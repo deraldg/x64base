@@ -131,6 +131,15 @@ which under-declare. Identical across all three lanes.
 | BUILDING | BLDG |
 | STUDENTS | SID, MAJOR, LNAME, FNAME, DOB, GPA |
 | TEACHERS | TID, DEPT_ID, LNAME, FNAME |
+<!-- Tag sets unchanged by stage 4 (2026-08-12): the memo column is not
+     indexed. But the CDX containers for STUDENTS/TEACHERS were REBUILT then,
+     because a CDX is hash-bound to table structure and correctly refuses a
+     table whose field count changed. Note the reset corollary: CDX identity
+     lives in a SEPARATE <container>.cdx.meta sidecar, so a reset must delete
+     BOTH the .cdx and the .cdx.meta -- deleting only the container leaves the
+     stale identity to judge the fresh one, and the failure message names the
+     TABLE, which reads like a table problem and is not. -->
+
 | COURSES | CID, DEPT_ID |
 | CLASSES | CLS_ID, TERM, CID, ROOM, TID |
 | ENROLL | SID, CLS_ID |
@@ -211,8 +220,54 @@ If you do mutate it, `reset_mcc_fixtures.ps1 -Execute` and rebuild stages 1–3.
 
 ## Files
 
+## Stage 4 -- memo columns on x64 STUDENTS + TEACHERS (2026-08-12, AIF-070 Part B)
+
+**The three-stage chain above does NOT produce these.** The published x64
+`STUDENTS` and `TEACHERS` carry a `NOTES M` memo column and a `.dtx` sidecar,
+added in place after stage 3 by:
+
+```text
+DO mcc_add_notes_memo          (dottalkpp/data/scripts/mcc_add_notes_memo.dts)
+```
+
+Measured post-change structure (`SHOW COLUMNS`, 2026-08-12):
+
+| Table | Fields | Memo column | Sidecar |
+| --- | --- | --- | --- |
+| STUDENTS | 10 (was 9) | `NOTES M(8)` at position 10 | `dbf/x64/STUDENTS.dtx` |
+| TEACHERS | 8 (was 7) | `NOTES M(8)` at position 8 | `dbf/x64/TEACHERS.dtx` |
+
+**Value-virgin by design:** the column exists, every token is null, both
+sidecars are empty. Record counts and every pre-existing field value are
+unchanged -- the freshness assertion still reads `50000000 Taylor Quinn`
+under `TAG SID`, and that is the check that proves the migration preserved
+data (it is the same assertion that caught the corruption described below).
+
+**After a full rebuild you must re-run stage 4.** `build_mcc_demo_bases.ps1`
+regenerates x64 from vfp, which has no memo columns, so a clean rebuild
+silently reverts to 9/7 fields -- and the `mcc_x64` workspace posture then
+carries 25 files instead of 27. Re-run the stage-4 script, then re-save the
+posture. The script is rerunnable (a second append refuses harmlessly) and
+its header records the backup two-step.
+
+**Why the memo columns exist:** MINIDB containers carry memo sidecars
+(AIF-108 `[SIDECAR]`), and the canonical workspace is what proves it -- the
+`mcc_x64` container is 27 files = 13 tables + 12 CDX + 2 DTX.
+
+**Bug found by this migration (AIF-110), stated here because it changes how
+you verify ANY schema change:** `FIELDMGR APPEND` used to blank-corrupt every
+x64 table it rewrote -- record count, field descriptors, schema, and deleted
+flags all read *correct* while every value became spaces. Fixed 2026-08-12.
+The lesson for this lane: **a green readback of shape is not a readback of
+data.** This README already said "a green readback is not proof" about
+directories; the same rule now has a second, sharper instance -- assert on
+FIELD VALUES, because a count-and-structure check passes on a blanked table.
+
+## Files
+
 | File | Purpose |
 | --- | --- |
+| `../mcc_add_notes_memo.dts` | **Stage 4** -- adds `NOTES M` to x64 STUDENTS/TEACHERS, rebuilds their CDX+LMDB, re-saves the posture. Not part of the three-stage chain; re-run after any full rebuild. |
 | `../../../scripts/mcc/build_mcc_demo_bases.ps1` | **The released entry point.** Warns, shows what will be overwritten, prompts, then builds. |
 | `../../../scripts/mcc/reset_mcc_fixtures.ps1` | Virgin slate. Report-only by default. |
 | `../../../scripts/mcc/extract_mcc_og.ps1` | Unpack the archive to `dbf\og`. MD5-pinned. |

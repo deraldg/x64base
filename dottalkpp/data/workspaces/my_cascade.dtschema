@@ -1,0 +1,8 @@
+DTSHEMA 2
+AREA 1 | dbf=CASCADE_Items.dbf | index=CASCADE_Items.cdx | indextype=CDX | tag=ITEM_ID | alias=CASCADE_Items
+AREA 2 | dbf=CASCADE_Vendors.dbf | index=CASCADE_Vendors.cdx | indextype=CDX | tag=VENDOR_ID | alias=CASCADE_Vendors
+AREA 3 | dbf=CASCADE_Customers.dbf | index=none | indextype=NONE | tag=none | alias=CASCADE_Customers
+AREA 4 | dbf=CASCADE_Sales_Orders.dbf | index=CASCADE_Sales_Orders.cdx | indextype=CDX | tag=SO_ID | alias=CASCADE_Sales_Orders
+AREA 5 | dbf=CASCADE_Purchase_Orders.dbf | index=CASCADE_Purchase_Orders.cdx | indextype=CDX | tag=PO_ID | alias=CASCADE_Purchase_Orders
+AREA 6 | dbf=CASCADE_Work_Orders.dbf | index=CASCADE_Work_Orders.cdx | indextype=CDX | tag=WO_ID | alias=CASCADE_Work_Orders
+AREA 7 | dbf=CASCADE_GL_Journal.dbf | index=CASCADE_GL_Journal.cdx | indextype=CDX | tag=JOURNAL_ID | alias=CASCADE_GL_Journal

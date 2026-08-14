@@ -1,0 +1,54 @@
+* ============================================================================
+* workspace_session_state.dts -- v3 session-state capture (owner requirement
+* 2026-08-11: "we need the cursor states and refresh relations"). A v3 save
+* emits CURSOR <area> <physical-recno> per open area plus CURRENT <area>; the
+* v3 loader applies them after AREA/REL restoration, the saved selection
+* outranks normalization, and the final refresh slaves children to the
+* RESTORED parents. PHYSICAL recno is the anchor (the GPS prior art: logical
+* row derives from physical under the active order); GPS is the verifier.
+* Old loaders skip the lines (tolerate-unknown; the KEY precedent).
+*
+* Proof shape: drive Sales_Orders to BOTTOM (SO 6) with the child slaved,
+* save the SESSION as v3, tear down completely, reload -- then assert the
+* parent is at SO 6 (not row 1) and the child re-slaved to it through the
+* load's own refresh. RUNTIME-PROVEN 2026-08-11 (build 15:22:32) first try:
+* "restored 43 area(s) and 58 relation(s) (+ 43 cursor(s))", GPS Area 21
+* Physical Recno 6 / Logical Row 6, child at Recno 11.
+*
+* Run: DO workspace_session_state | regression: REGRESSION RUN WORKSPACE_SESSION
+* Markers: SS_T1 (parent restored at BOTTOM), SS_T2 (child slaved after restore).
+* ============================================================================
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+FORMULA "WS-SESSION-PROOF-BEGIN"
+
+* --- environment-first: the cascade bundle roots ----------------------------
+SETPATH DBF SYSTEMS/CASCADE_ERP/DBF
+SETPATH INDEXES SYSTEMS/CASCADE_ERP/INDEXES
+SETPATH LMDB SYSTEMS/CASCADE_ERP/LMDB
+WORKSPACE CLOSE
+WORKSPACE LOAD cascade_all
+
+* --- take the session somewhere specific ------------------------------------
+SELECT 21
+SET ORDER TAG SO_ID
+BOTTOM
+REL REFRESH
+
+* --- save the SESSION, not just the schema ----------------------------------
+WORKSPACE SAVE sess_regress MEMO V3
+WORKSPACE CLOSE
+
+* --- resurrection ------------------------------------------------------------
+WORKSPACE LOAD sess_regress MEMO
+GPS
+? "SS_T1_parent_restored_at_bottom:" + (SO_ID = 6)
+SELECT 24
+? "SS_T2_child_slaved_after_restore:" + (SO_ID = 6)
+
+FORMULA "WS-SESSION-PROOF-END"
+
+* --- teardown: restore the x64 disk environment -----------------------------
+WORKSPACE CLOSE
+DO x64

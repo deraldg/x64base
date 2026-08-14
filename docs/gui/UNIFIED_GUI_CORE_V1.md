@@ -22,6 +22,28 @@ from the database contracts:
 - `../database/DATABASE_SAFETY_CONTRACT_V1.md`
 - `WINDOWED_APP_CONTRACT_V1.md`
 
+## Authority Order
+
+The unified GUI core exists to prevent drift, not to create a parallel runtime.
+
+Authority order for shared behavior is:
+
+1. `xbase`, `memo`, `xindex`, and `xexpr` for durable database mechanics.
+2. `dottalkpp` runtime and command handlers for command, script, relation,
+   mutation, and transcript semantics.
+3. GUI core facades and adapters for typed session/task/snapshot/workspace
+   models.
+4. Toolkit adapters for delivery, rendering, focus, and native platform
+   integration.
+
+Therefore:
+
+- GUI core should consume existing runtime or library behavior whenever
+  possible.
+- GUI core may bridge to the CLI/service layer while structured APIs mature.
+- GUI core must not silently redefine command behavior, area rules, relation
+  behavior, indexing behavior, or write safety in frontend code.
+
 ## C++ Core Shape
 
 | File | Role |
@@ -127,3 +149,13 @@ The frontends are orthogonal presentations, not independent database products.
 When one lane gains a concept, the concept should be named in the shared core
 contract before another lane reimplements it. The rendering can differ; the
 meaning should not.
+
+When a frontend needs behavior that does not already exist in shared code, the
+default sequence is:
+
+1. reuse a shared library/runtime service,
+2. add or strengthen a structured facade in GUI core,
+3. temporarily bridge through CLI/runtime,
+4. mark the action as an explicit skeleton.
+
+Skipping straight to toolkit-local behavior should be treated as drift.

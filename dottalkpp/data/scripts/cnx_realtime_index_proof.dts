@@ -1,0 +1,159 @@
+* ============================================================================
+* cnx_realtime_index_proof.dts
+*
+* Proves XIDX-TXN-02 M1: a CNX order is maintained in REALTIME. A REPLACE that
+* moves an indexed value re-places that record in the ordering immediately,
+* with NO REBUILD in between, and the engine does NOT warn about staleness
+* because there is nothing stale to warn about.
+*
+* This is the positive counterpart to index_maintenance_failure_proof.dts
+* (regression IDXSTALE), which asserts that a backend that CANNOT maintain
+* incrementally says so. Same fixture, same markers, opposite expectation --
+* deliberately, so the pair reads as one contract with two halves:
+*     maintenance happens        -> here (CNXLIVE)
+*     maintenance cannot happen  -> IDXSTALE, and the engine is honest
+* This file is the direct descendant of the IDXSTALE run that inverted when M1
+* landed; keeping both is what makes the inversion legible instead of looking
+* like a regression someone silently retuned.
+*
+* HOW CNX MAINTAINS A KEYLESS INDEX
+*   A CNX RUN1 payload stores 4 bytes per recno and NO keys
+*   (cnx_document.cpp:81 builds every entry as InxEntry{"", rn}). Order lives
+*   in the SEQUENCE of entries, so CnxBackend::upsert cannot binary-search
+*   stored keys -- there are none. It searches the PERMUTATION instead,
+*   comparing the edited record's live field value against the live field value
+*   of the record at each probe position (~log2 n record reads). The table is
+*   the ordering authority, which is the same authority a REBUILD uses, and
+*   both paths share derive_sort_entry_/sort_entry_less_ so they cannot drift.
+*
+* MARKER DESIGN -- READ BEFORE EDITING
+*   Inherited wholesale from IDXSTALE, and load-bearing for the same reasons:
+*     1. Park the cursor on a KNOWN DIFFERENT record before every SEEK, then
+*        assert the FIELD VALUE moved. A SEEK that silently no-ops fails the
+*        guard instead of inheriting a passing position.
+*     2. Markers must be STRING comparisons. "? <str> + FOUND()" and
+*        "? <str> + (RECNO() = 1)" both render EMPTY, which reads as failure.
+*        ALLTRIM(LNAME) = "X" renders .T./.F. correctly. Wrapping RECNO() in
+*        STR() does NOT rescue it -- the problem is RECNO() itself.
+*   A version of this proof that skipped rule 1 passed while proving nothing.
+*   Do not remove the GO guards.
+*
+* Self-contained: builds and erases its own throwaway v32 table; never touches
+* STUDENTS or any live fixture.
+*   Standalone:  DO cnx_realtime_index_proof
+*   Regression:  REGRESSION RUN CNXLIVE
+*
+* Runtime status: NOT YET PROVEN AS A REGISTERED SCRIPT. The behaviour it
+* asserts was runtime-proven 2026-07-31 on wsl-lean (TOP moved from rec 2 to
+* rec 1 with no REBUILD, leftStale=no, warning absent); this file packages that
+* measurement as a repeatable test.
+* ============================================================================
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+* x32 lane: CNX is the v32 indexing backend
+DO x32
+
+FORMULA "CNX-REALTIME-INDEX-PROOF-BEGIN"
+
+* --- throwaway v32 table (bare CREATE defaults to MSDOS/DBASE = v32) --------
+CREATE CNXLIVE (SID N(8), LNAME C(20))
+
+APPEND
+REPLACE SID WITH 1
+REPLACE LNAME WITH "MILLER"
+APPEND
+REPLACE SID WITH 2
+REPLACE LNAME WITH "ANDERSON"
+APPEND
+REPLACE SID WITH 3
+REPLACE LNAME WITH "ZEBRA"
+APPEND
+REPLACE SID WITH 4
+REPLACE LNAME WITH "YOUNG"
+
+* --- CNX index on LNAME ------------------------------------------------------
+CNX CREATE
+CNX ADDTAG LNAME
+REBUILD
+SET ORDER TAG LNAME
+
+* --- G0: the ORDER IS LIVE ---------------------------------------------------
+* Guards everything below. Park on 4 (YOUNG), seek a key that lives on 1.
+GO 4
+SEEK "MILLER"
+? "L_G0_seek_works_before_mutation:" + (ALLTRIM(LNAME) = "MILLER")
+
+* --- G1: baseline ORDER, before any mutation ---------------------------------
+* Under LNAME order the first row must be ANDERSON. L_T2 compares against this,
+* so it is taken before anything moves. If G1 fails, T2 proves nothing.
+GO TOP
+? "L_G1_baseline_top_is_ANDERSON:" + (ALLTRIM(LNAME) = "ANDERSON")
+
+* --- the mutation under test -------------------------------------------------
+* Expect EXACTLY ONE line:
+*   REPLACE: Replaced field #2 at rec 1.
+* The staleness warning must be ABSENT. Trace should read
+* "staleBefore=no leftStale=no" -- no false->true transition, because the
+* backend maintained the order rather than giving up on it.
+GO 1
+REPLACE LNAME WITH "AAAAA"
+
+* --- L_T1: the RECORD WRITE LANDED -------------------------------------------
+* Unchanged from IDXSTALE. Realtime maintenance must not cost the write.
+GO 1
+? "L_T1_record_carries_new_value:" + (ALLTRIM(LNAME) = "AAAAA")
+
+* --- L_T2: THE ORDER IS ALREADY CORRECT -- the whole point --------------------
+* This is the marker that inverted when M1 landed, and it is the reason this
+* file exists. AAAAA now sorts before ANDERSON, so an ordered walk must start
+* at record 1 IMMEDIATELY -- no REBUILD, no REINDEX, nothing between the
+* REPLACE above and the GO TOP below.
+*
+* Under the pre-M1 stub backend this read ANDERSON (see IDXSTALE E_T2). If it
+* reads ANDERSON here, realtime CNX maintenance has regressed to batch.
+GO TOP
+? "L_T2_realtime_order_top_is_AAAAA:" + (ALLTRIM(LNAME) = "AAAAA")
+
+* --- L_T3: the record that did NOT move is still correctly placed ------------
+* Guards against "maintenance" that reorders by accident -- e.g. an insert that
+* appends instead of placing, which would leave position 0 right while
+* corrupting everything after it. ANDERSON must now be SECOND, directly after
+* AAAAA. Reached by SKIP from TOP rather than by seek, so it reads the ORDER
+* and not a lookup.
+GO TOP
+SKIP
+? "L_T3_second_row_is_ANDERSON:" + (ALLTRIM(LNAME) = "ANDERSON")
+
+* --- L_T4: the tail of the order survived the edit ---------------------------
+* A permutation that lost or duplicated an entry can still look right at the
+* top. ZEBRA sorts last of the four and must still be there.
+BOTTOM
+? "L_T4_bottom_is_ZEBRA:" + (ALLTRIM(LNAME) = "ZEBRA")
+
+* --- L_T5: SEEK agrees with the maintained order -----------------------------
+* Park on the bottom, seek the moved record. Confirms lookup and order tell the
+* same story after realtime maintenance -- on a STALE index they can disagree,
+* which is exactly what IDXSTALE E_T3 documents.
+GO 3
+SEEK "AAAAA"
+? "L_T5_seek_reaches_moved_record:" + (ALLTRIM(LNAME) = "AAAAA")
+
+* --- L_T6: a REBUILD is a NO-OP now, not a repair ----------------------------
+* IDXSTALE E_T4 proves REBUILD repairs a stale order. Here there is nothing to
+* repair, so REBUILD must leave the order exactly as realtime maintenance
+* already had it. Same assertion as L_T2, taken after a rebuild: if realtime
+* and rebuild disagree, the two orderings have drifted and one of them is
+* wrong.
+REBUILD
+SET ORDER TAG LNAME
+GO TOP
+? "L_T6_rebuild_agrees_with_realtime:" + (ALLTRIM(LNAME) = "AAAAA")
+
+FORMULA "CNX-REALTIME-INDEX-PROOF-END"
+
+* --- teardown ----------------------------------------------------------------
+* No bare "SET ORDER TO" -- it reports "SET ORDER: missing target."
+* CLOSE drops the order with the table.
+CLOSE
+ERASE CNXLIVE CONFIRM

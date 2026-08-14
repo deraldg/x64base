@@ -1,0 +1,479 @@
+* ============================================================
+* MCC_CORE_SURFACE_AND_INDEX_REGRESSION_V9.DTS
+*
+* Purpose:
+*   Stable split regression for DotTalk++ using two clearly
+*   separated phases:
+*
+*     1) Core surface / non-LMDB behavior on v32 DBF
+*     2) Indexed CDX/LMDB behavior on v64 DBF/X64
+*
+* Design notes:
+*   - Do NOT mix v32 and v64 indexed work in the same phase.
+*   - v32 phase intentionally stays mostly on natural / classic
+*     behavior, with optional INX-style rebuild coverage where the
+*     table flavor naturally triggers it.
+*   - v64 phase explicitly switches BOTH DBF and INDEXES roots.
+*     This is critical. Opening a v64 table while still pointing
+*     INDEXES at x32 will make SET INDEX / SET ORDER look in the
+*     wrong directory.
+*   - Phase 3 is observation-only. It is not meant to prove open
+*     area selection after cleanup.
+*
+* Usage notes:
+*   - This script assumes your current public commands remain:
+*       INIT
+*       SETPATH / SET PATH
+*       SCHEMAS OPEN / CLOSE
+*       USE
+*       SELECT <name>
+*       SET INDEX TO <stem|file>
+*       SET ORDER TO TAG <tag>
+*       BUILDLMDB YES
+*   - If the path aliases differ in your build, adjust only the
+*     path lines near the top of each phase.
+*
+* Safety notes:
+*   - BUILDLMDB YES is included only in the v64 phase.
+*   - Table-buffer and calcwrite probes are reversible.
+*   - No PACK / ZAP / DELETE destructive coverage is included.
+* ============================================================
+
+SET ECHO OFF
+COLOR DEFAULT
+ECHO ===== V9 START =====
+
+* ------------------------------------------------------------
+* PHASE 0 - INIT / SANITY / PATH BASELINE
+* ------------------------------------------------------------
+* Goal:
+*   Start from a known process state, then observe what INIT and
+*   ini files actually set. We do not trust prior session state.
+* ------------------------------------------------------------
+ECHO ===== PHASE 0 INIT =====
+INIT
+VERSION
+STATUS
+WSREPORT
+
+* Optional path echo. Useful when path drift is suspected.
+* SET PATH
+
+* ------------------------------------------------------------
+* PHASE 1 - CORE SURFACE (v32 only, no CDX/LMDB attach)
+* ------------------------------------------------------------
+* Goal:
+*   Prove the public shell / DBF surface is healthy using the
+*   classic v32 data root.
+*
+* Important:
+*   We explicitly close all areas and clear relations first so the
+*   phase does not inherit stale open tables or relation state.
+*
+* Path rule:
+*   For this phase we want the DBF root on DBF/X32.
+*   We leave INDEXES on x32 as well because any default v32 rebuild
+*   or INX activity should resolve there naturally.
+* ------------------------------------------------------------
+ECHO ===== PHASE 1 CORE SURFACE V32 =====
+SCHEMAS CLOSE
+REL CLEAR ALL
+
+* Explicit v32 roots.
+SETPATH DBF DBF/X32
+SETPATH INDEXES INDEXES/X32
+
+* Open the v32 directory into work areas.
+* This is the main bring-up for the classic tables.
+SCHEMAS OPEN DBF/X32
+
+* -----------------------------
+* BUILDING
+* -----------------------------
+SELECT BUILDING
+COUNT
+LIST 3
+DISPLAY
+TOP
+SKIP 1
+BOTTOM
+TOP
+
+* -----------------------------
+* ROOMS
+* -----------------------------
+SELECT ROOMS
+COUNT
+LIST 3
+TUPLE *
+TOP
+SKIP 1
+BOTTOM
+TOP
+
+* -----------------------------
+* DEPT
+* -----------------------------
+SELECT DEPT
+COUNT
+LIST 3
+TUPLE *
+TOP
+SKIP 1
+BOTTOM
+TOP
+
+* -----------------------------
+* MAJORS
+* -----------------------------
+SELECT MAJORS
+COUNT
+LIST 3
+TUPLE *
+TOP
+SKIP 1
+BOTTOM
+TOP
+
+* -----------------------------
+* TERMS
+* -----------------------------
+SELECT TERMS
+COUNT
+LIST ALL
+TUPLE *
+TOP
+SKIP 1
+BOTTOM
+TOP
+
+* -----------------------------
+* COURSES
+* -----------------------------
+SELECT COURSES
+COUNT
+LIST 3
+TUPLE *
+TOP
+SKIP 1
+BOTTOM
+TOP
+
+* -----------------------------
+* TEACHERS
+* -----------------------------
+SELECT TEACHERS
+COUNT
+LIST 3
+TUPLE *
+LOCATE LNAME = "Wilson"
+TUPLE *
+TOP
+
+* -----------------------------
+* CLASSES
+* -----------------------------
+SELECT CLASSES
+COUNT
+LIST 3
+TUPLE *
+TOP
+SKIP 1
+BOTTOM
+TOP
+
+* -----------------------------
+* STUDENTS BASELINE
+* -----------------------------
+SELECT STUDENTS
+COUNT
+LIST 3
+TUPLE *
+TOP
+RECNO
+
+ECHO ===== PHASE 1 FILTER / LOCATE / COUNT =====
+SET FILTER TO
+COUNT
+COUNT DELETED
+COUNT NOT DELETED
+COUNT !DELETED
+COUNT FOR LNAME = "ANDERSON"
+COUNT WHERE GPA > 3.5
+COUNT GPA > 3.5
+
+* Filter canary: FNAME = AVA
+SET FILTER TO FNAME = "AVA"
+COUNT
+COUNT FOR GPA > 2.5
+COUNT FOR LNAME = "WHITE"
+TOP
+LIST 10
+SET FILTER TO
+
+* Multi-hit LOCATE / CONTINUE canary.
+LOCATE LNAME = "ANDERSON"
+TUP
+CONTINUE
+TUP
+CONTINUE
+TUP
+TOP
+
+ECHO ===== PHASE 1 BOOLEAN / SMARTLIST =====
+LOCATE LNAME = "Taylor"
+LIST 1
+BOOLEAN (GPA > 3)
+BOOLEAN (GPA < 3)
+BOOLEAN (GPA >= 2 AND GPA <= 4)
+SMARTLIST 5 FOR GPA >= 3.5
+RECNO
+
+ECHO ===== PHASE 1 AGGREGATES =====
+SUM GPA
+AVERAGE GPA
+AVG GPA
+MIN GPA
+MAX GPA
+
+SET FILTER TO FNAME = "AVA"
+COUNT
+SUM GPA
+AVERAGE GPA
+AVG GPA
+MIN GPA
+MAX GPA
+SET FILTER TO
+
+ECHO ===== PHASE 1 DATE/TIME =====
+DATE
+TODAY
+TIME
+NOW
+DATETIME
+CALC DATE()
+CALC TODAY()
+CALC TIME()
+CALC NOW()
+CALC DATETIME()
+CALC (DATE() = TODAY())
+CALC (NOW() = DATETIME())
+CALC DATE() + 2
+CALC DATE() - 2
+CTOD 2000-01-01
+CTOD "2000-01-01"
+CTOD "2000/01/01"
+CTOD 20000101
+CALC CTOD("2000-01-01")
+CALC DTOC(CTOD("2000-01-01"))
+DATEADD 20000101, 30
+DATEADD 20000101, -30
+DATEDIFF 20000101, 20000103
+CALC DATEADD(DATE(), 30)
+CALC DATEDIFF(CTOD("2000-01-01"), DATE())
+
+ECHO ===== PHASE 1 TABLE BUFFER =====
+* Reversible table-buffer write probe.
+SELECT STUDENTS
+LOCATE LNAME = "Taylor"
+TABLE ON
+REPLACE FNAME WITH "DeraldNew"
+TUPLE *
+LIST 1
+COMMIT
+LIST 1
+REPLACE FNAME WITH "Derald"
+COMMIT
+TABLE OFF
+LIST 1
+
+ECHO ===== PHASE 1 CALCWRITE =====
+* Reversible numeric write probe.
+SELECT STUDENTS
+LOCATE LNAME = "Taylor"
+TABLE ON
+TUPLE GPA
+CALC GPA = GPA + 0.01
+TUPLE GPA
+COMMIT
+LIST 1
+CALC GPA = GPA - 0.01
+COMMIT
+LIST 1
+TABLE OFF
+
+ECHO ===== PHASE 1 RELATIONS =====
+REL CLEAR ALL
+REL ADD STUDENTS ENROLL ON SID
+REL ADD ENROLL CLASSES ON CLS_ID
+REL LIST
+REL REFRESH
+REL_LIST
+REL_REFRESH
+
+ECHO ===== PHASE 1 SQLITE =====
+SQLITE VERSION
+SQLITE OPEN :memory:
+SQLITE EXEC CREATE TABLE t (id INTEGER PRIMARY KEY, name TEXT, n INTEGER);
+SQLITE EXEC INSERT INTO t (name, n) VALUES ('alpha', 10);
+SQLITE EXEC INSERT INTO t (name, n) VALUES ('bravo', 20);
+SQLITE EXEC INSERT INTO t (name, n) VALUES ('charlie', 30);
+SQLITE SELECT SELECT id, name, n FROM t ORDER BY id;
+SQLITE CLOSE
+
+ECHO ===== PHASE 1 DOTSCRIPT / BLOCKS =====
+! echo SET ECHO ON>tmp/mini_regression_v9.dts
+! echo ECHO MINI_DOTSCRIPT_V9_OK>>tmp/mini_regression_v9.dts
+DOTSCRIPT tmp/mini_regression_v9.dts
+SET ECHO OFF
+GO TOP
+
+* Branching smoke.
+IF .F.
+    ECHO IF_BRANCH_RAN_UNEXPECTED
+ELSE
+    ECHO ELSE_BRANCH_RAN_OK
+ENDIF
+
+* Loop buffering smoke.
+WHILE .F.
+    ECHO WHILE_BODY_RAN_UNEXPECTED
+ENDWHILE
+
+UNTIL .T.
+    ECHO UNTIL_BODY_RAN_UNEXPECTED
+ENDUNTIL
+
+* SCAN on an open v32 table.
+SELECT BUILDING
+TOP
+SCAN
+    TUPLE *
+ENDSCAN
+
+ECHO ===== PHASE 1 TUPTALK =====
+SELECT STUDENTS
+TUPTALK RESET
+TUPTALK PUSH ALL
+TUPTALK PUSH FILTER CND
+TUPTALK PUSH 3
+TUPTALK PUSH ROW
+TUPTALK LIST
+TUPTALK NORMALIZE
+TUPTALK EXPORT CSV students_norm_v9.csv
+TUPTALK EXPORT TSV students_norm_v9.tsv
+
+* Cleanly end the v32 phase before switching roots.
+SCHEMAS CLOSE
+REL CLEAR ALL
+
+* ------------------------------------------------------------
+* PHASE 2 - INDEX / LMDB / CDX (v64 only)
+* ------------------------------------------------------------
+* Goal:
+*   Prove the v64 indexed path using CDX + LMDB.
+*
+* Critical rule:
+*   Switch BOTH DBF and INDEXES roots here.
+*   If DBF is x64 but INDEXES remains x32, SET INDEX and SET ORDER
+*   will search the wrong tree.
+*
+* Assumption:
+*   The v64 tables live under DBF/X64 and the matching CDX
+*   containers live under INDEXES/X64.
+* ------------------------------------------------------------
+ECHO ===== PHASE 2 INDEXED V64 =====
+SETPATH DBF DBF/X64
+SETPATH INDEXES INDEXES/X64
+
+* Open a single v64 table for focused index testing.
+USE STUDENTS
+AREA
+STATUS
+
+ECHO ===== PHASE 2 ATTACH / ORDER =====
+* Public attach and order workflow.
+SET INDEX TO STUDENTS
+SET ORDER TO TAG LNAME
+AREA
+STATUS
+TOP
+SMARTLIST 10
+DISPLAY
+TUP
+
+* Secondary tag probe.
+SET ORDER TO TAG DOB
+AREA
+LIST 20
+
+ECHO ===== PHASE 2 SEEK / LOCATE UNDER ORDER =====
+* Ordered seek / locate probes.
+SET ORDER TO TAG LNAME
+TOP
+LOCATE LNAME = "ANDERSON"
+TUP
+CONTINUE
+TUP
+CONTINUE
+TUP
+
+ECHO ===== PHASE 2 REPORTING =====
+DBAREA
+STATUS
+WSREPORT
+WSREPORT ALL VERBOSE
+SHOW TABLE
+SHOW COLUMNS
+SHOW INDEX
+FIELDS
+DISPLAY
+TUP
+
+ECHO ===== PHASE 2 KNOWN-SAFE REBUILD (V64 ONLY) =====
+* Rebuild the CDX/LMDB backend in the v64 index tree.
+BUILDLMDB YES
+
+ECHO ===== PHASE 2 POST-REBUILD VERIFY =====
+* Re-attach and verify after rebuild.
+SET INDEX TO STUDENTS
+SET ORDER TO TAG LNAME
+TOP
+SMARTLIST 10
+STATUS
+AREA
+
+* Cleanly close phase 2.
+CLOSE
+SCHEMAS CLOSE
+REL CLEAR ALL
+
+* ------------------------------------------------------------
+* PHASE 3 - KNOWN OBSERVATIONS
+* ------------------------------------------------------------
+* Goal:
+*   Record known semantic observations without conflating them with
+*   open-area behavior.
+*
+* Important:
+*   Do NOT perform name-based SELECT after cleanup and treat it as
+*   a regression. After CLOSE / SCHEMAS CLOSE there are no open
+*   areas to bind by name.
+* ------------------------------------------------------------
+ECHO ===== PHASE 3 KNOWN OBSERVATIONS =====
+CALC ((DATE() + 2) > DATE())
+CALC ((DATE() - 2) < DATE())
+CALC (CTOD("2000-01-01") + 1 = CTOD("2000-01-02"))
+CALC (CTOD("2000-01-01") - 1 = CTOD("1999-12-31"))
+CALC (DATEDIFF(DATE(), DATE()) = 0)
+
+* Optional reminder only; intentionally commented out because all
+* tables are closed at this point, so name-based SELECT is not a
+* useful canary here.
+* SELECT BUILDING
+
+* ------------------------------------------------------------
+* END
+* ------------------------------------------------------------
+ECHO ===== V9 END =====
+QUIT

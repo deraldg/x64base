@@ -24,6 +24,7 @@ ECHO ============================================================
 ECHO ORDER ITERATOR REGRESSION 001
 ECHO ============================================================
 
+DO X32
 SCHEMAS CLOSE
 SCHEMAS OPEN DBF
 

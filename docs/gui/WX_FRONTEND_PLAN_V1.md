@@ -1,10 +1,12 @@
 # DotTalk++ wxWidgets Frontend Plan v1
 
-Status: phase-1 workspace shell started.
+Status: active native GUI lane.
 
 ## Purpose
 
-`dottalk_wx` is the first proposed real windowed GUI frontend for DotTalk++. It uses wxWidgets for native desktop widgets while keeping all runtime behavior behind `dottalk_gui_core`.
+`dottalk_wx_next` is the active native windowed GUI frontend for DotTalk++. It
+uses wxWidgets for native desktop widgets while keeping all runtime behavior
+behind `dottalk_gui_core`.
 
 The initial skeleton lives in `src/gui/wx`. It is compiled only when
 `DOTTALK_WITH_WX=ON`, and it currently provides a main frame, File/Open menu,
@@ -44,8 +46,8 @@ Future CMake shape:
 if (DOTTALK_WITH_WX)
   find_package(wxWidgets CONFIG QUIET)
   if (wxWidgets_FOUND)
-    add_executable(dottalk_wx ...)
-    target_link_libraries(dottalk_wx PRIVATE dottalk_gui_core ...)
+    add_executable(dottalk_wx_next ...)
+    target_link_libraries(dottalk_wx_next PRIVATE dottalk_gui_core ...)
   else()
     message(FATAL_ERROR "DOTTALK_WITH_WX=ON but wxWidgets was not found.")
   endif()
@@ -72,8 +74,8 @@ Top toolbar: open, refresh, close area, command input, run
 Initial menus:
 
 - File: Open Table, Exit
-- Workspace: Open Workspace, Save Workspace, Save Workspace As (disabled until
-  the workspace graph service is implemented)
+- Workspace: WORKSPACE OPEN Directory, WORKSPACE LOAD Schema, Save Workspace,
+  Save Workspace As
 - Area: Refresh Snapshot, Close Area
 - Run: Run Command, Run DotScript, Cancel Task
 - View: Output Log, Workspace Panel
@@ -101,16 +103,15 @@ visible.
 
 ### Open Workspace Graph
 
-Deferred until a GUI-core workspace graph service exists.
-
 Intended flow:
 
 1. User chooses Workspace > Open Workspace.
 2. GUI requests a `.dtschema` or `.dtschemas` file.
-3. Worker loads and validates areas, relation endpoints, index attachments, and
+3. GUI routes `workspace load` through the shared runtime/command path.
+4. Worker mirrors validated areas, relation endpoints, index attachments, and
    browser seeds through the shared runtime facade.
-4. UI rebuilds the Workspace Areas panel from the graph result.
-5. UI presents structured warnings for missing tables, stale indexes, relation
+5. UI rebuilds the Workspace Areas panel from the graph result.
+6. UI presents structured warnings for missing tables, stale indexes, relation
    mismatches, or unsupported graph features.
 
 ### Run Command
@@ -163,9 +164,9 @@ Acceptable configure modes:
 
 ## First Acceptance Criteria
 
-- `dottalk_wx` starts and shows a main window.
-- The main window exposes bootstrap Workspace load/save menu actions for
-  first-pass `.dtschema` files.
+- `dottalk_wx_next` starts and shows a main window.
+- The main window exposes runtime-backed Workspace load/save menu actions for
+  `.dtschema` / `.dtschemas` files.
 - The main window exposes a read-only Workspace Graph tab fed by current area
   state.
 - The main window can open more than one DBF as separate GUI areas.

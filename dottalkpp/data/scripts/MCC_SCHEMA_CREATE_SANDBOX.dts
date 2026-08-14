@@ -1,0 +1,122 @@
+* ============================================================
+* MCC_SCHEMA_CREATE_SANDBOX.DTS
+*
+* Purpose:
+*   Create the canonical MCC sample database tables in DBF/SANDBOX.
+*
+* Scope:
+*   - Tables and fields only
+*   - No data
+*   - No indexes
+*   - No relations
+*
+* Intended workflow:
+*   1) Run this script to create classic/source tables in DBF/SANDBOX.
+*   2) Later use COPY AS X64 to convert them into X64 form.
+*   3) Later build CDX/LMDB indexes from the X64 copies.
+*
+* Canonical MCC tables:
+*   BUILDING, CLASSES, COURSES, DEPT, ENROLL, MAJORS,
+*   ROOMS, STUD_MAJ, STUDENTS, TASSIGN, TEACHERS, TERMS
+* ============================================================
+
+SET ECHO ON
+COLOR DEFAULT
+
+ECHO ===== MCC SANDBOX SCHEMA CREATE START =====
+
+* ------------------------------------------------------------
+* Target the user sandbox root.
+* ------------------------------------------------------------
+SETPATH DBF DBF/SANDBOX
+SET PATH
+
+* ------------------------------------------------------------
+* Close anything currently open so CREATE starts clean.
+* ------------------------------------------------------------
+SCHEMAS CLOSE
+CLOSE ALL
+REL CLEAR ALL
+
+* ------------------------------------------------------------
+* BUILDING
+* ------------------------------------------------------------
+CREATE FOX26 BUILDING (BLDG C(6), NAME C(40))
+CLOSE
+
+* ------------------------------------------------------------
+* DEPT
+* ------------------------------------------------------------
+CREATE FOX26 DEPT (DEPT_ID C(4), NAME C(40))
+CLOSE
+
+* ------------------------------------------------------------
+* MAJORS
+* ------------------------------------------------------------
+CREATE FOX26 MAJORS (MAJOR C(4), NAME C(40), DEPT_ID C(4))
+CLOSE
+
+* ------------------------------------------------------------
+* ROOMS
+* ------------------------------------------------------------
+CREATE FOX26 ROOMS (ROOM C(8), BLDG C(6), CAP N(3,0))
+CLOSE
+
+* ------------------------------------------------------------
+* TERMS
+* ------------------------------------------------------------
+CREATE FOX26 TERMS (TERM C(6), START D(8), END D(8))
+CLOSE
+
+* ------------------------------------------------------------
+* COURSES
+* ------------------------------------------------------------
+CREATE FOX26 COURSES (CID C(8), TITLE C(50), DEPT_ID C(4), CREDITS N(2,0))
+CLOSE
+
+* ------------------------------------------------------------
+* TEACHERS
+* ------------------------------------------------------------
+CREATE FOX26 TEACHERS (TID N(6,0), LNAME C(20), FNAME C(15), DEPT_ID C(4), EMAIL C(40), HIRE_DATE D(8), TENURED L(1))
+CLOSE
+
+* ------------------------------------------------------------
+* CLASSES
+* ------------------------------------------------------------
+CREATE FOX26 CLASSES (CLS_ID C(10), TERM C(6), CID C(8), SEC N(2,0), ROOM C(8), DAYS C(7), TIME C(11), TID N(6,0), CAP N(3,0))
+CLOSE
+
+* ------------------------------------------------------------
+* STUDENTS
+* ------------------------------------------------------------
+CREATE FOX26 STUDENTS (SID N(8,0), LNAME C(20), FNAME C(15), DOB D(8), GENDER C(1), MAJOR C(4), ENROLL_D D(8), GPA N(4,2), EMAIL C(40))
+CLOSE
+
+* ------------------------------------------------------------
+* ENROLL
+* ------------------------------------------------------------
+CREATE FOX26 ENROLL (ENR_ID N(9,0), SID N(8,0), CLS_ID C(10), GRADE C(2), STATUS C(1), ENR_DATE D(8))
+CLOSE
+
+* ------------------------------------------------------------
+* STUD_MAJ
+* ------------------------------------------------------------
+CREATE FOX26 STUD_MAJ (SID N(8,0), MAJOR C(4), DECLARED D(8))
+CLOSE
+
+* ------------------------------------------------------------
+* TASSIGN
+* ------------------------------------------------------------
+CREATE FOX26 TASSIGN (CLS_ID C(10), TID N(6,0), ASSIGN_D D(8))
+CLOSE
+
+* ------------------------------------------------------------
+* Verification pass.
+* ------------------------------------------------------------
+ECHO ===== VERIFY SANDBOX TABLES =====
+SCHEMAS OPEN DBF
+SCHEMAS
+STRUCT ALL
+
+ECHO ===== MCC SANDBOX SCHEMA CREATE END =====
+QUIT

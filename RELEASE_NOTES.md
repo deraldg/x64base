@@ -1,4 +1,4 @@
-# x64base 0.6.0-beta — draft release notes
+# x64base 0.6.0-beta -- draft release notes
 
 This is an evaluation release of the DotTalk++ / x64base educational DBF
 runtime. It is not production-ready and is not a drop-in replacement for a

@@ -1,0 +1,158 @@
+* ============================================================
+* INDEX X64 CNX SMOKE v1
+* ============================================================
+* Purpose:
+*   CNX-on-x64 (owner ruling 2026-08-09): explicit .cnx on a v64
+*   table attaches with an advisory instead of refusing; SET ORDER
+*   honors the .cnx (explicit container form AND bare-tag fallback
+*   when no .cdx exists); bare REINDEX routes to the CNX engine when
+*   the active order is CNX; and the CDX default is UNCHANGED when
+*   no .cnx is asked for.
+*
+* Scope:
+*   Non-destructive except a disposable copy in SANDBOX.
+*   Self-bootstrapping; erases its own copy at both ends.
+*
+* Guard rationale:
+*   CNX was re-enacted to x64 standards (ramfs/vdisk in-RAM indexing,
+*   XIDX-TXN-02 M1 realtime maintenance); the old blanket refusal in
+*   SET INDEX / SET ORDER was stale policy. LMDB-backed CDX remains
+*   the preferred and default x64 index.
+* ============================================================
+
+ECHO ============================================================
+ECHO INDEX X64 CNX SMOKE v1
+ECHO ============================================================
+
+SET PATH DBF DBF/SANDBOX
+SET PATH INDEXES INDEXES/SANDBOX
+SET PATH LMDB LMDB/SANDBOX
+WORKSPACE CLOSE
+ERASE students_cnx64_smoke CONFIRM
+
+ECHO
+ECHO --- GUARD 1: CDX DEFAULT UNCHANGED (no explicit .cnx anywhere) ---
+USE students
+AREA
+* Expect: auto-attached CDX order (students.cdx); flavor v64.
+
+ECHO
+ECHO --- MAKE DISPOSABLE X64 COPY (no .cdx sidecar rides along) ---
+COPY TO students_cnx64_smoke
+CLOSE
+USE students_cnx64_smoke
+AREA
+COUNT
+
+ECHO
+ECHO --- BUILD A CNX FOR THE X64 COPY ---
+CNX CREATE
+CNX ADDTAG SID
+CNX ADDTAG LNAME
+REBUILD
+* REBUILD is the CNX engine; it carries no flavor guard and must
+* populate both tags on this v64 table.
+
+ECHO
+ECHO --- SCOPE A: EXPLICIT .cnx ATTACH (advisory, NOT refusal) ---
+SET INDEX TO students_cnx64_smoke.cnx
+* Expect: "advisory -- LMDB-backed CDX is the preferred index" then
+* "SET INDEX: CNX attached". The old output was a hard refusal:
+* "True x64/v128 tables require CDX (LMDB-backed)."
+
+ECHO
+ECHO --- SCOPE C1: EXPLICIT CONTAINER + TAG ORDER ---
+SETORDER students_cnx64_smoke.cnx LNAME
+AREA
+TOP
+TUPLE SID,LNAME,FNAME
+SKIP 1
+TUPLE SID,LNAME,FNAME
+* Expect: LNAME-ordered traversal under the CNX (not physical order).
+
+ECHO
+ECHO --- SEEK UNDER CNX ORDER ---
+SEEK "White"
+TUPLE SID,LNAME,FNAME
+
+ECHO
+ECHO --- SCOPE D2: BARE REINDEX ROUTES TO CNX (active CNX order) ---
+REINDEX
+* Expect: "REINDEX default -> CNX (active CNX order, via REBUILD)".
+* The old behavior forced CDX/BUILDLMDB and failed on the missing env.
+
+ECHO
+ECHO --- SCOPE C2: BARE-TAG FALLBACK FINDS THE .cnx (fresh session) ---
+WORKSPACE CLOSE
+USE students_cnx64_smoke
+SET ORDER TO SID
+AREA
+TOP
+TUPLE SID,LNAME,FNAME
+* Expect: advisory "no .cdx container found; using existing CNX",
+* then SID-ordered traversal. The old behavior failed with
+* "file not found: ...students_cnx64_smoke.cdx".
+
+ECHO
+ECHO --- SCOPE B: WORKSPACE OPEN DBF CNX (explicit index source) ---
+WORKSPACE CLOSE
+WORKSPACE OPEN DBF CNX
+SELECT STUDENTS_CNX64_SMOKE
+AREA
+* Expect: under explicit CNX mode the x64 copy attaches its .cnx, while
+* plain students (no .cnx present) opens WITHOUT an attached index --
+* the requested mode is honored, not silently swapped to CDX. This is a
+* verification phase: the WORKSPACE mode plumbing predates AIF-099 and
+* carries no flavor guard; this proves it on an x64 table.
+
+ECHO
+ECHO --- SCOPE E: CROSS-SLOT DECOY (owner-caught leak, 2026-08-09) ---
+* The old dirs_for_mode searched the INDEXES_X32 slot BEFORE the configured
+* INDEXES slot whenever CNX was wanted, so an x64 table could attach a
+* same-stem .cnx built over a DIFFERENT table (observed live:
+* dbf/x64/STUDENTS.dbf wearing indexes/x32/STUDENTS.cnx). Plant a decoy
+* copy of the smoke's .cnx in a dir posing as the x32 slot; the attach
+* MUST come from the configured slot (INDEXES/SANDBOX), not the decoy.
+COPY FILE INDEXES\SANDBOX\students_cnx64_smoke.cnx TO tmp\students_cnx64_smoke.cnx OVERWRITE
+SET PATH INDEXES_X32 tmp
+WORKSPACE CLOSE
+WORKSPACE OPEN DBF CNX
+SELECT STUDENTS_CNX64_SMOKE
+AREA
+* Expect: Index file path contains INDEXES\SANDBOX (configured slot), NOT
+* \tmp\ (the decoy posing as the x32 slot). Under the pre-fix order the
+* decoy would win and AREA would show the tmp path -- the known-bad that
+* the single-slot SANDBOX environment could not previously express.
+SET PATH INDEXES_X32 INDEXES/x32
+
+ECHO
+ECHO --- SCOPE F: ATTACHED CNX WINS BARE-TAG SET ORDER (no CDX hop) ---
+* Give the DISPOSABLE COPY both containers so the hop is expressible
+* self-contained (v1 of this phase used SANDBOX students.cnx -- a file that
+* only ever "existed" as the pre-fix x32-slot leak masquerading as local;
+* the phase was designed on evidence planted by the bug under test).
+* With BOTH containers present and the CNX deliberately attached, bare
+* SET ORDER TO <tag> must resolve on the ATTACHED CNX -- pre-fix it hopped
+* to the .cdx (observed live 2026-08-09: REINDEX honored the CNX while
+* SET ORDER TO TAG switched to CDX).
+WORKSPACE CLOSE
+USE students_cnx64_smoke
+CDX CREATE
+CDX ADDTAG SID
+BUILDLMDB
+SET INDEX TO students_cnx64_smoke.cnx
+SET ORDER TO SID
+AREA
+* Expect: advisory then "SET INDEX: CNX attached"; then
+* "SET ORDER: CNX TAG 'SID'" with Index file ...students_cnx64_smoke.cnx --
+* NOT "CDX TAG" / .cdx. Both containers are erased with the copy at cleanup.
+
+ECHO
+ECHO --- CLEANUP ---
+WORKSPACE CLOSE
+ERASE students_cnx64_smoke CONFIRM
+* Note: the decoy tmp\students_cnx64_smoke.cnx remains in TMP (transient dir).
+
+ECHO ============================================================
+ECHO INDEX X64 CNX SMOKE v1 DONE
+ECHO ============================================================

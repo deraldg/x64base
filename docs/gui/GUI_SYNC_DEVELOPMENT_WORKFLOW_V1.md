@@ -8,7 +8,7 @@ DotTalk++ now has three visible UI lanes:
 
 - C++ wxWidgets workbench,
 - Python/Tkinter workbench,
-- TurboTalk/FoxTalk TUI.
+- ArcticTalk/FoxTalk TUI.
 
 This document defines how those lanes stay synchronized while they mature at
 different speeds. The goal is not identical screens. The goal is one database
@@ -56,7 +56,7 @@ Frontend code owns:
 | --- | --- | --- |
 | wxWidgets C++ | Primary native windowed workbench | Packaged desktop GUI over shared runtime services |
 | Python/Tkinter | Fast mirror/prototype and inspection lane | First-class scripted GUI and binding proof surface |
-| TurboTalk/FoxTalk TUI | Command taxonomy and shell-bridge reference | Terminal UI where the medium is a real advantage |
+| ArcticTalk/FoxTalk TUI | Command taxonomy and shell-bridge reference | Terminal UI where the medium is a real advantage |
 
 The TUI is less important for rich workbench features, but it remains valuable
 for keyboard behavior, command taxonomy, and shell/session lessons. wx and
@@ -209,6 +209,16 @@ Highest-value sync targets:
 - dynamic record view parity,
 - startup/shutdown/init script policy,
 - read-only/edit safety boundary.
+
+Lifecycle script parity rule:
+
+- wx and Python GUI lanes must both search `DOTTALKPP_GUI_BIN` before generic
+  data/root startup locations.
+- `init.ini`, `dottalkpp.ini`, and `dotscript.ini` are startup scripts.
+- `shutdown.ini` is the shutdown script.
+- User/profile starts are allowed to customize banners, quotes, themes,
+  workspaces, and command setup, but database semantics still come from the
+  DotTalk++ runtime.
 
 ## Acceptance Checks
 

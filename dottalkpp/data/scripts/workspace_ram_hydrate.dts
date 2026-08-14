@@ -1,0 +1,56 @@
+* ============================================================================
+* workspace_ram_hydrate.dts -- memo -> RAM hydration (owner lane step 2,
+* 2026-08-11): WORKSPACE LOAD <name> MEMO RAM copies the posture's tables and
+* native CDX files from their DISK homes into the mounted RAM VFS (through
+* xbase::ramfs streams -- never std::filesystem, which would land on real
+* disk while claiming RAM), then loads the posture with its roots re-pointed
+* at RAM via the DTSHEMA 3 self-location mechanism. LMDB is not hydrated
+* (owner rule "lmdb only for disks"; ramfs.hpp: LMDB must mmap a real OS
+* file). Memo-sidecar hydration is chartered with the Part B regeneration
+* (no MCC table carries a memo field yet).
+*
+* The hydration is TIMED and prints a measured line -- first measure
+* 2026-08-11 (build 14:59:07): 24 file(s), 92139 B in 94.2 ms, and the VDISK
+* census independently agreed byte-for-byte (92139 B / 24 files).
+*
+* Self-contained: saves its own v3 source posture from mcc_x64 first, so it
+* never depends on hand-made catalog rows. VDISK UNMOUNT at the end is the
+* DISMISS exit of the two-exit close: all RAM files dropped, disk untouched.
+*
+* Run: DO workspace_ram_hydrate  |  regression: REGRESSION RUN WORKSPACE_RAM
+* Markers: HYD_T1 (STUDENTS row readable from the RAM-resident copy).
+* ============================================================================
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+FORMULA "WS-RAM-HYDRATE-BEGIN"
+
+* --- author the source posture (v3, self-locating) from the disk env --------
+* DO x64, not bare SETPATHs: measured 2026-08-11 -- under SETPATH DBF/INDEXES
+* alone (no LMDB slot), LOAD mcc_x64 attached ZERO CDX orders and the saved
+* posture recorded index=none for all 11 (payload 1223 B vs 1286 B, the 63 B
+* being 'none' replacing eleven .cdx names). The x64 CDX lane needs its LMDB
+* slot; DO x64 carries all three. The 13-vs-24 hydrated-file variance between
+* the first regression run and the hand run was THIS, not a hydrator defect.
+DO x64
+WORKSPACE CLOSE
+WORKSPACE LOAD mcc_x64
+WORKSPACE SAVE ram_hydrate_src MEMO V3
+WORKSPACE CLOSE
+
+* --- mount the RAM VFS and hydrate ------------------------------------------
+DO mem
+WORKSPACE LOAD ram_hydrate_src MEMO RAM
+
+* --- residency + readability proof ------------------------------------------
+VDISK STATUS
+SELECT 8
+TOP
+? "HYD_T1_students_in_ram:" + (SID >= 1)
+
+FORMULA "WS-RAM-HYDRATE-END"
+
+* --- the dismiss exit: drop everything, restore the disk environment --------
+WORKSPACE CLOSE
+VDISK UNMOUNT
+DO x64

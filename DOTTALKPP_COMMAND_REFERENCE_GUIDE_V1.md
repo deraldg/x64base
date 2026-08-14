@@ -249,7 +249,7 @@ APPEND
 Source comments:
 
 ```text
-src/cli/cmd_append_blank.cpp — APPEND BLANK
+src/cli/cmd_append_blank.cpp -- APPEND BLANK
 Delegates to shared append support so APPEND and APPEND BLANK stay aligned.
 ```
 
@@ -798,7 +798,7 @@ BROWSER
 Source comments:
 
 ```text
-src/cli/cmd_browse.cpp — thin forwarder to the refactored BROWSE module
+src/cli/cmd_browse.cpp -- thin forwarder to the refactored BROWSE module
 ```
 
 ---
@@ -2043,11 +2043,11 @@ COUNT <expr>          (implicit expression)
   COUNT !DELETED
   COUNT ALL
 Notes:
-  • Uses cli::scan::collect_selected_recnos(...) for the common scan/selection path.
-  • Keeps the active-tag simple equality fast path local to COUNT.
-  • Preserves cursor cohesion: COUNT must not leave the work area at EOF/last rec.
-  • Suppresses relations auto-refresh during full scans to prevent refresh thrash.
-  • Persistent SET FILTER is part of the logical rowset.
+  - Uses cli::scan::collect_selected_recnos(...) for the common scan/selection path.
+  - Keeps the active-tag simple equality fast path local to COUNT.
+  - Preserves cursor cohesion: COUNT must not leave the work area at EOF/last rec.
+  - Suppresses relations auto-refresh during full scans to prevent refresh thrash.
+  - Persistent SET FILTER is part of the logical rowset.
     Therefore plain COUNT must NOT use raw recCount() when a persistent filter is active.
 ```
 
@@ -2696,7 +2696,7 @@ Source comments:
 
 ```text
 src/cli/cmd_dump.cpp
-DotTalk++ — DUMP
+DotTalk++ -- DUMP
 Legacy, path-blind record dumper.
 Operates ONLY on the current work area.
 No path resolution, no file opens, no side effects.
@@ -5400,7 +5400,7 @@ UNLOCK
 Source comments:
 
 ```text
-cmd_lock.cpp — owner-aware UI (works with the back-compat shims too)
+cmd_lock.cpp -- owner-aware UI (works with the back-compat shims too)
 ```
 
 ---
@@ -5939,7 +5939,7 @@ Source comments:
 
 ```text
 src/cli/cmd_pack.cpp
-PACK — physically removes deleted records by rewriting the DBF to a temp file
+PACK -- physically removes deleted records by rewriting the DBF to a temp file
         containing only non-deleted records, then atomically replaces the original.
 Memo-aware extension:
   - legacy memo tables are still refused
@@ -8555,16 +8555,16 @@ Source comments:
 
 ```text
 src/cli/cmd_smartlist.cpp
-SMARTLIST — LIST-style output honoring current order with classic or AST-based FOR filtering.
+SMARTLIST -- LIST-style output honoring current order with classic or AST-based FOR filtering.
 Usage:
   SMARTLIST [ALL | <limit> | DELETED] [DEBUG] [TUPLES] [FOR <pred>]
 Notes:
-  • Ordering: respects current INX/CNX/CDX/LMDB (ASC/DESC) like LIST.
-  • Deletion visibility: default hides deleted unless ALL; "DELETED"
+  - Ordering: respects current INX/CNX/CDX/LMDB (ASC/DESC) like LIST.
+  - Deletion visibility: default hides deleted unless ALL; "DELETED"
     shows only deleted; "FOR !DELETED" also supported.
-  • Filtering: supports classic FOR <field> <op> <value> and AST-style expressions.
+  - Filtering: supports classic FOR <field> <op> <value> and AST-style expressions.
     SQL-ish input is normalized via sql_to_dottalk_where before compile.
-  • DEBUG: prints a couple of diagnostics.
+  - DEBUG: prints a couple of diagnostics.
 ```
 
 ---
@@ -9867,7 +9867,7 @@ Source comments:
 
 ```text
 src/cli/cmd_turbo_pack.cpp
-TURBOPACK — fast, low-level DBF compaction (byte-oriented)
+TURBOPACK -- fast, low-level DBF compaction (byte-oriented)
 Removes physically deleted records (* flag) by rewriting only live ones.
 Scope / contract:
   - Fast path for plain DBF tables only.
@@ -10154,7 +10154,7 @@ Source comments:
 
 ```text
 src/cli/cmd_use.cpp
-DotTalk++ USE command (open DBF in a work area) — duplicate-open guard, NOINDEX, auto-attach
+DotTalk++ USE command (open DBF in a work area) -- duplicate-open guard, NOINDEX, auto-attach
 ```
 
 ---
@@ -10875,7 +10875,7 @@ Source comments:
 
 ```text
 src/cli/cmd_zap.cpp
-ZAP — removes ALL records from the current DBF, preserving structure (header + field descriptors).
+ZAP -- removes ALL records from the current DBF, preserving structure (header + field descriptors).
       Rewrites the file with record count = 0, updated timestamp, and EOF marker.
 POLICY (2026):
   - Structural command (file-level operation)

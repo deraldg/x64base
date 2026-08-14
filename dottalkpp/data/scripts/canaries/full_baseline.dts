@@ -1,0 +1,20 @@
+* Full baseline sweep (safe, read-only)
+COLOR DEFAULT
+USE dbf\x32\students.dbf
+AREA
+STATUS
+STRUCT
+* ensure INX reports correctly
+LIST
+* switch to CNX
+USE dbf\x32\students.dbf NOINDEX
+SETCNX indexes\x32\students.cnx
+SETORDER indexes\x32\students.cnx LNAME --asc
+STATUS
+STRUCT INDEX
+LIST
+DESCEND
+LIST
+ASCEND
+LIST
+* end

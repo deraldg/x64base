@@ -1,0 +1,29 @@
+DO ..\x64
+
+ECHO -- Phase 1: SET VAR! typed/evaluated values - need to test memmos with vars too --
+SET VAR! n = 1
+SET VAR! step = 1
+SET VAR! cutoff = CTOD("2026-01-01")
+SET VAR! who = "Grimwood"
+SET VAR! s = "20260101"
+
+SHOW VAR
+SHOW VAR n
+SHOW VAR cutoff
+SHOW VAR who
+SHOW VAR s
+
+ECHO -- Phase 2: stepped updates without table dependency --
+ECHO n=&n
+SET VAR! n = (&n + &step)
+ECHO n=&n
+SET VAR! n = (&n + &step)
+ECHO n=&n
+SET VAR! n = (&n + &step)
+ECHO n=&n
+SET VAR! n = (&n + &step)
+ECHO n=&n
+SET VAR! n = (&n + &step)
+CONCAT &cutoff, "Accumulate"
+SHOW VAR n
+SHOW VAR cutoff

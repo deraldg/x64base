@@ -1,0 +1,180 @@
+* ============================================================================
+* cnx_persist_proof.dts
+*
+* Task #31 / XIDX-TXN-02 M2. Does realtime CNX maintenance SURVIVE A CLOSE?
+*
+* WHY THIS EXISTS
+*   M1 gave CnxBackend working upsert/erase, so a REPLACE that moves an indexed
+*   value re-places that record in the CNX ordering immediately (regression
+*   CNXLIVE). But the maintained permutation lived only in memory: the container
+*   on disk still held whatever the last REBUILD wrote, so the correct order was
+*   a property of the SESSION, not of the index. Close the table and the ordering
+*   silently reverted.
+*
+*   That is the gap this proof closes. CNXLIVE asks "is the order right now?".
+*   This asks "is it still right after the process stopped looking?" -- which is
+*   a DIFFERENT question, against a different capability (IIndexBackend::save,
+*   not maintainsIncrementally), and it needs its own proof for exactly the
+*   reason the two capabilities were separated in the first place.
+*
+* WHAT THE MECHANISM IS, SO A FAILURE CAN BE READ
+*   save() is append-and-switch: mark CNX_HDRF_DIRTY, append a fresh RUN1 block
+*   per mutated tag, then write the tag directory. The directory write is the
+*   single commit point. So the interesting failure modes are:
+*
+*     P2 .F. and no [CNX SAVE] line   -> save never fired. Look at close().
+*     P2 .F. and a [CNX SAVE] line    -> it wrote, and the reopen did not see it.
+*                                        Look at the tag directory, not the block.
+*     [CNX DIRTY] on the reopen       -> the directory write did not land, and
+*                                        the recovery path caught it. That is the
+*                                        backstop working, not a pass.
+*
+* MARKER DESIGN
+*   Inherited from CNXLIVE/IDXSTALE/CNXBUF and load-bearing for the same reason:
+*   every marker is a FIELD comparison. RECNO() and FOUND() render EMPTY in a "?"
+*   marker and STR() does not rescue them. Park the cursor on a known different
+*   record before any seek, then assert the field value moved.
+*
+* WHAT THIS PROOF DOES NOT COVER
+*   Crash recovery. Setting CNX_HDRF_DIRTY requires interrupting a save between
+*   the append and the directory write, which a .dts cannot do. The recovery path
+*   is exercised from the host by flipping the flag byte in the header and
+*   reopening -- see the session notes. Until that is run, "[CNX DIRTY] triggers
+*   a rebuild" is source-evidenced only, and this script must not be read as
+*   proving it.
+*
+*   Durability here means PROCESS death, not power loss: cnxfile has no fsync.
+*
+* Self-contained: builds and erases its own throwaway v32 table; never touches
+* STUDENTS or any live fixture.
+*   Standalone:  DOTSCRIPT scripts/cnx_persist_proof.dts
+*   Capture:     SET ALTERNATE TO <file> / SET ALTERNATE ON  (never DOTSCRIPT OUT)
+*
+* Runtime status: GREEN 2026-08-01, wsl-lean, 11/11 markers. [CNX SAVE] fired
+*   once at the first CLOSE (root=4240) and NOT at the second, which is P8's
+*   real evidence. Lane record: XIDX_TXN_02_PDLC_LANE_V1.md (M2).
+* ============================================================================
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+* x32 lane: CNX is the v32 indexing backend
+DO x32
+
+FORMULA "CNX-PERSIST-PROOF-BEGIN"
+
+* --- fixture: throwaway v32 table, CNX order on LNAME -------------------------
+ERASE TABLE CNXPERS CONFIRM
+CREATE CNXPERS (SID N(8), LNAME C(20))
+
+APPEND
+REPLACE SID WITH 1
+REPLACE LNAME WITH "MILLER"
+APPEND
+REPLACE SID WITH 2
+REPLACE LNAME WITH "ANDERSON"
+APPEND
+REPLACE SID WITH 3
+REPLACE LNAME WITH "ZEBRA"
+APPEND
+REPLACE SID WITH 4
+REPLACE LNAME WITH "YOUNG"
+
+CNX CREATE
+CNX ADDTAG LNAME
+REBUILD
+SET ORDER TAG LNAME
+
+* --- P_G0/P_G1: fixture guards ----------------------------------------------
+* If either fails, everything below is meaningless.
+GO 4
+SEEK "MILLER"
+? "P_G0_seek_works_before_edit:" + (ALLTRIM(LNAME) = "MILLER")
+
+GO TOP
+? "P_G1_baseline_top_is_ANDERSON:" + (ALLTRIM(LNAME) = "ANDERSON")
+
+* ============================================================================
+* PART 1 -- the M1 precondition: maintained in memory
+* ============================================================================
+* Not the point of this proof, but if this is already wrong then P2 would be
+* testing persistence of a WRONG ordering, which would look like a pass for the
+* wrong reason. Assert the starting state is correct before persisting it.
+GO 1
+REPLACE LNAME WITH "AAAAA"
+
+GO TOP
+? "P1_maintained_in_memory_top_is_AAAAA:" + (ALLTRIM(LNAME) = "AAAAA")
+
+* ============================================================================
+* PART 2 -- THE MILESTONE: does it survive the close?
+* ============================================================================
+* CLOSE is the trigger. CnxBackend::close() saves before clearing, so the
+* container should carry the maintained permutation from here on.
+*
+* NO REBUILD ANYWHERE BELOW. That is the whole assertion: a rebuild would
+* reconstruct the correct order from the table and prove nothing about whether
+* the save happened.
+CLOSE
+
+USE CNXPERS
+SET ORDER TAG LNAME
+
+GO TOP
+? "P2_survives_close_top_is_AAAAA:" + (ALLTRIM(LNAME) = "AAAAA")
+
+* --- P3: the rest of the ordering came back too ------------------------------
+* A save that wrote only the moved record, or truncated the block, would still
+* pass P2. Check both interior and tail.
+GO TOP
+SKIP
+? "P3_second_is_ANDERSON:" + (ALLTRIM(LNAME) = "ANDERSON")
+
+BOTTOM
+? "P4_bottom_is_ZEBRA:" + (ALLTRIM(LNAME) = "ZEBRA")
+
+* --- P5: lookup agrees with the persisted order ------------------------------
+* Park somewhere else first so a stale cursor cannot fake this.
+GO 3
+SEEK "AAAAA"
+? "P5_seek_reaches_moved_record:" + (ALLTRIM(LNAME) = "AAAAA")
+
+* ============================================================================
+* PART 3 -- the persisted order must AGREE WITH A REBUILD
+* ============================================================================
+* The strongest assertion here, and the same shape as CNXLIVE L_T6 and CNXBUF
+* B5. If save() wrote a permutation that differs from what the table implies,
+* the order CHANGES across this line and every earlier marker was measuring a
+* consistent lie. The rebuild must be a no-op.
+REBUILD
+SET ORDER TAG LNAME
+
+GO TOP
+? "P6_rebuild_agrees_with_persisted:" + (ALLTRIM(LNAME) = "AAAAA")
+
+BOTTOM
+? "P7_rebuild_agrees_at_tail:" + (ALLTRIM(LNAME) = "ZEBRA")
+
+* ============================================================================
+* PART 4 -- a second close with no edits must not corrupt anything
+* ============================================================================
+* Idempotence. save() is called on every close, and both a close-time and a
+* commit-time save can fire for one edit, so saving twice with nothing owed has
+* to be harmless. dirty_tags_ is empty here, so save() should return success
+* without opening the file at all -- externally visible as the ABSENCE of a
+* second [CNX SAVE] line for this tag.
+CLOSE
+
+USE CNXPERS
+SET ORDER TAG LNAME
+
+GO TOP
+? "P8_idempotent_close_top_is_AAAAA:" + (ALLTRIM(LNAME) = "AAAAA")
+
+BOTTOM
+? "P9_idempotent_close_tail_is_ZEBRA:" + (ALLTRIM(LNAME) = "ZEBRA")
+
+FORMULA "CNX-PERSIST-PROOF-END"
+
+* --- teardown ----------------------------------------------------------------
+CLOSE
+ERASE TABLE CNXPERS CONFIRM

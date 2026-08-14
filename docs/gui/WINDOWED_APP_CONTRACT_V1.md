@@ -4,6 +4,7 @@ Status: draft blocking contract.
 
 Related:
 
+- `ARCTICTALK_BRANDING_AND_LINEAGE_V1.md`
 - `OPEN_ARCH_GUI_PLAN_V1.md`
 - `UNIFIED_GUI_CORE_V1.md`
 - `WORKBENCH_STORY_V1.md`
@@ -23,9 +24,16 @@ and any later windowed frontend while keeping the UI lanes orthogonal.
 
 ## Core Rule
 
-A windowed DotTalk++ app is a workbench, not a command prompt in a window.
+A windowed DotTalk++ app is an ArcticTalk workbench, not a command prompt in a window.
 
-A DotTalk++ Workbench opens workspaces. A workspace is a collection of one or
+Brand interpretation:
+
+- `ArcticTalk` is the public-facing workbench umbrella.
+- `Foxtalk` remains a valid lineage/subsystem name inside that umbrella.
+- FoxPro-compatible command language may be preserved where useful, but the UI
+  must not imply that DotTalk++ is merely a clone.
+
+An ArcticTalk workbench opens workspaces. A workspace is a collection of one or
 more areas: the realm where DotTalk++ relates tables, attaches indexes, saves
 and modifies graph definitions as `.dtschema` or `.dtschemas`, and drives
 browsers, lists, and ERSATZ browser presets. Each area owns its own table,
@@ -33,6 +41,28 @@ state, snapshot, diagnostics, and event history.
 
 The command lane remains important, but native windows should also expose stable
 areas, snapshots, structure, tasks, diagnostics, and safe database workflows.
+
+## Authority and Reuse Rule
+
+Windowed frontends must reuse DotTalk++ behavior in this order:
+
+1. engine/library truth from `xbase`, `memo`, `xindex`, and `xexpr`,
+2. command/runtime truth from `dottalkpp`,
+3. shared GUI-core session/task/snapshot/workspace facades,
+4. toolkit-specific rendering and orchestration.
+
+The GUI may improve visibility, navigation, batching, and inspection. It may
+not create a separate database product with different command meaning,
+area/index/relation rules, or mutation semantics.
+
+If a visible feature is not yet backed by a mature shared service, the frontend
+should either:
+
+- bridge through the CLI/runtime,
+- expose a clearly named skeleton, or
+- defer the feature.
+
+Silent widget-local behavior forks are out of contract.
 
 ## Application Concepts
 

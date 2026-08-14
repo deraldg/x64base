@@ -1,0 +1,245 @@
+* ============================================================
+* SYSTEM_METADATA_SEED_v1.dts
+*
+* Purpose:
+*   Seed and prove the first truth rows for the x64 metadata
+*   catalog.
+*
+* Critical workflow rule:
+*   This script DOES NOT set paths.
+*   Run the environment script first:
+*
+*       DO metadata
+*       DO system_metadata_seed_v1
+*
+* Preconditions:
+*   SYSTEM_* tables already exist in the active metadata lane.
+*
+* Proof goals:
+*   - Long x64 field names work in REPLACE.
+*   - M fields accept real documentation prose.
+*   - The catalog can store commands, variants, subcommands,
+*     help text, and message prose.
+* ============================================================
+
+SET ECHO OFF
+ECHO ===== SYSTEM METADATA SEED V1 START =====
+
+* Show current paths for verification. Do not mutate them here.
+SETPATH
+
+* ------------------------------------------------------------
+* COMMANDS
+* ------------------------------------------------------------
+USE SYSTEM_COMMANDS
+
+APPEND BLANK
+REPLACE COMMAND_ID WITH "CMD_HELP"
+REPLACE CANONICAL_NAME WITH "HELP"
+REPLACE DISPLAY_NAME WITH "HELP"
+REPLACE ENTRY_KIND WITH "command"
+REPLACE IMPLEMENTATION_STATUS WITH "implemented"
+REPLACE VISIBILITY_TIER WITH "core"
+REPLACE OWNER_SUBSYSTEM WITH "help_system"
+REPLACE REGISTRATION_RING WITH "help_meta"
+REPLACE LIFECYCLE_PHASE WITH "session"
+REPLACE SOURCE_AUTHORITY WITH "shell_registry"
+REPLACE SOURCE_PREFIX_HINT WITH "cmd_"
+REPLACE SOURCE_FILE_PATH WITH "src/cli/cmd_help.cpp"
+REPLACE HANDLER_NAME WITH "cmd_HELP"
+REPLACE HAS_DIRECT_HANDLER WITH .T.
+REPLACE DISPATCH_REACHABLE WITH .T.
+REPLACE PUBLIC_SURFACE WITH .T.
+REPLACE SELF_REGISTERED WITH .F.
+REPLACE SUPPORTS_TIMER WITH .F.
+REPLACE USES_OUTPUT_ROUTER WITH .T.
+REPLACE USES_MESSAGE_CATALOG WITH .F.
+REPLACE ACTIVE WITH .T.
+REPLACE LAST_VERIFIED_AT WITH "2026-05-04"
+REPLACE NOTES WITH "Seed row. HELP is the public documentation router. This memo proves SYSTEM_COMMANDS.NOTES round-trip for x64 metadata."
+
+APPEND BLANK
+REPLACE COMMAND_ID WITH "CMD_SET"
+REPLACE CANONICAL_NAME WITH "SET"
+REPLACE DISPLAY_NAME WITH "SET"
+REPLACE ENTRY_KIND WITH "command_family"
+REPLACE IMPLEMENTATION_STATUS WITH "implemented"
+REPLACE VISIBILITY_TIER WITH "core"
+REPLACE OWNER_SUBSYSTEM WITH "command_router"
+REPLACE REGISTRATION_RING WITH "runtime_control"
+REPLACE LIFECYCLE_PHASE WITH "session"
+REPLACE SOURCE_AUTHORITY WITH "shell_registry"
+REPLACE SOURCE_PREFIX_HINT WITH "cmd_"
+REPLACE SOURCE_FILE_PATH WITH "src/cli/cmd_set.cpp"
+REPLACE HANDLER_NAME WITH "cmd_SET"
+REPLACE HAS_DIRECT_HANDLER WITH .T.
+REPLACE DISPATCH_REACHABLE WITH .T.
+REPLACE PUBLIC_SURFACE WITH .T.
+REPLACE SELF_REGISTERED WITH .F.
+REPLACE SUPPORTS_TIMER WITH .F.
+REPLACE USES_OUTPUT_ROUTER WITH .T.
+REPLACE USES_MESSAGE_CATALOG WITH .F.
+REPLACE ACTIVE WITH .T.
+REPLACE LAST_VERIFIED_AT WITH "2026-05-04"
+REPLACE NOTES WITH "SET is a routed command family. SET PATH, SET ORDER, SET INDEX, SET RELATION and related forms should be represented as subcommands or routed forms, not as unrelated flat commands."
+
+APPEND BLANK
+REPLACE COMMAND_ID WITH "CMD_REL"
+REPLACE CANONICAL_NAME WITH "REL"
+REPLACE DISPLAY_NAME WITH "REL"
+REPLACE ENTRY_KIND WITH "command_family"
+REPLACE IMPLEMENTATION_STATUS WITH "implemented"
+REPLACE VISIBILITY_TIER WITH "core"
+REPLACE OWNER_SUBSYSTEM WITH "relation_engine"
+REPLACE REGISTRATION_RING WITH "relation_tuple"
+REPLACE LIFECYCLE_PHASE WITH "command_execution"
+REPLACE SOURCE_AUTHORITY WITH "shell_registry"
+REPLACE SOURCE_PREFIX_HINT WITH "cmd_"
+REPLACE SOURCE_FILE_PATH WITH "src/cli/cmd_rel.cpp"
+REPLACE HANDLER_NAME WITH "cmd_REL"
+REPLACE HAS_DIRECT_HANDLER WITH .T.
+REPLACE DISPATCH_REACHABLE WITH .T.
+REPLACE PUBLIC_SURFACE WITH .T.
+REPLACE SELF_REGISTERED WITH .F.
+REPLACE SUPPORTS_TIMER WITH .T.
+REPLACE USES_OUTPUT_ROUTER WITH .T.
+REPLACE USES_MESSAGE_CATALOG WITH .F.
+REPLACE ACTIVE WITH .T.
+REPLACE LAST_VERIFIED_AT WITH "2026-05-04"
+REPLACE NOTES WITH "REL owns relation metadata and relation traversal surfaces. REL ENUM should be modeled as an implemented subcommand, not as an unimplemented top-level command."
+
+LIST ALL
+
+* ------------------------------------------------------------
+* ENTRY VARIANTS
+* ------------------------------------------------------------
+USE SYSTEM_ENTRY_VARIANTS
+
+APPEND BLANK
+REPLACE VARIANT_ID WITH "VAR_H_HELP"
+REPLACE TOKEN WITH "H"
+REPLACE VARIANT_KIND WITH "shortcut"
+REPLACE CANONICAL_TARGET WITH "HELP"
+REPLACE CANONICAL_HELP_OWNER WITH "HELP"
+REPLACE SOURCE_AUTHORITY WITH "shortcut_resolver"
+REPLACE SOURCE_FILE_PATH WITH "src/cli/shortcut_resolver.hpp"
+REPLACE SHADOWS_REGISTRY_KEY WITH .F.
+REPLACE DISPATCH_REACHABLE WITH .T.
+REPLACE PUBLIC_SURFACE WITH .T.
+REPLACE ACTIVE WITH .T.
+REPLACE LAST_VERIFIED_AT WITH "2026-05-04"
+REPLACE NOTES WITH "Shortcut: H shortens HELP."
+
+APPEND BLANK
+REPLACE VARIANT_ID WITH "VAR_RELATIONS_REL"
+REPLACE TOKEN WITH "RELATIONS"
+REPLACE VARIANT_KIND WITH "reexpression"
+REPLACE CANONICAL_TARGET WITH "REL"
+REPLACE CANONICAL_HELP_OWNER WITH "REL"
+REPLACE SOURCE_AUTHORITY WITH "preprocess_for_dispatch"
+REPLACE SOURCE_FILE_PATH WITH "src/cli/shell_api_extras.cpp"
+REPLACE SHADOWS_REGISTRY_KEY WITH .T.
+REPLACE DISPATCH_REACHABLE WITH .T.
+REPLACE PUBLIC_SURFACE WITH .T.
+REPLACE ACTIVE WITH .T.
+REPLACE LAST_VERIFIED_AT WITH "2026-05-04"
+REPLACE NOTES WITH "RELATIONS is normalized to REL by pre-dispatch processing. It is a re-expression, not an independent command family."
+
+LIST ALL
+
+* ------------------------------------------------------------
+* SUBCOMMANDS
+* ------------------------------------------------------------
+USE SYSTEM_SUBCOMMANDS
+
+APPEND BLANK
+REPLACE SUBCOMMAND_ID WITH "SUB_REL_ENUM"
+REPLACE PARENT_COMMAND WITH "REL"
+REPLACE SUBCOMMAND_NAME WITH "ENUM"
+REPLACE QUALIFIED_NAME WITH "REL ENUM"
+REPLACE DISPATCH_STYLE WITH "routed_subcommand"
+REPLACE IMPLEMENTATION_STATUS WITH "implemented"
+REPLACE VISIBILITY_TIER WITH "core"
+REPLACE OWNER_SUBSYSTEM WITH "relation_engine"
+REPLACE REGISTRATION_RING WITH "relation_tuple"
+REPLACE LIFECYCLE_PHASE WITH "command_execution"
+REPLACE SOURCE_AUTHORITY WITH "rel_router"
+REPLACE SOURCE_FILE_PATH WITH "src/cli/cmd_rel.cpp"
+REPLACE HANDLER_NAME WITH "cmd_REL"
+REPLACE PUBLIC_SURFACE WITH .T.
+REPLACE DISPATCH_REACHABLE WITH .T.
+REPLACE USES_OUTPUT_ROUTER WITH .T.
+REPLACE USES_MESSAGE_CATALOG WITH .F.
+REPLACE ACTIVE WITH .T.
+REPLACE LAST_VERIFIED_AT WITH "2026-05-04"
+REPLACE NOTES WITH "REL ENUM is an implemented REL subcommand used by relation enumeration, tuple views, and browser surfaces."
+
+LIST ALL
+
+* ------------------------------------------------------------
+* HELP TEXT MEMOS
+* ------------------------------------------------------------
+USE SYSTEM_HELP_TEXT
+
+APPEND BLANK
+REPLACE HELP_TEXT_ID WITH "HT_HELP_SUMMARY"
+REPLACE OWNER_KIND WITH "command"
+REPLACE OWNER_NAME WITH "HELP"
+REPLACE TEXT_KIND WITH "summary"
+REPLACE SEQ WITH 10
+REPLACE SOURCE_AUTHORITY WITH "curated_seed"
+REPLACE SOURCE_FILE_PATH WITH "SYSTEM_METADATA_SEED_v1.dts"
+REPLACE GENERATED WITH .F.
+REPLACE CURATED WITH .T.
+REPLACE ACTIVE WITH .T.
+REPLACE LAST_VERIFIED_AT WITH "2026-05-04"
+REPLACE TEXT_BODY WITH "HELP is the public documentation router. It should render reflected metadata where available, fall back to legacy catalogs where appropriate, and remain truthful about command, function, message, and educational-topic authority."
+REPLACE NOTES WITH "Memo proof row for SYSTEM_HELP_TEXT.TEXT_BODY."
+
+APPEND BLANK
+REPLACE HELP_TEXT_ID WITH "HT_METADATA_DOCTRINE"
+REPLACE OWNER_KIND WITH "concept"
+REPLACE OWNER_NAME WITH "METADATA_TRUTH"
+REPLACE TEXT_KIND WITH "doctrine"
+REPLACE SEQ WITH 20
+REPLACE SOURCE_AUTHORITY WITH "curated_seed"
+REPLACE SOURCE_FILE_PATH WITH "SYSTEM_METADATA_SEED_v1.dts"
+REPLACE GENERATED WITH .F.
+REPLACE CURATED WITH .T.
+REPLACE ACTIVE WITH .T.
+REPLACE LAST_VERIFIED_AT WITH "2026-05-04"
+REPLACE TEXT_BODY WITH "Runtime registers truth. ReferenceCollection normalizes truth. x64base persists truth. CDX and LMDB index truth. Memos explain truth. HELP presents truth. DrawIO visualizes truth. CMDHELPCHK validates truth."
+REPLACE NOTES WITH "Canonical doctrine seed. Names suggest; metadata records; runtime proves; validators enforce."
+
+LIST ALL
+DISPLAY
+
+* ------------------------------------------------------------
+* MESSAGES
+* ------------------------------------------------------------
+USE SYSTEM_MESSAGES
+
+APPEND BLANK
+REPLACE MESSAGE_ID WITH "MSG_METADATA_SEED_OK"
+REPLACE SYMBOL WITH "METADATA_SEED_OK"
+REPLACE ENUM_NAME WITH "MetadataSeedOk"
+REPLACE SEVERITY WITH "info"
+REPLACE FACILITY WITH "metadata"
+REPLACE SHORT_TEXT WITH "Metadata seed row created."
+REPLACE IMPLEMENTATION_STATUS WITH "planned"
+REPLACE VISIBILITY_TIER WITH "dev"
+REPLACE OWNER_SUBSYSTEM WITH "message_catalog"
+REPLACE SOURCE_AUTHORITY WITH "curated_seed"
+REPLACE SOURCE_FILE_PATH WITH "SYSTEM_METADATA_SEED_v1.dts"
+REPLACE PUBLIC_SURFACE WITH .F.
+REPLACE USED_BY_RUNTIME WITH .F.
+REPLACE ACTIVE WITH .T.
+REPLACE LAST_VERIFIED_AT WITH "2026-05-04"
+REPLACE SUGGESTED_ACTION WITH "Use this row to prove SYSTEM_MESSAGES memo behavior before wiring message-catalog extraction."
+REPLACE NOTES WITH "Seed message row only; not yet a runtime message enum."
+
+LIST ALL
+DISPLAY
+
+WORKSPACE
+ECHO ===== SYSTEM METADATA SEED V1 END =====

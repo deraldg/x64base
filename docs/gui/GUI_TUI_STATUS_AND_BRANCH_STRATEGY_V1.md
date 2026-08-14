@@ -8,7 +8,7 @@ DotTalk++ now has three visible UI lanes:
 
 - wxWidgets native windowed workbench,
 - Python/Tkinter preview workbench,
-- TurboTalk/FoxTalk Turbo Vision TUI.
+- ArcticTalk/FoxTalk Turbo Vision TUI.
 
 This document records where the lanes stand and how they should continue
 without forking database behavior away from x64base.
@@ -17,6 +17,13 @@ without forking database behavior away from x64base.
 
 The UI lanes are presentations over DotTalk++/x64base. They are not separate
 database engines.
+
+Naming rule:
+
+- `ArcticTalk` is the public umbrella for the front-end family.
+- `Foxtalk` remains the valid fox-lineage TUI/help/command taxonomy lane under
+  that umbrella.
+- Preserving classic syntax does not commit the project to clone behavior.
 
 The database runtime owns:
 
@@ -66,7 +73,7 @@ Current strengths:
 - About dialog exists.
 - `WORKSPACE OPEN <dir>` can populate GUI areas and snapshots.
 - `WORKSPACE ADD <dbf>` selects existing GUI area instead of duplicating.
-- TurboTalk-derived command catalog now drives rich wx menus.
+- ArcticTalk-derived command catalog now drives rich wx menus.
 
 Current limits:
 
@@ -95,7 +102,7 @@ Current strengths:
 - Workspace area list, Browse, Structure, Workspace Graph, command lane,
   language switching, About, SCAN dialog, and lifecycle script seams exist.
 - Python mirrors `WORKSPACE OPEN` and `WORKSPACE ADD` duplicate/select behavior.
-- Python now has the same TurboTalk-derived command categories as wx:
+- Python now has the same ArcticTalk-derived command categories as wx:
   Table, Record, Index, Lists, Browse, Rel, Tuple, Cmd.
 
 Current limits:
@@ -105,7 +112,7 @@ Current limits:
   Python DBF fallback for production-like behavior.
 - It is valuable for rapid UI proving, but cannot define runtime truth.
 
-### TurboTalk/FoxTalk TUI
+### ArcticTalk/FoxTalk TUI
 
 Primary files:
 
@@ -130,7 +137,7 @@ Current limits:
 
 - TVision widget code should not be copied into wx or Python.
 - Some command/menu surfaces remain exploratory.
-- Nested TUI apps are intentionally guarded from inside TurboTalk.
+- Nested TUI apps are intentionally guarded from inside ArcticTalk.
 
 ## Shared Assets to Promote
 
@@ -148,7 +155,7 @@ These should become shared concepts, not per-frontend inventions:
 
 The current `gui_command_catalog` and Python mirror are the first step. The next
 shared service should be a runtime-backed command runner modeled after
-TurboTalk's shell bridge.
+ArcticTalk's shell bridge.
 
 ## Branch Strategy
 
@@ -182,7 +189,7 @@ orthogonal frontends over shared contracts.
 
 1. Keep wx as the native workbench lane.
 2. Keep Python/Tkinter as the rapid preview and contract mirror lane.
-3. Keep TurboTalk/FoxTalk as the command taxonomy and shell-bridge reference.
+3. Keep ArcticTalk/FoxTalk as the command taxonomy and shell-bridge reference.
 4. Move shared concepts into `include/gui/core` and `src/gui/core` first.
 5. Let each frontend render those shared concepts in its own toolkit.
 6. Replace temporary mirrors with runtime-backed adapters incrementally.

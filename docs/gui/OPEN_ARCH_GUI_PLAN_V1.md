@@ -27,6 +27,30 @@ The windowed GUI must also honor the database contracts. It should not treat
 locale, encoding, collation, index validity, read-only safety, or mutation
 boundaries as later visual polish.
 
+## Authority and Reuse Contract
+
+The open-architecture GUI lane must not become a second database engine.
+
+Authority order for database behavior is:
+
+1. `xbase`, `memo`, `xindex`, and `xexpr` own record, memo, index, search,
+   value, and collation mechanics.
+2. `dottalkpp` command/runtime services own command semantics, DotScript,
+   work-area behavior, relation behavior, mutation boundaries, and transcript
+   truth.
+3. `dottalk_gui_core` may adapt those services into stable GUI session, task,
+   snapshot, and workspace models.
+4. wx, Python, TUI, and later frontends may render and orchestrate those models
+   but must not fork database meaning inside toolkit code.
+
+Practical rule:
+
+- reuse engine/runtime code first,
+- bridge to the CLI/runtime when no structured service exists yet,
+- expose a named skeleton when behavior is still pending,
+- never add a GUI-only interpretation of DBF/index/relation/update behavior
+  just because the widget layer makes it convenient.
+
 ## Top-Down GUI Rule
 
 DotTalk++ has grown database capability bottom-up: xbase records, indexes,

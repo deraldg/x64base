@@ -1,0 +1,28 @@
+* ============================================================
+* MCC MUTATION TRINITY DISPOSABLE DRIVER
+* ============================================================
+* Purpose:
+*   Run the disposable MCC mutation canaries for x32, vfp, x64.
+*
+* Rule:
+*   Each child canary bootstraps its own environment.
+*
+* Note:
+*   The VFP child remains a dev-only canary. It is useful for engine
+*   drift detection and pack/header investigation, but it should not be
+*   promoted into the normal public regression surface by accident.
+* ============================================================
+
+SET ECHO ON
+
+ECHO ============================================================
+ECHO MCC MUTATION TRINITY DISPOSABLE DRIVER
+ECHO ============================================================
+
+DO mcc_mutation_x32_disposable_canary
+DO mcc_mutation_vfp_disposable_canary
+DO mcc_mutation_x64_disposable_canary
+
+ECHO ============================================================
+ECHO MCC MUTATION TRINITY DISPOSABLE DRIVER DONE
+ECHO ============================================================

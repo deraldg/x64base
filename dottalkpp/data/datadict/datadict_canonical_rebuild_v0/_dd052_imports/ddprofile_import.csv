@@ -1,0 +1,4 @@
+PROFID,NAME,VISIBLE,NOTES
+ENGINE,ENGINE,T,Core x64base/Data Dictionary engine profile.
+PROFESSIONAL,PROFESSIONAL,T,Professional/developer documentation profile.
+OPTIONAL_OVERLAY,OPTIONAL_OVERLAY,F,Optional overlays such as educational/student/demo material.

@@ -1,0 +1,22 @@
+* ============================================================
+* WORKSPACE LOAD X64 CANARY
+* ============================================================
+* Purpose:
+*   Canonical x64 workspace-load smoke with explicit environment bootstrap.
+*
+* Safety:
+*   Read-only.
+* ============================================================
+
+SET ECHO ON
+ECHO WORKSPACE LOAD x64 canary
+
+DO ..\..\X64
+WORKSPACE LOAD x64.dtschemas
+WORKSPACE
+AREA
+DBAREAS
+STATUS
+
+WORKSPACE CLOSE
+WORKSPACE

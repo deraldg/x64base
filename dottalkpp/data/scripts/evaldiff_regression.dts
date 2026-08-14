@@ -1,0 +1,122 @@
+* evaldiff_regression.dts
+* ============================================================================
+* AIF-074 P4.0a -- classic-vs-tuple evaluator differential harness
+*
+* Status: CANDIDATE / explicit-run
+* Safety: MUTATING (SANDBOX only: throwaway EVALDIFF; erased at the end)
+* Observer contract:
+*   - every EVALDIFF invocation evaluates both engines over the same records
+*   - tuple construction uses committed truth (TABLE BUFFER overlay disabled)
+*   - physical deleted records are included
+*   - the current record is restored after every comparison
+*   - DIFFERENCES are findings, not silently repaired semantics
+* Read rule:
+*   EVALDIFF VERDICT-PARITY means TRUE/FALSE outcome classes agreed; it is not
+*   a correctness oracle. PARITY-ON-FAILURE means both paths failed every row.
+*   EVALDIFF DIFFERENCES lists every record where TRUE/FALSE/ERROR differed.
+* ============================================================================
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+SET PATH DBF DBF/SANDBOX
+SET PATH INDEXES INDEXES/SANDBOX
+SET PATH LMDB LMDB/SANDBOX
+
+FORMULA "EVALDIFF-P4.0A-BEGIN"
+
+ERASE TABLE EVALDIFF CONFIRM
+CREATE X64 EVALDIFF (CVAL C(12), NVAL N(9,2), DVAL D, LVAL L)
+
+APPEND
+REPLACE CVAL WITH "ALPHA"
+REPLACE NVAL WITH "12.50"
+REPLACE DVAL WITH "20240115"
+REPLACE LVAL WITH ".T."
+
+APPEND
+
+APPEND
+REPLACE CVAL WITH "BETA"
+REPLACE NVAL WITH "-1.00"
+REPLACE DVAL WITH "19991231"
+REPLACE LVAL WITH ".F."
+
+APPEND
+REPLACE CVAL WITH "OMEGA"
+REPLACE NVAL WITH "0.00"
+REPLACE DVAL WITH "20240229"
+REPLACE LVAL WITH ".T."
+DELETE
+
+GO 2
+FORMULA "EVALDIFF-CURSOR-BEFORE"
+? ALLTRIM(CVAL) = ""
+
+* Character, padding and typed equality
+EVALDIFF FOR CVAL = "ALPHA"
+EVALDIFF FOR CVAL = "ALPHA       "
+EVALDIFF FOR NVAL = 12.5
+EVALDIFF FOR LVAL = .T.
+
+* Blank-is-a-value and boundary predicates
+EVALDIFF FOR EMPTY(CVAL)
+EVALDIFF FOR EMPTY(NVAL)
+EVALDIFF FOR NVAL >= 0 AND NVAL < 13
+EVALDIFF FOR NOT (NVAL < 0) AND (LVAL = .T. OR EMPTY(CVAL))
+
+* Date comparison and the requested date conversion surface
+EVALDIFF FOR DVAL = "20240115"
+EVALDIFF FOR DTOS(DVAL) = "20240115"
+EVALDIFF FOR DVAL = CTOD("01/15/2024")
+
+* String functions
+EVALDIFF FOR ALLTRIM(CVAL) = "ALPHA"
+EVALDIFF FOR UPPER(CVAL) = "ALPHA"
+EVALDIFF FOR SUBSTR(CVAL, 1, 2) = "AL"
+
+* Function-call diagnosis controls:
+* impossible comparison catches a left-side call collapsing to constant TRUE;
+* literal argument separates function-call parsing from TupleRow field access.
+EVALDIFF FOR ALLTRIM(CVAL) = "ZZZZZ"
+EVALDIFF FOR UPPER("ALPHA") = "ALPHA"
+
+* Deleted-state and failure parity
+EVALDIFF FOR DELETED()
+EVALDIFF FOR NOSUCH = "X"
+EVALDIFF FOR NVAL = "NOTNUM"
+EVALDIFF FOR (CVAL = "ALPHA"
+
+*
+* ---------------------------------------------------------------------------
+* ED-01b -- END-OF-INPUT. Repair landed 2026-07-30 in src/cli/expr/api.cpp;
+* these two lines are its permanent guard. compile_where() is the ONE funnel
+* both evaluator families reach, so a single missing check produced identical
+* wrong answers on both sides -- agreement is not correctness.
+*
+* Expected AFTER the repair, both lines: PARITY-ON-FAILURE.
+*   NVAL = 12.5 GARBAGE  -- FLIPS. Before the repair both evaluators returned
+*                           the bare `NVAL = 12.5` verdict (1/3/0) and the run
+*                           printed VERDICT-PARITY: a green label on a wrong
+*                           answer. A VERDICT-PARITY line here is a REGRESSION.
+*   NVAL = 12.5 AND      -- UNCHANGED. Malformed control; the parser cannot
+*                           build a right operand, so it failed before the
+*                           repair and must keep failing. Proves the harness
+*                           can still see a genuine parse failure.
+*
+* The third proof of ED-01b needs STUDENTS (area 8, a MAJOR column) and cannot
+* live in this SANDBOX fixture: `8.MAJOR = "CSCI"` returned 200/0/0 against a
+* true 21/179/0. Captured in labtalk/proofs/runs/20260730_evaldiff_eof_probe.txt.
+* ---------------------------------------------------------------------------
+EVALDIFF FOR NVAL = 12.5 GARBAGE
+EVALDIFF FOR NVAL = 12.5 AND
+
+FORMULA "EVALDIFF-CURSOR-AFTER"
+? ALLTRIM(CVAL) = ""
+
+EVALDIFF USAGE
+
+CLOSE
+ERASE TABLE EVALDIFF CONFIRM
+
+FORMULA "EVALDIFF-P4.0A-END"

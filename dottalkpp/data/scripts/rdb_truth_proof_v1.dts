@@ -1,0 +1,393 @@
+
+* rdb_truth_proof_v1.dts
+* ============================================================================
+* LANE RDB-TRUTH -- M0 runtime proof harness (relational / SQL conformance)
+*
+* STATUS: review-needed. Authored by hosted AI from source read only.
+*         NEVER RUN before a maintainer reads it. It CREATES and ERASES tables.
+*
+* PURPOSE
+*   Convert the source-derived predictions in
+*   LANE_RDB_TRUTH_M0_FINDINGS_V1_20260728.md into runtime evidence -- or
+*   falsify them. Each marker is a machine-checkable ".T."/".F." on the
+*   expression path, per the regression-script doctrine in
+*   DTS_AUTHORING_AND_DATA_ENV_RULES_V1_20260721.md ("self-assert, don't
+*   narrate"; an ECHO EXPECT + eyeballed TUP can never go red).
+*
+* IMPORTANT -- HOW TO READ A GREEN RUN
+*   ".T." here does NOT mean "x64base is correct". It means "x64base behaved
+*   as the source predicted". Several markers assert the PRESENCE of a
+*   divergence from SQL truth. Read each marker's comment for which is which.
+*   Markers prefixed CONFORM_ assert agreement with relational truth.
+*   Markers prefixed DIVERGE_ assert a documented departure from it.
+*   A DIVERGE_ marker printing ".F." falsifies the corresponding finding and
+*   is a GOOD outcome -- it means the audit was wrong. Report it.
+*
+* FIXTURE-FREE
+*   Builds its own throwaway tables under data/dbf/SANDBOX and erases them.
+*   Touches no shared fixture, no live workspace, no HELP/META catalogs.
+*
+* SCOPE OF TIER A (this file)
+*   Findings provable by cursor landing after REL REFRESH:
+*     RDB-03 (type-asymmetric equality)
+*     RDB-04 (blank joins blank)
+*     RDB-05 (delete policy, both directions)
+*     RDB-14 (self-relation chain inference)
+*   Findings requiring row-set comparison (RDB-01/02/07/10/11/12) are emitted
+*   as a transcript between ORACLE markers and scored by
+*   rdb_truth_check_v1.py. SQL ground truth is produced in-run by the ORACLE-G
+*   block (in-process SQLITE :memory:). DotTalk has no memvar capture for REL
+*   row counts, so those findings cannot self-assert here. See OQ-6.
+*
+* RUN
+*   DOTSCRIPT <path>/rdb_truth_proof_v1.dts
+* PASS CRITERION
+*   Every marker between RDB-TRUTH-M0-BEGIN and RDB-TRUTH-M0-END prints ":.T.".
+* ============================================================================
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+SET PATH DBF DBF/SANDBOX
+SET PATH INDEXES INDEXES/SANDBOX
+SET PATH LMDB LMDB/SANDBOX
+
+FORMULA "RDB-TRUTH-M0-BEGIN"
+
+* ---------------------------------------------------------------------------
+* P0 -- idempotent teardown of any prior run
+* ---------------------------------------------------------------------------
+ERASE TABLE RDBPAR CONFIRM
+ERASE TABLE RDBTYP CONFIRM
+ERASE TABLE RDBBLK CONFIRM
+ERASE TABLE RDBDEL CONFIRM
+ERASE TABLE RDBFAN CONFIRM
+REL CLEAR ALL
+
+* ---------------------------------------------------------------------------
+* P1 -- build fixtures
+*
+* RDBPAR is the parent. Each child table has a distinctive record 1 acting as
+* a TOP SENTINEL, because a failed match leaves the child parked at top()
+* (set_relations.cpp:430-435). Without a sentinel, "no match" and "matched
+* record 1" are indistinguishable and the assertion would be a no-op.
+* ---------------------------------------------------------------------------
+
+CREATE X64 RDBPAR (PK C(4), PN N(6,2), PLBL C(10))
+APPEND
+REPLACE PK WITH "A"
+REPLACE PN WITH "1.00"
+REPLACE PLBL WITH "P_FANOUT"
+APPEND
+* record 2 -- PK deliberately left BLANK by APPEND; do not REPLACE it
+REPLACE PN WITH "0.00"
+REPLACE PLBL WITH "P_BLANK"
+APPEND
+REPLACE PK WITH "B"
+REPLACE PN WITH "2.00"
+REPLACE PLBL WITH "P_DELCHILD"
+APPEND
+REPLACE PK WITH "C"
+REPLACE PN WITH "3.00"
+REPLACE PLBL WITH "P_DELPAR"
+APPEND
+REPLACE PK WITH "1"
+REPLACE PN WITH "1.00"
+REPLACE PLBL WITH "P_TYPEASYM"
+CLOSE
+
+* RDBTYP -- type-asymmetry probe. TN is NUMERIC, TC is CHARACTER, same value.
+CREATE X64 RDBTYP (TN N(6,2), TC C(6), TLBL C(10))
+APPEND
+REPLACE TN WITH "99.00"
+REPLACE TC WITH "99"
+REPLACE TLBL WITH "T_TOP"
+APPEND
+REPLACE TN WITH "1.00"
+REPLACE TC WITH "1"
+REPLACE TLBL WITH "T_ONE"
+CLOSE
+
+* RDBBLK -- blank-key probe.
+CREATE X64 RDBBLK (BK C(4), BLBL C(10))
+APPEND
+REPLACE BK WITH "ZZ"
+REPLACE BLBL WITH "B_TOP"
+APPEND
+* record 2 -- BK deliberately left BLANK
+REPLACE BLBL WITH "B_BLANK"
+CLOSE
+
+* RDBDEL -- delete-policy probe.
+CREATE X64 RDBDEL (DK C(4), DLBL C(10))
+APPEND
+REPLACE DK WITH "ZZ"
+REPLACE DLBL WITH "D_TOP"
+APPEND
+REPLACE DK WITH "B"
+REPLACE DLBL WITH "D_DELROW"
+APPEND
+REPLACE DK WITH "B"
+REPLACE DLBL WITH "D_LIVEROW"
+APPEND
+REPLACE DK WITH "C"
+REPLACE DLBL WITH "D_UNDERDEL"
+CLOSE
+
+* RDBFAN -- cardinality probe (3 children for PK "A").
+CREATE X64 RDBFAN (FK C(4), FLBL C(10))
+APPEND
+REPLACE FK WITH "ZZ"
+REPLACE FLBL WITH "F_TOP"
+APPEND
+REPLACE FK WITH "A"
+REPLACE FLBL WITH "F_A1"
+APPEND
+REPLACE FK WITH "A"
+REPLACE FLBL WITH "F_A2"
+APPEND
+REPLACE FK WITH "A"
+REPLACE FLBL WITH "F_A3"
+CLOSE
+
+* Mark RDBDEL record 2 deleted (a live sibling remains at record 3).
+USE RDBDEL
+GO 2
+DELETE
+? "F00_fixture_child_marked_deleted:" + (DELETED())
+CLOSE
+
+* ---------------------------------------------------------------------------
+* P2 -- open the working set
+* ---------------------------------------------------------------------------
+USE RDBPAR
+USE RDBTYP
+USE RDBBLK
+USE RDBDEL
+USE RDBFAN
+SELECT RDBPAR
+? "F01_fixture_parent_selected:" + (ALLTRIM(PLBL) = "P_FANOUT")
+
+* ===========================================================================
+* RDB-03 -- equality is type-asymmetric
+*
+* Prediction (set_relations.cpp:323-348): the numeric comparison branch is
+* gated on the CHILD field's DBF type being 'N'. So the same logical pair
+* (1 = 1) matches in one direction and not the other.
+* ===========================================================================
+
+REL CLEAR ALL
+REL ADD RDBPAR RDBTYP ON PN TO TC
+SELECT RDBPAR
+LOCATE FOR PLBL = "P_TYPEASYM"
+REL REFRESH
+SELECT RDBTYP
+* Parent PN is N -> "1.00". Child TC is C -> byte compare against "99" then
+* "1". Neither equals "1.00", so no match; child parks at top sentinel.
+* SQL truth: 1 = 1, so a row SHOULD have matched.
+? "DIVERGE_R03A_char_child_blocks_numeric_equality:" + (ALLTRIM(TLBL) = "T_TOP")
+
+REL CLEAR ALL
+REL ADD RDBPAR RDBTYP ON PK TO TN
+SELECT RDBPAR
+LOCATE FOR PLBL = "P_TYPEASYM"
+REL REFRESH
+SELECT RDBTYP
+* Parent PK is C -> "1". Child TN is N -> numeric branch engages, 1.0 == 1.0.
+* Identical logical comparison, opposite result. Asymmetry proven when both
+* R03A and R03B are .T.
+? "DIVERGE_R03B_numeric_child_allows_same_equality:" + (ALLTRIM(TLBL) = "T_ONE")
+
+* ===========================================================================
+* RDB-04 -- a blank parent key joins to a blank child key
+*
+* Prediction: values_match has no empty-value guard; "" == "" matches.
+* SQL truth: NULL = NULL is UNKNOWN; no row is produced.
+* ===========================================================================
+
+REL CLEAR ALL
+REL ADD RDBPAR RDBBLK ON PK TO BK
+SELECT RDBPAR
+LOCATE FOR PLBL = "P_BLANK"
+REL REFRESH
+SELECT RDBBLK
+? "DIVERGE_R04_blank_key_joins_blank_key:" + (ALLTRIM(BLBL) = "B_BLANK")
+
+* ===========================================================================
+* RDB-05 -- delete policy
+* ===========================================================================
+
+REL CLEAR ALL
+REL ADD RDBPAR RDBDEL ON PK TO DK
+SELECT RDBPAR
+LOCATE FOR PLBL = "P_DELCHILD"
+REL REFRESH
+SELECT RDBDEL
+* Record 2 (DK "B") is deleted; record 3 (DK "B") is live. Enumeration skips
+* deleted children unconditionally (set_relations.cpp:1066, :371).
+? "CONFORM_R05A_deleted_child_skipped:" + (ALLTRIM(DLBL) = "D_LIVEROW")
+
+* Now delete the surviving sibling. With no live match, the child parks at
+* top() -- which is INDISTINGUISHABLE from a successful match on record 1.
+* That is the observability defect, not the delete policy.
+SELECT RDBDEL
+GO 3
+DELETE
+SELECT RDBPAR
+LOCATE FOR PLBL = "P_DELCHILD"
+REL REFRESH
+SELECT RDBDEL
+? "DIVERGE_R05B_no_match_is_indistinguishable_from_top:" + (ALLTRIM(DLBL) = "D_TOP")
+
+* Deleted PARENT. Prediction: enumeration never inspects the parent's delete
+* flag, so a deleted parent still resolves its children.
+SELECT RDBPAR
+LOCATE FOR PLBL = "P_DELPAR"
+DELETE
+? "F02_fixture_parent_marked_deleted:" + (DELETED())
+REL REFRESH
+SELECT RDBDEL
+? "DIVERGE_R05C_deleted_parent_still_resolves_children:" + (ALLTRIM(DLBL) = "D_UNDERDEL")
+
+* Restore the parent so later sections operate on a live row.
+SELECT RDBPAR
+LOCATE FOR PLBL = "P_DELPAR"
+RECALL
+? "F03_fixture_parent_recalled:" + (.NOT. DELETED())
+
+* ===========================================================================
+* RDB-14 -- self-relation chain inference has no cycle guard
+*
+* Prediction (set_relations.cpp:999-1012): infer_unique_chain_from_parent
+* carries no `seen` set and loops depth < 32, so RDBPAR -> RDBPAR yields a
+* 32-deep chain. Its sibling infer_unique_child_chain (:796-819) DOES guard.
+* This section is a SAFETY PROBE: if the engine hangs or recurses
+* pathologically here, the finding is confirmed the hard way. Bounded by
+* LIMIT 1 to keep the blast radius small.
+* ===========================================================================
+
+REL CLEAR ALL
+REL ADD RDBPAR RDBPAR ON PK TO PK
+SELECT RDBPAR
+LOCATE FOR PLBL = "P_FANOUT"
+FORMULA "RDB-TRUTH-SELFREL-PROBE-BEGIN"
+REL LIST ALL
+REL ENUM LIMIT 1 TUPLE RDBPAR.PK,RDBPAR.PLBL
+FORMULA "RDB-TRUTH-SELFREL-PROBE-END"
+? "F04_survived_self_relation_probe:" + (.T.)
+REL CLEAR ALL
+
+* ===========================================================================
+* TIER B -- ORACLE TRANSCRIPT
+*
+* The following blocks emit row sets that cannot self-assert in DotTalk.
+* rdb_truth_check_v1.py parses them and compares against the SQL answers in
+* rdb_truth_oracle_v1.sql. Do not eyeball these; run the checker.
+* ===========================================================================
+
+REL CLEAR ALL
+REL ADD RDBPAR RDBFAN ON PK TO FK
+SELECT RDBPAR
+LOCATE FOR PLBL = "P_FANOUT"
+
+* --- ORACLE A: RDB-01 (single-parent scope) + fan-out cardinality ---
+* SQL truth: SELECT ... FROM RDBPAR JOIN RDBFAN ON PK=FK -> 3 rows total
+* across ALL parents. Prediction: REL ENUM returns 3 rows for the CURRENT
+* parent only, and returns a different set as soon as the cursor moves.
+FORMULA "ORACLE-A-REL-ENUM-CURRENT-PARENT-BEGIN"
+REL ENUM RDBFAN TUPLE RDBPAR.PK,RDBPAR.PLBL,RDBFAN.FLBL
+FORMULA "ORACLE-A-REL-ENUM-CURRENT-PARENT-END"
+
+* Same command, parent cursor moved to a parent with no RDBFAN children.
+SELECT RDBPAR
+LOCATE FOR PLBL = "P_DELCHILD"
+FORMULA "ORACLE-B-REL-ENUM-OTHER-PARENT-BEGIN"
+REL ENUM RDBFAN TUPLE RDBPAR.PK,RDBPAR.PLBL,RDBFAN.FLBL
+FORMULA "ORACLE-B-REL-ENUM-OTHER-PARENT-END"
+
+* --- ORACLE C: RDB-02 (sibling relations are not traversable) ---
+* Four children registered on one parent. Prediction: bare REL ENUM with no
+* explicit path fails, because infer_unique_chain_from_parent requires
+* exactly one child (set_relations.cpp:1006).
+REL ADD RDBPAR RDBTYP ON PK TO TC
+REL ADD RDBPAR RDBBLK ON PK TO BK
+REL ADD RDBPAR RDBDEL ON PK TO DK
+SELECT RDBPAR
+LOCATE FOR PLBL = "P_FANOUT"
+FORMULA "ORACLE-C-REL-ENUM-NO-PATH-MULTICHILD-BEGIN"
+REL LIST
+REL ENUM TUPLE RDBPAR.PK,RDBFAN.FLBL
+FORMULA "ORACLE-C-REL-ENUM-NO-PATH-MULTICHILD-END"
+
+* --- ORACLE D: RDB-07 (LIMIT exhaustion vs result exhaustion) ---
+* Prediction: LIMIT 3 over a 3-row result and LIMIT 3 over a larger result
+* are reported identically. Nothing in the output distinguishes them.
+FORMULA "ORACLE-D-LIMIT-INDISTINGUISHABLE-BEGIN"
+REL ENUM LIMIT 3 RDBFAN TUPLE RDBPAR.PK,RDBFAN.FLBL
+REL ENUM LIMIT 2 RDBFAN TUPLE RDBPAR.PK,RDBFAN.FLBL
+FORMULA "ORACLE-D-LIMIT-INDISTINGUISHABLE-END"
+
+* --- ORACLE E: RDB-10 (DISTINCT degrades silently on an expression term) ---
+* First form: all terms are bare field refs -> DISTINCT key builds -> dedup.
+* Second form: one term is an expression -> parse_field_ref rejects it ->
+* have_key false -> "emit anyway" (rel_enum_engine.cpp:395-404).
+* Prediction: form 1 collapses the 3 fan-out rows, form 2 does not.
+FORMULA "ORACLE-E-DISTINCT-DEGRADATION-BEGIN"
+REL ENUM DISTINCT RDBFAN TUPLE RDBPAR.PK
+REL ENUM DISTINCT RDBFAN TUPLE ALLTRIM(RDBPAR.PK)
+FORMULA "ORACLE-E-DISTINCT-DEGRADATION-END"
+
+* --- ORACLE F: RDB-12 ((matches:) means two different things by depth) ---
+FORMULA "ORACLE-F-MATCHES-COLUMN-SEMANTICS-BEGIN"
+REL CLEAR ALL
+REL ADD RDBPAR RDBFAN ON PK TO FK
+REL ADD RDBFAN RDBTYP ON FK TO TC
+SELECT RDBPAR
+LOCATE FOR PLBL = "P_FANOUT"
+REL LIST
+REL LIST ALL
+FORMULA "ORACLE-F-MATCHES-COLUMN-SEMANTICS-END"
+
+* --- ORACLE G: SQL ground truth from the in-process SQLite engine ---
+* Same tuples, real SQL. cmd_sqlite.cpp:35-36 states SQLITE is independent of
+* DBF open/order state, which is exactly why it is a valid external oracle.
+FORMULA "ORACLE-G-SQLITE-GROUND-TRUTH-BEGIN"
+SQLITE OPEN :memory:
+SQLITE EXEC CREATE TABLE RDBPAR (PK TEXT, PN REAL, PLBL TEXT, DEL INTEGER DEFAULT 0);
+SQLITE EXEC CREATE TABLE RDBFAN (FK TEXT, FLBL TEXT, DEL INTEGER DEFAULT 0);
+SQLITE EXEC INSERT INTO RDBPAR (PK,PN,PLBL) VALUES ('A',1.00,'P_FANOUT');
+SQLITE EXEC INSERT INTO RDBPAR (PK,PN,PLBL) VALUES (NULL,0.00,'P_BLANK');
+SQLITE EXEC INSERT INTO RDBPAR (PK,PN,PLBL) VALUES ('B',2.00,'P_DELCHILD');
+SQLITE EXEC INSERT INTO RDBPAR (PK,PN,PLBL) VALUES ('C',3.00,'P_DELPAR');
+SQLITE EXEC INSERT INTO RDBPAR (PK,PN,PLBL) VALUES ('1',1.00,'P_TYPEASYM');
+SQLITE EXEC INSERT INTO RDBFAN (FK,FLBL) VALUES ('ZZ','F_TOP');
+SQLITE EXEC INSERT INTO RDBFAN (FK,FLBL) VALUES ('A','F_A1');
+SQLITE EXEC INSERT INTO RDBFAN (FK,FLBL) VALUES ('A','F_A2');
+SQLITE EXEC INSERT INTO RDBFAN (FK,FLBL) VALUES ('A','F_A3');
+SQLITE SELECT SELECT P.PK, P.PLBL, F.FLBL FROM RDBPAR P JOIN RDBFAN F ON P.PK = F.FK ORDER BY P.PK, F.FLBL;
+SQLITE SELECT SELECT COUNT(*) AS FULL_JOIN_ROWS FROM RDBPAR P JOIN RDBFAN F ON P.PK = F.FK;
+SQLITE SELECT SELECT COUNT(*) AS NULL_JOIN_ROWS FROM RDBPAR P JOIN RDBFAN F ON P.PK IS F.FK WHERE P.PK IS NULL;
+SQLITE CLOSE
+FORMULA "ORACLE-G-SQLITE-GROUND-TRUTH-END"
+
+* ---------------------------------------------------------------------------
+* CLEANUP -- restore globals, drop fixtures
+* ---------------------------------------------------------------------------
+REL CLEAR ALL
+SELECT RDBPAR
+CLOSE
+SELECT RDBTYP
+CLOSE
+SELECT RDBBLK
+CLOSE
+SELECT RDBDEL
+CLOSE
+SELECT RDBFAN
+CLOSE
+ERASE TABLE RDBPAR CONFIRM
+ERASE TABLE RDBTYP CONFIRM
+ERASE TABLE RDBBLK CONFIRM
+ERASE TABLE RDBDEL CONFIRM
+ERASE TABLE RDBFAN CONFIRM
+
+FORMULA "RDB-TRUTH-M0-END"

@@ -1,0 +1,95 @@
+* buffer_visibility_probe.dts
+* ============================================================================
+* AIF-074 -- PROBE (not a regression): who can see a buffered edit?
+*
+* Question: under TABLE BUFFER ON, a REPLACE is recorded in the table buffer and
+* NOT written to the DBF until COMMIT (cmd_replace.cpp contract). The tuple
+* projection path overlays those buffered values (tuple_builder.cpp:391, via a
+* FILE-LOCAL get_buffer_override at :90). No other path calls it.
+*
+* So: does a PREDICATE see the buffered value or the on-disk value, and does the
+* PROJECTION of the same statement agree with its own WHERE clause?
+*
+* Safety: MUTATING (SANDBOX only; ROLLBACK discards, table erased at the end).
+* This probe asserts nothing -- it RECORDS behavior for an owner ruling.
+* ============================================================================
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+SET PATH DBF DBF/SANDBOX
+SET PATH INDEXES INDEXES/SANDBOX
+SET PATH LMDB LMDB/SANDBOX
+
+FORMULA "BUFVIS-PROBE-BEGIN"
+
+ERASE TABLE BUFVIS CONFIRM
+
+CREATE X64 BUFVIS (SID N(6,0), MAJOR C(4))
+APPEND
+REPLACE SID WITH "1"
+REPLACE MAJOR WITH "CSCI"
+APPEND
+REPLACE SID WITH "2"
+REPLACE MAJOR WITH "MATH"
+CLOSE
+
+SELECT 1
+USE BUFVIS
+
+FORMULA "BUFVIS-BASELINE-BEGIN"
+LIST
+SQLSEL SELECT SID,MAJOR FROM BUFVIS
+FORMULA "BUFVIS-BASELINE-END"
+
+* --- buffer a change on record 1: CSCI -> MATH (NOT committed) ---
+TABLE BUFFER ON
+GO 1
+REPLACE MAJOR WITH "MATH"
+
+FORMULA "BUFVIS-STATUS-BEGIN"
+TABLE BUFFER STATUS
+FORMULA "BUFVIS-STATUS-END"
+
+* --- A. what does the classic display path show? (expect on-disk CSCI) ---
+FORMULA "BUFVIS-A-CLASSIC-DISPLAY-BEGIN"
+GO 1
+DISPLAY
+LIST
+FORMULA "BUFVIS-A-CLASSIC-DISPLAY-END"
+
+* --- B. what does the TUPLE projection path show? (expect buffered MATH) ---
+FORMULA "BUFVIS-B-TUPLE-PROJECTION-BEGIN"
+GO 1
+TUPLE BUFVIS.SID,BUFVIS.MAJOR
+FORMULA "BUFVIS-B-TUPLE-PROJECTION-END"
+
+* --- C. classic predicates: do they match old or new value? ---
+FORMULA "BUFVIS-C-CLASSIC-PREDICATE-BEGIN"
+COUNT FOR MAJOR = "CSCI"
+COUNT FOR MAJOR = "MATH"
+FORMULA "BUFVIS-C-CLASSIC-PREDICATE-END"
+
+* --- D. THE QUESTION: does a SQLSEL statement agree with itself? ---
+* If WHERE reads on-disk and projection overlays the buffer, then filtering on
+* the OLD value returns a row DISPLAYING the NEW value -- incoherent output.
+FORMULA "BUFVIS-D-SQLSEL-SELFCONSISTENCY-BEGIN"
+SQLSEL SELECT SID,MAJOR FROM BUFVIS WHERE MAJOR = "CSCI"
+SQLSEL SELECT SID,MAJOR FROM BUFVIS WHERE MAJOR = "MATH"
+SQLSEL SELECT COUNT(*) FROM BUFVIS WHERE MAJOR = "MATH"
+FORMULA "BUFVIS-D-SQLSEL-SELFCONSISTENCY-END"
+
+* --- discard; nothing committed ---
+ROLLBACK
+TABLE BUFFER OFF
+
+FORMULA "BUFVIS-AFTER-ROLLBACK-BEGIN"
+GO 1
+DISPLAY
+SQLSEL SELECT SID,MAJOR FROM BUFVIS
+FORMULA "BUFVIS-AFTER-ROLLBACK-END"
+
+CLOSE
+ERASE TABLE BUFVIS CONFIRM
+
+FORMULA "BUFVIS-PROBE-END"

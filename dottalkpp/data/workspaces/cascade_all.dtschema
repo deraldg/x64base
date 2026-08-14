@@ -1,0 +1,114 @@
+DTSHEMA 2
+AREA 0 | dbf=CASCADE_AP_Invoices.dbf | index=CASCADE_AP_Invoices.cdx | indextype=CDX | tag=AP_INVOICE | alias=CASCADE_AP_INVOICES
+AREA 1 | dbf=CASCADE_AP_Payments.dbf | index=CASCADE_AP_Payments.cdx | indextype=CDX | tag=AP_INVOICE | alias=CASCADE_AP_PAYMENTS
+AREA 2 | dbf=CASCADE_AR_Invoices.dbf | index=CASCADE_AR_Invoices.cdx | indextype=CDX | tag=AR_INVOICE | alias=CASCADE_AR_INVOICES
+AREA 3 | dbf=CASCADE_AR_Payments.dbf | index=CASCADE_AR_Payments.cdx | indextype=CDX | tag=AR_INVOICE | alias=CASCADE_AR_PAYMENTS
+AREA 4 | dbf=CASCADE_BOM_Details.dbf | index=CASCADE_BOM_Details.cdx | indextype=CDX | tag=BOM_ID | alias=CASCADE_BOM_DETAILS
+AREA 5 | dbf=CASCADE_BOM_Headers.dbf | index=CASCADE_BOM_Headers.cdx | indextype=CDX | tag=BOM_ID | alias=CASCADE_BOM_HEADERS
+AREA 6 | dbf=CASCADE_Customers.dbf | index=CASCADE_Customers.cdx | indextype=CDX | tag=CUSTOMER_C | alias=CASCADE_CUSTOMERS
+AREA 7 | dbf=CASCADE_Departments.dbf | index=CASCADE_Departments.cdx | indextype=CDX | tag=DEPT_CODE | alias=CASCADE_DEPARTMENTS
+AREA 8 | dbf=CASCADE_Employees.dbf | index=CASCADE_Employees.cdx | indextype=CDX | tag=EMPLOYEE_C | alias=CASCADE_EMPLOYEES
+AREA 9 | dbf=CASCADE_GL_Accounts.dbf | index=CASCADE_GL_Accounts.cdx | indextype=CDX | tag=ACCOUNT_CO | alias=CASCADE_GL_ACCOUNTS
+AREA 10 | dbf=CASCADE_GL_Journal.dbf | index=CASCADE_GL_Journal.cdx | indextype=CDX | tag=ACCOUNT_ID | alias=CASCADE_GL_JOURNAL
+AREA 11 | dbf=CASCADE_Inventory_Movements.dbf | index=CASCADE_Inventory_Movements.cdx | indextype=CDX | tag=ITEM_ID | alias=CASCADE_INVENTORY_MOVEMENTS
+AREA 12 | dbf=CASCADE_Items.dbf | index=CASCADE_Items.cdx | indextype=CDX | tag=SKU | alias=CASCADE_ITEMS
+AREA 13 | dbf=CASCADE_Payroll_Runs.dbf | index=CASCADE_Payroll_Runs.cdx | indextype=CDX | tag=EMPLOYEE_I | alias=CASCADE_PAYROLL_RUNS
+AREA 14 | dbf=CASCADE_PO_Lines.dbf | index=CASCADE_PO_Lines.cdx | indextype=CDX | tag=PO_ID | alias=CASCADE_PO_LINES
+AREA 15 | dbf=CASCADE_Price_Lists.dbf | index=CASCADE_Price_Lists.cdx | indextype=CDX | tag=CUSTOMER_I | alias=CASCADE_PRICE_LISTS
+AREA 16 | dbf=CASCADE_Purchase_Orders.dbf | index=CASCADE_Purchase_Orders.cdx | indextype=CDX | tag=PO_ID | alias=CASCADE_PURCHASE_ORDERS
+AREA 17 | dbf=CASCADE_Quality_Results.dbf | index=CASCADE_Quality_Results.cdx | indextype=CDX | tag=TEST_ID | alias=CASCADE_QUALITY_RESULTS
+AREA 18 | dbf=CASCADE_Quality_Tests.dbf | index=CASCADE_Quality_Tests.cdx | indextype=CDX | tag=TEST_ID | alias=CASCADE_QUALITY_TESTS
+AREA 19 | dbf=CASCADE_Receiving.dbf | index=CASCADE_Receiving.cdx | indextype=CDX | tag=PO_ID | alias=CASCADE_RECEIVING
+AREA 20 | dbf=CASCADE_Routings.dbf | index=CASCADE_Routings.cdx | indextype=CDX | tag=ROUTING_ID | alias=CASCADE_ROUTINGS
+AREA 21 | dbf=CASCADE_Sales_Orders.dbf | index=CASCADE_Sales_Orders.cdx | indextype=CDX | tag=SO_ID | alias=CASCADE_SALES_ORDERS
+AREA 22 | dbf=CASCADE_Shipment_Lines.dbf | index=CASCADE_Shipment_Lines.cdx | indextype=CDX | tag=SHIPMENT_I | alias=CASCADE_SHIPMENT_LINES
+AREA 23 | dbf=CASCADE_Shipments.dbf | index=CASCADE_Shipments.cdx | indextype=CDX | tag=SHIPMENT_I | alias=CASCADE_SHIPMENTS
+AREA 24 | dbf=CASCADE_SO_Lines.dbf | index=CASCADE_SO_Lines.cdx | indextype=CDX | tag=SO_ID | alias=CASCADE_SO_LINES
+AREA 25 | dbf=CASCADE_Stock_Levels.dbf | index=CASCADE_Stock_Levels.cdx | indextype=CDX | tag=ITEM_ID | alias=CASCADE_STOCK_LEVELS
+AREA 26 | dbf=CASCADE_Time_Cards.dbf | index=CASCADE_Time_Cards.cdx | indextype=CDX | tag=WO_ID | alias=CASCADE_TIME_CARDS
+AREA 27 | dbf=CASCADE_v_AP_Aging.dbf | index=none | indextype=NONE | tag=none | alias=CASCADE_V_AP_AGING
+AREA 28 | dbf=CASCADE_v_AR_Aging.dbf | index=none | indextype=NONE | tag=none | alias=CASCADE_V_AR_AGING
+AREA 29 | dbf=CASCADE_v_Available_Stock.dbf | index=none | indextype=NONE | tag=none | alias=CASCADE_V_AVAILABLE_STOCK
+AREA 30 | dbf=CASCADE_v_BOM_Explosion.dbf | index=none | indextype=NONE | tag=none | alias=CASCADE_V_BOM_EXPLOSION
+AREA 31 | dbf=CASCADE_v_Open_Sales_Orders.dbf | index=none | indextype=NONE | tag=none | alias=CASCADE_V_OPEN_SALES_ORDERS
+AREA 32 | dbf=CASCADE_v_Reorder_Alert.dbf | index=none | indextype=NONE | tag=none | alias=CASCADE_V_REORDER_ALERT
+AREA 33 | dbf=CASCADE_v_Three_Way_Match.dbf | index=none | indextype=NONE | tag=none | alias=CASCADE_V_THREE_WAY_MATCH
+AREA 34 | dbf=CASCADE_v_Trial_Balance.dbf | index=none | indextype=NONE | tag=none | alias=CASCADE_V_TRIAL_BALANCE
+AREA 35 | dbf=CASCADE_v_Work_Order_Status.dbf | index=none | indextype=NONE | tag=none | alias=CASCADE_V_WORK_ORDER_STATUS
+AREA 36 | dbf=CASCADE_Vendor_Items.dbf | index=CASCADE_Vendor_Items.cdx | indextype=CDX | tag=VENDOR_ID | alias=CASCADE_VENDOR_ITEMS
+AREA 37 | dbf=CASCADE_Vendors.dbf | index=CASCADE_Vendors.cdx | indextype=CDX | tag=VENDOR_COD | alias=CASCADE_VENDORS
+AREA 38 | dbf=CASCADE_Warehouses.dbf | index=CASCADE_Warehouses.cdx | indextype=CDX | tag=WAREHOUS~1 | alias=CASCADE_WAREHOUSES
+AREA 39 | dbf=CASCADE_WO_Materials.dbf | index=CASCADE_WO_Materials.cdx | indextype=CDX | tag=WO_ID | alias=CASCADE_WO_MATERIALS
+AREA 40 | dbf=CASCADE_WO_Operations.dbf | index=CASCADE_WO_Operations.cdx | indextype=CDX | tag=WO_ID | alias=CASCADE_WO_OPERATIONS
+AREA 41 | dbf=CASCADE_Work_Centers.dbf | index=CASCADE_Work_Centers.cdx | indextype=CDX | tag=CENTER_COD | alias=CASCADE_WORK_CENTERS
+AREA 42 | dbf=CASCADE_Work_Orders.dbf | index=CASCADE_Work_Orders.cdx | indextype=CDX | tag=WO_ID | alias=CASCADE_WORK_ORDERS
+* posture (canonical MCC pattern, owner-ruled 2026-08-10): pure children
+* sit on their spine FK tag, hubs on PK, parents on their code/human tag
+* -- so WORKSPACE LOAD stands the ERP up ready to relate.
+* posture (canonical MCC pattern, x64/CDX generation; owner-ruled
+* 2026-08-10): pure children sit on their spine FK tag, hubs on PK,
+* parents on their code/human tag -- WORKSPACE LOAD stands the ERP up
+* ready to relate. Views stay unindexed (materialized snapshots).
+* default relations -- GENERATED 2026-08-10 from systems/cascade_erp/meta
+* (58 FK edges; see schema/CASCADE_ERP.dtgraph). LOGICAL long field
+* names, not truncated descriptors -- the relation engine resolves x64
+* long names (proven 2026-08-10: 22 truncated names rejected, 36 short
+* names landed). Self-referencing edges included.
+RELATION CASCADE_AP_Invoices CASCADE_AP_Payments ON AP_INVOICE_ID
+RELATION CASCADE_AR_Invoices CASCADE_AR_Payments ON AR_INVOICE_ID
+RELATION CASCADE_BOM_Headers CASCADE_BOM_Details ON BOM_ID
+RELATION CASCADE_BOM_Headers CASCADE_Work_Orders ON BOM_ID
+RELATION CASCADE_Customers CASCADE_AR_Invoices ON CUSTOMER_ID
+RELATION CASCADE_Customers CASCADE_Price_Lists ON CUSTOMER_ID
+RELATION CASCADE_Customers CASCADE_Sales_Orders ON CUSTOMER_ID
+RELATION CASCADE_Departments CASCADE_Employees ON DEPT_ID
+RELATION CASCADE_Employees CASCADE_Departments ON EMPLOYEE_ID TO MANAGER_ID
+RELATION CASCADE_Employees CASCADE_Employees ON EMPLOYEE_ID TO REPORTS_TO
+RELATION CASCADE_Employees CASCADE_Inventory_Movements ON EMPLOYEE_ID TO CREATED_BY
+RELATION CASCADE_Employees CASCADE_Payroll_Runs ON EMPLOYEE_ID
+RELATION CASCADE_Employees CASCADE_Purchase_Orders ON EMPLOYEE_ID TO APPROVED_BY
+RELATION CASCADE_Employees CASCADE_Quality_Results ON EMPLOYEE_ID TO INSPECTOR_ID
+RELATION CASCADE_Employees CASCADE_Receiving ON EMPLOYEE_ID TO INSPECTOR_ID
+RELATION CASCADE_Employees CASCADE_Sales_Orders ON EMPLOYEE_ID TO SALES_REP_ID
+RELATION CASCADE_Employees CASCADE_Time_Cards ON EMPLOYEE_ID
+RELATION CASCADE_Employees CASCADE_Warehouses ON EMPLOYEE_ID TO MANAGER_ID
+RELATION CASCADE_GL_Accounts CASCADE_GL_Accounts ON ACCOUNT_ID TO PARENT_ID
+RELATION CASCADE_GL_Accounts CASCADE_GL_Journal ON ACCOUNT_ID
+RELATION CASCADE_Items CASCADE_BOM_Details ON ITEM_ID TO COMPONENT_ITEM_ID
+RELATION CASCADE_Items CASCADE_BOM_Headers ON ITEM_ID
+RELATION CASCADE_Items CASCADE_Inventory_Movements ON ITEM_ID
+RELATION CASCADE_Items CASCADE_PO_Lines ON ITEM_ID
+RELATION CASCADE_Items CASCADE_Price_Lists ON ITEM_ID
+RELATION CASCADE_Items CASCADE_Quality_Tests ON ITEM_ID
+RELATION CASCADE_Items CASCADE_Routings ON ITEM_ID
+RELATION CASCADE_Items CASCADE_SO_Lines ON ITEM_ID
+RELATION CASCADE_Items CASCADE_Stock_Levels ON ITEM_ID
+RELATION CASCADE_Items CASCADE_Vendor_Items ON ITEM_ID
+RELATION CASCADE_Items CASCADE_WO_Materials ON ITEM_ID
+RELATION CASCADE_Items CASCADE_Work_Orders ON ITEM_ID
+RELATION CASCADE_PO_Lines CASCADE_Receiving ON POLINE_ID
+RELATION CASCADE_Purchase_Orders CASCADE_AP_Invoices ON PO_ID
+RELATION CASCADE_Purchase_Orders CASCADE_PO_Lines ON PO_ID
+RELATION CASCADE_Purchase_Orders CASCADE_Receiving ON PO_ID
+RELATION CASCADE_Quality_Tests CASCADE_Quality_Results ON TEST_ID
+RELATION CASCADE_Routings CASCADE_WO_Operations ON ROUTING_ID
+RELATION CASCADE_SO_Lines CASCADE_Shipment_Lines ON SOLINE_ID
+RELATION CASCADE_Sales_Orders CASCADE_AR_Invoices ON SO_ID
+RELATION CASCADE_Sales_Orders CASCADE_SO_Lines ON SO_ID
+RELATION CASCADE_Sales_Orders CASCADE_Shipments ON SO_ID
+RELATION CASCADE_Sales_Orders CASCADE_Work_Orders ON SO_ID
+RELATION CASCADE_Shipments CASCADE_Shipment_Lines ON SHIPMENT_ID
+RELATION CASCADE_Vendors CASCADE_AP_Invoices ON VENDOR_ID
+RELATION CASCADE_Vendors CASCADE_Purchase_Orders ON VENDOR_ID
+RELATION CASCADE_Vendors CASCADE_Vendor_Items ON VENDOR_ID
+RELATION CASCADE_Warehouses CASCADE_Inventory_Movements ON WAREHOUSE_ID
+RELATION CASCADE_Warehouses CASCADE_Receiving ON WAREHOUSE_ID
+RELATION CASCADE_Warehouses CASCADE_Shipments ON WAREHOUSE_ID
+RELATION CASCADE_Warehouses CASCADE_Stock_Levels ON WAREHOUSE_ID
+RELATION CASCADE_Warehouses CASCADE_WO_Materials ON WAREHOUSE_ID
+RELATION CASCADE_Work_Centers CASCADE_Routings ON CENTER_ID
+RELATION CASCADE_Work_Centers CASCADE_Time_Cards ON CENTER_ID
+RELATION CASCADE_Work_Centers CASCADE_WO_Operations ON CENTER_ID
+RELATION CASCADE_Work_Orders CASCADE_Time_Cards ON WO_ID
+RELATION CASCADE_Work_Orders CASCADE_WO_Materials ON WO_ID
+RELATION CASCADE_Work_Orders CASCADE_WO_Operations ON WO_ID

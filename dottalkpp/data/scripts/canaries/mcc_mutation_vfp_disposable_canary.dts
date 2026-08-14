@@ -1,0 +1,165 @@
+* ============================================================
+* MCC MUTATION VFP DISPOSABLE CANARY
+* ============================================================
+* Purpose:
+*   Extensive reversible mutation coverage for MCC VFP/CNX.
+*
+* Visibility:
+*   Dev-only canary. Keep this behind the developer/testing surface until
+*   the VFP pack/header warning lane is fully closed.
+*
+* Rules:
+*   - Bootstraps its own environment.
+*   - Uses disposable table copies only.
+*   - Builds disposable CNX containers explicitly.
+*   - Verifies workspace/index bring-up, append, replace,
+*     multirep, calcwrite, table-buffer commit/rollback,
+*     delete/recall, and pack.
+* ============================================================
+
+SET ECHO ON
+SET DELETED ON
+
+ECHO ============================================================
+ECHO MCC MUTATION VFP DISPOSABLE CANARY
+ECHO ============================================================
+
+ERASE students_mut_canary_vfp CONFIRM
+ERASE students_mut_canary_vfp.cnx CONFIRM
+ERASE students_mut_canary_vfp.inx CONFIRM
+ERASE enroll_mut_canary_vfp CONFIRM
+ERASE enroll_mut_canary_vfp.cnx CONFIRM
+ERASE enroll_mut_canary_vfp.inx CONFIRM
+
+SET PATH DBF DBF/vfp
+SET PATH INDEXES INDEXES/vfp
+WORKSPACE CLOSE
+WORKSPACE LOAD mcc_vfp
+
+ECHO --- WORKSPACE AUTO-ATTACH PROBE: STUDENTS / ENROLL ---
+SELECT STUDENTS
+AREA
+SELECT ENROLL
+AREA
+
+ECHO --- STUDENTS COPY / CNX BUILD ---
+SELECT STUDENTS
+COPY TO students_mut_canary_vfp OVERWRITE
+CLOSE
+USE students_mut_canary_vfp
+CNX CREATE
+CNX ADDTAG SID
+CNX ADDTAG LNAME
+REBUILD
+SET INDEX TO students_mut_canary_vfp
+SET ORDER TO TAG SID
+TOP
+TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA,EMAIL
+
+ECHO --- STUDENTS APPEND / FILL / SEEK ---
+APPEND
+BOTTOM
+TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA,EMAIL
+REPLACE LNAME WITH "CANARY_VFP"
+REPLACE FNAME WITH "ALPHA"
+CALCWRITE DOB = CTOD("2001-01-03")
+REPLACE DOB WITH "20010104"
+REPLACE GENDER WITH "X"
+REPLACE MAJOR WITH "CSCI"
+CALCWRITE ENROLL_D = CTOD("2026-01-16")
+CALCWRITE GPA = 3.35
+REPLACE EMAIL WITH "canary_vfp@mcc.edu"
+SET ORDER TO TAG LNAME
+SEEK CANARY_VFP
+TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA,EMAIL
+
+ECHO --- STUDENTS INDEXED FIELD MUTATION ---
+REPLACE LNAME WITH "CANARY_VFPB"
+SEEK CANARY_VFPB
+TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA,EMAIL
+
+ECHO --- STUDENTS MULTIREP / CALCWRITE ---
+MULTIREP FNAME WITH "BETA", EMAIL WITH "canary_vfpb@mcc.edu"
+TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA,EMAIL
+CALCWRITE GPA = GPA + 0.25
+TUPLE GPA
+CALCWRITE GPA = GPA - 0.25
+TUPLE GPA
+
+ECHO --- STUDENTS TABLE BUFFER ROLLBACK ---
+TABLE ON
+REPLACE MAJOR WITH "ZZRB"
+TUPLE MAJOR
+ROLLBACK
+TUPLE MAJOR
+TABLE OFF
+
+ECHO --- STUDENTS TABLE BUFFER COMMIT ---
+TABLE ON
+REPLACE MAJOR WITH "ZZCM"
+COMMIT
+TUPLE MAJOR
+TABLE OFF
+REPLACE MAJOR WITH "CSCI"
+TUPLE MAJOR
+
+ECHO --- STUDENTS DELETE / RECALL / PACK ---
+SET ORDER TO TAG LNAME
+SEEK CANARY_VFPB
+DELETE
+COUNT DELETED
+RECALL
+COUNT DELETED
+SEEK CANARY_VFPB
+DELETE
+PACK
+COUNT FOR LNAME = "CANARY_VFPB"
+CLOSE
+ERASE students_mut_canary_vfp CONFIRM
+ERASE students_mut_canary_vfp.cnx CONFIRM
+ERASE students_mut_canary_vfp.inx CONFIRM
+
+ECHO --- ENROLL COPY / CNX BUILD ---
+SELECT ENROLL
+COPY TO enroll_mut_canary_vfp OVERWRITE
+CLOSE
+USE enroll_mut_canary_vfp
+CNX CREATE
+CNX ADDTAG SID
+CNX ADDTAG CLS_ID
+REBUILD
+SET INDEX TO enroll_mut_canary_vfp
+SET ORDER TO TAG SID
+TOP
+TUPLE SID,CLS_ID,GRADE
+
+ECHO --- ENROLL APPEND / FILL / SEEK ---
+APPEND
+BOTTOM
+TUPLE SID,CLS_ID,GRADE
+REPLACE CLS_ID WITH "VFPC9001"
+REPLACE GRADE WITH "A-"
+SET ORDER TO TAG CLS_ID
+SEEK VFPC9001
+TUPLE SID,CLS_ID,GRADE
+
+ECHO --- ENROLL MUTATE / RECALL / PACK ---
+MULTIREP GRADE WITH "B+"
+TUPLE SID,CLS_ID,GRADE
+DELETE
+COUNT DELETED
+RECALL
+COUNT DELETED
+DELETE
+PACK
+COUNT FOR CLS_ID = "VFPC9001"
+CLOSE
+ERASE enroll_mut_canary_vfp CONFIRM
+ERASE enroll_mut_canary_vfp.cnx CONFIRM
+ERASE enroll_mut_canary_vfp.inx CONFIRM
+
+WORKSPACE CLOSE
+
+ECHO ============================================================
+ECHO MCC MUTATION VFP DISPOSABLE CANARY DONE
+ECHO ============================================================

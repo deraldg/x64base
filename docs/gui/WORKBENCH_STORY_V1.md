@@ -1,15 +1,16 @@
-# DotTalk++ Workbench Story v1
+# ArcticTalk Workbench Story v1
 
 Status: active direction.
 
 Related:
 
+- `ARCTICTALK_BRANDING_AND_LINEAGE_V1.md`
 - `WORKSPACE_GRAPH_CONTRACT_V1.md`
 - `WINDOWED_APP_CONTRACT_V1.md`
 
 ## Product Sentence
 
-A DotTalk++ Workbench opens workspaces. A workspace is a collection of one or
+An ArcticTalk workbench opens workspaces. A workspace is a collection of one or
 more areas: the realm where DotTalk++ relates tables, attaches indexes, saves
 and modifies graph definitions as `.dtschema` or `.dtschemas`, and drives
 browsers, lists, and ERSATZ browser presets.
@@ -59,6 +60,13 @@ This is intentionally a hybrid:
 
 ## Naming Rules
 
+Branding note:
+
+- `ArcticTalk` is the public umbrella brand.
+- `Foxtalk` and fox-derived names remain valid lineage/subsystem names inside
+  that umbrella.
+- Classic FoxPro-style syntax may be preserved without claiming clone behavior.
+
 Use these names consistently in GUI-facing docs and labels:
 
 | Name | Meaning |
@@ -80,7 +88,7 @@ while the UI presents a workbench story.
 
 ## Near-Term Consequences
 
-- The application title should present as DotTalk++ Workbench.
+- The application title should present as ArcticTalk.
 - The left area list should be presented as Workspace Areas.
 - Opening a table creates or activates an area; it must not implicitly close
   other areas.

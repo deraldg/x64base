@@ -1,0 +1,391 @@
+* use_again_regression.dts
+* USE ... AGAIN: a second work area on an already-open DBF (workspace design
+* I5, v1 arm; owner "add use again", 2026-08-12).
+*
+* Self-bootstrapping and self-erasing: builds its own throwaway x64 tables in
+* SANDBOX (UAREGR plain, UAMEMO memo-carrying, UASENT an alias sentinel,
+* UAPLAIN for the no-AGAIN alias arm, UAEMP for the self-join), never
+* touches live fixtures.
+* Every marker is a FIELD-VALUE comparison (FIELDMGR_APPEND doctrine: a shape
+* assertion passes green on a blanked table).
+*
+* What v1 promises, and what each marker holds:
+*   UA_G0 -> fixture built (row 1 NAME = Alpha, read back by value)
+*   UA_T1a-> duplicate USE WITHOUT AGAIN stays a no-op where a regression
+*            would actually land: the TARGET area keeps its sentinel table
+*   UA_T1 -> and the already-open area 1 is undisturbed too, by value
+*   UA_T2 -> USE ... AGAIN opens a second area on the same file; the second
+*            instance reads row 1 by value
+*   UA_T3 -> THE COHERENCE MEASUREMENT: a write through area 1 is visible to
+*            a re-read through area 2. This marker MEASURES v1 coherence
+*            rather than assuming it; if it reds on some platform, that is a
+*            finding about two fstreams on one file, not a broken spec.
+*   UA_T4 -> AGAIN is REFUSED on a memo-carrying table (two sidecar appenders
+*            would interleave -- the AIF-110 shape), and the refusal left the
+*            TARGET area untouched: a sentinel table placed there first is
+*            still readable by value afterwards.
+*   UA_T5 -> the same refusal left the FIRST instance intact, by value.
+*   UA_T6 -> USE ... AGAIN ALIAS <n> makes the second instance ADDRESSABLE:
+*            SELECT <n> reaches it and reads its row by value.
+*   UA_T7 -> a duplicate explicit alias is REFUSED and the target area keeps
+*            the different table it already held.
+*   UA_T8 -> that refusal did not evict the alias's real holder either.
+*   UA_T9 -> ALIAS works WITHOUT AGAIN: a plain open under a chosen name.
+*   UA_T10-> an all-digit alias is refused, target area untouched.
+*   UA_T11-> ALIAS with no name following is refused, target area untouched.
+*   UA_T12 -> THE SELF-JOIN, and the arms that test what the verb is FOR:
+*             two aliased cursors on ONE table, related to each other.
+*             T12 declaring the relation positions the child;
+*   UA_T12b-> and the child TRACKS the parent when the parent moves. Two
+*             markers because they are two guarantees: a one-shot applied at
+*             declaration would leave T12 green and T12b red.
+*
+* Read the T4 site before editing it. It took three cuts, the first two of
+* which could not fail for their stated reason, and the third of which
+* required fixing the guard it tests.
+*
+* THE RECURRING DEFECT IN THIS FILE -- T4 twice, T6, T1, and a draft of T8,
+* all on the day it was written, and no count is given because that number
+* moved twice while this paragraph was being edited. One shape throughout:
+* ASSERTING A POSTCONDITION FROM A POSITION WHERE IT ALREADY HELD. Each was
+* written directly after the operation it checks, so the cursor, the area, or
+* the value it wanted was already in place before that operation ran -- which
+* means the operation could have done nothing at all and the marker would not
+* have noticed. The check that catches it is mechanical and
+* cheap: BEFORE trusting a green, ask what state the marker would report if
+* the command under test were deleted outright. If the answer is "the same
+* green", the marker is decoration. Two of these were caught only by reading
+* the transcript of a passing run, which is why the transcript gets read.
+*
+* WHY ALIAS IS HERE AT ALL (owner, 2026-08-12): without it USE AGAIN produced
+* a second cursor that was open and UNREACHABLE BY NAME, because both
+* instances took the file stem and find_open_area_by_name_ci first-matches
+* silently. Naming is how SET RELATION declares a join, so an unnameable
+* cursor cannot do the one job a second cursor exists for.
+*
+* RECCOUNT (owner correction, same day, and a correction to the correction):
+* the count IS a stored field in the DBF header (bytes 4-7), reachable as
+* DbArea::recCount64(), and it is now surfaced beside DELETED in
+* glue_xbase.cpp -- but that serves compile_predicate, i.e. scan and FOR
+* clauses, NOT the '?' marker path, which is rhs_eval. So RECCOUNT is real
+* and usable in a FOR predicate over an OPEN area, and unavailable to these
+* markers. Stated because the first version of this note claimed otherwise.
+*
+* v1 boundaries, deliberate and stated: the AGAIN instance opens in PHYSICAL
+* ORDER (a second in-process attach of one container would double-open an
+* LMDB environment -- undefined by LMDB's contract), and memo tables refuse.
+* Index-attach-on-AGAIN and memo-share-on-AGAIN are later, separately-gated
+* arms; when either lands, this spec gains an arm rather than losing one.
+*
+* Run:  REGRESSION RUN USE_AGAIN
+*   or: DOTSCRIPT dottalkpp/data/scripts/use_again_regression.dts
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+* Isolate to SANDBOX (house convention: every test sets its own path slots).
+SET PATH DBF DBF/SANDBOX
+SET PATH INDEXES INDEXES/SANDBOX
+SET PATH LMDB LMDB/SANDBOX
+
+FORMULA "USE-AGAIN-REGRESSION-BEGIN"
+
+* --- P0: throwaway fixture (idempotent: erase any prior leftovers first) ---
+WORKSPACE CLOSE
+ERASE TABLE UAREGR CONFIRM
+ERASE TABLE UAMEMO CONFIRM
+ERASE TABLE UASENT CONFIRM
+ERASE TABLE UAPLAIN CONFIRM
+ERASE TABLE UAEMP CONFIRM
+
+SELECT 1
+CREATE X64 UAREGR (ID N(4), NAME C(20))
+APPEND
+REPLACE ID WITH "1"
+REPLACE NAME WITH "Alpha"
+GO 1
+? "UA_G0_fixture_row:" + (NAME = "Alpha")
+
+* Sentinel table, built once here and used by T1 and T7. It carries a value
+* NO other fixture has ("Sentinel"), which is the whole point: a sentinel that
+* shares a value with the table under test cannot discriminate.
+SELECT 6
+CREATE X64 UASENT (ID N(4), NAME C(20))
+APPEND
+REPLACE ID WITH "6"
+REPLACE NAME WITH "Sentinel"
+
+* --- T1: duplicate USE without AGAIN is a no-op; BOTH areas undisturbed ----
+* T1a is the marker that actually tests the refusal. Its first cut asserted
+* only that area 1 survived -- true even if the guard were deleted and area 2
+* had opened a second instance, since that would not touch area 1. So area 2
+* is given a sentinel first: the refusal must leave UASENT sitting there. If
+* the guard goes, area 2 becomes UAREGR, NAME reads Alpha, and T1a reds.
+SELECT 2
+USE UASENT AGAIN ALIAS T1GUARD
+USE UAREGR
+GO 1
+? "UA_T1a_dup_refused_target_area_untouched:" + (NAME = "Sentinel")
+
+SELECT 1
+GO 1
+? "UA_T1_dup_refused_area1_intact:" + (NAME = "Alpha")
+
+* --- T2: AGAIN opens a second area on the same file ------------------------
+SELECT 2
+USE UAREGR AGAIN
+GO 1
+? "UA_T2_second_area_reads:" + (NAME = "Alpha")
+
+* --- T3: coherence MEASUREMENT -- write via area 1, re-read via area 2 -----
+SELECT 1
+GO 1
+REPLACE NAME WITH "Alpha2"
+SELECT 2
+GO 1
+? "UA_T3_write_visible_across_areas:" + (NAME = "Alpha2")
+
+* --- T4: memo-carrying table refuses AGAIN; first instance intact ----------
+SELECT 3
+CREATE X64 UAMEMO (ID N(4), NOTES M)
+APPEND
+REPLACE ID WITH "7"
+* T4 asserts the refusal by SENTINEL OCCUPANCY, and the technique is the
+* point. Three cuts were needed to get here (2026-08-12):
+*
+*   cut 1  .NOT. (ID = 7) in the empty target area -- a green that could not
+*          fail: ID was UNRESOLVABLE there, so the marker passed whether or
+*          not the refusal fired.
+*   cut 2  RECCOUNT() = 0 in the same empty area -- errored, because the
+*          marker evaluator binds a NULL AREA unless the area is OPEN
+*          (rhs_eval.cpp:969). Being closed is exactly what was being
+*          asserted, so NO symbol can resolve there: not RECCOUNT, not
+*          RECNO, not a field name.
+*   cut 3  this one. Stop asking whether the area is EMPTY -- an
+*          unaskable question -- and ask whether a KNOWN OCCUPANT SURVIVED,
+*          which is asked of an OPEN area and therefore answerable.
+*
+* Two general findings, both outliving this spec. IN THIS MARKER LANGUAGE NO
+* MARKER CAN ASSERT THAT AN AREA IS EMPTY; every such attempt is a false
+* green or a silent error. And AN ERRORED MARKER PRINTS NOTHING -- it does
+* not go red, it goes ABSENT, so a suite scored by counting greens still
+* reads full while a claim has quietly left it.
+*
+* Cut 3 also required a SOURCE FIX, and found it: the refusal used to run
+* AFTER reset_area_runtime_best_effort() and a.open(), so it destroyed this
+* area's occupant and then printed "Nothing was opened". The sentinel could
+* not have survived a guard that wiped the area before deciding to refuse.
+* Hoisted into the duplicate-open guard (cmd_use.cpp), where AGAIN's own
+* precondition -- the file is already open elsewhere -- makes the memo probe
+* free: it reads the live area's field list and touches no filesystem.
+
+SELECT 4
+USE UAREGR AGAIN
+
+* Area 4 now holds a KNOWN occupant: UAREGR, whose row 1 reads Alpha2 (T3
+* wrote it). This is the sentinel.
+USE UAMEMO AGAIN
+
+* The refusal must leave the sentinel standing. If the memo guard regresses
+* -- removed, or sunk back below the open -- area 4 is reset and reopened as
+* UAMEMO, NAME ceases to exist there, and this reds. That is a marker that
+* can only be green for the reason it claims.
+GO 1
+? "UA_T4_memo_refusal_left_target_area_untouched:" + (NAME = "Alpha2")
+
+SELECT 3
+GO 1
+? "UA_T5_memo_refusal_left_first_intact:" + (ID = 7)
+
+* --- T6/T7/T8: ALIAS (owner 'fix the use command', 2026-08-12) -------------
+* Before this arm, USE AGAIN produced a second instance that WAS OPEN AND
+* UNREACHABLE BY NAME: both instances took the file stem as their logical
+* name, and find_open_area_by_name_ci (workarea_util.cpp:29) returns the
+* FIRST match with no diagnostic -- so SET RELATION and every name-based verb
+* silently bound the lower-numbered area. A cursor you cannot name is not
+* usable for relations, which is the whole point of opening it.
+
+SELECT 5
+USE UAREGR AGAIN ALIAS SECONDLOOK
+GO 1
+
+* T6: the explicit alias took, and the instance answers to it. Asserted by
+* VALUE through the alias, not by reading the alias back -- an area reporting
+* its own name proves the string was stored, not that anything resolves it.
+*
+* THE SELECT 3 IS LOAD-BEARING. The first cut of this marker ran
+* SELECT SECONDLOOK while the cursor was ALREADY in area 5, so a total
+* failure of alias resolution would have left it exactly where the marker
+* wanted it and the assertion would have gone green regardless. Caught by
+* reading its own transcript after it passed. Stepping to area 3 first means
+* the cursor MUST move for this to read Alpha2: UAMEMO has no NAME field, so
+* a SELECT that does not resolve leaves the marker on an empty string.
+SELECT 3
+SELECT SECONDLOOK
+GO 1
+? "UA_T6_alias_is_addressable_by_name:" + (NAME = "Alpha2")
+
+* T7: a duplicate explicit alias is REFUSED, and the refusal leaves the
+* target area untouched. The sentinel here is a DIFFERENT TABLE on purpose:
+* the first draft of this marker put UAREGR in area 6, so its value matched
+* area 5's and the marker would have gone green even if SELECT had failed and
+* left the cursor elsewhere. Distinct values are what make it discriminate.
+SELECT 6
+USE UAREGR AGAIN ALIAS SECONDLOOK
+GO 1
+? "UA_T7_duplicate_alias_refused_area_untouched:" + (NAME = "Sentinel")
+
+* T8: the refusal did not evict the alias's real HOLDER either -- area 5 still
+* answers to SECONDLOOK. If the name had been taken away, SELECT would fail,
+* the cursor would stay in area 6, and this reds on "Sentinel".
+SELECT SECONDLOOK
+GO 1
+? "UA_T8_refusal_left_alias_holder_intact:" + (NAME = "Alpha2")
+
+* --- T9/T10/T11: the ALIAS paths the first pass left untested --------------
+* Written because three branches of the new clause had no marker at all:
+* ALIAS without AGAIN, the all-digit refusal, and the malformed clause. Every
+* arm above exercised AGAIN ALIAS together, so "the alias code works" rested
+* on one of its four paths. An untested refusal is the worst kind: it is
+* supposed to do nothing visible, so it looks fine while doing nothing at all.
+
+* T9: ALIAS with NO AGAIN. Needs a table not already open, so UAPLAIN is
+* built and then closed before being re-opened under a chosen name.
+SELECT 8
+CREATE X64 UAPLAIN (ID N(4), NAME C(20))
+APPEND
+REPLACE ID WITH "9"
+REPLACE NAME WITH "Plain"
+WORKSPACE CLOSE 8
+* WORKSPACE CLOSE <n>, not SCHEMAS CLOSE <n>: the latter works but prints a
+* deprecation banner. Found by this spec running it -- the USE duplicate-open
+* message had been RECOMMENDING the deprecated verb, and was corrected with
+* this arm (helpdata_messages.cpp).
+
+SELECT 8
+USE UAPLAIN ALIAS PLAINNAME
+SELECT 3
+SELECT PLAINNAME
+GO 1
+? "UA_T9_alias_without_again_resolves:" + (NAME = "Plain")
+
+* T10: an all-digit alias is refused -- SELECT would read it as an area
+* number, so the name would look bound and silently select a slot. Area 7
+* holds a sentinel; the refusal must leave it there.
+SELECT 7
+USE UASENT AGAIN ALIAS GUARD7
+USE UAREGR AGAIN ALIAS 42
+GO 1
+? "UA_T10_all_digit_alias_refused_area_untouched:" + (NAME = "Sentinel")
+
+* T11: ALIAS with nothing after it is refused rather than silently read as
+* "no alias given" -- those two readings differ by which name the table ends
+* up under, which is exactly the kind of difference that goes unnoticed.
+USE UAREGR AGAIN ALIAS
+GO 1
+? "UA_T11_malformed_alias_refused_area_untouched:" + (NAME = "Sentinel")
+
+* --- T12: THE SELF-JOIN. What USE AGAIN is FOR. ---------------------------
+* Every arm above tests the plumbing: that a second instance opens, is named,
+* and refuses what it should. None tests the PURPOSE. A second cursor on one
+* table exists so a row can be read against ANOTHER ROW OF THE SAME TABLE --
+* the self-join -- and until that is measured, this lane has shipped a
+* mechanism with no demonstrated use.
+*
+* This is possible only because of two facts measured 2026-08-12, either of
+* which could have blocked it:
+*   - SET RELATION in this engine matches BY FIELD VALUE THROUGH A SCAN
+*     (set_relations.cpp:304-322), not by an index seek. v1's AGAIN forces
+*     physical order, so an index-seeking relation would have been unusable
+*     on exactly the instances this feature creates.
+*   - relations resolve the child through find_open_area_by_name_ci, which
+*     compares the logical name. Before ALIAS both instances carried the file
+*     stem, so INTO <name> could not have addressed the second one at all.
+*
+* THIS ARM IS A MEASUREMENT, in the sense T3 is. It asserts that positioning
+* the PARENT moves the CHILD to its related row. If it reds, the finding is
+* that this engine's relations do not follow the cursor for a single-file
+* self-join -- worth knowing exactly, and not the same thing as a broken
+* spec. Do not "fix" a red here by weakening the marker.
+
+* TWO CORRECTIONS, both from the first run of this arm (2026-08-12):
+*
+*  1. CREATE ALREADY OPENS the table in the current area, so the USE that
+*     followed it was refused as "already open in current area" and its ALIAS
+*     was silently dropped. The alias never existed, SELECT on it failed, the
+*     cursor stayed where it was, and SET RELATION then ran FROM THE CHILD
+*     INTO ITSELF. The area keeps the name CREATE gave it, so the parent is
+*     addressed as UAEMP and no second name is needed.
+*  2. THIS ENGINE JOINS ON A COMMON FIELD NAME -- parent.F to child.F, as
+*     "REL: BOSS -> BOSS ON MGR" reported and the MCC precedent confirms
+*     (SET RELATION TO SID INTO ENROLL, SID on both sides). A MGR -> ID
+*     hierarchy is therefore INEXPRESSIBLE, so the original Ada/Bob design
+*     could not have worked even with the alias bug fixed. The join here is
+*     on DEPT: rows that SHARE a department, which is what an equi-join on
+*     one field name means for a single table.
+*
+* Also found and NOT fixed here, because it is the relation engine's business
+* rather than USE's: a relation from an area INTO ITSELF was accepted and
+* reported OK. A one-node cycle is not a join.
+
+SELECT 9
+CREATE X64 UAEMP (ID N(4), NAME C(20), DEPT N(4))
+APPEND
+REPLACE ID WITH "1"
+REPLACE NAME WITH "Ada"
+REPLACE DEPT WITH "10"
+APPEND
+REPLACE ID WITH "2"
+REPLACE NAME WITH "Bob"
+REPLACE DEPT WITH "20"
+APPEND
+REPLACE ID WITH "3"
+REPLACE NAME WITH "Cid"
+REPLACE DEPT WITH "10"
+
+* Second cursor on the same file, under its own name.
+SELECT 10
+USE UAEMP AGAIN ALIAS BOSS
+
+* Park the child on Bob (record 2, DEPT 20). If the relation does NOT follow
+* the parent, the child stays here and the marker reads Bob -- which is the
+* whole reason it is parked somewhere wrong first.
+GO 2
+
+SELECT 9
+SET RELATION TO DEPT INTO BOSS
+GO 3
+
+* Parent is Cid, DEPT 10. The child must move to the first row sharing that
+* department: Ada, record 1. Three rows exist so the match is unambiguous and
+* is neither the parent's own record nor the child's parked one.
+SELECT BOSS
+? "UA_T12_selfjoin_relation_positions_child:" + (NAME = "Ada")
+
+* T12b: THE PARENT ACTUALLY MOVES. T12 alone does not prove this, and its
+* first name claimed it did: the third APPEND had already left the parent on
+* record 3, so the GO 3 above was a no-op and all T12 measured was that
+* DECLARING the relation positions the child once. Whether the child TRACKS
+* the parent is a separate guarantee, and it is the one a self-join needs.
+*
+* Parent moves 3 -> 2 (Cid, DEPT 10 -> Bob, DEPT 20). The only row with DEPT
+* 20 is Bob himself, record 2, so the child must leave record 1 and land
+* there. If the relation is a one-shot applied at declaration, the child
+* stays on Ada and this reds while T12 stays green -- which is exactly the
+* distinction worth having two markers for.
+SELECT 9
+GO 2
+SELECT BOSS
+? "UA_T12b_selfjoin_child_tracks_parent_movement:" + (NAME = "Bob")
+
+SET RELATION OFF ALL
+
+FORMULA "USE-AGAIN-REGRESSION-END"
+
+* --- teardown: close everything, erase the throwaways ----------------------
+WORKSPACE CLOSE
+ERASE TABLE UAREGR CONFIRM
+ERASE TABLE UAMEMO CONFIRM
+ERASE TABLE UASENT CONFIRM
+ERASE TABLE UAPLAIN CONFIRM
+ERASE TABLE UAEMP CONFIRM

@@ -1,0 +1,3 @@
+SETPATH DBF = D:\code\ccode\dottalkpp\data\SYSTEMS\CASCADE_ERP\DBF
+SETPATH INDEXES = D:\code\ccode\dottalkpp\data\SYSTEMS\CASCADE_ERP\INDEXES
+SETPATH LMDB = D:\code\ccode\dottalkpp\data\SYSTEMS\CASCADE_ERP\LMDB

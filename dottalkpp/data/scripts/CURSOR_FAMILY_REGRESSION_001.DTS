@@ -28,7 +28,7 @@ ECHO ============================================================
 ECHO CURSOR FAMILY REGRESSION 001
 ECHO ============================================================
 
-SET V32
+DO X32
 WORKSPACE OPEN DBF
 SELECT STUDENTS
 

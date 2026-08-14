@@ -1,0 +1,4 @@
+USE dbf\sandbox\students
+GOTO 1
+CALCWRITE (lname = UPPER("grimwood"))
+CALCWRITE (gpa = 1 + 2)

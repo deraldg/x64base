@@ -121,7 +121,22 @@ function Update-DotTalkRuntimeExe {
     }
     catch {
         if (Test-Path -LiteralPath $Layout.RuntimeExe) {
-            Write-Warning "Runtime executable is locked; running existing copy at $($Layout.RuntimeExe)"
+            # Could not stage the fresh build (usually a running process holds the runtime exe:
+            # the dottalk_bbsd daemon or another dottalkpp). Fall back to the existing copy, but
+            # warn LOUDLY and quantify staleness so a stale run is never mistaken for a new build.
+            $builtTime = (Get-Item -LiteralPath $builtExe).LastWriteTime
+            $runTime   = (Get-Item -LiteralPath $Layout.RuntimeExe).LastWriteTime
+            $stale = ""
+            if ($builtTime -gt $runTime) {
+                $mins = [math]::Round(($builtTime - $runTime).TotalMinutes, 1)
+                $stale = " -- the copy being run is STALE ($mins min older than the build you just made)"
+            }
+            Write-Warning "datarun: could NOT copy the freshly-built exe into the runtime bin$stale."
+            Write-Warning "  reason : $($_.Exception.Message)"
+            Write-Warning "  built  : $builtExe  ($builtTime)"
+            Write-Warning "  running: $($Layout.RuntimeExe)  ($runTime)"
+            Write-Warning "  A running process is likely holding it (dottalk_bbsd daemon or another dottalkpp)."
+            Write-Warning "  Stop that process and re-run datarun to actually test the new build."
         }
         else {
             throw "Could not stage runtime executable from $builtExe to $($Layout.RuntimeExe): $($_.Exception.Message)"

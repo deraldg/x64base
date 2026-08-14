@@ -1,0 +1,183 @@
+* ============================================================
+* LANGUAGE SHAKEDOWN CANARY
+* Messaging-normalization lane -- runtime proof that the
+* es / fr / de / it locale rows resolve for every command
+* localized in the messaging pass.
+*
+* Status: RUNTIME_PROVEN / REVIEWED 2026-07-16
+* Safety: REPORT_ONLY / SMOKE
+* Purpose: prove compiled locale selection, localized command USAGE rendering,
+*   and the INDEXSEEK result-payload boundary after corrective audit.
+* Inputs: current built runtime and compiled/active message catalog.
+* Outputs: reviewed launcher-console transcript named by the invoking proof command.
+* Mutation: session locale only; reset to en-US; no DBF, index, LMDB, HELP, or files.
+* Fixture: none; command USAGE surfaces plus a no-table INDEXSEEK result probe.
+* Gate: maintainer-authorized corrective proof; reject unexplained errors or fallback.
+*
+* NON-DESTRUCTIVE:
+*   - USAGE forms only. Opens no table, mutates no data or files.
+*   - Safe to run with SET ERRORSTOP OFF.
+*
+* WHAT IT PROVES:
+*   - SET LANGUAGE <loc> switches the active message locale
+*     (cli::Settings::message_locale).
+*   - Each localized command's USAGE block renders in that locale
+*     via cli::cmdout::print_message -> format_message(id,vars,locale),
+*     i.e. it exercises the compiled es/fr/de/it locale table, not
+*     just the en-US fallback.
+*   - Catalog-level coverage via SET MESSAGE CATALOG CHECK and
+*     SET LANGUAGE REPORT <locale>.
+*   - INDEXSEEK result output remains a stable machine-facing payload and is
+*     not routed through the localizable message catalog.
+*
+* HOW TO READ IT:
+*   - Under each locale banner, every USAGE block should print with
+*     the localized labels:
+*       en-US : Usage:/Examples:/Notes:
+*       es    : Uso:/Ejemplos:/Notas:
+*       fr    : Utilisation :/Exemples :/Remarques :
+*       de    : Verwendung:/Beispiele:/Hinweise:
+*       it    : Uso:/Esempi:/Note:
+*   - Command keywords, placeholders and paths stay in English by design.
+*   - If a block prints English labels under a non-en locale, that
+*     command's locale row failed to resolve.
+* ============================================================
+SET ECHO ON
+
+* ------------------------------------------------------------
+* 00. Catalog integrity (concise validation signal)
+*   SET LANGUAGE REPORT <locale> is available for a full per-symbol
+*   coverage dump, but is intentionally omitted here to keep this
+*   regression entry lean. Use it interactively when auditing gaps.
+* ------------------------------------------------------------
+ECHO === LANGUAGE SHAKEDOWN CANARY ===
+SET MESSAGE CATALOG CHECK
+SET LANGUAGE CHECK
+
+* ------------------------------------------------------------
+* 01. BASELINE -- en-US (expect Usage:/Examples:/Notes:)
+* ------------------------------------------------------------
+SET LANGUAGE en-US
+ECHO --- en-US : localized command USAGE sweep ---
+ROLLBACK USAGE
+DELETE USAGE
+RECALL USAGE
+ERASE USAGE
+IMPORT USAGE
+EXPORT USAGE
+CREATE USAGE
+ZAP USAGE
+PACK USAGE
+COPY USAGE
+COMMIT USAGE
+TURBOPACK USAGE
+REBUILD USAGE
+SORT USAGE
+REINDEX USAGE
+SCX USAGE
+EXPORTFUNCTIONS USAGE
+INDEXSEEK USAGE
+
+* ------------------------------------------------------------
+* 02. SPANISH -- es (expect Uso:/Ejemplos:/Notas:)
+* ------------------------------------------------------------
+SET LANGUAGE es
+ECHO --- es : localized command USAGE sweep ---
+ROLLBACK USAGE
+DELETE USAGE
+RECALL USAGE
+ERASE USAGE
+IMPORT USAGE
+EXPORT USAGE
+CREATE USAGE
+ZAP USAGE
+PACK USAGE
+COPY USAGE
+COMMIT USAGE
+TURBOPACK USAGE
+REBUILD USAGE
+SORT USAGE
+REINDEX USAGE
+SCX USAGE
+EXPORTFUNCTIONS USAGE
+INDEXSEEK USAGE
+
+* ------------------------------------------------------------
+* 03. FRENCH -- fr (expect Utilisation :/Exemples :/Remarques :)
+* ------------------------------------------------------------
+SET LANGUAGE fr
+ECHO --- fr : localized command USAGE sweep ---
+ROLLBACK USAGE
+DELETE USAGE
+RECALL USAGE
+ERASE USAGE
+IMPORT USAGE
+EXPORT USAGE
+CREATE USAGE
+ZAP USAGE
+PACK USAGE
+COPY USAGE
+COMMIT USAGE
+TURBOPACK USAGE
+REBUILD USAGE
+SORT USAGE
+REINDEX USAGE
+SCX USAGE
+EXPORTFUNCTIONS USAGE
+INDEXSEEK USAGE
+
+* ------------------------------------------------------------
+* 04. GERMAN -- de (expect Verwendung:/Beispiele:/Hinweise:)
+* ------------------------------------------------------------
+SET LANGUAGE de
+ECHO --- de : localized command USAGE sweep ---
+ROLLBACK USAGE
+DELETE USAGE
+RECALL USAGE
+ERASE USAGE
+IMPORT USAGE
+EXPORT USAGE
+CREATE USAGE
+ZAP USAGE
+PACK USAGE
+COPY USAGE
+COMMIT USAGE
+TURBOPACK USAGE
+REBUILD USAGE
+SORT USAGE
+REINDEX USAGE
+SCX USAGE
+EXPORTFUNCTIONS USAGE
+INDEXSEEK USAGE
+
+* ------------------------------------------------------------
+* 05. ITALIAN -- it (expect Uso:/Esempi:/Note:)
+* ------------------------------------------------------------
+SET LANGUAGE it
+ECHO --- it : localized command USAGE sweep ---
+ROLLBACK USAGE
+DELETE USAGE
+RECALL USAGE
+ERASE USAGE
+IMPORT USAGE
+EXPORT USAGE
+CREATE USAGE
+ZAP USAGE
+PACK USAGE
+COPY USAGE
+COMMIT USAGE
+TURBOPACK USAGE
+REBUILD USAGE
+SORT USAGE
+REINDEX USAGE
+SCX USAGE
+EXPORTFUNCTIONS USAGE
+INDEXSEEK USAGE
+
+* ------------------------------------------------------------
+* 06. Reset to en-US
+* ------------------------------------------------------------
+SET LANGUAGE en-US
+ECHO --- en-US : stable result-payload boundary probe ---
+INDEXSEEK "__RESULT_CHANNEL_AUDIT__"
+ECHO === LANGUAGE SHAKEDOWN CANARY DONE ===

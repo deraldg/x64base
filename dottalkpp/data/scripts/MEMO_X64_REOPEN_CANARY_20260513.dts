@@ -1,0 +1,103 @@
+SET ECHO OFF
+* ============================================================
+* MEMO_X64_REOPEN_CANARY_20260513.DTS
+*
+* Purpose:
+*   Isolate the active x64 memo reopen/update bug without polluting the
+*   integrated x64 regression harness.
+*
+* STATUS UPDATE 2026-08-11: both reds below were re-measured GREEN on the
+* RAM-VFS path by memo_ram_hello.dts (H_T2 reopen readback, H_T3 update
+* after reopen -- registered as REGRESSION RUN MEMO_RAM_HELLO). The fix
+* most plausibly rode the memo_auto sidecar lifecycle work. THIS canary
+* runs the DISK path and has NOT been rerun since 2026-05-13: the
+* expectations below are three months stale. Next runner: rerun this
+* script; if green, repoint or retire it with the green recorded
+* (IDXSTALE precedent -- the subject moved, the test was not wrong).
+*
+* Known-red behavior as originally observed 2026-05-13 (now historical):
+*   - CREATE X64 ... NOTES M succeeds.
+*   - Initial REPLACE NOTES WITH "first x64 memo" appears correct before CLOSE.
+*   - After CLOSE / USE MEMO_X64, TUP shows NOTES as memo reference value "1"
+*     instead of "first x64 memo".
+*   - Later REPLACE NOTES reports: REPLACE: memo backend not attached.
+*
+* Expected eventual green behavior:
+*   - Reopen should reattach the x64 memo backend.
+*   - TUP / TUPLE NOTES should read back memo text.
+*   - REPLACE NOTES should update, clear, and reinsert memo text after reopen.
+*
+* Safety:
+*   - Destructive only to the MEMO_X64 test table family.
+*   - Does not open the MCC workspace.
+* ============================================================
+
+SETPATH DBF DBF/X64
+SETPATH INDEXES INDEXES/X64
+
+ECHO ===== X64 MEMO REOPEN CANARY START =====
+VERSION
+
+ECHO ===== CLEAN TEST TABLE =====
+CLOSE ALL
+REL CLEAR ALL
+ERASE MEMO_X64 CONFIRM
+
+ECHO ===== CREATE X64 MEMO TABLE =====
+CREATE X64 MEMO_X64 (ID N(8,0), TITLE C(20), NOTES M)
+APPEND
+REPLACE ID WITH 1
+REPLACE TITLE WITH X641
+REPLACE NOTES WITH "first x64 memo"
+
+ECHO [EXPECT-GREEN] Before close, NOTES should show first x64 memo.
+TUP
+TUPLE NOTES
+STRUCT
+FIELDS
+
+ECHO ===== REOPEN READBACK =====
+CLOSE
+USE MEMO_X64
+ECHO [EXPECT-GREEN] After reopen, NOTES should still show first x64 memo.
+ECHO [CURRENT-RED] 2026-05-13 observed TUP showing memo reference value 1 instead.
+TUP
+TUPLE NOTES
+STRUCT
+FIELDS
+
+ECHO ===== UPDATE AFTER REOPEN =====
+ECHO [EXPECT-GREEN] REPLACE NOTES should update memo text after reopen.
+ECHO [CURRENT-RED] 2026-05-13 observed: REPLACE: memo backend not attached.
+REPLACE NOTES WITH "second x64 memo"
+TUP
+TUPLE NOTES
+
+ECHO ===== REOPEN SECOND READBACK =====
+CLOSE
+USE MEMO_X64
+ECHO [EXPECT-GREEN] NOTES should show second x64 memo.
+TUP
+TUPLE NOTES
+
+ECHO ===== CLEAR AFTER REOPEN =====
+ECHO [EXPECT-GREEN] Clearing memo field should be accepted.
+REPLACE NOTES WITH ""
+TUP
+TUPLE NOTES
+
+ECHO ===== REINSERT AFTER CLEAR =====
+ECHO [EXPECT-GREEN] Reinsert after clear should be accepted and durable.
+REPLACE NOTES WITH "third x64 memo after clear"
+TUP
+TUPLE NOTES
+
+ECHO ===== FINAL REOPEN READBACK =====
+CLOSE
+USE MEMO_X64
+ECHO [EXPECT-GREEN] NOTES should show third x64 memo after clear.
+TUP
+TUPLE NOTES
+
+ECHO ===== X64 MEMO REOPEN CANARY END =====
+CLOSE ALL

@@ -1,0 +1,79 @@
+* key_metadata_regression.dts
+* ============================================================================
+* AIF-074 P1.1 -- KEY metadata (unique_reg Phase 2) round-trip regression
+*
+* Status: CANDIDATE / explicit-run (register a RegressionSpec row after proven)
+* Safety: MUTATING (SANDBOX only: throwaway KEYREGR table; writes a throwaway
+*         workspaces/keyregr_sandbox.dtschema which is NOT auto-erased)
+* Proves:
+*   T1  SET UNIQUE FIELD <f> PRIMARY designates a primary (implies unique)
+*   T2  WORKSPACE SAVE emits KEY lines; WORKSPACE LOAD re-applies them
+*       (round-trip proven by clearing the registry between save and load)
+*   T3  VALIDATE UNIQUE FIELD green on clean data, reports the dupe after one
+*       duplicate append (RED path)
+* Read rule: the LOAD block must echo "KEY: KEYREGR.KID PRIMARY" and
+*   "KEY: KEYREGR.KLBL UNIQUE"; the post-load SET UNIQUE listing must show
+*   both fields with KID marked (PRIMARY). Any "! KEY skipped" line = FAIL.
+* ============================================================================
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+SET PATH DBF DBF/SANDBOX
+SET PATH INDEXES INDEXES/SANDBOX
+SET PATH LMDB LMDB/SANDBOX
+
+FORMULA "KEYMETA-REGRESSION-BEGIN"
+
+ERASE TABLE KEYREGR CONFIRM
+
+CREATE X64 KEYREGR (KID N(6,0), KLBL C(10))
+APPEND
+REPLACE KID WITH "1"
+REPLACE KLBL WITH "K_ONE"
+APPEND
+REPLACE KID WITH "2"
+REPLACE KLBL WITH "K_TWO"
+
+* --- T1: designate keys; listing must show KID (PRIMARY), KLBL ---
+SET UNIQUE FIELD KID PRIMARY
+SET UNIQUE FIELD KLBL ON
+FORMULA "KEYMETA-T1-LISTING-BEGIN"
+SET UNIQUE
+FORMULA "KEYMETA-T1-LISTING-END"
+
+* --- T2: save, clear registry, load, verify restoration ---
+WORKSPACE SAVE keyregr_sandbox
+SET UNIQUE FIELD KID OFF
+SET UNIQUE FIELD KLBL OFF
+FORMULA "KEYMETA-T2-CLEARED-BEGIN"
+SET UNIQUE
+FORMULA "KEYMETA-T2-CLEARED-END"
+WORKSPACE LOAD keyregr_sandbox
+SELECT KEYREGR
+FORMULA "KEYMETA-T2-RESTORED-BEGIN"
+SET UNIQUE
+FORMULA "KEYMETA-T2-RESTORED-END"
+
+* --- T3: validate clean, then prove the RED path with one duplicate ---
+FORMULA "KEYMETA-T3-CLEAN-BEGIN"
+VALIDATE UNIQUE FIELD KID
+FORMULA "KEYMETA-T3-CLEAN-END"
+APPEND
+REPLACE KID WITH "2"
+REPLACE KLBL WITH "K_DUP"
+FORMULA "KEYMETA-T3-DUP-BEGIN"
+VALIDATE UNIQUE FIELD KID
+FORMULA "KEYMETA-T3-DUP-END"
+
+* --- T4 (slice 2): no-FIELD form validates ALL declared fields ---
+* Expect: KID reports 1 problem record; KLBL reports OK (3 unique values).
+FORMULA "KEYMETA-T4-REGISTRY-BEGIN"
+VALIDATE UNIQUE
+FORMULA "KEYMETA-T4-REGISTRY-END"
+
+* --- cleanup (dtschema keyregr_sandbox left in workspaces; erase manually) ---
+CLOSE
+ERASE TABLE KEYREGR CONFIRM
+
+FORMULA "KEYMETA-REGRESSION-END"

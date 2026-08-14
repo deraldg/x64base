@@ -1,0 +1,25 @@
+* ============================================================
+* DEVOTION_RELATIONS.DTS
+* Purpose:
+*   Concept relation setup for devotional import tables.
+* ============================================================
+
+SET ECHO ON
+SET PAGING OFF
+
+* Example intent. Adjust syntax to current relation grammar.
+
+* USE DEVOTIONS ALIAS DEVOTIONS
+* SELECT 2
+* USE DEVOSCRIPT ALIAS DEVOSCRIPT
+* SELECT 3
+* USE DEVOTAG ALIAS DEVOTAG
+
+* SELECT DEVOTIONS
+* SET RELATION TO DOCID INTO DEVOSCRIPT
+* SET RELATION TO DOCID INTO DEVOTAG ADDITIVE
+
+* RELATIONS
+* TUPVALIDATE
+
+? "DEVOTION_RELATIONS.DTS is a relation setup skeleton. Confirm current SET RELATION grammar before enabling."

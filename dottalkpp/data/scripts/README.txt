@@ -1,28 +1,19 @@
-DotScript staged set
+DotScript processing batch v2
 
-This GitHub-facing copy keeps a small flat set of useful DotScript files.
+This is a decomposition/sorting pass, not a semantic rewrite.
+Categories:
+- main: likely entry-point scripts
+- suites: grouped functional runs
+- cases: focused small tests
+- canaries: smoke, shakedown, repro, unstable probes
+- manual: interactive/manual scripts
+- legacy: older backend-era or ambiguous scripts retained for mining
 
-Preferred runtime pattern:
-- use `DO X64`, `DO CMDHELP`, or `DO METADATA` to switch lanes
-- use `WORKSPACE LOAD <name>` for curated workspace files
-- use `WORKSPACE OPEN DBF` or `WORKSPACE OPEN DBF CDX` for flat lane opens
+Use this as a staging package for further modernization.
 
-Kept here:
-- demo or smoke scripts
-- helpful browser/workflow examples
-- one-off maintenance scripts that are still useful to operators or developers
-
-Removed from this staging copy:
-- nested canary/case/suite scaffolding
-- local regression sprawl
-- historical subdirectory organization that is better kept in the dev tree
-
-Current flat set:
-- beta-0_shakedown.dts
-- dottalkpp_non_destructive_smoke.dts
-- ersatz_browser.dts
-- ersatz_rel_enum_browser.dts
-- pydottalk_shakedown.dts
-- rebuild_stage_lmdb_snapshot_128m.dts
-- rebuild_large_lmdb_envs_128m_20260621.dts
-- stable_demo.dts
+Current rule:
+- canonical runtime regressions should live in canaries, suites, or an explicit lane subfolder
+- every regression .dts must set up its own environment first (for example DO X32 / DO VFP / DO X64 / DO SANDBOX / DO METADATA / DO MESSAGING)
+- nested scripts below data/scripts should climb back to the data root when bootstrapping, for example DO ..\..\X64
+- then open its own tables/workspaces/ersatz state explicitly
+- tests, backup, tmp, and nested scripts/scripts are not authoritative long-term roots

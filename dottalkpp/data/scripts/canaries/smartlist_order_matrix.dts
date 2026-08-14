@@ -1,0 +1,18 @@
+CLOSE
+USE dbf\x32\students.dbf
+SETCNX indexes\x32\students.cnx
+SETORDER indexes\x32\students.cnx LNAME --asc
+SMARTLIST 5 FOR LNAME = 'CLARK'
+SMARTLIST 5 FOR LNAME >= 'M'
+SMARTLIST 5 FOR GPA >= 3.50
+SETORDER indexes\x32\students.cnx LNAME --desc
+SMARTLIST 5 FOR LNAME <= 'C'
+SETORDER indexes\x32\students.cnx GPA --asc
+SMARTLIST 5 FOR GPA = 4.00
+SETORDER indexes\x32\students.cnx GPA --desc
+SMARTLIST 5 DEBUG FOR GPA >= 3.00 AND LNAME >= 'T'
+CLOSE
+USE dbf\x32\students.dbf NOINDEX
+SMARTLIST 3
+SMARTLIST 3 FOR !DELETED
+QUIT

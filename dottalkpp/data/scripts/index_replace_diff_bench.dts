@@ -1,0 +1,101 @@
+* ============================================================================
+* index_replace_diff_bench.dts
+*
+* Measures item A (session 2026-07-30): apply_replace_snapshot now diffs the
+* (tag, key) pairs and emits only the tags whose key actually moved.
+*
+* Before the change it deleted EVERY before-key and inserted EVERY after-key
+* with no comparison, so a single-field REPLACE on an N-tag table issued 2N
+* committed LMDB write transactions when 2 would do. The on_replace()
+* old==new guard was never reachable from this path.
+*
+* This is a BENCHMARK, not a pass/fail regression: a .dts cannot count the
+* engine's own trace output. Run it with the index trace on and count the
+* emitted/skipped figures:
+*
+*   cd dottalkpp/data
+*   DOTTALK_INDEX_TRACE=1 ../bin-wsl-lean/dottalkpp <<< 'DO index_replace_diff_bench
+*   QUIT'
+*
+* Then read the two "[INDEX TRACE] apply_replace" lines it prints.
+*
+* EXPECTED on this 5-field / 4-tag table. Note "skipped" counts BOTH loops
+* (before and after), so an all-skipped pass on 4 tags reads skipped=8.
+*
+*   BENCH 1, REPLACE of an INDEXED field (LNAME):
+*     before=4 after=4 emitted_del=1 emitted_ins=1 skipped=6 tags=[-LNAME,+LNAME]
+*   BENCH 2, REPLACE of a NON-indexed field (NOTE):
+*     before=4 after=4 emitted_del=0 emitted_ins=0 skipped=8 tags=[]
+*
+* Under the old delete-all/insert-all BOTH read emitted_del=N emitted_ins=N
+* skipped=0. The target is: emitted scales with keys that MOVED, not with tag
+* count, and an unindexed edit costs zero index writes.
+*
+* HISTORY, so a future reader does not mistake progress for a pass. The first
+* run of this bench (2026-07-30) reported before=5 after=5 and
+* tags=[-NOTE,+NOTE] ok=yes for BENCH 2 -- an index write against a field with
+* no tag. Cause: capture enumerates FIELDS not tags, IndexManager::setTag never
+* validated the name, and CdxBackend::setTag created the LMDB sub-database on
+* demand, so every mutated field silently became a tag DB and the .cdx tagdir
+* diverged from the env. Fixed by removing the MDB_CREATE fallback from
+* setTag. "before=5" or a non-empty tags=[] on BENCH 2 means that regressed.
+*
+* If the emitted counts still track the tag count, the diff is not working, and
+* that is the finding -- do not accept a smaller-but-still-linear number.
+*
+* Self-contained: builds and erases its own throwaway table.
+* ============================================================================
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+DO x64
+
+FORMULA "INDEX-REPLACE-DIFF-BENCH-BEGIN"
+
+* --- throwaway table: four indexable fields plus one deliberately unindexed ---
+CREATE X64 IDXBENCH (SID N(6), LNAME C(20), CITY C(20), STATE C(2), NOTE C(30))
+APPEND
+REPLACE SID WITH 1
+REPLACE LNAME WITH "ADAMS"
+REPLACE CITY WITH "DENVER"
+REPLACE STATE WITH "CO"
+REPLACE NOTE WITH "first"
+APPEND
+REPLACE SID WITH 2
+REPLACE LNAME WITH "MILLER"
+REPLACE CITY WITH "AUSTIN"
+REPLACE STATE WITH "TX"
+REPLACE NOTE WITH "second"
+
+* --- four tags. NOTE is deliberately left untagged. ---
+CDX CREATE
+CDX ADDTAG SID
+CDX ADDTAG LNAME
+CDX ADDTAG CITY
+CDX ADDTAG STATE
+REINDEX CDX
+SET ORDER TAG LNAME
+
+TOP
+
+* --- BENCH 1: change one INDEXED field. Expect emitted 1/1, skipped 3. ---
+ECHO BENCH-1 replace indexed field LNAME
+REPLACE LNAME WITH "ZEBRA"
+
+* --- BENCH 2: change a NON-indexed field. Expect emitted 0/0, skipped 4. ---
+ECHO BENCH-2 replace non-indexed field NOTE
+REPLACE NOTE WITH "changed"
+
+* --- correctness alongside the counts: the moved key is reachable, ---
+* --- and a tag that was skipped is still intact. ---
+SEEK "ZEBRA"
+? "IDXB_T1_moved_key_found:" + (ALLTRIM(LNAME) = "ZEBRA")
+SET ORDER TAG CITY
+SEEK "AUSTIN"
+? "IDXB_T2_skipped_tag_intact:" + (ALLTRIM(LNAME) = "MILLER")
+
+FORMULA "INDEX-REPLACE-DIFF-BENCH-END"
+
+* --- teardown ---
+CLOSE
+ERASE IDXBENCH CONFIRM

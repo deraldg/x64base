@@ -2,17 +2,17 @@
 
 The front door for building the engine from a fresh clone. It describes the
 build presets **that exist in this repository right now**. There is no prebuilt
-binary here — this is a development-stage project; you build the runtime
+binary here -- this is a development-stage project; you build the runtime
 yourself, then run the data build.
 
-If a command below fails, that is a bug in this page — please report it. This
+If a command below fails, that is a bug in this page -- please report it. This
 page is meant to describe only what a cold clone actually contains.
 
 ## Prerequisites (Windows)
 
 - **Visual Studio 2022** (MSVC v143, "Desktop development with C++").
-- **CMake ≥ 3.21** (the Visual Studio installer can provide it).
-- **vcpkg** — clone and bootstrap from https://github.com/microsoft/vcpkg
+- **CMake >= 3.21** (the Visual Studio installer can provide it).
+- **vcpkg** -- clone and bootstrap from https://github.com/microsoft/vcpkg
 - **Set the vcpkg environment variable.** The presets reference two names for
   historical reasons; set **both** to your vcpkg checkout so every preset
   resolves:
@@ -40,7 +40,7 @@ Pick the preset that matches what you want. All are defined in
 | `core` / `core-vcpkg` | Ninja | none | none | Portable core (system deps / vcpkg). |
 | `wsl` | Ninja (Linux) | LMDB | none | Building under WSL. |
 
-**If you just want a working database runtime on Windows, use `pro-md`** — it is
+**If you just want a working database runtime on Windows, use `pro-md`** -- it is
 the fullest build (indexing + the Turbo Vision UI) and is the one named for
 day-to-day development.
 
@@ -56,13 +56,13 @@ cmake --preset windows-core
 cmake --build --preset windows-core --target dottalkpp
 ```
 
-Note: configure-preset names and build-preset names differ — the build presets
+Note: configure-preset names and build-preset names differ -- the build presets
 carry a `-Release` suffix (e.g. `pro-md` configures, `pro-md-Release` builds).
 
 ## After the build
 
 The runtime has no sample data until you build it. Build the demo databases
-(this is self-contained — it resets, extracts the canonical archive, and builds
+(this is self-contained -- it resets, extracts the canonical archive, and builds
 all three lanes plus the x64 LMDB indexes):
 
 ```powershell
@@ -90,7 +90,7 @@ should read `Anderson`.
 
 Notes:
 - `datarun.ps1` copies the freshly-built `dottalkpp.exe` (and its runtime DLLs)
-  from your build output into `dottalkpp\bin` automatically — you don't stage it
+  from your build output into `dottalkpp\bin` automatically -- you don't stage it
   by hand. This currently expects a **`pro-md`** build (`build\src\Release`).
 - On x64, ordered reads are LMDB-backed, so the `SET ORDER` above needs the
   LMDB envs that `build_mcc_demo_bases.ps1` builds. The `.cnx`/`.cdx` shipped in
@@ -98,12 +98,12 @@ Notes:
 
 Full walkthrough: `dottalkpp/data/scripts/mcc/README.md`.
 
-## Editions (in development — not yet in this repository)
+## Editions (in development -- not yet in this repository)
 
 A larger build-composition system is being developed: named **products**
 (`LEAN`, `PROFESSIONAL`, `EDUCATIONAL`, `DEVELOPMENT`) and explicit **index
 modes** (`NONE`, `LEGACY`, `LMDB`), with dedicated presets. It is **not on the
-public repository yet** — do not expect `DOTTALK_PRODUCT` or `windows-lean-*`
+public repository yet** -- do not expect `DOTTALK_PRODUCT` or `windows-lean-*`
 presets in this clone.
 
 The design and proof records for that in-progress work:

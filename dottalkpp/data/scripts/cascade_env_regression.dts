@@ -1,0 +1,116 @@
+* ============================================================================
+* cascade_env_regression.dts - AIF-105 Cascade system-bundle environment proof.
+*
+* Proves (all runtime-proven 2026-08-10 before promotion, per the
+* promote-final-tests rule): the systems/cascade_erp bundle stands up from
+* its slots; USE auto-attaches the built CDX orders; SET ORDER selects a tag
+* and ordered traversal follows it; SEEK reaches a record through the SKU
+* unique tag; and the SQLite carrier opens through ERP CASCADE at the bundle
+* path.
+*
+* Read-only: opens bundle tables, mutates nothing, restores the x64 env.
+* Run standalone: DO cascade_env_regression | regression: REGRESSION RUN CASCADE_ENV
+* Markers: C_G0, C_T1..C_T5 must all print .T.
+*
+* KNOWN-BEHAVIOR NOTE (measured 2026-08-10): the ITEM_ID tag orders the
+* N-type key LEXICOGRAPHICALLY (1,10,11..18,2..9), not numerically. C_T1/T2
+* encode that measured behavior on purpose. If numeric key encoding ever
+* lands, these two markers will flip -- that is the subject moving, not the
+* test failing; repoint them (IDXSTALE precedent). SQLite orders the same
+* key numerically, so this is also a recorded behavioral-parity difference
+* for the AIF-105 parity oracle (lane gate 3).
+*
+* Section 2 (C_T6..C_T8, added after the 2026-08-10 runtime proof):
+* WORKSPACE LOAD cascade_all restores 43 areas + 58 relations (logical-name
+* plane), and SET RELATION traversal follows the parent BY POSITION:
+* parent TOP -> REL REFRESH -> child SO_ID reads 1; parent BOTTOM ->
+* REL REFRESH -> child SO_ID reads 6 (child recno measured moving 1 -> 11).
+* HOUSE SEMANTIC (measured): slaving is REFRESH-DRIVEN -- the child follows
+* on REL REFRESH after a parent move, not implicitly per movement (a
+* deliberate difference from FoxPro). Requires workspaces/cascade_all.dtschema.
+* ============================================================================
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+FORMULA "CASCADE-ENV-PROOF-BEGIN"
+
+* --- environment: the bundle slots ------------------------------------------
+SET PATH DBF SYSTEMS/CASCADE_ERP/DBF
+SET PATH INDEXES SYSTEMS/CASCADE_ERP/INDEXES
+SET PATH LMDB SYSTEMS/CASCADE_ERP/LMDB
+
+* --- C_G0: bundle table opens and physical row 1 is the known seed ----------
+SELECT 1
+USE CASCADE_Items
+GOTO 1
+? "C_G0_items_row1_is_shaft:" + (ALLTRIM(SKU) = "RAW-SHAFT-4140")
+
+* --- ordered traversal under the ITEM_ID tag (lexicographic, see note) ------
+SET ORDER TAG ITEM_ID
+TOP
+? "C_T1_lex_top_is_item_1:" + (ALLTRIM(SKU) = "RAW-SHAFT-4140")
+SKIP
+? "C_T2_lex_next_is_item_10:" + (ALLTRIM(SKU) = "PKG-CARTON")
+BOTTOM
+? "C_T3_lex_bottom_is_item_9:" + (ALLTRIM(SKU) = "RAW-HYD-FIT")
+
+* --- SEEK through the SKU unique tag ----------------------------------------
+SET ORDER TAG SKU
+SEEK "PDU-100"
+* LOGICAL name plane in expressions: DESCRIPTION, not the truncated
+* descriptor DESCRIPTIO (first run 2026-08-10: SEEK landed at 14 but the
+* descriptor read empty and the marker went .F. -- the two-name-planes
+* doctrine catching its own author).
+? "C_T4_seek_pdu100_lands:" + (ALLTRIM(DESCRIPTION) = "Precision Drive Unit PDU-100")
+
+* --- second spine: Sales_Orders order attaches and tops at SO 1 -------------
+* SO_ID values are 1..6 (single digits), so lexicographic == numeric here and
+* TOP under the SO_ID tag is SO 1, whose STATUS was measured CONFIRMED
+* (ERP SELECT transcript, 2026-08-10).
+SELECT 2
+USE CASCADE_Sales_Orders
+SET ORDER TAG SO_ID
+TOP
+? "C_T5_so1_status_confirmed:" + (ALLTRIM(STATUS) = "CONFIRMED")
+
+* --- SQLite carrier: transcript checkpoints (unscored, like VDISK STATUS) ---
+* ERP CHECK prints its own 34/9/7/58/26/330 scorecard; the transcript is the
+* evidence. A .dts marker cannot read command output (house rule).
+ERP CASCADE
+ERP CHECK
+ERP CLOSE
+
+* === Section 2: the full workspace + relation traversal (proven 2026-08-10) ==
+* C_T6: the canonical workspace restores with relations intact
+WORKSPACE LOAD cascade_all
+SELECT CASCADE_SALES_ORDERS
+SET ORDER TAG SO_ID
+TOP
+REL REFRESH
+SELECT CASCADE_SO_LINES
+? "C_T6_child_follows_parent_top:" + (SO_ID = 1)
+* C_T7: moving the parent re-drives the child (the milestone marker)
+SELECT CASCADE_SALES_ORDERS
+BOTTOM
+REL REFRESH
+SELECT CASCADE_SO_LINES
+? "C_T7_child_follows_parent_bottom:" + (SO_ID = 6)
+* C_T8: the followed child record is real data, not just a position
+? "C_T8_child_line_is_order6_line1:" + (SOLINE_ID = 11)
+
+* --- walker #2: SQLSEL answers the same question by SET (proven 2026-08-10) --
+* House form: SQLSEL <select-body>, second SELECT optional (owner quick fix;
+* SQLSEL is the house SELECT, deliberately competing with SQLite). Transcript
+* checkpoint like ERP CHECK: expected rows 11,12 / totals 250.0, 6.5 --
+* the same record 11 the SET RELATION walk landed on by position.
+SQLSEL SOLINE_ID, SO_ID, ITEM_ID, LINE_TOTAL FROM CASCADE_SO_Lines WHERE SO_ID = 6
+* C_T9: walker agreement, asserted by cursor state -- SQLSEL is cursor-neutral
+* (its own regression proves that), so the child must STILL be on record 11
+* from the relation walk after the query returns.
+? "C_T9_sqlsel_cursor_neutral_walkers_agree:" + (SOLINE_ID = 11)
+
+FORMULA "CASCADE-ENV-PROOF-END"
+
+* --- teardown: close areas, restore the x64 disk environment ----------------
+WORKSPACE CLOSE
+DO x64

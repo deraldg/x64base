@@ -1,0 +1,72 @@
+* ============================================================================
+* memo_ram_hello.dts - owner request 2026-08-11: a students-shaped x64 table
+* with a memo field, built entirely in RAM, carrying one memo string.
+*
+* Why it is built rather than altered: the command surface has CREATE, COPY TO
+* and APPEND (blank/many) but no add-a-field-to-an-existing-table verb, and the
+* STUDENTS fixture is not mutated by policy. So this creates the same shape
+* plus NOTES M in the RAM VFS -- nothing is written to disk.
+*
+* Incidental re-measurement: MEMO_X64_REOPEN_CANARY_20260513.dts recorded a
+* KNOWN-RED behavior -- after CLOSE/USE, an x64 memo field read back as its
+* reference token instead of its text, and REPLACE then reported "memo backend
+* not attached." Markers H_T2/H_T3 below re-test exactly that on the RAM path.
+* If they read .T., that 2026-05-13 red has gone green and the canary needs
+* repointing (IDXSTALE precedent).
+*
+* Run: DO memo_ram_hello  |  regression: REGRESSION RUN MEMO_RAM_HELLO
+* Markers: H_T1 (write), H_T2 (reopen readback), H_T3 (update after reopen).
+* RUNTIME-PROVEN 2026-08-11 (build 10:05:05): all three .T. on first run --
+* the 2026-05-13 reds are GREEN on the RAM path. Promoted per the
+* promote-final-tests rule the same day.
+*
+* CORRECTION 2026-08-11 (afternoon, measured by the RAM-hydration leak check):
+* "nothing is written to disk" was FALSE for the memo half. The DBF lives in
+* ramfs, but the DTX memo sidecar does its own file I/O, bypasses the VFS,
+* and lands as a REAL file (data/ram/STUDMEMO.dtx, 4624 B -- it survived
+* VDISK UNMOUNT). The VDISK census ("RAM files = 1" despite "(+ memo)") was
+* correct all along. Lifecycle proof stands; memo RESIDENCY was disk, not
+* RAM. True RAM memos need ramfs coverage in the memo store layer (chartered).
+* ============================================================================
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+* RAM VFS: DBF + INDEXES under the RAM slot; nothing touches disk.
+DO mem
+VDISK UNMOUNT
+DO mem
+
+FORMULA "MEMO-RAM-HELLO-BEGIN"
+
+* --- students shape + a memo field ------------------------------------------
+CREATE X64 STUDMEMO (SID N(8,0), LNAME C(20), FNAME C(15), DOB D, GENDER C(1), MAJOR C(4), ENROLL_D D, GPA N(4,2), EMAIL C(40), NOTES M)
+STRUCT
+
+* --- one row, and the memo the owner asked for ------------------------------
+APPEND
+REPLACE SID WITH 1
+REPLACE LNAME WITH "GRIMWOOD"
+REPLACE FNAME WITH "DERALD"
+REPLACE NOTES WITH "This is a memo test. Hello Memo."
+TUPLE NOTES
+? "H_T1_memo_written:" + (NOTES = "This is a memo test. Hello Memo.")
+
+* --- residency: table + memo sidecar are RAM files, zero bytes on disk ------
+VDISK STATUS
+
+* --- the 2026-05-13 canary case: close, reopen, read the memo back ----------
+CLOSE
+USE STUDMEMO
+TUPLE NOTES
+? "H_T2_reopen_readback:" + (NOTES = "This is a memo test. Hello Memo.")
+
+* --- and update after reopen (the second half of the old red) ---------------
+REPLACE NOTES WITH "Hello again, memo."
+TUPLE NOTES
+? "H_T3_update_after_reopen:" + (NOTES = "Hello again, memo.")
+
+FORMULA "MEMO-RAM-HELLO-END"
+
+* --- teardown: drop the RAM disk, restore the x64 disk environment ----------
+VDISK UNMOUNT
+DO x64

@@ -1,0 +1,189 @@
+* ============================================================================
+* cnx_realtime_buffer_proof.dts
+*
+* Task #29. Does realtime CNX maintenance stay correct under TABLE BUFFER?
+*
+* WHY THIS EXISTS
+*   CnxBackend::upsert places a record by reading its LIVE field value and
+*   binary-searching the permutation against the live values of other records
+*   (cnx_backend.cpp, "HOW A KEYLESS INDEX IS MAINTAINED"). That is correct when
+*   the record has already been written. Under TABLE BUFFER the edit may still be
+*   in the buffer, and then the probe reads the OLD value.
+*
+*   Two failure shapes are possible and this proof separates them:
+*
+*     LAG    -- the index is not maintained until COMMIT. Defensible: the order
+*               simply trails the buffer, and COMMIT reconciles it.
+*     WRONG  -- the index IS maintained, from the wrong value or at the wrong
+*               time. This is the dangerous one, because it reports success.
+*
+*   The worst case is ROLLBACK. If upsert fires eagerly on a buffered edit, the
+*   rollback discards the RECORD change while the INDEX keeps the move, and the
+*   order then points at a value no record holds. Nothing warns: the write
+*   succeeded and the index reported maintenance. B5/B6 exist for that case.
+*
+* NOT YET A PASS/FAIL GATE
+*   B1 is OBSERVATIONAL. Both .T. and .F. are legitimate engine designs and this
+*   script does not presume which was intended -- it records which world we are
+*   in so the owner can rule. B2-B6 ARE load-bearing: whatever B1 shows, the
+*   committed order must be correct and must agree with a REBUILD, and a rolled
+*   back edit must leave no trace in the order.
+*
+* MARKER DESIGN
+*   Inherited from CNXLIVE/IDXSTALE and load-bearing for the same reason: every
+*   marker is a FIELD comparison. RECNO() and FOUND() render EMPTY in a "?"
+*   marker and STR() does not rescue them. Park the cursor on a known different
+*   record before any seek, then assert the field value moved.
+*
+* Self-contained: builds and erases its own throwaway v32 table; never touches
+* STUDENTS or any live fixture.
+*   Standalone:  DOTSCRIPT scripts/cnx_realtime_buffer_proof.dts
+*   Capture:     SET ALTERNATE TO <file> / SET ALTERNATE ON  (never DOTSCRIPT OUT)
+*
+* Runtime status: RUN 2026-08-01, wsl-lean, both modes.
+*   INDEXTXN OFF: B2/B3 .F. (COMMIT rebuilt, then served a stale binding) and
+*                 B4b .T. -- which is finding F1.
+*   INDEXTXN ON : B2/B3/B4 .T. with no rebuild on the path, and B4b .F. --
+*                 which is finding F3. B4b ANSWERS A DIFFERENT QUESTION IN EACH
+*                 MODE and is not flapping; see the B4b block below and the
+*                 findings document before "fixing" it.
+*   Lane record: XIDX_TXN_02_PDLC_LANE_V1.md
+*   Findings   : OPEN_INDEX_API_XIDX_TXN_02_CAPABILITY_FINDINGS_V1_20260801.md
+* ============================================================================
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+* x32 lane: CNX is the v32 indexing backend
+DO x32
+
+FORMULA "CNX-BUFFER-PROOF-BEGIN"
+
+* --- fixture: throwaway v32 table, CNX order on LNAME -------------------------
+ERASE TABLE CNXBUF CONFIRM
+CREATE CNXBUF (SID N(8), LNAME C(20))
+
+APPEND
+REPLACE SID WITH 1
+REPLACE LNAME WITH "MILLER"
+APPEND
+REPLACE SID WITH 2
+REPLACE LNAME WITH "ANDERSON"
+APPEND
+REPLACE SID WITH 3
+REPLACE LNAME WITH "ZEBRA"
+APPEND
+REPLACE SID WITH 4
+REPLACE LNAME WITH "YOUNG"
+
+CNX CREATE
+CNX ADDTAG LNAME
+REBUILD
+SET ORDER TAG LNAME
+
+* --- G0/G1: fixture guards, unbuffered --------------------------------------
+* If either fails, everything below is meaningless.
+GO 4
+SEEK "MILLER"
+? "B_G0_seek_works_before_buffer:" + (ALLTRIM(LNAME) = "MILLER")
+
+GO TOP
+? "B_G1_baseline_top_is_ANDERSON:" + (ALLTRIM(LNAME) = "ANDERSON")
+
+* --- enable buffering --------------------------------------------------------
+* If TABLE BUFFER refuses a v32/MSDOS table, that is itself the finding: the
+* buffered path would then be unreachable for CNX and B1-B6 are vacuous.
+TABLE BUFFER ON PERSISTENT
+
+* ============================================================================
+* PART 1 -- COMMIT must leave a CORRECT order
+* ============================================================================
+
+* Move MILLER (rec 1, sorts 3rd) to AAAAA (sorts 1st). Buffered.
+GO 1
+REPLACE LNAME WITH "AAAAA"
+
+* --- B1: OBSERVATIONAL -- is the order maintained BEFORE commit? -------------
+* .T. means the order already reflects the buffered edit (eager maintenance).
+* .F. means it does not (lag until commit).
+* NEITHER is scored. This records which design is in force.
+GO TOP
+? "B1_OBSERVE_order_moved_before_commit:" + (ALLTRIM(LNAME) = "AAAAA")
+
+COMMIT
+
+* --- B2: the committed order must be correct ---------------------------------
+* Load-bearing regardless of B1. AAAAA sorts first, so TOP must be AAAAA. If
+* upsert placed by the stale buffered value, this is where it shows.
+GO TOP
+? "B2_after_commit_top_is_AAAAA:" + (ALLTRIM(LNAME) = "AAAAA")
+
+* --- B3: the record that did not move is still correctly placed --------------
+GO TOP
+SKIP
+? "B3_after_commit_second_is_ANDERSON:" + (ALLTRIM(LNAME) = "ANDERSON")
+
+* --- B4: the tail survived ---------------------------------------------------
+BOTTOM
+? "B4_after_commit_bottom_is_ZEBRA:" + (ALLTRIM(LNAME) = "ZEBRA")
+
+* --- B4b: DISCRIMINATOR -- was the FILE wrong, or only the BINDING? ---------
+* B2/B3 read the order straight after COMMIT and got the PRE-edit permutation.
+* B5 below reads it after REBUILD *and* SET ORDER, and gets the correct one.
+* Two very different faults produce that:
+*
+*   .T. here -> the index FILE was correct after COMMIT's rebuild; only the
+*               ACTIVE ORDER was still bound to the stale in-memory
+*               permutation. Re-issuing SET ORDER fixes it with no rebuild.
+*               COMMIT owes a rebind, not a rebuild.
+*   .F. here -> COMMIT's rebuild genuinely produced a wrong index file, and
+*               only a SECOND rebuild corrects it. Much worse.
+*
+* No REBUILD on this line, deliberately. That is the whole point.
+SET ORDER TAG LNAME
+GO TOP
+? "B4b_reorder_without_rebuild_top_is_AAAAA:" + (ALLTRIM(LNAME) = "AAAAA")
+
+* --- B5: realtime-under-buffer must AGREE WITH REBUILD -----------------------
+* The strongest assertion here. If buffering made realtime maintenance place by
+* a stale value, a REBUILD will disagree and the order will CHANGE across this
+* line. Same shape as CNXLIVE L_T6, but with a buffered edit behind it.
+REBUILD
+SET ORDER TAG LNAME
+GO TOP
+? "B5_rebuild_agrees_with_buffered_realtime:" + (ALLTRIM(LNAME) = "AAAAA")
+
+* ============================================================================
+* PART 2 -- ROLLBACK must leave NO trace in the order
+* ============================================================================
+* The dangerous case. Move ZEBRA (rec 3, sorts LAST) to BBBBB (sorts 2nd), then
+* discard it. If the index kept the move, rec 3 is no longer at the bottom and
+* the order points at a value no record holds -- silent divergence, no warning.
+
+GO 3
+REPLACE LNAME WITH "BBBBB"
+ROLLBACK
+
+* --- B6a: the RECORD was restored -------------------------------------------
+GO 3
+? "B6a_rollback_restored_record:" + (ALLTRIM(LNAME) = "ZEBRA")
+
+* --- B6b: the ORDER was not corrupted ---------------------------------------
+* ZEBRA sorts last of {AAAAA, ANDERSON, YOUNG, ZEBRA}. If the discarded edit
+* leaked into the index, rec 3 moved to 2nd and BOTTOM becomes YOUNG.
+BOTTOM
+? "B6b_rollback_left_order_intact:" + (ALLTRIM(LNAME) = "ZEBRA")
+
+* --- B7: and a REBUILD still agrees -----------------------------------------
+* Catches an index that survived the rollback looking plausible but differing
+* from ground truth.
+REBUILD
+SET ORDER TAG LNAME
+BOTTOM
+? "B7_rebuild_agrees_after_rollback:" + (ALLTRIM(LNAME) = "ZEBRA")
+
+FORMULA "CNX-BUFFER-PROOF-END"
+
+* --- teardown ----------------------------------------------------------------
+TABLE BUFFER OFF
+CLOSE
+ERASE TABLE CNXBUF CONFIRM

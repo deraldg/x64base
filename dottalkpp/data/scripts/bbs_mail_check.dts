@@ -1,0 +1,38 @@
+* ============================================================================
+* bbs_mail_check.dts -- the house reads its own mail (AIF-108 M1 step 1, made
+* STANDING by owner ruling 2026-08-12: "a scheduled task").
+*
+* Origin: the challenge lane's first act was reading the boards, and the read
+* found an assignment four days stale ([assign:grok] Lane 1 write adapter M2)
+* and an untriaged defect report ("descending path looks off"). The lesson
+* was written before the evidence arrived: "a submission protocol without a
+* reading habit is a drop box." This script is the reading habit.
+*
+* Runs headless via the DotTalkBBSMail scheduled task (register script:
+* D:\code\register-bbs-mailcheck.ps1), which appends stdout to
+* D:\code\_bbsd_logs\bbs_mail.log -- the same cmd-redirect pattern the bbsd
+* task uses (ALTERNATE not needed; the wrapper owns capture. DOTSCRIPT OUT
+* is NOT used: AIF-081 measured it losing the entire cmdout surface).
+*
+* The board list below mirrors the seeded rooms. A new board must be added
+* here to be watched -- acceptable for now; a BBS READ ALL verb would retire
+* the list (named small gap, not built here).
+*
+* Reading the log: newest run is at the bottom; runs are delimited by the
+* FORMULA markers. Anything between them that is not seeded content is MAIL.
+* ============================================================================
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+FORMULA "BBS-MAIL-CHECK-BEGIN"
+VERSION
+
+BBS BOARDS
+BBS READ board.governance
+BBS READ board.afb.chat
+BBS READ board.notice
+BBS READ board.lounge
+BBS READ board.guestbook
+BBS READ board.worklog
+
+FORMULA "BBS-MAIL-CHECK-END"

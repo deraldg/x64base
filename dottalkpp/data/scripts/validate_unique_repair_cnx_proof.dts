@@ -1,0 +1,232 @@
+* ============================================================================
+* validate_unique_repair_cnx_proof.dts
+*
+* Task #33. Does VALIDATE UNIQUE ... REPAIR maintain a CNX order?
+*
+* WHY THIS EXISTS
+*   VUREPAIR (validate_unique_repair_index_proof.dts) proved REPAIR maintains
+*   the active index on x64/CDX, and its header says in as many words:
+*
+*       MUST run on x64/CDX, not x32/CNX. CnxBackend::upsert/erase are still
+*       stubs (lane XIDX-TXN-02), so a CNX table cannot maintain on mutation
+*       at all and this proof would fail there for an unrelated reason.
+*
+*   That restriction LAPSED on 2026-07-31 when XIDX-TXN-02 M1 gave CnxBackend
+*   working upsert/erase. The blocker is gone. Whether REPAIR actually maintains
+*   a CNX order was never measured -- the restriction was simply left in place.
+*   This script measures it.
+*
+*   The claim under test is not about CNX in isolation. It is that REPAIR routes
+*   through DbArea::replaceFieldStored() and therefore through the index replace
+*   snapshot, which is BACKEND-AGNOSTIC. If that is true, REPAIR inherits CNX
+*   maintenance for free and this proof passes with no source change. If it does
+*   not pass, REPAIR has a CDX-shaped assumption in it and the open index API
+*   has another instance of the defect it exists to remove.
+*
+* WHAT THIS TESTS THAT THE CDX ORIGINAL COULD NOT
+*   VUREPAIR asserts through SEEK only. On CDX that is sufficient, because a
+*   CDX tag stores keys and a seek is a key lookup.
+*
+*   A CNX RUN1 payload stores 4 bytes per recno and NO KEYS, so SEEK and ORDER
+*   are answered by different machinery, and IDXSTALE proved they can DISAGREE:
+*   a seek compares live field values through the recno ordering, so it can
+*   succeed over an ordering that is wrong. Asserting only through SEEK on CNX
+*   would therefore be a weaker test than the CDX one, not an equivalent one.
+*
+*   VURC_T3/T4 close that: they score ORDERED POSITION, which is the property
+*   M1 and M2 actually deliver, and T4 requires the maintained order to survive
+*   a REBUILD unchanged.
+*
+* FIXTURE AND EXPECTED ARITHMETIC
+*   SID 10, 20, 20, 30. Rec 3 is the duplicate REPAIR must renumber, and
+*   compute_max_numeric_value() sees 30, so rec 3 becomes 31 -- deterministic,
+*   same as the CDX proof.
+*
+*     before repair, ascending:  10 ADAMS  20 MILLER  20 ZEBRA  30 YOUNG
+*     after  repair, ascending:  10 ADAMS  20 MILLER  30 YOUNG  31 ZEBRA
+*
+*   So ZEBRA moves from the middle of the equal-key run to the BOTTOM. That
+*   movement is the observable, and it is why the guard checks TOP before and
+*   the assertions check BOTTOM after.
+*
+* MARKER DESIGN
+*   Every marker is a FIELD comparison, for the reason VUREPAIR learned the hard
+*   way and CNXLIVE/IDXSTALE/CNXBUF/CNXPERSIST inherited: RECNO() and FOUND()
+*   render EMPTY in a "?" marker and STR() does not rescue them. Park the cursor
+*   on a known different record before any seek, so a stale cursor cannot fake a
+*   pass -- VUREPAIR did not park, and this one does.
+*
+* KNOWN RISK, stated so a failure can be read
+*   The CNX proofs to date (CNXLIVE, CNXBUF, CNXPERSIST) all index a CHARACTER
+*   field. This one indexes a NUMERIC field, because the uniqueness candidate is
+*   SID. If T1/T2 fail while T3/T4 pass, suspect numeric SEEK on a keyless
+*   payload rather than REPAIR -- that is a different defect, in a different
+*   lane, and it should not be reported as a REPAIR failure.
+*
+* Self-contained: builds and erases its own throwaway v32 table; never touches
+* STUDENTS or any live fixture.
+*   Standalone:  DOTSCRIPT scripts/validate_unique_repair_cnx_proof.dts
+*   Capture:     SET ALTERNATE TO <file> / SET ALTERNATE ON  (never DOTSCRIPT OUT)
+*
+* Lane record: XIDX_TXN_02_PDLC_LANE_V1.md
+* Runtime status: NOT YET RUN. Authored 2026-08-01.
+* ============================================================================
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+* x32 lane: CNX is the v32 indexing backend
+DO x32
+
+FORMULA "VU-REPAIR-CNX-PROOF-BEGIN"
+
+* --- throwaway v32 table with a duplicated key value -------------------------
+ERASE TABLE VUREPCNX CONFIRM
+CREATE VUREPCNX (SID N(6), LNAME C(20))
+
+APPEND
+REPLACE SID WITH 10
+REPLACE LNAME WITH "ADAMS"
+APPEND
+REPLACE SID WITH 20
+REPLACE LNAME WITH "MILLER"
+APPEND
+REPLACE SID WITH 20
+REPLACE LNAME WITH "ZEBRA"
+APPEND
+REPLACE SID WITH 30
+REPLACE LNAME WITH "YOUNG"
+
+* --- index the uniqueness-candidate field and make it the active order -------
+CNX CREATE
+CNX ADDTAG SID
+REBUILD
+SET ORDER TAG SID
+
+* --- VURC_G0/G1: fixture guards ----------------------------------------------
+* If the order is not right BEFORE the repair, nothing below means anything.
+GO TOP
+? "VURC_G0_baseline_top_is_ADAMS:" + (ALLTRIM(LNAME) = "ADAMS")
+
+BOTTOM
+? "VURC_G1_baseline_bottom_is_YOUNG:" + (ALLTRIM(LNAME) = "YOUNG")
+
+* ============================================================================
+* THE REPAIR. No REINDEX and no REBUILD after this line until T4, deliberately.
+* ============================================================================
+VALIDATE UNIQUE FIELD SID REPAIR
+
+* --- VURC_D1/D2: DIAGNOSTIC -- what did REPAIR actually write? ---------------
+* Added after the first run (2026-08-01) came back T1/T2 green and T3/T4 red,
+* which left two candidate causes and no way to tell them apart:
+*
+*   D1 .T. -> rec 3 holds 31, so REPAIR wrote the value we expect and any
+*             ordering failure is a MAINTENANCE failure.
+*   D1 .F. -> REPAIR wrote something else, T1's "Found at 3" was a soft landing
+*             rather than an exact hit, and the ordering is arguably CORRECT for
+*             the value actually stored. Different defect entirely.
+*
+* Read by direct record access, not through the order, so a wrong ordering
+* cannot colour the answer. STR() on a numeric renders inside a marker where
+* the bare numeric comparison would not -- same rule as everywhere else.
+GO 3
+? "VURC_D1_rec3_sid_is_31:" + (ALLTRIM(STR(SID)) = "31")
+? "VURC_D2_rec3_is_ZEBRA:" + (ALLTRIM(LNAME) = "ZEBRA")
+
+* --- VURC_T1: the repaired record is reachable at its NEW key ----------------
+* Mirrors VUR_T2 on the CDX side. Park on a known different record first so the
+* assertion cannot pass on a cursor that never moved.
+GO 1
+SEEK 31
+? "VURC_T1_seek_new_key_is_ZEBRA:" + (ALLTRIM(LNAME) = "ZEBRA")
+
+* --- VURC_T2: the surviving legitimate 20 is still MILLER --------------------
+* Guards the other direction: the repair must not have removed the wrong entry
+* from the equal-key run. Mirrors VUR_T3.
+GO 1
+SEEK 20
+? "VURC_T2_seek_old_key_is_MILLER:" + (ALLTRIM(LNAME) = "MILLER")
+
+* --- VURC_T3: THE CNX-SPECIFIC ASSERTION -- the ORDER absorbed the repair ----
+* This is the one the CDX proof could not make. 31 is now the largest SID, so
+* ZEBRA must be at the BOTTOM of the ordering, with no rebuild anywhere between
+* the repair and this read. If REPAIR wrote the record but not the order, T1 can
+* still pass (a seek compares live values) while this reads YOUNG.
+* RE-SCORED 2026-08-01 after the walk below. This assertion used BOTTOM and
+* read .F., which looked like a maintenance failure and was not: the walk shows
+* the ordering IS 1,2,4,3 with ZEBRA last. BOTTOM is what disagrees with it.
+* Walk the order from TOP instead, so the marker scores the ORDERING rather
+* than one navigation verb's opinion of it.
+GO TOP
+SKIP
+SKIP
+SKIP
+? "VURC_T3_order_absorbed_repair_last_is_ZEBRA:" + (ALLTRIM(LNAME) = "ZEBRA")
+
+* --- VURC_F1: the BOTTOM disagreement, kept as its own marker ----------------
+* EXPECTED .F. UNTIL FIXED. Not a failure of this lane -- it is the finding
+* this proof turned up, and deleting the assertion would lose it. BOTTOM must
+* land on the last entry of the active order, which the walk shows is record 3.
+*
+* It is NOT simply "BOTTOM ignores the order": CNXBUF B4 and CNXPERSIST P4 both
+* assert bottom-is-ZEBRA on a CHARACTER tag where ordered-last and physical-last
+* differ, and both pass. So something diverges between the two paths, and this
+* marker is the standing evidence until someone measures which.
+BOTTOM
+? "VURC_F1_BOTTOM_agrees_with_order_EXPECT_F:" + (ALLTRIM(LNAME) = "ZEBRA")
+
+* --- DIAGNOSTIC WALK -- read the ordering, do not infer it -------------------
+* Added after the second run (2026-08-01). T3 and T4 both read .F., with T4
+* AFTER a rebuild that reads the table and sorts it. The table holds
+* 10/20/31/30 on records 1/2/3/4, so ascending order must end at record 3 --
+* and BOTTOM reports record 4 under BOTH the maintained and the rebuilt order.
+*
+* No ordering rule I can construct puts 30 after 31: not numeric, and not
+* string either, since "31" > "30" on a fixed-width right-aligned N(6) field.
+* TOP and BOTTOM are two samples of a sequence; that is not enough to diagnose
+* a sequence. Print the whole thing.
+*
+* This is NOT scored. It exists so the next reader sees the permutation instead
+* of a deduction about it -- two wrong deductions have already been made about
+* this exact test.
+FORMULA "VURC_WALK_AFTER_REPAIR:"
+CNX WALK SID
+SMARTLIST 10
+
+* --- VURC_T4: and the maintained order AGREES WITH A REBUILD -----------------
+* Same shape as CNXLIVE L_T6, CNXBUF B5 and CNXPERSIST P6. If the maintained
+* permutation differs from what the table implies, the order CHANGES across this
+* line and T3 was measuring a consistent lie. The rebuild must be a no-op.
+REBUILD
+SET ORDER TAG SID
+
+* RE-SCORED for the same reason as T3. The rebuilt ordering is 1,2,4,3 -- the
+* walk below prints it -- so a rebuild DOES agree with the maintained order,
+* which is the property this marker exists to assert.
+GO TOP
+SKIP
+SKIP
+SKIP
+? "VURC_T4_rebuild_agrees_last_is_ZEBRA:" + (ALLTRIM(LNAME) = "ZEBRA")
+
+GO TOP
+? "VURC_T5_rebuild_agrees_top_is_ADAMS:" + (ALLTRIM(LNAME) = "ADAMS")
+
+* --- DIAGNOSTIC WALK, post-rebuild -------------------------------------------
+* The discriminating one. A rebuild reads the TABLE and sorts it, so this
+* permutation is what collect_sorted_recnos_for_tag_ believes ascending order
+* to be for a numeric tag. If it differs from 1,2,4,3 the defect is in the
+* rebuild sort and has nothing to do with realtime maintenance or with M2 --
+* which would also mean CNX numeric ordering has been wrong all along and no
+* fixture caught it, because every existing fixture already ascends by recno.
+FORMULA "VURC_WALK_AFTER_REBUILD:"
+CNX WALK SID
+SMARTLIST 10
+
+FORMULA "VU-REPAIR-CNX-PROOF-END"
+
+* --- teardown ----------------------------------------------------------------
+* No bare "SET ORDER TO": it reports "SET ORDER: missing target."
+* CLOSE drops the order with the table -- and, since XIDX-TXN-02 M2, also
+* persists any maintained ordering, so expect a [CNX SAVE] line here.
+CLOSE
+ERASE TABLE VUREPCNX CONFIRM

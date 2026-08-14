@@ -1,0 +1,16 @@
+* datadict.dts
+* Canonical DotTalk++ data dictionary lane opener.
+*
+* Purpose:
+*   - activate the datadict paths
+*   - load the canonical ddbase workspace
+*   - expose the DD* tables for inspection and runtime DDICT work
+
+DO ddbase
+WORKSPACE LOAD ddbase
+
+ECHO ===== DATADICT TOOLING READY =====
+ECHO Data dictionary workspace is active.
+ECHO Canonical workspace: ddbase.dtschema
+ECHO DDICT helper/demo script: DDICT_HELP.dts
+ECHO ==================================

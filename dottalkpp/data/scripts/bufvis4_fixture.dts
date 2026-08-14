@@ -1,0 +1,24 @@
+* bufvis4_fixture.dts -- fixture only, for the interactive SMARTBROWSER test.
+* Creates SANDBOX BUFVIS4 with two records. The buffered edit and the browser
+* calls must happen in ONE live session, so they are typed by hand afterwards.
+* Safety: MUTATING (SANDBOX only). Idempotent: erases any prior BUFVIS4 first.
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+SET PATH DBF DBF/SANDBOX
+SET PATH INDEXES INDEXES/SANDBOX
+SET PATH LMDB LMDB/SANDBOX
+
+ERASE TABLE BUFVIS4 CONFIRM
+
+CREATE X64 BUFVIS4 (SID N(6,0), MAJOR C(4))
+APPEND
+REPLACE SID WITH "1"
+REPLACE MAJOR WITH "CSCI"
+APPEND
+REPLACE SID WITH "2"
+REPLACE MAJOR WITH "MATH"
+CLOSE
+
+FORMULA "BUFVIS4-FIXTURE-READY"

@@ -1,0 +1,140 @@
+* sqlsel_select_v1_regression.dts
+* ============================================================================
+* AIF-074 P3 slice 1 -- SQLSEL SELECT ... FROM, oracle-gated (gate G3)
+*
+* Status: CANDIDATE / explicit-run
+* Safety: MUTATING (SANDBOX only: throwaway SQLSTU; erased at the end)
+* Proves:
+*   S1  SELECT <cols> FROM <table>            -- the corpus form, finally real
+*   S2  SELECT * FROM <table>
+*   S3  WHERE predicate filters
+*   S4  LIMIT caps AND says so (honesty, P1.3 pattern)
+*   S5  cursor neutrality: recno before == recno after (R16b)
+*   S6  corrective errors: unopened table, expression select-item
+*   S7  legacy path preserved: SQLSEL USAGE still works
+*   ORACLE  the same queries over the same data in SQLite, for row comparison
+* Read rule: S1/S2/S3 row sets must equal the ORACLE block's rows (same values,
+*   same counts). S5 markers must both be .T. Any silent empty output = FAIL.
+* ============================================================================
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+SET PATH DBF DBF/SANDBOX
+SET PATH INDEXES INDEXES/SANDBOX
+SET PATH LMDB LMDB/SANDBOX
+
+FORMULA "SQLSEL-G3-BEGIN"
+
+ERASE TABLE SQLSTU CONFIRM
+
+CREATE X64 SQLSTU (SID N(6,0), LNAME C(12), MAJOR C(4))
+APPEND
+REPLACE SID WITH "1"
+REPLACE LNAME WITH "ADAMS"
+REPLACE MAJOR WITH "CSCI"
+APPEND
+REPLACE SID WITH "2"
+REPLACE LNAME WITH "BAKER"
+REPLACE MAJOR WITH "MATH"
+APPEND
+REPLACE SID WITH "3"
+REPLACE LNAME WITH "CARTER"
+REPLACE MAJOR WITH "CSCI"
+CLOSE
+
+SELECT 1
+USE SQLSTU
+
+* --- park the cursor on record 2; S5 asserts statements do not move it ---
+* Position is asserted through DATA (record 2 is BAKER): RECNO is a command,
+* not an expression function, so a RECNO() marker would fail silently.
+GO 2
+? "S5A_cursor_parked_before:" + (ALLTRIM(LNAME) = "BAKER")
+
+* --- S1: the corpus form ---
+FORMULA "SQLSEL-S1-BEGIN"
+SQLSEL SELECT SID,LNAME,MAJOR FROM SQLSTU
+FORMULA "SQLSEL-S1-END"
+
+* --- S2: star projection ---
+FORMULA "SQLSEL-S2-BEGIN"
+SQLSEL SELECT * FROM SQLSTU
+FORMULA "SQLSEL-S2-END"
+
+* --- S3: WHERE ---
+FORMULA "SQLSEL-S3-BEGIN"
+SQLSEL SELECT SID,LNAME FROM SQLSTU WHERE MAJOR = "CSCI"
+FORMULA "SQLSEL-S3-END"
+
+* --- S4: LIMIT caps and reports ---
+FORMULA "SQLSEL-S4-BEGIN"
+SQLSEL SELECT SID,LNAME FROM SQLSTU LIMIT 2
+FORMULA "SQLSEL-S4-END"
+
+* --- S5: cursor neutrality after all of the above ---
+? "S5B_cursor_unmoved_after:" + (ALLTRIM(LNAME) = "BAKER")
+
+* --- S6: corrective errors (must NOT be silent, must NOT emit rows) ---
+FORMULA "SQLSEL-S6-BEGIN"
+SQLSEL SELECT SID FROM NOSUCHTABLE
+SQLSEL SELECT ALLTRIM(LNAME) FROM SQLSTU
+SQLSEL SELECT SID,LNAME FROM SQLSTU LIMIT abc
+FORMULA "SQLSEL-S6-END"
+
+* --- S8 (slice 2): ORDER BY, both directions; sort is by VALUE not scan order ---
+* Fixture insert order is ADAMS, BAKER, CARTER (SID 1,2,3).
+* ORDER BY LNAME DESC must yield CARTER, BAKER, ADAMS.
+FORMULA "SQLSEL-S8-BEGIN"
+SQLSEL SELECT SID,LNAME FROM SQLSTU ORDER BY LNAME
+SQLSEL SELECT SID,LNAME FROM SQLSTU ORDER BY LNAME DESC
+FORMULA "SQLSEL-S8-END"
+
+* --- S9: ORDER BY + LIMIT -- LIMIT must cut the SORTED set, not the scan ---
+* Expect CARTER then BAKER (the two highest), NOT ADAMS/BAKER (first two scanned).
+FORMULA "SQLSEL-S9-BEGIN"
+SQLSEL SELECT SID,LNAME FROM SQLSTU ORDER BY LNAME DESC LIMIT 2
+FORMULA "SQLSEL-S9-END"
+
+* --- S10: COUNT(*), with and without WHERE ---
+FORMULA "SQLSEL-S10-BEGIN"
+SQLSEL SELECT COUNT(*) FROM SQLSTU
+SQLSEL SELECT COUNT(*) FROM SQLSTU WHERE MAJOR = "CSCI"
+FORMULA "SQLSEL-S10-END"
+
+* --- S11: slice-2 corrective errors ---
+FORMULA "SQLSEL-S11-BEGIN"
+SQLSEL SELECT SID FROM SQLSTU ORDER BY NOSUCHFIELD
+SQLSEL SELECT SID FROM SQLSTU ORDER BY LNAME SIDEWAYS
+SQLSEL SELECT COUNT(*) FROM SQLSTU ORDER BY LNAME
+FORMULA "SQLSEL-S11-END"
+
+* --- S12: cursor still unmoved after ORDER BY/COUNT work ---
+? "S12_cursor_unmoved_after_slice2:" + (ALLTRIM(LNAME) = "BAKER")
+
+* --- S7: legacy path preserved ---
+FORMULA "SQLSEL-S7-BEGIN"
+SQLSEL USAGE
+FORMULA "SQLSEL-S7-END"
+
+* --- ORACLE: same data, real SQL ---
+FORMULA "SQLSEL-ORACLE-BEGIN"
+SQLITE OPEN :memory:
+SQLITE EXEC CREATE TABLE SQLSTU (SID INTEGER, LNAME TEXT, MAJOR TEXT);
+SQLITE EXEC INSERT INTO SQLSTU VALUES (1,'ADAMS','CSCI');
+SQLITE EXEC INSERT INTO SQLSTU VALUES (2,'BAKER','MATH');
+SQLITE EXEC INSERT INTO SQLSTU VALUES (3,'CARTER','CSCI');
+SQLITE SELECT SELECT SID, LNAME, MAJOR FROM SQLSTU ORDER BY SID;
+SQLITE SELECT SELECT SID, LNAME FROM SQLSTU WHERE MAJOR = 'CSCI' ORDER BY SID;
+SQLITE SELECT SELECT COUNT(*) AS TOTAL_ROWS FROM SQLSTU;
+SQLITE SELECT SELECT SID, LNAME FROM SQLSTU ORDER BY LNAME DESC;
+SQLITE SELECT SELECT SID, LNAME FROM SQLSTU ORDER BY LNAME DESC LIMIT 2;
+SQLITE SELECT SELECT COUNT(*) AS CSCI_ROWS FROM SQLSTU WHERE MAJOR = 'CSCI';
+SQLITE CLOSE
+FORMULA "SQLSEL-ORACLE-END"
+
+* --- cleanup ---
+CLOSE
+ERASE TABLE SQLSTU CONFIRM
+
+FORMULA "SQLSEL-G3-END"

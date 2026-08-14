@@ -32,7 +32,7 @@ This should evolve from preview harness into a maintained Python frontend lane.
 The current implementation opens a real desktop window using Tkinter, loads DBF
 tables on a worker thread, and displays a table grid, log panel, and status bar.
 It also exposes a read-only Workspace Graph tab that summarizes the current
-areas while the graph load/save service remains pending.
+areas while routing schema load/save through DotTalk++ runtime commands.
 
 ## Runtime Boundary
 
@@ -61,8 +61,9 @@ text as its primary data path.
 
 Workspace files follow the same rule. Python widgets must not become an ad hoc
 `.dtschema`, `.dtschemas`, or `.erz` parser. The Python lane may prototype graph
-inspection, but durable load/save behavior belongs behind a shared workspace
-graph service.
+inspection, but durable load/save behavior belongs behind shared runtime or
+workspace graph services. The preview now routes `workspace load/save` through
+the DotTalk++ CLI bridge instead of maintaining a private bootstrap format.
 
 Both should also keep UI language, display locale, parse locale, table encoding,
 collation, and database safety state as explicit concepts rather than toolkit
@@ -81,8 +82,8 @@ Python mirrors the C++ resolver in `tools/gui_preview/dottalk_gui_text.py`.
   and preserve remaining areas when one area closes.
 - Add optional `pydottalk` discovery through `PYDOTTALK_BIN` and known build dirs.
 - Keep the visible layout aligned with the C++ wx skeleton.
-- Keep the bootstrap Workspace load/save menu aligned with the wx lane while
-  full graph load/save remains service-backed future work.
+- Keep Workspace load/save aligned with the wx lane by routing through the same
+  runtime command path.
 - Keep the read-only Workspace Graph tab aligned with the wx lane and fed from
   session/area state, not widget-owned database state.
 - Prototype locale, encoding, collation, and safety inspectors quickly in

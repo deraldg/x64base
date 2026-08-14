@@ -1,0 +1,104 @@
+* ============================================================
+* DEVOTION_SCHEMA.DTS
+* Purpose:
+*   Starter schema for importing devotional/journal DOCX files
+*   into x64base/DotTalk++.
+*
+* Notes:
+*   - This is intentionally conservative.
+*   - Adjust CREATE syntax to match current x64 CREATE grammar.
+*   - Memo fields store references only; MemoManager owns payloads.
+* ============================================================
+
+SET ECHO ON
+SET PAGING OFF
+
+* Recommended: switch to x64 sandbox/project path first.
+* DO X64
+* DO SANDBOX
+
+* ------------------------------------------------------------
+* DEVOTIONS: one row per document
+* ------------------------------------------------------------
+* CREATE DEVOTIONS ;
+*   DOCID I, ;
+*   DOCDATE D, ;
+*   WEEKDAY C(12), ;
+*   TITLE C(120), ;
+*   AUTHOR C(60), ;
+*   CATEGORY C(40), ;
+*   SRCFILE C(180), ;
+*   BODY M, ;
+*   SUMMARY M, ;
+*   IMPORTED C(19), ;
+*   ACTIVE L
+
+* INDEX ON DOCID TAG DOCID OF DEVOTIONS.CDX
+* INDEX ON DOCDATE TAG DOCDATE OF DEVOTIONS.CDX
+* INDEX ON TITLE TAG TITLE OF DEVOTIONS.CDX
+* INDEX ON AUTHOR TAG AUTHOR OF DEVOTIONS.CDX
+* INDEX ON CATEGORY TAG CATEGORY OF DEVOTIONS.CDX
+
+* ------------------------------------------------------------
+* DEVOSCRIPT: scripture references per document
+* ------------------------------------------------------------
+* CREATE DEVOSCRIPT ;
+*   RECID I, ;
+*   DOCID I, ;
+*   SEQ I, ;
+*   BOOK C(40), ;
+*   CHSTART N(4,0), ;
+*   VSTART N(4,0), ;
+*   CHEND N(4,0), ;
+*   VEND N(4,0), ;
+*   RAWREF C(120), ;
+*   QUOTED M
+
+* INDEX ON DOCID TAG DOCID OF DEVOSCRIPT.CDX
+* INDEX ON BOOK TAG BOOK OF DEVOSCRIPT.CDX
+* INDEX ON BOOK + STR(CHSTART) + STR(VSTART) TAG REFKEY OF DEVOSCRIPT.CDX
+
+* ------------------------------------------------------------
+* DEVOTAG: themes/tags per document
+* ------------------------------------------------------------
+* CREATE DEVOTAG ;
+*   TAGID I, ;
+*   DOCID I, ;
+*   TAG C(60), ;
+*   SOURCE C(20), ;
+*   SCORE N(6,2)
+
+* INDEX ON DOCID TAG DOCID OF DEVOTAG.CDX
+* INDEX ON TAG TAG TAG OF DEVOTAG.CDX
+
+* ------------------------------------------------------------
+* DEVOIMPORT: import audit
+* ------------------------------------------------------------
+* CREATE DEVOIMPORT ;
+*   BATCHID I, ;
+*   SRCFILE C(180), ;
+*   STATUS C(20), ;
+*   DOCCOUNT I, ;
+*   REFCOUNT I, ;
+*   MSG M, ;
+*   IMPORTED C(19)
+
+* INDEX ON BATCHID TAG BATCHID OF DEVOIMPORT.CDX
+* INDEX ON SRCFILE TAG SRCFILE OF DEVOIMPORT.CDX
+
+* ------------------------------------------------------------
+* DEVOREJECT: parse rejects/review queue
+* ------------------------------------------------------------
+* CREATE DEVOREJECT ;
+*   REJID I, ;
+*   BATCHID I, ;
+*   SRCFILE C(180), ;
+*   SECTION C(40), ;
+*   RAWTEXT M, ;
+*   REASON C(120), ;
+*   REVIEWED L
+
+* INDEX ON BATCHID TAG BATCHID OF DEVOREJECT.CDX
+* INDEX ON SRCFILE TAG SRCFILE OF DEVOREJECT.CDX
+
+? "DEVOTION_SCHEMA.DTS loaded. Uncomment CREATE/INDEX lines after confirming current CREATE grammar."

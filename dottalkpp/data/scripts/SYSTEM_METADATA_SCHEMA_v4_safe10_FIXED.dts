@@ -1,0 +1,385 @@
+* ============================================================
+* SYSTEM_METADATA_SCHEMA_v4_safe10_FIXED.dts
+*
+* Purpose:
+*   Create the first DotTalk++ x64 metadata catalog tables.
+*
+* Physical file contract:
+*   - Use short physical table names so current command/file lookup
+*     does not depend on long-name vector lookup.
+*   - Store/describe long logical names in the catalog layer later.
+*
+* Physical -> logical table map:
+*   SYSCMD    -> SYSTEM_COMMANDS
+*   SYSENTVAR -> SYSTEM_ENTRY_VARIANTS
+*   SYSSUBCMD -> SYSTEM_SUBCOMMANDS
+*   SYSFUNC   -> SYSTEM_FUNCTIONS
+*   SYSMSG    -> SYSTEM_MESSAGES
+*   SYSHELP   -> SYSTEM_HELP_TEXT
+*   SYSARGS   -> SYSTEM_ARGUMENTS
+*   SYSFLDDIC -> SYSTEM_FIELD_DICT
+*
+* Field contract:
+*   - Keep command-addressed field tokens <= 10 visible chars.
+*   - Include memo fields immediately to prove x64 memo behavior.
+*   - Use CDX logical tags backed by LMDB.
+*   - Keep English/source authority as the current default.
+*   - Make locale/region recognition explicit now so HELP/manual promotion
+*     does not require later schema backtracking.
+* ============================================================
+
+SET ECHO OFF
+SET PAGING OFF
+
+DO metadata
+
+* ------------------------------------------------------------
+* Reset old catalog tables/indexes in the metadata lane.
+* Include memo sidecars because these tables use M fields.
+* BUILDLMDB CLEAN YES below will recreate LMDB backends.
+* ------------------------------------------------------------
+ERASE SYSCMD.DBF CONFIRM
+ERASE SYSCMD.CDX CONFIRM
+ERASE SYSCMD.DTX CONFIRM
+ERASE SYSENTVAR.DBF CONFIRM
+ERASE SYSENTVAR.CDX CONFIRM
+ERASE SYSENTVAR.DTX CONFIRM
+ERASE SYSSUBCMD.DBF CONFIRM
+ERASE SYSSUBCMD.CDX CONFIRM
+ERASE SYSSUBCMD.DTX CONFIRM
+ERASE SYSFUNC.DBF CONFIRM
+ERASE SYSFUNC.CDX CONFIRM
+ERASE SYSFUNC.DTX CONFIRM
+ERASE SYSMSG.DBF CONFIRM
+ERASE SYSMSG.CDX CONFIRM
+ERASE SYSMSG.DTX CONFIRM
+ERASE SYSHELP.DBF CONFIRM
+ERASE SYSHELP.CDX CONFIRM
+ERASE SYSHELP.DTX CONFIRM
+ERASE SYSARGS.DBF CONFIRM
+ERASE SYSARGS.CDX CONFIRM
+ERASE SYSARGS.DTX CONFIRM
+ERASE SYSFLDDIC.DBF CONFIRM
+ERASE SYSFLDDIC.CDX CONFIRM
+ERASE SYSFLDDIC.DTX CONFIRM
+
+* ------------------------------------------------------------
+* SYSCMD -> SYSTEM_COMMANDS
+* ------------------------------------------------------------
+CREATE X64 SYSCMD ( ;
+    CMD_ID      C(32), ;
+    CAN_NAME    C(80), ;
+    DISP_NAME   C(80), ;
+    DEF_LOCALE  C(16), ;
+    REGION_ID   C(16), ;
+    ENTRY_KIND  C(10), ;
+    IMPL_STAT   C(32), ;
+    VIS_TIER    C(32), ;
+    OWNER       C(64), ;
+    REG_RING    C(64), ;
+    LIFE_PH     C(48), ;
+    SRC_AUTH    C(64), ;
+    SRC_HINT    C(32), ;
+    SRC_FILE    C(180), ;
+    HANDLER     C(96), ;
+    HAS_HDLR    L, ;
+    DISP_REACH  L, ;
+    PUB_SURF    L, ;
+    SELF_REG    L, ;
+    TIMER       L, ;
+    OUT_ROUTE   L, ;
+    MSG_CAT     L, ;
+    ACTIVE      L, ;
+    VER_AT      C(24), ;
+    NOTES       M ;
+)
+
+USE SYSCMD
+STRUCT
+CDX CREATE
+CDX ADDTAG CMD_ID
+CDX ADDTAG CAN_NAME
+CDX ADDTAG DEF_LOCALE
+CDX ADDTAG REGION_ID
+CDX ADDTAG ENTRY_KIND
+CDX ADDTAG IMPL_STAT
+CDX ADDTAG VIS_TIER
+CDX ADDTAG OWNER
+CDX ADDTAG REG_RING
+CDX ADDTAG SRC_AUTH
+BUILDLMDB CLEAN YES
+CLOSE
+
+* ------------------------------------------------------------
+* SYSENTVAR -> SYSTEM_ENTRY_VARIANTS
+* ------------------------------------------------------------
+CREATE X64 SYSENTVAR ( ;
+    VAR_ID      C(32), ;
+    TOKEN       C(80), ;
+    DEF_LOCALE  C(16), ;
+    REGION_ID   C(16), ;
+    VAR_KIND    C(32), ;
+    CAN_TARG    C(120), ;
+    HELP_OWNR   C(120), ;
+    SRC_AUTH    C(64), ;
+    SRC_FILE    C(180), ;
+    SHADOWS     L, ;
+    DISP_REACH  L, ;
+    PUB_SURF    L, ;
+    ACTIVE      L, ;
+    VER_AT      C(24), ;
+    NOTES       M ;
+)
+
+USE SYSENTVAR
+STRUCT
+CDX CREATE
+CDX ADDTAG VAR_ID
+CDX ADDTAG TOKEN
+CDX ADDTAG DEF_LOCALE
+CDX ADDTAG REGION_ID
+CDX ADDTAG VAR_KIND
+CDX ADDTAG CAN_TARG
+CDX ADDTAG HELP_OWNR
+CDX ADDTAG SRC_AUTH
+BUILDLMDB CLEAN YES
+CLOSE
+
+* ------------------------------------------------------------
+* SYSSUBCMD -> SYSTEM_SUBCOMMANDS
+* ------------------------------------------------------------
+CREATE X64 SYSSUBCMD ( ;
+    SUB_ID      C(32), ;
+    PARENT      C(80), ;
+    SUB_NAME    C(80), ;
+    QUAL_NAME   C(140), ;
+    DEF_LOCALE  C(16), ;
+    REGION_ID   C(16), ;
+    DISP_STYL   C(32), ;
+    IMPL_STAT   C(32), ;
+    VIS_TIER    C(32), ;
+    OWNER       C(64), ;
+    REG_RING    C(64), ;
+    LIFE_PH     C(48), ;
+    SRC_AUTH    C(64), ;
+    SRC_FILE    C(180), ;
+    HANDLER     C(96), ;
+    PUB_SURF    L, ;
+    DISP_REACH  L, ;
+    OUT_ROUTE   L, ;
+    MSG_CAT     L, ;
+    ACTIVE      L, ;
+    VER_AT      C(24), ;
+    NOTES       M ;
+)
+
+USE SYSSUBCMD
+STRUCT
+CDX CREATE
+CDX ADDTAG SUB_ID
+CDX ADDTAG PARENT
+CDX ADDTAG SUB_NAME
+CDX ADDTAG QUAL_NAME
+CDX ADDTAG DEF_LOCALE
+CDX ADDTAG REGION_ID
+CDX ADDTAG DISP_STYL
+CDX ADDTAG OWNER
+CDX ADDTAG VIS_TIER
+BUILDLMDB CLEAN YES
+CLOSE
+
+* ------------------------------------------------------------
+* SYSFUNC -> SYSTEM_FUNCTIONS
+* ------------------------------------------------------------
+CREATE X64 SYSFUNC ( ;
+    FUNC_ID     C(32), ;
+    CAN_NAME    C(80), ;
+    DISP_NAME   C(80), ;
+    DEF_LOCALE  C(16), ;
+    REGION_ID   C(16), ;
+    FUNC_CAT    C(40), ;
+    MIN_ARGS    N(4,0), ;
+    MAX_ARGS    N(4,0), ;
+    IMPL_STAT   C(32), ;
+    VIS_TIER    C(32), ;
+    OWNER       C(64), ;
+    SRC_AUTH    C(64), ;
+    SRC_FILE    C(180), ;
+    HANDLER     C(96), ;
+    CALC_CALL   L, ;
+    PUB_SURF    L, ;
+    SELF_REG    L, ;
+    MSG_CAT     L, ;
+    ACTIVE      L, ;
+    VER_AT      C(24), ;
+    NOTES       M ;
+)
+
+USE SYSFUNC
+STRUCT
+CDX CREATE
+CDX ADDTAG FUNC_ID
+CDX ADDTAG CAN_NAME
+CDX ADDTAG DEF_LOCALE
+CDX ADDTAG REGION_ID
+CDX ADDTAG FUNC_CAT
+CDX ADDTAG IMPL_STAT
+CDX ADDTAG OWNER
+CDX ADDTAG SRC_AUTH
+BUILDLMDB CLEAN YES
+CLOSE
+
+* ------------------------------------------------------------
+* SYSMSG -> SYSTEM_MESSAGES
+* ------------------------------------------------------------
+CREATE X64 SYSMSG ( ;
+    MSG_ID      C(32), ;
+    SYMBOL      C(120), ;
+    ENUM_NAME   C(80), ;
+    DEF_LOCALE  C(16), ;
+    REGION_ID   C(16), ;
+    CATEGORY    C(24), ;
+    SEVERITY    C(24), ;
+    FACILITY    C(48), ;
+    STATUS      C(24), ;
+    HELP_TOPIC  C(80), ;
+    CMDHELPCHK  C(96), ;
+    SHORT_TXT   C(180), ;
+    IMPL_STAT   C(32), ;
+    VIS_TIER    C(32), ;
+    OWNER       C(64), ;
+    SRC_AUTH    C(64), ;
+    SRC_FILE    C(180), ;
+    PUB_SURF    L, ;
+    USED_RUN    L, ;
+    ACTIVE      L, ;
+    VER_AT      C(24), ;
+    SUG_ACT     M, ;
+    NOTES       M ;
+)
+
+USE SYSMSG
+STRUCT
+CDX CREATE
+CDX ADDTAG MSG_ID
+CDX ADDTAG SYMBOL
+CDX ADDTAG DEF_LOCALE
+CDX ADDTAG REGION_ID
+CDX ADDTAG ENUM_NAME
+CDX ADDTAG CATEGORY
+CDX ADDTAG SEVERITY
+CDX ADDTAG FACILITY
+CDX ADDTAG STATUS
+CDX ADDTAG HELP_TOPIC
+CDX ADDTAG CMDHELPCHK
+CDX ADDTAG OWNER
+BUILDLMDB CLEAN YES
+CLOSE
+
+* ------------------------------------------------------------
+* SYSHELP -> SYSTEM_HELP_TEXT
+* ------------------------------------------------------------
+CREATE X64 SYSHELP ( ;
+    HLP_TXT_ID  C(32), ;
+    OWNER_KND   C(32), ;
+    OWNER_NAM   C(140), ;
+    LOCALE_ID   C(16), ;
+    SOURCE_LOC  C(16), ;
+    REGION_ID   C(16), ;
+    TEXT_DIR    C(8), ;
+    TEXT_KIND   C(32), ;
+    SEQ         N(8,0), ;
+    SRC_AUTH    C(64), ;
+    SRC_FILE    C(180), ;
+    GENERATED   L, ;
+    CURATED     L, ;
+    TRANSL_STA  C(24), ;
+    REVIEW_STA  C(24), ;
+    FALLBACK_A  L, ;
+    ACTIVE      L, ;
+    VER_AT      C(24), ;
+    TEXT_BODY   M, ;
+    NOTES       M ;
+)
+
+USE SYSHELP
+STRUCT
+CDX CREATE
+CDX ADDTAG HLP_TXT_ID
+CDX ADDTAG OWNER_KND
+CDX ADDTAG OWNER_NAM
+CDX ADDTAG LOCALE_ID
+CDX ADDTAG SOURCE_LOC
+CDX ADDTAG REGION_ID
+CDX ADDTAG TEXT_KIND
+CDX ADDTAG SEQ
+CDX ADDTAG SRC_AUTH
+BUILDLMDB CLEAN YES
+CLOSE
+
+* ------------------------------------------------------------
+* SYSARGS -> SYSTEM_ARGUMENTS
+* ------------------------------------------------------------
+CREATE X64 SYSARGS ( ;
+    ARG_ID      C(32), ;
+    OWNER_KND   C(32), ;
+    OWNER_NAM   C(140), ;
+    ARG_NAME    C(80), ;
+    DEF_LOCALE  C(16), ;
+    REGION_ID   C(16), ;
+    ARG_KIND    C(32), ;
+    VAL_SHAPE   C(48), ;
+    REQUIRED    L, ;
+    REPEAT      L, ;
+    SRC_AUTH    C(64), ;
+    SRC_FILE    C(180), ;
+    ACTIVE      L, ;
+    VER_AT      C(24), ;
+    NOTES       M ;
+)
+
+USE SYSARGS
+STRUCT
+CDX CREATE
+CDX ADDTAG ARG_ID
+CDX ADDTAG OWNER_KND
+CDX ADDTAG OWNER_NAM
+CDX ADDTAG ARG_NAME
+CDX ADDTAG DEF_LOCALE
+CDX ADDTAG REGION_ID
+CDX ADDTAG ARG_KIND
+CDX ADDTAG VAL_SHAPE
+BUILDLMDB CLEAN YES
+CLOSE
+
+* ------------------------------------------------------------
+* SYSFLDDIC -> SYSTEM_FIELD_DICT
+* Maps safe physical field tokens to long logical names.
+* ------------------------------------------------------------
+CREATE X64 SYSFLDDIC ( ;
+    TABLE_NAME  C(80), ;
+    FIELD_NAME  C(10), ;
+    LOG_NAME    C(80), ;
+    DEF_LOCALE  C(16), ;
+    REGION_ID   C(16), ;
+    FIELD_ROLE  C(32), ;
+    VALUE_KIND  C(48), ;
+    ACTIVE      L, ;
+    VER_AT      C(24), ;
+    DESCR       M, ;
+    NOTES       M ;
+)
+
+USE SYSFLDDIC
+STRUCT
+CDX CREATE
+CDX ADDTAG TABLE_NAME
+CDX ADDTAG FIELD_NAME
+CDX ADDTAG DEF_LOCALE
+CDX ADDTAG REGION_ID
+CDX ADDTAG LOG_NAME
+CDX ADDTAG FIELD_ROLE
+BUILDLMDB CLEAN YES
+CLOSE
+
+? "===== SYSTEM METADATA SCHEMA V4 SAFE10 FIXED COMPLETE ====="

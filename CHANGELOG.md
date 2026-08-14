@@ -11,6 +11,9 @@ beta release has not yet been cut.
 - Cross-platform C++ build and test workflow for the public `main` branch.
 - Portable core build presets and optional dependency features.
 - Explicit public project status and release-readiness documentation.
+- `CONTRIBUTING.md` now states how to choose a baseline branch: enumerate
+  published branches, read from `development`, open pull requests against
+  `main`.
 
 ### Changed
 
