@@ -579,6 +579,33 @@ General implementation conventions:
   designed against from the first minute. The counter-examples prove the
   rule's value: the same day's function-surface pass asked prior-art FIRST
   and shrank three "critical gaps" to one mechanism and one function.
+- If we do not curate in rapid development, we lose the work in rapid
+  development (owner rule, 2026-08-13). Work is not durable because it exists
+  on disk; it is durable because a REGISTRY points at it. The registration is
+  part of the work, not a tidy-up afterwards, and it is owed the same session
+  the evidence is produced -- a lane row, a proof fragment, or a project entry,
+  whichever the artifact is. Founding instance: the memo-zoo orthogonality
+  harness was chartered AND soaked on 2026-08-11 -- four green seeds, 20,500
+  generations, 104,044 operations, zero divergences -- and on 2026-08-13 a
+  search of the ecoschema map for "quantum", "memo zoo" and "minidb" returned
+  NOTHING. The harness, the charter, and the four transcripts were all in the
+  tree the whole time and reachable from no registry: the runtime project
+  declared 14 lanes and none of them was `memo`, against 10 files in
+  `src/memo/` and 8 memo documents; 59 proof records carried none for the zoo.
+  Nothing was lost -- but nothing could be FOUND, which in a tree this size is
+  the same thing until someone remembers it existed. Corollary: a registry that
+  truncates (the ecoschema map cuts notes at 380 characters) will cut the
+  retrieval NAMES first if they sit in the last paragraph, so lead a record
+  with the words a searcher would type.
+- An agent with disk access must not park artifacts of record in scratch
+  (owner rule, 2026-08-13). Scratch space is for work in progress that can be
+  regenerated; anything another session, another agent, or the maintainer must
+  later FIND belongs in the tree, tracked, and pointed at. Writing a durable
+  artifact to scratch when you hold a mounted, writable, version-controlled
+  repository is an unforgivable waste of the access -- the one capability a
+  hosted agent does not have, spent on a file that dies with the session. Test
+  before writing: would anyone need this tomorrow? Then it is repo-bound, and
+  the same session owes it a home and a pointer.
 
 ## Minimal New-AI Checklist
 
