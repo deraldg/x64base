@@ -6,12 +6,23 @@ export const topNav: NavItem[] = [
   { label: "LabTalk", href: "/products/labtalk" },
   { label: "Documentation", href: "/docs" },
   { label: "Schemas", href: "/schemas" },
-  // ECO: the ecoschema drill-down map, generated from the tree
-  // (docs/maintenance/ECOSCHEMA_MAP_V1.html) and served as a static drop-in
-  // from public/eco/. Self-contained -- one <style>, one <script>, zero
-  // external references -- so it needs no build step and cannot break the
-  // Next build. Linked as index.html for the same reason as /AI/: a bare
-  // directory 404s under `next dev`, which has no DirectoryIndex.
+  // ECO: the ecoschema drill-down map. This artifact is GENERATED, not static
+  // -- tools/fullstack_docs/ecoschema_map.py in the x64base tree emits it from
+  // projects.yaml + proofs.yaml + coordination/aif/*.claim + a scan of src/.
+  // DO NOT HAND-EDIT public/eco/index.html: the next generator run reverts you
+  // silently and the site then disagrees with the tree until somebody notices.
+  // To change it, re-run the generator and re-copy, then compare hashes --
+  // two hashes, one value, or the copy is not a copy.
+  //
+  // It is self-contained (one <style>, one <script>, zero external refs), so
+  // it needs no build step and cannot break the Next build. Linked as
+  // index.html for the same reason as /AI/: a bare directory 404s under
+  // `next dev`, which has no DirectoryIndex.
+  //
+  // Shipped deliberately as the RAW MAP (owner ruling 2026-08-13). A teaching
+  // variant -- `edu_eco`, hand-authored prose classed `maintained` wrapping the
+  // generated map, with the 4-of-41 registered-proof reading framed rather
+  // than bare -- is kept as a possible improvement, not chartered.
   { label: "ECO", href: "/eco/index.html" },
   // Two LMS decks, kept deliberately separate and NOT reconciled (AIF-102).
   //
