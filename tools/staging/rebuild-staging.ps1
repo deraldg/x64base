@@ -344,6 +344,54 @@ if ($publicOnlyFindings.Count) {
 }
 
 Write-Host "Overlaid $copied files ($mb MB) onto $Staging" -ForegroundColor Green
+
+# ---------------------------------------------------------------------------
+# Local-path guard (added 2026-08-13).
+#
+# The development tree is gated by prepush_gate.py; C:\x64base is NOT, so this
+# overlay was the one boundary where a machine-absolute path could reach the
+# public repository with nothing checking. It did: mcc_vfp.dtschema published
+# every AREA line as D:\code\ccode\...\indexes\x32\*.cnx, which cannot resolve
+# on any machine but this one, and two .dts headers named host scripts under
+# D:\code\. Found by the owner AFTER the push, which is the wrong order.
+#
+# Pattern is stage_public.py's LEAK_PATTERNS entry, deliberately reused rather
+# than reinvented -- there are already four local-path detectors in this repo
+# and a fifth would be the defect, not the fix.
+#
+# Report-only by design. It runs after the copy so it sees exactly what was
+# written, and it names files rather than refusing: some absolute paths are
+# legitimate (ops/Setup-VDisk.ps1 documents host disk layout, and prose that
+# quotes engine output is evidence). The judgement stays with the person.
+# ---------------------------------------------------------------------------
+$leakExt = @('.dts','.dtschema','.dtschemas','.ps1','.sh','.txt','.md','.csv','.ini','.json','.cob','.html')
+$leakHits = @()
+foreach ($item in $plan) {
+    $rel = $item.Rel
+    $ext = [System.IO.Path]::GetExtension($rel).ToLowerInvariant()
+    if ($leakExt -notcontains $ext) { continue }
+    $full = Join-Path $Staging $rel
+    if (-not (Test-Path -LiteralPath $full)) { continue }
+    $text = Get-Content -LiteralPath $full -Raw -ErrorAction SilentlyContinue
+    if ($null -eq $text) { continue }
+    # (?<![A-Za-z0-9]) keeps "https://" from reading as drive "s:" -- the same
+    # false positive that refused a correct ecoschema_map.py run on 2026-08-13.
+    foreach ($m in [regex]::Matches($text, '(?<![A-Za-z0-9])[A-Za-z]:[\\/](code|dev)[\\/][^\s"'',;)\]|]*')) {
+        $leakHits += [pscustomobject]@{ File = $rel; Path = $m.Value }
+    }
+}
+if ($leakHits.Count) {
+    Write-Host ""
+    Write-Host "LOCAL-PATH GUARD: $($leakHits.Count) machine-absolute path(s) in $($leakHits.File | Select-Object -Unique | Measure-Object | Select-Object -ExpandProperty Count) overlaid file(s)" -ForegroundColor Yellow
+    $leakHits | Group-Object File | ForEach-Object {
+        Write-Host ("  {0}" -f $_.Name) -ForegroundColor Yellow
+        $_.Group.Path | Select-Object -Unique | Select-Object -First 3 | ForEach-Object { Write-Host "      $_" }
+    }
+    Write-Host "  Scripts and schemas must use relative paths unless there is a stated reason." -ForegroundColor Yellow
+    Write-Host "  These publish to a repository other people clone; a D: path resolves on this machine only."
+} else {
+    Write-Host "Local-path guard: clean -- no machine-absolute paths in the overlaid text files." -ForegroundColor Green
+}
 if ($verifiedEscrow) {
     Write-Host "Verified $($verifiedEscrow.PublicOnlyRows.Count) public-baseline-only files after overlay." -ForegroundColor Green
 }

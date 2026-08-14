@@ -2,7 +2,7 @@
 * AI-BBS command-surface smoke (AIF-052/054/055).
 *
 * Exercises the BBS command path in-engine (no socket). The guest-scoping SECURITY
-* regression is the socket smoke D:\code\bbs_smoke.ps1 -- server-side permission
+* regression is the socket smoke bbs_smoke.ps1 (host side) -- server-side permission
 * denial needs the listener and cannot be driven from a script.
 *
 * Steps:

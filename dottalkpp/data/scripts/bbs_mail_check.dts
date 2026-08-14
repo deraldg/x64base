@@ -9,8 +9,9 @@
 * reading habit is a drop box." This script is the reading habit.
 *
 * Runs headless via the DotTalkBBSMail scheduled task (register script:
-* D:\code\register-bbs-mailcheck.ps1), which appends stdout to
-* D:\code\_bbsd_logs\bbs_mail.log -- the same cmd-redirect pattern the bbsd
+* register-bbs-mailcheck.ps1, host side, alongside the development root),
+* which appends stdout to _bbsd_logs\bbs_mail.log under the host log root
+* -- the same cmd-redirect pattern the bbsd
 * task uses (ALTERNATE not needed; the wrapper owns capture. DOTSCRIPT OUT
 * is NOT used: AIF-081 measured it losing the entire cmdout surface).
 *
