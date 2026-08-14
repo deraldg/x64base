@@ -189,6 +189,46 @@ Current public repository identities documented in governance:
   source split.
 - `deraldg/labtalk` owns campus, portal, labs, proofs, and teaching overlays.
 
+## Root Governance Documents
+
+The repository root holds 47 `.md` files. These are the ones that govern how the
+project is contributed to, built, licensed, released and promoted -- everything
+else in root is a lane artifact or a working note that has a home elsewhere.
+
+- `README.md` -- the human front door.
+- `CONTRIBUTING.md` -- how a change is proposed and what is expected of it.
+- `CODE_OF_CONDUCT.md` -- conduct expectations for participants.
+- `BUILDING.md` -- how the runtime is built.
+- `LICENSING.md` -- dual licence terms (GPLv3 or commercial).
+- `SECURITY.md` -- how to report a vulnerability.
+- `CREDITS.md` -- attribution, including non-git contributors.
+- `CHANGELOG.md` -- what changed, by release.
+- `RELEASE_NOTES.md` -- the current release statement.
+- `PROMOTION_PROCESS.md` -- how work moves development -> staging -> public.
+- `PROMOTION_CHECKLIST.md` -- the per-promotion checklist.
+- `WORKFLOW_X64BASE.md` -- the day-to-day working loop.
+
+Naming them here is not decoration. `check_mandatory_tracked.py` DERIVES the
+mandatory set from the backticked `.md` paths in this file and `AI_PORTAL.md`,
+so a document listed above is enforced-tracked and a document that is not listed
+is invisible to that gate. Before 2026-08-13 exactly four root documents were
+covered -- this file, `AI_PORTAL.md`, `CLAUDE.md` and `AGENTS.md` -- and the
+other forty-three, including every file above, could have gone untracked without
+anything noticing. The derivation is deliberate (a hand-kept second list would
+drift from what the portal actually says), so the way to protect a document is
+to point at it here rather than to add it to the checker.
+
+Deliberately NOT listed: MANIFEST.md -- named here WITHOUT backticks, because
+the derivation reads backticked paths and would otherwise declare the very file
+this paragraph is excluding. That is not a quirk to work around; it is the
+mechanism being literal about what "the portal points at this" means. Its name
+promises a repository inventory
+and its content is a one-off dev-drop note from 2026-05-21 about `C(4096)` field
+support, telling the reader to copy files into the repo root. It should be
+renamed to what it is or retired; declaring it mandatory would preserve the
+wrong thing, and a misleading name in root is worse than an absent one because
+the name alone gets cited as authority.
+
 ## Source Locations
 
 Use the repo-local source map before searching broadly:
