@@ -61,6 +61,24 @@ POLES = {
                  "hype removed. Directories that exist, with the files in them counted.",
         "reads": "Read this side for what EXISTS. Scanned from src/, not declared.",
     },
+    "labtalk": {
+        "label": "LabTalk",
+        "tag": "sideways // what is taught and recorded",
+        "blurb": "The campus and the record it keeps: lessons, proof documents, "
+                 "registries, and the AI portal. Where the engine's work becomes "
+                 "something a person or an agent can be taught from.",
+        "reads": "Read this side for what is KNOWN. Scanned from labtalk/.",
+    },
+    "site": {
+        "label": "x64base.com",
+        "tag": "outward // what the public is told",
+        "blurb": "The published face of all three other piers. It is the only "
+                 "surface an outsider ever sees, which makes it the one where an "
+                 "overclaim costs the most.",
+        # Stated on the panel rather than hidden: this pier is the odd one out.
+        "reads": "DECLARED, not scanned -- the site is a separate repository this "
+                 "generator cannot reach. The only unmeasured pier, said out loud.",
+    },
 }
 
 LIFECYCLES = [
@@ -142,6 +160,67 @@ def scrub_tree(obj):
     return obj
 
 
+# --- work state, from the intake queue ----------------------------------------
+# The claim ledger says a lane EXISTS. The intake queue says what STATE it is in,
+# and the map ignored that column entirely -- so a reader could see 43 claimed
+# lanes and not know which were proven, promoted, or merely proposed.
+#
+# Measured 2026-08-14 before writing the normaliser: 108 intake rows carry 86
+# DISTINCT status strings. That is free text, not a vocabulary, and it repeats the
+# underscore/hyphen split already found in proofs.yaml ("source_defined" x3 vs
+# "source-defined" x3; "runtime-observed" x6 vs "closed_runtime_observed" x4).
+# So: bucket by keyword, keep the raw string on the node, and report whatever
+# refuses to bucket rather than dropping it.
+INTAKE_QUEUE = "docs/ai-friendly/AI_INTERACTION_INTAKE_QUEUE_V1.md"
+
+# Order matters: first keyword hit wins, so terminal states are tested before
+# in-flight ones. Keys were extended 2026-08-14 from the 22 rows that refused to
+# bucket on the first pass -- measured, not guessed. Deliberately NOT tuned to
+# zero: a residual "unclassified" is the honest signal that this column is free
+# text, and driving it to zero by inventing keys would hide that.
+WORK_STATE = [
+    ("rejected",    ("reject", "withdrawn", "superseded")),
+    ("closed",      ("closed", "retired", "complete")),
+    ("promoted",    ("promoted", "published", "merged", "deployed")),
+    ("proven",      ("runtime-proven", "runtime_proven", "runtime-observed",
+                     "runtime_observed", "validated", "green", "proven",
+                     "measured", "fixed")),
+    ("source-defined", ("source-defined", "source_defined", "implemented", "built")),
+    ("anchored",    ("anchored", "codified", "documented", "pin ")),
+    ("active",      ("active", "in flight", "in progress", "wiring pending")),
+    ("in-review",   ("review-needed", "review needed", "review_needed", "routed",
+                     "draft", "scoping")),
+    ("planned",     ("planned", "proposed", "not started", "not-started",
+                     "pick-up-ready", "design", "intake", "charter", "staged",
+                     "seed")),
+]
+
+
+def work_state(raw: str) -> str:
+    low = (raw or "").lower()
+    for name, keys in WORK_STATE:
+        if any(k in low for k in keys):
+            return name
+    return "unclassified"
+
+
+def load_intake(root: str) -> dict:
+    """AIF-NNN -> {raw status, bucket}. Absent file is not fatal."""
+    out = {}
+    path = os.path.join(root, INTAKE_QUEUE)
+    if not os.path.isfile(path):
+        return out
+    for line in open(path, encoding="utf-8", errors="replace"):
+        m = re.match(r"\|\s*(AIF-\d{3})\s*\|", line)
+        if not m:
+            continue
+        cells = [c.strip() for c in line.split("|")]
+        raw = cells[6] if len(cells) > 6 else ""
+        raw = re.sub(r"\*\*|`", "", raw)[:90]
+        out[m.group(1)] = {"raw": raw, "state": work_state(raw)}
+    return out
+
+
 def repo_root() -> str:
     here = os.path.abspath(os.path.dirname(__file__))
     for _ in range(6):
@@ -186,9 +265,27 @@ def load(root: str) -> dict:
         claims.append({"aif": os.path.basename(f)[:-6], "lane": field("lane"),
                        "member": field("member")})
 
+    # LabTalk surfaces, SCANNED the same way src/ is -- counted, not declared.
+    # Owner direction 2026-08-13: the span rests on four piers, and a pier with
+    # no data is decoration. These are real directories with real file counts.
+    labtalk_areas = []
+    for name, rel in (("lessons", "labtalk/lessons"),
+                      ("proofs", "labtalk/proofs"),
+                      ("registries", "labtalk/registries"),
+                      ("ai_portal", "labtalk/ai_portal"),
+                      ("portal", "labtalk/portal")):
+        n = len([p for p in glob.glob(os.path.join(root, rel, "**", "*"),
+                                      recursive=True) if os.path.isfile(p)])
+        if n:
+            labtalk_areas.append({"name": name, "rel": rel, "files": n})
+
+    intake = load_intake(root)
+
     return {"projects": projects, "claims": claims, "proofs": proofs,
+            "intake": intake,
             "declared_states": declared,
             "subsystems": scan_subsystems(root),
+            "labtalk": labtalk_areas,
             "transcripts": len(glob.glob(os.path.join(root, "labtalk/proofs/runs/*"))),
             "dts": len(glob.glob(os.path.join(root, "dottalkpp/data/scripts/**/*.dts"),
                                  recursive=True))}
@@ -291,9 +388,30 @@ def build(data: dict, jn: dict) -> dict:
     add("grp:claims", "pole:x64base", "Claimed AIF lanes", "group", "",
         {"count": len(data["claims"])},
         "The atomic ledger. Claimed with O_EXCL, never chosen by grep.")
+    intake = data.get("intake", {})
     for c in data["claims"]:
-        add(f"cl:{c['aif']}", "grp:claims", c["aif"], "claim", "",
-            {"member": c["member"]}, c["lane"])
+        ix = intake.get(c["aif"], {})
+        add(f"cl:{c['aif']}", "grp:claims", c["aif"], "claim",
+            ix.get("state", "no intake row"),
+            {"member": c["member"], "raw": ix.get("raw", "")}, c["lane"])
+
+    # Work state -- the column the map used to ignore.
+    buckets = defaultdict(list)
+    for aif, ix in sorted(intake.items()):
+        buckets[ix["state"]].append((aif, ix["raw"]))
+    order = [n for n, _ in WORK_STATE] + ["unclassified"]
+    add("grp:workstate", "pole:x64base", "Work state", "group", "",
+        {"count": len(intake)},
+        f"{len(intake)} intake rows bucketed by the Status column. The claim ledger "
+        f"says a lane exists; this says what state it is in.")
+    for name in order:
+        rows = buckets.get(name, [])
+        if not rows:
+            continue
+        add(f"ws:{name}", "grp:workstate", name, "state", name,
+            {"count": len(rows)}, f"{len(rows)} lane(s)")
+        for aif, raw in rows:
+            add(f"ws:{name}:{aif}", f"ws:{name}", aif, "lane", "", {}, raw)
 
     # --- dottalkpp pole: SCANNED -------------------------------------------
     subs = data["subsystems"]
@@ -316,8 +434,64 @@ def build(data: dict, jn: dict) -> dict:
             add(f"{nid}:pf:{p['id']}", nid, p["id"], "proof",
                 p.get("state", ""), {}, (p.get("label") or "")[:200])
 
+    # --- labtalk pole: SCANNED ----------------------------------------------
+    areas = data.get("labtalk", [])
+    lt_total = sum(a["files"] for a in areas)
+    add("grp:labtalk", "pole:labtalk", "Campus surfaces", "group", "",
+        {"count": len(areas)},
+        f"Scanned from labtalk/ at run time -- {len(areas)} surface(s), "
+        f"{lt_total} file(s).")
+    for a in sorted(areas, key=lambda x: -x["files"]):
+        add("lt:" + a["name"], "grp:labtalk", a["name"], "subsystem", "",
+            {"count": a["files"], "files": f"{a['files']} files"},
+            f"{a['files']} file(s) under {a['rel']}.")
+
+    # --- site pole: DECLARED, and labelled as such --------------------------
+    add("grp:site", "pole:site", "Published surfaces", "group", "",
+        {"count": 0},
+        "NOT SCANNED. The site lives in a separate repository (x64base-site) "
+        "that this generator cannot read, so nothing here is measured. Listing "
+        "declared names would be the one hand-written literal on a map whose v2 "
+        "note says it removed hand-written literals BECAUSE THEY DRIFT. The "
+        "honest fix is an export from the site tree into this one -- "
+        "tools/reports/regen_site_regression.ps1 already writes cross-tree, so "
+        "the precedent exists. Until then this pier reports its own absence.")
+
     # --- the bridge ---------------------------------------------------------
     covered = [s for s in subs if jn["by_sub"].get(s["name"])]
+
+    # Per-pier coverage. The span rests on four piers, so it reports on four
+    # (owner direction 2026-08-13). Two are measured, one is measured and
+    # trivially complete, and one cannot be -- and saying which is which IS the
+    # measurement. A span that reported only the piers it could reach would be
+    # the same overclaim-by-omission this panel exists to catch.
+    add("br:piers", "pole:bridge",
+        "Proof coverage, per pier", "measure", "", {"count": 4},
+        "How much registered proof each pier carries. Read the gaps as facts "
+        "about the REGISTRY first and the work second.")
+    add("br:pier:x64base", "br:piers",
+        f"x64base -- {len(data['projects'])} projects, {len(data['claims'])} claims declared",
+        "measure", "", {"count": len(data["projects"])},
+        "Declared intent. Coverage here means a lane exists and is claimed, not "
+        "that anything is built.")
+    add("br:pier:dottalkpp", "br:piers",
+        f"DotTalk++ -- {len(covered)} of {len(subs)} subsystems carry a registered proof",
+        "measure", "", {"count": len(covered)},
+        "The number that reads worst and means least without its companion "
+        "below: the engine is not unproven, the index is aimed elsewhere.")
+    add("br:pier:labtalk", "br:piers",
+        f"LabTalk -- {lt_total} files across {len(areas)} surfaces",
+        "measure", "", {"count": lt_total},
+        "The campus holds the proof DOCUMENTS the registry indexes, so it is "
+        "both a pier and the filing cabinet the bridge reads from.")
+    add("br:pier:site", "br:piers",
+        "x64base.com -- 0 proof records, and 0 is not a finding",
+        "defect", "", {"count": 0},
+        "The site carries no registered proof at all. That is not evidence the "
+        "site is unproven; it is evidence that NOTHING IN THIS REGISTRY POINTS "
+        "AT IT, because the generator cannot see that repository. The zero is "
+        "the absence of a measurement, not a measurement of absence -- and it "
+        "is shown rather than omitted so the distinction stays visible.")
     add("br:coverage", "pole:bridge",
         f"{len(covered)} of {len(subs)} subsystems carry a registered proof",
         "measure", "", {"count": len(covered)},
@@ -332,6 +506,22 @@ def build(data: dict, jn: dict) -> dict:
     for k, v in jn["where"].most_common():
         add(f"br:w:{k}", "pole:bridge", f"{v} proof records point at {k}", "measure",
             "", {"count": v}, "")
+    ix = data.get("intake", {})
+    unc = [a for a, v in ix.items() if v["state"] == "unclassified"]
+    add("br:ledger", "pole:bridge",
+        f"{len(data['claims'])} claimed lanes against {len(ix)} intake rows",
+        "measure", "", {"count": len(ix)},
+        "A claim is atomic; an intake row is prose. Rows without a claim are "
+        "pre-coordination, which the collision gate already reports as advisory.")
+    add("br:vocab", "pole:bridge",
+        f"{len(set(v['raw'] for v in ix.values()))} distinct Status strings across "
+        f"{len(ix)} rows",
+        "defect" if len(unc) else "measure", "", {"count": len(unc)},
+        "The Status column is free text, not a vocabulary -- the same "
+        "underscore/hyphen split already found in proofs.yaml. "
+        + (f"{len(unc)} row(s) bucket to 'unclassified' and are listed under Work state."
+           if unc else "All rows bucket."))
+
     add("br:unmapped", "pole:bridge",
         f"{len(jn['unmapped'])} of {len(data['proofs'])} proof records map to no subsystem",
         "measure", "", {"count": len(jn["unmapped"])},
@@ -373,7 +563,15 @@ color:var(--dim);font-size:12px;display:flex;gap:6px;flex-wrap:wrap}
 #search{margin-left:auto;background:var(--pan);border:1px solid var(--line);
 color:var(--tx);padding:6px 10px;border-radius:4px;font:inherit;min-width:230px}
 main{padding:20px 22px 60px}
-.poles{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+/* Owner direction 2026-08-13: the bridge is a SPAN, so it lies horizontally
+   across the top and the four piers stand under it. The previous layout put it
+   in the middle column of three, which read as a third pole rather than as the
+   thing connecting them. */
+.span{margin-bottom:14px}
+.span .pole{border-color:var(--acc2)}
+.piers{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+@media(max-width:1100px){.piers{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:620px){.piers{grid-template-columns:1fr}}
 .pole{background:var(--pan);border:1px solid var(--line);border-radius:8px;padding:20px;
 cursor:pointer;transition:.15s}
 .pole:hover{border-color:var(--acc);transform:translateY(-2px)}
@@ -431,9 +629,14 @@ function poles(){
   const mk=(id,cls)=>{const n=D.nodes[id];return `<div class="pole ${cls||''}" onclick="go('${id}')">
     <h2>${n.label}</h2><div class="tag">${n.meta.tag}</div>
     <p>${n.note}</p><div class="reads">${n.meta.reads}</div></div>`;};
+  // The span first, full width, then the piers under it. Selected by ID rather
+  // than by index: the old code read k[0]/k[2]/k[1] positionally, which silently
+  // reorders the moment a pole is added -- and a pole was added.
   const k=D.kids["root"];
+  const piers=k.filter(id=>id!=="pole:bridge");
   document.getElementById("view").innerHTML=
-    `<div class="poles">${mk(k[0])}${mk(k[2],'mid')}${mk(k[1])}</div>`;
+    `<div class="span">${mk("pole:bridge","mid")}</div>` +
+    `<div class="piers">${piers.map(id=>mk(id)).join("")}</div>`;
 }
 function go(id){path.push(id);render();}
 function cards(id){
