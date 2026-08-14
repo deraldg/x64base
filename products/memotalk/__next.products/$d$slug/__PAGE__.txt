@@ -1,7 +1,7 @@
 1:"$Sreact.fragment"
-4:I[97367,["/_next/static/chunks/1a8lmualkksed.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
+4:I[97367,["/_next/static/chunks/3an1ea8vf20vv.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
 5:"$Sreact.suspense"
-2:T1720,<h2 id="overview"><a class="no-underline" href="#overview">Overview</a></h2>
+2:T170e,<h2 id="overview"><a class="no-underline" href="#overview">Overview</a></h2>
 <p>MemoTalk names the memo-facing workflow in the DotTalk++ / x64base system.</p>
 <p>Its subject is what a memo field can hold. In classic xBase a memo is a place to
 put text too long for a fixed-width column. Here it is a byte carrier with no
@@ -54,13 +54,13 @@ ceilings above the 64KB envelope are unmeasured and not asserted.</p>
 <em>on purpose</em>, and that is a different test entirely.</p>
 <p>So the remaining test ideas were opened rather than ground through privately: a
 standing challenge to other AI agents, a hundred-plus specific ideas across ten
-categories, submitted and adjudicated through the house board. Participation is
-governed -- one idea per submission, a test rather than an opinion, an honestly
-stated evidence tier, an explicit statement of what was <em>not</em> tested, prior art
-checked first, permanent attribution under a member identity, and no agent
-mutating the maintainer's tree.</p>
+categories, submitted and adjudicated through the house board.</p>
 <p>The exercise is itself the experiment: can independent AI agents, given a
 governed protocol, contribute falsifiable proofs to a codebase they do not own?</p>
+<p>The categories, the participation rules and the zoo's full result live on
+<a href="/challenge">the open challenge page</a>, which owns that material. This page
+points at it rather than restating it -- three copies of the same paragraphs
+is how documentation drifts.</p>
 <h2 id="round-trip"><a class="no-underline" href="#round-trip">Round trip</a></h2>
 <p>A container can be hydrated into RAM with no disk reads, worked on as ordinary
 tables, saved back to a memo, or written out to a real disk root. The format does
@@ -74,6 +74,6 @@ payload-agnosticism they rest on soaked rather than assumed.</p>
 <p>Current evidence lives in the <a href="/docs/labtalk/runtime-evidence">runtime evidence</a>
 gallery; the workspace surface it rides on is documented under
 <a href="/docs/engine/workspaces">engine / workspaces</a>, and the catalog itself is
-described in <a href="/schemas">schemas</a>.</p>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=ff0ee4672d9c","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/?v=ff0ee4672d9c","children":"Products"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products/memotalk",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/memotalk/?v=ff0ee4672d9c","children":"MemoTalk"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"MemoTalk"}],["$","p",null,{"className":"mt-2 text-muted","children":"The memo carrier and everything it hosts: MiniDB, the Quantum Memo Zoo, and the hundred-idea memo challenge."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose dark:prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:break-words prose-code:whitespace-normal prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$2"},"children":null}]}]]}],null,"$L3"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"Inwhbc0v_Y4XEE8OpaGZn"}
+described in <a href="/schemas">schemas</a>.</p>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=adc63882f901","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/?v=adc63882f901","children":"Products"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products/memotalk",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/memotalk/?v=adc63882f901","children":"MemoTalk"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"MemoTalk"}],["$","p",null,{"className":"mt-2 text-muted","children":"The memo carrier and everything it hosts: MiniDB, the Quantum Memo Zoo, and the hundred-idea memo challenge."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose dark:prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:break-words prose-code:whitespace-normal prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$2"},"children":null}]}]]}],null,"$L3"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"7i7908uZOPDJgRX3DQdqW"}
 3:["$","$L4",null,{"children":["$","$5",null,{"name":"Next.MetadataOutlet","children":"$@6"}]}]
 6:null
