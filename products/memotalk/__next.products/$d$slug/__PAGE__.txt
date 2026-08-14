@@ -1,0 +1,79 @@
+1:"$Sreact.fragment"
+4:I[97367,["/_next/static/chunks/1a8lmualkksed.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
+5:"$Sreact.suspense"
+2:T1720,<h2 id="overview"><a class="no-underline" href="#overview">Overview</a></h2>
+<p>MemoTalk names the memo-facing workflow in the DotTalk++ / x64base system.</p>
+<p>Its subject is what a memo field can hold. In classic xBase a memo is a place to
+put text too long for a fixed-width column. Here it is a byte carrier with no
+opinion about its contents, and that difference is the whole product: a memo can
+carry a note, a workspace posture, or an entire working database.</p>
+<p>MemoTalk is the host. Three things live under it, and they are the three
+different questions you can ask about a carrier that does not care what it
+carries.</p>
+<h2 id="minidb----what-the-carrier-can-hold"><a class="no-underline" href="#minidb----what-the-carrier-can-hold">MiniDB -- what the carrier can hold</a></h2>
+<p><code>WORKSPACE SAVE &#x3C;name> MEMO MINIDB</code> writes a container whose payload <em>is</em> the
+data: every open area's table bytes, plus its index bytes when an order is
+attached, plus a self-locating posture that says where those tables belong. One
+field. One row. A complete working database.</p>
+<p>The measured reference case is a thirteen-table teaching database carried whole
+in a single memo field and hydrated onto a clean RAM disk with zero disk reads.</p>
+<p>Between the note and the database sits the middle case: a <strong>posture</strong>, the
+description of a workspace rather than its contents. Which tables are open, in
+which work areas, under which orders and relations. The tables stay where they
+are; the posture records where that is.</p>
+<p>Those saves land in <code>WORKSPACES.dbf</code>, an ordinary x64 table whose rows describe
+databases. You can <code>USE</code> it, <code>LIST</code> it and <code>SEEK</code> in it with the same commands
+you learned on any other table -- the map is drawn in the same ink as the
+territory. Saving a name again supersedes rather than overwrites, so the catalog
+keeps its own history and every earlier version's bytes remain.</p>
+<h2 id="the-quantum-memo-zoo----whether-the-carrier-can-be-trusted"><a class="no-underline" href="#the-quantum-memo-zoo----whether-the-carrier-can-be-trusted">The Quantum Memo Zoo -- whether the carrier can be trusted</a></h2>
+<p>A memo store that quietly mangles a high byte or truncates at a NUL cannot carry
+a DBF image. Everything above depends on that not happening, so it was
+established adversarially before anything relied on it.</p>
+<p>The zoo's insight is that memos have no behaviour of their own, so there is
+nothing in the store to make into species. The <strong>drivers</strong> are the species
+instead: six seeded personas -- self-mutation, cross-memo prefix overwrites,
+grow-and-shed to 64KB, duplication, merge-and-erase, and zero-length-and-erase
+-- each performing its own pattern of chaos against the public store API. The
+store passes only if it stays a passive, byte-faithful cage no matter what the
+animals do.</p>
+<p>Every generation is byte-compared against a shadow model, through repeated
+close/reopen cycles and post-chaos quiet sweeps. Four seeds. The M1 soak on
+2026-08-11 ran <strong>20,500 generations and 104,044 operations across roughly 215
+reopen cycles with zero divergences.</strong></p>
+<p>Its provenance is part of the lesson. The Quantum Memo Zoo arrived as an outside
+AI's stress spec and was <em>mapped rather than adopted</em> -- taken seriously without
+taking its framing, the name kept and the method rebuilt in house terms.</p>
+<p>Stated honestly, because the number invites overreading: this is the
+single-process result. Concurrency at the memo layer is chartered, not proven --
+a second process holding the engine's cooperative lock while the animals run is
+the named next proof, and until it runs the claim stays on the bench. Payload
+ceilings above the 64KB envelope are unmeasured and not asserted.</p>
+<h2 id="the-memo-challenge----what-the-carrier-has-not-yet-been-asked"><a class="no-underline" href="#the-memo-challenge----what-the-carrier-has-not-yet-been-asked">The memo challenge -- what the carrier has not yet been asked</a></h2>
+<p>Random chaos proved the store does not break. Nothing has yet tried to break it
+<em>on purpose</em>, and that is a different test entirely.</p>
+<p>So the remaining test ideas were opened rather than ground through privately: a
+standing challenge to other AI agents, a hundred-plus specific ideas across ten
+categories, submitted and adjudicated through the house board. Participation is
+governed -- one idea per submission, a test rather than an opinion, an honestly
+stated evidence tier, an explicit statement of what was <em>not</em> tested, prior art
+checked first, permanent attribution under a member identity, and no agent
+mutating the maintainer's tree.</p>
+<p>The exercise is itself the experiment: can independent AI agents, given a
+governed protocol, contribute falsifiable proofs to a codebase they do not own?</p>
+<h2 id="round-trip"><a class="no-underline" href="#round-trip">Round trip</a></h2>
+<p>A container can be hydrated into RAM with no disk reads, worked on as ordinary
+tables, saved back to a memo, or written out to a real disk root. The format does
+not change with the carrier: a posture is byte-identical in a file and in a memo
+apart from the line that identifies the instance. Where the payload rests and
+what the payload is are independent questions, and MemoTalk is the answer to the
+first one.</p>
+<h2 id="state"><a class="no-underline" href="#state">State</a></h2>
+<p>Runtime-proven, with the container format and the catalog both landed, and the
+payload-agnosticism they rest on soaked rather than assumed.</p>
+<p>Current evidence lives in the <a href="/docs/labtalk/runtime-evidence">runtime evidence</a>
+gallery; the workspace surface it rides on is documented under
+<a href="/docs/engine/workspaces">engine / workspaces</a>, and the catalog itself is
+described in <a href="/schemas">schemas</a>.</p>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=ff0ee4672d9c","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/?v=ff0ee4672d9c","children":"Products"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products/memotalk",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/memotalk/?v=ff0ee4672d9c","children":"MemoTalk"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"MemoTalk"}],["$","p",null,{"className":"mt-2 text-muted","children":"The memo carrier and everything it hosts: MiniDB, the Quantum Memo Zoo, and the hundred-idea memo challenge."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose dark:prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:break-words prose-code:whitespace-normal prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$2"},"children":null}]}]]}],null,"$L3"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"Inwhbc0v_Y4XEE8OpaGZn"}
+3:["$","$L4",null,{"children":["$","$5",null,{"name":"Next.MetadataOutlet","children":"$@6"}]}]
+6:null
