@@ -1,4 +1,7 @@
+import fs from "node:fs";
+import matter from "gray-matter";
 import { Card } from "@/components/Card";
+import { walkMdx } from "@/lib/content";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -7,17 +10,62 @@ export const metadata: Metadata = {
     "The major workflows in the local DotTalk++ and x64base runtime: engine, shell, DotScript, tuple and relation views, SQLsel, and the Laboratory Campus."
 };
 
-const products = [
-  { slug: "x64base-engine", title: "x64base Engine", description: "DBF runtime, x64-family tables, indexes, memos, work areas." },
-  { slug: "dottalk", title: "DotTalk++", description: "Canonical command shell, scripting surface, and teaching runtime." },
-  { slug: "dotscript", title: "DotScript", description: "Script language for repeatable command files, loops, variables, comments, and automation." },
-  { slug: "tuptalk", title: "TupTalk", description: "Tuple-facing record views, projections, export, validation, and relation-aware row output." },
-  { slug: "tabletalk", title: "TableTalk", description: "Table buffering, dirty/stale state, commit/rollback, and buffered mutation workflows." },
-  { slug: "reltalk", title: "RelTalk", description: "Relation graphs, asymmetric links, workspace persistence, and ERSATZ traversal." },
-  { slug: "sqlsel", title: "SQLsel", description: "Set-oriented SELECT over open work areas, with WHERE, ORDER BY, LIMIT, and COUNT(*), verified against a SQLite oracle." },
-  { slug: "parallel-gui-tui", title: "Parallel GUI/TUI", description: "DotTalk++ Workbench lane for keeping graphical and terminal surfaces aligned over the same engine services." },
-  { slug: "labtalk", title: "Laboratory Campus / LabTalk", description: "Public campus frame and LabTalk mark for planning, in-development labs, and existing x64base / DotTalk++ learning evidence." }
+// This list is DERIVED from content/products/*.mdx, not hand-maintained.
+//
+// It used to be a hardcoded array, and on 2026-08-13 the owner noticed MemoTalk
+// missing from this page while its product page worked fine. Measured: THREE
+// products were unreachable from here -- arctictalk, memotalk and turbotalk --
+// each with an .mdx file and a live route, and none of them listed. Two had been
+// invisible long enough that nobody remembered adding them.
+//
+// A hand-typed index of files that already exist can only ever fall behind, and
+// it fails silently: the page renders perfectly, just short. Deriving it means a
+// new product page CANNOT be invisible here.
+//
+// ORDER is still curated, because alphabetical would open the page on ArcticTalk
+// rather than the engine. Anything not named in ORDER is appended alphabetically
+// instead of dropped -- the omission that started this could not happen again.
+const ORDER = [
+  "x64base-engine",
+  "dottalk",
+  "dotscript",
+  "memotalk",
+  "tuptalk",
+  "tabletalk",
+  "reltalk",
+  "sqlsel",
+  "parallel-gui-tui",
+  "arctictalk",
+  "turbotalk",
+  "labtalk"
 ];
+
+type ProductCard = { slug: string; title: string; description: string };
+
+function loadProducts(): ProductCard[] {
+  const found: ProductCard[] = walkMdx("products").map((r) => {
+    const fm = matter(fs.readFileSync(r.filePath, "utf8")).data as {
+      title?: string;
+      description?: string;
+    };
+    const slug = r.slug[0];
+    return {
+      slug,
+      title: fm.title ?? slug,
+      description: fm.description ?? ""
+    };
+  });
+
+  const rank = (s: string) => {
+    const i = ORDER.indexOf(s);
+    return i === -1 ? ORDER.length : i;
+  };
+  return found.sort(
+    (a, b) => rank(a.slug) - rank(b.slug) || a.slug.localeCompare(b.slug)
+  );
+}
+
+const products = loadProducts();
 
 export default function ProductsPage() {
   return (
