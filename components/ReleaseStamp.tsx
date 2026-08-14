@@ -22,6 +22,15 @@ import { useEffect, useState } from "react";
  *
  * Renders nothing at all if the fetch fails. A footer ornament must never be a
  * reason a page looks broken.
+ *
+ * The 0 case is deliberate and is NOT the same as the failure case. public/
+ * carries a committed seed with release_number 0, so `next dev` shows
+ * "release dev" rather than the nothing it used to show. Before that seed
+ * existed, local rendered blank while production rendered a number, and the
+ * component reported neither -- the two surfaces disagreed silently. Worse, a
+ * missing artifact IN PRODUCTION would have looked exactly like localhost:
+ * no error, no gap, just absence. The publish script now verifies the live
+ * file after pushing, because that blindness cannot be fixed from in here.
  */
 type Release = { release_number?: number; published_at_utc?: string };
 
@@ -43,13 +52,16 @@ export function ReleaseStamp() {
     };
   }, []);
 
-  if (!rel?.release_number) return null;
+  // A number we could not read at all -> render nothing, as before.
+  // A number we read as 0 -> the dev seed; say so out loud.
+  if (rel === null || typeof rel.release_number !== "number") return null;
 
+  const isDev = rel.release_number === 0;
   const day = rel.published_at_utc ? rel.published_at_utc.slice(0, 10) : null;
 
   return (
-    <span className="font-mono" title="Publishes of this site, counted from the deploy history. No visitor tracking.">
-      release {rel.release_number}
+    <span className="font-mono" title="Publishes of this site, counted from the deploy history. Not a visitor count -- this site has no analytics and no third-party scripts.">
+      release {isDev ? "dev" : rel.release_number}
       {day ? ` · ${day}` : ""}
     </span>
   );

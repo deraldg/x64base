@@ -127,6 +127,75 @@ function writeReleaseMetadata({ sourceCommit, sourceBranch, packageVersion }) {
   );
 }
 
+// The stamp is an ornament, so readReleaseNumber() swallows its own errors and
+// the component renders nothing when the fetch fails. Both are right in
+// isolation and together they were a blind spot: a missing artifact in
+// production looked EXACTLY like a working one with nothing to say -- no error,
+// no gap in the footer, no console line. The only way to tell was to go look,
+// and nobody goes and looks at an ornament.
+//
+// So the publish checks it, in two places. Before the push, deterministically,
+// on the bytes about to ship. After the push, over the network, against what
+// GitHub Pages actually serves. The first can block; the second cannot (the
+// commit is already out) but it can be loud, and it retries because Pages
+// propagation is not instant.
+function assertReleaseArtifactShippable() {
+  const file = path.join(outDir, "artifacts", "site-release.json");
+  if (!fs.existsSync(file)) {
+    throw new Error(`Release artifact missing from the build: ${file}`);
+  }
+  let parsed;
+  try {
+    parsed = JSON.parse(fs.readFileSync(file, "utf8"));
+  } catch (err) {
+    throw new Error(`Release artifact is not valid JSON: ${err.message}`);
+  }
+  if (!Number.isInteger(parsed.release_number) || parsed.release_number < 1) {
+    // null means readReleaseNumber() hit its catch; 0 means the public/ dev seed
+    // survived, i.e. writeReleaseMetadata never ran. Both ship a footer that
+    // says "dev" or nothing on the live site.
+    throw new Error(
+      `Release artifact has no usable release_number (got ${JSON.stringify(parsed.release_number)}). ` +
+      "null = the gh-pages log could not be counted; 0 = the dev seed was published instead of real metadata.",
+    );
+  }
+  return parsed.release_number;
+}
+
+async function verifyLiveReleaseArtifact(expected) {
+  const url = `https://${domain}/artifacts/site-release.json`;
+  const delaysMs = [3000, 6000, 12000, 24000, 30000];
+  for (let attempt = 0; attempt <= delaysMs.length; attempt += 1) {
+    try {
+      const res = await fetch(url, { cache: "no-store" });
+      if (res.ok) {
+        const live = await res.json();
+        if (live.release_number === expected) {
+          console.log(`Verified live release artifact: ${url} -> release ${expected}`);
+          return true;
+        }
+        console.log(
+          `  live release_number is ${live.release_number}, expecting ${expected} (Pages may still be propagating)`,
+        );
+      } else {
+        console.log(`  ${url} -> HTTP ${res.status}`);
+      }
+    } catch (err) {
+      console.log(`  ${url} -> ${err.message}`);
+    }
+    if (attempt < delaysMs.length) {
+      await new Promise((r) => setTimeout(r, delaysMs[attempt]));
+    }
+  }
+  console.error("");
+  console.error(`WARNING: could not confirm ${url} serves release ${expected}.`);
+  console.error("The push already happened -- this does NOT mean the publish failed.");
+  console.error("It means the footer's release stamp may be blank on the live site,");
+  console.error("and a blank stamp looks identical to a working one. Check by hand:");
+  console.error(`  curl -s ${url}`);
+  return false;
+}
+
 function assertLocalOnlyReportsAbsent() {
   const reportsDir = path.join(outDir, "reports");
   if (fs.existsSync(reportsDir)) {
@@ -175,6 +244,7 @@ if (!fs.existsSync(outDir)) {
 assertLocalOnlyReportsAbsent();
 
 writeReleaseMetadata({ sourceCommit, sourceBranch, packageVersion });
+const releaseNumber = assertReleaseArtifactShippable();
 
 removeDeployContents();
 copyDir(outDir, deployDir);
@@ -188,3 +258,7 @@ console.log(`Source commit: ${sourceCommit}`);
 console.log(`Source branch: ${sourceBranch}`);
 console.log("Release metadata: /artifacts/site-release.json");
 console.log("Verify Pages settings with: gh api repos/deraldg/x64base/pages");
+
+console.log("");
+console.log(`Confirming the live release artifact (release ${releaseNumber})...`);
+await verifyLiveReleaseArtifact(releaseNumber);

@@ -1,0 +1,19 @@
+{
+  "site": "x64base.com",
+  "release_number": 0,
+  "published_at_utc": null,
+  "publish_mode": "dev-seed",
+  "_comment": [
+    "Development seed, committed on purpose. The real file is written by",
+    "scripts/publish-github-pages.mjs into out/artifacts/ during a publish, which",
+    "OVERWRITES this one -- next build copies public/ into out/ first, the publish",
+    "script writes second. So production never serves this.",
+    "",
+    "It exists because without it the footer's ReleaseStamp fetched a 404 on",
+    "next dev, rendered null, and said nothing about it. Local and production",
+    "disagreed and neither surface admitted it. release_number 0 makes the",
+    "component render 'release dev', so the stamp is visible and styleable",
+    "locally and a missing/failed publish shows up as the word 'dev' in a place",
+    "someone will notice."
+  ]
+}
