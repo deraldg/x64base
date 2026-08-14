@@ -599,14 +599,72 @@ def build(data: dict, jn: dict) -> dict:
     return {"nodes": nodes, "kids": kids, "sclass": STATUS_CLASS}
 
 
+def _esc(s):
+    return (str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;"))
+
+
+def static_index(nodes):
+    """Emit every node as static HTML so the page can actually be indexed.
+
+    Pagefind parses HTML and does not run JavaScript. This page renders all of
+    its content client-side from the D blob, so for the whole of its life the
+    only text a crawler could see was 57 words of chrome -- the map's 465 lanes,
+    claims, proofs and subsystems were invisible to site search, and to any
+    reader without JavaScript. Adding <html> in the morning silenced Pagefind's
+    complaint without changing that; this is the part that fixes it.
+
+    Built from the SCRUBBED tree (scrub_tree runs before this is called), so the
+    static copy carries no path the interactive copy would have hidden, and the
+    refusal check downstream still sees everything that is about to be written.
+
+    Roughly doubles the page: the same text now exists as JSON for the UI and as
+    markup for the crawler. That is a real duplication and the reason it is
+    tolerable is that both halves are emitted here, from one source, in one
+    pass -- they cannot drift apart the way a hand-maintained index would.
+    """
+    out = []
+    for nid in sorted(nodes):
+        n = nodes[nid]
+        bits = ['<div class="ie">']
+        if n.get("kind"):
+            bits.append('<span class="k">%s</span> ' % _esc(n["kind"]))
+        bits.append("<b>%s</b>" % _esc(n.get("label") or nid))
+        if n.get("status"):
+            bits.append(' <span class="st">%s</span>' % _esc(n["status"]))
+        if n.get("note"):
+            bits.append("<p>%s</p>" % _esc(n["note"]))
+        extra = " ".join(_esc(v) for _, v in sorted((n.get("meta") or {}).items())
+                         if isinstance(v, str) and v)
+        if extra:
+            bits.append('<p class="mx">%s</p>' % extra)
+        bits.append("</div>")
+        out.append("".join(bits))
+    return "\n".join(out)
+
+
 TEMPLATE = """<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>x64base ecoschema -- drill-down map</title>
+<!-- Byte-identical to the no-flash script in the site's app/layout.tsx:68.
+     Same key, same 'light' default, same 'system' handling. If that ruling
+     changes, both copies change together. -->
+<script>(function(){try{var t=localStorage.getItem('theme')||'light';var d=t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);}catch(e){}})();</script>
 <style>
-:root{--bg:#0d1117;--pan:#151b23;--pan2:#1b232d;--line:#2a3441;--tx:#d7e0ea;
+/* Served from x64base.com/eco/ as a static passthrough, so this page does not
+   inherit the site's Next.js layout and was permanently dark while the site
+   defaults to light. The script in <head> reads the same localStorage['theme']
+   key the site uses, so the navbar toggle reaches this page too.
+
+   :root is light; html.dark restores the original console palette unchanged.
+   The gold --acc2:#f0b429 is kept in dark on the owner's call (2026-08-13).
+   Light needs a darker amber for contrast on paper, and rather than invent one
+   this uses the site's own --orange light token, rgb(186 92 20) = #ba5c14. */
+:root{--bg:#f6f9fc;--pan:#ffffff;--pan2:#eef3f8;--line:#d0ddeb;--tx:#0a1320;
+--dim:#374960;--acc:#1b6ca8;--acc2:#ba5c14;--ok:#15803d;--warn:#9a4c10;--bad:#b93030}
+html.dark{--bg:#0d1117;--pan:#151b23;--pan2:#1b232d;--line:#2a3441;--tx:#d7e0ea;
 --dim:#8b98a8;--acc:#5eb0ef;--acc2:#f0b429;--ok:#5dd39e;--warn:#e8834a;--bad:#f2777a}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--tx);
@@ -663,6 +721,15 @@ footer{padding:14px 22px;border-top:1px solid var(--line);color:var(--dim);font-
 footer a,.home{color:var(--acc);text-decoration:none}
 footer a:hover,.home:hover{text-decoration:underline}
 .home{font-size:12px;white-space:nowrap}
+#allentries{padding:0 22px 30px}
+#allentries summary{cursor:pointer;color:var(--acc);font-size:13px;padding:8px 0}
+#allentries .idx{columns:2;column-gap:22px}
+@media(max-width:820px){#allentries .idx{columns:1}}
+.ie{break-inside:avoid;border-left:2px solid var(--line);padding:2px 0 2px 10px;margin:0 0 10px}
+.ie .k{color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.4px}
+.ie .st{color:var(--acc2);font-size:11px}
+.ie p{margin:2px 0 0;color:var(--dim);font-size:12px}
+.ie p.mx{color:var(--dim);opacity:.75;font-size:11px}
 </style>
 </head>
 <body>
@@ -674,6 +741,14 @@ footer a:hover,.home:hover{text-decoration:underline}
 </header>
 <div id="crumbs"></div>
 <main id="view"></main>
+<section id="allentries">
+<details>
+<summary>All entries, as a static list -- what site search reads, and what this page shows without JavaScript</summary>
+<div class="idx" data-pagefind-body>
+__INDEX__
+</div>
+</details>
+</section>
 <footer>Generated by <code>tools/fullstack_docs/ecoschema_map.py</code> from
 <code>projects.yaml</code>, <code>proofs.yaml</code>, <code>coordination/aif/*.claim</code>
 and a scan of <code>src/*/</code>. Do not hand-edit; re-run the generator.
@@ -758,7 +833,8 @@ def main() -> int:
 
     nl = sum(len(p.get("lanes") or []) for p in data["projects"])
     out = args.out or os.path.join(root, "docs/maintenance/ECOSCHEMA_MAP_V1.html")
-    doc = (TEMPLATE.replace("__DATA__", json.dumps(built))
+    doc = (TEMPLATE.replace("__INDEX__", static_index(built["nodes"]))
+           .replace("__DATA__", json.dumps(built))
            .replace("__NP__", str(len(data["projects"])))
            .replace("__NL__", str(nl))
            .replace("__NC__", str(len(data["claims"])))
