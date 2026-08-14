@@ -45,39 +45,54 @@ except ImportError:
     sys.exit(4)
 
 
+# Prose rule for this map (owner direction 2026-08-13): write to a READER who
+# has just arrived, not to the maintainer. A stranger -- a student, an outside
+# developer, an AI agent onboarding cold -- should be able to learn what these
+# four surfaces ARE and why the distinction between them is worth drawing.
+# No in-jokes, no "us", no assumed context.
 POLES = {
     "x64base": {
         "label": "x64base",
-        "tag": "top-down // the organised frame",
-        "blurb": "Accurate, and openly a hybrid of planned and finished. The frame "
-                 "built from the top down so it can span the whole system and bridge "
-                 "downward to meet the push coming up from the engine.",
-        "reads": "Read this side for intent, structure, and where a thing is GOING.",
+        "tag": "declared // what the system says it is",
+        "blurb": "The plan of the system, written down: its lifecycles, its "
+                 "promotion ladder, the projects it has opened and the lanes "
+                 "someone has claimed. Every software project has a description "
+                 "of itself like this. It is drawn top-down, so it necessarily "
+                 "mixes what is finished with what is only intended -- and that "
+                 "mixture is not dishonesty, it is what a plan is.",
+        "reads": "Read this side to learn what the system is ORGANISED to be.",
     },
     "dottalkpp": {
         "label": "DotTalk++",
-        "tag": "bottom-up // what is actually built",
-        "blurb": "The simplified version of x64base with the conceptual unintended "
-                 "hype removed. Directories that exist, with the files in them counted.",
-        "reads": "Read this side for what EXISTS. Scanned from src/, not declared.",
+        "tag": "built // what the code actually contains",
+        "blurb": "The same system counted from the other end: directories that "
+                 "exist on disk, with their source files tallied. Nothing here "
+                 "is claimed -- it is measured at the moment this page is "
+                 "generated. If a subsystem appears here, code for it exists. "
+                 "That is a different and smaller statement than saying it works.",
+        "reads": "Read this side to learn what has actually been BUILT.",
     },
     "labtalk": {
         "label": "LabTalk",
-        "tag": "sideways // what is taught and recorded",
-        "blurb": "The campus and the record it keeps: lessons, proof documents, "
-                 "registries, and the AI portal. Where the engine's work becomes "
-                 "something a person or an agent can be taught from.",
-        "reads": "Read this side for what is KNOWN. Scanned from labtalk/.",
+        "tag": "recorded // what has been taught and evidenced",
+        "blurb": "Where the work becomes knowledge someone else can use: "
+                 "lessons, proof documents, the registries that index them, and "
+                 "the portal that onboards a newcomer. A system can be built and "
+                 "still be unlearnable. This is the surface that decides which.",
+        "reads": "Read this side to learn what the project KNOWS about itself.",
     },
     "site": {
         "label": "x64base.com",
-        "tag": "outward // what the public is told",
-        "blurb": "The published face of all three other piers. It is the only "
-                 "surface an outsider ever sees, which makes it the one where an "
-                 "overclaim costs the most.",
-        # Stated on the panel rather than hidden: this pier is the odd one out.
-        "reads": "DECLARED, not scanned -- the site is a separate repository this "
-                 "generator cannot reach. The only unmeasured pier, said out loud.",
+        "tag": "published // what an outsider is told",
+        "blurb": "The public face of the other three. It is the only surface most "
+                 "people will ever see, so it is the one where a claim that "
+                 "outruns its evidence does the most damage. Everything published "
+                 "here should be traceable back to one of the other piers.",
+        # This panel is deliberately the odd one out, and says why in plain terms.
+        "reads": "This pier is DECLARED, not measured: the website lives in a "
+                 "separate repository that this page's generator cannot read. "
+                 "Everything else here is counted; this one is asserted, and "
+                 "saying so is the point.",
     },
 }
 
@@ -339,12 +354,23 @@ def build(data: dict, jn: dict) -> dict:
     for key, p in POLES.items():
         add(f"pole:{key}", "root", p["label"], "pole", "",
             {"tag": p["tag"], "reads": p["reads"]}, p["blurb"])
+    # The "reads" line here used to say this was "the panel that can embarrass
+    # us". Removed on the owner's rule (2026-08-13): keep a remark like that only
+    # if the measurement genuinely warrants it, otherwise it is unprofessional.
+    # It does not warrant it. What this panel shows is an INDEXING gap, not a
+    # quality one -- most proof artifacts on disk were never registered. Calling
+    # that embarrassing both misstates the finding and performs modesty at the
+    # reader, who came here to learn something.
     add("pole:bridge", "root", "The bridge", "pole", "",
-        {"tag": "where the two poles actually meet",
-         "reads": "Coverage, measured. This is the panel that can embarrass us."},
-        "How far up the promotion ladder each built subsystem has actually climbed, "
-        "according to the proof registry -- and how much proof exists that the "
-        "registry does not index.")
+        {"tag": "measured // how the other four compare",
+         "reads": "Read this side to learn how far a claim and its evidence have "
+                  "drifted apart -- and which of the two is usually at fault."},
+        "A plan and a codebase always disagree somewhat. This panel measures the "
+        "distance between them instead of assuming it. It asks one question of "
+        "each pier: how much of what is here carries evidence that someone "
+        "registered? Where the answer is low, read it first as a statement about "
+        "the RECORD KEEPING, and only then about the work -- the two are easy to "
+        "confuse and the difference matters.")
 
     # --- x64base pole -------------------------------------------------------
     add("grp:lifecycles", "pole:x64base", "Lifecycles", "group", "",
@@ -370,7 +396,11 @@ def build(data: dict, jn: dict) -> dict:
 
     add("grp:projects", "pole:x64base", "Projects", "group", "",
         {"count": len(data["projects"])},
-        "Project contains Lane contains Milestone.")
+        "Work is nested three deep: a PROJECT contains LANES, and a lane contains "
+        "MILESTONES. The nesting matters because it is what lets a large system be "
+        "discussed at the size you happen to need -- a project for direction, a "
+        "lane for a piece of work someone owns, a milestone for a thing that can "
+        "actually be finished.")
     lane_ix = defaultdict(list)
     for c in data["claims"]:
         lane_ix[c["lane"].lower()].append(c)
@@ -387,7 +417,11 @@ def build(data: dict, jn: dict) -> dict:
 
     add("grp:claims", "pole:x64base", "Claimed AIF lanes", "group", "",
         {"count": len(data["claims"])},
-        "The atomic ledger. Claimed with O_EXCL, never chosen by grep.")
+        "A lane number is CLAIMED before work starts, so that two people -- or two "
+        "AI agents -- cannot pick the same one at the same time. The claim is made "
+        "by creating a file that only succeeds if it does not already exist, which "
+        "is a small idea with a large consequence: the answer to 'is this number "
+        "free?' can never be a stale guess.")
     intake = data.get("intake", {})
     for c in data["claims"]:
         ix = intake.get(c["aif"], {})
@@ -495,14 +529,20 @@ def build(data: dict, jn: dict) -> dict:
     add("br:coverage", "pole:bridge",
         f"{len(covered)} of {len(subs)} subsystems carry a registered proof",
         "measure", "", {"count": len(covered)},
-        "Registry coverage of the built tree. Everything else on the built pole "
-        "shows 'no proof registered', which is a statement about the REGISTRY, "
-        "not about whether the code was ever proven.")
+        "How much of the built code has evidence filed against it in the proof "
+        "registry. Read the remainder carefully: a subsystem showing 'no proof "
+        "registered' means NOBODY FILED A RECORD, which is not the same as "
+        "nobody testing it. The two readings differ enormously and only one of "
+        "them is supported by this number. The measure directly below shows why.")
     add("br:elsewhere", "pole:bridge",
         f"{data['transcripts']} transcripts and {data['dts']} .dts scripts exist",
         "measure", "", {},
-        "Proof artifacts on disk that the registry does not index. The engine is "
-        "not unproven; the index is aimed elsewhere.")
+        "Test scripts and recorded runs sitting on disk that the registry does "
+        "not point at. Compare this count with the one above and the real "
+        "situation appears: the testing largely happened, and the FILING did "
+        "not keep up with it. That is an ordinary condition in a fast-moving "
+        "project, and it is worth publishing rather than hiding, because a "
+        "coverage number read without it says something untrue.")
     for k, v in jn["where"].most_common():
         add(f"br:w:{k}", "pole:bridge", f"{v} proof records point at {k}", "measure",
             "", {"count": v}, "")
@@ -525,8 +565,11 @@ def build(data: dict, jn: dict) -> dict:
     add("br:unmapped", "pole:bridge",
         f"{len(jn['unmapped'])} of {len(data['proofs'])} proof records map to no subsystem",
         "measure", "", {"count": len(jn["unmapped"])},
-        "Reported rather than hidden. Most are portal and process proofs, which "
-        "have no src/ directory to land on.")
+        "Not every proof is about code. Many of these record process, "
+        "documentation or coordination results, which have no source directory "
+        "to attach to. They are listed rather than dropped, because a join that "
+        "silently discards what it cannot match will always look tidier than the "
+        "thing it is describing.")
     for p in jn["unmapped"]:
         add(f"br:um:{p['id']}", "br:unmapped", p["id"], "proof",
             p.get("state", ""), {}, (p.get("label") or "")[:160])
