@@ -70,8 +70,16 @@ Observed evidence:
 
 - DotTalk++ CLI starts with the `dottalk++ beta-0` banner and DotTalk++ build timestamp.
 - Runtime reports SQLite availability and version `3.50.4`.
-- `EDU_BIBLETALK` opens the SQLite seed `biblebase\bible_kjv_x64.sqlite`.
-- Startup/readback shows education-facing CLI output, including the ASCII display, BibleTalk quote, `HELP`, `USE`, `SELECT <n>`, `AREA`, `COLOR`, `ABOUT`, and `QUIT` prompt text.
+- `EDU_BIBLETALK` opens the SQLite seed `biblebase\bible_kjv_x64.sqlite` **when that
+  seed is installed**. It does not ship with the lean edition; without it the command
+  reports that the SQLite database is not installed rather than failing.
+- Startup/readback shows education-facing CLI output: `HELP`, `USE`, `SELECT <n>`,
+  `AREA`, `COLOR`, `ABOUT`, and `QUIT` prompt text.
+- The ASCII display and the BibleTalk quote visible in this capture come from an
+  **optional command configured in the operator's own `dottalkpp.ini`**, not from
+  default startup. A stock install prints neither. Noted here because this page is
+  evidence: a screenshot of one machine's configuration is evidence of what that
+  machine did, not of what the product does.
 - Developer/status hints include `CMDHELPCHK`, `GPS`, `WORKSPACE`, and `ERSATZ`.
 
 ## DotTalk++ CLI Workspace and Relation Load
