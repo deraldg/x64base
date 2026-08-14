@@ -1,0 +1,32 @@
+# AUTOLOG: SETPATH + DRAWIO diagram path integration
+
+- Date: 2026-05-10
+- Subsystem: Path state / SETPATH / DRAWIO
+- Files touched:
+  - `include/common/path_state.hpp`
+  - `src/common/path_state.cpp`
+  - `src/cli/cmd_setpath.cpp`
+  - `src/cli/cmd_setpath_command.cpp`
+  - `src/cli/cmd_drawio.cpp`
+- Intent:
+  - Add logical paths for system-generated diagrams and user/student diagrams.
+  - Make `SETPATH DIAGRAMS <path>` legal as an alias for `SYSTEM_DIAGRAMS`.
+  - Make DRAWIO list/select/open diagram files from the logical lanes.
+- Change:
+  - Added slots `DOCS`, `SYSTEM_DIAGRAMS`, and `USER_DIAGRAMS` to path state.
+  - Added aliases `DIAGRAMS` and `DRAWIO` -> `SYSTEM_DIAGRAMS`.
+  - Added default paths under `<repo>/docs/generated/diagrams` and `<repo>/user/<current-user>/diagrams`.
+  - Added `DRAWIO PATHS`, `DRAWIO LIST`, and scoped `DRAWIO OPEN` forms.
+- Behavior preserved:
+  - Existing no-arg DRAWIO/default URL behavior.
+  - Existing `DRAWIO OPEN <url>` behavior.
+  - SETPATH non-blocking validation.
+  - Table/data/workspace mutation boundaries.
+- Tests:
+  - C++17 compile checks with `-Wall -Wextra` for touched translation units.
+  - Path state smoke test for `DIAGRAMS` alias and default diagram roots.
+- Result:
+  - Patch compiles in isolation against uploaded source tree.
+- Risks / next action:
+  - Rebuild full DotTalk++ solution under MSVC.
+  - Run interactive checks: `SETPATH`, `SETPATH DIAGRAMS ...`, `DRAWIO PATHS`, `DRAWIO LIST SYSTEM`, `DRAWIO OPEN SYSTEM 1`.
