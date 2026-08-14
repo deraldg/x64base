@@ -36,6 +36,23 @@ Unlike `XIDX-TXN-01`, CNX has **no mutable tree and no external transactional KV
 
 **Recommended path:** A for v1 (earns transactional correctness + atomic persistence cheaply), then B for incremental performance. C remains the documented fallback.
 
+> **C1 RULED (owner, member.derald, 2026-07-30): Option A AND Option B, in that order.**
+> A ships first as the v1 transactional path; B is the committed target, not a maybe.
+> C stays only as the torn-write recovery behavior (dirty flag -> rebuild), never as a
+> destination. Same doctrine as the SQL lane's R29 ("measure twice, cut once"): build A
+> shaped so B is an EXTENSION, not a rewrite. Concretely, A must:
+>   1. keep the transaction delta as its OWN ordered structure ({op, key, recno} list),
+>      never smeared into InxPayload -- B consumes the same delta as page operations;
+>   2. implement save() = temp file + fsync + atomic rename + CNX_HDRF_DIRTY lifecycle
+>      ONCE -- B reuses the identical dirty-flag/torn-write contract (C3 answered here);
+>   3. leave upsert()/erase() as the only mutation entry points; the index_hooks seam
+>      does not change between A and B;
+>   4. enforce the C2 uint32 capacity guard in A -- B inherits it unchanged;
+>   5. gate COMMIT per C4 (delta-apply+save fast path, full rebuild() fallback) -- B
+>      swaps only the apply/persist internals inside that gating.
+> Net: A builds four of the five things B needs; B replaces one. Mark each seam with a
+> greppable `B-READY:` comment so the B work list is one grep, not archaeology.
+
 ## 4. Scope
 
 **In:** `cnx_backend.cpp` (`upsert`/`erase` real implementation or in-mem delta), `cnx_document.cpp` (`save()` implementation, atomic swap, dirty-flag lifecycle), COMMIT wiring so CNX uses delta-apply+save instead of unconditional `cmd_REBUILD`, `cnx.hpp` page structures if Option B.

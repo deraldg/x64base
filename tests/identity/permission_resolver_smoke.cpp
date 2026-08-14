@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: tests
+// layer: smoke
+// owns:
+// project: project.x64base.runtime
+// lane:
+// owner: member.derald
+// status: experimental
+
 // src/identity/permission_resolver_smoke.cpp
 // Standalone proof for the effective-permission resolver (AIF-045 M1b, Contract v1 §4).
 // Encodes the five worked examples from Contract §4.1 as assertions.

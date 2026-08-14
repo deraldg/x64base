@@ -43,25 +43,36 @@ import tempfile
 
 CPP_EXT = (".c", ".cc", ".cpp", ".cxx", ".h", ".hh", ".hpp", ".hxx", ".inl", ".ipp")
 
-# CLOSURE: any codepoint >= 128 on an added line fails. NOT an enumerated list.
+# SCOPE: an ENUMERATED typographic set, by owner ruling. NOT "all non-ASCII".
 #
-# Corrected 2026-08-14 after the enumerated version missed U+2022 BULLET, which
-# appears 25 times in C/C++ console output -- 16 of them in cmd_security.cpp's own
-# SECURITY RUNTIME block, i.e. the security command mojibaked its own output while
-# this gate reported clean. A banned-list gate is only ever as complete as the
-# author's imagination, which is the defect shape this house hunts.
+# Ruled 2026-08-14 by the owner, on the prior art in commit 4c584ba8f (2026-08-12),
+# whose message states it directly:
 #
-# The closure is not new. Prior art, found before changing anything:
-#   - AI_TIER1_SEED_V1.md sec 4: "ASCII only in new content; check with
-#     grep -P '[^\x00-\x7F]'" -- all non-ASCII, already ruled.
-#   - check_house_style.py:186 tests `ord(ch) >= 128` for docs and names the
-#     known ones while falling back to a generic message for the rest.
-#   - ascii_normalize.py exits 2 on an unmapped codepoint rather than guessing.
-# The enumerated list was a NARROWING of a rule that already existed. This file
-# now matches its siblings instead of inventing a third rule.
+#   "BOX-DRAWING AND ACCENTED CHARACTERS ARE UNTOUCHED. A blanket non-ASCII sweep
+#    would have destroyed 5390 box-drawing characters in report and TUI rendering
+#    and 312 accented characters the es/fr/de/it localized surfaces need.
+#    The house rule names em-dashes; it does not say 'ASCII only'."
 #
-# The table below is a TEACHING AID, not the test. It makes the message useful
-# for the cases we know; anything absent still fails, with a generic message.
+# That commit also diagnosed, before this gate existed, why the estate was blind:
+# check_house_style.py has CHECKED_SUFFIXES = (".md",), so .cpp/.hpp/.py/.dts/.ps1
+# accumulated ~350 em-dashes while every commit reported "house-style: PASS".
+# Credit where due -- this gate is the follow-through on that analysis, not its
+# discovery.
+#
+# KNOWN CONFLICT, recorded rather than resolved here: AI_TIER1_SEED_V1.md sec 4
+# says "ASCII only in new content; check with grep -P '[^\x00-\x7F]'", which is a
+# closure and disagrees with the ruling above. The seed is owner-maintained and
+# byte-budgeted; correcting it is his edit, not this file's. Until then the RULING
+# governs this gate and the disagreement is stated so nobody has to rediscover it.
+#
+# This list WAS widened to a full closure on 2026-08-14 and reverted the same day
+# when the ruling was found. The widening was made citing the seed, without having
+# found the commit. Prior art in a COMMIT MESSAGE is not reachable by grepping docs.
+#
+# Entries below marked (census) were added from a measurement of what is actually
+# in this tree's C/C++, not from intuition -- the enumerated version originally
+# missed U+2022 BULLET, 25 occurrences, 16 of them in cmd_security.cpp's own
+# SECURITY RUNTIME output. We do not ignore the small misses.
 REPLACEMENTS = {
     "—": ("EM DASH", "--"),
     "–": ("EN DASH", "-"),
@@ -90,13 +101,24 @@ def classify(ch: str) -> tuple[str, str]:
     if ch in REPLACEMENTS:
         return REPLACEMENTS[ch]
     o = ord(ch)
-    if 0x2500 <= o <= 0x257F:
-        return ("BOX DRAWING", "ASCII box art (+ - |), or keep it out of source")
-    if 0x00C0 <= o <= 0x024F:
-        return ("LATIN LETTER WITH DIACRITIC", "ASCII; see the locale note below")
-    if o >= 0x1F000:
-        return ("EMOJI / PICTOGRAPH", "a word")
     return (f"U+{o:04X}", "an ASCII equivalent")
+
+
+# Deliberately NOT banned, per the 4c584ba8f ruling. Named so the census can show
+# them and nobody mistakes silence for absence.
+ALLOWED = [
+    (0x2500, 0x257F, "box drawing", "report and TUI rendering"),
+    (0x00C0, 0x024F, "Latin letters with diacritics", "es/fr/de/it localized surfaces"),
+    (0x1F000, 0x10FFFF, "emoji / pictographs", "not named by the house rule"),
+]
+
+
+def allowed_class(ch: str):
+    o = ord(ch)
+    for lo, hi, name, why in ALLOWED:
+        if lo <= o <= hi:
+            return f"{name} ({why})"
+    return None
 
 
 def git(args: list[str], cwd: str | None = None) -> str:
@@ -147,7 +169,7 @@ def scan_tree(root: str):
                 t = open(p, encoding="utf-8", errors="replace").read()
             except OSError:
                 continue
-            n = sum(1 for c in t if ord(c) >= 128)
+            n = sum(1 for c in t if c in REPLACEMENTS)
             if n:
                 hits.append((n, os.path.relpath(p, root).replace("\\", "/")))
     hits.sort(reverse=True)
@@ -181,26 +203,30 @@ def self_test() -> int:
         open(ok, "w", encoding="utf-8").write('// plain -- ascii only\nint a=1;\n')
         git(["add", "clean.cpp"], cwd=d)
         clean = list(added_lines(None, cwd=d))
-        c_bad = [x for x in clean if any(ord(c) >= 128 for c in x[2])]
+        c_bad = [x for x in clean if any(c in REPLACEMENTS for c in x[2])]
 
         bad = os.path.join(d, "bad.cpp")
         open(bad, "w", encoding="utf-8").write('const char* m = "enabled=0 — off";\n')
         git(["add", "bad.cpp"], cwd=d)
         both = list(added_lines(None, cwd=d))
-        b_bad = [x for x in both if any(ord(c) >= 128 for c in x[2])]
+        b_bad = [x for x in both if any(c in REPLACEMENTS for c in x[2])]
 
-        # The case the enumerated version MISSED: a codepoint not in the table.
-        # If this passes, the closure has regressed to a banned-list again.
-        unk = os.path.join(d, "unknown.cpp")
-        open(unk, "w", encoding="utf-8").write('// • bullet, never enumerated\n')
-        git(["add", "unknown.cpp"], cwd=d)
+        # The owner's SCOPE RULING as an executable assertion, not a comment.
+        # Box drawing and accented letters are FUNCTIONAL (TUI rendering, and the
+        # es/fr/de/it localized surfaces) and must PASS. If this ever fails, the
+        # gate has silently widened past 4c584ba8f and the locale lane is next.
+        okf = os.path.join(d, "functional.cpp")
+        open(okf, "w", encoding="utf-8").write(
+            '// ── table rule, and café in a locale string\n')
+        git(["add", "functional.cpp"], cwd=d)
         u_bad = [x for x in list(added_lines(None, cwd=d))
-                 if "unknown.cpp" in x[0] and any(ord(c) >= 128 for c in x[2])]
+                 if "functional.cpp" in x[0]
+                 and any(c in REPLACEMENTS for c in x[2])]
 
     print(f"  control (ascii only)     -> {len(c_bad)} finding(s); expected 0")
     print(f"  known-bad (em dash)      -> {len(b_bad)} finding(s); expected 1")
-    print(f"  UNKNOWN codepoint (bullet)-> {len(u_bad)} finding(s); expected 1")
-    if len(c_bad) == 0 and len(b_bad) == 1 and len(u_bad) == 1:
+    print(f"  FUNCTIONAL (box + accent) -> {len(u_bad)} finding(s); expected 0 (ruled allowed)")
+    if len(c_bad) == 0 and len(b_bad) == 1 and len(u_bad) == 0:
         print("cpp-ascii: SELF-TEST PASS -- seen to fail, and seen not to.")
         return 0
     print("cpp-ascii: SELF-TEST FAIL -- the checker is unproven.", file=sys.stderr)
@@ -222,14 +248,37 @@ def main() -> int:
     if a.all:
         hits = scan_tree(root)
         tot = sum(n for n, _ in hits)
-        print(f"cpp-ascii census: {len(hits)} file(s), {tot} banned codepoint(s)")
+        print(f"cpp-ascii census: {len(hits)} file(s), {tot} BANNED codepoint(s)")
         for n, p in hits[:20]:
             print(f"    {n:4}  {p}")
+
+        # Not banned, and not hidden either. Ruled functional by 4c584ba8f; shown
+        # so nobody reads silence as absence.
+        allow = {}
+        for dp, dn, fn in os.walk(root):
+            dn[:] = [x for x in dn if x not in
+                     (".git", "node_modules", "out", "dist", ".next", "__pycache__")
+                     and not x.startswith("build")]
+            for f in fn:
+                if not f.lower().endswith(CPP_EXT):
+                    continue
+                try:
+                    t = open(os.path.join(dp, f), encoding="utf-8", errors="replace").read()
+                except OSError:
+                    continue
+                for ch in t:
+                    k = allowed_class(ch) if ord(ch) >= 128 else None
+                    if k:
+                        allow[k] = allow.get(k, 0) + 1
+        if allow:
+            print("\n  ALLOWED by ruling (functional, not banned):")
+            for k, n in sorted(allow.items(), key=lambda x: -x[1]):
+                print(f"    {n:6}  {k}")
         return 0
 
     found = []
     for path, ln, text in added_lines(a.range_spec):
-        bad = {c for c in text if ord(c) >= 128}
+        bad = {c for c in text if c in REPLACEMENTS}
         if bad:
             found.append((path, ln, text, bad))
 
@@ -244,7 +293,7 @@ def main() -> int:
               "python tools/staging/check_cpp_ascii.py --all", file=sys.stderr)
         return 2
 
-    print("cpp-ascii: PASS -- no non-ASCII in added C/C++ lines")
+    print("cpp-ascii: PASS -- no banned typographic codepoint in added C/C++ lines")
     return 0
 
 

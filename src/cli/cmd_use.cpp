@@ -30,11 +30,21 @@
 //   USE <path\table.dbf>
 //   USE <table> NOINDEX
 //   USE <table> NOIDX
+//   USE <table> AGAIN
 //
 // notes:
 //   USE requires a table name or path; no usable argument shows usage.
 //   Relative logical names resolve through the configured DBF path slot.
-//   USE prevents duplicate opens of the same DBF path across work areas.
+//   USE prevents duplicate opens of the same DBF path across work areas,
+//   and names the AGAIN arm in the refusal.
+//   AGAIN opens a SECOND work area on an already-open DBF (workspace design
+//   I5, v1). The second instance is writable -- record locking arbitrates,
+//   per the multi-user model -- and opens in PHYSICAL ORDER: index
+//   auto-attach is suppressed because a second in-process attach of the same
+//   container would double-open one LMDB environment (undefined behaviour).
+//   AGAIN is REFUSED on tables carrying memo fields: two sidecar writers
+//   would interleave appends. Both relaxations are later, separately-gated
+//   arms. Proof: REGRESSION RUN USE_AGAIN.
 //   USE clears stale order/tag/container state and closes the current area before opening the new DBF.
 //   USE opens the target DBF and populates DbArea metadata.
 //   USE auto-attaches memo storage when memo fields are present.
@@ -185,6 +195,57 @@ static bool contains_noindex(std::istringstream& iss)
     return found;
 }
 
+// USE ... AGAIN (workspace design I5, v1 arm). Non-consuming scan, same
+// pattern as contains_noindex: the flag may appear anywhere after the name.
+static bool contains_again(std::istringstream& iss)
+{
+    std::streampos pos = iss.tellg();
+    if (pos == std::streampos(-1)) {
+        return false;
+    }
+
+    bool found = false;
+    std::string tok;
+    while (iss >> tok) {
+        if (up_copy(tok) == "AGAIN") {
+            found = true;
+            break;
+        }
+    }
+
+    iss.clear();
+    iss.seekg(pos);
+    return found;
+}
+
+// USE ... ALIAS <name> (owner 'fix the use command', 2026-08-12). Same
+// non-consuming scan. Returns the token AFTER the keyword; sets `malformed`
+// when ALIAS is present with nothing following it, so a typo is reported
+// rather than silently treated as "no alias given" -- the difference between
+// those two is a table that opens under the wrong name.
+static std::string parse_alias_clause(std::istringstream& iss, bool& malformed)
+{
+    malformed = false;
+    std::streampos pos = iss.tellg();
+    if (pos == std::streampos(-1)) {
+        return {};
+    }
+
+    std::string out;
+    std::string tok;
+    while (iss >> tok) {
+        if (up_copy(tok) == "ALIAS") {
+            if (iss >> tok) out = tok;
+            else            malformed = true;
+            break;
+        }
+    }
+
+    iss.clear();
+    iss.seekg(pos);
+    return out;
+}
+
 
 static std::string trim_copy_use(std::string s)
 {
@@ -314,12 +375,75 @@ static int find_open_area_for_path(const fs::path& dbf_path) {
     return -1;
 }
 
-static void populate_dbarea_metadata(DbArea& a, const fs::path& dbf_path) {
+// `alias` is the name this INSTANCE answers to. Empty means "use the file
+// stem", which is the historic behaviour and stays the default.
+//
+// It lands in _logical_name deliberately: that is the field
+// find_open_area_by_name_ci() actually compares (workarea_util.cpp:29), so an
+// alias becomes addressable with no change at that function's 18 call sites.
+//
+// Measured 2026-08-12, and all three are stubs the owner correctly guessed
+// were meant for exactly this:
+//   _db_name          -- 3 writers (xbase.hpp:297, dbarea.cpp:128,205), ZERO
+//                        readers anywhere in the tree. A write-only member.
+//   _setLegacyName()  -- DbArea has no setName(), so this SFINAE wrapper
+//                        selects its empty fallback and has ALWAYS been a
+//                        silent no-op, under a comment reading "legacy alias".
+//   AREA's two lines  -- "Logical name" and "Legacy name()" both render
+//                        _logical_name, which is why they always agree.
+// The table-name-vs-alias split those fields were shaped for needs a setter
+// and accessor on DbArea; xbase.hpp is a wide include, so that is priced
+// separately rather than smuggled in here.
+// An alias must be reachable as a NAME. A purely numeric one would not be:
+// SELECT reads a digit string as an AREA NUMBER, so alias "3" would silently
+// select slot 3 instead of the table -- addressable in theory, wrong in fact.
+static bool alias_is_addressable(const std::string& s)
+{
+    if (s.empty()) return false;
+    for (char c : s) {
+        if (!std::isdigit(static_cast<unsigned char>(c))) return true;
+    }
+    return false;
+}
+
+// Slot holding `alias`, ignoring `except_slot` (the area being opened into).
+static int find_open_area_by_alias(const std::string& alias, int except_slot)
+{
+    auto* eng = shell_engine(); if (!eng) return -1;
+    const std::string target = up_copy(alias);
+    if (target.empty()) return -1;
+
+    for (int i = 0; i < xbase::MAX_AREA; ++i) {
+        if (i == except_slot) continue;
+        try {
+            DbArea& A = eng->area(i);
+            if (!A.isOpen()) continue;
+            if (up_copy(A.logicalName()) == target) return i;
+        } catch (...) { /* ignore bad slot */ }
+    }
+    return -1;
+}
+
+// STUDENTS taken -> STUDENTS2, STUDENTS3, ... Deterministic and announced;
+// never silent. Returns empty if it somehow cannot find a free name, which
+// the caller treats as a refusal rather than opening unaddressably.
+static std::string derive_distinct_alias(const std::string& stem, int except_slot)
+{
+    for (int n = 2; n <= 999; ++n) {
+        std::string cand = stem + std::to_string(n);
+        if (find_open_area_by_alias(cand, except_slot) < 0) return cand;
+    }
+    return {};
+}
+
+static void populate_dbarea_metadata(DbArea& a, const fs::path& dbf_path,
+                                     const std::string& alias) {
     const std::string abs = fs::absolute(dbf_path).string();
     const std::string stem = dbf_path.stem().string();
-    _setFilename(a, abs, 0);     // SCHEMAS uses filename() as truth
-    _setLogicalName(a, stem, 0); // optional alias
-    _setLegacyName(a, stem, 0);  // legacy alias
+    const std::string addressable = alias.empty() ? stem : alias;
+    _setFilename(a, abs, 0);            // SCHEMAS uses filename() as truth
+    _setLogicalName(a, addressable, 0); // the name this instance answers to
+    _setLegacyName(a, addressable, 0);  // no-op today; see the note above
 }
 
 // ----------------------- CNX uniqueness (reporting only) --------------------
@@ -520,7 +644,28 @@ void cmd_USE(DbArea& a, std::istringstream& iss)
         return;
     }
 
-    const bool noindex = contains_noindex(iss);
+    bool alias_malformed = false;
+    const std::string alias_requested = parse_alias_clause(iss, alias_malformed);
+    if (alias_malformed) {
+        cli::cmdout::print_line("USE: ALIAS requires a name (USE <table> [AGAIN] ALIAS <name>).");
+        return;
+    }
+    if (!alias_requested.empty() && !alias_is_addressable(alias_requested)) {
+        cli::cmdout::print_line(
+            "USE: refused -- alias '" + alias_requested +
+            "' is all digits, and SELECT would read it as an area number. "
+            "Nothing was opened.");
+        return;
+    }
+
+    const bool again = contains_again(iss);
+    // AGAIN forces physical order in v1, and this is load-bearing, not
+    // convenience: index auto-attach would open the SAME container for a
+    // second time in this process, and for the LMDB-backed lane that is two
+    // mdb_env_open calls on one environment (cdx_backend.cpp:224) -- undefined
+    // behaviour by LMDB's own contract. Index attach on a second instance is
+    // a later, separately-gated arm.
+    const bool noindex = again || contains_noindex(iss);
     ensure_setpath_initialized();
 
     // Resolve DBF path
@@ -534,24 +679,109 @@ void cmd_USE(DbArea& a, std::istringstream& iss)
         dbf_path = dottalk::paths::get_slot(dottalk::paths::Slot::DBF) / (base + ".dbf");
     }
 
-    // Duplicate-open guard (no-op if already open anywhere)
+    // Duplicate-open guard. Without AGAIN: no-op by design, with a hint that
+    // the AGAIN arm exists. With AGAIN: a second work area opens on the same
+    // file (workspace design I5 v1 -- writable, record locking arbitrates per
+    // the owner's multi-user model; intra-process lock isolation arrives with
+    // the (pid,workspace) owner).
     const int cur_slot = area_slot_of(a);
     const int dup_slot = find_open_area_for_path(dbf_path);
     if (dup_slot >= 0) {
         if (dup_slot == cur_slot) {
+            // AGAIN into the area that already holds the file is meaningless;
+            // same message either way.
             cli::cmdout::print_prefixed_message(
                 "USE",
                 dottalk::helpdata::MessageId::UseAlreadyOpenCurrentAreaText,
                 {{"file", dbf_path.filename().string()},
                  {"area", std::to_string(cur_slot)}});
-        } else {
+            return; // no-op by design
+        }
+        if (!again) {
             cli::cmdout::print_prefixed_message(
                 "USE",
                 dottalk::helpdata::MessageId::UseAlreadyOpenOtherAreaText,
                 {{"file", dbf_path.filename().string()},
                  {"area", std::to_string(dup_slot)}});
+            cli::cmdout::print_line(
+                "USE: add AGAIN to open a second work area on the same file "
+                "(physical order).");
+            return; // no-op by design
         }
-        return; // no-op by design
+        // MEMO REFUSAL, HOISTED (corrected 2026-08-12, found by its own spec).
+        // This check used to sit below, after reset_area_runtime_best_effort()
+        // and a.open() had already run -- so it printed "Nothing was opened"
+        // having opened the file AND destroyed whatever occupied this area.
+        // A guard with side effects is not a guard, and the message was a
+        // statement about state the code had already contradicted: the exact
+        // defect class this arm exists to prevent, inside the prevention.
+        //
+        // It costs nothing to be correct here. AGAIN means the file is open in
+        // dup_slot by definition, so its field list is already in memory --
+        // the probe reads that live area and touches no filesystem.
+        if (auto* eng = shell_engine(); eng && dup_slot >= 0) {
+            bool dupHasMemo = false;
+            try {
+                for (const auto& f : eng->area(dup_slot).fields()) {
+                    if (f.type == 'M' || f.type == 'm') { dupHasMemo = true; break; }
+                }
+            } catch (...) { /* unreadable slot: fall through to the open path */ }
+
+            if (dupHasMemo) {
+                cli::cmdout::print_line(
+                    "USE AGAIN: refused -- " + dbf_path.filename().string() +
+                    " carries memo fields, and a second sidecar writer would "
+                    "interleave appends. Nothing was opened, and area " +
+                    std::to_string(cur_slot) + " is untouched.");
+                return;
+            }
+        }
+
+        // NOTE: no announcement here either. The AGAIN banner prints only once
+        // the instance is committed, immediately before the open summary, so
+        // no path can announce an open it then retracts.
+        // fall through: open a second instance into the current area
+    }
+
+    // --- ALIAS RESOLUTION, before this area is touched -----------------------
+    // Everything below can still refuse, and a refusal must leave the target
+    // area exactly as it found it (the lesson the memo guard taught this
+    // afternoon by getting it wrong).
+    std::string alias_final = alias_requested;
+    {
+        const std::string stem = dbf_path.stem().string();
+        const std::string wanted = alias_final.empty() ? stem : alias_final;
+        const int holder = find_open_area_by_alias(wanted, cur_slot);
+
+        if (holder >= 0 && !alias_final.empty()) {
+            // Explicit and taken: REFUSE. Silently renaming a name the user
+            // typed would defeat the reason they typed it.
+            cli::cmdout::print_line(
+                "USE: refused -- alias '" + alias_final + "' is already held by area " +
+                std::to_string(holder) + ". Choose another, or close that area. "
+                "Nothing was opened.");
+            return;
+        }
+
+        if (holder >= 0) {
+            // Derived from the file stem and taken -- the ordinary AGAIN case,
+            // and also two same-named files from different directories. Before
+            // this arm both instances answered to one name and
+            // find_open_area_by_name_ci() returned the lower slot to SET
+            // RELATION and every other name-based verb, with no diagnostic:
+            // the second instance was open but unreachable by name.
+            alias_final = derive_distinct_alias(stem, cur_slot);
+            if (alias_final.empty()) {
+                cli::cmdout::print_line(
+                    "USE: refused -- cannot derive a free alias from '" + stem +
+                    "'. Give one explicitly with ALIAS. Nothing was opened.");
+                return;
+            }
+            cli::cmdout::print_line(
+                "USE: alias '" + wanted + "' is held by area " + std::to_string(holder) +
+                "; this instance is named '" + alias_final +
+                "'. Use ALIAS to choose your own.");
+        }
     }
 
     // --- CLEANUP CURRENT AREA BEFORE USE ---
@@ -563,7 +793,7 @@ void cmd_USE(DbArea& a, std::istringstream& iss)
     // Open DBF
     try {
         a.open(dbf_path.string());
-        populate_dbarea_metadata(a, dbf_path);
+        populate_dbarea_metadata(a, dbf_path, alias_final);
     } catch (const std::exception& ex) {
         cli::cmdout::print_message(
             dottalk::helpdata::MessageId::UseOpenFailedWithReasonText,
@@ -591,6 +821,15 @@ void cmd_USE(DbArea& a, std::istringstream& iss)
             }
         }
 
+        // The AGAIN + memo refusal USED TO LIVE HERE and has moved UP, into the
+        // duplicate-open guard, before this area is reset or the file opened.
+        // Reason recorded there: refusing after the damage is not refusing.
+        // Nothing replaces it at this point -- reaching here with again==true
+        // means the hoisted probe already cleared this file. Two MemoManager
+        // instances appending to one sidecar interleave offsets (the AIF-110
+        // silent-corruption shape, permanent in the memo store); a second memo
+        // attach stays a later, separately-gated arm.
+
         const std::string openedPath = a.filename().empty()
             ? fs::absolute(dbf_path).string()
             : a.filename();
@@ -602,6 +841,15 @@ void cmd_USE(DbArea& a, std::istringstream& iss)
                 dottalk::helpdata::MessageId::UseMemoAttachFailedText,
                 {{"reason", memo_err}});
         }
+    }
+
+    // AGAIN banner, printed only now: every refusal path above has been
+    // cleared, so this announces a second instance that actually exists.
+    if (again && dup_slot >= 0) {
+        cli::cmdout::print_line(
+            "USE AGAIN: second work area on " + dbf_path.filename().string() +
+            " (first instance stays in area " + std::to_string(dup_slot) +
+            "; physical order).");
     }
 
     // Standardized open report

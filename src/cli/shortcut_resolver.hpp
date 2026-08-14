@@ -51,6 +51,7 @@ inline const std::unordered_map<std::string, std::string>& ShortcutResolver::get
         { "?",            "FORMULA" },
         { "UNDELETE",     "RECALL" },
         { "EXACT",        "SETCASE"},
+	{ "LS",		  "DIR"},
 
         // ---- Relations -----------------------------------------------------
         { "SET_RELATION", "SET RELATION" },

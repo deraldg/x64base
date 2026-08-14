@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: tests
+// layer: test
+// owns:
+// project: project.x64base.runtime
+// lane:
+// owner: member.derald
+// status: supported
+
 // src/tests/test_lmdb_backend.cpp
 //
 // Smoke test for xindex::LmdbBackend

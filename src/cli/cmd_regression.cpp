@@ -93,7 +93,7 @@ struct RegressionSpec {
 // compile error ("too many initializers"), which is the safe failure -- but it
 // is a recurring papercut: it happened when CNXLIVE was added on 2026-07-31.
 // Bump it when you add a regression.
-constexpr std::array<RegressionSpec, 45> kRegressionSpecs{{
+constexpr std::array<RegressionSpec, 46> kRegressionSpecs{{
     {
         "NONDESTRUCTIVE",
         "dottalkpp_non_destructive_smoke.dts",
@@ -158,6 +158,66 @@ constexpr std::array<RegressionSpec, 45> kRegressionSpecs{{
         "WORKSPACE_MINIDB",
         "workspace_minidb.dts",
         "Memo-resident mini-database (AIF-070's chartered destination LANDED, owner 'do it' 2026-08-11; promoted final test, runtime-proven same day build 18:35:35 FIRST TRY): WORKSPACE SAVE <name> MEMO MINIDB writes a MINIDB 1 container -- the self-locating v3 posture PLUS every open table's bytes and every attached native index's bytes, length-prefixed and binary-safe (the memo store's payload-agnosticism, zoo-proven on embedded NULs, is what makes DBF/CDX bytes legal cargo). WORKSPACE LOAD <name> MEMO RAM detects the container and hydrates FROM THE PAYLOAD: memo -> RAM VFS, ZERO disk reads; the carried posture then stands areas up re-pointed at RAM. Reads are residence-aware (RAM-resident sources come from ramfs), so a RAM session can save its whole working set into a memo -- the owner's save-the-state vision. Plain MEMO load refuses a MINIDB payload with the hydration instruction rather than half-loading. First measure: mcc_db = 94200 B container (92139 B tables+indexes, 1443 B posture), oracle byte-compare OK on the WHOLE container; hydration onto a clean RAM disk 65.5 ms -- FASTER than disk-sourced hydration (71-94 ms) because it is memory to memory; STUDENTS row read and ENROLL CDX attached from memo-carried bytes (DB_T1/DB_T2). The catalog row records FMT='MINIDB 1'. What this makes true: a whole small database -- data, indexes, posture, session state -- lives inside one memo field of another database, versioned by the supersede chain, attributed, oracle-verified. Memo-sidecar carriage LANDED 2026-08-12 (AIF-108 [SIDECAR] unblock): the container now also carries each open area's attached memo sidecar -- the backend names its own file (IMemoBackend::path(), flushed before capture), no extension guessing -- and hydration lands sidecars on the REAL filesystem under the mount dir, because the DTX layer bypasses the ramfs (bypass-ledger member 1) and would never see a VFS-resident sidecar; the disk landing is the measured status quo made deliberate. Act-2 proof (DB_T3/DB_T4) is residue-hardened: the live sidecar is POISONED after the container is saved, so a green can only come from container bytes (hydration truncate-overwrites residue); DB_T4 proves post-hydration writability. Still chartered: the writeback cycle (RAM -> disk commit), LMDB carriage (out of ramfs scope by contract), ramfs memo-store coverage (which would collapse the sidecar disk landing into the VFS). Writes catalog rows; mutates the RAM VFS plus one real-disk sidecar residue (MDMEMO.dtx under data/ram, truncated by the next run). Requires workspaces/mcc_x64.dtschema + the x64 MCC tables. Explicit-run until soaked.",
+        false
+    },
+    {
+        "USE_AGAIN",
+        "use_again_regression.dts",
+        "USE ... AGAIN: a second work area on an already-open DBF (workspace design I5 v1 arm, "
+        "owner 'add use again' then 'fix the use command' 2026-08-12). Every marker is a "
+        "field-value comparison, and the count is deliberately not stated here -- it changed "
+        "three times on the day of writing, and a literal that drifts is worse than no literal: "
+        "UA_G0 fixture by value; UA_T1a/UA_T1 duplicate USE WITHOUT AGAIN stays a no-op, proven "
+        "at BOTH ends -- the target area keeps its sentinel table AND area 1 is undisturbed, "
+        "which took a correction, because asserting only the second is green even if the guard "
+        "is deleted outright (a second instance opening in area 2 does not touch area 1); "
+        "UA_T2 the AGAIN instance reads row 1 by value from a second area; "
+        "UA_T3 is the COHERENCE MEASUREMENT -- a write through area 1 re-read through area 2 -- "
+        "which measures v1 rather than assuming it (a red here is a finding about two fstreams "
+        "on one file, not a broken spec); UA_T5 memo-carrying tables REFUSE AGAIN -- two sidecar "
+        "appenders would interleave offsets, the AIF-110 shape landing where it would be "
+        "permanent -- and the FIRST instance survived the refusal, by value. "
+        "UA_T4 TOOK THREE CUTS AND THE HISTORY IS THE LESSON: .NOT. (ID = 7) and then "
+        "RECCOUNT() = 0 were both asserted in the EMPTY target area, and neither COULD work, "
+        "because the marker evaluator binds a null area unless the area is OPEN "
+        "(rhs_eval.cpp:969) -- being closed was the very thing under assertion. So cut 1 passed "
+        "because its symbol was unresolvable rather than because the refusal fired, reproducing "
+        "one layer down the defect that splitting T4 from T5 was meant to remove. Generalised and "
+        "worth carrying: NO MARKER IN THIS LANGUAGE CAN ASSERT THAT AN AREA IS EMPTY, and an "
+        "errored marker PRINTS NOTHING rather than going red, so a green count still reads full "
+        "while a claim has silently left the suite. Cut 3 asks an answerable question instead -- "
+        "did a KNOWN OCCUPANT SURVIVE -- and forced the source fix it needed: the memo guard ran "
+        "AFTER reset_area_runtime_best_effort() and a.open(), so it destroyed the target area's "
+        "occupant and then printed 'Nothing was opened'. Hoisted into the duplicate-open guard, "
+        "where AGAIN's own precondition makes the probe free (the file is already open elsewhere, "
+        "so its field list is in memory and no filesystem is touched). "
+        "UA_T6/T7/T8 are the ALIAS arm, and it is not a convenience clause: without it USE AGAIN "
+        "produced a second cursor that was open and UNREACHABLE BY NAME, since both instances "
+        "took the file stem and find_open_area_by_name_ci (workarea_util.cpp:29, 18 call sites) "
+        "returns the FIRST match with no diagnostic -- so SET RELATION silently bound the "
+        "lower-numbered area, and naming is how a join is declared. T6 proves the alias RESOLVES "
+        "(asserted by value THROUGH SELECT <alias>, not by reading the name back, which would "
+        "only prove a string was stored); T7 a duplicate explicit alias is refused with the "
+        "target area's DIFFERENT table intact -- distinct on purpose, because the first draft "
+        "used the same table and would have gone green even if SELECT had failed; T8 the refusal "
+        "did not evict the name's real holder. Aliases are refused rather than renamed when "
+        "explicit, auto-derived and ANNOUNCED (<table>2) when implicit, and all-digit aliases are "
+        "refused because SELECT would read them as area numbers. Owner-found stubs confirmed "
+        "while doing it: DbArea::_db_name has three writers and ZERO readers, and the "
+        "_setLegacyName SFINAE wrapper has always selected its empty fallback because DbArea has "
+        "no setName() -- a silent no-op under a comment reading 'legacy alias', which is why "
+        "AREA prints Logical name and Legacy name() identically. The table-name-vs-alias split "
+        "those fields were shaped for needs a DbArea accessor and is priced separately. Related: "
+        "RECCOUNT was surfaced beside DELETED in glue_xbase.cpp and is real, but it serves "
+        "compile_predicate -- scan and FOR clauses over an OPEN area -- not the '?' marker path. "
+        "v1 boundaries stated in "
+        "the arm itself: AGAIN forces PHYSICAL ORDER (a second in-process attach would "
+        "double-open one LMDB environment, undefined by LMDB's contract, cdx_backend.cpp:224) "
+        "and writes are arbitrated by record locks per the owner's multi-user model -- "
+        "intra-process lock isolation arrives with the (pid,workspace) owner (design I5). "
+        "Index-attach-on-AGAIN and memo-share-on-AGAIN are later separately-gated arms. "
+        "Self-bootstrapping throwaway UAREGR/UAMEMO in SANDBOX, self-erasing; explicit-run "
+        "until soaked.",
         false
     },
     {

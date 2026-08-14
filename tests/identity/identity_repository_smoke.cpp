@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: tests
+// layer: smoke
+// owns:
+// project: project.x64base.runtime
+// lane:
+// owner: member.derald
+// status: experimental
+
 // src/identity/identity_repository_smoke.cpp
 // Standalone proof for the identity repository + snapshot materialization (AIF-045 M2a).
 // Builds a small org and resolves through the store: stored entities -> materialized

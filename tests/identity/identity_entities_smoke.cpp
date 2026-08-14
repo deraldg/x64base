@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: tests
+// layer: smoke
+// owns:
+// project: project.x64base.runtime
+// lane:
+// owner: member.derald
+// status: experimental
+
 // src/identity/identity_entities_smoke.cpp
 // Standalone smoke proof for the identity domain layer (AIF-045 M1a).
 // Self-contained: depends only on the two identity headers + the standard library.

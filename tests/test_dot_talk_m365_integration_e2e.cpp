@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: tests
+// layer: test
+// owns:
+// project: project.x64base.runtime
+// lane:
+// owner: member.derald
+// status: supported
+
 // tests/test_dot_talk_m365_integration_e2e.cpp
 //
 // End-to-end stdlib-only tests:

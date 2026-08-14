@@ -1,0 +1,14 @@
+# dottalkpp gui workspace v1
+kind=dtschema
+table=dbf\x32\BUILDING.DBF
+table=dbf\x32\CLASSES.DBF
+table=dbf\x32\COURSES.DBF
+table=dbf\x32\DEPT.DBF
+table=dbf\x32\ENROLL.DBF
+table=dbf\x32\MAJORS.DBF
+table=dbf\x32\ROOMS.DBF
+table=dbf\x32\STUD_MAJ.DBF
+table=dbf\x32\STUDENTS.DBF
+table=dbf\x32\TASSIGN.DBF
+table=dbf\x32\TEACHERS.DBF
+table=dbf\x32\TERMS.DBF
