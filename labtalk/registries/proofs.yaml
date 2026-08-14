@@ -291,6 +291,30 @@ proofs:
     in the shipped configuration, does nothing and announces that it proved something. Not fixed here
     and not this lane''s. Recommend surveying under AIF-079 (declared-capability-validator), whose shape
     this matches, rather than opening a new lane -- prior art first.'
+- id: proof.aside.diagnostic_removed_and_called_a_fix
+  label: Silencing a warning was recorded as fixing it -- the commit message is wrong on the record
+  state: source_defined
+  related:
+  - D:/code/ccode/tools/fullstack_docs/ecoschema_map.py
+  - D:/code/ccode/docs/maintenance/ECOSCHEMA_MAP_V1.html
+  - D:/code/ccode/labtalk/registries/proofs.d/proof.memo.zoo_orthogonality.yaml
+  notes: 'CORRECTION, RECORDED -- the site commit 49fd9f607 (x64base-site, branch codex/lean-sites-publish,
+    2026-08-13) carries the message "eco: return links to the site, and a real html/head/body so search
+    can index it". The second clause is FALSE and cannot be rewritten, because the commit is pushed to
+    a shared branch; this record is the correction. What happened -- the ECO map page had no outer html
+    element, and every site build printed a Pagefind line saying the page was being skipped. Adding html/head/body
+    removed that line. It did not make the page searchable, because Pagefind indexes only pages carrying
+    data-pagefind-body, and the site declares that attribute in exactly one place (app/layout.tsx on the
+    main element) which a static passthrough under public/ never reaches. The page stayed unindexed, and
+    now stayed unindexed SILENTLY -- strictly worse than before, since the build no longer said so. Nor
+    would the attribute alone have worked: the map renders client-side from a JSON blob, Pagefind does
+    not run JavaScript, and the static text on the page measured 57 words of chrome. The real fix landed
+    later the same day (static_index() in ecoschema_map.py, 5,530 static words, Pagefind 156 -> 157 pages).
+    Two lessons worth more than the incident -- removing a diagnostic is not fixing the condition it reports,
+    and a build that goes quiet is not the same as a build that goes green; and the check that would have
+    caught it was in the log the whole time, one line above the warning, saying "Ignoring pages without
+    this tag". Same shape as proof.ai_portal.discoverability_caught_its_own_author and proof.aside.rule_caught_its_own_author:
+    the failure was demonstrated by the author of the fix, in the sitting the fix was written.'
 - id: proof.aside.rule_caught_its_own_author
   label: The aside rule caught its own author over-scoping -- the same session it was coined
   state: source_defined
@@ -752,6 +776,61 @@ proofs:
     the original proof: a probe that dies in the harness produces the same numbers as a mechanism that
     does not exist. This run is also the PRE-FIX CONTROL for the same command with -ExpectNoChange, which
     becomes the regression once mdb_env_set_mapsize(env_, 0) is applied.'
+- id: proof.memo.object_challenge
+  label: Memo object challenge -- an open exercise in AI cooperation
+  state: design_intended
+  source: D:/code/ccode/docs/maintenance/MEMO_OBJECT_CHALLENGE_LANE_V1.md
+  related:
+  - D:/code/ccode/docs/maintenance/MEMO_ZOO_ORTHOGONALITY_STRESS_CHARTER_V1.md
+  - D:/code/ccode/src/memo/memo_zoo.cpp
+  - D:/code/ccode/docs/maintenance/MEMO_RESIDENT_MINIDB_V1.md
+  notes: Chartered 2026-08-12. Lane AIF-108 (proposed -- claim-aif is the allocator, not grep, per the
+    AIF-078 lesson; if the tool allocates otherwise, the doc header and the intake row change together).
+    Owner member.derald, coworker and steward of record member.ai.claude.cowork. NO engine change is proposed
+    -- the lane produces tests, and a protocol for receiving tests from agents who are not us. Subject
+    under test is the DTX memo object (src/memo/), its carriers, and the workspace and MINIDB containers
+    that ride on it. Standing rationale -- the memo store is the most load-bearing and least defended
+    surface in the engine; it is payload-agnostic by design, adversarially proven on RANDOM payloads by
+    the zoo harness (proof.memo.zoo_orthogonality), and since 2026-08-11 it carries whole databases. The
+    zoo proved it survives chaos. It has never been attacked by an adversary that was trying, which is
+    the gap this lane exists to close. Venue is the house AI-BBS; the public entry point is the challenge
+    page on x64base.com. Recorded here 2026-08-13 for the same reason as its sibling -- the lane was chartered,
+    published to the website, and still absent from every registry the ecoschema map reads.
+- id: proof.memo.zoo_orthogonality
+  label: Quantum Memo Zoo -- memo store stays payload-agnostic and orthogonal under adversarial chaos
+  state: runtime_observed
+  source: D:/code/ccode/docs/maintenance/MEMO_ZOO_ORTHOGONALITY_STRESS_CHARTER_V1.md
+  related:
+  - D:/code/ccode/src/memo/memo_zoo.cpp
+  - D:/code/ccode/src/memo/memo_ref.cpp
+  - D:/code/ccode/docs/maintenance/MEMO_OBJECT_CHALLENGE_LANE_V1.md
+  - D:/code/ccode/docs/maintenance/MEMO_RESIDENT_MINIDB_V1.md
+  - D:/code/ccode/docs/maintenance/RAM_MINIDB_MEMO_WORKSPACE_OPERATIONS_V1.md
+  notes: 'QUANTUM MEMO ZOO / memo zoo / memo_zoo -- also the MINIDB and memo-resident workspace surface.
+    Retrieval names first, on purpose: consumers of this registry truncate notes, so a record whose identifying
+    words sit in the last paragraph is a record nobody finds. M1 SOAKED 2026-08-11 -- 20,500 generations,
+    104,044 operations, four seeds, ZERO divergences; M2 concurrency UNRUN. Detail follows. Harness is
+    src/memo/memo_zoo.cpp (target memo_zoo) -- six driver personas plus a shadow oracle, embedded-NUL
+    and high-byte payloads, Temporal Collapse reopens, steady-state settle, final reopen sweep. Four seeds
+    green -- 20260811 (500 generations / 1,584 ops), 7 (5,000 / 22,353), 42 (5,000 / 29,648, genesis population
+    200), 1993 (10,000 / 50,459, reopen every 50). Totals -- 20,500 generations, 104,044 operations, about
+    215 reopen cycles, ZERO divergences. What that promotes to runtime-proven at the store level -- isolation
+    (no operation on memo A alters memo B), fidelity and agnosticism (every readback byte-matches the
+    last write, including corrupted, binary-ish and empty payloads), and reopen durability at scale. The
+    reframe that makes it rigorous -- the zoo describes memos WITH behavior, x64base memos have NONE,
+    so species are DRIVER PERSONAS and the store passes by remaining a passive byte-faithful cage no matter
+    what the animals do. Emergent ecology finding, replicated across all four seeds -- predation (Hawk
+    merge plus Otter erase) drives every population to the floor of 8, so Merge-Hawks are apex predators
+    in every world; a Turtle-bias rebalance is a tuning note, not a proof gap. STILL OPEN, and deliberately
+    not covered by this record -- M2 (Sentinel as a second process, FLOCK serialization) and the hibernation
+    window are UNRUN, so concurrency is claimed nowhere here. Provenance -- external stimulus, an AI-generated
+    stress spec titled "Quantum Memo Zoo" supplied by the owner 2026-08-11, MAPPED into house terms rather
+    than adopted verbatim (received ideas are source material, not authority). Why this record exists
+    at all -- registered 2026-08-13 after the work proved unfindable. The harness, the charter and the
+    four green seeds had been in the tree since 11 August and were reachable from no registry, so neither
+    the ecoschema map nor site search could see them; a search of the map data for "quantum", "minidb"
+    and "memo zoo" returned nothing. The evidence was never missing, only unregistered, which is the failure
+    the rapid-development curation rule names.'
 - id: proof.owner_dogfood_caught_cross_slot_leak
   label: A green seven-phase regression missed what two minutes of owner dogfood caught -- the proof environment
     could not express the failure

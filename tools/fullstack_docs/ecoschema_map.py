@@ -478,8 +478,17 @@ def build(data: dict, jn: dict) -> dict:
             f"{s['src']} source file(s), {s['hdr']} header(s). "
             f"{len(pr)} registered proof(s).")
         for p in pr:
+            # The label says WHAT was proven; the notes say what was measured,
+            # what is still open, and where the evidence sits. Carrying only the
+            # label made the map searchable for claims and useless for evidence:
+            # on 2026-08-13 the memo zoo was registered with its seeds, its
+            # 104,044 operations and its unrun M2 all in the notes, and the map
+            # still could not answer "quantum", "memo zoo" or "minidb". Same
+            # 380-character budget the project notes already use, so this stays
+            # a summary line rather than a second copy of the record.
             add(f"{nid}:pf:{p['id']}", nid, p["id"], "proof",
-                p.get("state", ""), {}, (p.get("label") or "")[:200])
+                p.get("state", ""), {"notes": (p.get("notes") or "")[:380]},
+                (p.get("label") or "")[:200])
 
     # --- labtalk pole: SCANNED ----------------------------------------------
     areas = data.get("labtalk", [])
@@ -584,8 +593,12 @@ def build(data: dict, jn: dict) -> dict:
         "silently discards what it cannot match will always look tidier than the "
         "thing it is describing.")
     for p in jn["unmapped"]:
+        # Same notes budget as the mapped proofs above. An unmapped record is
+        # the one most in need of its detail carried: it has no subsystem to
+        # borrow context from, so the label alone leaves it unsearchable.
         add(f"br:um:{p['id']}", "br:unmapped", p["id"], "proof",
-            p.get("state", ""), {}, (p.get("label") or "")[:160])
+            p.get("state", ""), {"notes": (p.get("notes") or "")[:380]},
+            (p.get("label") or "")[:160])
     if jn["undeclared"]:
         add("br:undeclared", "pole:bridge",
             f"{len(jn['undeclared'])} proof(s) carry a state not in the declared vocabulary",
@@ -600,7 +613,19 @@ def build(data: dict, jn: dict) -> dict:
 
 
 def _esc(s):
-    return (str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;"))
+    """HTML-escape, and force the result to ASCII via numeric references.
+
+    The ASCII part is not fussiness. The JSON half of this page goes through
+    json.dumps, which escapes non-ASCII to \\uXXXX by default, so the file has
+    always been pure ASCII and the house no-non-ASCII rule has always passed.
+    The static index added 2026-08-13 wrote the same strings as literal UTF-8
+    and quietly broke that -- four characters arrived from AIF claim notes
+    (en dash, em dash, arrow, superset) the first time it ran. Numeric
+    references render identically for the reader and keep the byte stream
+    ASCII, which is what the JSON path was already doing.
+    """
+    s = (str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;"))
+    return s.encode("ascii", "xmlcharrefreplace").decode("ascii")
 
 
 def static_index(nodes):

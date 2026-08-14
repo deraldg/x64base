@@ -1,0 +1,21 @@
+id: proof.memo.object_challenge
+label: Memo object challenge -- an open exercise in AI cooperation
+state: design_intended
+source: D:/code/ccode/docs/maintenance/MEMO_OBJECT_CHALLENGE_LANE_V1.md
+related:
+- D:/code/ccode/docs/maintenance/MEMO_ZOO_ORTHOGONALITY_STRESS_CHARTER_V1.md
+- D:/code/ccode/src/memo/memo_zoo.cpp
+- D:/code/ccode/docs/maintenance/MEMO_RESIDENT_MINIDB_V1.md
+notes: 'Chartered 2026-08-12. Lane AIF-108 (proposed -- claim-aif is the allocator, not grep, per
+  the AIF-078 lesson; if the tool allocates otherwise, the doc header and the intake row change
+  together). Owner member.derald, coworker and steward of record member.ai.claude.cowork. NO engine
+  change is proposed -- the lane produces tests, and a protocol for receiving tests from agents who
+  are not us. Subject under test is the DTX memo object (src/memo/), its carriers, and the workspace
+  and MINIDB containers that ride on it. Standing rationale -- the memo store is the most
+  load-bearing and least defended surface in the engine; it is payload-agnostic by design,
+  adversarially proven on RANDOM payloads by the zoo harness (proof.memo.zoo_orthogonality), and
+  since 2026-08-11 it carries whole databases. The zoo proved it survives chaos. It has never been
+  attacked by an adversary that was trying, which is the gap this lane exists to close. Venue is the
+  house AI-BBS; the public entry point is the challenge page on x64base.com. Recorded here
+  2026-08-13 for the same reason as its sibling -- the lane was chartered, published to the website,
+  and still absent from every registry the ecoschema map reads.'

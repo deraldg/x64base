@@ -1,0 +1,37 @@
+id: proof.memo.zoo_orthogonality
+label: Quantum Memo Zoo -- memo store stays payload-agnostic and orthogonal under adversarial chaos
+state: runtime_observed
+source: D:/code/ccode/docs/maintenance/MEMO_ZOO_ORTHOGONALITY_STRESS_CHARTER_V1.md
+related:
+- D:/code/ccode/src/memo/memo_zoo.cpp
+- D:/code/ccode/src/memo/memo_ref.cpp
+- D:/code/ccode/docs/maintenance/MEMO_OBJECT_CHALLENGE_LANE_V1.md
+- D:/code/ccode/docs/maintenance/MEMO_RESIDENT_MINIDB_V1.md
+- D:/code/ccode/docs/maintenance/RAM_MINIDB_MEMO_WORKSPACE_OPERATIONS_V1.md
+notes: 'QUANTUM MEMO ZOO / memo zoo / memo_zoo -- also the MINIDB and memo-resident workspace
+  surface. Retrieval names first, on purpose: consumers of this registry truncate notes, so a
+  record whose identifying words sit in the last paragraph is a record nobody finds. M1 SOAKED
+  2026-08-11 -- 20,500 generations, 104,044 operations, four seeds, ZERO divergences; M2 concurrency
+  UNRUN. Detail follows. Harness is src/memo/memo_zoo.cpp (target
+  memo_zoo) -- six driver personas plus a shadow oracle, embedded-NUL and high-byte payloads,
+  Temporal Collapse reopens, steady-state settle, final reopen sweep. Four seeds green -- 20260811
+  (500 generations / 1,584 ops), 7 (5,000 / 22,353), 42 (5,000 / 29,648, genesis population 200),
+  1993 (10,000 / 50,459, reopen every 50). Totals -- 20,500 generations, 104,044 operations, about
+  215 reopen cycles, ZERO divergences. What that promotes to runtime-proven at the store level --
+  isolation (no operation on memo A alters memo B), fidelity and agnosticism (every readback
+  byte-matches the last write, including corrupted, binary-ish and empty payloads), and reopen
+  durability at scale. The reframe that makes it rigorous -- the zoo describes memos WITH behavior,
+  x64base memos have NONE, so species are DRIVER PERSONAS and the store passes by remaining a
+  passive byte-faithful cage no matter what the animals do. Emergent ecology finding, replicated
+  across all four seeds -- predation (Hawk merge plus Otter erase) drives every population to the
+  floor of 8, so Merge-Hawks are apex predators in every world; a Turtle-bias rebalance is a tuning
+  note, not a proof gap. STILL OPEN, and deliberately not covered by this record -- M2 (Sentinel as
+  a second process, FLOCK serialization) and the hibernation window are UNRUN, so concurrency is
+  claimed nowhere here. Provenance -- external stimulus, an AI-generated stress spec titled
+  "Quantum Memo Zoo" supplied by the owner 2026-08-11, MAPPED into house terms rather than adopted
+  verbatim (received ideas are source material, not authority). Why this record exists at all --
+  registered 2026-08-13 after the work proved unfindable. The harness, the charter and the four
+  green seeds had been in the tree since 11 August and were reachable from no registry, so neither
+  the ecoschema map nor site search could see them; a search of the map data for "quantum",
+  "minidb" and "memo zoo" returned nothing. The evidence was never missing, only unregistered,
+  which is the failure the rapid-development curation rule names.'
