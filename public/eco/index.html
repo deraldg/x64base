@@ -4,8 +4,23 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>x64base ecoschema -- drill-down map</title>
+<!-- Byte-identical to the no-flash script in the site's app/layout.tsx:68.
+     Same key, same 'light' default, same 'system' handling. If that ruling
+     changes, both copies change together. -->
+<script>(function(){try{var t=localStorage.getItem('theme')||'light';var d=t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);}catch(e){}})();</script>
 <style>
-:root{--bg:#0d1117;--pan:#151b23;--pan2:#1b232d;--line:#2a3441;--tx:#d7e0ea;
+/* Served from x64base.com/eco/ as a static passthrough, so this page does not
+   inherit the site's Next.js layout and was permanently dark while the site
+   defaults to light. The script in <head> reads the same localStorage['theme']
+   key the site uses, so the navbar toggle reaches this page too.
+
+   :root is light; html.dark restores the original console palette unchanged.
+   The gold --acc2:#f0b429 is kept in dark on the owner's call (2026-08-13).
+   Light needs a darker amber for contrast on paper, and rather than invent one
+   this uses the site's own --orange light token, rgb(186 92 20) = #ba5c14. */
+:root{--bg:#f6f9fc;--pan:#ffffff;--pan2:#eef3f8;--line:#d0ddeb;--tx:#0a1320;
+--dim:#374960;--acc:#1b6ca8;--acc2:#ba5c14;--ok:#15803d;--warn:#9a4c10;--bad:#b93030}
+html.dark{--bg:#0d1117;--pan:#151b23;--pan2:#1b232d;--line:#2a3441;--tx:#d7e0ea;
 --dim:#8b98a8;--acc:#5eb0ef;--acc2:#f0b429;--ok:#5dd39e;--warn:#e8834a;--bad:#f2777a}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--tx);
@@ -62,6 +77,15 @@ footer{padding:14px 22px;border-top:1px solid var(--line);color:var(--dim);font-
 footer a,.home{color:var(--acc);text-decoration:none}
 footer a:hover,.home:hover{text-decoration:underline}
 .home{font-size:12px;white-space:nowrap}
+#allentries{padding:0 22px 30px}
+#allentries summary{cursor:pointer;color:var(--acc);font-size:13px;padding:8px 0}
+#allentries .idx{columns:2;column-gap:22px}
+@media(max-width:820px){#allentries .idx{columns:1}}
+.ie{break-inside:avoid;border-left:2px solid var(--line);padding:2px 0 2px 10px;margin:0 0 10px}
+.ie .k{color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.4px}
+.ie .st{color:var(--acc2);font-size:11px}
+.ie p{margin:2px 0 0;color:var(--dim);font-size:12px}
+.ie p.mx{color:var(--dim);opacity:.75;font-size:11px}
 </style>
 </head>
 <body>
@@ -73,6 +97,478 @@ footer a:hover,.home:hover{text-decoration:underline}
 </header>
 <div id="crumbs"></div>
 <main id="view"></main>
+<section id="allentries">
+<details>
+<summary>All entries, as a static list -- what site search reads, and what this page shows without JavaScript</summary>
+<div class="idx" data-pagefind-body>
+<div class="ie"><span class="k">measure</span> <b>4 of 41 subsystems carry a registered proof</b><p>How much of the built code has evidence filed against it in the proof registry. Read the remainder carefully: a subsystem showing 'no proof registered' means NOBODY FILED A RECORD, which is not the same as nobody testing it. The two readings differ enormously and only one of them is supported by this number. The measure directly below shows why.</p></div>
+<div class="ie"><span class="k">measure</span> <b>104 transcripts and 317 .dts scripts exist</b><p>Test scripts and recorded runs sitting on disk that the registry does not point at. Compare this count with the one above and the real situation appears: the testing largely happened, and the FILING did not keep up with it. That is an ordinary condition in a fast-moving project, and it is worth publishing rather than hiding, because a coverage number read without it says something untrue.</p></div>
+<div class="ie"><span class="k">measure</span> <b>43 claimed lanes against 108 intake rows</b><p>A claim is atomic; an intake row is prose. Rows without a claim are pre-coordination, which the collision gate already reports as advisory.</p></div>
+<div class="ie"><span class="k">measure</span> <b>DotTalk++ -- 4 of 41 subsystems carry a registered proof</b><p>The number that reads worst and means least without its companion below: the engine is not unproven, the index is aimed elsewhere.</p></div>
+<div class="ie"><span class="k">measure</span> <b>LabTalk -- 300 files across 5 surfaces</b><p>The campus holds the proof DOCUMENTS the registry indexes, so it is both a pier and the filing cabinet the bridge reads from.</p></div>
+<div class="ie"><span class="k">defect</span> <b>x64base.com -- 0 proof records, and 0 is not a finding</b><p>The site carries no registered proof at all. That is not evidence the site is unproven; it is evidence that NOTHING IN THIS REGISTRY POINTS AT IT, because the generator cannot see that repository. The zero is the absence of a measurement, not a measurement of absence -- and it is shown rather than omitted so the distinction stays visible.</p></div>
+<div class="ie"><span class="k">measure</span> <b>x64base -- 19 projects, 43 claims declared</b><p>Declared intent. Coverage here means a lane exists and is claimed, not that anything is built.</p></div>
+<div class="ie"><span class="k">measure</span> <b>Proof coverage, per pier</b><p>How much registered proof each pier carries. Read the gaps as facts about the REGISTRY first and the work second.</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.agency.model</b> <span class="st">source_defined</span><p>Agency model -- capacity to act plus accountability for having acted</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.ai.roles_taxonomy</b> <span class="st">source_defined</span><p>AI roles taxonomy - agents vs Ollama vs GPTbase</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.ai_friendly.assimilation_docs_seed</b> <span class="st">source_defined</span><p>AI Friendly assimilation portal and book seeded</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.ai_friendly.maint_ai_assimilate.first_run</b> <span class="st">runtime_observed</span><p>MAINT AI ASSIMILATE first portal/runtime transcript</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.ai_portal.cold_resume_retention</b> <span class="st">runtime_observed</span><p>Artifact-mediated cold resume -- an 11-day-dormant agent recovering position from a handoff</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.ai_portal.discoverability_caught_its_own_author</b> <span class="st">source_defined</span><p>The discoverability fix caught its own maker -- Phase 7 was the next dropped thread</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.ai_portal.dotscript_startup_readiness.v1</b> <span class="st">runtime_observed</span><p>DotTalk++ / DotScript startup readiness probe v1</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.ai_portal.engineering_standards_seed</b> <span class="st">source_defined</span><p>AI Portal engineering-standards / definition-of-done seed on the mandatory path</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.ai_portal.lane_registered</b> <span class="st">source_defined</span><p>AI Portal Alpha/Experimental lane registered</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.ai_portal.root_entry_and_external_package.v1</b> <span class="st">source_defined</span><p>Root AI Portal entry and external change-package contract defined</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.ai_portal.sdlc_fast_start.v1</b> <span class="st">source_defined</span><p>AI Portal SDLC fast-start seed registered</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.ai_portal.seed_connection_prototype_direction.v1</b> <span class="st">design_intended</span><p>AI fast-start seed connection prototype direction registered</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.ai_portal.source_mutation_contract_gate.v1</b> <span class="st">source_defined</span><p>Source mutation contract preflight registered</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.aif078.slot_cost_measured_per_toolchain</b> <span class="st">runtime_observed</span><p>MAX_AREA per-slot cost measured on both supported toolchains; the two axes bind on different platforms</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.aif078.workspace_path_preserves_depth1</b> <span class="st">runtime_observed</span><p>DataAddress workspace scalar widened to a path with no depth-1 behavior change</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.aside.rule_caught_its_own_author</b> <span class="st">source_defined</span><p>The aside rule caught its own author over-scoping -- the same session it was coined</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.build.gcc_linux_warning_baseline</b> <span class="st">runtime_observed</span><p>GCC/Linux build of x64base under WSL -- warning baseline</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.case.registry_exists</b> <span class="st">case_registered</span><p>Case registry exists</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.cnx_orthogonality_recno_permutation</b> <span class="st">source_defined</span><p>The cross-generation index cocktail works BY CONSTRUCTION -- a CNX is a table-agnostic recno permutation, and REINDEX self-heals a foreign container</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.codev.system_corrects_its_extender</b> <span class="st">source_defined</span><p>The tree's own artifacts and gates corrected an outside AI extender, repeatedly</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.contract.dottalk_file_fulltree</b> <span class="st">runtime_observed</span><p>@dottalk.file universal contract - full-tree backfill at 100% coverage</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.edref.topic_exists</b> <span class="st">source_defined</span><p>EDREF topic exists</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.engine.append_blank_catalog_drift</b> <span class="st">runtime_observed</span><p>Runtime APPEND rejects the BLANK token the command catalog documents (silent clobber)</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.engine.key_metadata_survives_workspace_roundtrip</b> <span class="st">runtime_observed</span><p>PRIMARY/UNIQUE key declarations persist through WORKSPACE SAVE and LOAD</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.engine.scan_limit_reports_truncation</b> <span class="st">runtime_observed</span><p>Relation scans announce when the scan limit stopped them</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.engine.two_read_families_buffer_visibility</b> <span class="st">runtime_observed</span><p>Two coherent read families; buffer-visibility defects occur only at the hybrid seam</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.engine.typed_equality_crosses_declared_types</b> <span class="st">runtime_observed</span><p>Relation equality compares numerically whenever both sides are numeric literals</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.evidence.layer_versioned</b> <span class="st">runtime_observed</span><p>Proof transcripts un-ignored and committed -- registry claims now verifiable from a clone</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.export.sdf.fixed_width_export</b> <span class="st">runtime_observed</span><p>EXPORT SDF writes fixed-width records using the shared TUPTALK row formatter</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.golden_rule_verify_before_assert</b> <span class="st">source_defined</span><p>The golden rule, earned -- host-only changes asserted "done" broke; ground truth came only on running</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.grok_lane1_coworker_kind_collision</b> <span class="st">source_defined</span><p>First ai-ai coworker lane delivery (Grok) landed clean AND its one engine error was caught by ground-truthing before apply</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.lab.database_literacy_starter.first_run</b> <span class="st">runtime_observed</span><p>Database Literacy Starter first portal/runtime transcript</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.lmdb.mapsize_ladder_honoured_after_fix</b> <span class="st">runtime_observed</span><p>BUILDLMDB TINY survives an index attach -- the size ladder is honoured</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.lmdb.mapsize_override_on_attach</b> <span class="st">runtime_observed</span><p>LMDB env resizes 128 MiB -&gt; 1 GiB on index auto-attach, ignoring the BUILDLMDB ladder</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.lmdb.mapsize_override_replication_sysfunc</b> <span class="st">runtime_observed</span><p>LMDB mapsize override replicates on a second table (SYSFUNC, 69 rows)</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.owner_dogfood_caught_cross_slot_leak</b> <span class="st">source_defined</span><p>A green seven-phase regression missed what two minutes of owner dogfood caught -- the proof environment could not express the failure</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.pdlc.cobol_fixed_record.hop_closed</b> <span class="st">runtime_observed</span><p>DBF to fixed-record to GnuCOBOL read, 200 records</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.pdlc.csv_to_x64base.type_fidelity</b> <span class="st">runtime_observed</span><p>CSV to x64base preserves types, NULLs and long names</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.pdlc.dbf_csv_dbf.roundtrip_lossless</b> <span class="st">runtime_observed</span><p>DBF to CSV to DBF round trip is lossless</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.pdlc.dialect_ladder.dbase3_to_x64</b> <span class="st">runtime_observed</span><p>dBASE III to FoxPro 2.6 to VFP to x64 to x64 VECTOR, lossless</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.peer_review.header_only_findings</b> <span class="st">runtime_observed</span><p>A hosted peer with no tree access found three real defects from a header block</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.portal.truth_audit.latest</b> <span class="st">validated</span><p>Portal truth audit latest report</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.product.manualgen.board_preserved</b> <span class="st">validated</span><p>Manualgen product board and map preservation</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.sqlsel.select_statement_matches_sqlite</b> <span class="st">runtime_observed</span><p>SQLSEL SELECT ... FROM returns row sets equal to SQLite over the same data</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.tooling.cross_platform</b> <span class="st">runtime_observed</span><p>Workflow tooling ported to cross-platform Python, each tested</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.wal.dbf_record</b> <span class="st">runtime_observed</span><p>TABLE BUFFER write-ahead log -- DBF record atomicity + crash recovery</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.wal.memo_atomicity</b> <span class="st">design_intended</span><p>Whole-row atomicity including the memo store</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.worktree.lane_isolation</b> <span class="st">design_intended</span><p>Worktree-per-lane isolation -- sessions stop sharing one working tree</p></div>
+<div class="ie"><span class="k">measure</span> <b>48 of 59 proof records map to no subsystem</b><p>Not every proof is about code. Many of these record process, documentation or coordination results, which have no source directory to attach to. They are listed rather than dropped, because a join that silently discards what it cannot match will always look tidier than the thing it is describing.</p></div>
+<div class="ie"><span class="k">defect</span> <b>86 distinct Status strings across 108 rows</b><p>The Status column is free text, not a vocabulary -- the same underscore/hyphen split already found in proofs.yaml. 2 row(s) bucket to 'unclassified' and are listed under Work state.</p></div>
+<div class="ie"><span class="k">measure</span> <b>29 proof records point at a document</b></div>
+<div class="ie"><span class="k">measure</span> <b>2 proof records point at engine source</b></div>
+<div class="ie"><span class="k">measure</span> <b>6 proof records point at no source recorded</b></div>
+<div class="ie"><span class="k">measure</span> <b>22 proof records point at run transcript</b></div>
+<div class="ie"><span class="k">claim</span> <b>AIF-050</b> <span class="st">promoted</span><p>AI run traceability</p><p class="mx">member.ai.claude.cowork M0–M7 landed as candidates dev-only; M8 (Agent-Sync + peer) remaining; not promoted — pare</p></div>
+<div class="ie"><span class="k">claim</span> <b>AIF-065</b> <span class="st">source-defined</span><p>LMDB mapsize override -- BUILDLMDB size ladder not honoured by attach path</p><p class="mx">member.ai.claude.cowork source_defined</p></div>
+<div class="ie"><span class="k">claim</span> <b>AIF-066</b> <span class="st">source-defined</span><p>Locale spine: messaging mature, HELP preview fixture stranded, manuals greenfield</p><p class="mx">member.ai.claude.cowork source_defined</p></div>
+<div class="ie"><span class="k">claim</span> <b>AIF-067</b> <span class="st">source-defined</span><p>subcommand identity contract (@dottalk.subusage)</p><p class="mx">member.ai.claude.cowork source_defined</p></div>
+<div class="ie"><span class="k">claim</span> <b>AIF-068</b> <span class="st">unclassified</span><p>manualgen-harvest-feeder</p><p class="mx">member.ai.claude.cowork NOT abandoned -- prior art located, registration restored; no new work claimed</p></div>
+<div class="ie"><span class="k">claim</span> <b>AIF-070</b> <span class="st">proven</span><p>workspace.virtual_and_memo_resident</p><p class="mx">member.ai.grok.xai ACTIVE BUILD LANE as of 2026-08-11 -- first increment RUNTIME-PROVEN (was: review-needed e</p></div>
+<div class="ie"><span class="k">claim</span> <b>AIF-071</b> <span class="st">closed</span><p>ai-portal-report-discoverability</p><p class="mx">member.ai.claude.cowork closed_runtime_observed</p></div>
+<div class="ie"><span class="k">claim</span> <b>AIF-072</b> <span class="st">planned</span><p>docflush-manual-web-ascent</p><p class="mx">member.ai.claude.cowork not-started -- pick-up-ready</p></div>
+<div class="ie"><span class="k">claim</span> <b>AIF-073</b> <span class="st">source-defined</span><p>external-agent-memory</p><p class="mx">member.ai.chatgpt design-intended -- registered, not implemented</p></div>
+<div class="ie"><span class="k">claim</span> <b>AIF-074</b> <span class="st">planned</span><p>sqlsel-pdlc</p><p class="mx">member.ai.claude.cowork CHARTERED -- plan of record under review; no engine source changed; zero runtime evidence.</p></div>
+<div class="ie"><span class="k">claim</span> <b>AIF-075</b> <span class="st">closed</span><p>bbs-shell-attrib</p><p class="mx">member.ai.claude.cowork closed_runtime_observed</p></div>
+<div class="ie"><span class="k">claim</span> <b>AIF-076</b> <span class="st">closed</span><p>pseudochat-defuse</p><p class="mx">member.ai.claude.cowork closed</p></div>
+<div class="ie"><span class="k">claim</span> <b>AIF-077</b> <span class="st">closed</span><p>codex-wip</p><p class="mx">member.ai.claude.cowork closed_runtime_observed</p></div>
+<div class="ie"><span class="k">claim</span> <b>AIF-078</b> <span class="st">in-review</span><p>workspace-qualifier-namespace-depth</p><p class="mx">member.ai.claude.cowork review_needed -- design only, NO engine source changed, zero runtime evidence</p></div>
+<div class="ie"><span class="k">claim</span> <b>AIF-079</b> <span class="st">planned</span><p>declared-capability-validator</p><p class="mx">member.ai.claude.cowork mixed -- lane planned (no tool landed, zero runtime evidence); the engine slice that produ</p></div>
+<div class="ie"><span class="k">claim</span> <b>AIF-080</b> <span class="st">proven</span><p>index-backend-orthogonality</p><p class="mx">member.ai.claude.cowork mixed -- M1 landed and source-evidenced with a green parity run; F3 message split DEFERRED</p></div>
+<div class="ie"><span class="k">claim</span> <b>AIF-081</b> <span class="st">proven</span><p>output-capture-completeness</p><p class="mx">member.ai.claude.cowork findings recorded, NO source change landed -- F1 runtime-proven and source-evidenced, F3 h</p></div>
+<div class="ie"><span class="k">claim</span> <b>AIF-082</b> <span class="st">proven</span><p>onboarding-cost-and-acceptance</p><p class="mx">member.ai.claude.cowork M0 done -- measured + source-evidenced; NO portal doc edited, NO tool built, acceptance te</p></div>
+<div class="ie"><span class="k">claim</span> <b>AIF-083</b> <span class="st">source-defined</span><p>bbs-agency-legs</p><p class="mx">member.ai.claude.cowork findings recorded, NO source change, ZERO runtime evidence -- source-defined only</p></div>
+<div class="ie"><span class="k">claim</span> <b>AIF-086</b> <span class="st">proven</span><p>ai-systems-integration-sdlc</p><p class="mx">member.ai.codex.local M0 accepted; M1 owner-review candidate; local visibility prototype runtime-observed; no pu</p></div>
+<div class="ie"><span class="k">claim</span> <b>AIF-087</b> <span class="st">proven</span><p>triggers-pdlc</p><p class="mx">member.derald Phase-0 SIGNED 2026-08-04; Phase-1 spike LANDED and built green (cold-clone MSVC Release, </p></div>
+<div class="ie"><span class="k">claim</span> <b>AIF-088</b> <span class="st">in-review</span><p>command_catalog_runtime_drift</p><p class="mx">member.derald review-needed; AIF-088 to be claimed via session_coordinator.py claim-aif</p></div>
+<div class="ie"><span class="k">claim</span> <b>AIF-090</b> <span class="st">source-defined</span><p>x64base-agent-skill</p><p class="mx">member.ai.claude.cowork CONVERTED to a repair lane by owner ruling R7, 2026-08-06. D1-D4 implemented and runtime-p</p></div>
+<div class="ie"><span class="k">claim</span> <b>AIF-091</b> <span class="st">planned</span><p>dbf-vfp-type-support</p><p class="mx">member.ai.claude.cowork design-only; charter + M1 committed</p></div>
+<div class="ie"><span class="k">claim</span> <b>AIF-092</b> <span class="st">active</span><p>publication-surface-recovery</p><p class="mx">member.ai.claude.cowork active; five documents recovered, one derived, four items open</p></div>
+<div class="ie"><span class="k">claim</span> <b>AIF-093</b> <span class="st">planned</span><p>dottalkpp-text-extension</p><p class="mx">member.ai.claude.cowork design-only; charter committed; P1 discovery underway</p></div>
+<div class="ie"><span class="k">claim</span> <b>AIF-094</b> <span class="st">closed</span><p>pdlc-vocabulary-merge</p><p class="mx">member.ai.claude.cowork closed; dev-only, website committed and published one revision stale</p></div>
+<div class="ie"><span class="k">claim</span> <b>AIF-095</b> <span class="st">closed</span><p>dottalkpp-site</p><p class="mx">member.derald pick-up-ready -- SSL remediation complete; matrix scope ruling owed before content work</p></div>
+<div class="ie"><span class="k">claim</span> <b>AIF-096</b> <span class="st">planned</span><p>coordination-ontology</p><p class="mx">member.derald design-only proposal -- doc authored, awaiting doc-system unfreeze for placement</p></div>
+<div class="ie"><span class="k">claim</span> <b>AIF-097</b> <span class="st">in-review</span><p>private-site auth + search</p><p class="mx">member.derald scoping/design -- charter committed; phase register M0-M5 is the lifecycle</p></div>
+<div class="ie"><span class="k">claim</span> <b>AIF-098</b> <span class="st">planned</span><p>frontal_mem M2 lane1 write adapter</p><p class="mx">member.derald ON HOLD (owner ruling 2026-08-10) -- valid held item: a BBS test for a real proposed sourc</p></div>
+<div class="ie"><span class="k">claim</span> <b>AIF-099</b> <span class="st">proven</span><p>cnx-on-x64 warn-not-refuse</p><p class="mx">member.derald BUILT + PROVEN 2026-08-09 -- REGRESSION RUN INDEX_X64_CNX all five expectations PASS on ho</p></div>
+<div class="ie"><span class="k">claim</span> <b>AIF-100</b> <span class="st">planned</span><p>gate governance (build/commit/publish)</p><p class="mx">member.derald chartered -- M0 census next</p></div>
+<div class="ie"><span class="k">claim</span> <b>AIF-101</b> <span class="st">closed</span><p>development acceleration analysis (six-week exponential)</p><p class="mx">member.derald STANDING lane (owner directive 2026-08-09) -- M0-M3 complete (findings + white paper draft</p></div>
+<div class="ie"><span class="k">claim</span> <b>AIF-103</b> <span class="st">planned</span><p>specialty LMS external intake (Copilot proposal + local assessment)</p><p class="mx">member.ai.claude.cowork intake recorded -- Q1-Q5 owner rulings open</p></div>
+<div class="ie"><span class="k">claim</span> <b>AIF-104</b> <span class="st">closed</span><p>clean-clone core CI link and profile repair</p><p class="mx">member.ai.codex.local closed -- promoted to main; GitHub CI green</p></div>
+<div class="ie"><span class="k">claim</span> <b>AIF-105</b> <span class="st">active</span><p>Cascade ERP metadata, ETL, migration, and learning gold standard</p><p class="mx">member.ai.codex.local chartered -- Gate 0 durability and database-curation audit active; local structural mirror</p></div>
+<div class="ie"><span class="k">claim</span> <b>AIF-106</b> <span class="st">closed</span><p>dottalk-ai-historical-evidence-publication</p><p class="mx">member.ai.codex.local closed -- managed Sites version 16 deployed owner-only; public x64base.com/GitHub publicat</p></div>
+<div class="ie"><span class="k">claim</span> <b>AIF-107</b> <span class="st">promoted</span><p>low-key-entry-surface</p><p class="mx">member.ai.claude.cowork deployed -- live at https://dottalkpp.com (commit c0fc326, GitHub Pages); G2 development-r</p></div>
+<div class="ie"><span class="k">claim</span> <b>AIF-108</b> <span class="st">planned</span><p>memo-object-challenge</p><p class="mx">member.ai.claude.cowork chartered -- NO engine change proposed; this lane produces tests and a protocol for receiv</p></div>
+<div class="ie"><span class="k">claim</span> <b>AIF-109</b> <span class="st">planned</span><p>dotscript-product-gaps</p><p class="mx">member.ai.claude.cowork chartered -- findings and registration only; NO syntax proposed, five owner rulings pendin</p></div>
+<div class="ie"><span class="k">claim</span> <b>AIF-110</b> <span class="st">proven</span><p>fieldmgr_x64m_identity</p><p class="mx">member.derald FIXED AND PROVEN, guard lifted same session (build 05:04:34): the blank-writer was the rew</p></div>
+<div class="ie"><span class="k">claim</span> <b>AIF-111</b> <span class="st">proven</span><p>sandbox-build-ceiling</p><p class="mx">member.ai.claude.cowork MEASURED, one session, recipe committed -- doc correction OWED to AI_README/CLAUDE.md</p></div>
+<div class="ie"><span class="k">group</span> <b>Claimed AIF lanes</b><p>A lane number is CLAIMED before work starts, so that two people -- or two AI agents -- cannot pick the same one at the same time. The claim is made by creating a file that only succeeds if it does not already exist, which is a small idea with a large consequence: the answer to 'is this number free?' can never be a stale guess.</p></div>
+<div class="ie"><span class="k">group</span> <b>Engine subsystems</b><p>Scanned from src/*/ at run time -- 41 directories carrying source.</p></div>
+<div class="ie"><span class="k">group</span> <b>Campus surfaces</b><p>Scanned from labtalk/ at run time -- 5 surface(s), 300 file(s).</p></div>
+<div class="ie"><span class="k">group</span> <b>Lifecycles</b><p>Five named lifecycles. A bare 'the SDLC' is not sufficient when more than one could apply.</p></div>
+<div class="ie"><span class="k">group</span> <b>Projects</b><p>Work is nested three deep: a PROJECT contains LANES, and a lane contains MILESTONES. The nesting matters because it is what lets a large system be discussed at the size you happen to need -- a project for direction, a lane for a piece of work someone owns, a milestone for a thing that can actually be finished.</p></div>
+<div class="ie"><span class="k">group</span> <b>Promotion ladder</b><p>The ladder a claim climbs. Never claim a later stage because an earlier one succeeded.</p></div>
+<div class="ie"><span class="k">group</span> <b>Published surfaces</b><p>NOT SCANNED. The site lives in a separate repository (x64base-site) that this generator cannot read, so nothing here is measured. Listing declared names would be the one hand-written literal on a map whose v2 note says it removed hand-written literals BECAUSE THEY DRIFT. The honest fix is an export from the site tree into this one -- tools/reports/regen_site_regression.ps1 already writes cross-tree, so the precedent exists. Until then this pier reports its own absence.</p></div>
+<div class="ie"><span class="k">group</span> <b>Work state</b><p>108 intake rows bucketed by the Status column. The claim ledger says a lane exists; this says what state it is in.</p></div>
+<div class="ie"><span class="k">lifecycle</span> <b>AI Systems Integration SDLC</b><p>relationships, vocabulary, end-to-end gates</p><p class="mx">docs/maintenance/AI_SYSTEMS_INTEGRATION_SDLC_CHARTER_V1.md</p></div>
+<div class="ie"><span class="k">phase</span> <b>AI-BBS</b></div>
+<div class="ie"><span class="k">phase</span> <b>authorization</b></div>
+<div class="ie"><span class="k">phase</span> <b>coordination</b></div>
+<div class="ie"><span class="k">phase</span> <b>curation</b></div>
+<div class="ie"><span class="k">phase</span> <b>evidence</b></div>
+<div class="ie"><span class="k">phase</span> <b>memory</b></div>
+<div class="ie"><span class="k">phase</span> <b>onboarding</b></div>
+<div class="ie"><span class="k">phase</span> <b>portal</b></div>
+<div class="ie"><span class="k">phase</span> <b>projections</b></div>
+<div class="ie"><span class="k">phase</span> <b>pseudo-chat</b></div>
+<div class="ie"><span class="k">phase</span> <b>reports</b></div>
+<div class="ie"><span class="k">lifecycle</span> <b>DotTalk++ SDLC</b><p>engine, runtime and system correctness</p><p class="mx">docs/maintenance/DOTTALKPP_SDLC_CHARTER_v0.md</p></div>
+<div class="ie"><span class="k">phase</span> <b>design</b></div>
+<div class="ie"><span class="k">phase</span> <b>documentation/metadata</b></div>
+<div class="ie"><span class="k">phase</span> <b>implementation</b></div>
+<div class="ie"><span class="k">phase</span> <b>release and promotion</b></div>
+<div class="ie"><span class="k">phase</span> <b>requirements/boundary</b></div>
+<div class="ie"><span class="k">phase</span> <b>verification</b></div>
+<div class="ie"><span class="k">lifecycle</span> <b>LabTalk SDLC</b><p>laboratory campus truth and learning material</p><p class="mx">labtalk/LABTALK_SDLC_FRAMEWORK_v0.md</p></div>
+<div class="ie"><span class="k">phase</span> <b>cases</b></div>
+<div class="ie"><span class="k">phase</span> <b>labs</b></div>
+<div class="ie"><span class="k">phase</span> <b>lessons</b></div>
+<div class="ie"><span class="k">phase</span> <b>proofs</b></div>
+<div class="ie"><span class="k">phase</span> <b>student readiness</b></div>
+<div class="ie"><span class="k">lifecycle</span> <b>maintenance SDLC</b><p>the maintenance surfaces and their gates</p><p class="mx">docs/maintenance/MAINTENANCE_CHARTER_v1.md</p></div>
+<div class="ie"><span class="k">phase</span> <b>BBOX</b></div>
+<div class="ie"><span class="k">phase</span> <b>DDICT</b></div>
+<div class="ie"><span class="k">phase</span> <b>MAINT</b></div>
+<div class="ie"><span class="k">phase</span> <b>MANUAL</b></div>
+<div class="ie"><span class="k">phase</span> <b>drift gates</b></div>
+<div class="ie"><span class="k">lifecycle</span> <b>PDLC</b><p>programming development life cycle, program scale</p><p class="mx">docs/maintenance/PDLC_STUDENT_WORKING_MODEL_LANE_V1.md</p></div>
+<div class="ie"><span class="k">phase</span> <b>analyze</b></div>
+<div class="ie"><span class="k">phase</span> <b>code</b></div>
+<div class="ie"><span class="k">phase</span> <b>design</b></div>
+<div class="ie"><span class="k">phase</span> <b>document</b></div>
+<div class="ie"><span class="k">phase</span> <b>maintain</b></div>
+<div class="ie"><span class="k">phase</span> <b>test/debug</b></div>
+<div class="ie"><span class="k">subsystem</span> <b>ai_portal</b><p>51 file(s) under labtalk/ai_portal.</p><p class="mx">51 files</p></div>
+<div class="ie"><span class="k">subsystem</span> <b>lessons</b><p>18 file(s) under labtalk/lessons.</p><p class="mx">18 files</p></div>
+<div class="ie"><span class="k">subsystem</span> <b>portal</b><p>12 file(s) under labtalk/portal.</p><p class="mx">12 files</p></div>
+<div class="ie"><span class="k">subsystem</span> <b>proofs</b><p>109 file(s) under labtalk/proofs.</p><p class="mx">109 files</p></div>
+<div class="ie"><span class="k">subsystem</span> <b>registries</b><p>110 file(s) under labtalk/registries.</p><p class="mx">110 files</p></div>
+<div class="ie"><span class="k">level</span> <b>help_documented</b><p>HELP exposes it accurately -- 0 registered proof(s) at this rung</p></div>
+<div class="ie"><span class="k">level</span> <b>lab_ready</b><p>safe for LabTalk to package -- 0 registered proof(s) at this rung</p></div>
+<div class="ie"><span class="k">level</span> <b>professional_ready</b><p>safe for normal runtime use -- 0 registered proof(s) at this rung</p></div>
+<div class="ie"><span class="k">level</span> <b>runtime_observed</b><p>runtime proof exists -- 34 registered proof(s) at this rung</p></div>
+<div class="ie"><span class="k">level</span> <b>source_defined</b><p>code or contract exists -- 18 registered proof(s) at this rung</p></div>
+<div class="ie"><span class="k">level</span> <b>validated</b><p>a validator checked it -- 3 registered proof(s) at this rung</p></div>
+<div class="ie"><span class="k">pole</span> <b>The bridge</b><p>A plan and a codebase always disagree somewhat. This panel measures the distance between them instead of assuming it. It asks one question of each pier: how much of what is here carries evidence that someone registered? Where the answer is low, read it first as a statement about the RECORD KEEPING, and only then about the work -- the two are easy to confuse and the difference matters.</p><p class="mx">Read this side to learn how far a claim and its evidence have drifted apart -- and which of the two is usually at fault. measured // how the other four compare</p></div>
+<div class="ie"><span class="k">pole</span> <b>DotTalk++</b><p>The same system counted from the other end: directories that exist on disk, with their source files tallied. Nothing here is claimed -- it is measured at the moment this page is generated. If a subsystem appears here, code for it exists. That is a different and smaller statement than saying it works.</p><p class="mx">Read this side to learn what has actually been BUILT. built // what the code actually contains</p></div>
+<div class="ie"><span class="k">pole</span> <b>LabTalk</b><p>Where the work becomes knowledge someone else can use: lessons, proof documents, the registries that index them, and the portal that onboards a newcomer. A system can be built and still be unlearnable. This is the surface that decides which.</p><p class="mx">Read this side to learn what the project KNOWS about itself. recorded // what has been taught and evidenced</p></div>
+<div class="ie"><span class="k">pole</span> <b>x64base.com</b><p>The public face of the other three. It is the only surface most people will ever see, so it is the one where a claim that outruns its evidence does the most damage. Everything published here should be traceable back to one of the other piers.</p><p class="mx">This pier is DECLARED, not measured: the website lives in a separate repository that this page's generator cannot read. Everything else here is counted; this one is asserted, and saying so is the point. published // what an outsider is told</p></div>
+<div class="ie"><span class="k">pole</span> <b>x64base</b><p>The plan of the system, written down: its lifecycles, its promotion ladder, the projects it has opened and the lanes someone has claimed. Every software project has a description of itself like this. It is drawn top-down, so it necessarily mixes what is finished with what is only intended -- and that mixture is not dishonesty, it is what a plan is.</p><p class="mx">Read this side to learn what the system is ORGANISED to be. declared // what the system says it is</p></div>
+<div class="ie"><span class="k">project</span> <b>project.ai_friendly</b> <span class="st">seed</span><p>Routes AI-assisted work into durable, anchored project knowledge.</p><p class="mx">knowledge_project</p></div>
+<div class="ie"><span class="k">project</span> <b>project.ai_friendly.agent_memory</b> <span class="st">design_intended</span><p>Model the AI Portal as event-sourced external memory (working / episodic / prospective / semantic / procedural / evidence) for continuing human+AI agent work. Registered from a GPTbase design proposal (2026-07-28); design-intended, not implemented. GPTbase self-assigned as maintainer; corrected to steward, human ownership retained.</p><p class="mx">knowledge_project</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-073</b></div>
+<div class="ie"><span class="k">lane</span> <b>external-agent-memory</b><p class="mx">AIF-073</p></div>
+<div class="ie"><span class="k">lane</span> <b>ai_portal_hardening</b></div>
+<div class="ie"><span class="k">lane</span> <b>assimilation</b></div>
+<div class="ie"><span class="k">lane</span> <b>dashboard</b></div>
+<div class="ie"><span class="k">lane</span> <b>intake</b></div>
+<div class="ie"><span class="k">lane</span> <b>second_opinion</b></div>
+<div class="ie"><span class="k">lane</span> <b>workflow</b></div>
+<div class="ie"><span class="k">project</span> <b>project.ai_systems.integration</b> <span class="st">m1_owner_review_pending_with_visibility_prototype</span><p>Cross-system SDLC for integrating the AI Portal, onboarding, memory, reports, coordination, Pseudo-Chat, AI-BBS, authorization, evidence, and public projections. Incorporated lanes retain their original owners and lifecycles. M0 was owner-accepted on 2026-08-03. M1 requirements and discovery are owner-review pending. A read-only dynamic localhost report prototype is runtime-obs</p><p class="mx">sdlc_project</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-086</b></div>
+<div class="ie"><span class="k">project</span> <b>project.bbs.cooperation</b> <span class="st">charter_with_autonomous_poc</span><p>One participant-agnostic cooperation medium over the AI-BBS / Pseudo-Chat board: the same post/reply/attribution protocol serves AI-AI, AI-Human, and Human-Human cooperation. SYSMEMBER.KIND already models Human/AI/Service/ External as peers, so the protocol is done; what differs per member is the CONNECTOR (UI, loopback-direct via dottalk_bbsd, or human relay), an attention/tur</p><p class="mx">integration_project</p></div>
+<div class="ie"><span class="k">lane</span> <b>autonomous_match</b></div>
+<div class="ie"><span class="k">lane</span> <b>cooperation_medium</b></div>
+<div class="ie"><span class="k">lane</span> <b>member_connectors</b></div>
+<div class="ie"><span class="k">lane</span> <b>session_exchange_guard</b></div>
+<div class="ie"><span class="k">project</span> <b>project.db_converter</b> <span class="st">prototype</span><p>DBF/x64 to SQL conversion lane using pydottalk and SQLite.</p><p class="mx">migration_project</p></div>
+<div class="ie"><span class="k">lane</span> <b>dbf_to_sql</b></div>
+<div class="ie"><span class="k">lane</span> <b>migration_smoke</b></div>
+<div class="ie"><span class="k">lane</span> <b>pydottalk</b></div>
+<div class="ie"><span class="k">lane</span> <b>sqlite_sink</b></div>
+<div class="ie"><span class="k">project</span> <b>project.dottalk_webui</b> <span class="st">local_prototype</span><p>Local web UI experiments for DotTalk++/SelfDoc presentation.</p><p class="mx">web_ui_project</p></div>
+<div class="ie"><span class="k">lane</span> <b>local_web</b></div>
+<div class="ie"><span class="k">lane</span> <b>prototype</b></div>
+<div class="ie"><span class="k">lane</span> <b>selfdoc_ui</b></div>
+<div class="ie"><span class="k">project</span> <b>project.labtalk.campus</b> <span class="st">active_seed</span><p>Consumer and teaching layer over DotTalk++ runtime truth, including a reserved provider-neutral LMS communications lane. Its AI Portal sublane is machine-facing fast-start context for AI development partners, not a student AI-access portal.</p><p class="mx">campus_project</p></div>
+<div class="ie"><span class="k">lane</span> <b>ai_portal</b></div>
+<div class="ie"><span class="k">lane</span> <b>assignments</b></div>
+<div class="ie"><span class="k">lane</span> <b>cases</b></div>
+<div class="ie"><span class="k">lane</span> <b>communications</b></div>
+<div class="ie"><span class="k">lane</span> <b>historical_database_migration</b></div>
+<div class="ie"><span class="k">lane</span> <b>labs</b></div>
+<div class="ie"><span class="k">lane</span> <b>lms</b></div>
+<div class="ie"><span class="k">lane</span> <b>portal</b></div>
+<div class="ie"><span class="k">lane</span> <b>proofs</b></div>
+<div class="ie"><span class="k">lane</span> <b>registries</b></div>
+<div class="ie"><span class="k">project</span> <b>project.labtalk.historical_database_migration</b> <span class="st">active_seed</span><p>PDLC teaching project for carrying a stable business dataset through COBOL fixed-length records, xBase/DBF, CODASYL-style relationships, JSON, CSV, spreadsheets, SQLite/SQL, and x64base comparison. Existing runtime starters and sample packages are assembled first; historical cases remain review-labeled; GnuCOBOL acknowledgement is required before promotion. The benchmark lane c</p><p class="mx">pdlc_project</p></div>
+<div class="ie"><span class="k">lane</span> <b>analysis</b></div>
+<div class="ie"><span class="k">lane</span> <b>benchmark_x64base_vs_sqlite</b></div>
+<div class="ie"><span class="k">lane</span> <b>cascade_erp_metadata_etl_learning</b></div>
+<div class="ie"><span class="k">lane</span> <b>cases</b></div>
+<div class="ie"><span class="k">lane</span> <b>cobol_fixed_records</b></div>
+<div class="ie"><span class="k">lane</span> <b>codasyl_relationships</b></div>
+<div class="ie"><span class="k">lane</span> <b>dbf_xbase</b></div>
+<div class="ie"><span class="k">lane</span> <b>design</b></div>
+<div class="ie"><span class="k">lane</span> <b>documentation</b></div>
+<div class="ie"><span class="k">lane</span> <b>json_csv_spreadsheet</b></div>
+<div class="ie"><span class="k">lane</span> <b>maintenance</b></div>
+<div class="ie"><span class="k">lane</span> <b>proofs</b></div>
+<div class="ie"><span class="k">lane</span> <b>publication</b></div>
+<div class="ie"><span class="k">lane</span> <b>sqlite_bridge</b></div>
+<div class="ie"><span class="k">project</span> <b>project.labtalk.lms</b> <span class="st">reserved_local_only</span><p>Local-only queue and transport contract; no endpoint, credential, student data, or live delivery is configured.</p><p class="mx">integration_project</p></div>
+<div class="ie"><span class="k">lane</span> <b>lms_interface</b></div>
+<div class="ie"><span class="k">lane</span> <b>local_outbox</b></div>
+<div class="ie"><span class="k">lane</span> <b>message_contract</b></div>
+<div class="ie"><span class="k">lane</span> <b>moodle_future</b></div>
+<div class="ie"><span class="k">project</span> <b>project.labtalk.pdlc</b> <span class="st">active_seed</span><p>The documented program-scale life cycle (analyze -&gt; design -&gt; code -&gt; test/debug -&gt; document -&gt; maintain), taught so the student model and the working model coincide (AIF-037 source teaches). Scope calibration is part of the lesson: students see the complete cycle, then select only the gates justified by mode, change class, actual build target, product profile, and affected con</p><p class="mx">methodology_project</p></div>
+<div class="ie"><span class="k">lane</span> <b>framing</b></div>
+<div class="ie"><span class="k">lane</span> <b>publication</b></div>
+<div class="ie"><span class="k">lane</span> <b>six_step_reference</b></div>
+<div class="ie"><span class="k">lane</span> <b>worked_exemplar</b></div>
+<div class="ie"><span class="k">project</span> <b>project.labtalk.sdlc</b> <span class="st">active_seed</span><p>The teachable model of the runtime's actual evidence-gated, Agile-descended SDLC (lanes -&gt; milestones -&gt; proof gates -&gt; closeouts). Gate depth is scope-calibrated; x64base engine-only, dottalkpp runtime, product profile, and index profile are separate planning axes. Formalized as a project per AIF-040; sibling of project.labtalk.pdlc; charter-backed. Documents the working model</p><p class="mx">methodology_project</p></div>
+<div class="ie"><span class="k">lane</span> <b>charter</b></div>
+<div class="ie"><span class="k">lane</span> <b>closeout</b></div>
+<div class="ie"><span class="k">lane</span> <b>lane_governance</b></div>
+<div class="ie"><span class="k">lane</span> <b>proof_gates</b></div>
+<div class="ie"><span class="k">lane</span> <b>publication</b></div>
+<div class="ie"><span class="k">project</span> <b>project.labtalk.staging</b> <span class="st">seed</span><p>Local staging area for LabTalk work above DotTalk++ / x64base runtime scope.</p><p class="mx">staging_project</p></div>
+<div class="ie"><span class="k">lane</span> <b>ai</b></div>
+<div class="ie"><span class="k">lane</span> <b>cross_repo</b></div>
+<div class="ie"><span class="k">lane</span> <b>intake</b></div>
+<div class="ie"><span class="k">lane</span> <b>product</b></div>
+<div class="ie"><span class="k">lane</span> <b>publication</b></div>
+<div class="ie"><span class="k">lane</span> <b>review</b></div>
+<div class="ie"><span class="k">project</span> <b>project.pycrud</b> <span class="st">prototype</span><p>SQLAlchemy/Tk CRUD surface with optional DotTalk++ backend hook.</p><p class="mx">companion_app_project</p></div>
+<div class="ie"><span class="k">lane</span> <b>crud_gui</b></div>
+<div class="ie"><span class="k">lane</span> <b>dottalk_hook</b></div>
+<div class="ie"><span class="k">lane</span> <b>fastapi_backend</b></div>
+<div class="ie"><span class="k">lane</span> <b>xbase_json</b></div>
+<div class="ie"><span class="k">project</span> <b>project.sqlite_gui</b> <span class="st">local_prototype</span><p>Local SQLite GUI experiment lane.</p><p class="mx">gui_project</p></div>
+<div class="ie"><span class="k">lane</span> <b>gui</b></div>
+<div class="ie"><span class="k">lane</span> <b>prototype</b></div>
+<div class="ie"><span class="k">lane</span> <b>sqlite</b></div>
+<div class="ie"><span class="k">project</span> <b>project.x64base.dotscript</b> <span class="st">active_beta</span><p>The DotScript command/expression language surface, promoted from the project.x64base.runtime 'dotscript' lane per AIF-040. Owns the arrays lane (AIF-038, arrays RUNTIME-LIVE 2026-08; spec normative) and the incoming tuple field-type extension lane; stop_on_error (AIF-036) and the comment lexer (AIF-037) are proven surfaces here. 2026-08-12 (owner directive, DotScript-as-product</p><p class="mx">language_project</p></div>
+<div class="ie"><span class="k">lane</span> <b>arrays</b></div>
+<div class="ie"><span class="k">lane</span> <b>codeblocks</b></div>
+<div class="ie"><span class="k">lane</span> <b>error_handling</b></div>
+<div class="ie"><span class="k">lane</span> <b>errorstop</b></div>
+<div class="ie"><span class="k">lane</span> <b>expression_runtime</b></div>
+<div class="ie"><span class="k">lane</span> <b>functions_procedures</b></div>
+<div class="ie"><span class="k">lane</span> <b>lexing</b></div>
+<div class="ie"><span class="k">lane</span> <b>maps</b></div>
+<div class="ie"><span class="k">lane</span> <b>tuples</b></div>
+<div class="ie"><span class="k">project</span> <b>project.x64base.identity</b> <span class="st">active_development</span><p>Durable identity/RBAC/authorization layer the AI Portal needs (AIF-045): USERS (identity) -&gt; TEAM_MEMBER (participation) -&gt; TEAM_ASSIGNMENT -&gt; {ROLE, PERMISSION, ORG_UNIT, WORK_NODE, AUTHORIZATION_GRANT}, with the operational security policy kept independent as the final runtime constraint. The core strong-ID, DBF persistence, authentication, session, deny-precedence, owner-gat</p><p class="mx">governance_project</p></div>
+<div class="ie"><span class="k">lane</span> <b>authorization_audit</b></div>
+<div class="ie"><span class="k">lane</span> <b>cmd_security_bridge</b></div>
+<div class="ie"><span class="k">lane</span> <b>entity_contract</b></div>
+<div class="ie"><span class="k">lane</span> <b>management_schema</b></div>
+<div class="ie"><span class="k">lane</span> <b>rbac_core</b></div>
+<div class="ie"><span class="k">lane</span> <b>registry_import</b></div>
+<div class="ie"><span class="k">lane</span> <b>roundtrip_proof</b></div>
+<div class="ie"><span class="k">lane</span> <b>teaching_loop</b></div>
+<div class="ie"><span class="k">project</span> <b>project.x64base.public_staging</b> <span class="st">active_curated_staging</span><p>Receives only reviewed, relevant, clean work from the development root. Commits and GitHub pushes originate here. This tree and GitHub main are public projections, not competing development authority.</p><p class="mx">publication_staging_project</p></div>
+<div class="ie"><span class="k">lane</span> <b>clean_staging</b></div>
+<div class="ie"><span class="k">lane</span> <b>commit</b></div>
+<div class="ie"><span class="k">lane</span> <b>curation</b></div>
+<div class="ie"><span class="k">lane</span> <b>public_snapshot</b></div>
+<div class="ie"><span class="k">lane</span> <b>push</b></div>
+<div class="ie"><span class="k">project</span> <b>project.x64base.runtime</b> <span class="st">active_beta</span><p>Authoritative active development source and runtime truth for DotTalk++ / x64base. The current workspace branch is inspected, not invented per AI chat. Clean relevant work is selectively promoted to the staging root for publication.</p><p class="mx">runtime_project</p></div>
+<div class="ie"><span class="k">lane</span> <b>arctictalk_tui_workbench</b></div>
+<div class="ie"><span class="k">lane</span> <b>cli</b></div>
+<div class="ie"><span class="k">lane</span> <b>contracts</b></div>
+<div class="ie"><span class="k">lane</span> <b>ddl_schema_pdlc</b></div>
+<div class="ie"><span class="k">lane</span> <b>dotscript</b></div>
+<div class="ie"><span class="k">lane</span> <b>engine</b></div>
+<div class="ie"><span class="k">lane</span> <b>export_sdf</b></div>
+<div class="ie"><span class="k">lane</span> <b>gui</b></div>
+<div class="ie"><span class="k">lane</span> <b>help</b></div>
+<div class="ie"><span class="k">lane</span> <b>maintenance</b></div>
+<div class="ie"><span class="k">lane</span> <b>retro_launchpad</b></div>
+<div class="ie"><span class="k">lane</span> <b>selfdoc</b></div>
+<div class="ie"><span class="k">lane</span> <b>sql_family</b></div>
+<div class="ie"><span class="k">lane</span> <b>x32_traditional_xbase_support</b></div>
+<div class="ie"><span class="k">project</span> <b>project.x64base.website</b> <span class="st">downstream_publication_truth</span><p>Public documentation surface; publication is not runtime proof.</p><p class="mx">publication_project</p></div>
+<div class="ie"><span class="k">lane</span> <b>labtalk_publication</b></div>
+<div class="ie"><span class="k">lane</span> <b>public_docs</b></div>
+<div class="ie"><span class="k">lane</span> <b>selfdoc_publication</b></div>
+<div class="ie"><span class="k">subsystem</span> <b>AIPortal</b> <span class="st">no proof registered</span><p>1 source file(s), 0 header(s). 0 registered proof(s).</p><p class="mx">1 src / 0 hdr</p></div>
+<div class="ie"><span class="k">subsystem</span> <b>agile</b> <span class="st">no proof registered</span><p>1 source file(s), 1 header(s). 0 registered proof(s).</p><p class="mx">1 src / 1 hdr</p></div>
+<div class="ie"><span class="k">subsystem</span> <b>bbs</b> <span class="st">runtime_observed</span><p>2 source file(s), 0 header(s). 7 registered proof(s).</p><p class="mx">2 src / 0 hdr</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.bbs.guest</b> <span class="st">runtime_observed</span><p>AI-BBS guest leave-a-message (member.guest + board.guestbook)</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.bbs.m1_board</b> <span class="st">runtime_observed</span><p>AI-BBS M1 board tables + BBS command</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.bbs.m2_net_egress</b> <span class="st">runtime_observed</span><p>AI-BBS M2 NET EGRESS permissioned toggle</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.bbs.m3_argon2</b> <span class="st">runtime_observed</span><p>AI-BBS M3 Argon2id token crypto (libsodium)</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.bbs.m4_serve</b> <span class="st">runtime_observed</span><p>AI-BBS M4 BBS SERVE loopback listener + Ollama bridge</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.bbs.m6_daemon</b> <span class="st">runtime_observed</span><p>AI-BBS M6 standalone dottalk_bbsd daemon</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.bbs.worklog</b> <span class="st">runtime_observed</span><p>AI-BBS worklog/handoff board + simplex cascade guard</p></div>
+<div class="ie"><span class="k">subsystem</span> <b>bindings</b> <span class="st">no proof registered</span><p>2 source file(s), 0 header(s). 0 registered proof(s).</p><p class="mx">2 src / 0 hdr</p></div>
+<div class="ie"><span class="k">subsystem</span> <b>browser</b> <span class="st">no proof registered</span><p>4 source file(s), 0 header(s). 0 registered proof(s).</p><p class="mx">4 src / 0 hdr</p></div>
+<div class="ie"><span class="k">subsystem</span> <b>cdx</b> <span class="st">no proof registered</span><p>2 source file(s), 1 header(s). 0 registered proof(s).</p><p class="mx">2 src / 1 hdr</p></div>
+<div class="ie"><span class="k">subsystem</span> <b>cli</b> <span class="st">source_defined</span><p>370 source file(s), 119 header(s). 1 registered proof(s).</p><p class="mx">370 src / 119 hdr</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.help.cmdhelp_source_exists</b> <span class="st">source_defined</span><p>CMDHELP source exists</p></div>
+<div class="ie"><span class="k">subsystem</span> <b>cnx</b> <span class="st">no proof registered</span><p>2 source file(s), 1 header(s). 0 registered proof(s).</p><p class="mx">2 src / 1 hdr</p></div>
+<div class="ie"><span class="k">subsystem</span> <b>common</b> <span class="st">no proof registered</span><p>2 source file(s), 0 header(s). 0 registered proof(s).</p><p class="mx">2 src / 0 hdr</p></div>
+<div class="ie"><span class="k">subsystem</span> <b>core</b> <span class="st">no proof registered</span><p>1 source file(s), 0 header(s). 0 registered proof(s).</p><p class="mx">1 src / 0 hdr</p></div>
+<div class="ie"><span class="k">subsystem</span> <b>datadict</b> <span class="st">no proof registered</span><p>6 source file(s), 2 header(s). 0 registered proof(s).</p><p class="mx">6 src / 2 hdr</p></div>
+<div class="ie"><span class="k">subsystem</span> <b>dewey</b> <span class="st">no proof registered</span><p>2 source file(s), 3 header(s). 0 registered proof(s).</p><p class="mx">2 src / 3 hdr</p></div>
+<div class="ie"><span class="k">subsystem</span> <b>dli</b> <span class="st">no proof registered</span><p>7 source file(s), 0 header(s). 0 registered proof(s).</p><p class="mx">7 src / 0 hdr</p></div>
+<div class="ie"><span class="k">subsystem</span> <b>dt</b> <span class="st">no proof registered</span><p>5 source file(s), 1 header(s). 0 registered proof(s).</p><p class="mx">5 src / 1 hdr</p></div>
+<div class="ie"><span class="k">subsystem</span> <b>edu</b> <span class="st">no proof registered</span><p>19 source file(s), 0 header(s). 0 registered proof(s).</p><p class="mx">19 src / 0 hdr</p></div>
+<div class="ie"><span class="k">subsystem</span> <b>erp</b> <span class="st">no proof registered</span><p>0 source file(s), 1 header(s). 0 registered proof(s).</p><p class="mx">0 src / 1 hdr</p></div>
+<div class="ie"><span class="k">subsystem</span> <b>ext</b> <span class="st">no proof registered</span><p>3 source file(s), 1 header(s). 0 registered proof(s).</p><p class="mx">3 src / 1 hdr</p></div>
+<div class="ie"><span class="k">subsystem</span> <b>gui</b> <span class="st">no proof registered</span><p>11 source file(s), 3 header(s). 0 registered proof(s).</p><p class="mx">11 src / 3 hdr</p></div>
+<div class="ie"><span class="k">subsystem</span> <b>help</b> <span class="st">no proof registered</span><p>7 source file(s), 7 header(s). 0 registered proof(s).</p><p class="mx">7 src / 7 hdr</p></div>
+<div class="ie"><span class="k">subsystem</span> <b>identity</b> <span class="st">no proof registered</span><p>3 source file(s), 0 header(s). 0 registered proof(s).</p><p class="mx">3 src / 0 hdr</p></div>
+<div class="ie"><span class="k">subsystem</span> <b>import</b> <span class="st">no proof registered</span><p>1 source file(s), 0 header(s). 0 registered proof(s).</p><p class="mx">1 src / 0 hdr</p></div>
+<div class="ie"><span class="k">subsystem</span> <b>maintenance</b> <span class="st">no proof registered</span><p>1 source file(s), 1 header(s). 0 registered proof(s).</p><p class="mx">1 src / 1 hdr</p></div>
+<div class="ie"><span class="k">subsystem</span> <b>manual</b> <span class="st">no proof registered</span><p>3 source file(s), 3 header(s). 0 registered proof(s).</p><p class="mx">3 src / 3 hdr</p></div>
+<div class="ie"><span class="k">subsystem</span> <b>memo</b> <span class="st">no proof registered</span><p>8 source file(s), 1 header(s). 0 registered proof(s).</p><p class="mx">8 src / 1 hdr</p></div>
+<div class="ie"><span class="k">subsystem</span> <b>meta</b> <span class="st">no proof registered</span><p>1 source file(s), 0 header(s). 0 registered proof(s).</p><p class="mx">1 src / 0 hdr</p></div>
+<div class="ie"><span class="k">subsystem</span> <b>ms365</b> <span class="st">no proof registered</span><p>1 source file(s), 1 header(s). 0 registered proof(s).</p><p class="mx">1 src / 1 hdr</p></div>
+<div class="ie"><span class="k">subsystem</span> <b>palette</b> <span class="st">no proof registered</span><p>6 source file(s), 2 header(s). 0 registered proof(s).</p><p class="mx">6 src / 2 hdr</p></div>
+<div class="ie"><span class="k">subsystem</span> <b>pch</b> <span class="st">no proof registered</span><p>0 source file(s), 1 header(s). 0 registered proof(s).</p><p class="mx">0 src / 1 hdr</p></div>
+<div class="ie"><span class="k">subsystem</span> <b>reference</b> <span class="st">no proof registered</span><p>2 source file(s), 0 header(s). 0 registered proof(s).</p><p class="mx">2 src / 0 hdr</p></div>
+<div class="ie"><span class="k">subsystem</span> <b>security</b> <span class="st">no proof registered</span><p>1 source file(s), 0 header(s). 0 registered proof(s).</p><p class="mx">1 src / 0 hdr</p></div>
+<div class="ie"><span class="k">subsystem</span> <b>selfdoc</b> <span class="st">validated</span><p>1 source file(s), 0 header(s). 2 registered proof(s).</p><p class="mx">1 src / 0 hdr</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.lab.selfdoc.comments_to_contracts.first_run</b> <span class="st">validated</span><p>SelfDoc comments-to-contracts first CMDHELP/CMDHELPCHK run</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.selfdoc.comments_workflow_exists</b> <span class="st">source_defined</span><p>Comments to HELP workflow exists</p></div>
+<div class="ie"><span class="k">subsystem</span> <b>sqlite</b> <span class="st">no proof registered</span><p>1 source file(s), 0 header(s). 0 registered proof(s).</p><p class="mx">1 src / 0 hdr</p></div>
+<div class="ie"><span class="k">subsystem</span> <b>tests</b> <span class="st">no proof registered</span><p>11 source file(s), 1 header(s). 0 registered proof(s).</p><p class="mx">11 src / 1 hdr</p></div>
+<div class="ie"><span class="k">subsystem</span> <b>tools</b> <span class="st">no proof registered</span><p>4 source file(s), 0 header(s). 0 registered proof(s).</p><p class="mx">4 src / 0 hdr</p></div>
+<div class="ie"><span class="k">subsystem</span> <b>tuple</b> <span class="st">no proof registered</span><p>6 source file(s), 0 header(s). 0 registered proof(s).</p><p class="mx">6 src / 0 hdr</p></div>
+<div class="ie"><span class="k">subsystem</span> <b>tv</b> <span class="st">no proof registered</span><p>21 source file(s), 2 header(s). 0 registered proof(s).</p><p class="mx">21 src / 2 hdr</p></div>
+<div class="ie"><span class="k">subsystem</span> <b>value</b> <span class="st">no proof registered</span><p>1 source file(s), 0 header(s). 0 registered proof(s).</p><p class="mx">1 src / 0 hdr</p></div>
+<div class="ie"><span class="k">subsystem</span> <b>workspace</b> <span class="st">runtime_observed</span><p>5 source file(s), 1 header(s). 1 registered proof(s).</p><p class="mx">5 src / 1 hdr</p></div>
+<div class="ie"><span class="k">proof</span> <b>proof.workspace.writeback</b> <span class="st">runtime_observed</span><p>WORKSPACE WRITEBACK -- the memo/RAM to disk return leg, with its path resolution corrected</p></div>
+<div class="ie"><span class="k">subsystem</span> <b>xbase</b> <span class="st">no proof registered</span><p>15 source file(s), 3 header(s). 0 registered proof(s).</p><p class="mx">15 src / 3 hdr</p></div>
+<div class="ie"><span class="k">subsystem</span> <b>xexpr</b> <span class="st">no proof registered</span><p>5 source file(s), 0 header(s). 0 registered proof(s).</p><p class="mx">5 src / 0 hdr</p></div>
+<div class="ie"><span class="k">subsystem</span> <b>xindex</b> <span class="st">no proof registered</span><p>21 source file(s), 0 header(s). 0 registered proof(s).</p><p class="mx">21 src / 0 hdr</p></div>
+<div class="ie"><span class="k">state</span> <b>active</b> <span class="st">active</span><p>5 lane(s)</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-018</b><p>active -- lane opened, wiring pending</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-041</b><p>BETA-1 stabilization lane opened (active) — parent project.x64base.runtime. Maintainer-dir</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-063</b><p>active_development</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-092</b><p>active; five documents recovered, one derived, four items open</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-105</b><p>chartered -- Gate 0 durability and database-curation audit active; local structural mirror</p></div>
+<div class="ie"><span class="k">state</span> <b>anchored</b> <span class="st">anchored</span><p>10 lane(s)</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-001</b><p>anchored</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-002</b><p>anchored</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-003</b><p>anchored</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-006</b><p>anchored</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-013</b><p>anchored — design-intended</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-021</b><p>anchored — constructive transgression recorded; safe corrections applied; one error-code d</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-034</b><p>PIN — a change to the doc/SDLC model must trigger a flowchart/diagram-update pass. Brainst</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-037</b><p>Teaching-Grade Standard codified. Maintainer directive: use best practices wherever possib</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-039</b><p>PDLC (Programming Development Life Cycle) — documented student/working model, framing reco</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-040</b><p>Project ⊃ Lane ⊃ Milestone tiering + lane→project promotion, codified. Maintainer insight:</p></div>
+<div class="ie"><span class="k">state</span> <b>closed</b> <span class="st">closed</span><p>13 lane(s)</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-046</b><p>M0–M4 complete, committed dev-only; mirror has M0 only; not promoted/pushed — parent proje</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-047</b><p>M0–M5 COMPLETE (M0–M4 in-engine proven; M5 g++-syntax-proven, MSVC demo pending), committe</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-048</b><p>ACTIVE - Gates 0-5 PASS locally; Gate 6 selective scope pending. Repairs: 243 complete liv</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-069</b><p>closed_runtime_observed</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-071</b><p>closed_runtime_observed</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-075</b><p>closed_runtime_observed</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-076</b><p>closed</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-077</b><p>closed_runtime_observed</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-094</b><p>closed; dev-only, website committed and published one revision stale</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-095</b><p>pick-up-ready -- SSL remediation complete; matrix scope ruling owed before content work</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-101</b><p>STANDING lane (owner directive 2026-08-09) -- M0-M3 complete (findings + white paper draft</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-104</b><p>closed -- promoted to main; GitHub CI green</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-106</b><p>closed -- managed Sites version 16 deployed owner-only; public x64base.com/GitHub publicat</p></div>
+<div class="ie"><span class="k">state</span> <b>in-review</b> <span class="st">in-review</span><p>10 lane(s)</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-004</b><p>draft</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-005</b><p>draft</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-011</b><p>review-needed</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-012</b><p>routed — historical_review_needed; public-branch-exposed</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-019</b><p>review-needed</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-028</b><p>review-needed — dev-observed, not an M3/RECNO64 regression</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-064</b><p>review_needed</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-078</b><p>review_needed -- design only, NO engine source changed, zero runtime evidence</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-088</b><p>review-needed; AIF-088 to be claimed via session_coordinator.py claim-aif</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-097</b><p>scoping/design -- charter committed; phase register M0-M5 is the lifecycle</p></div>
+<div class="ie"><span class="k">state</span> <b>planned</b> <span class="st">planned</span><p>19 lane(s)</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-029</b><p>design/intake — proposed, not started</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-032</b><p>design/intake — proposed, not started</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-033</b><p>design/intake — proposed, not started</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-038</b><p>DotScript arrays — PLANNED, lane opened (not started). First general-purpose composite run</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-042</b><p>Script-header contract lane opened (proposed/dev) — parent project.x64base.runtime, folds </p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-044</b><p>design/intake — approved, not started — parent project.x64base.runtime. External-AI propos</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-059</b><p>design-intended -- not started</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-061</b><p>design-intended</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-072</b><p>not-started -- pick-up-ready</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-074</b><p>CHARTERED -- plan of record under review; no engine source changed; zero runtime evidence.</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-079</b><p>mixed -- lane planned (no tool landed, zero runtime evidence); the engine slice that produ</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-091</b><p>design-only; charter + M1 committed</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-093</b><p>design-only; charter committed; P1 discovery underway</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-096</b><p>design-only proposal -- doc authored, awaiting doc-system unfreeze for placement</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-098</b><p>ON HOLD (owner ruling 2026-08-10) -- valid held item: a BBS test for a real proposed sourc</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-100</b><p>chartered -- M0 census next</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-103</b><p>intake recorded -- Q1-Q5 owner rulings open</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-108</b><p>chartered -- NO engine change proposed; this lane produces tests and a protocol for receiv</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-109</b><p>chartered -- findings and registration only; NO syntax proposed, five owner rulings pendin</p></div>
+<div class="ie"><span class="k">state</span> <b>promoted</b> <span class="st">promoted</span><p>12 lane(s)</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-008</b><p>promoted</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-009</b><p>promoted</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-010</b><p>promoted</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-016</b><p>promoted</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-017</b><p>promoted -- Phase 1 PASSED at 1M/5.5M</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-020</b><p>promoted — source-defined and validator-tested</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-023</b><p>anchored — runtime-proven dev-only; not promoted</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-025</b><p>promoted — published live 2026-07-19</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-026</b><p>runtime-proven (dev); not committed/promoted</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-030</b><p>M1–M5 proven (dev; both VFP interop directions); not committed/promoted</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-050</b><p>M0–M7 landed as candidates dev-only; M8 (Agent-Sync + peer) remaining; not promoted — pare</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-107</b><p>deployed -- live at https://dottalkpp.com (commit c0fc326, GitHub Pages); G2 development-r</p></div>
+<div class="ie"><span class="k">state</span> <b>proven</b> <span class="st">proven</span><p>23 lane(s)</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-014</b><p>NONE, LEGACY, and LMDB core profiles runtime-proven in authoritative development; mutation</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-015</b><p>implemented and core profile/package matrix proven in authoritative development; public pu</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-022</b><p>anchored — runtime-proven split; source correction decision pending</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-027</b><p>RECNO64 M1–M4 dev-implemented (M4-1/2/3 proven, M4-4 build-pending); M4-5 de-saturation a </p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-031</b><p>fixed in cmd_replace; sweep pending</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-045</b><p>ACTIVE — core stack implemented, committed, and runtime-proven through 2d-3. M0/M1 strong-</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-049</b><p>ACTIVE PROTOTYPE LANE — two tui-adapted slices Release-build-proven; M0 full inventory and</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-051</b><p>FIXED dev-only (g++-proven); MSVC rebuild + HELP DATA regenerate to confirm in-corpus. Roo</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-052</b><p>runtime-observed</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-053</b><p>runtime-observed</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-054</b><p>runtime-observed</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-055</b><p>runtime-observed</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-062</b><p>runtime-observed</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-070</b><p>ACTIVE BUILD LANE as of 2026-08-11 -- first increment RUNTIME-PROVEN (was: review-needed e</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-080</b><p>mixed -- M1 landed and source-evidenced with a green parity run; F3 message split DEFERRED</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-081</b><p>findings recorded, NO source change landed -- F1 runtime-proven and source-evidenced, F3 h</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-082</b><p>M0 done -- measured + source-evidenced; NO portal doc edited, NO tool built, acceptance te</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-085</b><p>runtime-observed</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-086</b><p>M0 accepted; M1 owner-review candidate; local visibility prototype runtime-observed; no pu</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-087</b><p>Phase-0 SIGNED 2026-08-04; Phase-1 spike LANDED and built green (cold-clone MSVC Release, </p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-099</b><p>BUILT + PROVEN 2026-08-09 -- REGRESSION RUN INDEX_X64_CNX all five expectations PASS on ho</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-110</b><p>FIXED AND PROVEN, guard lifted same session (build 05:04:34): the blank-writer was the rew</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-111</b><p>MEASURED, one session, recipe committed -- doc correction OWED to AI_README/CLAUDE.md</p></div>
+<div class="ie"><span class="k">state</span> <b>rejected</b> <span class="st">rejected</span><p>1 lane(s)</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-007</b><p>rejected</p></div>
+<div class="ie"><span class="k">state</span> <b>source-defined</b> <span class="st">source-defined</span><p>13 lane(s)</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-024</b><p>anchored — source-defined</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-036</b><p>stop_on_error[severity] flag — implemented dev-only, build+prove pending. Maintainer-reque</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-056</b><p>source-defined</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-057</b><p>source-defined (small end built)</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-058</b><p>source-defined</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-060</b><p>source-defined</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-065</b><p>source_defined</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-066</b><p>source_defined</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-067</b><p>source_defined</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-073</b><p>design-intended -- registered, not implemented</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-083</b><p>findings recorded, NO source change, ZERO runtime evidence -- source-defined only</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-084</b><p>design-intended -- helper not built</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-090</b><p>CONVERTED to a repair lane by owner ruling R7, 2026-08-06. D1-D4 implemented and runtime-p</p></div>
+<div class="ie"><span class="k">state</span> <b>unclassified</b> <span class="st">unclassified</span><p>2 lane(s)</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-035</b><p>Manual assemblage package + assembler + two public views. The self-doc claim is only *most</p></div>
+<div class="ie"><span class="k">lane</span> <b>AIF-068</b><p>NOT abandoned -- prior art located, registration restored; no new work claimed</p></div>
+</div>
+</details>
+</section>
 <footer>Generated by <code>tools/fullstack_docs/ecoschema_map.py</code> from
 <code>projects.yaml</code>, <code>proofs.yaml</code>, <code>coordination/aif/*.claim</code>
 and a scan of <code>src/*/</code>. Do not hand-edit; re-run the generator.
