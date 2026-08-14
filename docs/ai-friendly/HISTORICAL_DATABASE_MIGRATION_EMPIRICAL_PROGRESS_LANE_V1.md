@@ -3,7 +3,9 @@
 Status: **active seed / proof gap assessment**  
 Owner: Laboratory Campus / DotTalk++ / x64base  
 Project: `project.labtalk.historical_database_migration`  
-Ticket: `AIF-058`
+Legacy ticket label: `AIF-058` -- collision; the intake authority assigns that
+number to the AI roles taxonomy. Do not use it for new historical-migration work.
+Active Cascade child lane: `AIF-105`.
 
 ## Purpose
 
@@ -28,7 +30,7 @@ future publication work.
 | JSON and spreadsheets | design-stage for data, **implemented for schema** | `DDL CREATE DBF <flavor> <out.dbf> FROM <schema.json>` creates flavored tables from JSON today, with `DDL VALIDATE <schema.json> USING <validator.json>` alongside. Data seeding is the gap: DDL's own notes state `SEED CSV` is "recognized but not yet implemented". So JSON schema → table works; JSON/CSV → rows does not. |
 | x64base vs SQLite benchmark | planned, **storage axis blocked** | The benchmark lane is chartered; no dedicated same-machine result set is yet authoritative. **Storage-footprint comparison must not be attempted until AIF-065 is corrected** — see the note below. |
 | Website publication | planned | Public evolution/case pages exist, but the sample-database catalog and migration proof pages are not yet published. |
-| GnuCOBOL acknowledgement | open gate | Add the acknowledgement before public promotion. |
+| GnuCOBOL acknowledgement | **written, review-needed** | `GNUCOBOL_ACKNOWLEDGEMENT_AND_TOOLCHAIN_V1.md` -- credits GnuCOBOL for every COBOL result this project has recorded as evidence, and records the toolchain as measured 2026-08-14: `cobc (GnuCOBOL) 3.2.0`, GPLv3+, translating to C for MinGW GCC 15.1.0, host `gcc` 15.2.0. Gate closes on owner review, not on this row. |
 
 ## Correction recorded 2026-07-26 (run `COWORK-20260726-001`)
 

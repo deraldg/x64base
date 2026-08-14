@@ -351,7 +351,10 @@ projects:
       COBOL fixed-length records, xBase/DBF, CODASYL-style relationships, JSON,
       CSV, spreadsheets, SQLite/SQL, and x64base comparison. Existing runtime
       starters and sample packages are assembled first; historical cases remain
-      review-labeled; GnuCOBOL acknowledgement is required before promotion.
+      review-labeled; GnuCOBOL acknowledgement is required before promotion and is
+      now written pending owner review in
+      docs/ai-friendly/GNUCOBOL_ACKNOWLEDGEMENT_AND_TOOLCHAIN_V1.md, which also
+      parks GCC 15.1's native COBOL front end as an unevaluated alternative.
       The benchmark lane compares equivalent x64base and SQLite workloads on the
       same machine and reports configuration-specific results only.
 
