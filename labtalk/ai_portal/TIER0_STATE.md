@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-08-15T18:37:47Z
+    generated_utc : 2026-08-15T18:45:31Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,9 +11,9 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : d4b9da97c  (2026-08-15)
+    HEAD          : 5e4c86b84  (2026-08-15)
     upstream      : fb7106e05
-    unpushed      : 3 commit(s) ahead of upstream
+    unpushed      : 4 commit(s) ahead of upstream
 
 ## Declared target
 
@@ -23,17 +23,20 @@ cannot drift, because nothing here is written by hand.
 ## Newest closeout
 
     file          : SESSION_CLOSEOUT_WORKSPACE_WRITEBACK_REGRESSION_2026-08-12.md
-    commits behind HEAD : 52
+    commits behind HEAD : 53
 
 ## Staleness warnings
 
-- The newest closeout is 52 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
-- 3 commit(s) are unpushed and invisible to a clone.
+- The newest closeout is 53 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
+- Claim(s) with no intake row, so they read as ABANDONED from HEAD: AIF-113, AIF-114. Same shape as AIF-062/078/080.
+- 4 commit(s) are unpushed and invisible to a clone.
 
 ## Claimed lanes (newest first)
 
 | AIF | lane | steward | intake row |
 | --- | --- | --- | --- |
+| AIF-114 | set-family-doc-drift | member.derald | **MISSING** |
+| AIF-113 | lock-release-recovery | member.derald | **MISSING** |
 | AIF-112 | site-and-guard-hardening | member.ai.claude.cowork | yes |
 | AIF-111 | sandbox-build-ceiling | member.ai.claude.cowork | yes |
 | AIF-110 | fieldmgr_x64m_identity | member.derald | yes |
@@ -44,9 +47,7 @@ cannot drift, because nothing here is written by hand.
 | AIF-105 | Cascade ERP metadata, ETL, migration, and learning gold standard | member.ai.codex.local | yes |
 | AIF-104 | clean-clone core CI link and profile repair | member.ai.codex.local | yes |
 | AIF-103 | specialty LMS external intake (Copilot proposal + local assessment) | member.ai.claude.cowork | yes |
-| AIF-101 | development acceleration analysis (six-week exponential) | member.derald | yes |
-| AIF-100 | gate governance (build/commit/publish) | member.derald | yes |
-| ... | 32 older claims omitted | | |
+| ... | 34 older claims omitted | | |
 
 ## Sessions, lineage, asides
 
@@ -59,6 +60,7 @@ parent + born_utc from the durable lineage ledger, '-' until a run wakes.
 
 | run | member | parent | born_utc | asides |
 | --- | --- | --- | --- | --- |
+| COWORK-20260815-001 | member.derald | - | - | AIF-113 -> AIF-114 |
 | COWORK-20260814-001 | member.ai.claude.cowork | - | - | AIF-112 |
 | AIPR-20260812-002 | member.ai.claude.cowork | - | - | AIF-111 |
 | AIPR-20260812-001 | member.derald | - | - | AIF-110 |
@@ -66,8 +68,7 @@ parent + born_utc from the durable lineage ledger, '-' until a run wakes.
 | COWORK-20260811-002 | member.ai.claude.cowork | - | - | AIF-108 |
 | COWORK-20260811-001 | member.ai.claude.cowork | - | - | AIF-107 |
 | CODEX-20260810-AI-HISTORY-WEB-001 | member.ai.codex.local | - | - | AIF-106 |
-| CODEX-20260810-ERP-RELATIONS-001 | member.ai.codex.local | - | - | AIF-105 |
-| ... | | | | 29 older run(s) omitted |
+| ... | | | | 30 older run(s) omitted |
 
 Perishable detail lives in the artifacts these point at. Do not
 restate anything above; regenerate it.
