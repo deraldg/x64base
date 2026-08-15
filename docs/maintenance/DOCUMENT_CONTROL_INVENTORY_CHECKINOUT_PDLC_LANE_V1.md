@@ -99,8 +99,12 @@ existing RBAC (acting member, `bbs`-style permissions, SYSGRANT), not a parallel
 
 ## Next gate
 
-Maintainer locks the Phase-0 decisions -> Grok produces the first real working package (a Phase-0
-decision packet plus a Phase-1 spike brief). Nothing is built until then.
+Phase-0 locked (2026-08-15); the Phase-1 spike package is drafted and transcribed
+(`docs/maintenance/external_ai_intake/aif112_phase1_spike_2026-08-15/`, AIPR-20260815-GROK-003).
+Next: run the dogfooded spike per its `notes/EXERCISE_OUTLINE.md` against a LIVE x64base instance,
+fill `notes/EVIDENCE_TEMPLATE.md`, and return the evidence. The evidence decides whether the runtime
+SQLITE surface suffices (proceed to command-family design, still dogfooded) or a concrete gap
+justifies reopening Fossil. No source mutation until proven.
 
 Owner `member.derald`; steward `member.ai.grok.xai`; scribe `member.ai.claude.cowork`;
 `coordination/aif/AIF-112.claim`.
