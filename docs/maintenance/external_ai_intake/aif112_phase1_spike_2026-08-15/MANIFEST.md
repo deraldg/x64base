@@ -7,13 +7,16 @@ ai_report_audit:
     provider: xAI
     product: Grok
     model: not_exposed
-    access_mode: remote
+    access_mode: hosted_proposal
   session:
     id: not_exposed
     chat_reference: not_exposed
   project:
     id: project.x64base.runtime
     root: D:/code/ccode
+  git:
+    branch: development
+    baseline_commit: ea420f9b7
   authorization:
     requested_by: maintainer (Phase-0 locked; Phase-1 spike authorized to draft)
     scope: >
