@@ -15,13 +15,50 @@ def require(condition: bool, message: str) -> None:
         errors.append(message)
 
 
+# Licensing was UNDECIDED when this gate was written (2026-07-14): it asserted that
+# LICENSE read exactly "To be determined." and that README said the same. The project
+# decided on 2026-08-08 (LICENSING.md, "decided 2026-08-08"), GPL-3.0 text landed
+# 2026-08-11 in 2dbc29c8f -- and nobody came back here. The gate then failed CI on
+# public main for the correct repository state, which is the worst way for a gate to
+# fail: it was not reporting drift, it WAS the drift.
+#
+# So these checks now assert the decided posture. They are deliberately still checks
+# and not deletions -- the point of the gate is that the public repo's license story
+# cannot quietly change, and that is as true after a decision as before one.
+OBSOLETE_LICENSE_WORDING = ("To be determined.", "To be defined", "All rights reserved")
+
 license_text = (ROOT / "LICENSE").read_text(encoding="utf-8")
-require(license_text.strip() == "To be determined.", "LICENSE must state the current project status exactly")
+require("GNU GENERAL PUBLIC LICENSE" in license_text, "LICENSE must carry the GNU GPL text")
+require("Version 3, 29 June 2007" in license_text, "LICENSE must be GPL version 3 specifically")
+for phrase in OBSOLETE_LICENSE_WORDING:
+    require(phrase not in license_text, f"LICENSE contains obsolete wording: {phrase!r}")
 
 readme = (ROOT / "README.md").read_text(encoding="utf-8")
 require("`main` is the canonical public source" in readme, "README must identify public main as canonical")
-require("To be determined." in readme, "README must state the current project license status")
-require("To be defined" not in readme, "README contains obsolete license wording")
+require("dual-licensed" in readme, "README must state that the project is dual-licensed")
+require("GPL-3.0-only" in readme, "README must name the open license exactly")
+require("LICENSING.md" in readme, "README must point to the full licensing terms")
+for phrase in OBSOLETE_LICENSE_WORDING:
+    require(phrase not in readme, f"README contains obsolete license wording: {phrase!r}")
+
+# The files have to agree with each other, not merely each be well-formed.
+#
+# Read defensively. LICENSING.md is allow-listed in PROMOTE.manifest but had
+# never actually been promoted, so on public main this path did not exist --
+# an unconditional read_text() here would raise FileNotFoundError and turn a
+# clean policy FAIL into an unhandled traceback in CI. A gate that crashes
+# tells you less than a gate that fails, and costs more to diagnose.
+licensing_path = ROOT / "LICENSING.md"
+if licensing_path.is_file():
+    licensing = licensing_path.read_text(encoding="utf-8")
+    require("GPL-3.0" in licensing, "LICENSING.md must name the same open license as README")
+    require("commercial" in licensing.lower(), "LICENSING.md must describe the commercial arm of the dual license")
+else:
+    errors.append(
+        "LICENSING.md is missing. README points readers to it for the full terms, "
+        "so a tree without it publishes a dangling promise. It is allow-listed in "
+        "PROMOTE.manifest -- promote it, or drop the README pointer."
+    )
 
 cmake = (ROOT / "CMakeLists.txt").read_text(encoding="utf-8")
 require("C:/Users/" not in cmake and "D:/code/" not in cmake, "CMake contains a personal machine path")
