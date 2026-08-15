@@ -70,6 +70,11 @@ are the ontology, the seed-rise plan, and the recall graph named below.
   moment. The active form is: when something was hard to find, synapse it.
 - **provenance is mandatory** -- an unattributed record poisons a trust-based store
   (made concrete by AIF-075).
+- **dogfood** -- the substrate is ours, not just the access path; the test is "is the thing
+  under us ours," not "did we reach it through our commands." SQLite is companion carrier and
+  oracle, never the thing built on. (Owner ruling 2026-08-15; home:
+  `docs/maintenance/AIF112_OWNER_RULING_D1_D3_AND_DOGFOOD_DEFINITION_V1.md` SS3.1-3.1a, which
+  carries the four negations and the operational test.)
 - **the recurring defect pattern** -- something reports success without doing its job
   (author-zero posts, a consumer committed without its definition, a handoff written where a
   clone cannot see it). **Verify before you rely; trust the measurement, not the success
@@ -292,6 +297,69 @@ sitting under the BBS.
   pseudo-chat lanes. Worked examples this session: the owner posted an assignment to the board
   (human->ai) and Claude assigned Grok on `board.afb.chat` (ai->ai) -- both attributed, both
   durable, same channel.
+
+### Peer review (coworker checks coworker -- coined 2026-08-12, first run 2026-08-13)
+
+- **peer review** -- an independent agent, not the author and having contributed nothing,
+  reads the cited files at the stated baseline and returns a durable verdict record before the
+  maintainer's promotion decision. **A verdict is a finding, not a decision**: nothing promotes
+  on `concur`, nothing is deleted on `blocking_conflict`, the owner rules. Supplies the party
+  `AI_REPORT_AUDIT_CONTRACT_V1` left unnamed when it said a report cannot approve itself.
+  Home: `docs/maintenance/PEER_DESIGN_REVIEW_SESSION_PROTOCOL_V1.md`; gate: BETA-1 E1 via
+  AIF-041 M6.
+- **seat** -- a charge in a review session that only its holder can discharge, assigned from
+  what the member actually *is* (`AI_ROLES_TAXONOMY_V1`): host (moderates, does not vote),
+  reproducer (runs the packet's own repro), adversary (assigned to argue the losing side),
+  precedent checker, naive reader. Not attendees; N interchangeable reviewers produce N
+  restatements. Home: same protocol, sec 3.
+- **turn validity** -- a turn counts only if it carries a `file:line`, a command and its real
+  output, or an explicit *"I could not run this, and here is why"*. Anything else is filed and
+  marked `void`. Declining is an accepted turn **so that declining is not a losing move**.
+- **UNDERTESTED** -- a ballot line closing unanimous with no dissent recorded. It is not
+  `agreed`; unanimity with no attempted counter-case measures the process, not the question.
+- **claim defect vs runtime defect (amends AIF-082, 2026-08-13)** -- two classes needing two
+  modalities. A **runtime defect** (a checker passing vacuously, a moved denominator, a crash
+  rendered as a finding) is found by RUNNING; inspection does not find it, and AIF-082 stands.
+  A **claim defect** (a stale baseline, an unattributable signature, an assertion with no
+  anchor) is found by READING, and a reviewer with **no tree access is well suited to it**,
+  because with nothing else to check it checks the claims. Consequence: a hosted seat is not a
+  weaker local seat -- it is the seat that audits what local seats assert.
+  Home: `labtalk/proofs/PEER_REVIEW_HEADER_ONLY_FINDINGS_20260813_V1.md`
+  (`proof.peer_review.header_only_findings`).
+- **run line (standing correction, 2026-08-13)** -- every handoff, closeout and report header
+  carries a `run` id, not only a member id. A member names a deployment; a run names the
+  session a reader can return to. Adopted after a hosted peer could not tell which session
+  wrote a report -- the gap AIF-050 was chartered to close, found in an artifact by that lane's
+  own steward.
+
+### Standing (who may file, and on what footing -- coined 2026-08-14)
+
+- **standing** -- what a member is *in a given matter*, recorded on the assignment
+  (`SYSASSIGN.AKIND`), as distinct from what it may do anywhere (its role) and whom it answers to
+  (its org). Deliberately relational: `member.ai.grok.xai` is a disinterested reviewer on PDR-001
+  and an interested author on its own AIF-098 patches at the same time, so standing cannot live on
+  the member. Ladder: `amicus`, `movant`, `steward`, `host`, `owner`; empty means **no standing
+  established** and must never be read as amicus -- absence of a recorded stake is not evidence of
+  disinterest. Home: `include/identity/org_schema.hpp`, `namespace standing`.
+- **amicus** (*amicus curiae*, friend of the court) -- a **non-party** admitted to file findings
+  because it has relevant sight, not because it has a stake. It may argue; it cannot be granted
+  relief. This is the posture peer review already assumed without a word for it: a verdict is a
+  finding, not a decision. Its value is exactly its disinterest, which is why it is only meaningful
+  once parties are distinguishable -- hence the org row. Not an imported metaphor:
+  `ruling_schema.hpp` is already a docket (`RULEID`, `STEWARD`, `PROPOSEDAT`, `DECIDEDBY`,
+  `SUPERBY`, status `0` glossed *"filed, no decision"*), and standing is the piece it was missing.
+- **movant** -- an **interested filer**: seeks a ruling on work it authored, paradigmatically an
+  outside AI submitting a change package. **Recused from reviewing its own matter.** Names the
+  party `EXTERNAL_AI_CHANGE_PACKAGE_V1` was reaching for when it said the contract "does not
+  authorize the outside AI to ... approve its own patch" -- until now nothing in the data could
+  tell you whether a reviewer authored the thing under review. The reason "partner" is not one
+  posture but two: the same outside party is amicus on one lane and movant on the next.
+- **party / non-party** -- a party has a stake in the outcome; a non-party does not. Host and
+  steward are parties and therefore **never amicus**, which restates PDR-001 sec 0's
+  conflicted-abstain rule as a consequence of standing rather than a house convention.
+  Independence is an **org** property, not a role property: two seats conflict iff they share an
+  `ORGUNIT`. Fail closed -- `ORGUNIT = 0` is "no org recorded," and two unknowns are not two
+  different parties. Home: `docs/maintenance/PARTNER_AMICUS_STANDING_LANE_V1.md`.
 
 ### Joining a lane (acceptance workflow)
 

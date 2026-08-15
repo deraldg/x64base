@@ -141,6 +141,51 @@ us ours."**
 A ledger reached through `SQLITE ...` is not dogfooded. It is a foreign store
 with a house-shaped door.
 
+### 3.1a What dogfood is NOT (owner, 2026-08-15)
+
+- Not "we called it through our CLI."
+- Not "it is compiled into the binary."
+- Not "it is available and cheap."
+- Not "we wrapped it in a command."
+
+Those are **access** or **availability** arguments. Dogfood is about **carrier
+identity**.
+
+Each negation is a test that something else can pass, which is why none of them
+can be the test. All four are properties of the INTERFACE. Carrier identity is a
+property of the SUBSTRATE: what format the bytes are in, whose locks protect
+them, whose catalog describes them, whose code you would edit to change their
+behaviour.
+
+**The operational test is one question: if this thing had a bug, whose bug would
+it be?** If the answer is "upstream's," you are a consumer, not a dogfooder.
+That is not wrong; it is a different relationship, and it buys none of what
+dogfooding is for.
+
+**What dogfooding buys is your own defects surfacing under load.** AIF-081 is the
+proof already on the record: the owner asked to route output through the
+engine's own capture instead of shell redirection, and "the first attempt worked
+mechanically and immediately exposed a defect IN THE FACILITY BEING USED" --
+`DOTSCRIPT OUT` produced 42 lines where `SET ALTERNATE` produced 89, and the
+missing line was the one the proof existed to demonstrate. That defect was found
+by depending on the thing.
+
+Run AIF-112 the other way and the loss is concrete. A ledger on SQLite, reached
+through the `SQLITE` family: a bug in it is a SQLite bug, not ours, not fixable,
+and not evidence about our engine. The spike would prove SQLite can hold a lock
+table. No pressure lands on `xbase_locks`, on FLOCK-per-append, or on the DBF
+catalog patterns -- and notably, the `release_held` defect and the three dead
+recovery functions would never have been approached. A green proof bar over an
+untouched hole.
+
+**A foreign carrier cannot fail in a way that teaches you anything about your own
+system.** Access, availability, compilation and wrapping do not change that.
+Only carrier identity does.
+
+The negations are recorded rather than only the positive definition because each
+one SOUNDS like dogfooding at the moment the decision is made. D1 passed all
+four and was signed.
+
 ### 3.2 SQLite's actual standing
 
 SQLite is in the tree deliberately and keeps every role it already has. From
