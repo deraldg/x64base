@@ -20,6 +20,7 @@ Acknowledgement here does not imply endorsement by the third-party project. Fina
 | wxWidgets | Optional cross-platform GUI frontend lane. | wxWidgets project. Official site: [wxwidgets.org](https://wxwidgets.org/). Upstream repository: [wxWidgets/wxWidgets](https://github.com/wxWidgets/wxWidgets). | [deraldg/wxWidgets](https://github.com/deraldg/wxWidgets) |
 | vcpkg | C/C++ dependency acquisition and build integration. | Microsoft and the C++ community. Official site: [vcpkg.io](https://vcpkg.io/). Upstream repository: [microsoft/vcpkg](https://github.com/microsoft/vcpkg). | [deraldg/vcpkg](https://github.com/deraldg/vcpkg) |
 | Ollama | Local large-language-model server for the DotTalk++ CHAT and AI-portal lane. | Ollama project. Official site: [ollama.com](https://ollama.com/). Upstream repository: [ollama/ollama](https://github.com/ollama/ollama). | Run as a local service (not a compiled fork). |
+| GnuCOBOL | **Compiles and runs every COBOL result this project has published.** The `COBOL` command exports fixed-length records and then calls `cobc`; DotTalk++ implements no COBOL of its own. | GnuCOBOL, a GNU project licensed GPLv3+ (runtime `libcob` is LGPL), by **Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch, Edward Hart** and contributors. Official site: [gnucobol.sourceforge.io](https://gnucobol.sourceforge.io/). | Invoked as an external process (not linked, not forked). Measured 2026-08-14: `cobc (GnuCOBOL) 3.2.0`. |
 
 ## Education and Integration Candidates
 
@@ -49,6 +50,28 @@ Beyond upstream open-source projects, x64base credits individual contributors.
 | Tailwind CSS | Utility-first styling system. | [tailwindcss.com](https://tailwindcss.com/). Upstream repository: [tailwindlabs/tailwindcss](https://github.com/tailwindlabs/tailwindcss). | [deraldg/tailwindcss](https://github.com/deraldg/tailwindcss) |
 | MDX / unified / remark / rehype | Markdown, MDX, headings, sanitization, and document publication pipeline. | [unifiedjs.com](https://unifiedjs.com/). Upstream repositories: [unifiedjs/unified](https://github.com/unifiedjs/unified), [remarkjs/remark](https://github.com/remarkjs/remark), [rehypejs/rehype](https://github.com/rehypejs/rehype). | [deraldg/unified](https://github.com/deraldg/unified), [deraldg/remark](https://github.com/deraldg/remark), [deraldg/rehype](https://github.com/deraldg/rehype) |
 | Lucide | Icon set used in the website interface. | [lucide.dev](https://lucide.dev/). Upstream repository: [lucide-icons/lucide](https://github.com/lucide-icons/lucide). | [deraldg/lucide](https://github.com/deraldg/lucide) |
+| Pagefind | Static-site search index and query runtime. | [pagefind.app](https://pagefind.app/). Upstream repository: [Pagefind/pagefind](https://github.com/Pagefind/pagefind). | Build-time tool (no fork). |
+| Visitor Badge | **Counts and draws the visitor number in this site's footer.** This site is static and has no server of its own, so it cannot count anything: the number you see is produced entirely by this service. | A Python service by **wiken**, licensed GPL-3.0, running since March 2020. Hosted instance: [visitor-badge.laobi.icu](https://visitor-badge.laobi.icu/). Repository: [hehuapei/visitor-badge](https://github.com/hehuapei/visitor-badge), itself a fork of the original [jwenjian/visitor-badge](https://github.com/jwenjian/visitor-badge). | Hosted third-party service (no fork). Opt out per browser: `localStorage.setItem('x64base:nocount','silent')`. |
+
+## The visitor count is not ours
+
+The number in the footer beside the release stamp is worth being precise about,
+because the two sit together and are not the same kind of fact.
+
+The **release number** is ours. It is counted from this site's own deploy
+history, served from this domain, and nothing outside can affect or block it.
+
+The **visit count** is not. We wrote no counter. Every visit is counted, stored
+and drawn by the third-party service credited above; we contribute an `<img>`
+tag pointing at it. If that service stops, the number stops -- and its own
+ancestor, `jwenjian/visitor-badge`, has already stopped, which is why the
+current one is a fork.
+
+What the number is and is not: it counts page loads keyed by address, not
+sessions and not people, so a reader who returns tomorrow counts again. Blockers
+that filter the domain will not count at all, and this site's audience blocks
+more than most. Read it as a floor and a rough gauge. It is not evidence, and it
+should never be cited on a page that carries evidence.
 
 ## LMDB Credit in the CDX System
 

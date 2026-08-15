@@ -57,13 +57,65 @@ export const GOATCOUNTER_CODE = "";
  */
 export const VISITOR_BADGE_PAGE_ID = "x64base.com";
 
-/** The badge image URL, or "" when unconfigured. */
-export function visitorBadgeUrl(): string {
+/**
+ * Do-not-count list.
+ *
+ * A static site cannot filter by IP -- there is no server of ours in the path,
+ * and the address is attached by the visitor's own browser when it fetches the
+ * badge. So the filter lives EARLIER than the IP: a flag in the visitor's own
+ * localStorage that decides whether the request is made at all. Nothing is sent
+ * anywhere to be filtered; the request simply never happens.
+ *
+ * That is strictly better than a server-side disallow list. A disallow list
+ * still receives your address and then promises not to use it. This never
+ * hands it over.
+ *
+ * Two modes, because "don't count me" and "don't tell them I was here" are
+ * different wishes:
+ *
+ *   "quiet"  -- fetch with query_only=true. You SEE the true count, and it does
+ *               not go up. The service still sees the request (and therefore
+ *               the address), it just does not record a visit.
+ *   "silent" -- no request at all. Nothing leaves the browser, no address is
+ *               seen, and the badge does not render for you.
+ *
+ * To switch yourself off, run this once in the browser console on x64base.com:
+ *
+ *     localStorage.setItem('x64base:nocount', 'quiet')   // see it, don't add
+ *     localStorage.setItem('x64base:nocount', 'silent')  // send nothing
+ *     localStorage.removeItem('x64base:nocount')         // count me again
+ *
+ * It is per-browser and per-device, so set it on each machine you browse from.
+ * Anyone else you want excluded -- a co-maintainer, a CI checker -- runs the
+ * same line. That is the whole disallow list: it is distributed, and each entry
+ * is held by the person it excludes, which is the only place it can be honest.
+ */
+export const NOCOUNT_KEY = "x64base:nocount";
+export type NoCountMode = "quiet" | "silent" | null;
+
+export function noCountMode(): NoCountMode {
+  if (typeof window === "undefined") return null;
+  try {
+    const v = window.localStorage.getItem(NOCOUNT_KEY);
+    return v === "quiet" || v === "silent" ? v : null;
+  } catch {
+    return null; // private mode, storage disabled: behave as a normal visitor
+  }
+}
+
+/**
+ * The badge image URL, or "" when unconfigured or suppressed.
+ * `query_only` is the service's own documented parameter for reading the count
+ * without incrementing it.
+ */
+export function visitorBadgeUrl(mode: NoCountMode = null): string {
   if (!VISITOR_BADGE_PAGE_ID) return "";
+  if (mode === "silent") return "";
   const q = new URLSearchParams({
     page_id: VISITOR_BADGE_PAGE_ID,
     left_text: "visits",
   });
+  if (mode === "quiet") q.set("query_only", "true");
   return `https://visitor-badge.laobi.icu/badge?${q.toString()}`;
 }
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { goatcounterTotalUrl, visitorBadgeUrl } from "@/config/analytics";
+import { goatcounterTotalUrl, visitorBadgeUrl, noCountMode, type NoCountMode } from "@/config/analytics";
 
 /**
  * Site-wide visitor count for the footer, beside the release stamp.
@@ -24,6 +24,10 @@ import { goatcounterTotalUrl, visitorBadgeUrl } from "@/config/analytics";
  */
 export function VisitorCount() {
   const [count, setCount] = useState<string | null>(null);
+  // Read on the client only. localStorage does not exist during the server
+  // render, and reading it in the render body would hydrate inconsistently.
+  const [skip, setSkip] = useState<NoCountMode>(null);
+  useEffect(() => setSkip(noCountMode()), []);
   const url = goatcounterTotalUrl();
 
   useEffect(() => {
@@ -56,8 +60,8 @@ export function VisitorCount() {
   // No GoatCounter code, or its fetch failed: fall back to the badge image.
   // An <img> needs no JS to count, so this still works where a script would
   // not -- which is why it is the fallback rather than the other way round.
-  const badge = visitorBadgeUrl();
-  if (!badge) return null;
+  const badge = visitorBadgeUrl(skip);
+  if (!badge) return null; // "silent": no request is made at all
 
   return (
     // eslint-disable-next-line @next/next/no-img-element
@@ -66,7 +70,11 @@ export function VisitorCount() {
       alt="Visits to this site"
       height={20}
       className="inline-block h-5 w-auto align-middle"
-      title="Counts page loads by IP. A rough gauge, not a session count, and a third party sees the request."
+      title={
+        skip === "quiet"
+          ? "Counting is off for this browser: you see the real number and do not add to it."
+          : "Counts page loads by IP. A rough gauge, not a session count, and a third party sees the request."
+      }
     />
   );
 }
