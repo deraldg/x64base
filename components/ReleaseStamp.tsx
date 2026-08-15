@@ -10,6 +10,20 @@ import { useEffect, useState } from "react";
  * Adding one would have ended that, so the counter counts something the site can
  * honestly know about itself instead: how many times it has been published.
  *
+ * AMENDED 2026-08-14. The sentence above stopped being unconditionally true.
+ * The owner asked for an actual visitor counter after emailing Xbase++, Harbour
+ * and LMDB, which is a fair thing to want to measure, so GoatCounter was wired
+ * in behind config/analytics.ts. It is OFF until a code is set there, so the
+ * paragraph above still describes the shipped default -- but it is now a
+ * setting, not a property of the site, and pretending otherwise would make this
+ * comment the sort of stale claim this project keeps correcting.
+ *
+ * The two numbers stay SEPARATE on purpose. This one is computed from our own
+ * deploy history, served from our own domain, and no blocker can touch it. The
+ * visitor count comes from a third party that a large share of this site's
+ * audience blocks. They sit side by side in the footer and they are not the
+ * same kind of fact: one is exact, the other is a floor.
+ *
  * The number comes from /artifacts/site-release.json, which the publish script
  * writes on every deploy. That file is on this domain, so reading it sends
  * nothing anywhere and sets no cookie -- the request goes to the same server

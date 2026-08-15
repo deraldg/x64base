@@ -36,14 +36,22 @@ export function Navbar() {
             below its content, which is how twelve links pushed the document
             scrollWidth past the viewport and gave every page a horizontal
             scrollbar. It is the backstop if primaryNav ever outgrows the bar
-            again: the nav clips instead of the whole page scrolling sideways. */}
-        <nav className="hidden min-w-0 items-center gap-1 md:flex">
+            again: the nav clips instead of the whole page scrolling sideways.
+
+            Breakpoint is lg (1024), not md (768), and the links are px-2 rather
+            than px-3, because both numbers were measured rather than picked.
+            Logo 131 + padding 48 + seven links + More, at px-3, needs 1036px --
+            so md engaged the desktop nav 268px before it could fit, and release
+            125 still carried 9px of overflow at a 1025px window. px-2 brings
+            the requirement to 972px, which clears lg with 52px to spare. Below
+            lg the hamburger takes over, and it lists all twelve. */}
+        <nav className="hidden min-w-0 items-center gap-1 lg:flex">
           {primary.map((i) => (
             <Link
               key={i.href}
               href={i.href}
               className={clsx(
-                "shrink-0 rounded-xl px-3 py-2 text-sm transition",
+                "shrink-0 rounded-xl px-2 py-2 text-sm transition",
                 i.active ? "bg-card/70 text-fg" : "text-muted hover:bg-card/60 hover:text-fg"
               )}
             >
@@ -62,7 +70,7 @@ export function Navbar() {
               aria-expanded={moreOpen}
               aria-haspopup="true"
               className={clsx(
-                "inline-flex items-center gap-1 rounded-xl px-3 py-2 text-sm transition",
+                "inline-flex items-center gap-1 rounded-xl px-2 py-2 text-sm transition",
                 moreHasActive ? "bg-card/70 text-fg" : "text-muted hover:bg-card/60 hover:text-fg"
               )}
             >
@@ -99,7 +107,7 @@ export function Navbar() {
             a visibility problem and only ever ADDED a rendering site, which is
             what finally broke the behaviour. One control, one state: the
             banner strip in layout.tsx. */}
-        <div className="flex items-center gap-2 md:hidden">
+        <div className="flex items-center gap-2 lg:hidden">
           <button
             type="button"
             className="inline-flex items-center justify-center rounded-xl border border-border bg-card/60 p-2 text-muted hover:text-fg"
@@ -112,7 +120,7 @@ export function Navbar() {
       </div>
 
       {open ? (
-        <div className="border-t border-border bg-bg/70 backdrop-blur md:hidden">
+        <div className="border-t border-border bg-bg/70 backdrop-blur lg:hidden">
           <div className="mx-auto flex w-full max-w-6xl flex-col gap-1 px-4 py-3">
             {items.map((i) => (
               <Link

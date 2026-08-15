@@ -4,6 +4,7 @@ import "./globals.css";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { goatcounterEndpoint } from "@/config/analytics";
 import currentWork from "@/public/artifacts/current-work-v1.json";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -68,6 +69,26 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               "(function(){try{var t=localStorage.getItem('theme')||'light';var d=t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);}catch(e){}})();"
           }}
         />
+        {/* Visitor counting, off entirely until config/analytics.ts carries a
+            code. Script + <noscript> pixel is GoatCounter's own documented
+            pairing (/help/pixel): the script counts JS visitors and can report
+            a real referrer, the pixel catches everyone with JS disabled. They
+            do not double-count -- <noscript> only renders when scripts are off.
+
+            Honest limit: an ad-blocker blocking the goatcounter.com DOMAIN
+            kills both at once, so the pixel is not the blocker workaround it
+            looks like. It only helps against JS being off or scripts being
+            selectively blocked. Given this site's audience, expect a floor. */}
+        {goatcounterEndpoint() ? (
+          <>
+            <script data-goatcounter={goatcounterEndpoint()} async src="//gc.zgo.at/count.js" />
+            <noscript>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={`${goatcounterEndpoint()}?p=/&t=x64base`} alt="" width={1} height={1} />
+            </noscript>
+          </>
+        ) : null}
+
         {/* Theme control lives HERE, not only in the navbar (owner report
             2026-08-11, third round). Measured: the navbar instances render in
             the built HTML -- both of them -- and were still not reaching the

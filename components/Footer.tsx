@@ -1,5 +1,6 @@
 import Link from "@/components/StaticLink";
 import { ReleaseStamp } from "@/components/ReleaseStamp";
+import { VisitorCount } from "@/components/VisitorCount";
 
 export function Footer() {
   return (
@@ -65,6 +66,7 @@ export function Footer() {
           <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <span className="font-mono">DBF_64 • FPT64 • Indexing • Education-first</span>
             <ReleaseStamp />
+            <VisitorCount />
           </span>
         </div>
       </div>
