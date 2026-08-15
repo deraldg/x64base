@@ -1052,6 +1052,48 @@ proofs:
     crashed during the VERIFY step, after writing. Recorded exception: afb-/bbsd-startup stay PowerShell
     (Windows Scheduled Tasks, no cross-platform equivalent). Outstanding debt: bbs_smoke.ps1 needs porting
     -- the standards seed names it the canonical socket regression.'
+- id: proof.tooling.local_path_detector_consolidation
+  label: Nine local-path detectors, seven blind to the environment the agents actually run in
+  state: runtime_observed
+  related:
+  - D:/code/ccode/tools/common/local_paths.json
+  - D:/code/ccode/tools/common/local_paths.py
+  - D:/code/ccode/tools/staging/rebuild-staging.ps1
+  - D:/code/ccode/tools/reports/stage_public.py
+  - D:/code/ccode/tools/fullstack_docs/ecoschema_map.py
+  - D:/code/ccode/labtalk/registries/proofs.d/proof.aside.diagnostic_removed_and_called_a_fix.yaml
+  notes: 'MEASURED 2026-08-13/14. A task opened as "consolidate the four local-path detectors" found NINE
+    on re-review: artifact_disposition.py:126, audit_manual_publication_readiness.py:19, build_gptbase_bundle.py:57
+    and :58, ecoschema_map.py:169, command_reference_candidate.py:20, regression_index.py:46, stage_public.py:39,
+    rebuild-staging.ps1:379. The count in the task title was itself a symptom -- nobody could see the
+    family, so nobody could see it growing. The comment in rebuild-staging.ps1 said "there are already
+    four detectors and a fifth would be the defect" while being, in fact, the ninth.
+
+    Two defects, both demonstrated rather than argued. FIRST, the detectors disagreed in ways that changed
+    output. ecoschema_map.py lacked the (?<![A-Za-z0-9]) lookbehind, so it read the "s" of "https://"
+    as drive "s:" and rewrote a published URL to "http<local path>" -- shipped, unnoticed, for weeks.
+    SECOND and larger: seven of the nine match only [A-Za-z]: drive letters. CLAUDE.md states agents run
+    under WSL and in mounted Linux sandboxes, where this tree is /mnt/d/code/ccode or /sessions/<id>/mnt/ccode.
+    A sweep of 3,351 tracked text files measured 5,867 drive-letter paths and 3,063 POSIX host paths,
+    with 12 files carrying POSIX paths and NO drive letter -- files every one of those seven detectors
+    reported as clean. The staging overlay guard added 2026-08-13 to stop machine-absolute paths reaching
+    the public repository was among the blind seven: it was written the same day, by an agent that had
+    read the WSL section, and it could not see a leak from its own environment. On the narrow dev-roots
+    pattern the guard uses, closing the blind spot moves 3,592 hits to 6,626 (+3,034, though 2,654 are
+    one captured build log).
+
+    Resolution: tools/common/local_paths.json is now the single authority, carrying three named patterns,
+    their rationale, and a 22-case test table; local_paths.py loads and self-tests it (22/22); rebuild-staging.ps1
+    reads the same JSON via ConvertFrom-Json and THROWS rather than falling back to an inline pattern,
+    because an inline fallback is how nine accumulated. JSON was chosen over a Python module precisely
+    because one call site is PowerShell -- a Python-only helper would have left a tenth private copy behind.
+    Eight Python call sites remain to migrate.
+
+    The lesson is not "share your regexes". It is that a guard inherits the blind spots of whoever wrote
+    it, and the author is the last person able to see them: the pattern matched the machine the author
+    pictured, and the author pictured the machine described in the docs rather than the one under their
+    feet. Same shape as proof.aside.diagnostic_removed_and_called_a_fix and proof.aside.rule_caught_its_own_author
+    -- caught in the sitting that wrote it, by measuring the thing instead of restating it.'
 - id: proof.wal.dbf_record
   label: TABLE BUFFER write-ahead log -- DBF record atomicity + crash recovery
   state: runtime_observed

@@ -355,9 +355,15 @@ Write-Host "Overlaid $copied files ($mb MB) onto $Staging" -ForegroundColor Gree
 # on any machine but this one, and two .dts headers named host scripts under
 # D:\code\. Found by the owner AFTER the push, which is the wrong order.
 #
-# Pattern is stage_public.py's LEAK_PATTERNS entry, deliberately reused rather
-# than reinvented -- there are already four local-path detectors in this repo
-# and a fifth would be the defect, not the fix.
+# Pattern comes from tools/common/local_paths.json -- the one authority, shared
+# with the Python callers. It is NOT restated here.
+#
+# It said "four detectors, and a fifth would be the defect" when written. A
+# re-review counted NINE, and found that seven of them -- including this guard
+# as first written -- matched only [A-Za-z]: drive letters. Agents on this
+# project run under WSL and in mounted sandboxes, so a leaked
+# /mnt/d/code/ccode would have passed every check. The JSON's dev_roots_only
+# pattern covers both spellings.
 #
 # Report-only by design. It runs after the copy so it sees exactly what was
 # written, and it names files rather than refusing: some absolute paths are
@@ -365,6 +371,12 @@ Write-Host "Overlaid $copied files ($mb MB) onto $Staging" -ForegroundColor Gree
 # quotes engine output is evidence). The judgement stays with the person.
 # ---------------------------------------------------------------------------
 $leakExt = @('.dts','.dtschema','.dtschemas','.ps1','.sh','.txt','.md','.csv','.ini','.json','.cob','.html')
+$leakSpecPath = Join-Path $PSScriptRoot '..\common\local_paths.json'
+if (-not (Test-Path -LiteralPath $leakSpecPath)) {
+    throw "Local-path guard: tools/common/local_paths.json not found at $leakSpecPath. " +
+          "Do not fall back to an inline pattern -- that is how nine of them accumulated."
+}
+$leakPattern = (Get-Content -LiteralPath $leakSpecPath -Raw | ConvertFrom-Json).patterns.dev_roots_only.regex
 $leakHits = @()
 foreach ($item in $plan) {
     $rel = $item.Rel
@@ -374,9 +386,7 @@ foreach ($item in $plan) {
     if (-not (Test-Path -LiteralPath $full)) { continue }
     $text = Get-Content -LiteralPath $full -Raw -ErrorAction SilentlyContinue
     if ($null -eq $text) { continue }
-    # (?<![A-Za-z0-9]) keeps "https://" from reading as drive "s:" -- the same
-    # false positive that refused a correct ecoschema_map.py run on 2026-08-13.
-    foreach ($m in [regex]::Matches($text, '(?<![A-Za-z0-9])[A-Za-z]:[\\/](code|dev)[\\/][^\s"'',;)\]|]*')) {
+    foreach ($m in [regex]::Matches($text, $leakPattern)) {
         $leakHits += [pscustomobject]@{ File = $rel; Path = $m.Value }
     }
 }

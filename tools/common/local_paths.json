@@ -1,0 +1,84 @@
+{
+  "_": [
+    "Machine-absolute path detection -- ONE authority, read by Python and PowerShell.",
+    "",
+    "AIF task 'consolidate the local-path detectors'. Before this file there were NINE",
+    "independent regexes across tools/, each written for one call site:",
+    "  ecoschema_map.py  manualgen/command_reference_candidate.py  reports/regression_index.py",
+    "  reports/stage_public.py  fullstack_docs/audit_manual_publication_readiness.py",
+    "  fullstack_docs/build_gptbase_bundle.py (x2)  datadict/disposition/artifact_disposition.py",
+    "  staging/rebuild-staging.ps1",
+    "",
+    "They did not agree, and the disagreements were not stylistic:",
+    "  * ecoschema_map's lacked the lookbehind and read 'https://x64base.com/' as drive 's:',",
+    "    which REFUSED a correct generator run (2026-08-13) and, worse, had silently rewritten",
+    "    a published URL to 'http<local path>' for weeks before anyone noticed.",
+    "  * SEVEN of the nine match only [A-Za-z]: drive letters. The project runs agents under",
+    "    WSL and in mounted Linux sandboxes -- CLAUDE.md says so -- and 23 tracked files carry",
+    "    /mnt/d/code/ccode or /home/<user>/ paths that those seven cannot see. The staging",
+    "    overlay guard added 2026-08-13 was among the blind ones.",
+    "",
+    "Regex syntax is restricted to what Python 're' and .NET both accept: character classes,",
+    "alternation, and (?<!...) lookbehind. No named groups, no possessives, no \\p classes.",
+    "",
+    "These are REPORT-ONLY signals by design. Some absolute paths are legitimate (host setup",
+    "docs, quoted engine output, SFTP examples against example.com). The tool names them; a",
+    "person decides. A guard that blocks on correct input teaches people to bypass it."
+  ],
+
+  "patterns": {
+    "windows_drive": {
+      "regex": "(?<![A-Za-z0-9])[A-Za-z]:[\\\\/][^\\s\"',;)\\]|]*",
+      "purpose": "Any drive-rooted Windows path. The lookbehind is load-bearing: it stops the 's' of 'https' being read as a drive."
+    },
+    "posix_host": {
+      "regex": "(?<![A-Za-z0-9])(?:/mnt/[a-z]/|/home/[^/\\s]+/|/sessions/[^/\\s]+/mnt/|/Users/[^/\\s]+/)[^\\s\"',;)\\]|]*",
+      "purpose": "Host paths as a WSL or sandboxed agent sees them. Absent from seven of the nine predecessors."
+    },
+    "dev_roots_only": {
+      "regex": "(?<![A-Za-z0-9])(?:[A-Za-z]:[\\\\/](?:code|dev)[\\\\/]|/mnt/[a-z]/(?:code|dev)/|/sessions/[^/\\s]+/mnt/)[^\\s\"',;)\\]|]*",
+      "purpose": "Narrower: only paths under a known development or staging root. Use where a broad match would be noise, e.g. the publication overlay."
+    }
+  },
+
+  "tests": {
+    "must_match": {
+      "windows_drive": [
+        "index=D:\\code\\ccode\\dottalkpp\\data\\indexes\\x32\\BUILDING.cnx",
+        "D:/code/ccode/include/xbase.hpp",
+        "C:\\Users\\deral\\AppData",
+        "table=E:\\somewhere\\else.dbf"
+      ],
+      "posix_host": [
+        "cd /mnt/d/code/ccode/dottalkpp/data",
+        "bash /mnt/d/code/pull-with-window.sh",
+        "/home/derald/data/students.dbf",
+        "/sessions/sharp-great-euler/mnt/ccode/AI_README.md"
+      ],
+      "dev_roots_only": [
+        "D:\\code\\ccode\\dottalkpp",
+        "/mnt/d/code/ccode/tools",
+        "/sessions/abc-def/mnt/ccode/x.md"
+      ]
+    },
+    "must_not_match": {
+      "windows_drive": [
+        "https://www.bryanbraun.com/after-dark-css/all/flying-toasters.html",
+        "http://localhost:3000/eco",
+        "index=BUILDING.cnx",
+        "ratio 3:1",
+        "mailto:someone@example.com"
+      ],
+      "posix_host": [
+        "SETPATH DBF = SYSTEMS/CASCADE_ERP/DBF",
+        "see docs/maintenance/README.md",
+        "https://x64base.com/docs"
+      ],
+      "dev_roots_only": [
+        "C:\\x64base\\dottalkpp",
+        "D:\\other\\tree\\file.md",
+        "https://x64base.com/"
+      ]
+    }
+  }
+}
