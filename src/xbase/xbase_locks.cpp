@@ -18,6 +18,7 @@
 #include <chrono>
 #include <string>
 #include <sstream>
+#include <locale>   // AIF-116: imbue(classic) on the owner-string and sidecar writers
 
 #ifdef _WIN32
   #include <windows.h>
@@ -52,7 +53,13 @@ static std::string make_owner_string() {
     const auto now = std::chrono::system_clock::now().time_since_epoch();
     const auto ms  = std::chrono::duration_cast<std::chrono::milliseconds>(now).count();
 
+    // AIF-116 / AIF-031: this string is an IDENTITY TOKEN that is parsed back,
+    // not display text. It must never carry locale digit grouping -- a stray
+    // "16,984" makes the pid unparseable and every live lock look stale.
+    // Imbued here as defence in depth; the cause is fixed in
+    // include/runtime/utf8_init.hpp.
     std::ostringstream os;
+    os.imbue(std::locale::classic());
     os << host << ":" << pid << ":" << ms;
     return os.str();
 }
@@ -99,7 +106,21 @@ struct LockMeta {
     std::string owner;
     unsigned long pid{0};
     long long ms{0};
+    // AIF-116: distinguishes "the owner's pid was read cleanly" from "the pid
+    // could not be determined". pid==0 cannot carry that distinction, because
+    // is_pid_alive(0) is false and would make an unreadable owner look dead.
+    bool pid_valid{false};
 };
+
+// Trailing CR / stray whitespace tolerated; anything else is a parse failure.
+static std::string trim_ascii_ws(std::string s) {
+    const auto is_ws = [](char c) {
+        return c == ' ' || c == '\t' || c == '\r' || c == '\n';
+    };
+    while (!s.empty() && is_ws(s.front())) s.erase(s.begin());
+    while (!s.empty() && is_ws(s.back()))  s.pop_back();
+    return s;
+}
 
 static bool read_lock_meta(const std::string& path, LockMeta& meta) {
     std::ifstream f(path, std::ios::binary);
@@ -110,10 +131,23 @@ static bool read_lock_meta(const std::string& path, LockMeta& meta) {
         if (line.rfind("owner=", 0) == 0) {
             meta.owner = line.substr(6);
         } else if (line.rfind("pid=", 0) == 0) {
+            // AIF-116: parse STRICTLY, and require the WHOLE field to be
+            // consumed. std::stoul takes the longest valid prefix and does
+            // NOT throw on trailing junk, so a locale-grouped "pid=16,984"
+            // silently yielded 16 -- a pid that is not alive, which sent
+            // every live lock down the stale-recovery path and defeated
+            // mutual exclusion. Leaving pid_valid false on failure is what
+            // makes the caller fail closed instead of open.
+            const std::string raw = trim_ascii_ws(line.substr(4));
             try {
-                meta.pid = static_cast<unsigned long>(std::stoul(line.substr(4)));
+                std::size_t consumed = 0;
+                const unsigned long v = std::stoul(raw, &consumed);
+                if (!raw.empty() && consumed == raw.size()) {
+                    meta.pid       = v;
+                    meta.pid_valid = true;
+                }
             } catch (...) {
-                meta.pid = 0;
+                // pid_valid stays false: owner is UNKNOWN, not dead.
             }
         } else if (line.rfind("ms=", 0) == 0) {
             try {
@@ -144,6 +178,10 @@ static bool write_lock_file(const std::string& path, const Owner& owner, std::st
         if (err) *err = "cannot create lock";
         return false;
     }
+
+    // AIF-116: the sidecar is a machine-read protocol file, not output. Its
+    // numbers are parsed back by read_lock_meta and must be locale-immune.
+    f.imbue(std::locale::classic());
 
 #ifdef _WIN32
     const unsigned long pid = static_cast<unsigned long>(::GetCurrentProcessId());
@@ -240,8 +278,12 @@ static bool create_or_validate_owned(const std::string& path, const Owner& me, s
         return true;
     }
 
-    // Stale lock: owner process is gone.
-    if (!is_pid_alive(meta.pid)) {
+    // Stale lock: owner process is PROVABLY gone.
+    // AIF-116: fail CLOSED. Only an owner whose pid was parsed cleanly may be
+    // declared stale. An unreadable or malformed owner is presumed ALIVE and
+    // its lock is respected. The old test treated "cannot tell" as "go ahead",
+    // which is how a grouped pid turned every live lock into a free one.
+    if (meta.pid_valid && !is_pid_alive(meta.pid)) {
         std::string ignored;
         if (!force_remove(path, &ignored)) {
             if (err) *err = "stale lock exists";
@@ -312,13 +354,17 @@ bool try_lock_record(DbArea& a, std::uint64_t recno, const Owner& me, std::strin
     if (fs::exists(tlp)) {
         LockMeta tmeta;
         if (read_lock_meta(tlp, tmeta)) {
-            if (tmeta.owner != me.id && is_pid_alive(tmeta.pid)) {
+            // AIF-116: deny when the foreign owner is alive OR UNKNOWN.
+            // With an unparseable pid the old test evaluated is_pid_alive(0)
+            // == false and fell straight through to the reclaim below, so a
+            // malformed table lock granted a record lock underneath it.
+            if (tmeta.owner != me.id && (!tmeta.pid_valid || is_pid_alive(tmeta.pid))) {
                 if (err) *err = "table locked";
                 return false;
             }
 
-            // stale table lock cleanup
-            if (tmeta.owner != me.id && !is_pid_alive(tmeta.pid)) {
+            // Stale table lock cleanup -- only when PROVABLY dead.
+            if (tmeta.owner != me.id && tmeta.pid_valid && !is_pid_alive(tmeta.pid)) {
                 std::string ignored;
                 (void)force_remove(tlp, &ignored);
             }

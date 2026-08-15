@@ -42,8 +42,9 @@ ai_report_audit:
 
 # Locale Grouping in the Lock Owner String Defeats Mutual Exclusion (V1)
 
-**Status:** runtime-observed, reproduced, root-caused to file:line.
-**Severity:** high. Cross-process mutual exclusion does not hold, deterministically,
+**Status:** runtime-observed, reproduced, root-caused to file:line, **and FIXED
+and re-proven the same session at build `fe42666e`** -- see section 13.
+**Severity:** high. Cross-process mutual exclusion did not hold, deterministically,
 for every table and record lock in the engine.
 **Evidence class:** `runtime_observed` -- every claim below was produced by a live
 two-process run on 2026-08-15 against banner stamp `fb7106e0 dirty`, or is a
@@ -316,6 +317,7 @@ be lost. None is load-bearing for the above.
 | C1 | `DBAREA` reports the X64 extended types `I` and `T` as `Other` while naming `Character`, `Logical`, `Memo`, and `Date` correctly. The reporter's type table was never taught the X64 additions. `STRUCT` is correct. |
 | D1 | `CREATE` silently overwrote two existing tables with no prompt, while `ERASE` refused to delete without `CONFIRM`. The safety is inverted: the destructive path is the unguarded one. `cmd_create.cpp:56` documents this as unknown ("possible_overwrite: depends on dbf_create backend behavior for existing paths"); it is now measured. Harmless at 0 records, silent data loss on a populated table. |
 | E1 | The lock owner string renders with thousands separators. Filed above as the root cause, not a cosmetic issue. |
+| F1 | **A `REPLACE` whose right-hand side fails to evaluate stores BLANK and reports SUCCESS.** `REPLACE ACQUIRED WITH DATEADD(TODAY, -2)` printed nothing and left the `D` field empty; `REPLACE ACQUIRED WITH DATEADD(DATE(), -2)` stored `20260813`. The difference is that bare `TODAY` resolves as a whole right-hand side but not as a function ARGUMENT, where it parses as an identifier -- the catalog's own example is `DATEADD(DATE(), 7)`, with parens. `DATEADD` is properly registered (`fn_date.cpp:440`, arity 2), so this is not an AIF-114 phantom. The defect is the silence: `validate_field_value_for_store` has a `case 'D'` returning `"invalid date for field"`, an error path that exists and did not fire. Same family as A3's silent clobber and E2 below -- **this engine's failures are quietest exactly where quiet costs most.** A field silently left blank by a typo in a date expression is a data-integrity hazard in any ledger built on this surface, AIF-112's included. |
 | E2 | `UNLOCK` on a record that is not locked reports success: `LOCK STATUS` showed `Record 3: unlocked`, and a subsequent bare `UNLOCK` answered `UNLOCK: record 3 unlocked.` A release verb that cannot distinguish "released it" from "there was nothing to release" gives the operator no way to detect that a lock they believed they held was already gone -- which is the exact condition this defect produces. Minor on its own, misleading in combination. |
 
 Retracted during the run: an apparent `STRUCT` column misalignment did not
@@ -496,6 +498,148 @@ compliance; the one without a gate held 33" -- the rule worth enforcing is that
 **no value serialised to disk may depend on the ambient locale**, and the cheap
 approximation of it is a gate that fails any new `std::locale::global` call that
 is not accompanied by a `numeric`-category override.
+
+## 13. Fixed and re-proven, same session, build `fe42666e`
+
+The owner elected to fix before reporting to the steward. Four source changes,
+authored by the scribe, built and run host-side by the owner.
+
+### 13a. The changes
+
+| File | Change |
+|---|---|
+| `include/runtime/utf8_init.hpp` | **the cause.** Encoding facets from the native locale, `numeric` category from `std::locale::classic()`, via the three-argument `std::locale` constructor. The POSIX `en_US.UTF-8` fallback gets the same override; `C.UTF-8` needed none. |
+| `src/xbase/xbase_locks.cpp` (owner-string builder) | `os.imbue(std::locale::classic())` -- defence in depth. |
+| `src/xbase/xbase_locks.cpp` (sidecar writer) | `f.imbue(std::locale::classic())` -- the sidecar is a machine-read protocol file, not output. |
+| `src/xbase/xbase_locks.cpp` (`read_lock_meta`) | new `LockMeta::pid_valid`. The field must parse **whole** -- `std::stoul` with a `pos` out-param, compared against the field length. A prefix parse is now a failure, not a value. |
+| `src/xbase/xbase_locks.cpp` (three stale checks) | **fail closed.** `:285` requires `pid_valid && !is_pid_alive`. `:360` denies when the foreign owner is alive **or unknown**. `:366` reclaims only when provably dead. |
+| `src/xbase/xbase_locks.cpp` (includes) | `<locale>` made explicit rather than arriving transitively through `<sstream>`. |
+
+Two of those sites were nearly missed. The record-lock path checks the *table*
+lock at `:356`/`:362`, and both tests read `is_pid_alive(tmeta.pid)` unguarded --
+with an unparseable pid the deny branch evaluated false and fell straight through
+to the reclaim, so a malformed table lock would have granted a record lock
+underneath it. Found by auditing every call site rather than the ones already
+touched.
+
+Strict-parse behaviour confirmed by compiling and running it before the build:
+`16984` valid; `16,984`, `12abc` and empty all rejected.
+
+### 13b. The proof
+
+Build `fe42666e dirty`, `Aug 15 2026 16:05:32`. Two processes, both on the new
+binary, same table, same data root.
+
+**The sidecar is clean:**
+
+```
+DotTalk++ lock
+owner=GRIMWOOD:48408:1786835282963
+pid=48408
+ms=1786835282964
+```
+
+**77 bytes. It was 87.** The ten-byte difference is exactly the ten grouping
+separators the old build wrote -- five in the owner line, one in `pid`, four in
+`ms`. The corruption was measurable in the file size.
+
+**Mutual exclusion holds.** Process 48408 (started 16:07:59) held the table
+lock. Process 71628 (started 16:08:52) ran `LOCK TABLE` and was **refused**:
+
+```
+. LOCK TABLE
+LOCK: failed (lock exists).
+. LOCK STATUS
+Table: LOCKED (owner GRIMWOOD:48408:1786835282963)
+Record 1: unlocked
+```
+
+Both pids verified alive at the time of refusal via `Get-Process`. The refusing
+process is provably not the owner -- the owner string is a process singleton, so
+a same-process attempt would have returned re-entrant success rather than an
+error.
+
+**AIF-112 Phase-1 Step 4 therefore PASSES**, on the DBF substrate, through
+`xbase::locks`, with no force path involved.
+
+**Step 5 PASSES.** 48408 ran `UNLOCK TABLE`; 71628 then read `Table: unlocked`,
+acquired, and became owner `GRIMWOOD:71628:1786835345327`. Release and
+re-acquire, cross-process, both owner strings clean.
+
+**Step 6 PASSES -- and this is the one that could not have been honestly scored
+before today.** Its mandatory requirement was `EXPAT` lease reclaim *without any
+force path*, and until this morning `force_remove` executed inside every
+acquisition, so any green here would have been a green over a running force
+path. Final ledger state:
+
+```
+CHK_ID ITEM_ID HOLDER          STATE    ACQUIRED EXPIRES  RELEASED SUP
+     1       1 member#4/kind0  expired  20260813 20260814 20260815  T
+     2       1 member#4/kind1  held     20260815 20260822            F
+```
+
+The expired lease is superseded with a release date and its history retained;
+the live lease belongs to a **different holder**; the whole transition ran inside
+one ordinary `LOCK TABLE` / `UNLOCK TABLE` pair which reported `Table: unlocked`
+on exit. No `force_unlock`, no hand-removed sidecar. This is the `WORKSPACES`
+supersede idiom from finding A2 carried onto leases, which is the reuse the
+Step 1 audit predicted.
+
+### 13b-ii. The recovery half, which is the half that could have been broken
+
+Fail-closed cuts both ways, and a parser that is too strict converts an
+enforcement fix into a permanent lock. Tested directly.
+
+A session took a table lock and **quit while holding it**. Both sidecars survived
+process death (`INVCHKOUT.dbf.lock`, `INVITEM.dbf.lock`), and `Get-Process
+dottalkpp` returned nothing -- confirming from observation what section 10
+established from source: nothing releases on exit.
+
+A fresh session then reclaimed both:
+
+```
+. LOCK STATUS
+Table: LOCKED (owner GRIMWOOD:38444:1786836161477)
+. LOCK TABLE
+LOCK: table locked.
+```
+
+Same for `INVITEM`, whose sidecar named a different dead process
+(`GRIMWOOD:53828:...`). Both reclaimed, both then released with
+`UNLOCK TABLE` reporting `table unlocked`.
+
+**So both directions now hold: a live foreign owner is respected, a provably
+dead one is reclaimed.** That is the behaviour the stale reaper was always
+written for and never delivered.
+
+**Method note, recorded because the instinct is the transferable part.** The
+reclaiming process reported owner pid `3844`, replacing a dead owner with pid
+`38444` -- the same digits less the last one. On a day spent chasing a number
+that lost its shape in transit, that resemblance was not something to wave past.
+`Get-Process` returned `3844`, started 16:31:24. Genuine coincidence; both are
+valid Windows pids (multiples of four). No second defect. **The point is that
+"expected" and "measured" were one command apart, and the whole lane exists
+because someone once settled for expected.**
+
+### 13c. What this does not yet cover
+
+- **No regression test exists yet.** Section 11's five cases remain owed, and
+  they must run on Windows -- see 12b, the defect cannot reproduce under
+  `C.UTF-8`.
+- **The gate is not built.** Section 12c's durable remedy -- fail any new
+  `std::locale::global` that does not override the `numeric` category -- is
+  still a proposal. Without it the one-line fix is reversible by the next person
+  with a good local reason, exactly as it was the first time.
+- **AIF-113 is unaffected and still owed.** The three recovery functions remain
+  dead and no FORCE verb is exposed. This session demonstrated why within the
+  hour: pre-existing sidecars carrying `pid=16,984` are, under the new
+  fail-closed reader, correctly unparseable and therefore presumed alive -- and
+  clearable by no command. They had to be deleted from PowerShell. **That is
+  AIF-113's missing escape hatch, encountered in practice, on the same day it
+  was re-ranked to a blocking dependency.**
+- **Scope of the locale change is untested beyond locking.** It alters global
+  numeric formatting *and parsing* for the whole process. Nothing else was
+  exercised. The full regression suite should run before this is called safe.
 
 ---
 

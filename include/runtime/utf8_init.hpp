@@ -76,18 +76,36 @@ inline void init_utf8() {
 
     // 4) Locale only. Do not force stdout/stderr mode here.
     // Leave output mode decisions to the console layer.
+    //
+    // AIF-116: take the ENCODING from the native locale, but the NUMERIC
+    // facets from "C". A bare std::locale("") installs the whole native
+    // locale, numpunct included, so on a grouping host every un-imbued
+    // stream in the process starts emitting "16,984" for 16984. That is
+    // not cosmetic: xbase_locks serialised the owner pid through such a
+    // stream, std::stoul read back 16, is_pid_alive said no, and every
+    // live lock was classified stale and force-removed -- cross-process
+    // mutual exclusion silently did not hold. AIF-031's ~20 imbue(classic)
+    // calls are the same damage seen at other sites and patched one by one;
+    // this is the same fix applied at the cause instead.
     try {
-        std::locale::global(std::locale(""));
+        std::locale native("");
+        std::locale::global(std::locale(native, std::locale::classic(),
+                                        std::locale::numeric));
     } catch (...) {
         // best effort only
     }
 
 #else
+    // POSIX: C.UTF-8 already carries classic numeric facets, so it is not
+    // exposed to the AIF-116 defect. The en_US.UTF-8 fallback IS, so it gets
+    // the same numeric override rather than being trusted.
     try {
         std::locale::global(std::locale("C.UTF-8"));
     } catch (...) {
         try {
-            std::locale::global(std::locale("en_US.UTF-8"));
+            std::locale fallback("en_US.UTF-8");
+            std::locale::global(std::locale(fallback, std::locale::classic(),
+                                            std::locale::numeric));
         } catch (...) {
             // best effort only
         }
