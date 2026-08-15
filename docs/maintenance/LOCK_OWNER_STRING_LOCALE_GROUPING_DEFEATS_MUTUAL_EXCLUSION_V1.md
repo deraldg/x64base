@@ -221,9 +221,15 @@ housekeeping and is not.
 
 ## 6. Remedy, smallest first
 
+0. **Fix the cause at the install point** -- `include/runtime/utf8_init.hpp:80`
+   takes the whole native locale when it wants only the encoding. See section
+   12c: keep the UTF-8 facets, take `numeric` from `classic()`. One line, fixes
+   every site in the process at once. *This item was added after the section 12
+   thread was closed; it outranks everything below it.*
 1. **Imbue both streams** in `xbase_locks.cpp` with `std::locale::classic()`,
    matching the AIF-031 convention already used elsewhere in the tree. This is
-   the one-line-per-site fix and it stops new bad sidecars.
+   the one-line-per-site fix and it stops new bad sidecars. Still worth doing
+   alongside item 0, as defence against the next global-locale change.
 2. **Harden the reader** so it does not silently accept a truncated parse:
    reject a `pid=` line with trailing non-digits rather than trusting the prefix.
    Defence in depth -- existing `.lock` files on disk are already malformed, and
@@ -400,12 +406,96 @@ classic locale, something later introduced a grouping locale at runtime, AIF-031
 was the cleanup, and `xbase_locks.cpp` was missed. That matches "it used to work
 and I did not change it."
 
-**This thread is unresolved and worth closing**, because it decides the scope of
-the fix. If a locale is installed at runtime rather than in code, imbuing the two
-lock sites is necessary but not sufficient -- the correct remedy is a rule that
-every value serialised to disk is locale-immune, enforced by a gate rather than
-by twenty remembered `imbue` calls. Locating the installation point is the next
-step and needs a host-side search wider than `src/` and `include/`.
+### 12a. Thread closed -- the installation point, found
+
+`include/runtime/utf8_init.hpp:80`, reached from `src/cli/main.cpp:233` as one of
+the first things `main()` does:
+
+```cpp
+// 4) Locale only. Do not force stdout/stderr mode here.
+// Leave output mode decisions to the console layer.
+try {
+    std::locale::global(std::locale(""));
+} catch (...) {
+    // best effort only
+}
+```
+
+**The intent was character encoding. `std::locale("")` is the whole native
+locale, and it brings `numpunct` with it.** The function is named `init_utf8`
+and the comment says "Locale only", meaning *only the locale, not the stream
+modes* -- the author was reasoning about `codecvt`. Nothing in the name, the
+comment, or the call site suggests it also changes how every integer in the
+process serialises. On a US Windows host the native locale groups thousands, and
+from that line onward every un-imbued stream in the program does too.
+
+It landed **2025-08-31**, in `d506195ce` "Alpha 5.0 shake-down baseline" -- the
+earliest commit in that file's history, and ten and a half months before
+`xbase_locks.cpp` enters recorded history.
+
+**This vindicates the owner's recollection precisely.** The lock code did not
+change. The ground under it did, in 2025, for an unrelated reason, in a header
+about console encoding. If the lock code predates Alpha 5.0 -- and its style
+suggests it does -- then it was written correct and was correct when written.
+
+It also explains AIF-031 completely. A sweep imbuing `classic()` at twenty CLI
+sites is not a coding standard, it is **damage control after a global locale was
+installed**, applied wherever the damage was noticed. `xbase_locks.cpp` was
+simply somewhere nobody looked, because nobody was reading lock sidecars for
+pretty numbers.
+
+### 12b. The defect is Windows-only
+
+The `#else` branch of the same function installs `C.UTF-8`, which is the C locale
+with UTF-8 encoding -- **classic `numpunct`, no grouping**. Linux and WSL builds
+therefore write `pid=16984` and lock correctly. Only the documented fallback path
+is exposed: if `C.UTF-8` is unavailable the code tries `en_US.UTF-8`, which does
+group.
+
+Three consequences:
+
+1. Any regression test for this **must run on Windows**. A green suite on WSL
+   proves nothing about it, which is a plausible reason it was never caught.
+2. The two platforms have been running different locking semantics -- one
+   enforcing, one not -- with no note anywhere saying so.
+3. `dottalk_bbsd` and `dottalkpp` share a store on Windows, which is the
+   configuration in daily use here and the one that is broken.
+
+### 12c. Remedy, revised -- fix the cause, not the twenty symptoms
+
+Imbuing the two lock sites (section 6 item 1) still stops the bleeding and is
+worth doing. But the cause is one line, and fixing it there fixes every site at
+once, including the twenty AIF-031 already patched and every future one:
+
+```cpp
+// UTF-8 encoding from the native locale; numeric formatting from "C".
+std::locale native("");
+std::locale::global(std::locale(native, std::locale::classic(),
+                                std::locale::numeric));
+```
+
+The three-argument `std::locale` constructor takes `native` as the base and
+replaces the `numeric` category facets from `classic()`. The program keeps the
+UTF-8 behaviour `init_utf8` exists to provide and loses the digit grouping it
+never wanted.
+
+**Argue about this before doing it, on three points.** (a) It changes global
+numeric formatting, so anywhere grouping is genuinely wanted for *display* must
+imbue deliberately -- a search of this tree suggests that is nowhere, since
+AIF-031 has been removing grouping wherever it appears. (b) It changes parsing as
+well as formatting, which is the direction that matters more for correctness and
+should be tested, not assumed. (c) The existing `imbue(classic())` calls should
+stay: they become redundant rather than wrong, and defence in depth is cheap
+against a global that any future line could change again.
+
+**And the durable version is still a gate.** A one-line fix at the install point
+is correct today and reversible by anybody who adds another
+`std::locale::global` for another good local reason. Per
+`PREPUSH_GATE_REFERENCE_V1.md` -- "obligations carrying a gate held 83-94 percent
+compliance; the one without a gate held 33" -- the rule worth enforcing is that
+**no value serialised to disk may depend on the ambient locale**, and the cheap
+approximation of it is a gate that fails any new `std::locale::global` call that
+is not accompanied by a `numeric`-category override.
 
 ---
 
