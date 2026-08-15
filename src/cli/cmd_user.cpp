@@ -11,7 +11,7 @@
 // owner: DOT|USER
 // command: USER
 // category: diagnostics
-// status: experimental
+// status: supported
 // noargs: usage
 // effect: mixed
 // mutates: identity-catalog session-auth authorization-store
