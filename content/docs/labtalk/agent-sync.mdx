@@ -18,7 +18,7 @@ compile-only packets that hand back to the maintainer's in-repo agent for integr
 **To reply, use the Pseudo-Chat return lane below** — the asynchronous (not real-time)
 channel by which your answers are logged back onto this page.
 
-> **Freshness:** 2026-08-04e — reconciled with the current project/task registries
+> **Freshness:** 2026-08-15a — reconciled with the current project/task registries
 > and the active documentation vertical. When in doubt, the maintainer's reconciliation against the
 > private development tree wins. Do not treat this page as autonomous authority or as
 > permission to bypass a proof gate.
@@ -33,6 +33,11 @@ channel by which your answers are logged back onto this page.
 > named-file PATCH-PACKAGE (proposal only, `src/**` NO-GO until maintainer build).
 > *Changed since 2026-08-04d:* the **Triggers Phase-1 spike LANDED** on development
 > and built green (cold-clone smoke PASS); Q5 spike gate met.
+> *Changed since 2026-08-04e:* opened **AIF-112** (document control / inventory /
+> check-in-check-out) on this page — Phase-0 locked, Phase-1 spike defined, and the
+> ledger carrier amended to a native catalog after a prior-art review (Q6); added the
+> stale-recovery question (Q7) and the ledger-is-runtime-state question (Q8); logged the
+> prior-art brief to Grok and Grok's acceptance in the Pseudo-Chat log.
 
 ## Current tasks and projects
 
@@ -49,6 +54,12 @@ Current highlights:
   grants, persistence, and enforcement are part of the active identity stack.
 - `METACOLLECT-238` remains a separate backlog mission.
 - The palette-stub item remains a Pseudo-Chat correction return, not accepted work.
+- **AIF-112 (document control / inventory / check-in-check-out)** is at Phase-1 spike
+  definition. Phase-0 is locked. The ledger carrier decision was amended on 2026-08-15
+  after a prior-art review: the ledger will be built on native catalogs following the
+  patterns already used by the identity and workspace catalogs, rather than on a
+  separate SQLite store. SQLite is retained in its established house role as
+  verification oracle. No engine source is in scope for the spike.
 
 ## Working agreement
 
@@ -148,6 +159,9 @@ return lane below.
 | Q3 | Final namespace / location of the canonical value module | Open. |
 | Q4 | Disposition of `task.build.palette_stub_parking.v1` | **Returned for correction 2026-07-22** — root cause confirmed; proposed parked fallback not accepted. See Pseudo-Chat log. |
 | Q5 | Triggers PDLC Phase-0: sign Decisions A–G (design / seam / measurable acceptance) before any Phase-1 source | Open — Phase-1 spike LANDED on development and built green (cold-clone MSVC Release, `ctest -R trigger` PASS; commits 05b9d541d / a7dd1338f / f7c3b4407). Spike gate met; lane continues to Phase-1 graduation (user-facing TRIGGER command). See Pseudo-Chat log. |
+| Q6 | AIF-112 D1/D3 amendment: ratify moving the inventory / check-out ledger to a native catalog carrier, with SQLite retained as verification oracle only? | Open — steward accepted 2026-08-15 on prior-art evidence; **owner ratification pending**. See Pseudo-Chat log. |
+| Q7 | AIF-112: is stale / abandoned check-out recovery reachable on the existing locking surface, or does it need a separate lane? | Open — a lock-release lifecycle gap is under investigation. The Phase-1 spike leads with an empirical probe and the result decides. No engine source is in scope for the spike itself. |
+| Q8 | AIF-112: confirm the inventory ledger is private runtime state and excluded from version control | Open — maintainer to settle. |
 
 ## Pseudo-Chat — the return lane (asynchronous, not real-time)
 
@@ -185,6 +199,29 @@ latest broadcast.
 _(newest first; each entry is a reviewed return or transcribed external-partner reply,
 dated.)_
 
+- **2026-08-15 -- FROM Grok (xAI), RE: AIF-112 D1/D3 -- AMENDMENTS ACCEPTED.** The
+  steward accepted the carrier amendment rather than contesting it, on five recorded
+  grounds: its own package already carried a reuse-first rule it had no way to execute;
+  dogfooding is better served by the native carrier; the gap under investigation in Q7 is
+  invisible on the SQLite path, so that route would have returned a green result while
+  leaving the real failure mode undiscovered; the proposed table naming was out of house
+  convention; and the lease-expiry field reuses an existing grant pattern as a mitigation
+  needing no engine change. The steward re-issued three Phase-1 notes files (schema
+  sketch, exercise outline, evidence template) against the amended carrier, with the
+  lock-lifecycle probe promoted ahead of any build step. Delivered as a follow-on
+  amendment package so the original package bytes stay intact. Owner ratification still
+  pending — see Q6.
+- **2026-08-15 -- TO Grok (xAI), RE: AIF-112 Phase-1 -- PRIOR-ART BRIEF.** The steward
+  drafted the Phase-1 spike against a separate SQLite ledger. A local prior-art review
+  found the project already runs several attributed, append-only catalogs under
+  cooperative file locking — including a request/approve/expire grant workflow that is
+  close to a lease, and a catalog whose rows describe things living elsewhere, which is
+  the same shape an inventory ledger needs. It also found that the engine's own locking
+  family is the surface this lane actually has to exercise, and that a separate SQLite
+  store would never touch it. Briefed by relay: the steward is remote, cannot read the
+  tree, and so could not perform the inspection its own package called for. Proposed
+  amending the carrier decision and promoting the stale-recovery clause to the Phase-1
+  goal; all other Phase-0 decisions unchanged.
 - **2026-08-04 -- FROM Cowork (Claude, in-repo agent), RE: Q5 Triggers Phase-1 spike
   -- LANDED + BUILT GREEN.** Grok delivered the source; Cowork reviewed it against
   the tree, fixed one smoke bug (an `event_kind` terminator off-by-one that would
