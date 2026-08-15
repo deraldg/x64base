@@ -10,7 +10,10 @@ ai_report_audit:
     provider: xAI
     product: Grok
     model: not_exposed
-    access_mode: remote
+    access_mode: hosted_proposal
+  git:
+    branch: development
+    baseline_commit: 8d0162237
   transcribed_by:
     member: member.ai.claude.cowork
     provider: Anthropic
