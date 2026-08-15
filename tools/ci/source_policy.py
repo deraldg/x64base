@@ -41,10 +41,24 @@ require("LICENSING.md" in readme, "README must point to the full licensing terms
 for phrase in OBSOLETE_LICENSE_WORDING:
     require(phrase not in readme, f"README contains obsolete license wording: {phrase!r}")
 
-# The two files have to agree with each other, not merely each be well-formed.
-licensing = (ROOT / "LICENSING.md").read_text(encoding="utf-8")
-require("GPL-3.0" in licensing, "LICENSING.md must name the same open license as README")
-require("commercial" in licensing.lower(), "LICENSING.md must describe the commercial arm of the dual license")
+# The files have to agree with each other, not merely each be well-formed.
+#
+# Read defensively. LICENSING.md is allow-listed in PROMOTE.manifest but had
+# never actually been promoted, so on public main this path did not exist --
+# an unconditional read_text() here would raise FileNotFoundError and turn a
+# clean policy FAIL into an unhandled traceback in CI. A gate that crashes
+# tells you less than a gate that fails, and costs more to diagnose.
+licensing_path = ROOT / "LICENSING.md"
+if licensing_path.is_file():
+    licensing = licensing_path.read_text(encoding="utf-8")
+    require("GPL-3.0" in licensing, "LICENSING.md must name the same open license as README")
+    require("commercial" in licensing.lower(), "LICENSING.md must describe the commercial arm of the dual license")
+else:
+    errors.append(
+        "LICENSING.md is missing. README points readers to it for the full terms, "
+        "so a tree without it publishes a dangling promise. It is allow-listed in "
+        "PROMOTE.manifest -- promote it, or drop the README pointer."
+    )
 
 cmake = (ROOT / "CMakeLists.txt").read_text(encoding="utf-8")
 require("C:/Users/" not in cmake and "D:/code/" not in cmake, "CMake contains a personal machine path")
