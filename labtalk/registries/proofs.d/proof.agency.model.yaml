@@ -17,4 +17,9 @@ notes: 'Names a model the system had already IMPLEMENTED but never stated, so th
   owner commits). Underlying leg-level behavior IS runtime_observed (proof.bbs.m2_net_egress = boundary
   refusal; proof.bbs.guest = designed minimal agency); the MODEL itself is source_defined. Declared gaps:
   no per-session identity, no token expiry, git agency serialized by convention not mechanism (AIF-059),
-  no durable Decision audit trail.'
+  no durable Decision audit trail. 2026-08-15 owner ruling: the USER command (src/cli/cmd_user.cpp) was
+  promoted experimental -> supported with these four gaps outstanding and declared, not closed. The status
+  field and this registry entry are therefore deliberately in tension: USER is supported, the agency model
+  it administers remains source_defined with named gaps. Recorded so the promotion is discoverable from the
+  proof side rather than only from the source header. See
+  docs/maintenance/USER_COMMAND_STATUS_PROMOTION_2026-08-15.md.'

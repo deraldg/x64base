@@ -75,6 +75,25 @@ are the ontology, the seed-rise plan, and the recall graph named below.
   oracle, never the thing built on. (Owner ruling 2026-08-15; home:
   `docs/maintenance/AIF112_OWNER_RULING_D1_D3_AND_DOGFOOD_DEFINITION_V1.md` SS3.1-3.1a, which
   carries the four negations and the operational test.)
+- **proof failure** -- a bug one level up. Not a defect in the engine or a feature, but a
+  failure in the co-documentation process and the higher theories: something was signed,
+  accepted, or granted a status on evidence that did not support it, and the proof apparatus
+  passed it anyway. A doctrine that did not hold is one. Siblings already in use as intake
+  classifications are `engine_defect` and `doc_defect`; this is the class that had no name.
+  **Record it the way you record a bug** -- what passed, why it passed, and what would have
+  caught it -- because a corpus of successes cannot show where the gates are missing. Owner,
+  2026-08-15: "we are very quick to record positive proofs, but we should report the failures
+  too." **A failure is still a proof** -- so one files like any other, by SUBJECT and at
+  whatever `state` its evidence earns, not in a separate namespace and not needing a new state
+  (`proof.bbs.m2_net_egress` already proves a refusal and needed neither). First instance:
+  `proof.governance.availability_is_not_adoption` -- a foreign carrier signed into a locked
+  Phase-0 on an availability argument; passed two onboarded AI agencies; caught eleven days
+  later by prior art, not by any gate.
+- **availability is not adoption** -- compiled in, callable, cheap, and wrapped in a command are
+  facts about AVAILABILITY. Adoption is a separate decision about carrier identity. A deny-list
+  is the wrong remedy (owner: forbid SQLite and you must next forbid GnuCOBOL, and so on
+  without end); the rule is positive and general. Operational test: **if this thing had a bug,
+  whose bug would it be?** (Home: `proof.governance.availability_is_not_adoption`.)
 - **the recurring defect pattern** -- something reports success without doing its job
   (author-zero posts, a consumer committed without its definition, a handoff written where a
   clone cannot see it). **Verify before you rely; trust the measurement, not the success

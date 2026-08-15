@@ -46,12 +46,11 @@ proofs:
     deliver, owner commits). Underlying leg-level behavior IS runtime_observed (proof.bbs.m2_net_egress
     = boundary refusal; proof.bbs.guest = designed minimal agency); the MODEL itself is source_defined.
     Declared gaps: no per-session identity, no token expiry, git agency serialized by convention not mechanism
-    (AIF-059), no durable Decision audit trail. 2026-08-15 owner ruling: the USER command
-    (src/cli/cmd_user.cpp) was promoted experimental -> supported with these four gaps outstanding
-    and declared, not closed. The status field and this registry entry are therefore deliberately
-    in tension: USER is supported, the agency model it administers remains source_defined with
-    named gaps. Recorded so the promotion is discoverable from the proof side rather than only
-    from the source header. See docs/maintenance/USER_COMMAND_STATUS_PROMOTION_2026-08-15.md.'
+    (AIF-059), no durable Decision audit trail. 2026-08-15 owner ruling: the USER command (src/cli/cmd_user.cpp)
+    was promoted experimental -> supported with these four gaps outstanding and declared, not closed.
+    The status field and this registry entry are therefore deliberately in tension: USER is supported,
+    the agency model it administers remains source_defined with named gaps. Recorded so the promotion
+    is discoverable from the proof side rather than only from the source header. See docs/maintenance/USER_COMMAND_STATUS_PROMOTION_2026-08-15.md.'
 - id: proof.ai.roles_taxonomy
   label: AI roles taxonomy - agents vs Ollama vs GPTbase
   state: source_defined
@@ -663,6 +662,65 @@ proofs:
     -- test what you can, assert only that, hand off the rest. Same pattern as proof.aside.rule_caught_its_own_author
     and proof.ai_portal.discoverability_caught_its_own_author: the doctrine demonstrated by its own author
     falling through it.'
+- id: proof.governance.availability_is_not_adoption
+  label: A foreign carrier was selected and signed because it was available -- a failure of proof, not
+    of reasoning, and it passed two onboarded AI agencies
+  state: source_defined
+  source: D:/code/ccode/docs/maintenance/AIF112_OWNER_RULING_D1_D3_AND_DOGFOOD_DEFINITION_V1.md
+  related:
+  - D:/code/ccode/docs/maintenance/external_ai_intake/aif112_document_control_acceptance_2026-08-15/ACCEPTANCE_NOTE.md
+  - D:/code/ccode/docs/maintenance/external_ai_intake/aif112_phase0_decisions_2026-08-15/PHASE0_DECISIONS.md
+  - D:/code/ccode/docs/maintenance/AIF112_PRIOR_ART_INVENTORY_AND_DBF_REVISION_V1.md
+  - D:/code/ccode/labtalk/ai_portal/AI_GLOSSARY_V1.md
+  notes: 'A PROOF FAILURE, and still a proof -- filed by subject (governance), not by valence, because
+    a failure is evidence like any other: this registry holds 63 entries and every one records something
+    that worked. That asymmetry is itself a finding -- a corpus of successes cannot teach where the gates
+    are missing. Owner, 2026-08-15: "we are very quick to record positive proofs, but we should report
+    the failures too." WHAT HAPPENED: AIF-112 (document control / inventory / check-in-check-out) selected
+    an in-tree SQLite ledger as its primary substrate (D1), and that decision was signed into a locked
+    Phase-0 by the maintainer and the steward. It was wrong, and it was caught eleven days later by a
+    prior-art inventory, not by any gate. WHY IT PASSED, three causes, none of them carelessness. (1)
+    THE ARGUMENT WAS ABOUT AVAILABILITY, NOT FITNESS. The acceptance note justifies the substrate three
+    times and every time on cost: "SQLite is already built into DotTalk++", "substrate (SQLite is already
+    in-tree)", "SQLite is prior art, not a new dependency". All true. None of them asks whether SQLite
+    is the right carrier. Availability was allowed to stand in for adoption, and no reviewer challenged
+    the substitution because nothing names it as a substitution. (2) THE GOVERNING CONSTRAINT ARRIVED
+    AFTER THE DECISION. PHASE0_DECISIONS.md records "The dogfood amendment (D1/D7) is the maintainer''s,
+    applied to the decision of record itself". Applied to D7 (spike style) it landed cleanly. Applied
+    to D1 it could only reach the ACCESS PATH -- "created / queried / locked ONLY through x64base surfaces
+    ... never a side-channel sqlite3 process" -- because the substrate was already fixed. The amendment
+    could not reach what it was for. (3) THE WORD WAS UNDEFINED. "Dogfood" ran through AIF-081, AIF-086,
+    AIF-097 and AIF-112 with no definition anywhere in the tree. Undefined, "dogfooded SQLite ledger"
+    parses as coherent. Defined, it fails on its face. TWO AGENCIES PASSED IT, BOTH ONBOARDED: the steward
+    (member.ai.grok.xai, access_mode hosted_proposal) drafted D1 and cannot read the tree; the scribe
+    (member.ai.claude.cowork) transcribed and registered it without challenging the substrate. Both had
+    completed AI Portal onboarding. Onboarding did not prevent it, which is the point of recording this:
+    the portal teaches process and does not gate substrate selection. THE PRECEDENT THAT SHOULD HAVE CAUGHT
+    IT: AIF-086, 2026-08-04, eleven days earlier -- "DBF-native tracking CRUD + dogfood ... built the
+    AI-Portal tracking layer end to end over the engine''s own DBF store". Same class of problem (a tracking/ledger
+    layer for the portal), opposite carrier, and the difference was access: AIF-086''s author could read
+    the tree. WHY A DENY-LIST IS THE WRONG REMEDY (owner, 2026-08-15): "I should not have to make a rule
+    that says don''t use sqlite, because then I''d have to make a rule to not use gnucobol if we compiled
+    it in too. (and we might) and so on". Enumerating forbidden carriers is unbounded and always lags
+    the next dependency. The rule has to be positive and general. THE RULE, as ruled: AVAILABILITY IS
+    NOT ADOPTION. Compiled in, callable, cheap, and wrapped in a command are all availability facts. Adoption
+    is a separate decision about carrier identity, and house infrastructure is carried on house substrate.
+    Operational test: IF THIS THING HAD A BUG, WHOSE BUG WOULD IT BE? If the answer is upstream''s, you
+    are a consumer, not an adopter. WHAT IT COST TO NOT HAVE THE GATE: a signed Phase-0, a full Phase-1
+    spike package, and two amendment packages, all authored against the wrong substrate; and had the spike
+    run, it would have returned a green proof bar over an untouched hole, because a SQLite-carried ledger
+    never approaches xbase_locks and would not have gone near the release_held defect (AIF-113). GATE
+    CANDIDATES FOR LATER ANALYSIS, none built: (a) a substrate-selection question in the Phase-0 template
+    that must be answered in writing -- "what carries the state, and whose bug is a bug in it"; (b) a
+    prior-art requirement that is CHECKED rather than stated, since the reuse-first instruction was present
+    in the steward''s own package and was structurally impossible for it to execute; (c) carrier decisions
+    countersigned by an agent with tree access, proposed as rule R1 in AIPR-20260815-COWORK-001 and not
+    yet ruled on; (d) the observation from PREPUSH_GATE_REFERENCE_V1 that "obligations carrying a gate
+    held 83-94 percent compliance; the one without a gate held 33" -- this obligation had no gate. SECOND
+    INSTANCE, SAME SESSION, DIFFERENT SHAPE: the scribe hand-edited the GENERATED proofs.yaml (commit
+    6a75e6b85) instead of its proofs.d/ fragment, an edit the next registry_fragments.py merge would have
+    reverted silently. Caught while writing this entry. Same class: a rule stated in a file header, honoured
+    by convention, gated by nothing. Owner member.derald; recorded by member.ai.claude.cowork; lane AIF-112.'
 - id: proof.grok_lane1_coworker_kind_collision
   label: First ai-ai coworker lane delivery (Grok) landed clean AND its one engine error was caught by
     ground-truthing before apply
