@@ -1,7 +1,8 @@
 # Document Control / Inventory / Check-in-Check-out PDLC Lane v1
 
-Status: chartered; Phase-0 decisions pending maintainer lock. Coordination + categorization only;
-no source mutation proposed.
+Status: chartered; Phase-0 decisions LOCKED (D1-D8, dogfood amendment on D1/D7), signed 2026-08-15
+(maintainer + Grok). Coordination + categorization only; no source mutation proposed.
+Baseline: `development` @ `23617ec67`.
 Ticket: AIF-112.
 Owner: member.derald.
 Steward (primary, driving): member.ai.grok.xai (Grok / xAI, Outside-AI, access_mode: remote).
@@ -48,19 +49,38 @@ host, and cannot read the private tree. Therefore:
 - **AIF-098** (Frontal_Mem persistent-memory): fenced. Do not absorb or duplicate it.
 - No collision with Triggers, Identity, or the Tuple freeze.
 
-## Phase-0 decisions pending maintainer lock
+## Phase-0 decisions -- LOCKED (signed 2026-08-15)
 
-These are the open questions Grok's first package should frame for the maintainer to lock:
-1. **Substrate** -- where does control/inventory state live? (SQLite already in-tree; DBF/SYS*
-   catalog; or a sidecar). Weigh against prior art and the dual-tree discipline.
-2. **Inventory scope** -- exactly which item classes are under control at M1 (source vs docs vs
-   samples vs capsules vs memo-resident schemas), and what stays out.
-3. **Lock model** -- check-out/check-in semantics: advisory vs enforced, single vs multi-holder,
-   how it interacts with Git as the publication path, and how a stale/abandoned checkout is
-   recovered (cf. the cross-process cooperative locking already in the engine).
-4. **Identity binding** -- who may check out/in; reuse the existing RBAC (`bbs`-style permissions,
-   acting member, SYSGRANT) rather than a parallel scheme.
-5. **Teaching surface** -- the HELP + contract shape, so the mechanism is documented, not hidden.
+Signed by maintainer + Grok, 2026-08-15. Grok's formal decision packet:
+`docs/maintenance/external_ai_intake/aif112_phase0_decisions_2026-08-15/` (AIPR-20260815-GROK-002).
+The dogfood amendment (D1/D7) is the maintainer's and sits in the signed decisions themselves (not
+only the spike brief), so it survives session rotation: the ledger must be exercised THROUGH x64base
+/ DotTalk++, never a side-channel sqlite3 process.
+
+- **D1 -- Primary substrate.** In-tree DotTalk++ SQLite ledger, created / queried / locked ONLY
+  through x64base / DotTalk++ surfaces (the SQLITE command family, work areas, tables), never a
+  side-channel sqlite3 process (dogfood). Git remains the publication path. **Fossil is considered,
+  not adopted** unless the dogfooded spike proves a required property the runtime SQLite surface
+  cannot express (this is the same experiment as the D7 spike).
+- **D2 -- Inventory scope.** Source + docs + samples + Workspace / Database Capsule + memo-resident
+  schemas.
+- **D3 -- Lock model.** Hybrid: exclusive check-out for non-mergeable items (binaries, capsules),
+  advisory for pure text (Git already merges text). Reuse the engine's cross-process cooperative
+  locking; define stale/abandoned-checkout recovery.
+- **D4 -- Publication boundary.** Private-tree authority only; GitHub remains the clean publication
+  gate (dual-tree discipline unchanged).
+- **D5 -- Teaching / SelfDoc.** Full HELP + contracts (AIF-025 / AIF-037). Because the spike is
+  dogfooded, the spike itself becomes representative student-facing evidence.
+- **D6 -- Fence.** Confirmed: no collision with Triggers, Identity, Tuple freeze, AIF-098, or the
+  remaining site-and-guard-hardening work.
+- **D7 -- First spike style.** pydottalk (or the CLI / runtime API) driving a LIVE x64base instance,
+  so every check-out, inventory list, and release is exercised through the product under test.
+  Lightweight, stays out of C++ `src/**` until the model is proven. NO naked sqlite3 script.
+- **D8 -- Relationship to AIF-055.** Explicitly coordinated: the inventory must be able to lock /
+  version Workspace / Database Capsules; coordinate, do not overwrite.
+
+Carried from the charter (to confirm in the spike, not a separate D): identity binding reuses the
+existing RBAC (acting member, `bbs`-style permissions, SYSGRANT), not a parallel scheme.
 
 ## PDLC gates (proposed)
 
@@ -74,7 +94,8 @@ These are the open questions Grok's first package should frame for the maintaine
   `docs/maintenance/external_ai_intake/aif112_document_control_acceptance_2026-08-15/`).
 - Pseudo-Chat acceptance note is prepared for transcription onto the agent-sync return lane at
   closeout cadence.
-- Phase-0 decisions are NOT yet locked. No source mutation is proposed.
+- Phase-0 decisions are LOCKED (D1-D8, dogfood amendment on D1/D7), signed 2026-08-15. Grok drafts
+  the Phase-1 spike package next. No source mutation is proposed.
 
 ## Next gate
 
