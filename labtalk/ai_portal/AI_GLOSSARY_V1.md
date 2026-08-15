@@ -89,6 +89,24 @@ are the ontology, the seed-rise plan, and the recall graph named below.
   `proof.governance.availability_is_not_adoption` -- a foreign carrier signed into a locked
   Phase-0 on an availability argument; passed two onboarded AI agencies; caught eleven days
   later by prior art, not by any gate.
+- **housekeeping** -- policy, not tidying: "a governed state-reconciliation cycle. Editing labels
+  or cleaning prose is not enough." Closeout must produce the work record (`AI_PORTAL.md:667`)
+  and move startup-facing state with the lane (`:712`), and a reusable working rule owes a
+  handoff (Tier 1 trigger). A task is not done until the housekeeping is finished. (Homes:
+  `docs/agents/HANDOFF_CODEX_CASCADE_ERP_GATE0_HOUSEKEEPING_2026-08-10.md` "Durable trap";
+  `docs/maintenance/CASCADE_ERP_GATE0_HOUSEKEEPING_V1.md`; lane precedent AIF-077.)
+- **good neighbor** -- conduct in a shared working tree, where your housekeeping can damage
+  someone else's. The protocol states it as "locks are advisory but binding by agreement",
+  "presence is courtesy, not permission", and "this coordinates, it does not authorize".
+  Two operational corollaries: **never `git add -A`** (it fuses several sessions' half-done
+  work), and -- extending that from staging to anything that WRITES -- regenerators, formatters
+  and sweeps act on WHATEVER IS ON DISK, including others' uncommitted fragments, so **scope the
+  commit, not the tool.** Exemplar AIF-077: Codex's abandoned WIP landed as one preservation
+  commit with honest provenance, runtime churn "not swept in blind." Near-miss 2026-08-15:
+  `registry_fragments.py merge --write` flushed five untracked `runs.d/` fragments into tracked
+  `ai_runs.yaml`; committing it would have published run records with no committed source.
+  Restored; fragments left for their owner. (Home:
+  `docs/maintenance/AI_SESSION_COORDINATION_PROTOCOL_V1.md`.)
 - **availability is not adoption** -- compiled in, callable, cheap, and wrapped in a command are
   facts about AVAILABILITY. Adoption is a separate decision about carrier identity. A deny-list
   is the wrong remedy (owner: forbid SQLite and you must next forbid GnuCOBOL, and so on
