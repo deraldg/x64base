@@ -1,0 +1,415 @@
+---
+ai_report_audit:
+  schema: ai-report-audit-v1
+  report_id: AIPR-20260815-COWORK-008
+  recorded_at_utc: 2026-08-15T00:00:00Z
+  agent:
+    provider: Anthropic
+    product: Claude (Cowork)
+    model: claude-opus-5
+    access_mode: local
+  git:
+    branch: development
+    baseline_commit: fb7106e0
+    working_tree: dirty
+    note: >
+      Baseline is the RUNTIME banner stamp reported by the running binary
+      ("dottalk++ v0.6 (2026-08-15, fb7106e0 dirty)"), not `git rev-parse HEAD`.
+      The evidence below is runtime-observed against that exact binary.
+  project:
+    id: project.x64base.runtime
+    root: D:/code/ccode
+  authorization:
+    requested_by: maintainer (member.derald), in-session, live AIF-112 Phase-1 run
+    scope: >
+      Finding report. Discovered while executing AIF-112 Phase-1 Step 4 on a live
+      instance. No source mutation. AIF-116 claimed host-side by the owner via
+      session_coordinator.py claim-aif; not self-assigned.
+  lane: AIF-116
+  lane_discovered_in: AIF-112
+  lane_blocking_dependency: AIF-113
+  lane_parent_defect_class: AIF-031
+  report:
+    path: docs/maintenance/LOCK_OWNER_STRING_LOCALE_GROUPING_DEFEATS_MUTUAL_EXCLUSION_V1.md
+    kind: defect_report
+  primary_topics:
+    - "xbase_locks"
+    - "mutual exclusion"
+    - "AIF-031"
+    - "locale grouping"
+    - "stale lock recovery"
+---
+
+# Locale Grouping in the Lock Owner String Defeats Mutual Exclusion (V1)
+
+**Status:** runtime-observed, reproduced, root-caused to file:line.
+**Severity:** high. Cross-process mutual exclusion does not hold, deterministically,
+for every table and record lock in the engine.
+**Evidence class:** `runtime_observed` -- every claim below was produced by a live
+two-process run on 2026-08-15 against banner stamp `fb7106e0 dirty`, or is a
+file:line read of the binary's own source.
+
+## 1. Summary
+
+`xbase::locks` writes the lock owner's pid into the `.lock` sidecar through an
+un-imbued stream. A grouping locale is active at runtime, so the pid is written
+with thousands separators (`pid=16,984`). The reader parses it back with
+`std::stoul`, which stops at the comma and returns `16`. The liveness check then
+asks whether pid `16` is alive, gets `false`, concludes the lock is **stale**,
+force-removes it, and grants the lock to the second process.
+
+The result is that **any process always sees any other process's lock as stale.**
+Locks are observable but not enforced.
+
+This is not a race and not intermittent. It fires on every acquisition.
+
+## 2. What was observed
+
+Two `dottalkpp` processes, same data root, same table
+(`dottalkpp/data/dbf/sandbox/INVITEM.dbf`), reached via `do sandbox`.
+
+**Window A** (pid 49640) takes the table lock:
+
+```
+. LOCK TABLE
+LOCK: table locked.
+. LOCK STATUS
+Table: LOCKED (owner GRIMWOOD:49,640:1,786,832,702,834)
+Record 3: unlocked
+```
+
+**Window B** (pid 16984), while A still holds it:
+
+```
+. LOCK STATUS
+Table: LOCKED (owner GRIMWOOD:49,640:1,786,832,702,834)
+Record 1: unlocked
+. LOCK TABLE
+LOCK: table locked.
+```
+
+B read A's lock correctly, then granted itself the same lock. **Detection works.
+Enforcement does not.**
+
+The sidecar on disk afterwards, showing B's pid and a single surviving lock file:
+
+```
+> Get-Content D:\code\ccode\dottalkpp\data\dbf\sandbox\*.lock
+DotTalk++ lock
+owner=GRIMWOOD:16,984:1,786,832,989,047
+pid=16,984
+ms=1,786,832,989,048
+```
+
+Only one `.lock` file exists (`INVITEM.dbf.lock`, 87 bytes). A's lock file was
+removed and replaced by B's, which is the signature of the stale-recovery branch
+having run.
+
+## 3. Mechanism, at source
+
+**Write side.** `src/xbase/xbase_locks.cpp`, two number-emitting sites, both bare:
+
+```cpp
+// make_owner_string(), :55-57
+std::ostringstream os;
+os << host << ":" << pid << ":" << ms;
+return os.str();
+```
+
+```cpp
+// lock file writer, :157-160
+f << "DotTalk++ lock\n";
+f << "owner=" << owner.id << "\n";
+f << "pid="   << pid      << "\n";
+f << "ms="    << ms       << "\n";
+```
+
+Neither stream is imbued. **`grep -c imbue src/xbase/xbase_locks.cpp` returns 0.**
+With a grouping locale installed, `<<` on an integer emits separators, which the
+observed output and the on-disk file both confirm.
+
+**Read side.** `read_lock_meta()`, :112-117:
+
+```cpp
+} else if (line.rfind("pid=", 0) == 0) {
+    try {
+        meta.pid = static_cast<unsigned long>(std::stoul(line.substr(4)));
+    } catch (...) {
+        meta.pid = 0;
+    }
+}
+```
+
+`std::stoul` parses the longest valid prefix and **does not throw** on trailing
+junk, so the `catch` never fires. Verified by compiling and running it:
+
+```
+stoul("16,984") = 16 (no throw)
+```
+
+**Decision side.** `try_lock_*`, :238-247:
+
+```cpp
+// Re-entrant lock in same process/session.
+if (meta.owner == me.id) {
+    return true;
+}
+
+// Stale lock: owner process is gone.
+if (!is_pid_alive(meta.pid)) {
+    std::string ignored;
+    if (!force_remove(path, &ignored)) { ... }
+```
+
+`is_pid_alive(16)` -> `OpenProcess` fails or the process is not `STILL_ACTIVE`
+-> `false` -> `force_remove` -> lock stolen.
+
+Note the re-entrancy guard above it compares `meta.owner` as a whole **string**,
+which is why same-process re-locking still behaves. The bug only bites across
+processes, which is exactly the case locks exist for.
+
+## 4. Blast radius
+
+`try_lock_table` / `try_lock_record` callers outside the locks TU:
+
+| Site | Meaning |
+|---|---|
+| `src/bbs/bbs_store.cpp:95` | the BBS daemon's per-append table FLOCK |
+| `src/cli/append_support.cpp:326,416,450,500` | every APPEND path |
+| `src/cli/cmd_commit.cpp:233` | COMMIT record lock |
+| `src/cli/cmd_delete.cpp:216` | DELETE record lock |
+| `src/cli/cmd_recall.cpp:234` | RECALL record lock |
+| `src/cli/cmd_calcwrite.cpp:712` | CALCWRITE record lock |
+| `src/cli/cmd_lock.cpp:161,175,199` | the explicit LOCK verbs (Class B) |
+
+Every write path in the engine, plus the daemon. `dottalkpp` and `dottalk_bbsd`
+share the on-disk store with no IPC between them, and cooperative locking is the
+only thing standing between them. It is not standing.
+
+## 5. Relationship to existing lanes
+
+**AIF-031** is the same defect class, already named and already swept:
+"no thousands grouping in stored values." The sweep imbued
+`std::locale::classic()` at roughly twenty sites -- `cmd_calc`, `cmd_replace`,
+`cmd_calcwrite`, `row_codec_fixed`, `fn_numeric`, `fn_string`, `shell_api`,
+`rhs_eval`, `date_utils`, `cmd_aggs`, `shell_eval_utils`, `cmd_replace_multi`.
+`SESSION_CLOSEOUT_FIELDTYPE_CODEC_2026-07-19.md` records the follow-up as open:
+
+> **AIF-031 numeric-formatting sweep** (intake task #100): audit other CLI/engine
+
+`src/xbase/xbase_locks.cpp` is what that unfinished audit missed. The lane was
+filed as a numeric-formatting cosmetic issue; in this file the same root cause
+silently disables mutual exclusion. **The severity of a defect class is not
+uniform across the sites it touches, and an audit scoped by "formatting" will
+not find the site where formatting is load-bearing.**
+
+**AIF-113** (`LOCK_RELEASE_AND_RECOVERY_LANE_V1.md`, claimed) covers three dead
+recovery functions and a command that never releases -- the **release** half of
+the lock subsystem. This finding is the **acquisition** half. Same file, same
+subsystem, different failure, and this one is the more severe.
+
+**Resolved 2026-08-15: this took its own number.** `AIF-116`, claimed host-side
+by the owner (`coordination/aif/AIF-116.claim`, run `COWORK-20260815-001`, lane
+`lock-owner-locale-grouping`). Own number rather than widening AIF-113 because
+acquisition and release are different failures with different remedies -- but
+they are a hard pair in the other direction, see section 10: AIF-113 is a
+**blocking dependency** of AIF-116's fix, not merely a neighbour. AIF-113's
+charter should gain a cross-reference saying so, since it was chartered as
+housekeeping and is not.
+
+**AIF-112** discovered it and is not the lane that fixes it.
+
+## 6. Remedy, smallest first
+
+1. **Imbue both streams** in `xbase_locks.cpp` with `std::locale::classic()`,
+   matching the AIF-031 convention already used elsewhere in the tree. This is
+   the one-line-per-site fix and it stops new bad sidecars.
+2. **Harden the reader** so it does not silently accept a truncated parse:
+   reject a `pid=` line with trailing non-digits rather than trusting the prefix.
+   Defence in depth -- existing `.lock` files on disk are already malformed, and
+   a corrupted owner must fail closed, not fail stale.
+3. **Fail closed on an unparseable owner.** Today an unreadable pid degrades to
+   "assume stale, steal the lock." The safe default is the opposite: an owner
+   that cannot be verified is an owner that is presumed alive.
+4. **Finish the AIF-031 audit** across the engine, not only the CLI.
+5. Add a two-process regression that asserts the second acquisition is refused.
+   There is currently no test that would have caught this.
+
+Item 3 is the one worth arguing about, and it is a design question rather than a
+bug fix: the current code chooses availability over safety when it cannot read
+the owner. That choice was probably never made explicitly.
+
+**Sequencing warning -- do not ship item 1 alone.** See section 10. Fixing the
+locale bug by itself converts a safety failure into a liveness failure, because
+the broken stale-detection is currently the only thing cleaning up leaked locks.
+Item 1 must land together with an exposed recovery path (AIF-113).
+
+## 7. What this does to the AIF-112 Phase-1 spike
+
+Steps 1 to 3 completed and are reportable. Step 4 (exclusive proof refused under
+FLOCK) **fails** -- not because the ledger design is wrong but because the
+substrate underneath it does not enforce. Steps 5 and 6 cannot be scored until
+this is fixed: "release and re-acquire" is not meaningful when acquisition never
+refuses.
+
+The sharpest consequence is for Step 6, whose mandatory requirement was
+**"`EXPAT` lease reclaim without any force path."** Under this defect,
+`force_remove` runs on *every* acquisition, silently, inside `try_lock_*`. A spike
+run to completion would have reported Step 6 green while a force path executed
+underneath it.
+
+That is the same failure shape recorded in
+`proof.governance.availability_is_not_adoption` -- a green proof bar over an
+untouched hole -- arriving a second time by a different route. There it was the
+wrong substrate; here it is the right substrate with an unverified property. Both
+cases pass the stated check and prove nothing.
+
+The counter-case is worth stating plainly: had AIF-112 kept its original SQLite
+ledger, this defect would still be sitting in the engine, unfound. The DBF
+correction is what put the spike on top of `xbase_locks` at all.
+
+## 8. Reproduction
+
+```
+# Window A
+./datarun.ps1
+do sandbox
+CREATE X64 INVITEM (ITEM_ID I, ITEM_KEY C(64), KIND C(16), REF C(200), STATE C(12), AUTHOR C(32), CREATED D, SUP L, NOTES M)
+SELECT 1
+USE INVITEM
+LOCK TABLE
+LOCK STATUS
+
+# Window B, while A holds
+./datarun.ps1
+do sandbox
+SELECT 1
+USE INVITEM
+LOCK STATUS      && reads A's lock correctly
+LOCK TABLE       && EXPECTED: refused.  ACTUAL: "LOCK: table locked."
+```
+
+Then inspect the sidecar:
+
+```
+Get-Content D:\code\ccode\dottalkpp\data\dbf\sandbox\INVITEM.dbf.lock
+```
+
+A correct run shows `pid=16984`. A defective run shows `pid=16,984`.
+
+## 9. Secondary findings from the same run
+
+Recorded here because they were observed in the same session and would otherwise
+be lost. None is load-bearing for the above.
+
+| Id | Finding |
+|---|---|
+| A3 | The `WORKSPACE CATALOG` footer instructs `USE + APPEND BLANK`. The runtime registers `APPEND` and `APPEND_BLANK` as separate verbs, so the spaced form is refused and the caller's subsequent REPLACEs clobber the current record. This is a third surface for `proof.engine.append_blank_catalog_drift` (AIF-086, R-APPEND-BLANK), which recorded only `shell_commands.cpp` and `command-catalog.mdx`. |
+| A4 | No `inv.*` permissions exist, and the 19 permissions are compiled into `identity_bootstrap.cpp` with literal ids, not seeded. Adding inventory permissions is a code change, not a data operation -- a Phase-2 cost the schema sketch did not price. |
+| A5 | Phase 1 needs no new permission: `database.mutate` (id 5, Medium, no approval) already covers ledger writes. Only `inv.break` warrants its own, and the house shape for it already exists -- `role.assign` (12) and `authorization.grant` (13), both Critical plus approval. |
+| C1 | `DBAREA` reports the X64 extended types `I` and `T` as `Other` while naming `Character`, `Logical`, `Memo`, and `Date` correctly. The reporter's type table was never taught the X64 additions. `STRUCT` is correct. |
+| D1 | `CREATE` silently overwrote two existing tables with no prompt, while `ERASE` refused to delete without `CONFIRM`. The safety is inverted: the destructive path is the unguarded one. `cmd_create.cpp:56` documents this as unknown ("possible_overwrite: depends on dbf_create backend behavior for existing paths"); it is now measured. Harmless at 0 records, silent data loss on a populated table. |
+| E1 | The lock owner string renders with thousands separators. Filed above as the root cause, not a cosmetic issue. |
+| E2 | `UNLOCK` on a record that is not locked reports success: `LOCK STATUS` showed `Record 3: unlocked`, and a subsequent bare `UNLOCK` answered `UNLOCK: record 3 unlocked.` A release verb that cannot distinguish "released it" from "there was nothing to release" gives the operator no way to detect that a lock they believed they held was already gone -- which is the exact condition this defect produces. Minor on its own, misleading in combination. |
+
+Retracted during the run: an apparent `STRUCT` column misalignment did not
+reproduce and was paste noise, not a defect. Recorded so it is not re-reported.
+
+## 10. Locks are never released except by an explicit UNLOCK -- and this bug is hiding it
+
+Asked by the owner during the run: does entering a new work area, or closing,
+clear a lock held by another session? **No. Nothing does.**
+
+| Path | Releases? |
+|---|---|
+| `CLOSE` / `CLOSE ALL` (`cmd_close.cpp`) | no -- the TU never mentions locks |
+| `CLEAR` (`cmd_clear.cpp`) | no -- never mentions locks |
+| `USE` / `OPEN` (`cmd_use.cpp`) | no -- its only lock references are I5 design comments |
+| `DbArea::close()` (`dbarea.cpp:59`) | no -- clears `_fp`, detaches index hooks, closes memo. No lock cleanup. |
+| `~DbArea()` (`dbarea.cpp:57`) | no -- calls `close()`, which does not release |
+| process exit | no -- nothing removes the sidecar |
+| `UNLOCK` (`cmd_unlock.cpp`) | **yes -- the only path** |
+| `release_held()` | exists, called by nothing (AIF-113) |
+
+Class A sites are fine: they pair acquire and release within one operation, by
+RAII (`bbs_store.cpp:99`, `cmd_workspace.cpp:2117`) or by an explicit unlock on
+every exit path (`append_support`, `cmd_commit`, `cmd_delete`, `cmd_recall`,
+`cmd_replace`, `cmd_calcwrite`, `dbarea.cpp:275`). The exposure is Class B --
+`LOCK TABLE` held across operations, which only `UNLOCK` ends.
+
+So a session that takes `LOCK TABLE` and then closes the table, switches work
+area, or exits leaves a live `.lock` sidecar with no owner able to reach it.
+
+**The two defects currently mask each other, and that is the dangerous part.**
+Leaked locks are being silently cleaned up by the broken stale-detection: every
+orphan looks stale because every lock looks stale. Repair the locale bug on its
+own and orphans stop being reclaimable at all -- and there is no exposed FORCE
+verb to clear them by hand, because `force_unlock_table` and
+`force_unlock_record` are dead code (AIF-113). A single abandoned `LOCK TABLE`
+would then wedge that table permanently for every process on the machine.
+
+**Therefore: the enforcement fix and the recovery path must land together.**
+Fixing safety first creates a liveness failure with no manual escape. This also
+raises AIF-113 from housekeeping to a blocking dependency, which was not its
+status when it was chartered.
+
+## 11. There is no regression test for locking
+
+`grep -rln "try_lock_table\|try_lock_record\|LOCK TABLE\|xbase::locks" tests/`
+returns nothing. No test file references the lock subsystem in any form.
+
+That is the reason a deterministic, every-single-time defect survived in every
+committed version of the file since 2026-07-14. It is not a subtle bug and it
+does not need a clever test -- the two-process reproduction in section 8 is the
+whole test, and any assertion that the second acquire is refused would have
+caught it on day one.
+
+Minimum coverage to add with the fix:
+
+1. Second process is **refused** while the first holds a table lock.
+2. Second process is refused while the first holds a **record** lock.
+3. A lock whose owner process is genuinely gone **is** reclaimed as stale.
+4. An owner string that cannot be parsed **fails closed** (presumed alive).
+5. Round-trip: the pid written to the sidecar reads back byte-identical, under a
+   grouping locale. This is the direct regression guard for this defect.
+
+Test 5 is the one that generalises: it would also catch the next site the
+AIF-031 audit misses.
+
+## 12. On the owner's recollection that this once worked
+
+The owner's read during the run was that locking behaved correctly when first
+written and broke when timestamps were added. Git cannot confirm or refute that:
+`src/xbase/xbase_locks.cpp` enters recorded history at `fecc3951e` (2026-07-14,
+a bulk "Checkpoint runtime source" import) already containing `make_owner_string`
+with `ms`, the `pid=` line, `is_pid_alive`, the `stoul` parse, and zero `imbue`
+calls. Across its entire recorded life the only substantive change is a
+`uint32_t` -> `uint64_t` recno widening. Any pre-timestamp version predates
+version control.
+
+But the recollection is probably right in substance, by a different route.
+**This code does not have to change in order to break.** It emits grouping only
+when a grouping locale is installed, and a repo-wide search finds no
+`std::locale::global` or `setlocale` call in `src/` or `include/` at all -- only
+the roughly twenty `imbue(std::locale::classic())` defences added by AIF-031.
+A sweep of twenty sites is what a team does *after* something starts installing
+a locale; the defences are evidence of the event.
+
+So the likely history is: the lock code was written correct-by-default under the
+classic locale, something later introduced a grouping locale at runtime, AIF-031
+was the cleanup, and `xbase_locks.cpp` was missed. That matches "it used to work
+and I did not change it."
+
+**This thread is unresolved and worth closing**, because it decides the scope of
+the fix. If a locale is installed at runtime rather than in code, imbuing the two
+lock sites is necessary but not sufficient -- the correct remedy is a rule that
+every value serialised to disk is locale-immune, enforced by a gate rather than
+by twenty remembered `imbue` calls. Locating the installation point is the next
+step and needs a host-side search wider than `src/` and `include/`.
+
+---
+
+**Recorded by** `member.ai.claude.cowork` from a live run driven by the owner.
+**Owner** `member.derald`. The run was operated host-side; the scribe has no
+runtime access and verified every source claim against the tree at
+`fb7106e0`.
