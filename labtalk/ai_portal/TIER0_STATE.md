@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-08-15T19:49:35Z
+    generated_utc : 2026-08-15T19:52:38Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,8 +11,8 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : d4661f4a3  (2026-08-15)
-    upstream      : d4661f4a3
+    HEAD          : 2fb514296  (2026-08-15)
+    upstream      : 2fb514296
     unpushed      : 0 commit(s) ahead of upstream
 
 ## Declared target
@@ -23,20 +23,19 @@ cannot drift, because nothing here is written by hand.
 ## Newest closeout
 
     file          : SESSION_CLOSEOUT_WORKSPACE_WRITEBACK_REGRESSION_2026-08-12.md
-    commits behind HEAD : 56
+    commits behind HEAD : 57
 
 ## Staleness warnings
 
-- The newest closeout is 56 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
-- Claim(s) with no intake row, so they read as ABANDONED from HEAD: AIF-113, AIF-114, AIF-115. Same shape as AIF-062/078/080.
+- The newest closeout is 57 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
 
 ## Claimed lanes (newest first)
 
 | AIF | lane | steward | intake row |
 | --- | --- | --- | --- |
-| AIF-115 | recall-graph-trigger-drift | member.derald | **MISSING** |
-| AIF-114 | set-family-doc-drift | member.derald | **MISSING** |
-| AIF-113 | lock-release-recovery | member.derald | **MISSING** |
+| AIF-115 | recall-graph-trigger-drift | member.derald | yes |
+| AIF-114 | set-family-doc-drift | member.derald | yes |
+| AIF-113 | lock-release-recovery | member.derald | yes |
 | AIF-112 | site-and-guard-hardening | member.ai.claude.cowork | yes |
 | AIF-111 | sandbox-build-ceiling | member.ai.claude.cowork | yes |
 | AIF-110 | fieldmgr_x64m_identity | member.derald | yes |
