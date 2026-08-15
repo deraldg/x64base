@@ -27,7 +27,29 @@ export function VisitorCount() {
   // Read on the client only. localStorage does not exist during the server
   // render, and reading it in the render body would hydrate inconsistently.
   const [skip, setSkip] = useState<NoCountMode>(null);
-  useEffect(() => setSkip(noCountMode()), []);
+  // `mounted` is what makes the opt-out real, and it was missing on release 127.
+  //
+  // The badge is an <img>. If the server render emits it, the tag lands in the
+  // static HTML and the browser fetches it BEFORE any JavaScript runs -- so the
+  // visit is already counted and the address already sent by the time the
+  // effect below reads localStorage. Measured live on 127: with the mode set to
+  // "silent" the badge correctly disappeared, and the request had still gone
+  // out (1 entry to laobi.icu in the resource timings). "quiet" was worse: the
+  // first, uncounted-URL request fired, THEN the element swapped to
+  // query_only=true. The opt-out hid the evidence instead of preventing it.
+  //
+  // Gating on `mounted` keeps the tag out of the static HTML entirely, so the
+  // request is only ever made after the preference has been read.
+  //
+  // The cost, stated because it is a real loss: visitors with JavaScript off no
+  // longer get counted, and no-JS counting was the reason an <img> was chosen
+  // over a script in the first place. An opt-out that actually opts out is
+  // worth more than counting the small share of readers who browse without JS.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setSkip(noCountMode());
+    setMounted(true);
+  }, []);
   const url = goatcounterTotalUrl();
 
   useEffect(() => {
@@ -60,6 +82,9 @@ export function VisitorCount() {
   // No GoatCounter code, or its fetch failed: fall back to the badge image.
   // An <img> needs no JS to count, so this still works where a script would
   // not -- which is why it is the fallback rather than the other way round.
+  // Never on the server, and never before the preference is known.
+  if (!mounted) return null;
+
   const badge = visitorBadgeUrl(skip);
   if (!badge) return null; // "silent": no request is made at all
 
