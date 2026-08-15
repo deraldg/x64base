@@ -13,6 +13,10 @@ always correct because they are raw strings; only the documentation lied.
 Known roles:
   D:\code\ccode  -> development authoring worktree; may push development only.
   C:\x64base     -> sterilized staging worktree; may push main only.
+  linked worktree cut from origin/main -> may push its OWN topic branch only,
+      for opening a pull request into main. Never main, never development, and
+      never a branch that carries development history. See
+      detect_branch_cut_role for the four conditions, all of which must hold.
 
 The pre-push mode reads Git's update records from stdin:
   <local-ref> <local-sha> <remote-ref> <remote-sha>
@@ -121,6 +125,96 @@ def detect_role(root: str) -> RepositoryRole | None:
         if root_windows == windows_key(role.root):
             return role
     return None
+
+
+def linked_worktree_parent(root: str) -> str | None:
+    """Return the main repository root if `root` is a LINKED worktree of it.
+
+    In a linked worktree Git's own directory is <common>/worktrees/<name> while
+    --git-common-dir still points at the main repository's .git. When the two
+    differ, this is a linked worktree, and the parent root is the directory
+    holding that common .git.
+
+    Returns None for the main worktree itself, and for anything Git refuses to
+    answer about.
+    """
+    try:
+        git_dir = git_output(root, "rev-parse", "--absolute-git-dir")
+        common = git_output(root, "rev-parse", "--git-common-dir")
+    except RuntimeError:
+        return None
+    if not os.path.isabs(common):
+        common = os.path.normpath(os.path.join(root, common))
+    if normalized_path(git_dir) == normalized_path(common):
+        return None
+    parent = os.path.dirname(common.rstrip("\\/"))
+    return parent or None
+
+
+def ref_is_ancestor(root: str, ref: str, sha: str) -> bool:
+    """True when `ref` exists locally and is an ancestor of `sha`."""
+    exists = subprocess.run(
+        ["git", "-C", root, "show-ref", "--verify", "--quiet", ref]
+    )
+    if exists.returncode != 0:
+        return False
+    return (
+        subprocess.run(
+            ["git", "-C", root, "merge-base", "--is-ancestor", ref, sha]
+        ).returncode
+        == 0
+    )
+
+
+def detect_branch_cut_role(root: str, branch: str) -> RepositoryRole | None:
+    """Recognise a PR branch cut from main, in a linked worktree.
+
+    ADDED 2026-08-14. The guard knew two roots and nothing else, so the
+    documented way to get a CI fix onto main -- cut a branch from origin/main in
+    a worktree, push it, open a pull request -- was refused outright, and the
+    only way through was `git commit --no-verify` plus `git push --no-verify`.
+    That is the worst outcome available: the guard did not permit a safe
+    operation, so the operator learned to switch it off entirely, and a habit of
+    --no-verify erodes every check it fronts, not just this one. A guard people
+    route around protects nothing.
+
+    So this permits exactly that workflow and nothing wider. ALL of these must
+    hold, or the role is refused and the old message stands:
+
+      1. `root` is a LINKED worktree whose parent is a declared root. A random
+         clone elsewhere on the disk is still refused.
+      2. The branch is neither `main` nor `development`. Those two keep their
+         existing single-root rules; a worktree cannot be used to reach them.
+      3. origin/main is an ancestor of HEAD -- the branch really was cut from
+         main and is proposing something main can fast-forward from.
+      4. origin/development is NOT an ancestor of HEAD. This is the load-bearing
+         one: without it, someone could branch off development inside a
+         worktree and push it as a "pull request", smuggling the whole
+         development history toward main and defeating the rule that
+         development is never merged into main.
+
+    The role it returns can push only its own branch, so the pre-push validator
+    needs no change: pushing anything else from this worktree is still refused.
+    """
+    if branch in ("", "main", "development"):
+        return None
+    parent = linked_worktree_parent(root)
+    if parent is None or detect_role(parent) is None:
+        return None
+    try:
+        head = git_output(root, "rev-parse", "HEAD")
+    except RuntimeError:
+        return None
+    if not ref_is_ancestor(root, "refs/remotes/origin/main", head):
+        return None
+    if ref_is_ancestor(root, "refs/remotes/origin/development", head):
+        return None
+    return RepositoryRole(
+        name="branch-cut-from-main",
+        root=root,
+        required_branch=branch,
+        allowed_remote_branch=branch,
+    )
 
 
 def git_output(root: str, *args: str) -> str:
@@ -376,7 +470,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"repository-role-guard: {exc}", file=sys.stderr)
         return 4
 
-    role = detect_role(root)
+    role = detect_role(root) or detect_branch_cut_role(root, branch)
     allow_staging_branch = (
         args.allow_staging_branch
         or os.environ.get("X64BASE_ALLOW_STAGING_BRANCH") == "1"
