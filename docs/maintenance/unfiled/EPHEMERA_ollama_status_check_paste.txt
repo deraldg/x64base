@@ -1,9 +1,0 @@
-derald@Grimwood:/mnt/c/Users/deral/code$ systemctl is-active ollama          # active
-ss -tlnp | grep 11434               # 127.0.0.1:11434
-ollama list                         # qwen2.5-coder:7b present?
-activating
-NAME                ID              SIZE      MODIFIED
-qwen2.5-coder:7b    dae161e27b0e    4.7 GB    35 hours ago
-derald@Grimwood:/mnt/c/Users/deral/code$
-
-
