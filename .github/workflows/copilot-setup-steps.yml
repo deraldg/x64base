@@ -1,0 +1,22 @@
+# GitHub Copilot coding agent -- environment setup.
+#
+# GitHub runs the job named `copilot-setup-steps` before the agent starts, to prepare its
+# environment. This installs the Ubuntu build prerequisites so the agent can configure, build, and
+# ctest the engine, mirroring the `ubuntu-core` job in ci.yml. Keep the two in sync.
+name: Copilot Setup Steps
+
+on:
+  workflow_dispatch:
+
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install native build prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build cmake autoconf autoconf-archive automake libtool
