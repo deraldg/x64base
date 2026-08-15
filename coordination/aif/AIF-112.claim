@@ -3,3 +3,16 @@ run_id: COWORK-20260814-001
 member: member.ai.claude.cowork
 lane: site-and-guard-hardening
 claimed_utc: 2026-08-15T02:53:35Z
+# --- reconciliation note (added 2026-08-15, maintainer-confirmed) ---
+# The five lines above are the immutable claim record, kept verbatim.
+# This number was claimed by member.ai.claude.cowork ON BEHALF OF member.ai.grok.xai;
+#   Outside-AI cannot run claim-aif on the host. The recorded lane text
+#   "site-and-guard-hardening" is a Claude placeholder, kept for transparency.
+# Maintainer-confirmed assignment: AIF-112 = Grok (member.ai.grok.xai, Outside-AI, access_mode:
+#   remote) for the Document Control / Inventory / Check-in-Check-out PDLC.
+# driving member / steward : member.ai.grok.xai
+# on-disk secondary + scribe: member.ai.claude.cowork
+# owner                     : member.derald
+# acceptance package        : AIPR-20260815-GROK-001
+# lane charter              : docs/maintenance/DOCUMENT_CONTROL_INVENTORY_CHECKINOUT_PDLC_LANE_V1.md
+# intake row + full scope   : docs/ai-friendly/AI_INTERACTION_INTAKE_QUEUE_V1.md (AIF-112)

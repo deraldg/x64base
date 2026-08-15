@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-08-15T02:54:07Z
+    generated_utc : 2026-08-15T12:49:09Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,9 +11,9 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : 1e3a94a1d  (2026-08-14)
+    HEAD          : fde924ab0  (2026-08-14)
     upstream      : 23a5ad336
-    unpushed      : 5 commit(s) ahead of upstream
+    unpushed      : 6 commit(s) ahead of upstream
 
 ## Declared target
 
@@ -23,19 +23,18 @@ cannot drift, because nothing here is written by hand.
 ## Newest closeout
 
     file          : SESSION_CLOSEOUT_WORKSPACE_WRITEBACK_REGRESSION_2026-08-12.md
-    commits behind HEAD : 43
+    commits behind HEAD : 44
 
 ## Staleness warnings
 
-- The newest closeout is 43 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
-- Claim(s) with no intake row, so they read as ABANDONED from HEAD: AIF-112. Same shape as AIF-062/078/080.
-- 5 commit(s) are unpushed and invisible to a clone.
+- The newest closeout is 44 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
+- 6 commit(s) are unpushed and invisible to a clone.
 
 ## Claimed lanes (newest first)
 
 | AIF | lane | steward | intake row |
 | --- | --- | --- | --- |
-| AIF-112 | site-and-guard-hardening | member.ai.claude.cowork | **MISSING** |
+| AIF-112 | site-and-guard-hardening | member.ai.claude.cowork | yes |
 | AIF-111 | sandbox-build-ceiling | member.ai.claude.cowork | yes |
 | AIF-110 | fieldmgr_x64m_identity | member.derald | yes |
 | AIF-109 | dotscript-product-gaps | member.ai.claude.cowork | yes |
