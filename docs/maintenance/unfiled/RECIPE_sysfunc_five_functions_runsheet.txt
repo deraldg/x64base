@@ -1,0 +1,31 @@
+Before I hand you commands, let me confirm the exact seed tooling so they're accurate (the SYSFUNC re-harvest path especially).Confirmed the tooling. Here's the ordered set to take everything green. All on your Windows box, from `D:\code\ccode`.
+
+**1. Prove the five new functions evaluate (quick sanity):**
+```powershell
+.\datarun.ps1 -CommandLines '? PROPER("john smith")','? PADL("7",4,"0")','? PADR("7",4,"0")','? PADC("AB",6,"*")','? STUFF("ABCDE",2,2,"xy")'
+```
+Expect: `John Smith`, `0007`, `7000`, `**AB**`, `AxyDE`. (If `?` doesn't print, use `CALC PROPER("john smith")` etc.)
+
+**2. Re-harvest SYSFUNC so the catalog gains the 5 (clears `normcheck` `FN_COVERAGE`):**
+```powershell
+cmake --build build --target metacollect --config Release
+.\build\Release\metacollect.exe D:\code\ccode --sysfunc-import-out dottalkpp\data\scripts\metadata\SYSFUNC_IMPORT_v1.csv
+.\datarun.ps1 -CommandLines 'DOTSCRIPT D:\code\ccode\dottalkpp\data\scripts\metadata\SYSFUNC_SEED_v1.dts'
+```
+Expect SYSFUNC readback = 74 (69 + STUFF/PADL/PADR/PADC/PROPER).
+
+**3. Re-seed SYSCMD so it drops `SIMPLEBROWSE`/`SMARTBROWSE` and carries `...BROWSER` (clears `normcheck` `IDENTITY`):**
+```powershell
+python tools\fullstack_docs\generate_syscmd.py --root . --write
+.\datarun.ps1 -CommandLines 'DOTSCRIPT D:\code\ccode\dottalkpp\data\scripts\metadata\SYSCMD_SEED_v1.dts'
+```
+*(This is the interim path via the live Python generator; retiring it for the metacollect harvester is the M0 unwind — a separate, later step. It's fine to use now.)*
+
+**4. Verify both guards are green:**
+```powershell
+python tools\fullstack_docs\refcheck_v1.py --root .
+python tools\fullstack_docs\normcheck_v1.py .
+```
+Expect `refcheck` PASS, and `normcheck` all six lanes at 0 → exit 0. That's the catalog surface publish-clean.
+
+Two notes: metacollect reflects source, so step 2's rebuild is just insurance (skip it if metacollect parses `.cpp` statically); and after seeding, `SYSCMD.dbf`/`SYSFUNC.dbf` and their LMDB envs change — commit or not per your regenerable-data call. Once step 4 is green, the prepush gate's advisory goes quiet on its own, and you can flip `--strict-norm` on whenever you want it enforced hard.

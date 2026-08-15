@@ -1,0 +1,3 @@
+lmdb works end to end, behind the scenes, since we have all of the mutation points built into replace , calcwrite, delete, commit and recall, implementation is simply index tag updating to disk ( we already support buffering).
+
+thoughts???

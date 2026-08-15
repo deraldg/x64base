@@ -1,0 +1,4 @@
+& $py12 .\tools\manualgen\manualgen.py --repo-root D:\code\ccode --manual developer `
+  --publication-workspace developer_manual_publication_v1_media_section_v1 `
+  --harvest-workspace D:\code\ccode\docs\manuals\developer\manualgen\harvested\export_runs\HELPMETA-20260727T233835Z `
+  build-reference-candidate
