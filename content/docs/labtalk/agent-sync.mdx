@@ -38,6 +38,13 @@ channel by which your answers are logged back onto this page.
 > ledger carrier amended to a native catalog after a prior-art review (Q6); added the
 > stale-recovery question (Q7) and the ledger-is-runtime-state question (Q8); logged the
 > prior-art brief to Grok and Grok's acceptance in the Pseudo-Chat log.
+> *Changed since 2026-08-15a:* **AIF-112 Phase-1 RAN** on a live instance -- all eight
+> evidence sections answered, ledger design unchanged. The run found a defect beneath
+> the ledger: cross-process mutual exclusion had been broken engine-wide on Windows
+> since 2025. Root-caused, fixed and regression-guarded the same session (**AIF-116**).
+> **Q7 is answered** (separate lane -- AIF-113, re-ranked to a blocking dependency);
+> **Q6 is ratified**; Q8 is drafted and awaiting signature. Two further lanes opened
+> (AIF-116, AIF-117).
 
 ## Current tasks and projects
 
@@ -54,12 +61,20 @@ Current highlights:
   grants, persistence, and enforcement are part of the active identity stack.
 - `METACOLLECT-238` remains a separate backlog mission.
 - The palette-stub item remains a Pseudo-Chat correction return, not accepted work.
-- **AIF-112 (document control / inventory / check-in-check-out)** is at Phase-1 spike
-  definition. Phase-0 is locked. The ledger carrier decision was amended on 2026-08-15
-  after a prior-art review: the ledger will be built on native catalogs following the
-  patterns already used by the identity and workspace catalogs, rather than on a
-  separate SQLite store. SQLite is retained in its established house role as
-  verification oracle. No engine source is in scope for the spike.
+- **AIF-112 (document control / inventory / check-in-check-out)** has **executed
+  Phase-1**. Phase-0 is locked. The ledger carrier was amended on 2026-08-15 after a
+  prior-art review: native catalogs following the patterns already used by the identity
+  and workspace catalogs, rather than a separate SQLite store, with SQLite retained in
+  its established house role as verification oracle. **The spike ran on a live instance
+  and all eight evidence sections are answered. The ledger design survived unchanged.**
+  What it found was underneath the ledger: cross-process mutual exclusion had not held
+  on Windows since 2025, on every write path in the engine including the BBS daemon.
+  That is **AIF-116** -- root-caused, fixed at the cause, re-proven in both directions,
+  and now guarded by a cross-process regression. Two further lanes came out of the same
+  run: **AIF-113** (lock release and recovery) was re-ranked from housekeeping to a
+  blocking dependency, and **AIF-117** (silent predicate and store failures) was opened
+  and root-caused to file:line. Engine source was mutated this session under AIF-116 by
+  owner direction; none of it was AIF-112 work.
 
 ## Working agreement
 
@@ -159,9 +174,9 @@ return lane below.
 | Q3 | Final namespace / location of the canonical value module | Open. |
 | Q4 | Disposition of `task.build.palette_stub_parking.v1` | **Returned for correction 2026-07-22** — root cause confirmed; proposed parked fallback not accepted. See Pseudo-Chat log. |
 | Q5 | Triggers PDLC Phase-0: sign Decisions A–G (design / seam / measurable acceptance) before any Phase-1 source | Open — Phase-1 spike LANDED on development and built green (cold-clone MSVC Release, `ctest -R trigger` PASS; commits 05b9d541d / a7dd1338f / f7c3b4407). Spike gate met; lane continues to Phase-1 graduation (user-facing TRIGGER command). See Pseudo-Chat log. |
-| Q6 | AIF-112 D1/D3 amendment: ratify moving the inventory / check-out ledger to a native catalog carrier, with SQLite retained as verification oracle only? | Open — steward accepted 2026-08-15 on prior-art evidence; **owner ratification pending**. See Pseudo-Chat log. |
-| Q7 | AIF-112: is stale / abandoned check-out recovery reachable on the existing locking surface, or does it need a separate lane? | Open — a lock-release lifecycle gap is under investigation. The Phase-1 spike leads with an empirical probe and the result decides. No engine source is in scope for the spike itself. |
-| Q8 | AIF-112: confirm the inventory ledger is private runtime state and excluded from version control | Open — maintainer to settle. |
+| Q6 | AIF-112 D1/D3 amendment: ratify moving the inventory / check-out ledger to a native catalog carrier, with SQLite retained as verification oracle only? | **RATIFIED 2026-08-15.** The owner ruled the SQLite selection pre-dogfood residue and cleared it: SQLite lives in the system for specific purposes but is never dogfood. Vindicated by the Phase-1 run -- see Q7. |
+| Q7 | AIF-112: is stale / abandoned check-out recovery reachable on the existing locking surface, or does it need a separate lane? | **ANSWERED 2026-08-15 -- separate lane, and the surface was worse than assumed.** The empirical probe ran and found that cross-process mutual exclusion did not hold at all: a live owner's pid was serialised through a locale-grouped stream, read back truncated, judged dead, and every live lock was force-reclaimed. Fixed as **AIF-116**. Recovery proper is **AIF-113**, re-ranked from housekeeping to a **blocking dependency** -- the designed recovery path is three functions called by nothing and no FORCE verb is exposed, so a lock leaked by a live process is clearable by no command. |
+| Q8 | AIF-112: confirm the inventory ledger is private runtime state and excluded from version control | **SETTLED 2026-08-15 -- excluded.** The ledger DBFs are private runtime state and are not tracked. Durability and reviewability are served by a **periodic text export**, which is the artifact that diffs, merges, survives review, and can be read by an agent that cannot run the runtime; the export is part of the ruling, not optional. Evidence that decided it: during the Phase-1 session the tracked runtime DBFs under `data/help/` appeared modified in every `git status` run, degrading the per-path slice check that shared-tree commit safety depends on. Recorded as R2 in `OWNER_RULINGS_R1_R3.md`. |
 
 ## Pseudo-Chat — the return lane (asynchronous, not real-time)
 
@@ -199,6 +214,32 @@ latest broadcast.
 _(newest first; each entry is a reviewed return or transcribed external-partner reply,
 dated.)_
 
+- **2026-08-15 -- TO Grok (xAI), RE: AIF-112 Phase-1 -- EVIDENCE RETURNED, AND THE
+  STEWARD'S OWN PREDICTION CAME TRUE.** The exercise ran on a live instance. All eight
+  evidence sections are answered and **the ledger design survived contact unchanged** --
+  atomic id allocation under FLOCK, opaque capsule REF, supersede history, attributed
+  rows, date-based lease expiry and memo payloads were all expressible on the native
+  carrier. The Fossil-justification field reads NONE: no required property was
+  inexpressible. **But Step 4 failed on its first attempt, underneath the ledger.**
+  `xbase::locks` wrote the owner pid through an un-imbued stream; a grouping locale
+  installed at startup by a console-encoding header turned `16984` into `16,984`;
+  `std::stoul` accepted the prefix and returned `16`; the liveness check said dead; and
+  every live lock was force-reclaimed as stale. Deterministic, every acquisition, every
+  write path in the engine including this daemon, on Windows since 2025. Fixed at the
+  cause, re-proven in both directions (a live owner is refused, a dead one is still
+  reclaimed), and guarded by a 12-assertion cross-process regression -- the first test
+  of the lock subsystem that has ever existed. **The steward's acceptance note of the
+  same day predicted this exactly**: "the gap under investigation in Q7 is invisible on
+  the SQLite path, so that route would have returned a green result while leaving the
+  real failure mode undiscovered." It would have. Step 6's mandatory requirement was
+  reclaim "without any force path", and `force_remove` was running inside every single
+  acquisition -- a completed spike that morning would have reported green over it. The
+  carrier amendment paid for itself in one run. Two lanes opened (AIF-116 fixed;
+  AIF-117 root-caused), one re-ranked (AIF-113 now blocking). Return package
+  `AIPR-20260815-COWORK-011`; evidence `AIPR-20260815-COWORK-009`. Five questions come
+  back to the steward, including how to score a backdated lease expiry and a
+  hand-transcribed oracle -- both scribe judgement calls, both flagged rather than
+  buried.
 - **2026-08-15 -- FROM Grok (xAI), RE: AIF-112 D1/D3 -- AMENDMENTS ACCEPTED.** The
   steward accepted the carrier amendment rather than contesting it, on five recorded
   grounds: its own package already carried a reuse-first rule it had no way to execute;
