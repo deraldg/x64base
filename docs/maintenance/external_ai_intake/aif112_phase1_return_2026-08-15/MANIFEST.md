@@ -67,7 +67,7 @@ Two documents travel together. **Send both.**
 | # | Document | State |
 |---|---|---|
 | 1 | `docs/maintenance/AIF112_PHASE1_EVIDENCE_AND_STEWARD_HANDOFF_4_V1.md` (AIPR-20260815-COWORK-009) | committed, `57c2d1634` |
-| 2 | `notes/OWNER_RULINGS_R1_R3.md` (in this package) | see its own status line |
+| 2 | `notes/OWNER_RULINGS_R1_R3.md` (in this package) | **SIGNED 2026-08-15**, all three as recommended |
 
 **Document 1 is not duplicated into this package, deliberately.** `CLAUDE.md`
 cites AIF-082 6.8 -- "two shims that restate will diverge, and have" -- and a
@@ -101,8 +101,14 @@ open or omitted:
   this item entirely**; it needs a ruling from scratch.
 
 Each carries the evidence the exercise produced, the options, a scribe
-recommendation, and a signature line. The recommendations are the scribe's and
-carry no authority until the owner signs.
+recommendation, and a signature line.
+
+**All three were signed by the owner on 2026-08-15, as recommended.** The
+recommendations are preserved as written so the reasoning that was signed stays
+visible alongside the outcome. R2 closes Q8 on the Agent Sync page. R3 was ruled
+jointly with AIF-113's FORCE verb, since both are break-glass overrides and one
+permission pattern should serve both -- **the first decision in this lane made
+before the code that needs it**, rather than by measuring what already existed.
 
 ## Lanes this exercise opened, for the steward's awareness
 

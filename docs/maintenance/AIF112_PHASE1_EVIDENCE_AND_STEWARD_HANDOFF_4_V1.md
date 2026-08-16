@@ -383,12 +383,25 @@ numbers.**
 2. **Score Step 7.** A hand-transcribed oracle over an undeclared lossy mapping
    found a real bug. Does that meet the oracle bar, or does the bar require the
    automated export before Phase 2?
-3. **Attribution stays a string stamp?** Confirmed against 106 live WORKSPACES
-   rows. Cost: no referential integrity, no rename propagation. Phase-1 default
-   was yours; Phase 2 should either confirm or upgrade deliberately.
-4. **Three items remain unruled by the owner from your PDLC map** -- attribution
-   (defaulted above), Q8 ledger-excluded-from-Git, and `inv.break`
-   maintainer-only. Your map omits `inv.break` entirely.
+3. ~~**Attribution stays a string stamp?**~~ **RULED 2026-08-15 -- yes.** String
+   stamp for Phase 1, confirmed against 106 live `WORKSPACES` rows. An `N(20)`
+   FK may be added alongside in Phase 2 if the live join is wanted; it does not
+   replace the stamp, because an FK follows a rename and would rewrite history.
+   Your Phase-1 recommendation is adopted as written.
+4. ~~**Three items remain unruled.**~~ **ALL THREE RULED 2026-08-15**, as
+   recommended, in `notes/OWNER_RULINGS_R1_R3.md` of the return package:
+   **R1** attribution -- string stamp (above).
+   **R2** the ledger is private runtime state, **excluded from version
+   control**, with a periodic text export as the durable and reviewable
+   artifact. This closes your Q8. Note the export is part of the ruling, not an
+   optional companion -- excluding without exporting trades a noisy repository
+   for an undurable ledger.
+   **R3** `inv.break` is `RiskClass::Critical`, approval required, owner exempt,
+   on the `cmd_bang.cpp` model. Ordinary ledger writes stay on
+   `database.mutate` and need no new permission. **Your PDLC map omitted this
+   item**, so it was ruled from scratch -- and ruled jointly with AIF-113's
+   FORCE verb, since both are break-glass overrides and one pattern should
+   serve both.
 5. **Does the G1 pattern block Phase 2?** The scribe's reading is no: a compiled
    command family calls the evaluation layer directly and sees errors the CLI
    drops. If you disagree, it becomes a prerequisite rather than a neighbour.

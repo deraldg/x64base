@@ -1,9 +1,8 @@
 # Owner Rulings R1-R3 -- AIF-112 Phase-1
 
-**Status: DRAFTED, UNSIGNED.** Every recommendation below is the scribe's and
-carries no authority. Each item ends with a signature line. Until an item is
-signed, the Phase-1 evidence return records the scribe's default, not a ruling,
-and says so.
+**Status: SIGNED 2026-08-15.** All three ruled by the owner in-session, as
+recommended. The scribe's recommendations below are preserved as written so the
+reasoning that was signed is visible, not just the outcome.
 
 **Owner:** `member.derald`. **Drafted by:** `member.ai.claude.cowork`.
 **Evidence baseline:** runtime `fe42666e`, tree `b8dc1e6fe`.
@@ -52,9 +51,12 @@ currently holding role X" is not a query the ledger can answer alone.
 an FK column later is additive; removing a stamp later is not. Committing to the
 stamp now forecloses nothing.
 
-> **OWNER RULING R1:** ______________________________________________
+> **OWNER RULING R1 -- ACCEPTED AS RECOMMENDED.**
+> Attribution is a **string stamp** for Phase 1, matching `WORKSPACES`. An
+> `N(20)` FK may be added alongside it in Phase 2 if the live join is wanted;
+> the stamp is not replaced by it. History stays immutable.
 >
-> Signed: ______________________  Date: ____________
+> Signed: **member.derald**  Date: **2026-08-15**
 
 ---
 
@@ -102,9 +104,14 @@ artifact.** Note that `data/dbf/sandbox/**` already sits outside the promotion
 manifest, so the spike tables are correctly placed today -- by accident, not by
 decision. Make it a decision.
 
-> **OWNER RULING R2:** ______________________________________________
+> **OWNER RULING R2 -- ACCEPTED AS RECOMMENDED.**
+> The inventory ledger DBFs are **private runtime state and excluded from
+> version control**. Durability and reviewability are served by a **periodic
+> text export**, which is the artifact that diffs, merges, survives review, and
+> can be read by an agent that cannot run the runtime. This closes Q8 on the
+> Agent Sync page.
 >
-> Signed: ______________________  Date: ____________
+> Signed: **member.derald**  Date: **2026-08-15**
 
 ---
 
@@ -155,17 +162,39 @@ And decide it once for two consumers: **AIF-113's FORCE verb is the same shape**
 `inv.break` and `FORCE UNLOCK` are ruled together, they can share one pattern
 instead of diverging into two.
 
-> **OWNER RULING R3:** ______________________________________________
+> **OWNER RULING R3 -- ACCEPTED AS RECOMMENDED.**
+> `inv.break` is **`RiskClass::Critical`, approval required, owner exempt**,
+> checked at the call site on the `cmd_bang.cpp` model. Ordinary ledger writes
+> stay on `database.mutate` and need no new permission. **AIF-113's FORCE verb
+> is ruled the same way by the same reasoning** -- one break-glass pattern, two
+> consumers, decided once.
 >
-> Signed: ______________________  Date: ____________
+> Signed: **member.derald**  Date: **2026-08-15**
 
 ---
 
-## What happens when these are signed
+## Carried out on signature, 2026-08-15
 
-1. The rulings are transcribed into this file with the owner's wording.
-2. `AIF112_PHASE1_EVIDENCE_AND_STEWARD_HANDOFF_4_V1.md` section 4 is updated --
-   it currently lists all three as open and R1 as carrying a scribe default.
-3. The intake row for AIF-112 records the rulings.
-4. R3, if accepted as written, becomes a stated input to AIF-113's design
-   options rather than an independent decision made later under time pressure.
+1. **Done** -- rulings recorded above.
+2. **Done** -- `AIF112_PHASE1_EVIDENCE_AND_STEWARD_HANDOFF_4_V1.md` section 4
+   updated; R1 no longer reads as a scribe default.
+3. **Done** -- Agent Sync Q8 closed by R2.
+4. **Done** -- R3 is now a stated input to AIF-113's design options rather than
+   a decision made later under time pressure. AIF-113's charter lists a
+   permission-gated FORCE verb as option 2; that option now has its permission
+   shape fixed before the work starts.
+
+## Consequences worth stating
+
+**R1** forecloses nothing. The FK remains addable and the stamp remains
+authoritative for history.
+
+**R2 creates one piece of owed work that did not exist before signature:** the
+text export. Excluding the ledger from Git without building the export trades a
+noisy repository for an undurable ledger, which is a worse position than either.
+The export is the ruling, not an optional companion to it.
+
+**R3 is the first decision this lane has made BEFORE the code that needs it.**
+Every other permission question in the exercise was answered by measuring what
+already existed. This one sets a shape for two consumers in advance -- which is
+the PDLC working as intended rather than as archaeology.
