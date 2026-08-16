@@ -631,9 +631,31 @@ because someone once settled for expected.**
 
 ### 13c. What this does not yet cover
 
-- **No regression test exists yet.** Section 11's five cases remain owed, and
-  they must run on Windows -- see 12b, the defect cannot reproduce under
-  `C.UTF-8`.
+- ~~**No regression test exists yet.**~~ **CLOSED 2026-08-15.**
+  `tools/regression/lock_mutual_exclusion_regression.ps1`, 12 assertions across
+  5 tests, all green at `fe42666e`. Covers section 11's list: pid round-trips
+  with no grouping (the direct guard), a dead owner IS still reclaimed, a live
+  foreign owner is refused and its sidecar left intact, a malformed pid fails
+  CLOSED, and a record lock is refused under a live foreign table lock. Skips
+  on non-Windows by design -- the defect cannot reproduce under `C.UTF-8`
+  (12b), so a green run there would be meaningless and a red one worse.
+  **Method note worth keeping.** It is PowerShell, not a `.dts`, because the
+  property is cross-process and a script inside one engine instance cannot
+  express it. Tests 3 to 5 FABRICATE a `.lock` sidecar with a chosen pid rather
+  than orchestrating a second live engine, which makes "alive" and "dead"
+  deterministic instead of timing-dependent; the cost is that the harness
+  hardcodes the sidecar FORMAT, so a deliberate format change will fail it.
+  That coupling is intentional -- the format is a cross-process protocol -- and
+  is recorded in the script header rather than left to be discovered.
+  **And it caught itself first.** T5 failed on the first run, reporting that a
+  record lock had been granted under a foreign table lock. It had not: the
+  fixture table was empty, `GO TOP` had nothing to land on, and `LOCK` returned
+  "no current record" -- which matched neither success nor the expected refusal
+  string. A test whose fixture fails silently and then reports a defect is the
+  same disease as AIF-117. Fixed by making setup verify persistence in a third
+  process and by asserting the cursor is on a real record before judging the
+  lock. Recorded because the first version would have sent someone hunting a
+  defect that was not there.
 - **The gate is not built.** Section 12c's durable remedy -- fail any new
   `std::locale::global` that does not override the `numeric` category -- is
   still a proposal. Without it the one-line fix is reversible by the next person
