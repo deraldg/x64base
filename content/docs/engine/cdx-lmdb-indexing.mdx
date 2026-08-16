@@ -14,14 +14,61 @@ Canonical source:
 
 ## Teaching Model
 
-The LabTalk explanation should start with the learner-visible model:
+The learner-visible model is a chain, and the order of its links is the lesson:
+
+**index -> index flavor -> order**
 
 1. A table stores records.
-2. A CDX container stores named logical tags for that table.
-3. An active order changes navigation without changing physical record order.
-4. LMDB is the backend index environment that makes the built order durable and fast.
+2. `SET INDEX` attaches a container. **This is where the flavor is decided** -- `.cnx`, `.cdx` or `.inx` -- not later.
+3. `SET ORDER` selects a named tag *inside* the flavor already chosen.
+4. An active order changes navigation without changing physical record order.
 
-That distinction matters. CDX is the container, creator, and manager surface for indexes in the xBase lineage. LMDB is the embedded database technology used underneath the modern x64base implementation.
+With no container attached you get logical, natural record order. That is the
+absence of an index rather than a fourth flavor.
+
+## CDX's backend depends on where the table lives
+
+This is the part most easily got wrong, because "CDX means LMDB" is true only
+on disk:
+
+| residence | CDX backend | maintains on mutation? |
+| --- | --- | --- |
+| disk | LMDB environment | yes |
+| vRAM | native CDX-V64 | **no** -- marks the container stale |
+
+**LMDB cannot live in vRAM.** `include/xbase/ramfs.hpp` states the reason
+plainly: LMDB "must mmap a real OS file", and the RAM filesystem has none. So
+`index_manager.cpp` routes RAM-resident tables to a "native CDX-V64 backend
+(uint64, LMDB-free) served from RAM", skipping the LMDB environment gate
+entirely. That native backend does not incrementally maintain: its `upsert` and
+`erase` mark the container stale and a rebuild reconstructs it.
+
+## Why CNX was reactivated for v64
+
+That constraint is the reason, and it is worth stating as cause and effect
+rather than as two unrelated facts.
+
+CNX gained realtime index maintenance specifically to serve RAM-resident
+tables -- `cnx_backend.cpp` says the RAM/vdisk case is "the case this milestone
+exists to serve". Since LMDB-backed CDX is unavailable in vRAM and native CDX
+goes stale on mutation, CNX is the flavor that stays correct there.
+
+So an owner ruling on 2026-08-09 reactivated CNX for v64 tables: an explicit
+`.cnx` is accepted on a v64 table with an advisory, where it was previously a
+hard refusal. Two things did **not** change, and both matter:
+
+- **The default is untouched.** With no extension given, v64 still resolves to
+  `.cdx`. CNX only auto-resolves when a `.cnx` exists and no `.cdx` does, and
+  it says so: "no .cdx container found; using existing CNX (LMDB-backed CDX is
+  the preferred x64 index)."
+- **Nothing substitutes automatically.** The engine does not swap CDX for CNX
+  because a table is in RAM. The choice is explicit and travels per table in
+  the workspace posture (`index=` / `indextype=`), which is what lets one
+  workspace mix CNX, CDX and INX.
+
+CDX is the container, creator, and manager surface for indexes in the xBase
+lineage. LMDB is the embedded database technology used underneath the modern
+x64base implementation **on disk**.
 
 ## Source Evidence
 
@@ -30,7 +77,12 @@ The current source tree shows this split in several places:
 - `include/cdx/cdx.hpp` defines the minimal CDX container contract: header I/O, table binding, tag directory read/write, and add/drop tag operations.
 - `src/cli/cmd_cdx.cpp` exposes CDX container management commands.
 - `src/cli/cmd_buildlmdb.cpp` builds or rebuilds the LMDB backing store for a CDX container.
-- `src/cli/cmd_setorder.cpp` documents the policy: v64 tables use a CDX container backed by LMDB; public CDX paths resolve under `INDEXES`, while backend LMDB paths resolve under `LMDB`.
+- `src/cli/cmd_setorder.cpp` documents the policy: **disk-resident** v64 tables use a CDX container backed by LMDB; public CDX paths resolve under `INDEXES`, while backend LMDB paths resolve under `LMDB`. The same file carries the 2026-08-09 CNX-on-v64 ruling and its advisory.
+- `src/cli/cmd_setindex.cpp` calls itself a "Flavor-aware decision flow" and is where the flavor is chosen: classic xBase/VFP accepts `.inx` / `.cnx`, true x64/v128 prefers `.cdx`. Attach and tag activation are "two related decisions" -- which is the `index -> index flavor -> order` chain above.
+- `include/xbase/ramfs.hpp` records why the vRAM lane differs: LMDB "must mmap a real OS file", so it is out of scope for the RAM filesystem.
+- `src/xindex/index_manager.cpp` routes RAM-resident tables to the "native CDX-V64 backend (uint64, LMDB-free) served from RAM", skipping the LMDB environment gate.
+- `src/xindex/cdx_native_backend.cpp` states the native backend's limit in its own comment: it "does not incrementally maintain on mutation in v1", so `upsert` and `erase` mark the container stale.
+- `src/xindex/cnx_backend.cpp` records why CNX gained realtime maintenance: "RAM/vdisk tables are the case this milestone exists to serve."
 - `docs/cases/CASE_ENG_010_INDEX_NAVIGATION_CDX_LMDB.md` states the teaching rule directly: CDX is the user-facing logical container, and LMDB is a backend implementation detail.
 
 ## Operational Flow
