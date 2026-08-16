@@ -42,3 +42,11 @@ The diagram captures the current SelfDoc/LANE model:
   `SYSMEMBER`, `SYSASSIGN`, `SYSCHATLNK`, project/run registries, and the BBS
   tables. The diagram explicitly does not claim a production `SYSCHATLNK`
   catalog.
+- `ai_portal_bbs_pseudo_chat_relational_erd_v1.mmd` - normalized candidate
+  entity model keeping `SYSCHATLNK` as the assignment participation edge.
+- `ai_portal_bbs_pseudo_chat_relational_dfd_v1.mmd` - data flow showing the
+  interactive `dottalkpp` executable and the separate `dottalk_bbsd` daemon
+  converging on one guarded BBS/conversation writer boundary.
+- `ai_portal_bbs_pseudo_chat_relational_pfd_v1.mmd` - proposed write,
+  observation, readback, and recovery lifecycle. It is design intent, not a
+  production writer claim.

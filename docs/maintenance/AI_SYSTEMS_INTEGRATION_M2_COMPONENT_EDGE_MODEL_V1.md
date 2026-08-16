@@ -27,11 +27,13 @@ a generator or validator (all M3), change runtime, or dispose of anything. Nodes
 and node attributes are carried by reference from
 `AI_SYSTEMS_CROSSWALK_V1.md` so this model cannot silently diverge from the
 accepted map. The new content here is the source-of-record matrix, the typed
-edge set, and the added `ai.capability.egress` node.
+edge set, and the added `ai.capability.egress` node. The 2026-08-16 relational
+planning pass corrects the node count and incorporates the already-registered
+`ai.link.agent_assignment_conversation` component without claiming M2 exit.
 
 ## 2. Node set
 
-23 nodes: the 22 crosswalk components (attributes -- stable ID, label, owning and
+24 nodes: the 23 crosswalk components (attributes -- stable ID, label, owning and
 incorporating lifecycle, authority class, state -- authoritative in
 `AI_SYSTEMS_CROSSWALK_V1.md`) plus `ai.capability.egress` (added by the
 2026-08-05 discovery re-entry).
@@ -60,6 +62,7 @@ record (A-03, A-05).
 | `ai.transport.bbs` | `src/bbs/`, `src/cli/cmd_bbs.cpp` (+ `data/metadata/bbs/`) | transport, not authority |
 | `ai.handoff.worklog` | `docs/ai-friendly/AI_BBS_WORKLOG_HANDOFF_LANE_V1.md` | convenience handoff |
 | `ai.pattern.pseudo_chat` | none by design; resolves to decomposed components | pattern, never SoR |
+| `ai.link.agent_assignment_conversation` | `docs/contracts/AI_AGENT_ASSIGNMENT_LINK_CONTRACT_V1.md`; relational candidate in `docs/maintenance/AI_PORTAL_BBS_PSEUDO_CHAT_RELATIONAL_SCHEMA_PLAN_V1.md` | relationship crosswalk, not project or BBS authority |
 | `ai.projection.operations` | none; derives-from provenance/evidence/claims | derived projection (not a SoR) |
 | `ai.public.reports` | **OPEN**: no publication manifest yet (D2) | reviewed publication |
 | `ai.public.website` | website source + publication contract | publication, not dev authority |
@@ -68,7 +71,7 @@ record (A-03, A-05).
 
 ## 3. Typed edge set
 
-Edge types (directional): `incorporates`, `derives_from`, `projects`,
+Edge types (directional): `incorporates`, `derives_from`, `projects`, `binds`,
 `transports`, `coordinates`, `audits`, `gates`, `teaches`, `supersedes`.
 
 - `incorporates`: the AI Systems Integration SDLC incorporates every node above.
@@ -82,6 +85,11 @@ Edge types (directional): `incorporates`, `derives_from`, `projects`,
   - `ai.public.website` projects reviewed `ai.public.reports` + educational cases.
   - `ai.projection.operations` projects current operational state (F-07/F-08:
     request-time or auto-invalidated cache; visible stale/error state).
+- `binds`:
+  - `ai.link.agent_assignment_conversation` binds a governed assignment to a
+    shared local conversation and typed provider, Portal-context, BBS, language,
+    message-provenance, and UI-observation routes. Binding transfers no authority
+    and does not replace the referenced system of record.
 - `transports`:
   - `ai.transport.bbs` transports `ai.handoff.worklog`, guest `ai.intake.external`,
     and `ai.pattern.pseudo_chat` exchanges. Transport is evidence, not state (P-02).
@@ -108,7 +116,7 @@ M2 exit gate: every projection resolves to a canonical record and no duplicate
 system of record exists. Findings:
 
 - Every projection/transport/coordination node resolves to a canonical record or
-  is explicitly "not a SoR" and points at one. PASS for 21 of 23 nodes.
+  is explicitly "not a SoR" and points at one. PASS for 22 of 24 nodes.
 - **Open item O-1**: `ai.public.reports` has no canonical record yet (a
   publication manifest). Tracks D2/D4; must be created before public separation
   (M6). Blocks a clean M2 exit only for the publication subgraph.
@@ -117,6 +125,9 @@ system of record exists. Findings:
   reconciliation obligation 6). This is a rule, not a gap.
 - Carried identity debts, not resolved here: D8 (`AIF-064` dual meaning) and D9
   (fast-start 20-vs-19 field count). They remain blocked from silent adoption.
+- The assignment/conversation link has an approved contract and disposable
+  create/read proof, but its normalized relational family, production catalog,
+  writer, physical indexes, migration, and rollback remain M3 gates.
 
 ## 5. Requirement trace (F-05)
 
@@ -133,7 +144,9 @@ system of record exists. Findings:
 1. Owner ruling on O-1 (create a `public_report` publication manifest as the SoR
    for `ai.public.reports`, or defer to M6 with the gap recorded).
 2. Owner confirmation that the edge types and single-SoR assignments match intent.
-3. Then M3 Design may select the machine-graph schema, generator, and validators
-   (still separate; not proposed here).
+3. Review the bounded relational candidate without treating it as the complete
+   machine graph or a production persistence approval.
+4. Then M3 Design may select the remaining machine-graph schema, generator, and
+   validators.
 
 This model selects no file as the canonical registry and writes to no runtime.

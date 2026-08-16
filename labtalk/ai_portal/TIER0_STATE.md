@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-08-16T19:59:29Z
+    generated_utc : 2026-08-16T21:27:38Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,9 +11,9 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : 318ee579d  (2026-08-16)
-    upstream      : 43711a357
-    unpushed      : 1 commit(s) ahead of upstream
+    HEAD          : 27ad6edc8  (2026-08-16)
+    upstream      : 27ad6edc8
+    unpushed      : 0 commit(s) ahead of upstream
 
 ## Declared target
 
@@ -27,7 +27,7 @@ cannot drift, because nothing here is written by hand.
 
 ## Staleness warnings
 
-- 1 commit(s) are unpushed and invisible to a clone.
+- none
 
 ## Claimed lanes (newest first)
 
@@ -51,6 +51,7 @@ cannot drift, because nothing here is written by hand.
 
     live   : 2026-07-31_cowork_bbs_agency_legs  (member.ai.claude.cowork)  [stale, reapable]
     live   : AIPR-20260729-001  (member.ai.claude.cowork)  [stale, reapable]
+    live   : COWORK-20260816-001  (member.ai.claude.cowork)
     live   : DECLARED-CAPABILITY-VALIDATOR-20260730  (member.ai.claude.cowork)  [stale, reapable]
 
 Aside chains -- a run's claims in order (its horizontal structure);

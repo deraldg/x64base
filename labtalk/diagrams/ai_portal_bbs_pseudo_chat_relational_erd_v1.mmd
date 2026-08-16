@@ -1,0 +1,259 @@
+%% AIF-086 AI Portal/BBS/Pseudo-Chat relational ERD v1
+%% Truth state: source-defined design candidate; no production tables
+%% Derived from AI_PORTAL_BBS_PSEUDO_CHAT_RELATIONAL_SCHEMA_PLAN_V1.md
+%% Entity blocks show selected key/provenance fields; validity/version fields may be omitted here
+%% The plan is the detailed field and authority record
+erDiagram
+    SYSMEMBER ||--o{ SYSASSIGN : receives
+    SYSASSIGN ||--o{ SYSCHATLNK : participates_as
+    SYSCONV ||--o{ SYSCHATLNK : has_participant
+    SYSCONV o|--o{ SYSCONV : forks_from
+
+    SYSCONV ||--o{ SYSCHROUTE : uses
+    SYSCHCONN ||--o{ SYSCHROUTE : defines_carrier
+    SYSCHCONN ||--o{ SYSCHSESS : instantiates
+    SYSCHSESS o|--o{ SYSCHSESS : accepts
+    SYSMEMBER o|--o{ SYSCHSESS : authenticated_principal
+    SYSCHROUTE ||--o| SYSCHRPRV : provider_details
+    SYSCHROUTE ||--o| SYSCHRBBS : bbs_details
+    SYSCHROUTE ||--o| SYSCHRDOC : document_details
+    SYSTHREAD ||--o{ SYSCHRBBS : routed_by_over_lifetime
+    SYSBOARD ||--o{ SYSTHREAD : contains
+    SYSTHREAD ||--o{ SYSPOST : contains
+    SYSMEMBER o|--o{ SYSTHREAD : opens
+    SYSMEMBER o|--o{ SYSPOST : acting_author
+
+    SYSCHATLNK ||--o{ SYSCHPART : uses_route
+    SYSCHROUTE ||--o{ SYSCHPART : has_participant
+    SYSCONV ||--o{ SYSCHLANG : declares_language
+    SYSCHATLNK o|--o{ SYSCHLANG : overrides_language
+    SYSCHPART ||--o{ SYSCHATUI : observed_as
+    SYSCHSESS ||--o{ SYSCHATUI : captured_by
+    SYSMEMBER o|--o{ SYSCHATUI : observing_principal
+
+    SYSCONV ||--o{ SYSCHCTX : has_context
+    SYSCHATLNK o|--o{ SYSCHCTX : scopes_context
+    SYSCONV ||--o{ SYSPOSTLNK : indexes_message
+    SYSCHPART o|--o{ SYSPOSTLNK : content_origin
+    SYSCHROUTE ||--o{ SYSPOSTLNK : travels_via
+    SYSPOST o|--o| SYSPOSTLNK : promoted_as
+    SYSMEMBER ||--o{ SYSPOSTLNK : acting_member
+    SYSMEMBER ||--o{ SYSPOSTLNK : principal
+    SYSCHSESS ||--o{ SYSPOSTLNK : written_by
+    SYSPOSTLNK o|--o{ SYSPOSTLNK : replies_to
+
+    SYSCHTXN ||--o{ SYSPOSTLNK : commits
+    SYSCHTXN ||--o{ SYSCHTXITM : manifests
+    SYSCHSESS o|--o{ SYSCHTXN : initiates
+    SYSMEMBER o|--o{ SYSCHTXN : acting_member
+    SYSMEMBER o|--o{ SYSCHTXN : principal
+
+    SYSCONV {
+        int ID PK
+        string CONVKEY UK
+        int PARENTID FK
+        string KIND
+        int STATUS
+        string SENSCLASS
+        int CREATEDAT
+        int MODAT
+        int ROWVER
+    }
+    SYSCHATLNK {
+        int ID PK
+        string LINKKEY UK
+        int CONVID FK
+        int ASSIGNID FK
+        int STATUS
+        int CREATEDAT
+        int MODAT
+        int VFROM
+        int VTHRU
+        int ROWVER
+    }
+    SYSCHCONN {
+        int ID PK
+        string CONNKEY UK
+        string CONNROLE
+        string KIND
+        string LABEL
+        string EXECNAME
+        string TRANSPORT
+        string HOSTSCOPE
+        int STATUS
+        int CREATEDAT
+        int MODAT
+    }
+    SYSCHSESS {
+        int ID PK
+        string SESSKEY UK
+        int CONNID FK
+        int PARENTID FK
+        string SESSKIND
+        int PRINCIPAL FK
+        int PID
+        string HOSTREF
+        string RUNKEY
+        int STARTAT
+        int ENDAT
+        string ENDREAS
+        int STATUS
+        int ROWVER
+    }
+    SYSCHROUTE {
+        int ID PK
+        string ROUTEKEY UK
+        int CONVID FK
+        int CARRID FK
+        string ROUTEKIND
+        int STATUS
+        int CREATEDAT
+        int MODAT
+    }
+    SYSCHRPRV {
+        int ROUTEID PK, FK
+        string PROVIDER
+        string PRODUCT
+        string SRCPROJ
+        string SRCCHAT
+        string SRCTHREAD
+        string PARENTREF
+        int SRCCREAT
+        int SRCMODAT
+        int OBSAT
+        int CREATEDAT
+        int MODAT
+    }
+    SYSCHRBBS {
+        int ROUTEID PK, FK
+        int THREADID FK
+        string ROUTEROLE
+        int CREATEDAT
+        int MODAT
+    }
+    SYSCHRDOC {
+        int ROUTEID PK, FK
+        string DOCREF
+        string PAGEREF
+        string RELAYPOL
+        int CREATEDAT
+        int MODAT
+    }
+    SYSCHPART {
+        int ID PK
+        int LINKID FK
+        int ROUTEID FK
+        string PARTROLE
+        int STATUS
+        int CREATEDAT
+        int MODAT
+    }
+    SYSCHLANG {
+        int ID PK
+        int CONVID FK
+        int LINKID FK
+        int LANGKIND
+        string LANGTAG
+        int PRIORITY
+        int CREATEDAT
+        int MODAT
+    }
+    SYSCHATUI {
+        int ID PK
+        int PARTID FK
+        string MODEL
+        string TITLE
+        string CWD
+        string UISECT
+        int UIPOS
+        int PINPOS
+        boolean PINNED
+        boolean ARCHIVED
+        int OBSAT
+        int OBSSESS FK
+        int OBSPRINC FK
+        string SNAPHASH
+    }
+    SYSCHCTX {
+        int ID PK
+        int CONVID FK
+        int LINKID FK
+        string CTXKIND
+        string CTXKEY
+        string RELKIND
+        boolean PRIMARY
+        int CREATEDAT
+        int MODAT
+    }
+    SYSPOSTLNK {
+        int ID PK
+        string MSGKEY UK
+        int CONVID FK
+        int ORIGPART FK
+        string ORIGKIND
+        int ROUTEID FK
+        int TXNID FK
+        int POSTID FK
+        string SRCMSGID
+        int PARENTID FK
+        int ACTORID FK
+        int PRINCIPAL FK
+        int WRITESESS FK
+        string ORIGRUN
+        string KIND
+        int WRITTENAT
+        int MODAT
+        int STATUS
+        string SENSCLASS
+        string PAYLOADREF
+        string PAYHASH
+        int ROWVER
+    }
+    SYSCHTXN {
+        int ID PK
+        string TXNKEY UK
+        int INITSESS FK
+        string OPKIND
+        int ACTORID FK
+        int PRINCIPAL FK
+        string DELEGREF
+        string TARGETKEY
+        int STATE
+        int STARTAT
+        int COMMITAT
+        string LASTERR
+        int ROWVER
+    }
+    SYSCHTXITM {
+        int ID PK
+        int TXNID FK
+        int SEQ
+        string TABLENAME
+        int ROWID
+        string ROWKEY
+        string OPKIND
+        int EXPECTVER
+        int STATE
+        int APPLYAT
+        int VERIFYAT
+        string PAYLOADREF
+        string PAYHASH
+        string SENSCLASS
+        string LASTERR
+        int ROWVER
+    }
+    SYSTHREAD {
+        int ID PK
+        int BOARDID FK
+        int OPENEDBY FK
+        int OPENAT
+        int STATE
+        int LASTPOST FK
+    }
+    SYSPOST {
+        int ID PK
+        int THREADID FK
+        int AUTHORID FK
+        string RUNID
+        int POSTAT
+    }

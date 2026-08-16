@@ -1,0 +1,110 @@
+%% AIF-086 AI Portal/BBS/Pseudo-Chat relational DFD v1
+%% Truth state: source-defined design candidate; no runtime writer
+%% dottalkpp and dottalk_bbsd are separate executable processes
+%% Website source and publication are downstream and never write development state
+flowchart LR
+    Human["Maintainer / human relay"]
+    Agents["Codex / ChatGPT / Copilot / Claude / local agents"]
+    Provider["Provider chat systems"]
+    Ollama["Ollama local model"]
+
+    CLI["dottalkpp interactive executable\nCLI plus optional BBS SERVE host"]
+    DAEMON["dottalk_bbsd standalone executable\nlong-lived BBS server host"]
+    Socket["Shared serve() socket protocol\nAUTH / CHAT / BBS READ / BBS POST / QUIT / SHUTDOWN"]
+    PreAuth["PREAUTH state\nfirst frame must be AUTH or connection closes"]
+    PostAuth["AUTHENTICATED state\ncommitted child SYSCHSESS plus per-command RBAC"]
+    PreAuthClose["Pre-auth close; no child session exists"]
+    AuthError["Send ERR; remain AUTHENTICATED"]
+    CommandError["Permission denial or safe rejected/recovered transaction\nSend ERR; remain AUTHENTICATED"]
+    AuthClose["Authenticated close\nQUIT / empty / EOF-error / idle timeout"]
+    OwnerStop["Successful owner SHUTDOWN\nclose child, then hosting process session"]
+    ProviderAdapter["Provider observation adapter"]
+    RelayAdapter["Document relay adapter"]
+    Query["AI Portal query/projection service"]
+
+    Auth[("Identity store\nSYSMEMBER / SYSASSIGN / SYSGRANT")]
+    Conv[("Conversation store\nSYSCONV / SYSCHATLNK / connectors / sessions / routes / context / UI")]
+    BBS[("BBS store\nSYSBOARD / SYSTHREAD / SYSPOST")]
+    Track[("Portal tracking\nprojects / lanes / runs / tasks / proofs")]
+    Journal[("Planned intent journal\nSYSCHTXN / SYSCHTXITM")]
+    SiteSource[("Website source / downstream projection candidate\nD:/dev/x64base-site")]
+    Published[("GitHub Pages / x64base.com published snapshot")]
+
+    SessionWriter["Typed session lifecycle writer\nbootstrap / auth / close / process stop / stale recovery"]
+    SessionRecovery["Startup stale-session recovery\nlocked host/process-liveness and parent checks"]
+    DomainWriter["Shared BBS/conversation domain writer\nBBS-only or explicit attach/promotion"]
+    Session["Resolve writer connector, process, authenticated session, principal, and actor"]
+    JournalLock["ONE global journal/allocation lock for every transaction kind\ncreate TXN shell by TXNKEY"]
+    DomainLocks["Canonical owning locks plus whole-table FLOCK\nincluding connector/session allocation"]
+    Manifest["Reserve numeric IDs; durably complete and read back manifest before mutation"]
+    Revalidate["Revalidate session principal, actor, RBAC, assignment/context when applicable"]
+
+    Human --> CLI
+    Human --> RelayAdapter
+    Agents --> Provider
+    Agents -->|"loopback when daemon hosts"| DAEMON
+    Agents -->|"loopback when BBS SERVE hosts"| CLI
+
+    Provider --> ProviderAdapter
+    ProviderAdapter -->|"explicit observation/promotion"| DomainWriter
+    RelayAdapter --> DomainWriter
+
+    CLI -->|"interactive POST / REPLY / CLOSE"| DomainWriter
+    CLI -->|"interactive BOARDS / READ"| BBS
+    CLI -->|"optional BBS SERVE host"| Socket
+    DAEMON -->|"standalone server host"| Socket
+    CLI -.->|"process start"| SessionWriter
+    DAEMON -.->|"process start"| SessionWriter
+
+    Socket --> PreAuth
+    PreAuth -->|"AUTH first frame"| Auth
+    PreAuth -->|"non-AUTH first frame"| PreAuthClose
+    Auth -->|"successful AUTH; principal = actor"| SessionWriter
+    Auth -->|"failed AUTH"| PreAuthClose
+    PostAuth -->|"CHAT plus chat.invoke"| Ollama
+    Ollama -->|"completion returned; not persisted"| Socket
+    PostAuth -->|"BBS READ plus bbs.read"| BBS
+    PostAuth -->|"BBS POST plus board permission"| DomainWriter
+    PostAuth -.->|"explicit CHAT promotion only"| DomainWriter
+    PostAuth -->|"QUIT / empty / EOF-error / idle timeout"| AuthClose
+    PostAuth -->|"successful owner SHUTDOWN"| OwnerStop
+    PostAuth -->|"denied SHUTDOWN / repeated AUTH / unknown"| AuthError
+    AuthError --> PostAuth
+    PostAuth -->|"chat.invoke / bbs.read / board-post denial"| CommandError
+    CommandError --> PostAuth
+    AuthClose -->|"connection_close: ENDAT / ENDREAS / status / ROWVER"| SessionWriter
+    OwnerStop -->|"connection_close then process_stop"| SessionWriter
+    DAEMON -.->|"restart after abnormal death"| SessionRecovery
+    SessionRecovery -->|"process_recovery"| SessionWriter
+
+    SessionWriter -->|"bootstrap: no initiator; auth: parent INITSESS plus reserved child"| JournalLock
+
+    DomainWriter -->|"read/validate member, actor, assignment when attached, and grants"| Auth
+    DomainWriter -->|"read/validate project, lane, run, task, proof when attached"| Track
+    DomainWriter --> Session
+    Session -->|"read/validate existing authenticated session"| Conv
+    Session --> JournalLock
+    JournalLock -->|"persist intent shell"| Journal
+    JournalLock --> DomainLocks
+    DomainLocks --> Manifest
+    Manifest -->|"complete/read-back SYSCHTXITM"| Journal
+    Manifest --> Revalidate
+    Revalidate -->|"locked identity and RBAC check"| Auth
+    Revalidate -->|"locked/precommit context check"| Track
+    Revalidate -->|"BBS-only or attached BBS mutation"| BBS
+    Revalidate -->|"connector/session lifecycle or explicit attach/promotion/metadata mutation"| Conv
+    BBS -->|"read-back exact reserved rows"| Journal
+    Conv -->|"read-back exact reserved rows"| Journal
+    Journal -->|"verified commit result"| DomainWriter
+    Journal -->|"safe rejected/recovered socket transaction"| CommandError
+    DomainWriter -->|"transport/session-fatal result"| AuthClose
+    Journal -->|"committed connection_auth enables command state"| PostAuth
+
+    Query --> Auth
+    Query --> Conv
+    Query --> BBS
+    Query --> Track
+    Query -->|"internal derived views"| Human
+    Query -->|"bounded agent context"| Agents
+    Query -.->|"generated/selective export plus separate site-review gate"| SiteSource
+    SiteSource -.->|"site build, scoped commit/push, deploy, and live verification"| Published

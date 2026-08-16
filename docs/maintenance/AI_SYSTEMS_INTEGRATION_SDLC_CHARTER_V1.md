@@ -201,6 +201,7 @@ remain outside that grant.
 | M1 exit | passed 2026-08-05 | `member.derald` | Owner ruling recorded in `AI_SYSTEMS_INTEGRATION_STEWARD_ASSIGNMENT_AND_M1_CONTINUATION_2026-08-05_V1.md`: "I already approved M1." Historical pending-review records remain preserved. |
 | M2 entry | active 2026-08-16 | `member.derald` | Owner directed AIF-lane integration of the agent/assignment/chat relationship and its portal artifacts. `SYSCHATLNK` supplies a bounded component and edge model; it does not close the full M2 gate. |
 | M2/M3 bounded contribution | source-defined plus disposable X64 proof 2026-08-16 | `member.ai.codex.local`, contributing agent | Contract, 35-field schema, maintenance manual, standalone PFD/DFD, portal registry, regression, and accepted transcript under run `AIPR-20260816-001`. No production catalog or writer is claimed. |
+| M2 relational normalization plan | source-defined design candidate 2026-08-16 | `member.ai.codex.local`, contributing agent | Run `AIPR-20260816-002` narrows `SYSCHATLNK` to the assignment/conversation participation edge and diagrams the related conversation, connector, runtime-session, route, language, context, UI, post-provenance, and recovery records. It explicitly models `dottalkpp`, the separate `dottalk_bbsd` executable, and daemon connection sessions. No production table or M2 exit is claimed. |
 
 ## 9. Planned implementation waves
 
@@ -250,6 +251,34 @@ after proof. No table exists in production metadata, and no other DBF table was
 created, modified, or deleted by this contribution. A production writer,
 catalog location, migration, physical indexes, relation enforcement, and
 rollback proof remain later gates.
+
+## 9.2 Relational normalization plan
+
+The next design candidate is
+`docs/maintenance/AI_PORTAL_BBS_PSEUDO_CHAT_RELATIONAL_SCHEMA_PLAN_V1.md`.
+It preserves the existing `LINKKEY` and `CONVKEY` contract while separating the
+different record grains currently carried by one 35-field candidate row:
+
+- shared conversation identity;
+- governed assignment participation;
+- connector, runtime session, and transport route, including distinct
+  `dottalkpp`, `dottalk_bbsd`, and daemon-connection boundaries;
+- provider-native, BBS-thread, and document-relay route details;
+- multilingual tags, Portal context, and append-only UI observations;
+- BBS/provider message provenance with origin, principal, writer connector,
+  exact reply parent, and run context;
+- a recoverable multi-table write intent plus ordered transaction-item manifest
+  for cross-process mutation.
+
+Maintained diagram sources:
+
+- `labtalk/diagrams/ai_portal_bbs_pseudo_chat_relational_erd_v1.mmd`
+- `labtalk/diagrams/ai_portal_bbs_pseudo_chat_relational_dfd_v1.mmd`
+- `labtalk/diagrams/ai_portal_bbs_pseudo_chat_relational_pfd_v1.mmd`
+
+This plan corrects an architectural relationship and prepares owner/steward
+decisions. It does not modify the current schema JSON, register a production
+catalog, write identity/BBS data, or authorize a website projection.
 
 ## 10. M0 exclusions
 

@@ -1,0 +1,92 @@
+%% AIF-086 AI Portal/BBS/Pseudo-Chat relational process flow v1
+%% Truth state: source-defined design candidate; implementation gates remain open
+flowchart TD
+    Start["Receive provider, CLI, daemon-socket, BBS, or document-relay event"]
+    Carrier{"Which carrier and process produced it?"}
+    SocketEvent{"Current socket protocol event?"}
+    PreAuth["PREAUTH state: inspect first frame only"]
+    FirstFrame{"First frame is AUTH?"}
+    Auth["Authenticate connection"]
+    AuthSession["Run connection_auth through the one global journal lock\nparent process initiates; reserve/persist authenticated child SYSCHSESS"]
+    PostVerb{"AUTHENTICATED state: next socket verb?"}
+    SendErr["Send ERR; retain authenticated child session"]
+    PreAuthClose["Close pre-auth connection; no child session exists"]
+    ConnectionClose["Run connection_close through the one global journal lock\nset ENDAT, ENDREAS, status, and ROWVER"]
+    OwnerCheck{"Authenticated principal has owner shutdown authority?"}
+    OwnerStop["Run connection_close, then process_stop; close server/process"]
+    StaleRecovery["On restart, run evidence-bound process_recovery\nclose only stale child/process sessions"]
+    SessionGate["Require persisted authenticated child connection SYSCHSESS"]
+    RBAC{"Command-specific RBAC allowed?\nchat.invoke / bbs.read / selected-board post permission"}
+    Class{"Operation class?"}
+    Read["Serve interactive BOARDS / READ or socket BBS READ through query path"]
+    Chat["Serve socket CHAT through Ollama; return transient completion"]
+    Connector["Resolve carrier and writer SYSCHCONN definitions"]
+    Bootstrap["Resolve process session; if absent, run typed process_bootstrap through the one global journal lock"]
+    Session["Resolve authenticated writer SYSCHSESS; do not inherit daemon operator"]
+    Actor["Resolve principal, acting member, grants, and stable target keys\nsocket equality; direct CLI difference requires DELEGREF"]
+    Attach{"Explicitly attach/promote into conversation graph?"}
+    BBSOnly["Plan independent BBS mutation only\nno fabricated assignment, conversation, route, or SYSPOSTLNK"]
+    Assignment["Resolve governed SYSASSIGN; capture ROWVER, status, member, and work"]
+    Conversation{"Existing CONVKEY?"}
+    NewConv["Mint CONVKEY and add SYSCONV to write plan"]
+    OldConv["Resolve existing SYSCONV"]
+    Link{"Existing assignment participation?"}
+    NewLink["Mint LINKKEY and add SYSCHATLNK to write plan"]
+    Route["Resolve or plan typed SYSCHROUTE and subtype"]
+    Part["Resolve or plan SYSCHPART for assignment and route"]
+    Context["Validate project, lane, run, task, proof, language, and sensitivity"]
+    JournalLock["Acquire the one global journal/allocation lock"]
+    Shell["Find/create SYSCHTXN shell by global TXNKEY"]
+    Locks["Acquire identity/domain locks in canonical order"]
+    Reserve["Reserve all numeric domain IDs under owning locks\ncomplete and read back SYSCHTXITM manifest before mutation"]
+    Revalidate["Recheck session principal, actor, grants, assignment/context when applicable, keys, and versions"]
+    Mutation{"Mutation class?"}
+    Observe["Write planned conversation rows and append UI/language/context observations"]
+    Independent["Write independent BBS mutation only"]
+    Write["Write attached/promoted BBS post and SYSPOSTLNK\nAUTHORID = ACTORID; record principal and writer session"]
+    Verify["Read back keys, relations, indexes, provenance, timestamps, and unlocked source versions"]
+    Commit["Mark manifest items and SYSCHTXN committed; expose derived Portal view"]
+    Recover["Forward-complete manifest or append invalidation; never rewrite durable BBS history"]
+    FailureDisposition{"After recovery, is an authenticated socket session still usable?"}
+    End["Return typed route/result; no authority inferred from transport"]
+
+    Start --> Carrier --> SocketEvent
+    SocketEvent -- "Yes" --> PreAuth --> FirstFrame
+    FirstFrame -- "No" --> PreAuthClose --> End
+    FirstFrame -- "Yes" --> Auth
+    Auth -- "Fail" --> PreAuthClose
+    Auth -- "Pass" --> AuthSession
+    AuthSession -- "Commit/read-back pass" --> PostVerb
+    AuthSession -- "Fail" --> PreAuthClose
+    PostVerb -- "CHAT / BBS READ / BBS POST" --> SessionGate --> RBAC
+    RBAC -- "Yes" --> Class
+    RBAC -- "No" --> SendErr
+    PostVerb -- "QUIT / empty / EOF-error / idle timeout" --> ConnectionClose --> End
+    PostVerb -- "SHUTDOWN" --> OwnerCheck
+    OwnerCheck -- "No" --> SendErr --> PostVerb
+    OwnerCheck -- "Yes" --> OwnerStop --> End
+    PostVerb -- "AUTH again / unknown" --> SendErr
+    Carrier -- "daemon/process restart" --> StaleRecovery --> End
+    SocketEvent -- "No: CLI/provider/document" --> Class
+    Class -- "BOARDS / READ / BBS READ" --> Read --> End
+    Read -.->|"authenticated socket: await next frame"| PostVerb
+    Class -- "Transient socket CHAT" --> Chat --> PostVerb
+    Class -- "Observation or durable write" --> Connector
+    Connector --> Bootstrap --> Session --> Actor --> Attach
+    Attach -- "No: independent BBS" --> BBSOnly --> JournalLock
+    Attach -- "Yes" --> Assignment --> Conversation
+    Conversation -- "No" --> NewConv --> Link
+    Conversation -- "Yes" --> OldConv --> Link
+    Link -- "No" --> NewLink --> Route
+    Link -- "Yes" --> Route
+    Route --> Part --> Context --> JournalLock
+    JournalLock --> Shell --> Locks --> Reserve --> Revalidate --> Mutation
+    Mutation -- "Metadata observation" --> Observe --> Verify
+    Mutation -- "Independent BBS" --> Independent --> Verify
+    Mutation -- "Attached/promoted message" --> Write --> Verify
+    Verify -- "Pass" --> Commit --> End
+    Commit -.->|"authenticated socket: await next frame"| PostVerb
+    Verify -- "Fail" --> Recover --> FailureDisposition
+    FailureDisposition -- "Yes: safe rejected/recovered command" --> SendErr
+    FailureDisposition -- "No: transport/session fatal" --> ConnectionClose
+    FailureDisposition -- "No: non-socket caller" --> End

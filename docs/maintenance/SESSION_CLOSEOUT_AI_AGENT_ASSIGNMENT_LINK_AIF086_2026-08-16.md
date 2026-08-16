@@ -89,13 +89,19 @@ It does not make the contributing agent the lane steward. It does not authorize
 or perform mutation of `C:\x64base`, a commit, a push, a production metadata
 migration, or GitHub publication.
 
-The repository flow remains one way:
+The repository stages below are labels, not PowerShell commands:
 
-```text
-D:\code\ccode development authoring
--> reviewed selective promotion
--> C:\x64base main staging
--> GitHub public publication
+| Stage | Role | Entry rule |
+| --- | --- | --- |
+| `D:\code\ccode` on `development` | authoritative authoring | all original work starts here |
+| `C:\x64base` on `main` | publication staging | reviewed selective promotion only |
+| GitHub `main` | public publication | push only from the staging tree after its gates pass |
+
+To enter the authoring tree in PowerShell, run only the command below. Do not
+paste the stage labels at a PowerShell prompt.
+
+```powershell
+Set-Location -LiteralPath 'D:\code\ccode'
 ```
 
 ## Open gates

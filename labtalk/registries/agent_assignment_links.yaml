@@ -10,6 +10,7 @@ link_surfaces:
     project: project.ai_systems.integration
     lane: AIF-086
     run: AIPR-20260816-001
+    schema_version: syschatlnk_v1
     table: SYSCHATLNK
     row_grain: one_agent_assignment_per_conversation
     shared_identifier: CONVKEY
@@ -24,6 +25,7 @@ link_surfaces:
     project: project.ai_systems.integration
     lane: AIF-086
     run: AIPR-20260816-001
+    schema_version: syschatlnk_v1
     table: SYSCHATLNK
     audience: [maintainer, operator, ai_agent]
 
@@ -37,6 +39,7 @@ link_surfaces:
     project: project.ai_systems.integration
     lane: AIF-086
     run: AIPR-20260816-001
+    schema_version: syschatlnk_v1
     derived_from:
       - ../docs/contracts/AI_AGENT_ASSIGNMENT_LINK_CONTRACT_V1.md
       - ../docs/maintenance/AI_AGENT_ASSIGNMENT_LINK_MAINTENANCE_MANUAL_V1.md
@@ -51,6 +54,7 @@ link_surfaces:
     project: project.ai_systems.integration
     lane: AIF-086
     run: AIPR-20260816-001
+    schema_version: syschatlnk_v1
     derived_from:
       - ../docs/contracts/AI_AGENT_ASSIGNMENT_LINK_CONTRACT_V1.md
       - ../dottalkpp/data/schemas/syschatlnk_v1.schema.json
@@ -65,6 +69,7 @@ link_surfaces:
     lane: AIF-086
     run: AIPR-20260816-001
     table: SYSCHATLNK
+    schema_version: syschatlnk_v1
 
   - id: agent_assignment_link.regression
     label: Create and Read SYSCHATLNK in X64
@@ -79,6 +84,7 @@ link_surfaces:
     project: project.x64base.runtime
     lane: AIF-086
     run: AIPR-20260816-001
+    schema_version: syschatlnk_v1
     safety: DISPOSABLE_TMP_WRITE
     mutation: creates_and_overwrites_only_SYSCHATLNK_proof_files_under_configured_TMP
     observed_result: Current development runtime validated and created the X64 DBF, reopened it, and passed link key, conversation key, assignment, locale, and timestamp readbacks with portal output acceptance accepted.
@@ -89,6 +95,65 @@ link_surfaces:
       - "SYSCHATLNK_T3_ASSIGN:.T."
       - "SYSCHATLNK_T4_LOCALE:.T."
       - "SYSCHATLNK_T5_TIMES:.T."
+
+design_surfaces:
+  - id: agent_assignment_link.relational_plan
+    label: AI Portal, BBS, and Pseudo-Chat Relational Schema Plan
+    kind: markdown
+    path: ../docs/maintenance/AI_PORTAL_BBS_PSEUDO_CHAT_RELATIONAL_SCHEMA_PLAN_V1.md
+    status: review_needed
+    truth_state: source_defined
+    proof_state: design_intended
+    project: project.ai_systems.integration
+    lane: AIF-086
+    run: AIPR-20260816-002
+    schema_version: normalized_candidate_v2
+    table_family: [SYSCONV, SYSCHATLNK, SYSCHCONN, SYSCHSESS, SYSCHROUTE, SYSCHRPRV, SYSCHRBBS, SYSCHRDOC, SYSCHPART, SYSCHLANG, SYSCHATUI, SYSCHCTX, SYSPOSTLNK, SYSCHTXN, SYSCHTXITM]
+    production_claim: none
+
+  - id: agent_assignment_link.relational_erd
+    label: Relational Conversation and Route ERD
+    kind: diagram
+    path: diagrams/ai_portal_bbs_pseudo_chat_relational_erd_v1.mmd
+    status: review_needed
+    truth_state: source_defined
+    proof_state: design_intended
+    project: project.ai_systems.integration
+    lane: AIF-086
+    run: AIPR-20260816-002
+    schema_version: normalized_candidate_v2
+    derived_from:
+      - ../docs/maintenance/AI_PORTAL_BBS_PSEUDO_CHAT_RELATIONAL_SCHEMA_PLAN_V1.md
+      - ../docs/contracts/AI_AGENT_ASSIGNMENT_LINK_CONTRACT_V1.md
+
+  - id: agent_assignment_link.relational_dfd
+    label: Relational Portal, CLI, Daemon, and BBS Data Flow
+    kind: diagram
+    path: diagrams/ai_portal_bbs_pseudo_chat_relational_dfd_v1.mmd
+    status: review_needed
+    truth_state: source_defined
+    proof_state: design_intended
+    project: project.ai_systems.integration
+    lane: AIF-086
+    run: AIPR-20260816-002
+    schema_version: normalized_candidate_v2
+    derived_from:
+      - ../docs/maintenance/AI_PORTAL_BBS_PSEUDO_CHAT_RELATIONAL_SCHEMA_PLAN_V1.md
+      - ../docs/maintenance/AI_BBS_OPERATIONS_RUNBOOK_V1.md
+
+  - id: agent_assignment_link.relational_pfd
+    label: Relational Conversation Write and Recovery Process Flow
+    kind: diagram
+    path: diagrams/ai_portal_bbs_pseudo_chat_relational_pfd_v1.mmd
+    status: review_needed
+    truth_state: source_defined
+    proof_state: design_intended
+    project: project.ai_systems.integration
+    lane: AIF-086
+    run: AIPR-20260816-002
+    schema_version: normalized_candidate_v2
+    derived_from:
+      - ../docs/maintenance/AI_PORTAL_BBS_PSEUDO_CHAT_RELATIONAL_SCHEMA_PLAN_V1.md
 
 governance_surfaces:
   - id: agent_assignment_link.aif_lane
@@ -116,6 +181,15 @@ governance_surfaces:
     project: project.ai_systems.integration
     lane: AIF-086
     run: AIPR-20260816-001
+
+  - id: agent_assignment_link.relational_plan_run
+    label: Relational Schema Planning Run
+    kind: yaml
+    path: registries/runs.d/AIPR-20260816-002.yaml
+    status: complete
+    project: project.ai_systems.integration
+    lane: AIF-086
+    run: AIPR-20260816-002
 
   - id: agent_assignment_link.closeout
     label: Assignment Link Contribution Closeout
@@ -146,11 +220,12 @@ governance_surfaces:
     lane: AIF-086
     run: AIPR-20260816-001
 
-join_routes:
+v1_compatibility_routes:
   - id: agent_assignment_link.identity_route
     label: Agent to Assignment
     kind: relation_route
     status: source_defined
+    schema_version: syschatlnk_v1_compatibility
     project: project.ai_systems.integration
     lane: AIF-086
     from: SYSCHATLNK.MEMBERID
@@ -162,17 +237,19 @@ join_routes:
     label: Shared Multi-Agent Conversation
     kind: relation_route
     status: source_defined
+    schema_version: syschatlnk_v1_compatibility
     project: project.ai_systems.integration
     lane: AIF-086
     from: SYSCHATLNK.LINKKEY
     through: SYSCHATLNK.CONVKEY
     to: SYSCHATLNK.CONVKEY
-    invariant: each assignment has one LINKKEY while all participants share CONVKEY
+    invariant: each assignment-conversation participation has one LINKKEY while all participants in the local conversation share CONVKEY
 
   - id: agent_assignment_link.bbs_route
     label: Conversation to AI-BBS and Pseudo-Chat
     kind: relation_route
     status: source_defined
+    schema_version: syschatlnk_v1_compatibility
     project: project.ai_systems.integration
     lane: AIF-086
     from: [SYSCHATLNK.BBSBOARD, SYSCHATLNK.BBSTHRID]
@@ -184,9 +261,106 @@ join_routes:
     label: Conversation to Project Name and UI Position
     kind: relation_route
     status: observational
+    schema_version: syschatlnk_v1_compatibility
     project: project.ai_systems.integration
     lane: AIF-086
     from: SYSCHATLNK.PROJKEY
     through: [SYSCHATLNK.TITLE, SYSCHATLNK.UISECT, SYSCHATLNK.UIPOS, SYSCHATLNK.PINPOS]
     to: provider_sidebar_projection
     invariant: UI fields are mutable observations and never identifiers
+
+normalized_candidate_routes:
+  - id: agent_assignment_link.v2_participant_route
+    label: V2 Project, Conversation, Assignment, and Member Route
+    kind: relation_route
+    status: review_needed
+    truth_state: source_defined
+    proof_state: design_intended
+    schema_version: normalized_candidate_v2
+    project: project.ai_systems.integration
+    lane: AIF-086
+    run: AIPR-20260816-002
+    from: SYSCHCTX.CTXKEY
+    joins:
+      - SYSCHCTX.CONVID = SYSCONV.ID
+      - SYSCHATLNK.CONVID = SYSCONV.ID
+      - SYSCHATLNK.ASSIGNID = SYSASSIGN.ID
+      - SYSASSIGN.MEMBERID = SYSMEMBER.ID
+    context_kind: project
+    relation_role: approved_primary_project_context
+    active_only: true
+    primary_only: true
+    to: SYSMEMBER.ID
+    invariant: context labels and AIF values never replace project, task, conversation, link, assignment, or member keys
+
+  - id: agent_assignment_link.v2_provider_ui_route
+    label: V2 Provider Route and UI Observation
+    kind: relation_route
+    status: review_needed
+    truth_state: source_defined
+    proof_state: design_intended
+    schema_version: normalized_candidate_v2
+    project: project.ai_systems.integration
+    lane: AIF-086
+    run: AIPR-20260816-002
+    from: SYSCHATLNK.ID
+    joins:
+      - SYSCHPART.LINKID = SYSCHATLNK.ID
+      - SYSCHPART.ROUTEID = SYSCHROUTE.ID
+      - SYSCHRPRV.ROUTEID = SYSCHROUTE.ID
+      - SYSCHATUI.PARTID = SYSCHPART.ID
+    latest_by: [SYSCHATUI.OBSAT, SYSCHATUI.ID]
+    to: provider_sidebar_projection
+    invariant: model, title, section, position, pin, and archive come from the latest append-only observation
+
+  - id: agent_assignment_link.v2_bbs_route
+    label: V2 Conversation to Durable AI-BBS
+    kind: relation_route
+    status: review_needed
+    truth_state: source_defined
+    proof_state: design_intended
+    schema_version: normalized_candidate_v2
+    project: project.ai_systems.integration
+    lane: AIF-086
+    run: AIPR-20260816-002
+    from: SYSCONV.ID
+    joins:
+      - SYSCHROUTE.CONVID = SYSCONV.ID
+      - SYSCHRBBS.ROUTEID = SYSCHROUTE.ID
+      - SYSCHRBBS.THREADID = SYSTHREAD.ID
+      - SYSPOST.THREADID = SYSTHREAD.ID
+    to: SYSPOST.ID
+    invariant: the BBS route uses the shared BBS carrier while each durable message records its actual writer session
+
+  - id: agent_assignment_link.v2_message_provenance_route
+    label: V2 Message Origin, Actor, Principal, and Writer Route
+    kind: relation_route
+    status: review_needed
+    truth_state: source_defined
+    proof_state: design_intended
+    schema_version: normalized_candidate_v2
+    project: project.ai_systems.integration
+    lane: AIF-086
+    run: AIPR-20260816-002
+    from: SYSPOSTLNK.MSGKEY
+    joins:
+      - alias: origin_participant
+        type: left
+        on: SYSPOSTLNK.ORIGPART = SYSCHPART.ID
+      - alias: bbs_post
+        type: left
+        on: SYSPOSTLNK.POSTID = SYSPOST.ID
+      - alias: actor_member
+        type: inner
+        on: SYSPOSTLNK.ACTORID = SYSMEMBER.ID
+      - alias: principal_member
+        type: inner
+        on: SYSPOSTLNK.PRINCIPAL = SYSMEMBER.ID
+      - alias: writer_session
+        type: inner
+        on: SYSPOSTLNK.WRITESESS = SYSCHSESS.ID
+      - alias: writer_connector
+        type: inner
+        on: SYSCHSESS.CONNID = SYSCHCONN.ID
+    to: SYSCHCONN.ID
+    invariant: content origin, acting BBS member, authenticated/transcribing principal, and recording process are distinct facts
