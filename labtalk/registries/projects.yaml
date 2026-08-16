@@ -137,10 +137,12 @@ projects:
   - id: project.ai_systems.integration
     name: AI Systems Integration SDLC
     kind: sdlc_project
-    status: m1_owner_review_pending_with_visibility_prototype
+    status: m1_accepted_m2_architecture_active
     root: D:/code/ccode
     owner: member.derald
     initial_steward: member.ai.codex.local
+    steward: member.ai.claude.cowork
+    contributing_agents_this_slice: [member.ai.codex.local]
     owning_lifecycle: ai_systems_integration_sdlc
     incorporating_lifecycle: ai_systems_integration_sdlc
     sdlc_lane: design
@@ -182,6 +184,12 @@ projects:
       - docs/maintenance/AI_SYSTEMS_CROSSWALK_V1.md
       - docs/maintenance/AI_SYSTEMS_INTEGRATION_DISCOVERY_AND_NEEDS_ASSESSMENT_M1_V1.md
       - docs/maintenance/AI_SYSTEMS_INTEGRATION_REQUIREMENTS_V1.md
+      - docs/contracts/AI_AGENT_ASSIGNMENT_LINK_CONTRACT_V1.md
+      - docs/maintenance/AI_AGENT_ASSIGNMENT_LINK_MAINTENANCE_MANUAL_V1.md
+      - dottalkpp/data/schemas/syschatlnk_v1.schema.json
+      - labtalk/registries/agent_assignment_links.yaml
+      - labtalk/diagrams/ai_agent_assignment_link_pfd_v1.mmd
+      - labtalk/diagrams/ai_agent_assignment_link_dfd_v1.mmd
       - docs/contracts/TRESPASS_AND_DELEGATED_AUTHORIZATION_CONTRACT_V1.md
       - docs/maintenance/SESSION_CLOSEOUT_AI_SYSTEMS_INTEGRATION_SDLC_M0_2026-08-03.md
       - docs/maintenance/SESSION_CLOSEOUT_AI_SYSTEMS_INTEGRATION_SDLC_M1_2026-08-03.md
@@ -190,10 +198,14 @@ projects:
       Cross-system SDLC for integrating the AI Portal, onboarding, memory,
       reports, coordination, Pseudo-Chat, AI-BBS, authorization, evidence, and
       public projections. Incorporated lanes retain their original owners and
-      lifecycles. M0 was owner-accepted on 2026-08-03. M1 requirements and
-      discovery are owner-review pending. A read-only dynamic localhost report
-      prototype is runtime-observed by explicit owner promotion; no runtime
-      delegation, report publication, or public-site mutation is claimed.
+      lifecycles. M0 was owner-accepted on 2026-08-03 and M1 was owner-accepted
+      on 2026-08-05. M2 architecture is active. The AIF-086 SYSCHATLNK slice
+      defines and runtime-proves disposable X64 creation for the agent,
+      assignment, conversation, project, run, BBS, language, timestamp, and UI
+      relationship, but installs no production catalog or writer. A read-only
+      dynamic localhost report prototype remains runtime-observed; no runtime
+      delegation, report publication, staging mutation, or public-site mutation
+      is claimed.
 
   - id: project.bbs.cooperation
     name: BBS Cooperation Medium (participant-agnostic)

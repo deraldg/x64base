@@ -29,6 +29,7 @@ No contract may claim a stronger evidence class than the available proof.
 
 | Contract | Kind | Evidence | Owner area | Source |
 | --- | --- | --- | --- | --- |
+| AI Agent Assignment Link Contract | Identity/integration/persistence | Source-defined + disposable X64 creation proof | identity, AI Portal, BBS | `docs/contracts/AI_AGENT_ASSIGNMENT_LINK_CONTRACT_V1.md`; `dottalkpp/data/schemas/syschatlnk_v1.schema.json` |
 | Authority Order | Publication/governance | Source-defined | governance | `docs/governance/authority_order.md` |
 | Evidence Classes | Publication/governance | Source-defined | governance | `docs/governance/01_evidence_classes.md` |
 | Contract Shelf | Contract governance | Design-intended | contracts | `docs/contracts/README.md` |

@@ -1,13 +1,13 @@
 # AI Systems Cross-Walk v1
 
-Status: **M0 maintained analysis; not a runtime registry**
+Status: **M1 owner-accepted baseline; M2 architecture active; not a runtime registry**
 Project: `project.ai_systems.integration`
 AIF lane: `AIF-086`
 Owning lifecycle: **AI Systems Integration SDLC**
 Incorporating lifecycle: **AI Systems Integration SDLC**
-Related lifecycles: **DotTalk++ SDLC**, **LabTalk SDLC**, **maintenance SDLC**, and **PLDC**
+Related lifecycles: **DotTalk++ SDLC**, **LabTalk SDLC**, **maintenance SDLC**, and **PDLC**
 Incorporated lanes: cataloged by the charter
-SDLC lane: `design` (M0 analyze)
+SDLC lane: `architecture` (M2 active)
 Owner: `member.derald`
 Initial steward: `member.ai.codex.local`
 
@@ -40,9 +40,10 @@ and generator; this file does not pre-empt that architecture decision.
 | `ai.transport.bbs` | AI-BBS | authenticated local boards and request/response transport | `src/bbs/`, `src/cli/cmd_bbs.cpp` | DotTalk++ SDLC | AI Systems Integration SDLC | runtime-observed, hardening open | transport, not authority |
 | `ai.handoff.worklog` | BBS worklog | asynchronous pickup and drop-off convention | `docs/ai-friendly/AI_BBS_WORKLOG_HANDOFF_LANE_V1.md` | DotTalk++ SDLC | AI Systems Integration SDLC | source-defined small end | convenience handoff |
 | `ai.pattern.pseudo_chat` | Pseudo-Chat | umbrella interaction pattern spanning several components | this cross-walk plus component records below | AI Systems Integration SDLC | AI Systems Integration SDLC | ambiguous legacy term | pattern, never system of record |
-| `ai.projection.operations` | Internal AI operational views | human-readable generated status, rulings, boards, and access views | `docs/reports/`, report generators | maintenance SDLC | AI Systems Integration SDLC | local/internal; freshness varies | derived projection |
-| `ai.public.reports` | Public Reports collection | reviewed public-interest reports, whitepapers, and research | future explicit publication manifest | source-owning SDLC per artifact | AI Systems Integration SDLC and PLDC | not yet separated | reviewed publication |
-| `ai.public.website` | Public website AI area | reviewed public explanation and educational projection | website source and publication contract | PLDC | AI Systems Integration SDLC | alpha publication surface | publication, not development authority |
+| `ai.link.agent_assignment_conversation` | Agent Assignment Link | bind each governed agent assignment to a shared conversation, provider IDs, project/run context, BBS route, language, timestamps, and mutable UI observation | `docs/contracts/AI_AGENT_ASSIGNMENT_LINK_CONTRACT_V1.md`; `dottalkpp/data/schemas/syschatlnk_v1.schema.json`; `labtalk/registries/agent_assignment_links.yaml` | AI Systems Integration SDLC | AI Systems Integration SDLC | source-defined; disposable X64 create/read proof accepted; no production catalog | relationship crosswalk, not project or BBS authority |
+| `ai.projection.operations` | Internal AI operational views | human-readable status, rulings, boards, and access views | `tools/reports/serve_dynamic_reports.py`, `docs/reports/`, and report generators | maintenance SDLC | AI Systems Integration SDLC | dynamic local gateway runtime-observed; static snapshots remain exports | derived projection |
+| `ai.public.reports` | Public Reports collection | reviewed public-interest reports, whitepapers, and research | future explicit publication manifest | source-owning SDLC per artifact | AI Systems Integration SDLC and PDLC | not yet separated | reviewed publication |
+| `ai.public.website` | Public website AI area | reviewed public explanation and educational projection | website source and publication contract | PDLC | AI Systems Integration SDLC | alpha publication surface | publication, not development authority |
 | `ai.education.labtalk` | LabTalk education | labs, lessons, cases, and worked SDLC examples | LabTalk registries and curriculum artifacts | LabTalk SDLC | AI Systems Integration SDLC | active campus | reviewed educational consumer |
 
 ## Pseudo-Chat decomposition
@@ -58,6 +59,25 @@ component name:
 | Worklog handoff | asynchronous lane pickup/drop-off post | No; closeout and registries remain authoritative. |
 | Guest message | narrowly scoped unaffiliated input | No; intake requiring review. |
 | Duplex chat | future concurrent interactive exchange | Not implemented and not authoritative. |
+
+## Agent-assignment conversation relationship
+
+`SYSCHATLNK` closes the naming gap between the Pseudo-Chat pattern and the
+actual governed records without turning chat or UI state into authority:
+
+```text
+SYSMEMBER -- MEMBERID --> SYSCHATLNK <-- ASSIGNID -- SYSASSIGN
+                                 |
+                   shared CONVKEY across agents
+                                 |
+          project / AI run / provider / optional SYSTHREAD
+```
+
+`LINKKEY` uniquely identifies one assignment's participation. `CONVKEY` is the
+shared local conversation identity. Provider titles, sidebar sections, and UI
+positions are mutable observations and never keys. The contract and schema are
+canonical for the relationship design; identity, BBS, project, and run records
+retain their existing owners and authority.
 
 ## Document and report classes
 
@@ -108,6 +128,9 @@ behavior. A public page cannot change development authority.
 8. The AIF-082 fast-start seed declares 20 mandatory task fields but enumerates
    19. AIF-086 preserves the 19 named fields and leaves the count/schema ruling
    with AIF-082.
+9. `SYSCHATLNK` has no approved production catalog path or writer. Its current
+   physical evidence is a deleted TMP proof DBF; production migration, index
+   materialization, and relation enforcement remain open.
 
 ## M2 machine-graph requirements
 

@@ -1,0 +1,22 @@
+id: proof.ai.agent_assignment_link_x64
+label: SYSCHATLNK X64 schema create and identifier readback
+state: runtime_observed
+source: D:/code/ccode/labtalk/proofs/runs/20260816_101951_agent_assignment_link_regression.txt
+item_id: agent_assignment_link.regression
+return_code: 0
+related:
+- D:/code/ccode/docs/contracts/AI_AGENT_ASSIGNMENT_LINK_CONTRACT_V1.md
+- D:/code/ccode/docs/maintenance/AI_AGENT_ASSIGNMENT_LINK_MAINTENANCE_MANUAL_V1.md
+- D:/code/ccode/dottalkpp/data/schemas/syschatlnk_v1.schema.json
+- D:/code/ccode/dottalkpp/data/scripts/ddl/syschatlnk_x64_regression.dts
+- D:/code/ccode/labtalk/diagrams/ai_agent_assignment_link_pfd_v1.mmd
+- D:/code/ccode/labtalk/diagrams/ai_agent_assignment_link_dfd_v1.mmd
+notes: >-
+  AIF-086 contribution run AIPR-20260816-001. The current development runtime
+  validated the 35-field UTF-8 schema, created SYSCHATLNK as X64 under the
+  configured TMP path, reopened the DBF, and passed LINKKEY, CONVKEY, ASSIGNID,
+  LOCALE, and timestamp-order readbacks. The LabTalk portal accepted all output
+  markers. The proof DBF and its DDL/index/load/schema sidecars were then removed.
+  No production SYSCHATLNK catalog exists, no writer was installed, and no other
+  DBF table was created, modified, or deleted by this run. Declared CDX indexes
+  remain design intent until physical materialization and reopen are proven.

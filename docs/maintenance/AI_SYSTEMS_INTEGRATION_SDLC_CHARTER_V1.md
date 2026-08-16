@@ -1,19 +1,22 @@
 # AI Systems Integration SDLC Charter v1
 
-Status: **active seed; analysis and requirements**
+Status: **M1 accepted 2026-08-05; M2 architecture active; bounded M3 schema candidate**
 Project: `project.ai_systems.integration`
 AIF lane: `AIF-086`
 Initial run: `AIPR-20260803-003`
+Current contribution run: `AIPR-20260816-001`
 Owning lifecycle: **AI Systems Integration SDLC**
 Incorporating lifecycle: **AI Systems Integration SDLC**
-Related lifecycles: **DotTalk++ SDLC**, **LabTalk SDLC**, **maintenance SDLC**, and **PLDC**
+Related lifecycles: **DotTalk++ SDLC**, **LabTalk SDLC**, **maintenance SDLC**, and **PDLC**
 Incorporated lanes: see section 4
-SDLC lane: `design` (M0 analyze and M1 requirements seed)
+SDLC lane: `architecture/design` (M2 active; bounded M3 schema candidate)
 Operating mode: `maintenance`
 Instructional overlay: `laboratory`
 Change class: `C3`
 Owner and final authority: `member.derald`
 Initial steward: `member.ai.codex.local`
+Current steward: `member.ai.claude.cowork`
+Contributing agent for the 2026-08-16 assignment-link slice: `member.ai.codex.local`
 
 ## 1. Mission
 
@@ -61,6 +64,44 @@ Each phase produces both an operational artifact and an educational account of
 what was actually done. Gates not exercised are not taught as completed.
 Mistakes, corrections, and superseded decisions remain visible with dates and
 evidence. The implementation is part of the curriculum.
+
+### 3.1 Recursive and cyclical re-entry rule
+
+The phase names describe required concerns, not a one-way conveyor. The AI
+Systems Integration SDLC is recursive when viewed as control flow and cyclical
+when viewed across successive improvements. New evidence, prior art, changed
+needs, failed assumptions, or a process defect MAY return work to an earlier
+phase. A later artifact does not waive an earlier gate when the cycle returns.
+
+Recursion is a recovery property, not a substitute for doing the first pass
+well. The lifecycle MUST reduce avoidable surprise through proportionate
+up-front problem definition, needs assessment, prior-art discovery, inventory,
+authority and ownership mapping, risk assessment, requirements elicitation,
+acceptance criteria, traceability, and review. Re-entry addresses genuinely new
+evidence and corrects omissions; it does not retroactively make an avoidable
+omission acceptable.
+
+An agent authorized to analyze an integration scope and able to read the
+relevant repository MUST take initiative on those classical, non-mutating SDLC
+steps unless the owner explicitly narrows or waives them. The owner should not
+have to enumerate standard discovery work. This initiative duty does not grant
+mutation, delegation, commit, promotion, or publication authority.
+
+Every re-entry MUST record:
+
+1. the evidence or defect that caused the return;
+2. the earlier phase and gate being reopened;
+3. downstream artifacts whose assumptions may now be stale;
+4. the evidence required to leave the reopened phase again; and
+5. the process improvement that will be taught from the correction.
+
+An empirical prior-art or orphan-work scan is a discovery and needs-assessment
+activity before it is a housekeeping activity. Its first result MUST be an
+inventory and cross-walk of purpose, maturity, ownership, authority,
+dependencies, requirement coverage, duplication, conflict, and evidence gaps.
+Disposition -- including Sidecar movement, archival, deletion candidacy, or
+incorporation -- follows a review gate. A reversible move does not substitute
+for discovery and does not prove that classification was correct.
 
 ## 4. Prior art incorporated, not duplicated
 
@@ -112,6 +153,10 @@ merely because they are convenient or visible.
 | D7 | BBS and worklog convenience can be mistaken for authority. | Require lane, run, actor, authorization, and promotion links; only a governed closeout or registry transition changes authoritative state. |
 | D8 | AIF-064 names the Retro VM/emulator lane in the intake queue but also names registry-fragment tooling in that tool and the AIF-084 worktree charter. | Treat the number as unresolved prior-art identity debt; do not silently adopt either meaning. Reconcile or renumber it through the owner and atomic claim process. |
 | D9 | `SDLC_FAST_START_SEED_V1.md` calls its mandatory task block a 20-field superset, but the enumerated block contains 19 fields. | Preserve all 19 named fields, report the mismatch, and resolve the declared count or schema in AIF-082 rather than inventing a field here. |
+| D10 | The requested empirical orphan-work scan was misclassified as housekeeping, and reversible Sidecar disposition began before the discovery inventory and requirements cross-walk were produced. | Re-enter M1 discovery, include the Sidecar batch in the evidence set, complete needs assessment before further disposition, and retain this defect as the teaching case for recursive phase re-entry. |
+| D11 | Local AI operational pages are manually generated HTML snapshots and can lag both the repository and an older preview copy. | Make local AI Operations views dynamic, read-only projections over canonical sources. Reserve static HTML for explicitly dated export or reviewed publication. |
+| D12 | A prior-art scan created a duplicate crosswalk and competing AIF-089 diagram lane before finding AIF-086. | Preserve AIF-086 as the single owner; require discovery of `docs/maintenance/` and `coordination/aif/` before minting a lane. AIF-089 was reverted and is not revived by later diagrams. |
+| D13 | Agent identity, governed assignment, provider chat identity, project, run, BBS thread, language, timestamps, and mutable UI position had no single durable relationship record. | Define `SYSCHATLNK` with immutable `LINKKEY` and shared `CONVKEY`; expose its contract and diagrams through the AI Portal while keeping production persistence behind a later gate. |
 
 ## 7. Actor-neutral boundary and trespass
 
@@ -143,6 +188,20 @@ remain outside that grant.
 | M6 Publication | AI navigation, public Reports collection, local-only enforcement | Default-deny public build and live readback pass; internal artifacts remain absent. |
 | M7 Maintenance and teaching | freshness ownership, regression cadence, worked LabTalk case | A new participant can explain and operate the integrated system from generated evidence. |
 
+### Phase decision record
+
+| Decision | Result | Authority | Evidence |
+| --- | --- | --- | --- |
+| M0 exit | passed 2026-08-03 | `member.derald` | Owner ruling: "Yes this looks good for M0"; M0 charter, cross-walk, prior-art reconciliation, and defect register at commit `1a61e9e6a`. |
+| M1 entry | active 2026-08-03 | `member.derald` | Owner direction: "next M1?"; bounded requirements run `AIPR-20260803-004`. |
+| M1 discovery re-entry | active 2026-08-03 | `member.derald` | Owner identified that the empirical `docs` and `tools` scan was part of requirements/needs assessment. D10 reopens discovery before further curation or M1 exit review. |
+| M1 discovery assessment | owner-review candidate 2026-08-03 | `member.ai.codex.local` | `AI_SYSTEMS_INTEGRATION_DISCOVERY_AND_NEEDS_ASSESSMENT_M1_V1.md` measures the four named surfaces, includes the Sidecar batch, cross-walks prior art, and proposes no disposition. |
+| M1 local-projection requirement | accepted requirement 2026-08-03 | `member.derald` | Owner ruling: "the pages should be dynamic." Local AI operational pages must derive current canonical state on request or through an automatically invalidated bounded cache; static snapshots are exports, not the normal Portal view. |
+| M1 visibility prototype | authorized and runtime-observed 2026-08-03 | `member.derald` | Owner promoted immediate local implementation because a visible UI is needed for further design, testing, and SDLC decisions. `tools/reports/serve_dynamic_reports.py` now serves request-time local reports on port 3000 and proxies the website on port 3002. This is an evidence-producing prototype, not public or production deployment. |
+| M1 exit | passed 2026-08-05 | `member.derald` | Owner ruling recorded in `AI_SYSTEMS_INTEGRATION_STEWARD_ASSIGNMENT_AND_M1_CONTINUATION_2026-08-05_V1.md`: "I already approved M1." Historical pending-review records remain preserved. |
+| M2 entry | active 2026-08-16 | `member.derald` | Owner directed AIF-lane integration of the agent/assignment/chat relationship and its portal artifacts. `SYSCHATLNK` supplies a bounded component and edge model; it does not close the full M2 gate. |
+| M2/M3 bounded contribution | source-defined plus disposable X64 proof 2026-08-16 | `member.ai.codex.local`, contributing agent | Contract, 35-field schema, maintenance manual, standalone PFD/DFD, portal registry, regression, and accepted transcript under run `AIPR-20260816-001`. No production catalog or writer is claimed. |
+
 ## 9. Planned implementation waves
 
 1. Vocabulary, project registration, charter, cross-walk, and candidate contract.
@@ -155,6 +214,42 @@ remain outside that grant.
 
 Each wave receives its own exact mutation scope. An incorporated lane is not
 changed merely because it appears in this charter.
+
+## 9.1 Bounded M2/M3 contribution: agent-assignment conversation link
+
+The 2026-08-16 owner request adds one stable integration component without
+transferring ownership from identity, BBS, project, or run registries:
+
+| Field | Record |
+| --- | --- |
+| Stable component | `ai.link.agent_assignment_conversation` |
+| Physical design name | `SYSCHATLNK` |
+| Row grain | one `SYSASSIGN` assignment participating in one local conversation |
+| Unique binding | `LINKKEY` |
+| Shared multi-agent conversation | `CONVKEY` |
+| Identity edges | `MEMBERID -> SYSMEMBER.ID`; `ASSIGNID -> SYSASSIGN.ID` |
+| Evidence and BBS edges | `RUNID -> ai_runs`; `BBSTHRID -> SYSTHREAD.ID` |
+| Portal edge | `PROJKEY` plus mutable title/section/position observation |
+| Language and time | UTF-8, BCP 47 `LOCALE`, `CODELANG`, UTC epoch creation/modification/observation |
+| Canonical contract | `docs/contracts/AI_AGENT_ASSIGNMENT_LINK_CONTRACT_V1.md` |
+| Portal registry | `labtalk/registries/agent_assignment_links.yaml` |
+
+Artifact set:
+
+- `docs/contracts/AI_AGENT_ASSIGNMENT_LINK_CONTRACT_V1.md`
+- `docs/maintenance/AI_AGENT_ASSIGNMENT_LINK_MAINTENANCE_MANUAL_V1.md`
+- `dottalkpp/data/schemas/syschatlnk_v1.schema.json`
+- `dottalkpp/data/scripts/ddl/syschatlnk_x64_regression.dts`
+- `labtalk/diagrams/ai_agent_assignment_link_pfd_v1.mmd`
+- `labtalk/diagrams/ai_agent_assignment_link_dfd_v1.mmd`
+- `labtalk/proofs/runs/20260816_101951_agent_assignment_link_regression.txt`
+
+The schema was validated and a physical DBF was created and read back only at
+`dottalkpp/data/tmp/SYSCHATLNK.dbf`. That DBF and its four sidecars were removed
+after proof. No table exists in production metadata, and no other DBF table was
+created, modified, or deleted by this contribution. A production writer,
+catalog location, migration, physical indexes, relation enforcement, and
+rollback proof remain later gates.
 
 ## 10. M0 exclusions
 

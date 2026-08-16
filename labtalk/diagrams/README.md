@@ -32,3 +32,13 @@ The diagram captures the current SelfDoc/LANE model:
 - SelfDoc `metacollect` and `metadata_collection_v0` report-only pipeline,
 - non-mutation and evidence-honesty guards,
 - local LabTalk availability before website matriculation.
+
+## AI Agent Assignment and Conversation Link
+
+- `ai_agent_assignment_link_pfd_v1.mmd` - AIF-086 process flow for provisioning
+  an agent assignment, minting `LINKKEY`/`CONVKEY`, observing provider UI state,
+  and optionally binding the conversation to AI-BBS.
+- `ai_agent_assignment_link_dfd_v1.mmd` - AIF-086 level-1 data flow across
+  `SYSMEMBER`, `SYSASSIGN`, `SYSCHATLNK`, project/run registries, and the BBS
+  tables. The diagram explicitly does not claim a production `SYSCHATLNK`
+  catalog.

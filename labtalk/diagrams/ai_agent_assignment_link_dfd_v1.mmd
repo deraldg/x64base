@@ -1,0 +1,41 @@
+%% DFD level 1 -- AI agent, assignment, conversation, run, and BBS data v1
+%% lane: AIF-086; class: maintained; SYSCHATLNK is not yet a production catalog
+flowchart LR
+  OP["Maintainer / operator"]
+  AG["Codex, ChatGPT, Copilot, Claude, local agents"]
+  UI["Provider chat UI"]
+
+  P1(("P1 resolve identity"))
+  P2(("P2 resolve assignment"))
+  P3(("P3 register conversation link"))
+  P4(("P4 route BBS / pseudo-chat"))
+  P5(("P5 present AI Portal view"))
+
+  D1[("SYSMEMBER")]
+  D2[("SYSASSIGN")]
+  D3[("SYSCHATLNK")]
+  D4[("projects.yaml / ai_runs")]
+  D5[("SYSBOARD / SYSTHREAD / SYSPOST")]
+
+  OP -->|"provision or approve"| P1
+  AG -->|"provider, product, model, MKEY"| P1
+  P1 --> D1
+  D1 -->|"MEMBERID and MKEY"| P2
+  OP -->|"role, work, permission context"| P2
+  P2 --> D2
+  D2 -->|"ASSIGNID, MEMBERID, WORKID"| P3
+  UI -->|"native IDs, title, position, locale, times"| P3
+  D4 -->|"PROJKEY and RUNID"| P3
+  P3 -->|"LINKKEY and CONVKEY"| D3
+  D3 -->|"optional BBS route"| P4
+  D4 -->|"run evidence"| P4
+  P4 --> D5
+  D5 -->|"board, thread, posts"| P4
+  P4 -->|"BBSBOARD and BBSTHRID"| D3
+  D1 --> P5
+  D2 --> P5
+  D3 --> P5
+  D4 --> P5
+  D5 --> P5
+  P5 -->|"governed relationship view"| AG
+  AG -->|"reply or handoff"| P4

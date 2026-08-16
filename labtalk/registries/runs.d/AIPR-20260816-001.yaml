@@ -1,0 +1,23 @@
+run_id: AIPR-20260816-001
+member: member.ai.codex.local
+product: Codex
+project: project.ai_systems.integration
+lanes:
+- AIF-086
+role: contributing_agent_assignment_conversation_crosswalk
+authored_by: member.ai.codex.local
+planned_by: member.derald
+owner: member.derald
+steward: member.ai.claude.cowork
+git:
+  branch: development
+  baseline: 318ee579d44a57f5e5f9640fba6c28eaa7a6ce50
+chat_handle: codex-local-20260816-agent-assignment-link
+handle_binding: SELF_REPORTED
+continues_run: AIPR-20260805-001
+started: 2026-08-16
+closeouts:
+- docs/maintenance/SESSION_CLOSEOUT_AI_AGENT_ASSIGNMENT_LINK_AIF086_2026-08-16.md
+reports:
+- AIPR-20260816-001
+status: complete

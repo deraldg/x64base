@@ -1,0 +1,101 @@
+LabTalk proof transcript
+timestamp: 20260816_101951
+item_id: agent_assignment_link.regression
+label: Create and Read SYSCHATLNK in X64
+kind: dottalk_script
+command_line: D:\code\ccode\dottalkpp\bin\dottalkpp.exe --script D:\code\ccode\labtalk\..\dottalkpp\data\scripts\ddl\syschatlnk_x64_regression.dts
+return_code: 0
+process_return_code: 0
+output_acceptance: accepted
+
+OUTPUT ACCEPTANCE
+=================
+accepted
+
+STDOUT
+======
+[32mINIT: Paths
+  BIN        : D:\code\ccode\dottalkpp\bin
+  DATA       : D:\code\ccode\dottalkpp\data
+  DBF        : D:\code\ccode\dottalkpp\data\dbf
+  INDEXES    : D:\code\ccode\dottalkpp\data\indexes
+  LMDB       : D:\code\ccode\dottalkpp\data\lmdb
+  WORKSPACES : D:\code\ccode\dottalkpp\data\workspaces
+  SCHEMAS    : D:\code\ccode\dottalkpp\data\schemas
+  PROJECTS   : D:\code\ccode\dottalkpp\data\projects
+  SCRIPTS    : D:\code\ccode\dottalkpp\data\scripts
+  TESTS      : D:\code\ccode\dottalkpp\data\tests
+  HELP       : D:\code\ccode\dottalkpp\data\help
+  LOGS       : D:\code\ccode\dottalkpp\data\logs
+  TMP        : D:\code\ccode\dottalkpp\data\tmp
+INIT: processing system .ini D:\code\ccode\dottalkpp\bin\dottalkpp.ini
+INIT: processing user .ini D:\code\ccode\dottalkpp\bin\init.ini
+Echo is OFF
+Paging is OFF
+Talk is OFF
+dottalk++ v0.6 (2026-08-15, fe42666e dirty)  (Aug 15 2026 16:05:32)
+DotTalk++ build Aug 15 2026 16:05:32
+SQLite available: 1, version: 3.50.4
+[0m         [33m*[0m
+[0m         [32m^[0m
+[0m        [32m^[31mo[32m^[0m
+[0m       [32m^^[36m#[32m^^[0m
+[0m      [32m^^^[33m*[32m^^^[0m
+[0m     [32m^^[33m+[32m^^^^^^[0m
+[0m    [32m^^^^^[31mo[32m^^^^^[0m
+[0m   [32m^^^[36m#[32m^^^^^[33m+[32m^^^[0m
+[0m  [32m^^[31mo[32m^^^^[33m*[32m^^^^^^^[0m
+[0m [32m^^^^^[33m+[32m^^^^^^[31mo[32m^^^^[0m
+[32m^^^^[36m#[32m^^^^[31mo[32m^^^^[33m+[32m^^^^[0m
+[0m         [37m|||[0m
+[0m         [37m|||[0m
+EDU_BIBLETALK QUOTE failed: BibleTalk SQLite seed not found. Tried:
+  biblebase\biblebase.sqlite
+  data\biblebase\biblebase.sqlite
+  biblebase\bible_kjv_x64.sqlite
+  data\biblebase\bible_kjv_x64.sqlite
+  bible_kjv_x64_rdbms\bible_kjv_x64.sqlite
+  data\bible_kjv_x64_rdbms\bible_kjv_x64.sqlite
+DotTalk++ type HELP. USE, SELECT <n>, AREA, COLOR <GREEN|AMBER|DEFAULT>, ABOUT, QUIT.
+
+Dev: CMDHELPCHK, GPS, WORKSPACE, ERSATZ.
+
+Hello World!
+. . . . ; ============================================================
+. ; SYSCHATLNK X64 REGRESSION
+. ; ============================================================
+. . WORKSPACE CLOSE: Closing all work areas...
+REL: cleared all
+WORKSPACE: 0 area(s) closed.
+. SETPATH: DBF = D:\code\ccode\dottalkpp\data\tmp
+. . DDL VALIDATE: OK
+  schema    = D:\code\ccode\dottalkpp\data\schemas\syschatlnk_v1.schema.json
+  validator = D:\code\ccode\dottalkpp\data\schemas\schema_json_v1.schema.json
+  contract  = schema_json_v1
+. DDL CREATE DBF: OK
+  schema = D:\code\ccode\dottalkpp\data\schemas\syschatlnk_v1.schema.json
+  output = D:\code\ccode\dottalkpp\data\tmp\SYSCHATLNK.dbf
+  flavor = X64
+  blank_rows = 1
+  sidecars = D:\code\ccode\dottalkpp\data\tmp
+. Opened SYSCHATLNK (v64) : Record count 1
+Valid Index/Indices   : CDX, CNX
+NOINDEX: auto-attach skipped (physical order).
+. . . . . . . . . . . . . . . . . . . . SYSCHATLNK_T1_LINKKEY:.T.
+. SYSCHATLNK_T2_CONVKEY:.T.
+. SYSCHATLNK_T3_ASSIGN:.T.
+. SYSCHATLNK_T4_LOCALE:.T.
+. SYSCHATLNK_T5_TIMES:.T.
+. Closed.
+. . ; SYSCHATLNK_T6_SIDECARS_EXPECTED: SYSCHATLNK.ddl.json SYSCHATLNK.indexes.json
+. WORKSPACE CLOSE: Closing all work areas...
+REL: cleared all
+WORKSPACE: 0 area(s) closed.
+. . ; ============================================================
+. ; SYSCHATLNK X64 REGRESSION DONE
+. ; ============================================================
+. SHUTDOWN: processing D:\code\ccode\dottalkpp\bin\shutdown.ini
+
+STDERR
+======
+(none)

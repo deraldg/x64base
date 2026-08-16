@@ -1,0 +1,22 @@
+%% PFD -- governed AI agent assignment and conversation linking v1
+%% lane: AIF-086; class: maintained; truth: source-defined + disposable X64 proof
+flowchart TD
+  A["Agent enters AI Portal"] --> B{"Member and assignment exist?"}
+  B -->|"no"| C["provision SYSMEMBER and SYSASSIGN"]
+  B -->|"yes"| D["resolve existing assignment"]
+  C --> D
+  D --> E{"conversation registered?"}
+  E -->|"no"| F["mint immutable CONVKEY"]
+  E -->|"yes"| G["reuse CONVKEY"]
+  F --> H["mint assignment-specific LINKKEY"]
+  G --> H
+  H --> I["capture provider, project, language, timestamps, and UI observation"]
+  I --> J{"BBS or pseudo-chat binding?"}
+  J -->|"yes"| K["resolve SYSBOARD and SYSTHREAD"]
+  J -->|"no"| L["leave BBS fields unset"]
+  K --> M["validate identity and assignment invariants"]
+  L --> M
+  M --> N["write one SYSCHATLNK row"]
+  N --> O["expose through portal.agent_assignment_links"]
+  O --> P["refresh mutable observations"]
+  P --> Q["preserve LINKKEY and CONVKEY"]

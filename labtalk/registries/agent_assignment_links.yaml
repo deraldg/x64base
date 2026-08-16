@@ -1,0 +1,192 @@
+# Agent / assignment / conversation link registry v1
+
+link_surfaces:
+  - id: agent_assignment_link.contract
+    label: Agent Assignment Link Contract
+    kind: markdown
+    path: ../docs/contracts/AI_AGENT_ASSIGNMENT_LINK_CONTRACT_V1.md
+    status: source_defined
+    proof_state: source_defined
+    project: project.ai_systems.integration
+    lane: AIF-086
+    run: AIPR-20260816-001
+    table: SYSCHATLNK
+    row_grain: one_agent_assignment_per_conversation
+    shared_identifier: CONVKEY
+    unique_identifier: LINKKEY
+
+  - id: agent_assignment_link.maintenance_manual
+    label: Agent Assignment Link Maintenance Manual
+    kind: markdown
+    path: ../docs/maintenance/AI_AGENT_ASSIGNMENT_LINK_MAINTENANCE_MANUAL_V1.md
+    status: source_defined
+    proof_state: source_defined
+    project: project.ai_systems.integration
+    lane: AIF-086
+    run: AIPR-20260816-001
+    table: SYSCHATLNK
+    audience: [maintainer, operator, ai_agent]
+
+  - id: agent_assignment_link.pfd
+    label: Agent Assignment Link Process Flow
+    kind: diagram
+    path: diagrams/ai_agent_assignment_link_pfd_v1.mmd
+    status: maintained
+    truth_state: source_defined
+    proof_state: source_defined
+    project: project.ai_systems.integration
+    lane: AIF-086
+    run: AIPR-20260816-001
+    derived_from:
+      - ../docs/contracts/AI_AGENT_ASSIGNMENT_LINK_CONTRACT_V1.md
+      - ../docs/maintenance/AI_AGENT_ASSIGNMENT_LINK_MAINTENANCE_MANUAL_V1.md
+
+  - id: agent_assignment_link.dfd
+    label: Agent Assignment Link Data Flow
+    kind: diagram
+    path: diagrams/ai_agent_assignment_link_dfd_v1.mmd
+    status: maintained
+    truth_state: source_defined
+    proof_state: source_defined
+    project: project.ai_systems.integration
+    lane: AIF-086
+    run: AIPR-20260816-001
+    derived_from:
+      - ../docs/contracts/AI_AGENT_ASSIGNMENT_LINK_CONTRACT_V1.md
+      - ../dottalkpp/data/schemas/syschatlnk_v1.schema.json
+
+  - id: agent_assignment_link.schema
+    label: SYSCHATLNK X64 Schema
+    kind: json
+    path: ../dottalkpp/data/schemas/syschatlnk_v1.schema.json
+    status: source_defined
+    proof_state: source_defined
+    project: project.x64base.runtime
+    lane: AIF-086
+    run: AIPR-20260816-001
+    table: SYSCHATLNK
+
+  - id: agent_assignment_link.regression
+    label: Create and Read SYSCHATLNK in X64
+    kind: dottalk_script
+    path: ../dottalkpp/data/scripts/ddl/syschatlnk_x64_regression.dts
+    script: ../dottalkpp/data/scripts/ddl/syschatlnk_x64_regression.dts
+    proof_output_dir: proofs/runs
+    status: proof_passed
+    truth_state: runtime_observed
+    proof_state: validated
+    proof: proofs/runs/20260816_101951_agent_assignment_link_regression.txt
+    project: project.x64base.runtime
+    lane: AIF-086
+    run: AIPR-20260816-001
+    safety: DISPOSABLE_TMP_WRITE
+    mutation: creates_and_overwrites_only_SYSCHATLNK_proof_files_under_configured_TMP
+    observed_result: Current development runtime validated and created the X64 DBF, reopened it, and passed link key, conversation key, assignment, locale, and timestamp readbacks with portal output acceptance accepted.
+    observed_warning: Runtime initialization reported the pre-existing optional BibleTalk SQLite seed warning; it did not affect DDL validation, creation, readback, or output acceptance.
+    required_output_patterns:
+      - "SYSCHATLNK_T1_LINKKEY:.T."
+      - "SYSCHATLNK_T2_CONVKEY:.T."
+      - "SYSCHATLNK_T3_ASSIGN:.T."
+      - "SYSCHATLNK_T4_LOCALE:.T."
+      - "SYSCHATLNK_T5_TIMES:.T."
+
+governance_surfaces:
+  - id: agent_assignment_link.aif_lane
+    label: AIF-086 AI Systems Integration SDLC
+    kind: markdown
+    path: ../docs/maintenance/AI_SYSTEMS_INTEGRATION_SDLC_CHARTER_V1.md
+    status: m2_architecture_active
+    project: project.ai_systems.integration
+    lane: AIF-086
+    run: AIPR-20260816-001
+
+  - id: agent_assignment_link.system_crosswalk
+    label: AI Systems Component Crosswalk
+    kind: markdown
+    path: ../docs/maintenance/AI_SYSTEMS_CROSSWALK_V1.md
+    status: maintained
+    project: project.ai_systems.integration
+    lane: AIF-086
+
+  - id: agent_assignment_link.run
+    label: Assignment Link Contribution Run
+    kind: yaml
+    path: registries/runs.d/AIPR-20260816-001.yaml
+    status: complete
+    project: project.ai_systems.integration
+    lane: AIF-086
+    run: AIPR-20260816-001
+
+  - id: agent_assignment_link.closeout
+    label: Assignment Link Contribution Closeout
+    kind: markdown
+    path: ../docs/maintenance/SESSION_CLOSEOUT_AI_AGENT_ASSIGNMENT_LINK_AIF086_2026-08-16.md
+    status: complete_development_only
+    project: project.ai_systems.integration
+    lane: AIF-086
+    run: AIPR-20260816-001
+
+  - id: agent_assignment_link.proof_registry
+    label: Assignment Link X64 Proof Registry Fragment
+    kind: yaml
+    path: registries/proofs.d/proof.ai.agent_assignment_link_x64.yaml
+    status: runtime_observed
+    project: project.ai_systems.integration
+    lane: AIF-086
+    run: AIPR-20260816-001
+
+  - id: agent_assignment_link.proof_transcript
+    label: Assignment Link X64 Accepted Transcript
+    kind: text
+    path: proofs/runs/20260816_101951_agent_assignment_link_regression.txt
+    status: accepted
+    truth_state: runtime_observed
+    proof_state: validated
+    project: project.ai_systems.integration
+    lane: AIF-086
+    run: AIPR-20260816-001
+
+join_routes:
+  - id: agent_assignment_link.identity_route
+    label: Agent to Assignment
+    kind: relation_route
+    status: source_defined
+    project: project.ai_systems.integration
+    lane: AIF-086
+    from: SYSCHATLNK.MEMBERID
+    through: SYSCHATLNK.ASSIGNID
+    to: [SYSMEMBER.ID, SYSASSIGN.ID]
+    invariant: SYSCHATLNK.MEMBERID must equal SYSASSIGN.MEMBERID
+
+  - id: agent_assignment_link.conversation_route
+    label: Shared Multi-Agent Conversation
+    kind: relation_route
+    status: source_defined
+    project: project.ai_systems.integration
+    lane: AIF-086
+    from: SYSCHATLNK.LINKKEY
+    through: SYSCHATLNK.CONVKEY
+    to: SYSCHATLNK.CONVKEY
+    invariant: each assignment has one LINKKEY while all participants share CONVKEY
+
+  - id: agent_assignment_link.bbs_route
+    label: Conversation to AI-BBS and Pseudo-Chat
+    kind: relation_route
+    status: source_defined
+    project: project.ai_systems.integration
+    lane: AIF-086
+    from: [SYSCHATLNK.BBSBOARD, SYSCHATLNK.BBSTHRID]
+    through: [SYSBOARD.BKEY, SYSTHREAD.ID]
+    to: SYSPOST.THREADID
+    evidence_link: SYSCHATLNK.RUNID
+
+  - id: agent_assignment_link.ui_route
+    label: Conversation to Project Name and UI Position
+    kind: relation_route
+    status: observational
+    project: project.ai_systems.integration
+    lane: AIF-086
+    from: SYSCHATLNK.PROJKEY
+    through: [SYSCHATLNK.TITLE, SYSCHATLNK.UISECT, SYSCHATLNK.UIPOS, SYSCHATLNK.PINPOS]
+    to: provider_sidebar_projection
+    invariant: UI fields are mutable observations and never identifiers

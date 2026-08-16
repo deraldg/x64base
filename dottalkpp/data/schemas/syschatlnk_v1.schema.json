@@ -1,0 +1,135 @@
+{
+  "version": "1.0",
+  "name": "SYSCHATLNK",
+  "encoding": "UTF-8",
+  "date_policy": "ISO",
+  "null_policy": "EMPTY_AS_EMPTY",
+  "logical_policy": "TF",
+  "table": "SYSCHATLNK",
+  "description": "One row per AI agent assignment bound to one locally governed conversation identity.",
+  "fields": [
+    { "name": "ID",        "type": "N", "length": 20,  "decimals": 0, "required": true },
+    { "name": "LINKKEY",   "type": "C", "length": 128, "required": true },
+    { "name": "CONVKEY",   "type": "C", "length": 128, "required": true },
+    { "name": "MEMBERID",  "type": "N", "length": 20,  "decimals": 0, "required": true },
+    { "name": "MKEY",      "type": "C", "length": 64,  "required": true },
+    { "name": "ASSIGNID",  "type": "N", "length": 20,  "decimals": 0, "required": true },
+    { "name": "WORKID",    "type": "N", "length": 20,  "decimals": 0 },
+    { "name": "PROVIDER",  "type": "C", "length": 32,  "required": true },
+    { "name": "PRODUCT",   "type": "C", "length": 32,  "required": true },
+    { "name": "MODEL",     "type": "C", "length": 48 },
+    { "name": "LOCALE",    "type": "C", "length": 35,  "required": true },
+    { "name": "CODELANG",  "type": "C", "length": 32 },
+    { "name": "PROJKEY",   "type": "C", "length": 96,  "required": true },
+    { "name": "SRCPROJ",   "type": "C", "length": 128 },
+    { "name": "SRCCHAT",   "type": "C", "length": 128 },
+    { "name": "SRCTHREAD", "type": "C", "length": 128 },
+    { "name": "PARENTID",  "type": "C", "length": 128 },
+    { "name": "RUNID",     "type": "C", "length": 64 },
+    { "name": "BBSBOARD",  "type": "C", "length": 64 },
+    { "name": "BBSTHRID",  "type": "N", "length": 20,  "decimals": 0 },
+    { "name": "TITLE",     "type": "C", "length": 160 },
+    { "name": "CWD",       "type": "C", "length": 240 },
+    { "name": "UISECT",    "type": "C", "length": 64 },
+    { "name": "UIPOS",     "type": "N", "length": 10,  "decimals": 0 },
+    { "name": "PINPOS",    "type": "N", "length": 10,  "decimals": 0 },
+    { "name": "PINNED",    "type": "L" },
+    { "name": "ARCHIVED",  "type": "L" },
+    { "name": "CREATEDAT", "type": "N", "length": 20,  "decimals": 0, "required": true },
+    { "name": "MODAT",     "type": "N", "length": 20,  "decimals": 0, "required": true },
+    { "name": "OBSAT",     "type": "N", "length": 20,  "decimals": 0, "required": true },
+    { "name": "SENSCLASS", "type": "C", "length": 24,  "required": true },
+    { "name": "STATUS",    "type": "N", "length": 2,   "decimals": 0, "required": true },
+    { "name": "VFROM",     "type": "N", "length": 20,  "decimals": 0, "required": true },
+    { "name": "VTHRU",     "type": "N", "length": 20,  "decimals": 0, "required": true },
+    { "name": "ROWVER",    "type": "N", "length": 20,  "decimals": 0, "required": true }
+  ],
+  "indexes": [
+    {
+      "name": "SYSCHATLNK_LINKKEY",
+      "engine": "CDX",
+      "order": ["LINKKEY"],
+      "unique": true,
+      "nullable": "DISALLOW",
+      "trim": "right",
+      "collation": "binary"
+    },
+    {
+      "name": "SYSCHATLNK_ASSIGN_CONV",
+      "engine": "CDX",
+      "order": ["ASSIGNID", "CONVKEY"],
+      "unique": true,
+      "nullable": "DISALLOW",
+      "trim": "right",
+      "collation": "binary"
+    },
+    {
+      "name": "SYSCHATLNK_CONVKEY",
+      "engine": "CDX",
+      "order": ["CONVKEY"],
+      "unique": false,
+      "nullable": "DISALLOW",
+      "trim": "right",
+      "collation": "binary"
+    },
+    {
+      "name": "SYSCHATLNK_RUNID",
+      "engine": "CDX",
+      "order": ["RUNID"],
+      "unique": false,
+      "nullable": "ALLOW",
+      "trim": "right",
+      "collation": "binary"
+    },
+    {
+      "name": "SYSCHATLNK_BBS",
+      "engine": "CDX",
+      "order": ["BBSBOARD", "BBSTHRID"],
+      "unique": false,
+      "nullable": "ALLOW",
+      "trim": "right",
+      "collation": "binary"
+    },
+    {
+      "name": "SYSCHATLNK_UI",
+      "engine": "CDX",
+      "order": ["PROJKEY", "UISECT", "UIPOS"],
+      "unique": false,
+      "nullable": "ALLOW",
+      "trim": "right",
+      "collation": "binary"
+    }
+  ],
+  "relations": [
+    {
+      "name": "SYSCHATLNK_MEMBER",
+      "parent_table": "SYSMEMBER",
+      "child_table": "SYSCHATLNK",
+      "cardinality": "1:N",
+      "enforce": "SOFT",
+      "nullable_fk": "DISALLOW",
+      "cascade": { "delete": "RESTRICT", "update": "RESTRICT" },
+      "on": [{ "parent": "ID", "child": "MEMBERID" }]
+    },
+    {
+      "name": "SYSCHATLNK_ASSIGN",
+      "parent_table": "SYSASSIGN",
+      "child_table": "SYSCHATLNK",
+      "cardinality": "1:N",
+      "enforce": "SOFT",
+      "nullable_fk": "DISALLOW",
+      "cascade": { "delete": "RESTRICT", "update": "RESTRICT" },
+      "on": [{ "parent": "ID", "child": "ASSIGNID" }]
+    },
+    {
+      "name": "SYSCHATLNK_BBSTHREAD",
+      "parent_table": "SYSTHREAD",
+      "child_table": "SYSCHATLNK",
+      "cardinality": "1:N",
+      "enforce": "SOFT",
+      "nullable_fk": "ALLOW",
+      "cascade": { "delete": "RESTRICT", "update": "RESTRICT" },
+      "on": [{ "parent": "ID", "child": "BBSTHRID" }]
+    }
+  ]
+}

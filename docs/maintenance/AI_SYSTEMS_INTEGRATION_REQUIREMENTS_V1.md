@@ -1,6 +1,6 @@
 # AI Systems Integration SDLC Requirements v1
 
-Status: **M1 discovery assessment candidate complete; owner review required**
+Status: **M1 accepted by owner 2026-08-05; retained as the M2 requirements baseline**
 Project: `project.ai_systems.integration`
 AIF lane: `AIF-086`
 Run: `AIPR-20260803-004`
@@ -13,6 +13,7 @@ Change class: `C3`
 Build target: `documentation_only`
 Owner and final authority: `member.derald`
 Steward and author: `member.ai.codex.local`
+Current lane steward: `member.ai.claude.cowork`
 
 ## 1. Phase boundary
 
@@ -34,8 +35,9 @@ revalidation.
 
 The correction pass is recorded in
 `docs/maintenance/AI_SYSTEMS_INTEGRATION_DISCOVERY_AND_NEEDS_ASSESSMENT_M1_V1.md`.
-It completes the named four-surface census as an owner-review candidate. It does
-not self-approve these requirements or authorize disposition or M2 entry.
+It completed the named four-surface census as an owner-review candidate. It did
+not self-approve these requirements. The owner subsequently accepted M1 on
+2026-08-05; that ruling is recorded below and unlocks bounded M2 architecture.
 
 | ID | Requirement |
 | --- | --- |
@@ -207,6 +209,14 @@ M1 exits only when the owner confirms that:
 5. trespass and delegation remain actor-neutral and safely attenuated;
 6. the M2 architecture task is sufficiently bounded by requirement IDs.
 
-Until that ruling, this document remains a candidate and AIF-086 remains in
-M1 Requirements. The discovery assessment is available; owner review is now the
-gate.
+The owner supplied that ruling on 2026-08-05: "I already approved M1." The
+ruling is preserved in
+`AI_SYSTEMS_INTEGRATION_STEWARD_ASSIGNMENT_AND_M1_CONTINUATION_2026-08-05_V1.md`.
+AIF-086 therefore entered M2 Architecture. Candidate labels in the acceptance
+matrix above preserve the pre-ruling assessment state; they are not the current
+lane gate.
+
+The 2026-08-16 `SYSCHATLNK` contribution traces primarily to `A-01`, `A-03`,
+`N-05`, `P-01`, `P-02`, `P-03`, `F-03`, `F-04`, and `F-05`. It supplies a
+bounded relationship component and source-of-record mapping without claiming
+the full M2 exit gate or a production persistence implementation.

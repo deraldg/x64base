@@ -177,6 +177,11 @@ sections:
     description: Machine-facing fast-start and task-context work for AI development partners entering x64base. It is not a student AI-access portal, production autonomous memory, or an independent authority source.
     registry: registries/ai_portal.yaml
 
+  - id: portal.agent_assignment_links
+    label: Agent Assignment Links
+    description: Durable multi-agent crosswalk from governed assignments to provider conversations, projects, UI observations, AI runs, and BBS pseudo-chat threads.
+    registry: registries/agent_assignment_links.yaml
+
   - id: portal.apps
     label: Apps
     description: Registered LabTalk campus apps.
