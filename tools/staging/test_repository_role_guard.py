@@ -261,15 +261,92 @@ class BranchCutFromMainTests(unittest.TestCase):
             check=True, capture_output=True, text=True,
         ).stdout.strip()
         own = [("refs/heads/ci/fix", head, "refs/heads/ci/fix", guard.ZERO_SHA)]
-        self.assertEqual(guard.validate_push_updates(role, own), [])
+        # root is REQUIRED for a branch-cut role: without it the per-commit
+        # ancestry cannot be established and the guard fails closed.
+        self.assertEqual(guard.validate_push_updates(role, own, root=str(self.wt_main)), [])
+        self.assertTrue(guard.validate_push_updates(role, own))  # no root -> refused
         for target in ("refs/heads/main", "refs/heads/development"):
             with self.subTest(target=target):
                 self.assertTrue(
                     guard.validate_push_updates(
                         role,
                         [("refs/heads/ci/fix", head, target, guard.ZERO_SHA)],
+                        root=str(self.wt_main),
                     )
                 )
+
+    def test_explicit_refspec_cannot_smuggle_development(self):
+        """Codex review, PR #13, 2026-08-16 -- reproduced before fixing.
+
+        The role is earned by HEAD's ancestry, but `git push` accepts a
+        refspec: `git push origin development:ci/fix` sends development's tip
+        at the accepted destination. The destination matched and nothing looked
+        at local_sha, so the exact history this role exists to exclude would
+        have published, and a PR from that branch would have carried it to main.
+        """
+        role = guard.detect_branch_cut_role(str(self.wt_main), "ci/fix")
+        dev = subprocess.run(
+            ["git", "-C", str(self.wt_main), "rev-parse", "development"],
+            check=True, capture_output=True, text=True,
+        ).stdout.strip()
+        errors = guard.validate_push_updates(
+            role,
+            [("refs/heads/development", dev, "refs/heads/ci/fix", guard.ZERO_SHA)],
+            root=str(self.wt_main),
+        )
+        self.assertTrue(errors, "a development SHA reached an accepted branch ref")
+        self.assertIn("development history", " ".join(errors))
+
+    def test_missing_development_ref_fails_closed(self):
+        """Codex review, PR #13 -- unverifiable history must not read as safe.
+
+        ref_is_ancestor returns False for "not an ancestor" AND for "ref absent",
+        so deleting only refs/remotes/origin/development made a worktree sitting
+        on development look like a clean cut from main. Same defect shape as
+        proof.tooling.catalog_state_blindness, reintroduced hours after it was
+        written up.
+        """
+        subprocess.run(
+            ["git", "-C", str(self.dev), "update-ref", "-d",
+             "refs/remotes/origin/development"],
+            check=True, capture_output=True,
+        )
+        # The local development branch still exists, so it must still be found.
+        self.assertIsNone(guard.detect_branch_cut_role(str(self.wt_dev), "ci/bad"))
+        # carries_development reports None only when NOTHING can be compared.
+        head = subprocess.run(
+            ["git", "-C", str(self.wt_main), "rev-parse", "HEAD"],
+            check=True, capture_output=True, text=True,
+        ).stdout.strip()
+        self.assertIs(guard.carries_development(str(self.wt_main), head), False)
+
+    def test_no_development_ref_at_all_is_undeterminable_and_refused(self):
+        """The None path -- and it needed a second attempt to actually reach.
+
+        The test above deletes only the remote-tracking ref, so the LOCAL
+        development branch still answers and `present` is never empty. Mutation
+        testing proved it: changing `return None` to `return False` in
+        carries_development broke NO test. The check was green for a reason
+        unrelated to what it claimed.
+
+        This one removes every development ref, which is the only state in
+        which the answer is genuinely unknowable, and requires that a cut which
+        is otherwise perfectly clean is still REFUSED. Safety here is not
+        "development is absent so nothing can be smuggled" -- it is "the claim
+        cannot be established, so it is not granted."
+        """
+        for ref in ("refs/remotes/origin/development", "refs/heads/development"):
+            subprocess.run(
+                ["git", "-C", str(self.dev), "update-ref", "-d", ref],
+                capture_output=True,
+            )
+        head = subprocess.run(
+            ["git", "-C", str(self.wt_main), "rev-parse", "HEAD"],
+            check=True, capture_output=True, text=True,
+        ).stdout.strip()
+        self.assertIsNone(guard.carries_development(str(self.wt_main), head))
+        # A textbook-clean cut from origin/main, refused because unverifiable.
+        self.assertIsNone(guard.detect_branch_cut_role(str(self.wt_main), "ci/fix"))
 
     def test_deletions_and_tags_still_refused_for_branch_cuts(self):
         role = guard.detect_branch_cut_role(str(self.wt_main), "ci/fix")
