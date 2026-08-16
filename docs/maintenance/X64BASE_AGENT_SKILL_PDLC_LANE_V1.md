@@ -90,11 +90,12 @@ three tiers already have.
 | R4 | 2026-08-06 | **Drift gate runs advisory for one cycle**, then promotes to hard-fail. |
 | R5 | 2026-08-06 | **`.claude/skills/` is an accepted vendor target in `development`.** |
 | R6 | 2026-08-06 | **Audience is repo-partner onboarding.** Engine/DotScript-operator and website-maintenance skills are deferred, not cancelled (section 8). |
-| R7 | 2026-08-06 | **G0 ruled: CONVERT.** "develop and document, it is our thesis". The skill programme is retired unbuilt; the lane becomes the D1-D4 repair lane, developed and documented as one act. P1-P9 below are superseded by section 11. |
+| R7 | 2026-08-06 | **G0 ruled: CONVERT.** "develop and document, it is our thesis". The skill programme is retired unbuilt; the lane becomes the D1-D4 repair lane, developed and documented as one act. P1-P9 below are superseded -- by section 10 for the repair work, and by R10 / section 11 for the live plan. (This clause previously pointed at "section 11" when that number was the maintenance rule; corrected 2026-08-16 during the renumber.) |
 | R8 | 2026-08-07 | **PLDC is merged into PDLC and retired.** "PLDC -- Product/Lab Delivery Cycle" and PDLC are one lifecycle. PDLC's SCOPE widens to span both the change and the deliverable; its NAME does not change -- it remains the **Programming** Development Life Cycle (`PDLC_STUDENT_WORKING_MODEL_LANE_V1.md`, `projects.yaml` `project.labtalk.pdlc`). This reverses R1, which had ruled the opposite. Doctrine of record: `SCOPE_CALIBRATED_LIFECYCLE_DOCTRINE_V1.md`, "Lifecycle vocabulary". Lane file renamed `X64BASE_AGENT_SKILL_PLDC_LANE_V1.md` -> `X64BASE_AGENT_SKILL_PDLC_LANE_V1.md`. |
 
 | R9 | 2026-08-16 | **Licence is DUAL: GPL-3.0-only, plus commercial terms from the author.** Settled by the owner; retires the "to be defined" placeholder that section 5 listed as blocking P9. Authority: `README.md` "License" section and `LICENSING.md` (<https://x64base.com/licensing/>); `LICENSE` is 34,510 B in `development` and on `main`. GPL-3.0-only covers free, open, educational and non-commercial use; a **commercial licence** is required to embed x64base in a closed-source or proprietary product. **Consequence for the lane, and it is not a formality:** a distributed `.skill` bundle is a derivative distribution, so it inherits GPL-3.0 by default -- and an AI agency embedding it in a proprietary product is *precisely* the case the commercial track exists for. The agency-facing package must therefore state BOTH tracks and point at `LICENSING.md`, never just "GPL-3.0". **Two residuals, tracked here, neither blocking:** (a) the tree carries both `LICENSE` (34,510 B) and `COPYING` (35,149 B) with different content, ambiguous to a licence scanner, and the bundle must name which governs; (b) `README.md` on `main` still reads "License: To be determined" while `development` carries the dual-licence text -- a promotion gap, and `README.md` IS allow-listed (`PROMOTE.manifest:54`), so an ordinary promotion refresh closes it. |
 | | | **CORRECTION, same day.** The first version of R9, committed in `ef8ea7899`, read "Licence is GPL-3.0" and was dated 2026-08-07. Both were wrong: the licence is dual, and the date was carried over from an earlier session day without checking the clock. Recorded rather than overwritten, because a ruling that silently changes its own terms is worse than one that shows the correction. |
+| R10 | 2026-08-16 | **A1 fork probe adopted as the plan of record; P1-P9 formally superseded.** The second-opinion pass (`COWORK-20260807-005`) established that P0 measured *onboarding* -- can a cold agent reach Tier 1 -- and never measured *operation* -- can an in-tree agent mutate a DBF safely. G0's NO-GO therefore does not cover the operation question, which was retired without a test. A1 measures that fork rather than building toward either answer. Source: `A1_MEASUREMENT_PLAN_X64BASE_SKILL_FORK_2026-08-07.md`, authored outside the repository; placement is the owner's. **Feasibility verified 2026-08-16 rather than taken on trust:** `tools/dbf/crud.py` carries real `--emit` and `--ram` flags with an fsram RAM-VFS dry run (line 414), and intake row AIF-088 records `R-APPEND-BLANK` as already caught by that harness -- so the instrument Arm B proposes has prior art on the defect class Arm B measures. **One amendment owed to the sender:** a written contamination inventory before Arm B runs, because `CLAUDE.md` auto-injects into every subagent and already states that `xbase::locks` exists, so the control arm is not naive and its head start must be on the record before the run, not discovered after. |
 
 ## 3. Standing disciplines (adopted, enforced per phase)
 
@@ -141,6 +142,12 @@ three tiers already have.
 
 ## 4. Phase register (P-phases with G-gates)
 
+> **SUPERSEDED -- do not plan from this table.** R7 (2026-08-06) retired P1-P9
+> unbuilt when G0 came back NO-GO. R10 (2026-08-16) adopts the A1 fork probe in
+> their place. The register is kept rather than deleted for two reasons: the P0
+> row is the evidence record, and removing a retired plan hides that it was
+> tried and why it failed. **Live plan: section 11.**
+
 | Phase | Content | Gate |
 | --- | --- | --- |
 | **P0** | **DONE 2026-08-06.** Two outside-runner cold probes, control vs skill stub, plus static reachability measurement. Evidence: `X64BASE_AGENT_SKILL_P0_MEASUREMENT_V1.md`. | **G0 NO-GO RECOMMENDED.** Both arms reached Tier 1 and answered 5/5; both read ~48 KB; no material saving. Premise falsified. Owner ruling required -- no self-approval by the author. |
@@ -164,13 +171,20 @@ three tiers already have.
 
 ## 6. Registration state
 
-| Artifact | State |
+**Corrected 2026-08-16.** This section previously asserted four pieces of
+perishable state, three of which had gone stale: the intake row was recorded as
+"owed" after it had landed, and the charter described itself as "uncommitted at
+time of writing" through several commits. Section 12 forbids exactly this, and
+the file stating the rule was the file breaking it. State that can be
+cheaply measured is no longer asserted here -- each row names the check instead.
+
+| Artifact | How to check it, rather than trust this table |
 | --- | --- |
-| `coordination/aif/AIF-090.claim` | written, atomic, `COWORK-20260806-001` |
-| Intake row AIF-090 | **owed** -- must be added to `docs/ai-friendly/AI_INTERACTION_INTAKE_QUEUE_V1.md` with or before this charter |
-| `labtalk/registries/skills.yaml` | absent; P1 creates it |
+| AIF-090 claim | `coordination/aif/AIF-090.claim`, run `COWORK-20260806-001` |
+| Intake row AIF-090 | `grep -n 'AIF-090' docs/ai-friendly/AI_INTERACTION_INTAKE_QUEUE_V1.md` -- the row is authoritative, not this line |
+| `labtalk/registries/skills.yaml` | `ls labtalk/registries/skills.yaml`. Created only if A1 rules toward a built artifact; R7 retired the P1 that would have created it unconditionally |
 | `labtalk/registries/ai_portal.yaml` | update owed at first material increment |
-| This charter | authored, uncommitted at time of writing |
+| This charter | tracked; `git log --oneline -- docs/maintenance/X64BASE_AGENT_SKILL_PDLC_LANE_V1.md` |
 
 ## 7. Provenance
 
@@ -430,7 +444,42 @@ previously untracked file makes every line an added line, so the whole file must
 be clean, not just the edit. Proven by forcing the FAIL branch: exit 2, message
 names the fixer, `--apply`, and the untracked trap.
 
-## 11. Maintenance rule for this file
+## 11. Live plan -- A1 fork probe (adopted 2026-08-16, R10)
+
+This replaces section 4. Full method, metrics and decision table:
+`A1_MEASUREMENT_PLAN_X64BASE_SKILL_FORK_2026-08-07.md` (outside the repo,
+placement owed). Summarised here only far enough to be actionable; the source
+governs, and this section must not restate it (section 12).
+
+**What A1 decides.** Not "what should the skill contain" but "what does an agent
+fail at that x64base's own HELP and catalog do not already fix?" If the answer is
+"nothing, for either audience," that is a measured retirement -- and it is
+cheaper to reach than one line of emitter code.
+
+| Arm | Audience | Method | Metric |
+| --- | --- | --- | --- |
+| **A** | external, no tree | Static classification of 5 real tasks: each required step marked `covered-by-derived-bundle` / `covered-by-published-governance` / `uncoverable-without-the-engine`. Static by design, so the `CLAUDE.md` auto-inject cannot invalidate it. | share of steps uncoverable without the engine |
+| **B** | in-tree, has engine | Control (`CMDHELP` + engine) vs treatment (plus a prove-then-apply verb) over the same mutations, against a disposable fsram fixture -- `tools/dbf/crud.py --emit --ram`, zero disk, no `C:\x64base` | per-class delta in destructive mistakes, unverified assumptions, stale-state errors |
+
+**Pre-registration is the discipline that makes it worth running.** Arm A's step
+list and every classification are written and reviewable *before* the metric is
+computed; Arm B's three metric classes are defined before the first run. Neither
+may be reclassified after the number is known. This is not ceremony: this lane's
+recorded failure mode is acting before finishing a count, so the count is fixed
+in advance.
+
+**Why no fifth outcome.** The decision table cannot end in "keep repairing the
+reference bundle." Every cell either retires the lane, narrows it to its one real
+audience, or replaces it with the operation-safety skill P0 never weighed.
+
+**Amendment owed before Arm B runs (R10).** A written contamination inventory:
+`CLAUDE.md` is auto-injected and already states that cooperative locking exists,
+so the control is pre-briefed. It does not supply the operational protocol --
+when to lock, how to verify, what readback proves -- and that gap is the
+uncontaminated ground the fixture should exercise. Record the head start before
+the run, or a null result will be unreadable.
+
+## 12. Maintenance rule for this file
 
 This file carries **phase state, rulings, and pointers**. It must not restate
 what a pointed-to document says. A milestone entry changes only when its
