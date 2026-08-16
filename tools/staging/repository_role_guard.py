@@ -49,6 +49,11 @@ class RepositoryRole:
     root: str
     required_branch: str
     allowed_remote_branch: str
+    # True only for a PR branch cut from origin/main. Carries the obligation
+    # that EVERY pushed commit is re-checked for ancestry, not just HEAD --
+    # see validate_push_updates. Default False so the two fixed roles are
+    # unaffected.
+    branch_cut: bool = False
 
 
 DEVELOPMENT_ROLE = RepositoryRole(
@@ -151,12 +156,26 @@ def linked_worktree_parent(root: str) -> str | None:
     return parent or None
 
 
-def ref_is_ancestor(root: str, ref: str, sha: str) -> bool:
-    """True when `ref` exists locally and is an ancestor of `sha`."""
-    exists = subprocess.run(
-        ["git", "-C", root, "show-ref", "--verify", "--quiet", ref]
+DEVELOPMENT_REFS = ("refs/remotes/origin/development", "refs/heads/development")
+
+
+def ref_exists(root: str, ref: str) -> bool:
+    return (
+        subprocess.run(
+            ["git", "-C", root, "show-ref", "--verify", "--quiet", ref]
+        ).returncode
+        == 0
     )
-    if exists.returncode != 0:
+
+
+def ref_is_ancestor(root: str, ref: str, sha: str) -> bool:
+    """True when `ref` exists locally and is an ancestor of `sha`.
+
+    CAUTION -- returns False for BOTH "not an ancestor" and "ref not present".
+    Callers that need to distinguish those must use ref_exists() as well.
+    See carries_development() for why, and what it cost.
+    """
+    if not ref_exists(root, ref):
         return False
     return (
         subprocess.run(
@@ -164,6 +183,38 @@ def ref_is_ancestor(root: str, ref: str, sha: str) -> bool:
         ).returncode
         == 0
     )
+
+
+def carries_development(root: str, sha: str) -> bool | None:
+    """Does `sha` contain development history?
+
+    True  -- yes, a development ref is an ancestor.
+    False -- no, and that was positively established.
+    None  -- UNDETERMINABLE: no development ref exists to compare against.
+
+    THE THIRD VALUE IS THE POINT, AND ITS ABSENCE WAS A REAL HOLE.
+    The first version of detect_branch_cut_role() asked
+    `if ref_is_ancestor(root, "refs/remotes/origin/development", head)` and
+    treated False as safe. But ref_is_ancestor returns False when the ref is
+    MISSING too, so a worktree in a repository lacking the remote-tracking ref
+    was accepted as branch-cut-from-main even when it sat directly on the
+    development branch. Unverifiable history read as clean history.
+
+    Found by Codex review on PR #13, 2026-08-16, and reproduced: delete only
+    refs/remotes/origin/development, keep the local branch, base a worktree on
+    it -- accepted. Callers must FAIL CLOSED on None.
+
+    Recorded because of what it is: the same defect as
+    proof.tooling.catalog_state_blindness, in which a helper returned one
+    answer for "absent" and "empty" and a guard therefore could not see an
+    empty catalog. That proof was written hours before this function was, by
+    the same author, and the bug was reintroduced anyway. Knowing a failure
+    shape is not the same as recognising it in your own new code.
+    """
+    present = [r for r in DEVELOPMENT_REFS if ref_exists(root, r)]
+    if not present:
+        return None
+    return any(ref_is_ancestor(root, r, sha) for r in present)
 
 
 def detect_branch_cut_role(root: str, branch: str) -> RepositoryRole | None:
@@ -207,13 +258,16 @@ def detect_branch_cut_role(root: str, branch: str) -> RepositoryRole | None:
         return None
     if not ref_is_ancestor(root, "refs/remotes/origin/main", head):
         return None
-    if ref_is_ancestor(root, "refs/remotes/origin/development", head):
+    # Fail CLOSED: None means no development ref exists to compare against, so
+    # the claim "this does not carry development" cannot be established.
+    if carries_development(root, head) is not False:
         return None
     return RepositoryRole(
         name="branch-cut-from-main",
         root=root,
         required_branch=branch,
         allowed_remote_branch=branch,
+        branch_cut=True,
     )
 
 
@@ -316,6 +370,45 @@ def validate_push_updates(
                 f"attempted {local_ref} -> {remote_ref}"
             )
             continue
+        # A branch-cut role was granted on the basis of HEAD's ancestry. That
+        # says nothing about what is actually being pushed.
+        #
+        # `git push origin development:ci/fix` sends development's tip at the
+        # accepted destination ref. The destination matched, the role was
+        # valid, and nothing looked at local_sha -- so the exact development
+        # history this role exists to exclude would publish, and a pull request
+        # from that branch would carry it into main. Found by Codex review on
+        # PR #13, 2026-08-16, and reproduced before fixing: the validator
+        # returned no errors for a development SHA targeting refs/heads/ci/fix.
+        #
+        # So the ancestry checks are re-applied here, per update record. HEAD
+        # is what earns the role; every pushed commit must earn its own passage.
+        if role.branch_cut:
+            if not root:
+                errors.append(
+                    "branch-cut role cannot validate a push without a repository root"
+                )
+                continue
+            if not ref_is_ancestor(root, "refs/remotes/origin/main", local_sha):
+                errors.append(
+                    f"branch-cut push must descend from origin/main; "
+                    f"{local_ref} -> {remote_ref} does not"
+                )
+                continue
+            carries = carries_development(root, local_sha)
+            if carries is None:
+                errors.append(
+                    "branch-cut push cannot be validated: no development ref "
+                    "exists to compare against (failing closed)"
+                )
+                continue
+            if carries:
+                errors.append(
+                    f"branch-cut push carries development history; "
+                    f"{local_ref} -> {remote_ref} is forbidden"
+                )
+                continue
+
         if role is STAGING_ROLE and remote_ref == "refs/heads/main":
             is_ancestor = development_ancestor_override
             if is_ancestor is None and root:
