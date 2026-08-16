@@ -7,7 +7,10 @@ ai_report_audit:
     provider: Anthropic
     product: Claude (Cowork)
     model: claude-opus-5
-    access_mode: local
+    access_mode: local_write
+  session:
+    id: not_exposed
+    chat_reference: not_exposed
   git:
     branch: development
     baseline_commit: b8dc1e6fe
@@ -32,7 +35,14 @@ ai_report_audit:
   lanes_spawned: AIF-116, AIF-117
   report:
     path: docs/maintenance/external_ai_intake/aif112_phase1_return_2026-08-15/
-    kind: evidence_return_package
+    kind: review_needed_change_package
+    kind_note: >
+      This package is an OUTBOUND evidence return, and the intake schema has no
+      kind for that -- audit_trail.py allows only review_needed_change_package
+      and intake_assessment. review_needed_change_package is the honest fit of
+      the two: notes/OWNER_RULINGS_R1_R3.md is drafted and unsigned and does
+      require owner review. But the label understates the package. See
+      "Schema gap" below.
   responds_to: AIPR-20260815-GROK-005
   primary_topics:
     - "AIF-112 Phase-1 return"
@@ -105,6 +115,40 @@ carry no authority until the owner signs.
 None of the three is AIF-112 work. All three were found by building the ledger
 rather than by reading the code, and none would have surfaced on the original
 SQLite substrate.
+
+## Schema gap, found by the gate on this package
+
+The report-audit check fired four advisories on the first version of this
+manifest and every one was correct. Two were plain mistakes -- a missing
+`session:` block, and `access_mode: local` where the registry allows only
+`local_write`, `local_read_only`, `hosted_proposal`, `external_patch`,
+`human_operated_tool`, `automation`. Both fixed.
+
+The other two are structural and are recorded rather than papered over.
+
+**1. There is no outbound `report.kind`.** `audit_trail.py` defines
+`INTAKE_KINDS = {"review_needed_change_package", "intake_assessment"}`. Both
+describe material arriving FROM an external agent. A return TO one has no label,
+so this package wears the closest fit. Either register an outbound kind, or rule
+that outbound material belongs at
+`docs/maintenance/*_FOR_TRANSMISSION_V1.md` (where handoffs 2 and 3 live) and
+keep `external_ai_intake/` strictly inbound. The second is tidier; the first
+keeps a correspondence thread in one directory. **Owner's call, and it is a real
+fork rather than a formatting nit.**
+
+**2. Most report kinds are audited by nothing.** `audit_trail.py` enforces
+`CLOSEOUT_KINDS = {"session_closeout"}` plus the intake glob. Everything else --
+`defect_report`, `lane_charter`, `evidence_return` -- carries an
+`ai_report_audit` envelope that no gate reads. The proof: **the same invalid
+`access_mode: local` sat in four committed documents from this session and was
+caught only in the fifth**, because the fifth happened to land under
+`external_ai_intake/`. All four have been corrected.
+
+That is this repository's own recurring finding, arriving again in the
+governance layer rather than the engine: an obligation without a gate. Per
+`PREPUSH_GATE_REFERENCE_V1.md`, "obligations carrying a gate held 83-94 percent
+compliance; the one without a gate held 33." The envelope contract is currently
+in the 33 for every kind except closeouts.
 
 ## Provenance
 

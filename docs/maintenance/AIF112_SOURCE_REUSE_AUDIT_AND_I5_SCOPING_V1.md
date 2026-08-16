@@ -7,7 +7,7 @@ ai_report_audit:
     provider: Anthropic
     product: Claude (Cowork)
     model: claude-opus-5
-    access_mode: local
+    access_mode: local_write
   session:
     id: not_exposed
     chat_reference: not_exposed
