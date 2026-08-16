@@ -41,12 +41,48 @@ GUARDED = ("dotref", "foxref")
 NAMESPACES = ("dotref", "foxref", "edref", "devref", "pshell_ref", "sql_ref")
 
 
-def catalog_names(root: Path, ns: str) -> list[str]:
+STATUS_RE = re.compile(r'^//\s*status:\s*(\S+)', re.M)
+
+
+def catalog_state(root: Path, ns: str) -> tuple[str, list[str], str | None]:
+    """Return (state, names, declared_status).
+
+    state is 'absent' | 'empty' | 'populated'.
+
+    THE THREE STATES ARE REPORTED SEPARATELY, AND THAT IS THE WHOLE POINT.
+    Until 2026-08-15 catalog_names() returned [] for a missing file and [] for
+    an empty one, and the caller printed "(empty)" and moved on for both. So
+    include/devref.hpp sat empty for months while declaring `status: supported`
+    and while AI_TIER1_SEED_V1.md named it as one of six reference authorities
+    that "own a namespace" -- told to every agent, contradicted by the file, and
+    invisible to the guard whose job was exactly this. Zero findings and zero
+    content produced identical output.
+
+    The declared status is returned because it is what makes an empty catalog
+    judgeable. Empty is legitimate for a RESERVED namespace and a defect for a
+    SUPPORTED one. Checking the file against its own claim is cheaper and
+    truer than maintaining a hand-kept list of which emptiness is allowed.
+    """
     p = root / "include" / f"{ns}.hpp"
     if not p.exists():
-        return []
-    seg = p.read_text(encoding="utf-8", errors="replace").split("catalog()", 1)[-1]
-    return [m.group(1).strip().upper() for m in NAME_RE.finditer(seg) if m.group(1).strip()]
+        return "absent", [], None
+    text = p.read_text(encoding="utf-8", errors="replace")
+    m = STATUS_RE.search(text)
+    status = m.group(1).strip().lower() if m else None
+    if "catalog()" not in text:
+        return "empty", [], status
+    seg = text.split("catalog()", 1)[-1]
+    names = [
+        m.group(1).strip().upper()
+        for m in NAME_RE.finditer(seg)
+        if m.group(1).strip()
+    ]
+    return ("populated" if names else "empty"), names, status
+
+
+def catalog_names(root: Path, ns: str) -> list[str]:
+    """Names only. Kept for callers that do not care about state."""
+    return catalog_state(root, ns)[1]
 
 
 def function_names(root: Path) -> set[str]:
@@ -137,10 +173,29 @@ def main() -> int:
     print(f"authorities: {len(commands)} commands/aliases, {len(funcs)} functions (SYSFUNC)\n")
     print(f"{'catalog':<12} {'entries':>7} {'cmd':>5} {'fn':>4} {'sub':>5} {'PHANTOM':>8}   phantoms")
     total_phantoms = 0
+    contradictions: list[str] = []
     for ns in NAMESPACES:
-        names = catalog_names(root, ns)
-        if not names:
-            print(f"{ns:<12} {'(empty)':>7}")
+        state, names, status = catalog_state(root, ns)
+        if state == "absent":
+            print(f"{ns:<12} {'ABSENT':>7}   include/{ns}.hpp does not exist")
+            contradictions.append(
+                f"{ns}: named in NAMESPACES but include/{ns}.hpp is not there"
+            )
+            continue
+        if state == "empty":
+            # Empty is fine if the header SAID it would be. It is a defect when
+            # the header claims to be supported, because then the file and its
+            # own contract disagree and every reader believes the contract.
+            if status in ("reserved", "planned", "stub"):
+                print(f"{ns:<12} {'(empty)':>7}   status: {status} -- empty by declaration")
+            else:
+                print(f"{ns:<12} {'EMPTY':>7}   status: {status or 'unset'}")
+                contradictions.append(
+                    f"{ns}: catalog is EMPTY but the header declares "
+                    f"status: {status or 'unset'!r}. Either populate it or "
+                    f"declare it 'reserved'. An empty catalog claiming support "
+                    f"is what hid devref while the Tier 1 seed advertised it."
+                )
             continue
         counts = {"command": 0, "function": 0, "subform": 0, "PHANTOM": 0}
         phantoms = []
@@ -166,11 +221,20 @@ def main() -> int:
         if not ok:
             return 2
 
+    if contradictions:
+        print("\nCATALOG STATE contradictions:")
+        for c in contradictions:
+            print(f"  {c}")
+
     print(f"\nGUARDED phantoms (dotref+foxref): {total_phantoms}")
-    if total_phantoms:
-        print("FAIL: a native/legacy reference entry names no command, function, or sub-form.")
+    if total_phantoms or contradictions:
+        if total_phantoms:
+            print("FAIL: a native/legacy reference entry names no command, function, or sub-form.")
+        if contradictions:
+            print(f"FAIL: {len(contradictions)} catalog(s) disagree with their own declared status.")
         return 1
     print("PASS: every dotref/foxref entry resolves to a command, function, or sub-form.")
+    print("PASS: every catalog's content agrees with its declared status.")
     return 0
 
 

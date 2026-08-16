@@ -15,12 +15,101 @@
 
 namespace edref {
 
+// What an entry IS. Before 2026-08-15 every entry was implicitly a concept
+// page, so 29 entries sat in one undifferentiated pile and the catalog could
+// not tell a definition from a drill.
+//
+// LAB IS DELIBERATELY ABSENT (owner ruling 2026-08-15): labs stay in LabTalk.
+// EDREF points at them via `lab_ref` and does not hold them. One home per
+// artifact -- the same rule that keeps the theme control in one place.
+enum class Kind {
+    Concept,     // what a thing is. The 29 originals.
+    Example,     // worked, and RUNNABLE -- pair with script_ref.
+    Exercise,    // the student produces something.
+    StudyGuide,  // review / end-of-chapter consolidation.
+    Assessment,  // self-check with a knowable answer.
+    Glossary,    // terminology lookup.
+};
+
+// Who the entry is pitched at. Owner 2026-08-15: college is the target, and
+// high-school AP is a good target too. Both is the default because most
+// concept text serves both, and marking the exceptions is cheaper than
+// marking the rule.
+enum class Level {
+    Both,
+    Ap,       // AP Computer Science scope.
+    College,  // assumes more, e.g. complexity analysis.
+};
+
 struct Item {
     const char* topic;    // canonical upper-case topic name
     const char* syntax;   // short form / heading
     const char* summary;  // full teaching text
     bool supported;       // whether the topic reflects current DotTalk++ behavior
+
+    // --- added 2026-08-15, BEFORE population, deliberately -------------------
+    // Every field below carries a default, so the 29 existing brace
+    // initialisers still compile unchanged (C++20 permits aggregates with
+    // default member initialisers). New entries should use designated
+    // initialisers: { .topic = "...", .kind = Kind::Exercise, ... }.
+    //
+    // Doing this at 29 entries rather than 200 is the whole point. The shape
+    // of a catalog is cheap to change while it is still mostly empty and
+    // ruinous afterwards.
+
+    Kind kind = Kind::Concept;
+    Level level = Level::Both;
+
+    // Reading order. 0 means unplaced -- a topic that exists but has not been
+    // given a home in the syllabus yet. A vector has array order; a course
+    // needs a stated one, and the difference should be visible.
+    int sequence = 0;
+
+    // Comma-separated topic names that must be understood first. This is the
+    // syllabus DAG: INDEX needs TABLE_RECORD_FIELD, PROJECTION needs RELATION.
+    // Checkable -- a prereq naming a topic that does not exist is a defect a
+    // tool can find, which is more than most curricula can say.
+    const char* prereq = "";
+
+    // Path, repo-relative, to a .dts script that DEMONSTRATES this entry.
+    //
+    // This is the field that makes EDREF unlike a textbook. Point it at a
+    // script under tests/ and the regression harness EXECUTES the teaching
+    // material. An example that stops working breaks a test instead of
+    // quietly misleading a student for a year. Every programming text ever
+    // printed contains code that no longer runs; this one is structurally
+    // incapable of it.
+    //
+    // Empty means "no script yet", which is honest. It does NOT mean "no
+    // script needed" -- tools/fullstack_docs/edrefcheck_v1.py reports the
+    // count of Example entries lacking one, because an unrunnable example is
+    // the thing this field exists to prevent.
+    const char* script_ref = "";
+
+    // LabTalk lab this entry leads into, by id. EDREF does not hold labs.
+    const char* lab_ref = "";
 };
+
+inline const char* kind_name(Kind k) {
+    switch (k) {
+        case Kind::Concept:    return "concept";
+        case Kind::Example:    return "example";
+        case Kind::Exercise:   return "exercise";
+        case Kind::StudyGuide: return "study-guide";
+        case Kind::Assessment: return "assessment";
+        case Kind::Glossary:   return "glossary";
+    }
+    return "concept";
+}
+
+inline const char* level_name(Level l) {
+    switch (l) {
+        case Level::Both:    return "ap+college";
+        case Level::Ap:      return "ap";
+        case Level::College: return "college";
+    }
+    return "ap+college";
+}
 
 inline const std::vector<Item>& catalog() {
     static const std::vector<Item> k = {

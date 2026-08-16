@@ -1,0 +1,50 @@
+id: proof.tooling.catalog_state_blindness
+label: A guard returned the same answer for missing, empty, and healthy -- so an empty catalog advertised as supported went unseen
+state: runtime_observed
+related:
+- D:/code/ccode/include/devref.hpp
+- D:/code/ccode/tools/fullstack_docs/refcheck_v1.py
+- D:/code/ccode/tools/fullstack_docs/edrefcheck_v1.py
+- D:/code/ccode/labtalk/ai_portal/AI_TIER1_SEED_V1.md
+- D:/code/ccode/labtalk/registries/proofs.d/proof.tooling.local_path_detector_consolidation.yaml
+notes: 'MEASURED 2026-08-16. include/devref.hpp contained an empty namespace, declared
+  "status: supported" in its @dottalk.file header, and was named in AI_TIER1_SEED_V1.md
+  as one of six reference authorities that "own a namespace" -- a document auto-injected
+  into every agent session. No source file has ever included it. The claim reached every
+  reader with full authority; the file behind it was empty.
+
+  WHY NOTHING CAUGHT IT. refcheck_v1.catalog_names() returned [] for a MISSING file and
+  [] for an EMPTY one, and the caller printed "(empty)" and continued for both. Zero
+  content and zero findings were the same output. The guard whose entire job was the
+  *ref catalogs could not distinguish a catalog that was fine from one that did not
+  exist. It had been reporting devref as "(empty)" for months, which read as information
+  rather than as a defect.
+
+  THE FIX, AND WHY IT IS NOT AN ALLOW-LIST. catalog_state() now returns absent / empty /
+  populated separately, AND the header''s own declared status. Empty is accepted for
+  "reserved", "planned" or "stub" and is a FINDING for "supported". So the file is judged
+  against its own contract rather than against a hand-kept list of which emptiness is
+  permitted -- the list would itself have drifted. Verified by mutation, on true exit
+  codes: unmutated 0; devref restored to empty+supported (the state it was actually in
+  that morning) 1; pshell_ref emptied 1; sql_ref removed 1; restored 0. A parallel guard,
+  edrefcheck_v1.py, applies the same three-state rule to the education catalog and has
+  eight further arms, each proven to fire.
+
+  MEASURED, NOT ASSUMED, AND THE ASSUMPTION WAS WRONG. Suspicion fell on pshell_ref and
+  sql_ref as likely also-empty. They are not: pshell_ref carries 90 entries consumed by
+  cmd_pshell.cpp:42, sql_ref 33 consumed by cmd_sql_help.cpp:61. They are simply reached
+  through their own commands rather than through the cmdhelp union, which is a second
+  legitimate access pattern and not a defect. devref was the only one, and it was empty
+  on purpose -- reserved for the x64base build split, where developer options are already
+  gated. The correction was therefore one word in a header, not a deletion.
+
+  THE SHAPE, WHICH RECURRED ALL DAY. A check that cannot fail is not a check. The same
+  session produced: a theme control judged for five rounds against a page that could not
+  execute a click handler; a CI gate asserting a licence the project had replaced six days
+  earlier; an opt-out verified by reading its URL rather than the network traffic, which
+  showed it still firing; a local-path detector family blind to the environment its own
+  authors ran in; a test in the new guard that passed with the rule deleted because the
+  only case exercised was refused for an unrelated reason; and a catalog parser that
+  silently reported 28 of 29 because it required a trailing comma. Six instances, one
+  error: verifying the thing that was easy to see instead of the thing that mattered.
+  Each was found by measuring twice by different means, and by none of the readings alone.'
