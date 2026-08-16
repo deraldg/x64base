@@ -102,6 +102,16 @@ Commits: `65f24d069`, `eca13fe64`, `fe42666e8`, `fcc1c2ff6`, `57c2d1634`,
   claim before row, so `check-aif-claimed` passed on both.
 - `CURRENT_TARGET.md` not changed -- this session did not change the lane target;
   it executed the existing one and spawned two engine lanes beneath it.
+- `docs/ai-friendly/AI_FRIENDLY_DASHBOARD_V1.md` -- Session Log row added.
+  **Added only after the gate warned**, which makes it the fifth method note
+  below. The AIF-006 warning text cites its own 33 percent compliance rate; this
+  session quoted that statistic in its closeout and then supplied another
+  instance of it before the commit landed.
+- `content/docs/labtalk/agent-sync.mdx` (x64base-site, separate repo) -- the
+  steward-facing channel: Q6 ratified, Q7 answered, Q8 settled by R2, Phase-1
+  result and the three lanes recorded in the Pseudo-Chat log. **Committed on
+  `codex/lean-sites-publish`, not published** -- it does not reach the steward
+  until the site ships.
 
 ## Published
 
