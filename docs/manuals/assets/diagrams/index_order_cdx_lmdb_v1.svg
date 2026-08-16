@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
+  <rect width="960" height="540" fill="#fbfbff"/>
+  <text x="40" y="46" font-family="Segoe UI, Arial, sans-serif" font-size="27" font-weight="700" fill="#111827">Index Order: index -&gt; index flavor -&gt; order</text>
+  <text x="40" y="74" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#4b5563">The flavor is decided when the container is ATTACHED. SET ORDER then selects a tag inside it.</text>
+  <text x="40" y="94" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#4b5563">CDX's backend depends on RESIDENCE: LMDB on disk, native in vRAM.</text>
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M2,2 L10,6 L2,10 Z" fill="#374151"/></marker>
+  </defs>
+
+  <g font-family="Segoe UI, Arial, sans-serif" text-anchor="middle" font-size="15">
+    <rect x="28" y="188" width="152" height="80" rx="8" fill="#dbeafe" stroke="#2563eb"/>
+    <text x="104" y="220">SET INDEX</text><text x="104" y="240" font-size="12">attach container</text><text x="104" y="256" font-size="12">flavor decided here</text>
+
+    <rect x="212" y="118" width="166" height="68" rx="8" fill="#fef3c7" stroke="#d97706"/>
+    <text x="295" y="145">CNX</text><text x="295" y="163" font-size="11">realtime maintenance</text><text x="295" y="177" font-size="11">v64 accepted 2026-08-09</text>
+
+    <rect x="212" y="204" width="166" height="68" rx="8" fill="#ede9fe" stroke="#7c3aed"/>
+    <text x="295" y="231">CDX</text><text x="295" y="249" font-size="11">logical surface</text><text x="295" y="263" font-size="11">backend by residence</text>
+
+    <rect x="212" y="290" width="166" height="60" rx="8" fill="#f1f5f9" stroke="#64748b"/>
+    <text x="295" y="315">INX</text><text x="295" y="333" font-size="11">no tags</text>
+
+    <rect x="404" y="182" width="182" height="60" rx="8" fill="#e5e7eb" stroke="#4b5563"/>
+    <text x="495" y="205">LMDB backend</text><text x="495" y="224" font-size="11">DISK ONLY -- mmaps a real file</text>
+
+    <rect x="404" y="252" width="182" height="60" rx="8" fill="#e5e7eb" stroke="#4b5563"/>
+    <text x="495" y="275">native CDX-V64</text><text x="495" y="294" font-size="11">vRAM -- LMDB-free, stale on mutate</text>
+
+    <rect x="618" y="188" width="150" height="80" rx="8" fill="#dcfce7" stroke="#16a34a"/>
+    <text x="693" y="222">SET ORDER</text><text x="693" y="243" font-size="12">select tag</text>
+
+    <rect x="796" y="188" width="140" height="80" rx="8" fill="#dcfce7" stroke="#16a34a"/>
+    <text x="866" y="222">active order</text><text x="866" y="243" font-size="12">navigation only</text>
+
+    <rect x="28" y="420" width="908" height="62" rx="8" fill="#fee2e2" stroke="#dc2626" stroke-dasharray="6 4"/>
+    <text x="482" y="446" font-size="15">No container attached -&gt; logical / natural record order</text>
+    <text x="482" y="466" font-size="12">This is the absence of an index, not a fourth flavor. Physical record order is never changed by any of the above.</text>
+  </g>
+
+  <g stroke="#374151" stroke-width="2.2" fill="none" marker-end="url(#arrow)">
+    <path d="M180 214 C196 190 198 160 212 152"/>
+    <path d="M180 228 H212"/>
+    <path d="M180 242 C196 268 198 305 212 315"/>
+
+    <path d="M378 226 C390 216 392 212 404 212"/>
+    <path d="M378 250 C390 262 392 276 404 278"/>
+
+    <path d="M378 152 C500 152 520 190 618 206"/>
+    <path d="M586 212 C598 214 604 218 618 220"/>
+    <path d="M586 282 C598 276 604 258 618 240"/>
+    <path d="M378 320 C500 320 520 282 618 254"/>
+
+    <path d="M768 228 H796"/>
+  </g>
+</svg>
