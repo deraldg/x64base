@@ -16,7 +16,11 @@ from urllib.parse import unquote
 LINK_RE = re.compile(r"(?<!!)\[[^\]]+\]\(([^)]+)\)")
 IMAGE_RE = re.compile(r"!\[([^\]]*)\]\(([^)]+)\)")
 HEADING_RE = re.compile(r"^#{1,6}\s+\S")
-LOCAL_PATH_RE = re.compile(r"(?<![A-Za-z0-9])[A-Za-z]:\\")
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / "tools" / "common"))
+import local_paths as _lp  # one authority: tools/common/local_paths.json
+LOCAL_PATH_RE = _lp.any_local()  # was Windows-drive-only; now POSIX host paths too
 
 
 def sha256(path: Path) -> str:

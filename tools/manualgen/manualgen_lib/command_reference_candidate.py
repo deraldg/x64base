@@ -17,7 +17,11 @@ from .util import read_csv, relpath_posix, sha256_file, write_csv, write_json
 COMMAND_LINK_RE = re.compile(
     r"(?<!!)\[([^\]]+)\]\(([^)]*command_reference_v1/commands/([^)/#]+\.md)(?:#[^)]*)?)\)"
 )
-LOCAL_PATH_RE = re.compile(r"(?<![A-Za-z0-9])[A-Za-z]:[\\/]")
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / "tools" / "common"))
+import local_paths as _lp  # one authority: tools/common/local_paths.json
+LOCAL_PATH_RE = _lp.any_local()
 CATALOG_PRIORITY = {name: index for index, name in enumerate(("DOT", "FOX", "ED", "EDU", "EXT", "UI", "DEV", "INTERNAL", "SYSTEM"))}
 KIND_ORDER = ("STATUS", "SUMMARY", "SYNTAX", "USAGE", "ARGUMENT", "EXAMPLE", "NOTE", "WARNING", "ERROR", "HINT", "ALIAS", "RELATED", "DEPRECATION", "MESSAGE")
 CONFIDENCE_PRIORITY = {"CURATED": 0, "AUTHORITATIVE": 1, "CATALOG": 2, "REFLECTED": 3, "INFERRED": 4}

@@ -51,6 +51,26 @@ proofs:
     The status field and this registry entry are therefore deliberately in tension: USER is supported,
     the agency model it administers remains source_defined with named gaps. Recorded so the promotion
     is discoverable from the proof side rather than only from the source header. See docs/maintenance/USER_COMMAND_STATUS_PROMOTION_2026-08-15.md.'
+- id: proof.ai.agent_assignment_link_x64
+  label: SYSCHATLNK X64 schema create and identifier readback
+  state: runtime_observed
+  source: D:/code/ccode/labtalk/proofs/runs/20260816_101951_agent_assignment_link_regression.txt
+  item_id: agent_assignment_link.regression
+  return_code: 0
+  related:
+  - D:/code/ccode/docs/contracts/AI_AGENT_ASSIGNMENT_LINK_CONTRACT_V1.md
+  - D:/code/ccode/docs/maintenance/AI_AGENT_ASSIGNMENT_LINK_MAINTENANCE_MANUAL_V1.md
+  - D:/code/ccode/dottalkpp/data/schemas/syschatlnk_v1.schema.json
+  - D:/code/ccode/dottalkpp/data/scripts/ddl/syschatlnk_x64_regression.dts
+  - D:/code/ccode/labtalk/diagrams/ai_agent_assignment_link_pfd_v1.mmd
+  - D:/code/ccode/labtalk/diagrams/ai_agent_assignment_link_dfd_v1.mmd
+  notes: AIF-086 contribution run AIPR-20260816-001. The current development runtime validated the 35-field
+    UTF-8 schema, created SYSCHATLNK as X64 under the configured TMP path, reopened the DBF, and passed
+    LINKKEY, CONVKEY, ASSIGNID, LOCALE, and timestamp-order readbacks. The LabTalk portal accepted all
+    output markers. The proof DBF and its DDL/index/load/schema sidecars were then removed. No production
+    SYSCHATLNK catalog exists, no writer was installed, and no other DBF table was created, modified,
+    or deleted by this run. Declared CDX indexes remain design intent until physical materialization and
+    reopen are proven.
 - id: proof.ai.roles_taxonomy
   label: AI roles taxonomy - agents vs Ollama vs GPTbase
   state: source_defined
@@ -1070,6 +1090,55 @@ proofs:
   label: Comments to HELP workflow exists
   state: source_defined
   source: D:/code/ccode/docs/maintenance/COMMENTS_HELP_PROOF_WORKFLOW_v1.md
+- id: proof.site.invalid_opacity_renders_nothing
+  label: Seven Tailwind opacity values were off-scale, so the utilities generated nothing and a hero caption
+    sat unreadable on the live site
+  state: runtime_observed
+  related:
+  - D:/dev/x64base-site/app/page.tsx
+  - D:/dev/x64base-site/app/globals.css
+  - D:/dev/x64base-site/tailwind.config.ts
+  - D:/code/ccode/labtalk/registries/proofs.d/proof.tooling.catalog_state_blindness.yaml
+  notes: 'MEASURED 2026-08-16 against the LIVE site (release 128), in the browser.
+
+    The hero caption "DotTalk++ CLI + DBF runtime + metadata validation" rendered at 1.24:1 against the
+    dark hero image in light mode, where 4.5:1 is the bar for body text. It was effectively invisible,
+    and had been for as long as the hero existed.
+
+    THE CAUSE WAS NOT THE COLOUR. The caption sits inside a bar whose class is `bg-bg/78`. Tailwind''s
+    opacity scale runs ... 50, 60, 70, 75, 80 ... and does NOT contain 78, so the utility was never generated
+    and the bar''s computed background was rgba(0, 0, 0, 0). Not a wrong background -- NO background.
+    The caption was text painted straight onto a photograph. The class was in the markup, the config was
+    correct (`rgb(var(--bg) / <alpha-value>)` is right), and every review of that file would have read
+    `bg-bg/78` as a translucent bar that existed.
+
+    A SWEEP FOUND SIX MORE, all silently generating nothing: bg-bg/35, bg-card/35, bg-card/45, bg-card/55,
+    bg-card/65, bg-brand/85, bg-card/85, across app/page.tsx, app/challenge, app/downloads, app/licensing,
+    app/schemas and components/Card.tsx. Each was fixed to the nearest scale step. With the bar restored
+    the caption measures 11.88:1 in light and 16.49:1 in dark.
+
+    TWO CORRECTIONS TO EARLIER WORK IN THE SAME SESSION, both recorded because the method mattered more
+    than the result.
+
+    (1) The 1.24:1 figure was first reported on 2026-08-15 with the WRONG mechanism attached: it was blamed
+    on --fg being near-black over a dark image, without noticing there was supposed to be a bar in between.
+    The number was right, the explanation was invented, and a colour change would have "fixed" it while
+    leaving seven broken utilities in place.
+
+    (2) During the sweep, `bg-card/60` appeared transparent and was nearly reported as an eighth instance.
+    It is `hover:bg-card/60` -- transparent until hovered, which is correct. The regex matched the class
+    name without regard to its variant. Caught by checking why a working class would fail rather than
+    adding it to the list.
+
+    THE SHAPE, AGAIN. An off-scale Tailwind value does not warn, does not error, and does not fall back
+    -- it produces nothing, and nothing looks like a design choice. Same family as proof.tooling.catalog_state_blindness,
+    where a helper returned the same answer for "absent" and "fine". Here the CSS engine returns the same
+    result for "no background wanted" and "background requested with an unsupported value". A guard would
+    be cheap: the scale is fixed and knowable, so a check over the source for off-scale opacity modifiers
+    is a grep, and it would have caught all seven before publication. WRITTEN the same day: scripts/check-opacity-scale.mjs,
+    wired into `npm run build` so it blocks before a publish can happen. Verified against all six original
+    off-scale values, and verified to pass bracket syntax (bg-bg/[78%]) through, since that form is explicit
+    about being unusual.'
 - id: proof.sqlsel.select_statement_matches_sqlite
   label: SQLSEL SELECT ... FROM returns row sets equal to SQLite over the same data
   state: runtime_observed

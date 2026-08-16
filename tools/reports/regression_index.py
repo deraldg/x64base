@@ -43,7 +43,11 @@ def _unescape(s: str) -> str:
     return s.replace('\\\\', '\\').replace('\\"', '"')
 
 
-_WINPATH = re.compile(r'[A-Za-z]:\\[^\s)]+')
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / "tools" / "common"))
+import local_paths as _lp  # one authority: tools/common/local_paths.json
+_WINPATH = _lp.any_local()  # name kept; no longer Windows-only
 
 
 def _clean_paths(s: str) -> str:

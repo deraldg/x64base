@@ -147,6 +147,58 @@ FAIL -- the third recorded instance of `${PIPESTATUS[0]}` in this project. Twice
 shell fragments meant as explanation were placed in code blocks and pasted into
 PowerShell.
 
+## Addendum, same day: the still-open list, implemented
+
+Written after the closeout above, at the maintainer's instruction to implement
+what remained. Each item below was measured before and after.
+
+**The light-mode contrast defects are fixed, and the cause was not what the
+closeout said.** `--brand` and `--orange` were darkened against a measurement
+rather than an eye: brand 4.21:1 -> **4.61:1** on `--bg` and 4.45 -> **4.87:1**
+on `--card`, orange 4.29 -> **4.54:1**, hue preserved, dark palette untouched
+(still 10.02:1 and 9.00:1).
+
+But the hero caption was a different bug entirely. The closeout reported 1.24:1
+and blamed `--fg` over a dark image. Wrong mechanism. The caption sits inside a
+bar classed `bg-bg/78`, and Tailwind's opacity scale has no 78 -- so the utility
+never generated and the bar's computed background was `rgba(0, 0, 0, 0)`. Not a
+wrong background: NO background. The caption was text painted onto a photograph.
+A sweep found **six more** off-scale values doing the same thing silently across
+five files. All fixed; the caption now measures **11.88:1** in light and 16.49:1
+in dark. Recorded as `proof.site.invalid_opacity_renders_nothing`.
+
+**A guard now exists for it.** `scripts/check-opacity-scale.mjs`, wired into
+`npm run build` so it blocks before a publish can happen. Verified against all
+six original values and verified to let bracket syntax (`bg-bg/[78%]`) through,
+since that form is explicit about being unusual. The scale is fixed and
+knowable, so this was cheap -- and it would have caught every one of them before
+publication.
+
+**start-ai.ps1's warning is widened.** It said dev mode breaks SEARCH. It breaks
+all client-side React behind the gateway, which is a different blast radius and
+cost five rounds of theme-button "fixes" plus two more today. The header now
+carries the measurement (3/490 hydrated via :3000 against 445/493 direct) and
+the launcher prints a yellow warning at dev start.
+
+**Four of the eight remaining local-path detectors are migrated** onto
+`tools/common/local_paths`: `audit_manual_publication_readiness.py`,
+`ecoschema_map.py`, `command_reference_candidate.py`, `regression_index.py`.
+Each verified to import, resolve the shim from its own directory depth, and
+match both Windows and POSIX host paths without the `https://`-as-drive-`s:`
+false positive.
+
+**Four are deliberately NOT migrated**, because they are different shapes and
+substituting mechanically would be wrong:
+- `artifact_disposition.py:126` -- a path REWRITER with a capture group, not a
+  detector.
+- `build_gptbase_bundle.py:57` (`_SCRUB`) -- also a rewriter.
+- `build_gptbase_bundle.py:58` (`_LEAK`) -- mixes path detection with SECRETS
+  (`BEGIN PRIVATE KEY`, `password`, `api_key`). The secrets half is a separate
+  concern and should probably become its own named pattern rather than be folded
+  in.
+- `stage_public.py:39` -- part of a labelled `LEAK_PATTERNS` tuple list using
+  dev-roots semantics; wants `dev_roots_only()` and a small restructure.
+
 ## Still open
 
 - `--brand` at 4.21:1 across 61 uses, and the hero caption at 1.24:1.

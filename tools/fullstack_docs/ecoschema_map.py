@@ -166,7 +166,11 @@ PATH_NAMES = [
 # match, and "file:///D:/code" is still caught by its "D:/code" tail. The
 # trailing run is this tool's own addition -- it reports the whole offending
 # path in the refusal message, where manualgen only needs to know one exists.
-ANY_LOCAL_PATH = re.compile(r"(?<![A-Za-z0-9])[A-Za-z]:[\\/][^\s\"',;)\]]*")
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / "tools" / "common"))
+import local_paths as _lp  # one authority: tools/common/local_paths.json
+ANY_LOCAL_PATH = _lp.any_local()
 
 
 def scrub(text: str) -> str:

@@ -3,17 +3,40 @@
 # Companion to tools/reports/run_reports.py. The difference that matters:
 # run_reports REUSES whatever already listens on :3000 / :3002, so a stale
 # `next dev` on :3000 gets adopted AS the gateway and /AI/ + /AI/console 404.
-# This script FREES those ports first, so the gateway always really starts.
+# This script refuses occupied ports rather than terminating an unverified process.
 #
 # What it does, in order:
-#   1. free ports 3000 / 3002 / 8770 (stop any stale listener)
+#   1. verify ports 3000 / 3002 / 8770 are free (never kill an unknown listener)
 #   2. start the website on :3002                      (its own window)
-#         default   : `next dev`  -- live editing/HMR; site SEARCH does NOT work
-#                     (Pagefind has no index under dev)
+#         default   : `next dev`  -- live editing/HMR, BUT SEE THE WARNING BELOW.
+#                     Site SEARCH does not work (Pagefind has no index under dev)
+#                     and NOTHING CLIENT-SIDE WORKS THROUGH :3000 EITHER.
+#
+#   *** DEV MODE THROUGH THE GATEWAY DOES NOT HYDRATE. Measured 2026-08-15. ***
+#
+#   The gateway proxies GET/HEAD through urllib and cannot carry a WebSocket
+#   upgrade, so `next dev`'s HMR socket never connects and React never hydrates
+#   behind :3000. Measured: 3 of 490 elements had a React fiber via :3000,
+#   against 445 of 493 on :3002 direct. Every client component is then INERT --
+#   menus do not open, useEffect never fires, the theme control does nothing,
+#   the release stamp and visitor counter never render.
+#
+#   Nothing errors. The HTML arrives byte-identical, every chunk loads, the
+#   console is clean, and the page LOOKS perfect. The only tell is that
+#   "[HMR] connected" appears on :3002 and never on :3000.
+#
+#   This cost five rounds of "fixing" a theme button that had never been able to
+#   run a click handler, and two more rounds after that. The warning here used
+#   to say only that SEARCH was inert -- true, and far too narrow.
+#
+#   So: for SITE work use :3002 directly, or relaunch with -Built (a static
+#   build needs no HMR socket, and :3000 then works fully). Use :3000 for /AI/
+#   and the console, which are served by the gateway itself and do hydrate.
+#   Real fix, unwritten: teach the gateway to proxy WebSocket upgrades.
 #         -Built    : `npm run build` + `serve out` -- production-like; SEARCH WORKS
-#   3. start the reports gateway on :3000              (its own window, writes ON)
+#   3. start the reports gateway on :3000              (its own window, preview by default)
 #         -> /AI/         live reports, rebuilt per request (needs pyyaml -> venv)
-#         -> /AI/console  maintenance UI (--enable-write allows Execute)
+#         -> /AI/console  maintenance UI (-EnableWrite allows Execute)
 #         -> everything else proxied to :3002 (so /search rides the built site)
 #   4. open http://localhost:3000/AI/console
 #
@@ -22,6 +45,7 @@
 # Run:
 #   powershell -ExecutionPolicy Bypass -File <repo>\start-ai.ps1            (dev)
 #   powershell -ExecutionPolicy Bypass -File <repo>\start-ai.ps1 -Built     (search works)
+#   powershell -ExecutionPolicy Bypass -File <repo>\start-ai.ps1 -EnableWrite
 #
 # Overridable:
 #   $env:X64BASE_SITE    website source dir   [default: D:/dev/x64base-site]
@@ -35,7 +59,10 @@
 # NOTE: the ":3000 refused" seen during setup was NOT the interpreter -- it was a
 # cmd /k quoting mistake in THIS script, since fixed at the gateway launch below.
 
-param([switch]$Built)
+param(
+  [switch]$Built,
+  [switch]$EnableWrite
+)
 
 $ErrorActionPreference = 'Continue'
 
@@ -48,14 +75,6 @@ $py   = if ($env:X64BASE_PYTHON) { $env:X64BASE_PYTHON } else { 'python' }
 if (-not (Test-Path $site)) { Write-Host ("  WARNING: website dir not found: {0} (set `$env:X64BASE_SITE)" -f $site) }
 if (($py -match '[\\/]') -and -not (Test-Path $py)) {
   Write-Host ("  WARNING: python not found: {0} -- the gateway needs pyyaml; set `$env:X64BASE_PYTHON" -f $py)
-}
-
-function Stop-Port([int]$port) {
-  Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue |
-    Select-Object -ExpandProperty OwningProcess -Unique | ForEach-Object {
-      Write-Host ("  stopping PID {0} holding :{1}" -f $_, $port)
-      Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue
-    }
 }
 
 function Test-Port([int]$port) {
@@ -74,9 +93,13 @@ function Wait-Port([int]$port, [string]$label, [int]$tries = 60) {
   return $false
 }
 
-Write-Host 'freeing ports 3000 / 3002 / 8770 ...'
-Stop-Port 3000; Stop-Port 3002; Stop-Port 8770
-Start-Sleep -Seconds 1
+Write-Host 'verifying ports 3000 / 3002 / 8770 are free ...'
+foreach ($port in @(3000, 3002, 8770)) {
+  if (Test-Port $port) {
+    Write-Error ("port :{0} is already occupied; refusing to stop an unverified process" -f $port)
+    exit 2
+  }
+}
 
 if ($Built) {
   Write-Host ("building + serving the STATIC site on :3002 in {0} (search works in this mode) ..." -f $site)
@@ -84,29 +107,61 @@ if ($Built) {
   Start-Process -FilePath 'cmd.exe' `
     -ArgumentList '/k', 'npm run build && npx serve out -l 3002' `
     -WorkingDirectory $site
-  Wait-Port 3002 'website (built)' 300   # build + Pagefind index can take a couple of minutes
+  if (-not (Wait-Port 3002 'website (built)' 300)) {
+    Write-Error 'website startup failed; READY will not be announced'
+    exit 3
+  }
 } else {
-  Write-Host ("starting website (Next.js dev) on :3002 in {0} -- note: site SEARCH is inert under dev ..." -f $site)
+  Write-Host ("starting website (Next.js dev) on :3002 in {0} ..." -f $site)
+  Write-Host "  WARNING: dev mode. Through :3000 the site does NOT hydrate --" -ForegroundColor Yellow
+  Write-Host "  no menus, no theme control, no counter, no search. Nothing errors." -ForegroundColor Yellow
+  Write-Host "  Use http://localhost:3002 for site work, or relaunch with -Built." -ForegroundColor Yellow
   Start-Process -FilePath 'cmd.exe' `
     -ArgumentList '/k', 'npx next dev -p 3002' `
     -WorkingDirectory $site
-  Wait-Port 3002 'website'
+  if (-not (Wait-Port 3002 'website')) {
+    Write-Error 'website startup failed; READY will not be announced'
+    exit 3
+  }
 }
 
-Write-Host 'starting reports gateway on :3000 (console Execute enabled) ...'
+if ($EnableWrite) {
+  Write-Host 'starting reports gateway on :3000 (console Execute enabled by explicit request) ...' -ForegroundColor Yellow
+  $writeArg = ' --enable-write'
+} else {
+  Write-Host 'starting reports gateway on :3000 (read + preview; use -EnableWrite to allow Execute) ...'
+  $writeArg = ''
+}
 # Keep {0} ($py) UNQUOTED. `cmd /k` strips the first and last quote off the whole
 # line, so an extra pair around the exe mangles the command into "The filename,
 # directory name, or volume label syntax is incorrect" and the gateway never binds.
 # The default 'python' has no spaces; if X64BASE_PYTHON is a spaced path, set an
 # 8.3 short path or a symlink rather than quoting here.
-$gwArgs = ('/k {0} "{1}\tools\reports\serve_dynamic_reports.py" --bind 127.0.0.1 --port 3000 --upstream http://127.0.0.1:3002 --enable-write' -f $py, $repo)
+$gwArgs = ('/k {0} "{1}\tools\reports\serve_dynamic_reports.py" --bind 127.0.0.1 --port 3000 --upstream http://127.0.0.1:3002{2}' -f $py, $repo, $writeArg)
 Start-Process -FilePath 'cmd.exe' -ArgumentList $gwArgs -WorkingDirectory $repo
-Wait-Port 3000 'gateway'
+if (-not (Wait-Port 3000 'gateway')) {
+  Write-Error 'gateway startup failed; READY will not be announced'
+  exit 4
+}
+
+try {
+  $health = Invoke-RestMethod -Uri 'http://127.0.0.1:3000/AI/health' -TimeoutSec 30
+  if ($health.mode -ne 'live-development' -or -not $health.upstream.ok) {
+    throw 'gateway health payload did not identify a healthy live-development stack'
+  }
+  if ([bool]$health.execute_enabled -ne [bool]$EnableWrite) {
+    throw 'gateway write posture does not match the requested startup mode'
+  }
+} catch {
+  Write-Error ("gateway readiness validation failed: {0}" -f $_.Exception.Message)
+  exit 5
+}
 
 Write-Host ''
 Write-Host 'READY:'
 Write-Host '  AI views:  http://localhost:3000/AI/'
 Write-Host '  Console:   http://localhost:3000/AI/console'
+Write-Host ('  Writes:    {0}' -f $(if ($EnableWrite) { 'ENABLED (explicit)' } else { 'disabled; previews only' }))
 if ($Built) {
   Write-Host '  Search:    http://localhost:3000/search   (built mode -- index present)'
 } else {
@@ -114,4 +169,4 @@ if ($Built) {
 }
 Write-Host ''
 Write-Host ('(Standalone console with writes, no gateway:  "{0}" tools\dbf\maint_server.py  -> http://127.0.0.1:8770/ )' -f $py)
-Start-Process 'http://localhost:3000/AI/console'
+Start-Process 'http://localhost:3000/AI/'
