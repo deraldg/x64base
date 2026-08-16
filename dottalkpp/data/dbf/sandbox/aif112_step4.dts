@@ -1,0 +1,69 @@
+&& AIF-112 Phase-1 Step 4 -- ledger-level exclusive check-out.
+&&
+&& LOCATION MATTERS. This file lives in data/dbf/sandbox/ and NOT at the data
+&& root, because PROMOTE.manifest line 113 allow-lists dottalkpp/data/*.dts and
+&& line 124 allow-lists dottalkpp/data/scripts/*.dts -- either would publish a
+&& spike artifact to the public repo and fail the Phase-1 publication-hygiene
+&& check. data/dbf/sandbox/** is not allow-listed; ersatz_rel_enum_browser.dts
+&& is the existing precedent for a script living here.
+&&
+&& The property under test is NOT "an OS lock refuses a second process" (that is
+&& AIF-116's proof). It is: SCAN and APPEND happen inside ONE FLOCK scope, so a
+&& second exclusive request on an already-held item is refused by the ledger
+&& itself, never by a SELECT-then-decide outside the lock.
+&&
+&& Run this script TWICE against the same data.
+&&   pass 1 must print  AIF112-STEP4-RESULT: GRANTED
+&&   pass 2 must print  AIF112-STEP4-RESULT: REFUSED
+&& Any other pairing is a failure.
+&&
+&& Areas are stated explicitly; nothing is inherited from the session.
+&& Requires: do sandbox, and INVCHKOUT open in area 2.
+
+ECHO ===== AIF112-STEP4 BEGIN =====
+
+SELECT 2
+LOCK TABLE
+LOCK STATUS
+
+&& ---- check, under the lock ----
+&& The predicate tests STATE as well as ITEM_ID, so a RELEASED row does not
+&& block a later re-acquire -- which is what makes step 5 meaningful. Bare AND
+&& is the house spelling (Expression Comparison Shake-Down); the lexer also
+&& accepts .AND.
+GO TOP
+LOCATE FOR ITEM_ID = 3 AND STATE = "held"
+
+IF ITEM_ID = 3 AND STATE = "held"
+    ECHO AIF112-STEP4-RESULT: REFUSED (item 3 already checked out; nothing appended)
+ELSE
+    && ---- allocate, still under the SAME lock ----
+    && max(id)+1 read from the bottom row of an append-only ledger, inside the
+    && FLOCK. This is the WORKSPACES max(WS_ID)+1 idiom (cmd_workspace.cpp).
+    && The value is echoed before use: AIF-116 finding F1 showed a REPLACE whose
+    && right-hand side fails to evaluate stores BLANK and reports SUCCESS, so an
+    && unverified allocation is not evidence.
+    GO BOTTOM
+    VAR nextid = CHK_ID + 1
+    ECHO AIF112-STEP4-NEXTID:
+    ? $nextid
+
+    APPEND_BLANK
+    REPLACE CHK_ID WITH $nextid
+    REPLACE ITEM_ID WITH 3
+    REPLACE HOLDER WITH "member#4/kind0"
+    REPLACE STATE WITH "held"
+    REPLACE ACQUIRED WITH DATE()
+    REPLACE EXPIRES WITH DATEADD(DATE(), 7)
+    REPLACE SUP WITH F
+    REPLACE NOTES WITH "Step 4 exclusive grant. Scan and append in one FLOCK scope."
+    ECHO AIF112-STEP4-RESULT: GRANTED (appended under the same FLOCK)
+ENDIF
+
+UNLOCK TABLE
+LOCK STATUS
+
+SELECT 2
+LIST ALL
+
+ECHO ===== AIF112-STEP4 END =====

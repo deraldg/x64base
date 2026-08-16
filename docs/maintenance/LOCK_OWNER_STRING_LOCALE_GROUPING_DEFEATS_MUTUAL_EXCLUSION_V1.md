@@ -559,15 +559,23 @@ process is provably not the owner -- the owner string is a process singleton, so
 a same-process attempt would have returned re-entrant success rather than an
 error.
 
-**AIF-112 Phase-1 Step 4 therefore PASSES**, on the DBF substrate, through
-`xbase::locks`, with no force path involved.
+**The FLOCK primitive therefore enforces.** Precise about what that is and is
+not: this proves the substrate property Step 4 depends on. It is **not** Step 4,
+which requires a ledger-level refusal with scan and append in one lock scope.
+The scribe conflated the two in an interim report to the owner and claimed a
+pass that had not happened; corrected on re-reading the template. Step 4 proper
+was run afterwards as `dbf/sandbox/aif112_step4.dts` and passes -- see
+`AIF112_PHASE1_EVIDENCE_AND_STEWARD_HANDOFF_4_V1.md`.
 
-**Step 5 PASSES.** 48408 ran `UNLOCK TABLE`; 71628 then read `Table: unlocked`,
-acquired, and became owner `GRIMWOOD:71628:1786835345327`. Release and
-re-acquire, cross-process, both owner strings clean.
+**Cross-process release and re-acquire also verified.** 48408 ran
+`UNLOCK TABLE`; 71628 then read `Table: unlocked`, acquired, and became owner
+`GRIMWOOD:71628:1786835345327`. Again a substrate property, not the ledger-level
+Step 5, which was run separately.
 
-**Step 6 PASSES -- and this is the one that could not have been honestly scored
-before today.** Its mandatory requirement was `EXPAT` lease reclaim *without any
+**Step 6 passes -- and this is the one that could not have been honestly scored
+before today.** (Recorded here because the reclaim exercised the fixed lock path;
+the full Phase-1 scoring, including the backdating substitution this step used,
+belongs to the evidence return, not to this defect report.) Its mandatory requirement was `EXPAT` lease reclaim *without any
 force path*, and until this morning `force_remove` executed inside every
 acquisition, so any green here would have been a green over a running force
 path. Final ledger state:

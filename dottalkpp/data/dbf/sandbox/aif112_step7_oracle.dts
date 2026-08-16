@@ -1,0 +1,57 @@
+&& AIF-112 Phase-1 Step 7 -- SQLite ORACLE for the final INVCHKOUT state.
+&&
+&& LOCATION MATTERS -- see aif112_step4.dts. data/*.dts, data/scripts/*.dts and
+&& data/tests/** all promote to the public repo; data/dbf/sandbox/** does not.
+&& Invoke as:  DO dbf/sandbox/aif112_step7_oracle
+&&
+&& CARRIER vs ORACLE. SQLite is NOT the carrier here and never was -- the ledger
+&& is DBF. This script uses SQLite purely as an independent second opinion, which
+&& is the only role the owner's dogfood ruling leaves it: "SQLite lives in our
+&& system and has a specific purpose, but is NEVER dogfood."
+&&
+&& NO SIDE-CHANNEL. Everything below runs through the runtime's own linked
+&& SQLite via the SQLITE verb. No sqlite3.exe, no external process, no file
+&& touched outside this session. The template requires this and it is the whole
+&& point of the D1 access-path amendment.
+&&
+&& WHAT THIS PROVES, AND WHAT IT DOES NOT. The mirror rows below are HAND
+&& TRANSCRIBED from the DBF listing. So agreement demonstrates (a) the ledger
+&& shape is expressible in a second engine and (b) the aggregates agree. It does
+&& NOT independently verify the DBF content, because the same human typed both
+&& sides. A real oracle needs an automated export; that is owed, not done.
+&& Recording the weakness is the point -- an oracle nobody questions is not an
+&& oracle, it is a second copy of the same assumption.
+
+ECHO ===== AIF112-STEP7-ORACLE BEGIN =====
+
+SQLITE OPEN :memory:
+SQLITE VERSION
+
+SQLITE EXEC CREATE TABLE invchkout_oracle (chk_id INTEGER, item_id INTEGER, holder TEXT, state TEXT, acquired TEXT, expires TEXT, released TEXT, sup TEXT);
+
+SQLITE EXEC INSERT INTO invchkout_oracle VALUES (1,1,'member#4/kind0','expired','20260813','20260814','20260815','T');
+SQLITE EXEC INSERT INTO invchkout_oracle VALUES (2,1,'member#4/kind1','held','20260815','20260822','','F');
+SQLITE EXEC INSERT INTO invchkout_oracle VALUES (3,3,'member#4/kind0','released','20260815','20260822','20260815','T');
+SQLITE EXEC INSERT INTO invchkout_oracle VALUES (4,3,'member#4/kind0','held','20260815','20260822','','F');
+
+ECHO --- oracle side (SQLite, through the runtime) ---
+SQLITE SELECT SELECT chk_id,item_id,holder,state,acquired,expires,released,sup FROM invchkout_oracle ORDER BY chk_id;
+
+ECHO --- oracle aggregates: total, held, superseded ---
+SQLITE SELECT SELECT COUNT(*) AS total FROM invchkout_oracle;
+SQLITE SELECT SELECT COUNT(*) AS held FROM invchkout_oracle WHERE state='held';
+SQLITE SELECT SELECT COUNT(*) AS superseded FROM invchkout_oracle WHERE sup='T';
+
+ECHO --- one live holder per item is the invariant that matters ---
+SQLITE SELECT SELECT item_id, COUNT(*) AS live FROM invchkout_oracle WHERE state='held' GROUP BY item_id;
+
+SQLITE CLOSE
+
+ECHO --- carrier side (DBF, the real ledger) ---
+SELECT 2
+LIST ALL
+ECHO --- carrier aggregates, must match the oracle above ---
+COUNT FOR STATE = "held"
+COUNT FOR SUP
+
+ECHO ===== AIF112-STEP7-ORACLE END =====

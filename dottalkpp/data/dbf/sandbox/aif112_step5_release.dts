@@ -1,0 +1,44 @@
+&& AIF-112 Phase-1 Step 5 -- release the exclusive check-out on ITEM_ID 3.
+&&
+&& LOCATION MATTERS -- see the header of aif112_step4.dts. data/*.dts and
+&& data/scripts/*.dts both promote to the public repo (PROMOTE.manifest 113,
+&& 124); data/dbf/sandbox/** does not.
+&&
+&& Template wording: "Release (append Released / supersede Held)". This script
+&& takes the SUPERSEDE option: the held row is marked released in place, keeping
+&& acquire and release dates on one row and preserving history via SUP. That
+&& matches what step 6's reclaim did to CHK_ID 1, so the spike uses one idiom
+&& throughout rather than two.
+&&
+&& Sequence for the full step 5 proof:
+&&   1. DO aif112_step4           -> REFUSED   (item 3 is held)
+&&   2. DO aif112_step5_release   -> RELEASED
+&&   3. DO aif112_step4           -> GRANTED   (re-acquire succeeds, id = max+1)
+&&
+&& Areas are stated explicitly; nothing is inherited from the session.
+
+ECHO ===== AIF112-STEP5-RELEASE BEGIN =====
+
+SELECT 2
+LOCK TABLE
+LOCK STATUS
+
+GO TOP
+LOCATE FOR ITEM_ID = 3 AND STATE = "held"
+
+IF ITEM_ID = 3 AND STATE = "held"
+    REPLACE STATE WITH "released"
+    REPLACE RELEASED WITH DATE()
+    REPLACE SUP WITH T
+    ECHO AIF112-STEP5-RESULT: RELEASED (held row superseded under the FLOCK)
+ELSE
+    ECHO AIF112-STEP5-RESULT: NOTHING-TO-RELEASE (no held row for item 3)
+ENDIF
+
+UNLOCK TABLE
+LOCK STATUS
+
+SELECT 2
+LIST ALL
+
+ECHO ===== AIF112-STEP5-RELEASE END =====
