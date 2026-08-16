@@ -75,6 +75,30 @@ export const moreNav: NavItem[] = [
   { label: "News", href: "/news" }
 ];
 
+/**
+ * Maintainer-only entries. These are appended to the More menu ONLY under local
+ * preview (NEXT_PUBLIC_SITE_VERSION unset), so they never render on the
+ * published site.
+ *
+ * RETRO, added 2026-08-15. Owner: "my private playground until I decide how
+ * much of it goes into labtalk and dottalkpp." It is intended to hold emulator
+ * payloads and captures of vintage operating systems, and the redistribution
+ * rights on ROMs and BIOS images are unsettled -- Commodore KERNAL, Amiga
+ * Kickstart, PS2 and Xbox BIOS are all proprietary. So this leaking is a
+ * licensing exposure, not an untidy page, on a project that publishes under
+ * GPL-3.0 and says so on its front door.
+ *
+ * Hiding the link is the WEAKEST of the three layers and must never be the only
+ * one: a hidden link still builds a reachable route. The other two are
+ * LOCAL_ONLY_DIRS in scripts/strip-local-only-output.mjs (deletes it from every
+ * build output) and the refusal in scripts/publish-github-pages.mjs (aborts the
+ * publish if it survived anyway). Same shape as /reports, which has been
+ * local-only since it was written.
+ */
+export const localOnlyNav: NavItem[] = [
+  { label: "RETRO", href: "/retro" }
+];
+
 /** Every item, in the original order. The mobile menu shows all of these. */
 export const topNav: NavItem[] = [
   primaryNav[0], primaryNav[1], primaryNav[2], primaryNav[3],

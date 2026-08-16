@@ -9,6 +9,24 @@ function assertInside(child, parent) {
   }
 }
 
+/**
+ * Directories that exist for the maintainer and must never reach the public
+ * site. One list, so adding a private surface is one edit rather than three.
+ *
+ *   reports -- the local report/console lane, local-only since it was built.
+ *   retro   -- the RETRO playground (2026-08-15). Owner's words: "my private
+ *              playground until I decide how much of it goes into labtalk and
+ *              dottalkpp." It will hold emulator payloads and OS captures whose
+ *              redistribution rights are unsettled, so leaking it is a
+ *              licensing problem and not merely an untidy one.
+ *
+ * This list is the SECOND of three layers. The first is that the nav entry only
+ * renders under local preview; the third is the publish script refusing outright
+ * if a directory named here survived into out/. Any one layer failing leaves the
+ * other two, which is the point.
+ */
+export const LOCAL_ONLY_DIRS = ["reports", "retro"];
+
 export function stripLocalOnlyOutput({ root = process.cwd() } = {}) {
   const outDir = path.resolve(root, "out");
   const outputRoots = [
@@ -19,11 +37,13 @@ export function stripLocalOnlyOutput({ root = process.cwd() } = {}) {
   const removedPaths = [];
 
   for (const outputRoot of outputRoots) {
-    const reportsDir = path.resolve(outputRoot, "reports");
-    assertInside(reportsDir, outputRoot);
-    if (!fs.existsSync(reportsDir)) continue;
-    fs.rmSync(reportsDir, { recursive: true, force: true });
-    removedPaths.push(reportsDir);
+    for (const name of LOCAL_ONLY_DIRS) {
+      const dir = path.resolve(outputRoot, name);
+      assertInside(dir, outputRoot);
+      if (!fs.existsSync(dir)) continue;
+      fs.rmSync(dir, { recursive: true, force: true });
+      removedPaths.push(dir);
+    }
   }
 
   const staleArtifact = path.resolve(root, "x64base-sites-artifact.tar.gz");

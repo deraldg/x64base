@@ -5,7 +5,10 @@ import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
 import clsx from "clsx";
 import { Menu, X, ChevronDown } from "lucide-react";
-import { topNav, primaryNav, moreNav } from "@/config/nav";
+import { topNav, primaryNav, moreNav, localOnlyNav } from "@/config/nav";
+
+// Unset only in local preview; the publish sets it to the source commit.
+const IS_LOCAL_PREVIEW = !process.env.NEXT_PUBLIC_SITE_VERSION;
 
 export function Navbar() {
   const pathname = usePathname();
@@ -17,9 +20,13 @@ export function Navbar() {
     active: pathname === i.href || (i.href !== "/" && pathname.startsWith(i.href + "/"))
   });
 
-  const items = useMemo(() => topNav.map(mark), [pathname]);
+  const withLocal = IS_LOCAL_PREVIEW ? [...moreNav, ...localOnlyNav] : moreNav;
+  const items = useMemo(
+    () => (IS_LOCAL_PREVIEW ? [...topNav, ...localOnlyNav] : topNav).map(mark),
+    [pathname]
+  );
   const primary = useMemo(() => primaryNav.map(mark), [pathname]);
-  const more = useMemo(() => moreNav.map(mark), [pathname]);
+  const more = useMemo(() => withLocal.map(mark), [pathname]);
   const moreHasActive = more.some((i) => i.active);
 
   return (

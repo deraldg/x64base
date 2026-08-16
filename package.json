@@ -8,13 +8,14 @@
     "generate:diagrams": "node scripts/generate-diagrams.mjs",
     "check:diagrams": "node scripts/check-diagrams.mjs",
     "check:public-content": "node scripts/check-public-content.mjs",
-    "build": "node scripts/check-diagrams.mjs && node scripts/check-public-content.mjs && node scripts/clean-build-output.mjs && next build && node scripts/strip-local-only-output.mjs && pagefind --site out && node scripts/build-sites-dist.mjs",
+    "build": "node scripts/check-diagrams.mjs && node scripts/check-public-content.mjs && node scripts/clean-build-output.mjs && next build && pagefind --site out",
     "index:search": "pagefind --site out",
     "start": "next start",
     "lint": "next lint",
     "build:apache": "node scripts/build-apache-static.mjs",
     "build:sites": "node scripts/build-sites-artifact.mjs",
-    "publish:github-pages": "node scripts/publish-github-pages.mjs"
+    "publish:github-pages": "node scripts/publish-github-pages.mjs",
+    "build:publish": "npm run build && node scripts/strip-local-only-output.mjs && node scripts/build-sites-dist.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",

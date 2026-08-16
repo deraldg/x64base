@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
+import { LOCAL_ONLY_DIRS } from "./strip-local-only-output.mjs";
 
 const root = process.cwd();
 const outDir = path.join(root, "out");
@@ -197,11 +198,21 @@ async function verifyLiveReleaseArtifact(expected) {
 }
 
 function assertLocalOnlyReportsAbsent() {
-  const reportsDir = path.join(outDir, "reports");
-  if (fs.existsSync(reportsDir)) {
-    throw new Error(
-      `Refusing to publish local-only reports found at ${reportsDir}`,
-    );
+  // Reads LOCAL_ONLY_DIRS from the stripper rather than repeating the names.
+  // A second hand-kept list is how the two drift, and the drift would be
+  // silent in the direction that matters: the stripper stops removing
+  // something the guard still is not looking for, and it publishes.
+  for (const name of LOCAL_ONLY_DIRS) {
+    const dir = path.join(outDir, name);
+    if (fs.existsSync(dir)) {
+      throw new Error(
+        `Refusing to publish local-only content found at ${dir}. ` +
+        "This directory is maintainer-only (see LOCAL_ONLY_DIRS in " +
+        "scripts/strip-local-only-output.mjs). The build's strip step should " +
+        "have removed it; that it survived means the strip step did not run " +
+        "or did not cover this path.",
+      );
+    }
   }
 }
 
@@ -234,7 +245,15 @@ const packageVersion = readPackageVersion();
 
 run("git", ["fetch", "origin", "gh-pages"], { cwd: deployDir });
 run("git", ["pull", "--rebase", "origin", "gh-pages"], { cwd: deployDir });
-run(npmCommand, ["run", "build"], {
+// build:publish, NOT build. The difference is the whole local-only mechanism:
+// `build` leaves local-only routes in out/ so a -Built preview can actually
+// serve them, and `build:publish` strips them and then packages. Stripping used
+// to live in `build`, which meant a local preview deleted the very page it was
+// meant to let the maintainer look at, while the nav link survived in the JS
+// bundle -- a link to a guaranteed 404. Found 2026-08-16 by trying to open the
+// page. assertLocalOnlyReportsAbsent below is still the backstop if this ever
+// gets pointed back at plain `build`.
+run(npmCommand, ["run", "build:publish"], {
   env: { NEXT_PUBLIC_SITE_VERSION: sourceCommit.slice(0, 12) },
 });
 
