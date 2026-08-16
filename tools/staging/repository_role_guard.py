@@ -13,6 +13,10 @@ always correct because they are raw strings; only the documentation lied.
 Known roles:
   D:\code\ccode  -> development authoring worktree; may push development only.
   C:\x64base     -> sterilized staging worktree; may push main only.
+  linked worktree cut from origin/main -> may push its OWN topic branch only,
+      for opening a pull request into main. Never main, never development, and
+      never a branch that carries development history. See
+      detect_branch_cut_role for the four conditions, all of which must hold.
 
 The pre-push mode reads Git's update records from stdin:
   <local-ref> <local-sha> <remote-ref> <remote-sha>
@@ -45,6 +49,11 @@ class RepositoryRole:
     root: str
     required_branch: str
     allowed_remote_branch: str
+    # True only for a PR branch cut from origin/main. Carries the obligation
+    # that EVERY pushed commit is re-checked for ancestry, not just HEAD --
+    # see validate_push_updates. Default False so the two fixed roles are
+    # unaffected.
+    branch_cut: bool = False
 
 
 DEVELOPMENT_ROLE = RepositoryRole(
@@ -121,6 +130,145 @@ def detect_role(root: str) -> RepositoryRole | None:
         if root_windows == windows_key(role.root):
             return role
     return None
+
+
+def linked_worktree_parent(root: str) -> str | None:
+    """Return the main repository root if `root` is a LINKED worktree of it.
+
+    In a linked worktree Git's own directory is <common>/worktrees/<name> while
+    --git-common-dir still points at the main repository's .git. When the two
+    differ, this is a linked worktree, and the parent root is the directory
+    holding that common .git.
+
+    Returns None for the main worktree itself, and for anything Git refuses to
+    answer about.
+    """
+    try:
+        git_dir = git_output(root, "rev-parse", "--absolute-git-dir")
+        common = git_output(root, "rev-parse", "--git-common-dir")
+    except RuntimeError:
+        return None
+    if not os.path.isabs(common):
+        common = os.path.normpath(os.path.join(root, common))
+    if normalized_path(git_dir) == normalized_path(common):
+        return None
+    parent = os.path.dirname(common.rstrip("\\/"))
+    return parent or None
+
+
+DEVELOPMENT_REFS = ("refs/remotes/origin/development", "refs/heads/development")
+
+
+def ref_exists(root: str, ref: str) -> bool:
+    return (
+        subprocess.run(
+            ["git", "-C", root, "show-ref", "--verify", "--quiet", ref]
+        ).returncode
+        == 0
+    )
+
+
+def ref_is_ancestor(root: str, ref: str, sha: str) -> bool:
+    """True when `ref` exists locally and is an ancestor of `sha`.
+
+    CAUTION -- returns False for BOTH "not an ancestor" and "ref not present".
+    Callers that need to distinguish those must use ref_exists() as well.
+    See carries_development() for why, and what it cost.
+    """
+    if not ref_exists(root, ref):
+        return False
+    return (
+        subprocess.run(
+            ["git", "-C", root, "merge-base", "--is-ancestor", ref, sha]
+        ).returncode
+        == 0
+    )
+
+
+def carries_development(root: str, sha: str) -> bool | None:
+    """Does `sha` contain development history?
+
+    True  -- yes, a development ref is an ancestor.
+    False -- no, and that was positively established.
+    None  -- UNDETERMINABLE: no development ref exists to compare against.
+
+    THE THIRD VALUE IS THE POINT, AND ITS ABSENCE WAS A REAL HOLE.
+    The first version of detect_branch_cut_role() asked
+    `if ref_is_ancestor(root, "refs/remotes/origin/development", head)` and
+    treated False as safe. But ref_is_ancestor returns False when the ref is
+    MISSING too, so a worktree in a repository lacking the remote-tracking ref
+    was accepted as branch-cut-from-main even when it sat directly on the
+    development branch. Unverifiable history read as clean history.
+
+    Found by Codex review on PR #13, 2026-08-16, and reproduced: delete only
+    refs/remotes/origin/development, keep the local branch, base a worktree on
+    it -- accepted. Callers must FAIL CLOSED on None.
+
+    Recorded because of what it is: the same defect as
+    proof.tooling.catalog_state_blindness, in which a helper returned one
+    answer for "absent" and "empty" and a guard therefore could not see an
+    empty catalog. That proof was written hours before this function was, by
+    the same author, and the bug was reintroduced anyway. Knowing a failure
+    shape is not the same as recognising it in your own new code.
+    """
+    present = [r for r in DEVELOPMENT_REFS if ref_exists(root, r)]
+    if not present:
+        return None
+    return any(ref_is_ancestor(root, r, sha) for r in present)
+
+
+def detect_branch_cut_role(root: str, branch: str) -> RepositoryRole | None:
+    """Recognise a PR branch cut from main, in a linked worktree.
+
+    ADDED 2026-08-14. The guard knew two roots and nothing else, so the
+    documented way to get a CI fix onto main -- cut a branch from origin/main in
+    a worktree, push it, open a pull request -- was refused outright, and the
+    only way through was `git commit --no-verify` plus `git push --no-verify`.
+    That is the worst outcome available: the guard did not permit a safe
+    operation, so the operator learned to switch it off entirely, and a habit of
+    --no-verify erodes every check it fronts, not just this one. A guard people
+    route around protects nothing.
+
+    So this permits exactly that workflow and nothing wider. ALL of these must
+    hold, or the role is refused and the old message stands:
+
+      1. `root` is a LINKED worktree whose parent is a declared root. A random
+         clone elsewhere on the disk is still refused.
+      2. The branch is neither `main` nor `development`. Those two keep their
+         existing single-root rules; a worktree cannot be used to reach them.
+      3. origin/main is an ancestor of HEAD -- the branch really was cut from
+         main and is proposing something main can fast-forward from.
+      4. origin/development is NOT an ancestor of HEAD. This is the load-bearing
+         one: without it, someone could branch off development inside a
+         worktree and push it as a "pull request", smuggling the whole
+         development history toward main and defeating the rule that
+         development is never merged into main.
+
+    The role it returns can push only its own branch, so the pre-push validator
+    needs no change: pushing anything else from this worktree is still refused.
+    """
+    if branch in ("", "main", "development"):
+        return None
+    parent = linked_worktree_parent(root)
+    if parent is None or detect_role(parent) is None:
+        return None
+    try:
+        head = git_output(root, "rev-parse", "HEAD")
+    except RuntimeError:
+        return None
+    if not ref_is_ancestor(root, "refs/remotes/origin/main", head):
+        return None
+    # Fail CLOSED: None means no development ref exists to compare against, so
+    # the claim "this does not carry development" cannot be established.
+    if carries_development(root, head) is not False:
+        return None
+    return RepositoryRole(
+        name="branch-cut-from-main",
+        root=root,
+        required_branch=branch,
+        allowed_remote_branch=branch,
+        branch_cut=True,
+    )
 
 
 def git_output(root: str, *args: str) -> str:
@@ -222,6 +370,45 @@ def validate_push_updates(
                 f"attempted {local_ref} -> {remote_ref}"
             )
             continue
+        # A branch-cut role was granted on the basis of HEAD's ancestry. That
+        # says nothing about what is actually being pushed.
+        #
+        # `git push origin development:ci/fix` sends development's tip at the
+        # accepted destination ref. The destination matched, the role was
+        # valid, and nothing looked at local_sha -- so the exact development
+        # history this role exists to exclude would publish, and a pull request
+        # from that branch would carry it into main. Found by Codex review on
+        # PR #13, 2026-08-16, and reproduced before fixing: the validator
+        # returned no errors for a development SHA targeting refs/heads/ci/fix.
+        #
+        # So the ancestry checks are re-applied here, per update record. HEAD
+        # is what earns the role; every pushed commit must earn its own passage.
+        if role.branch_cut:
+            if not root:
+                errors.append(
+                    "branch-cut role cannot validate a push without a repository root"
+                )
+                continue
+            if not ref_is_ancestor(root, "refs/remotes/origin/main", local_sha):
+                errors.append(
+                    f"branch-cut push must descend from origin/main; "
+                    f"{local_ref} -> {remote_ref} does not"
+                )
+                continue
+            carries = carries_development(root, local_sha)
+            if carries is None:
+                errors.append(
+                    "branch-cut push cannot be validated: no development ref "
+                    "exists to compare against (failing closed)"
+                )
+                continue
+            if carries:
+                errors.append(
+                    f"branch-cut push carries development history; "
+                    f"{local_ref} -> {remote_ref} is forbidden"
+                )
+                continue
+
         if role is STAGING_ROLE and remote_ref == "refs/heads/main":
             is_ancestor = development_ancestor_override
             if is_ancestor is None and root:
@@ -376,7 +563,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"repository-role-guard: {exc}", file=sys.stderr)
         return 4
 
-    role = detect_role(root)
+    role = detect_role(root) or detect_branch_cut_role(root, branch)
     allow_staging_branch = (
         args.allow_staging_branch
         or os.environ.get("X64BASE_ALLOW_STAGING_BRANCH") == "1"

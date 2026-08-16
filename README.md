@@ -218,7 +218,22 @@ xBase / SAP / ERP background
 
 ## License
 
-To be determined.
+x64base / DotTalk++ is **dual-licensed**:
+
+- **GPL-3.0-only** -- free and open source for everyone. Read it, run it, study it,
+  teach with it, fork it, preserve it. Students, educators, hobbyists, researchers,
+  and the retro/xBase community never pay. See [`LICENSE`](LICENSE).
+- **Commercial license** -- for embedding x64base in a closed-source or proprietary
+  product, or for use on terms other than the GPL. Available from the author.
+
+Educational and non-commercial use is already free under the GPL. Accredited
+institutions needing commercial terms may request them at no or nominal cost.
+
+The license covers the software; project names remain the author's.
+
+Full terms and rationale: [`LICENSING.md`](LICENSING.md) -- <https://x64base.com/licensing/>
+
+Copyright (c) 1993-2026 Derald R Grimwood Jr.
 
 ## Final Note
 
