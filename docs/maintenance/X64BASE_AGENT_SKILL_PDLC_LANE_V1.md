@@ -93,6 +93,8 @@ three tiers already have.
 | R7 | 2026-08-06 | **G0 ruled: CONVERT.** "develop and document, it is our thesis". The skill programme is retired unbuilt; the lane becomes the D1-D4 repair lane, developed and documented as one act. P1-P9 below are superseded by section 11. |
 | R8 | 2026-08-07 | **PLDC is merged into PDLC and retired.** "PLDC -- Product/Lab Delivery Cycle" and PDLC are one lifecycle. PDLC's SCOPE widens to span both the change and the deliverable; its NAME does not change -- it remains the **Programming** Development Life Cycle (`PDLC_STUDENT_WORKING_MODEL_LANE_V1.md`, `projects.yaml` `project.labtalk.pdlc`). This reverses R1, which had ruled the opposite. Doctrine of record: `SCOPE_CALIBRATED_LIFECYCLE_DOCTRINE_V1.md`, "Lifecycle vocabulary". Lane file renamed `X64BASE_AGENT_SKILL_PLDC_LANE_V1.md` -> `X64BASE_AGENT_SKILL_PDLC_LANE_V1.md`. |
 
+| R9 | 2026-08-07 | **Licence is GPL-3.0.** Settled by the owner; retires the "to be defined" placeholder that section 5 listed as blocking P9. Verified present in `development` and on `main` as `LICENSE` (34,510 B, identical size on both), and reported as GPL-3.0 on the repository's public page. **Consequence for the lane:** a distributed `.skill` bundle is a derivative distribution and inherits GPL-3.0. It must ship the licence text and a provenance line naming the source commit, and the agency-facing package documentation must state the licence rather than leave an outside party to infer it. **One thing to resolve before packaging:** the tree carries BOTH `LICENSE` (34,510 B) and `COPYING` (35,149 B). Two licence files of different content is ambiguous to an outside reader and to automated licence scanners; the bundle must name which one governs. |
+
 ## 3. Standing disciplines (adopted, enforced per phase)
 
 1. **The skill carries no doctrine of its own.** It is a loader, a trigger
@@ -157,7 +159,7 @@ three tiers already have.
 | --- | --- |
 | P4 | Does the distributable bundle ship from `deraldg/x64base` or `deraldg/labtalk`? Governance assigns campus/portal/teaching overlays to `labtalk`, which argues for the latter; the skill's subject is the x64base repo, which argues for the former. |
 | P6 | Are vendor projections under `.claude/skills/` committed (R5 accepts the target) or regenerated per clone the way pre-commit hooks already are? R5 settles admissibility, not tracking. |
-| P9 | Licensing for a distributed package. Repo licence is currently "to be defined"; a package handed to an outside agency needs an answer. |
+| ~~P9~~ | ~~Licensing for a distributed package. Repo licence is currently "to be defined"; a package handed to an outside agency needs an answer.~~ **SETTLED by R9 (2026-08-07): GPL-3.0.** Struck rather than deleted, so the ledger shows the question was asked and answered. Residual, tracked under R9 and not blocking: the tree carries both `LICENSE` and `COPYING` with different content, and the bundle must name which governs. |
 
 ## 6. Registration state
 
