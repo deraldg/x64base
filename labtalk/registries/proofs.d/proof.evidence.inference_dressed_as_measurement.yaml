@@ -1,0 +1,58 @@
+id: proof.evidence.inference_dressed_as_measurement
+label: Four wrong conclusions in one session, each built on a CORRECT measurement; the defect is the inference step, not the instrument
+state: recorded
+related:
+- D:/dev/x64base-site/app/retro/page.tsx
+- D:/dev/x64base-site/components/Navbar.tsx
+- D:/code/ccode/coordination/OPEN_ITEMS.md
+- D:/code/ccode/docs/maintenance/AIF_118_SILENT_PASS_GUARD_LANE_V1.md
+notes: 'RECORDED 2026-08-17. AIF-118 exists because checks return the same answer for
+  "absent" and "fine". This is the human-side twin: the MEASUREMENT was right every
+  time and the CONCLUSION drawn from it was wrong.
+
+  FOUR INSTANCES, one session:
+
+    1. "derald.com is no longer ours." Evidence: the browser served an unrelated
+       medical practice over a rejected certificate. TRUE. Conclusion: the
+       registration lapsed and someone re-registered it. FALSE -- Verisign RDAP:
+       registered 2004, expires 2027-06-24, GoDaddy, all four client locks set. The
+       repo even said "retired" in c244300da, and RETIRING A HOST IS NOT RELEASING A
+       NAME. The wrong sentence was written into a source comment before anyone checked
+       the registry, which takes one request.
+
+    2. "The two IS_LOCAL_PREVIEW predicates disagree." Evidence: /retro appeared
+       NOWHERE in the DOM while the LOCAL PREVIEW badge rendered. TRUE. Conclusion:
+       layout.tsx and Navbar.tsx compute local-preview differently, so local-only nav
+       is suppressed. FALSE -- the More menu was COLLAPSED and renders its items on
+       open. A whole lib/site.ts "single source of truth" was written, with a confident
+       comment citing a measured finding, for a defect that did not exist. The owner
+       corrected it in five words: "retro does live in more".
+
+    3. "The light theme is not the default." Evidence: grep found `color-scheme: dark`
+       at a LOWER file offset than `color-scheme: light`. TRUE. Conclusion: the dark
+       block precedes :root. FALSE -- the match was inside `prefers-color-scheme: dark`
+       in the no-flash script''s media query. The pattern matched text that was not the
+       thing it named.
+
+    4. "docs/manuals/developer/dev is clean" and "the metadata directory is clean."
+       Evidence: `git status --porcelain <dir>` printed nothing. TRUE. Conclusion:
+       nothing untracked there. FALSE -- porcelain omits untracked files without
+       -uall. 20 files in one case, 21 in the other.
+
+  THE COMMON SHAPE: a true observation, then a mechanism invented to explain it, then
+  the mechanism written down as though it had been verified. In 1 and 2 the invented
+  mechanism reached a committed artifact before being caught.
+
+  WHAT ACTUALLY CAUGHT THEM: 1 and 3 and 4 by measuring a SECOND way (a registry
+  lookup, reading the file rather than grepping it, re-running with -uall). 2 by the
+  owner, who knew the UI. None by re-reading the original evidence, because the
+  original evidence was never wrong.
+
+  OPERATIONAL RULE THIS SUPPORTS: when a measurement implies a mechanism, the mechanism
+  is a HYPOTHESIS until separately measured. Write the observation down as an
+  observation. The cheapest tell is a sentence of the form "X, therefore Y" where Y was
+  never independently checked -- and the cost is not the error, it is that the error
+  gets committed with a confident comment and outlives the session that made it.
+
+  Companion: proof.golden_rule_verify_before_assert, and the AIF-118 charter''s closing
+  note that every real find came from measuring a second way.'

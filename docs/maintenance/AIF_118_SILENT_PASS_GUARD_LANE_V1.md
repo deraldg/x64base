@@ -82,6 +82,47 @@ PR #13 merged to `main`. Site releases 126-131 published.
 - `include/devref.hpp` -- `status: supported` corrected to `reserved`.
 - `include/edref.hpp` -- catalog shape settled before population; 29 one-line titles.
 
+## Day two, 2026-08-17 -- the shape held, and split in half
+
+Commits: `e9d7e3aa4`, `846b0ca02`, `a35ebe1bf`, `91e814a1d` (ccode);
+`4a941f273`, `84939eeb4`, `4d35f2b3d`, `0ad92d7dc` (x64base-site).
+Closeout: `SESSION_CLOSEOUT_AIF118_CONSOLE_THEME_LAB_AND_LEAN_PYDOTTALK_2026-08-17.md`.
+
+**The lane's rule earned a corollary.** Extracting pydottalk from the monolithic
+build surfaced four globals the parent had been supplying invisibly, and they
+divide cleanly:
+
+| provided silently | how it fails |
+| --- | --- |
+| generated `build_vectors.hpp` | compile error, immediate |
+| `NOMINMAX` | compile error -- but 30+ diagnostics across 7 lines, **none naming windows.h or max** |
+| `CMAKE_MSVC_RUNTIME_LIBRARY` | **links cleanly, misbehaves at runtime** |
+| seven `DOTTALK_*` feature flags | **links cleanly, then corrupts** -- undefined reads as 0 under `#if`, so the module compiles a different view of the same structs than the libraries it links |
+
+So a subproject that COMPILES is not extracted. The dangerous half of what a
+parent provides produces no diagnostic at all, which is this lane's own thesis
+applied to build systems rather than to checks. Recorded as
+`proof.build.parent_provided_globals`.
+
+**And the human twin of the same defect.** Four wrong conclusions this session
+were each built on a CORRECT measurement -- the instrument was right and the
+inference was invented: a stranger's webpage read as a lapsed domain (the
+registry says it expires 2027-06-24), a collapsed nav menu read as two
+disagreeing predicates, `prefers-color-scheme: dark` matched as
+`color-scheme: dark`, and `git status --porcelain` without `-uall` read as a
+clean directory. Two of the four reached a committed artifact before being
+caught. Recorded as `proof.evidence.inference_dressed_as_measurement`, because
+"measure a second way" is not enough guidance on its own: the measurement was
+never the problem.
+
+**A new rung, below the lane.** `coordination/OPEN_ITEMS.md` plus
+`tools/coordination/check_open_items.py` -- small deferred work that is too
+small for an AIF claim and too real to lose in chat, surfaced by the pre-push
+gate only when a row's own NEXT LOOK date passes. Chosen against AIF-006's
+measurement (ungated obligations 33 percent, gated 83-94) and deliberately
+non-blocking, since every row is deferred by choice and a blocking gate teaches
+people to delete rows.
+
 ## Still open under this lane
 
 - **No C++ was compiled this session.** The `edref.hpp` change is additive and *should*
