@@ -850,6 +850,8 @@ render();
 def main() -> int:
     ap = argparse.ArgumentParser(description="Generate the ecoschema drill-down map.")
     ap.add_argument("--out", default=None)
+    ap.add_argument("--check", metavar="PATH", default=None,
+                    help="compare PATH against a fresh generate; exit 3 on drift")
     args = ap.parse_args()
 
     root = repo_root()
@@ -869,6 +871,51 @@ def main() -> int:
            .replace("__NC__", str(len(data["claims"])))
            .replace("__NS__", str(len(data["subsystems"])))
            .replace("__NPF__", str(len(data["proofs"]))))
+    if args.check:
+        # DRIFT GATE. The map is a `generated` route with no gate of its own, and
+        # it went stale in three days on 2026-08-14..17 (7 new lanes, 7 new proof
+        # records) with nothing announcing it. AIF-025 already learned this lesson
+        # on the command catalogs; this is the same shape.
+        #
+        # A byte compare is only valid because the generator is DETERMINISTIC --
+        # same registries in, same bytes out, verified by running it twice. Nothing
+        # here embeds a timestamp, on purpose: a clock in the output would make
+        # every run "drift" and the gate would be worthless.
+        target = args.check
+        if not os.path.isfile(target):
+            print(f"ecoschema-map: CHECK ERROR -- no such file: {target}", file=sys.stderr)
+            return 4
+        published = open(target, encoding="utf-8").read()
+        if published == doc:
+            print(f"ecoschema-map: CHECK PASS -- {os.path.basename(target)} matches "
+                  f"a fresh generate")
+            return 0
+        print(f"ecoschema-map: CHECK DRIFT -- {target} no longer matches its authority",
+              file=sys.stderr)
+        try:
+            import re as _re
+            old = json.loads(_re.search(r"const D = (\{.*?\});\n", published, _re.S).group(1))
+            for kind in ("claim", "proof", "lane", "subsystem", "project"):
+                a = sum(1 for n in old["nodes"].values() if n["kind"] == kind)
+                b = sum(1 for n in built["nodes"].values() if n["kind"] == kind)
+                if a != b:
+                    print(f"    {kind:11} published {a:4} -> fresh {b:4}  ({b - a:+d})",
+                          file=sys.stderr)
+            ol = {n["label"] for n in old["nodes"].values() if n["kind"] == "claim"}
+            nl = {n["label"] for n in built["nodes"].values() if n["kind"] == "claim"}
+            if nl - ol:
+                print(f"    new lanes: {', '.join(sorted(nl - ol))}", file=sys.stderr)
+            if ol - nl:
+                print(f"    gone:      {', '.join(sorted(ol - nl))}", file=sys.stderr)
+        except Exception:
+            print("    (published file is not parseable for a counts diff)",
+                  file=sys.stderr)
+        print("\n  Regenerate and re-copy:\n"
+              "    python tools/fullstack_docs/ecoschema_map.py\n"
+              "    copy docs/maintenance/ECOSCHEMA_MAP_V1.html <site>/public/eco/index.html",
+              file=sys.stderr)
+        return 3
+
     # Refuse to emit a leaking file. A scrub nobody checks is a scrub that stops
     # working the first time a note names a new path.
     leaks = [m for m in ANY_LOCAL_PATH.findall(doc) if not m.startswith("<")]
