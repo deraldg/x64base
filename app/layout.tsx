@@ -57,8 +57,22 @@ const siteVersion = process.env.NEXT_PUBLIC_SITE_VERSION ?? "local-preview";
 const isLocalPreview = siteVersion === "local-preview";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  // suppressHydrationWarning on <html> is REQUIRED here, not decorative. The
+  // no-flash script in <body> deliberately mutates documentElement.classList
+  // before React hydrates, so the server's <html class> and the client's differ
+  // by design. Without it, React logs "A tree hydrated but some attributes of
+  // the server rendered HTML didn't match" on every load in a dark/system theme.
+  //
+  // It suppresses ONE level -- attributes of <html> itself -- which is exactly
+  // the scope of the intentional mismatch. It does not hide errors below.
+  //
+  // Why it surfaced 2026-08-17 and not earlier: through the reports gateway on
+  // :3000 React never hydrated at all (measured 3 of 490 elements with a fiber),
+  // so a hydration warning was impossible. Fixing the gateway's WebSocket proxy
+  // (AIF-118) made hydration real and this latent mismatch visible. It had been
+  // firing on :3002 direct all along.
   return (
-    <html lang="en" className={`${inter.variable} ${jetbrains.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${inter.variable} ${jetbrains.variable}`}>
       <body className="min-h-screen">
         {/* Theme no-flash: apply the stored preference (light default, owner
             ruling 2026-08-11) before anything paints. Runs synchronously as the
