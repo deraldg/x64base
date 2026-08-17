@@ -45,8 +45,13 @@ ai_report_audit:
 Two doctrine rules are waiting on the same wall.
 
 1. **"A task isn't done until the housekeeping is finished."** Salvaged
-   2026-08-15 from a file whose name was its own first line. Filed at
-   `docs/maintenance/unfiled/RULE_housekeeping_completes_the_task.txt`.
+   2026-08-15 from a file whose name was its own first line.
+   **RESOLVED 2026-08-16 (AIF-118), by owner ruling: promoted into
+   `AI_TIER1_SEED_V1.md` section 5, and the salvage file deleted (`17e70061b`).**
+   It cost 145 B and the ceiling held on slack alone -- 8104 B of 8192, 88 B
+   headroom -- so **nothing was demoted and this proposal's premise is
+   unchanged**. One of the two rules below is off the wall; the wall is 145 B
+   higher.
 2. **"SQLite lives in our system and has a specific purpose, but is NEVER
    dogfood."** Owner ruling, 2026-08-15, recorded in
    `AIF112_OWNER_RULING_D1_D3_AND_DOGFOOD_DEFINITION_V1.md`. This one matters
