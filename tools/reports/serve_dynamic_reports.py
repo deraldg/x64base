@@ -35,6 +35,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tools" / "dbf"))
 import maint_server  # noqa: E402
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import regression_index  # noqa: E402  (same dir; the live regression list surface)
+import ws_proxy  # noqa: E402  (same dir; carries WebSocket upgrades to upstream)
 
 # /AI is the new name for the local report/console surface; /reports is kept as a
 # transitional alias so existing links and the site do not break during the rename.
@@ -205,6 +206,13 @@ class Handler(http.server.BaseHTTPRequestHandler):
     server: DynamicReportServer
 
     def do_GET(self):
+        # A WebSocket handshake is a GET carrying `Upgrade: websocket`, and it
+        # must leave the HTTP path BEFORE _dispatch, which proxies via urllib
+        # and cannot represent 101 Switching Protocols. Dropping it is silent:
+        # `next dev`'s HMR socket never connects and React never hydrates behind
+        # the gateway, with no error anywhere. See tools/reports/ws_proxy.py.
+        if ws_proxy.try_proxy_upgrade(self, self.server.upstream):
+            return
         self._dispatch(include_body=True)
 
     def do_HEAD(self):
