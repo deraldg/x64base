@@ -212,6 +212,21 @@ def section_size(root: Path, node: dict) -> int:
     An anchored node costs its SECTION: from the anchor to the next heading at
     the same level. Only an unanchored node costs its whole file. Nothing is
     counted twice, because sections do not overlap.
+
+    CORRECTED AGAIN 2026-08-16 (AIF-118), same bug class as the 07-31 fix above:
+    a confident number that was wrong. A `#` comment inside a FENCED CODE BLOCK
+    matches `^#{1,2} ` and was being read as the next heading, so a section
+    ending its first paragraph in a shell snippet was truncated there. Measured:
+    `AI_README.md` "## Runtime Start Points" reported **64 B against an actual
+    2943 B, a 46x under-report**, because line 2 of its first powershell block is
+    `# From the repository root:`. Fenced blocks are now masked before the search.
+
+    Blast radius when found: 1 of 20 anchored nodes, and it surfaced only because
+    a node was added that pointed there. The bug was latent for as long as the
+    function has existed -- nothing reported it, because an under-reported working
+    set looks like a SMALL working set, which is exactly what this tool is
+    supposed to produce. A metric whose failure mode is "looks like success" is
+    the shape this repository keeps finding.
     """
     path = root / str(node.get("path", ""))
     if not path.is_file():
@@ -225,12 +240,23 @@ def section_size(root: Path, node: dict) -> int:
     if start < 0:
         return path.stat().st_size
 
+    body = text[start + len(anchor):]
+    # Mask fenced blocks, preserving newline count so offsets into `body` stay
+    # valid. Replacement must be the same LENGTH, not merely the same shape --
+    # the match end is used as an index back into the unmasked body.
+    masked = re.sub(
+        r"^```.*?^```",
+        lambda m: re.sub(r"[^\n]", " ", m.group(0)),
+        body,
+        flags=re.DOTALL | re.MULTILINE,
+    )
+
     level = len(anchor) - len(anchor.lstrip("#"))
     if level:
-        nxt = re.search(rf"^#{{1,{level}}} ", text[start + len(anchor):], flags=re.MULTILINE)
+        nxt = re.search(rf"^#{{1,{level}}} ", masked, flags=re.MULTILINE)
     else:
-        nxt = re.search(r"^## ", text[start + len(anchor):], flags=re.MULTILINE)
-    end = start + len(anchor) + (nxt.start() if nxt else len(text) - start - len(anchor))
+        nxt = re.search(r"^## ", masked, flags=re.MULTILINE)
+    end = start + len(anchor) + (nxt.start() if nxt else len(body))
     return len(text[start:end].encode("utf-8"))
 
 

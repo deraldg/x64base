@@ -78,6 +78,19 @@ triggers:
     label: working on AI memory, consolidation, recall, or the root Frontal_Mem project
   - id: trigger.where_is
     label: about to grep/find for a code or registry target -- check the search map first
+  # Added 2026-08-16 (AIF-118) closing three of the four gaps AIF-115 measured:
+  # seed table rows that carried guidance the resolver could not produce. An
+  # agent reading the table and an agent running the resolver got DIFFERENT
+  # Tier 1 guidance, and that guidance existed only in the fallback -- so the
+  # fallback could not be demoted without losing it. The fourth gap, "edit the
+  # website", targets the x64base-site repo and ZERO nodes point outside this
+  # one; a cross-repo node convention is an owner decision, not a mechanical add.
+  - id: trigger.read_write_dbf
+    label: about to read or write DBF tables, memos, or indexes
+  - id: trigger.use_reference_authority
+    label: about to use or trust a reference authority or command/function catalog
+  - id: trigger.capture_proof
+    label: about to capture runtime output as proof
 
 # ---------------------------------------------------------------- nodes
 nodes:
@@ -505,6 +518,59 @@ nodes:
     hard_fails: false
     tier: 0
 
+  # --- AIF-118: nodes backing the three gaps closed above -------------------
+  # Each carries the SUBSTANTIVE claim the seed table carried, not just a path.
+  # A node that only points somewhere makes the resolver a slower table of
+  # contents; the seed row's value was the warning, so the warning travels.
+  - id: manual.dbf_formats
+    label: "x64 is not x32: format, memo, and index layout"
+    path: docs/manuals/developer/dev/dev-08-dbf-x32-x64-formats.md
+    anchor: ""
+    class: semantic
+    enforced_by: ""
+    hard_fails: false
+    tier: 2
+  - id: manual.indexing_flavors
+    label: "index -> index flavor -> order: INX, CNX, CDX, and LMDB as a CDX backing"
+    path: docs/manuals/developer/dev/dev-09-indexing-inx-cnx-cdx-lmdb.md
+    anchor: ""
+    class: semantic
+    enforced_by: ""
+    hard_fails: false
+    tier: 2
+  - id: manual.memo_system
+    label: "memo text is MemoManager/x64 sidecar, NEVER a classic .dbt -- a v32 reader will lie"
+    path: docs/manuals/developer/dev/dev-10-memo-system.md
+    anchor: ""
+    class: semantic
+    enforced_by: ""
+    hard_fails: false
+    tier: 2
+  - id: mechanism.refcheck
+    label: "each authority owns its namespace; verify rather than assume it is populated"
+    path: tools/fullstack_docs/refcheck_v1.py
+    anchor: ""
+    class: procedural
+    enforced_by: tools/staging/prepush_gate.py
+    hard_fails: false
+    tier: 2
+  - id: mechanism.edrefcheck
+    label: "the EDUCATIONAL catalog's guard: empty is a FINDING, not a pass"
+    path: tools/fullstack_docs/edrefcheck_v1.py
+    anchor: ""
+    class: procedural
+    enforced_by: tools/staging/prepush_gate.py
+    hard_fails: false
+    tier: 2
+  - id: practice.capture_proof
+    label: "capture with SET ALTERNATE, never DOTSCRIPT ... OUT"
+    path: AI_README.md
+    anchor: "## Runtime Start Points"
+    class: procedural
+    enforced_by: ""
+    hard_fails: false
+    tier: 2
+
 # ---------------------------------------------------------------- edges
 # Types:
 #   fires_at     trigger -> doctrine. The retrieval edge.
@@ -611,3 +677,14 @@ edges:
   - {from: trigger.onboard, to: doc.bootstrap_card, type: fires_at}
   - {from: trigger.understand_why, to: doc.assimilation_portal, type: fires_at}
   - {from: doctrine.retrieval_failure, to: doc.root_portal_ancestor, type: evidenced_by}
+
+  # --- AIF-118: edges for the three gaps closed above -----------------------
+  - {from: trigger.read_write_dbf, to: manual.dbf_formats, type: fires_at}
+  - {from: trigger.read_write_dbf, to: manual.memo_system, type: fires_at}
+  - {from: trigger.read_write_dbf, to: manual.indexing_flavors, type: fires_at}
+  - {from: manual.dbf_formats, to: manual.memo_system, type: requires}
+
+  - {from: trigger.use_reference_authority, to: mechanism.refcheck, type: fires_at}
+  - {from: trigger.use_reference_authority, to: mechanism.edrefcheck, type: fires_at}
+
+  - {from: trigger.capture_proof, to: practice.capture_proof, type: fires_at}
