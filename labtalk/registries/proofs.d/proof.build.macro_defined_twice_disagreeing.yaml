@@ -1,0 +1,58 @@
+id: proof.build.macro_defined_twice_disagreeing
+label: One macro, two authorities, opposite values on the same command line, and the only signal is a compiler warning nobody reads
+state: runtime_observed
+related:
+- D:/code/ccode/bindings/pydottalk/CMakeLists.txt
+- D:/code/ccode/src/xindex/CMakeLists.txt
+- D:/code/ccode/bindings/pydottalk/CMakePresets.json
+notes: 'MEASURED 2026-08-17, Linux, gcc, Ninja, Release, DOTTALK_INDEX_MODE=LEGACY.
+
+  TWO AUTHORITIES emitted the same macro with opposite values, and both reached
+  the compiler:
+
+    bindings/pydottalk/CMakeLists.txt   emitted DOTTALK_HAS_XINDEX=0
+    src/xindex/CMakeLists.txt:38        exports DOTTALK_HAS_XINDEX=1, PUBLIC
+
+  A PUBLIC target_compile_definitions propagates to every consumer that links
+  the target. The binding links xindex, so both -D flags landed on the same
+  command line: 48 occurrences of =0 against 26 of =1 across the build. The last
+  flag wins, per translation unit, which means the value depended on flag order
+  rather than on anything anyone decided.
+
+  THE CAUSE WAS A CONFLATION, not a typo. DOTTALK_HAS_XINDEX answers "does the
+  xindex library exist". DOTTALK_WITH_INDEX answers "is the lmdb backend
+  compiled". The binding keyed the first off the second, which is correct for
+  LMDB (both 1) and correct for NONE (both 0) and WRONG for LEGACY, the one
+  state whose entire purpose is that the two differ. src/xindex/CMakeLists.txt
+  had it right and said so in its own comment: "xindex exists, lmdb does not".
+
+  WHY IT STAYED HIDDEN FOR THE WHOLE OF ITS LIFE: LEGACY was never the default
+  and, before this session, was never selected. The contradiction is unreachable
+  in the other two modes. It appeared within minutes of LEGACY becoming the
+  default preset -- that is, the defect was found by CHANGING A DEFAULT, not by
+  reading the code, and the code had been read carefully twice that same day.
+
+  BLAST RADIUS, measured rather than assumed: DOTTALK_HAS_XINDEX appears in ZERO
+  files under include/, and is consulted only under src/cli, which the Python
+  binding never compiles. So nothing was miscompiled and the fix changed not one
+  byte of the artifact. It was a live landmine rather than a live fire: the
+  moment a public header consults the macro, or the binding compiles a CLI
+  source, the winner becomes flag order.
+
+  THE AIF-118 CONNECTION. The observable symptom was a warning -- technically
+  loud, practically silent, buried in the middle of a 52-step Ninja log that
+  ended in a green exit code. A build that PASSES while emitting a diagnosis of
+  its own incoherence is the same shape as a check that returns the same answer
+  for absent and fine. The exit code did not distinguish them.
+
+  FIX: key DOTTALK_HAS_XINDEX off DOTTALK_INDEX_MODE (0 only when NONE, since
+  only NONE omits the library) so the binding agrees with the library that owns
+  the definition. Verified by clean rebuild of all three modes: zero
+  redefinition warnings, identical artifacts.
+
+  GENERALISATION WORTH KEEPING. When a subproject re-emits a flag that a linked
+  target already exports PUBLIC, the subproject is not configuring, it is
+  arguing. Prefer letting the owning target be the single authority, and emit
+  from the parent only those flags no target owns. The enumeration discipline in
+  proof.build.parent_provided_globals tells you WHICH flags the parent must
+  supply; it does not tell you which it must NOT, and this is that other half.'

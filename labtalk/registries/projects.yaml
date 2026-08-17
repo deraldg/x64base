@@ -263,6 +263,35 @@ projects:
       - ../run-pycrud.ps1
     notes: SQLAlchemy/Tk CRUD surface with optional DotTalk++ backend hook.
 
+  - id: project.pydottalk
+    name: PyDotTalk Python Binding
+    kind: binding_project
+    status: active_beta
+    root: D:/code/ccode/bindings/pydottalk
+    lanes: [python_api, lean_build, crud, packaging, index_api]
+    docs:
+      - ../PYDOTTALK_STARTER_README.md
+      - ../../docs/maintenance/PYDOTTALK_SDLC_CHARTER_v0.md
+      - ../../docs/contracts/PYTHON_BINDING_TRUST_CONTRACT_V1.md
+      - ../../docs/maintenance/PYDOTTALK_CAPABILITY_REVIEW_AND_CRUD_READINESS_V1.md
+    launchers:
+      - ../../build_pydottalk.ps1
+      - ../../run-pydottalk.ps1
+    notes: >
+      Registered 2026-08-17 as a SEPARATE BUT CO-SOURCED product rather than a
+      build switch of the engine. Co-sourced means one set of sources with two
+      consumers: the standalone build adds src/xbase, src/memo and src/xindex by
+      DOTTALK_ROOT and never restates their source lists, so the engine remains
+      the single authority on struct layout, ABI and every DOTTALK_* macro.
+      Ships a pybind11 extension module; builds lean via
+      bindings/pydottalk/CMakePresets.json (lean-legacy is the default) with no
+      CLI, no TUI and no BBS. Measured state on registration: CRUD only, no
+      index API, indexing never tested through the binding, no packaging or
+      wheel story. Owning charter is PYDOTTALK_SDLC_CHARTER_v0.md; the trust
+      boundary is PYTHON_BINDING_TRUST_CONTRACT_V1.md. Downstream consumers
+      already registered here: project.pycrud and project.db_converter both
+      name pydottalk as a lane.
+
   - id: project.db_converter
     name: DB_Converter
     kind: migration_project

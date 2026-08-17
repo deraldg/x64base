@@ -1,0 +1,84 @@
+id: proof.build.index_mode_changes_nothing_shipped
+label: A three-state build option that changes the build tree and not the artifact, because nothing in the module ever references what it selects
+state: runtime_observed
+related:
+- D:/code/ccode/bindings/pydottalk/CMakeLists.txt
+- D:/code/ccode/bindings/pydottalk/CMakePresets.json
+- D:/code/ccode/bindings/pydottalk/src/module.cpp
+- D:/code/ccode/src/xindex/CMakeLists.txt
+- D:/code/ccode/CMakePresets.json
+- D:/code/ccode/coordination/OPEN_ITEMS.md
+notes: 'MEASURED 2026-08-17 on Linux/ELF, gcc, Ninja, Release. DOTTALK_INDEX_MODE has
+  three legitimate states and src/xindex/CMakeLists.txt genuinely honours all three.
+  The build tree differs exactly as documented:
+
+    LMDB    xindex.a=yes  lmdb_backend.o=yes  48 objects
+    LEGACY  xindex.a=yes  lmdb_backend.o=no   47 objects
+    NONE    xindex.a=no   lmdb_backend.o=no   25 objects
+
+  THE SHIPPED MODULE IS BYTE-IDENTICAL IN ALL THREE. 665336 bytes,
+  sha256 54cb15eb9bf73c8d..., same hash three times. Corroborated rather than
+  inferred from size alone (the mistake this lane already logged once): the .so
+  carries ZERO mdb_ symbols, ZERO symbols matching lmdb, ZERO undefined index
+  symbols, and ldd lists only libstdc++, libgcc_s, libc, libm and the loader.
+  No lmdb, no sodium.
+
+  CAUSE, and it is not a cmake bug. A static archive contributes only those
+  objects that resolve an undefined symbol. bindings/pydottalk/src/module.cpp
+  references the index zero times, so libxindex.a satisfies nothing and the
+  linker discards all of it, lmdb_backend.o included. Compiling more does not
+  ship more.
+
+  WHY THE BINDING HAS NO INDEX REFERENCES, confirmed by searching the AI portal
+  on the maintainer''s instruction: it has never had an index API. The portal
+  (labtalk/ai_portal/) mentions pydottalk exactly ONCE, in TIER0_STATE.md, and
+  only as a closeout FILENAME. The four launcher_pydottalk proof runs are
+  356-389 bytes each with zero hits for set order, seek, index or tag.
+  proofs.yaml ties pydottalk to exactly one proof, the APPEND BLANK catalog
+  drift, which is CRUD. module.cpp binds open, close, gotoRec, top, bottom,
+  skip, readCurrent, writeCurrent, appendBlank, deleteCurrent, fields, get and
+  set. There is no setOrder, no seek, no tag. Maintainer, same day: "so far we
+  have only used crud."
+
+  THE SHAPE, and this is why it belongs to AIF-118. The option answers the same
+  for LMDB and for NONE at the only layer a caller can observe. It is the third
+  instance found today of one check or switch returning an identical result for
+  "present" and "absent", after proof.build.parent_provided_globals and
+  proof.contract.declaration_harvested_by_nothing. The distinguishing feature
+  here is that NOTHING IS BROKEN: xindex is correct, the modes are correct, and
+  the module is correct. The defect is a claim of choice where no choice
+  currently exists, which is why the fix is a default and a comment rather than
+  code.
+
+  DECISION TAKEN: LEGACY becomes the default preset for the binding. It yields
+  the identical artifact while requiring no lmdb at configure time, so the
+  cheapest of three indistinguishable options wins. LMDB and NONE stay
+  available and each preset description records this measurement, so the next
+  reader is told why the choice is free instead of rediscovering it.
+
+  WHAT WOULD MAKE THIS PROOF OBSOLETE, and it should be re-measured then rather
+  than trusted: the first index binding added to module.cpp. At that moment
+  libxindex.a starts resolving symbols, lean-none should begin to FAIL to link,
+  and on Windows the .pyd may acquire a runtime dependency on lmdb.dll, since
+  vcpkg builds lmdb as a DLL on x64-windows. Tracked as OI-007.
+
+  RE-MEASURED AFTER A RELATED FIX, same session. Making LEGACY the default
+  exposed a second defect (see proof.build.macro_defined_twice_disagreeing) and
+  flipping DOTTALK_HAS_XINDEX from 0 to 1 in LEGACY did NOT change any of the
+  three hashes. That is corroboration, not a coincidence: the macro is consulted
+  in zero public headers and only in src/cli, which the binding never compiles.
+  A clean rebuild of all three modes after the fix gives the same 665336 bytes
+  and the same sha256, with zero redefinition warnings.
+
+  NOT VERIFIED HERE: any Windows measurement. This session had no Windows host,
+  so the lmdb.dll question is stated as a question and not as a finding. One
+  command settles it: dumpbin /dependents pydottalk.cp312-win_amd64.pyd
+
+  METHOD NOTE. lmdb is not installable in this container and vcpkg was not
+  available, so LMDB mode was exercised by building liblmdb from the py-lmdb
+  sdist sources and placing a hand-written unofficial-lmdbConfig.cmake shim in
+  /tmp to stand in for the vcpkg-generated package. The shim lived only in /tmp
+  and never in the repository. It proves that lmdb_backend.cpp compiles and
+  links on Linux/ELF, which was the one path the 2026-08-17 morning run could
+  not reach. It does NOT prove the house vcpkg route on Linux; the wsl-lean
+  root preset is that route and remains maintainer-operated.'
