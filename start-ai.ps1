@@ -154,16 +154,56 @@ if (-not (Wait-Port 3000 'gateway')) {
   exit 4
 }
 
-try {
-  $health = Invoke-RestMethod -Uri 'http://127.0.0.1:3000/AI/health' -TimeoutSec 30
-  if ($health.mode -ne 'live-development' -or -not $health.upstream.ok) {
-    throw 'gateway health payload did not identify a healthy live-development stack'
+# Readiness is POLLED, not asked once, and a failure PRINTS THE PAYLOAD.
+#
+# WHY POLLED (measured 2026-08-17): a bound port is not a ready service. The
+# gateway's health check does a HEAD to the upstream, while `next dev` binds
+# :3002 immediately and compiles the first request on demand. So both Wait-Port
+# calls can succeed, the health check fire, the upstream still be compiling, and
+# the gateway CORRECTLY answer 503. A cold start exited 5 that way while both
+# processes were fine and healthy one second later (started_at 21:53:42Z,
+# last_render_at 21:53:43Z). The old single attempt turned a startup race into a
+# reported failure.
+#
+# WHY THE BODY IS PRINTED: health_payload() reports three separate conditions --
+# upstream.ok, registries.ok, last_render_error -- and returns them in the
+# response body. Invoke-RestMethod throws on 503, so the old catch printed only
+# "Response status code does not indicate success" and discarded the diagnosis
+# the server had already made. In PowerShell 7 the body survives on
+# $_.ErrorDetails.Message; use it.
+#
+# The strict posture is UNCHANGED: this still refuses to announce READY for a
+# genuinely unhealthy stack. It just stops calling a cold start a failure.
+$healthDeadline = (Get-Date).AddSeconds(90)
+$health = $null
+$lastDetail = 'no response'
+$announcedWait = $false
+while ($true) {
+  try {
+    $health = Invoke-RestMethod -Uri 'http://127.0.0.1:3000/AI/health' -TimeoutSec 15
+    if ($health.mode -eq 'live-development' -and $health.upstream.ok) { break }
+    $lastDetail = 'mode={0} upstream.ok={1} upstream.error={2}' -f $health.mode, $health.upstream.ok, $health.upstream.error
+  } catch {
+    $body = $_.ErrorDetails.Message
+    $lastDetail = if ($body) { $body } else { $_.Exception.Message }
+    $health = $null
   }
-  if ([bool]$health.execute_enabled -ne [bool]$EnableWrite) {
-    throw 'gateway write posture does not match the requested startup mode'
+  if ((Get-Date) -gt $healthDeadline) {
+    Write-Error ("gateway readiness validation failed after 90s. Last health response:`n{0}" -f $lastDetail)
+    exit 5
   }
-} catch {
-  Write-Error ("gateway readiness validation failed: {0}" -f $_.Exception.Message)
+  if (-not $announcedWait) {
+    Write-Host '  waiting for the upstream site to compile its first request ...'
+    $announcedWait = $true
+  }
+  Start-Sleep -Seconds 2
+}
+
+# NOT retried: a write-posture mismatch is a real disagreement about what was
+# asked for, not a cold start, and waiting cannot change it.
+if ([bool]$health.execute_enabled -ne [bool]$EnableWrite) {
+  $postureMsg = 'gateway write posture does not match the requested startup mode (execute_enabled={0}, -EnableWrite={1})'
+  Write-Error ($postureMsg -f $health.execute_enabled, [bool]$EnableWrite)
   exit 5
 }
 
