@@ -27,15 +27,17 @@ ai_report_audit:
       settled before population. Includes an explicit ground-truth ledger, because
       a large share of this session's work was host-only.
   report:
-    path: docs/maintenance/SESSION_CLOSEOUT_GUARDS_SITE_AND_EDREF_SHAPE_2026-08-16.md
+    path: docs/maintenance/SESSION_CLOSEOUT_AIF118_GUARDS_SITE_AND_EDREF_SHAPE_2026-08-16.md
     kind: session_closeout
 ---
 
-# Session Closeout -- guards, the published site, and the EDREF shape
+# Session Closeout -- AIF-118: guards, the published site, and the EDREF shape
 
 Date: 2026-08-16 (work spans the evening of 2026-08-15 and the morning of 2026-08-16).
 Owning lifecycle: PDLC.
-SDLC lane: tooling / publication.
+SDLC lane: tooling / publication. **AIF-118** (claimed 2026-08-17T01:04:55Z, run `COWORK-20260816-001`, lane
+`guards-site-contrast-and-edref-shape`). Charter: `docs/maintenance/AIF_118_SILENT_PASS_GUARD_LANE_V1.md`.
+Intake row: `docs/ai-friendly/AI_INTERACTION_INTAKE_QUEUE_V1.md` (AIF-118).
 Repositories touched: `D:\code\ccode` (development), `D:\dev\x64base-site`
 (`codex/lean-sites-publish`), and one branch cut from `origin/main`.
 
