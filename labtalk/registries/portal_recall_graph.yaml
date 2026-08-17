@@ -532,25 +532,26 @@ nodes:
   # Each carries the SUBSTANTIVE claim the seed table carried, not just a path.
   # A node that only points somewhere makes the resolver a slower table of
   # contents; the seed row's value was the warning, so the warning travels.
-  - id: manual.dbf_formats
-    label: "x64 is not x32: format, memo, and index layout"
-    path: docs/manuals/developer/dev/dev-08-dbf-x32-x64-formats.md
+  # RETARGETED 2026-08-16, same day, after these pointed at UNTRACKED drafts.
+  # docs/manuals/developer/dev/dev-08|09|10.md exist on the maintainer's disk and
+  # in NO commit -- 21 of 22 files in that directory are untracked, none ignored,
+  # all stamped DRAFT_WITH_TEMPORARY_EVIDENCE_LANES (last_verified 2026-07-07).
+  # The manual really ships in two other places (developer-manual.mdx on the
+  # website, and the dottalkpp HELP tables), so that directory is a third,
+  # unpromoted authoring copy. Tier 1 retrieval must point at what a CLONE has.
+  # Caught by running this repo's own coverage gate against a fresh checkout
+  # rather than the working tree -- it passed locally and failed from HEAD.
+  - id: guide.dbf_path_policy
+    label: "DBF path policy: SETPATH the slot, then use BARE table names -- a written precondition is not a precondition"
+    path: DOTTALKPP_DBF_PATH_POLICY.md
     anchor: ""
-    class: semantic
+    class: procedural
     enforced_by: ""
     hard_fails: false
     tier: 2
-  - id: manual.indexing_flavors
-    label: "index -> index flavor -> order: INX, CNX, CDX, and LMDB as a CDX backing"
-    path: docs/manuals/developer/dev/dev-09-indexing-inx-cnx-cdx-lmdb.md
-    anchor: ""
-    class: semantic
-    enforced_by: ""
-    hard_fails: false
-    tier: 2
-  - id: manual.memo_system
-    label: "memo text is MemoManager/x64 sidecar, NEVER a classic .dbt -- a v32 reader will lie"
-    path: docs/manuals/developer/dev/dev-10-memo-system.md
+  - id: guide.command_reference
+    label: "x64 is not x32: memo, index flavor (INX/CNX/CDX + LMDB backing), and the command surface that reaches them"
+    path: DOTTALKPP_COMMAND_REFERENCE_GUIDE_V1.md
     anchor: ""
     class: semantic
     enforced_by: ""
@@ -705,10 +706,8 @@ edges:
   - {from: doctrine.retrieval_failure, to: doc.root_portal_ancestor, type: evidenced_by}
 
   # --- AIF-118: edges for the three gaps closed above -----------------------
-  - {from: trigger.read_write_dbf, to: manual.dbf_formats, type: fires_at}
-  - {from: trigger.read_write_dbf, to: manual.memo_system, type: fires_at}
-  - {from: trigger.read_write_dbf, to: manual.indexing_flavors, type: fires_at}
-  - {from: manual.dbf_formats, to: manual.memo_system, type: requires}
+  - {from: trigger.read_write_dbf, to: guide.dbf_path_policy, type: fires_at}
+  - {from: trigger.read_write_dbf, to: guide.command_reference, type: fires_at}
 
   - {from: trigger.use_reference_authority, to: mechanism.refcheck, type: fires_at}
   - {from: trigger.use_reference_authority, to: mechanism.edrefcheck, type: fires_at}

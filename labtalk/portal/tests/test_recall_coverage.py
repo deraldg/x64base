@@ -34,6 +34,7 @@ PROVEN TO FAIL (three mutations of the graph, each reverted after):
 from __future__ import annotations
 
 import importlib.util
+import subprocess
 import unittest
 from pathlib import Path
 
@@ -90,6 +91,47 @@ class RecallCoverageTest(unittest.TestCase):
                         path.is_file(),
                         f"{trig_id} -> {node_id} points at {node.get('path')}, "
                         "which is not on disk",
+                    )
+
+    def test_every_referenced_node_is_TRACKED_not_merely_present(self):
+        """On disk is not the same as in the repository.
+
+        ADDED 2026-08-16 after this suite passed in the working tree and FAILED
+        against a fresh checkout of the same commit. Three nodes pointed at
+        `docs/manuals/developer/dev/dev-0*.md`, which exist on the maintainer's
+        disk and are in no commit -- 21 of the 22 files in that directory are
+        untracked and none are gitignored. Every clone would have resolved
+        `read_write_dbf` to nothing while this test reported green.
+
+        That is the lane's own defect shape inside the gate written to detect
+        it: a check whose subject was the author's filesystem rather than the
+        artifact that ships. Same family as launch-common.ps1 (ten tracked
+        scripts dot-sourcing an untracked file) and the SYSFUNC metadata tables.
+        """
+        try:
+            tracked = set(
+                subprocess.run(
+                    ["git", "--no-optional-locks", "ls-files"],
+                    cwd=REPO_ROOT, capture_output=True, text=True, timeout=60,
+                    check=True,
+                ).stdout.splitlines()
+            )
+        except (OSError, subprocess.SubprocessError):
+            self.skipTest("git unavailable; cannot distinguish tracked from present")
+
+        for trig_id, node_ids in self.fires.items():
+            for node_id in node_ids:
+                node = self.nodes.get(node_id)
+                if not node:
+                    continue
+                rel = str(node.get("path", "")).replace("\\", "/")
+                with self.subTest(trigger=trig_id, node=node_id):
+                    self.assertIn(
+                        rel, tracked,
+                        f"{trig_id} -> {node_id} points at {rel}, which is NOT "
+                        "tracked. It resolves on this machine and to nothing in "
+                        "a clone, so Tier 1 retrieval would silently return an "
+                        "empty working set for everyone else.",
                     )
 
     def test_no_node_resolves_to_a_truncated_section(self):
