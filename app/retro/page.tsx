@@ -209,23 +209,49 @@ export default function RetroPage() {
         })}
       </div>
 
-      {/* The public home for this material. RETRO here is the staging bench --
-          collect freely, promote deliberately. The index at derald.com is the
-          curated face, and keeping the link here means the two never drift into
-          being two separate collections that disagree. */}
+      {/* PUBLIC INDEX: NO LIVE LINK, DELIBERATELY. 2026-08-17.
+          RETRO here is the staging bench -- collect freely, promote deliberately
+          -- and the plan was for a curated public index to sit at
+          www.derald.com/retro.
+
+          The link was REMOVED because the destination does not currently serve
+          us. As of 2026-08-17 that host answers with an unrelated third party's
+          website over a certificate the browser rejects, so the link did not
+          merely 404: it handed a reader to a stranger's business under a name
+          that reads like the maintainer's own.
+
+          THE DOMAIN IS STILL OURS. Corrected the same day after an actual
+          registry lookup, having first written here that it was "no longer
+          ours" -- inferred from a stranger's page rather than checked. Verisign
+          RDAP, 2026-08-17: registered 2004-06-24, expires 2027-06-24, registrar
+          GoDaddy, nameservers NS23/NS24.DOMAINCONTROL.COM, all four client locks
+          set, last changed 2026-07-08. Not lapsed, not taken. What broke is DNS
+          or host binding, which is a configuration problem on an asset we hold.
+          It was retired as a SUPPORT HOST in c244300da (2026-07-10) -- retiring
+          a host is not releasing a name, and conflating the two is what produced
+          the wrong sentence.
+
+          Tracked as OI-001 in ccode `coordination/OPEN_ITEMS.md`, where = dns,
+          because the fix happens in a registrar panel and can never be closed by
+          a commit here.
+
+          It never reached a visitor -- /retro is local-only on three layers -- so
+          the exposure was confined to this bench. `check-public-content.mjs`
+          still FAILS any published page referencing derald.com; that rule is
+          correct while the host answers as someone else, and stays.
+
+          Restore a link only when the destination is verified to serve us. Put
+          the URL in one place and let this page read it, rather than hardcoding
+          a second copy here. */}
       <div className="mt-10 border-t border-border pt-6">
         <p className="text-sm text-muted">
-          Public retro index:{" "}
-          <a
-            href="https://www.derald.com/retro"
-            className="font-mono text-brand underline hover:text-fg"
-            rel="noopener"
-          >
-            www.derald.com/retro
-          </a>
+          Public retro index: <span className="font-mono">not published yet</span>
         </p>
         <p className="mt-1 text-xs text-muted">
-          This page is the private bench. That one is the curated index.
+          This page is the private bench. The curated public index has no
+          confirmed home yet: the intended one (derald.com) is still ours but
+          currently resolves to an unrelated site, so the link was removed rather
+          than left pointing away from the project.
         </p>
       </div>
     </main>
