@@ -99,9 +99,20 @@ request line and headers byte-for-byte, forwards the `101`, then relays both
 directions with `selectors`. Six tests against a real RFC 6455 echo upstream, and
 four mutations each proven to fail (never detect the upgrade; compare `Connection`
 whole rather than tokenised; drop `Sec-WebSocket-Key`; relay one direction).
-**NOT yet verified against `next dev` itself** -- the proof is a synthetic
-upstream, so the remaining check is `[HMR] connected` appearing on `:3000`, which
-needs a browser.
+**VERIFIED LIVE the same evening, 19:32 local:** through the running gateway,
+`:3000` hydrated **436 of 493 elements** (was 3 of 490) and the console carried
+**`[HMR] connected`** -- the single line that had only ever appeared on `:3002`.
+Confirmed `next dev` with Turbopack rather than a `-Built` static serve, since a
+static build hydrates without any socket and would have proved nothing.
+Attribution settled by clock, not assumption: the gateway process started
+`18:59:56`, three minutes after the commit at `18:56:57`, so this is not the
+stale-binary-passing-for-fixed shape this project has hit before.
+Two of the verifier's own probes were wrong on the way and are recorded because
+the correction is the lesson: a combined measurement returned `{}`, which is a
+blank rather than a result, and the direct socket probes targeted
+`/_next/webpack-hmr` when this build uses Turbopack and never opens that path.
+The app's own console message settled it -- the socket reporting itself, rather
+than a guess at its address.
 
 **5. Four defects on the published site**, all invisible in dark mode and all
 measured rather than eyeballed: the nav needed 1,324px against a 1,152px container

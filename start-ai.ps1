@@ -29,14 +29,20 @@
 #   run a click handler, and two more rounds after that. The warning here used
 #   to say only that SEARCH was inert -- true, and far too narrow.
 #
-#   FIXED 2026-08-16 (AIF-118, 57de30b35): tools/reports/ws_proxy.py now carries
-#   the upgrade, so :3000 should hydrate under `next dev`. The everything-above
-#   is kept because it is the diagnosis, and because the fix is proven against a
-#   synthetic RFC 6455 upstream, NOT yet against `next dev` itself. The check
-#   that settles it is one line in the console: `[HMR] connected` on :3000.
-#   Until someone reports seeing that, treat :3002 as the trustworthy surface
-#   for site work, or use -Built (a static build needs no HMR socket at all).
-#   Use :3000 for /AI/ and the console, served by the gateway itself.
+#   FIXED AND VERIFIED LIVE 2026-08-16 (AIF-118, 57de30b35).
+#   tools/reports/ws_proxy.py carries the upgrade. Measured in the browser
+#   against this gateway, 19:32 local: **436 of 493 elements hydrated on :3000**
+#   (was 3 of 490), and **`[HMR] connected` appeared in the console on :3000**
+#   -- the one line that used to appear only on :3002. Confirmed `next dev` with
+#   Turbopack, not a -Built static serve, because a static build hydrates with no
+#   socket and would have proved nothing. Attribution confirmed by clock: the
+#   gateway process started 18:59:56, three minutes AFTER the commit at 18:56:57,
+#   so it is not a stale process passing for a fixed one.
+#   Everything above is kept: it is the diagnosis, and it is how you recognise
+#   this shape the next time something looks perfect and does nothing.
+#   Note for the next reader: Turbopack does NOT use /_next/webpack-hmr, so
+#   probing that path proves nothing here. Read the console, not your guess at
+#   the endpoint. Use :3000 for /AI/ and the console, served by the gateway.
 #         -Built    : `npm run build` + `serve out` -- production-like; SEARCH WORKS
 #   3. start the reports gateway on :3000              (its own window, preview by default)
 #         -> /AI/         live reports, rebuilt per request (needs pyyaml -> venv)
