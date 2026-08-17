@@ -101,6 +101,15 @@ triggers:
   # document as the authority. Same defect as devref.hpp declaring `supported`.
   - id: trigger.edit_website
     label: about to edit or publish a page on the website
+  # Added 2026-08-17 after a session spent REDISCOVERING documented ground: it
+  # worked out `pip install cmake ninja --break-system-packages` by trial, and
+  # diagnosed the lmdb/glibc link failure from a missing header -- both of which
+  # HANDOFF_CLAUDE_COWORK_SANDBOX_BUILD_2026-08-12.md had already recorded, five
+  # days earlier, in this repository. The document was reachable; nothing routed
+  # anyone to it. That is AIF-082 case study 3, and the fix is a trigger rather
+  # than another document nobody is pointed at.
+  - id: trigger.work_in_sandbox
+    label: about to build, install tooling, or run anything inside the mounted Linux sandbox
 
 # ---------------------------------------------------------------- nodes
 nodes:
@@ -589,6 +598,30 @@ nodes:
     enforced_by: ""
     hard_fails: false
     tier: 2
+  - id: handoff.sandbox_build
+    label: "sandbox toolchain recipe: pip install cmake ninja --break-system-packages; lmdb fails to link on this glibc (__isoc23_strtol)"
+    path: docs/agents/HANDOFF_CLAUDE_COWORK_SANDBOX_BUILD_2026-08-12.md
+    anchor: ""
+    class: procedural
+    enforced_by: ""
+    hard_fails: false
+    tier: 2
+  - id: doctrine.sandbox_is_not_the_host
+    label: "a sandbox is not the WSL host -- measure your own toolchain, never cite a doc for versions"
+    path: AI_README.md
+    anchor: "### A sandbox is not the WSL host"
+    class: procedural
+    enforced_by: ""
+    hard_fails: false
+    tier: 1
+  - id: doctrine.sandbox_git_and_build
+    label: "in a sandbox: NO mutating git and no plain `git status` (index.lock); assume you cannot build, and VERIFY rather than trust that line"
+    path: CLAUDE.md
+    anchor: "## Sandbox agents: NO git, and you cannot build"
+    class: procedural
+    enforced_by: tools/staging/check_sandbox_git_guard.py
+    hard_fails: false
+    tier: 1
   - id: contract.website_publication
     label: "the website is a downstream publication surface, not an independent marketing layer -- claims trace back to source"
     path: docs/contracts/WEBSITE_SELFDOC_PUBLICATION_CONTRACT_V1.md
@@ -713,6 +746,11 @@ edges:
   - {from: trigger.use_reference_authority, to: mechanism.edrefcheck, type: fires_at}
 
   - {from: trigger.capture_proof, to: practice.capture_proof, type: fires_at}
+
+  - {from: trigger.work_in_sandbox, to: doctrine.sandbox_git_and_build, type: fires_at}
+  - {from: trigger.work_in_sandbox, to: handoff.sandbox_build, type: fires_at}
+  - {from: trigger.work_in_sandbox, to: doctrine.sandbox_is_not_the_host, type: fires_at}
+  - {from: handoff.sandbox_build, to: doctrine.sandbox_is_not_the_host, type: requires}
 
   - {from: trigger.edit_website, to: lane.website_assembly, type: fires_at}
   - {from: trigger.edit_website, to: contract.website_publication, type: fires_at}
