@@ -79,6 +79,9 @@ rollup, not a reconstruction.
 Lane protocol (claiming, registering, closing out, leaving a handoff) fires at
 specific moments and lives in the trigger index below.
 
+**A task is not done until the housekeeping is finished** -- and housekeeping
+here is a governed state-reconciliation cycle, not tidying prose.
+
 ## 6. The one habit that matters
 
 The most common defect here is not a crash. It is **a thing that reports success
