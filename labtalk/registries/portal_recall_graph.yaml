@@ -91,6 +91,16 @@ triggers:
     label: about to use or trust a reference authority or command/function catalog
   - id: trigger.capture_proof
     label: about to capture runtime output as proof
+  # The fourth gap, closed 2026-08-16 after establishing what actually owns this.
+  # It was NOT a cross-repo problem. The operative artifact an editor needs is the
+  # AIF-033 lane (status: active foundation), which itself names the site's
+  # website-documentation-matrix.mdx as one of its scattered ingredients. An
+  # earlier pass nearly pointed this at WEBSITE_CONTENT_MANIFEST_M1_CLASSIFICATION
+  # -- that is MILESTONE 1 of this same lane, already superseded by manifest v2,
+  # and pointing Tier 1 at a finished milestone would advertise a superseded
+  # document as the authority. Same defect as devref.hpp declaring `supported`.
+  - id: trigger.edit_website
+    label: about to edit or publish a page on the website
 
 # ---------------------------------------------------------------- nodes
 nodes:
@@ -570,6 +580,22 @@ nodes:
     enforced_by: ""
     hard_fails: false
     tier: 2
+  - id: lane.website_assembly
+    label: "classify the page FIRST: static, maintained, derived, generated, reported -- hand-edits inside a generated anchor are forbidden"
+    path: docs/maintenance/WEBSITE_CONTENT_MANIFEST_AND_ASSEMBLY_LANE_V1.md
+    anchor: ""
+    class: procedural
+    enforced_by: ""
+    hard_fails: false
+    tier: 2
+  - id: contract.website_publication
+    label: "the website is a downstream publication surface, not an independent marketing layer -- claims trace back to source"
+    path: docs/contracts/WEBSITE_SELFDOC_PUBLICATION_CONTRACT_V1.md
+    anchor: ""
+    class: procedural
+    enforced_by: ""
+    hard_fails: false
+    tier: 2
 
 # ---------------------------------------------------------------- edges
 # Types:
@@ -688,3 +714,7 @@ edges:
   - {from: trigger.use_reference_authority, to: mechanism.edrefcheck, type: fires_at}
 
   - {from: trigger.capture_proof, to: practice.capture_proof, type: fires_at}
+
+  - {from: trigger.edit_website, to: lane.website_assembly, type: fires_at}
+  - {from: trigger.edit_website, to: contract.website_publication, type: fires_at}
+  - {from: lane.website_assembly, to: contract.website_publication, type: requires}
