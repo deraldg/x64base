@@ -77,7 +77,7 @@ produced is treated as not proven. Write it down as it happens; a closeout is a
 rollup, not a reconstruction.
 
 Lane protocol (claiming, registering, closing out, leaving a handoff) fires at
-specific moments and lives in the trigger index below.
+specific moments: `recall.py open_lane`, then `close_out`.
 
 **A task is not done until the housekeeping is finished** -- and housekeeping
 here is a governed state-reconciliation cycle, not tidying prose.
@@ -109,25 +109,9 @@ owns it.
 
 ## Going deeper -- retrieve by what you are about to do
 
-Prefer the resolver: `python labtalk/ai_portal/recall.py <trigger>` returns the
-smallest working set, measured. Table below is the fallback.
-
-| About to | Read |
-| --- | --- |
-| change source | `AI_ENGINEERING_STANDARDS_SEED_V1.md`, `SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md` |
-| read or write DBF, memos, or indexes | x64 is not x32: memo text is MemoManager/x64-sidecar, never classic `.dbt`; use the native x64 path, never a v32 reader. `docs/manuals/developer/dev/dev-08-dbf-x32-x64-formats.md` (+ dev-09/10) |
-| use a reference authority or catalog | each authority owns its namespace (dotref, foxref, edref, pshell_ref, sql_ref, devref; SYSFUNC for functions); verify with `tools/fullstack_docs/refcheck_v1.py` |
-| edit the website | classify the page first via `x64base-site` `content/docs/dev/website-documentation-matrix.mdx`; hand-edit only `static`/`maintained` -- otherwise fix source and regenerate |
-| write DotScript | `DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md`, `dottalkpp/data/scripts/README.txt` |
-| plan gates for a change | `SCOPE_CALIBRATION_SEED_V1.md`, `SDLC_FAST_START_SEED_V1.md` |
-| open a lane | prior art first, then `claim-aif`, then register **before or with** the work. `AI_SESSION_COORDINATION_PROTOCOL_V1.md` |
-| close out work | update what you made stale; **leave a handoff, not only a closeout**. `AI_PORTAL.md` "Closeout Updates Startup" |
-| commit or push | `AI_PORTAL.md` "Pre-Push Gate"; `tools/staging/prepush_gate.py` |
-| publish to the website | `AI_PORTAL.md` "Local Integration Rule" and "Closeout Updates Startup" |
-| capture proof output | `AI_README.md` WSL section (use `SET ALTERNATE`, never `DOTSCRIPT ... OUT`) |
-| understand why a rule exists | `AI_PORTAL.md` doctrine and dated scar tissue |
-
----
+`python labtalk/ai_portal/recall.py <trigger>` returns the smallest working set,
+measured; run it bare to list triggers. If you cannot run it, the generated
+fallback is `labtalk/ai_portal/RECALL_FALLBACK_TABLE_V1.md`.
 
 ## The five questions (stopping rule)
 

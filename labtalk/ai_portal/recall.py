@@ -289,11 +289,70 @@ def demotable(g: dict) -> int:
     return 0
 
 
+FALLBACK_DOC = "labtalk/ai_portal/RECALL_FALLBACK_TABLE_V1.md"
+
+FALLBACK_HEADER = """<!-- GENERATED FROM labtalk/registries/portal_recall_graph.yaml -- DO NOT HAND-EDIT.
+     Regenerate: python labtalk/ai_portal/recall.py --write-fallback
+     Guarded by: labtalk/portal/tests/test_recall_fallback_sync.py -->
+
+# Recall fallback -- retrieve by what you are about to do
+
+**This is the Tier 2 landing place for the table demoted out of
+`AI_TIER1_SEED_V1.md` on 2026-08-16 (AIF-118, executing AIF-115's proposal).**
+
+Prefer the resolver: `python labtalk/ai_portal/recall.py <trigger>` returns the
+smallest working set, measured, and can follow `requires` edges this flat table
+cannot. Use this page only when you cannot run it.
+
+It is GENERATED from the graph, so it cannot drift from the resolver. The seed's
+maintenance contract says demoting means *moving*, not restating -- and AIF-082
+6.8 records that two shims which restate each other will diverge, and have. A
+hand-copied table here would have been exactly that shim.
+
+| About to | Read |
+| --- | --- |
+"""
+
+
+def fallback_markdown(root: Path, g: dict) -> str:
+    """Render the trigger index as the flat table the seed used to carry."""
+    nodes = {n["id"]: n for n in g["nodes"]}
+    fires: dict[str, list[str]] = {}
+    for e in g["edges"]:
+        if e.get("type") == "fires_at":
+            fires.setdefault(e["from"], []).append(e["to"])
+
+    rows = []
+    for t in g["triggers"]:
+        targets = fires.get(t["id"], [])
+        cells = []
+        for nid in targets:
+            n = nodes.get(nid)
+            if not n:
+                continue
+            path = str(n.get("path", ""))
+            label = str(n.get("label", "")).replace("|", "\\|")
+            cells.append(f"{label} -- `{path}`")
+        label = str(t.get("label", "")).replace("|", "\\|")
+        rows.append(f"| {label} | {'<br>'.join(cells) or '(no nodes)'} |")
+    return FALLBACK_HEADER + "\n".join(rows) + "\n"
+
+
+def write_fallback(root: Path, g: dict) -> int:
+    target = root / FALLBACK_DOC
+    target.write_text(fallback_markdown(root, g), encoding="utf-8")
+    print(f"recall: wrote {FALLBACK_DOC} ({target.stat().st_size} B, "
+          f"{len(g['triggers'])} trigger(s))")
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Assemble a working set from a trigger.")
     ap.add_argument("query", nargs="?", help="what you are about to do")
     ap.add_argument("--validate", action="store_true")
     ap.add_argument("--demotable", action="store_true")
+    ap.add_argument("--write-fallback", action="store_true",
+                    help="regenerate the Tier 2 fallback table from the graph")
     args = ap.parse_args()
 
     root = repo_root()
@@ -303,6 +362,8 @@ def main() -> int:
         return validate(g)
     if args.demotable:
         return demotable(g)
+    if args.write_fallback:
+        return write_fallback(root, g)
 
     if not args.query:
         print("recall: name what you are about to do. Triggers:")
