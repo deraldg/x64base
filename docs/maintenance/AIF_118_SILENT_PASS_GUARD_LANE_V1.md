@@ -4,8 +4,16 @@
 Date 2026-08-16. **AIF-118** (claimed 2026-08-17T01:04:55Z, run `COWORK-20260816-001`,
 lane `guards-site-contrast-and-edref-shape`).
 Parent project: `project.x64base.runtime` (tooling) with a publication seam.
-Sibling lane: **AIF-100** Gate Governance, which governs the gate estate. This lane
-governs one DEFECT SHAPE within it.
+
+**Sibling lanes, and this one is not first.** **AIF-100** Gate Governance owns the gate
+estate; this lane owns one DEFECT SHAPE inside it. **AIF-117** *Silent Predicate and
+Store Failures* is the SAME SHAPE one layer down, in the engine: `FieldRef::eval` tests
+whether a field is non-blank, so `COUNT FOR <logical>` matches every row whatever its
+value, an unresolvable field matches none, and `scan_selector.cpp` declares an error
+string it never reads -- the engine diagnoses and the command discards. Read the two
+together. AIF-117 is silence between layers of the runtime; AIF-118 is silence between
+a check and its caller. Neither is a subset of the other, and a fix in one does not
+touch the other.
 
 ## Why this is a lane and not five bug fixes
 
