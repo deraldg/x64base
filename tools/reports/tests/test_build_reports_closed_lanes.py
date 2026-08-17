@@ -47,6 +47,8 @@ class ClosedLaneDisclosureTests(unittest.TestCase):
         portal = out / "AI_PORTAL_REPORT.html"
         cls.portal_exists = portal.is_file()
         cls.html = portal.read_text(encoding="utf-8", errors="replace") if cls.portal_exists else ""
+        index = out / "index.html"
+        cls.index_html = index.read_text(encoding="utf-8", errors="replace") if index.is_file() else ""
 
     @classmethod
     def tearDownClass(cls):
@@ -68,6 +70,15 @@ class ClosedLaneDisclosureTests(unittest.TestCase):
     def test_closed_lanes_link_to_their_record(self):
         # at least one closed lane must link to its evidence/claim on GitHub
         self.assertIn("blob/development/", self.html)
+
+    def test_console_copy_defers_to_runtime_write_posture(self):
+        self.assertIn("posture shown at runtime", self.index_html)
+        self.assertIn("--enable-write", self.index_html)
+        self.assertNotIn("On this shared gateway it is read + emit", self.index_html)
+
+    def test_board_worklog_badge_matches_current_registry_policy(self):
+        self.assertIn("registry policy -- board.worklog currently included", self.index_html)
+        self.assertNotIn("selective -- exclude board.worklog", self.index_html)
 
 
 if __name__ == "__main__":

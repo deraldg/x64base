@@ -142,27 +142,57 @@ def read_fragments(root, spec):
     if h.is_file():
         hdr = load(h)
     recs = []
+    seen = {}
     for f in sorted(frag.glob('*.yaml')):
         if f.name == '_header.yaml':
             continue
         r = load(f)
-        if isinstance(r, dict):
-            recs.append(r)
-        else:
-            print(f"  WARN {f.name}: not a mapping, skipped", file=sys.stderr)
+        if not isinstance(r, dict):
+            raise ValueError(f"{f}: fragment must be a mapping")
+        rid = r.get(spec['idf'])
+        if rid is None or not str(rid).strip():
+            raise ValueError(f"{f}: missing required {spec['idf']}")
+        identity = str(rid)
+        if identity in seen:
+            raise ValueError(
+                f"{f}: duplicate {spec['idf']} {identity!r}; first declared in {seen[identity]}"
+            )
+        seen[identity] = f
+        recs.append(r)
     return hdr, recs
 
 
-def do_merge(root, name, spec, write):
+def compose_registry(root, name):
+    """Compose one registry from its authoritative fragments without writing disk.
+
+    This is the programmatic equivalent of ``merge``. Consumers that need current
+    local state can use the fragment authority directly while reviewed snapshots
+    continue to use the committed flat build artifact.
+    """
+    root = Path(root)
+    if name not in SPECS:
+        raise KeyError(f"unknown fragmented registry: {name}")
+    spec = SPECS[name]
     hdr, recs = read_fragments(root, spec)
     if hdr is None:
-        print(f"  skip {name}: {spec['dir']}/ not present (run split first)"); return None
+        raise FileNotFoundError(
+            root / 'labtalk' / 'registries' / spec['dir']
+        )
     out = dict(hdr)
     out[spec['key']] = recs
     if 'current_by_lane' in spec['computed']:
         by_lane, by_proj = compute_indexes(recs)
         out['current_by_lane'] = by_lane
         out['current_by_project'] = by_proj
+    return out
+
+
+def do_merge(root, name, spec, write):
+    try:
+        out = compose_registry(root, name)
+    except FileNotFoundError:
+        print(f"  skip {name}: {spec['dir']}/ not present (run split first)"); return None
+    recs = out[spec['key']]
     text = BANNER.format(d=spec['dir']) + "\n" + dump(out)
     dst = root / 'labtalk' / 'registries' / name
     if write:

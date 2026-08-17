@@ -5,7 +5,7 @@ Human-readable HTML reports over live DotTalk++ state (AI Portal + BBS).
 Reads, READ-ONLY:
   dottalkpp/data/metadata/bbs/{SYSBOARD,SYSTHREAD,SYSPOST}.dbf
   dottalkpp/data/metadata/identity/{SYSMEMBER,SYSROLE,SYSPERM,SYSMEMROLE,SYSROLEPERM,SYSUSER,SYSGRANT}.dbf
-  labtalk/registries/{ai_runs,proofs}.yaml
+  labtalk/registries/{ai_runs,proofs}.yaml or authoritative {runs,proofs}.d fragments
   docs/ai-friendly/AI_INTERACTION_INTAKE_QUEUE_V1.md
 
 Writes: docs/reports/{index,AI_PORTAL_REPORT,BBS_BOARDS_REPORT,BBS_ACCESS_REPORT}.html
@@ -50,9 +50,10 @@ _ap = argparse.ArgumentParser(description=__doc__)
 _ap.add_argument('--root', default=str(Path(__file__).resolve().parents[2]),
                  help='repo root (default: two levels up from this script)')
 _ap.add_argument('--out', default=None, help='output dir (default: <root>/docs/reports)')
-_ap.add_argument('--source', choices=['yaml', 'dbf'], default='yaml',
-                 help='AI Portal lane/run/proof source: authored YAML registries (default) '
-                      'or the DERIVED DBF tracking tables via tools/dbf/crud.read '
+_ap.add_argument('--source', choices=['yaml', 'fragments', 'dbf'], default='yaml',
+                 help='AI Portal lane/run/proof source: reviewed flat YAML snapshot (default), '
+                      'authoritative local .d fragments composed read-only in memory, or the '
+                      'DERIVED DBF tracking tables via tools/dbf/crud.read '
                       '(SYSLANE/SYSRUN/SYSRUNLANE/SYSPROOF). dbf dogfoods the tracking layer: '
                       'a landed lane IS a row, so it cannot be missing from the view.')
 _ap.add_argument('--public', action='store_true',
@@ -503,8 +504,18 @@ emit('BBS_ACCESS_REPORT.html', r2)
 # =====================================================================
 RG = ROOT/'labtalk'/'registries'
 rd = lambda n: yaml.safe_load((RG/n).read_text(encoding='utf-8',errors='replace'))
-runs_y   = rd('ai_runs.yaml')
-proofs_y = rd('proofs.yaml')
+
+def _load_from_fragments():
+    """Compose run/proof registries in memory from their authoritative .d files."""
+    import importlib.util
+    source = ROOT/'tools'/'registries'/'registry_fragments.py'
+    spec = importlib.util.spec_from_file_location('dottalk_registry_fragments', source)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f'cannot load fragment registry helper: {source}')
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return (module.compose_registry(ROOT, 'ai_runs.yaml'),
+            module.compose_registry(ROOT, 'proofs.yaml'))
 
 def _load_from_dbf():
     """Derive (runs, by_lane, by_proj, proofs, lane_rows) from the tracking DBFs via
@@ -550,10 +561,17 @@ if _args.source == 'dbf':
     print(f"AI Portal source: DBF tracking tables "
           f"({len(lane_rows)} lanes, {len(runs)} runs, {len(proofs)} proofs)")
 else:
+    if _args.source == 'fragments':
+        runs_y, proofs_y = _load_from_fragments()
+    else:
+        runs_y, proofs_y = rd('ai_runs.yaml'), rd('proofs.yaml')
     runs   = runs_y.get('runs',[])
     by_lane= runs_y.get('current_by_lane',{})
     by_proj= runs_y.get('current_by_project',{})
     proofs = proofs_y.get('proofs',[])
+    if _args.source == 'fragments':
+        print(f"AI Portal source: current local registry fragments "
+              f"({len(by_lane)} lanes, {len(runs)} runs, {len(proofs)} proofs)")
     # lane rows from the intake queue table
     lane_rows={}
     qtxt=(ROOT/'docs/ai-friendly/AI_INTERACTION_INTAKE_QUEUE_V1.md').read_text(encoding='utf-8',errors='replace')
@@ -703,9 +721,12 @@ Every run here is <code>MAINTAINER_ATTESTED</code>: the platform stamps the sess
 <i>not_exposed</i>, so the <b>closeout is the recovery path</b>, not the chat link.
 That is by design -- the record lives in the repo, not in a vendor's session store.</div>"""
 
+_source_pill = {
+    'dbf': ' <span class="pill acc">source: DBF tracking tables</span>',
+    'fragments': ' <span class="pill acc">source: current local registry fragments</span>',
+}.get(_args.source, '')
 _sub3=("Who worked what, what is proven, and where to pick the thread back up."
-       + (' <span class="pill acc">source: DBF tracking tables</span>'
-          if _args.source=='dbf' else ''))
+       + _source_pill)
 r3=page("DotTalk++ AI Portal -- Lanes, Runs and Proofs",
         _sub3,
         f"""<div class="grid">
@@ -788,6 +809,13 @@ Answers: <i>what is waiting on me, and what unblocks if I decide it?</i>
 Currently <b>{_rulings[0]} open</b>, {_rulings[1]} ratified.</div>
 <div style="margin-top:8px"><span class="pill bad">private -- never publish</span></div></div>""")
 
+_regenerate_command = f"python tools/reports/build_reports.py --source {_args.source}"
+_regenerate_source = {
+    "fragments": "authoritative local registry fragments",
+    "dbf": "derived DBF tracking tables",
+    "yaml": "reviewed flat YAML snapshot inputs",
+}[_args.source]
+
 if PUBLIC:
     idx_body = _idx_kpi + """
 <div class="card"><h3 style="margin-top:0"><a href="AI_PORTAL_REPORT.html">AI Portal -- Lanes, Runs and Proofs</a></h3>
@@ -810,9 +838,10 @@ else:
     idx_body = _idx_kpi + """
 <div class="card"><h3 style="margin-top:0"><a href="console">Tracking Maintenance Console</a></h3>
 <div class="dim small">Interactive CRUD over the DBF tracking tables -- lanes, runs, proofs, tasks.
-On this shared gateway it is read + emit (edits show the DotScript to run); live writes go through the
-standalone console. Answers: <i>edit the tracking state directly.</i></div>
-<div style="margin-top:8px"><span class="pill acc">interactive -- via the local gateway</span></div></div>
+The console visibly reports its current posture. Execute is available only when the gateway is launched
+with <code>--enable-write</code>; otherwise operations emit the DotScript to run. Answers:
+<i>inspect or maintain the tracking state.</i></div>
+<div style="margin-top:8px"><span class="pill acc">posture shown at runtime</span></div></div>
 
 <div class="card"><h3 style="margin-top:0"><a href="AI_PORTAL_REPORT.html">AI Portal -- Lanes, Runs and Proofs</a></h3>
 <div class="dim small">The front door in reading order, every tracked lane with its evidence class,
@@ -823,7 +852,7 @@ Answers: <i>what has been worked, what is actually proven, and where do I pick i
 <div class="card"><h3 style="margin-top:0"><a href="BBS_BOARDS_REPORT.html">BBS -- Boards and Traffic</a></h3>
 <div class="dim small">All six rooms, their post permissions, and every post ever made, rendered by board
 with handoff posts pretty-printed. Answers: <i>what is on the board right now?</i></div>
-<div style="margin-top:8px"><span class="pill warn">selective -- exclude board.worklog</span></div></div>
+<div style="margin-top:8px"><span class="pill warn">registry policy -- board.worklog currently included</span></div></div>
 
 <div class="card"><h3 style="margin-top:0"><a href="BBS_ACCESS_REPORT.html">BBS -- Access and Identity</a></h3>
 <div class="dim small">Members, roles, the full permission matrix, who may post to which room,
@@ -835,11 +864,11 @@ and the connection recipe. Answers: <i>who can do what, and how do I get in?</i>
 architecture, the AI coordination team model, and the triage optimization roadmap. Answers:
 <i>how does cross-session memory work here?</i></div>
 <div style="margin-top:8px"><span class="pill acc">private -- unlisted site section</span></div></div>
-""" + _rulings_card + """
+""" + _rulings_card + f"""
 
 <div class="note"><b>Regenerate</b><br>
-<pre class="m" style="margin:7px 0 0">python tools/reports/build_reports.py</pre>
-<div class="small dim" style="margin-top:7px">Reads the DBF tables and YAML registries directly. Read-only --
+<pre class="m" style="margin:7px 0 0">{e(_regenerate_command)}</pre>
+<div class="small dim" style="margin-top:7px">Reads {e(_regenerate_source)} directly. Read-only --
 it never writes to the store, so it is safe to run while the daemon is up.</div></div>"""
 
 idx = page("DotTalk++ AI", "Human-readable views over live project state.", idx_body)
