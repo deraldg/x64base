@@ -1,0 +1,63 @@
+id: proof.edref.storage_was_already_decided
+label: The EDREF storage question was answered in July and half-built; the search nearly produced a duplicate schema instead
+state: runtime_observed
+related:
+- D:/code/ccode/include/edref.hpp
+- D:/code/ccode/dottalkpp/data/help/HELP_TOPIC.dbf
+- D:/code/ccode/config/package/lean.manifest
+- D:/code/ccode/config/package/educational.manifest
+- D:/code/ccode/src/help/helpdata_export_dbf.cpp
+- D:/code/ccode/tools/fullstack_docs/edrefcheck_v1.py
+notes: 'MEASURED 2026-08-16. An open lane item asked where the EDREF teaching catalog
+  should live: compiled into the header, or seeded into a DBF and read at runtime. A
+  design was proposed -- CSV as source, compiled fallback for lean, DBF for educational
+  -- and was about to be built as EDREF_IMPORT_v1.csv plus a new table.
+
+  IT ALREADY EXISTED. The owner said "look here, there is probably a home already",
+  and there was:
+
+    config/package/lean.manifest (2026-07-14): "Compiled HELP fallback remains
+      available without full catalogs."
+    config/package/educational.manifest: ships dottalkpp/data/help/**
+    HELP_TOPIC.dbf: CATALOG is a C8 discriminator. CATALOG=ED holds 29 topics,
+      TOPICTYPE=EDUCATION holds the same 29, HELP_LINE holds 842 ED lines,
+      COMMANDS holds 29, and PRIMARY=EDREF on every one of those rows -- the
+      schema already NAMES edref as the authority.
+
+  So the policy was set in July, the discriminator column was waiting, the rows were
+  seeded, and the edition split was written down. The proposed design was correct and
+  five weeks late. Building it would have produced a second table beside a schema that
+  had a column for exactly this, and two copies of 29 topics that would eventually
+  disagree.
+
+  WHAT WAS ACTUALLY MISSING, and it took measuring to find. HELP_TOPIC.TITLE is C80
+  and merely echoed TOPIC on all 29 ED rows, because helpdata_export_dbf.cpp:362 sets
+  row.title = command.empty() ? key : command. SUMMARY is C200 and every one of the 29
+  rows measured 195-200 characters: it is the prose HARD TRUNCATED, a sentence cut in
+  half, not a summary. So the catalog had no one-line summary anywhere -- not in the
+  header, not in the DBF -- while appearing to have one in both. Fixed by adding a
+  title field to edref::Item (fifth POSITIONAL slot; C++20 forbids mixing designated
+  and positional initialisers, so it could not join the designated block) and writing
+  29 sentences, longest 70 of 80. edrefcheck_v1.py now fails on a missing title, one
+  over 80 chars, or one that merely echoes the topic -- the state being replaced.
+  SYSTEM rows already used TITLE meaningfully (138 of 138), so this follows existing
+  practice rather than bending the schema.
+
+  A MEASUREMENT ERROR ON THE WAY, recorded because it is the third of its exact kind
+  in one session. A first comparison reported that 12 of 29 SUMMARY values had drifted
+  from the header. They had not: the check compared a 200-character truncated blob
+  against a single line. Corrected measurement: 29/29 first lines identical, 29/29
+  SUMMARY a byte-prefix of the header prose, zero drift. The same shape as counting
+  carriage returns as non-ASCII (143 phantom findings) and as reading hover:bg-card/60
+  as a broken utility earlier the same day. All three were caught by measuring a second
+  way, none by re-reading.
+
+  THE LESSON IS NOT "search harder". It is that a project which records its decisions
+  will out-remember the person working in it, and an agent asked to design something
+  should first assume the design exists. The owner did not remember the July manifests
+  either -- he remembered that there was PROBABLY a home, which was enough. Same family
+  as lesson.career.the_tree_already_has_it.
+
+  STILL OPEN: helpdata_export_dbf.cpp:362 must prefer the edref title for ED rows, or
+  the DBF keeps echoing TOPIC. That is a C++ change and was NOT made -- no build was
+  run this session, so it is a maintainer handoff under the golden rule.'

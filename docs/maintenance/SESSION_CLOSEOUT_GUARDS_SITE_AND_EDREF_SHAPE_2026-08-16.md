@@ -199,6 +199,41 @@ substituting mechanically would be wrong:
 - `stage_public.py:39` -- part of a labelled `LEAK_PATTERNS` tuple list using
   dev-roots semantics; wants `dev_roots_only()` and a small restructure.
 
+## Second addendum: the site published, and EDREF settled
+
+**The site is live at release 131**, with the contrast repairs verified on the
+published page rather than by arithmetic: hero caption **1.24:1 -> 17.64:1** in
+light (16.49 dark), `--brand` **4.21 -> 4.87:1**, horizontal overflow 0. The
+theme flag used for testing was cleared afterwards.
+
+**Three guards fired during that publish, and one of them was wrong in a way
+worth keeping.** `check-public-content.mjs` blocked the push over
+`app/retro/page.tsx` linking to derald.com -- a host deliberately retired in
+`c244300da` (2026-07-10). The retirement is correct. The guard was not: it scans
+SOURCE and had no concept of a local-only route, so it was policing a file that
+`strip-local-only-output.mjs` deletes from every build and that the publish
+aborts over if it survives. Fixed by narrowing SCOPE, not the rule -- it now
+skips paths under `LOCAL_ONLY_DIRS`, and a published page referencing derald.com
+still fails. That is the third list in this repo pointed at that one authority
+after two had already drifted.
+
+**The `build` / `build:publish` split**, made earlier the same day, was also
+exercised for the first time here. `build` keeps local-only routes so a `-Built`
+preview can serve them; `build:publish` strips then packages. Stripping used to
+live in `build`, which meant a local preview deleted the very page it was meant
+to show while the nav link survived in the bundle -- a link to a guaranteed 404.
+
+**EDREF storage is settled, and nothing needed inventing.** Recorded in full as
+`proof.edref.storage_was_already_decided`. The short version: the policy was set
+on 2026-07-14 in `lean.manifest` and `educational.manifest`, the DBF already
+carried `CATALOG='ED'` with 29 topics, 842 lines and `PRIMARY='EDREF'`, and the
+proposed design was correct and five weeks late. What was genuinely missing was
+a one-line summary, which existed nowhere: `TITLE` echoed `TOPIC` on all 29 rows,
+and `SUMMARY` is a C200 hard truncation sitting at 195-200 chars on every one.
+29 titles written, longest 70 of 80, with three new guard arms.
+
+**Four detectors migrated**, four deliberately not -- see the first addendum.
+
 ## Still open
 
 - `--brand` at 4.21:1 across 61 uses, and the hero caption at 1.24:1.
