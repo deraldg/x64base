@@ -1,0 +1,65 @@
+id: proof.contract.declaration_harvested_by_nothing
+label: A contract declared a posture and asserted it was harvested; two tools existed and neither looked, so the declaration reached no inventory
+state: runtime_observed
+related:
+- D:/code/ccode/docs/contracts/PYTHON_BINDING_TRUST_CONTRACT_V1.md
+- D:/code/ccode/docs/contracts/CONTRACT_REGISTRY_V1.md
+- D:/code/ccode/bindings/pydottalk/src/module.cpp
+- D:/code/ccode/tools/contracts/contract_scan.py
+- D:/code/ccode/src/meta/metacollect.cpp
+notes: 'MEASURED 2026-08-17, and the author of the defect is the author of the contract
+  describing the defect class.
+
+  CONTEXT. pydottalk exposes a write path (append_blank, delete_current, set,
+  set_field, write_current) and consults no member, permission or token, while every
+  other write surface in the project carries a boundary. The owner ruled it TRUSTED --
+  "our tool, our app" -- and asked that the confirmation ripple through the system. A
+  contract was written (PYTHON_BINDING_TRUST_CONTRACT_V1), registered in the Active
+  Contracts table, and the source header was annotated:
+
+      // @dottalk.contract PYTHON_BINDING_TRUST_CONTRACT_V1
+      // trust: caller-is-boundary (first-party, in-tree)
+      // mutates: dbf-records
+      // locking: inherited-from-dbarea
+
+  The contract asserted the posture "travels with the code and is HARVESTED rather
+  than living only here". That sentence was committed in dacb23e83. It was FALSE.
+
+  THE MEASUREMENT, taken after committing rather than before. Two harvesters exist and
+  the annotation fell exactly between them:
+
+    src/meta/metacollect.cpp:152  -- DOES walk bindings/, but harvests @dottalk.usage,
+                                     the COMMAND contract. pydottalk is not a command,
+                                     so it matched nothing.
+    tools/contracts/contract_scan.py:171 -- DOES parse @dottalk.contract, but its
+                                     source_roots were include/, src/, tools/ only.
+                                     It never looked in bindings/.
+
+  So the file carried a correct annotation, the registry carried a correct row, and no
+  inventory anywhere knew the annotation existed.
+
+  WHY THIS IS THE LANE SHAPE AND NOT MERELY A MISSING PATH. The failure is symmetric
+  and silent on BOTH sides. From the source side the file looks compliant -- the
+  annotation is present and well-formed. From the registry side the contract looks
+  registered -- the row exists with an evidence class. Neither side has any signal that
+  the connection between them was never made. A reviewer checking either half finds it
+  correct. That is the same absent-vs-fine ambiguity AIF-118 was chartered for,
+  reappearing at the level of a metadata pipeline rather than a check.
+
+  FIX. One line: root / "bindings" added to contract_scan.py source_roots. Verified by
+  compiling the scanner, confirming bindings/ is in the list, confirming the scanner
+  rglob''s each root, and confirming module.cpp:10 carries the annotation.
+
+  THE REUSABLE RULE, which is the point of this record. An annotation is NOT
+  self-executing. Before writing that a declaration ripples, NAME THE TOOL that reads
+  it and CHECK THAT TOOL''S ROOTS. "It is annotated" and "it is harvested" are
+  different claims, and the gap between them produces no diagnostic on either side.
+
+  METHOD NOTE. The error was caught by the housekeeping rule filed into the Tier 1 seed
+  the previous day -- "a task is not done until the housekeeping is finished" -- which
+  prompted asking what the commit had made stale. The false sentence was left visible
+  in the contract with its correction beside it rather than edited away, per house
+  practice for recording rather than smoothing.
+
+  Companion: proof.evidence.inference_dressed_as_measurement (same session, same shape
+  applied to reasoning rather than to pipelines).'
