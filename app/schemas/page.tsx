@@ -148,7 +148,7 @@ export default function SchemasPage() {
             avoids turning a 58-edge schema into an unreadable wall of lines.
           </p>
         </div>
-        <a href="/images/schemas/cascade-erp-module-schema-v1.svg" className="block overflow-auto rounded-lg border border-border bg-card/35 p-3">
+        <a href="/images/schemas/cascade-erp-module-schema-v1.svg" className="block overflow-auto rounded-lg border border-border bg-card/30 p-3">
           <Image
             src="/images/schemas/cascade-erp-module-schema-v1.svg"
             alt="Cascade ERP tables grouped into finance, sales, procurement, inventory, manufacturing, quality, and people modules"
@@ -169,7 +169,7 @@ export default function SchemasPage() {
             projections and snapshots, while sidecars preserve the semantics that DBF cannot enforce.
           </p>
         </div>
-        <a href="/images/schemas/cascade-dual-carrier-schema-v1.svg" className="block overflow-auto rounded-lg border border-border bg-card/35 p-3">
+        <a href="/images/schemas/cascade-dual-carrier-schema-v1.svg" className="block overflow-auto rounded-lg border border-border bg-card/30 p-3">
           <Image
             src="/images/schemas/cascade-dual-carrier-schema-v1.svg"
             alt="Read-only SQLite schema inspection flowing through the dual-carrier contract into x64base DBF projections and sidecars"
@@ -194,7 +194,7 @@ export default function SchemasPage() {
         </div>
       </section>
 
-      <section className="rounded-lg border border-border bg-card/45 p-6">
+      <section className="rounded-lg border border-border bg-card/40 p-6">
         <h2 className="text-2xl font-semibold tracking-tight">Nine analytical views</h2>
         <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {views.map((view) => (
@@ -219,7 +219,7 @@ export default function SchemasPage() {
             fixtures so a learner can see both the data and its purpose.
           </p>
         </div>
-        <a href="/images/schemas/database-ecology-schema-catalog-v1.svg" className="block overflow-auto rounded-lg border border-border bg-card/35 p-3">
+        <a href="/images/schemas/database-ecology-schema-catalog-v1.svg" className="block overflow-auto rounded-lg border border-border bg-card/30 p-3">
           <Image
             src="/images/schemas/database-ecology-schema-catalog-v1.svg"
             alt="Database schema catalog showing MCC, HELP, metadata, identity, AI-BBS, AI Portal, DataDict, documentation, locale, application, and fixture families"
@@ -298,7 +298,7 @@ export default function SchemasPage() {
           </p>
         </div>
 
-        <div className="rounded-lg border border-border bg-card/45 p-6">
+        <div className="rounded-lg border border-border bg-card/40 p-6">
           <h3 className="text-xl font-semibold tracking-tight text-fg">Why there is a Cascade-sized limit</h3>
           <div className="mt-3 space-y-4 text-[15px] leading-7 text-muted">
             <p>

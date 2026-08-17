@@ -18,7 +18,7 @@ export function Card({
     <div
       className={clsx(
         "rounded-2xl border border-border bg-card/70 p-5 shadow-soft backdrop-blur",
-        "transition hover:border-brand/60 hover:bg-card/85",
+        "transition hover:border-brand/60 hover:bg-card/80",
         className
       )}
     >

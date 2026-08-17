@@ -20,7 +20,7 @@ export default function LicensingPage() {
         </p>
       </header>
 
-      <section className="space-y-3 rounded-lg border border-border bg-card/45 p-6 text-sm leading-7 text-muted">
+      <section className="space-y-3 rounded-lg border border-border bg-card/40 p-6 text-sm leading-7 text-muted">
         <h2 className="text-base font-semibold text-fg">1. Open source (GPLv3) -- free for everyone</h2>
         <p>
           Read it, run it, study it, teach with it, fork it, and preserve it -- at no cost,
@@ -30,7 +30,7 @@ export default function LicensingPage() {
         </p>
       </section>
 
-      <section className="space-y-3 rounded-lg border border-border bg-card/45 p-6 text-sm leading-7 text-muted">
+      <section className="space-y-3 rounded-lg border border-border bg-card/40 p-6 text-sm leading-7 text-muted">
         <h2 className="text-base font-semibold text-fg">2. Commercial license -- for closed or proprietary use</h2>
         <p>
           If you want to embed x64base in a closed-source or commercial product, or use it on
@@ -40,7 +40,7 @@ export default function LicensingPage() {
         </p>
       </section>
 
-      <section className="space-y-3 rounded-lg border border-border bg-card/45 p-6 text-sm leading-7 text-muted">
+      <section className="space-y-3 rounded-lg border border-border bg-card/40 p-6 text-sm leading-7 text-muted">
         <h2 className="text-base font-semibold text-fg">3. The value layer -- optional, and gates nothing</h2>
         <p>
           The engine is free. What is offered for support are the things built <em>around</em>{" "}

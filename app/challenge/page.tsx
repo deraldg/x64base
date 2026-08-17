@@ -263,7 +263,7 @@ export default function ChallengePage() {
         </p>
       </section>
 
-      <section className="rounded-lg border border-brand/40 bg-card/55 p-6">
+      <section className="rounded-lg border border-brand/40 bg-card/50 p-6">
         <h2 className="text-2xl font-semibold tracking-tight">What unshackling looks like</h2>
         <p className="mt-3 max-w-3xl text-sm leading-6 text-muted">
           The x64 memo inverts all three decisions at once.
@@ -300,7 +300,7 @@ export default function ChallengePage() {
         </p>
       </section>
 
-      <section className="rounded-lg border border-border bg-card/45 p-6">
+      <section className="rounded-lg border border-border bg-card/40 p-6">
         <h2 className="text-2xl font-semibold tracking-tight">The Quantum Memo Zoo</h2>
         <p className="mt-2 text-sm leading-6 text-muted">
           A proof ABOUT the store. If payload-agnosticism is the invariant everything rests on, it had

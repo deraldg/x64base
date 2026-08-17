@@ -192,7 +192,7 @@ export default function HomePage() {
             proof into documentation and curriculum. The goal is a glass-but-real system whose development
             can be inspected, taught, and improved from the same evidence.
           </p>
-          <div className="mt-5 rounded-lg border border-border bg-card/55 p-4 text-sm leading-6 text-muted">
+          <div className="mt-5 rounded-lg border border-border bg-card/50 p-4 text-sm leading-6 text-muted">
             <p className="font-mono text-xs uppercase tracking-[0.2em] text-brand">{siteNoticeVersion}</p>
             <p className="mt-2">
               Recent runtime proofs: two independent relational walkers agreeing over a 34-table ERP
@@ -225,7 +225,7 @@ export default function HomePage() {
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
               href="/docs/getting-started/overview"
-              className="inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-bg transition hover:bg-brand/85"
+              className="inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-bg transition hover:bg-brand/80"
             >
               Start reading
               <ArrowRight size={16} aria-hidden="true" />
@@ -266,12 +266,12 @@ export default function HomePage() {
                 <Link
                   key={item.label}
                   href={item.href!}
-                  className="rounded-lg border border-border bg-card/55 p-4 transition hover:border-brand/60"
+                  className="rounded-lg border border-border bg-card/50 p-4 transition hover:border-brand/60"
                 >
                   {content}
                 </Link>
               ) : (
-                <div key={item.label} className="rounded-lg border border-border bg-card/55 p-4">
+                <div key={item.label} className="rounded-lg border border-border bg-card/50 p-4">
                   {content}
                 </div>
               );
@@ -288,7 +288,7 @@ export default function HomePage() {
             priority
             className="h-full min-h-[360px] w-full object-cover"
           />
-          <div className="absolute inset-x-0 bottom-0 border-t border-border bg-bg/78 px-5 py-4 backdrop-blur">
+          <div className="absolute inset-x-0 bottom-0 border-t border-border bg-bg/80 px-5 py-4 backdrop-blur">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="font-mono text-xs text-brand">engine status</p>
@@ -327,7 +327,7 @@ export default function HomePage() {
         })}
       </section>
 
-      <section className="rounded-lg border border-border bg-card/55 p-6">
+      <section className="rounded-lg border border-border bg-card/50 p-6">
         <div className="grid gap-6 lg:grid-cols-[0.88fr_1.12fr] lg:items-center">
           <div>
             <p className="font-mono text-xs uppercase tracking-[0.24em] text-brand">LMS boundary</p>
@@ -356,7 +356,7 @@ export default function HomePage() {
               ["skill", "An AI-facing package can reduce the same material to a governed capability."],
               ["plugin", "A host can add the module without turning LabTalk into the host LMS."],
             ].map(([title, text]) => (
-              <div key={title} className="rounded-lg border border-border bg-bg/35 p-4">
+              <div key={title} className="rounded-lg border border-border bg-bg/30 p-4">
                 <div className="font-mono text-xs uppercase text-brand">{title}</div>
                 <p className="mt-3 text-sm leading-6 text-fg">{text}</p>
               </div>
@@ -395,7 +395,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="rounded-lg border border-border bg-card/35 p-5">
+      <section className="rounded-lg border border-border bg-card/30 p-5">
         <div className="grid gap-4 md:grid-cols-[0.75fr_1.25fr] md:items-center">
           <div>
             <p className="font-mono text-xs uppercase tracking-[0.24em] text-brand">start points</p>
@@ -439,7 +439,7 @@ export default function HomePage() {
             <Link
               key={item.href}
               href={item.href!}
-              className="rounded-lg border border-border bg-card/55 p-4 text-sm font-semibold text-fg transition hover:border-brand/60"
+              className="rounded-lg border border-border bg-card/50 p-4 text-sm font-semibold text-fg transition hover:border-brand/60"
             >
               {item.title}
             </Link>
@@ -448,20 +448,20 @@ export default function HomePage() {
             href="https://github.com/deraldg/x64base"
             target="_blank"
             rel="noreferrer"
-            className="rounded-lg border border-border bg-card/55 p-4 text-sm font-semibold text-fg transition hover:border-brand/60"
+            className="rounded-lg border border-border bg-card/50 p-4 text-sm font-semibold text-fg transition hover:border-brand/60"
           >
             GitHub repository
           </a>
           <Link
             href="/docs/dev/selfdoc-website-publication"
-            className="rounded-lg border border-border bg-card/55 p-4 text-sm font-semibold text-fg transition hover:border-brand/60"
+            className="rounded-lg border border-border bg-card/50 p-4 text-sm font-semibold text-fg transition hover:border-brand/60"
           >
             SelfDoc website publication
           </Link>
         </div>
       </section>
 
-      <section className="grid gap-6 rounded-lg border border-border bg-card/45 p-6 lg:grid-cols-[0.85fr_1.15fr]">
+      <section className="grid gap-6 rounded-lg border border-border bg-card/40 p-6 lg:grid-cols-[0.85fr_1.15fr]">
         <div>
           <p className="font-mono text-xs uppercase tracking-[0.24em] text-brand">research context</p>
           <h2 className="mt-3 text-2xl font-semibold tracking-tight">The xBase ecosystem is still alive.</h2>
@@ -486,26 +486,26 @@ export default function HomePage() {
           </Link>
         </div>
         <div className="grid gap-3 sm:grid-cols-3">
-          <div className="rounded-lg border border-border bg-bg/35 p-4">
+          <div className="rounded-lg border border-border bg-bg/30 p-4">
             <div className="font-mono text-xs uppercase text-muted">ecosystem</div>
             <p className="mt-3 text-sm leading-6 text-fg">
               Open-source, commercial, migration, DBF-engine, and legacy branches all still matter.
             </p>
           </div>
-          <div className="rounded-lg border border-border bg-bg/35 p-4">
+          <div className="rounded-lg border border-border bg-bg/30 p-4">
             <div className="font-mono text-xs uppercase text-muted">constraint</div>
             <p className="mt-3 text-sm leading-6 text-fg">
               Classic DBF-family formats carry structural assumptions from earlier computing eras.
             </p>
           </div>
-          <div className="rounded-lg border border-border bg-bg/35 p-4">
+          <div className="rounded-lg border border-border bg-bg/30 p-4">
             <div className="font-mono text-xs uppercase text-muted">approach</div>
             <p className="mt-3 text-sm leading-6 text-fg">
               x64base uses its own metadata and documentation infrastructure to describe,
               validate, and increasingly prove itself.
             </p>
           </div>
-          <div className="rounded-lg border border-border bg-bg/35 p-4 sm:col-span-3">
+          <div className="rounded-lg border border-border bg-bg/30 p-4 sm:col-span-3">
             <div className="flex items-center gap-2 font-mono text-xs uppercase text-muted">
               <BarChart3 size={14} aria-hidden="true" />
               comparison
@@ -515,7 +515,7 @@ export default function HomePage() {
               dBASE tools, and Python DBF libraries without overstating active-beta work.
             </p>
           </div>
-          <div className="rounded-lg border border-border bg-bg/35 p-4 sm:col-span-3">
+          <div className="rounded-lg border border-border bg-bg/30 p-4 sm:col-span-3">
             <div className="flex items-center gap-2 font-mono text-xs uppercase text-muted">
               <LayoutPanelTop size={14} aria-hidden="true" />
               planned lane
@@ -529,7 +529,7 @@ export default function HomePage() {
       </section>
 
       <section className="grid gap-4 md:grid-cols-2">
-        <Link href="/docs/labtalk/selfdoc-lane" className="rounded-lg border border-border bg-card/65 p-6 transition hover:border-brand/60">
+        <Link href="/docs/labtalk/selfdoc-lane" className="rounded-lg border border-border bg-card/70 p-6 transition hover:border-brand/60">
           <ScrollText className="h-6 w-6 text-orange" aria-hidden="true" />
           <h2 className="mt-4 text-xl font-semibold tracking-tight">Co-development documentation</h2>
           <p className="mt-2 leading-7 text-muted">
@@ -543,7 +543,7 @@ export default function HomePage() {
             <Link
               key={lane.href}
               href={lane.href}
-              className="rounded-lg border border-border bg-card/65 p-6 transition hover:border-brand/60"
+              className="rounded-lg border border-border bg-card/70 p-6 transition hover:border-brand/60"
             >
               <Icon className="h-6 w-6 text-orange" aria-hidden="true" />
               <h2 className="mt-4 text-xl font-semibold tracking-tight">{lane.title}</h2>

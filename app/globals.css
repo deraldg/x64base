@@ -13,9 +13,18 @@
   --card: 255 255 255;
   --border: 208 221 235;
 
-  --brand: 11 132 145;    /* teal, darkened for contrast on light */
-  --teal: 11 132 145;
-  --orange: 186 92 20;
+  /* Darkened again 2026-08-16, and this time against a measurement rather than
+     an eye. The previous values were darkened "for contrast on light" and
+     stopped just short: --brand measured 4.21:1 on --bg and 4.45:1 on --card,
+     against the 4.5:1 WCAG wants for body text, across 61 uses. That is the
+     worst kind of miss -- not obviously broken, just quietly hard to read, so
+     it survives review and readers feel it without diagnosing it.
+     Now 4.61:1 and 4.87:1. --orange was 4.29:1 on --bg, now 4.54:1.
+     Hue preserved (95% and 97% brightness); the dark palette is untouched and
+     still measures 10.02:1 and 9.00:1. */
+  --brand: 10 125 138;    /* teal, measured >= 4.5:1 on bg and card */
+  --teal: 10 125 138;
+  --orange: 180 89 19;
   --green: 21 128 61;
   --purple: 126 58 194;
   --red: 185 48 48;

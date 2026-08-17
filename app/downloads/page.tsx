@@ -284,7 +284,7 @@ export default function DownloadsPage() {
             <a
               key={item.href}
               href={item.href}
-              className="block rounded-lg border border-border bg-card/35 p-5 transition hover:border-brand/60"
+              className="block rounded-lg border border-border bg-card/30 p-5 transition hover:border-brand/60"
             >
               <div className="flex items-start gap-3">
                 <Download className="mt-1 h-5 w-5 shrink-0 text-brand" aria-hidden="true" />
@@ -298,7 +298,7 @@ export default function DownloadsPage() {
         </div>
       </section>
 
-      <section className="rounded-lg border border-border bg-card/35 p-5 text-sm leading-6 text-muted">
+      <section className="rounded-lg border border-border bg-card/30 p-5 text-sm leading-6 text-muted">
         <div className="flex items-start gap-3">
           <Download className="mt-1 h-5 w-5 shrink-0 text-brand" aria-hidden="true" />
           <p>
