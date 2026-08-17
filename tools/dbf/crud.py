@@ -434,7 +434,11 @@ def emit_ram(cmd: str, spec: reg.TableSpec, values: dict, key, where: dict,
 # hand and runs in the sandbox). So read has a pure-Python path too: parse the DBF
 # directly, respect the deleted tombstone, and classify live vs closed via the
 # registry policy. This is what build_reports.py wires in as its DBF derive-source.
-def _read_dbf_pure(path: Path, include_deleted: bool = False) -> tuple:
+def _read_dbf_pure(
+    path: Path,
+    include_deleted: bool = False,
+    include_metadata: bool = False,
+) -> tuple:
     import struct
     b = Path(path).read_bytes()
     _nrec, hlen, rlen = struct.unpack_from("<IHH", b, 4)
@@ -457,9 +461,13 @@ def _read_dbf_pure(path: Path, include_deleted: bool = False) -> tuple:
         rec = b[base:base + rlen]
         if len(rec) < rlen:
             continue
-        if not include_deleted and rec[0:1] == b"*":
+        deleted = rec[0:1] == b"*"
+        if not include_deleted and deleted:
             continue  # deleted tombstone
         row = {n: rec[d:d + ln].decode("cp437", "replace").strip() for (n, d, ln) in fields}
+        if include_metadata:
+            row["_deleted"] = deleted
+            row["_recno"] = i + 1
         rows.append(row)
     return [f[0] for f in fields], rows
 
@@ -474,13 +482,18 @@ def is_live(spec: reg.TableSpec, row: dict) -> bool:
     return True  # crosswalk / append_term: a link/ledger row is always "present"
 
 
-def read_rows(table: str, root: Path = REPO, include_deleted: bool = False) -> list:
+def read_rows(
+    table: str,
+    root: Path = REPO,
+    include_deleted: bool = False,
+    include_metadata: bool = False,
+) -> list:
     """All non-deleted rows of a table via the pure DBF path (no engine)."""
     spec = reg.get(table)
     path = Path(root) / "dottalkpp" / "data" / "metadata" / spec.subdir / f"{spec.name}.dbf"
     if not path.is_file():
         raise CrudError(f"{spec.name}: no DBF at {path} (seed/load it first)")
-    _names, rows = _read_dbf_pure(path, include_deleted)
+    _names, rows = _read_dbf_pure(path, include_deleted, include_metadata)
     return rows
 
 
