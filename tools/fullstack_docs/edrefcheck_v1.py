@@ -76,12 +76,19 @@ def parse_catalog(path: Path):
     for m in ENTRY_RE.finditer(body):
         topic, syntax, summary, supported, tail = m.groups()
         fields = {k: v.strip() for k, v in FIELD_RE.findall(tail or "")}
+        # `title` is the FIFTH POSITIONAL field, not a designated one, so it
+        # appears in the tail as: ,\n "one sentence"
+        # C++20 forbids mixing designated and positional initialisers in one
+        # braced list, which is why it sits before the designated block and has
+        # to be parsed positionally here.
+        tm = re.match(r'\s*,\s*"((?:[^"\\]|\\.)*)"', tail or "")
         entries.append(
             {
                 "topic": topic.strip(),
                 "syntax": syntax.strip(),
                 "summary": summary,
                 "supported": supported == "true",
+                "title": tm.group(1) if tm else "",
                 "kind": fields.get("kind", "Kind::Concept").split("::")[-1],
                 "level": fields.get("level", "Level::Both").split("::")[-1],
                 "sequence": fields.get("sequence", "0"),
@@ -117,6 +124,27 @@ def check(root: Path) -> list[str]:
             findings.append(f"{e['topic']}: unknown kind {e['kind']!r}")
         if e["level"] not in LEVELS:
             findings.append(f"{e['topic']}: unknown level {e['level']!r}")
+
+    # title is the compiled fallback's ENTIRE text, and it lands in
+    # HELP_TOPIC.TITLE which is C80. Three ways it can be wrong, all checkable:
+    # missing (the fallback says nothing), too long (silently truncated by the
+    # DBF writer -- the exact failure SUMMARY already has, sitting at its C200
+    # ceiling on all 29 rows), or an echo of the topic name, which is what TITLE
+    # held before and is indistinguishable from having no summary at all.
+    for e in entries:
+        t = e.get("title", "").strip()
+        if not t:
+            findings.append(f"{e['topic']}: no title -- the compiled fallback would be empty")
+        elif len(t) > 80:
+            findings.append(
+                f"{e['topic']}: title is {len(t)} chars; HELP_TOPIC.TITLE is C80 "
+                "and would truncate it silently"
+            )
+        elif t.strip().upper() == e["topic"].strip().upper():
+            findings.append(
+                f"{e['topic']}: title merely echoes the topic name, which is the "
+                "state this field exists to replace"
+            )
 
     # script_ref must point at a file that exists. This is the whole point of
     # the field: an example that claims to run and does not is the defect.
@@ -171,6 +199,8 @@ def summarise(root: Path) -> str:
     lines = [
         f"edrefcheck: {len(entries)} entries",
         "  by kind      : " + ", ".join(f"{k}={v}" for k, v in sorted(kinds.items())),
+        f"  with title   : {sum(1 for e in entries if e.get('title','').strip())}"
+        f"   (longest {max((len(e.get('title','')) for e in entries), default=0)} of 80)",
         f"  with script  : {sum(1 for e in entries if e['script_ref'])}",
         f"  with prereq  : {sum(1 for e in entries if e['prereq'])}",
         f"  unplaced     : {len(unplaced)} (sequence 0)",

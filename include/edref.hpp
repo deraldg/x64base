@@ -47,6 +47,26 @@ struct Item {
     const char* summary;  // full teaching text
     bool supported;       // whether the topic reflects current DotTalk++ behavior
 
+    // One sentence, <= 80 chars. THE COMPILED FALLBACK'S ENTIRE TEXT.
+    //
+    // Positioned here, immediately after `supported`, on purpose: C++20 forbids
+    // mixing designated and positional initialisers in one braced list, so a
+    // field the 29 existing positional entries must supply cannot sit after the
+    // designated-only block below. It is the fifth positional slot.
+    //
+    // Why it exists (measured 2026-08-16). HELP_TOPIC.TITLE is C80 and, for all
+    // 29 ED rows, merely echoes TOPIC -- helpdata_export_dbf.cpp:362 sets
+    // `row.title = command.empty() ? key : command`. Meanwhile SUMMARY is C200
+    // and every one of the 29 rows sits at 195-200 chars: it is the prose HARD
+    // TRUNCATED, not a summary, so it reads as a sentence cut in half. So the
+    // catalog had no one-line summary anywhere, in either the header or the DBF.
+    // SYSTEM rows already use TITLE meaningfully (138 of 138), so filling it for
+    // ED follows existing practice rather than bending the schema.
+    //
+    // 80 is a discipline, not a limit to fill: if it does not fit in a sentence
+    // it is not a summary.
+    const char* title = "";
+
     // --- added 2026-08-15, BEFORE population, deliberately -------------------
     // Every field below carries a default, so the 29 existing brace
     // initialisers still compile unchanged (C++20 permits aggregates with
@@ -139,7 +159,8 @@ Teaching approach
         "How do I think about it?"
         "What is the simplest example?"
         "How does it relate to the larger engine?" )",
-            true
+            true,
+            "What EDREF is, and what belongs in it."
         },
 
         {
@@ -189,7 +210,8 @@ A practical mental model
     Index       = alternate ordered path through rows
     Relation    = parent-child path between tables
     Tuple       = projected logical row, possibly across multiple tables )",
-            true
+            true,
+            "DotTalk++ understood as four layers working together."
         },
 
         {
@@ -224,7 +246,8 @@ Teaching point
 
 Common mistake
     Forgetting that SELECT changes the active work area before the next command runs.)",
-            true
+            true,
+            "Commands run in order, one after another: the first control construct."
         },
 
         {
@@ -264,7 +287,8 @@ Typical uses
 
 Teaching point
     Decision logic is about controlling execution, not merely testing truth.)",
-            true
+            true,
+            "IF and ELSE choose between alternatives on a condition."
         },
 
         {
@@ -311,7 +335,8 @@ DotTalk++ loop families
 Teaching point
     LOOP / WHILE / UNTIL are general control-flow constructs.
     SCAN is a data-aware loop specialized for table traversal.)",
-            true
+            true,
+            "LOOP, WHILE, UNTIL and SCAN: four ways to repeat work."
         },
 
         {
@@ -341,7 +366,8 @@ What students should learn
 Related idea
     LIST shows records.
     SCAN processes records.)",
-            true
+            true,
+            "The record-oriented loop: a loop that knows about rows."
         },
 
         {
@@ -378,7 +404,8 @@ Here SEEK depends on:
 
 Teaching point
     Learning DotTalk++ means learning stateful programming.)",
-            true
+            true,
+            "What the engine remembers between one command and the next."
         },
 
         {
@@ -412,7 +439,8 @@ Why work areas matter
 Teaching point
     A work area is not merely a filename.
     It is a live operational context.)",
-            true
+            true,
+            "An active slot that can hold one open table."
         },
 
         {
@@ -448,7 +476,8 @@ Typical commands
 Teaching point
     Most command behavior becomes clearer once this hierarchy is firm:
         table > record > field )",
-            true
+            true,
+            "The core hierarchy: tables hold records, records hold fields."
         },
 
         {
@@ -485,7 +514,8 @@ Educational use
 Important distinction
     Data      = "Taylor"
     Metadata  = field FNAME, type C, len 15 )",
-            true
+            true,
+            "Data about data: what the engine knows about your tables."
         },
 
         {
@@ -524,7 +554,8 @@ Example
 Teaching point
     Without schema, bytes are only bytes.
     With schema, bytes become records and fields.)",
-            true
+            true,
+            "The structural definition of a table or dataset."
         },
 
         {
@@ -553,7 +584,8 @@ Why indexes matter
 Teaching point
     An index does not usually change the record data itself.
     It changes how the engine reaches the records.)",
-            true
+            true,
+            "An alternate path through records, without moving them."
         },
 
         {
@@ -585,7 +617,8 @@ So:
     TOP in indexed order.
 
 This is one of the most important database-learning moments in DotTalk++.)",
-            true
+            true,
+            "The navigation sequence currently in force."
         },
 
         {
@@ -610,7 +643,8 @@ Teaching point
     Filtering is not the same as ordering.
     Ordering rearranges rows.
     Filtering removes non-matching rows from consideration.)",
-            true
+            true,
+            "Limiting which rows are visible, by a condition."
         },
 
         {
@@ -639,7 +673,8 @@ Boolean logic words
 Teaching point
     Predicates are the language of selection.
     They control decisions, filters, and searches.)",
-            true
+            true,
+            "A true/false expression that decides what qualifies."
         },
 
         {
@@ -671,7 +706,8 @@ Commands using expressions
 Teaching point
     Expressions produce values.
     Predicates are expressions whose value is true or false.)",
-            true
+            true,
+            "Something the engine evaluates to produce a value."
         },
 
         {
@@ -697,7 +733,8 @@ Educational meaning
     It is the row as selected for output or processing.
 
 This is a major bridge toward relational thinking.)",
-            true
+            true,
+            "A projected logical row, assembled across related areas."
         },
 
         {
@@ -723,7 +760,8 @@ Public surfaces
 Teaching point
     Relations are the backbone of multi-table thinking.
     They let a current parent row lead you into matching child rows.)",
-            true
+            true,
+            "A declared link from a parent table to a child table."
         },
 
         {
@@ -747,7 +785,8 @@ Educational value
     REL ENUM is the clearest current demonstration that DotTalk++
     is more than a single-table shell.
     It is a relation-aware projection engine.)",
-            true
+            true,
+            "The relation-walk projection engine."
         },
 
         {
@@ -766,7 +805,8 @@ Why the concept matters
 
 Teaching point
     Enumeration is how a system turns stored data into a visible stream of results.)",
-            true
+            true,
+            "Generating a sequence of results one at a time."
         },
 
         {
@@ -791,7 +831,8 @@ Educational point
         persisted state
 
 This is a classic database concept and an important teaching tool.)",
-            true
+            true,
+            "Staging changes before they become permanent."
         },
 
         {
@@ -812,7 +853,8 @@ Why COMMIT matters educationally
 Contrast
     REPLACE without buffering may write directly.
     REPLACE with TABLE ON stages first, then COMMIT finalizes.)",
-            true
+            true,
+            "Making staged changes permanent."
         },
 
         {
@@ -830,7 +872,8 @@ Educational point
         selection   = which rows
         ordering    = in what sequence
         projection  = which columns )",
-            true
+            true,
+            "Choosing which fields to show."
         },
 
         {
@@ -853,7 +896,8 @@ Important idea
 
 Teaching point
     Navigation is to a database session what cursor movement is to an editor.)",
-            true
+            true,
+            "Moving the current record pointer."
         },
 
         {
@@ -878,7 +922,8 @@ Educational point
     Some are key-based.
     Some are predicate-based.
     Some are display-based.)",
-            true
+            true,
+            "SEEK, FIND and LOCATE: several search styles, different costs."
         },
 
         {
@@ -901,7 +946,8 @@ DotScript demonstrates
     loops
     command composition
     testing discipline )",
-            true
+            true,
+            "DotScript: the repeatable, scriptable surface of the shell."
         },
 
         {
@@ -921,7 +967,8 @@ Educational value
         document what fails
         preserve reproducible runs
         separate stable behavior from experiments )",
-            true
+            true,
+            "Why testing sits at the centre of DotTalk++ development."
         },
 
         {
@@ -975,7 +1022,8 @@ R"(A practical study order
 Teaching principle
     Move from single table -> ordered navigation -> predicate logic ->
     projection -> relations -> scripting.)",
-            true
+            true,
+            "A practical study order through these topics."
         },
 
         {
@@ -1042,7 +1090,8 @@ Tuple
 
 Work area
     Active open-table slot.)",
-            true
+            true,
+            "Quick definitions for the vocabulary used throughout."
         }
     };
 
