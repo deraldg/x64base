@@ -113,8 +113,13 @@ Always re-check before making Git decisions:
 ```powershell
 git remote -v
 git branch --show-current
-git status --short
+git status --short -uall
 ```
+
+`-uall` is not decoration. This repository sets `status.showUntrackedFiles=no`,
+so a bare `git status --short` reports NOTHING for a file you just created, and
+a new document that is never staged looks identical to a clean tree. Measured
+2026-08-17; tracked as OI-008.
 
 ### Remote / hosted agents -- MANDATORY branch enumeration
 

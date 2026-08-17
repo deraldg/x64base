@@ -109,7 +109,11 @@ Full WSL build/run detail and the host-vs-sandbox table: `AI_README.md`,
 
 Concurrent AI sessions share ONE working tree, so commits go out as scoped, per-path
 slices -- NEVER `git add -A`/`git add .` (that fuses several sessions' half-done work).
-`git status --short` between add and commit is the safety check.
+`git status --short -uall` between add and commit is the safety check. **Keep `-uall`.**
+This repo sets `status.showUntrackedFiles=no`, so a bare `git status` shows nothing at
+all for a file you just created: an unstaged NEW document is indistinguishable from a
+clean tree. Measured 2026-08-17 (OI-008), after the prescribed check reported clean
+while five new files sat unstaged.
 
 Anti-collision loop (prevents two sessions claiming the same AIF-NNN lane number):
 

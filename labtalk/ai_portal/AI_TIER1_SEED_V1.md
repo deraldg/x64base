@@ -48,7 +48,9 @@ Concurrent AI sessions share **one** working tree. `git status` shows many
 modified and hundreds of untracked files belonging to other sessions.
 
 - **NEVER `git add -A` or `git add .`.** Name exact paths. Always.
-- `git status --short` between add and commit; verify only your paths are staged.
+- `git status --short -uall` between add and commit; verify only your paths are
+  staged. `-uall` is REQUIRED: this repo sets `status.showUntrackedFiles=no`, so
+  a bare status cannot see a NEW file at all (measured 2026-08-17; OI-008).
 - Commit one coherent theme at a time. A push is a scoped slice, never a sweep.
 - **In a mounted sandbox, no git that takes `.git/index.lock`**: no mutate, and
   NOT plain `git status` (it takes the lock; wedged the repo once). Read-only IS
