@@ -1,5 +1,6 @@
 import Link from "@/components/StaticLink";
 import { getNewsPostsByCategory } from "@/lib/news";
+import WorkingLog from "@/components/WorkingLog";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -33,6 +34,8 @@ export default function AnnouncementsPage() {
           </Link>
         ))}
       </div>
+
+      <WorkingLog />
     </div>
   );
 }

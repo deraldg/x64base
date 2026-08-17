@@ -1,6 +1,6 @@
 import Link from "@/components/StaticLink";
 import { getAllNewsPosts } from "@/lib/news";
-import { getMilestonesSorted } from "@/lib/milestones";
+import WorkingLog from "@/components/WorkingLog";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -15,9 +15,6 @@ export default function NewsPage() {
     .filter((p) => p.category === "announcements")
     .slice(0, 8);
   const pressReleaseCount = allPosts.filter((p) => p.category === "press-releases").length;
-  // Working log. Fed entirely by content/news/milestones.json -- do NOT add
-  // entries here. See lib/milestones.ts.
-  const milestones = getMilestonesSorted(12);
 
   return (
     <div className="space-y-8">
@@ -60,41 +57,7 @@ export default function NewsPage() {
         </div>
       </section>
 
-      {milestones.length > 0 ? (
-        <section className="rounded-2xl border border-border bg-card/30 p-6">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <h2 className="text-lg font-semibold tracking-tight">Working log</h2>
-            <p className="text-xs text-muted">
-              Smaller milestones between announcements, newest first.
-            </p>
-          </div>
-
-          <ol className="mt-4 space-y-4">
-            {milestones.map((m) => (
-              <li key={`${m.date}-${m.title}`} className="border-l-2 border-border pl-4">
-                <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                  <span className="font-mono text-xs text-muted">{m.date}</span>
-                  <span className="font-semibold">
-                    {m.href ? (
-                      <Link href={m.href} className="hover:underline">
-                        {m.title}
-                      </Link>
-                    ) : (
-                      m.title
-                    )}
-                  </span>
-                  {m.tag ? (
-                    <span className="rounded-full border border-border px-2 py-0.5 text-xs uppercase tracking-[0.14em] text-muted">
-                      {m.tag}
-                    </span>
-                  ) : null}
-                </div>
-                <p className="mt-1 text-sm text-muted">{m.summary}</p>
-              </li>
-            ))}
-          </ol>
-        </section>
-      ) : null}
+      <WorkingLog limit={12} />
 
       <section className="rounded-2xl border border-dashed border-border bg-card/10 p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
