@@ -106,17 +106,45 @@ extension of this one:
 ## Required declaration in source
 
 `bindings/pydottalk/src/module.cpp` carries a `@dottalk.file v1` header. It must
-name this contract, so the posture travels with the code and is harvested rather
-than living only here:
+name this contract, so the posture travels with the code rather than living only
+here:
 
     // @dottalk.contract PYTHON_BINDING_TRUST_CONTRACT_V1
     // trust: caller-is-boundary (first-party, in-tree)
     // mutates: dbf-records
     // locking: inherited-from-dbarea
 
-`owns:` and `lane:` in that header are currently EMPTY and should be filled when
-this lands; an empty field in a declared-capability header is the same
-absent-vs-fine ambiguity this contract was written to remove.
+`owns:` and `lane:` in that header were EMPTY and are now filled; an empty field
+in a declared-capability header is the same absent-vs-fine ambiguity this
+contract was written to remove.
+
+### The harvest path, and the gap found while asserting it
+
+This contract originally claimed the annotation "is harvested". **That was false
+when written, and is recorded rather than quietly corrected.**
+
+Measured 2026-08-17, two tools and neither saw it:
+
+- `src/meta/metacollect.cpp:152` DOES walk `bindings/`, but it harvests
+  `@dottalk.usage` -- COMMAND contracts. `pydottalk` is not a command, so it
+  matches nothing.
+- `tools/contracts/contract_scan.py` DOES parse `@dottalk.contract` (line 171),
+  but its `source_roots` were `include/`, `src/`, `tools/` only. It never looked
+  in `bindings/`.
+
+So the annotation existed, the contract said it travelled, and no inventory knew
+about it. **Silent in the worst direction:** compliant from the source side,
+missing from the registry side, and neither side complains -- which is the exact
+defect shape AIF-118 exists for, committed by the author of this contract while
+writing it.
+
+Fixed by adding `root / "bindings"` to `contract_scan.py` source roots. Verified:
+the scanner compiles, `bindings/` is in the list, it `rglob`s each root, and
+`module.cpp:10` carries the annotation.
+
+**Standing caution for the next binding.** A `@dottalk.contract` line is not
+self-executing. Before claiming any annotation ripples, name the tool that reads
+it and check that tool's roots.
 
 ## Promotion rule
 

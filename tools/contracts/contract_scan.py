@@ -93,7 +93,16 @@ def parse_registry_entries(markdown: str) -> list[RegistryEntry]:
 
 def scan(root: pathlib.Path) -> ScanResult:
     docs = root / "docs"
-    source_roots = [root / "include", root / "src", root / "tools"]
+    # bindings/ added 2026-08-17. It was absent, so `@dottalk.contract` in
+    # bindings/pydottalk/src/module.cpp was invisible to this scan -- the
+    # annotation existed, the contract said it was harvested, and nothing read
+    # it. metacollect DOES walk bindings/ but harvests @dottalk.usage (command
+    # contracts), and the binding is not a command, so neither tool saw it.
+    #
+    # The gap was silent in the worst direction: a declared posture that no
+    # inventory knows about reads as compliant from the source side and as
+    # missing from the registry side, and neither side complains.
+    source_roots = [root / "include", root / "src", root / "tools", root / "bindings"]
 
     contract_docs: list[pathlib.Path] = []
     if docs.exists():
