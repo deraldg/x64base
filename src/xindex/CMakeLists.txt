@@ -23,14 +23,14 @@ add_library(xindex STATIC ${XINDEX_SOURCES})
 
 # Explicitly add CNX sources that live outside src/xindex.
 target_sources(xindex PRIVATE
-  "${CMAKE_SOURCE_DIR}/src/xindex/cnx_backend.cpp"
-  "${CMAKE_SOURCE_DIR}/src/cnx/cnx_document.cpp"
-  "${CMAKE_SOURCE_DIR}/src/cnx/cnx_file.cpp"
+  "${DOTTALK_ROOT}/src/xindex/cnx_backend.cpp"
+  "${DOTTALK_ROOT}/src/cnx/cnx_document.cpp"
+  "${DOTTALK_ROOT}/src/cnx/cnx_file.cpp"
 )
 
 target_include_directories(xindex
   PUBLIC
-    ${CMAKE_SOURCE_DIR}/include
+    ${DOTTALK_ROOT}/include
 )
 
 target_compile_definitions(xindex

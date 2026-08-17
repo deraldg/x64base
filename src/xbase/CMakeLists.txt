@@ -12,7 +12,7 @@ add_library(xbase STATIC ${XBASE_SOURCES})
 
 target_include_directories(xbase
   PUBLIC
-    ${CMAKE_SOURCE_DIR}/include
+    ${DOTTALK_ROOT}/include
 )
 
 if (MSVC)

@@ -20,6 +20,25 @@ endif()
 
 project(DotTalkpp VERSION 0.6 LANGUAGES CXX)
 
+# DOTTALK_ROOT -- the repository root, as the SHARED libraries should refer to it.
+#
+# Added 2026-08-17. src/xbase, src/memo and src/xindex used ${CMAKE_SOURCE_DIR}
+# for include/ and for three explicit cnx sources. That is correct only while
+# THIS file is the top of the configure, which silently made those three
+# libraries unusable from any other top-level project: a standalone build
+# rooted elsewhere resolves CMAKE_SOURCE_DIR to its own directory and the
+# includes vanish.
+#
+# Setting it here (identical value, zero behaviour change for this build) and
+# having the libraries read DOTTALK_ROOT lets bindings/pydottalk configure them
+# directly, WITHOUT re-listing their sources. That matters more than the
+# convenience: the source lists are globbed, and a second hand-copied list is
+# the shape this project keeps finding -- two restatements that drift, silently,
+# the first time somebody adds a file to src/xbase.
+if(NOT DEFINED DOTTALK_ROOT)
+  set(DOTTALK_ROOT "${CMAKE_SOURCE_DIR}" CACHE INTERNAL "DotTalk++ repository root")
+endif()
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)

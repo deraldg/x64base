@@ -22,7 +22,7 @@ add_library(memo STATIC ${MEMO_SOURCES})
 
 target_include_directories(memo
   PUBLIC
-    ${CMAKE_SOURCE_DIR}/include
+    ${DOTTALK_ROOT}/include
 )
 
 target_compile_definitions(memo
