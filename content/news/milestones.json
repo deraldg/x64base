@@ -1,0 +1,74 @@
+{
+  "$comment": [
+    "Working log feed for /news. THIS is the file you edit; the page is generated from it.",
+    "Add a milestone by appending one object to `items`. Never edit app/news/page.tsx to add news.",
+    "Fields: date (YYYY-MM-DD, required), title (required), summary (required), href (optional,",
+    "must be a real page on this site), tag (optional short label).",
+    "House voice: written from proofs, not positioning. Say what was demonstrated. Keep internal",
+    "lane numbers and source paths out of this file -- they belong in the working record, not here.",
+    "Malformed entries FAIL THE BUILD by design: a feed that silently drops a row is worse than one",
+    "that stops. See lib/milestones.ts."
+  ],
+  "items": [
+    {
+      "date": "2026-08-17",
+      "title": "The Python binding becomes its own product",
+      "summary": "pydottalk was being built as a switch of the engine build, so producing a four-source module also compiled the entire command-line runtime and the terminal UI library it never referenced. It now builds standalone against the same engine sources, with its own build presets and its own lifecycle charter.",
+      "tag": "build"
+    },
+    {
+      "date": "2026-08-17",
+      "title": "The maintenance console gets a light theme",
+      "summary": "Every colour moved behind theme variables, so no literal value can outlive a theme change. Contrast was measured rather than eyeballed, and the light default now matches the website's own preference key instead of inventing a second one.",
+      "tag": "tooling"
+    },
+    {
+      "date": "2026-08-16",
+      "title": "Five guards that could not fail",
+      "summary": "Five checks across the toolchain returned the same answer for \"nothing is wrong\" and \"nothing was examined\", and each had been passing for months. Every one now judges against a declared truth, and each new test was proven able to fail before it was trusted.",
+      "tag": "quality"
+    },
+    {
+      "date": "2026-08-15",
+      "title": "Record locking, re-proven from the ground up",
+      "summary": "A locale installed for console text encoding also changed number formatting, which corrupted the owner identifier written into lock sidecars. A lock could therefore be reclaimed while its owner was still running. Fixed at the cause, made fail-closed, and covered by the first test the lock subsystem has ever had.",
+      "tag": "engine"
+    },
+    {
+      "date": "2026-08-12",
+      "title": "Workspace write-back closed to green",
+      "summary": "The write-back path now refuses a collision without writing anything, replaces only on explicit confirmation, and keeps a recoverable backup. Each assertion was checked for its ability to fail before the suite was believed.",
+      "tag": "engine"
+    },
+    {
+      "date": "2026-08-12",
+      "title": "Memo sidecar carriage and the descend probe",
+      "summary": "Workspaces carried inside memo objects gained a verified sidecar path, and a probe for descending into nested container state.",
+      "tag": "engine"
+    },
+    {
+      "date": "2026-08-11",
+      "title": "Lean entry site deployed, licence settled",
+      "summary": "A minimal entry site went live on its own domain, and the licence question that had been deferred through several releases was answered.",
+      "tag": "publication"
+    },
+    {
+      "date": "2026-08-09",
+      "title": "CNX indexes on x64 tables warn rather than refuse",
+      "summary": "Opening a CNX index against an x64 table used to be refused outright. It now warns and proceeds where the combination is safe, with the boundary demonstrated rather than assumed.",
+      "tag": "engine"
+    },
+    {
+      "date": "2026-08-09",
+      "title": "External course intake, and a gateway that aborts cleanly",
+      "summary": "An external learning-management intake lane was accepted, and the local gateway now handles aborted requests without leaving the surface in a half-served state.",
+      "tag": "campus"
+    },
+    {
+      "date": "2026-08-07",
+      "title": "Two lifecycle vocabularies merged into one",
+      "summary": "The project had been carrying two names for the same product lifecycle. One was retired and its material merged, so there is a single vocabulary for how work is chartered and closed.",
+      "tag": "process"
+    }
+  ]
+}
