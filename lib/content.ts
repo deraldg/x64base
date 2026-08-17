@@ -1,7 +1,12 @@
 import fs from "node:fs";
 import path from "node:path";
 
-export type Section = "about" | "products" | "docs" | "licensing" | "brand" | "news" | "portal" | "memory";
+// "lab" is a LOCAL-ONLY content root (2026-08-17). It is listed in
+// LOCAL_ONLY_DIRS, so its build output is deleted before publish and the publish
+// script aborts if it survives. Content that is not ready to be a public claim
+// lives here instead of being deleted or left published by accident.
+export type Section =
+  | "about" | "products" | "docs" | "licensing" | "brand" | "news" | "portal" | "memory" | "lab";
 
 export function contentDir(...parts: string[]) {
   return path.join(process.cwd(), "content", ...parts);

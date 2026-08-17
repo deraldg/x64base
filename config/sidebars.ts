@@ -123,7 +123,10 @@ export const docsSidebar: SidebarGroup[] = [
       { label: "Naming Conventions", href: "/docs/dev/naming-conventions" },
       { label: "Coding Standards", href: "/docs/dev/coding-standards" },
       { label: "Contribution Guide", href: "/docs/dev/contribution-guide" },
-      { label: "Experimental Work", href: "/docs/dev/experimental" }
+      // "Experimental Work" moved to the local-only Lab on 2026-08-17
+      // (/lab/experimental). Leaving the entry here would have published a
+      // sidebar link to a route the stripper deletes -- a 404 for every
+      // visitor, which is worse than either publishing it or hiding it.
     ]
   }
 ];

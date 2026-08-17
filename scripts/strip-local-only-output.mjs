@@ -19,13 +19,18 @@ function assertInside(child, parent) {
  *              dottalkpp." It will hold emulator payloads and OS captures whose
  *              redistribution rights are unsettled, so leaking it is a
  *              licensing problem and not merely an untidy one.
+ *   lab     -- the Lab (2026-08-17): work that is real but not yet a public
+ *              claim. Prototypes and research inventories that would carry
+ *              more authority on the public site than the work behind them
+ *              justifies. First tenant: the Dewey / hierarchy experiments,
+ *              moved out of /docs/dev/experimental.
  *
  * This list is the SECOND of three layers. The first is that the nav entry only
  * renders under local preview; the third is the publish script refusing outright
  * if a directory named here survived into out/. Any one layer failing leaves the
  * other two, which is the point.
  */
-export const LOCAL_ONLY_DIRS = ["reports", "retro"];
+export const LOCAL_ONLY_DIRS = ["reports", "retro", "lab"];
 
 export function stripLocalOnlyOutput({ root = process.cwd() } = {}) {
   const outDir = path.resolve(root, "out");

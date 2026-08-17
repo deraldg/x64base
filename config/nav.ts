@@ -96,7 +96,8 @@ export const moreNav: NavItem[] = [
  * local-only since it was written.
  */
 export const localOnlyNav: NavItem[] = [
-  { label: "RETRO", href: "/retro" }
+  { label: "RETRO", href: "/retro" },
+  { label: "LAB", href: "/lab" }
 ];
 
 /** Every item, in the original order. The mobile menu shows all of these. */
