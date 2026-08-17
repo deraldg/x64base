@@ -205,6 +205,29 @@ divergence is a live defect: four pieces of Tier 1 guidance exist only in a
 table the seed itself calls a fallback, and five resolver triggers are invisible
 to anyone reading it. Fixing that is worth doing whether or not the table moves.
 
+**STEP 1 EXECUTED 2026-08-16 (AIF-118, `a4f09d406`), three of four.**
+`trigger.read_write_dbf`, `trigger.use_reference_authority` and
+`trigger.capture_proof` now exist with backing nodes and edges; the graph is 16
+triggers / 54 nodes / 76 edges and `--validate` passes. Each node carries the
+seed row's SUBSTANTIVE claim rather than only a path, because a node that merely
+points somewhere turns the resolver into a slower table of contents.
+
+**Still open, and still an owner call:** `edit the website`. It targets
+`x64base-site` and zero nodes in this graph point outside this repository, so a
+cross-repo node convention has to be decided before that row can be demoted --
+demote it first and its guidance falls back to nothing.
+
+**A caution this proposal should carry, discovered while doing step 1.** Closing
+the gaps exposed a latent defect in `recall.py`: `section_size` read a `#`
+comment inside a fenced code block as the next heading and under-reported one
+section by **46x (64 B against 3516 B)**. It had been wrong since the function
+was written and nothing noticed, because an under-counted working set looks like
+a SMALL working set -- the exact output the tool exists to produce. Fixed and
+guarded (`labtalk/portal/tests/test_recall_section_size.py`, 7 arms, 3 mutations
+proven to fail). The bearing on this proposal: **"verify the resolver is not
+thin" cannot be discharged by reading it.** The three new triggers were checked
+against real output; the other 13 still have not been.
+
 ---
 
 Owner: `member.derald`. Author: `member.ai.claude.cowork`.
