@@ -3,8 +3,9 @@
 
 Every report request runs the existing read-only report builder into a fresh
 temporary directory. The response therefore reflects the current DBF tables,
-registries, and AIF queue without mutating ``docs/reports`` or relying on a
-manual regeneration step.
+authoritative registry fragments, and AIF queue without mutating flat registry
+build artifacts or ``docs/reports`` and without relying on a manual regeneration
+step.
 
 Non-report requests are proxied to the local website development server. This
 keeps the normal ``http://localhost:3000`` entry point while the reports remain
@@ -21,6 +22,7 @@ import argparse
 import datetime as dt
 import http.server
 import json
+import secrets
 import subprocess
 import sys
 import tempfile
@@ -87,9 +89,11 @@ NAV_BAR = (
 
 
 def inject_nav(text: str) -> str:
-    """Insert a Home (/AI/) + Back bar right after <body>. Both the reports and the
-    mounted /AI/console had no way home once opened -- reported 2026-08-07. Works on any
-    page with a <body> tag, so it covers report HTML and the console alike."""
+    """Insert a Home (/AI/) + Back bar into generated report HTML.
+
+    The maintenance console now carries its own full operational navigation and is
+    served without this compatibility bar.
+    """
     lower = text.lower()
     i = lower.find("<body")
     if i == -1:
@@ -103,16 +107,18 @@ def inject_nav(text: str) -> str:
 def decorate_live_html(body: bytes, observed: str) -> bytes:
     """Make request-time status visible without altering static export files."""
     text = body.decode("utf-8", "replace")
-    marker = '<body><div class="wrap">'
     banner = (
-        marker
-        + '<div class="band" style="background:#dcfce7;color:#14532d;'
+        '<div class="band" style="background:#dcfce7;color:#14532d;'
         'border:1px solid #86efac">LIVE LOCAL VIEW -- generated for this request '
         f'from current canonical state at <code>{observed}</code>. Reload to re-read.'
         '</div>'
     )
-    if marker in text:
-        text = text.replace(marker, banner, 1)
+    marker = '<div class="wrap"'
+    start = text.lower().find(marker)
+    if start != -1:
+        opening_end = text.find(">", start)
+        if opening_end != -1:
+            text = text[: opening_end + 1] + banner + text[opening_end + 1 :]
     return inject_nav(text).encode("utf-8")
 
 
@@ -138,9 +144,28 @@ def report_name_for_path(raw_path: str) -> str | None:
     return None
 
 
+def report_builder_command(repo_root: Path, out: Path) -> list[str]:
+    """Build live reports from authoritative fragments, never reviewed snapshots."""
+    builder = repo_root / "tools" / "reports" / "build_reports.py"
+    return [
+        sys.executable,
+        str(builder),
+        "--root",
+        str(repo_root),
+        "--out",
+        str(out),
+        "--source",
+        "fragments",
+    ]
+
+
+def health_status_code(payload: dict) -> int:
+    return 200 if payload.get("ok") else 503
+
+
 class DynamicReportServer(http.server.ThreadingHTTPServer):
     daemon_threads = True
-    allow_reuse_address = True
+    allow_reuse_address = False
 
     def __init__(self, address, handler, *, repo_root: Path, upstream: str,
                  write_enabled: bool = False):
@@ -149,6 +174,10 @@ class DynamicReportServer(http.server.ThreadingHTTPServer):
         self.upstream = upstream.rstrip("/")
         self.render_lock = threading.Lock()
         self.write_enabled = write_enabled  # console Execute on the shared surface
+        self.write_token = secrets.token_urlsafe(32) if write_enabled else ""
+        self.started_at = dt.datetime.now(dt.timezone.utc)
+        self.last_render_at = ""
+        self.last_render_error = ""
 
     def handle_error(self, request, client_address):
         """Client aborts get one line; every other exception keeps its traceback.
@@ -170,36 +199,70 @@ class DynamicReportServer(http.server.ThreadingHTTPServer):
         super().handle_error(request, client_address)
 
     def render_report(self, name: str) -> tuple[bytes, str]:
-        builder = self.repo_root / "tools" / "reports" / "build_reports.py"
-        with self.render_lock, tempfile.TemporaryDirectory(
-            prefix="dottalk-live-reports-"
-        ) as temporary:
-            out = Path(temporary)
-            completed = subprocess.run(
-                [
-                    sys.executable,
-                    str(builder),
-                    "--root",
-                    str(self.repo_root),
-                    "--out",
-                    str(out),
-                ],
-                cwd=self.repo_root,
-                capture_output=True,
-                text=True,
-                encoding="utf-8",
-                errors="replace",
-                timeout=30,
-                check=False,
-            )
-            if completed.returncode != 0:
-                detail = (completed.stderr or completed.stdout).strip()
-                raise RuntimeError(detail or f"report builder exited {completed.returncode}")
-            target = out / name
-            if not target.is_file():
-                raise RuntimeError(f"report builder did not emit {name}")
-            observed = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-            return decorate_live_html(target.read_bytes(), observed), observed
+        try:
+            with self.render_lock, tempfile.TemporaryDirectory(
+                prefix="dottalk-live-reports-"
+            ) as temporary:
+                out = Path(temporary)
+                completed = subprocess.run(
+                    report_builder_command(self.repo_root, out),
+                    cwd=self.repo_root,
+                    capture_output=True,
+                    text=True,
+                    encoding="utf-8",
+                    errors="replace",
+                    timeout=30,
+                    check=False,
+                )
+                if completed.returncode != 0:
+                    detail = (completed.stderr or completed.stdout).strip()
+                    raise RuntimeError(
+                        detail or f"report builder exited {completed.returncode}"
+                    )
+                target = out / name
+                if not target.is_file():
+                    raise RuntimeError(f"report builder did not emit {name}")
+                observed = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+                body = decorate_live_html(target.read_bytes(), observed)
+                self.last_render_at = observed
+                self.last_render_error = ""
+                return body, observed
+        except Exception as exc:
+            self.last_render_error = f"{type(exc).__name__}: {exc}"
+            raise
+
+    def health_payload(self) -> dict:
+        if not self.last_render_at or self.last_render_error:
+            try:
+                self.render_report("index.html")
+            except Exception:
+                pass
+        upstream_ok = False
+        upstream_error = ""
+        try:
+            request = urllib.request.Request(self.upstream + "/", method="HEAD")
+            with urllib.request.urlopen(request, timeout=2) as response:
+                upstream_ok = 200 <= response.status < 500
+        except (OSError, urllib.error.URLError) as exc:
+            upstream_error = str(exc)
+        registries = maint_server._registry_health(self.repo_root)
+        healthy = bool(upstream_ok and registries.get("ok") and not self.last_render_error)
+        return {
+            "ok": healthy,
+            "mode": "live-development",
+            "report_source": "authoritative registry fragments",
+            "snapshot_source": "reviewed flat registries",
+            "execute_enabled": self.write_enabled,
+            "started_at": self.started_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "last_render_at": self.last_render_at,
+            "last_render_error": self.last_render_error,
+            "upstream": {
+                "url": self.upstream,
+                "ok": upstream_ok,
+                "error": upstream_error,
+            },
+            "registries": registries,
+        }
 
 
 class Handler(http.server.BaseHTTPRequestHandler):
@@ -223,9 +286,11 @@ class Handler(http.server.BaseHTTPRequestHandler):
         path = urllib.parse.urlsplit(self.path).path
         if cpre is not None and path == cpre + "/api/op":
             try:
+                maint_server.require_local_json(self.headers, self.server.write_token)
                 n = int(self.headers.get("Content-Length", 0))
                 body = json.loads(self.rfile.read(n) or b"{}")
-                res = maint_server._do_op(body, write_enabled=self.server.write_enabled)
+                with maint_server.WRITE_LOCK:
+                    res = maint_server._do_op(body, write_enabled=self.server.write_enabled)
                 self._send_json(200, res)
             except (maint_server.crud.CrudError, KeyError) as exc:
                 self._send_json(400, {"ok": False, "error": str(exc)})
@@ -249,6 +314,14 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
     def _dispatch(self, *, include_body: bool):
         path = urllib.parse.urlsplit(self.path).path
+        if path.rstrip("/") in ("/AI/health", "/reports/health"):
+            payload = self.server.health_payload()
+            self._send_json(
+                health_status_code(payload),
+                payload,
+                include_body=include_body,
+            )
+            return
         if path.rstrip("/") in ("/AI/regression", "/reports/regression"):
             self._serve_regression(include_body=include_body)
             return
@@ -273,14 +346,25 @@ class Handler(http.server.BaseHTTPRequestHandler):
         path = urllib.parse.urlsplit(self.path).path
         api_prefix = cpre + "/api"
         if path in (cpre, cpre + "/", cpre + "/index.html"):
-            html = inject_nav(maint_server.render_page(api_prefix, self.server.write_enabled))
+            html = maint_server.render_page(
+                api_prefix,
+                self.server.write_enabled,
+                self.server.write_token,
+            )
             self._send_html(200, html, include_body=include_body)
             return
         if path == api_prefix or path.startswith(api_prefix + "/"):
             sub = urllib.parse.unquote(path[len(api_prefix):]).strip("/")
             try:
                 if sub == "tables":
-                    self._send_json(200, maint_server._tables_payload(), include_body=include_body)
+                    self._send_json(
+                        200,
+                        maint_server._tables_payload(
+                            self.server.repo_root,
+                            write_enabled=self.server.write_enabled,
+                        ),
+                        include_body=include_body,
+                    )
                 elif sub.startswith("table/"):
                     tname = sub[len("table/"):]
                     deleted = urllib.parse.parse_qs(
@@ -302,6 +386,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
         self.send_response(code)
         self.send_header("Content-Type", "application/json")
         self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         if include_body:
@@ -312,6 +397,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
         self.send_response(code)
         self.send_header("Content-Type", "text/html; charset=utf-8")
         self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         if include_body:
@@ -455,18 +541,25 @@ def parse_args(argv=None):
 
 def main(argv=None) -> int:
     args = parse_args(argv)
+    if args.enable_write and not maint_server.is_loopback_host(args.bind):
+        print("write-enabled gateway must bind to loopback", file=sys.stderr)
+        return 2
     root = Path(args.root).resolve()
     builder = root / "tools" / "reports" / "build_reports.py"
     if not builder.is_file():
         print(f"missing report builder: {builder}", file=sys.stderr)
         return 2
-    server = DynamicReportServer(
-        (args.bind, args.port),
-        Handler,
-        repo_root=root,
-        upstream=args.upstream,
-        write_enabled=args.enable_write,
-    )
+    try:
+        server = DynamicReportServer(
+            (args.bind, args.port),
+            Handler,
+            repo_root=root,
+            upstream=args.upstream,
+            write_enabled=args.enable_write,
+        )
+    except OSError as exc:
+        print(f"cannot bind gateway to {args.bind}:{args.port}: {exc}", file=sys.stderr)
+        return 2
     mode = "READ + EMIT + EXECUTE" if args.enable_write else "READ + EMIT (execute disabled)"
     print(
         f"Dynamic local AI views:  http://{args.bind}:{args.port}/AI/   (alias: /reports/)\n"
