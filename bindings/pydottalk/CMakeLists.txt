@@ -192,10 +192,30 @@ endif()
 # DOTTALK_WITH_INDEX is a choice here; the component flags are OFF because this
 # is a data binding, not the education or developer surface.
 if(PYDOTTALK_STANDALONE)
-  if(DOTTALK_WITH_INDEX)
-    set(DOTTALK_HAS_XINDEX 1)
-  else()
+  # DOTTALK_HAS_XINDEX answers "does the xindex library exist". It is NOT the
+  # same question as DOTTALK_WITH_INDEX, which answers "is the lmdb backend
+  # compiled". This block keyed the first off the second, which collapsed the
+  # two and made LEGACY contradict itself.
+  #
+  # MEASURED 2026-08-17, LEGACY, Linux/gcc/Ninja: this file emitted
+  # DOTTALK_HAS_XINDEX=0 while src/xindex/CMakeLists.txt:38 exports
+  # DOTTALK_HAS_XINDEX=1 as a PUBLIC definition on the xindex target, so BOTH
+  # reached the same compiler command line -- 48 occurrences of =0 against 26
+  # of =1 across the build. gcc said "DOTTALK_HAS_XINDEX redefined"; the last
+  # flag on the line wins, per translation unit. That is the "module compiles a
+  # different view of the same structs than the libraries it links" hazard the
+  # comment above describes, no longer hypothetical.
+  #
+  # It hid because it is LEGACY-only: LMDB has both sources agreeing at 1, and
+  # NONE never creates the target so nothing disagrees at 0. It surfaced the day
+  # LEGACY became the default preset.
+  #
+  # Only NONE omits the library, so only NONE may say 0. LEGACY is precisely the
+  # state the comment above names: xindex exists, lmdb does not.
+  if(DOTTALK_INDEX_MODE STREQUAL "NONE")
     set(DOTTALK_HAS_XINDEX 0)
+  else()
+    set(DOTTALK_HAS_XINDEX 1)
   endif()
 
   foreach(_flag
