@@ -63,6 +63,7 @@ No contract may claim a stronger evidence class than the available proof.
 | DotTalk Extension Exit Contract | Runtime/usage/safety/document-control | Design-intended + source-policy annotation | extension layer, CLI dispatcher, contract lane | `docs/contracts/DOTTALK_EXTENSION_EXIT_CONTRACT_V1.md` |
 | Index Key Is A Field, Not An Expression | Usage/data | **Runtime-proven** | xindex, cdx, cnx, cli | `src/cli/cmd_index.cpp` usage contract; `INDEX USAGE` runtime readback 2026-07-14 |
 | Index Lane Split (CNX x32 / CDX x64) | Data/index/safety | **Runtime-proven** | xindex, cdx, cnx, xbase | `src/cli/cmd_reindex.cpp`; `USE USAGE`, `CNX USAGE`, `CDX USAGE`, `BUILDLMDB USAGE` runtime readback 2026-07-14 |
+| Python Binding Trust Contract | Bindings/trust boundary/data safety | Source-defined + runtime-proven (locking measured in `dbarea.cpp:253`; authorization measured absent in the binding) | bindings, xbase, identity, contract lane | `docs/contracts/PYTHON_BINDING_TRUST_CONTRACT_V1.md`; `bindings/pydottalk/src/module.cpp` |
 
 ## Usage Contract Lane
 
@@ -104,7 +105,9 @@ or extraction paths:
 - index collation contracts,
 - DBF/memo safety contracts,
 - GUI event contracts,
-- Python/C++ binding contracts,
+- ~~Python/C++ binding contracts~~ -- FILLED 2026-08-17 for `pydottalk` by the
+  Python Binding Trust Contract above. Still open for any OTHER binding; the
+  contract is per-binding, not a blanket posture for the kind,
 - build option/dependency contracts,
 - destructive command safety contracts,
 - import/export locale contracts,
