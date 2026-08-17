@@ -214,7 +214,33 @@ PORTAL = {
         pk="ID", key="TKEY"),
 }
 
-TABLES: dict = {**IDENTITY, **BBS, **PORTAL}
+# ---- selfdoc catalogs (command / message / help self-documentation) -----------
+# Registered read-only (writable=False): these are candidate-writer projections
+# owned by the metacollect pipeline, so the CRUD reads + reports them but refuses
+# writes -- exactly as it does for the daemon-owned bbs store. Field lists are
+# DERIVED from the .dtschema contracts under data/schemas/**; the sibling test
+# tools/dbf/tests/test_schema_registry_selfdoc.py reparses those contracts and
+# fails on drift. subdir="" because the selfdoc .dbf files live in data/metadata/
+# directly, not in a per-catalog subdirectory.
+#
+# R1 scope (SELFDOC_PORTAL_SCHEMA_SHARING_STUDY_V1): SYSCMD lands first because it
+# satisfies every existing house invariant unchanged. The next catalog, SYSMSG,
+# carries VER_AT as C(24); test_id_and_epoch_widths expects any *AT field to be
+# N(20). That divergence IS study finding R5 (selfdoc VER_AT string vs portal
+# N(20) epoch) and must be decided -- adopt the N(20) epoch, or exempt selfdoc's
+# display stamp -- before SYSMSG and the remaining catalogs register here.
+SELFDOC = {
+    "SYSCMD": TableSpec(
+        "SYSCMD", "",
+        (_c("CMD_ID", 32), _c("CAN_NAME", 80), _c("TYPE", 20), _c("VIS", 20),
+         _c("HANDLER", 96), _l("ACTIVE")),
+        # ACTIVE L is the soft-close signal: close = set ACTIVE .F. (status kind,
+        # terminal False). This catalog carries no numeric epoch/rowver.
+        ClosePolicy("status", field="ACTIVE", terminal=False),
+        pk="CMD_ID", key="CAN_NAME", writable=False),
+}
+
+TABLES: dict = {**IDENTITY, **BBS, **PORTAL, **SELFDOC}
 
 
 def get(name: str) -> TableSpec:

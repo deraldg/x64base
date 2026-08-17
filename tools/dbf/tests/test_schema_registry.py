@@ -83,6 +83,10 @@ def parse_table_fields(text: str, table: str):
 
 def test_every_table_matches_header():
     for name, spec in reg.TABLES.items():
+        if spec.subdir not in ("identity", "bbs", "portal"):
+            # selfdoc catalogs (subdir="") are header-less; their drift guard is
+            # tools/dbf/tests/test_schema_registry_selfdoc.py against .dtschema.
+            continue
         text = header_for(spec).read_text(encoding="utf-8", errors="replace")
         parsed = parse_table_fields(text, name)
         check(parsed is not None, f"{name}: not found in {header_for(spec).name}")
