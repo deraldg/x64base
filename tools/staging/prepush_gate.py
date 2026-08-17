@@ -138,6 +138,14 @@ REPORT_SURFACE_PREFIXES = (
 NORMALIZATION_GUARDS = (
     ("refcheck", "tools/fullstack_docs/refcheck_v1.py", ("--root", "{root}")),
     ("normcheck", "tools/fullstack_docs/normcheck_v1.py", ("{root}",)),
+    # edrefcheck guards the EDUCATIONAL catalog, whose failure mode differs from
+    # refcheck's: refcheck asks "does this command exist", edrefcheck asks "does
+    # this teaching material hold together as a course" -- a script_ref naming a
+    # file that is not there, a prereq naming a topic that is not there, a title
+    # over the C80 that HELP_TOPIC.TITLE would silently truncate. Added under
+    # AIF-118; `include/` is already in NORM_RELEVANT_PREFIXES, so a change to
+    # include/edref.hpp triggers it without widening the trigger set.
+    ("edrefcheck", "tools/fullstack_docs/edrefcheck_v1.py", ("--root", "{root}")),
 )
 NORM_RELEVANT_PREFIXES = (
     "include/", "src/cli/", "src/ext/", "src/help/",
