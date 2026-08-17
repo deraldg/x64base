@@ -89,9 +89,17 @@ Recorded honestly so the charter does not open by overstating its subject.
   and OI-007.
 - **It builds standalone and lean**, on Windows/MSVC and on Linux/ELF, and is not
   pinned to one Python version despite the `cp312` house default.
-- **It has no packaging story.** No wheel, no `pyproject.toml`, no declared
-  interpreter support range, no versioning policy. `version()` reports `0.4.0`
-  from a source constant.
+- **It has no packaging story.** No wheel, no declared interpreter support
+  range, no versioning policy. `version()` reports `0.4.0` from a source
+  constant. CORRECTED 2026-08-17, same day: this bullet first said "no
+  `pyproject.toml`". One EXISTS at the repo root. It configures `black`, `ruff`
+  and `pytest` and carries a `[build-system]` block, but it declares no
+  `[project]` table, so it packages nothing and names no distribution. The
+  conclusion stands and the sentence did not. The mistake is worth keeping
+  because of how it was made: the file is untracked, and I asserted its absence
+  from a `git status` that cannot report untracked files at all (OI-008). M1
+  should decide whether that file grows a `[project]` table or whether the
+  binding gets its own manifest under `bindings/pydottalk/`.
 
 ## Lifecycle gates
 
