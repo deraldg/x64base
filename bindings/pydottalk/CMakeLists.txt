@@ -69,6 +69,31 @@ if(PYDOTTALK_STANDALONE)
   set(CMAKE_CXX_EXTENSIONS OFF)
 endif()
 
+# ---- Position-independent code: REQUIRED on ELF, invisible on Windows -------
+# The final artifact is a SHARED MODULE. On ELF platforms every object linked
+# into a .so must be position-independent, and the static libraries this pulls
+# in (xbase, memo, xindex) default to non-PIC.
+#
+# MEASURED 2026-08-17, first Linux configure of this project. Every translation
+# unit compiled cleanly under GCC 11.4 -- xbase, memo, module.cpp and all three
+# extra TUs -- and then the LINK failed:
+#
+#   relocation R_X86_64_TPOFF32 against
+#   `xbase::trigger_hooks::(anonymous)::g_suppress_depth`
+#   can not be used when making a shared object; recompile with -fPIC
+#
+# Note where it failed: not at configure, not at compile, but at link, naming a
+# thread-local in an anonymous namespace three libraries deep. Nothing earlier
+# hinted at it.
+#
+# NOT a lean-build defect. NOTHING in this repository sets PIC -- not the root
+# CMakeLists, not the three library files. Windows never surfaces it because a
+# DLL does not carry the constraint, so the root build with -DBUILD_PYDOTTALK=ON
+# would hit exactly this the first time it ran on Linux. Set here because this
+# is the file that builds a shared module; if the root build ever grows a Linux
+# .so target it needs the same line.
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 # ---- Locate the repository -------------------------------------------------
 # bindings/pydottalk/ -> bindings/ -> repo root. Verified by a file that only
 # exists at the root, so a wrong answer fails here rather than as a confusing
@@ -85,11 +110,50 @@ if(NOT EXISTS "${DOTTALK_ROOT}/include/xbase.hpp")
     "the top-level CMakeLists.")
 endif()
 
-# ---- Feature switches the three libraries read -----------------------------
-# Standalone only: in the root build DOTTALK_WITH_INDEX is already decided and
-# redefining it here would silently disagree with the engine it links against.
+# ---- Index mode: the HOUSE index and LMDB are different things -------------
+# Corrected 2026-08-17 on owner challenge: "don't we distinguish between index
+# and lmdb in our builds -- our house index system should ship even when lmdb
+# doesn't". It does, and this file had flattened the distinction.
+#
+# src/xindex/CMakeLists.txt already encodes three states in its own comment:
+#
+#   LMDB   -- everything, including lmdb_backend.cpp; find_package(unofficial-lmdb)
+#   LEGACY -- "retains the manager and file-backed index providers while omitting
+#             the direct LMDB backend"  -> CNX, native CDX, index_manager, all of
+#             it, with NO lmdb dependency at all
+#   NONE   -- "never enters this directory or creates xindex"
+#
+# It selects between them with the DOTTALK_WITH_INDEX boolean, and compiles
+# DOTTALK_HAS_XINDEX=1 next to DOTTALK_WITH_INDEX=0 for LEGACY -- literally
+# "xindex exists, lmdb does not".
+#
+# THE BUG THIS REPLACES: this file wrapped add_subdirectory(xindex) in
+# `if(DOTTALK_WITH_INDEX)`, which collapsed LEGACY into NONE. Passing
+# -DDOTTALK_WITH_INDEX=OFF to work around a missing lmdb.h therefore threw away
+# the house index engine as well, and the Linux run of 2026-08-17 was recorded
+# as "index OFF" when what was actually wanted, and available, was LEGACY.
+#
+# DOTTALK_INDEX_MODE is the three-state name the root build already prints in
+# its summary. DOTTALK_WITH_INDEX stays derived from it, because that is the
+# variable the shared library file reads.
 if(PYDOTTALK_STANDALONE)
-  option(DOTTALK_WITH_INDEX "Build the index engine into pydottalk" ON)
+  set(DOTTALK_INDEX_MODE "LMDB" CACHE STRING
+      "Index engine: LMDB (full), LEGACY (house index, no lmdb), NONE (no xindex)")
+  set_property(CACHE DOTTALK_INDEX_MODE PROPERTY STRINGS LMDB LEGACY NONE)
+
+  if(NOT DOTTALK_INDEX_MODE MATCHES "^(LMDB|LEGACY|NONE)$")
+    message(FATAL_ERROR
+      "pydottalk: DOTTALK_INDEX_MODE='${DOTTALK_INDEX_MODE}' is not one of "
+      "LMDB, LEGACY, NONE.")
+  endif()
+
+  if(DOTTALK_INDEX_MODE STREQUAL "LMDB")
+    set(DOTTALK_WITH_INDEX ON)
+  else()
+    set(DOTTALK_WITH_INDEX OFF)   # LEGACY and NONE both omit the lmdb backend
+  endif()
+  message(STATUS "pydottalk: DOTTALK_INDEX_MODE=${DOTTALK_INDEX_MODE} "
+                 "(lmdb backend: ${DOTTALK_WITH_INDEX})")
 endif()
 
 # ---- Python and pybind11 ---------------------------------------------------
@@ -227,7 +291,9 @@ endif()
 # -DBUILD_PYDOTTALK=ON for the entire tree rather than just this module.
 if(PYDOTTALK_STANDALONE)
   add_subdirectory("${DOTTALK_ROOT}/src/xbase"  "${CMAKE_BINARY_DIR}/_xbase")
-  if(DOTTALK_WITH_INDEX)
+  if(DOTTALK_INDEX_MODE STREQUAL "NONE")
+    message(STATUS "pydottalk: index NONE -- xindex not built")
+  else()
     add_subdirectory("${DOTTALK_ROOT}/src/xindex" "${CMAKE_BINARY_DIR}/_xindex")
   endif()
   add_subdirectory("${DOTTALK_ROOT}/src/memo"   "${CMAKE_BINARY_DIR}/_memo")
@@ -273,7 +339,26 @@ target_compile_features(pydottalk PRIVATE cxx_std_20)
 
 target_link_libraries(pydottalk PRIVATE xbase memo)
 target_compile_definitions(pydottalk PRIVATE HAVE_XBASE=1)
-if(DOTTALK_WITH_INDEX AND TARGET xindex)
+# Link xindex whenever the TARGET exists, not when the lmdb backend is on.
+#
+# This guard used to read `if(DOTTALK_WITH_INDEX AND TARGET xindex)`, which is
+# the same conflation the index-mode block above corrects: in LEGACY,
+# DOTTALK_WITH_INDEX is OFF (no lmdb) while xindex very much exists.
+#
+# MEASURED 2026-08-17, and the first explanation was wrong. The LEGACY and NONE
+# artifacts came out byte-identical at 665,336 B, which looked like "compiled 22
+# TUs and linked none of them". It is not. `nm -D` on both shows the same
+# symbols, and the real reason is simpler: **module.cpp does not reference the
+# index at all** -- no xindex, index_manager, set_order, seek, cnx or cdx. A
+# static library only contributes objects that resolve undefined symbols, so
+# linking it correctly changes nothing.
+#
+# So the mode currently makes NO difference to this artifact, and saying
+# otherwise would be a false claim in a build file. It matters the moment the
+# binding gains index operations -- `seek` / `set_order` are listed as unproven
+# milestones in PYDOTTALK_STARTER_README.md -- and the guard is correct in
+# advance rather than needing to be rediscovered then.
+if(TARGET xindex)
   target_link_libraries(pydottalk PRIVATE xindex)
 endif()
 
