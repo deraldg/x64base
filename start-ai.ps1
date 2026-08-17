@@ -29,10 +29,14 @@
 #   run a click handler, and two more rounds after that. The warning here used
 #   to say only that SEARCH was inert -- true, and far too narrow.
 #
-#   So: for SITE work use :3002 directly, or relaunch with -Built (a static
-#   build needs no HMR socket, and :3000 then works fully). Use :3000 for /AI/
-#   and the console, which are served by the gateway itself and do hydrate.
-#   Real fix, unwritten: teach the gateway to proxy WebSocket upgrades.
+#   FIXED 2026-08-16 (AIF-118, 57de30b35): tools/reports/ws_proxy.py now carries
+#   the upgrade, so :3000 should hydrate under `next dev`. The everything-above
+#   is kept because it is the diagnosis, and because the fix is proven against a
+#   synthetic RFC 6455 upstream, NOT yet against `next dev` itself. The check
+#   that settles it is one line in the console: `[HMR] connected` on :3000.
+#   Until someone reports seeing that, treat :3002 as the trustworthy surface
+#   for site work, or use -Built (a static build needs no HMR socket at all).
+#   Use :3000 for /AI/ and the console, served by the gateway itself.
 #         -Built    : `npm run build` + `serve out` -- production-like; SEARCH WORKS
 #   3. start the reports gateway on :3000              (its own window, preview by default)
 #         -> /AI/         live reports, rebuilt per request (needs pyyaml -> venv)

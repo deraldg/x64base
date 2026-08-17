@@ -64,8 +64,9 @@ review of the whole estate -- AIF-100 owns that.
 ## What landed under this lane on 2026-08-16
 
 Commits on `development`: `199ad511b`, `dec2f3802`, `0dc63f4b9`, `b105ae99a`,
-`1e3a94a1d`, `df1a5e361`, `aac6b8bdf`, `ced4f4f73`. PR #13 merged to `main`.
-Site releases 126-131 published.
+`1e3a94a1d`, `df1a5e361`, `aac6b8bdf`, `ced4f4f73`, then the lane's own slice
+`51af918db`, `11f94c4c8`, `29cfdbbd3`, `57de30b35`, `17e70061b`, `f809701ff`.
+PR #13 merged to `main`. Site releases 126-131 published.
 
 - `tools/common/local_paths.json` -- one authority replacing nine private regexes, with
   a 22-case test table and POSIX host coverage.
@@ -89,7 +90,12 @@ Site releases 126-131 published.
   `HELP_TOPIC.TITLE` still echoes `TOPIC` for the 29 ED rows.
 - Four local-path detectors deliberately not migrated -- two are rewriters, one mixes
   path detection with SECRETS, one needs a restructure. Decisions, not substitutions.
-- `edrefcheck_v1.py` is not wired into `prepush_gate.py`.
+- ~~`edrefcheck_v1.py` is not wired into `prepush_gate.py`.~~ **CLOSED
+  `29cfdbbd3`** -- third entry in `NORMALIZATION_GUARDS`; `include/` was already
+  a trigger prefix, so it fires on an `edref.hpp` change without widening the
+  trigger set. NOTE: the commit that wired it did NOT exercise it (`tools/staging/`
+  is not a trigger prefix), so it was verified separately through the gate's own
+  `run_normalization_guards()`, not merely by being present in the tuple.
 - A `Prose.tsx` half-override guard: two light-mode readability regressions in five days,
   both from a background override without a matching foreground.
 - The remaining `*ref` catalogs (`pshell_ref`, `sql_ref`) were measured healthy (90 and

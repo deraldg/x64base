@@ -93,7 +93,15 @@ had a fiber, against 445/493 direct on `:3002`. The HTML is byte-identical throu
 the proxy and every chunk loads; the only console difference is that
 `[HMR] connected` appears on `:3002` and never on `:3000`. Nothing errored. The
 theme button had never worked there, and nothing said so. `-Built` mode is the
-workaround; real WebSocket proxying is the fix, unwritten.
+workaround. **FIXED LATER THE SAME DAY, `57de30b35`:** `tools/reports/ws_proxy.py`
+detects the upgrade before `_dispatch`, opens a raw socket upstream, replays the
+request line and headers byte-for-byte, forwards the `101`, then relays both
+directions with `selectors`. Six tests against a real RFC 6455 echo upstream, and
+four mutations each proven to fail (never detect the upgrade; compare `Connection`
+whole rather than tokenised; drop `Sec-WebSocket-Key`; relay one direction).
+**NOT yet verified against `next dev` itself** -- the proof is a synthetic
+upstream, so the remaining check is `[HMR] connected` appearing on `:3000`, which
+needs a browser.
 
 **5. Four defects on the published site**, all invisible in dark mode and all
 measured rather than eyeballed: the nav needed 1,324px against a 1,152px container
