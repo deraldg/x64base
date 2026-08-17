@@ -1,8 +1,40 @@
 import fs from "node:fs";
 import path from "node:path";
+import { LOCAL_ONLY_DIRS } from "./strip-local-only-output.mjs";
 
 const root = process.cwd();
 const scanRoots = ["app", "components", "config", "content", "public"];
+
+/**
+ * Routes that never reach a visitor are out of scope for a PUBLIC content guard.
+ *
+ * This guard scans SOURCE and explicitly ignores out/, which is correct for
+ * everything that publishes. But it had no concept of a local-only route, so on
+ * 2026-08-16 it blocked a publish over app/retro/page.tsx -- a page that
+ * strip-local-only-output.mjs deletes from every build output and that the
+ * publish script aborts over if it ever survives. The guard was policing a file
+ * that cannot reach a reader.
+ *
+ * That matters beyond the inconvenience. A guard that fires on content it does
+ * not govern creates pressure to weaken the RULE (here: the retirement of
+ * derald.com as a support host, c244300da, 2026-07-10) when the right fix is to
+ * narrow the SCOPE. Rules get relaxed under deadline; scope corrections do not
+ * cost anything.
+ *
+ * Derived from LOCAL_ONLY_DIRS so this cannot drift from the stripper -- the
+ * third list in this repo to be pointed at that one authority after two of them
+ * had already fallen behind.
+ */
+const localOnlyRoutePrefixes = LOCAL_ONLY_DIRS.flatMap((name) => [
+  path.join(root, "app", name),
+  path.join(root, "public", name),
+]);
+
+function isLocalOnly(file) {
+  return localOnlyRoutePrefixes.some(
+    (p) => file === p || file.startsWith(p + path.sep)
+  );
+}
 const extensions = new Set([
   ".css",
   ".csv",
@@ -58,6 +90,7 @@ function walk(dir) {
       continue;
     }
     if (!entry.isFile() || !extensions.has(path.extname(entry.name))) continue;
+    if (isLocalOnly(full)) continue; // never reaches a visitor; out of scope
     scanFile(full);
   }
 }
