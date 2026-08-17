@@ -6,9 +6,9 @@ Owner: member.derald
 Scope: the `pydottalk` Python extension module as a product in its own right
 Parent doctrine: `DOTTALKPP_SDLC_CHARTER_v0.md`, `SCOPE_CALIBRATED_LIFECYCLE_DOCTRINE_V1.md`
 Trust boundary: `docs/contracts/PYTHON_BINDING_TRUST_CONTRACT_V1.md`
-AIF lane: NOT YET CLAIMED. Claim with
-`python tools/coordination/session_coordinator.py claim-aif`, then record the
-number here and in `coordination/aif/`.
+AIF lane: **AIF-119**, claimed 2026-08-17, run `COWORK-20260817-001`, lane
+`pydottalk-co-sourced-product`. Charter:
+`docs/maintenance/AIF_119_PYDOTTALK_CO_SOURCED_PRODUCT_LANE_V1.md`.
 
 ## Purpose
 
