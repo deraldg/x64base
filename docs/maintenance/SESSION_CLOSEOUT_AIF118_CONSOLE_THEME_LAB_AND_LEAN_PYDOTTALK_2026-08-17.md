@@ -39,7 +39,7 @@ Charter: `docs/maintenance/AIF_118_SILENT_PASS_GUARD_LANE_V1.md`.
 Repositories: `D:\code\ccode` (development) and `D:\dev\x64base-site`
 (`codex/lean-sites-publish`).
 
-## READ THIS FIRST -- two slices did NOT land
+## READ THIS FIRST -- two slices had NOT landed, and now have (RESOLVED same day)
 
 Recorded at the top because the rest of this document is less important than
 these, and because a closeout that buries its own gaps is the defect this lane
@@ -58,7 +58,33 @@ is named for.
    only on one disk. **A note that is not committed is a note that was not
    sent**, which is precisely the failure the quip tool warned about on 08-16.
 
-Commands for both were given and not run. They are not lost, they are unlanded.
+**RESOLVED 2026-08-17, later the same session.** Commands had been given twice and
+not run; the third time they were, in priority order:
+
+| commit | what |
+| --- | --- |
+| `6a931ab3d` | console: write-token boundary, loopback enforcement, `WRITE_LOCK`, crud `_deleted`/`_recno`; dead `PAGE` template removed |
+| `7f532088f` | reports: fragment-sourced registries, `compose_registry()` with duplicate-id refusal |
+| `f30a620a7` | gateway: fragment render path, `/health`, per-session write token |
+| `a92b17fa1` | docs: schema-inventory website feed lane |
+| `60224d96e` | the board note to Codex |
+
+**The item that could not wait was a security boundary, not the data loss.**
+Measured before landing: `is_loopback_host`, `require_local_json` and
+`WRITE_LOCK` had ZERO occurrences in HEAD and 4 / 2 / 2 in the working tree.
+HEAD's `do_POST` read the body and called `_do_op` with no content-type check
+and no token, and `_do_op` defaults `write_enabled=True` for the standalone
+server. `--host` defaults to loopback, which saved it, but nothing ENFORCED
+that. The fix existed, was reviewed and was green; it simply was not in git.
+
+Caveat kept honest: the ABSENCE of the guards is measured; exploitability was
+never demonstrated against a running instance. "The guard is missing" is
+certain; "you were breached" was never claimed.
+
+**Why this section stays rather than being deleted.** It was true when written,
+and the reason it stopped being true -- being asked "is there anything pending
+that can't wait?" -- is the reusable part. Unlanded work does not announce
+itself; someone has to ask.
 
 ## What landed
 
