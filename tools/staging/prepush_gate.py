@@ -563,6 +563,23 @@ def main() -> int:
                   "demoting means moving, not restating.", file=sys.stderr)
             exit_code = 2
 
+        # 5b. OPEN ITEMS -- ADVISORY, and deliberately never anything else.
+        # coordination/OPEN_ITEMS.md is the rung below a lane: work too small
+        # for an AIF claim and too real to lose in chat. Every row is deferred
+        # BY CHOICE, so blocking on one would teach the operator to delete the
+        # row instead of doing the work -- losing the item AND reporting clean,
+        # which is worse than never having written it down.
+        #
+        # It speaks only when a row's own NEXT LOOK date has passed. A count
+        # that prints every commit stops being read by the third day; a date
+        # makes the reminder periodic, and the row is silent until the day you
+        # yourself asked to hear about it.
+        rc = _run_portal_check("tools/coordination/check_open_items.py", [])
+        if rc == 3:
+            print("\n  ADVISORY -- open item(s) past their NEXT LOOK date "
+                  "(coordination/OPEN_ITEMS.md). NOT blocking. Do it, or move "
+                  "the date -- moving it is legitimate, leaving it stale is not.")
+
         # 6. NEW INTAKE ROWS CITE A CLAIMED AIF -- ADVISORY for one cycle, then
         # hard (AIF-092). The anti-collision loop had an allocator with no teeth
         # and a detector that only fires AFTER two lanes have collided: nothing
