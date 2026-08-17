@@ -58,5 +58,37 @@ notes: 'MEASURED 2026-08-17. pydottalk was a switch in the main build, then move
 
   RESULT: xbase + xindex + memo + 4 TUs -> pydottalk.cp312-win_amd64.pyd, ctest 2/2
   green, and dottalkpp.exe verified green BEFORE the lean path because the DOTTALK_ROOT
-  substitution touched libraries the CLI depends on. NOT verified: any Linux/WSL
-  configure; the if(MSVC) block is MSVC-only evidence.'
+  substitution touched libraries the CLI depends on.
+
+  LINUX RUN, 2026-08-17, and it found a FIFTH global Windows can never surface.
+  Configured and built under GCC 11.4 in a mounted Linux container (cmake and pybind11
+  from pip per the sandbox handoff; index mode LEGACY because lmdb will not link on
+  this glibc). Every translation unit compiled -- xbase, memo, the module, all three
+  extra TUs. Then the LINK failed:
+
+    relocation R_X86_64_TPOFF32 against
+    `xbase::trigger_hooks::(anonymous)::g_suppress_depth`
+    can not be used when making a shared object; recompile with -fPIC
+
+  CMAKE_POSITION_INDEPENDENT_CODE is set NOWHERE in this repository. A DLL does not
+  carry the constraint, so the ROOT build with -DBUILD_PYDOTTALK=ON would hit exactly
+  this the first time it ran on Linux. Fixed in the lean file; root still latent
+  (OI-006).
+
+  NOTE WHERE IT HID, because it changes the method. Not configure, not compile, but
+  LINK -- naming a thread-local in an anonymous namespace three libraries deep. The
+  first four globals were found by ENUMERATING what the parent sets before
+  add_subdirectory(src). This fifth one is not in that list at all: it is a property of
+  the OUTPUT KIND (shared module vs executable), not of the parent. No amount of
+  reading the root CMakeLists would have produced it. Enumeration was necessary and
+  INSUFFICIENT; only building on the other platform found it.
+
+  AFTER THE FIX: builds, links, and IMPORTS -- pydottalk 0.4.0, 53 public members,
+  Python 3.10. That import also retired a separate over-correction: the Windows wrapper
+  had been made to HARD-FAIL on any interpreter but 3.12. The module is not pinned to a
+  version; the real danger was a SILENT interpreter swap, which a loud warning covers
+  without refusing legitimate builds.
+
+  STILL NOT VERIFIED: the LMDB index path on any Linux host (__isoc23_strtol, the
+  glibc mismatch documented in the sandbox handoff), and no run on the maintainer WSL
+  host, which has a newer glibc and would settle it.'

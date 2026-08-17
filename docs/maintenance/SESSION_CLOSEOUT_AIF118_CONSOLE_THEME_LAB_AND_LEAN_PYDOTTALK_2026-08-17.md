@@ -168,8 +168,17 @@ anyone holding the old URL.
 
 **NOT verified:**
 
-- **No WSL or Linux build of the lean CMake.** It is MSVC-only evidence; the
-  `if(MSVC)` block is untested elsewhere.
+- ~~No WSL or Linux build of the lean CMake.~~ **DONE the same day.** It found a
+  fifth parent-provided global -- `CMAKE_POSITION_INDEPENDENT_CODE`, set nowhere in
+  this repository, failing at LINK on ELF for any shared module. Builds, links and
+  imports after the fix (`pydottalk 0.4.0`, Python 3.10). It also proved the house
+  index compiles with ZERO lmdb (22 xindex TUs: `cnx_backend`, `cdx_native_backend`,
+  `index_manager`), correcting a conflation in the lean file that had collapsed
+  LEGACY into NONE.
+- **Still MSVC-only: the LMDB index path.** lmdb will not link on this container's
+  glibc (`__isoc23_strtol`), so `DOTTALK_INDEX_MODE=LMDB` is untested on Linux.
+- **It was a mounted Linux container, not the maintainer's WSL host.** Same class of
+  evidence, not identical.
 - The lean build has not been run from a clean clone -- only from this tree,
   which already had vcpkg packages present.
 - `pydottalk_smoke_x64.py` and the other sandbox probes were NOT run; only the
