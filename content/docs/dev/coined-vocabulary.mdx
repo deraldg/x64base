@@ -19,6 +19,15 @@ named in the developer manual's reading order, and summarized here. This page
 deliberately does not duplicate the entries -- a copied glossary is a stale
 glossary (the no-perishable-literals rule applied to itself).
 
+If you are reading this from outside the source tree, that path does not resolve
+for you. The **[Coined Vocabulary Term Index](/docs/dev/coined-vocabulary-index)**
+carries every term, its one-line gloss, and its home, so the vocabulary is
+reachable here without a copy existing anywhere. It is *generated* from the
+maintained source by `tools/fullstack_docs/glossary_sync.py`, and a drift check
+re-derives it and fails if the two disagree -- so it cannot go stale in the way a
+hand-kept copy would. Definitions still live in the homes; the index points, like
+the glossary it projects.
+
 ## What kind of terms it holds
 
 - **Ontology and memory** -- the two atoms (chat, project), synapses, recall
