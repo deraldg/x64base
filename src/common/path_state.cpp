@@ -102,6 +102,13 @@ void build_all_paths(State& s)
     s.docs_root = s.root / "docs";
     s.system_diagrams_root = s.docs_root / "generated" / "diagrams";
 
+    // ROOT-relative, not data-relative, and deliberately so. TOOLS holds helper
+    // programs the RUNTIME invokes (not scripts a user runs -- that is SCRIPTS,
+    // under data). A command that shells out to a helper is broken the moment
+    // the helper is not beside the product, so this must sit where the product
+    // is staged rather than in the development tree.
+    s.tools_root = s.root / "tools";
+
     s.dbf_root = s.data_root / "dbf";
     s.xdbf_root = s.data_root / "xdbf";
     s.dbf_x32_root = s.dbf_root / "x32";
@@ -189,6 +196,7 @@ fs::path get_slot(Slot slot)
     case Slot::SCHEMAS: return s.schemas_root;
     case Slot::PROJECTS: return s.projects_root;
     case Slot::SCRIPTS: return s.scripts_root;
+    case Slot::TOOLS: return s.tools_root;
     case Slot::TESTS: return s.tests_root;
     case Slot::HELP: return s.help_root;
     case Slot::LOGS: return s.logs_root;
@@ -253,6 +261,7 @@ void set_slot(Slot slot, const fs::path& value)
     case Slot::SCHEMAS: s.schemas_root = abs; break;
     case Slot::PROJECTS: s.projects_root = abs; break;
     case Slot::SCRIPTS: s.scripts_root = abs; break;
+    case Slot::TOOLS: s.tools_root = abs; break;
     case Slot::TESTS: s.tests_root = abs; break;
     case Slot::HELP: s.help_root = abs; break;
     case Slot::LOGS: s.logs_root = abs; break;
@@ -335,6 +344,7 @@ std::optional<Slot> slot_from_string(const std::string& name)
     if (key == "SCHEMAS") return Slot::SCHEMAS;
     if (key == "PROJECTS") return Slot::PROJECTS;
     if (key == "SCRIPTS") return Slot::SCRIPTS;
+    if (key == "TOOL" || key == "TOOLS") return Slot::TOOLS;
     if (key == "TESTS") return Slot::TESTS;
     if (key == "HELP") return Slot::HELP;
     if (key == "LOGS") return Slot::LOGS;
@@ -404,6 +414,7 @@ std::string slot_name(Slot slot)
     case Slot::SCHEMAS: return "SCHEMAS";
     case Slot::PROJECTS: return "PROJECTS";
     case Slot::SCRIPTS: return "SCRIPTS";
+    case Slot::TOOLS: return "TOOLS";
     case Slot::TESTS: return "TESTS";
     case Slot::HELP: return "HELP";
     case Slot::LOGS: return "LOGS";
@@ -557,6 +568,7 @@ std::string describe()
         << "SCHEMAS    = " << s.schemas_root.string() << "\n"
         << "PROJECTS   = " << s.projects_root.string() << "\n"
         << "SCRIPTS    = " << s.scripts_root.string() << "\n"
+        << "TOOLS      = " << s.tools_root.string() << "\n"
         << "TESTS      = " << s.tests_root.string() << "\n"
         << "HELP       = " << s.help_root.string() << "\n"
         << "LOGS       = " << s.logs_root.string() << "\n"

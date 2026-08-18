@@ -266,6 +266,7 @@ void cmd_EXPORT(DbArea&, std::istringstream&);
 void cmd_IMPORT(DbArea&, std::istringstream&);
 
 void cmd_SFTP(DbArea&, std::istringstream&);
+void cmd_SMTP(DbArea&, std::istringstream&);
 
 // DEVELOPMENT
 void cmd_SHOWINI(DbArea&, std::istringstream&);

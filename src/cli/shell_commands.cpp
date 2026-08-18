@@ -399,6 +399,7 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     registry().add("WEB",       [](DbArea& A, std::istringstream& S) { cmd_WEB(A,S);  });
     registry().add("IMAGE",     [](DbArea& A, std::istringstream& S) { cmd_IMAGE_DISPLAY(A,S); });
     registry().add("SFTP",      [](DbArea& A, std::istringstream& S) { cmd_SFTP(A,S); });
+    registry().add("SMTP",      [](DbArea& A, std::istringstream& S) { cmd_SMTP(A,S); });
 #endif
 
     // Calculator, expression, and education-expression commands. CALC should

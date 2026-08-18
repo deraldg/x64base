@@ -40,6 +40,7 @@ enum class Slot {
     SCHEMAS,
     PROJECTS,
     SCRIPTS,
+    TOOLS,          // helper programs the runtime invokes; root-relative, ships with the product
     TESTS,
     HELP,
     LOGS,
@@ -100,6 +101,7 @@ struct State {
     fs::path schemas_root;
     fs::path projects_root;
     fs::path scripts_root;
+    fs::path tools_root;
     fs::path tests_root;
     fs::path help_root;
     fs::path logs_root;

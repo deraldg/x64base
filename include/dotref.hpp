@@ -1127,6 +1127,9 @@ Notes:
         {"SFTP", "SFTP [USAGE|<args...>]",
                  "File-transfer helper surface for SFTP-oriented workflows where enabled by local policy.", true},
 
+        {"SMTP", "SMTP [USAGE|STATUS|PROBE|SEND FROM <file> [TO <addr>] SUBJECT <text>]",
+                 "Mail helper surface: probe the configured server or send a message body, where enabled by local policy. Credentials come from the environment and are never read or printed by the command.", true},
+
         {"SHOWINI", "SHOWINI [USAGE|SYSTEM|USER|ALL]",
                  "Display DotTalk++ initialization/configuration files and resolved startup settings.", true},
 
