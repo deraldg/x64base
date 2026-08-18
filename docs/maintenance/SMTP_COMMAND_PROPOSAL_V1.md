@@ -22,8 +22,8 @@ ai_report_audit:
     scope: >
       Proposes an SMTP command that wraps the existing tools/notify/smtp_probe.py
       behind the established external-process and identity gates. Resolves the
-      capability question against the permission catalog. Proposal only; no code
-      written, nothing built.
+      capability question against the permission catalog. IMPLEMENTED
+      2026-08-18; see the status section at the end of this document.
   report:
     path: docs/maintenance/SMTP_COMMAND_PROPOSAL_V1.md
     kind: proposal
@@ -184,3 +184,43 @@ Arm 6 matters most. `smtp_probe.py` already distinguishes auth failure from
 every other failure, and a wrapper that collapses both into "SMTP failed" would
 discard a diagnosis the tool already made -- the shape recorded repeatedly in
 this repository's proofs.
+
+## STATUS 2026-08-18: implemented, one arm short of proven
+
+Landed in `840b27c3a`, `358c14a8a`, `157aad8e6` and the launcher commit that
+follows them. Build green; `SMTP` and `SMTP STATUS` verified at runtime.
+
+**The `--to` gap is closed.** `smtp_probe.py` grew `--to`, defaulting to
+`SMTP_USER` so every prior invocation is unchanged. Proven against a fake
+transport six ways: default resolves to self, `--to` overrides, flag order is
+irrelevant, a comma list passes through, `From` stays the authenticated user,
+body still comes from stdin. Both value-taking flags now REFUSE a value starting
+with `--`, because a caller that builds the command line programmatically would
+otherwise turn a dropped argument into a subject of "--to" and mail it to the
+default recipient with no diagnostic.
+
+**The script-location answer changed, and this proposal's reasoning about it was
+superseded.** The text above says there is no TOOLS path slot -- true when
+written, false now. On the maintainer's instruction ("home for tools and
+utilities and prefs") a **`Slot::TOOLS`** was added, root-relative, resolving to
+`<appRoot>/tools`. SCRIPTS (under data) is scripts a USER runs; TOOLS is helpers
+the RUNTIME invokes. `DOTTALK_SMTP_PROBE` survives as an explicit override.
+
+**Two things that measurement caught and design would not have.**
+
+1. `cmd_setpath.cpp::init_defaults` is a SECOND defaulting path that re-roots
+   every slot when the data root moves. TOOLS was missing from it, so a SETPATH
+   would have moved every slot except TOOLS, leaving mail invoking a helper from
+   the previous product with no diagnostic. Found only because the maintainer
+   said "trace cmd_setpath.cpp".
+2. The helper is COPIED into the runtime tree, not moved. `dottalkpp/` is not in
+   `stage_dottalkpp_repo.ps1`'s `IncludeRoots`, so a `git mv` would have fixed
+   the local run and deleted the helper from the published product. Staging is
+   done in `launch-common.ps1` beside the exe and DLL staging, as a list so the
+   next runtime helper is one line.
+
+**Verification status against the plan above:** arm 1 PASS (usage printed, no
+attempt). Arms 2 through 6 NOT RUN -- they need the gates set and real
+credentials, which is maintainer-operated. Arm 6 remains the one that matters:
+until a wrong password is shown to surface as exit 3 rather than a generic
+failure, the claim that the probe's diagnosis reaches the caller is untested.
