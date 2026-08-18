@@ -1,22 +1,32 @@
 ---
-title: "Coined Vocabulary -- Term Index"
-description: "Generated index of the house coined vocabulary: every term, its one-line gloss, and where its definition lives. Derived from the maintained glossary in the source tree."
+title: "Vocabulary Index"
+description: "Generated index of the project vocabulary: coined house terms with their homes, product terminology with per-audience notes, aliases, and legacy wording. Derived from the maintained sources in the source tree."
 ---
 
 Derived index: GLOSSARY-INDEX-001
 
-**GENERATED. Do not edit by hand.** This page is a derived projection of
-`labtalk/ai_portal/AI_GLOSSARY_V1.md` in the source tree. Hand edits are overwritten and fail the
-drift gate. Regenerate with `tools/fullstack_docs/glossary_sync.py emit`.
+**GENERATED. Do not edit by hand.** This page is a derived projection of the
+maintained vocabulary sources in the source tree. Hand edits are overwritten
+and fail the drift gate. Regenerate with
+`tools/fullstack_docs/glossary_sync.py emit`.
 
 It exists so the vocabulary is *reachable* from the published site. The
 companion page [Coined Vocabulary (Glossary)](/docs/dev/coined-vocabulary)
 explains why the glossary is doctrine; this page is the index itself.
 
-Definitions are NOT reproduced here. Each term names a home, and the home
-holds the definition -- the glossary is a pointer index, and so is this.
+**Two instruments, projected together.** The coined vocabulary
+(`labtalk/ai_portal/AI_GLOSSARY_V1.md`) records terms the house MINTED -- doctrine, named by
+this project for its own practice. The product terminology, aliases and legacy
+tables (`docs/glossary/`) are a reader's dictionary -- what a word MEANS, what
+to say instead, and what has been retired. They are maintained separately and
+do not overlap; both are indexed here so one page answers "what does this
+word mean here?"
 
-Source extraction snapshot: 69 terms, 29 with a home, from `labtalk/ai_portal/AI_GLOSSARY_V1.md` at commit `0cfab2cea`.
+Definitions are NOT reproduced from the coined glossary. Each coined term names
+a home, and the home holds the definition -- it is a pointer index, and so is
+this.
+
+Source extraction snapshot: 69 coined terms (29 with a home), 5 product terms, 5 aliases, 2 legacy terms; from `labtalk/ai_portal/AI_GLOSSARY_V1.md` and `docs/glossary/` at commit `0cfab2cea`.
 
 ## A note on "atom" (two senses -- do not conflate)
 
@@ -123,4 +133,39 @@ Source extraction snapshot: 69 terms, 29 with a home, from `labtalk/ai_portal/AI
 | **movant** | an **interested filer**: seeks a ruling on work it authored, paradigmatically an outside AI submitting a change package | _(in this glossary)_ |
 | **party / non-party** | a party has a stake in the outcome; a non-party does not | `docs/maintenance/PARTNER_AMICUS_STANDING_LANE_V1.md` |
 | **project frontal memory** | the per-project always-loaded entry context: its pointer plus the recall working set its trigger returns | _(in this glossary)_ |
+
+## Product terminology (reader dictionary)
+
+A different instrument from the coined vocabulary above: what a word MEANS
+for a reader, with notes per audience. Maintained as
+`docs/glossary/glossary_master_v0.csv`.
+
+| Term | Definition | Student | User | Developer |
+| --- | --- | --- | --- | --- |
+| **DotTalk++** | Interactive command-driven xBase/FoxPro-inspired runtime and documentation environment. | Program used to learn database concepts. | Command environment used to work with structured data. | Runtime application and command surface layered over engine, HELP, metadata, and SelfDoc. |
+| **SelfDoc** | Provenance and verification authority for documentation and metadata evidence. | The system that helps DotTalk++ check itself. | Verification system behind trustworthy manuals and HELP. | Evidence/provenance subsystem that harvests, stages, validates, reports, and protects documentation truth. |
+| **MEMO_LINES** | Import-safe long-text side table for SelfDoc metadata/diagram lanes. | Usually not needed. | Not normally user-facing. | v1 long-text staging table for metadata/diagram work. |
+| **Contract** | A reviewed, canonical specification of a schema, interface, or behavior together with its declared proof/truth state; the authority a component is measured against. | A written and reviewed promise for how something must be shaped or behave. | The reviewed definition a feature is checked against. | Reviewed spec (e.g. a .dtschema field contract, or an interface/behavior contract) carrying identity invariants and an explicit proof state; the registry and tests are DERIVED from it, so drift fails. Distinct from the physical DBF/code that implements it. |
+| **Identity system** | The single security and user system: SYSUSER (authentication credential), SYSMEMBER (the principal/actor), and the RBAC catalogs, enforced by the acting-member and agent_permitted() gate. | The one place the program checks who you are and what you may do. | The single sign-in and permission system every feature uses. | Canonical principal and RBAC system: SYSUSER credential plus SYSMEMBER actor plus SYSROLE/PERM/ROLEPERM/MEMROLE/OVERRIDE/ASSIGN/GRANT, gated by principal_key()/act_as/agent_permitted(). Every system references members by id or MKEY; there is no second user or credential store. |
+
+## Aliases -- say this, not that
+
+Maintained as `docs/glossary/alias_map_v0.csv`.
+
+| If you say | Use | Status | Note |
+| --- | --- | --- | --- |
+| area | **Work Area** | ALIAS | Common shorthand. |
+| row | **Record** | ALIAS | Use Record in xBase/DotTalk++ context. |
+| column | **Field** | ALIAS | Use Field in DotTalk++ table discussions. |
+| logical row | **Tuple** | ALIAS | Good teaching phrase; canonical term is Tuple. |
+| SCHEMAS | **Workspace** | LEGACY/WATCH | Compatibility/historical term pending RQ-004. |
+
+## Legacy and watch terms
+
+Retired or historical wording. Maintained as `docs/glossary/legacy_terms_v0.csv`.
+
+| Legacy term | Prefer | Status | Note |
+| --- | --- | --- | --- |
+| SCHEMAS | **WORKSPACE** | LEGACY/WATCH | Prefer WORKSPACE pending RQ-004. |
+| DTX | **Native Memo / memo64 design quarry** | HISTORICAL/WATCH | Do not publish as current memo format unless verified. |
 
