@@ -33,14 +33,9 @@ ai_report_audit:
 
 **Status:** charter, review-needed. Owner: member.derald.
 Steward: member.ai.claude.cowork. Date: 2026-08-17.
-**AIF: NOT YET CLAIMED.** Claim with
-
-```text
-python tools/coordination/session_coordinator.py claim-aif --member member.ai.claude.cowork --run COWORK-20260817-001 --lane application-ui-dsl
-```
-
-(One line. PowerShell continuation is a backtick, not `^`; the caret form fails
-with "not recognized as a name of a cmdlet" and leaves the claim unmade.)
+**AIF-120**, claimed 2026-08-18T03:15:29Z, run `COWORK-20260817-001`,
+member `member.ai.claude.cowork`, lane `application-ui-dsl`.
+Claim: `coordination/aif/AIF-120.claim`.
 
 then record the number here, add the intake row, and delete this block.
 Published seed: `x64base.com/docs/dev/application-ui-dsl-lane/`
