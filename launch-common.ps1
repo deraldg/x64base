@@ -185,6 +185,52 @@ function Update-DotTalkRuntimeExe {
     if ($staged -eq 0) {
         Write-Warning "No runtime DLLs staged into $runtimeDir. If the exe fails to load (lmdb.dll / sqlite3.dll / tvision.dll not found), build with a vcpkg preset first so vcpkg_installed is populated."
     }
+
+    # ---- Runtime helper scripts (the TOOLS path slot) -----------------------
+    # Some commands shell out to a helper rather than implementing a protocol
+    # themselves -- SMTP invokes tools/notify/smtp_probe.py, as SFTP invokes the
+    # system sftp client. The engine finds these through the TOOLS slot, which
+    # resolves to <appRoot>/tools, NOT to the repository tools/ directory.
+    #
+    # The source of truth stays in the repository tools/ tree, because that is
+    # what ships to the public repo (stage_dottalkpp_repo.ps1 IncludeRoots lists
+    # "tools"; it does NOT list "dottalkpp"). Moving the helper into the runtime
+    # tree would fix a local run and simultaneously delete it from the published
+    # product. So it is COPIED here, exactly as the exe and DLLs are.
+    #
+    # Repo-relative paths; each is staged to the same relative location under
+    # <appRoot>. Add a line to extend.
+    $runtimeHelpers = @(
+        "tools\notify\smtp_probe.py"
+    )
+
+    foreach ($rel in $runtimeHelpers) {
+        $src = Join-Path $Layout.RepoRoot $rel
+        $dst = Join-Path $Layout.AppRoot  $rel
+
+        if (-not (Test-Path -LiteralPath $src)) {
+            Write-Warning "Runtime helper not found in the repository: $src (the command that uses it will report it missing)."
+            continue
+        }
+
+        $dstDir = Split-Path -Parent $dst
+        if (-not (Test-Path -LiteralPath $dstDir)) {
+            New-Item -ItemType Directory -Path $dstDir -Force | Out-Null
+        }
+
+        try {
+            Copy-Item -LiteralPath $src -Destination $dst -Force
+        }
+        catch {
+            # Same posture as the DLL stage: only complain if the destination is
+            # ALSO absent. A locked-but-present helper is usable; a missing one
+            # is not, and the command that needs it must not be the first to
+            # discover that.
+            if (-not (Test-Path -LiteralPath $dst)) {
+                Write-Warning "Could not stage runtime helper $rel : $($_.Exception.Message)"
+            }
+        }
+    }
 }
 
 function Invoke-DotTalkCliRuntime {
