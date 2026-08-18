@@ -1,0 +1,126 @@
+---
+title: "Coined Vocabulary -- Term Index"
+description: "Generated index of the house coined vocabulary: every term, its one-line gloss, and where its definition lives. Derived from the maintained glossary in the source tree."
+---
+
+Derived index: GLOSSARY-INDEX-001
+
+**GENERATED. Do not edit by hand.** This page is a derived projection of
+`labtalk/ai_portal/AI_GLOSSARY_V1.md` in the source tree. Hand edits are overwritten and fail the
+drift gate. Regenerate with `tools/fullstack_docs/glossary_sync.py emit`.
+
+It exists so the vocabulary is *reachable* from the published site. The
+companion page [Coined Vocabulary (Glossary)](/docs/dev/coined-vocabulary)
+explains why the glossary is doctrine; this page is the index itself.
+
+Definitions are NOT reproduced here. Each term names a home, and the home
+holds the definition -- the glossary is a pointer index, and so is this.
+
+Source extraction snapshot: 69 terms, 29 with a home, from `labtalk/ai_portal/AI_GLOSSARY_V1.md` at commit `0cfab2cea`.
+
+## A note on "atom" (two senses -- do not conflate)
+
+| Term | Gloss | Home |
+| --- | --- | --- |
+| **Ontological atom** | one of the two irreducible entities, *chat* and *project*. In this sense a quip is a relation, not an atom | _(in this glossary)_ |
+| **Registered primitive ("atom" of the toolset)** | a first-class, implemented, registered building block (has an AIF, code, and a test) | _(in this glossary)_ |
+## The two atoms (ontology)
+
+| Term | Gloss | Home |
+| --- | --- | --- |
+| **chat** | the acting atom: a bounded-context session that does work and must reach memory | _(in this glossary)_ |
+| **project** | the durable atom: the owner-controlled store that holds memory across sessions | _(in this glossary)_ |
+## Registered primitives (implemented -- AIF + code + test)
+
+| Term | Gloss | Home |
+| --- | --- | --- |
+| **quip** | an ephemeral heads-up between concurrent sessions; the lightest coordination rung | _(in this glossary)_ |
+| **claim-aif** | the atomic lane-number allocator (`O_EXCL`); the allocator, not grep | _(in this glossary)_ |
+## Recall / memory mechanism
+
+| Term | Gloss | Home |
+| --- | --- | --- |
+| **synapse** | a typed, directed, strength-weighted link between two memories; the unit of the recall graph (Frontal_Mem thesis, Appendix A) | `SYNAPSE_CONCEPT_V1.md` |
+| **recall graph** | the portal's synapse network: typed nodes + edges + triggers | `labtalk/registries/portal_recall_graph.yaml`, resolver `labtalk/ai_portal/recall.py` |
+| **trigger** | an intent ("about to cut a release") that fires the synapses hung off it | _(in this glossary)_ |
+| **frontal memory** | the always-injected layer: Tier-0 generated state, the Tier-1 seed, and the vendor shims | _(in this glossary)_ |
+| **seed budget / gate** | 8192 B hard ceiling on the Tier-1 seed; adding requires demoting | _(in this glossary)_ |
+## Durable principles (Frontal_Mem doctrine)
+
+| Term | Gloss | Home |
+| --- | --- | --- |
+| **human-side memory locus** | the model is stateless; durability lives in the store, not the model | _(in this glossary)_ |
+| **action now or demote** | unreasoned deferral is the agent scoring the work low; it then decays | _(in this glossary)_ |
+| **normalize on collect** | atomic, deduped, linked by default; costed rollups (grandfather pattern) only when a full rebuild is too dear | _(in this glossary)_ |
+| **reachable, not just filed** | filing is storage; a synapse is retrieval at the right moment | _(in this glossary)_ |
+| **provenance is mandatory** | an unattributed record poisons a trust-based store (made concrete by AIF-075) | _(in this glossary)_ |
+| **recursive co-development** | consumption of the system is how the system is developed | `x64base-site` `content/docs/dev/recursive-co-development.mdx`.) |
+| **dogfood** | the substrate is ours, not just the access path; the test is "is the thing under us ours," not "did we reach it through our commands." SQLite is companion carrier and oracle, never the thing built on | `docs/maintenance/AIF112_OWNER_RULING_D1_D3_AND_DOGFOOD_DEFINITION_V1.md` SS3.1-3.1a, which carries the four negations and the operational test.) |
+| **proof failure** | a bug one level up | _(in this glossary)_ |
+| **housekeeping** | policy, not tidying: "a governed state-reconciliation cycle | _(in this glossary)_ |
+| **good neighbor** | conduct in a shared working tree, where your housekeeping can damage someone else's | `docs/maintenance/AI_SESSION_COORDINATION_PROTOCOL_V1.md`.) |
+| **availability is not adoption** | compiled in, callable, cheap, and wrapped in a command are facts about AVAILABILITY. Adoption is a separate decision about carrier identity | `proof.governance.availability_is_not_adoption`.) |
+| **the recurring defect pattern** | something reports success without doing its job (author-zero posts, a consumer committed without its definition, a handoff written where a clone cannot see it) | _(in this glossary)_ |
+| **the golden rule (verify before you assert)** | never report a change as "done" unless you verified it | _(in this glossary)_ |
+| **final tests promote to regressions (owner rule, 2026-08-09)** | the ad-hoc "final test" that proves a task done is not throwaway: when the task closes, promote it (when possible) into a registered regression so the proof keeps running | _(in this glossary)_ |
+| **no perishable literals (AIF-082)** | if an agent can cheaply measure it, do not assert it; hand-kept numbers drift the moment nobody updates them | _(in this glossary)_ |
+| **evidence tiers (planned / chartered / source-evidenced / runtime-proven)** | every public claim states which tier its evidence sits in and demotes the day the tier says so | _(in this glossary)_ |
+| **it costs nothing to do it right (owner rule, 2026-08-11)** | when the correct form of a small act is free, the correct form is mandatory; convenience is not a reason | _(in this glossary)_ |
+| **openness is a one-way door** | released-open cannot be pulled back; income is preserved by dual-license + copyright + CLA, never by "open then close." | `docs/maintenance/licensing/LICENSING_PRINCIPLE_ONE_WAY_DOOR_V1.md` |
+| **the hangman probe (2026-08-04)** | the project's smallest honest test of whether two agents can hold a turn-taking conversation over the Pseudo-Chat board with the human only initiating | `docs/maintenance/HANGMAN_PROBE_AND_AUTONOMOUS_MATCH_V1.md` |
+| **a chat surface is not a running process** | the diagnosis hangman produced: a hosted chat agent executes once per human message and cannot poll, wake, or notice a changed board | _(in this glossary)_ |
+| **we support widows and orphans (owner rule, 2026-08-10)** | publishing-surface integrity, named for the typesetting terms but deliberately framed as a duty of CARE, not a prohibition | `docs/maintenance/AI_PORTAL_MAIN_POINTER_DRAFT_V1.md` |
+## Learning doctrine (the macro-system teaches -- coined 2026-08-10)
+
+| Term | Gloss | Home |
+| --- | --- | --- |
+| **learning micro-system** | one bounded, executable learning unit: its own data, indexes, schema, scripts, and self-proof, loadable and retirable as a unit | `docs/maintenance/CASCADE_ERP_METADATA_ETL_LEARNING_GOLD_STANDARD_LANE_V1.md` |
+| **learning macro-system** | the wider ecosystem (x64base, DotTalk++, LabTalk, metadata, documentation, testing, AI, publication) that connects the micro-systems | _(in this glossary)_ |
+| **NON LMS** | the founding refusal: this is not a Learning Management System (no grading, no management), while drifting toward a Learning Memory System -- fun, true, and not true (owner titling, unhyphenated) | `app/lms-proposal/page.tsx` (x64base-site) + the site matrix row |
+| **demonstrated negation** | teaching a concept by RUNNABLY exhibiting its absence; the deliberate sibling of learning-by-failure (failure finds the boundary by accident; this builds the exhibit that meets it by design) | the ETL subject-lane charter (founding principles) |
+| **the iterative example** | the house learning motto, owner-coined 2026-08-11: "we regroup, go back and amend, and move forward." A deficiency shaped by its era is not lived with once the future arrives | AIF-070 catalog v2 lane |
+| **go for gold unless the cost is platinum** | the house design doctrine, owner-coined 2026-08-12 ruling the DotScript function surface: "we are not a clone, that ship has sailed, so we get to improve the product when we step out of the box." When the better... | `docs/maintenance/DOTSCRIPT_FUNCTION_SURFACE_PRIOR_ART_V1.md` section 6 |
+| **measure twice, cut once** | owner ruling 2026-07-30, the third member of the design-tier family and the one that governs SEQUENCING rather than tier | `docs/maintenance/SQLSEL_PDLC_LANE_V1.md` R29; second application `src/AIPortal/sessions/2026-07-21_claude_recno64_indextxn_onboarding/LANE_CNX_TXN_MUTATIONS_V1_20260721.md` C1 |
+| **the red pen** | correcting a preserved external artifact in OUR overlay layer, never by editing the artifact: the received document stays byte-identical, the disagreement renders on top, attributed to the house | `public/lms-proposal/deck.html` (x64base-site) |
+## Relational doctrine (Cascade double milestone -- 2026-08-10)
+
+| Term | Gloss | Home |
+| --- | --- | --- |
+| **two house graphs** | one declared relation graph, two supported consumers: SET RELATION (traditional, positional) and SQLSEL (set-based; the house SELECT, second SELECT optional; SQLite is companion carrier AND verification oracle) | the Cascade lane doc + `tools/cascade_erp/generate_dtschema.py` headers |
+| **walker** | a relational consumer strategy over the declared graph | _(in this glossary)_ |
+| **two name planes** | CDX tags resolve 10-char DBF descriptors; the REL engine and expression evaluator resolve x64 LONG logical names | _(in this glossary)_ |
+| **refresh-driven slaving** | the child cursor follows its parent on `REL REFRESH`, not implicitly per movement; a deliberate difference from FoxPro | _(in this glossary)_ |
+| **canonical workspace posture** | the MCC pattern, x64 generation: pure children sit on their spine FK tag, hubs on their PK tag, parents on their code/human tag | _(in this glossary)_ |
+| **.dtschema / .dtgraph / .erz** | the file-plane vocabulary, named 2026-08-10: `.dtschema` is the engine's own WORKSPACE SAVE/LOAD snapshot format; `.dtgraph` is a GENERATED attributed relation graph (tag orders + FK edges, provenance-stamped with... | _(in this glossary)_ |
+## Derived / conceptual terms
+
+| Term | Gloss | Home |
+| --- | --- | --- |
+| **session / run / member** | terms over the chat atom (an acting instance / its run id / the identity acting); not atoms themselves | coordination protocol |
+| **handoff** | a session's consolidated close-out to the next session; must be placed where a clone can see it (versioned), not in an untracked dir | _(in this glossary)_ |
+| **aside** | a side trip taken during a task in progress to correct or check out a side issue, then return to the main task | _(in this glossary)_ |
+| **recursion / recurse back** | the call-stack view of stepping back: stepping out of the current task to handle a side issue is a push (a new frame), "recurse back" is the pop (return to the frame underneath) | `RECURSION_MARKERS_V1.md` |
+| **recursion marker** | a short greppable breadcrumb (`RECURSED OUT -> / IN <- / BACK <-`) placed in the SDLC/PDLC artifact at each push/pop so the movement pattern is trackable and an un-returned step-back (an `OUT` with no `BACK`)... | `RECURSION_MARKERS_V1.md` |
+| **pseudo-chat** | the short-term-to-long-term consolidation channel; a live exchange consolidates into an attributed BBS post through the value gate | `docs/maintenance/PSEUDO_CHAT_RETURN_LANE_V1.md` |
+| **Good Neighbor policy** | the external-AI conduct rule | `docs/maintenance/GOOD_NEIGHBOR_POLICY_V1.md` |
+| **Class A / Class B partner** | capability tiers for an acting agent (file/shell/tools vs chat-only); capability is a property of the deployment, not the brand | `labtalk/ai_portal/EXTERNAL_CALL_CONTRACT_V1.md` |
+## The team model (AI agencies as coworkers -- reinforced 2026-08-08)
+
+| Term | Gloss | Home |
+| --- | --- | --- |
+| **team-member entity / coworker** | an AI agency holding a member identity + service token | `src/cli/cmd_user.cpp` (`USER LOGIN`/`AS`/`TOKEN`), `src/identity/identity_admin.cpp` (`current_member`, `login`); conduct rule: `docs/maintenance/GOOD_NEIGHBOR_POLICY_V1.md` |
+| **coauthor of record (owner ruling 2026-08-10)** | a Coworker (Class A) that authors a lane's artifacts is named coauthor of record on the lane doc, under real attribution (AIF-075), with the owner as planner/committer | _(in this glossary)_ |
+| **one member id per DEPLOYMENT, not per brand (owner-ratified 2026-08-09)** | A member identity (e.g | _(in this glossary)_ |
+| **the four communication axes** | every exchange is one of ai<->ai, human<->human, ai<->human, human<->ai, and all four ride the same attributed substrate (BBS Lane 1) plus the pseudo-chat lanes | _(in this glossary)_ |
+| **peer review** | an independent agent, not the author and having contributed nothing, reads the cited files at the stated baseline and returns a durable verdict record before the maintainer's promotion decision | `docs/maintenance/PEER_DESIGN_REVIEW_SESSION_PROTOCOL_V1.md`; gate: BETA-1 E1 via AIF-041 M6 |
+| **seat** | a charge in a review session that only its holder can discharge, assigned from what the member actually *is* (`AI_ROLES_TAXONOMY_V1`): host (moderates, does not vote), reproducer (runs the packet's own repro),... | same protocol, sec 3 |
+| **turn validity** | a turn counts only if it carries a `file:line`, a command and its real output, or an explicit *"I could not run this, and here is why"*. Anything else is filed and marked `void`. Declining is an accepted turn **so... | _(in this glossary)_ |
+| **UNDERTESTED** | a ballot line closing unanimous with no dissent recorded | _(in this glossary)_ |
+| **claim defect vs runtime defect (amends AIF-082, 2026-08-13)** | two classes needing two modalities | `labtalk/proofs/PEER_REVIEW_HEADER_ONLY_FINDINGS_20260813_V1.md` (`proof.peer_review.header_only_findings`) |
+| **run line (standing correction, 2026-08-13)** | every handoff, closeout and report header carries a `run` id, not only a member id | _(in this glossary)_ |
+| **standing** | what a member is *in a given matter*, recorded on the assignment (`SYSASSIGN.AKIND`), as distinct from what it may do anywhere (its role) and whom it answers to (its org) | `include/identity/org_schema.hpp`, `namespace standing` |
+| **amicus** | a **non-party** admitted to file findings because it has relevant sight, not because it has a stake | _(in this glossary)_ |
+| **movant** | an **interested filer**: seeks a ruling on work it authored, paradigmatically an outside AI submitting a change package | _(in this glossary)_ |
+| **party / non-party** | a party has a stake in the outcome; a non-party does not | `docs/maintenance/PARTNER_AMICUS_STANDING_LANE_V1.md` |
+| **project frontal memory** | the per-project always-loaded entry context: its pointer plus the recall working set its trigger returns | _(in this glossary)_ |
+
