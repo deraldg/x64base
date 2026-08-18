@@ -117,6 +117,146 @@ version vendored here before any of it is committed to.
 The correspondence is close enough on all three columns that a single source
 form is realistic. **The disagreements are the lane, and there are three.**
 
+## AMENDMENT 2026-08-18: the target is platforms we do NOT own
+
+Maintainer correction, and it changes what "good" means for this lane:
+
+> "We want to make room for and accommodate OTHER gui platforms -- not our own.
+> As long as you have a good basis, AI can easily handle new frontends."
+
+So the success test is NOT "it works on FoxTalk". It is: **could someone
+implement this vocabulary on a platform nobody here has seen, working from the
+specification alone?** That reframes Turbo Vision from "the backend" to "one
+implementer, and the least representative of the set".
+
+**Turbo Vision is the wrong thing to design against.** It is a character-cell,
+single-threaded, cooperative, synchronous event loop. Real GUIs differ from it
+in ways that are invisible until a second backend exists, which is exactly when
+a vocabulary is most expensive to change.
+
+**What every candidate platform genuinely shares** -- Turbo Vision, Win32, wx,
+Qt, Tk, and the browser -- is a short list, and it is the real basis:
+
+- a top-level window or frame, with a title and a close
+- a menu bar carrying popups and items, with accelerators
+- dialogs, modal and modeless
+- controls: label, text input, button, checkbox, radio group, list, scrollbar
+- keyboard focus with an order, and mouse input
+- some command or event dispatch from a control back to script
+- ownership: destroying a container destroys its children
+
+That list is portable. Everything below is where the platforms stop agreeing.
+
+### The axis Turbo Vision cannot teach: threading
+
+This was missing from the charter entirely and it is the most likely thing to
+sink a vocabulary designed TUI-first.
+
+| platform | UI thread rule | marshal from another thread |
+| --- | --- | --- |
+| Turbo Vision | single-threaded, no rule needed | n/a |
+| Win32 | window handles have thread affinity | `PostMessage` |
+| wxWidgets | GUI calls on the main thread | `CallAfter` / `wxQueueEvent` |
+| Qt | widgets on the GUI thread | queued signal/slot connections |
+| Tk | not thread-safe at all | `after()` onto the main loop |
+| browser | single JS thread | workers + `postMessage` |
+
+**The common denominator is not "no threads". It is: the UI has an owning
+thread, and work done anywhere else must be marshalled back to it.** Every real
+platform states this; only Turbo Vision is silent, because it has no other
+thread to be wrong about.
+
+So the DSL must take a position. Either (a) handlers are declared to run on the
+UI thread and anything slow must be handed off explicitly, or (b) there is a
+background/async construct with a defined completion path. **Saying nothing is
+the one unacceptable answer**, because each backend will then invent its own,
+and a script stops being portable the first time it does something slow.
+
+### Other places Turbo Vision would mislead
+
+- **Modality.** TV `execView` and Win32 `DialogBox` are nested loops; the
+  browser has no modal loop at all, only callbacks. `READ` is not universal.
+- **Layout and resize.** TV is fixed character cells with no reflow. Real GUIs
+  resize, scale for DPI, and lay out by font metrics. TV cannot teach any of it.
+- **Ownership** is the one that generalises cleanly: parent destroys child holds
+  on TV, Win32, Qt and Tk alike. Keep it; it is free portability.
+
+### What this changes in this charter
+
+1. Turbo Vision is demoted from "the proven backend" to "the first implementer".
+2. **A real GUI must inform the design, not validate it afterwards.** wx and Tk
+   both already have launchers and proof runs in this repository
+   (`labtalk/aops/run-wx.ps1`, `tk.run.ps1`, and runs under
+   `labtalk/proofs/runs/`), so a second reference costs discovery, not
+   construction.
+3. Threading becomes a required ruling alongside coordinates.
+4. The specification must be written so an implementer with none of this code
+   can build a frontend from it. If the spec only makes sense while reading
+   `foxtalk_*`, the lane has failed its own test.
+
+## AMENDMENT 2026-08-18 (b): the DSL is also an INTERCHANGE FORMAT
+
+Maintainer, same session:
+
+> "But supporting the foxpro 2.6a graphics language we can also export the
+> graphic requirements to external gui generators."
+
+This is the strongest argument in the lane and it deserves to be the frame.
+
+**FoxPro 2.6a did not hand-write screens. It generated them.** Its design tools
+produced files that a generator then turned into procedural code:
+
+| designer | design file | generated |
+| --- | --- | --- |
+| Screen Builder | `.SCX` / `.SCT` | `.SPR` screen program |
+| Menu Builder | `.MNX` / `.MNT` | `.MPR` menu program |
+| Report Writer | `.FRX` / `.FRT` | `.FRG` |
+| Project Manager | `.PJX` / `.PJT` | -- |
+
+**And those design files are DBF tables.** `.SCX`, `.MNX` and `.FRX` are
+DBF-format files with a memo sidecar; in FoxPro you could `USE` a `.SCX` and
+browse the screen definition as rows. (Recalled, not measured -- the project
+references none of `SCX/MNX/FRX/SPR/MPR` anywhere today, so this is prior art
+from outside the tree and should be verified against a real 2.6a artifact before
+it is built on.)
+
+That matters here more than it would anywhere else: **this project is a DBF
+engine.** A UI definition stored as a DBF table with a memo sidecar is not an
+odd choice, it is the native one -- readable by `USE`, browsable by `BROWSE`,
+indexable, diffable through the same tooling as every other table, and carried
+by the same memo and workspace machinery already built.
+
+So the architecture is three layers, not one:
+
+```text
+DSL text            what a human writes        DEFINE WINDOW / DEFINE MENU
+   |
+   v
+design table        the interchange format     a DBF + memo, SCX-shaped
+   |
+   +--> runtime interpreter   (FoxTalk/TV reads the table directly)
+   +--> generator -> Win32
+   +--> generator -> wx / Qt / Tk
+   +--> generator -> web
+```
+
+**The generators are consumers of a table, not of the parser.** That is what
+"export the graphic requirements to external GUI generators" buys, and it
+resolves the portability worry above by construction: a new frontend never needs
+the DSL, the parser, or any of this C++ -- it needs to read one documented
+table. Which is also precisely the artifact you would hand an AI and say "write
+me a Qt frontend for this."
+
+It also gives the lane a much better v1 boundary. **The table schema is the
+deliverable.** A text DSL that only ever fed FoxTalk would be a private
+convenience; a documented design table with one interpreter and one generator is
+a contract other people can build against.
+
+Consequences for the gates below: the coordinate ruling and the threading ruling
+are properties of the TABLE, not of the syntax, and must be decided there.
+Anything a generator cannot see in the table cannot be generated, so anything
+the DSL expresses that the table does not carry is a portability leak.
+
 ## The three real problems
 
 **1. Coordinates. This is the fork that decides everything else.**
@@ -165,10 +305,33 @@ Adopted from the published seed, which had already written them, plus two:
 5. SelfDoc metadata coverage
 6. Manualgen section
 7. Website comparison update
-8. **A coordinate-model ruling, recorded before syntax is fixed** (see above)
-9. **A second backend spiked, not shipped** -- enough of one non-TUI target to
-   prove the vocabulary is not secretly Turbo Vision in disguise. Without this,
-   gate 3 passing means nothing about portability.
+8. **A coordinate-model ruling, recorded before the table schema is fixed**
+9. **A threading ruling** -- handlers on the UI thread with explicit hand-off,
+   or a background construct with a defined completion path. Silence fails.
+10. **The design table documented as a standalone contract** -- schema, fields,
+    memo layout -- readable by someone with none of this source. This is the
+    deliverable; the DSL text is a convenience over it.
+11. **A second backend spiked from the TABLE, not the parser** -- enough of wx
+    or Tk to prove a generator needs nothing but the documented schema. Both
+    already have launchers and proof runs here, so this is discovery rather
+    than construction. Without it, gate 3 passing says nothing about
+    portability.
+
+## The retro piece
+
+Maintainer's note, and it is a real deliverable rather than a garnish: the
+FoxPro 2.6a design-file story is **good retro content**, and `/retro` already
+exists as a site surface.
+
+The angle writes itself and is true: in 1994 a screen designer stored its work
+as a database table, because the tool was built by database people who reached
+for the thing they had. Thirty years later a DBF engine wants a portable UI
+description, and the same answer is still the right one -- for the same reason.
+`.SCX` was a `.DBF`. You could `USE` your user interface.
+
+It doubles as recruitment for the lane: the piece explains the architecture to a
+reader who would never open a charter, and the artifact it describes is the one
+we want other people generating frontends from.
 
 ## Housekeeping this lane inherits
 
