@@ -197,7 +197,15 @@ Two portability rules that are cheap here and expensive later:
 
 ---
 
-## 4. Defect found while measuring -- `docs/ui/` is untracked
+## 4. Defect found while measuring -- `docs/ui/` was untracked (**RESOLVED**)
+
+> **Resolved 2026-08-18 in `1a40c97a7`**, "docs/ui: track the four active UI
+> architecture documents (widow fix)", author Derald Grimwood, six minutes after
+> this section was written. All four files are status `A` in that commit and are
+> in `HEAD` now. The section below is kept in its original present tense as the
+> dated record of the defect; **it no longer describes the tree.** Re-measured by
+> run `COWORK-20260818-001`: `git ls-tree -r 6d52c6d6f -- docs/ui` -> 0 files;
+> `git ls-tree -r HEAD -- docs/ui` -> 4 files.
 
 Not part of the ruling. Recorded because it was found on the way and it is the
 exact failure mode the house names.
@@ -273,8 +281,18 @@ git commit -m "AIF-120: R11 threading ruling (gate 9), adopted from the shipped 
 
 ```powershell
 # 2. SEPARATE commit -- the widow in section 4. Maintainer's files, maintainer's call.
+# DONE: run as 1a40c97a7 on 2026-08-18. Kept for the record; do not re-run.
 git add docs/ui/GUI_THREADING_RAII_CONTRACT_V1.md docs/ui/CORE_UI_PRINCIPLES_V1.md
 git add docs/ui/UI_LANE_TRADEOFFS_V1.md docs/ui/TUI_ALIGNMENT_PLAN_V1.md
 git status --short -uall
 git commit -m "docs/ui: track the four active UI architecture documents (widow fix)"
+```
+
+```powershell
+# 3. This amendment pass (section 4 resolution note + section 6 marking, and the
+#    open-list correction in the status file). Run in D:\code\ccode.
+git add docs/maintenance/AIF120_THREADING_RULING_V1.md
+git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
+git status --short -uall
+git commit -m "AIF-120: mark the docs/ui widow resolved in 1a40c97a7; correct the ls-files note"
 ```

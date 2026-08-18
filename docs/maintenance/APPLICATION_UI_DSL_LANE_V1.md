@@ -260,6 +260,10 @@ the DSL expresses that the table does not carry is a portability leak.
 ## The three real problems
 
 **1. Coordinates. This is the fork that decides everything else.**
+**SETTLED 2026-08-18 as R12** -- option 3, layout intent primary, absolute
+quarantined and advisory. See AMENDMENT (e) and
+`docs/maintenance/AIF120_COORDINATE_RULING_V1.md`. The three options are kept
+below as the record of what was chosen among.
 `@ row, col` is character-cell geometry. Turbo Vision is also character-cell, so
 FoxPro maps onto it almost perfectly -- which is exactly the trap, because the
 easiest target will make the language TUI-shaped and every GUI target after it
@@ -440,6 +444,44 @@ Three consequences beyond R11 itself:
    section 4 of the ruling with a separate staging command. Maintainer's files;
    not actioned by this lane.
 
+
+## AMENDMENT 2026-08-18 (e): R12, the coordinate ruling -- gate 8 closed
+
+Ruling text, six measurements and disproof conditions:
+`docs/maintenance/AIF120_COORDINATE_RULING_V1.md`. Status review-needed. This
+section points; it does not restate.
+
+**R12. The design table's portable geometry is layout INTENT, not position.
+Absolute coordinates are permitted, quarantined and advisory: they travel in a
+separate origin group carrying R2's scale unit, marked imported rather than
+authored, and a generator that ignores them entirely is still conformant.**
+An absent dimension is derived by the target and never written back as if
+measured. Menu rows carry no origin group at all.
+
+Three things the measurement changed about how this charter framed the fork:
+
+1. **Half the fork was already settled and the charter did not notice.** The four
+   `.MNX` specimens carry 205 records and **zero** geometry columns; menus
+   position by `LEVELNAME` + `ITEMNUM` ordinal, which is option 3's shape. R8
+   adopted that vocabulary. The lane had therefore already chosen layout intent
+   for menus while still listing the fork as open.
+2. **Option 1 is contradicted by the house's own shipped GUI.**
+   `src/gui/wx/main_frame.cpp` builds 17 sizers and calls `SetSizer` 14 times,
+   with **zero** `wxPoint`, `SetPosition` or `Move`. When this project builds a
+   real GUI it declares intent. And `include/gui/core/` carries no geometry at
+   all -- the same geometry-free core contract R11 adopted for threading.
+3. **The source format is not fully absolute either.** 22 of the 45
+   geometry-bearing records across both `.SCX` specimens declare fewer than all
+   four values, systematically omitting height on text-bearing controls, while
+   carrying **zero** font properties to derive it from. The format already
+   expects the target to compute a dimension.
+
+The charter priced option 3 as "the most work" and that stands in absolute terms.
+The sequencing argument is what decides it: intent-first adds absolute later as an
+optional annotation, which is what R12 does in one section; absolute-first cannot
+add intent later without rewriting every consumer. Cheap now, rewrite later, versus
+expensive now, extension later -- the house's own "measure twice, cut once" test.
+
 ## Scope
 
 **In scope:** the DSL surface, its parser, its command registry entries, and one
@@ -465,9 +507,10 @@ Adopted from the published seed, which had already written them, plus two:
 5. SelfDoc metadata coverage
 6. Manualgen section
 7. Website comparison update
-8. **A coordinate-model ruling, recorded before the table schema is fixed**
+8. **A coordinate-model ruling, recorded before the table schema is fixed** -- **CLOSED as R12**, 2026-08-18, review-needed
 9. **A threading ruling** -- handlers on the UI thread with explicit hand-off,
    or a background construct with a defined completion path. Silence fails.
+   **CLOSED as R11**, 2026-08-18, review-needed.
 10. **The design table documented as a standalone contract** -- schema, fields,
     memo layout -- readable by someone with none of this source. This is the
     deliverable; the DSL text is a convenience over it.

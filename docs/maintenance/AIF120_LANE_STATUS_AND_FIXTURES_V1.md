@@ -62,8 +62,9 @@ recursing that directory.
 
 | subject | file |
 | --- | --- |
-| Lane charter, scope, proof gates, and rulings **R1 through R11** | `docs/maintenance/APPLICATION_UI_DSL_LANE_V1.md` |
+| Lane charter, scope, proof gates, and rulings **R1 through R12** | `docs/maintenance/APPLICATION_UI_DSL_LANE_V1.md` |
 | **R11, the threading ruling (gate 9)** -- full text, evidence, disproof conditions | `docs/maintenance/AIF120_THREADING_RULING_V1.md` |
+| **R12, the coordinate ruling (gate 8)** -- six measurements, disproof conditions | `docs/maintenance/AIF120_COORDINATE_RULING_V1.md` |
 | The shipped GUI core the ruling adopts | `src/gui/core/`, `include/gui/core/`, `docs/ui/GUI_THREADING_RAII_CONTRACT_V1.md` |
 | Specimen-by-specimen measurements and the corrections between them | `docs/maintenance/AIF120_VFP_SCX_EMPIRICAL_BASELINE_V1.md` |
 | The reader that produced every measurement | `tools/vfp/read_vfp_binary.py` |
@@ -135,6 +136,7 @@ Settled, with the ruling text in the charter:
 | R9 | menu scope splits declarative / imperative; charter must pick | TEST_MAIN.MPR |
 | R10 | every designer format parents differently; only the DBF layer is shared | all three |
 | R11 | UI-thread rule adopted from the shipped GUI core; table carries `DISPATCH` with default `ui`, `worker` requires `ON_COMPLETE` | `src/gui/core/` + `docs/ui/GUI_THREADING_RAII_CONTRACT_V1.md`, not a specimen |
+| R12 | layout intent is the portable geometry; absolute coordinates quarantined, advisory, and carrying R2's unit | the wx frontend, the GUI core, 205 menu records, 58 form records |
 
 Open:
 
@@ -143,16 +145,47 @@ Open:
   said: the rule was already written and shipped in `src/gui/` and `docs/ui/`,
   and this file's own claim that no measurement had touched it was produced by a
   search shaped for `DEFINE WINDOW`. See the ruling's section 0.
-- **`docs/ui/` is untracked** -- four active architecture documents in the tree
-  and in no commit, one of them cited by path from tracked source. A widow.
-  Maintainer's files; staging command in the ruling's section 6.
-- **The coordinate fork.** R2 narrowed it but did not choose among the charter's
-  three options.
+- ~~**`docs/ui/` is untracked.**~~ **Closed**: fixed in `1a40c97a7`, "docs/ui:
+  track the four active UI architecture documents (widow fix)". Verified
+  2026-08-18 by run `COWORK-20260817-001`: 4 of 4 in the index AND 4 of 4 in
+  `HEAD`, working tree clean.
+
+  **Amended by run `COWORK-20260818-001`, the run that reported it.** The item is
+  closed, but not because the original check was wrong -- the maintainer acted on
+  the report. Sequence, measured from the log rather than recalled: the report was
+  made at baseline `6d52c6d6f`, where `git ls-tree -r 6d52c6d6f -- docs/ui`
+  returns **0 files**; `1a40c97a7` then adds all four with status `A`, which is
+  git's own statement that they were in no prior commit; its author is
+  `Derald Grimwood` and its timestamp is 08:25:51 -0700, six minutes after the
+  report. The widow was real, and reporting it is what closed it.
+
+  The general caution above is worth keeping and is separately true: `git
+  ls-files` reads the index, so for a claim of the form "this file is in no
+  commit", `ls-tree HEAD` is the check that matches the claim. It did not apply
+  to this instance -- `ls-files docs/ui` returned **0**, and an empty index
+  result cannot be a staged-but-uncommitted false positive; only a non-empty one
+  can. Recording the check as inadequate when it was sound would teach the wrong
+  lesson in a house whose rules are earned by real failures.
+- ~~**The coordinate fork.**~~ **Closed 2026-08-18 as R12**, run
+  `COWORK-20260818-001`, review-needed: option 3, layout intent primary.
+  Like the threading item, it was less open than this list said -- the four
+  `.MNX` specimens carry 205 records and zero geometry columns, so the menu half
+  of the fork had already been decided by R8's adoption of that vocabulary.
 - **A hand-authored `.SCX` with real method code.** Both form specimens are
   designer output. The menus proved the reader extracts code, so this is no
   longer urgent -- it is now about vocabulary in `METHODS`/`OBJCODE`, not about
-  whether extraction works.
-- **`ACCOUNTS.SCX` / `.SCT` into fixtures**, once VFP releases them.
+  whether extraction works. **Its value rose with R12:** it is also disproof
+  condition 4 for the coordinate ruling, since a hand-authored form declaring all
+  four dimensions on every control would show R12's measured partiality (22 of 45
+  records) as a wizard artifact rather than a property of the format. One
+  specimen now tests two rulings.
+- ~~**`ACCOUNTS.SCX` / `.SCT` into fixtures.**~~ **Closed**: VFP released them
+  and all sixteen fixtures are present and hash-verified, as the manifest above
+  already recorded. This entry contradicted its own document for one edit cycle
+  -- two runs amended the same uncommitted file and neither reconciled the other
+  half. Worth noting as the concrete cost of concurrent editing that AIF-050
+  warns about: nothing was lost, but the file asserted both "all sixteen landed"
+  and "two still pending" simultaneously.
 
 ## The honest summary of this measurement lane
 
