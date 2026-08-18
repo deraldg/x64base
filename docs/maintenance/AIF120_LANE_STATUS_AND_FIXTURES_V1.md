@@ -65,6 +65,7 @@ recursing that directory.
 | Lane charter, scope, proof gates, and rulings **R1 through R12** | `docs/maintenance/APPLICATION_UI_DSL_LANE_V1.md` |
 | **R11, the threading ruling (gate 9)** -- full text, evidence, disproof conditions | `docs/maintenance/AIF120_THREADING_RULING_V1.md` |
 | **R12, the coordinate ruling (gate 8)** -- six measurements, disproof conditions | `docs/maintenance/AIF120_COORDINATE_RULING_V1.md` |
+| **VFP 9 reading an x64base-written table** -- the lane's first `runtime-proven` result | `docs/maintenance/AIF120_VFP_READS_X64BASE_OUTPUT_V1.md` |
 | The shipped GUI core the ruling adopts | `src/gui/core/`, `include/gui/core/`, `docs/ui/GUI_THREADING_RAII_CONTRACT_V1.md` |
 | Specimen-by-specimen measurements and the corrections between them | `docs/maintenance/AIF120_VFP_SCX_EMPIRICAL_BASELINE_V1.md` |
 | The reader that produced every measurement | `tools/vfp/read_vfp_binary.py` |
@@ -186,6 +187,23 @@ Open:
   half. Worth noting as the concrete cost of concurrent editing that AIF-050
   warns about: nothing was lost, but the file asserted both "all sixteen landed"
   and "two still pending" simultaneously.
+
+## One measurement runs the other way
+
+Everything in the settled ledger above was produced by reading files VFP wrote.
+On 2026-08-18 the direction reversed for the first time: VFP 9 opened
+`dottalkpp/data/dbf/vfp/STUDENTS.dbf` -- written by this project's own
+`COPY TO ... AS VFP` at `dottalkpp/data/scripts/mcc/mcc_build_vfp.dts:81` -- read
+all 200 records, and agreed with `tools/vfp/read_vfp_binary.py` on all 81 field
+values legible in the witness screenshot. Header measured genuinely VFP:
+`hlen` 584, which is the plain 321 for nine fields plus VFP's 263-byte backlink
+block.
+
+It is the lane's only `runtime-proven` result and the referee was Microsoft's
+implementation rather than this project's test suite. It is also one interactive
+session on one machine, proving nothing about `.SCX`, about writing, about
+indexes, or about the four untested field types. Both halves are recorded in
+`docs/maintenance/AIF120_VFP_READS_X64BASE_OUTPUT_V1.md`.
 
 ## The honest summary of this measurement lane
 
