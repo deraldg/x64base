@@ -1,0 +1,26 @@
+AIF-120 R30 evidence -- composite members materialised
+run: python3 tools/uidef/import_scx.py form1.scx UIDEF_FORM1
+
+form1.scx -> UIDEF_FORM1.DBF  records=24 rlen=169 hlen=808
+  REFUSED kinds (not in v1 vocabulary): ['grid', 'header', 'hyperlink', 'line', 'oleboundcontrol', 'olecontrol', 'shape', 'spinner', 'timer']
+  COMPOSITE MEMBERS materialised (R30): 6 -- button x2, page x2, radio x2
+  conformance findings: none
+
+--- the rows R30 produces ---
+OBJID  PARENT   KIND     ORD  ORIGIN                         PROPS
+M001   O009     button   1    ORIGIN_TOP = 5 ORIGIN_LEFT = 5 caption = "Command1" 
+M002   O009     button   2    ORIGIN_TOP = 34 ORIGIN_LEFT =  caption = "Command2" 
+O009   O001     group    5    ORIGIN_TOP = 228 ORIGIN_LEFT = buttoncount = 2 value = 1 
+M003   O010     radio    1    ORIGIN_TOP = 5 ORIGIN_LEFT = 5 caption = "Option1" value = 1 
+M004   O010     radio    2    ORIGIN_TOP = 24 ORIGIN_LEFT =  caption = "Option2" 
+O010   O001     group    6    ORIGIN_TOP = 24 ORIGIN_LEFT =  buttoncount = 2 value = 1 
+M005   O015     page     1                                   caption = "Page1" 
+M006   O015     page     2                                   caption = "Page2" 
+O015   O001     pageset  11   ORIGIN_TOP = 24 ORIGIN_LEFT =  erasepage = .T. pagecount = 2 
+
+--- rendered ---
+  FONT rows=1  FONTREF applied to 0 widget(s)
+  DERIVED position for O002 -- FLOW=free with no ORIGIN; fell back to ORDINAL order
+  DERIVED position for O003 -- FLOW=free with no ORIGIN; fell back to ORDINAL order
+  DERIVED position for O004 -- FLOW=free with no ORIGIN; fell back to ORDINAL order
+rendered 22 widgets -> /tmp/man/_x.png
