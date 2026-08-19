@@ -1,0 +1,53 @@
+AIF-120 R22 evidence -- host capability mapping: import and consume
+run: python3 tools/uidef/import_mnx.py test_main.mnx UIDEF_CAP_MAIN
+     xvfb-run -a python3.12 tools/uidef/uidef_tk_host.py UIDEF_CAP_MAIN.DBF shot.png
+
+--- IMPORT: both menu fixtures ---
+test_main.mnx -> UIDEF_CAP_MAIN.DBF  records=78 rlen=164 hlen=776
+  submenu containers linked to their opener item: 9 of 9
+  OBJCODE 78 -> host capability: 18 mapped, 0 unmapped, 0 nameless, 3 named separators (no behaviour)
+  conformance findings: none
+  rows carrying ORIGIN (R12.4 requires 0): 0
+
+test_go.mnx -> UIDEF_CAP_GO.DBF  records=14 rlen=164 hlen=776
+  submenu containers linked to their opener item: 1 of 1
+  OBJCODE 78 -> host capability: 0 mapped, 0 unmapped, 0 nameless, 0 named separators (no behaviour)
+  conformance findings: none
+  rows carrying ORIGIN (R12.4 requires 0): 0
+
+--- NEGATIVE TEST: the caption check against a deliberately wrong mapping ---
+CAPTION MISMATCH -- capability may name the wrong thing: I055 'Class Browser' -> tools.data_browser (missing class)
+
+--- CONSUME ON TK ---
+host capabilities declared by this target : 7
+  provided -- item wired to real behaviour: 7
+      I018   Undo           -> edit.undo
+      I019   Redo           -> edit.redo
+      I021   Cut            -> edit.cut
+      I022   Copy           -> edit.copy
+      I023   Paste          -> edit.paste
+      I024   Clear          -> edit.clear
+      I026   Select All     -> edit.select_all
+  REFUSED and named, item disabled        : 11
+      I028   Find...        -> edit.find
+      I029   Find Again     -> edit.find_again
+      I030   Replace...     -> edit.replace
+      I045   Do...          -> program.run
+      I046   Cancel         -> program.cancel
+      I047   Resume         -> program.resume
+      I048   Suspend        -> program.suspend
+      I049   Compile...     -> program.compile
+      I055   Class Browser  -> tools.class_browser
+      I062   Arrange All    -> window.arrange
+      I063   Cycle          -> window.rotate
+  non-host items (ui dispatch)            : 28
+
+exercising the provided capabilities on the Text widget:
+    edit.cut   -> 'WORLD'
+    edit.paste -> 'WORLDHELLO '
+    edit.undo  -> 'WORLD'
+
+R20    a `host` item did real work with no registry entry : True
+R20    edit.undo reached the host's own undo stack        : True
+R20    every unprovided capability refused BY NAME        : True
+R20.1  items with a host dispatch and no handler          : 0
