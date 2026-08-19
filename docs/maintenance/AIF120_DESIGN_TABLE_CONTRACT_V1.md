@@ -93,7 +93,7 @@ last; do not inherit that.)
 | `SPAN` | N(5,0) | O | cells spanned in a `grid` flow. Default 1 |
 | `KIND` | C(20) | P+C | the portable class name -- section 4 |
 | `FLOW` | C(8) | P on containers | `row`, `column`, `grid`, `free`. Section 5 |
-| `BINDING` | C(64) | O | data field this control reads and writes |
+| `BINDING` | C(64) | O | data field this control reads and writes, as `alias.field` -- see section 10b |
 | `FONTREF` | N(3,0) | O | 1-based index into this document's `FONT` rows. 0 = target default |
 | `PROVENANCE` | C(10) | P | `authored`, `imported`, or `inherited` -- a row materialised from an object's class (R31) |
 | `PROPS` | M | O | property text -- section 7. Named keys so far: `Caption`, `Mask` (R25), `Columns` on a `grid` container (R23.2), `Class` and `ClassSource` on an instance (R31), and the menu keys of section 11. Everything else passes through under the source's own key |
@@ -465,6 +465,54 @@ beside its table -- recomputed relative to the document on every save. The bare
 filename is the zero-distance case, not a fallback. The same convention appears
 independently in `.FRX` (`Database = ..\..\data\testdata.dbc`) and in `.SCX`
 class-library references.
+
+## 10b. `BINDING` is `alias.field`, and the areas are open before any handler fires
+
+**Added 2026-08-19 by R53.** Gate 11's second-nearest fix was *"Define `BINDING`'s
+syntax"*; the field table said only "data field this control reads and writes", and
+`manifest.py` had been enforcing a rule the contract never stated.
+
+Measured over the 170-form corpus -- 159 `ControlSource` occurrences:
+
+| shape | count | share | ruling |
+|---|---|---|---|
+| `alias.field` | 145 | 91.2% | **the form.** `alias` MUST name an `Alias` declared in `SOURCE` |
+| empty | 8 | 5.0% | legal; the control is unbound |
+| object reference, e.g. `This.Parent.SysTray1.Tiptext` | 4 | 2.5% | **refused.** Not data -- see below |
+| bare `field` | 2 | 1.3% | **refused.** Ambient state -- see below |
+
+VFP writes the value **quoted** in the designer record (`"books.desc"`). `BINDING`
+holds it **unquoted**; the quotes are the container's, not the value's.
+
+Resolution of `alias` is case-insensitive, matching `Table` resolution in section 10.
+
+**A bare field name is refused**, not resolved. It means "the field of whatever work
+area is current", and section 10 already refuses that reasoning for `Table`: *"never
+a bare name resolved against ambient state."* One rule, applied twice.
+
+**An object reference is refused for a different reason, and the reason matters.**
+`This.Parent.SysTray1.Tiptext` binds a control's property to *another control's
+property*. It is not a malformed `alias.field`; it is a kind of thing UIDEF v1 does
+not model at all. A reader that reports it as "not alias.field" tells the author
+they made a typo, when what they actually did was use a feature that is absent. Until
+R53 these fell through the alias lookup and were skipped in **silence**, which is
+worse than either message.
+
+### The work areas are open before the first handler fires
+
+`SOURCE` names an `Alias` and a `Table` for each work area (section 10), and the lock
+domain is computed from the `Relation` edges between them (R36, R26). Nothing said
+who **opens** them, and the runtime's lock provider emits `SELECT <alias>` -- which
+presumes the alias is already open in a work area of its own.
+
+> **A conforming frontend opens every `Alias` declared in `SOURCE` into its own work
+> area, resolving `Table` per section 10, before it fires any handler.** A `Table`
+> that does not resolve is refused there, as section 10 already requires -- not at
+> first use, when a handler is already mid-flight.
+
+This was found by a harness that opened two tables into one work area, silently
+replacing the first, and then released a lock it did not hold while the lock it did
+hold stayed held (R52.4). The precondition had been implicit across R47, R48 and R49.
 
 ## 11. Menus
 

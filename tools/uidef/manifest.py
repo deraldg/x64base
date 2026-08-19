@@ -135,15 +135,33 @@ def bind_check(m, tables):
             out.append(('REFUSE', 'alias %s -> %s' % (alias, tbl),
                         'no schema supplied for this table'))
     widths = []
+    # R53, measured over the 170-form corpus: 159 ControlSource occurrences,
+    # 145 alias.field (91.2%), 8 empty, 4 object references, 2 bare field. The
+    # three minorities are three DIFFERENT things and were not being told apart.
     for oid, kind, binding, org_w, mask in m['bound']:
-        if '.' not in binding:
+        parts = binding.split('.')
+        head = parts[0].lower()
+        if len(parts) > 2 or head in ('this', 'thisform', 'thisformset'):
+            # `This.Parent.SysTray1.Tiptext` -- a control bound to another
+            # CONTROL'S PROPERTY, not to data. Not a malformed alias.field; a
+            # different kind of thing, which UIDEF v1 does not model. It used to
+            # fall through to the alias lookup, miss, and be skipped in SILENCE.
             out.append(('REFUSE', 'BINDING %s on %s' % (binding, oid),
-                        'not alias.field'))
+                        'object reference, not a data binding -- outside v1'))
             continue
-        alias, field = binding.split('.', 1)
+        if len(parts) == 1:
+            # A bare field name resolves against whatever work area happens to be
+            # current -- the ambient state section 10 already forbids for `Table`.
+            out.append(('REFUSE', 'BINDING %s on %s' % (binding, oid),
+                        'bare field name; not alias.field, and the current work '
+                        'area is ambient state'))
+            continue
+        alias, field = parts[0], parts[1]
         sch = tables.get(alias.lower())
         if sch is None:
-            continue                      # already refused above
+            out.append(('REFUSE', 'BINDING %s on %s' % (binding, oid),
+                        'alias %s is not declared in SOURCE' % alias))
+            continue
         f = sch.get(field.lower())
         if f is None:
             out.append(('REFUSE', 'BINDING %s on %s' % (binding, oid),
