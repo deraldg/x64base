@@ -142,6 +142,18 @@ Portable because ordinal containment is the one primitive every candidate has:
 Turbo Vision nests `TRect`s, wx nests sizers, Qt nests layouts, Tk packs and
 grids, the browser flows boxes.
 
+> **TESTED 2026-08-19 by R34 and R35**, and this claim holds. One document carrying
+> **zero coordinates** was rendered by three backends -- Tk (`place`/`pack`/`grid`,
+> pixels), a browser (flexbox and CSS grid, pixels) and a character grid (no pixels,
+> no fonts) -- and all three return the **identical** verdict from the table alone:
+> two derivations, one refusal, for the same rows and the same reasons.
+>
+> `SPAN` and `TABORDINAL` are not conveniences of the first toolkit that met them.
+> CSS grid spells `SPAN` as `grid-column: span N` and a browser spells `TABORDINAL`
+> as `tabindex`, an attribute that exists precisely because focus order and layout
+> order are different orders. Neither had to be translated for the second target;
+> both were already its own model.
+
 **An absent dimension is never defaulted to a number, and for many controls a
 PRESENT one is ignored too** (R16, R17). A control that does not state a size gets
 one from its content and its font -- from the `FONT` rows if
@@ -321,8 +333,29 @@ ORIGIN_SCALE = px
 > | control | width comes from |
 > | --- | --- |
 > | content-sized (`label`, `button`, `check`, `radio`, `group`, `page`) | its own content in the target's font (**R16**) |
-> | data-sized and **bound** | the bound field's declared width, in characters (**R17**) |
+> | data-sized and **bound** | its **`Mask`**, which the schema determines (**R25**, narrowing R17) |
 > | data-sized and **unbound** | `ORIGIN_WIDTH` with its `ORIGIN_SCALE` |
+| a **container whose children carry `ORIGIN`** | its own stated width and height (**R30.3**) -- nothing else can supply them, because absolutely positioned children report no size |
+
+### 8b. Units, and the conversion this section still does not give
+
+**Added 2026-08-19 by R35.** `ORIGIN_SCALE` enumerates units and gives conversions
+between none of them, which gate 11 logged as G-6 before a consumer needed one.
+
+Measured: **20 objects in the corpus declare a `ScaleMode` and all 20 say pixels.**
+The `cell` value has been specified and produced by nothing. The character-cell
+backend is the first consumer that needs `px` in cells, and it divides by 7 and 20
+-- numbers taken from R25's own measurements -- and **declares the conversion as
+derived on every render** (R12.3).
+
+> Either this section gives conversions between its units, or it should enumerate
+> only `px`. An unconvertible unit is a promise the format cannot keep.
+
+**A coarse target bands before it quantises (R35.1).** Converting each
+`ORIGIN_TOP` independently splits a visual row in two, because a label sits a few
+pixels off its own field's baseline. That is R19's inference finding governing
+rendering: 19 `ORIGIN_TOP` values on one real form band into **10 visual rows**
+within 8 px, and without banding a label and its field land on different lines.
 > | containers (`form`, `panel`, `pageset`) | `ORIGIN`, honoured |
 >
 > **A width for a content-sized or bound control therefore need not be carried at
@@ -407,7 +440,20 @@ submitted. Nothing queued may outlive the object that queued it.
 Alias = customers
 Table = ..\data\customers.dbf
 Order = cust_id
+Relation = customer -> orders ON cust_id
 ```
+
+**`Relation` added 2026-08-19 by R36**, closing the gap R26.2 named. A `Relation`
+line states that navigating the parent work area repositions the child. The **lock
+domain** is the transitive closure of these edges, and per **R26** a mutating
+handler must serialize against the whole domain, not the area it names -- measured
+at 100 failures in 100 trials when it does not. A document with several work areas
+and no `Relation` line is ambiguous between "each is its own domain" and "the
+document did not say", and a reader should report which it assumed.
+
+Resolution is **case-insensitive** (R28.3): a document whose `Table` does not
+resolve is refused, never rendered unbound, because a width silently derived from a
+schema that was never opened is worse than no width.
 
 `Table` is **relative to the UIDEF document's own location**, never absolute and
 never a bare name resolved against ambient state.
@@ -459,6 +505,12 @@ here (R28.4).
 field; tolerates absent **O** fields; drops unknown properties silently and
 unknown `KIND` loudly; honours `ORIGIN_SCALE` if it honours `ORIGIN` at all;
 records any dimension it derived.
+
+**A target may also IGNORE an optional property its medium has no concept for, and
+must say so** (R35.3). A character grid has no fonts: it cannot honour `FONTREF`
+and must not refuse a document over it. Ignoring is not refusal and it is not
+honouring, and this section had no word for it until a target existed that needed
+one.
 
 **A conformant WRITER** emits every **P** field; emits `ORIGIN_SCALE` whenever it
 emits any `ORIGIN_*`; never writes a derived dimension into `ORIGIN`; sets
@@ -563,6 +615,18 @@ when.
     codepage. Proposed, not adopted.
 12. **`FLOW = row` is defined as "left to right"**, a hard-coded direction that is
     wrong in an RTL locale. Untouched.
+13. **`ORIGIN_SCALE` gives no conversions** (R35.4, gate 11 G-6). Section 8b states
+    the problem and does not solve it: the only consumer that has needed one chose
+    its own divisor and declared it.
+14. **The refusal set belongs to the target, not the format** (R34.2), which is a
+    result rather than an open item -- but it means conformance cannot be stated as
+    a single list. `tools/uidef/manifest.py` carries three real target profiles and
+    a hypothetical one, and its five outcomes -- `REFUSE`, `DEGRADE`, `DERIVE`,
+    `REQUIRE`, `NOTE` -- are richer than section 12's vocabulary.
+15. **Nothing takes a lock.** R36 lets a document state its lock domain and R26
+    proves what happens without one, but no generated frontend serializes anything.
+    The same gap holds for `DISPATCH = worker`: all three backends are Python, and
+    only Tk implements dispatch at all.
 
 ## 15. Handoff -- PowerShell, run in `D:\code\ccode`
 
