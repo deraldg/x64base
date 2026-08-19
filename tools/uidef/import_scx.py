@@ -35,6 +35,32 @@ RENAME_PROPS = {'inputmask': 'Mask'}
 # children; see AIF120_TAB_ORDER_MEASUREMENT_V1.md and the owner's decision of
 # 2026-08-19. Removed from PROPS so it is not carried twice.
 PROMOTED = ('tabindex',)
+
+# Set by convert(): [(objid, kind, [child names]), ...] -- see implied_children.
+LAST_IMPLIED = []
+
+
+def implied_children(keep):
+    """Child objects that exist only as dotted property names on their parent.
+
+    R28.1, found by the gate 11 implementer: `UIDEF_STUDENTS`'s button panel has
+    no child records at all. Its ten buttons live here --
+    `cmdadd.caption = "\\<Add"`, `cmddelete.enabled = .F.` -- and R6 puts implicit
+    children out of v1, so a conformant reader renders an empty panel and says
+    nothing. Every wizard form loses its whole navigation bar that way.
+
+    v1 still does not MATERIALISE them; that is a scope change and the owner's.
+    What it must not do is lose them silently. Returns the names so the importer
+    can name what it dropped.
+    """
+    names = []
+    for k in keep:
+        if '.' not in k:
+            continue
+        head = k.split('.', 1)[0].strip().lower()
+        if head and head not in names:
+            names.append(head)
+    return sorted(names)
 GEO  = ('top','left','height','width')
 # Contract section 9 event names
 EVENTS = {'click':'Click','init':'Init','interactivechange':'Change','activate':'Activate',
@@ -125,7 +151,7 @@ def convert(scx_path, out_stem):
         if b not in KINDMAP: refused.append(b); continue
         n+=1; ids[path(r)] = 'O%03d'%n
 
-    n=0; ordinal={}
+    n=0; ordinal={}; implied=[]
     for r in objs:
         b=(r['BASECLASS'] or '').strip().lower()
         if b in SKIP or b not in KINDMAP: continue
@@ -148,6 +174,9 @@ def convert(scx_path, out_stem):
         for mname in re.findall(r'^\s*PROCEDURE\s+([A-Za-z_]\w*)', m, re.I|re.M):
             ev=EVENTS.get(mname.lower())
             if ev: hs.append((ev, '%s / ui' % mname))
+        imp = implied_children(keep)
+        if imp:
+            implied.append((ids[path(r)], KINDMAP[b], imp))
         out.append({'RECKIND':'OBJ','OBJID':ids[path(r)],'PARENT':pid,
                     'ORDINAL':ordinal[pid],'KIND':KINDMAP[b],
                     'FLOW':'free' if b in ('form','container','pageframe') else '',
@@ -159,6 +188,10 @@ def convert(scx_path, out_stem):
     # FONTREF is an index into this document's FONT rows in table order, so any
     # row added for a declaration the cache lacked goes on the end, keeping the
     # indices already handed out valid.
+    # R28.1: name what is dropped. Kept as a module-level record rather than a
+    # fourth return value, so every existing caller of convert() keeps working.
+    global LAST_IMPLIED
+    LAST_IMPLIED = implied
     out.extend(extra_fonts)
     nrec,rlen,hlen = uidef.write(out_stem+'.DBF', out_stem+'.FPT', out)
     return out, refused, (nrec,rlen,hlen)
@@ -168,5 +201,11 @@ if __name__=='__main__':
     out,refused,(n,rl,hl)=convert(scx,stem)
     print("%s -> %s.DBF  records=%d rlen=%d hlen=%d" % (os.path.basename(scx),stem,n,rl,hl))
     if refused: print("  REFUSED kinds (not in v1 vocabulary):", sorted(set(refused)))
+    if LAST_IMPLIED:
+        tot=sum(len(v) for _,_,v in LAST_IMPLIED)
+        print("  IMPLIED CHILDREN dropped -- %d object(s) name %d child(ren) only as"
+              " dotted properties (R6 scope, R28.1 naming):" % (len(LAST_IMPLIED), tot))
+        for oid,kind,names in LAST_IMPLIED:
+            print("    %-6s %-8s %2d: %s" % (oid, kind, len(names), ", ".join(names)))
     f=uidef.validate(out)
     print("  conformance findings:", f if f else "none")
