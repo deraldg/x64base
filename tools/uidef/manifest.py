@@ -49,6 +49,89 @@ def parse_handlers(txt):
     return out
 
 
+# R17: a BOUND control's width lives in the data schema, not in the design.
+# px = 7.00 * chars + 11.4, fitted on STUDENTS (r=0.9982) and ACCOUNTS (r=0.9977).
+R17_SLOPE, R17_INTERCEPT = 7.00, 11.4
+
+# R25: the width follows the INPUT MASK, not the field. Same intercept for both
+# mask classes; the slope is the per-character advance, and a digit is narrower
+# than an X in the fonts these forms use.
+#   X masks     : 7.00 * len + 10   -- exact on 6 of 6 at length >= 15
+#   digit masks : 6.43 * len + 10   -- fitted on 4 points, not exact
+# A type with no mask is a constant: date 62 px (3 of 3), logical 18 px (1 of 1).
+MASK_SLOPE = {'X': 7.00, '9': 6.43}
+MASK_INTERCEPT = 10.0
+UNMASKED_PX = {'D': 62.0, 'L': 18.0}
+
+
+def mask_width(mask, ftype):
+    """Predicted px from the mask, or from the type when there is no mask."""
+    m = (mask or '').strip().strip('"')
+    if not m:
+        return UNMASKED_PX.get(ftype)
+    cls = 'X' if m.upper().count('X') >= len(m) / 2.0 else '9'
+    return MASK_SLOPE[cls] * len(m) + MASK_INTERCEPT
+
+# A control kind implies what it can bind to. This is the loosest defensible
+# reading -- a `check` needs a logical, and everything else takes text.
+KIND_WANTS = {'check': set('L'), 'radio': set('L')}
+
+
+def schema_of(dbf_path):
+    t = Dbf(dbf_path)
+    return {name.lower(): (typ, width, dec) for name, typ, width, dec in t.fields}
+
+
+def bind_check(m, tables):
+    """Join a document's BINDINGs against real DBF schemas.
+
+    The manifest can say a document needs a data source (R24.1's REQUIRE). This
+    says whether a PARTICULAR source satisfies it, which is the join R17 implies:
+    if a bound control's width comes from the field's declared width, then the
+    schema is part of the document's meaning, not an external detail.
+    """
+    out = []
+    for alias, tbl in sorted(m['aliases'].items()):
+        if alias not in tables:
+            out.append(('REFUSE', 'alias %s -> %s' % (alias, tbl),
+                        'no schema supplied for this table'))
+    widths = []
+    for oid, kind, binding, org_w, mask in m['bound']:
+        if '.' not in binding:
+            out.append(('REFUSE', 'BINDING %s on %s' % (binding, oid),
+                        'not alias.field'))
+            continue
+        alias, field = binding.split('.', 1)
+        sch = tables.get(alias.lower())
+        if sch is None:
+            continue                      # already refused above
+        f = sch.get(field.lower())
+        if f is None:
+            out.append(('REFUSE', 'BINDING %s on %s' % (binding, oid),
+                        'field not in the schema'))
+            continue
+        typ, width, dec = f
+        want = KIND_WANTS.get(kind)
+        if want and typ not in want:
+            out.append(('REFUSE', '%s %s bound to %s' % (kind, oid, binding),
+                        'field type %s cannot drive a %s' % (typ, kind)))
+            continue
+        px = R17_SLOPE * width + R17_INTERCEPT          # R17, from the field
+        mx = mask_width(mask, typ)                      # R25, from the mask
+        if org_w:
+            widths.append((oid, binding, width, px, mx, org_w))
+    if widths:
+        e17 = [abs(px - ow) for _, _, _, px, _, ow in widths]
+        e25 = [abs(mx - ow) for _, _, _, _, mx, ow in widths if mx is not None]
+        out.append(('NOTE', 'width check on %d bound control(s)' % len(widths),
+                    'R17 from the field: mean |err| %.1f px, max %.1f  |  '
+                    'R25 from the mask: mean |err| %.1f px, max %.1f (n=%d)'
+                    % (sum(e17) / len(e17), max(e17),
+                       (sum(e25) / len(e25)) if e25 else -1,
+                       max(e25) if e25 else -1, len(e25))))
+    return out, widths
+
+
 def manifest(path):
     rows = list(Dbf(path).rows())
     objs = [r for r in rows if (r['RECKIND'] or '').strip() == 'OBJ']
@@ -74,7 +157,14 @@ def manifest(path):
         'fonts': 0,
         'fonts_unreferenced': [],
         'needs_origin': False,
+        'aliases': {},
+        'bound': [],
     }
+    for r in rows:
+        if (r['RECKIND'] or '').strip() == 'DOC':
+            src = parse_props(r['SOURCE'])
+            if src.get('alias'):
+                m['aliases'][src['alias'].lower()] = src.get('table', '')
     referenced = set()
     for r in objs:
         oid = (r['OBJID'] or '').strip()
@@ -95,8 +185,16 @@ def manifest(path):
         span = (r['SPAN'] or '').strip()
         if span and span not in ('0', '1'):
             m['spans'].append((oid, span))
-        if (r['BINDING'] or '').strip():
+        b = (r['BINDING'] or '').strip()
+        if b:
             m['bindings'] += 1
+            ow = parse_props(r['ORIGIN']).get('origin_width')
+            try:
+                ow = float(ow) if ow else None
+            except ValueError:
+                ow = None
+            m['bound'].append((oid, kind, b.lower(), ow,
+                               parse_props(r['PROPS']).get('mask')))
         # Contract field table: FONTREF is "1-based index into this document's FONT
         # rows. 0 = target default." An index, not an OBJID -- the first version of
         # this check compared it to FONT-row OBJIDs and reported a false defect on
@@ -199,7 +297,15 @@ def check(m, p):
     return out
 
 
-def report(path, profiles):
+def load_schemas(paths):
+    out = {}
+    for p in paths:
+        alias = os.path.splitext(os.path.basename(p))[0].lower()
+        out[alias] = schema_of(p)
+    return out
+
+
+def report(path, profiles, tables=None):
     m = manifest(path)
     print("%s -- %d objects" % (m['document'], m['objects']))
     print("  kinds     : %s" % ', '.join('%s x%d' % kv for kv in sorted(m['kinds'].items()) if kv[0]))
@@ -220,6 +326,19 @@ def report(path, profiles):
                     print("      %-8s %-34s %s" % (s, subj, why))
         print("      -> %s" % (', '.join('%s %d' % (k, v) for k, v in sorted(counts.items()))
                                or 'clean'))
+    if tables is not None and m['bindings']:
+        res, widths = bind_check(m, tables)
+        print("  vs the supplied schema(s): %s" % ', '.join(sorted(tables)))
+        for s_, subj, why in res:
+            print("      %-8s %-34s %s" % (s_, subj, why))
+        if widths:
+            print("      %-10s %-22s %5s %9s %9s %9s" %
+                  ('object', 'binding', 'chars', 'R17 px', 'R25 px', 'design px'))
+            for oid, b, w, px, mx, ow in widths:
+                print("      %-10s %-22s %5d %9.1f %9s %9.1f"
+                      % (oid, b, w, px, ('%.1f' % mx) if mx is not None else '--', ow))
+        if not res:
+            print("      every binding resolves")
     print()
     return m
 
@@ -231,5 +350,11 @@ if __name__ == '__main__':
         profs.append(PROFILE_MINIMAL)
     if '--minimal' not in sys.argv:
         profs.insert(0, profile_tk())
+    tables = None
+    if '--schema' in sys.argv:
+        i = sys.argv.index('--schema')
+        paths = sys.argv[i + 1].split(',')
+        tables = load_schemas(paths)
+        args = [a for a in args if a not in paths]
     for a in args:
-        report(a, profs)
+        report(a, profs, tables)

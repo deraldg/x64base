@@ -19,6 +19,17 @@ KINDMAP = {
     'image':'image',
 }
 SKIP = {'dataenvironment','cursor','relation'}          # become SOURCE, not objects
+
+# Properties the shared language NAMES, because a consumer must understand them.
+# R15 set up a `name = value` property language with shared keys; R20.2 said the
+# vocabulary is the DSL's, not VFP's spelling. Everything else still passes through
+# verbatim under VFP's own key -- 648 distinct keys across the corpus, measured --
+# which is fine for decoration and wrong for anything the layout depends on.
+#
+# `InputMask` is load-bearing: R25 measures that a bound control's width follows
+# its MASK, not its field. A consumer that cannot find the mask cannot reproduce
+# the width, so the mask gets a name.
+RENAME_PROPS = {'inputmask': 'Mask'}
 GEO  = ('top','left','height','width')
 # Contract section 9 event names
 EVENTS = {'click':'Click','init':'Init','interactivechange':'Change','activate':'Activate',
@@ -120,7 +131,7 @@ def convert(scx_path, out_stem):
         for g in GEO:
             if g in p: org.append(('ORIGIN_'+g.upper(), p[g]))
         if org: org.append(('ORIGIN_SCALE','px' if p.get('scalemode','3')=='3' else 'cell'))
-        keep={k:v for k,v in p.items()
+        keep={RENAME_PROPS.get(k, k): v for k,v in p.items()
               if k not in GEO and k not in ('name','scalemode','controlsource')}
         hs=[]
         m=(r['METHODS'] or '')

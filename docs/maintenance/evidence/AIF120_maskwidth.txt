@@ -1,0 +1,51 @@
+AIF-120 R25 evidence -- a bound control's width follows its INPUT MASK
+run: python3 tools/uidef/manifest.py UIDEF_STUDENTS.DBF --schema STUDENTS.dbf
+
+--- the mask is derived from the schema, exactly ---
+  binding                field    mask                   chars  width
+  students.sid           N(8,0)   99,999,999                10     72
+  students.lname         C(20,0)  XXXXXXXXXXXXXXXXXXXX      20    150
+  students.fname         C(15,0)  XXXXXXXXXXXXXXX           15    115
+  students.dob           D(8,0)   (none)                     -     62
+  students.gender        C(1,0)   X                          1     20
+  students.major         C(4,0)   XXXX                       4     50
+  students.enroll_d      D(8,0)   (none)                     -     62
+  students.gpa           N(4,2)   9.99                       4     36
+  students.email         C(40,0)  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX    40    290
+  accounts.accountid     C(15,0)  XXXXXXXXXXXXXXX           15    115
+  accounts.acctname      C(30,0)  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX    30    220
+  accounts.descript      M(4,0)   (none)                     -      -
+  accounts.accountnum    C(15,0)  XXXXXXXXXXXXXXX           15    115
+  accounts.accttype      C(20,0)  XXXXXXXXXXXXXXXXXXXX      20    150
+  accounts.startdate     D(8,0)   (none)                     -     62
+  accounts.taxable       L(1,0)   (none)                     -     18
+  accounts.units         N(5,0)   99,999                     6     48
+  accounts.totaldue      N(15,2)  999,999,999,999.99        18    126
+  accounts.note          M(4,0)   (none)                     -      -
+
+--- prediction from the field (R17) vs from the mask (R25) ---
+  vs the supplied schema(s): students
+      NOTE     width check on 9 bound control(s)  R17 from the field: mean |err| 3.9 px, max 10.6  |  R25 from the mask: mean |err| 2.0 px, max 12.0 (n=9)
+      object     binding                chars    R17 px    R25 px design px
+      O003       students.sid               8      67.4      74.3      72.0
+      O005       students.lname            20     151.4     150.0     150.0
+      O007       students.fname            15     116.4     115.0     115.0
+      O009       students.dob               8      67.4      62.0      62.0
+      O011       students.gender            1      18.4      17.0      20.0
+      O013       students.major             4      39.4      38.0      50.0
+      O015       students.enroll_d          8      67.4      62.0      62.0
+      O017       students.gpa               4      39.4      35.7      36.0
+      O019       students.email            40     291.4     290.0     290.0
+
+  vs the supplied schema(s): accounts
+      NOTE     width check on 8 bound control(s)  R17 from the field: mean |err| 2.8 px, max 9.6  |  R25 from the mask: mean |err| 0.1 px, max 0.6 (n=8)
+      object     binding                chars    R17 px    R25 px design px
+      O003       accounts.accountid        15     116.4     115.0     115.0
+      O005       accounts.acctname         30     221.4     220.0     220.0
+      O009       accounts.accountnum       15     116.4     115.0     115.0
+      O011       accounts.accttype         20     151.4     150.0     150.0
+      O013       accounts.startdate         8      67.4      62.0      62.0
+      O015       accounts.taxable           1      18.4      18.0      18.0
+      O017       accounts.units             5      46.4      48.6      48.0
+      O019       accounts.totaldue         15     116.4     125.7     126.0
+
