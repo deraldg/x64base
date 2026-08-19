@@ -10,7 +10,8 @@ R14: the table carries a handler NAME, never a body. The generator resolves the
 name against a registry the target supplies. Nothing is eval'd.
 """
 import queue, sys, threading, time
-sys.path.insert(0,'/tmp/gen')
+import os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import uidef_tk as U
 import tkinter as tk
 from tkinter import ttk

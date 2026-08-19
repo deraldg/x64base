@@ -11,8 +11,16 @@ baseline offset is a within-row difference, so it never crosses a column boundar
 and cannot corrupt the row assignment.
 """
 import sys, collections
-sys.path.insert(0,'/tmp/gen')
+import os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from read_vfp_binary import Dbf
+from import_scx import SKIP        # one definition of "not a visual object"
+
+# A DataEnvironment is not a layout group. Its children are cursors and relations,
+# they all sit at top 0, and asking a coordinate heuristic about them yields `row`
+# -- 9 times in this corpus. The importer has always skipped these (import_scx.SKIP
+# turns them into SOURCE, not objects), so the design table was never polluted; the
+# MEASUREMENT was. Reusing the importer's set rather than keeping a second opinion.
 
 def props(r):
     d={}
@@ -66,12 +74,26 @@ def infer(children, tol=6):
                 '%d grid columns x %d rows + %d outlier(s)'%(len(grid_cols),mode,n_out))
     return ('free',None,'no modal grid: column depths %s'%sorted(depths.values()))
 
+def is_visual(rows):
+    """Map a parent path -> False when that object is one the importer skips."""
+    base={}
+    for r in rows:
+        nm=(r['OBJNAME'] or '').strip().lower()
+        par=(r['PARENT'] or '').strip().lower()
+        full=(par+'.'+nm) if par else nm
+        base[full]=(r['BASECLASS'] or '').strip().lower()
+    def ok(parent):
+        b=base.get((parent or '').strip().lower())
+        return b not in SKIP
+    return ok
+
 def analyse(path, tol=6, verbose=False):
     rows=[r for r in Dbf(path).rows() if (r['PLATFORM'] or '').strip().upper()!='COMMENT']
+    ok=is_visual(rows)
     kids=collections.defaultdict(list)
     for r in rows:
         par=(r['PARENT'] or '').strip()
-        if par: kids[par].append(r)
+        if par and ok(par): kids[par].append(r)
     out=collections.Counter()
     for parent,cs in kids.items():
         ch=[]

@@ -111,11 +111,36 @@ def build_window(path):
     from tkinter import ttk
     doc, fonts, objs = load(path)
     kids = tree(objs)
+    rec = {(r['OBJID'] or '').strip(): r for r in objs}
     root = tk.Tk()
     root.title(parse_props(doc['PROPS']).get('sourcefile', 'UIDEF'))
     made = {}
+    notes = []
+
+    def container_flow(oid):
+        # Contract section 5, field table line: FLOW is "P on containers". The
+        # container declares how its children are arranged; the CHILD carries only
+        # ORDINAL and SPAN. Reading FLOW off the child -- which this file did until
+        # 2026-08-19 -- means `row` and `column` can never fire, because no importer
+        # writes FLOW onto a child. That is why they had never been rendered.
+        r = rec.get(oid)
+        return (r['FLOW'] or '').strip().lower() if r is not None else ''
 
     def build(pid, parent):
+        pflow = container_flow(pid)
+        gcols = None
+        if pflow == 'grid':
+            gp = parse_props(rec[pid]['PROPS']) if pid in rec else {}
+            if 'columns' in gp:
+                gcols = int(float(gp['columns']))
+            else:
+                # Section 5 says `grid` wraps, and never says at what width. An
+                # absent dimension is not defaulted to a number (R12.3), so the
+                # container is refused and named rather than guessed at 2.
+                notes.append("REFUSED grid on %s -- FLOW=grid with no Columns "
+                             "property; section 5 does not say where it wraps" % pid)
+                pflow = 'column'
+        cell = [0, 0]
         for r in kids.get(pid, []):
             oid = (r['OBJID'] or '').strip()
             kind = (r['KIND'] or '').strip().lower()
@@ -151,19 +176,40 @@ def build_window(path):
             # Contract s8: a generator that honours ORIGIN must honour ORIGIN_SCALE.
             # Position is honoured; SIZE is filtered by R16 -- honouring a label's
             # stated width truncates it on a toolkit with a different font.
-            if 'origin_top' in org and 'origin_left' in org:
-                kw = dict(x=float(org['origin_left']), y=float(org['origin_top']))
-                if 'origin_width' in org and kind not in CONTENT_SIZED:
-                    kw['width'] = float(org['origin_width'])   # R16
-                w.place(**kw)
-            elif flow == 'row':
-                w.pack(side='left')
+            span = int(float((r['SPAN'] or '0').strip() or 0)) or 1
+            if pflow == 'free' or not pflow:
+                if 'origin_top' in org and 'origin_left' in org:
+                    kw = dict(x=float(org['origin_left']), y=float(org['origin_top']))
+                    if 'origin_width' in org and kind not in CONTENT_SIZED:
+                        kw['width'] = float(org['origin_width'])   # R16
+                    w.place(**kw)
+                else:
+                    # `free` means positioned by ORIGIN, and there is no ORIGIN. The
+                    # only thing left is ORDINAL. R12.3: a target that derives a
+                    # position must SAY it derived one.
+                    notes.append("DERIVED position for %s -- FLOW=free with no "
+                                 "ORIGIN; fell back to ORDINAL order" % oid)
+                    w.pack(anchor='w')
+            elif pflow == 'row':
+                w.pack(side='left', padx=2, pady=2)
+            elif pflow == 'column':
+                w.pack(side='top', anchor='w', padx=2, pady=2)
+            elif pflow == 'grid':
+                if cell[1] + span > gcols:
+                    cell[0] += 1; cell[1] = 0
+                w.grid(row=cell[0], column=cell[1], columnspan=span,
+                       sticky='w', padx=2, pady=2)
+                cell[1] += span
+                if cell[1] >= gcols:
+                    cell[0] += 1; cell[1] = 0
             else:
                 w.pack(anchor='w')
             made[oid] = w
             build(oid, w)
 
     build("", root)
+    for nt in notes:
+        print("  " + nt)
     return root, made
 
 

@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Author a UIDEF document by hand -- PROVENANCE = authored, never yet exercised.
 Carries a `worker` handler with an ON_COMPLETE, to test R11 at runtime."""
-import sys; sys.path.insert(0,'/tmp/gen')
+import os, sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import uidef
 P=uidef.props
 recs=[

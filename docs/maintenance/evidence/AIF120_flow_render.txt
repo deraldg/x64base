@@ -1,0 +1,24 @@
+AIF-120 R23 evidence -- FLOW belongs to the container
+
+--- corpus, all parents (R19's measurement) ---
+  positioned groups=228 expressible=36 (15.8%)  free=192 row=21 column=3 grid=12
+  -- 14 of those parents are DataEnvironment/cursor/relation, which the
+     importer has always skipped; 9 of the 21 rows are DataEnvironments.
+
+--- corpus, visual parents only (corrected) ---
+  positioned groups=214 expressible=26 (12.1%)  free=188 row=11 column=3 grid=12
+
+--- AUTHORED FLOW document: every FLOW value, zero coordinates ---
+FLOWDEMO.DBF records=25 rlen=164 hlen=776
+  conformance findings: none
+  rows carrying ORIGIN (this document must have 0): 0
+  FLOW values exercised: {'column': 2, 'row': 1, 'grid': 2, 'free': 1}
+
+--- RENDER, before the fix: FLOW read off the child ---
+rendered 24 widgets -> /tmp/flow/A_before.png
+  the four row buttons stacked vertically; grid did not grid
+
+--- RENDER, after the fix: FLOW read off the container ---
+  REFUSED grid on G2 -- FLOW=grid with no Columns property; section 5 does not say where it wraps
+  DERIVED position for L9 -- FLOW=free with no ORIGIN; fell back to ORDINAL order
+rendered 24 widgets -> /tmp/flow/B_after.png

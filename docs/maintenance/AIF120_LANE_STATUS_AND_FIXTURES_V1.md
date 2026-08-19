@@ -63,7 +63,7 @@ recursing that directory.
 | subject | file |
 | --- | --- |
 | Lane charter, scope, proof gates, and rulings **R1 through R12** -- amendments (a) to (e) | `docs/maintenance/APPLICATION_UI_DSL_LANE_V1.md` |
-| Rulings **R13 through R22** live in their own files; this ledger is their only index. The charter does not carry them. | -- |
+| Rulings **R13 through R23** live in their own files; this ledger is their only index. The charter does not carry them. | -- |
 | **R11, the threading ruling (gate 9)** -- full text, evidence, disproof conditions | `docs/maintenance/AIF120_THREADING_RULING_V1.md` |
 | **R12, the coordinate ruling (gate 8)** -- six measurements, disproof conditions | `docs/maintenance/AIF120_COORDINATE_RULING_V1.md` |
 | **VFP 9 reading an x64base-written table** -- the lane's first `runtime-proven` result | `docs/maintenance/AIF120_VFP_READS_X64BASE_OUTPUT_V1.md` |
@@ -85,7 +85,8 @@ recursing that directory.
 | **R20** -- `OBJCODE 78` decoded: a menu item can reference a HOST capability; `DISPATCH` gains `host` | `docs/maintenance/AIF120_HOST_CAPABILITY_RULING_V1.md` |
 | **R21** -- serialization is per handler and navigation-triggered; R11.4 contention and lifetime runtime-proven | `docs/maintenance/AIF120_SERIALIZATION_RULING_V1.md` |
 | **R22** -- the host capability mapping, its caption guard, and refusal as a visible outcome | `docs/maintenance/AIF120_CAPABILITY_MAPPING_V1.md` |
-| The UIDEF tooling | `tools/uidef/uidef.py`, `import_scx.py`, `import_mnx.py`, `uidef_tk.py`, `uidef_tk_menu.py`, `author_uidef.py`, `dispatch_test.py`, `infer_flow.py`, `contend_test.py`, `lifetime_test.py`, `uidef_tk_host.py` |
+| **R23** -- `FLOW` belongs to the container; `grid` must state `Columns`; R19's corpus figures corrected | `docs/maintenance/AIF120_FLOW_CONTAINER_RULING_V1.md` |
+| The UIDEF tooling | `tools/uidef/uidef.py`, `import_scx.py`, `import_mnx.py`, `uidef_tk.py`, `uidef_tk_menu.py`, `author_uidef.py`, `dispatch_test.py`, `infer_flow.py`, `contend_test.py`, `lifetime_test.py`, `uidef_tk_host.py`, `author_flow.py` |
 | The shipped GUI core the ruling adopts | `src/gui/core/`, `include/gui/core/`, `docs/ui/GUI_THREADING_RAII_CONTRACT_V1.md` |
 | Specimen-by-specimen measurements and the corrections between them | `docs/maintenance/AIF120_VFP_SCX_EMPIRICAL_BASELINE_V1.md` |
 | The reader that produced every measurement | `tools/vfp/read_vfp_binary.py` |
@@ -176,6 +177,7 @@ Settled, with the ruling text in the charter:
 | R20 | a menu item may select a capability the HOST provides; `DISPATCH` gains `host`, needing no thread rule and no registry | `OBJCODE 78` on 21 of 67 items; prefix families map 1:1 onto `OBJCODE` |
 | R21 | the unit of serialization is the handler, not the cursor operation, and navigation triggers it, not mutation; a completion is delivered at most once | per-op locking 200/200 wrong walks, same as no lock; 0-ms buffer keeps the write and still loses the walk 200/200; corrupt walk reports 100 of 200 students at mean 2.92 vs 2.94 |
 | R22 | a capability mapping is a translation and needs an independent witness -- the caption; a named host resource is not necessarily a command; refusal must be visible | 18 mapped + 3 named separators = 21 of 21; caption guard caught `tools.data_browser` on "Class Browser"; Tk provides 7 of 18 and refuses 11 by name |
+| R23 | `FLOW` is the container's field, not the child's -- `row` and `column` were unreachable, not untested; an unspecified `grid` is refused, not stacked; a derived position is declared | A/B render of one authored document with zero coordinates; 228 groups reproduced at 15.8%, corrected to 214 visual groups at 12.1%; 9 of 21 `row` groups were DataEnvironments |
 
 Open:
 

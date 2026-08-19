@@ -1,5 +1,6 @@
 import subprocess, sys, time
-sys.path.insert(0,'/tmp/gen')
+import os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import uidef_tk as U
 import tkinter as tk
 
