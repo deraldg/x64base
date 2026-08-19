@@ -1,0 +1,108 @@
+* aif120_lock_contract_regression.dts
+* AIF-120 (application-ui-dsl) -- the lane's lock contract, expressed in the house's
+* own script language instead of a bespoke harness.
+*
+* Why this file exists: rulings R47 through R63 proved the lock contract with C++
+* probes, Python harnesses and WSL shell scripts. DotTalk++ already ships a script
+* language, a regression launcher and a self-asserting proof form. This is the same
+* contract restated where the house keeps its proofs. See AIF120_DOTSCRIPT_V1.md.
+*
+* Form: transcript canary (the comment_handling_regression.dts form), not the
+* "<TAG>:.T." form -- lock state is not reachable from the expression path, so the
+* proof is the documented expected output below, read against the run.
+*
+* Fixture: STUDENTS and ENROLL from the shipped x64 school tables. Read-only:
+* nothing is appended, replaced, deleted or packed. Every lock taken is released.
+*
+* Regression doctrine: every test sets its own environment.
+*
+* Run:  DOTSCRIPT aif120\aif120_lock_contract_regression.dts
+*
+* EXPECTED OUTPUT (the assertion; * marks the line that carries a claim):
+*   A3 -- Table: LOCKED  AND  Record 5: unlocked        (R54: independent by design)
+*   A4 -- UNLOCK prints a RECORD message and the table stays LOCKED  (correction 34)
+*   B1 -- owner token is host:pid:ms, with no user and no session   (R54 open item)
+*   C1 -- UNLOCK reports "unlocked" for a record that was never locked
+*   C2 -- ...while LOCK WHO on the same record says "no lock recorded"
+*   D1 -- LOCK twice on one record reports success twice, no depth count  (R51)
+*   D2 -- ...and ONE UNLOCK releases it
+*   E1 -- LOCK STATUS reports the CURRENT record, not the record that is locked
+*   F1 -- two work areas hold two table locks at once  (R26 lock domain)
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+SET PATH DBF dbf/x64
+
+FORMULA "AIF120-LOCK-CONTRACT-BEGIN"
+
+ECHO
+ECHO --- A. the record verb and the table verb are not symmetric ---
+SELECT 1
+USE STUDENTS
+GOTO 5
+ECHO A1 LOCK
+LOCK
+LOCK STATUS
+ECHO A2 UNLOCK
+UNLOCK
+LOCK STATUS
+ECHO A3 LOCK TABLE
+LOCK TABLE
+LOCK STATUS
+ECHO A4 UNLOCK -- claims the record, leaves the table
+UNLOCK
+LOCK STATUS
+ECHO A5 UNLOCK TABLE
+UNLOCK TABLE
+LOCK STATUS
+
+ECHO
+ECHO --- B. the owner token ---
+LOCK
+ECHO B1 LOCK WHO 5
+LOCK WHO 5
+UNLOCK
+
+ECHO
+ECHO --- C. an unlock that measures nothing ---
+ECHO C1 UNLOCK 77 with no lock held
+UNLOCK 77
+ECHO C2 LOCK WHO 77
+LOCK WHO 77
+
+ECHO
+ECHO --- D. re-entrancy carries no depth ---
+ECHO D1 LOCK 9 twice
+LOCK 9
+LOCK 9
+ECHO D2 UNLOCK 9 once
+UNLOCK 9
+LOCK WHO 9
+
+ECHO
+ECHO --- E. LOCK STATUS follows the cursor, not the lock ---
+GOTO 7
+LOCK 9
+ECHO E1 LOCK STATUS at record 7 while record 9 is locked
+LOCK STATUS
+LOCK WHO 9
+UNLOCK 9
+
+ECHO
+ECHO --- F. two areas, two table locks (R26 lock domain) ---
+SELECT 2
+USE ENROLL
+LOCK TABLE
+LOCK STATUS
+SELECT 1
+LOCK TABLE
+LOCK STATUS
+ECHO F1 both areas report a table lock above
+UNLOCK TABLE
+SELECT 2
+UNLOCK TABLE
+LOCK STATUS
+
+WORKSPACE CLOSE
+
+FORMULA "AIF120-LOCK-CONTRACT-END"
