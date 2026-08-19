@@ -163,6 +163,14 @@ tolerating it, so the DSL states it rather than discovering it per backend.
 
 ### R11.4 -- Mutating work is serialized per workspace; lifetime is by container
 
+> **Corrected 2026-08-19 by R21.** This heading is wrong and the body below is
+> right. The trigger is navigation, not mutation: a handler that writes nothing
+> still corrupts a concurrent walk, because `SEEK` alone moves the shared
+> pointer. R21 also fixes the granularity -- the unit of serialization is the
+> handler body, not the cursor operation. Both clauses are runtime-proven in
+> `docs/maintenance/AIF120_SERIALIZATION_RULING_V1.md`. The heading is left as
+> written rather than edited, so the record shows what was ruled and when.
+
 Two portability rules that are cheap here and expensive later:
 
 - **Serialization.** Commands that move the record pointer or change area,

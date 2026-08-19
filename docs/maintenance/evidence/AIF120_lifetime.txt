@@ -1,0 +1,26 @@
+AIF-120 R21 evidence -- R11.4 lifetime, cancelled and failed states
+run: xvfb-run -a python3.12 tools/uidef/lifetime_test.py
+
+R11.4 LIFETIME -- destroying a container with work in flight
+
+  PART 1 -- naive runtime: the completion is delivered regardless
+    UI        UI      destroying the container while the worker is in flight
+    worker    worker  scope cancelled at step 6/20 -- returning early
+    complete  UI      state=cancelled result=None
+    ERROR     UI      completion touched a destroyed widget: invalid command name ".!frame.!label"
+
+  PART 2 -- scoped runtime: the pump drops a dead scope's completion
+    UI        UI      destroying the container while the worker is in flight
+    worker    worker  scope cancelled at step 6/20 -- returning early
+    dropped   UI      completion for a dead scope 'frame1' never ran
+
+  PART 3 -- the `failed` state, never previously reached
+    worker    worker  raised ValueError('the handler body raised') -- caught in the worker, NOT on the UI thread
+    complete  UI      state=failed result=ValueError('the handler body raised')
+
+RESULTS
+  worker observed cancellation          : True
+  naive: completion hit a dead widget   : TclError: invalid command name ".!frame.!label"
+  scoped: completion dropped, cancelled : True
+  every completion ran on the UI thread : True
+  failed state reached on the UI thread  : True

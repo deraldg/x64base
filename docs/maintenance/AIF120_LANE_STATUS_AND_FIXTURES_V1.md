@@ -62,7 +62,8 @@ recursing that directory.
 
 | subject | file |
 | --- | --- |
-| Lane charter, scope, proof gates, and rulings **R1 through R20** | `docs/maintenance/APPLICATION_UI_DSL_LANE_V1.md` |
+| Lane charter, scope, proof gates, and rulings **R1 through R12** -- amendments (a) to (e) | `docs/maintenance/APPLICATION_UI_DSL_LANE_V1.md` |
+| Rulings **R13 through R21** live in their own files; this ledger is their only index. The charter does not carry them. | -- |
 | **R11, the threading ruling (gate 9)** -- full text, evidence, disproof conditions | `docs/maintenance/AIF120_THREADING_RULING_V1.md` |
 | **R12, the coordinate ruling (gate 8)** -- six measurements, disproof conditions | `docs/maintenance/AIF120_COORDINATE_RULING_V1.md` |
 | **VFP 9 reading an x64base-written table** -- the lane's first `runtime-proven` result | `docs/maintenance/AIF120_VFP_READS_X64BASE_OUTPUT_V1.md` |
@@ -82,7 +83,8 @@ recursing that directory.
 | **R11 + R14 verified at runtime** on Tk; `FLOW` and `PROVENANCE=authored` exercised for the first time | `docs/maintenance/AIF120_DISPATCH_RUNTIME_V1.md` |
 | **R19** -- `FLOW=free` is what most real forms ARE; 5b's framing withdrawn | `docs/maintenance/AIF120_FLOW_INFERENCE_V1.md` |
 | **R20** -- `OBJCODE 78` decoded: a menu item can reference a HOST capability; `DISPATCH` gains `host` | `docs/maintenance/AIF120_HOST_CAPABILITY_RULING_V1.md` |
-| The UIDEF tooling | `tools/uidef/uidef.py`, `import_scx.py`, `import_mnx.py`, `uidef_tk.py`, `uidef_tk_menu.py`, `author_uidef.py`, `dispatch_test.py`, `infer_flow.py` |
+| **R21** -- serialization is per handler and navigation-triggered; R11.4 contention and lifetime runtime-proven | `docs/maintenance/AIF120_SERIALIZATION_RULING_V1.md` |
+| The UIDEF tooling | `tools/uidef/uidef.py`, `import_scx.py`, `import_mnx.py`, `uidef_tk.py`, `uidef_tk_menu.py`, `author_uidef.py`, `dispatch_test.py`, `infer_flow.py`, `contend_test.py`, `lifetime_test.py` |
 | The shipped GUI core the ruling adopts | `src/gui/core/`, `include/gui/core/`, `docs/ui/GUI_THREADING_RAII_CONTRACT_V1.md` |
 | Specimen-by-specimen measurements and the corrections between them | `docs/maintenance/AIF120_VFP_SCX_EMPIRICAL_BASELINE_V1.md` |
 | The reader that produced every measurement | `tools/vfp/read_vfp_binary.py` |
@@ -171,6 +173,7 @@ Settled, with the ruling text in the charter:
 | R18 | a structural link must never be inferred from a field the format lets be blank; `.MNX` nesting is `OBJCODE 77` + document order | 1 of 1 and 9 of 9 linked; 2 of 9 openers have an empty NAME |
 | R19 | `free` + `ORIGIN` is the correct representation of most imports, not a fallback; 84% of real groups are not row/column/grid | 228 container groups, strict inference: 16% expressible |
 | R20 | a menu item may select a capability the HOST provides; `DISPATCH` gains `host`, needing no thread rule and no registry | `OBJCODE 78` on 21 of 67 items; prefix families map 1:1 onto `OBJCODE` |
+| R21 | the unit of serialization is the handler, not the cursor operation, and navigation triggers it, not mutation; a completion is delivered at most once | per-op locking 200/200 wrong walks, same as no lock; 0-ms buffer keeps the write and still loses the walk 200/200; corrupt walk reports 100 of 200 students at mean 2.92 vs 2.94 |
 
 Open:
 

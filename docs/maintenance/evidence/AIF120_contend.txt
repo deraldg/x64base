@@ -1,0 +1,35 @@
+AIF-120 R21 evidence -- R11.4 serialization under contention
+run: python3 tools/uidef/contend_test.py
+
+STUDENTS.dbf: 200 records, GPA sum 588.74 (single-threaded truth)
+
+PART A -- forced interleaving: the exact mechanism R11.4 names
+    A: walks the cursor while B holds a buffered REPLACE
+    A: reads record 1 (Taylor) -- B had positioned record 101
+    B: COMMIT returned False  (buffer was None)
+    discards recorded: 1   writes applied: 0
+
+PART B -- free-running race, 200 trials per mode
+  B holds its buffer 0.5 ms while A walks ~4 ms -- collision near certain
+  none         wrong walk 200/200   lost write 200/200   stolen pointer   0/200
+  per-op       wrong walk 200/200   lost write 200/200   stolen pointer   0/200
+  per-handler  wrong walk   0/200   lost write   0/200   stolen pointer   0/200
+
+R11.4 serialization holds only at handler granularity: True
+
+PART C -- the same race with B fast, to see the INTERMITTENT rate
+  (the honest number: a bug that fails 3 percent of the time still ships)
+  buffer held   0.000 ms:  none         wrong walk 200/200   lost write   0/200   stolen pointer   0/200
+  buffer held   0.050 ms:  none         wrong walk 200/200   lost write 197/200   stolen pointer   0/200
+  buffer held   0.200 ms:  none         wrong walk 200/200   lost write 199/200   stolen pointer   0/200
+  buffer held   1.000 ms:  none         wrong walk 200/200   lost write 200/200   stolen pointer   0/200
+
+PART D -- what the corrupted walk actually REPORTS
+  This is the part that matters. The walk does not crash and does not
+  raise. It returns a plausible answer that is wrong.
+  truth              : 200 students, GPA sum 588.74, mean 2.94
+  observed 30x       : 100 students, GPA sum 291.54, mean 2.92
+  observed  9x       : 101 students, GPA sum 295.13, mean 2.92
+  observed  1x       : 105 students, GPA sum 306.77, mean 2.92
+  B's SEEK landed on record 101 of 200 and took A's walk with it.
+  A reported half the roster with a credible mean. Nothing errored.
