@@ -299,55 +299,99 @@ ruling's commit before starting the next one.** Two handoffs went unrun in this
 session -- R30's and the contract's -- and both were found by looking rather than by
 anything failing.
 
+## 6e. FOURTH ADDENDUM -- rulings R34 through R39: three backends and a runtime
+
+Section 6d ended at R33. What followed answered the question the closeout had been
+carrying as its top open item since the first addendum: *a second real backend*.
+
+| ruling | what | commit |
+| --- | --- | --- |
+| **R34** | a second backend on a different geometry model -- a browser flowing boxes | `cc91be3da` |
+| **R35** | a third, on a character grid with no pixels and no fonts | `0fcccaf28` |
+| **R36** | `SOURCE` carries relations; the manifest computes the lock domain. R26.2 closed | `2f85c96dc` |
+| **R37** | a backend-independent runtime that takes the lock the document names | `eff5f86a0` |
+| **R38** | the Tk backend adopts it; the chain runs end to end | `05af27848` |
+| **R39** | one scope per container; concurrency is declared, not configured | `b494060f3` |
+
+**Section 5's portability claim is no longer a claim.** One document carrying zero
+coordinates, rendered by three backends across three geometry models --
+`place`/`pack`/`grid`, flexbox and CSS grid, and a character grid -- returning the
+**identical** verdict from the table alone: two derivations, one refusal, the same
+rows and the same reasons. `SPAN` is `grid-column: span N` in a browser and
+`TABORDINAL` is `tabindex`; neither had to be translated for the second target,
+because both were already its own model.
+
+**The chain is joined.** A `relation` record the importer had been discarding
+determines, three commits later, which lock a generated frontend takes at runtime:
+
+```
+.SCX  ->  import_scx   ->  UIDEF table  ->  manifest   ->  runtime  ->  Tk
+          R31 classes       R36 SOURCE       R26 lock       R37        R38/R39
+          R30 members       relations        domain
+```
+
+**And the concurrency result is a pair.** R38 showed two handlers naming
+*different* work areas serialising against each other because the document declared
+a relation; R39 showed two handlers naming *different* work areas running
+*concurrently* because it did not. Neither alone proves anything. Together they
+show the lock extent is a property of the document, not of the runtime.
+
+**Corrections: twenty-seven.** The two since section 6d:
+
+| # | what | how it was caught |
+| --- | --- | --- |
+| 26 | `relate_test.py` resolved its data tables **beside itself**, so it and `locked_test.py` both died on the maintainer's machine | running the tool there before writing it up. Third instance of container-local paths reaching the repo, after the `/tmp/gen` entries and the absolute `CLASSLOC` |
+| 27 | R38 gave the whole window one `Scope` where R21.4 says **container** | writing R38's own open items. Fixed one commit later in R39 -- the shortest a named defect has survived in this lane |
+
+Number 27 is the one to keep, and R38.1 is why: *a runtime, a profile or a rule is
+`planned` until a consumer uses it -- writing it and writing about it are the same
+tier.* R37 built a runtime and recorded that nothing used it, which felt like
+enough. It was not. The difference between the two states is a thread timeline that
+could not be produced by reading either file.
+
 ## 7. What the next session inherits
 
-**Rewritten 2026-08-19 after R33.** The version this replaced stopped at R25 and
-listed as untested four things that have since been done.
+**Rewritten again 2026-08-19 after R39.** The previous version stopped at R33 and
+named a second backend as the top of the queue; there are now three.
 
-**Ready for owner review:** rulings **R1 through R33**, all `review-needed`. The
-author does not self-approve and nothing here has been approved by anyone. Three of
-the thirty-three were the maintainer's own calls, marked as such: R27, R32, and the
-scope decision behind R30.
+**Ready for owner review:** rulings **R1 through R39**, all `review-needed`.
+Nothing here has been approved by anyone. Three were the maintainer's own calls --
+R27 (`TABORDINAL` as an ordinal), R32 (methods inherit), and the scope decision
+behind R30 -- and are marked as such in the ledger.
 
 **Decisions that are the owner's:**
 
 - **R33.4 -- captions as message references.** x64base ships `SET LOCALE` and 4,756
   texts in five locales; the design table carries literal prose in one language and
-  one codepage. Making a caption name a catalog symbol would let one document render
-  in five locales and would largely dissolve the single-codepage limit, because the
-  table would hold identifiers and the catalog the text. It touches section 7, the
-  importer, every consumer, and an authority model owned elsewhere.
-- **R29's three options on implicit children**, now that R30 has separated
-  inheritance from composition and both are implemented. What remains of the
-  question is the 274 dotted names whose class libraries are absent.
-- **`FLOW = row` hard-codes left to right** and is wrong in an RTL locale.
+  one codepage. This is the largest single thing the lane has proposed and not done.
+- **`FLOW = row` hard-codes left to right**, wrong in an RTL locale.
+- **Section 8 gives no conversions between its units** (R35.4). Either it does, or
+  it should enumerate only `px`.
 - **Menu containers are marked by `Container = .T.` in `PROPS`, not by `KIND`**, so
-  the validator cannot check that `FLOW` only appears on containers.
-- **`coordination/aif/AIF-120.claim` still records `run_id: COWORK-20260817-001`**
-  while this run is `COWORK-20260818-001`. Deliberately untouched.
+  the validator cannot check that `FLOW` appears only on containers.
+- **`coordination/aif/AIF-120.claim` records the wrong `run_id`.** Deliberately
+  untouched.
 - **The two defects the contract records against itself** -- section 12's permission
-  to refuse `FLOW = free`, section 4's refuse-the-whole-document rule -- unchanged.
+  to refuse `FLOW = free`, section 4's refuse-the-whole-document rule.
 
 **Untested, in the order I would take them:**
 
-1. **A second real backend.** Gate 11 proved a second *reader* can be built from the
-   contract; `manifest.py`'s `minimal` profile still describes a target nobody has
-   built, and everything renderable in this lane renders on Tk.
-2. **Nothing fires an inherited handler.** R32 carries 788 of them; no test invokes
-   one that arrived by inheritance rather than by authoring.
-3. **Depth-one class resolution.** A class member that is itself an instance does
-   not recurse.
-4. **No round trip for composition or inheritance.** Nothing folds materialised
-   members back into dotted properties on export.
-5. **The 19 gaps from gate 11** are in
-   `docs/maintenance/evidence/AIF120_gate11_FINDINGS.md`. Five are absorbed into the
-   contract; fourteen are untriaged.
+1. **wx.** It is in this tree, it is C++, and every backend so far is Python. It
+   would test the dispatch and handler model rather than geometry -- which is the
+   half three backends have not stressed, since only Tk implements dispatch at all.
+2. **A real cursor under the lock.** R37 and R39's runtime is real; what it protects
+   is `relate_test.Workspace`, not a `src/gui/` cursor.
+3. **Deadlock.** R26.3 argued that one lock per domain removes lock-order inversion
+   by construction. Still argued.
+4. **Nested container cancellation.** A panel inside a page inside a pageframe
+   should cancel innermost-first; nothing exercises it.
+5. **The 14 untriaged gate 11 gaps** in
+   `docs/maintenance/evidence/AIF120_gate11_FINDINGS.md`.
 
-**Unexplained, and honestly so:** 274 dotted names whose libraries the corpus does
-not contain; 271 unreferenced FONT rows; FONT metric fields 4 through 9; the
+**Unexplained, and honestly so:** 274 dotted names whose class libraries the corpus
+does not contain; 271 unreferenced FONT rows; FONT metric fields 4 through 9; the
 digit-mask slope fitted on four points; `gender` at 20 px and `major` at 50 px;
-`RESERVED4`; and one `.FRX` `TAG2` column that will not decode as its declared
-codepage.
+`RESERVED4`; one `.FRX` `TAG2` column that will not decode as its declared codepage.
 
 **Deferred by the maintainer's own scope call:** `.FRX` reports.
 
@@ -355,8 +399,9 @@ codepage.
 read the exit code. Before generalising from specimens, count how many you have.
 Before writing a check, read the field table. Before believing a field works, find
 the consumer that reads it. Before answering a question about the wider system,
-grep the wider system -- correction 23 was one grep away. And check `git log` for
-the previous handoff before building on it.
+grep the wider system. Before building on a handoff, check `git log` that it ran.
+Before writing a tool up, run it on the maintainer's machine. And when you record
+your own gap, fix it in the same session -- recording is not fixing.
 
 ## 8. Learning from FoxPro, not bound by it
 
