@@ -59,6 +59,21 @@ class LockProvider:
         # SCANS an area needs the whole area, and the document does not say whether
         # a handler scans or edits one row. Choosing per handler is a schema
         # question and therefore the owner's.
+        #
+        # R52, measured: `table` is conservative only AGAINST OTHER TABLE LOCKERS.
+        # `LOCK TABLE` succeeds while another process holds a RECORD lock, and both
+        # then believe they have exclusive access to that row:
+        #
+        #     . LOCK: table locked.
+        #     . Table:  LOCKED (owner Grimwood:21109:...)
+        #     Record 1: LOCKED (owner Grimwood:21080:...)
+        #
+        # VFP's FLOCK() refuses in that situation; this engine does not (reported to
+        # the xbase lane, R52.2). So NEITHER granularity is sufficient on its own
+        # today, and no combination available to a frontend fixes it -- taking both
+        # verbs would still cover one record. `table` stays the default because it
+        # is strictly better than `record` for a scanning handler, not because it
+        # is safe.
         # R50: the RELEASE verb must pair with the ACQUIRE verb. Bare `UNLOCK`
         # unlocks the current RECORD, not the table (src/cli/cmd_unlock.cpp:
         # "UNLOCK with no arguments unlocks the current record"), so releasing a
