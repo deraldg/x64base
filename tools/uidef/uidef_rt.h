@@ -14,6 +14,7 @@
 #pragma once
 #include <wx/wx.h>
 #include <wx/statbox.h>
+#include <wx/bookctrl.h>
 #include <wx/sizer.h>
 #include <atomic>
 #include <functional>
@@ -82,6 +83,19 @@ inline bool destroy_container(wxWindow* root, const wxString& objid) {
     wxWindow* w = wxWindow::FindWindowByName(objid, root);
     if (!w) return false;
     uidef_announce_destroy(w);
+    // R46: a notebook OWNS its pages. Destroy() on a page window leaves the book
+    // control holding a freed entry and the next Layout() segfaults -- the same
+    // shape as the wxStaticBox case, a different owner, a third removal verb.
+    // DeletePage destroys the page window, so the scope is cancelled either way;
+    // what changes is whether the process survives to observe it.
+    if (auto* book = wxDynamicCast(w->GetParent(), wxBookCtrlBase)) {
+        for (size_t i = 0; i < book->GetPageCount(); ++i)
+            if (book->GetPage(i) == w) {
+                book->DeletePage(i);
+                book->Layout();
+                return true;
+            }
+    }
     if (auto* box = wxDynamicCast(w, wxStaticBox)) {
         wxWindow* parent = box->GetParent();
         wxSizer* top = parent ? parent->GetSizer() : nullptr;
