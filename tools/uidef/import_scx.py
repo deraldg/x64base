@@ -30,6 +30,11 @@ SKIP = {'dataenvironment','cursor','relation'}          # become SOURCE, not obj
 # its MASK, not its field. A consumer that cannot find the mask cannot reproduce
 # the width, so the mask gets a name.
 RENAME_PROPS = {'inputmask': 'Mask'}
+
+# Promoted to a COLUMN, not a property. Tab order is a second ordinal over the same
+# children; see AIF120_TAB_ORDER_MEASUREMENT_V1.md and the owner's decision of
+# 2026-08-19. Removed from PROPS so it is not carried twice.
+PROMOTED = ('tabindex',)
 GEO  = ('top','left','height','width')
 # Contract section 9 event names
 EVENTS = {'click':'Click','init':'Init','interactivechange':'Change','activate':'Activate',
@@ -132,7 +137,12 @@ def convert(scx_path, out_stem):
             if g in p: org.append(('ORIGIN_'+g.upper(), p[g]))
         if org: org.append(('ORIGIN_SCALE','px' if p.get('scalemode','3')=='3' else 'cell'))
         keep={RENAME_PROPS.get(k, k): v for k,v in p.items()
-              if k not in GEO and k not in ('name','scalemode','controlsource')}
+              if k not in GEO and k not in PROMOTED
+              and k not in ('name','scalemode','controlsource')}
+        try:
+            tabord = int(float(p.get('tabindex') or 0))
+        except ValueError:
+            tabord = 0
         hs=[]
         m=(r['METHODS'] or '')
         for mname in re.findall(r'^\s*PROCEDURE\s+([A-Za-z_]\w*)', m, re.I|re.M):
@@ -142,6 +152,7 @@ def convert(scx_path, out_stem):
                     'ORDINAL':ordinal[pid],'KIND':KINDMAP[b],
                     'FLOW':'free' if b in ('form','container','pageframe') else '',
                     'BINDING':p.get('controlsource','').strip('"'),
+                    'TABORDINAL':tabord,
                     'FONTREF':fontref(p),'PROVENANCE':'imported',
                     'PROPS':uidef.props(sorted(keep.items())),
                     'ORIGIN':uidef.props(org),'HANDLERS':uidef.props(hs)})

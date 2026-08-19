@@ -63,7 +63,7 @@ recursing that directory.
 | subject | file |
 | --- | --- |
 | Lane charter, scope, proof gates, and rulings **R1 through R12** -- amendments (a) to (e) | `docs/maintenance/APPLICATION_UI_DSL_LANE_V1.md` |
-| Rulings **R13 through R25** live in their own files; this ledger is their only index. The charter does not carry them. | -- |
+| Rulings **R13 through R27** live in their own files; this ledger is their only index. The charter does not carry them. | -- |
 | **R11, the threading ruling (gate 9)** -- full text, evidence, disproof conditions | `docs/maintenance/AIF120_THREADING_RULING_V1.md` |
 | **R12, the coordinate ruling (gate 8)** -- six measurements, disproof conditions | `docs/maintenance/AIF120_COORDINATE_RULING_V1.md` |
 | **VFP 9 reading an x64base-written table** -- the lane's first `runtime-proven` result | `docs/maintenance/AIF120_VFP_READS_X64BASE_OUTPUT_V1.md` |
@@ -89,7 +89,9 @@ recursing that directory.
 | **R24** -- a document manifest answers refusal from the table; `FONTREF` resolves the object's own font; `pageset` renders | `docs/maintenance/AIF120_MANIFEST_AND_FONTREF_V1.md` |
 | **R25** -- a bound control's width follows its INPUT MASK; R17 narrowed; `PROPS` gains `Mask` | `docs/maintenance/AIF120_MASK_WIDTH_RULING_V1.md` |
 | Tab order: measurement only, deliberately rules nothing -- inputs for the owner decision R25 raised | `docs/maintenance/AIF120_TAB_ORDER_MEASUREMENT_V1.md` |
-| The UIDEF tooling | `tools/uidef/uidef.py`, `import_scx.py`, `import_mnx.py`, `uidef_tk.py`, `uidef_tk_menu.py`, `author_uidef.py`, `dispatch_test.py`, `infer_flow.py`, `contend_test.py`, `lifetime_test.py`, `uidef_tk_host.py`, `author_flow.py`, `manifest.py`, `author_fonts.py`, `author_tabs.py` |
+| **R26** -- the unit of serialization is the RELATION SET, not the work area | `docs/maintenance/AIF120_RELATION_SET_RULING_V1.md` |
+| **R27** -- tab order becomes `TABORDINAL`, a second ordinal column; the owner's decision | `docs/maintenance/AIF120_TAB_ORDINAL_RULING_V1.md` |
+| The UIDEF tooling | `tools/uidef/uidef.py`, `import_scx.py`, `import_mnx.py`, `uidef_tk.py`, `uidef_tk_menu.py`, `author_uidef.py`, `dispatch_test.py`, `infer_flow.py`, `contend_test.py`, `lifetime_test.py`, `uidef_tk_host.py`, `author_flow.py`, `manifest.py`, `author_fonts.py`, `author_tabs.py`, `relate_test.py` |
 | The shipped GUI core the ruling adopts | `src/gui/core/`, `include/gui/core/`, `docs/ui/GUI_THREADING_RAII_CONTRACT_V1.md` |
 | Specimen-by-specimen measurements and the corrections between them | `docs/maintenance/AIF120_VFP_SCX_EMPIRICAL_BASELINE_V1.md` |
 | The reader that produced every measurement | `tools/vfp/read_vfp_binary.py` |
@@ -183,6 +185,8 @@ Settled, with the ruling text in the charter:
 | R23 | `FLOW` is the container's field, not the child's -- `row` and `column` were unreachable, not untested; an unspecified `grid` is refused, not stacked; a derived position is declared | A/B render of one authored document with zero coordinates; 228 groups reproduced at 15.8%, corrected to 214 visual groups at 12.1%; 9 of 21 `row` groups were DataEnvironments |
 | R24 | a document's requirements are computable from the table alone, so refusal need not wait for a window; a reference is not a measurement -- `FONTREF` must resolve the object's own declaration | manifest and render agree on every refusal across 6 documents; 1688 of 3010 corpus objects declare a font, 98.9% resolve into their file's own cache; per-object `FONTREF` 0% -> 70.4%; `pageset` refused by the reference consumer until found |
 | R25 | a bound control's width follows its MASK, not its field, and the schema determines the mask; a load-bearing property must be named, not passed through | 17 bound controls: R17 mean |err| 3.4 px, R25 1.1 px and exact on 11; ACCOUNTS 0.1 px on 8 of 8; 649 PROPS keys of which 1 is named |
+| R26 | where a relation exists, the lock domain is the transitive closure of related work areas; locking only what you name is not serialization | correct per-workspace locking wrong 100/100, same as no lock; a trusting child handler returned another student's rows 100/100 |
+| R27 | tab order is a second ordinal over the same children, not an attribute of one -- OWNER'S DECISION; duplicates refused to produce, tolerated to consume | 1445 of 2186 corpus objects carry one; 9 of 170 files hold a genuine duplicate; `crmfiles.scx` O002 is ORDINAL 1 and TABORDINAL 5 |
 
 Open:
 

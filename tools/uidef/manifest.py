@@ -157,6 +157,8 @@ def manifest(path):
         'fonts': 0,
         'fonts_unreferenced': [],
         'needs_origin': False,
+        'tab_declared': 0,
+        'tab_absent': 0,
         'aliases': {},
         'bound': [],
     }
@@ -182,6 +184,12 @@ def manifest(path):
                     m['free_without_origin'].append(oid)
         if (r['ORIGIN'] or '').strip():
             m['needs_origin'] = True
+        if kind not in ('form',):
+            t = str(r['TABORDINAL'] or '').strip()
+            if t and t != '0':
+                m['tab_declared'] += 1
+            else:
+                m['tab_absent'] += 1
         span = (r['SPAN'] or '').strip()
         if span and span not in ('0', '1'):
             m['spans'].append((oid, span))
@@ -291,6 +299,15 @@ def check(m, p):
         out.append(('DERIVE', 'container %s' % oid,
                     'FLOW=free with no ORIGIN on any child -- position derived from '
                     'ORDINAL and must be declared (R12.3, R23.3)'))
+    if m['tab_absent'] and not m['tab_declared']:
+        out.append(('DERIVE', '%d control(s) with no TABORDINAL' % m['tab_absent'],
+                    'tab order must be derived and declared; measured, a derived '
+                    'order matches the document exactly in 25.7% of groups'))
+    elif m['tab_absent'] and m['tab_declared']:
+        out.append(('DERIVE', '%d of %d control(s) lack TABORDINAL'
+                    % (m['tab_absent'], m['tab_absent'] + m['tab_declared']),
+                    'a partial tab order is the worst case: the gaps must be '
+                    'derived and interleaved with the declared stops'))
     if m['bindings']:
         out.append(('REQUIRE', '%d bound control(s)' % m['bindings'],
                     'target must supply a data source; widths come from the schema (R17)'))

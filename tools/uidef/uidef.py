@@ -18,6 +18,12 @@ FIELDS = [
     ("OBJID",      "C", 12),
     ("PARENT",     "C", 12),
     ("ORDINAL",    "N",  5),
+    # Tab order is a SECOND ordinal over the same children, not an attribute of
+    # one of them. Measured 2026-08-19 across 171 corpus groups and 1689 tab
+    # stops: it matches document order in 5.3% and banded reading order in 25.7%,
+    # so it is not derivable from anything else in the table. Owner's call, taken
+    # in-session: an ordinal, not a PROPS property.
+    ("TABORDINAL", "N",  5),
     ("SPAN",       "N",  5),
     ("KIND",       "C", 20),
     ("FLOW",       "C",  8),
@@ -95,6 +101,25 @@ def write(dbf_path, fpt_path, records, today=None):
 def validate(rows):
     """Conformance checks from contract section 12. Returns a list of findings."""
     out=[]
+    # TABORDINAL is an order over a container's children, so its only structural
+    # rule is that two children of one container cannot share a position. A claim
+    # that can be checked should be checked (R13's RESERVED2 principle, R22.1).
+    tabs={}
+    for i,r in enumerate(rows,1):
+        if (r.get("RECKIND") or "").strip()!="OBJ": continue
+        t=(str(r.get("TABORDINAL") or "").strip())
+        if not t or t=="0": continue
+        par=(r.get("PARENT") or "").strip()
+        # A top-level object is its own tab domain. An .SCX can hold a form SET --
+        # several forms in one file -- and each starts its tab sequence at 1, so
+        # comparing them to each other is a false positive. The first version of
+        # this check did exactly that, and most of what it flagged was form sets.
+        if not par: continue
+        key=(par, t)
+        if key in tabs:
+            out.append("rec %d: TABORDINAL %s duplicated in container %r (also rec %d)"
+                       % (i, t, key[0], tabs[key]))
+        tabs[key]=i
     if not rows or (rows[0].get("RECKIND") or "").strip()!="DOC":
         out.append("section 2: first record must be RECKIND=DOC")
     seen=set()
