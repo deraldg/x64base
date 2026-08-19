@@ -1,0 +1,24 @@
+AIF-120 R26 evidence -- two workers, two work areas, one SET RELATION
+run: python3 tools/uidef/relate_test.py
+
+SET RELATION TO sid INTO enroll
+  parent STUDENTS.dbf 200 records; child ENROLL.dbf 686 records
+  student 50000002 has 5 enrolments: F25ENGL260, F25MATH160, S26ARTS210, F25MATH102, S26CHEM170
+
+  none           no lock at all                               wrong 100/100   other students' rows   0/100
+  per-workspace  each handler locks the work area it touches  wrong 100/100   other students' rows   0/100
+        wrong    x65  F25ENGL260, F25MATH160, F25MATH160
+        wrong    x33  F25ENGL260, F25MATH160
+        wrong    x1   F25ENGL260, F25MATH160, S26ARTS210, F25MATH160
+  relation-set   each handler locks the whole relation set    wrong   0/100   other students' rows   0/100
+
+  the SAME read by a handler that TRUSTS the relation instead of
+  re-checking the parent key on every child row:
+  per-workspace  wrong 100/100   rows belonging to ANOTHER student 100/100
+        x45  F25ENGL260, F25MATH160, F25MATH160, W26ARTS210, S26PHYS190
+        x24  F25ENGL260, F25MATH160, W26ARTS120, S26MATH160, S26MATH190
+  relation-set   wrong   0/100   rows belonging to ANOTHER student   0/100
+        x100 F25ENGL260, F25MATH160, S26ARTS210, F25MATH102, S26CHEM170
+
+The child handler locked the child, read the child, and never touched the
+parent's lock. The parent walk moved the child anyway, through the relation.
