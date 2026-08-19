@@ -88,6 +88,7 @@ recursing that directory.
 | **R23** -- `FLOW` belongs to the container; `grid` must state `Columns`; R19's corpus figures corrected | `docs/maintenance/AIF120_FLOW_CONTAINER_RULING_V1.md` |
 | **R24** -- a document manifest answers refusal from the table; `FONTREF` resolves the object's own font; `pageset` renders | `docs/maintenance/AIF120_MANIFEST_AND_FONTREF_V1.md` |
 | **R25** -- a bound control's width follows its INPUT MASK; R17 narrowed; `PROPS` gains `Mask` | `docs/maintenance/AIF120_MASK_WIDTH_RULING_V1.md` |
+| Tab order: measurement only, deliberately rules nothing -- inputs for the owner decision R25 raised | `docs/maintenance/AIF120_TAB_ORDER_MEASUREMENT_V1.md` |
 | The UIDEF tooling | `tools/uidef/uidef.py`, `import_scx.py`, `import_mnx.py`, `uidef_tk.py`, `uidef_tk_menu.py`, `author_uidef.py`, `dispatch_test.py`, `infer_flow.py`, `contend_test.py`, `lifetime_test.py`, `uidef_tk_host.py`, `author_flow.py`, `manifest.py`, `author_fonts.py`, `author_tabs.py` |
 | The shipped GUI core the ruling adopts | `src/gui/core/`, `include/gui/core/`, `docs/ui/GUI_THREADING_RAII_CONTRACT_V1.md` |
 | Specimen-by-specimen measurements and the corrections between them | `docs/maintenance/AIF120_VFP_SCX_EMPIRICAL_BASELINE_V1.md` |
