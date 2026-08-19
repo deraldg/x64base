@@ -245,56 +245,118 @@ inside the tool built to catch drift. Number 20 has a rule attached -- `git stat
 is not a read, it takes the index lock, so it runs as
 `git --no-optional-locks status` over the bridge from now on.
 
+## 6d. THIRD ADDENDUM -- rulings R26 through R33, and gate 11 actually run
+
+Section 6c ended at R25. The maintainer kept saying continue, and made three
+rulings of his own along the way.
+
+| ruling | what | how it was found | commit |
+| --- | --- | --- | --- |
+| **R26** | the unit of serialization is the RELATION SET, not the work area | two workers on `STUDENTS` and `ENROLL` joined by `SET RELATION`; correct per-workspace locking scored 100/100 wrong | `479cdc7eb` |
+| **R27** | tab order is a second ordinal, `TABORDINAL` -- **the owner's decision** | measuring, then asking, then implementing one word of answer | `ecbb9a6dc` |
+| **R28** | gate 11 run by an independent implementer | isolation by construction: a clean directory, the contract, a DBF reader, five tables | `b7f292aa6` |
+| **R29** | implicit children are not an edge case | the gate 11 implementer chasing what its author set aside | `9ba293c31` |
+| **R30** | the composition rule; corrects R29 | designing the rule required looking at what the parents actually are | (shipped early inside R31's commit; document `a3190dd07` era) |
+| **R31** | a `.VCX` is a sequence of class blocks; instances flatten | reading a class library for the first time | `564747371` |
+| **R32** | handlers inherit; nine standard events restored -- **the owner's decision** | splitting "events" from "custom methods" and finding the second group was not what it claimed | `3341b96f7` |
+| **R33** | codepage honoured; binary columns unpacked; the DSL bypasses x64base's own locale catalog | **the maintainer pointing at `dottalkpp` messaging** | `7f8ead58b` |
+
+**Gate 11 is the one to read.** The contract names it as its own acceptance test and
+this author could not run it, having written both ends. An implementer holding only
+the contract, a generic DBF reader and five tables rendered **four of five** and
+correctly refused the fifth. It also logged **4 contradictions, 19 gaps and 7
+ambiguities**, and its verdict is now in the contract itself: *this document answers
+"how is a UIDEF document structured?" completely and "what is in one?" barely.*
+
+**What the table gained.** `OBJ` rows across the corpus: 2,186 before R30, 2,324
+after it, **2,687** after R31 -- a 23% increase in what the design table actually
+carries, entirely from material that was always in the source and never imported.
+Handlers: **788 inherited**, rows carrying any `HANDLERS` up to 1,047.
+
+**One schema change in fourteen rulings.** `TABORDINAL`, and the owner made that
+call. Everything else -- composition, inheritance, host capabilities, masks, fonts,
+capability refusal -- cost the schema nothing, because the table could already say
+it.
+
+**Corrections this session made to itself: twenty-five.** Twenty are in sections 2,
+6b and 6c. The five since:
+
+| # | what | how it was caught |
+| --- | --- | --- |
+| 21 | R29's headline: "775 implied children lost, 26% of every form" | designing R30 and finding 646 of them were **inherited**, not lost -- the document was complete and the importer ignored `CLASS` |
+| 22 | the duplicate-`TABORDINAL` check reported 116 findings | reading the rows: 107 were form sets, where each form starts its tab sequence at 1. Real count 9 |
+| 23 | "no, we are not respecting international languages" | the maintainer pointing at `SET LOCALE`. True of the design table, **wrong about x64base**, and said without looking |
+| 24 | the reader decoded 79 binary columns as text | chasing the encoding work; every `Y` and `I` column had been characters |
+| 25 | R30's handoff was never run and R31 was built on top of it | checking `git log` after R31 landed -- too late to prevent, early enough to repair |
+
+Number 23 is the one worth keeping. The honest answer was two answers: the design
+table genuinely could not hold Polish, Greek, Japanese or Arabic, **and** x64base
+has shipped `SET LOCALE` with 4,756 texts in five locales the whole time. Answering
+the first without checking the second was the error, and it took one grep to find.
+
+Number 25 has a rule attached, now followed: **check `git log` for the previous
+ruling's commit before starting the next one.** Two handoffs went unrun in this
+session -- R30's and the contract's -- and both were found by looking rather than by
+anything failing.
+
 ## 7. What the next session inherits
 
-**Ready for owner review:** rulings **R1 through R25**, all `review-needed`. The
-author does not self-approve and none of these has been approved by anyone.
+**Rewritten 2026-08-19 after R33.** The version this replaced stopped at R25 and
+listed as untested four things that have since been done.
 
-**Decisions that are the owner's, not the author's:**
+**Ready for owner review:** rulings **R1 through R33**, all `review-needed`. The
+author does not self-approve and nothing here has been approved by anyone. Three of
+the thirty-three were the maintainer's own calls, marked as such: R27, R32, and the
+scope decision behind R30.
 
-- **`tabindex` has no home.** 1,664 corpus objects carry it. `ORDINAL` is *layout*
-  order; tab order is a second independent order over the same children. A
-  generated frontend with the wrong tab order is wrong, so this is not decoration.
-  Named `PROPS` key, or a second ordinal?
-- **`FLOW` on non-containers is unvalidated.** `import_mnx.py` writes
-  `FLOW = column` on every menu item. Harmless only because the menu renderer
-  ignores `FLOW` -- the same condition that hid R23.1. The validator cannot check
-  it because a menu container is marked by `Container = .T.` in `PROPS`, not by
-  `KIND`. Give menu containers a `KIND`, or teach the validator the flag.
-- **`coordination/aif/AIF-120.claim` records `run_id: COWORK-20260817-001`** while
-  this run is `COWORK-20260818-001`. Rewriting a claim rewrites the record and
-  inventing a `continued_by` field could break whatever parses it. Left alone
-  deliberately.
-- **The two defects the contract records against itself** stand unchanged: section
-  12's permission to refuse `FLOW = free` (which refuses the majority permanently),
-  and section 4's refuse-the-whole-document rule (which rejects 82% of real forms).
+**Decisions that are the owner's:**
+
+- **R33.4 -- captions as message references.** x64base ships `SET LOCALE` and 4,756
+  texts in five locales; the design table carries literal prose in one language and
+  one codepage. Making a caption name a catalog symbol would let one document render
+  in five locales and would largely dissolve the single-codepage limit, because the
+  table would hold identifiers and the catalog the text. It touches section 7, the
+  importer, every consumer, and an authority model owned elsewhere.
+- **R29's three options on implicit children**, now that R30 has separated
+  inheritance from composition and both are implemented. What remains of the
+  question is the 274 dotted names whose class libraries are absent.
+- **`FLOW = row` hard-codes left to right** and is wrong in an RTL locale.
+- **Menu containers are marked by `Container = .T.` in `PROPS`, not by `KIND`**, so
+  the validator cannot check that `FLOW` only appears on containers.
+- **`coordination/aif/AIF-120.claim` still records `run_id: COWORK-20260817-001`**
+  while this run is `COWORK-20260818-001`. Deliberately untouched.
+- **The two defects the contract records against itself** -- section 12's permission
+  to refuse `FLOW = free`, section 4's refuse-the-whole-document rule -- unchanged.
 
 **Untested, in the order I would take them:**
 
-1. **Two `worker` handlers contending.** R21 ran one worker against the UI thread.
-   Two workers is the same shape and has not run.
-2. **Contention across work areas.** R11.4 serializes "against one workspace"; two
-   workspaces joined by `SET RELATION` is a second sharing channel nothing has
-   touched.
-3. **A real second backend.** `manifest.py`'s `minimal` profile describes a target
-   nobody has built. It exercises the checker and proves nothing about wx.
-4. **`row` and `column` against real imports.** All 14 such groups are in
-   third-party corpus forms whose licence is undetermined, so they stay outside the
-   repo. The authored document proves the consumer, not those documents.
+1. **A second real backend.** Gate 11 proved a second *reader* can be built from the
+   contract; `manifest.py`'s `minimal` profile still describes a target nobody has
+   built, and everything renderable in this lane renders on Tk.
+2. **Nothing fires an inherited handler.** R32 carries 788 of them; no test invokes
+   one that arrived by inheritance rather than by authoring.
+3. **Depth-one class resolution.** A class member that is itself an instance does
+   not recurse.
+4. **No round trip for composition or inheritance.** Nothing folds materialised
+   members back into dotted properties on export.
+5. **The 19 gaps from gate 11** are in
+   `docs/maintenance/evidence/AIF120_gate11_FINDINGS.md`. Five are absorbed into the
+   contract; fourteen are untriaged.
 
-**Unexplained, and honestly so:** 271 FONT rows carried and unreferenced after the
-corpus re-import; FONT metric fields 4 through 9; the digit-mask slope, fitted on
-four points; `gender` at 20 px and `major` at 50 px, which no model here produces;
-`RESERVED4` (values `2` x154, `1` x16).
+**Unexplained, and honestly so:** 274 dotted names whose libraries the corpus does
+not contain; 271 unreferenced FONT rows; FONT metric fields 4 through 9; the
+digit-mask slope fitted on four points; `gender` at 20 px and `major` at 50 px;
+`RESERVED4`; and one `.FRX` `TAG2` column that will not decode as its declared
+codepage.
 
-**Deferred by the maintainer's own scope call:** `.FRX` reports. Measured under M7
-and R15, unruled.
+**Deferred by the maintainer's own scope call:** `.FRX` reports.
 
 **Do not repeat:** before asserting something does not exist, vary the query and
 read the exit code. Before generalising from specimens, count how many you have.
-Before writing a check, read the field table -- number 19 above. And before
-believing a field works, find the consumer that reads it; four of this session's
-defects were fields nobody read.
+Before writing a check, read the field table. Before believing a field works, find
+the consumer that reads it. Before answering a question about the wider system,
+grep the wider system -- correction 23 was one grep away. And check `git log` for
+the previous handoff before building on it.
 
 ## 8. Learning from FoxPro, not bound by it
 
