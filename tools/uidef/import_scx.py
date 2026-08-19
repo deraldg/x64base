@@ -65,6 +65,8 @@ LAST_MATERIALISED = []      # R30: [(parent, kind, member name), ...]
 LAST_COUNT_MISMATCH = []    # R30.1: [(parent, baseclass, key, declared, actual), ...]
 LAST_INHERITED = []         # R31: [(instance, class, member), ...]
 LAST_UNRESOLVED = []        # R31: [(instance, class, classloc, why), ...]
+LAST_INH_HANDLERS = 0       # R32: event handlers inherited from a class
+LAST_INH_CUSTOM = []        # R32: custom method names v1 cannot carry
 
 
 def split_members(p):
@@ -92,6 +94,32 @@ def member_ordinal(name, mp, fallback):
     return int(digits) if digits else fallback
 
 
+def handlers_of(rec):
+    """Event handlers a record defines, as NAMES. R14: never a body.
+
+    Returns [(event, "Name / ui"), ...]. A method whose name is not one of the
+    contract's section 9 events is a custom method -- real behaviour that v1 has
+    no concept for. Counted by the caller, never invented into an event.
+    """
+    out = []
+    for mname in re.findall(r'^\s*PROCEDURE\s+([A-Za-z_]\w*)',
+                            rec.get('METHODS') or '', re.I | re.M):
+        ev = EVENTS.get(mname.lower())
+        if ev:
+            out.append((ev, '%s / ui' % mname))
+    return out
+
+
+def custom_methods(rec):
+    """Named behaviour that is not an event. R32 counts these; v1 carries none."""
+    out = []
+    for mname in re.findall(r'^\s*PROCEDURE\s+([A-Za-z_]\w*)',
+                            rec.get('METHODS') or '', re.I | re.M):
+        if mname.lower() not in EVENTS:
+            out.append(mname)
+    return out
+
+
 def implied_children(keep):
     """Child objects that exist only as dotted property names on their parent.
 
@@ -117,7 +145,14 @@ GEO  = ('top','left','height','width')
 # Contract section 9 event names
 EVENTS = {'click':'Click','init':'Init','interactivechange':'Change','activate':'Activate',
           'deactivate':'Deactivate','destroy':'Destroy','error':'Error',
-          'gotfocus':'Focus','lostfocus':'Blur','load':'Load'}
+          'gotfocus':'Focus','lostfocus':'Blur','load':'Load',
+          # R32.2. Nine standard events the contract's section 9 list omits,
+          # measured on 92 handlers in the corpus. `Unload` is 72 of them, and
+          # section 9 carries `Load` without it -- an asymmetry that loses exactly
+          # the teardown R21 spent a ruling on.
+          'unload':'Unload', 'mousemove':'MouseMove', 'mousedown':'MouseDown',
+          'mouseup':'MouseUp', 'dblclick':'DoubleClick', 'dragover':'DragOver',
+          'dragdrop':'DragDrop', 'keypress':'KeyPress', 'valid':'Validate'}
 
 def sprops(r):
     d={}
@@ -205,6 +240,7 @@ def convert(scx_path, out_stem):
 
     n=0; ordinal={}; implied=[]; materialised=[]; counts=[]; mn_total=[0]
     inherited=[]; unresolved=[]; inherited_refused=[]
+    inh_handlers=[0]; inh_custom=[]
     for r in objs:
         b=(r['BASECLASS'] or '').strip().lower()
         if b in SKIP or b not in KINDMAP: continue
@@ -222,11 +258,7 @@ def convert(scx_path, out_stem):
             tabord = int(float(p.get('tabindex') or 0))
         except ValueError:
             tabord = 0
-        hs=[]
-        m=(r['METHODS'] or '')
-        for mname in re.findall(r'^\s*PROCEDURE\s+([A-Za-z_]\w*)', m, re.I|re.M):
-            ev=EVENTS.get(mname.lower())
-            if ev: hs.append((ev, '%s / ui' % mname))
+        hs = handlers_of(r)
         oid = ids[path(r)]
 
         # R30: materialise a composite control's members as ordinary rows. Only
@@ -254,6 +286,15 @@ def convert(scx_path, out_stem):
             if block is None:
                 unresolved.append((ids[path(r)], cls, cl, why))
             else:
+                # R32: the class root's handlers are the instance's, unless the
+                # instance defines the same event itself. An override replaces;
+                # everything else inherits.
+                own = {ev for ev, _ in hs}
+                for ev, ref in handlers_of(block['root']):
+                    if ev not in own:
+                        hs.append((ev, ref))
+                        inh_handlers[0] += 1
+                inh_custom.extend(custom_methods(block['root']))
                 over = split_members(p)
                 for mi, m in enumerate(block['members'], 1):
                     mname = (m['OBJNAME'] or '').strip()
@@ -284,7 +325,11 @@ def convert(scx_path, out_stem):
                                 'BINDING': (mp.get('controlsource') or '').strip('"'),
                                 'FONTREF': fontref(mp), 'PROVENANCE': PROV_INHERITED,
                                 'PROPS': uidef.props(sorted(mkeep.items())),
-                                'ORIGIN': uidef.props(morg) if morg else ''})
+                                'ORIGIN': uidef.props(morg) if morg else '',
+                                # R32: a member's event handlers inherit with it.
+                                'HANDLERS': uidef.props(handlers_of(m))})
+                    inh_handlers[0] += len(handlers_of(m))
+                    inh_custom.extend(custom_methods(m))
                     inherited.append((ids[path(r)], cls, mname))
 
         members = []
@@ -353,6 +398,9 @@ def convert(scx_path, out_stem):
     global LAST_INHERITED, LAST_UNRESOLVED
     LAST_INHERITED = inherited
     LAST_UNRESOLVED = unresolved
+    global LAST_INH_HANDLERS, LAST_INH_CUSTOM
+    LAST_INH_HANDLERS = inh_handlers[0]
+    LAST_INH_CUSTOM = inh_custom
     out.extend(extra_fonts)
     nrec,rlen,hlen = uidef.write(out_stem+'.DBF', out_stem+'.FPT', out)
     return out, refused, (nrec,rlen,hlen)
@@ -362,6 +410,13 @@ if __name__=='__main__':
     out,refused,(n,rl,hl)=convert(scx,stem)
     print("%s -> %s.DBF  records=%d rlen=%d hlen=%d" % (os.path.basename(scx),stem,n,rl,hl))
     if refused: print("  REFUSED kinds (not in v1 vocabulary):", sorted(set(refused)))
+    if LAST_INH_HANDLERS or LAST_INH_CUSTOM:
+        print("  INHERITED HANDLERS (R32): %d event handler(s) carried; "
+              "%d custom method(s) NOT carried -- v1 has no concept for them"
+              % (LAST_INH_HANDLERS, len(LAST_INH_CUSTOM)))
+        if LAST_INH_CUSTOM:
+            u=sorted(set(LAST_INH_CUSTOM))
+            print("    custom: %s%s" % (", ".join(u[:8]), " ..." if len(u)>8 else ""))
     if LAST_INHERITED:
         byc={}
         for _,c,_ in LAST_INHERITED: byc[c]=byc.get(c,0)+1
