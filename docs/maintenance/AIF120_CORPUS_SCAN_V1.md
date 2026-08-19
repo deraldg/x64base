@@ -161,9 +161,74 @@ VFP wrote `RESERVED4 = 1` into our generated form's DataEnvironment and nothing
 explained it. Across the corpus: **`2` (154 records) and `1` (16 records)**, empty
 everywhere else.
 
-Still undecoded, and deliberately not guessed at. What is now known is that it is
-a small enumeration rather than a count or a flag, and that it appears on a small
-minority of records. Whoever decodes it should start from the 154.
+**Chased, and NOT decoded.** Recorded here in full because a negative result with
+its method stated is worth more than the next session repeating the search.
+
+What is established:
+
+1. It appears on **exactly one record per file -- the DataEnvironment, always
+   record 2 -- in 170 of 170 files.** It is universal, not occasional.
+2. It is **binary**: `2` (154 files) or `1` (16).
+3. **It is not a count.** Uncorrelated with cursor count (0-5), DataEnvironment
+   member count (0-7), and `RESERVED2` (1-8) -- all of which vary freely within
+   both groups.
+4. **Not a property flag.** The DataEnvironment's own property keys distribute
+   almost identically across both values (`datasource` 37% vs 39%).
+5. **Not a file-format version.** Every file in both groups carries the same
+   `VERSION =   3.00` in its `Screen` header record.
+6. **Not cleanly an era marker.** The `=1` group skews newer -- median
+   `TIMESTAMP` 686,196,354 against 552,687,696 -- but the ranges overlap heavily
+   (`=1` min 544,893,238 sits well inside the `=2` range), so no threshold
+   separates them.
+
+**The hypothesis that fits our own specimens perfectly and the corpus not at all.**
+Our five VFP 9 files split without exception by which VFP tool produced them:
+
+| fixture | produced by | `RESERVED4` |
+| --- | --- | --- |
+| `ACCOUNTS.SCX` | VFP 9 Form Wizard | `2` |
+| `STUDENTS.SCX` | VFP 9 Form Wizard | `2` |
+| `form1.scx` | VFP 9 designer, hand-built | `1` |
+| `X64FORM_VFPSAVED.SCX` | ours, then saved by the VFP 9 designer | `1` |
+| `X64FORM_SAMEDIR.SCX` | same, saved again elsewhere | `1` |
+
+Five for five: wizard writes `2`, designer writes `1`, same VFP version. But
+tested against the corpus the rule collapses -- only **2 of 152** `=2` files carry
+any wizard class-library fingerprint at all. **A rule that is perfect on five
+files and absent on a hundred and fifty is not a rule**, and this lane has now
+been burned three times by generalising from a handful. It is recorded as a
+hypothesis with its own disconfirming evidence attached, and nothing is built on
+it.
+
+**Also tested and rejected: the database-container hypothesis.** A VFP
+DataEnvironment can source from free tables or from a `.DBC`, which is exactly the
+kind of distinction a per-DataEnvironment marker would plausibly record. Measured:
+`=2` splits 44 DBC-backed / 10 free / 100 with no cursors at all; `=1` splits
+1 / 5 / 10. Both values occur on both kinds. Not it.
+
+**The maintainer's reframing, untested and the most promising direction left.**
+member.derald, in session: *"I have a weird file or two I have to keep in the
+workspace dir to handle things like value ranges for fields, maybe its like that."*
+
+That reframes the search. Every hypothesis above treats `RESERVED4` as describing
+something INTRINSIC to the DataEnvironment -- its size, its members, its data
+source, its era, its producer -- and all of them fail. A marker that flags or
+points at state held OUTSIDE the file would be invisible to every one of those
+correlations, which is precisely the shape of the evidence: universal, binary,
+and uncorrelated with everything measurable inside the document.
+
+It is recorded untested because testing it needs artifacts this corpus does not
+carry -- the workspace-side files a DataEnvironment might reference. Whoever picks
+this up should start there rather than re-running the correlations above, which
+are all recorded as negative.
+
+**One thing about `RESERVED4` IS settled, and it matters for R13.** Our writer
+left it **empty**, and VFP 9 opened, ran and round-tripped the file anyway. So
+`RESERVED4` is a field the reference implementation **writes but does not
+require** -- a third category beside R13's required-on-output and optional-on-input.
+Gate 10's contract needs all three: *required to produce*, *optional to produce*,
+and *emitted by the reference but safely omitted*. Only the last is invisible
+unless you write the format and get away with leaving something out.
 
 ## 7. What this corpus makes available that the lane still lacks
 

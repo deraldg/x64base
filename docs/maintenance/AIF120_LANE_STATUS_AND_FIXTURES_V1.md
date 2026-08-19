@@ -62,7 +62,7 @@ recursing that directory.
 
 | subject | file |
 | --- | --- |
-| Lane charter, scope, proof gates, and rulings **R1 through R13** | `docs/maintenance/APPLICATION_UI_DSL_LANE_V1.md` |
+| Lane charter, scope, proof gates, and rulings **R1 through R15** | `docs/maintenance/APPLICATION_UI_DSL_LANE_V1.md` |
 | **R11, the threading ruling (gate 9)** -- full text, evidence, disproof conditions | `docs/maintenance/AIF120_THREADING_RULING_V1.md` |
 | **R12, the coordinate ruling (gate 8)** -- six measurements, disproof conditions | `docs/maintenance/AIF120_COORDINATE_RULING_V1.md` |
 | **VFP 9 reading an x64base-written table** -- the lane's first `runtime-proven` result | `docs/maintenance/AIF120_VFP_READS_X64BASE_OUTPUT_V1.md` |
@@ -71,6 +71,8 @@ recursing that directory.
 | The writer that produced it | `tools/vfp/write_vfp_binary.py`, `tools/vfp/make_students_form.py` |
 | **First `.VCX`** -- scale mode as a word in `RESERVED6`; `RESERVED2` corroborated; vocabulary 24 -> 26 | `docs/maintenance/AIF120_VCX_SPECIMEN_V1.md` |
 | **Corpus scan** -- 170 third-party forms, 3,010 records; R13 and M5 confirmed at scale, M4 corrected again, `.FRX` measured | `docs/maintenance/AIF120_CORPUS_SCAN_V1.md` |
+| **R14** -- method bodies stay out of v1; 88% of 1,583 real procedures navigate the object model | `docs/maintenance/AIF120_METHOD_CODE_SCOPE_V1.md` |
+| **R15** -- three of four formats share a `name = value` property language AND its key vocabulary; gate 10 adopts it | `docs/maintenance/AIF120_SHARED_PROPERTY_LANGUAGE_V1.md` |
 | The shipped GUI core the ruling adopts | `src/gui/core/`, `include/gui/core/`, `docs/ui/GUI_THREADING_RAII_CONTRACT_V1.md` |
 | Specimen-by-specimen measurements and the corrections between them | `docs/maintenance/AIF120_VFP_SCX_EMPIRICAL_BASELINE_V1.md` |
 | The reader that produced every measurement | `tools/vfp/read_vfp_binary.py` |
@@ -152,6 +154,8 @@ Settled, with the ruling text in the charter:
 | R11 | UI-thread rule adopted from the shipped GUI core; table carries `DISPATCH` with default `ui`, `worker` requires `ON_COMPLETE` | `src/gui/core/` + `docs/ui/GUI_THREADING_RAII_CONTRACT_V1.md`, not a specimen |
 | R12 | layout intent is the portable geometry; absolute coordinates quarantined, advisory, and carrying R2's unit | the wx frontend, the GUI core, 205 menu records, 58 form records |
 | R13 | the designer formats have required-on-OUTPUT fields that are optional on input; the contract must record requiredness per direction | two VFP 9 rejections, each fixed by one change, then an open |
+| R14 | method bodies never enter v1; the table carries a handler REFERENCE, never handler source | 1,583 procedures across 169 corpus forms, 88% object-model-navigating |
+| R15 | two shared layers, not one -- the DBF container AND a `name = value` property language with shared keys; R10 amended on payload, unchanged on structure | 3,517 property-bearing records across `.SCX`/`.VCX`/`.FRX`; 9 shared cursor keys |
 
 Open:
 
@@ -186,6 +190,11 @@ Open:
   Like the threading item, it was less open than this list said -- the four
   `.MNX` specimens carry 205 records and zero geometry columns, so the menu half
   of the fork had already been decided by R8's adoption of that vocabulary.
+- ~~**A hand-authored `.SCX` with real method code.**~~ **Closed 2026-08-19 by
+  R14**, which found 169 of them in the corpus and answered the question they were
+  wanted for. Note the specimens are still all designer output locally; the
+  corpus supplied the hand-authored code, and `.VCX` method bodies remain
+  unmeasured. Original entry follows.
 - **A hand-authored `.SCX` with real method code.** Both form specimens are
   designer output. The menus proved the reader extracts code, so this is no
   longer urgent -- it is now about vocabulary in `METHODS`/`OBJCODE`, not about
