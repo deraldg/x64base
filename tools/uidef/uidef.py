@@ -40,16 +40,26 @@ FIELDS = [
 KINDS = {"form","panel","group","pageset","page",
          "label","text","button","check","radio","list","combo","image","menu"}
 FLOWS = {"row","column","grid","free"}
+# R33. The header declares a codepage in byte 29 and every value was then encoded
+# as latin1, which is a DIFFERENT encoding across 0x80-0x9F -- so a euro sign or a
+# curly quote, both ordinary in the de/fr/es/it text x64base's own message catalog
+# already ships, raised UnicodeEncodeError instead of being written. Declare and
+# encode with the SAME codepage, and say which character failed when one will not
+# fit.
+LANGUAGE_DRIVER = {"cp1252": 0x03, "cp1250": 0xc8, "cp1251": 0xc9, "cp1253": 0xcb,
+                   "cp1254": 0xca, "cp1255": 0x7d, "cp1256": 0x7e, "cp874": 0x7c,
+                   "cp932": 0x7b, "cp936": 0x7a, "cp949": 0x79, "cp950": 0x78}
+DEFAULT_ENCODING = "cp1252"
 BACKLINK = 263
 MEMO_START = 512
 
 
 class Memo:
-    def __init__(self, start=MEMO_START):
-        self.blocks=[]; self.offset=start; self.start=start
+    def __init__(self, start=MEMO_START, encoding=DEFAULT_ENCODING):
+        self.blocks=[]; self.offset=start; self.start=start; self.encoding=encoding
     def add(self, text):
         if not text: return 0
-        p=text.encode("latin1"); ptr=self.offset
+        p=encode_or_explain(text, self.encoding); ptr=self.offset
         self.blocks.append(struct.pack(">II",1,len(p))+p)
         self.offset += 8+len(p)
         return ptr
@@ -59,12 +69,30 @@ class Memo:
                 + struct.pack(">H",1) + b"\0"*(self.start-8) + body)
 
 
+def encode_or_explain(text, encoding, where=""):
+    """Encode, or fail naming the character AND the codepage that cannot hold it.
+
+    `UnicodeEncodeError: 'latin-1' codec can't encode character '\u0119'` tells a
+    caller nothing actionable. A DBF carries ONE codepage, so the honest failure is
+    "this document is cp1252 and this character is not in it" -- which is a real
+    constraint of the container, not a bug to be worked around silently.
+    """
+    try:
+        return text.encode(encoding)
+    except UnicodeEncodeError as e:
+        bad = text[e.start:e.end]
+        raise ValueError(
+            "%scannot store %r (U+%04X) in a %s table: a DBF declares one codepage "
+            "in header byte 29 and every value must fit it"
+            % (where and where + ": ", bad, ord(bad[0]), encoding))
+
+
 def props(pairs):
     return "".join("%s = %s\r\n" % (k,v) for k,v in pairs)
 
 
-def write(dbf_path, fpt_path, records, today=None):
-    memo=Memo()
+def write(dbf_path, fpt_path, records, today=None, encoding=DEFAULT_ENCODING):
+    memo=Memo(encoding=encoding)
     rlen = 1 + sum(w for _,_,w in FIELDS)
     packed=[]
     for i,rec in enumerate(records):
@@ -75,9 +103,10 @@ def write(dbf_path, fpt_path, records, today=None):
                 row += struct.pack("<I", memo.add(v))
             elif typ=="N":
                 s="" if v in ("",None) else str(int(v))
-                row += s.encode("latin1")[:w].rjust(w,b" ")
+                row += s.encode("ascii")[:w].rjust(w,b" ")
             else:
-                row += str(v).encode("latin1")[:w].ljust(w,b" ")
+                row += encode_or_explain(str(v), encoding,
+                                         "record %d field %s" % (i+1, name))[:w].ljust(w,b" ")
         if len(row)!=rlen:
             raise ValueError("record %d is %d bytes, expected %d" % (i+1,len(row),rlen))
         packed.append(row)
@@ -85,7 +114,10 @@ def write(dbf_path, fpt_path, records, today=None):
     d = today or dt.date.today()
     h = bytes([0x30, d.year%100, d.month, d.day])
     h += struct.pack("<I", len(packed)) + struct.pack("<H", hlen) + struct.pack("<H", rlen)
-    h += b"\0"*16 + bytes([0x02,0x03]) + b"\0"*2
+    driver = LANGUAGE_DRIVER.get(encoding)
+    if driver is None:
+        raise ValueError("no VFP language driver byte for %r" % encoding)
+    h += b"\0"*16 + bytes([0x02, driver]) + b"\0"*2
     disp=1
     for name,typ,w in FIELDS:
         fb = name.encode("ascii")[:11].ljust(11,b"\0") + typ.encode("ascii")
