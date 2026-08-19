@@ -63,7 +63,7 @@ recursing that directory.
 | subject | file |
 | --- | --- |
 | Lane charter, scope, proof gates, and rulings **R1 through R12** -- amendments (a) to (e) | `docs/maintenance/APPLICATION_UI_DSL_LANE_V1.md` |
-| Rulings **R13 through R33** live in their own files; this ledger is their only index. The charter does not carry them. | -- |
+| Rulings **R13 through R34** live in their own files; this ledger is their only index. The charter does not carry them. | -- |
 | **R11, the threading ruling (gate 9)** -- full text, evidence, disproof conditions | `docs/maintenance/AIF120_THREADING_RULING_V1.md` |
 | **R12, the coordinate ruling (gate 8)** -- six measurements, disproof conditions | `docs/maintenance/AIF120_COORDINATE_RULING_V1.md` |
 | **VFP 9 reading an x64base-written table** -- the lane's first `runtime-proven` result | `docs/maintenance/AIF120_VFP_READS_X64BASE_OUTPUT_V1.md` |
@@ -97,7 +97,8 @@ recursing that directory.
 | **R31** -- `.VCX` read as a class library; instances flattened, `PROVENANCE` gains `inherited` | `docs/maintenance/AIF120_CLASS_RESOLUTION_V1.md` |
 | **R32** -- handlers inherit; nine standard events restored, `Unload` chief among them -- OWNER'S DECISION | `docs/maintenance/AIF120_METHOD_INHERITANCE_V1.md` |
 | **R33** -- codepage honoured; binary columns unpacked; the DSL bypasses x64base's own locale catalog | `docs/maintenance/AIF120_LOCALE_AND_ENCODING_V1.md` |
-| The UIDEF tooling | `tools/uidef/uidef.py`, `import_scx.py`, `import_mnx.py`, `uidef_tk.py`, `uidef_tk_menu.py`, `author_uidef.py`, `dispatch_test.py`, `infer_flow.py`, `contend_test.py`, `lifetime_test.py`, `uidef_tk_host.py`, `author_flow.py`, `manifest.py`, `author_fonts.py`, `author_tabs.py`, `relate_test.py`, `classlib.py` |
+| **R34** -- a second backend on a different geometry model; the refusal set is a property of the target | `docs/maintenance/AIF120_SECOND_BACKEND_V1.md` |
+| The UIDEF tooling | `tools/uidef/uidef.py`, `import_scx.py`, `import_mnx.py`, `uidef_tk.py`, `uidef_tk_menu.py`, `author_uidef.py`, `dispatch_test.py`, `infer_flow.py`, `contend_test.py`, `lifetime_test.py`, `uidef_tk_host.py`, `author_flow.py`, `manifest.py`, `author_fonts.py`, `author_tabs.py`, `relate_test.py`, `classlib.py`, `uidef_html.py` |
 | The shipped GUI core the ruling adopts | `src/gui/core/`, `include/gui/core/`, `docs/ui/GUI_THREADING_RAII_CONTRACT_V1.md` |
 | Specimen-by-specimen measurements and the corrections between them | `docs/maintenance/AIF120_VFP_SCX_EMPIRICAL_BASELINE_V1.md` |
 | The reader that produced every measurement | `tools/vfp/read_vfp_binary.py` |
@@ -199,6 +200,7 @@ Settled, with the ruling text in the charter:
 | R31 | a `.VCX` is a sequence of class blocks delimited by a declared record count; a class is identified by block and liveness, never by name; an instance is flattened and says so | 25 libraries, 110 live classes, 0 count mismatches; 3 blocks named `frmsolution`, 2 deleted; 31% of VCX records deleted against 0% of SCX/MNX/FRX; 351 of 431 references resolved, 363 members materialised |
 | R32 | a handler reference defined on a class reaches the instance; an event the instance defines itself wins -- OWNER'S DECISION | 788 handlers inherited, rows with HANDLERS 1047; section 9 was missing 9 standard events over 92 handlers, `Unload` 72 of them while `Load` was carried |
 | R33 | a table must honour the codepage it declares, and binary columns are not text; the design table embeds literal captions while x64base ships 4756 texts in 5 locales behind SET LOCALE | round trip proven in cp1250/1252/1253/932/1256; 79 binary columns were decoded as text; text-field decode failures 15 -> 1; R30/R31 figures unchanged |
+| R34 | `FLOW`, `SPAN` and `TABORDINAL` are the target's own concepts, not Tk conveniences; refusal is a property of the target, not the format | one coordinate-free document rendered by place/pack/grid and by flexbox/CSS grid, both refusing the same two rows for the same reasons; tk refuses 12 capabilities where html refuses 11 |
 
 Open:
 

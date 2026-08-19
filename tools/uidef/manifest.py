@@ -243,6 +243,20 @@ def profile_tk():
     }
 
 
+def profile_html():
+    """The second REAL backend (R34). Imported, never restated."""
+    import uidef_html
+    return {
+        'name': 'html -- uidef_html.py (flexbox / CSS grid)',
+        'kinds': set(uidef_html.KINDS_RENDERED),
+        'flows': set(uidef_html.FLOWS_SUPPORTED),
+        'dispatch': set(uidef_html.DISPATCH_SUPPORTED),
+        'host': set(uidef_html.CAPABILITIES),
+        'span': True,
+        'origin': True,
+    }
+
+
 # A deliberately small target, to show the check working against something that is
 # not the reference consumer. Nothing implements this; it is a profile, not a claim.
 PROFILE_MINIMAL = {
@@ -363,9 +377,11 @@ def report(path, profiles, tables=None):
 if __name__ == '__main__':
     args = [a for a in sys.argv[1:] if not a.startswith('--')]
     profs = []
-    if '--minimal' in sys.argv or '--both' in sys.argv:
+    if '--minimal' in sys.argv or '--all' in sys.argv:
         profs.append(PROFILE_MINIMAL)
-    if '--minimal' not in sys.argv:
+    if '--html' in sys.argv or '--both' in sys.argv or '--all' in sys.argv:
+        profs.append(profile_html())
+    if '--minimal' not in sys.argv and '--html' not in sys.argv:
         profs.insert(0, profile_tk())
     tables = None
     if '--schema' in sys.argv:

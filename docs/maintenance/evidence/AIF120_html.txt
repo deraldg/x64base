@@ -1,0 +1,37 @@
+AIF-120 R34 evidence -- a second backend, and a second real profile
+run: python3 tools/uidef/uidef_html.py <table>.DBF out.html
+     python3 tools/uidef/manifest.py <table>.DBF --both
+
+--- generating every table for the HTML target ---
+FLOWDEMO.DBF -> /tmp/man/FLOWDEMO.html
+  elements 24   refused kinds 0   host capabilities wired 0, refused 0
+  REFUSED grid on G2 -- FLOW=grid with no Columns property (R23.2)
+  DERIVED layout for P3 -- FLOW=free with no ORIGIN on any child; fell back to ORDINAL order (R23.3)
+TABDEMO.DBF -> /tmp/man/TABDEMO.html
+  elements 9   refused kinds 0   host capabilities wired 0, refused 0
+  DERIVED layout for PS -- FLOW=free with no ORIGIN on any child; fell back to ORDINAL order (R23.3)
+FONTDEMO.DBF -> /tmp/man/FONTDEMO.html
+  elements 6   refused kinds 0   host capabilities wired 0, refused 0
+  FONTREF 9 on L5 names no usable FONT row
+UIDEF_STUDENTS.DBF -> /tmp/man/UIDEF_STUDENTS.html
+  elements 20   refused kinds 0   host capabilities wired 0, refused 0
+UIDEF_FORM1.DBF -> /tmp/man/UIDEF_FORM1.html
+  elements 22   refused kinds 0   host capabilities wired 0, refused 0
+  DERIVED layout for O015 -- FLOW=free with no ORIGIN on any child; fell back to ORDINAL order (R23.3)
+
+--- markup balance ---
+  FLOWDEMO         opens=6   closes=6   balanced
+  TABDEMO          opens=6   closes=6   balanced
+  FONTDEMO         opens=1   closes=1   balanced
+  UIDEF_STUDENTS   opens=2   closes=2   balanced
+  UIDEF_FORM1      opens=10  closes=10  balanced
+
+--- the same document against two REAL target profiles ---
+  host caps : 18 -- edit.clear, edit.copy, edit.cut, edit.find, edit.find_again, edit.paste, edit.redo, edit.replace, edit.select_all, edit.undo, program.cancel, program.compile, program.resume, program.run, program.suspend, tools.class_browser, window.arrange, window.rotate
+  vs tk -- uidef_tk.py + uidef_tk_host.py
+      REFUSE   capability edit.find               target does not provide this host capability -- R20, R22.4
+      REFUSE   capability edit.find_again         target does not provide this host capability -- R20, R22.4
+      -> DERIVE 1, REFUSE 12
+  vs html -- uidef_html.py (flexbox / CSS grid)
+      REFUSE   capability edit.find_again         target does not provide this host capability -- R20, R22.4
+      -> DERIVE 1, REFUSE 11
