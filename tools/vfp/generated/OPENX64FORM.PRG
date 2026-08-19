@@ -6,4 +6,4 @@
 * has to be on the VFP path before the designer resolves it.
 
 SET PATH TO d:\code\ccode\dottalkpp\data\dbf\vfp
-MODIFY FORM d:\code\ccode\tools\vfp\generated\X64FORM.SCX
+MODIFY FORM d:\code\ccode\tools\vfp\generated\x64form.scx
