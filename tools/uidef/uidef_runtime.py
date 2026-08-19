@@ -28,13 +28,39 @@ class LockProvider:
     time: owner-aware (`host:pid:nonce`), sidecar-file based, cross-process, with
     liveness and recovery, and a defect history of its own (AIF-116).
 
-    The house verb is DotTalk++'s own:  SELECT <alias> ; LOCK TABLE ; UNLOCK.
+    The house verb is DotTalk++'s own:  SELECT <alias> ; LOCK [TABLE] ; UNLOCK.
     A provider issues exactly that. The default provider is None -- in-process
     exclusion only -- because a frontend with no engine attached still has to run.
+
+    R48 -- granularity. `LOCK TABLE` locks the whole area; bare `LOCK` locks the
+    CURRENT RECORD of the selected area, which is the granularity a form actually
+    edits. R26's closure is what makes the record form correct: a relation has
+    already moved every child area's pointer to the matching row, so locking the
+    current record of every area in the domain locks exactly the row set the
+    handler can reach.
+
+    Bare `LOCK` also carries NO NUMBER, and that is not a style preference.
+    AIF-116 was a record number written through a stream that picked up a grouping
+    locale -- `pid=16,984`, read back by `std::stoul` as `16`. The same surface
+    exists for any frontend that renders a recno into a command:
+
+        default-constructed ostringstream : LOCK 16,984
+        round-trip of the grouped form    : 16
+
+    The house verb that needs no number does not have that surface at all. If a
+    future need forces `LOCK <n>`, the number must be rendered through the classic
+    locale, and `tools/uidef/lock_provider_test.py` fails if any emitted command
+    contains a digit that the runtime put there.
     """
 
-    def __init__(self, run):
+    def __init__(self, run, granularity='table'):
         self.run = run                    # run(command_text) -> bool
+        # 'table' is the conservative default and what R47 shipped: a handler that
+        # SCANS an area needs the whole area, and the document does not say whether
+        # a handler scans or edits one row. Choosing per handler is a schema
+        # question and therefore the owner's.
+        self.verb = 'LOCK TABLE' if granularity == 'table' else 'LOCK'
+        self.granularity = granularity
         self.held = []
 
     def try_lock(self, aliases):
@@ -46,7 +72,7 @@ class LockProvider:
         """
         taken = []
         for a in sorted(aliases):
-            if self.run('SELECT %s' % a) and self.run('LOCK TABLE'):
+            if self.run('SELECT %s' % a) and self.run(self.verb):
                 taken.append(a)
             else:
                 for t in reversed(taken):
