@@ -64,11 +64,12 @@ static void run_all(wxWindow* frame) {
         const char* label = record ? "record" : "table ";
         printf("  %s acquire : %s\n", label, join(acq).c_str());
         printf("  %s release : %s\n", label, join(g_cmds).c_str());
-        const std::string verb = record ? "LOCK" : "LOCK TABLE";
+        const std::string verb   = record ? "LOCK"   : "LOCK TABLE";
+        const std::string unverb = record ? "UNLOCK" : "UNLOCK TABLE";
         bool ok = got && acq.size() == 4 && acq[0] == "SELECT enroll" && acq[1] == verb
                   && acq[2] == "SELECT students" && acq[3] == verb
                   && g_cmds.size() == 4 && g_cmds[0] == "SELECT students"
-                  && g_cmds[1] == "UNLOCK" && g_cmds[3] == "UNLOCK";
+                  && g_cmds[1] == unverb && g_cmds[3] == unverb;
         all = all && ok;
     }
 
@@ -84,7 +85,7 @@ static void run_all(wxWindow* frame) {
     auto p2 = uidef::lock_provider(counting);
     bool second = p2(true, domain);
     int unlocks = 0;
-    for (auto& c : g_cmds) if (c == "UNLOCK") ++unlocks;
+    for (auto& c : g_cmds) if (c == "UNLOCK TABLE") ++unlocks;
     printf("  rollback       : returned %s, rolled back %d lock(s)  (%s)\n",
            second ? "true" : "false", unlocks, join(g_cmds).c_str());
     bool roll_ok = !second && unlocks == 1;

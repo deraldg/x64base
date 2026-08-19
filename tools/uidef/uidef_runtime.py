@@ -59,7 +59,14 @@ class LockProvider:
         # SCANS an area needs the whole area, and the document does not say whether
         # a handler scans or edits one row. Choosing per handler is a schema
         # question and therefore the owner's.
+        # R50: the RELEASE verb must pair with the ACQUIRE verb. Bare `UNLOCK`
+        # unlocks the current RECORD, not the table (src/cli/cmd_unlock.cpp:
+        # "UNLOCK with no arguments unlocks the current record"), so releasing a
+        # `LOCK TABLE` with `UNLOCK` leaves the table lock held. Measured against
+        # the real binary: after UNLOCK, `LOCK STATUS` still reported
+        # `Table: LOCKED (owner Grimwood:5383:...)`.
         self.verb = 'LOCK TABLE' if granularity == 'table' else 'LOCK'
+        self.unverb = 'UNLOCK TABLE' if granularity == 'table' else 'UNLOCK'
         self.granularity = granularity
         self.held = []
 
@@ -77,7 +84,7 @@ class LockProvider:
             else:
                 for t in reversed(taken):
                     self.run('SELECT %s' % t)
-                    self.run('UNLOCK')
+                    self.run(self.unverb)
                 return False
         self.held.append(tuple(sorted(aliases)))
         return True
@@ -85,7 +92,7 @@ class LockProvider:
     def unlock(self, aliases):
         for a in reversed(sorted(aliases)):
             self.run('SELECT %s' % a)
-            self.run('UNLOCK')
+            self.run(self.unverb)
         try:
             self.held.remove(tuple(sorted(aliases)))
         except ValueError:

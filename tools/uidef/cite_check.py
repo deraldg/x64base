@@ -26,7 +26,8 @@ import sys
 ROOTS = ('docs/', 'tools/', 'src/', 'include/', 'labtalk/', 'coordination/',
          'dottalkpp/', 'scripts/', 'smoke/')
 EXTS = ('.md', '.py', '.png', '.txt', '.h', '.hpp', '.cpp', '.csv', '.yaml',
-        '.yml', '.dts', '.html', '.json', '.dbf', '.scx', '.mnx', '.vcx', '.frx')
+        '.yml', '.dts', '.html', '.json', '.dbf', '.scx', '.mnx', '.vcx', '.frx',
+        '.sh', '.ps1')
 # A document that DOCUMENTS an ignored path -- R33 and R42 do exactly that, and so
 # does any handoff explaining why a file cannot be staged -- would otherwise be
 # flagged on every commit that touches it. A permanent advisory trains people to

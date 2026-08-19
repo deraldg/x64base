@@ -317,14 +317,19 @@ private:
 inline Runtime::LockProvider lock_provider(
         std::function<bool(const std::string&)> run,
         bool record_granularity = false) {
-    const std::string verb = record_granularity ? "LOCK" : "LOCK TABLE";
-    return [run, verb](bool acquire, const std::vector<std::string>& aliases) -> bool {
+    // R50: the release verb PAIRS with the acquire verb. Bare `UNLOCK` unlocks the
+    // current RECORD, not the table -- releasing a `LOCK TABLE` with `UNLOCK` leaves
+    // the table lock held for the life of the process. Measured against the real
+    // binary, not read off the header.
+    const std::string verb   = record_granularity ? "LOCK"   : "LOCK TABLE";
+    const std::string unverb = record_granularity ? "UNLOCK" : "UNLOCK TABLE";
+    return [run, verb, unverb](bool acquire, const std::vector<std::string>& aliases) -> bool {
         std::vector<std::string> in_order(aliases);
         std::sort(in_order.begin(), in_order.end());
         if (!acquire) {
             for (auto it = in_order.rbegin(); it != in_order.rend(); ++it) {
                 run("SELECT " + *it);
-                run("UNLOCK");
+                run(unverb);
             }
             return true;
         }
@@ -333,7 +338,7 @@ inline Runtime::LockProvider lock_provider(
             if (run("SELECT " + a) && run(verb)) { taken.push_back(a); continue; }
             for (auto it = taken.rbegin(); it != taken.rend(); ++it) {
                 run("SELECT " + *it);
-                run("UNLOCK");
+                run(unverb);
             }
             return false;
         }

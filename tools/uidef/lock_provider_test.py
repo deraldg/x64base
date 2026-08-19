@@ -32,7 +32,11 @@ class Sink:
 
 def case_verbs():
     ok = True
-    for gran, verb in (('table', 'LOCK TABLE'), ('record', 'LOCK')):
+    # R50: the release verb PAIRS with the acquire verb. Bare `UNLOCK` unlocks the
+    # current RECORD -- releasing a `LOCK TABLE` with it leaves the table locked,
+    # measured against the real binary in tools/uidef/lock_crossproc_wsl.sh.
+    for gran, verb, unverb in (('table', 'LOCK TABLE', 'UNLOCK TABLE'),
+                               ('record', 'LOCK', 'UNLOCK')):
         s = Sink()
         p = urt.LockProvider(s, granularity=gran)
         assert p.try_lock(['students', 'enroll'])
@@ -41,7 +45,7 @@ def case_verbs():
         s.cmds.clear()
         p.unlock(['students', 'enroll'])
         rel = list(s.cmds)
-        want_rel = ['SELECT students', 'UNLOCK', 'SELECT enroll', 'UNLOCK']
+        want_rel = ['SELECT students', unverb, 'SELECT enroll', unverb]
         good = got == want and rel == want_rel
         ok = ok and good
         print("  %-6s acquire : %s" % (gran, ' ; '.join(got)))
@@ -69,7 +73,7 @@ def case_rollback():
         return True
     p2 = urt.LockProvider(run)
     second = p2.try_lock(['a', 'b'])
-    released = s2.cmds.count('UNLOCK')
+    released = s2.cmds.count('UNLOCK TABLE')
     print("  refuse first  : returned %s, commands=%d" % (first, len(s.cmds)))
     print("  refuse second : returned %s, rolled back %d lock(s)  (%s)"
           % (second, released, ' ; '.join(s2.cmds)))
