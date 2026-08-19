@@ -1,0 +1,86 @@
+AIF-120 R35 evidence -- a character-cell backend
+run: python3 tools/uidef/uidef_text.py <table>.DBF
+
+======================================================================
+FLOWDEMO.DBF -- 100 cells wide, character grid
+  elements 23   refused 0   derived-geometry containers 1
+  REFUSED grid on G2 -- FLOW=grid with no Columns (R23.2); fell back to column
+  DERIVED layout for P3 -- FLOW=free with no ORIGIN on any child; fell back to ORDINAL order (R23.3)
+
++- FLOW demo -- no coordinates anywhere -----------+
+|+-------------------------------------------+     |
+||< First >  < Prior >  < Next >  < Last >   |     |
+|+-------------------------------------------+     |
+|+-------------+                                   |
+||[ ] Taxable  |                                   |
+||[ ] Active   |                                   |
+||[ ] Archived |                                   |
+|+-------------+                                   |
+|+- Grid, Columns = 2, one spanning row -+         |
+||Last name     [__________]             |         |
+||First name    [__________]             |         |
+||Major         [__________]             |         |
+||[__________]                           |         |
+||                                       |         |
+|+---------------------------------------+         |
+|+- Grid with no Columns -- must be refused -+     |
+||alpha                                      |     |
+||beta                                       |     |
+||gamma                                      |     |
+|+-------------------------------------------+     |
+|+-----------------------------------------------+ |
+||free with no ORIGIN: order is all a target has | |
+|+-----------------------------------------------+ |
++--------------------------------------------------+
+
+======================================================================
+UIDEF_STUDENTS.DBF -- 100 cells wide, character grid
+  elements 19   refused 0   derived-geometry containers 1
+  IGNORED 3 FONT row(s) and every FONTREF -- this target has no fonts. The contract has no conformance word for `ignored`; it is not refusal and it is not honouring.
+  DERIVED cell geometry for O001 -- ORIGIN is px and this target's unit is a cell; divided by 7 x 20, which the contract does not specify (R12.3, gate 11 G-6)
+  BANDED 19 ORIGIN_TOP values into 10 visual rows on O001 within 8 px -- quantising each one alone splits a row in two (R19, R35.1)
+
++- STUDENTS ------------------------------------------+
+| Sid:     [__________]                               |
+| Lname:   [____________________]                     |
+| Fname:   [_______________]                          |
+| Dob:     [__________]                               |
+| Gender:  [_]                                        |
+| Major:   [____]                                     |
+| Enroll_d:[__________]                               |
+| Gpa:     [____]                                     |
+| Email:   [________________________________________] |
+|  +----------+                                       |
+|  +----------+                                       |
++-----------------------------------------------------+
+
+======================================================================
+TABDEMO.DBF -- 100 cells wide, character grid
+  elements 8   refused 0   derived-geometry containers 1
+  DERIVED layout for PS -- FLOW=free with no ORIGIN on any child; fell back to ORDINAL order (R23.3)
+
++- pageset demo ---------------------+
+|+---------------------------------+ |
+||+- Student -+                    | |
+|||Last name  |                    | |
+|||First name |                    | |
+||+-----------+                    | |
+||+- Enrolment ------------------+ | |
+|||< Add >  < Drop >  < Swap >   | | |
+||+------------------------------+ | |
+|+---------------------------------+ |
++------------------------------------+
+
+======================================================================
+FONTDEMO.DBF -- 100 cells wide, character grid
+  elements 5   refused 0   derived-geometry containers 0
+  IGNORED 3 FONT row(s) and every FONTREF -- this target has no fonts. The contract has no conformance word for `ignored`; it is not refusal and it is not honouring.
+
++- FONTREF demo -----------------+
+|FONTREF 1 -- Helvetica 16       |
+|FONTREF 2 -- Courier 11         |
+|FONTREF 3 -- Times 13           |
+|FONTREF 0 -- the target default |
+|FONTREF 9 -- no such FONT row   |
++--------------------------------+
+

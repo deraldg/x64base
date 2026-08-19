@@ -243,6 +243,20 @@ def profile_tk():
     }
 
 
+def profile_text():
+    """The third backend (R35): a character grid, no fonts, no pixels."""
+    import uidef_text
+    return {
+        'name': 'text -- uidef_text.py (character cells, no fonts)',
+        'kinds': set(uidef_text.KINDS_RENDERED),
+        'flows': set(uidef_text.FLOWS_SUPPORTED),
+        'dispatch': set(uidef_text.DISPATCH_SUPPORTED),
+        'host': set(uidef_text.CAPABILITIES),
+        'span': True,
+        'origin': True,
+    }
+
+
 def profile_html():
     """The second REAL backend (R34). Imported, never restated."""
     import uidef_html
@@ -381,7 +395,9 @@ if __name__ == '__main__':
         profs.append(PROFILE_MINIMAL)
     if '--html' in sys.argv or '--both' in sys.argv or '--all' in sys.argv:
         profs.append(profile_html())
-    if '--minimal' not in sys.argv and '--html' not in sys.argv:
+    if '--text' in sys.argv or '--all' in sys.argv:
+        profs.append(profile_text())
+    if '--minimal' not in sys.argv and '--html' not in sys.argv and '--text' not in sys.argv:
         profs.insert(0, profile_tk())
     tables = None
     if '--schema' in sys.argv:
