@@ -75,7 +75,12 @@ namespace {
 // relations refresh (if enabled) to re-sync children to the restored parent.
 struct WorkAreaCursorRestore {
     struct SlotState {
-        int32_t recno{0};
+        // RECNO64 / AIF-120 R67.3. This was int32_t read through recno(), the
+        // SIGNALLING 32-bit adapter. Past 2^31 recno() returns -1 by design, the
+        // `<= 0` guard below fired, and the browser silently did not restore the
+        // cursor it promises to preserve -- then relations refresh re-synced every
+        // child to wherever the browse had left the parent. Nothing reported it.
+        dottalk::RecordNo recno{0};
         bool open{false};
     };
 
@@ -88,7 +93,7 @@ struct WorkAreaCursorRestore {
             if (xbase::DbArea* a = workareas::db(i)) {
                 try {
                     slots[i].open  = a->isOpen();
-                    slots[i].recno = a->recno();
+                    slots[i].recno = a->recno64();
                 } catch (...) {
                     slots[i].open = false;
                     slots[i].recno = 0;
@@ -100,11 +105,13 @@ struct WorkAreaCursorRestore {
     ~WorkAreaCursorRestore() {
         for (std::size_t i = 0; i < slots.size(); ++i) {
             if (!slots[i].open) continue;
-            if (slots[i].recno <= 0) continue;
+            // 0 is the engine's own "no current record" (bof() is _crn64 == 0).
+            // It no longer doubles as the overflow signal.
+            if (slots[i].recno == 0) continue;
             if (xbase::DbArea* a = workareas::db(i)) {
                 try {
                     if (a->isOpen()) {
-                        (void)a->gotoRec(slots[i].recno);
+                        (void)a->gotoRec64(slots[i].recno);
                         (void)a->readCurrent();
                     }
                 } catch (...) {}
@@ -262,8 +269,10 @@ static PromptResult dispatch(dottalk::DbTupleStream& stream, PagerState& ps,
 
     if (u == "TOP") { stream.top(); return {PagerAction::Repaint, true}; }
     if (u == "BOTTOM") { stream.bottom(); return {PagerAction::Repaint, true}; }
-    if (u.rfind("SKIP ", 0) == 0) { try { long n = std::stol(trim_copy(raw.substr(5))); stream.skip(n); } catch (...) {} return {PagerAction::Repaint, true}; }
-    if (u.rfind("GOTO ", 0) == 0) { try { long n = std::stol(trim_copy(raw.substr(5))); (void)(stream.is_ordered() ? stream.goto_pos(n) : stream.goto_recno(n)); } catch (...) {} return {PagerAction::Repaint, true}; }
+    // stoll, not stol: `long` is 32-bit under MSVC, so the pager's own GOTO
+    // truncated a record number the stream can now hold.
+    if (u.rfind("SKIP ", 0) == 0) { try { dottalk::RecordDelta n = std::stoll(trim_copy(raw.substr(5))); stream.skip(n); } catch (...) {} return {PagerAction::Repaint, true}; }
+    if (u.rfind("GOTO ", 0) == 0) { try { long long v = std::stoll(trim_copy(raw.substr(5))); if (v >= 1) { const dottalk::RecordNo n = static_cast<dottalk::RecordNo>(v); (void)(stream.is_ordered() ? stream.goto_pos(n) : stream.goto_recno(n)); } } catch (...) {} return {PagerAction::Repaint, true}; }
 
     if (u.rfind("STATUS ", 0) == 0) {
         const std::string mode = up(trim_copy(u.substr(7)));

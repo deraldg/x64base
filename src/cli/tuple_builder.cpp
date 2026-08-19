@@ -87,7 +87,7 @@ std::string area_display_name_upper(int slot) {
 }
 
 // If TABLE buffering is enabled for an area, return the highest-priority buffered value for (recno, field1).
-bool get_buffer_override(int area0, int recno, int field1, std::string& out_val) {
+bool get_buffer_override(int area0, dottalk::RecordNo recno, int field1, std::string& out_val) {
     if (!dottalk::table::in_range(area0)) return false;
     if (!dottalk::table::is_enabled(area0)) return false;
 
@@ -248,9 +248,15 @@ std::vector<std::pair<int, std::string>> expand(const FieldRef& r) {
     return out;
 }
 
-int safe_recno(const xbase::DbArea* A) {
+// This is the SOURCE of every TupleFragment::recno, and it read recno() -- the
+// 32-bit adapter that signals -1 past INT32_MAX. Widening TupleFragment::recno to
+// an unsigned RecordNo without widening this turned that visible -1 into
+// 18446744073709551615: a signal became a plausible-looking record number, which is
+// precisely the failure mode xbase.hpp chose -1 to avoid. Widen the producer or do
+// not widen the field.
+dottalk::RecordNo safe_recno(const xbase::DbArea* A) {
     if (!A) return 0;
-    try { return static_cast<int>(A->recno()); } catch (...) { return 0; }
+    try { return A->recno64(); } catch (...) { return 0; }
 }
 
 int resolve_field1(const xbase::DbArea* ar, const std::string& canonicalField) {
@@ -385,7 +391,7 @@ TupleBuildResult build_tuple_from_spec(const std::string& spec_in, const TupleBu
         // Overlay TABLE-buffered edits only for preview-oriented callers.
         if (opt.overlay_table_buffer && have_area) {
             const int area0 = slot;
-            const int recno = safe_recno(ar);
+            const dottalk::RecordNo recno = safe_recno(ar);
 
             std::string ov;
             if (field1 > 0 && get_buffer_override(area0, recno, field1, ov)) {

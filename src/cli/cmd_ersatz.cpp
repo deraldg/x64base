@@ -206,7 +206,7 @@ namespace
         std::cout << "; ERSATZ ACTIVE ORDER: " << order_info_line(area) << "\n";
     }
 
-    static long ersatz_recno_safe(xbase::DbArea& area);
+    static dottalk::RecordNo ersatz_recno_safe(xbase::DbArea& area);
 
     static bool ersatz_read_current_safe(xbase::DbArea& area)
     {
@@ -256,7 +256,7 @@ namespace
         }
     }
 
-    static bool ersatz_skip(xbase::DbArea& area, long n)
+    static bool ersatz_skip(xbase::DbArea& area, dottalk::RecordDelta n)
     {
         try {
             if (n == 0)
@@ -268,7 +268,7 @@ namespace
                 // vector, then move by n logical positions. This preserves
                 // full relational expansion while making the root cursor obey
                 // SET ORDER / ASCEND / DESCEND.
-                const long saved = ersatz_recno_safe(area);
+                const dottalk::RecordNo saved = ersatz_recno_safe(area);
                 dottalk::DbTupleStream nav("*");
                 if (saved > 0)
                     (void)nav.goto_recno(saved);
@@ -276,17 +276,28 @@ namespace
                 return ersatz_read_current_safe(area);
             }
 
-            area.skip(n);
+            // DbArea::skip takes an `int` on purpose: it is a DELTA, and RECNO64
+            // separates RecordDelta (identity arithmetic) from a single hop. Clamp
+            // explicitly rather than letting the narrowing happen silently -- a
+            // skip larger than 2 billion in one call cannot be satisfied anyway,
+            // and the engine will refuse it at the bound check.
+            constexpr dottalk::RecordDelta kHopMax = 2147483647;
+            const int hop = (n > kHopMax) ? static_cast<int>(kHopMax)
+                          : (n < -kHopMax) ? static_cast<int>(-kHopMax)
+                          : static_cast<int>(n);
+            area.skip(hop);
             return ersatz_read_current_safe(area);
         } catch (...) {
             return false;
         }
     }
 
-    static long ersatz_recno_safe(xbase::DbArea& area)
+    static dottalk::RecordNo ersatz_recno_safe(xbase::DbArea& area)
     {
         try {
-            return static_cast<long>(area.recno());
+            // recno64(), not recno(): the 32-bit adapter signals -1 past
+            // INT32_MAX, and every caller here tests `> 0`.
+            return area.recno64();
         } catch (...) {
             return 0;
         }
@@ -1508,7 +1519,7 @@ echo ============================================================
         std::string table;
         std::string spec;
         int area_slot = -1;
-        int saved_recno = 0;
+        dottalk::RecordNo saved_recno = 0;
         std::size_t rows = 0;
         ErsatzDeltaMap map;
     };
@@ -1527,12 +1538,17 @@ echo ============================================================
         return upper_copy(n);
     }
 
-    static int safe_area_recno(xbase::DbArea& area)
+    // recno(), the 32-bit adapter, returns -1 past INT32_MAX by design -- so the
+    // `> 0` guard at the restore site below silently skipped restoring the cursor
+    // on exactly the tables the engine was widened for. Same defect as R69.1/R69.3,
+    // third instance. recno64() is the authoritative value and 0 is the engine's
+    // own "no current record" (bof() is _crn64 == 0).
+    static dottalk::RecordNo safe_area_recno(xbase::DbArea& area)
     {
-        try { return static_cast<int>(area.recno()); } catch (...) { return 0; }
+        try { return area.recno64(); } catch (...) { return 0; }
     }
 
-    static int tuple_row_recno(const dottalk::TupleRow& row)
+    static dottalk::RecordNo tuple_row_recno(const dottalk::TupleRow& row)
     {
         for (const auto& f : row.fragments)
         {
@@ -1573,7 +1589,7 @@ echo ============================================================
         if (!row.values.empty() && !trim(row.values.front()).empty())
             return trim(row.values.front());
 
-        const int rn = tuple_row_recno(row);
+        const dottalk::RecordNo rn = tuple_row_recno(row);
         if (rn > 0)
             return "RECNO:" + std::to_string(rn);
 
@@ -1589,7 +1605,7 @@ echo ============================================================
     static std::string tuple_summary(const dottalk::TupleRow& row)
     {
         std::ostringstream oss;
-        const int rn = tuple_row_recno(row);
+        const dottalk::RecordNo rn = tuple_row_recno(row);
         if (rn > 0)
             oss << "RECNO=" << rn;
         else
@@ -1681,7 +1697,7 @@ echo ============================================================
     {
         ErsatzDeltaMap out;
 
-        const int old_recno = safe_area_recno(area);
+        const dottalk::RecordNo old_recno = safe_area_recno(area);
 
         dottalk::DbTupleStream stream(spec.empty() ? "*" : spec, "ERSATZ DELTA");
         stream.top();
@@ -1719,7 +1735,7 @@ echo ============================================================
         if (old_recno > 0)
         {
             try {
-                area.gotoRec(static_cast<std::size_t>(old_recno));
+                area.gotoRec64(old_recno);
                 (void)area.readCurrent();
             } catch (...) {}
         }

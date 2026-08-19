@@ -122,3 +122,23 @@ add_executable(dottalkpp_tracking_schema_test
 )
 target_include_directories(dottalkpp_tracking_schema_test PRIVATE ${CMAKE_SOURCE_DIR}/include)
 add_test(NAME dottalkpp_tracking_schema_test COMMAND dottalkpp_tracking_schema_test)
+
+# ---- RECNO64 gate 3: tuple-stream order-vector capacity (AIF-120 R69) -------
+# The order vector is the one place in DbTupleStream where widening has a real
+# memory cost, so its width is a DECLARED CAPACITY chosen once -- IIndexBackend's
+# shape from RECNO64 M4-4, one layer up. This asserts the narrow backing holds a
+# classic table's whole unsigned range, REFUSES a value past its ceiling instead of
+# truncating it (the previous path narrowed a 64-bit CDX/LMDB recno to uint32_t
+# silently, and 2^32 truncates to 0 -- the engine's own "no current record"), and
+# that the wide backing keeps two record numbers past 2^32 distinct.
+# Header-only against db_tuple_stream.hpp: no table, no index, no engine link.
+add_executable(dottalkpp_tuple_order_capacity_test
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_tuple_stream_order_capacity.cpp
+)
+target_include_directories(dottalkpp_tuple_order_capacity_test PRIVATE
+  ${CMAKE_SOURCE_DIR}/include
+  ${CMAKE_SOURCE_DIR}/src
+  ${CMAKE_SOURCE_DIR}/src/cli
+)
+add_test(NAME dottalkpp_tuple_order_capacity_test
+         COMMAND dottalkpp_tuple_order_capacity_test)

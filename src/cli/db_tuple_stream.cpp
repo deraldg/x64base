@@ -42,17 +42,22 @@ xbase::DbArea* current_area() {
     }
 }
 
-long safe_rec_count(xbase::DbArea* A) {
+// RECNO64. This read recCount(), which is the SIGNALLING 32-bit adapter: past
+// INT32_MAX it returns -1 by design ("out of 32-bit range; use the *64 accessor"),
+// so every bound check below became `r > -1` and the whole stream refused to
+// position on exactly the tables the engine was widened for. recCount64() is the
+// authoritative value.
+RecordNo safe_rec_count(xbase::DbArea* A) {
     if (!A) return 0;
-    try { return static_cast<long>(A->recCount()); }
+    try { return A->recCount64(); }
     catch (...) { return 0; }
 }
 
-bool goto_rec_safe(xbase::DbArea* A, long r) {
+bool goto_rec_safe(xbase::DbArea* A, RecordNo r) {
     if (!A) return false;
     try {
-        if (r < 1 || r > static_cast<long>(A->recCount())) return false;
-        A->gotoRec(static_cast<std::size_t>(r));
+        if (r < 1 || r > A->recCount64()) return false;
+        A->gotoRec64(r);
         (void)A->readCurrent();
         return true;
     } catch (...) {
@@ -93,9 +98,9 @@ static inline uint64_t read_le_u64(const void* p) {
 //   asc=false -> last..first
 static bool collect_lmdb_cdx_recnos(const std::string& cdxPathStr,
                                     const std::string& tag,
-                                    int recCount,
+                                    RecordNo recCount,
                                     bool asc,
-                                    std::vector<uint32_t>& out)
+                                    std::vector<RecordNo>& out)
 {
     out.clear();
     if (tag.empty()) return false;
@@ -155,7 +160,14 @@ static bool collect_lmdb_cdx_recnos(const std::string& cdxPathStr,
     MDB_val v{};
     rc = mdb_cursor_get(cur, &k, &v, asc ? MDB_FIRST : MDB_LAST);
 
-    out.reserve(static_cast<std::size_t>(std::max(0, recCount)));
+    // A hint only -- and recCount is now a 64-bit count that a corrupt header could
+    // make enormous, so it is capped rather than trusted. The old line clamped the
+    // LOWER bound (std::max(0, ...)) against a signed int; with an unsigned count
+    // the bound that matters is the upper one. Watch this one: it is the first
+    // place a wide count turns into an allocation.
+    constexpr RecordNo kReserveCap = 1u << 22;      // 4 Mi entries = 32 MB
+    out.reserve(static_cast<std::size_t>(recCount < kReserveCap ? recCount
+                                                               : kReserveCap));
 
     while (rc == MDB_SUCCESS) {
         uint64_t rn64 = 0;
@@ -175,8 +187,13 @@ static bool collect_lmdb_cdx_recnos(const std::string& cdxPathStr,
             rn64 = read_le_u64(b + (k.mv_size - 8));
         }
 
-        if (rn64 > 0 && rn64 <= static_cast<uint64_t>(recCount)) {
-            out.push_back(static_cast<uint32_t>(rn64));
+        if (rn64 > 0 && rn64 <= recCount) {
+            // The x64 CDX/LMDB path stores FULL 64-bit record numbers (RECNO64
+            // M3c) and this line used to write them into a uint32_t vector. On a
+            // table past 2^31 the index held the right number and the stream threw
+            // the top bits away -- silently, on both platforms. push() refuses
+            // rather than truncating, and the refusal is counted and reported.
+            out.push_back(rn64);
         }
 
         rc = mdb_cursor_get(cur, &k, &v, asc ? MDB_NEXT : MDB_PREV);
@@ -188,9 +205,9 @@ static bool collect_lmdb_cdx_recnos(const std::string& cdxPathStr,
 #else
 static bool collect_lmdb_cdx_recnos(const std::string&,
                                     const std::string&,
-                                    int,
+                                    RecordNo,
                                     bool,
-                                    std::vector<uint32_t>& out)
+                                    std::vector<RecordNo>& out)
 {
     out.clear();
     return false;
@@ -218,27 +235,26 @@ void DbTupleStream::set_filter_for(std::string expr) {
     }
 }
 
-bool DbTupleStream::goto_recno(long r) { return goto_recno_internal(r); }
+bool DbTupleStream::goto_recno(RecordNo r) { return goto_recno_internal(r); }
 
-bool DbTupleStream::goto_pos(long pos) {
+bool DbTupleStream::goto_pos(RecordNo pos) {
     if (pos < 1 || mode_ != NavMode::OrderVector) return false;
-    return goto_order_pos(pos - 1);
+    return goto_order_pos(pos);          // both 1-based now
 }
 
 bool DbTupleStream::is_ordered() const { return mode_ == NavMode::OrderVector; }
 
-long DbTupleStream::order_count() const {
-    return static_cast<long>(order_recnos_.size());
+RecordNo DbTupleStream::order_count() const {
+    return static_cast<RecordNo>(order_recnos_.size());
 }
 
-long DbTupleStream::current_pos() const {
-    return mode_ == NavMode::OrderVector ? (order_pos_ < 0 ? 0 : (order_pos_ + 1)) : cur_recno_;
+RecordNo DbTupleStream::current_pos() const {
+    return mode_ == NavMode::OrderVector ? order_pos_ : cur_recno_;
 }
 
 void DbTupleStream::refresh_bounds_only() {
     xbase::DbArea* A = current_area();
     max_recno_ = safe_rec_count(A);
-    if (cur_recno_ < 0) cur_recno_ = 0;
     if (cur_recno_ > max_recno_) cur_recno_ = max_recno_;
 }
 
@@ -256,12 +272,17 @@ void DbTupleStream::refresh_bounds_and_order() {
     if (has_order) {
         mode_ = NavMode::OrderVector;
         order_recnos_.clear();
-        order_pos_ = -1;
+        order_pos_ = 0;
 
         try {
             if (orderstate::isCnx(*A)) {
+                // Classic CNX stores recnos in four bytes (RECNO64 M4-4), so the
+                // loader's uint32_t vector is correct BY FORMAT here, not a
+                // compromise. It is copied into the capacity-checked vector.
                 const std::string tag = orderstate::activeTag(*A);
-                order_nav_detail::build_cnx_recnos_from_db(*A, tag, order_recnos_);
+                std::vector<uint32_t> tmp;
+                order_nav_detail::build_cnx_recnos_from_db(*A, tag, tmp);
+                order_recnos_.assign(tmp.begin(), tmp.end());
             } else if (orderstate::isCdx(*A)) {
                 const std::string ord_path = orderstate::orderName(*A);
                 const std::string tag = orderstate::activeTag(*A);
@@ -271,7 +292,7 @@ void DbTupleStream::refresh_bounds_and_order() {
                     (void)collect_lmdb_cdx_recnos(
                         ord_path,
                         tag,
-                        static_cast<int>(A->recCount()),
+                        A->recCount64(),
                         asc,
                         order_recnos_
                     );
@@ -279,11 +300,14 @@ void DbTupleStream::refresh_bounds_and_order() {
             } else {
                 const std::string ord_path = orderstate::orderName(*A);
                 if (!ord_path.empty()) {
-                    order_nav_detail::load_inx_recnos(ord_path, A->recCount(), order_recnos_);
+                    // Legacy .inx is a classic 32-bit format (M4-4), same as CNX.
+                    std::vector<uint32_t> tmp;
+                    order_nav_detail::load_inx_recnos(ord_path, A->recCount(), tmp);
                     // Legacy INX loader is assumed ascending; preserve current direction.
                     if (!orderstate::isAscending(*A)) {
-                        std::reverse(order_recnos_.begin(), order_recnos_.end());
+                        std::reverse(tmp.begin(), tmp.end());
                     }
+                    order_recnos_.assign(tmp.begin(), tmp.end());
                 }
             }
         } catch (...) {
@@ -296,22 +320,17 @@ void DbTupleStream::refresh_bounds_and_order() {
     } else {
         mode_ = NavMode::Physical;
         order_recnos_.clear();
-        order_pos_ = -1;
+        order_pos_ = 0;
     }
 
-    if (cur_recno_ < 0) cur_recno_ = 0;
     if (cur_recno_ > max_recno_) cur_recno_ = max_recno_;
 }
 
 void DbTupleStream::top() {
     refresh_bounds_and_order();
     last_emitted_recno_ = 0;
-    if (mode_ == NavMode::OrderVector) {
-        order_pos_ = -1;
-        cur_recno_ = 0;
-    } else {
-        cur_recno_ = 0;
-    }
+    order_pos_ = 0;
+    cur_recno_ = 0;
 }
 
 void DbTupleStream::bottom() {
@@ -320,11 +339,11 @@ void DbTupleStream::bottom() {
 
     if (mode_ == NavMode::OrderVector) {
         if (!order_recnos_.empty()) {
-            order_pos_ = static_cast<long>(order_recnos_.size()) - 1;
-            cur_recno_ = static_cast<long>(order_recnos_[static_cast<std::size_t>(order_pos_)]);
+            order_pos_ = static_cast<RecordNo>(order_recnos_.size());   // 1-based
+            cur_recno_ = order_recnos_.back();
             (void)goto_rec_safe(current_area(), cur_recno_);
         } else {
-            order_pos_ = -1;
+            order_pos_ = 0;
             cur_recno_ = 0;
         }
     } else {
@@ -333,7 +352,7 @@ void DbTupleStream::bottom() {
     }
 }
 
-bool DbTupleStream::goto_physical_recno(long r) {
+bool DbTupleStream::goto_physical_recno(RecordNo r) {
     xbase::DbArea* A = current_area();
     if (!A) return false;
     if (!goto_rec_safe(A, r)) return false;
@@ -341,43 +360,49 @@ bool DbTupleStream::goto_physical_recno(long r) {
     return true;
 }
 
-bool DbTupleStream::goto_order_pos(long p) {
-    if (p < 0) return false;
-    const long sz = static_cast<long>(order_recnos_.size());
-    if (p >= sz) return false;
-    const uint32_t rn = order_recnos_[static_cast<std::size_t>(p)];
-    if (!goto_physical_recno(static_cast<long>(rn))) return false;
+// `p` is 1-based, matching goto_pos() and current_pos(). The old code mixed a
+// 0-based index with a -1 sentinel, which is why the position had to be adjusted
+// at four different call sites; an unsigned identity has no room for -1 and 0 was
+// already free.
+bool DbTupleStream::goto_order_pos(RecordNo p) {
+    if (p < 1) return false;
+    const RecordNo sz = static_cast<RecordNo>(order_recnos_.size());
+    if (p > sz) return false;
+    const RecordNo rn = order_recnos_[static_cast<std::size_t>(p - 1)];
+    if (!goto_physical_recno(rn)) return false;
     order_pos_ = p;
     return true;
 }
 
-bool DbTupleStream::goto_recno_internal(long r) {
+bool DbTupleStream::goto_recno_internal(RecordNo r) {
     refresh_bounds_only();
     if (mode_ == NavMode::OrderVector) {
-        auto it = std::find(order_recnos_.begin(), order_recnos_.end(), static_cast<uint32_t>(r));
-        if (it == order_recnos_.end()) return false;
-        const long p = static_cast<long>(std::distance(order_recnos_.begin(), it));
+        const RecordNo p = order_find_pos(order_recnos_, r);   // 1-based, 0 = absent
+        if (p == 0) return false;
         return goto_order_pos(p);
     }
     return goto_physical_recno(r);
 }
 
-bool DbTupleStream::step(long delta) {
+bool DbTupleStream::step(RecordDelta delta) {
     refresh_bounds_only();
+    // Both branches compute in SIGNED 64-bit and only then range-check into the
+    // unsigned identity, so an underflow is a rejected move rather than a very
+    // large record number.
     if (mode_ == NavMode::OrderVector) {
-        const long sz = static_cast<long>(order_recnos_.size());
+        const RecordDelta sz = static_cast<RecordDelta>(order_recnos_.size());
         if (sz <= 0) return false;
-        long target = order_pos_;
-        if (target < 0) target = (delta > 0) ? 0 : -1;
-        else target += delta;
-        if (target < 0 || target >= sz) return false;
-        return goto_order_pos(target);
+        RecordDelta target;
+        if (order_pos_ == 0) target = (delta > 0) ? 1 : 0;
+        else target = static_cast<RecordDelta>(order_pos_) + delta;
+        if (target < 1 || target > sz) return false;
+        return goto_order_pos(static_cast<RecordNo>(target));
     }
 
-    long target = cur_recno_ + delta;
+    RecordDelta target = static_cast<RecordDelta>(cur_recno_) + delta;
     if (cur_recno_ == 0 && delta > 0) target = 1;
-    if (target < 1 || target > max_recno_) return false;
-    return goto_physical_recno(target);
+    if (target < 1 || target > static_cast<RecordDelta>(max_recno_)) return false;
+    return goto_physical_recno(static_cast<RecordNo>(target));
 }
 
 TupleRow DbTupleStream::build_current_tuple() {
@@ -409,11 +434,11 @@ std::vector<TupleRow> DbTupleStream::next_page(std::size_t max_rows) {
 
     if (mode_ == NavMode::OrderVector) {
         if (order_recnos_.empty()) return out;
-        if (order_pos_ < 0) {
-            if (!goto_order_pos(0)) return out;
+        if (order_pos_ == 0) {                 // unpositioned; 1-based from here
+            if (!goto_order_pos(1)) return out;
         }
     } else {
-        if (max_recno_ <= 0) return out;
+        if (max_recno_ == 0) return out;
         if (cur_recno_ == 0) {
             if (!goto_physical_recno(1)) return out;
         }
@@ -430,13 +455,13 @@ std::vector<TupleRow> DbTupleStream::next_page(std::size_t max_rows) {
     return out;
 }
 
-void DbTupleStream::skip(long n) {
+void DbTupleStream::skip(RecordDelta n) {
     if (n == 0) return;
 
     if (n > 0) {
         if (mode_ == NavMode::OrderVector) {
-            if (order_pos_ < 0) {
-                if (!goto_order_pos(0)) return;
+            if (order_pos_ == 0) {
+                if (!goto_order_pos(1)) return;
                 --n;
             }
         } else {
@@ -481,11 +506,11 @@ std::string DbTupleStream::status_line() const {
     const std::string oh = current_order_hint();
 
     if (mode_ == NavMode::OrderVector) {
-        const long pos_show = (order_pos_ < 0 ? 0 : (order_pos_ + 1));
-        const long total = static_cast<long>(order_recnos_.size());
+        const RecordNo pos_show = order_pos_;
+        const RecordNo total = static_cast<RecordNo>(order_recnos_.size());
         oss << "SMARTBROWSER: pos " << pos_show << " / " << total << "  [" << oh << "]";
     } else {
-        const long show = (last_emitted_recno_ > 0 ? last_emitted_recno_ : cur_recno_);
+        const RecordNo show = (last_emitted_recno_ > 0 ? last_emitted_recno_ : cur_recno_);
         oss << "SMARTBROWSER: rec " << show << " / " << max_recno_ << "  [" << oh << "]";
     }
 
@@ -514,20 +539,20 @@ std::string DbTupleStream::status_line() const {
 void DbTupleStream::set_order_physical() {
     mode_ = NavMode::Physical;
     order_recnos_.clear();
-    order_pos_ = -1;
+    order_pos_ = 0;      // 1-based; 0 is unpositioned
     last_emitted_recno_ = 0;
     refresh_bounds_only();
 }
 
 void DbTupleStream::set_order_inx() {
     mode_ = NavMode::OrderVector;
-    order_pos_ = -1;
+    order_pos_ = 0;      // 1-based; 0 is unpositioned
     last_emitted_recno_ = 0;
 }
 
 void DbTupleStream::set_order_cnx() {
     mode_ = NavMode::OrderVector;
-    order_pos_ = -1;
+    order_pos_ = 0;      // 1-based; 0 is unpositioned
     last_emitted_recno_ = 0;
 }
 
