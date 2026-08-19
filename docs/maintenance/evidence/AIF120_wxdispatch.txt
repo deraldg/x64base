@@ -1,0 +1,46 @@
+AIF-120 R41 evidence -- the dispatch runtime on a compiled target
+generate: python3 tools/uidef/uidef_wx.py ADOPT.DBF adopt.cpp --dispatch
+build:    g++ -std=c++14 adopt.cpp registry.cpp -o adopt $(wx-config --cxxflags --libs) -pthread
+
+--- the domains the generator read out of the document's SOURCE ---
+14:  static const std::vector<std::vector<std::string>> DOMAINS = {{"enroll", "students"}};
+
+--- the event bindings it emitted ---
+  21:  w_B1->Bind(wxEVT_BUTTON, [](wxCommandEvent&){ g_rt->fire("TotalGpa", "worker", g_scope, "students", "Done"); });
+  24:  w_B2->Bind(wxEVT_BUTTON, [](wxCommandEvent&){ g_rt->fire("ListEnrolments", "worker", g_scope, "enroll", "Done"); });
+  27:  w_B3->Bind(wxEVT_BUTTON, [](wxCommandEvent&){ g_rt->fire("edit.cut", "host", g_scope, "", ""); });
+  30:  w_B4->Bind(wxEVT_BUTTON, [](wxCommandEvent&){ g_rt->fire("TotalGpa", "worker", g_scope, "students", ""); });
+
+=== RUN 1: lock the RELATION SET (R26) ===
+  handler timeline:
+     TotalGpa enter  [worker]
+     host edit.cut  [UI]
+     TotalGpa leave  [worker]
+     ListEnrolments enter  [worker]
+     Done completed (588.74)  [UI]
+     ListEnrolments leave  [worker]
+     Done completed (5 rows)  [UI]
+  runtime log:
+     worker TotalGpa
+     worker ListEnrolments
+     host edit.cut
+     refused TotalGpa worker with no ON_COMPLETE
+     complete Done completed
+     complete Done completed
+
+=== RUN 2: lock the work area the handler NAMES (the reading R26 corrected) ===
+  handler timeline:
+     TotalGpa enter  [worker]
+     host edit.cut  [UI]
+     ListEnrolments enter  [worker]
+     ListEnrolments leave  [worker]
+     Done completed (5 rows)  [UI]
+     TotalGpa leave  [worker]
+     Done completed (588.74)  [UI]
+  runtime log:
+     worker TotalGpa
+     worker ListEnrolments
+     host edit.cut
+     refused TotalGpa worker with no ON_COMPLETE
+     complete Done completed
+     complete Done completed

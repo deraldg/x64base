@@ -41,7 +41,58 @@ def cstr(s):
     return '"' + (s or '').replace('\\', '\\\\').replace('"', '\\"') + '"'
 
 
-def generate(path, title=None):
+def domains_from_source(src):
+    """R36: the lock domains, straight out of the DOC record's SOURCE."""
+    aliases, edges = [], []
+    for line in (src or '').replace('\r\n', '\n').split('\n'):
+        if ' = ' not in line:
+            continue
+        k, v = line.split(' = ', 1)
+        k = k.strip().lower()
+        if k == 'alias':
+            aliases.append(v.strip().lower())
+        elif k == 'relation':
+            body = v.split(' ON ', 1)[0]
+            if ' -> ' in body:
+                a, b = body.split(' -> ', 1)
+                edges.append((a.strip().lower(), b.strip().lower()))
+    par = {}
+
+    def find(x):
+        par.setdefault(x, x)
+        while par[x] != x:
+            par[x] = par[par[x]]
+            x = par[x]
+        return x
+
+    for a, b in edges:
+        ra, rb = find(a), find(b)
+        if ra != rb:
+            par[ra] = rb
+    for a in aliases:
+        find(a)
+    g = {}
+    for x in par:
+        g.setdefault(find(x), []).append(x)
+    return sorted((sorted(v) for v in g.values()), key=lambda d: (-len(d), d))
+
+
+def parse_handlers(txt):
+    out = {}
+    for line in (txt or '').replace('\r\n', '\n').split('\n'):
+        if '=' not in line:
+            continue
+        ev, rest = line.split('=', 1)
+        comp = ''
+        if '->' in rest:
+            rest, comp = rest.split('->', 1)
+            comp = comp.strip()
+        parts = [p.strip() for p in rest.split('/')]
+        out[ev.strip()] = (parts[0], (parts[1] if len(parts) > 1 else 'ui').lower(), comp)
+    return out
+
+
+def generate(path, title=None, dispatch=False):
     rows = list(Dbf(path).rows())
     objs = [r for r in rows if (r['RECKIND'] or '').strip() == 'OBJ']
     fonts = [r for r in rows if (r['RECKIND'] or '').strip() == 'FONT']
@@ -116,6 +167,12 @@ def generate(path, title=None):
                         % (ind, v, cstr(cap or title or 'UIDEF'),
                            org.get('origin_width', '620'),
                            str(int(float(org.get('origin_height', 420))) + 40)))
+            if dispatch:
+                body.append('%sg_rt = new uidef::Runtime(%s, DOMAINS, '
+                            'wxTheApp->argc > 2);' % (ind, v))
+                body.append('%sg_scope = std::make_shared<uidef::Scope>("%s");'
+                            % (ind, oid))
+                body.append('%suidef_register(*g_rt);' % ind)
             sub = child_sizer(oid, flow, pr, v, ind)
             for c in kids.get(oid, []):
                 emit(c, v, flow, sub, depth)
@@ -123,6 +180,8 @@ def generate(path, title=None):
             if sub:
                 body.append('%s%s->Layout();' % (ind, v))
             body.append('%s%s->Show();' % (ind, v))
+            if dispatch:
+                body.append('%suidef_after_init(%s);' % (ind, v))
             return
 
         if kind == 'group':
@@ -169,6 +228,15 @@ def generate(path, title=None):
         f = fontexpr(r)
         if f:
             body.append('%s%s->SetFont(%s);' % (ind, v, f))
+
+        if dispatch and kind == 'button':
+            hs = parse_handlers(r['HANDLERS'])
+            if 'Click' in hs:
+                name, disp, comp = hs['Click']
+                alias = (r['BINDING'] or '').strip().split('.')[0].lower()
+                body.append('%s%s->Bind(wxEVT_BUTTON, [](wxCommandEvent&){ '
+                            'g_rt->fire("%s", "%s", g_scope, "%s", "%s"); });'
+                            % (ind, v, name, disp, alias, comp))
 
         if kind in ('panel', 'page', 'pageset'):
             sub = child_sizer(oid, flow, pr, v, ind)
@@ -238,17 +306,37 @@ def generate(path, title=None):
     for r in roots:
         emit(r, 'nullptr', '', None, 1)
 
-    src = ['#include <wx/wx.h>', '#include <wx/notebook.h>', '#include <wx/gbsizer.h>',
-           '#include <wx/statbox.h>', '',
-           'class App : public wxApp { public: bool OnInit() override {'] + body + [
-           '  if (wxTheApp->argc > 1) CallAfter([]{ wxTheApp->ExitMainLoop(); });',
-           '  return true; } };', 'wxIMPLEMENT_APP(App);']
+    doc = [r for r in rows if (r['RECKIND'] or '').strip() == 'DOC'][0]
+    doms = domains_from_source(doc['SOURCE'])
+    head = ['#include <wx/wx.h>', '#include <wx/notebook.h>', '#include <wx/gbsizer.h>',
+            '#include <wx/statbox.h>']
+    pre = []
+    if dispatch:
+        head += ['#include "uidef_rt.h"', '#include <cstdio>']
+        pre = ['uidef::Runtime* g_rt = nullptr;',
+               'std::shared_ptr<uidef::Scope> g_scope;',
+               'void uidef_register(uidef::Runtime&);   // the TARGET supplies these',
+               'void uidef_after_init(wxWindow*);        // and its own entry point',
+               '']
+    # Without dispatch the app has nothing to do, so a run flag exits it after the
+    # window is up. With dispatch the target's own `uidef_after_init` owns the exit,
+    # and emitting both made the second argument quit before anything ran.
+    tail = ([] if dispatch else
+            ['  if (wxTheApp->argc > 1) CallAfter([]{ wxTheApp->ExitMainLoop(); });'])
+    src = head + [''] + pre + [
+           'class App : public wxApp { public: bool OnInit() override {'] + (
+           ['  static const std::vector<std::vector<std::string>> DOMAINS = {%s};'
+            % ', '.join('{%s}' % ', '.join('"%s"' % a for a in d) for d in doms)]
+           if dispatch else []) + body + [
+
+           ] + tail + ['  return true; } };', 'wxIMPLEMENT_APP(App);']
     return "\n".join(src), notes, made[0]
 
 
 if __name__ == '__main__':
-    src, notes, n = generate(sys.argv[1])
-    out = sys.argv[2] if len(sys.argv) > 2 else None
+    src, notes, n = generate(sys.argv[1], dispatch='--dispatch' in sys.argv)
+    args = [a for a in sys.argv[2:] if not a.startswith('--')]
+    out = args[0] if args else None
     if out:
         open(out, 'w').write(src)
     print("%s -> %s   %d widget(s)" % (os.path.basename(sys.argv[1]), out or '(stdout)', n))
