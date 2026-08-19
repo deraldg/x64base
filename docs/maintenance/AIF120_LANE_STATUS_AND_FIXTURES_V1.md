@@ -75,7 +75,8 @@ recursing that directory.
 | **R15** -- three of four formats share a `name = value` property language AND its key vocabulary; gate 10 adopts it | `docs/maintenance/AIF120_SHARED_PROPERTY_LANGUAGE_V1.md` |
 | **GATE 10 DRAFT** -- the UIDEF design table as a standalone contract (forms and menus) | `docs/maintenance/AIF120_DESIGN_TABLE_CONTRACT_V1.md` |
 | **UIDEF first implementation** -- writer, importer, validator; three defects found in the contract by producing from it | `docs/maintenance/AIF120_UIDEF_FIRST_IMPLEMENTATION_V1.md` |
-| The UIDEF tooling | `tools/uidef/uidef.py`, `tools/uidef/import_scx.py` |
+| **GATE 11 SPIKE** -- a Tk frontend built from the UIDEF table alone; truncated labels are R12's argument rendered | `docs/maintenance/AIF120_GATE11_TK_SPIKE_V1.md` |
+| The UIDEF tooling | `tools/uidef/uidef.py`, `tools/uidef/import_scx.py`, `tools/uidef/uidef_tk.py` |
 | The shipped GUI core the ruling adopts | `src/gui/core/`, `include/gui/core/`, `docs/ui/GUI_THREADING_RAII_CONTRACT_V1.md` |
 | Specimen-by-specimen measurements and the corrections between them | `docs/maintenance/AIF120_VFP_SCX_EMPIRICAL_BASELINE_V1.md` |
 | The reader that produced every measurement | `tools/vfp/read_vfp_binary.py` |

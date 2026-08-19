@@ -148,6 +148,72 @@ dimension **must record that it derived it** and must never write the derived
 value back into `ORIGIN`. (R12.3. Writing it back launders a guess into a
 measurement.)
 
+### 5b. FIRST TEST OF SECTION 5, AND IT FAILS -- imports are `free`, not `grid`
+
+Run the same day this contract was drafted, against 228 container groups in 170
+real forms. **The finding contradicts how section 5 reads.**
+
+**What the test did.** For each container, cluster children's `Top` and `Left`
+values with a tolerance, then classify: one row cluster -> `row`; one column
+cluster -> `column`; a lattice no larger than 1.5x the child count -> `grid`;
+otherwise `free`.
+
+| tolerance | `row` | `column` | `grid` | **`free`** | expressible |
+| --- | --- | --- | --- | --- | --- |
+| 0 (exact) | 17 | 2 | 5 | **204** | 11% |
+| 4 | 19 | 2 | 17 | **190** | 17% |
+| 8 | 22 | 3 | 28 | **175** | 23% |
+| 12 | 24 | 4 | 64 | **136** | 40% |
+
+**Between 60% and 89% of real container groups do not express as
+row/column/grid.**
+
+**Why exact matching fails, which is the transferable part.** `STUDENTS.SCX` is
+the cleanest imaginable case -- nine label/textbox pairs, labels at `Left = 10`,
+textboxes at `Left = 71`, rows spaced 24 apart. A human sees a 2x9 grid. The
+data says **nineteen** distinct `Top` values, because each label sits **4 units
+below** its textbox:
+
+```text
+top=57  left=71  textbox SID1
+top=61  left=10  label   LBLSID1
+top=81  left=71  textbox LNAME1
+top=85  left=10  label   LBLLNAME1
+```
+
+That is baseline alignment. **Visual alignment is not numerical alignment**, so
+any derivation of layout intent from absolute coordinates needs tolerance
+clustering, and this contract says nothing about it. Even with tolerance,
+`STUDENTS.SCX` still classifies `free` because one button container sits at a
+third `Left` -- real forms mix an aligned majority with outliers.
+
+**A caution on the numbers.** The classifier is crude and the percentages move
+with both the tolerance and the lattice criterion. **Treat the direction as the
+finding, not the figure.** What is robust: exact matching is hopeless, tolerance
+helps and does not rescue, and the majority stays `free` under every setting
+tried.
+
+**The contradiction this exposes in the contract as drafted.** Section 5 presents
+`FLOW`/`ORDINAL` as the model and section 8 calls `ORIGIN` advisory, which a
+generator "may ignore entirely and remain conformant". Section 12 then permits a
+generator to refuse `FLOW = free`. Put together: **a conformant generator may
+refuse the majority of imported documents, and may ignore the only field those
+documents carry their layout in.**
+
+**What this does NOT overturn.** R12 chose layout intent for *authored*
+documents, and that choice stands -- it was decided on the sequencing argument,
+and nothing here touches it. `ORIGIN`'s quarantine is also vindicated: it is not
+a nicety for round-trip fidelity, it is **the load-bearing path for every
+import**.
+
+**Proposed correction, for owner ruling rather than steward fiat.** Section 8's
+"a generator may ignore `ORIGIN` entirely" and section 12's "may refuse
+`FLOW = free`" must both be narrowed. A defensible pair: a generator may refuse
+`free` **only if** it also refuses documents whose `PROVENANCE` is `imported`;
+and a generator that accepts `free` **must** honour `ORIGIN`, since there is
+nothing else to lay the document out with. Recorded as a defect against this
+draft, not silently patched into it.
+
 ## 6. Requiredness has three values, and this is the contract's sharpest rule
 
 R13 was found by writing a real designer format and being refused twice. A schema
@@ -315,9 +381,10 @@ must refuse unknown `KIND`, and must implement `DISPATCH`.
 
 1. **Not implemented.** No writer, no reader, no round-trip. This is a
    specification, tier `planned`.
-2. **`FLOW` has never been exercised.** Every layout ruling behind it is measured
-   from formats that use absolute geometry. The first import of a real `.SCX`
-   into `FLOW`/`ORDINAL` is the test that could break section 5.
+2. ~~**`FLOW` has never been exercised.**~~ **Exercised the same day, and it
+   broke -- see 5b.** 60-89% of 228 real container groups classify as `free`.
+   The contract's generator permissions are contradictory as drafted and 5b
+   proposes a correction for owner ruling.
 3. **The fourteen `KIND` values are a judgement**, checked against measured
    vocabulary but not against a second backend.
 4. **Gate 11 is the acceptance test for this document** -- a frontend generated
