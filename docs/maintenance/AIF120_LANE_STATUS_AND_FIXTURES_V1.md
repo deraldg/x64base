@@ -69,6 +69,8 @@ recursing that directory.
 | **STUDENTS.SCX**, third form specimen; replicates R1/R2/R4/R12.3 and corrects R12's M4 | `docs/maintenance/AIF120_STUDENTS_SCX_SPECIMEN_V1.md` |
 | **R13** -- VFP 9 opened an x64base-GENERATED `.SCX`; required-on-output vs required-on-input | `docs/maintenance/AIF120_GENERATED_SCX_ACCEPTED_V1.md` |
 | The writer that produced it | `tools/vfp/write_vfp_binary.py`, `tools/vfp/make_students_form.py` |
+| **First `.VCX`** -- scale mode as a word in `RESERVED6`; `RESERVED2` corroborated; vocabulary 24 -> 26 | `docs/maintenance/AIF120_VCX_SPECIMEN_V1.md` |
+| **Corpus scan** -- 170 third-party forms, 3,010 records; R13 and M5 confirmed at scale, M4 corrected again, `.FRX` measured | `docs/maintenance/AIF120_CORPUS_SCAN_V1.md` |
 | The shipped GUI core the ruling adopts | `src/gui/core/`, `include/gui/core/`, `docs/ui/GUI_THREADING_RAII_CONTRACT_V1.md` |
 | Specimen-by-specimen measurements and the corrections between them | `docs/maintenance/AIF120_VFP_SCX_EMPIRICAL_BASELINE_V1.md` |
 | The reader that produced every measurement | `tools/vfp/read_vfp_binary.py` |
@@ -104,8 +106,10 @@ round-trip test, so they are copied into the tree here. 91 KB total.
 | `X64FORM_VFPSAVED.SCT` | 3979 | `801f76d823867269` | its memo sidecar |
 | `X64FORM_SAMEDIR.SCX` | 3540 | `8ceac98c1146d58d` | the SAME form saved by VFP from the table's own directory -- `CursorSource` collapses to a bare filename; the controlled pair that proves relative-to-document addressing |
 | `X64FORM_SAMEDIR.SCT` | 3947 | `c2c530320a84a898` | its memo sidecar |
+| `TEST_APP.VCX` | 4193 | `f103f811a8415e3c` | **first class library**: 14 class stubs, `RESERVED6 = Pixels`, base classes `toolbar` and `custom` |
+| `TEST_APP.VCT` | 23349 | `4f34842166c1a4e2` | its memo sidecar |
 
-**All twenty-two landed** (sixteen on 2026-08-18 morning, `STUDENTS.SCX`/`.SCT` that afternoon). `ACCOUNTS.SCX`/`.SCT` arrived last, after VFP released
+**All twenty-four landed** (sixteen on 2026-08-18 morning, `STUDENTS.SCX`/`.SCT` that afternoon). `ACCOUNTS.SCX`/`.SCT` arrived last, after VFP released
 them; the fourteen others copied while the form was still open in the designer.
 
 That lock behaviour is worth recording, because it **inverted twice in one day**:

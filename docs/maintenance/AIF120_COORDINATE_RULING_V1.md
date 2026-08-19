@@ -119,6 +119,17 @@ half of it was settled.
 > supported; the sentence "the source format already expects the target to derive
 > a dimension" must read "wizard output already expects it". Full split:
 > `docs/maintenance/AIF120_STUDENTS_SCX_SPECIMEN_V1.md` section 4.
+>
+> **AMENDED AGAIN, same run, against 170 files.** The wizard/native split above
+> is also wrong. Measured over 3,010 object records in 170 third-party forms:
+> **367 of 2,684 geometry-bearing records are partial (13.7%)**, and it tracks
+> **containers**, not producers -- `form` 57%, `container` 47%, while `shape`,
+> `image`, `grid`, `pageframe`, `editbox` and `listbox` omit nothing at all. The
+> commonest omission is `height` AND `width` together (207), not `height` alone
+> (48). M4 has now been stated three ways in one session; only the third was
+> measured against enough files to be worth believing, and it should be treated
+> as provisional too. R12.3 is unchanged by all three.
+> Full scan: `docs/maintenance/AIF120_CORPUS_SCAN_V1.md`.
 
 Both `.SCX` files, 58 records. 45 carry at least one of
 `top`/`left`/`height`/`width`; 13 carry none (`dataenvironment` 1, `cursor` 2,
