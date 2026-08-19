@@ -53,6 +53,22 @@ KIND_WIDGET = {          # contract section 4, the fourteen v1 kinds
 }
 
 
+def parse_handlers_line(txt):
+    """`Event = Name / dispatch [-> Completion]` -- contract section 9."""
+    out = {}
+    for line in (txt or '').replace('\r\n', '\n').split('\n'):
+        if '=' not in line:
+            continue
+        ev, rest = line.split('=', 1)
+        comp = None
+        if '->' in rest:
+            rest, comp = rest.split('->', 1)
+            comp = comp.strip()
+        parts = [p.strip() for p in rest.split('/')]
+        out[ev.strip()] = (parts[0], (parts[1] if len(parts) > 1 else 'ui').lower(), comp)
+    return out
+
+
 def parse_props(txt):
     d = {}
     for line in (txt or '').replace('\r\n', '\n').split('\n'):
@@ -116,13 +132,24 @@ def describe(path):
         print("  REFUSED kinds:", sorted(set(refused)))
 
 
-def build_window(path):
+def build_window(path, registry=None, host=None):
     import tkinter as tk
     from tkinter import ttk
     from tkinter import font as tkfont
     doc, fonts, objs = load(path)
     kids = tree(objs)
     rec = {(r['OBJID'] or '').strip(): r for r in objs}
+
+    # R37: the reference consumer uses the shared runtime rather than wiring
+    # handlers itself. The lock domains come from the document's own SOURCE (R36),
+    # so this backend never decides what to serialize against -- it is told.
+    rt = scope = None
+    if registry is not None:
+        import uidef_runtime
+        rt = uidef_runtime.Runtime(
+            uidef_runtime.domains_from_source(doc['SOURCE']),
+            registry, host=host)
+        scope = uidef_runtime.Scope('window')
     root = tk.Tk()
 
     # FONTREF is a 1-based index into the document's FONT rows in table order
@@ -219,8 +246,19 @@ def build_window(path):
             elif pflow == 'free' or not pflow:
                 if 'origin_top' in org and 'origin_left' in org:
                     kw = dict(x=float(org['origin_left']), y=float(org['origin_top']))
-                    if 'origin_width' in org and kind not in CONTENT_SIZED:
+                    # R16 says a stated dimension is advisory when CONTENT decides
+                    # it. A container whose children are absolutely positioned has
+                    # no content-determined size -- `place` does not propagate
+                    # geometry, so the container collapses and clips everything in
+                    # it. Found by R30: materialised option-group members rendered
+                    # into a zero-size frame and vanished.
+                    placed_kids = any((k['ORIGIN'] or '').strip()
+                                      for k in kids.get(oid, []))
+                    content_sized = kind in CONTENT_SIZED and not placed_kids
+                    if 'origin_width' in org and not content_sized:
                         kw['width'] = float(org['origin_width'])   # R16
+                    if 'origin_height' in org and placed_kids:
+                        kw['height'] = float(org['origin_height'])
                     w.place(**kw)
                 else:
                     # `free` means positioned by ORIGIN, and there is no ORIGIN. The
@@ -260,15 +298,36 @@ def build_window(path):
                         # widget. Say so rather than drop it silently.
                         notes.append("FONTREF %d on %s (%s): this toolkit will not "
                                      "take a font on that widget" % (fri, oid, kind))
+            if rt is not None:
+                hs = parse_handlers_line(r['HANDLERS'])
+                click = hs.get('Click')
+                if click:
+                    name, disp, comp = click
+                    alias = (r['BINDING'] or '').strip().split('.')[0]
+                    try:
+                        w.configure(command=(lambda n=name, d=disp, a=alias, c=comp:
+                                             rt.fire(n, d, scope, alias=a,
+                                                     completion=c)))
+                    except tk.TclError:
+                        pass                      # not a command widget
             made[oid] = w
             build(oid, w)
 
     build("", root)
+    if rt is not None:
+        def _pump():
+            rt.pump()
+            try:
+                root.after(30, _pump)
+            except tk.TclError:
+                pass
+        root.after(30, _pump)
+        root.bind('<Destroy>', lambda e: scope.destroy() if e.widget is root else None)
     if fonts:
         print("  FONT rows=%d  FONTREF applied to %d widget(s)" % (len(fonts), len(applied)))
     for nt in notes:
         print("  " + nt)
-    return root, made
+    return (root, made, rt) if rt is not None else (root, made)
 
 
 if __name__ == '__main__':

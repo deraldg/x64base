@@ -1,0 +1,22 @@
+AIF-120 R38 evidence -- the Tk backend driving the shared runtime
+run: xvfb-run -a python3.12 tools/uidef/adopt_test.py
+
+  lock domains, read from the document's SOURCE: [['enroll', 'students']]
+  UI thread: 140018001227904
+
+  handler timeline (thread id in brackets):
+     TotalGpa         enter      [140017984112320]
+     host             edit.cut   [140018001227904]
+     TotalGpa         leave      [140017984112320]
+     ListEnrolments   enter      [140017975703232]
+     Done             completed  [140018001227904]
+     ListEnrolments   leave      [140017975703232]
+     Done             completed  [140018001227904]
+
+  R21.1  two worker handlers on one lock domain OVERLAPPED : False
+  R11.3  both ran OFF the UI thread                        : True
+  R11.3  every completion ran ON the UI thread             : True
+  R20    host capability ran with no thread rule           : True
+  R11.3  worker with no ON_COMPLETE refused                : True
+
+  runtime log: [('worker', 'TotalGpa'), ('worker', 'ListEnrolments'), ('host', 'edit.cut'), ('refused', 'TotalGpa', 'worker with no ON_COMPLETE (R11.3)'), ('complete', 'Done', 'completed'), ('complete', 'Done', 'completed')]
