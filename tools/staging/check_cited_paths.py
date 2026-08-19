@@ -30,6 +30,17 @@ ROOTS = ('docs/', 'tools/', 'src/', 'include/', 'labtalk/', 'coordination/',
          'dottalkpp/', 'scripts/', 'smoke/')
 EXTS = ('.md', '.py', '.png', '.txt', '.h', '.hpp', '.cpp', '.csv', '.yaml',
         '.yml', '.dts', '.html', '.json', '.dbf', '.scx', '.mnx', '.vcx', '.frx')
+# A document that DOCUMENTS an ignored path -- R33 and R42 do exactly that, and so
+# does any handoff explaining why a file cannot be staged -- would otherwise be
+# flagged on every commit that touches it. A permanent advisory trains people to
+# skip the whole check, which is the failure `open-items` was written to avoid.
+# So a line may opt out explicitly, and the marker is greppable rather than magic:
+#
+#     the working copy at `tools/uidef/read_vfp_binary.py`  <!-- cite-check:ignore -->
+#
+# It suppresses only the line it appears on, so it cannot silence a document.
+SUPPRESS = 'cite-check:ignore'
+
 PATH_RE = re.compile(r'(?<![\w/.-])((?:%s)[A-Za-z0-9_./-]+)' % '|'.join(ROOTS))
 
 
@@ -62,10 +73,13 @@ def cited(doc, rev=None):
         except OSError:
             return set()
     out = set()
-    for m in PATH_RE.finditer(text):
-        p = m.group(1).rstrip('.,;:)`*')
-        if p.endswith(EXTS):
-            out.add(p)
+    for line in text.replace('\r\n', '\n').split('\n'):
+        if SUPPRESS in line:
+            continue
+        for m in PATH_RE.finditer(line):
+            p = m.group(1).rstrip('.,;:)`*')
+            if p.endswith(EXTS):
+                out.add(p)
     return out
 
 

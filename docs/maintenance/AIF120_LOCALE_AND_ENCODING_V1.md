@@ -166,7 +166,10 @@ Run after the R32 commit.
 ```powershell
 cd D:\code\ccode
 git add docs/maintenance/AIF120_LOCALE_AND_ENCODING_V1.md
-git add tools/uidef/read_vfp_binary.py
+# NOTE added 2026-08-19 by R42: this block staged tools/uidef/read_vfp_binary.py (cite-check:ignore),
+# which is gitignored by design. `git add` on an ignored path is a SILENT no-op, so R33's
+# reader fix never reached the repository and every gate still passed. The reader that
+# ships is tools/vfp/read_vfp_binary.py, promoted by R42. The dead line is removed.
 git add tools/uidef/uidef.py
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
 git diff --cached --stat

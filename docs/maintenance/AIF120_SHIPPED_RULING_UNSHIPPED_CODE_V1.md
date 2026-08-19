@@ -39,7 +39,7 @@ in committed work.
 
 ## 1. R33's fix was never in the repository
 
-`tools/uidef/read_vfp_binary.py` is **gitignored** -- line 2 of
+`tools/uidef/read_vfp_binary.py` is **gitignored** -- line 2 of <!-- cite-check:ignore -->
 `tools/uidef/.gitignore`, a deliberate working copy of the reader that lives at
 `tools/vfp/read_vfp_binary.py`.
 
@@ -116,7 +116,7 @@ passed on every one of these commits, correctly.
 
 ## 6. Still open
 
-- **`tools/uidef/read_vfp_binary.py` still exists locally.** It is inert now, but a
+- **`tools/uidef/read_vfp_binary.py` still exists locally.** It is inert now, but a <!-- cite-check:ignore -->
   sandbox cannot delete on this mount. The maintainer can remove it.
 - **Nothing checks this automatically.** R42.3 names a one-command check and
   nothing runs it. A gate that resolves every path cited in a ruling's front matter
