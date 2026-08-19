@@ -295,9 +295,14 @@ def generate(path, title=None, dispatch=False):
                 name, disp, comp = hs['Click']
                 alias = (r['BINDING'] or '').strip().split('.')[0].lower()
                 own = scope_for((r['PARENT'] or '').strip())
+                # R58: `g_scope` is a global, and capturing a global by value is
+                # redundant -- gcc warns "capture of variable with non-automatic
+                # storage duration", which is an error under -Werror. Container
+                # scopes ARE locals and must still be captured.
+                cap = '' if own == 'g_scope' else own
                 body.append('%s%s->Bind(wxEVT_BUTTON, [%s](wxCommandEvent&){ '
                             'g_rt->fire("%s", "%s", %s, "%s", "%s"); });'
-                            % (ind, v, own, name, disp, own, alias, comp))
+                            % (ind, v, cap, name, disp, own, alias, comp))
 
         if kind in ('panel', 'page', 'pageset'):
             if dispatch:
