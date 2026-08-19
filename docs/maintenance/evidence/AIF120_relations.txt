@@ -1,0 +1,34 @@
+AIF-120 R36 evidence -- relations carried, lock domain computed
+run: python3 tools/uidef/import_scx.py <form>.scx OUT
+     python3 tools/uidef/manifest.py OUT.DBF
+
+specimen: a corpus form with a three-level relation chain
+
+1_many.scx -> /tmp/MANY.DBF  records=30 rlen=169 hlen=808
+  REFUSED kinds (not in v1 vocabulary): ['custom', 'grid', 'header', 'shape']
+  INHERITED HANDLERS (R32): 13 event handler(s) carried; 3 custom method(s) NOT carried -- v1 has no concept for them
+    custom: beforerecordpointermoved, enabledisablebuttons, recordpointermoved
+
+--- the DOC record's SOURCE ---
+Alias = customer
+Table = customer
+Alias = orders
+Table = orders
+Alias = orditems
+Table = orditems
+Alias = products
+Table = products
+Relation = customer -> orders ON cust_id
+Relation = orders -> orditems ON order_id
+Relation = orditems -> products ON product_id
+
+--- what a target is told before it builds anything ---
+  vs minimal -- labels, fields and buttons, stacked, synchronous
+      REFUSE   kind panel (x1)                    target does not render this kind -- contract s4
+      DEGRADE  ORIGIN present                     target ignores ORIGIN; layout falls back to ORDINAL, which R16 says is often correct anyway
+      DERIVE   15 of 23 control(s) lack TABORDINAL a partial tab order is the worst case: the gaps must be derived and interleaved with the declared stops
+      REQUIRE  lock domain {customer, orders, orditems, products} R26: these work areas move together, so a mutating handler must serialize against the whole set, not the area it names
+      REQUIRE  2 bound control(s)                 target must supply a data source; widths come from the schema (R17)
+      NOTE     FONT row(s) 1,3,4 unreferenced     carried as source metrics; no object selects them
+      -> DEGRADE 1, DERIVE 1, NOTE 1, REFUSE 1, REQUIRE 2
+

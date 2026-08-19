@@ -177,6 +177,18 @@ def convert(scx_path, out_stem):
             if 'alias' in p: src.append(('Alias', p['alias'].strip('"')))
             if 'cursorsource' in p: src.append(('Table', p['cursorsource'].strip('"')))
             if 'order' in p: src.append(('Order', p['order'].strip('"')))
+    # R36, closing R26.2. A `relation` record in the DataEnvironment says which work
+    # areas move together, and R26 makes that a CORRECTNESS requirement: the lock
+    # domain is the transitive closure of related areas, so a frontend that cannot
+    # see the relations cannot know what to serialize. The importer discarded every
+    # one of them -- `relation` is in SKIP -- while R26 was being written.
+    for r in objs:
+        if (r['BASECLASS'] or '').strip().lower()!='relation': continue
+        p=sprops(r)
+        par=p.get('parentalias','').strip('"'); ch=p.get('childalias','').strip('"')
+        expr=p.get('relationalexpr','').strip('"')
+        if par and ch:
+            src.append(('Relation', '%s -> %s ON %s' % (par, ch, expr or '?')))
 
     out=[{'RECKIND':'DOC','OBJID':'DOC1','PROVENANCE':'imported',
           'PROPS':uidef.props([('Version','1'),('Origin','vfp-scx'),

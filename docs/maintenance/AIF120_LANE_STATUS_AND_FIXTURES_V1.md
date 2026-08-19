@@ -63,7 +63,7 @@ recursing that directory.
 | subject | file |
 | --- | --- |
 | Lane charter, scope, proof gates, and rulings **R1 through R12** -- amendments (a) to (e) | `docs/maintenance/APPLICATION_UI_DSL_LANE_V1.md` |
-| Rulings **R13 through R35** live in their own files; this ledger is their only index. The charter does not carry them. | -- |
+| Rulings **R13 through R36** live in their own files; this ledger is their only index. The charter does not carry them. | -- |
 | **R11, the threading ruling (gate 9)** -- full text, evidence, disproof conditions | `docs/maintenance/AIF120_THREADING_RULING_V1.md` |
 | **R12, the coordinate ruling (gate 8)** -- six measurements, disproof conditions | `docs/maintenance/AIF120_COORDINATE_RULING_V1.md` |
 | **VFP 9 reading an x64base-written table** -- the lane's first `runtime-proven` result | `docs/maintenance/AIF120_VFP_READS_X64BASE_OUTPUT_V1.md` |
@@ -99,6 +99,7 @@ recursing that directory.
 | **R33** -- codepage honoured; binary columns unpacked; the DSL bypasses x64base's own locale catalog | `docs/maintenance/AIF120_LOCALE_AND_ENCODING_V1.md` |
 | **R34** -- a second backend on a different geometry model; the refusal set is a property of the target | `docs/maintenance/AIF120_SECOND_BACKEND_V1.md` |
 | **R35** -- a character-cell backend: band before quantising; `ignored` is a missing conformance outcome | `docs/maintenance/AIF120_CHARACTER_CELL_V1.md` |
+| **R36** -- `SOURCE` carries relations; the manifest computes the lock domain. R26.2 closed | `docs/maintenance/AIF120_RELATION_SOURCE_V1.md` |
 | The UIDEF tooling | `tools/uidef/uidef.py`, `import_scx.py`, `import_mnx.py`, `uidef_tk.py`, `uidef_tk_menu.py`, `author_uidef.py`, `dispatch_test.py`, `infer_flow.py`, `contend_test.py`, `lifetime_test.py`, `uidef_tk_host.py`, `author_flow.py`, `manifest.py`, `author_fonts.py`, `author_tabs.py`, `relate_test.py`, `classlib.py`, `uidef_html.py`, `uidef_text.py` |
 | The shipped GUI core the ruling adopts | `src/gui/core/`, `include/gui/core/`, `docs/ui/GUI_THREADING_RAII_CONTRACT_V1.md` |
 | Specimen-by-specimen measurements and the corrections between them | `docs/maintenance/AIF120_VFP_SCX_EMPIRICAL_BASELINE_V1.md` |
@@ -203,6 +204,7 @@ Settled, with the ruling text in the charter:
 | R33 | a table must honour the codepage it declares, and binary columns are not text; the design table embeds literal captions while x64base ships 4756 texts in 5 locales behind SET LOCALE | round trip proven in cp1250/1252/1253/932/1256; 79 binary columns were decoded as text; text-field decode failures 15 -> 1; R30/R31 figures unchanged |
 | R34 | `FLOW`, `SPAN` and `TABORDINAL` are the target's own concepts, not Tk conveniences; refusal is a property of the target, not the format | one coordinate-free document rendered by place/pack/grid and by flexbox/CSS grid, both refusing the same two rows for the same reasons; tk refuses 12 capabilities where html refuses 11 |
 | R35 | a coarse target must BAND coordinates before quantising, which is R19's inference finding governing rendering; `ignored` is a conformance outcome the contract cannot express; `ORIGIN_SCALE=cell` is unexercised and unconvertible | three backends return the identical verdict on a coordinate-free document; 19 TOP values banded into 10 visual rows; 20 of 20 corpus ScaleMode declarations say pixels |
+| R36 | a document states its own lock domain: `SOURCE` gains `Relation`, and the closure is computed from the table before any window exists | 8 relation records the importer had been discarding; a three-edge chain resolving to one domain of four work areas; first real document to hit R27's partial-tab-order case |
 
 Open:
 

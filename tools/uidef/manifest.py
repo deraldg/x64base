@@ -82,6 +82,39 @@ def schema_of(dbf_path):
     return {name.lower(): (typ, width, dec) for name, typ, width, dec in t.fields}
 
 
+def lock_domains(relations, aliases):
+    """R26: the unit of serialization is the transitive closure of related areas.
+
+    Returns a list of sets. A handler that locks only the areas it names is not
+    serialized, because navigating any area in a domain repositions the others
+    without passing through their interfaces -- measured at 100/100 wrong in
+    `relate_test.py`. A target needs this BEFORE it dispatches anything, and it can
+    only get it from the document.
+    """
+    parent = {}
+
+    def find(x):
+        parent.setdefault(x, x)
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    def union(a, b):
+        ra, rb = find(a), find(b)
+        if ra != rb:
+            parent[ra] = rb
+
+    for a_, b_, _expr in relations:
+        union(a_, b_)
+    for al in aliases:
+        find(al)
+    groups = {}
+    for x in parent:
+        groups.setdefault(find(x), set()).add(x)
+    return sorted(groups.values(), key=lambda g: (-len(g), sorted(g)))
+
+
 def bind_check(m, tables):
     """Join a document's BINDINGs against real DBF schemas.
 
@@ -161,12 +194,24 @@ def manifest(path):
         'tab_absent': 0,
         'aliases': {},
         'bound': [],
+        'relations': [],
     }
     for r in rows:
         if (r['RECKIND'] or '').strip() == 'DOC':
             src = parse_props(r['SOURCE'])
             if src.get('alias'):
                 m['aliases'][src['alias'].lower()] = src.get('table', '')
+            for line in (r['SOURCE'] or '').replace('\r\n', '\n').split('\n'):
+                if not line.lower().startswith('relation = '):
+                    continue
+                body = line.split(' = ', 1)[1]
+                expr = ''
+                if ' ON ' in body:
+                    body, expr = body.split(' ON ', 1)
+                if ' -> ' in body:
+                    a_, b_ = body.split(' -> ', 1)
+                    m['relations'].append((a_.strip().lower(), b_.strip().lower(),
+                                           expr.strip()))
     referenced = set()
     for r in objs:
         oid = (r['OBJID'] or '').strip()
@@ -327,6 +372,17 @@ def check(m, p):
         out.append(('DERIVE', 'container %s' % oid,
                     'FLOW=free with no ORIGIN on any child -- position derived from '
                     'ORDINAL and must be declared (R12.3, R23.3)'))
+    if m['relations']:
+        doms = lock_domains(m['relations'], m['aliases'])
+        multi = [d for d in doms if len(d) > 1]
+        for d in multi:
+            out.append(('REQUIRE', 'lock domain {%s}' % ', '.join(sorted(d)),
+                        'R26: these work areas move together, so a mutating handler '
+                        'must serialize against the whole set, not the area it names'))
+    elif m['aliases'] and len(m['aliases']) > 1:
+        out.append(('NOTE', '%d work areas, no relations declared' % len(m['aliases']),
+                    'each is its own lock domain -- or the document did not say '
+                    '(R26.2)'))
     if m['tab_absent'] and not m['tab_declared']:
         out.append(('DERIVE', '%d control(s) with no TABORDINAL' % m['tab_absent'],
                     'tab order must be derived and declared; measured, a derived '
