@@ -1,0 +1,19 @@
+AIF-120 R37 evidence -- the rules inside the generated runtime
+run: python3 tools/uidef/locked_test.py
+
+R37 -- R21 and R26 inside the generated runtime
+
+  lock domains read from the document's SOURCE: [['enroll', 'students']]
+  student 50000002 has 5 enrolments
+
+  granularity=area    lock the work area the handler NAMES (R11.4 as written) wrong 60/60   another student's rows 60/60
+  granularity=domain  lock the RELATION SET (R26)                          wrong  0/60   another student's rows  0/60
+
+  Same document, same two `worker` handlers, same completions.
+  One constructor argument between a correct frontend and a corrupt one.
+
+  the other clauses, through the same runtime:
+    R21.4 container destroyed mid-flight: completion DROPPED, not delivered
+    failed state reached on the UI thread : [("ValueError('handler raised')", 'failed')]
+    R11.3 worker with no ON_COMPLETE      : refused
+    R20   host capability not provided    : refused

@@ -23,8 +23,24 @@ sys.path.insert(0, os.path.join(HERE, '..', 'vfp'))
 sys.path.insert(0, HERE)
 from read_vfp_binary import Dbf
 
-PARENT = os.environ.get('AIF120_STUDENTS') or os.path.join(HERE, 'STUDENTS.dbf')
-CHILD = os.environ.get('AIF120_ENROLL') or os.path.join(HERE, 'ENROLL.dbf')
+def _table(env, name):
+    """Resolve a data table from the REPO, not from beside this script.
+
+    Defaulting to `HERE/<name>` worked only in the container this was written in --
+    the same container-local-path defect R23 section 6 swept out of four other
+    tools. `contend_test.py` already had the right pattern and this did not.
+    """
+    p = os.environ.get(env)
+    if p and os.path.exists(p):
+        return p
+    repo = os.path.join(HERE, '..', '..', 'dottalkpp', 'data', 'dbf', 'vfp', name)
+    if os.path.exists(repo):
+        return repo
+    return os.path.join(HERE, name)
+
+
+PARENT = _table('AIF120_STUDENTS', 'STUDENTS.dbf')
+CHILD = _table('AIF120_ENROLL', 'ENROLL.dbf')
 
 
 class _Null:
@@ -193,29 +209,34 @@ def trials(mode, n=100, trusting=False):
     return wrong, leaked, seen
 
 
-print("SET RELATION TO sid INTO enroll")
-print("  parent STUDENTS.dbf 200 records; child ENROLL.dbf 686 records")
-print("  student %d has %d enrolments: %s" % (SID, len(TRUTH), ', '.join(TRUTH)))
-print()
-for mode, label in (('none', 'no lock at all'),
-                    ('per-workspace', 'each handler locks the work area it touches'),
-                    ('relation-set', 'each handler locks the whole relation set')):
-    w, l, seen = trials(mode)
-    print("  %-14s %-44s wrong %3d/100   other students' rows %3d/100"
-          % (mode, label, w, l))
-    if w and mode == 'per-workspace':
-        for got, hits in seen.most_common(3):
-            mark = 'CORRECT' if list(got) == TRUTH else 'wrong'
-            print("        %-8s x%-3d %s" % (mark, hits, ', '.join(got) or '(empty)'))
-print()
-print("  the SAME read by a handler that TRUSTS the relation instead of")
-print("  re-checking the parent key on every child row:")
-for mode in ('per-workspace', 'relation-set'):
-    w, l, seen = trials(mode, trusting=True)
-    print("  %-14s wrong %3d/100   rows belonging to ANOTHER student %3d/100"
-          % (mode, w, l))
-    for got, hits in seen.most_common(2):
-        print("        x%-3d %s" % (hits, ', '.join(got) or '(empty)'))
-print()
-print("The child handler locked the child, read the child, and never touched the")
-print("parent's lock. The parent walk moved the child anyway, through the relation.")
+def main():
+    print("SET RELATION TO sid INTO enroll")
+    print("  parent STUDENTS.dbf 200 records; child ENROLL.dbf 686 records")
+    print("  student %d has %d enrolments: %s" % (SID, len(TRUTH), ', '.join(TRUTH)))
+    print()
+    for mode, label in (('none', 'no lock at all'),
+                        ('per-workspace', 'each handler locks the work area it touches'),
+                        ('relation-set', 'each handler locks the whole relation set')):
+        w, l, seen = trials(mode)
+        print("  %-14s %-44s wrong %3d/100   other students' rows %3d/100"
+              % (mode, label, w, l))
+        if w and mode == 'per-workspace':
+            for got, hits in seen.most_common(3):
+                mark = 'CORRECT' if list(got) == TRUTH else 'wrong'
+                print("        %-8s x%-3d %s" % (mark, hits, ', '.join(got) or '(empty)'))
+    print()
+    print("  the SAME read by a handler that TRUSTS the relation instead of")
+    print("  re-checking the parent key on every child row:")
+    for mode in ('per-workspace', 'relation-set'):
+        w, l, seen = trials(mode, trusting=True)
+        print("  %-14s wrong %3d/100   rows belonging to ANOTHER student %3d/100"
+              % (mode, w, l))
+        for got, hits in seen.most_common(2):
+            print("        x%-3d %s" % (hits, ', '.join(got) or '(empty)'))
+    print()
+    print("The child handler locked the child, read the child, and never touched the")
+    print("parent's lock. The parent walk moved the child anyway, through the relation.")
+
+
+if __name__ == '__main__':
+    main()
