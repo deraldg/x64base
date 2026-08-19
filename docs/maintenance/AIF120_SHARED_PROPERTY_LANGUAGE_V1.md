@@ -142,11 +142,16 @@ DBF: enumerate the columns instead of naming them.**
 
 - **`.MNX`'s exclusion is measured, not explained.** Whether menus lack a property
   language because they predate it or because they never needed one is unknown.
-- **The `.FRX` `OBJTYPE` enum is only partly decoded.** `1` is the page-setup
-  header (14 of 14 files), `5` literal text, `8` a data expression, `25`/`26` the
-  DataEnvironment and cursors, `18` report variables, `17` a picture field. `23`
-  (74 records), `9` (67), `6` (32), `7` (15) and `10` (2) are inferred from
-  geometry and font presence only and are **not** decoded.
+- **The `.FRX` `OBJTYPE` enum is partly decoded.** Settled by column evidence:
+  `1` page-setup header (14 of 14 files), `5` literal text, `8` a data
+  expression, `25`/`26` the DataEnvironment and its cursors, `18` report
+  variables, `17` a picture field. Narrowed since: **`9` is a band** -- 67
+  records, `HEIGHT` set with no `VPOS`/`HPOS`, `OBJCODE` populated in 64 of 67,
+  and 67 bands across 14 files is a plausible per-report count; **`6` is a rule or
+  line** -- `PENSIZE` and `PENPAT` on all 32, one sample 6.77in wide by 0.02in
+  tall; **`7` is a filled box** -- `PENSIZE`, `PENPAT`, `FILLPAT` and `FILLRED`
+  together, 15 records. Still **not** decoded: `23` (74 records, pen colour and
+  font on every one) and `10` (2 records, `VPOS`/`HPOS` and nothing else).
 - **No `.PJX`, `.LBX` or `.DBC` measured.** The interchange table in the charter
   names more formats than this lane has opened.
 

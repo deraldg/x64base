@@ -197,6 +197,46 @@ layout manager" is confirmed by count. A DSL that copies the source format's
 geometry model inherits a format with no answer for a resized window -- which is
 every GUI target except the TUI.
 
+### M7. `.FRX` carries TWO undeclared unit systems in ONE record
+
+Added 2026-08-19 from the corpus, after R12 was ruled. It does not change R12; it
+sharpens R2, which R12 leans on.
+
+All 14 corpus `.FRX` files position objects in the same scale -- `invoice.frx`
+reaches `VPOS` 60,312.5 and `WIDTH` 71,250. Dimensional analysis: 71,250 at
+1/10000 inch is 7.125 inches, which fits inside an 8.5-inch page with margins,
+and 60,312.5 is 6.03 inches down it. Consistent with FoxPro report units of
+1/10000 inch. **Nothing in the file says so.**
+
+Meanwhile the report header record (`OBJTYPE 1`, once per file) declares page
+setup as property text:
+
+```text
+ORIENTATION=0
+PAPERSIZE=1
+PAPERLENGTH=2794
+PAPERWIDTH=2159
+```
+
+2,794 and 2,159 are **tenths of a millimetre** -- 279.4mm x 215.9mm, exactly US
+Letter. **Nothing in the file says that either.**
+
+So a single `.FRX` expresses object geometry in ten-thousandths of an inch and
+page geometry in tenths of a millimetre, in the same document, with **neither
+unit declared anywhere**. Two unit systems, zero declarations.
+
+**This is R2's failure mode in its purest observed form.** R2 ruled the DSL must
+carry an explicit scale mode and that a reader must supply a default *and record
+which one it applied*. In `.SCX` the unit is at least declarable (`ScaleMode`,
+present in 19 of 3,010 records). In `.FRX` there is no unit field at all -- the
+default is not the fallback, it is the only path, and R2's record-what-you-applied
+half is the whole ruling.
+
+For gate 10: **the design table must carry a unit per geometry group, not per
+document**, because a real source format demonstrably mixes them within one
+record. R12.2's `ORIGIN_SCALE` is per origin-group and therefore already the right
+shape; this is the measurement that justifies it, arriving after the fact.
+
 ---
 
 ## 3. R12 -- the ruling
