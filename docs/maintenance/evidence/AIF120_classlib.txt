@@ -1,0 +1,29 @@
+AIF-120 R31 evidence -- .VCX read as a class library, instances resolved
+
+--- class library structure (solution.vcx, corpus) ---
+  25 libraries read, 110 live classes, 0 declared-count mismatches
+  blocks are: root (PARENT empty, RESERVED2 = record count) + members + COMMENT
+  solution.vcx holds THREE blocks named frmsolution; two are DELETED
+  corpus deleted records: vcx 206 of 663 (31%); scx/mnx/frx 0
+
+--- corpus-wide resolution ---
+  431 class references, 351 resolved (81%)
+  363 inherited members materialised
+  OBJ rows 2186 (before R30) -> 2324 (R30) -> 2687 (R31), +23%
+  274 dotted names still unresolved -- libraries not present in the corpus
+
+--- the wizard-generated specimen, whose classes are unreachable ---
+STUDENTS.SCX -> /tmp/R31OUT.DBF  records=24 rlen=169 hlen=808
+  REFUSED classes (R31) -- 20 instance(s) across 4 class(es):
+    embossedfield    x9   absolute path -- addressing is relative to the document (4b)
+        CLASSLOC c:\program files (x86)\microsoft visual foxpro 9\wizards\wizembss.vcx
+    embossedform     x1   absolute path -- addressing is relative to the document (4b)
+        CLASSLOC c:\program files (x86)\microsoft visual foxpro 9\wizards\wizembss.vcx
+    embossedlabel    x9   absolute path -- addressing is relative to the document (4b)
+        CLASSLOC c:\program files (x86)\microsoft visual foxpro 9\wizards\wizembss.vcx
+    txtbtns          x1   absolute path -- addressing is relative to the document (4b)
+        CLASSLOC c:\program files (x86)\microsoft visual foxpro 9\wizards\wizbtns.vcx
+  IMPLIED CHILDREN dropped -- 2 object(s) name 16 child(ren) only as dotted properties (R6 scope, R28.1 naming):
+    O001   form      6: label1, layoutsty, shape1, shape2, shape3, shape4
+    O020   panel    10: cmdadd, cmddelete, cmdedit, cmdend, cmdexit, cmdfind, cmdnext, cmdprev, cmdprint, cmdtop
+  conformance findings: none

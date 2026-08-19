@@ -8,6 +8,7 @@ inferred that the source does not state.
 import os, re, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from read_vfp_binary import Dbf
+import classlib
 import uidef
 
 # .SCX BASECLASS -> UIDEF KIND. Only the v1 vocabulary; anything else is REFUSED.
@@ -36,8 +37,59 @@ RENAME_PROPS = {'inputmask': 'Mask'}
 # 2026-08-19. Removed from PROPS so it is not carried twice.
 PROMOTED = ('tabindex',)
 
+# R31: a subclassed object is an INSTANCE. Its class's members are materialised
+# into the document so the table stays self-contained -- a consumer should not need
+# a `.VCX` reader to draw a form -- and they carry PROVENANCE `inherited` so the
+# flattening is reversible and honest about where each row came from.
+PROV_INHERITED = 'inherited'
+CLASS_KEYS = ('Class', 'ClassSource')
+
+# R30, the composition rule. A composite control stores its members as dotted
+# property names on itself; they are part of the control, not children of the
+# form. Measured: 272 member names behind 72 parents across the corpus.
+# `KIND` of a member is fixed by the composite; nothing else is needed, because
+# PARENT/ORDINAL/KIND/PROPS/ORIGIN could always express this.
+COMPOSITE = {
+    'optiongroup':  ('radio',  'buttoncount'),
+    'commandgroup': ('button', 'buttoncount'),
+    'pageframe':    ('page',   'pagecount'),
+    'grid':         ('column', 'columncount'),   # `grid` is refused in v1 (R7)
+}
+# Member properties that become table fields rather than PROPS text.
+MEMBER_GEO = ('top', 'left', 'width', 'height')
+MEMBER_ORDER = ('pageorder', 'columnorder')
+
 # Set by convert(): [(objid, kind, [child names]), ...] -- see implied_children.
 LAST_IMPLIED = []
+LAST_MATERIALISED = []      # R30: [(parent, kind, member name), ...]
+LAST_COUNT_MISMATCH = []    # R30.1: [(parent, baseclass, key, declared, actual), ...]
+LAST_INHERITED = []         # R31: [(instance, class, member), ...]
+LAST_UNRESOLVED = []        # R31: [(instance, class, classloc, why), ...]
+
+
+def split_members(p):
+    """Group an object's dotted properties into {member: {prop: value}}."""
+    mem = {}
+    for k, v in p.items():
+        if '.' not in k:
+            continue
+        head, rest = k.split('.', 1)
+        if '.' in rest:            # two levels deep -- R30 section 6, not handled
+            continue
+        mem.setdefault(head.strip().lower(), {})[rest.strip().lower()] = v
+    return mem
+
+
+def member_ordinal(name, mp, fallback):
+    """Declared order if the member states one, else the suffix the name carries."""
+    for k in MEMBER_ORDER:
+        if k in mp:
+            try:
+                return int(float(mp[k]))
+            except ValueError:
+                pass
+    digits = ''.join(c for c in name if c.isdigit())
+    return int(digits) if digits else fallback
 
 
 def implied_children(keep):
@@ -151,7 +203,8 @@ def convert(scx_path, out_stem):
         if b not in KINDMAP: refused.append(b); continue
         n+=1; ids[path(r)] = 'O%03d'%n
 
-    n=0; ordinal={}; implied=[]
+    n=0; ordinal={}; implied=[]; materialised=[]; counts=[]; mn_total=[0]
+    inherited=[]; unresolved=[]; inherited_refused=[]
     for r in objs:
         b=(r['BASECLASS'] or '').strip().lower()
         if b in SKIP or b not in KINDMAP: continue
@@ -174,9 +227,112 @@ def convert(scx_path, out_stem):
         for mname in re.findall(r'^\s*PROCEDURE\s+([A-Za-z_]\w*)', m, re.I|re.M):
             ev=EVENTS.get(mname.lower())
             if ev: hs.append((ev, '%s / ui' % mname))
+        oid = ids[path(r)]
+
+        # R30: materialise a composite control's members as ordinary rows. Only
+        # for a composite that is NOT subclassed -- when CLASS differs from
+        # BASECLASS the members live in the class library and these properties are
+        # overrides to them (R30 section 4, mechanism A), which v1 does not
+        # resolve.
+        cls = (r['CLASS'] or '').strip().lower()
+
+        # R31, mechanism A: the object is an instance of a class. Materialise the
+        # class's members here, applying this instance's overrides, so the design
+        # table is self-contained. Failure is named, never silent (R20, R22.4).
+        if cls and cls != b:
+            keep['Class'] = '"%s"' % cls
+            cl = (r['CLASSLOC'] or '').strip()
+            if cl:
+                keep['ClassSource'] = '"%s"' % cl
+            lib_path, why = classlib.resolve_classloc(cl, scx_path)
+            block = None
+            if lib_path:
+                try:
+                    block = classlib.read_library(lib_path, Dbf).get(cls)
+                except Exception as e:
+                    why = 'library unreadable: %s' % e
+            if block is None:
+                unresolved.append((ids[path(r)], cls, cl, why))
+            else:
+                over = split_members(p)
+                for mi, m in enumerate(block['members'], 1):
+                    mname = (m['OBJNAME'] or '').strip()
+                    mb = (m['BASECLASS'] or '').strip().lower()
+                    if mb in SKIP or mb not in KINDMAP:
+                        inherited_refused.append((ids[path(r)], mname, mb))
+                        continue
+                    mp = sprops(m)
+                    mp.update(over.get(mname.lower(), {}))   # instance wins
+                    for dk in [k for k in keep
+                               if k.split('.', 1)[0].strip().lower() == mname.lower()]:
+                        keep.pop(dk, None)
+                    morg = []
+                    for g in GEO:
+                        if g in mp:
+                            morg.append(('ORIGIN_' + g.upper(), mp[g]))
+                    if morg:
+                        morg.append(('ORIGIN_SCALE',
+                                     'px' if mp.get('scalemode', '3') == '3' else 'cell'))
+                    mkeep = {RENAME_PROPS.get(k, k): v for k, v in mp.items()
+                             if k not in GEO and k not in PROMOTED
+                             and '.' not in k
+                             and k not in ('name', 'scalemode', 'controlsource')}
+                    mn_total[0] += 1
+                    out.append({'RECKIND': 'OBJ', 'OBJID': 'M%03d' % mn_total[0],
+                                'PARENT': ids[path(r)], 'ORDINAL': mi,
+                                'KIND': KINDMAP[mb], 'FLOW': '',
+                                'BINDING': (mp.get('controlsource') or '').strip('"'),
+                                'FONTREF': fontref(mp), 'PROVENANCE': PROV_INHERITED,
+                                'PROPS': uidef.props(sorted(mkeep.items())),
+                                'ORIGIN': uidef.props(morg) if morg else ''})
+                    inherited.append((ids[path(r)], cls, mname))
+
+        members = []
+        if b in COMPOSITE and (not cls or cls == b):
+            mkind, countkey = COMPOSITE[b]
+            mem = split_members(p)
+            for i, (mname, mp) in enumerate(sorted(mem.items()), 1):
+                members.append((mname, mp, member_ordinal(mname, mp, i)))
+            if members:
+                declared = p.get(countkey)
+                try:
+                    declared = int(float(declared)) if declared is not None else None
+                except ValueError:
+                    declared = None
+                # R30.1: the composite states its own member count, so check it.
+                if declared is not None and declared != len(members):
+                    counts.append((oid, b, countkey, declared, len(members)))
+                for mname, mp, morder in sorted(members, key=lambda t: t[2]):
+                    # the member is a row now, so its dotted keys leave PROPS
+                    for dk in [k for k in keep
+                               if k.split('.', 1)[0].strip().lower() == mname]:
+                        keep.pop(dk, None)
+                    morg = []
+                    for g in MEMBER_GEO:
+                        if g in mp:
+                            morg.append(('ORIGIN_' + g.upper(), mp[g]))
+                    if morg:
+                        # R30.2: member coordinates are already parent-relative,
+                        # which is what section 8 means everywhere else.
+                        morg.append(('ORIGIN_SCALE',
+                                     'px' if p.get('scalemode', '3') == '3' else 'cell'))
+                    mkeep = {RENAME_PROPS.get(k, k): v for k, v in mp.items()
+                             if k not in MEMBER_GEO and k not in MEMBER_ORDER
+                             and k not in PROMOTED
+                             and k not in ('name', 'controlsource')}
+                    mn_total[0] += 1
+                    out.append({'RECKIND': 'OBJ', 'OBJID': 'M%03d' % mn_total[0],
+                                'PARENT': oid, 'ORDINAL': morder,
+                                'KIND': mkind, 'FLOW': '',
+                                'BINDING': (mp.get('controlsource') or '').strip('"'),
+                                'FONTREF': fontref(mp), 'PROVENANCE': 'imported',
+                                'PROPS': uidef.props(sorted(mkeep.items())),
+                                'ORIGIN': uidef.props(morg) if morg else ''})
+                    materialised.append((oid, mkind, mname))
+
         imp = implied_children(keep)
         if imp:
-            implied.append((ids[path(r)], KINDMAP[b], imp))
+            implied.append((oid, KINDMAP[b], imp))
         out.append({'RECKIND':'OBJ','OBJID':ids[path(r)],'PARENT':pid,
                     'ORDINAL':ordinal[pid],'KIND':KINDMAP[b],
                     'FLOW':'free' if b in ('form','container','pageframe') else '',
@@ -190,8 +346,13 @@ def convert(scx_path, out_stem):
     # indices already handed out valid.
     # R28.1: name what is dropped. Kept as a module-level record rather than a
     # fourth return value, so every existing caller of convert() keeps working.
-    global LAST_IMPLIED
+    global LAST_IMPLIED, LAST_MATERIALISED, LAST_COUNT_MISMATCH
     LAST_IMPLIED = implied
+    LAST_MATERIALISED = materialised
+    LAST_COUNT_MISMATCH = counts
+    global LAST_INHERITED, LAST_UNRESOLVED
+    LAST_INHERITED = inherited
+    LAST_UNRESOLVED = unresolved
     out.extend(extra_fonts)
     nrec,rlen,hlen = uidef.write(out_stem+'.DBF', out_stem+'.FPT', out)
     return out, refused, (nrec,rlen,hlen)
@@ -201,6 +362,33 @@ if __name__=='__main__':
     out,refused,(n,rl,hl)=convert(scx,stem)
     print("%s -> %s.DBF  records=%d rlen=%d hlen=%d" % (os.path.basename(scx),stem,n,rl,hl))
     if refused: print("  REFUSED kinds (not in v1 vocabulary):", sorted(set(refused)))
+    if LAST_INHERITED:
+        byc={}
+        for _,c,_ in LAST_INHERITED: byc[c]=byc.get(c,0)+1
+        print("  INHERITED MEMBERS materialised (R31): %d from %d class(es) -- %s"
+              % (len(LAST_INHERITED), len(byc),
+                 ", ".join("%s x%d"%(c,n) for c,n in sorted(byc.items()))))
+    if LAST_UNRESOLVED:
+        # One line per distinct class, not per instance. Naming a refusal is the
+        # rule (R20, R22.4); repeating it twenty times is noise, which is the same
+        # defect one level up.
+        g = {}
+        for oid, c, cl, why in LAST_UNRESOLVED:
+            g.setdefault((c, cl, why), []).append(oid)
+        print("  REFUSED classes (R31) -- %d instance(s) across %d class(es):"
+              % (len(LAST_UNRESOLVED), len(g)))
+        for (c, cl, why), oids in sorted(g.items()):
+            print("    %-16s x%-3d %s" % (c, len(oids), why))
+            print("        CLASSLOC %s" % cl)
+    if LAST_MATERIALISED:
+        byk={}
+        for _,k,_ in LAST_MATERIALISED: byk[k]=byk.get(k,0)+1
+        print("  COMPOSITE MEMBERS materialised (R30): %d -- %s"
+              % (len(LAST_MATERIALISED),
+                 ", ".join("%s x%d"%(k,v) for k,v in sorted(byk.items()))))
+    for oid,b,key,dec,act in LAST_COUNT_MISMATCH:
+        print("  R30.1 COUNT MISMATCH on %s (%s): %s says %d, %d materialised"
+              % (oid,b,key,dec,act))
     if LAST_IMPLIED:
         tot=sum(len(v) for _,_,v in LAST_IMPLIED)
         print("  IMPLIED CHILDREN dropped -- %d object(s) name %d child(ren) only as"
