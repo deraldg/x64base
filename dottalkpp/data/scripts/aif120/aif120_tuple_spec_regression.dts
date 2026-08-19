@@ -1,0 +1,96 @@
+* aif120_tuple_spec_regression.dts
+* AIF-120 (application-ui-dsl) -- what the engine's tuple spec can say, measured, so
+* the design table's BINDING can be judged against it instead of against VFP.
+*
+* R53 gave BINDING the syntax "alias.field" and refused everything else. BETA-4.4
+* freezes the engine's own spec resolution as "*, AREA.*, AREA.FIELD, #n". This
+* script measures all four against the shipped x64 school tables, so the gap between
+* the two grammars is a run, not an argument. See AIF120_TUPLE_SPEC_V1.md.
+*
+* Form: transcript canary (the comment_handling_regression.dts form).
+* Fixture: STUDENTS and ENROLL, read-only. One relation is added and cleared.
+* Regression doctrine: every test sets its own environment.
+*
+* Run:  DOTSCRIPT aif120\aif120_tuple_spec_regression.dts
+*
+* EXPECTED OUTPUT -- the claims:
+*   T1  bare field list          -> resolves          (this is NOT what R53 allows)
+*   T2  *                        -> all fields of the current area
+*   T3  AREA.FIELD               -> resolves, spanning two work areas  (R53's form)
+*   T4  AREA.*                   -> all fields of a NAMED area
+*   T5  #n ordinal               -> DOES NOT RESOLVE. The line degrades to a bare
+*                                   TUPLE and prints every field, with no header,
+*                                   because the canonical inline comment vocabulary
+*                                   (AIF-037: && and #) cuts '#' to end of line
+*                                   before the spec parser sees it. BETA-4.4 declares
+*                                   a form the lexer removes.
+*   T6  --AREA-PREFIX            -> headers qualify as AREA.FIELD
+*   T7  --STRICT on a bad name   -> refuses, naming the area slot
+*   G1  ERSATZ GRID          -> the body renders (PATH, DESCENDANT SUMMARY, TUPLE
+*                                GRID, footer) while the header says
+*                                "ROOT: (none)  RECNO: 0", CURRENT ROOT RECORD is
+*                                "(none)" and RELATION TREE is "(none)".
+*   G2  ERSATZ REFRESH        -> the SAME state renders as a complete five-region
+*                                frame: ROOT/RECNO/PATH/LIMIT/ORDER, CURRENT ROOT
+*                                RECORD, RELATION TREE, DESCENDANT SUMMARY, TUPLE
+*                                GRID, and "ROWS SHOWN: n / LIMIT m | STATUS: OK".
+*   G3  ERSATZ GRID again     -> STILL "ROOT: (none)". GRID is a second renderer
+*                                ("ERSATZ GRID Relational Browser") that never
+*                                resolves three of the five regions, and REFRESH
+*                                ("ERSATZ Relational Browser") does. Same state.
+*
+*   The TUPLE GRID columns SPAN two work areas -- LNAME/FNAME/GENDER from STUDENTS,
+*   CLS_ID/GRADE from ENROLL -- which is BETA-4.1's "one logical row; may span areas".
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+SET PATH DBF dbf/x64
+
+FORMULA "AIF120-TUPLE-SPEC-BEGIN"
+
+SELECT 1
+USE STUDENTS
+SELECT 2
+USE ENROLL
+SELECT 1
+REL ADD STUDENTS ENROLL ON SID
+
+ECHO T1 bare field list
+TUPLE LNAME,FNAME --HEADER
+
+ECHO T2 star
+TUPLE * --HEADER
+
+ECHO T3 AREA.FIELD across two areas
+TUPLE STUDENTS.LNAME,ENROLL.GRADE --HEADER
+
+ECHO T4 AREA.star
+TUPLE ENROLL.* --HEADER
+
+ECHO T5 ordinal -- expect NO header and every field
+TUPLE #2,#3 --HEADER
+
+ECHO T5b ordinal mid-spec -- expect LNAME alone, no header
+TUPLE LNAME,#3 --HEADER
+
+ECHO T6 area prefix
+TUPLE STUDENTS.LNAME,ENROLL.GRADE --HEADER --AREA-PREFIX
+
+ECHO T7 strict on a name that is not a field
+TUPLE STUDENTS.NOSUCH --STRICT
+
+ECHO
+ECHO --- the grid the engine already ships ---
+ERSATZ ROOT STUDENTS
+ERSATZ LIMIT 3
+ECHO G1 GRID -- header says ROOT (none), body is populated
+ERSATZ GRID
+ECHO G2 REFRESH -- the complete frame
+ERSATZ REFRESH
+ECHO G3 GRID again -- header is empty again
+ERSATZ GRID
+
+REL CLEAR ALL
+WORKSPACE CLOSE
+
+FORMULA "AIF120-TUPLE-SPEC-END"
