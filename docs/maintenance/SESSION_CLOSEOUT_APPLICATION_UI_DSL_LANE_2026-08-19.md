@@ -193,21 +193,150 @@ was wrong with every one.**
 section 2; R19 withdrawing 5b, the contract reconciled twice against its own newer
 rulings, and the `X64FORM.SCX` case normalisation are the rest.
 
+## 6c. SECOND ADDENDUM -- rulings R20 through R25, same run
+
+Section 6b ended at R19. The maintainer said "go go go" and the run continued
+through six more rulings. Recorded here so there is still one place to look.
+
+| ruling | what | how it was found | commit |
+| --- | --- | --- | --- |
+| **R20** | a menu item may select a capability the HOST provides; `DISPATCH` gains `host` | decoding the last undecoded `OBJCODE`; 21 of 67 items | `8de1b655c` |
+| **R21** | serialization is per HANDLER and NAVIGATION triggers it, not mutation; a completion is delivered at most once | two handlers contending on the real `STUDENTS.dbf`; per-op locking scored the same as no lock | `bf2da2852` |
+| **R22** | a capability mapping is a translation and needs an independent witness; refusal must be visible | the caption guard caught its own author's mis-mapping on its first run | `9696b9692` |
+| **R23** | `FLOW` is the container's field; an unspecified `grid` is refused, not stacked | rendering `row` and `column` for the first time and finding they were unreachable | `52831534b` |
+| **R24** | a document's requirements are computable from the table alone; a reference is not a measurement | the manifest, run once, over six documents | `e6205e11c` |
+| **R25** | a bound control's width follows its MASK, not its field | joining `BINDING` to a real schema and re-running R17 | `abe250c52` |
+
+**Runtime-proven this half:** two handlers contending on a 200-record DBF cursor,
+with the failure and the fix both measured; a container destroyed with a worker in
+flight, and the `cancelled` and `failed` states reached for the first time; host
+capabilities doing real clipboard work on Tk with 11 of 18 refused by name; three
+fonts applied through `FONTREF`; a `pageset` rendered as a notebook.
+
+**Tooling added:** `contend_test.py`, `lifetime_test.py`, `uidef_tk_host.py`,
+`manifest.py`, `author_flow.py`, `author_fonts.py`, `author_tabs.py`.
+**Ten evidence artefacts added** under `docs/maintenance/evidence/`.
+
+**Four defects in committed code, all the same shape.** `FLOW` read off the child
+instead of the container (R23.1). `FONTREF` written by the importer and read by
+nobody (R24.2). `pageset` produced by the importer and rendered by nobody (R24.3).
+`InputMask` carried under VFP's spelling, load-bearing and unnamed (R25.5). Every
+one survived because **production and consumption were never checked against each
+other.** A round trip is not a test if only one end is implemented. `manifest.py`
+is the cheap standing version of that check.
+
+**Corrections this session made to itself: twenty.** Eleven are in sections 2 and
+6b. The other nine:
+
+| # | what | how it was caught |
+| --- | --- | --- |
+| 12 | the ledger claimed the charter carries "rulings R1 through R20"; it stops at R12 | checking the claim before propagating it as R21 |
+| 13 | R11.4's heading said "mutating work" where its own body said "moves the record pointer" | the 0 ms buffer case: the write survived, the walk still broke |
+| 14 | the lifetime test's own pump outlived its window | the test printing the defect it was written to prove |
+| 15 | `tools.data_browser` mapped onto the caption "Class Browser" | the caption guard, on its first run, one minute after being written |
+| 16 | every label rendered with literal double quotes | opening the screenshot |
+| 17 | R19's corpus figures inflated by 9 DataEnvironments classified as `row` | asking what a "container group" actually is |
+| 18 | four committed tools carried a hardcoded `/tmp/gen` on `sys.path` | reading a file for a different reason |
+| 19 | the manifest's `FONTREF` check compared an index against `OBJID`s | reading the contract's field table before writing up the finding |
+| 20 | a stale `.git/index.lock` from my own timed-out `git status` over the bridge | the maintainer's commit failing |
+
+Number 19 is the one to keep: **a drift check that was itself drift**, written
+inside the tool built to catch drift. Number 20 has a rule attached -- `git status`
+is not a read, it takes the index lock, so it runs as
+`git --no-optional-locks status` over the bridge from now on.
+
 ## 7. What the next session inherits
 
-**Ready:** gate 10 is drafted and implemented; what remains is owner review of
-R1-R19 and the two defects the contract records against itself (section 12's
-permission to refuse `FLOW = free`, and section 4's refuse-the-whole-document rule
-which rejects 82% of real forms). It goes in with four things this lane did
-not have yesterday: R13's per-direction requiredness; relative-to-document
-addressing; container-versus-control geometry normalisation; and measured proof
-that `.SCX`, `.MNX`, `.FRX` and `.VCX` each encode shared concepts differently.
+**Ready for owner review:** rulings **R1 through R25**, all `review-needed`. The
+author does not self-approve and none of these has been approved by anyone.
 
-**Open:** gate 11 (a second backend generated from the TABLE); `RESERVED4`
-undecoded (values `2` x154, `1` x16 across the corpus); the licence question on
-`D:\dev\vfp-corpus`; no syntax, no parser, no registry entries.
+**Decisions that are the owner's, not the author's:**
 
-**Do not repeat:** before asserting that something does not exist in this tree,
-vary the query form and read the exit code. Before generalising from specimens,
-count how many you have. This session produced eight corrections and seven of
-them were one mistake.
+- **`tabindex` has no home.** 1,664 corpus objects carry it. `ORDINAL` is *layout*
+  order; tab order is a second independent order over the same children. A
+  generated frontend with the wrong tab order is wrong, so this is not decoration.
+  Named `PROPS` key, or a second ordinal?
+- **`FLOW` on non-containers is unvalidated.** `import_mnx.py` writes
+  `FLOW = column` on every menu item. Harmless only because the menu renderer
+  ignores `FLOW` -- the same condition that hid R23.1. The validator cannot check
+  it because a menu container is marked by `Container = .T.` in `PROPS`, not by
+  `KIND`. Give menu containers a `KIND`, or teach the validator the flag.
+- **`coordination/aif/AIF-120.claim` records `run_id: COWORK-20260817-001`** while
+  this run is `COWORK-20260818-001`. Rewriting a claim rewrites the record and
+  inventing a `continued_by` field could break whatever parses it. Left alone
+  deliberately.
+- **The two defects the contract records against itself** stand unchanged: section
+  12's permission to refuse `FLOW = free` (which refuses the majority permanently),
+  and section 4's refuse-the-whole-document rule (which rejects 82% of real forms).
+
+**Untested, in the order I would take them:**
+
+1. **Two `worker` handlers contending.** R21 ran one worker against the UI thread.
+   Two workers is the same shape and has not run.
+2. **Contention across work areas.** R11.4 serializes "against one workspace"; two
+   workspaces joined by `SET RELATION` is a second sharing channel nothing has
+   touched.
+3. **A real second backend.** `manifest.py`'s `minimal` profile describes a target
+   nobody has built. It exercises the checker and proves nothing about wx.
+4. **`row` and `column` against real imports.** All 14 such groups are in
+   third-party corpus forms whose licence is undetermined, so they stay outside the
+   repo. The authored document proves the consumer, not those documents.
+
+**Unexplained, and honestly so:** 271 FONT rows carried and unreferenced after the
+corpus re-import; FONT metric fields 4 through 9; the digit-mask slope, fitted on
+four points; `gender` at 20 px and `major` at 50 px, which no model here produces;
+`RESERVED4` (values `2` x154, `1` x16).
+
+**Deferred by the maintainer's own scope call:** `.FRX` reports. Measured under M7
+and R15, unruled.
+
+**Do not repeat:** before asserting something does not exist, vary the query and
+read the exit code. Before generalising from specimens, count how many you have.
+Before writing a check, read the field table -- number 19 above. And before
+believing a field works, find the consumer that reads it; four of this session's
+defects were fields nobody read.
+
+## 8. Learning from FoxPro, not bound by it
+
+Added at the maintainer's instruction, and it is a correction to how this record
+could otherwise be read. Six rulings deep, a reader could come away thinking the
+DSL is defined as "what VFP does". It is not. VFP is the **teacher**, because it is
+a designer format with thirty years of real documents in it and therefore a source
+of measurements rather than opinions. It is not the ceiling.
+
+Sorting this session's findings by how far they travel is worth doing explicitly,
+because the two kinds have been written in the same voice:
+
+**Portable claims -- they constrain any target and any source format:**
+
+- R13, requiredness is per direction, not per field.
+- R14, the table carries a handler reference and never a body.
+- R16, a stated dimension is advisory when content determines it.
+- R20, an item may select a capability the HOST provides.
+- R21, serialization is per handler and navigation triggers it.
+- R22, a translation table needs an independent witness; refusal must be visible.
+- R23, `FLOW` belongs to the container; an unspecified layout is refused.
+- R24, a document's requirements are computable from the table alone.
+- R25's **mechanism**: width follows the mask, and the schema determines the mask.
+
+None of those mention FoxPro. They would be true of a Qt designer file or a
+hand-authored document, and several were discovered against Tk, not VFP.
+
+**Facts about this corpus -- true, measured, and not laws:**
+
+- R18's `OBJCODE 77` plus document order. That is how `.MNX` stores nesting. The
+  portable half is the *rule* it produced -- never infer a structural link from a
+  field the format lets be blank.
+- R19's 88% `free`. That is how these forms were authored, not how forms must be.
+- R25's constants: 7.00 px per `X`, 62 px for a date, the 6.43 digit slope. One
+  wizard, one font, one machine. The mechanism travels; the numbers do not.
+
+Where the two were mixed, the ruling says so. Where a number is a fit rather than
+a law, the ruling says that too -- R25 section 8 flags its own four-point slope.
+
+The consequence for the next session: **the design table is free to carry things
+VFP has no way to express**, and R24's manifest is the machinery that makes that
+safe, because a target can refuse what it cannot do without anyone having to
+restrict the table to the intersection of what every source format happens to
+support. `tabindex` is the first live example -- VFP has it, the table has nowhere
+to put it, and the answer is not constrained by how VFP stores it.
