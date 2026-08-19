@@ -61,6 +61,15 @@ the granularity is genuine.
 
 ## 2. R52.1 -- a held RECORD does not block a TABLE lock
 
+> **NOTE added 2026-08-19 by R54: the framing below is WITHDRAWN.** The owner ruled
+> that table and record locks are INDEPENDENT by design -- record locking in x64base
+> is meant to be rich, and a single record holder vetoing every table lock would lock
+> people out to buy a guarantee most handlers do not need. What follows is a correct
+> MEASUREMENT and an incorrect verdict: it is the intended semantic, not a defect,
+> and the cross-lane finding filed against AIF-116 in this document's front matter is
+> withdrawn with it. The consequence for R48.3 stands and is restated in R54.2.
+> See `docs/maintenance/AIF120_LOCK_INDEPENDENCE_V1.md`.
+
 ```
       . LOCK: table locked.
       . Table:  LOCKED (owner Grimwood:21109:1787170787044)

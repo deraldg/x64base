@@ -60,20 +60,25 @@ class LockProvider:
         # a handler scans or edits one row. Choosing per handler is a schema
         # question and therefore the owner's.
         #
-        # R52, measured: `table` is conservative only AGAINST OTHER TABLE LOCKERS.
-        # `LOCK TABLE` succeeds while another process holds a RECORD lock, and both
-        # then believe they have exclusive access to that row:
+        # R52 measured, and R54 ruled: a table lock and record locks are
+        # INDEPENDENT in x64base. `LOCK TABLE` succeeds while another process holds
+        # a record lock --
         #
         #     . LOCK: table locked.
         #     . Table:  LOCKED (owner Grimwood:21109:...)
         #     Record 1: LOCKED (owner Grimwood:21080:...)
         #
-        # VFP's FLOCK() refuses in that situation; this engine does not (reported to
-        # the xbase lane, R52.2). So NEITHER granularity is sufficient on its own
-        # today, and no combination available to a frontend fixes it -- taking both
-        # verbs would still cover one record. `table` stays the default because it
-        # is strictly better than `record` for a scanning handler, not because it
-        # is safe.
+        # -- and that is the OWNER'S RULING, not a defect. Record locking is meant
+        # to be rich, and making one record holder veto every table lock would lock
+        # people out to buy a guarantee most handlers do not need.
+        #
+        # The consequence for this runtime is what matters here: a `table` domain
+        # lock excludes other TABLE lockers and says nothing about record editors.
+        # A handler that SCANS an area under it may read rows another process is
+        # mid-edit. `table` remains the default because it is strictly better than
+        # `record` for a scanning handler -- not because it makes one safe. R54.3
+        # names the engine query that would close the gap; nothing in a frontend
+        # can.
         # R50: the RELEASE verb must pair with the ACQUIRE verb. Bare `UNLOCK`
         # unlocks the current RECORD, not the table (src/cli/cmd_unlock.cpp:
         # "UNLOCK with no arguments unlocks the current record"), so releasing a
