@@ -13,12 +13,6 @@ built is a text formatter.
 import os, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-# `read_vfp_binary` is the VFP binary reader and it lives in tools/vfp.
-# tools/uidef/read_vfp_binary.py is a GITIGNORED working copy, so importing it
-# from this directory made nine committed tools unimportable on a fresh clone --
-# found by the house 'sweep for your own leftovers' rule, not by anything failing.
-# tools/vfp goes on the path FIRST so the ignored copy can never shadow it.
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'vfp'))
 from read_vfp_binary import Dbf
 
 KINDS_RENDERED = frozenset((
@@ -111,9 +105,53 @@ def generate(path, title=None, dispatch=False):
 
     body, notes = [], []
     made = [0]
+    rec = {(r['OBJID'] or '').strip(): r for r in objs}
 
     def var(oid):
         return 'w_' + oid.replace('.', '_')
+
+    # R44: R39 fixed this on Tk and the wx generator was written from R38, so it
+    # shipped the defect R39 had already named -- one scope for the whole window,
+    # which makes ANY container's destruction cancel every SIBLING's queued work.
+    # R21.4 scopes cancellation to the container. The generator now emits one
+    # std::shared_ptr<Scope> per container and each handler captures its nearest
+    # enclosing one BY VALUE, so the scope outlives the widget that owned it and
+    # a late completion finds an object to ask rather than a dangling pointer.
+    CONTAINER_KINDS = ('form', 'group', 'panel', 'page', 'pageset')
+    scopes = {}
+
+    def emit_scope(oid, v, ind):
+        """Create this container's scope, and cancel ONLY this container's work
+        when it is destroyed. wxEVT_DESTROY propagates up from children, so the
+        handler checks the event's window -- without that guard the first child
+        destroyed would cancel its parent, which is the same off-by-one-container
+        error in the other direction."""
+        sc = 'sc_' + oid.replace('.', '_')
+        scopes[oid] = sc
+        # A target cannot exercise R21.4 without a handle to the container, and
+        # unlike Tk (which hands back a dict of widgets) a generated OnInit keeps
+        # its locals. wx already has the mechanism: name the window after the
+        # OBJID and `wxWindow::FindWindowByName` resolves it.
+        body.append('%s%s->SetName("%s");' % (ind, v, oid))
+        body.append('%sauto %s = std::make_shared<uidef::Scope>("%s");'
+                    % (ind, sc, oid))
+        # Both the scope AND the window pointer must be captured: the window is a
+        # local of the generated OnInit, so naming it inside the lambda without
+        # capturing it does not compile. It is captured BY VALUE as a raw pointer
+        # for identity comparison only -- the handler never dereferences it, which
+        # matters because it fires while that window is being destroyed.
+        body.append('%s%s->Bind(wxEVT_DESTROY, [%s, %s](wxWindowDestroyEvent& e){ '
+                    'if (e.GetWindow() == %s) %s->destroy(); e.Skip(); });'
+                    % (ind, v, sc, v, v, sc))
+        return sc
+
+    def scope_for(oid):
+        cur = oid
+        while cur:
+            if cur in scopes:
+                return scopes[cur]
+            cur = (rec[cur]['PARENT'] or '').strip() if cur in rec else ''
+        return 'g_scope'
 
     def fontexpr(r):
         fr = int(float((r['FONTREF'] or '0').strip() or 0))
@@ -178,6 +216,11 @@ def generate(path, title=None, dispatch=False):
                             'wxTheApp->argc > 2);' % (ind, v))
                 body.append('%sg_scope = std::make_shared<uidef::Scope>("%s");'
                             % (ind, oid))
+                # The frame's own scope IS g_scope -- a window-wide cancel is still
+                # correct FOR THE WINDOW. What R44 removes is every container
+                # sharing it.
+                scopes[oid] = 'g_scope'
+                body.append('%sg_scope_owner = %s;' % (ind, v))
                 body.append('%suidef_register(*g_rt);' % ind)
             sub = child_sizer(oid, flow, pr, v, ind)
             for c in kids.get(oid, []):
@@ -201,6 +244,8 @@ def generate(path, title=None, dispatch=False):
                 body.append('%sauto* %s_sb = new wxStaticBoxSizer(wxVERTICAL, %s, %s);'
                             % (ind, v, parent_var, cstr(cap)))
                 body.append('%sauto* %s = %s_sb->GetStaticBox();' % (ind, v, v))
+                if dispatch:
+                    emit_scope(oid, v, ind)
                 body.append('%sauto* %s = new wxGridBagSizer(4, 8);' % (ind, szname))
                 body.append('%sint %s_i = 0; const int %s_n = %s;'
                             % (ind, szname, szname, pr['columns']))
@@ -217,6 +262,8 @@ def generate(path, title=None, dispatch=False):
                 body.append('%sauto* %s = new wxStaticBoxSizer(%s, %s, %s);'
                             % (ind, szname, orient, parent_var, cstr(cap)))
                 body.append('%sauto* %s = %s->GetStaticBox();' % (ind, v, szname))
+                if dispatch:
+                    emit_scope(oid, v, ind)
                 for c in kids.get(oid, []):
                     emit(c, v, flow, szname, depth + 1)
                 outer = szname
@@ -240,11 +287,14 @@ def generate(path, title=None, dispatch=False):
             if 'Click' in hs:
                 name, disp, comp = hs['Click']
                 alias = (r['BINDING'] or '').strip().split('.')[0].lower()
-                body.append('%s%s->Bind(wxEVT_BUTTON, [](wxCommandEvent&){ '
-                            'g_rt->fire("%s", "%s", g_scope, "%s", "%s"); });'
-                            % (ind, v, name, disp, alias, comp))
+                own = scope_for((r['PARENT'] or '').strip())
+                body.append('%s%s->Bind(wxEVT_BUTTON, [%s](wxCommandEvent&){ '
+                            'g_rt->fire("%s", "%s", %s, "%s", "%s"); });'
+                            % (ind, v, own, name, disp, own, alias, comp))
 
         if kind in ('panel', 'page', 'pageset'):
+            if dispatch:
+                emit_scope(oid, v, ind)
             sub = child_sizer(oid, flow, pr, v, ind)
             for c in kids.get(oid, []):
                 if kind == 'pageset':
@@ -321,6 +371,7 @@ def generate(path, title=None, dispatch=False):
         head += ['#include "uidef_rt.h"', '#include <cstdio>']
         pre = ['uidef::Runtime* g_rt = nullptr;',
                'std::shared_ptr<uidef::Scope> g_scope;',
+               'wxWindow* g_scope_owner = nullptr;',
                'void uidef_register(uidef::Runtime&);   // the TARGET supplies these',
                'void uidef_after_init(wxWindow*);        // and its own entry point',
                '']
