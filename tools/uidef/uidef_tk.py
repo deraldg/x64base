@@ -26,6 +26,14 @@ import os, subprocess, sys, time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from read_vfp_binary import Dbf
 
+# R16: a stated ORIGIN size is ADVISORY for controls whose size their content
+# determines, and AUTHORITATIVE for controls whose size the data determines.
+# Evidence: docs/maintenance/evidence/AIF120_origin_abc.png -- honouring every
+# width truncates labels, honouring none loses field sizing, honouring only the
+# data-sized ones keeps both.
+CONTENT_SIZED = {'label','button','check','radio','group','page'}
+DATA_SIZED    = {'text','list','combo','image'}
+
 KIND_WIDGET = {          # contract section 4, the fourteen v1 kinds
     'form':'toplevel', 'panel':'frame', 'group':'labelframe',
     'pageset':'notebook', 'page':'frame',
@@ -141,13 +149,12 @@ def build_window(path):
                 continue
             w = factory()
             # Contract s8: a generator that honours ORIGIN must honour ORIGIN_SCALE.
-            # Honouring ORIGIN_WIDTH literally is what truncates labels on a
-            # toolkit whose font differs from the one the widths were measured
-            # against -- the observed cost of absolute geometry, and R12's case.
+            # Position is honoured; SIZE is filtered by R16 -- honouring a label's
+            # stated width truncates it on a toolkit with a different font.
             if 'origin_top' in org and 'origin_left' in org:
                 kw = dict(x=float(org['origin_left']), y=float(org['origin_top']))
-                if 'origin_width' in org:
-                    kw['width'] = float(org['origin_width'])
+                if 'origin_width' in org and kind not in CONTENT_SIZED:
+                    kw['width'] = float(org['origin_width'])   # R16
                 w.place(**kw)
             elif flow == 'row':
                 w.pack(side='left')

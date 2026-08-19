@@ -101,6 +101,42 @@ the right one, and R16 names a third that is.
 `ORIGIN` group carrying the layout, and `ORIGIN` is still load-bearing for
 imports. R16 changes how a generator *reads* that group, not whether it is needed.
 
+## 4b. R16 implemented and rendered -- it beats both, and creates one new problem
+
+The ruling above was derived from two renders. It has now been implemented and
+rendered as a third. Evidence: `docs/maintenance/evidence/AIF120_origin_abc.png`,
+A / B / C left to right.
+
+**C keeps what both others lost.** Every label reads in full -- `Lname:`,
+`Fname:`, `Gender:`, `Enroll_d:` -- and every field keeps its authored width:
+`Gender` one character, `Dob` date-sized, `Email` wide. R16 is not a compromise
+between A and B; on this document it is strictly better than either.
+
+`tools/uidef/uidef_tk.py` implements it, so the ruling is executable rather than
+prose: `if 'origin_width' in org and kind not in CONTENT_SIZED`.
+
+**And it introduces a problem neither A nor B had.** Look at `Enroll_d:` in C --
+the label now runs right up against its field. Positions are still honoured, and
+those positions were authored for the *narrow* VFP labels. Widen a label to its
+natural size and it grows into space the layout had allocated to something else.
+On a longer caption they would overlap.
+
+So R16 converts a **truncation** failure into a **collision** failure. That is a
+real improvement -- clipped text is unreadable, adjacent text is merely ugly --
+but it is not a solution, and it shows where the next ruling has to go: **if a
+content-sized control's size is derived, its siblings' positions cannot be
+authoritative either.** Deriving one dimension while honouring a neighbour's
+position is internally inconsistent, and this render is the proof.
+
+Which is an argument for `FLOW` that no amount of reasoning produced. A
+row/column/grid layout has no such inconsistency, because nothing carries an
+absolute position for a derived size to collide with. R12 chose layout intent on a
+sequencing argument -- cheap now versus a rewrite later. **This is the first
+evidence that absolute positions and derived sizes cannot coexist at all**, which
+is a stronger reason than the one the ruling was made on.
+
+Not ruled here. Recorded as the open item R16 creates.
+
 ## 5. What this does not establish
 
 - **One toolkit.** Tk's font is wider than VFP's; on a toolkit with a narrower
