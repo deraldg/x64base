@@ -80,10 +80,19 @@ Not inferred from the path. The writer is in the tree and tracked:
 It is step 8 of 12 in that build. All twelve outputs carry version byte `0x30`
 and all twelve are tracked in `HEAD`.
 
-**The bytes VFP read are the bytes in the repository.** File mtime is
-2026-07-15 19:30:14 UTC, unchanged after the 08:52 session -- so VFP opened it
-`SHARED`, read it, and did not write it back. The measurement below is therefore
-against the same byte stream, not a VFP-rewritten copy.
+**The bytes VFP read are the bytes in the repository.** File mtime was
+2026-07-15 19:30:14 UTC, unchanged after the 08:52 session -- so that session
+opened it `SHARED`, read it, and did not write it back. The measurement below is
+against that byte stream.
+
+> **AMENDED 2026-08-18T16:21Z, same run.** "VFP did not write it back" is true of
+> the 08:52 session and **false of the day**. A later Form Designer session wrote
+> exactly one byte -- offset 28, `0x00` -> `0x01`, the header flag declaring a
+> production `.CDX` -- and created `STUDENTS.CDX`. All 200 records remain
+> byte-identical and the header is otherwise unchanged. This does not weaken
+> section 5; it strengthens it, since modifying in place is a harder
+> compatibility test than reading. Details and the maintainer decision it needs:
+> `docs/maintenance/AIF120_STUDENTS_SCX_SPECIMEN_V1.md` section 2.
 
 ## 3. The byte-level half, re-measured in-session
 

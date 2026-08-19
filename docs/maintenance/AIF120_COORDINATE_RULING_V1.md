@@ -108,6 +108,18 @@ half of it was settled.
 
 ### M4. The form specimens are not fully absolute either -- 22 of 45 are partial
 
+> **AMENDED 2026-08-18, same run, by a third specimen.** The aggregate below is
+> arithmetically right and analytically wrong: it mixes a wizard form with a
+> native one. Split out, `ACCOUNTS.SCX` (wizard) is 22 of 22 partial and
+> `form1.scx` (native) is 0 of 23, and `STUDENTS.SCX` (wizard) is 20 of 20.
+> **Partiality is a property of the Form Wizard, not of the `.SCX` format** --
+> the same error R4 was corrected for, one ruling later on a different axis. And
+> this ruling's own disproof condition 4 asked for exactly the file that was
+> already in the fixture set and already cited here. R12.3 survives and is better
+> supported; the sentence "the source format already expects the target to derive
+> a dimension" must read "wizard output already expects it". Full split:
+> `docs/maintenance/AIF120_STUDENTS_SCX_SPECIMEN_V1.md` section 4.
+
 Both `.SCX` files, 58 records. 45 carry at least one of
 `top`/`left`/`height`/`width`; 13 carry none (`dataenvironment` 1, `cursor` 2,
 `header` 3, `textbox` 3, unclassified 4). Of the 45:
@@ -131,7 +143,35 @@ coordinate one.
 top-level container of a real shipped CRUD form does not state where it is or how
 wide it is.
 
-### M5. There is no typographic anchor in the file
+### M5. There is no typographic anchor in the file -- **WRONG, RETRACTED**
+
+> **RETRACTED 2026-08-18, same run, same day.** This measurement is false and the
+> conclusion drawn from it is false. Every `.SCX` measured -- all three, including
+> both originals -- carries a trailing `PLATFORM = COMMENT`, `UNIQUEID = RESERVED`
+> record whose `PROPERTIES` memo is a **font metrics table**:
+> `Arial, 0, 9, 5, 15, 12, 32, 3, 0`. Three rows in each wizard form, one in the
+> native form. The document does carry metrics.
+>
+> **How the error was made, because the shape matters more than the fact.** The
+> scan parsed `PROPERTIES` as `name = value` lines and counted keys matching
+> `font*`. The reserved record's payload is positional CSV with no `=` at all, so
+> the parser returned an empty dict for it and the scan reported absence. That is
+> the house trap -- *a search shaped by the object you have cannot find an object
+> with a different schema* -- and it is the third instance in this lane in one
+> day: the charter missing `src/gui/` because it searched for `DEFINE WINDOW`,
+> M4 aggregating wizard and native specimens, and now this.
+>
+> **What replaces it.** The nine positional fields are not decoded here and must
+> not be guessed; what is measured is that the table exists, is per-font, and
+> sizes with the number of fonts the form uses. **This strengthens R12.3 rather
+> than weakening it:** a target deriving an omitted height can derive it from
+> metrics *carried by the document* rather than from its own font, which is more
+> faithful and more portable than the original rule assumed. R12.3's requirement
+> is unchanged -- record *unspecified*, never default to a number -- but the
+> derivation now has a documented source, and the design table must carry the
+> font table for a generator to use it.
+>
+> The original text is kept below as the record of what was claimed.
 
 **Zero font properties across all 58 records** -- no `fontname`, no `fontsize`,
 nothing matching `font*`. So "derive cells from font metrics in the document" is
@@ -192,9 +232,11 @@ faithful.
 
 ### R12.3 -- An absent dimension is derived by the target, never defaulted to a number
 
-M4 and M5 together: the file omits height systematically, and carries no font to
-compute it from. So the table records *that* a dimension is unspecified and the
-target computes it from its own content and font metrics.
+M4 and M5 together: wizard output omits height systematically. **M5 as originally
+written was retracted** -- the file DOES carry a font metrics table in its
+reserved record -- so the table records *that* a dimension is unspecified, and the
+target computes it from content plus the font metrics the document carries,
+falling back to its own font only when the document names none.
 
 The importer records which dimensions it derived, in the same discipline R2
 requires for an absent scale mode. **A derived value must never be written back
@@ -263,10 +305,12 @@ R12 is refuted by any of:
 2. a candidate platform with no ordinal containment primitive;
 3. a measured case where R12.3's derived height differs enough from VFP's
    rendering to change meaning rather than appearance;
-4. a hand-authored `.SCX` that declares all four dimensions on every control,
-   which would show M4's partiality as a wizard artifact rather than a property
-   of the format. **This is the same specimen the lane is already waiting on**,
-   which raises its value: it now tests two rulings instead of one.
+4. ~~a hand-authored `.SCX` that declares all four dimensions on every
+   control~~ -- **already answered, and answered against M4's framing.**
+   `form1.scx` is native, declares all four on all 23 geometry-bearing records,
+   and was in the fixture set when this was written. The hand-authored specimen
+   is still wanted for R4's `METHODS`/`OBJCODE` vocabulary, but it is no longer
+   this ruling's open disproof condition -- condition 1 is.
 
 The cheapest live check is gate 11's second backend. Implement R12.1 on Tk, whose
 `pack`/`grid` are ordinal by construction, and see whether the two form specimens

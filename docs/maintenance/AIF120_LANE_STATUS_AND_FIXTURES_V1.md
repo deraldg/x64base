@@ -62,10 +62,13 @@ recursing that directory.
 
 | subject | file |
 | --- | --- |
-| Lane charter, scope, proof gates, and rulings **R1 through R12** | `docs/maintenance/APPLICATION_UI_DSL_LANE_V1.md` |
+| Lane charter, scope, proof gates, and rulings **R1 through R13** | `docs/maintenance/APPLICATION_UI_DSL_LANE_V1.md` |
 | **R11, the threading ruling (gate 9)** -- full text, evidence, disproof conditions | `docs/maintenance/AIF120_THREADING_RULING_V1.md` |
 | **R12, the coordinate ruling (gate 8)** -- six measurements, disproof conditions | `docs/maintenance/AIF120_COORDINATE_RULING_V1.md` |
 | **VFP 9 reading an x64base-written table** -- the lane's first `runtime-proven` result | `docs/maintenance/AIF120_VFP_READS_X64BASE_OUTPUT_V1.md` |
+| **STUDENTS.SCX**, third form specimen; replicates R1/R2/R4/R12.3 and corrects R12's M4 | `docs/maintenance/AIF120_STUDENTS_SCX_SPECIMEN_V1.md` |
+| **R13** -- VFP 9 opened an x64base-GENERATED `.SCX`; required-on-output vs required-on-input | `docs/maintenance/AIF120_GENERATED_SCX_ACCEPTED_V1.md` |
+| The writer that produced it | `tools/vfp/write_vfp_binary.py`, `tools/vfp/make_students_form.py` |
 | The shipped GUI core the ruling adopts | `src/gui/core/`, `include/gui/core/`, `docs/ui/GUI_THREADING_RAII_CONTRACT_V1.md` |
 | Specimen-by-specimen measurements and the corrections between them | `docs/maintenance/AIF120_VFP_SCX_EMPIRICAL_BASELINE_V1.md` |
 | The reader that produced every measurement | `tools/vfp/read_vfp_binary.py` |
@@ -95,8 +98,14 @@ round-trip test, so they are copied into the tree here. 91 KB total.
 | `test_append.mnt` | 5148 | `0d74c5b30dd57a2c` | its memo sidecar |
 | `TEST_GO.MPR` | 3210 | `152157bd17e456a8` | **GENMENU output for `test_go.mnx`** -- the reference the DSL is checked against |
 | `TEST_MAIN.MPR` | 13709 | `f57f4679843ab19b` | GENMENU output showing the imperative half of the vocabulary |
+| `STUDENTS.SCX` | 3649 | `d7e0e4df48b6c05f` | **third form**: wizard CRUD over an x64base-written table; the wizard/native partiality split |
+| `STUDENTS.SCT` | 7489 | `6caf0899fd045dc0` | its memo sidecar |
+| `X64FORM_VFPSAVED.SCX` | 3540 | `43e53d2c1640ab3d` | **x64base-generated, then saved by VFP 9** -- the free input/output fixture for the writer |
+| `X64FORM_VFPSAVED.SCT` | 3979 | `801f76d823867269` | its memo sidecar |
+| `X64FORM_SAMEDIR.SCX` | 3540 | `8ceac98c1146d58d` | the SAME form saved by VFP from the table's own directory -- `CursorSource` collapses to a bare filename; the controlled pair that proves relative-to-document addressing |
+| `X64FORM_SAMEDIR.SCT` | 3947 | `c2c530320a84a898` | its memo sidecar |
 
-**All sixteen landed.** `ACCOUNTS.SCX`/`.SCT` arrived last, after VFP released
+**All twenty-two landed** (sixteen on 2026-08-18 morning, `STUDENTS.SCX`/`.SCT` that afternoon). `ACCOUNTS.SCX`/`.SCT` arrived last, after VFP released
 them; the fourteen others copied while the form was still open in the designer.
 
 That lock behaviour is worth recording, because it **inverted twice in one day**:
@@ -138,6 +147,7 @@ Settled, with the ruling text in the charter:
 | R10 | every designer format parents differently; only the DBF layer is shared | all three |
 | R11 | UI-thread rule adopted from the shipped GUI core; table carries `DISPATCH` with default `ui`, `worker` requires `ON_COMPLETE` | `src/gui/core/` + `docs/ui/GUI_THREADING_RAII_CONTRACT_V1.md`, not a specimen |
 | R12 | layout intent is the portable geometry; absolute coordinates quarantined, advisory, and carrying R2's unit | the wx frontend, the GUI core, 205 menu records, 58 form records |
+| R13 | the designer formats have required-on-OUTPUT fields that are optional on input; the contract must record requiredness per direction | two VFP 9 rejections, each fixed by one change, then an open |
 
 Open:
 
