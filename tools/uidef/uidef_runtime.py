@@ -14,9 +14,56 @@ This is the missing piece -- the runtime a generated app actually runs on:
          areas, read from the document's own SOURCE (R36)
   R20    a `host` handler needs no thread rule, no completion and no registry
 """
-import os, queue, sys, threading
+import contextlib, os, queue, sys, threading
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+
+class LockProvider:
+    """How the runtime actually takes a lock on the DATA.
+
+    R47: until now it did not. `LockDomains` held `threading.RLock`s and nothing
+    ever touched a table -- a simulation of locking running BESIDE the engine's
+    own locks rather than through them. x64base has had `xbase::locks` the whole
+    time: owner-aware (`host:pid:nonce`), sidecar-file based, cross-process, with
+    liveness and recovery, and a defect history of its own (AIF-116).
+
+    The house verb is DotTalk++'s own:  SELECT <alias> ; LOCK TABLE ; UNLOCK.
+    A provider issues exactly that. The default provider is None -- in-process
+    exclusion only -- because a frontend with no engine attached still has to run.
+    """
+
+    def __init__(self, run):
+        self.run = run                    # run(command_text) -> bool
+        self.held = []
+
+    def try_lock(self, aliases):
+        """All-or-nothing across the domain. Releases what it took on failure.
+
+        Order is sorted, so two processes contending for the same domain take the
+        areas in the same order -- but that is defence in depth, not the reason
+        this is safe: `try_lock_table` never waits, so no circular wait can form.
+        """
+        taken = []
+        for a in sorted(aliases):
+            if self.run('SELECT %s' % a) and self.run('LOCK TABLE'):
+                taken.append(a)
+            else:
+                for t in reversed(taken):
+                    self.run('SELECT %s' % t)
+                    self.run('UNLOCK')
+                return False
+        self.held.append(tuple(sorted(aliases)))
+        return True
+
+    def unlock(self, aliases):
+        for a in reversed(sorted(aliases)):
+            self.run('SELECT %s' % a)
+            self.run('UNLOCK')
+        try:
+            self.held.remove(tuple(sorted(aliases)))
+        except ValueError:
+            pass
 
 
 class LockDomains:
@@ -28,7 +75,7 @@ class LockDomains:
     domain the area belongs to.
     """
 
-    def __init__(self, domains, granularity='domain'):
+    def __init__(self, domains, granularity='domain', provider=None):
         # `area` is the WRONG reading kept runnable on purpose: it locks the work
         # area a handler names, which is what R11.4 said before R26 corrected it.
         # A runtime that can be configured wrong on request is how you show the
@@ -37,20 +84,70 @@ class LockDomains:
             domains = [{a} for d in domains for a in d]
         self.granularity = granularity
         self.domains = [frozenset(d) for d in domains]
-        self.locks = {d: threading.RLock() for d in self.domains}
+        # A plain Lock, taken with blocking=False. NOT an RLock, and not blocking:
+        # `xbase::locks::try_lock_table` is a single attempt that returns false
+        # (R47), which is FLOCK()'s own semantic. Re-entry by the SAME thread is
+        # handled above the lock by a depth count, because a handler calling a
+        # handler on its own data is not contention.
+        self.locks = {d: threading.Lock() for d in self.domains}
         self.of = {}
         for d in self.domains:
             for alias in d:
                 self.of[alias] = d
+        self.provider = provider
+        self._held = threading.local()
 
-    def lock_for(self, alias):
-        d = self.of.get((alias or '').lower())
+    def domain_of(self, alias):
+        a = (alias or '').lower()
+        d = self.of.get(a)
         if d is None:                       # an area the document did not declare
-            d = frozenset([(alias or '').lower()])
-            self.of[(alias or '').lower()] = d
-            self.locks[d] = threading.RLock()
+            d = frozenset([a])
+            self.of[a] = d
+            self.locks[d] = threading.Lock()
             self.domains.append(d)
-        return self.locks[d]
+        return d
+
+    def lock_for(self, alias):              # kept for callers that only inspect
+        return self.locks[self.domain_of(alias)]
+
+    def _depth(self):
+        if not hasattr(self._held, 'depth'):
+            self._held.depth = {}
+        return self._held.depth
+
+    def acquire(self, alias):
+        """Try once. Return True if this thread now holds the domain.
+
+        No path here waits, so no circular wait can form: the AB-BA case that
+        deadlocks a blocking implementation is refused on the second acquisition
+        instead. That is not a guard bolted on -- it is what try-semantics mean.
+        """
+        d = self.domain_of(alias)
+        depth = self._depth()
+        if depth.get(d):                    # already mine: R21.1, not contention
+            depth[d] += 1
+            return True
+        if not self.locks[d].acquire(blocking=False):
+            return False
+        if self.provider is not None and not self.provider.try_lock(d):
+            self.locks[d].release()
+            return False
+        depth[d] = 1
+        return True
+
+    def release(self, alias):
+        d = self.domain_of(alias)
+        depth = self._depth()
+        n = depth.get(d, 0)
+        if n <= 0:
+            return
+        if n > 1:
+            depth[d] = n - 1
+            return
+        depth[d] = 0
+        if self.provider is not None:
+            self.provider.unlock(d)
+        self.locks[d].release()
 
     def describe(self):
         return [sorted(d) for d in self.domains]
@@ -71,8 +168,8 @@ class Scope:
 
 class Runtime:
     def __init__(self, domains, registry, host=None, post=None,
-                 granularity='domain'):
-        self.domains = LockDomains(domains, granularity)
+                 granularity='domain', provider=None):
+        self.domains = LockDomains(domains, granularity, provider=provider)
         self.registry = registry
         self.host = host or {}
         self.q = queue.Queue()
@@ -100,8 +197,13 @@ class Runtime:
             return False
 
         if disp == 'ui':
-            with self.domains.lock_for(alias):     # R21.1: whole handler
+            if not self.domains.acquire(alias):    # R47: one attempt, like FLOCK()
+                self.note('refused', name, 'domain busy (R47)')
+                return False
+            try:                                   # R21.1: whole handler
                 fn(scope)
+            finally:
+                self.domains.release(alias)
             self.note('ui', name)
             return True
 
@@ -112,15 +214,24 @@ class Runtime:
 
             def body():
                 state, result = 'completed', None
+                # R47: ONE attempt. A busy domain refuses the handler rather than
+                # queueing it -- FLOCK() returns .F., it does not wait. Everything
+                # this lane recorded about contention before R47 described a
+                # blocking lock the engine does not have.
+                if not self.domains.acquire(alias):
+                    self.note('refused', name, 'domain busy (R47)')
+                    self.post((scope, completion, 'domain busy', 'refused'))
+                    return
                 try:
                     # R21.1 and R26: one lock, for the whole handler, over the whole
                     # domain. Not per operation and not per work area.
-                    with self.domains.lock_for(alias):
-                        result = fn(scope)
+                    result = fn(scope)
                     if scope.cancelled.is_set():
                         state = 'cancelled'
                 except Exception as e:
                     state, result = 'failed', repr(e)
+                finally:
+                    self.domains.release(alias)
                 self.post((scope, completion, result, state))
 
             threading.Thread(target=body, daemon=True).start()

@@ -19,8 +19,10 @@
 #include <atomic>
 #include <functional>
 #include <map>
+#include <functional>
 #include <memory>
 #include <mutex>
+#include <condition_variable>
 #include <string>
 #include <thread>
 #include <vector>
@@ -129,6 +131,16 @@ public:
         }
     }
 
+    /// R47: dogfood x64base. Set this to a callable that issues the house's own
+    /// verbs -- SELECT <alias> ; LOCK TABLE for acquire, SELECT <alias> ; UNLOCK
+    /// for release -- through `xbase::locks`. It returns false when the engine
+    /// refuses, and the runtime then refuses the handler. Left unset, the runtime
+    /// gives in-process exclusion only, which is all a frontend with no engine
+    /// attached can honestly claim.
+    using LockProvider = std::function<bool(bool acquire,
+                                            const std::vector<std::string>& aliases)>;
+    void set_lock_provider(LockProvider p) { provider_ = std::move(p); }
+
     void reg(const std::string& n, Handler h)    { handlers_[n] = std::move(h); }
     void comp(const std::string& n, Completion c){ comps_[n]    = std::move(c); }
     void host(const std::string& n, std::function<void()> f) { host_[n] = std::move(f); }
@@ -149,7 +161,8 @@ public:
         if (h == handlers_.end()) { log("refused " + name + " not in the registry"); return false; }
 
         if (dispatch == "ui") {
-            std::lock_guard<std::mutex> g(*lock_for(alias));
+            Hold hold(this, alias);                        // R47: one attempt
+            if (!hold.ok) { log("refused " + name + " domain busy"); return false; }
             h->second(*scope);
             log("ui " + name);
             return true;
@@ -159,16 +172,28 @@ public:
                 log("refused " + name + " worker with no ON_COMPLETE");
                 return false;
             }
-            std::mutex* m = lock_for(alias);
             Handler fn = h->second;
             wxWindow* ui = ui_;
             auto self = this;
-            std::thread([this, fn, m, scope, completion, ui, self, name] {
+            std::thread([this, fn, scope, completion, ui, self, name, alias] {
                 std::string result, state = "completed";
-                try {
-                    std::lock_guard<std::mutex> g(*m);     // R21.1 + R26
-                    result = fn(*scope);
-                } catch (const std::exception& e) { state = "failed"; result = e.what(); }
+                // R47: ONE attempt. A busy domain refuses the handler rather than
+                // queueing it -- FLOCK() returns .F., it does not wait. Everything
+                // recorded about contention before R47 described a blocking lock
+                // the engine does not have.
+                {
+                    Hold hold(self, alias);
+                    if (!hold.ok) {
+                        self->log("refused " + name + " domain busy");
+                        ui->CallAfter([self, scope, completion] {
+                            self->deliver(scope, completion, "domain busy", "refused");
+                        });
+                        return;
+                    }
+                    try {
+                        result = fn(*scope);               // R21.1 + R26
+                    } catch (const std::exception& e) { state = "failed"; result = e.what(); }
+                }
                 if (scope->cancelled) state = "cancelled";
                 ui->CallAfter([self, scope, completion, result, state] {
                     self->deliver(scope, completion, result, state);
@@ -199,10 +224,57 @@ public:
 
 private:
     void add_domain(const std::vector<std::string>& d) {
+        aliases_.push_back(d);
         domains_.push_back(d);
         locks_.push_back(std::unique_ptr<std::mutex>(new std::mutex()));
         for (const auto& a : d) of_[a] = locks_.size() - 1;
     }
+    // R47: a scoped, NON-BLOCKING domain hold. `xbase::locks::try_lock_table` is a
+    // single attempt that returns false -- FLOCK()'s own semantic -- so this is
+    // try_lock(), not lock(). Nothing here waits, so no circular wait can form:
+    // the AB-BA case that deadlocks a blocking implementation is refused instead.
+    // Re-entry by the SAME thread is allowed above the mutex, by depth, because a
+    // handler calling a handler on its own data is not contention (R21.1).
+    struct Hold {
+        Runtime* rt = nullptr;
+        size_t   ix = 0;
+        bool     ok = false;
+        bool     reentered = false;
+        Hold(Runtime* r, const std::string& alias) : rt(r) {
+            ix = r->index_for(alias);
+            auto& depth = r->depth();
+            auto d = depth.find(ix);
+            if (d != depth.end() && d->second > 0) {
+                d->second += 1; ok = reentered = true; return;
+            }
+            if (!r->locks_[ix]->try_lock()) return;
+            if (r->provider_ && !r->provider_(true, r->aliases_[ix])) {
+                r->locks_[ix]->unlock(); return;
+            }
+            depth[ix] = 1;
+            ok = true;
+        }
+        ~Hold() {
+            if (!ok) return;
+            auto& depth = rt->depth();
+            if (--depth[ix] > 0) return;
+            if (rt->provider_) rt->provider_(false, rt->aliases_[ix]);
+            rt->locks_[ix]->unlock();
+        }
+        Hold(const Hold&) = delete;
+        Hold& operator=(const Hold&) = delete;
+    };
+
+    std::map<size_t, int>& depth() {
+        static thread_local std::map<size_t, int> d;
+        return d;
+    }
+    size_t index_for(const std::string& alias) {
+        auto it = of_.find(alias);
+        if (it == of_.end()) { add_domain({alias}); it = of_.find(alias); }
+        return it->second;
+    }
+
     std::mutex* lock_for(const std::string& alias) {
         auto it = of_.find(alias);
         if (it == of_.end()) { add_domain({alias}); it = of_.find(alias); }
@@ -211,12 +283,14 @@ private:
     wxWindow* ui_;
     std::vector<std::vector<std::string>> domains_;
     std::vector<std::unique_ptr<std::mutex>> locks_;
+    std::vector<std::vector<std::string>> aliases_;
     std::map<std::string, size_t> of_;
     std::map<std::string, Handler> handlers_;
     std::map<std::string, Completion> comps_;
     std::map<std::string, std::function<void()>> host_;
     std::vector<std::string> log_;
     std::mutex logm_;
+    LockProvider provider_;
 };
 
 }  // namespace uidef
