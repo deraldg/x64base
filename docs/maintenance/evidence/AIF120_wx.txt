@@ -1,0 +1,35 @@
+AIF-120 R40 evidence -- a compiled backend: UIDEF -> wx C++ -> g++ -> a running window
+run: python3 tools/uidef/uidef_wx.py <table>.DBF out.cpp
+     g++ out.cpp -o app $(wx-config --cxxflags --libs)
+
+--- generating every table ---
+FLOWDEMO.DBF -> /tmp/wxt/FLOWDEMO.cpp   24 widget(s)
+  REFUSED grid on G2 -- FLOW=grid with no Columns property (R23.2); fell back to column
+  DERIVED layout for P3 -- FLOW=free with no ORIGIN on any child; fell back to ORDINAL order (R23.3)
+TABDEMO.DBF -> /tmp/wxt/TABDEMO.cpp   9 widget(s)
+  DERIVED layout for PS -- FLOW=free with no ORIGIN on any child; fell back to ORDINAL order (R23.3)
+FONTDEMO.DBF -> /tmp/wxt/FONTDEMO.cpp   6 widget(s)
+  FONTREF 9 on L5 names no usable FONT row
+UIDEF_STUDENTS.DBF -> /tmp/wxt/UIDEF_STUDENTS.cpp   20 widget(s)
+UIDEF_FORM1.DBF -> /tmp/wxt/UIDEF_FORM1.cpp   21 widget(s)
+  REFUSED kind 'image' on O014 -- contract s4
+  DERIVED layout for O015 -- FLOW=free with no ORIGIN on any child; fell back to ORDINAL order (R23.3)
+
+--- compiling every one of them ---
+  FLOWDEMO: COMPILED 191824 bytes
+  TABDEMO: COMPILED 177080 bytes
+  FONTDEMO: COMPILED 137824 bytes
+  UIDEF_STUDENTS: COMPILED 146424 bytes
+  UIDEF_FORM1: COMPILED 243560 bytes
+
+--- wx C++ emitted for the FLOW row (4 buttons, no coordinates) ---
+  auto* w_P1_sizer = new wxBoxSizer(wxHORIZONTAL);
+    auto* w_B1 = new wxButton(w_P1, wxID_ANY, "First", wxDefaultPosition, wxDefaultSize);
+    w_P1_sizer->Add(w_B1, 0, wxALL, 6);
+    auto* w_B2 = new wxButton(w_P1, wxID_ANY, "Prior", wxDefaultPosition, wxDefaultSize);
+    w_P1_sizer->Add(w_B2, 0, wxALL, 6);
+    auto* w_B3 = new wxButton(w_P1, wxID_ANY, "Next", wxDefaultPosition, wxDefaultSize);
+    w_P1_sizer->Add(w_B3, 0, wxALL, 6);
+    auto* w_B4 = new wxButton(w_P1, wxID_ANY, "Last", wxDefaultPosition, wxDefaultSize);
+    w_P1_sizer->Add(w_B4, 0, wxALL, 6);
+  w_P1->SetSizer(w_P1_sizer);
