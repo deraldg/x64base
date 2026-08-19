@@ -29,11 +29,17 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # tools/vfp goes on the path FIRST so the ignored copy can never shadow it.
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'vfp'))
 from read_vfp_binary import Dbf
+from uidef import doc_source
 
 KINDS_RENDERED = frozenset((
     'form', 'label', 'text', 'button', 'check', 'radio', 'list', 'combo',
     'panel', 'page', 'group', 'pageset',
+    # R66. The character grid is the target these five were MEASURED on -- dottalk++
+    # renders exactly this shape in a terminal -- so this backend must not paraphrase
+    # them the way a toolkit backend has to.
+    'grid', 'tree', 'detail', 'summary', 'statusbar',
 ))
+FRAME_KINDS = frozenset(('grid', 'tree', 'detail', 'summary', 'statusbar'))
 FLOWS_SUPPORTED = frozenset(('row', 'column', 'grid', 'free'))
 DISPATCH_SUPPORTED = frozenset(('ui',))          # no threads, no host clipboard
 CAPABILITIES = ()
@@ -87,6 +93,7 @@ def render(path, width=100, height=40):
     objs = [r for r in rows if (r['RECKIND'] or '').strip() == 'OBJ']
     fonts = [r for r in rows if (r['RECKIND'] or '').strip() == 'FONT']
     rec = {(r['OBJID'] or '').strip(): r for r in objs}
+    src_aliases, src_rels = doc_source(rows)
     kids = {}
     for r in objs:
         kids.setdefault((r['PARENT'] or '').strip(), []).append(r)
@@ -120,6 +127,73 @@ def render(path, width=100, height=40):
         if kind == 'list':
             return '[' + '_' * 10 + ']'
         return cap
+
+    def frame_block(kind, pr, ch):
+        """R66/contract 4b -- the five regions of the ERSATZ frame, as characters.
+
+        Every one of these is STRUCTURE, not data: a design-time preview has no
+        records, exactly as `text` renders `[______]` rather than a value. What the
+        frame kinds add is that their structure is DECLARED -- a grid's columns come
+        from its BINDING (contract 10c, which is what answers R6) and a tree's edges
+        come from SOURCE (4b(a)), so there is nothing here to invent.
+        """
+        b = (ch['BINDING'] or '').strip()
+        specs = [x.strip() for x in b.split(',') if x.strip()]
+
+        def spec_cols(default_alias):
+            cols = []
+            for sp in specs:
+                if sp == '*':
+                    cols.append((default_alias or '?').upper() + '.*')
+                elif sp.endswith('.*'):
+                    cols.append(sp.upper())
+                else:
+                    cols.append(sp.split('.')[-1].upper())
+            return cols or ['*']
+
+        if kind == 'grid':
+            heads = spec_cols(src_aliases[0] if src_aliases else None)
+            w = max([10] + [len(h) for h in heads])
+            hdr = '  '.join(h.ljust(w) for h in heads)
+            try:
+                n = int(float(pr.get('rowlimit', 3) or 3))
+            except ValueError:
+                n = 3
+            n = max(1, min(n, 5))
+            body = ['  '.join('.' * w for _ in heads) for _ in range(n)]
+            return [hdr, '-' * len(hdr)] + body
+        if kind == 'tree':
+            root = b.lower() or (src_aliases[0] if src_aliases else '?')
+            out = [root.upper()]
+            for a_, b_, expr in src_rels:
+                if a_ == root:
+                    out.append('  -> %s   ON %s' % (b_.upper(), expr or '?'))
+            if len(out) == 1:
+                out.append('  (no Relation edge from %s in SOURCE)' % root.upper())
+            return out
+        if kind == 'detail':
+            names = spec_cols(src_aliases[0] if src_aliases else None)
+            # An `alias.*` expands from the SCHEMA, which a design-time preview does
+            # not have. Say that, rather than drawing a row called "STUDENTS.*".
+            if any(n.endswith('.*') for n in names):
+                return ['(every field of %s, from the schema at render time)'
+                        % ', '.join(n[:-2] for n in names if n.endswith('.*'))]
+            w = max([8] + [len(n) for n in names])
+            return ['%s : %s' % (n.ljust(w), '.' * 8) for n in names]
+        if kind == 'summary':
+            root = b.lower() or (src_aliases[0] if src_aliases else '?')
+            out = ['%s : %s' % (b_.upper().ljust(10), 'n')
+                   for a_, b_, _e in src_rels if a_ == root]
+            return out or ['(no child of %s in SOURCE)' % root.upper()]
+        # statusbar -- 4b(c): it reports, it does not compute, and a value the
+        # reader cannot supply is omitted rather than guessed.
+        shows = [x.strip().lower()
+                 for x in str(pr.get('shows', '')).replace(',', ' ').split()]
+        seen = {'rows': 'ROWS SHOWN: n', 'limit': 'LIMIT m', 'order': 'ORDER: physical',
+                'root': 'ROOT: %s' % ((src_aliases[0] if src_aliases else '?').upper()),
+                'recno': 'RECNO: n', 'status': 'STATUS: OK'}
+        parts = [seen[x] for x in shows if x in seen]
+        return [' | '.join(parts) if parts else '(statusbar declares no Shows)']
 
     used = {'made': 0, 'refused': 0, 'derived': 0}
 
@@ -215,6 +289,25 @@ def render(path, width=100, height=40):
                 if not (used_free and 'origin_top' in org):
                     r = br + inner + 2
                 maxr = max(maxr, br + inner + 2); maxc = max(maxc, bc + w)
+                used['made'] += 1
+                continue
+            if kind in FRAME_KINDS:
+                lines = frame_block(kind, cp, ch)
+                # The engine titles each region of its frame; so does this.
+                if cp.get('caption'):
+                    lines = [cp['caption']] + lines
+                if used_free and 'origin_top' in org and 'origin_left' in org:
+                    fr = top + band.get(float(org['origin_top']),
+                                        int(float(org['origin_top'])) // PX_PER_CELL_Y)
+                    fc = left + int(float(org['origin_left'])) // PX_PER_CELL_X
+                else:
+                    fr, fc = r, c
+                for i, ln in enumerate(lines):
+                    cv.put(fr + i, fc, ln)
+                    maxc = max(maxc, fc + len(ln))
+                maxr = max(maxr, fr + len(lines))
+                if not (used_free and 'origin_top' in org):
+                    r = fr + len(lines)
                 used['made'] += 1
                 continue
             g = glyph(kind, cp, ch)

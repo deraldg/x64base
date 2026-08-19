@@ -25,6 +25,7 @@ and a Python with tkinter -- 3.12 here, 3.11 has none):
 import os, subprocess, sys, time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from read_vfp_binary import Dbf
+from uidef import doc_source as uidef_doc_source
 
 # R16: a stated ORIGIN size is ADVISORY for controls whose size their content
 # determines, and AUTHORITATIVE for controls whose size the data determines.
@@ -39,7 +40,11 @@ CONTENT_SIZED = {'label','button','check','radio','group','page'}
 KINDS_RENDERED = frozenset((
     'form', 'label', 'text', 'button', 'check', 'radio', 'list', 'combo',
     'image', 'panel', 'page', 'group', 'pageset',
+    # R66. ttk supplies a Treeview, which is BOTH a grid (columns, show='headings')
+    # and a tree (show='tree'), so four of the five are native here too.
+    'grid', 'tree', 'detail', 'summary', 'statusbar',
 ))
+FRAME_KINDS = frozenset(('grid', 'tree', 'detail', 'summary', 'statusbar'))
 FLOWS_SUPPORTED = frozenset(('row', 'column', 'grid', 'free'))
 DISPATCH_SUPPORTED = frozenset(('ui', 'worker', 'host'))
 DATA_SIZED    = {'text','list','combo','image'}
@@ -50,6 +55,9 @@ KIND_WIDGET = {          # contract section 4, the fourteen v1 kinds
     'label':'Label', 'text':'Entry', 'button':'Button', 'check':'Checkbutton',
     'radio':'Radiobutton', 'list':'Listbox', 'combo':'Combobox', 'image':'Label',
     'menu':'menu',
+    # R66, contract 4b.
+    'grid':'Treeview', 'tree':'Treeview', 'detail':'Frame', 'summary':'Frame',
+    'statusbar':'Label',
 }
 
 
@@ -88,6 +96,18 @@ def load(path):
     return doc[0], fonts, objs
 
 
+def source_of(path):
+    """The DOC's declared work areas and relation edges. R66, contract 4b(a).
+
+    Separate from `load` on purpose: `load` returns three things and two other
+    tools unpack exactly three. Widening it to carry this broke `dispatch_test.py`
+    and `uidef_tk_menu.py` the moment it was tried, which is the same class of
+    mistake as R22.1 -- a shared helper is a contract, and changing its shape is a
+    change to every caller whether or not you looked at them.
+    """
+    return uidef_doc_source(list(Dbf(path).rows()))
+
+
 def tree(objs):
     kids = {}
     for r in objs:
@@ -99,6 +119,7 @@ def tree(objs):
 
 def describe(path):
     doc, fonts, objs = load(path)
+    src_aliases, src_rels = source_of(path)
     kids = tree(objs)
     print("UIDEF document: %s" % os.path.basename(path))
     print("  DOC props:", parse_props(doc['PROPS']))
@@ -132,11 +153,84 @@ def describe(path):
         print("  REFUSED kinds:", sorted(set(refused)))
 
 
+def frame_widget(parent, kind, r, pr, cap, src_aliases, src_rels):
+    """R66/contract 4b -- the five ERSATZ regions on ttk.
+
+    Structure, not data: a design-time preview has no records, which is the same
+    choice `text` makes when it renders an empty Entry. A grid's columns come from
+    its BINDING (contract 10c) and a tree's edges from SOURCE (4b(a)), so nothing
+    here is generated from a count property -- which is what R6 refused and what
+    contract 4 now records as answered rather than overruled.
+    """
+    from tkinter import ttk
+    b = (r['BINDING'] or '').strip()
+    specs = [x.strip() for x in b.split(',') if x.strip()]
+    first = (src_aliases[0] if src_aliases else '?')
+
+    def heads():
+        out = []
+        for sp in specs:
+            if sp == '*':
+                out.append(first.upper() + '.*')
+            elif sp.endswith('.*'):
+                out.append(sp.upper())
+            else:
+                out.append(sp.split('.')[-1].upper())
+        return out or ['*']
+
+    if kind == 'grid':
+        cols = heads()
+        try:
+            n = max(1, min(int(float(pr.get('rowlimit', 3) or 3)), 5))
+        except ValueError:
+            n = 3
+        w = ttk.Treeview(parent, columns=cols, show='headings', height=n)
+        for c in cols:
+            w.heading(c, text=c)
+            w.column(c, width=90, stretch=False)
+        return w
+    if kind == 'tree':
+        root = b.lower() or first
+        w = ttk.Treeview(parent, show='tree', height=max(2, 1 + len(src_rels)))
+        top = w.insert('', 'end', text=root.upper(), open=True)
+        edges = [(c, e) for a_, c, e in src_rels if a_ == root]
+        for c, e in edges:
+            w.insert(top, 'end', text='%s   ON %s' % (c.upper(), e or '?'))
+        if not edges:
+            w.insert(top, 'end', text='(no Relation edge in SOURCE)')
+        return w
+    if kind in ('detail', 'summary'):
+        w = ttk.Frame(parent, relief='groove', borderwidth=1)
+        if kind == 'detail':
+            if any(sp.endswith('.*') or sp == '*' for sp in specs):
+                names = ['(every field of %s)' % first.upper()]
+            else:
+                names = heads()
+            lines = ['%s :' % nm for nm in names]
+        else:
+            root = b.lower() or first
+            kidsx = [c for a_, c, _e in src_rels if a_ == root]
+            lines = (['%s : n' % c.upper() for c in kidsx]
+                     or ['(no child of %s in SOURCE)' % root.upper()])
+        for ln in lines:
+            ttk.Label(w, text=ln).pack(anchor='w')
+        return w
+    # statusbar -- 4b(c): reports, does not compute; an unsupplied value is omitted.
+    labels = {'rows': 'ROWS SHOWN', 'limit': 'LIMIT', 'order': 'ORDER',
+              'root': 'ROOT', 'recno': 'RECNO', 'status': 'STATUS'}
+    shows = [x.strip().lower()
+             for x in str(pr.get('shows', '')).replace(',', ' ').split()]
+    txt = ' | '.join('%s: --' % labels[x] for x in shows if x in labels)
+    return ttk.Label(parent, relief='sunken', anchor='w',
+                     text=txt or '(statusbar declares no Shows)')
+
+
 def build_window(path, registry=None, host=None):
     import tkinter as tk
     from tkinter import ttk
     from tkinter import font as tkfont
     doc, fonts, objs = load(path)
+    src_aliases, src_rels = source_of(path)
     kids = tree(objs)
     rec = {(r['OBJID'] or '').strip(): r for r in objs}
 
@@ -229,6 +323,10 @@ def build_window(path, registry=None, host=None):
                 made[oid] = root
                 build(oid, root)
                 continue
+            if kind in FRAME_KINDS:
+                w = frame_widget(parent, kind, r, pr, cap, src_aliases, src_rels)
+            else:
+                w = None
             factory = {
                 'label':  lambda: ttk.Label(parent, text=cap),
                 'text':   lambda: ttk.Entry(parent),
@@ -247,13 +345,14 @@ def build_window(path, registry=None, host=None):
                 # by manifest.py on its first run over form1.scx.
                 'pageset': lambda: ttk.Notebook(parent),
             }.get(kind)
-            if factory is None:
+            if w is None and factory is None:
                 print("REFUSED kind %r on %s -- contract s4" % (kind, oid))
                 continue
             assert kind in KINDS_RENDERED, (
                 "%r renders but is not in KINDS_RENDERED -- the constant has drifted"
                 % kind)
-            w = factory()
+            if w is None:
+                w = factory()
             if rt is not None and kind in CONTAINER_KINDS:
                 import uidef_runtime as _urt2
                 sc = _urt2.Scope(oid)

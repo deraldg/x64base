@@ -14,11 +14,16 @@ import os, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from read_vfp_binary import Dbf
+from uidef import doc_source
 
 KINDS_RENDERED = frozenset((
     'form', 'label', 'text', 'button', 'check', 'radio', 'list', 'combo',
     'panel', 'page', 'group', 'pageset',
+    # R66. wx has a native control for each: wxListCtrl in report mode is the grid,
+    # wxTreeCtrl the tree, and a frame owns its own status bar.
+    'grid', 'tree', 'detail', 'summary', 'statusbar',
 ))
+FRAME_KINDS = frozenset(('grid', 'tree', 'detail', 'summary', 'statusbar'))
 FLOWS_SUPPORTED = frozenset(('row', 'column', 'grid', 'free'))
 DISPATCH_SUPPORTED = frozenset(('ui', 'worker', 'host'))
 # wx gives a wxTextCtrl these natively, and has no Find.
@@ -94,6 +99,7 @@ def parse_handlers(txt):
 
 def generate(path, title=None, dispatch=False):
     rows = list(Dbf(path).rows())
+    src_aliases, src_rels = doc_source(rows)
     objs = [r for r in rows if (r['RECKIND'] or '').strip() == 'OBJ']
     fonts = [r for r in rows if (r['RECKIND'] or '').strip() == 'FONT']
     rec = {(r['OBJID'] or '').strip(): r for r in objs}
@@ -278,6 +284,107 @@ def generate(path, title=None, dispatch=False):
                 add_to(sizer_var, outer, ind, is_sizer=True)
             return
 
+        if kind in FRAME_KINDS:
+            # R66/contract 4b -- the five ERSATZ regions in wx. Structure, not data:
+            # a generated frontend has no records until a handler supplies them, the
+            # same way a wxTextCtrl is generated empty. The columns come from
+            # BINDING (contract 10c) and the tree edges from SOURCE (4b(a)), so
+            # nothing is generated from a count property -- R6's objection answered.
+            b = (r['BINDING'] or '').strip()
+            specs = [x.strip() for x in b.split(',') if x.strip()]
+            first = (src_aliases[0] if src_aliases else '?')
+
+            def _heads():
+                out = []
+                for sp in specs:
+                    if sp == '*':
+                        out.append(first.upper() + '.*')
+                    elif sp.endswith('.*'):
+                        out.append(sp.upper())
+                    else:
+                        out.append(sp.split('.')[-1].upper())
+                return out or ['*']
+
+            if kind == 'grid':
+                body.append('%sauto* %s = new wxListCtrl(%s, wxID_ANY, %s, %s, '
+                            'wxLC_REPORT | wxLC_SINGLE_SEL);'
+                            % (ind, v, parent_var, pos, size))
+                for i, h in enumerate(_heads()):
+                    body.append('%s%s->InsertColumn(%d, %s, wxLIST_FORMAT_LEFT, 90);'
+                                % (ind, v, i, cstr(h)))
+                # BETA-7.1 / contract 4b(b): the browse is read-only, and wxLC_REPORT
+                # without wxLC_EDIT_LABELS is read-only by construction rather than
+                # by convention. Stated so a later edit does not quietly add it.
+                body.append('%s// read-only by construction: no wxLC_EDIT_LABELS '
+                            '(BETA-7.1, contract 4b(b))' % ind)
+            elif kind == 'tree':
+                root = b.lower() or first
+                body.append('%sauto* %s = new wxTreeCtrl(%s, wxID_ANY, %s, %s, '
+                            'wxTR_DEFAULT_STYLE);'
+                            % (ind, v, parent_var, pos, size))
+                body.append('%sauto %s_root = %s->AddRoot(%s);'
+                            % (ind, v, v, cstr(root.upper())))
+                edges = [(c, e) for a_, c, e in src_rels if a_ == root]
+                for c, e in edges:
+                    body.append('%s%s->AppendItem(%s_root, %s);'
+                                % (ind, v, v, cstr('%s   ON %s' % (c.upper(),
+                                                                   e or '?'))))
+                if not edges:
+                    body.append('%s%s->AppendItem(%s_root, %s);'
+                                % (ind, v, v, cstr('(no Relation edge in SOURCE)')))
+                body.append('%s%s->Expand(%s_root);' % (ind, v, v))
+            elif kind in ('detail', 'summary'):
+                szn = '%s_sizer' % v
+                body.append('%sauto* %s = new wxStaticBoxSizer(wxVERTICAL, %s, %s);'
+                            % (ind, szn, parent_var, cstr(cap)))
+                body.append('%sauto* %s = %s->GetStaticBox();' % (ind, v, szn))
+                if kind == 'detail':
+                    if any(sp.endswith('.*') or sp == '*' for sp in specs):
+                        lines = ['(every field of %s)' % first.upper()]
+                    else:
+                        lines = ['%s :' % h for h in _heads()]
+                else:
+                    root = b.lower() or first
+                    kidsx = [c for a_, c, _e in src_rels if a_ == root]
+                    lines = (['%s : n' % c.upper() for c in kidsx]
+                             or ['(no child of %s in SOURCE)' % root.upper()])
+                for i, ln in enumerate(lines):
+                    body.append('%s%s->Add(new wxStaticText(%s, wxID_ANY, %s), '
+                                '0, wxALL, 2);' % (ind, szn, v, cstr(ln)))
+                if sizer_var:
+                    add_to(sizer_var, szn, ind, is_sizer=True)
+                return
+            else:
+                labels = {'rows': 'ROWS SHOWN', 'limit': 'LIMIT', 'order': 'ORDER',
+                          'root': 'ROOT', 'recno': 'RECNO', 'status': 'STATUS'}
+                shows = [x.strip().lower() for x in
+                         str(pr.get('shows', '')).replace(',', ' ').split()]
+                txt = ' | '.join('%s: --' % labels[x] for x in shows if x in labels)
+                pk = (rec.get((r['PARENT'] or '').strip(), {}) or {})
+                pkind = ((pk.get('KIND') or '').strip().lower()
+                         if hasattr(pk, 'get') else '')
+                if pkind == 'form':
+                    # wx idiom: a frame OWNS its status bar. Adding a bordered
+                    # static text to the frame's sizer instead compiles and renders
+                    # something that is not a status bar -- R40's lesson.
+                    body.append('%s%s->CreateStatusBar();'
+                                % (ind, var((r['PARENT'] or '').strip())))
+                    body.append('%s%s->SetStatusText(%s);'
+                                % (ind, var((r['PARENT'] or '').strip()),
+                                   cstr(txt or '(statusbar declares no Shows)')))
+                    return
+                body.append('%sauto* %s = new wxStaticText(%s, wxID_ANY, %s, %s, %s, '
+                            'wxBORDER_SUNKEN);'
+                            % (ind, v, parent_var,
+                               cstr(txt or '(statusbar declares no Shows)'),
+                               pos, size))
+            f = fontexpr(r)
+            if f:
+                body.append('%s%s->SetFont(%s);' % (ind, v, f))
+            if sizer_var:
+                add_to(sizer_var, v, ind)
+            return
+
         if ctor is None:
             return
         if kind in ('label', 'button', 'check', 'radio'):
@@ -376,8 +483,14 @@ def generate(path, title=None, dispatch=False):
 
     doc = [r for r in rows if (r['RECKIND'] or '').strip() == 'DOC'][0]
     doms = domains_from_source(doc['SOURCE'])
+    # R66: <wx/wx.h> does not pull in listctrl or treectrl, and the generator that
+    # emits a wxListCtrl without them produces a file that does not compile -- which
+    # is the cheapest possible version of R40's lesson and still had to be found by
+    # building. Included unconditionally: the cost is compile time, and a
+    # conditional include is one more thing that can be wrong per document.
     head = ['#include <wx/wx.h>', '#include <wx/notebook.h>', '#include <wx/gbsizer.h>',
-            '#include <wx/statbox.h>']
+            '#include <wx/statbox.h>', '#include <wx/listctrl.h>',
+            '#include <wx/treectrl.h>']
     pre = []
     if dispatch:
         head += ['#include "uidef_rt.h"', '#include <cstdio>']

@@ -15,12 +15,17 @@ import os, sys, html
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from read_vfp_binary import Dbf
+from uidef import doc_source
 
 # The profile this target declares, for manifest.py to import (R24.1).
 KINDS_RENDERED = frozenset((
     'form', 'label', 'text', 'button', 'check', 'radio', 'list', 'combo',
     'image', 'panel', 'page', 'group', 'pageset',
+    # R66. A browser has a native element for four of the five -- table, ul, dl and
+    # a footer div -- so this target renders their STRUCTURE rather than a box.
+    'grid', 'tree', 'detail', 'summary', 'statusbar',
 ))
+FRAME_KINDS = frozenset(('grid', 'tree', 'detail', 'summary', 'statusbar'))
 FLOWS_SUPPORTED = frozenset(('row', 'column', 'grid', 'free'))
 DISPATCH_SUPPORTED = frozenset(('ui', 'worker', 'host'))
 # A browser provides MORE host capabilities than Tk: find and replace are native.
@@ -64,8 +69,19 @@ def load(path):
     return kind('DOC')[0], kind('FONT'), kind('OBJ')
 
 
+def source_of(path):
+    """The DOC's work areas and relation edges -- contract 4b(a). R66.
+
+    Separate from `load` for the reason spelled out in uidef_tk.source_of: widening
+    a shared three-value helper is a change to every caller, and the tk version of
+    this broke two tools before it was reverted.
+    """
+    return doc_source(list(Dbf(path).rows()))
+
+
 def generate(path):
     doc, fonts, objs = load(path)
+    src_aliases, src_rels = source_of(path)
     rec = {(r['OBJID'] or '').strip(): r for r in objs}
     kids = {}
     for r in objs:
@@ -183,6 +199,74 @@ def generate(path):
         sattr = ' style="%s"' % full if full else ''
         child = kids.get(oid, [])
 
+        if kind in FRAME_KINDS:
+            # R66/contract 4b. Structure, not data -- the same choice `text` makes
+            # when it emits an empty <input>. A grid's columns are DECLARED by its
+            # BINDING (10c) and a tree's edges by SOURCE (4b(a)), so nothing here is
+            # generated from a count property, which is what R6 refused.
+            b = (r['BINDING'] or '').strip()
+            specs = [x.strip() for x in b.split(',') if x.strip()]
+            if cap:
+                out.append('%s<h2>%s</h2>' % (pad, esc(cap)))
+            if kind == 'grid':
+                heads = [(sp.upper() if sp.endswith('.*') or sp == '*'
+                          else sp.split('.')[-1].upper()) for sp in specs] or ['*']
+                try:
+                    n = max(1, min(int(float(pr.get('rowlimit', 3) or 3)), 5))
+                except ValueError:
+                    n = 3
+                out.append('%s<table class="grid"%s><thead><tr>%s</tr></thead><tbody>'
+                           % (pad, sattr,
+                              ''.join('<th>%s</th>' % esc(h) for h in heads)))
+                for _ in range(n):
+                    out.append('%s  <tr>%s</tr>'
+                               % (pad, ''.join('<td></td>' for _ in heads)))
+                out.append('%s</tbody></table>' % pad)
+            elif kind == 'tree':
+                root = b.lower() or (src_aliases[0] if src_aliases else '?')
+                edges = [(c, e) for a_, c, e in src_rels if a_ == root]
+                out.append('%s<ul class="tree"%s><li>%s<ul>'
+                           % (pad, sattr, esc(root.upper())))
+                for c, e in edges:
+                    out.append('%s  <li>%s <em>ON %s</em></li>'
+                               % (pad, esc(c.upper()), esc(e or '?')))
+                if not edges:
+                    out.append('%s  <li><em>no Relation edge in SOURCE</em></li>' % pad)
+                out.append('%s</ul></li></ul>' % pad)
+            elif kind == 'detail':
+                out.append('%s<dl class="detail"%s>' % (pad, sattr))
+                if any(sp.endswith('.*') or sp == '*' for sp in specs):
+                    out.append('%s  <dt><em>every field of %s</em></dt><dd></dd>'
+                               % (pad, esc(', '.join(
+                                   (sp[:-2] or '?').upper() if sp.endswith('.*')
+                                   else (src_aliases[0] if src_aliases else '?').upper()
+                                   for sp in specs))))
+                else:
+                    for sp in specs:
+                        out.append('%s  <dt>%s</dt><dd></dd>'
+                                   % (pad, esc(sp.split('.')[-1].upper())))
+                out.append('%s</dl>' % pad)
+            elif kind == 'summary':
+                root = b.lower() or (src_aliases[0] if src_aliases else '?')
+                out.append('%s<ul class="summary"%s>' % (pad, sattr))
+                kidsx = [c for a_, c, _e in src_rels if a_ == root]
+                for c in kidsx or []:
+                    out.append('%s  <li>%s : <span class="n"></span></li>'
+                               % (pad, esc(c.upper())))
+                if not kidsx:
+                    out.append('%s  <li><em>no child of %s in SOURCE</em></li>'
+                               % (pad, esc(root.upper())))
+                out.append('%s</ul>' % pad)
+            else:
+                labels = {'rows': 'ROWS SHOWN', 'limit': 'LIMIT', 'order': 'ORDER',
+                          'root': 'ROOT', 'recno': 'RECNO', 'status': 'STATUS'}
+                shows = [x.strip().lower() for x in
+                         str(pr.get('shows', '')).replace(',', ' ').split()]
+                cells = ''.join('<span class="cell">%s: <b></b></span>'
+                                % esc(labels[x]) for x in shows if x in labels)
+                out.append('%s<div class="statusbar"%s>%s</div>'
+                           % (pad, sattr, cells or '<em>no Shows declared</em>'))
+            return
         if kind == 'form':
             out.append('%s<div class="form"%s>' % (pad, sattr))
             if cap:

@@ -51,10 +51,38 @@ class LockProvider:
     future need forces `LOCK <n>`, the number must be rendered through the classic
     locale, and `tools/uidef/lock_provider_test.py` fails if any emitted command
     contains a digit that the runtime put there.
+
+    R66 -- the METHODOLOGY, after R64.1. `src/cli/cmd_unlock.cpp` calls the `void`
+    best-effort overload of `xbase::locks::unlock_*` at all three of its call sites
+    and then prints `UNLOCK: record N unlocked.` unconditionally. Measured: `UNLOCK
+    77` reports success for a record that was never locked, and `LOCK WHO 77`
+    immediately answers `no lock recorded for 77.` The command layer's message is
+    not a result.
+
+    So this provider does not believe it. The rule, and it is general:
+
+        If the surface returns a STATUS, use it.
+        If the surface only PRINTS, confirm with an observer before believing it.
+        Never infer a lock from the absence of an error.
+
+    The observer is the house's own: `LOCK STATUS`, which reports
+    `Table: LOCKED (owner host:pid:ms)` and `Record n: ...`. Pass `observe` and the
+    provider confirms every acquire and every release. Without `observe` it still
+    runs -- a frontend with no engine attached must -- but it says so, once, through
+    `log`, rather than reporting an unverified lock as a lock.
+
+    R64.2 measured that `LOCK STATUS` reports the CURRENT record rather than the
+    locked one, which would make it useless for confirming `LOCK <n>`. It is exactly
+    right for bare `LOCK`, which is the only record verb this provider emits -- and
+    it emits no number for the AIF-116 reason above. Two independent constraints
+    landing on the same command is worth noticing rather than relying on.
     """
 
-    def __init__(self, run, granularity='table'):
+    def __init__(self, run, granularity='table', observe=None, log=None):
         self.run = run                    # run(command_text) -> bool
+        self.observe = observe            # observe(command_text) -> output text
+        self.log = log
+        self._warned = False
         # 'table' is the conservative default and what R47 shipped: a handler that
         # SCANS an area needs the whole area, and the document does not say whether
         # a handler scans or edits one row. Choosing per handler is a schema
@@ -99,24 +127,76 @@ class LockProvider:
         """
         taken = []
         for a in sorted(aliases):
-            if self.run('SELECT %s' % a) and self.run(self.verb):
+            if (self.run('SELECT %s' % a) and self.run(self.verb)
+                    and self._confirm(True)):
                 taken.append(a)
             else:
                 for t in reversed(taken):
                     self.run('SELECT %s' % t)
                     self.run(self.unverb)
+                    self._confirm(False)
                 return False
         self.held.append(tuple(sorted(aliases)))
         return True
 
     def unlock(self, aliases):
+        """Release, and CONFIRM the release. R66.
+
+        A release the caller cannot confirm is the worst of the three states: the
+        runtime believes the domain is free, the engine believes it is held, and
+        nothing reports a difference until another process is refused. This returns
+        True only when the observer agrees the lock is gone.
+        """
+        ok = True
         for a in reversed(sorted(aliases)):
             self.run('SELECT %s' % a)
             self.run(self.unverb)
+            if not self._confirm(False):
+                ok = False
+                if self.log:
+                    self.log('UNLOCK on %s reported success and %s still shows the '
+                             'lock held -- R64.1' % (a, 'LOCK STATUS'))
         try:
             self.held.remove(tuple(sorted(aliases)))
         except ValueError:
             pass
+        return ok
+
+    def _confirm(self, want_held):
+        """Ask the engine what it actually did. R66; see the class note on R64.1.
+
+        Returns True when the observed state matches `want_held`. With no observer
+        supplied it returns True and warns ONCE -- an unverified provider is a
+        legitimate configuration (no engine attached) and an unremarked one is not.
+        """
+        if self.observe is None:
+            if not self._warned:
+                self._warned = True
+                if self.log:
+                    self.log('lock provider is UNVERIFIED: no observer supplied, so '
+                             'every acquire and release is taken from the command '
+                             'layer\'s printed message, which R64.1 measured is '
+                             'printed whether or not anything happened')
+            return True
+        text = self.observe('LOCK STATUS') or ''
+        key = 'Table:' if self.granularity == 'table' else 'Record '
+        held = None
+        for ln in text.replace('\r\n', '\n').split('\n'):
+            # The shell prefixes what it prints -- `. Table: unlocked` at the prompt,
+            # `; ...` for ECHO -- so anchoring on the start of the line finds
+            # nothing and reports every state as unconfirmed. Found by running it:
+            # the FIRST version of this check called a correctly held lock a failure,
+            # which is the safe direction to be wrong in and still wrong.
+            i = ln.find(key)
+            if i >= 0:
+                held = 'LOCKED' in ln[i:]      # the engine spells the held state up
+                break                          # and the free state lower-case
+        if held is None:
+            if self.log:
+                self.log('LOCK STATUS produced no %s line; treating as unconfirmed'
+                         % line.rstrip(':'))
+            return False
+        return held is bool(want_held)
 
 
 class LockDomains:

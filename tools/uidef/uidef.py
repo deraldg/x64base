@@ -37,8 +37,11 @@ FIELDS = [
     ("NOTES",      "M",  4),
 ]
 
+# R66 added the five data-frame kinds, measured from ERSATZ rather than from the
+# VFP corpus -- contract section 4b.
 KINDS = {"form","panel","group","pageset","page",
-         "label","text","button","check","radio","list","combo","image","menu"}
+         "label","text","button","check","radio","list","combo","image","menu",
+         "grid","tree","detail","summary","statusbar"}
 FLOWS = {"row","column","grid","free"}
 # R33. The header declares a codepage in byte 29 and every value was then encoded
 # as latin1, which is a DIFFERENT encoding across 0x80-0x9F -- so a euro sign or a
@@ -172,4 +175,61 @@ def validate(rows):
             org=(r.get("ORIGIN") or "")
             if "ORIGIN_" in org and "ORIGIN_SCALE" not in org:
                 out.append("rec %d: section 8 -- ORIGIN_* present with no ORIGIN_SCALE" % i)
+    return out
+
+
+def doc_source(rows):
+    """Parse the DOC rows' SOURCE into (aliases-in-order, relation edges). R66.
+
+    Contract 4b(a): a `tree` and a `summary` take their shape from the relation
+    graph the document already states in SOURCE, and contract 10c resolves a bare
+    `*` against the FIRST alias declared here. Four targets need that answer and
+    none of them should compute it differently, so it lives with the reader.
+
+    Returns (["students", "enroll"], [("students", "enroll", "SID"), ...]).
+    """
+    aliases, rels = [], []
+    for r in rows:
+        if (r.get('RECKIND') or '').strip() != 'DOC':
+            continue
+        src = (r.get('SOURCE') or '').replace('\r\n', '\n')
+        for line in src.split('\n'):
+            line = line.strip()
+            low = line.lower()
+            if low.startswith('alias = '):
+                a = line.split(' = ', 1)[1].strip().lower()
+                if a and a not in aliases:
+                    aliases.append(a)
+            elif low.startswith('relation = '):
+                body = line.split(' = ', 1)[1]
+                expr = ''
+                if ' ON ' in body:
+                    body, expr = body.split(' ON ', 1)
+                if ' -> ' in body:
+                    a_, b_ = body.split(' -> ', 1)
+                    rels.append((a_.strip().lower(), b_.strip().lower(), expr.strip()))
+    return aliases, rels
+
+
+def doc_alias_tables(rows):
+    """`Alias` -> `Table` for every work area the DOC declares, IN ORDER. R66.
+
+    `parse_props` returns a dict, so a SOURCE declaring four aliases collapsed to
+    the LAST one wherever it was used to read them -- which is a silent loss in a
+    field whose whole purpose is to declare several. Ordered because contract 10c
+    resolves a bare `*` against the FIRST alias.
+    """
+    out = {}
+    for r in rows:
+        if (r.get('RECKIND') or '').strip() != 'DOC':
+            continue
+        cur = None
+        for line in (r.get('SOURCE') or '').replace('\r\n', '\n').split('\n'):
+            line = line.strip()
+            low = line.lower()
+            if low.startswith('alias = '):
+                cur = line.split(' = ', 1)[1].strip().lower()
+                out.setdefault(cur, '')
+            elif low.startswith('table = ') and cur:
+                out[cur] = line.split(' = ', 1)[1].strip()
     return out

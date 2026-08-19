@@ -21,6 +21,7 @@ exists somewhere is the mistake R22.1 and R23.4 both landed on.
 import os, sys, collections
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import uidef                                    # doc_alias_tables (R66)
 # `read_vfp_binary` is the VFP binary reader and it lives in tools/vfp.
 # tools/uidef/read_vfp_binary.py is a GITIGNORED working copy, so importing it
 # from this directory made nine committed tools unimportable on a fresh clone --
@@ -82,6 +83,25 @@ def mask_width(mask, ftype):
 # reading -- a `check` needs a logical, and everything else takes text.
 KIND_WANTS = {'check': set('L'), 'radio': set('L')}
 
+# R66. The five data-frame kinds, measured from ERSATZ (R65). They divide three ways
+# by what BINDING means on them, which is why a single alias.field rule could not
+# cover them: a control binds a FIELD, a frame binds a ROW or a ROOT.
+SPEC_KINDS   = {'grid', 'detail'}        # BINDING is a tuple spec -- section 10c
+ROOT_KINDS   = {'tree', 'summary'}       # BINDING is a bare alias: the root
+UNBOUND_KIND = 'statusbar'               # BINDING must be empty
+FRAME_KINDS  = SPEC_KINDS | ROOT_KINDS | {UNBOUND_KIND}
+# BETA-7.1: the shipped browse is read-only, editing explicitly disabled. Contract
+# 4b(b) refuses a document that says otherwise rather than ignoring it.
+READONLY_KINDS = SPEC_KINDS
+FALSEY = {'false', '.f.', 'f', '0', 'no', 'off'}
+# Contract 4b(c): a statusbar renders TupleStream::status_line(); Shows filters what
+# that reports rather than naming values the reader computes.
+STATUS_SHOWS = {'rows', 'limit', 'order', 'root', 'recno', 'status'}
+# Contract 4c. Each of these names a DbTupleStream method, so their legal values are
+# the engine's, not a taste.
+STREAM_ORDERS = {'physical', 'inx', 'cnx'}   # set_order_physical / _inx / _cnx
+ROWLIMIT_MAX = 200                           # app_smart_browser.cpp clamps 1..200
+
 
 def schema_of(dbf_path):
     t = Dbf(dbf_path)
@@ -138,45 +158,108 @@ def bind_check(m, tables):
     # R53, measured over the 170-form corpus: 159 ControlSource occurrences,
     # 145 alias.field (91.2%), 8 empty, 4 object references, 2 bare field. The
     # three minorities are three DIFFERENT things and were not being told apart.
+    first_alias = next(iter(m['aliases']), None)
+    doms = lock_domains(m['relations'], m['aliases']) if m['relations'] else []
     for oid, kind, binding, org_w, mask in m['bound']:
-        parts = binding.split('.')
-        head = parts[0].lower()
-        if len(parts) > 2 or head in ('this', 'thisform', 'thisformset'):
-            # `This.Parent.SysTray1.Tiptext` -- a control bound to another
-            # CONTROL'S PROPERTY, not to data. Not a malformed alias.field; a
-            # different kind of thing, which UIDEF v1 does not model. It used to
-            # fall through to the alias lookup, miss, and be skipped in SILENCE.
+        # R66/contract 4b + 10c. BINDING means three different things now, and which
+        # one it means is a property of the KIND, not of the string.
+        if kind == UNBOUND_KIND:
             out.append(('REFUSE', 'BINDING %s on %s' % (binding, oid),
-                        'object reference, not a data binding -- outside v1'))
+                        'a statusbar reports the frame\'s own state and is not bound '
+                        'to data -- contract 4b(c); name the values in PROPS Shows'))
             continue
-        if len(parts) == 1:
-            # A bare field name resolves against whatever work area happens to be
-            # current -- the ambient state section 10 already forbids for `Table`.
+        if kind in ROOT_KINDS:
+            if any(c in binding for c in '.,*'):
+                out.append(('REFUSE', 'BINDING %s on %s' % (binding, oid),
+                            '%s binds the ROOT alias, not a field or a spec -- its '
+                            'shape is the SOURCE relation graph (contract 4b(a))'
+                            % kind))
+            elif binding not in m['aliases']:
+                out.append(('REFUSE', 'BINDING %s on %s' % (binding, oid),
+                            'alias %s is not declared in SOURCE' % binding))
+            continue
+        if kind not in SPEC_KINDS and (',' in binding or '*' in binding):
             out.append(('REFUSE', 'BINDING %s on %s' % (binding, oid),
-                        'bare field name; not alias.field, and the current work '
-                        'area is ambient state'))
+                        'a tuple spec binds a ROW; a %s binds one field -- '
+                        'contract 10c' % kind))
             continue
-        alias, field = parts[0], parts[1]
-        sch = tables.get(alias.lower())
-        if sch is None:
+        specs = [x.strip() for x in binding.split(',')] if kind in SPEC_KINDS \
+                else [binding]
+        used = []
+        for spec in specs:
+            if spec.startswith('#'):
+                # R65.3. Not "bad binding" -- a form BETA-4.4 declares and the
+                # AIF-037 lexer deletes before the spec parser ever sees it.
+                out.append(('REFUSE', 'BINDING %s on %s' % (spec, oid),
+                            'ordinal spec is unreachable through the shell '
+                            '(AIF-037 cuts # to end of line); name the field'))
+                continue
+            parts = spec.split('.')
+            head = parts[0].lower()
+            if len(parts) > 2 or head in ('this', 'thisform', 'thisformset'):
+                # `This.Parent.SysTray1.Tiptext` -- a control bound to another
+                # CONTROL'S PROPERTY, not to data. Not a malformed alias.field; a
+                # different kind of thing, which UIDEF v1 does not model. It used to
+                # fall through to the alias lookup, miss, and be skipped in SILENCE.
+                out.append(('REFUSE', 'BINDING %s on %s' % (spec, oid),
+                            'object reference, not a data binding -- outside v1'))
+                continue
+            if spec == '*':
+                # Contract 10c: the FIRST alias in SOURCE, never "the current work
+                # area" -- section 10 refuses ambient resolution and this is the
+                # third place the same rule applies.
+                if first_alias is None:
+                    out.append(('REFUSE', 'BINDING * on %s' % oid,
+                                'no alias is declared in SOURCE for * to resolve '
+                                'against'))
+                    continue
+                sch = tables.get(first_alias)
+                if sch is None:
+                    out.append(('REFUSE', 'BINDING * on %s' % oid,
+                                'no schema supplied for alias %s' % first_alias))
+                    continue
+                used.extend((first_alias, f) for f in sch)
+                continue
+            if len(parts) == 1:
+                # A bare field name resolves against whatever work area happens to be
+                # current -- the ambient state section 10 already forbids for `Table`.
+                out.append(('REFUSE', 'BINDING %s on %s' % (spec, oid),
+                            'bare field name; not alias.field, and the current work '
+                            'area is ambient state'))
+                continue
+            alias, field = parts[0], parts[1]
+            sch = tables.get(alias.lower())
+            if sch is None:
+                out.append(('REFUSE', 'BINDING %s on %s' % (spec, oid),
+                            'alias %s is not declared in SOURCE' % alias))
+                continue
+            if field == '*':
+                used.extend((alias.lower(), f) for f in sch)
+                continue
+            f = sch.get(field.lower())
+            if f is None:
+                out.append(('REFUSE', 'BINDING %s on %s' % (spec, oid),
+                            'field not in the schema'))
+                continue
+            typ, width, dec = f
+            want = KIND_WANTS.get(kind)
+            if want and typ not in want:
+                out.append(('REFUSE', '%s %s bound to %s' % (kind, oid, spec),
+                            'field type %s cannot drive a %s' % (typ, kind)))
+                continue
+            used.append((alias.lower(), field.lower()))
+            if org_w and kind not in FRAME_KINDS:
+                px = R17_SLOPE * width + R17_INTERCEPT      # R17, from the field
+                mx = mask_width(mask, typ)                  # R25, from the mask
+                widths.append((oid, spec, width, px, mx, org_w))
+        # Contract 10c: a spec across two aliases describes a JOIN, so SOURCE must
+        # already relate them -- otherwise the row is invented and R26's lock domain
+        # does not cover it.
+        named = sorted({a for a, _ in used})
+        if len(named) > 1 and not any(set(named) <= d for d in doms):
             out.append(('REFUSE', 'BINDING %s on %s' % (binding, oid),
-                        'alias %s is not declared in SOURCE' % alias))
-            continue
-        f = sch.get(field.lower())
-        if f is None:
-            out.append(('REFUSE', 'BINDING %s on %s' % (binding, oid),
-                        'field not in the schema'))
-            continue
-        typ, width, dec = f
-        want = KIND_WANTS.get(kind)
-        if want and typ not in want:
-            out.append(('REFUSE', '%s %s bound to %s' % (kind, oid, binding),
-                        'field type %s cannot drive a %s' % (typ, kind)))
-            continue
-        px = R17_SLOPE * width + R17_INTERCEPT          # R17, from the field
-        mx = mask_width(mask, typ)                      # R25, from the mask
-        if org_w:
-            widths.append((oid, binding, width, px, mx, org_w))
+                        'spec names %s, and SOURCE declares no Relation joining '
+                        'them -- contract 10c' % ' and '.join(named)))
     if widths:
         e17 = [abs(px - ow) for _, _, _, px, _, ow in widths]
         e25 = [abs(mx - ow) for _, _, _, _, mx, ow in widths if mx is not None]
@@ -219,12 +302,18 @@ def manifest(path):
         'aliases': {},
         'bound': [],
         'relations': [],
+        'frames': [],
+        'frame_with_children': [],
     }
     for r in rows:
         if (r['RECKIND'] or '').strip() == 'DOC':
-            src = parse_props(r['SOURCE'])
-            if src.get('alias'):
-                m['aliases'][src['alias'].lower()] = src.get('table', '')
+            # R66. This was `parse_props(r['SOURCE'])['alias']`, and parse_props
+            # returns a DICT -- so a SOURCE declaring four work areas kept only the
+            # LAST one, in the field whose entire purpose is to declare several.
+            # R26's lock domains survived it because the Relation edges carry the
+            # closure, but `alias not declared in SOURCE` could not fire and
+            # contract 10c's "first alias" had no first.
+            m['aliases'].update(uidef.doc_alias_tables([r]))
             for line in (r['SOURCE'] or '').replace('\r\n', '\n').split('\n'):
                 if not line.lower().startswith('relation = '):
                     continue
@@ -272,6 +361,8 @@ def manifest(path):
                 ow = None
             m['bound'].append((oid, kind, b.lower(), ow,
                                parse_props(r['PROPS']).get('mask')))
+        if kind in FRAME_KINDS:
+            m['frames'].append((oid, kind, b, parse_props(r['PROPS'])))
         # Contract field table: FONTREF is "1-based index into this document's FONT
         # rows. 0 = target default." An index, not an OBJID -- the first version of
         # this check compared it to FONT-row OBJIDs and reported a false defect on
@@ -294,6 +385,12 @@ def manifest(path):
     m['fonts'] = len(fontrows)
     m['fonts_unreferenced'] = [i for i in range(1, len(fontrows) + 1)
                                if i not in referenced]
+    # R66/contract 4b(a): a tree or a summary takes its shape from the SOURCE
+    # relation graph, which the document already states once. Child rows would be a
+    # second copy of the closure that can drift from the first.
+    for oid, kind, _b, _pr in m['frames']:
+        if kind in ROOT_KINDS and children.get(oid):
+            m['frame_with_children'].append((oid, kind, len(children[oid])))
     return m
 
 
@@ -416,6 +513,61 @@ def check(m, p):
                     % (m['tab_absent'], m['tab_absent'] + m['tab_declared']),
                     'a partial tab order is the worst case: the gaps must be '
                     'derived and interleaved with the declared stops'))
+    # R66. Contract 4b. These hold with or without a schema, so they are not in
+    # bind_check -- a document that says a grid is editable is wrong on its own.
+    for oid, kind, _b, pr in m['frames']:
+        if kind in READONLY_KINDS:
+            ro = str(pr.get('readonly', '')).strip().lower()
+            if ro in FALSEY:
+                out.append(('REFUSE', '%s %s ReadOnly=%s' % (kind, oid, ro),
+                            'BETA-7.1 locks the shipped browse to read-only and '
+                            'contract 4b(b) carries that into the kind; an editable '
+                            'row path across a lock domain is not proven (R57.2)'))
+        if kind == 'grid':
+            # Contract 4c: these are DbTupleStream's arguments, not decoration.
+            o = str(pr.get('order', '')).strip().lower()
+            if o and o not in STREAM_ORDERS:
+                out.append(('REFUSE', 'grid %s Order=%s' % (oid, o),
+                            'not an order the stream can be set to -- contract 4c '
+                            'closes it to %s' % ', '.join(sorted(STREAM_ORDERS))))
+            rl = str(pr.get('rowlimit', '')).strip()
+            if rl:
+                try:
+                    n = int(float(rl))
+                except ValueError:
+                    n = 0
+                if n < 1:
+                    out.append(('REFUSE', 'grid %s RowLimit=%s' % (oid, rl),
+                                'RowLimit is next_page(max_rows) and must be a '
+                                'positive integer -- contract 4c'))
+                elif n > ROWLIMIT_MAX:
+                    out.append(('DEGRADE', 'grid %s RowLimit=%s' % (oid, rl),
+                                'the house browser clamps next_page to %d '
+                                '(app_smart_browser.cpp); a reader that clamps must '
+                                'say so -- contract 4c' % ROWLIMIT_MAX))
+            w = [x for x in str(pr.get('columnwidths', '')).split(',') if x.strip()]
+            b = next((bb for oo, kk, bb, _p in m['frames'] if oo == oid), '')
+            ncols = len([x for x in b.split(',') if x.strip()])
+            if w and ncols and len(w) != ncols:
+                out.append(('REFUSE', 'grid %s ColumnWidths has %d entr(ies)'
+                            % (oid, len(w)),
+                            'the spec declares %d column(s); ColumnWidths is '
+                            'ordinal-aligned with it -- contract 4c' % ncols))
+        if kind == UNBOUND_KIND:
+            shows = [x.strip().lower()
+                     for x in str(pr.get('shows', '')).replace(',', ' ').split()]
+            bad = [x for x in shows if x not in STATUS_SHOWS]
+            if bad:
+                out.append(('REFUSE', 'statusbar %s Shows %s' % (oid, ' '.join(bad)),
+                            'not a frame state value -- contract 4b(c) closes the '
+                            'list to %s' % ', '.join(sorted(STATUS_SHOWS))))
+            elif not shows:
+                out.append(('NOTE', 'statusbar %s' % oid,
+                            'no Shows property; the reader decides what to report'))
+    for oid, kind, n in m['frame_with_children']:
+        out.append(('REFUSE', '%s %s has %d child row(s)' % (kind, oid, n),
+                    'a %s takes its shape from the SOURCE relations -- child rows '
+                    'are a second copy of the closure (contract 4b(a))' % kind))
     if m['bindings']:
         out.append(('REQUIRE', '%d bound control(s)' % m['bindings'],
                     'target must supply a data source; widths come from the schema (R17)'))
