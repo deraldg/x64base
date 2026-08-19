@@ -1,0 +1,11 @@
+AIF-120 R39 evidence -- R21.4 at container granularity
+run: xvfb-run -a python3.12 tools/uidef/scope_test.py
+
+  lock domains: [['a'], ['b']]
+  destroying P1 while both handlers are in flight
+
+  completions delivered: [('P2', 'finished in P2', 'completed')]
+  runtime log           : [('worker', 'Slow'), ('worker', 'Slow'), ('dropped', 'Done', 'P1'), ('complete', 'Done', 'completed')]
+
+  R21.4  the destroyed container's work was dropped : True
+  R21.4  the SURVIVING container's work completed   : True

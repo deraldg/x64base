@@ -144,12 +144,26 @@ def build_window(path, registry=None, host=None):
     # handlers itself. The lock domains come from the document's own SOURCE (R36),
     # so this backend never decides what to serialize against -- it is told.
     rt = scope = None
+    scopes = {}
     if registry is not None:
-        import uidef_runtime
-        rt = uidef_runtime.Runtime(
-            uidef_runtime.domains_from_source(doc['SOURCE']),
-            registry, host=host)
-        scope = uidef_runtime.Scope('window')
+        import uidef_runtime as _urt
+        rt = _urt.Runtime(_urt.domains_from_source(doc['SOURCE']), registry, host=host)
+        scope = _urt.Scope('window')
+
+    CONTAINER_KINDS = ('form', 'panel', 'group', 'page', 'pageset')
+
+    def scope_for(oid):
+        """R21.4 says a CONTAINER's destruction cancels the work its handlers
+        queued. R38 gave the whole window one scope, which cancels a sibling's work
+        when any container goes -- correct for a window and wrong for a container,
+        against a rule this lane wrote itself. One scope per container, and a
+        handler uses its nearest enclosing one."""
+        cur = oid
+        while cur:
+            if cur in scopes:
+                return scopes[cur]
+            cur = (rec[cur]['PARENT'] or '').strip() if cur in rec else ''
+        return scope
     root = tk.Tk()
 
     # FONTREF is a 1-based index into the document's FONT rows in table order
@@ -236,6 +250,14 @@ def build_window(path, registry=None, host=None):
                 "%r renders but is not in KINDS_RENDERED -- the constant has drifted"
                 % kind)
             w = factory()
+            if rt is not None and kind in CONTAINER_KINDS:
+                import uidef_runtime as _urt2
+                sc = _urt2.Scope(oid)
+                scopes[oid] = sc
+                # Destroying THIS container cancels only what THIS container queued.
+                w.bind('<Destroy>',
+                       (lambda e, s_=sc, w_=w: s_.destroy() if e.widget is w_ else None),
+                       add='+')
             # Contract s8: a generator that honours ORIGIN must honour ORIGIN_SCALE.
             # Position is honoured; SIZE is filtered by R16 -- honouring a label's
             # stated width truncates it on a toolkit with a different font.
@@ -304,10 +326,11 @@ def build_window(path, registry=None, host=None):
                 if click:
                     name, disp, comp = click
                     alias = (r['BINDING'] or '').strip().split('.')[0]
+                    own = scope_for((r['PARENT'] or '').strip())
                     try:
-                        w.configure(command=(lambda n=name, d=disp, a=alias, c=comp:
-                                             rt.fire(n, d, scope, alias=a,
-                                                     completion=c)))
+                        w.configure(command=(lambda n=name, d=disp, a=alias, c=comp,
+                                             s_=own: rt.fire(n, d, s_, alias=a,
+                                                             completion=c)))
                     except tk.TclError:
                         pass                      # not a command widget
             made[oid] = w
