@@ -62,7 +62,7 @@ recursing that directory.
 
 | subject | file |
 | --- | --- |
-| Lane charter, scope, proof gates, and rulings **R1 through R15** | `docs/maintenance/APPLICATION_UI_DSL_LANE_V1.md` |
+| Lane charter, scope, proof gates, and rulings **R1 through R16** | `docs/maintenance/APPLICATION_UI_DSL_LANE_V1.md` |
 | **R11, the threading ruling (gate 9)** -- full text, evidence, disproof conditions | `docs/maintenance/AIF120_THREADING_RULING_V1.md` |
 | **R12, the coordinate ruling (gate 8)** -- six measurements, disproof conditions | `docs/maintenance/AIF120_COORDINATE_RULING_V1.md` |
 | **VFP 9 reading an x64base-written table** -- the lane's first `runtime-proven` result | `docs/maintenance/AIF120_VFP_READS_X64BASE_OUTPUT_V1.md` |
@@ -76,6 +76,7 @@ recursing that directory.
 | **GATE 10 DRAFT** -- the UIDEF design table as a standalone contract (forms and menus) | `docs/maintenance/AIF120_DESIGN_TABLE_CONTRACT_V1.md` |
 | **UIDEF first implementation** -- writer, importer, validator; three defects found in the contract by producing from it | `docs/maintenance/AIF120_UIDEF_FIRST_IMPLEMENTATION_V1.md` |
 | **GATE 11 SPIKE** -- a Tk frontend built from the UIDEF table alone; truncated labels are R12's argument rendered | `docs/maintenance/AIF120_GATE11_TK_SPIKE_V1.md` |
+| **R16** -- a stated dimension is advisory when content determines it; A/B render evidence | `docs/maintenance/AIF120_ORIGIN_AB_RULING_V1.md` |
 | The UIDEF tooling | `tools/uidef/uidef.py`, `tools/uidef/import_scx.py`, `tools/uidef/uidef_tk.py` |
 | The shipped GUI core the ruling adopts | `src/gui/core/`, `include/gui/core/`, `docs/ui/GUI_THREADING_RAII_CONTRACT_V1.md` |
 | Specimen-by-specimen measurements and the corrections between them | `docs/maintenance/AIF120_VFP_SCX_EMPIRICAL_BASELINE_V1.md` |
@@ -160,6 +161,7 @@ Settled, with the ruling text in the charter:
 | R13 | the designer formats have required-on-OUTPUT fields that are optional on input; the contract must record requiredness per direction | two VFP 9 rejections, each fixed by one change, then an open |
 | R14 | method bodies never enter v1; the table carries a handler REFERENCE, never handler source | 1,583 procedures across 169 corpus forms, 88% object-model-navigating |
 | R15 | two shared layers, not one -- the DBF container AND a `name = value` property language with shared keys; R10 amended on payload, unchanged on structure | 3,517 property-bearing records across `.SCX`/`.VCX`/`.FRX`; 9 shared cursor keys |
+| R16 | a stated dimension is advisory for content-sized controls, authoritative for data-sized ones; refines R12.3 | two conformant renders of one document, side by side |
 
 Open:
 
