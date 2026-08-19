@@ -163,8 +163,15 @@ def generate(path, title=None, dispatch=False):
         fp = parse_props(fonts[fr - 1]['PROPS'])
         if not (fp.get('name') and fp.get('size')):
             return None
-        return ('wxFont(%s, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, '
-                'wxFONTWEIGHT_NORMAL, false, %s)' % (fp['size'], cstr(fp['name'])))
+        # R56: the four components of a font's identity, not three.
+        slant = ('wxFONTSTYLE_ITALIC'
+                 if (fp.get('italic') or '').upper().startswith('.T')
+                 else 'wxFONTSTYLE_NORMAL')
+        weight = ('wxFONTWEIGHT_BOLD'
+                  if (fp.get('bold') or '').upper().startswith('.T')
+                  else 'wxFONTWEIGHT_NORMAL')
+        return ('wxFont(%s, wxFONTFAMILY_DEFAULT, %s, %s, false, %s)'
+                % (fp['size'], slant, weight, cstr(fp['name'])))
 
     def emit(r, parent_var, parent_flow, sizer_var, depth):
         oid = (r['OBJID'] or '').strip()

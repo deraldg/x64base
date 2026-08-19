@@ -310,6 +310,41 @@ Rules:
   party extends)
 - `PROPS` never carries geometry. Geometry is `FLOW`/`ORDINAL`, or `ORIGIN`
 
+## 7b. The `FONT` row's properties
+
+**Added 2026-08-20 by R56.** Gate 11's nearest fix was *"Name the `FONT` row's
+properties"*: `FONTREF` was defined as an index into rows whose contents the contract
+never described.
+
+| key | meaning | required |
+|---|---|---|
+| `Name` | typeface family, quoted | yes |
+| `Size` | point size | yes |
+| `Bold` | `.T.` / `.F.` | yes |
+| `Italic` | `.T.` / `.F.` | yes |
+| `Metrics` | the source font-cache line, **carried and not interpreted** | no |
+
+**A font's identity is all four of name, size, bold and italic.** Two objects share a
+`FONTREF` only when all four agree. Before R56 the table carried name and size alone,
+so a bold control and a plain one at the same family and size resolved to one row and
+rendered identically -- measured across the corpus, **561 objects declare `FontBold`
+(158 of them `.T.`) and 3 declare `FontItalic` (all `.T.`)**, so 161 objects stated an
+emphasis the document discarded.
+
+`Metrics` is the raw comma-separated cache line, e.g. `Arial, 0, 9, 5, 15, 12, 32, 3,
+0`. Field 1 is the name and field 3 the point size; **the rest are not decoded, and
+field 2 in particular must not be read as a style flag.** It looks like one -- values
+0, 1, 2, 3, 4, 32 and 128 appear, and `3` is exactly where `bold|italic` would fall --
+but correlated against objects that declare `FontBold = .T.`, it agrees 33 times and
+disagrees 85. A reader that decodes it will be wrong more often than right.
+
+**The object's own `FontBold` / `FontItalic` is the authority**, never the cache. A
+cache-derived `FONT` row is therefore always `Bold = .F.`, `Italic = .F.`, and an
+object declaring emphasis gets a derived row of its own.
+
+A target that cannot render emphasis must say so, exactly as R35.3 already requires
+for fonts on a character grid.
+
 ## 8. `ORIGIN` -- quarantined, advisory, and carrying its own unit
 
 Absolute coordinates are permitted and **advisory**. Same property text form:

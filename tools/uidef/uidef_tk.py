@@ -179,7 +179,11 @@ def build_window(path, registry=None, host=None):
         except ValueError:
             size = 0
         if fam and size:
-            fontobj[i] = tkfont.Font(family=fam, size=size)
+            # R56: emphasis is part of the font's identity, not a decoration on it.
+            fontobj[i] = tkfont.Font(
+                family=fam, size=size,
+                weight='bold' if (fp.get('bold') or '').upper().startswith('.T') else 'normal',
+                slant='italic' if (fp.get('italic') or '').upper().startswith('.T') else 'roman')
     root.title(parse_props(doc['PROPS']).get('sourcefile', 'UIDEF'))
     made = {}
     notes = []

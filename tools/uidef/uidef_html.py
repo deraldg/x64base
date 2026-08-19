@@ -14,12 +14,6 @@ portability test, not an independence test. R28 was the independence test.
 import os, sys, html
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-# `read_vfp_binary` is the VFP binary reader and it lives in tools/vfp.
-# tools/uidef/read_vfp_binary.py is a GITIGNORED working copy, so importing it
-# from this directory made nine committed tools unimportable on a fresh clone --
-# found by the house 'sweep for your own leftovers' rule, not by anything failing.
-# tools/vfp goes on the path FIRST so the ignored copy can never shadow it.
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'vfp'))
 from read_vfp_binary import Dbf
 
 # The profile this target declares, for manifest.py to import (R24.1).
@@ -84,7 +78,12 @@ def generate(path):
     for i, f in enumerate(fonts, 1):
         fp = parse_props(f['PROPS'])
         if fp.get('name') and fp.get('size'):
-            fontcss[i] = "font-family:%s;font-size:%spt" % (fp['name'], fp['size'])
+            css = "font-family:%s;font-size:%spt" % (fp['name'], fp['size'])
+            if (fp.get('bold') or '').upper().startswith('.T'):
+                css += ";font-weight:bold"          # R56
+            if (fp.get('italic') or '').upper().startswith('.T'):
+                css += ";font-style:italic"
+            fontcss[i] = css
 
     def esc(t):
         return html.escape(t or '')

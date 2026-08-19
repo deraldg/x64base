@@ -7,12 +7,6 @@ inferred that the source does not state.
 """
 import os, re, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-# `read_vfp_binary` is the VFP binary reader and it lives in tools/vfp.
-# tools/uidef/read_vfp_binary.py is a GITIGNORED working copy, so importing it
-# from this directory made nine committed tools unimportable on a fresh clone --
-# found by the house 'sweep for your own leftovers' rule, not by anything failing.
-# tools/vfp goes on the path FIRST so the ignored copy can never shadow it.
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'vfp'))
 from read_vfp_binary import Dbf
 import classlib
 import uidef
@@ -205,12 +199,19 @@ def convert(scx_path, out_stem):
     # to a line of their own file's cache on (name, size) -- 98.9%. So it is parsed,
     # not just carried. Field 1 is the name and field 3 the point size; the rest are
     # metrics whose meaning is not established here, so they ride as `Metrics`.
-    font_index = {}          # (name.lower(), size) -> 1-based FONTREF
+    font_index = {}          # (name.lower(), size) -> 1-based FONTREF, cache lines
+    styled_index = {}        # (name.lower(), size, bold, italic) -> ref, derived
+    # R56: a font's IDENTITY is name + size + weight + slant. The cache line's
+    # fields beyond 1 and 3 are still uninterpreted, so a cache row is recorded as
+    # NOT bold and NOT italic; an object that declares either gets a derived row.
+    # Measured: 561 corpus objects declare FontBold (158 of them .T.) and 3 declare
+    # FontItalic (all .T.), so 161 objects carried an emphasis the table dropped.
     for i,f in enumerate(fonts,1):
         parts=[x.strip() for x in f.split(',')]
         pairs=[('Metrics','%s'%f)]
         if len(parts)>=3:
-            pairs=[('Name','"%s"'%parts[0]),('Size',parts[2]),('Metrics','%s'%f)]
+            pairs=[('Name','"%s"'%parts[0]),('Size',parts[2]),
+                   ('Bold','.F.'),('Italic','.F.'),('Metrics','%s'%f)]
             font_index[(parts[0].lower(), parts[2])]=i
         out.append({'RECKIND':'FONT','OBJID':'FONT%d'%i,'ORDINAL':i,
                     'PROVENANCE':'imported','PROPS':uidef.props(pairs)})
@@ -227,6 +228,24 @@ def convert(scx_path, out_stem):
         nm=(p.get('fontname') or '').strip().strip('"')
         if not nm: return 0
         sz=(p.get('fontsize') or '').strip()
+        bold=(p.get('fontbold') or '').strip().upper().startswith('.T')
+        ital=(p.get('fontitalic') or '').strip().upper().startswith('.T')
+        if bold or ital:
+            # R56: emphasis is part of the font, so a bold object cannot share the
+            # plain cache line. Give it its own row, keyed on all four components.
+            skey=(nm.lower(), sz, bold, ital)
+            if skey in styled_index: return styled_index[skey]
+            i=len(fonts)+len(extra_fonts)+1
+            extra_fonts.append({'RECKIND':'FONT','OBJID':'FONT%d'%i,'ORDINAL':i,
+                                'PROVENANCE':'derived',
+                                'PROPS':uidef.props([('Name','"%s"'%nm),('Size',sz or '0'),
+                                                     ('Bold','.T.' if bold else '.F.'),
+                                                     ('Italic','.T.' if ital else '.F.'),
+                                                     ('Metrics','(emphasis declared on the '
+                                                      'object; the source cache has no '
+                                                      'styled line)')])})
+            styled_index[skey]=i
+            return i
         key=(nm.lower(), sz)
         if key in font_index: return font_index[key]
         # A cache may lag an edit -- 18 of 1688 in the corpus. The object's own
@@ -236,6 +255,7 @@ def convert(scx_path, out_stem):
         extra_fonts.append({'RECKIND':'FONT','OBJID':'FONT%d'%i,'ORDINAL':i,
                             'PROVENANCE':'derived',
                             'PROPS':uidef.props([('Name','"%s"'%nm),('Size',sz or '0'),
+                                                 ('Bold','.F.'),('Italic','.F.'),
                                                  ('Metrics','(declared on the object; '
                                                   'not in the source font cache)')])})
         font_index[key]=i
