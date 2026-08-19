@@ -79,7 +79,8 @@ recursing that directory.
 | **R16** -- a stated dimension is advisory when content determines it; A/B render evidence | `docs/maintenance/AIF120_ORIGIN_AB_RULING_V1.md` |
 | **R17** -- a BOUND control's width is in the data schema, not the design; r=0.998 on two forms | `docs/maintenance/AIF120_BOUND_WIDTH_RULING_V1.md` |
 | **R18** -- `.MNX` submenu links resolve by `OBJCODE 77` + document order, never by name; contract s11 exercised | `docs/maintenance/AIF120_MENU_NESTING_RULING_V1.md` |
-| The UIDEF tooling | `tools/uidef/uidef.py`, `import_scx.py`, `import_mnx.py`, `uidef_tk.py`, `uidef_tk_menu.py` |
+| **R11 + R14 verified at runtime** on Tk; `FLOW` and `PROVENANCE=authored` exercised for the first time | `docs/maintenance/AIF120_DISPATCH_RUNTIME_V1.md` |
+| The UIDEF tooling | `tools/uidef/uidef.py`, `import_scx.py`, `import_mnx.py`, `uidef_tk.py`, `uidef_tk_menu.py`, `author_uidef.py`, `dispatch_test.py` |
 | The shipped GUI core the ruling adopts | `src/gui/core/`, `include/gui/core/`, `docs/ui/GUI_THREADING_RAII_CONTRACT_V1.md` |
 | Specimen-by-specimen measurements and the corrections between them | `docs/maintenance/AIF120_VFP_SCX_EMPIRICAL_BASELINE_V1.md` |
 | The reader that produced every measurement | `tools/vfp/read_vfp_binary.py` |
