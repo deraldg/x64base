@@ -20,6 +20,15 @@ from read_vfp_binary import Dbf
 import tkinter as tk
 
 
+# The capabilities THIS target provides, as a vocabulary a conformance check can
+# import. host_table() builds its callables from this tuple, so the two cannot
+# disagree.
+CAPABILITIES = (
+    'edit.cut', 'edit.copy', 'edit.paste', 'edit.clear', 'edit.select_all',
+    'edit.undo', 'edit.redo',
+)
+
+
 def host_table(text):
     """What THIS target provides. R20.3: no registry entry, no thread rule.
 
@@ -28,7 +37,7 @@ def host_table(text):
     """
     def ev(name):
         return lambda: text.event_generate(name)
-    return {
+    impl = {
         'edit.cut':        ev('<<Cut>>'),
         'edit.copy':       ev('<<Copy>>'),
         'edit.paste':      ev('<<Paste>>'),
@@ -37,6 +46,8 @@ def host_table(text):
         'edit.undo':       text.edit_undo,
         'edit.redo':       text.edit_redo,
     }
+    assert set(impl) == set(CAPABILITIES), "CAPABILITIES has drifted from host_table"
+    return impl
 
 
 def parse_props(txt):

@@ -53,9 +53,46 @@ def convert(scx_path, out_stem):
           'PROPS':uidef.props([('Version','1'),('Origin','vfp-scx'),
                                ('SourceFile', os.path.basename(scx_path))]),
           'SOURCE':uidef.props(src) if src else ''}]
+    # The RESERVED record's lines are the document's FONT TABLE, not a decoration:
+    # measured, 1670 of 1688 objects that declare a FontName in the corpus resolve
+    # to a line of their own file's cache on (name, size) -- 98.9%. So it is parsed,
+    # not just carried. Field 1 is the name and field 3 the point size; the rest are
+    # metrics whose meaning is not established here, so they ride as `Metrics`.
+    font_index = {}          # (name.lower(), size) -> 1-based FONTREF
     for i,f in enumerate(fonts,1):
+        parts=[x.strip() for x in f.split(',')]
+        pairs=[('Metrics','%s'%f)]
+        if len(parts)>=3:
+            pairs=[('Name','"%s"'%parts[0]),('Size',parts[2]),('Metrics','%s'%f)]
+            font_index[(parts[0].lower(), parts[2])]=i
         out.append({'RECKIND':'FONT','OBJID':'FONT%d'%i,'ORDINAL':i,
-                    'PROVENANCE':'imported','PROPS':'Metrics = %s\r\n'%f})
+                    'PROVENANCE':'imported','PROPS':uidef.props(pairs)})
+    extra_fonts=[]           # declarations the source cache does not contain
+
+    def fontref(p):
+        """Resolve an object's OWN declared font. 0 means the target's default.
+
+        The old code was `1 if fonts else 0` -- every object pointed at cache line
+        one. That discards a real declaration on 56% of corpus objects and asserts a
+        font for the other 44%. The field table says 0 is the target default, so an
+        object that states no font gets 0.
+        """
+        nm=(p.get('fontname') or '').strip().strip('"')
+        if not nm: return 0
+        sz=(p.get('fontsize') or '').strip()
+        key=(nm.lower(), sz)
+        if key in font_index: return font_index[key]
+        # A cache may lag an edit -- 18 of 1688 in the corpus. The object's own
+        # declaration is the truth, so add a row for it rather than snapping it to
+        # the nearest cache line.
+        i=len(fonts)+len(extra_fonts)+1
+        extra_fonts.append({'RECKIND':'FONT','OBJID':'FONT%d'%i,'ORDINAL':i,
+                            'PROVENANCE':'derived',
+                            'PROPS':uidef.props([('Name','"%s"'%nm),('Size',sz or '0'),
+                                                 ('Metrics','(declared on the object; '
+                                                  'not in the source font cache)')])})
+        font_index[key]=i
+        return i
 
     # OBJID per source object, keyed on the dotted path (R5: identity is the path)
     # R5: identity is the DOTTED PATH, never OBJNAME. form1.scx carries three
@@ -94,9 +131,13 @@ def convert(scx_path, out_stem):
                     'ORDINAL':ordinal[pid],'KIND':KINDMAP[b],
                     'FLOW':'free' if b in ('form','container','pageframe') else '',
                     'BINDING':p.get('controlsource','').strip('"'),
-                    'FONTREF':1 if fonts else 0,'PROVENANCE':'imported',
+                    'FONTREF':fontref(p),'PROVENANCE':'imported',
                     'PROPS':uidef.props(sorted(keep.items())),
                     'ORIGIN':uidef.props(org),'HANDLERS':uidef.props(hs)})
+    # FONTREF is an index into this document's FONT rows in table order, so any
+    # row added for a declaration the cache lacked goes on the end, keeping the
+    # indices already handed out valid.
+    out.extend(extra_fonts)
     nrec,rlen,hlen = uidef.write(out_stem+'.DBF', out_stem+'.FPT', out)
     return out, refused, (nrec,rlen,hlen)
 

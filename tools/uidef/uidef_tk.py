@@ -32,6 +32,16 @@ from read_vfp_binary import Dbf
 # width truncates labels, honouring none loses field sizing, honouring only the
 # data-sized ones keeps both.
 CONTENT_SIZED = {'label','button','check','radio','group','page'}
+
+# The kinds THIS target renders. Exposed as a constant so a conformance check can
+# import it rather than keep a second opinion about what Tk supports -- the failure
+# mode R22.1 and R23.4 both landed on.
+KINDS_RENDERED = frozenset((
+    'form', 'label', 'text', 'button', 'check', 'radio', 'list', 'combo',
+    'image', 'panel', 'page', 'group', 'pageset',
+))
+FLOWS_SUPPORTED = frozenset(('row', 'column', 'grid', 'free'))
+DISPATCH_SUPPORTED = frozenset(('ui', 'worker', 'host'))
 DATA_SIZED    = {'text','list','combo','image'}
 
 KIND_WIDGET = {          # contract section 4, the fourteen v1 kinds
@@ -109,13 +119,30 @@ def describe(path):
 def build_window(path):
     import tkinter as tk
     from tkinter import ttk
+    from tkinter import font as tkfont
     doc, fonts, objs = load(path)
     kids = tree(objs)
     rec = {(r['OBJID'] or '').strip(): r for r in objs}
     root = tk.Tk()
+
+    # FONTREF is a 1-based index into the document's FONT rows in table order
+    # (contract field table). Until 2026-08-19 nothing resolved it -- FONT rows were
+    # produced by the importer and consumed by nobody, which is how every object came
+    # to point at cache line 1 without anyone noticing.
+    fontobj = {}
+    for i, fr in enumerate(fonts, 1):
+        fp = parse_props(fr['PROPS'])
+        fam = fp.get('name')
+        try:
+            size = int(float(fp.get('size') or 0))
+        except ValueError:
+            size = 0
+        if fam and size:
+            fontobj[i] = tkfont.Font(family=fam, size=size)
     root.title(parse_props(doc['PROPS']).get('sourcefile', 'UIDEF'))
     made = {}
     notes = []
+    applied = []
 
     def container_flow(oid):
         # Contract section 5, field table line: FLOW is "P on containers". The
@@ -128,6 +155,7 @@ def build_window(path):
 
     def build(pid, parent):
         pflow = container_flow(pid)
+        pkind = ((rec[pid]['KIND'] or '').strip().lower() if pid in rec else '')
         gcols = None
         if pflow == 'grid':
             gp = parse_props(rec[pid]['PROPS']) if pid in rec else {}
@@ -168,16 +196,27 @@ def build_window(path):
                 'panel':  lambda: ttk.Frame(parent, relief='groove', borderwidth=1),
                 'page':   lambda: ttk.Frame(parent),
                 'group':  lambda: ttk.LabelFrame(parent, text=cap),
+                # `pageset` is in the contract's vocabulary and import_scx maps
+                # `pageframe` onto it, but this file had no factory for it, so the
+                # reference consumer refused every tabbed form it was given. Found
+                # by manifest.py on its first run over form1.scx.
+                'pageset': lambda: ttk.Notebook(parent),
             }.get(kind)
             if factory is None:
                 print("REFUSED kind %r on %s -- contract s4" % (kind, oid))
                 continue
+            assert kind in KINDS_RENDERED, (
+                "%r renders but is not in KINDS_RENDERED -- the constant has drifted"
+                % kind)
             w = factory()
             # Contract s8: a generator that honours ORIGIN must honour ORIGIN_SCALE.
             # Position is honoured; SIZE is filtered by R16 -- honouring a label's
             # stated width truncates it on a toolkit with a different font.
             span = int(float((r['SPAN'] or '0').strip() or 0)) or 1
-            if pflow == 'free' or not pflow:
+            if pkind == 'pageset':
+                # A tab is not placed by a geometry manager; the notebook owns it.
+                parent.add(w, text=cap or oid)
+            elif pflow == 'free' or not pflow:
                 if 'origin_top' in org and 'origin_left' in org:
                     kw = dict(x=float(org['origin_left']), y=float(org['origin_top']))
                     if 'origin_width' in org and kind not in CONTENT_SIZED:
@@ -204,10 +243,29 @@ def build_window(path):
                     cell[0] += 1; cell[1] = 0
             else:
                 w.pack(anchor='w')
+            try:
+                fri = int(float((r['FONTREF'] or '0').strip() or 0))
+            except ValueError:
+                fri = 0
+            if fri:
+                f = fontobj.get(fri)
+                if f is None:
+                    notes.append("FONTREF %d on %s names no usable FONT row" % (fri, oid))
+                else:
+                    try:
+                        w.configure(font=f)
+                        applied.append((oid, fri))
+                    except tk.TclError:
+                        # ttk styles a Button's font through the style, not the
+                        # widget. Say so rather than drop it silently.
+                        notes.append("FONTREF %d on %s (%s): this toolkit will not "
+                                     "take a font on that widget" % (fri, oid, kind))
             made[oid] = w
             build(oid, w)
 
     build("", root)
+    if fonts:
+        print("  FONT rows=%d  FONTREF applied to %d widget(s)" % (len(fonts), len(applied)))
     for nt in notes:
         print("  " + nt)
     return root, made
