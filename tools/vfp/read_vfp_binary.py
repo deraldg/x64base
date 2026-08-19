@@ -42,6 +42,22 @@ FORM_COLS = ("PLATFORM", "OBJNAME", "PARENT", "BASECLASS", "CLASS",
              "CLASSLOC", "PROPERTIES", "METHODS", "OBJCODE")
 
 
+# VFP's language-driver byte (DBF header offset 29) -> a Python codec.
+# AIF-120 R33. The reader decoded every byte as latin1 and never looked at this
+# byte, which is correct for exactly one of the seventeen values below and silently
+# wrong for the rest. x64base's own message catalog already ships five locales
+# behind SET LOCALE, so this is the design table failing a standard the rest of the
+# tree already meets.
+LANGUAGE_DRIVER = {
+    0x00: None,          0x01: "cp437",   0x02: "cp850",   0x03: "cp1252",
+    0x64: "cp852",       0x65: "cp866",   0x66: "cp865",   0x67: "cp861",
+    0x78: "cp950",       0x79: "cp949",   0x7a: "cp936",   0x7b: "cp932",
+    0x7c: "cp874",       0x7d: "cp1255",  0x7e: "cp1256",
+    0xc8: "cp1250",      0xc9: "cp1251",  0xca: "cp1254",  0xcb: "cp1253",
+}
+FALLBACK_ENCODING = "latin1"     # byte-preserving; never raises, never correct
+
+
 class Dbf:
     def __init__(self, path):
         self.path = path
@@ -51,6 +67,9 @@ class Dbf:
         if len(d) < 32:
             raise ValueError("%s: too short to be a DBF (%d bytes)" % (path, len(d)))
         self.version = d[0]
+        self.codepage_byte = d[29]
+        self.encoding = LANGUAGE_DRIVER.get(d[29]) or FALLBACK_ENCODING
+        self.encoding_declared = LANGUAGE_DRIVER.get(d[29]) is not None
         self.nrec, = struct.unpack("<I", d[4:8])
         self.hlen, = struct.unpack("<H", d[8:10])
         self.rlen, = struct.unpack("<H", d[10:12])
@@ -61,7 +80,7 @@ class Dbf:
             fb = d[off:off + 32]
             if len(fb) < 32:
                 break
-            self.fields.append((fb[:11].split(b"\0")[0].decode("latin1"),
+            self.fields.append((fb[:11].split(b"\0")[0].decode("ascii", "replace"),
                                 chr(fb[11]), fb[16], fb[17]))
             off += 32
 
@@ -71,6 +90,8 @@ class Dbf:
         self.width_sum = 1 + sum(f[2] for f in self.fields)
         self.width_ok = (self.width_sum == self.rlen)
 
+        self.undecodable = set()
+        self._cur = None
         self.memo = None
         self.blocksize = 0
         self.memo_path = None
@@ -84,6 +105,58 @@ class Dbf:
                     self.memo_path = cand
                     self.blocksize, = struct.unpack(">H", self.memo[6:8])
                     break
+
+    def _dec(self, raw, field=None):
+        """Decode using the codepage the FILE declares, not the one we assume.
+
+        Falling back matters and so does knowing WHERE. A `.SCX` keeps compiled
+        method bytecode in `OBJCODE` and binary in the `RESERVED*` columns; those
+        are not text in any codepage and must not be reported as an encoding
+        problem. A `PROPERTIES` or `OBJNAME` that will not decode is a real one.
+        """
+        try:
+            return raw.decode(self.encoding)
+        except (UnicodeDecodeError, LookupError):
+            if field:
+                self.undecodable.add(field)
+            return raw.decode(FALLBACK_ENCODING)
+
+    def _binary_value(self, typ, raw):
+        """VFP's BINARY column types. R33.3.
+
+        `I`, `Y`, `B`, `T`, `W` and `0` hold packed bytes, not text, and this
+        reader decoded every non-memo column as characters. Measured: 79 such
+        columns across the corpus -- 46 `I`, 20 `Y`, 3 `B`, plus `T`, `W` and the
+        `0` null-flags column. Nothing this lane has measured used one, because
+        STUDENTS and ACCOUNTS declare `N` and `C` throughout; checked, not assumed.
+        """
+        try:
+            if typ == "I":
+                return struct.unpack("<i", raw[:4])[0]
+            if typ == "Y":                    # currency: int64 scaled by 10^4
+                return struct.unpack("<q", raw[:8])[0] / 10000.0
+            if typ == "B":
+                return struct.unpack("<d", raw[:8])[0]
+            if typ == "T":                    # datetime: Julian day + ms past midnight
+                jd, ms = struct.unpack("<ii", raw[:8])
+                return "%d:%d" % (jd, ms)
+        except struct.error:
+            pass
+        return raw                            # `W`, `G`, `0`: hand back the bytes
+
+    BINARY_TYPES = frozenset("IYBTW0G")
+
+    # Columns that are binary by design, so a decode failure in them says nothing.
+    BINARY_FIELDS = frozenset((
+        "OBJCODE", "OLE", "OLE2", "USER", "PROTECTED",
+        "RESERVED1", "RESERVED2", "RESERVED3", "RESERVED4",
+        "RESERVED5", "RESERVED6", "RESERVED7", "RESERVED8",
+    ))
+
+    @property
+    def encoding_ok(self):
+        """True when every field that is supposed to be TEXT decoded."""
+        return not (self.undecodable - self.BINARY_FIELDS)
 
     def has_memo_fields(self):
         return any(f[1] == "M" for f in self.fields)
@@ -109,7 +182,7 @@ class Dbf:
             if len(raw) == 4:
                 block = struct.unpack("<I", raw)[0]
             else:
-                s = raw.decode("latin1").strip("\0 ")
+                s = self._dec(raw).strip("\0 ")
                 if not s:
                     return None, "null"
                 if not s.isdigit():
@@ -126,7 +199,7 @@ class Dbf:
         if p + 8 + ln > len(self.memo):
             return None, "block %d claims %d bytes, sidecar has %d" % (
                 block, ln, len(self.memo) - p - 8)
-        return self.memo[p + 8:p + 8 + ln].decode("latin1"), "ok"
+        return self._dec(self.memo[p + 8:p + 8 + ln], self._cur), "ok"
 
     def rows(self):
         p = self.hlen
@@ -140,13 +213,17 @@ class Dbf:
             for name, typ, w, _dec in self.fields:
                 raw = rec[o:o + w]
                 o += w
+                if typ in self.BINARY_TYPES:
+                    row[name] = self._binary_value(typ, raw)
+                    continue
                 if typ == "M":
+                    self._cur = name
                     txt, status = self.read_memo(raw)
                     if status not in ("ok", "null"):
                         row["_MEMO_ERR"].append("%s: %s" % (name, status))
                     row[name] = txt or ""
                 else:
-                    row[name] = raw.decode("latin1").strip()
+                    row[name] = self._dec(raw, name).strip()
             yield row
 
 

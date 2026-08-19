@@ -24,6 +24,12 @@ and a Python with tkinter -- 3.12 here, 3.11 has none):
 """
 import os, subprocess, sys, time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# `read_vfp_binary` is the VFP binary reader and it lives in tools/vfp.
+# tools/uidef/read_vfp_binary.py is a GITIGNORED working copy, so importing it
+# from this directory made nine committed tools unimportable on a fresh clone --
+# found by the house 'sweep for your own leftovers' rule, not by anything failing.
+# tools/vfp goes on the path FIRST so the ignored copy can never shadow it.
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'vfp'))
 from read_vfp_binary import Dbf
 
 # R16: a stated ORIGIN size is ADVISORY for controls whose size their content
