@@ -141,14 +141,52 @@ Portable because ordinal containment is the one primitive every candidate has:
 Turbo Vision nests `TRect`s, wx nests sizers, Qt nests layouts, Tk packs and
 grids, the browser flows boxes.
 
-**An absent dimension is never defaulted to a number.** A control that does not
-state a size gets one from its content and its font -- from the `FONT` rows if
+**An absent dimension is never defaulted to a number, and for many controls a
+PRESENT one is ignored too** (R16, R17). A control that does not state a size gets
+one from its content and its font -- from the `FONT` rows if
 `FONTREF` is set, from the target's own font otherwise. A reader that derives a
 dimension **must record that it derived it** and must never write the derived
 value back into `ORIGIN`. (R12.3. Writing it back launders a guess into a
 measurement.)
 
-### 5b. FIRST TEST OF SECTION 5, AND IT FAILS -- imports are `free`, not `grid`
+### 5b. FIRST TEST OF SECTION 5 -- imports are `free`, and R19 says that is CORRECT
+
+> **THIS SECTION'S FRAMING WAS WITHDRAWN BY R19, same run, 2026-08-19.** What
+> follows called the high `free` rate a **defect in this contract**. It is not. It
+> is a fact about how forms were authored, and `free` plus an `ORIGIN` group is the
+> **correct** representation of most imported documents.
+>
+> Two things were wrong with the test below. It clustered `TOP` independently,
+> which baseline offsets defeat -- a label sits four units below its own field, so
+> nine visual rows present as eighteen `TOP` values. And its lattice criterion was
+> permissive to the point of meaninglessness: `19 tops x 3 lefts >= 19` holds for
+> almost any arrangement, so it measured "no two controls share a coordinate".
+>
+> A correct method -- cluster on `LEFT` only, sort each column by `TOP`, read rows
+> off by index, and treat a real form as **a grid plus outliers** -- infers
+> `STUDENTS.SCX` as `grid, 2 columns x 9 rows + 1 outlier` and `ACCOUNTS.SCX` as
+> `2 x 10 + 1`, both exactly right, where the test below called both `free`.
+> Corpus-wide it finds **fewer** grids, not more: **16%** of 228 container groups
+> against the 40% below, because the 40% counted arrangements that are not grids.
+>
+> **So 84% of real container groups genuinely are not row, column or grid**, and
+> `free` is not an inference failure. `tools/uidef/infer_flow.py`, ruling
+> `AIF120_FLOW_INFERENCE_V1.md`.
+>
+> **The correction this section proposes is still required, for a better reason.**
+> A generator that refuses `FLOW = free` refuses most real documents
+> **permanently**, not until an importer improves. Section 12 must be narrowed
+> either way.
+>
+> **And R12 is confirmed with its scope measured.** Layout intent is right for
+> AUTHORED documents -- the hand-authored test document is `FLOW = column` with no
+> `ORIGIN` on any row and it renders. For imports the intent mostly does not exist
+> to recover. UIDEF has two permanent populations, and an interchange format must
+> represent what documents ARE.
+>
+> The original text follows as the record of what was claimed.
+
+#### Original 5b, withdrawn -- imports are `free`, not `grid`
 
 Run the same day this contract was drafted, against 228 container groups in 170
 real forms. **The finding contradicts how section 5 reads.**
@@ -270,8 +308,35 @@ ORIGIN_WIDTH = 200
 ORIGIN_SCALE = px
 ```
 
-- **a generator may ignore `ORIGIN` entirely and remain conformant**
-- a generator that honours it **must** honour `ORIGIN_SCALE` or refuse the row
+> **SUPERSEDED IN PART by R16 and R17, 2026-08-19, both runtime-proven.** The two
+> permissions below -- honour it, or ignore it entirely -- were both measured and
+> **both are wrong**. Honouring every width truncates every label on a toolkit
+> whose font differs from the authoring font; ignoring every width discards field
+> sizing the document knows and the target cannot infer. Evidence:
+> `docs/maintenance/evidence/AIF120_width_ace.png`.
+>
+> The rule that replaces them, for SIZE only -- position is unaffected:
+>
+> | control | width comes from |
+> | --- | --- |
+> | content-sized (`label`, `button`, `check`, `radio`, `group`, `page`) | its own content in the target's font (**R16**) |
+> | data-sized and **bound** | the bound field's declared width, in characters (**R17**) |
+> | data-sized and **unbound** | `ORIGIN_WIDTH` with its `ORIGIN_SCALE` |
+> | containers (`form`, `panel`, `pageset`) | `ORIGIN`, honoured |
+>
+> **A width for a content-sized or bound control therefore need not be carried at
+> all**, and a target must prefer content or schema over any width that is.
+> Measured basis: authored pixel width correlates with the bound field's declared
+> width at **r = 0.9982** (`STUDENTS`, n=9) and **r = 0.9977** (`ACCOUNTS`, n=8),
+> fit `px = 7.00 * chars + 11.4` -- the slope is the authoring font's character
+> cell, which is exactly what does not travel.
+>
+> Rulings: `AIF120_ORIGIN_AB_RULING_V1.md`, `AIF120_BOUND_WIDTH_RULING_V1.md`.
+
+- ~~a generator may ignore `ORIGIN` entirely and remain conformant~~ -- see above;
+  position may be ignored, size is governed by R16/R17
+- a generator that honours a **position** or an unbound size **must** honour
+  `ORIGIN_SCALE` or refuse the row
 - any member may be absent. Absence is normal: measured across 2,684
   geometry-bearing records in 170 real forms, 13.7% are partial, and containers
   are the ones that omit -- `form` 57%, `panel`-shaped 47%, while sized controls
@@ -361,8 +426,11 @@ records any dimension it derived.
 emits any `ORIGIN_*`; never writes a derived dimension into `ORIGIN`; sets
 `PROVENANCE`; writes `SOURCE.Table` relative to the document.
 
-**A conformant GENERATOR** may ignore `ORIGIN` wholly, may refuse `FLOW = free`,
-must refuse unknown `KIND`, and must implement `DISPATCH`.
+**A conformant GENERATOR** may ignore `ORIGIN` **positions**, must apply R16/R17
+for sizes rather than either honouring or ignoring `ORIGIN` wholesale, must refuse
+unknown `KIND`, and must implement `DISPATCH`. Its permission to refuse
+`FLOW = free` is contested -- see 5b, which measures that doing so refuses the
+majority of imported documents.
 
 ## 13. What v1 does not do, stated so nobody has to discover it
 

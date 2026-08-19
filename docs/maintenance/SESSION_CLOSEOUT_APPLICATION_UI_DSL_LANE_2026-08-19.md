@@ -151,10 +151,54 @@ source in one commit and 16 in another. Adding the designer suffixes to
 
 **To whoever owns `tools/coordination/session_coordinator.py`:** see section 5.
 
+## 6b. ADDENDUM -- the session continued well past this closeout
+
+This closeout was written when the lane stood at R13 and gate 10 was "ready to
+start". The maintainer said keep going, and it did. Recorded here rather than in a
+second closeout, so there is one place to look.
+
+**Rulings R14 through R19**, all review-needed:
+
+| ruling | what | how it was found |
+| --- | --- | --- |
+| **R14** | method bodies never enter v1; the table carries a handler REFERENCE | 2,404 real procedures, 86% navigate the object model |
+| **R15** | the formats share TWO layers -- the DBF container AND a `name = value` property language with shared keys | testing every column of every record instead of the expected one |
+| **R16** | a stated dimension is advisory when CONTENT determines it | two conformant renders of one document, side by side |
+| **R17** | a BOUND control's width is in the data schema, not the design | r=0.9982 and r=0.9977 on two independent forms |
+| **R18** | a structural link must never be inferred from a field the format lets be blank | `.MNX` nesting: 2 of 9 openers have an empty `NAME` |
+| **R19** | `FLOW=free` is what most real forms ARE, not an inference failure | 84% of 228 container groups; withdrew this session's own 5b framing |
+
+**Gates:** 8 and 9 ruled; **10 drafted, reconciled twice**, and implemented;
+**11 spiked on a second backend for both forms and menus.**
+
+**Tooling that now exists**, all in `tools/uidef/` unless noted:
+`../vfp/write_vfp_binary.py` (VFP accepts its output), `uidef.py` (schema, DBF
+writer, conformance validator), `import_scx.py`, `import_mnx.py`, `uidef_tk.py`,
+`uidef_tk_menu.py`, `author_uidef.py`, `dispatch_test.py`, `infer_flow.py`.
+
+**Runtime-proven results:** VFP 9 opened, ran and round-tripped an x64base-generated
+`.SCX`; a Tk form and a Tk menubar built from UIDEF tables alone; all three R11
+dispatch clauses verified with thread identities compared.
+
+**Six evidence renders** under `docs/maintenance/evidence/`.
+
+**The pattern held to the end.** Of the six later rulings, five were produced or
+corrected by making something and looking at it -- two VFP rejections, five
+renders, a validator that caught the author violating R5, `cmp` stopping a false
+count, and a fixed algorithm inverting a conclusion this session had already
+committed. **The reading phase produced plausible documents; production found what
+was wrong with every one.**
+
+**Corrections this session made to itself, total: eleven.** Eight are listed in
+section 2; R19 withdrawing 5b, the contract reconciled twice against its own newer
+rulings, and the `X64FORM.SCX` case normalisation are the rest.
+
 ## 7. What the next session inherits
 
-**Ready:** gate 10 -- the design table as a standalone contract, which the
-charter calls the actual deliverable. It goes in with four things this lane did
+**Ready:** gate 10 is drafted and implemented; what remains is owner review of
+R1-R19 and the two defects the contract records against itself (section 12's
+permission to refuse `FLOW = free`, and section 4's refuse-the-whole-document rule
+which rejects 82% of real forms). It goes in with four things this lane did
 not have yesterday: R13's per-direction requiredness; relative-to-document
 addressing; container-versus-control geometry normalisation; and measured proof
 that `.SCX`, `.MNX`, `.FRX` and `.VCX` each encode shared concepts differently.
