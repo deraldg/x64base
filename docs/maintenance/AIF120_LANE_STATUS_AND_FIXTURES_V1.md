@@ -106,7 +106,7 @@ recursing that directory.
 | **R40** -- a compiled wx C++ backend; compiling is not rendering | `docs/maintenance/AIF120_WX_BACKEND_V1.md` |
 | **R41** -- the dispatch runtime in C++; the rule survived the primitives | `docs/maintenance/AIF120_WX_DISPATCH_V1.md` |
 | **R42** -- a ruling shipped and its code did not; `git add` on an ignored path is a silent no-op | `docs/maintenance/AIF120_SHIPPED_RULING_UNSHIPPED_CODE_V1.md` |
-| The UIDEF tooling | `tools/uidef/uidef.py`, `import_scx.py`, `import_mnx.py`, `uidef_tk.py`, `uidef_tk_menu.py`, `author_uidef.py`, `dispatch_test.py`, `infer_flow.py`, `contend_test.py`, `lifetime_test.py`, `uidef_tk_host.py`, `author_flow.py`, `manifest.py`, `author_fonts.py`, `author_tabs.py`, `relate_test.py`, `classlib.py`, `uidef_html.py`, `uidef_text.py`, `uidef_runtime.py`, `locked_test.py`, `adopt_test.py`, `scope_test.py`, `uidef_wx.py`, `uidef_rt.h`, `wx_demo_registry.cpp` |
+| The UIDEF tooling | `tools/uidef/uidef.py`, `import_scx.py`, `import_mnx.py`, `uidef_tk.py`, `uidef_tk_menu.py`, `author_uidef.py`, `dispatch_test.py`, `infer_flow.py`, `contend_test.py`, `lifetime_test.py`, `uidef_tk_host.py`, `author_flow.py`, `manifest.py`, `author_fonts.py`, `author_tabs.py`, `relate_test.py`, `classlib.py`, `uidef_html.py`, `uidef_text.py`, `uidef_runtime.py`, `locked_test.py`, `adopt_test.py`, `scope_test.py`, `uidef_wx.py`, `uidef_rt.h`, `wx_demo_registry.cpp`, `cite_check.py` |
 | The shipped GUI core the ruling adopts | `src/gui/core/`, `include/gui/core/`, `docs/ui/GUI_THREADING_RAII_CONTRACT_V1.md` |
 | Specimen-by-specimen measurements and the corrections between them | `docs/maintenance/AIF120_VFP_SCX_EMPIRICAL_BASELINE_V1.md` |
 | The reader that produced every measurement | `tools/vfp/read_vfp_binary.py` |

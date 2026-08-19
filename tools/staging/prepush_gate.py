@@ -94,6 +94,14 @@ HARD_BLOCK_BASENAMES = (
 
 # --- WARN lane: versioned data & generated runtime data ------------------------
 DATA_SUFFIXES = (".dbf", ".dbt", ".fpt", ".cnx", ".cdx", ".inx", ".mdx")
+# NOT here, deliberately, by owner ruling 2026-08-19: the FoxPro designer
+# extensions -- .scx/.sct, .mnx/.mnt, .vcx/.vct, .frx/.frt -- are VALID
+# x64base extensions. AIF-120 R10 measured that they are DBF tables, and an
+# earlier version of this line added them here on that basis. That conflated
+# two different things: this list exists to flag RUNTIME DATA CHURN staged by
+# accident (regenerated indexes, help tables), and a form or menu is an
+# AUTHORED ARTIFACT this project produces. Being DBF-shaped is a fact about
+# the container, not about the role. They stay source.
 DATA_DIR_SEGMENTS = (
     "/data/dbf/",
     "/data/indexes/",
@@ -556,6 +564,27 @@ def main() -> int:
         # ceiling was the project's cited exemplar of a bounded metric and had
         # still drifted 798 B unnoticed, because it was enforced by whoever
         # happened to be watching. Now it is enforced by this.
+        # 6. CITED PATHS -- ADVISORY, and scoped to this change set. A document
+        # that cites a repo path it does not ship is the house's WIDOW, and
+        # section 10 of the working rules says to sweep for them. That sweep had
+        # no mechanism, and AIF-120 R42 measured the cost: a ruling shipped
+        # asserting a fix that was not in tracked code, because `git add` on a
+        # gitignored path is a SILENT no-op. The commit was clean and every gate
+        # above passed -- correctly, since an ignored path never reaches the
+        # staged index they inspect. Nine committed tools were unimportable on a
+        # fresh clone for the same reason.
+        #
+        # Advisory, not blocking: a widow is usually someone forgetting to stage
+        # one file, and refusing the commit that carries the rest of their work
+        # is the wrong trade. Scoped to changed documents for the reason 5b
+        # gives -- a check that reports the whole tree's backlog every commit
+        # stops being read by the third day.
+        rc = _run_portal_check("tools/staging/check_cited_paths.py", [])
+        if rc == 3:
+            print("\n  ADVISORY -- a document in this change set cites a repo path "
+                  "that is not tracked (see above). NOT blocking. Stage the file, "
+                  "or stop citing it. An IGNORED path can never be staged at all.")
+
         rc = _run_portal_check("tools/staging/check_seed_budget.py", [])
         if rc == 2:
             print("\n  BLOCKED -- a document is over the byte budget it declares "

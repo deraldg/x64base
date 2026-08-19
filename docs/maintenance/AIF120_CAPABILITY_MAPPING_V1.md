@@ -192,7 +192,10 @@ git add docs/maintenance/evidence/AIF120_host_caps.png
 git add tools/uidef/import_mnx.py
 git add tools/uidef/uidef_tk_host.py
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
-git add coordination/active_sessions/COWORK-20260818-001.yaml
 git diff --cached --stat
+# NOTE added 2026-08-19 by R42: an earlier version of this block staged
+# coordination/active_sessions/COWORK-20260818-001.yaml, which is gitignored
+# by design -- session state is local. `git add` on it is a silent no-op, so
+# the line did nothing and has been removed. The heartbeat lives on disk.
 git commit -m "AIF-120: R22 -- host capability mapping closed; a translation table gets a caption guard, refusal is a visible outcome"
 ```

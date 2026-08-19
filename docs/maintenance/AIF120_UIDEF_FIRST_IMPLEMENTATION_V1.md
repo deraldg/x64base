@@ -185,5 +185,5 @@ git status --short -uall
 git commit -m "AIF-120: UIDEF first implementation -- writer, importer, validator; three defects found in the gate 10 contract"
 ```
 
-`tools/uidef/read_vfp_binary.py` is a working copy of the reader and
+`tools/vfp/read_vfp_binary.py` is a working copy of the reader and
 `tools/uidef/generated/` is output; neither needs tracking.
