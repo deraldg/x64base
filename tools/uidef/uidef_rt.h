@@ -13,6 +13,8 @@
 //   R20    a `host` handler needs no thread rule and no completion
 #pragma once
 #include <wx/wx.h>
+#include <wx/statbox.h>
+#include <wx/sizer.h>
 #include <atomic>
 #include <functional>
 #include <map>
@@ -31,6 +33,70 @@ struct Scope {
     explicit Scope(std::string n) : name(std::move(n)) {}
     void destroy() { alive = false; cancelled = true; }
 };
+
+// R45: a UIDEF `group` becomes a wxStaticBox, and a wxStaticBoxSizer OWNS that
+// box. Calling Destroy() on the box leaves the sizer holding a freed pointer, and
+// the next Layout() segfaults -- exit 139, no diagnostic. R44 named the containers
+// so a target could reach them and thereby handed out a handle that is unsafe to
+// use in the obvious way.
+//
+// The safe teardown is to delete the OWNING SIZER, whose destructor destroys the
+// box; the box's wxEVT_DESTROY still fires, so the scope is still cancelled. A
+// target must not have to know that, so it is here rather than in a comment.
+inline wxStaticBoxSizer* uidef_owner_of(wxSizer* s, wxStaticBox* box) {
+    if (!s) return nullptr;
+    if (auto* sb = dynamic_cast<wxStaticBoxSizer*>(s))
+        if (sb->GetStaticBox() == box) return sb;
+    for (auto* item : s->GetChildren())
+        if (auto* r = uidef_owner_of(item->GetSizer(), box)) return r;
+    return nullptr;
+}
+
+inline bool uidef_detach(wxSizer* from, wxSizer* target) {
+    if (!from) return false;
+    if (from->Detach(target)) return true;
+    for (auto* item : from->GetChildren())
+        if (uidef_detach(item->GetSizer(), target)) return true;
+    return false;
+}
+
+// Destroying a window with Destroy() defers to idle and every descendant gets its
+// own wxEVT_DESTROY on the way down. Deleting a sizer runs the destructors
+// IMMEDIATELY, and the descendants' bound handlers are gone by the time their
+// windows die -- so the safe-teardown path silently stopped cancelling nested
+// scopes while the crashing path had cancelled them correctly. Two ways to remove
+// the same container disagreed about R21.4.
+//
+// So the intent is announced before either teardown runs, depth-first, and the
+// handlers are idempotent (Scope::destroy only sets flags) so the second
+// announcement from a real wxEVT_DESTROY costs nothing.
+inline void uidef_announce_destroy(wxWindow* w) {
+    for (auto* c : w->GetChildren()) uidef_announce_destroy(c);
+    wxWindowDestroyEvent e(w);
+    w->GetEventHandler()->ProcessEvent(e);
+}
+
+/// Destroy the container named `objid` (its OBJID, set by the generator).
+/// Returns false if no such container is reachable from `root`.
+inline bool destroy_container(wxWindow* root, const wxString& objid) {
+    wxWindow* w = wxWindow::FindWindowByName(objid, root);
+    if (!w) return false;
+    uidef_announce_destroy(w);
+    if (auto* box = wxDynamicCast(w, wxStaticBox)) {
+        wxWindow* parent = box->GetParent();
+        wxSizer* top = parent ? parent->GetSizer() : nullptr;
+        if (wxStaticBoxSizer* owner = uidef_owner_of(top, box)) {
+            if (owner == top) parent->SetSizer(nullptr, false);
+            else uidef_detach(top, owner);
+            delete owner;              // destroys the box, fires wxEVT_DESTROY
+            if (parent) parent->Layout();
+            return true;
+        }
+    }
+    w->Destroy();
+    if (w->GetParent()) w->GetParent()->Layout();
+    return true;
+}
 
 class Runtime {
 public:

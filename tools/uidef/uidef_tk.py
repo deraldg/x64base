@@ -24,12 +24,6 @@ and a Python with tkinter -- 3.12 here, 3.11 has none):
 """
 import os, subprocess, sys, time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-# `read_vfp_binary` is the VFP binary reader and it lives in tools/vfp.
-# tools/uidef/read_vfp_binary.py is a GITIGNORED working copy, so importing it
-# from this directory made nine committed tools unimportable on a fresh clone --
-# found by the house 'sweep for your own leftovers' rule, not by anything failing.
-# tools/vfp goes on the path FIRST so the ignored copy can never shadow it.
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'vfp'))
 from read_vfp_binary import Dbf
 
 # R16: a stated ORIGIN size is ADVISORY for controls whose size their content
@@ -344,14 +338,32 @@ def build_window(path, registry=None, host=None):
 
     build("", root)
     if rt is not None:
+        # The pump reschedules itself, so at teardown there is always exactly one
+        # `after` in flight. Letting it fire into a torn-down interpreter prints
+        # `invalid command name "..._pump"` from Tcl -- on stderr, from a callback,
+        # with no traceback into this file. Harmless, and it is noise in every
+        # evidence capture this lane produces. Cancel it with the window.
+        pump_id = [None]
+
         def _pump():
             rt.pump()
             try:
-                root.after(30, _pump)
+                pump_id[0] = root.after(30, _pump)
             except tk.TclError:
-                pass
-        root.after(30, _pump)
-        root.bind('<Destroy>', lambda e: scope.destroy() if e.widget is root else None)
+                pump_id[0] = None
+        pump_id[0] = root.after(30, _pump)
+
+        def _root_gone(e):
+            if e.widget is not root:
+                return
+            if pump_id[0] is not None:
+                try:
+                    root.after_cancel(pump_id[0])
+                except tk.TclError:
+                    pass
+                pump_id[0] = None
+            scope.destroy()
+        root.bind('<Destroy>', _root_gone)
     if fonts:
         print("  FONT rows=%d  FONTREF applied to %d widget(s)" % (len(fonts), len(applied)))
     for nt in notes:
