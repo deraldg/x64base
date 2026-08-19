@@ -229,6 +229,8 @@ class Runtime:
         self.post = post or self.q.put
         self.ui_thread = threading.get_ident()
         self.log = []
+        self._workers = []
+        self._wlock = threading.Lock()
 
     def note(self, *a):
         self.log.append(a)
@@ -287,12 +289,39 @@ class Runtime:
                     self.domains.release(alias)
                 self.post((scope, completion, result, state))
 
-            threading.Thread(target=body, daemon=True).start()
+            # R55: the house GUI threading contract (docs/ui/GUI_THREADING_RAII_CONTRACT_V1.md)
+            # requires "worker threads joined or stopped from destructors" and names
+            # "no detached worker thread that can outlive its session or event sink"
+            # as an anti-pattern. This was `daemon=True` and never joined -- the
+            # process could exit with a handler mid-write.
+            t = threading.Thread(target=body, daemon=True)
+            with self._wlock:
+                self._workers.append(t)
+            t.start()
             self.note('worker', name)
             return True
 
         self.note('refused', name, 'unknown DISPATCH %r' % disp)
         return False
+
+    def shutdown(self, timeout=2.0):
+        """Stop cleanly: cancel nothing, but WAIT for what is already running.
+
+        The house contract's shutdown clause -- "queued work cancelled or drained in
+        a predictable shutdown path", "queued work does not outlive the session".
+        Callers that want the work abandoned destroy the scope first (R21.4); this
+        only guarantees no worker is still touching data when the session goes.
+        Returns the threads still alive after `timeout`, which should be empty.
+        """
+        with self._wlock:
+            pending = list(self._workers)
+        for t in pending:
+            t.join(timeout)
+        still = [t for t in pending if t.is_alive()]
+        with self._wlock:
+            self._workers = [t for t in self._workers if t.is_alive()]
+        self.pump()
+        return still
 
     # -- the completion pump, on the UI thread only --------------------
     def pump(self):

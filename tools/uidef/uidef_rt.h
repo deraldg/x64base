@@ -143,6 +143,17 @@ public:
                                             const std::vector<std::string>& aliases)>;
     void set_lock_provider(LockProvider p) { provider_ = std::move(p); }
 
+    /// Join every worker. The destructor calls this; a host may call it earlier to
+    /// make shutdown ordering explicit. Cancellation is a SCOPE concern (R21.4) --
+    /// this waits, it does not abandon.
+    void join_workers() {
+        std::vector<std::thread> mine;
+        { std::lock_guard<std::mutex> g(wm_); mine.swap(workers_); }
+        for (auto& t : mine) if (t.joinable()) t.join();
+    }
+
+    ~Runtime() { join_workers(); }
+
     void reg(const std::string& n, Handler h)    { handlers_[n] = std::move(h); }
     void comp(const std::string& n, Completion c){ comps_[n]    = std::move(c); }
     void host(const std::string& n, std::function<void()> f) { host_[n] = std::move(f); }
@@ -177,7 +188,7 @@ public:
             Handler fn = h->second;
             wxWindow* ui = ui_;
             auto self = this;
-            std::thread([this, fn, scope, completion, ui, self, name, alias] {
+            std::thread th([this, fn, scope, completion, ui, self, name, alias] {
                 std::string result, state = "completed";
                 // R47: ONE attempt. A busy domain refuses the handler rather than
                 // queueing it -- FLOCK() returns .F., it does not wait. Everything
@@ -200,7 +211,13 @@ public:
                 ui->CallAfter([self, scope, completion, result, state] {
                     self->deliver(scope, completion, result, state);
                 });
-            }).detach();
+            });
+            {   // R55: the house contract requires worker threads joined or stopped
+                // from destructors, and names a detached worker that can outlive its
+                // session an anti-pattern. This was `.detach()`.
+                std::lock_guard<std::mutex> g(wm_);
+                workers_.push_back(std::move(th));
+            }
             log("worker " + name);
             return true;
         }
@@ -293,6 +310,8 @@ private:
     std::vector<std::string> log_;
     std::mutex logm_;
     LockProvider provider_;
+    std::vector<std::thread> workers_;
+    std::mutex wm_;
 };
 
 // R49: the LOCK VERBS live in the RUNTIME, on both targets.
