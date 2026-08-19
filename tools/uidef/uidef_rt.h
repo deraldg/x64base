@@ -18,8 +18,10 @@
 #include <wx/sizer.h>
 #include <atomic>
 #include <functional>
+#include <algorithm>
 #include <map>
 #include <functional>
+#include <algorithm>
 #include <memory>
 #include <mutex>
 #include <condition_variable>
@@ -292,5 +294,51 @@ private:
     std::mutex logm_;
     LockProvider provider_;
 };
+
+// R49: the LOCK VERBS live in the RUNTIME, on both targets.
+//
+// R48.2 ruled that the runtime never renders a number into a command, because a
+// recno written through a default-constructed ostringstream under a grouping locale
+// becomes `LOCK 16,984` and reads back as 16 (AIF-116). That rule held in the Python
+// runtime by construction -- it writes the commands -- and was only HOPED FOR here,
+// because this seam handed the target a list of aliases and let it say whatever it
+// liked. A rule the runtime cannot enforce on one of its two targets is a rule that
+// target does not have.
+//
+// So the command text moves in. A target supplies only `run(text) -> bool`.
+//
+//   rt.set_lock_provider(uidef::lock_provider(
+//       [](const std::string& cmd){ return engine.execute(cmd); }));
+//
+// Ordering matches the Python provider exactly: sorted on acquire, reversed on
+// release, all-or-nothing with rollback -- a partial acquisition that survives a
+// refusal is held by a process that does not believe it holds it, and xbase::locks
+// will never call that stale.
+inline Runtime::LockProvider lock_provider(
+        std::function<bool(const std::string&)> run,
+        bool record_granularity = false) {
+    const std::string verb = record_granularity ? "LOCK" : "LOCK TABLE";
+    return [run, verb](bool acquire, const std::vector<std::string>& aliases) -> bool {
+        std::vector<std::string> in_order(aliases);
+        std::sort(in_order.begin(), in_order.end());
+        if (!acquire) {
+            for (auto it = in_order.rbegin(); it != in_order.rend(); ++it) {
+                run("SELECT " + *it);
+                run("UNLOCK");
+            }
+            return true;
+        }
+        std::vector<std::string> taken;
+        for (const auto& a : in_order) {
+            if (run("SELECT " + a) && run(verb)) { taken.push_back(a); continue; }
+            for (auto it = taken.rbegin(); it != taken.rend(); ++it) {
+                run("SELECT " + *it);
+                run("UNLOCK");
+            }
+            return false;
+        }
+        return true;
+    };
+}
 
 }  // namespace uidef
