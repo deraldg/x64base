@@ -62,7 +62,7 @@ recursing that directory.
 
 | subject | file |
 | --- | --- |
-| Lane charter, scope, proof gates, and rulings **R1 through R17** | `docs/maintenance/APPLICATION_UI_DSL_LANE_V1.md` |
+| Lane charter, scope, proof gates, and rulings **R1 through R18** | `docs/maintenance/APPLICATION_UI_DSL_LANE_V1.md` |
 | **R11, the threading ruling (gate 9)** -- full text, evidence, disproof conditions | `docs/maintenance/AIF120_THREADING_RULING_V1.md` |
 | **R12, the coordinate ruling (gate 8)** -- six measurements, disproof conditions | `docs/maintenance/AIF120_COORDINATE_RULING_V1.md` |
 | **VFP 9 reading an x64base-written table** -- the lane's first `runtime-proven` result | `docs/maintenance/AIF120_VFP_READS_X64BASE_OUTPUT_V1.md` |
@@ -78,7 +78,8 @@ recursing that directory.
 | **GATE 11 SPIKE** -- a Tk frontend built from the UIDEF table alone; truncated labels are R12's argument rendered | `docs/maintenance/AIF120_GATE11_TK_SPIKE_V1.md` |
 | **R16** -- a stated dimension is advisory when content determines it; A/B render evidence | `docs/maintenance/AIF120_ORIGIN_AB_RULING_V1.md` |
 | **R17** -- a BOUND control's width is in the data schema, not the design; r=0.998 on two forms | `docs/maintenance/AIF120_BOUND_WIDTH_RULING_V1.md` |
-| The UIDEF tooling | `tools/uidef/uidef.py`, `tools/uidef/import_scx.py`, `tools/uidef/uidef_tk.py` |
+| **R18** -- `.MNX` submenu links resolve by `OBJCODE 77` + document order, never by name; contract s11 exercised | `docs/maintenance/AIF120_MENU_NESTING_RULING_V1.md` |
+| The UIDEF tooling | `tools/uidef/uidef.py`, `import_scx.py`, `import_mnx.py`, `uidef_tk.py`, `uidef_tk_menu.py` |
 | The shipped GUI core the ruling adopts | `src/gui/core/`, `include/gui/core/`, `docs/ui/GUI_THREADING_RAII_CONTRACT_V1.md` |
 | Specimen-by-specimen measurements and the corrections between them | `docs/maintenance/AIF120_VFP_SCX_EMPIRICAL_BASELINE_V1.md` |
 | The reader that produced every measurement | `tools/vfp/read_vfp_binary.py` |
@@ -164,6 +165,7 @@ Settled, with the ruling text in the charter:
 | R15 | two shared layers, not one -- the DBF container AND a `name = value` property language with shared keys; R10 amended on payload, unchanged on structure | 3,517 property-bearing records across `.SCX`/`.VCX`/`.FRX`; 9 shared cursor keys |
 | R16 | a stated dimension is advisory for content-sized controls, authoritative for data-sized ones; refines R12.3 | two conformant renders of one document, side by side |
 | R17 | a bound control's width derives from its field's declared width in characters; the table need not carry it | r=0.9982 (STUDENTS, n=9) and r=0.9977 (ACCOUNTS, n=8); five renders |
+| R18 | a structural link must never be inferred from a field the format lets be blank; `.MNX` nesting is `OBJCODE 77` + document order | 1 of 1 and 9 of 9 linked; 2 of 9 openers have an empty NAME |
 
 Open:
 
