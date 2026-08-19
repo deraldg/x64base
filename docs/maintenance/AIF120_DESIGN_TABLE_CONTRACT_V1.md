@@ -89,13 +89,14 @@ last; do not inherit that.)
 | `OBJID` | C(12) | P+C | identity. Unique within the document. Opaque; never parsed |
 | `PARENT` | C(12) | P | `OBJID` of the containing object. Empty on `DOC`, `FONT`, and the root object |
 | `ORDINAL` | N(5,0) | P | position among siblings, ascending, gaps allowed |
+| `TABORDINAL` | N(5,0) | O | focus order among siblings, independent of `ORDINAL`. `0`/absent = the target derives it and must say so. Added 2026-08-19 by R27, the owner's decision; see `AIF120_TAB_ORDINAL_RULING_V1.md` |
 | `SPAN` | N(5,0) | O | cells spanned in a `grid` flow. Default 1 |
 | `KIND` | C(20) | P+C | the portable class name -- section 4 |
 | `FLOW` | C(8) | P on containers | `row`, `column`, `grid`, `free`. Section 5 |
 | `BINDING` | C(64) | O | data field this control reads and writes |
 | `FONTREF` | N(3,0) | O | 1-based index into this document's `FONT` rows. 0 = target default |
-| `PROVENANCE` | C(10) | P | `authored` or `imported` |
-| `PROPS` | M | O | property text -- section 7 |
+| `PROVENANCE` | C(10) | P | `authored`, `imported`, or `inherited` -- a row materialised from an object's class (R31) |
+| `PROPS` | M | O | property text -- section 7. Named keys so far: `Caption`, `Mask` (R25), `Columns` on a `grid` container (R23.2), `Class` and `ClassSource` on an instance (R31), and the menu keys of section 11. Everything else passes through under the source's own key |
 | `ORIGIN` | M | O | quarantined absolute geometry -- section 8 |
 | `HANDLERS` | M | O | handler references -- section 9 |
 | `SOURCE` | M | O | data source, relative to this document -- section 10 |
@@ -363,19 +364,36 @@ Export = BuildReport / worker -> ExportDone
 
 Each line is `Event = HandlerName / DISPATCH [-> CompletionHandler]`.
 
-`DISPATCH` is `ui` or `worker` (R11):
+`DISPATCH` is `ui`, `worker` or `host` (R11, R20):
 
 - **`ui`** -- runs on the platform's UI-owning thread, must not block
 - **`worker`** -- runs off it, must not touch any UI object, and **must** name a
-  completion handler which runs under `ui`
+  completion handler which runs under `ui`. The completion is delivered **at most
+  once**: destroying the container drops it (R21.4)
+- **`host`** -- names a capability the HOST provides, such as `edit.cut`. No thread
+  rule, no completion path, no registry entry. A target that does not provide the
+  named capability **refuses the item and names it** (R20, R22.4)
 
 The default is `ui`, chosen so failures are loud: a handler wrongly on the UI
 thread freezes and is found in the first minute; wrongly off it corrupts widget
 state intermittently and is found on someone else's platform.
 
-**Event names in v1** -- ten, covering 65% of 1,583 measured implementations:
+**Event names in v1 -- nineteen.** The original ten:
 `Click`, `Init`, `Change`, `Activate`, `Deactivate`, `Destroy`, `Error`,
-`Focus`, `Blur`, `Load`. An unknown event name is dropped with a diagnostic.
+`Focus`, `Blur`, `Load`.
+
+Nine added 2026-08-19 by **R32.2**, which measured 92 handlers being silently
+discarded because this list was shorter than the format: `Unload`, `MouseMove`,
+`MouseDown`, `MouseUp`, `DoubleClick`, `DragOver`, `DragDrop`, `KeyPress`,
+`Validate`. `Unload` is 72 of the 92 -- this list carried `Load` and dropped the
+teardown event that pairs with it, while R21 was ruling on teardown.
+
+A handler name defined on an object's CLASS reaches the instance (**R32**); an
+event the instance defines itself wins. A method whose name is not an event is a
+custom method: v1 has no concept for one, and the importer names them rather than
+mapping them onto an event the source never declared (R32.3).
+
+An unknown event name is dropped with a diagnostic.
 
 **Completion order is not guaranteed.** A completion handler receives a task
 identity and a terminal state and must tolerate arriving out of order.
@@ -410,10 +428,30 @@ Menu rows are `OBJ` with `KIND = menu`, nested by `PARENT`, ordered by `ORDINAL`
 25 columns, **zero geometry columns of any kind**. Menus have never had position;
 a v1 that adds one for symmetry makes the menu half unportable for no gain.
 
-Menu-specific properties live in `PROPS`: `Caption`, `Key`, `Message`, `Checked`,
-`Enabled`, `Separator`. The `\<` mnemonic escape and `\-` separator convention are
-inherited from the source vocabulary, which uses them consistently in both
-captions and prompts (R8).
+Menu-specific properties live in `PROPS`. **Corrected 2026-08-19 by R28.2**, which
+measured the six keys named here against the thirteen a real menu table carries:
+
+| key | on | what it is |
+| --- | --- | --- |
+| `Caption`, `Mnemonic` | items | the label and its accelerator index |
+| `Key`, `KeyLabel` | items | the shortcut and its printed form |
+| `Message`, `Mark`, `SkipFor` | items | status text, mark, skip condition |
+| `Separator` | items | `.T.` on a separator |
+| **`Container`** | popups | **the only thing distinguishing a popup from an item** |
+| **`OpenerPrompt`** | popups | **the only caption a popup row carries** |
+| `Name`, `OpenedBy`, `DeclaredItems` | popups | identity, opener, declared count |
+
+`Container` and `OpenerPrompt` were undocumented, and section 7 permits a reader to
+drop any property it does not know. Two sound rules that together **produce a blank
+menubar** -- R28.2's ruling is that structure must never travel in a channel a
+reader may discard. The two keys this section used to name, `Checked` and
+`Enabled`, appear **zero** times; the real one is `Mark`.
+
+The `\<` mnemonic escape and `\-` separator convention are the source vocabulary's
+(R8). **In the source.** In a UIDEF table the escape is already resolved into a
+`Mnemonic` index: measured, `\<` appears in **0 of 55** captions. The claim that it
+is used "consistently in both captions and prompts" is true of `.MNX` and false
+here (R28.4).
 
 ## 12. Conformance
 
@@ -445,24 +483,92 @@ majority of imported documents.
 - **No expression evaluation.** `SKIP FOR` embeds host-language expressions; v1
   carries them as opaque text in `PROPS` or refuses them, and does not evaluate.
 
+## 13b. The container declares ONE codepage
+
+Added 2026-08-19 by **R33.** Header byte 29 is VFP's language driver and it holds a
+single value, so **every text value in a document shares one codepage**. A reader
+decodes with the codepage the file declares, never with an assumed one; a writer
+declares and encodes with the same codepage and refuses text that will not fit,
+naming the character and the codepage rather than raising a codec error.
+
+Round-tripped: cp1252, cp1250, cp1253, cp932 and cp1256 -- Western European,
+Central European, Greek, Japanese and Arabic.
+
+The consequence is a real limit, not a defect: **one document cannot mix Japanese
+and Greek.** That is workable for a per-locale document set and fatal for one
+document in many languages. R33.4 proposes the way out -- a caption that names a
+message symbol resolved through x64base's existing catalog, which already carries
+4,756 texts in five locales behind `SET LOCALE`. Then the table holds ASCII
+identifiers and the catalog holds the prose. Proposed, not adopted.
+
+Columns of type `I`, `Y`, `B`, `T`, `W`, `G` and `0` are **binary**, not text, and
+are unpacked rather than decoded (R33.3).
+
 ## 14. Open against this contract
 
-1. **Not implemented.** No writer, no reader, no round-trip. This is a
-   specification, tier `planned`.
-2. ~~**`FLOW` has never been exercised.**~~ **Exercised the same day, and it
-   broke -- see 5b.** 60-89% of 228 real container groups classify as `free`.
-   The contract's generator permissions are contradictory as drafted and 5b
-   proposes a correction for owner ruling.
+**Updated 2026-08-19, same run.** Items 1 and 2 as first drafted are no longer
+true and are struck rather than deleted, so the record shows what was believed
+when.
+
+1. ~~**Not implemented.** No writer, no reader, no round-trip. This is a
+   specification, tier `planned`.~~ **Implemented the same day.** A writer and
+   conformance validator (`tools/uidef/uidef.py`), two readers (`import_scx.py`,
+   `import_mnx.py`), three consumers (`uidef_tk.py`, `uidef_tk_menu.py`,
+   `uidef_tk_host.py`), a requirements/refusal checker (`manifest.py`), and eleven
+   evidence renders and transcripts. Tier: **runtime-proven** for forms and menus
+   on one backend.
+2. ~~**`FLOW` has never been exercised.** 60-89% of 228 real container groups
+   classify as `free`.~~ **Exercised, and the measurement was wrong twice.** R19
+   corrected the inference; R23.4 then found that 14 of those 228 parents were
+   `dataenvironment`/`cursor`/`relation`, which have no layout. Current figure:
+   **214 visual positioned groups, 26 expressible, 12.1%** -- `free` is 87.9%, and
+   R19's ruling that this is correct rather than a failure stands.
 3. **The fourteen `KIND` values are a judgement**, checked against measured
-   vocabulary but not against a second backend.
+   vocabulary but not against a second backend. Unchanged. `pageset` rendered for
+   the first time on 2026-08-19 (R24.3) after being in the vocabulary and in no
+   consumer.
 4. **Gate 11 is the acceptance test for this document** -- a frontend generated
-   from this table alone, by someone holding nothing else.
+   from this table alone, by someone holding nothing else. **Spiked, not met.** The
+   Tk consumers were written by the same author as the table. `manifest.py`'s
+   `minimal` profile describes a target nobody has built.
+5. **`SOURCE` cannot express a relation** (R26.2). It carries `Alias`, `Table` and
+   `Order` per work area and has nowhere to record `SET RELATION`, so a generated
+   frontend cannot know its own lock domain -- which R26 makes a correctness
+   requirement, not a convenience.
+6. **The property language names four keys and passes through 648** (R25.5).
+   Measured over the corpus: 649 distinct `PROPS` keys, of which the DSL had named
+   one. `Mask`, `Columns` and the menu keys are now named. `fontname`/`fontsize`
+   are carried twice -- once raw, once resolved into `FONTREF` -- and
+   `fontbold`/`fontitalic` are in neither, so the `FONT` row is the incomplete
+   copy.
+7. **Section 12's permission to refuse `FLOW = free`** and **section 4's
+   refuse-the-whole-document rule** remain the two defects this contract records
+   against itself. Unchanged and still owner decisions.
+8. **Gate 11 was run for real on 2026-08-19** (R28) by an implementer holding only
+   this document, a DBF reader and five tables. Four of five rendered and one was
+   correctly refused. It logged **4 contradictions, 19 gaps and 7 ambiguities**;
+   this document has since absorbed the five with measured consequences, and the
+   rest are in `docs/maintenance/evidence/AIF120_gate11_FINDINGS.md`, untriaged.
+   Its verdict stands as the honest summary: *this contract answers "how is a UIDEF
+   document structured?" completely and "what is in one?" barely.*
+9. **`SOURCE` cannot express a relation** (R26.2), and R26 makes that a correctness
+   requirement rather than a convenience: the lock domain is the relation set, so a
+   frontend that cannot see the relations cannot know what to serialize.
+10. **Composition and inheritance are settled; the contract does not describe
+    them.** R30 materialises a composite control's members as ordinary rows and R31
+    flattens a class instance, both without a schema change -- but sections 2 and 4
+    say nothing about either, and a second implementer would not deduce them.
+11. **Captions are literals** (R33.4). x64base ships `SET LOCALE` and 4,756 texts
+    in five locales; this document's `Caption` carries prose in one language and one
+    codepage. Proposed, not adopted.
+12. **`FLOW = row` is defined as "left to right"**, a hard-coded direction that is
+    wrong in an RTL locale. Untouched.
 
 ## 15. Handoff -- PowerShell, run in `D:\code\ccode`
 
 ```powershell
 git add docs/maintenance/AIF120_DESIGN_TABLE_CONTRACT_V1.md
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
-git status --short -uall
+git --no-optional-locks status --short -uall
 git commit -m "AIF-120: gate 10 draft -- the UIDEF design table as a standalone contract (forms and menus)"
 ```
