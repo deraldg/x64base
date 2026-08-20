@@ -163,6 +163,27 @@ reads `SET PATH DBF DBF/x64`; on POSIX that misses `dbf/x64` and every subsequen
 command fails with the tables closed. Also hit on `dbf/og/STUDENTS.DBF`, which
 opens fine once the case matches. Windows hides it completely.
 
+**R73.3a -- and that script is not tracked.** The `cited-paths` gate flagged this
+ruling's citation of `x64.dts` as a WIDOW: on disk, not in the repository. Measured
+rather than assumed, the directory it lives in is
+**96 of 135 `.dts` files untracked** -- including `x64.dts` itself, which every x64
+session runs as `do x64`, and the MCC regression canaries. A fresh clone does not
+have them.
+
+Two consequences, and the second is the one that matters. The citation above is
+honest but unresolvable for any reader who cloned; and the defect in R73.3 cannot
+be fixed by such a reader either, because they do not have the file to fix. This
+is R42's lesson at directory scale -- *a green gate is evidence about what was
+STAGED* -- and `REGRESSION_CANARY_INVENTORY_v1.md` has been carrying the same
+widows against `data/scripts/canaries/*.dts` for some time.
+
+**Deliberately not fixed here.** `data/scripts` is another lane's area and shipped
+scripts are report-only unless a task names them. The recommendation is to stage
+`x64.dts` at minimum -- it is referenced by name in house documentation and by
+every x64 session -- at which point this ruling's citation resolves by itself and
+no suppression marker is needed. A `cite-check:ignore` here would hide exactly the
+signal the gate exists to raise.
+
 **R73.4 -- `TUPLE` over a closed area prints `"" | ""`.** No error, no refusal --
 a row of empty strings that reads like data. Minor, and the same shape as
 everything else in this ruling.
