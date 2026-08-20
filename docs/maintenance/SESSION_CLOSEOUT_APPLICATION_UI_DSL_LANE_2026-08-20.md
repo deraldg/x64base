@@ -45,6 +45,10 @@ That line is first on purpose. See section 5.
 |---|---|
 | `489a24c21` | **R70** -- the generated grid binds `DbTupleStream` |
 | `898a37b62` | **R71** -- UIDEF promoted to `project.x64base.gui`; `tools/uidef` -> `gui/uidef` |
+| `d67a5ec25` | this closeout, and the wx-samples correction |
+| `ec8a00418` | **R72** -- the host contract read out of `run_shell()` |
+| `40953de49` | **R73/R74** -- `Order` is a mode not an index format; the frames render engine counts |
+| `b41ee98df` | **R73.3a** -- the script cited for a defect is itself untracked, with 95 others |
 
 Baseline was `7156ac702`. Both rulings are **review-needed**; the author does not
 self-approve.
@@ -74,6 +78,35 @@ others build under," and AIF-120 met all three before the question was asked.
 `kind: gui_project` -- and zero outside it, which answered the placement question
 from the registry rather than from opinion.
 
+**R72 -- the host was already written.** Added after this closeout first landed,
+which is why the commit table above includes the closeout itself. The maintainer
+pointed at `src/cli/shell.cpp`; `run_shell()` turns out to BE the host contract --
+setup at 506-550, the stdin REPL at 551-769, teardown at 770-789 reversed. A GUI
+replaces the middle third. `src/tv/foxtalk_app.cpp:469` was already hosting this
+engine from a non-CLI frontend through the same `shell_engine()` seam. Reading it
+convicted R70.5 of re-deriving `shell.cpp:532-534` per document, and corrected my
+claim that selection-to-cursor had no mechanism -- `cursor_hook::set_callback` is
+exactly that. `gui/uidef/wx_host.cpp` is the host; runtime-proven.
+
+**R73 -- `Order` named a format the document does not choose.** Added after R72.
+Asked to change `cnx` to `cdx` for x64, there was nothing to change:
+`set_order_inx()` and `set_order_cnx()` are byte-identical and neither attaches an
+index or selects a tag. Across four flavors of the MCC schema the engine reports
+the formats each table offers, and **`INX` does not exist for x64** -- so contract
+4c permitted a document to request a format the table cannot have. Now
+`physical | ordered`, with the old spellings accepted and reported. It also
+convicted R70: `set_order_*` returns void while `WORKSPACE OPEN` can say
+`found (not attached)`, so a bound grid asks for an order, is told nothing, and
+browses physical in silence.
+
+**R74 -- the frames stopped rendering placeholders.** The maintainer's `REL ENUM`
+demo showed match counts at every hop. `summary` had been rendering `ENROLL : n`
+with a literal *n*; `relations_api` has had `match_count_for_child()` and
+`list_tree_for_current_parent()` the whole time, under a comment reading
+`// Debug / UI`. Now filled and measured live. The demo also showed a **second grid
+shape** -- `enum_emit_for_current_parent` over a declared path -- that UIDEF cannot
+express; recorded and deliberately not designed.
+
 ## State
 
 - `gui/uidef` -- 53 tracked files, renames preserved (git reported 95-100% similarity per file).
@@ -93,15 +126,18 @@ from the registry rather than from opinion.
 
 ## Next unit
 
-Four things stand between R70's proof and something a person can use, none large:
-a real host (read `SOURCE`, open each alias -- the generator already has that data
-from `doc_source()`); selection-to-cursor, which is what makes `detail`, `summary`
-and `statusbar` follow the user; paging (`next_page` is called once); and a CMake
-target, since the 44-object link was assembled by hand.
+**Read this after R74.** This section has now been rewritten twice for the same
+reason -- see the housekeeping note below.
 
-Structural note for later: `DbTupleStream` has no library target, so a frontend
-reaches it by linking 44 objects out of the CLI tree. That is R61's boundary
-showing up in the consumer that needs it most.
+- **Paging.** `next_page` is called once; the R74 fills also run once and nothing recomputes them when the cursor moves. R72 established `cursor_hook::set_callback` is the signal that should. One unit covers both.
+- **A CMake target.** The 46-object link was assembled by hand from an `nm` closure.
+- **The second grid shape**, when the owner rules on its document form. Runtime contract is `enum_emit_for_current_parent`.
+- **MSVC.** Nothing in R70-R74 was built outside gcc 13 / wx 3.2.4 / Linux.
+- **The positive half of R73** -- that ordered differs from physical -- needs a tree with the LMDB `.cdx.d` environments. This container has none.
+
+Owner decisions open: `relations_boot::autoload()` and `cmd_INIT` participation
+(R72); the `Path` grid form (R74); staging `x64.dts` and the 95 other untracked
+`.dts` (R73.3a); and `gui/` vs `src/gui/` naming (R71).
 
 ## Corrections this session
 
@@ -125,6 +161,22 @@ both owner calls:
 
 - a resuming agent should treat any compaction summary as a handoff missing its first line, and onboard before acting;
 - lane session records should carry the onboarding directive as their literal first line, so it survives compaction. This document does.
+
+## A closeout committed mid-session is a perishable literal
+
+Recorded because it happened twice in this one session. This document was
+committed at `d67a5ec25` saying "R70/R71 landed" -- then R72 landed, and its "Next
+unit" section named two things R72 had just done. Fixed. Then R73, R74 and R73.3a
+landed and it was stale again, including the fix.
+
+The house rule is *no perishable literals: if it can be cheaply measured, do not
+assert it.* A closeout that asserts what a session did, while the session is still
+running, is one by construction. Two ways out, both owner calls:
+
+- **the closeout is the LAST commit of a session** -- nothing follows it, so it cannot go stale; or
+- **its commit table is generated and verified** rather than hand-listed, the way `TIER0_STATE.md` is.
+
+The second is better and the first is free.
 
 ## Housekeeping
 
