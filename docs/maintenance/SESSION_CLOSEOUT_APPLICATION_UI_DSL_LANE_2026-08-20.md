@@ -1,8 +1,8 @@
 ---
 ai_report_audit:
   schema: ai-report-audit-v1
-  report_id: AIPR-20260820-COWORK-091
-  recorded_at_utc: 2026-08-20T22:15:00Z
+  report_id: AIPR-20260821-COWORK-095
+  recorded_at_utc: 2026-08-21T01:30:00Z
   agent:
     provider: Anthropic
     product: Claude (Cowork)
@@ -23,9 +23,9 @@ ai_report_audit:
       mission", then "examine the ccode dir and find an appropriate home for our
       gui work", then "you are green to develop".
     scope: >
-      Session closeout for AIF-120, run COWORK-20260818-001. Records the twelve
-      rulings that landed (R70 through R81, grid-to-TupleStream binding through
-      the character-cell weight allocation), the six corrections made, what is
+      Session closeout for AIF-120, run COWORK-20260818-001. Records the fourteen
+      rulings that landed (R70 through R83, grid-to-TupleStream binding through
+      the frontend reading its own document), the corrections made, what is
       owed to other areas, the leftovers to delete, and the state the next
       session inherits.
   report:
@@ -65,8 +65,10 @@ What is stable, and therefore stated, is which ruling lives in which document:
 | **R79** -- `Weight` and `Fill` added to `PROPS` | `docs/maintenance/AIF120_LAYOUT_WEIGHT_V1.md` |
 | **R80** -- `Weight` needs free space; two backends had none | `docs/maintenance/AIF120_WEIGHT_BACKENDS_V1.md` |
 | **R81** -- the character-cell backend owns its remainder | `docs/maintenance/AIF120_CELL_ALLOCATION_V1.md` |
+| **R82** -- location is a WORKSPACE fact, not a document property | `docs/maintenance/AIF120_LOCATION_VOCABULARY_V1.md` |
+| **R83** -- the frontend opens the tables its own document names | `docs/maintenance/AIF120_SOURCE_RESOLUTION_V1.md` |
 
-All twelve are **review-needed**; the author does not self-approve. Also landed:
+All fourteen are **review-needed**; the author does not self-approve. Also landed:
 the wx-samples correction, R73.3a, the owner ruling that `ccode/gui` is the GUI
 project and `src/gui` is for C++ GUI code, and the retirement of
 `wx_stream_harness.cpp`.
@@ -226,6 +228,16 @@ expose a renderer that mis-states it. And because R81 honours SOME weights, ever
 weighted child it will not resize is now named individually with its own reason,
 since a partial honouring is exactly where a silent drop hides.
 
+**R82 -- location is a workspace fact, and a rule nothing checks is indistinguishable from no rule.** Asked where a document should say WHERE its tables live, the answer was already ruled: contract section 10 said so on 2026-08-19, measured from VFP recomputing a data-source path relative to the form on every save. What R82 found is that **nothing performed it.** No tool refused an unresolvable `Table`; `gui/uidef/wx_host.cpp` read its table list from an environment variable; and all 22 fixtures depended on that. A ruling with no enforcement had been quoted as settled for a day. The owner ruled that the document keeps saying nothing about location -- workspace only, consistent with R73's shape: the document says WHAT, the workspace says WHERE.
+
+**R82.3 -- and I cited a format version from a paste.** R82 said a `DTSHEMA 2` row carries location. It does not. `dbf=STUDENTS.dbf` is a bare name the engine resolves against `Slot::DBF`, which `SETPATH` sets -- so a v2 posture declares WHICH table, not where, and cannot satisfy section 10 either. `DTSHEMA 3` has recorded `DBFROOT`, `IDXROOT` and `LMDBROOT` since 2026-08-11 and is exactly the thing R82 was reaching for. I had read the workspace the maintainer pasted, not the format.
+
+**R83 -- all three gaps closed, and the check caught us first.** `gui/uidef/workspace.py` reads a DTSHEMA posture from the ENGINE (`schema_load_from_stream`, `src/cli/cmd_workspace.cpp:1800`) rather than from a sample -- R82.3's correction applied to the method. `manifest.py` performs section 10's refusal and pointedly does NOT fall back to the environment, because that would make every document resolve and report the ambient dependency the section forbids. `wx_host.cpp` takes WHICH tables from the document and WHERE from `Slot::DBF`, the slot `WORKSPACE OPEN DBF` names, and a missing root now SPEAKS instead of standing up an empty window in silence.
+
+Its first run caught `gui/uidef/author_mainframe.py` declaring `Table = (none -- the sample fills every grid from code)` -- **an English sentence in a field the contract defines as a path**, surviving four rulings because nothing checked `Table`. The generated C++ is byte-identical after removing it, which proves the alias was decoration. Then the check caught itself: section 10 resolves case-insensitively (R28.3), the first resolver matched exactly, and on Linux it reported every table missing because the corpus writes `STUDENTS.DBF` and the file is `STUDENTS.dbf`.
+
+Proven by BUILDING and RUNNING: 56s, 66 translation units, and a frontend that opened `STUDENTS.DBF` and `ENROLL.DBF` because its document named them. **22 of 22 byte-identical without `--stream`**; with it, 7 change and every one is 15 lines added, 0 removed.
+
 ## State
 
 - `gui/uidef` -- **57 tracked files**, renames preserved (git reported 95-100% similarity per file).
@@ -248,6 +260,7 @@ since a partial honouring is exactly where a silent drop hides.
 | **R82.4** -- `dottalkpp/data/workspaces/mcc_x64.dtschema` declares `tag=none` for all thirteen areas while `mcc_x32.dtschema` declares real tags (`BLDG`, `CLS_ID`, `CID`, `DEPT_ID`, ...). So R73.7's "no active order on x64" is not only the directory-scan door -- the shipped x64 workspace file itself declares no tags while its x32 twin does. An asymmetry between two files, not a design decision | workspace owner |
 | **R82.1** -- the 50-slot `dottalk::paths::Slot` enum has three hand-maintained printers showing **13, 18 and 37** slots (`src/cli/cmd_init.cpp:286`, `dump()` in `src/cli/cmd_setpath.cpp`, `describe()` in `src/common/path_state.cpp`); `slot_name()` already covers the enum and none of the three iterates it. `DBF_X64` is set at init and consumed by `src/gui/core/session.cpp`, and a maintainer reading `INIT: Paths` cannot see it. Owner ruled: report, do not fix | engine lane |
 | **R82.2** -- `docs/maintenance/WORKSPACE_MANAGER_AND_GROUPS_DESIGN_V1.md` cites `gui/core/session.cpp`; the file is `src/gui/core/session.cpp` and is tracked. A citation missing its `src/` prefix, not a missing file (R81.5) | workspace-manager lane |  <!-- cite-check:ignore -->
+| **A Good Neighbor note is owed on the BOARD.** R81.4 changed `tools/staging/check_cited_paths.py`, which is not this lane's file. The four fields are in that ruling and the reason sits above the tuple in the source -- but a lane ruling is not a channel its owner has any reason to read, and agents do not write to `docs/ai-friendly/PSEUDO_CHAT_BOARD.md`. The `RE:` note is drafted for the maintainer to transcribe | gate owner |
 | **R81.1** -- **24** repo paths cited in `docs/ai-friendly/AI_FRIENDLY_DASHBOARD_V1.md` cannot be reached from a clone: 23 widows, all ON DISK and merely untracked, plus **one that is GITIGNORED** -- `.../DOCFLUSH-20260722-001/FULLSTACK_DOCUMENTATION_FLUSH_FILE_MANIFEST_V1.csv`, which `git add` can never stage (R42.1). R73.3a's shape at dashboard scale. Not on the rows this session touched, and `cited-paths` is advisory, so nothing blocked | dashboard owner |
 | **R81.2 -- and my own sweep under-counted it.** I reported 22 by grepping for a whitelist of extensions (`py md cpp hpp h txt yaml dts DBF png FPT`). The gate found 24, because the two I missed end in `.csv` and `.mjs`. **A search shaped by the objects you already have cannot find an object with a different schema** -- the house doctrine, applied to my own evidence-gathering rather than to someone else's code, and the second time this session a whitelist has been the defect. The gate's regex is the one to trust; mine was a convenience that quietly narrowed the question | AIF-120, recorded |
 | **BETA citations.** 26 across nine documents cite the BETA checklist as authority. The maintainer ruled it "a template"; `foxref.cpp` shows all 43 items `BetaStatus::OPEN`. Retarget to lane rulings | AIF-120, next session |
@@ -257,7 +270,9 @@ since a partial honouring is exactly where a silent drop hides.
 **Read this after R74.** This section has now been rewritten twice for the same
 reason -- see the housekeeping note below.
 
-- **MSVC.** See the Owed table. One `cmake` configure-and-build of `uidef_wx_demo` answers it, and it is the oldest thing here.
+- **`WORKSPACE SAVE mcc_x64 V3`, then flip section 10 to a refusal.** ONE cut: the moment `manifest.py` refuses an unresolvable `Table`, all 22 fixtures fail, because they are the documents that violate it. The corpus cannot move until a v3 posture exists, so enforcement and migration land together or neither does. R83 built everything else for it.
+- **MSVC.** See the Owed table. R76's target makes it one command and R83 reproduced that build, so the only thing missing is a Windows toolchain. Oldest item in the lane.
+- **R82.4** -- `mcc_x64.dtschema` declares `tag=none` for thirteen areas while `mcc_x32.dtschema` declares real tags. Worth deciding BEFORE the v3 save bakes it in.
 - ~~**The positive half of R73**~~ -- **CLOSED.** The maintainer ran it on the device (this lane's container has no `LMDB/`, and `LMDB/x64` is 577 MB, over the staging cap). `USE teachers NOINDEX` reports `Order : NATURAL` and lists recnos 1..20 in sequence; `SET ORDER TO FNAME` lists 16, 57, 64, 103, 114, 6, 36, ... in FNAME order. Transcript at `docs/maintenance/evidence/AIF120_R73_ordered_vs_physical.txt`. **It also reopened the ruling one notch** -- see R73.6 below.
 - **`Order` has no word for DESCENDING (R73.6).** The command after the proof was `DESCEND`, and the engine answered `Order: DESCENDING.` -- same tag, opposite direction. R73 closed the set at two by surveying `DbTupleStream`'s setters, which have no direction, and not the order state the engine reports. `Descending` is a second AXIS, not a third value, and whether it belongs to the document at all or to the workspace beside `tag=` is an owner decision. Contract 4e(a).
 - **`Order: ASCEND` is not evidence an order is active (R73.7).** `WORKSPACE OPEN`'s directory scan attaches the container and selects NO tag; `USE` attaches and selects one. Both report `ASCEND`. The scan path is the one a generated frontend uses, which makes R73.1's "asks for an order, is told nothing, browses physical" the NORMAL case rather than an edge one. Contract 4e(b).
@@ -266,7 +281,7 @@ reason -- see the housekeeping note below.
 - **Character-cell COLUMN weight** -- needs a fixed canvas height the way HTML needed a sized form. The mechanism is written once already; what is missing is a height to divide, and inventing one is a decision about what a character-cell render IS.
 - **`FLOW = grid` row/column growth** -- `AddGrowableRow`/`AddGrowableCol`, open since R79.
 - **The second grid shape**, when the owner rules on its document form. Runtime contract is `enum_emit_for_current_parent`.
-- **The 26 BETA citations**, still pointing at a template the maintainer has ruled is not authority.
+- **The 26 BETA citations**, still pointing at a template the maintainer has ruled is not authority. FOUR are live in `gui/uidef/manifest.py` and one prints in its normal output. This session also reached for a BETA item number as a label hours after retargeting away from them, which is why the item is not merely cosmetic.
 
 Owner decisions open: `relations_boot::autoload()` and `cmd_INIT` participation
 (R72); the `Path` grid form (R74); staging `x64.dts` and the 95 other untracked
@@ -334,7 +349,8 @@ commit table cannot name its own commit.
 
 Gitignored, mine, safe to delete: `tmp/r70_eng.tgz`, `tmp/r70_src.tgz`,
 `tmp/r71_stage_list.txt`, `tmp/logrow.txt`, `tmp/flavors.tgz`, `tmp/flavors/`,
-`tmp/cfg.tgz`, `tmp/aif120_probe.tgz`, `tmp/_to_delete/`.
+`tmp/cfg.tgz`, `tmp/aif120_probe.tgz`, `tmp/r83_tree.tgz`, `tmp/r83_mcc.tgz`,
+`tmp/r83_lesson.txt`, `tmp/r83_closeout_body.txt`, `tmp/_to_delete/`.
 
 `gui/uidef/generated/` and the 22 `.DBF`/`.FPT` fixture pairs stay untracked by
 design -- they are DERIVED, and R75 made every one of them reproducible from a
