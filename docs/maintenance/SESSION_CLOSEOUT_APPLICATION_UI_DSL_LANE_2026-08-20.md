@@ -41,19 +41,43 @@ That line is first on purpose. See section 5.
 
 ## Commits
 
-| Commit | Ruling |
-|---|---|
-| `489a24c21` | **R70** -- the generated grid binds `DbTupleStream` |
-| `898a37b62` | **R71** -- UIDEF promoted to `project.x64base.gui`; `tools/uidef` -> `gui/uidef` |
-| `d67a5ec25` | this closeout, and the wx-samples correction |
-| `ec8a00418` | **R72** -- the host contract read out of `run_shell()` |
-| `40953de49` | **R73/R74** -- `Order` is a mode not an index format; the frames render engine counts |
-| `b41ee98df` | **R73.3a** -- the script cited for a defect is itself untracked, with 95 others |
-| `99653aaa9` | this closeout and the Session Log, carrying R72-R74 |
-| (this commit) | **R75** -- the sixteen refusal fixtures made reproducible |
+Baseline for this session is `7156ac702`. The commits themselves are **not listed
+here** -- see below for why. To read them:
 
-Baseline was `7156ac702`. Both rulings are **review-needed**; the author does not
-self-approve.
+```powershell
+git log --oneline 7156ac702..
+```
+
+What is stable, and therefore stated, is which ruling lives in which document:
+
+| Ruling | Document |
+|---|---|
+| **R70** -- the generated grid binds `DbTupleStream` | `AIF120_GRID_STREAM_BINDING_V1.md` |
+| **R71** -- UIDEF promoted to `project.x64base.gui` | `AIF120_PROJECT_PROMOTION_V1.md` |
+| **R72** -- the host contract read out of `run_shell()` | `AIF120_HOST_CONTRACT_V1.md` |
+| **R73** -- `Order` is a mode, not an index format | `AIF120_ORDER_VOCABULARY_V1.md` |
+| **R74** -- the frames render engine counts | `AIF120_RELATION_FRAMES_V1.md` |
+| **R75** -- the refusal fixtures made reproducible | `AIF120_FIXTURE_CORPUS_V1.md` |
+
+All six are **review-needed**; the author does not self-approve. Also landed: the
+wx-samples correction, R73.3a, and the retirement of `wx_stream_harness.cpp`.
+
+### Why there is no hash table here
+
+This document carried one and it went stale **four times in one session** -- after
+R72, after R73/R74, after R75, and after the retirement. Each fix was correct and
+each was obsolete within the hour.
+
+The house rule is *no perishable literals: if it can be cheaply measured, do not
+assert it.* A hand-maintained commit table in a closeout is the definition of one,
+and the proof is small and complete: staging the closeout WITH its ruling fixed the
+staleness, and the row for that very ruling still had to read `(this commit)` --
+because **a hand-written commit table cannot name its own commit.** The hash does
+not exist until the commit is made, and the commit is made from the file. Being the
+last commit is not sufficient either. Only a measurement closes it.
+
+So the list is replaced by the command that produces it. The ruling-to-document
+mapping stays, because that does not change after the fact.
 
 ## What was done
 
@@ -177,19 +201,10 @@ both owner calls:
 
 ## A closeout committed mid-session is a perishable literal
 
-Recorded because it happened twice in this one session. This document was
-committed at `d67a5ec25` saying "R70/R71 landed" -- then R72 landed, and its "Next
-unit" section named two things R72 had just done. Fixed. Then R73, R74 and R73.3a
-landed and it was stale again, including the fix.
-
-The house rule is *no perishable literals: if it can be cheaply measured, do not
-assert it.* A closeout that asserts what a session did, while the session is still
-running, is one by construction. Two ways out, both owner calls:
-
-- **the closeout is the LAST commit of a session** -- nothing follows it, so it cannot go stale; or
-- **its commit table is generated and verified** rather than hand-listed, the way `TIER0_STATE.md` is.
-
-The second is better and the first is free.
+Recorded in the Commits section above, where it is demonstrated rather than
+described. Short form: this document went stale four times in one session, the fix
+is to measure rather than assert, and the deciding evidence is that a hand-written
+commit table cannot name its own commit.
 
 ## Housekeeping
 
