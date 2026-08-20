@@ -479,8 +479,10 @@ projects:
       built in parallel as tests -- samples someone could use as a template, not a
       permanent product; an earlier draft called them "the shipped C++ GUI
       application", which inferred product status from a build target's existence.
-      Merging them under gui/ is a later unit in any case, because a directory move
-      and a build-graph change fail in different ways. Measured state at promotion: the wx backend is
+      Owner ruling 2026-08-20: src/gui is for C++ GUI code and gui/ is the GUI
+      project; nothing merges. src/ is what the build compiles, a top-level
+      directory is a product -- the same split as pycrud, dottalk-webui and
+      bindings/pydottalk. Measured state at promotion: the wx backend is
       runtime-proven against the engine (R70 -- a generated window linking 44 house
       translation units, filling a grid from DbTupleStream off the shipped x64
       tables); Tk, HTML and character-cell render but have no data binding; nothing

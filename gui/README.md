@@ -67,12 +67,19 @@ has its own view of GUI isolation and this directory does not disturb it.
 `gui/uidef` is a language that generates applications. They are related the way a
 compiler is related to a program.
 
-> **Known cost, recorded rather than hidden:** `gui/` and `src/gui/` now both
-> exist. Any sentence saying "the gui directory" is ambiguous until one of them
-> moves. Consolidating `src/gui` under here is a legitimate later unit and would
-> touch `src/CMakeLists.txt` lines 117, 450 and 454; it was deliberately NOT
-> bundled with this move, because a directory move and a build-graph change fail
-> in different ways and should not fail together.
+> **Owner ruling, 2026-08-20: both exist, and the split is deliberate.**
+> `ccode/gui` is the GUI **project** -- the UIDEF language, its backends, its hosts
+> and its fixtures. `src/gui` is for **C++ GUI code**, and will be used for that.
+>
+> The division follows the one the tree already uses everywhere else: `src/` holds
+> what the build compiles (`src/cli`, `src/xbase`, `src/xindex`, `src/gui`), and a
+> top-level directory holds a product (`pycrud`, `dottalk-webui`, `bindings/pydottalk`,
+> and now `gui`). So "the gui directory" is not ambiguous once you know which
+> question you are asking: **`src/gui` is a build input, `gui/` is a program.**
+>
+> An earlier draft of this file recorded the coexistence as a cost to be resolved by
+> moving one of them. That was the author reading a name collision where the owner
+> had a structure. Nothing moves.
 
 Also elsewhere on purpose:
 

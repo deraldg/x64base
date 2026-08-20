@@ -140,27 +140,29 @@ restructuring is wanted it is its own unit with its own proof.
 - `tools/gui_preview/` -- a Python mirror of `src/gui/core`, belonging to that application.
 - `docs/maintenance/AIF120_*.md` -- the rulings stay in the lane ledger. `AIF120_LANE_STATUS_AND_FIXTURES_V1.md` is their only index, and moving the documents out of the directory that index lives in would break the one thing that makes them findable.
 
-## 5. The cost, recorded rather than hidden
+## 5. Both directories exist on purpose -- owner ruling
 
-**`gui/` and `src/gui/` will both exist.** Any sentence saying "the gui directory"
-is ambiguous until one of them moves. I am recording this rather than solving it,
-for a reason worth stating: `src/CMakeLists.txt:117` already reads
+This section originally recorded `gui/` and `src/gui/` coexisting as a **cost**,
+noted that "the gui directory" would be ambiguous, and offered to rename this one
+to `uidef/` while it was still cheap.
 
-```cmake
-  "${CMAKE_CURRENT_SOURCE_DIR}/gui"       # GUI isolated, not globbed
-```
+**Owner ruling, 2026-08-20: `ccode/gui` is the GUI project; `src/gui` will be used
+for C++ GUI code.** Nothing moves, and the ambiguity I predicted does not arise,
+because the two answer different questions:
 
-so the build has *already* decided GUI is a separate citizen it does not want
-swept up with everything else. Consolidating `src/gui` under a top-level `gui/`
-is therefore a coherent later unit and probably the right end state -- but it
-changes the build graph, and **a directory move and a build-graph change fail in
-different ways and should not be made to fail together.** This ruling moves files
-that no build references. That is why it is safe; bundling the other half is
-exactly what would make it unsafe.
+| | holds | consumed by |
+|---|---|---|
+| `src/gui` | C++ GUI code | the CMake build, like `src/cli`, `src/xbase`, `src/xindex` |
+| `gui/` | the GUI **project** -- language, backends, hosts, fixtures | people and their tools |
 
-If the owner would rather avoid the ambiguity entirely, the cheap moment is now,
-before the commit: naming the directory `uidef/` instead of `gui/` costs one
-string in three files. After the commit it costs 251 citations again.
+That is the division the tree already uses. `src/` is where the build looks; a
+top-level directory is where a product lives -- `pycrud`, `dottalk-webui`,
+`bindings/pydottalk`, and now `gui`. Recording the correction plainly: I read a
+name collision where the owner had a structure, which is the same mistake as
+reading a build target as a product (section 4's owner note) one level up.
+
+The consequence for `src/CMakeLists.txt:117,450,454` is that they are **not** a
+pending migration. They are where C++ GUI code is built, and they stay.
 
 ## 6. What it costs to move, measured
 
