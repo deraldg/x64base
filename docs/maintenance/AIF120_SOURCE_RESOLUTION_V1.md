@@ -170,7 +170,7 @@ fact (AIF-120 R82).
 | without `--stream` | **22 of 22 byte-identical.** R70's opt-in invariant holds |
 | with `--stream` | 7 of 22 change -- exactly the documents that bind -- and every one is **15 lines added, 0 removed.** Purely additive |
 | `workspace.py --selftest` | 15 checks, including that a v2 posture must NOT resolve |
-| section 10 check | proven in all three states in section 2 |
+| section 10 check | all three states in section 2 exercised. The first two -- no workspace, and the SHIPPED v2 posture -- are proven against real files. **The third is proven against a SYNTHETIC v3 posture**, so it is a proof about this reader and this file, not about a v3 the engine wrote. *A caveat is not a control*: the row says synthetic because calling it proven would be the claim, and the flag would not undo it |
 | ASCII | clean across all five changed files |
 
 ## 7. What is NOT proven, stated rather than left to be discovered
@@ -187,6 +187,13 @@ fact (AIF-120 R82).
   meantime, which is the difference between a rule nothing checks and a rule
   nothing yet blocks on.
 - **MSVC.** Unchanged. Everything here is gcc 13 / wx 3.2.4 / Linux.
+
+- **`tools/staging/check_cited_paths.py` is not this lane's file.** R81.4 changed it
+  (one entry added to `ROOTS`) with the reason written above the tuple and a Good
+  Neighbor record in that ruling. The house's durable channel for a change in
+  someone else's area is `docs/ai-friendly/PSEUDO_CHAT_BOARD.md`, which agents do
+  not write to -- the note is drafted for the maintainer to transcribe rather than
+  left only in a lane document its owner has no reason to read.
 
 ## 8. Open
 
