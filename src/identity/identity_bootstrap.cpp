@@ -69,18 +69,31 @@ InMemoryIdentityStore build_seed() {
     // Guestbook-only "leave a message" capability (board.guestbook POSTPERM). Distinct from
     // bbs.post so a guest cannot post to any other board. Guests get ONLY this.
     const PermissionId bbs_guest   = P(19, "bbs.guest",           "bbs",      "guest",   RiskClass::Low,      false);
+    // --- AIF-120: launching the product's own windowed GUI -------------------
+    // Resource class "app", NOT "host". That is the whole point and it is load
+    // bearing: agent_permitted() consults DOTTALK_ALLOW_HOST_COMMANDS only when
+    // resource_class == "host" (identity_admin.cpp:463). Opening a first-party
+    // window that ships in the same bin directory is not host shell execution,
+    // and requiring the shell door for it would make a user enable arbitrary
+    // command execution to see their own GUI -- a far wider grant than the act.
+    //
+    // Medium, no approval: it starts a process, so it is not Low; it mutates no
+    // data, opens no socket and runs no user-supplied string, so it is not
+    // Critical the way host.shell is.
+    const PermissionId app_gui     = P(20, "app.gui",             "app",      "launch",  RiskClass::Medium,   false);
 
     auto grant_role = [&](RoleId r, std::initializer_list<PermissionId> perms) {
         for (PermissionId p : perms) s.role_permissions.push_back({r, p});
     };
     grant_role(MAINTAINER, {src_read, src_prop, src_mut, db_read, db_mut, promote, git_commit,
                             git_push, publish, branch, user_mgr, role_asn, auth_grant, host_shell,
-                            host_egress, bbs_read, bbs_post, chat_invoke});
-    grant_role(DEVELOPER, {src_read, src_prop, src_mut, db_read, db_mut, git_commit, bbs_read});
-    grant_role(REVIEWER,  {src_read, db_read, bbs_read});
-    grant_role(TEACHER,   {src_read, db_read, db_mut, bbs_read});
-    grant_role(STUDENT,   {src_read, db_read, bbs_read});
-    // AI partners: propose + board + chat; NOT source.mutate, NOT host.network.egress.
+                            host_egress, bbs_read, bbs_post, chat_invoke, app_gui});
+    grant_role(DEVELOPER, {src_read, src_prop, src_mut, db_read, db_mut, git_commit, bbs_read, app_gui});
+    grant_role(REVIEWER,  {src_read, db_read, bbs_read, app_gui});
+    grant_role(TEACHER,   {src_read, db_read, db_mut, bbs_read, app_gui});
+    grant_role(STUDENT,   {src_read, db_read, bbs_read, app_gui});
+    // AI partners: propose + board + chat; NOT source.mutate, NOT host.network.egress,
+    // and NOT app.gui -- an agent should not be opening windows on someone's desktop.
     grant_role(AI_PARTNER,{src_read, src_prop, db_read, bbs_read, bbs_post, chat_invoke});
     grant_role(PUB_OP,    {promote, git_commit, git_push, publish, bbs_read});
     // AIF-075: BBS READ is public. Every seeded role (incl. the guest "leave a message" role and
