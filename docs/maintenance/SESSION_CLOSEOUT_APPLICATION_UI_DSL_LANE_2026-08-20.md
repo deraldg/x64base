@@ -49,6 +49,8 @@ That line is first on purpose. See section 5.
 | `ec8a00418` | **R72** -- the host contract read out of `run_shell()` |
 | `40953de49` | **R73/R74** -- `Order` is a mode not an index format; the frames render engine counts |
 | `b41ee98df` | **R73.3a** -- the script cited for a defect is itself untracked, with 95 others |
+| `99653aaa9` | this closeout and the Session Log, carrying R72-R74 |
+| (this commit) | **R75** -- the sixteen refusal fixtures made reproducible |
 
 Baseline was `7156ac702`. Both rulings are **review-needed**; the author does not
 self-approve.
@@ -106,6 +108,17 @@ with a literal *n*; `relations_api` has had `match_count_for_child()` and
 `// Debug / UI`. Now filled and measured live. The demo also showed a **second grid
 shape** -- `enum_emit_for_current_parent` over a declared path -- that UIDEF cannot
 express; recorded and deliberately not designed.
+
+**R75 -- the leftover this session was carrying all along.** The maintainer asked
+whether he could try his form and could not, which exposed that the eighteen UIDEF
+documents every refusal count is quoted against were not in the repository. Four
+regenerate from tracked author scripts; **the sixteen negative and property cases
+existed only in this container.** `author_cases.py` reproduces them, verified
+behaviourally. The reason nine rulings missed it is the finding: `cited-paths`
+matches PATHS, and those fixtures are cited by NAME.
+
+**Staged with this closeout, deliberately** -- the rule recorded below, applied on
+its first opportunity.
 
 ## State
 
