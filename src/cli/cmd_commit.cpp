@@ -99,6 +99,7 @@
 #include "cli/order_state.hpp"
 #include "memo/memo_manager.hpp"
 
+#include "workarea_util.hpp"
 #if DOTTALK_HAS_XINDEX
 // Legacy index rebuild commands. CDX/LMDB is not rebuilt by COMMIT.
 void cmd_REINDEX(xbase::DbArea& A, std::istringstream& args);
@@ -137,15 +138,6 @@ struct CommitResult {
 static void print_commit_usage()
 {
     cli::cmdout::print_message(dottalk::helpdata::MessageId::CommitUsageText);
-}
-
-static int resolve_area0(xbase::DbArea& A) {
-    if (auto* eng = shell_engine()) {
-        for (int i = 0; i < xbase::MAX_AREA; ++i) {
-            if (&eng->area(i) == &A) return i;
-        }
-    }
-    return -1;
 }
 
 struct CursorRestore {
@@ -598,7 +590,7 @@ void cmd_COMMIT(xbase::DbArea& A, std::istringstream& in) {
     const bool talk = Settings::instance().talk_on.load();
 
     if (!all) {
-        const int area0 = resolve_area0(A);
+        const int area0 = cli::slot_of_area(&A);
         if (area0 < 0) {
             cli::cmdout::print_prefixed_message(
                 "COMMIT", dottalk::helpdata::MessageId::CommitCannotDetermineAreaText);

@@ -100,6 +100,7 @@
 #include "xindex/index_manager.hpp"
 #include "xindex/attach.hpp"
 
+#include "workarea_util.hpp"
 // Provided by the interactive shell.
 extern "C" xbase::XBaseEngine* shell_engine(void);
 
@@ -144,15 +145,6 @@ static bool is_delete_usage_request(const std::string& raw)
     }
 
     return t == "USAGE" || t == "HELP" || t == "?";
-}
-
-static int resolve_current_index(xbase::DbArea& A) {
-    xbase::XBaseEngine* eng = shell_engine();
-    if (!eng) return -1;
-    for (int i = 0; i < xbase::MAX_AREA; ++i) {
-        if (&eng->area(i) == &A) return i;
-    }
-    return -1;
 }
 
 static void mark_all_fields_stale_best_effort(xbase::DbArea& A, int area0) {
@@ -259,7 +251,7 @@ static bool delete_current_with_lock(xbase::DbArea& area)
     xbase::locks::unlock_record(area, rn);
 
     if (ok) {
-        const int area0 = resolve_current_index(area);
+        const int area0 = cli::slot_of_area(&area);
         mark_all_fields_stale_best_effort(area, area0);
         refresh_after_delete_best_effort(area);
 
@@ -297,7 +289,7 @@ static bool buffer_delete_recno(int area0, std::uint64_t recno) {
 
 // Single-record DELETE: buffer it when TABLE BUFFER is on, else write through.
 static bool delete_current_buffered_or_through(xbase::DbArea& area) {
-    const int area0 = resolve_current_index(area);
+    const int area0 = cli::slot_of_area(&area);
     if (area0 >= 0 && dottalk::table::is_enabled(area0)) {
         return buffer_delete_recno(area0, area.recno64());
     }
@@ -311,7 +303,7 @@ static int32_t delete_targets_by_recno(xbase::DbArea& area,
 
     // Buffered mode: stage each delete + journal it; defer to COMMIT/ROLLBACK.
     {
-        const int area0 = resolve_current_index(area);
+        const int area0 = cli::slot_of_area(&area);
         if (area0 >= 0 && dottalk::table::is_enabled(area0)) {
             for (uint64_t rn : targets) {
                 if (!area.gotoRec64(rn)) continue;

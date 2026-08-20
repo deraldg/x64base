@@ -108,6 +108,7 @@
 #include "cli/table_state.hpp"
 #include "cli/order_state.hpp"
 
+#include "workarea_util.hpp"
 #include <algorithm>
 #include <cctype>
 #include <cstdint>
@@ -166,15 +167,6 @@ static bool prompt_yes_no(const std::string& prompt, bool default_no = true) {
     if (line.empty()) return !default_no;
     char c = static_cast<char>(std::toupper(static_cast<unsigned char>(line[0])));
     return c == 'Y';
-}
-
-static int resolve_current_index(xbase::DbArea& A) {
-    if (auto* eng = shell_engine()) {
-        for (int i = 0; i < xbase::MAX_AREA; ++i) {
-            if (&eng->area(i) == &A) return i;
-        }
-    }
-    return -1;
 }
 
 static bool ensure_clean_or_commit(xbase::DbArea& A, int area0, const char* verb) {
@@ -439,7 +431,7 @@ static fs::path probe_default_inx_for_current(DbArea& A) {
 
 static bool run_reindex_inx(DbArea& A, const std::string& argRest)
 {
-    const int area0 = resolve_current_index(A);
+    const int area0 = cli::slot_of_area(&A);
     if (!ensure_clean_or_commit(A, area0, "REINDEX")) return false;
 
     if (!A.isOpen()) {

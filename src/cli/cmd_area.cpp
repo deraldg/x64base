@@ -53,6 +53,7 @@
 #include "cli/order_report.hpp"
 #include "workspace/workarea_utils.hpp"
 
+#include "workarea_util.hpp"
 using namespace xbase;
 namespace fs = std::filesystem;
 
@@ -83,17 +84,6 @@ static void print_area_usage()
     cli::cmdout::print_message(dottalk::helpdata::MessageId::AreaUsageText);
 }
 
-static int resolve_current_index(DbArea& A)
-{
-    XBaseEngine* eng = shell_engine();
-    if (!eng) return -1;
-
-    for (int i = 0; i < MAX_AREA; ++i) {
-        if (&eng->area(i) == &A) return i;
-    }
-    return -1;
-}
-
 static std::string area_file_label(const DbArea& A)
 {
     std::string s = A.logicalName();
@@ -122,7 +112,7 @@ void cmd_AREA(DbArea& A, std::istringstream& args)
         return;
     }
 
-    const int idx = resolve_current_index(A);
+    const int idx = cli::slot_of_area(&A);
 
     if (idx >= 0)
         cli::cmdout::print_message(

@@ -53,6 +53,7 @@
 #include "cli/table_state.hpp"
 #include "cli/command_output.hpp"
 
+#include "workarea_util.hpp"
 extern "C" xbase::XBaseEngine* shell_engine();
 
 namespace {
@@ -60,16 +61,6 @@ namespace {
 static inline std::string up_copy(std::string s) {
     for (auto& ch : s) ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
     return s;
-}
-
-static int resolve_current_index(xbase::DbArea& A) {
-    xbase::XBaseEngine* eng = shell_engine();
-    if (!eng) return -1;
-
-    for (int i = 0; i < xbase::MAX_AREA; ++i) {
-        if (&eng->area(i) == &A) return i;
-    }
-    return -1;
 }
 
 static void rollback_area(int area0, size_t& total_changes, int& areas_touched) {
@@ -161,7 +152,7 @@ void cmd_ROLLBACK(xbase::DbArea& A, std::istringstream& in) {
         return;
     }
 
-    const int area0 = resolve_current_index(A);
+    const int area0 = cli::slot_of_area(&A);
     if (area0 < 0) {
         cli::cmdout::print_prefixed_message(
             "ROLLBACK", dottalk::helpdata::MessageId::RollbackCannotDetermineCurrentAreaText);

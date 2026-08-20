@@ -87,6 +87,7 @@
 #include "xindex/index_manager.hpp"
 #include "xindex/attach.hpp"
 
+#include "workarea_util.hpp"
 // Provided by the interactive shell.
 extern "C" xbase::XBaseEngine* shell_engine(void);
 
@@ -112,15 +113,6 @@ struct CursorRestore {
         } catch (...) {}
     }
 };
-
-static int resolve_current_index(xbase::DbArea& A) {
-    xbase::XBaseEngine* eng = shell_engine();
-    if (!eng) return -1;
-    for (int i = 0; i < xbase::MAX_AREA; ++i) {
-        if (&eng->area(i) == &A) return i;
-    }
-    return -1;
-}
 
 static void mark_all_fields_stale_best_effort(xbase::DbArea& A, int area0) {
     if (area0 < 0) return;
@@ -260,7 +252,7 @@ static bool recall_current_with_lock(xbase::DbArea& area)
     xbase::locks::unlock_record(area, rn);
 
     if (ok) {
-        const int area0 = resolve_current_index(area);
+        const int area0 = cli::slot_of_area(&area);
         mark_all_fields_stale_best_effort(area, area0);
     }
 

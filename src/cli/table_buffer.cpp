@@ -46,6 +46,7 @@
 #include "help/helpdata_messages.hpp"
 #include "xbase.hpp"
 
+#include "workarea_util.hpp"
 extern "C" xbase::XBaseEngine* shell_engine();
 
 using namespace dottalk::table;
@@ -190,16 +191,6 @@ static std::string stale_fields_string_for_area(xbase::DbArea& A, int area0) {
 
     if (out.empty()) return {};
     return std::string(" [") + out + "]";
-}
-
-static int resolve_current_index(xbase::DbArea& A) {
-    xbase::XBaseEngine* eng = shell_engine();
-    if (!eng) return -1;
-
-    for (int i = 0; i < xbase::MAX_AREA; ++i) {
-        if (&eng->area(i) == &A) return i;
-    }
-    return -1;
 }
 
 static std::vector<int> default_current_target(xbase::DbArea& current) {
@@ -496,7 +487,7 @@ static void table_buffer_testadd(const std::string& arg, xbase::DbArea& current_
               << ", field1=" << field1
               << ", value='" << value << "'\n";
 
-    const int curr = resolve_current_index(current_area);
+    const int curr = cli::slot_of_area(&current_area);
     if (curr < 0 || !is_enabled(curr)) {
         cli::cmdout::print_prefixed_message(
             "TABLE BUFFER",
@@ -527,7 +518,7 @@ static void table_buffer_dispatch(const std::string& rest, xbase::DbArea& curren
                 table_buffer_status(i);
             }
         } else if (arg.empty()) {
-            const int curr = resolve_current_index(current_area);
+            const int curr = cli::slot_of_area(&current_area);
             if (curr >= 0 && is_enabled(curr)) {
                 table_buffer_status(curr);
             } else {
@@ -554,7 +545,7 @@ static void table_buffer_dispatch(const std::string& rest, xbase::DbArea& curren
                 table_buffer_dump(i);
             }
         } else if (arg.empty()) {
-            const int curr = resolve_current_index(current_area);
+            const int curr = cli::slot_of_area(&current_area);
             if (curr >= 0 && is_enabled(curr)) {
                 table_buffer_dump(curr);
             } else {

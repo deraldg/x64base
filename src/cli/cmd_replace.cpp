@@ -116,6 +116,7 @@
 #include "memo/memo_auto.hpp"
 #include "memo/memostore.hpp"
 
+#include "workarea_util.hpp"
 using cli::Settings;
 
 static std::string to_upper_copy(std::string s) {
@@ -753,15 +754,6 @@ static bool eval_legacy_replace_expr(xbase::DbArea& A,
 // On success, stored_value_out becomes either "" (no memo) or decimal object-id text.
 extern "C" xbase::XBaseEngine* shell_engine(void);
 
-static int resolve_current_index(xbase::DbArea& A) {
-    xbase::XBaseEngine* eng = shell_engine();
-    if (!eng) return -1;
-    for (int i = 0; i < xbase::MAX_AREA; ++i) {
-        if (&eng->area(i) == &A) return i;
-    }
-    return -1;
-}
-
 struct RecordLockGuard {
     xbase::DbArea& A;
     std::uint64_t rn = 0;
@@ -841,7 +833,7 @@ void cmd_REPLACE(xbase::DbArea& A, std::istringstream& in) {
         return;
     }
 
-    const int area0 = resolve_current_index(A);
+    const int area0 = cli::slot_of_area(&A);
     if (area0 < 0) {
         cli::cmdout::print_prefixed_message(
             "REPLACE",
