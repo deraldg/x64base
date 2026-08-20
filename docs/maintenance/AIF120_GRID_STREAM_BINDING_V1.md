@@ -355,6 +355,18 @@ a picture of it.
 | How to undo | `git revert` the commit. The default generator's output is byte-identical before and after, so reverting cannot change any existing generated file |
 | Risk | low. New behavior is behind a flag that nothing calls by default |
 
+## 11b. RETIRED -- `wx_stream_harness.cpp`, superseded by R72's host
+
+The harness this ruling added supplied the one seam a generated `--stream` file
+cannot supply for itself, and did it badly: a leaked function-static engine, no
+cursor hook, and no teardown at all. **R72 read the host contract out of
+`run_shell()` and `gui/uidef/wx_host.cpp` does the same job correctly**, including
+the symmetric unwind the harness never had.
+
+Retired on the owner's instruction, 2026-08-20. The `git add` line in section 12
+below is the transcript of a handoff that was executed and is left as written --
+it carries a suppression marker because it is a record, not a pointer.
+
 ## 12. Handoff -- PowerShell, run in `D:\code\ccode`
 
 ```powershell
@@ -366,7 +378,7 @@ git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
 git add docs/maintenance/evidence/AIF120_R70_framedemo_stream.png
 git add gui/uidef/uidef_wx.py
 git add gui/uidef/manifest.py
-git add gui/uidef/wx_stream_harness.cpp
+git add gui/uidef/wx_stream_harness.cpp   # retired by R72 -- see the note above  <!-- cite-check:ignore -->
 git add dottalkpp/data/scripts/aif120/r70_stream.dts
 
 git status -uall

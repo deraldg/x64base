@@ -229,6 +229,18 @@ stream-mode translation unit, **0 of them in generated code.** Clean under
 - **Text dispatch is unbuilt.** Section 5 says what it costs and in what order; nothing here does it.
 - **MSVC.** Still nothing in R70, R71 or R72 built outside gcc 13 / wx 3.2.4 / Linux.
 
+## 8b. `wx_stream_harness.cpp` retired
+
+Owner instruction, 2026-08-20. R70's harness is removed: `wx_host.cpp` does what it
+did and the part it omitted. R70 section 11b carries the retirement note, and its
+handoff transcript keeps the old path with a suppression marker because a record of
+an executed commit is not a pointer.
+
+Worth one line for whoever reads this next: **the harness was not wrong, it was
+under-specified.** It supplied the engine and stopped, because I had never read the
+function that says what else a host owes. Nothing about it failed -- the window ran.
+That is the argument for reading `run_shell()` before writing a host, not after.
+
 ## 9. Good Neighbor
 
 | | |
