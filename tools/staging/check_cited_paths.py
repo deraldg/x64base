@@ -26,8 +26,14 @@ import re
 import subprocess
 import sys
 
+# `gui/` was added by AIF-120 R81.4. AIF-120 R71 promoted that lane out of
+# `tools/uidef` into `gui/uidef` and retargeted 251 citations INTO a directory
+# this tuple did not list -- so the promotion commit's `cited-paths: OK` was a
+# green about the paths that had NOT moved. Measured at the time of the fix: 175
+# citations across 66 documents were invisible here, and turning them on costs
+# exactly one advisory.
 ROOTS = ('docs/', 'tools/', 'src/', 'include/', 'labtalk/', 'coordination/',
-         'dottalkpp/', 'scripts/', 'smoke/')
+         'dottalkpp/', 'scripts/', 'smoke/', 'gui/')
 EXTS = ('.md', '.py', '.png', '.txt', '.h', '.hpp', '.cpp', '.csv', '.yaml',
         '.yml', '.dts', '.html', '.json', '.dbf', '.scx', '.mnx', '.vcx', '.frx',
         '.sh', '.ps1')

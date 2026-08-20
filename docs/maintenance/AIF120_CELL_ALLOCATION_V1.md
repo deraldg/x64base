@@ -208,6 +208,49 @@ it. The backend table in R80 section 1 gains its last row:
 | How to undo | `git revert`. 19 of 22 renders are byte-identical either way; the other three are section 6 |
 | Risk | low, and confined to one file. The behaviour is gated on a property no fixture sets; the two unweighted renders that moved, moved by removing columns nothing was in |
 
+## 9a. R81.3 / R81.4 -- the gate could not see the project this lane was promoted into
+
+**Added after this ruling landed**, from the gate's own output on the commit that
+carried it.
+
+**R81.3.** `cited-paths` reported **9 paths cited, 9 tracked** on a session closeout
+that names 43 files. Thirty-four were BARE NAMES -- including all twelve
+`AIF120_*.md` rulings, which are that document's entire index. A green about 9 was
+being read as a green about 43. That is R75's finding (*a gate sees the shape it
+was built to see*) inside the document that records R75. Eighteen citations
+retargeted to full paths; gate-visible went 9 to 21.
+
+**R81.4, and this one is larger.** The retarget moved five scripts to
+`gui/uidef/...` and the count went up by 12, not 17. The gate's `ROOTS` tuple
+(`tools/staging/check_cited_paths.py:29`) lists nine directories and **`gui/` is
+not one of them.**
+
+R71 promoted this lane out of `tools/uidef` into `gui/uidef` and **retargeted 251
+citations into a directory the verifying gate does not scan.** That commit reported
+`cited-paths: OK -- 159 of 159 tracked, zero widows` and R71 quotes it as evidence
+the migration was clean. It was evidence about the 159 paths that had NOT moved.
+
+Measured before the fix:
+
+| | |
+|---|---|
+| `gui/` paths cited across tracked `.md` | **175 citations in 66 documents** |
+| distinct `gui/` paths | 57 |
+| invisible to `cited-paths` | **all of them** |
+| cost of switching them on | **one advisory** -- `gui/core/session.cpp`, cited by `docs/maintenance/WORKSPACE_MANAGER_AND_GROUPS_DESIGN_V1.md`, not on disk and not tracked; another lane's document, reported not fixed |  <!-- cite-check:ignore -->
+
+`'gui/'` added to `ROOTS`, with the reason in the source above the tuple rather
+than only here.
+
+**The shape.** R42 found that `git add` on a gitignored path is a silent no-op, so
+a green gate was evidence about what was STAGED and not what was intended. This is
+the same sentence with a different verb: **a green gate is evidence about what it
+was configured to LOOK AT.** A project promotion moves files; nothing moves the
+gates' idea of where files live, and no gate reports a directory it was never told
+about -- silence is what a blind spot sounds like. Any future promotion under
+AIF-040 should check the gate configuration as part of the move, and that belongs
+in AIF-040 rather than here.
+
 ## 10. Handoff -- PowerShell, run in `D:\code\ccode`
 
 **R78, R79 and R80 have not landed.** `HEAD` is still `851a664bd` (R77), so the
