@@ -257,21 +257,16 @@ def generate(path, title=None, dispatch=False, stream=False):
                         % (ind, v, cstr(cap or title or 'UIDEF'),
                            org.get('origin_width', '620'),
                            str(int(float(org.get('origin_height', 420))) + 40)))
-            if stream and stream_relations and not made_rels:
+            if stream_relations and not made_rels:
                 made_rels.append(1)
-                body.append('%srelations_api::attach_engine(shell_engine());' % ind)
-                for pa, ch, ed in stream_relations:
-                    if not ed:
-                        notes.append('SKIPPED relation %s -> %s -- no ON field '
-                                     'in SOURCE' % (pa, ch))
-                        continue
-                    body.append('%srelations_api::add_relation(%s, %s, {%s});'
-                                % (ind, cstr(pa.upper()), cstr(ch.upper()),
-                                   cstr(ed.upper())))
-                body.append('%srelations_api::set_current_parent_name(%s);'
-                            % (ind, cstr((src_aliases[0] if src_aliases else '')
-                                         .upper())))
-                body.append('%srelations_api::set_autorefresh(true);' % ind)
+                # R72. This was four inline relations_api calls, emitted per
+                # document into widget-construction code. `src/cli/shell.cpp`
+                # run_shell() already performs exactly that setup at 532-534 --
+                # so R70.5 re-derived the host's own initialization instead of
+                # calling it. The document still owns WHAT its relations are; the
+                # host lifecycle owns WHEN, and owns the matching teardown that
+                # run_shell has at 777-783 and R70 had not at all.
+                body.append('%suidef_attach_source(*shell_engine());' % ind)
             if dispatch:
                 body.append('%sg_rt = new uidef::Runtime(%s, DOMAINS, '
                             'wxTheApp->argc > 2);' % (ind, v))
@@ -582,6 +577,19 @@ def generate(path, title=None, dispatch=False, stream=False):
     head = ['#include <wx/wx.h>', '#include <wx/notebook.h>', '#include <wx/gbsizer.h>',
             '#include <wx/statbox.h>', '#include <wx/listctrl.h>',
             '#include <wx/treectrl.h>']
+    REL_LINES = []
+    for _pa, _ch, _ed in stream_relations:
+        if not _ed:
+            notes.append('SKIPPED relation %s -> %s -- no ON field in SOURCE'
+                         % (_pa, _ch))
+            continue
+        REL_LINES.append('    relations_api::add_relation(%s, %s, {%s});'
+                         % (cstr(_pa.upper()), cstr(_ch.upper()),
+                            cstr(_ed.upper())))
+    if src_aliases:
+        REL_LINES.append('    relations_api::set_current_parent_name(%s);'
+                         % cstr(src_aliases[0].upper()))
+
     pre = []
     # R70.3. Emitting the helper for a document with no bound grid gives
     # -Wunused-function, and `-fsyntax-only` cannot see it -- gcc only warns
@@ -599,6 +607,22 @@ def generate(path, title=None, dispatch=False, stream=False):
             'extern "C" xbase::XBaseEngine* shell_engine();',
             '',
             'std::vector<std::unique_ptr<dottalk::DbTupleStream>> g_streams;',
+            '',
+            '// R72. The DOCUMENT contributes its SOURCE relation graph; the HOST',
+            '// owns when it happens and unwinds it. This is run_shell()\'s shape',
+            '// (src/cli/shell.cpp: attach at 532-534, detach at 777-783), not a',
+            '// new arrangement -- and the detach half is what R70 was missing.',
+            'void uidef_attach_source(xbase::XBaseEngine& eng) {',
+            '    relations_api::attach_engine(&eng);',
+           ] + REL_LINES + [
+            '    relations_api::set_autorefresh(true);',
+            '}',
+            '',
+            'void uidef_detach_source() {',
+            '    g_streams.clear();          // streams hold cursor state: die first',
+            '    relations_api::clear_all_relations();',
+            '    relations_api::attach_engine(nullptr);',
+            '}',
             '',
             '// The only place rows enter a generated grid. next_page(max_rows) is the',
             '// paging verb (contract 4c); the house clamps max_rows to 1..200 and the',
@@ -670,7 +694,16 @@ def generate(path, title=None, dispatch=False, stream=False):
             % ', '.join('{%s}' % ', '.join('"%s"' % a for a in d) for d in doms)]
            if dispatch else []) + body + [
 
-           ] + tail + ['  return true; } };', 'wxIMPLEMENT_APP(App);']
+           ] + tail + (
+           # Correction 53: the OnExit override split `return true; } };` into
+           # two lines for EVERY document, breaking the byte-identical guarantee
+           # that is the whole argument for --stream being additive. The split
+           # now happens only where there is an override to put between them.
+           ['  return true; }',
+            '  int OnExit() override { uidef_detach_source(); return 0; }',
+            '};']
+           if will_bind else ['  return true; } };']
+           ) + ['wxIMPLEMENT_APP(App);']
     return "\n".join(src), notes, made[0]
 
 
