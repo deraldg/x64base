@@ -787,6 +787,27 @@ if(DOTTALK_BUILD_SLOT_COST_PROBE AND NOT TARGET g0_slot_cost_probe)
 endif()
 # END DOTARCH METACOLLECT CMAKE BUILDWIRE OPTION B V1
 
+# AIF-120: the windowed GUI installs beside dottalkpp, because that is where the
+# runtime looks for it. The GUI path slot is root-relative (<root>/bin), so a
+# packaged product whose GUI landed anywhere else would have APPGUI report "not
+# present in this build" on a build that contains it.
+#
+# The dev tree is handled separately, by a POST_BUILD stage in
+# src/gui/wx/CMakeLists.txt; this is the INSTALL half. The package manifest lists
+# only the three .ini files under dottalkpp/bin -- executables are gitignored
+# (.gitignore:247, **/*.exe) and reach the package through install(TARGETS),
+# which is exactly how dottalkpp itself gets there.
+foreach(_dottalk_gui_install IN ITEMS dottalk_wx dottalk_wx_next)
+    if (TARGET ${_dottalk_gui_install})
+        install(TARGETS ${_dottalk_gui_install} RUNTIME DESTINATION bin)
+        if (WIN32)
+            install(FILES $<TARGET_RUNTIME_DLLS:${_dottalk_gui_install}>
+                    DESTINATION bin OPTIONAL)
+        endif()
+    endif()
+endforeach()
+unset(_dottalk_gui_install)
+
 if(TARGET dottalkpp)
     if (WIN32)
         install(TARGETS dottalkpp RUNTIME DESTINATION bin)

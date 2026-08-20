@@ -1,46 +1,84 @@
 // @dottalk.file v1
 // subsystem: cli
-// layer: helper
+// layer: command
 // owns:
 // project: project.x64base.runtime
 // lane: application-ui-dsl
 // owner: member.derald
 // status: supported
 
-// app_gui.cpp -- launch the windowed GUI from the shell.
+// src/cli/app_gui.cpp
+// -----------------------------------------------------------------------------
+// Launch the windowed GUI from the shell.
+//
+// The windowed GUI is a SEPARATE EXECUTABLE (`dottalk_wx`, built by
+// src/gui/wx/CMakeLists.txt behind DOTTALK_WITH_WX, OFF by default). dottalkpp
+// does not link wxWidgets, so this command launches a process; it does not
+// create a window in this one. That is deliberate: a wxApp event loop inside
+// the CLI process would stand a second UI thread beside the shell's, which is
+// what docs/ui/GUI_THREADING_RAII_CONTRACT_V1.md governs.
+//
+// Registration is orthogonal to the Turbo Vision block in shell_commands.cpp:
+// that block gates on DOTTALK_TV_AVAILABLE, and this is the wx surface. There is
+// no compile-time flag to gate on here because the CLI never links wx -- and a
+// gated-away command answers "Unknown command", which tells a user nothing. The
+// command always exists and reports what it found, the way cmd_palette_stub does.
+// -----------------------------------------------------------------------------
+
+// @dottalk.usage v1
+// owner: DOT|APPGUI
+// command: APPGUI
+// aliases: GUI
+// category: gui
+// status: supported
+// noargs: launch
+// effect: launch-ui-or-report
+// mutates: none
+// usage-access: APPGUI USAGE
+// summary:
+//   Launch the windowed wxWidgets GUI as a separate process, or report by name
+//   why it cannot be launched.
 //
 // usage:
-//   GUI
 //   APPGUI
-//   APPGUI <document>
+//   APPGUI USAGE
 //
-//   Both keys are bound to this symbol in shell_commands.cpp (:178, :199).
-//   The body does not care which one the user typed.
+// examples:
+//   APPGUI
+//   GUI
+//   APPGUI USAGE
 //
 // notes:
-//   The windowed GUI is a SEPARATE EXECUTABLE (`dottalk_wx`, built by
-//   src/gui/wx/CMakeLists.txt behind DOTTALK_WITH_WX, OFF by default). dottalkpp
-//   does not link wxWidgets, so this command launches a process; it does not
-//   create a window in this one. That is deliberate and it is the existing
-//   shape, not a shortcut -- putting a wxApp event loop inside the CLI process
-//   would put a second UI thread beside the shell's, which is exactly what the
-//   threading contract in docs/ui/GUI_THREADING_RAII_CONTRACT_V1.md governs.
-//
-//   With no argument the GUI opens on the current workspace. With a document
-//   argument the intent is a UIDEF-generated frontend; that target is not in
-//   this build and the command SAYS SO rather than silently ignoring the word.
-//
-//   A GUI that is not in the build is reported by NAME, with every path that
-//   was tried. Same choice `cmd_palette_stub` makes for PALETTE: a missing
-//   feature answers, it does not vanish.
+//   Authorized by identity permission `app.gui` (resource class "app", NOT
+//   "host"), so it does not require DOTTALK_ALLOW_HOST_COMMANDS. The owner is
+//   exempt; any other member needs the permission through a role or a grant.
+//   A refusal names the acting member and the stage that denied it.
+//   The GUI executable's declared home is the GUI path slot (SETPATH GUI),
+//   root-relative and beside the product. When the GUI is absent the command
+//   names DOTTALK_WITH_WX and lists every path it probed, each tagged with
+//   where that path came from.
+//   A document argument is refused by name: a UIDEF-generated frontend is a
+//   separate target (gui/uidef/CMakeLists.txt) and is not wired to this command.
 //
 // risk:
-//   reads_files: yes (probes for the GUI executable)
-//   executes_commands: no
-//   launches_external_process: yes -- gated by identity permission `app.gui`
+//   launches_external_process: yes -- one first-party executable, no shell string
+//   reads_files: yes -- probes for the GUI executable
 //   mutates_data: no
 //   mutates_session: no
 //   writes_files: no
+//
+// related:
+//   SIMPLEBROWSER
+//   SMARTBROWSER
+//   WORKSPACE
+
+// @dottalk.location v1
+// id: DOTSRC-DOTTALKPP-CLI-APP-GUI
+// home: src/cli
+// canonical-path: src/cli/app_gui.cpp
+// project: dottalkpp
+// role: command-implementation
+// @dottalk.end
 
 #include "cli/command_output.hpp"
 #include "shell_commands.hpp"
@@ -52,6 +90,7 @@
 #include <filesystem>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace {
@@ -76,35 +115,81 @@ std::string upper_token(std::istringstream& iss)
     return textio::up(tok);
 }
 
-/// Every place a GUI executable could reasonably be, in probe order.
-/// Returned rather than assumed: when nothing is found the caller prints this
-/// list, so "not installed" is a statement with evidence behind it.
-std::vector<fs::path> candidate_paths()
+/// Every place a GUI executable could reasonably be, in probe order, PAIRED
+/// with where the idea came from.
+///
+/// R89. The first version asked `get_slot(Slot::BIN)` and nothing else, and it
+/// came back EMPTY -- so the probe list was empty, the loop that prints it ran
+/// zero times, and the command reported "not present in this build" having
+/// looked nowhere. A diagnostic that can be empty is worse than no diagnostic:
+/// it is a confident answer with no evidence under it.
+///
+/// The reason the slot is empty is worth writing down, because the banner says
+/// otherwise. `INIT: Paths` prints `BIN` from `get_executable_dir()`
+/// (cmd_init.cpp:287), NOT from `get_slot(Slot::BIN)`. Nothing in the CLI ever
+/// calls `initialize_from_bin()`, so `state().bin_root` is never populated and
+/// the two disagree. That is AIF-120 R82.1 again -- a hand-maintained printer
+/// showing a value the slot does not hold -- and it is reported to the engine
+/// lane rather than fixed here, because `set_slot(Slot::BIN, ...)` re-runs
+/// `build_all_paths()` and that is not a side effect to introduce untested.
+///
+/// So DATA is used as the anchor instead. It is populated, and
+/// `initialize_from_bin()` itself defines the relationship in reverse:
+/// bin/../data. Reading it forwards -- data/../bin -- is the same fact.
+std::vector<std::pair<std::string, fs::path>> candidate_paths()
 {
-    std::vector<fs::path> out;
-    std::error_code ec;
+    std::vector<std::pair<std::string, fs::path>> out;
+    std::vector<std::pair<std::string, fs::path>> roots;
 
+    // Slot::GUI is the DECLARED home: root-relative, beside the product, set by
+    // init_defaults and re-rooted by SETPATH along with everything else. A path
+    // the product declares is one this command can only report; a path it derives
+    // is one it can get wrong.
+    const fs::path gui = dottalk::paths::get_slot(dottalk::paths::Slot::GUI);
+    if (!gui.empty()) {
+        roots.emplace_back("Slot::GUI", gui);
+    }
+
+    // Kept as fallbacks, and ordered after the declaration on purpose. BIN exists
+    // in the enum but nothing in the CLI populates it -- `INIT: Paths` prints a
+    // BIN line computed from get_executable_dir() (cmd_init.cpp:287), not from
+    // this slot, so the banner and the slot disagree. Probed anyway: if it is
+    // ever populated it is authoritative, and if it is not, the tag says so.
     const fs::path bin = dottalk::paths::get_slot(dottalk::paths::Slot::BIN);
-    for (const char* name : kGuiExecutables) {
-        if (!bin.empty()) {
-            out.push_back(bin / (std::string(name) + kExeSuffix));
-        }
-    }
-    // A developer tree builds the GUI under its own target directory rather than
-    // beside dottalkpp. Probed second so an installed product always wins.
     if (!bin.empty()) {
+        roots.emplace_back("Slot::BIN", bin);
+    }
+
+    const fs::path data = dottalk::paths::get_slot(dottalk::paths::Slot::DATA);
+    if (!data.empty() && data.has_parent_path()) {
+        roots.emplace_back("Slot::DATA/../bin", data.parent_path() / "bin");
+    }
+
+    std::error_code ec;
+    const fs::path cwd = fs::current_path(ec);
+    if (!ec && !cwd.empty()) {
+        roots.emplace_back("current directory", cwd);
+    }
+
+    for (const auto& [why, root] : roots) {
         for (const char* name : kGuiExecutables) {
-            out.push_back(bin / "gui" / "wx" / (std::string(name) + kExeSuffix));
+            out.emplace_back(why, root / (std::string(name) + kExeSuffix));
+        }
+        // A developer tree builds the GUI under its own target directory rather
+        // than beside dottalkpp. Probed after the plain location so an installed
+        // product always wins.
+        for (const char* name : kGuiExecutables) {
+            out.emplace_back(why, root / "gui" / "wx" / (std::string(name) + kExeSuffix));
         }
     }
-    (void)ec;
     return out;
 }
 
-fs::path first_existing(const std::vector<fs::path>& candidates)
+fs::path first_existing(const std::vector<std::pair<std::string, fs::path>>& candidates)
 {
     std::error_code ec;
-    for (const auto& p : candidates) {
+    for (const auto& [why, p] : candidates) {
+        (void)why;
         if (fs::exists(p, ec) && !ec && fs::is_regular_file(p, ec) && !ec) {
             return p;
         }
@@ -125,6 +210,17 @@ void launch_detached(const fs::path& exe)
     std::system(cmd.c_str());
 }
 
+void print_usage()
+{
+    cli::cmdout::print_line("APPGUI -- launch the windowed GUI");
+    cli::cmdout::print_line("  APPGUI            launch, or report why it cannot");
+    cli::cmdout::print_line("  APPGUI USAGE      this text");
+    cli::cmdout::print_line("  alias: GUI");
+    cli::cmdout::print_line(
+        "  Authorized by identity permission 'app.gui'. The GUI itself is a "
+        "separate executable built by DOTTALK_WITH_WX.");
+}
+
 } // namespace
 
 void app_GUI(DbArea& /*area*/, std::istringstream& iss)
@@ -137,6 +233,14 @@ void app_GUI(DbArea& /*area*/, std::istringstream& iss)
     std::string tok = upper_token(iss);
     if (tok == "GUI") {
         tok = upper_token(iss);
+    }
+
+    // usage-access contract. Answered before the permission check and before any
+    // probe -- the same ordering SIMPLEBROWSER uses, and for the same reason: a
+    // user asking what a command does should not need permission to be told.
+    if (tok == "USAGE" || tok == "HELP" || tok == "?") {
+        print_usage();
+        return;
     }
 
     // AIF-045 identity, not the host-shell policy. `app.gui` is resource class
@@ -161,7 +265,7 @@ void app_GUI(DbArea& /*area*/, std::istringstream& iss)
         }
     }
 
-    const std::vector<fs::path> candidates = candidate_paths();
+    const std::vector<std::pair<std::string, fs::path>> candidates = candidate_paths();
     const fs::path exe = first_existing(candidates);
 
     if (exe.empty()) {
@@ -170,8 +274,16 @@ void app_GUI(DbArea& /*area*/, std::istringstream& iss)
         cli::cmdout::print_line(
             "APPGUI: it is built by DOTTALK_WITH_WX, which is OFF by default "
             "(src/CMakeLists.txt:6).");
-        for (const auto& p : candidates) {
-            cli::cmdout::print_line("APPGUI:   looked for " + p.string());
+        if (candidates.empty()) {
+            // Cannot happen with the current roots, and said anyway: the failure
+            // this replaced was exactly a loop that ran zero times.
+            cli::cmdout::print_line(
+                "APPGUI: no probe location could be resolved at all -- "
+                "Slot::BIN, Slot::DATA and the current directory are all empty.");
+        }
+        for (const auto& [why, p] : candidates) {
+            cli::cmdout::print_line("APPGUI:   looked for " + p.string() +
+                                    "   [" + why + "]");
         }
         return;
     }

@@ -166,3 +166,40 @@ else()
   target_compile_options(dottalk_wx PRIVATE -Wall -Wextra -Wpedantic)
   target_compile_options(dottalk_wx_next PRIVATE -Wall -Wextra -Wpedantic)
 endif()
+
+# -----------------------------------------------------------------------------
+# Stage the built GUI where the runtime looks for it. AIF-120.
+#
+# `APPGUI` resolves the GUI executable through the GUI path slot, which is
+# root-relative and beside the product: <repo>/dottalkpp/bin (path_state.cpp,
+# `s.gui_root = s.root / "bin"`, and cmd_setpath.cpp init_defaults). A launcher
+# that has to guess where a build put its output is a launcher that can be wrong;
+# staging here means the product DECLARES the location and APPGUI only reports it.
+#
+# copy_if_different, matching the wx DLL step above -- a rebuild that changed
+# nothing should not touch the staged file.
+set(DOTTALK_GUI_STAGE_DIR "${CMAKE_SOURCE_DIR}/dottalkpp/bin")
+
+foreach(_dottalk_gui_target dottalk_wx dottalk_wx_next)
+  add_custom_command(TARGET ${_dottalk_gui_target} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${DOTTALK_GUI_STAGE_DIR}"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      "$<TARGET_FILE:${_dottalk_gui_target}>"
+      "${DOTTALK_GUI_STAGE_DIR}"
+    COMMENT "Staging ${_dottalk_gui_target} into dottalkpp/bin (the GUI path slot)"
+  )
+endforeach()
+
+# The executable alone is not runnable on Windows. The DLL list was gathered
+# above for the build directory; the staged copy needs the same set beside it.
+if (WIN32 AND _dottalk_wx_runtime_dlls)
+  add_custom_command(TARGET dottalk_wx POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      ${_dottalk_wx_runtime_dlls}
+      "${DOTTALK_GUI_STAGE_DIR}"
+    COMMAND_EXPAND_LISTS
+    COMMENT "Staging wxWidgets runtime DLLs into dottalkpp/bin"
+  )
+endif()
+
+unset(_dottalk_gui_target)

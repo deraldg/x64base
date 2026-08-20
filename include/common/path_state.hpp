@@ -41,6 +41,7 @@ enum class Slot {
     PROJECTS,
     SCRIPTS,
     TOOLS,          // helper programs the runtime invokes; root-relative, ships with the product
+    GUI,            // windowed GUI executables the runtime launches; root-relative, beside the product
     TESTS,
     HELP,
     LOGS,
@@ -102,6 +103,7 @@ struct State {
     fs::path projects_root;
     fs::path scripts_root;
     fs::path tools_root;
+    fs::path gui_root;
     fs::path tests_root;
     fs::path help_root;
     fs::path logs_root;
