@@ -3,7 +3,7 @@
 // layer: command
 // owns:
 // project: project.x64base.runtime
-// lane: application-ui-dsl
+// lane: AIF-120
 // owner: member.derald
 // status: supported
 
@@ -22,7 +22,10 @@
 // that block gates on DOTTALK_TV_AVAILABLE, and this is the wx surface. There is
 // no compile-time flag to gate on here because the CLI never links wx -- and a
 // gated-away command answers "Unknown command", which tells a user nothing. The
-// command always exists and reports what it found, the way cmd_palette_stub does.
+// command always exists and reports what it found. That is the house pattern:
+// SQLITE is registered unconditionally (shell_commands.cpp:442) and answers
+// "not available in this build (DOTTALK_SQLITE_AVAILABLE=0)" at run time from
+// src/cli/cmd_sqlite.cpp:705 rather than vanishing from the registry.
 // -----------------------------------------------------------------------------
 
 // @dottalk.usage v1
