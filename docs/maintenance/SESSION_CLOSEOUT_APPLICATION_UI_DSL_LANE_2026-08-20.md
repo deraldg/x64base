@@ -1,8 +1,8 @@
 ---
 ai_report_audit:
   schema: ai-report-audit-v1
-  report_id: AIPR-20260820-COWORK-080
-  recorded_at_utc: 2026-08-20T03:10:00Z
+  report_id: AIPR-20260820-COWORK-091
+  recorded_at_utc: 2026-08-20T22:15:00Z
   agent:
     provider: Anthropic
     product: Claude (Cowork)
@@ -23,10 +23,11 @@ ai_report_audit:
       mission", then "examine the ccode dir and find an appropriate home for our
       gui work", then "you are green to develop".
     scope: >
-      Session closeout for AIF-120, run COWORK-20260818-001. Records the two
-      rulings that landed (R70 grid-to-TupleStream binding, R71 lane-to-project
-      promotion), the six corrections made, what is owed to other areas, the
-      leftovers to delete, and the state the next session inherits.
+      Session closeout for AIF-120, run COWORK-20260818-001. Records the twelve
+      rulings that landed (R70 through R81, grid-to-TupleStream binding through
+      the character-cell weight allocation), the six corrections made, what is
+      owed to other areas, the leftovers to delete, and the state the next
+      session inherits.
   report:
     path: docs/maintenance/SESSION_CLOSEOUT_APPLICATION_UI_DSL_LANE_2026-08-20.md
     kind: session_closeout
@@ -58,9 +59,17 @@ What is stable, and therefore stated, is which ruling lives in which document:
 | **R73** -- `Order` is a mode, not an index format | `AIF120_ORDER_VOCABULARY_V1.md` |
 | **R74** -- the frames render engine counts | `AIF120_RELATION_FRAMES_V1.md` |
 | **R75** -- the refusal fixtures made reproducible | `AIF120_FIXTURE_CORPUS_V1.md` |
+| **R76** -- the UIDEF document is a CMake source | `AIF120_CMAKE_TARGET_V1.md` |
+| **R77** -- measured against a wx sample the lane did not author | `AIF120_SAMPLE_MEASUREMENT_V1.md` |
+| **R78** -- the round trip carried the tree and lost PROPORTION | `AIF120_ROUND_TRIP_V1.md` |
+| **R79** -- `Weight` and `Fill` added to `PROPS` | `AIF120_LAYOUT_WEIGHT_V1.md` |
+| **R80** -- `Weight` needs free space; two backends had none | `AIF120_WEIGHT_BACKENDS_V1.md` |
+| **R81** -- the character-cell backend owns its remainder | `AIF120_CELL_ALLOCATION_V1.md` |
 
-All six are **review-needed**; the author does not self-approve. Also landed: the
-wx-samples correction, R73.3a, and the retirement of `wx_stream_harness.cpp`.
+All twelve are **review-needed**; the author does not self-approve. Also landed:
+the wx-samples correction, R73.3a, the owner ruling that `ccode/gui` is the GUI
+project and `src/gui` is for C++ GUI code, and the retirement of
+`wx_stream_harness.cpp`.
 
 ### Why there is no hash table here
 
@@ -144,21 +153,99 @@ matches PATHS, and those fixtures are cited by NAME.
 **Staged with this closeout, deliberately** -- the rule recorded below, applied on
 its first opportunity.
 
+**R76 -- the document becomes a build input.** R70's 46-object link was assembled
+by hand from an `nm` closure, which is a measurement, not a build.
+`gui/uidef/CMakeLists.txt` runs the author script, generates the C++ and compiles it: 62
+seconds clean, 66 translation units, a 2.27 MB binary, with the UIDEF document as
+a CMake SOURCE. Extracting it hit the same silent parent globals AIF-118 recorded
+for pydottalk -- a standalone target inherits nothing and says nothing about what
+it did not inherit, so the failure is a link error three layers from the cause.
+Twenty-nine of the files it compiles are owned by no library; that list is
+explicit in the target rather than discovered again by the next person.
+
+**R77 -- graded by someone else's homework.** The maintainer offered the two
+parallel wx samples for dogfooding. Every UIDEF document to date was authored by
+this lane, and **a language graded only on its own homework will pass.** Measured
+against a screen the lane did not write: a word for about 90% of the controls,
+independent corroboration of contract 4b(b) from outside the lane -- and no word
+at all for NEGOTIABLE geometry, a sash the user drags. That gap is a CONCEPT, not
+a missing control kind, which is the only kind of gap an unauthored screen finds.
+
+**R78 -- the round trip, and the property nobody thought to name.**
+`author_mainframe.py` describes `src/gui/wx/main_frame.cpp` as a UIDEF document
+and `uidef_wx.py` generates it back: **47 records, 45 elements, ZERO refusals**,
+carrying a `pageset` inside a `page` inside a `pageset` that no prior document in
+this lane has nested, and it builds and runs against wx alone with no engine. What
+it could not carry was PROPORTION. Measured, 33 sizer additions carry an explicit
+proportion -- 20 fixed, 13 saying take the remaining space -- so the render is a
+recognisable frame in which NOTHING STRETCHES. R12 ruled layout intent portable and
+quarantined coordinates, and then the design table captured order and containment
+and dropped the one property all four backends share.
+
+**R79 -- `Weight` and `Fill`, shaped so the upgrade is an extension.** The
+maintainer answered with "gold standard", and the house rule *go for gold unless
+the cost is platinum* has a second half that decided the design: ship the gold
+SHAPED so platinum is an extension. Both properties went into `PROPS` on the
+CHILD, not a seventeenth field -- a column would be tidier and would change the
+record length, every reader, both importers and every document ever authored.
+Absent means 0 and false, so **all 18 fixtures generate byte-identical output**: a
+layout property added to a layout language that provably moves no existing
+document. Child-not-container is also what makes R77's sash an extension rather
+than a rewrite, because a sash is two weighted children plus a movable boundary.
+
+**R80 -- and the claim R79 made one ruling earlier.** R79 shipped a table
+asserting all four backends carry both natively. Carrying the property into the
+other three found that table half wrong -- not about the toolkits, which have the
+mechanisms, but about this lane's backends: **`Weight` is a share of FREE SPACE,
+and a container that sizes to its children has none.** The HTML form was
+`display:inline-block` and the character-cell renderer never divided its width; in
+both, correct CSS and correct intent would have been emitted and been INERT. That
+is asserting from the shape of the thing instead of measuring it -- in a ruling one
+turn old, about the property I was implementing. HTML fixed, Tk implemented and
+reporting the ratio its boolean `expand` loses, character cell reporting the drop.
+
+**R81 -- the backend that has to own the remainder.** R80 named the two-pass
+`draw()` and this is it. Along a `row` the character-cell renderer now measures
+natural widths, divides the slack by the declared weights and widens the glyphs.
+The reason it earned a ruling is not the two passes: **a character grid divides a
+DISCRETE resource,** which the three pixel backends never confront. 3:1 of ten
+spare cells is 7.5 and 2.5 and somebody must own the halves -- wx, Tk and CSS hand
+that to a toolkit; here there is none. So the rule was chosen and WRITTEN DOWN:
+`floor(slack * weight / total_weight)` each, remainder one cell at a time in
+ORDINAL order, arbitrary but deterministic and stated, because a renderer that
+rounded differently on different runs would make one document mean two things.
+Proven on arithmetic chosen not to come out even.
+
+Filling a budget is the first thing this renderer has ever done that could
+OVERFLOW one, and it immediately did, three times: a phantom two-column trailing
+gap recorded after every row, a box overhead that was 2 where a container GRANTED
+and 3 where it ASKED so every nesting level cost three columns nobody reserved,
+and a `stretch()` that would have grown a combo past its own drop arrow. **None of
+those were findable by R79 or R80** -- it took a renderer that USES its budget to
+expose a renderer that mis-states it. And because R81 honours SOME weights, every
+weighted child it will not resize is now named individually with its own reason,
+since a partial honouring is exactly where a silent drop hides.
+
 ## State
 
-- `gui/uidef` -- 53 tracked files, renames preserved (git reported 95-100% similarity per file).
-- `gui/README.md`, `labtalk/registries/projects.yaml` row `project.x64base.gui`.
-- 251 citations retargeted across 55 documents; `cited-paths` reports **159 of 159 tracked, zero widows.**
-- Six backends import and run from the new home; `KINDS` still 19; `generate(path, title, dispatch, stream)`.
+- `gui/uidef` -- **57 tracked files**, renames preserved (git reported 95-100% similarity per file).
+- `gui/README.md`, `labtalk/registries/projects.yaml` row `project.x64base.gui`, `gui/uidef/CMakeLists.txt`.
+- 251 citations retargeted across 55 documents; `cited-paths` reports zero widows on every commit since.
+- Four backends carry `Weight`; `KINDS` still 19; `generate(path, title, dispatch, stream)`.
+- The corpus regenerates: `author_cases.py` (16 refusal fixtures) plus five other author scripts, 22 documents in all.
+- `prove_r81.py` asserts the cell-allocation rule and exits non-zero if it ever stops holding.
 
 ## Owed, and to whom
 
 | Item | Who |
 |---|---|
-| **MSVC verification of R70.** Everything is gcc 13 / wx 3.2.4 / Linux. R68's whole argument is that `long` differs LP64 vs LLP64, and R69 already cost a round of exactly this. I would not call the GUI attached until it links under MSVC | maintainer |
-| **Naming: `gui/` vs `src/gui/`.** Both now exist; "the gui directory" is ambiguous. Consolidating `src/gui` under `gui/` touches `src/CMakeLists.txt:117,450,454` and was deliberately not bundled | owner ruling |
+| **MSVC.** Nothing in R70 through R81 has been built outside gcc 13 / wx 3.2.4 / Linux. R68's whole argument is that `long` differs LP64 vs LLP64, and R69 already cost a round of exactly this. R76's CMake target makes this one command now, and a FAILURE would be more useful than another green Linux build. **This is the oldest open item in the lane by several rulings** | maintainer |
+| ~~**Naming: `gui/` vs `src/gui/`**~~ -- **CLOSED by owner ruling**: `ccode/gui` is the GUI project and `src/gui` is for C++ GUI code. The coexistence I recorded as a cost is the structure; nothing moves, and `src/CMakeLists.txt:117,450,454` is not a pending migration | resolved |
 | **R71.1** -- `prepush_gate.py:380` documents the mass-ack as cmd.exe `set X=1 && git commit`; in PowerShell that sets a shell variable the gate cannot see | gate owner |
 | **R70.6/.7/.8** -- three `-Wsign-conversion` in `include/xbase.hpp`; a stale "R70" citation at `db_tuple_stream.hpp:71` that means R69; `HELP TUPLE` documents `#n`, which the lexer deletes | engine lane |
+| **R73.7** -- `AREA`/`DBAREA` report `Order: ASCEND` for an area whose `Active tag` is `(none)` and which lists physically, so the reported order cannot be trusted as state. Two attach paths, two outcomes, one word | engine lane |
+| **R73.8** -- `STRUCT` prints `Tags : (none)` for `STUDENTS.cdx` while `SET ORDER TO FNAME` selects a tag out of that container and `USE` auto-attaches `SID` from it; `CDX INFO` on `TEACHERS.cdx` lists four. **Reported, not concluded** -- one `CDX INFO` with `STUDENTS` selected settles it | engine lane |
+| **R81.1** -- 22 repo paths cited in `docs/ai-friendly/AI_FRIENDLY_DASHBOARD_V1.md` are untracked. All 22 are ON DISK, so this is R73.3a's shape at dashboard scale: a reader who cloned has the citation and not the target. Not on the rows this session touched, and `cited-paths` scopes to the change set, so nothing blocked | dashboard owner |
 | **BETA citations.** 26 across nine documents cite the BETA checklist as authority. The maintainer ruled it "a template"; `foxref.cpp` shows all 43 items `BetaStatus::OPEN`. Retarget to lane rulings | AIF-120, next session |
 
 ## Next unit
@@ -166,23 +253,32 @@ its first opportunity.
 **Read this after R74.** This section has now been rewritten twice for the same
 reason -- see the housekeeping note below.
 
-- **Paging.** `next_page` is called once; the R74 fills also run once and nothing recomputes them when the cursor moves. R72 established `cursor_hook::set_callback` is the signal that should. One unit covers both.
-- **A CMake target.** The 46-object link was assembled by hand from an `nm` closure.
+- **MSVC.** See the Owed table. One `cmake` configure-and-build of `uidef_wx_demo` answers it, and it is the oldest thing here.
+- ~~**The positive half of R73**~~ -- **CLOSED.** The maintainer ran it on the device (this lane's container has no `LMDB/`, and `LMDB/x64` is 577 MB, over the staging cap). `USE teachers NOINDEX` reports `Order : NATURAL` and lists recnos 1..20 in sequence; `SET ORDER TO FNAME` lists 16, 57, 64, 103, 114, 6, 36, ... in FNAME order. Transcript at `docs/maintenance/evidence/AIF120_R73_ordered_vs_physical.txt`. **It also reopened the ruling one notch** -- see R73.6 below.
+- **`Order` has no word for DESCENDING (R73.6).** The command after the proof was `DESCEND`, and the engine answered `Order: DESCENDING.` -- same tag, opposite direction. R73 closed the set at two by surveying `DbTupleStream`'s setters, which have no direction, and not the order state the engine reports. `Descending` is a second AXIS, not a third value, and whether it belongs to the document at all or to the workspace beside `tag=` is an owner decision. Contract 4e(a).
+- **`Order: ASCEND` is not evidence an order is active (R73.7).** `WORKSPACE OPEN`'s directory scan attaches the container and selects NO tag; `USE` attaches and selects one. Both report `ASCEND`. The scan path is the one a generated frontend uses, which makes R73.1's "asks for an order, is told nothing, browses physical" the NORMAL case rather than an edge one. Contract 4e(b).
+- **Paging.** `next_page` is called once; the R74 fills also run once and nothing recomputes them when the cursor moves. R72 established `cursor_hook::set_callback` is the signal that should. One unit covers both, and it is the largest piece of unfinished runtime behaviour in the lane.
+- **Tk through `grid()` rather than `pack()`** -- carries the ratio Tk's boolean `expand` loses (R80 section 4). Needs nothing from anyone.
+- **Character-cell COLUMN weight** -- needs a fixed canvas height the way HTML needed a sized form. The mechanism is written once already; what is missing is a height to divide, and inventing one is a decision about what a character-cell render IS.
+- **`FLOW = grid` row/column growth** -- `AddGrowableRow`/`AddGrowableCol`, open since R79.
 - **The second grid shape**, when the owner rules on its document form. Runtime contract is `enum_emit_for_current_parent`.
-- **MSVC.** Nothing in R70-R74 was built outside gcc 13 / wx 3.2.4 / Linux.
-- **The positive half of R73** -- that ordered differs from physical -- needs a tree with the LMDB `.cdx.d` environments. This container has none.
+- **The 26 BETA citations**, still pointing at a template the maintainer has ruled is not authority.
 
 Owner decisions open: `relations_boot::autoload()` and `cmd_INIT` participation
 (R72); the `Path` grid form (R74); staging `x64.dts` and the 95 other untracked
-`.dts` (R73.3a); and `gui/` vs `src/gui/` naming (R71).
+`.dts` (R73.3a); and R77's NEGOTIABLE geometry -- the sash the design table has no
+word for.
 
 ## Corrections this session
 
-Five, all recorded in their rulings. Two are worth repeating because they are the
-same shape:
+Six, all recorded in their rulings. Four are worth repeating because they are the
+same shape -- and the shape is that a fix applied to one SITE is not a rule:
 
 - **Correction 50** -- `--dispatch` and `--stream` did not compose; the dispatch branch assigned over the stream block. Found by asking whether they composed, not by anything failing.
 - **Correction 51** -- my handoff ended in `git add docs/maintenance`. 967 paths staged, 199 data fixtures, 405 non-ASCII lines belonging to other lanes. I never wrote `-A` or `.`, which is the trap: **the rule is about breadth, not spelling.** `prepush-gate` caught it, nothing was committed, nothing was lost. `migrate_uidef.py` now emits the exact stage list it always knew.
+- **Correction 52** -- I pushed a whole file over the working tree and DESTROYED a `cite-check:ignore` marker I had added directly to that tree an hour earlier, then reintroduced the very citation the marker existed to suppress while writing the correction for it. The remedy is one line and it is now a standing constraint: **one authoritative copy.** Edit the working tree in place; do not keep a scratch copy and push it whole.
+- **Correction 53** -- adding an `OnExit` override split `return true; } };` for EVERY document, so the byte-identical-without-`--stream` invariant failed on a purely COSMETIC change. That is the invariant doing its job; it is now split only when the document actually binds.
+- **Correction 54** -- R70.3's unused-helper fix had been applied to ONE helper instead of made a rule, so two new helpers reintroduced the same defect on six of eighteen fixtures immediately. Every helper is now gated on its own caller list. Same shape as 49, 51 and 52: the fix that lands at a site instead of at the rule comes back.
 
 ## 5. Onboarding -- owed, and paid late
 
@@ -209,4 +305,10 @@ commit table cannot name its own commit.
 ## Housekeeping
 
 Gitignored, mine, safe to delete: `tmp/r70_eng.tgz`, `tmp/r70_src.tgz`,
-`tmp/r71_stage_list.txt`, `tmp/_to_delete/r70_section4d.md`.
+`tmp/r71_stage_list.txt`, `tmp/logrow.txt`, `tmp/flavors.tgz`, `tmp/flavors/`,
+`tmp/cfg.tgz`, `tmp/aif120_probe.tgz`, `tmp/_to_delete/`.
+
+`gui/uidef/generated/` and the 22 `.DBF`/`.FPT` fixture pairs stay untracked by
+design -- they are DERIVED, and R75 made every one of them reproducible from a
+tracked author script. That is the difference between a leftover and a build
+product, and R75 is the ruling that had to learn it the hard way.

@@ -310,6 +310,62 @@ the stream cannot tell it so. **A reader that cannot confirm the order is active
 must not imply that it is** -- report the request, not the result. This is open
 against the engine as R73.1.
 
+### 4e(a). Proven, and the direction the vocabulary cannot say (R73.6)
+
+R73 shipped `physical | ordered` **without having proven they differ at
+runtime** -- the container this lane works in has `DBF/` and `INDEXES/` and no
+`LMDB/`. Measured on the device by the maintainer and captured in
+`docs/maintenance/evidence/AIF120_R73_ordered_vs_physical.txt`:
+
+| | engine says | listing |
+|---|---|---|
+| `USE teachers NOINDEX` | `Order : NATURAL` | recnos 1..20 in sequence |
+| `SET ORDER TO FNAME` | `SET ORDER: CDX TAG 'FNAME' (ASC)` | recnos 16, 57, 64, 103, 114, 6, 36, ... FNAME ascending |
+
+**Closed: `ordered` is not `physical`.** The two-value vocabulary describes two
+real runtime states.
+
+It also describes only two of three. The next command in the same transcript:
+
+```
+. descend
+Order: DESCENDING.
+```
+
+Same tag, opposite direction, and the engine's order state at the CLI is
+**three-valued and directional** -- `NATURAL`, `ASCEND`, `DESCENDING` -- with
+`DESCEND` a verb that changes direction without changing the tag. `ordered` maps
+onto `ASCEND`. **A UIDEF document cannot say ORDERED, DESCENDING.**
+
+That is the same defect R73 was written to fix, one level down. R73 caught a
+vocabulary naming index FORMATS the engine chooses for itself; it then closed the
+set at two by looking at `DbTupleStream`'s setters, which have no direction, and
+not at the order state the engine actually reports. **A closed set is only as good
+as the survey that closed it.**
+
+Not fixed here, deliberately. `Descending` is a second axis, not a third value --
+`Order = ordered` plus a `Descending` flag, or `ordered | ordered-descending`,
+are different designs and the wrong one is expensive. It is also not obvious that
+direction belongs to the DOCUMENT at all rather than to the workspace beside
+`tag=`, which is where R73 put "by what". Recorded as an open decision, and until
+it is made **a reader must not imply a direction it cannot express.**
+
+### 4e(b). Two doors into an area leave it in different states (R73.7)
+
+The same transcript shows why 4e's "told nothing" consequence is the normal case
+and not an edge one:
+
+| door | reports | active tag |
+|---|---|---|
+| `WORKSPACE OPEN` directory scan | `[index: STUDENTS.cdx, attached]`, then `Order: ASCEND` | **`(none)`** |
+| `USE students` | `Auto-attached order: students.cdx (tag: SID)` | `SID` |
+
+Both areas report `Order: ASCEND`. One has a tag driving it and one does not, and
+the one that does not lists physically -- `DISPLAY` returns physical record 1.
+A frame bound through the workspace-scan path asks for `ordered`, is told
+`ASCEND`, and browses physical. **`Order: ASCEND` is not evidence that an order
+is active**, which is what R73.1 asks the engine to make sayable.
+
 ## 4f. The frames report engine state, and the engine has an API for it (R74)
 
 Section 4b(a) says a `tree` and a `summary` take their shape from the `SOURCE`

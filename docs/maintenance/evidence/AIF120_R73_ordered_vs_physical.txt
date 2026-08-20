@@ -1,0 +1,135 @@
+AIF-120 R73 -- ordered differs from physical, measured at runtime
+Maintainer transcript, member.derald, 2026-08-20, run COWORK-20260818-001.
+Engine: dottalk++ v0.6 (2026-08-19, 5246809f dirty).
+Data: MCC schema, x64 flavor -- DBF/x64, INDEXES/x64, LMDB/x64.
+
+This is the evidence R73 named as missing and could not produce: the container
+this lane works in has DBF/ and INDEXES/ but no LMDB/, and LMDB/x64 is 577 MB
+across 24 files, over the staging cap. So it was measured on the device.
+
+==============================================================================
+1. THE BASELINE -- physical order, stated by the engine as NATURAL
+==============================================================================
+
+. use teachers noindex
+Opened teachers (v64) : Record count 20
+Valid Index/Indices   : CDX, CNX
+NOINDEX: auto-attach skipped (physical order).
+
+. dbarea
+Order       : NATURAL
+Index file  : (none)
+Active tag  :
+
+. smartlist
+      TID    LNAME                FNAME           DEPT_ID
+     1 100000 Wilson               Sam             HIST
+     2 100001 Thompson             Emma            HIST
+     3 100002 Smith                Sam             CHEM
+     4 100003 Clark                Mia             HIST
+     5 100004 Thomas               Morgan          PHYS
+    ...
+    20 100019 Hernandez            Mason           PSYC
+
+Recnos 1..20 in sequence. That is physical.
+
+==============================================================================
+2. ORDERED -- a tag selected, and the physical sequence abandoned
+==============================================================================
+
+. set order to fname
+SET ORDER: CDX TAG 'FNAME' (ASC)
+
+. smartlist
+      SID      LNAME                FNAME
+    16 50000015 Martin               Adrien
+    57 50000056 Sanchez              Adrien
+    64 50000063 Martinez             Adrien
+   103 50000102 Williams             Adrien
+   114 50000113 Clark                Adrien
+     6 50000005 Rodriguez            Alex
+    36 50000035 Davis                Alex
+    42 50000041 Williams             Alex
+    ...
+   167 50000166 Lewis                Ava
+
+Recnos 16, 57, 64, 103, 114, 6, 36, 42, ... -- scattered, and FNAME ascending.
+PROVEN: ordered is not physical. R73's positive half is closed.
+
+==============================================================================
+3. THE THING THE VOCABULARY HAS NO WORD FOR
+==============================================================================
+
+. descend
+Order: DESCENDING.
+
+. smartlist
+   187 50000186 Lee                  Taylor
+   185 50000184 Williams             Taylor
+   164 50000163 Smith                Taylor
+   ...
+    18 50000017 Williams             Sophia
+
+Same tag, opposite direction. The engine's order state at the CLI is
+THREE-valued and DIRECTIONAL -- NATURAL, ASCEND, DESCENDING -- and `DESCEND` is
+a verb that changes it without changing the tag.
+
+Contract 4e closes `Order` to TWO values, `physical | ordered`. `ordered` maps
+onto ASCEND. There is no way for a UIDEF document to say ORDERED, DESCENDING.
+
+==============================================================================
+4. TWO DOORS INTO AN AREA, AND THEY DO NOT LEAVE IT IN THE SAME STATE
+==============================================================================
+
+Door one -- WORKSPACE OPEN's directory scan:
+
+. workspace open dbf
+  Area 9: opened 'STUDENTS.dbf'  [index: STUDENTS.cdx, attached]
+
+. area
+  Order: ASCEND
+  Index file  : D:\code\ccode\dottalkpp\data\INDEXES\x64\STUDENTS.cdx
+  Active tag  : (none)
+
+. display
+Record 1
+  SID = 50000000
+  LNAME = Taylor
+
+Container attached, NO TAG SELECTED, and record 1 is physical record 1.
+
+Door two -- USE:
+
+. use students
+Opened students (v64) : Record count 200
+Valid Index/Indices   : CDX, CNX
+Auto-attached order: students.cdx (tag: SID)
+
+. dbarea
+Order       : ASCEND
+Active tag  : SID
+Sort        : SID
+
+Container attached AND a tag selected.
+
+Both report `Order: ASCEND`. One of them has an active tag and one does not.
+This is the mechanism behind the consequence 4e already records -- a frame that
+asks for `ordered` and is told nothing browses physical in silence. The two
+paths are why "told nothing" is the normal case rather than an edge one.
+
+==============================================================================
+5. NOT SETTLED HERE
+==============================================================================
+
+. struct
+Dbfile      : ...\dbf\x64\STUDENTS.dbf  (STUDENTS.dbf)
+Index file  : ...\INDEXES\x64\STUDENTS.cdx
+Tags        : (none)
+Active tag  : (none)
+
+STRUCT reports `Tags : (none)` for a container that demonstrably has tags --
+`SET ORDER TO FNAME` selected one out of it four commands later, and `USE`
+auto-attached SID out of the same file. Compare `CDX INFO` on TEACHERS.cdx,
+which lists four. Whether STRUCT enumerates tags only for the USE-attached path,
+or does not enumerate them at all, is not decided by this transcript. One
+`CDX INFO` with STUDENTS selected would settle it. Reported, not concluded.

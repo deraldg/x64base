@@ -206,3 +206,53 @@ loader's own.
 | How to verify | `python gui/uidef/manifest.py` on `P1_order_bad` (refuses) and `P2_order_ok` (degrades); `DOTSCRIPT aif120/flavors.dts` for the four-flavor table |
 | How to undo | `git revert`. No-`--stream` output is byte-identical before and after |
 | Risk | low. One vocabulary narrowed, both old spellings still accepted |
+
+## R73.6 / R73.7 -- measured after the fact, and the ruling was half-surveyed
+
+**Added 2026-08-20, after the maintainer ran the measurement this ruling could not.**
+
+This ruling closed `Order` at two values while stating plainly that it had not
+proven the two differ at runtime -- the working container has `DBF/` and
+`INDEXES/` and no `LMDB/`, and `LMDB/x64` is 577 MB across 24 files. The
+maintainer ran it on the device. Full transcript:
+`docs/maintenance/evidence/AIF120_R73_ordered_vs_physical.txt`.
+
+**R73.6 -- closed, and then reopened one notch.** `USE teachers NOINDEX` reports
+`Order : NATURAL` and lists recnos 1..20 in sequence; `SET ORDER TO FNAME` reports
+`SET ORDER: CDX TAG 'FNAME' (ASC)` and lists 16, 57, 64, 103, 114, 6, 36, ... in
+FNAME order. `ordered` is not `physical`, on x64, through CDX and LMDB. That was
+the open item.
+
+The next command in the same transcript was `DESCEND`, and the engine answered
+`Order: DESCENDING.` -- same tag, opposite direction. **The engine's order state
+is three-valued and directional and this ruling closed the set at two.** I
+surveyed `DbTupleStream`'s setters, which have no direction, and called the set
+closed; I did not survey the order state the engine reports. That is the same
+error this ruling was written to correct -- a vocabulary chosen from one artifact
+instead of measured against the engine -- committed while correcting it.
+
+**A closed set is only as good as the survey that closed it**, and the honest
+form of "closed" is to name what was surveyed. This ruling did not.
+
+Not fixed here. `Descending` is a second AXIS, not a third value, and whether it
+belongs to the document at all or to the workspace beside `tag=` -- where this
+ruling put "by what" -- is a design decision, not a coding one. Contract 4e(a)
+records it as open. Until it is decided, a reader must not imply a direction it
+cannot express.
+
+**R73.7 -- the two doors.** `WORKSPACE OPEN`'s directory scan attaches the
+container and selects NO TAG (`Active tag : (none)`, and `DISPLAY` returns
+physical record 1); `USE students` attaches AND selects one (`tag: SID`). Both
+areas report `Order: ASCEND`. So **`Order: ASCEND` is not evidence that an order
+is active**, and a frame bound through the scan path asks for `ordered`, is told
+`ASCEND`, and browses physical. This is the mechanism behind the consequence this
+ruling already recorded as R73.1; what is new is that it is the NORMAL path, not
+an edge case, because the workspace-scan door is the one a generated frontend
+uses. Contract 4e(b).
+
+**Reported, not concluded:** `STRUCT` prints `Tags : (none)` for `STUDENTS.cdx`
+while `SET ORDER TO FNAME` selects a tag out of that same container four commands
+later and `USE` auto-attaches `SID` from it. `CDX INFO` on `TEACHERS.cdx` lists
+four tags. Whether `STRUCT` enumerates tags only for the `USE`-attached path or
+not at all is not decided by this transcript -- one `CDX INFO` with `STUDENTS`
+selected would settle it. Engine lane.
