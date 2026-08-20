@@ -175,11 +175,98 @@ fix.
 - **`Descending`** -- R73.6, still an owner decision.
 - **MSVC** -- unchanged, and still the oldest.
 
+## 9. R82.3 -- the correction, made the same day: I named the wrong format version
+
+**`WORKSPACE OPEN`'s implementation contradicts section 5 of this ruling, and the
+format I should have been pointing at already exists.**
+
+### 9.1 What a DTSHEMA 2 row actually declares
+
+Section 5 says a `DTSHEMA 2` row is "a DECLARED, per-area, readable statement of
+where a table is." Measured in `src/cli/cmd_workspace.cpp`:
+
+```cpp
+static inline fs::path resolve_relative_to_root(const fs::path& p) {
+    if (p.is_absolute()) return p;
+    return fs::weakly_canonical(dbf_root() / p);      // dbf_root() == Slot::DBF
+}
+```
+
+`dbf=BUILDING.dbf` is a BARE NAME resolved against `Slot::DBF`, which is what
+`SETPATH` sets. And the shipped corpus proves it: `mcc_x64.dtschema` and
+`mcc_x32.dtschema` have **identical `dbf=` lines** for all thirteen areas and
+differ only in `index=`, `indextype=` and `tag=`.
+
+**A v2 row declares WHICH table, not WHERE.** Location still comes from ambient
+state -- the exact thing section 10 forbids and this ruling claimed the workspace
+had solved.
+
+### 9.2 DTSHEMA 3, owner-chartered 2026-08-11, nine days before I asserted otherwise
+
+```cpp
+// v3 declarative lines (owner-chartered 2026-08-11). Roots make the
+// posture SELF-LOCATING: the v3 loader resolves relative dbf/index
+// entries against these instead of demanding a pre-set environment.
+out << "FLAVOR "   << fl << "\n";
+out << "DBFROOT "  << s8(rootDbf)  << "\n";
+out << "IDXROOT "  << s8(rootIdx)  << "\n";
+out << "LMDBROOT " << s8(paths::get_slot(paths::Slot::LMDB)) << "\n";
+```
+
+That is this ruling's requirement, designed, chartered and implemented before this
+ruling was written. It even records `FLAVOR` -- measured from the open areas --
+which is the fact R73 spent a ruling establishing.
+
+**Nothing uses it.** Every `.dtschema` on disk begins `DTSHEMA 2`; v3 is opt-in
+through a trailing `V3` keyword on `WORKSPACE SAVE`, and v2 stays the default "so
+every proven path is untouched."
+
+So the ruling in section 2 stands unchanged -- **location is a workspace fact** --
+and section 5's clause was pointing at the wrong version. The corpus unit in
+section 7 shrinks accordingly: it is not a format change, it is
+
+```
+WORKSPACE SAVE mcc_x64 V3
+```
+
+### 9.3 The failure, named because it is now a pattern
+
+This is the **third** time today I described a mechanism from its shape instead of
+reading how it resolves. R79's backend table asserted capability from toolkits
+(corrected by R80). R81.4 called a path "not on disk" when it had lost a `src/`
+prefix (corrected by R81.5). Here I called a v2 workspace row a location statement
+because the maintainer had pasted one and it had a `dbf=` field in it.
+
+Every time, **the artifact I reasoned from was the one already in front of me**,
+and the fuller thing was one file away. That is the house's own doctrine -- *a
+search shaped by the object you have cannot find an object with a different
+schema* -- and it applies to the object someone hands you as much as to a grep.
+The house rule *always look for prior art* is the specific defence, and R82 did
+not obey it: I cited a format version from a paste instead of reading the format.
+
+### 9.4 Two things the same reading turned up
+
+**R82.4, and it sharpens R73.7.** `mcc_x64.dtschema` declares `tag=none` for all
+thirteen areas. `mcc_x32.dtschema` declares real tags -- `BLDG`, `CLS_ID`, `CID`,
+`DEPT_ID` and so on. So "no active order on x64" is not only the directory-scan
+door R73.7 found; **the shipped x64 workspace file itself declares no tags while
+its x32 twin does.** That is an asymmetry between two files, not a design
+decision, and it is why the maintainer's transcript showed `Order: ASCEND` with
+`Active tag : (none)`. Reported to the workspace owner.
+
+**The house already answered "name a slot instead of a path" -- at the invocation.**
+`resolve_open_target` accepts ten slot names as command shorthand, so
+`WORKSPACE OPEN DBF` means the configured slot and not a directory called `dbf`,
+with a comment preserving `DO X64` + `WORKSPACE OPEN DBF`. The slot vocabulary is
+real and it is spoken by the COMMAND. That is independent support for the owner
+ruling in section 2: the document does not name a slot because the invocation
+already does.
+
 ## 8. Good Neighbor
 
 | | |
 |---|---|
-| What changed | This ruling; contract section 10 gains the workspace-is-not-ambient clause; ledger rows; the closeout's Owed table gains R82.1. **No code changed** |
+| What changed | This ruling incl. the same-day correction in section 9; contract section 10's clause, corrected to name DTSHEMA 3; ledger rows; the closeout's Owed table. **No code changed** |
 | Whose area | AIF-120. `src/` untouched; R82.1 is reported to the engine lane, not fixed |
 | Authorization | maintainer, in-session: "check cmd_setpath.cpp for consumption", then the two owner rulings |
 | How to verify | `python3 -c "import re;print(len(re.findall(r'case Slot::', open('src/common/path_state.cpp').read())))"` for the enum coverage; `sed -n '286,297p' src/cli/cmd_init.cpp` and `dump()` in `src/cli/cmd_setpath.cpp` for the two shorter lists; `gui/uidef/wx_host.cpp:121` for the environment resolution |

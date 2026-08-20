@@ -802,13 +802,21 @@ never a bare name resolved against ambient state.
 ambient state:
 
 > `SETPATH` and "whatever work area happens to be current" are AMBIENT --
-> unwritten, order-dependent, invisible in the document set. A `DTSHEMA 2` row is
-> a DECLARED, per-area, readable statement of where a table is. A bare `Table`
-> name resolved through one IS resolved against a document; just not against the
-> UIDEF document.
+> unwritten, order-dependent, invisible in the document set. A **`DTSHEMA 3`**
+> workspace is not: it records `FLAVOR`, `DBFROOT`, `IDXROOT` and `LMDBROOT`, and
+> its loader resolves relative `dbf=`/`index=` entries against those instead of
+> against a pre-set environment. A bare `Table` name resolved through one IS
+> resolved against a document; just not against the UIDEF document.
 
-So `Table = STUDENTS.DBF` beside a workspace row naming `DBF/x64` is conformant,
-and the same line with nothing but `SETPATH` behind it is not. **Location is a
+**The version matters and R82 first named the wrong one (R82.3).** A `DTSHEMA 2`
+row declares WHICH table, not WHERE: `dbf=BUILDING.dbf` is a bare name resolved
+against `Slot::DBF` by `resolve_relative_to_root` in `src/cli/cmd_workspace.cpp`,
+so `mcc_x64.dtschema` and `mcc_x32.dtschema` carry identical `dbf=` lines and
+differ only in index and tag. **v2 does not satisfy this section; v3 does**, it
+has been owner-chartered since 2026-08-11, and no workspace on disk uses it yet.
+
+So `Table = STUDENTS.DBF` beside a **v3** workspace declaring `DBFROOT` is
+conformant, and the same line with nothing but `SETPATH` behind it is not. **Location is a
 workspace fact** -- the owner ruling in R82, and the same division R73 made for
 `Order` and R12 made for coordinates. A document does NOT name a path slot, even
 though `dottalk::paths::slot_from_string` offers a closed, checkable vocabulary of
