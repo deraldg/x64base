@@ -77,6 +77,27 @@ def parse_handlers_line(txt):
     return out
 
 
+FALSEY = ('false', '.f.', 'f', '0', 'no', 'off')
+
+
+def weight_of(pr):
+    """R80, contract 5c: a child's share of the parent's FLOW axis. 0 = fixed."""
+    v = str(pr.get('weight', '')).strip()
+    if not v:
+        return 0
+    try:
+        n = int(float(v))
+    except ValueError:
+        return 0
+    return n if n > 0 else 0
+
+
+def fill_of(pr):
+    """R80, contract 5c: whether the child stretches ACROSS the flow axis."""
+    v = str(pr.get('fill', '')).strip().lower()
+    return bool(v) and v not in FALSEY
+
+
 def parse_props(txt):
     d = {}
     for line in (txt or '').replace('\r\n', '\n').split('\n'):
@@ -393,9 +414,29 @@ def build_window(path, registry=None, host=None):
                                  "ORIGIN; fell back to ORDINAL order" % oid)
                     w.pack(anchor='w')
             elif pflow == 'row':
-                w.pack(side='left', padx=2, pady=2)
+                # R80, contract 5c. Tk's `expand` IS Weight and `fill` IS Fill,
+                # and this target has a sized window (root.geometry from ORIGIN),
+                # so unlike HTML and the character cell there IS free space to
+                # divide. Tk's expand is a BOOLEAN, not a ratio: it splits the
+                # slack equally among everyone who claims it. So a Weight of 3
+                # against 1 becomes "both expand", and the RATIO is lost even
+                # though the intent survives. Reported, because a reader that
+                # honours half a property must say which half.
+                _w, _f = weight_of(pr), fill_of(pr)
+                if _w > 1:
+                    notes.append("DEGRADED Weight=%d on %s -- Tk pack expand is "
+                                 "a boolean and divides slack EQUALLY; the ratio "
+                                 "is lost (R80)" % (_w, oid))
+                w.pack(side='left', padx=2, pady=2, expand=bool(_w),
+                       fill=('both' if _f else 'none'))
             elif pflow == 'column':
-                w.pack(side='top', anchor='w', padx=2, pady=2)
+                _w, _f = weight_of(pr), fill_of(pr)
+                if _w > 1:
+                    notes.append("DEGRADED Weight=%d on %s -- Tk pack expand is "
+                                 "a boolean and divides slack EQUALLY; the ratio "
+                                 "is lost (R80)" % (_w, oid))
+                w.pack(side='top', anchor='w', padx=2, pady=2, expand=bool(_w),
+                       fill=('x' if _f else 'none'))
             elif pflow == 'grid':
                 if cell[1] + span > gcols:
                     cell[0] += 1; cell[1] = 0

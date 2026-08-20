@@ -42,6 +42,29 @@ def parse_props(txt):
     return out
 
 
+FALSEY = ('false', '.f.', 'f', '0', 'no', 'off')
+
+
+def weight_of(pr):
+    """R79. `Weight` on a child: how much of the FLOW axis it takes. 0 = fixed."""
+    v = str(pr.get('weight', '')).strip()
+    if not v:
+        return 0
+    try:
+        n = int(float(v))
+    except ValueError:
+        return 0
+    return n if n > 0 else 0
+
+
+def fill_of(pr):
+    """R79. `Fill` on a child: whether it stretches ACROSS the flow axis."""
+    v = str(pr.get('fill', '')).strip().lower()
+    if not v:
+        return False
+    return v not in FALSEY
+
+
 def cstr(s):
     return '"' + (s or '').replace('\\', '\\\\').replace('"', '\\"') + '"'
 
@@ -554,7 +577,16 @@ def generate(path, title=None, dispatch=False, stream=False):
         if kind in ('panel', 'page', 'pageset'):
             if dispatch:
                 emit_scope(oid, v, ind)
-            sub = child_sizer(oid, flow, pr, v, ind)
+            # R78, found by the round trip. A `pageset` puts its children in
+            # through AddPage, never through a sizer -- and the branch below
+            # already knew that, because it skips close_sizer for pageset. So
+            # child_sizer() was creating a wxBoxSizer that nothing ever added to
+            # and nothing ever set: `-Wunused-variable`, twice, in the first
+            # document that nests a pageset. Nine rulings of fixtures never
+            # caught it because not one of them has a pageset. Same class as
+            # R70.3 and correction 54 -- something emitted with no consumer --
+            # and the third time this lane has paid for it.
+            sub = None if kind == 'pageset' else child_sizer(oid, flow, pr, v, ind)
             for c in kids.get(oid, []):
                 if kind == 'pageset':
                     emit(c, v, flow, None, depth + 1)
@@ -567,7 +599,8 @@ def generate(path, title=None, dispatch=False, stream=False):
                 close_sizer(oid, flow, v, sub, ind)
         if sizer_var:
             add_to(sizer_var, v, ind,
-                   span=int(float((r['SPAN'] or '0').strip() or 0)) or 1)
+                   span=int(float((r['SPAN'] or '0').strip() or 0)) or 1,
+                   weight=weight_of(pr), fill=fill_of(pr))
 
     def child_sizer(oid, flow, pr, owner, ind, staticbox=None):
         name = '%s_sizer' % var(oid)
@@ -599,16 +632,37 @@ def generate(path, title=None, dispatch=False, stream=False):
     gridsizers = set()
 
 
-    def add_to(sizer_var, thing, ind, is_sizer=False, span=1):
+    def add_to(sizer_var, thing, ind, is_sizer=False, span=1, weight=0, fill=False):
+        """R79. The proportion argument was hardcoded 0 -- every child fixed.
+
+        wx has carried `proportion` in Add() since forever and this generator
+        always passed zero, so a document could describe WHICH children a
+        container has and in what ORDER, and never which one absorbs the
+        remaining space. Weight and Fill are the two per-child properties every
+        one of this lane's four backends has (wx proportion/wxEXPAND, Tk
+        expand/fill, CSS flex-grow/align-self, and a character cell renderer
+        needs both to divide a row). Absent means 0 and false, which is exactly
+        what this function did before, so no existing document moves.
+        """
         if not sizer_var:
             return
         if sizer_var in gridsizers and not is_sizer:
+            # wxGridBagSizer takes no proportion; growth is per row/column and
+            # is a container question, not a child one. Recorded rather than
+            # silently dropped -- see R79 section 4.
+            if weight:
+                notes.append('DROPPED Weight on a FLOW=grid child -- '
+                             'wxGridBagSizer grows by row/column, not by child '
+                             '(R79)')
             body.append('%s%s->Add(%s, wxGBPosition(%s_i / %s_n, %s_i %% %s_n), '
-                        'wxGBSpan(1,%d)); %s_i += %d;'
+                        'wxGBSpan(1,%d)%s); %s_i += %d;'
                         % (ind, sizer_var, thing, sizer_var, sizer_var,
-                           sizer_var, sizer_var, span, sizer_var, span))
+                           sizer_var, sizer_var, span,
+                           ', wxEXPAND' if fill else '', sizer_var, span))
         else:
-            body.append('%s%s->Add(%s, 0, wxALL, 6);' % (ind, sizer_var, thing))
+            flags = 'wxALL' + ('|wxEXPAND' if fill else '')
+            body.append('%s%s->Add(%s, %d, %s, 6);'
+                        % (ind, sizer_var, thing, weight, flags))
 
     def close_sizer(oid, flow, owner, sizer_var, ind, staticbox=False):
         if not sizer_var:

@@ -104,6 +104,22 @@ def generate(path):
     def esc(t):
         return html.escape(t or '')
 
+    FALSEY = ('false', '.f.', 'f', '0', 'no', 'off')
+
+    def weight_of(pr):
+        v = str(pr.get('weight', '')).strip()
+        if not v:
+            return 0
+        try:
+            n = int(float(v))
+        except ValueError:
+            return 0
+        return n if n > 0 else 0
+
+    def fill_of(pr):
+        v = str(pr.get('fill', '')).strip().lower()
+        return bool(v) and v not in FALSEY
+
     def style_for(r, kind, org, parent_flow, parent_kind):
         st = []
         fr = int(float((r['FONTREF'] or '0').strip() or 0))
@@ -118,6 +134,19 @@ def generate(path):
                       % (org['origin_top'], org['origin_left']))
             if 'origin_width' in org and kind not in CONTENT_SIZED:
                 st.append("width:%spx" % org['origin_width'])   # R16
+        # R80, contract 5c. flex-grow IS this target's Weight and align-self IS
+        # its Fill -- but both only mean something inside a container that HAS
+        # free space, which is why section 3 of R80 had to give `.form` a size
+        # before either did anything. CSS having the property is not the same as
+        # the layout having room.
+        _pr = parse_props(r['PROPS'])
+        _w = weight_of(_pr)
+        if _w and parent_flow in ('row', 'column'):
+            st.append("flex-grow:%d" % _w)
+            st.append("flex-basis:0")
+        if fill_of(_pr) and parent_flow in ('row', 'column'):
+            st.append("align-self:stretch")
+
         # Contract s5: SPAN gives the cells a member consumes in a `grid` flow.
         # CSS grid has the concept natively, which is a point for FLOW being the
         # portable geometry rather than a Tk convenience.
@@ -268,7 +297,23 @@ def generate(path):
                            % (pad, sattr, cells or '<em>no Shows declared</em>'))
             return
         if kind == 'form':
-            out.append('%s<div class="form"%s>' % (pad, sattr))
+            # R80. A form that declares ORIGIN dimensions becomes a SIZED flex
+            # column, because that is the only way its children's flex-grow means
+            # anything. Emitting flex-grow into an inline-block container is the
+            # exact failure this ruling was written about: the property is
+            # present, correct, and inert.
+            _fw = org.get('origin_width')
+            _fh = org.get('origin_height')
+            if _fw and _fh:
+                _fs = 'width:%spx;height:%spx' % (_fw, _fh)
+                _fs = (full + ';' + _fs) if full else _fs
+                out.append('%s<div class="form sized" style="%s">' % (pad, _fs))
+            else:
+                notes.append('DROPPED Weight/Fill inside form %s -- no ORIGIN '
+                             'dimensions, so the container is content-sized and '
+                             'there is no free space to divide (R80)'
+                             % (r['OBJID'] or '').strip())
+                out.append('%s<div class="form"%s>' % (pad, sattr))
             if cap:
                 out.append('%s  <h1>%s</h1>' % (pad, esc(cap)))
         elif kind == 'label':
@@ -315,6 +360,11 @@ def generate(path):
             "<title>%s</title>" % esc(dp.get('sourcefile', 'UIDEF')),
             "<style>body{font-family:sans-serif;font-size:9pt;margin:12px}",
             ".form{border:1px solid #999;padding:10px;display:inline-block}",
+            # R80: a form carrying ORIGIN dimensions is sized from them, so a
+            # flex child has something to grow INTO. Without this the CSS was
+            # emitted and inert -- inline-block is content-sized and flex-grow
+            # distributes free space that does not exist.
+            ".form.sized{display:flex;flex-direction:column}",
             "fieldset{border:1px solid #aaa;margin:2px 0}",
             "details{border:1px solid #ccc;padding:2px 6px;margin:2px 0}",
             "button[disabled]{color:#999}",

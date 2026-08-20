@@ -23,7 +23,7 @@ import os, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # `read_vfp_binary` is the VFP binary reader and it lives in tools/vfp.
-# gui/uidef/read_vfp_binary.py is a GITIGNORED working copy, so importing it
+# tools/uidef/read_vfp_binary.py is a GITIGNORED working copy, so importing it
 # from this directory made nine committed tools unimportable on a fresh clone --
 # found by the house 'sweep for your own leftovers' rule, not by anything failing.
 # tools/vfp goes on the path FIRST so the ignored copy can never shadow it.
@@ -40,6 +40,13 @@ KINDS_RENDERED = frozenset((
     'grid', 'tree', 'detail', 'summary', 'statusbar',
 ))
 FRAME_KINDS = frozenset(('grid', 'tree', 'detail', 'summary', 'statusbar'))
+
+# A container's caller asks for `innerw + BOX_OVERHEAD` columns: two borders
+# and a gap. A content-sized renderer never had to know that number -- nothing
+# ever reached its budget. A renderer that FILLS its budget does: the grant a
+# parent hands a child must already have this subtracted, or every nesting
+# level costs three columns nobody reserved.
+BOX_OVERHEAD = 3
 FLOWS_SUPPORTED = frozenset(('row', 'column', 'grid', 'free'))
 DISPATCH_SUPPORTED = frozenset(('ui',))          # no threads, no host clipboard
 CAPABILITIES = ()
@@ -127,6 +134,45 @@ def render(path, width=100, height=40):
         if kind == 'list':
             return '[' + '_' * 10 + ']'
         return cap
+
+    # No `fill_of` here, and no FALSEY to feed it: `Fill` stretches ACROSS the
+    # flow axis, and the cross axis of a character row is exactly one line tall.
+    # There is nothing to stretch into, so the property has no reading on this
+    # target and R80's silence about it stands.
+    CONTAINER_KINDS = ('form', 'panel', 'page', 'pageset', 'group')
+
+    def weight_of(pr):
+        """R81, contract 5c: a child's share of the parent's FLOW axis."""
+        v = str(pr.get('weight', '')).strip()
+        if not v:
+            return 0
+        try:
+            n = int(float(v))
+        except ValueError:
+            return 0
+        return n if n > 0 else 0
+
+    def stretch(g, want):
+        """Widen a glyph to `want` cells. R81.
+
+        A field grows through its FILL run, so `[____]` becomes a longer field
+        rather than a short field with trailing blanks -- the stretch has to be
+        VISIBLE or the render cannot show that it happened. Anything else is
+        padded on the right, because a label or a button given more room
+        occupies it without becoming a different label or a wider button.
+
+        Order matters: a combo is `[________ v]` and also ends in `]`, so the
+        general bracket rule would grow the run PAST the drop arrow and produce
+        `[________ v___]`. The narrower shape is tested first.
+        """
+        if want <= len(g):
+            return g
+        pad = want - len(g)
+        if len(g) >= 4 and g[0] == '[' and g.endswith(' v]'):
+            return '[' + g[1:-3] + '_' * pad + ' v]'
+        if len(g) >= 3 and g[0] == '[' and g[-1] == ']' and '_' in g:
+            return g[:-1] + '_' * pad + ']'
+        return g + ' ' * pad
 
     def frame_block(kind, pr, ch):
         """R66/contract 4b -- the five regions of the ERSATZ frame, as characters.
@@ -226,6 +272,83 @@ def render(path, width=100, height=40):
             for i, g in enumerate(cells):
                 col_w[i % ncols] = max(col_w[i % ncols], len(g))
 
+        # R81, contract 5c. R80 reported Weight as dropped here because this
+        # renderer was content-sized: `draw()` measured each child and grew the
+        # canvas, and `avail_w` was only ever DECREMENTED on the way down. It is
+        # now two-pass along a `row` axis -- measure the natural widths, then give
+        # the slack to whoever claimed it.
+        #
+        # A CHARACTER GRID DIVIDES A DISCRETE RESOURCE, which is the question the
+        # other three backends never have to answer. 3:1 of ten spare cells is
+        # 7.5 and 2.5, and somebody must own the halves. The rule, chosen and
+        # written down rather than left to float():
+        #
+        #   floor(slack * weight / total_weight) each, then the remaining cells
+        #   go ONE AT A TIME to the weighted children in ORDINAL order.
+        #
+        # Earliest-wins is arbitrary but it is DETERMINISTIC and it is stated;
+        # a renderer that rounded differently on different runs would make a
+        # document mean two things.
+        alloc = {}
+        # `blocked` collects every weighted child this pass will NOT resize, so
+        # that no declared Weight leaves the renderer without a word said about
+        # it. R80 reported dropping in one lump; R81 honours some of them, and a
+        # partial honouring is exactly where a silent drop hides.
+        blocked = []
+        weighted = []
+        for ch in children:
+            cpp = parse_props(ch['PROPS'])
+            if weight_of(cpp):
+                weighted.append(((ch['OBJID'] or '').strip(),
+                                 (ch['KIND'] or '').strip().lower()))
+        if flow == 'row' and avail_w and weighted:
+            nat, wts = {}, {}
+            for ch in children:
+                cid = (ch['OBJID'] or '').strip()
+                ck = (ch['KIND'] or '').strip().lower()
+                cpp = parse_props(ch['PROPS'])
+                if ck in CONTAINER_KINDS or ck in FRAME_KINDS:
+                    # A frame draws itself from `frame_block` and a container
+                    # from its own children; neither is a glyph this pass can
+                    # widen. Named, not skipped.
+                    if weight_of(cpp):
+                        blocked.append((cid, ck, 'is drawn from its own content, '
+                                                 'not from a glyph this pass can widen'))
+                    continue
+                nat[cid] = len(glyph(ck, cpp, ch))
+                wts[cid] = weight_of(cpp)
+            total_w = sum(wts.values())
+            if total_w:
+                used_cols = sum(nat.values()) + 2 * max(0, len(nat) - 1)
+                slack = max(0, avail_w - used_cols)
+                if slack:
+                    order = [(ch['OBJID'] or '').strip() for ch in children
+                             if wts.get((ch['OBJID'] or '').strip())]
+                    for cid in order:
+                        alloc[cid] = nat[cid] + (slack * wts[cid]) // total_w
+                    rem = slack - sum(alloc[c] - nat[c] for c in order)
+                    for i in range(rem):
+                        alloc[order[i % len(order)]] += 1
+                else:
+                    for cid in [k for k in wts if wts[k]]:
+                        blocked.append((cid, 'control',
+                                        'sits in a row already at or past the %d '
+                                        'cells available, so there is no slack' % avail_w))
+        elif weighted:
+            # R81 divides slack only along a horizontal run. A column stacks one
+            # line per child and a character row is exactly one cell tall: the
+            # FLOW axis here is height, and this canvas has no fixed height to
+            # take height FROM.
+            why = ('sits in FLOW=%s, which distributes along an axis this target '
+                   'measures in whole lines with no fixed height to divide' % flow)
+            if flow == 'row':
+                why = 'sits in a row drawn with no width budget to divide'
+            for cid, ck in weighted:
+                blocked.append((cid, ck, why))
+        for cid, ck, why in blocked:
+            notes.append("DROPPED Weight on %s (%s) in %s -- it %s (R81)"
+                         % (cid, ck, oid, why))
+
         has_org = any((ch['ORIGIN'] or '').strip() for ch in children)
         used_free = flow == 'free' and has_org
         if flow == 'free' and not has_org:
@@ -283,8 +406,8 @@ def render(path, width=100, height=40):
                     bc = left + int(float(org['origin_left'])) // PX_PER_CELL_X
                 else:
                     br, bc = r, c
-                inner, innerw = draw(cid, br + 1, bc + 1, avail_w - 2)
-                w = max(len(title) + 6, innerw + 3, 12)
+                inner, innerw = draw(cid, br + 1, bc + 1, avail_w - BOX_OVERHEAD)
+                w = max(len(title) + 6, innerw + BOX_OVERHEAD, 12)
                 cv.box(br, bc, w, inner + 2, title)
                 if not (used_free and 'origin_top' in org):
                     r = br + inner + 2
@@ -319,8 +442,9 @@ def render(path, width=100, height=40):
                 cv.put(gr, gc, g)
                 maxr = max(maxr, gr + 1); maxc = max(maxc, gc + len(g))
             elif flow == 'row':
+                g = stretch(g, alloc.get(cid, 0))
                 cv.put(r, c, g); c += len(g) + 2
-                maxr = max(maxr, r + 1); maxc = max(maxc, c)
+                maxr = max(maxr, r + 1); maxc = max(maxc, c - 2)
             elif flow == 'grid':
                 ncols = int(float(pr['columns']))
                 span = int(float((ch['SPAN'] or '0').strip() or 0)) or 1
@@ -344,8 +468,8 @@ def render(path, width=100, height=40):
         cp = parse_props(root['PROPS'])
         if (root['KIND'] or '').strip().lower() == 'form':
             title = cp.get('caption', '')
-            inner, innerw = draw(oid, r + 1, 1, width - 2)
-            cv.box(r, 0, max(innerw + 3, len(title) + 6), inner + 2, title)
+            inner, innerw = draw(oid, r + 1, 1, width - BOX_OVERHEAD)
+            cv.box(r, 0, max(innerw + BOX_OVERHEAD, len(title) + 6), inner + 2, title)
             r += inner + 2
     return cv.text(), notes, used
 

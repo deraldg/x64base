@@ -476,6 +476,44 @@ and a generator that accepts `free` **must** honour `ORIGIN`, since there is
 nothing else to lay the document out with. Recorded as a defect against this
 draft, not silently patched into it.
 
+## 5c. `Weight` and `Fill` -- geometry the FLOW model was missing (R79)
+
+Section 5 gives a container a `FLOW` and its children an `ORDINAL`. That declares
+WHICH children and in WHAT ORDER, and says nothing about **how the space is
+divided**. Measured against a GUI this lane did not author
+(`src/gui/wx/main_frame.cpp`): **33 sizer additions carry an explicit proportion,
+20 fixed and 13 saying "take the remaining space"**, plus 27 cross-axis fill flags.
+None of it was expressible, and a generated frame rendered with every child at its
+minimum size.
+
+R12 quarantined absolute coordinates because they do not travel. Proportion is the
+opposite case: **it is the most portable part of layout intent**, and all four of
+this lane's backends carry it natively -- wx `proportion`/`wxEXPAND`, Tk
+`expand`/`fill`, CSS `flex-grow`/`align-self`, and a character-cell renderer needs
+both to divide a row.
+
+> **`Weight`** -- a non-negative integer in `PROPS` on a CHILD: its share of the
+> parent's `FLOW` axis. `0` means fixed. **Absent means `0`.**
+>
+> **`Fill`** -- a boolean in `PROPS` on a CHILD: whether it stretches ACROSS the
+> flow axis. **Absent means false.**
+
+Two properties because they are two independent questions. A toolbar button is
+`Weight = 0, Fill = .T.`; a command box is `Weight = 1, Fill = .F.`.
+
+**In `PROPS`, not a seventeenth field.** Both are per-child layout data, like
+`ORDINAL` and `SPAN`, and a column would be tidier. A column also changes the
+record length, and with it every existing document, every reader and both
+importers. Section 7 designates `PROPS` as the extension point; the house rule is
+*go for gold unless the cost is platinum*, and a schema change to carry two
+optional values is the platinum. Because absent means today's behaviour, **every
+document written before this section renders exactly as it did.**
+
+Two limits, stated rather than discovered:
+
+- **`Weight` does not describe a sash.** Turning a splitter's `500` into `3:1` is an approximation the author CHOOSES; nothing in a pixel position implies a ratio. Whether UIDEF describes negotiable geometry at all is open and untouched by this section.
+- **On `FLOW = grid`, `Fill` applies and `Weight` does not.** A grid grows by row and column, which is a container question. A reader encountering `Weight` on a grid-flow child MUST report that it was dropped.
+
 ## 6. Requiredness has three values, and this is the contract's sharpest rule
 
 R13 was found by writing a real designer format and being refused twice. A schema

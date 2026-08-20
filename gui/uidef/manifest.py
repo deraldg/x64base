@@ -387,6 +387,10 @@ def manifest(path):
         'relations': [],
         'frames': [],
         'frame_with_children': [],
+        # R79. Weight/Fill belong to any child of a flowed container, not only to
+        # frame kinds, so the checker needs every object's PROPS -- not just the
+        # subsets the earlier rulings happened to collect.
+        'all_props': [],
     }
     for r in rows:
         if (r['RECKIND'] or '').strip() == 'DOC':
@@ -412,6 +416,8 @@ def manifest(path):
     for r in objs:
         oid = (r['OBJID'] or '').strip()
         kind = (r['KIND'] or '').strip().lower()
+        pr_all = parse_props(r['PROPS'])
+        m['all_props'].append((oid, kind, pr_all))
         flow = (r['FLOW'] or '').strip().lower()
         m['kinds'][kind] += 1
         if flow:
@@ -596,6 +602,27 @@ def check(m, p):
                     % (m['tab_absent'], m['tab_absent'] + m['tab_declared']),
                     'a partial tab order is the worst case: the gaps must be '
                     'derived and interleaved with the declared stops'))
+    # R79. Weight and Fill are per-child layout properties and are checked on
+    # EVERY object, not just frames -- any child of a flowed container may carry
+    # them. Absent means 0/false, which is what every document said before they
+    # existed, so silence is never a finding.
+    for oid, kind, pr in m.get('all_props', []):
+        w = str(pr.get('weight', '')).strip()
+        if w:
+            try:
+                n = int(float(w))
+            except ValueError:
+                n = -1
+            if n < 0:
+                out.append(('REFUSE', '%s %s Weight=%s' % (kind, oid, w),
+                            'Weight is a share of the FLOW axis and must be a '
+                            'non-negative integer; 0 means fixed -- contract 5c'))
+        f = str(pr.get('fill', '')).strip().lower()
+        if f and f not in FALSEY and f not in ('true', '.t.', 't', '1', 'yes', 'on'):
+            out.append(('REFUSE', '%s %s Fill=%s' % (kind, oid, f),
+                        'Fill is a boolean -- it says whether the child stretches '
+                        'ACROSS the flow axis, contract 5c'))
+
     # R66. Contract 4b. These hold with or without a schema, so they are not in
     # bind_check -- a document that says a grid is editable is wrong on its own.
     for oid, kind, _b, pr in m['frames']:
