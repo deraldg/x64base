@@ -1,0 +1,65 @@
+* r70_stream_binding.dts
+* AIF-120 R70 -- the stream side of the generated grid binding, measured.
+*
+* The generated wx grid declares its columns from BINDING (contract 10c) and then
+* fills them from DbTupleStream. This proves the two halves AGREE: the columns the
+* generator writes into InsertColumn are exactly the values the engine returns for
+* the same spec, in the same order. A generator whose heads and rows disagree
+* compiles perfectly and renders a lie.
+*
+* Fixture: STUDENTS + ENROLL from the shipped x64 school tables, related on SID --
+* the FRAMEDEMO document's own SOURCE. Read-only throughout.
+*
+* Regression doctrine: every test sets its own environment.
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+SET PATH DBF dbf/x64
+
+FORMULA "AIF120-R70-STREAM-BEGIN"
+
+ECHO
+ECHO --- FRAMEDEMO SOURCE: two aliases, one Relation edge ---
+SELECT 1
+USE STUDENTS
+SELECT 2
+USE ENROLL
+SELECT 1
+SET RELATION TO SID INTO ENROLL
+
+ECHO
+ECHO --- A. the spec resolves to FOUR values, one per generated column ---
+ECHO A1 heads the generator emits: LNAME FNAME CLS_ID GRADE
+GOTO FIRST
+ECHO A2 the engine returns:
+TUPLE students.lname,students.fname,enroll.cls_id,enroll.grade
+
+ECHO
+ECHO --- B. next_page(3) is three DISTINCT rows, not one row three times ---
+ECHO B1 row 1
+TUPLE students.lname,students.fname,enroll.cls_id,enroll.grade
+SKIP
+ECHO B2 row 2
+TUPLE students.lname,students.fname,enroll.cls_id,enroll.grade
+SKIP
+ECHO B3 row 3
+TUPLE students.lname,students.fname,enroll.cls_id,enroll.grade
+
+ECHO
+ECHO --- C. a one-alias spec is the P2/P6 case ---
+GOTO FIRST
+TUPLE students.lname,students.fname
+
+ECHO
+ECHO --- D. alias.* is the N9/N10 case: the whole record, one alias ---
+TUPLE students.*
+
+ECHO
+ECHO --- E. R65.3 again, from HELP's OWN documented syntax ---
+ECHO E1 HELP TUPLE documents "TUPLE #11.*"; the AIF-037 lexer cuts # to end of line
+TUPLE #1.lname
+ECHO E2 ...which is why contract 10c REFUSES an ordinal spec instead of emitting it
+
+WORKSPACE CLOSE
+
+FORMULA "AIF120-R70-STREAM-END"

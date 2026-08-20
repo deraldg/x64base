@@ -97,7 +97,7 @@ def parse_handlers(txt):
     return out
 
 
-def generate(path, title=None, dispatch=False):
+def generate(path, title=None, dispatch=False, stream=False):
     rows = list(Dbf(path).rows())
     src_aliases, src_rels = doc_source(rows)
     objs = [r for r in rows if (r['RECKIND'] or '').strip() == 'OBJ']
@@ -111,10 +111,43 @@ def generate(path, title=None, dispatch=False):
 
     body, notes = [], []
     made = [0]
+    stream_vars = []      # R70: [(objid, cvar)] -- one entry per BOUND grid
+    # R70.1. The first version of --stream bound EVERY grid, including the three
+    # the contract already refuses (editable, ordinal spec, unjoined two-alias
+    # spec). A generator that ships a binding its own gate refused is worse than
+    # no gate. The predicates live in manifest.py so the reasons exist once.
+    stream_refused = {}
+    if stream:
+        import manifest as _mf
+        stream_refused = _mf.stream_refusals(_mf.manifest(path))
+    # R70.5, found by RUNNING the generated window: the tree drew
+    # "STUDENTS -> ENROLL ON SID" from SOURCE while the stream returned ENROLL
+    # record 1 on every row, because nothing had told the ENGINE about the join.
+    # The document declared a relation the runtime never established, and the
+    # result was three rows that looked right and were wrong. Contract 10c makes
+    # a cross-alias spec legal only when SOURCE relates the aliases, so the SAME
+    # declaration must reach the engine -- through the house's own
+    # relations_api, not a re-derived join.
+    # Correction 49, caught by the fixture sweep: the relation calls were gated on
+    # "this document HAS relations" while the includes were gated on "a grid was
+    # actually bound" -- so nine of eighteen fixtures emitted relations_api calls
+    # with no header. The two must be the SAME condition, and it can only be
+    # answered before the walk, because the form is emitted before its children.
+    will_bind = bool(stream) and any(
+        (r['KIND'] or '').strip().lower() == 'grid'
+        and (r['BINDING'] or '').strip()
+        and (r['OBJID'] or '').strip() not in stream_refused
+        for r in objs)
+    stream_relations = list(src_rels) if will_bind else []
+    made_rels = []
     rec = {(r['OBJID'] or '').strip(): r for r in objs}
 
     def var(oid):
         return 'w_' + oid.replace('.', '_')
+
+    def has_statusbar(form_oid):
+        return any((c['KIND'] or '').strip().lower() == 'statusbar'
+                   for c in kids.get(form_oid, []))
 
     # R44: R39 fixed this on Tk and the wx generator was written from R38, so it
     # shipped the defect R39 had already named -- one scope for the whole window,
@@ -224,6 +257,21 @@ def generate(path, title=None, dispatch=False):
                         % (ind, v, cstr(cap or title or 'UIDEF'),
                            org.get('origin_width', '620'),
                            str(int(float(org.get('origin_height', 420))) + 40)))
+            if stream and stream_relations and not made_rels:
+                made_rels.append(1)
+                body.append('%srelations_api::attach_engine(shell_engine());' % ind)
+                for pa, ch, ed in stream_relations:
+                    if not ed:
+                        notes.append('SKIPPED relation %s -> %s -- no ON field '
+                                     'in SOURCE' % (pa, ch))
+                        continue
+                    body.append('%srelations_api::add_relation(%s, %s, {%s});'
+                                % (ind, cstr(pa.upper()), cstr(ch.upper()),
+                                   cstr(ed.upper())))
+                body.append('%srelations_api::set_current_parent_name(%s);'
+                            % (ind, cstr((src_aliases[0] if src_aliases else '')
+                                         .upper())))
+                body.append('%srelations_api::set_autorefresh(true);' % ind)
             if dispatch:
                 body.append('%sg_rt = new uidef::Runtime(%s, DOMAINS, '
                             'wxTheApp->argc > 2);' % (ind, v))
@@ -239,6 +287,16 @@ def generate(path, title=None, dispatch=False):
             for c in kids.get(oid, []):
                 emit(c, v, flow, sub, depth)
             close_sizer(oid, flow, v, sub, ind)
+            if stream and has_statusbar(oid):
+                if len(stream_vars) == 1:
+                    body.append('%s%s->SetStatusText(wxString::FromUTF8('
+                                '%s.status_line().c_str()));'
+                                % (ind, v, stream_vars[0][1]))
+                elif len(stream_vars) > 1:
+                    body.append('%s// R70 OPEN: %d bound grid(s), one statusbar -- '
+                                'contract 4b(c) names ONE status source and does '
+                                'not say which. Left unset rather than guessed.'
+                                % (ind, len(stream_vars)))
             if sub:
                 body.append('%s%s->Layout();' % (ind, v))
             body.append('%s%s->Show();' % (ind, v))
@@ -317,6 +375,39 @@ def generate(path, title=None, dispatch=False):
                 # by convention. Stated so a later edit does not quietly add it.
                 body.append('%s// read-only by construction: no wxLC_EDIT_LABELS '
                             '(BETA-7.1, contract 4b(b))' % ind)
+                if stream and oid in stream_refused:
+                    body.append('%s// R70 REFUSED stream binding: %s'
+                                % (ind, stream_refused[oid]))
+                    notes.append('REFUSED stream binding on %s -- %s'
+                                 % (oid, stream_refused[oid]))
+                elif stream and not specs:
+                    notes.append('REFUSED stream binding on %s -- no BINDING' % oid)
+                if stream and specs and oid not in stream_refused:
+                    spec = b
+                    if spec.strip() == '*':
+                        spec = '%s.*' % first
+                    sv = '%s_stream' % v
+                    body.append('%sg_streams.push_back('
+                                'std::make_unique<dottalk::DbTupleStream>(%s));'
+                                % (ind, cstr(spec)))
+                    body.append('%sauto& %s = *g_streams.back();' % (ind, sv))
+                    o = str(pr.get('order', '')).strip().lower()
+                    if o in ('physical', 'inx', 'cnx'):
+                        body.append('%s%s.set_order_%s();' % (ind, sv, o))
+                    elif o:
+                        # Unreachable while stream_refusals gates Order, and left
+                        # in on purpose: R70.2 was this branch dropping a declared
+                        # property in silence. If the gate is ever loosened the
+                        # drop is reported instead of vanishing.
+                        notes.append('DROPPED Order=%s on %s -- not a stream order'
+                                     % (o, oid))
+                    filt = str(pr.get('filter', '')).strip()
+                    if filt:
+                        body.append('%s%s.set_filter_for(%s);' % (ind, sv, cstr(filt)))
+                    body.append('%s%s.top();' % (ind, sv))
+                    nrows = max(1, min(int(float(pr.get('rowlimit', 20) or 20)), 200))
+                    body.append('%suidef_fill_grid(%s, %s, %d);' % (ind, v, sv, nrows))
+                    stream_vars.append((oid, sv))
             elif kind == 'tree':
                 root = b.lower() or first
                 body.append('%sauto* %s = new wxTreeCtrl(%s, wxID_ANY, %s, %s, '
@@ -492,9 +583,77 @@ def generate(path, title=None, dispatch=False):
             '#include <wx/statbox.h>', '#include <wx/listctrl.h>',
             '#include <wx/treectrl.h>']
     pre = []
+    # R70.3. Emitting the helper for a document with no bound grid gives
+    # -Wunused-function, and `-fsyntax-only` cannot see it -- gcc only warns
+    # once it generates code. A syntax check is not a build (R40 again).
+    if will_bind:
+        head += ['#include "xbase.hpp"', '#include "db_tuple_stream.hpp"',
+                 '#include "set_relations.hpp"',
+                 '#include <memory>', '#include <string>', '#include <vector>']
+        pre += [
+            '// R70: the frame\'s runtime contract (contract 4c) is TupleStream. The',
+            '// generated file OWNS the streams for the life of the window; a stream',
+            '// holds engine cursor state and must outlive the fill.',
+            '// The engine is the HOST\'s, not the generated file\'s: shell.cpp defines',
+            '// this seam and a wx host supplies its own. Declared, never defined here.',
+            'extern "C" xbase::XBaseEngine* shell_engine();',
+            '',
+            'std::vector<std::unique_ptr<dottalk::DbTupleStream>> g_streams;',
+            '',
+            '// The only place rows enter a generated grid. next_page(max_rows) is the',
+            '// paging verb (contract 4c); the house clamps max_rows to 1..200 and the',
+            '// generator has already clamped RowLimit to the same range.',
+            '//',
+            '// R70.4. The generator declares one column per comma-separated spec, which',
+            '// is right for `alias.field` and WRONG for `*` and `alias.*`: those are one',
+            '// spec and N values, and N is a property of the SCHEMA, which the generator',
+            '// does not have. The first version set items on columns that did not exist',
+            '// -- it compiled, it linked, and it dropped every field after the first.',
+            '// So the columns are reconciled against the engine on the first row: the',
+            '// arity and the LABELS both come from TupleRow::columns, which is the only',
+            '// place that knows them. The generated heads are the pre-fill placeholder,',
+            '// exactly as they are without --stream.',
+            'static void uidef_fill_grid(wxListCtrl* grid, dottalk::TupleStream& s,',
+            '                            std::size_t max_rows) {',
+            '    grid->DeleteAllItems();',
+            '    long row = 0;',
+            '    bool reconciled = false;',
+            '    for (const auto& t : s.next_page(max_rows)) {',
+            '        if (t.values.empty()) continue;',
+            '        if (!reconciled) {',
+            '            const int have = grid->GetColumnCount();',
+            '            const int want = static_cast<int>(t.values.size());',
+            '            for (int c = have; c < want; ++c)',
+            '                grid->InsertColumn(c, wxEmptyString, wxLIST_FORMAT_LEFT, 90);',
+            '            for (int c = 0; c < want; ++c) {',
+            '                const std::string nm =',
+            '                    (static_cast<std::size_t>(c) < t.columns.size())',
+            '                        ? t.columns[static_cast<std::size_t>(c)].name',
+            '                        : std::string();',
+            '                if (nm.empty()) continue;',
+            '                wxListItem col;',
+            '                col.SetMask(wxLIST_MASK_TEXT);',
+            '                col.SetText(wxString::FromUTF8(nm.c_str()));',
+            '                grid->SetColumn(c, col);',
+            '            }',
+            '            reconciled = true;',
+            '        }',
+            '        const long i = grid->InsertItem(',
+            '            row, wxString::FromUTF8(t.values[0].c_str()));',
+            '        for (std::size_t c = 1; c < t.values.size(); ++c)',
+            '            grid->SetItem(i, static_cast<int>(c),',
+            '                          wxString::FromUTF8(t.values[c].c_str()));',
+            '        ++row;',
+            '    }',
+            '}',
+            '']
     if dispatch:
         head += ['#include "uidef_rt.h"', '#include <cstdio>']
-        pre = ['uidef::Runtime* g_rt = nullptr;',
+        # Correction 50: this was `pre =`, which SILENTLY discarded the stream
+        # block above whenever both flags were given. --dispatch and --stream are
+        # independent modes and must compose; found by asking whether they did,
+        # not by anything failing.
+        pre += ['uidef::Runtime* g_rt = nullptr;',
                'std::shared_ptr<uidef::Scope> g_scope;',
                'wxWindow* g_scope_owner = nullptr;',
                'void uidef_register(uidef::Runtime&);   // the TARGET supplies these',
@@ -516,7 +675,8 @@ def generate(path, title=None, dispatch=False):
 
 
 if __name__ == '__main__':
-    src, notes, n = generate(sys.argv[1], dispatch='--dispatch' in sys.argv)
+    src, notes, n = generate(sys.argv[1], dispatch='--dispatch' in sys.argv,
+                             stream='--stream' in sys.argv)
     args = [a for a in sys.argv[2:] if not a.startswith('--')]
     out = args[0] if args else None
     if out:

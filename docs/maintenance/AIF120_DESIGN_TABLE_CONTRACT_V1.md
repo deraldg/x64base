@@ -235,6 +235,42 @@ One consequence is worth stating because it removes a hazard rather than adding 
 its pager session. A GUI grid holds its stream for the window's lifetime and never
 enters or leaves, so it neither needs that nor inherits its 32-bit limit (R67.3).
 
+## 4d. A cross-alias spec obliges the reader to ESTABLISH the relation, not just declare it
+
+R70, found by running a generated window rather than reading it.
+
+Section 10c makes a two-alias tuple spec legal only when `SOURCE` declares a
+`Relation` joining the aliases. That rule was written, checked by the manifest, and
+satisfied by 17 of 17 corpus grids -- and it still let a frontend render three rows
+in which the parent columns moved and the child columns did not. The document said
+`STUDENTS -> ENROLL ON SID`; the generated frontend drew that edge into its `tree`
+and then opened a stream over an engine that had never been told about it. Nothing
+refused, nothing warned, nothing returned false.
+
+> **A declaration a reader does not act on is decoration.** A reader that binds a
+> cross-alias spec MUST establish every `SOURCE` `Relation` edge on the engine
+> before the first row is fetched, through the house's own relation surface. A
+> reader that cannot do so MUST refuse the binding and say why; it must not fetch
+> rows and hope.
+
+Concretely, in the house's own C++ that is `relations_api::add_relation(parent,
+child, {field})` per edge, plus `set_current_parent_name` for the first alias in
+`SOURCE`. Nothing about the rule is wx-specific: an HTML or Tk reader that resolves
+a two-alias spec by any other means is inventing a join, and R26's lock domain does
+not cover a row that was invented.
+
+Two consequences follow, and both are constraints rather than freedoms:
+
+- **The tree and the join are ONE declaration with two consumers.** A reader may not
+  draw the relation and skip establishing it, nor establish an edge it did not draw.
+  They come from the same `SOURCE` rows or the document is not being read.
+- **A single-alias spec carries no such obligation.** `students.lname,students.fname`
+  needs no relation, and a reader must not establish one it was not given.
+
+The generator's own emission is the reference reading, and its refusal set is the
+manifest's -- `tools/uidef/manifest.py::stream_refusals` -- so a second backend has
+one place to ask rather than a second copy to keep in step.
+
 ## 5. Geometry is INTENT. `FLOW` and `ORDINAL` are the whole model
 
 Per R12: **layout intent is the portable geometry.** A container declares a

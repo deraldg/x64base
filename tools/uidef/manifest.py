@@ -141,6 +141,77 @@ def lock_domains(relations, aliases):
     return sorted(groups.values(), key=lambda g: (-len(g), sorted(g)))
 
 
+def stream_refusals(m, doms=None):
+    """R70. Which grids in this document may NOT be bound to a DbTupleStream.
+
+    Exists because the wx generator's `--stream` mode emitted a live binding for
+    every grid, including the three the contract already refuses -- an editable
+    grid (4b(b)), an ordinal spec (10c/R65.3), and a two-alias spec with no
+    Relation edge (10c). A generator that ignores the gate its own document failed
+    is worse than no gate: the refusal is printed and the binding ships anyway.
+
+    Schema-free by construction. Every reason below is a property of the DOCUMENT,
+    so this answers with no tables supplied -- which matters because the generator
+    is normally run without any. Schema-dependent refusals stay in bind_check.
+
+    Returns {objid: reason}. A grid absent from the mapping is bindable.
+    """
+    out = {}
+    if doms is None:
+        doms = lock_domains(m['relations'], m['aliases']) if m['relations'] else []
+
+    def refuse(oid, why):
+        out.setdefault(oid, why)
+
+    for oid, kind, b, pr in m['frames']:
+        if kind != 'grid':
+            continue
+        if str(pr.get('readonly', '')).strip().lower() in FALSEY:
+            refuse(oid, 'ReadOnly is false -- contract 4b(b) refuses an editable '
+                        'row path (BETA-7.1)')
+            continue
+        o = str(pr.get('order', '')).strip().lower()
+        if o and o not in STREAM_ORDERS:
+            refuse(oid, 'Order=%s is not one of %s -- contract 4c'
+                        % (o, ', '.join(sorted(STREAM_ORDERS))))
+            continue
+        rl = str(pr.get('rowlimit', '')).strip()
+        if rl:
+            try:
+                n = int(float(rl))
+            except ValueError:
+                n = 0
+            if n < 1:
+                refuse(oid, 'RowLimit=%s is not a positive integer; it is '
+                            'next_page(max_rows) -- contract 4c' % rl)
+                continue
+        specs = [x.strip() for x in (b or '').split(',') if x.strip()]
+        if not specs:
+            refuse(oid, 'no BINDING; a grid without a spec has no row to stream')
+            continue
+        bad = [sp for sp in specs if sp.startswith('#')]
+        if bad:
+            refuse(oid, 'ordinal spec %s is unreachable through the shell '
+                        '(AIF-037 cuts # to end of line) -- contract 10c'
+                        % ', '.join(bad))
+            continue
+        named = sorted({sp.split('.')[0].lower() for sp in specs
+                        if sp != '*' and '.' in sp})
+        undeclared = [a for a in named if a not in m['aliases']]
+        if undeclared:
+            refuse(oid, 'alias %s is not declared in SOURCE'
+                        % ', '.join(undeclared))
+            continue
+        if len(named) > 1 and not any(set(named) <= d for d in doms):
+            refuse(oid, 'spec names %s and SOURCE declares no Relation joining '
+                        'them -- contract 10c' % ' and '.join(named))
+            continue
+        if '*' in specs and not m['aliases']:
+            refuse(oid, 'BINDING * has no alias in SOURCE to resolve against '
+                        '-- contract 10c')
+    return out
+
+
 def bind_check(m, tables):
     """Join a document's BINDINGs against real DBF schemas.
 
