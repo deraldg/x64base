@@ -140,6 +140,8 @@ def generate(path, title=None, dispatch=False, stream=False):
         for r in objs)
     stream_relations = list(src_rels) if will_bind else []
     made_rels = []
+    live_trees = []       # R74: [treevar]
+    live_summaries = []   # R74: [(labelvar, child_alias)]
     rec = {(r['OBJID'] or '').strip(): r for r in objs}
 
     def var(oid):
@@ -282,6 +284,11 @@ def generate(path, title=None, dispatch=False, stream=False):
             for c in kids.get(oid, []):
                 emit(c, v, flow, sub, depth)
             close_sizer(oid, flow, v, sub, ind)
+            for _tv in live_trees:
+                body.append('%suidef_fill_tree(%s);' % (ind, _tv))
+            for _lv, _child in live_summaries:
+                body.append('%suidef_fill_summary(%s, %s);'
+                            % (ind, _lv, cstr(_child.upper())))
             if stream and has_statusbar(oid):
                 if len(stream_vars) == 1:
                     body.append('%s%s->SetStatusText(wxString::FromUTF8('
@@ -386,9 +393,34 @@ def generate(path, title=None, dispatch=False, stream=False):
                                 'std::make_unique<dottalk::DbTupleStream>(%s));'
                                 % (ind, cstr(spec)))
                     body.append('%sauto& %s = *g_streams.back();' % (ind, sv))
+                    # R73. Two modes, not three. `inx` and `cnx` are accepted
+                    # as deprecated spellings of `ordered` because the corpus
+                    # already says them, and BOTH map to set_order_cnx() --
+                    # arbitrary only in appearance: set_order_inx() and
+                    # set_order_cnx() are byte-identical in the engine
+                    # (db_tuple_stream.cpp:547 and :553), so there is nothing to
+                    # choose between. The engine picks the index FORMAT from the
+                    # table's flavor; the document cannot and should not.
                     o = str(pr.get('order', '')).strip().lower()
-                    if o in ('physical', 'inx', 'cnx'):
-                        body.append('%s%s.set_order_%s();' % (ind, sv, o))
+                    if o == 'physical':
+                        body.append('%s%s.set_order_physical();' % (ind, sv))
+                    elif o in ('ordered', 'inx', 'cnx'):
+                        if o != 'ordered':
+                            notes.append('DEGRADED Order=%s on %s -- read as '
+                                         '`ordered` (R73); the index format is '
+                                         'chosen by DBF flavor, not by the '
+                                         'document' % (o, oid))
+                        body.append('%s%s.set_order_cnx();   '
+                                    '// NavMode::OrderVector; see R73' % (ind, sv))
+                        # R73.1, and the generator cannot fix it: set_order_* is
+                        # void. WORKSPACE OPEN can say "found (not attached)";
+                        # a bound grid asks for an order and is told nothing, so
+                        # an unattached index browses PHYSICAL in silence. The
+                        # emitted line records what was asked for, since that is
+                        # the only part the frontend controls.
+                        body.append('%s// R73.1 OPEN: if no order is active on '
+                                    'the area this browses physical and says so '
+                                    'to no one -- set_order_* returns void' % ind)
                     elif o:
                         # Unreachable while stream_refusals gates Order, and left
                         # in on purpose: R70.2 was this branch dropping a declared
@@ -419,6 +451,13 @@ def generate(path, title=None, dispatch=False, stream=False):
                     body.append('%s%s->AppendItem(%s_root, %s);'
                                 % (ind, v, v, cstr('(no Relation edge in SOURCE)')))
                 body.append('%s%s->Expand(%s_root);' % (ind, v, v))
+                if will_bind:
+                    # R74. The static edges above come from SOURCE and are right
+                    # about SHAPE. relations_api::list_tree_for_current_parent
+                    # is the same tree with MATCH COUNTS at every hop, which is
+                    # what `REL LIST ALL` prints and what this control was drawing
+                    # a picture of.
+                    live_trees.append(v)
             elif kind in ('detail', 'summary'):
                 szn = '%s_sizer' % v
                 body.append('%sauto* %s = new wxStaticBoxSizer(wxVERTICAL, %s, %s);'
@@ -434,9 +473,24 @@ def generate(path, title=None, dispatch=False, stream=False):
                     kidsx = [c for a_, c, _e in src_rels if a_ == root]
                     lines = (['%s : n' % c.upper() for c in kidsx]
                              or ['(no child of %s in SOURCE)' % root.upper()])
+                kidsx_live = ([c for a_, c, _e in src_rels
+                               if a_ == ((b.lower() or first) if kind == 'summary'
+                                         else None)]
+                              if (will_bind and kind == 'summary') else [])
                 for i, ln in enumerate(lines):
-                    body.append('%s%s->Add(new wxStaticText(%s, wxID_ANY, %s), '
-                                '0, wxALL, 2);' % (ind, szn, v, cstr(ln)))
+                    if kidsx_live and i < len(kidsx_live):
+                        # R74. `ENROLL : n` had a LITERAL n because the generator
+                        # had no source for the count. relations_api has one:
+                        # match_count_for_child(). The placeholder stays as the
+                        # pre-fill text, exactly as the grid's heads do.
+                        lv = '%s_sum%d' % (v, i)
+                        body.append('%sauto* %s = new wxStaticText(%s, wxID_ANY, %s);'
+                                    % (ind, lv, v, cstr(ln)))
+                        body.append('%s%s->Add(%s, 0, wxALL, 2);' % (ind, szn, lv))
+                        live_summaries.append((lv, kidsx_live[i]))
+                    else:
+                        body.append('%s%s->Add(new wxStaticText(%s, wxID_ANY, %s), '
+                                    '0, wxALL, 2);' % (ind, szn, v, cstr(ln)))
                 if sizer_var:
                     add_to(sizer_var, szn, ind, is_sizer=True)
                 return
@@ -618,6 +672,42 @@ def generate(path, title=None, dispatch=False, stream=False):
             '    relations_api::set_autorefresh(true);',
             '}',
             '',
+           ] + ([
+            '// R74. `ENROLL : n` was a literal n, and `-> ENROLL ON SID` was',
+            '// drawn from SOURCE with no counts, because the generator had no',
+            '// source for either. relations_api has both, under a comment in',
+            '// set_relations.hpp that reads "Debug / UI" -- the house shipped a',
+            '// UI-facing relation surface and these frames rendered placeholders',
+            '// beside it. Called after uidef_attach_source and a positioned',
+            '// parent; before that there is nothing true to show.',
+                        'static void uidef_fill_summary(wxStaticText* t, const std::string& child) {',
+            '    const int n = relations_api::match_count_for_child(child);',
+            '    t->SetLabel(wxString::FromUTF8(',
+            '        (child + " : " + std::to_string(n)).c_str()));',
+            '}',
+            '',
+            ''] if live_summaries else []) + ([
+                        'static void uidef_fill_tree(wxTreeCtrl* tree) {',
+            '    const auto rows = relations_api::list_tree_for_current_parent(true, 8);',
+            '    if (rows.empty()) return;   // keep the SOURCE-drawn shape',
+            '    tree->DeleteAllItems();',
+            '    std::vector<wxTreeItemId> stack;',
+            '    for (const auto& r : rows) {',
+            '        const std::string& ln = r.line;',
+            '        std::size_t indent = 0;',
+            '        while (indent < ln.size() && ln[indent] == \' \') ++indent;',
+            '        const std::size_t depth = indent / 2;',
+            '        const wxString text = wxString::FromUTF8(ln.substr(indent).c_str());',
+            '        if (stack.empty()) { stack.push_back(tree->AddRoot(text)); continue; }',
+            '        if (depth >= stack.size()) stack.resize(depth, stack.back());',
+            '        else stack.resize(depth);',
+            '        if (stack.empty()) { stack.push_back(tree->AddRoot(text)); continue; }',
+            '        stack.push_back(tree->AppendItem(stack.back(), text));',
+            '    }',
+            '    if (!stack.empty()) tree->ExpandAll();',
+            '}',
+            '',
+            ''] if live_trees else []) + [
             'void uidef_detach_source() {',
             '    g_streams.clear();          // streams hold cursor state: die first',
             '    relations_api::clear_all_relations();',

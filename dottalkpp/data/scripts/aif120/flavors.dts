@@ -1,0 +1,41 @@
+* AIF-120 R73 -- the canonical schema in four flavors, and who chooses the index.
+*
+* WORKSPACE OPEN's usage text says: "Without CNX/INX/CDX, indexes are chosen by
+* DBF flavor: true x64/v128 CDX, classic VFP/v32 CNX." Contract 4c lets a UIDEF
+* document say Order = inx | cnx, i.e. name the format. This asks the engine
+* whether that is the document's choice to make.
+*
+* One table, STUDENTS, four flavors. Read-only.
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+ECHO
+ECHO === og (MS-DOS lineage) ===
+SET PATH DBF flav/og
+SELECT 1
+USE STUDENTS
+AREA
+
+ECHO
+ECHO === vfp ===
+SET PATH DBF flav/vfp
+SELECT 2
+USE STUDENTS
+AREA
+
+ECHO
+ECHO === x32 ===
+SET PATH DBF flav/x32
+SELECT 3
+USE STUDENTS
+AREA
+
+ECHO
+ECHO === x64 ===
+SET PATH DBF dbf/x64
+SELECT 4
+USE STUDENTS
+AREA
+
+WORKSPACE CLOSE

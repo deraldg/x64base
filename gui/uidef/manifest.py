@@ -99,7 +99,19 @@ FALSEY = {'false', '.f.', 'f', '0', 'no', 'off'}
 STATUS_SHOWS = {'rows', 'limit', 'order', 'root', 'recno', 'status'}
 # Contract 4c. Each of these names a DbTupleStream method, so their legal values are
 # the engine's, not a taste.
-STREAM_ORDERS = {'physical', 'inx', 'cnx'}   # set_order_physical / _inx / _cnx
+# R73. Was {'physical','inx','cnx'} -- three values, because DbTupleStream has
+# three setters. Measured: set_order_inx() (db_tuple_stream.cpp:547) and
+# set_order_cnx() (:553) are BYTE-IDENTICAL, both setting NavMode::OrderVector
+# and nothing else, and neither attaches an index or selects a tag. The engine
+# picks the format from the table itself -- WORKSPACE OPEN's own usage says
+# "indexes are chosen by DBF flavor: true x64/v128 CDX, classic VFP/v32 CNX".
+# So a document naming `inx` or `cnx` purports to choose something the engine
+# derived from the file. There are TWO modes, not three.
+STREAM_ORDERS = {'physical', 'ordered'}
+# Kept working, because the corpus and P2_order_ok already say `cnx` and a
+# vocabulary change should not invalidate documents that were correct when
+# written. Accepted, mapped to `ordered`, and reported -- not silently equated.
+DEPRECATED_ORDERS = {'inx': 'ordered', 'cnx': 'ordered'}
 ROWLIMIT_MAX = 200                           # app_smart_browser.cpp clamps 1..200
 
 
@@ -171,7 +183,7 @@ def stream_refusals(m, doms=None):
                         'row path (BETA-7.1)')
             continue
         o = str(pr.get('order', '')).strip().lower()
-        if o and o not in STREAM_ORDERS:
+        if o and o not in STREAM_ORDERS and o not in DEPRECATED_ORDERS:
             refuse(oid, 'Order=%s is not one of %s -- contract 4c'
                         % (o, ', '.join(sorted(STREAM_ORDERS))))
             continue
@@ -597,7 +609,14 @@ def check(m, p):
         if kind == 'grid':
             # Contract 4c: these are DbTupleStream's arguments, not decoration.
             o = str(pr.get('order', '')).strip().lower()
-            if o and o not in STREAM_ORDERS:
+            if o in DEPRECATED_ORDERS:
+                out.append(('DEGRADE', 'grid %s Order=%s' % (oid, o),
+                            'R73: `%s` names an index FORMAT, and the engine chooses '
+                            'the format from the table (x64 -> CDX, classic -> CNX). '
+                            'Read as `%s`. Which index and which tag are workspace '
+                            'facts (DTSHEMA index=/tag=), not document facts'
+                            % (o, DEPRECATED_ORDERS[o])))
+            elif o and o not in STREAM_ORDERS:
                 out.append(('REFUSE', 'grid %s Order=%s' % (oid, o),
                             'not an order the stream can be set to -- contract 4c '
                             'closes it to %s' % ', '.join(sorted(STREAM_ORDERS))))

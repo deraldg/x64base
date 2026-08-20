@@ -202,7 +202,7 @@ So the `PROPS` in 4b are not decoration. Each names a method:
 | `PROPS` | the engine | rule |
 | --- | --- | --- |
 | `RowLimit` | `next_page(max_rows)` | a positive integer. The house's own browser clamps to **1..200**; a reader may clamp lower and must say so |
-| `Order` | `set_order_physical()` / `set_order_inx()` / `set_order_cnx()` | a **closed set**: `physical`, `inx`, `cnx`. Anything else is refused |
+| `Order` | `set_order_physical()` / `set_order_cnx()` | **R73**: a closed set of TWO, `physical` and `ordered`. `inx` and `cnx` are accepted as deprecated spellings of `ordered` and reported; anything else is refused |
 | `Filter` | `set_filter_for(expr)` | BETA-6.2: a `FOR` filter evaluates **on tuple values only**, never on a work area's fields behind the tuple |
 | `ColumnWidths` | -- | design evidence, ordinal-aligned with the spec. Advisory under R16, exactly as `ORIGIN_WIDTH` is |
 | `ReadOnly` | -- | 4b(b): `.T.` only |
@@ -270,6 +270,71 @@ Two consequences follow, and both are constraints rather than freedoms:
 The generator's own emission is the reference reading, and its refusal set is the
 manifest's -- `gui/uidef/manifest.py::stream_refusals` -- so a second backend has
 one place to ask rather than a second copy to keep in step.
+
+## 4e. `Order` is a MODE, not an index format (R73)
+
+Section 4c originally closed `Order` to `physical | inx | cnx`, one value per
+`DbTupleStream` setter. Measured: `set_order_inx()` and `set_order_cnx()`
+(`src/cli/db_tuple_stream.cpp:547` and `:553`) are **byte-identical** -- both set
+`NavMode::OrderVector` and reset the position, and neither attaches an index or
+selects a tag. There are two navigation modes and the contract offered three words.
+
+Worse, the two extra words name index FORMATS, and the engine chooses the format
+from the table. `WORKSPACE OPEN`'s usage says so -- *"indexes are chosen by DBF
+flavor: true x64/v128 CDX, classic VFP/v32 CNX"* -- and the MCC schema, canonical
+across MS-DOS, VFP and x64, makes it measurable:
+
+| flavor | `DBF Flavor` | `Valid Index/Indices` |
+|---|---|---|
+| `dbf/og` | `v32` | CNX, INX |
+| `dbf/vfp` | `vfp` | CNX, INX |
+| `dbf/x32` | `v32` | CNX, INX |
+| `dbf/x64` | `v64` | **CDX, CNX** |
+
+`INX` does not exist for x64. The old vocabulary let a document request a format
+the table cannot offer.
+
+> **`Order` is `physical` or `ordered`.** Which index and which tag are properties
+> of the WORKSPACE, not of the document -- a `DTSHEMA 2` row already carries
+> `index=`, `indextype=` and `tag=` per area. The document says *ordered*; the
+> workspace says *by what*.
+
+`inx` and `cnx` remain accepted as deprecated spellings of `ordered`, reported with
+a `DEGRADE` rather than silently equated: the corpus already says them and they
+were correct when written.
+
+One consequence a reader must handle. `set_order_*` returns `void`, while
+`WORKSPACE OPEN` can report `[index: STUDENTS.cdx, found (not attached)]`. A frame
+that asks for `ordered` on an area with no active order browses **physical**, and
+the stream cannot tell it so. **A reader that cannot confirm the order is active
+must not imply that it is** -- report the request, not the result. This is open
+against the engine as R73.1.
+
+## 4f. The frames report engine state, and the engine has an API for it (R74)
+
+Section 4b(a) says a `tree` and a `summary` take their shape from the `SOURCE`
+relations. That is right about SHAPE and was silent about VALUES, so the reference
+generator rendered `ENROLL : n` with a literal *n*.
+
+`src/cli/set_relations.hpp` carries, under a comment reading `// Debug / UI`:
+
+```cpp
+std::vector<PreviewRow> list_tree_for_current_parent(bool recursive, int max_depth);
+int  match_count_for_child(const std::string& child_area);
+std::vector<std::string> child_areas_for_current_parent();
+```
+
+> A `tree` renders `list_tree_for_current_parent()`; a `summary` renders
+> `match_count_for_child()` per child. The `SOURCE`-drawn shape is the **pre-fill
+> placeholder**, exactly as a grid's column heads are, and remains what a reader
+> without an engine shows. A reader MUST NOT invent a count.
+
+**Still absent, and named rather than designed:** the engine has a second grid
+shape. `relations_api::enum_emit_for_current_parent(path_children, max_rows, emit)`
+enumerates the inner-join rows of a declared relation PATH -- the `REL ENUM`
+command -- across as many aliases as the path has. Section 10c describes a tuple
+SPEC over the current record and has no word for a PATH. Until an owner rules on
+the document form, a `grid` is the spec shape only.
 
 ## 5. Geometry is INTENT. `FLOW` and `ORDINAL` are the whole model
 
