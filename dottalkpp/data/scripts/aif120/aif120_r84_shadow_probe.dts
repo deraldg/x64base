@@ -1,0 +1,49 @@
+; ============================================================================
+; AIF-120 R84 -- the same workspace NAME resolves to two different files,
+; and the one a clone gets is the one that loses.
+;
+; MEASURED FIRST, so you are re-running a result rather than a hunch:
+;   dottalkpp/user/derald/workspaces/mcc_x64.dtschema   12 areas, 15 relations, real tags
+;   dottalkpp/user/public/workspaces/mcc_x64.dtschema   12 areas, 15 relations   (byte-identical)
+;   dottalkpp/user/default/workspaces/mcc_x64.dtschema  12 areas, 15 relations   (byte-identical)
+;   dottalkpp/data/workspaces/mcc_x64.dtschema          13 areas,  0 relations, tag=none
+; The three that win are GITIGNORED. The one that loses is the only TRACKED one.
+; `dottalkpp/user/` has zero tracked files.
+;
+; TWO RESOLVERS, and this is the part worth seeing run:
+;   ERSATZ resolves a workspace NAME through four roots, current-user FIRST
+;     (cmd_ersatz.cpp:455 workspace_search_roots, :588 resolve_workspace_target)
+;   WORKSPACE LOAD resolves a PATH relative to DATA -- your own transcript
+;     proved it: `ws load mcc_64` looked in data\mcc_64.dtschema and nowhere else.
+;
+; So this script asks the same question twice and expects two answers.
+; It also produces the two real DTSHEMA 3 files R83 said it did not have.
+;
+; SCOPE: AIF-120 reading the workspace lane's format. Writes only files named
+; for this lane, both deletable:
+;   dottalkpp/data/workspaces/aif120_r84_from_path.dtschema
+;   dottalkpp/data/workspaces/aif120_r84_from_name.dtschema
+; ============================================================================
+
+set echo on
+do x64
+
+; --- A. the file a fresh clone gets: path-pinned into data/workspaces -------
+workspace close
+ws load workspaces\mcc_x64
+workspace
+; EXPECT: 13 areas. Relations: 0.
+workspace save aif120_r84_from_path v3
+
+; --- B. the file the NAME resolves to, through ERSATZ's four-root search ----
+; `ersatz` with no argument auto-loads the profile for the active workspace,
+; exactly as it did in your transcript. The profile says
+; WORKSPACE=mcc_x64.dtschema -- a bare name, not a path.
+workspace close
+ersatz
+; EXPECT: 12 areas and 15 REL lines, from a gitignored file under user/.
+workspace save aif120_r84_from_name v3
+
+; --- C. read-only ----------------------------------------------------------
+workspace
+workspace catalog

@@ -19,9 +19,11 @@ SIDs. Both are the real tables in this tree.
 import os, sys, threading, time, collections
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.join(HERE, '..', 'vfp'))
 sys.path.insert(0, HERE)
-from read_vfp_binary import Dbf
+# R87. Was `from read_vfp_binary import Dbf`, which resolved to the GITIGNORED
+# working copy in this directory. `_vfp` loads the TRACKED tools/vfp reader by
+# absolute path, so a clean clone works and the ignored copy cannot shadow it.
+from _vfp import Dbf
 
 def _table(env, name):
     """Resolve a data table from the REPO, not from beside this script.

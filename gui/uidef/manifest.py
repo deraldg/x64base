@@ -29,8 +29,10 @@ import resolve_workspace                        # R84, which file that name wins
 # from this directory made nine committed tools unimportable on a fresh clone --
 # found by the house 'sweep for your own leftovers' rule, not by anything failing.
 # tools/vfp goes on the path FIRST so the ignored copy can never shadow it.
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'vfp'))
-from read_vfp_binary import Dbf
+# R87. Was `from read_vfp_binary import Dbf`, which resolved to the GITIGNORED
+# working copy in this directory. `_vfp` loads the TRACKED tools/vfp reader by
+# absolute path, so a clean clone works and the ignored copy cannot shadow it.
+from _vfp import Dbf
 
 
 def parse_props(txt):
@@ -113,6 +115,39 @@ def weight_of(pr):
         return 0
     return n if n > 0 else 0
 
+
+# R86. The design table's PROPERTY vocabulary, closed and keyed by RECKIND --
+# because it is three vocabularies and not one, which is why a flat scan for
+# "properties nothing reads" reported 128 dead words and was wrong. A DOC row's
+# `Version` is not an object property that no backend implements; it is document
+# metadata, read by a person. A FONT row's `Name` and `Size` are read through the
+# font machinery and never through an object's PROPS. Grouped correctly, the whole
+# corpus -- 29 documents, 297 rows -- states exactly ONE object property that no
+# target reads, and this lane authored it yesterday.
+#
+# (My first scanner could not see that. It matched `pr.get('...')` and so was blind
+# to every property reached any other way, and it had no idea which RECKIND a key
+# came from. A search shaped by the object you have cannot find an object with a
+# different schema -- the house doctrine, earned again, on my own evidence rather
+# than someone else's code.)
+PROPS_KNOWN = {
+    'DOC':  {'sourcefile', 'contract', 'version', 'title', 'origin', 'kind'},
+    'FONT': {'name', 'size', 'metrics', 'bold', 'italic'},
+    'OBJ':  {'caption', 'columns', 'columnwidths', 'fill', 'filter', 'mask',
+             'minpane', 'order', 'readonly', 'rowlimit', 'shows', 'weight'},
+    # `multiline` is deliberately ABSENT. R85's P8 states it, no target reads it,
+    # and adding it here before a backend implements it would declare a word known
+    # on the strength of wanting it -- which is the silence this check exists to
+    # break, performed by the check itself. It goes in when wx, Tk, HTML and the
+    # character cell can each say what they do with it. Until then the checker
+    # names it on every run, which is the correct amount of pressure.
+}
+# An `imported` row carries what the SOURCE record carried -- `oldsetdelete`,
+# `viewtype`, `cmdprev.enabled`, 116 distinct keys across the VFP imports. That is
+# PRESERVATION and it is the importer working, not a document making claims a
+# target ignores. Measured: 404 occurrences on imported rows, 34 on authored rows
+# (all DOC or FONT metadata), 4 on measured rows. Exempt, by provenance, stated.
+PROPS_EXEMPT_PROVENANCE = 'imported'
 
 SPLITTER_KIND = 'splitter'
 SPLITTER_PANES = 2
@@ -420,7 +455,20 @@ def manifest(path):
         # frame kinds, so the checker needs every object's PROPS -- not just the
         # subsets the earlier rulings happened to collect.
         'all_props': [],
+        'unknown_props': [],
     }
+    for r in rows:
+        rk = (r['RECKIND'] or '').strip().upper()
+        if (r['PROVENANCE'] or '').strip().lower() != PROPS_EXEMPT_PROVENANCE:
+            known = PROPS_KNOWN.get(rk)
+            if known is not None:
+                for line in (r['PROPS'] or '').replace('\r\n', '\n').split('\n'):
+                    if ' = ' not in line:
+                        continue
+                    k = line.split(' = ', 1)[0].strip()
+                    if k.lower() not in known:
+                        m['unknown_props'].append(
+                            ((r['OBJID'] or '').strip() or rk, rk, k))
     for r in rows:
         if (r['RECKIND'] or '').strip() == 'DOC':
             # R66. This was `parse_props(r['SOURCE'])['alias']`, and parse_props
@@ -820,6 +868,20 @@ def check(m, p):
                             'empty panes -- but every measured splitter in the shipped '
                             'frame is added with proportion 1 and wxEXPAND '
                             '(main_frame.cpp:703) (R85.1)'))
+    # R86. Reported, not refused. R85 argued that an unknown KIND is refused while
+    # an unknown PROPERTY is silently ignored, and then this lane immediately relied
+    # on a silently-ignored property. Refusing would make the two symmetric, but the
+    # asymmetry has a reason: an unknown KIND cannot be drawn AT ALL, while an
+    # unknown property loses a modifier on an object that still renders. This lane
+    # already has a word for that outcome -- R80 and R81 report a dropped Weight
+    # rather than refusing the document -- so an unknown property joins the reports
+    # and does not invent a third policy. Silently ignored becomes NAMED.
+    for oid, rk, key in m['unknown_props']:
+        out.append(('NOTE', '%s %s states %s' % (rk, oid, key),
+                    'no target reads this property and the checker does not know '
+                    'it; the object renders and the word does nothing. Legal, and '
+                    'now said out loud rather than discovered by its absence from '
+                    'a screen (R86)'))
     for oid, kind, n in m['frame_with_children']:
         out.append(('REFUSE', '%s %s has %d child row(s)' % (kind, oid, n),
                     'a %s takes its shape from the SOURCE relations -- child rows '

@@ -19,9 +19,11 @@ Three modes, because the interesting result is not "a lock fixes it":
 import os, sys, threading, time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.join(HERE, '..', 'vfp'))     # tools/vfp/read_vfp_binary.py
 sys.path.insert(0, HERE)
-from read_vfp_binary import Dbf
+# R87. Was `from read_vfp_binary import Dbf`, which resolved to the GITIGNORED
+# working copy in this directory. `_vfp` loads the TRACKED tools/vfp reader by
+# absolute path, so a clean clone works and the ignored copy cannot shadow it.
+from _vfp import Dbf
 
 # The workspace under test is the same 200-record table VFP 9 opened.
 DBF = os.environ.get('AIF120_STUDENTS') or os.path.join(

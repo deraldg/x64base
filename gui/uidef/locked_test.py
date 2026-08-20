@@ -14,7 +14,6 @@ import os, sys, threading, time, collections
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-sys.path.insert(0, os.path.join(HERE, '..', 'vfp'))
 import uidef_runtime as RT
 from relate_test import Workspace, PARENT, CHILD, SID, TRUTH
 

@@ -7,7 +7,10 @@ inferred that the source does not state.
 """
 import os, re, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from read_vfp_binary import Dbf
+# R87. Was `from read_vfp_binary import Dbf`, which resolved to the GITIGNORED
+# working copy in this directory. `_vfp` loads the TRACKED tools/vfp reader by
+# absolute path, so a clean clone works and the ignored copy cannot shadow it.
+from _vfp import Dbf
 import classlib
 import uidef
 

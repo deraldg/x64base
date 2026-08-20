@@ -174,7 +174,12 @@ add_custom_command(
           "${CMAKE_CURRENT_SOURCE_DIR}/uidef.py"
   COMMENT "UIDEF: generating wx C++ from ${UIDEF_DOCUMENT}.DBF")
 
-add_executable(uidef_wx_demo "${_gen}" wx_host.cpp ${UIDEF_CLI_SOURCES})
+# WIN32 is ignored everywhere except Windows, where it is the difference between
+# a GUI-subsystem executable and a console one. wx supplies WinMain on Windows,
+# so a console-subsystem target is the classic first MSVC link failure for a wx
+# CMake project -- an unresolved entry point, with nothing about it that names wx.
+# Added unqualified because it costs the Linux build nothing (R87).
+add_executable(uidef_wx_demo WIN32 "${_gen}" wx_host.cpp ${UIDEF_CLI_SOURCES})
 
 target_include_directories(uidef_wx_demo PRIVATE
   "${DOTTALK_ROOT}/include"

@@ -18,8 +18,10 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # from this directory made nine committed tools unimportable on a fresh clone --
 # found by the house 'sweep for your own leftovers' rule, not by anything failing.
 # tools/vfp goes on the path FIRST so the ignored copy can never shadow it.
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'vfp'))
-from read_vfp_binary import Dbf
+# R87. Was `from read_vfp_binary import Dbf`, which resolved to the GITIGNORED
+# working copy in this directory. `_vfp` loads the TRACKED tools/vfp reader by
+# absolute path, so a clean clone works and the ignored copy cannot shadow it.
+from _vfp import Dbf
 from import_scx import SKIP        # one definition of "not a visual object"
 
 # A DataEnvironment is not a layout group. Its children are cursors and relations,

@@ -501,12 +501,48 @@ v1. The whole argument for FoxPro syntax is that it hides that model.
 Adopted from the published seed, which had already written them, plus two:
 
 1. Syntax contract and examples
-2. Command registry entries
+2. Command registry entries -- **RE-SIZED, 2026-08-20, and it is much smaller
+   than this list implies.** VERIFIED in source, not assumed: DotScript is a line
+   iterator over the same executor the interactive prompt uses. `shell_api.cpp:309`
+   says so -- "Canonical shell execution path. All front-ends should call this" --
+   and `cmd_dotscript.cpp:568` calls it, as do ERSATZ, INIT, MCC, SHUTDOWN, TEST
+   and `init_script_runner`. `registry()` is a singleton
+   (`command_registry.cpp:219`) and registration is one line:
+   `dli::registry().add("ERASE", &cmd_ERASE);`. The comment lexer is shared, not
+   parallel (`dotscript_lexing.hpp`, "Canonical DotTalk++ / DotScript comment +
+   line lexing", AIF-037).
+   **So there is no grammar to write and no DotScript surface to build
+   separately: a command registered once is reachable from the prompt, from every
+   `.dts`, and from ERSATZ and INIT.** Gates 3 and 4 are therefore not downstream
+   of a parser.
+   One measured exception: DO/ENDDO shell-only block capture lives in
+   `shell.cpp` (`BlockCaptureState`) with no presence in `shell_api.cpp`, so that
+   grouping is interactive-only and DOTSCRIPT bypasses it. DOTSCRIPT also adds two
+   runner policies that are not syntax -- STOP_ON_ERROR abort, and nesting capped
+   at main plus one subscript.
+   Remaining work: the handlers themselves. Not chartered as a separate unit --
+   folded into whichever GUI unit needs them first, per the steward, 2026-08-20.
 3. TUI proof for menu, window, dialog, button, and event handler
 4. HELP/CMDHELP coverage
 5. SelfDoc metadata coverage
 6. Manualgen section
-7. Website comparison update
+7. Website comparison update -- **STATUS: ALPHA**, 2026-08-20. Owner:
+   member.ai.claude.cowork (ALPHA), assigned by the steward in-session.
+   Replacement page drafted against this charter and R11/R12/R66-R86;
+   the seed still reads "Planned, not implemented" while eleven rulings
+   sit behind it. Draft is `docs/maintenance/evidence/AIF120_GATE7_application-ui-dsl-lane.md`,
+   for `content/docs/dev/application-ui-dsl-lane.mdx` in the site repo.
+   It is held here as `.md`, not `.mdx`, and that is not tidiness:
+   `prepush_gate.py:96` lists `.mdx` in `DATA_SUFFIXES` because in xBase
+   `.mdx` is a MULTIPLE INDEX file. Staging the draft under its web
+   extension failed the gate as a runtime data fixture (exit 3), and the
+   only ways through were to rename it or to declare it data with
+   `--allow-data`, which would have put a false statement in the record.
+   It becomes `.mdx` when it lands in the site repo, where nothing thinks
+   that extension means an index.
+   Measured while drafting: gate 2 is genuinely zero -- the seed's own
+   `CREATE MENU` exists only in `src/cli/fox_standard_catalog.cpp`, marked
+   "Static historical reference entry. Not the live DotTalk++ command contract."
 8. **A coordinate-model ruling, recorded before the table schema is fixed** -- **CLOSED as R12**, 2026-08-18, review-needed
 9. **A threading ruling** -- handlers on the UI thread with explicit hand-off,
    or a background construct with a defined completion path. Silence fails.

@@ -24,7 +24,10 @@ and a Python with tkinter -- 3.12 here, 3.11 has none):
 """
 import os, subprocess, sys, time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from read_vfp_binary import Dbf
+# R87. Was `from read_vfp_binary import Dbf`, which resolved to the GITIGNORED
+# working copy in this directory. `_vfp` loads the TRACKED tools/vfp reader by
+# absolute path, so a clean clone works and the ignored copy cannot shadow it.
+from _vfp import Dbf
 from uidef import doc_source as uidef_doc_source
 
 # R16: a stated ORIGIN size is ADVISORY for controls whose size their content

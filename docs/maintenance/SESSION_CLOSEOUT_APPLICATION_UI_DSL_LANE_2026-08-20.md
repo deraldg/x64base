@@ -68,6 +68,8 @@ What is stable, and therefore stated, is which ruling lives in which document:
 | **R82** -- location is a WORKSPACE fact, not a document property | `docs/maintenance/AIF120_LOCATION_VOCABULARY_V1.md` |
 | **R83** -- the frontend opens the tables its own document names | `docs/maintenance/AIF120_SOURCE_RESOLUTION_V1.md` |
 | **R85** -- the sash is a KIND, and an unweighted splitter cannot honour its own ORIGIN | `docs/maintenance/AIF120_SPLITTER_KIND_V1.md` |
+| **R86** -- the property vocabulary is closed per RECKIND; one dead word in 29 documents, and it is mine | `docs/maintenance/AIF120_PROPERTY_VOCABULARY_V1.md` |
+| **R87** -- eleven tools imported a GITIGNORED file, so R76's target could not build from a clean clone | `docs/maintenance/AIF120_CLEAN_CLONE_IMPORTS_V1.md` |
 
 R84 is deliberately absent. It exists as `gui/uidef/resolve_workspace.py`,  <!-- cite-check:ignore -->
 which is ON DISK AND UNTRACKED. The suppress marker is on the line above for that
@@ -79,7 +81,7 @@ surveyed, 3 divergent, and the tracked
 work done from this lane, so it is owed as a REPORT and not numbered as an
 AIF-120 ruling. Recorded here rather than quietly renumbered.
 
-All fifteen are **review-needed**; the author does not self-approve. Also landed:
+All seventeen are **review-needed**; the author does not self-approve. Also landed:
 the wx-samples correction, R73.3a, the owner ruling that `ccode/gui` is the GUI
 project and `src/gui` is for C++ GUI code, and the retirement of
 `wx_stream_harness.cpp`.
@@ -255,7 +257,7 @@ Proven by BUILDING and RUNNING: 56s, 66 translation units, and a frontend that o
 - `gui/README.md`, `labtalk/registries/projects.yaml` row `project.x64base.gui`, `gui/uidef/CMakeLists.txt`.
 - 251 citations retargeted across 55 documents; `cited-paths` reports zero widows on every commit since.
 - Four backends carry `Weight` AND `splitter`; `KINDS` is **20**; `generate(path, title, dispatch, stream)`.
-- The corpus regenerates: `gui/uidef/author_cases.py` (**20** fixtures) plus five other author scripts, **24** documents in all.
+- The corpus regenerates FROM A CLEAN CLONE as of R87: `gui/uidef/author_cases.py` (**20** fixtures) plus five other author scripts, **24** documents in all.
 - `gui/uidef/prove_r81.py` asserts the cell-allocation rule and exits non-zero if it ever stops holding.
 
 ## Owed, and to whom
@@ -274,8 +276,35 @@ Proven by BUILDING and RUNNING: 56s, 66 translation units, and a frontend that o
 | **A Good Neighbor note is owed on the BOARD.** R81.4 changed `tools/staging/check_cited_paths.py`, which is not this lane's file. The four fields are in that ruling and the reason sits above the tuple in the source -- but a lane ruling is not a channel its owner has any reason to read, and agents do not write to `docs/ai-friendly/PSEUDO_CHAT_BOARD.md`. The `RE:` note is drafted for the maintainer to transcribe | gate owner |
 | **R81.1** -- **24** repo paths cited in `docs/ai-friendly/AI_FRIENDLY_DASHBOARD_V1.md` cannot be reached from a clone: 23 widows, all ON DISK and merely untracked, plus **one that is GITIGNORED** -- `.../DOCFLUSH-20260722-001/FULLSTACK_DOCUMENTATION_FLUSH_FILE_MANIFEST_V1.csv`, which `git add` can never stage (R42.1). R73.3a's shape at dashboard scale. Not on the rows this session touched, and `cited-paths` is advisory, so nothing blocked | dashboard owner |
 | **R81.2 -- and my own sweep under-counted it.** I reported 22 by grepping for a whitelist of extensions (`py md cpp hpp h txt yaml dts DBF png FPT`). The gate found 24, because the two I missed end in `.csv` and `.mjs`. **A search shaped by the objects you already have cannot find an object with a different schema** -- the house doctrine, applied to my own evidence-gathering rather than to someone else's code, and the second time this session a whitelist has been the defect. The gate's regex is the one to trust; mine was a convenience that quietly narrowed the question | AIF-120, recorded |
+| **Tk crashes on `N5_ordinal_spec.DBF`** -- `_tkinter.TclError: Column #3 out of range`, `uidef_tk.py:258`. Confirmed PRE-EXISTING against the 2026-08-20 13:50 generator, so it predates the splitter and R85.3. One fixture of twenty. An unhandled traceback is not a refusal, and this backend is supposed to refuse in words | AIF-120, next unit |
+| **MSVC, narrowed.** R87 removed the blocker that would have stopped the build before the compiler ran, and inspected all 31 translation units the target compiles: POSIX headers guarded, `localtime_s`/`gmtime_s` branches present, no gcc-only syntax, `/permissive-` already configured. What remains needs a Windows box -- `find_package(wxWidgets REQUIRED)` wants `wxWidgets_ROOT_DIR`/`wxWidgets_LIB_DIR`, and nothing here can test a link | steward |
 | **The published lane page is stale, and it is gate 7.** `x64base.com/docs/dev/application-ui-dsl-lane/` still reads "Planned, not implemented", proposes a `CREATE WINDOW` / `DEFINE BUTTON` command syntax, and orders the backends Arctic-first. The charter already names it "Published seed" and supersedes it -- gates 10 and 11 make the design table the deliverable and the DSL text a convenience over it -- but **"Website comparison update" is the charter's own gate 7**, and eleven rulings now sit behind a page that says the lane has not started. Not an agent's call to publish | maintainer |
 | **BETA citations.** 26 across nine documents cite the BETA checklist as authority. The maintainer ruled it "a template"; `foxref.cpp` shows all 43 items `BetaStatus::OPEN`. Retarget to lane rulings | AIF-120, next session |
+
+## Gate 7 and the portal -- assigned in-session
+
+The steward assigned **gate 7 (website comparison update) to ALPHA**, status
+**ALPHA**, and set two conditions: no web work, and site documentation goes up in
+BATCHES. So the deliverable here is a drafted page in the repository, not a
+publication:
+
+- `docs/maintenance/evidence/AIF120_GATE7_application-ui-dsl-lane.md` -- the
+  replacement for `content/docs/dev/application-ui-dsl-lane.mdx` in the site repo.
+- The charter's gate 7 entry now carries the status, the owner and the draft path.
+
+**Responsibility for it does not batch.** The draft states gate-by-gate status, so
+it goes stale every time a ruling lands; keeping it current between batches is the
+lane agent's job, not the steward's. It was written before R86 and R87 and needs
+their line before the next batch goes up.
+
+Measured while drafting, and worth keeping: **gate 2 is genuinely zero.** The
+seed's own `CREATE MENU` exists only in `src/cli/fox_standard_catalog.cpp`, marked
+"Static historical reference entry. Not the live DotTalk++ command contract."
+
+The lane also now keeps its own durable documentation in the portal rather than
+only in this lane's corner -- `labtalk/ai_portal/AIF120_APPLICATION_UI_DSL_SEED_V1.md`,
+the smallest sufficient start for a resumed agent, including the failure modes
+this lane has actually paid for.
 
 ## Next unit
 
