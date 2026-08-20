@@ -21,6 +21,12 @@ from uidef import doc_source
 KINDS_RENDERED = frozenset((
     'form', 'label', 'text', 'button', 'check', 'radio', 'list', 'combo',
     'image', 'panel', 'page', 'group', 'pageset',
+    # R85. A browser has no sash widget, but it has the two facts a sash is made
+    # of: a fixed-size first pane and a flexible second one. CSS `resize` even
+    # supplies a real, script-free drag handle -- at the pane's corner rather
+    # than along the whole boundary. Rendered, and the difference is REPORTED
+    # rather than left for a reader to discover by dragging.
+    'splitter',
     # R66. A browser has a native element for four of the five -- table, ul, dl and
     # a footer div -- so this target renders their STRUCTURE rather than a box.
     'grid', 'tree', 'detail', 'summary', 'statusbar',
@@ -120,6 +126,17 @@ def generate(path):
         v = str(pr.get('fill', '')).strip().lower()
         return bool(v) and v not in FALSEY
 
+    def _parent_of(r):
+        return (r['PARENT'] or '').strip()
+
+    def _pane_index(r):
+        sibs = kids.get(_parent_of(r), [])
+        oid_ = (r['OBJID'] or '').strip()
+        for i, c in enumerate(sibs):
+            if (c['OBJID'] or '').strip() == oid_:
+                return i
+        return 0
+
     def style_for(r, kind, org, parent_flow, parent_kind):
         st = []
         fr = int(float((r['FONTREF'] or '0').strip() or 0))
@@ -140,6 +157,45 @@ def generate(path):
         # before either did anything. CSS having the property is not the same as
         # the layout having room.
         _pr = parse_props(r['PROPS'])
+        # R85. A PANE is not a flex child of an ordinary row -- it is one of the
+        # two sides of a boundary, and which side decides everything. The first
+        # pane is the one the sash position measures, so it is fixed at ORIGIN
+        # and made resizable; the second takes the rest. MinPane survives here,
+        # as a CSS minimum, which is the opposite of Tk -- ttk.PanedWindow keeps
+        # Weight and loses MinPane, a browser keeps MinPane and has no gravity.
+        # Neither toolkit carries both and the document carries both.
+        if parent_kind == 'splitter':
+            oid_ = (r['OBJID'] or '').strip()
+            first = _pane_index(r) == 0
+            sp = rec.get(_parent_of(r))
+            sorg = parse_props(sp['ORIGIN']) if sp is not None else {}
+            spr = parse_props(sp['PROPS']) if sp is not None else {}
+            across = 'width' if parent_flow == 'row' else 'height'
+            if first:
+                pos = sorg.get('origin_width' if parent_flow == 'row'
+                               else 'origin_height')
+                if pos:
+                    st.append("flex:0 0 %spx" % pos)
+                else:
+                    st.append("flex:1 1 0")
+                    notes.append("DERIVED sash position for %s -- the splitter "
+                                 "states no ORIGIN, so the panes split evenly "
+                                 "(R85)" % oid_)
+                st.append("overflow:auto")
+                st.append("resize:%s" % ('horizontal' if parent_flow == 'row'
+                                         else 'vertical'))
+                st.append("border-%s:4px solid #b8b8b8"
+                          % ('right' if parent_flow == 'row' else 'bottom'))
+                mp = str(spr.get('minpane', '')).strip()
+                if mp:
+                    st.append("min-%s:%spx" % (across, int(float(mp))))
+            else:
+                st.append("flex:1 1 0")
+                st.append("overflow:auto")
+                mp = str(spr.get('minpane', '')).strip()
+                if mp:
+                    st.append("min-%s:%spx" % (across, int(float(mp))))
+            return ";".join(st)
         _w = weight_of(_pr)
         if _w and parent_flow in ('row', 'column'):
             st.append("flex-grow:%d" % _w)
@@ -161,6 +217,14 @@ def generate(path):
         return ";".join(st)
 
     def container_style(oid, flow, pr):
+        if oid in rec and (rec[oid]['KIND'] or '').strip().lower() == 'splitter':
+            # A splitter's FLOW is the direction of the SASH, and the panes lie
+            # across it -- same fact ttk spells with `orient`. `stretch` keeps the
+            # panes the full height of the boundary, which is the one thing a
+            # plain flex row does not do by default.
+            d = 'row' if flow == 'row' else 'column'
+            return ("display:flex;flex-direction:%s;align-items:stretch;"
+                    "gap:0;width:100%%" % d)
         if flow == 'row':
             return "display:flex;flex-direction:row;gap:6px;align-items:center"
         if flow == 'column':
@@ -200,6 +264,15 @@ def generate(path):
             notes.append("REFUSED kind %r on %s -- contract s4" % (kind, oid))
             return
         counts['made'] += 1
+        if kind == 'splitter':
+            # R85. Said once, plainly, every time. A browser's `resize` grip sits
+            # at the pane's CORNER; a sash is the whole boundary. The layout the
+            # document describes is reproduced exactly -- the interaction is not,
+            # and no script is emitted to fake it.
+            notes.append("DEGRADED splitter %s -- the boundary renders at the "
+                         "stated position and the first pane is resizable, but "
+                         "the drag target is CSS `resize` at the pane's corner, "
+                         "not the full-length sash wx and ttk give (R85)" % oid)
         st = style_for(r, kind, org, parent_flow, parent_kind)
         # R27: TABORDINAL is a second ordinal over the same children. A browser has
         # exactly that concept and spells it `tabindex`.

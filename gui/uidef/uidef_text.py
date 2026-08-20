@@ -34,6 +34,11 @@ from uidef import doc_source
 KINDS_RENDERED = frozenset((
     'form', 'label', 'text', 'button', 'check', 'radio', 'list', 'combo',
     'panel', 'page', 'group', 'pageset',
+    # R85. A character grid draws a sash better than it draws most things: the
+    # boundary IS a column of '|' or a row of '-', and the terminal the engine
+    # already ships puts one down the middle of its own screen. What it cannot
+    # do is DRAG it, and that is reported, once, per splitter.
+    'splitter',
     # R66. The character grid is the target these five were MEASURED on -- dottalk++
     # renders exactly this shape in a terminal -- so this backend must not paraphrase
     # them the way a toolkit backend has to.
@@ -139,7 +144,7 @@ def render(path, width=100, height=40):
     # flow axis, and the cross axis of a character row is exactly one line tall.
     # There is nothing to stretch into, so the property has no reading on this
     # target and R80's silence about it stands.
-    CONTAINER_KINDS = ('form', 'panel', 'page', 'pageset', 'group')
+    CONTAINER_KINDS = ('form', 'panel', 'page', 'pageset', 'group', 'splitter')
 
     def weight_of(pr):
         """R81, contract 5c: a child's share of the parent's FLOW axis."""
@@ -242,6 +247,120 @@ def render(path, width=100, height=40):
         return [' | '.join(parts) if parts else '(statusbar declares no Shows)']
 
     used = {'made': 0, 'refused': 0, 'derived': 0}
+
+    def split(ch, r, c, avail_w):
+        """Draw a splitter: two panes and the boundary between them. R85.
+
+        Called from two places -- the child loop, and pane(), because a pane may
+        BE a splitter. Written once so a nested sash reports the same three lines
+        an outer one does; the first version inlined it in the loop and the inner
+        splitter of the measured screen came out as a plain box with no divider
+        and no word said about it.
+        """
+        cid = (ch['OBJID'] or '').strip()
+        cp = parse_props(ch['PROPS'])
+        org = parse_props(ch['ORIGIN'])
+        sflow = (ch['FLOW'] or '').strip().lower()
+        panes = kids.get(cid, [])
+        if len(panes) != 2 or sflow not in ('row', 'column'):
+            # The checker refuses both of these before a renderer is
+            # reached; this target refuses them again rather than
+            # guessing, because a backend that only works downstream of
+            # a checker is not a backend.
+            notes.append("REFUSED splitter %s -- %d pane(s), FLOW=%s; a "
+                         "splitter is two panes and a direction (R85)"
+                         % (cid, len(panes), sflow or '(none)'))
+            used['refused'] += 1
+            return 0, 0
+        # R12 keeps the sash position in ORIGIN, in px. This target's
+        # unit is a cell, so the number is DERIVED and the derivation is
+        # declared -- same conversion, and the same admission, that
+        # FLOW=free already makes above.
+        key = 'origin_width' if sflow == 'row' else 'origin_height'
+        per = PX_PER_CELL_X if sflow == 'row' else PX_PER_CELL_Y
+        budget = max(avail_w - BOX_OVERHEAD, 8)
+        if key in org:
+            pos = max(1, int(float(org[key])) // per)
+            notes.append("DERIVED sash position for %s -- ORIGIN says %s px "
+                         "and this target's unit is a cell; %s / %d = %d "
+                         "(R12.3, R85)"
+                         % (cid, org[key], org[key], per, pos))
+            used['derived'] += 1
+        else:
+            pos = budget // 2
+            notes.append("DERIVED sash position for %s -- no ORIGIN, so the "
+                         "boundary is centred (R85)" % cid)
+            used['derived'] += 1
+        notes.append("DEGRADED splitter %s -- the boundary is drawn at the "
+                     "position the document states and the panes are sized "
+                     "to it, but a character cell has no pointer to drag it "
+                     "with; it is a divider, not a sash (R85)" % cid)
+        if sflow == 'row':
+            pos = max(1, min(pos, budget - 2))
+            h1, w1 = pane(panes[0], r + 1, c + 1, pos - 1)
+            h2, w2 = pane(panes[1], r + 1, c + pos + 1, budget - pos - 1)
+            inner = max(h1, h2, 1)
+            cv.box(r, c, budget + 2, inner + 2, cp.get('caption', ''))
+            for rr in range(r + 1, r + inner + 1):
+                cv.put(rr, c + pos, '|')
+            _h = inner + 2
+        else:
+            # A column splitter's ORIGIN is a HEIGHT, and this canvas has
+            # no fixed height to divide -- the same wall R81 hit. So the
+            # first pane is drawn at its natural height and the boundary
+            # goes under it, and the derived row is reported as the number
+            # it would have used.
+            h1, w1 = pane(panes[0], r + 1, c + 1, budget)
+            if h1 != pos:
+                notes.append("DROPPED sash position %d on %s -- a column "
+                             "sash divides HEIGHT and this canvas grows to "
+                             "its content; the boundary sits under the "
+                             "first pane at %d instead (R81, R85)"
+                             % (pos, cid, h1))
+            h2, w2 = pane(panes[1], r + h1 + 2, c + 1, budget)
+            inner = h1 + h2 + 1
+            cv.box(r, c, budget + 2, inner + 2, cp.get('caption', ''))
+            cv.put(r + h1 + 1, c + 1, '-' * budget)
+            _h = inner + 2
+        used['made'] += 1
+        return _h, budget + 2
+
+    def pane(ch, top, left, width):
+        """Draw ONE pane of a splitter into a region, and report what it used.
+
+        R85. `draw()` draws a container's CHILDREN, so it cannot draw a pane that
+        is itself a control -- and a pane may be anything: a list, a grid, a
+        panel, or another splitter. This is the one place in this file that has
+        to dispatch on a single row rather than a list of them, which is what a
+        pane is: not a member of a flow, but one side of a boundary.
+        """
+        cid = (ch['OBJID'] or '').strip()
+        kind = (ch['KIND'] or '').strip().lower()
+        cp = parse_props(ch['PROPS'])
+        if kind not in KINDS_RENDERED:
+            notes.append("REFUSED kind %r on %s -- contract s4" % (kind, cid))
+            used['refused'] += 1
+            return 1, 0
+        if kind in FRAME_KINDS:
+            lines = frame_block(kind, cp, ch)
+            if cp.get('caption'):
+                lines = [cp['caption']] + lines
+            for i, ln in enumerate(lines):
+                cv.put(top + i, left, ln[:width])
+            used['made'] += 1
+            return len(lines), min(max((len(l) for l in lines), default=0), width)
+        if kind == 'splitter':
+            return split(ch, top, left, width)
+        if kind in CONTAINER_KINDS:
+            inner, innerw = draw(cid, top + 1, left + 1, width - BOX_OVERHEAD)
+            w = max(min(width, max(innerw + BOX_OVERHEAD, 12)), 4)
+            cv.box(top, left, w, inner + 2, cp.get('caption', ''))
+            used['made'] += 1
+            return inner + 2, w
+        g = glyph(kind, cp, ch)
+        cv.put(top, left, stretch(g, width))
+        used['made'] += 1
+        return 1, min(len(g), width)
 
     def draw(oid, top, left, avail_w):
         """Draw the children of `oid`. Returns (rows, cols) consumed.
@@ -392,6 +511,13 @@ def render(path, width=100, height=40):
             if kind not in KINDS_RENDERED:
                 notes.append("REFUSED kind %r on %s -- contract s4" % (kind, cid))
                 used['refused'] += 1
+                continue
+            if kind == 'splitter':
+                h, w = split(ch, r, c, avail_w)
+                if h == 0:
+                    continue
+                r = r + h
+                maxr = max(maxr, r); maxc = max(maxc, c + w)
                 continue
             if kind in ('group', 'panel', 'pageset', 'page'):
                 title = cp.get('caption', '')

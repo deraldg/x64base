@@ -18,7 +18,7 @@ from uidef import doc_source, doc_alias_tables
 
 KINDS_RENDERED = frozenset((
     'form', 'label', 'text', 'button', 'check', 'radio', 'list', 'combo',
-    'panel', 'page', 'group', 'pageset',
+    'panel', 'page', 'group', 'pageset', 'splitter',
     # R66. wx has a native control for each: wxListCtrl in report mode is the grid,
     # wxTreeCtrl the tree, and a frame owns its own status bar.
     'grid', 'tree', 'detail', 'summary', 'statusbar',
@@ -275,6 +275,7 @@ def generate(path, title=None, dispatch=False, stream=False):
             'panel':  'new wxPanel(%s, wxID_ANY, %s, %s)',
             'page':   'new wxPanel(%s, wxID_ANY, %s, %s)',
             'pageset': 'new wxNotebook(%s, wxID_ANY, %s, %s)',
+            'splitter': 'new wxSplitterWindow(%s, wxID_ANY, %s, %s)',
         }.get(kind)
 
         if kind == 'form':
@@ -575,7 +576,7 @@ def generate(path, title=None, dispatch=False, stream=False):
                             'g_rt->fire("%s", "%s", %s, "%s", "%s"); });'
                             % (ind, v, cap, name, disp, own, alias, comp))
 
-        if kind in ('panel', 'page', 'pageset'):
+        if kind in ('panel', 'page', 'pageset', 'splitter'):
             if dispatch:
                 emit_scope(oid, v, ind)
             # R78, found by the round trip. A `pageset` puts its children in
@@ -587,16 +588,66 @@ def generate(path, title=None, dispatch=False, stream=False):
             # caught it because not one of them has a pageset. Same class as
             # R70.3 and correction 54 -- something emitted with no consumer --
             # and the third time this lane has paid for it.
-            sub = None if kind == 'pageset' else child_sizer(oid, flow, pr, v, ind)
+            # R85. A splitter takes its two panes through Split*(), never
+            # through a sizer -- the same shape as `pageset` and AddPage, and
+            # the same reason: a wxBoxSizer nobody adds to is the unused-variable
+            # defect R70.3 and correction 54 already paid for twice.
+            sub = None if kind in ('pageset', 'splitter') else child_sizer(oid, flow, pr, v, ind)
             for c in kids.get(oid, []):
-                if kind == 'pageset':
+                if kind == 'splitter':
+                    emit(c, v, flow, None, depth + 1)
+                elif kind == 'pageset':
                     emit(c, v, flow, None, depth + 1)
                     body.append('%s%s->AddPage(%s, %s);'
                                 % (ind, v, var((c['OBJID'] or '').strip()),
                                    cstr(parse_props(c['PROPS']).get('caption', ''))))
                 else:
                     emit(c, v, flow, sub, depth + 1)
-            if kind != 'pageset':
+            if kind == 'splitter':
+                panes = kids.get(oid, [])
+                if len(panes) != 2:
+                    notes.append("REFUSED splitter %s -- %d pane(s); a splitter is "
+                                 "exactly two and the boundary between them (R85)"
+                                 % (oid, len(panes)))
+                else:
+                    a = var((panes[0]['OBJID'] or '').strip())
+                    b = var((panes[1]['OBJID'] or '').strip())
+                    # FLOW says which way the boundary runs. `row` is two panes
+                    # side by side, which wx calls SplitVertically -- the wx name
+                    # describes the SASH and the UIDEF name describes the FLOW of
+                    # the children, so they read opposite and mean the same thing.
+                    split = 'SplitVertically' if flow == 'row' else 'SplitHorizontally'
+                    # The number is the FIRST pane's extent, so it is a width on a
+                    # vertical sash and a height on a horizontal one -- ORIGIN's
+                    # existing vocabulary, under R12's quarantine. 0 lets wx centre it.
+                    key = 'origin_width' if flow == 'row' else 'origin_height'
+                    pos = int(float(org.get(key, 0)))
+                    body.append('%s%s->%s(%s, %s, %d);' % (ind, v, split, a, b, pos))
+                    mp = str(pr.get('minpane', '')).strip()
+                    if mp:
+                        body.append('%s%s->SetMinimumPaneSize(%d);'
+                                    % (ind, v, int(float(mp))))
+                    # R79's Weight IS the gravity here. Not a second property --
+                    # the container decides what the shared one means.
+                    #
+                    # The direction was MEASURED, not remembered. wx 3.2.4 under
+                    # Xvfb, a 200|200 split given 200 more pixels of width:
+                    #
+                    #   gravity 0.0 : first 200 -> 200   second 195 -> 395
+                    #   gravity 0.5 : first      +100    second      +100
+                    #   gravity 1.0 : first      +200    second  10 ->  10
+                    #
+                    # So gravity is the share the FIRST pane takes: w1/(w1+w2).
+                    # I wrote w2/(w1+w2) from memory of the documentation and it
+                    # generated SetSashGravity(1.0) for the measured screen's
+                    # 0-then-1 panes -- code that compiles, runs, and resizes the
+                    # wrong pane. Nothing in the corpus would have caught it.
+                    w1 = weight_of(parse_props(panes[0]['PROPS']))
+                    w2 = weight_of(parse_props(panes[1]['PROPS']))
+                    if w1 + w2:
+                        body.append('%s%s->SetSashGravity(%.4f);'
+                                    % (ind, v, float(w1) / float(w1 + w2)))
+            elif kind != 'pageset':
                 close_sizer(oid, flow, v, sub, ind)
         if sizer_var:
             add_to(sizer_var, v, ind,
@@ -683,7 +734,7 @@ def generate(path, title=None, dispatch=False, stream=False):
     # is the cheapest possible version of R40's lesson and still had to be found by
     # building. Included unconditionally: the cost is compile time, and a
     # conditional include is one more thing that can be wrong per document.
-    head = ['#include <wx/wx.h>', '#include <wx/notebook.h>', '#include <wx/gbsizer.h>',
+    head = ['#include <wx/wx.h>\n#include <wx/splitter.h>', '#include <wx/notebook.h>', '#include <wx/gbsizer.h>',
             '#include <wx/statbox.h>', '#include <wx/listctrl.h>',
             '#include <wx/treectrl.h>']
     REL_LINES = []

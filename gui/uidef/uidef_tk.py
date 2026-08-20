@@ -40,6 +40,11 @@ CONTENT_SIZED = {'label','button','check','radio','group','page'}
 KINDS_RENDERED = frozenset((
     'form', 'label', 'text', 'button', 'check', 'radio', 'list', 'combo',
     'image', 'panel', 'page', 'group', 'pageset',
+    # R85. ttk.PanedWindow is a real sash: draggable, orientable, and it takes a
+    # per-pane `weight` that means what Weight means. What it does NOT have is a
+    # per-pane minimum -- classic tk.PanedWindow carries `minsize`, ttk dropped
+    # it -- so MinPane is DEGRADED here rather than silently discarded.
+    'splitter',
     # R66. ttk supplies a Treeview, which is BOTH a grid (columns, show='headings')
     # and a tree (show='tree'), so four of the five are native here too.
     'grid', 'tree', 'detail', 'summary', 'statusbar',
@@ -51,7 +56,7 @@ DATA_SIZED    = {'text','list','combo','image'}
 
 KIND_WIDGET = {          # contract section 4, the fourteen v1 kinds
     'form':'toplevel', 'panel':'frame', 'group':'labelframe',
-    'pageset':'notebook', 'page':'frame',
+    'pageset':'notebook', 'page':'frame', 'splitter':'panedwindow',
     'label':'Label', 'text':'Entry', 'button':'Button', 'check':'Checkbutton',
     'radio':'Radiobutton', 'list':'Listbox', 'combo':'Combobox', 'image':'Label',
     'menu':'menu',
@@ -78,6 +83,46 @@ def parse_handlers_line(txt):
 
 
 FALSEY = ('false', '.f.', 'f', '0', 'no', 'off')
+
+
+
+def _pack_fill(flow, weight, fill):
+    """R85.3. Which axes a packed child stretches along. Two properties, two axes.
+
+    This was `'both' if Fill else 'none'` in a row and `'x' if Fill else 'none'`
+    in a column, which reads Fill and ignores Weight -- so Tk granted a weighted
+    child its share of the slack with `expand` and then left the widget its own
+    size inside that share, centred. Found by looking at a splitter: P8 says
+    Weight 1 and Fill true on a splitter whose inner sash sits at 500, and the
+    splitter came out 100 px tall with the inner sash clamped to the bottom and
+    a pane collapsed to nothing.
+
+    R79 defines the two words on different axes: Weight is the share of the FLOW
+    axis, Fill is stretch ACROSS it. So each property owns one axis and the
+    mapping is mechanical:
+
+        row     Weight -> x    Fill -> y
+        column  Weight -> y    Fill -> x
+
+    The old row mapping also over-reached: `Fill` alone produced `both`, which
+    stretches along the flow axis as well -- a document that asked for the cross
+    axis got both. Corrected here; every fixture that changed as a result is
+    listed in the ruling rather than absorbed.
+    """
+    axes = set()
+    if flow == 'row':
+        if weight:
+            axes.add('x')
+        if fill:
+            axes.add('y')
+    else:
+        if weight:
+            axes.add('y')
+        if fill:
+            axes.add('x')
+    if len(axes) == 2:
+        return 'both'
+    return axes.pop() if axes else 'none'
 
 
 def weight_of(pr):
@@ -265,7 +310,7 @@ def build_window(path, registry=None, host=None):
         rt = _urt.Runtime(_urt.domains_from_source(doc['SOURCE']), registry, host=host)
         scope = _urt.Scope('window')
 
-    CONTAINER_KINDS = ('form', 'panel', 'group', 'page', 'pageset')
+    CONTAINER_KINDS = ('form', 'panel', 'group', 'page', 'pageset', 'splitter')
 
     def scope_for(oid):
         """R21.4 says a CONTAINER's destruction cancels the work its handlers
@@ -365,7 +410,25 @@ def build_window(path, registry=None, host=None):
                 # reference consumer refused every tabbed form it was given. Found
                 # by manifest.py on its first run over form1.scx.
                 'pageset': lambda: ttk.Notebook(parent),
+                # R85. FLOW says which way the boundary runs; ttk says which way
+                # the panes are stacked, which is the same fact spelled the other
+                # way round. row = a vertical sash = horizontally arranged panes.
+                'splitter': lambda: ttk.PanedWindow(
+                    parent, orient=('horizontal' if flow == 'row' else 'vertical')),
             }.get(kind)
+            if kind == 'splitter':
+                # R85. Said out loud rather than dropped. ttk.PanedWindow has no
+                # per-pane minimum; classic tk.PanedWindow does, but it has no
+                # per-pane weight, and gravity is the fact the measured screens
+                # actually depend on. Neither widget carries both, so this target
+                # keeps Weight and reports the loss.
+                if str(pr.get('minpane', '')).strip():
+                    notes.append("DEGRADED MinPane=%s on %s -- ttk.PanedWindow has "
+                                 "no per-pane minimum, so a pane here CAN be "
+                                 "dragged to nothing" % (pr['minpane'], oid))
+                if not org:
+                    notes.append("DERIVED sash position for %s -- no ORIGIN; ttk "
+                                 "splits by the panes' requested sizes" % oid)
             if w is None and factory is None:
                 print("REFUSED kind %r on %s -- contract s4" % (kind, oid))
                 continue
@@ -386,9 +449,28 @@ def build_window(path, registry=None, host=None):
             # Position is honoured; SIZE is filtered by R16 -- honouring a label's
             # stated width truncates it on a toolkit with a different font.
             span = int(float((r['SPAN'] or '0').strip() or 0)) or 1
+            if kind == 'splitter':
+                # The sash cannot be placed until the panes are in and the paned
+                # window has a size -- before that ttk clamps every position to
+                # the current (zero) extent. Deferred, and the coordinate is read
+                # from ORIGIN because R12 says a position lives there.
+                key = 'origin_width' if flow == 'row' else 'origin_height'
+                if key in org:
+                    def _place(w_=w, pos_=int(float(org[key]))):
+                        try:
+                            w_.sashpos(0, pos_)
+                        except Exception:
+                            pass
+                    w.after(60, _place)
             if pkind == 'pageset':
                 # A tab is not placed by a geometry manager; the notebook owns it.
                 parent.add(w, text=cap or oid)
+            elif pkind == 'splitter':
+                # R85. Same shape as a tab: the paned window owns its panes and
+                # no geometry manager touches them. `weight` here is R79's Weight
+                # read as a share of the extra space, which is what wx's sash
+                # gravity is too -- two toolkits, one fact, spelled differently.
+                parent.add(w, weight=weight_of(pr))
             elif pflow == 'free' or not pflow:
                 if 'origin_top' in org and 'origin_left' in org:
                     kw = dict(x=float(org['origin_left']), y=float(org['origin_top']))
@@ -428,7 +510,7 @@ def build_window(path, registry=None, host=None):
                                  "a boolean and divides slack EQUALLY; the ratio "
                                  "is lost (R80)" % (_w, oid))
                 w.pack(side='left', padx=2, pady=2, expand=bool(_w),
-                       fill=('both' if _f else 'none'))
+                       fill=_pack_fill('row', _w, _f))
             elif pflow == 'column':
                 _w, _f = weight_of(pr), fill_of(pr)
                 if _w > 1:
@@ -436,7 +518,7 @@ def build_window(path, registry=None, host=None):
                                  "a boolean and divides slack EQUALLY; the ratio "
                                  "is lost (R80)" % (_w, oid))
                 w.pack(side='top', anchor='w', padx=2, pady=2, expand=bool(_w),
-                       fill=('x' if _f else 'none'))
+                       fill=_pack_fill('column', _w, _f))
             elif pflow == 'grid':
                 if cell[1] + span > gcols:
                     cell[0] += 1; cell[1] = 0
@@ -522,7 +604,14 @@ if __name__ == '__main__':
     elif '--shot' in sys.argv:
         out = sys.argv[sys.argv.index('--shot') + 1]
         root, made = build_window(p)
-        root.update_idletasks(); root.update(); time.sleep(0.6)
+        # R85. Was `time.sleep(0.6)`, which sleeps the PROCESS and not the event
+        # loop, so nothing scheduled with after() ever ran -- including the sash
+        # placement, which cannot happen until the panes have a size. The shot
+        # showed a splitter at its default position and would have been filed as
+        # "tk ignores ORIGIN". Pump the loop instead of blocking it.
+        deadline = time.time() + 1.2
+        while time.time() < deadline:
+            root.update_idletasks(); root.update(); time.sleep(0.02)
         subprocess.run(["import", "-window", "root", out], check=False)
         print("rendered %d widgets -> %s" % (len(made), out))
     else:

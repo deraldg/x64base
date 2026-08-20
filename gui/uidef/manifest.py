@@ -23,6 +23,7 @@ import os, sys, collections
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import uidef                                    # doc_alias_tables (R66)
 import workspace                                # R83, the DTSHEMA reader
+import resolve_workspace                        # R84, which file that name wins
 # `read_vfp_binary` is the VFP binary reader and it lives in tools/vfp.
 # gui/uidef/read_vfp_binary.py is a GITIGNORED working copy, so importing it
 # from this directory made nine committed tools unimportable on a fresh clone --
@@ -89,6 +90,32 @@ KIND_WANTS = {'check': set('L'), 'radio': set('L')}
 # cover them: a control binds a FIELD, a frame binds a ROW or a ROOT.
 SPEC_KINDS   = {'grid', 'detail'}        # BINDING is a tuple spec -- section 10c
 ROOT_KINDS   = {'tree', 'summary'}       # BINDING is a bare alias: the root
+# R85. A splitter is two panes and a boundary the user drags. Arity is a KIND
+# rule here rather than a property-conditional one, which is the whole reason
+# it is a KIND: `splitter` with three children is refusable, `panel` with a
+# `Sash` flag and three children is a question nobody can answer.
+def weight_of(pr):
+    """R79's Weight, read the same way all four backends read it. R85.
+
+    This is the FIFTH copy of six lines -- uidef_wx, uidef_tk, uidef_html and
+    uidef_text each carry their own, and now the checker needs one. That is a
+    smell and it is recorded rather than smoothed: a property whose meaning
+    lives in five places can mean five things, and the only reason it does not
+    yet is that all five were written the same afternoon. Naming it here so the
+    consolidation is a known unit and not a surprise.
+    """
+    v = str(pr.get('weight', '')).strip()
+    if not v:
+        return 0
+    try:
+        n = int(float(v))
+    except ValueError:
+        return 0
+    return n if n > 0 else 0
+
+
+SPLITTER_KIND = 'splitter'
+SPLITTER_PANES = 2
 UNBOUND_KIND = 'statusbar'               # BINDING must be empty
 FRAME_KINDS  = SPEC_KINDS | ROOT_KINDS | {UNBOUND_KIND}
 # BETA-7.1: the shipped browse is read-only, editing explicitly disabled. Contract
@@ -388,6 +415,7 @@ def manifest(path):
         'relations': [],
         'frames': [],
         'frame_with_children': [],
+        'splitters': [],
         # R79. Weight/Fill belong to any child of a flowed container, not only to
         # frame kinds, so the checker needs every object's PROPS -- not just the
         # subsets the earlier rulings happened to collect.
@@ -481,6 +509,34 @@ def manifest(path):
     for oid, kind, _b, _pr in m['frames']:
         if kind in ROOT_KINDS and children.get(oid):
             m['frame_with_children'].append((oid, kind, len(children[oid])))
+    # R85. Collected with each pane's Weight, because on a splitter Weight is not
+    # a share of slack -- it IS the sash gravity, w1/(w1+w2). Same property, and
+    # the container it sits in decides what it means.
+    #
+    # (That formula was written w2/(w1+w2) here for one afternoon, from memory.
+    # It is measured: under Xvfb, gravity 0.0 leaves the FIRST pane at its size
+    # and gives the growth to the second; 1.0 gives it to the first. So gravity
+    # is the first pane's share, and w1 belongs on top.)
+    #
+    # R85.1 also needs the PARENT's kind, because "does this splitter fill its
+    # parent" has two different answers: a splitter in a sizer fills only if it
+    # says Weight/Fill, but a splitter that is itself a PANE of another splitter
+    # always fills -- Split*() gives a pane the whole side, there is no
+    # proportion to state. Same object, and the container decides. Again.
+    kind_of = {(r['OBJID'] or '').strip(): (r['KIND'] or '').strip().lower()
+               for r in rows if (r['RECKIND'] or '').strip() == 'OBJ'}
+    for r in rows:
+        if (r['RECKIND'] or '').strip() != 'OBJ':
+            continue
+        if (r['KIND'] or '').strip().lower() != SPLITTER_KIND:
+            continue
+        oid = (r['OBJID'] or '').strip()
+        kids = children.get(oid, [])
+        pr = parse_props(r['PROPS'])
+        m['splitters'].append((oid, (r['FLOW'] or '').strip().lower(),
+                               [(c, weight_of(parse_props(c['PROPS']))) for c in kids],
+                               pr, (r['ORIGIN'] or '').strip(),
+                               kind_of.get((r['PARENT'] or '').strip(), '')))
     return m
 
 
@@ -682,6 +738,88 @@ def check(m, p):
             elif not shows:
                 out.append(('NOTE', 'statusbar %s' % oid,
                             'no Shows property; the reader decides what to report'))
+    for oid, flow, panes, pr, origin, parent_kind in m['splitters']:
+        if len(panes) != SPLITTER_PANES:
+            out.append(('REFUSE', 'splitter %s has %d pane(s)' % (oid, len(panes)),
+                        'a splitter is exactly %d panes and the boundary between '
+                        'them; wxSplitterWindow cannot hold a third and a document '
+                        'that means three panes means two splitters (R85)'
+                        % SPLITTER_PANES))
+            continue
+        if flow not in ('row', 'column'):
+            out.append(('REFUSE', 'splitter %s FLOW=%s' % (oid, flow or '(none)'),
+                        'FLOW is what says which way the boundary runs -- row is a '
+                        'vertical sash, column a horizontal one. There is no third '
+                        'answer and no default worth guessing (R85)'))
+        w = [x[1] for x in panes]
+        if sum(w) == 0:
+            out.append(('NOTE', 'splitter %s' % oid,
+                        'neither pane declares Weight, so the sash gravity is 0.0 -- '
+                        'the first pane holds its size and the second absorbs the '
+                        'resize. That is wx\'s default and all three measured '
+                        'splitters run at it, but it is now stated rather than '
+                        'inherited (R85)'))
+        mp = str(pr.get('minpane', '')).strip()
+        if mp:
+            try:
+                n = int(float(mp))
+            except ValueError:
+                out.append(('REFUSE', 'splitter %s MinPane=%s' % (oid, mp),
+                            'MinPane is a whole number of pixels (R85)'))
+            else:
+                if n < 0:
+                    out.append(('REFUSE', 'splitter %s MinPane=%s' % (oid, mp),
+                                'MinPane cannot be negative (R85)'))
+        else:
+            out.append(('NOTE', 'splitter %s' % oid,
+                        'no MinPane; a pane can be dragged to nothing and the '
+                        'control it holds becomes unreachable. All three measured '
+                        'splitters set 120 (R85)'))
+        if not origin:
+            out.append(('DERIVE', 'splitter %s' % oid,
+                        'no ORIGIN, so the initial boundary is the target\'s -- '
+                        'wx centres it. The measured screen states 220, 500 and '
+                        '260; a position is a coordinate and lives in ORIGIN under '
+                        'R12, not in PROPS (R85)'))
+        # R85.1. MEASURED, not reasoned. P7 was built twice from the same
+        # document, changing one emitted argument:
+        #
+        #   Add(splitter, 0, wxALL, 6)            sash lands at 119
+        #   Add(splitter, 1, wxALL|wxEXPAND, 6)   sash lands at 220
+        #
+        # The document said `origin_width = 220` both times. Unweighted, the
+        # splitter gets its BEST size (245 px here) and wx clamps a 220 sash
+        # against a 120 MinPane down to an even split -- silently. The screen
+        # then contradicts the document and nothing says so.
+        #
+        # This is refused rather than noted because the author cannot know the
+        # best size: it depends on the pane contents, the font and the platform.
+        # An ORIGIN under an unweighted splitter is not wrong, it is
+        # UNPREDICTABLE, and a coordinate that might mean itself is worse than
+        # one that does not. R79 already gives the document the words to fix it.
+        own_w = weight_of(pr)
+        own_fill = str(pr.get('fill', '')).strip().lower()
+        fills = bool(own_fill) and own_fill not in FALSEY
+        # A pane of another splitter already fills; nothing to state and nothing
+        # to lose. Measured: P8's INNER carries no proportion anywhere and its
+        # own sash still lands where the document put it.
+        if parent_kind == SPLITTER_KIND:
+            pass
+        elif not own_w and not fills:
+            if origin:
+                out.append(('REFUSE', 'splitter %s states ORIGIN but no Weight' % oid,
+                            'an unweighted splitter is laid out at its best size, so '
+                            'the sash position it names is clamped to whatever that '
+                            'happens to be -- measured 220 asked, 119 rendered. Give '
+                            'it Weight (and Fill across the flow) or drop the ORIGIN '
+                            'and let the target centre the sash (R85.1)'))
+            else:
+                out.append(('NOTE', 'splitter %s has no Weight' % oid,
+                            'it will be laid out at its best size rather than filling '
+                            'its parent. Legal, and measured at 245 px wide for two '
+                            'empty panes -- but every measured splitter in the shipped '
+                            'frame is added with proportion 1 and wxEXPAND '
+                            '(main_frame.cpp:703) (R85.1)'))
     for oid, kind, n in m['frame_with_children']:
         out.append(('REFUSE', '%s %s has %d child row(s)' % (kind, oid, n),
                     'a %s takes its shape from the SOURCE relations -- child rows '
@@ -698,6 +836,20 @@ def load_schemas(paths):
         alias = os.path.splitext(os.path.basename(p))[0].lower()
         out[alias] = schema_of(p)
     return out
+
+
+def _find_dottalk_root():
+    """Walk up for the tree that holds `dottalkpp/`. Returned rather than
+    assumed: this file is run from several directories and R84's whole point is
+    that a path you did not verify is a guess wearing a path's clothes."""
+    d = os.path.abspath(os.getcwd())
+    while True:
+        if os.path.isdir(os.path.join(d, 'dottalkpp')):
+            return d
+        nd = os.path.dirname(d)
+        if nd == d:
+            return None
+        d = nd
 
 
 def source_resolution(path, ws=None):
@@ -829,10 +981,31 @@ if __name__ == '__main__':
     if '--workspace' in sys.argv:
         i = sys.argv.index('--workspace')
         wspath = sys.argv[i + 1]
-        ws = workspace.load(wspath)
         args = [a for a in args if a != wspath]
+
+        # R84. A workspace given by NAME is not a file until a resolver says so,
+        # and this house has two resolvers that disagree. Reporting the path we
+        # actually read is not decoration: three of the MCC workspace names
+        # resolve to a gitignored file that shadows a tracked one, so `mcc_x64`
+        # means one thing to the engine and another to anyone who cloned. This
+        # lane reasoned from the tracked loser through two rulings before the
+        # maintainer's own transcript exposed it.
+        if os.sep not in wspath and '/' not in wspath and not os.path.isfile(wspath):
+            root = os.environ.get('DOTTALK_ROOT') or _find_dottalk_root()
+            if root:
+                txt, rc = resolve_workspace.report(wspath, root)
+                print(txt)
+                if rc == 2:
+                    print('  -- resolution above is ADVISORY here; this check reads '
+                          'the winner, which is what the engine would read.')
+                hits = [p for _, p in resolve_workspace.candidates(wspath, root)
+                        if os.path.isfile(p)]
+                if hits:
+                    wspath = hits[0]
+
+        ws = workspace.load(wspath)
         print('workspace %s -- DTSHEMA %d, %s'
-              % (os.path.basename(wspath), ws.version,
+              % (wspath, ws.version,
                  'self-locating' if ws.self_locating
                  else 'NOT self-locating; it declares which table, not where (R82.3)'))
     tables = None

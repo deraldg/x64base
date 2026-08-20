@@ -39,9 +39,36 @@ FIELDS = [
 
 # R66 added the five data-frame kinds, measured from ERSATZ rather than from the
 # VFP corpus -- contract section 4b.
-KINDS = {"form","panel","group","pageset","page",
+# R85 added `splitter`, measured from `src/gui/wx/main_frame.cpp` -- the third
+# kind in this list to come from a screen this lane did not author, after R66's
+# five data frames came from ERSATZ. Three splitters there, and the vocabulary
+# they need was ALREADY HERE except for one constraint:
+#
+#   orientation  -> FLOW row/column. SplitVertically is two children side by
+#                   side; SplitHorizontally is stacked. No new word.
+#   gravity      -> the children's Weight (R79). `SetSashGravity` appears ZERO
+#                   times in that tree, so all three run at wx's default 0.0 --
+#                   first pane holds, second absorbs -- which is Weight 0 and 1.
+#   position     -> ORIGIN. 220, 500 and 260 are pixels, so R12's quarantine
+#                   already rules on them. No new word.
+#   minimum      -> PROPS.MinPane. The one genuinely new thing, 120 on all three.
+#                   A constraint, not a coordinate: it survives a resize.
+#
+# A KIND and not a `Sash` property on `panel`, and the reason is this lane's own
+# ethic rather than tidiness. A splitter has an arity of exactly two, a
+# behaviour, and runtime state no panel has. More decisively: an unknown KIND is
+# REFUSED by contract section 4, while an unknown PROPERTY is ignored -- so the
+# property spelling would render a panel whose boundary does not drag and say
+# NOTHING, which is the silent degradation R80, R81 and R83 each exist to stop.
+# The corpus argument that first pointed me at a property was simply wrong: no
+# existing document uses either spelling, so both are equally invisible.
+KINDS = {"form","panel","group","pageset","page","splitter",
          "label","text","button","check","radio","list","combo","image","menu",
          "grid","tree","detail","summary","statusbar"}
+
+# wxSplitterWindow holds exactly two panes; Tk's PanedWindow is n-ary but a
+# document that means "two panes and a boundary" must not silently become three.
+SPLITTER_PANES = 2
 FLOWS = {"row","column","grid","free"}
 # R33. The header declares a codepage in byte 29 and every value was then encoded
 # as latin1, which is a DIFFERENT encoding across 0x80-0x9F -- so a euro sign or a
