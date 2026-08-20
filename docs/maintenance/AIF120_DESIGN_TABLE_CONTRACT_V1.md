@@ -798,6 +798,28 @@ schema that was never opened is worse than no width.
 `Table` is **relative to the UIDEF document's own location**, never absolute and
 never a bare name resolved against ambient state.
 
+**R82 supplies the distinction this sentence was missing.** A WORKSPACE row is not
+ambient state:
+
+> `SETPATH` and "whatever work area happens to be current" are AMBIENT --
+> unwritten, order-dependent, invisible in the document set. A `DTSHEMA 2` row is
+> a DECLARED, per-area, readable statement of where a table is. A bare `Table`
+> name resolved through one IS resolved against a document; just not against the
+> UIDEF document.
+
+So `Table = STUDENTS.DBF` beside a workspace row naming `DBF/x64` is conformant,
+and the same line with nothing but `SETPATH` behind it is not. **Location is a
+workspace fact** -- the owner ruling in R82, and the same division R73 made for
+`Order` and R12 made for coordinates. A document does NOT name a path slot, even
+though `dottalk::paths::slot_from_string` offers a closed, checkable vocabulary of
+50 of them; that vocabulary belongs to the workspace.
+
+**Not yet enforced, and stated here so nobody reads silence as compliance.** No
+tool refuses a `SOURCE` whose `Table` does not resolve, `gui/uidef/wx_host.cpp`
+resolves from the `R70_DBF` environment variable rather than from `SOURCE`, and
+all 22 corpus documents rely on that. Conformance to this section is currently
+**declared and unimplemented in every backend** -- R82 section 4.
+
 This was measured rather than designed. VFP was observed rewriting a data-source
 path to `..\..\..\dottalkpp\data\dbf\vfp\students.dbf` when the form lived three
 directories away, and to the bare `students.dbf` when the same form was saved
