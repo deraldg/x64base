@@ -44,7 +44,7 @@ was.
 
 ## 1. The surface is real, and it is two lines of C++
 
-`tools/uidef/lock_number_probe.cpp`, under a grouping locale set globally -- AIF-116's
+`gui/uidef/lock_number_probe.cpp`, under a grouping locale set globally -- AIF-116's
 own runtime condition:
 
 ```
@@ -85,7 +85,7 @@ Bare `LOCK` carries no number, so the AIF-116 surface is **absent** rather than
 handled. `LOCK <n>` and `LOCK WHO <n>` do carry one, and the runtime has no reason to
 use either -- it does not know record numbers, and the area it just selected does.
 
-`tools/uidef/lock_provider_test.py` asserts this directly: every emitted command
+`gui/uidef/lock_provider_test.py` asserts this directly: every emitted command
 except `SELECT <alias>` must contain no digit. `SELECT` is excluded because the alias
 is the document's text, not something the runtime rendered.
 
@@ -128,7 +128,7 @@ because the owning process is alive. It would sit there until `force_unlock_tabl
 
 ## 6. Runtime-proven
 
-`tools/uidef/lock_provider_test.py` exits 0 on four cases: verbs and order, all-or-
+`gui/uidef/lock_provider_test.py` exits 0 on four cases: verbs and order, all-or-
 nothing rollback, no runtime-rendered numbers, and a provider refusal refusing the
 handler rather than running it anyway (`handler ran=False`, one refusal, the
 completion delivered as `refused`).
@@ -158,16 +158,16 @@ That is a real and useful thing to test, and it is not the same as the lock work
 
 ## 8. Good Neighbor note
 
-- **What changed.** `tools/uidef/uidef_runtime.py`: `LockProvider` takes a
+- **What changed.** `gui/uidef/uidef_runtime.py`: `LockProvider` takes a
   `granularity` of `table` or `record` and emits `LOCK TABLE` or bare `LOCK`. New:
-  `tools/uidef/lock_provider_test.py`, `tools/uidef/lock_number_probe.cpp`.
+  `gui/uidef/lock_provider_test.py`, `gui/uidef/lock_number_probe.cpp`.
 - **Whose area.** AIF-120's own. `xbase::locks` is AIF-116's and **nothing in `src/`
   or `include/` was touched**; the probe is a standalone demonstration that links
   nothing from the engine.
 - **What authorization.** Maintainer (member.derald), standing in-session "next
   unit", under the "dogfood" ruling.
-- **How to verify or undo.** Verify: `python3 tools/uidef/lock_provider_test.py`
-  (exit 0, four cases) and `g++ -std=c++14 tools/uidef/lock_number_probe.cpp -o
+- **How to verify or undo.** Verify: `python3 gui/uidef/lock_provider_test.py`
+  (exit 0, four cases) and `g++ -std=c++14 gui/uidef/lock_number_probe.cpp -o
   lock_number_probe && ./lock_number_probe`, which must print `LOCK 16,984` for the
   un-imbued stream and `16` for the round trip. Undo: the change is one constructor
   argument and one attribute; removing them restores R47's table-only provider.
@@ -176,9 +176,9 @@ That is a real and useful thing to test, and it is not the same as the lock work
 
 ```powershell
 cd D:\code\ccode
-git add tools/uidef/uidef_runtime.py
-git add tools/uidef/lock_provider_test.py
-git add tools/uidef/lock_number_probe.cpp
+git add gui/uidef/uidef_runtime.py
+git add gui/uidef/lock_provider_test.py
+git add gui/uidef/lock_number_probe.cpp
 git add docs/maintenance/AIF120_LOCK_GRANULARITY_V1.md
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
 git diff --cached --stat

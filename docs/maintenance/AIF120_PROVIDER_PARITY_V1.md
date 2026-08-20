@@ -159,14 +159,14 @@ deterministic.
 
 ## 7. Good Neighbor note
 
-- **What changed.** `tools/uidef/uidef_rt.h` gains `uidef::lock_provider`, a factory
+- **What changed.** `gui/uidef/uidef_rt.h` gains `uidef::lock_provider`, a factory
   that builds the `LockProvider` inside the runtime. New:
-  `tools/uidef/wx_provider_registry.cpp`.
+  `gui/uidef/wx_provider_registry.cpp`.
 - **Whose area.** AIF-120's own. Nothing in `src/` or `include/` was touched;
   `xbase::locks` is AIF-116's.
 - **What authorization.** Maintainer (member.derald), in-session "next".
 - **How to verify or undo.** Verify: build `scopes.cpp` (generated with
-  `--dispatch`) against `tools/uidef/wx_provider_registry.cpp` and run under
+  `--dispatch`) against `gui/uidef/wx_provider_registry.cpp` and run under
   `xvfb-run`; all four cases must print True and the header line must show the
   grouping locale writing `16,984`. Undo: deleting `uidef::lock_provider` restores
   the alias-list seam, and with it a target's freedom to write its own commands.
@@ -175,8 +175,8 @@ deterministic.
 
 ```powershell
 cd D:\code\ccode
-git add tools/uidef/uidef_rt.h
-git add tools/uidef/wx_provider_registry.cpp
+git add gui/uidef/uidef_rt.h
+git add gui/uidef/wx_provider_registry.cpp
 git add docs/maintenance/AIF120_PROVIDER_PARITY_V1.md
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
 git diff --cached --stat

@@ -254,7 +254,7 @@ decide whether it is worth the cost.
 
 ## 6. Good Neighbor note
 
-- **What changed.** `tools/uidef/uidef_runtime.py`: the comment at the granularity
+- **What changed.** `gui/uidef/uidef_runtime.py`: the comment at the granularity
   choice now records the ruled semantic instead of calling it a defect.
   `docs/maintenance/AIF120_RECORD_AND_DOMAIN_V1.md`: section 2 carries a withdrawal
   note pointing here.
@@ -273,7 +273,7 @@ decide whether it is worth the cost.
 
 ```powershell
 cd D:\code\ccode
-git add tools/uidef/uidef_runtime.py
+git add gui/uidef/uidef_runtime.py
 git add docs/maintenance/AIF120_RECORD_AND_DOMAIN_V1.md
 git add docs/maintenance/AIF120_LOCK_INDEPENDENCE_V1.md
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md

@@ -127,7 +127,7 @@ already built"*.
 
 ## 7. Good Neighbor note
 
-- **What changed.** New file only: `tools/uidef/lock_boundary_probe.cpp`, with its
+- **What changed.** New file only: `gui/uidef/lock_boundary_probe.cpp`, with its
   build line and the sparse-file warning in the header comment. No shipped code
   changed.
 - **Whose area.** AIF-120's own. The engine was linked against and read; the fixture
@@ -141,7 +141,7 @@ already built"*.
 
 ```powershell
 cd D:\code\ccode
-git add tools/uidef/lock_boundary_probe.cpp
+git add gui/uidef/lock_boundary_probe.cpp
 git add docs/maintenance/AIF120_LOCK_BOUNDARY_V1.md
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
 git diff --cached --stat

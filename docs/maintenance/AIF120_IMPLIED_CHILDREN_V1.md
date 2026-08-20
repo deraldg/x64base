@@ -39,7 +39,7 @@ owner decision.
 
 ## 1. Measured across the corpus
 
-`tools/uidef/import_scx.py` now records every child that exists only as a dotted
+`gui/uidef/import_scx.py` now records every child that exists only as a dotted
 property name on its parent -- `cmdadd.caption = "\<Add"` and its kin. Across all
 170 `.SCX` files:
 
@@ -150,7 +150,7 @@ today than it was when R6 was written, because R6 was made without this number.
 ```powershell
 cd D:\code\ccode
 git add docs/maintenance/AIF120_IMPLIED_CHILDREN_V1.md
-git add tools/uidef/import_scx.py
+git add gui/uidef/import_scx.py
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
 git diff --cached --stat
 git commit -m "AIF-120: R29 -- implied children measured at 775 across the corpus, 26% of all objects; importer now names what it drops"

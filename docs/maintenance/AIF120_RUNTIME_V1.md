@@ -36,7 +36,7 @@ Every concurrency rule this lane produced was proven in a **model**.
 `dispatch_test.py` fires handlers at a Tk window that owns no data. The contract's
 open item 15 states the consequence: *"Nothing takes a lock."*
 
-`tools/uidef/uidef_runtime.py` is the missing piece -- the runtime a generated
+`gui/uidef/uidef_runtime.py` is the missing piece -- the runtime a generated
 frontend actually runs on, with the lock domains read from the document's own
 `SOURCE` (R36).
 
@@ -132,9 +132,9 @@ machine before writing it up.
 cd D:\code\ccode
 git add docs/maintenance/AIF120_RUNTIME_V1.md
 git add docs/maintenance/evidence/AIF120_runtime.txt
-git add tools/uidef/uidef_runtime.py
-git add tools/uidef/locked_test.py
-git add tools/uidef/relate_test.py
+git add gui/uidef/uidef_runtime.py
+git add gui/uidef/locked_test.py
+git add gui/uidef/relate_test.py
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
 git diff --cached --stat
 git commit -m "AIF-120: R37 -- the concurrency rules move into a backend-independent runtime; 60/60 wrong on area granularity, 0/60 on domain"

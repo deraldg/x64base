@@ -40,7 +40,7 @@ using the API already built. The answer is both, and the honest accounting is be
 | tool | what it does | verdict |
 |---|---|---|
 | `tools/vfp/read_vfp_binary.py` | reads VFP **designer** containers -- `.SCX`, `.VCX`, `.FRX`, `.MNX` | **defensible.** These are design-time artifacts the engine does not read, and the importer must run with no engine present. |
-| `tools/uidef/uidef.py` | **writes** UIDEF design tables as DBFs, by hand | **unexamined until now.** x64base is the DBF authority and this lane writes DBFs itself. |
+| `gui/uidef/uidef.py` | **writes** UIDEF design tables as DBFs, by hand | **unexamined until now.** x64base is the DBF authority and this lane writes DBFs itself. |
 | the 2^31 fixture in section 5 | patched a DBF header with `struct.pack` | **wrong.** `dbf_create` exists. |
 
 ### The one that had never been checked

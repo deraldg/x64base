@@ -21,7 +21,7 @@ ai_report_audit:
   authorization:
     requested_by: maintainer (member.derald), in-session "good , resume our mission",
       returning the lane to its charter after the R69 engine detour. This ruling
-      edits tools/uidef/ (AIF-120's own area) and adds one .dts under
+      edits gui/uidef/ (AIF-120's own area) and adds one .dts under
       dottalkpp/data/scripts/aif120/. It does NOT edit src/ -- see section 8.
   report:
     path: docs/maintenance/AIF120_GRID_STREAM_BINDING_V1.md
@@ -63,7 +63,7 @@ filled from the shipped x64 school tables, screen-captured under Xvfb.
 
 ## 2. What the generator emits
 
-For `FRAMEDEMO.DBF`, `python3 tools/uidef/uidef_wx.py FRAMEDEMO.DBF out.cpp --stream`
+For `FRAMEDEMO.DBF`, `python3 gui/uidef/uidef_wx.py FRAMEDEMO.DBF out.cpp --stream`
 adds exactly this to the file it already produced:
 
 ```cpp
@@ -348,10 +348,10 @@ a picture of it.
 
 | | |
 |---|---|
-| What changed | `tools/uidef/uidef_wx.py` (a `stream=` mode), `tools/uidef/manifest.py` (one new function, `stream_refusals`), one new `.dts`, one new harness file, one evidence image, contract section 4d, ledger rows |
+| What changed | `gui/uidef/uidef_wx.py` (a `stream=` mode), `gui/uidef/manifest.py` (one new function, `stream_refusals`), one new `.dts`, one new harness file, one evidence image, contract section 4d, ledger rows |
 | Whose area | AIF-120's own tools and docs. `src/` is **not** touched by this ruling |
 | Authorization | maintainer, in-session: "good , resume our mission" |
-| How to verify | `python3 tools/uidef/uidef_wx.py FRAMEDEMO.DBF out.cpp --stream`, then compile per section 5a; and `DOTSCRIPT aif120/r70_stream.dts` for the shell side |
+| How to verify | `python3 gui/uidef/uidef_wx.py FRAMEDEMO.DBF out.cpp --stream`, then compile per section 5a; and `DOTSCRIPT aif120/r70_stream.dts` for the shell side |
 | How to undo | `git revert` the commit. The default generator's output is byte-identical before and after, so reverting cannot change any existing generated file |
 | Risk | low. New behavior is behind a flag that nothing calls by default |
 
@@ -364,9 +364,9 @@ git add docs/maintenance/AIF120_GRID_STREAM_BINDING_V1.md
 git add docs/maintenance/AIF120_DESIGN_TABLE_CONTRACT_V1.md
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
 git add docs/maintenance/evidence/AIF120_R70_framedemo_stream.png
-git add tools/uidef/uidef_wx.py
-git add tools/uidef/manifest.py
-git add tools/uidef/wx_stream_harness.cpp
+git add gui/uidef/uidef_wx.py
+git add gui/uidef/manifest.py
+git add gui/uidef/wx_stream_harness.cpp
 git add dottalkpp/data/scripts/aif120/r70_stream.dts
 
 git status -uall

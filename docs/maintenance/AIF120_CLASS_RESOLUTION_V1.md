@@ -164,8 +164,8 @@ by the corpus it borrowed -- 4b's addressing, R31's absolute paths, and the
 cd D:\code\ccode
 git add docs/maintenance/AIF120_CLASS_RESOLUTION_V1.md
 git add docs/maintenance/evidence/AIF120_classlib.txt
-git add tools/uidef/classlib.py
-git add tools/uidef/import_scx.py
+git add gui/uidef/classlib.py
+git add gui/uidef/import_scx.py
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
 git diff --cached --stat
 git commit -m "AIF-120: R31 -- .VCX read as a class library; 363 inherited members materialised, 81% of class references resolved"

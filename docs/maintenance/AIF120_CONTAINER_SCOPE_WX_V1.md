@@ -162,11 +162,11 @@ never at risk of shipping.
 
 ## 6. Good Neighbor note
 
-- **What changed.** `tools/uidef/uidef_wx.py` emits one `uidef::Scope` per container,
+- **What changed.** `gui/uidef/uidef_wx.py` emits one `uidef::Scope` per container,
   names containers after their `OBJID`, and binds a guarded `wxEVT_DESTROY` per
   container; button handlers capture their nearest enclosing scope by value. New file
-  `tools/uidef/wx_scope_registry.cpp`, the target-side harness for R21.4.
-- **Whose area.** AIF-120's own; no file outside `tools/uidef/` and
+  `gui/uidef/wx_scope_registry.cpp`, the target-side harness for R21.4.
+- **Whose area.** AIF-120's own; no file outside `gui/uidef/` and
   `docs/maintenance/` is touched.
 - **What authorization.** Maintainer (member.derald), standing in-session "continue",
   clearing the lane's own list of known-untested claims.
@@ -180,8 +180,8 @@ never at risk of shipping.
 
 ```powershell
 cd D:\code\ccode
-git add tools/uidef/uidef_wx.py
-git add tools/uidef/wx_scope_registry.cpp
+git add gui/uidef/uidef_wx.py
+git add gui/uidef/wx_scope_registry.cpp
 git add docs/maintenance/AIF120_CONTAINER_SCOPE_WX_V1.md
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
 git diff --cached --stat

@@ -34,7 +34,7 @@ Author: member.ai.claude.cowork, run `COWORK-20260818-001`. Date: 2026-08-19.
 
 Tk and HTML are both retained-mode widget toolkits with fonts and pixels. A
 character grid has neither, so everything this lane measured in pixels has to
-**degrade** rather than translate. `tools/uidef/uidef_text.py`.
+**degrade** rather than translate. `gui/uidef/uidef_text.py`.
 
 ## 1. The result first
 
@@ -150,8 +150,8 @@ Recorded because of what they repeat:
 cd D:\code\ccode
 git add docs/maintenance/AIF120_CHARACTER_CELL_V1.md
 git add docs/maintenance/evidence/AIF120_text.txt
-git add tools/uidef/uidef_text.py
-git add tools/uidef/manifest.py
+git add gui/uidef/uidef_text.py
+git add gui/uidef/manifest.py
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
 git diff --cached --stat
 git commit -m "AIF-120: R35 -- a character-cell backend; band before quantising, and ORIGIN_SCALE=cell has never been produced by anything"

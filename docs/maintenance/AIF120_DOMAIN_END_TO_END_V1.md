@@ -117,7 +117,7 @@ under `xvfb`. The generated file compiles clean under `-Wall -Wextra` (R58.2).
 
 ## 6. Good Neighbor note
 
-- **What changed.** New file only: `tools/uidef/wx_domain_registry.cpp`, with its
+- **What changed.** New file only: `gui/uidef/wx_domain_registry.cpp`, with its
   build line in the header comment. **No shipped code changed in this ruling** -- it
   is a measurement of what R36, R26, R57 and R58 already built.
 - **Whose area.** AIF-120's own. The engine was linked against and read, never
@@ -125,7 +125,7 @@ under `xvfb`. The generated file compiles clean under `-Wall -Wextra` (R58.2).
 - **What authorization.** Maintainer (member.derald), standing in-session: "keep
   dogfooding the engine".
 - **How to verify or undo.** Verify: the build line in
-  `tools/uidef/wx_domain_registry.cpp`; expect `students=LOCKED enroll=LOCKED` during
+  `gui/uidef/wx_domain_registry.cpp`; expect `students=LOCKED enroll=LOCKED` during
   both handlers and `free free` after. Undo: the file is a test; deleting it changes
   no behaviour.
 
@@ -133,7 +133,7 @@ under `xvfb`. The generated file compiles clean under `-Wall -Wextra` (R58.2).
 
 ```powershell
 cd D:\code\ccode
-git add tools/uidef/wx_domain_registry.cpp
+git add gui/uidef/wx_domain_registry.cpp
 git add docs/maintenance/AIF120_DOMAIN_END_TO_END_V1.md
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
 git diff --cached --stat

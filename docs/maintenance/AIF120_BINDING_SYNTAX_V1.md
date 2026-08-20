@@ -145,7 +145,7 @@ runtime locks, and the `USE` has always been the harness's job.
 
 - **What changed.** `docs/maintenance/AIF120_DESIGN_TABLE_CONTRACT_V1.md`: section 3's
   `BINDING` row now points at a new **section 10b**, which defines the syntax, the two
-  refusals, and the open precondition. `tools/uidef/manifest.py`: four distinct
+  refusals, and the open precondition. `gui/uidef/manifest.py`: four distinct
   refusal reasons where there were two and a silence.
 - **Whose area.** AIF-120's own -- the contract and the manifest tool are both this
   lane's. No engine source was read or touched in this ruling.
@@ -162,7 +162,7 @@ runtime locks, and the `USE` has always been the harness's job.
 ```powershell
 cd D:\code\ccode
 git add docs/maintenance/AIF120_DESIGN_TABLE_CONTRACT_V1.md
-git add tools/uidef/manifest.py
+git add gui/uidef/manifest.py
 git add docs/maintenance/AIF120_BINDING_SYNTAX_V1.md
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
 git diff --cached --stat

@@ -37,7 +37,7 @@ navigation is what triggers it. Both halves are right and the unit is wrong.
 
 ## 1. The experiment
 
-`tools/uidef/relate_test.py`. Parent `STUDENTS.dbf`, 200 records. Child
+`gui/uidef/relate_test.py`. Parent `STUDENTS.dbf`, 200 records. Child
 `ENROLL.dbf`, 686 records across 200 distinct `SID`s. Between them,
 `SET RELATION TO sid INTO enroll` -- moving the parent's record pointer
 repositions the child's.
@@ -143,7 +143,7 @@ Corollaries:
 cd D:\code\ccode
 git add docs/maintenance/AIF120_RELATION_SET_RULING_V1.md
 git add docs/maintenance/evidence/AIF120_relation.txt
-git add tools/uidef/relate_test.py
+git add gui/uidef/relate_test.py
 git diff --cached --stat
 git commit -m "AIF-120: R26 -- the unit of serialization is the relation set; correct per-workspace locking scores the same as none"
 ```

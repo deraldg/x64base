@@ -173,15 +173,15 @@ real sidecars.
 
 ## 8. Good Neighbor note
 
-- **What changed.** `tools/uidef/uidef_runtime.py`: a comment at the granularity
+- **What changed.** `gui/uidef/uidef_runtime.py`: a comment at the granularity
   choice recording that `table` is conservative only against other table lockers.
-  New: `tools/uidef/lock_record_domain_wsl.sh`.
+  New: `gui/uidef/lock_record_domain_wsl.sh`.
 - **Whose area.** AIF-120's own. `src/xbase/xbase_locks.cpp` was **read, not
   touched**; section 2 is reported to AIF-116 for relay. The harness copies both
   tables to a scratch directory, so no `.lock` sidecar is created in the repository.
 - **What authorization.** Maintainer (member.derald), standing in-session, under the
   agreed split: PowerShell for doc work, WSL for testing and dev.
-- **How to verify or undo.** Verify: `bash tools/uidef/lock_record_domain_wsl.sh`
+- **How to verify or undo.** Verify: `bash gui/uidef/lock_record_domain_wsl.sh`
   from the repo root in WSL; A1, A2, C0 and C must be True and B False until the
   engine changes. Undo: the code change is a comment; the harness is a test.
 
@@ -189,8 +189,8 @@ real sidecars.
 
 ```powershell
 cd D:\code\ccode
-git add tools/uidef/uidef_runtime.py
-git add tools/uidef/lock_record_domain_wsl.sh
+git add gui/uidef/uidef_runtime.py
+git add gui/uidef/lock_record_domain_wsl.sh
 git add docs/maintenance/AIF120_RECORD_AND_DOMAIN_V1.md
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
 git diff --cached --stat

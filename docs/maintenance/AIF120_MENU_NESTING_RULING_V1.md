@@ -37,8 +37,8 @@ as a live Tk menubar under `xvfb`.
 Evidence: `docs/maintenance/evidence/AIF120_uidef_menu_tk.png`.
 
 Contract section 11 was the only part of gate 10 with neither a producer nor a
-consumer. Both now exist: `tools/uidef/import_mnx.py` and
-`tools/uidef/uidef_tk_menu.py`.
+consumer. Both now exist: `gui/uidef/import_mnx.py` and
+`gui/uidef/uidef_tk_menu.py`.
 
 ## 1. The `.MNX` structure, measured
 
@@ -129,7 +129,7 @@ consumers to verify rather than trust.
 
 ```powershell
 $env:X64BASE_ALLOW_DATA = "1"
-git add tools/uidef/import_mnx.py tools/uidef/uidef_tk_menu.py
+git add gui/uidef/import_mnx.py gui/uidef/uidef_tk_menu.py
 git add docs/maintenance/AIF120_MENU_NESTING_RULING_V1.md
 git add docs/maintenance/evidence/AIF120_uidef_menu_tk.png
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md

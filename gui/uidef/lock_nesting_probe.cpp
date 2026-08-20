@@ -7,7 +7,7 @@
 //   cd /mnt/d/code/ccode
 //   cp dottalkpp/data/dbf/vfp/STUDENTS.dbf /tmp/nest_STUDENTS.dbf
 //   B=build/wsl-core-vcpkg
-//   g++ -std=c++17 -Iinclude -I$B/generated tools/uidef/lock_nesting_probe.cpp \
+//   g++ -std=c++17 -Iinclude -I$B/generated gui/uidef/lock_nesting_probe.cpp \
 //       $B/src/xbase/libxbase.a $B/src/memo/libmemo.a $B/src/xexpr/libxexpr.a \
 //       $B/src/libdottalk_value.a $B/src/libdottalk_inx_payload.a \
 //       -o /tmp/nest -pthread

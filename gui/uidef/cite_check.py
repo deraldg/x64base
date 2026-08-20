@@ -10,8 +10,8 @@ an ignored path never reaches the staged index a gate inspects.
 This is that sweep as one command. It resolves every repo path a document cites
 against `git ls-files` and reports what is cited but not shipped.
 
-    python tools/uidef/cite_check.py                     # every AIF120 ruling
-    python tools/uidef/cite_check.py docs/maintenance/X.md ...
+    python gui/uidef/cite_check.py                     # every AIF120 ruling
+    python gui/uidef/cite_check.py docs/maintenance/X.md ...
 
 Exit status is 1 if anything is cited and not tracked, so it can be wired into a
 gate by whoever owns gates. It is deliberately NOT a gate here: portal gates are
@@ -34,7 +34,7 @@ EXTS = ('.md', '.py', '.png', '.txt', '.h', '.hpp', '.cpp', '.csv', '.yaml',
 # skip the whole check, which is the failure `open-items` was written to avoid.
 # So a line may opt out explicitly, and the marker is greppable rather than magic:
 #
-#     the working copy at `tools/uidef/read_vfp_binary.py`  <!-- cite-check:ignore -->
+#     the working copy at `gui/uidef/read_vfp_binary.py`  <!-- cite-check:ignore -->
 #
 # It suppresses only the line it appears on, so it cannot silence a document.
 SUPPRESS = 'cite-check:ignore'

@@ -102,8 +102,8 @@ survived in this lane, and it is what R38.1 asked for: recording is not fixing.
 cd D:\code\ccode
 git add docs/maintenance/AIF120_CONTAINER_SCOPE_V1.md
 git add docs/maintenance/evidence/AIF120_scopes.txt
-git add tools/uidef/uidef_tk.py
-git add tools/uidef/scope_test.py
+git add gui/uidef/uidef_tk.py
+git add gui/uidef/scope_test.py
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
 git diff --cached --stat
 git commit -m "AIF-120: R39 -- one scope per container; and unrelated work areas run concurrently, so the runtime serializes exactly what the document declares"

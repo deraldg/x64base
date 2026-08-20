@@ -36,7 +36,7 @@ R22 left this open:
 > The refusal report is per-render, not per-document. A target cannot ask "will
 > this menu work here?" without building it.
 
-`tools/uidef/manifest.py` answers it. Running it over the lane's six documents
+`gui/uidef/manifest.py` answers it. Running it over the lane's six documents
 found two defects in fields the lane has been writing for a week and nothing has
 ever read.
 
@@ -166,7 +166,7 @@ below it was found rather than buried under a false one.
 - `import_scx.py` resolves per-object fonts and marks derived FONT rows.
 - `uidef_tk.py` applies `FONTREF`, renders `pageset`, and exposes its vocabulary.
 - `uidef_tk_host.py` exposes its capability vocabulary.
-- `tools/uidef/manifest.py` is new, with `author_fonts.py` and `author_tabs.py`.
+- `gui/uidef/manifest.py` is new, with `author_fonts.py` and `author_tabs.py`.
 
 ## 7. Still open
 
@@ -196,12 +196,12 @@ git add docs/maintenance/AIF120_MANIFEST_AND_FONTREF_V1.md
 git add docs/maintenance/evidence/AIF120_manifest.txt
 git add docs/maintenance/evidence/AIF120_fontref.png
 git add docs/maintenance/evidence/AIF120_pageset.png
-git add tools/uidef/manifest.py
-git add tools/uidef/author_fonts.py
-git add tools/uidef/author_tabs.py
-git add tools/uidef/import_scx.py
-git add tools/uidef/uidef_tk.py
-git add tools/uidef/uidef_tk_host.py
+git add gui/uidef/manifest.py
+git add gui/uidef/author_fonts.py
+git add gui/uidef/author_tabs.py
+git add gui/uidef/import_scx.py
+git add gui/uidef/uidef_tk.py
+git add gui/uidef/uidef_tk_host.py
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
 git diff --cached --stat
 git commit -m "AIF-120: R24 -- a document manifest answers refusal from the table; FONTREF resolves the object's own font; pageset renders"

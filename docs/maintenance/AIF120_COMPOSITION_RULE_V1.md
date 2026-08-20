@@ -189,7 +189,7 @@ rendering `form1.scx` with an empty option group never surfaced it.
 
 ## 6. Implemented, and measured
 
-R30 is implemented in `tools/uidef/import_scx.py`, R30.3 in `uidef_tk.py`.
+R30 is implemented in `gui/uidef/import_scx.py`, R30.3 in `uidef_tk.py`.
 
 | | |
 | --- | --- |
@@ -246,8 +246,8 @@ cd D:\code\ccode
 git add docs/maintenance/AIF120_COMPOSITION_RULE_V1.md
 git add docs/maintenance/evidence/AIF120_composite.txt
 git add docs/maintenance/evidence/AIF120_composite.png
-git add tools/uidef/import_scx.py
-git add tools/uidef/uidef_tk.py
+git add gui/uidef/import_scx.py
+git add gui/uidef/uidef_tk.py
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
 git diff --cached --stat
 git commit -m "AIF-120: R30 -- composition rule implemented; 138 members materialised, 0 count mismatches; R29 corrected"

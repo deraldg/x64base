@@ -17,7 +17,7 @@ or `window.arrange`. The split is the backend's, not the author's.
 import os, subprocess, sys, time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # `read_vfp_binary` is the VFP binary reader and it lives in tools/vfp.
-# tools/uidef/read_vfp_binary.py is a GITIGNORED working copy, so importing it
+# gui/uidef/read_vfp_binary.py is a GITIGNORED working copy, so importing it
 # from this directory made nine committed tools unimportable on a fresh clone --
 # found by the house 'sweep for your own leftovers' rule, not by anything failing.
 # tools/vfp goes on the path FIRST so the ignored copy can never shadow it.

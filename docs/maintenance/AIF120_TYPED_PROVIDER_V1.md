@@ -46,7 +46,7 @@ an hour; what `dbarea.cpp` exposed is the ruling.
 
 ## 1. R57.1 -- the typed provider, and the toolkit it does not need
 
-`tools/uidef/uidef_xbase_locks.h` builds a `LockProvider` that calls
+`gui/uidef/uidef_xbase_locks.h` builds a `LockProvider` that calls
 `xbase::locks` directly: `try_lock_table` / `try_lock_record` with the owner-aware
 overloads, error strings out, and `locked_by_other()` -- a question the text path
 **cannot ask at all**, because answering it means rendering a record number into a
@@ -217,9 +217,9 @@ question instead.
 
 ## 7. Good Neighbor note
 
-- **What changed.** New: `tools/uidef/uidef_xbase_locks.h` (typed provider, no
+- **What changed.** New: `gui/uidef/uidef_xbase_locks.h` (typed provider, no
   toolkit dependency, warns at the call site) and
-  `tools/uidef/lock_nesting_probe.cpp` (the experiment, with its build line in the
+  `gui/uidef/lock_nesting_probe.cpp` (the experiment, with its build line in the
   header comment).
 - **Whose area.** AIF-120's own. `src/xbase/dbarea.cpp` and `xbase_locks.cpp` were
   **read and linked against, never modified**. Section 3 is an observation for
@@ -227,7 +227,7 @@ question instead.
 - **What authorization.** Maintainer (member.derald), in-session: "obviously r55.3
   needs immediate repair", "dbarea.cpp", "work on the nesting probe".
 - **How to verify or undo.** Verify: the build line in
-  `tools/uidef/lock_nesting_probe.cpp`, run once with no argument and once with
+  `gui/uidef/lock_nesting_probe.cpp`, run once with no argument and once with
   `table`; record must report the lock GONE and table must report it held. Undo: both
   files are new and additive; deleting them changes no shipped behaviour.
 
@@ -235,8 +235,8 @@ question instead.
 
 ```powershell
 cd D:\code\ccode
-git add tools/uidef/uidef_xbase_locks.h
-git add tools/uidef/lock_nesting_probe.cpp
+git add gui/uidef/uidef_xbase_locks.h
+git add gui/uidef/lock_nesting_probe.cpp
 git add docs/maintenance/AIF120_TYPED_PROVIDER_V1.md
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
 git diff --cached --stat

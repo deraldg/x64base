@@ -20,7 +20,7 @@ ai_report_audit:
     baseline_commit: cba7bb618
   authorization:
     requested_by: maintainer (member.derald), in-session, "yes" -- to writing up the
-      gate 11 spike and adding uidef_tk.py to tools/uidef/.
+      gate 11 spike and adding uidef_tk.py to gui/uidef/.
   report:
     path: docs/maintenance/AIF120_GATE11_TK_SPIKE_V1.md
     kind: measurement
@@ -41,7 +41,7 @@ The charter's gate 11: *"A second backend spiked from the TABLE, not the parser 
 enough of wx or Tk to prove a generator needs nothing but the documented schema.
 Without it, gate 3 passing says nothing about portability."*
 
-`tools/uidef/uidef_tk.py` is that spike. Its **entire input** is a DBF with a memo
+`gui/uidef/uidef_tk.py` is that spike. Its **entire input** is a DBF with a memo
 sidecar plus the gate 10 contract. It imports a DBF reader and `tkinter`. It
 contains no reference to VFP, `.SCX`, `foxref`, the FoxTalk layer, or any other
 part of this project -- checked by reading it, and it is 150 lines, so the check
@@ -68,7 +68,7 @@ C++ -- it needs to read one documented table."*
 Reproduction:
 
 ```sh
-cd tools/uidef
+cd gui/uidef
 python3 import_scx.py ../vfp/fixtures/STUDENTS.SCX generated/UIDEF_STUDENTS
 xvfb-run -s "-screen 0 620x420x24" python3.12 uidef_tk.py \
     generated/UIDEF_STUDENTS.DBF --shot render.png
@@ -131,7 +131,7 @@ for changing which of the two the contract calls advisory.**
 ## 6. Handoff -- PowerShell, run in `D:\code\ccode`
 
 ```powershell
-git add tools/uidef/uidef_tk.py
+git add gui/uidef/uidef_tk.py
 git add docs/maintenance/AIF120_GATE11_TK_SPIKE_V1.md
 git add docs/maintenance/evidence/AIF120_uidef_tk_render.png
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md

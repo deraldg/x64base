@@ -121,8 +121,8 @@ timeline above -- which could not have been produced by reading either file.
 cd D:\code\ccode
 git add docs/maintenance/AIF120_RUNTIME_ADOPTION_V1.md
 git add docs/maintenance/evidence/AIF120_adopt.txt
-git add tools/uidef/uidef_tk.py
-git add tools/uidef/adopt_test.py
+git add gui/uidef/uidef_tk.py
+git add gui/uidef/adopt_test.py
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
 git diff --cached --stat
 git commit -m "AIF-120: R38 -- the Tk backend fires every handler through the shared runtime; two handlers naming different work areas serialize because the document says they are related"

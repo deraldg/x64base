@@ -41,10 +41,10 @@ wrong with it.**
 
 | artifact | what |
 | --- | --- |
-| `tools/uidef/uidef.py` | the v1 schema, a DBF+memo writer, and a conformance validator implementing contract section 12 |
-| `tools/uidef/import_scx.py` | `.SCX` -> UIDEF importer |
-| `tools/uidef/generated/UIDEF_STUDENTS.DBF` / `.FPT` | a real UIDEF document, imported from `STUDENTS.SCX` |
-| `tools/uidef/generated/UIDEF_FORM1.DBF` / `.FPT` | the same from `form1.scx`, the 24-base-class sampler |
+| `gui/uidef/uidef.py` | the v1 schema, a DBF+memo writer, and a conformance validator implementing contract section 12 |
+| `gui/uidef/import_scx.py` | `.SCX` -> UIDEF importer |
+| `gui/uidef/generated/UIDEF_STUDENTS.DBF` / `.FPT` | a real UIDEF document, imported from `STUDENTS.SCX` |
+| `gui/uidef/generated/UIDEF_FORM1.DBF` / `.FPT` | the same from `form1.scx`, the 24-base-class sampler |
 
 `UIDEF_STUDENTS.DBF`: version `0x30`, 24 records, `rlen` 164, `hlen` 776, width
 arithmetic checks, and **`read_vfp_binary.py` reads it** -- the design table is a
@@ -178,7 +178,7 @@ carrying the entire layout of every document this importer produces.
 ## 7. Handoff -- PowerShell, run in `D:\code\ccode`
 
 ```powershell
-git add tools/uidef/uidef.py tools/uidef/import_scx.py
+git add gui/uidef/uidef.py gui/uidef/import_scx.py
 git add docs/maintenance/AIF120_UIDEF_FIRST_IMPLEMENTATION_V1.md
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
 git status --short -uall
@@ -186,4 +186,4 @@ git commit -m "AIF-120: UIDEF first implementation -- writer, importer, validato
 ```
 
 `tools/vfp/read_vfp_binary.py` is a working copy of the reader and
-`tools/uidef/generated/` is output; neither needs tracking.
+`gui/uidef/generated/` is output; neither needs tracking.

@@ -137,15 +137,15 @@ beside an engine that had locks.
 
 ## 6. Good Neighbor note
 
-- **What changed.** `tools/uidef/uidef_wx.py`: form-level scopes are no longer
-  captured (they are globals). New: `tools/uidef/wx_e2e_registry.cpp`, the end-to-end
+- **What changed.** `gui/uidef/uidef_wx.py`: form-level scopes are no longer
+  captured (they are globals). New: `gui/uidef/wx_e2e_registry.cpp`, the end-to-end
   target, with its build line in the header comment.
 - **Whose area.** AIF-120's own. The engine was **linked against and read, never
   modified**; the target opens a copy of a fixture table and writes nothing.
 - **What authorization.** Maintainer (member.derald), in-session: "keep dogfooding
   the engine".
 - **How to verify or undo.** Verify: the build line in
-  `tools/uidef/wx_e2e_registry.cpp`; expect `recCount64=200`, `table locked=yes`
+  `gui/uidef/wx_e2e_registry.cpp`; expect `recCount64=200`, `table locked=yes`
   during the handler and `no -- released` after. Undo: the generator change is one
   conditional; restoring it reintroduces the `-Wall` warning in every generated
   frontend that has a form-level button.
@@ -154,8 +154,8 @@ beside an engine that had locks.
 
 ```powershell
 cd D:\code\ccode
-git add tools/uidef/uidef_wx.py
-git add tools/uidef/wx_e2e_registry.cpp
+git add gui/uidef/uidef_wx.py
+git add gui/uidef/wx_e2e_registry.cpp
 git add docs/maintenance/AIF120_END_TO_END_V1.md
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
 git diff --cached --stat

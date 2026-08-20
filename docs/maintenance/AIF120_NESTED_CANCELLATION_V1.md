@@ -179,17 +179,17 @@ predicted deserves the same verification as evidence that contradicts it.**
 
 ## 8. Good Neighbor note
 
-- **What changed.** `tools/uidef/uidef_rt.h` gains `destroy_container`,
-  `uidef_announce_destroy` and two sizer helpers. `tools/uidef/uidef_tk.py` cancels
-  its pending `after` on window destruction. New: `tools/uidef/nested_scope_test.py`
-  and `tools/uidef/wx_nested_registry.cpp`.
-- **Whose area.** AIF-120's own; nothing outside `tools/uidef/` and
+- **What changed.** `gui/uidef/uidef_rt.h` gains `destroy_container`,
+  `uidef_announce_destroy` and two sizer helpers. `gui/uidef/uidef_tk.py` cancels
+  its pending `after` on window destruction. New: `gui/uidef/nested_scope_test.py`
+  and `gui/uidef/wx_nested_registry.cpp`.
+- **Whose area.** AIF-120's own; nothing outside `gui/uidef/` and
   `docs/maintenance/`.
 - **What authorization.** Maintainer (member.derald), in-session: "yes,
   nested-container cancelation".
 - **How to verify or undo.** Verify: `xvfb-run -a python3.12
-  tools/uidef/nested_scope_test.py`, and for wx generate with `--dispatch`, build
-  against `tools/uidef/wx_nested_registry.cpp`, and run with each of `G1`, `PIN`,
+  gui/uidef/nested_scope_test.py`, and for wx generate with `--dispatch`, build
+  against `gui/uidef/wx_nested_registry.cpp`, and run with each of `G1`, `PIN`,
   `PSIB` as the argument; the two tables in section 4 must match cell for cell and
   every run must exit 0. Undo: removing `destroy_container` from `uidef_rt.h`
   restores the segfault in section 2; removing only `uidef_announce_destroy` restores
@@ -199,10 +199,10 @@ predicted deserves the same verification as evidence that contradicts it.**
 
 ```powershell
 cd D:\code\ccode
-git add tools/uidef/uidef_rt.h
-git add tools/uidef/uidef_tk.py
-git add tools/uidef/nested_scope_test.py
-git add tools/uidef/wx_nested_registry.cpp
+git add gui/uidef/uidef_rt.h
+git add gui/uidef/uidef_tk.py
+git add gui/uidef/nested_scope_test.py
+git add gui/uidef/wx_nested_registry.cpp
 git add docs/maintenance/AIF120_NESTED_CANCELLATION_V1.md
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
 git diff --cached --stat

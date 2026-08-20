@@ -39,15 +39,15 @@ in committed work.
 
 ## 1. R33's fix was never in the repository
 
-`tools/uidef/read_vfp_binary.py` is **gitignored** -- line 2 of <!-- cite-check:ignore -->
-`tools/uidef/.gitignore`, a deliberate working copy of the reader that lives at
+`gui/uidef/read_vfp_binary.py` is **gitignored** -- line 2 of <!-- cite-check:ignore -->
+`gui/uidef/.gitignore`, a deliberate working copy of the reader that lives at
 `tools/vfp/read_vfp_binary.py`.
 
 R33's handoff staged exactly that path. `git add` on an ignored file does nothing,
 the commit succeeded, every gate passed, and **the ruling shipped while the code
 did not.** Measured on the tracked reader afterwards:
 
-| marker | `tools/vfp` | `tools/uidef` |
+| marker | `tools/vfp` | `gui/uidef` |
 | --- | --- | --- |
 | `LANGUAGE_DRIVER` | 0 | 3 |
 | `codepage_byte` | 0 | 1 |
@@ -116,7 +116,7 @@ passed on every one of these commits, correctly.
 
 ## 6. Still open
 
-- **`tools/uidef/read_vfp_binary.py` still exists locally.** It is inert now, but a <!-- cite-check:ignore -->
+- **`gui/uidef/read_vfp_binary.py` still exists locally.** It is inert now, but a <!-- cite-check:ignore -->
   sandbox cannot delete on this mount. The maintainer can remove it.
 - **Nothing checks this automatically.** R42.3 names a one-command check and
   nothing runs it. A gate that resolves every path cited in a ruling's front matter
@@ -137,9 +137,9 @@ git diff --cached --stat
 git commit -m "AIF-120: R30 -- composition rule document and evidence; the implementation shipped early inside R31"
 
 git add tools/vfp/read_vfp_binary.py
-git add tools/uidef/import_scx.py tools/uidef/import_mnx.py tools/uidef/infer_flow.py
-git add tools/uidef/manifest.py tools/uidef/uidef_tk.py tools/uidef/uidef_tk_host.py
-git add tools/uidef/uidef_html.py tools/uidef/uidef_text.py tools/uidef/uidef_wx.py
+git add gui/uidef/import_scx.py gui/uidef/import_mnx.py gui/uidef/infer_flow.py
+git add gui/uidef/manifest.py gui/uidef/uidef_tk.py gui/uidef/uidef_tk_host.py
+git add gui/uidef/uidef_html.py gui/uidef/uidef_text.py gui/uidef/uidef_wx.py
 git add docs/maintenance/AIF120_SHIPPED_RULING_UNSHIPPED_CODE_V1.md
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
 git diff --cached --stat

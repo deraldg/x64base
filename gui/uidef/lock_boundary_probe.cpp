@@ -4,7 +4,7 @@
 // occupies 8 KB on disk -- the gap is a sparse hole):
 //
 //   B=build/wsl-core-vcpkg
-//   g++ -std=c++17 -Iinclude -I$B/generated tools/uidef/lock_boundary_probe.cpp \
+//   g++ -std=c++17 -Iinclude -I$B/generated gui/uidef/lock_boundary_probe.cpp \
 //       $B/src/xbase/libxbase.a $B/src/memo/libmemo.a $B/src/xexpr/libxexpr.a \
 //       $B/src/libdottalk_value.a $B/src/libdottalk_inx_payload.a -o /tmp/b31 -pthread
 //   /tmp/b31

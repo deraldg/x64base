@@ -31,7 +31,7 @@ ai_report_audit:
 
 Status: **measurement and ruling, review-needed.** Owner: member.derald.
 Author: member.ai.claude.cowork, run `COWORK-20260818-001`. Date: 2026-08-19.
-Algorithm: `tools/uidef/infer_flow.py`.
+Algorithm: `gui/uidef/infer_flow.py`.
 
 Contract section 5b recorded that imports land `FLOW = free` and treated the high
 rate as **a defect in the contract**. This measures it properly and the conclusion
@@ -128,7 +128,7 @@ format must represent what documents are, not what they should have been.
 ## 6. Handoff -- PowerShell, run in `D:\code\ccode`
 
 ```powershell
-git add tools/uidef/infer_flow.py
+git add gui/uidef/infer_flow.py
 git add docs/maintenance/AIF120_FLOW_INFERENCE_V1.md
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
 git status --short -uall

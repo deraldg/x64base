@@ -47,7 +47,7 @@ Both are now runtime-proven, and both changed what R11.4 should say.
 
 ## 1. The experiment
 
-`tools/uidef/contend_test.py` models one DBF work area as a `Workspace`: a record
+`gui/uidef/contend_test.py` models one DBF work area as a `Workspace`: a record
 pointer, a pending `REPLACE` buffer and an order, all of them **workspace** state
 rather than call state. That is the entire reason R11.4 exists -- two handlers in
 one work area share one pointer.
@@ -148,7 +148,7 @@ recommend. Serialization is the only remedy.
 
 ## 6. R21.4 -- a completion handler is delivered at most once, never exactly once
 
-`tools/uidef/lifetime_test.py` destroys a Tk container **while** a worker is in
+`gui/uidef/lifetime_test.py` destroys a Tk container **while** a worker is in
 flight, which dispatch_test.py never did. Two runtimes, same worker:
 
 | runtime | result |
@@ -221,8 +221,8 @@ cd D:\code\ccode
 git add docs/maintenance/AIF120_SERIALIZATION_RULING_V1.md
 git add docs/maintenance/evidence/AIF120_contend.txt
 git add docs/maintenance/evidence/AIF120_lifetime.txt
-git add tools/uidef/contend_test.py
-git add tools/uidef/lifetime_test.py
+git add gui/uidef/contend_test.py
+git add gui/uidef/lifetime_test.py
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
 git add docs/maintenance/AIF120_THREADING_RULING_V1.md
 git diff --cached --stat

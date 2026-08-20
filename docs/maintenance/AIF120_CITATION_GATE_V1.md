@@ -87,7 +87,7 @@ real widow -- goes with it.
 ## 2. Ruling R43.1: a line may opt out, and the opt-out is greppable
 
 ```
-the working copy at `tools/uidef/read_vfp_binary.py`  <!-- cite-check:ignore -->
+the working copy at `gui/uidef/read_vfp_binary.py`  <!-- cite-check:ignore -->
 ```
 
 Three properties, each chosen against a failure:
@@ -121,9 +121,9 @@ deliberate. The distinction is the whole ruling:
 | Site | Citation | Disposition |
 |---|---|---|
 | `AIF120_CAPABILITY_MAPPING_V1.md:197` | the gitignored heartbeat yaml | suppressed -- the note is *about* it being ignored |
-| `AIF120_SHIPPED_RULING_UNSHIPPED_CODE_V1.md:42` | `tools/uidef/read_vfp_binary.py` | suppressed -- R42's subject matter |  <!-- cite-check:ignore -->
+| `AIF120_SHIPPED_RULING_UNSHIPPED_CODE_V1.md:42` | `gui/uidef/read_vfp_binary.py` | suppressed -- R42's subject matter |  <!-- cite-check:ignore -->
 | `AIF120_SHIPPED_RULING_UNSHIPPED_CODE_V1.md:119` | same, in "Still open" | suppressed -- same |
-| `AIF120_LOCALE_AND_ENCODING_V1.md:169` | `git add tools/uidef/read_vfp_binary.py` | **repaired, not suppressed** |  <!-- cite-check:ignore -->
+| `AIF120_LOCALE_AND_ENCODING_V1.md:169` | `git add gui/uidef/read_vfp_binary.py` | **repaired, not suppressed** |  <!-- cite-check:ignore -->
 
 The fourth was not documentation. It was a live `git add` on a gitignored path inside
 a shipped handoff block -- the last surviving instance of the exact defect R42.1
@@ -132,7 +132,7 @@ built to find. It was replaced with a note, in the form R42 already used one doc
 earlier:
 
 ```
-# NOTE added 2026-08-19 by R42: this block staged tools/uidef/read_vfp_binary.py (cite-check:ignore),
+# NOTE added 2026-08-19 by R42: this block staged gui/uidef/read_vfp_binary.py (cite-check:ignore),
 # which is gitignored by design. `git add` on an ignored path is a SILENT no-op, so R33's
 # reader fix never reached the repository and every gate still passed. The reader that
 # ships is tools/vfp/read_vfp_binary.py, promoted by R42. The dead line is removed.
@@ -147,7 +147,7 @@ by reading the suppressed line, which is why the marker sits on that line.
 ## 4. Runtime-proven: the lane is clean
 
 ```
-$ python3 tools/uidef/cite_check.py
+$ python3 gui/uidef/cite_check.py
 cite_check: 43 document(s), 122 distinct path(s) cited, 122 tracked
   every cited path is tracked
 exit=0
@@ -180,7 +180,7 @@ record says about the last one.
   `AIF_081_OUTPUT_CAPTURE_RUNTIME_PROOF_V1_20260731.md` cites a missing
   `scripts/index_maintenance_failure_proof.dts`. Portal gates are AIF-082's area.  <!-- cite-check:ignore -->
   This lane installed a check, not a policy for other people's documents.
-- **`tools/uidef/read_vfp_binary.py` still exists locally and is inert.** A sandbox  <!-- cite-check:ignore -->
+- **`gui/uidef/read_vfp_binary.py` still exists locally and is inert.** A sandbox  <!-- cite-check:ignore -->
   cannot delete on this mount. The maintainer can remove it; nothing imports it.
 - **The marker has no expiry.** A suppression added for a defect that later gets
   fixed will keep suppressing. `grep -rn cite-check:ignore docs/` is the audit; there
@@ -189,7 +189,7 @@ record says about the last one.
 ## 7. Good Neighbor note
 
 - **What changed.** `tools/staging/check_cited_paths.py` and
-  `tools/uidef/cite_check.py` gained a per-line `cite-check:ignore` opt-out and a
+  `gui/uidef/cite_check.py` gained a per-line `cite-check:ignore` opt-out and a
   restored `return` in `cited()`. Three AIF-120 rulings gained four markers, one of
   which replaced a dead `git add` line.
 - **Whose area.** `tools/staging/` is AIF-082's (portal gates); the check there was
@@ -197,7 +197,7 @@ record says about the last one.
   are AIF-120's own.
 - **What authorization.** Maintainer (member.derald), in-session: "continue,
   authorized", following "who is the gate owner".
-- **How to verify or undo.** Verify: `python3 tools/uidef/cite_check.py` from the
+- **How to verify or undo.** Verify: `python3 gui/uidef/cite_check.py` from the
   repo root -- expect `122 tracked` and exit 0. Undo: the marker is inert text; delete
   the `SUPPRESS` block and the `if SUPPRESS in line: continue` in both tools and every
   suppressed citation is reported again. The four document markers can be removed with
@@ -210,7 +210,7 @@ record says about the last one.
 ```powershell
 cd D:\code\ccode
 git add tools/staging/check_cited_paths.py
-git add tools/uidef/cite_check.py
+git add gui/uidef/cite_check.py
 git add docs/maintenance/AIF120_CAPABILITY_MAPPING_V1.md
 git add docs/maintenance/AIF120_LOCALE_AND_ENCODING_V1.md
 git add docs/maintenance/AIF120_SHIPPED_RULING_UNSHIPPED_CODE_V1.md

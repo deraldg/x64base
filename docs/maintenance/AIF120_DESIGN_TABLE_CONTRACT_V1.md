@@ -268,7 +268,7 @@ Two consequences follow, and both are constraints rather than freedoms:
   needs no relation, and a reader must not establish one it was not given.
 
 The generator's own emission is the reference reading, and its refusal set is the
-manifest's -- `tools/uidef/manifest.py::stream_refusals` -- so a second backend has
+manifest's -- `gui/uidef/manifest.py::stream_refusals` -- so a second backend has
 one place to ask rather than a second copy to keep in step.
 
 ## 5. Geometry is INTENT. `FLOW` and `ORDINAL` are the whole model
@@ -329,7 +329,7 @@ measurement.)
 > against the 40% below, because the 40% counted arrangements that are not grids.
 >
 > **So 84% of real container groups genuinely are not row, column or grid**, and
-> `free` is not an inference failure. `tools/uidef/infer_flow.py`, ruling
+> `free` is not an inference failure. `gui/uidef/infer_flow.py`, ruling
 > `AIF120_FLOW_INFERENCE_V1.md`.
 >
 > **The correction this section proposes is still required, for a better reason.**
@@ -836,7 +836,7 @@ when.
 
 1. ~~**Not implemented.** No writer, no reader, no round-trip. This is a
    specification, tier `planned`.~~ **Implemented the same day.** A writer and
-   conformance validator (`tools/uidef/uidef.py`), two readers (`import_scx.py`,
+   conformance validator (`gui/uidef/uidef.py`), two readers (`import_scx.py`,
    `import_mnx.py`), three consumers (`uidef_tk.py`, `uidef_tk_menu.py`,
    `uidef_tk_host.py`), a requirements/refusal checker (`manifest.py`), and eleven
    evidence renders and transcripts. Tier: **runtime-proven** for forms and menus
@@ -892,7 +892,7 @@ when.
     its own divisor and declared it.
 14. **The refusal set belongs to the target, not the format** (R34.2), which is a
     result rather than an open item -- but it means conformance cannot be stated as
-    a single list. `tools/uidef/manifest.py` carries three real target profiles and
+    a single list. `gui/uidef/manifest.py` carries three real target profiles and
     a hypothetical one, and its five outcomes -- `REFUSE`, `DEGRADE`, `DERIVE`,
     `REQUIRE`, `NOTE` -- are richer than section 12's vocabulary.
 15. **Nothing takes a lock.** R36 lets a document state its lock domain and R26

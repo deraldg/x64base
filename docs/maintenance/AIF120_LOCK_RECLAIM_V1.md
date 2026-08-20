@@ -158,7 +158,7 @@ same-session callers are unaffected, which is why every test to date passes.
 
 ## 6. Good Neighbor note
 
-- **What changed.** New file `tools/uidef/lock_reclaim_wsl.sh`. **No code changed in
+- **What changed.** New file `gui/uidef/lock_reclaim_wsl.sh`. **No code changed in
   this ruling** -- it is a measurement plus one cross-lane finding.
 - **Whose area.** `src/xbase/xbase_locks.cpp` is AIF-116's and **was read, not
   touched.** Section 4 is a report for the maintainer to relay, with a suggested fix
@@ -166,7 +166,7 @@ same-session callers are unaffected, which is why every test to date passes.
   directory, so no `.lock` sidecar is created anywhere in the repository.
 - **What authorization.** Maintainer (member.derald), standing in-session, under the
   agreed split: PowerShell for doc work, WSL for testing and dev.
-- **How to verify or undo.** Verify: `bash tools/uidef/lock_reclaim_wsl.sh` from the
+- **How to verify or undo.** Verify: `bash gui/uidef/lock_reclaim_wsl.sh` from the
   repo root in WSL after `./wslbuild.sh`; both verdict lines must read True. Undo:
   the file is a test and deleting it changes no behaviour.
 
@@ -174,7 +174,7 @@ same-session callers are unaffected, which is why every test to date passes.
 
 ```powershell
 cd D:\code\ccode
-git add tools/uidef/lock_reclaim_wsl.sh
+git add gui/uidef/lock_reclaim_wsl.sh
 git add docs/maintenance/AIF120_LOCK_RECLAIM_V1.md
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
 git diff --cached --stat

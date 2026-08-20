@@ -130,7 +130,7 @@ unrelated domains     overlapped=True (A in B in         unchanged
 same-domain re-entry  inner ran, refusals=0              inner ran, refusals=0
 ```
 
-`tools/uidef/lock_semantics_test.py` exits 0. The wx build exits 0 on both modes.
+`gui/uidef/lock_semantics_test.py` exits 0. The wx build exits 0 on both modes.
 
 ## 4. What this changes in already-shipped rulings
 
@@ -177,21 +177,21 @@ same-domain re-entry  inner ran, refusals=0              inner ran, refusals=0
 
 ## 6. Good Neighbor note
 
-- **What changed.** `tools/uidef/uidef_runtime.py` and `tools/uidef/uidef_rt.h`:
+- **What changed.** `gui/uidef/uidef_runtime.py` and `gui/uidef/uidef_rt.h`:
   non-blocking domain acquisition, per-thread re-entry depth, refusal delivered as a
   completion state, and a `LockProvider` seam that issues the house's own
   `SELECT`/`LOCK TABLE`/`UNLOCK`. The `SecondDomain` guard added earlier the same day
-  was removed. New: `tools/uidef/lock_semantics_test.py`,
-  `tools/uidef/wx_lock_registry.cpp`.
+  was removed. New: `gui/uidef/lock_semantics_test.py`,
+  `gui/uidef/wx_lock_registry.cpp`.
 - **Whose area.** `xbase::locks` is AIF-116's and the engine's; **nothing in
   `src/` or `include/` was touched.** This lane changed only how its own runtime
   asks. The provider seam is a call site, not a modification.
 - **What authorization.** Maintainer (member.derald), in-session: "are you use
   x64base locking", "dogfood", and the explicit contention ruling "Refuse, like
   FLOCK()".
-- **How to verify or undo.** Verify: `python3 tools/uidef/lock_semantics_test.py`
+- **How to verify or undo.** Verify: `python3 gui/uidef/lock_semantics_test.py`
   (exit 0, four cases), and for wx build `scopes.cpp` against
-  `tools/uidef/wx_lock_registry.cpp` and run with `abba` and `contend`. Undo: the
+  `gui/uidef/wx_lock_registry.cpp` and run with `abba` and `contend`. Undo: the
   change is confined to `LockDomains`/`Hold` and the two dispatch branches;
   restoring `threading.RLock` + `with lock` restores queueing, and with it the
   deadlock in section 1.
@@ -200,10 +200,10 @@ same-domain re-entry  inner ran, refusals=0              inner ran, refusals=0
 
 ```powershell
 cd D:\code\ccode
-git add tools/uidef/uidef_runtime.py
-git add tools/uidef/uidef_rt.h
-git add tools/uidef/lock_semantics_test.py
-git add tools/uidef/wx_lock_registry.cpp
+git add gui/uidef/uidef_runtime.py
+git add gui/uidef/uidef_rt.h
+git add gui/uidef/lock_semantics_test.py
+git add gui/uidef/wx_lock_registry.cpp
 git add docs/maintenance/AIF120_LOCK_SEMANTICS_V1.md
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
 git diff --cached --stat

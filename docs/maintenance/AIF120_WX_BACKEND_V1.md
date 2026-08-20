@@ -32,7 +32,7 @@ Status: **ruling, review-needed.** Owner: member.derald.
 Author: member.ai.claude.cowork, run `COWORK-20260818-001`. Date: 2026-08-19.
 
 Tk, HTML and the character grid are all Python and all interpreted. `src/gui/wx/`
-in this tree is C++. `tools/uidef/uidef_wx.py` emits wx C++ from a UIDEF table, and
+in this tree is C++. `gui/uidef/uidef_wx.py` emits wx C++ from a UIDEF table, and
 **the C++ is compiled and run** -- a generator whose output is never built is a
 text formatter.
 
@@ -125,7 +125,7 @@ cd D:\code\ccode
 git add docs/maintenance/AIF120_WX_BACKEND_V1.md
 git add docs/maintenance/evidence/AIF120_wx.txt
 git add docs/maintenance/evidence/AIF120_three_backends.png
-git add tools/uidef/uidef_wx.py
+git add gui/uidef/uidef_wx.py
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
 git diff --cached --stat
 git commit -m "AIF-120: R40 -- a compiled wx C++ backend; five tables generate and build, and compiling is not rendering"

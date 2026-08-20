@@ -18,7 +18,7 @@
 # so process exit cannot explain the release (R50.2).
 #
 # Run from the repo root in WSL, after ./wslbuild.sh:
-#     bash tools/uidef/lock_record_domain_wsl.sh
+#     bash gui/uidef/lock_record_domain_wsl.sh
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"

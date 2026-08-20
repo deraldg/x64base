@@ -157,13 +157,13 @@ tree on Ubuntu 24.04, two live processes, real `.lock` sidecars. This is the fir
 ## 8. Good Neighbor note
 
 - **What changed.** `tools/staging/check_cited_paths.py` and
-  `tools/uidef/cite_check.py` gained `.sh` and `.ps1` to their extension list --
+  `gui/uidef/cite_check.py` gained `.sh` and `.ps1` to their extension list --
   this ruling cites a `.sh` harness and the check silently ignored it, which is
   the blind spot R42 and R43 exist to close.
-  `tools/uidef/uidef_runtime.py` and `tools/uidef/uidef_rt.h`: the
-  release verb pairs with the acquire verb. `tools/uidef/lock_provider_test.py` and
-  `tools/uidef/wx_provider_registry.cpp` assert the pairing. New:
-  `tools/uidef/lock_crossproc_wsl.sh`.
+  `gui/uidef/uidef_runtime.py` and `gui/uidef/uidef_rt.h`: the
+  release verb pairs with the acquire verb. `gui/uidef/lock_provider_test.py` and
+  `gui/uidef/wx_provider_registry.cpp` assert the pairing. New:
+  `gui/uidef/lock_crossproc_wsl.sh`.
 - **Whose area.** AIF-120's own. Nothing in `src/` or `include/` was touched. The
   harness copies its table to a scratch directory, so no `.lock` sidecar is created
   anywhere in the repository. The AIF-116 corroboration in section 5 is offered to
@@ -171,7 +171,7 @@ tree on Ubuntu 24.04, two live processes, real `.lock` sidecars. This is the fir
 - **What authorization.** Maintainer (member.derald), in-session: "remember we have
   wsl as an option too", followed by building the binary and running the harness.
 - **How to verify or undo.** Verify: `./wslbuild.sh` then
-  `bash tools/uidef/lock_crossproc_wsl.sh` from the repo root in WSL; step 2 must
+  `bash gui/uidef/lock_crossproc_wsl.sh` from the repo root in WSL; step 2 must
   show `LOCK: failed (lock exists)`, and step 4 must show B acquiring while A is
   still running. Undo: reverting `unverb` to the literal `UNLOCK` in both runtimes
   restores the leak in section 2, which no in-process test detects.
@@ -180,13 +180,13 @@ tree on Ubuntu 24.04, two live processes, real `.lock` sidecars. This is the fir
 
 ```powershell
 cd D:\code\ccode
-git add tools/uidef/uidef_runtime.py
-git add tools/uidef/uidef_rt.h
-git add tools/uidef/lock_provider_test.py
-git add tools/uidef/wx_provider_registry.cpp
-git add tools/uidef/lock_crossproc_wsl.sh
+git add gui/uidef/uidef_runtime.py
+git add gui/uidef/uidef_rt.h
+git add gui/uidef/lock_provider_test.py
+git add gui/uidef/wx_provider_registry.cpp
+git add gui/uidef/lock_crossproc_wsl.sh
 git add tools/staging/check_cited_paths.py
-git add tools/uidef/cite_check.py
+git add gui/uidef/cite_check.py
 git add docs/maintenance/AIF120_CROSSPROCESS_LOCK_V1.md
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
 git diff --cached --stat

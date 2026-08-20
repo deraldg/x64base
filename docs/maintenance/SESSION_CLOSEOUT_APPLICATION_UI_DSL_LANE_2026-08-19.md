@@ -171,7 +171,7 @@ second closeout, so there is one place to look.
 **Gates:** 8 and 9 ruled; **10 drafted, reconciled twice**, and implemented;
 **11 spiked on a second backend for both forms and menus.**
 
-**Tooling that now exists**, all in `tools/uidef/` unless noted:
+**Tooling that now exists**, all in `gui/uidef/` unless noted:
 `../vfp/write_vfp_binary.py` (VFP accepts its output), `uidef.py` (schema, DBF
 writer, conformance validator), `import_scx.py`, `import_mnx.py`, `uidef_tk.py`,
 `uidef_tk_menu.py`, `author_uidef.py`, `dispatch_test.py`, `infer_flow.py`.

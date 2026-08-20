@@ -133,11 +133,11 @@ emphasis. Evidence tier: **runtime-proven**.
 
 ## 6. Good Neighbor note
 
-- **What changed.** `tools/uidef/import_scx.py`: `FONT` rows carry `Bold` and
-  `Italic`; emphasis keys a derived row. `tools/uidef/uidef_tk.py`,
+- **What changed.** `gui/uidef/import_scx.py`: `FONT` rows carry `Bold` and
+  `Italic`; emphasis keys a derived row. `gui/uidef/uidef_tk.py`,
   `uidef_html.py`, `uidef_wx.py`: each applies them.
   `docs/maintenance/AIF120_DESIGN_TABLE_CONTRACT_V1.md`: new section 7b.
-- **Whose area.** AIF-120's own, entirely. Nothing outside `tools/uidef/` and
+- **Whose area.** AIF-120's own, entirely. Nothing outside `gui/uidef/` and
   `docs/maintenance/` was touched, and nothing outside the lane was read except to
   confirm no font prior art exists.
 - **What authorization.** Maintainer (member.derald), standing in-session.
@@ -150,10 +150,10 @@ emphasis. Evidence tier: **runtime-proven**.
 
 ```powershell
 cd D:\code\ccode
-git add tools/uidef/import_scx.py
-git add tools/uidef/uidef_tk.py
-git add tools/uidef/uidef_html.py
-git add tools/uidef/uidef_wx.py
+git add gui/uidef/import_scx.py
+git add gui/uidef/uidef_tk.py
+git add gui/uidef/uidef_html.py
+git add gui/uidef/uidef_wx.py
 git add docs/maintenance/AIF120_DESIGN_TABLE_CONTRACT_V1.md
 git add docs/maintenance/AIF120_FONT_EMPHASIS_V1.md
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md

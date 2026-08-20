@@ -11,7 +11,7 @@
 // "imbue carefully" -- it is that DotTalk++'s bare `LOCK` locks the current record
 // and carries no number, so the runtime never renders one.
 //
-//   g++ -std=c++14 tools/uidef/lock_number_probe.cpp -o lock_number_probe && ./lock_number_probe
+//   g++ -std=c++14 gui/uidef/lock_number_probe.cpp -o lock_number_probe && ./lock_number_probe
 #include <cstdio>
 #include <locale>
 #include <sstream>

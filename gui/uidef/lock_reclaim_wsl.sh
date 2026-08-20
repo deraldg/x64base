@@ -19,7 +19,7 @@
 # accident.
 #
 # Run from the repo root in WSL, after ./wslbuild.sh:
-#     bash tools/uidef/lock_reclaim_wsl.sh
+#     bash gui/uidef/lock_reclaim_wsl.sh
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"

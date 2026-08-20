@@ -13,7 +13,7 @@
 # matters: while one process holds the lock, does the other get refused?
 #
 # Run from the repo root in WSL, after ./wslbuild.sh:
-#     bash tools/uidef/lock_crossproc_wsl.sh
+#     bash gui/uidef/lock_crossproc_wsl.sh
 #
 # Nothing is written inside the repository: the table is copied to a scratch
 # directory first, so the `.lock` sidecars land there and not in a tracked tree.

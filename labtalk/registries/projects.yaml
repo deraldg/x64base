@@ -445,3 +445,40 @@ projects:
       remains at M4 registry import, M5 portable YAML bootstrap, and M6 teaching loop. The
       legacy SECURITY selector remains diagnostic-only and grants no USER/RBAC authority.
       Feeds AI Portal gates APH-1/3/5.
+
+  - id: project.x64base.gui
+    name: UIDEF -- the UI description layer
+    kind: gui_project
+    status: active_beta
+    root: D:/code/ccode/gui
+    languages: [python, c++, dbf]
+    lanes: [uidef_contract, tk_backend, html_backend, character_cell_backend,
+            wx_backend, scx_import, lock_provider, tuple_stream_binding]
+    docs:
+      - README.md
+      - ../docs/maintenance/AIF120_DESIGN_TABLE_CONTRACT_V1.md
+      - ../docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
+      - ../docs/maintenance/AIF120_PROJECT_PROMOTION_V1.md
+    concepts:
+      - concept.database.table
+      - concept.runtime.state
+    notes: >
+      Promoted from lane AIF-120 (application-ui-dsl) on 2026-08-20 under AIF-040,
+      which promotes a lane that "spawns sub-lanes, gains an independent lifecycle,
+      or becomes a program others build under." AIF-120 remains the originating
+      intake row and the rulings ledger; the rulings themselves stay in
+      docs/maintenance with every other lane's, because that ledger is their only
+      index. Root moved from tools/uidef to gui/ in the same commit as the
+      promotion: tools/ holds a program's helpers, and this is a program -- four
+      backends over one DBF "design table" that names no toolkit. Placement follows
+      the pattern already in this file (project.pycrud, project.dottalk_webui,
+      project.sqlite_gui all root at ccode/<dir>), so a non-C++ product beside src/
+      and include/ is established practice here, not a new rule. NOT consolidated:
+      src/gui/{core,wx} and include/gui/core remain the shipped C++ GUI application
+      with its own CMake targets (dottalk_wx, dottalk_wx_next); merging them under
+      gui/ is a later unit because a directory move and a build-graph change fail
+      in different ways. Measured state at promotion: the wx backend is
+      runtime-proven against the engine (R70 -- a generated window linking 44 house
+      translation units, filling a grid from DbTupleStream off the shipped x64
+      tables); Tk, HTML and character-cell render but have no data binding; nothing
+      is verified under MSVC.

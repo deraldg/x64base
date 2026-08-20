@@ -7,7 +7,7 @@
 // owner: member.derald
 // status: supported
 
-// tools/uidef/wx_stream_harness.cpp -- AIF-120 R70.
+// gui/uidef/wx_stream_harness.cpp -- AIF-120 R70.
 //
 // A generated `--stream` frontend needs exactly ONE thing from its host that it
 // cannot declare for itself: the engine. `src/cli/db_tuple_stream.cpp` reaches the

@@ -128,16 +128,16 @@ in its header.
 
 ## 6. Good Neighbor note
 
-- **What changed.** `tools/uidef/uidef_rt.h` gains a `wxBookCtrlBase` branch in
-  `destroy_container`. New: `tools/uidef/page_scope_test.py` and
-  `tools/uidef/wx_page_registry.cpp`.
-- **Whose area.** AIF-120's own; nothing outside `tools/uidef/` and
+- **What changed.** `gui/uidef/uidef_rt.h` gains a `wxBookCtrlBase` branch in
+  `destroy_container`. New: `gui/uidef/page_scope_test.py` and
+  `gui/uidef/wx_page_registry.cpp`.
+- **Whose area.** AIF-120's own; nothing outside `gui/uidef/` and
   `docs/maintenance/`.
 - **What authorization.** Maintainer (member.derald), standing in-session
   "continue", taking the case R45 section 7 named.
 - **How to verify or undo.** Verify: `xvfb-run -a python3.12
-  tools/uidef/page_scope_test.py`, and for wx generate with `--dispatch`, build
-  against `tools/uidef/wx_page_registry.cpp`, and run with `delete:PG1`,
+  gui/uidef/page_scope_test.py`, and for wx generate with `--dispatch`, build
+  against `gui/uidef/wx_page_registry.cpp`, and run with `delete:PG1`,
   `delete:PS` and `remove:PG1`; the two tables in section 3 must match and every run
   must exit 0. Undo: removing the `wxBookCtrlBase` branch restores the exit-139
   crash in section 1 and changes nothing else.
@@ -146,9 +146,9 @@ in its header.
 
 ```powershell
 cd D:\code\ccode
-git add tools/uidef/uidef_rt.h
-git add tools/uidef/page_scope_test.py
-git add tools/uidef/wx_page_registry.cpp
+git add gui/uidef/uidef_rt.h
+git add gui/uidef/page_scope_test.py
+git add gui/uidef/wx_page_registry.cpp
 git add docs/maintenance/AIF120_PAGE_TEARDOWN_V1.md
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
 git diff --cached --stat

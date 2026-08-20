@@ -42,7 +42,7 @@ R14 stands: the table carries a handler **name**, resolved by the target against
 registry it supplies. Nothing is evaluated and no body enters the table. What R32
 adds is that a name defined on a class reaches the instance.
 
-Two paths, both implemented in `tools/uidef/import_scx.py`:
+Two paths, both implemented in `gui/uidef/import_scx.py`:
 
 - **A class member's handlers** ride with the member when R31 materialises it.
 - **The class root's handlers** merge into the instance, and **an event the
@@ -116,7 +116,7 @@ half of what a class library actually does.
 ```powershell
 cd D:\code\ccode
 git add docs/maintenance/AIF120_METHOD_INHERITANCE_V1.md
-git add tools/uidef/import_scx.py
+git add gui/uidef/import_scx.py
 git diff --cached --stat
 git commit -m "AIF-120: R32 -- handlers inherit from the class; nine standard events restored to the vocabulary, Unload chief among them"
 ```

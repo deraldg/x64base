@@ -174,8 +174,8 @@ self-approve.
 cd D:\code\ccode
 git add docs/maintenance/AIF120_MASK_WIDTH_RULING_V1.md
 git add docs/maintenance/evidence/AIF120_maskwidth.txt
-git add tools/uidef/import_scx.py
-git add tools/uidef/manifest.py
+git add gui/uidef/import_scx.py
+git add gui/uidef/manifest.py
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
 git diff --cached --stat
 git commit -m "AIF-120: R25 -- a bound control's width follows its INPUT MASK; R17 narrowed; PROPS gains Mask"

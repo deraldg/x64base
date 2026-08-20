@@ -34,7 +34,7 @@ def case_verbs():
     ok = True
     # R50: the release verb PAIRS with the acquire verb. Bare `UNLOCK` unlocks the
     # current RECORD -- releasing a `LOCK TABLE` with it leaves the table locked,
-    # measured against the real binary in tools/uidef/lock_crossproc_wsl.sh.
+    # measured against the real binary in gui/uidef/lock_crossproc_wsl.sh.
     for gran, verb, unverb in (('table', 'LOCK TABLE', 'UNLOCK TABLE'),
                                ('record', 'LOCK', 'UNLOCK')):
         s = Sink()

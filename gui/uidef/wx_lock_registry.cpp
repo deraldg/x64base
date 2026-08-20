@@ -1,5 +1,5 @@
 // R47: lock semantics on the compiled target. AIF-120.
-// Same four cases as tools/uidef/deadlock_test.py, on std::thread/std::mutex.
+// Same four cases as gui/uidef/deadlock_test.py, on std::thread/std::mutex.
 #include "uidef_rt.h"
 #include <chrono>
 #include <cstdio>

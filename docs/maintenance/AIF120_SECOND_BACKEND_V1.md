@@ -49,7 +49,7 @@ does not repeat it.
 
 ## 2. The result
 
-`tools/uidef/uidef_html.py`. All five tables generate; markup balances on every
+`gui/uidef/uidef_html.py`. All five tables generate; markup balances on every
 one; and the layout intent lands.
 
 `docs/maintenance/evidence/AIF120_two_backends.png` is one document -- `FLOWDEMO`,
@@ -133,8 +133,8 @@ cd D:\code\ccode
 git add docs/maintenance/AIF120_SECOND_BACKEND_V1.md
 git add docs/maintenance/evidence/AIF120_html.txt
 git add docs/maintenance/evidence/AIF120_two_backends.png
-git add tools/uidef/uidef_html.py
-git add tools/uidef/manifest.py
+git add gui/uidef/uidef_html.py
+git add gui/uidef/manifest.py
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
 git diff --cached --stat
 git commit -m "AIF-120: R34 -- a second backend on a different geometry model; SPAN and TABORDINAL are the target's own concepts, and the refusal set differs by target"

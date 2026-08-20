@@ -34,7 +34,7 @@ Author: member.ai.claude.cowork, run `COWORK-20260818-001`. Date: 2026-08-19.
 
 **Evidence tier: `runtime-proven`.** Executed under `xvfb` in the agent's
 container; thread identities compared at each call.
-Test: `tools/uidef/dispatch_test.py`. Document: `tools/uidef/author_uidef.py`.
+Test: `gui/uidef/dispatch_test.py`. Document: `gui/uidef/author_uidef.py`.
 
 R11 was adopted from a shipped C++ contract and never invoked. R14 ruled that the
 table carries handler references and never bodies, and nothing had resolved one.
@@ -130,7 +130,7 @@ use `ORIGIN` -- and only the authored half is portable in the sense R12 intended
 ## 7. Handoff -- PowerShell, run in `D:\code\ccode`
 
 ```powershell
-git add tools/uidef/dispatch_test.py tools/uidef/author_uidef.py
+git add gui/uidef/dispatch_test.py gui/uidef/author_uidef.py
 git add docs/maintenance/AIF120_DISPATCH_RUNTIME_V1.md
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
 git status --short -uall

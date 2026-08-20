@@ -35,7 +35,7 @@ R40 emitted wx C++ and bound no events, and said so: *"the thing wx was actually
 wanted for -- the handler and threading model on a compiled target -- is still
 untested, and R40 should not be read as having done it."* This does it.
 
-`tools/uidef/uidef_rt.h` is the dispatch runtime in C++ -- `std::thread`,
+`gui/uidef/uidef_rt.h` is the dispatch runtime in C++ -- `std::thread`,
 `std::mutex` and `wxWindow::CallAfter` where R37 used Python threads and a polled
 queue. `uidef_wx.py --dispatch` emits the bindings and the domain table.
 
@@ -139,9 +139,9 @@ now determines which `std::mutex` a compiled C++ frontend takes.
 cd D:\code\ccode
 git add docs/maintenance/AIF120_WX_DISPATCH_V1.md
 git add docs/maintenance/evidence/AIF120_wxdispatch.txt
-git add tools/uidef/uidef_rt.h
-git add tools/uidef/uidef_wx.py
-git add tools/uidef/wx_demo_registry.cpp
+git add gui/uidef/uidef_rt.h
+git add gui/uidef/uidef_wx.py
+git add gui/uidef/wx_demo_registry.cpp
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
 git diff --cached --stat
 git commit -m "AIF-120: R41 -- the dispatch runtime in C++; the same two orderings on std::mutex and CallAfter"

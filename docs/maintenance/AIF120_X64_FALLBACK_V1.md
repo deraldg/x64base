@@ -205,7 +205,7 @@ trinity did:
 
 ## 6. The lane's own C++, audited against the six rules
 
-Dogfooding the answer: `tools/uidef/uidef_xbase_locks.h` and `tools/uidef/uidef_rt.h`
+Dogfooding the answer: `gui/uidef/uidef_xbase_locks.h` and `gui/uidef/uidef_rt.h`
 carry **no `long`, no `uint32_t`, and no `int32_t` record identity**. Every record
 number goes through `a->recno64()`, with the reason on the line
 (*"recno64(), not recno(): the 32-bit adapter returns -1 rather than clamping"*), and

@@ -43,7 +43,7 @@ consumes them. Closing it produced four clauses.
 
 ## 1. The accounting, both fixtures
 
-`tools/uidef/import_mnx.py` now reports every item's disposition, because an item
+`gui/uidef/import_mnx.py` now reports every item's disposition, because an item
 that leaves the importer with neither a handler nor a named reason is the silent
 failure itself.
 
@@ -111,7 +111,7 @@ by real data. It is here because the alternative -- import it as an ordinary ite
 
 ## 5. R22.4 -- refusal is a first-class outcome, and it must be visible
 
-`tools/uidef/uidef_tk_host.py` is the consumer half: a real capability table for
+`gui/uidef/uidef_tk_host.py` is the consumer half: a real capability table for
 Tk, and a real refusal for everything Tk does not have. Tk is a fair test because
 the split is the backend's, not mine -- it genuinely provides clipboard editing on
 a `Text` widget through virtual events, and genuinely has nothing resembling
@@ -153,7 +153,7 @@ render as an ordinary live item.**
 - No new column, again. `DISPATCH = host` plus a capability identifier in
   `HANDLERS` carried all of this. Two rulings running, no schema change.
 - The importer gains an accounting line and a caption guard.
-- `tools/uidef/uidef_tk_host.py` is new: the reference consumer for `host`.
+- `gui/uidef/uidef_tk_host.py` is new: the reference consumer for `host`.
 
 ## 7. A defect in my own render, caught by looking at it
 
@@ -189,8 +189,8 @@ cd D:\code\ccode
 git add docs/maintenance/AIF120_CAPABILITY_MAPPING_V1.md
 git add docs/maintenance/evidence/AIF120_hostcaps.txt
 git add docs/maintenance/evidence/AIF120_host_caps.png
-git add tools/uidef/import_mnx.py
-git add tools/uidef/uidef_tk_host.py
+git add gui/uidef/import_mnx.py
+git add gui/uidef/uidef_tk_host.py
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
 git diff --cached --stat
 # NOTE added 2026-08-19 by R42: an earlier version of this block staged

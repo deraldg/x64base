@@ -266,7 +266,7 @@ refusal cases all still pass.
   only.
 - **What authorization.** Maintainer (member.derald), in-session "continue" plus the
   three corrections recorded in the front matter.
-- **How to verify or undo.** Verify: `python3 tools/uidef/import_scx.py 1_many.scx
+- **How to verify or undo.** Verify: `python3 gui/uidef/import_scx.py 1_many.scx
   UI_1_many` (needs `1_many.sct` beside it) and read `BINDING` on the two `grid`
   rows; `calc.scx`, `lookup.scx`, `custorder.scx` and `books.scx` print the four
   refusals. Undo: the contract sections and the two tool diffs revert
@@ -280,8 +280,8 @@ first, then:
 
 ```powershell
 cd D:\code\ccode
-git add tools/uidef/import_scx.py
-git add tools/uidef/manifest.py
+git add gui/uidef/import_scx.py
+git add gui/uidef/manifest.py
 git add docs/maintenance/AIF120_DESIGN_TABLE_CONTRACT_V1.md
 git add docs/maintenance/AIF120_GRID_IMPORT_V1.md
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md

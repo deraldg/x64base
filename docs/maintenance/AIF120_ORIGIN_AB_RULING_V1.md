@@ -112,7 +112,7 @@ A / B / C left to right.
 `Gender` one character, `Dob` date-sized, `Email` wide. R16 is not a compromise
 between A and B; on this document it is strictly better than either.
 
-`tools/uidef/uidef_tk.py` implements it, so the ruling is executable rather than
+`gui/uidef/uidef_tk.py` implements it, so the ruling is executable rather than
 prose: `if 'origin_width' in org and kind not in CONTENT_SIZED`.
 
 **And it introduces a problem neither A nor B had.** Look at `Enroll_d:` in C --

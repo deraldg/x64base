@@ -5,9 +5,9 @@
 //   B=build/wsl-core-vcpkg
 //   cp dottalkpp/data/dbf/vfp/STUDENTS.dbf /tmp/c_STUDENTS.dbf
 //   cp dottalkpp/data/dbf/vfp/ENROLL.dbf   /tmp/c_ENROLL.dbf
-//   python3 tools/uidef/uidef_wx.py DOMAIN.DBF /tmp/dom.cpp --dispatch
-//   g++ -std=c++17 -Wall -Wextra -Iinclude -I$B/generated -Itools/uidef \
-//       /tmp/dom.cpp tools/uidef/wx_contend_registry.cpp \
+//   python3 gui/uidef/uidef_wx.py DOMAIN.DBF /tmp/dom.cpp --dispatch
+//   g++ -std=c++17 -Wall -Wextra -Iinclude -I$B/generated -Igui/uidef \
+//       /tmp/dom.cpp gui/uidef/wx_contend_registry.cpp \
 //       $B/src/xbase/libxbase.a $B/src/memo/libmemo.a $B/src/xexpr/libxexpr.a \
 //       $B/src/libdottalk_value.a $B/src/libdottalk_inx_payload.a \
 //       -o /tmp/con $(wx-config --cxxflags --libs) -pthread

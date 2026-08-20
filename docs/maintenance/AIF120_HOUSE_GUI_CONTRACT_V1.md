@@ -185,14 +185,14 @@ this lane would have invented, which is the argument for the house rule in one l
 
 ## 7. Good Neighbor note
 
-- **What changed.** `tools/uidef/uidef_runtime.py`: workers tracked, `shutdown()`
-  joins them. `tools/uidef/uidef_rt.h`: workers owned in a vector, `join_workers()`,
+- **What changed.** `gui/uidef/uidef_runtime.py`: workers tracked, `shutdown()`
+  joins them. `gui/uidef/uidef_rt.h`: workers owned in a vector, `join_workers()`,
   `~Runtime()` joins.
 - **Whose area.** AIF-120's own runtime. `docs/ui/`, `include/gui/`, `src/gui/` and
   `include/xbase_locks.hpp` were **read, not touched**. R55.2 and R55.3 are reports.
 - **What authorization.** Maintainer (member.derald), in-session: *"always look for
   prior art"* and *"always report if a house rule or gate unjustly blocks progress"*.
-- **How to verify or undo.** Verify: `python3 tools/uidef/lock_semantics_test.py` and
+- **How to verify or undo.** Verify: `python3 gui/uidef/lock_semantics_test.py` and
   `lock_provider_test.py`; on wx rebuild the R44/R45/R46/R49 harnesses -- all must
   reproduce. Undo: restoring `daemon=True` and `.detach()` restores the anti-pattern
   named in the house contract.
@@ -201,8 +201,8 @@ this lane would have invented, which is the argument for the house rule in one l
 
 ```powershell
 cd D:\code\ccode
-git add tools/uidef/uidef_runtime.py
-git add tools/uidef/uidef_rt.h
+git add gui/uidef/uidef_runtime.py
+git add gui/uidef/uidef_rt.h
 git add docs/maintenance/AIF120_HOUSE_GUI_CONTRACT_V1.md
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
 git diff --cached --stat

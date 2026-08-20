@@ -42,7 +42,7 @@ The contract's field table says `FLOW` is **"P on containers"**, and section 5 s
 it plainly: *"A container declares a `FLOW`; its children declare `ORDINAL` and
 optionally `SPAN`."*
 
-`tools/uidef/uidef_tk.py` read `FLOW` off **the child being placed**:
+`gui/uidef/uidef_tk.py` read `FLOW` off **the child being placed**:
 
 ```python
 flow = (r['FLOW'] or '').strip().lower()      # r is the CHILD
@@ -61,7 +61,7 @@ and the two-column grid laid out as a single stack. B is the same table after th
 consumer reads `FLOW` from the container: the row is a row, the grid is a grid, and
 the spanning control occupies both cells.
 
-The document, `tools/uidef/author_flow.py`, exercises all four values --
+The document, `gui/uidef/author_flow.py`, exercises all four values --
 `row`, `column`, `grid`, `free` -- and carries **zero coordinates**. That is the
 lane's central claim standing up on its own: a portable layout with no geometry.
 
@@ -174,12 +174,12 @@ cd D:\code\ccode
 git add docs/maintenance/AIF120_FLOW_CONTAINER_RULING_V1.md
 git add docs/maintenance/evidence/AIF120_flow_render.txt
 git add docs/maintenance/evidence/AIF120_flow_ab.png
-git add tools/uidef/uidef_tk.py
-git add tools/uidef/author_flow.py
-git add tools/uidef/infer_flow.py
-git add tools/uidef/author_uidef.py
-git add tools/uidef/dispatch_test.py
-git add tools/uidef/uidef_tk_menu.py
+git add gui/uidef/uidef_tk.py
+git add gui/uidef/author_flow.py
+git add gui/uidef/infer_flow.py
+git add gui/uidef/author_uidef.py
+git add gui/uidef/dispatch_test.py
+git add gui/uidef/uidef_tk_menu.py
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
 git diff --cached --stat
 git commit -m "AIF-120: R23 -- FLOW belongs to the container; grid must state Columns; R19 corpus figures corrected"

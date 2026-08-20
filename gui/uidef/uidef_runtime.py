@@ -49,7 +49,7 @@ class LockProvider:
 
     The house verb that needs no number does not have that surface at all. If a
     future need forces `LOCK <n>`, the number must be rendered through the classic
-    locale, and `tools/uidef/lock_provider_test.py` fails if any emitted command
+    locale, and `gui/uidef/lock_provider_test.py` fails if any emitted command
     contains a digit that the runtime put there.
 
     R66 -- the METHODOLOGY, after R64.1. `src/cli/cmd_unlock.cpp` calls the `void`

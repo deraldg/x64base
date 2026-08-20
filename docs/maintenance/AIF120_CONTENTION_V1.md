@@ -112,7 +112,7 @@ cannot arrive late -- the defect that produced attempt 2.
 
 ## 5. Good Neighbor note
 
-- **What changed.** New file only: `tools/uidef/wx_contend_registry.cpp`, with its
+- **What changed.** New file only: `gui/uidef/wx_contend_registry.cpp`, with its
   build and two-process run line in the header comment. **No shipped code changed.**
 - **Whose area.** AIF-120's own. The engine was linked against and read, never
   modified. Both tables are copies.
@@ -127,7 +127,7 @@ cannot arrive late -- the defect that produced attempt 2.
 
 ```powershell
 cd D:\code\ccode
-git add tools/uidef/wx_contend_registry.cpp
+git add gui/uidef/wx_contend_registry.cpp
 git add docs/maintenance/AIF120_CONTENTION_V1.md
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
 git diff --cached --stat

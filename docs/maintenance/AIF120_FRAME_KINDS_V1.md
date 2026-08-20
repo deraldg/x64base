@@ -98,7 +98,7 @@ R65.2 measured that `alias.field` is a strict subset of BETA-4.4's `*`, `AREA.*`
 
 ## 3. Four targets render it, and they were run
 
-`tools/uidef/author_frame.py` writes the frame as a UIDEF document -- deliberately
+`gui/uidef/author_frame.py` writes the frame as a UIDEF document -- deliberately
 the same screen the engine draws, so the two can be read against each other.
 
 **Character cells** (`uidef_text.py`), which is the target the kinds were measured
@@ -196,14 +196,14 @@ observer is exactly right for the only record verb the provider is allowed to us
 
 ### It runs against the real shell
 
-`tools/uidef/shell_session.py` is the smallest possible glue: it sends a command line
+`gui/uidef/shell_session.py` is the smallest possible glue: it sends a command line
 to a live `dottalkpp` over a pipe and returns what the shell printed, framed by a
 sentinel it asked the shell to echo. It translates nothing. (It is not
 `shell_execute_line` -- that is the in-process C++ entry a compiled frontend embeds,
 R61 -- it is the same command surface over a pipe, for the Python runtime and for
 tests.)
 
-`tools/uidef/lock_shell_provider_test.py`, run against
+`gui/uidef/lock_shell_provider_test.py`, run against
 `dottalk++ v0.6 (2026-08-19, 8969de78 dirty)`:
 
 ```
@@ -274,9 +274,9 @@ and `scope_test` all still pass, and `AUTHORED.DBF` still renders on all targets
   taking and releasing table locks and leaving both unlocked.
 - **What authorization.** Maintainer (member.derald), in-session *"add those to the
   vocabulary and update the locking methodology"*.
-- **How to verify or undo.** Verify: `python3 tools/uidef/author_frame.py FRAMEDEMO`
+- **How to verify or undo.** Verify: `python3 gui/uidef/author_frame.py FRAMEDEMO`
   then render on any target, and
-  `python3 tools/uidef/lock_shell_provider_test.py <dottalkpp>` for the provider.
+  `python3 gui/uidef/lock_shell_provider_test.py <dottalkpp>` for the provider.
   Undo: the contract sections and the tool diffs revert independently -- the five
   kinds are additive and no existing document uses them.
 
@@ -293,16 +293,16 @@ git diff --cached --stat
 git commit -m "AIF-120: R65 -- the grid already ships and the design table cannot describe it; BINDING is a subset and #n is deleted by the lexer"
 
 git add docs/maintenance/AIF120_DESIGN_TABLE_CONTRACT_V1.md
-git add tools/uidef/uidef.py
-git add tools/uidef/manifest.py
-git add tools/uidef/uidef_text.py
-git add tools/uidef/uidef_html.py
-git add tools/uidef/uidef_tk.py
-git add tools/uidef/uidef_wx.py
-git add tools/uidef/uidef_runtime.py
-git add tools/uidef/author_frame.py
-git add tools/uidef/shell_session.py
-git add tools/uidef/lock_shell_provider_test.py
+git add gui/uidef/uidef.py
+git add gui/uidef/manifest.py
+git add gui/uidef/uidef_text.py
+git add gui/uidef/uidef_html.py
+git add gui/uidef/uidef_tk.py
+git add gui/uidef/uidef_wx.py
+git add gui/uidef/uidef_runtime.py
+git add gui/uidef/author_frame.py
+git add gui/uidef/shell_session.py
+git add gui/uidef/lock_shell_provider_test.py
 git add docs/maintenance/AIF120_FRAME_KINDS_V1.md
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
 git diff --cached --stat

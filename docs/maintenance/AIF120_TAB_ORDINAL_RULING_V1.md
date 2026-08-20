@@ -144,9 +144,9 @@ regenerates a UIDEF table should be re-run afterwards.
 ```powershell
 cd D:\code\ccode
 git add docs/maintenance/AIF120_TAB_ORDINAL_RULING_V1.md
-git add tools/uidef/uidef.py
-git add tools/uidef/import_scx.py
-git add tools/uidef/manifest.py
+git add gui/uidef/uidef.py
+git add gui/uidef/import_scx.py
+git add gui/uidef/manifest.py
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
 git diff --cached --stat
 git commit -m "AIF-120: R27 -- tab order becomes TABORDINAL, a second ordinal column; owner's decision, first schema change since gate 10"

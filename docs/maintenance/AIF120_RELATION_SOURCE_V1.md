@@ -131,8 +131,8 @@ worse than either extreme and it occurs in the wild.
 cd D:\code\ccode
 git add docs/maintenance/AIF120_RELATION_SOURCE_V1.md
 git add docs/maintenance/evidence/AIF120_relations.txt
-git add tools/uidef/import_scx.py
-git add tools/uidef/manifest.py
+git add gui/uidef/import_scx.py
+git add gui/uidef/manifest.py
 git add docs/maintenance/AIF120_LANE_STATUS_AND_FIXTURES_V1.md
 git diff --cached --stat
 git commit -m "AIF-120: R36 -- SOURCE carries relations and the manifest computes the lock domain; R26.2 closed"
