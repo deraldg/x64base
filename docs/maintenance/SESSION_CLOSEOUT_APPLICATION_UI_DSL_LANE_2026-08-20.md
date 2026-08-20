@@ -275,7 +275,6 @@ Proven by BUILDING and RUNNING: 56s, 66 translation units, and a frontend that o
 | **R81.1** -- **24** repo paths cited in `docs/ai-friendly/AI_FRIENDLY_DASHBOARD_V1.md` cannot be reached from a clone: 23 widows, all ON DISK and merely untracked, plus **one that is GITIGNORED** -- `.../DOCFLUSH-20260722-001/FULLSTACK_DOCUMENTATION_FLUSH_FILE_MANIFEST_V1.csv`, which `git add` can never stage (R42.1). R73.3a's shape at dashboard scale. Not on the rows this session touched, and `cited-paths` is advisory, so nothing blocked | dashboard owner |
 | **R81.2 -- and my own sweep under-counted it.** I reported 22 by grepping for a whitelist of extensions (`py md cpp hpp h txt yaml dts DBF png FPT`). The gate found 24, because the two I missed end in `.csv` and `.mjs`. **A search shaped by the objects you already have cannot find an object with a different schema** -- the house doctrine, applied to my own evidence-gathering rather than to someone else's code, and the second time this session a whitelist has been the defect. The gate's regex is the one to trust; mine was a convenience that quietly narrowed the question | AIF-120, recorded |
 | **The published lane page is stale, and it is gate 7.** `x64base.com/docs/dev/application-ui-dsl-lane/` still reads "Planned, not implemented", proposes a `CREATE WINDOW` / `DEFINE BUTTON` command syntax, and orders the backends Arctic-first. The charter already names it "Published seed" and supersedes it -- gates 10 and 11 make the design table the deliverable and the DSL text a convenience over it -- but **"Website comparison update" is the charter's own gate 7**, and eleven rulings now sit behind a page that says the lane has not started. Not an agent's call to publish | maintainer |
-| **Tier 0 regenerated at the wrong moment.** See correction 56. `TIER0_STATE.md` currently asserts `HEAD: fbd6f56ed` and `newest closeout: 0 commits behind` while HEAD is the R85 commit. One regeneration and a commit of that file alone fixes it | maintainer |
 | **BETA citations.** 26 across nine documents cite the BETA checklist as authority. The maintainer ruled it "a template"; `foxref.cpp` shows all 43 items `BetaStatus::OPEN`. Retarget to lane rulings | AIF-120, next session |
 
 ## Next unit
@@ -323,18 +322,37 @@ same shape -- and the shape is that a fix applied to one SITE is not a rule:
   The shape is the one this section names four times already: **a fix that lands
   at a site instead of at the rule comes back**, and this time it came back
   against the rule that was written about it.
-- **Correction 56 -- my handoff regenerated Tier 0 BEFORE the commit.** The
-  PowerShell block ran `generate_tier0_state.py` and then `git add`/`git commit`
-  in one sequence, so `labtalk/ai_portal/TIER0_STATE.md` recorded
-  `HEAD: fbd6f56ed` and `newest closeout: 0 commits behind HEAD` at the instant a
-  commit made both false. Before that run the file correctly WARNED that the
-  closeout was 2 commits behind; after it, it asserts freshness it does not have.
-  A generated file that cannot drift by hand can still be generated at the wrong
-  moment, and the failure direction matters: it went from reporting staleness to
-  reporting none. The projection is structurally always at least one commit
-  behind -- it cannot name the commit that carries it -- so the honest sequence is
-  **commit the content first, regenerate second, commit the projection alone**,
-  and the number that must never lie is the closeout distance, not the hash.
+- **Correction 56 -- VOID AS WRITTEN, and the correction to it is the finding.**
+  It said my handoff regenerated `TIER0_STATE.md` before the commit and so made it
+  assert a freshness it did not have, and it prescribed a sequence: commit the
+  content, regenerate, commit the projection alone. Every part of that is wrong,
+  and the commit output that proved it was on screen when I wrote it:
+
+      tier0-refresh: TIER0_STATE.md regenerated -- rides in this commit (by design)
+
+  **A pre-commit hook already does this, on every commit.**
+  `tools/staging/refresh-tier0.ps1` installs it; the hook runs the generator,
+  `git add`s the file, and announces itself -- and the installer's own comment
+  records why it announces: a silent add put an unexplained third file into
+  `cf5caa7bb` (2026-08-10) and was misread as another session's stray staging.
+
+  So the one-commit lag is not a defect and was never mine. The hook necessarily
+  runs while HEAD is still the PREVIOUS commit, so the projection always names
+  HEAD-1 and its `commits behind HEAD` is computed at the moment it is true.
+  That is the designed, announced behaviour of the file, and I filed it as damage.
+
+- **Correction 56a -- what actually went wrong: I wrote a procedure for a
+  mechanism that already existed.** My handoff carried a manual
+  `python labtalk\ai_portal\generate_tier0_state.py` step and staged the file by
+  hand -- hand-managing a hook-managed file. `073051c98` is a commit that exists
+  only because I did not read `tools/staging/refresh-tier0.ps1` before diagnosing,
+  and correction 56 is a paragraph of doctrine built on top of not having read it.
+  **Always look for prior art** is a house rule and this is what skipping it
+  costs: not a broken file, but a confident written explanation of a problem that
+  was not there, published in the document other people read to learn how the
+  lane works. The remedy is the rule itself, applied one step earlier -- before
+  writing the correction, not before writing the code.
+
 - **Correction 54** -- R70.3's unused-helper fix had been applied to ONE helper instead of made a rule, so two new helpers reintroduced the same defect on six of eighteen fixtures immediately. Every helper is now gated on its own caller list. Same shape as 49, 51 and 52: the fix that lands at a site instead of at the rule comes back.
 
 ## 5. Onboarding -- owed, and paid late
