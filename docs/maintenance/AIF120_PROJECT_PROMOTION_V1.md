@@ -135,7 +135,7 @@ restructuring is wanted it is its own unit with its own proof.
 
 **Does not move:**
 
-- `src/gui/{core,wx}`, `include/gui/core` -- the shipped C++ GUI application, with CMake targets `dottalk_wx` and `dottalk_wx_next` wired at `src/CMakeLists.txt:450,454`.
+- `src/gui/{core,wx}`, `include/gui/core` -- C++ GUI work with CMake targets `dottalk_wx` and `dottalk_wx_next` wired at `src/CMakeLists.txt:450,454`. **Owner ruling, 2026-08-20: these wx GUIs were built in parallel as tests -- samples someone could use as a template, not a permanent product.** This ruling's earlier draft called them "the shipped C++ GUI application," which was product status inferred from the existence of a build target -- the same shape as citing an all-OPEN checklist as authority, one section below. Corrected on the owner's note. Nothing in `gui/uidef` depends on them or was derived from them.
 - `tools/gui/generate_gui_messages.py` -- a build-time generator for `include/gui/core/generated_gui_messages.hpp`; it serves the build, so it stays with the build's tools.
 - `tools/gui_preview/` -- a Python mirror of `src/gui/core`, belonging to that application.
 - `docs/maintenance/AIF120_*.md` -- the rulings stay in the lane ledger. `AIF120_LANE_STATUS_AND_FIXTURES_V1.md` is their only index, and moving the documents out of the directory that index lives in would break the one thing that makes them findable.
@@ -178,7 +178,9 @@ the tools" over a command whose output was thirty-one lines long, and only caugh
 it because the output was on screen next to the claim. None of the thirty-one is
 an executable dependency -- no `import`, `open`, `Path` or `subprocess` resolves
 through them, checked rather than assumed -- but `cite_check.py` prints
-`python tools/uidef/cite_check.py` as its own usage line, and that is the gate
+`python tools/uidef/cite_check.py` as its own usage line  <!-- cite-check:ignore -->
+-- quoted as the stale string this move fixed, not as a live pointer --
+and that is the gate
 whose entire job is catching stale paths. Prose inside code is exactly the
 staleness a green test run does not see.
 
@@ -281,6 +283,34 @@ block directly above those two lines exists to prevent.
 
 The correct spelling is `$env:X64BASE_ALLOW_MASS = "1"`. One line, in the file
 that already explains why the env var exists at all.
+
+## 7d. Correction 52 -- two copies of the truth, and the newer push won
+
+The `<!-- cite-check:ignore -->` marker on the line above was added directly to the
+working tree, then **silently destroyed by my own next push** of the same document
+from a session-local scratch copy that had never received it. The gate caught the
+consequence at the closeout commit: `MISSING tools/uidef/cite_check.py -- cited,  <!-- cite-check:ignore -->
+not on disk`. (That quoted error message is itself a citation of the dead path, so
+it carries the suppression marker too -- the paragraph explaining the defect
+reproduced it on first write, and the gate said so again.)
+
+I was maintaining the ruling in two places and editing them alternately -- some
+changes in the scratch copy and pushed whole-file, some directly in the tree. A
+whole-file push does not merge; it replaces. Any edit made only on the far side is
+gone, and nothing announces it.
+
+This is `AI_PORTAL.md`'s own **case study 2, dual-authoring the staging tree**:
+*"two copies of the truth, free to drift... the instant staging is edited as if it
+were a source, neither tree is authoritative."* The portal records that pattern
+about `AI_PORTAL.md` itself drifting 42 KB from its own published copy. I
+reproduced it at document scale, inside the ruling that quotes the portal, within
+the same session in which I already recorded correction 51.
+
+The remedy is the doctrine's own: **one authoritative copy.** From this point the
+working tree is edited in place and the scratch copy is not pushed again. The
+marker is restored, and the checker suppresses per line -- the path and
+`cite-check:ignore` must sit on the SAME line, which is why the surrounding
+sentence is broken across three.
 
 ## 8. Good Neighbor
 

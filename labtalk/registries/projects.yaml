@@ -474,10 +474,13 @@ projects:
       the pattern already in this file (project.pycrud, project.dottalk_webui,
       project.sqlite_gui all root at ccode/<dir>), so a non-C++ product beside src/
       and include/ is established practice here, not a new rule. NOT consolidated:
-      src/gui/{core,wx} and include/gui/core remain the shipped C++ GUI application
-      with its own CMake targets (dottalk_wx, dottalk_wx_next); merging them under
-      gui/ is a later unit because a directory move and a build-graph change fail
-      in different ways. Measured state at promotion: the wx backend is
+      src/gui/{core,wx} and include/gui/core stay put, with their CMake targets
+      (dottalk_wx, dottalk_wx_next). Owner note 2026-08-20: those wx GUIs were
+      built in parallel as tests -- samples someone could use as a template, not a
+      permanent product; an earlier draft called them "the shipped C++ GUI
+      application", which inferred product status from a build target's existence.
+      Merging them under gui/ is a later unit in any case, because a directory move
+      and a build-graph change fail in different ways. Measured state at promotion: the wx backend is
       runtime-proven against the engine (R70 -- a generated window linking 44 house
       translation units, filling a grid from DbTupleStream off the shipped x64
       tables); Tk, HTML and character-cell render but have no data binding; nothing

@@ -49,9 +49,17 @@ on a move.
 
 ## What is NOT here, and why
 
-`src/gui/core`, `src/gui/wx` and `include/gui/core` are the **shipped C++ GUI
-application** (targets `dottalk_wx`, `dottalk_wx_next`). They stay where the build
-expects them. `src/CMakeLists.txt` already excludes that subtree from globbing --
+`src/gui/core`, `src/gui/wx` and `include/gui/core` are C++ GUI work with its own
+CMake targets (`dottalk_wx`, `dottalk_wx_next`). They stay where the build expects
+them.
+
+**Owner note, 2026-08-20:** the wx GUIs there were built in parallel as tests --
+**samples someone could use as a template**, not a permanent product. An earlier
+draft of this file called them "the shipped C++ GUI application"; that was the
+author inferring product status from the presence of a CMake target, which is the
+same mistake as inferring a ruling from a checklist item. Their status is the
+owner's to declare, and it is declared here rather than assumed. Nothing in
+`gui/uidef` depends on them, adopts them, or was derived from them. `src/CMakeLists.txt` already excludes that subtree from globbing --
 `"${CMAKE_CURRENT_SOURCE_DIR}/gui"   # GUI isolated, not globbed` -- so the build
 has its own view of GUI isolation and this directory does not disturb it.
 
