@@ -36,15 +36,25 @@ import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import uidef
 
-SOURCE = "\n".join([
-    "Alias = workspace",
-    "Table = (none -- the sample fills every grid from code)",
-])
+# R83. This document declared `Alias = workspace` with
+# `Table = (none -- the sample fills every grid from code)` -- an English
+# sentence in a field contract section 10 defines as a PATH. It survived four
+# rulings because nothing checked `Table`; `manifest.py`'s section 10 check
+# found it on its first run, which is a fair advertisement for the check.
+#
+# The frame it describes really has no data source: `src/gui/wx/main_frame.cpp`
+# fills every grid from code, and nothing in this document BINDS. An alias is a
+# work area, so declaring one for a work area that does not exist is the same
+# class of decoration R70.5 ruled on. The sentence was true and worth keeping;
+# it belongs in NOTES, where prose is the point, not in a path field.
+SOURCE = ""
+DOC_NOTES = ("no work areas: src/gui/wx/main_frame.cpp fills every grid from "
+             "code, so this document declares no Alias and no Table (R83)")
 
 
 def main(stem='MAINFRAME'):
     out = [{'RECKIND': 'DOC', 'OBJID': 'DOC', 'PROVENANCE': 'measured',
-            'SOURCE': SOURCE,
+            'SOURCE': SOURCE, 'NOTES': DOC_NOTES,
             'PROPS': uidef.props([('SourceFile', '"src/gui/wx/main_frame.cpp"')])}]
 
     def obj(oid, parent, kind, ordinal, flow='', binding='', pairs=(), notes='',

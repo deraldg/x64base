@@ -44,13 +44,19 @@
 #include <string>
 #include <vector>
 
+#include <filesystem>
+
 #include "xbase.hpp"
 #include "xbase/cursor_hook.hpp"
 #include "set_relations.hpp"
+#include "common/path_state.hpp"
 
 // The document's contribution to setup, emitted by uidef_wx.py --stream.
 // Declared, not defined here: the host owns WHEN, the document owns WHAT.
 void uidef_attach_source(xbase::XBaseEngine& eng);
+
+// R83. WHICH tables, from the document's own SOURCE. Never where.
+const std::vector<std::string>& uidef_source_tables();
 
 namespace {
 
@@ -113,25 +119,78 @@ void end() {
 } // namespace uidef_host
 
 namespace {
+namespace fs = std::filesystem;
+
+// Contract section 10 resolves CASE-INSENSITIVELY (R28.3), and it is not
+// decoration on a case-sensitive filesystem: the corpus writes `STUDENTS.DBF`
+// and the file on disk is `STUDENTS.dbf`. Without this the host reports every
+// table missing and the failure reads like a configuration problem.
+fs::path resolve_ci(const fs::path& dir, const std::string& name) {
+    std::error_code ec;
+    fs::path exact = dir / name;
+    if (fs::exists(exact, ec)) return exact;
+    std::string low = name;
+    for (char& c : low) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    for (fs::directory_iterator it(dir, ec), end; !ec && it != end; it.increment(ec)) {
+        std::string have = it->path().filename().string();
+        std::string hl = have;
+        for (char& c : hl) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+        if (hl == low) return it->path();
+    }
+    return exact;
+}
+
+// Where the tables are. R82: the DOCUMENT does not say, and this host must not
+// invent it. Two sources, in the order the house itself uses -- the engine's
+// own DBF slot first (what `SETPATH` and `DO X64` set, and what
+// `WORKSPACE OPEN DBF` means), then an explicit override from the invocation.
+//
+// R82.3 is why the slot comes first: the house's answer to "name a location
+// without hard-coding one" is that the INVOCATION names a slot. A frontend
+// asking the same slot is asking the same question the shell asks.
+fs::path table_root() {
+    const fs::path slot = dottalk::paths::get_slot(dottalk::paths::Slot::DBF);
+    if (!slot.empty()) return slot;
+    if (const char* e = std::getenv("UIDEF_DBF_ROOT")) {
+        if (*e) return fs::path(e);
+    }
+    return {};
+}
+
 // wxApp::OnInit runs after static initialization, so the host is up before the
-// generated file constructs a stream. UIDEF_TABLES is the demo's stand-in for
-// what a real host reads out of the document's SOURCE.
+// generated file constructs a stream.
+//
+// R83 replaced the UIDEF_TABLES environment variable this used to read. The
+// tables a generated frontend opens now come from the document that generated
+// it, which is what contract section 10 has always said and what this file's
+// own comment asked for. Only the ROOT is still an input, because only the
+// root is a workspace fact.
 struct Boot {
     Boot() {
-        const char* dir = std::getenv("R70_DBF");
-        const char* csv = std::getenv("UIDEF_TABLES");
-        if (!dir || !*dir) return;
-        std::vector<std::string> t;
-        std::string s(csv && *csv ? csv : "STUDENTS,ENROLL"), tok;
-        for (char c : s) {
-            if (c == ',') { if (!tok.empty()) t.push_back(tok); tok.clear(); }
-            else tok += c;
+        const std::vector<std::string>& names = uidef_source_tables();
+        if (names.empty()) return;          // the document declares no tables
+        const fs::path root = table_root();
+        if (root.empty()) {
+            // Before R83 this returned in silence and the frontend came up with
+            // every grid empty. `WORKSPACE LOAD` refuses a shortfall for this
+            // reason -- "standing up empty areas over missing files is the
+            // silent-success failure this codebase hunts" -- and a frontend that
+            // does it quietly is the same failure with a window in front of it.
+            std::cout << "uidef_host: the document declares " << names.size()
+                      << " table(s) and NOTHING SAYS WHERE THEY ARE. The DBF path"
+                      << " slot is unset and UIDEF_DBF_ROOT is not in the"
+                      << " environment, so no area was opened and every bound"
+                      << " control will be empty. Location is a workspace fact"
+                      << " (AIF-120 R82).\n";
+            return;
         }
-        if (!tok.empty()) t.push_back(tok);
-        for (auto& n : t) n = std::string(dir) + "/" + n + ".dbf";
+        std::vector<std::string> t;
+        t.reserve(names.size());
+        for (const std::string& n : names) t.push_back(resolve_ci(root, n).string());
         if (uidef_host::begin(t)) {
-            std::cout << "uidef_host: " << t.size() << " area(s) open, "
-                      << "cursor hook installed, SOURCE relations attached\n";
+            std::cout << "uidef_host: " << t.size() << " area(s) open from the "
+                      << "document's SOURCE, cursor hook installed, "
+                      << "SOURCE relations attached\n";
         }
     }
     ~Boot() { uidef_host::end(); }

@@ -22,6 +22,7 @@ import os, sys, collections
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import uidef                                    # doc_alias_tables (R66)
+import workspace                                # R83, the DTSHEMA reader
 # `read_vfp_binary` is the VFP binary reader and it lives in tools/vfp.
 # gui/uidef/read_vfp_binary.py is a GITIGNORED working copy, so importing it
 # from this directory made nine committed tools unimportable on a fresh clone --
@@ -699,7 +700,72 @@ def load_schemas(paths):
     return out
 
 
-def report(path, profiles, tables=None):
+def source_resolution(path, ws=None):
+    """Contract section 10: does every `Table` this document declares RESOLVE?
+
+    Section 10 has said since 2026-08-19 that a document whose `Table` does not
+    resolve is REFUSED, never rendered unbound -- "a width silently derived from
+    a schema that was never opened is worse than no width". R82 found that
+    nothing performed that refusal. This does.
+
+    The order is the contract's own, and the second step is R82's ruling:
+
+      1. DOCUMENT-RELATIVE. Section 10's primary rule, measured from VFP, which
+         recomputes a data-source path relative to the form on every save. A
+         bare name is the ZERO-DISTANCE case of that rule, not a fallback.
+      2. THROUGH A DECLARED WORKSPACE, if one is supplied AND it is self-locating
+         -- which per R82.3 means DTSHEMA 3, because a v2 posture resolves its
+         members against `Slot::DBF` and so states which table, not where.
+      3. Otherwise REFUSE.
+
+    What this deliberately does NOT do is fall back to the environment. Reading
+    `SETPATH`, `R70_DBF` or the current directory would make every document
+    resolve and would report exactly the ambient-state dependency section 10
+    exists to forbid. **An unresolvable Table is the honest answer** when neither
+    the document nor a declared posture says where the table is.
+
+    Returns (rows, checked) -- `checked` is False when there was nothing to
+    check, so a caller can tell "no tables" from "all fine".
+    """
+    rows = list(Dbf(path).rows())
+    tabs = uidef.doc_alias_tables(rows)
+    out = []
+    if not tabs:
+        return out, False
+    here = os.path.dirname(os.path.abspath(path))
+    for alias in sorted(tabs):
+        t = (tabs[alias] or '').strip()
+        if not t:
+            out.append(('REFUSE', 'Alias %s' % alias,
+                        'declares no Table; an alias with no table is a work area '
+                        'nothing can open (contract s10)'))
+            continue
+        cand = t if os.path.isabs(t) else os.path.join(here, t)
+        if os.path.exists(cand):
+            out.append(('NOTE', 'Table %s' % t,
+                        'resolves document-relative (contract s10)'))
+            continue
+        if ws is not None and ws.self_locating:
+            wc = ws.resolve_dbf(t)
+            if wc and os.path.exists(wc):
+                out.append(('NOTE', 'Table %s' % t,
+                            'resolves through the declared workspace -> %s' % wc))
+                continue
+            out.append(('REFUSE', 'Table %s' % t,
+                        'resolves neither beside the document nor through the '
+                        'declared workspace (contract s10)'))
+            continue
+        why = ('does not resolve beside the document, and no self-locating '
+               'workspace was supplied (contract s10)')
+        if ws is not None:
+            why = ('does not resolve beside the document, and the supplied '
+                   'workspace is DTSHEMA %d -- it declares which table, not '
+                   'where (R82.3); a v3 posture carries DBFROOT' % ws.version)
+        out.append(('REFUSE', 'Table %s' % t, why))
+    return out, True
+
+
+def report(path, profiles, tables=None, ws=None):
     m = manifest(path)
     print("%s -- %d objects" % (m['document'], m['objects']))
     print("  kinds     : %s" % ', '.join('%s x%d' % kv for kv in sorted(m['kinds'].items()) if kv[0]))
@@ -720,6 +786,17 @@ def report(path, profiles, tables=None):
                     print("      %-8s %-34s %s" % (s, subj, why))
         print("      -> %s" % (', '.join('%s %d' % (k, v) for k, v in sorted(counts.items()))
                                or 'clean'))
+    res10, checked10 = source_resolution(path, ws)
+    print("  vs contract s10 -- does every declared Table resolve?")
+    if not checked10:
+        print("      the document declares no Table; nothing to resolve")
+    else:
+        for s_, subj, why in res10:
+            print("      %-8s %-34s %s" % (s_, subj, why))
+        if ws is None:
+            print("      NOTE     %-34s %s"
+                  % ('no workspace supplied',
+                     'pass --workspace <file.dtschema> to check step 2 (R82)'))
     if tables is not None and m['bindings']:
         res, widths = bind_check(m, tables)
         print("  vs the supplied schema(s): %s" % ', '.join(sorted(tables)))
@@ -748,6 +825,16 @@ if __name__ == '__main__':
         profs.append(profile_text())
     if '--minimal' not in sys.argv and '--html' not in sys.argv and '--text' not in sys.argv:
         profs.insert(0, profile_tk())
+    ws = None
+    if '--workspace' in sys.argv:
+        i = sys.argv.index('--workspace')
+        wspath = sys.argv[i + 1]
+        ws = workspace.load(wspath)
+        args = [a for a in args if a != wspath]
+        print('workspace %s -- DTSHEMA %d, %s'
+              % (os.path.basename(wspath), ws.version,
+                 'self-locating' if ws.self_locating
+                 else 'NOT self-locating; it declares which table, not where (R82.3)'))
     tables = None
     if '--schema' in sys.argv:
         i = sys.argv.index('--schema')
@@ -755,4 +842,4 @@ if __name__ == '__main__':
         tables = load_schemas(paths)
         args = [a for a in args if a not in paths]
     for a in args:
-        report(a, profs, tables)
+        report(a, profs, tables, ws)

@@ -14,7 +14,7 @@ import os, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from read_vfp_binary import Dbf
-from uidef import doc_source
+from uidef import doc_source, doc_alias_tables
 
 KINDS_RENDERED = frozenset((
     'form', 'label', 'text', 'button', 'check', 'radio', 'list', 'combo',
@@ -123,6 +123,7 @@ def parse_handlers(txt):
 def generate(path, title=None, dispatch=False, stream=False):
     rows = list(Dbf(path).rows())
     src_aliases, src_rels = doc_source(rows)
+    src_tables = doc_alias_tables(rows)
     objs = [r for r in rows if (r['RECKIND'] or '').strip() == 'OBJ']
     fonts = [r for r in rows if (r['RECKIND'] or '').strip() == 'FONT']
     rec = {(r['OBJID'] or '').strip(): r for r in objs}
@@ -715,6 +716,21 @@ def generate(path, title=None, dispatch=False, stream=False):
             'extern "C" xbase::XBaseEngine* shell_engine();',
             '',
             'std::vector<std::unique_ptr<dottalk::DbTupleStream>> g_streams;',
+            '',
+            '// R83, contract 10. The DOCUMENT names its tables; it does not say',
+            '// where they are -- that is a workspace fact (R82). Until this',
+            '// existed the host read a CSV out of UIDEF_TABLES, so the tables a',
+            '// generated frontend opened came from the ENVIRONMENT and the',
+            '// document\'s own SOURCE was never consulted. Emitted under the',
+            '// same gate as uidef_attach_source so the pair cannot go missing',
+            '// separately (correction 54).',
+            'const std::vector<std::string>& uidef_source_tables() {',
+            '    static const std::vector<std::string> t = {',
+           ] + ['        %s,' % cstr(src_tables[a]) for a in src_aliases
+                if src_tables.get(a)] + [
+            '    };',
+            '    return t;',
+            '}',
             '',
             '// R72. The DOCUMENT contributes its SOURCE relation graph; the HOST',
             '// owns when it happens and unwinds it. This is run_shell()\'s shape',
