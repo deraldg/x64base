@@ -237,10 +237,27 @@ Measured before the fix:
 | `gui/` paths cited across tracked `.md` | **175 citations in 66 documents** |
 | distinct `gui/` paths | 57 |
 | invisible to `cited-paths` | **all of them** |
-| cost of switching them on | **one advisory** -- `gui/core/session.cpp`, cited by `docs/maintenance/WORKSPACE_MANAGER_AND_GROUPS_DESIGN_V1.md`, not on disk and not tracked; another lane's document, reported not fixed |  <!-- cite-check:ignore -->
+| cost of switching them on | **one advisory**, and it is a MISTYPED CITATION rather than a missing file -- see R81.5 |
 
 `'gui/'` added to `ROOTS`, with the reason in the source above the tuple rather
 than only here.
+
+**R81.5 -- the advisory, read properly.** The one path the widened gate flags is
+`gui/core/session.cpp`, cited by `docs/maintenance/WORKSPACE_MANAGER_AND_GROUPS_DESIGN_V1.md`.  <!-- cite-check:ignore -->
+When this ruling first recorded it I wrote "not on disk and not tracked", which is
+true of the string and wrong about the world: the file is
+`src/gui/core/session.cpp`, it is tracked, and the citation has simply lost its
+`src/` prefix.  <!-- cite-check:ignore --> Found by reading it -- it is the file that resolves `DBF_X64` before
+`DBF_X32` before `DBF`.
+
+Correcting my own sentence rather than the other lane's document, because the
+difference matters to whoever picks this up: **a missing file is a gap, a mistyped
+path is a typo**, and handing someone the first when it is the second sends them
+looking for work that does not exist. The citation itself belongs to that lane.
+
+That the gate could not tell them apart is not a defect in the gate -- it checks
+whether a cited path is tracked, and `gui/core/session.cpp` is not. It is a  <!-- cite-check:ignore -->
+reminder that **an advisory names a symptom and a human still owes it a cause.**
 
 **The shape.** R42 found that `git add` on a gitignored path is a silent no-op, so
 a green gate was evidence about what was STAGED and not what was intended. This is
