@@ -319,6 +319,19 @@ nodes:
     hard_fails: false
     tier: 2
 
+  # AIF-120. Descriptive process paper (episodic): a frontend lane found engine
+  # defects behind a gate the engine lane had already declared, plus the same
+  # system catching the author four times. Reachable from "why does a rule exist"
+  # and from opening a lane -- its practical claim is that a declared gate no
+  # fixture can fail is worth something to a VISITING lane.
+  - id: doc.whitepaper_congruence
+    label: White paper -- lane congruence, a frontend lane finding an engine defect
+    path: labtalk/ai_portal/whitepapers/WHITE_PAPER_LANE_CONGRUENCE_V1.md
+    class: episodic
+    enforced_by: null
+    hard_fails: false
+    tier: 2
+
   # Portal orphan repair (crawl 2026-08-08). Three load-bearing docs were reachable by
   # neither the graph nor entry-doc prose. Routed to the trigger where each actually bites.
   - id: mechanism.report_audit_contract
@@ -659,6 +672,10 @@ edges:
   # AIF-096: the model under the mechanism, and the narrative behind the rules.
   - {from: mechanism.session_coordination, to: mechanism.coordination_ontology, type: requires}
   - {from: trigger.understand_why, to: doc.whitepaper_coordination, type: fires_at}
+  # AIF-120: the congruence paper answers "why work both ends at once", and a lane
+  # about to open should know what a visiting lane is FOR.
+  - {from: trigger.understand_why, to: doc.whitepaper_congruence, type: fires_at}
+  - {from: trigger.open_lane, to: doc.whitepaper_congruence, type: fires_at}
   # Portal orphan repair (crawl 2026-08-08): route the three load-bearing orphans.
   - {from: trigger.close_out, to: mechanism.report_audit_contract, type: fires_at}
   - {from: trigger.publish, to: seed.promotion_model, type: fires_at}

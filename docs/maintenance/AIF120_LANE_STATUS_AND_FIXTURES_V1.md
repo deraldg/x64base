@@ -133,6 +133,7 @@ recursing that directory.
 | **R67** -- the grid imports from the corpus, 17 of 17 obey the Relation rule, and `TupleStream` is the kind's runtime contract | `docs/maintenance/AIF120_GRID_IMPORT_V1.md` |
 | **R68** -- the trinity's six rules, and what an x32 fallback costs; RECNO64 completion gate 3 is open at the tuple stream | `docs/maintenance/AIF120_X64_FALLBACK_V1.md` |
 | **R69** -- the tuple stream widened to RECNO64; it could not position past 2^31 and the CDX order vector truncated 64-bit recnos to 0 | `docs/maintenance/AIF120_TUPLE_STREAM_RECNO64_V1.md` |
+| **White paper** -- lane congruence: how a frontend lane found engine defects behind a gate the engine lane had already declared | `labtalk/ai_portal/whitepapers/WHITE_PAPER_LANE_CONGRUENCE_V1.md` |
 | The UIDEF tooling | `tools/uidef/uidef.py`, `import_scx.py`, `import_mnx.py`, `uidef_tk.py`, `uidef_tk_menu.py`, `author_uidef.py`, `dispatch_test.py`, `infer_flow.py`, `contend_test.py`, `lifetime_test.py`, `uidef_tk_host.py`, `author_flow.py`, `manifest.py`, `author_fonts.py`, `author_tabs.py`, `relate_test.py`, `classlib.py`, `uidef_html.py`, `uidef_text.py`, `uidef_runtime.py`, `locked_test.py`, `adopt_test.py`, `scope_test.py`, `uidef_wx.py`, `uidef_rt.h`, `wx_demo_registry.cpp`, `cite_check.py` |
 | The shipped GUI core the ruling adopts | `src/gui/core/`, `include/gui/core/`, `docs/ui/GUI_THREADING_RAII_CONTRACT_V1.md` |
 | Specimen-by-specimen measurements and the corrections between them | `docs/maintenance/AIF120_VFP_SCX_EMPIRICAL_BASELINE_V1.md` |
