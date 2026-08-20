@@ -53,18 +53,18 @@ What is stable, and therefore stated, is which ruling lives in which document:
 
 | Ruling | Document |
 |---|---|
-| **R70** -- the generated grid binds `DbTupleStream` | `AIF120_GRID_STREAM_BINDING_V1.md` |
-| **R71** -- UIDEF promoted to `project.x64base.gui` | `AIF120_PROJECT_PROMOTION_V1.md` |
-| **R72** -- the host contract read out of `run_shell()` | `AIF120_HOST_CONTRACT_V1.md` |
-| **R73** -- `Order` is a mode, not an index format | `AIF120_ORDER_VOCABULARY_V1.md` |
-| **R74** -- the frames render engine counts | `AIF120_RELATION_FRAMES_V1.md` |
-| **R75** -- the refusal fixtures made reproducible | `AIF120_FIXTURE_CORPUS_V1.md` |
-| **R76** -- the UIDEF document is a CMake source | `AIF120_CMAKE_TARGET_V1.md` |
-| **R77** -- measured against a wx sample the lane did not author | `AIF120_SAMPLE_MEASUREMENT_V1.md` |
-| **R78** -- the round trip carried the tree and lost PROPORTION | `AIF120_ROUND_TRIP_V1.md` |
-| **R79** -- `Weight` and `Fill` added to `PROPS` | `AIF120_LAYOUT_WEIGHT_V1.md` |
-| **R80** -- `Weight` needs free space; two backends had none | `AIF120_WEIGHT_BACKENDS_V1.md` |
-| **R81** -- the character-cell backend owns its remainder | `AIF120_CELL_ALLOCATION_V1.md` |
+| **R70** -- the generated grid binds `DbTupleStream` | `docs/maintenance/AIF120_GRID_STREAM_BINDING_V1.md` |
+| **R71** -- UIDEF promoted to `project.x64base.gui` | `docs/maintenance/AIF120_PROJECT_PROMOTION_V1.md` |
+| **R72** -- the host contract read out of `run_shell()` | `docs/maintenance/AIF120_HOST_CONTRACT_V1.md` |
+| **R73** -- `Order` is a mode, not an index format | `docs/maintenance/AIF120_ORDER_VOCABULARY_V1.md` |
+| **R74** -- the frames render engine counts | `docs/maintenance/AIF120_RELATION_FRAMES_V1.md` |
+| **R75** -- the refusal fixtures made reproducible | `docs/maintenance/AIF120_FIXTURE_CORPUS_V1.md` |
+| **R76** -- the UIDEF document is a CMake source | `docs/maintenance/AIF120_CMAKE_TARGET_V1.md` |
+| **R77** -- measured against a wx sample the lane did not author | `docs/maintenance/AIF120_SAMPLE_MEASUREMENT_V1.md` |
+| **R78** -- the round trip carried the tree and lost PROPORTION | `docs/maintenance/AIF120_ROUND_TRIP_V1.md` |
+| **R79** -- `Weight` and `Fill` added to `PROPS` | `docs/maintenance/AIF120_LAYOUT_WEIGHT_V1.md` |
+| **R80** -- `Weight` needs free space; two backends had none | `docs/maintenance/AIF120_WEIGHT_BACKENDS_V1.md` |
+| **R81** -- the character-cell backend owns its remainder | `docs/maintenance/AIF120_CELL_ALLOCATION_V1.md` |
 
 All twelve are **review-needed**; the author does not self-approve. Also landed:
 the wx-samples correction, R73.3a, the owner ruling that `ccode/gui` is the GUI
@@ -146,7 +146,7 @@ express; recorded and deliberately not designed.
 whether he could try his form and could not, which exposed that the eighteen UIDEF
 documents every refusal count is quoted against were not in the repository. Four
 regenerate from tracked author scripts; **the sixteen negative and property cases
-existed only in this container.** `author_cases.py` reproduces them, verified
+existed only in this container.** `gui/uidef/author_cases.py` reproduces them, verified
 behaviourally. The reason nine rulings missed it is the finding: `cited-paths`
 matches PATHS, and those fixtures are cited by NAME.
 
@@ -172,8 +172,8 @@ at all for NEGOTIABLE geometry, a sash the user drags. That gap is a CONCEPT, no
 a missing control kind, which is the only kind of gap an unauthored screen finds.
 
 **R78 -- the round trip, and the property nobody thought to name.**
-`author_mainframe.py` describes `src/gui/wx/main_frame.cpp` as a UIDEF document
-and `uidef_wx.py` generates it back: **47 records, 45 elements, ZERO refusals**,
+`gui/uidef/author_mainframe.py` describes `src/gui/wx/main_frame.cpp` as a UIDEF document
+and `gui/uidef/uidef_wx.py` generates it back: **47 records, 45 elements, ZERO refusals**,
 carrying a `pageset` inside a `page` inside a `pageset` that no prior document in
 this lane has nested, and it builds and runs against wx alone with no engine. What
 it could not carry was PROPORTION. Measured, 33 sizer additions carry an explicit
@@ -232,8 +232,8 @@ since a partial honouring is exactly where a silent drop hides.
 - `gui/README.md`, `labtalk/registries/projects.yaml` row `project.x64base.gui`, `gui/uidef/CMakeLists.txt`.
 - 251 citations retargeted across 55 documents; `cited-paths` reports zero widows on every commit since.
 - Four backends carry `Weight`; `KINDS` still 19; `generate(path, title, dispatch, stream)`.
-- The corpus regenerates: `author_cases.py` (16 refusal fixtures) plus five other author scripts, 22 documents in all.
-- `prove_r81.py` asserts the cell-allocation rule and exits non-zero if it ever stops holding.
+- The corpus regenerates: `gui/uidef/author_cases.py` (16 refusal fixtures) plus five other author scripts, 22 documents in all.
+- `gui/uidef/prove_r81.py` asserts the cell-allocation rule and exits non-zero if it ever stops holding.
 
 ## Owed, and to whom
 
@@ -276,7 +276,7 @@ Six, all recorded in their rulings. Four are worth repeating because they are th
 same shape -- and the shape is that a fix applied to one SITE is not a rule:
 
 - **Correction 50** -- `--dispatch` and `--stream` did not compose; the dispatch branch assigned over the stream block. Found by asking whether they composed, not by anything failing.
-- **Correction 51** -- my handoff ended in `git add docs/maintenance`. 967 paths staged, 199 data fixtures, 405 non-ASCII lines belonging to other lanes. I never wrote `-A` or `.`, which is the trap: **the rule is about breadth, not spelling.** `prepush-gate` caught it, nothing was committed, nothing was lost. `migrate_uidef.py` now emits the exact stage list it always knew.
+- **Correction 51** -- my handoff ended in `git add docs/maintenance`. 967 paths staged, 199 data fixtures, 405 non-ASCII lines belonging to other lanes. I never wrote `-A` or `.`, which is the trap: **the rule is about breadth, not spelling.** `prepush-gate` caught it, nothing was committed, nothing was lost. `gui/uidef/migrate_uidef.py` now emits the exact stage list it always knew.
 - **Correction 52** -- I pushed a whole file over the working tree and DESTROYED a `cite-check:ignore` marker I had added directly to that tree an hour earlier, then reintroduced the very citation the marker existed to suppress while writing the correction for it. The remedy is one line and it is now a standing constraint: **one authoritative copy.** Edit the working tree in place; do not keep a scratch copy and push it whole.
 - **Correction 53** -- adding an `OnExit` override split `return true; } };` for EVERY document, so the byte-identical-without-`--stream` invariant failed on a purely COSMETIC change. That is the invariant doing its job; it is now split only when the document actually binds.
 - **Correction 54** -- R70.3's unused-helper fix had been applied to ONE helper instead of made a rule, so two new helpers reintroduced the same defect on six of eighteen fixtures immediately. Every helper is now gated on its own caller list. Same shape as 49, 51 and 52: the fix that lands at a site instead of at the rule comes back.
@@ -295,6 +295,30 @@ both owner calls:
 
 - a resuming agent should treat any compaction summary as a handoff missing its first line, and onboard before acting;
 - lane session records should carry the onboarding directive as their literal first line, so it survives compaction. This document does.
+
+## R81.3 -- R75's finding, in the document that records R75
+
+`cited-paths` on the commit that carried this closeout reported **9 paths cited,
+9 tracked**, and passed. This document names things by name 43 times. **Thirty-four
+of them are bare names the gate cannot see** -- including all twelve `AIF120_*.md`
+rulings, which are this document's entire INDEX.
+
+That is R75's finding exactly: *a gate sees the shape it was built to see, and its
+silence about a class of thing is not evidence the class is clean.* R75 is three
+paragraphs above, in this file, written this session. A green `cited-paths` on a
+closeout whose index is invisible to it is a gate reporting on 9 citations and
+being read as reporting on 43.
+
+Fixed here for the twelve rulings and the five tooling scripts -- they now carry
+`docs/maintenance/` and `gui/uidef/`, so the index is checkable. The rest stay bare
+on purpose: `STUDENTS.cdx` and `TEACHERS.cdx` are data the engine locates,
+`tmp/*` is scratch that should not exist next week, and inventing a path to make a
+gate happy is worse than a name the gate cannot check.
+
+**The general form, and it is not fixed:** a bare filename is a citation with no
+verifiable target, and this house's convention writes rulings that way in every
+index table. R75 made the fixtures reproducible; it did not make the citations
+reachable. That is a lane-wide convention question, not a defect in this document.
 
 ## A closeout committed mid-session is a perishable literal
 
