@@ -36,6 +36,22 @@ notes: 'MEASURED 2026-08-13/14. A task opened as "consolidate the four local-pat
   chosen over a Python module precisely because one call site is PowerShell -- a Python-only helper
   would have left a tenth private copy behind. Eight Python call sites remain to migrate.
 
+  VERIFIED UNDER .NET 2026-08-21, which was a stated precondition for the next promotion run and
+  is now met. One authority feeding two regex engines is only safe if both engines read it the same
+  way, and that had been reasoned about rather than run. Static review first: all three patterns use
+  only constructs whose meaning is identical in Python re and System.Text.RegularExpressions -- no
+  (?P<name>) group syntax, no \Z (which anchors absolutely in Python and before a final newline in
+  .NET), no POSIX classes, and the (?<![A-Za-z0-9]) lookbehinds are fixed-width, so they are legal
+  in both. Then executed, in PowerShell, on the dev_roots_only pattern loaded from the JSON exactly
+  as rebuild-staging.ps1:379 loads it, using real specimens produced by the same day''s sterilization
+  of the staging tree: ''SETPATH DBF = D:\code\ccode\dottalkpp\data\SYSTEMS\CASCADE_ERP\DBF'' returned
+  True and ''SETPATH DBF = SYSTEMS\CASCADE_ERP\DBF'' returned False.
+
+  Both arms deliberately. A leak guard that fires on everything is as useless as one that fires on
+  nothing, and only the negative arm distinguishes a working detector from a broken one that happens
+  to be shouting -- the same reason the 22-case table carries must_not_match rows and not only
+  must_match.
+
   The lesson is not "share your regexes". It is that a guard inherits the blind spots of whoever
   wrote it, and the author is the last person able to see them: the pattern matched the machine the
   author pictured, and the author pictured the machine described in the docs rather than the one
