@@ -9,6 +9,8 @@
 
 #include "main_frame.hpp"
 
+#include "memo_browser_frame.hpp"
+
 #include "res/app_icon.hpp"
 
 #include "datadict/ddict_catalog_paths.hpp"
@@ -64,6 +66,7 @@ enum : int {
     IdWorkspaceOpenDirectory,
     IdWorkspaceLoadRuntime,
     IdWorkspaceClose,
+    IdWorkspaceMemoBrowse,
     IdOpenWorkspace,
     IdSaveWorkspace,
     IdSaveWorkspaceAs,
@@ -437,6 +440,7 @@ MainFrame::MainFrame(std::filesystem::path initial_table, LocaleContext locale)
     Bind(wxEVT_MENU, &MainFrame::OnWorkspaceOpenDirectory, this, IdWorkspaceOpenDirectory);
     Bind(wxEVT_MENU, &MainFrame::OnWorkspaceLoadRuntime, this, IdWorkspaceLoadRuntime);
     Bind(wxEVT_MENU, &MainFrame::OnWorkspaceClose, this, IdWorkspaceClose);
+    Bind(wxEVT_MENU, &MainFrame::OnWorkspaceMemoBrowse, this, IdWorkspaceMemoBrowse);
     Bind(wxEVT_MENU, &MainFrame::OnOpenWorkspace, this, IdOpenWorkspace);
     Bind(wxEVT_MENU, &MainFrame::OnSaveWorkspace, this, IdSaveWorkspace);
     Bind(wxEVT_MENU, &MainFrame::OnSaveWorkspaceAs, this, IdSaveWorkspaceAs);
@@ -500,6 +504,8 @@ void MainFrame::BuildMenu() {
     workspace->Append(IdWorkspaceOpenDirectory, "WORKSPACE OPEN Directory...");
     workspace->Append(IdWorkspaceLoadRuntime, "WORKSPACE LOAD Schema...");
     workspace->Append(IdWorkspaceClose, "WORKSPACE CLOSE");
+    workspace->AppendSeparator();
+    workspace->Append(IdWorkspaceMemoBrowse, "Browse Memo Workspaces...");
     workspace->AppendSeparator();
     workspace->Append(IdOpenWorkspace, "Load Workspace Schema...");
     workspace->Append(IdSaveWorkspace, gui_text(GuiTextId::SaveWorkspace, locale_));
@@ -2172,6 +2178,23 @@ bool MainFrame::RecallCommandHistory(int direction) {
     command_->SetValue(command_history_[static_cast<std::size_t>(command_history_index_)]);
     command_->SetInsertionPointEnd();
     return true;
+}
+
+// AIF-120. Opens the memo browser as its own window owned by this frame -- not
+// a second application and not a modal dialog. It is read-only: it lists the
+// WORKSPACES catalog and renders what each memo field contains, hydrating
+// nothing. Repeated invocations raise the existing window rather than stacking
+// copies.
+void MainFrame::OnWorkspaceMemoBrowse(wxCommandEvent&) {
+    for (wxWindow* child : GetChildren()) {
+        if (auto* existing = dynamic_cast<MemoBrowserFrame*>(child)) {
+            existing->Raise();
+            existing->SetFocus();
+            return;
+        }
+    }
+    auto* browser = new MemoBrowserFrame(this);
+    browser->Show();
 }
 
 } // namespace dottalk::gui::wxui

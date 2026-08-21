@@ -39,7 +39,17 @@ endif()
 set(DOTTALK_WX_SOURCES
   main.cpp
   main_frame.cpp
+  memo_browser_frame.cpp
 )
+
+# AIF-120 R91. The application icon. On MSW it is a LINKED RESOURCE -- the .rc
+# names the .ico, CMake hands it to the resource compiler, and Explorer takes
+# the executable icon from the same resource wxIconBundle reads at run time.
+# Everywhere else the icon is compiled in as XPM by res/app_icon.hpp and there
+# is nothing to add to the source list.
+if (WIN32)
+  list(APPEND DOTTALK_WX_SOURCES res/x64base.rc)
+endif()
 
 add_executable(dottalk_wx WIN32 ${DOTTALK_WX_SOURCES})
 add_executable(dottalk_wx_next WIN32 ${DOTTALK_WX_SOURCES})

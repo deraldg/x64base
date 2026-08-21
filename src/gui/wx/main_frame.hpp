@@ -75,6 +75,7 @@ private:
     void OnWorkspaceOpenDirectory(wxCommandEvent& event);
     void OnWorkspaceLoadRuntime(wxCommandEvent& event);
     void OnWorkspaceClose(wxCommandEvent& event);
+    void OnWorkspaceMemoBrowse(wxCommandEvent& event);
     void OnOpenWorkspace(wxCommandEvent& event);
     void OnSaveWorkspace(wxCommandEvent& event);
     void OnSaveWorkspaceAs(wxCommandEvent& event);
