@@ -207,6 +207,16 @@
         "DOTTALK_WITH_WX": "OFF",
         "BUILD_PYDOTTALK": "OFF"
       }
+    },
+    {
+      "name": "wsl-gui-core",
+      "displayName": "WSL GUI-neutral core (Linux, Ninja, LMDB, no TV/WX)",
+      "description": "wsl-lean plus DOTTALK_WITH_GUI=ON. src/CMakeLists.txt gates gui/core on (DOTTALK_WITH_GUI OR DOTTALK_WITH_WX) and gui/wx on DOTTALK_WITH_WX alone, so this compiles and tests dottalk_gui_core with no toolkit present. dottalk_gui_core links only xbase and memo and contains no wx include; every extra source it pulls in (path_state, path_resolver, the four ddict_*, order_iterator, order_state) already builds on Linux in wsl-lean. Use this to compile and run GUI application logic in the Linux loop; the wx widget layer still requires a Windows MSVC build.",
+      "inherits": "wsl-lean",
+      "binaryDir": "${sourceDir}/build-wsl-gui-core",
+      "cacheVariables": {
+        "DOTTALK_WITH_GUI": "ON"
+      }
     }
   ],
   "buildPresets": [
@@ -222,7 +232,8 @@
     { "name": "pro-md-labtalk-Release", "configurePreset": "pro-md-labtalk", "configuration": "Release" },
     { "name": "ansi-mt-Release", "configurePreset": "ansi-mt", "configuration": "Release" },
     { "name": "wsl-Release", "configurePreset": "wsl", "configuration": "Release" },
-    { "name": "wsl-lean", "configurePreset": "wsl-lean", "configuration": "Release" }
+    { "name": "wsl-lean", "configurePreset": "wsl-lean", "configuration": "Release" },
+    { "name": "wsl-gui-core", "configurePreset": "wsl-gui-core", "configuration": "Release" }
   ],
   "testPresets": [
     { "name": "core", "configurePreset": "core", "output": { "outputOnFailure": true } },
@@ -236,6 +247,7 @@
     { "name": "pro-md-Release", "configurePreset": "pro-md", "configuration": "Release", "output": { "outputOnFailure": true } },
     { "name": "pro-md-labtalk-Release", "configurePreset": "pro-md-labtalk", "configuration": "Release", "output": { "outputOnFailure": true } },
     { "name": "ansi-mt-Release", "configurePreset": "ansi-mt", "configuration": "Release", "output": { "outputOnFailure": true } },
-    { "name": "wsl-Release", "configurePreset": "wsl", "output": { "outputOnFailure": true } }
+    { "name": "wsl-Release", "configurePreset": "wsl", "output": { "outputOnFailure": true } },
+    { "name": "wsl-gui-core", "configurePreset": "wsl-gui-core", "output": { "outputOnFailure": true } }
   ]
 }
