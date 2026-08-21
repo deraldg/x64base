@@ -71,7 +71,7 @@ SETLMDB
 
 * If you want an absolute-path form too, uncomment and edit the drive/path:
 * ECHO --- 4b) SETLMDB <ABS>\students.cdx.d (explicit envdir, absolute) ---
-* SETLMDB D:\code\ccode\dottalkpp\data\indexes\students.cdx.d
+* SETLMDB indexes\students.cdx.d
 * SETLMDB
 
 * ============================================================

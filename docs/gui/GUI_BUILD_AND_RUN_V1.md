@@ -60,7 +60,7 @@ The CLI lane runs `dottalkpp --script` in a temporary script when a CLI
 executable is discoverable. To force the executable path:
 
 ```powershell
-$env:DOTTALKPP_GUI_CLI = "D:\code\ccode\build\src\Release\dottalkpp.exe"
+$env:DOTTALKPP_GUI_CLI = "build\src\Release\dottalkpp.exe"
 ```
 
 Regenerate GUI message adapters after editing
@@ -91,21 +91,21 @@ read-only pure-Python DBF preview reader.
 Configure against the canonical Windows build root:
 
 ```powershell
-cmake -S D:\code\ccode -B D:\code\ccode\build -G "Visual Studio 17 2022" -A x64 -D CMAKE_TOOLCHAIN_FILE=$env:VCPKG_ROOT\scripts\buildsystems\vcpkg.cmake -D VCPKG_TARGET_TRIPLET=x64-windows -D DOTTALK_WITH_GUI=ON -D DOTTALK_WITH_WX=OFF -D DOTTALK_WITH_TV=OFF -D DOTTALK_WITH_INDEX=ON -D BUILD_TESTING=ON
+cmake -S . -B build -G "Visual Studio 17 2022" -A x64 -D CMAKE_TOOLCHAIN_FILE=$env:VCPKG_ROOT\scripts\buildsystems\vcpkg.cmake -D VCPKG_TARGET_TRIPLET=x64-windows -D DOTTALK_WITH_GUI=ON -D DOTTALK_WITH_WX=OFF -D DOTTALK_WITH_TV=OFF -D DOTTALK_WITH_INDEX=ON -D BUILD_TESTING=ON
 ```
 
 Build and test:
 
 ```powershell
-cmake --build D:\code\ccode\build --config Release --target dottalk_gui_core_async_smoke
-ctest --test-dir D:\code\ccode\build -C Release -R dottalk_gui_core_async_smoke --output-on-failure
+cmake --build build --config Release --target dottalk_gui_core_async_smoke
+ctest --test-dir build -C Release -R dottalk_gui_core_async_smoke --output-on-failure
 ```
 
-wx locale smoke:
+Workbench locale smoke:
 
 ```powershell
-D:\code\ccode\build\src\gui\wx\Release\dottalk_wx_next.exe --locale es
-D:\code\ccode\build\src\gui\wx\Release\dottalk_wx_next.exe --locale it
+build\src\gui\wx\Release\dottalk_wb_next.exe --locale es
+build\src\gui\wx\Release\dottalk_wb_next.exe --locale it
 ```
 
 After launch, use the `Language` menu to switch among the seeded GUI locales
@@ -113,10 +113,10 @@ without restarting.
 
 ## C++ wxWidgets Frontend
 
-`dottalk_wx_next` is the active native wx target:
+`dottalk_wb_next` is the active native Workbench target:
 
 ```powershell
-cmake --build D:\code\ccode\build --config Release --target dottalk_wx_next
+cmake --build build --config Release --target dottalk_wb_next
 ```
 
 This currently requires wxWidgets to be installed for the selected toolchain.
@@ -124,34 +124,34 @@ This currently requires wxWidgets to be installed for the selected toolchain.
 can provide it.
 
 After building, launch directly from the wx target directory. The wx target
-copies the wxWidgets runtime DLLs beside `dottalk_wx_next.exe` on Windows:
+copies the wxWidgets runtime DLLs beside `dottalk_wb_next.exe` on Windows:
 
 ```powershell
-D:\code\ccode\build\src\gui\wx\Release\dottalk_wx_next.exe
+build\src\gui\wx\Release\dottalk_wb_next.exe
 ```
 
 Launch with an initial table:
 
 ```powershell
-D:\code\ccode\build\src\gui\wx\Release\dottalk_wx_next.exe D:\code\ccode\dottalkpp\data\dbf\x64\ENROLL.DBF
+build\src\gui\wx\Release\dottalk_wb_next.exe dottalkpp\data\dbf\x64\ENROLL.DBF
 ```
 
 If a local build tree was produced before this copy step existed, rebuild the
-`dottalk_wx_next` target once. As a temporary fallback, put the vcpkg triplet `bin`
+`dottalk_wb_next` target once. As a temporary fallback, put the vcpkg triplet `bin`
 directory on `PATH` before launching.
 
-The wx skeleton currently keeps multiple opened DBFs as GUI work areas. Use the
+The Workbench skeleton currently keeps multiple opened DBFs as GUI work areas. Use the
 left Areas panel to switch between open tables, and use Close Area to close the
 selected area without closing the others.
 
-For the canonical wx build lane, prefer the wrapper so the CLI and wx runtime DLL
+For the canonical Workbench build lane, prefer the wrapper so the CLI and wx runtime DLL
 paths are established consistently:
 
 ```powershell
-D:\code\ccode\wx.run.ps1 --locale it D:\code\ccode\dottalkpp\data\dbf\x64\ENROLL.DBF
+.\wb.run.ps1 --locale it dottalkpp\data\dbf\x64\ENROLL.DBF
 ```
 
-The wx Workbench mirrors the Python lane: runtime-backed Workspace load/save/save-as,
+The Workbench mirrors the Python lane: runtime-backed Workspace load/save/save-as,
 Path Roots inspection, SET DBF / SET INDEX skeleton entries, and a Run >
 SCAN...ENDSCAN... dialog that displays CLI scan output in a separate results
 window.

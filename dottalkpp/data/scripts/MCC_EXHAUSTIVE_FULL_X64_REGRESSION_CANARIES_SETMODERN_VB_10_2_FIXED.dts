@@ -894,6 +894,6 @@ SCHEMAS
 SCHEMAS CLOSE
 ECHO ===== X64 REGRESSION VB_10_2_FIXED END =====
 * QUIT
-* $py12 = "D:\code\ccode\build\vcpkg_installed\x64-windows\tools\python3\python.exe"
-* & $py12 D:\code\ccode\bindings\pydottalk_smoke.py
+* $py12 = "..\..\build\vcpkg_installed\x64-windows\tools\python3\python.exe"
+* & $py12 ..\..\bindings\pydottalk_smoke.py
 

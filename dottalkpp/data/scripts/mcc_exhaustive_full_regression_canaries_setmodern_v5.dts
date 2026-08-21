@@ -713,6 +713,6 @@ SCHEMAS CLOSE
 ECHO ===== V4 REGRESSION END =====
 QUIT
 
-$py13 = "D:\code\ccode\build\vcpkg_installed\x64-windows\tools\python3\python.exe"
-& $py13 D:\code\ccode\bindings\pydottalk_smoke.py
+$py13 = "..\..\build\vcpkg_installed\x64-windows\tools\python3\python.exe"
+& $py13 ..\..\bindings\pydottalk_smoke.py
 

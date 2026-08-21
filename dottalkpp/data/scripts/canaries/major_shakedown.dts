@@ -587,6 +587,6 @@ ECHO ===== EXHAUSTIVE FULL REGRESSION END =====
 
 * OPTIONAL (EXTERNAL): pydottalk smoke via BANG
 * Uncomment and adjust path if you want it inside the same run:
-* ! "D:\code\ccode\build\vcpkg_installed\x64-windows\tools\python3\python.exe" D:\code\ccode\bindings\pydottalk_smoke.py
+* ! "..\..\build\vcpkg_installed\x64-windows\tools\python3\python.exe" ..\..\bindings\pydottalk_smoke.py
 
 QUIT

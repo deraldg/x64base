@@ -98,22 +98,39 @@ Notes:
 
 Full walkthrough: `dottalkpp/data/scripts/mcc/README.md`.
 
-## Editions (in development -- not yet in this repository)
+## Editions
 
-A larger build-composition system is being developed: named **products**
-(`LEAN`, `PROFESSIONAL`, `EDUCATIONAL`, `DEVELOPMENT`) and explicit **index
-modes** (`NONE`, `LEGACY`, `LMDB`), with dedicated presets. It is **not on the
-public repository yet** -- do not expect `DOTTALK_PRODUCT` or `windows-lean-*`
-presets in this clone.
+**Corrected 2026-08-17.** This section previously said the edition system was
+"not on the public repository yet" and told readers not to expect
+`DOTTALK_PRODUCT` or `windows-lean-*` presets in this clone. That is wrong, and
+was wrong on `main` as well: `origin/main`'s `CMakePresets.json` carries 28
+occurrences of those names, including the `windows-lean-table` and
+`windows-lean-lmdb` presets. The page was telling readers that features present
+in their own checkout were absent.
 
-The design and proof records for that in-progress work:
+Both axes are live and are **independent** of each other:
+
+- **Products** (`DOTTALK_PRODUCT`): `LEAN`, `PROFESSIONAL`, `EDUCATIONAL`,
+  `DEVELOPMENT`. Default `DEVELOPMENT`.
+- **Index modes** (`DOTTALK_INDEX_MODE`): `NONE`, `LEGACY`, `LMDB`.
+
+`LEAN` does not mean engine-only and does not mean no-index. Note also that the
+default index mode is **`LEGACY`, not `NONE`**: passing `-DDOTTALK_WITH_INDEX=OFF`
+disables only the LMDB backend and leaves the house index in place.
+
+**Full reference:** `docs/manuals/developer/dev/dev-21-build-system.md` (DEV-21
+Build System) documents every target, option, preset, entry-point script and
+platform status, with the measured landmines.
+
+Design and proof records for the edition work:
 
 - `docs/maintenance/XBASE_XINDEX_BUILD_PROOF_MATRIX_V1.md`
 - `docs/maintenance/XBASE_OPTIONAL_INDEX_ARCHITECTURE_DECISION_V1.md`
 - `docs/maintenance/X64BASE_ENGINE_EDITION_SEPARATION_PLAN_V1.md`
 
-When the edition system is published and certified with a cold-clone build, this
-page will describe it. Until then, use the presets in the table above.
+Still outstanding: a cold-clone build certification for the edition matrix. The
+presets exist and are used daily; what has NOT been demonstrated is a fresh
+clone building each product/index combination from scratch on a clean machine.
 
 ## License
 
