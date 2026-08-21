@@ -205,7 +205,8 @@
         "DOTTALK_WITH_TV": "OFF",
         "DOTTALK_WITH_GUI": "OFF",
         "DOTTALK_WITH_WX": "OFF",
-        "BUILD_PYDOTTALK": "OFF"
+        "BUILD_PYDOTTALK": "OFF",
+        "DOTTALK_SKIP_PACKAGE_INVENTORY": "ON"
       }
     },
     {

@@ -557,6 +557,21 @@ endif()
 # Product Package Allow-list
 # ============================================================
 
+# AIF-120. The inventory step below reads and SHA-256s every file the product
+# manifest names -- measured 254 files / 65,663,475 bytes for DEVELOPMENT -- on
+# every configure, and then registers all of them as CMAKE_CONFIGURE_DEPENDS so
+# touching any one re-triggers it. Across a WSL 9p mount to a Windows drive that
+# was the whole of a 530-second configure, for a step that contributes nothing to
+# compiling or linking: its only consumers are install() rules.
+#
+# OFF by default, so release and Windows builds hash exactly what they always
+# hashed. The in-loop Linux presets set it ON -- their own descriptions say they
+# exist to be fast. A build with this ON cannot produce a package, and says so.
+if (NOT DEFINED DOTTALK_SKIP_PACKAGE_INVENTORY)
+    option(DOTTALK_SKIP_PACKAGE_INVENTORY
+        "Skip the product package inventory and its install rules (in-loop builds)" OFF)
+endif()
+
 # Product packaging is a third filter, separate from .gitignore (never
 # version) and PROMOTE.manifest (publish now). It selects only git-tracked
 # runtime inputs for this named product and never recursively copies the
@@ -574,6 +589,14 @@ set(DOTTALK_PRODUCT_INVENTORY
     "${_dottalk_package_dir}/${_dottalk_product_lower}-product-inventory.json")
 set(_dottalk_package_file_list
     "${_dottalk_package_dir}/${_dottalk_product_lower}-package-files.txt")
+# The guarded body keeps its original indentation on purpose: re-indenting
+# forty lines would bury a six-line change in a whole-block diff.
+if (DOTTALK_SKIP_PACKAGE_INVENTORY)
+message(STATUS
+    "Product package: SKIPPED (DOTTALK_SKIP_PACKAGE_INVENTORY=ON) "
+    "-- this build cannot produce an installable package")
+else()
+
 execute_process(
     COMMAND "${Python3_EXECUTABLE}"
             "${CMAKE_SOURCE_DIR}/tools/packaging/build_product_inventory.py"
@@ -623,11 +646,15 @@ foreach(_dottalk_package_rel IN LISTS DOTTALK_PACKAGE_FILES)
             DESTINATION "${_dottalk_package_dest}")
 endforeach()
 
+endif()
+
 install(FILES "${CMAKE_SOURCE_DIR}/LICENSE" DESTINATION ".")
 install(FILES "${DOTTALK_PACKAGE_MANIFEST}"
         DESTINATION "." RENAME "product.manifest")
-install(FILES "${DOTTALK_PRODUCT_INVENTORY}"
-        DESTINATION "." RENAME "product-inventory.json")
+if (NOT DOTTALK_SKIP_PACKAGE_INVENTORY)
+    install(FILES "${DOTTALK_PRODUCT_INVENTORY}"
+            DESTINATION "." RENAME "product-inventory.json")
+endif()
 
 if (BUILD_TESTING)
     foreach(_dottalk_package_product IN ITEMS
@@ -643,6 +670,13 @@ if (BUILD_TESTING)
                     --output
                     "${_dottalk_package_dir}/${_dottalk_package_product}-test-inventory.json"
         )
+        # AIF-120. These four run the same read-and-SHA-256 pass as the
+        # configure step, once per product: measured 230 of a 235-second ctest
+        # run on Linux, against 4.2 seconds for all twelve code tests combined.
+        # The label lets an in-loop run skip them -- ctest -LE packaging -- the
+        # way src/tests/CMakeLists.txt already labels its own.
+        set_tests_properties("package_manifest_${_dottalk_package_product}"
+            PROPERTIES LABELS "packaging")
     endforeach()
 endif()
 
