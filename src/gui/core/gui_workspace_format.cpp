@@ -10,7 +10,9 @@
 #include "gui/core/gui_workspace_format.hpp"
 
 #include "dottalk/minidb.hpp"
+#include "dottalk/dtschema.hpp"
 
+#include <cctype>
 #include <algorithm>
 #include <iomanip>
 #include <sstream>
@@ -126,6 +128,19 @@ std::string format_workspace_graph_text(const WorkspaceModel& model,
         if (shown == 0) graph << "    none\n";
 
         graph << "\n  Relations\n";
+        // AIF-120. A posture can mirror its RELATION lines while every one of
+        // its AREA lines fails to resolve -- measured live: m1_check.dtschema
+        // opened 0 of 43 tables and still produced 58 relations. Rendering
+        // those identically to live ones puts a healthy-looking graph directly
+        // under "0 area(s)" and leaves the reader to notice the contradiction.
+        // Endpoint-by-endpoint resolution needs an alias on AreaInfo (today
+        // display_name is alias + ".DBF", and guessing the alias back out of it
+        // would be a fourth fuzzy name comparison in this tree). The zero-area
+        // case needs no guessing and is the one that actually occurs.
+        if (count == 0) {
+            graph << "    [UNBACKED] No table is open in this workspace, so every\n"
+                     "               endpoint below is a name with nothing behind it.\n";
+        }
         shown = 0;
         for (const auto& relation : model.relations) {
             if (relation.workspace != workspace) continue;
@@ -200,6 +215,84 @@ std::string format_minidb_container_text(const std::string& payload,
             << " section(s) this reader does not understand\n";
         for (const auto& sect : sc.ignored_sections) out << "      " << sect << "\n";
     }
+
+    // AIF-120. Is this container complete enough to rebuild from?
+    //
+    // The CDX container is the PUBLISHED index; LMDB is derived from it by
+    // BUILDLMDB and is deliberately never carried here (mcc_build_x64.dts:
+    // "LMDB is a derived backend, not a stored format", measured at 53 GB on
+    // disk against a 104 KB container). So a container is rebuildable exactly
+    // when every table and index its posture DECLARES is actually present as a
+    // member -- write that back to disk and BUILDLMDB has everything it needs.
+    //
+    // A missing member is worth knowing BEFORE the writeback, not after
+    // BUILDLMDB comes up short. The "none" sentinel is honoured here for the
+    // same reason it is everywhere else: a declared index of "none" is an
+    // absence, not a filename.
+    {
+        auto basename_lower = [](std::string v) {
+            const auto slash = v.find_last_of("/\\");
+            if (slash != std::string::npos) v = v.substr(slash + 1);
+            for (char& ch : v) ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+            return v;
+        };
+
+        std::vector<std::string> have_tables, have_indexes;
+        for (const auto& m : sc.files) {
+            (m.relpath.rfind("indexes/", 0) == 0 ? have_indexes : have_tables)
+                .push_back(basename_lower(m.relpath));
+        }
+        auto present = [&](const std::vector<std::string>& v, const std::string& want) {
+            return std::find(v.begin(), v.end(), basename_lower(want)) != v.end();
+        };
+
+        std::vector<std::string> missing;
+        std::size_t declared_tables = 0, declared_indexes = 0;
+        std::istringstream areas(sc.posture);
+        std::string aline;
+        while (std::getline(areas, aline)) {
+            if (!aline.empty() && aline.back() == '\r') aline.pop_back();
+            if (aline.rfind("AREA ", 0) != 0 && aline.rfind("area ", 0) != 0) continue;
+            std::string dbf, idx, alias;
+            std::istringstream parts(aline);
+            std::string part;
+            while (std::getline(parts, part, '|')) {
+                const auto eq = part.find('=');
+                if (eq == std::string::npos) continue;
+                std::string key = part.substr(0, eq);
+                std::string val = part.substr(eq + 1);
+                while (!key.empty() && std::isspace(static_cast<unsigned char>(key.front()))) key.erase(key.begin());
+                while (!key.empty() && std::isspace(static_cast<unsigned char>(key.back()))) key.pop_back();
+                while (!val.empty() && std::isspace(static_cast<unsigned char>(val.front()))) val.erase(val.begin());
+                while (!val.empty() && std::isspace(static_cast<unsigned char>(val.back()))) val.pop_back();
+                for (char& ch : key) ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+                if (key == "dbf") dbf = val;
+                else if (key == "index") idx = val;
+                else if (key == "alias") alias = val;
+            }
+            if (!dottalk::dtschema::is_absent(dbf)) {
+                ++declared_tables;
+                if (!present(have_tables, dbf)) missing.push_back(alias + ": table " + dbf);
+            }
+            if (!dottalk::dtschema::is_absent(idx)) {
+                ++declared_indexes;
+                if (!present(have_indexes, idx)) missing.push_back(alias + ": index " + idx);
+            }
+        }
+
+        out << "  rebuild   : ";
+        if (missing.empty()) {
+            out << "COMPLETE -- " << declared_tables << " table(s) and "
+                << declared_indexes << " index container(s) declared, all present.\n"
+                << "              Written back to disk, BUILDLMDB can re-derive the\n"
+                << "              LMDB envs from these CDX containers.\n";
+        } else {
+            out << "INCOMPLETE -- " << missing.size() << " declared member(s) absent:\n";
+            for (const auto& m : missing) out << "              " << m << "\n";
+            out << "              A writeback would land short of what the posture claims.\n";
+        }
+    }
+
     out << "\n";
 
     auto dump = [&](const char* label,
@@ -221,7 +314,41 @@ std::string format_minidb_container_text(const std::string& payload,
     while (std::getline(ps, line)) {
         if (!line.empty() && line.back() == '\r') line.pop_back();
         if (line.empty()) continue;
-        out << "    " << line << "\n";
+
+        // AIF-120. The three ROOT lines are NOT equally operative, and printing
+        // them identically invites the reader to assume they are. The CLI says
+        // so on every load (cmd_workspace.cpp:1997 and :2004): DBFROOT/IDXROOT
+        // apply to that load's resolution only, and LMDBROOT is "recorded, not
+        // applied" under the chartered disk-only rule.
+        //
+        // The reason behind that rule, since "chartered" alone teaches nothing:
+        // LMDB is disk-backed and cannot serve a RAM-resident workspace.
+        // index_manager.cpp:110 routes a .cdx under a mounted ramfs root to
+        // CdxNativeBackend (CDX-V64, LMDB-free), skipping the LMDB env gate
+        // entirely, and hydrate_minidb writes every .cdx member into the RAM
+        // VFS. So a hydrated workspace never reaches LMDB, and the root it
+        // carried would have nothing to point at.
+        //
+        // These roots also record whoever SAVED the container -- one row in the
+        // live catalog carries a Windows D:\ root and another an agent session's
+        // mount path -- so they are provenance, not location. Hydration replaces
+        // the first two outright.
+        std::string low;
+        low.reserve(line.size());
+        for (char ch : line) low.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(ch))));
+
+        const char* note = nullptr;
+        if (low.rfind("lmdbroot ", 0) == 0) {
+            note = "   <- recorded, not applied: LMDB needs a disk, and a hydrated\n"
+                   "                 workspace serves its .cdx from RAM through the\n"
+                   "                 LMDB-free native CDX-V64 backend instead";
+        } else if (low.rfind("dbfroot ", 0) == 0 || low.rfind("idxroot ", 0) == 0) {
+            note = "   <- the saver's root; hydration replaces this with the RAM root";
+        }
+
+        out << "    " << line;
+        if (note) out << note;
+        out << "\n";
     }
 
     out << "\n  Nothing above was hydrated. These bytes are still in the memo;\n"

@@ -1858,9 +1858,22 @@ std::size_t Session::mirror_workspace_load_schema(const std::filesystem::path& s
                                 std::to_string(indexes_attached) + " index container(s)"));
     }
     if (!impl_->relations.empty()) {
-        messages.push_back(info("gui.workspace.relations_mirrored",
-                                "WORKSPACE LOAD mirrored schema relations into the GUI workspace model.",
-                                std::to_string(impl_->relations.size()) + " relation(s)"));
+        // AIF-120. Mirroring relations into a workspace where NO table opened is
+        // not neutral news, and reporting it at info severity directly beneath a
+        // run of schema_table_missing warnings reads as success. Measured live:
+        // m1_check.dtschema logged 43 table-missing warnings, then "mirrored
+        // 58 relation(s)" as info, and the graph drew them as though live.
+        if (opened == 0) {
+            messages.push_back(warning("gui.workspace.relations_unbacked",
+                "WORKSPACE LOAD mirrored schema relations, but no table opened -- "
+                "every endpoint is missing.",
+                std::to_string(impl_->relations.size()) +
+                " relation(s) against 0 open area(s)"));
+        } else {
+            messages.push_back(info("gui.workspace.relations_mirrored",
+                                    "WORKSPACE LOAD mirrored schema relations into the GUI workspace model.",
+                                    std::to_string(impl_->relations.size()) + " relation(s)"));
+        }
     }
     return opened;
 }
