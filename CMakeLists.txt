@@ -280,6 +280,21 @@ endif()
 # Main Source Tree
 # ============================================================
 
+# AIF-120. CTest.cmake:175 does find_program(MEMORYCHECK_COMMAND NAMES purify
+# valgrind boundscheck drmemory cuda-memcheck compute-sanitizer). None of those
+# are installed here, so the cache holds MEMORYCHECK_COMMAND-NOTFOUND -- and
+# CMake re-runs a find_program whose cached result is NOTFOUND on EVERY
+# configure. Measured 14.7 seconds per configure searching for memory checkers
+# that are not there, over a 9p mount.
+#
+# Seeding the cache with an empty (but not NOTFOUND) value makes find_program
+# return immediately. Nothing is lost: ctest -T memcheck has no checker today
+# either. Set MEMORYCHECK_COMMAND explicitly to use a real one.
+if (NOT DEFINED MEMORYCHECK_COMMAND)
+    set(MEMORYCHECK_COMMAND "" CACHE FILEPATH
+        "Memory checker for ctest -T memcheck; empty skips the probe")
+endif()
+
 include(CTest)
 
 # ============================================================

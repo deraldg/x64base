@@ -189,7 +189,7 @@
     {
       "name": "wsl-lean",
       "displayName": "WSL lean (Linux, Ninja, LMDB, no TV/WX)",
-      "description": "Fast in-loop Linux build. Uses the canonical vcpkg.json with VCPKG_MANIFEST_FEATURES=index, so vcpkg installs only the four base packages and never builds tvision or wxwidgets -- no vcpkg-wsl.json swap needed. Lean means lean DEPENDENCIES, not a lean command surface: PRODUCT=DEVELOPMENT and WITH_DEV=ON keep REGRESSION available. vcpkg_installed is per-build-dir, so this does not disturb build-wsl.",
+      "description": "Fast in-loop Linux build. Uses the canonical vcpkg.json with VCPKG_MANIFEST_FEATURES=index, so vcpkg installs only the four base packages and never builds tvision or wxwidgets -- no vcpkg-wsl.json swap needed. Lean means lean DEPENDENCIES, not a lean command surface: PRODUCT=DEVELOPMENT and WITH_DEV=ON keep REGRESSION available. vcpkg_installed is per-build-dir, so this does not disturb build-wsl. VCPKG_MANIFEST_INSTALL=OFF because the manifest re-install measured 141.6 of 185 configure seconds while reporting 36.7ms of actual work -- the rest is process start, manifest resolution and ABI hashing over the 9p mount. The packages are already in vcpkg_installed. After changing vcpkg.json, or on a fresh build dir, configure once with -DVCPKG_MANIFEST_INSTALL=ON.",
       "inherits": "core-base",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build-wsl-lean",
@@ -206,7 +206,8 @@
         "DOTTALK_WITH_GUI": "OFF",
         "DOTTALK_WITH_WX": "OFF",
         "BUILD_PYDOTTALK": "OFF",
-        "DOTTALK_SKIP_PACKAGE_INVENTORY": "ON"
+        "DOTTALK_SKIP_PACKAGE_INVENTORY": "ON",
+        "VCPKG_MANIFEST_INSTALL": "OFF"
       }
     },
     {
