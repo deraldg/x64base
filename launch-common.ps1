@@ -284,13 +284,13 @@ function Invoke-DotTalkCliRuntime {
     }
 }
 
-function Invoke-DotTalkWxRuntime {
+function Invoke-DotTalkWbRuntime {
     param(
         [Parameter(Mandatory = $true)]
         [string]$EntryScriptPath,
 
         [Parameter(Mandatory = $true)]
-        [string[]]$WxRelativeExeCandidates,
+        [string[]]$WbRelativeExeCandidates,
 
         [string[]]$AppArgs
     )
@@ -298,8 +298,8 @@ function Invoke-DotTalkWxRuntime {
     $layout = Get-DotTalkLayout -EntryScriptPath $EntryScriptPath
     Set-DotTalkTraceDefaults
 
-    $wxCandidates = @(
-        $WxRelativeExeCandidates |
+    $wbCandidates = @(
+        $WbRelativeExeCandidates |
         Where-Object { $_ -ne $null -and $_ -ne "" } |
         ForEach-Object { Join-Path $layout.RepoRoot $_ }
     )
@@ -314,13 +314,13 @@ function Invoke-DotTalkWxRuntime {
     Assert-DotTalkPath -LiteralPath $layout.AppRoot -Label "Application root"
     Assert-DotTalkPath -LiteralPath $layout.RuntimeData -Label "Runtime data path"
 
-    $wxExe = $wxCandidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
-    if (-not $wxExe) {
-        throw "wx executable not found. Checked: $($wxCandidates -join ', ')"
+    $wbExe = $wbCandidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
+    if (-not $wbExe) {
+        throw "Workbench executable not found. Checked: $($wbCandidates -join ', ')"
     }
 
-    if ($wxExe -like "*build-wx-fixed-local*") {
-        Write-Warning "Using deprecated wx build root at $wxExe. Canonical GUI build root is $($layout.BuildRoot)."
+    if ($wbExe -like "*build-wx-fixed-local*") {
+        Write-Warning "Using deprecated wx build root at $wbExe. Canonical GUI build root is $($layout.BuildRoot)."
     }
 
     $cliExe = $cliCandidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
@@ -334,10 +334,10 @@ function Invoke-DotTalkWxRuntime {
     $env:DOTTALKPP_DATA = $layout.RuntimeData
     $env:DOTTALK_DATA = $layout.RuntimeData
 
-    $wxDir = Split-Path -Parent $wxExe
-    $env:DOTTALKPP_GUI_BIN = $wxDir
+    $wbDir = Split-Path -Parent $wbExe
+    $env:DOTTALKPP_GUI_BIN = $wbDir
 
-    $runtimePathParts = @($wxDir)
+    $runtimePathParts = @($wbDir)
     if ($env:VCPKG_ROOT) {
         $runtimePathParts += (Join-Path $env:VCPKG_ROOT "installed\x64-windows\bin")
     }
@@ -352,7 +352,7 @@ function Invoke-DotTalkWxRuntime {
 
     Push-Location $layout.RuntimeData
     try {
-        & $wxExe @runtimeArgs
+        & $wbExe @runtimeArgs
         Set-DotTalkLastExitCode
     }
     finally {

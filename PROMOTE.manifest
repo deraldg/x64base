@@ -83,15 +83,15 @@ config/package/lean.manifest
 config/package/professional.manifest
 config/package/educational.manifest
 
-# --- launchers (product front-ends: pydottalk, CLI, wx GUI) ----------------
+# --- launchers (product front-ends: pydottalk, CLI, Workbench GUI) ----------------
 #     NOT listed: holdout products (bible, erp/cascade, artic) and ALPHA
 #     subsystems (pycrud, dottalk-webui).
 run-pydottalk.ps1
 run-cli.ps1
-run-wx.ps1
-run-wx-next.ps1
-wx.run.ps1
-wx.next.run.ps1
+run-wb.ps1
+run-wb-next.ps1
+wb.run.ps1
+wb.next.run.ps1
 launch-common.ps1
 tk.run.ps1
 tk.run.sh
