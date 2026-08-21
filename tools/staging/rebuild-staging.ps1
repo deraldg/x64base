@@ -267,10 +267,30 @@ $misses = New-Object System.Collections.ArrayList
 foreach ($entry in $manifest) {
     $full = Join-Path $dev $entry
     $hits = @(Get-ChildItem -Path $full -File -Recurse:$false -ErrorAction SilentlyContinue)
-    # '**' or directory entries: recurse
-    if ($entry -match '\*\*' -or (Test-Path -LiteralPath $full -PathType Container)) {
+
+    if ($entry -match '\*\*') {
+        # `**` is NOT a recursive glob to Get-ChildItem -Path. It is resolved as an
+        # ordinary single-level wildcard, so `**/*.text` joined onto the dev root
+        # matched NOTHING while docs/ai-friendly/DOTTALKPP_DOT_TEXT_CONVENTION.text
+        # sat tracked two levels down -- the AIF-093 "chosen to travel" marker, which
+        # .gitignore carries an explicit `!**/*.text` guard for, and which had
+        # consequently never once travelled. Measured 2026-08-21: present in
+        # development, absent from main.
+        #
+        # Split the pattern and let -Recurse do the walking, which is what the entry
+        # always meant. The old code reported this as an entry that "matched nothing",
+        # a phrasing that reads as "there are none of these" rather than "a file you
+        # deliberately marked was missed" -- absence and failure returning one answer.
+        $leaf = Split-Path $entry -Leaf
+        $base = Split-Path $entry -Parent
+        $base = if ([string]::IsNullOrWhiteSpace($base) -or $base -match '^\*\*[\\/]?$') { $dev }
+                else { Join-Path $dev ($base -replace '[\\/]?\*\*[\\/]?$','') }
+        $hits = @(Get-ChildItem -LiteralPath $base -Filter $leaf -File -Recurse -ErrorAction SilentlyContinue)
+    }
+    elseif (Test-Path -LiteralPath $full -PathType Container) {
         $hits = @(Get-ChildItem -Path $full -File -Recurse -ErrorAction SilentlyContinue)
     }
+
     if (-not $hits) { [void]$misses.Add($entry); continue }
     foreach ($h in $hits) {
         $rel = $h.FullName.Substring($dev.Length + 1)
