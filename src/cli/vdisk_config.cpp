@@ -10,6 +10,7 @@
 // src/cli/vdisk_config.cpp
 // [vdisk] admin config parser + Layer-1 sizing (AIF-043). See cli/vdisk_config.hpp.
 
+#include "common/path_state.hpp"
 #include "cli/vdisk_config.hpp"
 
 #include <algorithm>
@@ -30,6 +31,11 @@
 #endif
 
 namespace dottalk::vdisk {
+
+std::string default_ini_path()
+{
+    return (dottalk::paths::get_slot(dottalk::paths::Slot::BIN) / "vdisk.ini").string();
+}
 
 namespace {
 

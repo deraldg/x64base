@@ -45,6 +45,12 @@ struct VDiskConfig {
 const char* mode_name(Mode m) noexcept;
 const char* on_full_name(OnFull f) noexcept;
 
+// AIF-120. Where the admin config lives: BIN/vdisk.ini, beside dottalkpp.ini
+// and init.ini. This was a static helper inside cmd_vdisk.cpp; hydration
+// admission needs the same file, and a path convention with two copies is the
+// shape this lane keeps finding at the bottom of its bugs.
+std::string default_ini_path();
+
 // Parse an INI file for the [vdisk] block. Missing file/block => present=false.
 // Comments: lines beginning with ; # or *; inline ;/# after a value are trimmed.
 // Unknown keys ignored; missing keys keep the defaults above.

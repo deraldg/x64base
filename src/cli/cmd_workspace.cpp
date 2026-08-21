@@ -210,6 +210,7 @@
 #include "xbase_64.hpp"
 #include "memo/memo_auto.hpp"   // cli_memo::memo_auto_on_use / memo_auto_on_close
 #include "dottalk/minidb.hpp"       // AIF-120: the MINIDB 1 container scanner
+#include "cli/vdisk_config.hpp"     // AIF-120: hydration admission budget
 // AIF-070 M2 (memo carrier) dependencies:
 #include "xbase/dbf_create.hpp"          // create the WORKSPACES catalog (X64, memo field)
 #include "xbase/field_name_policy.hpp"   // descriptor-name planning (two name planes)
@@ -2406,6 +2407,13 @@ static void save_to_memo(const std::string& name, int version = 2,
                && set_by_name(a, "FMT", minidb ? "MINIDB 1"
                                                : (version == 3 ? "DTSHEMA 3" : "DTSHEMA 2"), err)
                && set_by_name(a, "SIZE_B", std::to_string(payload.size()), err)
+               // AIF-120: EST_HYD_B's first writer. mdBytes is the sum of the
+               // container's FILE lengths -- exactly what hydration will put in
+               // RAM -- and the scanner re-derives the same number at load time,
+               // so the two can be checked against each other. Left blank for a
+               // posture-only payload, which has no RAM hydration path at all
+               // (LOAD ... MEMO RAM refuses non-MINIDB by design).
+               && (!minidb || set_by_name(a, "EST_HYD_B", std::to_string(mdBytes), err))
                && set_by_name(a, "MAX_AREAS", std::to_string(areaCount), err)
                && set_by_name(a, "DEPTH", "0", err)          // leaf until hydration says otherwise
                && set_by_name(a, "SELF_REF", selfRef ? "T" : "F", err)
@@ -2416,7 +2424,8 @@ static void save_to_memo(const std::string& name, int version = 2,
                && set_by_name(a, "DBF_ROOT", s8(dbf_root()), err)
                && set_by_name(a, "IDX_ROOT", s8(idx_root()), err)
                && set_by_name(a, "SNAPSHOT", mr.ref.token, err);
-        // PAYLOAD_SHA / EST_HYD_B / VERIFIED_AT remain chartered columns.
+        // PAYLOAD_SHA / VERIFIED_AT remain chartered columns; EST_HYD_B is
+        // populated above for MINIDB payloads as of AIF-120 R103.
         if (!ok) { std::cout << err << "\n"; cli_memo::memo_auto_on_close(a); a.close(); return; }
         a.writeCurrent();
 
@@ -2682,10 +2691,48 @@ static bool hydrate_minidb(const std::string& name, const std::string& payload,
         std::cout << "  ~ MINIDB: unknown section (ignored): " << sect << "\n";
     }
 
-    // >>> The admission decision point. sc.total_file_bytes is what hydration
-    // >>> will cost and nothing has been written yet. The RAM-budget refusal
-    // >>> (recommended_budget_bytes(), vdisk_config.cpp) belongs exactly here
-    // >>> and lands as its own ruling; EST_HYD_B is this same number.
+    // AIF-120. Hydration admission -- the decision the old single-pass hydrator
+    // could not make, because it learned the cost only after paying it. Here the
+    // cost is known and not one byte has been written.
+    //
+    // The policy is NOT invented here. vdisk_config.hpp declares it:
+    // OnFull { Warn, Spill, Fail } against a warn_pct high-water, applied to
+    // xbase::ramfs used bytes. An absent [vdisk] block means no opinion, exactly
+    // as it does everywhere else that config is optional.
+    {
+        const auto cfg = dottalk::vdisk::load_vdisk_config(
+            dottalk::vdisk::default_ini_path());
+        const std::uint64_t budget = (cfg.present && cfg.enabled)
+            ? dottalk::vdisk::recommended_budget_bytes(cfg) : 0;
+        if (budget) {
+            const std::uint64_t used      = xbase::ramfs::used_bytes();
+            const std::uint64_t want      = sc.total_file_bytes;
+            const std::uint64_t projected = used + want;
+            if (projected > budget) {
+                std::cout << "WORKSPACE MINIDB: hydrating '" << name << "' needs "
+                          << want << " B on top of " << used
+                          << " B already resident, which exceeds the " << budget
+                          << " B budget (mode=" << dottalk::vdisk::mode_name(cfg.mode)
+                          << ", on_full=" << dottalk::vdisk::on_full_name(cfg.on_full)
+                          << ").\n";
+                if (cfg.on_full == dottalk::vdisk::OnFull::Fail) {
+                    std::cout << "  Refused before writing anything. Raise the budget in "
+                              << dottalk::vdisk::default_ini_path()
+                              << ", DISMISS a resident workspace, or set on_full=warn.\n";
+                    return false;
+                }
+                if (cfg.on_full == dottalk::vdisk::OnFull::Spill) {
+                    std::cout << "  on_full=spill has no implementation on the hydration "
+                                 "path; proceeding as warn. Said out loud rather than "
+                                 "treating spill as silent permission.\n";
+                }
+            } else if (cfg.warn_pct && projected * 100 / budget >= cfg.warn_pct) {
+                std::cout << "  ~ MINIDB: after hydration the RAM disk is "
+                          << (projected * 100 / budget) << "% of budget ("
+                          << projected << " / " << budget << " B).\n";
+            }
+        }
+    }
 
     const std::string& posture = sc.posture;
     std::size_t files = 0;

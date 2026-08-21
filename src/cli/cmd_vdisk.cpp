@@ -87,9 +87,11 @@ std::string up_(std::string s)
 }
 
 // bin/vdisk.ini -- sits alongside dottalkpp.ini / init.ini.
+// AIF-120: retired onto dottalk::vdisk::default_ini_path() -- hydration
+// admission needs the same path and one convention should have one home.
 std::string vdisk_ini_path()
 {
-    return (dottalk::paths::get_slot(dottalk::paths::Slot::BIN) / "vdisk.ini").string();
+    return dottalk::vdisk::default_ini_path();
 }
 
 std::string fmt_bytes(std::uint64_t n)
