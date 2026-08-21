@@ -31,6 +31,31 @@ namespace dottalk::gui {
 
 namespace {
 
+class ScriptShellRuntime final : public GuiShellRuntime {
+public:
+    RuntimeCliResult run(const RuntimeCliRequest& request) override {
+        return run_runtime_cli_command(request);
+    }
+
+    std::string description() const override {
+        return "external DotTalk++ script bridge";
+    }
+
+    bool persistent() const override {
+        return false;
+    }
+};
+
+
+// AIF-120. Everything from here to the matching #endif belongs to the
+// Windows runtime. These six helpers are used ONLY by
+// PersistentProcessShellRuntime below -- gcc reported five of them as
+// defined-but-not-used on every Linux build, and the sixth
+// (first_token_lower) escaped only because its single caller is one of the
+// five. They sat above the #ifdef, so the file read as though the helpers
+// were shared and the persistent process was an extra. It is the reverse:
+// ScriptShellRuntime above is what every non-Windows build actually gets.
+#ifdef _WIN32
 std::string trim_ascii(std::string value) {
     auto is_space = [](unsigned char ch) {
         return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n';
@@ -104,22 +129,6 @@ std::filesystem::path gui_data_root_for_shell() {
     return {};
 }
 
-class ScriptShellRuntime final : public GuiShellRuntime {
-public:
-    RuntimeCliResult run(const RuntimeCliRequest& request) override {
-        return run_runtime_cli_command(request);
-    }
-
-    std::string description() const override {
-        return "external DotTalk++ script bridge";
-    }
-
-    bool persistent() const override {
-        return false;
-    }
-};
-
-#ifdef _WIN32
 class PersistentProcessShellRuntime final : public GuiShellRuntime {
 public:
     PersistentProcessShellRuntime() = default;
