@@ -51,6 +51,7 @@
 .editorconfig
 .github/workflows/*.yml
 LICENSE
+LICENSING.md
 README.md
 MANIFEST.txt
 BUILDING.md

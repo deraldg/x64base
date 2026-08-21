@@ -4,6 +4,12 @@ _Status: formalized process. Supersedes the older `WORKFLOW_X64BASE.md`, which
 describes a now-retired intermediate tree (`D:\code\ccode\x64base`) and an
 outdated "C:\x64base is a mirror only" role. Reconcile or delete that file._
 
+> **Non-negotiable:** the arrow in this title describes reviewed promotion, not
+> a Git branch merge or refspec. Never push `development:main` and never merge
+> the `development` branch into `main`. Original work stays in
+> `D:\code\ccode`; only sterilized staging rooted at `C:\x64base` may update
+> GitHub `main`.
+
 ## 1. Purpose
 
 Define exactly how work moves from active development into the public GitHub
@@ -30,6 +36,11 @@ D:\code\ccode  (development)  --allow-list overlay-->  C:\x64base  (main)  --pus
 
 There is no intermediate curated tree. `development` is the only authoring
 surface; `main` is the only public surface.
+
+For engine source, any explicitly authorized promotion branch is created from
+`main` inside the sterilized staging workflow. Only the reviewed source slice is
+applied to it. It must not inherit the `development` branch or unrelated
+development history.
 
 ## 3. What publishes: the two lanes
 
@@ -74,7 +85,8 @@ Rules:
 Run from `D:\code\ccode` unless noted.
 
 1. **Land changes on `development`.** Commit real work to the `development`
-   branch. Never author directly in `C:\x64base`.
+   branch. Never author directly in `C:\x64base`. Pushing `development` updates
+   the integration branch only; it does not publish to `main`.
 2. **Rebuild staging.** `tools/staging/rebuild-staging.ps1` clones `github/main`
    into `C:\x64base` (baseline), preserves the committed baseline + dirty layer
    in verified escrow, then overlays every `PROMOTE.manifest` match from
@@ -122,8 +134,15 @@ Target state: after a promotion run, off-allow-list DIFF = 0 and no
 
 ## 9. Open items to reconcile
 
-1. **Retire `WORKFLOW_X64BASE.md`** or rewrite it to match this document (it
-   still references the removed intermediate tree and the old branch name).
+1. ~~**Retire `WORKFLOW_X64BASE.md`** or rewrite it to match this document (it
+   still references the removed intermediate tree and the old branch name).~~
+   **RULED 2026-08-07 (AIF-092 R4): RETIRE, do not rewrite.** It is not in
+   `PROMOTE.manifest`, has no `development` source, and this document already
+   supersedes it. `CONTRIBUTING.md` now carries the repository-roles table it
+   partly served, and unlike this document `CONTRIBUTING.md` IS allow-listed, so
+   the current statement reaches `main`. Removal happens in the
+   rebuild-review-commit window. Reasoning:
+   `docs/maintenance/PUBLICATION_SURFACE_RECOVERY_PDLC_LANE_V1.md` section 6c.
 2. **Path mismatch:** `PROMOTE.manifest` promotes `BUILDING.md` at repo root,
    but `main` carries it at `docs/getting-started/BUILDING.md`. Pick one.
 3. **Expand the allow-list** using `PROMOTE.additions.manifest` so engine source

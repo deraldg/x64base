@@ -1,4 +1,4 @@
-# First Promotion Checklist — new `PROMOTE.manifest` → `main`
+# Promotion Checklist -- reviewed development work to `main`
 
 Companion to `PROMOTION_PROCESS.md`. This is the ordered runbook for the FIRST
 promotion after the manifest restructure, with the drift audit wired in as a
@@ -10,14 +10,19 @@ script's own help first — do not assume flags.
 
 ## 0. Pre-flight (one-time decisions for this promotion)
 
-- [ ] **Confirm the broad source globs.** The new manifest publishes
-      `src/**/*.cpp|hpp|h` and `include/**/*.hpp|h`. Confirm you intend ALL
-      engine source public. If any subtree must stay private, narrow the glob
-      before promoting.
+- [ ] Run `python tools/staging/repository_role_guard.py` and confirm
+      `D:\code\ccode`, branch `development`, allowed remote branch
+      `development`.
+- [ ] Confirm that this is a reviewed promotion, not a plan to push
+      `development:main` or merge the `development` branch into `main`.
+- [ ] **Confirm the two promotion lanes.** `PROMOTE.manifest` must exclude
+      `src/**`, `include/**`, bindings, and build configuration. Those files
+      use the reviewed source lane on a temporary branch created from `main` in
+      sterilized staging. They never arrive through a merge of `development`.
 - [ ] **Reconcile `BUILDING.md`.** Manifest promotes it at repo root; `main`
       carries it at `docs/getting-started/BUILDING.md`. Pick one location.
 - [ ] **Commit the manifest + process docs on `development`** (done:
-      `965b39650`) and `git push`.
+      `965b39650`) and push only to `development`.
 - [ ] Place `audit-drift.ps1` in `tools/staging/` and commit it.
 
 ## 1. Preserve current staging state
@@ -42,9 +47,9 @@ script's own help first — do not assume flags.
 ## 4. Rebuild staging (report, then execute)
 
 - [ ] `pwsh tools/staging/rebuild-staging.ps1`            # report-only
-- [ ] Review the expanded file set — especially the newly-added `src/**`,
-      `include/**`, docs, and tooling globs. This is the moment a bad glob is
-      caught cheaply.
+- [ ] Review the expanded file set. `src/**`, `include/**`, bindings, and build
+      configuration in an overlay plan are a hard role/lane error. This is the
+      moment a bad glob is caught cheaply.
 - [ ] `pwsh tools/staging/rebuild-staging.ps1 -Execute`   # apply
       (or the bound executor: `python tools/staging/execute_gate5_staging_rebuild.py --execute`)
 
@@ -75,10 +80,13 @@ Run in the `C:\x64base` (main) clone. These were leaking into the public repo:
 
 Run in the `C:\x64base` (main) clone:
 
+- [ ] `python tools/staging/repository_role_guard.py` must identify sterilized
+      staging on `main` with `main` as the only allowed remote branch.
 - [ ] `python tools/staging/prepush_gate.py`   # inspects the staged change set
       (exit 0 clean · 2 hard-block · 3 warn-needs-ack). Use `--allow-data` only
       for a fixture change you deliberately named.
-- [ ] `git commit` then `git push` to `main`.
+- [ ] Confirm `development` is not an ancestor of the proposed `main` tip.
+- [ ] `git commit` then `git push` to `main` from `C:\x64base` only.
 - [ ] In `D:\code\ccode`: `git fetch --prune` (drop the old branch ref);
       in `C:\x64base`: `git fetch --prune`.
 
@@ -88,8 +96,9 @@ Run in the `C:\x64base` (main) clone:
       off-allow-list DIFF trending to 0.
 - [ ] Retire or rewrite `WORKFLOW_X64BASE.md` (superseded by
       `PROMOTION_PROCESS.md`).
-- [ ] Consider `python tools/staging/prepush_gate.py --install-hook` so the
-      change-set gate runs automatically on every commit.
+- [ ] Run `python tools/staging/repository_role_guard.py --install-hooks` so the
+      role guard runs on every commit and push and the change-set gate runs on
+      every commit.
 
 ## Gate summary
 
