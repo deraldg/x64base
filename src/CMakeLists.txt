@@ -46,6 +46,33 @@ if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/memo/CMakeLists.txt")
   add_subdirectory(memo)
 endif()
 
+# AIF-120. xbase's dbarea.cpp constructs and closes a dottalk::memo::MemoManager,
+# so xbase depends on memo exactly as much as memo depends on xbase
+# (src/memo/CMakeLists.txt:32). Only the second edge was ever declared. CMake
+# therefore had no reason to emit memo after xbase or to repeat either archive,
+# and GNU ld -- which scans left to right and resolves only undefineds it
+# already knows about -- could not satisfy dbarea.o's two references when
+# libxbase.a was scanned last. Declaring the real cycle is what lets CMake
+# repeat the archives; that is what static-library cycles are for.
+#
+# This cannot live in src/xbase/CMakeLists.txt: xbase is added above, before the
+# memo target exists.
+#
+# Nothing recompiles. memo's one PUBLIC compile definition (DOTTALK_WITH_INDEX)
+# is already on xbase's command line from the common settings, and no xbase
+# source reads it; memo's PUBLIC include directory is the same include root
+# xbase already carries.
+#
+# MSVC never showed this -- link.exe resolves across all inputs regardless of
+# order -- so every Windows build has always been clean. On Linux, survival was
+# decided by declaration shape: src/tests/CMakeLists.txt:53 names
+# "PRIVATE xbase memo" in one call and gets a second xbase entry by accident,
+# while src/gui/core names them in two PUBLIC calls and gets one, placed after
+# memo. Same true dependency, opposite outcome.
+if (TARGET xbase AND TARGET memo)
+  target_link_libraries(xbase PUBLIC memo)
+endif()
+
 # Phase 1: xexpr is a facade over the existing CLI expression layer.
 # It must be added before dottalkpp so the target exists for top-level common settings.
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/xexpr/CMakeLists.txt")
