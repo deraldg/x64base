@@ -11,6 +11,12 @@
   ],
   "items": [
     {
+      "date": "2026-08-21",
+      "title": "Visual FoxPro forms and menus, read directly",
+      "summary": "A form or menu saved by Visual FoxPro is a database table with a memo sidecar, so the reader that opens a table opens those too. Reading real ones settled what any converter would have to handle: one form carried twenty-four distinct control classes, and the columns of a grid turned out to have no records at all -- they exist only as a count kept on the parent, so walking the records alone loses every label inside the grid. The menu language proved to be ordinary text that FoxPro itself writes out, which means a menu and the program generated from it are a matched pair a future generator can be checked against rather than argued about.",
+      "tag": "tooling"
+    },
+    {
       "date": "2026-08-17",
       "title": "The Python binding becomes its own product",
       "summary": "pydottalk was being built as a switch of the engine build, so producing a four-source module also compiled the entire command-line runtime and the terminal UI library it never referenced. It now builds standalone against the same engine sources, with its own build presets and its own lifecycle charter.",
