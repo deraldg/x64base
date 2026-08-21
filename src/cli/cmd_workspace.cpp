@@ -209,6 +209,7 @@
 #include "xbase.hpp"
 #include "xbase_64.hpp"
 #include "memo/memo_auto.hpp"   // cli_memo::memo_auto_on_use / memo_auto_on_close
+#include "dottalk/minidb.hpp"       // AIF-120: the MINIDB 1 container scanner
 // AIF-070 M2 (memo carrier) dependencies:
 #include "xbase/dbf_create.hpp"          // create the WORKSPACES catalog (X64, memo field)
 #include "xbase/field_name_policy.hpp"   // descriptor-name planning (two name planes)
@@ -2665,77 +2666,62 @@ static bool hydrate_minidb(const std::string& name, const std::string& payload,
                            const fs::path& ramRoot, const fs::path& ramIdx) {
     const auto t0 = std::chrono::steady_clock::now();
 
-    std::size_t pos = 0;
-    auto read_line = [&](std::string& out) -> bool {
-        const auto nl = payload.find('\n', pos);
-        if (nl == std::string::npos) return false;
-        out = payload.substr(pos, nl - pos);
-        pos = nl + 1;
-        return true;
-    };
-
-    std::string line;
-    if (!read_line(line) || trim_copy(line) != "MINIDB 1") {
-        std::cout << "WORKSPACE MINIDB: unrecognized container header.\n";
+    // AIF-120. Scan the whole container BEFORE writing any of it. This used to
+    // be one pass that parsed and wrote together, which meant the file count
+    // and byte total existed only after every byte had already landed in the
+    // VFS -- there was no instant at which the cost was known and not yet paid,
+    // so hydration admission could not be implemented at all. The scanner is
+    // pure (include/dottalk/minidb.hpp) and is the same one the GUI uses to
+    // browse a container without hydrating it.
+    const auto sc = dottalk::minidb::scan(payload);
+    if (!sc.ok) {
+        std::cout << "WORKSPACE MINIDB: " << sc.error << ".\n";
         return false;
     }
-
-    std::string posture;
-    int files = 0;
-    std::uint64_t bytes = 0;
-
-    while (read_line(line)) {
-        const std::string t = trim_copy(line);
-        if (t == "END") break;
-        const std::string low = to_lower(t);
-
-        if (low.rfind("posture ", 0) == 0) {
-            const std::size_t len = std::strtoull(t.substr(8).c_str(), nullptr, 10);
-            if (pos + len > payload.size()) { std::cout << "WORKSPACE MINIDB: truncated posture.\n"; return false; }
-            posture = payload.substr(pos, len);
-            pos += len;
-        } else if (low.rfind("file ", 0) == 0) {
-            std::istringstream hs(t.substr(5));
-            std::size_t len = 0; hs >> len;
-            std::string rel; std::getline(hs, rel); rel = trim_copy(rel);
-            if (rel.empty() || pos + len > payload.size()) {
-                std::cout << "WORKSPACE MINIDB: bad FILE section.\n"; return false;
-            }
-            const fs::path dst = (rel.rfind("indexes/", 0) == 0)
-                ? ramIdx / fs::path(rel.substr(8))
-                : ramRoot / fs::path(rel);
-            // Memo sidecars (AIF-108 [SIDECAR], 2026-08-12) land on the REAL
-            // filesystem, not the VFS: the DTX layer bypasses the ramfs
-            // (bypass-ledger member 1), so a sidecar written into the VFS
-            // would sit exactly where memo I/O never looks. The mount dir
-            // exists physically, so the sidecar is disk-resident beside the
-            // virtual DBF -- the measured status quo, now deliberate. When
-            // ramfs memo coverage lands, this branch collapses into the one
-            // below.
-            const std::string dstExt = to_lower(s8(fs::path(rel).extension()));
-            const bool memoSidecar =
-                dstExt == ".dtx" || dstExt == ".dbt" || dstExt == ".fpt";
-            if (memoSidecar) {
-                std::error_code ec;
-                fs::create_directories(dst.parent_path(), ec);
-                std::ofstream out(dst, std::ios::binary | std::ios::trunc);
-                if (!out) { std::cout << "WORKSPACE MINIDB: cannot create sidecar file " << s8(dst) << "\n"; return false; }
-                out.write(payload.data() + pos, static_cast<std::streamsize>(len));
-                out.flush();
-            } else {
-                auto out = xbase::ramfs::open(s8(dst), /*create*/true);
-                if (!out) { std::cout << "WORKSPACE MINIDB: cannot create RAM file " << s8(dst) << "\n"; return false; }
-                out->write(payload.data() + pos, static_cast<std::streamsize>(len));
-                out->flush();
-            }
-            pos += len;
-            ++files; bytes += len;
-        } else {
-            std::cout << "  ~ MINIDB: unknown section (ignored): " << t << "\n";
-        }
+    for (const auto& sect : sc.ignored_sections) {
+        std::cout << "  ~ MINIDB: unknown section (ignored): " << sect << "\n";
     }
 
-    if (posture.empty()) { std::cout << "WORKSPACE MINIDB: container carried no posture.\n"; return false; }
+    // >>> The admission decision point. sc.total_file_bytes is what hydration
+    // >>> will cost and nothing has been written yet. The RAM-budget refusal
+    // >>> (recommended_budget_bytes(), vdisk_config.cpp) belongs exactly here
+    // >>> and lands as its own ruling; EST_HYD_B is this same number.
+
+    const std::string& posture = sc.posture;
+    std::size_t files = 0;
+    std::uint64_t bytes = 0;
+
+    for (const auto& member : sc.files) {
+        const std::string& rel = member.relpath;
+        const fs::path dst = (rel.rfind("indexes/", 0) == 0)
+            ? ramIdx / fs::path(rel.substr(8))
+            : ramRoot / fs::path(rel);
+        // Memo sidecars (AIF-108 [SIDECAR], 2026-08-12) land on the REAL
+        // filesystem, not the VFS: the DTX layer bypasses the ramfs
+        // (bypass-ledger member 1), so a sidecar written into the VFS
+        // would sit exactly where memo I/O never looks. The mount dir
+        // exists physically, so the sidecar is disk-resident beside the
+        // virtual DBF -- the measured status quo, now deliberate. When
+        // ramfs memo coverage lands, this branch collapses into the one
+        // below.
+        const std::string dstExt = to_lower(s8(fs::path(rel).extension()));
+        const bool memoSidecar =
+            dstExt == ".dtx" || dstExt == ".dbt" || dstExt == ".fpt";
+        if (memoSidecar) {
+            std::error_code ec;
+            fs::create_directories(dst.parent_path(), ec);
+            std::ofstream out(dst, std::ios::binary | std::ios::trunc);
+            if (!out) { std::cout << "WORKSPACE MINIDB: cannot create sidecar file " << s8(dst) << "\n"; return false; }
+            out.write(payload.data() + member.offset, static_cast<std::streamsize>(member.length));
+            out.flush();
+        } else {
+            auto out = xbase::ramfs::open(s8(dst), /*create*/true);
+            if (!out) { std::cout << "WORKSPACE MINIDB: cannot create RAM file " << s8(dst) << "\n"; return false; }
+            out->write(payload.data() + member.offset, static_cast<std::streamsize>(member.length));
+            out->flush();
+        }
+        ++files; bytes += member.length;
+    }
 
     // Re-point the posture at RAM and load through the standard v3 path.
     std::string hydrated;
