@@ -1,0 +1,10 @@
+// x64base application icon -- MSW resource script.
+//
+// The resource is NAMED rather than numbered because wxWidgets looks icons up
+// by name: `wxIconBundle("x64base_icon", nullptr)` loads every size the .ico
+// carries, and Explorer takes the first icon resource in the file for the
+// executable. One icon resource, so both readings agree.
+//
+// Provenance and the regeneration recipe: src/gui/wx/res/README.md
+
+x64base_icon ICON "x64base.ico"
