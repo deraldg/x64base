@@ -210,6 +210,7 @@
 #include "xbase_64.hpp"
 #include "memo/memo_auto.hpp"   // cli_memo::memo_auto_on_use / memo_auto_on_close
 #include "dottalk/minidb.hpp"       // AIF-120: the MINIDB 1 container scanner
+#include "dottalk/minidb_hydrate.hpp" // AIF-120: materialise + re-point, shared with the GUI
 #include "cli/vdisk_config.hpp"     // AIF-120: hydration admission budget
 // AIF-070 M2 (memo carrier) dependencies:
 #include "xbase/dbf_create.hpp"          // create the WORKSPACES catalog (X64, memo field)
@@ -2734,59 +2735,26 @@ static bool hydrate_minidb(const std::string& name, const std::string& payload,
         }
     }
 
-    const std::string& posture = sc.posture;
-    std::size_t files = 0;
-    std::uint64_t bytes = 0;
-
-    for (const auto& member : sc.files) {
-        const std::string& rel = member.relpath;
-        const fs::path dst = (rel.rfind("indexes/", 0) == 0)
-            ? ramIdx / fs::path(rel.substr(8))
-            : ramRoot / fs::path(rel);
-        // Memo sidecars (AIF-108 [SIDECAR], 2026-08-12) land on the REAL
-        // filesystem, not the VFS: the DTX layer bypasses the ramfs
-        // (bypass-ledger member 1), so a sidecar written into the VFS
-        // would sit exactly where memo I/O never looks. The mount dir
-        // exists physically, so the sidecar is disk-resident beside the
-        // virtual DBF -- the measured status quo, now deliberate. When
-        // ramfs memo coverage lands, this branch collapses into the one
-        // below.
-        const std::string dstExt = to_lower(s8(fs::path(rel).extension()));
-        const bool memoSidecar =
-            dstExt == ".dtx" || dstExt == ".dbt" || dstExt == ".fpt";
-        if (memoSidecar) {
-            std::error_code ec;
-            fs::create_directories(dst.parent_path(), ec);
-            std::ofstream out(dst, std::ios::binary | std::ios::trunc);
-            if (!out) { std::cout << "WORKSPACE MINIDB: cannot create sidecar file " << s8(dst) << "\n"; return false; }
-            out.write(payload.data() + member.offset, static_cast<std::streamsize>(member.length));
-            out.flush();
-        } else {
-            auto out = xbase::ramfs::open(s8(dst), /*create*/true);
-            if (!out) { std::cout << "WORKSPACE MINIDB: cannot create RAM file " << s8(dst) << "\n"; return false; }
-            out->write(payload.data() + member.offset, static_cast<std::streamsize>(member.length));
-            out->flush();
-        }
-        ++files; bytes += member.length;
+    // AIF-120. Materialising and re-pointing now live in
+    // include/dottalk/minidb_hydrate.hpp so the GUI can hydrate in its OWN
+    // process. That is not a tidiness preference: xbase::ramfs is "an
+    // in-process RAM filesystem" with "a process-global registry" (its own
+    // header), and the Workbench reaches the CLI through a CHILD PROCESS, so a
+    // container hydrated across that bridge lands where the GUI can never open
+    // it. Same code, both callers, no process boundary.
+    const auto mat = dottalk::minidb::materialize(payload, sc, ramRoot, ramIdx);
+    if (!mat.ok) {
+        std::cout << "WORKSPACE MINIDB: " << mat.error << ".\n";
+        return false;
     }
-
-    // Re-point the posture at RAM and load through the standard v3 path.
-    std::string hydrated;
-    {
-        std::istringstream scan(posture);
-        std::string l; bool first = true;
-        while (std::getline(scan, l)) {
-            const std::string low = to_lower(trim_copy(l));
-            if (low.rfind("dbfroot ", 0) == 0 || low.rfind("idxroot ", 0) == 0 ||
-                low.rfind("lmdbroot ", 0) == 0) continue;
-            hydrated += l; hydrated += "\n";
-            if (first) {
-                hydrated += "DBFROOT " + s8(ramRoot) + "\n";
-                hydrated += "IDXROOT " + s8(ramIdx) + "\n";
-                first = false;
-            }
-        }
+    for (const auto& note : mat.notes) {
+        std::cout << "  ~ MINIDB: " << note << "\n";
     }
+    const std::size_t files = mat.files;
+    const std::uint64_t bytes = mat.bytes;
+
+    const std::string hydrated =
+        dottalk::minidb::repoint_posture_to_ram(sc.posture, ramRoot, ramIdx);
     std::istringstream in(hydrated);
     schema_load_from_stream(in, "minidb:" + name);
 

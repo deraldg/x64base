@@ -12,6 +12,9 @@
 #include "common/path_resolver.hpp"
 #include "common/path_state.hpp"
 #include "dottalk/dtschema.hpp"
+#include "dottalk/minidb.hpp"
+#include "dottalk/minidb_hydrate.hpp"
+#include "xbase/ramfs.hpp"
 #include "cli/order_iterator.hpp"
 #include "cli/order_state.hpp"
 #include "gui/core/gui_command_catalog.hpp"
@@ -396,6 +399,19 @@ std::vector<WorkspaceOpenIndexAttachment> workspace_open_indexes_from_cli_output
     return attachments;
 }
 
+std::vector<WorkspaceSchemaArea> load_dtschema2_areas_from_stream(
+        std::istream& file,
+        std::vector<WorkspaceRelationInfo>& relations);
+
+std::vector<WorkspaceSchemaArea> load_dtschema2_areas(const std::filesystem::path& schema_path,
+                                                      std::vector<WorkspaceRelationInfo>& relations) {
+    std::ifstream file(schema_path);
+    if (!file) {
+        return {};
+    }
+    return load_dtschema2_areas_from_stream(file, relations);
+}
+
 std::optional<std::filesystem::path> resolve_schema_dbf_path(const std::filesystem::path& token,
                                                              const std::string& index_type) {
     if (token.empty()) {
@@ -468,13 +484,13 @@ std::optional<std::filesystem::path> resolve_schema_index_path(const std::filesy
 
 void merge_relation(std::vector<WorkspaceRelationInfo>& relations, WorkspaceRelationInfo relation);
 
-std::vector<WorkspaceSchemaArea> load_dtschema2_areas(const std::filesystem::path& schema_path,
-                                                      std::vector<WorkspaceRelationInfo>& relations) {
-    std::ifstream file(schema_path);
+// AIF-120. A posture is a posture whether it came from a file or out of a memo
+// field, so the parser reads a stream and the path form is a wrapper. The memo
+// path has no file to hand it.
+std::vector<WorkspaceSchemaArea> load_dtschema2_areas_from_stream(
+        std::istream& file,
+        std::vector<WorkspaceRelationInfo>& relations) {
     std::vector<WorkspaceSchemaArea> areas;
-    if (!file) {
-        return areas;
-    }
 
     std::string line;
     while (std::getline(file, line)) {
@@ -1766,13 +1782,124 @@ std::size_t Session::mirror_workspace_load_schema(const std::filesystem::path& s
                                    schema_path.string()));
         return 0;
     }
+    std::ifstream file(schema_path, std::ios::binary);
+    std::ostringstream text;
+    text << file.rdbuf();
+    // Empty roots: resolve members through the path slots, as this form always has.
+    return mirror_workspace_posture(text.str(), schema_path.string(), {}, {}, messages);
+}
 
+std::size_t Session::mirror_memo_workspace(const std::string& name,
+                                           std::vector<StatusMessage>& messages) {
+    std::string error;
+    const auto rows = gui_list_memo_workspaces(error);
+    if (!error.empty()) {
+        messages.push_back(warning("gui.workspace.catalog_unavailable",
+                                   "WORKSPACE LOAD could not read the workspace catalog.", error));
+        return 0;
+    }
+
+    // Live rows only, matching how the CLI resolves a workspace by name. A
+    // superseded row of the same name is a different snapshot and is not what
+    // "load by name" means.
+    const MemoWorkspaceRow* row = nullptr;
+    for (const auto& r : rows) {
+        if (!r.superseded && r.name == name) row = &r;
+    }
+    if (!row) {
+        messages.push_back(warning("gui.workspace.memo_name_missing",
+                                   "WORKSPACE LOAD found no live memo workspace of that name.", name));
+        return 0;
+    }
+
+    const std::string payload = gui_read_memo_payload(row->snapshot, error);
+    if (!error.empty()) {
+        messages.push_back(warning("gui.workspace.memo_read_failed",
+                                   "WORKSPACE LOAD could not read the memo payload.", error));
+        return 0;
+    }
+
+    // A posture-only payload names tables that already live on disk, so the
+    // path slots resolve them exactly as a file-carried posture would.
+    if (!dottalk::minidb::is_container(payload)) {
+        return mirror_workspace_posture(payload, "memo:" + name, {}, {}, messages);
+    }
+
+    // A MINIDB payload carries the tables themselves. They must be hydrated
+    // into the RAM VFS OF THIS PROCESS: xbase::ramfs is an in-process registry,
+    // so a hydration performed by the CLI bridge's child process would be
+    // invisible here. See include/dottalk/minidb_hydrate.hpp.
+    const auto ram_root = dottalk::paths::get_slot(dottalk::paths::Slot::RAM);
+    if (ram_root.empty()) {
+        messages.push_back(warning("gui.workspace.ram_slot_missing",
+                                   "WORKSPACE LOAD cannot hydrate a MINIDB payload: no RAM path slot "
+                                   "is configured."));
+        return 0;
+    }
+
+    // AIF-120. Mount the RAM disk HERE if it is not already, and say so.
+    //
+    // The obvious alternative -- refusing and telling the operator to run
+    // VDISK MOUNT -- would be advice that cannot work. The GUI has no handler
+    // for VDISK, so the command crosses the CLI bridge into a CHILD PROCESS,
+    // and xbase::ramfs is by its own header an in-process registry. The mount
+    // would land in the child and this process would stay exactly as unmounted
+    // as before. A RAM disk is per-process by design; the Workbench needs its
+    // own, and asking for the container is asking for somewhere to put it.
+    if (!xbase::ramfs::mounted(ram_root.string())) {
+        std::error_code ec;
+        std::filesystem::create_directories(ram_root, ec);   // sidecars land on real disk
+        xbase::ramfs::mount(ram_root.string());
+        if (!xbase::ramfs::mounted(ram_root.string())) {
+            messages.push_back(warning("gui.workspace.vdisk_mount_failed",
+                                       "WORKSPACE LOAD could not mount a RAM disk for the hydrated "
+                                       "workspace.", ram_root.string()));
+            return 0;
+        }
+        messages.push_back(info("gui.workspace.vdisk_mounted",
+                                "WORKSPACE LOAD mounted this process's RAM disk. A RAM disk is "
+                                "per-process, so the Workbench keeps its own.",
+                                ram_root.string()));
+    }
+    const std::filesystem::path ram_index_root = ram_root / "indexes";
+
+    const auto scanned = dottalk::minidb::scan(payload);
+    if (!scanned.ok) {
+        messages.push_back(warning("gui.workspace.minidb_unreadable",
+                                   "WORKSPACE LOAD could not read the MINIDB container.", scanned.error));
+        return 0;
+    }
+
+    const auto placed = dottalk::minidb::materialize(payload, scanned, ram_root, ram_index_root);
+    if (!placed.ok) {
+        messages.push_back(warning("gui.workspace.minidb_hydrate_failed",
+                                   "WORKSPACE LOAD could not hydrate the MINIDB container.", placed.error));
+        return 0;
+    }
+    messages.push_back(info("gui.workspace.minidb_hydrated",
+                            "WORKSPACE LOAD hydrated a MINIDB container into the RAM disk.",
+                            std::to_string(placed.files) + " file(s), " +
+                            std::to_string(placed.bytes) + " B from the memo"));
+
+    // The roots are passed explicitly rather than repointed into the posture
+    // text, because this parser reads only AREA and RELATION lines and has
+    // never honoured a v3 DBFROOT.
+    return mirror_workspace_posture(scanned.posture, "minidb:" + name,
+                                    ram_root, ram_index_root, messages);
+}
+
+std::size_t Session::mirror_workspace_posture(const std::string& posture,
+                                              const std::string& label,
+                                              const std::filesystem::path& dbf_root,
+                                              const std::filesystem::path& index_root,
+                                              std::vector<StatusMessage>& messages) {
     std::vector<WorkspaceRelationInfo> schema_relations;
-    const auto schema_areas = load_dtschema2_areas(schema_path, schema_relations);
+    std::istringstream posture_stream(posture);
+    const auto schema_areas = load_dtschema2_areas_from_stream(posture_stream, schema_relations);
     if (schema_areas.empty()) {
         messages.push_back(warning("gui.workspace.schema_empty",
                                    "WORKSPACE LOAD did not mirror into GUI areas because no schema areas were found.",
-                                   schema_path.string()));
+                                   label));
         return 0;
     }
 
@@ -1789,7 +1916,14 @@ std::size_t Session::mirror_workspace_load_schema(const std::filesystem::path& s
     AreaId max_area_id = 0;
 
     for (const auto& schema_area : schema_areas) {
-        const auto dbf = resolve_schema_dbf_path(schema_area.dbf, schema_area.index_type);
+        // AIF-120. With a root override the member is placed, not searched.
+        // A hydrated workspace lives in the RAM VFS, where std::filesystem
+        // cannot see it -- xbase::ramfs keeps its own registry and DbArea
+        // consults it for virtual paths -- so any existence probe here would
+        // reject a table that is perfectly openable.
+        const auto dbf = dbf_root.empty()
+            ? resolve_schema_dbf_path(schema_area.dbf, schema_area.index_type)
+            : std::optional<std::filesystem::path>(dbf_root / schema_area.dbf.filename());
         if (!dbf) {
             messages.push_back(warning("gui.workspace.schema_table_missing",
                                        "A WORKSPACE LOAD schema table could not be mirrored into a GUI area.",
@@ -1812,7 +1946,10 @@ std::size_t Session::mirror_workspace_load_schema(const std::filesystem::path& s
             // alone accepted that sentinel as data and asked the CDX backend
             // for a tag named NONE. See include/dottalk/dtschema.hpp.
             if (!dottalk::dtschema::is_absent(schema_area.index.string())) {
-                if (const auto index = resolve_schema_index_path(schema_area.index, schema_area.index_type)) {
+                const auto index = index_root.empty()
+                    ? resolve_schema_index_path(schema_area.index, schema_area.index_type)
+                    : std::optional<std::filesystem::path>(index_root / schema_area.index.filename());
+                if (index) {
                     std::string err;
                     const bool attached = !dottalk::dtschema::is_absent(schema_area.tag)
                         ? activate_gui_order(area->area, *index, schema_area.tag, true, err)
@@ -1851,7 +1988,7 @@ std::size_t Session::mirror_workspace_load_schema(const std::filesystem::path& s
 
     messages.push_back(info("gui.workspace.load_mirrored",
                             "WORKSPACE LOAD mirrored schema areas into GUI areas.",
-                            std::to_string(opened) + " table(s) from " + schema_path.string()));
+                            std::to_string(opened) + " table(s) from " + label));
     if (indexes_attached > 0) {
         messages.push_back(info("gui.workspace.indexes_mirrored",
                                 "WORKSPACE LOAD mirrored attached index containers into GUI areas.",
@@ -2489,8 +2626,37 @@ CommandResult Session::run_command(const CommandRequest& request) {
                     << "  workspace load <name.dtschema>\n"
                     << "  workspace save <name.dtschema>";
             } else if (action == "load") {
-                const auto schema = resolve_workspace_schema_token(std::filesystem::path(strip_matching_quotes(name)));
-                if (!schema) {
+                // AIF-120. The memo forms are not filenames. This branch used to
+                // take everything after two tokens as a path, so
+                // "WORKSPACE LOAD minidb_regress MEMO RAM" was reported as a
+                // missing schema FILE -- a message that sends the reader hunting
+                // for something that was never meant to exist.
+                std::string memo_name;
+                bool via_memo = false;
+                for (const auto& word : split_words(name)) {
+                    const std::string flag = upper_ascii(word);
+                    if (flag == "MEMO") {
+                        via_memo = true;
+                    } else if (flag == "RAM" || flag == "PARTIAL") {
+                        // residence/tolerance modifiers, not part of the name
+                    } else if (memo_name.empty()) {
+                        memo_name = strip_matching_quotes(word);
+                    }
+                }
+                if (via_memo) {
+                    const auto opened = mirror_memo_workspace(memo_name, result.messages);
+                    out << "WORKSPACE LOAD (memo)\n"
+                        << "Workspace: " << memo_name << "\n"
+                        << "Opened GUI areas: " << opened << "\n";
+                    if (impl_->active_area_id != 0) {
+                        if (const auto* area = impl_->active_area()) {
+                            out << "Active area: " << visible_area_id(area->id)
+                                << "  " << area->display_name << "\n";
+                        }
+                    }
+                } else if (const auto schema = resolve_workspace_schema_token(
+                               std::filesystem::path(strip_matching_quotes(name)));
+                           !schema) {
                     result.messages.push_back(warning("gui.workspace.schema_missing",
                                                       "WORKSPACE LOAD could not find the schema file.",
                                                       name));
