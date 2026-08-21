@@ -1482,8 +1482,7 @@ void initialize_gui_paths() {
 void run_lifecycle_scripts(GuiShellRuntime& runtime, const std::vector<std::string>& names) {
     for (const auto& script : existing_lifecycle_scripts(names)) {
         RuntimeCliResult ignored = runtime.run(RuntimeCliRequest{
-            "DOTSCRIPT " + script.string(),
-            {}
+            .command = "DOTSCRIPT " + script.string(),
         });
         (void)ignored;
     }
@@ -1576,8 +1575,7 @@ Session::Session()
     std::vector<StatusMessage> ignored_messages;
     for (const auto& script : existing_lifecycle_scripts({"init.ini", "dottalkpp.ini", "dotscript.ini"})) {
         RuntimeCliResult cli = impl_->shell_runtime->run(RuntimeCliRequest{
-            "DOTSCRIPT " + script.string(),
-            {}
+            .command = "DOTSCRIPT " + script.string(),
         });
         mirror_setpath_output_to_gui(cli.output, ignored_messages);
         if (output_clears_relations(cli.output)) {
