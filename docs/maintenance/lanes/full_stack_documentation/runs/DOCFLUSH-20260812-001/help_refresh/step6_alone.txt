@@ -1,0 +1,110 @@
+[32mINIT: Paths
+  BIN        : D:\code\ccode\dottalkpp\bin
+  DATA       : D:\code\ccode\dottalkpp\data
+  DBF        : D:\code\ccode\dottalkpp\data\dbf
+  INDEXES    : D:\code\ccode\dottalkpp\data\indexes
+  LMDB       : D:\code\ccode\dottalkpp\data\lmdb
+  WORKSPACES : D:\code\ccode\dottalkpp\data\workspaces
+  SCHEMAS    : D:\code\ccode\dottalkpp\data\schemas
+  PROJECTS   : D:\code\ccode\dottalkpp\data\projects
+  SCRIPTS    : D:\code\ccode\dottalkpp\data\scripts
+  TESTS      : D:\code\ccode\dottalkpp\data\tests
+  HELP       : D:\code\ccode\dottalkpp\data\help
+  LOGS       : D:\code\ccode\dottalkpp\data\logs
+  TMP        : D:\code\ccode\dottalkpp\data\tmp
+INIT: processing system .ini D:\code\ccode\dottalkpp\bin\dottalkpp.ini
+INIT: processing user .ini D:\code\ccode\dottalkpp\bin\init.ini
+Echo is OFF
+Paging is OFF
+Talk is OFF
+dottalk++ v0.6 (2026-08-21, cac02a8b dirty)  (Aug 21 2026 10:12:21)
+DotTalk++ build Aug 21 2026 10:12:21
+SQLite available: 1, version: 3.50.4
+[0m         [33m*[0m
+[0m         [32m^[0m
+[0m        [32m^[31mo[32m^[0m
+[0m       [32m^^[36m#[32m^^[0m
+[0m      [32m^^^[33m*[32m^^^[0m
+[0m     [32m^^[33m+[32m^^^^^^[0m
+[0m    [32m^^^^^[31mo[32m^^^^^[0m
+[0m   [32m^^^[36m#[32m^^^^^[33m+[32m^^^[0m
+[0m  [32m^^[31mo[32m^^^^[33m*[32m^^^^^^^[0m
+[0m [32m^^^^^[33m+[32m^^^^^^[31mo[32m^^^^[0m
+[32m^^^^[36m#[32m^^^^[31mo[32m^^^^[33m+[32m^^^^[0m
+[0m         [37m|||[0m
+[0m         [37m|||[0m
+EDU_BIBLETALK: opened BibleTalk seed biblebase\bible_kjv_x64.sqlite
+BibleTalk Quote
+  Matthew 20:11
+  And when they had received it, they murmured against the goodman of the house,
+DotTalk++ type HELP. USE, SELECT <n>, AREA, COLOR <GREEN|AMBER|DEFAULT>, ABOUT, QUIT.
+
+Dev: CMDHELPCHK, GPS, WORKSPACE, ERSATZ.
+
+Hello World!
+. CMDHELP wrote current HELP DATA -> D:\code\ccode\dottalkpp\data\help
+Artifacts mined from: D:\code\ccode\src
+Usage contracts mined directly: 3499 row(s) from 207 file(s)
+CMDHELP Report (current HELP DATA)
+  directory : D:\code\ccode\dottalkpp\data\help
+  line rows : 29075
+  topics    : 530
+
+By KIND:
+  ALIAS              53
+  ARGUMENT           414
+  DEPRECATION        1
+  ERROR              478
+  EXAMPLE            1078
+  HINT               19
+  MESSAGE            1009
+  NOTE               3703
+  RELATED            1980
+  SOURCE_FACT        4299
+  STATUS             1563
+  SUMMARY            2393
+  SYNTAX             6061
+  USAGE              5979
+  WARNING            45
+
+By SOURCE:
+  CURATED_DOC        868
+  DOTREF             1005
+  EDREF              786
+  FOXREF             665
+  REGISTRY           465
+  SHARED_MSG         2637
+  SOURCE_MINER       7560
+  USAGE_CONTRACT     15089
+
+Preview rows
+TOPICKEY            KIND          SOURCE          CONFID        ROLE      TEXT
+--------------------------------------------------------------------------------
+DOT|ABOUT           STATUS        REGISTRY        REFLECTED     TEXT      implemented=yes; supported=yes
+DOT|ABOUT           SUMMARY       DOTREF          CATALOG       TEXT      Print DotTalk++ project identity, lineage, build/runtime information, and current session summary.
+DOT|ABOUT           SYNTAX        DOTREF          CATALOG       TEXT      ABOUT
+DOT|AGGS            STATUS        REGISTRY        REFLECTED     TEXT      implemented=yes; supported=yes
+DOT|AGGS            SUMMARY       DOTREF          CATALOG       TEXT      Aggregate command-family owner for SUM, AVG, MIN, and MAX; use AGGS USAGE for family/subcommand help
+DOT|AGGS            SYNTAX        DOTREF          CATALOG       TEXT      AGGS [SUM|AVG|MIN|MAX] <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]
+DOT|APPEND          STATUS        REGISTRY        REFLECTED     TEXT      implemented=yes; supported=yes
+DOT|APPEND          SUMMARY       DOTREF          CATALOG       TEXT      Append a new record using current table defaults and active buffering rules.
+DOT|APPEND          SYNTAX        DOTREF          CATALOG       TEXT      APPEND
+DOT|APPEND_BLANK    STATUS        REGISTRY        REFLECTED     TEXT      implemented=yes; supported=yes
+DOT|APPEND_BLANK    SUMMARY       DOTREF          CATALOG       TEXT      Append a blank record to the current table.
+DOT|APPEND_BLANK    SYNTAX        DOTREF          CATALOG       TEXT      APPEND BLANK
+DOT|APPGUI          STATUS        REGISTRY        REFLECTED     TEXT      implemented=yes; supported=no
+DOT|APPGUI          SUMMARY       DOTREF          CATALOG       TEXT      APPGUI is a registered DotTalk++ command; curated DOTREF support status and help summary are pending
+DOT|ARCTICTALK      STATUS        REGISTRY        REFLECTED     TEXT      implemented=yes; supported=yes
+DOT|ARCTICTALK      SUMMARY       DOTREF          CATALOG       TEXT      Launch the ArcticTalk Turbo Vision TUI shell.
+DOT|ARCTICTALK      SUMMARY       DOTREF          CATALOG       TEXT      
+DOT|ARCTICTALK      SUMMARY       DOTREF          CATALOG       TEXT              Example:
+DOT|ARCTICTALK      SUMMARY       DOTREF          CATALOG       TEXT                  ARCTICTALK
+DOT|ARCTICTALK      SUMMARY       DOTREF          CATALOG       TEXT      
+DOT|ARCTICTALK      SUMMARY       DOTREF          CATALOG       TEXT              Notes:
+DOT|ARCTICTALK      SUMMARY       DOTREF          CATALOG       TEXT                  Intended for keyboard-driven browsing and diagnostics.
+DOT|ARCTICTALK      SUMMARY       DOTREF          CATALOG       TEXT                  Exits back to the DotTalk++ CLI.
+DOT|ARCTICTALK      SYNTAX        DOTREF          CATALOG       TEXT      ARCTICTALK
+  ... 29051 more row(s) not shown. This preview is capped at 24 rows of 29075 and truncates text at 100 characters.
+  Full render, no cap and no truncation: CMDHELP REPORT ALL  (or HELP GIANT ALL)
+  SET PAGING ON first -- the full render is every row.
+. SHUTDOWN: processing D:\code\ccode\dottalkpp\bin\shutdown.ini

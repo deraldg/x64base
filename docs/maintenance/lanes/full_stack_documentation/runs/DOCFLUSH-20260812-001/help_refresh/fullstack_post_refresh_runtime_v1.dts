@@ -1,0 +1,79 @@
+* ============================================================================
+* fullstack_post_refresh_runtime_v1.dts -- DOCFLUSH-20260812-001 (flush v5)
+* Phase 4 / Gate 4 post-rebuild capture.
+*
+* This is the twin of runtime_baseline/fullstack_pre_refresh_runtime_v1.dts.
+* Its first block is BYTE-FOR-BYTE the same command sequence so the two
+* transcripts diff cleanly; the v5 additions come after, where they cannot
+* shift the lines above them.
+*
+* Run it only AFTER the seven-step sequence in HELP_REFRESH_PACKAGE_V1.md.
+* Running it against a store built by a stale exe produces a transcript that
+* looks like evidence and is not -- that failure cost v5 a full cycle on
+* 2026-08-12.
+*
+* Run (from D:\code\ccode, ABSOLUTE paths -- datarun pushes cwd to the data root):
+*   $run = 'D:\code\ccode\docs\maintenance\lanes\full_stack_documentation\runs\DOCFLUSH-20260812-001\help_refresh'
+*   ./datarun.ps1 -CommandLines (Get-Content "$run\fullstack_post_refresh_runtime_v1.dts") |
+*     Tee-Object "$run\fullstack_post_refresh_runtime_v1.txt"
+*   Set-Location D:\code\ccode
+*
+* Read-only: every command below reports. Nothing rebuilds, nothing writes HELP.
+* ============================================================================
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+FORMULA "DOCFLUSH-V5-POSTREFRESH-BEGIN"
+
+* --- runtime identity: binds the transcript to an exe and a commit ----------
+ABOUT
+
+* --- HELP store as rebuilt ---------------------------------------------------
+CMDHELP
+CMDHELP TOPICS
+
+* --- structural check of that store -----------------------------------------
+CMDHELPCHK
+
+* --- the reference authorities, each reporting its own surface ---------------
+DOTHELP
+FOXHELP
+
+* --- manual state ------------------------------------------------------------
+MANUAL STATUS
+MANUAL COUNTS
+
+* --- the 2026-08-12 targets, unchanged from the baseline --------------------
+HELP WORKSPACE
+HELP ERASE
+HELP REGRESSION
+
+* --- the function surface ----------------------------------------------------
+HELP FUNCTIONS
+
+* ============================================================================
+* v5 ADDITIONS -- everything above this line mirrors the baseline exactly.
+* ============================================================================
+
+* --- the two commands whose contracts are NEW since the store was built -----
+* SMTP: dotref entry added in 358c14a8a plus a new @dottalk.usage v1 contract
+* in src/cli/cmd_smtp.cpp (status: review-needed).
+* APPGUI: new @dottalk.usage v1 contract in src/cli/app_gui.cpp.
+* Both must resolve. "No help found" for either means the rebuild missed the
+* new contracts and Gate 4 FAILS.
+HELP SMTP
+CMDHELP SMTP
+HELP APPGUI
+CMDHELP APPGUI
+
+* --- SOURCE distribution, the instrument that settles what moved ------------
+* Compare against the addendum's measured table (USAGE_CONTRACT 14914,
+* SOURCE_MINER 7503, SHARED_MSG 2637, DOTREF 992, CURATED_DOC 868, EDREF 786,
+* FOXREF 665, REGISTRY 462; 28827 lines, 528 topics). foxref.hpp did NOT change
+* since the store was built, so FOXREF is expected FLAT; edref.hpp changed
+* twice (810686319, aac6b8bdf), so EDREF is expected to MOVE.
+CMDHELP SOURCE
+
+FORMULA "DOCFLUSH-V5-POSTREFRESH-END"
+
+QUIT

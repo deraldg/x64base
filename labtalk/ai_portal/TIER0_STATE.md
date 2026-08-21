@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-08-21T16:16:14Z
+    generated_utc : 2026-08-21T18:34:31Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,8 +11,8 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : 370391ae8  (2026-08-21)
-    upstream      : 370391ae8
+    HEAD          : cac02a8b5  (2026-08-21)
+    upstream      : cac02a8b5
     unpushed      : 0 commit(s) ahead of upstream
 
 ## Declared target
@@ -22,12 +22,12 @@ cannot drift, because nothing here is written by hand.
 
 ## Newest closeout
 
-    file          : SESSION_CLOSEOUT_APPLICATION_UI_DSL_LANE_2026-08-20.md
-    commits behind HEAD : 32
+    file          : SESSION_CLOSEOUT_PROMOTION_TO_MAIN_AND_WORKBENCH_RENAME_2026-08-21.md
+    commits behind HEAD : ?
 
 ## Staleness warnings
 
-- The newest closeout is 32 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
+- none
 
 ## Claimed lanes (newest first)
 
@@ -53,6 +53,7 @@ cannot drift, because nothing here is written by hand.
     live   : AIPR-20260729-001  (member.ai.claude.cowork)  [stale, reapable]
     live   : COWORK-20260816-002  (member.ai.claude.cowork)  [stale, reapable]
     live   : COWORK-20260818-001  (member.ai.claude.cowork)  [stale, reapable]
+    live   : COWORK-20260821-002  (member.ai.claude.cowork)
     live   : DECLARED-CAPABILITY-VALIDATOR-20260730  (member.ai.claude.cowork)  [stale, reapable]
 
 Aside chains -- a run's claims in order (its horizontal structure);
