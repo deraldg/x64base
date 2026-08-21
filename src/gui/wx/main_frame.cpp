@@ -9,12 +9,15 @@
 
 #include "main_frame.hpp"
 
+#include "res/app_icon.hpp"
+
 #include "datadict/ddict_catalog_paths.hpp"
 #include "datadict/ddict_object_resolver.hpp"
 #include "datadict/ddict_read_helpers.hpp"
 #include "dottalk/version.hpp"
 #include "gui/core/gui_command_catalog.hpp"
 #include "gui/core/gui_workspace_format.hpp"
+#include "gui/core/gui_runtime_adapter.hpp"
 
 #include <wx/checkbox.h>
 #include <wx/choice.h>
@@ -415,6 +418,7 @@ const GuiEvent& DotTalkCoreEvent::payload() const noexcept {
 MainFrame::MainFrame(std::filesystem::path initial_table, LocaleContext locale)
     : wxFrame(nullptr, wxID_ANY, workbench_title(), wxDefaultPosition, wxSize(1100, 720)),
       locale_(std::move(locale)) {
+    SetIcons(app_icon_bundle());
     BuildMenu();
     BuildLayout();
     CreateStatusBar(4);
@@ -1119,7 +1123,20 @@ void MainFrame::AddArea(const OpenTableResult& result) {
     }
 
     area_ids_.push_back(result.area_id);
-    area_infos_.push_back(AreaInfo{result.area_id, true, result.path, result.display_name, result.record_count});
+    // AIF-120. Named rather than positional: adding `workspace` as AreaInfo's
+    // second member silently slid `true` onto it under aggregate init, and the
+    // compiler caught it only because bool does not convert to std::string. The
+    // next member added would not be so lucky. This form also fixes what the
+    // positional one quietly skipped -- the workspace was never being set on
+    // this path, which bypasses gui_area_info_from_dbarea entirely.
+    AreaInfo info;
+    info.area_id = result.area_id;
+    info.workspace = gui_workspace_of_area(result.area_id);
+    info.active = true;
+    info.path = result.path;
+    info.display_name = result.display_name;
+    info.record_count = result.record_count;
+    area_infos_.push_back(std::move(info));
     workspace_model_.active_area_id = result.area_id;
     workspace_model_.tables = area_infos_;
     std::ostringstream label;
@@ -1184,24 +1201,36 @@ void MainFrame::ApplyTables(const WorkspaceModel& model) {
         return;
     }
 
-    reset_grid(tables_grid_, static_cast<int>(model.tables.size()), 6);
-    tables_grid_->SetColLabelValue(0, "Area");
-    tables_grid_->SetColLabelValue(1, "Table");
-    tables_grid_->SetColLabelValue(2, "Records");
-    tables_grid_->SetColLabelValue(3, "Fields");
-    tables_grid_->SetColLabelValue(4, "Active");
-    tables_grid_->SetColLabelValue(5, "Path");
+    // AIF-120. WS is leftmost and is never blank: an area belongs to exactly one
+    // workspace and DEFAULT is a workspace (invariant I1). The column is not
+    // decoration -- name resolution is first-match with no ambiguity signal, so
+    // when two workspaces both hold STUDENTS this column is the difference
+    // between seeing two rows and seeing one row that is quietly the wrong one.
+    //
+    // Row count is model.tables.size() -- OPEN AREAS, never the slot space. The
+    // CLI's WORKSPACE listing prints one line per slot and MAX_AREA is a build
+    // vector with no upper bound, so a per-slot grid would be unbounded by
+    // construction.
+    reset_grid(tables_grid_, static_cast<int>(model.tables.size()), 7);
+    tables_grid_->SetColLabelValue(0, "WS");
+    tables_grid_->SetColLabelValue(1, "Area");
+    tables_grid_->SetColLabelValue(2, "Table");
+    tables_grid_->SetColLabelValue(3, "Records");
+    tables_grid_->SetColLabelValue(4, "Fields");
+    tables_grid_->SetColLabelValue(5, "Active");
+    tables_grid_->SetColLabelValue(6, "Path");
 
     for (std::size_t row = 0; row < model.tables.size(); ++row) {
         const auto& area = model.tables[row];
         const int grid_row = static_cast<int>(row);
         tables_grid_->SetRowLabelValue(grid_row, std::to_string(row + 1));
-        tables_grid_->SetCellValue(grid_row, 0, visible_area_id(area.area_id));
-        tables_grid_->SetCellValue(grid_row, 1, area.display_name);
-        tables_grid_->SetCellValue(grid_row, 2, std::to_string(area.record_count));
-        tables_grid_->SetCellValue(grid_row, 3, std::to_string(area.field_count));
-        tables_grid_->SetCellValue(grid_row, 4, area.active ? "yes" : "");
-        tables_grid_->SetCellValue(grid_row, 5, area.path.string());
+        tables_grid_->SetCellValue(grid_row, 0, area.workspace);
+        tables_grid_->SetCellValue(grid_row, 1, visible_area_id(area.area_id));
+        tables_grid_->SetCellValue(grid_row, 2, area.display_name);
+        tables_grid_->SetCellValue(grid_row, 3, std::to_string(area.record_count));
+        tables_grid_->SetCellValue(grid_row, 4, std::to_string(area.field_count));
+        tables_grid_->SetCellValue(grid_row, 5, area.active ? "yes" : "");
+        tables_grid_->SetCellValue(grid_row, 6, area.path.string());
     }
     tables_grid_->AutoSizeColumns(false);
 }
@@ -1211,30 +1240,33 @@ void MainFrame::ApplyIndexes(const WorkspaceModel& model) {
         return;
     }
 
-    reset_grid(indexes_grid_, static_cast<int>(model.indexes.size()), 9);
-    indexes_grid_->SetColLabelValue(0, "Area");
-    indexes_grid_->SetColLabelValue(1, "Table");
-    indexes_grid_->SetColLabelValue(2, "Kind");
-    indexes_grid_->SetColLabelValue(3, "Active");
-    indexes_grid_->SetColLabelValue(4, "Direction");
-    indexes_grid_->SetColLabelValue(5, "Active Tag");
-    indexes_grid_->SetColLabelValue(6, "Tags");
-    indexes_grid_->SetColLabelValue(7, "Backend");
-    indexes_grid_->SetColLabelValue(8, "Container");
+    // AIF-120. An order belongs to its area's workspace; same rule as Tables.
+    reset_grid(indexes_grid_, static_cast<int>(model.indexes.size()), 10);
+    indexes_grid_->SetColLabelValue(0, "WS");
+    indexes_grid_->SetColLabelValue(1, "Area");
+    indexes_grid_->SetColLabelValue(2, "Table");
+    indexes_grid_->SetColLabelValue(3, "Kind");
+    indexes_grid_->SetColLabelValue(4, "Active");
+    indexes_grid_->SetColLabelValue(5, "Direction");
+    indexes_grid_->SetColLabelValue(6, "Active Tag");
+    indexes_grid_->SetColLabelValue(7, "Tags");
+    indexes_grid_->SetColLabelValue(8, "Backend");
+    indexes_grid_->SetColLabelValue(9, "Container");
 
     for (std::size_t row = 0; row < model.indexes.size(); ++row) {
         const auto& index = model.indexes[row];
         const int grid_row = static_cast<int>(row);
         indexes_grid_->SetRowLabelValue(grid_row, std::to_string(row + 1));
-        indexes_grid_->SetCellValue(grid_row, 0, visible_area_id(index.area_id));
-        indexes_grid_->SetCellValue(grid_row, 1, index.area_name);
-        indexes_grid_->SetCellValue(grid_row, 2, index.kind);
-        indexes_grid_->SetCellValue(grid_row, 3, index.active ? "yes" : "");
-        indexes_grid_->SetCellValue(grid_row, 4, index.ascending ? "ASC" : "DESC");
-        indexes_grid_->SetCellValue(grid_row, 5, index.tag);
-        indexes_grid_->SetCellValue(grid_row, 6, join_labels(index.tags));
-        indexes_grid_->SetCellValue(grid_row, 7, index.backend);
-        indexes_grid_->SetCellValue(grid_row, 8, index.container.string());
+        indexes_grid_->SetCellValue(grid_row, 0, index.workspace);
+        indexes_grid_->SetCellValue(grid_row, 1, visible_area_id(index.area_id));
+        indexes_grid_->SetCellValue(grid_row, 2, index.area_name);
+        indexes_grid_->SetCellValue(grid_row, 3, index.kind);
+        indexes_grid_->SetCellValue(grid_row, 4, index.active ? "yes" : "");
+        indexes_grid_->SetCellValue(grid_row, 5, index.ascending ? "ASC" : "DESC");
+        indexes_grid_->SetCellValue(grid_row, 6, index.tag);
+        indexes_grid_->SetCellValue(grid_row, 7, join_labels(index.tags));
+        indexes_grid_->SetCellValue(grid_row, 8, index.backend);
+        indexes_grid_->SetCellValue(grid_row, 9, index.container.string());
     }
     indexes_grid_->AutoSizeColumns(false);
 }
@@ -1244,24 +1276,29 @@ void MainFrame::ApplyRelations(const WorkspaceModel& model) {
         return;
     }
 
-    reset_grid(relations_grid_, static_cast<int>(model.relations.size()), 6);
-    relations_grid_->SetColLabelValue(0, "Parent");
-    relations_grid_->SetColLabelValue(1, "Child");
-    relations_grid_->SetColLabelValue(2, "Parent Key");
-    relations_grid_->SetColLabelValue(3, "Child Key");
-    relations_grid_->SetColLabelValue(4, "Matches");
-    relations_grid_->SetColLabelValue(5, "Source");
+    // AIF-120. Relations are engine-global today -- one map keyed by bare
+    // uppercased parent alias with no owner field -- so this column shows what
+    // the runtime cannot yet separate, and will stop being a constant when it can.
+    reset_grid(relations_grid_, static_cast<int>(model.relations.size()), 7);
+    relations_grid_->SetColLabelValue(0, "WS");
+    relations_grid_->SetColLabelValue(1, "Parent");
+    relations_grid_->SetColLabelValue(2, "Child");
+    relations_grid_->SetColLabelValue(3, "Parent Key");
+    relations_grid_->SetColLabelValue(4, "Child Key");
+    relations_grid_->SetColLabelValue(5, "Matches");
+    relations_grid_->SetColLabelValue(6, "Source");
 
     for (std::size_t row = 0; row < model.relations.size(); ++row) {
         const auto& relation = model.relations[row];
         const int grid_row = static_cast<int>(row);
         relations_grid_->SetRowLabelValue(grid_row, std::to_string(row + 1));
-        relations_grid_->SetCellValue(grid_row, 0, relation.parent);
-        relations_grid_->SetCellValue(grid_row, 1, relation.child);
-        relations_grid_->SetCellValue(grid_row, 2, relation.parent_key);
-        relations_grid_->SetCellValue(grid_row, 3, relation.child_key);
-        relations_grid_->SetCellValue(grid_row, 4, std::to_string(relation.match_count));
-        relations_grid_->SetCellValue(grid_row, 5, relation.source);
+        relations_grid_->SetCellValue(grid_row, 0, relation.workspace);
+        relations_grid_->SetCellValue(grid_row, 1, relation.parent);
+        relations_grid_->SetCellValue(grid_row, 2, relation.child);
+        relations_grid_->SetCellValue(grid_row, 3, relation.parent_key);
+        relations_grid_->SetCellValue(grid_row, 4, relation.child_key);
+        relations_grid_->SetCellValue(grid_row, 5, std::to_string(relation.match_count));
+        relations_grid_->SetCellValue(grid_row, 6, relation.source);
     }
     relations_grid_->AutoSizeColumns(false);
 }
