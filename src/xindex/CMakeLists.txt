@@ -38,7 +38,7 @@ target_sources(xindex PRIVATE
 # never pulled. Every OTHER closure that links xindex fails at link:
 #
 #   dottalk_bbsd  hand-globbed src/cdx/*.cpp into its own sources (CMakeLists.txt)
-#   dottalk_wx    11 unresolved externals, all CdxDocument:: and cdxfile::
+#   dottalk_wb    11 unresolved externals, all CdxDocument:: and cdxfile::
 #
 # Fixed where CNX was fixed rather than hand-copied a third time. Same guarantee
 # as the CNX lines above: dottalkpp keeps compiling its own copies and the linker

@@ -11,7 +11,7 @@
 // -----------------------------------------------------------------------------
 // Launch the windowed GUI from the shell.
 //
-// The windowed GUI is a SEPARATE EXECUTABLE (`dottalk_wx`, built by
+// The windowed GUI is a SEPARATE EXECUTABLE (`dottalk_wb`, built by
 // src/gui/wx/CMakeLists.txt behind DOTTALK_WITH_WX, OFF by default). dottalkpp
 // does not link wxWidgets, so this command launches a process; it does not
 // create a window in this one. That is deliberate: a wxApp event loop inside
@@ -106,10 +106,10 @@ constexpr const char* kExeSuffix = ".exe";
 constexpr const char* kExeSuffix = "";
 #endif
 
-// Both are built from the same source list by src/gui/wx/CMakeLists.txt:44-45.
-// `dottalk_wx` first: `_next` is the forward target and a tree that has both
+// Both are built from the same source list by src/gui/wx/CMakeLists.txt:54-55.
+// `dottalk_wb` first: `_next` is the forward target and a tree that has both
 // should launch the one the rest of the product means by "the GUI".
-const char* const kGuiExecutables[] = {"dottalk_wx", "dottalk_wx_next"};
+const char* const kGuiExecutables[] = {"dottalk_wb", "dottalk_wb_next"};
 
 std::string upper_token(std::istringstream& iss)
 {

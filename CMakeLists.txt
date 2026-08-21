@@ -535,7 +535,7 @@ if (DOTTALK_BUILD_BBSD AND NOT TARGET dottalk_bbsd)
     message(STATUS "dottalk_bbsd (standalone BBS daemon) ENABLED.")
 endif()
 
-foreach(_dottalk_gui_target IN ITEMS dottalk_wx dottalk_wx_next)
+foreach(_dottalk_gui_target IN ITEMS dottalk_wb dottalk_wb_next)
     dottalk_apply_version_metadata(${_dottalk_gui_target})
 endforeach()
 unset(_dottalk_gui_target)
@@ -846,7 +846,7 @@ endif()
 # only the three .ini files under dottalkpp/bin -- executables are gitignored
 # (.gitignore:247, **/*.exe) and reach the package through install(TARGETS),
 # which is exactly how dottalkpp itself gets there.
-foreach(_dottalk_gui_install IN ITEMS dottalk_wx dottalk_wx_next)
+foreach(_dottalk_gui_install IN ITEMS dottalk_wb dottalk_wb_next)
     if (TARGET ${_dottalk_gui_install})
         install(TARGETS ${_dottalk_gui_install} RUNTIME DESTINATION bin)
         if (WIN32)
