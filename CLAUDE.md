@@ -45,8 +45,15 @@ WSL builds also exist (`build-wsl`, etc.); `.exe` cross-platform via guarded cod
 - Runs headless via the **`DotTalkBBSD`** logon scheduled task; binds `127.0.0.1:8765` (loopback only).
 - Shares the SAME data root as the CLI: `dottalkpp\data` (launched with `--data D:\code\ccode\dottalkpp\data`).
 - Log: `D:\code\_bbsd_logs\bbsd.log`. Register/start scripts in `D:\code\` (`register-bbsd-startup.ps1`).
-- **Rebuilding the daemon requires stopping the task first** (`Stop-ScheduledTask -TaskName 'DotTalkBBSD'`);
-  a running instance locks `dottalk_bbsd.exe` (LNK1104 on build otherwise).
+- **Rebuilding the daemon requires KILLING THE PROCESS, from an ELEVATED shell.** A running instance
+  locks `dottalk_bbsd.exe` (LNK1104 on build otherwise). `Stop-ScheduledTask -TaskName 'DotTalkBBSD'`
+  alone is NOT enough and this line used to say it was: it stops what the scheduler still tracks,
+  returns success, and leaves the process running. Measured 2026-08-21, two builds in a row still
+  LNK1104 after a clean `Stop-ScheduledTask`. What worked:
+  `Get-Process dottalk_bbsd | Stop-Process -Force` **run elevated** -- the task starts the daemon at
+  logon, so an unelevated shell cannot end it. Confirm before and after with
+  `Get-Process dottalk_bbsd | Select-Object Id, Path`. Restart it afterwards
+  (`Start-ScheduledTask -TaskName 'DotTalkBBSD'`) or the BBS stays down until next logon.
 - Companion: `AFB-Ollama-Startup` task brings up the isolated WSL Ollama on `127.0.0.1:11434` (version
   `0.9.5` = WSL/isolated; `0.32.3` = Windows/non-isolated -- CHAT must hit the WSL one).
 
