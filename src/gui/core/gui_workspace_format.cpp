@@ -9,6 +9,8 @@
 
 #include "gui/core/gui_workspace_format.hpp"
 
+#include "dottalk/minidb.hpp"
+
 #include <algorithm>
 #include <iomanip>
 #include <sstream>
@@ -160,6 +162,72 @@ std::string format_workspace_graph_text(const WorkspaceModel& model,
     graph << "here from a disk-resident one. That is the next slice, and until it\n";
     graph << "lands this view cannot tell you where a table actually lives.\n";
     return graph.str();
+}
+
+std::string format_minidb_container_text(const std::string& payload,
+                                         const std::string& title) {
+    std::ostringstream out;
+    out << title << "\n\n";
+
+    if (!dottalk::minidb::is_container(payload)) {
+        out << "  This memo does not carry a MINIDB 1 container.\n"
+            << "  " << payload.size() << " byte(s); first line does not read 'MINIDB 1'.\n";
+        return out.str();
+    }
+
+    const auto sc = dottalk::minidb::scan(payload);
+    if (!sc.ok) {
+        out << "  Container refused: " << sc.error << ".\n"
+            << "  Nothing was hydrated. " << payload.size() << " byte(s) in the field.\n";
+        return out.str();
+    }
+
+    // Split members the way the container itself does: an "indexes/" prefix is
+    // the only structure the format carries.
+    std::vector<const dottalk::minidb::Member*> tables, indexes;
+    std::size_t widest = 0;
+    for (const auto& m : sc.files) {
+        (m.relpath.rfind("indexes/", 0) == 0 ? indexes : tables).push_back(&m);
+        widest = std::max(widest, m.relpath.size());
+    }
+
+    out << "  container : MINIDB 1, " << payload.size() << " byte(s) in the memo\n"
+        << "  posture   : " << sc.posture.size() << " byte(s)\n"
+        << "  members   : " << sc.files.size() << " file(s), "
+        << sc.total_file_bytes << " byte(s) hydrated\n";
+    if (!sc.ignored_sections.empty()) {
+        out << "  unknown   : " << sc.ignored_sections.size()
+            << " section(s) this reader does not understand\n";
+        for (const auto& sect : sc.ignored_sections) out << "      " << sect << "\n";
+    }
+    out << "\n";
+
+    auto dump = [&](const char* label,
+                    const std::vector<const dottalk::minidb::Member*>& v) {
+        if (v.empty()) return;
+        out << "  " << label << "\n";
+        for (const auto* m : v) {
+            out << "    " << std::left << std::setw(static_cast<int>(widest) + 2)
+                << m->relpath << std::right << std::setw(12) << m->length << "\n";
+        }
+        out << "\n";
+    };
+    dump("Tables", tables);
+    dump("Index containers", indexes);
+
+    out << "  Posture carried by the container\n";
+    std::istringstream ps(sc.posture);
+    std::string line;
+    while (std::getline(ps, line)) {
+        if (!line.empty() && line.back() == '\r') line.pop_back();
+        if (line.empty()) continue;
+        out << "    " << line << "\n";
+    }
+
+    out << "\n  Nothing above was hydrated. These bytes are still in the memo;\n"
+           "  the member sizes are what a WORKSPACE LOAD ... MEMO RAM would place\n"
+           "  in the RAM disk, and are the same total the catalog records as EST_HYD_B.\n";
+    return out.str();
 }
 
 } // namespace dottalk::gui
