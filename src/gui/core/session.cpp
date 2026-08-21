@@ -11,6 +11,7 @@
 
 #include "common/path_resolver.hpp"
 #include "common/path_state.hpp"
+#include "dottalk/dtschema.hpp"
 #include "cli/order_iterator.hpp"
 #include "cli/order_state.hpp"
 #include "gui/core/gui_command_catalog.hpp"
@@ -1808,10 +1809,14 @@ std::size_t Session::mirror_workspace_load_schema(const std::filesystem::path& s
                 : dbf->filename().string();
             area->area.open(dbf->string());
 
-            if (!schema_area.index.empty()) {
+            // AIF-120. DTSHEMA writes the literal word "none" for an absent
+            // index or tag (cmd_workspace.cpp:1569-1575). Testing emptiness
+            // alone accepted that sentinel as data and asked the CDX backend
+            // for a tag named NONE. See include/dottalk/dtschema.hpp.
+            if (!dottalk::dtschema::is_absent(schema_area.index.string())) {
                 if (const auto index = resolve_schema_index_path(schema_area.index, schema_area.index_type)) {
                     std::string err;
-                    const bool attached = !trim_ascii(schema_area.tag).empty()
+                    const bool attached = !dottalk::dtschema::is_absent(schema_area.tag)
                         ? activate_gui_order(area->area, *index, schema_area.tag, true, err)
                         : attach_gui_order_container(area->area, *index, err);
                     if (attached) {
