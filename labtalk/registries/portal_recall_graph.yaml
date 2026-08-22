@@ -296,6 +296,19 @@ nodes:
     hard_fails: true
     tier: 2
 
+  # Steward request 2026-08-22: the AIF number generator is real, tracked, and
+  # was found by searching every time anyone needed it -- the thesis 5.1 shape
+  # (stored, correct, functionally absent). Routed at open_lane so a reader
+  # meets it BEFORE picking a number by hand. Reads the intake register AND the
+  # claim files, because 66 numbers exist only in the register.
+  - id: mechanism.next_aif_number
+    label: Next free AIF number -- reads the intake register AND the claim files; max+1, never a gap
+    path: tools/coordination/next_aif.py
+    class: procedural
+    enforced_by: null
+    hard_fails: false
+    tier: 2
+
   # AIF-096. The design model UNDER the coordination protocol: two atoms (chat
   # mortal/acts, project durable/records), wake-first, lineage + asides. Reachable
   # as a `requires` from the protocol node so a routed reader gets the model, not
@@ -663,6 +676,7 @@ edges:
   - {from: trigger.write_dotscript, to: seed.dotscript_readiness, type: fires_at}
 
   - {from: trigger.open_lane, to: doctrine.lanes_and_promotion, type: fires_at}
+  - {from: trigger.open_lane, to: mechanism.next_aif_number, type: fires_at}
   - {from: trigger.open_lane, to: doctrine.ownership_authorship, type: fires_at}
 
   - {from: trigger.commit_or_push, to: doctrine.prepush_gate, type: fires_at}
