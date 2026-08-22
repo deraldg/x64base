@@ -121,14 +121,11 @@ remains its own commit and its own ruling, per that section.
 
 ## 4. What this does NOT do, stated rather than implied
 
-- **It does not enforce the within-workspace uniqueness invariant.** R112 sec 6a
-  ruled that half lands first and independently -- refuse a duplicate name at
-  the open or the rename. It is not in this change. **And there is a collision
-  to settle before it can be**: `USE ... AGAIN` deliberately opens a second
-  instance of the same table, which under a naive uniqueness guard would be
-  refused, reding a 13-marker spec. Whether AGAIN auto-derives a name or is
-  exempt is a ruling, not an implementation detail, and it is owed before the
-  prevention half is built.
+- ~~**It does not enforce the within-workspace uniqueness invariant.**~~
+  **WRONG -- see sec 5a.** The invariant is already enforced at
+  `cmd_use.cpp:944-972`, and the AGAIN question I raised as owed is already
+  answered there by the auto-rename. Left struck rather than deleted, because
+  the correction is the finding.
 - **It does not re-key the relation store.** The store is still
   `unordered_map<UPPER parent name, vector<Relation>>` with no owner field.
   That is I1.2 and it is the actual AIF-078 stage 4 blocker.
@@ -160,6 +157,79 @@ What the markers DO pin is the **ruled choice**:
 When the policy flips to hard refusal, these two markers move. That is
 deliberate: it makes the flip a red marker and its own ruling, which is what
 "time-boxed by measurement" has to mean if it means anything.
+
+## 5a. AMENDMENT, same day, after the first runtime pass -- sec 4's first bullet was wrong, and so was R112 sec 3
+
+Written before the build, sec 4 said the within-workspace uniqueness invariant
+"is not enforced" and named a ruling owed about `USE ... AGAIN` before it could
+be. **The first run of `NAME_AMBIG` refused to build its own fixture and proved
+otherwise:**
+
+    USE: refused -- alias 'NAMDUP' is already held by area 1.
+      Choose another, or close that area. Nothing was opened.
+
+**The guard already exists**, at `cmd_use.cpp:944-972`, resolving the name
+BEFORE the target area is touched:
+
+- an **explicit** `ALIAS` already held is **refused**;
+- a name **derived from the file stem** that is already held is **auto-renamed**
+  to `<stem>2` and **announced**.
+
+And the AGAIN question sec 4 raised as owed is already answered by that second
+arm -- `USE_AGAIN` shows it live, twice, deriving `UAREGR2` and `UAREGR3`. The
+comment at `:963` even names the case this lane cares about: *"the ordinary
+AGAIN case, **and also two same-named files from different directories**."*
+
+**So R112 sec 3 is stale in its sharpest claim.** It measured that
+`USE ... ALIAS` assigns the logical name "with **no uniqueness check at all**"
+and offered `USE dbf\x64\teachers.dbf ALIAS STUDENTS` as "a deliberate
+collision, accepted". That was true at `8aca9ef1b`. It stopped being true on
+2026-08-12 when USE_AGAIN's alias arm landed. **R112 sec 6a then scheduled the
+within-workspace "prevent" half as work to be done, and a different lane had
+already shipped it** -- a ruling planning work that was finished, which is the
+mirror image of this house's usual failure and worth the same attention.
+
+### What that does to the instrument
+
+Two open areas in one workspace **cannot** share a logical name. So
+`ambiguity_count()` is **structurally zero today** -- not untested,
+*unreachable* -- until two workspaces can be open at once **and** cross-workspace
+names are permitted to repeat, which R112 sec 4 says they may.
+
+R112 sec 6a called this exact shot:
+
+> the migration phase can only observe cross-workspace ambiguity once two
+> workspaces can be open at once -- before that it would record zero for the
+> wrong reason, and **a zero that means "nothing was tested" is exactly the
+> false green** trap-4 is about.
+
+**The instrument built under that ruling walked into the trap the ruling
+described.** Recorded rather than quietly repurposed.
+
+The ledger is not therefore useless, but **its meaning has changed and the
+claim must change with it**: it is not a migration counter for a live
+first-wins policy, because there is no live within-workspace first-wins policy
+to migrate. It is a **tripwire for AIF-078 stage 4** -- the line goes non-zero
+the day two workspaces can hold one name, and that is the day the
+cross-workspace half of R112 becomes real work. Sec 3's framing stands only for
+the cross-workspace case.
+
+### And my own spec produced a false green
+
+`N_T1` read `.T.` in the failed run while proving nothing: only one `NAMDUP`
+existed, so the resolution was unambiguous and the marker asserted a tautology.
+Sec 5 argued at length that a spec which cannot fail on its subject is the
+house's recurring defect; the first cut of that spec contained one. The spec is
+rewritten to assert what is actually true and reachable -- the
+two-directories-same-basename rename, which nothing else in the corpus covers.
+
+### What is NOT changed by this amendment
+
+The resolver consolidation stands and is verified: `REGRESSION ALL` green on
+all 8 defaults, `USE_AGAIN` 15/15, `USE_ARGS` 7/7, on build `83f5032e`. And a
+prediction I made before the run was wrong in the harmless direction: I expected
+`USE_AGAIN` to emit new `NAME:` announce lines. It emitted none, and cannot --
+the rename means its two instances never share a name.
 
 ## 6. Cost
 
