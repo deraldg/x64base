@@ -207,3 +207,90 @@ and the destroy guards -- compiled and executed under g++ -std=c++20.
 3. Catalog persistence for declared workspaces (stage 5).
 4. `WORKSPACE NEW` on a name that already exists prints and returns; reruns
    within one process are tolerable but not idempotent.
+
+---
+
+## Addendum -- local slots rebased to 0 (owner ruling 2026-08-22)
+
+**Status:** review-needed. Same AIPR, same stage, same files; recorded here
+rather than in a separate document because it changes a field this ruling
+introduced and would be unreadable apart from it.
+
+### The observation
+
+The owner noticed the asymmetry before it set:
+
+> "i noticed workspace handles are 1 based and areas are 0 based ... i always
+> kind of thought of '0' as a 'default' for when 1 table was in use, not a
+> requirement just a 'default' not a rule, just opining before things get baked
+> in"
+
+There were in fact THREE numbering planes in one process, not two:
+
+| plane | base | kind |
+|---|---|---|
+| engine slot | 0 | position |
+| workspace-local slot | 1 | position |
+| workspace handle | 1, with 0 = "none" | key |
+
+### The ruling
+
+> "we advertise all over the place that x64base is not a clone but an
+> 'evolution'. so 0 based costs us nothing to maintain forward in workspaces
+> too"
+
+Local slots are now **0-based**, matching the engine.
+
+The 1-based spelling was inherited habit, not design: dBase and FoxPro number
+work areas from 1 and FoxPro spends `SELECT 0` on "the lowest unused work area."
+Neither is a contract this project owes anyone -- and note DotTalk++ had already
+diverged, since `SELECT 0` here selects area 0 rather than allocating a free
+one. Keeping the inherited base bought one thing: a second counting origin
+inside one process, and an off-by-one for every reader to carry.
+
+### Why it was free, and the AIF-079 instance it exposed
+
+`DbArea::wsLocalSlot()` had **zero readers** -- written in `dbf_file.cpp`,
+cleared in `dbarea.cpp`, read nowhere; `WORKSPACE REGISTRY` derived its display
+number from the member vector's index, never from the field. That is the
+AIF-079 shape (a mechanism with no call sites) and it is **mine**, introduced in
+stage 1 five days ago, found while answering a question about numbering rather
+than a question about dead code. Fifth instance in this lane's census, first one
+authored here.
+
+### What did NOT change, and why
+
+**The handle stays a key.** It is the runtime twin of the catalog's `WS_ID`
+auto-id allocator, and a key has no position to be based on. Handle `0` remains
+reserved for "no such workspace / no parent," which is what lets
+`find_by_name_ci`, `parent_of` and `resolve_workspace_token` report failure
+through the return value with no second channel.
+
+The concrete cost of 0-basing it would have been observable: `WORKSPACE
+REGISTRY` prints `parent 0` to mean **root**. With DEFAULT at handle 0 that line
+stops distinguishing "has no parent" from "child of DEFAULT" -- information lost
+at exactly the place the tree is read.
+
+### The line that had to move with it
+
+`dbf_file.cpp` guarded the join result with `if (local > 0)`. Correct while
+slots were 1-based; under 0-basing that spelling silently drops **every
+workspace's first area**. Now `>= 0`.
+
+`join()`'s failure return survived untouched precisely because it is `-1` and
+not `0`. Had the original author reached for zero as the error value, the first
+valid slot and "no such workspace" would now be the same number. That is luck
+rather than foresight, and it is written down here so the next person treats it
+as a constraint.
+
+### Verification
+
+The standalone header self-check was extended and re-run under `g++ -std=c++20`:
+first member is slot 0, lowest-free reuse returns 0, idempotent re-join returns
+0, and `join()` on an unknown handle returns `-1` and is asserted **distinct
+from 0** -- the assertion this rebase could have broken and did not.
+
+`WORKSPACE REGISTRY` output changes: member lines now read `local 0  engine slot
+N`. `WORKSPACE_SCOPE` asserts no local-slot numbers (no marker in this language
+reads REGISTRY output -- the IDXDIFF external-measurement precedent), so it
+stays green on its own terms; the numbering is covered by the self-check.

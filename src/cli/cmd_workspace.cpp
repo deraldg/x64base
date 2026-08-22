@@ -3848,7 +3848,10 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
                           << "  members " << mem.size() << "\n";
                 for (std::size_t i = 0; i < mem.size(); ++i) {
                     if (mem[i] < 0) continue;   // vacated local slot, awaiting reuse
-                    std::cout << "    local " << (i + 1)
+                    // 0-based, matching the engine slot beside it (owner ruling
+                    // 2026-08-22). The two columns now agree on where counting
+                    // starts, which is the whole point of the rebase.
+                    std::cout << "    local " << i
                               << "  engine slot " << mem[i] << "\n";
                 }
             }

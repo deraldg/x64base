@@ -230,7 +230,12 @@ void DbArea::open(const std::string& filename)
     // handle yet, so every area still resolves to 1 exactly as before.
     _ws_handle = workspace::current_handle();
     const std::int32_t local = workspace::join(_ws_handle, _engine_slot);
-    if (local > 0) _ws_local_slot = local;
+    // Local slots are 0-BASED (owner ruling 2026-08-22), so the guard is
+    // >= 0 and not > 0 -- slot 0 is the first real member, and only the
+    // NEGATIVE return means join() refused. This line read `> 0` for the
+    // first day of its life, when slots were 1-based; under 0-basing that
+    // spelling would silently drop every workspace's first area.
+    if (local >= 0) _ws_local_slot = local;
 }
 
 void DbArea::readHeader()

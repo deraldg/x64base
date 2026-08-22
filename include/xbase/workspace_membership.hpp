@@ -241,23 +241,50 @@ inline bool destroy(std::uint64_t h) {
     return true;
 }
 
-// Join, returning the WORKSPACE-LOCAL slot (1..n) -- decision D2. The LOWEST
-// FREE local slot is reused rather than always appending: a leave would
-// otherwise leave a permanent hole, and renumbering survivors is not an option
-// because a local slot is an address. Bounded by the members of this workspace.
-// Returns -1 if the handle is unknown; the caller keeps its previous value.
+// Join, returning the WORKSPACE-LOCAL slot (0..n-1) -- decision D2, rebased
+// 0 by owner ruling 2026-08-22.
+//
+// WHY 0 AND NOT 1. The first cut was 1-based out of xBase habit: dBase and
+// FoxPro number work areas from 1, and FoxPro spends 0 on "the lowest unused
+// work area." But this project is an EVOLUTION of that lineage and not a clone
+// of it, so an inherited convention is only worth keeping when it buys
+// something. Here it bought a second numbering base inside one process --
+// engine slots 0-based, local slots 1-based -- and the only thing a reader
+// gets from that is an off-by-one to remember. Owner ruling: "0 based costs us
+// nothing to maintain forward in workspaces too."
+//
+// It was free to change because it had no consumers: DbArea::wsLocalSlot() had
+// ZERO readers at the time of the rebase (written in dbf_file.cpp, cleared in
+// dbarea.cpp, read nowhere), and WORKSPACE REGISTRY derived its display number
+// from the vector index rather than from the field. An AIF-079 instance of my
+// own making, caught while answering a question about numbering rather than
+// about dead code.
+//
+// A LOCAL SLOT IS A POSITION, and positions here are 0-based like the engine's.
+// A HANDLE is a KEY -- the runtime twin of the catalog's WS_ID auto-id -- and
+// keys have no base to speak of; handle 0 stays reserved for "no such
+// workspace / no parent" so failure travels in the return value.
+//
+// The LOWEST FREE local slot is reused rather than always appending: a leave
+// would otherwise leave a permanent hole, and renumbering survivors is not an
+// option because a local slot is an address. Bounded by the members of this
+// workspace.
+//
+// Returns -1 if the handle is unknown. The failure sentinel survived the rebase
+// untouched precisely because it is NEGATIVE and not zero -- had it been 0, the
+// first valid slot and "no such workspace" would now be the same value.
 inline std::int32_t join(std::uint64_t h, std::int32_t engine_slot) {
     auto it = table().find(h);
     if (it == table().end()) return -1;
     auto& m = it->second.members;
     for (std::size_t i = 0; i < m.size(); ++i) {
-        if (m[i] == engine_slot) return static_cast<std::int32_t>(i + 1);  // idempotent
+        if (m[i] == engine_slot) return static_cast<std::int32_t>(i);  // idempotent
     }
     for (std::size_t i = 0; i < m.size(); ++i) {
-        if (m[i] < 0) { m[i] = engine_slot; return static_cast<std::int32_t>(i + 1); }
+        if (m[i] < 0) { m[i] = engine_slot; return static_cast<std::int32_t>(i); }
     }
     m.push_back(engine_slot);
-    return static_cast<std::int32_t>(m.size());
+    return static_cast<std::int32_t>(m.size() - 1);
 }
 
 // Leave. The member's local slot becomes free for the next join rather than
