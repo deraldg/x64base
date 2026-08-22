@@ -88,6 +88,20 @@ static bool predicate_chain_fast_allowed(const std::string& src) {
 
 // -------------------- “value-expr to string” subset --------------------
 // Field refs + literals + string/date/numeric builtins. No arithmetic operators.
+//
+// AIF-120 R115. Because this subset has NO operators, its lexer stops at the
+// first character it does not know -- and `+` is one of them. It used to stop
+// SILENTLY and append End, so a truncated token stream was indistinguishable
+// from a complete one and at_end() reported true on a PREFIX. eval_any() then
+// returned that prefix as the value of the WHOLE expression, which is why
+// `? "TAG:[" + RECNO() + "]"` printed `TAG:[` -- no closing bracket, no error
+// and no failure. Measured 2026-08-22 (probe 2 Q2/Q3/Q5/Q6/Q11/Q12/Q13).
+//
+// This is AIF-074 ED-01b one evaluator over. api.cpp:16-27 describes the same
+// shape it closed there: a predicate whose valid PREFIX parsed was accepted
+// and its remainder discarded without a word. The lexer now REPORTS that it
+// stopped early and every caller refuses the parse, so the class is closed on
+// this path too.
 
 struct Tok {
     enum Kind { Ident, Number, String, LParen, RParen, Comma, End } kind{};
@@ -101,7 +115,9 @@ static bool is_ident_char(char c) {
     return std::isalnum(static_cast<unsigned char>(c)) || c == '_';
 }
 
-static std::vector<Tok> lex_value_expr(const std::string& src) {
+static std::vector<Tok> lex_value_expr(const std::string& src,
+                                       bool* stopped_early = nullptr) {
+    if (stopped_early) *stopped_early = false;
     std::vector<Tok> out;
     out.reserve(src.size() / 2 + 8);
 
@@ -158,7 +174,10 @@ static std::vector<Tok> lex_value_expr(const std::string& src) {
             continue;
         }
 
-        break; // unknown char => stop
+        // Unknown character. Report it: what follows is a PREFIX of the input,
+        // and the End pushed below is about to make it look complete.
+        if (stopped_early) *stopped_early = true;
+        break;
     }
 
     out.push_back({Tok::End, ""});
@@ -641,7 +660,12 @@ bool compile_where_program(const std::string& exprText,
 }
 
 bool eval_string_value_expr(xbase::DbArea& A, const std::string& exprText, std::string& out) {
-    const auto toks = lex_value_expr(exprText);
+    // A partially-lexed input is not an expression this subset can evaluate.
+    // Refusing here is what makes the at_end() check below mean "the whole
+    // input was consumed" rather than "the token stream ran out" (R115).
+    bool stopped_early = false;
+    const auto toks = lex_value_expr(exprText, &stopped_early);
+    if (stopped_early) return false;
     ValueParser p(A, toks);
     std::string v;
     if (!p.parse_expr(v)) return false;

@@ -45,6 +45,11 @@
 //   FORMULA USAGE prints usage before expression evaluation.
 //   When a table is open, field-aware expressions use the current record.
 //   This command does not mutate table data.
+//   An expression that cannot be evaluated REPORTS, and the report names the
+//   expression: "FORMULA error: <reason> -- in: <expr>". It does not print a
+//   partial result. This matters for self-asserting scripts, where the marker
+//   tag lives INSIDE the expression: an unnamed error is indistinguishable in
+//   a transcript from a marker that was never run (AIF-120 R115).
 //
 // risk:
 //   evaluates_expression: yes except usage
@@ -163,7 +168,14 @@ static std::string format_number(double v) {
     return s.empty() ? "0" : s;
 }
 
-static void print_value(const xexpr::Value& value) {
+// AIF-120 R115: the error branch takes the source text so the report can name
+// the expression. A self-asserting script carries its marker tag inside the
+// expression -- `? "UA_T4_area_is_empty:" + (RECCOUNT() = 0)` -- so an error
+// that prints only a reason removes the tag from the transcript entirely, and
+// a reader grepping for UA_T4 finds nothing at all rather than a failure.
+// Measured 2026-08-22: probe 1 P12/P13 printed "FORMULA error: scalar
+// evaluation failed" twice with nothing to tell the two markers apart.
+static void print_value(const xexpr::Value& value, const std::string& src) {
     switch (value.kind()) {
         case xexpr::ValueKind::Bool:
             std::cout << (value.as_bool() ? ".T." : ".F.") << "\n";
@@ -183,13 +195,15 @@ static void print_value(const xexpr::Value& value) {
             std::cout << std::to_string(value.as_date8()) << "\n";
             return;
 
-        case xexpr::ValueKind::Error:
-            if (!value.error_message().empty()) {
-                std::cout << "FORMULA error: " << value.error_message() << "\n";
-            } else {
-                std::cout << "FORMULA error: evaluation failed.\n";
-            }
+        case xexpr::ValueKind::Error: {
+            const std::string reason = value.error_message().empty()
+                                     ? std::string("evaluation failed")
+                                     : value.error_message();
+            std::cout << "FORMULA error: " << reason;
+            if (!src.empty()) std::cout << " -- in: " << src;
+            std::cout << "\n";
             return;
+        }
 
         case xexpr::ValueKind::None:
         default:
@@ -245,5 +259,5 @@ void edu_FORMULA(DbArea& area, std::istringstream& in) {
     ctx.area = area.isOpen() ? &area : nullptr;
 
     const xexpr::Value value = xexpr::evaluate_expression(expr, ctx);
-    print_value(value);
+    print_value(value, expr);
 }

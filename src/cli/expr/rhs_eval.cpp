@@ -268,7 +268,17 @@ static bool is_ident_char(char c) {
     return std::isalnum(static_cast<unsigned char>(c)) || c == '_' || c == '$';
 }
 
-static std::vector<Tok> lex_value_expr(const std::string& src) {
+// AIF-120 R115: the same defect, one file over. See value_eval.cpp's copy of
+// this lexer -- an unrecognized character ended the lex, End was appended, and
+// at_end() then reported true on a PREFIX. The AIF-074 P1.6 note further down
+// records this class biting here once already (a dot not followed by a digit
+// "ended the lex and the whole expression silently failed"); that repair taught
+// the lexer one more token rather than teaching it to say when it stopped.
+// This does the latter, so the next unlexable character reports instead of
+// truncating.
+static std::vector<Tok> lex_value_expr(const std::string& src,
+                                       bool* stopped_early = nullptr) {
+    if (stopped_early) *stopped_early = false;
     std::vector<Tok> out;
     std::size_t i = 0;
     auto skip_ws = [&]() {
@@ -348,6 +358,8 @@ static std::vector<Tok> lex_value_expr(const std::string& src) {
             if (m == 'F' || m == 'f') { out.push_back({Tok::Ident, "F"}); i += 3; continue; }
         }
 
+        // Unknown character: the rest of the input is being dropped. Say so.
+        if (stopped_early) *stopped_early = true;
         break;
     }
     out.push_back({Tok::End, ""});
@@ -889,7 +901,9 @@ static dottalk::expr::EvalValue scalar_to_eval(const ScalarValue& v) {
 }
 
 static bool eval_scalar_expr(xbase::DbArea* A, const std::string& exprText, dottalk::expr::EvalValue& out) {
-    auto toks = lex_value_expr(exprText);
+    bool stopped_early = false;
+    auto toks = lex_value_expr(exprText, &stopped_early);
+    if (stopped_early) return false;   // a prefix is not the expression (R115)
     ValueParser p(A, toks);
     ScalarValue v;
     if (!p.parse_expr(v)) return false;
@@ -969,7 +983,12 @@ bool eval_rhs_avalue(xbase::DbArea* areaOrNull,
     xbase::DbArea* area = (areaOrNull && areaOrNull->isOpen()) ? areaOrNull : nullptr;
 
     // Parse once with the array-preserving ScalarValue path so an ArrayRef survives.
-    auto toks = lex_value_expr(expr);
+    bool stopped_early = false;
+    auto toks = lex_value_expr(expr, &stopped_early);
+    if (stopped_early) {
+        if (errOut) *errOut = "unrecognized character in expression";
+        return false;
+    }
     ValueParser p(area, toks);
     ScalarValue v;
     if (p.parse_expr(v) && p.at_end()) {
