@@ -83,8 +83,26 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     // These commands can change the current table or relation graph. Refresh
     // relations explicitly after they run.
 
-    // With engine cursor hook active, avoid manual refresh on cursor-moving commands.
-    // Keep manual refresh for: open/close/select, relation-definition changes, and data mutations.
+    // Relation auto-refresh is issued ONCE PER COMMAND LINE by the canonical
+    // executor, shell_execute_line() in shell_api.cpp -- not here. Do not add
+    // per-command refresh calls for cursor movement; the shell already covers
+    // it, and a second call would double the child scan.
+    //
+    // The explicit refresh calls that remain below are now REDUNDANT for every
+    // command that is NOT on the suppression list -- the shell already
+    // refreshed once after the command returned, so those 18 sites refresh
+    // twice. They are retained deliberately here so that this change is one
+    // added call and nothing else; removing them is mechanical, costs a scan
+    // per mutation, and wants its own ruling.
+    //
+    // The one that must NOT be removed is DELETE. It is the ONLY explicit-call
+    // command that is also on the suppression list (measured 2026-08-22), so
+    // the shell skips it and this call is the only refresh it gets.
+    //
+    // Corrected 2026-08-22 (AIF-120): this block used to read "with engine
+    // cursor hook active, avoid manual refresh on cursor-moving commands".
+    // xbase::cursor_hook::notify() has no call sites, so that hook never
+    // fired and the cursor movers refreshed nothing at all.
 
     registry().add("USE",   [](DbArea& A, std::istringstream& S){
         if (!dottalk::dirty::maybe_prompt_area(A, "USE")) {
@@ -121,9 +139,10 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     // ---------------------------------------------------------------------
     // Direct cursor movers
     // ---------------------------------------------------------------------
-    // These should trigger relation maintenance through the engine cursor hook.
-    // Do not add manual refresh calls here unless the hook contract changes.
-    // Cursor movers: rely on engine cursor hook (no manual refresh here)
+    // Cursor movers. Relation maintenance for these is issued by
+    // shell_execute_line() after the command returns; deliberately no refresh
+    // call here. (Before 2026-08-22 this comment claimed the engine cursor
+    // hook covered them -- it did not; cursor_hook::notify() is never called.)
     registry().add("GO",           [](DbArea& A, std::istringstream& S){ cmd_GO(A,S);      });
     registry().add("TOP",          [](DbArea& A, std::istringstream& S){ cmd_TOP(A,S);     });
     registry().add("BOTTOM",       [](DbArea& A, std::istringstream& S){ cmd_BOTTOM(A,S);  });
@@ -133,10 +152,13 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     // ---------------------------------------------------------------------
     // Read/report commands that should preserve cursor position
     // ---------------------------------------------------------------------
-    // These observe or print data. If one starts moving the cursor, fix that
-    // command or route movement through the engine hook rather than adding a
+    // These observe or print data and must leave the cursor where they found
+    // it. Most are also on the shell's relation-refresh suppression list
+    // (rel_refresh_suppress.cpp), so shell_execute_line() skips its
+    // post-command refresh for them -- a relation refresh matches by scan, and
+    // these are the commands most likely to be run over a large table. If one
+    // of them starts moving the cursor, fix that command; do not add a
     // registry refresh here.
-    // Non-positioning (should preserve cursor): no refresh here
     registry().add("COUNT",        [](DbArea& A, std::istringstream& S){ cmd_COUNT(A,S);    });
     registry().add("LIST",         [](DbArea& A, std::istringstream& S){ cmd_LIST(A,S);     });
 #if DOTTALK_WITH_INDEX
@@ -175,6 +197,7 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     // Filter changes affect relation results without moving cursor: keep manual refresh
     registry().add("SETFILTER", [](DbArea& A, std::istringstream& S){ cmd_SETFILTER(A,S); relations_api::refresh_if_enabled(); });
 
+    registry().add("GUI", [](DbArea& A, std::istringstream& S){ app_GUI(A,S); });
 
     // ---------------------------------------------------------------------
     // Optional Turbo Vision / UI commands
@@ -194,6 +217,9 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
 #else
     (void)include_ui_cmds;
 #endif
+
+    registry().add("APPGUI", [](DbArea& A, std::istringstream& S){ app_GUI(A,S); });
+   	
 
     // ---------------------------------------------------------------------
     // File/import/export/sort utilities
@@ -233,10 +259,11 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     // ---------------------------------------------------------------------
     // Ordered seek/find/order commands
     // ---------------------------------------------------------------------
-    // FIND and SEEK are cursor movers. SETORDER is special: changing active
-    // order can change logical relation context even if physical recno stays
-    // fixed, so SETORDER also refreshes explicitly.
-    // Cursor movers (seek/find/order): rely on cursor hook
+    // FIND and SEEK are cursor movers -- refreshed by shell_execute_line()
+    // after the command, like GO/SKIP above. SETORDER is different: changing
+    // the active order can change logical relation context even when the
+    // physical recno does not move, and it is not a cursor mover at all, so it
+    // keeps its own explicit refresh.
     registry().add("FIND",         [](DbArea& A, std::istringstream& S){ cmd_FIND(A,S);     });
 #if DOTTALK_HAS_XINDEX
     registry().add("SEEK",         [](DbArea& A, std::istringstream& S){ cmd_SEEK(A,S);     });
@@ -341,14 +368,15 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     registry().add("DUMP",      [](DbArea& A, std::istringstream& S){ cmd_DUMP(A,S); });
     registry().add("EDIT",      [](DbArea& A, std::istringstream& S){ cmd_EDIT(A,S); });
 
-    // LOCATE/CONTINUE are cursor movers and should use the same hook contract
-    // as GO/TOP/SKIP/SEEK.
-    // Cursor movers: rely on cursor hook
+    // LOCATE/CONTINUE are cursor movers, refreshed by shell_execute_line()
+    // after the command -- same treatment as GO/TOP/SKIP/SEEK.
     registry().add("LOCATE",    [](DbArea& A, std::istringstream& S){ cmd_LOCATE(A,S);   });
     registry().add("CONTINUE",  [](DbArea& A, std::istringstream& S){ cmd_CONTINUE(A,S); });
 
-    // AREA and RECNO are observer/developer commands. If RECNO sets position,
-    // it should route through the normal movement path so the hook fires.
+    // AREA and RECNO are observer/developer commands. RECNO DOES set position
+    // when given an argument (cmd_recno.cpp:122 calls gotoRec64), so it is a
+    // cursor mover in practice and is covered by shell_execute_line()'s
+    // post-command refresh along with the rest.
     registry().add("AREA",      [](DbArea& A, std::istringstream& S){ cmd_AREA(A,S);  });
     registry().add("RECNO",     [](DbArea& A, std::istringstream& S){ cmd_RECNO(A,S); });
 

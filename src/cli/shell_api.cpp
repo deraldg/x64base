@@ -38,6 +38,7 @@
 #include "cli/command_output.hpp"
 #include "cli/expr/value_eval.hpp"
 #include "cli/rel_refresh_suppress.hpp"
+#include "set_relations.hpp"          // relations_api::refresh_if_enabled()
 #include "cli/settings.hpp"
 
 #if __has_include("cli/path_resolver.hpp") && __has_include("cli/cmd_setpath.hpp")
@@ -382,6 +383,33 @@ bool shell_execute_line(xbase::DbArea& area, const std::string& rawLine)
             ok = true;
         }
     }
+
+    // -------------------------------------------------------------------
+    // Relation auto-refresh (AIF-120, 2026-08-22)
+    // -------------------------------------------------------------------
+    // This is the canonical executor every front-end routes through, so one
+    // call here maintains SET RELATION children after ANY command that moved
+    // the cursor -- GO/GOTO/SKIP/TOP/BOTTOM, SEEK/FIND, LOCATE/CONTINUE --
+    // with no per-command wrapper in shell_commands.cpp and no new opinion
+    // needed when a future cursor mover is added.
+    //
+    // WHY IT IS HERE AND NOT IN THE ENGINE HOOK. xbase::cursor_hook was built
+    // for exactly this: shell.cpp installs on_cursor_changed, which does this
+    // work and honours the same suppression counter. But cursor_hook::notify()
+    // has NO CALL SITES anywhere in the tree, so that callback never fires.
+    // shell_commands.cpp then had its manual refresh REMOVED from the cursor
+    // movers on the strength of that hook ("rely on engine cursor hook"),
+    // which left SET RELATION children stale after every parent movement --
+    // measured as USE_AGAIN UA_T12b. The hook and its Guard sites are left in
+    // place deliberately; removing them is a separate ruling.
+    //
+    // THE SUPPRESSION LIST IS HONOURED ON PURPOSE. refresh_from_parent_name
+    // matches by SCAN, not index seek (set_relations.cpp:346), so refreshing
+    // after COUNT/LIST/SUM over a large table would cost a full child scan per
+    // call. This is the SAME predicate RelRefreshGuard uses above, so the
+    // suppress-during and skip-after halves of the policy cannot drift apart.
+    if (!shell_is_rel_refresh_suppression_command(U))
+        relations_api::refresh_if_enabled();
 
     if (timer_on) {
         const auto t1 = timer_clock::now();
