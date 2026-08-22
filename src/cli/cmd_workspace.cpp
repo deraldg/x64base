@@ -189,6 +189,7 @@
 //   VDISK
 //
 #include <algorithm>
+#include "xbase/workspace_membership.hpp"
 #include <cctype>
 #include <climits>
 #include <cstdlib>
@@ -3556,6 +3557,10 @@ static void workspace_print_usage() {
     std::cout << "    replaced files are kept as <name>.__wbak. WITH INDEXES copies container\n";
     std::cout << "    BYTES only -- LMDB is not carried, so the destination needs BUILDLMDB.\n";
     std::cout << "  - Without CNX/INX/CDX, index files are chosen by DBF flavor: true x64/v128 CDX, classic VFP/v32 CNX.\n";
+    std::cout << "  - REGISTRY reports the RUNTIME workspace membership (which areas belong to\n";
+    std::cout << "    which workspace right now), which is not the catalog: WORKSPACES.dbf is the\n";
+    std::cout << "    persistence authority and answers what has been SAVED. One workspace exists\n";
+    std::cout << "    today, DEFAULT, and every open area belongs to it (AIF-078 stage 2).\n";
 }
 
 std::string workspace_last_loaded_file() {
@@ -3588,6 +3593,28 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
     try {
         if (sub_command == "usage" || sub_command == "help" || sub_command == "?") {
             workspace_print_usage();
+
+        } else if (sub_command == "registry") {
+            // AIF-078 stage 2. An observer, deliberately: a registry nothing
+            // can read is a registry no spec can assert, and this house has
+            // just spent a day on columns that never varied and mechanisms
+            // that never fired. Every line here is a FIELD of the membership,
+            // not a summary of it, so a spec can go red on contents.
+            const auto hs = xbase::workspace::handles();
+            std::cout << "WORKSPACE REGISTRY (runtime membership)\n";
+            std::cout << "  current handle : " << xbase::workspace::current_handle() << "\n";
+            std::cout << "  workspaces     : " << hs.size() << "\n";
+            for (const auto h : hs) {
+                const auto mem = xbase::workspace::members(h);
+                std::cout << "  handle " << h
+                          << "  name " << xbase::workspace::name_of(h)
+                          << "  members " << mem.size() << "\n";
+                for (std::size_t i = 0; i < mem.size(); ++i) {
+                    if (mem[i] < 0) continue;   // vacated local slot, awaiting reuse
+                    std::cout << "    local " << (i + 1)
+                              << "  engine slot " << mem[i] << "\n";
+                }
+            }
 
         } else if (sub_command == "add") {
             auto toks = split_tokens(rest_of_args);

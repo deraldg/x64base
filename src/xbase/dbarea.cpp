@@ -23,6 +23,7 @@
 // ==============================
 
 #include "xbase.hpp"
+#include "xbase/workspace_membership.hpp"
 #include "xbase/index_hooks.hpp"
 #include "xbase/trigger_hooks.hpp"
 #include "memo/memo_manager.hpp"
@@ -105,10 +106,20 @@ void DbArea::close() {
     _memo_mgr.reset();
     _memo_ctx.clear();
 
-    // AIF-120 I1.0: the area is no longer owned by any workspace. The SLOT is
-    // NOT cleared -- it is stamped once at engine construction and is a
+    // AIF-120 I1.0: the area is no longer owned by any workspace. The ENGINE
+    // slot is NOT cleared -- it is stamped once at engine construction and is a
     // property of the array position, not of whatever table is open in it.
+    //
+    // AIF-078 stage 2: leave the workspace's child list before dropping the
+    // handle, because the handle is what says which list to leave. The
+    // WORKSPACE-LOCAL slot IS cleared, because unlike the engine slot it is a
+    // property of the membership, and the membership is what just ended. The
+    // vacated local slot is reused by the next join rather than shifting the
+    // survivors down -- a local slot is an address, and re-addressing live
+    // members silently would be worse than a gap.
+    workspace::leave(_ws_handle, _engine_slot);
     _ws_handle = 0;
+    _ws_local_slot = -1;
 
     // x64/VFP extras
     _dbf_version_byte = 0x03;

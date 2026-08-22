@@ -15,6 +15,7 @@
 // Notes: ASCII only.
 
 #include "xbase.hpp"
+#include "xbase/workspace_membership.hpp"
 #include "xbase_vfp.hpp"
 #include "xbase_64.hpp"
 #include "xbase/ramfs.hpp"
@@ -218,10 +219,18 @@ void DbArea::open(const std::string& filename)
 
     // AIF-120 I1.1. LAST statement of open(), deliberately: every failure path
     // above throws, and close() (called on entry) has already zeroed this, so
-    // an area is owned only if it actually opened. One workspace exists today,
-    // so the handle is the constant 1 -- see the note on _ws_handle in
-    // xbase.hpp for why a constant is the honest value for now.
-    _ws_handle = 1;
+    // an area is owned only if it actually opened.
+    //
+    // AIF-078 stage 2: the constant 1 becomes a READ of the runtime workspace
+    // registry, and the area joins that workspace's child list here. This and
+    // close() are the ONLY two points in the tree where an area joins or
+    // leaves a workspace, which is why registration lives at this choke point
+    // rather than at the eight src/cli call sites that reach open(). The
+    // registry seeds itself holding DEFAULT = 1 and nothing sets the current
+    // handle yet, so every area still resolves to 1 exactly as before.
+    _ws_handle = workspace::current_handle();
+    const std::int32_t local = workspace::join(_ws_handle, _engine_slot);
+    if (local > 0) _ws_local_slot = local;
 }
 
 void DbArea::readHeader()
