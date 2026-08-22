@@ -168,20 +168,28 @@ static bool is_numeric_literal(const std::string& s) {
 // workarea_util.{hpp,cpp}; behavior unchanged.
 using cli::find_open_area_by_name_ci;
 
-static int slot_of_area_ptr(const xbase::DbArea* area) {
-    if (!area) return -1;
-    const std::size_t n = workareas::count();
-    for (std::size_t i = 0; i < n; ++i) {
-        if (workareas::db(i) == area) return static_cast<int>(i);
-    }
-    return -1;
-}
+// AIF-078 D8 sec 7, 2026-08-22. A file-local slot_of_area_ptr() used to live
+// here: a linear scan over workareas::count() -- which returns the CONFIGURED
+// MAXIMUM, not the number of open areas -- reached from ScopedEngineSelect's
+// ctor, and so from inside goto_first_match()'s per-record loop below. It was a
+// LEFTOVER: AIF-120 I1.1 had already replaced that scan with an O(1) member
+// read in cli::slot_of_area (workarea_util.cpp), whose sibling import sits
+// directly above this comment, and the sweep missed this copy. Deleted rather than rewritten, because a second spelling of
+// one question is the defect I1.3a spent a day closing one layer down.
+//
+// It was not merely slower. I1.1's note records that the shared version answers
+// correctly for a CLOSED area, where the scan returned -1, because
+// workareas::db(i) walks only what is currently bound. Every ScopedEngineSelect
+// here guards `slot < 0`, so the old copy silently declined to select for a
+// closed area; the shared one selects the real slot. Behaviour for an OPEN area
+// -- which is every call site in this file -- is identical.
+using cli::slot_of_area;
 
 class ScopedEngineSelect {
 public:
     explicit ScopedEngineSelect(const xbase::DbArea* area) noexcept {
         if (!g_engine || !area) return;
-        const int slot = slot_of_area_ptr(area);
+        const int slot = slot_of_area(area);
         if (slot < 0) return;
         try {
             prev_ = g_engine->currentArea();

@@ -303,3 +303,156 @@ The plan itself is verified by reading it against sections 3, 4 and 6, every
 claim in which was measured on `c16355c2b` rather than recalled.
 
 **How to undo.** Delete this file; no code depends on it.
+
+## 11. AMENDMENT 2026-08-22 -- prior art reconciled, D8/D9 ruled, stage table corrected
+
+Added after the steward flagged that this plan was drafted without the depth of
+prior art held in two sibling conversations (*Multiple workspaces SQL
+architecture*, *Relational SQL validation*), and after an independent review
+rejected the first draft of D8/D9. **Every claim below was read from the tree or
+from a named document at amendment time**, not recalled -- see 11h for why that
+sentence is here.
+
+### 11a. Two new rulings, both review-needed
+
+- **D8** -- `AIF078_D8_LANE_SEAM_RULING_V1.md` (`AIPR-20260822-COWORK-113`). The
+  AIF-070 / AIF-078 seam is **persistence vs runtime**. Q-R2 of
+  `WORKSPACE_RUNTIME_RECONCILIATION_AIF070_AIF078_V1.md` is closed: the runtime
+  registry is AIF-078's; AIF-070 consumes it.
+- **D9** -- `AIF078_D9_RELATION_KEY_AND_CLOSURE_RULING_V1.md`
+  (`AIPR-20260822-COWORK-114`). **D9.1 is the steward's:** *"yes we key both
+  ends."* Both endpoints of a relation edge carry a workspace handle. The handle
+  ADDRESSES an edge; it does not PARTITION the closure. Cross-workspace edge
+  CREATION is refused for now, and that refusal is recorded as a **behaviour
+  removal**, not a new guard.
+
+**Section 8's *"Workspace-scoped relations ... Own ruling, own work"* is
+DISCHARGED by D8/D9.** It is no longer out of scope; it is ruled.
+
+### 11b. Section 8 was right about the fact, and the fact is worse than it reads
+
+Section 8 records *"a relation can span two workspaces' areas."* Measured:
+`add_relation` (`src/cli/set_relations.cpp:524-529`) resolves both endpoints
+through `cli::find_open_area_by_name_ci`, which walks every slot with **no
+handle filter** (`src/cli/workarea_util.cpp:49-60`). So the edge is not merely
+representable -- it is **creatable today**, and `refresh_from_parent_name` then
+follows the child by name at `:418`, first match wins. That is the qualifier
+lane's *"plausible, well-formed, wrong rows"* (`:260-262`), reachable now.
+
+### 11c. Stage table -- corrections
+
+- **Stage 2.** The choke-point half **shipped**: `include/xbase/workspace_membership.hpp`
+  (312 lines) with allocator, `join`/`leave`, `would_cycle` (`:183`),
+  `kMaxWorkspaceDepth = 32` (`:116`); wired at `src/xbase/dbf_file.cpp:231` and
+  `src/xbase/dbarea.cpp:120`; CLI-reachable via `WORKSPACE NEW`
+  (`cmd_workspace.cpp:3891`) and `WORKSPACE SWITCH` (`:3949`). **The catalog
+  half did NOT ship** -- `dbf_file.cpp:231` reads `workspace::current_handle()`,
+  not `WS_ID`, so A1/A2/A3 are unexecuted. **The relation-handle half is I1.2**,
+  now scoped by D9.
+- **Stage 4.** Its two-workspace precondition is **met and mutation-tested**:
+  `dottalkpp/data/scripts/workspace_multi_regression.dts` drives four
+  workspaces with eleven markers and a header recording *"MUTATION TESTED
+  2026-08-22 -- THE ARMS ARE LIVE AND INDEPENDENT."*
+  **But R112's measured-zero gate is not thereby satisfied.**
+  `cmd_use.cpp:944-972` auto-renames a duplicate stem, so that script yields
+  `MWSHARE`/`MWSHARE2` rather than a collision, and the ambiguity ledger is
+  expected to stay zero. **Driving it non-zero needs a deliberate fixture and
+  remains unmeasured.**
+- **Stage 3.** D9.5 specifies its guard: scoped close computes the closure
+  first and refuses rather than orphaning an endpoint outside the workspace.
+- **Stage 6.** Two persisted relation formats already exist and this lane
+  versions neither (D8.2): the DTSHEMA posture `RELATION <parent> <child> ON
+  <key>` line, written `src/gui/core/session.cpp:2093-2100` and read `:545-559`;
+  and `RelationSpec` (`src/cli/set_relations.hpp:123-135`), names only.
+
+### 11d. A surface this plan never had: the four splitters
+
+`SESSION_CLOSEOUT_WORKSPACE_QUALIFIER_NAMESPACE_DEPTH_2026-07-30.md:53` counted
+**three** places assuming globally-unique table aliases, plus **four splitters
+that degrade `A.B.C` to an empty value rather than erroring**. Surface 1
+(`find_open_area_by_name_ci`) was closed by AIF-120 I1.3a. Surface 2 is the
+relation store, now D9's. **The four splitters appear in no stage of this plan
+and this lane has never looked at them.** Silent degrade to empty is the AIF-118
+shape. Owner and stage: unassigned.
+
+### 11e. What has actually moved -- correcting an overclaim made in this lane
+
+`WORKSPACE_RUNTIME_RECONCILIATION_AIF070_AIF078_V1.md:139-147` lists seven
+process-global objects. A draft of D8 claimed six had moved. Re-measured: **one
+moved cleanly, two moved in part, four are untouched.** `workareas::global()`
+(`src/cli/workareas.hpp:169`) and the per-area `AreaState` array
+(`src/cli/table_state.cpp:79-82`) contain **zero** `workspace` references;
+`cmd_workspace.cpp:264-265` is still one `static std::string`; name resolution
+gained the ambiguity ledger but **not scope**. The relation graph is the
+sharpest of five remaining, not the last of one.
+
+### 11f. Registry consumers, and the correct verbs
+
+`xbase::workspace` consumers: `cmd_workspace.cpp` (create `:3937`,
+`set_current_handle` `:3961`, close/registry `:1355-1528`, resolution
+`:3728-3731`, diagnostics `:3839-3854`); `cmd_set.cpp:1409-1428`
+(`SET RECURSION`, i.e. **D7**); `cmd_use.cpp:442-456`, `:824`, `:1069-1076`
+(AIF-121 `USE ... IN FREE`); `workarea_util.cpp:117` (ambiguity ledger).
+
+**The verbs are `WORKSPACE NEW` and `WORKSPACE SWITCH`.** There is no
+`WORKSPACE CREATE`; it falls through to *"Unknown subcommand."*
+
+### 11g. Two items ready to cut, independent of I1.2
+
+1. **Delete `slot_of_area_ptr`** (`src/cli/set_relations.cpp:171-178`). It is a
+   leftover duplicate of `cli::slot_of_area` (`src/cli/workarea_util.cpp:174-180`,
+   AIF-120 I1.1), sitting three lines below that refactor's own `using` import.
+   It is not merely O(MAX_AREA) on a hot path (`ScopedEngineSelect` ctor `:184`,
+   constructed at nine sites including `:365` inside `goto_first_match`'s
+   per-record loop) -- I1.1's note records that the shared version *"answers
+   correctly for a closed area too -- the old scan did not"*, so the duplicate is
+   **behaviourally wrong** for a closed area, returning -1. Verify with a
+   before/after `REL ENUM` timing on a multi-row chain.
+2. **Register the unregistered specs.** `workspace_multi_regression.dts`,
+   `workspace_multi_demo.dts` and `rel_scanlimit_honesty_regression.dts` are not
+   in `kRegressionSpecs` (`src/cli/cmd_regression.cpp:96`, N = 49, hand-
+   maintained) and are unreachable by name. The first is this lane's own stage-3/4
+   evidence.
+
+**Verification hazard to carry into every stage:** `RELJOIN`
+(`cmd_regression.cpp:284-289`) and `NAME_AMBIG` (`:462-467`) both carry
+`in_default_suite = false`. **The default suite runs no relation spec.** A green
+`REGRESSION ALL` is not evidence for a relation change.
+
+### 11h. Method note -- why the first D8/D9 draft failed
+
+It was written against a **copy** of this plan held in a project doc store. The
+copy predated D7, stage 7 and the corrected stage 2, so the draft numbered a
+ruling on top of the steward's D7, announced a registry as unbuilt-then-built
+that this plan already described as existing, and claimed the relation graph was
+unassigned when section 8 assigns it. **The copy was treated as an authority
+when it was a cache.**
+
+This is the third instance in one session of a summary trusted over its source,
+and it is what `AIF120_WORKSPACE_NAME_SHADOWING_REPORT_V1.md:139-140` already
+states: *"Reading a file by path answers 'what does this file say', never 'is
+this the file that loads.'"*
+
+**Proposed standing rule, not yet ruled:** a ruling may cite a project-doc or
+chat-held copy for narrative, never for a fact about the tree. Facts are read
+from the tree at authoring time.
+
+### 11i. Decisions owed -- superseding section 9
+
+1. **D6, D7 sign-off** (unchanged from section 9).
+2. **D8 and D9 sign-off**, both review-needed.
+3. **When the R112 instrumentation runs, and who reads the count.** Now with the
+   11c caveat: the existing multi-workspace script will not drive it non-zero.
+4. **AIF-070's design authority** -- obtain the whitepaper, or rule the MANIFEST
+   abstract is it (`WORKSPACE_RUNTIME_RECONCILIATION_AIF070_AIF078_V1.md:73`).
+   Plus AIF-070's still-absent intake row and the AIF-055/AIF-070 number
+   mismatch. **Maintainer's, not this lane's.**
+5. **Owner for the four splitters** (11d).
+6. **Whether `merge_relation` (`src/gui/core/session.cpp:1113-1132`) is brought
+   into agreement with D9.1 or explicitly excluded.** Its identity is
+   `(lower parent, lower child)` with a key check where an empty key is
+   compatible with anything, and `workspace` is not in the predicate -- although
+   `WorkspaceRelationInfo` carries the field (`include/gui/core/model.hpp:164`)
+   and `gui_workspace_format.cpp:146` already filters on it. Leaving it
+   workspace-blind while the CLI store is re-keyed recreates the two-resolver
+   defect I1.3a closed, one layer up.

@@ -108,7 +108,7 @@ void ambiguity_reset();
 // is a property of the array position, not of the table open in it. Callers
 // that treated -1 as "closed" were relying on a side effect of the old scan;
 // ask isOpen() for that.
-int slot_of_area(xbase::DbArea* area);
+int slot_of_area(const xbase::DbArea* area);
 
 // RAII: select the given area's slot; restore the previous selection on exit.
 // No-op (and harmless) when the area is null, unknown, or already current.

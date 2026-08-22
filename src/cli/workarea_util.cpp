@@ -172,7 +172,13 @@ xbase::DbArea* find_open_area_by_name_ci(const std::string& logical_or_name)
 // old scan did not, because workareas::db(i) only walks what is currently
 // bound. Behaviour for an OPEN area is identical; for a closed one it is now
 // right instead of -1.
-int slot_of_area(xbase::DbArea* area)
+//
+// AIF-078 D8 sec 7, 2026-08-22: the parameter is CONST. It reads one member
+// and mutates nothing, and set_relations.cpp's ScopedEngineSelect holds a
+// const DbArea*. Widening to const is source-compatible for all existing
+// callers and is what let the duplicate scan there be deleted rather than
+// const_cast around.
+int slot_of_area(const xbase::DbArea* area)
 {
     if (!area) return -1;
     // The ENGINE slot -- the array position, which is what every caller here
