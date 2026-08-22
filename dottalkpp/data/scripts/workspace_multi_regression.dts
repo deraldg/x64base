@@ -1,0 +1,247 @@
+* ============================================================================
+* workspace_multi_regression.dts
+*
+* MULTIPLE WORKSPACES: SIBLINGS, NESTING, AND A FILE OPEN IN TWO OF THEM.
+*
+* WHY THIS FILE EXISTS, GIVEN workspace_scope_regression.dts ALREADY PASSES
+*   That file proved ONE relation: a scoped close spares DEFAULT. DEFAULT is
+*   the ancestor of everything, so sparing it is the weakest possible evidence
+*   that close is scoped -- an implementation that closed "everything except
+*   area 0" would pass it. SIBLINGS are the discriminator that separates
+*   "scoped to a workspace" from "scoped away from the root", and no existing
+*   script opens two workspaces that are peers rather than parent and child.
+*
+*   WSM_T1 is that arm. WSALPHA and WSBETA are peers; WSALPHA is closed; BETA's
+*   sentinel must still read. Under a close that walks anything other than its
+*   own member set, BETA goes with it and this line reds.
+*
+* THE ARM THAT MATTERS MOST IS WSM_T2, AND IT IS ABOUT ONE FILE, NOT TWO
+*   MWSHARE.DBF is opened in WSALPHA and again in WSBETA. This is the case a
+*   per-workspace area registry either handles or quietly gets wrong, because
+*   the two workspaces now disagree about who owns a single file handle. Close
+*   WSALPHA and BETA must still read MWSHARE. If close releases by FILE rather
+*   than by workspace membership, BETA loses a table it never closed, and the
+*   failure is invisible in any test where each workspace holds distinct files.
+*
+*   This is the shape the engine already documents elsewhere: dottalkpp and
+*   dottalk_bbsd share the on-disk store with no IPC, so "two openers, one
+*   file" is the established condition rather than an exotic one.
+*
+* WHAT THIS FILE DELIBERATELY DOES NOT ASSERT, AND WHY
+*   That a closed workspace is EMPTY, or that a closed area is gone.
+*   workspace_scope_regression.dts established the rule and the reason:
+*   NO MARKER IN THIS LANGUAGE CAN ASSERT THAT AN AREA IS EMPTY, because the
+*   marker evaluator binds a null area unless the area is OPEN, and an ERRORED
+*   MARKER PRINTS NOTHING RATHER THAN GOING RED. A suite can therefore lose a
+*   claim silently and still report a full green count.
+*
+*   Every assertion below is consequently a POSITIVE READ of a sentinel that
+*   must survive. Absence is proven only by contrast -- what is still readable
+*   after an operation, never by claiming something is not.
+*
+* MARKER PREFIX
+*   WSM_ rather than WS_, so these can be told apart from the scope regression
+*   in a combined run. WSM_G* are setup guards; if a guard reds, the arms below
+*   it are meaningless and should be read as unproven rather than as passes.
+*
+* IDEMPOTENT PER PROCESS, NOT PER SESSION -- AND THAT IS NOT A CHOICE
+*   Run this twice in ONE interactive session and the second run prints
+*       WORKSPACE NEW: a workspace named WSALPHA already exists
+*   three times, then proceeds against the FIRST run's topology. It passed
+*   anyway on 2026-08-22 only because the shape was identical; change the
+*   topology and the second run would test the old one and still report green.
+*
+*   The teardown cannot prevent this. WORKSPACE CLOSE ALL releases AREAS
+*   everywhere -- its own help says "Close every workspace, everywhere" -- but
+*   the registry still lists all four workspaces afterward at members 0, and
+*   cmd_workspace.cpp exposes no DROP, DELETE or REMOVE verb for a name. Once
+*   a workspace name exists in a session it cannot be reclaimed.
+*
+*   So: run this from datarun.ps1, which starts a fresh process each time.
+*   Inside a long-lived session, run it ONCE. If you must repeat it, restart
+*   the process rather than trusting the second pass.
+*
+* RUN
+*   ./datarun.ps1 -CommandLines 'DO scripts\workspace_multi_regression.dts'
+*
+*   Paths given to DO/DOTSCRIPT resolve against the DATA ROOT, not the repo
+*   root. The repo-relative form doubles the prefix and reports "script not
+*   found" against ...\dottalkpp\data\dottalkpp\data\scripts\..., which reads
+*   as a missing file rather than as a mis-rooted path. The absolute form
+*   works too: DO d:\code\ccode\dottalkpp\data\scripts\workspace_multi_regression.dts
+* ============================================================================
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+SET PATH DBF DBF/SANDBOX
+
+FORMULA "WORKSPACE-MULTI-PROOF-BEGIN"
+
+* --------------------------------------------------------------------------
+* Teardown FIRST. A regression that assumes a clean tree passes for the wrong
+* reason on the second run.
+* --------------------------------------------------------------------------
+SET RECURSION ON
+WORKSPACE SWITCH DEFAULT
+WORKSPACE CLOSE ALL
+ERASE mwdef CONFIRM
+ERASE mwalpha CONFIRM
+ERASE mwbeta CONFIRM
+ERASE mwgamma CONFIRM
+ERASE mwshare CONFIRM
+
+* --------------------------------------------------------------------------
+* DEFAULT gets a sentinel, and so does the file that will be opened twice.
+* --------------------------------------------------------------------------
+SELECT 0
+CREATE X64 MWDEF (ID N(4), MARK C(10))
+APPEND
+REPLACE ID WITH 1
+REPLACE MARK WITH "DEF"
+
+SELECT 5
+CREATE X64 MWSHARE (ID N(4), MARK C(10))
+APPEND
+REPLACE ID WITH 9
+REPLACE MARK WITH "SHARE"
+
+* --------------------------------------------------------------------------
+* Topology: DEFAULT, two PEERS, and one CHILD under the first peer.
+*
+*   DEFAULT
+*     +-- WSALPHA          (peer)
+*     |     +-- WSGAMMA    (child of WSALPHA)
+*     +-- WSBETA           (peer of WSALPHA, NOT under it)
+* --------------------------------------------------------------------------
+WORKSPACE NEW WSALPHA
+WORKSPACE NEW WSBETA
+WORKSPACE NEW WSGAMMA UNDER WSALPHA
+
+WORKSPACE SWITCH WSALPHA
+SELECT 1
+CREATE X64 MWALPHA (ID N(4), MARK C(10))
+APPEND
+REPLACE ID WITH 2
+REPLACE MARK WITH "ALPHA"
+* AGAIN is REQUIRED, and the first cut of this file did not have it.
+* MWSHARE was created in area 5 while DEFAULT was current, so the file already
+* had a work area and belonged to DEFAULT. A bare USE was REFUSED here ("already
+* open in area 5"), and in WSBETA a bare USE silently RE-USED DEFAULT's area 5
+* rather than opening one of its own. WSM_T2 then asserted that a file survived
+* in a peer that never held it -- true by construction, proving nothing.
+* WSM_G4 is what caught it. Measured 2026-08-22.
+SELECT 4
+USE mwshare AGAIN
+
+WORKSPACE SWITCH WSBETA
+SELECT 2
+CREATE X64 MWBETA (ID N(4), MARK C(10))
+APPEND
+REPLACE ID WITH 3
+REPLACE MARK WITH "BETA"
+SELECT 6
+USE mwshare AGAIN
+
+WORKSPACE SWITCH WSGAMMA
+SELECT 3
+CREATE X64 MWGAMMA (ID N(4), MARK C(10))
+APPEND
+REPLACE ID WITH 4
+REPLACE MARK WITH "GAMMA"
+
+* --------------------------------------------------------------------------
+* GUARDS. Every sentinel is readable before anything is closed. If any of
+* these reds, treat every WSM_T* below as UNPROVEN, not as passing.
+* --------------------------------------------------------------------------
+SELECT 0
+GO TOP
+? "WSM_G0_default_sentinel:" + (ALLTRIM(MARK) = "DEF")
+SELECT 1
+GO TOP
+? "WSM_G1_alpha_sentinel:" + (ALLTRIM(MARK) = "ALPHA")
+SELECT 2
+GO TOP
+? "WSM_G2_beta_sentinel:" + (ALLTRIM(MARK) = "BETA")
+SELECT 3
+GO TOP
+? "WSM_G3_gamma_sentinel:" + (ALLTRIM(MARK) = "GAMMA")
+SELECT 4
+GO TOP
+? "WSM_G4_share_open_in_alpha:" + (ALLTRIM(MARK) = "SHARE")
+SELECT 6
+GO TOP
+? "WSM_G5_share_open_in_beta:" + (ALLTRIM(MARK) = "SHARE")
+
+WORKSPACE REGISTRY
+
+* --------------------------------------------------------------------------
+* THE CLOSE. WSALPHA goes, and RECURSION ON means WSGAMMA goes with it.
+* WSBETA is a PEER and must be untouched.
+* --------------------------------------------------------------------------
+SET RECURSION ON
+WORKSPACE SWITCH WSALPHA
+WORKSPACE CLOSE
+
+WORKSPACE REGISTRY
+
+* --------------------------------------------------------------------------
+* WSM_T1 -- a peer is not a descendant. This is the arm the existing scope
+* regression cannot supply: sparing DEFAULT is compatible with "close
+* everything but the root", sparing a SIBLING is not.
+* --------------------------------------------------------------------------
+SELECT 2
+GO TOP
+? "WSM_T1_peer_survived_sibling_close:" + (ALLTRIM(MARK) = "BETA")
+
+* --------------------------------------------------------------------------
+* WSM_T2 -- one FILE, two workspaces, one closed. BETA never closed MWSHARE
+* and must still read it. A close that releases by file rather than by
+* workspace membership reds here and nowhere else in this suite.
+* --------------------------------------------------------------------------
+SELECT 6
+GO TOP
+? "WSM_T2_shared_file_survived_in_peer:" + (ALLTRIM(MARK) = "SHARE")
+
+* --------------------------------------------------------------------------
+* WSM_T3 -- DEFAULT is still intact after a peer subtree was closed. Weaker
+* than T1 on its own, kept because it is the arm that would catch a close
+* that walked UPWARD from the closed workspace.
+* --------------------------------------------------------------------------
+SELECT 0
+GO TOP
+? "WSM_T3_default_untouched:" + (ALLTRIM(MARK) = "DEF")
+
+* --------------------------------------------------------------------------
+* WSM_T4 -- the child's FILE was released, proven by contrast: reopen it in
+* the surviving peer and read the sentinel. This is how a released handle is
+* demonstrated without asserting that anything is absent.
+* --------------------------------------------------------------------------
+WORKSPACE SWITCH WSBETA
+SELECT 7
+USE mwgamma
+GO TOP
+? "WSM_T4_child_file_released_and_reopenable:" + (ALLTRIM(MARK) = "GAMMA")
+
+* --------------------------------------------------------------------------
+* WSM_T5 -- SWITCH is not a no-op on state. Return to DEFAULT and read its
+* sentinel without re-selecting: the workspace must restore its own area.
+* --------------------------------------------------------------------------
+WORKSPACE SWITCH DEFAULT
+SELECT 0
+GO TOP
+? "WSM_T5_default_readable_after_switch_back:" + (ALLTRIM(MARK) = "DEF")
+
+* --------------------------------------------------------------------------
+* Teardown. Leave the sandbox as it was found.
+* --------------------------------------------------------------------------
+SET RECURSION ON
+WORKSPACE SWITCH DEFAULT
+WORKSPACE CLOSE ALL
+ERASE mwdef CONFIRM
+ERASE mwalpha CONFIRM
+ERASE mwbeta CONFIRM
+ERASE mwgamma CONFIRM
+ERASE mwshare CONFIRM
+
+FORMULA "WORKSPACE-MULTI-PROOF-END"
