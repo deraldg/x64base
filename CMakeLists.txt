@@ -66,8 +66,20 @@ execute_process(
     OUTPUT_STRIP_TRAILING_WHITESPACE
     ERROR_QUIET
 )
+# --untracked-files=no is LOAD-BEARING, not tidiness (AIF-120 R118, 2026-08-22).
+# Without it `status --porcelain` emits a `??` line per untracked file, and this
+# tree carries thousands of them by design -- 4251 under docs/ (manualgen
+# published output, review packets, runlogs, datadict contracts) and 260 under
+# scripts/. _dottalk_git_status was therefore NEVER empty, so DOTTALKPP_GIT_DIRTY
+# was structurally pinned at 1 and every build ever stamped said "dirty",
+# including a spotless tree. The flag could not report clean. It now means what
+# a reader assumes: TRACKED files differ from HEAD.
+#
+# --no-optional-locks so configure does not take .git/index.lock. This house has
+# been wedged by an orphaned index.lock twice (2026-07-31, 2026-08-22); a build
+# configure is not worth a third.
 execute_process(
-    COMMAND git -C "${CMAKE_SOURCE_DIR}" status --porcelain
+    COMMAND git -C "${CMAKE_SOURCE_DIR}" --no-optional-locks status --porcelain --untracked-files=no
     OUTPUT_VARIABLE _dottalk_git_status
     OUTPUT_STRIP_TRAILING_WHITESPACE
     ERROR_QUIET
