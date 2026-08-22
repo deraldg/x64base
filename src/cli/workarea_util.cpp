@@ -56,7 +56,7 @@ xbase::DbArea* find_open_area_by_name_ci(const std::string& logical_or_name)
 // the body. That is the whole shape of I1: ownership stops being reconstructed
 // from side tables and starts being a property of the thing that has it.
 //
-// _ws_slot is stamped at engine construction (dbf_file.cpp, XBaseEngine ctor)
+// _engine_slot is stamped at engine construction (dbf_file.cpp, XBaseEngine ctor)
 // and is never cleared, so this answers correctly for a closed area too -- the
 // old scan did not, because workareas::db(i) only walks what is currently
 // bound. Behaviour for an OPEN area is identical; for a closed one it is now
@@ -64,7 +64,9 @@ xbase::DbArea* find_open_area_by_name_ci(const std::string& logical_or_name)
 int slot_of_area(xbase::DbArea* area)
 {
     if (!area) return -1;
-    return area->wsSlot();
+    // The ENGINE slot -- the array position, which is what every caller here
+    // selects on. Not the workspace-local slot; see DbArea::wsLocalSlot().
+    return area->engineSlot();
 }
 
 ScopedAreaSelect::ScopedAreaSelect(xbase::DbArea* area) noexcept

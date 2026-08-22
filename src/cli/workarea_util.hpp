@@ -44,7 +44,7 @@ xbase::DbArea* find_open_area_by_name_ci(const std::string& logical_or_name);
 
 // Slot index this area occupies, or -1 if the pointer is null.
 //
-// AIF-120 I1.1: reads DbArea::wsSlot(), stamped once at engine construction.
+// AIF-120 I1.1: reads DbArea::engineSlot(), stamped once at engine construction.
 // It no longer scans, and it no longer returns -1 for a CLOSED area -- the slot
 // is a property of the array position, not of the table open in it. Callers
 // that treated -1 as "closed" were relying on a side effect of the old scan;

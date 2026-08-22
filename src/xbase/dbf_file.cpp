@@ -421,7 +421,7 @@ XBaseEngine::XBaseEngine() {
     // at construction and simply had nowhere to live.
     for (std::size_t i = 0; i < _areas.size(); ++i) {
         _areas[i] = std::make_unique<DbArea>();
-        _areas[i]->setWorkspaceSlot(static_cast<int32_t>(i));
+        _areas[i]->setEngineSlot(static_cast<int32_t>(i));
     }
 }
 

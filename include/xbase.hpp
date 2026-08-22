@@ -238,16 +238,40 @@ public:
     const std::string& logicalName() const noexcept { return _logical_name; }
 
     // ---- Workspace ownership (AIF-078 design I1) --------------------------
-    // Which workspace owns this area, and which slot it occupies inside it.
-    // 0 / -1 mean not assigned. See the member declarations for the rules.
-    [[nodiscard]] uint64_t wsHandle() const noexcept { return _ws_handle; }
-    [[nodiscard]] int32_t  wsSlot()   const noexcept { return _ws_slot;   }
+    // Which workspace owns this area, where the area sits in the ENGINE's
+    // array, and where it sits inside its own workspace. 0 / -1 mean not
+    // assigned. See the member declarations for the rules.
+    //
+    // CORRECTED 2026-08-22, AIF-078 stage 1, decision D4. This block used to
+    // read "which slot it occupies inside it" -- inside the WORKSPACE -- while
+    // the setter block below called the same member "a property of the array
+    // position". Two descriptions, one member, and they are DIFFERENT NUMBERS
+    // the moment a second workspace exists, with nothing in the code to
+    // announce which one a caller had relied on. dbf_file.cpp stamps it with
+    // the engine array index, so the setter was right and the accessor was
+    // wrong. They are now two members with two names, and neither comment has
+    // to be read as a claim about the other.
+    [[nodiscard]] uint64_t wsHandle()    const noexcept { return _ws_handle;     }
+    [[nodiscard]] int32_t  engineSlot()  const noexcept { return _engine_slot;   }
+    [[nodiscard]] int32_t  wsLocalSlot() const noexcept { return _ws_local_slot; }
 
-    // Stamped once by XBaseEngine's constructor and never again -- the slot is
-    // a property of the array position, not of the table. Public rather than
-    // friend because XBaseEngine is not the only conceivable owner of a slot
-    // array, and a one-line setter is a smaller commitment than friendship.
-    void setWorkspaceSlot(int32_t slot) noexcept { _ws_slot = slot; }
+    // Stamped once by XBaseEngine's constructor and never again -- the engine
+    // slot is a property of the array position, not of the table. Public
+    // rather than friend because XBaseEngine is not the only conceivable owner
+    // of a slot array, and a one-line setter is a smaller commitment than
+    // friendship.
+    void setEngineSlot(int32_t slot) noexcept { _engine_slot = slot; }
+
+    // Assigned by the workspace registry when an area joins a workspace
+    // (AIF-078 stage 2). CHARTERED AND UNSET until then -- -1 everywhere,
+    // deliberately, which is the rule the workspace catalog already applies to
+    // its own unpopulated columns: "an empty column is a chartered claim"
+    // (cmd_workspace.cpp, catalog v2). Numbering is 1..n LOCAL TO THE
+    // WORKSPACE (decision D2), so a member added mid-session -- every
+    // USE AGAIN instance included -- is simply n+1 and never leaves a hole.
+    // Bounded by MAX_AREA and therefore int32_t on purpose; see the note on
+    // widths at the member declarations.
+    void setWorkspaceLocalSlot(int32_t slot) noexcept { _ws_local_slot = slot; }
 
     // ---- Memo sidecar facts (co-located with DBF) -------------------------
     const std::string& memoPath() const noexcept { return _memo_abs_path; }
@@ -459,15 +483,23 @@ private:
     //
     // 0 / -1 mean NOT ASSIGNED, which is the state of a closed area. The
     // engine constructs MAX_AREA areas eagerly (dbf_file.cpp:409-411), so
-    // _ws_slot is stamped there once and never changes; _ws_handle is set when
-    // an area is opened into a workspace and cleared by close().
+    // _engine_slot is stamped there once and never changes; _ws_handle is set
+    // when an area is opened into a workspace and cleared by close().
     //
     // One workspace exists today, so _ws_handle is 1 for every open area. That
     // is deliberate: the FIELD is the change, and a constant is the honest
     // value while there is exactly one workspace to name. See
     // docs/maintenance/AIF120_NAME_SCHEMA_RULING_V1.md sec 4 level 1.
+    // WIDTHS ARE DELIBERATE, not an oversight (AIF-078 stage 1).
+    // _ws_handle is 64-bit because it names a WORKSPACE, and workspace
+    // identity is the catalog's WS_ID -- an N(10) column, up to ten digits,
+    // which overflows int32. The two slots are 32-bit because they index
+    // AREAS, which are bounded by MAX_AREA (itself an int); the steward ruled
+    // unbounded areas OUT on 2026-08-22, so a wider slot would be churn with
+    // no capacity behind it.
     uint64_t    _ws_handle{0};
-    int32_t     _ws_slot{-1};
+    int32_t     _engine_slot{-1};
+    int32_t     _ws_local_slot{-1};
 
     // RETIRED 2026-08-22 (AIF-120 I1.0): _db_name and _filename lived here
     // under a "Legacy storage (DEPRECATED, mapped internally)" banner. Neither
@@ -475,7 +507,7 @@ private:
     // _filename had zero of both -- not one line in src/ or include/ ever
     // touched it. Removed while the header was already open for the members
     // above, at no extra rebuild. The table-name-vs-alias split they were
-    // shaped for is design I1's job and is done by _ws_handle/_ws_slot plus
+    // shaped for is design I1's job and is done by _ws_handle/_engine_slot plus
     // the one real name, _logical_name.
 
     // ===== VFP compatibility additions =====================================
