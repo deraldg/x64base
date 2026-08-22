@@ -19,6 +19,8 @@
 
 #include "cli/expr/rhs_eval.hpp"
 
+#include "xbase_field_getters.hpp"   // xfg::resolve_field_index_std (R116)
+
 #include <algorithm>
 #include <cctype>
 #include <cmath>
@@ -197,14 +199,25 @@ static bool is_single_quoted_literal(const std::string& src) {
     return false;
 }
 
+// AIF-120 R116: ONE field-name authority.
+//
+// This compared the name against fields()[i].name and nothing else. On an
+// x64 table that is only half the question: a LONG field name is written to
+// disk under a 10-byte DESCRIPTOR token (plus ~n and ~hash collision
+// aliases, field_name_policy.hpp), and a caller naming that token missed
+// here -- silently, because the miss returns "not a field" and every path
+// downstream reads that as an empty value or a string literal.
+//
+// xfg::resolve_field_index_std (xbase_field_getters.hpp) already answers the
+// whole question: logical names win, x64 descriptor tokens are accepted as
+// aliases ONLY where they map uniquely, ambiguity is refused, and -1 means
+// genuinely not a field. Four resolvers in this engine disagreed about what
+// a field name is; they now all ask the same one.
+//
+// CONVENTION: 0-based/-1 in, 1-based/-1 out (callers here test > 0).
 static int field_index_ci(xbase::DbArea& area, const std::string& name) {
-    const std::string want = up(trim(name));
-    if (want.empty()) return -1;
-    const auto defs = area.fields();
-    for (size_t i = 0; i < defs.size(); ++i) {
-        if (up(defs[i].name) == want) return static_cast<int>(i) + 1;
-    }
-    return -1;
+    const int idx0 = xfg::resolve_field_index_std(area, name);
+    return idx0 < 0 ? -1 : idx0 + 1;
 }
 
 static bool is_x64_memo_field(const xbase::DbArea& A, int field1) {

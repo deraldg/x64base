@@ -34,15 +34,28 @@ inline std::string upper(std::string s) {
     return s;
 }
 
+// AIF-120 R116: ONE field-name authority.
+//
+// This compared the name against fields()[i].name and nothing else. On an
+// x64 table that is only half the question: a LONG field name is written to
+// disk under a 10-byte DESCRIPTOR token (plus ~n and ~hash collision
+// aliases, field_name_policy.hpp), and a caller naming that token missed
+// here -- silently, because the miss returns "not a field" and every path
+// downstream reads that as an empty value or a string literal.
+//
+// xfg::resolve_field_index_std (xbase_field_getters.hpp) already answers the
+// whole question: logical names win, x64 descriptor tokens are accepted as
+// aliases ONLY where they map uniquely, ambiguity is refused, and -1 means
+// genuinely not a field. Four resolvers in this engine disagreed about what
+// a field name is; they now all ask the same one.
+//
+// CONVENTION: the resolver returns 0-based with -1 for unknown; this function
+// owes its callers 1-based with 0 for unknown. The conversion is the whole
+// body -- get it wrong and every field read shifts by one while every row
+// still looks like it worked.
 inline int field_index_ci(const xbase::DbArea& a, std::string_view name) {
-    std::string N{name};
-    const auto& Fs = a.fields();
-    std::string U = upper(N);
-    for (int i = 0; i < (int)Fs.size(); ++i) {
-        std::string H = Fs[(size_t)i].name;
-        if (upper(H) == U) return i + 1; // 1-based
-    }
-    return 0;
+    const int idx0 = xfg::resolve_field_index_std(a, std::string{name});
+    return idx0 < 0 ? 0 : idx0 + 1;
 }
 
 // Scan-evaluator lane M1: field-name -> 1-based index with a per-view cache, so
