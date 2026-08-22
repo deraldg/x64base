@@ -39,6 +39,25 @@
 *   must survive. Absence is proven only by contrast -- what is still readable
 *   after an operation, never by claiming something is not.
 *
+* MUTATION TESTED 2026-08-22 -- THE ARMS ARE LIVE AND INDEPENDENT
+*   A green suite proves nothing until an arm has been shown able to red. This
+*   file had already produced one false green (see the AGAIN note below), so it
+*   owed that demonstration more than most.
+*
+*   WSM_T1 and WSM_T2 were both mutated to expect "MUTANT" and the suite re-run
+*   in a fresh process. Result: those two went .F. and THE OTHER NINE STAYED
+*   .T. -- which is the outcome that matters, because it separates three cases
+*   a single red cannot:
+*
+*     both red, nine green  -> arms are live AND independent      (observed)
+*     everything red        -> arms are coupled; one break masks the rest
+*     nothing red           -> the assertion never reaches the data, which is
+*                              exactly what WSM_T2 was doing before WSM_G4
+*                              caught it
+*
+*   Re-run the mutation after any change to the topology or the area map. The
+*   arms are only independent for the shape they were measured against.
+*
 * MARKER PREFIX
 *   WSM_ rather than WS_, so these can be told apart from the scope regression
 *   in a combined run. WSM_G* are setup guards; if a guard reds, the arms below

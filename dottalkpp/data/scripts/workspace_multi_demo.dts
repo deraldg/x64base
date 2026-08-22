@@ -1,0 +1,248 @@
+* ============================================================================
+* workspace_multi_demo.dts
+*
+* MULTIPLE WORKSPACES -- A GUIDED TOUR. THIS IS NOT A TEST.
+*
+* WHAT THIS IS
+*   A narrated walkthrough of the multi-workspace surface: NEW, UNDER, SWITCH,
+*   REGISTRY, SET RECURSION, scoped CLOSE, and what happens when one file is
+*   open in more than one workspace. Every step prints what it is about to do
+*   and then shows the registry, so the output reads top to bottom as an
+*   explanation rather than as a log.
+*
+* WHAT THIS IS NOT, AND WHY THE DISTINCTION IS ENFORCED HERE
+*   It asserts NOTHING. There are no markers, no .T./.F. lines, and no name in
+*   this file resembles a test id. That is deliberate: a demo that also carries
+*   assertions is a test that nobody maintains, and a green from it would be
+*   read as evidence when it was only narration.
+*
+*   The regression that DOES gate this behaviour is
+*   workspace_multi_regression.dts. If you want to know whether multiple
+*   workspaces still work, run that. If you want to know what they DO, run
+*   this.
+*
+* THE SURFACE THIS TOUR COVERS, AND WHERE IT IS OTHERWISE UNDOCUMENTED
+*   WORKSPACE NEW / UNDER / SWITCH / REGISTRY / CLOSE ALL and SET RECURSION are
+*   all implemented, and as of 2026-08-22 NONE of them appear in the
+*   @dottalk.usage contract block in src/cli/cmd_workspace.cpp. WORKSPACE USAGE
+*   will not show you a single verb this file uses. Until that contract is
+*   refreshed, this tour is the usage documentation.
+*
+* RUN
+*   ./datarun.ps1 -CommandLines 'DO scripts\workspace_multi_demo.dts'
+*
+*   Paths given to DO resolve against the DATA ROOT, not the repo root.
+*   Run it ONCE per process: workspace names cannot be reclaimed in a session
+*   (see ACT 6), so a second run in the same session will refuse the NEWs.
+* ============================================================================
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+SET PATH DBF DBF/SANDBOX
+
+FORMULA "WORKSPACE-MULTI-DEMO-BEGIN"
+
+SET RECURSION ON
+WORKSPACE SWITCH DEFAULT
+WORKSPACE CLOSE ALL
+ERASE demodef CONFIRM
+ERASE demoa CONFIRM
+ERASE demoa1 CONFIRM
+ERASE demob CONFIRM
+ERASE demob1 CONFIRM
+ERASE demoshare CONFIRM
+
+? " "
+? "=========================================================================="
+? "ACT 1 -- A workspace is a NAMED GROUP OF WORK AREAS."
+? "=========================================================================="
+? "You always start in one. It is called DEFAULT and you did not create it."
+? "Opening a table right now puts that area into DEFAULT's group."
+? " "
+
+SELECT 0
+CREATE X64 DEMODEF (ID N(4), MARK C(10))
+APPEND
+REPLACE ID WITH 1
+REPLACE MARK WITH "DEF"
+
+SELECT 7
+CREATE X64 DEMOSHARE (ID N(4), MARK C(10))
+APPEND
+REPLACE ID WITH 9
+REPLACE MARK WITH "SHARE"
+
+? " "
+? "Two areas now belong to DEFAULT. The registry is the authority on that:"
+WORKSPACE REGISTRY
+
+? " "
+? "=========================================================================="
+? "ACT 2 -- NEW creates a workspace. UNDER nests one inside another."
+? "=========================================================================="
+? "Names are how a person refers to a workspace, so they must be unique."
+? "Two trees are built here so both RECURSION arms can be shown later."
+? " "
+
+WORKSPACE NEW WSDEMO_A
+WORKSPACE NEW WSDEMO_A1 UNDER WSDEMO_A
+WORKSPACE NEW WSDEMO_B
+WORKSPACE NEW WSDEMO_B1 UNDER WSDEMO_B
+
+? " "
+? "Note the depth column: A1 and B1 report depth 1 and name their parent."
+? "Note also that all four have ZERO members. Creating a workspace does not"
+? "move anything into it -- only opening an area while it is CURRENT does."
+WORKSPACE REGISTRY
+
+? " "
+? "=========================================================================="
+? "ACT 3 -- SWITCH decides which workspace the NEXT area joins."
+? "=========================================================================="
+? "This is the whole mental model. SWITCH, then open. Not the reverse."
+? " "
+
+WORKSPACE SWITCH WSDEMO_A
+SELECT 1
+CREATE X64 DEMOA (ID N(4), MARK C(10))
+APPEND
+REPLACE ID WITH 2
+REPLACE MARK WITH "A"
+
+WORKSPACE SWITCH WSDEMO_A1
+SELECT 2
+CREATE X64 DEMOA1 (ID N(4), MARK C(10))
+APPEND
+REPLACE ID WITH 3
+REPLACE MARK WITH "A1"
+
+WORKSPACE SWITCH WSDEMO_B
+SELECT 3
+CREATE X64 DEMOB (ID N(4), MARK C(10))
+APPEND
+REPLACE ID WITH 4
+REPLACE MARK WITH "B"
+
+WORKSPACE SWITCH WSDEMO_B1
+SELECT 4
+CREATE X64 DEMOB1 (ID N(4), MARK C(10))
+APPEND
+REPLACE ID WITH 5
+REPLACE MARK WITH "B1"
+
+? " "
+? "Each workspace now owns exactly the area opened while it was current:"
+WORKSPACE REGISTRY
+
+? " "
+? "=========================================================================="
+? "ACT 4 -- ONE FILE, THREE WORKSPACES. This is where AGAIN matters."
+? "=========================================================================="
+? "DEMOSHARE.DBF is already open in DEFAULT, area 7."
+? "A bare USE would be REFUSED: the engine will not silently give you a second"
+? "handle on a file you already hold. AGAIN is the explicit way to ask."
+? "Watch the alias: the engine auto-names the extra instances and SAYS SO."
+? " "
+
+WORKSPACE SWITCH WSDEMO_A
+SELECT 5
+USE demoshare AGAIN
+
+WORKSPACE SWITCH WSDEMO_B
+SELECT 6
+USE demoshare AGAIN
+
+? " "
+? "One file, three work areas, three different owners. This is the case that"
+? "separates a per-workspace area registry from a global one:"
+WORKSPACE REGISTRY
+
+? " "
+? "=========================================================================="
+? "ACT 5 -- CLOSE is SCOPED, and RECURSION decides how far it reaches."
+? "=========================================================================="
+? "With RECURSION ON, closing A also closes its child A1."
+? "Everything outside that subtree -- DEFAULT, B, B1 -- is untouched,"
+? "INCLUDING B's own handle on the shared file."
+? " "
+
+SET RECURSION ON
+WORKSPACE SWITCH WSDEMO_A
+WORKSPACE CLOSE
+
+? " "
+? "A and A1 are now at members 0. B, B1 and DEFAULT are exactly as they were:"
+WORKSPACE REGISTRY
+
+? " "
+? "Proof by reading rather than by claiming: B's tables still answer."
+WORKSPACE SWITCH WSDEMO_B
+SELECT 3
+GO TOP
+? "  DEMOB  still reads : " + ALLTRIM(MARK)
+SELECT 6
+GO TOP
+? "  shared still reads : " + ALLTRIM(MARK)
+
+? " "
+? "Now the contrast. With RECURSION OFF, closing B does NOT descend into B1."
+? "The flag does not gate whether nesting may EXIST -- it gates whether an"
+? "operation DESCENDS. B1 stays open and readable."
+? " "
+
+SET RECURSION OFF
+WORKSPACE SWITCH WSDEMO_B
+WORKSPACE CLOSE
+
+WORKSPACE REGISTRY
+
+? " "
+? "B1 survived its parent being closed, because RECURSION was OFF:"
+WORKSPACE SWITCH WSDEMO_B1
+SELECT 4
+GO TOP
+? "  DEMOB1 still reads : " + ALLTRIM(MARK)
+
+? " "
+? "=========================================================================="
+? "ACT 6 -- THE LIMITS. Two of them, and the engine tells you about one."
+? "=========================================================================="
+? " "
+? "LIMIT 1 -- relations are cleared GLOBALLY on a scoped close."
+? "  The relation graph is not workspace-scoped yet, so closing one workspace"
+? "  clears relations belonging to areas that are still open elsewhere. The"
+? "  engine prints that warning itself, naming the count, rather than doing it"
+? "  quietly. It is an AIF-078 stage 3 limitation, not a defect in your script."
+? " "
+? "LIMIT 2 -- a workspace NAME cannot be reclaimed within a session."
+? "  WORKSPACE CLOSE ALL releases every area everywhere, and after it the"
+? "  registry STILL lists every workspace at members 0. There is no DROP,"
+? "  DELETE or REMOVE verb. Try WORKSPACE NEW WSDEMO_A again after the"
+? "  teardown below and it will refuse. That is why this file says run it"
+? "  once per process."
+? " "
+
+SET RECURSION ON
+WORKSPACE SWITCH DEFAULT
+WORKSPACE CLOSE ALL
+
+? " "
+? "After CLOSE ALL: zero members everywhere, but four workspaces still named."
+WORKSPACE REGISTRY
+
+ERASE demodef CONFIRM
+ERASE demoa CONFIRM
+ERASE demoa1 CONFIRM
+ERASE demob CONFIRM
+ERASE demob1 CONFIRM
+ERASE demoshare CONFIRM
+
+? " "
+? "=========================================================================="
+? "END OF TOUR."
+? "  The gating regression is scripts\workspace_multi_regression.dts."
+? "  This file proved nothing and was not trying to."
+? "=========================================================================="
+
+FORMULA "WORKSPACE-MULTI-DEMO-END"
