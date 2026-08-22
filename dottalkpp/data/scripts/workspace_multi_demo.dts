@@ -28,6 +28,22 @@
 *   will not show you a single verb this file uses. Until that contract is
 *   refreshed, this tour is the usage documentation.
 *
+* THE THREE LINES IN THIS FILE THAT CAN VANISH, AND WHY THEY ARE PAIRED
+*   88 of the 91 ? lines here are string literals: they cannot error, so they
+*   always print. Exactly THREE read a field, and a read that errors PRINTS
+*   NOTHING rather than failing -- the same evaluator behaviour the regression
+*   header records.
+*
+*   In a regression that is survivable, because a missing marker name is
+*   conspicuous in the results. In a narrated tour it is not: one line missing
+*   from forty is invisible, and the demo would read as complete while having
+*   silently skipped the only place it shows live data.
+*
+*   So each of the three is preceded by a LITERAL line naming what it expects.
+*   If the read vanishes, the expectation dangles with no partner and the gap
+*   is obvious. Added 2026-08-22 after mutation-testing the regression made the
+*   failure mode concrete.
+*
 * RUN
 *   ./datarun.ps1 -CommandLines 'DO scripts\workspace_multi_demo.dts'
 *
@@ -180,10 +196,12 @@ WORKSPACE REGISTRY
 WORKSPACE SWITCH WSDEMO_B
 SELECT 3
 GO TOP
-? "  DEMOB  still reads : " + ALLTRIM(MARK)
+? "  DEMOB  expected B      -- the NEXT line is the live read:"
+? "  DEMOB  actual        : " + ALLTRIM(MARK)
 SELECT 6
 GO TOP
-? "  shared still reads : " + ALLTRIM(MARK)
+? "  shared expected SHARE  -- the NEXT line is the live read:"
+? "  shared actual        : " + ALLTRIM(MARK)
 
 ? " "
 ? "Now the contrast. With RECURSION OFF, closing B does NOT descend into B1."
@@ -202,7 +220,8 @@ WORKSPACE REGISTRY
 WORKSPACE SWITCH WSDEMO_B1
 SELECT 4
 GO TOP
-? "  DEMOB1 still reads : " + ALLTRIM(MARK)
+? "  DEMOB1 expected B1     -- the NEXT line is the live read:"
+? "  DEMOB1 actual        : " + ALLTRIM(MARK)
 
 ? " "
 ? "=========================================================================="
@@ -228,7 +247,9 @@ WORKSPACE SWITCH DEFAULT
 WORKSPACE CLOSE ALL
 
 ? " "
-? "After CLOSE ALL: zero members everywhere, but four workspaces still named."
+? "After CLOSE ALL: zero members everywhere, but FIVE workspaces still named."
+? "  Five, not four: DEFAULT counts. It is the workspace ACT 1 pointed out you"
+? "  were already standing in, and CLOSE ALL empties it like any other."
 WORKSPACE REGISTRY
 
 ERASE demodef CONFIRM
