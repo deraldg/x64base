@@ -8,6 +8,11 @@ param(
 
     [string]$VcpkgTriplet = 'x64-windows',
 
+    # House default on Windows. NOT a hard requirement -- the module builds and
+    # imports on other versions (proven on 3.10 under Linux, 2026-08-17). A
+    # mismatch warns rather than blocks. Pass '' to silence.
+    [string]$ExpectPythonVersion = '3.12',
+
     # Build directory for the LEAN configure. Deliberately NOT build-labtalk:
     # that tree belongs to the root build, and sharing it would mean this
     # configure and that one overwrite each other's cache.
@@ -111,33 +116,39 @@ if ([IO.Path]::GetFileName($PythonExe) -notlike 'python*.exe') {
     throw "Resolved PythonExe does not look like a Python interpreter: '$PythonExe'."
 }
 
-# ---- The interpreter must be 3.12 ------------------------------------------
-# The house target is Python 3.12 and the module ships as cp312-win_amd64.pyd.
-# Two ways this goes wrong quietly, both seen 2026-08-17:
+# ---- Report the interpreter, and WARN on a surprise ------------------------
+# The house default on Windows is 3.12 and the artifact ships as
+# cp312-win_amd64.pyd -- but the module is NOT limited to 3.12. Corrected
+# 2026-08-17 by the owner ("if it has run with 3.8 python, not a limitation"),
+# and demonstrated the same day: a Linux build of this same source produced
+# pydottalk.cpython-310-x86_64-linux-gnu.so, which imported and reported
+# `pydottalk 0.4.0` under Python 3.10.
 #
-#   1. A bad -D Python3_EXECUTABLE makes CMake fall back to whatever python is
-#      on PATH. Here that was the system 3.13.5, which has no Development
-#      component, so the error blamed a missing component rather than the wrong
-#      interpreter.
-#   2. Worse, a 3.13 WITH headers would configure happily and emit a
-#      cp313 .pyd that every 3.12 caller then fails to import -- a build that
-#      succeeds and produces the wrong artifact.
+# So the danger was never "a version other than 3.12". It was a SILENT swap: a
+# bad -D Python3_EXECUTABLE made CMake fall back to whatever python was on PATH
+# (3.13.5, no Development component), and the error blamed the missing
+# component rather than the wrong interpreter. The worse variant is a 3.13 WITH
+# headers, which configures happily and emits a cp313 artifact that every 3.12
+# caller then fails to import.
 #
-# So assert the version rather than trusting candidate order. Note this wants
-# the VCPKG python3 (it carries the Development headers and libs), not the repo
-# .venv312, which exists for host tooling and is not a build interpreter.
+# A loud line fixes that. Blocking was an over-correction: it would refuse
+# legitimate builds on any other interpreter, and the maintainer knows their
+# environment better than this script does. Pass -ExpectPythonVersion '' to
+# silence the warning entirely.
 $pyVersion = (& $PythonExe -c "import sys; print('{}.{}'.format(*sys.version_info[:2]))" 2>$null)
 if ($LASTEXITCODE -ne 0 -or -not $pyVersion) {
     throw "Could not query the Python version from '$PythonExe'."
 }
 $pyVersion = $pyVersion.Trim()
-if ($pyVersion -ne '3.12') {
-    throw ("PythonExe is $pyVersion, but pydottalk targets 3.12 (the module ships " +
-           "as cp312-win_amd64.pyd). Resolved: '$PythonExe'. " +
-           "Pass -PythonExe pointing at the vcpkg python3, normally " +
-           "<repo>\build-labtalk\vcpkg_installed\x64-windows\tools\python3\python.exe.")
-}
 Write-Host "PythonVer  : $pyVersion"
+
+if ($ExpectPythonVersion -and $pyVersion -ne $ExpectPythonVersion) {
+    Write-Warning ("Building against Python $pyVersion, not the house default " +
+        "$ExpectPythonVersion. That is allowed -- the module is not pinned to one " +
+        "version -- but the artifact will carry a cp$($pyVersion -replace '\.','') " +
+        "tag and only that interpreter will import it. Resolved from: '$PythonExe'. " +
+        "If this was not deliberate, pass -PythonExe explicitly.")
+}
 
 Write-Host "BindingsDir: $BindingsDir"
 Write-Host "RepoRoot   : $RepoRoot"
