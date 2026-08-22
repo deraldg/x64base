@@ -89,8 +89,8 @@ The 196 objects are ordinary memo text; the first is literally
 
 ### 1c. The live catalog -- `minidb_depth_census.py catalog`
 
-`dottalkpp/data/workspaces/WORKSPACES.dbf`, 106 rows, read with an independent
-DBF reader:
+The live catalog is `dottalkpp/data/workspaces/WORKSPACES.dbf` -- untracked by design: it is the running table the engine writes to, not a repo artifact, and staging it would freeze evidence that is supposed to stay live.  <!-- cite-check:ignore -->
+106 rows, read with an independent DBF reader:
 
 | column | value across all 106 rows |
 |---|---|
@@ -235,7 +235,9 @@ sec 2, sec 3 and sec 4 (every claim verified at file:line against
   a ruling. The author does not self-approve; this ships `review-needed`.
 - **How to verify.** Re-run all three censuses in one command:
 
-      python3 tools/dbf/minidb_depth_census.py all tmp/minidb dottalkpp/data/workspaces/WORKSPACES.dbf
+      python3 tools/dbf/minidb_depth_census.py all tmp/minidb <catalog>
+
+  where `<catalog>` is the live `dottalkpp/data/workspaces/WORKSPACES.dbf` -- see sec 1c for why it is untracked.  <!-- cite-check:ignore -->
 
   The container payloads are the `SNAPSHOT` memo of each `MINIDB 1` catalog row,
   extracted 2026-08-21 to `tmp/minidb/` (37 `.bin` files, one per object id --
