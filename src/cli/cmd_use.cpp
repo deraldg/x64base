@@ -31,9 +31,21 @@
 //   USE <table> NOINDEX
 //   USE <table> NOIDX
 //   USE <table> AGAIN
+//   USE <table> IN <n>
+//   USE <table> IN FREE
 //
 // notes:
 //   USE requires a table name or path; no usable argument shows usage.
+//   USE REFUSES arguments it does not recognize, by name (AIF-121). It used to
+//   ignore them and open into the current area anyway, which destroyed that
+//   area's occupant silently -- the reason IN <n> exists here at all.
+//   IN <n> opens into area n and does NOT change the current area. IN FREE
+//   takes the lowest unoccupied area, and refuses rather than falling back
+//   when there is none.
+//   The USAGE text rendered by print_use_usage() comes from the message
+//   catalog and does not yet list IN; the catalog is owned by the full-stack
+//   document push and is OWED this line. The refusal path prints the correct
+//   syntax inline meanwhile.
 //   Relative logical names resolve through the configured DBF path slot.
 //   USE prevents duplicate opens of the same DBF path across work areas,
 //   and names the AGAIN arm in the refusal.
@@ -83,6 +95,7 @@
 #include <vector>
 
 #include "xbase.hpp"
+#include "xbase/workspace_membership.hpp"   // IN FREE is workspace-scoped (AIF-121)
 #include "xbase_64.hpp"
 #include "xbase/area_kind_util.hpp"
 #include "cli/command_output.hpp"
@@ -173,79 +186,109 @@ static std::string up_copy(std::string s)
     return s;
 }
 
-static bool contains_noindex(std::istringstream& iss)
-{
-    std::streampos pos = iss.tellg();
-    if (pos == std::streampos(-1)) {
-        return false;
-    }
+// ---------------------------------------------------------------------------
+// USE argument parsing (AIF-121).
+//
+// WHAT THIS REPLACED, AND WHY THE SHAPE MATTERED MORE THAN THE MISSING CHECK.
+// This file used to read its tail with THREE independent non-consuming scans --
+// contains_noindex, contains_again, parse_alias_clause. Each saved the stream
+// position, swept forward looking for its own keyword, and rewound. Nothing
+// ever enumerated the tail as a whole, so NO TOKEN WAS EVER UNACCOUNTED FOR.
+//
+// Unknown arguments were therefore not ignored by oversight. Nothing was in a
+// position to notice them. `USE students IN 1` parsed as `USE students` with
+// two tokens quietly dropped on the floor, and the table opened into the
+// CURRENT area -- destroying whatever occupied it, with no message. Measured
+// 2026-08-22: two USE commands, two "Opened" lines, WORKSPACE REGISTRY
+// reporting members 1.
+//
+// So the fix is not a check bolted onto three scanners. It is ONE PASS that
+// CONSUMES every token and classifies it, with a final else that refuses by
+// name. The gate cannot be forgotten afterwards, because the parser is
+// required to account for every token it is handed; a fifth clause added later
+// cannot reopen the hole by omission.
+//
+// This is the house rule stated 2026-08-22 -- "all commands and functions
+// should validate field names" -- one level out: validate ARGUMENTS.
+struct UseTail {
+    bool        again           = false;
+    bool        noindex         = false;
+    std::string alias;
+    bool        alias_malformed = false;
 
-    bool found = false;
+    // IN <n> | IN FREE. `have_in` says the clause appeared at all, which is
+    // what separates "not asked for" from "asked for and unusable" -- the
+    // distinction parse_alias_clause already had to learn for ALIAS.
+    bool        have_in         = false;
+    bool        in_free         = false;
+    long long   in_area         = -1;
+
+    std::string unknown;    // first unrecognized token, verbatim for the message
+    std::string in_problem;  // IN present but its argument missing or unusable
+};
+
+static bool token_is_all_digits(const std::string& s) {
+    if (s.empty()) return false;
+    for (const char c : s) {
+        if (c < '0' || c > '9') return false;
+    }
+    return true;
+}
+
+// Consumes the stream to exhaustion. Every token lands in exactly one bucket,
+// including the reject bucket -- that totality is the whole point.
+static UseTail parse_use_tail(std::istringstream& iss)
+{
+    UseTail t;
     std::string tok;
+
     while (iss >> tok) {
         const std::string u = up_copy(tok);
-        if (u == "NOINDEX" || u == "NOIDX") {
-            found = true;
-            break;
+
+        if (u == "NOINDEX" || u == "NOIDX") { t.noindex = true; continue; }
+        if (u == "AGAIN")                   { t.again   = true; continue; }
+
+        if (u == "ALIAS") {
+            std::string nm;
+            if (iss >> nm) t.alias = nm;
+            else           t.alias_malformed = true;
+            continue;
         }
-    }
 
-    iss.clear();
-    iss.seekg(pos);
-    return found;
-}
+        if (u == "IN") {
+            t.have_in = true;
+            std::string arg;
+            if (!(iss >> arg)) {
+                t.in_problem = "IN requires an area number or FREE";
+                continue;
+            }
+            const std::string au = up_copy(arg);
+            if (au == "FREE") { t.in_free = true; continue; }
 
-// USE ... AGAIN (workspace design I5, v1 arm). Non-consuming scan, same
-// pattern as contains_noindex: the flag may appear anywhere after the name.
-static bool contains_again(std::istringstream& iss)
-{
-    std::streampos pos = iss.tellg();
-    if (pos == std::streampos(-1)) {
-        return false;
-    }
-
-    bool found = false;
-    std::string tok;
-    while (iss >> tok) {
-        if (up_copy(tok) == "AGAIN") {
-            found = true;
-            break;
+            // Digits only, deliberately: std::stoll would accept "3junk" and
+            // return 3, which is the same longest-valid-prefix trap that let
+            // AIF-116 read pid=16,984 as 16. An area number is either a number
+            // or it is a mistake worth naming.
+            if (!token_is_all_digits(arg)) {
+                t.in_problem = "IN expects an area number or FREE, not '" + arg + "'";
+                continue;
+            }
+            try {
+                t.in_area = std::stoll(arg);
+            } catch (...) {
+                t.in_problem = "IN area number out of range: '" + arg + "'";
+            }
+            continue;
         }
+
+        // THE LINE THIS WHOLE STRUCTURE EXISTS FOR. Anything unclassified is
+        // reported by name rather than dropped. First one wins; naming one
+        // token the caller can see beats a count they cannot act on.
+        if (t.unknown.empty()) t.unknown = tok;
     }
 
-    iss.clear();
-    iss.seekg(pos);
-    return found;
+    return t;
 }
-
-// USE ... ALIAS <name> (owner 'fix the use command', 2026-08-12). Same
-// non-consuming scan. Returns the token AFTER the keyword; sets `malformed`
-// when ALIAS is present with nothing following it, so a typo is reported
-// rather than silently treated as "no alias given" -- the difference between
-// those two is a table that opens under the wrong name.
-static std::string parse_alias_clause(std::istringstream& iss, bool& malformed)
-{
-    malformed = false;
-    std::streampos pos = iss.tellg();
-    if (pos == std::streampos(-1)) {
-        return {};
-    }
-
-    std::string out;
-    std::string tok;
-    while (iss >> tok) {
-        if (up_copy(tok) == "ALIAS") {
-            if (iss >> tok) out = tok;
-            else            malformed = true;
-            break;
-        }
-    }
-
-    iss.clear();
-    iss.seekg(pos);
-    return out;
-}
-
 
 static std::string trim_copy_use(std::string s)
 {
@@ -357,6 +400,69 @@ static int area_slot_of(DbArea& a) {
     auto* eng = shell_engine(); if (!eng) return -1;
     for (int i = 0; i < xbase::MAX_AREA; ++i) {
         if (&eng->area(i) == &a) return i;
+    }
+    return -1;
+}
+
+// The workspace-local slot of an area, 0-based. THE FIRST READER of
+// DbArea::_ws_local_slot, which has had three writers and none of these since
+// AIF-078 stage 1 landed it five days ago -- my own AIF-079 instance, closed
+// here rather than catalogued again.
+static int workspace_area_slot_of(const DbArea& a) {
+    return a.wsLocalSlot();   // -1 when the area belongs to no workspace
+}
+
+static bool area_is_open_safe(xbase::XBaseEngine* eng, int slot) {
+    if (!eng || slot < 0 || slot >= xbase::MAX_AREA) return true;  // treat unknown as taken
+    try { return eng->area(slot).isOpen(); } catch (...) { return true; }
+}
+
+// IN FREE -- an unoccupied area, chosen for THIS WORKSPACE.
+//
+// NAMED FREE AND NOT NEXT (owner ruling 2026-08-22): NEXT implies forward
+// adjacency and this may return a slot BEHIND the cursor. A name that promises
+// an order the code does not keep is worse than no name.
+//
+// WORKSPACE-SCOPED, AND THAT IS THE POINT (owner ruling 2026-08-22, "scoped").
+// The first cut swept 0..MAX_AREA globally, which with one workspace open is
+// indistinguishable from correct and stops being so the moment there are two:
+// a global sweep hands out the lowest free ENGINE slot, and that slot can sit
+// INSIDE ANOTHER WORKSPACE'S RUN. The owner's design rule for this lane is
+// that a workspace's areas stay contiguous -- "keep the areas contiguous",
+// fractal to the same rule for tables under one root -- so an allocator that
+// can drop an area into the middle of a neighbour's block is a contiguity
+// violation armed and waiting for stage 4.
+//
+// So: GROW MY OWN BLOCK FIRST. If this workspace already holds areas, the
+// slot after its highest member keeps the run unbroken. Only when that is
+// taken do we fall back to the lowest free slot anywhere -- and we SAY SO,
+// because a silently broken invariant is the shape this whole lane exists to
+// remove. `broke_contiguity` carries that fact back to the caller rather than
+// printing from down here, so the message lands with the rest of USE's output.
+static int find_free_area_for_current_workspace(bool& broke_contiguity) {
+    broke_contiguity = false;
+    auto* eng = shell_engine(); if (!eng) return -1;
+
+    const std::uint64_t h   = xbase::workspace::current_handle();
+    const auto          mem = xbase::workspace::members(h);
+
+    int highest = -1;
+    for (const auto slot : mem) {
+        if (slot > highest) highest = static_cast<int>(slot);
+    }
+
+    // Contiguous growth: the slot immediately after my highest member.
+    if (highest >= 0 && highest + 1 < xbase::MAX_AREA) {
+        if (!area_is_open_safe(eng, highest + 1)) return highest + 1;
+    }
+
+    // Fallback. Reached when my block is boxed in, or when this workspace
+    // holds nothing yet and is therefore starting one.
+    for (int i = 0; i < xbase::MAX_AREA; ++i) {
+        if (!area_is_open_safe(eng, i)) {
+            broke_contiguity = (highest >= 0);
+            return i;
+        }
     }
     return -1;
 }
@@ -627,7 +733,14 @@ static std::string open_display_name(const DbArea& a, const fs::path& dbf_path)
 
 // ----------------------- Command entry --------------------------------------
 
-void cmd_USE(DbArea& a, std::istringstream& iss)
+// The parameter is the area the caller is STANDING IN. `a` below is bound to
+// the area being OPENED INTO, which are the same thing unless IN <n> says
+// otherwise. Binding the old name to the resolved target keeps every line
+// downstream -- alias resolution, the duplicate guard, teardown, memo attach,
+// order attach, the open report -- correct with no edit, and makes it
+// impossible for one of them to be forgotten and quietly keep operating on
+// the wrong area. That forgetting is the defect this commit fixes.
+void cmd_USE(DbArea& current_area, std::istringstream& iss)
 {
     const std::string raw_args = iss.str();
     if (is_use_usage_request(raw_args)) {
@@ -644,9 +757,30 @@ void cmd_USE(DbArea& a, std::istringstream& iss)
         return;
     }
 
-    bool alias_malformed = false;
-    const std::string alias_requested = parse_alias_clause(iss, alias_malformed);
-    if (alias_malformed) {
+    const UseTail tail = parse_use_tail(iss);
+
+    // REFUSALS FIRST, ALL OF THEM, BEFORE ANY AREA IS TOUCHED. Every branch
+    // below returns having opened nothing and changed nothing -- the lesson
+    // the memo guard taught this lane by getting it wrong (it refused AFTER
+    // resetting the area and opening the file, then printed "Nothing was
+    // opened" over the wreckage).
+    if (!tail.unknown.empty()) {
+        cli::cmdout::print_line(
+            "USE: refused -- unrecognized argument '" + tail.unknown + "'.");
+        cli::cmdout::print_line(
+            "  USE <table> [IN <n>|FREE] [AGAIN] [ALIAS <name>] [NOINDEX|NOIDX]");
+        cli::cmdout::print_line(
+            "  Nothing was opened. USE used to ignore what it did not understand "
+            "and open into the current area anyway (AIF-121).");
+        return;
+    }
+    if (!tail.in_problem.empty()) {
+        cli::cmdout::print_line("USE: refused -- " + tail.in_problem + ". Nothing was opened.");
+        return;
+    }
+
+    const std::string alias_requested = tail.alias;
+    if (tail.alias_malformed) {
         cli::cmdout::print_line("USE: ALIAS requires a name (USE <table> [AGAIN] ALIAS <name>).");
         return;
     }
@@ -658,14 +792,69 @@ void cmd_USE(DbArea& a, std::istringstream& iss)
         return;
     }
 
-    const bool again = contains_again(iss);
+    // --- RESOLVE THE TARGET AREA --------------------------------------------
+    // IN <n> names the destination; AGAIN carries no placement opinion at all
+    // (it only grants permission to duplicate), so there is no interaction
+    // rule between them and none is invented here -- owner ruling 2026-08-22.
+    // Without IN this is the current area, which is exactly today's behaviour.
+    DbArea* target_p = &current_area;
+    if (tail.have_in) {
+        auto* eng = shell_engine();
+        if (!eng) {
+            cli::cmdout::print_line("USE: refused -- engine unavailable. Nothing was opened.");
+            return;
+        }
+        long long want = tail.in_area;
+        bool broke_contiguity = false;
+        if (tail.in_free) {
+            const int free_slot = find_free_area_for_current_workspace(broke_contiguity);
+            if (free_slot < 0) {
+                // Deliberately NOT falling back to the current area. Falling
+                // back is the silent-replacement behaviour this lane exists
+                // to kill, and it would be at its worst here: the caller who
+                // wrote FREE is the one who most clearly did not want it.
+                cli::cmdout::print_line(
+                    "USE: refused -- IN FREE found no unoccupied area (all " +
+                    std::to_string(xbase::MAX_AREA) + " are in use). Nothing was opened.");
+                return;
+            }
+            want = free_slot;
+            if (broke_contiguity) {
+                cli::cmdout::print_line(
+                    "USE IN FREE: workspace '" + xbase::workspace::name_of(xbase::workspace::current_handle()) +
+                    "' could not grow contiguously; area " + std::to_string(free_slot) +
+                    " is outside its existing run.");
+            }
+        }
+        if (want < 0 || want >= xbase::MAX_AREA) {
+            cli::cmdout::print_line(
+                "USE: refused -- area " + std::to_string(want) + " is out of range (0.." +
+                std::to_string(xbase::MAX_AREA - 1) + "). Nothing was opened.");
+            return;
+        }
+        try {
+            target_p = &eng->area(static_cast<int>(want));
+        } catch (...) {
+            cli::cmdout::print_line(
+                "USE: refused -- area " + std::to_string(want) +
+                " is unreachable. Nothing was opened.");
+            return;
+        }
+    }
+
+    // From here down, `a` IS the target. Note this does NOT select it: opening
+    // into another area leaves the caller standing where they were, which is
+    // the FoxPro contract for IN <n> and the reason the clause is useful.
+    DbArea& a = *target_p;
+
+    const bool again = tail.again;
     // AGAIN forces physical order in v1, and this is load-bearing, not
     // convenience: index auto-attach would open the SAME container for a
     // second time in this process, and for the LMDB-backed lane that is two
     // mdb_env_open calls on one environment (cdx_backend.cpp:224) -- undefined
     // behaviour by LMDB's own contract. Index attach on a second instance is
     // a later, separately-gated arm.
-    const bool noindex = again || contains_noindex(iss);
+    const bool noindex = again || tail.noindex;
     ensure_setpath_initialized();
 
     // Resolve DBF path
@@ -861,6 +1050,34 @@ void cmd_USE(DbArea& a, std::istringstream& iss)
     cli::cmdout::print_message(
         dottalk::helpdata::MessageId::UseValidIndexesLineText,
         {{"types", valid_index_types_for(a)}});
+
+    // PLACEMENT REPORT -- printed only when IN was used, because that is the
+    // one moment a person has asked where the table goes and deserves an
+    // answer in BOTH planes at once.
+    //
+    // This project currently numbers three different things and two of them
+    // are positions: engine slots (0-based), workspace-local slots (0-based
+    // since the owner ruling this session), and workspace handles (keys, where
+    // 0 means "none"). Someone reading `local 2` and typing `SELECT 2` gets a
+    // different area, and that collision is a live hazard rather than a
+    // theoretical one. Printing both together, side by side, at the moment of
+    // placement is the cheapest available inoculation.
+    //
+    // It is also the FIRST READER of DbArea::_ws_local_slot. Stage 1 gave that
+    // field three writers and no consumers; rather than catalogue a fifth
+    // AIF-079 instance, this line spends it.
+    if (tail.have_in) {
+        const int   eng_slot   = area_slot_of(a);
+        const int   local_slot = workspace_area_slot_of(a);
+        const auto  h          = a.wsHandle();
+        std::string where = "USE: opened into engine area " + std::to_string(eng_slot);
+        if (local_slot >= 0) {
+            where += "  (workspace " + xbase::workspace::name_of(h) +
+                     ", local slot " + std::to_string(local_slot) + ")";
+        }
+        where += ". Current area is unchanged.";
+        cli::cmdout::print_line(where);
+    }
 
     // NOINDEX → force physical order; stop
     if (noindex) {
