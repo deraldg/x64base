@@ -1,3 +1,20 @@
+// @dottalk.file v1
+// subsystem: gui
+// layer: probe
+// owns: standalone main(); no uidef_register
+// project: project.x64base.gui
+// lane: AIF-120
+// owner: member.derald
+// status: supported
+// summary:
+//   R63 -- LOCK past record 2^31, via a sparse 19 GB logical file
+//
+// notes:
+//   Contract added 2026-08-22. This directory was promoted from lane to
+//   project in 898a37b62 without them, so 14 of its 15 C++ files were
+//   INVISIBLE to the doc pass -- not undocumented, invisible: the pass
+//   completed and reported success while covering less than it claimed.
+
 // AIF-120 R63 -- does the lane's LOCK path work at a record number past 2^31?
 //
 // Build and run (needs the engine archives; creates a 19 GB LOGICAL file that

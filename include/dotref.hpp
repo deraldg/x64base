@@ -555,6 +555,15 @@ Notes:
 
         {"TVISION",   "TVISION", "Turbo Vision diagnostics / demos.", true},
 
+        // APPGUI and its alias GUI. Registered 2026-08-22: src/cli/app_gui.cpp
+        // has carried a full @dottalk.usage block for some time, so the command
+        // LOOKED documented while CMDHELP had no entry to generate a page from.
+        // The alias gets its own row because a reader who types GUI is not
+        // helped by a catalog that only answers to APPGUI.
+        {"APPGUI",    "APPGUI", "Launch the windowed Workbench GUI (dottalk_wb) as a separate process, or report by name why it cannot be launched.", true},
+
+        {"GUI",       "APPGUI", "Alias for APPGUI: launch the windowed Workbench GUI, or report why it cannot start.", true},
+
         {"TURBOPACK", "TURBOPACK", "Turbo Vision / pack-related utility.", true},
 
         {"FOXPRO",    "FOXPRO", "DotTalk++ UI / browser command.", true},

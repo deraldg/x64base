@@ -1,3 +1,20 @@
+// @dottalk.file v1
+// subsystem: gui
+// layer: registry
+// owns: uidef_register / uidef_after_init
+// project: project.x64base.gui
+// lane: AIF-120
+// owner: member.derald
+// status: supported
+// summary:
+//   R49 -- the C++ lock provider seam under a grouping locale
+//
+// notes:
+//   Contract added 2026-08-22. This directory was promoted from lane to
+//   project in 898a37b62 without them, so 14 of its 15 C++ files were
+//   INVISIBLE to the doc pass -- not undocumented, invisible: the pass
+//   completed and reported success while covering less than it claimed.
+
 // R49: the C++ lock provider seam, under a grouping locale. AIF-120.
 //
 // R48 proved what the PYTHON runtime says to the engine. The C++ seam was seven

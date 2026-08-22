@@ -39,8 +39,14 @@
 // mutates: none
 // usage-access: APPGUI USAGE
 // summary:
-//   Launch the windowed wxWidgets GUI as a separate process, or report by name
-//   why it cannot be launched.
+//   Launch the windowed Workbench GUI -- `dottalk_wb`, built with wxWidgets --
+//   as a separate process, or report by name why it cannot be launched.
+//
+//   The binary is named here on purpose. It was `dottalk_wx` until 2026-08-22,
+//   and a contract that describes a command only by its toolkit cannot answer
+//   the first question a reader has, which is what gets started. The BUILD
+//   SWITCH is still DOTTALK_WITH_WX and is correct: that gates wxWidgets, not
+//   the product.
 //
 // usage:
 //   APPGUI

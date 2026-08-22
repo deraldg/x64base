@@ -1,3 +1,20 @@
+// @dottalk.file v1
+// subsystem: gui
+// layer: provider
+// owns: a TYPED lock provider calling xbase::locks directly
+// project: project.x64base.gui
+// lane: AIF-120
+// owner: member.derald
+// status: supported
+// summary:
+//   typed provider seam; does not speak console
+//
+// notes:
+//   Contract added 2026-08-22. This directory was promoted from lane to
+//   project in 898a37b62 without them, so 14 of its 15 C++ files were
+//   INVISIBLE to the doc pass -- not undocumented, invisible: the pass
+//   completed and reported success while covering less than it claimed.
+
 // A TYPED lock provider: calls xbase::locks directly instead of speaking console
 // text. AIF-120, R57.
 //

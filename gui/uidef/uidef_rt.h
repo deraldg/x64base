@@ -1,3 +1,20 @@
+// @dottalk.file v1
+// subsystem: gui
+// layer: runtime
+// owns: the UIDEF dispatch runtime: std::thread, std::mutex, wxWindow::CallAfter
+// project: project.x64base.gui
+// lane: AIF-120
+// owner: member.derald
+// status: supported
+// summary:
+//   R41 -- the C++ runtime R37 built in Python and R40 emitted without event binding
+//
+// notes:
+//   Contract added 2026-08-22. This directory was promoted from lane to
+//   project in 898a37b62 without them, so 14 of its 15 C++ files were
+//   INVISIBLE to the doc pass -- not undocumented, invisible: the pass
+//   completed and reported success while covering less than it claimed.
+
 // The UIDEF dispatch runtime, in C++. AIF-120, R41.
 //
 // R37 built this in Python and R38/R39 proved it on Tk. R40 emitted wx C++ and

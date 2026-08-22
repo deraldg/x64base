@@ -1,3 +1,20 @@
+// @dottalk.file v1
+// subsystem: gui
+// layer: registry
+// owns: uidef_register / uidef_after_init
+// project: project.x64base.gui
+// lane: AIF-120
+// owner: member.derald
+// status: supported
+// summary:
+//   R47 -- lock semantics on the compiled target, the four cases from deadlock_test.py
+//
+// notes:
+//   Contract added 2026-08-22. This directory was promoted from lane to
+//   project in 898a37b62 without them, so 14 of its 15 C++ files were
+//   INVISIBLE to the doc pass -- not undocumented, invisible: the pass
+//   completed and reported success while covering less than it claimed.
+
 // R47: lock semantics on the compiled target. AIF-120.
 // Same four cases as gui/uidef/deadlock_test.py, on std::thread/std::mutex.
 #include "uidef_rt.h"

@@ -1,3 +1,20 @@
+// @dottalk.file v1
+// subsystem: gui
+// layer: registry
+// owns: uidef_register / uidef_after_init
+// project: project.x64base.gui
+// lane: AIF-120
+// owner: member.derald
+// status: supported
+// summary:
+//   what a TARGET supplies: handler bodies by name (R14) and a host capability table
+//
+// notes:
+//   Contract added 2026-08-22. This directory was promoted from lane to
+//   project in 898a37b62 without them, so 14 of its 15 C++ files were
+//   INVISIBLE to the doc pass -- not undocumented, invisible: the pass
+//   completed and reported success while covering less than it claimed.
+
 // What a TARGET supplies: handler bodies by name (R14), a host capability table,
 // and its own entry point. The generated file references these and defines none.
 #include "uidef_rt.h"

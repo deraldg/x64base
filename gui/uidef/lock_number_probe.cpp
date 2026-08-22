@@ -1,3 +1,20 @@
+// @dottalk.file v1
+// subsystem: gui
+// layer: probe
+// owns: standalone main(); no uidef_register
+// project: project.x64base.gui
+// lane: AIF-120
+// owner: member.derald
+// status: supported
+// summary:
+//   R48 -- whether AIF-116's defect shape exists for a frontend
+//
+// notes:
+//   Contract added 2026-08-22. This directory was promoted from lane to
+//   project in 898a37b62 without them, so 14 of its 15 C++ files were
+//   INVISIBLE to the doc pass -- not undocumented, invisible: the pass
+//   completed and reported success while covering less than it claimed.
+
 // AIF-120 R48 -- does AIF-116's defect surface exist for a FRONTEND?
 //
 // AIF-116: `xbase::locks` wrote the owner pid through an un-imbued stream while a
