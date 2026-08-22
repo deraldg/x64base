@@ -206,14 +206,34 @@ dated section rather than restated here. In summary: stage 2's choke-point half
 shipped and its catalog-handoff and relation-handle halves did not; stage 4's
 two-workspace precondition is **met and mutation-tested**
 (`dottalkpp/data/scripts/workspace_multi_regression.dts`, four workspaces,
-eleven markers, 2026-08-22) though that script is **not registered** in
-`kRegressionSpecs`; the four `A.B.C` splitters are in no stage; and
-`set_relations.cpp:171-178` `slot_of_area_ptr` is a **leftover duplicate** of
-`cli::slot_of_area` (`src/cli/workarea_util.cpp:174-180`, AIF-120 I1.1) sitting
-three lines below that refactor's own `using` import. It is not merely slower:
-I1.1's note records that the shared version *"answers correctly for a closed
-area too -- the old scan did not"*, so the duplicate is also **behaviourally
-wrong for a closed area**, returning -1 where the shared one returns the slot.
+eleven markers, 2026-08-22 -- **authored by the concurrent session**,
+`9e9d37f79` / `8554be086`, not by this lane); the four `A.B.C` splitters are in
+no stage; and `set_relations.cpp`'s file-local `slot_of_area_ptr` was a
+**leftover duplicate** of `cli::slot_of_area` (`src/cli/workarea_util.{hpp,cpp}`,
+AIF-120 I1.1), sitting directly below that refactor's own `using` import. It was
+not merely slower: I1.1's note records that the shared version *"answers
+correctly for a closed area too -- the old scan did not"*, so the duplicate was
+also **behaviourally wrong for a closed area**, returning -1 where the shared one
+returns the slot.
+
+**AMENDED 2026-08-22, same day.** Both items above LANDED in `c85df7477`:
+`slot_of_area_ptr` is deleted and the script is registered as `WSMULTI`
+(`kRegressionSpecs` 49 -> 51, alongside `RELSCAN`). **Line numbers are
+deliberately absent from the paragraph above** -- its first version cited
+`set_relations.cpp:365` and `:300` for the `ScopedEngineSelect` sites, and the
+comment written in the same commit shifted them eight lines. Perishable literals,
+made stale by their own commit, in a document whose sec 10 is about exactly that
+class of error. Cite the FUNCTION; it does not drift.
+
+**The closed-area difference was verified unreachable, after the fact and by
+walking every site.** All nine `ScopedEngineSelect` constructions are guarded:
+`goto_first_match`'s own `if (!child.isOpen()) return false;`; the
+`isOpen()` check at the head of the match-count path; the three sites whose
+pointers come from `find_open_area_by_name_ci`, which gates on `isOpen()`; and
+`get_by_index_as_string`, which returns early on an empty field list -- which is
+what a closed area has. A closed area cannot reach the ctor from this file, so
+the deletion is behaviour-preserving here. Stated as measured only now; the
+committed code comment asserted it first.
 
 ## 8. Evidence tier
 

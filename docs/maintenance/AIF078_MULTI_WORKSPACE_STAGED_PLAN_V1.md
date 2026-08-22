@@ -399,20 +399,42 @@ sharpest of five remaining, not the last of one.
 
 ### 11g. Two items ready to cut, independent of I1.2
 
-1. **Delete `slot_of_area_ptr`** (`src/cli/set_relations.cpp:171-178`). It is a
-   leftover duplicate of `cli::slot_of_area` (`src/cli/workarea_util.cpp:174-180`,
-   AIF-120 I1.1), sitting three lines below that refactor's own `using` import.
-   It is not merely O(MAX_AREA) on a hot path (`ScopedEngineSelect` ctor `:184`,
-   constructed at nine sites including `:365` inside `goto_first_match`'s
-   per-record loop) -- I1.1's note records that the shared version *"answers
-   correctly for a closed area too -- the old scan did not"*, so the duplicate is
-   **behaviourally wrong** for a closed area, returning -1. Verify with a
-   before/after `REL ENUM` timing on a multi-row chain.
-2. **Register the unregistered specs.** `workspace_multi_regression.dts`,
-   `workspace_multi_demo.dts` and `rel_scanlimit_honesty_regression.dts` are not
-   in `kRegressionSpecs` (`src/cli/cmd_regression.cpp:96`, N = 49, hand-
-   maintained) and are unreachable by name. The first is this lane's own stage-3/4
-   evidence.
+**Both LANDED 2026-08-22 as `c85df7477`.** Kept as the record of what was cut
+and why. **Function names, not line numbers** -- the first version of this
+subsection cited `set_relations.cpp:365` and `:184`, and the comment written in
+the same commit shifted them eight lines. A cite that its own commit invalidates
+is the perishable-literal trap this plan warns about in 11h.
+
+1. **`slot_of_area_ptr` DELETED** from `src/cli/set_relations.cpp`;
+   `ScopedEngineSelect`'s ctor now calls `cli::slot_of_area`
+   (`src/cli/workarea_util.{hpp,cpp}`, AIF-120 I1.1), whose parameter was widened
+   to `const` so the duplicate could be deleted rather than `const_cast`-ed
+   around -- source-compatible for all 21 existing callers. It was a leftover
+   sitting directly below that refactor's own `using` import. Not merely
+   O(MAX_AREA) on the `goto_first_match` per-record path: I1.1's note records the
+   shared version *"answers correctly for a closed area too -- the old scan did
+   not"*, so the duplicate was **behaviourally wrong** for a closed area,
+   returning -1.
+   **Verified after the fact, by walking all nine `ScopedEngineSelect` sites:**
+   the closed-area difference is UNREACHABLE from this file. Each site is guarded
+   by `goto_first_match`'s own `isOpen()` check, by the `isOpen()` guard at the
+   head of the match-count path, by `find_open_area_by_name_ci` (which gates on
+   `isOpen()`), or -- for `get_by_index_as_string` -- by an early return on an
+   empty field list, which is what a closed area has.
+   **The `REL ENUM` before/after timing was NOT taken.** The payoff is argued
+   from the loop shape, not measured. Still owed.
+2. **`WSMULTI` and `RELSCAN` REGISTERED**, `kRegressionSpecs` 49 -> 51
+   (`src/cli/cmd_regression.cpp`, size hand-maintained). Both existed and neither
+   could be reached by name. **`workspace_multi_demo.dts` was deliberately NOT
+   registered** -- it asserts nothing, and a demo in the regression registry is
+   the FIELDMGR_APPEND shape. It therefore remains unrun on this build.
+   **`workspace_multi_regression.dts` is the concurrent session's work**
+   (`9e9d37f79`, `8554be086`); this lane only listed it.
+   **`RELSCAN`'s first run by name immediately paid for the registration:** its
+   header promises a T3 -- *"warning appears ONCE per REL command even with
+   multiple children"* -- and the fixture declares ONE child, so no `RELSCAN-T3`
+   block is emitted and the claim is unexercised. The registry entry names that
+   gap rather than repeating the header.
 
 **Verification hazard to carry into every stage:** `RELJOIN`
 (`cmd_regression.cpp:284-289`) and `NAME_AMBIG` (`:462-467`) both carry
