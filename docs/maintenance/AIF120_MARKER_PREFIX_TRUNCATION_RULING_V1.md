@@ -68,7 +68,7 @@ printed inside `[ ]` so an empty value and a vanished one cannot be confused.
 | `? "[" + RECCOUNT + "]"` | `[RECCOUNT]` | **not 200** |
 | `? "[" + DELETED + "]"` | `[DELETED]` | **not T/F** |
 | `COUNT FOR NOSUCHFIELD = "x"` | `0` | silent |
-| `COUNT FOR RECNO() = 1` | `0` | **silently wrong; the true answer is 1** |
+| `COUNT FOR RECNO() = 1` | `0` | **a count for a clause that never resolved (see 3a)** |
 
 **The mechanism, and it is one line.** `value_eval.cpp`'s value-expression
 lexer ends with
@@ -138,8 +138,8 @@ owed, and that run is itself the measurement of how much was passing silently.
 Each of these is a separate decision and none is inside the R114 option 2 go.
 
 - **The predicate path answers wrong, not just quietly.**
-  `COUNT FOR RECNO() = 1` returns 0 where the true answer is 1, and
-  `COUNT FOR NOSUCHFIELD = "x"` returns 0 with no diagnostic. Two causes:
+  `COUNT FOR RECNO() = 1` and `COUNT FOR NOSUCHFIELD = "x"` each return 0
+  with no diagnostic (but see 3a -- this is not a wrong NUMBER). Two causes:
   `glue_xbase.cpp:178` returns an empty string for a name that is not a field
   (`:198`, `:264`, `:282` are the same site in the numeric accessor and in
   `make_record_view_raw`), and a predicate that fails to COMPILE is swallowed
@@ -161,6 +161,36 @@ Each of these is a separate decision and none is inside the R114 option 2 go.
   `glue_xbase.cpp` resolves none of them. R114 sec 4 parked this as unmeasured.
   AIF-074's EVALDIFF harness exists to compare exactly these two and would be
   the instrument; it was not run here.
+
+## 3a. Correction to this document, 2026-08-22 (steward)
+
+**Steward, in session: "recno() is not a function."** He is right, and sec 3
+as first written contradicted R114 sec 1 one document later.
+
+R114 established that `RECNO` is **not a function in this expression layer** --
+it exists only as a COMMAND (`src/cli/cmd_recno.cpp`). Sec 3 then described
+`COUNT FOR RECNO() = 1` as returning 0 "where the true answer is 1". **There is
+no true answer of 1.** The question is not askable in this language, so the
+correct response is a REFUSAL, not a count.
+
+The defect is real and the correction sharpens it:
+
+- **Not** "a predicate returns the wrong number".
+- **But** "an unanswerable question is answered with a number". `RECNO()` is an
+  unresolvable CALL and should report that RECNO is not a function;
+  `NOSUCHFIELD` is an unresolvable NAME and should report that no such field
+  exists. Both instead produce `0`, which reads as a result.
+
+**This bounds the fix.** Making `RECNO()` evaluate is R114 option 3 -- a
+language decision, the steward's, and explicitly out of scope here. The only
+change sec 3 argues for is: **stop reporting a count for a clause that never
+resolved.** Any patch that makes `COUNT FOR RECNO() = 1` return 1 has answered
+a different question than the one this document asked.
+
+Recorded rather than edited away because a shipped ruling asserted something
+false, and because the class is this lane's recurring one: I measured a claim
+(the count) against an expectation I had invented (that RECNO resolves) instead
+of against the finding I had written down four hours earlier.
 
 ## 4. Corrections to R114
 
