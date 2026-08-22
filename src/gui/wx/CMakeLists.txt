@@ -54,6 +54,29 @@ endif()
 add_executable(dottalk_wb WIN32 ${DOTTALK_WX_SOURCES})
 add_executable(dottalk_wb_next WIN32 ${DOTTALK_WX_SOURCES})
 
+# AIF-078 stage 5, 2026-08-22. dottalk_wb_next exists so v2 work can be built
+# WITHOUT disturbing the shipping Workbench (steward, in-session: "a copy of
+# dottalk_wb to use for building without screwing up version 1"). The copy was
+# made one level too high: both targets take the SAME ${DOTTALK_WX_SOURCES},
+# the same includes, libraries and flags, and neither carried a define -- so
+# nothing could tell them apart and every edit to main_frame.cpp reached BOTH.
+# The isolation the second target was created to provide did not exist; the
+# build simply produced one program twice under two names, which is also why
+# AIF-122's rebuild probe counted main_frame.cpp twice.
+#
+# One define restores the intent. v2 goes behind `#if DOTTALK_WB_NEXT`, so v1
+# is unchanged BY CONSTRUCTION rather than by care -- the guarded code is not
+# in its translation unit at all.
+#
+# WHAT THIS DOES NOT PROTECT, and it is the load-bearing half: both targets
+# link dottalk_gui_core, where the workspace model lives. A define guards the
+# wx SURFACE, never the core. Core changes must therefore stay ADDITIVE AND
+# INERT until _next proves them -- new fields nothing assigns, new functions
+# v1's paths never call. WorkspaceRelationInfo::workspace is the accidental
+# precedent: declared, plumbed to a grid column and a filter, never assigned,
+# and v1 renders correctly regardless.
+target_compile_definitions(dottalk_wb_next PRIVATE DOTTALK_WB_NEXT=1)
+
 if (wxWidgets_USE_FILE AND NOT TARGET wx::core)
   include("${wxWidgets_USE_FILE}")
 endif()

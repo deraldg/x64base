@@ -237,8 +237,47 @@ std::string gui_version_label() {
     return dottalk::version::display_version();
 }
 
+// AIF-078 stage 5, 2026-08-22. THE BUILD VARIANT, in one place.
+//
+// DOTTALK_WB_NEXT is defined for the dottalk_wb_next target only
+// (src/gui/wx/CMakeLists.txt). Until today the two GUI targets compiled the
+// same sources with no define between them, so the second executable provided
+// none of the isolation it was created for. The tag is the guard's EXERCISE,
+// not decoration: both binaries stage into dottalkpp/bin, so a window has to
+// say which one it is, and a v1 window that ever reads NEXT means the guard
+// has leaked. A define with no observable effect would be a mechanism with
+// zero call sites, which is the shape this house keeps finding.
+//
+// CORRECTED SAME DAY. The first cut put the tag inside workbench_title() and
+// its comment called that "the ONE funnel every title goes through". It is
+// not. workbench_title() serves the main frame -- ctor plus THREE SetTitle
+// sites -- while the Record View frame built its own caption inline at three
+// further sites, so under _next the main window would have read NEXT and the
+// Record View window would not. One binary, two answers to "which build am I".
+// That is the same two-spellings-of-one-question defect this house keeps
+// finding, authored here while documenting it. Both captions now consult this
+// tag, and record_view_title() exists so the Record View caption has a funnel
+// of its own instead of three inline copies.
+constexpr const char* wb_variant_tag() {
+#if defined(DOTTALK_WB_NEXT) && DOTTALK_WB_NEXT
+    return " NEXT";
+#else
+    return "";
+#endif
+}
+
 std::string workbench_title(const std::string& display_name = {}) {
-    std::string title = "DotTalk++ Workbench " + gui_version_label();
+    std::string title = std::string("DotTalk++ Workbench") + wb_variant_tag() +
+                        " " + gui_version_label();
+    if (!display_name.empty()) {
+        title += " - " + display_name;
+    }
+    return title;
+}
+
+std::string record_view_title(const std::string& display_name = {}) {
+    std::string title = std::string("Record View") + wb_variant_tag() +
+                        " " + gui_version_label();
     if (!display_name.empty()) {
         title += " - " + display_name;
     }
@@ -1770,7 +1809,7 @@ void MainFrame::ShowRecordView() {
     if (!record_view_frame_) {
         record_view_frame_ = new wxFrame(this,
                                          wxID_ANY,
-                                         "Record View " + gui_version_label(),
+                                         record_view_title(),
                                          wxDefaultPosition,
                                          record_view_size(current_snapshot_.columns));
         record_view_panel_ = new wxPanel(record_view_frame_, wxID_ANY);
@@ -1800,7 +1839,7 @@ void MainFrame::RefreshRecordView() {
 
     if (current_area_id_ == 0 || current_snapshot_.area_id != current_area_id_ ||
         current_snapshot_.columns.empty()) {
-        record_view_frame_->SetTitle("Record View " + gui_version_label());
+        record_view_frame_->SetTitle(record_view_title());
         if (record_view_panel_->GetSizer()) {
             record_view_panel_->SetSizer(nullptr, true);
         }
@@ -1835,8 +1874,8 @@ void MainFrame::RefreshRecordView() {
         return;
     }
 
-    record_view_frame_->SetTitle("Record View " + gui_version_label() + " - " +
-                                 current_snapshot_.display_name + " #" + std::to_string(recno));
+    record_view_frame_->SetTitle(record_view_title(
+        current_snapshot_.display_name + " #" + std::to_string(recno)));
     record_view_frame_->SetMinSize(record_view_size(current_snapshot_.columns));
     if (record_view_panel_->GetSizer()) {
         record_view_panel_->SetSizer(nullptr, true);
