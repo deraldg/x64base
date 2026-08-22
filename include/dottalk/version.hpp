@@ -26,6 +26,22 @@
 // same lie in a different field.
 //
 // A build that lands here is unconfigured, and now says so.
+//
+// AIF-122. The four values now arrive from a GENERATED HEADER emitted by
+// configure_file (copy-if-different), not as -D on every command line. This
+// header has exactly two includers, so a changed SHA recompiles two files
+// instead of the ~400 the command-line form recompiled.
+//
+// Guarded by __has_include so this header still stands alone: a non-CMake
+// build, or a bare `g++ -fsyntax-only`, finds no stamp and falls through to
+// the deliberately-implausible defaults below, which is the behaviour the
+// comment above describes.
+#if defined(__has_include)
+#  if __has_include(<dottalk/version_stamp.hpp>)
+#    include <dottalk/version_stamp.hpp>
+#  endif
+#endif
+
 #ifndef DOTTALKPP_VERSION
 #define DOTTALKPP_VERSION "0.0-unconfigured"
 #endif

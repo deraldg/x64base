@@ -481,19 +481,14 @@ if (DOTTALK_WITH_WX)
   add_subdirectory(gui/wx)
 endif()
 
-# 3.2) PALETTE command: by default, provide a stub so scripts don't explode
-set(_gen_dir "${CMAKE_CURRENT_BINARY_DIR}/generated")
-file(MAKE_DIRECTORY "${_gen_dir}")
-set(_shim "${_gen_dir}/cmd_palette_stub.cpp")
-file(WRITE "${_shim}" [=[
-  #include <sstream>
-  #include <iostream>
-  namespace xbase { class DbArea; }
-  extern "C" void cmd_PALETTE(xbase::DbArea&, std::istringstream&) {
-      std::cerr << "PALETTE not available in this build.\n";
-  }
-]=])
-target_sources(dottalkpp PRIVATE "${_shim}")
+# 3.2) PALETTE command: a stub so scripts don't explode.
+#
+# AIF-122. This block used to GENERATE the stub with file(WRITE) on every
+# configure. file(WRITE) is not copy-if-different, so it rewrote identical
+# bytes with a fresh mtime and cost one recompile per configure; and its body
+# was a bracket argument with nothing to substitute -- a constant, generated.
+# The stub is now src/cli/cmd_palette_stub.cpp, picked up by the GLOB_RECURSE
+# above like every other command, so there is nothing to list here.
 
 # 3.3) Optional standalone fox_palette.exe (opt-in)
 if (DOTTALK_WITH_TV AND DOTTALK_BUILD_PALETTE_EXE)

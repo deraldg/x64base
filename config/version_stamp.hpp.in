@@ -1,0 +1,27 @@
+// @dottalk.file v1
+// subsystem: dottalk
+// layer: header
+// owns:
+// project: project.x64base.runtime
+// lane: AIF-122
+// owner: member.derald
+// status: supported
+
+// GENERATED FROM config/version_stamp.hpp.in -- DO NOT EDIT.
+// Emitted by configure_file(), which is COPY-IF-DIFFERENT: this file's mtime
+// moves only when one of these four values actually changes, so a configure
+// that re-reads the same SHA costs nothing.
+//
+// AIF-122. These four values used to be target_compile_definitions applied to
+// every target, i.e. a -D on the command line of ~400 translation units. A
+// commit changed the SHA, which changed every command line, which rebuilt the
+// whole tree -- measured 2026-08-22. They are read in exactly two places
+// (cmd_version.cpp and gui/wx/main_frame.cpp, both via dottalk/version.hpp),
+// so a stamp change now costs two files.
+
+#pragma once
+
+#define DOTTALKPP_VERSION      "@DOTTALKPP_VERSION_LABEL@"
+#define DOTTALKPP_VERSION_DATE "@DOTTALKPP_VERSION_DATE@"
+#define DOTTALKPP_GIT_SHA      "@DOTTALKPP_GIT_SHA@"
+#define DOTTALKPP_GIT_DIRTY    @DOTTALKPP_GIT_DIRTY@

@@ -324,6 +324,15 @@ configure_file(
     "${CMAKE_SOURCE_DIR}/config/build_vectors.json.in"
     "${CMAKE_BINARY_DIR}/generated/dottalk/build_vectors.json"
     @ONLY)
+
+# AIF-122. The version stamp, as a GENERATED HEADER rather than as -D on every
+# command line. configure_file is copy-if-different, so this file's mtime moves
+# only when one of the four values changes -- and only the two TUs that include
+# dottalk/version.hpp recompile when it does. See config/version_stamp.hpp.in.
+configure_file(
+    "${CMAKE_SOURCE_DIR}/config/version_stamp.hpp.in"
+    "${CMAKE_BINARY_DIR}/generated/dottalk/version_stamp.hpp"
+    @ONLY)
 include_directories("${CMAKE_BINARY_DIR}/generated")
 
 add_subdirectory(src)
@@ -391,25 +400,23 @@ find_package(unofficial-sodium CONFIG REQUIRED)
 # Target Helper
 # ============================================================
 
-function(dottalk_apply_version_metadata target_name)
-    if (NOT TARGET ${target_name})
-        return()
-    endif()
-
-    target_compile_definitions(${target_name} PRIVATE
-        DOTTALKPP_VERSION=\"${DOTTALKPP_VERSION_LABEL}\"
-        DOTTALKPP_VERSION_DATE=\"${DOTTALKPP_VERSION_DATE}\"
-        DOTTALKPP_GIT_SHA=\"${DOTTALKPP_GIT_SHA}\"
-        DOTTALKPP_GIT_DIRTY=${DOTTALKPP_GIT_DIRTY}
-    )
-endfunction()
+# AIF-122. dottalk_apply_version_metadata() DELETED, not emptied.
+#
+# It put the four version defines on the compiler command line of every TU in
+# every target it touched. Changing the SHA changed every command line, so a
+# one-line doc commit recompiled ~400 files -- measured 2026-08-22 at
+# 83f5032e -> 3908abed, twice, for change sets of 8 and 4 files. The stamp now
+# arrives as generated/dottalk/version_stamp.hpp (copy-if-different) and is
+# read only through include/dottalk/version.hpp, whose two includers are
+# cmd_version.cpp and gui/wx/main_frame.cpp.
+#
+# Emptied rather than deleted would have left a function with no effect and two
+# live call sites -- the AIF-079 shape this lane has now catalogued five times.
 
 function(dottalk_apply_common_settings target_name)
     if (NOT TARGET ${target_name})
         return()
     endif()
-
-    dottalk_apply_version_metadata(${target_name})
 
     target_compile_definitions(${target_name} PRIVATE
         DOTTALK_PROFILE_${DOTTALK_PROFILE}=1
@@ -547,11 +554,6 @@ if (DOTTALK_BUILD_BBSD AND NOT TARGET dottalk_bbsd)
     message(STATUS "dottalk_bbsd (standalone BBS daemon) ENABLED.")
 endif()
 
-foreach(_dottalk_gui_target IN ITEMS dottalk_wb dottalk_wb_next)
-    dottalk_apply_version_metadata(${_dottalk_gui_target})
-endforeach()
-unset(_dottalk_gui_target)
-
 if (BUILD_PYDOTTALK)
     if (TARGET pydottalk)
         dottalk_apply_common_settings(pydottalk)
@@ -644,10 +646,26 @@ string(STRIP "${_dottalk_inventory_output}" _dottalk_inventory_output)
 message(STATUS "Product package: ${_dottalk_inventory_output}")
 
 file(STRINGS "${_dottalk_package_file_list}" DOTTALK_PACKAGE_FILES)
+
+# AIF-122. ${DOTTALK_PACKAGE_FILES} REMOVED from CMAKE_CONFIGURE_DEPENDS.
+#
+# 254 of its 257 entries are RUNTIME DATA under dottalkpp/data/ -- including
+# dottalkpp/data/dbf/x64/STUDENTS.dtx, a memo sidecar the regression suite
+# writes. So running the tests re-triggered a configure, every time, and CMake
+# said so by name:
+#
+#   the file 'dottalkpp/data/dbf/x64/STUDENTS.dtx' is newer than
+#   'build/CMakeFiles/generate.stamp.depend'
+#
+# Measured 2026-08-22: STUDENTS.dtx 12:22:02 -> 12:36:10 across one
+# REGRESSION RUN, and the next build reconfigured for 13s. Verifying the build
+# should not dirty the build. The inventory's only consumers are the install()
+# rules below, so the file list is an INPUT to packaging, not a reason to
+# re-run CMake. The manifest and the script that reads it stay: those are the
+# things whose change genuinely alters the configure.
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
     "${DOTTALK_PACKAGE_MANIFEST}"
     "${CMAKE_SOURCE_DIR}/tools/packaging/build_product_inventory.py"
-    ${DOTTALK_PACKAGE_FILES}
 )
 
 foreach(_dottalk_package_rel IN LISTS DOTTALK_PACKAGE_FILES)
