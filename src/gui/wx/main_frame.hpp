@@ -66,6 +66,12 @@ public:
                        LocaleContext locale = {});
     ~MainFrame() override;
 
+    // AIF-120. Run a command exactly as the Command box does -- history, log
+    // echo, status text, then session_->submit_command. Public so a child
+    // window (the memo browser) can drive the SAME path rather than growing a
+    // second way to reach the runtime.
+    void SubmitCommandText(const std::string& text);
+
 private:
     void BuildMenu();
     void BuildLayout();

@@ -967,15 +967,23 @@ void MainFrame::OnRunCommand(wxCommandEvent&) {
     if (text.empty()) {
         return;
     }
-    AddCommandHistory(text);
     if (is_record_view_command(text)) {
+        AddCommandHistory(text);
         command_->Clear();
         ShowRecordView();
         return;
     }
+    command_->Clear();
+    SubmitCommandText(text);
+}
+
+void MainFrame::SubmitCommandText(const std::string& text) {
+    if (text.empty()) {
+        return;
+    }
+    AddCommandHistory(text);
     AppendLog("> " + text);
     SetStatusText(gui_text(GuiTextId::RunningCommand, locale_), 0);
-    command_->Clear();
     session_->submit_command(CommandRequest{text});
 }
 

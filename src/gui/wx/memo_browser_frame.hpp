@@ -22,9 +22,12 @@
 
 #include <wx/frame.h>
 
+#include <string>
+
 class wxListView;
 class wxTextCtrl;
-class wxStatusBar;
+class wxStaticText;
+class wxButton;
 
 namespace dottalk::gui::wxui {
 
@@ -36,8 +39,16 @@ private:
     void ReloadCatalog();
     void ShowSelected();
 
-    wxListView* list_ = nullptr;
-    wxTextCtrl* detail_ = nullptr;
+    // The command that would open the currently selected row, or empty when
+    // the selection cannot be opened (see OnOpenInWorkbench for why a
+    // superseded row cannot).
+    std::string PlannedCommand(std::string& why_not) const;
+    void OnOpenInWorkbench();
+
+    wxListView*  list_    = nullptr;
+    wxTextCtrl*  detail_  = nullptr;
+    wxStaticText* plan_   = nullptr;
+    wxButton*    open_    = nullptr;
 };
 
 } // namespace dottalk::gui::wxui

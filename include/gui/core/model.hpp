@@ -20,6 +20,19 @@ namespace dottalk::gui {
 using TaskId = std::uint64_t;
 using AreaId = std::uint64_t;
 
+// AIF-120, multi-workspace GUI slice. Design invariant I1
+// (WORKSPACE_MANAGER_AND_GROUPS_DESIGN_V1.md): an area belongs to exactly ONE
+// workspace and there is NO NULL -- a bare USE outside any workspace opens into
+// an implicit, always-present workspace named DEFAULT, which behaves like every
+// other workspace. So a workspace field is never blank, and the GUI never has a
+// cell it has to explain.
+//
+// The name is a constant rather than a literal at each site because the runtime
+// registry does not exist yet: when it lands, the workspace of an area stops
+// being "DEFAULT, always" and becomes a lookup, and this is the one place that
+// has to know.
+inline constexpr const char* kDefaultWorkspace = "DEFAULT";
+
 enum class TaskState {
     queued,
     running,
@@ -116,6 +129,8 @@ struct CloseAreaResult {
 
 struct AreaInfo {
     AreaId area_id {0};
+    // Never blank -- DEFAULT is a workspace (invariant I1).
+    std::string workspace {kDefaultWorkspace};
     bool active {false};
     std::filesystem::path path;
     std::string display_name;
@@ -131,6 +146,7 @@ struct ListAreasResult {
 
 struct WorkspaceIndexInfo {
     AreaId area_id {0};
+    std::string workspace {kDefaultWorkspace};
     std::string area_name;
     std::string kind;
     std::filesystem::path container;
@@ -142,6 +158,10 @@ struct WorkspaceIndexInfo {
 };
 
 struct WorkspaceRelationInfo {
+    // The relation's OWNING workspace. Relations are engine-global today, so a
+    // refresh has no group scope -- recorded here so the column can show what
+    // the runtime cannot yet separate.
+    std::string workspace {kDefaultWorkspace};
     std::string parent;
     std::string child;
     std::string parent_key;
@@ -152,6 +172,9 @@ struct WorkspaceRelationInfo {
 
 struct WorkspaceModel {
     AreaId active_area_id {0};
+    // Scope of the selector, and the grouping key of every page above.
+    std::string current_workspace {kDefaultWorkspace};
+    std::vector<std::string> workspaces {std::string(kDefaultWorkspace)};
     std::vector<AreaInfo> tables;
     std::vector<WorkspaceIndexInfo> indexes;
     std::vector<WorkspaceRelationInfo> relations;
