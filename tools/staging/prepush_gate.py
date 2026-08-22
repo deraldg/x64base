@@ -532,6 +532,23 @@ def main() -> int:
                   "change introduces are checked.", file=sys.stderr)
             exit_code = 2
 
+        # 2b. VERSION COHERENCE -- hard. The product version is declared by
+        # `project(DotTalkpp VERSION x)` and was ALSO hand-typed in five other
+        # places, one of which had already drifted ("0.6-dev" against the
+        # authority's "0.6"). Nothing compared them, which is why bumping the
+        # version kept being forgotten -- the forgetting was designed in.
+        # AIF-120 collapsed the copies instead of policing them, so this gate
+        # enforces "there are no copies" rather than "the copies agree".
+        # Falsification tested 2026-08-21: a reintroduced literal and a
+        # plausible C++ fallback each go red; the missing-authority arm is
+        # written but was NOT observed firing.
+        rc = _run_portal_check("tools/staging/check_version_coherence.py", [])
+        if rc == 2:
+            print("\n  BLOCKED -- the version is declared in more than one "
+                  "place. Bump project(DotTalkpp VERSION x) in CMakeLists.txt "
+                  "and let every other reader derive from it.", file=sys.stderr)
+            exit_code = 2
+
         # 3. MANDATORY SET TRACKED -- hard. Found 16 portal-declared files
         # untracked, including the repository-role contract every document
         # defers to and the role guard this very gate invokes.
