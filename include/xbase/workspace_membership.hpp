@@ -47,6 +47,8 @@
 // NOT thread-safe, matching xbase::ramfs and the rest of this layer: the shell
 // is single-threaded and the Workbench reaches the CLI through a child process.
 
+#include <algorithm>
+#include <cctype>
 #include <cstddef>
 #include <cstdint>
 #include <string>
@@ -64,6 +66,13 @@ inline constexpr const char*   kDefaultName   = "DEFAULT";
 struct Entry {
     std::string               name;
     std::vector<std::int32_t> members;   // engine slots, ascending by local slot
+
+    // AIF-078 stage 3. The owner ruling: "multiple workspaces is just a
+    // workspace of workspaces of areas." A workspace therefore has ONE parent
+    // (0 = a root), which is the runtime mirror of the catalog's PREV_ID/DEPTH
+    // pair. It is a parent pointer and not a child vector on purpose: a child
+    // list has two places to forget an edge, and this has one.
+    std::uint64_t parent{0};
 };
 
 // One instance per process. Function-local static so this header needs no
@@ -86,6 +95,25 @@ inline std::uint64_t& current_handle_ref() {
 // replaces did.
 inline std::uint64_t current_handle() noexcept { return current_handle_ref(); }
 inline void set_current_handle(std::uint64_t h) noexcept { current_handle_ref() = h; }
+
+// SET RECURSION ON | OFF -- owner ruling 2026-08-22: "even with OFF we still
+// allow multiple workspaces, just parallel." So this flag does NOT gate
+// whether nested workspaces may EXIST; it gates whether an operation on a
+// parent DESCENDS into its children. OFF means a close touches exactly the
+// workspace you named and says so.
+inline bool& recursion_enabled_ref() { static bool on = true; return on; }
+inline bool  recursion_enabled() noexcept { return recursion_enabled_ref(); }
+inline void  set_recursion_enabled(bool on) noexcept { recursion_enabled_ref() = on; }
+
+// The recursion guard the owner asked for, "like we did databases in memos."
+// The number is a backstop, not a policy: real nesting is single digits, and a
+// walk that reaches 32 has found a cycle the structural guard missed.
+//
+// THE POINT OF THIS CONSTANT IS THAT SOMETHING PRINTS WHEN IT FIRES. The
+// relation depth cap (set_relations.cpp) is hardcoded twice and returns
+// SILENTLY at the limit, so a truncated traversal is indistinguishable from a
+// complete one. Every caller of this cap in stage 3 announces.
+inline constexpr int kMaxWorkspaceDepth = 32;
 
 inline const Entry* find(std::uint64_t h) {
     auto it = table().find(h);
@@ -112,6 +140,105 @@ inline std::vector<std::uint64_t> handles() {
     out.reserve(table().size());
     for (const auto& kv : table()) out.push_back(kv.first);
     return out;
+}
+
+inline bool exists(std::uint64_t h) { return table().count(h) != 0; }
+
+inline std::uint64_t parent_of(std::uint64_t h) {
+    const Entry* e = find(h);
+    return e ? e->parent : 0u;
+}
+
+// Children of h, ascending. Bounded by the NUMBER OF WORKSPACES, not by
+// MAX_AREA -- design constraint D3 survives. Workspaces are counted in
+// handfuls; areas are counted in hundreds of thousands.
+inline std::vector<std::uint64_t> children(std::uint64_t h) {
+    std::vector<std::uint64_t> out;
+    for (const auto& kv : table()) {
+        if (kv.first != h && kv.second.parent == h) out.push_back(kv.first);
+    }
+    std::sort(out.begin(), out.end());
+    return out;
+}
+
+// Case-insensitive name lookup. Returns 0 when nothing matches, because 0 is
+// not a legal handle -- kDefaultHandle is 1 precisely so that 0 can mean "no
+// such workspace" without a second return channel.
+inline std::uint64_t find_by_name_ci(const std::string& nm) {
+    auto up = [](std::string v) {
+        for (char& c : v) c = static_cast<char>(::toupper(static_cast<unsigned char>(c)));
+        return v;
+    };
+    const std::string want = up(nm);
+    for (const auto& kv : table()) {
+        if (up(kv.second.name) == want) return kv.first;
+    }
+    return 0;
+}
+
+// Would making p the parent of h close a cycle? Walks UP from p looking for h.
+// This is the STRUCTURAL guard, and it runs at declaration time -- the cheapest
+// possible moment, when the cost is one short walk and nothing has been built
+// on the bad edge yet. The depth cap is the second line, not the first.
+inline bool would_cycle(std::uint64_t h, std::uint64_t p) {
+    if (h == 0 || p == 0) return false;
+    if (h == p) return true;                       // SELF_REF, refused
+    int guard = 0;
+    for (std::uint64_t up = p; up != 0; up = parent_of(up)) {
+        if (up == h) return true;
+        if (++guard > kMaxWorkspaceDepth) return true;   // unreachable if the
+    }                                                    // invariant holds
+    return false;
+}
+
+// Depth of h measured from its root. 0 = a root, matching the catalog's
+// "DEPTH 0 = leaf" field being the same integer read from the other end.
+inline int depth_of(std::uint64_t h) {
+    int d = 0;
+    for (std::uint64_t up = parent_of(h); up != 0; up = parent_of(up)) {
+        if (++d > kMaxWorkspaceDepth) break;
+    }
+    return d;
+}
+
+// Allocate the next free handle. Monotonic within a session; handles are NOT
+// reused after destroy(), because a stale handle held by an area must resolve
+// to "gone" and never to "somebody else."
+inline std::uint64_t next_handle_ref_bump() {
+    static std::uint64_t next = kDefaultHandle;
+    for (;;) {
+        ++next;
+        if (!exists(next)) return next;
+    }
+}
+
+inline std::uint64_t create(const std::string& nm, std::uint64_t parent = 0) {
+    if (parent != 0 && !exists(parent)) return 0;
+    const std::uint64_t h = next_handle_ref_bump();
+    table()[h] = Entry{ nm, {}, parent };
+    return h;
+}
+
+inline bool set_parent(std::uint64_t h, std::uint64_t p) {
+    if (!exists(h)) return false;
+    if (p != 0 && !exists(p)) return false;
+    if (would_cycle(h, p)) return false;
+    table()[h].parent = p;
+    return true;
+}
+
+// Remove an EMPTY, CHILDLESS workspace. Refuses otherwise rather than
+// cascading, so a destroy can never be the thing that silently orphaned an
+// open area. DEFAULT is not destroyable: invariant I1 says an area belongs to
+// exactly one workspace and there is no null, which needs DEFAULT to outlive
+// every other workspace.
+inline bool destroy(std::uint64_t h) {
+    if (h == kDefaultHandle || !exists(h)) return false;
+    if (member_count(h) != 0)   return false;
+    if (!children(h).empty())   return false;
+    if (current_handle() == h) set_current_handle(kDefaultHandle);
+    table().erase(h);
+    return true;
 }
 
 // Join, returning the WORKSPACE-LOCAL slot (1..n) -- decision D2. The LOWEST
@@ -146,8 +273,9 @@ inline void leave(std::uint64_t h, std::int32_t engine_slot) {
     while (!m.empty() && m.back() < 0) m.pop_back();
 }
 
-// Create or rename. Stage 2 seeds only DEFAULT; this exists so stage 4 has
-// somewhere to put the second workspace without reopening this header.
+// Rename, or create at a CALLER-CHOSEN handle. Stage 3 added create() for the
+// normal path -- reach for this only when the handle is dictated from outside,
+// which is what a catalog restore will need when WS_ID is the authority.
 inline bool declare(std::uint64_t h, const std::string& nm) {
     if (h == 0) return false;
     table()[h].name = nm;

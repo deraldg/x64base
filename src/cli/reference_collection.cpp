@@ -93,6 +93,7 @@ std::vector<SubcommandInfo> collect_set_subcommands()
     add("EDITOR",       "SET EDITOR",       "inline", "inline", "core",   true, {"SET EDITOR TO <value|DEFAULT|OFF>"});
     add("TIMER",        "SET TIMER",        "inline", "inline", "core",   true, {"SET TIMER ON|OFF"});
     add("POLLING",      "SET POLLING",      "inline", "inline", "core",   true, {"SET POLLING ON|OFF"});
+    add("RECURSION",    "SET RECURSION",    "inline", "inline", "workspace", true, {"SET RECURSION", "SET RECURSION ON|OFF"});
     add("TABLE BUFFER", "SET TABLE BUFFER", "inline", "inline", "buffer", true, {"SET TABLE BUFFER ON|OFF [ALL]"});
 
     // Public routed / conditional surfaces

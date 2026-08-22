@@ -205,6 +205,8 @@
 #include <string>
 #include <type_traits>
 #include <unordered_set>
+#include <set>
+#include <cstdint>
 #include <vector>
 
 #include "xbase.hpp"
@@ -1316,14 +1318,158 @@ static bool close_area_if_open(int area0) {
     }
 }
 
-static void schema_close_all() {
-    std::cout << "WORKSPACE CLOSE: Closing all work areas...\n";
-    int close_count = 0;
-    for (int area0 = 0; area0 < xbase::MAX_AREA; ++area0) {
-        if (close_area_if_open(area0)) close_count++;
+// ---------------------------------------------------------------------------
+// AIF-078 stage 3. CLOSE BECOMES SCOPED.
+//
+// WHAT WAS WRONG WITH THE OLD ONE. It read
+//     for (int area0 = 0; area0 < xbase::MAX_AREA; ++area0)
+// which is a sweep of the whole engine, and it was correct only because
+// exactly one workspace has ever existed. The owner named the defect directly:
+// "close_all needs to be SCOPED to a specific workspace instead of
+// 0-max_areas. workspaces have to know the group of areas that belong to
+// them." Stage 2 built that group; this is the first consumer of it.
+//
+// IT IS ALSO A COST BOUND, not only a correctness one. MAX_AREA is 512 for
+// testing and the owner has stated the real ceiling is not 512 -- "can you
+// imagine how long it would take to give you a dotscript results of a 10
+// trillion max_area pass." A close that is O(MAX_AREA) cannot survive that
+// sentence; a close that is O(members) does not care what MAX_AREA is.
+//
+// POST-ORDER, and the reason is not aesthetics: a parent workspace may hold
+// relations INTO a child's areas, so the child's areas must go first or the
+// parent's teardown is reaching into slots that are half gone. Children first,
+// then self, is the same order the memo cycle walk uses.
+//
+// THE GUARD ANNOUNCES. Both guards -- the visited set and the depth cap --
+// print when they fire. This is the whole lesson of the relation depth cap
+// (set_relations.cpp, hardcoded 24, twice, returning SILENTLY): a traversal
+// that stops early and says nothing is indistinguishable from one that
+// finished, and a caller cannot tell a complete answer from a truncated one.
+// ---------------------------------------------------------------------------
+
+// Close every area belonging to ONE workspace. The member list is SNAPSHOTTED
+// first because DbArea::close() calls workspace::leave(), which mutates the
+// very vector we would otherwise be iterating (stage 2 wired that, and this is
+// the first place it bites).
+static int close_workspace_members(std::uint64_t h) {
+    const std::vector<std::int32_t> snapshot = xbase::workspace::members(h);
+    int closed = 0;
+    for (const auto slot : snapshot) {
+        if (slot < 0) continue;                 // vacated local slot
+        if (slot >= xbase::MAX_AREA) continue;  // defensive; membership is engine-stamped
+        if (close_area_if_open(static_cast<int>(slot))) closed++;
+    }
+    return closed;
+}
+
+// Post-order walk. Returns areas closed; reports workspaces visited through
+// ws_visited so the caller can say what it actually did.
+static int close_workspace_tree(std::uint64_t h,
+                                bool recursive,
+                                int depth,
+                                std::set<std::uint64_t>& seen,
+                                int& ws_visited) {
+    if (!xbase::workspace::exists(h)) return 0;
+
+    if (!seen.insert(h).second) {
+        std::cout << "WORKSPACE CLOSE: cycle detected at handle " << h
+                  << " (" << xbase::workspace::name_of(h)
+                  << "); that branch was already closed and is not revisited.\n";
+        return 0;
     }
 
+    if (depth > xbase::workspace::kMaxWorkspaceDepth) {
+        std::cout << "WORKSPACE CLOSE: recursion depth cap "
+                  << xbase::workspace::kMaxWorkspaceDepth
+                  << " reached at handle " << h
+                  << "; deeper workspaces were NOT closed and remain open.\n";
+        return 0;
+    }
+
+    int closed = 0;
+
+    if (recursive) {
+        for (const auto c : xbase::workspace::children(h)) {
+            closed += close_workspace_tree(c, recursive, depth + 1, seen, ws_visited);
+        }
+    } else {
+        const auto kids = xbase::workspace::children(h);
+        if (!kids.empty()) {
+            std::cout << "WORKSPACE CLOSE: SET RECURSION is OFF; " << kids.size()
+                      << " nested workspace(s) under " << xbase::workspace::name_of(h)
+                      << " were left open.\n";
+        }
+    }
+
+    closed += close_workspace_members(h);
+    ws_visited++;
+    return closed;
+}
+
+// The integrity check that keeps this change honest.
+//
+// Membership is stamped by DbArea::open(). If an area is open and NOT a member
+// of any workspace, the stamp was missed, and a member-list close would walk
+// past it and leave a live file handle behind while reporting success. The old
+// full sweep would have caught it by brute force.
+//
+// So the sweep survives -- as a RECONCILE that runs only on a full close, and
+// that PRINTS what it found instead of quietly absorbing it. An orphan here is
+// a defect in the registration path, and this is the line that would name it.
+// If this never prints, membership and reality agree, which is the claim
+// stage 2's verification made on 14 areas and this keeps making on every run.
+static int reconcile_unregistered_areas() {
+    std::set<int> registered;
+    for (const auto h : xbase::workspace::handles()) {
+        for (const auto slot : xbase::workspace::members(h)) {
+            if (slot >= 0) registered.insert(static_cast<int>(slot));
+        }
+    }
+
+    int orphans = 0;
+    for (int area0 = 0; area0 < xbase::MAX_AREA; ++area0) {
+        if (registered.count(area0)) continue;
+        try {
+            xbase::DbArea& A = get_area_0based(area0);
+            if (!area_open(A)) continue;
+        } catch (...) { continue; }
+
+        std::cout << "WORKSPACE CLOSE: area " << area0
+                  << " was open but belongs to NO workspace -- closing it, and this is a\n"
+                     "  defect in workspace registration, not in this close.\n";
+        if (close_area_if_open(area0)) orphans++;
+    }
+    return orphans;
+}
+
+// KNOWN OVER-REACH, STATED RATHER THAN HIDDEN.
+//
+// The relation graph is process-global: relations_api has no notion of which
+// workspace a relation belongs to. So a SCOPED close still has to clear ALL
+// relations, because leaving a relation pointing into an area this close just
+// emptied is the dangling-parent shape, and a dangling relation is worse than
+// an over-eager clear.
+//
+// That means a scoped close currently costs relations belonging to workspaces
+// it did not touch. This is a real limitation of stage 3, not a design choice,
+// and it is PRINTED when it can actually bite -- when another workspace still
+// holds areas. Making the relation graph workspace-scoped is the named
+// prerequisite before two workspaces can hold relations at the same time.
+static void close_common_teardown(int close_count, bool scoped) {
 #if HAVE_RELATIONS
+    if (scoped) {
+        std::size_t elsewhere = 0;
+        for (const auto h : xbase::workspace::handles()) {
+            if (h == xbase::workspace::current_handle()) continue;
+            elsewhere += xbase::workspace::member_count(h);
+        }
+        if (elsewhere > 0) {
+            std::cout << "WORKSPACE CLOSE: relations are cleared GLOBALLY -- the relation graph\n"
+                         "  is not workspace-scoped yet, so relations belonging to the "
+                      << elsewhere << " area(s)\n"
+                         "  still open elsewhere were cleared too (AIF-078 stage 3 limitation).\n";
+        }
+    }
     clear_relations_all_safe();
 #endif
 
@@ -1334,6 +1480,59 @@ static void schema_close_all() {
     normalize_selected_area_after_workspace_change(0);
 
     std::cout << "WORKSPACE: " << close_count << " area(s) closed.\n";
+}
+
+// EVERY workspace. This is what the structural reset paths (WORKSPACE OPEN,
+// WORKSPACE LOAD) mean by "close all", and what WORKSPACE CLOSE ALL means:
+// leave nothing open anywhere. Roots are walked post-order; children reached
+// through their parents are skipped by the visited set.
+static void schema_close_all() {
+    std::cout << "WORKSPACE CLOSE: Closing all work areas...\n";
+
+    std::set<std::uint64_t> seen;
+    int close_count = 0;
+    int ws_visited  = 0;
+
+    for (const auto h : xbase::workspace::handles()) {
+        if (xbase::workspace::parent_of(h) != 0) continue;   // reached via its parent
+        close_count += close_workspace_tree(h, /*recursive=*/true, 0, seen, ws_visited);
+    }
+    // Any workspace not reachable from a root (a broken parent edge) still has
+    // to be closed. Announce, because an unreachable workspace is a defect.
+    for (const auto h : xbase::workspace::handles()) {
+        if (seen.count(h)) continue;
+        std::cout << "WORKSPACE CLOSE: workspace " << h << " (" << xbase::workspace::name_of(h)
+                  << ") was not reachable from any root; closing it directly.\n";
+        close_count += close_workspace_tree(h, /*recursive=*/true, 0, seen, ws_visited);
+    }
+
+    close_count += reconcile_unregistered_areas();
+    close_common_teardown(close_count, /*scoped=*/false);
+}
+
+// The CURRENT workspace only. Bare WORKSPACE CLOSE. Descends into nested
+// workspaces per SET RECURSION -- owner ruling: OFF still permits multiple
+// workspaces, it just keeps them parallel instead of nested.
+static void schema_close_current_workspace() {
+    const std::uint64_t h = xbase::workspace::current_handle();
+    const bool recursive  = xbase::workspace::recursion_enabled();
+
+    std::cout << "WORKSPACE CLOSE: closing workspace " << h
+              << " (" << xbase::workspace::name_of(h) << ")"
+              << (recursive ? " and any nested workspaces" : " only (RECURSION OFF)")
+              << "...\n";
+
+    std::set<std::uint64_t> seen;
+    int ws_visited  = 0;
+    int close_count = close_workspace_tree(h, recursive, 0, seen, ws_visited);
+
+    // Only a full close reconciles: the sweep is O(MAX_AREA) and a scoped close
+    // exists precisely to not pay that. Stated rather than silently skipped --
+    // a bounded operation should say what it did not look at.
+    if (ws_visited > 1) {
+        std::cout << "WORKSPACE: " << ws_visited << " workspace(s) closed.\n";
+    }
+    close_common_teardown(close_count, /*scoped=*/true);
 }
 
 static int schema_close_matching_token(const string& token) {
@@ -3505,6 +3704,26 @@ static void workspace_print_tuples(xbase::DbArea& current,
 
 // --------- Command Entry ----------------------------------------------------
 
+// Resolve a user token to a workspace handle: a decimal handle, or a name,
+// case-insensitively. Returns 0 for "no such workspace" -- kDefaultHandle is 1
+// so that 0 can carry the failure without a second return channel.
+static std::uint64_t resolve_workspace_token(const string& tok) {
+    const string t = trim_copy(tok);
+    if (t.empty()) return 0;
+
+    bool all_digits = true;
+    for (const char c : t) {
+        if (c < '0' || c > '9') { all_digits = false; break; }
+    }
+    if (all_digits) {
+        try {
+            const std::uint64_t h = static_cast<std::uint64_t>(std::stoull(t));
+            return xbase::workspace::exists(h) ? h : 0u;
+        } catch (...) { return 0; }
+    }
+    return xbase::workspace::find_by_name_ci(t);
+}
+
 static void workspace_print_usage() {
     std::cout << "Usage:\n";
     std::cout << "  WORKSPACE                                   (List open areas)\n";
@@ -3520,7 +3739,11 @@ static void workspace_print_usage() {
     std::cout << "  WORKSPACE OPEN <target> INX|IDX [FALLBACK] [recursive] [TABLE]\n";
     std::cout << "  WORKSPACE OPEN <target> CDX [FALLBACK] [recursive] [TABLE]   (LMDB)\n";
     std::cout << "  WORKSPACE OPEN <target> NOINDEX [recursive] [TABLE]\n";
-    std::cout << "  WORKSPACE CLOSE                            (Close all open areas)\n";
+    std::cout << "  WORKSPACE NEW <name> [UNDER <parent>]      (Declare a runtime workspace)\n";
+    std::cout << "  WORKSPACE SWITCH <name-or-handle>          (Areas opened next join this workspace)\n";
+    std::cout << "  WORKSPACE REGISTRY                         (Report runtime membership and nesting)\n";
+    std::cout << "  WORKSPACE CLOSE                            (Close the CURRENT workspace)\n";
+    std::cout << "  WORKSPACE CLOSE ALL                        (Close every workspace, everywhere)\n";
     std::cout << "  WORKSPACE CLOSE <n> [m ...]                (Close by area index)\n";
     std::cout << "  WORKSPACE CLOSE <name|file|stem|alias>[,...] (Close by name/alias; case-insensitive)\n";
     std::cout << "  WORKSPACE SAVE <file>                      (Save areas [+relations if available])\n";
@@ -3559,8 +3782,14 @@ static void workspace_print_usage() {
     std::cout << "  - Without CNX/INX/CDX, index files are chosen by DBF flavor: true x64/v128 CDX, classic VFP/v32 CNX.\n";
     std::cout << "  - REGISTRY reports the RUNTIME workspace membership (which areas belong to\n";
     std::cout << "    which workspace right now), which is not the catalog: WORKSPACES.dbf is the\n";
-    std::cout << "    persistence authority and answers what has been SAVED. One workspace exists\n";
-    std::cout << "    today, DEFAULT, and every open area belongs to it (AIF-078 stage 2).\n";
+    std::cout << "    persistence authority and answers what has been SAVED. Workspaces declared\n";
+    std::cout << "    with NEW are runtime-only and do not survive a restart (AIF-078 stage 3).\n";
+    std::cout << "  - Bare CLOSE is SCOPED to the current workspace and costs one walk of ITS\n";
+    std::cout << "    members, not a sweep of every area slot. CLOSE ALL is the old everywhere\n";
+    std::cout << "    behaviour and is the only form that also reconciles unregistered areas.\n";
+    std::cout << "  - SET RECURSION ON|OFF decides whether a CLOSE descends into nested\n";
+    std::cout << "    workspaces. OFF still permits multiple workspaces -- they are parallel\n";
+    std::cout << "    rather than nested -- and a skipped child is reported, never silent.\n";
 }
 
 std::string workspace_last_loaded_file() {
@@ -3603,11 +3832,19 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
             const auto hs = xbase::workspace::handles();
             std::cout << "WORKSPACE REGISTRY (runtime membership)\n";
             std::cout << "  current handle : " << xbase::workspace::current_handle() << "\n";
+            std::cout << "  recursion      : "
+                      << (xbase::workspace::recursion_enabled() ? "ON" : "OFF") << "\n";
             std::cout << "  workspaces     : " << hs.size() << "\n";
             for (const auto h : hs) {
                 const auto mem = xbase::workspace::members(h);
+                // AIF-078 stage 3 added parent and depth. They are printed as
+                // FIELDS, per line, for the same reason the member list is: a
+                // spec has to be able to go red on the SHAPE of the tree, not
+                // just on a count that happens to match.
                 std::cout << "  handle " << h
                           << "  name " << xbase::workspace::name_of(h)
+                          << "  parent " << xbase::workspace::parent_of(h)
+                          << "  depth " << xbase::workspace::depth_of(h)
                           << "  members " << mem.size() << "\n";
                 for (std::size_t i = 0; i < mem.size(); ++i) {
                     if (mem[i] < 0) continue;   // vacated local slot, awaiting reuse
@@ -3615,6 +3852,82 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
                               << "  engine slot " << mem[i] << "\n";
                 }
             }
+
+        } else if (sub_command == "new") {
+            // AIF-078 stage 3. The runtime creator.
+            //
+            // WHY IT IS IN THIS STAGE AND NOT STAGE 4. close_workspace()'s
+            // recursive branch has exactly one way to be exercised: a
+            // workspace with a child. Without a way to make one, stage 3 would
+            // ship a recursion guard, a depth cap and a post-order walk that
+            // NOTHING can reach -- which is the AIF-079 shape this lane has
+            // now catalogued four times (wasStale, cursor_hook::notify, the
+            // relation depth cap, the whole src/workspace namespace). A
+            // mechanism with zero call sites is not "ready for stage 4", it is
+            // unproven code wearing a plan as an alibi.
+            //
+            // Runtime only: no catalog row is written. WORKSPACES.dbf remains
+            // the persistence authority and stage 5 is where a declared
+            // workspace learns to survive a restart.
+            auto toks = split_tokens(rest_of_args);
+            if (toks.empty()) {
+                std::cout << "WORKSPACE NEW: missing name.\n";
+                std::cout << "  Use: WORKSPACE NEW <name> [UNDER <parent-name-or-handle>]\n";
+                return;
+            }
+
+            const string nm = toks[0];
+            std::uint64_t parent = 0;
+
+            if (toks.size() >= 2) {
+                if (!ci_equal(toks[1], "under") || toks.size() < 3) {
+                    std::cout << "WORKSPACE NEW: unexpected '" << toks[1] << "'.\n";
+                    std::cout << "  Use: WORKSPACE NEW <name> [UNDER <parent-name-or-handle>]\n";
+                    return;
+                }
+                parent = resolve_workspace_token(toks[2]);
+                if (parent == 0) {
+                    std::cout << "WORKSPACE NEW: no such parent workspace: " << toks[2] << "\n";
+                    return;
+                }
+            }
+
+            if (xbase::workspace::find_by_name_ci(nm) != 0) {
+                std::cout << "WORKSPACE NEW: a workspace named " << nm
+                          << " already exists; names are the handle a person uses "
+                             "and two of them is an ambiguity, not a convenience.\n";
+                return;
+            }
+
+            const std::uint64_t h = xbase::workspace::create(nm, parent);
+            if (h == 0) {
+                std::cout << "WORKSPACE NEW: refused.\n";
+                return;
+            }
+
+            std::cout << "WORKSPACE NEW: handle " << h << "  name " << nm
+                      << "  parent " << parent
+                      << "  depth " << xbase::workspace::depth_of(h) << "\n";
+            std::cout << "  Areas opened after WORKSPACE SWITCH " << nm
+                      << " join this workspace.\n";
+
+        } else if (sub_command == "switch") {
+            auto toks = split_tokens(rest_of_args);
+            if (toks.empty()) {
+                std::cout << "WORKSPACE SWITCH: missing target.\n";
+                std::cout << "  Use: WORKSPACE SWITCH <name-or-handle>\n";
+                return;
+            }
+            const std::uint64_t h = resolve_workspace_token(toks[0]);
+            if (h == 0) {
+                std::cout << "WORKSPACE SWITCH: no such workspace: " << toks[0] << "\n";
+                return;
+            }
+            xbase::workspace::set_current_handle(h);
+            std::cout << "WORKSPACE SWITCH: current handle " << h
+                      << " (" << xbase::workspace::name_of(h) << ")"
+                      << ", depth " << xbase::workspace::depth_of(h)
+                      << ", members " << xbase::workspace::member_count(h) << "\n";
 
         } else if (sub_command == "add") {
             auto toks = split_tokens(rest_of_args);
@@ -3868,6 +4181,16 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
 
             string tokline = trim_copy(rest_of_args);
             if (tokline.empty()) {
+                // AIF-078 stage 3. Bare CLOSE is now SCOPED to the current
+                // workspace. With one workspace open this is byte-identical to
+                // the old full sweep, which is why the default suite does not
+                // move; with two it is the difference between closing your
+                // workspace and closing someone else's.
+                schema_close_current_workspace();
+            } else if (ci_equal(tokline, "all")) {
+                // CLOSE ALL keeps the old meaning of bare CLOSE -- every
+                // workspace, everywhere -- so nothing that relied on
+                // "close everything" has lost the ability to say it.
                 schema_close_all();
             } else {
                 auto tokens = split_tokens(tokline);

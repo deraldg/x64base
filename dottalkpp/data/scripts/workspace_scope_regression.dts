@@ -1,0 +1,203 @@
+* ============================================================================
+* workspace_scope_regression.dts
+*
+* AIF-078 stage 3. WORKSPACE CLOSE IS SCOPED TO A WORKSPACE.
+*
+* WHAT CHANGED AND WHY THIS FILE EXISTS
+*   Until stage 3, WORKSPACE CLOSE ran
+*       for (int area0 = 0; area0 < xbase::MAX_AREA; ++area0)
+*   and was correct only because exactly one workspace had ever existed. The
+*   owner named it directly: "close_all needs to be SCOPED to a specific
+*   workspace instead of 0-max_areas. workspaces have to know the group of
+*   areas that belong to them." Stage 2 built that group and proved it (14
+*   tables opened, 14 members, 0 after close, measured 2026-08-22). This is
+*   the first spec that can tell the two implementations apart.
+*
+*   WS_T1 IS THAT DISCRIMINATOR. Under the old sweep it goes RED: closing a
+*   child workspace took every area in the process with it, DEFAULT's included.
+*   Under the scoped close it goes green. Delete the scoping and this file
+*   reds on exactly one line.
+*
+* THE COST ARGUMENT, WHICH IS NOT SECONDARY
+*   MAX_AREA is 512 for testing and the owner has stated the real ceiling is
+*   not 512 -- "can you imagine how long it would take to give you a dotscript
+*   results of a 10 trillion max_area pass." A close that is O(MAX_AREA) does
+*   not survive that sentence. A close that is O(members) does not care what
+*   MAX_AREA is. WS_T1 defends the correctness; the cost follows from the same
+*   change.
+*
+* SET RECURSION, AND WHY BOTH ARMS ARE HERE
+*   Owner ruling 2026-08-22: "we need a SET RECURSION ON | OFF / even with OFF
+*   we still allow multiple workspaces, just parallel." So the flag does NOT
+*   gate whether nesting may exist -- it gates whether an operation DESCENDS.
+*   WS_T2 is the arm where that is load-bearing: same script, same shape, one
+*   flag flipped, and the nested workspace's table is still readable afterward.
+*   Without WS_T2 the OFF branch would be a documented preference rather than a
+*   measured behaviour.
+*
+* WHAT THIS FILE DELIBERATELY DOES NOT ASSERT, AND WHY
+*   That a workspace closed under RECURSION ON is EMPTY. USE_AGAIN established
+*   the rule the hard way, over three cuts: NO MARKER IN THIS LANGUAGE CAN
+*   ASSERT THAT AN AREA IS EMPTY, because the marker evaluator binds a null
+*   area unless the area is OPEN (rhs_eval.cpp:969) -- being closed is the very
+*   thing under assertion -- and an errored marker PRINTS NOTHING rather than
+*   going red, so a green count still reads full while a claim has silently
+*   left the suite. So the recursive close is proven by CONTRAST (WS_T2's
+*   survival under OFF against its absence under ON) and by the member counts
+*   in the two WORKSPACE REGISTRY blocks, which are read from the transcript.
+*   That is external measurement, the IDXDIFF precedent: "a .dts cannot count
+*   engine trace output."
+*
+* MARKERS ARE FIELD-VALUE COMPARISONS, every one of them. A spec that asserts
+*   SHAPE passes green on a blanked table -- the FIELDMGR_APPEND doctrine.
+*
+* Self-bootstrapping: creates WSDEF / WSPAR / WSCHI in SANDBOX and erases them.
+* Never touches a live fixture. Leaves three runtime-only workspaces declared
+* (WSPARENT, WSCHILD) -- they hold no areas and do not survive a restart.
+* Restores SET RECURSION ON at the end.
+*   Standalone:  DO workspace_scope_regression
+*   Regression:  REGRESSION RUN WORKSPACE_SCOPE
+* ============================================================================
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+SET PATH DBF DBF/SANDBOX
+
+FORMULA "WORKSPACE-SCOPE-PROOF-BEGIN"
+
+* --- clean slate -------------------------------------------------------------
+* CLOSE ALL, not bare CLOSE: this must be the everywhere form regardless of
+* which workspace a previous script left current.
+SET RECURSION ON
+WORKSPACE CLOSE ALL
+ERASE wsdef CONFIRM
+ERASE wspar CONFIRM
+ERASE wschi CONFIRM
+
+* --- three sentinels, one per workspace --------------------------------------
+* Each lands in its OWN engine area, because CREATE closes the current area
+* before writing -- creating into an area that already holds a sentinel would
+* destroy the thing under test. The engine slot is chosen explicitly rather
+* than inherited.
+SELECT 0
+CREATE X64 WSDEF (ID N(4), MARK C(10))
+APPEND
+REPLACE ID WITH 1
+REPLACE MARK WITH "DEF"
+
+WORKSPACE NEW WSPARENT
+WORKSPACE NEW WSCHILD UNDER WSPARENT
+
+WORKSPACE SWITCH WSPARENT
+SELECT 1
+CREATE X64 WSPAR (ID N(4), MARK C(10))
+APPEND
+REPLACE ID WITH 2
+REPLACE MARK WITH "PAR"
+
+WORKSPACE SWITCH WSCHILD
+SELECT 2
+CREATE X64 WSCHI (ID N(4), MARK C(10))
+APPEND
+REPLACE ID WITH 3
+REPLACE MARK WITH "CHI"
+
+* --- G0/G1/G2: the fixture is real before anything is closed -----------------
+* Guards for everything below. A green WS_T1 means nothing if the sentinel it
+* reads was never written.
+SELECT 0
+GO TOP
+? "WS_G0_default_sentinel_written:" + (ALLTRIM(MARK) = "DEF")
+SELECT 1
+GO TOP
+? "WS_G1_parent_sentinel_written:" + (ALLTRIM(MARK) = "PAR")
+SELECT 2
+GO TOP
+? "WS_G2_child_sentinel_written:" + (ALLTRIM(MARK) = "CHI")
+
+* --- the tree, before ---------------------------------------------------------
+* Expect: DEFAULT parent 0 depth 0 members 1
+*         WSPARENT parent 0 depth 0 members 1
+*         WSCHILD  parent <WSPARENT> depth 1 members 1
+WORKSPACE REGISTRY
+
+* --- ARM 1: RECURSION ON -- close the parent ---------------------------------
+* Closes WSCHILD's areas first (post-order), then WSPARENT's. DEFAULT is not
+* named and must not be touched.
+SET RECURSION ON
+WORKSPACE SWITCH WSPARENT
+WORKSPACE CLOSE
+
+* --- the tree, after ----------------------------------------------------------
+* Expect WSPARENT members 0 and WSCHILD members 0, DEFAULT members 1. These
+* counts are the direct evidence that the recursion descended; the markers
+* below are the indirect evidence. Read both.
+WORKSPACE REGISTRY
+
+* --- WS_T1: THE DISCRIMINATOR -------------------------------------------------
+* DEFAULT's sentinel survived a close of a DIFFERENT workspace. Under the old
+* 0..MAX_AREA sweep this area was closed too and this line goes red.
+SELECT 0
+GO TOP
+? "WS_T1_scoped_close_spared_default:" + (ALLTRIM(MARK) = "DEF")
+
+* --- ARM 2: RECURSION OFF -- close the parent, child must survive -------------
+* Rebuild the same shape. The workspaces still exist with zero members, so only
+* the tables are reopened.
+SET RECURSION OFF
+
+WORKSPACE SWITCH WSPARENT
+SELECT 1
+USE wspar
+
+WORKSPACE SWITCH WSCHILD
+SELECT 2
+USE wschi
+
+* Guard the rebuild before asserting anything about it.
+SELECT 2
+GO TOP
+? "WS_G3_child_reopened:" + (ALLTRIM(MARK) = "CHI")
+
+WORKSPACE SWITCH WSPARENT
+WORKSPACE CLOSE
+
+* --- WS_T2: OFF LEFT THE NESTED WORKSPACE OPEN --------------------------------
+* The flag is load-bearing here and nowhere else. Under RECURSION ON this same
+* sequence closes area 2; under OFF it must not, and the close must have SAID
+* so ("SET RECURSION is OFF; 1 nested workspace(s) ... were left open").
+SELECT 2
+GO TOP
+? "WS_T2_recursion_off_kept_child_open:" + (ALLTRIM(MARK) = "CHI")
+
+* --- WS_T3: DEFAULT is untouched under either flag ----------------------------
+SELECT 0
+GO TOP
+? "WS_T3_default_untouched_under_off:" + (ALLTRIM(MARK) = "DEF")
+
+* --- ARM 3: CLOSE ALL still means everywhere ----------------------------------
+* The old bare-CLOSE contract did not disappear, it moved to an explicit form.
+* Nothing may be left open after this, including the workspace nobody named.
+WORKSPACE CLOSE ALL
+
+* --- WS_T4: the files were RELEASED, not merely forgotten ---------------------
+* Reopening and reading proves the close reached the filesystem. A close that
+* dropped its bookkeeping while leaving handles open would pass every marker
+* above and fail here.
+SELECT 0
+USE wsdef
+GO TOP
+? "WS_T4_close_all_released_the_file:" + (ALLTRIM(MARK) = "DEF")
+
+* --- teardown -----------------------------------------------------------------
+WORKSPACE CLOSE ALL
+ERASE wsdef CONFIRM
+ERASE wspar CONFIRM
+ERASE wschi CONFIRM
+
+* Restore the shipped default. ERRORSTOP is the cautionary precedent: a spec
+* that leaves a global flag flipped poisons every script after it in the suite.
+SET RECURSION ON
+WORKSPACE SWITCH DEFAULT
+
+FORMULA "WORKSPACE-SCOPE-PROOF-END"

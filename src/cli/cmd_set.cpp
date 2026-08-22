@@ -113,6 +113,7 @@
 //
 
 #include "xbase.hpp"
+#include "xbase/workspace_membership.hpp"   // SET RECURSION (AIF-078 stage 3)
 
 #include <algorithm>
 #include <cctype>
@@ -1372,6 +1373,59 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
         cli::cmdout::print_message(
             dottalk::helpdata::MessageId::SetTimerStatusText,
             {{"state", on ? "ON" : "OFF"}});
+        return;
+    }
+
+    // ---------------------------------------------------------------
+    // SET RECURSION
+    // ---------------------------------------------------------------
+    // @dottalk.subusage v1
+    // parent: SET
+    // sub: RECURSION
+    // category: workspace
+    // tier: public
+    // status: supported
+    // disp-style: inline
+    // handler: cmd_SET
+    // usage-access: SET USAGE
+    // summary:
+    //   Whether a workspace operation descends into nested workspaces.
+    //   OFF still permits multiple workspaces -- they run parallel
+    //   rather than nested (AIF-078 stage 3, owner ruling 2026-08-22).
+    // usage:
+    //   SET RECURSION
+    //   SET RECURSION ON|OFF
+    //
+    // Output goes through plain cout rather than the message catalog on
+    // purpose: the help DBFs under dottalkpp/data/help are owned by a
+    // concurrent full-stack document push, and minting MessageIds here would
+    // put this lane's edits in the middle of that regeneration. The text is
+    // deliberately boring so the eventual catalog entry is a transcription
+    // rather than a redesign.
+    if (opt == "RECURSION") {
+        std::string tok;
+        if (!(args >> tok)) {
+            out << "SET RECURSION is "
+                << (xbase::workspace::recursion_enabled() ? "ON" : "OFF") << ".\n";
+            return;
+        }
+
+        bool on = xbase::workspace::recursion_enabled();
+        if (!parse_on_off(tok, on)) {
+            out << "Usage:\n";
+            out << "  SET RECURSION            (report current state)\n";
+            out << "  SET RECURSION ON|OFF\n";
+            out << "Notes:\n";
+            out << "  - ON: an operation on a workspace descends into workspaces nested\n";
+            out << "    under it. A close is post-order, children before parent.\n";
+            out << "  - OFF: an operation touches only the workspace named. Nested\n";
+            out << "    workspaces still EXIST and stay open; the skip is reported.\n";
+            out << "  - This does not restrict how many workspaces may be open.\n";
+            return;
+        }
+
+        xbase::workspace::set_recursion_enabled(on);
+        out << "SET RECURSION " << (on ? "ON" : "OFF") << ".\n";
         return;
     }
 
