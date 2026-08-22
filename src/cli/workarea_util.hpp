@@ -27,11 +27,28 @@
 
 namespace cli {
 
-// Case-insensitive lookup of an OPEN work area by logicalName() or name().
+// Case-insensitive lookup of an OPEN work area by logical name.
+//
+// The implementation compares logicalName() and then name(); those are the SAME
+// member (xbase.hpp:238 and :288, the latter under "Legacy compatibility"), so
+// the second comparison can never match when the first did not. Said here
+// rather than left implying two name spaces -- see
+// docs/maintenance/AIF120_NAME_SCHEMA_RULING_V1.md sec 1.
+//
+// FIRST MATCH WINS and no ambiguity is reported. Nothing keeps a logical name
+// unique, so two open areas can carry the same one; the ruling above governs
+// what should happen and is not implemented here yet.
+//
 // Returns nullptr when no open area matches.
 xbase::DbArea* find_open_area_by_name_ci(const std::string& logical_or_name);
 
-// Slot index of an area pointer within workareas, or -1 if not present.
+// Slot index this area occupies, or -1 if the pointer is null.
+//
+// AIF-120 I1.1: reads DbArea::wsSlot(), stamped once at engine construction.
+// It no longer scans, and it no longer returns -1 for a CLOSED area -- the slot
+// is a property of the array position, not of the table open in it. Callers
+// that treated -1 as "closed" were relying on a side effect of the old scan;
+// ask isOpen() for that.
 int slot_of_area(xbase::DbArea* area);
 
 // RAII: select the given area's slot; restore the previous selection on exit.

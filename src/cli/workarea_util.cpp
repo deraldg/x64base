@@ -50,14 +50,21 @@ xbase::DbArea* find_open_area_by_name_ci(const std::string& logical_or_name)
     return nullptr;
 }
 
+// AIF-120 I1.1. This was a linear scan over the open areas, comparing pointers
+// to recover a number the area could simply have carried. It has 21 call sites
+// across 15 files; none of them changes, because the SIGNATURE does not -- only
+// the body. That is the whole shape of I1: ownership stops being reconstructed
+// from side tables and starts being a property of the thing that has it.
+//
+// _ws_slot is stamped at engine construction (dbf_file.cpp, XBaseEngine ctor)
+// and is never cleared, so this answers correctly for a closed area too -- the
+// old scan did not, because workareas::db(i) only walks what is currently
+// bound. Behaviour for an OPEN area is identical; for a closed one it is now
+// right instead of -1.
 int slot_of_area(xbase::DbArea* area)
 {
     if (!area) return -1;
-    const std::size_t n = workareas::count();
-    for (std::size_t i = 0; i < n; ++i) {
-        if (workareas::db(i) == area) return static_cast<int>(i);
-    }
-    return -1;
+    return area->wsSlot();
 }
 
 ScopedAreaSelect::ScopedAreaSelect(xbase::DbArea* area) noexcept

@@ -105,9 +105,10 @@ void DbArea::close() {
     _memo_mgr.reset();
     _memo_ctx.clear();
 
-    // Legacy mirrors
-    _db_name.clear();
-    _filename.clear();
+    // AIF-120 I1.0: the area is no longer owned by any workspace. The SLOT is
+    // NOT cleared -- it is stamped once at engine construction and is a
+    // property of the array position, not of whatever table is open in it.
+    _ws_handle = 0;
 
     // x64/VFP extras
     _dbf_version_byte = 0x03;
@@ -122,10 +123,6 @@ void DbArea::setFilename(std::string path) {
     if (!p.is_absolute()) p = fs::absolute(p, ec);
 
     _compute_paths_and_names_(p.string());
-
-    // Keep legacy mirrors in sync
-    _filename  = _dbf_abs_path;
-    _db_name   = _logical_name;
 }
 
 int DbArea::recordLength() const noexcept {
@@ -199,10 +196,6 @@ void DbArea::_compute_paths_and_names_(const std::string& abs_dbf_path) {
         _memo_abs_path = dbt.string();
         _memo_kind = MemoKind::DBT;
     }
-
-    // 4) Keep legacy mirrors synchronized (derived, not authoritative)
-    _filename  = _dbf_abs_path;
-    _db_name   = _logical_name;
 }
 
 void DbArea::_clear_paths_and_names_() noexcept {

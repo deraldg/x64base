@@ -237,6 +237,18 @@ public:
     const std::string& dbfBasename() const noexcept { return _dbf_basename; }
     const std::string& logicalName() const noexcept { return _logical_name; }
 
+    // ---- Workspace ownership (AIF-078 design I1) --------------------------
+    // Which workspace owns this area, and which slot it occupies inside it.
+    // 0 / -1 mean not assigned. See the member declarations for the rules.
+    [[nodiscard]] uint64_t wsHandle() const noexcept { return _ws_handle; }
+    [[nodiscard]] int32_t  wsSlot()   const noexcept { return _ws_slot;   }
+
+    // Stamped once by XBaseEngine's constructor and never again -- the slot is
+    // a property of the array position, not of the table. Public rather than
+    // friend because XBaseEngine is not the only conceivable owner of a slot
+    // array, and a one-line setter is a smaller commitment than friendship.
+    void setWorkspaceSlot(int32_t slot) noexcept { _ws_slot = slot; }
+
     // ---- Memo sidecar facts (co-located with DBF) -------------------------
     const std::string& memoPath() const noexcept { return _memo_abs_path; }
     MemoKind           memoKind() const noexcept { return _memo_kind; }
@@ -294,7 +306,6 @@ public:
     // mirror or own the underlying vector metadata blocks.
     void setLogicalName(std::string name) {
         _logical_name = std::move(name);
-        _db_name = _logical_name;
     }
 
     bool setFieldName(int field1, std::string name) {
@@ -438,9 +449,34 @@ private:
     std::string _memo_abs_path;
     MemoKind    _memo_kind{MemoKind::NONE};
 
-    // ===== Legacy storage (DEPRECATED, mapped internally) =================
-    std::string _db_name;
-    std::string _filename;
+    // ===== Workspace ownership (AIF-078 design I1) ========================
+    // An area belongs to exactly ONE workspace, and now knows which one and
+    // which slot it occupies inside it. Before this, ownership existed only in
+    // side tables -- which is why the relation graph is keyed on a bare
+    // uppercased parent name with no owner field (set_relations.cpp:60), and
+    // why slot_of_area() had to linear-scan the open areas to answer "which
+    // slot am I" at 21 call sites across 15 files.
+    //
+    // 0 / -1 mean NOT ASSIGNED, which is the state of a closed area. The
+    // engine constructs MAX_AREA areas eagerly (dbf_file.cpp:409-411), so
+    // _ws_slot is stamped there once and never changes; _ws_handle is set when
+    // an area is opened into a workspace and cleared by close().
+    //
+    // One workspace exists today, so _ws_handle is 1 for every open area. That
+    // is deliberate: the FIELD is the change, and a constant is the honest
+    // value while there is exactly one workspace to name. See
+    // docs/maintenance/AIF120_NAME_SCHEMA_RULING_V1.md sec 4 level 1.
+    uint64_t    _ws_handle{0};
+    int32_t     _ws_slot{-1};
+
+    // RETIRED 2026-08-22 (AIF-120 I1.0): _db_name and _filename lived here
+    // under a "Legacy storage (DEPRECATED, mapped internally)" banner. Neither
+    // was mapped to anything. _db_name had four writers and ZERO readers;
+    // _filename had zero of both -- not one line in src/ or include/ ever
+    // touched it. Removed while the header was already open for the members
+    // above, at no extra rebuild. The table-name-vs-alias split they were
+    // shaped for is design I1's job and is done by _ws_handle/_ws_slot plus
+    // the one real name, _logical_name.
 
     // ===== VFP compatibility additions =====================================
     uint8_t     _dbf_version_byte{0x03};

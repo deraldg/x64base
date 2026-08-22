@@ -83,19 +83,54 @@ Budget it per iteration, not per project.
 is small; the per-file cost on MSVC is unknown and is the one number in this
 document I am guessing at, so I am not putting a figure on it.
 
+## 1a. CORRECTION 2026-08-22 -- the timing sample contained a failed compile
+
+Found while implementing I1.0. **`src/cli/set_relations.cpp` did not compile**
+in that measurement: it includes `"cli/command_output.hpp"`, which lives at
+`src/cli/command_output.hpp`, and my ad-hoc command line omitted `-I src`. I
+timed with `/usr/bin/time`, **which prints a duration whether or not the compile
+succeeded**, and I did not check exit status. Its 1.98s -- the fastest of the
+seven, and therefore the one pulling the mean down hardest -- was the cost of
+failing, not of compiling.
+
+Re-run in place with exit status checked, **6 of the 7 compile**. Dropping the
+failure:
+
+| | mean | 337 TUs, single-threaded |
+|---|---|---|
+| as published (7 samples, one invalid) | 5.28 s | ~30 min |
+| **corrected (6 valid samples)** | **5.83 s** | **~33 min** |
+
+The published figure was **optimistic by about 9%**. The conclusion is unchanged
+-- the rebuild is minutes at any real `-j` -- but the number was arrived at
+partly by accident and is corrected here rather than left standing.
+
+**Method note for anyone repeating this:** `/usr/bin/time cmd` reports elapsed
+time for a failure exactly as readily as for a success. Check the exit status,
+or time only compiles you have separately proven succeed.
+
 ## 2. The header widening itself -- measured, and it is nearly free
 
 A probe copy of `include/xbase.hpp` with the two members added
 (`tmp/i1probe/xbase.hpp`, `std::uint64_t _ws_handle`, `std::int32_t _ws_slot`):
 
-| | before | after |
-|---|---|---|
-| `sizeof(xbase::DbArea)` | 1088 B | **1104 B** (+16, measured) |
+| | before | probe (add only) | **as implemented** |
+|---|---|---|---|
+| `sizeof(xbase::DbArea)` | 1088 B | 1104 B (+16) | **1032 B (-56)** |
 
 `MAX_AREA` is **512** and `XBaseEngine` eagerly constructs all of them
-(`include/xbase.hpp:494`, `src/xbase/dbf_file.cpp:409-411`), so the cost is
-**512 x 16 = 8 KB per engine**. There is exactly one engine in the tree
-(`src/cli/shell.cpp:527`). Eight kilobytes, once.
+(`include/xbase.hpp:494`, `src/xbase/dbf_file.cpp:409-411`).
+
+**CORRECTED 2026-08-22, as implemented: the type SHRANK.** The probe measured
+adding two members to an unchanged header. The landed change also retires
+`_db_name` and `_filename` -- two `std::string` members, 32 bytes each on
+libstdc++ -- which more than pays for the 16 bytes added. Net **-56 bytes per
+area**, so **512 x -56 = 28 KB SAVED per engine**, not 8 KB spent. There is
+exactly one engine in the tree (`src/cli/shell.cpp:527`).
+
+I published "+8 KB" as a cost. It is a saving. Recorded because a price quoted
+in the wrong direction is worth correcting even when the correction is good
+news.
 
 And it compiles as-is. Three representative TUs built at `-O3` against the
 widened header with **zero call-site changes**:
@@ -104,9 +139,15 @@ widened header with **zero call-site changes**:
     src/cli/table_state.cpp     compiles clean
     src/cli/workarea_util.cpp   compiles clean
 
-**So step 0 is: two lines, 30 minutes of compile, 8 KB, no behaviour change, and
-nothing uses the new members.** It buys nothing on its own. It is the enabling
-edit, and it is trivially revertible.
+**So step 0 is: two members, ~33 minutes of compile, 28 KB saved, and no
+behaviour change.** It is the enabling edit, and it is trivially revertible.
+
+**LANDED 2026-08-22 (I1.0 + I1.1).** One correction from implementing it: the
+new members could not simply sit where `_db_name` did, because that block is
+**private** -- I had assumed public. They are private with `wsHandle()` /
+`wsSlot()` accessors and a `setWorkspaceSlot()` the engine constructor uses,
+which is the better shape anyway: an identity should be read through an
+accessor, not poked. The compiler caught the assumption in one build.
 
 ## 3. The rewiring -- where the money actually is
 
@@ -129,9 +170,43 @@ shape: the map is file-static, so the *data structure* change is confined to one
 have to change, which would ripple to 28 includers.
 
 **Live behaviour that must not move:** 208 relations across the corpus, 28 of
-them independently-named composite endpoints (AIF-078, `b3c713ae4`), and **10
-`.dts` regression scripts** exercise `SET RELATION`. Depth-1 behaviour must be
-byte-identical after I1 -- that is the acceptance test, and it exists already.
+them independently-named composite endpoints (AIF-078, `b3c713ae4`). Depth-1
+behaviour must be byte-identical after I1.
+
+### 3a. The acceptance oracle is thinner than it looks -- CORRECTION
+
+An earlier draft of this note said the `.dts` regression scripts are the
+acceptance test and "it exists already". **Measured, that is wrong in the part
+that matters.**
+
+| | tracked |
+|---|---|
+| `.dts` using `SET RELATION` (classic singular verb) | **10** |
+| `.dts` using `SET RELATIONS` (plural) | **0** |
+| `.dts` using `SET RELATIONS ADD` (the composite verb) | **0** |
+
+`SET RELATIONS ADD` appears in tracked files **only** in the command reference,
+the help tables and import CSVs -- **never in an executable script**. The verb is
+shipped, documented, and carries 28 of the 208 live relations, and it has **zero
+tracked executable coverage**.
+
+Meanwhile **eight untracked `.dts` files in `scripts/` exercise relations**,
+including `set_relations_test.dts`, `BUILD_FULL_RELATIONSHIPS.dts` and
+`MCC -- Build full relations graph (CNX-backed).dts`.
+`scripts/set_relations_test.dts` is a **four-deep chain** built with the
+composite verb -- `STUDENTS -> ENROLL -> CLASSES -> TASSIGN -> TEACHERS`, then
+`TUPLE` across all five tables. That is the exact shape a workspace-keyed
+relation map is most likely to break, and it exists on one disk.
+
+**This is the same widow class as R109/R109b**, found the same way: a status
+tail the steward pasted. It changes the I1.2 risk row below from "the oracle
+exists" to "the oracle must be built or adopted first".
+
+**Recommended before I1.2 is written, not after:** review the eight untracked
+relation scripts, and stage the ones that are real tests. That is a steward
+decision -- they are his working files, some may be scratch, and an agent should
+not stage them unasked. But I1.2 should not start until the composite verb has
+executable coverage that a clean clone can run.
 
 ## 4. Recommended sequence -- four increments, each abandonable
 
@@ -142,11 +217,12 @@ a separate commit.**
 |---|---|---|---|---|
 | **I1.0** | add the two members, populate nowhere | 337 TUs, ~30 min | **2 lines** | none measured -- proven above |
 | **I1.1** | populate them at open/close; assert the invariant in a test | 337 TUs | area open path, `schema_close_all`, one test | low -- writes only, nothing reads yet |
-| **I1.2** | re-key the relation graph on (workspace, name) | 337 TUs + 28 includers if signatures move | 1 `.cpp` internals, maybe `set_relations.hpp` | **the real risk.** 208 live relations, 10 `.dts` scripts as the oracle |
+| **I1.2** | re-key the relation graph on (workspace, name) | 337 TUs + 28 includers if signatures move | 1 `.cpp` internals, maybe `set_relations.hpp` | **the real risk, and the oracle is incomplete** -- see sec 3a. `SET RELATIONS ADD` has zero tracked executable coverage. **Blocked until it has some.** |
 | **I1.3** | scope name resolution, add an ambiguity signal | 337 TUs | 10 files, 32 sites | medium -- changes what happens on a name collision, which is a **user-visible** behaviour change and needs its own ruling |
 
-I1.0 and I1.1 together are perhaps a session. I1.2 is a session on its own and
-should not share a commit with anything. I1.3 changes behaviour a user can see
+I1.0 and I1.1 together are perhaps a session. I1.2 is a session on its own,
+should not share a commit with anything, and **should not start at all until
+sec 3a is resolved.** I1.3 changes behaviour a user can see
 and wants your ruling before it is written, not after.
 
 **Do not do all four in one pass.** If I1.2 goes wrong, a single commit
@@ -196,4 +272,10 @@ that document is next touched.
   Per-TU cost: compile any listed TU with the flags in sec 1. `sizeof`: the probe
   header is at `tmp/i1probe/xbase.hpp`, diff it against `include/xbase.hpp` to
   see the exact two lines. Counts: `git grep -c <symbol> -- src include`.
+- **Expected gate advisory, left deliberately.** `cited-paths` will report
+  `scripts/set_relations_test.dts` as a WIDOW -- on disk, not tracked. That is
+  **not an oversight and must not be suppressed with `cite-check:ignore`**: the
+  whole of sec 3a is that this file should be tracked and is not. The advisory
+  is the finding. It clears when the file is staged, which is the steward's
+  call, not an agent's.
 - **How to undo.** Delete this one file. Nothing else was touched.

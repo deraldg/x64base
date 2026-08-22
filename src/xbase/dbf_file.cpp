@@ -215,6 +215,13 @@ void DbArea::open(const std::string& filename)
         _crn64 = 0;
         _del = NOT_DELETED;
     }
+
+    // AIF-120 I1.1. LAST statement of open(), deliberately: every failure path
+    // above throws, and close() (called on entry) has already zeroed this, so
+    // an area is owned only if it actually opened. One workspace exists today,
+    // so the handle is the constant 1 -- see the note on _ws_handle in
+    // xbase.hpp for why a constant is the honest value for now.
+    _ws_handle = 1;
 }
 
 void DbArea::readHeader()
@@ -407,7 +414,15 @@ bool DbArea::deleteCurrent() {
 }
 
 XBaseEngine::XBaseEngine() {
-    for (auto& p : _areas) p = std::make_unique<DbArea>();
+    // AIF-120 I1.1. The slot index is a property of the ARRAY POSITION, not of
+    // whatever table is later opened in it, so it is stamped once here and
+    // never cleared -- close() deliberately leaves it alone. This is the whole
+    // reason slot_of_area() can stop scanning: the answer was always knowable
+    // at construction and simply had nowhere to live.
+    for (std::size_t i = 0; i < _areas.size(); ++i) {
+        _areas[i] = std::make_unique<DbArea>();
+        _areas[i]->setWorkspaceSlot(static_cast<int32_t>(i));
+    }
 }
 
 } // namespace xbase
