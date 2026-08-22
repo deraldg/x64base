@@ -40,6 +40,9 @@ void cmd_FOX_PALETTE(DbArea&, std::istringstream&);
 void edu_CHRISTMAS(DbArea&, std::istringstream&);
 void edu_HANUKKAH(DbArea&, std::istringstream&);
 
+void app_GUI(DbArea&, std::istringstream&);
+
+
 // TABLES
 void cmd_VDISK(DbArea&, std::istringstream&);   // AIF-043 in-memory RAM disk
 void cmd_USE(DbArea&, std::istringstream&);

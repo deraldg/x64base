@@ -183,11 +183,11 @@ static void print_setpath_usage()
 static bool is_setpath_usage_request(const std::string& raw)
 {
     std::string t = up(raw);
-    while (!t.empty() && (t.front() == ' ' || t.front() == '\\t')) t.erase(t.begin());
-    while (!t.empty() && (t.back() == ' ' || t.back() == '\\t' || t.back() == '\\r' || t.back() == '\\n')) t.pop_back();
+    while (!t.empty() && (t.front() == ' ' || t.front() == '\t')) t.erase(t.begin());
+    while (!t.empty() && (t.back() == ' ' || t.back() == '\t' || t.back() == '\r' || t.back() == '\n')) t.pop_back();
     if (t.rfind("SET PATH ", 0) == 0) {
         t = t.substr(9);
-        while (!t.empty() && (t.front() == ' ' || t.front() == '\\t')) t.erase(t.begin());
+        while (!t.empty() && (t.front() == ' ' || t.front() == '\t')) t.erase(t.begin());
     }
     return t == "USAGE" || t == "HELP" || t == "?";
 }

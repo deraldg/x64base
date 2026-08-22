@@ -22,6 +22,14 @@ namespace dottalk::zip::detail {
 
 namespace {
 
+// AIF-120. The whole helper block is Windows-only. Both public entry points
+// below take a "#if !defined(_WIN32)" early return that reports "Windows
+// backend not available on this platform" and touches no helper at all, so on
+// Linux gcc reported four of these as defined-but-not-used. The inner
+// "#if defined(_WIN32)" guards inside the bodies are now redundant but are
+// left alone: removing them is a larger edit than the defect warrants.
+#if defined(_WIN32)
+
 static std::string ps_single_quote(const std::string& s)
 {
     // PowerShell single-quoted string escaping:
@@ -118,6 +126,8 @@ static std::vector<std::string> split_lines_nonempty(const std::string& text)
     return out;
 }
 
+#endif  // _WIN32 -- helper block
+
 } // namespace
 
 bool win_available_list(std::string* why_not)
@@ -170,6 +180,7 @@ Result win_list_archive(const fs::path& archive_path, Listing* listing)
     r.archive_path = archive_path;
 
 #if !defined(_WIN32)
+    (void)listing;   // the Windows path is what consumes it
     r.success = false;
     r.exit_code = -1;
     r.message = "Windows backend not available on this platform";
