@@ -1507,6 +1507,13 @@ static void schema_close_all() {
     }
 
     close_count += reconcile_unregistered_areas();
+
+    // AIF-120 I1.3a. A full close is the boundary of a measurement: nothing is
+    // open afterwards, so no name can still be ambiguous, and a ledger carried
+    // across it would attribute one script's collisions to the next. The .dts
+    // specs open with WORKSPACE CLOSE ALL for exactly this reason.
+    cli::ambiguity_reset();
+
     close_common_teardown(close_count, /*scoped=*/false);
 }
 
@@ -3853,6 +3860,31 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
                     // starts, which is the whole point of the rebase.
                     std::cout << "    local " << i
                               << "  engine slot " << mem[i] << "\n";
+                }
+            }
+
+            // AIF-120 I1.3a -- the R112 migration instrument, read here.
+            //
+            // R112 sec 6a ruled first-wins-plus-warning admissible ONLY as an
+            // instrumented phase whose counter has to reach a measured zero
+            // before the hard refusal lands. A printed warning nobody counts is
+            // the thing that ruling rejected, so the count is a FIELD of the
+            // registry, assertable by a spec, and it is printed even when it is
+            // zero: "absent" and "not instrumented" must not look alike.
+            {
+                const std::size_t amb = cli::ambiguity_count();
+                std::cout << "  name ambiguity : " << amb << " resolution(s)\n";
+                for (const auto& h2 : cli::ambiguity_ledger()) {
+                    std::cout << "    name " << h2.name
+                              << "  site " << h2.site
+                              << "  chose area " << h2.chosen_slot
+                              << "  hits " << h2.hits
+                              << "  candidates";
+                    for (std::size_t k = 0; k < h2.engine_slots.size(); ++k) {
+                        std::cout << " ws" << h2.ws_handles[k]
+                                  << ":a" << h2.engine_slots[k];
+                    }
+                    std::cout << "\n";
                 }
             }
 

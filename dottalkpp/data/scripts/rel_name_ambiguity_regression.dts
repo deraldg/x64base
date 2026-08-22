@@ -1,0 +1,142 @@
+* ============================================================================
+* rel_name_ambiguity_regression.dts
+*
+* AIF-120 I1.3a. ONE RESOLVER, AND AN AMBIGUOUS NAME NOW SAYS SO.
+*
+* WHAT WAS WRONG
+*   Two functions answered "which open area is called X" and they did not
+*   agree. find_open_area_by_name_ci (workarea_util.cpp, 21 call sites)
+*   returned the FIRST match -- the lowest engine slot. build_area_by_up_name
+*   (set_relations.cpp, the recursive REL LIST tree builder) built its own map
+*   with an unconditional `out[key] = a`, which makes it the LAST match -- the
+*   highest slot. Same question, two answers, and neither said which area it
+*   had picked.
+*
+*   R112 sec 3 measured the reach: twelve basenames -- students, teachers,
+*   classes, enroll, courses, dept, majors, rooms, stud_maj, tassign, terms,
+*   building -- exist in all three of dbf/x64, dbf/x32 and dbf/vfp. That is
+*   the MCC demo corpus, not a corner case. And it needs no second workspace:
+*   USE guards duplicates by PATH only, and USE ... ALIAS sets the logical name
+*   with no uniqueness check at all, which is how this script builds its
+*   fixture in one workspace.
+*
+* WHAT THIS SPEC CAN AND CANNOT SEE, stated rather than implied.
+*   The divergence itself is NOT field-observable. build_area_by_up_name's map
+*   fed record counts that get PRINTED; it never moved a cursor. So no marker
+*   here goes red on the old build, and this spec is not a discriminator for
+*   the consolidation -- the compiler is, because the function is gone and
+*   cannot be called. Saying so is the point: a spec that cannot fail on the
+*   defect it is named after is the false green this house keeps finding.
+*
+*   What the markers DO pin is the ruled CHOICE. R112 sec 6a ruled first-wins
+*   plus an instrumented warning as the migration step toward requiring
+*   qualification. N_T1/N_T2 assert that choice by field value, so the day the
+*   policy flips to a hard refusal these two lines move -- the flip becomes a
+*   red marker and its own ruling, which is what "time-boxed by measurement"
+*   has to mean if it means anything.
+*
+* N_T2 IS THE DISCRIMINATOR FOR DIRECTION. NAMLO and NAMHI are both open under
+*   the logical name NAMDUP, in areas 1 and 2. The parent moves; exactly one
+*   child follows. A green N_T2 says the HIGHER slot stayed put -- if anyone
+*   ever "fixes" ambiguity by making the last match win, N_T2 reds and N_T1
+*   reds with it.
+*
+* THE LEDGER IS TRANSCRIPT EVIDENCE, read by a human or a gate, not by a
+*   marker. WORKSPACE REGISTRY prints `name ambiguity : N resolution(s)` and
+*   one row per distinct (name, call site). The NAME-AMBIGUITY-LEDGER block
+*   MUST contain a non-zero count and a NAMDUP row; the same field printed as
+*   0 in a run that opened no duplicates is the measured zero R112 makes the
+*   gate for turning first-wins into a refusal.
+*
+* Self-bootstrapping NAMPAR/NAMLO/NAMHI in SANDBOX, self-erasing.
+*   Standalone:  DO rel_name_ambiguity_regression
+*   Regression:  REGRESSION RUN NAME_AMBIG
+* ============================================================================
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+SET PATH DBF DBF/SANDBOX
+
+FORMULA "NAME-AMBIGUITY-BEGIN"
+
+REL CLEAR ALL
+WORKSPACE CLOSE ALL
+ERASE nampar CONFIRM
+ERASE namlo CONFIRM
+ERASE namhi CONFIRM
+
+* --- fixture: one parent, two children that will share a name --------------
+SELECT 0
+CREATE X64 NAMPAR (PK C(4))
+APPEND
+REPLACE PK WITH "A"
+APPEND
+REPLACE PK WITH "B"
+
+SELECT 1
+CREATE X64 NAMLO (CK C(4), MARK C(10))
+APPEND
+REPLACE CK WITH "A"
+REPLACE MARK WITH "LOW_A"
+APPEND
+REPLACE CK WITH "B"
+REPLACE MARK WITH "LOW_B"
+
+SELECT 2
+CREATE X64 NAMHI (CK C(4), MARK C(10))
+APPEND
+REPLACE CK WITH "A"
+REPLACE MARK WITH "HIGH_A"
+APPEND
+REPLACE CK WITH "B"
+REPLACE MARK WITH "HIGH_B"
+
+WORKSPACE CLOSE ALL
+
+* --- the collision, built in ONE workspace with no second root -------------
+* USE ... ALIAS is a RENAME (R112 sec 1: alias= and ALIAS both assign
+* _logical_name) and it performs NO uniqueness check. Two areas, one name.
+SELECT 0
+USE nampar
+SELECT 1
+USE namlo ALIAS NAMDUP
+SELECT 2
+USE namhi ALIAS NAMDUP
+
+SELECT 1
+GO TOP
+? "N_G0_low_area_holds_low:" + (ALLTRIM(MARK) = "LOW_A")
+SELECT 2
+GO TOP
+? "N_G1_high_area_holds_high:" + (ALLTRIM(MARK) = "HIGH_A")
+
+* --- the ambiguous resolution, announced -----------------------------------
+* REL ADD resolves the child name NAMDUP. Two areas match. The block below
+* MUST contain a NAME: line naming both candidates and the area chosen.
+SELECT 0
+GO TOP
+FORMULA "NAME-AMBIGUITY-ANNOUNCE-BEGIN"
+REL ADD NAMPAR NAMDUP ON PK TO CK
+FORMULA "NAME-AMBIGUITY-ANNOUNCE-END"
+
+* --- move the parent; exactly one child follows ----------------------------
+SKIP
+
+SELECT 1
+? "N_T1_lowest_slot_followed_the_parent:" + (ALLTRIM(MARK) = "LOW_B")
+SELECT 2
+? "N_T2_higher_slot_did_not_follow:" + (ALLTRIM(MARK) = "HIGH_A")
+
+* --- the instrument, read ---------------------------------------------------
+FORMULA "NAME-AMBIGUITY-LEDGER-BEGIN"
+WORKSPACE REGISTRY
+FORMULA "NAME-AMBIGUITY-LEDGER-END"
+
+* --- teardown --------------------------------------------------------------
+REL CLEAR ALL
+WORKSPACE CLOSE ALL
+ERASE nampar CONFIRM
+ERASE namlo CONFIRM
+ERASE namhi CONFIRM
+
+FORMULA "NAME-AMBIGUITY-END"

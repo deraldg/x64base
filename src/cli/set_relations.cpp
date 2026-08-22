@@ -392,7 +392,7 @@ static void clear_subtree_to_top(const std::string& parent_name,
     if (it == relations_store().end()) return;
 
     for (const auto& r : it->second) {
-        if (xbase::DbArea* child = find_open_area_by_name_ci(r.child)) {
+        if (xbase::DbArea* child = find_open_area_by_name_ci(r.child, "REL clear_subtree")) {
             try { child->top(); child->readCurrent(); } catch (...) {}
         }
         clear_subtree_to_top(r.child, seen, depth + 1);
@@ -406,7 +406,7 @@ static void refresh_from_parent_name(const std::string& parent_name,
     const std::string key = up_copy(parent_name);
     if (!seen.insert(key).second) return;
 
-    xbase::DbArea* parent = find_open_area_by_name_ci(parent_name);
+    xbase::DbArea* parent = find_open_area_by_name_ci(parent_name, "REL refresh parent");
     if (!parent || parent->recno() <= 0) return;
 
     try { parent->readCurrent(); } catch (...) {}
@@ -415,7 +415,7 @@ static void refresh_from_parent_name(const std::string& parent_name,
     if (it == relations_store().end()) return;
 
     for (const auto& rel : it->second) {
-        xbase::DbArea* child = find_open_area_by_name_ci(rel.child);
+        xbase::DbArea* child = find_open_area_by_name_ci(rel.child, "REL refresh child");
         if (!child) continue;
 
         const auto kv = parent_values(*parent, rel.joins);
@@ -521,8 +521,8 @@ bool add_relation(const std::string& parent_area,
         return false;
     }
 
-    xbase::DbArea* P = find_open_area_by_name_ci(parent);
-    xbase::DbArea* C = find_open_area_by_name_ci(child);
+    xbase::DbArea* P = find_open_area_by_name_ci(parent, "REL add parent");
+    xbase::DbArea* C = find_open_area_by_name_ci(child, "REL add child");
     if (!P || !C) {
         emit_rel_diag(dottalk::helpdata::MessageId::RelDiagAddFailedNotOpenText);
         return false;
@@ -632,7 +632,7 @@ void set_current_parent_name(const std::string& logical_name) noexcept {
 
 std::string current_parent_name() {
     if (!current_parent_override().empty()) {
-        if (find_open_area_by_name_ci(current_parent_override())) return current_parent_override();
+        if (find_open_area_by_name_ci(current_parent_override(), "REL current parent")) return current_parent_override();
         current_parent_override().clear();
     }
     return infer_parent_from_workarea();
@@ -667,7 +667,7 @@ int match_count_for_child(const std::string& child_area) {
         const std::string parent = current_parent_name();
         if (parent.empty()) return 0;
 
-        xbase::DbArea* parent_db = find_open_area_by_name_ci(parent);
+        xbase::DbArea* parent_db = find_open_area_by_name_ci(parent, "REL matchcount parent");
         if (!parent_db || parent_db->recno() <= 0) return 0;
 
         auto it = relations_store().find(up_copy(parent));
@@ -678,7 +678,7 @@ int match_count_for_child(const std::string& child_area) {
                                 [&](const Relation& r){ return r.child == child; });
         if (rit == it->second.end()) return 0;
 
-        xbase::DbArea* child_db = find_open_area_by_name_ci(child);
+        xbase::DbArea* child_db = find_open_area_by_name_ci(child, "REL matchcount child");
         if (!child_db || !child_db->isOpen()) return 0;
 
         const int parent_recno = parent_db->recno();
@@ -775,24 +775,20 @@ void import_relations(const std::vector<RelationSpec>& specs, bool clear_existin
 
 // ---- Accurate REL LIST ALL support helpers (internal) ----
 
-static std::unordered_map<std::string, xbase::DbArea*> build_area_by_up_name() {
-    std::unordered_map<std::string, xbase::DbArea*> out;
-
-    const std::size_t n = workareas::count();
-    out.reserve(n * 2);
-
-    for (std::size_t i = 0; i < n; ++i) {
-        xbase::DbArea* a = workareas::db(i);
-        if (!a || !a->isOpen()) continue;
-
-        std::string ln;
-        try { ln = a->logicalName(); } catch (...) {}
-        const std::string key = up_copy(!ln.empty() ? ln : a->name());
-        if (!key.empty()) out[key] = a;
-    }
-
-    return out;
-}
+// AIF-120 I1.3a: DELETED, and deliberately not replaced in kind.
+//
+// This function built its own UPPER-name -> area map with `out[key] = a`, an
+// unconditional assign, which made it LAST-match-wins: with two open areas
+// named STUDENTS it handed back the HIGHER slot, while
+// find_open_area_by_name_ci() -- the resolver every other REL path uses --
+// returned the LOWER one. Two resolvers, one question, different answers, and
+// neither said which area it had picked. R112 sec 3 measured twelve basenames
+// shared across the x64/x32/vfp roots, so the collision is the demo corpus,
+// not a corner case.
+//
+// The map now comes from cli::build_open_area_index_ci(), which is built on the
+// same primitive as the singular resolver. They agree by construction. Anyone
+// re-adding a local index here re-opens the divergence.
 
 static std::vector<std::string> infer_unique_child_chain(const std::string& root_up, int max_depth) {
     std::vector<std::string> chain;
@@ -869,7 +865,7 @@ std::vector<PreviewRow> list_tree_for_current_parent(bool recursive, int max_dep
         return out;
     }
 
-    const auto area_by = build_area_by_up_name();
+    const auto area_by = cli::build_open_area_index_ci();
     const auto chain_children = infer_unique_child_chain(root, max_depth);
 
     std::vector<std::string> chain_names;
@@ -971,7 +967,7 @@ std::vector<relations_api::PreviewRow> preview_child(const std::string& child_ar
                                 [&](const Relation& r){ return r.child == child; });
         if (rit == it->second.end()) return out;
 
-        const xbase::DbArea* child_db = find_open_area_by_name_ci(child);
+        const xbase::DbArea* child_db = find_open_area_by_name_ci(child, "REL preview child");
 
         auto kv = parent_field_values_names(*A, *rit);
         const std::string for_expr = build_for_expr(child_db, kv);
@@ -1027,9 +1023,9 @@ static bool enum_chain_dfs(
         return true;
     }
 
-    xbase::DbArea* parent_db = find_open_area_by_name_ci(parent_up);
+    xbase::DbArea* parent_db = find_open_area_by_name_ci(parent_up, "REL enum parent");
     const std::string child_up = up_copy(chain_children[idx]);
-    xbase::DbArea* child_db = find_open_area_by_name_ci(child_up);
+    xbase::DbArea* child_db = find_open_area_by_name_ci(child_up, "REL enum child");
     if (!parent_db || !child_db) return false;
 
     auto it = relations_store().find(parent_up);
