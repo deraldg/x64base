@@ -421,8 +421,29 @@ is the perishable-literal trap this plan warns about in 11h.
    head of the match-count path, by `find_open_area_by_name_ci` (which gates on
    `isOpen()`), or -- for `get_by_index_as_string` -- by an early return on an
    empty field list, which is what a closed area has.
-   **The `REL ENUM` before/after timing was NOT taken.** The payoff is argued
-   from the loop shape, not measured. Still owed.
+   **Timing: an AFTER floor was taken 2026-08-22; a before/after was not and
+   now cannot be** -- the pre-deletion binary is gone, so the payoff stays
+   argued from the loop shape. Recorded so the next person has a number to beat.
+   Measured on the MCC x64 five-table chain
+   (STUDENTS 200 -> ENROLL 686 -> CLASSES 200 -> TASSIGN 200 -> TEACHERS 20),
+   `SET TIMER ON`, build 15:33:32, Alienware m16 R2 / Core Ultra 9 185H:
+
+       WORKSPACE OPEN DBF (14 tables, AUTO INDEX)   0.1113 s
+       SELECT STUDENTS                              0.0167 s
+       LOCATE FOR SID = 50000010                    0.0059 s
+       REL ADD  (each of four)                      0.0104 - 0.0133 s
+       REL REFRESH                                  0.0122 s
+       REL ENUM (4 children, 5 rows emitted)        0.1179 s
+
+   **What the floor incidentally shows, and it is not about this fix.** A single
+   chain refresh costs ~12 ms, and `refresh_if_enabled()` fires after EVERY
+   non-suppressed command line (R117, landed the same day). So building a
+   four-edge chain pays four full chain refreshes -- roughly 46 ms -- of which
+   THREE are superseded by the next `REL ADD` before anything reads them. The
+   refresh is correct and the suppression list is deliberate; what is unpriced is
+   that chain CONSTRUCTION refreshes per edge rather than once at the end.
+   Reported, not fixed, not this lane's: it is R117's design surface, and the
+   number only exists because the timing floor was taken.
 2. **`WSMULTI` and `RELSCAN` REGISTERED**, `kRegressionSpecs` 49 -> 51
    (`src/cli/cmd_regression.cpp`, size hand-maintained). Both existed and neither
    could be reached by name. **`workspace_multi_demo.dts` was deliberately NOT
