@@ -171,6 +171,89 @@ generated header on the include path.
 expected new evidence is the **second** build: commit anything, rebuild, and
 count compiled files. It should be 2, not ~400.
 
+**Superseded -- this OWED item was carried out and this expectation was wrong.
+See sec 6a.**
+
+## 6a. AMENDMENT 2026-08-22 -- the post-fix measurement, and a second wrong prediction by the author
+
+The OWED work in sec 6 was carried out. All three fixes landed as `fe4dae225`,
+MSVC configure + build clean, `REGRESSION ALL` green on all 8 defaults, and the
+banner reads `v0.6 (2026-08-22, fe4dae22 dirty)` -- not `0.0-unconfigured`, so
+the generated header is genuinely on the include path and the fallback is not
+silently winning.
+
+Then four probes:
+
+| probe | state | reconfigure? | .cpp compiled |
+|---|---|---|---|
+| 1 | pre-fix, HEAD unmoved, suite had just run | yes | **1** |
+| 2 | post-fix, no source change | no | **0** |
+| 3 | post-fix, after an empty commit that moved the SHA | no | **0** |
+| 4 | post-fix, SHA still moved, configure FORCED | yes | **3** |
+
+**Fix #2 is confirmed** -- probe 2 costs 0 where the old tree paid 1 on every
+configure. **Fix #3 is confirmed** -- `REGRESSION ALL` wrote `STUDENTS.dtx` and
+no `CMake is re-running because ... STUDENTS.dtx` line followed.
+
+**Fix #1 is confirmed by probe 4, not by probe 3**, and sec 6 was wrong about
+which probe would show it. I predicted the post-commit rebuild would be "2"
+(in conversation, "about 3" once the second GUI target was counted), and said
+that ~400 would mean I had missed a site. Probe 3 returned **0** -- neither of
+the two outcomes I told the steward to watch for.
+
+The error is in the framing, not the fix. `configure_file` runs at **configure**
+time only. Probe 3 moved the SHA but never reconfigured, so the stamp header was
+never regenerated, so nothing that depends on it rebuilt. The `~3` figure is the
+cost of *a commit plus a configure*, not of a commit.
+
+**Fixes #1 and #3 interact, and sec 4 did not anticipate it.** #3 removed the
+mechanism that used to force a reconfigure on nearly every cycle. With that
+gone, configures are rare, so the SHA is re-read rarely, so #1's per-commit cost
+is usually zero and occasionally ~3. Better than predicted, for an unpredicted
+reason.
+
+To close the #1 measurement honestly, force a configure and count:
+
+    cmake -S . -B build
+    cmake --build build --config Release 2>&1 | Tee-Object tmp\rebuild_probe4.txt
+    (Select-String -Path tmp\rebuild_probe4.txt -Pattern '\.cpp$' | Measure-Object).Count
+
+Run and measured: **3**, and the three are named in the build log --
+`main_frame.cpp` twice (once for `dottalk_wb`, once for `dottalk_wb_next`) and
+`cmd_version.cpp` once. That is exactly the includer set identified in sec 2, with
+no fourth file and no fourth target. **Fix #1 is confirmed: ~400 -> 3 per
+configure, 0 per commit.**
+
+Probe 4 is the falsifier, not probe 3. Had it returned ~400 the stamp would
+still be on the command lines; had it returned 0 the header would not be
+regenerating at all and the fix would be inert. It returned neither.
+
+### Consequence: the staleness moved, it did not go away
+
+The banner will now go stale **more often than before**, because the SHA is only
+re-read at configure time and configures are now rare. The data-file
+`CONFIGURE_DEPENDS` churn that sec 4 removed was accidentally acting as a stamp
+refresher -- expensively, but it was doing it.
+
+This is R118's staleness finding re-pointed, and it is the same line of CMake
+seen from the other end (sec 2). The trade is deliberate and correct: a stale
+SHA in a banner is cheap, 400 TUs per commit is not. But it is a trade, and it
+belongs in the record rather than being rediscovered. If a fresh SHA ever has to
+be **guaranteed**, the fix is a **build-time** custom command that writes the
+stamp header, still copy-if-different -- not a return to per-TU defines.
+
+### Two smaller notes from the probes
+
+- `git commit --allow-empty` reported `1 file changed, 5 insertions(+), 5
+  deletions(-)`: the `tier0-refresh` hook regenerated `TIER0_STATE.md`. An
+  `--allow-empty` commit is not an inert probe in this tree.
+- The probe commit `c9efaae94` is **local, not pushed**. Keeping or dropping it
+  is the steward's call.
+
+**Evidence tier for this amendment: measured throughout.** Probes 1-4 are
+compiled-file counts from build logs; the three files in probe 4 are named by
+the log itself, not inferred.
+
 ## 7. Found while working, NOT fixed -- AIF-079 instance #6
 
 `src/palette/cmd_palette_shim.cpp` defines a real `cmd_PALETTE` that forwards
