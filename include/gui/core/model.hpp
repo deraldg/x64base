@@ -48,6 +48,15 @@ using AreaOrdinal = std::uint64_t;
 // `id == 0 ? "none"`, which was safe only while ids were 1-based; carrying that
 // spelling onto a 0-based ordinal would have made "no area" and "the first
 // area" the same value. Absent must not be spelled like fine.
+//
+// STATUS UNDER R6.3 (ruling D10 sec 2a, on review 2026-08-23): BORDERLINE, and
+// said here so this is not read as the exemplary form. R6.3 orders the choices
+// -- make absence UNREPRESENTABLE BY TYPE where a type is free, and reserve a
+// named value only where it is not. A type was very nearly free here: this
+// travels in model structs and across the async boundary, and
+// std::optional<AreaOrdinal> would have made "no area" unspellable rather than
+// merely reserved. Compliant under R6.1 (no correct producer can emit ~0 as a
+// list index) and reserved and named -- but re-pointing it is chartered work.
 inline constexpr AreaOrdinal kNoAreaOrdinal = ~AreaOrdinal{0};
 
 // The ONE display conversion, replacing three identical copies that lived in

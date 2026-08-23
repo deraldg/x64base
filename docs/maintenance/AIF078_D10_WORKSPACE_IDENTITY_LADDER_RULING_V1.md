@@ -125,15 +125,20 @@ this document:**
 >
 > **R6 -- An absent value must not be representable in the space of present
 > ones.** *(AMENDMENT 2026-08-23, review-needed -- the accepted set was five.
-> See sec 2a.)* "None", "not yet", "not applicable" and "free" are not data and
-> must not be spelled like data. Absence goes out of band -- negative for a
-> position, 0 reserved for a key, an explicit sentinel or an optional for an
-> unsigned count -- and two DIFFERENT absences never share one value.
+> See sec 2a, and the three RESOLUTIONS it carries.)* "None", "not yet", "not
+> applicable" and "free" are not data and must not be spelled like data.
+>
+> **The test is whether a CORRECT PRODUCER COULD EVER EMIT THE VALUE** -- not
+> whether the bit pattern exists in the underlying type (R6.1). Absence is made
+> unrepresentable BY TYPE where a type is free, and carried by a RESERVED, NAMED
+> value where it is not (R6.3). Two DIFFERENT absences never share one value.
+> R6 governs values THIS TREE defines; foreign formats are out of scope (R6.2).
 
 
 ## 2a. R6, and the basing question that produced it
 
-**AMENDMENT, 2026-08-23. Status: review-needed.** The accepted ruling had five
+**AMENDMENT, 2026-08-23. Status: review-needed, WITH THE REVIEW'S THREE
+RESOLUTIONS APPLIED (R6.1-R6.3, below).** The accepted ruling had five
 rules. R6 was added after the steward asked a question that deserved a measured
 answer rather than an opinion: *"is the problem areas is 0 based? Is the cost of
 keeping it that way greater than conforming?"*
@@ -226,6 +231,73 @@ are expensive to find.
 - The GUI half of the same finding is fixed by construction rather than by
   patch: its areas take real array slots and therefore pass real numbers. See
   `claude/AIF078_GUI_AREA_SLOTS_PLAN.md`.
+
+### Resolutions, on review 2026-08-23
+
+The steward asked for the review to be settled rather than argued. Three
+objections were raised against this amendment BY ITS OWN AUTHOR and are resolved
+here; the numbering is R6.1 to R6.3 and the R6 text above is amended to match.
+
+**R6.1 -- The test is "could a correct producer emit this", not "is the bit
+pattern reachable".** The first draft read "representable in the space of present
+ones", which can be misread as *must be a different type*. It is not. A value is
+out of band when NO CORRECT PRODUCER CAN EVER EMIT IT. `kNoAreaOrdinal` is
+`~0` and therefore reachable in a `uint64_t`, but it cannot occur as an index
+into a list that will never hold 2^64-1 areas, so it satisfies R6. Without this
+sentence someone will "fix" a correct sentinel and call the churn compliance.
+
+**R6.2 -- R6 governs values THIS TREE defines. Foreign formats are out of
+scope, and one of them violates R6 at its root.** DBF, CDX and LMDB carry
+sentinels this project does not own and cannot change. DBF is the hard case:
+fields are SPACE-PADDED, so an empty character field and a field of spaces are
+THE SAME BYTES. Absence and data are identical there by the format's design --
+which is exactly where USE_AGAIN's finding comes from ("no marker in this
+language can assert that an area is EMPTY") and why FIELDMGR_APPEND's doctrine
+exists ("a spec asserting SHAPE passes green on a blanked table"). R6 cannot fix
+DBF, and must not be read as licence to try. What it governs is every value this
+tree mints for its own use.
+
+**R6.3 -- Prefer the TYPE where it is free; a reserved value is the fallback,
+not the default.** The first draft offered "an explicit sentinel or an optional"
+as equals, which is the weaker rule and -- stated plainly -- the one that happens
+to bless what its author had already written. The order is:
+
+  1. **Unrepresentable by type** where that is free: `std::optional<T>`, or a
+     distinct type. Absence cannot be spelled at all, so it cannot be spelled
+     wrong.
+  2. **Reserved, named, and enforced at the producer** where a type is not free
+     -- an on-disk or on-wire layout, a C API boundary, a value that must
+     round-trip through an int. `handle 0` is the worked example: reserved for
+     "no such workspace", and `next_handle_ref_bump()` starts at `kDefaultHandle`
+     and pre-increments, so **0 is never minted**. The reservation is enforced
+     where values are made, not merely documented where they are read.
+  3. **Never** a value a correct producer could emit.
+
+CONSEQUENCE THE AUTHOR OWES, recorded rather than quietly skipped: under R6.3,
+`kNoAreaOrdinal` is a BORDERLINE case. It is compliant under R6.1 and it is
+reserved and named, but a type was very nearly free there -- `AreaOrdinal`
+travels in model structs and across the async boundary, and
+`std::optional<AreaOrdinal>` would have made "no area" unspellable rather than
+merely reserved. Re-pointing it is chartered follow-up work, not a defect. The
+rule that excuses the code its author wrote is the rule to distrust, which is
+why this is written down instead of settled in the code's favour.
+
+### Why R6 is the right abstraction, and this is the evidence that decided it
+
+R6 is **BASE-AGNOSTIC**, and this tree already proves it by running both
+conventions at once, each correctly:
+
+| space | base | how absence is spelled | enforced |
+|---|---|---|---|
+| record numbers | **1-based** | `0` | `if (_crn64 == 0) return false` (dbarea.cpp) |
+| engine and local slots | **0-based** | `-1` | `join()`/`leave()` refuse negatives |
+| workspace handles | a KEY, no base | `0` | never minted -- `next_handle_ref_bump` starts at 1 |
+
+A rule that holds across two OPPOSITE bases is a rule about absence, not about
+numbering. That is why it survives the question that produced it: the steward
+asked whether 0-basing was the problem, and the answer is that the problem is
+indifferent to the base -- which is only visible once the rule is stated
+separately from the numbering it was found in.
 
 ## 3. R2 applied -- the measurement that settles System A vs System B
 
