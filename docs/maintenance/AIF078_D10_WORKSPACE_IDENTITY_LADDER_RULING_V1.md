@@ -27,6 +27,9 @@ ai_report_audit:
     supersedes: D9 sec 9b's persistence half. See sec 6.
     accepted_by: maintainer (member.derald), in-session 2026-08-23 -- "accept".
       Covers D10.2, D10.4 and D10.5; D10.1 and D10.3 were already his.
+    accepted_r6: maintainer (member.derald), in-session 2026-08-23 -- "r6 accept",
+      with R6.1-R6.3 as resolved on review. R6.3 binds RETROACTIVELY -- "clean
+      start" -- so kNoAreaOrdinal becomes work rather than a chartered note.
   report:
     path: docs/maintenance/AIF078_D10_WORKSPACE_IDENTITY_LADDER_RULING_V1.md
     kind: ruling
@@ -34,8 +37,10 @@ ai_report_audit:
 
 # AIF-078 -- D10: one identity ladder, three rungs, and a workspace is born durable
 
-Status: **ruling, ACCEPTED 2026-08-23**, with ONE AMENDMENT OUTSTANDING --
-**R6 (sec 2a) is review-needed**; the accepted rule set was five. D10.1 and D10.3 are the STEWARD's,
+Status: **ruling, ACCEPTED 2026-08-23.** The original five rules were accepted
+in-session ("accept"); **R6 (sec 2a) was accepted separately the same day
+("r6 accept") after its own review**, carrying resolutions R6.1-R6.3. The
+accepted set is now SIX. D10.1 and D10.3 are the STEWARD's,
 given in-session. D10.2, D10.4 and D10.5 were the author's recommendations and
 were **accepted by the steward in-session the same day -- "accept"** -- which
 is what moves this document out of review-needed. One branch remains open
@@ -124,8 +129,8 @@ this document:**
 > what produced the conflict.
 >
 > **R6 -- An absent value must not be representable in the space of present
-> ones.** *(AMENDMENT 2026-08-23, review-needed -- the accepted set was five.
-> See sec 2a, and the three RESOLUTIONS it carries.)* "None", "not yet", "not
+> ones.** *(Amendment 2026-08-23, ACCEPTED the same day after its own review --
+> "r6 accept". See sec 2a and resolutions R6.1-R6.3.)* "None", "not yet", "not
 > applicable" and "free" are not data and must not be spelled like data.
 >
 > **The test is whether a CORRECT PRODUCER COULD EVER EMIT THE VALUE** -- not
@@ -137,8 +142,9 @@ this document:**
 
 ## 2a. R6, and the basing question that produced it
 
-**AMENDMENT, 2026-08-23. Status: review-needed, WITH THE REVIEW'S THREE
-RESOLUTIONS APPLIED (R6.1-R6.3, below).** The accepted ruling had five
+**AMENDMENT, 2026-08-23. Status: ACCEPTED** -- "r6 accept", after a review
+whose three objections were raised against the author's own draft and are
+resolved below as R6.1-R6.3. The accepted ruling had five
 rules. R6 was added after the steward asked a question that deserved a measured
 answer rather than an opinion: *"is the problem areas is 0 based? Is the cost of
 keeping it that way greater than conforming?"*
@@ -273,14 +279,17 @@ to bless what its author had already written. The order is:
      where values are made, not merely documented where they are read.
   3. **Never** a value a correct producer could emit.
 
-CONSEQUENCE THE AUTHOR OWES, recorded rather than quietly skipped: under R6.3,
-`kNoAreaOrdinal` is a BORDERLINE case. It is compliant under R6.1 and it is
-reserved and named, but a type was very nearly free there -- `AreaOrdinal`
-travels in model structs and across the async boundary, and
-`std::optional<AreaOrdinal>` would have made "no area" unspellable rather than
-merely reserved. Re-pointing it is chartered follow-up work, not a defect. The
-rule that excuses the code its author wrote is the rule to distrust, which is
-why this is written down instead of settled in the code's favour.
+CONSEQUENCE THE AUTHOR OWES, and the steward made it WORK rather than a note.
+Under R6.3 `kNoAreaOrdinal` is a BORDERLINE case: compliant under R6.1, reserved
+and named, but a type was very nearly free there -- `AreaOrdinal` travels in
+model structs and across the async boundary, and `std::optional<AreaOrdinal>`
+makes "no area" unspellable rather than merely reserved.
+
+**R6.3 BINDS RETROACTIVELY** (steward, 2026-08-23: *"clean start"*). The
+borderline case is not grandfathered: the sentinel is re-pointed onto the type.
+The rule that excuses the code its author wrote is the rule to distrust -- and
+the steward declined to let this one do that, which is what makes R6.3 a rule
+rather than a preference.
 
 ### Why R6 is the right abstraction, and this is the evidence that decided it
 

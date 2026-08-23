@@ -43,26 +43,27 @@ using AreaId = std::uint64_t;
 // with + 1 or - 1 again.
 using AreaOrdinal = std::uint64_t;
 
-// NO AREA. Deliberately not 0, because ordinal 0 is the FIRST area -- the exact
-// collision this constant exists to prevent. The old display conversion read
-// `id == 0 ? "none"`, which was safe only while ids were 1-based; carrying that
-// spelling onto a 0-based ordinal would have made "no area" and "the first
-// area" the same value. Absent must not be spelled like fine.
+// NO AREA is a TYPE, not a value -- ruling D10 R6.3, and it binds retroactively
+// by steward direction 2026-08-23 ("clean start").
 //
-// STATUS UNDER R6.3 (ruling D10 sec 2a, on review 2026-08-23): BORDERLINE, and
-// said here so this is not read as the exemplary form. R6.3 orders the choices
-// -- make absence UNREPRESENTABLE BY TYPE where a type is free, and reserve a
-// named value only where it is not. A type was very nearly free here: this
-// travels in model structs and across the async boundary, and
-// std::optional<AreaOrdinal> would have made "no area" unspellable rather than
-// merely reserved. Compliant under R6.1 (no correct producer can emit ~0 as a
-// list index) and reserved and named -- but re-pointing it is chartered work.
-inline constexpr AreaOrdinal kNoAreaOrdinal = ~AreaOrdinal{0};
+// This was `kNoAreaOrdinal = ~0`: reserved, named, and compliant under R6.1,
+// because no correct producer can emit ~0 as an index into a list that will
+// never hold 2^64-1 areas. It was still the WEAKER form. R6.3 orders the
+// choices -- make absence unrepresentable BY TYPE where a type is free, and
+// reserve a named value only where it is not -- and a type was free here.
+//
+// What the type buys over the sentinel, concretely: the DEFAULT is absence, so
+// a field that nobody set cannot read as "area 0"; there is no constant to
+// compare against and therefore none to forget; and arithmetic on an unset
+// ordinal does not compile instead of quietly computing on ~0. The rule that
+// excuses the code its author wrote is the rule to distrust, and this is the
+// author's own sentinel being held to it.
+using MaybeAreaOrdinal = std::optional<AreaOrdinal>;
 
 // The ONE display conversion, replacing three identical copies that lived in
 // session.cpp, main_frame.cpp and gui_workspace_format.cpp.
-inline std::string format_area_ordinal(AreaOrdinal ordinal) {
-    return ordinal == kNoAreaOrdinal ? std::string("none") : std::to_string(ordinal);
+inline std::string format_area_ordinal(const MaybeAreaOrdinal& ordinal) {
+    return ordinal ? std::to_string(*ordinal) : std::string("none");
 }
 
 // AIF-120, multi-workspace GUI slice. Design invariant I1
@@ -116,7 +117,7 @@ struct OpenTableResult {
     bool ok {false};
     AreaId area_id {0};
     // Where it landed in the list -- the number to show, never area_id - 1.
-    AreaOrdinal ordinal {kNoAreaOrdinal};
+    MaybeAreaOrdinal ordinal;
     // Which workspace took it. Carried for the same reason the ordinal is:
     // the session had the DbArea in hand and knew the exact answer, and a view
     // that has only an id cannot work it out afterwards. Never blank (I1).
@@ -182,7 +183,7 @@ struct AreaInfo {
     AreaId area_id {0};
     // The positional rung, carried rather than reconstructed. A view that
     // renders this never has to know what an AreaId is made of.
-    AreaOrdinal ordinal {kNoAreaOrdinal};
+    MaybeAreaOrdinal ordinal;
     // Never blank -- DEFAULT is a workspace (invariant I1).
     std::string workspace {kDefaultWorkspace};
     bool active {false};
@@ -194,14 +195,14 @@ struct AreaInfo {
 
 struct ListAreasResult {
     AreaId active_area_id {0};
-    AreaOrdinal active_ordinal {kNoAreaOrdinal};
+    MaybeAreaOrdinal active_ordinal;
     std::vector<AreaInfo> areas;
     std::vector<StatusMessage> messages;
 };
 
 struct WorkspaceIndexInfo {
     AreaId area_id {0};
-    AreaOrdinal ordinal {kNoAreaOrdinal};
+    MaybeAreaOrdinal ordinal;
     std::string workspace {kDefaultWorkspace};
     std::string area_name;
     std::string kind;
@@ -234,7 +235,7 @@ struct WorkspaceRelationInfo {
 
 struct WorkspaceModel {
     AreaId active_area_id {0};
-    AreaOrdinal active_ordinal {kNoAreaOrdinal};
+    MaybeAreaOrdinal active_ordinal;
     // Scope of the selector, and the grouping key of every page above.
     std::string current_workspace {kDefaultWorkspace};
     std::vector<std::string> workspaces {std::string(kDefaultWorkspace)};

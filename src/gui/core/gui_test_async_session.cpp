@@ -387,7 +387,16 @@ int main() {
             // old spelling this could not fail, because the displayed number WAS
             // id - 1 by construction. It can fail now, which is what makes it
             // worth asserting.
-            if (!require(after.areas[0].area_id != after.areas[0].ordinal + 1,
+            //
+            // The position is dereferenced explicitly, and that is R6.3 showing
+            // its work: since the ordinal became std::optional, arithmetic on an
+            // UNSET one does not compile. Under the old sentinel this line would
+            // have cheerfully computed on ~0 and compared it.
+            if (!require(after.areas[0].ordinal.has_value(),
+                         "the surviving area reported no position at all")) {
+                return EXIT_FAILURE;
+            }
+            if (!require(after.areas[0].area_id != *after.areas[0].ordinal + 1,
                          "identity and position are still the same number wearing two names")) {
                 return EXIT_FAILURE;
             }

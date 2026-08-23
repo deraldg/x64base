@@ -192,7 +192,7 @@ struct WorkspaceOpenIndexAttachment {
     // AIF-078. This is parsed out of the CLI's "Area <n>" line, and that n is a
     // POSITION. It used to be stored as an AreaId with a + 1 welded on, which is
     // what made a positional token and an identity the same C++ type.
-    AreaOrdinal area_ordinal {kNoAreaOrdinal};
+    MaybeAreaOrdinal area_ordinal;
     std::filesystem::path container;
 };
 
@@ -1615,24 +1615,29 @@ struct Session::Impl {
 
     // The identity rung -> the positional rung. A LOOKUP, not arithmetic, and
     // it fails in the return value (D10 R3): an id that is not in the list has
-    // no position, and kNoAreaOrdinal says so out loud.
-    AreaOrdinal ordinal_of(AreaId id) const {
+    // no position, and under R6.3 that is an EMPTY OPTIONAL rather than a
+    // reserved number -- so a caller cannot forget to check it and then do
+    // arithmetic on the answer.
+    MaybeAreaOrdinal ordinal_of(AreaId id) const {
         for (std::size_t i = 0; i < areas.size(); ++i) {
             if (areas[i]->id == id) {
                 return static_cast<AreaOrdinal>(i);
             }
         }
-        return kNoAreaOrdinal;
+        return std::nullopt;
     }
 
-    // The positional rung -> the identity rung. Also a lookup. kNoAreaOrdinal is
-    // enormous, so the bounds test rejects it without a special case.
-    Area* find_area_by_ordinal(AreaOrdinal ordinal) {
-        return ordinal < areas.size() ? areas[static_cast<std::size_t>(ordinal)].get() : nullptr;
+    // The positional rung -> the identity rung. Also a lookup. Takes the
+    // optional so "no ordinal" and "ordinal past the end" both land on the same
+    // honest nullptr, and neither needs a magic number to say so.
+    Area* find_area_by_ordinal(const MaybeAreaOrdinal& ordinal) {
+        if (!ordinal || *ordinal >= areas.size()) return nullptr;
+        return areas[static_cast<std::size_t>(*ordinal)].get();
     }
 
-    const Area* find_area_by_ordinal(AreaOrdinal ordinal) const {
-        return ordinal < areas.size() ? areas[static_cast<std::size_t>(ordinal)].get() : nullptr;
+    const Area* find_area_by_ordinal(const MaybeAreaOrdinal& ordinal) const {
+        if (!ordinal || *ordinal >= areas.size()) return nullptr;
+        return areas[static_cast<std::size_t>(*ordinal)].get();
     }
 
     // What to SHOW. Every caller that used to write visible_area_id writes
