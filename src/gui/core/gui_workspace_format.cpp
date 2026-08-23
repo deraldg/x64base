@@ -159,8 +159,11 @@ std::string format_workspace_graph_text(const WorkspaceModel& model,
                     graph << " TO " << relation.child_key;
                 }
             }
-            if (relation.match_count > 0) {
-                graph << "  (" << relation.match_count << " matches)";
+            // R6. Previously `> 0`, which hid a measured zero and an
+            // uncomputed count behind the same silence. A zero is an ANSWER
+            // and now prints; only absence stays silent.
+            if (relation.match_count) {
+                graph << "  (" << *relation.match_count << " matches)";
             }
             graph << "\n";
         }

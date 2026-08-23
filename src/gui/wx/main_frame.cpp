@@ -1361,7 +1361,7 @@ void MainFrame::ApplyRelations(const WorkspaceModel& model) {
         relations_grid_->SetCellValue(grid_row, 2, relation.child);
         relations_grid_->SetCellValue(grid_row, 3, relation.parent_key);
         relations_grid_->SetCellValue(grid_row, 4, relation.child_key);
-        relations_grid_->SetCellValue(grid_row, 5, std::to_string(relation.match_count));
+        relations_grid_->SetCellValue(grid_row, 5, dottalk::gui::format_match_count(relation.match_count));
         relations_grid_->SetCellValue(grid_row, 6, relation.source);
     }
     relations_grid_->AutoSizeColumns(false);

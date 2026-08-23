@@ -214,6 +214,27 @@ struct WorkspaceIndexInfo {
     std::string backend;
 };
 
+// A relation's match count, and the ABSENCE of one.
+//
+// D10 R6: an absent value must not be representable in the space of present
+// ones. This field was `std::uint64_t match_count {0}` and 0 meant BOTH "no
+// rows matched" and "never computed" -- and the two are not the same answer.
+// The producer already distinguishes them: set_relations.cpp:1010 prints
+// "(matches: n/a)" when it could not compute one, and the parser threw that
+// away with value_or(0). main_frame.cpp then showed the user "0".
+//
+// R6.3 says prefer the TYPE where it is free. It is free here, exactly as it
+// was for MaybeAreaOrdinal, and R6.3 binds retroactively -- "clean start".
+// The default is now ABSENCE, so a field nobody set cannot read as a measured
+// zero, and arithmetic on an uncomputed count does not compile.
+using MatchCount = std::uint64_t;
+using MaybeMatchCount = std::optional<MatchCount>;
+
+// Rendered form. Absent is not "0" and is not a lie -- it is nothing.
+inline std::string format_match_count(const MaybeMatchCount& count) {
+    return count ? std::to_string(*count) : std::string();
+}
+
 struct WorkspaceRelationInfo {
     // The relation's OWNING workspace.
     //
@@ -229,7 +250,7 @@ struct WorkspaceRelationInfo {
     std::string child;
     std::string parent_key;
     std::string child_key;
-    std::uint64_t match_count {0};
+    MaybeMatchCount match_count;
     std::string source;
 };
 
