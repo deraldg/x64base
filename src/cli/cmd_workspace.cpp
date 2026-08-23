@@ -4139,8 +4139,22 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
                     // 0-based, matching the engine slot beside it (owner ruling
                     // 2026-08-22). The two columns now agree on where counting
                     // starts, which is the whole point of the rebase.
+                    // AIF-078 2026-08-23: the AREA's session handle printed
+                    // beside its two POSITIONS, which is the identity ladder
+                    // made visible in one line -- local slot and engine slot
+                    // are addresses and are REUSED; the handle is a name and is
+                    // never reused. This is also what gives DbArea::areaHandle()
+                    // a reader: a field with a writer and no readers is the
+                    // AIF-079 shape, and minting one while closing another
+                    // would have been a poor trade.
+                    auto* eng_for_handle = shell_engine();
+                    const std::uint64_t ah =
+                        (eng_for_handle && mem[i] >= 0 && mem[i] < xbase::MAX_AREA)
+                            ? eng_for_handle->area(mem[i]).areaHandle()
+                            : 0;
                     std::cout << "    local " << i
-                              << "  engine slot " << mem[i] << "\n";
+                              << "  engine slot " << mem[i]
+                              << "  area handle " << ah << "\n";
                 }
             }
 

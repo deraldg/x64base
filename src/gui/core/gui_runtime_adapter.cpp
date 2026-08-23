@@ -8,6 +8,7 @@
 // status: supported
 
 #include "gui/core/gui_runtime_adapter.hpp"
+#include "xbase/workspace_membership.hpp"   // an area knows its workspace (AIF-078)
 
 #include "cli/order_iterator.hpp"
 #include "cli/order_state.hpp"
@@ -138,10 +139,31 @@ void populate_cursor_state(TableSnapshot& snapshot, xbase::DbArea& area, int32_t
 } // namespace
 
 std::string gui_workspace_of_area(AreaId /*area_id*/) {
-    // One flat area array, no owner back-pointer: every open area is in DEFAULT
-    // until the registry lands. Deliberately ignores the id rather than
-    // pretending to consult something.
+    // STILL A STUB, and now for a NARROWER reason than the one it used to give.
+    //
+    // It used to say "no owner back-pointer ... until the registry lands." The
+    // registry landed (AIF-078), and an area DOES know its workspace -- see the
+    // DbArea overload below, which is exact. What is still missing is a way to
+    // get from an AreaId to an area, because AreaId itself had two spellings in
+    // one type: session.cpp minted a private counter while another path derived
+    // it as engine slot + 1. Unifying those onto DbArea::areaHandle() is the
+    // next step and is what makes this body writable.
+    //
+    // Deliberately still ignores the id rather than pretending to consult
+    // something -- and returns a real name rather than an empty string, because
+    // invariant I1 says there is no null workspace.
     return std::string(kDefaultWorkspace);
+}
+
+std::string gui_workspace_of_area(const xbase::DbArea& area) {
+    const std::uint64_t handle = area.wsHandle();
+    if (handle == 0) {
+        // Closed areas carry handle 0 -- "no workspace" -- and I1 says a name
+        // must still come back.
+        return std::string(kDefaultWorkspace);
+    }
+    const std::string name = xbase::workspace::name_of(handle);
+    return name.empty() ? std::string(kDefaultWorkspace) : name;
 }
 
 AreaInfo gui_area_info_from_dbarea(AreaId area_id,
@@ -150,7 +172,9 @@ AreaInfo gui_area_info_from_dbarea(AreaId area_id,
                                    const std::string& display_name) {
     AreaInfo info;
     info.area_id = area_id;
-    info.workspace = gui_workspace_of_area(area_id);
+    // The AREA is in hand here, so ask the exact question rather than the
+    // one that still cannot be answered from an id alone.
+    info.workspace = gui_workspace_of_area(area);
     info.active = active;
     info.path = runtime_path(area);
     info.display_name = display_name.empty() ? area.logicalName() : display_name;

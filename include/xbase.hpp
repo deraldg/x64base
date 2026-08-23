@@ -41,6 +41,37 @@ namespace xbase {
 constexpr int           MAX_FIELDS = static_cast<int>(dottalk::build::max_fields);             // was 256
 constexpr int           MAX_INDEX  = static_cast<int>(dottalk::build::legacy_max_index_slots); // was 5
 constexpr int           MAX_AREA   = static_cast<int>(dottalk::build::max_areas);              // was 512
+
+// AIF-078 -- THE AREA'S SESSION HANDLE (steward, 2026-08-23: "i accept your
+// recommendation").
+//
+// Workspaces got a monotonic never-reused handle; areas did not, and the gap
+// showed. AreaId in the GUI had TWO spellings in one type: session.cpp minted a
+// counter of its own, while another path derived it as engine slot + 1. Two
+// spellings of one identity is the defect R5 of the identity ladder names, and
+// it is why gui_workspace_of_area() could not be written honestly -- its
+// parameter had no single meaning, so no correct body existed.
+//
+// A COMPOSITE OF (workspace, slot) WOULD NOT HAVE FIXED IT. Both parts are
+// POSITIONS and both are reused -- workspace::join() deliberately reuses the
+// lowest free local slot, and its own comment says renumbering is not an option
+// "because a local slot is an address". Composing two addresses yields a
+// two-dimensional address, not a name; and it would change if an area ever
+// moved between workspaces, while an identity that changes when the thing has
+// not is not an identity.
+//
+// So the area gets the same rung the workspace has: minted at open(), MONOTONIC
+// within the session, NEVER REUSED after close, and 0 meaning "not open". Never
+// reused for the reason the workspace handle is not: a stale id held by a view
+// must resolve to GONE and never to somebody else.
+//
+// NOT PERSISTED. This is the SESSION rung. The durable rung for an area is its
+// path (later a catalog id), and the positional rung stays the engine and local
+// slots -- derivation runs downward only (ladder R1).
+inline std::uint64_t next_area_handle() noexcept {
+    static std::uint64_t next = 0;
+    return ++next;
+}
 // Record-size guardrails (fixed record = sum of field widths). Hard ceiling catches
 // corrupt/absurd 64-bit record lengths; soft advisory nudges wide rows toward memo.
 constexpr std::uint64_t X64_MAX_RECORD_SIZE      = dottalk::build::x64::max_record_bytes;       // was 16 MiB
@@ -252,6 +283,8 @@ public:
     // wrong. They are now two members with two names, and neither comment has
     // to be read as a claim about the other.
     [[nodiscard]] uint64_t wsHandle()    const noexcept { return _ws_handle;     }
+    // The area's own session identity. 0 = not open. See next_area_handle().
+    [[nodiscard]] uint64_t areaHandle()  const noexcept { return _area_handle;   }
     [[nodiscard]] int32_t  engineSlot()  const noexcept { return _engine_slot;   }
     [[nodiscard]] int32_t  wsLocalSlot() const noexcept { return _ws_local_slot; }
 
@@ -498,6 +531,12 @@ private:
     // unbounded areas OUT on 2026-08-22, so a wider slot would be churn with
     // no capacity behind it.
     uint64_t    _ws_handle{0};
+    // AIF-078 2026-08-23. The AREA's session handle -- minted by open(), cleared
+    // by close(), never reused. 64-bit for the same reason _ws_handle is: it is
+    // a monotonic counter over the life of a session, not an index into
+    // anything, so MAX_AREA does not bound it. Opening and closing one area in a
+    // loop advances it without limit, which is the point.
+    uint64_t    _area_handle{0};
     int32_t     _engine_slot{-1};
     int32_t     _ws_local_slot{-1};
 

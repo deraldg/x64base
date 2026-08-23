@@ -229,6 +229,12 @@ void DbArea::open(const std::string& filename)
     // registry seeds itself holding DEFAULT = 1 and nothing sets the current
     // handle yet, so every area still resolves to 1 exactly as before.
     _ws_handle = workspace::current_handle();
+    // AIF-078 2026-08-23: the AREA's own session handle, minted at the same
+    // choke point and for the same reason the workspace join lives here rather
+    // than at the eight src/cli call sites that reach open(). Monotonic, never
+    // reused, 0 while closed -- so a stale id held by a view resolves to GONE
+    // and never to somebody else.
+    _area_handle = next_area_handle();
     const std::int32_t local = workspace::join(_ws_handle, _engine_slot);
     // Local slots are 0-BASED (owner ruling 2026-08-22), so the guard is
     // >= 0 and not > 0 -- slot 0 is the first real member, and only the

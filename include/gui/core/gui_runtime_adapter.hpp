@@ -41,6 +41,14 @@ namespace dottalk::gui {
 /// invariant I1 -- there is no null workspace.
 std::string gui_workspace_of_area(AreaId area_id);
 
+/// The same question, asked of an area we already hold -- and this one has a
+/// real answer (AIF-078, 2026-08-23). The engine stamps _ws_handle at open(),
+/// so an area in hand knows its workspace in O(1) with no lookup and no
+/// assumption about what an AreaId means. Prefer this overload wherever the
+/// DbArea is available; the AreaId form above stays for callers that hold only
+/// an id, and is honest about what it cannot yet resolve.
+std::string gui_workspace_of_area(const xbase::DbArea& area);
+
 AreaInfo gui_area_info_from_dbarea(AreaId area_id,
                                    bool active,
                                    const xbase::DbArea& area,

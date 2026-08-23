@@ -120,6 +120,11 @@ void DbArea::close() {
     workspace::leave(_ws_handle, _engine_slot);
     _ws_handle = 0;
     _ws_local_slot = -1;
+    // The area handle is CLEARED, never reassigned: the next open() mints a
+    // fresh one. That is what makes a stale id resolve to "gone" instead of to
+    // whatever opened into this slot next -- the engine slot IS reused, and
+    // this is the field that does not.
+    _area_handle = 0;
 
     // x64/VFP extras
     _dbf_version_byte = 0x03;
