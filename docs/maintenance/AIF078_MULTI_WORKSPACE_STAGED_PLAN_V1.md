@@ -499,3 +499,75 @@ from the tree at authoring time.
    and `gui_workspace_format.cpp:146` already filters on it. Leaving it
    workspace-blind while the CLI store is re-keyed recreates the two-resolver
    defect I1.3a closed, one layer up.
+
+### 11j. AMENDMENT 2026-08-23 -- item 6 CLOSED, and one new item owed
+
+Status of this section's item 6, and a surface it did not name. Both measured
+in the tree at `53b1a129e`, not read from a cache.
+
+**Item 6 is CLOSED.** `merge_relation` was brought into agreement with D9.1,
+not excluded. It now lives at `src/gui/core/relation_parse.cpp` -- lifted out
+of session.cpp's anonymous namespace, where nothing could link it and so
+nothing could settle it. `workspace` IS in the identity predicate; the
+empty-key fallback is DELETED (no relation in this tree is keyless --
+`add_relation` refuses empty field lists at `set_relations.cpp:570`, and
+`import_relations` at `:841` routes REL LOAD back through it); and a keyless
+line is refused AT THE PRODUCER per D10 R6.3. Held by
+`dottalkpp_relation_merge_test`, eight arms, links nothing.
+
+**NEW, OWED, and this is the one to plan for rather than discover:**
+
+7. **THE GUI IS NAME-KEYED AND D9.1 KEYS ON A HANDLE. Rule the conversion, and
+   rule WHERE it lives, before stage 4 cuts I1.2.**
+
+   This is not a relation quirk. Four structs in `include/gui/core/model.hpp`
+   (`:124`, `:188`, `:206`, `:248`) plus `current_workspace` (`:261`) and the
+   `workspaces` list (`:262`) all carry `std::string workspace
+   {kDefaultWorkspace}`. Every GUI filter compares those NAMES
+   (`gui_workspace_format.cpp:78`, `:98`, `:103`, `:115`, `:146`). D9.1 keys
+   both ends of a relation on a `ws_handle`.
+
+   THE CONVERSION IS LEGAL AND ALREADY EXISTS, in both directions and with the
+   right failure discipline: `workspace_membership.hpp:227` `find_by_name_ci`
+   returns 0 for "no such workspace", `:161` `name_of` returns an empty string,
+   and the header at `:166` states the doctrine outright -- failure is reported
+   in the return value, not thrown. Name is the DURABLE rung and handle the
+   SESSION rung, so name -> handle runs DOWNWARD, which R1 permits.
+
+   SO THE QUESTION IS NOT WHICH RUNG IS RIGHT. It is that the GUI persists its
+   model to posture files, where a NAME survives a session and a HANDLE does
+   not, while the engine's store is runtime, where the handle is the identity.
+   That is exactly the seam **D8** already ruled -- persistence vs runtime --
+   so the conversion belongs AT that seam and should be named there once,
+   rather than appearing implicitly at each of the eleven sites above.
+
+   TWO THINGS TO SETTLE WITH IT, both cheap now:
+
+   a. `owning_workspace_now()` (`src/gui/core/session.cpp:507`) reads
+      `name_of(current_handle())` and, when that comes back EMPTY, returns
+      `kDefaultWorkspace`. It converts a FAILURE into a real workspace name
+      that a real workspace could also carry -- absent mapped into the space of
+      present, which R6 forbids, in the one function that is now the GUI's
+      single entry point for the value. EITHER it is unreachable, in which case
+      it is an AIF-118 instance (same answer for absent and fine) and the
+      fallback should say so; OR it is reachable and it is an R6 violation.
+      This lane did not determine which and is not guessing -- two predictions
+      of mine were falsified on 2026-08-23 by asserting reachability from
+      source alone.
+
+   b. `kDefaultWorkspace = "DEFAULT"` (`model.hpp:80`) and `kDefaultName =
+      "DEFAULT"` (`workspace_membership.hpp:69`) are TWO INDEPENDENT
+      DECLARATIONS of the same literal, in two headers, with nothing linking
+      them. They agree today. Changing either one silently stops the GUI's
+      model from agreeing with the engine's table, which is the two-resolver
+      shape I1.3a closed -- one question, two answers, neither saying which it
+      had picked.
+
+   **status: review-needed.** Authored by `member.ai.claude.cowork`; the author
+   does not self-approve.
+
+**Good Neighbor.** WHAT CHANGED: this section only -- no code. WHOSE AREA:
+`src/gui` is this lane's; `include/xbase/workspace_membership.hpp` and
+`src/cli/set_relations.cpp` were READ, not touched. WHAT AUTHORIZATION:
+steward, in-session 2026-08-23. HOW TO VERIFY: every line number above is a
+direct quote at `53b1a129e`. HOW TO UNDO: delete this section.
