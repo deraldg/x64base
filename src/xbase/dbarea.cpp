@@ -117,7 +117,9 @@ void DbArea::close() {
     // vacated local slot is reused by the next join rather than shifting the
     // survivors down -- a local slot is an address, and re-addressing live
     // members silently would be worse than a gap.
-    workspace::leave(_ws_handle, _engine_slot);
+    // R6: only a WORK AREA ever joined, so only a work area leaves. A scratch
+    // handle (no engine slot) was never a member -- see dbf_file.cpp's open().
+    if (_engine_slot >= 0) workspace::leave(_ws_handle, _engine_slot);
     _ws_handle = 0;
     _ws_local_slot = -1;
     // The area handle is CLEARED, never reassigned: the next open() mints a

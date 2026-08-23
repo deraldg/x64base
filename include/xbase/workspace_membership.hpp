@@ -334,6 +334,22 @@ inline bool destroy(std::uint64_t h) {
 // untouched precisely because it is NEGATIVE and not zero -- had it been 0, the
 // first valid slot and "no such workspace" would now be the same value.
 inline std::int32_t join(std::uint64_t h, std::int32_t engine_slot) {
+    // R6 (ruling D10 sec 2a, 2026-08-23): an absent value must not be
+    // representable in the space of present ones.
+    //
+    // A NEGATIVE slot is not a position. It means "this area has no engine slot
+    // at all" -- and -1 is ALSO this array's FREE-ENTRY marker, four lines
+    // below. Two different absences shared one value, so the idempotence scan
+    // matched the first FREE entry, returned its index, and CLAIMED NOTHING.
+    // Every slotless DbArea in the tree therefore "joined" as a silent no-op:
+    // roughly 47 of them (message_catalog 16, bbs_store 14, cmd_workspace 5,
+    // the GUI's session areas, and a dozen more), each one reporting a local
+    // slot it did not hold.
+    //
+    // Refused in the RETURN VALUE and not by printing: this is a membership
+    // table, and giving it an output dependency to announce a precondition the
+    // caller can check is the wrong trade. R3 -- failure travels in the return.
+    if (engine_slot < 0) return -1;
     auto it = table().find(h);
     if (it == table().end()) return -1;
     auto& m = it->second.members;
@@ -351,6 +367,10 @@ inline std::int32_t join(std::uint64_t h, std::int32_t engine_slot) {
 // shifting everything after it, because shifting would silently re-address
 // live members.
 inline void leave(std::uint64_t h, std::int32_t engine_slot) {
+    // R6, the symmetric half. A negative "leave" would match the first FREE
+    // entry for exactly the reason join() did, so it cleared a hole and called
+    // it a departure. Nothing that never joined can leave.
+    if (engine_slot < 0) return;
     auto it = table().find(h);
     if (it == table().end()) return;
     auto& m = it->second.members;

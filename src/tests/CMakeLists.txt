@@ -22,6 +22,17 @@ if(DOTTALK_WITH_INDEX AND TARGET xindex)
   add_test(NAME dottalkpp_lmdb_backend_smoke COMMAND dottalkpp_lmdb_backend_smoke)
 endif()
 
+# ---- Workspace membership: R6, absent is not a value -----------------------
+# Header-only (include/xbase/workspace_membership.hpp is all inline), so this
+# links nothing and touches no filesystem. Proves join()/leave() refuse a
+# NEGATIVE engine slot -- the value that used to mean both "this area has no
+# slot" and "this member entry is free". See ruling D10 sec 2a.
+add_executable(dottalkpp_workspace_membership_test
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_workspace_membership.cpp
+)
+target_include_directories(dottalkpp_workspace_membership_test PRIVATE ${CMAKE_SOURCE_DIR}/include)
+add_test(NAME dottalkpp_workspace_membership_test COMMAND dottalkpp_workspace_membership_test)
+
 add_executable(dottalkpp_security_policy_test
   ${CMAKE_CURRENT_SOURCE_DIR}/test_security_policy.cpp
 )

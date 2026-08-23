@@ -235,13 +235,26 @@ void DbArea::open(const std::string& filename)
     // reused, 0 while closed -- so a stale id held by a view resolves to GONE
     // and never to somebody else.
     _area_handle = next_area_handle();
-    const std::int32_t local = workspace::join(_ws_handle, _engine_slot);
-    // Local slots are 0-BASED (owner ruling 2026-08-22), so the guard is
-    // >= 0 and not > 0 -- slot 0 is the first real member, and only the
-    // NEGATIVE return means join() refused. This line read `> 0` for the
-    // first day of its life, when slots were 1-based; under 0-basing that
-    // spelling would silently drop every workspace's first area.
-    if (local >= 0) _ws_local_slot = local;
+    // R6 (ruling D10 sec 2a, 2026-08-23). A DbArea WITH NO ENGINE SLOT IS NOT A
+    // WORK AREA. It is a scratch handle -- a local object opened inside a
+    // function to read or write one file and dead at the closing brace -- and
+    // there are roughly 47 of them in this tree. setEngineSlot() has exactly one
+    // caller (XBaseEngine's constructor, over its own array), so anything not in
+    // that array carries -1 for life.
+    //
+    // Every one of those used to call join(h, -1), which matched the member
+    // array's own free-entry marker and claimed nothing. The no-op was harmless
+    // and ACCIDENTAL; this makes the precondition explicit, and it is what lets
+    // join() refuse a negative slot outright rather than absorb it.
+    if (_engine_slot >= 0) {
+        const std::int32_t local = workspace::join(_ws_handle, _engine_slot);
+        // Local slots are 0-BASED (owner ruling 2026-08-22), so the guard is
+        // >= 0 and not > 0 -- slot 0 is the first real member, and only the
+        // NEGATIVE return means join() refused. This line read `> 0` for the
+        // first day of its life, when slots were 1-based; under 0-basing that
+        // spelling would silently drop every workspace's first area.
+        if (local >= 0) _ws_local_slot = local;
+    }
 }
 
 void DbArea::readHeader()

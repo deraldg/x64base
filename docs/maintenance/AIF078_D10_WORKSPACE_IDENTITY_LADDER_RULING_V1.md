@@ -34,7 +34,8 @@ ai_report_audit:
 
 # AIF-078 -- D10: one identity ladder, three rungs, and a workspace is born durable
 
-Status: **ruling, ACCEPTED 2026-08-23.** D10.1 and D10.3 are the STEWARD's,
+Status: **ruling, ACCEPTED 2026-08-23**, with ONE AMENDMENT OUTSTANDING --
+**R6 (sec 2a) is review-needed**; the accepted rule set was five. D10.1 and D10.3 are the STEWARD's,
 given in-session. D10.2, D10.4 and D10.5 were the author's recommendations and
 were **accepted by the steward in-session the same day -- "accept"** -- which
 is what moves this document out of review-needed. One branch remains open
@@ -121,6 +122,110 @@ this document:**
 > **R5 -- One tree, one ladder.** A second identity system for the same noun is
 > a DEFECT, not a lane. This is the rule that was missing, and its absence is
 > what produced the conflict.
+>
+> **R6 -- An absent value must not be representable in the space of present
+> ones.** *(AMENDMENT 2026-08-23, review-needed -- the accepted set was five.
+> See sec 2a.)* "None", "not yet", "not applicable" and "free" are not data and
+> must not be spelled like data. Absence goes out of band -- negative for a
+> position, 0 reserved for a key, an explicit sentinel or an optional for an
+> unsigned count -- and two DIFFERENT absences never share one value.
+
+
+## 2a. R6, and the basing question that produced it
+
+**AMENDMENT, 2026-08-23. Status: review-needed.** The accepted ruling had five
+rules. R6 was added after the steward asked a question that deserved a measured
+answer rather than an opinion: *"is the problem areas is 0 based? Is the cost of
+keeping it that way greater than conforming?"*
+
+### The answer: 0-basing caused one defect out of four
+
+| defect found this day | caused by 0-basing? |
+|---|---|
+| `AreaId` carrying identity and position in one type | no -- base-independent |
+| `id - 1` copied into three files | no -- a base MISMATCH (mint 1-based, display 0-based); one base anywhere removes it |
+| `id == 0 ? "none"` breaking on a 0-based ordinal | **yes** -- 0 is the first area, so there is no free null |
+| `join(h, -1)` claiming nothing | no -- and 1-basing REPRODUCES it |
+
+The last row is the one that decides it. If slots were 1-based and 0 meant
+"none", the member array would still need a free-entry marker and 0 is the
+obvious pick -- so "absent" and "free" would collide again under new numbers.
+**The defect is two meanings sharing one value, not the base.** Renumbering
+moves the collision; it does not remove it.
+
+### The cost of conforming, measured
+
+- **103 `MAX_AREA` references** across roughly 25 files under `src/cli`,
+  `src/xbase`, `src/gui` -- every loop and every bound.
+- The whole visible surface: `Area 0:`, `Current area: 0 of {0..11}`,
+  `area(s) 0..12`, WAM, DBAREAS, STATUS, and the goldens that encode them.
+- **27 saved postures on disk begin `AREA 0 | dbf=...`.** That is DATA AT REST.
+  Renumbering means a posture format version bump plus a migration, and MINIDB
+  containers carry postures INSIDE memo fields, so those travel too.
+- It would reintroduce the mixed-base era the steward ruled out on 2026-08-22,
+  unless local slots move with it.
+
+The cost of KEEPING 0-based is one rule, which is R6.
+
+### The steward had already ruled it, and the reason was recorded
+
+`include/xbase/workspace_membership.hpp:304` --
+
+> The first cut was 1-based out of xBase habit: dBase and FoxPro number work
+> areas from 1, and FoxPro spends 0 on "the lowest unused work area." But this
+> project is an EVOLUTION of that lineage and not a clone of it, so an inherited
+> convention is only worth keeping when it buys something. Here it bought a
+> second numbering base inside one process -- engine slots 0-based, local slots
+> 1-based -- and the only thing a reader gets from that is an off-by-one to
+> remember. Owner ruling: "0 based costs us nothing to maintain forward in
+> workspaces too."
+
+and thirty lines below it, the absence half already stated --
+
+> The failure sentinel survived the rebase untouched precisely because it is
+> NEGATIVE and not zero -- had it been 0, the first valid slot and "no such
+> workspace" would now be the same value.
+
+R6 is that sentence promoted from a comment about one function to a rule about
+the tree.
+
+### The one honest cost of 0-basing, named
+
+FoxPro spends `SELECT 0` on "the lowest unused work area"; here `SELECT 0`
+selects area zero. That is a real divergence for anyone arriving from FoxPro.
+It is already handled deliberately rather than by accident: `USE ... IN FREE`
+(AIF-121) is that idiom given its own NAME instead of being smuggled into a
+magic zero -- which is R6 applied to a verb rather than to a value.
+
+### What R6 would have caught
+
+1. `join(h, engine_slot)` -- `-1` means BOTH "this area has no engine slot" and
+   "this member entry is free", so a slotless area matches a free entry, is
+   handed its index, and claims nothing. Two absences, one value.
+2. `visible_area_id(id)` -- `0` meant "none" while ids were 1-based, and would
+   have meant "the first area" the moment the rung rebased. Caught during the
+   AreaId unification only because the rule was being written at the time;
+   `kNoAreaOrdinal` is `~0` for this reason.
+3. `gui_workspace_of_area(AreaId)` -- returned the constant `DEFAULT` for every
+   input: the same answer for "DEFAULT" and for "I cannot tell". Deleted at
+   `31c06b525` rather than kept as a seam.
+4. DTSHEMA's literal word `none` for an absent index or tag -- testing
+   emptiness alone accepted the sentinel AS DATA and asked the CDX backend for
+   a tag named NONE (AIF-120, `dtschema::is_absent`).
+
+Four instances, three of them shipped. R6 is cheap to obey and the instances
+are expensive to find.
+
+### What R6 requires, concretely
+
+- A slotless `DbArea` is NOT a work area and does not join a workspace:
+  `open()` joins only when `_engine_slot >= 0`.
+- `join()` then REFUSES a negative slot and ANNOUNCES, because after the above
+  nothing sends one -- and a guard that cannot be reached silently is how the
+  first version of this defect survived.
+- The GUI half of the same finding is fixed by construction rather than by
+  patch: its areas take real array slots and therefore pass real numbers. See
+  `claude/AIF078_GUI_AREA_SLOTS_PLAN.md`.
 
 ## 3. R2 applied -- the measurement that settles System A vs System B
 
