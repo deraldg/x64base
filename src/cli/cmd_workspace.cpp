@@ -2531,6 +2531,166 @@ static std::string build_minidb_container(const std::string& posture,
     return c;
 }
 
+// ---------------------------------------------------------------------------
+// AIF-078 D10.2 -- ONE scan, ONE allocator, shared by every catalog writer.
+//
+// Until 2026-08-23 this loop lived inline in save_to_memo, and SAVE was the
+// only writer, so "where a WS_ID comes from" and "where a save supersedes its
+// predecessor" were the same fifteen lines and could not disagree with each
+// other. D10.1 adds a SECOND writer -- WORKSPACE NEW's birth row -- and two
+// copies of an allocator is precisely how max+1 drifts. So the scan is lifted
+// out whole and both writers call it under the same FLOCK. Same discipline as
+// the one relation resolver and the one workspace field parser: the way two
+// things cannot disagree is that there is only one of them.
+//
+// The scan is now PURE. It REPORTS the prior live row instead of superseding
+// it in passing, because DESTROY (D10.3) must supersede a live row WITHOUT
+// writing a replacement, and a scan that supersedes as a side effect cannot
+// serve that caller.
+struct WsChainLink { std::uint64_t id; std::uint64_t prev; };
+
+struct WsCatalogScan {
+    std::uint64_t max_id   = 0;    // highest WS_ID present; max_id + 1 is next
+    std::uint64_t live_id  = 0;    // WS_ID of this name's live row (0 = none)
+    std::int32_t  live_rec = -1;   // its physical recno, for the caller to act on
+    std::vector<WsChainLink> links;  // every row's (WS_ID -> PREV_ID), for chain_root
+};
+
+static WsCatalogScan scan_catalog(xbase::DbArea& a, const std::string& name) {
+    WsCatalogScan s;
+    const std::uint64_t n = a.recCount64();
+    for (std::uint64_t r = 1; r <= n; ++r) {
+        try {
+            a.gotoRec(static_cast<int32_t>(r)); a.readCurrent();
+            const std::uint64_t rid =
+                std::strtoull(trim_copy(get_by_name(a, "WS_ID")).c_str(), nullptr, 10);
+            const std::uint64_t pid =
+                std::strtoull(trim_copy(get_by_name(a, "PREV_ID")).c_str(), nullptr, 10);
+            if (rid > s.max_id) s.max_id = rid;
+            if (rid != 0) s.links.push_back(WsChainLink{rid, pid});
+            // Name comparison kept EXACTLY as the pre-D10 loop had it --
+            // untrimmed, against the raw field -- because this half is
+            // load-bearing for the append-history every save regression
+            // depends on, and a refactor is not the place to change it.
+            if (get_by_name(a, "WS_NAME") == name && get_by_name(a, "SUPERSEDED") != "1") {
+                s.live_id  = rid;
+                s.live_rec = static_cast<std::int32_t>(r);
+            }
+        } catch (...) {}
+    }
+    return s;
+}
+
+// D10.2: a workspace's durable identity is the ROOT of its PREV_ID chain --
+// walk back until PREV_ID is 0 and that row's WS_ID is the workspace. Git's
+// model, and the catalog was already three-quarters of the way there.
+//
+// The walk is BOUNDED by the number of rows scanned and ANNOUNCES when the
+// bound is hit, rather than returning a plausible number in silence. That is
+// the direct lesson of the relation depth cap, which was hardcoded twice and
+// silent both times.
+static std::uint64_t chain_root(const WsCatalogScan& s, std::uint64_t id) {
+    std::uint64_t cur = id;
+    for (std::size_t guard = 0; guard <= s.links.size(); ++guard) {
+        if (cur == 0) return 0;
+        std::uint64_t prev = 0;
+        bool found = false;
+        for (const auto& l : s.links) {
+            if (l.id == cur) { prev = l.prev; found = true; break; }
+        }
+        if (!found) return cur;   // dangling PREV_ID: this is as far back as it goes
+        if (prev == 0) return cur;  // PREV_ID 0 = first row of the chain
+        cur = prev;
+    }
+    std::cout << "WORKSPACE: WS_ID lineage walk hit its bound of " << s.links.size()
+              << " row(s) starting from WS_ID " << id
+              << " -- the PREV_ID chain in the catalog contains a cycle. Reporting "
+              << cur << " as the root; the catalog needs a look.\n";
+    return cur;
+}
+
+// D10.1 -- a workspace is born durable.
+//
+// Called by WORKSPACE NEW BEFORE the runtime handle exists, so a catalog that
+// refuses leaves no half-born workspace behind. That ordering is
+// WORKSPACE_WRITEBACK's gather-all-before-writing applied to creation, and it
+// is why there is no rollback path here to get wrong.
+//
+// Two outcomes, and the second is not a fallback:
+//
+//   ADOPT -- the catalog already holds a LIVE chain under this name, so this
+//   workspace keeps the identity that name already means. WS_NAME is THE key
+//   by the owner's catalog-v2 ruling ("single-key identity -- NO composite
+//   keys"), so minting a second id for the same name would manufacture, one
+//   level up, exactly the ambiguity NAME_AMBIG exists to prevent.
+//
+//   BIRTH -- it does not, so write the birth row: WS_ID = max+1, PREV_ID = 0,
+//   no payload. FMT reads "BIRTH 1" so the row is self-describing and the
+//   catalog census can tell a birth from a save rather than inferring it.
+static bool ensure_durable_workspace(const std::string& name,
+                                     std::uint64_t& ws_id_out,
+                                     bool& adopted,
+                                     std::string& err) {
+    ws_id_out = 0;
+    adopted   = false;
+
+    xbase::DbArea a;
+    if (!open_catalog(a, err)) return false;
+
+    bool ok = false;
+    {
+        WsLock lk(a, err);
+        if (!lk) { cli_memo::memo_auto_on_close(a); a.close(); return false; }
+
+        const WsCatalogScan scan = scan_catalog(a, name);
+
+        if (scan.live_id != 0) {
+            ws_id_out = chain_root(scan, scan.live_id);
+            adopted   = true;
+            ok        = true;
+        } else {
+            const std::uint64_t newId = scan.max_id + 1;
+            a.appendBlank();
+            ok = set_by_name(a, "WS_ID",      std::to_string(newId), err)
+              && set_by_name(a, "WS_NAME",    name, err)
+              && set_by_name(a, "SCHEMA_NAME", name, err)
+              && set_by_name(a, "FMT",        "BIRTH 1", err)
+              && set_by_name(a, "OS_COMPAT",  "ALL", err)
+              && set_by_name(a, "SIZE_B",     "0", err)
+              && set_by_name(a, "MAX_AREAS",  "0", err)
+              && set_by_name(a, "DEPTH",      "0", err)
+              && set_by_name(a, "SELF_REF",   "F", err)
+              && set_by_name(a, "PREV_ID",    "0", err)
+              && set_by_name(a, "SUPERSEDED", "0", err)
+              && set_by_name(a, "SAVED_AT",   now_stamp(), err)
+              && set_by_name(a, "AUTHOR",     author_stamp(), err)
+              && set_by_name(a, "DBF_ROOT",   s8(dbf_root()), err)
+              && set_by_name(a, "IDX_ROOT",   s8(idx_root()), err);
+            if (ok) {
+                a.writeCurrent();
+                // Read the id back FROM THE FIELD, not from memory. A field
+                // width truncated a memo token past a memory-ref oracle once
+                // (2026-08-11) and WS_ID is N(10) carrying a value we intend
+                // to persist relations against.
+                const std::uint64_t back =
+                    std::strtoull(trim_copy(get_by_name(a, "WS_ID")).c_str(), nullptr, 10);
+                if (back != newId) {
+                    err = "WORKSPACE NEW: birth row read back as WS_ID " +
+                          std::to_string(back) + " after writing " +
+                          std::to_string(newId) + ". Nothing is durable here.";
+                    ok = false;
+                } else {
+                    ws_id_out = newId;
+                }
+            }
+        }
+    } // release FLOCK while the area is still open
+
+    cli_memo::memo_auto_on_close(a);
+    a.close();
+    return ok;
+}
+
 static void save_to_memo(const std::string& name, int version = 2,
                          bool minidb = false) {
     const std::string base = schema_save_to_string(version);
@@ -2543,34 +2703,29 @@ static void save_to_memo(const std::string& name, int version = 2,
         WsLock lk(a, err);
         if (!lk) { std::cout << err << "\n"; cli_memo::memo_auto_on_close(a); a.close(); return; }
 
-        // One scan, two jobs (under the FLOCK):
-        //  - D4 append-history: supersede any prior live row of this name,
-        //    remembering its WS_ID as this save's PREV_ID lineage.
-        //  - WS_ID allocation, generation half of "use unique auto-id"
-        //    (owner ruling 2026-08-11). Measured that day: the x64 header
-        //    slot autoq_next EXISTS (xbase_64.hpp:52; init=1 at create;
-        //    hydrated into the area at open, xbase_64.hpp:530) but is
-        //    LOAD-ONLY -- no APPEND consumer, no increment, no store path
-        //    back to the header. Wiring those three is a chartered engine
-        //    lane. Until it lands: max(WS_ID)+1 under this FLOCK -- the
-        //    proven bbs_store next_id pattern, self-healing after any
-        //    manual edit and forward-compatible with the autoq wiring.
-        std::uint64_t maxId = 0, prevId = 0;
-        const std::uint64_t n = a.recCount64();
-        for (std::uint64_t r = 1; r <= n; ++r) {
+        // Allocation and lineage come from the ONE scan every catalog writer
+        // shares (scan_catalog, above). What used to happen inside that loop
+        // -- superseding the prior live row -- happens HERE now, explicitly,
+        // because the scan must stay pure for DESTROY's sake (D10.3).
+        // Behaviour is unchanged: same max+1, same prevId, same supersede.
+        //
+        // Allocation is max(WS_ID)+1 under this FLOCK, the proven bbs_store
+        // next_id pattern. Measured 2026-08-11: the x64 header slot autoq_next
+        // EXISTS (xbase_64.hpp:52; init=1 at create; hydrated into the area at
+        // open, xbase_64.hpp:530) but is LOAD-ONLY -- no APPEND consumer, no
+        // increment, no store path back to the header. Wiring those three is a
+        // chartered engine lane. Until it lands, max+1 is self-healing after a
+        // manual edit and forward-compatible with the autoq wiring.
+        const WsCatalogScan scan = scan_catalog(a, name);
+        const std::uint64_t prevId = scan.live_id;
+        const std::uint64_t newId  = scan.max_id + 1;
+        if (scan.live_rec >= 0) {
             try {
-                a.gotoRec(static_cast<int32_t>(r)); a.readCurrent();
-                const std::uint64_t rid =
-                    std::strtoull(trim_copy(get_by_name(a, "WS_ID")).c_str(), nullptr, 10);
-                if (rid > maxId) maxId = rid;
-                if (get_by_name(a, "WS_NAME") == name && get_by_name(a, "SUPERSEDED") != "1") {
-                    prevId = rid;
-                    if (!set_by_name(a, "SUPERSEDED", "1", err)) { std::cout << err << "\n"; }
-                    else a.writeCurrent();
-                }
+                a.gotoRec(scan.live_rec); a.readCurrent();
+                if (!set_by_name(a, "SUPERSEDED", "1", err)) { std::cout << err << "\n"; }
+                else a.writeCurrent();
             } catch (...) {}
         }
-        const std::uint64_t newId = maxId + 1;
 
         // Instance identity (owner rule 2026-08-11): memo-carried postures
         // stamp a memo-flavored unique id -- M<ws_id> -- as a WSID line
@@ -2712,6 +2867,18 @@ struct MemoFetch {
 // is therefore "nothing the system writes puts a non-memo row in this table",
 // NOT "nothing can". Read this report as a record of saves, not as a proof
 // about arbitrary rows.
+//
+// CORRECTION 2026-08-23, the third revision of this comment, and the first one
+// that was PREDICTED rather than discovered. AIF-078 D10.1 makes WORKSPACE NEW
+// a catalog writer: a BIRTH ROW carries WS_ID, WS_NAME and FMT "BIRTH 1", and
+// NO memo payload. So the invariant above is now false as written -- the
+// system itself writes a non-memo row, by design.
+//
+// Restated: EVERY SYSTEM ROW IS EITHER A SAVE (a memo row, FMT "DTSHEMA n" or
+// "MINIDB n") OR A BIRTH (no payload, FMT "BIRTH 1"), and FMT is what tells
+// them apart. It was recorded as owed in D10 sec 6 before the code landed,
+// which is the only reason it is being corrected in the same commit instead of
+// being found later by someone counting rows.
 //
 // So carrier is stated once in the footer, and the file carrier is counted
 // where it actually lives -- the .dtschema files in this same directory, which
@@ -3848,11 +4015,19 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
                 // FIELDS, per line, for the same reason the member list is: a
                 // spec has to be able to go red on the SHAPE of the tree, not
                 // just on a count that happens to match.
+                // D10: the durable rung, printed beside the session one so a
+                // reader can see BOTH and a spec can assert on either. A 0
+                // reads as "(none yet)" rather than as the number zero,
+                // because 0 is not a legal WS_ID and printing it bare would
+                // invite someone to compare against it.
+                const std::uint64_t wsid = xbase::workspace::ws_id_of(h);
                 std::cout << "  handle " << h
                           << "  name " << xbase::workspace::name_of(h)
                           << "  parent " << xbase::workspace::parent_of(h)
                           << "  depth " << xbase::workspace::depth_of(h)
-                          << "  members " << mem.size() << "\n";
+                          << "  members " << mem.size()
+                          << "  WS_ID " << (wsid ? std::to_string(wsid)
+                                                 : std::string("(none yet)")) << "\n";
                 for (std::size_t i = 0; i < mem.size(); ++i) {
                     if (mem[i] < 0) continue;   // vacated local slot, awaiting reuse
                     // 0-based, matching the engine slot beside it (owner ruling
@@ -3901,9 +4076,19 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
             // mechanism with zero call sites is not "ready for stage 4", it is
             // unproven code wearing a plan as an alibi.
             //
-            // Runtime only: no catalog row is written. WORKSPACES.dbf remains
-            // the persistence authority and stage 5 is where a declared
-            // workspace learns to survive a restart.
+            // WAS "Runtime only: no catalog row is written." NO LONGER, and
+            // the change is the whole of AIF-078 D10.1 (steward, 2026-08-23:
+            // "i want a ws_id"). A workspace is BORN DURABLE: NEW either
+            // adopts the durable identity its name already means in the
+            // catalog, or writes a birth row to mint one. WORKSPACES.dbf is
+            // still the persistence authority -- that has not changed. What
+            // changed is that a workspace no longer has to be SAVED before it
+            // can be referred to from outside this process, which is what a
+            // workspace-scoped relation edge will need (D10.4).
+            //
+            // ORDER MATTERS: the durable identity is allocated BEFORE the
+            // runtime handle exists, so a catalog that refuses leaves nothing
+            // half-born to roll back.
             auto toks = split_tokens(rest_of_args);
             if (toks.empty()) {
                 std::cout << "WORKSPACE NEW: missing name.\n";
@@ -3934,15 +4119,51 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
                 return;
             }
 
+            // D10.1: durable first. A refusal here opens nothing.
+            std::uint64_t wsId = 0;
+            bool adopted = false;
+            std::string derr;
+            // ws_memo:: qualified for the same reason save_to_memo is at the
+            // SAVE site -- the catalog helpers all live in that namespace.
+            if (!ws_memo::ensure_durable_workspace(nm, wsId, adopted, derr)) {
+                std::cout << (derr.empty()
+                                ? std::string("WORKSPACE NEW: could not allocate a durable "
+                                              "WS_ID.")
+                                : derr)
+                          << "\n";
+                std::cout << "  Nothing was created. A workspace is born durable "
+                             "(AIF-078 D10.1), so a catalog that cannot be written "
+                             "is a refusal, not a warning.\n";
+                return;
+            }
+
             const std::uint64_t h = xbase::workspace::create(nm, parent);
             if (h == 0) {
                 std::cout << "WORKSPACE NEW: refused.\n";
                 return;
             }
+            // Checked, not assumed. set_ws_id refuses an unknown handle, a
+            // zero id, and a RE-stamp with a different id -- and the house
+            // rule is to count successes rather than attempts.
+            if (!xbase::workspace::set_ws_id(h, wsId)) {
+                std::cout << "WORKSPACE NEW: handle " << h << " would not take WS_ID "
+                          << wsId << ". The catalog row stands; the runtime handle "
+                             "does not know about it.\n";
+            }
 
             std::cout << "WORKSPACE NEW: handle " << h << "  name " << nm
                       << "  parent " << parent
-                      << "  depth " << xbase::workspace::depth_of(h) << "\n";
+                      << "  depth " << xbase::workspace::depth_of(h)
+                      << "  WS_ID " << wsId << "\n";
+            if (adopted) {
+                // Announced, never silent: adopting is a different act from
+                // minting, and a person who expected a fresh id needs to be
+                // told their name already meant something.
+                std::cout << "  ADOPTED the durable identity this name already holds "
+                             "in the catalog. WS_NAME is the key, so a live chain "
+                             "under this name keeps its WS_ID rather than gaining "
+                             "a second one.\n";
+            }
             std::cout << "  Areas opened after WORKSPACE SWITCH " << nm
                       << " join this workspace.\n";
 

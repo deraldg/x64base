@@ -14,6 +14,11 @@
 // role: Runtime workspace membership -- which areas belong to which workspace
 // authority: canonical-header-contract
 // mutation: token-authorized
+//
+// TOKEN for the 2026-08-23 mutation (Entry::ws_id, ws_id_of, set_ws_id):
+// AIF-078 D10, ACCEPTED by the steward in-session the same day -- "i want a
+// ws_id", then "accept", then "go". See
+// docs/maintenance/AIF078_D10_WORKSPACE_IDENTITY_LADDER_RULING_V1.md.
 
 // AIF-078 stage 2. The RUNTIME half of workspace identity.
 //
@@ -73,6 +78,20 @@ struct Entry {
     // pair. It is a parent pointer and not a child vector on purpose: a child
     // list has two places to forget an edge, and this has one.
     std::uint64_t parent{0};
+
+    // AIF-078 D10.1/D10.2 (steward, 2026-08-23: "i want a ws_id" / "accept").
+    // The workspace's DURABLE identity: the ROOT of its PREV_ID chain in
+    // WORKSPACES.dbf. 0 means "no durable identity yet", which is a real and
+    // legal state for exactly one workspace -- DEFAULT, which exists before
+    // any command runs and is allocated LAZILY so that a bare launch never
+    // touches the catalog.
+    //
+    // R1 of the identity ladder says derivation runs DOWNWARD ONLY, so this
+    // field is a STAMP and not a lookup: the allocator lives CLI-side with
+    // the catalog (cmd_workspace.cpp, ensure_durable_workspace), and this
+    // header never reaches up to it. A handle knows its WS_ID because it was
+    // told; it cannot go and find out.
+    std::uint64_t ws_id{0};
 };
 
 // One instance per process. Function-local static so this header needs no
@@ -123,6 +142,28 @@ inline const Entry* find(std::uint64_t h) {
 inline std::string name_of(std::uint64_t h) {
     const Entry* e = find(h);
     return e ? e->name : std::string{};
+}
+
+// D10 ladder, the durable rung. ws_id_of() is the named upward conversion
+// R1 permits -- session handle -> durable id -- and it can fail, which it
+// reports as 0 rather than by throwing, exactly like find_by_name_ci below.
+inline std::uint64_t ws_id_of(std::uint64_t h) {
+    const Entry* e = find(h);
+    return e ? e->ws_id : 0;
+}
+
+// Stamp a durable identity onto a live handle. Returns false for an unknown
+// handle or a zero id, so a caller cannot quietly mark a workspace durable
+// with nothing. Re-stamping the SAME id is idempotent; re-stamping a
+// DIFFERENT one is refused -- a workspace's durable identity is its chain
+// root and a chain root does not change (D10.2).
+inline bool set_ws_id(std::uint64_t h, std::uint64_t id) {
+    if (id == 0) return false;
+    auto it = table().find(h);
+    if (it == table().end()) return false;
+    if (it->second.ws_id != 0 && it->second.ws_id != id) return false;
+    it->second.ws_id = id;
+    return true;
 }
 
 inline std::size_t member_count(std::uint64_t h) {
