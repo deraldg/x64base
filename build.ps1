@@ -158,19 +158,43 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 # --- 3) Build ---
-Write-Host ">>> Building target dottalkpp..."
+#
+# AIF-078, 2026-08-23 (steward: "fix it"). This block was a HARDCODED
+# `--target dottalkpp` regardless of the switches, so -WithGui and -WithWx
+# reached only the CONFIGURE step: they made the GUI targets exist in the
+# solution and then never built them, while the summary above printed
+# "DOTTALK_WITH_GUI : ON" / "DOTTALK_WITH_WX : ON" either way. A switch whose
+# success looks identical whether the thing built or not is the same shape this
+# lane keeps removing from the source -- and it is how a STALE
+# dottalk_gui_core_async_smoke.exe reported PASS against a fixture that did not
+# exist yet, 25 minutes before it was written.
+#
+# The target list is now DERIVED from the switches and PRINTED, so what the flag
+# did is visible in the transcript instead of assumed. Guards mirror the CMake
+# ones exactly (src/CMakeLists.txt:476-482): gui/core is added under
+# DOTTALK_WITH_GUI *or* DOTTALK_WITH_WX, gui/wx only under DOTTALK_WITH_WX, and
+# the async smoke target exists only when BUILD_TESTING is on -- which is read
+# back from the CACHE rather than guessed, because naming a target that was
+# never generated fails the whole build.
+$Targets = @('dottalkpp')
+if ($WithPyDotTalk) { $Targets += 'pydottalk' }
+
+if ($WithGui -or $WithWx) {
+  $Targets += 'dottalk_gui_core'
+  $CacheFile = Join-Path $BuildDir 'CMakeCache.txt'
+  if (Test-Path $CacheFile) {
+    if (Select-String -Path $CacheFile -Pattern '^BUILD_TESTING:BOOL=ON' -Quiet) {
+      $Targets += 'dottalk_gui_core_async_smoke'
+    }
+  }
+}
+if ($WithWx) { $Targets += 'dottalk_wb' }
+
+Write-Host (">>> Building target(s): " + ($Targets -join ', '))
 if ($UseNinja) {
-  if ($WithPyDotTalk) {
-    cmake --build $BuildDir --target dottalkpp pydottalk
-  } else {
-    cmake --build $BuildDir --target dottalkpp
-  }
+  cmake --build $BuildDir --target $Targets
 } else {
-  if ($WithPyDotTalk) {
-    cmake --build $BuildDir --config $Config --target dottalkpp pydottalk
-  } else {
-    cmake --build $BuildDir --config $Config --target dottalkpp
-  }
+  cmake --build $BuildDir --config $Config --target $Targets
 }
 if ($LASTEXITCODE -ne 0) {
   throw "CMake build failed with exit code $LASTEXITCODE"
