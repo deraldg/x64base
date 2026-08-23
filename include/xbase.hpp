@@ -68,6 +68,21 @@ constexpr int           MAX_AREA   = static_cast<int>(dottalk::build::max_areas)
 // NOT PERSISTED. This is the SESSION rung. The durable rung for an area is its
 // path (later a catalog id), and the positional rung stays the engine and local
 // slots -- derivation runs downward only (ladder R1).
+//
+// AMENDMENT, same day, after the GUI side landed. The paragraph above says this
+// is why gui_workspace_of_area() could not be written honestly, and implies
+// that unifying AreaId would make it writable. THE SECOND HALF WAS WRONG, and
+// the record is worth more than the tidy version. AreaId did become a real
+// identity, and the function still could not be written -- because the GUI's
+// areas are owned by its session and not by this engine's area array, so no
+// registry maps a handle back to an area. Its one caller had the DbArea a frame
+// earlier, so the stub was deleted instead of built. A correct diagnosis of a
+// defect is not automatically a correct prediction of the fix.
+//
+// The GUI's positional rung is NOT the engine slot, for a related reason:
+// setEngineSlot() is called only from dbf_file.cpp over this engine's own
+// _areas array, so a session-owned DbArea keeps _engine_slot == -1 for life.
+// The GUI's positional rung is the index in its own area list.
 inline std::uint64_t next_area_handle() noexcept {
     static std::uint64_t next = 0;
     return ++next;

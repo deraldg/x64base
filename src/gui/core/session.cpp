@@ -189,7 +189,10 @@ std::optional<std::filesystem::path> workspace_open_dir_from_cli_output(const st
 }
 
 struct WorkspaceOpenIndexAttachment {
-    AreaId area_id {0};
+    // AIF-078. This is parsed out of the CLI's "Area <n>" line, and that n is a
+    // POSITION. It used to be stored as an AreaId with a + 1 welded on, which is
+    // what made a positional token and an identity the same C++ type.
+    AreaOrdinal area_ordinal {kNoAreaOrdinal};
     std::filesystem::path container;
 };
 
@@ -392,7 +395,7 @@ std::vector<WorkspaceOpenIndexAttachment> workspace_open_indexes_from_cli_output
 
         if (auto container = resolve_workspace_open_index_container(dbf_dir, std::filesystem::path(rest))) {
             WorkspaceOpenIndexAttachment attachment;
-            attachment.area_id = static_cast<AreaId>(area0 + 1);
+            attachment.area_ordinal = static_cast<AreaOrdinal>(area0);
             attachment.container = std::move(*container);
             attachments.push_back(std::move(attachment));
         }
@@ -1392,9 +1395,12 @@ std::string command_suggestion(const std::string& verb) {
     return best_distance <= 2 ? best : std::string{};
 }
 
-std::string visible_area_id(AreaId id) {
-    return id == 0 ? std::string("none") : std::to_string(id - 1);
-}
+// AIF-078: the conversion visible_area_id -- id minus 1 -- lived here, in
+// main_frame.cpp and in
+// gui_workspace_format.cpp -- three identical copies of a rung conversion, which
+// is three more than D10 R3 allows. The one survivor is
+// model.hpp's format_area_ordinal(), and the ordinal it formats is now looked up
+// in the area list rather than reconstructed by arithmetic from an identity.
 
 std::string dbf_flavor_label(const xbase::DbArea& area) {
     std::ostringstream out;
@@ -1607,6 +1613,34 @@ struct Session::Impl {
         return nullptr;
     }
 
+    // The identity rung -> the positional rung. A LOOKUP, not arithmetic, and
+    // it fails in the return value (D10 R3): an id that is not in the list has
+    // no position, and kNoAreaOrdinal says so out loud.
+    AreaOrdinal ordinal_of(AreaId id) const {
+        for (std::size_t i = 0; i < areas.size(); ++i) {
+            if (areas[i]->id == id) {
+                return static_cast<AreaOrdinal>(i);
+            }
+        }
+        return kNoAreaOrdinal;
+    }
+
+    // The positional rung -> the identity rung. Also a lookup. kNoAreaOrdinal is
+    // enormous, so the bounds test rejects it without a special case.
+    Area* find_area_by_ordinal(AreaOrdinal ordinal) {
+        return ordinal < areas.size() ? areas[static_cast<std::size_t>(ordinal)].get() : nullptr;
+    }
+
+    const Area* find_area_by_ordinal(AreaOrdinal ordinal) const {
+        return ordinal < areas.size() ? areas[static_cast<std::size_t>(ordinal)].get() : nullptr;
+    }
+
+    // What to SHOW. Every caller that used to write visible_area_id writes
+    // this instead, so the list is consulted exactly once per printed number.
+    std::string visible_ordinal(AreaId id) const {
+        return format_area_ordinal(ordinal_of(id));
+    }
+
     Area* find_area_by_path(const std::filesystem::path& path) {
         const std::string wanted = comparable_path(path);
         for (const auto& area : areas) {
@@ -1624,7 +1658,10 @@ struct Session::Impl {
 
         long long visible = 0;
         if (parse_i64(token, visible) && visible >= 0) {
-            return find_area(static_cast<AreaId>(visible + 1));
+            // What the user typed is a POSITION. It was previously turned into
+            // an identity by adding 1, which agreed with the mint counter only
+            // until the first close.
+            return find_area_by_ordinal(static_cast<AreaOrdinal>(visible));
         }
 
         const std::string wanted = lower_ascii(token);
@@ -1648,7 +1685,6 @@ struct Session::Impl {
     std::vector<std::unique_ptr<Area>> areas;
     std::vector<WorkspaceRelationInfo> relations;
     AreaId active_area_id {0};
-    AreaId next_area_id {1};
     std::unique_ptr<GuiShellRuntime> shell_runtime {make_script_shell_runtime()};
 };
 
@@ -1698,6 +1734,8 @@ OpenTableResult Session::open_table(const OpenTableRequest& request) {
             impl_->active_area_id = existing->id;
             result.ok = true;
             result.area_id = existing->id;
+            result.ordinal = impl_->ordinal_of(existing->id);
+            result.workspace = gui_workspace_of_area(existing->area);
             result.path = existing->path;
             result.display_name = existing->display_name;
             result.record_count = existing->area.isOpen() ? existing->area.recCount64() : 0;
@@ -1707,14 +1745,23 @@ OpenTableResult Session::open_table(const OpenTableRequest& request) {
         }
 
         auto area = std::make_unique<Impl::Area>();
-        area->id = impl_->next_area_id++;
         area->path = request.path;
         area->display_name = result.display_name;
         area->area.open(request.path.string());
+        // AIF-078. The identity is the ENGINE'S, and it does not exist until the
+        // area is open -- which is why this assignment now sits BELOW open()
+        // rather than above it. The old counter was spent before open() could
+        // throw, so every failed open burned an id that nothing ever held.
+        area->id = area->area.areaHandle();
 
         result.ok = true;
         result.area_id = area->id;
+        // Where it is about to land. size() is read BEFORE the push below, so
+        // this is the index it will occupy, not the one after it.
+        result.ordinal = static_cast<AreaOrdinal>(impl_->areas.size());
         result.record_count = area->area.recCount64();
+        // Asked of the AREA, which is the only rung that can answer it.
+        result.workspace = gui_workspace_of_area(area->area);
         if (result.display_name.empty()) {
             result.display_name = area->area.logicalName();
             area->display_name = result.display_name;
@@ -1749,7 +1796,6 @@ std::size_t Session::mirror_workspace_open_directory(const std::filesystem::path
     impl_->areas.clear();
     impl_->relations.clear();
     impl_->active_area_id = 0;
-    impl_->next_area_id = 1;
 
     std::vector<std::filesystem::path> dbfs;
     for (const auto& entry : std::filesystem::directory_iterator(dir, ec)) {
@@ -1763,10 +1809,10 @@ std::size_t Session::mirror_workspace_open_directory(const std::filesystem::path
     for (const auto& dbf : dbfs) {
         try {
             auto area = std::make_unique<Impl::Area>();
-            area->id = impl_->next_area_id++;
             area->path = dbf;
             area->display_name = dbf.filename().string();
             area->area.open(dbf.string());
+            area->id = area->area.areaHandle();
             impl_->active_area_id = area->id;
             impl_->areas.push_back(std::move(area));
             ++opened;
@@ -1788,7 +1834,7 @@ std::size_t Session::mirror_workspace_open_directory(const std::filesystem::path
     std::size_t indexes_attached = 0;
     std::set<AreaId> index_attached_area_ids;
     for (const auto& attachment : workspace_open_indexes_from_cli_output(shell_output, dir)) {
-        auto* area = impl_->find_area(attachment.area_id);
+        auto* area = impl_->find_area_by_ordinal(attachment.area_ordinal);
         if (!area || !area->area.isOpen()) {
             continue;
         }
@@ -1976,11 +2022,9 @@ std::size_t Session::mirror_workspace_posture(const std::string& posture,
     impl_->areas.clear();
     impl_->relations = std::move(schema_relations);
     impl_->active_area_id = 0;
-    impl_->next_area_id = 1;
 
     std::size_t opened = 0;
     std::size_t indexes_attached = 0;
-    AreaId max_area_id = 0;
 
     for (const auto& schema_area : schema_areas) {
         // AIF-120. With a root override the member is placed, not searched.
@@ -2000,13 +2044,28 @@ std::size_t Session::mirror_workspace_posture(const std::string& posture,
 
         try {
             auto area = std::make_unique<Impl::Area>();
-            area->id = static_cast<AreaId>(schema_area.slot + 1);
-            max_area_id = std::max(max_area_id, area->id);
             area->path = *dbf;
             area->display_name = !schema_area.alias.empty()
                 ? schema_area.alias + ".DBF"
                 : dbf->filename().string();
             area->area.open(dbf->string());
+            // AIF-078. schema_area.slot is the SAVED POSITION, and it is
+            // deliberately no longer reused as this area's identity. A posture
+            // records where an area SAT; where it sits now is wherever this
+            // restore puts it.
+            //
+            // The saved ORDER is still honoured, and by the mechanism that was
+            // already here: load_dtschema2_areas_from_stream sorts its result by
+            // slot before returning it, so this loop runs in ascending saved-slot
+            // order and the field keeps a real reader. What a posture cannot
+            // promise is the same NUMBERS -- a slot is an address and this
+            // session's addresses are its own.
+            //
+            // KNOWN NARROWING: a posture written by the CLI can carry GAPS
+            // between engine slots, and the GUI cannot reproduce a gap, because
+            // its positional rung is an index into a dense list. Saved slots
+            // 0 and 3 come back as ordinals 0 and 1, in that order.
+            area->id = area->area.areaHandle();
 
             // AIF-120. DTSHEMA writes the literal word "none" for an absent
             // index or tag (cmd_workspace.cpp:1569-1575). Testing emptiness
@@ -2050,8 +2109,6 @@ std::size_t Session::mirror_workspace_posture(const std::string& posture,
                                        dbf->string()));
         }
     }
-
-    impl_->next_area_id = std::max<AreaId>(max_area_id + 1, 1);
 
     messages.push_back(info("gui.workspace.load_mirrored",
                             "WORKSPACE LOAD mirrored schema areas into GUI areas.",
@@ -2134,7 +2191,7 @@ bool Session::save_workspace_schema(const std::filesystem::path& schema_path,
                                 lower_ascii(alias_stem) != lower_ascii(path_stem) &&
                                 lower_ascii(alias_stem) != lower_ascii(area->area.logicalName());
 
-        file << "AREA " << visible_area_id(area->id)
+        file << "AREA " << impl_->visible_ordinal(area->id)
              << "|dbf=\"" << dbf_token << "\"";
         if (!index_type.empty()) {
             file << "|indextype=" << index_type;
@@ -2277,16 +2334,25 @@ CloseAreaResult Session::close_area(const CloseAreaRequest& request) {
 ListAreasResult Session::list_areas() const {
     ListAreasResult result;
     result.active_area_id = impl_->active_area_id;
+    result.active_ordinal = impl_->ordinal_of(impl_->active_area_id);
 
     result.areas.reserve(impl_->areas.size());
-    for (const auto& area : impl_->areas) {
+    // AIF-078. The ordinal is the index in THIS list -- the same list
+    // find_area_by_ordinal indexes -- so what is shown and what can be typed
+    // are the same number by construction rather than by coincidence. The
+    // index is taken here and not inside the adapter because it is a fact
+    // about the session's list, not about the DbArea.
+    for (std::size_t i = 0; i < impl_->areas.size(); ++i) {
+        const auto& area = impl_->areas[i];
         if (!area->area.isOpen()) {
             continue;
         }
-        result.areas.push_back(gui_area_info_from_dbarea(area->id,
-                                                         area->id == impl_->active_area_id,
-                                                         area->area,
-                                                         area->display_name));
+        AreaInfo info = gui_area_info_from_dbarea(area->id,
+                                                  area->id == impl_->active_area_id,
+                                                  area->area,
+                                                  area->display_name);
+        info.ordinal = static_cast<AreaOrdinal>(i);
+        result.areas.push_back(std::move(info));
     }
 
     return result;
@@ -2296,6 +2362,7 @@ WorkspaceModel Session::workspace_model() const {
     WorkspaceModel model;
     const auto areas = list_areas();
     model.active_area_id = areas.active_area_id;
+    model.active_ordinal = areas.active_ordinal;
     model.tables = areas.areas;
     model.messages = areas.messages;
     model.relations = impl_->relations;
@@ -2420,6 +2487,7 @@ WorkspaceModel Session::workspace_model() const {
 
         WorkspaceIndexInfo index;
         index.area_id = area->id;
+        index.ordinal = impl_->ordinal_of(area->id);
         index.area_name = area->display_name;
         index.kind = order_kind(area->area);
         index.active = orderstate::hasOrder(area->area);
@@ -2482,8 +2550,8 @@ CommandResult Session::run_command(const CommandRequest& request) {
 
         if (const auto cli_area = last_cli_area_from_output(cli.output)) {
             if (*cli_area >= 0) {
-                const AreaId area_id = static_cast<AreaId>(*cli_area + 1);
-                if (auto* selected = impl_->find_area(area_id)) {
+                // The shell reports a POSITION, and it is resolved as one.
+                if (auto* selected = impl_->find_area_by_ordinal(static_cast<AreaOrdinal>(*cli_area))) {
                     impl_->active_area_id = selected->id;
                     result.messages.push_back(info("gui.area.shell_selected",
                                                    "GUI selected the work area reported by the DotTalk++ shell.",
@@ -2592,7 +2660,7 @@ CommandResult Session::run_command(const CommandRequest& request) {
             out << "No current GUI work area is selected.";
         } else {
             out << "ACTIVE GUI AREA\n"
-                << "Area: " << visible_area_id(area->id) << "\n"
+                << "Area: " << impl_->visible_ordinal(area->id) << "\n"
                 << "Table: " << area->display_name << "\n"
                 << "Records: " << area->area.recCount64() << "\n"
                 << "Fields: " << area->area.fields().size() << "\n"
@@ -2607,7 +2675,7 @@ CommandResult Session::run_command(const CommandRequest& request) {
             for (const auto& area : impl_->areas) {
                 const bool active = area->id == impl_->active_area_id;
                 out << (active ? "* " : "  ")
-                    << visible_area_id(area->id) << "  "
+                    << impl_->visible_ordinal(area->id) << "  "
                     << area->display_name << "  records="
                     << (area->area.isOpen() ? area->area.recCount64() : 0)
                     << "  path=" << area->path.string() << "\n";
@@ -2641,7 +2709,7 @@ CommandResult Session::run_command(const CommandRequest& request) {
                 }
                 if (impl_->active_area_id != 0) {
                     if (const auto* area = impl_->active_area()) {
-                        out << "Active area: " << visible_area_id(area->id)
+                        out << "Active area: " << impl_->visible_ordinal(area->id)
                             << "  " << area->display_name << "\n";
                     }
                 }
@@ -2666,7 +2734,6 @@ CommandResult Session::run_command(const CommandRequest& request) {
             impl_->areas.clear();
             impl_->relations.clear();
             impl_->active_area_id = 0;
-            impl_->next_area_id = 1;
             result.messages.push_back(info("gui.workspace.closed", "All GUI work areas were closed."));
             out << "WORKSPACE CLOSE\n"
                 << "Closed GUI areas: " << closed;
@@ -2677,7 +2744,7 @@ CommandResult Session::run_command(const CommandRequest& request) {
             if (impl_->active_area_id == 0) {
                 out << "none\n";
             } else {
-                out << visible_area_id(impl_->active_area_id) << "\n";
+                out << impl_->visible_ordinal(impl_->active_area_id) << "\n";
             }
             out << "Relations: workspace graph service pending\n"
                 << "Indexes: workspace graph service pending\n"
@@ -2717,7 +2784,7 @@ CommandResult Session::run_command(const CommandRequest& request) {
                         << "Opened GUI areas: " << opened << "\n";
                     if (impl_->active_area_id != 0) {
                         if (const auto* area = impl_->active_area()) {
-                            out << "Active area: " << visible_area_id(area->id)
+                            out << "Active area: " << impl_->visible_ordinal(area->id)
                                 << "  " << area->display_name << "\n";
                         }
                     }
@@ -2736,7 +2803,7 @@ CommandResult Session::run_command(const CommandRequest& request) {
                         << "Opened GUI areas: " << opened << "\n";
                     if (impl_->active_area_id != 0) {
                         if (const auto* area = impl_->active_area()) {
-                            out << "Active area: " << visible_area_id(area->id)
+                            out << "Active area: " << impl_->visible_ordinal(area->id)
                                 << "  " << area->display_name << "\n";
                         }
                     }
@@ -2771,7 +2838,7 @@ CommandResult Session::run_command(const CommandRequest& request) {
         if (impl_->active_area_id == 0) {
             out << "none\n";
         } else {
-            out << visible_area_id(impl_->active_area_id) << "\n";
+            out << impl_->visible_ordinal(impl_->active_area_id) << "\n";
         }
         out << "Relations: workspace graph service pending\n"
             << "Indexes: workspace graph service pending\n"
@@ -2782,7 +2849,7 @@ CommandResult Session::run_command(const CommandRequest& request) {
         const auto* area = impl_->active_area();
         out << "GUI SESSION STATUS\n"
             << "Open areas: " << impl_->areas.size() << "\n"
-            << "Active area: " << (area ? visible_area_id(area->id) : std::string("none")) << "\n";
+            << "Active area: " << (area ? impl_->visible_ordinal(area->id) : std::string("none")) << "\n";
         if (area && area->area.isOpen()) {
             out << "Active table: " << area->display_name << "\n"
                 << "Records: " << area->area.recCount64() << "\n"
@@ -2810,7 +2877,7 @@ CommandResult Session::run_command(const CommandRequest& request) {
             out << "No matching GUI work area is open: " << target;
         } else {
             impl_->active_area_id = area->id;
-            out << "Selected GUI area " << visible_area_id(area->id) << ".\n"
+            out << "Selected GUI area " << impl_->visible_ordinal(area->id) << ".\n"
                 << "Table: " << area->display_name << "\n"
                 << "Recno: " << area->area.recno64();
         }
@@ -2821,7 +2888,7 @@ CommandResult Session::run_command(const CommandRequest& request) {
             out << "No current GUI work area is selected.";
         } else {
             out << "DBAREA\n"
-                << "Area: " << visible_area_id(area->id) << "\n"
+                << "Area: " << impl_->visible_ordinal(area->id) << "\n"
                 << "Logical name: " << area->area.logicalName() << "\n"
                 << "Table: " << area->display_name << "\n"
                 << "File type: " << dbf_flavor_label(area->area) << "\n"
@@ -2937,7 +3004,7 @@ CommandResult Session::run_command(const CommandRequest& request) {
             out << "No current table is selected.";
         } else {
             out << "BROWSE SUMMARY\n"
-                << "Area: " << visible_area_id(area->id) << "\n"
+                << "Area: " << impl_->visible_ordinal(area->id) << "\n"
                 << "Table: " << area->display_name << "\n"
                 << "Records: " << area->area.recCount64() << "\n"
                 << "Fields: " << area->area.fields().size() << "\n"

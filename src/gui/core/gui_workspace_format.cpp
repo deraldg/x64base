@@ -22,9 +22,9 @@ namespace dottalk::gui {
 
 namespace {
 
-std::string visible_area_id(AreaId id) {
-    return id == 0 ? std::string("none") : std::to_string(id - 1);
-}
+// AIF-078: this was the second of three identical copies of the same rung
+// conversion. The number shown is a POSITION and now arrives as one, in the
+// model's own ordinal field, formatted by model.hpp's format_area_ordinal.
 
 } // namespace
 
@@ -34,7 +34,7 @@ std::string format_workspace_graph_text(const ListAreasResult& areas,
     std::ostringstream graph;
     graph << title << "\n\n";
     graph << "Areas: " << areas.areas.size() << "\n";
-    graph << "Active area: " << visible_area_id(areas.active_area_id) << "\n\n";
+    graph << "Active area: " << format_area_ordinal(areas.active_ordinal) << "\n\n";
 
     if (areas.areas.empty()) {
         graph << no_open_areas_text << "\n";
@@ -42,7 +42,7 @@ std::string format_workspace_graph_text(const ListAreasResult& areas,
         graph << "Areas\n";
         for (const auto& area : areas.areas) {
             graph << (area.active ? "* " : "  ")
-                  << visible_area_id(area.area_id) << "  "
+                  << format_area_ordinal(area.ordinal) << "  "
                   << area.display_name << "\n"
                   << "    table: " << area.path.string() << "\n"
                   << "    records: " << area.record_count << "\n"
@@ -86,7 +86,7 @@ std::string format_workspace_graph_text(const WorkspaceModel& model,
     graph << "Workspaces: " << order.size()
           << "    Current: " << model.current_workspace << "\n";
     graph << "Areas: " << model.tables.size()
-          << "    Active area: " << visible_area_id(model.active_area_id) << "\n\n";
+          << "    Active area: " << format_area_ordinal(model.active_ordinal) << "\n\n";
 
     if (model.tables.empty()) {
         graph << no_open_areas_text << "\n";
@@ -102,7 +102,7 @@ std::string format_workspace_graph_text(const WorkspaceModel& model,
         for (const auto& area : model.tables) {
             if (area.workspace != workspace) continue;
             graph << (area.active ? "  * " : "    ")
-                  << std::setw(4) << std::left << visible_area_id(area.area_id)
+                  << std::setw(4) << std::left << format_area_ordinal(area.ordinal)
                   << std::setw(22) << std::left << area.display_name
                   << std::setw(8) << std::right << area.record_count << " rec"
                   << std::setw(5) << std::right << area.field_count << " fld   "
@@ -114,7 +114,7 @@ std::string format_workspace_graph_text(const WorkspaceModel& model,
         for (const auto& index : model.indexes) {
             if (index.workspace != workspace) continue;
             ++shown;
-            graph << "    " << visible_area_id(index.area_id) << "  "
+            graph << "    " << format_area_ordinal(index.ordinal) << "  "
                   << index.area_name << "  " << index.kind;
             if (index.active) {
                 graph << "  " << index.container.string();

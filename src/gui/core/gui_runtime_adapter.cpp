@@ -138,22 +138,26 @@ void populate_cursor_state(TableSnapshot& snapshot, xbase::DbArea& area, int32_t
 
 } // namespace
 
-std::string gui_workspace_of_area(AreaId /*area_id*/) {
-    // STILL A STUB, and now for a NARROWER reason than the one it used to give.
-    //
-    // It used to say "no owner back-pointer ... until the registry lands." The
-    // registry landed (AIF-078), and an area DOES know its workspace -- see the
-    // DbArea overload below, which is exact. What is still missing is a way to
-    // get from an AreaId to an area, because AreaId itself had two spellings in
-    // one type: session.cpp minted a private counter while another path derived
-    // it as engine slot + 1. Unifying those onto DbArea::areaHandle() is the
-    // next step and is what makes this body writable.
-    //
-    // Deliberately still ignores the id rather than pretending to consult
-    // something -- and returns a real name rather than an empty string, because
-    // invariant I1 says there is no null workspace.
-    return std::string(kDefaultWorkspace);
-}
+// AIF-078, 2026-08-23: gui_workspace_of_area(AreaId) IS GONE, and it was not
+// replaced by a working body.
+//
+// Its comment promised that unifying AreaId onto DbArea::areaHandle() would
+// make it writable. The unification landed, and the promise turned out to be
+// wrong -- for a reason worth keeping. AreaId is now a real identity, but the
+// GUI's areas are owned by the session, not by the engine's area array, so
+// there is no registry anywhere that maps a handle back to an area. Writing
+// this would have meant building one purely to serve a caller that did not
+// need it.
+//
+// It had exactly one caller, on an OpenTableResult, and the session had the
+// DbArea in hand at that moment. So the answer travels in the result instead,
+// and the question is asked of the rung that can answer it. What was deleted
+// is a function that returned the constant DEFAULT for every input -- the same
+// value for "DEFAULT" and for "I cannot tell", which is the shape this lane
+// keeps finding and keeps refusing to leave in place.
+//
+// If a caller ever genuinely holds only an id, the honest move is a registry,
+// and it should be built then, with that caller as its reason.
 
 std::string gui_workspace_of_area(const xbase::DbArea& area) {
     const std::uint64_t handle = area.wsHandle();

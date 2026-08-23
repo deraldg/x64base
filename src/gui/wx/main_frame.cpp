@@ -100,9 +100,10 @@ constexpr LanguageMenuItem kLanguageMenuItems[] = {
     {IdLanguageIt, "it", GuiTextId::LocaleIt},
 };
 
-std::string visible_area_id(AreaId id) {
-    return id == 0 ? std::string("none") : std::to_string(id - 1);
-}
+// AIF-078: this was the third of three identical copies of the same rung
+// conversion, and the one furthest from anything that could check it -- a view
+// doing arithmetic on an identity to guess a position. The position now arrives
+// in the model beside the identity; see model.hpp's format_area_ordinal.
 
 std::string join_labels(const std::vector<std::string>& labels) {
     std::ostringstream out;
@@ -1184,16 +1185,25 @@ void MainFrame::AddArea(const OpenTableResult& result) {
     // this path, which bypasses gui_area_info_from_dbarea entirely.
     AreaInfo info;
     info.area_id = result.area_id;
-    info.workspace = gui_workspace_of_area(result.area_id);
+    // AIF-078: was gui_workspace_of_area(result.area_id), a call that could
+    // only ever return the constant DEFAULT. The session answered it exactly
+    // at open() and put the answer in the result.
+    info.workspace = result.workspace;
+    // AIF-078: and the POSITION, for the same reason -- this path bypasses
+    // gui_area_info_from_dbarea, so anything the model needs has to be copied
+    // across explicitly. Without this the tables column reads "none" on every
+    // area opened through here, while the areas list beside it reads correctly.
+    info.ordinal = result.ordinal;
     info.active = true;
     info.path = result.path;
     info.display_name = result.display_name;
     info.record_count = result.record_count;
     area_infos_.push_back(std::move(info));
     workspace_model_.active_area_id = result.area_id;
+    workspace_model_.active_ordinal = result.ordinal;
     workspace_model_.tables = area_infos_;
     std::ostringstream label;
-    label << visible_area_id(result.area_id) << "  " << result.display_name << "  (" << result.record_count << ")";
+    label << format_area_ordinal(result.ordinal) << "  " << result.display_name << "  (" << result.record_count << ")";
     areas_->Append(label.str());
     areas_->SetSelection(static_cast<int>(area_ids_.size() - 1));
     current_area_id_ = result.area_id;
@@ -1206,6 +1216,7 @@ void MainFrame::RebuildAreas(const ListAreasResult& result) {
     area_infos_.clear();
     current_area_id_ = result.active_area_id;
     workspace_model_.active_area_id = result.active_area_id;
+    workspace_model_.active_ordinal = result.active_ordinal;
     workspace_model_.tables = result.areas;
 
     if (!areas_) {
@@ -1225,7 +1236,7 @@ void MainFrame::RebuildAreas(const ListAreasResult& result) {
         area_ids_.push_back(area.area_id);
         area_infos_.push_back(area);
         std::ostringstream label;
-        label << visible_area_id(area.area_id) << "  " << area.display_name << "  (" << area.record_count << ")";
+        label << format_area_ordinal(area.ordinal) << "  " << area.display_name << "  (" << area.record_count << ")";
         areas_->Append(label.str());
         if (area.active) {
             active_selection = static_cast<int>(area_ids_.size() - 1);
@@ -1278,7 +1289,7 @@ void MainFrame::ApplyTables(const WorkspaceModel& model) {
         const int grid_row = static_cast<int>(row);
         tables_grid_->SetRowLabelValue(grid_row, std::to_string(row + 1));
         tables_grid_->SetCellValue(grid_row, 0, area.workspace);
-        tables_grid_->SetCellValue(grid_row, 1, visible_area_id(area.area_id));
+        tables_grid_->SetCellValue(grid_row, 1, format_area_ordinal(area.ordinal));
         tables_grid_->SetCellValue(grid_row, 2, area.display_name);
         tables_grid_->SetCellValue(grid_row, 3, std::to_string(area.record_count));
         tables_grid_->SetCellValue(grid_row, 4, std::to_string(area.field_count));
@@ -1311,7 +1322,7 @@ void MainFrame::ApplyIndexes(const WorkspaceModel& model) {
         const int grid_row = static_cast<int>(row);
         indexes_grid_->SetRowLabelValue(grid_row, std::to_string(row + 1));
         indexes_grid_->SetCellValue(grid_row, 0, index.workspace);
-        indexes_grid_->SetCellValue(grid_row, 1, visible_area_id(index.area_id));
+        indexes_grid_->SetCellValue(grid_row, 1, format_area_ordinal(index.ordinal));
         indexes_grid_->SetCellValue(grid_row, 2, index.area_name);
         indexes_grid_->SetCellValue(grid_row, 3, index.kind);
         indexes_grid_->SetCellValue(grid_row, 4, index.active ? "yes" : "");

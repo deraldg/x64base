@@ -32,21 +32,17 @@ namespace dottalk::gui {
 
 /// Which workspace owns this area.
 ///
-/// AIF-120. Today the answer is always DEFAULT, because the runtime registry
-/// that would give a different one does not exist yet -- the engine holds one
-/// flat area array with no owner back-pointer, which the AIF-070/078
-/// reconciliation enumerates at file:line. This function is the seam: it is the
-/// single place that becomes a registry lookup, so no caller learns to assume
-/// the constant. Returning a real name today rather than an empty string is
-/// invariant I1 -- there is no null workspace.
-std::string gui_workspace_of_area(AreaId area_id);
-
-/// The same question, asked of an area we already hold -- and this one has a
-/// real answer (AIF-078, 2026-08-23). The engine stamps _ws_handle at open(),
-/// so an area in hand knows its workspace in O(1) with no lookup and no
-/// assumption about what an AreaId means. Prefer this overload wherever the
-/// DbArea is available; the AreaId form above stays for callers that hold only
-/// an id, and is honest about what it cannot yet resolve.
+/// ONE overload, and it takes the AREA. The engine stamps _ws_handle at open(),
+/// so an area in hand knows its workspace in O(1), exactly, with no lookup and
+/// no assumption about what an AreaId means.
+///
+/// There was an AreaId overload beside this one until AIF-078 (2026-08-23). It
+/// returned the constant DEFAULT for every input, which is the same answer for
+/// "DEFAULT" and for "I cannot tell". Its single caller had the DbArea
+/// available one frame earlier, so the answer now travels in OpenTableResult
+/// and the stub was deleted rather than kept as a seam nothing was using.
+/// gui_runtime_adapter.cpp records why unifying AreaId did not make it
+/// writable after all.
 std::string gui_workspace_of_area(const xbase::DbArea& area);
 
 AreaInfo gui_area_info_from_dbarea(AreaId area_id,
