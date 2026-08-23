@@ -418,6 +418,15 @@ to what shipped -- is a ruling of its own and the steward's call.
 
 ## 9b. RE-AMENDMENT 2026-08-23 -- 9a picked its spelling from a document, and the tree disagrees
 
+> **SUPERSEDED IN PART, same day, by D10.4**
+> (`AIF078_D10_WORKSPACE_IDENTITY_LADDER_RULING_V1.md`). 9b's RUNTIME half --
+> the store keys on the handle -- stands, and so does the measurement below.
+> **Its PERSISTENCE half is wrong:** 9b said persist the workspace NAME,
+> reaching for `Entry::name` because that was the field it could see, and
+> `Entry` is the SESSION rung. A persisted edge carries the **chain-root
+> `WS_ID`** with `WS_NAME` alongside. Read 9b for the measurement; read D10 for
+> the ruling.
+
 Authorised by the steward's standing architectural directive, in-session
 2026-08-22: *"we have spent the day improving workspaces, the gui is brand new,
 and as such more disposable than the engine so modify the new product to the
