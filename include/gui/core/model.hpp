@@ -158,9 +158,15 @@ struct WorkspaceIndexInfo {
 };
 
 struct WorkspaceRelationInfo {
-    // The relation's OWNING workspace. Relations are engine-global today, so a
-    // refresh has no group scope -- recorded here so the column can show what
-    // the runtime cannot yet separate.
+    // The relation's OWNING workspace.
+    //
+    // WAS: "Relations are engine-global today, so a refresh has no group scope
+    // -- recorded here so the column can show what the runtime cannot yet
+    // separate." That stopped being true at AIF-078 I1.2, which partitioned the
+    // relation store by workspace: the runtime CAN separate them now, and this
+    // field is written from the session's current workspace at parse time
+    // (session.cpp, owning_workspace_now). Until then it had ZERO writers while
+    // gui_workspace_format.cpp filtered on it -- a filter on a constant.
     std::string workspace {kDefaultWorkspace};
     std::string parent;
     std::string child;

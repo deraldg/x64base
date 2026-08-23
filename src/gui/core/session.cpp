@@ -8,6 +8,7 @@
 // status: supported
 
 #include "gui/core/session.hpp"
+#include "xbase/workspace_membership.hpp"   // I1.2: relations carry their owning workspace
 
 #include "common/path_resolver.hpp"
 #include "common/path_state.hpp"
@@ -484,6 +485,29 @@ std::optional<std::filesystem::path> resolve_schema_index_path(const std::filesy
 
 void merge_relation(std::vector<WorkspaceRelationInfo>& relations, WorkspaceRelationInfo relation);
 
+// AIF-078 I1.2 follow-up. WorkspaceRelationInfo::workspace had ZERO WRITERS:
+// all three construction sites in this file left it at its kDefaultWorkspace
+// default, while gui_workspace_format.cpp filtered on it and main_frame.cpp
+// displayed it in a column. A filter on a constant, and a column that could
+// only ever read DEFAULT.
+//
+// That was defensible while the runtime had nothing to report -- model.hpp said
+// so: "Relations are engine-global today, so a refresh has no group scope."
+// It stopped being true when the relation store was partitioned, so the field
+// gets its writer here.
+//
+// The OWNING workspace of a parsed edge is the session's CURRENT workspace,
+// for both sources and for the same reason: REL LIST reports the current
+// workspace's map (that is what the partition means), and a posture is loaded
+// INTO a workspace named by the command, never one it records itself
+// (invariant I3). Neither source carries a workspace of its own, so neither is
+// being second-guessed.
+std::string owning_workspace_now() {
+    const std::string name =
+        xbase::workspace::name_of(xbase::workspace::current_handle());
+    return name.empty() ? std::string(kDefaultWorkspace) : name;
+}
+
 // AIF-120. A posture is a posture whether it came from a file or out of a memo
 // field, so the parser reads a stream and the path form is a wrapper. The memo
 // path has no file to hand it.
@@ -550,6 +574,7 @@ std::vector<WorkspaceSchemaArea> load_dtschema2_areas_from_stream(
             }
             std::istringstream head(rest.substr(0, on));
             WorkspaceRelationInfo relation;
+            relation.workspace = owning_workspace_now();
             head >> relation.parent >> relation.child;
             relation.parent_key = trim_ascii(rest.substr(on + 4));
             relation.child_key = relation.parent_key;
@@ -1110,16 +1135,56 @@ std::optional<std::uint64_t> match_count_from_relation_line(const std::string& l
     return static_cast<std::uint64_t>(value);
 }
 
+// TWO DEFECTS FIXED HERE, both named in AIF-078 D9 sec 4 item 5 and excluded
+// from I1.2 in writing (D10 sec 8a) until the field had a writer.
+//
+// 1. WORKSPACE WAS NOT IN THE IDENTITY PREDICATE. Two edges differing only by
+//    owning workspace fused into one. Harmless while every relation was stamped
+//    DEFAULT; a silent data loss the moment the store was partitioned and the
+//    field got written. This is the two-resolver defect I1.3a closed in the
+//    engine, one layer up, and sec 4 item 5 predicted it by name.
+//
+// 2. AN EMPTY KEY WAS COMPATIBLE WITH ANYTHING, so the merge was
+//    ORDER-DEPENDENT. Sources report different amounts: REL LIST's tree gives a
+//    match count and sometimes no key, a posture gives keys and no counts. That
+//    fill-in is DELIBERATE and is kept. What was wrong is what happened when a
+//    keyless edge met MORE THAN ONE candidate -- P->C ON SID and P->C ON
+//    CLS_ID are two different relations, and a keyless P->C arriving third
+//    silently attached to whichever happened to be first in the vector.
+//
+//    Now: exact key match first; only if none, fall back to a keyless
+//    candidate, and ONLY when there is exactly ONE. Two candidates means the
+//    edge is genuinely unattributable, so it becomes its OWN row -- visible --
+//    rather than fusing into a guess. That is invariant I4, "ambiguity is
+//    reported, never first-match", expressed the one way a model merge can
+//    express it: refuse to fuse.
 void merge_relation(std::vector<WorkspaceRelationInfo>& relations, WorkspaceRelationInfo relation) {
-    const auto same_relation = [&](const WorkspaceRelationInfo& existing) {
-        const bool same_tables = lower_ascii(existing.parent) == lower_ascii(relation.parent) &&
-                                 lower_ascii(existing.child) == lower_ascii(relation.child);
-        const bool compatible_key = existing.parent_key.empty() || relation.parent_key.empty() ||
-                                    lower_ascii(existing.parent_key) == lower_ascii(relation.parent_key);
-        return same_tables && compatible_key;
+    const auto same_edge = [&](const WorkspaceRelationInfo& existing) {
+        return lower_ascii(existing.workspace) == lower_ascii(relation.workspace) &&
+               lower_ascii(existing.parent) == lower_ascii(relation.parent) &&
+               lower_ascii(existing.child) == lower_ascii(relation.child);
     };
 
-    const auto found = std::find_if(relations.begin(), relations.end(), same_relation);
+    // Pass 1: the same edge on the same key. Exact, order-independent.
+    auto found = std::find_if(relations.begin(), relations.end(),
+                              [&](const WorkspaceRelationInfo& existing) {
+        return same_edge(existing) &&
+               lower_ascii(existing.parent_key) == lower_ascii(relation.parent_key);
+    });
+
+    // Pass 2: one side did not report a key. Merge only if the candidate is
+    // UNIQUE -- see the note above.
+    if (found == relations.end()) {
+        auto candidate = relations.end();
+        std::size_t candidates = 0;
+        for (auto it = relations.begin(); it != relations.end(); ++it) {
+            if (!same_edge(*it)) continue;
+            if (!it->parent_key.empty() && !relation.parent_key.empty()) continue;
+            if (candidates++ == 0) candidate = it;
+        }
+        if (candidates == 1) found = candidate;
+    }
+
     if (found == relations.end()) {
         relations.push_back(std::move(relation));
         return;
@@ -1181,6 +1246,7 @@ std::vector<WorkspaceRelationInfo> parse_relation_edges_from_output(const std::s
             }
 
             WorkspaceRelationInfo relation;
+            relation.workspace = owning_workspace_now();
             relation.parent = trim_ascii(rest.substr(0, arrow));
             relation.child = trim_ascii(rest.substr(arrow + 2, on - (arrow + 2)));
             relation.parent_key = trim_ascii(rest.substr(on + 4));
@@ -1221,6 +1287,7 @@ std::vector<WorkspaceRelationInfo> parse_relation_edges_from_output(const std::s
         const auto on = rest.find(" ON ");
 
         WorkspaceRelationInfo relation;
+        relation.workspace = owning_workspace_now();
         relation.parent = tree_stack.back().second;
         relation.child = on == std::string::npos ? trim_ascii(rest) : trim_ascii(rest.substr(0, on));
         relation.parent_key = on == std::string::npos ? std::string{} : trim_ascii(rest.substr(on + 4));
