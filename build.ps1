@@ -179,16 +179,34 @@ if ($LASTEXITCODE -ne 0) {
 $Targets = @('dottalkpp')
 if ($WithPyDotTalk) { $Targets += 'pydottalk' }
 
+# BUILD_TESTING is read ONCE, here, and from the cache rather than guessed.
+# It was previously read inside the GUI block, which meant a test target that
+# is not GUI-conditional could not be reached at all.
+$Testing = $false
+$CacheFile = Join-Path $BuildDir 'CMakeCache.txt'
+if (Test-Path $CacheFile) {
+  $Testing = Select-String -Path $CacheFile -Pattern '^BUILD_TESTING:BOOL=ON' -Quiet
+}
+
 if ($WithGui -or $WithWx) {
   $Targets += 'dottalk_gui_core'
-  $CacheFile = Join-Path $BuildDir 'CMakeCache.txt'
-  if (Test-Path $CacheFile) {
-    if (Select-String -Path $CacheFile -Pattern '^BUILD_TESTING:BOOL=ON' -Quiet) {
-      $Targets += 'dottalk_gui_core_async_smoke'
-    }
-  }
+  if ($Testing) { $Targets += 'dottalk_gui_core_async_smoke' }
 }
 if ($WithWx) { $Targets += 'dottalk_wb' }
+
+# NOT GUI-CONDITIONAL: src/tests targets link nothing and exist purely under
+# BUILD_TESTING.
+#
+# GAP, NAMED RATHER THAN PAPERED OVER: this script still does not build the
+# OTHER src/tests targets. On 2026-08-23 `ctest` reported 17/17 green while
+# this script had built at most four targets -- the other thirteen binaries
+# were left over from an earlier full build. That is the SAME stale-artifact
+# shape this script was fixed for, one directory across, and it is a
+# pre-existing gap this lane did not create. Enumerating thirteen targets by
+# hand is how a build script grows a list nobody maintains, and ALL_BUILD is
+# wrong because it would build dottalk_wb_next, which is deliberately excluded.
+# Recorded for a decision rather than guessed at.
+if ($Testing) { $Targets += 'dottalkpp_relation_merge_test' }
 
 Write-Host (">>> Building target(s): " + ($Targets -join ', '))
 if ($UseNinja) {

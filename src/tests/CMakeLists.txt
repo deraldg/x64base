@@ -33,6 +33,24 @@ add_executable(dottalkpp_workspace_membership_test
 target_include_directories(dottalkpp_workspace_membership_test PRIVATE ${CMAKE_SOURCE_DIR}/include)
 add_test(NAME dottalkpp_workspace_membership_test COMMAND dottalkpp_workspace_membership_test)
 
+# ---- Relation merge and parse: AIF-078 decision-owed #6 --------------------
+# relation_parse.cpp is text in, rows out -- it includes only model.hpp, which
+# is standard-library only -- so this compiles that ONE translation unit
+# directly and links nothing. It deliberately does NOT link dottalk_gui_core,
+# which would drag in session.cpp, xbase and memo to test a pure function.
+# Two arms PIN known defects (the unparsed ` TO ` clause, and the tree that
+# flattens below depth 1) and are written to go RED when those are fixed.
+add_executable(dottalkpp_relation_merge_test
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_relation_merge.cpp
+  ${CMAKE_SOURCE_DIR}/src/gui/core/relation_parse.cpp
+)
+target_compile_features(dottalkpp_relation_merge_test PRIVATE cxx_std_20)
+target_include_directories(dottalkpp_relation_merge_test PRIVATE
+  ${CMAKE_SOURCE_DIR}/include
+  ${CMAKE_SOURCE_DIR}/src
+)
+add_test(NAME dottalkpp_relation_merge_test COMMAND dottalkpp_relation_merge_test)
+
 add_executable(dottalkpp_security_policy_test
   ${CMAKE_CURRENT_SOURCE_DIR}/test_security_policy.cpp
 )
