@@ -51,6 +51,28 @@ target_include_directories(dottalkpp_relation_merge_test PRIVATE
 )
 add_test(NAME dottalkpp_relation_merge_test COMMAND dottalkpp_relation_merge_test)
 
+# ---- GUI match counter: the fixture the two-counters fix was owed ----------
+# Unlike the relation-merge test this one LINKS dottalk_gui_core, because the
+# counter under test needs a live Session with real open tables -- which is
+# exactly why it drifted from the engine's counter unnoticed. Guarded on the
+# target existing, since gui/core is only added under DOTTALK_WITH_GUI or
+# DOTTALK_WITH_WX.
+#
+# It builds its own tables and does NOT skip when data is absent: everything it
+# reads, it wrote.
+if (TARGET dottalk_gui_core)
+  add_executable(dottalkpp_gui_match_count_test
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_gui_match_count.cpp
+  )
+  target_compile_features(dottalkpp_gui_match_count_test PRIVATE cxx_std_20)
+  target_link_libraries(dottalkpp_gui_match_count_test PRIVATE dottalk_gui_core)
+  target_include_directories(dottalkpp_gui_match_count_test PRIVATE
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/src
+  )
+  add_test(NAME dottalkpp_gui_match_count_test COMMAND dottalkpp_gui_match_count_test)
+endif()
+
 add_executable(dottalkpp_security_policy_test
   ${CMAKE_CURRENT_SOURCE_DIR}/test_security_policy.cpp
 )

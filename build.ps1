@@ -97,19 +97,19 @@ if (Test-Path $Cache) {
   }
 
   if ($cwdIsWin -and $hasWSLPath) {
-    Write-Warning "CMakeCache points to WSL paths but you're in Windows PowerShell. Cleaning build/…"
+    Write-Warning "CMakeCache points to WSL paths but you're in Windows PowerShell. Cleaning build/..."
     Remove-Item -Recurse -Force $BuildDir
   }
   elseif (-not $cwdIsWin -and $hasWinPath) {
-    Write-Warning "CMakeCache points to Windows paths but you're in WSL. Cleaning build/…"
+    Write-Warning "CMakeCache points to Windows paths but you're in WSL. Cleaning build/..."
     Remove-Item -Recurse -Force $BuildDir
   }
   elseif ($cacheGenerator -and $cacheGenerator -ne $RequestedGenerator) {
-    Write-Warning "CMakeCache generator '$cacheGenerator' does not match requested generator '$RequestedGenerator'. Cleaning build/…"
+    Write-Warning "CMakeCache generator '$cacheGenerator' does not match requested generator '$RequestedGenerator'. Cleaning build/..."
     Remove-Item -Recurse -Force $BuildDir
   }
   elseif ($cachedPyDotTalk -and $cachedPyDotTalk -ne $RequestedPyDotTalk) {
-    Write-Warning "CMakeCache BUILD_PYDOTTALK='$cachedPyDotTalk' does not match requested BUILD_PYDOTTALK='$RequestedPyDotTalk'. Cleaning build/…"
+    Write-Warning "CMakeCache BUILD_PYDOTTALK='$cachedPyDotTalk' does not match requested BUILD_PYDOTTALK='$RequestedPyDotTalk'. Cleaning build/..."
     Remove-Item -Recurse -Force $BuildDir
   }
 }
@@ -190,7 +190,12 @@ if (Test-Path $CacheFile) {
 
 if ($WithGui -or $WithWx) {
   $Targets += 'dottalk_gui_core'
-  if ($Testing) { $Targets += 'dottalk_gui_core_async_smoke' }
+  if ($Testing) {
+    $Targets += 'dottalk_gui_core_async_smoke'
+    # Guarded on the same switches as gui/core in src/tests/CMakeLists.txt
+    # -- this one LINKS the library, so it does not exist without it.
+    $Targets += 'dottalkpp_gui_match_count_test'
+  }
 }
 if ($WithWx) { $Targets += 'dottalk_wb' }
 
