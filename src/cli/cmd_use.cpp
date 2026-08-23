@@ -94,6 +94,7 @@
 #include <type_traits>
 #include <vector>
 
+#include "workarea_util.hpp"
 #include "xbase.hpp"
 #include "xbase/workspace_membership.hpp"   // IN FREE is workspace-scoped (AIF-121)
 #include "xbase_64.hpp"
@@ -397,11 +398,12 @@ static std::string path_key(const fs::path& p) {
 }
 
 static int area_slot_of(DbArea& a) {
-    auto* eng = shell_engine(); if (!eng) return -1;
-    for (int i = 0; i < xbase::MAX_AREA; ++i) {
-        if (&eng->area(i) == &a) return i;
-    }
-    return -1;
+    // AIF-120 I1.1 sweep completed 2026-08-22 (AIF-078 GUI design sec 8, O5).
+    // This was a MAX_AREA pointer-identity scan. The engine stamps the same
+    // number into DbArea::_engine_slot once at construction, so the scan
+    // recovered a value the area already carried. Body only -- the signature
+    // and every call site are unchanged, which is how I1.1 did it.
+    return cli::slot_of_area(&a);
 }
 
 // The workspace-local slot of an area, 0-based. THE FIRST READER of

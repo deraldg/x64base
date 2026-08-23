@@ -76,6 +76,7 @@
 //   DUMP
 //
 
+#include "workarea_util.hpp"
 #include "xbase.hpp"
 #include "textio.hpp"
 #include "cli/command_output.hpp"
@@ -369,17 +370,12 @@ static inline void dbg(bool on, const std::string& msg) {
 }
 
 static int resolve_area_index(xbase::DbArea& a) {
-    xbase::XBaseEngine* eng = shell_engine();
-    if (!eng) return -1;
-
-    for (int i = 0; i < xbase::MAX_AREA; ++i) {
-        try {
-            if (&eng->area(i) == &a) return i;
-        } catch (...) {
-        }
-    }
-
-    return -1;
+    // AIF-120 I1.1 sweep completed 2026-08-22 (AIF-078 GUI design sec 8, O5).
+    // This was a MAX_AREA pointer-identity scan. The engine stamps the same
+    // number into DbArea::_engine_slot once at construction, so the scan
+    // recovered a value the area already carried. Body only -- the signature
+    // and every call site are unchanged, which is how I1.1 did it.
+    return cli::slot_of_area(&a);
 }
 
 static Options parse_opts(std::istringstream& iss) {

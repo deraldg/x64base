@@ -112,6 +112,7 @@
 //   STOP_ON_ERROR
 //
 
+#include "workarea_util.hpp"
 #include "xbase.hpp"
 #include "xbase/workspace_membership.hpp"   // SET RECURSION (AIF-078 stage 3)
 
@@ -934,13 +935,9 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
                 return;
             }
 
-            int area0 = -1;
-            for (int i = 0; i < xbase::MAX_AREA; ++i) {
-                if (&eng->area(i) == &A) {
-                    area0 = i;
-                    break;
-                }
-            }
+            // AIF-120 I1.1 sweep, 2026-08-22. Was a MAX_AREA pointer-identity
+            // scan for a number DbArea::_engine_slot already carries.
+            const int area0 = cli::slot_of_area(&A);
 
             if (area0 < 0) {
                 cli::cmdout::print_message(

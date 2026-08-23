@@ -194,13 +194,13 @@ static std::string stale_fields_string_for_area(xbase::DbArea& A, int area0) {
 }
 
 static std::vector<int> default_current_target(xbase::DbArea& current) {
-    auto* eng = shell_engine();
-    if (!eng) return {};
-
-    for (int i = 0; i < xbase::MAX_AREA; ++i) {
-        if (&eng->area(i) == &current) return {i};
-    }
-    return {};
+    // AIF-120 I1.1 sweep, 2026-08-22. Was a MAX_AREA pointer-identity scan for a
+    // number DbArea::_engine_slot already carries. The empty-vector-on-miss
+    // contract is preserved exactly: slot_of_area answers -1 for an area the
+    // engine never stamped, which is the same set the scan failed to find.
+    const int slot = cli::slot_of_area(&current);
+    if (slot < 0) return {};
+    return {slot};
 }
 
 // ---- Display Functions -----------------------------------------------------

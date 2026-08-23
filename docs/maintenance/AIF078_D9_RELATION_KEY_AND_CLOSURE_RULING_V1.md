@@ -22,7 +22,10 @@ ai_report_audit:
     requested_by: maintainer (member.derald), in-session 2026-08-22 -- "2 assign
       yourself coworker and resolve it too", then the explicit ruling "yes we key
       both ends", then "now that you know better do better". Authorises this
-      ruling and fixes D9.1. Authorises NO code.
+      ruling and fixes D9.1. Authorises NO code. Sec 9b (2026-08-23) rests on
+      the steward's standing architectural directive of the same session --
+      "modify the new product to the existing dottalkpp product, so truth can
+      flow from the bottom up" -- and likewise authorises NO code.
   review:
     first_draft: rejected by independent review, same session. See sec 9.
   report:
@@ -83,6 +86,12 @@ undeclared behaviour**, and that must be stated plainly rather than dressed as a
 new guard.
 
 ## 2. The ruling
+
+> **AMENDED 2026-08-22 -- READ SEC 9a FIRST.** D9.1 keys on
+> `WorkspaceIdentity`, not the raw handle. **D9.3 is WITHDRAWN**: there is
+> no refusal, because the owner had already ruled cross-workspace relations
+> into a separate explicitly-qualified list on 2026-08-12. The text below is
+> the original and is kept as the record of what was reversed.
 
 > **D9.1 -- BOTH ENDS CARRY A HANDLE. Steward, 2026-08-22: "yes we key both
 > ends."** The store key is `(parent_handle, UPPER parent_name)`;
@@ -299,6 +308,237 @@ An earlier draft was sent back by independent review. Corrections folded above:
 8. It quoted half of the *"buy the option"* sentence and omitted the clause that
    opposed it. Sec 6 now quotes both halves.
 
+## 9a. AMENDMENT 2026-08-22 -- D9 conformed to an owner ruling it had reversed
+
+Authorised by the steward in-session ("go") after this author read
+`WORKSPACE_MANAGER_AND_GROUPS_DESIGN_V1.md` (`AIPR-20260812-010`, review-needed,
+**revised after a hostile review**, citations independently re-derived at
+`28a14d653`, lane line `AIF-078, coworker on AIF-070`). **That is this lane's
+own design note, ten days older than D9, and D9 was written without reading
+it.** Third instance in one day of authoring on top of an unread authority.
+
+### What it contradicted
+
+Section 1, under *"ruled by the owner in brainstorm and kept"*:
+
+> Relations are stored **PER WORKSPACE** -- each workspace owns its relation
+> map, so `CUSTOMERS`-vs-`CUSTOMERS` never collides because the key never
+> leaves its workspace. **Cross-workspace relations are a separate, explicitly
+> qualified list.**
+
+**D9.3 refused cross-workspace edge creation.** The owner had already ruled
+they exist, held separately and requiring qualification. A refusal is not a
+cautious default when a standing ruling says otherwise -- it is a reversal.
+
+Section 2, adopting hostile-review D5's cut:
+
+> the registry is KEYED on the existing `dottalk::reference::WorkspaceIdentity`
+> ... **The in-memory handle is a private interning index, never a public
+> identity.**
+
+**D9.1 keyed on the raw handle**, which publishes an interning index as
+identity -- one of the three uncomparable spellings that review existed to
+collapse.
+
+### The amended ruling
+
+> **D9.1 (amended).** Both ends of a relation edge carry a workspace. The
+> steward's *"yes we key both ends"* is untouched; the SPELLING changes.
+> The public, persisted, compared and qualified identity is
+> **`dottalk::reference::WorkspaceIdentity`**
+> (`include/reference/data_address.hpp:30-39` -- `logical_name`,
+> `profile_path`, `session_id`, with `operator==` and `unspecified()`
+> shipping). The in-memory store MAY key on the interned `uint64_t` handle for
+> O(1) lookup, because that is private; it may never hand that number out as
+> identity, persist it, or compare across a boundary.
+>
+> **D9.2 (stands, reinforced).** The handle does not partition the closure.
+> The design's separate cross-workspace list is precisely a closure that spans,
+> which is what R26 defines and Q9 wanted.
+>
+> **D9.3 (WITHDRAWN and replaced).** No refusal. Each workspace owns its
+> relation map -- so same-named parents in two workspaces cannot collide,
+> because the key never leaves its workspace -- and **cross-workspace relations
+> live in a separate, explicitly qualified list.** Crossing is always spelled,
+> never implied, which is the same shape the owner ruled for
+> `COMMIT ALL` vs `COMMIT GLOBAL` (design sec 3, R4).
+>
+> **D9.4 (stands, repointed).** The red-capable spec no longer exercises a
+> refusal. It exercises the QUALIFICATION REQUIREMENT: an unqualified
+> cross-workspace reference must be reported, never first-matched. That is
+> invariant I4 -- *"ambiguity is reported, never first-match"* -- and it is
+> what `find_open_area_by_name_ci` cannot do today, since it returns a bare
+> `DbArea*` and gains a diagnostic out-parameter across all its call sites.
+>
+> **D9.5 (stands, strengthened).** Scoped close computes the closure first.
+> Invariant I5 adds the half D9.5 did not have: closing a workspace must also
+> RELEASE ITS LOCKS, because `locks::release_held` is declared, defined
+> (`src/xbase/xbase_locks.cpp:407`) and **called by nothing**, and the
+> stale-lock reaper only fires on a dead pid -- so two workspaces in one
+> process are not isolated until close releases what the workspace held.
+
+### Consequences for I1.2's scope (sec 4 above)
+
+- The store becomes **per workspace**, not one map with a composite key. Sec 4
+  item 1's `RelKey{ws, name}` is superseded: the partition IS the map.
+- A second structure is needed for the qualified cross-workspace list. Sec 4
+  did not price it.
+- The qualified spelling is **already parsed and rendered** -- the canonical
+  dotted form `WS.#n.TABLE.RECNO(k).FIELD`, `QualifiedReferenceParser`
+  (`src/reference/qualified_reference.cpp`, status supported) and
+  `DataAddress::diagnostic_text()` (`src/reference/data_address.cpp:180-246`,
+  `CURRENT_WORKSPACE` sentinel at `:193`). I1.2 invents no grammar.
+- Sec 4's migration note **inverts**: D9.3's refusal was what made an existing
+  cross-workspace edge unrestorable on import. With no refusal, that hazard
+  goes away; what replaces it is that such an edge must land in the qualified
+  list rather than in a workspace's own map.
+
+### Also stale, carried into D8 and corrected here
+
+- **The DTSHEMA v4 per-area `ws=` field is WITHDRAWN** by invariant I3: *"a
+  posture never records which workspace owned an area, because it is loaded
+  INTO a workspace named by the command."* D8.3 repeated the reconciliation
+  note's "one bump, both fields" including that field.
+- **Design sec 3 lists `USE ... AGAIN` as "NEW VERB, must be built".** It
+  SHIPPED, same date, with the memo refusal and the auto-rename (registered
+  spec `USE_AGAIN`). R1's proposed read-only default for the second instance
+  is not what landed -- coherence was MEASURED (UA_T3), not designed away.
+- **`include/reference/data_address.hpp:56-59` reads "searched-and-absent: no
+  runtime workspace registry, no containment invariant, no cycle guard, no
+  depth cap."** All four now exist in `include/xbase/workspace_membership.hpp`.
+
+### The reconciliation this opens, and it is not mine to make
+
+`workspace_membership.hpp` keys on a `uint64_t` handle carrying a name string.
+Design sec 2 says identity is `WorkspaceIdentity` and the handle is private.
+**What shipped is not what was designed.** D8 recorded Q-R2 as closed because
+an object exists; this amendment records that the object does not match its
+specification. Reconciling the two -- conform the registry, or amend the design
+to what shipped -- is a ruling of its own and the steward's call.
+
+## 9b. RE-AMENDMENT 2026-08-23 -- 9a picked its spelling from a document, and the tree disagrees
+
+Authorised by the steward's standing architectural directive, in-session
+2026-08-22: *"we have spent the day improving workspaces, the gui is brand new,
+and as such more disposable than the engine so modify the new product to the
+existing dottalkpp product, so truth can flow from the bottom up."* That
+directive settles which side of a spec-vs-runtime disagreement gives way, and
+9a resolved one in the other direction.
+
+### The defect in 9a
+
+9a corrected two instances of authoring on top of an unread authority, and
+committed a third variety of the same error in the act of doing it. It moved
+D9.1's key from the shipped handle onto
+`dottalk::reference::WorkspaceIdentity` **because a design note said identity
+was spelled that way**. It did not measure whether anything constructs one.
+
+This is the shape the staged plan's standing rule (sec 11h) exists to stop:
+
+> A ruling may cite a project-doc or chat-held copy for **narrative**, never
+> for a **fact about the tree**. Facts are read from the tree at authoring
+> time.
+
+"`WorkspaceIdentity` is the public identity" is a fact about the tree. It was
+taken from a document.
+
+### Measured at authoring time, 2026-08-23, working tree at `f2d4727f`
+
+`grep -rn "WorkspaceIdentity" include src --include=*.hpp --include=*.cpp
+--include=*.h` returns **17 lines in exactly three files**:
+
+- `include/reference/data_address.hpp` -- 5 (the declaration and accessors)
+- `src/reference/data_address.cpp` -- 6 (its own definition, `operator==`,
+  `unspecified()`, and a function-local `static const` default at `:153`)
+- `src/tests/test_pdlc_foundation_smoke.cpp` -- 6
+
+**Zero in `src/cli`, `src/xbase`, or `src/gui`.** Every construction of a
+populated `WorkspaceIdentity` in this tree is in one test file. Nothing that
+opens a workspace, switches one, joins an area to one, or closes one produces
+one. It is an AIF-079 instance -- a mechanism built with zero call sites --
+and 9a proposed keying the relation store on it.
+
+Worse than unused: **two of its three fields have no producer at all.**
+`profile_path` and `session_id` are written nowhere outside that test. The
+shipped registry entry (`include/xbase/workspace_membership.hpp:66-78`) is
+`Entry{ name, parent, members }` -- it has a name, and it has neither of the
+other two. Keying on `WorkspaceIdentity` today does not read an identity; it
+requires inventing two values at the moment of use, which is fabrication
+wearing a struct.
+
+What DOES ship, and is exercised by three registered specs
+(`WORKSPACE_SCOPE`, `WSMULTI`, `USE_ARGS`), is the handle: `std::uint64_t`,
+monotonic within a session, never reused after `destroy()` so a stale handle
+resolves to nothing rather than to a stranger, `kDefaultHandle = 1` precisely
+so 0 can mean "no workspace"
+(`workspace_membership.hpp:63`, `:204-213`, `:235-240`).
+
+### What 9a was right about, and it is the reason this is a split and not a revert
+
+A handle is **session-scoped**. It cannot be written into a `.dtschema` and
+read back next week, because next week's handle 2 is a different workspace.
+That is a real defect in "key both ends on the handle" and it is exactly what
+`WorkspaceIdentity` was shaped to solve. 9a saw the right problem and reached
+for an unbuilt answer.
+
+D8 already drew the line this needs: **the seam is persistence vs runtime.**
+
+### The re-amended ruling
+
+> **D9.1 (re-amended).** The steward's *"yes we key both ends"* is untouched
+> for the third time. Both ends of a relation edge carry a workspace. The
+> SPELLING is split on the D8 seam:
+>
+> - **Runtime, in-process, in-memory:** the workspace is the interned
+>   `std::uint64_t` handle. It is what the engine maintains, what every area
+>   already carries as `_ws_handle`, what the registry keys, and the only
+>   workspace identity any runtime writer in this tree produces. O(1), no
+>   allocation, no fabricated fields.
+> - **Persisted or crossing a process boundary:** the workspace is its
+>   **NAME**, as `workspace_membership::Entry::name` holds it and
+>   `name_of()` returns it -- the one field of `WorkspaceIdentity` that has a
+>   producer. `profile_path` and `session_id` stay `unspecified()` until
+>   something writes them; a persisted edge that carries two invented values
+>   is worse than one that carries a name and says so.
+>
+> **D9.2 - D9.5 stand as amended in 9a.** The per-workspace map, the withdrawn
+> refusal, the separate qualified cross-workspace list, the qualification
+> requirement under I4, and the lock release under I5 are all unaffected by
+> which token spells a workspace.
+
+### The reconciliation, now with a recommendation instead of a shrug
+
+9a closed by naming the disagreement and declining to resolve it: *"What
+shipped is not what was designed ... a ruling of its own and the steward's
+call."* It remains the steward's call. This section adds what 9a owed it -- a
+measurement and a recommendation.
+
+**Recommended: amend the design note, not the runtime.**
+`WORKSPACE_MANAGER_AND_GROUPS_DESIGN_V1.md` sec 2 reads *"the in-memory handle
+is a private interning index, never a public identity."* Under the bottom-up
+directive the shipped registry is the senior artifact: it exists, it is
+exercised by three green specs, and it is what the GUI redesign will consume.
+The design note is correct that a raw session handle must never be PERSISTED
+or COMPARED ACROSS A BOUNDARY -- and D9.1 above concedes exactly that half by
+persisting the name. What it should give up is the claim that the handle is
+private in-process, because in-process is the only place it is used.
+
+**Not recommended, and stated so it is a choice rather than an omission:**
+conforming the registry to `WorkspaceIdentity` would mean inventing a
+`profile_path` and a `session_id` for every workspace so that a struct built
+for a future consumer can be satisfied by a present one. That is the tail
+wagging the dog, and the directive says which end is the dog.
+
+### What would falsify 9b
+
+- A runtime writer of `WorkspaceIdentity` outside `data_address.cpp` and the
+  test -- then it is not an AIF-079 instance and the measurement is wrong.
+- A producer landing for `profile_path` or `session_id` (an AIF-070 profile
+  path, say) -- then the struct has content and persisting the bare name is
+  the lossy choice.
+- A steward ruling that the design note wins. It is his note and his call;
+  this section is a recommendation with its arithmetic shown, not a decision.
+
 ## 10. Good Neighbor note
 
 - **What changed.** This document. No code, no build, no test.
@@ -315,4 +555,14 @@ An earlier draft was sent back by independent review. Corrections folded above:
   `sed -n '284,289p;462,467p' src/cli/cmd_regression.cpp`;
   `sed -n '92,98p' include/xbase/workspace_membership.hpp`;
   `grep -c 'relations_store()' src/cli/set_relations.cpp`.
-- **How to undo.** Delete this file. No code depends on it.
+- **How to verify sec 9b, and it is the whole of its argument.**
+  `grep -rn "WorkspaceIdentity" include src --include=*.hpp --include=*.cpp --include=*.h`
+  -- expect 17 lines in three files, none of them under `src/cli`, `src/xbase`
+  or `src/gui`; `sed -n '66,78p' include/xbase/workspace_membership.hpp` --
+  expect `Entry` to carry `name`, `parent`, `members` and neither
+  `profile_path` nor `session_id`; `sed -n '204,213p;235,240p'
+  include/xbase/workspace_membership.hpp` for the monotonic, never-reused
+  handle.
+- **How to undo.** Delete this file. No code depends on it. To undo sec 9b
+  alone, delete the section: 9a stands on its own and its closing paragraph
+  already leaves the reconciliation open.

@@ -8,6 +8,7 @@
 // status: supported
 
 // src/cli/dirty_prompt.cpp
+#include "workarea_util.hpp"
 #include "cli/dirty_prompt.hpp"
 
 #include <cctype>
@@ -106,17 +107,12 @@ static bool commit_all_dirty() {
 }
 
 static int area_index_from_ref(xbase::DbArea& areaRef) {
-    xbase::XBaseEngine* eng = nullptr;
-    try { eng = shell_engine(); } catch (...) { eng = nullptr; }
-    if (!eng) return -1;
-
-    for (int i = 0; i < xbase::MAX_AREA; ++i) {
-        try {
-            if (&(eng->area(i)) == &areaRef) return i;
-        } catch (...) {
-        }
-    }
-    return -1;
+    // AIF-120 I1.1 sweep completed 2026-08-22 (AIF-078 GUI design sec 8, O5).
+    // This was a MAX_AREA pointer-identity scan. The engine stamps the same
+    // number into DbArea::_engine_slot once at construction, so the scan
+    // recovered a value the area already carried. Body only -- the signature
+    // and every call site are unchanged, which is how I1.1 did it.
+    return cli::slot_of_area(&areaRef);
 }
 
 static bool is_quit_like(const std::string& opLabel) {
