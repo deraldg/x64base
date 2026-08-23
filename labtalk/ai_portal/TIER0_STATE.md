@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-08-23T18:25:01Z
+    generated_utc : 2026-08-23T18:39:50Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,8 +11,8 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : edbbc5081  (2026-08-23)
-    upstream      : edbbc5081
+    HEAD          : 82d609fc5  (2026-08-23)
+    upstream      : 82d609fc5
     unpushed      : 0 commit(s) ahead of upstream
 
 ## Declared target

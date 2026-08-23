@@ -14,10 +14,12 @@
 // is text in, rows out, which is the whole reason it was lifted out of
 // session.cpp's anonymous namespace.
 //
-// TWO ARMS PIN DEFECTS RATHER THAN CONTRACTS, and they say so in their own
-// failure text. They exist so that FIXING the defect turns them red on
-// purpose, which is the only way a fixture can hold a known-wrong behaviour
-// without quietly blessing it. Neither is a claim that the behaviour is right.
+// T7 AND T8 WERE PINS, and are not any more. Each asserted a known-wrong
+// behaviour and said in its own failure text that going red meant the defect
+// had been fixed and the arm should be rewritten. Both went red on 2026-08-23
+// when 4a and 4e landed, and both are now written the right way round. The
+// mechanism is recorded because it worked: a fixture can hold a known-wrong
+// behaviour without blessing it, and it tells you when to stop.
 
 #include "gui/core/relation_parse.hpp"
 
@@ -31,6 +33,8 @@ namespace {
 using dottalk::gui::WorkspaceRelationInfo;
 using dottalk::gui::merge_relation;
 using dottalk::gui::parse_relation_edges_from_output;
+using dottalk::gui::format_relation_posture_line;
+using dottalk::gui::parse_relation_posture_line;
 
 bool require(bool condition, const std::string& message) {
     if (!condition) {
@@ -209,58 +213,245 @@ int main() {
         }
     }
 
-    // ---- T7 PIN: the ` TO ` clause is NOT parsed (finding 4a) -------------
+    // ---- T7: the ` TO ` clause IS parsed (finding 4a, fixed) -------------
     // set_relations.cpp:894 emits `ON <parent-csv> TO <child-csv>` whenever the
-    // two field lists differ, and SET RELATIONS ADD ... ON a TO b is shipped
-    // grammar (cmd_relations.cpp:418-455). The parser takes everything after
-    // " ON " as ONE key and copies it to the child side. gui_workspace_format
-    // .cpp measured the cost: 190 of 1,102 RELATION lines (17.2%) in the live
-    // catalog carry an explicit TO, and its ` TO ` renderer -- which fires only
-    // when child_key != parent_key -- can therefore never fire.
+    // field lists differ, and gui_workspace_format.cpp measured how often that
+    // is: 190 of 1,102 RELATION lines (17.2%) in the live catalog carry an
+    // explicit TO. Its ` TO ` renderer fires only when child_key != parent_key,
+    // so until this split existed the renderer could never fire -- the need was
+    // measured, the renderer written, and the parser upstream never produced
+    // its input.
     //
-    // PINNED, NOT BLESSED. When 4a lands, parent_key becomes "SID,TERM" and
-    // child_key "STU_ID,TERM_CD", and this arm goes red on purpose.
+    // Each side stays a CSV. "SID,TERM" is ONE key made of two fields, and
+    // splitting it further is the caller's business, not the parser's.
     {
         const auto rows = parse_relation_edges_from_output(
             "P\n  -> C ON SID,TERM TO STU_ID,TERM_CD  (matches: 3)\n", "DEFAULT");
         if (!require(rows.size() == 1, "T7: the TO-form line did not parse at all")) {
             return EXIT_FAILURE;
         }
-        if (!require(rows[0].parent_key == "SID,TERM TO STU_ID,TERM_CD" &&
-                     rows[0].child_key == rows[0].parent_key,
-                     "T7 PIN: the TO clause is now split -- finding 4a has been "
-                     "fixed, so DELETE this arm and assert the correct split")) {
+        if (!require(rows[0].parent_key == "SID,TERM",
+                     "T7: the parent side of the TO clause is wrong")) {
+            return EXIT_FAILURE;
+        }
+        if (!require(rows[0].child_key == "STU_ID,TERM_CD",
+                     "T7: the child side of the TO clause is wrong")) {
+            return EXIT_FAILURE;
+        }
+        // THE DISCRIMINATOR for the renderer that could not fire.
+        if (!require(rows[0].child_key != rows[0].parent_key,
+                     "T7: the two sides compare equal, so ` TO ` still cannot render")) {
             return EXIT_FAILURE;
         }
     }
 
-    // ---- T8 PIN: the tree FLATTENS below depth 1 (finding 4e, new) --------
-    // The producer indents by depth * 2 (set_relations.cpp), so depth 1 is two
-    // spaces and depth 2 is four. The parser pops while
-    // `tree_stack.back().first >= indent` but pushes at `indent + 2`, so a
-    // depth-2 line at indent 4 pops the depth-1 entry that was stored at 4 and
-    // is attributed to the ROOT. COURSES is a child of ENROLL and is recorded
-    // as a child of STUDENTS. Either the push should be `indent` or the pop
-    // should be `>`; the two do not currently agree.
-    //
-    // PINNED, NOT BLESSED. Fixing it makes this arm red on purpose.
+    // ---- T7b: NO TO clause means the child side MIRRORS the parent --------
+    // Not empty. An empty field name is not something a correct producer
+    // emits, so nothing downstream should have to tell "no child key" apart
+    // from a real one.
     {
-        const auto rows = parse_relation_edges_from_output(kTree, "DEFAULT");
-        if (!require(rows[1].child == "COURSES", "T8: the depth-2 edge is missing")) {
+        const auto rows = parse_relation_edges_from_output(
+            "P\n  -> C ON SID  (matches: 1)\n", "DEFAULT");
+        if (!require(rows.size() == 1 && rows[0].parent_key == "SID" &&
+                     rows[0].child_key == "SID",
+                     "T7b: a keyed line without TO did not mirror its key")) {
             return EXIT_FAILURE;
         }
-        if (!require(rows[1].parent == "STUDENTS",
-                     "T8 PIN: the depth-2 edge now names its real parent -- "
-                     "finding 4e has been fixed, so DELETE this arm and assert "
-                     "parent == ENROLL")) {
+    }
+
+    // ---- T8: the tree NESTS correctly (finding 4e, fixed) ----------------
+    // The producer indents by depth * 2. The parser pops entries whose
+    // recorded indent is >= the current one, so the push has to record the
+    // indent the child was SEEN at. It recorded `indent + 2`, so a depth-1
+    // child stored at 4 was popped by its own depth-2 child at indent 4, and
+    // every descendant below depth 1 was attributed to the ROOT.
+    {
+        const auto rows = parse_relation_edges_from_output(kTree, "DEFAULT");
+        if (!require(rows.size() == 2 && rows[1].child == "COURSES",
+                     "T8: the depth-2 edge is missing")) {
+            return EXIT_FAILURE;
+        }
+        if (!require(rows[0].parent == "STUDENTS",
+                     "T8: the depth-1 edge lost its root")) {
+            return EXIT_FAILURE;
+        }
+        if (!require(rows[1].parent == "ENROLL",
+                     "T8: the depth-2 edge is still attributed to the ROOT")) {
+            return EXIT_FAILURE;
+        }
+    }
+
+    // ---- T8b: SIBLINGS at one depth keep the same parent ------------------
+    // The arrangement that a too-eager pop and a too-lazy pop disagree about,
+    // so it discriminates the fix from an overcorrection to `>`.
+    {
+        const auto rows = parse_relation_edges_from_output(
+            "R\n"
+            "  -> A ON K1  (matches: 1)\n"
+            "    -> A2 ON K2  (matches: 2)\n"
+            "  -> B ON K3  (matches: 3)\n", "DEFAULT");
+        if (!require(rows.size() == 3, "T8b: the three edges did not all parse")) {
+            return EXIT_FAILURE;
+        }
+        if (!require(rows[0].parent == "R" && rows[0].child == "A",
+                     "T8b: the first depth-1 edge is wrong")) {
+            return EXIT_FAILURE;
+        }
+        if (!require(rows[1].parent == "A" && rows[1].child == "A2",
+                     "T8b: the depth-2 edge did not nest under its sibling")) {
+            return EXIT_FAILURE;
+        }
+        if (!require(rows[2].parent == "R" && rows[2].child == "B",
+                     "T8b: the second depth-1 edge did not pop back to the root")) {
+            return EXIT_FAILURE;
+        }
+    }
+
+    // ---- T9: the POSTURE ROUND TRIP is lossless --------------------------
+    // THE ARM THAT DID NOT EXIST WHEN THE LOSS DID. The writer emitted
+    // `ON <parent_key>` and dropped the child side; the reader could not have
+    // read one back. Two broken ends made the round trip look lossless, which
+    // is why nothing caught it -- a save/load cycle returned exactly what it
+    // was given, and what it was given had already been flattened.
+    //
+    // This is the FIELDMGR_APPEND shape stated the other way round: a
+    // round-trip assertion proves nothing unless the value being carried can
+    // tell the two ends apart. A relation whose sides are EQUAL cannot. So the
+    // arm carries one whose sides differ.
+    {
+        WorkspaceRelationInfo original;
+        original.workspace = "DEFAULT";
+        original.parent = "STUDENTS";
+        original.child = "ENROLL";
+        original.parent_key = "SID,TERM";
+        original.child_key = "STU_ID,TERM_CD";
+
+        std::string line;
+        if (!require(format_relation_posture_line(original, line),
+                     "T9: a complete relation produced no posture line")) {
+            return EXIT_FAILURE;
+        }
+        if (!require(line == "RELATION STUDENTS ENROLL ON SID,TERM TO STU_ID,TERM_CD",
+                     "T9: the posture line is not the shape the reader expects")) {
+            return EXIT_FAILURE;
+        }
+
+        WorkspaceRelationInfo back;
+        if (!require(parse_relation_posture_line(line, "DEFAULT", back),
+                     "T9: the writer's own line did not parse")) {
+            return EXIT_FAILURE;
+        }
+        if (!require(back.parent == original.parent && back.child == original.child &&
+                     back.parent_key == original.parent_key &&
+                     back.child_key == original.child_key,
+                     "T9: a field did not survive the round trip")) {
+            return EXIT_FAILURE;
+        }
+        // THE DISCRIMINATOR. Under the old writer this was the assertion that
+        // would have failed, and it is the only one that could have.
+        if (!require(back.child_key != back.parent_key,
+                     "T9: the child side was flattened onto the parent's")) {
+            return EXIT_FAILURE;
+        }
+    }
+
+    // ---- T9b: equal sides emit NO ` TO `, so ordinary files do not churn --
+    {
+        WorkspaceRelationInfo same;
+        same.workspace = "DEFAULT";
+        same.parent = "STUDENTS";
+        same.child = "ENROLL";
+        same.parent_key = "SID";
+        same.child_key = "SID";
+
+        std::string line;
+        if (!require(format_relation_posture_line(same, line) &&
+                     line == "RELATION STUDENTS ENROLL ON SID",
+                     "T9b: a same-key relation grew a redundant TO clause")) {
+            return EXIT_FAILURE;
+        }
+        WorkspaceRelationInfo back;
+        if (!require(parse_relation_posture_line(line, "DEFAULT", back) &&
+                     back.parent_key == "SID" && back.child_key == "SID",
+                     "T9b: a keyed line without TO did not round trip")) {
+            return EXIT_FAILURE;
+        }
+    }
+
+    // ---- T9c: both ends REFUSE in the return value (R3) ------------------
+    // Not by emitting an empty line, and not by half-filling the output.
+    {
+        WorkspaceRelationInfo incomplete;
+        incomplete.workspace = "DEFAULT";
+        incomplete.parent = "STUDENTS";
+        incomplete.child = "ENROLL";
+        // no key
+        std::string line = "SENTINEL";
+        if (!require(!format_relation_posture_line(incomplete, line),
+                     "T9c: a keyless relation was given a posture line")) {
+            return EXIT_FAILURE;
+        }
+        if (!require(line == "SENTINEL",
+                     "T9c: the refused format still wrote to its output")) {
+            return EXIT_FAILURE;
+        }
+
+        WorkspaceRelationInfo out;
+        out.parent = "SENTINEL";
+        if (!require(!parse_relation_posture_line("AREA 0 | students.dbf", "DEFAULT", out),
+                     "T9c: a non-RELATION posture line was parsed as a relation")) {
+            return EXIT_FAILURE;
+        }
+        if (!require(!parse_relation_posture_line("RELATION STUDENTS ENROLL", "DEFAULT", out),
+                     "T9c: a RELATION line with no key was accepted")) {
+            return EXIT_FAILURE;
+        }
+        if (!require(out.parent == "SENTINEL",
+                     "T9c: a refused parse still wrote to its output")) {
+            return EXIT_FAILURE;
+        }
+    }
+
+    // ---- T10: the posture and the shell agree on ONE grammar -------------
+    // The same relation reached through the two different producers must land
+    // on the same row rather than two. This is the arrangement that would have
+    // caught 4a from either side: before the split, the tree's
+    // `ON SID TO STU_ID` and the posture's `ON SID TO STU_ID` both collapsed
+    // to one blob key, which agreed -- wrongly, and identically.
+    {
+        std::vector<WorkspaceRelationInfo> rows;
+        for (auto r : parse_relation_edges_from_output(
+                 "STUDENTS\n  -> ENROLL ON SID TO STU_ID  (matches: 7)\n", "DEFAULT")) {
+            merge_relation(rows, std::move(r));
+        }
+        WorkspaceRelationInfo from_file;
+        if (!require(parse_relation_posture_line(
+                         "RELATION STUDENTS ENROLL ON SID TO STU_ID", "DEFAULT", from_file),
+                     "T10: the posture line did not parse")) {
+            return EXIT_FAILURE;
+        }
+        merge_relation(rows, std::move(from_file));
+
+        if (!require(rows.size() == 1,
+                     "T10: the two producers disagreed and the edge split in two")) {
+            return EXIT_FAILURE;
+        }
+        if (!require(rows[0].parent_key == "SID" && rows[0].child_key == "STU_ID",
+                     "T10: the agreed row does not carry both sides")) {
+            return EXIT_FAILURE;
+        }
+        if (!require(rows[0].match_count.has_value() && *rows[0].match_count == 7,
+                     "T10: the count from the shell did not survive the posture merge")) {
             return EXIT_FAILURE;
         }
     }
 
     std::cout << "R6: an uncomputed match count is absent, not zero; "
                  "a keyless line is not a relation\n";
-    std::cout << "PIN: 2 arms hold known defects (4a the TO clause, "
-                 "4e the flattened tree) and go red when they are fixed\n";
+    std::cout << "4a: `ON p TO c` splits both sides; 4e: the tree nests "
+                 "instead of flattening onto the root\n";
+    std::cout << "posture: writer and reader share one grammar, and the round "
+                 "trip carries a relation whose two sides DIFFER\n";
     std::cout << "PASS: dottalkpp relation merge\n";
     return EXIT_SUCCESS;
 }

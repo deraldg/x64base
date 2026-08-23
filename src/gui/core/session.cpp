@@ -568,22 +568,9 @@ std::vector<WorkspaceSchemaArea> load_dtschema2_areas_from_stream(
             continue;
         }
 
-        if (line.rfind("RELATION ", 0) == 0) {
-            std::string rest = trim_ascii(line.substr(9));
-            const auto on = rest.find(" ON ");
-            if (on == std::string::npos) {
-                continue;
-            }
-            std::istringstream head(rest.substr(0, on));
-            WorkspaceRelationInfo relation;
-            relation.workspace = owning_workspace_now();
-            head >> relation.parent >> relation.child;
-            relation.parent_key = trim_ascii(rest.substr(on + 4));
-            relation.child_key = relation.parent_key;
-            relation.source = "DTSchema";
-            if (!relation.parent.empty() && !relation.child.empty()) {
-                merge_relation(relations, std::move(relation));
-            }
+        WorkspaceRelationInfo relation;
+        if (parse_relation_posture_line(line, owning_workspace_now(), relation)) {
+            merge_relation(relations, std::move(relation));
         }
     }
 
@@ -2029,13 +2016,16 @@ bool Session::save_workspace_schema(const std::filesystem::path& schema_path,
         file << "\n";
     }
 
+    // 4a, the other half. This was a `file <<` chain that wrote
+    // `ON <parent_key>` and nothing else, so a relation binding
+    // differently-named endpoints came back from its own posture with the
+    // child side silently replaced by the parent's. It now shares one unit
+    // with the reader, and the round trip is held by a fixture.
+    std::string posture_line;
     for (const auto& relation : impl_->relations) {
-        if (relation.parent.empty() || relation.child.empty() || relation.parent_key.empty()) {
-            continue;
+        if (format_relation_posture_line(relation, posture_line)) {
+            file << posture_line << "\n";
         }
-        file << "RELATION " << relation.parent
-             << " " << relation.child
-             << " ON " << relation.parent_key << "\n";
     }
 
     file.flush();
@@ -2232,6 +2222,22 @@ WorkspaceModel Session::workspace_model() const {
         auto* parent = find_relation_area(relation.parent);
         auto* child = find_relation_area(relation.child);
         if (!parent || !child) {
+            return;
+        }
+
+        // 4b. A relation key is a FIELD LIST -- `ON SID,TERM TO STU_ID,TERM_CD`
+        // is shipped grammar -- and this counter compares ONE field's value.
+        // It used to hand the whole list to field_index, which compared the
+        // entire string to a field NAME, got 0, and returned; the count then
+        // read as a measured zero. R6 made the absence expressible, so the
+        // honest answer is now available: leave the count ABSENT and say
+        // nothing, rather than answer a question this counter cannot answer.
+        //
+        // House rule 2026-08-22 -- commands and functions validate field names
+        // -- is why the refusal is explicit here instead of relying on
+        // field_index happening to miss.
+        if (relation.parent_key.find(',') != std::string::npos ||
+            relation.child_key.find(',') != std::string::npos) {
             return;
         }
 

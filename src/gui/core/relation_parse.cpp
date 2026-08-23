@@ -87,6 +87,23 @@ std::optional<std::uint64_t> match_count_from_relation_line(const std::string& l
 
 } // namespace
 
+void split_relation_keys(const std::string& on_clause,
+                         std::string& parent_key,
+                         std::string& child_key) {
+    const std::string clause = trim_ascii(on_clause);
+    const auto to = clause.find(" TO ");
+    if (to == std::string::npos) {
+        parent_key = clause;
+        child_key = clause;
+        return;
+    }
+    parent_key = trim_ascii(clause.substr(0, to));
+    child_key = trim_ascii(clause.substr(to + 4));
+    if (child_key.empty()) {
+        child_key = parent_key;
+    }
+}
+
 // TWO DEFECTS FIXED HERE, both named in AIF-078 D9 sec 4 item 5 and excluded
 // from I1.2 in writing (D10 sec 8a) until the field had a writer.
 //
@@ -152,25 +169,63 @@ void merge_relation(std::vector<WorkspaceRelationInfo>& relations, WorkspaceRela
         return;
     }
 
-    // The parent_key fill-in went with pass 2: no producer can hand us an
-    // empty one any more, so a row cannot be sitting here with one either.
-    //
-    // The CHILD key fill-in stays, and is NOT dead code waiting to be found.
-    // It is unreachable only because all three parse sites currently assign
-    // child_key = parent_key, which is finding 4a -- the ` TO ` clause the
-    // producer emits and the parser does not split. gui_workspace_format.cpp
-    // already measured the size of that: 190 of 1,102 RELATION lines (17.2%)
-    // in the live catalog carry an explicit TO. This line goes live the day
-    // 4a lands, and deleting it would have to be undone that same day.
-    if (found->child_key.empty()) {
-        found->child_key = relation.child_key;
-    }
+    // BOTH key fill-ins are gone, and the second one is a third correction of
+    // mine. I wrote that the CHILD fill-in "goes live the day 4a lands".
+    // 4a landed here and it did not: split_relation_keys mirrors the parent
+    // side when there is no TO clause, so every producer now emits a non-empty
+    // child_key, exactly as they already emitted a non-empty parent_key. The
+    // line was dead before 4a and is dead after it, for a different reason.
     if (!found->match_count) {
         found->match_count = relation.match_count;
     }
     if (!relation.source.empty()) {
         found->source = relation.source;
     }
+}
+
+bool format_relation_posture_line(const WorkspaceRelationInfo& relation,
+                                  std::string& out) {
+    if (relation.parent.empty() || relation.child.empty() ||
+        relation.parent_key.empty()) {
+        return false;
+    }
+    out = "RELATION " + relation.parent + " " + relation.child +
+          " ON " + relation.parent_key;
+    // Only when the two sides actually differ, so a file full of ordinary
+    // same-name relations does not churn.
+    if (!relation.child_key.empty() && relation.child_key != relation.parent_key) {
+        out += " TO " + relation.child_key;
+    }
+    return true;
+}
+
+bool parse_relation_posture_line(const std::string& line,
+                                 const std::string& owning_workspace,
+                                 WorkspaceRelationInfo& out) {
+    constexpr const char* prefix = "RELATION ";
+    const std::string text = trim_ascii(line);
+    if (text.rfind(prefix, 0) != 0) {
+        return false;
+    }
+    const std::string rest =
+        trim_ascii(text.substr(std::char_traits<char>::length(prefix)));
+    const auto on = rest.find(" ON ");
+    if (on == std::string::npos) {
+        return false;
+    }
+
+    WorkspaceRelationInfo relation;
+    relation.workspace = owning_workspace;
+    std::istringstream head(rest.substr(0, on));
+    head >> relation.parent >> relation.child;
+    split_relation_keys(rest.substr(on + 4), relation.parent_key, relation.child_key);
+    relation.source = "DTSchema";
+    if (relation.parent.empty() || relation.child.empty() ||
+        relation.parent_key.empty()) {
+        return false;
+    }
+    out = std::move(relation);
+    return true;
 }
 
 std::vector<WorkspaceRelationInfo> parse_relation_edges_from_output(
@@ -220,8 +275,7 @@ std::vector<WorkspaceRelationInfo> parse_relation_edges_from_output(
             relation.workspace = owning_workspace;
             relation.parent = trim_ascii(rest.substr(0, arrow));
             relation.child = trim_ascii(rest.substr(arrow + 2, on - (arrow + 2)));
-            relation.parent_key = trim_ascii(rest.substr(on + 4));
-            relation.child_key = relation.parent_key;
+            split_relation_keys(rest.substr(on + 4), relation.parent_key, relation.child_key);
             relation.source = "DotTalk++ shell";
             if (!relation.parent.empty() && !relation.child.empty()) {
                 merge_relation(relations, std::move(relation));
@@ -261,8 +315,9 @@ std::vector<WorkspaceRelationInfo> parse_relation_edges_from_output(
         relation.workspace = owning_workspace;
         relation.parent = tree_stack.back().second;
         relation.child = on == std::string::npos ? trim_ascii(rest) : trim_ascii(rest.substr(0, on));
-        relation.parent_key = on == std::string::npos ? std::string{} : trim_ascii(rest.substr(on + 4));
-        relation.child_key = relation.parent_key;
+        if (on != std::string::npos) {
+            split_relation_keys(rest.substr(on + 4), relation.parent_key, relation.child_key);
+        }
         // R6: the count keeps its absence. "(matches: n/a)" is what the
         // producer prints when it could not compute one (set_relations.cpp
         // :1010), and value_or(0) used to turn that into a zero the wx grid
@@ -281,7 +336,13 @@ std::vector<WorkspaceRelationInfo> parse_relation_edges_from_output(
         if (!relation.parent.empty() && !relation.child.empty()) {
             const std::string child = relation.child;
             merge_relation(relations, std::move(relation));
-            tree_stack.push_back({indent + 2, child});
+            // 4e. Was `indent + 2`, which did not agree with the pop above:
+            // the pop discards entries whose recorded indent is >= the current
+            // one, so a depth-1 child stored at 4 was popped by its OWN
+            // depth-2 child at indent 4, and every descendant below depth 1
+            // was attributed to the ROOT. Store the indent the child was SEEN
+            // at, and the two agree.
+            tree_stack.push_back({indent, child});
         }
     }
     return relations;
