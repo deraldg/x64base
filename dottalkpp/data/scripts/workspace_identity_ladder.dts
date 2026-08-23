@@ -1,0 +1,172 @@
+; ============================================================================
+; WORKSPACE IDENTITY LADDER -- AIF-078 D10.1 / D10.2 / D10.3
+; ============================================================================
+;
+; WHAT MAKES THIS A DISCRIMINATOR AND NOT A DEMONSTRATION.
+;
+; WSL_T4 is the arm that matters. It destroys a workspace and then creates one
+; with the SAME NAME, and asserts the second WS_ID is GREATER than the first.
+; That comparison can only pass if retirement actually reached the catalog:
+; if WORKSPACE DESTROY silently no-ops, or supersedes the wrong row, or writes
+; a flag that does not stick, then the name still has a live chain, the second
+; NEW ADOPTS it, and the two ids are EQUAL. One line, and it separates a real
+; retirement from a cheerful message.
+;
+; WHY IT ASSERTS AGAINST THE CATALOG TABLE.
+;
+; WORKSPACES.dbf is an ordinary x64 table -- that is the whole point of it, the
+; map drawn in the same ink as the territory -- so this spec opens it and reads
+; FIELDS. Every marker here is a field-value comparison, per the doctrine
+; FIELDMGR_APPEND paid for: a spec that asserts SHAPE passes green on a blanked
+; table. Nothing here reads a console line.
+;
+; WHAT IT DELIBERATELY DOES NOT COVER, stated rather than implied.
+;
+; ADOPTION ACROSS A PROCESS BOUNDARY is not testable here. WORKSPACE NEW
+; refuses a duplicate name within a session, so a single process cannot ask a
+; second NEW to adopt. It was proven by hand instead, 2026-08-23, build
+; 05:27:07, two separate datarun processes:
+;
+;     run 1: WORKSPACE NEW: handle 2  name LADDERTEST ... WS_ID 110
+;     run 2: WORKSPACE NEW: handle 2  name LADDERTEST ... WS_ID 110
+;            ADOPTED the durable identity this name already holds ...
+;
+; A two-process fixture is the chartered follow-up. Until it exists, adoption
+; rests on that transcript and this spec does not claim it.
+;
+; NOTHING HERE ASSERTS THAT ANYTHING IS ABSENT. USE_AGAIN established over
+; three cuts that no marker in this language can assert emptiness, and that an
+; ERRORED marker PRINTS NOTHING rather than going red -- so a suite can lose a
+; claim silently and still report a full green. Both refusal arms therefore ask
+; the answerable question instead: did the KNOWN OCCUPANT SURVIVE.
+;
+; GUARDS. If any WSL_G* reds, treat every WSL_T* as UNPROVEN rather than as
+; passing -- the catalog predicates depend on locating the right row, and the
+; two refusal arms depend on a sentinel actually having been written.
+;
+; WSL_G4/G5 EXIST BECAUSE THIS SPEC'S FIRST RUN NEEDED THEM. It wrote APPEND
+; BLANK, which this shell does not take; nothing was appended, both sentinel
+; tables were created EMPTY, and WSL_T6 and WSL_T7 both went RED while the verb
+; under test had behaved perfectly -- the refusals printed exactly as designed.
+; A fixture failure wearing a verb failure's clothes. The guards were missing
+; because this spec guarded its CATALOG reads and not its SENTINEL writes, which
+; is the same omission WSMULTI's WSM_G4 was added to close. Guard every input an
+; arm reads, not just the interesting ones.
+;
+; Self-bootstrapping: WSLDEF / WSLOCC in SANDBOX, erased at the end. Leaves
+; retired (SUPERSEDED) catalog rows behind BY DESIGN -- that is the history
+; D10.3 keeps, and it is what WSL_T5 reads.
+; ============================================================================
+
+SET PATH DBF DBF/SANDBOX
+WORKSPACE CLOSE ALL
+
+; Prior-run residue: these may or may not exist. A refusal here is noise, not
+; a failure -- the spec's own arms do not depend on the starting state.
+WORKSPACE DESTROY WSLADR1
+WORKSPACE DESTROY WSLADR2
+
+ERASE wsldef CONFIRM
+ERASE wslocc CONFIRM
+
+; Two sentinels, each in its OWN engine area -- CREATE closes the current area
+; before writing, so creating into an area that already holds a sentinel would
+; destroy the thing under test. The slot is chosen explicitly, never inherited.
+;
+; APPEND, not APPEND BLANK. The first cut of this spec wrote APPEND BLANK, which
+; this shell does not take: BLANK falls through as an unrecognized argument, the
+; command prints its usage, NOTHING IS APPENDED, and the following REPLACE says
+; "no current record". Both sentinel tables were created EMPTY and the two
+; refusal arms below read a field that was never written -- so a FIXTURE failure
+; arrived dressed as a VERB failure. Had the empty field happened to compare
+; equal it would have arrived as a GREEN instead, which is the whole reason
+; WSL_G4/G5 now exist.
+
+SELECT 0
+CREATE X64 WSLDEF (ID N(4), MARK C(10))
+APPEND
+REPLACE ID WITH 1
+REPLACE MARK WITH "DEF"
+
+SELECT 1
+CREATE X64 WSLOCC (ID N(4), MARK C(10))
+APPEND
+REPLACE ID WITH 1
+REPLACE MARK WITH "OCC"
+
+; Guards for the two arms that depend on these. A green WSL_T6 or WSL_T7 means
+; nothing if the sentinel it reads was never written.
+SELECT 0
+? "WSL_G4_default_sentinel_written:" + (ALLTRIM(MARK) = "DEF")
+SELECT 1
+? "WSL_G5_occupant_sentinel_written:" + (ALLTRIM(MARK) = "OCC")
+
+WORKSPACE CLOSE ALL
+
+; --- BIRTH ------------------------------------------------------------------
+; D10.1: a workspace is born durable. D10.2: the birth row IS the chain root.
+
+WORKSPACE NEW WSLADR1
+
+SET PATH DBF workspaces
+USE WORKSPACES
+LOCATE FOR ALLTRIM(WS_NAME) = "WSLADR1" .AND. ALLTRIM(SUPERSEDED) = "0"
+VAR id1 = WS_ID
+? "WSL_G0_live_row_located_by_name:" + (ALLTRIM(WS_NAME) = "WSLADR1")
+? "WSL_G1_located_row_is_live:" + (ALLTRIM(SUPERSEDED) = "0")
+? "WSL_T1_birth_row_is_self_describing:" + (ALLTRIM(FMT) = "BIRTH 1")
+? "WSL_T2_birth_row_carries_no_payload:" + (SIZE_B = 0)
+? "WSL_T3_birth_row_is_the_chain_root:" + (PREV_ID = 0)
+CLOSE
+
+; --- THE DISCRIMINATOR ------------------------------------------------------
+; Destroy, then create the same name again. A fresh id proves the live row was
+; really retired; an equal id proves it was not.
+
+WORKSPACE DESTROY WSLADR1
+WORKSPACE NEW WSLADR1
+
+SET PATH DBF workspaces
+USE WORKSPACES
+LOCATE FOR ALLTRIM(WS_NAME) = "WSLADR1" .AND. ALLTRIM(SUPERSEDED) = "0"
+? "WSL_G2_live_row_located_after_recreate:" + (ALLTRIM(WS_NAME) = "WSLADR1")
+? "WSL_T4_destroy_then_new_minted_a_fresh_id:" + (WS_ID > $id1)
+
+; --- HISTORY KEPT -----------------------------------------------------------
+; The retired row is still there, still readable, and now flagged. A destroyed
+; workspace leaves a record, not a hole.
+
+LOCATE FOR WS_ID = $id1
+? "WSL_G3_retired_row_still_present:" + (ALLTRIM(WS_NAME) = "WSLADR1")
+? "WSL_T5_retired_row_is_superseded:" + (ALLTRIM(SUPERSEDED) = "1")
+CLOSE
+
+; --- REFUSAL: DEFAULT -------------------------------------------------------
+; Invariant I1 needs DEFAULT to outlive every other workspace. Asserted by a
+; POSITIVE READ of a sentinel opened in DEFAULT afterwards, never by claiming
+; something is absent.
+
+SET PATH DBF DBF/SANDBOX
+USE wsldef
+WORKSPACE DESTROY DEFAULT
+? "WSL_T6_default_survived_the_refusal:" + (ALLTRIM(MARK) = "DEF")
+WORKSPACE CLOSE ALL
+
+; --- REFUSAL: OCCUPIED ------------------------------------------------------
+; Destroy does not cascade, so it must refuse a workspace that still holds an
+; area -- and the area must still be there afterwards.
+
+WORKSPACE NEW WSLADR2
+WORKSPACE SWITCH WSLADR2
+USE wslocc
+WORKSPACE DESTROY WSLADR2
+? "WSL_T7_occupied_workspace_kept_its_area:" + (ALLTRIM(MARK) = "OCC")
+
+; --- TEARDOWN ---------------------------------------------------------------
+
+WORKSPACE CLOSE ALL
+WORKSPACE SWITCH DEFAULT
+WORKSPACE DESTROY WSLADR1
+WORKSPACE DESTROY WSLADR2
+ERASE wsldef CONFIRM
+ERASE wslocc CONFIRM

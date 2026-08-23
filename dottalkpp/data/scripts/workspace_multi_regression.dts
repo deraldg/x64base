@@ -257,6 +257,17 @@ GO TOP
 SET RECURSION ON
 WORKSPACE SWITCH DEFAULT
 WORKSPACE CLOSE ALL
+
+* Retire the three workspaces this spec declared (AIF-078 D10.3, 2026-08-23).
+* Since D10.1 each WORKSPACE NEW writes a BIRTH ROW, so without this the spec
+* would leave THREE permanent catalog rows behind on every run.
+*
+* WSGAMMA FIRST: it is nested under WSALPHA, and DESTROY refuses a workspace
+* that still has children rather than cascading, so the leaf goes first.
+WORKSPACE DESTROY WSGAMMA
+WORKSPACE DESTROY WSALPHA
+WORKSPACE DESTROY WSBETA
+
 ERASE mwdef CONFIRM
 ERASE mwalpha CONFIRM
 ERASE mwbeta CONFIRM

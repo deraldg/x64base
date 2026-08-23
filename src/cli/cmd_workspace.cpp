@@ -2691,6 +2691,82 @@ static bool ensure_durable_workspace(const std::string& name,
     return ok;
 }
 
+// AIF-078 D10.3 -- the return leg of "born durable" (steward, 2026-08-23:
+// "it is the same lane").
+//
+// A workspace born durable must be able to die durable, or birth rows pile up
+// with nothing able to retire them -- WORKSPACE_SCOPE and WSMULTI mint two and
+// three per run respectively, so "nothing retires them" is measured in rows per
+// regression pass, not in theory.
+//
+// RETIREMENT IS SUPERSESSION, not deletion. The chain's live row is marked
+// SUPERSEDED and no replacement is written, which makes the rule exactly:
+//
+//     A WORKSPACE EXISTS IFF ITS CHAIN HAS A LIVE ROW.
+//
+// That costs no schema change and no new flag, and it keeps SUPERSEDED with
+// ONE meaning -- "this row is no longer the current state of that name" --
+// which is true whether a newer save replaced it or nothing did. The history
+// survives: every prior row is still there, still chained, still readable, so
+// a destroyed workspace leaves a record of having existed rather than a hole.
+//
+// It is also what makes the discriminating spec possible. After a destroy the
+// name has no live row, so the next WORKSPACE NEW finds nothing to adopt and
+// mints a FRESH id -- and "the second WS_ID differs from the first" is a
+// field-value comparison that can only pass if retirement actually happened.
+static bool retire_durable_workspace(const std::string& name,
+                                     std::uint64_t& retired_id,
+                                     bool& had_row,
+                                     std::string& err) {
+    retired_id = 0;
+    had_row    = false;
+
+    xbase::DbArea a;
+    if (!open_catalog(a, err)) return false;
+
+    bool ok = false;
+    {
+        WsLock lk(a, err);
+        if (!lk) { cli_memo::memo_auto_on_close(a); a.close(); return false; }
+
+        const WsCatalogScan scan = scan_catalog(a, name);
+        if (scan.live_rec < 0) {
+            // No live row. NOT an error: a workspace can be runtime-only if it
+            // predates D10.1, and a caller that has already checked its runtime
+            // preconditions should not be blocked by the catalog having nothing
+            // to say. Reported through had_row so the verb can say which
+            // happened instead of implying a retirement that did not occur.
+            ok = true;
+        } else {
+            retired_id = chain_root(scan, scan.live_id);
+            try {
+                a.gotoRec(scan.live_rec); a.readCurrent();
+                if (set_by_name(a, "SUPERSEDED", "1", err)) {
+                    a.writeCurrent();
+                    // Read the flag back FROM THE FIELD. A retirement that
+                    // silently did not stick would leave the name adoptable,
+                    // and the next NEW would hand a destroyed workspace's
+                    // identity to a new one -- the worst failure this verb has.
+                    a.gotoRec(scan.live_rec); a.readCurrent();
+                    if (trim_copy(get_by_name(a, "SUPERSEDED")) == "1") {
+                        had_row = true;
+                        ok      = true;
+                    } else {
+                        err = "WORKSPACE DESTROY: the live catalog row for '" + name +
+                              "' did not take SUPERSEDED. The workspace is NOT retired.";
+                    }
+                }
+            } catch (const std::exception& e) {
+                err = std::string("WORKSPACE DESTROY: catalog write failed: ") + e.what();
+            }
+        }
+    } // release FLOCK while the area is still open
+
+    cli_memo::memo_auto_on_close(a);
+    a.close();
+    return ok;
+}
+
 static void save_to_memo(const std::string& name, int version = 2,
                          bool minidb = false) {
     const std::string base = schema_save_to_string(version);
@@ -3913,7 +3989,8 @@ static void workspace_print_usage() {
     std::cout << "  WORKSPACE OPEN <target> INX|IDX [FALLBACK] [recursive] [TABLE]\n";
     std::cout << "  WORKSPACE OPEN <target> CDX [FALLBACK] [recursive] [TABLE]   (LMDB)\n";
     std::cout << "  WORKSPACE OPEN <target> NOINDEX [recursive] [TABLE]\n";
-    std::cout << "  WORKSPACE NEW <name> [UNDER <parent>]      (Declare a runtime workspace)\n";
+    std::cout << "  WORKSPACE NEW <name> [UNDER <parent>]      (Declare a workspace; allocates its WS_ID)\n";
+    std::cout << "  WORKSPACE DESTROY <name-or-handle>         (Retire an empty, childless workspace)\n";
     std::cout << "  WORKSPACE SWITCH <name-or-handle>          (Areas opened next join this workspace)\n";
     std::cout << "  WORKSPACE REGISTRY                         (Report runtime membership and nesting)\n";
     std::cout << "  WORKSPACE CLOSE                            (Close the CURRENT workspace)\n";
@@ -4166,6 +4243,127 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
             }
             std::cout << "  Areas opened after WORKSPACE SWITCH " << nm
                       << " join this workspace.\n";
+
+        } else if (sub_command == "destroy") {
+            // AIF-078 D10.3 (steward, 2026-08-23: "it is the same lane").
+            //
+            // The return leg of D10.1. This is also where
+            // xbase::workspace::destroy() finally gets a call site: it has
+            // been defined, correct, and CALLED BY NOTHING since stage 3 --
+            // the fifth AIF-079 instance this lane has catalogued, and the
+            // first one this lane has closed.
+            //
+            // ORDER IS THE WHOLE SAFETY ARGUMENT. Every RUNTIME precondition
+            // is checked BEFORE the catalog is touched. Retiring the durable
+            // row first and only then discovering the workspace still holds
+            // areas would leave a LIVE workspace with NO identity -- and its
+            // name freshly adoptable, so the next WORKSPACE NEW would hand a
+            // living workspace's identity to a different one. Validate
+            // everything, then mutate: writeback's gather-all-before-writing,
+            // pointed at deletion.
+            //
+            // destroy() enforces the same three refusals itself and returns a
+            // bare bool. They are re-checked here, individually, so the verb
+            // can say WHICH one fired. A refusal that does not name its reason
+            // is the exact shape this lane keeps finding.
+            auto toks = split_tokens(rest_of_args);
+            if (toks.empty()) {
+                std::cout << "WORKSPACE DESTROY: missing target.\n";
+                std::cout << "  Use: WORKSPACE DESTROY <name-or-handle>\n";
+                return;
+            }
+
+            const std::uint64_t h = resolve_workspace_token(toks[0]);
+            if (h == 0) {
+                std::cout << "WORKSPACE DESTROY: no such workspace: " << toks[0] << "\n";
+                return;
+            }
+            if (h == xbase::workspace::kDefaultHandle) {
+                std::cout << "WORKSPACE DESTROY: DEFAULT cannot be destroyed.\n";
+                std::cout << "  Invariant I1: an area belongs to exactly ONE workspace and "
+                             "there is no null one, which needs DEFAULT to outlive every "
+                             "other workspace.\n";
+                return;
+            }
+
+            const std::size_t mem = xbase::workspace::member_count(h);
+            if (mem != 0) {
+                std::cout << "WORKSPACE DESTROY: refused -- workspace " << h << " ("
+                          << xbase::workspace::name_of(h) << ") still holds "
+                          << mem << " open area(s).\n";
+                std::cout << "  Close them first (WORKSPACE CLOSE " << xbase::workspace::name_of(h)
+                          << "). Destroy does not cascade, so it can never be the thing "
+                             "that silently orphaned an open area. Nothing was changed.\n";
+                return;
+            }
+
+            const auto kids = xbase::workspace::children(h);
+            if (!kids.empty()) {
+                std::cout << "WORKSPACE DESTROY: refused -- workspace " << h << " ("
+                          << xbase::workspace::name_of(h) << ") has "
+                          << kids.size() << " nested workspace(s):\n";
+                for (const auto k : kids) {
+                    std::cout << "  handle " << k << "  name "
+                              << xbase::workspace::name_of(k) << "\n";
+                }
+                std::cout << "  Destroy them first. A parent removed out from under its "
+                             "children would leave their parent pointer naming a handle "
+                             "that resolves to nothing. Nothing was changed.\n";
+                return;
+            }
+
+            // Name is captured BEFORE the runtime entry goes away: WS_NAME is
+            // the catalog key, and after destroy() there is nothing left to
+            // ask.
+            const std::string  dnm   = xbase::workspace::name_of(h);
+            const std::uint64_t known = xbase::workspace::ws_id_of(h);
+
+            std::uint64_t retired = 0;
+            bool hadRow = false;
+            std::string derr;
+            if (!ws_memo::retire_durable_workspace(dnm, retired, hadRow, derr)) {
+                std::cout << (derr.empty()
+                                ? std::string("WORKSPACE DESTROY: could not retire the "
+                                              "durable row.")
+                                : derr)
+                          << "\n";
+                std::cout << "  Nothing was destroyed. The runtime workspace is untouched, "
+                             "which is the safe half to be left holding.\n";
+                return;
+            }
+
+            if (!xbase::workspace::destroy(h)) {
+                // Every precondition destroy() checks was checked above, so
+                // reaching here means the two disagree. Say so loudly rather
+                // than reporting a success that did not happen -- and note the
+                // catalog row IS already retired at this point.
+                std::cout << "WORKSPACE DESTROY: the runtime registry refused handle " << h
+                          << " AFTER its durable row was retired.\n";
+                std::cout << "  This should be unreachable -- the verb re-checks every "
+                             "refusal destroy() makes. The catalog now has no live row for '"
+                          << dnm << "' while the handle still exists. Report this.\n";
+                return;
+            }
+
+            std::cout << "WORKSPACE DESTROY: handle " << h << "  name " << dnm << "\n";
+            if (hadRow) {
+                std::cout << "  Durable identity RETIRED: WS_ID " << retired
+                          << " -- its live catalog row is now SUPERSEDED, so the name has "
+                             "no live row and a future WORKSPACE NEW " << dnm
+                          << " will mint a FRESH WS_ID rather than adopt this one.\n";
+                std::cout << "  History kept: every row in the chain is still there and "
+                             "still readable. A destroyed workspace leaves a record, not a "
+                             "hole.\n";
+            } else {
+                std::cout << "  No live catalog row to retire"
+                          << (known ? " (the runtime handle carried WS_ID " +
+                                      std::to_string(known) + ", which the catalog does not "
+                                      "list as live)"
+                                    : " (this workspace never had a durable identity)")
+                          << ". The runtime workspace is gone.\n";
+            }
+            std::cout << "  Handle " << h << " is NOT reused: a stale handle held by an area "
+                         "must resolve to 'gone' and never to somebody else.\n";
 
         } else if (sub_command == "switch") {
             auto toks = split_tokens(rest_of_args);

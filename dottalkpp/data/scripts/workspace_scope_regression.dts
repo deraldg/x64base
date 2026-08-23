@@ -200,4 +200,17 @@ ERASE wschi CONFIRM
 SET RECURSION ON
 WORKSPACE SWITCH DEFAULT
 
+* Retire the two workspaces this spec declared (AIF-078 D10.3, 2026-08-23).
+* Before DESTROY existed they were runtime-only and evaporated with the process;
+* since D10.1 each one writes a BIRTH ROW, so leaving them declared would add two
+* permanent catalog rows PER RUN of this spec. Same principle as the flag above:
+* a spec that leaves residue behind poisons everything downstream of it, and
+* rows accumulate more quietly than a flag does.
+*
+* CHILD FIRST. DESTROY refuses a workspace that still has nested workspaces --
+* it does not cascade, so a parent removed out from under its children would
+* leave their parent pointer naming a handle that resolves to nothing.
+WORKSPACE DESTROY WSCHILD
+WORKSPACE DESTROY WSPARENT
+
 FORMULA "WORKSPACE-SCOPE-PROOF-END"
