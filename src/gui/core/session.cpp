@@ -2266,14 +2266,52 @@ WorkspaceModel Session::workspace_model() const {
             return;
         }
 
+        // TWO COUNTERS, 2a and 2b. This loop and
+        // relations_api::match_count_for_child answer what looks like one
+        // question and were answering two different ones. Both halves fixed
+        // here are cases where THIS one was simply wrong:
+        //
+        //   2a. DELETED ROWS WERE COUNTED AS MATCHES. The engine skips them
+        //       (`!child_db->isDeleted() && values_match(...)`), and isDeleted
+        //       appeared nowhere in this file. Same table, same relation, two
+        //       different integers, and nothing said which one a grid cell
+        //       held.
+        //
+        //   2b. THE SCAN WAS UNBOUNDED and had no concept of stopping early.
+        //       That is the shape AIF-074 P1.3 / RDB-06 exists to prevent: a
+        //       truncated scan reads exactly like a complete one unless it
+        //       announces itself.
+        //
+        // kGuiMatchScanLimit MIRRORS the engine's default (set_relations.cpp
+        // :120). It does not READ it, because relations_api is not linked into
+        // src/gui at all -- the GUI consumes relations by parsing CLI text
+        // (I1.2 recon). So REL SCANLIMIT does not reach this counter: this is
+        // A bound, not THE bound, and saying so is the point of naming it.
+        //
+        // STILL DIVERGENT, deliberately, because closing these means linking
+        // the engine and that is the open GUI-layer decision, not a patch:
+        // the engine matches on ALL join fields where this compares one, and
+        // walks the ACTIVE INDEX ORDER inside a ScopedEngineSelect where this
+        // walks physical record order.
+        constexpr std::uint64_t kGuiMatchScanLimit = 500000;
+
         std::uint64_t count = 0;
+        std::uint64_t scanned = 0;
+        bool truncated = false;
         const auto child_count = child->area.recCount64();
         const auto limit = std::min<std::uint64_t>(
             child_count,
             static_cast<std::uint64_t>(std::numeric_limits<int32_t>::max()));
         for (std::uint64_t recno = 1; recno <= limit; ++recno) {
+            if (++scanned > kGuiMatchScanLimit) {
+                truncated = true;
+                break;
+            }
             try {
                 if (!child->area.gotoRec(static_cast<int32_t>(recno)) || !child->area.readCurrent()) {
+                    continue;
+                }
+                if (child->area.isDeleted()) {
                     continue;
                 }
                 if (trim_ascii(child->area.get(child_field)) == parent_value) {
@@ -2293,7 +2331,15 @@ WorkspaceModel Session::workspace_model() const {
             (void)parent->area.gotoRec(static_cast<int32_t>(parent_recno));
             (void)parent->area.readCurrent();
         }
-        relation.match_count = count;
+        // R6, and the reason 2b could be fixed without inventing a type. A
+        // truncated scan has no honest number: a short count would say "this
+        // is how many there are", which is false, and there is no third state
+        // to put it in. ABSENT says "I could not compute this", which is true.
+        // The cursor restore above runs either way -- refusing to answer must
+        // not also leave the user's record pointer moved.
+        if (!truncated) {
+            relation.match_count = count;
+        }
     };
 
     for (auto& relation : model.relations) {
