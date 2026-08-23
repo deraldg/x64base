@@ -25,6 +25,8 @@ ai_report_audit:
       ws_id" (D10.1) and "it is the same lane" (D10.3). Authorises NO code.
   review:
     supersedes: D9 sec 9b's persistence half. See sec 6.
+    accepted_by: maintainer (member.derald), in-session 2026-08-23 -- "accept".
+      Covers D10.2, D10.4 and D10.5; D10.1 and D10.3 were already his.
   report:
     path: docs/maintenance/AIF078_D10_WORKSPACE_IDENTITY_LADDER_RULING_V1.md
     kind: ruling
@@ -32,9 +34,11 @@ ai_report_audit:
 
 # AIF-078 -- D10: one identity ladder, three rungs, and a workspace is born durable
 
-Status: **ruling, review-needed.** D10.1 and D10.3 are the STEWARD's, given
-in-session and recorded here. D10.2, D10.4 and D10.5 are the author's
-recommendations, adopted under the shape he ruled, and are not self-approved.
+Status: **ruling, ACCEPTED 2026-08-23.** D10.1 and D10.3 are the STEWARD's,
+given in-session. D10.2, D10.4 and D10.5 were the author's recommendations and
+were **accepted by the steward in-session the same day -- "accept"** -- which
+is what moves this document out of review-needed. One branch remains open
+inside D10.5 and is marked there; it blocks nothing.
 Owner: member.derald. Author: member.ai.claude.cowork, run `COWORK-20260823-001`.
 Date: 2026-08-23. Baseline `fd41c5d87`.
 
@@ -217,9 +221,15 @@ steward's instinct located, and it is a real defect, not a preference.
 > **D10.5 (author, and no longer a crux).** `WorkspaceIdentity` is the
 > reference lane's ADDRESS type, not the workspace ladder. Under R1 it sits
 > DOWNSTREAM: its workspace field is populated FROM the ladder at one named
-> conversion site, or the struct is repointed onto `WS_ID`. Either is a small
-> change once D10.1-D10.4 stand, and it is the steward's call which. Under R5,
-> what may NOT happen is the two systems continuing to coexist as peers.
+> conversion site, or the struct is repointed onto `WS_ID`. Under R5, what may
+> NOT happen is the two systems continuing to coexist as peers.
+>
+> **ACCEPTED 2026-08-23, with one branch left open.** "Downstream, not a peer"
+> is settled. WHICH of the two -- populate from the ladder, or repoint onto
+> `WS_ID` -- is deliberately deferred to the moment the conversion site is
+> written, because that is when the cost of each becomes visible rather than
+> estimated. It blocks nothing: no consumer exists to be broken either way,
+> which is the whole finding of sec 3.
 
 ## 6. What this makes false the day it lands
 
