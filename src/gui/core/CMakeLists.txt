@@ -5,6 +5,7 @@ add_library(dottalk_gui_core STATIC
   gui_shell_runtime.cpp
   gui_workspace_format.cpp
   localization.cpp
+  relation_parse.cpp
   gui_cli_bridge.cpp
   session.cpp
 )

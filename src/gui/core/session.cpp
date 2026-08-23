@@ -22,6 +22,7 @@
 #include "gui/core/gui_runtime_adapter.hpp"
 #include "gui_shell_runtime.hpp"
 #include "gui_cli_bridge.hpp"
+#include "relation_parse.hpp"
 #include "cli/shell_shortcuts.hpp"
 #include "xbase.hpp"
 #include "xindex/index_manager.hpp"
@@ -485,8 +486,6 @@ std::optional<std::filesystem::path> resolve_schema_index_path(const std::filesy
     }
     return std::nullopt;
 }
-
-void merge_relation(std::vector<WorkspaceRelationInfo>& relations, WorkspaceRelationInfo relation);
 
 // AIF-078 I1.2 follow-up. WorkspaceRelationInfo::workspace had ZERO WRITERS:
 // all three construction sites in this file left it at its kDefaultWorkspace
@@ -1117,195 +1116,6 @@ bool output_clears_relations(const std::string& output) {
     return false;
 }
 
-std::size_t leading_space_count(const std::string& text) {
-    std::size_t count = 0;
-    while (count < text.size() && text[count] == ' ') {
-        ++count;
-    }
-    return count;
-}
-
-std::optional<std::uint64_t> match_count_from_relation_line(const std::string& line) {
-    const auto marker = line.find("(matches:");
-    if (marker == std::string::npos) {
-        return std::nullopt;
-    }
-    const std::string tail = trim_ascii(line.substr(marker + 9));
-    long long value = 0;
-    if (!parse_i64_prefix(tail, value) || value < 0) {
-        return std::nullopt;
-    }
-    return static_cast<std::uint64_t>(value);
-}
-
-// TWO DEFECTS FIXED HERE, both named in AIF-078 D9 sec 4 item 5 and excluded
-// from I1.2 in writing (D10 sec 8a) until the field had a writer.
-//
-// 1. WORKSPACE WAS NOT IN THE IDENTITY PREDICATE. Two edges differing only by
-//    owning workspace fused into one. Harmless while every relation was stamped
-//    DEFAULT; a silent data loss the moment the store was partitioned and the
-//    field got written. This is the two-resolver defect I1.3a closed in the
-//    engine, one layer up, and sec 4 item 5 predicted it by name.
-//
-// 2. AN EMPTY KEY WAS COMPATIBLE WITH ANYTHING, so the merge was
-//    ORDER-DEPENDENT. Sources report different amounts: REL LIST's tree gives a
-//    match count and sometimes no key, a posture gives keys and no counts. That
-//    fill-in is DELIBERATE and is kept. What was wrong is what happened when a
-//    keyless edge met MORE THAN ONE candidate -- P->C ON SID and P->C ON
-//    CLS_ID are two different relations, and a keyless P->C arriving third
-//    silently attached to whichever happened to be first in the vector.
-//
-//    Now: exact key match first; only if none, fall back to a keyless
-//    candidate, and ONLY when there is exactly ONE. Two candidates means the
-//    edge is genuinely unattributable, so it becomes its OWN row -- visible --
-//    rather than fusing into a guess. That is invariant I4, "ambiguity is
-//    reported, never first-match", expressed the one way a model merge can
-//    express it: refuse to fuse.
-void merge_relation(std::vector<WorkspaceRelationInfo>& relations, WorkspaceRelationInfo relation) {
-    const auto same_edge = [&](const WorkspaceRelationInfo& existing) {
-        return lower_ascii(existing.workspace) == lower_ascii(relation.workspace) &&
-               lower_ascii(existing.parent) == lower_ascii(relation.parent) &&
-               lower_ascii(existing.child) == lower_ascii(relation.child);
-    };
-
-    // Pass 1: the same edge on the same key. Exact, order-independent.
-    auto found = std::find_if(relations.begin(), relations.end(),
-                              [&](const WorkspaceRelationInfo& existing) {
-        return same_edge(existing) &&
-               lower_ascii(existing.parent_key) == lower_ascii(relation.parent_key);
-    });
-
-    // Pass 2: one side did not report a key. Merge only if the candidate is
-    // UNIQUE -- see the note above.
-    if (found == relations.end()) {
-        auto candidate = relations.end();
-        std::size_t candidates = 0;
-        for (auto it = relations.begin(); it != relations.end(); ++it) {
-            if (!same_edge(*it)) continue;
-            if (!it->parent_key.empty() && !relation.parent_key.empty()) continue;
-            if (candidates++ == 0) candidate = it;
-        }
-        if (candidates == 1) found = candidate;
-    }
-
-    if (found == relations.end()) {
-        relations.push_back(std::move(relation));
-        return;
-    }
-
-    if (found->parent_key.empty()) {
-        found->parent_key = relation.parent_key;
-    }
-    if (found->child_key.empty()) {
-        found->child_key = relation.child_key;
-    }
-    if (found->match_count == 0) {
-        found->match_count = relation.match_count;
-    }
-    if (!relation.source.empty()) {
-        found->source = relation.source;
-    }
-}
-
-std::vector<WorkspaceRelationInfo> parse_relation_edges_from_output(const std::string& output) {
-    std::vector<WorkspaceRelationInfo> relations;
-    std::istringstream stream(output);
-    std::string line;
-    std::vector<std::pair<std::size_t, std::string>> tree_stack;
-    while (std::getline(stream, line)) {
-        const std::string original_line = line;
-        line = trim_ascii(line);
-        if (line.empty()) {
-            continue;
-        }
-
-        constexpr const char* rooted_marker = "Relations (tree) rooted at:";
-        if (line.rfind(rooted_marker, 0) == 0) {
-            const std::string root = trim_ascii(line.substr(std::char_traits<char>::length(rooted_marker)));
-            if (!root.empty()) {
-                tree_stack.clear();
-                tree_stack.push_back({0, root});
-            }
-            continue;
-        }
-
-        constexpr const char* parent_marker = "Relations for parent:";
-        if (line.rfind(parent_marker, 0) == 0) {
-            const std::string root = trim_ascii(line.substr(std::char_traits<char>::length(parent_marker)));
-            if (!root.empty()) {
-                tree_stack.clear();
-                tree_stack.push_back({0, root});
-            }
-            continue;
-        }
-
-        constexpr const char* prefix = "REL:";
-        if (line.rfind(prefix, 0) == 0) {
-            std::string rest = trim_ascii(line.substr(std::char_traits<char>::length(prefix)));
-            const auto arrow = rest.find("->");
-            const auto on = rest.find(" ON ");
-            if (arrow == std::string::npos || on == std::string::npos || on <= arrow) {
-                continue;
-            }
-
-            WorkspaceRelationInfo relation;
-            relation.workspace = owning_workspace_now();
-            relation.parent = trim_ascii(rest.substr(0, arrow));
-            relation.child = trim_ascii(rest.substr(arrow + 2, on - (arrow + 2)));
-            relation.parent_key = trim_ascii(rest.substr(on + 4));
-            relation.child_key = relation.parent_key;
-            relation.source = "DotTalk++ shell";
-            if (!relation.parent.empty() && !relation.child.empty()) {
-                merge_relation(relations, std::move(relation));
-            }
-            continue;
-        }
-
-        if (line.find(" ") == std::string::npos && line.find("->") == std::string::npos) {
-            tree_stack.clear();
-            tree_stack.push_back({0, line});
-            continue;
-        }
-
-        if (line.rfind("->", 0) != 0 || tree_stack.empty()) {
-            continue;
-        }
-
-        const std::size_t indent = leading_space_count(original_line);
-        while (tree_stack.size() > 1 && tree_stack.back().first >= indent) {
-            tree_stack.pop_back();
-        }
-
-        std::string rest = trim_ascii(line.substr(2));
-        const auto arrow = rest.find("->");
-        if (arrow != std::string::npos) {
-            continue;
-        }
-
-        const auto matches = match_count_from_relation_line(rest);
-        const auto match_marker = rest.find("(matches:");
-        if (match_marker != std::string::npos) {
-            rest = trim_ascii(rest.substr(0, match_marker));
-        }
-        const auto on = rest.find(" ON ");
-
-        WorkspaceRelationInfo relation;
-        relation.workspace = owning_workspace_now();
-        relation.parent = tree_stack.back().second;
-        relation.child = on == std::string::npos ? trim_ascii(rest) : trim_ascii(rest.substr(0, on));
-        relation.parent_key = on == std::string::npos ? std::string{} : trim_ascii(rest.substr(on + 4));
-        relation.child_key = relation.parent_key;
-        relation.match_count = matches.value_or(0);
-        relation.source = "DotTalk++ shell";
-        if (!relation.parent.empty() && !relation.child.empty()) {
-            const std::string child = relation.child;
-            merge_relation(relations, std::move(relation));
-            tree_stack.push_back({indent + 2, child});
-        }
-    }
-    return relations;
-}
-
 std::string first_token_from_command_text(const std::string& text) {
     std::istringstream stream(text);
     std::string token;
@@ -1714,7 +1524,7 @@ Session::Session()
         if (const auto schema = workspace_load_schema_from_cli_output(cli.output, script.string())) {
             (void)mirror_workspace_load_schema(*schema, ignored_messages);
         }
-        for (auto relation : parse_relation_edges_from_output(cli.output)) {
+        for (auto relation : parse_relation_edges_from_output(cli.output, owning_workspace_now())) {
             merge_relation(impl_->relations, std::move(relation));
         }
     }
@@ -2415,7 +2225,7 @@ WorkspaceModel Session::workspace_model() const {
     };
 
     auto count_relation_matches = [&](WorkspaceRelationInfo& relation) {
-        if (relation.match_count != 0 || relation.parent.empty() || relation.child.empty()) {
+        if (relation.match_count || relation.parent.empty() || relation.child.empty()) {
             return;
         }
 
@@ -2549,7 +2359,7 @@ CommandResult Session::run_command(const CommandRequest& request) {
             workspace_open_mirrored = opened > 0;
         }
 
-        for (auto relation : parse_relation_edges_from_output(cli.output)) {
+        for (auto relation : parse_relation_edges_from_output(cli.output, owning_workspace_now())) {
             merge_relation(impl_->relations, std::move(relation));
         }
 
