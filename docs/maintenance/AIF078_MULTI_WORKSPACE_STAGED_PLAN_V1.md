@@ -518,7 +518,9 @@ line is refused AT THE PRODUCER per D10 R6.3. Held by
 **NEW, OWED, and this is the one to plan for rather than discover:**
 
 7. **THE GUI IS NAME-KEYED AND D9.1 KEYS ON A HANDLE. Rule the conversion, and
-   rule WHERE it lives, before stage 4 cuts I1.2.**
+   rule WHERE it lives. ORIGINALLY WRITTEN "before stage 4 cuts I1.2" -- see
+   the correction at the end of this item; I1.2 is already cut and this is
+   live.**
 
    This is not a relation quirk. Four structs in `include/gui/core/model.hpp`
    (`:124`, `:188`, `:206`, `:248`) plus `current_workspace` (`:261`) and the
@@ -565,6 +567,31 @@ line is refused AT THE PRODUCER per D10 R6.3. Held by
 
    **status: review-needed.** Authored by `member.ai.claude.cowork`; the author
    does not self-approve.
+
+   **CORRECTION, same day, before this section was reviewed by anyone.** This
+   item was written as something to settle "before stage 4 cuts I1.2", and the
+   lane said in chat that I1.2 stays HELD. THAT IS FALSE. I1.2 LANDED at
+   `3ddd7fac7` (2026-08-23 06:05, an ancestor of HEAD): the relation store is
+   partitioned by workspace and keyed on
+   `xbase::workspace::current_handle()`.
+
+   I took "held" from `claude/AIF078_I12_RELATION_STORE_RECON.md`, which says
+   HELD and was written 2026-08-22. It is a CACHE and it went stale overnight.
+   **Sec 11h of this very document names that trap** -- a project-doc copy may
+   be cited for NARRATIVE, never for a FACT about the tree -- and it caught the
+   author of an amendment TO it. Recorded rather than silently edited, because
+   the trap catching someone in the act of citing it is the useful part.
+
+   WHAT THE CORRECTION CHANGES: item 7 is not a thing to settle BEFORE I1.2 is
+   cut. **It is live now.** The engine partitions by HANDLE; the GUI carries a
+   NAME in six places (`model.hpp:124`, `:188`, `:206`, `:248`, `:261`, `:262`)
+   and nothing converts between them. It does not wait on the GUI-layer
+   decision either -- whichever way that goes, something must convert a
+   workspace NAME to a HANDLE, once, in a named place.
+
+   Also corrected: the comment at `include/gui/core/model.hpp:160-171`, which
+   this lane called an overclaim in chat, is **TRUE**. The runtime CAN separate
+   relations by workspace.
 
 **Good Neighbor.** WHAT CHANGED: this section only -- no code. WHOSE AREA:
 `src/gui` is this lane's; `include/xbase/workspace_membership.hpp` and
