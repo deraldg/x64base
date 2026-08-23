@@ -1263,12 +1263,16 @@ static void schema_list_open(bool show_all) {
 }
 
 #if HAVE_RELATIONS
+static inline void clear_relations_for_workspace_safe(std::uint64_t ws) {
+    try { relations_api::clear_all_relations_for(ws); } catch (...) {}
+}
 static inline void clear_relations_all_safe() {
-    try { relations_api::clear_all_relations(); } catch (...) {}
+    try { relations_api::clear_all_relations_everywhere(); } catch (...) {}
     try { relations_api::set_current_parent_name(""); } catch (...) {}
 }
 #else
 static inline void clear_relations_all_safe() {}
+static inline void clear_relations_for_workspace_safe(std::uint64_t) {}
 #endif
 
 #if HAVE_RELATIONS
@@ -1442,35 +1446,60 @@ static int reconcile_unregistered_areas() {
     return orphans;
 }
 
-// KNOWN OVER-REACH, STATED RATHER THAN HIDDEN.
+// THE OVER-REACH THIS USED TO STATE IS GONE (AIF-078 I1.2, 2026-08-23).
 //
-// The relation graph is process-global: relations_api has no notion of which
-// workspace a relation belongs to. So a SCOPED close still has to clear ALL
-// relations, because leaving a relation pointing into an area this close just
-// emptied is the dangling-parent shape, and a dangling relation is worse than
-// an over-eager clear.
+// It used to read: "The relation graph is process-global ... so a SCOPED close
+// still has to clear ALL relations ... a scoped close currently costs relations
+// belonging to workspaces it did not touch. This is a real limitation of stage
+// 3, not a design choice." It printed that apology whenever another workspace
+// still held areas, and it named its own fix: "Making the relation graph
+// workspace-scoped is the named prerequisite."
 //
-// That means a scoped close currently costs relations belonging to workspaces
-// it did not touch. This is a real limitation of stage 3, not a design choice,
-// and it is PRINTED when it can actually bite -- when another workspace still
-// holds areas. Making the relation graph workspace-scoped is the named
-// prerequisite before two workspaces can hold relations at the same time.
+// That prerequisite landed. The store is partitioned by workspace handle, so a
+// scoped close clears the relations of THE WORKSPACES IT ACTUALLY CLOSED and
+// nothing else. The reasoning that forced the over-reach still holds and is
+// what makes the scoping correct rather than merely narrower: leaving an edge
+// pointing into an area this close just emptied is the dangling-parent shape,
+// and a dangling relation is worse than an over-eager clear. The set of areas
+// this close emptied is exactly the closed workspaces' members, so clearing
+// exactly those workspaces' maps leaves nothing dangling.
+//
+// CLOSE ALL still clears EVERYWHERE -- deliberately now, through a function
+// that says so, rather than because clearing everywhere was the only thing the
+// store could do.
+static void collect_workspace_subtree(std::uint64_t h,
+                                      std::vector<std::uint64_t>& out,
+                                      int depth = 0) {
+    // Bounded and non-recursive past the cap, for the same reason every other
+    // walk in this lane is: a cycle the structural guard missed must not hang
+    // a close.
+    if (depth > xbase::workspace::kMaxWorkspaceDepth) return;
+    if (std::find(out.begin(), out.end(), h) != out.end()) return;
+    out.push_back(h);
+    for (const auto k : xbase::workspace::children(h))
+        collect_workspace_subtree(k, out, depth + 1);
+}
+
 static void close_common_teardown(int close_count, bool scoped) {
 #if HAVE_RELATIONS
     if (scoped) {
-        std::size_t elsewhere = 0;
-        for (const auto h : xbase::workspace::handles()) {
-            if (h == xbase::workspace::current_handle()) continue;
-            elsewhere += xbase::workspace::member_count(h);
+        // Exactly the workspaces this close emptied: the current one plus its
+        // descendants. Under SET RECURSION OFF the nested ones were left open,
+        // so clearing their maps would be the old over-reach in miniature --
+        // but their areas are still open, so their edges are not dangling and
+        // they are not ours to clear. member_count() is what tells them apart.
+        std::vector<std::uint64_t> subtree;
+        collect_workspace_subtree(xbase::workspace::current_handle(), subtree);
+        for (const auto h : subtree) {
+            if (h != xbase::workspace::current_handle() &&
+                xbase::workspace::member_count(h) != 0) {
+                continue;   // still open: not emptied by this close, not ours
+            }
+            clear_relations_for_workspace_safe(h);
         }
-        if (elsewhere > 0) {
-            std::cout << "WORKSPACE CLOSE: relations are cleared GLOBALLY -- the relation graph\n"
-                         "  is not workspace-scoped yet, so relations belonging to the "
-                      << elsewhere << " area(s)\n"
-                         "  still open elsewhere were cleared too (AIF-078 stage 3 limitation).\n";
-        }
+    } else {
+        clear_relations_all_safe();
     }
-    clear_relations_all_safe();
 #endif
 
 #if HAVE_TABLE

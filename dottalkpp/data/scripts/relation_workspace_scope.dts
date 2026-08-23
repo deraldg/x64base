@@ -1,0 +1,162 @@
+; ============================================================================
+; RELATION STORE IS WORKSPACE-SCOPED -- AIF-078 I1.2
+; ============================================================================
+;
+; WHAT THIS SEPARATES.
+;
+; Until 2026-08-23 the relation graph was ONE process-global map, and
+; cmd_workspace.cpp said so in a comment headed "KNOWN OVER-REACH, STATED
+; RATHER THAN HIDDEN": a scoped close had to clear EVERY relation, because
+; leaving an edge pointing into an area it had just emptied is the
+; dangling-parent shape. It printed the cost whenever it could bite --
+; "relations are cleared GLOBALLY ... (AIF-078 stage 3 limitation)" -- and it
+; named its own fix: "Making the relation graph workspace-scoped is the named
+; prerequisite before two workspaces can hold relations at the same time."
+;
+; Both arms below FAIL against that implementation and PASS against the
+; partitioned store. Delete the partition and both go red.
+;
+; HOW THEY ASSERT, and it is by FIELD VALUE, never by console text.
+;
+; A relation's observable effect is refresh-driven slaving: move the parent,
+; REL REFRESH, and the child lands on the matching row. So each arm moves
+; RSWSB's parent to a DIFFERENT key and reads the CHILD's label. If RSWSB's
+; relation survived, the child follows and the label changes; if it was
+; collateral damage from something done in RSWSA, the child sits where it was
+; and the label does not change. The two keys are deliberately different rows,
+; because a spec that re-asserts the SAME value it already saw proves nothing.
+;
+; NOTHING HERE ASSERTS THAT RSWSA'S RELATIONS ARE GONE. No marker in this
+; language can assert absence (USE_AGAIN, three cuts), and an errored marker
+; PRINTS NOTHING rather than going red. Absence is proven only by contrast, and
+; the contrast here is RSWSB SURVIVING -- which is the half that matters anyway,
+; because the defect was never "clears too little".
+;
+; GUARDS. RS_G0..RS_G2 prove the fixture and prove the relation was LIVE before
+; the act under test. If any of them reds, treat both arms as UNPROVEN: an arm
+; that reads a label which never changed cannot tell "the relation survived"
+; from "the relation never worked".
+;
+; RECORDED, NOT FIXED: current_parent_override() in set_relations.cpp is still
+; ONE global, not per workspace. It is the REL parent shorthand, not the graph,
+; so it does not affect these arms -- but it is the next workspace-blind piece
+; of relation state and it should not be discovered by surprise.
+;
+; Self-bootstrapping RSAP/RSAC/RSBP/RSBC in SANDBOX, erased at the end; the two
+; workspaces are destroyed in teardown (D10.3) so no catalog rows accumulate.
+; ============================================================================
+
+SET PATH DBF DBF/SANDBOX
+WORKSPACE CLOSE ALL
+WORKSPACE DESTROY RSWSA
+WORKSPACE DESTROY RSWSB
+ERASE rsap CONFIRM
+ERASE rsac CONFIRM
+ERASE rsbp CONFIRM
+ERASE rsbc CONFIRM
+
+; --- fixtures ---------------------------------------------------------------
+; Two parents, two children. Each child carries THREE rows so the parent has
+; somewhere to move TO: the label read after a refresh is the discriminator.
+
+SELECT 0
+CREATE X64 RSAP (PK C(4))
+APPEND
+REPLACE PK WITH "A"
+
+SELECT 1
+CREATE X64 RSAC (CK C(4), CLBL C(10))
+APPEND
+REPLACE CK WITH "A"
+REPLACE CLBL WITH "A_ONE"
+
+SELECT 2
+CREATE X64 RSBP (PK C(4))
+APPEND
+REPLACE PK WITH "A"
+APPEND
+REPLACE PK WITH "B"
+
+SELECT 3
+CREATE X64 RSBC (CK C(4), CLBL C(10))
+APPEND
+REPLACE CK WITH "Z"
+REPLACE CLBL WITH "B_ZED"
+APPEND
+REPLACE CK WITH "A"
+REPLACE CLBL WITH "B_ALPHA"
+APPEND
+REPLACE CK WITH "B"
+REPLACE CLBL WITH "B_BETA"
+
+SELECT 3
+GO 3
+? "RS_G0_child_fixture_written:" + (ALLTRIM(CLBL) = "B_BETA")
+
+WORKSPACE CLOSE ALL
+
+; --- two workspaces, each with its own relation ------------------------------
+
+WORKSPACE NEW RSWSA
+WORKSPACE SWITCH RSWSA
+USE rsap IN FREE
+USE rsac IN FREE
+SELECT rsap
+REL ADD RSAP RSAC ON PK TO CK
+
+WORKSPACE NEW RSWSB
+WORKSPACE SWITCH RSWSB
+USE rsbp IN FREE
+USE rsbc IN FREE
+SELECT rsbp
+REL ADD RSBP RSBC ON PK TO CK
+
+; The relation must be LIVE before anything is done to the other workspace,
+; or an unchanged label later proves nothing.
+SELECT rsbp
+GO 1
+REL REFRESH
+SELECT rsbc
+? "RS_G1_relation_live_before_the_act:" + (ALLTRIM(CLBL) = "B_ALPHA")
+
+; --- RS_T1: REL CLEAR ALL is scoped -----------------------------------------
+; Clear RSWSA's relations from inside RSWSA. RSWSB's must still drive its child.
+
+WORKSPACE SWITCH RSWSA
+REL CLEAR ALL
+
+WORKSPACE SWITCH RSWSB
+SELECT rsbp
+GO 2
+REL REFRESH
+SELECT rsbc
+? "RS_T1_clear_all_spared_the_other_workspace:" + (ALLTRIM(CLBL) = "B_BETA")
+
+; --- RS_T2: a SCOPED CLOSE is scoped ----------------------------------------
+; Rebuild RSWSA's relation, then CLOSE RSWSA. Under the global map this cleared
+; everything and said so. RSWSB's parent moves BACK to key A, so the label must
+; change again -- re-reading B_BETA would pass even if refresh did nothing.
+
+WORKSPACE SWITCH RSWSA
+SELECT rsap
+REL ADD RSAP RSAC ON PK TO CK
+? "RS_G2_other_workspace_relation_rebuilt:" + (ALLTRIM(PK) = "A")
+WORKSPACE CLOSE
+
+WORKSPACE SWITCH RSWSB
+SELECT rsbp
+GO 1
+REL REFRESH
+SELECT rsbc
+? "RS_T2_scoped_close_spared_the_other_workspace:" + (ALLTRIM(CLBL) = "B_ALPHA")
+
+; --- teardown ---------------------------------------------------------------
+
+WORKSPACE CLOSE ALL
+WORKSPACE SWITCH DEFAULT
+WORKSPACE DESTROY RSWSA
+WORKSPACE DESTROY RSWSB
+ERASE rsap CONFIRM
+ERASE rsac CONFIRM
+ERASE rsbp CONFIRM
+ERASE rsbc CONFIRM

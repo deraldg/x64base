@@ -24,6 +24,7 @@
 #include "tuple_types.hpp"
 #include "textio.hpp"
 #include "workarea_util.hpp"
+#include "xbase/workspace_membership.hpp"   // I1.2: the store is partitioned by workspace handle
 
 #include <algorithm>
 #include <cctype>
@@ -57,9 +58,55 @@ struct Relation {
     std::vector<std::string> child_names;      // child-side field names
 };
 
+// AIF-078 I1.2 -- THE RELATION STORE IS PARTITIONED BY WORKSPACE.
+//
+// Until 2026-08-23 this was ONE process-global map, and that single fact was
+// what forced WORKSPACE CLOSE's known over-reach: a scoped close had to clear
+// EVERY relation, because leaving an edge pointing into an area it had just
+// emptied is the dangling-parent shape, and a dangling relation is worse than
+// an over-eager clear. The cost was that closing one workspace destroyed the
+// relations of workspaces it never touched -- printed, when it could bite, as
+// "relations are cleared GLOBALLY ... (AIF-078 stage 3 limitation)."
+//
+// D9.3 as amended by sec 9a: EACH WORKSPACE OWNS ITS RELATION MAP. The first
+// draft of D9 sec 4 proposed a composite RelKey{ws, name} in one flat map; the
+// amendment superseded it with the better shape -- THE PARTITION IS THE MAP.
+// Same-named parents in two workspaces cannot collide because the key never
+// leaves its workspace, and no hash function has to be written to get that.
+//
+// D10.4 fixes the SPELLING of the partition key: the RUNTIME store keys on the
+// interned uint64 handle -- what the engine maintains, what every area already
+// carries as _ws_handle, and the only workspace identity any runtime writer in
+// this tree produces. The durable WS_ID belongs to the persisted form, which is
+// explicitly out of scope here (D8.2: RelationSpec gains no handle).
+//
+// WHY relations_store() KEEPS ITS SHAPE. It had 29 call sites in this file and
+// nowhere else, roughly half of which never see a DbArea at all. Rewriting all
+// 29 to thread a handle would have been 29 chances to thread the WRONG one.
+// Instead the accessor resolves the current workspace itself, so the call sites
+// are unchanged and there is exactly ONE place that decides which partition a
+// name lookup means. Callers that must name a DIFFERENT workspace say so, once,
+// through relations_store_for().
+static std::unordered_map<std::uint64_t,
+                          std::unordered_map<std::string, std::vector<Relation>>>&
+all_relation_stores() {
+    static std::unordered_map<std::uint64_t,
+                              std::unordered_map<std::string, std::vector<Relation>>> stores;
+    return stores;
+}
+
+// The relation map of a NAMED workspace. operator[] default-constructs, which
+// is what we want: a workspace with no relations yet has an empty map, not a
+// missing one, so every caller reads the same shape.
+static std::unordered_map<std::string, std::vector<Relation>>&
+relations_store_for(std::uint64_t ws) {
+    return all_relation_stores()[ws];
+}
+
+// The CURRENT workspace's map. This is what "the relation store" means to every
+// existing caller, and the scoping is the whole change.
 static std::unordered_map<std::string, std::vector<Relation>>& relations_store() {
-    static std::unordered_map<std::string, std::vector<Relation>> relations;
-    return relations;
+    return relations_store_for(xbase::workspace::current_handle());
 }
 
 #if DOTTALK_EXTRA_DIAGNOSTICS
@@ -628,8 +675,29 @@ void clear_relations(const std::string& parent_area) {
         {{"parent", up_copy(parent_area)}});
 }
 
+// SCOPED as of I1.2: this clears the CURRENT workspace's relations and leaves
+// every other workspace's alone. That is what REL CLEAR ALL has always meant to
+// a person -- "clear my relations" -- and before the partition existed there was
+// only one workspace for it to mean.
 void clear_all_relations() {
     relations_store().clear();
+    current_parent_override().clear();
+    emit_rel_diag(dottalk::helpdata::MessageId::RelDiagClearedAllText);
+}
+
+// Clear ONE named workspace's relations. The close path uses this to clear
+// exactly the workspaces it actually closed, instead of clearing the world and
+// printing an apology for it.
+void clear_all_relations_for(std::uint64_t ws) {
+    relations_store_for(ws).clear();
+    if (ws == xbase::workspace::current_handle()) current_parent_override().clear();
+}
+
+// EVERY workspace. This is what CLOSE ALL and the structural reset paths mean --
+// leave nothing anywhere -- and it is now a DELIBERATE choice at those call
+// sites rather than the only behaviour available.
+void clear_all_relations_everywhere() {
+    all_relation_stores().clear();
     current_parent_override().clear();
     emit_rel_diag(dottalk::helpdata::MessageId::RelDiagClearedAllText);
 }

@@ -270,6 +270,44 @@ in sec 9). REASONED for sec 2 (the three-rung convergence is prior art from
 outside this tree, offered as precedent, not as proof about this code).
 RULED for D10.1 and D10.3. RECOMMENDED for D10.2, D10.4, D10.5.
 
+## 8a. I1.2 LANDED 2026-08-23, and the one exclusion D9 required in writing
+
+The relation store is now partitioned by workspace handle, per D10.4's runtime
+half. `relations_store()` keeps its exact signature and resolves the current
+workspace internally, so all 29 call sites are unchanged and exactly ONE place
+decides which partition a name lookup means. Proven by `RELSCOPE2`
+(RS_G0-G2, RS_T1, RS_T2).
+
+**D9 sec 4 item 1 is superseded in the landing as it was in 9a.** The composite
+`RelKey{ws, name}` was never built: the partition IS the map, so no hash
+function was written and same-named parents in two workspaces cannot collide
+because the key never leaves its workspace.
+
+**The exclusion, stated as sec 4 item 5 required.** `merge_relation`
+(`src/gui/core/session.cpp`) is **EXPLICITLY OUT OF I1.2**, not brought into
+agreement. Its identity predicate compares lowered parent and child names with
+no workspace term, and its key check treats an EMPTY key as compatible with
+anything -- the AIF-118 shape, absent read as fine. Both remain true today.
+
+The reason this is an exclusion rather than an oversight: `merge_relation` is
+the GUI's own model-merge path and does not read the CLI store this lane just
+partitioned, so the two cannot disagree about a relation they never share.
+**What it WILL do, the moment the GUI consumes the partitioned store, is
+recreate the two-resolver defect I1.3a closed, one layer up** -- exactly as sec
+4 item 5 predicted. That makes it a prerequisite of the GUI redesign's S-series,
+not of I1.2, and it is recorded here so the redesign meets it as a known debt
+rather than as a discovery.
+
+Also landed with I1.2, from sec 4 item 4: `set_current_handle()` now REJECTS 0
+at the API. It was policed only at one call site before; harmless against a flat
+map, load-bearing against a partitioned one, because a stray 0 would drop a
+whole workspace's relations into the reserved "no such workspace" bucket.
+
+Recorded, not fixed: `current_parent_override()` in `set_relations.cpp` is still
+ONE global rather than per workspace. It is the REL parent shorthand and not the
+graph, so no arm of `RELSCOPE2` depends on it -- but it is the next
+workspace-blind piece of relation state and should not be found by surprise.
+
 ## 9. Good Neighbor note
 
 - **What changed.** This document. No code, no build, no test, no schema.

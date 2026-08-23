@@ -113,7 +113,26 @@ inline std::uint64_t& current_handle_ref() {
 // behaviour: every area still resolves to handle 1, exactly as the constant it
 // replaces did.
 inline std::uint64_t current_handle() noexcept { return current_handle_ref(); }
-inline void set_current_handle(std::uint64_t h) noexcept { current_handle_ref() = h; }
+
+// REJECTS 0, and AIF-078 I1.2 is why that moved from a call site into the API.
+//
+// 0 is reserved for "no such workspace / no parent" (find_by_name_ci below) and
+// is _ws_handle's value on a CLOSED area (dbarea.cpp). Until I1.2 that reservation
+// was policed only where WORKSPACE SWITCH happens to call this -- so one future
+// caller passing 0 would stamp handle 0 onto every subsequently opened area, and
+// those areas are isOpen(). Harmless while the relation store was one flat map;
+// load-bearing the moment the store is PARTITIONED by this number, because a
+// whole workspace's relations would land in the reserved bucket and read back as
+// belonging to nothing.
+//
+// Returns false rather than throwing or printing: this is a header contract with
+// no output of its own, and every existing caller that discards the result gets
+// the same behaviour it had for a legal handle.
+inline bool set_current_handle(std::uint64_t h) noexcept {
+    if (h == 0) return false;
+    current_handle_ref() = h;
+    return true;
+}
 
 // SET RECURSION ON | OFF -- owner ruling 2026-08-22: "even with OFF we still
 // allow multiple workspaces, just parallel." So this flag does NOT gate
