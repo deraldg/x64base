@@ -85,6 +85,7 @@ human states it once, here.
 | R112 | -- | ruling (backfill) | AIF-120 | `member.derald` | The measured-zero gate; first-wins-plus-warning admissible ONLY as instrumented behaviour. |
 | R113 | -- | ruling (backfill) | AIF-120 | `member.derald` | Order and functions (with R114). |
 | R114 | -- | ruling (backfill) | AIF-120 | `member.derald` | Order and functions (with R113). |
+| R120 | 2026-08-24 | ruling | AIF-078 | `member.derald` | **The GUI's positional rung IS the engine slot.** Step 3 of the slot lane. The GUI's ordinal was the index into its own area list while the CLI's was the engine slot, so one area had two positional addresses and the posture line `AREA <n>` meant a different thing depending on which surface wrote it. The ordinal is now the slot: sparse, stable across another area's close, and the same number both surfaces print. Costs recorded rather than discovered: the survivor of a close KEEPS its number instead of being renumbered, the vacated slot becomes a hole the next open falls into, and GUI-written postures from before this change carry list indices that will now be read as slots. |
 | R119 | 2026-08-24 | ruling | AIF-078 | `member.derald` | **`autoq_next` is RESERVED AND UNWIRED.** The x64 header sequence slot stays load-only; the catalog keeps `max(WS_ID)+1` under a FLOCK. Stamped R119 and not R7 because R7 was already taken -- the near-miss that caused this register to exist. |
 
 R4, R8-R109 excluding those above, R111 and R115-R118 are **cited in the tree

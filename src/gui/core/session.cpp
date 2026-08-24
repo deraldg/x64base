@@ -1469,25 +1469,44 @@ struct Session::Impl {
     // reserved number -- so a caller cannot forget to check it and then do
     // arithmetic on the answer.
     MaybeAreaOrdinal ordinal_of(AreaId id) const {
-        for (std::size_t i = 0; i < areas.size(); ++i) {
-            if (areas[i]->id == id) {
-                return static_cast<AreaOrdinal>(i);
+        for (const auto& area : areas) {
+            if (area->id == id) {
+                // AIF-078 step 3 (ruling R120, 2026-08-24). THE ENGINE SLOT,
+                // not the list index. Still a lookup and still downward-only;
+                // what changed is WHICH positional rung this session reports,
+                // so that "area 5" means the same area whether it is typed at
+                // the GUI or at the CLI.
+                return static_cast<AreaOrdinal>(area->slot());
             }
         }
         return std::nullopt;
     }
 
     // The positional rung -> the identity rung. Also a lookup. Takes the
-    // optional so "no ordinal" and "ordinal past the end" both land on the same
-    // honest nullptr, and neither needs a magic number to say so.
+    // optional so "no ordinal" and "no area at that position" both land on the
+    // same honest nullptr, and neither needs a magic number to say so.
+    //
+    // AIF-078 step 3. This SEARCHES rather than indexes, and that is the shape
+    // change, not a cost. The old bounds test `*ordinal >= areas.size()` was
+    // only correct while the position WAS the index; a slot is an address in
+    // the engine's array of MAX_AREA, so a session holding two areas can hold
+    // slots 0 and 7, and "is 7 past the end of a list of 2" is the wrong
+    // question. Asking which area SITS at 7 is the right one, and it answers
+    // absent for a slot this session does not hold.
     Area* find_area_by_ordinal(const MaybeAreaOrdinal& ordinal) {
-        if (!ordinal || *ordinal >= areas.size()) return nullptr;
-        return areas[static_cast<std::size_t>(*ordinal)].get();
+        if (!ordinal) return nullptr;
+        for (const auto& area : areas) {
+            if (static_cast<AreaOrdinal>(area->slot()) == *ordinal) return area.get();
+        }
+        return nullptr;
     }
 
     const Area* find_area_by_ordinal(const MaybeAreaOrdinal& ordinal) const {
-        if (!ordinal || *ordinal >= areas.size()) return nullptr;
-        return areas[static_cast<std::size_t>(*ordinal)].get();
+        if (!ordinal) return nullptr;
+        for (const auto& area : areas) {
+            if (static_cast<AreaOrdinal>(area->slot()) == *ordinal) return area.get();
+        }
+        return nullptr;
     }
 
     // What to SHOW. Every caller that used to write visible_area_id writes
@@ -1643,9 +1662,15 @@ OpenTableResult Session::open_table(const OpenTableRequest& request) {
 
         result.ok = true;
         result.area_id = area->id;
-        // Where it is about to land. size() is read BEFORE the push below, so
-        // this is the index it will occupy, not the one after it.
-        result.ordinal = static_cast<AreaOrdinal>(impl_->areas.size());
+        // AIF-078 step 3. THE SLOT IT CLAIMED, read off the area itself.
+        //
+        // This used to be `impl_->areas.size()` read before the push -- the
+        // index it was about to occupy. That number was correct and meant the
+        // wrong thing: it answered "where in this list" when the CLI answering
+        // the same question says "which engine slot". Reading it off the area
+        // removes the read-order dependency as well; there is no longer a
+        // before-the-push and an after-the-push answer.
+        result.ordinal = static_cast<AreaOrdinal>(area->slot());
         result.record_count = area->area().recCount64();
         // Asked of the AREA, which is the only rung that can answer it.
         result.workspace = gui_workspace_of_area(area->area());
@@ -1733,6 +1758,22 @@ std::size_t Session::mirror_workspace_open_directory(const std::filesystem::path
     std::size_t indexes_attached = 0;
     std::set<AreaId> index_attached_area_ids;
     for (const auto& attachment : workspace_open_indexes_from_cli_output(shell_output, dir)) {
+        // MEASURED WHILE DOING R120, AND NOT FIXED HERE. attachment.area_ordinal
+        // was parsed out of the CLI's OWN output ("Area 3 [index: ...]"), so it
+        // is an address in the CLI's engine. This lookup resolves it in the
+        // GUI's engine, which is a different array. The two agree only because
+        // the GUI mirrors the CLI's tables in the order reported, into a fresh
+        // engine, so both count up from 0 together.
+        //
+        // That coincidence is OLDER than step 3 -- before it, this indexed the
+        // GUI's list and relied on the same ordering. The change neither fixes
+        // nor worsens it; it makes it VISIBLE, because both numbers now claim
+        // to be slots and a reader can finally ask "slots in which engine".
+        // A gap in the CLI's report loses the attachment either way.
+        //
+        // The honest fix is to match on PATH, which both sides already have
+        // and which is engine-independent. Deliberately a separate change: it
+        // is a behaviour fix, and this commit is a rung repoint.
         auto* area = impl_->find_area_by_ordinal(attachment.area_ordinal);
         if (!area || !area->area().isOpen()) {
             continue;
@@ -1972,10 +2013,21 @@ std::size_t Session::mirror_workspace_posture(const std::string& posture,
             // promise is the same NUMBERS -- a slot is an address and this
             // session's addresses are its own.
             //
-            // KNOWN NARROWING: a posture written by the CLI can carry GAPS
-            // between engine slots, and the GUI cannot reproduce a gap, because
-            // its positional rung is an index into a dense list. Saved slots
-            // 0 and 3 come back as ordinals 0 and 1, in that order.
+            // THE NARROWING RECORDED HERE IS HALF CLOSED (R120, step 3), and
+            // the half that remains is a different one, so it is restated
+            // rather than deleted.
+            //
+            // CLOSED: the GUI's positional rung is no longer an index into a
+            // dense list, so it CAN now express a gap. Restoring a posture that
+            // names slots 0 and 3 no longer forces the report to say 0 and 1.
+            //
+            // STILL OPEN: this loop claims a FRESH slot per area rather than
+            // the saved one, so the gap it can now express is not necessarily
+            // the SAVED gap. Honouring the saved slot needs a documented
+            // collision fallback -- a saved slot can already be occupied in
+            // this process, by the CLI or by an earlier area in this same loop
+            // -- and that is a separate decision, deliberately not taken here.
+            // Named so the remaining half cannot be mistaken for the closed one.
             area->id = area->area().areaHandle();
 
             // AIF-120. DTSHEMA writes the literal word "none" for an absent
@@ -2102,6 +2154,15 @@ bool Session::save_workspace_schema(const std::filesystem::path& schema_path,
                                 lower_ascii(alias_stem) != lower_ascii(path_stem) &&
                                 lower_ascii(alias_stem) != lower_ascii(area->area().logicalName());
 
+        // R120. This writes the ENGINE SLOT, which is what the reader has
+        // always called this field (WorkspaceSchemaArea::slot) and what the
+        // CLI's own writer has always put there (cmd_workspace.cpp, `area0`).
+        // Before step 3 the GUI wrote a list index into the same field, so one
+        // line on disk meant two different things depending on which surface
+        // wrote it. Postures written by the GUI BEFORE this change carry list
+        // indices and will now be read as slots; the two coincide only where
+        // the areas were contiguous from 0, which is the common case and not a
+        // guarantee.
         file << "AREA " << impl_->visible_ordinal(area->id)
              << "|dbf=\"" << dbf_token << "\"";
         if (!index_type.empty()) {
@@ -2251,13 +2312,17 @@ ListAreasResult Session::list_areas() const {
     result.active_ordinal = impl_->ordinal_of(impl_->active_area_id);
 
     result.areas.reserve(impl_->areas.size());
-    // AIF-078. The ordinal is the index in THIS list -- the same list
-    // find_area_by_ordinal indexes -- so what is shown and what can be typed
-    // are the same number by construction rather than by coincidence. The
-    // index is taken here and not inside the adapter because it is a fact
-    // about the session's list, not about the DbArea.
-    for (std::size_t i = 0; i < impl_->areas.size(); ++i) {
-        const auto& area = impl_->areas[i];
+    // AIF-078 step 3. The ordinal is the area's ENGINE SLOT -- the same number
+    // find_area_by_ordinal searches for -- so what is shown and what can be
+    // typed are the same number by construction rather than by coincidence,
+    // and it is ALSO the number the CLI would print for that area.
+    //
+    // It is taken from the area rather than from the loop counter, and that is
+    // the point of the change: a loop counter is a fact about this list, and a
+    // list that skips closed areas (the isOpen guard just below) would have
+    // made the counter disagree with find_area_by_ordinal the moment anything
+    // was closed. There is nothing left for the two to disagree about.
+    for (const auto& area : impl_->areas) {
         if (!area->area().isOpen()) {
             continue;
         }
@@ -2265,7 +2330,7 @@ ListAreasResult Session::list_areas() const {
                                                   area->id == impl_->active_area_id,
                                                   area->area(),
                                                   area->display_name);
-        info.ordinal = static_cast<AreaOrdinal>(i);
+        info.ordinal = static_cast<AreaOrdinal>(area->slot());
         result.areas.push_back(std::move(info));
     }
 

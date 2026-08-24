@@ -358,13 +358,44 @@ int main() {
                 return EXIT_FAILURE;
             }
             if (!require(first.ordinal == 0 && second.ordinal == 1,
-                         "two opened areas did not land at positions 0 and 1")) {
+                         "two opened areas did not claim engine slots 0 and 1")) {
                 return EXIT_FAILURE;
             }
 
-            // THE DISCRIMINATOR. Close the first. The survivor must keep its
-            // IDENTITY and inherit the POSITION -- the two rungs moving in
-            // opposite ways across one event, which is the whole claim.
+            // THE DISCRIMINATOR, REPOINTED BY RULING R120 (AIF-078 step 3).
+            //
+            // What this block asserted before step 3: the survivor keeps its
+            // IDENTITY and INHERITS the position, the two rungs moving in
+            // opposite directions across one close. That was true of a dense
+            // list index and is false of an engine slot, so the expectations
+            // below are INVERTED rather than adjusted, and they are inverted
+            // deliberately -- a test whose subject moves must be repointed on
+            // purpose, not left to pass for a new reason.
+            //
+            // What it asserts now: the survivor keeps BOTH rungs. Its identity
+            // does not change and neither does its slot. The rungs no longer
+            // move in opposite directions, because there is now only one
+            // positional answer for an area and the engine already owned it.
+            //
+            // AND THE VACATED SLOT IS NOT REFILLED, which is the part the
+            // author got wrong and this test caught. find_free_area_for_workspace
+            // grows CONTIGUOUSLY: it takes highest_member + 1 and only scans for
+            // the lowest free slot when that block is boxed in (and says so
+            // through broke_contiguity when it does). close() leaves the
+            // workspace (dbarea.cpp), so after closing slot 0 the members are
+            // {1}, the highest is 1, and the reopen lands on 2. Slot 0 stays
+            // empty.
+            //
+            // The first draft of this block asserted 0 -- "falls into the
+            // hole" -- on an unmeasured guess about the allocator. It went red
+            // here, which is the whole reason to run a discriminator against a
+            // prediction instead of writing the prediction into the doctrine.
+            //
+            // This still cannot pass by accident. Under the old rung the
+            // survivor's number CHANGED on close and the reopen landed at the
+            // end; both of those now fail. The two spellings disagree on every
+            // assertion in this block, which is what makes it a discriminator
+            // in both directions.
             const auto closed = session.close_area(CloseAreaRequest{first.area_id});
             if (!require(closed.ok, "close_area did not close the first area")) {
                 return EXIT_FAILURE;
@@ -378,8 +409,9 @@ int main() {
                          "the surviving area changed identity across a close")) {
                 return EXIT_FAILURE;
             }
-            if (!require(after.areas[0].ordinal == 0,
-                         "the surviving area did not inherit position 0")) {
+            if (!require(after.areas[0].ordinal == 1,
+                         "the surviving area did not KEEP its engine slot 1 "
+                         "across the close of another area")) {
                 return EXIT_FAILURE;
             }
 
@@ -401,24 +433,41 @@ int main() {
                 return EXIT_FAILURE;
             }
 
-            // What a user types is the POSITION. It has to reach the area that
-            // is actually sitting there -- asserted on the reported VALUES,
-            // because run_command reports ok for a miss as well as a hit.
-            const auto selected = session.run_command(CommandRequest{"select 0"});
-            if (!require(selected.output.find("Selected GUI area 0.") != std::string::npos,
-                         "select 0 did not report selecting position 0")) {
+            // What a user types is the POSITION, and after R120 that is the
+            // engine slot -- so this now selects 1, the slot the survivor kept,
+            // and `select 0` would reach NOTHING because slot 0 is a hole.
+            // Asserted on the reported VALUES, because run_command reports ok
+            // for a miss as well as a hit.
+            const auto selected = session.run_command(CommandRequest{"select 1"});
+            if (!require(selected.output.find("Selected GUI area 1.") != std::string::npos,
+                         "select 1 did not report selecting engine slot 1")) {
                 return EXIT_FAILURE;
             }
             if (!require(!second.display_name.empty() &&
                              selected.output.find(second.display_name) != std::string::npos,
-                         "select 0 reached a different table than the one at position 0")) {
+                         "select 1 reached a different table than the one at slot 1")) {
+                return EXIT_FAILURE;
+            }
+
+            // AND THE HOLE IS REALLY A HOLE. Slot 0 was vacated by the close
+            // and nothing has refilled it yet, so selecting it must MISS.
+            // Without this the block would pass just as well if find_area_by
+            // _ordinal had silently kept indexing the list -- where 0 is
+            // always the first live area and can never be empty.
+            const auto miss = session.run_command(CommandRequest{"select 0"});
+            if (!require(miss.output.find("Selected GUI area 0.") == std::string::npos,
+                         "select 0 claimed to select a slot that was vacated")) {
                 return EXIT_FAILURE;
             }
 
             // Identity is never reused. Reopening the closed table mints a NEW
             // handle rather than handing back the one that just died, so a
             // stale id held by a view resolves to GONE and never to somebody
-            // else. The position, being an address, IS reused.
+            // else. The position, being an address, COULD be reused -- but
+            // under this allocator it is not reused eagerly: the workspace's
+            // block grows past its highest member, so a reopen takes a fresh
+            // slot and the vacated one is left standing empty until the block
+            // is boxed in.
             const auto reopened = session.open_table(OpenTableRequest{first.path});
             if (!require(reopened.ok, "could not reopen the table that was closed")) {
                 return EXIT_FAILURE;
@@ -427,12 +476,41 @@ int main() {
                          "a reopened area was handed the dead area's identity")) {
                 return EXIT_FAILURE;
             }
-            if (!require(reopened.ordinal == 1, "the reopened area did not take the free position")) {
+            // 2, not 0. This is the assertion that separates CONTIGUOUS
+            // GROWTH from lowest-free-wins, and the two policies are
+            // indistinguishable until something is closed out of the middle.
+            // Asserting 0 here would have quietly encoded the wrong allocator.
+            if (!require(reopened.ordinal == 2,
+                         "the reopened area did not grow the workspace block to "
+                         "slot 2 -- the allocator takes highest_member + 1, it "
+                         "does not refill the vacated slot")) {
                 return EXIT_FAILURE;
             }
 
-            std::cout << "area ladder: position 0 was reused across a close, identity "
-                      << first.area_id << " was not (reopen minted " << reopened.area_id << ")\n";
+            // AND THE SESSION IS NOW GENUINELY SPARSE: slots 1 and 2, with 0
+            // standing empty. The old dense-list rung could not represent this
+            // state at all -- it would have reported 0 and 1 -- so this is the
+            // shape that only exists after R120.
+            const auto sparse = session.list_areas();
+            if (!require(sparse.areas.size() == 2, "expected two open areas")) {
+                return EXIT_FAILURE;
+            }
+            bool holds_1 = false, holds_2 = false, holds_0 = false;
+            for (const auto& a : sparse.areas) {
+                if (a.ordinal == 0) holds_0 = true;
+                if (a.ordinal == 1) holds_1 = true;
+                if (a.ordinal == 2) holds_2 = true;
+            }
+            if (!require(holds_1 && holds_2 && !holds_0,
+                         "the session did not report the sparse set {1, 2} with "
+                         "slot 0 vacant")) {
+                return EXIT_FAILURE;
+            }
+
+            std::cout << "area ladder: the survivor kept slot 1, the reopen grew "
+                         "the block to slot 2 leaving slot 0 vacant, and identity "
+                      << first.area_id << " was not reused (reopen minted "
+                      << reopened.area_id << ")\n";
         }
     }
 

@@ -31,16 +31,44 @@ using TaskId = std::uint64_t;
 // which equals the list position only while nothing is ever closed.
 using AreaId = std::uint64_t;
 
-// The area's POSITIONAL rung: where it sits in the session's area list. This is
-// the number the user types, the number the tables column shows, and the number
-// a posture records as AREA <n>. 0-BASED, DENSE, and RENUMBERED when an area
-// closes -- all three are properties, not defects. A position is an address,
-// and addresses are reused; that is the whole difference between this rung and
-// the one above.
+// The area's POSITIONAL rung: THE AREA'S ENGINE SLOT. This is the number the
+// user types, the number the tables column shows, and the number a posture
+// records as AREA <n> -- and it is now the SAME number the CLI would print for
+// that area, which is the entire point.
 //
-// Derivation runs DOWNWARD only (ruling D10 R1): id -> ordinal is a lookup in
-// the list, ordinal -> id is a lookup in the list, and neither is ever spelled
-// with + 1 or - 1 again.
+// RULING R120, 2026-08-24 (AIF-078 step 3). This rung used to be the index into
+// the session's area list: 0-based, DENSE, and RENUMBERED on every close. That
+// was documented here as "properties, not defects", and as a description of a
+// list index it was correct. It was the wrong THING to be describing.
+//
+// WHY IT CHANGED. An area had two positional addresses -- its GUI list index
+// and its engine slot -- and which one you got depended on which surface you
+// asked. Two answers to one question IS the defect (R5), and it had already
+// reached disk: the posture line `AREA <n>|dbf=...` is written by the CLI as an
+// engine slot and was written by the GUI as a list index, into a field the
+// reader calls `slot`. One field, two meanings, no way to tell them apart.
+//
+// WHAT THAT COSTS, MEASURED RATHER THAN ASSUMED. The number is now SPARSE --
+// a session holding two areas really can show 1 and 2 with 0 standing empty --
+// and it is STABLE across a close: the survivors keep their numbers, where the
+// old rung renumbered everyone below the gap.
+//
+// AND THE VACATED SLOT IS NOT EAGERLY REUSED. find_free_area_for_workspace
+// grows the workspace's block CONTIGUOUSLY -- highest_member + 1 -- and only
+// scans for the lowest free slot when that block is boxed in, reporting
+// broke_contiguity when it does. So closing an area out of the middle leaves a
+// hole that stays a hole. The first draft of this comment claimed the next
+// open would fall into it; the async smoke's ladder block went red and said
+// otherwise, which is why that block asserts 2 and not 0.
+//
+// Neither behaviour is more correct in the abstract. This one is the one the
+// engine already has, and having ONE of them is worth more than choosing
+// between two.
+//
+// Derivation still runs DOWNWARD only (ruling D10 R1): id -> ordinal is a
+// lookup, ordinal -> id is a lookup, and neither is ever spelled with + 1 or
+// - 1. What changed is what the lookup consults -- the area's own slot rather
+// than its position in a vector.
 using AreaOrdinal = std::uint64_t;
 
 // NO AREA is a TYPE, not a value -- ruling D10 R6.3, and it binds retroactively
