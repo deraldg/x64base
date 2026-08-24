@@ -96,6 +96,7 @@ private:
     void OnBrowseCellSelected(wxGridEvent& event);
     void OnDDictRefresh(wxCommandEvent& event);
     void OnDDictFilterChanged(wxCommandEvent& event);
+    void OnTableRowSelected(wxGridEvent& event);
     void OnDDictObjectSelected(wxGridEvent& event);
     void OnDDictDetailSelected(wxGridEvent& event);
     void OnRecordViewKeyDown(wxKeyEvent& event);
@@ -186,6 +187,10 @@ private:
     std::string command_history_draft_;
     int command_history_index_ {-1};
     bool applying_snapshot_ {false};
+    // The SAME KIND OF LATCH as applying_snapshot_, for the Tables grid, and it
+    // is separate on purpose: one flag covering two repaint paths would make
+    // "am I repainting" mean two things and go wrong the first time they nest.
+    bool applying_tables_ {false};
     std::unique_ptr<AsyncSession> session_;
 };
 

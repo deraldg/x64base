@@ -506,6 +506,14 @@ MainFrame::MainFrame(std::filesystem::path initial_table, LocaleContext locale)
         grid_->Bind(wxEVT_GRID_SELECT_CELL, &MainFrame::OnBrowseCellSelected, this);
         grid_->Bind(wxEVT_CHAR_HOOK, &MainFrame::OnRecordViewKeyDown, this);
     }
+    if (tables_grid_) {
+        // The Tables grid HIGHLIGHTED a row and drove nothing -- every other
+        // grid here binds this event and it alone did not. A highlight that
+        // looks identical whether the selection is consumed or ignored is the
+        // AIF-118 shape wearing a UI: the same answer for "selected" and "this
+        // does nothing."
+        tables_grid_->Bind(wxEVT_GRID_SELECT_CELL, &MainFrame::OnTableRowSelected, this);
+    }
     if (ddict_objects_grid_) {
         ddict_objects_grid_->Bind(wxEVT_GRID_SELECT_CELL, &MainFrame::OnDDictObjectSelected, this);
     }
@@ -1091,6 +1099,52 @@ void MainFrame::OnDDictFilterChanged(wxCommandEvent&) {
     }
 }
 
+void MainFrame::OnTableRowSelected(wxGridEvent& event) {
+    // A REPAINT IS NOT A CLICK. ApplyTables rebuilds this grid with
+    // DeleteRows/AppendRows, and wxGrid moves its cursor when the rows under it
+    // go -- which fires this very event. Unguarded, that closed a loop through
+    // the async queue: repaint -> selection event -> submit_select_area ->
+    // result -> ApplyTables -> repaint, two hops, forever. The Workbench went
+    // Not Responding with the log filling with identical
+    // "[gui.area.selected] GUI work area selected." lines, which is what a
+    // feedback loop looks like from the outside.
+    //
+    // OnBrowseCellSelected has carried this guard all along (applying_snapshot_)
+    // and this handler simply did not copy it. Same defect, same shape, one
+    // grid over.
+    if (applying_tables_ || !session_) {
+        event.Skip();
+        return;
+    }
+
+    // BY IDENTITY, NOT BY POSITION. The row index is used ONCE, to find the
+    // AreaInfo the grid painted, and what travels onward is its AreaId --
+    // never the row number. That is what let this frame survive R120 changing
+    // the meaning of the ordinal underneath it without a single edit: the
+    // list maps position -> AreaId immediately and everything downstream is
+    // identity.
+    //
+    // It also survives what has not happened yet. If this grid ever sorts or
+    // filters, row N stops being the Nth area, and any code that indexed a
+    // parallel vector by row would then reach the WRONG area while looking
+    // exactly as correct as it does today.
+    const int row = event.GetRow();
+    if (row >= 0 && static_cast<std::size_t>(row) < area_infos_.size()) {
+        const AreaId id = area_infos_[static_cast<std::size_t>(row)].area_id;
+        // SELECTING WHAT IS ALREADY SELECTED IS NOT A STATE CHANGE. The latch
+        // above assumes wxGrid sends this event synchronously from inside
+        // ApplyTables; this line does not assume anything about WHEN it
+        // arrives. Together with ApplyTables parking the cursor on the active
+        // row, a late or queued repaint event names the area that is already
+        // current and dies here instead of starting another lap.
+        if (id != 0 && id != current_area_id_) {
+            current_area_id_ = id;
+            session_->submit_select_area(SelectAreaRequest{id});
+        }
+    }
+    event.Skip();
+}
+
 void MainFrame::OnDDictObjectSelected(wxGridEvent& event) {
     const int row = event.GetRow();
     if (row >= 0 && static_cast<std::size_t>(row) < ddict_visible_object_rows_.size()) {
@@ -1275,6 +1329,16 @@ void MainFrame::ApplyTables(const WorkspaceModel& model) {
     // CLI's WORKSPACE listing prints one line per slot and MAX_AREA is a build
     // vector with no upper bound, so a per-slot grid would be unbounded by
     // construction.
+    // REPAINT LATCH. Everything from here to the end of this function is the
+    // frame painting itself, not the user choosing anything, and
+    // OnTableRowSelected has to be able to tell those apart -- see the note
+    // there for what happened when it could not.
+    applying_tables_ = true;
+    struct TablesRepaintGuard {
+        bool* flag;
+        ~TablesRepaintGuard() { if (flag) *flag = false; }
+    } tables_repaint_guard{&applying_tables_};
+
     reset_grid(tables_grid_, static_cast<int>(model.tables.size()), 7);
     tables_grid_->SetColLabelValue(0, "WS");
     tables_grid_->SetColLabelValue(1, "Area");
@@ -1287,7 +1351,17 @@ void MainFrame::ApplyTables(const WorkspaceModel& model) {
     for (std::size_t row = 0; row < model.tables.size(); ++row) {
         const auto& area = model.tables[row];
         const int grid_row = static_cast<int>(row);
-        tables_grid_->SetRowLabelValue(grid_row, std::to_string(row + 1));
+        // AREAS ARE NEVER RENUMBERED -- not in the CLI, not here. This gutter
+        // used to paint 1..N beside an Area column reading 0..N-1: two number
+        // columns an inch apart, one of them a wxGrid row counter with no
+        // meaning in this system. Close an area and the counter recounts,
+        // because that is what a grid does -- and it reads exactly like the
+        // areas having been renumbered. That misread happened, to the owner,
+        // on this grid.
+        //
+        // One number, in the column labelled Area. The gutter stays as a click
+        // target and says nothing.
+        tables_grid_->SetRowLabelValue(grid_row, wxString{});
         tables_grid_->SetCellValue(grid_row, 0, area.workspace);
         tables_grid_->SetCellValue(grid_row, 1, format_area_ordinal(area.ordinal));
         tables_grid_->SetCellValue(grid_row, 2, area.display_name);
@@ -1297,6 +1371,34 @@ void MainFrame::ApplyTables(const WorkspaceModel& model) {
         tables_grid_->SetCellValue(grid_row, 6, area.path.string());
     }
     tables_grid_->AutoSizeColumns(false);
+
+    // PARK THE CURSOR ON THE ACTIVE AREA. Two reasons, and the second is the
+    // one that was actually reported.
+    //
+    // 1. After reset_grid the cursor sits at row 0 regardless of which area is
+    //    active. Left there, a repaint does not merely fire a spurious
+    //    selection event -- it fires one naming THE WRONG AREA, so a repaint
+    //    while area 5 was active would quietly move the user to area 0. The
+    //    hang made that visible; without the hang it would have been a silent
+    //    wrong answer.
+    //
+    // 2. The steward asked on 2026-08-24 why the Areas grid highlight did not
+    //    mean anything and suggested it should read differently from an
+    //    ordinary selection. This is that, from the other end: the highlight
+    //    now IS the active area rather than wherever the grid last happened to
+    //    leave its cursor.
+    if (tables_grid_->GetNumberRows() > 0 && tables_grid_->GetNumberCols() > 0) {
+        for (std::size_t row = 0; row < model.tables.size(); ++row) {
+            if (model.tables[row].area_id != model.active_area_id ||
+                model.active_area_id == 0) {
+                continue;
+            }
+            const int grid_row = static_cast<int>(row);
+            tables_grid_->SetGridCursor(grid_row, 0);
+            tables_grid_->SelectRow(grid_row);
+            break;
+        }
+    }
 }
 
 void MainFrame::ApplyIndexes(const WorkspaceModel& model) {
@@ -1320,7 +1422,8 @@ void MainFrame::ApplyIndexes(const WorkspaceModel& model) {
     for (std::size_t row = 0; row < model.indexes.size(); ++row) {
         const auto& index = model.indexes[row];
         const int grid_row = static_cast<int>(row);
-        indexes_grid_->SetRowLabelValue(grid_row, std::to_string(row + 1));
+        // Same reason as the tables grid: no fake number beside the real one.
+        indexes_grid_->SetRowLabelValue(grid_row, wxString{});
         indexes_grid_->SetCellValue(grid_row, 0, index.workspace);
         indexes_grid_->SetCellValue(grid_row, 1, format_area_ordinal(index.ordinal));
         indexes_grid_->SetCellValue(grid_row, 2, index.area_name);
