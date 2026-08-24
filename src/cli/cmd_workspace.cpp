@@ -2841,10 +2841,18 @@ static bool retire_durable_workspace(const std::string& name,
 // verb reclaims nothing. It exists to stop rows being adopted, not to save
 // disk -- disk was measured at 703 bytes a row and was never the reason.
 //
-// DO NOT ADD A PACK OPTION without first wiring autoq_next's store-back path
-// (xbase_64.hpp:52 / dbf_create.cpp:481 -- set at create, hydrated at open,
-// getter and setter present, NO writer). Pack-now-wire-later is the one
-// combination that reissues identities, and it does so silently.
+// DO NOT ADD A PACK OPTION. The x64 header's autoq_next slot -- the only place
+// a high-water mark could survive a pack -- is RESERVED AND UNWIRED by steward
+// ruling 2026-08-24. The full statement, the measured population, and the
+// three-part recipe for making it live are at the LargeHeaderExtension
+// declaration in xbase_64.hpp; they are stated there rather than here because
+// that is where anyone wiring it would land.
+//
+// What that means for this verb: max(WS_ID)+1 over a scan that COUNTS DELETED
+// ROWS is the only thing standing between a purge and a reissued identity.
+// Pack the file and the flagged rows stop counting; the next WORKSPACE NEW
+// then hands out a WS_ID that a superseded row already owns, and nothing
+// prints. Pack-now-wire-later is that combination, in that order.
 struct WsPurgeResult {
     std::vector<std::uint64_t> ids;       // WS_IDs that ACTUALLY TRANSITIONED
     std::vector<std::uint64_t> already;   // WS_IDs already purged before this call
@@ -2951,12 +2959,14 @@ static void save_to_memo(const std::string& name, int version = 2,
         // Behaviour is unchanged: same max+1, same prevId, same supersede.
         //
         // Allocation is max(WS_ID)+1 under this FLOCK, the proven bbs_store
-        // next_id pattern. Measured 2026-08-11: the x64 header slot autoq_next
-        // EXISTS (xbase_64.hpp:52; init=1 at create; hydrated into the area at
-        // open, xbase_64.hpp:530) but is LOAD-ONLY -- no APPEND consumer, no
-        // increment, no store path back to the header. Wiring those three is a
-        // chartered engine lane. Until it lands, max+1 is self-healing after a
-        // manual edit and forward-compatible with the autoq wiring.
+        // next_id pattern. The x64 header slot autoq_next EXISTS but is
+        // LOAD-ONLY -- measured 2026-08-11, re-measured 2026-08-24 across all
+        // of src and include: no consumer, no increment, no store path back to
+        // the header, and autoQNext64() has zero callers. RULED 2026-08-24:
+        // the slot stays reserved and unwired, so max+1 is not a placeholder
+        // waiting on an engine lane -- it is the answer. It is also the better
+        // one here: it self-heals after a hand-edited row, which a header
+        // high-water mark cannot. See xbase_64.hpp for the ruling.
         const WsCatalogScan scan = scan_catalog(a, name);
         const std::uint64_t prevId = scan.live_id;
         const std::uint64_t newId  = scan.max_id + 1;

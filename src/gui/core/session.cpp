@@ -1382,9 +1382,11 @@ struct Session::Impl {
     //
     // It used to hold `xbase::DbArea area;` BY VALUE, and that one fact is what
     // made a session-owned area second class: setEngineSlot() has exactly one
-    // caller in the tree (dbf_file.cpp:444, over the engine's own array), so an
-    // area outside that array could never have an engine slot and carried -1 for
-    // life. -1 is ALSO the member array's free-slot sentinel, so join(h, -1)
+    // caller in the tree -- XBaseEngine's constructor in dbf_file.cpp, over the
+    // engine's own array, named rather than numbered because the line number
+    // this comment used to carry was already wrong. An area outside that array
+    // could never have an engine slot and carried -1 for life. -1 is ALSO the
+    // member array's free-slot sentinel, so join(h, -1)
     // matched the first FREE slot and claimed nothing, and leave(h, -1) cleared
     // nothing. Membership could not see these areas at all.
     //

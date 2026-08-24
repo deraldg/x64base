@@ -478,6 +478,12 @@ bool serialize_x64_dbf(std::ostream& out,
     ext.record_count   = 0;
     ext.data_start_64  = hdrLenWide;
     ext.record_size_64 = recLenWide;
+    // The only write of this field anywhere. It is 1 on every x64 table ever
+    // created and stays 1, because the slot is reserved and unwired
+    // (2026-08-24 ruling; see LargeHeaderExtension in xbase_64.hpp). Note the
+    // consequence: "issued nothing" and "never wired" are the same byte
+    // pattern on disk, so no reader can tell them apart. That is accepted for
+    // as long as there are no readers.
     ext.autoq_next     = 1;
     ext.table_flags    = hasMemo ? xbase::DBF64_FLAG_HAS_MEMO : 0;
     if (!metaBlock.empty()) {

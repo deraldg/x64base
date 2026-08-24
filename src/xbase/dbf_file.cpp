@@ -405,6 +405,12 @@ bool DbArea::appendBlank() {
 
     // x64 dialect also keeps the authoritative record count in the extension block
     // immediately after the 32-byte VFP-style header.
+    //
+    // THIS IS WHERE autoq_next's STORE-BACK WOULD GO, and it is deliberately
+    // not here: the slot is reserved and unwired (2026-08-24 ruling, see
+    // xbase_64.hpp). The patch-one-field-in-place idiom below is exactly the
+    // shape it would take. Writing it before there is a consumer and an
+    // increment is the combination that reissues identities silently.
     if (_dbf_version_byte == DBF_VERSION_64) {
         const std::uint64_t rc64 = _rec_count64;
         io().seekp(static_cast<std::streamoff>(sizeof(VfpHeader)) +

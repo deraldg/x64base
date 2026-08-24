@@ -464,6 +464,10 @@ public:
     }
 
     // ---- 64-bit DBF compatibility additions -------------------------------
+    // autoQNext64() has NO callers, by ruling rather than by accident: the
+    // slot is reserved and unwired (2026-08-24, AIF-078). The full statement
+    // and the recipe for making it live are at the LargeHeaderExtension
+    // declaration in xbase_64.hpp. Do not add a store-back without a consumer.
     void setAutoQNext64(uint64_t v) noexcept {
         _autoq_next64 = v;
     }
@@ -530,7 +534,9 @@ private:
     // slot am I" at 21 call sites across 15 files.
     //
     // 0 / -1 mean NOT ASSIGNED, which is the state of a closed area. The
-    // engine constructs MAX_AREA areas eagerly (dbf_file.cpp:409-411), so
+    // engine constructs MAX_AREA areas eagerly (XBaseEngine's constructor in
+    // dbf_file.cpp -- the old "409-411" here pointed at the append path, and
+    // was already wrong before this commit shifted it further), so
     // _engine_slot is stamped there once and never changes; _ws_handle is set
     // when an area is opened into a workspace and cleared by close().
     //

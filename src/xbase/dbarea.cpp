@@ -129,6 +129,9 @@ void DbArea::close() {
     _area_handle = 0;
 
     // x64/VFP extras
+    // NOTE the sentinel split: 0 here, but the on-disk floor is 1
+    // (dbf_create.cpp). Harmless while the slot is unwired -- nothing reads
+    // it -- and a trap for whoever wires it. See xbase_64.hpp.
     _dbf_version_byte = 0x03;
     _autoq_next64 = 0;
     _table_flags = 0;

@@ -18,8 +18,8 @@
 // WHY THE OLD CODE FAILS THIS, which is what makes it a discriminator and not
 // a demonstration:
 //
-// setEngineSlot() has exactly ONE caller in the tree -- dbf_file.cpp:444, in
-// XBaseEngine's constructor, over the engine's own array. An area outside that
+// setEngineSlot() has exactly ONE caller in the tree -- XBaseEngine's
+// constructor in dbf_file.cpp, over the engine's own array. An area outside that
 // array could never have an engine slot and carried -1 for life. DbArea::open()
 // then called workspace::join(_ws_handle, _engine_slot) with -1, and join's
 // first loop is `if (m[i] == engine_slot) return i;` -- an idempotence check

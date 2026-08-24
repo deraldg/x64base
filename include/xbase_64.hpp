@@ -44,12 +44,59 @@ constexpr uint8_t DBF_VERSION_64 = 0x64;
 // -----------------------------------------------------------------------------
 // X64 LARGE HEADER EXTENSION (64 bytes)
 // -----------------------------------------------------------------------------
+//
+// autoq_next IS RESERVED AND DELIBERATELY UNWIRED.
+// Steward ruling 2026-08-24 (AIF-078 lane). This is a decision, not an
+// oversight, and it is written here so the next reader does not have to
+// rediscover it.
+//
+// MEASURED POPULATION -- the whole of it, `grep -rn autoq src include`:
+//   dbf_create.cpp   writes the constant 1, once, at create
+//   this file        hydrates it at open -> DbArea::setAutoQNext64
+//   xbase.hpp        setter and getter, plus the _autoq_next64 member
+//   dbarea.cpp       resets the member to 0
+//   cmd_workspace.cpp  three comments, and nothing else
+// autoQNext64() has ZERO callers. The value travels from disk into memory
+// and dies there.
+//
+// WHY IT STAYS THAT WAY. The question this slot would answer -- "what is the
+// next id" -- is already answered. WORKSPACE NEW allocates max(WS_ID)+1 under
+// a FLOCK (cmd_workspace.cpp), which self-heals after a hand-edited row. Make
+// the header authoritative too and one question has two ladders, which is the
+// defect, not the feature. Nothing in the tree needs a sequence today: VFP
+// autoincrement fields (version byte 0x31) are recognized by name only --
+// see the note at dbf_file.cpp about VFP autoinc metadata not being
+// first-class at runtime.
+//
+// TO MAKE IT LIVE, IF THAT DAY COMES. All three, in one lane, under a claimed
+// AIF number -- piecemeal is the only combination that silently reissues
+// identities:
+//   1. A CONSUMER. Something must read autoQNext64() and use the value. There
+//      is no such caller today, so the store-back alone would write a number
+//      nobody asks for.
+//   2. AN INCREMENT under the same lock the consumer allocates under, so two
+//      writers cannot draw the same value.
+//   3. A STORE-BACK. The idiom already exists: the append path in
+//      dbf_file.cpp patches record_count in place at
+//      sizeof(VfpHeader) + offsetof(LargeHeaderExtension, record_count)
+//      rather than rewriting the 32-byte header, precisely so dialect tail
+//      bytes are not clobbered. autoq_next takes the same shape at its own
+//      offsetof. This is the EASY third; do not let it be the first.
+// HAZARD FOR WHOEVER WIRES IT: the on-disk floor is 1 (create) but the
+// in-memory reset is 0 (dbarea.cpp). A store-back that ships the reset value
+// writes a 0 the format never means. Reconcile the two sentinels BEFORE
+// anything writes.
+//
+// UNTIL THEN: this slot must not gate a PACK. See the WsPurgeResult block in
+// cmd_workspace.cpp -- a pack that renumbers without a live sequence reissues
+// WS_IDs, and it does so without printing anything.
+//
 #pragma pack(push, 1)
 struct LargeHeaderExtension {
     uint64_t record_count;     // total records (64-bit)
     uint64_t data_start_64;    // data section offset
     uint64_t record_size_64;   // bytes per record
-    uint64_t autoq_next;       // next autoincrement / sequence value
+    uint64_t autoq_next;       // sequence slot -- RESERVED, NOT WIRED (see above)
     uint32_t table_flags;      // x64 table capability flags
     uint32_t reserved32;       // reserved
     uint64_t reserved[3];      // reserved, future use
