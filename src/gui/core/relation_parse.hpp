@@ -10,6 +10,9 @@
 #pragma once
 
 #include "gui/core/model.hpp"
+#include "xbase/relation_wire.hpp"
+
+#include <cstdint>
 
 #include <string>
 #include <vector>
@@ -29,24 +32,19 @@ namespace dottalk::gui {
 // PARAMETER. That is the same correction as ruling D10 R3 -- a dependency
 // travels in the signature, not through a side channel -- and it is what lets
 // this unit link nothing and touch no filesystem.
-// Split the clause AFTER " ON " into its parent-side and child-side field
-// lists. This is the exact inverse of set_relations.cpp:894 format_on_fields,
-// which emits `ON <parent-csv>` when the two lists match and
-// `ON <parent-csv> TO <child-csv>` when they differ.
+// R124/R125, 2026-08-24. THE WIRE FORMAT MOVED TO xbase.
 //
-// Each side stays a CSV. A relation may bind SEVERAL fields -- the shipped
-// grammar is `SET RELATIONS ADD <p> <c> ON <csv> [TO <csv>]`
-// (cmd_relations.cpp:418-455) and add_relation requires the two lists to be
-// the same LENGTH, not the same names. So "SID,TERM" is one key made of two
-// fields, and callers that want a single FIELD NAME must say so.
+// split_relation_keys and the posture round trip now live in
+// include/xbase/relation_wire.hpp, because the PRODUCER could not reach them
+// here -- dottalkpp does not link dottalk_gui_core, and R122 ruled that the fix
+// is for the producer to emit structured data rather than for anyone to change
+// who links whom. What remains in this unit is what is genuinely the GUI's:
+// merging edges into the GUI's model, and scraping the CLI's HUMAN output.
 //
-// child_key is never left empty: with no TO clause, or a malformed empty one,
-// it mirrors the parent side. An empty field name is not something a correct
-// producer emits, so nothing downstream has to tell "no child key" apart from
-// a real one.
-void split_relation_keys(const std::string& on_clause,
-                         std::string& parent_key,
-                         std::string& child_key);
+// The two functions below are ADAPTERS. They convert between the wire's
+// RelationRecord and the GUI's WorkspaceRelationInfo, which carries display
+// concerns the wire does not: a workspace NAME (rendered from the handle by
+// xbase::workspace::name_of) and a `source` label.
 
 void merge_relation(std::vector<WorkspaceRelationInfo>& relations,
                     WorkspaceRelationInfo relation);
@@ -65,8 +63,12 @@ void merge_relation(std::vector<WorkspaceRelationInfo>& relations,
 bool format_relation_posture_line(const WorkspaceRelationInfo& relation,
                                   std::string& out);
 
+// TAKES A HANDLE, NOT A NAME (R125). The caller is the side that knows which
+// workspace it is reading for, and the engine has keyed relations by handle
+// since I1.2. The name this stamps into the model is a RENDERING, produced
+// here so that exactly one place in the GUI performs the conversion.
 bool parse_relation_posture_line(const std::string& line,
-                                 const std::string& owning_workspace,
+                                 std::uint64_t owning_workspace,
                                  WorkspaceRelationInfo& out);
 
 std::vector<WorkspaceRelationInfo> parse_relation_edges_from_output(

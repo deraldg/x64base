@@ -9,6 +9,9 @@
 
 #include "relation_parse.hpp"
 
+#include "xbase/relation_wire.hpp"
+#include "xbase/workspace_membership.hpp"
+
 #include <algorithm>
 #include <cctype>
 #include <cstdint>
@@ -87,22 +90,9 @@ std::optional<std::uint64_t> match_count_from_relation_line(const std::string& l
 
 } // namespace
 
-void split_relation_keys(const std::string& on_clause,
-                         std::string& parent_key,
-                         std::string& child_key) {
-    const std::string clause = trim_ascii(on_clause);
-    const auto to = clause.find(" TO ");
-    if (to == std::string::npos) {
-        parent_key = clause;
-        child_key = clause;
-        return;
-    }
-    parent_key = trim_ascii(clause.substr(0, to));
-    child_key = trim_ascii(clause.substr(to + 4));
-    if (child_key.empty()) {
-        child_key = parent_key;
-    }
-}
+// MOVED TO xbase::relwire (R124). Imported so the scraper below, which is
+// staying, keeps calling the ONE implementation rather than growing a second.
+using xbase::relwire::split_relation_keys;
 
 // TWO DEFECTS FIXED HERE, both named in AIF-078 D9 sec 4 item 5 and excluded
 // from I1.2 in writing (D10 sec 8a) until the field had a writer.
@@ -183,47 +173,50 @@ void merge_relation(std::vector<WorkspaceRelationInfo>& relations, WorkspaceRela
     }
 }
 
+// ---- ADAPTERS OVER THE WIRE UNIT (R124/R125) -----------------------------
+//
+// The grammar is not implemented here any more. These convert, and the
+// conversion is the only thing they do -- if a field starts being TRANSFORMED
+// on the way through, that is a second grammar arriving by the back door.
+
 bool format_relation_posture_line(const WorkspaceRelationInfo& relation,
                                   std::string& out) {
-    if (relation.parent.empty() || relation.child.empty() ||
-        relation.parent_key.empty()) {
-        return false;
-    }
-    out = "RELATION " + relation.parent + " " + relation.child +
-          " ON " + relation.parent_key;
-    // Only when the two sides actually differ, so a file full of ordinary
-    // same-name relations does not churn.
-    if (!relation.child_key.empty() && relation.child_key != relation.parent_key) {
-        out += " TO " + relation.child_key;
-    }
-    return true;
+    xbase::relwire::RelationRecord record;
+    record.parent     = relation.parent;
+    record.child      = relation.child;
+    record.parent_key = relation.parent_key;
+    record.child_key  = relation.child_key;
+    // The workspace is deliberately NOT carried into the line: it is context,
+    // not content (see relation_wire.hpp). The writer emits one workspace's
+    // edges at a time and the reader is told which.
+    return xbase::relwire::format_relation_posture_line(record, out);
 }
 
 bool parse_relation_posture_line(const std::string& line,
-                                 const std::string& owning_workspace,
+                                 std::uint64_t owning_workspace,
                                  WorkspaceRelationInfo& out) {
-    constexpr const char* prefix = "RELATION ";
-    const std::string text = trim_ascii(line);
-    if (text.rfind(prefix, 0) != 0) {
-        return false;
-    }
-    const std::string rest =
-        trim_ascii(text.substr(std::char_traits<char>::length(prefix)));
-    const auto on = rest.find(" ON ");
-    if (on == std::string::npos) {
+    xbase::relwire::RelationRecord record;
+    if (!xbase::relwire::parse_relation_posture_line(line, owning_workspace, record)) {
         return false;
     }
 
     WorkspaceRelationInfo relation;
-    relation.workspace = owning_workspace;
-    std::istringstream head(rest.substr(0, on));
-    head >> relation.parent >> relation.child;
-    split_relation_keys(rest.substr(on + 4), relation.parent_key, relation.child_key);
+    // R125: THE HANDLE BECOMES A NAME HERE, AND ONLY HERE, ON THIS PATH. The
+    // model column shows a name because a person reads it; the key it was
+    // parsed under is the handle. An unknown handle renders as the default
+    // rather than as an empty column, which is the same fallback
+    // owning_workspace_now() has always used.
+    std::string name = xbase::workspace::name_of(owning_workspace);
+    relation.workspace  = name.empty() ? std::string(kDefaultWorkspace) : std::move(name);
+    relation.parent     = std::move(record.parent);
+    relation.child      = std::move(record.child);
+    relation.parent_key = std::move(record.parent_key);
+    relation.child_key  = std::move(record.child_key);
+    relation.match_count = record.match_count;
+    // A DISPLAY LABEL, NOT WIRE CONTENT. It says where this row came from so a
+    // reader can tell a posture edge from a scraped one; the producer has no
+    // opinion about it and the wire record carries no such field.
     relation.source = "DTSchema";
-    if (relation.parent.empty() || relation.child.empty() ||
-        relation.parent_key.empty()) {
-        return false;
-    }
     out = std::move(relation);
     return true;
 }

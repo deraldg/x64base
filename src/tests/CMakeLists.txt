@@ -34,15 +34,37 @@ target_include_directories(dottalkpp_workspace_membership_test PRIVATE ${CMAKE_S
 add_test(NAME dottalkpp_workspace_membership_test COMMAND dottalkpp_workspace_membership_test)
 
 # ---- Relation merge and parse: AIF-078 decision-owed #6 --------------------
-# relation_parse.cpp is text in, rows out -- it includes only model.hpp, which
-# is standard-library only -- so this compiles that ONE translation unit
-# directly and links nothing. It deliberately does NOT link dottalk_gui_core,
-# which would drag in session.cpp, xbase and memo to test a pure function.
-# Two arms PIN known defects (the unparsed ` TO ` clause, and the tree that
-# flattens below depth 1) and are written to go RED when those are fixed.
+# relation_parse.cpp is text in, rows out -- so this compiles those translation
+# units directly and links nothing. It deliberately does NOT link
+# dottalk_gui_core, which would drag in session.cpp, xbase and memo to test a
+# pure function.
+#
+# R124 (2026-08-24) split the unit: the posture round trip moved to
+# src/xbase/relation_wire.cpp so the CLI can reach it too, and what stayed here
+# is the GUI's own -- merging into the model, and scraping human CLI text. Both
+# halves are still standard-library only, and this target is the reason we know
+# that: it has been compiling the unit outside dottalk_gui_core since before the
+# move, which is what made the move cheap.
+# STALE UNTIL 2026-08-24, corrected here. This said "Two arms PIN known defects
+# (the unparsed ` TO ` clause, and the tree that flattens below depth 1) and are
+# written to go RED when those are fixed." Both defects WERE fixed, and the arms
+# were repointed at the time -- the fixture's own transcript now reads "4a: `ON p
+# TO c` splits both sides; 4e: the tree nests instead of flattening onto the
+# root", which is the FIXED behaviour asserted, not a defect pinned. Only this
+# comment was left describing the old world.
+#
+# It survived because a comment cannot go red. That is the same shape as the
+# setting AIF-123 restored, and the same shape as the ~80% cross-file citation
+# rot this project has measured and not yet gated -- a claim that decays without
+# ever failing. It was caught by READING THE FIXTURE'S TRANSCRIPT rather than by
+# trusting a green suite, which is the only thing that could have caught it.
 add_executable(dottalkpp_relation_merge_test
   ${CMAKE_CURRENT_SOURCE_DIR}/test_relation_merge.cpp
   ${CMAKE_SOURCE_DIR}/src/gui/core/relation_parse.cpp
+  # R124: the posture round trip moved to xbase, so this fixture compiles that
+  # TU as well. It still links NOTHING -- relation_wire.cpp is standard-library
+  # only and is filed under src/xbase for reach, not for dependencies.
+  ${CMAKE_SOURCE_DIR}/src/xbase/relation_wire.cpp
 )
 target_compile_features(dottalkpp_relation_merge_test PRIVATE cxx_std_20)
 target_include_directories(dottalkpp_relation_merge_test PRIVATE

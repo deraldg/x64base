@@ -570,7 +570,10 @@ std::vector<WorkspaceSchemaArea> load_dtschema2_areas_from_stream(
         }
 
         WorkspaceRelationInfo relation;
-        if (parse_relation_posture_line(line, owning_workspace_now(), relation)) {
+        // R125: THE HANDLE, not owning_workspace_now()'s rendered name. The
+        // conversion back to a name for display happens inside the parser, in
+        // one place, which is what GUI_LAYER_DECISION_OUTLINE step 2 asked for.
+        if (parse_relation_posture_line(line, xbase::workspace::current_handle(), relation)) {
             merge_relation(relations, std::move(relation));
         }
     }

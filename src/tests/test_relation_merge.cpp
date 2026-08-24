@@ -22,6 +22,7 @@
 // behaviour without blessing it, and it tells you when to stop.
 
 #include "gui/core/relation_parse.hpp"
+#include "xbase/workspace_membership.hpp"
 
 #include <cstdlib>
 #include <iostream>
@@ -35,6 +36,23 @@ using dottalk::gui::merge_relation;
 using dottalk::gui::parse_relation_edges_from_output;
 using dottalk::gui::format_relation_posture_line;
 using dottalk::gui::parse_relation_posture_line;
+
+// R125, 2026-08-24. THE POSTURE PARSER TAKES A HANDLE NOW, NOT A NAME.
+//
+// These calls said "DEFAULT" and now say kDefaultHandle. That is not a
+// cosmetic swap: the engine has keyed the relation store by HANDLE since I1.2
+// while the GUI carried a NAME, and nothing converted. The conversion now
+// happens in exactly one place, inside the parser, and what these arms verify
+// on the way back out -- rows[0].workspace, the merge identity -- is the
+// RENDERED name. Both spellings still meet, which is the point:
+// xbase::workspace::kDefaultName and dottalk::gui::kDefaultWorkspace are both
+// "DEFAULT", so the round trip closes.
+//
+// T10 IS THE ARM THAT WOULD CATCH A BREAK HERE. It merges an edge parsed from
+// a posture line against one scraped from CLI text -- two producers, two
+// paths, one of which now goes through the handle -- and requires them to
+// FUSE into a single row. If the handle-to-name rendering ever stops agreeing
+// with what the scraper stamps, that arm splits the edge in two and says so.
 
 bool require(bool condition, const std::string& message) {
     if (!condition) {
@@ -337,7 +355,7 @@ int main() {
         }
 
         WorkspaceRelationInfo back;
-        if (!require(parse_relation_posture_line(line, "DEFAULT", back),
+        if (!require(parse_relation_posture_line(line, xbase::workspace::kDefaultHandle, back),
                      "T9: the writer's own line did not parse")) {
             return EXIT_FAILURE;
         }
@@ -371,7 +389,7 @@ int main() {
             return EXIT_FAILURE;
         }
         WorkspaceRelationInfo back;
-        if (!require(parse_relation_posture_line(line, "DEFAULT", back) &&
+        if (!require(parse_relation_posture_line(line, xbase::workspace::kDefaultHandle, back) &&
                      back.parent_key == "SID" && back.child_key == "SID",
                      "T9b: a keyed line without TO did not round trip")) {
             return EXIT_FAILURE;
@@ -398,11 +416,11 @@ int main() {
 
         WorkspaceRelationInfo out;
         out.parent = "SENTINEL";
-        if (!require(!parse_relation_posture_line("AREA 0 | students.dbf", "DEFAULT", out),
+        if (!require(!parse_relation_posture_line("AREA 0 | students.dbf", xbase::workspace::kDefaultHandle, out),
                      "T9c: a non-RELATION posture line was parsed as a relation")) {
             return EXIT_FAILURE;
         }
-        if (!require(!parse_relation_posture_line("RELATION STUDENTS ENROLL", "DEFAULT", out),
+        if (!require(!parse_relation_posture_line("RELATION STUDENTS ENROLL", xbase::workspace::kDefaultHandle, out),
                      "T9c: a RELATION line with no key was accepted")) {
             return EXIT_FAILURE;
         }
@@ -426,7 +444,7 @@ int main() {
         }
         WorkspaceRelationInfo from_file;
         if (!require(parse_relation_posture_line(
-                         "RELATION STUDENTS ENROLL ON SID TO STU_ID", "DEFAULT", from_file),
+                         "RELATION STUDENTS ENROLL ON SID TO STU_ID", xbase::workspace::kDefaultHandle, from_file),
                      "T10: the posture line did not parse")) {
             return EXIT_FAILURE;
         }
