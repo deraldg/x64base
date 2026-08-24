@@ -25,6 +25,7 @@
 #include "relation_parse.hpp"
 #include "cli/shell_shortcuts.hpp"
 #include "xbase.hpp"
+#include "xbase/area_alloc.hpp"   // AIF-078 step 2b: the ONE free-slot policy
 #include "xindex/index_manager.hpp"
 #include "xindex/attach.hpp"
 
@@ -1377,27 +1378,61 @@ void run_lifecycle_scripts(GuiShellRuntime& runtime, const std::vector<std::stri
 } // namespace
 
 struct Session::Impl {
+    // AIF-078 slot lane, step 2b. THE AREA IS BORROWED, NOT OWNED.
+    //
+    // It used to hold `xbase::DbArea area;` BY VALUE, and that one fact is what
+    // made a session-owned area second class: setEngineSlot() has exactly one
+    // caller in the tree (dbf_file.cpp:444, over the engine's own array), so an
+    // area outside that array could never have an engine slot and carried -1 for
+    // life. -1 is ALSO the member array's free-slot sentinel, so join(h, -1)
+    // matched the first FREE slot and claimed nothing, and leave(h, -1) cleared
+    // nothing. Membership could not see these areas at all.
+    //
+    // Now it holds a reference into the engine's array, at a slot claimed from
+    // the same allocator the CLI's USE ... IN FREE uses. join() and leave() are
+    // already called from DbArea::open()/close(); they simply start receiving a
+    // REAL slot. Nothing else had to change for membership to become true.
     struct Area {
+        // R6: an absent value must not be representable among present ones.
+        // There is NO default constructor, so an unbound Area cannot exist and
+        // area() has no absent case to defend against across its 132 callers.
+        Area(xbase::XBaseEngine& eng, int slot) noexcept : eng_(&eng), slot_(slot) {}
+
+        // RAII PRESERVED ACROSS THE OWNERSHIP CHANGE, and this destructor is
+        // load-bearing. Before 2b, `areas.clear()` closed files implicitly --
+        // destroying an Area destroyed its by-value DbArea and ~DbArea() calls
+        // close(). The DbArea is no longer ours to destroy, so without this the
+        // three clears and one erase would stop closing anything: files left
+        // open, slots left claimed, NO compile error and no failing test. A
+        // silent leak. Keeping the release here means those four call sites need
+        // no edits at all, and close() does workspace::leave() itself.
+        ~Area() {
+            try {
+                if (eng_ && slot_ >= 0) eng_->area(slot_).close();
+            } catch (...) {
+                // A destructor may not throw. Losing the close is bad; losing
+                // the process is worse.
+            }
+        }
+
+        Area(const Area&)            = delete;
+        Area& operator=(const Area&) = delete;
+
         AreaId id {0};
         std::filesystem::path path;
         std::string display_name;
 
-        // AIF-078 slot lane, step 2a. The DbArea was a PUBLIC MEMBER read
-        // directly at 132 sites. It is now reached through one accessor, and
-        // that is the whole point of this step: step 2b changes WHERE the
-        // DbArea lives -- borrowed from an engine's array by slot instead of
-        // owned here by value -- and with one seam that is a change to two
-        // lines instead of 132.
-        //
-        // Deliberately inert. Same storage, same lifetime, same everything;
-        // an inline accessor returning a reference to the member it replaced.
-        // The mechanical half is made provable before the semantic half is
-        // attempted, which is the discipline the allocator lift used.
-        xbase::DbArea&       area()       noexcept { return area_; }
-        const xbase::DbArea& area() const noexcept { return area_; }
+        // The ENGINE slot -- the number that means AREA <n> in the CLI, in a
+        // posture, and in SELECT n. Step 3 re-points the GUI's positional rung
+        // at this instead of at the list index.
+        int slot() const noexcept { return slot_; }
+
+        xbase::DbArea&       area()       { return eng_->area(slot_); }
+        const xbase::DbArea& area() const { return eng_->area(slot_); }
 
     private:
-        xbase::DbArea area_;
+        xbase::XBaseEngine* eng_;
+        int                 slot_;
     };
 
     Area* active_area() {
@@ -1500,6 +1535,26 @@ struct Session::Impl {
         return nullptr;
     }
 
+    // DECLARED BEFORE `areas` ON PURPOSE. Members are destroyed in REVERSE
+    // declaration order, so this engine is torn down AFTER the areas that hold
+    // references into its array. Swap these two lines and every ~Area() runs
+    // against a destroyed engine -- which would compile, and would not
+    // necessarily fail a test.
+    xbase::XBaseEngine engine;
+
+    // Claim a slot for a new area, or -1. ONE allocator, shared with the CLI:
+    // xbase::find_free_area_for_workspace grows this workspace's own block
+    // first and falls back to the lowest free slot anywhere, reporting when it
+    // breaks contiguity (owner rulings 2026-08-22, "scoped" and "keep the areas
+    // contiguous"). A second free-slot policy for the same array is R5's defect.
+    int claim_area_slot(bool& broke_contiguity) {
+        return xbase::find_free_area_for_workspace(
+            &engine,
+            xbase::workspace::default_table(),
+            xbase::workspace::current_handle(),
+            broke_contiguity);
+    }
+
     std::vector<std::unique_ptr<Area>> areas;
     std::vector<WorkspaceRelationInfo> relations;
     AreaId active_area_id {0};
@@ -1562,7 +1617,19 @@ OpenTableResult Session::open_table(const OpenTableRequest& request) {
             return result;
         }
 
-        auto area = std::make_unique<Impl::Area>();
+        bool broke_contiguity = false;
+        const int slot = impl_->claim_area_slot(broke_contiguity);
+        if (slot < 0) {
+            // The CLI already ruled this, and the GUI adopts its answer rather
+            // than inventing a second spelling for the same refusal (R5).
+            // cmd_use.cpp:766 -- "Deliberately NOT falling back to the current
+            // area. Falling back is the silent-replacement behaviour this lane
+            // exists to kill."
+            throw std::runtime_error(
+                "no unoccupied work area (all " + std::to_string(xbase::MAX_AREA) +
+                " are in use). Nothing was opened.");
+        }
+        auto area = std::make_unique<Impl::Area>(impl_->engine, slot);
         area->path = request.path;
         area->display_name = result.display_name;
         area->area().open(request.path.string());
@@ -1626,7 +1693,19 @@ std::size_t Session::mirror_workspace_open_directory(const std::filesystem::path
     std::size_t opened = 0;
     for (const auto& dbf : dbfs) {
         try {
-            auto area = std::make_unique<Impl::Area>();
+            bool broke_contiguity = false;
+            const int slot = impl_->claim_area_slot(broke_contiguity);
+            if (slot < 0) {
+                // The CLI already ruled this, and the GUI adopts its answer rather
+                // than inventing a second spelling for the same refusal (R5).
+                // cmd_use.cpp:766 -- "Deliberately NOT falling back to the current
+                // area. Falling back is the silent-replacement behaviour this lane
+                // exists to kill."
+                throw std::runtime_error(
+                    "no unoccupied work area (all " + std::to_string(xbase::MAX_AREA) +
+                    " are in use). Nothing was opened.");
+            }
+            auto area = std::make_unique<Impl::Area>(impl_->engine, slot);
             area->path = dbf;
             area->display_name = dbf.filename().string();
             area->area().open(dbf.string());
@@ -1861,7 +1940,19 @@ std::size_t Session::mirror_workspace_posture(const std::string& posture,
         }
 
         try {
-            auto area = std::make_unique<Impl::Area>();
+            bool broke_contiguity = false;
+            const int slot = impl_->claim_area_slot(broke_contiguity);
+            if (slot < 0) {
+                // The CLI already ruled this, and the GUI adopts its answer rather
+                // than inventing a second spelling for the same refusal (R5).
+                // cmd_use.cpp:766 -- "Deliberately NOT falling back to the current
+                // area. Falling back is the silent-replacement behaviour this lane
+                // exists to kill."
+                throw std::runtime_error(
+                    "no unoccupied work area (all " + std::to_string(xbase::MAX_AREA) +
+                    " are in use). Nothing was opened.");
+            }
+            auto area = std::make_unique<Impl::Area>(impl_->engine, slot);
             area->path = *dbf;
             area->display_name = !schema_area.alias.empty()
                 ? schema_area.alias + ".DBF"
