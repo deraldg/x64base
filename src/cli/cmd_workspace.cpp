@@ -2583,6 +2583,14 @@ struct WsCatalogScan {
     std::uint64_t live_id  = 0;    // WS_ID of this name's live row (0 = none)
     std::int32_t  live_rec = -1;   // its physical recno, for the caller to act on
     std::vector<WsChainLink> links;  // every row's (WS_ID -> PREV_ID), for chain_root
+
+    // AIF-078 (2026-08-24, steward ruling "A -- flag, never pack"). EVERY
+    // physical recno carrying this WS_NAME, live or superseded, in physical
+    // order. PURGE needs the whole chain, and it must agree with DESTROY about
+    // which rows belong to a name -- so it reads that answer off the SAME scan
+    // rather than re-deriving the predicate. Two copies of "which rows are
+    // this workspace's" is how they come to disagree.
+    std::vector<std::int32_t> name_recs;
 };
 
 static WsCatalogScan scan_catalog(xbase::DbArea& a, const std::string& name) {
@@ -2601,9 +2609,12 @@ static WsCatalogScan scan_catalog(xbase::DbArea& a, const std::string& name) {
             // untrimmed, against the raw field -- because this half is
             // load-bearing for the append-history every save regression
             // depends on, and a refactor is not the place to change it.
-            if (get_by_name(a, "WS_NAME") == name && get_by_name(a, "SUPERSEDED") != "1") {
-                s.live_id  = rid;
-                s.live_rec = static_cast<std::int32_t>(r);
+            if (get_by_name(a, "WS_NAME") == name) {
+                s.name_recs.push_back(static_cast<std::int32_t>(r));
+                if (get_by_name(a, "SUPERSEDED") != "1") {
+                    s.live_id  = rid;
+                    s.live_rec = static_cast<std::int32_t>(r);
+                }
             }
         } catch (...) {}
     }
@@ -2787,6 +2798,113 @@ static bool retire_durable_workspace(const std::string& name,
                 }
             } catch (const std::exception& e) {
                 err = std::string("WORKSPACE DESTROY: catalog write failed: ") + e.what();
+            }
+        }
+    } // release FLOCK while the area is still open
+
+    cli_memo::memo_auto_on_close(a);
+    a.close();
+    return ok;
+}
+
+// ---------------------------------------------------------------------------
+// AIF-078 -- WORKSPACE PURGE. Steward ruling 2026-08-24: "A -- flag, never
+// pack." Design: claude/AIF078_DESIGN_WORKSPACE_PURGE.md.
+//
+// WHY IT NEVER PACKS, and this is the whole safety argument:
+//
+// WS_ID allocation is scan.max_id + 1, DERIVED by scanning the surviving rows
+// (save_to_memo, below). Nothing persists a high-water mark. Physically remove
+// the highest-numbered rows and the next WORKSPACE NEW re-mints a WS_ID a
+// purged workspace already used -- and D10.2 makes the chain-root WS_ID the
+// workspace's DURABLE IDENTITY, so that is two workspaces sharing one identity
+// across time. R5's defect on the time axis.
+//
+// Flagging without packing is safe precisely BECAUSE scan_catalog does not
+// filter deleted rows: a flagged row is still counted toward max_id, so the
+// high-water mark survives. That same blindness is what makes the OTHER half
+// mandatory -- a flagged row would still be ELECTED LIVE on WS_NAME plus
+// SUPERSEDED alone, and adoptable by the next NEW. So SUPERSEDED=1 is not
+// decoration here; it is the half that stops the election. Both writes, or the
+// row is worse off than before.
+//
+// AND IT IS THE ONLY HALF THAT PROTECTS ANYTHING, measured 2026-08-24 by this
+// verb's own spec on its first run. The delete flag does NOT hide the row: with
+// SET DELETED ON, LOCATE still reaches a purged record and moves the cursor onto
+// it. WSPURGE's PG_T3 was written to assert the opposite and INVERTED. So do not
+// reason about this verb as if flagged rows disappear -- they stay reachable,
+// readable and counted. What changed about a purged row is that no WORKSPACE NEW
+// can adopt it. Measured for LOCATE; other scan paths are unmeasured and are not
+// claimed either way.
+//
+// The honest cost, stated rather than implied: THE FILE NEVER SHRINKS. This
+// verb reclaims nothing. It exists to stop rows being adopted, not to save
+// disk -- disk was measured at 703 bytes a row and was never the reason.
+//
+// DO NOT ADD A PACK OPTION without first wiring autoq_next's store-back path
+// (xbase_64.hpp:52 / dbf_create.cpp:481 -- set at create, hydrated at open,
+// getter and setter present, NO writer). Pack-now-wire-later is the one
+// combination that reissues identities, and it does so silently.
+struct WsPurgeResult {
+    std::vector<std::uint64_t> ids;       // WS_IDs flagged, physical order
+    std::uint64_t              high = 0;  // max WS_ID the scan still counts
+    bool                       had_live = false;
+};
+
+static bool purge_durable_workspace(const std::string& name,
+                                    WsPurgeResult& out,
+                                    std::string& err)
+{
+    out = WsPurgeResult{};
+
+    xbase::DbArea a;
+    if (!open_catalog(a, err)) return false;
+
+    bool ok = false;
+    {
+        WsLock lk(a, err);
+        if (!lk) { cli_memo::memo_auto_on_close(a); a.close(); return false; }
+
+        // One scan, shared with every other catalog writer. name_recs is this
+        // name's whole chain; max_id is the high-water mark we are promising
+        // not to move.
+        const WsCatalogScan scan = scan_catalog(a, name);
+        out.high = scan.max_id;
+        out.had_live = (scan.live_rec >= 0);
+
+        ok = true;
+        for (const auto rec : scan.name_recs) {
+            try {
+                a.gotoRec(rec); a.readCurrent();
+                const std::uint64_t rid = std::strtoull(
+                    trim_copy(get_by_name(a, "WS_ID")).c_str(), nullptr, 10);
+
+                // SUPERSEDED first. If the delete flag landed and this did not,
+                // the row would be invisible AND still adoptable -- strictly
+                // worse than leaving it alone.
+                if (!set_by_name(a, "SUPERSEDED", "1", err)) { ok = false; break; }
+                a.writeCurrent();
+                a.deleteCurrent();   // sets the flag and writes through
+
+                // Read BOTH back from the record, as DESTROY does. A write that
+                // silently did not stick is the worst failure either verb has.
+                a.gotoRec(rec); a.readCurrent();
+                if (trim_copy(get_by_name(a, "SUPERSEDED")) != "1") {
+                    err = "WORKSPACE PURGE: record " + std::to_string(rec) +
+                          " did not take SUPERSEDED. Stopped; earlier rows are "
+                          "already purged.";
+                    ok = false; break;
+                }
+                if (!a.isDeleted()) {
+                    err = "WORKSPACE PURGE: record " + std::to_string(rec) +
+                          " did not take the delete flag. Stopped; earlier rows "
+                          "are already purged.";
+                    ok = false; break;
+                }
+                out.ids.push_back(rid);
+            } catch (const std::exception& e) {
+                err = std::string("WORKSPACE PURGE: catalog write failed: ") + e.what();
+                ok = false; break;
             }
         }
     } // release FLOCK while the area is still open
@@ -4020,6 +4138,7 @@ static void workspace_print_usage() {
     std::cout << "  WORKSPACE OPEN <target> NOINDEX [recursive] [TABLE]\n";
     std::cout << "  WORKSPACE NEW <name> [UNDER <parent>]      (Declare a workspace; allocates its WS_ID)\n";
     std::cout << "  WORKSPACE DESTROY <name-or-handle>         (Retire an empty, childless workspace)\n";
+    std::cout << "  WORKSPACE PURGE <name>                     (Catalog hygiene: flag a retired name's rows; never packs)\n";
     std::cout << "  WORKSPACE SWITCH <name-or-handle>          (Areas opened next join this workspace)\n";
     std::cout << "  WORKSPACE REGISTRY                         (Report runtime membership and nesting)\n";
     std::cout << "  WORKSPACE CLOSE                            (Close the CURRENT workspace)\n";
@@ -4407,6 +4526,105 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
             }
             std::cout << "  Handle " << h << " is NOT reused: a stale handle held by an area "
                          "must resolve to 'gone' and never to somebody else.\n";
+
+        } else if (sub_command == "purge") {
+            // AIF-078. Steward ruling 2026-08-24: a purge, shape "A -- flag,
+            // never pack". Implementation notes and the no-pack argument live
+            // on purge_durable_workspace above.
+            //
+            // THE REFUSAL RULE CHANGED BETWEEN DESIGN AND CODE, and the reason
+            // is worth keeping. The design said "PURGE refuses while the name
+            // has a LIVE catalog row -- DESTROY it first", on the tidy theory
+            // that DESTROY retires and PURGE erases. Then DESTROY's own
+            // dispatch was read: it resolves its target through
+            // resolve_workspace_token(), i.e. the RUNTIME registry, and
+            // answers "no such workspace" for anything not currently declared.
+            //
+            // So a CATALOG-ONLY live head -- goneprobe, ls_probe, wm_regress
+            // and the ten others the 2026-08-24 census found -- is reachable
+            // by NEITHER verb under that rule. The clause would have fenced
+            // off the exact rows the verb was ruled in to deal with. It was
+            // asserted without checking the adjacent verb, which is the same
+            // mistake as calling workarea_util "a shared home" before checking
+            // the second consumer could link it.
+            //
+            // What is refused instead is what actually needs protecting: a
+            // workspace that is DECLARED RIGHT NOW. Yanking the identity out
+            // from under a live runtime workspace would leave it running with
+            // no durable row and its name freshly adoptable -- the failure
+            // DESTROY's own ordering comment is built to avoid.
+            auto toks = split_tokens(rest_of_args);
+            if (toks.empty()) {
+                std::cout << "WORKSPACE PURGE: missing target.\n";
+                std::cout << "  Use: WORKSPACE PURGE <name>\n";
+                std::cout << "  Purges CATALOG ROWS by WS_NAME. This is catalog "
+                             "hygiene, not a session verb.\n";
+                return;
+            }
+            const std::string pnm = trim_copy(toks[0]);
+
+            if (xbase::workspace::find_by_name_ci(pnm) != 0) {
+                std::cout << "WORKSPACE PURGE: refused -- '" << pnm
+                          << "' is a workspace DECLARED IN THIS SESSION.\n";
+                std::cout << "  Retire it first (WORKSPACE DESTROY " << pnm
+                          << "), which supersedes its live row and releases the "
+                             "name. Purging a declared workspace would leave it "
+                             "running with no durable identity. Nothing was "
+                             "changed.\n";
+                return;
+            }
+            if (ci_equal(pnm, "DEFAULT")) {
+                std::cout << "WORKSPACE PURGE: DEFAULT cannot be purged.\n";
+                std::cout << "  Invariant I1 needs DEFAULT to outlive every other "
+                             "workspace, and that applies to its history too.\n";
+                return;
+            }
+
+            ws_memo::WsPurgeResult pr;
+            std::string perr;
+            if (!ws_memo::purge_durable_workspace(pnm, pr, perr)) {
+                std::cout << (perr.empty()
+                                ? std::string("WORKSPACE PURGE: the catalog write failed.")
+                                : perr)
+                          << "\n";
+                if (!pr.ids.empty()) {
+                    std::cout << "  PARTIAL: " << pr.ids.size()
+                              << " row(s) were already purged before the stop. The "
+                                 "catalog is consistent -- every purged row carries "
+                                 "BOTH the delete flag and SUPERSEDED -- but the "
+                                 "chain is not fully done. Re-run to finish.\n";
+                }
+                return;
+            }
+
+            if (pr.ids.empty()) {
+                std::cout << "WORKSPACE PURGE: no catalog rows carry the name '"
+                          << pnm << "'. Nothing was changed.\n";
+                return;
+            }
+
+            std::cout << "WORKSPACE PURGE: name " << pnm << "\n";
+            std::cout << "  Purged " << pr.ids.size() << " row(s), WS_ID";
+            for (std::size_t i = 0; i < pr.ids.size(); ++i) {
+                std::cout << (i ? "," : " ") << pr.ids[i];
+            }
+            std::cout << "\n";
+            if (pr.had_live) {
+                std::cout << "  One of them was a LIVE HEAD: a WORKSPACE NEW " << pnm
+                          << " would have ADOPTED it and inherited whatever the last "
+                             "run left in that row. It will now mint fresh.\n";
+            }
+            std::cout << "  HIGH-WATER MARK PRESERVED: the next WS_ID is still "
+                      << (pr.high + 1)
+                      << ". Rows are FLAGGED, not packed, so the allocator still "
+                         "counts them and NO WS_ID CAN BE REISSUED.\n";
+            std::cout << "  The file did not shrink, and that is the design. Do not "
+                         "PACK this catalog: allocation is max(WS_ID)+1 derived from "
+                         "surviving rows, so packing would hand a purged workspace's "
+                         "identity to a new one.\n";
+            std::cout << "  Purged rows are STILL READABLE -- measured 2026-08-24, "
+                         "LOCATE reaches them even with SET DELETED ON. What changed "
+                         "is that no WORKSPACE NEW can adopt them.\n";
 
         } else if (sub_command == "switch") {
             auto toks = split_tokens(rest_of_args);

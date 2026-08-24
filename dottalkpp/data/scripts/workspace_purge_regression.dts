@@ -1,0 +1,199 @@
+; ============================================================================
+; WORKSPACE PURGE -- AIF-078, steward ruling 2026-08-24 "A -- flag, never pack"
+; ============================================================================
+;
+; WHAT MAKES PG_T1 A DISCRIMINATOR AND NOT A DEMONSTRATION.
+;
+; WS_ID allocation is max(WS_ID) + 1, DERIVED by scanning the surviving catalog
+; rows. Nothing persists a high-water mark. So if PURGE ever physically removed
+; rows -- or if the allocator learned to skip delete-flagged ones -- purging the
+; NEWEST rows would drop max back below them, and the next WORKSPACE NEW would
+; re-mint an id a purged workspace already used.
+;
+; That is not cosmetic. D10.2 makes the chain-root WS_ID a workspace's DURABLE
+; IDENTITY, so reissuing one gives two different workspaces the same identity at
+; different times -- R5's defect on the time axis, where nothing can detect it
+; after the fact.
+;
+; PG_T1 arranges exactly that trap: WSPRG1 is minted, retired, minted again and
+; retired again, so its two rows are the two HIGHEST in the catalog. Both are
+; purged. Then a NEW name is minted, and its id must be GREATER than the highest
+; purged id. Pack, and this reads less-or-equal. One line, and it separates
+; "flagged" from "gone".
+;
+; WHY PG_T2 AND PG_T3 ARE A PAIR.
+;
+; Ruling A has two halves and the row is WORSE OFF if only one lands. The delete
+; flag hides the row from ordinary reads; SUPERSEDED=1 stops the catalog scan
+; ELECTING it as live. scan_catalog does not filter deleted rows -- it elects on
+; WS_NAME plus SUPERSEDED alone -- so a flag-only purge would leave a row that is
+; invisible to the user and still adoptable by the next WORKSPACE NEW. Deleted
+; and fine would look alike, which is the AIF-118 shape.
+;
+; PG_T2 reads the purged row WITH SET DELETED OFF and asserts SUPERSEDED = 1.
+;
+; PG_T3 WAS WRITTEN TO SHOW THE ROW GOES AWAY UNDER SET DELETED ON. IT DOES NOT.
+; Measured on this spec's first run: LOCATE still reaches a delete-flagged row
+; with deleted visibility HIDE (ON). So the sentence above about the flag hiding
+; the row is TRUE OF THE INTENT AND FALSE OF THE ENGINE, and it is left standing
+; with this correction beneath it rather than quietly rewritten -- the flag is
+; what keeps the row COUNTED (preserving the high-water mark), and SUPERSEDED is
+; what makes it unadoptable. See the arm itself for the full measurement.
+;
+; PG_T4 IS THE REFUSAL ARM, and it guards a rule that changed between design and
+; code. The design said PURGE would refuse any name with a LIVE catalog row and
+; send the caller to DESTROY first. Then DESTROY's dispatch was read: it resolves
+; its target through the RUNTIME registry and answers "no such workspace" for
+; anything not currently declared. A catalog-only live head -- the thirteen the
+; 2026-08-24 census found -- is reachable by NEITHER verb under that rule. So
+; what PURGE refuses is a workspace DECLARED IN THIS SESSION, which is what
+; actually needs protecting.
+;
+; Every marker is a FIELD-VALUE comparison against WORKSPACES.dbf, per the
+; doctrine FIELDMGR_APPEND paid for: a spec that asserts SHAPE passes green on a
+; blanked table. Nothing here reads a console line.
+;
+; GUARDS: if any PG_G* reds, treat every PG_T* as UNPROVEN. The arms all depend
+; on the two-row chain having actually been built, and on the ids being known.
+;
+; Leaves its own rows behind, flagged and superseded, BY DESIGN -- the file never
+; shrinks and that is what ruling A chose. Cost is 4 rows per run.
+; Explicit-run until soaked.
+; ============================================================================
+
+SET PATH DBF DBF/SANDBOX
+WORKSPACE CLOSE ALL
+SET DELETED ON
+
+; Prior-run residue. Refusals here are noise, not failure.
+WORKSPACE DESTROY WSPRG1
+WORKSPACE DESTROY WSPRG2
+WORKSPACE DESTROY WSPRG3
+
+; --- BUILD A TWO-ROW CHAIN AT THE TOP OF THE CATALOG ------------------------
+; Mint, retire, mint again, retire again. WSPRG1 now owns the two highest
+; WS_IDs in the catalog, which is what makes the pack hazard reachable.
+
+WORKSPACE NEW WSPRG1
+SET PATH DBF workspaces
+USE WORKSPACES
+LOCATE FOR ALLTRIM(WS_NAME) = "WSPRG1" .AND. ALLTRIM(SUPERSEDED) = "0"
+VAR pid1 = WS_ID
+? "PG_G0_first_row_located:" + (ALLTRIM(WS_NAME) = "WSPRG1")
+CLOSE
+
+WORKSPACE DESTROY WSPRG1
+WORKSPACE NEW WSPRG1
+SET PATH DBF workspaces
+USE WORKSPACES
+LOCATE FOR ALLTRIM(WS_NAME) = "WSPRG1" .AND. ALLTRIM(SUPERSEDED) = "0"
+VAR pid2 = WS_ID
+? "PG_G1_second_row_is_newer:" + (WS_ID > $pid1)
+CLOSE
+
+WORKSPACE DESTROY WSPRG1
+
+; Both rows are now superseded and nothing holds the name. Confirm the chain is
+; really two rows before purging it -- an arm that purges one row and reports
+; success proves less than it looks.
+SET PATH DBF workspaces
+USE WORKSPACES
+; NOT RECCOUNT(). USE_AGAIN measured that RECNO()/FOUND() render EMPTY in a '?'
+; marker and that STR() does not rescue them; RECCOUNT() serves compile_predicate
+; -- scan and FOR clauses over an open area -- not the marker path. A marker that
+; errors PRINTS NOTHING rather than going red, so this guard would have vanished
+; from the suite while the count still read full. Field comparison instead.
+LOCATE FOR WS_ID = $pid1
+? "PG_G2_first_row_still_present_before_purge:" + (ALLTRIM(WS_NAME) = "WSPRG1")
+CLOSE
+
+; --- THE PURGE --------------------------------------------------------------
+
+WORKSPACE PURGE WSPRG1
+
+; --- PG_T1: THE DISCRIMINATOR ----------------------------------------------
+; A brand new name must mint ABOVE the highest purged id. If the purged rows
+; had left the file, max would have fallen back below them and this reads .F.
+
+WORKSPACE NEW WSPRG2
+SET PATH DBF workspaces
+USE WORKSPACES
+LOCATE FOR ALLTRIM(WS_NAME) = "WSPRG2" .AND. ALLTRIM(SUPERSEDED) = "0"
+? "PG_G3_new_name_has_a_live_row:" + (ALLTRIM(WS_NAME) = "WSPRG2")
+? "PG_T1_purge_did_not_lower_the_high_water_mark:" + (WS_ID > $pid2)
+CLOSE
+
+; --- PG_T2: THE ELECTION-BLOCKING HALF LANDED -------------------------------
+; Read the purged row itself, with deleted rows visible.
+
+SET DELETED OFF
+SET PATH DBF workspaces
+USE WORKSPACES
+LOCATE FOR WS_ID = $pid2
+? "PG_G4_purged_row_still_on_disk:" + (ALLTRIM(WS_NAME) = "WSPRG1")
+? "PG_T2_purged_row_is_superseded:" + (ALLTRIM(SUPERSEDED) = "1")
+CLOSE
+
+; --- PG_T3: SET DELETED ON DOES NOT HIDE THE ROW FROM LOCATE ----------------
+;
+; THIS ARM INVERTED ON ITS FIRST RUN, 2026-08-24, AND THE MEASUREMENT IS WORTH
+; MORE THAN THE GREEN IT REPLACED.
+;
+; It was written to assert the opposite: park on a live row, LOCATE the purged
+; one, and show the known occupant survived because the delete flag hid it.
+; It read .F. -- LOCATE printed "Located." and moved the cursor onto the purged
+; row. With SET DELETED ON, and the shell confirming "Deleted visibility: HIDE
+; (ON)" one line earlier, a delete-flagged record is STILL REACHED by LOCATE.
+;
+; The flag itself landed. purge_durable_workspace re-reads isDeleted() from the
+; record before counting a row done and refuses to continue if it is false, and
+; the verb reported both rows purged -- so this is not a write that failed. It
+; is LOCATE not consulting the setting.
+;
+; WHAT THAT CHANGES, and it is a correction to this spec's own header and to
+; the purge design: the delete flag is NOT what protects the catalog. SUPERSEDED
+; is. The flag's value is that scan_catalog still COUNTS the row, which is what
+; preserves the high-water mark (PG_T1). Hiding was assumed, not measured, and
+; the assumption was wrong.
+;
+; MEASURED FOR LOCATE ONLY. Whether LIST, SMARTLIST, COUNT or the FOR-scan path
+; honour SET DELETED is UNMEASURED here and is not claimed either way.
+;
+; Both lines below are now a TRIPWIRE. If PG_T3 ever reads .F. again, LOCATE has
+; GAINED delete-filtering, and the purge's safety argument gains a second layer
+; that it does not have today -- repoint this arm deliberately rather than
+; letting it retune itself. PG_T3B is the protection that actually holds, read
+; off the same row in the same breath.
+
+SET DELETED ON
+SET PATH DBF workspaces
+USE WORKSPACES
+LOCATE FOR ALLTRIM(WS_NAME) = "WSPRG2" .AND. ALLTRIM(SUPERSEDED) = "0"
+? "PG_G5_parked_on_a_live_row:" + (ALLTRIM(WS_NAME) = "WSPRG2")
+LOCATE FOR WS_ID = $pid2
+? "PG_T3_locate_still_reaches_a_purged_row_under_deleted_on:" + (ALLTRIM(WS_NAME) = "WSPRG1")
+? "PG_T3B_but_it_is_superseded_so_it_cannot_be_adopted:" + (ALLTRIM(SUPERSEDED) = "1")
+CLOSE
+
+; --- PG_T4: THE REFUSAL ARM -------------------------------------------------
+; A workspace declared in THIS session is refused, and survives the refusal
+; with its live row intact.
+
+WORKSPACE NEW WSPRG3
+WORKSPACE PURGE WSPRG3
+SET PATH DBF workspaces
+USE WORKSPACES
+LOCATE FOR ALLTRIM(WS_NAME) = "WSPRG3" .AND. ALLTRIM(SUPERSEDED) = "0"
+? "PG_T4_declared_workspace_kept_its_live_row:" + (ALLTRIM(SUPERSEDED) = "0")
+CLOSE
+
+; --- TEARDOWN ---------------------------------------------------------------
+; Retire then purge this spec's own names, which is the DESTROY-then-PURGE flow
+; the verb is designed around. The rows remain, flagged; the file never shrinks.
+
+WORKSPACE DESTROY WSPRG2
+WORKSPACE DESTROY WSPRG3
+WORKSPACE PURGE WSPRG2
+WORKSPACE PURGE WSPRG3
+SET DELETED ON
+WORKSPACE CLOSE ALL
