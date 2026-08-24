@@ -432,6 +432,15 @@ static void normalize_agg_predicate(xbase::DbArea& area, AggSpec& spec) {
     spec.pred_expr = normalize_unquoted_rhs_literals(area, spec.pred_expr);
 }
 
+// AIF-123. ALLRECS is not "show everything" -- it is "this command carried no
+// deleted clause", which is exactly when the session default should decide.
+// Reading it as "show everything" is how a bare COUNT/SUM came to include
+// deleted rows while SET DELETED said hide.
+static filter::DeletedPolicy deleted_policy_for(DelMode m) {
+    return (m == DelMode::ALLRECS) ? filter::DeletedPolicy::SessionDefault
+                                   : filter::DeletedPolicy::CallerHandles;
+}
+
 static bool passes_deleted_mode(xbase::DbArea& area, DelMode m) {
     if (m == DelMode::ALLRECS) return true;
 
@@ -696,7 +705,10 @@ static void run_agg(AggOp op, const char* opname, xbase::DbArea& area, std::istr
         if (!passes_deleted_mode(area, spec.del_mode)) continue;
 
         // Persistent SET FILTER + optional command FOR/WHERE together define visibility.
-        if (!filter::visible(&area, pred_ast)) continue;
+        // AIF-123: ALLRECS means the command carried no deleted clause, so the
+        // gate applies SET DELETED. An explicit clause has already spoken on the
+        // line above and must not be undone here.
+        if (!filter::visible(&area, pred_ast, deleted_policy_for(spec.del_mode))) continue;
 
         double v = 0.0;
         if (!eval_value_plan(vp, area, rv, v, use_raw)) continue;
@@ -821,7 +833,7 @@ static void run_agg_all(xbase::DbArea& area, std::istringstream& args) {
             if (!area.readCurrent()) continue;
         }
         if (!passes_deleted_mode(area, spec.del_mode)) continue;
-        if (!filter::visible(&area, pred_ast)) continue;
+        if (!filter::visible(&area, pred_ast, deleted_policy_for(spec.del_mode))) continue;
 
         double v = 0.0;
         if (!eval_value_plan(vp, area, rv, v, use_raw)) continue;

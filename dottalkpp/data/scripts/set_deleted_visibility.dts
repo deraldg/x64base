@@ -1,0 +1,229 @@
+; ============================================================================
+; SET DELETED VISIBILITY -- AIF-123, restoration of a rung lost 2025-08-16
+; ============================================================================
+;
+; WHY THIS SPEC EXISTS, AND WHY IT HAS TO ASSERT BOTH HALVES.
+;
+; SET DELETED is xBase canon: it decides whether delete-flagged but unpurged
+; records are visible to displays and searches. This engine honoured it at
+; alpha-v3 -- cmd_list.cpp read Settings::deletedOn() directly. Commit 06ba79e93
+; (2025-08-16) rewrote LIST and replaced that read with a per-command flag;
+; 523a85e54, the same day, pruned the .sav that still carried the old line. From
+; then until 2026-08-24 NOTHING in the tree called Settings::deletedOn().
+;
+; THE REWRITE PRESERVED THE DEFAULT AND SEVERED THE CONTROL. LIST still hid
+; deleted rows, so nobody running LIST saw any change. What broke is invisible
+; from the default path: SET DELETED OFF stopped doing anything, because the
+; command had stopped asking. Fourteen months, and nothing could go red, because
+; the only way to see it is to CHANGE THE SETTING AND NOTICE NOTHING CHANGES.
+;
+; So this spec asserts BOTH DIRECTIONS, and the OFF half is the discriminator.
+;
+;   A SPEC THAT ONLY ASSERTS "SET DELETED ON HIDES THE ROW" PASSES GREEN ON A
+;   BUILD THAT HIDES DELETED ROWS UNCONDITIONALLY -- which is exactly the build
+;   06ba79e93 produced and exactly the build that shipped for fourteen months.
+;
+; That is the FIELDMGR_APPEND doctrine in a new place: a spec asserting the
+; shape of the answer passes on a fixture that cannot give a different one.
+; Only contrast proves a switch is connected to anything.
+;
+; WHAT IS ASSERTED, AND WHY THESE COMMANDS.
+;
+; GO and SKIP, not LIST and COUNT. Markers here are FIELD-VALUE comparisons per
+; FIELDMGR_APPEND, and GO/SKIP always land the cursor on a record whose fields
+; can be read. LIST and COUNT report through console text, which no marker can
+; read -- their behaviour is visible in the transcript and is NOT claimed by an
+; arm. Stated rather than implied.
+;
+; RECALL is asserted too, and for a different reason -- see half three. It is
+; the one verb whose whole purpose is delete-flagged rows, so it is where a
+; restoration like this does its damage if the precedence rule is wrong.
+;
+; NAVIGATION IS TWO FAMILIES, WHICH THIS SPEC'S FIRST RUN DISCOVERED.
+;   LOGICAL  -- FIRST / LAST / NEXT / PRIOR, via cli::logical_nav, which calls
+;               filter::visible() and therefore honours SET DELETED.
+;   PHYSICAL -- GO / SKIP, which move the DbArea cursor directly and consult
+;               nothing but SET FILTER.
+; Two answers to "where is the next visible record" -- R5, in the navigator.
+; The logical family is asserted; the physical family is TRIPWIRED at its
+; measured behaviour and named as unfinished.
+;
+; GO is also the sharpest case in the canon. include/foxpro_go.hpp has said the
+; whole time:
+;     "If <n> is deleted and SET DELETED ON, FoxPro skips forward to the next
+;      undeleted record."
+;     "With SET DELETED OFF, GO <n> lands exactly on <n>."
+; The specification survived the implementation. These arms are that paragraph.
+;
+; WHAT A RED ARM DOES AND DOES NOT SEPARATE.
+;
+; If the SD_ON_* arms red, either the delete flag never landed on record 2 or
+; the setting is not consulted. This spec CANNOT tell those apart -- both make
+; the row reachable under ON -- and it does not pretend to. Both mean the same
+; actionable thing: the delete rung is not working. Distinguishing them is a
+; debugging step, and the honest home for "is the flag byte really set" is a
+; unit fixture over DbArea::isDeleted(), not a marker.
+;
+; The SD_OFF_* arms are what make the pair meaningful: they fail on a build that
+; hides unconditionally, which no single-direction spec can detect.
+;
+; Disposable table, rebuilt every run. Leaves nothing behind.
+; ============================================================================
+
+SET PATH DBF DBF/SANDBOX
+
+; --- fixture: three rows, the middle one delete-flagged ---------------------
+SELECT 1
+CREATE X64 SDVIS (ID N(8,0), NAME C(20))
+
+APPEND
+REPLACE ID WITH 1
+REPLACE NAME WITH "AliveOne"
+
+APPEND
+REPLACE ID WITH 2
+REPLACE NAME WITH "DeletedRow"
+
+APPEND
+REPLACE ID WITH 3
+REPLACE NAME WITH "AliveTwo"
+
+GO 2
+DELETE
+CLOSE
+
+; ============================================================================
+; HALF ONE -- SET DELETED OFF: the flagged row is VISIBLE
+;
+; THIS IS THE DISCRIMINATOR. A build that hides deleted rows unconditionally --
+; the build this project shipped from 2025-08-16 to 2026-08-24 -- fails every
+; arm below while passing every arm in half two.
+; ============================================================================
+
+USE SDVIS NOINDEX
+SET DELETED OFF
+
+GO 1
+? "SD_G0_fixture_built:" + (ALLTRIM(NAME) = "AliveOne")
+
+GO 3
+? "SD_G1_third_row_present:" + (ALLTRIM(NAME) = "AliveTwo")
+
+LOCATE FOR ID = 2
+? "SD_OFF_T1_locate_reaches_the_flagged_row:" + (ALLTRIM(NAME) = "DeletedRow")
+
+GO 2
+? "SD_OFF_T2_go_lands_exactly_on_2:" + (ALLTRIM(NAME) = "DeletedRow")
+
+GO 1
+SKIP
+? "SD_OFF_T3_skip_steps_onto_the_flagged_row:" + (ALLTRIM(NAME) = "DeletedRow")
+
+; NEXT is the LOGICAL navigator (cmd_next.cpp -> logical_nav -> filter::visible).
+; SKIP above is the PHYSICAL one. They are different families and this spec's
+; first run proved they answer differently -- see half two.
+GO 1
+NEXT
+? "SD_OFF_T7_next_steps_onto_the_flagged_row:" + (ALLTRIM(NAME) = "DeletedRow")
+
+CLOSE
+
+; ============================================================================
+; HALF TWO -- SET DELETED ON: the flagged row is INVISIBLE
+;
+; This is the half everyone writes. On its own it proves nothing, because it
+; also passes on a build with no setting at all that simply always hides.
+; ============================================================================
+
+USE SDVIS NOINDEX
+SET DELETED ON
+
+GO 1
+? "SD_G2_still_the_same_fixture:" + (ALLTRIM(NAME) = "AliveOne")
+
+; --- THE FAMILY THAT IS WIRED ----------------------------------------------
+; NEXT goes through cmd_next.cpp -> logical_nav::next_recno -> is_visible ->
+; filter::visible(). This is the arm that proves the restored rung actually
+; reaches a navigator.
+GO 1
+NEXT
+? "SD_ON_T7_next_steps_over_the_flagged_row:" + (ALLTRIM(NAME) = "AliveTwo")
+
+; --- THE FAMILY THAT IS NOT -- TRIPWIRES, NOT ASPIRATIONS -------------------
+;
+; SD_ON_T4 AND SD_ON_T5 WERE WRITTEN AS ASSERTIONS AND BOTH READ .F. ON THE
+; FIRST RUN, 2026-08-24. They are repointed here to record the measured
+; behaviour rather than the intended one -- the IDXSTALE precedent -- because a
+; red arm nobody can act on gets muted, and a quietly retuned arm loses the
+; finding.
+;
+; WHAT WAS MEASURED: GO and SKIP do NOT consult SET DELETED. They navigate the
+; DbArea directly. Only FIRST / LAST / NEXT / PRIOR go through logical_nav, and
+; therefore only those four reach the gate. cmd_skip.cpp:126 consults
+; filter::has_active_filter() -- SET FILTER -- and nothing else.
+;
+; THE AUTHOR'S ERROR, RECORDED: the fix's plan said "logical_nav is already the
+; right home, so wiring the gate gets GO/SKIP for free." That was read off
+; first/next/prev/last_recno living in logical_nav.cpp and generalised to all
+; navigation. GO and SKIP are not in that file and never were.
+;
+; THIS IS UNFINISHED WORK, NOT ACCEPTED BEHAVIOUR. include/foxpro_go.hpp states
+; the canon plainly and has the whole time: "If <n> is deleted and SET DELETED
+; ON, FoxPro skips forward to the next undeleted record." Wiring GO and SKIP is
+; a further change and wants its own ruling, because it alters what a bare GO
+; does. Until then these two lines say what the engine does, out loud.
+;
+; IF EITHER EVER READS .T., GO/SKIP HAVE GAINED DELETE-FILTERING. Repoint them
+; deliberately back to assertions; do not let them retune themselves.
+GO 2
+? "SD_ON_TRIP1_go_2_still_lands_on_the_flagged_row:" + (ALLTRIM(NAME) = "DeletedRow")
+
+GO 1
+SKIP
+? "SD_ON_TRIP2_skip_still_steps_onto_the_flagged_row:" + (ALLTRIM(NAME) = "DeletedRow")
+
+CLOSE
+
+; ============================================================================
+; HALF THREE -- THE PRECEDENCE RULE: AN EXPLICIT CLAUSE BEATS THE SETTING
+;
+; RECALL EXISTS TO OPERATE ON DELETE-FLAGGED ROWS. If the session default were
+; allowed to reach it, SET DELETED ON would hide every row RECALL is for, and
+; RECALL would silently find nothing -- a verb that reports success over an
+; empty selection. That is the regression this restoration could most easily
+; have shipped, and it was caught by the owner asking about cmd_delete.cpp
+; before the code was committed, not by a test.
+;
+; It does not happen, and the reason is structural rather than lucky: all four
+; of cmd_recall's selection paths set deleted_mode = OnlyDeleted, which the gate
+; reads as CallerHandles and stays out of. This arm locks that in.
+;
+; RECALL ALL under SET DELETED ON must clear the flag on record 2. Then GO 2 --
+; still under ON -- must land on it, because it is no longer flagged. One arm
+; proving both that RECALL reached a row the gate would have hidden, and that
+; the gate stops hiding it once it is live.
+;
+; NOTE, stated because it is a real consequence and not a defect: under SET
+; DELETED ON you cannot NAVIGATE onto a flagged row to recall it one at a time --
+; GO skips forward and LOCATE does not reach it. That is xBase canon (SET
+; DELETED OFF is how you get at a deleted record), and the scoped RECALL forms
+; work regardless because they name the clause.
+; ============================================================================
+
+USE SDVIS NOINDEX
+SET DELETED ON
+
+RECALL ALL
+
+GO 2
+? "SD_ON_T6_recall_reached_a_row_the_gate_hides:" + (ALLTRIM(NAME) = "DeletedRow")
+
+CLOSE
+
+; ============================================================================
+; RESTORE THE SESSION DEFAULT.
+; SET DELETED defaults to ON (settings.hpp: deleted_on{true}). A spec that
+; leaves a session setting flipped is a spec that changes the next spec's
+; answers, which is how a suite starts depending on its own running order.
+; ============================================================================
+SET DELETED ON

@@ -4667,9 +4667,19 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
                          "PACK this catalog: allocation is max(WS_ID)+1 derived from "
                          "surviving rows, so packing would hand a purged workspace's "
                          "identity to a new one.\n";
-            std::cout << "  Purged rows are STILL READABLE -- measured 2026-08-24, "
-                         "LOCATE reaches them even with SET DELETED ON. What changed "
-                         "is that no WORKSPACE NEW can adopt them.\n";
+            // CORRECTED 2026-08-24, same day, by AIF-123. This line used to say
+            // "LOCATE reaches them even with SET DELETED ON", which was true of
+            // the engine when it was written and stopped being true a few hours
+            // later when the delete rung was restored in filter::visible().
+            // A verb that describes engine behaviour has to be corrected when
+            // the engine changes, or it becomes the most authoritative wrong
+            // answer in the system -- the user reads it at the moment of doing
+            // the thing.
+            std::cout << "  Purged rows are STILL ON DISK and still counted, which is what "
+                         "preserves the high-water mark. They are hidden from ordinary "
+                         "reads under SET DELETED ON (AIF-123); SET DELETED OFF shows "
+                         "them again. What changed is that no WORKSPACE NEW can adopt "
+                         "them, and that is SUPERSEDED's doing, not the delete flag's.\n";
 
         } else if (sub_command == "switch") {
             auto toks = split_tokens(rest_of_args);

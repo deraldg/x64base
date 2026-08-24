@@ -23,14 +23,32 @@ bool pass_deleted_filter(const xbase::DbArea& a, DelFilter del, bool all) {
         case DelFilter::OnlyDeleted: return isDel;
         case DelFilter::OnlyAlive:   return !isDel;
         case DelFilter::Any:
-        default:                     return all ? true : !isDel;
+        default:
+            // AIF-123. `all` IS THE ROW-LIMIT FLAG. It means "no 20-row cap"
+            // (QuerySpec::limit), and it was ALSO deciding deleted visibility --
+            // one flag answering two questions, so `LIST ALL` typed to see past
+            // twenty rows silently turned deleted rows on as well, and SET
+            // DELETED appeared nowhere in the decision.
+            //
+            // With no explicit clause the answer now comes from the session
+            // setting, applied once in filter::visible(). Returning true here is
+            // not "show everything" -- it is "no clause in force, the gate
+            // decides", which is what DelFilter::Any has always meant.
+            (void)all;
+            return true;
     }
 }
 
 bool pass_all_filters(xbase::DbArea& a, const QuerySpec& spec) {
     if (!pass_deleted_filter(a, spec.del, spec.all)) return false;
 
-    if (!filter::visible(&a, spec.expr_prog)) return false;
+    // An explicit OnlyDeleted / OnlyAlive clause has already spoken above, and
+    // in xBase a clause beats the session default -- so the gate must not then
+    // filter those rows back out. Any means no clause: let it apply SET DELETED.
+    const auto policy = (spec.del == DelFilter::Any)
+                            ? filter::DeletedPolicy::SessionDefault
+                            : filter::DeletedPolicy::CallerHandles;
+    if (!filter::visible(&a, spec.expr_prog, policy)) return false;
 
     if (spec.haveFieldFilter &&
         !predicates::eval(a, spec.fld, spec.op, spec.val)) {

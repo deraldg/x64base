@@ -71,7 +71,17 @@ static std::string normalize_expr(std::string expr)
 static bool row_visible(xbase::DbArea& area,
                         DeletedMode dmode)
 {
-    if (!filter::visible(&area, nullptr))
+    // AIF-123. DeletedMode::UseDefault was a socket with nothing behind it: the
+    // enum named a default, the switch fell through to `return true`, and no
+    // default existed anywhere to fall back TO. It does now -- SET DELETED,
+    // applied inside the gate. OnlyDeleted / OnlyAlive are explicit clauses and
+    // beat the session default, so they tell the gate to stay out rather than
+    // being filtered away before they can be read.
+    const auto policy = (dmode == DeletedMode::UseDefault)
+                            ? filter::DeletedPolicy::SessionDefault
+                            : filter::DeletedPolicy::CallerHandles;
+
+    if (!filter::visible(&area, nullptr, policy))
         return false;
 
     if (dmode == DeletedMode::OnlyDeleted)

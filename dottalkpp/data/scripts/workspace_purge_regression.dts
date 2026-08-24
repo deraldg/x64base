@@ -171,8 +171,32 @@ USE WORKSPACES
 LOCATE FOR ALLTRIM(WS_NAME) = "WSPRG2" .AND. ALLTRIM(SUPERSEDED) = "0"
 ? "PG_G5_parked_on_a_live_row:" + (ALLTRIM(WS_NAME) = "WSPRG2")
 LOCATE FOR WS_ID = $pid2
-? "PG_T3_locate_still_reaches_a_purged_row_under_deleted_on:" + (ALLTRIM(WS_NAME) = "WSPRG1")
-? "PG_T3B_but_it_is_superseded_so_it_cannot_be_adopted:" + (ALLTRIM(SUPERSEDED) = "1")
+; THE TRIPWIRE FIRED, 2026-08-24, AND THIS IS THE DELIBERATE REPOINT.
+;
+; PG_T3 recorded a measured defect: LOCATE reached a delete-flagged row with
+; deleted visibility HIDE (ON). Its own instruction said that if it ever read
+; .F. again, LOCATE had GAINED delete-filtering and the arm must be repointed
+; on purpose rather than allowed to retune itself. It read .F. the same day.
+;
+; AIF-123 found why: filter::visible() -- the one gate LIST, COUNT, SMARTLIST,
+; LOCATE, FIND, SCAN, EXPORT and logical_nav all ask -- applied SET FILTER and
+; FOR and never consulted SET DELETED. The rung had been missing since
+; 2025-08-16 (06ba79e93). It is back, and LOCATE now reports "Not Located."
+;
+; So the arm is inverted, and PG_T3B is repurposed rather than deleted. It used
+; to read SUPERSEDED off the row LOCATE landed on; with no landing it was
+; reading a stale cursor and would have gone red for a reason that had nothing
+; to do with what it names. It now carries the OTHER HALF -- the same
+; both-halves discipline SDVIS is built on, because "hidden under ON" means
+; nothing without "visible under OFF" beside it.
+? "PG_T3_locate_no_longer_reaches_a_purged_row_under_deleted_on:" + (ALLTRIM(WS_NAME) = "WSPRG2")
+CLOSE
+
+SET DELETED OFF
+SET PATH DBF workspaces
+USE WORKSPACES
+LOCATE FOR WS_ID = $pid2
+? "PG_T3B_and_set_deleted_off_still_reaches_it:" + (ALLTRIM(WS_NAME) = "WSPRG1")
 CLOSE
 
 ; --- PG_T4: THE REFUSAL ARM -------------------------------------------------

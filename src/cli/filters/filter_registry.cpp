@@ -20,6 +20,7 @@
 #include "xbase.hpp"
 
 // real API
+#include "cli/settings.hpp"
 #include "cli/expr/api.hpp"
 #include "cli/expr/ast.hpp"
 
@@ -278,9 +279,35 @@ bool has_active_filter(xbase::DbArea* area)
 }
 
 bool visible(xbase::DbArea* area,
-             const std::shared_ptr<Expr>& for_ast)
+             const std::shared_ptr<Expr>& for_ast,
+             DeletedPolicy deleted)
 {
     if (!area) return false;
+
+    // THE DELETE RUNG, RESTORED. AIF-123, 2026-08-24.
+    //
+    // This gate is what LIST, COUNT, SMARTLIST, LOCATE, FIND, SCAN, EXPORT and
+    // logical_nav (SKIP / GO / first / next / prev / last) all ask. It applied
+    // SET FILTER and FOR and never consulted SET DELETED, which is why a
+    // delete-flagged row was reachable by LOCATE with the shell reporting
+    // "Deleted visibility: HIDE (ON)" one line earlier.
+    //
+    // IT WAS NOT ALWAYS SO. `cmd_list.cpp` read Settings::deletedOn() at
+    // alpha-v3. Commit 06ba79e93 (2025-08-16) rewrote LIST and replaced that
+    // read with a per-command flag; 523a85e54 the same day pruned the .sav that
+    // still held the old line. From then until today NOTHING in the tree called
+    // Settings::deletedOn(). The rewrite PRESERVED THE DEFAULT and severed the
+    // control, so no behaviour changed on the path anyone ran and nothing could
+    // go red. Fourteen months.
+    //
+    // Read directly rather than passed in: one place cannot disagree with
+    // itself, and twelve call sites passing a bool is twelve chances to pass the
+    // wrong one -- which is how the second answer got created the first time.
+    if (deleted == DeletedPolicy::SessionDefault &&
+        cli::Settings::instance().deleted_on.load() &&
+        area->isDeleted()) {
+        return false;
+    }
 
     std::shared_ptr<Expr> fil_ast;
     {

@@ -27,6 +27,12 @@
 //   • Suppresses relations auto-refresh during full scans to prevent refresh thrash.
 //   • Persistent SET FILTER is part of the logical rowset.
 //     Therefore plain COUNT must NOT use raw recCount() when a persistent filter is active.
+//   • SET DELETED is part of the logical rowset for exactly the same reason
+//     (AIF-123, 2026-08-24). The rule above was written for SET FILTER and was
+//     correct; it simply predates the delete rung being wired, and a rule that
+//     names one filter does not generalise itself. recCount() is the PHYSICAL
+//     count and includes delete-flagged rows, so the shortcut is valid only
+//     when nothing at all is narrowing the rowset.
 
 // @dottalk.usage v1
 // owner: DOT|COUNT
@@ -85,6 +91,7 @@
 #include <string>
 #include <vector>
 
+#include "cli/settings.hpp"
 #include "xbase.hpp"
 #include "cli/scan_selector.hpp"
 #include "cli/order_state.hpp"
@@ -292,7 +299,12 @@ static uint64_t do_count_fast_eq_active_tag(xbase::DbArea& area,
         if (!area.readCurrent()) continue;
 
         // Keep fast path logically consistent with COUNT selection semantics.
-        if (!filter::visible(&area, nullptr)) continue;
+        // AIF-123: this fast path is only taken when the spec carries no
+        // deleted clause (see usable_fast_path, which refuses ONLY_DELETED and
+        // ONLY_NOT_DELETED), so SessionDefault is the whole of the policy here
+        // and is stated rather than defaulted into silently.
+        if (!filter::visible(&area, nullptr,
+                             filter::DeletedPolicy::SessionDefault)) continue;
 
         const std::string val = trim(area.get(field_idx));
         const auto match = dottalk::expr::compare_text_values(val, fp.literal);
@@ -413,8 +425,20 @@ void cmd_COUNT(xbase::DbArea& area, std::istringstream& args)
 
     uint64_t result = 0;
 
-    if (spec.mode == CountMode::ALLRECS && !has_persistent_filter) {
-        // True fast-path only when there is no persistent SET FILTER.
+    // AIF-123. `recCount()` is the PHYSICAL record count -- it includes
+    // delete-flagged rows. Taking it when SET DELETED is ON would have walked
+    // straight around the rung this lane just restored, and it would have done
+    // so on the single most common invocation in the shell: a bare COUNT.
+    //
+    // This is the same shape as the rule six lines of comment above, one level
+    // up: a shortcut that is sound only while NOTHING narrows the rowset. That
+    // rule was written when SET FILTER was the only narrowing thing, and it was
+    // right then. Adding a second narrowing thing does not update it by itself.
+    const bool hides_deleted = cli::Settings::instance().deleted_on.load();
+
+    if (spec.mode == CountMode::ALLRECS && !has_persistent_filter && !hides_deleted) {
+        // True fast-path: no persistent SET FILTER and SET DELETED OFF, so the
+        // logical rowset really is every physical record.
         result = static_cast<uint64_t>(area.recCount());
     } else {
         // Keep COUNT's local optimization.
