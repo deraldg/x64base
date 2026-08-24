@@ -7,24 +7,42 @@
 // owner: member.derald
 // status: supported
 //
-// AIF-078. THE FIXTURE THAT WAS OWED.
+// AIF-078. REPOINTED 2026-08-24 BY RULING R123 -- ITS SUBJECT WAS DELETED.
 //
-// Session::workspace_model()'s count_relation_matches counted DELETED ROWS as
-// matches and scanned without a bound. Those were fixed by reading, and the
-// commit that fixed them said in its own text that it had no fixture, because
-// the counter needs a live Session with real open tables -- which is exactly
-// why it drifted from the engine's counter unnoticed in the first place.
+// WHAT IT USED TO ASSERT. Session::workspace_model() carried a
+// count_relation_matches lambda that counted DELETED ROWS as matches and
+// scanned without a bound. Those were fixed by reading, and this fixture was
+// written to hold the fix -- the discriminator being one integer, over a child
+// table of four rows keyed S1, S1, S2 and S1-DELETED, where a counter honouring
+// the deletion says 2 and the shipped one said 3.
 //
-// This is that fixture. It links dottalk_gui_core, builds its own two tables,
-// and does NOT skip when data is missing. That last part is deliberate: the
-// existing async smoke guards its table work with is_regular_file and passes
-// green when the file is absent, which is a spec that reports success for
-// having done nothing. Everything here is created by the test, so absent data
-// is a FAILURE rather than a silent pass.
+// WHAT R123 DID. It deleted the counter. The GUI's number disagreed with
+// relations_api::match_count_for_child in FOUR ways, not one -- deleted rows,
+// scan bound, join arity, and index order versus physical order -- and under
+// R122 it cannot be fixed in place, because a match count is a computation over
+// this process's open areas and the engine's counter lives behind a process
+// boundary. A number that disagrees with the engine is worse than no number.
 //
-// THE DISCRIMINATOR is one integer. The child table holds four rows keyed
-// S1, S1, S2 and S1-DELETED. A counter that honours the deletion says 2. The
-// counter as it shipped said 3. No other arrangement separates them.
+// SO THIS FIXTURE IS REPOINTED, NOT DELETED, AND NOT LEFT TO RETUNE ITSELF --
+// the IDXSTALE precedent. Its subject is now the ABSENCE: the GUI reports no
+// count, and the relation edge survives intact anyway. That second half is the
+// arm that matters, because "no count" is also what a blanked model produces.
+//
+// The fixture below is UNCHANGED and still earns its keep. It links
+// dottalk_gui_core, builds its own two tables, and does NOT skip when data is
+// missing -- everything here is created by the test, so absent data is a
+// FAILURE rather than a silent pass. It is now the only place that proves a
+// relation edge survives a real posture load against real open tables.
+//
+// THE FILENAME IS KEPT. It is still about the match count; what changed is that
+// the answer is now absence. Renaming it would cost a CMake edit and lose the
+// thread from R123 back to the defect it closed.
+//
+// WHEN A COUNT RETURNS -- and R122 says one will, emitted by the producer from
+// the engine's own state -- T1 GOES RED. That is correct and it is the point.
+// Repoint it then to assert the ENGINE's number, which for this fixture is 2:
+// four child rows keyed S1, S1, S2 and S1-DELETED, with the engine skipping the
+// deleted one. That arrangement is preserved below for exactly that day.
 
 #include "gui/core/session.hpp"
 #include "xbase.hpp"
@@ -186,30 +204,54 @@ int main() {
         return EXIT_FAILURE;
     }
 
-    // ---- T1: the counter answered at all ---------------------------------
-    // A single-field key over two open tables is squarely within what this
-    // counter can do, so ABSENT here would mean it refused a question it can
-    // answer -- the opposite failure from the one being guarded.
-    if (!require(edge->match_count.has_value(),
-                 "the GUI counter left a count it should have been able to compute")) {
+    // ---- T1 (R123): THE GUI REPORTS NO COUNT -----------------------------
+    // A single-field key over two open tables is squarely within what the old
+    // counter could do -- which is the point. This is not a question the GUI
+    // fails to answer; it is a question the GUI no longer ANSWERS AT ALL,
+    // because its answer disagreed with the engine's and there is no third
+    // state to put the disagreement in.
+    //
+    // This arm is a TRIPWIRE in the honest direction: it reds the day a count
+    // comes back. See the header for what to repoint it to.
+    if (!require(!edge->match_count.has_value(),
+                 "the GUI produced a match count -- R123 deleted the GUI's "
+                 "counter, so a number here means either the counter came back "
+                 "or a second one was written")) {
         return EXIT_FAILURE;
     }
 
-    // ---- T2: THE DISCRIMINATOR -- deleted rows are not matches -----------
-    if (!require(*edge->match_count != 3,
-                 "the count is 3: the DELETED child row is still being counted")) {
+    // ---- T2: THE EDGE SURVIVES, AND THIS IS THE ARM THAT MATTERS ---------
+    // FIELDMGR_APPEND. T1 alone is satisfied by a BLANKED MODEL: no relations
+    // at all, no counts at all, green. So T1 is not evidence of anything until
+    // something proves the edge is really there -- with its endpoints and its
+    // key, as VALUES, not as a row that exists.
+    //
+    // It also guards the thing R123 could plausibly have broken. Deleting the
+    // counter meant deleting the loop that walked model.relations, and a
+    // careless cut takes the edge with it.
+    if (!require(edge->parent == "MCPAR",
+                 "the surviving edge lost its parent")) {
         return EXIT_FAILURE;
     }
-    if (!require(*edge->match_count == 2,
-                 "the count is neither 2 nor 3, so the arrangement is not what "
-                 "this fixture assumes -- check G0 before trusting this arm")) {
+    if (!require(edge->child == "MCCHD",
+                 "the surviving edge lost its child")) {
+        return EXIT_FAILURE;
+    }
+    if (!require(edge->parent_key == "SID",
+                 "the surviving edge lost its key")) {
+        return EXIT_FAILURE;
+    }
+    if (!require(edge->child_key == "SID",
+                 "the surviving edge lost its mirrored child key -- with no TO "
+                 "clause the parser mirrors the parent side, and an empty one "
+                 "here would mean that mirroring stopped")) {
         return EXIT_FAILURE;
     }
 
     fs::remove_all(dir, ec);
 
-    std::cout << "GUI match counter: 4 child rows keyed S1,S1,S2,S1-DELETED "
-                 "count as 2, not 3\n";
+    std::cout << "GUI relation edge: MCPAR -> MCCHD ON SID survives a posture "
+                 "load with NO match count, which is R123\n";
     std::cout << "PASS: dottalkpp gui match count\n";
     return EXIT_SUCCESS;
 }

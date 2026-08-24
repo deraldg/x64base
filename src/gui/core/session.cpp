@@ -1565,11 +1565,14 @@ struct Session::Impl {
     // one place: a lambda inside workspace_model(), reachable only by building
     // a whole model.
     //
-    // close_area asks the same question. A second spelling of it there is the
-    // R5 defect this lane has spent two days closing one layer down -- two
-    // answers to one question, agreeing only by inspection -- so the predicate
-    // is lifted here and BOTH callers go through it. Behaviour is unchanged:
-    // same four names, same lowering, same .dbf strip.
+    // It was lifted here on 2026-08-24 because close_area and the display side
+    // both asked it and a second spelling is the R5 defect. R123 then deleted
+    // the display-side caller, so TODAY THERE IS ONE CALLER --
+    // drop_relations_naming. That is recorded rather than quietly tidied: the
+    // predicate stays factored because the question is a real one with a real
+    // answer, not because two places happen to ask it this week. Behaviour is
+    // unchanged from the lift: same four names, same lowering, same .dbf
+    // strip.
     static std::vector<std::string> relation_names_of(const Area& area) {
         std::vector<std::string> names {
             area.area().logicalName(),
@@ -1604,18 +1607,13 @@ struct Session::Impl {
         return false;
     }
 
-    // Which OPEN area answers to this endpoint, if any. THE DISPLAY SIDE.
-    Area* area_for_relation_endpoint(const std::string& relation_table) {
-        for (const auto& candidate : areas) {
-            if (!candidate->area().isOpen()) {
-                continue;
-            }
-            if (area_answers_to(*candidate, relation_table)) {
-                return candidate.get();
-            }
-        }
-        return nullptr;
-    }
+    // THE DISPLAY-SIDE LOOKUP WAS DELETED BY R123, and it is worth saying why
+    // rather than leaving a gap. area_for_relation_endpoint resolved a relation
+    // ENDPOINT NAME to an open area, and its only caller was the match counter.
+    // With the counter gone it had zero call sites -- the AIF-079 shape this
+    // project already pays to name -- so it went with it. Nothing else in the
+    // GUI has ever needed to turn a relation endpoint into an area; the counter
+    // was the only reason that question was ever asked here.
 
     // Drop every relation edge naming `area` on either side; return how many
     // went. THE CLOSE SIDE.
@@ -2464,156 +2462,40 @@ WorkspaceModel Session::workspace_model() const {
     model.messages = areas.messages;
     model.relations = impl_->relations;
 
-    // AIF-078 relation cleanup. This WAS two lambdas -- relation_name and the
-    // body below -- and they are now Impl members, because close_area asks the
-    // same question and a second spelling of it is the defect. The local name
-    // is kept so the rest of this function is untouched.
-    auto find_relation_area = [&](const std::string& relation_table) -> Impl::Area* {
-        return impl_->area_for_relation_endpoint(relation_table);
-    };
+    // THE GUI DOES NOT COUNT MATCHES. Ruling R123, 2026-08-24.
+    //
+    // A ~145-line count_relation_matches lambda stood here and answered, for
+    // every relation edge, "how many child rows match the parent". So did
+    // relations_api::match_count_for_child, and they answered DIFFERENTLY --
+    // four ways. This one counted DELETED rows where the engine skipped them,
+    // scanned with a bound of its own that REL SCANLIMIT could not reach,
+    // compared ONE join field where the engine matched all of them, and walked
+    // PHYSICAL record order where the engine walked the active index inside a
+    // ScopedEngineSelect.
+    //
+    // One relation, two numbers, and nothing on screen saying which one a grid
+    // cell held. That is R5 -- two answers to one question IS the defect.
+    //
+    // IT COULD NOT BE FIXED IN PLACE, and that is what R122 settled. A match
+    // count is a computation over THIS PROCESS's open areas at THIS PROCESS's
+    // cursor positions. The engine's counter lives behind a process boundary
+    // (gui_shell_runtime CreateProcessW / gui_cli_bridge _popen), and a
+    // subprocess cannot answer a question about state it does not have without
+    // replicating that state. So the choice was link the engine or stop
+    // answering, and R122 ruled the link out on dependency direction.
+    //
+    // A NUMBER THAT DISAGREES WITH THE ENGINE IS WORSE THAN NO NUMBER, so the
+    // count is now ABSENT. This needed no new type: match_count is already a
+    // MaybeMatchCount and the renderers already carry an n/a state -- R6 was
+    // satisfied the whole time and this code was declining to use it. The old
+    // lambda already knew, too: it refused to report a TRUNCATED scan for
+    // exactly this reason ("ABSENT says I could not compute this, which is
+    // true"). R123 extends that honesty from the truncated case to every case.
+    //
+    // WHEN A COUNT COMES BACK it arrives from the producer under R122's
+    // structured emission, computed once, by the engine, from the engine's own
+    // state -- not recomputed here from a second copy of the rules.
 
-    auto field_index = [](const xbase::DbArea& area, const std::string& field_name) {
-        const std::string wanted = lower_ascii(trim_ascii(field_name));
-        const auto& fields = area.fields();
-        for (std::size_t i = 0; i < fields.size(); ++i) {
-            if (lower_ascii(trim_ascii(fields[i].name)) == wanted) {
-                return static_cast<int>(i + 1);
-            }
-        }
-        return 0;
-    };
-
-    auto count_relation_matches = [&](WorkspaceRelationInfo& relation) {
-        if (relation.match_count || relation.parent.empty() || relation.child.empty()) {
-            return;
-        }
-
-        auto* parent = find_relation_area(relation.parent);
-        auto* child = find_relation_area(relation.child);
-        if (!parent || !child) {
-            return;
-        }
-
-        // 4b. A relation key is a FIELD LIST -- `ON SID,TERM TO STU_ID,TERM_CD`
-        // is shipped grammar -- and this counter compares ONE field's value.
-        // It used to hand the whole list to field_index, which compared the
-        // entire string to a field NAME, got 0, and returned; the count then
-        // read as a measured zero. R6 made the absence expressible, so the
-        // honest answer is now available: leave the count ABSENT and say
-        // nothing, rather than answer a question this counter cannot answer.
-        //
-        // House rule 2026-08-22 -- commands and functions validate field names
-        // -- is why the refusal is explicit here instead of relying on
-        // field_index happening to miss.
-        if (relation.parent_key.find(',') != std::string::npos ||
-            relation.child_key.find(',') != std::string::npos) {
-            return;
-        }
-
-        const int parent_field = field_index(parent->area(), relation.parent_key);
-        const int child_field = field_index(child->area(), relation.child_key.empty()
-            ? relation.parent_key
-            : relation.child_key);
-        if (parent_field <= 0 || child_field <= 0) {
-            return;
-        }
-
-        const auto parent_recno = parent->area().recno64();
-        const auto child_recno = child->area().recno64();
-        std::string parent_value;
-        try {
-            if (parent_recno < 1 || parent_recno > parent->area().recCount64()) {
-                if (!parent->area().gotoRec(1) || !parent->area().readCurrent()) {
-                    return;
-                }
-            }
-            if (!parent->area().readCurrent()) {
-                return;
-            }
-            parent_value = trim_ascii(parent->area().get(parent_field));
-        } catch (...) {
-            return;
-        }
-
-        // TWO COUNTERS, 2a and 2b. This loop and
-        // relations_api::match_count_for_child answer what looks like one
-        // question and were answering two different ones. Both halves fixed
-        // here are cases where THIS one was simply wrong:
-        //
-        //   2a. DELETED ROWS WERE COUNTED AS MATCHES. The engine skips them
-        //       (`!child_db->isDeleted() && values_match(...)`), and isDeleted
-        //       appeared nowhere in this file. Same table, same relation, two
-        //       different integers, and nothing said which one a grid cell
-        //       held.
-        //
-        //   2b. THE SCAN WAS UNBOUNDED and had no concept of stopping early.
-        //       That is the shape AIF-074 P1.3 / RDB-06 exists to prevent: a
-        //       truncated scan reads exactly like a complete one unless it
-        //       announces itself.
-        //
-        // kGuiMatchScanLimit MIRRORS the engine's default (set_relations.cpp
-        // :120). It does not READ it, because relations_api is not linked into
-        // src/gui at all -- the GUI consumes relations by parsing CLI text
-        // (I1.2 recon). So REL SCANLIMIT does not reach this counter: this is
-        // A bound, not THE bound, and saying so is the point of naming it.
-        //
-        // STILL DIVERGENT, deliberately, because closing these means linking
-        // the engine and that is the open GUI-layer decision, not a patch:
-        // the engine matches on ALL join fields where this compares one, and
-        // walks the ACTIVE INDEX ORDER inside a ScopedEngineSelect where this
-        // walks physical record order.
-        constexpr std::uint64_t kGuiMatchScanLimit = 500000;
-
-        std::uint64_t count = 0;
-        std::uint64_t scanned = 0;
-        bool truncated = false;
-        const auto child_count = child->area().recCount64();
-        const auto limit = std::min<std::uint64_t>(
-            child_count,
-            static_cast<std::uint64_t>(std::numeric_limits<int32_t>::max()));
-        for (std::uint64_t recno = 1; recno <= limit; ++recno) {
-            if (++scanned > kGuiMatchScanLimit) {
-                truncated = true;
-                break;
-            }
-            try {
-                if (!child->area().gotoRec(static_cast<int32_t>(recno)) || !child->area().readCurrent()) {
-                    continue;
-                }
-                if (child->area().isDeleted()) {
-                    continue;
-                }
-                if (trim_ascii(child->area().get(child_field)) == parent_value) {
-                    ++count;
-                }
-            } catch (...) {
-            }
-        }
-
-        if (child_recno >= 1 && child_recno <= child_count &&
-            child_recno <= static_cast<std::uint64_t>(std::numeric_limits<int32_t>::max())) {
-            (void)child->area().gotoRec(static_cast<int32_t>(child_recno));
-            (void)child->area().readCurrent();
-        }
-        if (parent_recno >= 1 && parent_recno <= parent->area().recCount64() &&
-            parent_recno <= static_cast<std::uint64_t>(std::numeric_limits<int32_t>::max())) {
-            (void)parent->area().gotoRec(static_cast<int32_t>(parent_recno));
-            (void)parent->area().readCurrent();
-        }
-        // R6, and the reason 2b could be fixed without inventing a type. A
-        // truncated scan has no honest number: a short count would say "this
-        // is how many there are", which is false, and there is no third state
-        // to put it in. ABSENT says "I could not compute this", which is true.
-        // The cursor restore above runs either way -- refusing to answer must
-        // not also leave the user's record pointer moved.
-        if (!truncated) {
-            relation.match_count = count;
-        }
-    };
-
-    for (auto& relation : model.relations) {
-        count_relation_matches(relation);
-    }
 
     model.indexes.reserve(impl_->areas.size());
     for (const auto& area : impl_->areas) {
