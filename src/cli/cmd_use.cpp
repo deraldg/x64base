@@ -414,60 +414,13 @@ static int workspace_area_slot_of(const DbArea& a) {
     return a.wsLocalSlot();   // -1 when the area belongs to no workspace
 }
 
-static bool area_is_open_safe(xbase::XBaseEngine* eng, int slot) {
-    if (!eng || slot < 0 || slot >= xbase::MAX_AREA) return true;  // treat unknown as taken
-    try { return eng->area(slot).isOpen(); } catch (...) { return true; }
-}
-
-// IN FREE -- an unoccupied area, chosen for THIS WORKSPACE.
-//
-// NAMED FREE AND NOT NEXT (owner ruling 2026-08-22): NEXT implies forward
-// adjacency and this may return a slot BEHIND the cursor. A name that promises
-// an order the code does not keep is worse than no name.
-//
-// WORKSPACE-SCOPED, AND THAT IS THE POINT (owner ruling 2026-08-22, "scoped").
-// The first cut swept 0..MAX_AREA globally, which with one workspace open is
-// indistinguishable from correct and stops being so the moment there are two:
-// a global sweep hands out the lowest free ENGINE slot, and that slot can sit
-// INSIDE ANOTHER WORKSPACE'S RUN. The owner's design rule for this lane is
-// that a workspace's areas stay contiguous -- "keep the areas contiguous",
-// fractal to the same rule for tables under one root -- so an allocator that
-// can drop an area into the middle of a neighbour's block is a contiguity
-// violation armed and waiting for stage 4.
-//
-// So: GROW MY OWN BLOCK FIRST. If this workspace already holds areas, the
-// slot after its highest member keeps the run unbroken. Only when that is
-// taken do we fall back to the lowest free slot anywhere -- and we SAY SO,
-// because a silently broken invariant is the shape this whole lane exists to
-// remove. `broke_contiguity` carries that fact back to the caller rather than
-// printing from down here, so the message lands with the rest of USE's output.
-static int find_free_area_for_current_workspace(bool& broke_contiguity) {
-    broke_contiguity = false;
-    auto* eng = shell_engine(); if (!eng) return -1;
-
-    const std::uint64_t h   = xbase::workspace::current_handle();
-    const auto          mem = xbase::workspace::members(h);
-
-    int highest = -1;
-    for (const auto slot : mem) {
-        if (slot > highest) highest = static_cast<int>(slot);
-    }
-
-    // Contiguous growth: the slot immediately after my highest member.
-    if (highest >= 0 && highest + 1 < xbase::MAX_AREA) {
-        if (!area_is_open_safe(eng, highest + 1)) return highest + 1;
-    }
-
-    // Fallback. Reached when my block is boxed in, or when this workspace
-    // holds nothing yet and is therefore starting one.
-    for (int i = 0; i < xbase::MAX_AREA; ++i) {
-        if (!area_is_open_safe(eng, i)) {
-            broke_contiguity = (highest >= 0);
-            return i;
-        }
-    }
-    return -1;
-}
+// IN FREE and area_is_open_safe LIVE IN workarea_util NOW (AIF-078 slot lane
+// step 1). They moved because session-owned areas are about to need the same
+// free-slot policy, and a second copy of it would be R5's defect: two answers
+// to "which slot is free" for one array. The policy, and the owner rulings that
+// shaped it ("scoped", "keep the areas contiguous", FREE not NEXT), are
+// documented at the declaration in workarea_util.hpp. Nothing here changed but
+// the address.
 
 static int find_open_area_for_path(const fs::path& dbf_path) {
     auto* eng = shell_engine(); if (!eng) return -1;
@@ -809,7 +762,7 @@ void cmd_USE(DbArea& current_area, std::istringstream& iss)
         long long want = tail.in_area;
         bool broke_contiguity = false;
         if (tail.in_free) {
-            const int free_slot = find_free_area_for_current_workspace(broke_contiguity);
+            const int free_slot = cli::find_free_area_for_current_workspace(broke_contiguity);
             if (free_slot < 0) {
                 // Deliberately NOT falling back to the current area. Falling
                 // back is the silent-replacement behaviour this lane exists

@@ -212,6 +212,7 @@ if ($WithWx) { $Targets += 'dottalk_wb' }
 # wrong because it would build dottalk_wb_next, which is deliberately excluded.
 # Recorded for a decision rather than guessed at.
 if ($Testing) { $Targets += 'dottalkpp_relation_merge_test' }
+if ($Testing) { $Targets += 'dottalkpp_area_alloc_test' }
 
 Write-Host (">>> Building target(s): " + ($Targets -join ', '))
 if ($UseNinja) {

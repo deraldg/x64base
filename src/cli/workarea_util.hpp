@@ -26,6 +26,7 @@
 #include <vector>
 
 #include "xbase.hpp"
+#include "xbase/workspace_membership.hpp"
 
 namespace cli {
 
@@ -109,6 +110,61 @@ void ambiguity_reset();
 // that treated -1 as "closed" were relying on a side effect of the old scan;
 // ask isOpen() for that.
 int slot_of_area(const xbase::DbArea* area);
+
+// ---- IN FREE: the free-slot policy -----------------------------------------
+//
+// Lifted OUT of cmd_use.cpp (AIF-078 slot lane, step 1) with no behaviour
+// change and its CLI call site unchanged. It moved because a SECOND consumer is
+// coming: session-owned areas take real engine slots, and the Workbench must
+// reuse this policy rather than re-derive it. Two free-slot policies for one
+// array is R5's defect exactly, and the last one cost a ten-site sweep
+// (AIF-120 I1.1).
+//
+// It sits beside slot_of_area() because both answer questions about POSITIONS
+// IN THE ENGINE ARRAY, which is what this unit is for.
+
+// Is engine slot `slot` occupied? UNKNOWN COUNTS AS TAKEN -- a null engine, an
+// out-of-range index, or a throwing area() all answer true, so an allocator
+// built on this can never hand out a slot it failed to inspect. That bias is
+// the whole point of the name: it is not "is open", it is "is open, safely".
+bool area_is_open_safe(xbase::XBaseEngine* eng, int slot);
+
+// IN FREE -- an unoccupied area, chosen for the workspace `handle` names.
+//
+// NAMED FREE AND NOT NEXT (owner ruling 2026-08-22): NEXT implies forward
+// adjacency and this may return a slot BEHIND the cursor. A name that promises
+// an order the code does not keep is worse than no name.
+//
+// WORKSPACE-SCOPED, AND THAT IS THE POINT (owner ruling 2026-08-22, "scoped").
+// The first cut swept 0..MAX_AREA globally, which with one workspace open is
+// indistinguishable from correct and stops being so the moment there are two:
+// a global sweep hands out the lowest free ENGINE slot, and that slot can sit
+// INSIDE ANOTHER WORKSPACE'S RUN. The owner's design rule for this lane is
+// that a workspace's areas stay contiguous -- "keep the areas contiguous",
+// fractal to the same rule for tables under one root -- so an allocator that
+// can drop an area into the middle of a neighbour's block is a contiguity
+// violation armed and waiting.
+//
+// So: GROW MY OWN BLOCK FIRST. If this workspace already holds areas, the slot
+// after its highest member keeps the run unbroken. Only when that is taken do
+// we fall back to the lowest free slot anywhere -- and we SAY SO, because a
+// silently broken invariant is the shape this whole lane exists to remove.
+// `broke_contiguity` carries that fact back to the caller rather than printing
+// from down here, so the message lands with the rest of the caller's output.
+//
+// THE ENGINE AND THE TABLE ARE PARAMETERS, not things this function reaches for.
+// It used to call shell_engine() and the process-global membership table, which
+// is exactly what made it unreachable from a second process-local runtime and
+// untestable without a live shell. Returns -1 when nothing is free.
+int find_free_area_for_workspace(xbase::XBaseEngine* eng,
+                                 xbase::workspace::WorkspaceTable& table,
+                                 std::uint64_t handle,
+                                 bool& broke_contiguity);
+
+// The shell's spelling: the shell engine, the default membership table, the
+// current handle. This is the signature cmd_use.cpp has always called, kept so
+// the lift moved no call site.
+int find_free_area_for_current_workspace(bool& broke_contiguity);
 
 // RAII: select the given area's slot; restore the previous selection on exit.
 // No-op (and harmless) when the area is null, unknown, or already current.

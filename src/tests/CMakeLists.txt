@@ -193,3 +193,33 @@ target_include_directories(dottalkpp_tuple_order_capacity_test PRIVATE
 )
 add_test(NAME dottalkpp_tuple_order_capacity_test
          COMMAND dottalkpp_tuple_order_capacity_test)
+
+# ---- IN FREE allocator test (AIF-078 slot lane, step 1) ---------------------
+# THE FIRST FIXTURE THE FREE-SLOT POLICY HAS EVER HAD. It was a `static` inside
+# cmd_use.cpp that fetched shell_engine() and the process-global membership
+# table, so nothing could call it; step 1 lifted it into workarea_util and made
+# the engine, the table and the handle parameters. The discriminating arm is the
+# workspace-SCOPED placement: a naive lowest-free sweep and this policy return
+# different slots (2 vs 7), so the arm fails if the scoping is ever lost.
+#
+# Compiles the three CLI translation units it needs rather than linking the
+# shell: workarea_util (the policy), workareas (its array access), and
+# workareas_engine_bridge (the real forwarding indirection). The test itself
+# supplies the two symbols the shell would -- shell_engine(), deliberately null,
+# and an inert cmdout::print_line -- which is why the CLI's output layer
+# (OutputRouter/doc/helpdata) is NOT dragged in for a path no arm reaches.
+if(TARGET xbase)
+  add_executable(dottalkpp_area_alloc_test
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_area_alloc.cpp
+    ${CMAKE_SOURCE_DIR}/src/cli/workarea_util.cpp
+    ${CMAKE_SOURCE_DIR}/src/cli/workareas.cpp
+    ${CMAKE_SOURCE_DIR}/src/cli/workareas_engine_bridge.cpp
+  )
+  target_link_libraries(dottalkpp_area_alloc_test PRIVATE xbase memo)
+  target_include_directories(dottalkpp_area_alloc_test PRIVATE
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/cli
+  )
+  add_test(NAME dottalkpp_area_alloc_test COMMAND dottalkpp_area_alloc_test)
+endif()

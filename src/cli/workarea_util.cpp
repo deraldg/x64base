@@ -186,6 +186,56 @@ int slot_of_area(const xbase::DbArea* area)
     return area->engineSlot();
 }
 
+// ---- IN FREE ---------------------------------------------------------------
+// Lifted verbatim from cmd_use.cpp (AIF-078 slot lane step 1). The only change
+// is that the engine, the membership table and the handle arrive as arguments
+// instead of being fetched from process globals; see workarea_util.hpp for why.
+
+bool area_is_open_safe(xbase::XBaseEngine* eng, int slot)
+{
+    if (!eng || slot < 0 || slot >= xbase::MAX_AREA) return true;  // unknown is taken
+    try { return eng->area(slot).isOpen(); } catch (...) { return true; }
+}
+
+int find_free_area_for_workspace(xbase::XBaseEngine* eng,
+                                 xbase::workspace::WorkspaceTable& table,
+                                 std::uint64_t handle,
+                                 bool& broke_contiguity)
+{
+    broke_contiguity = false;
+    if (!eng) return -1;
+
+    const auto mem = table.members(handle);
+
+    int highest = -1;
+    for (const auto slot : mem) {
+        if (slot > highest) highest = static_cast<int>(slot);
+    }
+
+    // Contiguous growth: the slot immediately after my highest member.
+    if (highest >= 0 && highest + 1 < xbase::MAX_AREA) {
+        if (!area_is_open_safe(eng, highest + 1)) return highest + 1;
+    }
+
+    // Fallback. Reached when my block is boxed in, or when this workspace holds
+    // nothing yet and is therefore starting one.
+    for (int i = 0; i < xbase::MAX_AREA; ++i) {
+        if (!area_is_open_safe(eng, i)) {
+            broke_contiguity = (highest >= 0);
+            return i;
+        }
+    }
+    return -1;
+}
+
+int find_free_area_for_current_workspace(bool& broke_contiguity)
+{
+    return find_free_area_for_workspace(shell_engine(),
+                                        xbase::workspace::default_table(),
+                                        xbase::workspace::current_handle(),
+                                        broke_contiguity);
+}
+
 ScopedAreaSelect::ScopedAreaSelect(xbase::DbArea* area) noexcept
 {
     eng_ = shell_engine();
