@@ -195,6 +195,7 @@ if ($WithGui -or $WithWx) {
     # Guarded on the same switches as gui/core in src/tests/CMakeLists.txt
     # -- this one LINKS the library, so it does not exist without it.
     $Targets += 'dottalkpp_gui_match_count_test'
+    $Targets += 'dottalkpp_gui_area_membership_test'
   }
 }
 if ($WithWx) { $Targets += 'dottalk_wb' }

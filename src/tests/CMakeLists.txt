@@ -73,6 +73,31 @@ if (TARGET dottalk_gui_core)
   add_test(NAME dottalkpp_gui_match_count_test COMMAND dottalkpp_gui_match_count_test)
 endif()
 
+# ---- AIF-078: GUI areas are real engine-array areas -------------------------
+#
+# The discriminator for step 2b. Against the pre-2b code -- where
+# Session::Impl::Area held a DbArea BY VALUE and so carried _engine_slot == -1
+# for life -- workspace::join(h, -1) matched the free-slot sentinel and claimed
+# nothing, so member_count reads the baseline and every area reports the same
+# local slot. This fixture reads 2 and two DISTINCT slots, and destroys the
+# Session to prove ~Area() releases them again.
+#
+# Gated on dottalk_gui_core like the counter test above it, which is why both
+# need .\build.ps1 -WithGui: src/gui/core is behind DOTTALK_WITH_GUI and a
+# plain build does not compile it.
+if (TARGET dottalk_gui_core)
+  add_executable(dottalkpp_gui_area_membership_test
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_gui_area_membership.cpp
+  )
+  target_compile_features(dottalkpp_gui_area_membership_test PRIVATE cxx_std_20)
+  target_link_libraries(dottalkpp_gui_area_membership_test PRIVATE dottalk_gui_core)
+  target_include_directories(dottalkpp_gui_area_membership_test PRIVATE
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/src
+  )
+  add_test(NAME dottalkpp_gui_area_membership_test COMMAND dottalkpp_gui_area_membership_test)
+endif()
+
 add_executable(dottalkpp_security_policy_test
   ${CMAKE_CURRENT_SOURCE_DIR}/test_security_policy.cpp
 )
