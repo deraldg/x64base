@@ -2846,10 +2846,20 @@ static bool retire_durable_workspace(const std::string& name,
 // getter and setter present, NO writer). Pack-now-wire-later is the one
 // combination that reissues identities, and it does so silently.
 struct WsPurgeResult {
-    std::vector<std::uint64_t> ids;       // WS_IDs flagged, physical order
+    std::vector<std::uint64_t> ids;       // WS_IDs that ACTUALLY TRANSITIONED
+    std::vector<std::uint64_t> already;   // WS_IDs already purged before this call
     std::uint64_t              high = 0;  // max WS_ID the scan still counts
     bool                       had_live = false;
 };
+
+// A re-purge is a NO-OP in outcome -- setting SUPERSEDED on a superseded row and
+// re-flagging a flagged one changes nothing -- but reporting it as work is a
+// count that lies. Measured 2026-08-24 on WSPURGE's second run: the verb said
+// "Purged 4 row(s), WS_ID 161,162,165,166" when only 165 and 166 had moved; 161
+// and 162 were the previous run's rows, already purged. Left alone, every run
+// reports a larger number for the same work. This house has the rule already,
+// from WORKSPACE WRITEBACK: a count is a fact about a loop until something
+// declares what it SHOULD be. So the two are counted apart.
 
 static bool purge_durable_workspace(const std::string& name,
                                     WsPurgeResult& out,
@@ -2879,6 +2889,13 @@ static bool purge_durable_workspace(const std::string& name,
                 const std::uint64_t rid = std::strtoull(
                     trim_copy(get_by_name(a, "WS_ID")).c_str(), nullptr, 10);
 
+                // Read the CURRENT state before touching it. A row that is
+                // already superseded AND already flagged has nothing to
+                // transition, and saying so is the difference between a count
+                // and a claim.
+                const bool already_purged =
+                    (trim_copy(get_by_name(a, "SUPERSEDED")) == "1") && a.isDeleted();
+
                 // SUPERSEDED first. If the delete flag landed and this did not,
                 // the row would be invisible AND still adoptable -- strictly
                 // worse than leaving it alone.
@@ -2901,7 +2918,8 @@ static bool purge_durable_workspace(const std::string& name,
                           "are already purged.";
                     ok = false; break;
                 }
-                out.ids.push_back(rid);
+                if (already_purged) out.already.push_back(rid);
+                else                out.ids.push_back(rid);
             } catch (const std::exception& e) {
                 err = std::string("WORKSPACE PURGE: catalog write failed: ") + e.what();
                 ok = false; break;
@@ -4597,18 +4615,35 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
                 return;
             }
 
-            if (pr.ids.empty()) {
+            if (pr.ids.empty() && pr.already.empty()) {
                 std::cout << "WORKSPACE PURGE: no catalog rows carry the name '"
                           << pnm << "'. Nothing was changed.\n";
                 return;
             }
 
+            const auto say_ids = [](const std::vector<std::uint64_t>& v) {
+                for (std::size_t i = 0; i < v.size(); ++i) {
+                    std::cout << (i ? "," : " ") << v[i];
+                }
+            };
+
             std::cout << "WORKSPACE PURGE: name " << pnm << "\n";
-            std::cout << "  Purged " << pr.ids.size() << " row(s), WS_ID";
-            for (std::size_t i = 0; i < pr.ids.size(); ++i) {
-                std::cout << (i ? "," : " ") << pr.ids[i];
+            if (pr.ids.empty()) {
+                std::cout << "  Nothing to do: all " << pr.already.size()
+                          << " row(s) for this name were ALREADY purged, WS_ID";
+                say_ids(pr.already);
+                std::cout << "\n";
+            } else {
+                std::cout << "  Purged " << pr.ids.size() << " row(s), WS_ID";
+                say_ids(pr.ids);
+                std::cout << "\n";
+                if (!pr.already.empty()) {
+                    std::cout << "  " << pr.already.size()
+                              << " further row(s) were ALREADY purged and did not change, WS_ID";
+                    say_ids(pr.already);
+                    std::cout << "\n";
+                }
             }
-            std::cout << "\n";
             if (pr.had_live) {
                 std::cout << "  One of them was a LIVE HEAD: a WORKSPACE NEW " << pnm
                           << " would have ADOPTED it and inherited whatever the last "
