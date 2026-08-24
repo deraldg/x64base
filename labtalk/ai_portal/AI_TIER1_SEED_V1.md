@@ -109,6 +109,17 @@ owns it.
 | Your environment's versions | **measure** (`ldd --version`, `command -v cmake`) | never cite a doc |
 | Source layout | `AI_README.md`, Source Locations | maintained |
 
+## Do not ask for pasted console output
+
+Every runtime surface writes to a file you can read. `*>` captures all streams:
+
+    .\datarun.ps1 -CommandLines "REGRESSION RUN <SPEC>" *> tmp\run.log
+    .\build.ps1 -Testing *> tmp\build.log
+
+`tmp/` is gitignored. In-engine: `SET ALTERNATE TO <file>` then `ON`. To produce
+PROOF rather than read output, tee and hash -- see the teed wrappers in
+`dottalkpp/data/scripts/pinocchio/`. Full section: the Local-Access Checklist.
+
 ## Going deeper -- retrieve by what you are about to do
 
 `python labtalk/ai_portal/recall.py <trigger>` returns the smallest working set,

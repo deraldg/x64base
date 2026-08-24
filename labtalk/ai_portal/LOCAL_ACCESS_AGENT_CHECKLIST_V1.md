@@ -86,6 +86,63 @@ document. It is not hypothetical.
 - [ ] **Long or destructive builds are maintainer-operated.** Prepare the exact
   command and expected evidence; hand it over. Do not launch or babysit.
 
+## Capturing a runtime transcript -- READ THIS BEFORE ASKING FOR A PASTE
+
+An agent that cannot run the engine still does not need the maintainer to paste
+console output into chat. **Every runtime surface here can write to a file the
+agent can read.** Added 2026-08-24 after an agent asked for pasted output
+roughly thirty times in one session while this facility sat unused.
+
+- [ ] **Redirect the whole run and read the file.** `*>` captures every stream,
+  stderr included:
+
+      .\datarun.ps1 -CommandLines "REGRESSION RUN WSPURGE" *> tmp\wspurge.log
+      .\build.ps1 -Testing                                 *> tmp\build.log
+      ctest --test-dir build -C Release                     *> tmp\ctest.log
+      git commit -F tmp\msg.txt                             *> tmp\commit.log
+
+- [ ] **`datarun.ps1 -CommandLines` is non-interactive.** It writes a temp
+  script and runs it through the engine's `--script` entry, so no one types at
+  a prompt. Pass several commands as a comma-separated list.
+- [ ] **`tmp/` and `dottalkpp/data/tmp/` are gitignored** (`.gitignore:266`,
+  `:72`), so transcripts left there never appear in `git status` and never risk
+  being staged.
+- [ ] **The engine carries the whole xBase output-routing family** -- all of it
+  in `cmd_set.cpp`, all of it usable from inside a DotScript:
+
+      SET ALTERNATE TO <file> / ON / OFF     transcript of console output
+      SET PRINT TO <file>     / ON / OFF     report output to a file
+      SET DEVICE TO FILE <path>              @..SAY output to a file
+      SET DEVICE TO SCREEN | PRINTER | NULL
+      SET CONSOLE ON | OFF                   silence the screen half
+      SET ECHO ON                            echo COMMANDS into the transcript
+
+  **`SET ECHO ON` beside `SET ALTERNATE` is the pairing worth knowing:** without
+  it a transcript records answers with no questions, and a reader cannot tell
+  which command produced which line.
+- [ ] **Choose by what you need.** `*>` from the shell for the FULL console
+  including engine chatter and stderr -- that is what a build or a suite run
+  needs. `SET ALTERNATE` when the capture must be produced from inside the
+  script itself, or when you want only the engine's own stream without the
+  launcher's noise.
+- [ ] **`--script` is the runtime's only entry argument** (`src/cli/main.cpp`),
+  which is what `datarun.ps1 -CommandLines` drives. There is no `--log` flag;
+  routing is the engine's job, capture is the shell's.
+- [ ] **The strongest form already exists and is worth copying.** The Pinocchio
+  proof lane's `run_pinocchio_*_teed.ps1` wrappers tee the full console to a
+  timestamped log under `data/tmp/` **and print its SHA-256**, so a proof ledger
+  binds to a real runner log. Their own header says why: a transcript sourced
+  from chat is not evidence. If you are producing proof rather than just
+  reading output, tee and hash.
+
+**Why this section exists at all.** The facility was not missing, it was
+UNFINDABLE -- built in one lane, documented inside that lane's own wrapper, and
+cited by nothing an arriving agent reads. That is the same defect this project
+keeps paying for: `recall.py` cited by zero entry-path documents (AIF-090 D1),
+`SET DELETED` severed from every reader for fourteen months (AIF-123),
+`autoq_next` set once and read never (R119). **Art built in one lane and never
+carried across is art nobody has.**
+
 ## Prohibited even with write access
 
 Same as the global boundary: no credentials, no permission changes, no
