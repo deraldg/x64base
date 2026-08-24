@@ -642,6 +642,35 @@ def main() -> int:
         # blocked routine maintenance on any of the 65 pre-coordination rows.
         # The check now compares against the pre-image and fires only on a
         # number NEW to the queue. Verified both directions before arming.
+        # 6a. R-NUMBER COLLISIONS -- hard on a real collision, advisory on the
+        # backlog. Added 2026-08-24 after a NEAR-MISS, not after a failure: a
+        # ruling was about to be stamped R7 on the assumption that each AIF lane
+        # carried its own R1..Rn series. It does not -- the R-space is one flat
+        # global sequence and R7 has been taken since 2026-08-06 (the owner
+        # ruling on AIF-090). Nothing detected it. The number was checked only
+        # because someone happened to grep before typing.
+        #
+        # The AIF pair took two goes to get teeth (an optional allocator, then
+        # a detector that only fired after a collision, then check_aif_claimed
+        # closing it from the front). The R pair is built with both halves from
+        # the start because that lesson is already paid for.
+        #
+        # THE BACKLOG IS ADVISORY AND WILL STAY THAT WAY. Roughly a hundred
+        # numbers are cited with no register row and predate the register by
+        # years. Blocking on those would be red every commit, and a permanently
+        # red gate is a switched-off gate.
+        rc = _run_portal_check("tools/coordination/r_collision_gate.py", [])
+        if rc == 2:
+            print("\n  BLOCKED -- R-number collision: either a duplicate row in "
+                  "the register, or a newly declared number the tree already "
+                  "cites. Run tools/coordination/next_r.py and take max+1; "
+                  "grep is not an allocator.", file=sys.stderr)
+            exit_code = 2
+        elif rc == 3:
+            print("\n  ADVISORY -- R-numbers cited with no register row. NOT "
+                  "blocking. Back-fill what they meant when you next touch one; "
+                  "they are reserved either way.")
+
         rc = _run_portal_check("tools/coordination/check_aif_claimed.py", [])
         if rc == 2:
             print("\n  BLOCKED -- a new intake row names an AIF number with no "

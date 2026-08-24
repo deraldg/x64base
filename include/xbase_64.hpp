@@ -46,7 +46,7 @@ constexpr uint8_t DBF_VERSION_64 = 0x64;
 // -----------------------------------------------------------------------------
 //
 // autoq_next IS RESERVED AND DELIBERATELY UNWIRED.
-// Steward ruling 2026-08-24 (AIF-078 lane). This is a decision, not an
+// Steward ruling R119, 2026-08-24 (AIF-078 lane). This is a decision, not an
 // oversight, and it is written here so the next reader does not have to
 // rediscover it.
 //

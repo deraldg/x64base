@@ -20,6 +20,13 @@ elsewhere, and a reused number makes two different things share an identity
 in a record that is supposed to be permanent. Gaps are REPORTED so a human
 can rule on them; they are never handed out.
 
+SEE ALSO: R-numbers (doctrine rules and lane rulings) are a SEPARATE flat
+sequence with their own allocator, tools/coordination/next_r.py. They are not
+per-lane and they are not derived from an AIF number. Cross-linked in both
+directions on purpose: AIF-090 D1 measured what happens to a tool nothing
+points at -- recall.py was cited by ZERO entry-path documents and a cold probe
+hunting for exactly that kind of tool found six others and missed it.
+
 Run:  $py12 tools\\coordination\\next_aif.py
 """
 import pathlib
@@ -83,6 +90,15 @@ def main() -> int:
     if gaps:
         print(f"gaps, NOT reusable ({len(gaps)}): "
               + ", ".join(f"AIF-{n}" for n in gaps))
+
+    # One line, always printed. Stamping a RULING needs the other allocator,
+    # and the moment a lane number is issued is the moment someone is about to
+    # need one. A pointer that only appears in a docstring is a pointer nobody
+    # reads at the moment it matters.
+    print()
+    print("Stamping a RULING (an R-number)? Different sequence, different "
+          "allocator:")
+    print("  $py12 tools\\coordination\\next_r.py")
     return 0
 
 

@@ -407,7 +407,7 @@ bool DbArea::appendBlank() {
     // immediately after the 32-byte VFP-style header.
     //
     // THIS IS WHERE autoq_next's STORE-BACK WOULD GO, and it is deliberately
-    // not here: the slot is reserved and unwired (2026-08-24 ruling, see
+    // not here: the slot is reserved and unwired (ruling R119, see
     // xbase_64.hpp). The patch-one-field-in-place idiom below is exactly the
     // shape it would take. Writing it before there is a consumer and an
     // increment is the combination that reissues identities silently.

@@ -2843,7 +2843,7 @@ static bool retire_durable_workspace(const std::string& name,
 //
 // DO NOT ADD A PACK OPTION. The x64 header's autoq_next slot -- the only place
 // a high-water mark could survive a pack -- is RESERVED AND UNWIRED by steward
-// ruling 2026-08-24. The full statement, the measured population, and the
+// ruling R119 (2026-08-24). The full statement, the measured population, and the
 // three-part recipe for making it live are at the LargeHeaderExtension
 // declaration in xbase_64.hpp; they are stated there rather than here because
 // that is where anyone wiring it would land.
@@ -2962,7 +2962,7 @@ static void save_to_memo(const std::string& name, int version = 2,
         // next_id pattern. The x64 header slot autoq_next EXISTS but is
         // LOAD-ONLY -- measured 2026-08-11, re-measured 2026-08-24 across all
         // of src and include: no consumer, no increment, no store path back to
-        // the header, and autoQNext64() has zero callers. RULED 2026-08-24:
+        // the header, and autoQNext64() has zero callers. RULED R119, 2026-08-24:
         // the slot stays reserved and unwired, so max+1 is not a placeholder
         // waiting on an engine lane -- it is the answer. It is also the better
         // one here: it self-heals after a hand-edited row, which a header

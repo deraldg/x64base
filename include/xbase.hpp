@@ -465,7 +465,7 @@ public:
 
     // ---- 64-bit DBF compatibility additions -------------------------------
     // autoQNext64() has NO callers, by ruling rather than by accident: the
-    // slot is reserved and unwired (2026-08-24, AIF-078). The full statement
+    // slot is reserved and unwired (R119, 2026-08-24, AIF-078). The full statement
     // and the recipe for making it live are at the LargeHeaderExtension
     // declaration in xbase_64.hpp. Do not add a store-back without a consumer.
     void setAutoQNext64(uint64_t v) noexcept {
