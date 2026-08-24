@@ -7,12 +7,37 @@ Param(
   [string]$PythonExe = '',
   [switch]$NoIndex,
   [switch]$NoTV,
+  [switch]$NoGui,
   [switch]$WithGui,
   [switch]$WithWx,
   [switch]$WithPyDotTalk
 )
 
 $ErrorActionPreference = 'Stop'
+
+# AIF-078, 2026-08-24 (steward: "-WithGui should be the default").
+#
+# The GUI used to be OFF unless asked for, and src/CMakeLists.txt:476 gates
+# gui/core behind DOTTALK_WITH_GUI -- so a plain build did not COMPILE
+# src/gui/core at all. Measured on 508325324: a build.ps1 run reported
+# "Built OK" while session.obj was a full DAY older than dottalkpp.exe.
+# Because the gate is at CONFIGURE time, even `cmake --build build` over the
+# whole tree walked past it: 25 targets built, none of them the file that had
+# just changed.
+#
+# The cost was not a slow build, it was SILENCE. ctest went 18 -> 20 the
+# moment the GUI was switched on, and the two that appeared --
+# dottalk_gui_core_async_smoke and dottalkpp_gui_match_count_test -- had not
+# been failing. They had not been RUNNING, and nothing in a green summary
+# said so. That is the same shape as REGRESSION ALL passing ten specs over a
+# commit that rewrote the allocator without once exercising it.
+#
+# So the GUI now follows the house idiom for a feature that is ON: an opt-OUT
+# switch, like -NoIndex and -NoTV. -WithGui is still ACCEPTED and still forces
+# it on -- it is redundant now rather than wrong, and removing it would break
+# every script and habit that spells it. -NoWx is NOT added: wxWidgets is a
+# heavier dependency and DOTTALK_WITH_WX stays opt-in.
+$GuiEnabled = (-not $NoGui) -or $WithGui
 $RepoRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $RepoRoot
 
@@ -127,7 +152,7 @@ $configureArgs = @(
   '-D', "CMAKE_BUILD_TYPE=$Config",
   '-D', ('DOTTALK_WITH_INDEX=' + ($(if ($NoIndex) { 'OFF' } else { 'ON' }))),
   '-D', ('DOTTALK_WITH_TV=' + ($(if ($NoTV) { 'OFF' } else { 'ON' }))),
-  '-D', ('DOTTALK_WITH_GUI=' + ($(if ($WithGui) { 'ON' } else { 'OFF' }))),
+  '-D', ('DOTTALK_WITH_GUI=' + ($(if ($GuiEnabled) { 'ON' } else { 'OFF' }))),
   '-D', ('DOTTALK_WITH_WX=' + ($(if ($WithWx) { 'ON' } else { 'OFF' }))),
   '-D', ('BUILD_PYDOTTALK=' + ($(if ($WithPyDotTalk) { 'ON' } else { 'OFF' }))),
   '-D', "DOTTALK_PROFILE=DEV"
@@ -188,7 +213,7 @@ if (Test-Path $CacheFile) {
   $Testing = Select-String -Path $CacheFile -Pattern '^BUILD_TESTING:BOOL=ON' -Quiet
 }
 
-if ($WithGui -or $WithWx) {
+if ($GuiEnabled -or $WithWx) {
   $Targets += 'dottalk_gui_core'
   if ($Testing) {
     $Targets += 'dottalk_gui_core_async_smoke'
