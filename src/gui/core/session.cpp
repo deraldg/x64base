@@ -1556,6 +1556,89 @@ struct Session::Impl {
         return nullptr;
     }
 
+    // ---- AIF-078: relation ENDPOINT matching, ONE spelling ---------------
+    //
+    // A relation edge names its endpoints as TEXT -- whatever the CLI printed
+    // or a DTSCHEMA2 posture carried -- and an area answers to four different
+    // spellings of itself. Deciding whether a given area IS a given endpoint is
+    // a real question with a real answer, and it used to be asked in exactly
+    // one place: a lambda inside workspace_model(), reachable only by building
+    // a whole model.
+    //
+    // close_area asks the same question. A second spelling of it there is the
+    // R5 defect this lane has spent two days closing one layer down -- two
+    // answers to one question, agreeing only by inspection -- so the predicate
+    // is lifted here and BOTH callers go through it. Behaviour is unchanged:
+    // same four names, same lowering, same .dbf strip.
+    static std::vector<std::string> relation_names_of(const Area& area) {
+        std::vector<std::string> names {
+            area.area().logicalName(),
+            area.display_name,
+            area.path.filename().string(),
+            area.path.stem().string()
+        };
+        for (auto& name : names) {
+            name = lower_ascii(trim_ascii(std::move(name)));
+            if (ends_with_ci(name, ".dbf")) {
+                name.resize(name.size() - 4);
+            }
+        }
+        return names;
+    }
+
+    // Does `area` answer to the endpoint name `relation_table`? An EMPTY name
+    // never matches -- neither an endpoint with no text nor an area with no
+    // logical name -- because "both are blank" is not a match, it is two
+    // absences, and treating it as one would drop every relation on the first
+    // close of an unnamed area.
+    static bool area_answers_to(const Area& area, const std::string& relation_table) {
+        const std::string wanted = lower_ascii(trim_ascii(relation_table));
+        if (wanted.empty()) {
+            return false;
+        }
+        for (const auto& name : relation_names_of(area)) {
+            if (!name.empty() && name == wanted) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Which OPEN area answers to this endpoint, if any. THE DISPLAY SIDE.
+    Area* area_for_relation_endpoint(const std::string& relation_table) {
+        for (const auto& candidate : areas) {
+            if (!candidate->area().isOpen()) {
+                continue;
+            }
+            if (area_answers_to(*candidate, relation_table)) {
+                return candidate.get();
+            }
+        }
+        return nullptr;
+    }
+
+    // Drop every relation edge naming `area` on either side; return how many
+    // went. THE CLOSE SIDE.
+    //
+    // MUST BE CALLED BEFORE DbArea::close(). relation_names_of reads
+    // logicalName() off the LIVE area, and close() clears area identity
+    // (dbarea.cpp) -- so an area closed first answers to one fewer name than it
+    // did a line earlier, and an edge written against its logical name would
+    // survive the close of its own table. There is no compile error for getting
+    // that order wrong and the result has the same SHAPE either way, which is
+    // why the order is stated here instead of left to be noticed.
+    std::size_t drop_relations_naming(const Area& area) {
+        const auto before = relations.size();
+        relations.erase(
+            std::remove_if(relations.begin(), relations.end(),
+                [&](const WorkspaceRelationInfo& relation) {
+                    return area_answers_to(area, relation.parent) ||
+                           area_answers_to(area, relation.child);
+                }),
+            relations.end());
+        return before - relations.size();
+    }
+
     // DECLARED BEFORE `areas` ON PURPOSE. Members are destroyed in REVERSE
     // declaration order, so this engine is torn down AFTER the areas that hold
     // references into its array. Swap these two lines and every ~Area() runs
@@ -2293,6 +2376,30 @@ CloseAreaResult Session::close_area(const CloseAreaRequest& request) {
         return result;
     }
 
+    // AIF-078: THE MISSING ARM OF AN EXISTING PAIR.
+    //
+    // Every WHOLESALE close in this file already clears relations -- the
+    // WORKSPACE OPEN mirror, WORKSPACE LOAD, and WORKSPACE CLOSE all do
+    // `areas.clear()` next to `relations.clear()`. The SINGLE-area close did
+    // not, so closing one table in the Workbench left edges pointing at a table
+    // that is gone: the model went on counting matches for them and the posture
+    // writer went on saving them.
+    //
+    // The CLI has the same split and says so out loud (cmd_close.cpp: "Relation
+    // clearing is handled by the caller because single-area CLOSE and CLOSE ALL
+    // differ there"). This is that caller, finally written.
+    //
+    // AND IT IS NOT A LINK TO THE RELATION ENGINE. relations_api is not in this
+    // process's picture at all: the GUI's relation store IS impl_->relations,
+    // filled by parsing CLI output text from an OUT-OF-PROCESS dottalkpp
+    // (gui_cli_bridge _popens `dottalkpp --script`) and by DTSCHEMA2 posture.
+    // Linking the engine here would add a SECOND, empty, engine-backed store
+    // and close nothing -- a third answer to one question. See
+    // claude/AIF078_FINDING_RELATION_CLEANUP_IS_NOT_AN_ENGINE_LINK.md.
+    //
+    // BEFORE the close, deliberately -- see drop_relations_naming.
+    const std::size_t dropped_relations = impl_->drop_relations_naming(**it);
+
     (*it)->area().close();
     impl_->areas.erase(it);
 
@@ -2303,6 +2410,17 @@ CloseAreaResult Session::close_area(const CloseAreaRequest& request) {
     result.ok = true;
     result.active_area_id = impl_->active_area_id;
     result.messages.push_back(info("gui.area.closed", "GUI work area closed."));
+    // SAID OUT LOUD, not done quietly. The steward's observation on 2026-08-24
+    // was that "closing an area will break any joins and relations open" -- and
+    // a cleanup that removes them silently is indistinguishable, from the
+    // Workbench, from relations that were never there. The count is a VALUE a
+    // spec can assert on; a cleanup that reported nothing could only be checked
+    // by inspecting the model afterwards.
+    if (dropped_relations > 0) {
+        result.messages.push_back(info("gui.area.relations_dropped",
+                                       "Relations naming the closed table were dropped.",
+                                       std::to_string(dropped_relations) + " relation(s)"));
+    }
     return result;
 }
 
@@ -2346,35 +2464,12 @@ WorkspaceModel Session::workspace_model() const {
     model.messages = areas.messages;
     model.relations = impl_->relations;
 
-    auto relation_name = [](const Impl::Area& area) {
-        std::vector<std::string> names {
-            area.area().logicalName(),
-            area.display_name,
-            area.path.filename().string(),
-            area.path.stem().string()
-        };
-        for (auto& name : names) {
-            name = lower_ascii(trim_ascii(std::move(name)));
-            if (ends_with_ci(name, ".dbf")) {
-                name.resize(name.size() - 4);
-            }
-        }
-        return names;
-    };
-
+    // AIF-078 relation cleanup. This WAS two lambdas -- relation_name and the
+    // body below -- and they are now Impl members, because close_area asks the
+    // same question and a second spelling of it is the defect. The local name
+    // is kept so the rest of this function is untouched.
     auto find_relation_area = [&](const std::string& relation_table) -> Impl::Area* {
-        const std::string wanted = lower_ascii(trim_ascii(relation_table));
-        for (const auto& candidate : impl_->areas) {
-            if (!candidate->area().isOpen()) {
-                continue;
-            }
-            for (const auto& name : relation_name(*candidate)) {
-                if (name == wanted) {
-                    return candidate.get();
-                }
-            }
-        }
-        return nullptr;
+        return impl_->area_for_relation_endpoint(relation_table);
     };
 
     auto field_index = [](const xbase::DbArea& area, const std::string& field_name) {

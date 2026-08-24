@@ -18,6 +18,7 @@
 #include <condition_variable>
 #include <cstdlib>
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <mutex>
 #include <string>
@@ -511,6 +512,183 @@ int main() {
                          "the block to slot 2 leaving slot 0 vacant, and identity "
                       << first.area_id << " was not reused (reopen minted "
                       << reopened.area_id << ")\n";
+        }
+    }
+
+    {
+        // ---- AIF-078: CLOSING ONE AREA DROPS THE RELATIONS THAT NAME IT ----
+        //
+        // The gap: every WHOLESALE close in session.cpp already cleared
+        // relations -- the WORKSPACE OPEN mirror, WORKSPACE LOAD and WORKSPACE
+        // CLOSE each do areas.clear() next to relations.clear() -- and the
+        // SINGLE-area close did not. Closing one table in the Workbench left
+        // edges pointing at a table that was gone.
+        //
+        // A spec for that has to prove three things, and only the third is hard:
+        //
+        //   1. an edge naming the closed table as PARENT goes,
+        //   2. an edge naming it as CHILD goes,
+        //   3. AND EVERY OTHER EDGE STAYS.
+        //
+        // (3) IS THE DISCRIMINATOR. `relations.clear()` -- the obvious wrong
+        // fix, and the one the three wholesale sites already use -- passes (1)
+        // and (2) perfectly and fails only there. Without (3) this block would
+        // go green against a cleanup that threw the whole store away.
+        //
+        // FIELDMGR_APPEND: every assertion is on a VALUE the session reports --
+        // the drop COUNT, and the surviving edge's parent, child and key. An
+        // assertion on the SHAPE of the relations list ("it shrank", "it is a
+        // list") passes just as well on a blanked one.
+        dottalk::gui::Session session;
+
+        std::error_code ec;
+        const auto dbf_root = dottalk::paths::get_slot(dottalk::paths::Slot::DBF_X64);
+        std::vector<std::filesystem::path> candidates;
+        for (std::filesystem::directory_iterator it(dbf_root, ec), end; !ec && it != end; it.increment(ec)) {
+            if (!it->is_regular_file(ec) || ec) {
+                ec.clear();
+                continue;
+            }
+            std::string ext = it->path().extension().string();
+            for (auto& ch : ext) {
+                ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+            }
+            if (ext == ".dbf") {
+                candidates.push_back(it->path());
+            }
+        }
+        std::sort(candidates.begin(), candidates.end());
+
+        std::vector<std::filesystem::path> usable;
+        for (const auto& candidate : candidates) {
+            if (usable.size() >= 2) {
+                break;
+            }
+            if (session.open_table(OpenTableRequest{candidate}).ok) {
+                usable.push_back(candidate);
+            }
+        }
+
+        if (usable.size() < 2) {
+            // LOUD, never silent. A fixture that could not run has to say so in
+            // the transcript or its green means nothing.
+            std::cout << "SKIP: relation cleanup needs two openable tables under "
+                      << dbf_root.string() << "; found " << usable.size() << "\n";
+        } else {
+            const std::string a_name = usable[0].stem().string();
+            const std::string b_name = usable[1].stem().string();
+
+            const auto schema = std::filesystem::temp_directory_path() /
+                                "dottalk_gui_core_relation_cleanup.dtschema";
+            std::filesystem::remove(schema, ec);
+            const auto saved = session.run_command(CommandRequest{"workspace save " + schema.string()});
+            if (!require(saved.ok, "workspace save did not succeed for the relation fixture")) {
+                return EXIT_FAILURE;
+            }
+
+            // THE GUI'S RELATION STORE HAS EXACTLY TWO DOORS: parsed CLI output
+            // text, and a DTSCHEMA2 posture. The CLI door spawns an
+            // OUT-OF-PROCESS dottalkpp (gui_cli_bridge), which a unit fixture
+            // must not depend on -- so the posture is the door that makes this
+            // hermetic. It links nothing and starts nothing.
+            {
+                std::ofstream posture(schema, std::ios::app);
+                if (!require(static_cast<bool>(posture),
+                             "could not append relation posture lines to the schema")) {
+                    return EXIT_FAILURE;
+                }
+                posture << "RELATION " << a_name << " " << b_name << " ON PKEY\n";
+                posture << "RELATION " << b_name << " " << a_name << " ON CKEY\n";
+                posture << "RELATION " << b_name << " ZZ_NO_SUCH_TABLE ON SKEY\n";
+            }
+
+            (void)session.run_command(CommandRequest{"workspace close"});
+            const auto loaded = session.run_command(CommandRequest{"workspace load " + schema.string()});
+            if (!require(loaded.ok, "workspace load did not succeed for the relation fixture")) {
+                return EXIT_FAILURE;
+            }
+
+            auto model = session.workspace_model();
+            if (!require(model.relations.size() == 3,
+                         "the posture did not mirror three relations into the GUI model")) {
+                return EXIT_FAILURE;
+            }
+
+            const auto areas_before = session.list_areas();
+            if (!require(areas_before.areas.size() == 2,
+                         "workspace load did not restore both areas of the relation fixture")) {
+                return EXIT_FAILURE;
+            }
+
+            dottalk::gui::AreaId a_id = 0;
+            for (const auto& area : areas_before.areas) {
+                if (area.path.stem().string() == a_name) {
+                    a_id = area.area_id;
+                }
+            }
+            if (!require(a_id != 0, "could not find the reloaded area named by the relations")) {
+                return EXIT_FAILURE;
+            }
+
+            const auto closed = session.close_area(CloseAreaRequest{a_id});
+            if (!require(closed.ok, "close_area did not close the related table")) {
+                return EXIT_FAILURE;
+            }
+
+            // (1) AND (2), THROUGH THE COUNT THE SESSION ITSELF REPORTS. Two
+            // edges named the closed table -- one as parent, one as child --
+            // and the third named it nowhere. The count is asserted rather than
+            // inferred from the leftovers, because a cleanup that reported
+            // nothing could only ever be checked after the fact.
+            bool reported_two = false;
+            for (const auto& message : closed.messages) {
+                if (message.code == "gui.area.relations_dropped" &&
+                    message.detail == "2 relation(s)") {
+                    reported_two = true;
+                }
+            }
+            if (!require(reported_two,
+                         "closing an area did not report dropping exactly 2 relations")) {
+                return EXIT_FAILURE;
+            }
+
+            model = session.workspace_model();
+            if (!require(model.relations.size() == 1,
+                         "the close did not leave exactly the one edge that never named it")) {
+                return EXIT_FAILURE;
+            }
+
+            // (3). THE ARM THAT SEPARATES A TARGETED DROP FROM relations.clear().
+            // Asserted on the edge's FIELD VALUES, not on the fact that a row
+            // is there -- a row survives a blanking too.
+            const auto& survivor = model.relations.front();
+            if (!require(survivor.parent == b_name,
+                         "the surviving relation did not keep its parent")) {
+                return EXIT_FAILURE;
+            }
+            if (!require(survivor.child == "ZZ_NO_SUCH_TABLE",
+                         "the surviving relation did not keep its child")) {
+                return EXIT_FAILURE;
+            }
+            if (!require(survivor.parent_key == "SKEY",
+                         "the surviving relation did not keep its key")) {
+                return EXIT_FAILURE;
+            }
+
+            // AND THE CLOSE IS STILL A CLOSE. If the drop had run AFTER
+            // DbArea::close() it would have matched on one fewer name, and on a
+            // table whose posture used its LOGICAL name the edges would have
+            // survived their own table -- with the areas list looking exactly
+            // like this either way.
+            const auto areas_after = session.list_areas();
+            if (!require(areas_after.areas.size() == 1,
+                         "the relation cleanup close left the wrong number of areas open")) {
+                return EXIT_FAILURE;
+            }
+
+            std::cout << "relation cleanup: closing " << a_name
+                      << " dropped its 2 edges and left " << b_name
+                      << " -> ZZ_NO_SUCH_TABLE standing\n";
         }
     }
 
