@@ -37,6 +37,7 @@
 #include "xbase/dbf_create.hpp"
 #include "xbase/workspace_membership.hpp"
 
+#include "xbase/area_alloc.hpp"
 #include "workarea_util.hpp"
 
 // THIS BINARY IS ITS OWN SHELL. Two symbols the CLI layer expects from the
@@ -109,7 +110,7 @@ int main() {
     // THE DISCRIMINATOR. Lowest-free would say 2, which sits inside another
     // workspace's run. Scoped-and-contiguous says 7.
     {
-        const int got = cli::find_free_area_for_workspace(&eng, table, h, broke);
+        const int got = xbase::find_free_area_for_workspace(&eng, table, h, broke);
         assert(got == 7  && "contiguous growth must extend this workspace's own block");
         assert(got != 2  && "a lowest-free sweep would have returned 2 -- scoping lost");
         assert(!broke    && "growing contiguously is not a contiguity break");
@@ -123,7 +124,7 @@ int main() {
     {
         occupy(eng, 7);
         broke = false;   // seeded WRONG in the other direction for this arm
-        const int got = cli::find_free_area_for_workspace(&eng, table, h, broke);
+        const int got = xbase::find_free_area_for_workspace(&eng, table, h, broke);
         assert(got == 2 && "boxed in, fall back to the lowest free slot anywhere");
         assert(broke    && "a non-contiguous placement MUST be reported");
         std::cout << "area_alloc B: boxed in -> " << got
@@ -136,7 +137,7 @@ int main() {
     {
         const std::uint64_t empty = table.create("NO_MEMBERS");
         broke = true;    // seeded WRONG
-        const int got = cli::find_free_area_for_workspace(&eng, table, empty, broke);
+        const int got = xbase::find_free_area_for_workspace(&eng, table, empty, broke);
         assert(got == 2 && "an empty workspace takes the lowest free slot");
         assert(!broke   && "a workspace with no run cannot have broken it");
         std::cout << "area_alloc C: empty workspace took " << got
@@ -153,7 +154,7 @@ int main() {
         assert(h2 == h && "both tables mint the same first handle -- that is the point");
         assert(other.join(h2, 0) == 0);
         broke = true;
-        const int got = cli::find_free_area_for_workspace(&eng, other, h2, broke);
+        const int got = xbase::find_free_area_for_workspace(&eng, other, h2, broke);
         assert(got == 2 && "slot 1 is taken, so this block cannot grow either");
         assert(broke    && "block at 0 boxed in by slot 1 -- reported");
         std::cout << "area_alloc D: same handle in a second table -> " << got
@@ -165,7 +166,7 @@ int main() {
     // this binary, so the convenience wrapper must reach here too.
     {
         broke = true;
-        const int got = cli::find_free_area_for_workspace(nullptr, table, h, broke);
+        const int got = xbase::find_free_area_for_workspace(nullptr, table, h, broke);
         assert(got == -1 && "no engine, no answer");
         assert(!broke    && "a refusal is not a contiguity break");
 
@@ -179,11 +180,11 @@ int main() {
     // area_is_open_safe's bias, stated in its header comment, asserted here so
     // the comment is not the only thing holding it.
     {
-        assert(cli::area_is_open_safe(nullptr, 0)              && "null engine -> taken");
-        assert(cli::area_is_open_safe(&eng, -1)                && "negative slot -> taken");
-        assert(cli::area_is_open_safe(&eng, xbase::MAX_AREA)   && "past the end -> taken");
-        assert(cli::area_is_open_safe(&eng, 0)                 && "an open slot is taken");
-        assert(!cli::area_is_open_safe(&eng, 2)                && "a free slot is free");
+        assert(xbase::area_is_open_safe(nullptr, 0)              && "null engine -> taken");
+        assert(xbase::area_is_open_safe(&eng, -1)                && "negative slot -> taken");
+        assert(xbase::area_is_open_safe(&eng, xbase::MAX_AREA)   && "past the end -> taken");
+        assert(xbase::area_is_open_safe(&eng, 0)                 && "an open slot is taken");
+        assert(!xbase::area_is_open_safe(&eng, 2)                && "a free slot is free");
         std::cout << "area_alloc F: unknown counts as taken\n";
     }
 
