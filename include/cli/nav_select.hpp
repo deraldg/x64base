@@ -14,9 +14,15 @@
 //   include/cli/nav_select.hpp
 //
 // Purpose:
-//   Shared cursor-selection helper used by SKIP / GO-style
-//   navigation to choose the next record number from either the
-//   active logical/filter view or the active physical/index order.
+//   Shared cursor-selection helper used by SKIP / TOP / BOTTOM to
+//   choose the next record number from either the active logical
+//   view or the active physical/index order.
+//
+//   NOT GO. R121 (2026-08-24) draws the line this file sits on:
+//   ADDRESSING IS ABSOLUTE, TRAVERSAL IS FILTERED. GO names a
+//   record and must land on it; SKIP/TOP/BOTTOM name a position in
+//   a set and must walk the visible one. cmd_goto.cpp deliberately
+//   does not include this header and must not start.
 //
 // Fix in this version:
 //   Prevent ordered SKIP boundary leakage.
@@ -55,7 +61,13 @@ namespace cli::navsel {
 enum class Mode {
     RawOrder,
     LogicalView,
-    AutoByFilter
+    // RENAMED FROM AutoByFilter BY R121. The old name was accurate about what
+    // the code did and wrong about what the code is for: it chose the logical
+    // view by asking whether a SET FILTER was active, which is only one of the
+    // two things that make the visible set differ from the raw order. Fixing
+    // the predicate without fixing the name would have left a label describing
+    // the bug.
+    AutoByVisibility
 };
 
 enum class Step {
@@ -67,9 +79,14 @@ enum class Step {
 
 inline Mode resolve_mode(xbase::DbArea& A, Mode mode)
 {
-    if (mode == Mode::AutoByFilter) {
-        return filter::has_active_filter(&A) ? Mode::LogicalView
-                                             : Mode::RawOrder;
+    if (mode == Mode::AutoByVisibility) {
+        // R121: ONE QUESTION, ASKED ONCE, IN THE PLACE THAT OWNS IT.
+        // Was `filter::has_active_filter(&A)`, which silently meant "SET
+        // DELETED is not a reason to filter" -- and everything downstream of
+        // Mode::LogicalView already honoured SET DELETED, so the setting was
+        // wired end to end except for the branch that decides to use it.
+        return filter::view_is_filtered(&A) ? Mode::LogicalView
+                                            : Mode::RawOrder;
     }
     return mode;
 }
@@ -159,7 +176,7 @@ inline std::int64_t pick_recno(xbase::DbArea& A,
         }
         break;
 
-    case Mode::AutoByFilter:
+    case Mode::AutoByVisibility:
         break;
     }
 

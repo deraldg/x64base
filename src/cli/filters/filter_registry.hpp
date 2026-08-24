@@ -46,6 +46,25 @@ enum class DeletedPolicy {
     CallerHandles     // an explicit deleted clause is in force here; stay out
 };
 
+// IS THE LOGICAL VIEW SUBJECT TO FILTERING AT ALL?
+//
+// R121, 2026-08-24. This is the question navigation has to ask before it
+// decides whether to traverse the visible set or the raw order, and asking it
+// wrongly is the whole of the R121 defect: navsel::resolve_mode asked
+// has_active_filter() instead, so SET DELETED -- the OTHER reason the logical
+// view differs from the raw order -- never reached SKIP, TOP or BOTTOM.
+//
+// IT LIVES HERE BECAUSE visible() LIVES HERE. Both halves of visibility are
+// applied in one place by design (AIF-123); a caller assembling its own
+// `has_active_filter(a) || deleted_on` would be the second spelling, and the
+// first thing to go stale when a third reason to hide a row arrives.
+//
+// NAMED FOR WHAT IT KNOWS. It says the view is SUBJECT TO a filter, not that
+// any row is actually hidden -- a SET FILTER that matches everything hides
+// nothing and this still answers true. A name promising more than the code
+// delivers is worse than no name (owner ruling 2026-08-22, FREE vs NEXT).
+bool view_is_filtered(xbase::DbArea* area);
+
 // Visibility gate used by LIST / COUNT / SMARTLIST / LOCATE and now nav redirect.
 // Applies SET DELETED (per `deleted`), the persistent SET FILTER, and an
 // optional FOR expression.

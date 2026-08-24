@@ -278,6 +278,15 @@ bool has_active_filter(xbase::DbArea* area)
     return static_cast<bool>(it->second.ast) || !it->second.text.empty();
 }
 
+bool view_is_filtered(xbase::DbArea* area)
+{
+    // The filter half is PER AREA; the deleted half is per SESSION. Both are
+    // reasons the visible set differs from the raw order, and a traversal that
+    // consults one and not the other walks a set nobody asked for.
+    if (has_active_filter(area)) return true;
+    return cli::Settings::instance().deleted_on.load();
+}
+
 bool visible(xbase::DbArea* area,
              const std::shared_ptr<Expr>& for_ast,
              DeletedPolicy deleted)

@@ -27,6 +27,8 @@
 //
 // notes:
 //   SKIP with no arguments moves forward one logical record.
+//   SKIP walks the VISIBLE set: it honours SET FILTER and, since R121, SET
+//   DELETED. Contrast GOTO, which addresses a record number absolutely.
 //   SKIP <n> moves forward when n is positive and backward when n is negative.
 //   SKIP 0 rereads the current record.
 //   SKIP requires an open table except for SKIP USAGE.
@@ -123,7 +125,13 @@ void cmd_SKIP(xbase::DbArea& A, std::istringstream& in)
     // order_skip() moves up to |n| positions (partial-to-boundary) and leaves the
     // work area positioned and read. The per-record visibility loop below runs
     // only when a SET FILTER is active (which needs per-candidate visibility).
-    if (!filter::has_active_filter(&A) && orderstate::hasOrder(A)) {
+    // R121: THE SAME PREDICATE AS resolve_mode, DELIBERATELY. This guard and
+    // the mode chooser ask one question -- "may anything be hidden here" -- and
+    // if they ask it differently the fast path becomes a hole straight through
+    // the fix: an ordered SKIP with no SET FILTER would take the index shortcut
+    // and step onto a deleted row while the slow path a line below refused to.
+    // That is R5 with a performance excuse.
+    if (!filter::view_is_filtered(&A) && orderstate::hasOrder(A)) {
         if (order_skip(A, n)) {
             if (talk) {
                 cli::cmdout::print_message(
@@ -149,7 +157,7 @@ void cmd_SKIP(xbase::DbArea& A, std::istringstream& in)
     while (steps-- > 0) {
         rn = cli::navsel::pick_recno(
             A,
-            cli::navsel::Mode::AutoByFilter,
+            cli::navsel::Mode::AutoByVisibility,
             step_kind,
             current);
 

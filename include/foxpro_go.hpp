@@ -5,7 +5,38 @@
 // project: project.x64base.runtime
 // lane: 
 // owner: member.derald
-// status: supported
+// status: review-needed
+//
+// ############################################################################
+// THIS FILE IS NOT A SPECIFICATION AND MUST NOT BE CITED AS ONE.
+//
+// Demoted 2026-08-24 under ruling R121. It is UNREVIEWED GENERATED PROSE. It
+// says so itself, in its own second paragraph -- "This is not a header file --
+// just the deep technical breakdown you asked for" -- and it ends by offering
+// to generate four more documents and asking which direction to take.
+//
+// IT CONTRADICTS ITSELF on the one question it was cited for. Sections 2.2 and
+// 5.3 say GO <n> moves to the physical record number; 2.3 and 2.4 say it skips
+// forward past filtered and deleted rows; 5.3 says both, in consecutive
+// bullets. There is no reading under which all of those hold.
+//
+// IT WAS CITED ANYWAY, by member.ai.claude.cowork, in two places, as canon that
+// "survived the implementation" -- read only as far as the sentence that suited
+// the argument. Both citations are corrected: the comment block in
+// dottalkpp/data/scripts/set_deleted_visibility.dts and the SDVIS registry
+// entry in src/cli/cmd_regression.cpp.
+//
+// WHAT REPLACED IT: ruling R121 decides GO on principle and needs no dialect
+// authority. ADDRESSING IS ABSOLUTE, TRAVERSAL IS FILTERED. The xBase family is
+// honoured here but not binding (steward, 2026-08-24).
+//
+// KEPT, NOT DELETED. Nothing includes it, so it costs nothing to leave; and a
+// demoted document with its demotion attached teaches what a deleted one
+// cannot. If it is ever to become a specification, someone has to reconcile
+// 2.2 against 2.3 against 5.3 and sign it.
+//
+// See claude/FINDING_STATUS_SUPPORTED_SEPARATES_NOTHING.md.
+// ############################################################################
 
 Here’s a **clean, complete, codex‑style enumeration of the FoxPro 2.6a `GO` command**, written in the same tone and structural precision as your reference headers. This is not a header file -- just the deep technical breakdown you asked for.
 

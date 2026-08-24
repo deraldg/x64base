@@ -39,21 +39,36 @@
 ; the one verb whose whole purpose is delete-flagged rows, so it is where a
 ; restoration like this does its damage if the precedence rule is wrong.
 ;
-; NAVIGATION IS TWO FAMILIES, WHICH THIS SPEC'S FIRST RUN DISCOVERED.
-;   LOGICAL  -- FIRST / LAST / NEXT / PRIOR, via cli::logical_nav, which calls
-;               filter::visible() and therefore honours SET DELETED.
-;   PHYSICAL -- GO / SKIP, which move the DbArea cursor directly and consult
-;               nothing but SET FILTER.
-; Two answers to "where is the next visible record" -- R5, in the navigator.
-; The logical family is asserted; the physical family is TRIPWIRED at its
-; measured behaviour and named as unfinished.
+; NAVIGATION IS TWO FAMILIES -- AND THIS SPEC'S FIRST DESCRIPTION OF THEM WAS
+; WRONG ABOUT WHICH VERB SAT IN WHICH. Corrected 2026-08-24 under R121:
+;   ADDRESSING -- GO <n> / GOTO <n>, which name a record and land on it. Routed
+;                 through cli::nav::go_absolute, a bare gotoRec64. Correct.
+;   TRAVERSAL  -- FIRST / LAST / NEXT / PRIOR / TOP / BOTTOM / SKIP / GO +n,
+;                 which name a POSITION IN A SET and must walk the visible one.
 ;
-; GO is also the sharpest case in the canon. include/foxpro_go.hpp has said the
-; whole time:
-;     "If <n> is deleted and SET DELETED ON, FoxPro skips forward to the next
-;      undeleted record."
-;     "With SET DELETED OFF, GO <n> lands exactly on <n>."
-; The specification survived the implementation. These arms are that paragraph.
+; The old text put GO and SKIP together as "physical". They were never one
+; family: cmd_goto.cpp already split GOTO <n> (go_absolute) from GOTO FIRST/LAST
+; (go_endpoint -> logical_nav), and cmd_go.cpp:134 already routed GO +n through
+; nav::skip_relative -> logical_nav. So GO +1 HONOURED SET DELETED WHILE SKIP 1
+; DID NOT -- two spellings of "forward one record" disagreeing, which is the R5
+; pair actually present and not the one this comment named.
+;
+; The single defect was navsel::resolve_mode choosing the logical view by asking
+; only whether a SET FILTER was active. Its three callers -- SKIP, TOP, BOTTOM --
+; were the entire blast radius; everything downstream was already wired.
+;
+; WITHDRAWN 2026-08-24. This paragraph used to cite include/foxpro_go.hpp as
+; canon -- "the specification survived the implementation" -- for the claim that
+; GO <n> skips forward under SET DELETED ON. It is withdrawn in place rather
+; than deleted, because the error is more useful than its absence.
+;
+; The file is not a specification. It opens "This is not a header file -- just
+; the deep technical breakdown you asked for" and closes by offering to generate
+; four more documents. It contradicts itself on this exact point. And it was
+; cited, by me, without being read past the sentence that suited the argument.
+;
+; What replaced it is RULING R121, which decides the question on principle and
+; needs no dialect authority: ADDRESSING IS ABSOLUTE, TRAVERSAL IS FILTERED.
 ;
 ; WHAT A RED ARM DOES AND DOES NOT SEPARATE.
 ;
@@ -173,14 +188,108 @@ NEXT
 ; a further change and wants its own ruling, because it alters what a bare GO
 ; does. Until then these two lines say what the engine does, out loud.
 ;
-; IF EITHER EVER READS .T., GO/SKIP HAVE GAINED DELETE-FILTERING. Repoint them
-; deliberately back to assertions; do not let them retune themselves.
+; REPOINTED 2026-08-24 BY RULING R121 -- BOTH OF THEM, IN OPPOSITE DIRECTIONS.
+; They were tripwires recording measured behaviour because nobody had ruled.
+; R121 ruled, so they are assertions now, and the two halves of that ruling pull
+; them apart:
+;
+;   ADDRESSING IS ABSOLUTE.  GO <n> names a record and must land on it under any
+;   setting. A GO that skipped forward would make the one command whose purpose
+;   is reaching a specific record unable to reach it -- GO 2 would land on 3 and
+;   report success -- and would close the only door to navigating onto a flagged
+;   row to RECALL it one at a time. So TRIP1's measured .T. was RIGHT, and is now
+;   right BY RULING rather than by accident.
+;
+;   TRAVERSAL IS FILTERED.  SKIP names a position in a SET -- next -- and the set
+;   must be the visible one. TRIP2 INVERTS.
+;
+; RULED ON PRINCIPLE, NOT ON DIALECT PRECEDENT. The earlier note here cited
+; include/foxpro_go.hpp as canon saying GO skips forward. That citation was
+; wrong twice over: the file is unreviewed generated prose that says of itself
+; "This is not a header file" and contradicts itself on this exact point (its
+; 2.2 and 5.3 both say GO moves to the physical record number, its 2.3 and 2.4
+; say it skips forward), AND the xBase family is honoured here but not binding
+; (steward, 2026-08-24). The citation was mine. See
+; claude/FINDING_STATUS_SUPPORTED_SEPARATES_NOTHING.md.
+;
+; THE POSITIVE FORM IS DELIBERATE. SD_ON_T8 asserts the cursor landed on
+; AliveTwo, not merely that it is NOT on DeletedRow. The negative form passes if
+; SKIP went nowhere, or hit EOF, or failed -- three ways to be wrong that look
+; like success. FIELDMGR_APPEND: assert the value you expect, not the value you
+; do not.
 GO 2
-? "SD_ON_TRIP1_go_2_still_lands_on_the_flagged_row:" + (ALLTRIM(NAME) = "DeletedRow")
+? "SD_ON_T9_go_2_lands_exactly_on_2_even_though_flagged:" + (ALLTRIM(NAME) = "DeletedRow")
 
 GO 1
 SKIP
-? "SD_ON_TRIP2_skip_still_steps_onto_the_flagged_row:" + (ALLTRIM(NAME) = "DeletedRow")
+? "SD_ON_T8_skip_steps_OVER_the_flagged_row_onto_3:" + (ALLTRIM(NAME) = "AliveTwo")
+
+CLOSE
+
+; ============================================================================
+; HALF TWO-B -- R121 REACHES TOP AND BOTTOM, AND THIS FIXTURE CAN SEE IT
+;
+; WHY A SECOND TABLE. SDVIS flags its MIDDLE row, so TOP and BOTTOM land on
+; rows 1 and 3 whether or not they honour SET DELETED. Asserting them against
+; SDVIS would have produced two arms that pass under both spellings -- the
+; FIELDMGR_APPEND defect in its purest form, a green that means nothing. The
+; fixture has to be able to answer differently before the question is worth
+; asking, so SDEDGE flags the ENDS and leaves the middle alive.
+;
+; WHY THEY ARE ASSERTED AT ALL. R121 fixed one predicate --
+; navsel::resolve_mode -- and SKIP was one of its THREE callers. TOP and BOTTOM
+; came along in the same edit. An unasserted half of a ruling is how a rung goes
+; quiet, which is the entire subject of AIF-123: the 2025-08-16 rewrite
+; preserved the default and severed the control, and nothing went red for
+; fourteen months.
+;
+; Under the OLD spelling: ON would land TOP on DeadFirst and BOTTOM on DeadLast,
+; failing both ON arms while passing both OFF arms. The pair discriminates in
+; both directions.
+; ============================================================================
+
+SELECT 1
+CREATE X64 SDEDGE (ID N(8,0), NAME C(20))
+
+APPEND
+REPLACE ID WITH 1
+REPLACE NAME WITH "DeadFirst"
+
+APPEND
+REPLACE ID WITH 2
+REPLACE NAME WITH "AliveMiddle"
+
+APPEND
+REPLACE ID WITH 3
+REPLACE NAME WITH "DeadLast"
+
+GO 1
+DELETE
+GO 3
+DELETE
+CLOSE
+
+; --- OFF: the ends are visible, so the endpoints ARE the ends ---------------
+USE SDEDGE NOINDEX
+SET DELETED OFF
+
+TOP
+? "SD_EDGE_OFF_T1_top_reaches_the_flagged_first_row:" + (ALLTRIM(NAME) = "DeadFirst")
+
+BOTTOM
+? "SD_EDGE_OFF_T2_bottom_reaches_the_flagged_last_row:" + (ALLTRIM(NAME) = "DeadLast")
+
+CLOSE
+
+; --- ON: both endpoints collapse onto the one visible row -------------------
+USE SDEDGE NOINDEX
+SET DELETED ON
+
+TOP
+? "SD_EDGE_ON_T3_top_skips_the_flagged_first_row:" + (ALLTRIM(NAME) = "AliveMiddle")
+
+BOTTOM
+? "SD_EDGE_ON_T4_bottom_skips_the_flagged_last_row:" + (ALLTRIM(NAME) = "AliveMiddle")
 
 CLOSE
 
