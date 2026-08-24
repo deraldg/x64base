@@ -1,5 +1,17 @@
 ; ============================================================================
-; WORKSPACE PURGE -- AIF-078, steward ruling 2026-08-24 "A -- flag, never pack"
+; WORKSPACE DELETE -- AIF-078, steward ruling 2026-08-24 "A -- flag, never pack"
+;
+; THE VERB WAS RENAMED THE SAME DAY. It was WORKSPACE PURGE until the owner read
+; its output: "how could you ever locate a purged row, it is gone forever,
+; delete is a flag and that means the row still exists just ignored." The verb
+; sets the delete flag and SUPERSEDED and the row stays on disk permanently --
+; so the name promised removal and the code guaranteed the opposite. In xBase
+; the pair is exact: DELETE flags, PACK removes. PURGE is still ACCEPTED as an
+; alias and PG_T5 below is what keeps that true.
+;
+; This file and its spec id keep the name WSPURGE deliberately: a spec id is an
+; allocated identifier with run history behind it, and renaming one to match a
+; verb costs more than it buys.
 ; ============================================================================
 ;
 ; WHAT MAKES PG_T1 A DISCRIMINATOR AND NOT A DEMONSTRATION.
@@ -109,7 +121,7 @@ CLOSE
 
 ; --- THE PURGE --------------------------------------------------------------
 
-WORKSPACE PURGE WSPRG1
+WORKSPACE DELETE WSPRG1
 
 ; --- PG_T1: THE DISCRIMINATOR ----------------------------------------------
 ; A brand new name must mint ABOVE the highest purged id. If the purged rows
@@ -204,20 +216,46 @@ CLOSE
 ; with its live row intact.
 
 WORKSPACE NEW WSPRG3
-WORKSPACE PURGE WSPRG3
+WORKSPACE DELETE WSPRG3
 SET PATH DBF workspaces
 USE WORKSPACES
 LOCATE FOR ALLTRIM(WS_NAME) = "WSPRG3" .AND. ALLTRIM(SUPERSEDED) = "0"
 ? "PG_T4_declared_workspace_kept_its_live_row:" + (ALLTRIM(SUPERSEDED) = "0")
 CLOSE
 
-; --- TEARDOWN ---------------------------------------------------------------
-; Retire then purge this spec's own names, which is the DESTROY-then-PURGE flow
-; the verb is designed around. The rows remain, flagged; the file never shrinks.
+; --- TEARDOWN, AND PG_T5 -----------------------------------------------------
+; Retire then delete this spec's own names -- the DESTROY-then-DELETE flow the
+; verb is designed around. The rows remain, flagged; the file never shrinks.
 
 WORKSPACE DESTROY WSPRG2
 WORKSPACE DESTROY WSPRG3
-WORKSPACE PURGE WSPRG2
+WORKSPACE DELETE WSPRG2
+
+; --- PG_T5: THE PURGE ALIAS STILL DISPATCHES --------------------------------
+;
+; WSPRG3 is retired above and is deleted HERE, deliberately spelled the OLD way.
+; -WithGui taught this lesson the same morning: a spelling kept for
+; compatibility that nothing exercises is a spelling that rots, and the rot is
+; only discovered by whoever's script breaks.
+;
+; THE ARM IS A FIELD-VALUE COMPARISON, not a run of the command. The first
+; draft of this block was the WORKSPACE PURGE line and a comment calling itself
+; PG_T5, with no marker behind it -- which asserts NOTHING. If PURGE stopped
+; dispatching, the verb would print an error and the spec would still read all
+; green. That is the FIELDMGR_APPEND defect committed inside the arm written to
+; prevent it, caught before it ran.
+;
+; So: read WSPRG3's row back with deleted rows VISIBLE and assert SUPERSEDED=1.
+; That is only true if the alias actually reached delete_durable_workspace.
+
 WORKSPACE PURGE WSPRG3
+
+SET DELETED OFF
+SET PATH DBF workspaces
+USE WORKSPACES
+LOCATE FOR ALLTRIM(WS_NAME) = "WSPRG3"
+? "PG_T5_purge_alias_still_reaches_the_verb:" + (ALLTRIM(SUPERSEDED) = "1")
+CLOSE
+
 SET DELETED ON
 WORKSPACE CLOSE ALL

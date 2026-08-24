@@ -2808,7 +2808,8 @@ static bool retire_durable_workspace(const std::string& name,
 }
 
 // ---------------------------------------------------------------------------
-// AIF-078 -- WORKSPACE PURGE. Steward ruling 2026-08-24: "A -- flag, never
+// AIF-078 -- WORKSPACE DELETE (spelled PURGE until 2026-08-24; that alias is
+// still accepted). Steward ruling 2026-08-24: "A -- flag, never
 // pack." Design: claude/AIF078_DESIGN_WORKSPACE_PURGE.md.
 //
 // WHY IT NEVER PACKS, and this is the whole safety argument:
@@ -2853,7 +2854,7 @@ static bool retire_durable_workspace(const std::string& name,
 // Pack the file and the flagged rows stop counting; the next WORKSPACE NEW
 // then hands out a WS_ID that a superseded row already owns, and nothing
 // prints. Pack-now-wire-later is that combination, in that order.
-struct WsPurgeResult {
+struct WsDeleteResult {
     std::vector<std::uint64_t> ids;       // WS_IDs that ACTUALLY TRANSITIONED
     std::vector<std::uint64_t> already;   // WS_IDs already purged before this call
     std::uint64_t              high = 0;  // max WS_ID the scan still counts
@@ -2869,11 +2870,11 @@ struct WsPurgeResult {
 // from WORKSPACE WRITEBACK: a count is a fact about a loop until something
 // declares what it SHOULD be. So the two are counted apart.
 
-static bool purge_durable_workspace(const std::string& name,
-                                    WsPurgeResult& out,
+static bool delete_durable_workspace(const std::string& name,
+                                    WsDeleteResult& out,
                                     std::string& err)
 {
-    out = WsPurgeResult{};
+    out = WsDeleteResult{};
 
     xbase::DbArea a;
     if (!open_catalog(a, err)) return false;
@@ -2915,21 +2916,21 @@ static bool purge_durable_workspace(const std::string& name,
                 // silently did not stick is the worst failure either verb has.
                 a.gotoRec(rec); a.readCurrent();
                 if (trim_copy(get_by_name(a, "SUPERSEDED")) != "1") {
-                    err = "WORKSPACE PURGE: record " + std::to_string(rec) +
+                    err = "WORKSPACE DELETE: record " + std::to_string(rec) +
                           " did not take SUPERSEDED. Stopped; earlier rows are "
-                          "already purged.";
+                          "already deleted.";
                     ok = false; break;
                 }
                 if (!a.isDeleted()) {
-                    err = "WORKSPACE PURGE: record " + std::to_string(rec) +
+                    err = "WORKSPACE DELETE: record " + std::to_string(rec) +
                           " did not take the delete flag. Stopped; earlier rows "
-                          "are already purged.";
+                          "are already deleted.";
                     ok = false; break;
                 }
                 if (already_purged) out.already.push_back(rid);
                 else                out.ids.push_back(rid);
             } catch (const std::exception& e) {
-                err = std::string("WORKSPACE PURGE: catalog write failed: ") + e.what();
+                err = std::string("WORKSPACE DELETE: catalog write failed: ") + e.what();
                 ok = false; break;
             }
         }
@@ -4166,7 +4167,8 @@ static void workspace_print_usage() {
     std::cout << "  WORKSPACE OPEN <target> NOINDEX [recursive] [TABLE]\n";
     std::cout << "  WORKSPACE NEW <name> [UNDER <parent>]      (Declare a workspace; allocates its WS_ID)\n";
     std::cout << "  WORKSPACE DESTROY <name-or-handle>         (Retire an empty, childless workspace)\n";
-    std::cout << "  WORKSPACE PURGE <name>                     (Catalog hygiene: flag a retired name's rows; never packs)\n";
+    std::cout << "  WORKSPACE DELETE <name>                    (Catalog hygiene: flag a retired name's rows; there is no PACK)\n"
+              "  WORKSPACE PURGE <name>                     (accepted alias for DELETE)\n";
     std::cout << "  WORKSPACE SWITCH <name-or-handle>          (Areas opened next join this workspace)\n";
     std::cout << "  WORKSPACE REGISTRY                         (Report runtime membership and nesting)\n";
     std::cout << "  WORKSPACE CLOSE                            (Close the CURRENT workspace)\n";
@@ -4555,10 +4557,31 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
             std::cout << "  Handle " << h << " is NOT reused: a stale handle held by an area "
                          "must resolve to 'gone' and never to somebody else.\n";
 
-        } else if (sub_command == "purge") {
-            // AIF-078. Steward ruling 2026-08-24: a purge, shape "A -- flag,
-            // never pack". Implementation notes and the no-pack argument live
-            // on purge_durable_workspace above.
+        } else if (sub_command == "delete" || sub_command == "purge") {
+            // AIF-078. Steward ruling 2026-08-24: shape "A -- flag, never
+            // pack". Implementation notes and the no-pack argument live on
+            // delete_durable_workspace above.
+            //
+            // THE VERB WAS CALLED "PURGE" UNTIL THE OWNER READ ITS OUTPUT.
+            // "how could you ever locate a purged row, it is gone forever,
+            // delete is a flag and that means the row still exists just
+            // ignored." Exactly right, and it indicted the name: this verb
+            // sets the delete flag and SUPERSEDED and the row stays on disk
+            // PERMANENTLY -- which is the whole design, since max(WS_ID)+1
+            // needs those rows COUNTED to hold the high-water mark. The name
+            // promised removal and the implementation guarantees the opposite.
+            //
+            // In xBase the pair is exact: DELETE flags and the row is ignored,
+            // PACK removes it. "Purge" belongs on the PACK side, so every
+            // sentence of the form "LOCATE reaches a purged row" was nonsense
+            // on its face -- and it misled the OWNER, reading output written
+            // by its own author. The name reached further than any definition
+            // could have.
+            //
+            // So the verb is WORKSPACE DELETE, and THE DELIBERATE ABSENCE OF A
+            // WORKSPACE PACK now says what a paragraph used to. PURGE stays
+            // accepted -- scripts and habits spell it, the same reasoning that
+            // kept -WithGui working when the GUI became the default.
             //
             // THE REFUSAL RULE CHANGED BETWEEN DESIGN AND CODE, and the reason
             // is worth keeping. The design said "PURGE refuses while the name
@@ -4583,36 +4606,36 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
             // DESTROY's own ordering comment is built to avoid.
             auto toks = split_tokens(rest_of_args);
             if (toks.empty()) {
-                std::cout << "WORKSPACE PURGE: missing target.\n";
-                std::cout << "  Use: WORKSPACE PURGE <name>\n";
-                std::cout << "  Purges CATALOG ROWS by WS_NAME. This is catalog "
+                std::cout << "WORKSPACE DELETE: missing target.\n";
+                std::cout << "  Use: WORKSPACE DELETE <name>   (WORKSPACE PURGE is an accepted alias)\n";
+                std::cout << "  Flags CATALOG ROWS by WS_NAME -- sets the delete flag and SUPERSEDED. Nothing is removed and there is deliberately no WORKSPACE PACK. This is catalog "
                              "hygiene, not a session verb.\n";
                 return;
             }
             const std::string pnm = trim_copy(toks[0]);
 
             if (xbase::workspace::find_by_name_ci(pnm) != 0) {
-                std::cout << "WORKSPACE PURGE: refused -- '" << pnm
+                std::cout << "WORKSPACE DELETE: refused -- '" << pnm
                           << "' is a workspace DECLARED IN THIS SESSION.\n";
                 std::cout << "  Retire it first (WORKSPACE DESTROY " << pnm
                           << "), which supersedes its live row and releases the "
-                             "name. Purging a declared workspace would leave it "
+                             "name. Deleting a declared workspace's rows would leave it "
                              "running with no durable identity. Nothing was "
                              "changed.\n";
                 return;
             }
             if (ci_equal(pnm, "DEFAULT")) {
-                std::cout << "WORKSPACE PURGE: DEFAULT cannot be purged.\n";
+                std::cout << "WORKSPACE DELETE: DEFAULT cannot be deleted.\n";
                 std::cout << "  Invariant I1 needs DEFAULT to outlive every other "
                              "workspace, and that applies to its history too.\n";
                 return;
             }
 
-            ws_memo::WsPurgeResult pr;
+            ws_memo::WsDeleteResult pr;
             std::string perr;
-            if (!ws_memo::purge_durable_workspace(pnm, pr, perr)) {
+            if (!ws_memo::delete_durable_workspace(pnm, pr, perr)) {
                 std::cout << (perr.empty()
-                                ? std::string("WORKSPACE PURGE: the catalog write failed.")
+                                ? std::string("WORKSPACE DELETE: the catalog write failed.")
                                 : perr)
                           << "\n";
                 if (!pr.ids.empty()) {
@@ -4626,7 +4649,7 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
             }
 
             if (pr.ids.empty() && pr.already.empty()) {
-                std::cout << "WORKSPACE PURGE: no catalog rows carry the name '"
+                std::cout << "WORKSPACE DELETE: no catalog rows carry the name '"
                           << pnm << "'. Nothing was changed.\n";
                 return;
             }
@@ -4637,19 +4660,26 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
                 }
             };
 
-            std::cout << "WORKSPACE PURGE: name " << pnm << "\n";
+            std::cout << "WORKSPACE DELETE: name " << pnm << "\n";
+            // WHAT THE RENAME BOUGHT, VISIBLE HERE. Under the old name this
+            // block needed four paragraphs explaining that nothing was removed,
+            // because the verb was called PURGE and the behaviour was the
+            // opposite. Called DELETE, most of that is carried by the word: an
+            // xBase reader already knows DELETE flags and PACK removes. What is
+            // left is the one thing the vocabulary does NOT say -- that there is
+            // deliberately no WORKSPACE PACK, and why.
             if (pr.ids.empty()) {
                 std::cout << "  Nothing to do: all " << pr.already.size()
-                          << " row(s) for this name were ALREADY purged, WS_ID";
+                          << " row(s) for this name were ALREADY deleted, WS_ID";
                 say_ids(pr.already);
                 std::cout << "\n";
             } else {
-                std::cout << "  Purged " << pr.ids.size() << " row(s), WS_ID";
+                std::cout << "  Deleted " << pr.ids.size() << " row(s), WS_ID";
                 say_ids(pr.ids);
                 std::cout << "\n";
                 if (!pr.already.empty()) {
                     std::cout << "  " << pr.already.size()
-                              << " further row(s) were ALREADY purged and did not change, WS_ID";
+                              << " further row(s) were ALREADY deleted and did not change, WS_ID";
                     say_ids(pr.already);
                     std::cout << "\n";
                 }
@@ -4660,13 +4690,12 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
                              "run left in that row. It will now mint fresh.\n";
             }
             std::cout << "  HIGH-WATER MARK PRESERVED: the next WS_ID is still "
-                      << (pr.high + 1)
-                      << ". Rows are FLAGGED, not packed, so the allocator still "
-                         "counts them and NO WS_ID CAN BE REISSUED.\n";
-            std::cout << "  The file did not shrink, and that is the design. Do not "
-                         "PACK this catalog: allocation is max(WS_ID)+1 derived from "
-                         "surviving rows, so packing would hand a purged workspace's "
-                         "identity to a new one.\n";
+                      << (pr.high + 1) << ".\n";
+            std::cout << "  THERE IS DELIBERATELY NO WORKSPACE PACK. Allocation is "
+                         "max(WS_ID)+1 derived from the surviving rows, so the "
+                         "deleted rows must keep being COUNTED. Pack this catalog "
+                         "and the next WORKSPACE NEW would inherit a deleted "
+                         "workspace's durable identity.\n";
             // CORRECTED 2026-08-24, same day, by AIF-123. This line used to say
             // "LOCATE reaches them even with SET DELETED ON", which was true of
             // the engine when it was written and stopped being true a few hours
@@ -4675,11 +4704,9 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
             // the engine changes, or it becomes the most authoritative wrong
             // answer in the system -- the user reads it at the moment of doing
             // the thing.
-            std::cout << "  Purged rows are STILL ON DISK and still counted, which is what "
-                         "preserves the high-water mark. They are hidden from ordinary "
-                         "reads under SET DELETED ON (AIF-123); SET DELETED OFF shows "
-                         "them again. What changed is that no WORKSPACE NEW can adopt "
-                         "them, and that is SUPERSEDED's doing, not the delete flag's.\n";
+            std::cout << "  The rows are hidden under SET DELETED ON and visible under "
+                         "SET DELETED OFF (AIF-123). What stops a WORKSPACE NEW "
+                         "adopting them is SUPERSEDED, not the delete flag.\n";
 
         } else if (sub_command == "switch") {
             auto toks = split_tokens(rest_of_args);
