@@ -27,7 +27,7 @@ thirty-year-old prior art with the same shape.
 | Why is a specific decision the way it is | `docs/maintenance/AIF120_*_V1.md` -- one ruling per unit |
 | What is settled, open, and owed to whom | the newest `SESSION_CLOSEOUT_APPLICATION_UI_DSL_LANE_*.md` |
 | Which ruling lives in which file | the closeout's index table |
-| What outside sources describe VFP formats | `docs/manuals/developer/dev/dev-19-external-references.md` |
+| What outside sources describe VFP formats | `docs/manuals/developer/dev/dev-23-external-references.md` |
 
 **Read the closeout first.** It is the only one of these that tells you what is
 currently false.

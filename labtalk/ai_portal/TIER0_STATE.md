@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-08-24T15:18:11Z
+    generated_utc : 2026-08-24T15:43:28Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,8 +11,8 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : f998b2651  (2026-08-24)
-    upstream      : f998b2651
+    HEAD          : 7b4abe523  (2026-08-24)
+    upstream      : 7b4abe523
     unpushed      : 0 commit(s) ahead of upstream
 
 ## Declared target
@@ -23,16 +23,17 @@ cannot drift, because nothing here is written by hand.
 ## Newest closeout
 
     file          : SESSION_CLOSEOUT_PROMOTION_TO_MAIN_AND_WORKBENCH_RENAME_2026-08-21.md
-    commits behind HEAD : 67
+    commits behind HEAD : 68
 
 ## Staleness warnings
 
-- The newest closeout is 67 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
+- The newest closeout is 68 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
 
 ## Claimed lanes (newest first)
 
 | AIF | lane | steward | intake row |
 | --- | --- | --- | --- |
+| AIF-123 | set-deleted-visibility-sweep | member.ai.claude.cowork | yes |
 | AIF-122 | build-stamp-rebuild-cost | member.ai.claude.cowork | yes |
 | AIF-121 | use-argument-validation | member.ai.claude.cowork | yes |
 | AIF-120 | application-ui-dsl | member.ai.claude.cowork | yes |
@@ -44,8 +45,7 @@ cannot drift, because nothing here is written by hand.
 | AIF-114 | set-family-doc-drift | member.derald | yes |
 | AIF-113 | lock-release-recovery | member.derald | yes |
 | AIF-112 | site-and-guard-hardening | member.ai.claude.cowork | yes |
-| AIF-111 | sandbox-build-ceiling | member.ai.claude.cowork | yes |
-| ... | 42 older claims omitted | | |
+| ... | 43 older claims omitted | | |
 
 ## Sessions, lineage, asides
 
@@ -61,6 +61,7 @@ parent + born_utc from the durable lineage ledger, '-' until a run wakes.
 
 | run | member | parent | born_utc | asides |
 | --- | --- | --- | --- | --- |
+| COWORK-20260824-001 | member.ai.claude.cowork | - | - | AIF-123 |
 | COWORK-20260822-001 | member.ai.claude.cowork | - | - | AIF-121 -> AIF-122 |
 | COWORK-20260817-001 | member.ai.claude.cowork | - | - | AIF-119 -> AIF-120 |
 | COWORK-20260816-001 | member.ai.claude.cowork | - | - | AIF-118 |
@@ -68,8 +69,7 @@ parent + born_utc from the durable lineage ledger, '-' until a run wakes.
 | COWORK-20260814-001 | member.ai.claude.cowork | - | - | AIF-112 |
 | AIPR-20260812-002 | member.ai.claude.cowork | - | - | AIF-111 |
 | AIPR-20260812-001 | member.derald | - | - | AIF-110 |
-| COWORK-20260812-001 | member.ai.claude.cowork | - | - | AIF-109 |
-| ... | | | | 33 older run(s) omitted |
+| ... | | | | 34 older run(s) omitted |
 
 Perishable detail lives in the artifacts these point at. Do not
 restate anything above; regenerate it.
