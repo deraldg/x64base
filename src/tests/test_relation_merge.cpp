@@ -23,6 +23,7 @@
 
 #include "gui/core/relation_parse.hpp"
 #include "xbase/workspace_membership.hpp"
+#include "xbase/relation_wire.hpp"
 
 #include <cstdlib>
 #include <iostream>
@@ -468,6 +469,59 @@ int main() {
                  "a keyless line is not a relation\n";
     std::cout << "4a: `ON p TO c` splits both sides; 4e: the tree nests "
                  "instead of flattening onto the root\n";
+    // ---- T11 (R124): THE NAKED-NAME RULE, WHICH IS THE PART A CONVERSION LOSES
+    //
+    // `A.SID` and `B.SID` are the SAME key: the qualifier says which table the
+    // field was reached through, and the key is about the field. So a relation
+    // declared that way gets NO ` TO ` clause.
+    //
+    // THIS ARM EXISTS BECAUSE THE RULE ALMOST TRAVELLED SEPARATELY FROM THE
+    // FORMATTER. cmd_workspace.cpp had its own same_field_list_ci and built the
+    // line by hand; consolidating onto the shared formatter without carrying the
+    // rule would have started emitting ` TO A.SID TO B.SID`-shaped clauses and
+    // silently changed every WORKSPACE SAVE. Nothing else in the suite compares
+    // qualified names, so nothing else would have gone red.
+    //
+    // Asserted on the LINE, which is what a reader and a file both see.
+    {
+        std::string line;
+        const auto qualified = xbase::relwire::make_relation_record(
+            xbase::workspace::kDefaultHandle, "STUDENTS", "ENROLL",
+            {"A.SID"}, {"B.SID"});
+        if (!require(xbase::relwire::format_relation_posture_line(qualified, line),
+                     "T11: a qualified-key relation produced no posture line")) {
+            return EXIT_FAILURE;
+        }
+        if (!require(line == "RELATION STUDENTS ENROLL ON A.SID",
+                     "T11: qualified names that name ONE key emitted a TO clause "
+                     "-- the naked-name rule did not travel with the formatter")) {
+            return EXIT_FAILURE;
+        }
+
+        // AND THE CONTRAST, or the arm above proves only that TO is never
+        // emitted. Genuinely different fields must still produce the clause.
+        const auto differing = xbase::relwire::make_relation_record(
+            xbase::workspace::kDefaultHandle, "STUDENTS", "ENROLL",
+            {"SID"}, {"STU_ID"});
+        if (!require(xbase::relwire::format_relation_posture_line(differing, line),
+                     "T11: a differing-key relation produced no posture line")) {
+            return EXIT_FAILURE;
+        }
+        if (!require(line == "RELATION STUDENTS ENROLL ON SID TO STU_ID",
+                     "T11: two genuinely different keys did NOT emit a TO clause")) {
+            return EXIT_FAILURE;
+        }
+
+        // A DIFFERENT LENGTH IS A DIFFERENT KEY, never a match, whatever the
+        // names -- the grammar requires the two sides to be the same LENGTH.
+        if (!require(!xbase::relwire::relation_field_lists_match({"SID"}, {"SID", "TERM"}),
+                     "T11: lists of different length were treated as one key")) {
+            return EXIT_FAILURE;
+        }
+    }
+
+    std::cout << "naked-name rule: A.SID/B.SID is ONE key and emits no TO; "
+                 "SID/STU_ID is two and emits one\n";
     std::cout << "posture: writer and reader share one grammar, and the round "
                  "trip carries a relation whose two sides DIFFER\n";
     std::cout << "PASS: dottalkpp relation merge\n";

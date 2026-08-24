@@ -239,6 +239,8 @@
 
 #if __has_include("set_relations.hpp")
   #include "set_relations.hpp"
+#include "xbase/relation_wire.hpp"
+#include "xbase/workspace_membership.hpp"
   #define HAVE_RELATIONS 1
 #else
   #define HAVE_RELATIONS 0
@@ -1596,45 +1598,51 @@ static int schema_close_matching_token(const string& token) {
 
 // --------- RELATIONS IO (optional) ------------------------------------------
 
+// R124, 2026-08-24. ONE FORMATTER, AND THIS FILE STOPPED BEING THE FOURTH.
+//
+// What stood here: a hand-rolled `<parent> <child> ON <csv> [TO <csv>]` builder
+// with its own same_field_list_ci and join_csv, and a caller that prepended the
+// word RELATION. That made FOUR implementations of one grammar -- this one, the
+// GUI's posture writer, the GUI's posture reader, and the GUI's scraper over
+// REL LIST text -- and the round trip between the first two was correct only by
+// inspection.
+//
+// They can share now because R124 put the record somewhere both sides reach:
+// xbase::relwire, which both dottalkpp and dottalk_gui_core already link.
+//
+// BEHAVIOUR IS PRESERVED, INCLUDING THE PART THAT IS EASY TO LOSE. The old
+// same_field_list_ci compared NAKED, UPPER-CASED names, so `ON A.SID TO B.SID`
+// counted as one key and emitted NO ` TO ` clause. A conversion that let the
+// formatter compare the finished strings instead would have started emitting
+// that clause and quietly changed what WORKSPACE SAVE writes. The rule moved
+// WITH the formatter -- relwire::relation_field_lists_match -- and
+// make_relation_record applies it before the strings are built, which is the
+// only place it can be applied correctly.
+//
+// The lines now come back COMPLETE, with the RELATION keyword, because splitting
+// a grammar across a producer and its caller is how the child key got dropped
+// the first time.
 #if HAVE_RELATIONS
-static bool same_field_list_ci(const std::vector<std::string>& a,
-                               const std::vector<std::string>& b) {
-    if (a.size() != b.size()) return false;
-    auto naked = [](std::string s) {
-        auto dot = s.find('.');
-        if (dot != std::string::npos) s = s.substr(dot + 1);
-        return to_upper(trim_copy(std::move(s)));
-    };
-    for (std::size_t i = 0; i < a.size(); ++i) {
-        if (naked(a[i]) != naked(b[i])) return false;
-    }
-    return true;
-}
-
-static std::string join_csv(const std::vector<std::string>& fields) {
-    std::ostringstream oss;
-    for (std::size_t i = 0; i < fields.size(); ++i) {
-        if (i) oss << ",";
-        oss << fields[i];
-    }
-    return oss.str();
-}
-
 static std::vector<string> export_relations_lines() {
     std::vector<string> lines;
     try {
         for (const auto& rs : relations_api::export_relations()) {
+            // The legacy `fields` projection is the fallback for both sides,
+            // which is what the previous code did and is preserved verbatim:
+            // an older relation file carries only that.
             const std::vector<std::string>& parent_fields =
                 !rs.parent_fields.empty() ? rs.parent_fields : rs.fields;
             const std::vector<std::string>& child_fields =
                 !rs.child_fields.empty() ? rs.child_fields : rs.fields;
 
-            std::ostringstream oss;
-            oss << rs.parent << " " << rs.child << " ON " << join_csv(parent_fields);
-            if (!child_fields.empty() && !same_field_list_ci(parent_fields, child_fields)) {
-                oss << " TO " << join_csv(child_fields);
+            const auto record = xbase::relwire::make_relation_record(
+                xbase::workspace::current_handle(),
+                rs.parent, rs.child, parent_fields, child_fields);
+
+            std::string line;
+            if (xbase::relwire::format_relation_posture_line(record, line)) {
+                lines.push_back(line);
             }
-            lines.push_back(oss.str());
         }
     } catch (...) {}
     return lines;
@@ -1818,8 +1826,9 @@ static std::string schema_save_to_string(int version = 2) {
         } catch (...) {}
     }
 
+    // The keyword is part of the line now (R124) -- see export_relations_lines.
     for (const auto& rline : export_relations_lines()) {
-        out << "RELATION " << rline << "\n";
+        out << rline << "\n";
     }
 
     // AIF-074 P1.1: persist unique/primary key declarations (unique_reg Phase 2).

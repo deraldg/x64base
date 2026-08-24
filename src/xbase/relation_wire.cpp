@@ -29,6 +29,7 @@
 #include <cctype>
 #include <sstream>
 #include <string>
+#include <vector>
 
 namespace xbase::relwire {
 namespace {
@@ -50,7 +51,60 @@ std::string trim_ascii(std::string value) {
     return value;
 }
 
+// The field name with any `table.` qualifier stripped, upper-cased. Matches
+// set_relations.cpp's naked_field + up_copy, which is the behaviour being
+// preserved rather than redesigned.
+std::string naked_upper(std::string s) {
+    const auto dot = s.find('.');
+    if (dot != std::string::npos) s = s.substr(dot + 1);
+    s = trim_ascii(std::move(s));
+    for (char& ch : s) ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
+    return s;
+}
+
+std::string join_csv(const std::vector<std::string>& fields) {
+    std::string out;
+    for (std::size_t i = 0; i < fields.size(); ++i) {
+        if (i) out += ",";
+        out += fields[i];
+    }
+    return out;
+}
+
 } // namespace
+
+bool relation_field_lists_match(const std::vector<std::string>& a,
+                                const std::vector<std::string>& b) {
+    // LENGTH FIRST, and a different length is a different key -- the shipped
+    // grammar requires the two sides to be the same LENGTH, not the same names.
+    if (a.size() != b.size()) return false;
+    for (std::size_t i = 0; i < a.size(); ++i) {
+        if (naked_upper(a[i]) != naked_upper(b[i])) return false;
+    }
+    return true;
+}
+
+RelationRecord make_relation_record(std::uint64_t workspace,
+                                    std::string parent,
+                                    std::string child,
+                                    const std::vector<std::string>& parent_fields,
+                                    const std::vector<std::string>& child_fields) {
+    RelationRecord record;
+    record.workspace  = workspace;
+    record.parent     = std::move(parent);
+    record.child      = std::move(child);
+    record.parent_key = join_csv(parent_fields);
+    // MIRRORING IS THE SIGNAL. format_relation_posture_line emits ` TO ` only
+    // when the two keys DIFFER as text, so making them identical here is how
+    // "these name the same key" travels -- and it is why the naked comparison
+    // has to happen on this side rather than inside the formatter, which sees
+    // only the finished strings.
+    record.child_key  = (child_fields.empty() ||
+                         relation_field_lists_match(parent_fields, child_fields))
+                            ? record.parent_key
+                            : join_csv(child_fields);
+    return record;
+}
 
 void split_relation_keys(const std::string& on_clause,
                          std::string& parent_key,

@@ -55,6 +55,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace xbase::relwire {
 
@@ -105,6 +106,33 @@ struct RelationRecord {
     // computed once, from the producer's own state.
     std::optional<std::uint64_t> match_count;
 };
+
+// DO THE TWO FIELD LISTS NAME THE SAME KEY?
+//
+// NAKED AND CASE-INSENSITIVE: `A.SID` and `B.SID` are the SAME field name for
+// this purpose, because the qualifier says which table the field was reached
+// through and the key is about the field. This is the rule that decides whether
+// a posture line gets a ` TO ` clause at all.
+//
+// IT WAS ALREADY IN THE TREE TWICE when this was written -- set_relations.cpp's
+// same_field_lists and cmd_workspace.cpp's same_field_list_ci -- computing the
+// same answer from two spellings, and a third was about to be avoided rather
+// than added. Consolidated here on 2026-08-24 with the CLI's writer.
+bool relation_field_lists_match(const std::vector<std::string>& a,
+                                const std::vector<std::string>& b);
+
+// Build a record from two field lists, applying the rule above.
+//
+// THE FIELD NAMES ARE CARRIED VERBATIM. Only the DECISION uses naked names: a
+// key of `A.SID` is written as `A.SID`, because the posture is a record of what
+// the relation was declared as, not of what it normalizes to. What the rule
+// changes is whether child_key mirrors parent_key (no ` TO ` emitted) or stands
+// on its own.
+RelationRecord make_relation_record(std::uint64_t workspace,
+                                    std::string parent,
+                                    std::string child,
+                                    const std::vector<std::string>& parent_fields,
+                                    const std::vector<std::string>& child_fields);
 
 // Split the clause AFTER " ON " into its parent-side and child-side lists.
 // The exact inverse of the CLI's format_on_fields (set_relations.cpp), which
