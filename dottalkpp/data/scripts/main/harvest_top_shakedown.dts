@@ -1,0 +1,57 @@
+* ============================================================
+* HARVEST TOP SHAKEDOWN
+* ============================================================
+* Purpose:
+*   Flush newly harvested command/reference/regression changes through
+*   a single top-layer proof path.
+*
+* Current coverage:
+*   1. REGRESSION launcher surface
+*   2. SECURITY role/session + assignment surface
+*   3. Holiday/demo command usage surfaces
+*   4. Curated non-destructive runtime smoke
+*   5. x64 widened metrics/matrix boundary proof
+*
+* Rule:
+*   Child regressions must bootstrap their own environment.
+* ============================================================
+
+SET ECHO ON
+
+ECHO ============================================================
+ECHO HARVEST TOP SHAKEDOWN
+ECHO ============================================================
+
+DO ..\x64
+
+ECHO .
+ECHO STEP 1: Launcher inventory
+REGRESSION LIST
+REGRESSION SHOW NONDESTRUCTIVE
+REGRESSION SHOW X64_METRICS
+REGRESSION SHOW HARVEST
+
+ECHO .
+ECHO STEP 2: Role / assignment surface
+SECURITY LOGIN DEVELOPER AS Derald
+SECURITY WHOAMI
+SECURITY ASSIGNMENTS
+SECURITY LOGOUT
+
+ECHO .
+ECHO STEP 3: Holiday/demo usage contracts
+CHRISTMAS USAGE
+HANUKKAH USAGE
+
+ECHO .
+ECHO STEP 4: Curated non-destructive smoke
+REGRESSION RUN NONDESTRUCTIVE
+
+ECHO .
+ECHO STEP 5: x64 widened metrics proof
+REGRESSION RUN X64_METRICS
+
+ECHO .
+ECHO ============================================================
+ECHO HARVEST TOP SHAKEDOWN DONE
+ECHO ============================================================

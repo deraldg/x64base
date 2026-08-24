@@ -1,0 +1,100 @@
+* ============================================================
+* X64 MATRIX / METRICS BOUNDARY CANARY
+* ============================================================
+* Purpose:
+*   Explicitly shake down the widened x64 structural lane instead
+*   of relying only on indirect mutation/workspace canaries.
+*
+* What it proves:
+*   1. X64 CREATE / OPEN / APPEND / REPLACE / REOPEN still works
+*      once record length exceeds the old signed 16-bit barrier.
+*   2. X64 still works once the compatible 16-bit header mirror
+*      would have to saturate at 65535 and the runtime must honor
+*      the wide metrics from the x64 extension.
+*
+* Current CREATE constraint:
+*   - single X64 C field is capped at 4096 in the current parser,
+*     so this canary crosses the large-record boundaries by using
+*     multiple wide character fields.
+*
+* Safety:
+*   - bootstraps its own environment
+*   - disposable tables only
+* ============================================================
+
+SET ECHO ON
+SET DELETED ON
+
+ECHO ============================================================
+ECHO X64 MATRIX / METRICS BOUNDARY CANARY
+ECHO ============================================================
+
+* Self-bootstrap without nested DOTSCRIPT dependency.
+SET PATH DBF DBF/x64
+SET PATH INDEXES INDEXES/x64
+SET PATH LMDB LMDB/x64
+WORKSPACE CLOSE
+
+ERASE x64_metrics_mid_canary CONFIRM
+ERASE x64_metrics_hi_canary CONFIRM
+
+ECHO .
+ECHO --- CASE 1: CROSS OLD SIGNED-16 RECORD BARRIER ---
+ECHO Expected record length: 36865 bytes (1 + 9 * 4096)
+ECHO Expected behavior: create/open/append/reopen remains green
+
+SELECT 0
+CREATE X64 x64_metrics_mid_canary (F01 C(4096), F02 C(4096), F03 C(4096), F04 C(4096), F05 C(4096), F06 C(4096), F07 C(4096), F08 C(4096), F09 C(4096))
+AREA
+FIELDS
+STRUCT
+APPEND
+BOTTOM
+REPLACE F01 WITH "MID_OK"
+REPLACE F09 WITH "TAIL_OK"
+CALC LEN(ALLTRIM(F01))
+CALC LEN(ALLTRIM(F09))
+CLOSE
+
+USE x64_metrics_mid_canary
+AREA
+STRUCT
+COUNT
+CALC LEN(ALLTRIM(F01))
+CALC LEN(ALLTRIM(F09))
+CLOSE
+
+ECHO .
+ECHO --- CASE 2: CROSS 65535 COMPAT MIRROR BARRIER ---
+ECHO Expected record length: 69633 bytes (1 + 17 * 4096)
+ECHO Expected behavior: header mirror may saturate, but wide x64 metrics
+ECHO must still allow create/open/append/reopen and stable mutation
+
+SELECT 0
+CREATE X64 x64_metrics_hi_canary (F01 C(4096), F02 C(4096), F03 C(4096), F04 C(4096), F05 C(4096), F06 C(4096), F07 C(4096), F08 C(4096), F09 C(4096), F10 C(4096), F11 C(4096), F12 C(4096), F13 C(4096), F14 C(4096), F15 C(4096), F16 C(4096), F17 C(4096))
+AREA
+FIELDS
+STRUCT
+APPEND
+BOTTOM
+REPLACE F01 WITH "HIGH_OK"
+REPLACE F17 WITH "TAIL_HIGH_OK"
+CALC LEN(ALLTRIM(F01))
+CALC LEN(ALLTRIM(F17))
+CLOSE
+
+USE x64_metrics_hi_canary
+AREA
+STRUCT
+COUNT
+CALC LEN(ALLTRIM(F01))
+CALC LEN(ALLTRIM(F17))
+CLOSE
+
+ERASE x64_metrics_mid_canary CONFIRM
+ERASE x64_metrics_hi_canary CONFIRM
+
+ECHO .
+ECHO ============================================================
+ECHO X64 MATRIX / METRICS BOUNDARY CANARY DONE
+ECHO ============================================================
