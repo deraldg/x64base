@@ -6,9 +6,9 @@
     Date   : 2026-08-25
     Auth   : the owner's "promote the harvest" -- the gated act named in the
              input contract's authority boundary.
-    Status : **DONE and verified**, and the steward's authoritative `$py12` run
-             has since confirmed it -- `validation_fail_rows=0`. See section 5a,
-             which also corrects section 5.
+    Status : **DONE and verified.** The steward's authoritative `$py12` run
+             confirms it: `validation_fail_rows=0`, `files=14/14`. Section 5a
+             corrects section 5 and a mischaracterisation of the standard.
 
 ---
 
@@ -119,7 +119,7 @@ An earlier run's report (`mdo_224`) carries the `PYTHON_312` FAIL and no REVIEW
 rows, which is what naming the workspaces looks like.
 
 
-## 5a. CORRECTED, minutes later. The steward re-ran it, and the one FAIL was the check itself.
+## 5a. CORRECTED. The authoritative run is clean, and PYTHON_312 was doing its job.
 
     & $py12 tools\manualgen\manualgen.py validate    MANRUN-20260825T122556Z-526DCAD2
       selected_harvest_workspace=...\harvested   files=14/14
@@ -131,47 +131,57 @@ rows, which is what naming the workspaces looks like.
 **Zero failures. The promotion validates.** The two REVIEW rows are the
 legacy_default selection notes described in section 5 and are unchanged.
 
-### The PYTHON_312 check asserts a floor the code does not demonstrate needing
+### PYTHON_312 is a STANDARD, not a capability floor -- and it worked
 
-Section 5 treated my 3.10 run as suspect on the strength of that check. **The
-owner's ruling is that 3.10 and 3.8 are proven**, and the measurement agrees:
+Much of this project's Python runs on any recent interpreter. **3.12 is the
+current standard.** `PYTHON_312` enforces the standard, and on 2026-08-25 it did
+exactly what it exists to do: it told a run that it was off-standard, on the
+first line of its own report, before anything downstream was trusted.
+
+The measurement below is real and says nothing against the check:
 
     all tools/manualgen *.py files                          51
     python -m compileall under 3.10                         exit 0, zero errors
-    match statements / except* / PEP 695 / tomllib /
+    match / except* / PEP 695 / tomllib /
       itertools.batched / datetime.UTC anywhere             none
+    validate on 3.10   fail 1  review 2  boundary 0  files 14/14
+    validate on 3.12   fail 0  review 2  boundary 0  files 14/14
 
-    validate on 3.10   fail 1  review 2  boundary 0   files 14/14
-    validate on 3.12   fail 0  review 2  boundary 0   files 14/14
-    -------------------------------------------------------------
-    the ONLY differing row is PYTHON_312 -- the row that tests the interpreter
+**That is TOLERANCE, not SANCTION, and tolerance is not the question the check
+asks.** A standard exists so runs are comparable across machines and agents and
+so per-tool floors never have to be re-established one file at a time. "It
+happened to work here" is precisely the argument a standard is there to stop.
 
-**Twenty-four of twenty-five checks produced identical results on both
-interpreters. The gate's own output is the evidence that its requirement is
-overstated.** `validation.py:29` says "Manualgen requires Python 3.12 or newer",
-which is a policy statement wearing a capability check's clothes.
+### The error being corrected is mine, and it is the day's second instance
 
-**This is AIF-118's family with the polarity reversed.** That lane collects
-checks that CANNOT FAIL; this is a check that fails when nothing is wrong -- the
-same defect underneath, which is a gate not measuring what it claims to.
-Instance 4 of that lane is the closest cousin: `tools/ci/source_policy.py`
-asserted a licence the project had replaced, and CI failed on the CORRECT
-repository state. **The gate WAS the drift.**
+An earlier draft of this section called `PYTHON_312` "a policy statement wearing
+a capability check's clothes" and filed it as AIF-118's family with the polarity
+reversed -- a gate failing when nothing is wrong. **That was wrong.** A standard
+is *supposed* to be stated as a requirement; that is what a standard is. The
+check is not mismeasuring, and the AIF-118 comparison does not hold: those were
+guards that could not detect a real defect, and this one detected a real
+deviation and reported it accurately.
 
-### What is NOT claimed
+**Twice today a deliberate decision was read as a defect** -- first
+`media_section_v1`, where four claims came from measuring a supporting workspace
+without looking for which publication had been chosen as the manual; now this.
+Both times the shape was the same: a measurement was correct, the inference from
+it to "something is broken" was not, and the missing step was asking whether
+someone had already decided this on purpose.
 
-**Compiling is not running.** `compileall` proves syntax across all 51 files; it
-proves nothing about behaviour. The RUNTIME evidence on 3.10 is one subcommand
--- `validate` -- returning results identical to 3.12 on every row but one.
-`inventory`, `build`, `assemble` and the rest are **unexercised on 3.10 by this
-pass**, and 3.8 was not available to test here at all; that floor rests on the
-owner's evidence, not on anything measured in this document.
+The honest reading of the 3.10 run: **it produced correct results and it was
+still off-standard, and both of those are true at once.** Section 5's caution
+was right for the wrong reason -- the run should be repeated on the standard
+interpreter not because 3.10 might have broken something, but because a
+standard that bends for a convenient result is not one.
 
-**Not proposed as a change.** `tools/manualgen/` is not this lane's code, and a
-version floor is a maintainer's policy call even when the code does not enforce
-it. Recorded so the next agent who sees `PYTHON_312 FAIL` knows to check whether
-anything actually broke before treating it as a blocker -- which is exactly the
-mistake this document made an hour ago.
+### What the measurement IS good for
+
+Recorded so nobody re-derives it: manualgen does not currently *depend* on
+3.12-only constructs, so the standard can move without a code migration, and a
+`PYTHON_312 FAIL` in a transcript means "run it again properly", not "the tool
+is broken on this machine". **Compiling is not running** -- 51 files parse on
+3.10, one subcommand was exercised there, and 3.8 was not tested at all.
 
 ---
 
