@@ -1,0 +1,23 @@
+{
+  "mdo": "MDO-251",
+  "status": "X64BASE_MAN_CATALOG_BASELINE_PROMOTION_GREEN",
+  "created_utc": "2026-05-27T14:47:38Z",
+  "accepted_catalog_dir": "D:\\code\\ccode\\docs\\manuals\\developer\\manualgen\\accepted_catalogs\\man_catalog_v1",
+  "source_execution_dbf_dir": "D:\\code\\ccode\\docs\\manuals\\developer\\manualgen\\generated\\x64base_man_catalog_execution_v1\\dbf",
+  "promoted_tables": [
+    "MANRUN",
+    "MANSECTION",
+    "MANMEDIA",
+    "MANANCHOR",
+    "MANHASH",
+    "MANREVIEW",
+    "MANPUB",
+    "MANAPPX"
+  ],
+  "promoted_dbf_pass_count": 8,
+  "promoted_dbf_fail_count": 0,
+  "backup_created": 0,
+  "backup_dir": "",
+  "protected_system_mutations": 0,
+  "publication_replacement": 0
+}
