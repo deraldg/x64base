@@ -54,6 +54,18 @@ def read_dbf(path, want=None):
         head = f.read(32)
         if len(head) < 32:
             raise ValueError("short header: %s" % path)
+        # REFUSE what we cannot read. Byte 0 is the format version: 0x03 is
+        # dBase III, which this walker implements. 0x64 is the x64base native
+        # format (long field names, different descriptor shape) -- the manualgen
+        # MAN* catalogs are 0x64. Parsing one as 0x03 does NOT fail: the header
+        # fields (row count, generation date) still read correctly while every
+        # FIELD VALUE comes back sliced at the wrong offset, which is a confident
+        # wrong answer. Measured 2026-08-25 against MANSECTION.dbf.
+        if head[0] != 0x03:
+            raise ValueError(
+                "%s is DBF format 0x%02x, not 0x03 -- this reader implements "
+                "dBase III only and would silently misread every field value"
+                % (pathlib.Path(path).name, head[0]))
         year, month, day = head[1], head[2], head[3]
         nrec = struct.unpack("<I", head[4:8])[0]
         hdrlen = struct.unpack("<H", head[8:10])[0]

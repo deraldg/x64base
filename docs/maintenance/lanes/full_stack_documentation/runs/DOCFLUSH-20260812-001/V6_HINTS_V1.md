@@ -423,10 +423,13 @@ None of them need the engine, a build, or a network. All run read-only.
 
 ### 8i. I built the second spelling. Read this before adding a tool.
 
-Sections 8 through 8h were first written around a NEW
-`tools/coordination/docpush_preflight.py`. **One already existed** --
+Sections 8 through 8h were first written around a NEW second copy of
+`docpush_preflight.py`, under `tools/coordination/`. **One already existed** --
 `tools/fullstack_docs/docpush_preflight.py`, tracked since 2026-08-05, owner
-member.derald, lane AIF-088. Same name. Same stated purpose. I committed the
+member.derald, lane AIF-088. Same filename. Same stated purpose. The duplicate
+was removed in the same commit that folded its checks in, so the coordination
+path deliberately no longer exists and is named here as history, not as a
+citation. I committed the
 duplicate in `48ba947e6` on the same day I fixed an R5 defect in
 `helpdata_export_dbf.cpp` and wrote 8e recommending a prior-art check -- which I
 then never ran on my own tool's name.
