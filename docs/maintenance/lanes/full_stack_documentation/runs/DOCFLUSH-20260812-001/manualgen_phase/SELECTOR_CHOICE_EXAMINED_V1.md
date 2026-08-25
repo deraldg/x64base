@@ -147,6 +147,61 @@ objection stands only in this reduced form: (a) still requires FABRICATING an
 input artifact -- a topics CSV that excludes the twenty -- and that artifact has
 no other purpose and no provenance of its own.
 
+### 1a-iii. CORRECTION to 1a-ii, same day: the 47 was measured against one surface
+
+Section 1a-ii reported "47 SYSFUNC names NOT linked from
+`functions_and_expression_helpers.md`" and called it a function DOCUMENTATION
+gap. **The count is right and the word was wrong.** The owner ran the engine's
+own listings, and functions have four operator-facing surfaces the manual
+section is not:
+
+    HELP FUNCTIONS          categorised list, 73 names
+    HELP FUNCTION <name>    per-function help
+    HELP <category>         NUMERIC, DATE, STRING, SEARCH, LOGICAL,
+                            CONSTRUCTION, CONVERSION, MISC
+    CMDHELPCHK              Function Inventory -- name, category, MIN, MAX,
+                            authority, status, source file
+
+So the 47 is a **manual-linkage** gap, not an undocumented surface. Recorded
+correctly rather than left overstated.
+
+### 1a-iv. And the 73-vs-75 gap is ALIASES, not omissions
+
+`HELP FUNCTIONS` totals 21+22+17+4+3+3+3 = **73**; SYSFUNC holds **75**. The two
+extra rows are `STRCAT` and `TRIM`, and the first reading here was that an
+operator-facing listing was silently dropping two implemented functions --
+the AIF-118 shape, and a tidy one.
+
+**The source refutes it:**
+
+    FunctionDoc{ "RTRIM",  { "TRIM" },   FunctionCategory::String, 1, 1, ... }
+    FunctionDoc{ "CONCAT", { "STRCAT" }, FunctionCategory::Construction, 1, 32, ... }
+
+The second field is the ALIAS list. **`TRIM` is an alias of `RTRIM`; `STRCAT` is
+an alias of `CONCAT`** -- and the catalog says so in its own note, "STRCAT is
+treated as an alias of CONCAT". `HELP FUNCTIONS` prints canonical names and
+suppresses aliases, **which is correct.** There is no defect.
+
+SYSFUNC marks them, and not by the lowercase category first suspected:
+
+    CONCAT   SRC_AUTH = function_catalog     canonical
+    RTRIM    SRC_AUTH = function_catalog     canonical
+    STRCAT   SRC_AUTH = builtin_registry     ALIAS
+    TRIM     SRC_AUTH = builtin_registry     ALIAS
+
+`STRCAT` carries `MAX_ARGS 32` like `CONCAT`; `TRIM` carries `1,1` like `RTRIM`.
+
+**This is the SAME NOUN PROBLEM as 1a-i, one authority over.** "SYSFUNC has 75
+functions" is 73 functions plus 2 alias rows, and the 47 in 1a-ii inherits it.
+`SRC_AUTH` is the discriminator and nothing in this run's earlier counts used it.
+
+**One genuine loose end, small:** `CMDHELPCHK`'s Function Inventory prints
+`string` in lower case for exactly those two rows while every other String
+function prints `String`, and `META_SYSFUNC` stores `String` for all of them.
+Two views of one fact disagreeing on case. Noted, not chased.
+
+---
+
 ## 2. A risk both options share: the thin topics may FAIL the run
 
     if not selected:
