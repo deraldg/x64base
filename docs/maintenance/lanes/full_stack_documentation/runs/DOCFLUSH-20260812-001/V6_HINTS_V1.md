@@ -363,6 +363,31 @@ Section 7 recorded that twice in v5 a "finding" was already on record with the
 same analysis and the same prescription. This is that check, automated. Run on
 "em-dash" it returns five hits immediately -- including the two that were missed.
 
+### 8e2. A TEST IN ANOTHER LANGUAGE IS A PROXY TOO
+
+2026-08-25. The owner ruled a 256-character preview column. I implemented it,
+then verified the boundary logic by porting it to Python and running six cases.
+All six passed. The change was still broken: a dBase III field-length
+descriptor is ONE BYTE, `256` wrapped to `0`, and the build wrote a ZERO-WIDTH
+column that reduced all 500 summaries to nothing.
+
+**Python integers do not wrap. My test could not have found it, and I presented
+it as verification anyway.** MSVC did find it -- C4305 and C4309, at compile
+time, pointing at the exact argument -- and the OWNER read the warnings while I
+was busy trusting my test.
+
+Two rules out of it:
+
+- **Read the compiler's warnings before reporting a change as verified.** They
+  are a second reviewer that already ran.
+- **A test written in a different language than the code tests a different
+  program.** Fine for algorithm shape; useless for overflow, width, signedness
+  or anything the type system decides. Know which one you are checking.
+
+This is section 8d's family again -- a proxy that cannot answer the question put
+to it -- and it is the first one this steward COMMITTED rather than merely
+wrote a warning about. Three withdrawn Gate 4 assertions, then this.
+
 ### 8f. Before writing what a defect COSTS, read a row
 
 AIF-126 was measured correctly and then described wrongly. The finding said nine
