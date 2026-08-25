@@ -90,6 +90,44 @@ def cited(doc, rev=None):
     return out
 
 
+def suppressed_lines(doc, rev=None):
+    """Marked lines, and the paths each one hides. For REPORTING only.
+
+    THE MARKER SUPPRESSES ANY LINE CONTAINING IT -- INCLUDING A LINE THAT ONLY
+    NAMES IT. Measured 2026-08-25: the sentence in a ruling that said idcite
+    mirrors `cite-check:ignore` disarmed its own line, and the untracked path
+    cited there went unreported for a commit. A real widow, hidden by the
+    marker's own documentation.
+
+    THE SEMANTICS ARE DELIBERATELY NOT CHANGED. Two forms are in live use --
+    `<!-- cite-check:ignore -->` and a bare parenthesised `(cite-check:ignore)`
+    inside fenced code blocks where an HTML comment would render literally --
+    so requiring one form would break real suppressions. And "greppable, not
+    magic" is a stated design property of this marker (AIF120_CITATION_GATE).
+
+    So this REPORTS instead. A marker that hides nothing needing hiding is
+    almost always an incidental mention, and that is the case worth seeing.
+    """
+    if rev:
+        text = git(['show', '%s:%s' % (rev, doc)])
+    else:
+        try:
+            text = open(doc, encoding='utf-8', errors='replace').read()
+        except OSError:
+            return []
+    out = []
+    for n, line in enumerate(text.replace('\r\n', '\n').split('\n'), 1):
+        if SUPPRESS not in line:
+            continue
+        hidden = set()
+        for m in PATH_RE.finditer(line):
+            p = m.group(1).rstrip('.,;:)`*')
+            if p.endswith(EXTS):
+                hidden.add(p)
+        out.append((n, sorted(hidden)))
+    return out
+
+
 def main(argv):
     rng = argv[0] if argv else None
     docs = staged_docs(rng)
@@ -127,8 +165,25 @@ def main(argv):
     widows = [p for p in rest if p not in ignored and (rng or os.path.exists(p))]
     missing = [p for p in rest if p not in ignored and not rng and not os.path.exists(p)]
 
+    # ADVISORY: markers that are not doing any work. Cannot move the exit code.
+    inert = []
+    for d in docs:
+        for line_no, hidden in suppressed_lines(d, rev):
+            if not hidden or all(h in tracked for h in hidden):
+                inert.append((d, line_no, hidden))
+
     print("cited-paths: %d document(s), %d path(s) cited, %d tracked"
           % (len(docs), len(paths), len(tracked)))
+    if inert:
+        print("  advisory: %d suppression(s) hiding nothing that needed hiding "
+              "-- an incidental mention of the marker suppresses its own line:"
+              % len(inert))
+        for d, line_no, hidden in inert[:10]:
+            why = ("no citable path" if not hidden
+                   else "%d path(s), all tracked" % len(hidden))
+            print("    %s:%d  (%s)" % (d, line_no, why))
+        if len(inert) > 10:
+            print("    ... and %d more" % (len(inert) - 10))
     if not (widows or missing or ignored):
         print("cited-paths: OK -- every cited path is tracked")
         return 0
