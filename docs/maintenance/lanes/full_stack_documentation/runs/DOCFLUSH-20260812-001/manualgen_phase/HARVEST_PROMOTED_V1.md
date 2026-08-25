@@ -6,8 +6,9 @@
     Date   : 2026-08-25
     Auth   : the owner's "promote the harvest" -- the gated act named in the
              input contract's authority boundary.
-    Status : **DONE and verified.** One check must be re-run by the steward
-             under `$py12` before this is called authoritative (section 5).
+    Status : **DONE and verified**, and the steward's authoritative `$py12` run
+             has since confirmed it -- `validation_fail_rows=0`. See section 5a,
+             which also corrects section 5.
 
 ---
 
@@ -116,6 +117,63 @@ They say an evidence-bearing run must NAME its workspaces rather than inherit
 the default. They are a property of how I invoked it, not of what was promoted.
 An earlier run's report (`mdo_224`) carries the `PYTHON_312` FAIL and no REVIEW
 rows, which is what naming the workspaces looks like.
+
+
+## 5a. CORRECTED, minutes later. The steward re-ran it, and the one FAIL was the check itself.
+
+    & $py12 tools\manualgen\manualgen.py validate    MANRUN-20260825T122556Z-526DCAD2
+      selected_harvest_workspace=...\harvested   files=14/14
+      validation_fail_rows=0   validation_review_rows=2   boundary_fail_rows=0
+
+    & $py12 tools\manualgen\manualgen.py inventory   MANRUN-20260825T122558Z-3DC7C7B9
+      files=14/14   sections=25  media=19  appendices=13  manifests=5
+
+**Zero failures. The promotion validates.** The two REVIEW rows are the
+legacy_default selection notes described in section 5 and are unchanged.
+
+### The PYTHON_312 check asserts a floor the code does not demonstrate needing
+
+Section 5 treated my 3.10 run as suspect on the strength of that check. **The
+owner's ruling is that 3.10 and 3.8 are proven**, and the measurement agrees:
+
+    all tools/manualgen *.py files                          51
+    python -m compileall under 3.10                         exit 0, zero errors
+    match statements / except* / PEP 695 / tomllib /
+      itertools.batched / datetime.UTC anywhere             none
+
+    validate on 3.10   fail 1  review 2  boundary 0   files 14/14
+    validate on 3.12   fail 0  review 2  boundary 0   files 14/14
+    -------------------------------------------------------------
+    the ONLY differing row is PYTHON_312 -- the row that tests the interpreter
+
+**Twenty-four of twenty-five checks produced identical results on both
+interpreters. The gate's own output is the evidence that its requirement is
+overstated.** `validation.py:29` says "Manualgen requires Python 3.12 or newer",
+which is a policy statement wearing a capability check's clothes.
+
+**This is AIF-118's family with the polarity reversed.** That lane collects
+checks that CANNOT FAIL; this is a check that fails when nothing is wrong -- the
+same defect underneath, which is a gate not measuring what it claims to.
+Instance 4 of that lane is the closest cousin: `tools/ci/source_policy.py`
+asserted a licence the project had replaced, and CI failed on the CORRECT
+repository state. **The gate WAS the drift.**
+
+### What is NOT claimed
+
+**Compiling is not running.** `compileall` proves syntax across all 51 files; it
+proves nothing about behaviour. The RUNTIME evidence on 3.10 is one subcommand
+-- `validate` -- returning results identical to 3.12 on every row but one.
+`inventory`, `build`, `assemble` and the rest are **unexercised on 3.10 by this
+pass**, and 3.8 was not available to test here at all; that floor rests on the
+owner's evidence, not on anything measured in this document.
+
+**Not proposed as a change.** `tools/manualgen/` is not this lane's code, and a
+version floor is a maintainer's policy call even when the code does not enforce
+it. Recorded so the next agent who sees `PYTHON_312 FAIL` knows to check whether
+anything actually broke before treating it as a blocker -- which is exactly the
+mistake this document made an hour ago.
+
+---
 
 ## 6. What promotion did NOT do
 
