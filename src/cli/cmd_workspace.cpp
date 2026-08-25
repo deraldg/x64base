@@ -86,9 +86,26 @@
 //   WORKSPACE CLOSE
 //   WORKSPACE CLOSE <n> [m ...]
 //   WORKSPACE CLOSE <name|file|stem|alias>[,...]
-//   WORKSPACE SAVE <file>
+//   WORKSPACE SAVE <file>              -- the CANONICAL SCHEMA (DTSHEMA 2)
+//   WORKSPACE SAVE <file> V3           -- the SESSION (DTSHEMA 3)
 //   WORKSPACE SAVE <name> MEMO [V3]
 //   WORKSPACE SAVE <name> MEMO MINIDB
+//
+//   V2 IS THE CANONICAL WORKSPACE SCHEMA; V3 IS THE SESSION (AIF-124,
+//   owner 2026-08-24). They are two different artifacts and the file says
+//   which it is on line one:
+//     DTSHEMA 2 -- AREA, RELATION, KEY. The DEFINITION. Relative paths, no
+//                  cursor, portable, and the one to commit.
+//     DTSHEMA 3 -- adds FLAVOR / DBFROOT / IDXROOT / LMDBROOT (where it
+//                  resolved from) and CURSOR / CURRENT (where it stood).
+//                  Machine-specific BY NATURE: a session happened on a
+//                  machine, so where it resolved from is part of it.
+//   V3 IS ACCEPTED FOR A PLAIN FILE TOO, not only the MEMO form -- the
+//   parser strips the trailing keyword either way. The help said otherwise
+//   by omission until 2026-08-24.
+//   A posture is NOT byte-stable and is not meant to be (owner ruling,
+//   2026-08-24): WSID carries a per-save stamp because a posture records an
+//   INSTANCE. Byte-identity belongs to MINIDB, which carries table bytes.
 //   WORKSPACE LOAD <file>
 //   WORKSPACE LOAD <name> MEMO
 //   WORKSPACE LOAD <name> MEMO RAM

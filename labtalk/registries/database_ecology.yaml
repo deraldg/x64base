@@ -1,0 +1,298 @@
+# Curatable inventory of physical database-bearing surfaces in the
+# DotTalk++ / LabTalk development ecology. Counts are measured snapshots;
+# re-scan before using them as current truth.
+
+database_ecology:
+  schema: labtalk-database-ecology-v1
+  status: measured_candidate
+  lane: AIF-105
+  owner: member.derald
+  steward: member.ai.codex.local
+  measured_utc: 2026-08-10T16:40:02Z
+  report: docs/maintenance/DOTTALKPP_LABTALK_DATABASE_ECOLOGY_INVENTORY_V1.md
+  tooling:
+    scanner: tools/database_ecology/database_ecology.py
+    tests: tools/database_ecology/tests/test_database_ecology.py
+    sidecar_intake_candidate: docs/maintenance/database_ecology/SIDECAR_INTAKE_CANDIDATE_DBECO-20260810-001.csv
+    sidecar_batch_id: DBECO-20260810-001
+    sidecar_candidate_files: 239
+    sidecar_files_moved: 0
+    sidecar_contract: docs/maintenance/SIDECAR_RETENTION_AND_AGING_CONTRACT_V1.md
+  roots:
+    - path: D:/code/docs
+      files_scanned: 8
+      physical_databases: 0
+      role: historical_source_documents
+    - path: D:/code/ccode
+      files_scanned: 55354
+      role: development_authority_and_local_runtime
+
+  physical_census:
+    primary_stores:
+      dbf_tables: 853
+      dbf_content_distinct_sha256: 480
+      lmdb_environments: 388
+      sqlite_files_by_signature: 40
+      sqlite_ecology_files: 5
+      sqlite_incidental_browser_profile_files: 35
+    companions:
+      lmdb_lock_files: 388
+      cdx_containers: 273
+      cnx_containers: 33
+      dbt_memo_files: 146
+      fpt_memo_files: 10
+    definitions_and_rebuild_inputs:
+      dtschema_files: 51
+      schema_json_files: 107
+      ddl_json_files: 86
+      index_sidecar_json_files: 86
+      load_receipt_json_files: 86
+      sql_files: 9
+    git_visibility:
+      dbf_tracked: 62
+      dbf_untracked: 791
+      sqlite_tracked: 0
+      sqlite_untracked: 40
+      lmdb_environments_tracked: 0
+      lmdb_environments_untracked: 388
+
+  sqlite_databases:
+    - id: sqlite.bible_kjv_runtime
+      path: dottalkpp/data/biblebase/bible_kjv_x64.sqlite
+      role: canonical_runtime_carrier
+      tables: 13
+      views: 0
+      bytes: 299868160
+      tracked: false
+      ignored: true
+      replica:
+        path: dottalkpp/docs/Bible/bible_kjv_x64_rdbms/bible_kjv_x64_rdbms/bible_kjv_x64.sqlite
+        byte_identical: true
+        sha256: 24b11b6f1f0ad08a10bda987387b16c96bcccb21952b09971a857447133e31a5
+      curation_state: package_has_manifest_schema_checksums_and_launcher
+    - id: sqlite.cascade_precision_erp
+      path: dottalkpp/data/cascade_precision_erp/cascade_precision_mfg_erp.sqlite
+      role: canonical_erp_carrier
+      tables: 34
+      views: 9
+      bytes: 241664
+      tracked: false
+      ignored: true
+      curation_state: local_package_candidate_gate0_not_clean_checkout_durable
+    - id: sqlite.conversion_gap_probe
+      path: dottalkpp/data/tmp/conv_gap_probe.sqlite
+      role: generated_test_fixture
+      tables: 1
+      views: 0
+      bytes: 8192
+      tracked: false
+      ignored: true
+      generator: tests/conversion/03_04_sqlite_capability_gap_v2.dts
+      curation_state: disposable_but_governed
+    - id: sqlite.pycrud_demo
+      path: pycrud/data/demo.sqlite
+      role: local_teaching_application_default
+      tables: 4
+      views: 0
+      bytes: 36864
+      tracked: false
+      ignored: true
+      generator: pycrud/sql/schema_sqlite.sql
+      curation_state: generated_from_documented_schema
+    - id: sqlite.edge_manual_render_profile
+      path_glob: .tmp/edge-manual-render/**
+      role: incidental_browser_profile_state
+      files: 35
+      tracked: false
+      ignored: true
+      generator: tools/manualgen/render_manual_formats.ps1
+      curation_state: sensitive_disposable_not_ecology_data
+
+  dbf_families:
+    - id: dbf.cascade_mirror
+      canonical_root: dottalkpp/data/dbf/cascade_erp
+      tables_and_view_snapshots: 43
+      source_tables: 34
+      materialized_views: 9
+      role: generated_x64base_teaching_mirror
+      tracked: false
+    - id: dbf.mcc_x64
+      canonical_root: dottalkpp/data/dbf/x64
+      tables: 13
+      role: x64_education_dataset
+    - id: dbf.mcc_x32
+      canonical_root: dottalkpp/data/dbf/x32
+      tables: 13
+      role: classic_xbase_education_dataset
+    - id: dbf.mcc_vfp
+      canonical_root: dottalkpp/data/dbf/vfp
+      tables: 12
+      role: visual_foxpro_education_dataset
+    - id: dbf.mcc_original
+      canonical_root: dottalkpp/data/dbf/og
+      tables: 12
+      role: original_reference_dataset
+    - id: dbf.help
+      canonical_root: dottalkpp/data/help
+      live_tables: 10
+      v32_reference_tables: 6
+      role: help_and_localization_catalog
+    - id: dbf.metadata_core
+      canonical_root: dottalkpp/data/metadata
+      tables: 8
+      role: runtime_command_function_and_field_metadata
+    - id: dbf.metadata_identity
+      canonical_root: dottalkpp/data/metadata/identity
+      tables: 9
+      role: identity_rbac_and_authorization
+    - id: dbf.metadata_bbs
+      canonical_root: dottalkpp/data/metadata/bbs
+      tables: 3
+      role: ai_bbs_board_thread_and_post_store
+    - id: dbf.metadata_portal
+      canonical_root: dottalkpp/data/metadata/portal
+      tables: 5
+      role: ai_portal_lane_run_proof_and_task_projection
+    - id: dbf.datadict
+      canonical_root: dottalkpp/data/datadict
+      tables: 17
+      role: data_dictionary_and_evidence_catalog
+    - id: dbf.source_comments
+      canonical_root: dottalkpp/data/comments
+      tables: 8
+      role: source_comment_and_usage_catalog
+    - id: dbf.manuals
+      canonical_root: dottalkpp/data/manuals
+      tables: 8
+      role: manual_assembly_catalog
+    - id: dbf.messaging
+      canonical_root: dottalkpp/data/messaging
+      tables: 2
+      role: message_catalog
+    - id: dbf.locale
+      canonical_root: dottalkpp/data/locale
+      tables: 2
+      role: locale_and_fallback_catalog
+    - id: dbf.pinocchio
+      canonical_root: dottalkpp/data/dbf/pinocchio
+      tables: 2
+      role: performance_teaching_fixture
+    - id: dbf.memo_and_format_fixtures
+      roots:
+        - dottalkpp/data/dbf/memo
+        - dottalkpp/data/dbf/x64/memo_sample
+        - dottalkpp/data/dbf/ladder
+      role: memo_format_and_dialect_interoperability_fixtures
+    - id: dbf.sandbox_and_probe_outputs
+      roots:
+        - dottalkpp/data/dbf/sandbox
+        - dottalkpp/data/dbf/dev
+        - dottalkpp/data/ram
+      role: generated_tests_and_local_runtime_residue
+
+  lmdb_inventory:
+    total_environments: 388
+    runtime_data_tree: 139
+    docs_evidence_and_backups: 241
+    build_output_copies: 8
+    runtime_groups:
+      comments: 8
+      datadict_active: 18
+      datadict_promotion_backups: 22
+      help: 9
+      locale: 2
+      manuals: 8
+      memo: 3
+      messaging_including_root_duplicates: 4
+      metadata: 12
+      pinocchio: 2
+      x64_education: 13
+      portal_tracking: 4
+      sandbox: 27
+      standalone_probe_or_residue: 7
+    curation_state: generated_index_environments_not_primary_table_authority
+
+  schema_only_engines:
+    - engine: Microsoft_SQL_Server
+      path: pycrud/sql/schema_mssql.sql
+      physical_database_found: false
+    - engine: MySQL
+      path: pycrud/sql/schema_mysql.sql
+      physical_database_found: false
+    - engine: SQLite
+      path: pycrud/sql/schema_sqlite.sql
+      physical_database_found: true
+
+  orphan_review_queue:
+    - id: orphan.cascade_root_duplicate_mirror
+      path_glob: dottalkpp/data/dbf/CASCADE_*
+      artifact_files: 215
+      classification: duplicate_generated_output
+      canonical_replacement: dottalkpp/data/dbf/cascade_erp/CASCADE_*
+      evidence: current mirror runner targets only the cascade_erp subdirectory; 43 DBFs and three static sidecar classes are byte-identical, and load receipts differ only by run timestamp
+      disposition: verify_consumers_then_age_in_ccode_sidecar
+    - id: orphan.lmdb_datadict_mananchor
+      path: dottalkpp/data/lmdb/datadict/MANANCHOR.cdx.d
+      classification: misplaced_index_environment
+      canonical_replacement: dottalkpp/data/lmdb/manuals/MANANCHOR.cdx.d
+      disposition: verify_consumer_then_age_in_ccode_sidecar
+    - id: orphan.m372e_art_probe
+      paths:
+        - dottalkpp/data/indexes/M372E_ART.cdx
+        - dottalkpp/data/indexes/M372E_ART.cdx.meta
+        - dottalkpp/data/lmdb/M372E_ART.cdx.d
+      classification: completed_probe_without_backing_dbf
+      disposition: retain_if_bound_to_accepted_proof_else_age_in_ccode_sidecar
+    - id: orphan.autodbf_probe_lmdb
+      paths:
+        - dottalkpp/data/lmdb/adbf_cg_ok.cdx.d
+        - dottalkpp/data/lmdb/adbf_stillok.cdx.d
+      classification: test_cleanup_gap
+      evidence: quarantine tests create and erase the DBFs but the LMDB environments remain
+      disposition: repair_test_cleanup_then_age_existing_environments_in_ccode_sidecar
+    - id: orphan.zz_probe_indexes
+      paths:
+        - dottalkpp/data/indexes/x64/zz_probe_x64.cdx
+        - dottalkpp/data/indexes/x64/zz_probe_x64.cdx.meta
+        - dottalkpp/data/indexes/vfp/zz_probe_vfp.cnx
+        - dottalkpp/data/indexes/x32/zz_probe_x32.cnx
+        - dottalkpp/data/indexes/x32/zz_enroll_probe_x32.cnx
+      classification: named_probe_residue_without_backing_dbf
+      disposition: verify_no_active_regression_dependency_then_age_in_ccode_sidecar
+    - id: orphan.generic_index_outputs
+      paths:
+        - dottalkpp/data/docs/messaging/candidates/phase14_inactive_candidate_cdx_execution/indexes/table.cdx
+        - dottalkpp/data/indexes/table.cdx
+        - dottalkpp/data/indexes/table.cnx
+        - dottalkpp/data/indexes/TINY.cdx
+        - dottalkpp/data/indexes/metadata/SOURCE_COMMENT/table.cdx
+        - dottalkpp/data/indexes/sandbox/table.cdx
+        - dottalkpp/data/indexes/vfp/table.cnx
+        - dottalkpp/data/indexes/x32/table.cnx
+        - dottalkpp/data/indexes/x64/table.cdx
+      classification: parser_or_probe_output_without_named_table_authority
+      disposition: reconcile_generating_tests_then_age_in_ccode_sidecar
+    - id: generated.students_cnx64_smoke_decoy
+      path: dottalkpp/data/tmp/students_cnx64_smoke.cnx
+      classification: documented_disposable_test_decoy
+      orphan: false
+      disposition: delete_during_test_cleanup_or_tmp_reclamation
+    - id: quarantine.students_bad
+      path: dottalkpp/data/dbf/x64/STUDENTS.dbf.bad
+      classification: intentionally_preserved_defect_evidence
+      orphan: false
+      disposition: keep_until_owning_repair_lane_closes
+
+  integrity_findings:
+    memo_companions_without_colocated_dbf: 0
+    generated_sidecars_without_colocated_dbf: 0
+    lmdb_data_without_lock_peer: 0
+    lmdb_lock_without_data_peer: 0
+
+  curation_gates:
+    - assign one authority class to every family: canonical, generated, fixture, proof, backup, quarantine, or incidental
+    - make every canonical ignored binary reproducible from tracked schema, data, checksums, and a tested rebuild command
+    - do not treat an untracked runtime file as clean-checkout durable
+    - independently verify every orphan candidate before deletion
+    - route accepted untracked orphan candidates through the hash-bound D:/code/ccode.sidecar aging contract instead of direct deletion
+    - keep browser-profile SQLite files outside publication, manifests, and database lessons

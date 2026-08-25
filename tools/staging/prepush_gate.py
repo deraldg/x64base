@@ -2,6 +2,20 @@
 """
 prepush_gate.py -- mechanical enforcement of the AI_PORTAL Pre-Push Gate.
 
+IT RUNS AT COMMIT TIME, NOT PUSH TIME, AND THE NAME DOES NOT SAY SO.
+Recorded 2026-08-24. `.git/hooks/pre-commit` invokes this guard (right after
+repository_role_guard.py); `.git/hooks/pre-push` does NOT. So every message this
+prints appears during `git commit`, and a change set is refused before it is
+ever a commit -- which is the better place to stop it, and is why the wiring is
+correct even though the name is misleading.
+
+The name is historical: the AI_PORTAL rule it enforces is called the Pre-Push
+Gate, and the gate moved earlier than its rule's name did. NOT RENAMED, because
+the name is cited by that rule and by run records; corrected here instead, which
+is the only place a reader of this file will look. `.git/hooks/` is not tracked,
+so the wiring cannot be documented from inside the repository except here.
+
+
 Single source of truth for the exclusion list is AI_PORTAL.md (the
 "Outside-AI Delivery Rule", line ~300):
 
