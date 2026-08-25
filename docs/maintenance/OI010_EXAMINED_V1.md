@@ -187,6 +187,70 @@ path is enough to have it checked.
 
 ---
 
+## 10. ACTIONED 2026-08-25 -- and the manifest settles item 3
+
+The owner authorized items 1, 2 and 3. Reading `PROMOTION_PROCESS.md` first
+changed what each of them IS.
+
+### 10a. Item 3 is decided by the manifest, not by preference
+
+    PROMOTE.manifest:167    docs/getting-started/**
+
+**The whole tier is already on the allow-list**, so it is INTENDED to publish
+FROM `development`. Section 9's two options were not equally weighted after all:
+"rule it publication-only and stop linking it" contradicts the manifest, which
+promotes it from here.
+
+**So: track the three on `development`.** That is the option the promotion
+process already assumes.
+
+**And it is not cosmetic.** `PROMOTION_PROCESS.md` section 5.2 overlays "every
+`PROMOTE.manifest` match from development" -- which is how three untracked files
+reached `main` in the first place. **A promotion run from a FRESH CLONE of
+`development` would publish nothing for `docs/getting-started/`**, because a
+fresh clone does not have them, and the drift audit would report GONE for a tier
+the manifest says should publish. The current state works only because this
+workstation happens to hold files git does not.
+
+### 10b. Item 1 is not an edit, it is a promotion run
+
+`BUILDING.md` is `PROMOTE.manifest:57`. Section 5.2 overlays every manifest
+match. **So the corrected root `BUILDING.md` promotes itself the next time
+staging is rebuilt** -- there is nothing to hand-apply, and hand-applying would
+violate section 8: *"No change is hand-edited in both `development` and `main`.
+Fix in `development`, then re-promote."*
+
+The fix already exists in `development` (`cfb8aaebf`, 2026-08-17). **Item 1 is
+"run the promotion", not "write a patch".**
+
+### 10c. Item 2 is a purge inside the rebuild-review-commit window
+
+The rebuild clones `github/main` as its baseline, so
+`docs/getting-started/BUILDING.md` survives unless removed deliberately. Section
+6 classifies it: present in staging, no development counterpart, off the
+intent -- and section 7 gives the idiom (`git rm ... --cached` from `main`).
+Section 9.1 records the same treatment already ruled for `WORKFLOW_X64BASE.md`:
+*"Removal happens in the rebuild-review-commit window."*
+
+**Neither 1 nor 2 can be run from here.** `PROMOTION_PROCESS.md` is
+non-negotiable that only sterilized staging at `C:\x64base` may update `main`,
+and `C:\x64base` is not a folder this session can reach at all.
+
+### 10d. The note is recorded in FOUR places
+
+    PROMOTE.manifest:75-76        "Reconcile to ONE canonical location..."
+    PROMOTION_CHECKLIST.md:22-23  "Pick one location."
+    PROMOTION_PROCESS.md:9.2      "Path mismatch ... Pick one."
+    coordination/OPEN_ITEMS.md    OI-010
+
+All four say the same thing and none of them has drifted -- yet. **Four copies of
+one instruction is the shape the row itself cites from AIF-082 6.8**, "two shims
+that restate will diverge, and have". When items 1 and 2 land, all four should be
+retired in the same commit, not left as four independent reminders of a closed
+question.
+
+---
+
 ## 7. What was NOT done
 
 - **No branch touched.** `origin/main` was read with `git show` and `git grep`
