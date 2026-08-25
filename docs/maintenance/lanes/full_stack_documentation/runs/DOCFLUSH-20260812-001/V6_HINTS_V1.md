@@ -268,10 +268,11 @@ Sections 1 through 7 are prose, and prose is what v5 kept failing to read in
 time. Section 1 opens by admitting the lesson was already written down and lost
 anyway. So the answer is not a better warning. **It is a check that runs.**
 
-    $py12 tools\coordination\docpush_preflight.py          <- before you start
-    $py12 tools\coordination\docpush_preflight.py --after   <- after every rebuild
+    $py12 tools\fullstack_docs\docpush_preflight.py --root . <- before you start
+    $py12 tools\fullstack_docs\docpush_preflight.py --root . <- after every rebuild
 
-That is the gate. It takes about a second, reads only file times and DBF
+That is the gate -- **the one that has existed since 2026-08-05**, now carrying
+five checks instead of three. It takes about a second, reads only file times and DBF
 headers, needs no engine and no build, and runs in a sandbox that cannot
 compile -- which is where most of this lane's verification actually happens.
 
@@ -289,6 +290,11 @@ output that looked correct at the time.
 | `generation stamp` | the two tables generated on different days -- one rebuild reached only one | -- |
 | `store integrity` | 2,757 rows with a blank `TOPICKEY`, invisible for five rebuilds | AIF-126 |
 | `status coherence` | 167 rows that are `pending` and `AUTHORITATIVE` at once | open |
+
+Steps 1 to 3 of the preflight (contract coverage, catalog drift, plan ASCII)
+were already there and are unchanged. Steps 4 and 5 are the table above.
+**Steps 1-3 check CONTENT. Steps 4-5 check ORDER and the join. Neither half can
+see the other's failures**, which is why v5 passed 1-3 while losing cycles to 4.
 
 All seven detectors were tested against real evidence before this was written:
 the pre-fix store (`help.bak-20260824-175951`) fires `store newer than exe` and
@@ -383,8 +389,30 @@ it. If that command can be written, the item is not blocked -- it is queued.
 
 ### 8h. Where the tools live
 
-    tools/coordination/docpush_preflight.py    the gate (this section)
-    tools/coordination/help_store_check.py     store integrity + topic-set diff
-    tools/coordination/cmd_source_index.py     command -> handler -> source file
+    tools/fullstack_docs/docpush_preflight.py     THE preflight -- five checks
+    tools/coordination/help_build_order_check.py  step 4: ordering + binding
+    tools/coordination/help_store_check.py        step 5: the join + set diff
+    tools/coordination/cmd_source_index.py        command -> handler -> source file
 
-None of them need the engine, a build, or a network. All three run read-only.
+None of them need the engine, a build, or a network. All run read-only.
+
+### 8i. I built the second spelling. Read this before adding a tool.
+
+Sections 8 through 8h were first written around a NEW
+`tools/coordination/docpush_preflight.py`. **One already existed** --
+`tools/fullstack_docs/docpush_preflight.py`, tracked since 2026-08-05, owner
+member.derald, lane AIF-088. Same name. Same stated purpose. I committed the
+duplicate in `48ba947e6` on the same day I fixed an R5 defect in
+`helpdata_export_dbf.cpp` and wrote 8e recommending a prior-art check -- which I
+then never ran on my own tool's name.
+
+The content was complementary and nothing was lost: the old one checks CONTENT,
+the new checks were ORDER, and they are now steps 4 and 5 of the one preflight.
+The new file is renamed `help_build_order_check.py`, for what it checks.
+
+**The rule, and it is the same rule as AIF-126:** before adding a tool, a gate,
+a script or a checker, search for the name AND the purpose. `git ls-files |
+findstr <word>` costs one second. Two files with one name is not a naming
+problem -- it is two answers to one question, and one of them will be wrong
+later. The prior-art check exists; run it on what you are about to build, not
+only on what you are about to claim.

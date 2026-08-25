@@ -1,5 +1,18 @@
 #!/usr/bin/env python3
-"""Did the full-stack doc push actually do what its transcript says? Ask the clock and the tables.
+"""Was the engine built before the store, and the catalogs before the engine? Ask the clock.
+
+NAME NOTE, and it is a correction. This was first written as a second
+`docpush_preflight.py`, under tools/coordination/, by a steward who did not
+check whether one already existed. It did -- tools/fullstack_docs/
+docpush_preflight.py, tracked since 2026-08-05, owner member.derald, lane
+AIF-088. Two files, one name, one purpose: exactly the R5 defect this same
+session spent the day fixing in helpdata_export_dbf.cpp, and exactly what the
+--prior-art check added in the same commit exists to prevent. It was never run
+on the tool's own name.
+
+The content was complementary, so nothing is thrown away. THAT preflight checks
+CONTENT (contract coverage, catalog drift, ASCII). This one checks ORDER (who
+was built before what) and is named for it. The one preflight now calls both.
 
 WHY THIS EXISTS. Flush v5 lost cycles to four failures that a transcript cannot
 show and a human cannot reliably eyeball. All four are ORDERING facts -- who was
@@ -30,11 +43,11 @@ Every one is cheap to detect and expensive to miss. This runs in about a second,
 reads only file times and DBF headers, needs no engine and no build, and works
 in a sandbox that cannot compile.
 
-  $py12 tools\\coordination\\docpush_preflight.py            -- before you start
-  $py12 tools\\coordination\\docpush_preflight.py --after    -- after a rebuild
-  $py12 tools\\coordination\\docpush_preflight.py --no-git   -- skip git checks
-  $py12 tools\\coordination\\docpush_preflight.py --prior-art "<subject>"
-  $py12 tools\\coordination\\docpush_preflight.py --store <dir>  -- check a backup
+  $py12 tools\\coordination\\help_build_order_check.py         -- direct
+  $py12 tools\\fullstack_docs\\docpush_preflight.py           -- THE preflight
+  ... --no-git    skip git checks     ... --after    post-rebuild mode
+  ... --prior-art "<subject>"   search the lane record before claiming a finding
+  ... --store <dir>             check a help.bak-* snapshot instead
 
 Exit codes: 0 all checks pass, 1 a check failed, 2 could not read what it needs.
 """
@@ -66,7 +79,7 @@ class Report:
         self.rows.append((verdict, name, detail, why))
 
     def render(self):
-        print("docpush preflight -- %s" % ROOT)
+        print("build-order check -- %s" % ROOT)
         print()
         for verdict, name, detail, why in self.rows:
             print("  %-5s %-26s %s" % (verdict, name, detail))
@@ -328,7 +341,7 @@ def main():
             HELP = ROOT / a.store
 
     if not ROOT.exists():
-        sys.stderr.write("docpush_preflight: cannot find repo root\n")
+        sys.stderr.write("help_build_order_check: cannot find repo root\n")
         return 2
 
     rep = Report()
