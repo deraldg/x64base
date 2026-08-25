@@ -256,3 +256,135 @@ and the same prescription. The owner had already said where the evidence lived.
 **Cheapest possible check before claiming a discovery:** grep
 `ai_portal_tasks.yaml` and the lane's own `runs/*/NEXT_PUSH_CONTINUATION*` for
 the subject. Both are small. Both were right.
+
+---
+
+## 8. v6 STARTS BY RUNNING TWO COMMANDS. That is the whole improvement.
+
+    Added 2026-08-25, run COWORK-20260824-001, at the owner's instruction
+    ("make sure fullstack doc push v6 goes much smoother").
+
+Sections 1 through 7 are prose, and prose is what v5 kept failing to read in
+time. Section 1 opens by admitting the lesson was already written down and lost
+anyway. So the answer is not a better warning. **It is a check that runs.**
+
+    $py12 tools\coordination\docpush_preflight.py          <- before you start
+    $py12 tools\coordination\docpush_preflight.py --after   <- after every rebuild
+
+That is the gate. It takes about a second, reads only file times and DBF
+headers, needs no engine and no build, and runs in a sandbox that cannot
+compile -- which is where most of this lane's verification actually happens.
+
+### 8a. What it checks, and which cycle each one cost
+
+Every check is a failure that ACTUALLY HAPPENED, and every one of them produced
+output that looked correct at the time.
+
+| check | the failure it encodes | when |
+|---|---|---|
+| `binding` | exe built from a dirty worktree, so the store is not reproducible from any commit | 2026-08-24 |
+| `exe newer than catalogs` | dotref/foxref are COMPILED IN; a stale exe silently publishes the old catalog | 2026-08-12, section 1 |
+| `store newer than exe` | store rebuilt by an exe that predates the change under test | 2026-08-12 |
+| `legacy before store` | `BUILD LEGACY` and `BUILD . <src>` passed as ONE array; only the first ran | 2026-08-24 |
+| `generation stamp` | the two tables generated on different days -- one rebuild reached only one | -- |
+| `store integrity` | 2,757 rows with a blank `TOPICKEY`, invisible for five rebuilds | AIF-126 |
+| `status coherence` | 167 rows that are `pending` and `AUTHORITATIVE` at once | open |
+
+All seven detectors were tested against real evidence before this was written:
+the pre-fix store (`help.bak-20260824-175951`) fires `store newer than exe` and
+`store integrity`; a synthetic half-run fires `legacy before store`; and a
+same-second rebuild does NOT fire it, so the tolerance is not a false positive
+waiting to happen. A gate nobody has watched fail is not a gate.
+
+### 8b. THE RULE THAT COST THE MOST THIS PASS
+
+**One `datarun.ps1` invocation per HELP-mutating command. Never an array.**
+
+Section 7 of `help_refresh/HELP_REFRESH_PACKAGE_V1.md` reads "5 + 6" and passes
+both builds in one `-CommandLines` array. **Split it.** `--script` is stdin
+redirection (`main.cpp:195-213`), so a nested `std::cin` read inside the first
+command eats the following line and the second never runs. It cost v5 a cycle on
+2026-08-12, and on 2026-08-24 it happened AGAIN inside an apply script written
+by the same steward who had just documented it -- because the form was copied
+from the package without being questioned.
+
+The transcript of a half-run is complete, well-formed, and wrong. Only the
+clock catches it. That is now `legacy before store`.
+
+### 8c. Two Gate 4 assertions v6 should adopt, and one it should retire
+
+**Adopt 1' -- provenance, replacing the withdrawn build-stamp assertion.**
+The banner has carried the answer all along:
+
+    dottalk++ v0.6 (2026-08-24, c39d966c dirty)  (Aug 24 2026 17:05:41)
+
+Commit AND dirty flag. The assertion is: **the banner names a commit and is not
+`dirty`.** One grep. It is the only assertion in the set that can catch the
+2026-08-12 failure, and `docpush_preflight` checks the same fact from git.
+
+**Adopt 6' -- a topic-SET diff, retiring the topic-count floor.**
+On 2026-08-24 the count floor scored a REPAIR as a regression: five expression
+functions correctly stopped being invented as commands, the total fell from 530
+to 526, and assertion 6 failed. A floor cannot tell content lost from
+miscategorised content correctly removed. The replacement names every departure
+and lets a human disposition it:
+
+    $py12 tools\coordination\help_store_check.py --against <pre-run store>
+
+The LINE floor may stand -- lines are additive, and a fall there is real signal.
+
+**Retire 5b entirely.** It was withdrawn as malformed in v5 and should not
+reappear: an `EDREF` HELP_LINE row count cannot witness a change that lands in
+`HELP_TOPIC.TITLE`.
+
+### 8d. The family all three withdrawn assertions belong to
+
+The build stamp, the EDREF row count, and the topic floor failed the same way:
+**a proxy that cannot answer the question put to it.** `__DATE__` in a
+translation unit that need not recompile cannot witness freshness. A row count in
+one table cannot witness a change in another. A total cannot witness membership.
+
+Before writing an assertion, ask what OTHER world would produce the same number.
+If the answer is "a healthy one" or "a broken one", the assertion is not
+measuring what it claims. Three of eight failed this test in v5.
+
+### 8e. Before calling anything a discovery
+
+    $py12 tools\coordination\docpush_preflight.py --prior-art "<subject>"
+
+Searches `ai_portal_tasks.yaml`, every `NEXT_PUSH_CONTINUATION*`, and this file.
+Section 7 recorded that twice in v5 a "finding" was already on record with the
+same analysis and the same prescription. This is that check, automated. Run on
+"em-dash" it returns five hits immediately -- including the two that were missed.
+
+### 8f. Before writing what a defect COSTS, read a row
+
+AIF-126 was measured correctly and then described wrongly. The finding said nine
+percent of the help store was unreachable by any operator and named `SET` and
+`ABOUT` as the headline losses -- which reads as missing SET documentation. One
+sample row refuted it: the payload is the runtime MESSAGE CATALOG, `{placeholder}`
+templates that `CMDHELP` excludes from rendering on purpose. The true figure is
+530 operator-facing rows across 83 topics. Real, and much smaller.
+
+**The measurement was sound and the sentence about it was not.** Sampling one
+row costs nothing and would have caught it. A correct number does not license a
+claim about what the number means.
+
+### 8g. An item is "blocked" only when someone has tried it and been stopped
+
+Five blockers went into the 2026-08-24 triage. **Two had been answerable for
+three passes and had simply never been attempted** -- a direct `HELP_TOPIC.TITLE`
+read (settled in one command), and `FN_COVERAGE`, which is not a dotscript verb
+at all but a metacollect check whose output was already sitting in
+`tmp/metacompare.csv`.
+
+Before carrying a blocker forward, write down the one command that would settle
+it. If that command can be written, the item is not blocked -- it is queued.
+
+### 8h. Where the tools live
+
+    tools/coordination/docpush_preflight.py    the gate (this section)
+    tools/coordination/help_store_check.py     store integrity + topic-set diff
+    tools/coordination/cmd_source_index.py     command -> handler -> source file
+
+None of them need the engine, a build, or a network. All three run read-only.
