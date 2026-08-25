@@ -47,6 +47,19 @@ inline const std::vector<Item>& catalog() {
         {"BUILDVECTORS", "BUILDVECTORS | BUILD VECTORS | BUILD INFO",
                  "Report the compile-time engine capacity limits and configuration fingerprint; read-only.", true},
 
+        // The two spaced spellings need their OWN rows, even though the syntax
+        // field above already names them. CMDHELP indexes this catalog by the
+        // NAME field only, so alternates written into syntax prose are invisible
+        // to it: shell_commands.cpp registers "BUILD VECTORS" and "BUILD INFO"
+        // as real commands, they matched nothing here, and both fell through to
+        // the "curated DOTREF help is pending" placeholder. Documented and
+        // undocumented looked identical from the generator's side.
+        {"BUILD VECTORS", "BUILD VECTORS",
+                 "Spaced spelling of BUILDVECTORS: report the compile-time engine capacity limits and configuration fingerprint; read-only.", true},
+
+        {"BUILD INFO", "BUILD INFO",
+                 "Spaced spelling of BUILDVECTORS: report the compile-time engine capacity limits and configuration fingerprint; read-only.", true},
+
         {"DEFCMD", "DEFCMD [USAGE|LIST|<NAME> [=] <body-text>]",
                  "Define or list an experimental session-only scratch command; cannot shadow protected built-ins and never writes table data or disk state.", true},
 

@@ -78,6 +78,7 @@
 #include "xbase.hpp"
 #include "xbase_field_getters.hpp"
 #include "cli/command_output.hpp"
+#include "cli/expr/function_catalog.hpp"
 #include "cli/output_router.hpp"
 #include "edref.hpp"
 #include "helpdata_cmdhelp_bridge.hpp"
@@ -189,18 +190,35 @@ static std::string canonical_set_family_query(const std::string& query) {
     return it == kMap.end() ? std::string{} : it->second;
 }
 
+// ASK THE FUNCTION CATALOG. DO NOT KEEP A SECOND COPY OF ITS CONTENTS HERE.
+//
+// This predicate decides whether a name reaching collect_commands() is an
+// expression function rather than a command. A false answer promotes it to a
+// DOT command row carrying the "curated DOTREF help is pending" placeholder --
+// i.e. it invents a command that does not exist and files a documentation debt
+// against it.
+//
+// It used to answer from a hand-maintained literal list of 64 names kept right
+// here, duplicating dottalk::expr's catalog. The two drifted, as two lists that
+// must agree always do. Measured 2026-08-22, the catalog resolved ELEVEN names
+// this list had never heard of:
+//
+//     FILE PADC PADL PADR PROPER STRCAT STUFF UDATE UDATETIME UNOW UTIME
+//
+// Only five of the eleven were VISIBLE as bogus command rows (FILE, UDATE,
+// UDATETIME, UNOW, UTIME). The other six were masked by an unrelated accident:
+// they also appear in foxref, so the FOX row claimed the key before the
+// placeholder branch could reach them. The masking is why this went unnoticed,
+// and it is exactly why the fix is delegation rather than "add the five" --
+// adding the visible five would have left six live drifts in place and looked
+// like a complete fix.
+//
+// get_function_doc() resolves ALIASES as well as primary names, which is what
+// makes delegation strictly safe: all 64 of the old literals still resolve
+// (verified, zero regressions), including TRIM, which is not its own entry but
+// an alias of RTRIM -- a case a name-only comparison would have called a loss.
 static bool is_expression_function_name(const std::string& name) {
-    static const std::unordered_set<std::string> names = {
-        "ABS","ACOS","ALLTRIM","ASC","ASIN","AT","ATAN","ATC","BETWEEN",
-        "CDOW","CEILING","CHR","CHRTRAN","CMONTH","CONCAT","COS","CTOD",
-        "DATE","DATEADD","DATEDIFF","DATETIME","DAY","DOW","DTOC","DTOS",
-        "EMPTY","EXP","FLOOR","GOMONTH","INT","LEFT","LEN","LIKE","LOG",
-        "LOG10","LOWER","LTRIM","MAX","MIN","MOD","MONTH","NOW","RAND",
-        "RAT","REPLICATE","RIGHT","ROUND","RTRIM","SECONDS","SIN","SOUNDEX",
-        "SPACE","SQRT","STR","STRTRAN","SUBSTR","TAN","TIME","TODAY",
-        "TRANSFORM","TRIM","UPPER","VAL","YEAR"
-    };
-    return names.count(up(name)) != 0;
+    return dottalk::expr::get_function_doc(up(name)) != nullptr;
 }
 
 static bool is_developer_surface_name(const std::string& name) {
