@@ -170,8 +170,16 @@ amendment and nothing said so.** Full record:
    12/12 translation units compiled, linked to a 1,603,904-byte binary with
    **zero undefined references**, and `./metacollect --help` returns the tool's
    own argument diagnostic -- it starts and parses, it did not merely link.
-   **Caveat: Linux/g++ only. MSVC untested**, and the blocker this closes was
-   itself a toolchain-visibility problem.
+   **CONFIRMED ON MSVC 2026-08-25** -- and the "Linux/g++ only, MSVC untested"
+   caveat this line originally carried was already false when written.
+   `build/Release/metacollect.exe` was dated 2026-08-21, seven days after the
+   fix, with `DOTTALK_BUILD_METACOLLECT=ON` in the cache. Observed rebuild:
+   `dt_meta.vcxproj -> dt_meta.lib`, `metacollect.vcxproj -> metacollect.exe`,
+   and the binary parses its own arguments. **The precondition is closed on both
+   toolchains.** The incremental build recompiled exactly the two translation
+   units predicted stale (`ddict_dbf_reader.cpp`, `ddict_read_helpers.cpp` --
+   datadict, unrelated to the link closure), which is what makes the timestamp
+   reading a measurement rather than an inference.
 
 **The owner ruling this precondition asked for** -- whether `path_state`'s
 process-wide mutable slot state crosses `dt_meta`'s stated "no DBF writes"

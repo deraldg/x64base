@@ -80,6 +80,39 @@ Windows.** Undefined-symbol closure is not usually toolchain-dependent, but
 toolchain-visibility problem. A Windows build with `-DDOTTALK_BUILD_METACOLLECT=ON`
 would settle it; nothing here should be read as having done that.
 
+### 1d. MSVC CONFIRMED, 2026-08-25. The caveat above is discharged.
+
+The caveat in 1c was written from the sandbox's lack of a toolchain and was
+repeated three times today as "MSVC untested". **It was already false when
+first written.** `build/Release/metacollect.exe` was dated **2026-08-21 02:27**
+-- seven days after the fix landed -- and `build/CMakeCache.txt` already carried
+`DOTTALK_BUILD_METACOLLECT:BOOL=ON` under Visual Studio 17 2022. Nobody looked
+at the build tree; the claim came from reasoning about the sandbox.
+
+Observed transcript, steward's machine, 2026-08-25:
+
+    cmake --build build --config Release --target metacollect
+      Checking File Globs
+      ddict_dbf_reader.cpp
+      ddict_read_helpers.cpp
+      Generating Code...
+      dt_meta.vcxproj      -> D:\code\ccode\build\Release\dt_meta.lib
+      metacollect.vcxproj  -> D:\code\ccode\build\Release\metacollect.exe
+
+    build\Release\metacollect.exe --help
+      METACOLLECT error: unrecognized argument: --help
+
+**`dt_meta` links and `metacollect` links, on MSVC.** The binary starts and
+parses its own arguments. The precondition is closed on BOTH toolchains.
+
+**The incremental build recompiled exactly the two translation units predicted
+stale** -- `ddict_dbf_reader.cpp` and `ddict_read_helpers.cpp`, both touched
+2026-08-25 00:05, both newer than the 08-21 exe, both datadict and unrelated to
+the `path_resolver`/`path_state` closure. Ten of twelve sources predated the
+binary and did not rebuild. **That agreement is what turns the timestamp
+inference into a measurement**: the prediction named two files and the compiler
+named the same two.
+
 **Recommendation: Gate 0's metacollect precondition passes.** The owner ruling
 it asked for -- whether `path_state`'s process-wide mutable slot state crosses
 `dt_meta`'s "no DBF writes" safety boundary -- was answered in the code review
