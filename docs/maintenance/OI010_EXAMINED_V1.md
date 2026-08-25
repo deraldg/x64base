@@ -357,3 +357,91 @@ the steward runs the promotion himself.**
 
 When 1 and 2 land, section 10d applies: retire all four copies of the
 "pick one location" note in the same commit.
+
+---
+
+## 14. CORRECTION 2026-08-25, same day: ITEM 1 IS ALREADY DONE
+
+**Section 10b said "Item 1 is 'run the promotion', not 'write a patch'." Both
+halves are now wrong: there is nothing to run either.**
+
+    origin/main:BUILDING.md   sha f1ba8ade207b1a4f   138 lines
+    HEAD:BUILDING.md          sha f1ba8ade207b1a4f   138 lines
+    main's copy carries "Corrected 2026-08-17":  yes
+
+**The 2026-08-21 promotion (`9470a50d9`) already carried it.** The corrected
+root `BUILDING.md` has been on the public repository for four days. Item 1 is
+CLOSED, and it closed itself exactly as section 10b predicted it would --
+`PROMOTE.manifest:57` overlays it -- just earlier than this document assumed.
+
+**ITEM 2 IS STILL OPEN.** `docs/getting-started/BUILDING.md` remains on `main`.
+It does not need a promotion run: it needs a removal inside any
+rebuild-review-commit window.
+
+### 14a. Why this was not seen until now, and it is a method failure
+
+Sections 11 and 12 were measured "read-only from `origin/main`, a local ref".
+True, and incomplete. **The ref had last been fetched on 2026-08-16 and was
+NINE DAYS STALE** -- it predated the 2026-08-21 promotion entirely, and
+`9470a50d9` was not even in the local object store.
+
+    local origin/main tip, before fetch:  72a449d05  2026-08-16
+    after `git fetch origin`:             9470a50d9  2026-08-21
+
+**Section 11's three conclusions all SURVIVED re-measurement** against the
+current ref -- the getting-started copy still does not repeat the false claim
+(47 lines, zero hits), the README still links the site and a sibling, and the
+directory is still 4 files against 3. They were right. **They were right by
+luck**: that promotion did not touch any of the three.
+
+**What the stale ref DID hide was item 1**, which the same document was
+recommending as work to be done.
+
+**THE RULE, WHICH THIS HOUSE ALREADY HAD:** check the freshness stamp. It was
+applied to a twenty-day-old inventory report earlier in this same flush and
+caught a false clean. It was not applied to a git ref, because a ref does not
+look like a report. `git log -1 --format=%ad origin/main` and the mtime of
+`.git/refs/remotes/origin/` are the stamp; reading a remote ref without
+checking when it was fetched is reading a cached answer.
+
+### 14b. What a promotion run today would actually publish
+
+Measured after the fetch, manifest-matched TRACKED paths, development against
+current main:
+
+    identical  235      CHANGED  9      NEW  64
+
+The CHANGED nine are worth a deliberate look because seven of them are one
+subsystem:
+
+    dottalkpp/data/help/HELP_ARTIFACTS.dbf   HELP_LINE.dbf
+    dottalkpp/data/help/HELP_SECTION.dbf     HELP_TOPIC.dbf
+    dottalkpp/data/help/cmd_args.dbt         commands.dbt
+    dottalkpp/data/help/help_artifacts.dbt
+    dottalkpp/data/indexes/x32/STUDENTS.cnx
+    dottalkpp/data/scripts/pinocchio/ticketb_phase0_decode_cost.dts
+
+**That is the HELP store, and it carries the AIF-126 repair** -- 2,757
+blank-TOPICKEY rows filled, +139 reachable topics, 0 lost. Publishing it is
+almost certainly right, but it is a substantive data change riding in a
+promotion whose stated purpose was a build document, and it belongs to a
+CONCURRENT session's lane. It should be a decision, not a side effect.
+
+**FOR CONTRAST, THE FIRST RUN OF THIS AUDIT REPORTED CHANGED 29, NEW 70** --
+against the stale ref. Twenty of those "changes" and six of those "new files"
+were already on main. An audit against a stale baseline does not merely miss
+things; it invents work.
+
+### 14c. OI-017 is NOT fixed for its three worst files
+
+`9470a50d9`'s own message says "the data scripts carry relative paths instead
+of `D:\code\ccode`". Measured, current main against development:
+
+    dottalkpp/data/cdxdemo.dts                main 4   dev 4
+    dottalkpp/data/schemas/mcc_x64_output.txt  main 4   dev 4
+    dottalkpp/help/find_repo_string.ps1        main 1   dev 1
+
+Other scripts were sterilised; these three were not. OI-017 stands for them,
+and they are now TRACKED in development (`f6a8d71a6`), which is what makes
+fixing them possible -- you cannot sterilise in development what development
+does not track.
