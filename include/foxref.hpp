@@ -733,6 +733,25 @@ inline const std::vector<Item>& catalog() {
         {"DTOC",      "DTOC(<dDate>)",
                  "Convert a Date value to a character string using current SET DATE/SET CENTURY.", true},
 
+        // Gate 1 Q2, ruled 2026-08-25. A POINTER, NOT A SECOND COPY.
+        //
+        // FILE() is supported and DELIBERATELY DIFFERS from VFP. The divergence
+        // is documented once, in src/cli/expr/function_catalog.cpp, which is the
+        // authority for functions and is what feeds HELP. This entry does not
+        // repeat it: two homes for one fact is the R5 shape, and this struct has
+        // no divergence field to put it in -- every other entry here describes
+        // VFP-identical behaviour.
+        //
+        // But SILENCE WAS THE WRONG ANSWER TOO. foxref is where a FoxPro reader
+        // looks, and with no entry at all they cannot tell "x64base does not have
+        // FILE()" from "x64base has it, differently" -- absent and
+        // present-but-different rendering identically, which is R6. The entry
+        // exists to answer the first question and to send them to the second.
+        {"FILE",      "FILE(<cPath>)",
+                 "Test whether a filesystem entry exists. SUPPORTED, and deliberately "
+                 "broader than VFP: see the function catalogue entry for FILE() for the "
+                 "divergence and for how paths resolve against the engine's path slots.", true},
+
         {"SUM", "SUM <expr> TO <memvar> [ALL|DELETED] [FOR <pred>] [WHILE <pred>] [NEXT <n>|REST]",
                  "Sum a numeric expression over a record set.", true},
 

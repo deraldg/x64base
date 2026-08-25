@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-08-25T15:59:27Z
+    generated_utc : 2026-08-25T16:10:06Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,9 +11,9 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : 384841b03  (2026-08-25)
+    HEAD          : 706952ef4  (2026-08-25)
     upstream      : a278b511e
-    unpushed      : 42 commit(s) ahead of upstream
+    unpushed      : 43 commit(s) ahead of upstream
 
 ## Declared target
 
@@ -23,17 +23,18 @@ cannot drift, because nothing here is written by hand.
 ## Newest closeout
 
     file          : SESSION_CLOSEOUT_PROMOTION_TO_MAIN_AND_WORKBENCH_RENAME_2026-08-21.md
-    commits behind HEAD : 128
+    commits behind HEAD : 129
 
 ## Staleness warnings
 
-- The newest closeout is 128 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
-- 42 commit(s) are unpushed and invisible to a clone.
+- The newest closeout is 129 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
+- 43 commit(s) are unpushed and invisible to a clone.
 
 ## Claimed lanes (newest first)
 
 | AIF | lane | steward | intake row |
 | --- | --- | --- | --- |
+| AIF-129 | contract-subblock-vocabularies-uncontrolled | member.ai.claude.cowork | yes |
 | AIF-128 | refcheck-guard-tests-the-union-not-the-authority | member.ai.claude.cowork | yes |
 | AIF-127 | x64-reader-false-terminator-at-thirteen-rows | member.ai.claude.cowork | yes |
 | AIF-126 | help-store-shared-msg-unreachable-by-key | member.ai.claude.cowork | yes |
@@ -45,8 +46,7 @@ cannot drift, because nothing here is written by hand.
 | AIF-120 | application-ui-dsl | member.ai.claude.cowork | yes |
 | AIF-119 | pydottalk-co-sourced-product | member.ai.claude.cowork | yes |
 | AIF-118 | guards-site-contrast-and-edref-shape | member.ai.claude.cowork | yes |
-| AIF-117 | silent-predicate-and-store-failures | member.derald | yes |
-| ... | 48 older claims omitted | | |
+| ... | 49 older claims omitted | | |
 
 ## Sessions, lineage, asides
 
@@ -62,7 +62,7 @@ parent + born_utc from the durable lineage ledger, '-' until a run wakes.
 
 | run | member | parent | born_utc | asides |
 | --- | --- | --- | --- | --- |
-| COWORK-20260825-001 | member.ai.claude.cowork | - | - | AIF-128 |
+| COWORK-20260825-001 | member.ai.claude.cowork | - | - | AIF-128 -> AIF-129 |
 | COWORK-20260824-001 | member.ai.claude.cowork | - | - | AIF-123 -> AIF-124 -> AIF-125 -> AIF-126 -> AIF-127 |
 | COWORK-20260822-001 | member.ai.claude.cowork | - | - | AIF-121 -> AIF-122 |
 | COWORK-20260817-001 | member.ai.claude.cowork | - | - | AIF-119 -> AIF-120 |
