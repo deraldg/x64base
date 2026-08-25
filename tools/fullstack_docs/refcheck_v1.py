@@ -192,8 +192,30 @@ def main() -> int:
     fn_ext = ext_functions(root)
     fn_core = implemented_core_functions(root)
     funcs = fn_seed | fn_ext | fn_core
-    if not commands:
-        print("refcheck: could not resolve the command registry", file=sys.stderr)
+    # TEST THE AUTHORITY, NOT THE UNION -- AIF-128, 2026-08-25.
+    #
+    # This guard used to read `if not commands:` -- the UNION of the registry
+    # with the two alias sources. So it answered "fine" whenever ANY of the
+    # three resolved, including when the one it names in its own message was
+    # the one that failed. Same answer for "registry absent" as for "registry
+    # fine": the AIF-118 shape, in the guard whose whole job is to catch that.
+    #
+    # PROVEN 2026-08-25 by injecting an empty registry_map with the alias
+    # sources intact: this message never printed, and refcheck instead
+    # reported "GUARDED phantoms (dotref+foxref): 270" and failed with
+    # "a native/legacy reference entry names no command" -- exit 1. That is
+    # worse than silence. It is a confident, precise accusation against 270
+    # hand-authored dotref/foxref entries that were never wrong, and it sends
+    # the next reader to edit the catalogs instead of the registry.
+    #
+    # The aliases are REPORTED rather than counted toward the verdict: a name
+    # scraped from an alias table is not a registry, however many of them
+    # there are.
+    if not commands_reg:
+        print("refcheck: could not resolve the command registry -- "
+              f"alias sources contributed {len(commands_alias)} name(s), "
+              "which is not a registry; refusing to judge the *ref catalogs "
+              "against it", file=sys.stderr)
         return 2
 
     if fn_state != "populated":
