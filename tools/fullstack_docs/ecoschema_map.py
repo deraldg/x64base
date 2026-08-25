@@ -243,13 +243,15 @@ def load_intake(root: str) -> dict:
     if not os.path.isfile(path):
         return out
     for line in open(path, encoding="utf-8", errors="replace"):
-        m = re.match(r"\|\s*(AIF-\d{3})\s*\|", line)
+        # R126: match any width, canonicalise the key so it still joins to the
+        # AIF-NNN.claim basenames below.
+        m = re.match(r"\|\s*AIF-0*(\d+)\s*\|", line)
         if not m:
             continue
         cells = [c.strip() for c in line.split("|")]
         raw = cells[6] if len(cells) > 6 else ""
         raw = re.sub(r"\*\*|`", "", raw)[:90]
-        out[m.group(1)] = {"raw": raw, "state": work_state(raw)}
+        out[f"AIF-{int(m.group(1)):03d}"] = {"raw": raw, "state": work_state(raw)}
     return out
 
 

@@ -45,7 +45,13 @@ CLAIM_DIR = "coordination/aif"
 
 # An intake ROW, not a passing mention: the table's first cell. A row that only
 # discusses AIF-041 in its notes must not be treated as claiming it.
-ROW_RE = re.compile(r"^\|\s*AIF-(\d{3})\b")
+# R126: an AIF number IS AN INTEGER. The zero padding is a DISPLAY convention.
+# Match loosely (any width, any padding) and normalise to int; render with %03d,
+# which is a MINIMUM width and widens by itself past 999. Measured 2026-08-25:
+# `AIF-\d{3}` read "AIF-1000" as NO MATCH in five readers and, in
+# tools/tracking/seed_tracking.py, as "AIF-100" -- a DIFFERENT, ALREADY-TAKEN
+# number. Silent identity collision, not a decline.
+ROW_RE = re.compile(r"^\|\s*AIF-0*(\d+)\b")
 
 
 def repo_root() -> Path:
@@ -113,7 +119,7 @@ def claimed(root: Path) -> set[int]:
         return set()
     out = set()
     for p in d.glob("AIF-*.claim"):
-        m = re.match(r"AIF-(\d{3})\.claim$", p.name)
+        m = re.match(r"AIF-0*(\d+)\.claim$", p.name)
         if m:
             out.add(int(m.group(1)))
     return out

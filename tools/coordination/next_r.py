@@ -66,8 +66,10 @@ SCAN_SUFFIXES = (".md", ".cpp", ".hpp", ".h", ".py")
 # prevent it. next_aif.py carries this same lesson in its own comment; it is
 # repeated here rather than cross-referenced because the next person to edit
 # this regex will be reading THIS file.
-CITE = re.compile(r"\bR0*(\d{1,3})\b")
-ROW = re.compile(r"^\|\s*R0*(\d{1,3})\s*\|", re.MULTILINE)
+# R126 applies to R-numbers too: `\d{1,3}` made "| R1000 |" match NOTHING, and
+# R is at R125 -- closer to the wall than AIF is. Same rule, same fix.
+CITE = re.compile(r"\bR0*(\d+)\b")
+ROW = re.compile(r"^\|\s*R0*(\d+)\s*\|", re.MULTILINE)
 
 
 def declared() -> set[int]:

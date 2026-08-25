@@ -34,7 +34,13 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-LANE_RE = re.compile(r'^AIF-\d{3}$')
+# R126: an AIF number IS AN INTEGER. The zero padding is a DISPLAY convention.
+# Match loosely (any width, any padding) and normalise to int; render with %03d,
+# which is a MINIMUM width and widens by itself past 999. Measured 2026-08-25:
+# `AIF-\d{3}` read "AIF-1000" as NO MATCH in five readers and, in
+# tools/tracking/seed_tracking.py, as "AIF-100" -- a DIFFERENT, ALREADY-TAKEN
+# number. Silent identity collision, not a decline.
+LANE_RE = re.compile(r'^AIF-\d+$')
 SLUG_RE = re.compile(r'^[a-z0-9][a-z0-9-]*$')
 
 

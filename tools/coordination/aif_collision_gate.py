@@ -22,22 +22,44 @@ from pathlib import Path
 
 INTAKE = "docs/ai-friendly/AI_INTERACTION_INTAKE_QUEUE_V1.md"
 AIF_DIR = "coordination/aif"
-ROW_RE = re.compile(r"^\|\s*(AIF-\d{3})\b", re.MULTILINE)
-CLAIM_RE = re.compile(r"AIF-(\d{3})\.claim$")
+# R126: an AIF number IS AN INTEGER. The zero padding is a DISPLAY convention.
+# Match loosely (any width, any padding) and normalise to int; render with %03d,
+# which is a MINIMUM width and widens by itself past 999. Measured 2026-08-25:
+# `AIF-\d{3}` read "AIF-1000" as NO MATCH in five readers and, in
+# tools/tracking/seed_tracking.py, as "AIF-100" -- a DIFFERENT, ALREADY-TAKEN
+# number. Silent identity collision, not a decline.
+ROW_RE = re.compile(r"^\|\s*AIF-0*(\d+)\b", re.MULTILINE)
+CLAIM_RE = re.compile(r"AIF-0*(\d+)\.claim$")
+# DELIBERATELY LOOSER THAN ROW_RE: one or more digits, any padding. A number
+# written AIF-89 in prose is spoken for exactly as much as one written AIF-089,
+# and this pattern is used ONLY to report, never to fail. Same reasoning as
+# tools/coordination/next_aif.py's PAT -- padding is a display convention, not
+# an identity.
+MENTION_RE = re.compile(r"AIF-0*(\d+)")
+
+
+def canon(n) -> str:
+    """Digits (any width/padding) -> the one canonical spelling. R126."""
+    return f"AIF-{int(n):03d}"
+
+
+def intake_text(root: Path) -> str:
+    p = root / INTAKE
+    return p.read_text(errors="ignore") if p.exists() else ""
 
 
 def intake_numbers(root: Path):
-    p = root / INTAKE
-    if not p.exists():
-        return []
-    return ROW_RE.findall(p.read_text(errors="ignore"))
+    # Canonicalise on the way out so AIF-43 and AIF-043 are ONE number, not two.
+    # Without this the loosened pattern would make a duplicate INVISIBLE -- the
+    # opposite of what this gate is for.
+    return [canon(n) for n in ROW_RE.findall(intake_text(root))]
 
 
 def claimed(root: Path):
     d = root / AIF_DIR
     if not d.is_dir():
         return set()
-    return {"AIF-" + m.group(1) for f in d.glob("AIF-*.claim") if (m := CLAIM_RE.search(f.name))}
+    return {canon(m.group(1)) for f in d.glob("AIF-*.claim") if (m := CLAIM_RE.search(f.name))}
 
 
 def main() -> int:
@@ -75,6 +97,31 @@ def main() -> int:
             print(f"\nadvisory: claim(s) with no intake row (abandoned/demo -> release-aif): {', '.join(orphan_claims)}")
         if unclaimed_rows:
             print(f"advisory: intake row(s) with no claim file (pre-coordination): {len(unclaimed_rows)}")
+
+        # ADVISORY -- AIF numbers CITED in the register with no row of their own.
+        # Added 2026-08-25 (AIF-128 follow-on). PRINT ONLY: it cannot move the
+        # exit code, and must not -- a cross-reference is not a collision.
+        #
+        # WHY IT EXISTS. R-numbers already get this advisory ("N number(s) cited
+        # in the tree with no register row, back-fill welcome") and AIF numbers
+        # did not, so the class was invisible here. It surfaced only because two
+        # counters in the same prepush output disagreed by one -- next_aif.py
+        # reporting 126 against this gate's 125 -- and someone diffed them by
+        # hand. One number today; the class grows silently.
+        #
+        # SCOPE IS THE REGISTER, NOT THE TREE, and that is a deliberate limit.
+        # The R gate walks 1,884 files; this reads the one file already in hand,
+        # so it costs nothing and catches the case that actually bit. An AIF
+        # number cited only in source or a lane doc is NOT reported. Say so
+        # rather than let the line read as full coverage.
+        cited_no_row = sorted(
+            {canon(n) for n in
+             {int(m) for m in MENTION_RE.findall(intake_text(root))}}
+            - rowset)
+        if cited_no_row:
+            print(f"advisory: AIF number(s) cited in the register with no row of "
+                  f"their own (register scope only, not the tree; back-fill "
+                  f"welcome): {', '.join(cited_no_row)}")
         if args.strict and (orphan_claims or unclaimed_rows):
             fail = True
             print("STRICT: ledger/intake not reconciled -> FAIL", file=sys.stderr)

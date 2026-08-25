@@ -35,7 +35,21 @@ from pathlib import Path
 
 DASHBOARD = "docs/ai-friendly/AI_FRIENDLY_DASHBOARD_V1.md"
 CLOSEOUT_RE = re.compile(r"docs/maintenance/SESSION_CLOSEOUT_[^/]+\.md$")
-AIF_RE = re.compile(r"\bAIF-(\d{3})\b")
+# R126: an AIF number IS AN INTEGER. The zero padding is a DISPLAY convention.
+# Match loosely (any width, any padding) and normalise to int; render with %03d,
+# which is a MINIMUM width and widens by itself past 999. Measured 2026-08-25:
+# `AIF-\d{3}` read "AIF-1000" as NO MATCH in five readers and, in
+# tools/tracking/seed_tracking.py, as "AIF-100" -- a DIFFERENT, ALREADY-TAKEN
+# number. Silent identity collision, not a decline.
+# ... AND NOT A BRACE-EXPANSION SHORTHAND. Measured 2026-08-25 while widening:
+# docs/maintenance/SESSION_CLOSEOUT_AIF112_PHASE1_AND_LOCK_MUTUAL_EXCLUSION_
+# 2026-08-15.md:60 writes `coordination/aif/AIF-11{6,7}.claim` for the PAIR
+# 116 and 117. "{" is a non-word character, so a bare \b happily matched
+# "AIF-11" and resolved it to AIF-011 -- a real number, wrongly cited. The old
+# \d{3} pattern missed it by accident; the widened one must decline it on
+# purpose. Only the PROSE scanners need this. Row-anchored patterns do not: a
+# row id sits at line start and is followed by "|".
+AIF_RE = re.compile(r"\bAIF-0*(\d+)\b(?!\{)")
 
 
 def repo_root() -> Path:
@@ -144,11 +158,13 @@ def owning_lane(path: Path) -> str | None:
     for line in text.splitlines():
         if line.startswith("# "):
             hit = AIF_RE.search(line)
-            return f"AIF-{hit.group(1)}" if hit else None
+            # int() then %03d: the capture is now unpadded, so echoing it raw
+            # would turn AIF-043 into AIF-43 and stop matching the claim files.
+            return f"AIF-{int(hit.group(1)):03d}" if hit else None
 
     head = "\n".join(text.splitlines()[:40])
     hit = AIF_RE.search(head)
-    return f"AIF-{hit.group(1)}" if hit else None
+    return f"AIF-{int(hit.group(1)):03d}" if hit else None
 
 
 def main() -> int:

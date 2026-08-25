@@ -73,6 +73,24 @@ def main() -> int:
     hi = max(taken)
     nxt = hi + 1
 
+    # WHY THIS NUMBER READS HIGHER THAN THE COLLISION GATE'S, added 2026-08-25.
+    #
+    # The prepush output prints these two lines a few apart:
+    #     next_aif.py          intake register : 126 number(s)
+    #     aif_collision_gate   intake rows: 125   distinct AIF: 125
+    #
+    # BOTH ARE RIGHT. They ask different questions on purpose. This tool
+    # matches AIF-NNN ANYWHERE in the register, because a number someone has
+    # merely WRITTEN DOWN is spoken for and handing it out would collide.
+    # The gate matches row ids (`| AIF-NNN |`) because a row id is the only
+    # thing that can be DUPLICATED. An allocator should over-count; a
+    # duplicate detector must not.
+    #
+    # Measured 2026-08-25, the difference was exactly one number: AIF-043,
+    # cited three times inside other rows' Notes and in a delivery note, with
+    # no row of its own. Recorded here so the next reader does not re-derive
+    # it or "fix" one tool to agree with the other. See AIF-128 for the
+    # general rule: name what is in a count, and say which question it answers.
     print(f"intake register : {len(intake_nums)} number(s)  {INTAKE.relative_to(ROOT)}")
     print(f"claim files     : {len(claim_nums)} number(s)  {CLAIMS.relative_to(ROOT)}/")
     print(f"union           : {len(taken)} distinct")

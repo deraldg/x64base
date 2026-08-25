@@ -35,7 +35,14 @@ SESS_DIR = f"{COORD}/active_sessions"
 LOCK_DIR = f"{COORD}/locks"
 QUIP_DIR = f"{COORD}/quips"
 LINEAGE_DIR = f"{COORD}/lineage"
-AIF_LO, AIF_HI = 6, 999          # scan AIF-006 .. AIF-999
+# R126: an AIF number is an INTEGER; the padding is display. This bound is the
+# SCAN range, and it WAS the real ceiling in the minting path -- %03d widens by
+# itself past 999, but this range stopped dead at it, so `claim-aif` would have
+# returned no candidate at AIF-999 while the formatter was perfectly happy.
+# Raised, and the candidate list below is now LAZY so the wider bound costs
+# nothing: the generator stops at the first free number, it does not build a
+# million-element list.
+AIF_LO, AIF_HI = 6, 999999       # scan AIF-006 .. AIF-999999
 STALE_MIN = 240                  # presence/lock older than this (min) is reapable
 INTAKE = "docs/ai-friendly/AI_INTERACTION_INTAKE_QUEUE_V1.md"
 
@@ -56,9 +63,12 @@ def ensure_dirs(root: Path):
 def git_committed_aifs(root: Path):
     try:
         out = subprocess.check_output(
-            ["git", "-C", str(root), "grep", "-hoE", r"AIF-[0-9]{3}", "HEAD", "--", "docs", "AI_PORTAL.md"],
+            # -hE not -hoE: grep returns LINES and the Python pattern below is the
+            # single extractor, so the brace-shorthand rule lives in exactly one
+            # place. POSIX ERE cannot express the negative lookahead at all.
+            ["git", "-C", str(root), "grep", "-hE", r"AIF-[0-9]+", "HEAD", "--", "docs", "AI_PORTAL.md"],
             text=True, stderr=subprocess.DEVNULL)
-        return set(re.findall(r"AIF-([0-9]{3})", out))
+        return set(re.findall(r"\bAIF-0*([0-9]+)\b(?!\{)", out))
     except Exception:
         return set()
 
@@ -67,12 +77,12 @@ def working_tree_aifs(root: Path):
     p = root / INTAKE
     if not p.exists():
         return set()
-    return set(re.findall(r"^\|\s*AIF-([0-9]{3})\b", p.read_text(errors="ignore"), re.MULTILINE))
+    return set(re.findall(r"^\|\s*AIF-0*([0-9]+)\b", p.read_text(errors="ignore"), re.MULTILINE))
 
 
 def claimed_aifs(root: Path):
     d = root / AIF_DIR
-    return {m.group(1) for f in d.glob("AIF-*.claim") if (m := re.match(r"AIF-(\d{3})\.claim", f.name))}
+    return {m.group(1) for f in d.glob("AIF-*.claim") if (m := re.match(r"AIF-0*(\d+)\.claim", f.name))}
 
 
 def taken(root: Path):
@@ -82,7 +92,7 @@ def taken(root: Path):
 def claim_aif(root: Path, member, run, lane, want=None):
     ensure_dirs(root)
     used = taken(root)
-    candidates = [want] if want is not None else [n for n in range(AIF_LO, AIF_HI + 1) if n not in used]
+    candidates = [want] if want is not None else (n for n in range(AIF_LO, AIF_HI + 1) if n not in used)
     for n in candidates:
         path = root / AIF_DIR / f"AIF-{n:03d}.claim"
         try:
@@ -273,8 +283,9 @@ def holds(root: Path, run):
     for f in sorted((root / AIF_DIR).glob("*.claim")):
         body = f.read_text(errors="ignore")
         if f"run_id: {run}" in body:
-            m = re.search(r"AIF-([0-9]{3})", body)
-            out.append("AIF-" + m.group(1) if m else f.stem)
+            m = re.search(r"AIF-0*([0-9]+)", body)
+            # %03d, not the raw capture: the capture is unpadded now.
+            out.append("AIF-%03d" % int(m.group(1)) if m else f.stem)
     return out
 
 

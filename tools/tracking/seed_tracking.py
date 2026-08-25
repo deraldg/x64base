@@ -40,7 +40,21 @@ DEFAULT_OUT = REPO / "dottalkpp" / "data" / "metadata" / "portal" / "seed"
 DOCPAT = re.compile(r"([\w./-]+\.(?:md|csv|json|yaml|html|cpp|hpp|py))")
 MEMBERPAT = re.compile(r"(member\.[A-Za-z0-9_.]+)")
 PROJPAT = re.compile(r"(project\.[A-Za-z0-9_.]+)")
-AIFPAT = re.compile(r"AIF-(\d{3})")
+# R126: an AIF number IS AN INTEGER. The zero padding is a DISPLAY convention.
+# Match loosely (any width, any padding) and normalise to int; render with %03d,
+# which is a MINIMUM width and widens by itself past 999. Measured 2026-08-25:
+# `AIF-\d{3}` read "AIF-1000" as NO MATCH in five readers and, in
+# tools/tracking/seed_tracking.py, as "AIF-100" -- a DIFFERENT, ALREADY-TAKEN
+# number. Silent identity collision, not a decline.
+# ... AND NOT A BRACE-EXPANSION SHORTHAND. Measured 2026-08-25 while widening:
+# docs/maintenance/SESSION_CLOSEOUT_AIF112_PHASE1_AND_LOCK_MUTUAL_EXCLUSION_
+# 2026-08-15.md:60 writes `coordination/aif/AIF-11{6,7}.claim` for the PAIR
+# 116 and 117. "{" is a non-word character, so a bare \b happily matched
+# "AIF-11" and resolved it to AIF-011 -- a real number, wrongly cited. The old
+# \d{3} pattern missed it by accident; the widened one must decline it on
+# purpose. Only the PROSE scanners need this. Row-anchored patterns do not: a
+# row id sits at line start and is followed by "|".
+AIFPAT = re.compile(r"\bAIF-0*(\d+)\b(?!\{)")
 
 COLUMNS = {
     "SYSLANE": ["ID", "LKEY", "TITLE", "OWNERKEY", "STEWARDKEY", "PROJECT", "SDLCLANE",
@@ -144,7 +158,7 @@ def _proof_lane(p: dict) -> str:
     blob = " ".join(str(p.get(k, "")) for k in ("id", "label", "notes", "source", "item_id"))
     blob += " " + " ".join(str(x) for x in (p.get("related") or []))
     m = AIFPAT.search(blob)
-    return f"AIF-{m.group(1)}" if m else ""
+    return f"AIF-{int(m.group(1)):03d}" if m else ""
 
 
 def extract_proofs(root: Path) -> list[dict]:
