@@ -16,6 +16,7 @@ Checks:
 No third-party deps. Owner: member.derald - steward: member.ai.claude.cowork - lane: AIF-050.
 """
 import argparse
+import idcite
 import re
 import sys
 from pathlib import Path
@@ -116,7 +117,8 @@ def main() -> int:
         # rather than let the line read as full coverage.
         cited_no_row = sorted(
             {canon(n) for n in
-             {int(m) for m in MENTION_RE.findall(intake_text(root))}}
+             {int(m) for m in MENTION_RE.findall(
+                 idcite.live_text(intake_text(root)))}}
             - rowset)
         if cited_no_row:
             print(f"advisory: AIF number(s) cited in the register with no row of "

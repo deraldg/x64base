@@ -22,6 +22,7 @@ Owner: member.derald - steward: member.ai.claude.cowork - lane: AIF-050 - status
 """
 import argparse
 import datetime as dt
+import idcite
 import os
 import re
 import subprocess
@@ -68,7 +69,9 @@ def git_committed_aifs(root: Path):
             # place. POSIX ERE cannot express the negative lookahead at all.
             ["git", "-C", str(root), "grep", "-hE", r"AIF-[0-9]+", "HEAD", "--", "docs", "AI_PORTAL.md"],
             text=True, stderr=subprocess.DEVNULL)
-        return set(re.findall(r"\bAIF-0*([0-9]+)\b(?!\{)", out))
+        # Prose scan -> honours id-cite:ignore. working_tree_aifs() below is
+        # row-anchored (a DECLARATION) and deliberately does not.
+        return set(re.findall(r"\bAIF-0*([0-9]+)\b(?!\{)", idcite.live_text(out)))
     except Exception:
         return set()
 

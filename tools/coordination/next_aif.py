@@ -29,6 +29,7 @@ hunting for exactly that kind of tool found six others and missed it.
 
 Run:  $py12 tools\\coordination\\next_aif.py
 """
+import idcite
 import pathlib
 import re
 import sys
@@ -45,12 +46,22 @@ CLAIMS = ROOT / "coordination" / "aif"
 # normalise to int; the padding is a display convention, not the identity.
 PAT = re.compile(r"AIF-0*(\d+)")
 
+# THE DECLARATION PATTERN, AND IT IS NOT SUPPRESSIBLE. A row id is how an AIF
+# number is CLAIMED. `id-cite:ignore` may hide a citation; if it could hide a
+# row the marker would become a way to conceal a duplicate. So row ids are
+# unioned in BEFORE the marker is applied to the looser scan below.
+ROW_PAT = re.compile(r"^\|\s*AIF-0*(\d+)\b", re.MULTILINE)
+
 
 def main() -> int:
     intake_nums: set[int] = set()
+    opted_out = 0
     if INTAKE.is_file():
         text = INTAKE.read_text(encoding="utf-8", errors="replace")
-        intake_nums = {int(m) for m in PAT.findall(text)}
+        rows = {int(m) for m in ROW_PAT.findall(text)}          # never suppressible
+        mentions = {int(m) for m in PAT.findall(idcite.live_text(text))}
+        intake_nums = rows | mentions
+        opted_out = idcite.suppressed_count(text)
     else:
         print(f"WARNING: intake register not found: {INTAKE}", file=sys.stderr)
 
@@ -92,6 +103,12 @@ def main() -> int:
     # it or "fix" one tool to agree with the other. See AIF-128 for the
     # general rule: name what is in a count, and say which question it answers.
     print(f"intake register : {len(intake_nums)} number(s)  {INTAKE.relative_to(ROOT)}")
+    if opted_out:
+        # REPORT the opt-outs. A suppression nobody can see is
+        # indistinguishable from a scanner that silently stopped working --
+        # the same reason check_cited_paths prints its ignored paths.
+        print(f"                  ({opted_out} line(s) marked {idcite.SUPPRESS},"
+              f" citations there not counted; row ids always are)")
     print(f"claim files     : {len(claim_nums)} number(s)  {CLAIMS.relative_to(ROOT)}/")
     print(f"union           : {len(taken)} distinct")
     print(f"highest taken   : AIF-{hi}")

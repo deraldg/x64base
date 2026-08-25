@@ -35,6 +35,7 @@ its output says exactly where to look.
 
 Run:  $py12 tools\\coordination\\next_r.py
 """
+import idcite
 import pathlib
 import re
 import sys
@@ -102,8 +103,14 @@ def cited_map() -> dict[str, set[int]]:
             if "__pycache__" in p.parts:
                 continue
             try:
+                # R126 follow-up: a document may QUOTE an R number without
+                # SPENDING it. Applied HERE, on the citation scan, and
+                # deliberately NOT in declared() -- a register row is how a
+                # number is claimed, and a marker that could hide one would
+                # turn this gate into the instrument of a collision.
                 nums = {int(m) for m in CITE.findall(
-                    p.read_text(encoding="utf-8", errors="replace"))}
+                    idcite.live_text(
+                        p.read_text(encoding="utf-8", errors="replace")))}
             except OSError:
                 continue
             out[p.relative_to(ROOT).as_posix()] = nums

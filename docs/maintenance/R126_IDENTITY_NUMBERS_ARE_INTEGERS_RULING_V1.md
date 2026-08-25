@@ -202,17 +202,20 @@ numbers is the wrong trade today.
 ## 11. Section 10's own warning, walked into one section later, for 874 numbers
 
 **A NOTE ON THIS SECTION'S SPELLING, WHICH IS THE WHOLE POINT.** Every R number
-below is written in words, and the one quoted gate line has its R token
-altered. That is not fussiness -- writing them normally is exactly what caused
-what follows, twice: once in the ruling body, and once in the first draft of
-this section, which recreated the defect it exists to describe.
+below is written in words. That is not fussiness -- writing them normally is
+exactly what caused what follows, twice: once in the ruling body, and once in
+the first draft of this section, which recreated the defect it exists to
+describe. The one quoted gate line is now VERBATIM again, carried by the
+`id-cite:ignore` marker built in section 12; the rest is left in words as the
+record of what the workaround cost to read.
 
 Section 10 measured this class for AIF, priced it at two numbers, and accepted
 it. **The R half was not measured, and it cost 874.**
 
-The commit that landed this ruling printed, with the token here altered:
+The commit that landed this ruling printed, verbatim -- the marker is visible
+on purpose, because it is greppable rather than magic:
 
-    declared: 18   cited in tree: 125 (over 1885 file(s))   highest: R<1000>
+    declared: 18   cited in tree: 125 (over 1885 file(s))   highest: R1000    <!-- id-cite:ignore -->
 
 The highest R number in the tree was reported as one thousand. The document
 explaining that a three-digit-bounded pattern could not match a four-digit R
@@ -253,3 +256,62 @@ and the workaround this section is written in (spelling them out in words) does
 not scale and makes documents worse to read. **Still not built: it wants an
 explicit go, and the frontier is correct without it.** Recorded as the open
 item, with a price attached this time.
+
+## 12. The marker exists now -- `id-cite:ignore`
+
+Built 2026-08-25 on the steward's go, once section 11 had put a price on the
+class. `tools/coordination/idcite.py`, mirroring `cite-check:ignore` in
+`tools/staging/check_cited_paths.py` deliberately -- same idiom, same line
+scope, same greppable-not-magic spelling:
+
+    the gate reported `highest: R1000`   <!-- id-cite:ignore -->
+
+**IT SUPPRESSES ONLY THE LINE IT APPEARS ON**, so it cannot silence a document.
+
+### The safety property, which is what makes it sound
+
+**A CITATION may be suppressed. A DECLARATION MAY NOT.**
+
+A row id in this register or the AIF intake queue, and a claim filename, are
+how a number is CLAIMED. If the marker could hide one, it would become a way to
+conceal a duplicate -- turning an anti-collision gate into the instrument of a
+collision. So:
+
+  - the declaration patterns do not consult the module AT ALL -- `next_r.ROW`,
+    `aif_collision_gate.ROW_RE` / `CLAIM_RE`, `check_aif_claimed.ROW_RE`,
+    `session_coordinator.working_tree_aifs`;
+  - `next_aif.py` gained a row-anchored `ROW_PAT` and unions row ids in
+    UNSUPPRESSIBLY before applying the marker to its looser mention scan. It
+    had no declaration pattern before; it does now, and that is a small
+    hardening this work paid for on the way past.
+
+**The marker can cost you a reminder. It cannot cost you a number.**
+
+### Proven, including the hostile case
+
+    prose citation, no marker        taken=[6, 7, 500]   rows=[6, 7]
+    marker on a ROW line             taken=[6, 7]        rows=[6, 7]
+    marker on a PROSE line           taken=[6]           rows=[6]
+    HOSTILE: a row marking ITSELF    taken=[6, 500]      rows=[6, 500]
+
+The last line is the one that matters: a row that tries to hide behind the
+marker is still counted, in both the union and the declaration set.
+
+R-side, the same two properties:
+
+    ROW on a marked register row     ['1000']   -- declaration survives
+    CITE on a marked prose line      NONE       -- citation suppressed
+    CITE on that line unmarked       ['1000']   -- and it is the marker doing it
+
+### Where it is applied, and where it is not
+
+    applied      next_r.cited_map (the tree scan that burned 874)
+                 next_aif.py mention scan
+                 session_coordinator.git_committed_aifs (the docs grep)
+                 aif_collision_gate MENTION_RE (the cited-with-no-row advisory)
+    NOT applied  every declaration pattern listed above
+
+`next_aif.py` also REPORTS the opt-outs -- how many lines were marked -- rather
+than dropping them silently. A suppression nobody can see is indistinguishable
+from a scanner that quietly stopped working, which is the same reason
+`check_cited_paths` prints its ignored paths instead of skipping them.
