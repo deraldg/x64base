@@ -187,7 +187,9 @@ def main() -> int:
 
     commands = set(g.registry_map(root)) | shortcut_aliases(root) | routed_aliases(root)
     fn_state, fn_seed = function_state(root)
-    funcs = fn_seed | ext_functions(root) | implemented_core_functions(root)
+    fn_ext = ext_functions(root)
+    fn_core = implemented_core_functions(root)
+    funcs = fn_seed | fn_ext | fn_core
     if not commands:
         print("refcheck: could not resolve the command registry", file=sys.stderr)
         return 2
@@ -197,7 +199,29 @@ def main() -> int:
         print(f"refcheck: SYSFUNC catalogue is {fn_state.upper()} "
               f"({'dottalkpp/data/metadata/SYSFUNC.dbf'}) -- the function authority "
               "below is source-derived only", file=sys.stderr)
-    seedlabel = "SYSFUNC" if fn_state == "populated" else f"SYSFUNC {fn_state.upper()}"
+    # THE LABEL NAMES WHAT IS IN THE NUMBER, added 2026-08-25.
+    #
+    # This line used to read "77 functions (SYSFUNC)" while normcheck_v1.py, one
+    # line below it in the same gate output, reported "CATALOG(SYSFUNC) 75".
+    # TWO NUMBERS FOR ONE AUTHORITY, ADJACENT, IN THE SAME RUN. Both were right:
+    # this total is a UNION of SYSFUNC with the source-derived sets, and the two
+    # extras are STU_REPEAT and STU_UPPER -- student extension functions that
+    # will never have a SYSFUNC row, exactly as check_dotref_coverage's own note
+    # about fn_STU_* says. The number was never wrong; the parenthetical
+    # attributed all of it to SYSFUNC.
+    #
+    # Same defect as counting COMMANDS.dbf's function-bridge entries as
+    # commands: a noun doing work it has not earned. See stack_audit_v1.py
+    # check G (COUNT_KINDS), which exists because that mistake was made three
+    # times in one session -- including in this very line, by the author of the
+    # check, on the same day.
+    extra = len(funcs) - len(fn_seed)
+    if fn_state == "populated":
+        seedlabel = f"SYSFUNC {len(fn_seed)}"
+    else:
+        seedlabel = f"SYSFUNC {fn_state.upper()}"
+    if extra:
+        seedlabel += f" + {extra} source-derived"
     print(f"authorities: {len(commands)} commands/aliases, {len(funcs)} functions ({seedlabel})\n")
     print(f"{'catalog':<12} {'entries':>7} {'cmd':>5} {'fn':>4} {'sub':>5} {'PHANTOM':>8}   phantoms")
     total_phantoms = 0
