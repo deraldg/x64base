@@ -162,6 +162,29 @@ def build(
             k for k in same_name if every[k].get("CATALOG", "").upper() not in compose_set
         )
 
+    # HASH THE INPUTS BEFORE WRITING ANYTHING, added 2026-08-25 after this
+    # function wrote 20 pages, a ledger, a lineage and a review document and
+    # THEN died assembling its manifest, leaving an output directory with no
+    # manifest -- artifacts with no status, no input hashes and no findings
+    # record. Anything that can refuse must refuse BEFORE the first write.
+    inputs = {
+        "selector": "allowlist" if only_keys else "postbaseline",
+        "only_topic_keys": sorted(only_keys) if only_keys else [],
+        "compose_catalogs": list(compose_catalogs),
+        "reference_run": reference_run,
+        "disposition_run": disposition_run,
+        "current_topics": str(current_topics_path),
+        "current_topics_sha256": sha256(current_topics_path),
+        # None in allow-list mode: there IS no baseline, and recording an empty
+        # string is truer than inventing a path. The crash this replaces was
+        # sha256(None).
+        "baseline_topics": str(baseline_topics_path) if baseline_topics_path else "",
+        "baseline_topics_sha256": sha256(baseline_topics_path) if baseline_topics_path else "",
+        "help_lines": str(help_lines_path),
+        "help_lines_sha256": sha256(help_lines_path),
+        "accepted_command_dir": str(accepted_command_dir),
+    }
+
     if dry_run:
         # SELECT, CLASSIFY, REPORT -- WRITE NOTHING. The contract gates generating
         # command-reference PROSE from harvested rows. Classification produces no
@@ -195,7 +218,8 @@ def build(
                        "selected": len(new_gaps), "would_fail": len(would_fail)},
             "findings": findings,
             "predicted_no_included_help_rows": would_fail,
-            "dry_run": True,
+            "inputs": inputs,          # resolved here too, so --dry-run covers
+            "dry_run": True,           # the path whose failure left a partial run
         }
 
     commands_dir = output_dir / "commands"
@@ -347,15 +371,7 @@ def build(
             "included_help_rows": sum(int(row["included_help_rows"]) for row in ledger),
             "findings": len(findings),
         },
-        "inputs": {
-            "current_topics": str(current_topics_path),
-            "current_topics_sha256": sha256(current_topics_path),
-            "baseline_topics": str(baseline_topics_path),
-            "baseline_topics_sha256": sha256(baseline_topics_path),
-            "help_lines": str(help_lines_path),
-            "help_lines_sha256": sha256(help_lines_path),
-            "accepted_command_dir": str(accepted_command_dir),
-        },
+        "inputs": inputs,
         "artifacts": {
             "ledger": str(ledger_path),
             "ledger_sha256": sha256(ledger_path),
