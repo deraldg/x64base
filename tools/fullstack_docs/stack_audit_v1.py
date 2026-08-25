@@ -22,6 +22,12 @@ Checks (all READ-ONLY; this tool never writes a table, never mutates source):
                     (uncollected additions / phantom rows).
   E. DOTREF_COV     dotref.hpp coverage measured against the LIVE SYSCMD table,
                     never against a CSV.
+  G. COUNT_KINDS    Every identity count beside the discriminator that splits it:
+                    COMMANDS.dbf holds function-bridge entries, SYSFUNC holds
+                    alias rows, @dottalk.file is not @dottalk.usage. Emits NO
+                    findings -- it reports, so the naive number never appears
+                    alone. Added after three counts went wrong the same way in
+                    one session (2026-08-25).
   F. EMBEDDED_BOM   Repo-wide scan for a UTF-8 BOM after byte 0 in C/C++ sources
                     (breaks MSVC: C3872/C2014/C2143). The prepush gate blocks these
                     at commit; this catches any already sitting in the tree.
@@ -1030,6 +1036,146 @@ def check_table_parse(root: Path):
     return findings, detail
 
 
+def check_count_kinds(root: Path):
+    """G. COUNT_KINDS -- every identity count, beside the discriminator that splits it.
+
+    WHY THIS EXISTS. On 2026-08-25 three counts went wrong in one session, all
+    the same way: a number taken from an authority that holds more than one KIND
+    of thing, with no discriminator applied.
+
+        578 "contract-bearing .cpp"   was @dottalk.file, the FILE HEADER on 578
+                                      files. Usage contracts: 231.
+        320 "commands"                is 288 commands + 32 function-bridge
+                                      entries that are really SYSFUNC functions.
+         75 "functions"               is 73 names HELP FUNCTIONS prints, plus
+                                      STRCAT and TRIM -- alias names carried in
+                                      a FunctionDoc alias field
+                                      (STRCAT->CONCAT, TRIM->RTRIM).
+
+    None was a guess. Each was a correct sum over the wrong set.
+
+    AND THE FIRST RUN OF THIS CHECK CORRECTED ITS OWN AUTHOR. The session that
+    wrote it had concluded "SRC_AUTH separates canonical functions from alias
+    rows" and committed that. SRC_AUTH splits SYSFUNC 68/7, not 73/2: the seven
+    builtin_registry rows are PADC PADL PADR PROPER STRCAT STUFF TRIM, and FIVE
+    OF THEM ARE PRINTED by HELP FUNCTIONS. SRC_AUTH is harvest provenance, not
+    alias status. The real alias discriminator lives in a FunctionDoc alias
+    field in function_catalog.cpp and is in NO table at all -- which is exactly
+    why a count taken from a table cannot be trusted to know what it holds.
+
+    WHY A CHECK AND NOT A DOCUMENT. An errata list records facts true when
+    written -- COMMANDS.dbf moved twice in the week those numbers were taken, so
+    "320 is really 288" is wrong the day a command lands and nothing says so. A
+    heads-up has to be read at the right moment by someone who does not yet know
+    they need it; that session read five governing documents and still got three
+    counts wrong. THE REGISTERS EXISTED; CONSULTING THEM IS THE STEP THAT FAILED.
+
+    This emits NO findings. It is not a defect detector -- it reports, so that
+    the naive number never appears on a page alone and nobody has to re-derive
+    the split. That is also why it cannot move the baseline ratchet.
+
+    READS THROUGH dbfread, NOT THE LOCAL dbf_column. Two of these tables are
+    x64, and this module's own dbf_fields() scans for the 0x0D descriptor
+    terminator from offset 32 -- inside the x64 phantom block -- which is
+    AIF-127. It is not firing today (SYSCMD's row count is 212, low byte 0xd4)
+    and both readers agree exactly on SYSCMD as of this writing. It WOULD fire
+    silently at 269 rows, 57 away. Fixing dbf_column is a separate change and is
+    deliberately not made here; this check simply does not depend on it.
+    """
+    detail = {}
+
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import dbfread  # noqa: E402  -- the shared x64-correct reader
+
+    # --- functions: SRC_AUTH separates catalog entries from alias rows --------
+    fn_names, fn_by_auth = set(), {}
+    fnp = root / "dottalkpp/data/metadata/SYSFUNC.dbf"
+    if fnp.is_file():
+        try:
+            t = dbfread.read(fnp)
+            for r in t.rows:
+                name = r.get("CAN_NAME", "").strip().upper()
+                if not name:
+                    continue
+                fn_names.add(name)
+                auth = r.get("SRC_AUTH", "").strip() or "(blank)"
+                fn_by_auth[auth] = fn_by_auth.get(auth, 0) + 1
+            detail["sysfunc"] = {"rows": len(t.rows), "distinct_names": len(fn_names),
+                                 "by_SRC_AUTH": fn_by_auth,
+                                 "note": "SRC_AUTH is HARVEST PROVENANCE, not "
+                                         "alias status. builtin_registry rows "
+                                         "are PADC PADL PADR PROPER STRCAT "
+                                         "STUFF TRIM -- five of those seven ARE "
+                                         "printed by HELP FUNCTIONS. The two "
+                                         "that are not (STRCAT, TRIM) are alias "
+                                         "names living in a FunctionDoc alias "
+                                         "field, which is visible ONLY in "
+                                         "function_catalog.cpp and in no table. "
+                                         "HELP FUNCTIONS prints 73 of these 75."}
+        except Exception as e:
+            detail["sysfunc"] = {"error": f"{type(e).__name__}: {e}"}
+    else:
+        detail["sysfunc"] = {"error": "SYSFUNC.dbf not found"}
+
+    # --- commands: a name also in SYSFUNC is a FUNCTION on the bridge ---------
+    cmdp = root / "dottalkpp/data/help/COMMANDS.dbf"
+    if cmdp.is_file():
+        try:
+            t = dbfread.read(cmdp)
+            names = {r.get("COMMAND", "").strip().upper() for r in t.rows}
+            names.discard("")
+            bridge = sorted(n for n in names if n in fn_names)
+            by_cat = {}
+            for r in t.rows:
+                c = r.get("CATALOG", "").strip() or "(blank)"
+                by_cat[c] = by_cat.get(c, 0) + 1
+            detail["commands_dbf"] = {
+                "rows": len(t.rows), "distinct_names": len(names),
+                "commands": len(names) - len(bridge),
+                "function_bridge_entries": len(bridge),
+                "function_bridge_names": bridge,
+                "rows_by_CATALOG": by_cat,
+                "note": "a distinct name also present in SYSFUNC is a FUNCTION "
+                        "reached through the function command-line bridge, "
+                        "not a command"}
+        except Exception as e:
+            detail["commands_dbf"] = {"error": f"{type(e).__name__}: {e}"}
+    else:
+        detail["commands_dbf"] = {"error": "COMMANDS.dbf not found"}
+
+    # --- contracts: NOT recounted here, on purpose ---------------------------
+    # The @dottalk.usage / @dottalk.file distinction was the third of the three
+    # wrong counts, and it is tempting to add it. It is NOT added, for two
+    # reasons. Check C (CONTRACT_QA) already owns the contract estate and
+    # already names this failure -- "mention-only false positives that inflate
+    # command counts". And counting it here means a THIRD full read of every
+    # tracked source, after BANNER_CENSUS and CONTRACT_QA have each already made
+    # one; this check reads three small tables and should stay cheap enough that
+    # nobody is tempted to skip the audit.
+    detail["dottalk_markers"] = {
+        "counted_here": False,
+        "owner": "check C -- CONTRACT_QA",
+        "note": "@dottalk.usage is the CONTRACT. @dottalk.file is a provenance "
+                "header and is NOT a contract -- counting it inflates the "
+                "contract estate roughly 2.5x (231 vs 578 files, 2026-08-25). "
+                "See CONTRACT_QA detail for the live contract numbers."}
+
+    # --- help topics: one table, five catalogs --------------------------------
+    tp = root / "dottalkpp/data/help/HELP_TOPIC.dbf"
+    if tp.is_file():
+        try:
+            t = dbfread.read(tp)
+            by_cat = {}
+            for r in t.rows:
+                c = r.get("CATALOG", "").strip() or "(blank)"
+                by_cat[c] = by_cat.get(c, 0) + 1
+            detail["help_topics"] = {"rows": len(t.rows), "by_CATALOG": by_cat}
+        except Exception as e:
+            detail["help_topics"] = {"error": f"{type(e).__name__}: {e}"}
+
+    return [], detail
+
+
 def check_embedded_bom(root: Path, files):
     """F. Build-breaking. Non-negotiable FAIL."""
     bad = []
@@ -1063,7 +1209,8 @@ def run_audit(root: Path):
                      ("registration_policy", lambda: check_registration_policy(root)),
                      ("table_parse", lambda: check_table_parse(root)),
                      ("dead_registration", lambda: check_dead_registration(root)),
-                     ("embedded_bom", lambda: check_embedded_bom(root, files))):
+                     ("embedded_bom", lambda: check_embedded_bom(root, files)),
+                     ("count_kinds", lambda: check_count_kinds(root))):
         f, d = fn()
         findings.extend(f)
         detail[name] = d

@@ -4,7 +4,8 @@
              errata list in the fullstack push system? or just a heads up to the
              next agent"
     By     : member.ai.claude.cowork (ALPHA)
-    Status : review-needed. **PROPOSAL ONLY -- nothing built.**
+    Status : review-needed. **BUILT 2026-08-25** -- see section 7, including
+             two corrections the first run made to this document.
 
 ---
 
@@ -115,6 +116,64 @@ puts what the next run needs:
 > read the breakdown.
 
 A hint is cheap and occasionally lands. It is not the mechanism.
+
+## 7. BUILT 2026-08-25, and its first run corrected its own author
+
+`G. COUNT_KINDS` is implemented in `stack_audit_v1.py`. It returns `([], detail)`
+-- **no findings** -- so it cannot move the FAIL/WARN ratchet or the baseline;
+its breakdown lands in the report's Detail section and in `summary.json`. First
+run, live tree:
+
+    COMMANDS.dbf   460 rows / 320 distinct = 288 commands + 32 function-bridge
+                   by CATALOG: DOT 256, FOX 175, ED 29
+    SYSFUNC         75 rows, by SRC_AUTH: function_catalog 68, builtin_registry 7
+    HELP_TOPIC     665 rows across NINE catalogs: DOT 300, FOX 170, SYSTEM 138,
+                   ED 29, EDU 15, UI 6, INTERNAL 4, EXT 2, DEV 1
+
+### 7a. Two claims of this document's own were wrong, and the check found them
+
+**`SRC_AUTH` is NOT the alias discriminator.** Sections 1 and 3b of this
+document, and commit `56bd74696`, state that `SRC_AUTH=builtin_registry` marks
+alias rows. It splits SYSFUNC **68/7, not 73/2**, and the seven are:
+
+    PADC  PADL  PADR  PROPER  STRCAT  STUFF  TRIM
+
+**Five of those seven ARE printed by `HELP FUNCTIONS`.** So `SRC_AUTH` records
+HARVEST PROVENANCE -- which reader supplied the row -- and says nothing about
+alias status. The real discriminator is membership in a `FunctionDoc` alias
+field in `function_catalog.cpp`, **which is in no table at all.**
+
+That is a sharper version of this document's own thesis than it managed to
+write: **a count taken from a table cannot always be repaired by another column
+of the same table.** Sometimes the kind is only knowable from the source.
+
+**And `HELP_TOPIC` has nine catalogs, not five.** Section 4 proposed reporting
+"665 by TOPICKEY across DOT / FOX / ED / EDU / UI". `SYSTEM` alone holds 138
+topics -- more than ED, EDU, UI, INTERNAL, EXT and DEV combined -- and was left
+out of a list written to prevent exactly this.
+
+### 7b. What that argues
+
+Both errors were made **while writing the anti-error document**, by an author who
+had just spent a session cataloguing this failure mode. Neither would have been
+caught by an errata list or a heads-up, because both WERE the heads-up. **The
+run caught them, in its first execution, before either reached a reader.**
+
+### 7c. Scope kept deliberately narrow
+
+`@dottalk` marker counts are **not** recounted here. Check C already owns the
+contract estate and already names "mention-only false positives that inflate
+command counts", and adding it would mean a third full read of every tracked
+source after BANNER_CENSUS and CONTRACT_QA. The check reads three small tables
+and points at C.
+
+It reads through `dbfread`, not the module's local `dbf_column`: two of the three
+tables are x64, and `dbf_fields()` scans for the `0x0D` terminator from offset 32
+-- **AIF-127, latent in this file.** It is not firing (SYSCMD is 212 rows, low
+byte `0xd4`, and both readers agree exactly today) and it would fire silently at
+269. **Fixing `dbf_column` is a separate change and was deliberately not made.**
+
+---
 
 ## 6. Good Neighbour
 

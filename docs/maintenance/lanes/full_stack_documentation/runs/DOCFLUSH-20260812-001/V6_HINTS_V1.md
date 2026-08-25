@@ -444,3 +444,36 @@ findstr <word>` costs one second. Two files with one name is not a naming
 problem -- it is two answers to one question, and one of them will be wrong
 later. The prior-art check exists; run it on what you are about to build, not
 only on what you are about to claim.
+
+## 9. Never count a raw authority
+
+Added 2026-08-25 after three counts went wrong in one session, all the same way:
+a number taken from an authority that holds more than one KIND of thing.
+
+    COMMANDS.dbf    320 distinct names = 288 commands + 32 FUNCTION entries
+                    reached through the function command-line bridge. A name
+                    also present in SYSFUNC is a function, not a command.
+    SYSFUNC          75 rows, and HELP FUNCTIONS prints 73. STRCAT and TRIM are
+                    ALIAS names (->CONCAT, ->RTRIM) carried in a FunctionDoc
+                    alias field in function_catalog.cpp -- WHICH IS IN NO TABLE.
+                    SRC_AUTH does NOT tell you this: it splits 68/7 and five of
+                    its seven builtin_registry rows are ordinary printed
+                    functions. Harvest provenance, not alias status.
+    @dottalk.usage  231 files is the CONTRACT estate. @dottalk.file is 578 and
+                    is a provenance header, not a contract.
+    HELP_TOPIC      665 rows across NINE catalogs -- DOT 300, FOX 170,
+                    SYSTEM 138, ED 29, EDU 15, UI 6, INTERNAL 4, EXT 2, DEV 1.
+                    A four- or five-catalog list is wrong and omits the third
+                    largest.
+
+**Do not re-derive these. Run `python tools/fullstack_docs/stack_audit_v1.py`
+and read check G (COUNT_KINDS) in the report's Detail section**, or take
+identities from `build_reference_authority_crosswalk.py`, which assigns
+`entity_type` (COMMAND / FUNCTION / ARGUMENT) and has since 2026-07.
+
+**The numbers above are already stale by design.** They are here to show the
+SHAPE of the mistake. G re-measures; this section does not.
+
+**Two of the four bullets above were wrong when first written**, in a document
+whose subject is not getting these wrong, and the check caught both on its first
+run. That is the argument for running it rather than reading this.
