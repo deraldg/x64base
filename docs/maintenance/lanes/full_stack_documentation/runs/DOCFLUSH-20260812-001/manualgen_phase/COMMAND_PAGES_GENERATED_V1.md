@@ -4,7 +4,8 @@
     Lane   : AIF-068. Ruling: R127.
     By     : member.ai.claude.cowork (ALPHA), for member.derald
     Date   : 2026-08-25
-    Status : **CANDIDATE ONLY, review-needed. NOT accepted, NOT published.**
+    Status : **ACCEPTED 2026-08-25 into command_reference_v1, review-needed.**
+             Generated as candidates first; section 8 records the acceptance.
 
 ---
 
@@ -90,9 +91,13 @@ These two pages are THIN BY RULING, not by absence of material, and the ledger
 says so in its `cross_reference` column. That distinction is the whole reason
 the column exists.
 
-## 4. What this is NOT
+## 4. What this was NOT, at generation time
 
-- **Not accepted.** Every page carries
+Section 8 supersedes the first bullet: the pages were ACCEPTED later the same
+day. The rest still holds, and the sequence is the point -- generated and
+verified as candidates first, accepted as a separate act on a separate word.
+
+- **Not accepted** (at the time of section 3). Every page carries
   `CANDIDATE ONLY: report-only command-reference page; no publication
   authority`, verified across all twenty. Acceptance into
   `command_reference_v1` is a separate act with its own hashes and its own
@@ -139,3 +144,64 @@ to be identical.
                        in the working tree.
     How to undo:       delete the output directory; nothing references it and
                        nothing was accepted. Delete this file.
+
+
+## 8. ACCEPTED, 2026-08-25
+
+Owner: *"i accept the 20"*.
+
+    accepted pages   191 -> 211  (+20)
+    all 20 byte-identical to the generated candidates (cmp, 0 differ)
+    slug collisions with the existing 191: NONE
+    none of the 20 was reader-linked
+
+### The banner was NOT edited, and that is deliberate
+
+Every one of the 191 pages already in `command_reference_v1` carries
+`CANDIDATE ONLY: report-only command-reference page; no publication
+authority` -- including the reader-linked ones. It is the convention for the
+whole surface, not a marker of un-accepted status, and it is consistent with
+the promotion model: nothing in the development worktree carries publication
+authority, which is conferred at promotion through sterilized staging.
+
+So the 20 were copied verbatim. Editing the banner would have made them the
+only twenty pages in the product that claimed something the other 191 do not.
+
+### The index tool had to be fixed first, and the defect is worth recording
+
+`build_complete_command_reference_index.py` assigned provenance with ONE
+hardcoded set and an `else`:
+
+    if slug in POSTBASELINE_REPAIR:  layer = "post-baseline repair"
+    elif slug in reader:             layer = "reader-linked"
+    else:                            layer = "supplemental"
+
+The index describes that last layer to the reader as "the accepted
+supplemental set". **So dropping the 20 in would have made the index assert,
+on twenty rows, an acceptance they had never been given** -- the same answer
+for "known supplemental" and "never classified", which is the AIF-118 shape
+inside the document whose whole job is keeping the layers distinct.
+
+It is also the same defect fixed four commits earlier in the generator, where
+a hardcoded July run id would have stamped these pages with a run that did not
+produce them. **Provenance encoded as a literal means new work inherits an old
+label.**
+
+Fixed: every layer is DECLARED -- the 8 repair, the 19 supplemental (which had
+only ever been supplemental by falling through the else, now enumerated), and
+the 20 written-debt -- and an undeclared page is UNCLASSIFIED and FAILS the
+build rather than being labelled.
+
+### Verified
+
+    behaviour-preserving on the pre-acceptance tree:
+      old 191 = reader 164 / supplemental 19 / repair 8
+      new 191 = reader 164 / supplemental 19 / repair 8 / written-debt 0
+      index differences: header wording and one new count line. NOT ONE PAGE
+      CHANGED LAYER.
+
+    after acceptance:
+      pages=211 reader=164 supplemental=19 repair=8 written_debt=20  exit 0
+
+    fail-closed proven: an undeclared page in commands/ returns exit 2 and the
+      index is NOT written. Test page removed; the directory is back to 211.
