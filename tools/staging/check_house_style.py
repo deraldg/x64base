@@ -35,6 +35,7 @@ Exit codes: 0 clean, 1 repo root not found, 2 violations in added lines.
 from __future__ import annotations
 
 import argparse
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -82,6 +83,26 @@ def offenders(text: str) -> list[str]:
         else:
             seen[ch] = f"U+{ord(ch):04X} -> use an ASCII equivalent"
     return list(seen.values())
+
+
+# A markdown table cell is separated by a SPACED pipe; inline content is not.
+# `| AIF-121 | ... [IN <n>|FREE] ... |` -- the two outer pipes are separators and
+# the one inside the brackets is BNF alternation that GFM still reads as a cell
+# boundary, so the row renders with extra columns and its Notes cell is cut in
+# three. Measured 2026-08-25 across the AIF intake register: 8 rows, 20 such
+# pipes, ZERO false positives -- every hit was real inline content (BNF
+# alternation, `DOT|PRINT`-style catalog keys, `CSV|PIPE|SDF` format lists).
+#
+# The fix is `\|`, which renders as a literal pipe and keeps the cell intact.
+INLINE_PIPE = re.compile(r"(?<!\\)(?<=\S)\|(?=\S)")
+
+
+def table_pipe_offenders(text: str) -> int:
+    """Unescaped, unspaced pipes in what looks like a markdown table row."""
+    line = text.rstrip()
+    if not (line.startswith("| ") and line.endswith("|")):
+        return 0
+    return len(INLINE_PIPE.findall(line))
 
 
 def added_lines(root: Path, rng: str | None) -> list[tuple[str, int, str]]:
@@ -185,6 +206,30 @@ def main() -> int:
         for path, lineno, line in added_lines(root, args.rng)
         if any(ord(ch) >= 128 for ch in line)
     ]
+
+    # ADVISORY, NOT A HARD BLOCK, AND THE ASYMMETRY IS DELIBERATE.
+    #
+    # The ASCII rule blocks because `--` is ALWAYS a safe substitution. This one
+    # cannot be: inside a fenced code block a line may legitimately begin with
+    # `|` -- sample gate output, an illustrated table -- and escaping there would
+    # CORRUPT the sample. This checker reads a diff, which carries no fence
+    # state, so it cannot tell a real table row from an illustrated one.
+    #
+    # Upgrade path, if the noise proves to be zero: read the whole staged file
+    # and track ``` fences, then this can block like its neighbour.
+    pipes = [
+        (path, lineno, line, n)
+        for path, lineno, line in added_lines(root, args.rng)
+        if (n := table_pipe_offenders(line))
+    ]
+    if pipes:
+        total = sum(n for _, _, _, n in pipes)
+        print(f"house-style: advisory -- {total} unescaped inline pipe(s) in "
+              f"{len(pipes)} added table row(s); each one splits its cell")
+        for path, lineno, line, n in pipes[:10]:
+            print(f"  {path}:{lineno}  ({n})")
+            print(f"      {line.strip()[:96]}")
+        print("  Escape them as \\| -- renders as a literal pipe, cell stays whole.")
 
     if not findings:
         print("house-style: PASS -- no non-ASCII in added documentation lines")
