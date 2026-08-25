@@ -443,24 +443,45 @@ Rules, each of which has already cost a session:
   (`index_manager.cpp:449-457`, `append_support.cpp:74-82`). They are opt-OUT.
   Pin them explicitly for reproducible figures.
 
-### A sandbox is not the WSL host
+### A sandbox is not the WSL host -- but it is not a place you cannot build
 
-An AI partner running in a mounted Linux sandbox (for example Cowork) is **not**
-in the maintainer's WSL and generally cannot build or run:
+A sandbox (for example Cowork) is **not** the maintainer's WSL. It is also not
+one fixed machine: a mounted sandbox and a cloud container differ in toolchain,
+in privileges, and in whether the repository is even on the filesystem.
+Therefore:
 
-| | WSL host | Cowork sandbox, measured 2026-07-31 |
-| --- | --- | --- |
-| Distro | Ubuntu 24.04 | Ubuntu 22.04.5 |
-| glibc | 2.38 | 2.35 |
-| GLIBCXX | 3.4.32 | 3.4.30 |
-| cmake / ninja | present | **absent** |
-| lmdb / sqlite3 / nlohmann / sodium headers | present | **absent** |
+**Measure your own. Never cite this section for versions.**
 
-The staged `bin-wsl-lean` ELF is readable there but **will not execute** -- it
-needs glibc 2.38 and GLIBCXX 3.4.32. The practical ceiling in such a sandbox is
-per-translation-unit `g++ -fsyntax-only`. Builds and runs are therefore
-maintainer-operated handoffs: the agent prepares the exact command and the
-expected evidence.
+```bash
+command -v cmake ninja g++ ; ldd --version | head -1
+```
+
+**A sandbox CAN build and run dottalkpp.** Measured 2026-08-12 (mounted
+sandbox, full build, `REGRESSION RUN WORKSPACE_WRITEBACK` green twice) and again
+2026-08-25 (cloud container, `core` and `DEVELOPMENT` builds, engine ran). The
+repository has said so all along: `.github/workflows/ci.yml` builds and `ctest`s
+the tree on `ubuntu-latest` on every push to `main`.
+
+The recipe, its traps, and the differences between the two sandbox shapes are in
+**`docs/agents/HANDOFF_CLAUDE_COWORK_SANDBOX_BUILD_2026-08-12.md`**. Read it
+before you start; three agents have now re-derived it independently because this
+section used to say the opposite.
+
+**What remains true:** the staged `dottalkpp/bin-wsl-lean/` ELF is built against
+the WSL host's newer glibc/GLIBCXX and is not expected to execute in a sandbox.
+That is a property of that binary, not a ceiling on the sandbox.
+
+**What was false, and is corrected here (AIF-130):** that a sandbox "generally
+cannot build or run", and the `g++ -fsyntax-only` ceiling drawn from it. That
+ceiling came from a 2026-07-31 table showing `cmake / ninja` absent. Absent by
+default is not prevented -- pip, apt, or a preinstalled image each fix it, and
+the 2026-08-12 measurement retired the claim thirteen days before this
+correction landed.
+
+**A green in a sandbox is not a green on the maintainer's toolchain.** Name the
+platform you measured on, every time. And if your change adds a command or an
+expression builtin, the OTHER platform's binary is stale by definition: say
+"rebuild first" in the same breath as "re-run this".
 
 **A sandboxed agent must run NO git commands.** Even `git status` refreshes the
 index, takes `.git/index.lock`, and cannot reliably unlink it across the mount,
