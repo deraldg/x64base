@@ -273,3 +273,87 @@ question.
                         `windows-lean-table`; `git show origin/main:BUILDING.md`
                         contains "not on the public repository yet".
     How to undo       : delete this file.
+
+---
+
+## 11. MEASURED 2026-08-25 against `origin/main` -- three of the row's premises are wrong
+
+Read-only, from the development worktree. `origin/main` is a local ref, so none
+of this needed the staging tree.
+
+### 11a. The `docs/getting-started/` copy does NOT repeat the false claim
+
+The row says it "was NOT inspected and may repeat it". **Inspected. It does
+not.** `origin/main:docs/getting-started/BUILDING.md` is 47 lines and mentions
+`DOTTALK_PRODUCT` zero times and `windows-lean` zero times. It is a clean,
+preset-driven quickstart: core preset, Windows VS2022, Linux/WSL/macOS, and the
+vcpkg feature lanes, closing with "Do not add personal package-manager or
+dependency paths to tracked CMake files."
+
+**Nor does main's ROOT copy carry it** -- zero hits there too. The only tree
+carrying the phrase is `development`, and it carries it inside the CORRECTION:
+"Corrected 2026-08-17. This section previously said ... That is wrong." A grep
+for the defect finds the fix, which is worth knowing before someone greps.
+
+### 11b. The public README does not link that file
+
+The row says "the public README links the `docs/getting-started/` copy".
+`origin/main:README.md` links two things in that area and NEITHER is it:
+
+    :26   https://x64base.com/docs/getting-started/overview/   -- the SITE
+    :191  docs/getting-started/POSIX_WSL_QUICKSTART.md          -- a SIBLING
+
+A `git grep` for `getting-started/BUILDING` across all of `main` outside
+`docs/maintenance` returns nothing. **The file is referenced by nothing on the
+branch that carries it.**
+
+### 11c. It is the ONLY main-only file in a directory whose siblings are shared
+
+    docs/getting-started/ on main          4 files
+    docs/getting-started/ on development   3 files -- the same three
+
+    DEVELOPER_CONSTANTS_AND_X64_METADATA.md   both
+    FAQ.md                                    both
+    POSIX_WSL_QUICKSTART.md                   both
+    BUILDING.md                               MAIN ONLY
+
+So this is not a quickstart TIER that only `main` has. It is a shared directory
+with exactly one orphan in it, which is precisely
+`PROMOTION_PROCESS.md` section 6's classification: present in staging, no
+development counterpart, off the intent.
+
+## 12. What this does to the recommendation
+
+**Section 6's two actions stand, and are now EVIDENCED rather than reasoned.**
+
+The delete in item 2 was recommended on the ground that the file is
+unreferenced. That ground is now measured on three independent counts: nothing
+on `main` cites it, it has no development counterpart while all three of its
+siblings do, and the site already covers the getting-started tier
+(`WEBSITE_CONTENT_MANIFEST_M1_CLASSIFICATION_V1.md:72` lists "getting-started/
+overview, installation, quickstart, faq" as site content).
+
+**THE ALTERNATIVE WAS CONSIDERED AND IS REJECTED ON THE ROW'S OWN GROUNDS.**
+Adopting the file into `development` -- keeping it as the quickstart tier with
+root `BUILDING.md` as the fuller document and DEV-21 as reference -- would give
+it a counterpart and let it promote legitimately. The content is good enough to
+justify asking. **It is rejected because it builds exactly the three-way split
+the row names as "the live risk"**, and because the tier it would occupy is
+already occupied by the website.
+
+**NOT A NEW DECISION, AND THE DISTINCTION MATTERS.** Nothing here changes what
+was recommended in section 6 or ruled in section 10. It removes the last
+unmeasured premise from under it. The row can be closed on evidence rather than
+on a reading.
+
+## 13. Still not runnable from here
+
+Unchanged, and stated again because read access is not write authority:
+`C:\x64base` was granted READ-ONLY for this examination. Items 1 and 2 are a
+promotion run and a purge inside the rebuild-review-commit window, and
+`PROMOTION_PROCESS.md` is non-negotiable that only sterilized staging may update
+`main`. **Nothing in the staging tree was written, and nothing should be until
+the steward runs the promotion himself.**
+
+When 1 and 2 land, section 10d applies: retire all four copies of the
+"pick one location" note in the same commit.
