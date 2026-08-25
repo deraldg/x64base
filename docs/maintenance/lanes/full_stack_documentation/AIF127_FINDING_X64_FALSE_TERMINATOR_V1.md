@@ -115,6 +115,46 @@ There is one on disk already.
 
 ---
 
+## 7. WHAT THE BLOCKED READ WAS HIDING -- added 2026-08-25, same day
+
+Section 3 argued this class matters because the affected table is the integrity
+table. That was an argument. **It is now a measurement.**
+
+MANHASH was opened with a one-off parser that locates `X64M` positively rather
+than deriving it from the `0x0D` terminator, and every one of its thirteen
+declared artifacts was re-hashed against disk:
+
+    match 12   drift 1   missing 0
+
+The one drifted row is **MANHASH-001, the published developer manual** -- the
+only artifact in the catalog that anyone reads:
+
+    accepted   5C45339E6DF0406913092991E85A37FAD77A03B5C241E0C53EB5DB89543F923A
+    on disk    5ADFCDED44B4C7F4B0938EAC526FA466A5C4BB48FD59BFC85DA582E91E7F2C53
+
+    catalog promoted     2026-05-27 14:47:38Z
+    publication written  2026-05-27 19:13:55Z   (4h 26m later, same day)
+
+and `man_catalog_v1_manifest.json` records `"publication_replacement": 0`, so
+the promotion did not do it.
+
+**The catalog has been asserting a stale hash for its headline artifact for
+ninety days, and the assertion lives in the one table the reader declines to
+open.** This is not a coincidence in the bad sense -- MANHASH is the integrity
+table precisely because it is the one that changes when artifacts change, so it
+is the table most likely to sit at an arbitrary row count. But it does raise the
+priority: the defect is not "one table is awkward to read", it is **"the drift
+detector is the thing that is unreadable."**
+
+This does NOT change what is claimed in section 6. No data was lost; the drift
+is an addition, not damage; the reader is still right to decline rather than
+guess. The one-off parser was not committed and nothing here fixes AIF-127.
+
+Full verification pass:
+`docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260812-001/manualgen_phase/PHASE6_CATALOG_VERIFICATION_V1.md`
+
+---
+
 ## Good Neighbor note
 
     WHAT CHANGED   : this finding and coordination/aif/AIF-127.claim. No source,
