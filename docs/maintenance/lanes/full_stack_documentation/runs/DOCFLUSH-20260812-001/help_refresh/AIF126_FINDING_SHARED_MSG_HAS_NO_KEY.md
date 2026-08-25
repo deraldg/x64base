@@ -149,13 +149,60 @@ check that a HELP_LINE row can name its topic.
   2026-08-05, which is as far back as the backups reach.
 - **Not claimed: any fix.** No repair is proposed here. This is a finding.
 
-## 8. What it costs, stated plainly
+## 8. What it costs -- CORRECTED 2026-08-25, my first statement was inflated
 
-Nine percent of the help store cannot be retrieved by any operator through any
-command, and the surface that would have said so reports it as a zero in a
-column nobody reads. Two of the three largest unreachable headers are `SET` and
-`ABOUT` -- the two commands most likely to be the first thing a new operator
-types.
+**What I first wrote, and why it was wrong.** I wrote that "nine percent of the
+help store cannot be retrieved by any operator" and pointed at `COMMAND:SET`
+(151 lines) and `COMMAND:ABOUT` (138) as "the two commands most likely to be
+the first thing a new operator types." That reads as though a hundred and fifty
+lines of SET *documentation* were missing. **They are not.** I wrote the
+sentence before sampling a row, and the sample refutes it:
+
+    STATUS | SET_MESSAGE_CATALOG_VALIDATION_GREEN_LAB | green
+    STATUS | SET_MESSAGE_CATALOG_VALIDATION_STATUS_TE | Message catalog validation: {status}
+
+That is the runtime MESSAGE CATALOG -- the strings the engine prints, carrying
+`{placeholder}` substitution slots. `COMMAND:SET`'s 151 rows are 80 STATUS and
+71 MESSAGE, and both kinds are excluded from rendering **on purpose**
+(`cmdhelp.cpp:1705` drops STATUS as "validator material"; MESSAGE is not in
+`render_kind_default`'s allow-list at all). Raw `{status}` templates in a help
+page would be noise. The renderer is not a second bug.
+
+**What actually holds up, measured after the fix:**
+
+    owner-keyed rows ...... 2,757
+    renderable ............ 530    ERROR 478, WARNING 32, HINT 19, DEPRECATION 1
+    blocked by policy ..... 2,227  STATUS 1,098, MESSAGE 1,009, SOURCE_FACT 120
+    topics with content ... 83 of 139
+
+So the honest cost is **530 operator-facing rows -- every error, warning and
+hint those 83 topics can emit -- unreachable by any means**, plus a broken join
+that made 2,757 rows unaddressable in the data layer regardless of what the
+renderer would have done with them. That is a real defect and worth fixing. It
+is not nine percent of the operator's help.
+
+**The distinction that makes it concrete.** `CMDHELP COMMAND:SET` renders
+nothing even now, correctly -- its payload is all message-catalog templates.
+`CMDHELP COMMAND:AUTODBF` renders 35 lines, and they are exactly what an
+operator wants:
+
+    ERROR
+    -----
+    Cannot open {path} for read.
+    MAXCHAR must be between 1 and 254.
+    line {line}: expected {expected} column(s), found {found}
+    long text requires {bytes} bytes; AUTODBF does not auto-promote to memo yet
+    target exists: {path}
+    ... 30 more
+
+Every failure AUTODBF can report, on one page, reachable by name. That is the
+win, and it is smaller and sharper than the one I claimed.
+
+**A new question this exposes, for a ruling.** 56 of the 139 owner topics have
+ZERO renderable rows. They can never render anything, by design. That is
+`topics=0` inverted -- a topic that exists and can never answer. They look like
+`MSGMGR`'s surface rather than `CMDHELP`'s, and the boundary should be decided
+before it calcifies.
 
 ## 9. Owed
 

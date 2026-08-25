@@ -627,7 +627,20 @@ static void append_line_rows_for_role(const Artifact& artifact,
             HelpLineRow row;
             row.line_id = next_line_id++;
             row.art_id = art_id;
-            row.topickey = artifact.cmdkey;
+            // ONE KEY, ONE ANSWER. This must stay the same expression the
+            // HELP_TOPIC (line ~346) and HELP_SECTION (line ~419) builders
+            // use. It did not, and it cost 2,757 rows -- the whole
+            // SHARED_MSG bucket plus MINER:SOURCE, 9.4% of the store --
+            // which reached HELP_LINE with a BLANK key while their headers
+            // reached HELP_TOPIC with a real one, so no operator could
+            // retrieve them by any name. A shared message clears both
+            // cmdkey and command on purpose (helpdata_artifacts.cpp:75-88)
+            // and carries its identity in the OWNER; only topic_key_for
+            // knows that. Reading the raw field here silently produced "".
+            // topic_key_for returns cmdkey unchanged when it is set, so
+            // every row that had a key keeps exactly the key it had.
+            // See AIF-126.
+            row.topickey = topic_key_for(artifact);
             row.catalog = artifact.catalog;
             row.topic = artifact.command;
             row.kind = to_string(artifact.kind);
