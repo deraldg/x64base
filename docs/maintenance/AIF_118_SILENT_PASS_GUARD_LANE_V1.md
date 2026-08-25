@@ -27,7 +27,7 @@ regexes. They are the same defect:
 Each had been passing for weeks or months. None had ever failed. That is the tell:
 a check that has never failed has not been shown to work.
 
-## The five instances, as evidence
+## The instances, as evidence
 
 | # | where | what returned the same answer for absent and fine |
 | --- | --- | --- |
@@ -36,10 +36,20 @@ a check that has never failed has not been shown to work.
 | 3 | Tailwind opacity `bg-bg/78` | an off-scale value generates NO css rather than erroring, so a hero caption shipped at **1.24:1** contrast and six further utilities rendered nothing at all |
 | 4 | `tools/ci/source_policy.py` | asserted a licence the project replaced on 2026-08-08, so CI failed on public main for the CORRECT repository state -- the gate WAS the drift |
 | 5 | `tools/common/local_paths` predecessors | seven of nine detectors matched only `[A-Za-z]:` drive letters while agents run under WSL; 3,063 POSIX host paths were invisible to every one of them |
+| 6 | `normcheck_v1.sysfunc_names()` | `set()` for a MISSING SYSFUNC and `set()` for one in perfect agreement. `FN_IDENTITY` is **fail**-severity and is computed as a set difference, so an absent authority yields zero findings -- byte-identical output to a healthy catalogue. `FN_COVERAGE` did move 0 -> 75, but it is **warn**, so a human would see seventy-five warnings and the gate would see none. FIXED 2026-08-25, proven to fail in four states |
+| 7 | `refcheck_v1.function_names()` | absent, EMPTY **and unreadable** all returned `set()` -- `except Exception: return set()`. It sat forty-one lines below `catalog_state()`, this lane's own exemplary three-state repair. **The rule was applied to one reader and not to the one immediately beneath it.** FIXED 2026-08-25 |
+| 8 | `refcheck_v1` precondition guard (AIF-128) | named the command registry in its message and tested the UNION of the registry with two alias sources, so it passed whenever ANY of the three resolved. **It did not fail quiet -- it failed LOUD AT THE WRONG FILE:** with the registry emptied it charged 270 correct hand-authored catalog entries and exited 1. Exit 1 says "your catalogs are wrong"; exit 2 says "I could not measure". FIXED `8c37d0ac0` |
+| 9 | `build_complete_command_reference_index.py` | an `else` branch labelled anything unrecognised "supplemental" -- a layer the index describes to readers as *the accepted supplemental set*. Same answer for "known supplemental" and "never classified", **in the document whose entire job is keeping the provenance layers distinct.** FIXED `706952ef4`; every layer now DECLARED and an undeclared page FAILS |
+| 10 | the page generator's own `--dry-run` | **the shape in the VERIFICATION, not the code.** The dry run returned before the write path, so it answered "fine" for a path it never executed. It passed; the real run then wrote 20 pages and died assembling its manifest. FIXED `bb6712b20` by hashing inputs before the first write |
 
 Two more of the same shape were found in the AUTHOR'S OWN new tests, by mutation
 testing rather than review: a guard test that passed with its rule deleted, and a
 catalog parser that silently reported 28 of 29 because it required a trailing comma.
+
+**Instances 6 to 10 were all found on ONE DAY, 2026-08-25**, during work that was
+not looking for them -- a documentation flush. That is the lane's thesis restated
+by accident: the shape is not rare and it is not clustered, it is what a guard
+degrades into when nobody makes it fail.
 
 ## The rule this lane exists to enforce
 
@@ -139,6 +149,12 @@ people to delete rows.
   `run_normalization_guards()`, not merely by being present in the tuple.
 - A `Prose.tsx` half-override guard: two light-mode readability regressions in five days,
   both from a background override without a matching foreground.
+- **`refcheck_v1`'s FUNCTION half still has no precondition guard at all.**
+  Currently ACCEPTABLE rather than ignored: `function_state()` three-states
+  SYSFUNC, emits a finding for absent and empty, and the summary line prints
+  `SYSFUNC ABSENT` instead of a number -- so the absence IS reported by name.
+  But "reported somewhere" is a weaker property than "guarded", and if that
+  reporting is ever simplified this becomes instance 11. (AIF-128 s8.)
 - The remaining `*ref` catalogs (`pshell_ref`, `sql_ref`) were measured healthy (90 and
   33 entries) but reached through their own commands rather than the cmdhelp union.
 
@@ -149,6 +165,13 @@ measuring a second way -- comparing a count against one taken differently, break
 rule on purpose to see whether a test noticed, or reading network traffic instead of
 an attribute. Four of this session's own measurements were confidently wrong and were
 caught the same way.
+
+**2026-08-25 adds two variants worth naming separately.** First, the shape can
+live in the VERIFICATION rather than the code (instance 10) -- a dry run that
+passes because it never reaches the failing path is indistinguishable from one
+that passes because the path is sound. Second, it recurs NEXT TO ITS OWN REPAIR
+for the second time: instance 7 sat forty-one lines below this lane's exemplary
+fix, exactly as instance 1's neighbour did.
 
 Related: `lesson.career.a_script_never_run_is_not_evidence`,
 `lesson.career.a_wrong_answer_that_looks_right`,
