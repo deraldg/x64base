@@ -75,7 +75,7 @@ line away from the formatter I had checked.
     check_aif_claimed.ROW_RE      NO MATCH
     session_coordinator claim     NO MATCH
     lane.LANE_RE (exact match)    NO MATCH
-    next_r.CITE / .ROW  (R1000)   NO MATCH
+    next_r.CITE / .ROW  (4-digit)  NO MATCH
     seed_tracking.AIFPAT          'AIF-100'   <-- NOT a decline
     next_aif.PAT                  'AIF-1000'  <-- the one that was right
 
@@ -84,7 +84,7 @@ number**. A ceiling that declines is a nuisance; a ceiling that silently
 truncates an identity into another live identity is a collision.
 
 **THE SIBLING SEQUENCE IS CLOSER TO THE WALL.** `next_r.py` used
-`R0*(\d{1,3})`, so `| R1000 |` matched nothing -- and R is at **R125** against
+`R0*(\d{1,3})`, so a FOUR-DIGIT R row matched nothing -- and R is at **R125** against
 AIF's 128, with the same three-digit ceiling and no separate warning.
 
 ## 6. The false positive the widening created, and how it was caught
@@ -165,8 +165,8 @@ license the claim that they have produced a wrong answer.**
     Whose area:        shared coordination tooling, read by every lane.
     Authorization:     member.derald, 2026-08-25, "do it".
     How to verify:     section 7. The one-line check is that
-                       `| AIF-1000 |` and `| R1000 |` now resolve, and
-                       `AIF-11{6,7}` does not.
+                       `| AIF-1000 |` and a four-digit R row now
+                       resolve, and `AIF-11{6,7}` does not.
     How to undo:       revert this commit. No number was consumed, no corpus
                        file re-padded, no data migrated.
 
@@ -198,3 +198,58 @@ If that trade is ever judged wrong, the fix is a suppression marker for AIF
 citations mirroring `cite-check:ignore` in `tools/staging/check_cited_paths.py`
 -- deliberately NOT built here, because new machinery on the strength of two
 numbers is the wrong trade today.
+
+## 11. Section 10's own warning, walked into one section later, for 874 numbers
+
+**A NOTE ON THIS SECTION'S SPELLING, WHICH IS THE WHOLE POINT.** Every R number
+below is written in words, and the one quoted gate line has its R token
+altered. That is not fussiness -- writing them normally is exactly what caused
+what follows, twice: once in the ruling body, and once in the first draft of
+this section, which recreated the defect it exists to describe.
+
+Section 10 measured this class for AIF, priced it at two numbers, and accepted
+it. **The R half was not measured, and it cost 874.**
+
+The commit that landed this ruling printed, with the token here altered:
+
+    declared: 18   cited in tree: 125 (over 1885 file(s))   highest: R<1000>
+
+The highest R number in the tree was reported as one thousand. The document
+explaining that a three-digit-bounded pattern could not match a four-digit R
+row contained three literal four-digit R tokens as EXAMPLES, and the widened
+`CITE` -- widened by this very ruling -- read all three as citations.
+`next_r.py` reports next-free as `max + 1`, so the next ruling would have been
+numbered one thousand and one, and everything from one hundred and twenty-seven
+to nine hundred and ninety-nine would have become gaps. **Gaps are reserved and
+never reissued**, so that is 874 numbers spent on three examples.
+
+**WHY THE EARLIER MEASUREMENT DID NOT CATCH IT.** It was correct, and it was
+taken at the wrong time. Before writing, the corpus held zero four-or-more-digit
+R tokens across all ten `SCAN_DIRS` -- verified by exhaustion, recorded in
+section 7. Then this document was written INTO one of those scan directories,
+carrying the very tokens whose absence had just been proven. **A measurement of
+a corpus is invalidated by the act of adding to that corpus**, and a widening
+change is precisely the case where the author's own new prose is the likeliest
+source of the new matches.
+
+**FIXED WITHOUT NEW MACHINERY.** The three examples now read "four-digit R row"
+and "(4-digit)"; the register row never carried the token at all. Verified:
+zero R tokens above this ruling's own number remain in this file, so the
+frontier and next-free are correct again.
+
+**THE AIF NUMBERS STAY SPENT.** Section 10's trade was accepted at two numbers
+-- three, counting the one its own closing sentence spends -- and it is still
+the right trade at that price. This section does not reverse it. It applies the
+same reasoning to a case whose price turned out to be three orders of magnitude
+higher, and reaches the opposite answer for that reason alone.
+
+**WHAT THIS CHANGES ABOUT THE SUPPRESSION MARKER.** Section 10 declined to
+build one, on the ground that new machinery on the strength of two numbers is
+the wrong trade. That ground has moved. A marker mirroring `cite-check:ignore`
+in `tools/staging/check_cited_paths.py` would let a document quote an identity
+WITHOUT spending it -- which every future ruling about identity numbers will
+need, because a rule about numbers cannot be explained without example numbers,
+and the workaround this section is written in (spelling them out in words) does
+not scale and makes documents worse to read. **Still not built: it wants an
+explicit go, and the frontier is correct without it.** Recorded as the open
+item, with a price attached this time.
