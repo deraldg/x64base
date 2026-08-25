@@ -94,10 +94,22 @@ def suppressed_lines(doc, rev=None):
     """Marked lines, and the paths each one hides. For REPORTING only.
 
     THE MARKER SUPPRESSES ANY LINE CONTAINING IT -- INCLUDING A LINE THAT ONLY
-    NAMES IT. Measured 2026-08-25: the sentence in a ruling that said idcite
-    mirrors `cite-check:ignore` disarmed its own line, and the untracked path
-    cited there went unreported for a commit. A real widow, hidden by the
-    marker's own documentation.
+    NAMES IT. The sentence in the R126 ruling saying that idcite mirrors
+    `cite-check:ignore` disarms its own line, so the path cited there is not
+    checked.
+
+    CORRECTION, 2026-08-25, recorded rather than quietly edited: this docstring
+    first said that had hidden a REAL WIDOW -- an untracked idcite.py cited for
+    the span of one commit. IT DID NOT. Checked afterwards: at 2bca2a60a the
+    ruling did not mention idcite.py at all (that section was written later),
+    and at 05f232360 the citation and the file landed in the SAME commit, so
+    the path was tracked at every revision that cited it. The incident was
+    inferred from a file-ordering worry and never measured. There is no known
+    instance of this marker hiding a real widow.
+
+    THE MECHANISM IS STILL REAL -- an incidental mention does disarm its line
+    -- but the risk is theoretical, and this check is worth having on the
+    weaker ground: a marker doing no work is noise a maintainer should see.
 
     THE SEMANTICS ARE DELIBERATELY NOT CHANGED. Two forms are in live use --
     `<!-- cite-check:ignore -->` and a bare parenthesised `(cite-check:ignore)`
