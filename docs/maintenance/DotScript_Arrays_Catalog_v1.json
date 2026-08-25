@@ -1,0 +1,417 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "document": {
+        "id": "DOTSCRIPT-ARRAYS-SPEC-V1",
+        "title": "DotScript Arrays",
+        "version": "1.0-draft",
+        "date": "2026-07-20",
+        "status": "design_specification",
+        "implementation_claim": "not_yet_runtime_proven",
+        "authority": [
+            "runtime_proves",
+            "source_defines",
+            "help_explains"
+        ],
+        "reference_lanes": {
+            "foxref": "historical_and_compatibility_reference",
+            "dotref": "native_dottalkpp_reference"
+        }
+    },
+    "normative_rules": [
+        "indexes_are_one_based",
+        "array_literals_use_braces",
+        "subscripts_use_square_brackets",
+        "arrays_are_heterogeneous_runtime_values",
+        "multidimensional_arrays_are_nested_arrays",
+        "assignment_shares_object_identity",
+        "aclone_creates_recursive_independent_clone",
+        "indexed_assignment_does_not_implicitly_resize",
+        "adel_preserves_length",
+        "ains_preserves_length",
+        "initial_release_prohibits_reference_cycles",
+        "arrays_do_not_belong_to_dbarea",
+        "database_rollback_does_not_rollback_script_arrays",
+        "tuple_stream_materialization_is_explicit_and_bounded",
+        "native_dottalkpp_array_commands_are_first_class_language"
+    ],
+    "syntax": [
+        {
+            "id": "array_literal_empty",
+            "form": "$A = {}",
+            "origin": "xbase_family_dotscript_adaptation",
+            "phase": 1
+        },
+        {
+            "id": "array_literal",
+            "form": "$A = { expression [, expression ...] }",
+            "origin": "xbase_family_dotscript_adaptation",
+            "phase": 1
+        },
+        {
+            "id": "array_constructor",
+            "form": "$A = ARRAY([dimension [, dimension ...]])",
+            "origin": "xbase",
+            "phase": 1
+        },
+        {
+            "id": "dimension",
+            "form": "DIMENSION $A[dimension [, dimension ...]]",
+            "origin": "fox_xbase_compatible",
+            "phase": 2
+        },
+        {
+            "id": "declare",
+            "form": "DECLARE $A[dimension [, dimension ...]]",
+            "origin": "fox_xbase_compatible",
+            "phase": 2
+        },
+        {
+            "id": "subscript_read",
+            "form": "$A[index [, index ...]]",
+            "origin": "dotscript_xbase_indexing",
+            "phase": 1
+        },
+        {
+            "id": "subscript_write",
+            "form": "$A[index [, index ...]] = expression",
+            "origin": "dotscript_xbase_indexing",
+            "phase": 1
+        }
+    ],
+    "functions": [
+        {
+            "name": "ARRAY",
+            "kind": "function",
+            "origin": "xbase",
+            "reference_lane": "foxref",
+            "syntax": "ARRAY([dimension [, dimension ...]])",
+            "returns": "array",
+            "mutates": [],
+            "phase": 1,
+            "status": "planned"
+        },
+        {
+            "name": "ALEN",
+            "kind": "function",
+            "origin": "xbase",
+            "reference_lane": "foxref",
+            "syntax": "ALEN(array)",
+            "returns": "numeric_outer_length",
+            "mutates": [],
+            "phase": 1,
+            "status": "planned"
+        },
+        {
+            "name": "AADD",
+            "kind": "function",
+            "origin": "xbase",
+            "reference_lane": "foxref",
+            "syntax": "AADD(array, value)",
+            "returns": "appended_value",
+            "mutates": [
+                "argument_1_length",
+                "argument_1_contents"
+            ],
+            "reference_behavior": "array_values_are_inserted_by_shared_reference",
+            "phase": 1,
+            "status": "planned"
+        },
+        {
+            "name": "ASIZE",
+            "kind": "function",
+            "origin": "xbase",
+            "reference_lane": "foxref",
+            "syntax": "ASIZE(array, new_length)",
+            "returns": "same_array_reference",
+            "mutates": [
+                "argument_1_length",
+                "argument_1_contents"
+            ],
+            "phase": 1,
+            "status": "planned"
+        },
+        {
+            "name": "ACLONE",
+            "kind": "function",
+            "origin": "xbase",
+            "reference_lane": "foxref",
+            "syntax": "ACLONE(array)",
+            "returns": "new_recursive_array_clone",
+            "mutates": [],
+            "topology_rule": "preserve_shared_children_within_clone",
+            "phase": 1,
+            "status": "planned"
+        },
+        {
+            "name": "ASAME",
+            "kind": "function",
+            "origin": "dottalk",
+            "reference_lane": "dotref",
+            "syntax": "ASAME(left_array, right_array)",
+            "returns": "logical_object_identity",
+            "mutates": [],
+            "phase": 1,
+            "status": "planned"
+        },
+        {
+            "name": "ISARRAY",
+            "kind": "function",
+            "origin": "dottalk",
+            "reference_lane": "dotref",
+            "syntax": "ISARRAY(value)",
+            "returns": "logical",
+            "mutates": [],
+            "phase": 1,
+            "status": "planned"
+        },
+        {
+            "name": "ADEL",
+            "kind": "function",
+            "origin": "xbase",
+            "reference_lane": "foxref",
+            "syntax": "ADEL(array, position)",
+            "returns": "same_array_reference",
+            "mutates": [
+                "argument_1_contents",
+                "argument_1_order"
+            ],
+            "length_behavior": "unchanged_last_element_becomes_nil",
+            "phase": 2,
+            "status": "planned"
+        },
+        {
+            "name": "AINS",
+            "kind": "function",
+            "origin": "xbase",
+            "reference_lane": "foxref",
+            "syntax": "AINS(array, position)",
+            "returns": "same_array_reference",
+            "mutates": [
+                "argument_1_contents",
+                "argument_1_order"
+            ],
+            "length_behavior": "unchanged_last_element_discarded",
+            "phase": 2,
+            "status": "planned"
+        },
+        {
+            "name": "AFILL",
+            "kind": "function",
+            "origin": "xbase",
+            "reference_lane": "foxref",
+            "syntax": "AFILL(array, value [, start [, count]])",
+            "returns": "same_array_reference",
+            "mutates": [
+                "argument_1_contents"
+            ],
+            "phase": 2,
+            "status": "planned"
+        },
+        {
+            "name": "ASCAN",
+            "kind": "function",
+            "origin": "xbase",
+            "reference_lane": "foxref",
+            "syntax": "ASCAN(array, value [, start [, count]])",
+            "returns": "one_based_position_or_zero",
+            "mutates": [],
+            "code_block_overload": "deferred",
+            "phase": 2,
+            "status": "planned"
+        },
+        {
+            "name": "ACOPY",
+            "kind": "function",
+            "origin": "xbase",
+            "reference_lane": "foxref",
+            "syntax": "ACOPY(source, target [, source_start [, count [, target_start]]])",
+            "returns": "target_array_reference",
+            "mutates": [
+                "argument_2_contents"
+            ],
+            "target_resize": "never_implicit",
+            "nested_array_behavior": "copy_shared_reference_not_recursive_clone",
+            "phase": 2,
+            "status": "planned"
+        },
+        {
+            "name": "ASORT",
+            "kind": "function",
+            "origin": "xbase",
+            "reference_lane": "foxref",
+            "syntax": "ASORT(array [, start [, count]])",
+            "returns": "same_array_reference",
+            "mutates": [
+                "argument_1_order"
+            ],
+            "default_order": "ascending_stable",
+            "nil_order": "after_non_nil",
+            "comparator_overload": "deferred",
+            "phase": 2,
+            "status": "planned"
+        },
+        {
+            "name": "ATAIL",
+            "kind": "function",
+            "origin": "xbase",
+            "reference_lane": "foxref",
+            "syntax": "ATAIL(array)",
+            "returns": "last_value_or_nil_for_empty",
+            "mutates": [],
+            "phase": 2,
+            "status": "planned"
+        },
+        {
+            "name": "AEVAL",
+            "kind": "function",
+            "origin": "xbase",
+            "reference_lane": "foxref",
+            "syntax": "AEVAL(array, code_block [, start [, count]])",
+            "returns": "same_array_reference",
+            "mutates": "defined_by_code_block",
+            "phase": 4,
+            "status": "deferred_requires_code_blocks"
+        }
+    ],
+    "commands": [
+        {
+            "name": "DIMENSION",
+            "origin": "fox_xbase_compatible",
+            "reference_lane": "foxref",
+            "syntax": "DIMENSION $A[dimension [, dimension ...]]",
+            "phase": 2,
+            "status": "planned"
+        },
+        {
+            "name": "DECLARE",
+            "origin": "fox_xbase_compatible",
+            "reference_lane": "foxref",
+            "syntax": "DECLARE $A[dimension [, dimension ...]]",
+            "phase": 2,
+            "status": "planned",
+            "alias_of": "DIMENSION"
+        },
+        {
+            "name": "ARRAY INFO",
+            "origin": "dottalk",
+            "reference_lane": "dotref",
+            "syntax": "ARRAY INFO expression",
+            "phase": 3,
+            "status": "planned"
+        },
+        {
+            "name": "ARRAY LIST",
+            "origin": "dottalk",
+            "reference_lane": "dotref",
+            "syntax": "ARRAY LIST expression [RECURSIVE] [FROM n] [COUNT n]",
+            "phase": 3,
+            "status": "planned"
+        },
+        {
+            "name": "ARRAY VALIDATE",
+            "origin": "dottalk",
+            "reference_lane": "dotref",
+            "syntax": "ARRAY VALIDATE expression",
+            "phase": 3,
+            "status": "planned"
+        },
+        {
+            "name": "ARRAY STATS",
+            "origin": "dottalk",
+            "reference_lane": "dotref",
+            "syntax": "ARRAY STATS",
+            "phase": 3,
+            "status": "planned"
+        },
+        {
+            "name": "ARRAY LIMITS",
+            "origin": "dottalk",
+            "reference_lane": "dotref",
+            "syntax": "ARRAY LIMITS",
+            "phase": 3,
+            "status": "planned"
+        },
+        {
+            "name": "ARRAY TRACE",
+            "origin": "dottalk",
+            "reference_lane": "dotref",
+            "syntax": "ARRAY TRACE ON|OFF|STATUS",
+            "phase": 3,
+            "status": "planned"
+        }
+    ],
+    "bridges": [
+        {
+            "name": "TUPTOARRAY",
+            "origin": "dottalk",
+            "reference_lane": "dotref",
+            "phase": 5,
+            "status": "planned"
+        },
+        {
+            "name": "ARRAYTOTUP",
+            "origin": "dottalk",
+            "reference_lane": "dotref",
+            "phase": 5,
+            "status": "planned"
+        },
+        {
+            "name": "TUPMATERIALIZE",
+            "origin": "dottalk",
+            "reference_lane": "dotref",
+            "phase": 5,
+            "status": "planned",
+            "requires_bound": true
+        },
+        {
+            "name": "JSONENCODE",
+            "origin": "dottalk_structured_value_service",
+            "phase": 5,
+            "status": "planned"
+        },
+        {
+            "name": "JSONDECODE",
+            "origin": "dottalk_structured_value_service",
+            "phase": 5,
+            "status": "planned"
+        }
+    ],
+    "explicit_noncore_names": [
+        "APUSH",
+        "APOP",
+        "ASHIFT",
+        "AUNSHIFT",
+        "ASLICE",
+        "ACONTAINS",
+        "AFREEZE",
+        "AINSERT",
+        "AREMOVE"
+    ],
+    "errors": [
+        "ARRAY_EXPECTED",
+        "ARRAY_INDEX_TYPE",
+        "ARRAY_INDEX_RANGE",
+        "ARRAY_DIMENSION_TYPE",
+        "ARRAY_DIMENSION_RANGE",
+        "ARRAY_TOO_LARGE",
+        "ARRAY_DEPTH",
+        "ARRAY_CYCLE",
+        "ARRAY_FROZEN",
+        "ARRAY_ITERATION_MUTATION",
+        "ARRAY_SORT_TYPES",
+        "ARRAY_COPY_RANGE",
+        "ARRAY_LITERAL_MISSING",
+        "ARRAY_INTERMEDIATE_TYPE"
+    ],
+    "required_test_scripts": [
+        "ARRAY_BASIC.DTS",
+        "ARRAY_REFERENCE.DTS",
+        "ARRAY_NESTED.DTS",
+        "ARRAY_FUNCTIONS.DTS",
+        "ARRAY_ERRORS.DTS",
+        "ARRAY_LOOP.DTS",
+        "ARRAY_DIAGNOSTICS.DTS",
+        "ARRAY_JSON.DTS",
+        "ARRAY_TUPLE_BRIDGE.DTS"
+    ]
+}

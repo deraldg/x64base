@@ -1,0 +1,22 @@
+&& FIELDTYPE M5 interop fixture -- write a genuine VFP (v0x30) table with the four
+&& binary field types, so the independent spec-based reader
+&& (src/tests/vfp_field_interop.py --check) can confirm they are VFP-compatible.
+&&
+&& Values are chosen to be exact: AMT 3.140625 = 3 + 9/64 (exact double), -0.5 exact;
+&& BAL scales cleanly to int64/10^4; TS 2000-01-01 12:00 = JDN 2451545 + 43,200,000 ms.
+CREATE VFP VFPTYPES (NAME C(10), NUM I, AMT B, BAL Y, TS T)
+APPEND
+REPLACE NAME WITH "Ada"
+REPLACE NUM WITH 50000000
+REPLACE AMT WITH 3.140625
+REPLACE BAL WITH 1234.5678
+REPLACE TS WITH 20000101120000
+APPEND
+REPLACE NAME WITH "Grace"
+REPLACE NUM WITH -2147483648
+REPLACE AMT WITH -0.5
+REPLACE BAL WITH -99.9999
+REPLACE TS WITH 19700101000000
+GO TOP
+LIST
+CLOSE ALL
