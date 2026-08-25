@@ -85,17 +85,38 @@ def catalog_names(root: Path, ns: str) -> list[str]:
     return catalog_state(root, ns)[1]
 
 
-def function_names(root: Path) -> set[str]:
-    """Authoritative expression-function names, from the seeded SYSFUNC catalog."""
+def function_state(root: Path) -> tuple[str, set[str]]:
+    """Return (state, names) from the seeded SYSFUNC catalog.
+    state is 'absent' | 'empty' | 'populated'.
+
+    Three states, separately, for the reason catalog_state() gives forty lines
+    above -- and this function did not have them until 2026-08-25. It returned
+    set() for a missing file AND swallowed every exception, so absent, empty and
+    UNREADABLE were one answer. That is the stronger form of the defect
+    catalog_state() was written to fix, sitting immediately beneath it.
+
+    The caller unions this with ext_functions() and implemented_core_functions(),
+    so a silent empty here does not zero the authority count -- it shrinks it,
+    and the printed label still says "(SYSFUNC)" while no SYSFUNC was read. The
+    consequence is a misreported authority rather than a missed phantom, which
+    is why this is quieter than the FN_IDENTITY lane in normcheck_v1.py and
+    still wrong.
+
+    dottalkpp/data/metadata/ is UNTRACKED and not gitignored, so 'absent' is the
+    state of every fresh clone.
+    """
     dbf = root / "dottalkpp/data/metadata/SYSFUNC.dbf"
     if not dbf.exists():
-        return set()
-    try:
-        t = dbfread.read(dbf)
-    except Exception:
-        return set()
+        return "absent", set()
+    t = dbfread.read(dbf)        # unreadable must RAISE, not read as empty
     col = "CAN_NAME" if any(f.name == "CAN_NAME" for f in t.fields) else t.fields[1].name
-    return {r[col].strip().upper() for r in t.rows if r[col].strip()}
+    names = {r[col].strip().upper() for r in t.rows if r[col].strip()}
+    return ("populated" if names else "empty"), names
+
+
+def function_names(root: Path) -> set[str]:
+    """Names only. Kept for callers that do not care about state."""
+    return function_state(root)[1]
 
 
 EXT_FN_RE = re.compile(r'\bstatic\s+std::string\s+fn_([A-Z_][A-Z0-9_]*)\s*\(')
@@ -165,12 +186,19 @@ def main() -> int:
     root = Path(a.root).resolve()
 
     commands = set(g.registry_map(root)) | shortcut_aliases(root) | routed_aliases(root)
-    funcs = function_names(root) | ext_functions(root) | implemented_core_functions(root)
+    fn_state, fn_seed = function_state(root)
+    funcs = fn_seed | ext_functions(root) | implemented_core_functions(root)
     if not commands:
         print("refcheck: could not resolve the command registry", file=sys.stderr)
         return 2
 
-    print(f"authorities: {len(commands)} commands/aliases, {len(funcs)} functions (SYSFUNC)\n")
+    if fn_state != "populated":
+        # Do not print "(SYSFUNC)" over a number no SYSFUNC contributed to.
+        print(f"refcheck: SYSFUNC catalogue is {fn_state.upper()} "
+              f"({'dottalkpp/data/metadata/SYSFUNC.dbf'}) -- the function authority "
+              "below is source-derived only", file=sys.stderr)
+    seedlabel = "SYSFUNC" if fn_state == "populated" else f"SYSFUNC {fn_state.upper()}"
+    print(f"authorities: {len(commands)} commands/aliases, {len(funcs)} functions ({seedlabel})\n")
     print(f"{'catalog':<12} {'entries':>7} {'cmd':>5} {'fn':>4} {'sub':>5} {'PHANTOM':>8}   phantoms")
     total_phantoms = 0
     contradictions: list[str] = []

@@ -6,7 +6,8 @@
     Files  : AIF-118 `guards-site-contrast-and-edref-shape` for section 4.
              No new AIF claimed -- section 4 is a sixth instance of a lane that
              already exists.
-    Status : **review-needed.** Section 4 carries a proposed patch, NOT APPLIED.
+    Status : **review-needed.** Section 4's patch is APPLIED and PROVEN TO FAIL
+             (section 4e). Section 2's tracking is handed to the steward.
 
 ---
 
@@ -198,7 +199,7 @@ That is not a criticism of the AIF-118 session. It is the point the lane exists
 to make -- the shape recurs, including next to its own repair, which is why it
 is a lane and not five bug fixes.
 
-### 4d. Proposed patch -- NOT APPLIED
+### 4d. The patch -- APPLIED 2026-08-25
 
 Match `catalog_state`'s shape rather than inventing a new one:
 
@@ -220,20 +221,66 @@ rather than as zero findings.
 
 `refcheck_v1.function_names()` wants the same treatment and is the same patch.
 
-**Verification that must accompany it, per this lane's own doctrine:** run the
-gate with SYSFUNC.dbf temporarily renamed and show FN_IDENTITY going red. A
-guard that has not been shown to fail is not evidence.
+**Verification, per this lane's own doctrine -- a guard that has not been shown
+to fail is not evidence.** See 4e.
 
----
+### 4e. Proven to fail, in four states
+
+Fault injection at the SYSFUNC path, in-process, against the REAL tree, so every
+other authority loads normally and only the state under test changes. (House
+precedent: `refcheck_v1.py` already ships a `--selftest` that injects a
+synthetic phantom.) Fixtures: an EMPTY catalogue built from the real header with
+`nrec` set to 0, and an UNREADABLE one of non-DBF bytes.
+
+    state                       exit  FN_IDENTITY(fail)  FN_COVERAGE(warn)  verdict
+    POPULATED (live authority)     0                  0                  0  PASS
+    ABSENT    (file missing)       1                  1                 75  FAIL
+    EMPTY     (header, 0 rows)     1                  1                 75  FAIL
+    UNREADABLE(garbage bytes)      -- raises, gate stops --
+
+with the finding text naming the state:
+
+    SYSFUNC AUTHORITY ABSENT: <path> does not exist -- this lane cannot be
+    evaluated, and zero findings here would be indistinguishable from full
+    agreement
+
+    SYSFUNC AUTHORITY EMPTY: <path> exists but holds no CAN_NAME rows
+
+**Before the patch, ABSENT produced exit 0, FN_IDENTITY 0, PASS -- byte for byte
+the POPULATED result.** All four states are now distinguishable and three of the
+four stop the gate.
+
+`refcheck_v1.py` likewise: ABSENT and EMPTY now print a stderr notice and label
+the count `SYSFUNC ABSENT` / `SYSFUNC EMPTY` instead of printing `(SYSFUNC)` over
+a number no SYSFUNC contributed to. Its exit stays 0, correctly -- its phantom
+count is source-derived and genuinely unaffected; the defect there was a
+misreported authority, not a missed phantom.
+
+**No regression.** Post-patch on the untouched live tree: normcheck exit 0, PASS,
+`CATALOG(SYSFUNC) 75 [populated]`; refcheck exit 0, `300 commands/aliases, 77
+functions (SYSFUNC)`. Both files byte-compile.
+
+**One honest wart:** the UNREADABLE case raises `IndexError` from `dbfread`'s
+descriptor walk rather than a named layout error. It fails closed, which is the
+whole requirement, but the diagnostic is poor. That belongs to `dbfread.py` --
+adjacent to AIF-127 -- and was not widened into here.
+
+**Fixtures live in gitignored scratch** (`tmp/SYSFUNC_EMPTY.dbf`,
+`tmp/SYSFUNC_JUNK.dbf`) so they will not survive. If this lane wants the guard's
+failure to stay reproducible, they want a durable home and a test that runs
+them; that is a decision, not a substitution, and it is not taken here.
 
 ## 5. What this pass did NOT do
 
-- **No patch applied.** Section 4d is a proposal; `tools/fullstack_docs/` is the
-  doc-tooling lane and the gate is live.
+- **The patch IS applied** (4d/4e) to `normcheck_v1.py` and `refcheck_v1.py`.
+  Backups of both originals are in gitignored `tmp/`. No other tool touched.
+- **The AIF-118 charter was NOT edited.** The instance row is drafted in 4a-4c;
+  inserting it into another lane's charter is the owner's call.
 - **No Windows build.** Section 1c is Linux/g++ 13 only.
 - No metadata files staged for tracking; section 2 is a measurement.
-- The envelope itself was NOT edited. Its section 3 is stale and should be
-  amended by whoever owns the run record, not silently overwritten here.
+- The envelope's section 3 IS now amended, by APPENDING a dated resolution
+  beneath the original text rather than editing the original claim away -- it
+  was true when written, and the eleven-day gap is itself the finding.
 - **AIF-127 still NOT FIXED.**
 
 ---

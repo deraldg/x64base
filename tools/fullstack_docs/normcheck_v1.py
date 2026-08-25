@@ -65,12 +65,41 @@ def implemented_functions(root: Path) -> set[str]:
     return out
 
 
-def sysfunc_names(root: Path) -> set[str]:
+def sysfunc_state(root: Path) -> tuple[str, set[str]]:
+    """Return (state, names). state is 'absent' | 'empty' | 'populated'.
+
+    THE THREE STATES ARE REPORTED SEPARATELY, AND THAT IS THE WHOLE POINT
+    (AIF-118). Until 2026-08-25 this returned set() for a missing SYSFUNC.dbf,
+    and FN_IDENTITY -- a FAIL-severity lane computed as fn_cat - fn_impl --
+    came out EMPTY, which is the identical output to a catalogue in perfect
+    agreement. Measured, by calling the function rather than reading it:
+
+        authority PRESENT, perfect agreement  FN_IDENTITY(fail)=0 FN_COVERAGE(warn)=0
+        authority ABSENT (file missing)       FN_IDENTITY(fail)=0 FN_COVERAGE(warn)=75
+
+    FN_COVERAGE does move, but it is warn-severity, so the gate's exit status
+    does not. This checker runs inside tools/staging/prepush_gate.py.
+
+    Absent is not a theoretical state: dottalkpp/data/metadata/ is UNTRACKED and
+    not gitignored -- 16 files, 580,299 bytes, 0 in git -- so absent is the
+    state of every fresh clone.
+
+    A corrupt or unreadable file RAISES rather than returning empty. Forty lines
+    below, catalog_rows() has always read SYSCMD with no guard at all and raised
+    FileNotFoundError, which is the correct behaviour; the two authorities in
+    this one file disagreed only because they were written at different times.
+    """
     p = root / SYSFUNC
     if not p.exists():
-        return set()
-    t = dbfread.read(p)
-    return {r["CAN_NAME"].strip().upper() for r in t.rows if r["CAN_NAME"].strip()}
+        return "absent", set()
+    t = dbfread.read(p)          # a corrupt catalogue must RAISE, not read empty
+    names = {r["CAN_NAME"].strip().upper() for r in t.rows if r["CAN_NAME"].strip()}
+    return ("populated" if names else "empty"), names
+
+
+def sysfunc_names(root: Path) -> set[str]:
+    """Names only. Kept for callers that do not care about state."""
+    return sysfunc_state(root)[1]
 
 SYSCMD = "dottalkpp/data/metadata/SYSCMD.dbf"
 CATALOG_CPP = "src/cli/command_catalog.cpp"
@@ -145,7 +174,20 @@ def main() -> int:
 
     # --- FUNCTION SURFACE: implemented specs vs SYSFUNC catalog ---
     fn_impl = implemented_functions(root)
-    fn_cat = sysfunc_names(root)
+    fn_state, fn_cat = sysfunc_state(root)
+    if fn_state == "absent":
+        # An authority that is not there cannot agree with anything. Say so on
+        # the FAIL lane instead of reporting zero findings, which is what an
+        # authority in perfect agreement also reports.
+        findings["FN_IDENTITY"].append(
+            f"SYSFUNC AUTHORITY ABSENT: {SYSFUNC} does not exist -- "
+            "this lane cannot be evaluated, and zero findings here would be "
+            "indistinguishable from full agreement"
+        )
+    elif fn_state == "empty":
+        findings["FN_IDENTITY"].append(
+            f"SYSFUNC AUTHORITY EMPTY: {SYSFUNC} exists but holds no CAN_NAME rows"
+        )
     for name in sorted(fn_cat - fn_impl):
         findings["FN_IDENTITY"].append(f"{name} (SYSFUNC row) not implemented in any fn spec")
     for name in sorted(fn_impl - fn_cat):
@@ -157,7 +199,8 @@ def main() -> int:
     print("cross-authority normalization gate")
     print(f"  commands : REGISTRY {len(reg)}  CATALOG(SYSCMD) {len(cat)}  HELP(*ref) {len(helpn)}"
           f"  REFLECTION(command_catalog) {len(refl)}")
-    print(f"  functions: IMPLEMENTED(fn specs) {len(fn_impl)}  CATALOG(SYSFUNC) {len(fn_cat)}\n")
+    print(f"  functions: IMPLEMENTED(fn specs) {len(fn_impl)}  CATALOG(SYSFUNC) {len(fn_cat)}"
+          f" [{fn_state}]\n")
     print(f"{'lane':<12} {'sev':<5} {'findings':>8}")
     fail = 0
     for lane, sev in LANE_SEVERITY.items():

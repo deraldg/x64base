@@ -142,6 +142,57 @@ steward's.
 inventory meanwhile; it may not reach a Gate 4 HELP rebuild claiming SYSFUNC
 agreement.
 
+### RESOLVED 2026-08-25. The text above is left standing because it was true when written.
+
+**All three legs are satisfied, and two of them were satisfied before this
+amendment and nothing said so.** Full record:
+`gate0/GATE0_PRECONDITION_CLOSEOUT_V1.md`.
+
+1. **The link fix landed 2026-08-14 in `d99f4ed9c`** -- `path_resolver.cpp` and
+   `path_state.cpp` added to the `dt_meta` target. "NOT APPLIED, pending an
+   owner ruling" was accurate on 2026-08-12 and stale from 2026-08-14. **It went
+   eleven days unamended, and on 2026-08-25 it caused this steward to start
+   re-raising a closed blocker.** That is the cost of a run record that is only
+   ever appended to at the front.
+
+2. **SYSFUNC no longer disagrees with the engine.**
+   `tools/fullstack_docs/normcheck_v1.py`, 2026-08-25:
+   `IMPLEMENTED(fn specs) 75 == CATALOG(SYSFUNC) 75`, `FN_IDENTITY 0`,
+   `FN_COVERAGE 0`. The `FILE` warning is gone. **The count of 77 above is also
+   stale; the catalogue holds 75.**
+
+3. **metacollect builds and links -- verified BY BUILDING**, which the
+   `CMakeLists.txt` comment asked for and nobody had done: `d99f4ed9c` carries a
+   one-line message with no body or transcript, and `DOTTALK_BUILD_METACOLLECT`
+   is still `OFF` by default at `CMakeLists.txt:114` -- the same default that
+   hid the original breakage. Eleven `dt_meta` sources plus
+   `src/tools/metacollect_main.cpp`, isolated, g++ 13.3.0 `-std=c++17`:
+   12/12 translation units compiled, linked to a 1,603,904-byte binary with
+   **zero undefined references**, and `./metacollect --help` returns the tool's
+   own argument diagnostic -- it starts and parses, it did not merely link.
+   **Caveat: Linux/g++ only. MSVC untested**, and the blocker this closes was
+   itself a toolchain-visibility problem.
+
+**The owner ruling this precondition asked for** -- whether `path_state`'s
+process-wide mutable slot state crosses `dt_meta`'s stated "no DBF writes"
+boundary -- **is answered in the code that landed**, and the reasoning is
+recorded in the CMakeLists comment: a local stub would have compiled and then
+resolved paths DIFFERENTLY from the engine, which is worse than a link error,
+because a link error stops.
+
+**GATE 0'S METACOLLECT PRECONDITION PASSES.** A Gate 4 HELP rebuild may now
+claim SYSFUNC agreement, and section 1b is the measurement that backs the claim.
+
+Two facts found while closing it, both recorded in the closeout and neither
+blocking Gate 0:
+
+- `dottalkpp/data/metadata/` holds the eight SYS* authorities this run
+  reconciles against -- 16 top-level files, 580,299 bytes -- and **0 are tracked
+  and 0 are gitignored.** A fresh clone has no SYSCMD and no SYSFUNC.
+- `normcheck_v1.py` returned the same answer for an ABSENT SYSFUNC as for one in
+  perfect agreement, on a **fail**-severity lane. Filed to AIF-118; patched and
+  proven to fail on 2026-08-25.
+
 ---
 
 ## 4. Open questions carried into Phase 1
