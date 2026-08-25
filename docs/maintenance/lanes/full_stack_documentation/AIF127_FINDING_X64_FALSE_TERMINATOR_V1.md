@@ -5,8 +5,8 @@
     Found  : 2026-08-25, opening the manualgen MAN* catalog for flush v5 Phase 6
     Tier   : SOURCE-EVIDENCED at file:line, and the affected file proven INTACT
              by arithmetic.
-    Status : **review-needed. NOT FIXED.** Read-only throughout. The reader
-             belongs to the doc-tooling lane and the fix is a design call.
+    Status : **FIXED 2026-08-25, review-needed.** Option 3 of section 5 --
+             positive identification plus validation. See section 8.
 
 ---
 
@@ -155,10 +155,105 @@ Full verification pass:
 
 ---
 
+## 8. FIXED 2026-08-25 -- option 3, and proven on 206 files
+
+Section 5 offered three options and recommended neither. **Option 3 was taken:
+identify positively AND validate**, because (1) is the identification and (2) is
+what makes a future surprise loud instead of empty.
+
+### 8a. The change
+
+One helper, `_descriptor_end(b, hdrlen) -> (desc_end, ext_off)`, now answers
+both questions the old code answered twice with the same flawed scan -- the
+classic descriptor walk at `:113` and the X64M locate at `:175`. Both call it.
+
+    x = b.find(b"X64M", 32, hdrlen)
+    if x > 32 and b[x - 1] == 0x0D and (x - 1 - 32) % 32 == 0:
+        return x - 1, x
+    ... classic scan ...
+    if off == 32:  raise DbfLayoutError(...)
+
+**What was kept.** The module's refusal to key on the block version number
+survives untouched -- "keying on the version number would have hardcoded an
+assumption that a v3 could quietly break" was right and is still right. The
+defect was never the choice to derive; it was deriving from **one byte at a
+fixed offset whose value is CONTENT, not structure.**
+
+**The validation is not decoration.** The marker is accepted only when the byte
+before it really is `0x0D` and the descriptor array divides evenly into 32-byte
+records from offset 32. Measured across every x64 table in the tree -- both
+accepted MAN catalogs and the eight SYS* authorities -- **that invariant holds
+21 of 21**, at marker offsets from 225 to 769.
+
+**A terminator on the first probe now RAISES** instead of yielding an empty
+descriptor list. It describes a table with zero fields, which no real table has.
+
+### 8b. Proven -- 206 files, old reader against new
+
+    files tested   206      (MAN catalogs, metadata authorities, HELP store,
+                             and every fixture under dottalkpp/data/dbf)
+    identical      205
+    FIXED            1      MANHASH.dbf -- 5 fields, 13 rows
+    BROKE            0
+    differ           0
+    error-both       0
+
+Signatures compared were field count, field names, types, widths, declared row
+count and live row count. **Nothing changed except the file that could not be
+read.**
+
+MANHASH now verifies through the SHARED reader, with no one-off parser, and
+reproduces the earlier hand-rolled result exactly: **match 12, drift 1, missing
+0**, the drift being MANHASH-001. The workaround described in
+`PHASE6_CATALOG_VERIFICATION_V1.md` section 4 is no longer needed.
+
+### 8c. The guard shown to fail before being trusted
+
+Section 5 said "the regression test writes itself: a 13-row x64 table." It does,
+and the periodicity claim of section 3 is now demonstrated end to end rather
+than argued. A real table (MANANCHOR) re-stamped to each row count, padded, and
+read by both readers:
+
+    nrec=12    byte32=0x0c   OLD reads          NEW reads
+    nrec=13    byte32=0x0d   OLD FAILS          NEW reads
+    nrec=269   byte32=0x0d   OLD FAILS          NEW reads
+    nrec=270   byte32=0x0e   OLD reads          NEW reads
+    nrec=525   byte32=0x0d   OLD FAILS          NEW reads
+
+13, 269, 525 -- exactly the predicted sequence, failing before and reading
+after, with the neighbours 12, 270 unaffected in both.
+
+### 8d. A correction to section 2, found while building that fixture
+
+Section 2 says "an x64 DBF opens a phantom block at offset 32 whose first field
+is the row count", and section 3 says byte 32 IS the low byte of the row count.
+**More precisely: the phantom block carries its OWN u32 row count at offset 32,
+independent of the header's at offset 4.**
+
+The first attempt at the fixture above re-stamped only the header count and byte
+32 stayed at its original `0x09` -- the table read fine and proved nothing. Both
+had to be set.
+
+Measured: **in all 21 x64 tables the phantom count equals the header count.**
+That is a fact about how they were written, not a guarantee. A writer that
+updated one and not the other would produce a table stating its row count twice,
+differently -- which nothing currently checks. **Recorded, not pursued.**
+
+### 8e. Not fixed, and deliberately not touched
+
+`dbfread.py:296-300` carries TWO consecutive `if not real: raise` guards with
+different messages. The second is unreachable. It is pre-existing, it is
+harmless, and widening a targeted fix to tidy adjacent code is how a clean diff
+becomes an unreviewable one. **Left alone on purpose.**
+
+---
+
 ## Good Neighbor note
 
-    WHAT CHANGED   : this finding and coordination/aif/AIF-127.claim. No source,
-                     no data, no reader, no catalog. Nothing was fixed.
+    WHAT CHANGED   : 2026-08-24 -- this finding and coordination/aif/AIF-127.claim.
+                     2026-08-25 -- tools/fullstack_docs/dbfread.py, one helper
+                     added and two scans replaced by calls to it, plus sections
+                     7 and 8 here. No data, no catalog, no publication.
     WHOSE AREA     : tools/fullstack_docs/dbfread.py belongs to the doc-tooling
                      lane, owner member.derald. READ ONLY here.
     AUTHORIZATION  : the owner's instruction to tidy up and run through

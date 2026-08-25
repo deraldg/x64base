@@ -76,6 +76,71 @@ class Table:
         return len(self.rows)
 
 
+def _descriptor_end(b: bytes, hdrlen: int) -> tuple[int, int]:
+    """Return (desc_end, ext_off): where the classic 32-byte descriptor array
+    stops, and where the X64M extension begins (hdrlen when there is none).
+
+    AIF-127. This exists because the old derivation read ONE BYTE AT A FIXED
+    OFFSET WHOSE VALUE IS CONTENT, NOT STRUCTURE. An x64 file opens a phantom
+    block at offset 32 whose first field is the row count, and the scan for the
+    0x0D descriptor terminator started there:
+
+        term = 32
+        while term + 32 <= hdrlen and b[term] != 0x0D:
+            term += 32
+
+    13 == 0x0D. So MANHASH.dbf -- thirteen rows, file proven intact by
+    arithmetic -- terminated on the very first probe, X64M at offset 257 was
+    never found, and the reader declined a perfectly good table. The failure is
+    DATA-DEPENDENT and PERIODIC: any x64 table whose row count carries 0x0D in
+    its low byte is affected -- 13, 269, 525, 781, every 256 rows -- so a table
+    reads today, becomes unreadable when it grows, and reads again one row
+    later, with no change to schema, writer or file.
+
+    KEEPING WHAT WAS RIGHT. The module deliberately does not key on the block
+    version number ("keying on the version number would have hardcoded an
+    assumption that a v3 could quietly break"), and that instinct is kept. A
+    terminator is a STRUCTURAL fact; the low byte of a row count is data that
+    can impersonate one. So:
+
+      1. IDENTIFY POSITIVELY. Search the header span for the unambiguous four
+         byte X64M marker before trusting any terminator.
+      2. VALIDATE THE CANDIDATE. Accept the marker only when the byte before it
+         really is 0x0D and the descriptor array divides evenly into 32-byte
+         records from offset 32. Measured across all 21 x64 tables in this tree
+         -- both accepted MAN catalogs and the eight SYS* authorities -- that
+         invariant holds 21 of 21, at marker offsets from 225 to 769.
+      3. REFUSE THE IMPOSSIBLE. A terminator on the first probe describes a
+         table with ZERO fields, which no real table has. Raise instead of
+         returning an empty descriptor list, so a future surprise is loud
+         rather than empty.
+    """
+    x = b.find(b"X64M", 32, hdrlen)
+    if x > 32 and b[x - 1] == 0x0D and (x - 1 - 32) % 32 == 0:
+        return x - 1, x
+
+    off = 32
+    while off + 32 <= hdrlen and b[off] != 0x0D:
+        off += 32
+
+    if off == 32:
+        if x >= 0:
+            raise DbfLayoutError(
+                f"X64M found at offset {x} but the descriptor array does not "
+                f"reconcile (byte {x - 1} is 0x{b[x - 1]:02x}, expected 0x0d; "
+                f"span {x - 1 - 32} is not a multiple of 32). This layout is "
+                "not the one this reader understands -- refusing rather than "
+                "guessing at a shifted read."
+            )
+        raise DbfLayoutError(
+            "descriptor terminator found at offset 32, which describes a table "
+            "with ZERO fields. No real table has none, so this is a false "
+            "terminator (AIF-127) or a malformed header -- refusing rather "
+            "than returning an empty field list."
+        )
+    return off, hdrlen
+
+
 def read(path: str | Path, *, include_deleted: bool = False) -> Table:
     p = Path(path)
     b = p.read_bytes()
@@ -108,9 +173,11 @@ def read(path: str | Path, *, include_deleted: bool = False) -> Table:
     # name heuristic, so older tables still read. That path keeps its ASCII
     # caveat -- str.isalpha() is Unicode-aware, and SYSCMD's phantom 'Ë' passes
     # a bare .isalpha().
+    desc_end, ext_off = _descriptor_end(b, hdrlen)
+
     raw_desc = []
     off = 32
-    while off + 32 <= hdrlen and b[off] != 0x0D:
+    while off + 32 <= desc_end:
         raw = b[off:off + 11]
         raw_desc.append((
             raw.split(b"\0")[0].decode("latin1"),
@@ -171,10 +238,7 @@ def read(path: str | Path, *, include_deleted: bool = False) -> Table:
     # instead of reading past the field table. Keying on the version number
     # would have hardcoded an assumption that a v3 could quietly break.
     x64m: list[tuple[str, int | None]] = []
-    term = 32
-    while term + 32 <= hdrlen and b[term] != 0x0D:
-        term += 32
-    ext = b[term + 1:hdrlen] if term < hdrlen else b""
+    ext = b[ext_off:hdrlen] if ext_off < hdrlen else b""
     if ext[:4] == b"X64M":
         try:
             (_ver, _extlen, _rsv, _tnamelen, frec_off,
