@@ -1,0 +1,82 @@
+SYSMSG.dbf -- SUPERSEDED / DO NOT SEED
+======================================
+Date:     2026-07-27
+Run:      COWORK-20260726-001
+By:       member.ai.claude.cowork   Decided by: member.derald
+Status:   RETIRED. Not a lane. Do not populate.
+
+SYSMSG.dbf sits in this directory holding 0 records with a 17-field schema, and
+dottalkpp/data/scripts/metadata/SYSMSG_IMPORT_v1.csv holds 1006 rows in 23
+columns. That reads like an unseeded lane. It is not.
+
+
+THE MEASUREMENT
+---------------
+
+    dottalkpp\data\messaging\SYSTEM_MESSAGES.dbf    1006 records, 9 fields
+    dottalkpp\data\metadata\SYSMSG.dbf                 0 records, 17 fields
+    SYSMSG_IMPORT_v1.csv                            1006 rows,  23 columns
+
+    SYMBOL overlap, CSV vs live SYSTEM_MESSAGES:
+        overlap    1006 / 1006
+        CSV-only      0
+        live-only     0
+
+The same 1006 messages. Both sides cite src/help/helpdata_messages.cpp as
+SRC/SRC_FILE. SYSTEM_MESSAGES is already seeded, has its own CDX container and
+LMDB environment under data/messaging, and is maintained by a real command:
+
+    MSGMGR SEED PRIORITYA|PRIORITYB|PRIORITYC CHECK
+    MSGMGR SEED PRIORITYA|PRIORITYB|PRIORITYC APPLY
+
+
+WHY NOT SEED IT ANYWAY
+----------------------
+
+Seeding SYSMSG would create a SECOND copy of the same 1006 messages under a
+THIRD schema, with:
+  - no generator (metacollect has --syscmd-import-out, --sysfunc-import-out and
+    --sysargs-import-out, and deliberately NO --sysmsg-import-out)
+  - no maintenance command (MSGMGR targets SYSTEM_MESSAGES / SYSTEM_MESSAGE_TEXT)
+  - no rule for keeping the two in sync when helpdata_messages.cpp changes
+
+Two tables holding the same data with no sync rule is not redundancy, it is a
+future contradiction with a date on it.
+
+Earlier in this same run, SYSSRC and SYSCMDDOC were designed from scratch before
+anyone checked whether SRCFILE and SRCUSAGE already covered the same ground.
+They did. This is that mistake, caught before the write instead of after.
+
+
+WHAT WAS ACTUALLY DONE
+----------------------
+
+tools/fullstack_docs/stack_audit_v1.py LANES now watches SYSTEM_MESSAGES instead
+of SYSMSG, keeping SYSMSG_IMPORT_v1.csv as its comparison CSV. CSV_VS_TABLE went
+from 1 warning to 0: 1006 == 1006.
+
+The guard had been reporting "EMPTY_TABLE: SYSMSG -- lane is unseeded" for a
+table that should never be seeded. That was not a guard defect. The LANES map
+asserted all four lanes were peers, and a guard cannot tell "not yet done" from
+"should never be done" -- that distinction has to be written down, and now is,
+in the comment above LANES.
+
+
+OPEN QUESTIONS -- deliberately not answered here
+------------------------------------------------
+
+1. SYSMSG's 23 columns are a SUPERSET of SYSTEM_MESSAGES' 9. The extras are
+   DEF_LOCALE, REGION_ID, HELP_TOPIC, CMDHELPCHK, IMPL_STAT, VIS_TIER, PUB_SURF,
+   USED_RUN, SUG_ACT, VER_AT, SHORT_TXT, NOTES. Some of those -- the locale
+   spine especially -- may have been intended to EXTEND SYSTEM_MESSAGES rather
+   than replace it. If so, the right move is to widen SYSTEM_MESSAGES, not to
+   revive this table.
+
+2. SYSMSG_IMPORT_v1.csv is now the comparison CSV for a table called
+   SYSTEM_MESSAGES. The name is misleading and should be reconciled.
+
+3. Whoever added SYSMSG and its extra columns is not recorded anywhere found so
+   far. Worth knowing before (1) is decided.
+
+DO NOT delete SYSMSG.dbf without answering (1). An empty table costs nothing;
+the schema in it is the only surviving record of that design intent.
