@@ -271,3 +271,65 @@ that authorization has not been given. Nothing here generates anything.
                         `harvested/HELP_HELP_TOPIC.csv` carries `CATALOG=FOX`;
                         the run id at line 96 is a string literal.
     How to undo       : delete this file.
+
+---
+
+## 6. CORRECTION, 2026-08-25 -- two of this document's claims were wrong
+
+Recorded here rather than edited away, same day, per the house rule.
+
+### 6a. Section 3's description of option (b) was wrong
+
+It recommended (b) as selecting on
+
+    supported topic, no physical page, regardless of baseline
+
+and called that "a condition a reader can check against the tree". **Measured
+against the promoted harvest, that condition returns 109 topics, not 20.**
+
+The 20 written-debt commands are a NAMED LIST. They are a subset of the 109 and
+nothing in the data distinguishes them from the other 89. There is no selector
+rule that yields them, and describing one was a recommendation made without
+measuring what it would select.
+
+The `--expected-topic-key` guard praised in section 1c would have caught this at
+run time as `EXPECTED_KEY_MISMATCH` -- **the guard works, and it is what turns
+this from a defect into a correction.** But it would have caught a tool built to
+the wrong description.
+
+**What shipped instead: an ALLOW-LIST (`--only-topic-key`), not a rule.** The
+caller names the keys and the tool verifies them (supported, and not already
+paged). A tool must not pretend to deduce a list somebody chose.
+
+### 6b. Section 2's line counts were per-COMMAND; the generator keys per-TOPIC
+
+Section 2 named the thin candidates as `TRANSFORM` 3, `AVERAGE` 6, `REL_LIST` 6
+and said "the other seventeen carry 41 to 161 lines". Those figures sum a
+command's lines across every catalog. **The generator groups by one TOPICKEY**,
+and per selected key the picture was worse and wider:
+
+    DOT|AVERAGE      3     DOT|BROWSETV   3   (section 2 recorded 47)
+    DOT|REL_LIST     3     DOT|BOOLEAN   15   (section 2 recorded 47)
+                           DOT|FORMULA   15   (section 2 recorded 71)
+
+That gap is what led to R127: the missing lines were real, they were under
+`UI|BROWSETV` (41), `EDU|FORMULA` (53) and `EDU|BOOLEAN` (32), and a page built
+without them would have carried between 5% and 32% of its command's evidence
+**silently**.
+
+### 6c. And section 2's risk is no longer a risk -- it is measured
+
+Section 2 said the thin-topic failure "is not predicted, it is flagged: whether
+six raw lines survive classification cannot be known without running the
+classifier, and running it is the gated act."
+
+**The second half was wrong.** Classification produces no prose and writes no
+file; it is not the gated act. `--dry-run` now runs `_deduplicate_lines` over
+the selected rows and reports what would be included, and the answer for all
+twenty is:
+
+    predicted NO_INCLUDED_HELP_ROWS : NONE
+    thinnest included: DOT|AVERAGE 5 of 6, DOT|REL_LIST 5 of 6, DOT|BOOLEAN 7 of 15
+
+**Nothing will hard-fail.** The gate was drawn one step too early, and drawing
+it correctly cost nothing and removed the only unquantified risk in the job.
