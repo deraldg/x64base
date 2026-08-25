@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-08-25T02:54:28Z
+    generated_utc : 2026-08-25T03:04:40Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,9 +11,9 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : ce98cb24a  (2026-08-24)
+    HEAD          : 536007a3a  (2026-08-24)
     upstream      : a278b511e
-    unpushed      : 7 commit(s) ahead of upstream
+    unpushed      : 8 commit(s) ahead of upstream
 
 ## Declared target
 
@@ -23,19 +23,20 @@ cannot drift, because nothing here is written by hand.
 ## Newest closeout
 
     file          : SESSION_CLOSEOUT_PROMOTION_TO_MAIN_AND_WORKBENCH_RENAME_2026-08-21.md
-    commits behind HEAD : 93
+    commits behind HEAD : 94
 
 ## Staleness warnings
 
-- The newest closeout is 93 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
-- Claim(s) with no intake row, so they read as ABANDONED from HEAD: AIF-126. Same shape as AIF-062/078/080.
-- 7 commit(s) are unpushed and invisible to a clone.
+- The newest closeout is 94 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
+- Claim(s) with no intake row, so they read as ABANDONED from HEAD: AIF-127. Same shape as AIF-062/078/080.
+- 8 commit(s) are unpushed and invisible to a clone.
 
 ## Claimed lanes (newest first)
 
 | AIF | lane | steward | intake row |
 | --- | --- | --- | --- |
-| AIF-126 | help-store-shared-msg-unreachable-by-key | member.ai.claude.cowork | **MISSING** |
+| AIF-127 | x64-reader-false-terminator-at-thirteen-rows | member.ai.claude.cowork | **MISSING** |
+| AIF-126 | help-store-shared-msg-unreachable-by-key | member.ai.claude.cowork | yes |
 | AIF-125 | agent-navigation-index-over-system-metadata | member.ai.claude.cowork | yes |
 | AIF-124 | canonical-workspace-versus-workspace-state | member.ai.claude.cowork | yes |
 | AIF-123 | set-deleted-visibility-sweep | member.ai.claude.cowork | yes |
@@ -46,8 +47,7 @@ cannot drift, because nothing here is written by hand.
 | AIF-118 | guards-site-contrast-and-edref-shape | member.ai.claude.cowork | yes |
 | AIF-117 | silent-predicate-and-store-failures | member.derald | yes |
 | AIF-116 | lock-owner-locale-grouping | member.derald | yes |
-| AIF-115 | recall-graph-trigger-drift | member.derald | yes |
-| ... | 46 older claims omitted | | |
+| ... | 47 older claims omitted | | |
 
 ## Sessions, lineage, asides
 
@@ -63,7 +63,7 @@ parent + born_utc from the durable lineage ledger, '-' until a run wakes.
 
 | run | member | parent | born_utc | asides |
 | --- | --- | --- | --- | --- |
-| COWORK-20260824-001 | member.ai.claude.cowork | - | - | AIF-123 -> AIF-124 -> AIF-125 -> AIF-126 |
+| COWORK-20260824-001 | member.ai.claude.cowork | - | - | AIF-123 -> AIF-124 -> AIF-125 -> AIF-126 -> AIF-127 |
 | COWORK-20260822-001 | member.ai.claude.cowork | - | - | AIF-121 -> AIF-122 |
 | COWORK-20260817-001 | member.ai.claude.cowork | - | - | AIF-119 -> AIF-120 |
 | COWORK-20260816-001 | member.ai.claude.cowork | - | - | AIF-118 |
