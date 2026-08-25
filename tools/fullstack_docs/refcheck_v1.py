@@ -185,7 +185,9 @@ def main() -> int:
     a = ap.parse_args()
     root = Path(a.root).resolve()
 
-    commands = set(g.registry_map(root)) | shortcut_aliases(root) | routed_aliases(root)
+    commands_reg = set(g.registry_map(root))
+    commands_alias = shortcut_aliases(root) | routed_aliases(root)
+    commands = commands_reg | commands_alias
     fn_state, fn_seed = function_state(root)
     fn_ext = ext_functions(root)
     fn_core = implemented_core_functions(root)
@@ -222,7 +224,24 @@ def main() -> int:
         seedlabel = f"SYSFUNC {fn_state.upper()}"
     if extra:
         seedlabel += f" + {extra} source-derived"
-    print(f"authorities: {len(commands)} commands/aliases, {len(funcs)} functions ({seedlabel})\n")
+    # THE SAME DISCIPLINE ON THE COMMAND HALF, added 2026-08-25 (see 3d85320d3).
+    #
+    # This line read "300 commands/aliases" while normcheck_v1.py, four lines
+    # below it in the same gate output, reported "REGISTRY 246". Weaker than
+    # the SYSFUNC case: "commands/aliases" does disclose that two KINDS are in
+    # the number -- it just never gave the split, so 300 and 246 were left for
+    # the reader to reconcile unaided. Disclosing the kinds is not the same as
+    # disclosing the proportions.
+    #
+    # Measured 2026-08-25 on this tree: registry_map 246, shortcut_aliases 44
+    # (38 not in the registry), routed_aliases 65 (16 more), union 300, so 54
+    # of the 300 are alias forms with no registry entry of their own.
+    alias_only = len(commands) - len(commands_reg)
+    cmdlabel = f"REGISTRY {len(commands_reg)}"
+    if alias_only:
+        cmdlabel += f" + {alias_only} alias forms"
+    print(f"authorities: {len(commands)} commands/aliases ({cmdlabel}), "
+          f"{len(funcs)} functions ({seedlabel})\n")
     print(f"{'catalog':<12} {'entries':>7} {'cmd':>5} {'fn':>4} {'sub':>5} {'PHANTOM':>8}   phantoms")
     total_phantoms = 0
     contradictions: list[str] = []
