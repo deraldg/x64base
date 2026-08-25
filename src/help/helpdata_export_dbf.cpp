@@ -20,6 +20,7 @@
 #include <ctime>
 #include <filesystem>
 #include <fstream>
+#include <iostream>
 #include <map>
 #include <stdexcept>
 #include <string>
@@ -176,14 +177,47 @@ private:
     uint32_t next_block_ { 1 };
 };
 
-static void write_fixed(std::ofstream& out, std::string value, uint8_t len)
+// TRUNCATION MUST NOT BE SILENT. A fixed-width column that quietly resizes an
+// oversized value destroys the evidence that anything was lost: the row that
+// fit exactly and the row that was cut look identical afterwards, so the table
+// cannot tell you whether it is intact. That is R6 in a DBF writer.
+//
+// Measured 2026-08-25 before this counter existed: 84 HELP_LINE rows carried a
+// NAME at exactly the 40-char column width. All 84 were real message keys
+// losing their tails; no two DISTINCT keys had collided, but nothing in the
+// store could have said so either way. See AIF-126 for the same shape in the
+// TOPICKEY join.
+//
+// Pass the column name where a value carries identity. Unnamed columns still
+// count toward the total, so a new overflow is never invisible.
+static std::map<std::string, int> g_truncations;
+
+static void write_fixed(std::ofstream& out, std::string value, uint8_t len,
+                        const char* field = nullptr)
 {
     if (value.size() < len) {
         value.append(len - value.size(), ' ');
     } else if (value.size() > len) {
         value.resize(len);
+        g_truncations[field ? field : "(unnamed column)"] += 1;
     }
     out.write(value.data(), len);
+}
+
+static std::string truncation_report()
+{
+    if (g_truncations.empty()) {
+        return {};
+    }
+    int total = 0;
+    std::string detail;
+    for (const auto& kv : g_truncations) {
+        total += kv.second;
+        if (!detail.empty()) detail += ", ";
+        detail += kv.first + " " + std::to_string(kv.second);
+    }
+    return "HELP export: " + std::to_string(total)
+         + " value(s) truncated to fit a column (" + detail + ")";
 }
 
 static void write_number(std::ofstream& out, std::string value, uint8_t len)
@@ -472,7 +506,7 @@ static int write_help_topic_dbf(const std::string& out_dir, const std::vector<He
         const char not_deleted = ' ';
         out.write(&not_deleted, 1);
         write_number(out, std::to_string(row.topic_id), 10);
-        write_fixed(out, row.topickey, 48);
+        write_fixed(out, row.topickey, 48, "TOPICKEY");
         write_fixed(out, row.catalog, 8);
         write_fixed(out, row.topic, 40);
         write_fixed(out, row.topic_type, 12);
@@ -481,7 +515,7 @@ static int write_help_topic_dbf(const std::string& out_dir, const std::vector<He
         write_logical(out, row.supported);
         write_fixed(out, row.primary_source, 16);
         write_fixed(out, row.confid, 16);
-        write_fixed(out, row.title, 80);
+        write_fixed(out, row.title, 80, "TITLE");
         write_fixed(out, row.summary, 200);
         write_number(out, std::to_string(row.sections), 6);
         write_number(out, std::to_string(row.lines), 8);
@@ -509,7 +543,7 @@ static int write_help_section_dbf(const std::string& out_dir, const std::vector<
         field_c("SOURCE",   16),
         field_c("CONFID",   16),
         field_c("SEVERITY",  8),
-        field_c("NAME",     40),
+        field_c("NAME",     64),   // 64 not 40: longest live message key measured 55 (2026-08-25)
         field_n("ORD",       6),
         field_n("NLINES",    6)
     };
@@ -527,12 +561,12 @@ static int write_help_section_dbf(const std::string& out_dir, const std::vector<
         write_number(out, std::to_string(row.sect_id), 10);
         write_number(out, std::to_string(row.art_id), 10);
         write_number(out, std::to_string(row.topic_id), 10);
-        write_fixed(out, row.topickey, 48);
+        write_fixed(out, row.topickey, 48, "TOPICKEY");
         write_fixed(out, row.kind, 16);
         write_fixed(out, row.source, 16);
         write_fixed(out, row.confid, 16);
         write_fixed(out, row.severity, 8);
-        write_fixed(out, row.name, 40);
+        write_fixed(out, row.name, 64, "NAME");
         write_number(out, std::to_string(row.ordinal), 6);
         write_number(out, std::to_string(row.nlines), 6);
     }
@@ -605,6 +639,45 @@ static std::vector<std::string> split_parts(const std::string& line, size_t max_
     }
     return parts;
 }
+
+// HELP_LINE IS A PSEUDO-MEMO, AND THAT IS DELIBERATE. DO NOT "FIX" IT.
+//
+// This is the oldest subsystem in the project. It was written before the engine
+// had a memo field of any kind, so unbounded help text is carried the only way
+// a fixed-width DBF can carry it: one logical line is split into 240-byte
+// PARTS across numbered rows, and the reader reassembles by LINE_NO + PART_NO.
+// That is a memo field written in the vocabulary the format had at the time.
+// The store is dBase III (0x03) for the same reason -- it predates x64.
+//
+// Recorded 2026-08-25 by the owner, member.derald, because the reason existed
+// nowhere but in his memory and he had forgotten it himself. This comment is
+// the point of the exercise. An agent reading LINE_NO / PART_NO / TEXT(240)
+// cold reads it as an implementation quirk -- one did, the same week, while
+// tracing AIF-126 through this very function -- and an agent told to
+// "modernize HELP" would delete a working design without knowing it was one.
+//
+// It is barely exercised and it does not strain. Measured on the live store,
+// 2026-08-25:
+//
+//     PART_NO  1: 29,255 rows    2: 6 rows    3: 1 row
+//     rows at exactly 240 chars (the spill point) : 6
+//     longest reassembled logical line : 719 chars (DOT|VDISK, line 1)
+//
+// Seven continuation rows out of 29,262. The mechanism does exactly what it
+// was built for and almost never has to.
+//
+// WHETHER TO CONVERT THIS STORE TO x64 IS AN OPEN, UNHURRIED QUESTION. The
+// house rule is that documentation databases are x64 -- and the manualgen MAN*
+// catalog is -- so this store is the exception. It stays the exception on
+// purpose, for now: HELP is the subsystem every other lane measures itself
+// through, and converting it puts the instrument on the bench. "It works" is
+// a real argument and it is being made deliberately rather than by neglect.
+// If it is converted later, that will be a decision with this note behind it
+// instead of a decision taken twice.
+//
+// The historical design is preserved as an artifact in its own right; see the
+// historical-source-lineage lane. The artifact is this DESIGN, not this file,
+// which is why the store can keep running while the design is kept.
 
 static void append_line_rows_for_role(const Artifact& artifact,
                                       int art_id,
@@ -692,7 +765,7 @@ static int write_help_line_dbf(const std::string& out_dir, const std::vector<Art
         field_c("SOURCE",   16),
         field_c("CONFID",   16),
         field_c("SEVERITY",  8),
-        field_c("NAME",     40),
+        field_c("NAME",     64),   // 64 not 40: longest live message key measured 55 (2026-08-25)
         field_c("ROLE",     12),
         field_n("LINE_NO",   6),
         field_n("PART_NO",   4),
@@ -712,14 +785,14 @@ static int write_help_line_dbf(const std::string& out_dir, const std::vector<Art
         out.write(&not_deleted, 1);
         write_number(out, std::to_string(row.line_id), 10);
         write_number(out, std::to_string(row.art_id), 10);
-        write_fixed(out, row.topickey, 48);
+        write_fixed(out, row.topickey, 48, "TOPICKEY");
         write_fixed(out, row.catalog, 8);
         write_fixed(out, row.topic, 40);
         write_fixed(out, row.kind, 16);
         write_fixed(out, row.source, 16);
         write_fixed(out, row.confid, 16);
         write_fixed(out, row.severity, 8);
-        write_fixed(out, row.name, 40);
+        write_fixed(out, row.name, 64, "NAME");
         write_fixed(out, row.role, 12);
         write_number(out, std::to_string(row.line_no), 6);
         write_number(out, std::to_string(row.part_no), 4);
@@ -752,7 +825,7 @@ static void write_help_artifacts_dbf(const std::string& out_dir,
         field_c("SOURCE",   16),
         field_c("CONFID",   16),
         field_c("SEVERITY",  8),
-        field_c("NAME",     40),
+        field_c("NAME",     64),   // 64 not 40: longest live message key measured 55 (2026-08-25)
         field_n("ORD",       6),
         field_m("TEXT"),
         field_m("DETAIL"),
@@ -777,13 +850,13 @@ static void write_help_artifacts_dbf(const std::string& out_dir,
         write_number(out, std::to_string(id), 10);
         write_fixed(out, artifact.catalog, 8);
         write_fixed(out, artifact.command, 24);
-        write_fixed(out, artifact.cmdkey, 40);
+        write_fixed(out, artifact.cmdkey, 40, "CMDKEY");
         write_fixed(out, owner_to_string(artifact.owner), 40);
         write_fixed(out, to_string(artifact.kind), 16);
         write_fixed(out, to_string(artifact.source), 16);
         write_fixed(out, to_string(artifact.confidence), 16);
         write_fixed(out, to_string(artifact.severity), 8);
-        write_fixed(out, artifact.name, 40);
+        write_fixed(out, artifact.name, 64, "NAME");
         write_number(out, std::to_string(artifact.ordinal), 6);
         write_memo_ptr(out, dbt.append(artifact.text));
         write_memo_ptr(out, dbt.append(artifact.detail));
@@ -817,6 +890,12 @@ ExportCounts export_artifacts_dbf(const std::string& out_dir,
     const int topics_written = write_help_topic_dbf(out_dir, topics);
     const int sections_written = write_help_section_dbf(out_dir, sections);
     const int lines = write_help_line_dbf(out_dir, artifacts);
+
+    const std::string truncated = truncation_report();
+    if (!truncated.empty()) {
+        std::cerr << truncated << "\n";
+    }
+    g_truncations.clear();
 
     return { static_cast<int>(artifacts.size()), lines, topics_written, sections_written };
 }
