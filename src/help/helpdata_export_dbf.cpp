@@ -204,6 +204,63 @@ static void write_fixed(std::ofstream& out, std::string value, uint8_t len,
     out.write(value.data(), len);
 }
 
+// A PREVIEW IS NOT A TRUNCATION, AND MUST NOT BE COUNTED AS ONE.
+//
+// HELP_TOPIC.SUMMARY is a fixed-width PREVIEW. It is not the authority: the
+// complete summary already lives in HELP_LINE as KIND=SUMMARY rows, split
+// across PARTS by the pseudo-memo when it is long. The topic row carries a
+// short copy so reports can show something without walking the line table.
+//
+// Before this existed, that copy was cut mid-word at 200 characters, 83 times
+// per build, silently -- one fact in two homes with the lossy one saying
+// nothing. Ruled by member.derald 2026-08-25: keep the preview, widen it to
+// 256, and make it ADMIT that it is a preview by ending on a word boundary
+// with an ellipsis.
+//
+// So an over-length SUMMARY is now a deliberate, visible, reversible act with
+// a full-text authority one join away -- and the truncation counter goes back
+// to meaning ONLY "a value was lost and nothing else holds it".
+//
+// 255 IS THE FORMAT CEILING, NOT A PREFERENCE. A dBase III field-length
+// descriptor is ONE BYTE, so no column here can exceed 255 and `len` is a
+// uint8_t all the way down. The owner ruled 256; the format cannot express it.
+// Asked for as 256, MSVC C4305/C4309 caught the wrap to 0 at compile time --
+// which would have written a ZERO-WIDTH SUMMARY and destroyed the column
+// rather than widening it. Anything wider than 255 needs the x64 format, and
+// that is one more entry on the bill for the store being 0x03; see the
+// pseudo-memo note at append_line_rows_for_role.
+static std::map<std::string, int> g_previews;
+
+static std::string make_preview(std::string value, uint8_t len)
+{
+    if (value.size() <= len) {
+        return value;
+    }
+    const std::size_t room = len >= 3 ? static_cast<std::size_t>(len) - 3 : 0;
+    std::size_t cut = value.rfind(' ', room);
+    // Fall back to a hard cut when there is no word break near the end --
+    // one long token should not collapse the preview to nothing.
+    if (cut == std::string::npos || cut + 24 < room) {
+        cut = room;
+    }
+    value.resize(cut);
+    while (!value.empty() && (value.back() == ' ' || value.back() == '\n')) {
+        value.pop_back();
+    }
+    value += "...";
+    return value;
+}
+
+static void write_preview(std::ofstream& out, std::string value, uint8_t len,
+                          const char* field)
+{
+    if (value.size() > len) {
+        g_previews[field] += 1;
+        value = make_preview(std::move(value), len);
+    }
+    write_fixed(out, std::move(value), len, field);
+}
+
 static std::string truncation_report()
 {
     if (g_truncations.empty()) {
@@ -490,7 +547,7 @@ static int write_help_topic_dbf(const std::string& out_dir, const std::vector<He
         field_c("PRIMARY",    16),
         field_c("CONFID",     16),
         field_c("TITLE",      80),
-        field_c("SUMMARY",   200),
+        field_c("SUMMARY",   255),   // PREVIEW column, 255 = the FORMAT CEILING (see make_preview)
         field_n("SECTIONS",    6),
         field_n("LINES",       8)
     };
@@ -507,16 +564,16 @@ static int write_help_topic_dbf(const std::string& out_dir, const std::vector<He
         out.write(&not_deleted, 1);
         write_number(out, std::to_string(row.topic_id), 10);
         write_fixed(out, row.topickey, 48, "TOPICKEY");
-        write_fixed(out, row.catalog, 8);
-        write_fixed(out, row.topic, 40);
-        write_fixed(out, row.topic_type, 12);
-        write_fixed(out, row.status, 16);
+        write_fixed(out, row.catalog, 8, "CATALOG");
+        write_fixed(out, row.topic, 40, "TOPIC");
+        write_fixed(out, row.topic_type, 12, "TOPICTYPE");
+        write_fixed(out, row.status, 16, "STATUS");
         write_logical(out, row.implemented);
         write_logical(out, row.supported);
-        write_fixed(out, row.primary_source, 16);
-        write_fixed(out, row.confid, 16);
+        write_fixed(out, row.primary_source, 16, "PRIMARY");
+        write_fixed(out, row.confid, 16, "CONFID");
         write_fixed(out, row.title, 80, "TITLE");
-        write_fixed(out, row.summary, 200);
+        write_preview(out, row.summary, 255, "SUMMARY");
         write_number(out, std::to_string(row.sections), 6);
         write_number(out, std::to_string(row.lines), 8);
     }
@@ -562,10 +619,10 @@ static int write_help_section_dbf(const std::string& out_dir, const std::vector<
         write_number(out, std::to_string(row.art_id), 10);
         write_number(out, std::to_string(row.topic_id), 10);
         write_fixed(out, row.topickey, 48, "TOPICKEY");
-        write_fixed(out, row.kind, 16);
-        write_fixed(out, row.source, 16);
-        write_fixed(out, row.confid, 16);
-        write_fixed(out, row.severity, 8);
+        write_fixed(out, row.kind, 16, "KIND");
+        write_fixed(out, row.source, 16, "SOURCE");
+        write_fixed(out, row.confid, 16, "CONFID");
+        write_fixed(out, row.severity, 8, "SEVERITY");
         write_fixed(out, row.name, 64, "NAME");
         write_number(out, std::to_string(row.ordinal), 6);
         write_number(out, std::to_string(row.nlines), 6);
@@ -786,17 +843,17 @@ static int write_help_line_dbf(const std::string& out_dir, const std::vector<Art
         write_number(out, std::to_string(row.line_id), 10);
         write_number(out, std::to_string(row.art_id), 10);
         write_fixed(out, row.topickey, 48, "TOPICKEY");
-        write_fixed(out, row.catalog, 8);
-        write_fixed(out, row.topic, 40);
-        write_fixed(out, row.kind, 16);
-        write_fixed(out, row.source, 16);
-        write_fixed(out, row.confid, 16);
-        write_fixed(out, row.severity, 8);
+        write_fixed(out, row.catalog, 8, "CATALOG");
+        write_fixed(out, row.topic, 40, "TOPIC");
+        write_fixed(out, row.kind, 16, "KIND");
+        write_fixed(out, row.source, 16, "SOURCE");
+        write_fixed(out, row.confid, 16, "CONFID");
+        write_fixed(out, row.severity, 8, "SEVERITY");
         write_fixed(out, row.name, 64, "NAME");
-        write_fixed(out, row.role, 12);
+        write_fixed(out, row.role, 12, "ROLE");
         write_number(out, std::to_string(row.line_no), 6);
         write_number(out, std::to_string(row.part_no), 4);
-        write_fixed(out, row.text, 240);
+        write_fixed(out, row.text, 240, "TEXT");
     }
 
     const char eof = 0x1a;
@@ -848,14 +905,14 @@ static void write_help_artifacts_dbf(const std::string& out_dir,
 
         const int id = artifact.id > 0 ? artifact.id : next_id;
         write_number(out, std::to_string(id), 10);
-        write_fixed(out, artifact.catalog, 8);
-        write_fixed(out, artifact.command, 24);
+        write_fixed(out, artifact.catalog, 8, "CATALOG");
+        write_fixed(out, artifact.command, 24, "COMMAND");
         write_fixed(out, artifact.cmdkey, 40, "CMDKEY");
-        write_fixed(out, owner_to_string(artifact.owner), 40);
-        write_fixed(out, to_string(artifact.kind), 16);
-        write_fixed(out, to_string(artifact.source), 16);
-        write_fixed(out, to_string(artifact.confidence), 16);
-        write_fixed(out, to_string(artifact.severity), 8);
+        write_fixed(out, owner_to_string(artifact.owner), 40, "OWNER");
+        write_fixed(out, to_string(artifact.kind), 16, "KIND");
+        write_fixed(out, to_string(artifact.source), 16, "SOURCE");
+        write_fixed(out, to_string(artifact.confidence), 16, "CONFID");
+        write_fixed(out, to_string(artifact.severity), 8, "SEVERITY");
         write_fixed(out, artifact.name, 64, "NAME");
         write_number(out, std::to_string(artifact.ordinal), 6);
         write_memo_ptr(out, dbt.append(artifact.text));
@@ -895,7 +952,20 @@ ExportCounts export_artifacts_dbf(const std::string& out_dir,
     if (!truncated.empty()) {
         std::cerr << truncated << "\n";
     }
+    if (!g_previews.empty()) {
+        int total = 0;
+        std::string detail;
+        for (const auto& kv : g_previews) {
+            total += kv.second;
+            if (!detail.empty()) detail += ", ";
+            detail += kv.first + " " + std::to_string(kv.second);
+        }
+        std::cerr << "HELP export: " << total
+                  << " preview(s) shortened with an ellipsis (" << detail
+                  << ") -- full text is in HELP_LINE\n";
+    }
     g_truncations.clear();
+    g_previews.clear();
 
     return { static_cast<int>(artifacts.size()), lines, topics_written, sections_written };
 }

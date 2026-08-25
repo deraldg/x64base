@@ -90,6 +90,49 @@ Two changes, both independent of the format question:
 The second matters more than the first. A width is a guess that will be wrong
 again eventually; a counter makes the next overflow announce itself.
 
+**It announced one on its first run.** I widened `NAME` expecting silence and
+got `83 value(s) truncated to fit a column`, in a column I had not named --
+`HELP_TOPIC.SUMMARY`, `C200`, cut mid-word on every build the store has ever
+had. Not a defect I predicted. Found by the instrument, not the reasoning,
+which is the argument for building instruments.
+
+## SUMMARY is a PREVIEW and now says so -- owner ruling, 2026-08-25
+
+The full summary already lives in `HELP_LINE` as `KIND=SUMMARY` rows, split
+across parts by the pseudo-memo. `HELP_TOPIC.SUMMARY` is a second copy in a
+fixed column, and it was the lossy one -- one fact in two homes, the short one
+silent about it. Widening alone would only move the cut, so the ruling keeps
+the preview and makes it ADMIT what it is: word boundary, ellipsis, and a
+report line of its own.
+
+**255, not the 256 that was ruled.** A dBase III field-length descriptor is ONE
+BYTE. Asked for as 256 it wrapped to 0. The build that carried it wrote a
+ZERO-WIDTH SUMMARY column and reported `500 value(s) truncated` -- every summary
+in the store reduced to nothing. It was caught by MSVC C4305/C4309, which the
+OWNER read and the steward did not. My Python test of the preview logic could
+not have found it: Python integers do not wrap. A proxy that cannot answer the
+question put to it -- the fourth of that family in this flush, and the first
+one I committed rather than merely wrote down.
+
+Measured after the fix, on the live store:
+
+    summaries over 200 (the old width) .......... 83
+    summaries over 255 (the new width) .......... 65
+    now whole, having fit between the two ....... 18
+    ellipsis rows on disk ....................... 65, matching the report
+    any value exceeding 255 ..................... 0
+    truncation line ............................. ABSENT
+
+    before:  DOT|CDX   ...so CREATE/ADDTAG/DROPTAG operate on the in-RA
+    after:   DOT|CALC  ...wrapped in parentheses to avoid being parsed as...
+
+Truncation now means only "a value was lost and nothing else holds it". If that
+line ever returns, it is a real defect.
+
+**And the ruling is the sharpest entry yet on the x64 bill.** The owner asked
+for one more character than the format can count. The documentation store's
+format now visibly limits the documentation.
+
 ## The artifact question dissolves
 
 "Upgrade it" and "keep it as an artifact" read as alternatives only while the
