@@ -6,8 +6,8 @@
     Method : read-only. `git show` and `git grep` against `HEAD` and
              `origin/main`. No branch touched, no file moved.
     Status : review-needed. **The row's central question is already answered by
-             the promotion manifest; its stated premise is wrong; and the real
-             defect is more urgent than the question.**
+             the promotion manifest; its stated premise is wrong; the real
+             defect is more urgent than the question; and section 9 widens it.**
 
 ---
 
@@ -124,6 +124,68 @@ cause**, and the promotion documents can drop their reconciliation notes.
 **Neither can be done from `development`** -- the row says so and is right; this
 is promotion scope. What has changed is that it is now a specified action rather
 than an open question.
+
+## 9. WIDENED the same day -- the gate answered a question this document raised
+
+Committing this examination put it in a change set, so `cited-paths` read its
+citations and returned one the author had not looked for:
+
+    WIDOW docs/getting-started/POSIX_WSL_QUICKSTART.md -- on disk, NOT tracked
+
+**The whole `docs/getting-started/` tier is tracked on `main` and untracked on
+`development`:**
+
+    file                                      on development   on main
+    DEVELOPER_CONSTANTS_AND_X64_METADATA.md   on disk, UNTRACKED   tracked
+    FAQ.md                                    on disk, UNTRACKED   tracked
+    POSIX_WSL_QUICKSTART.md                   on disk, UNTRACKED   tracked
+    BUILDING.md                               NOT ON DISK AT ALL   tracked
+
+None of the three is gitignored -- 12,623 bytes, plain markdown, zero non-ASCII,
+source lane.
+
+**And `development`'s own README links one of them**, at line 191:
+
+    - [docs/getting-started/POSIX_WSL_QUICKSTART.md](docs/getting-started/POSIX_WSL_QUICKSTART.md)
+
+**So a fresh clone of `development` gets a README with a broken link**, for the
+same reason OI-011 recorded about the developer manual: untracked by omission,
+invisible because nothing ever listed it.
+
+### 9a. This is OI-010's shape, one directory wider
+
+Section 3 concluded that `docs/getting-started/BUILDING.md` is a main-only
+orphan. That was right about the file and too narrow about the cause.
+**`docs/getting-started/` is a MAIN-ONLY TIER that `development` carries on disk
+and not in git** -- BUILDING.md is simply the member that is not even on disk
+here.
+
+That reframes the second recommendation in section 6. Deleting
+`docs/getting-started/BUILDING.md` on `main` still stands -- it is unreferenced
+there and the manifest names root as canonical. But the tier around it is
+referenced, is published, and is missing from the branch promotions come from.
+
+### 9b. The decision this adds
+
+**Either** track the three on `development` -- 12.6 KB, one `git add`, and the
+README link resolves in a fresh clone -- **or** rule `docs/getting-started/` a
+publication-only tier and stop linking it from `development`'s README. The
+current state is neither, and it is the state that produces a broken link.
+
+**Not proposed as done here.** The three files were not staged; this is a
+publication-scope question sitting beside a promotion-scope one, and both belong
+to the same call.
+
+### 9c. Worth noticing about the instrument
+
+This document argued in section 3 that `git grep` returning nothing is only
+evidence when the instrument is checked, and used `POSIX_WSL_QUICKSTART` on
+`main` as that check. **The same filename came back minutes later as a widow on
+`development`** -- the file chosen to prove the tool works turned out to be the
+next finding. The citation gate reads what a document cites, so writing about a
+path is enough to have it checked.
+
+---
 
 ## 7. What was NOT done
 
