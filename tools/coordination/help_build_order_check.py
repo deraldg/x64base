@@ -54,6 +54,7 @@ Exit codes: 0 all checks pass, 1 a check failed, 2 could not read what it needs.
 import argparse
 import datetime
 import pathlib
+import re
 import subprocess
 import sys
 
@@ -66,7 +67,35 @@ HELP = ROOT / "dottalkpp" / "data" / "help"
 CATALOGS = ["include/dotref.hpp", "include/foxref.hpp", "include/edref.hpp"]
 LEGACY = ["COMMANDS.dbf", "CMD_ARGS.dbf"]
 STORE = ["HELP_LINE.dbf", "HELP_TOPIC.dbf"]
-PRIOR_ART = ["labtalk/registries/ai_portal_tasks.yaml"]
+# WHAT --prior-art SEARCHES, DECLARED RATHER THAN IMPLIED.
+#
+# 2026-08-25. This check answered PASS -- "no prior mention of 'sandbox build'"
+# -- five times in a row for a subject that has BOTH a dedicated document
+# (docs/agents/HANDOFF_CLAUDE_COWORK_SANDBOX_BUILD_2026-08-12.md) and a
+# dedicated recall trigger (trigger.work_in_sandbox). It searched three files,
+# all inside one lane, and reported the result as though it had searched the
+# repository. The agent believed it and was one step from writing a second
+# sandbox-build document -- the same R5 two-answers-to-one-question defect this
+# very tool's docstring exists to describe.
+#
+# Two changes, and the second matters more than the first:
+#   1. the search now reaches docs/agents/ and the recall graph, which are where
+#      cross-session findings and their routing actually live;
+#   2. a PASS now NAMES ITS SCOPE. "no mention in N source(s)" is a bounded
+#      claim a reader can check. "no prior mention" is an unbounded claim this
+#      function was never in a position to make -- a proxy answering a question
+#      it cannot reach, which is the family this lane keeps retiring assertions
+#      from. Widening the search alone would have fixed today and left the
+#      overstatement in place for tomorrow.
+PRIOR_ART = ["labtalk/registries/ai_portal_tasks.yaml",
+             "labtalk/registries/portal_recall_graph.yaml"]
+
+# (directory, [glob, ...]) -- searched if the directory exists.
+PRIOR_ART_TREES = [
+    ("docs/maintenance/lanes/full_stack_documentation/runs",
+     ["*/NEXT_PUSH_CONTINUATION*", "*/V6_HINTS*"]),
+    ("docs/agents", ["*.md"]),
+]
 
 PASS, FAIL, WARN, SKIP = "PASS", "FAIL", "WARN", "skip"
 
@@ -296,31 +325,68 @@ def check_generation_stamp(rep):
 
 def check_prior_art(rep, subject):
     """Twice in v5 a 'discovery' was already written down. Cheapest check
-    there is."""
+    there is -- but see PRIOR_ART above: it is a BOUNDED search and says so."""
     hits = []
+    searched = []
+
+    # WHY ALL-TOKENS AND NOT THE PHRASE. Widening the SOURCES on 2026-08-25 was
+    # not enough: --prior-art "sandbox build" still read clean, because the
+    # document that answers it is titled "a Cowork sandbox CAN build and run the
+    # engine" and the contiguous string "sandbox build" appears nowhere. A
+    # substring test on a multi-word subject asks whether someone happened to
+    # phrase it your way. That is not the question.
+    #
+    # The costs here are ASYMMETRIC and the matcher should follow them: a false
+    # WARN costs one read, a false PASS costs a duplicate document and the
+    # session that writes it. So a line hits when EVERY token is present, in any
+    # order. Exact-phrase hits are marked so the reader can still see which is
+    # which. For a one-word subject this is identical to the old behaviour.
+    tokens = [t for t in re.split(r"[^A-Za-z0-9]+", subject.lower()) if t]
+
+    def scan(path, rel):
+        searched.append(rel)
+        try:
+            text = path.read_text(encoding="latin1")
+        except OSError:
+            return
+        for n, ln in enumerate(text.splitlines(), 1):
+            low = ln.lower()
+            exact = subject.lower() in low
+            if exact or (tokens and all(t in low for t in tokens)):
+                hits.append("%s%s:%d  %s"
+                            % ("* " if exact else "  ", rel, n, ln.strip()[:100]))
+
     for rel in PRIOR_ART:
         p = ROOT / rel
-        if not p.exists():
+        if p.exists():
+            scan(p, rel)
+
+    for reldir, globs in PRIOR_ART_TREES:
+        base = ROOT / reldir
+        if not base.exists():
             continue
-        for n, ln in enumerate(p.read_text(encoding="latin1").splitlines(), 1):
-            if subject.lower() in ln.lower():
-                hits.append("%s:%d  %s" % (rel, n, ln.strip()[:100]))
-    runs = ROOT / "docs/maintenance/lanes/full_stack_documentation/runs"
-    if runs.exists():
-        for p in sorted(runs.glob("*/NEXT_PUSH_CONTINUATION*")) + \
-                 sorted(runs.glob("*/V6_HINTS*")):
-            for n, ln in enumerate(p.read_text(encoding="latin1").splitlines(), 1):
-                if subject.lower() in ln.lower():
-                    hits.append("%s:%d  %s"
-                                % (p.relative_to(ROOT), n, ln.strip()[:100]))
+        seen = set()
+        for g in globs:
+            for p in sorted(base.glob(g)):
+                if p.is_file() and p not in seen:
+                    seen.add(p)
+                    scan(p, str(p.relative_to(ROOT)).replace("\\", "/"))
+
+    scope = "%d source(s)" % len(searched)
     if hits:
-        rep.add(WARN, "prior art", "%d mention(s) of %r already on record"
-                % (len(hits), subject),
+        rep.add(WARN, "prior art",
+                "%d mention(s) of %r already on record (searched %s)"
+                % (len(hits), subject, scope),
                 "\n".join(hits[:10])
                 + ("\n... and %d more" % (len(hits) - 10) if len(hits) > 10 else "")
+                + "\n(* = exact phrase; the rest matched every token in any order)"
                 + "\nRead these before calling it a discovery.")
     else:
-        rep.add(PASS, "prior art", "no prior mention of %r" % subject)
+        rep.add(PASS, "prior art",
+                "no mention of %r in the %s searched" % (subject, scope),
+                "This is a BOUNDED negative, not proof of absence. Searched:\n"
+                + "\n".join("  " + r for r in searched)
+                + "\nA subject documented anywhere else will read as clean here.")
 
 
 def main():

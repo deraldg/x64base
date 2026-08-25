@@ -130,6 +130,116 @@ script is not found. Run from `dottalkpp/`, not `dottalkpp/data/`.
 
 Capture with `SET ALTERNATE`, never `DOTSCRIPT ... OUT` -- see `AI_README.md`.
 
+## Second confirmation, 2026-08-25 -- and the routing still failed
+
+    agent  : member.ai.claude.cowork, run COWORK-20260825-001
+    result : built and ran again, in a DIFFERENT sandbox shape
+    method : re-derived from scratch by trial, WITHOUT reading this file
+
+**Read that last line first.** This is the THIRD independent re-derivation of a
+recipe that has been in the tree since 2026-08-12. `portal_recall_graph.yaml`
+already records the second one and added `trigger.work_in_sandbox` to stop a
+third. It did not, because nothing fires a trigger on the agent's behalf.
+
+The cause is not that this document is hard to reach -- eleven files cite it.
+The cause is that **the document it corrects still says the opposite.**
+`AI_README.md`, "A sandbox is not the WSL host", still carries a 2026-07-31
+table with `cmake / ninja | present | **absent**` and still concludes the ceiling
+is `g++ -fsyntax-only`. An agent onboarding CORRECTLY, in the mandatory order,
+reaches "cannot build" and stops. Only an agent who happens to fire the trigger
+learns otherwise. The truth is reachable; the falsehood is unavoidable.
+
+That correction is the open item. It was named in "The correction" above on
+2026-08-12 -- "Both files should be corrected under the AIF this finding is
+given" -- and the AIF was never claimed, so it never landed.
+
+### The environment moved, so half the recipe above is now shape-specific
+
+The 2026-08-12 run was a **mounted** sandbox. This one was a cloud container with
+no mount of the repo at all. Both are "the sandbox"; they are not the same
+machine, and the differences change four of the five steps.
+
+| | 2026-08-12, mounted sandbox | 2026-08-25, cloud container |
+| --- | --- | --- |
+| root / apt | none. `apt-get download` only | root; `apt-get install` works |
+| cmake, ninja | `pip install --break-system-packages` | preinstalled |
+| g++ | 11 | 13 |
+| the source | copy off the mount | **no mount** -- tar it in |
+| dependency source | the repo's own `build-wsl-lean/vcpkg_installed` | distro `-dev` packages |
+| the blocker | vcpkg `.a` needed `__isoc23_strtol`; swap 3 static libs | vcpkg CONFIG NAMES absent; 2 shim files |
+
+**Measure yours; do not adopt either column.** Both are perishable and the
+"Measure, do not trust this file either" probe above still governs.
+
+### Recipe delta for a container with no mount
+
+**Getting the source in.** A file-transfer bridge with a per-call file cap cannot
+move a 3,300-file tree. One archive can:
+
+```bash
+git ls-files -z | tr '\0' '\n' \
+  | grep -v '^\(dottalkpp/data/\|docs/\|labtalk/\|whitepapers/\)' > tmp/tarlist.txt
+tar -czf tmp/src.tgz -T tmp/tarlist.txt          # ~11 MB, ~27 s over the mount
+```
+
+Excluding `docs/` and `labtalk/` keeps it small but **also removes what
+`--prior-art` searches**, which is part of why this file went unread. If you
+intend any prior-art or doctrine work in the container, do not exclude them.
+
+**Dependencies.** The four core deps (`vcpkg.json`) all exist as Ubuntu packages:
+`libsodium-dev liblmdb-dev nlohmann-json3-dev libsqlite3-dev`. What Ubuntu does
+NOT ship is the vcpkg-specific package CONFIG for two of them, so
+`find_package(unofficial-lmdb CONFIG REQUIRED)` and `unofficial-sodium` fail.
+Two shim files on `CMAKE_PREFIX_PATH` are the whole fix. They are deliberately
+NOT in the repo -- a container-only crutch tracked in the tree would be a second
+answer to the dependency question. Inlined here so this file has no widow:
+
+```cmake
+# unofficial-lmdbConfig.cmake
+find_path(LMDB_INCLUDE_DIR lmdb.h)
+find_library(LMDB_LIBRARY NAMES lmdb)
+if(NOT TARGET unofficial::lmdb::lmdb)
+  add_library(unofficial::lmdb::lmdb UNKNOWN IMPORTED)
+  set_target_properties(unofficial::lmdb::lmdb PROPERTIES
+    IMPORTED_LOCATION "${LMDB_LIBRARY}"
+    INTERFACE_INCLUDE_DIRECTORIES "${LMDB_INCLUDE_DIR}")
+endif()
+set(unofficial-lmdb_FOUND TRUE)
+```
+
+The sodium shim is identical with `sodium.h`, `NAMES sodium`, and target
+`unofficial-sodium::sodium`.
+
+**Step 4 of the original recipe still applies unchanged.** `git init` the copy:
+`build_product_inventory.py` shells out to `git ls-files` at CONFIGURE time and
+dies with a message about the packaging script, not about git. Stage by explicit
+manifest, never `-A`, even in a throwaway.
+
+### Two traps this run added
+
+- **`DOTTALK_PRODUCT=DEVELOPMENT` with `DOTTALK_INDEX_MODE=NONE` configures
+  cleanly and fails at LINK.** `src/edu/edu_six.cpp` calls
+  `xindex::upper_ascii_copy`, which lives in `src/xindex/local_index_stub.cpp`,
+  which `NONE` does not link. Latent, not live: `CMakeLists.txt` defaults an
+  unset index mode to LMDB, so you only reach it by setting `NONE` explicitly.
+- **The DEVELOPMENT product manifest requires `dottalkpp/data/**` to match
+  TRACKED files.** If you excluded that tree from the archive, configure fails.
+  Satisfying it with a placeholder file makes the build proceed, and makes the
+  manifest check prove nothing. Say so if you do it.
+
+### What it is FOR
+
+Not just closing your own proof loop. The container is a free A/B rig for
+anything compiled IN: on 2026-08-25 it settled whether an uncommitted
+`include/dotref.hpp` change did what its comment claimed, by building the tree
+twice with only those 13 lines differing and diffing `CMDHELP BUILD LEGACY`
+output. Two rows changed out of 461, and **the row COUNT was identical in both**
+-- a count-based assertion would have scored the repair as no change at all.
+That experiment cost no maintainer cycle and touched no shared file.
+
+Note the row ids renumber on insert, so a raw diff of two captures read 676
+lines for a 2-row change. Strip the id column before diffing.
+
 ## What this does not license
 
 - **Still no git mutation from the sandbox.** Unchanged, and it is the rule this
