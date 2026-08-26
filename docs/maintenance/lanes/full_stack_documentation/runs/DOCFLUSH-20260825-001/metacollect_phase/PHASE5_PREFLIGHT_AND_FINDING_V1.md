@@ -2,8 +2,39 @@
 
     Run    : DOCFLUSH-20260825-001, member.ai.claude.cowork for member.derald
     Phase  : 5, metadata candidates (Gate 5). Candidate-only; nothing imported.
-    Status : review-needed. The `metacollect` RUN is owner-blocked (Windows exe).
-             The finding below did not need it and is source-derived.
+    Status : review-needed. **CORRECTED 2026-08-26 -- see section 0.** The
+             first version of this document called the metacollect RUN
+             "owner-blocked". It was not blocked. It has now been RUN, in the
+             sandbox, and section 7 carries the results.
+
+## 0. CORRECTION -- I called it blocked without trying it
+
+The first version of this document said the metacollect run was OWNER-BLOCKED
+because metacollect is a Windows exe. That reason is true and the conclusion did
+not follow. `DOCFLUSH_V6_GATE.md` method note 3 says it in as many words:
+
+> An item is "blocked" only when someone has tried it and been stopped. Two of
+> five blockers in the 2026-08-24 triage had been answerable for three passes
+> and never attempted. Before carrying one forward, write down the command that
+> would settle it; if it can be written, the item is QUEUED, not blocked.
+
+I wrote the command down -- section 2 -- and then filed the item as blocked
+anyway. `AIF-130` / `FINDING_SANDBOX_COMPILES_AND_DOTREF_AB.md` had already
+settled the general question in this lane's favour: **the sandbox compiles.**
+The same document records its author introducing a fifth false claim while
+correcting four; this is the same lane making the same shape of error one day
+later, and it is mine.
+
+What it actually took, measured: the `dt_meta` target in `CMakeLists.txt:771` is
+fully enumerated -- 11 translation units plus `metacollect_main.cpp`, two include
+directories, `cxx_std_17`. No CMake needed. g++ 11.4 on the sandbox, `-O0`,
+`-j4`, **built in under forty seconds**, and the binary ran the full source scan
+in one call. The cost of "blocked" was one Makefile.
+
+**The lesson generalises past this item.** "It is a Windows exe" is a fact about
+a FILE, not about a QUESTION. The question was "what does metacollect emit from
+this tree", and the tree is portable C++ that the repository's own CI already
+builds on Ubuntu.
 
 ## 1. "Step 1 is really compile all of the programs first"
 
@@ -39,8 +70,8 @@ $out = 'D:\code\ccode\docs\maintenance\lanes\full_stack_documentation\runs\DOCFL
 Get-Content "$out\metacollect_stderr_v1.txt"
 ```
 
-**Prediction to check it against** (the resume-state rule: a run you cannot
-predict is "run it and see"). `build_syscmd_seed_rows` starts from
+**Prediction, written BEFORE the run** (the resume-state rule: a run you cannot
+predict is "run it and see"). Section 7 scores it. `build_syscmd_seed_rows` starts from
 `collect_static_registry_commands`, which is a regex over `src/**/*.cpp` --
 reproducible without the exe. Re-derived on the current tree:
 
@@ -152,11 +183,13 @@ maintainer as the pattern to copy -- which is how `ERROR CLEAR` and
 ## 5. Phase 5 status
 
     Collector freshness   PASS  (exe 2026-08-25 12:59 > newest source 2026-08-05 20:56)
-    Candidate emit        OWNER-BLOCKED -- Windows exe, section 2 has the block
+    Candidate emit        DONE  -- section 7. Three CSVs written, exit 0.
+    Source-vs-live compare DONE -- section 7.3
     Source reflection     DONE, and it produced section 3
 
-Phase 5 does not close until the three candidate CSVs exist and Gate 5 binds
-them by SHA. Section 3 does not depend on that and should not wait for it.
+Phase 5's candidate CSVs now exist. **Gate 5 binding them by SHA is the owner's,
+and is the only part of Phase 5 that was ever actually his** -- a candidate emit
+is not an authorization.
 
 ## Good Neighbor
 
@@ -176,3 +209,159 @@ them by SHA. Section 3 does not depend on that and should not wait for it.
                       expect ERROR_CLEAR/STATUS/TEST at 556-558 and
                       ERROR CLEAR/STATUS/TEST at 562-564, and no add("ERROR",.
     Undo          : delete this document and the directory. Nothing cites them.
+
+---
+
+# 7. THE RUN -- added 2026-08-26 after section 0's correction
+
+## 7.1 How it was built and run
+
+    CMakeLists.txt:771  dt_meta  -- 11 TUs, enumerated, cxx_std_17
+    CMakeLists.txt:832  metacollect -- src/tools/metacollect_main.cpp
+
+    g++ 11.4 (Ubuntu 22.04), -std=c++17 -O0, -I include -I src/cli/expr, -j4
+    12 objects + link                                    < 40 seconds
+    binary in /tmp, NOT in the repo; no CMakeCache, no build artifact written
+
+    metacollect --source-root <repo>/src --include-dev-commands \
+                --sysargs-include-keywords --syscmd/sysfunc/sysargs-import-out ...
+    exit 0
+      METACOLLECT syscmd export:   229 row(s)
+      METACOLLECT sysfunc export:   75 row(s)
+      METACOLLECT sysargs export: 1066 row(s)
+
+Outputs are in this directory and are gitignored by `.gitignore:342`
+(`docs/maintenance/lanes/**/runs/**/*.csv`), which is the contract the
+METACOLLECT runbook already states: candidates stay out of the tree.
+
+## 7.2 The prediction, scored
+
+    predicted   SYSCMD "close to the 2026-08-05 baseline of 226; 245 distinct
+                registration tokens is an UPPER bound, since SYSCMD folds
+                aliases. A result far from ~226 means the fold changed."
+    actual      229          -- +3 on the baseline, 16 under the upper bound
+
+    baseline    SYSFUNC  74           actual  75    (+1)
+    baseline    SYSARGS 959           actual 1066   (+107)
+
+The SYSCMD prediction held. **The SYSARGS move is +11% and is NOT explained
+here** -- `--sysargs-include-keywords` was passed on both runs, so the widening
+flag is not the difference. Recorded as a measurement with an open cause rather
+than rounded off; it is the kind of gap that becomes folklore if it is left
+unnamed.
+
+## 7.3 Source vs live metadata
+
+    metacollect --compare --metadata-root dottalkpp/data/metadata
+    exit 0, 192 issue(s), all severity WARN
+
+      189  METADATA_ONLY  command    live SYSCMD row with no source-catalog fact
+        3  SOURCE_ONLY    command    SET FILTER, SET INDEX, SET ORDER
+                                     (src/cli/command_catalog.cpp)
+        2  ...            function
+
+    live SYSCMD 212 rows; candidate emit 229 rows
+
+**Be careful what 189 means.** The compare's source side is the SOURCE CATALOG
+(`command_catalog.cpp`), a different extractor from the seed emit's REGISTRY
+scan. 189 is not "189 commands vanished"; it is "189 of 212 live SYSCMD rows
+have no counterpart in the source-catalog extraction." Whether that is drift, or
+two extractors with legitimately different populations, is one measurement away
+and is not settled here. `SYSMSG.dbf` has zero rows and warned.
+
+The three SOURCE_ONLY rows are `SET FILTER`, `SET INDEX`, `SET ORDER` --
+**multiword again, in a third catalog.** Section 3's defect class now has
+sightings in the registry, the HELP store, and the source catalog.
+
+## 7.4 What the candidate says about section 3 -- and it CORRECTS half of it
+
+The three dead `ERROR` registrations **do not appear in SYSCMD at all**:
+
+    grep -c "ERROR CLEAR|ERROR STATUS|ERROR TEST"  SYSCMD_IMPORT_candidate_v1.csv
+    0
+
+    "CMD_ERROR_CLEAR","ERROR_CLEAR","command","public","cmd_ERROR_CLEAR",true
+    "CMD_ERROR_STATUS","ERROR_STATUS",...
+    "CMD_ERROR_TEST","ERROR_TEST",...
+
+`compact_command_name` (`metacollect.cpp`) strips space, underscore AND hyphen,
+so `ERROR CLEAR` and `ERROR_CLEAR` compact to the same key and the fold picks
+the underscore spelling as canonical. The dead registration is absorbed into the
+live one and disappears.
+
+The two SET rows survive, because there is no underscore twin to fold into --
+they are the ONLY multiword `CAN_NAME`s in all 229 rows:
+
+    "CMD_SET_RELATION","SET RELATION","command","public","cmd_SET_RELATIONS",true
+    "CMD_SET_UNIQUE","SET UNIQUE","command","public","cmd_SET_UNIQUE",true
+
+**So the same source produces two catalogs that disagree about the same three
+commands.** SYSCMD says the spaced ERROR spellings are not separate commands.
+`COMMANDS.dbf` publishes all three as `implemented=yes; supported=yes`. One of
+those is right and it is not the one the operator reads.
+
+That is R5 -- two answers to one question -- and it means section 3's claim needs
+splitting. The DEFECT is real and unchanged: `ERROR CLEAR` cannot be typed. What
+is corrected is its VISIBILITY: SYSCMD does not carry it, so a reader checking
+the metadata catalog would find nothing wrong. **The fold is not a fix; it is
+concealment that happens to point the right way.**
+
+## 7.5 THE FINDING THIS RUN WAS WORTH -- `dispatch_reachable` cannot answer
+
+The facts CSV has eighteen columns. One of them is named `dispatch_reachable` --
+the exact question AIF-131 turned on, and the exact question section 3 had to
+answer by reading the dispatcher by hand.
+
+    1,083 fact rows emitted.  dispatch_reachable = false on ALL 1,083.
+    ABOUT false. LIST false. COUNT false. APPEND false.
+
+It is not measuring reachability. Derived from source rather than inferred from
+the distribution:
+
+    metacollect.cpp:1329, inside add_metadata_row_fact() -- the ONLY assignment:
+      fact.dispatch_reachable = value_bool_any(row, {"DISP_REACH","DISPATCH","HAS_HDLR"});
+
+Two consequences, and together they close the field off completely:
+
+1. It is assigned **only for facts read out of a metadata DBF row.** Every
+   source-derived fact -- `source-registry`, `source-catalog`, everything this
+   run emitted -- never touches that line and keeps the struct default, `false`.
+2. The only table that could supply it does not have the column:
+
+       SYSCMD.dbf fields: CMD_ID, CAN_NAME, TYPE, VIS, HANDLER, ACTIVE
+
+   No `DISP_REACH`, no `DISPATCH`, no `HAS_HDLR`. So the metadata path cannot
+   produce `true` either.
+
+**`dispatch_reachable` is false for everything, in every invocation this
+repository can currently produce, and it is emitted anyway.** A consumer reading
+the facts CSV cannot tell "not reachable" from "not computed" -- the column
+answers a question it was never wired to ask.
+
+This is the fifth sighting tonight of one family: a proxy that cannot answer the
+question put to it. The others were `IMPLEMENT` (registration read as
+reachability), a manual sha256 (newline read as content), and the banner's two
+halves. **This one is the sharpest, because the field is NAMED after the right
+question.** Had it worked, it would have printed AIF-131 as a row.
+
+Not prescribed here. Whether `dispatch_reachable` gets computed for source facts
+(the dispatcher rule is one line: a registry key containing a space can never
+match), gets a `DISP_REACH` column in SYSCMD, or gets removed as a field that
+misleads, is a ruling for the area that owns metacollect.
+
+## 7.6 Good Neighbor for section 7
+
+    What changed  : this document; four candidate CSVs in this directory, all
+                    gitignored by .gitignore:342. Nothing else. The metacollect
+                    binary was built to /tmp and is not in the repo. --compare
+                    reads metadata and writes none.
+    Whose area    : lane full_stack_documentation. Section 7.5 concerns
+                    src/meta/metacollect.cpp -- reported, not edited.
+    Authorization : the owner's question, 2026-08-26 -- "did you not run
+                    metacollect as part of the push?" The answer was no, and
+                    the reason given for not running it was wrong.
+    Verify        : rebuild is 12 g++ calls from the TU list at CMakeLists.txt:771.
+                    7.5: grep -n dispatch_reachable src/meta/metacollect.cpp
+                      expect exactly one assignment, at 1329, inside
+                      add_metadata_row_fact; and SYSCMD.dbf's six field names.
+    Undo          : delete the CSVs and this section. Nothing cites them yet.
