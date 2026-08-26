@@ -16,7 +16,7 @@ Diagram attachment: `DIAG-CMDAUTH-004`
 Canonical source:
 `docs/manuals/assets/diagrams/command_reference_harvest_v1.svg`
 
-Source extraction snapshot: `237` registered command keys and `237` parsed usage contract blocks.
+Source extraction snapshot: `239` registered command keys and `239` parsed usage contract blocks.
 
 ## Source-Derived Commands
 
@@ -27,13 +27,14 @@ Source extraction snapshot: `237` registered command keys and `237` parsed usage
 | `AGGS` | aggregate | supported | AGGS is the aggregate family/owner for the direct aggregate verbs SUM, AVG, MIN, and MAX. | `src\cli\cmd_aggs.cpp` |
 | `APPEND` | data | supported | Append one or more blank records to the current table, using smart append paths that maintain keys and active indexes, or raw append paths when requested. | `src\cli\cmd_append.cpp` |
 | `APPEND_BLANK` | data | supported | Append one blank record using the shared append support path so APPEND and APPEND BLANK behavior stay aligned. | `src\cli\cmd_append_blank.cpp` |
+| `APPGUI` | gui | supported | Launch the windowed Workbench GUI -- `dottalk_wb`, built with wxWidgets -- as a separate process, or report by name why it cannot be launched. | `src\cli\app_gui.cpp` |
 | `ARCTICTALK` | turbo-vision-ui | supported-conditional | Launch the ArcticTalk Turbo Vision shell when TV support is available. | `src\tv\cmd_foxtalk.cpp` |
 | `AREA` | workspace | supported | Report the current work-area slot and current area file/session state. | `src\cli\cmd_area.cpp` |
 | `AREA51` | diagnostics | supported | Report the current work-area slot and its cursor/order state WITHOUT invoking the full AREA command and WITHOUT triggering relation refresh. | `src\cli\cmd_area51.cpp` |
 | `ASCEND` | index | supported | Set the active order/tag direction to ascending for the current work area. | `src\cli\cmd_ascend.cpp` |
 | `ASCII` | education-reference | supported | Print ASCII/extended ASCII reference tables and selected ranges. | `src\edu\edu_ascii_table.cpp` |
 | `AUTODBF` | io schema | experimental | Create an X64 DBF from a CSV file and import the CSV rows into the newly created table.  CSV headers may become field names; when there is no header, deterministic FIELDnnn names are generated. | `src\cli\cmd_autodbf.cpp` |
-| `AVERAGE` | aggregate | supported | Average a numeric expression over the visible record set. (alias of AVG) | `src\cli\cmd_aggs.cpp` |
+| `AVERAGE` | aggregate | supported | Average a numeric expression over the visible record set. | `src\cli\cmd_aggs.cpp` |
 | `AVG` | aggregate | supported | Average a numeric expression over the visible record set. | `src\cli\cmd_aggs.cpp` |
 | `BANG` | shell | supported | Launch the host operating-system shell or execute a host shell command. | `src\cli\cmd_bang.cpp` |
 | `BBOX` | education | experimental | Teach and inspect the Blackbox model: data enters a processing system and information comes out. | `src\cli\cmd_bbox.cpp` |
@@ -47,10 +48,9 @@ Source extraction snapshot: `237` registered command keys and `237` parsed usage
 | `BROWSER` | ui | supported | Enter a minimal interactive browser with list, display, goto, edit, help, and quit commands, delegating work to existing command handlers. | `src\cli\cmd_browser.cpp` |
 | `BROWSETUI` | ui | supported | Enter the full-screen Turbo/console browse UI with create, read, update, delete, append, navigation, and staged edit support. | `src\cli\cmd_browsetui.cpp` |
 | `BROWSETV` | turbo-vision-developer-ui | developer | Open the Turbo Vision grid browser for the current table. | `src\tv\cmd_recordview.cpp` |
-| `BUILD INFO` | diagnostics | supported | Report the compiled engine capacity "build vectors" (AIF-044) — the selected maximums this binary was configured with, plus a fingerprint. (alias of BUILD VECTORS) | `src\cli\cmd_buildvectors.cpp` |
-| `BUILD VECTORS` | diagnostics | supported | Report the compiled engine capacity "build vectors" (AIF-044) — the selected maximums this binary was configured with, plus a fingerprint. | `src\cli\cmd_buildvectors.cpp` |
+| `BUILD` | diagnostics | supported | Report the compiled engine capacity "build vectors" (AIF-044) -- the selected maximums this binary was configured with, plus a fingerprint. | `src\cli\cmd_buildvectors.cpp` |
 | `BUILDLMDB` | index | supported | Build or rebuild the LMDB backing store for a CDX container using one LMDB environment per table container and named databases for tags. | `src\cli\cmd_buildlmdb.cpp` |
-| `BUILDVECTORS` | diagnostics | supported | Report the compiled engine capacity "build vectors" (AIF-044) — the selected maximums this binary was configured with, plus a fingerprint. | `src\cli\cmd_buildvectors.cpp` |
+| `BUILDVECTORS` | diagnostics | supported | Report the compiled engine capacity "build vectors" (AIF-044) -- the selected maximums this binary was configured with, plus a fingerprint. | `src\cli\cmd_buildvectors.cpp` |
 | `CALC` | expression | supported | Evaluate an xexpr scalar expression and print the result. When the input is an assignment to a real field in the current area, CALC delegates to CALCWRITE for mutation semantics. | `src\cli\cmd_calc.cpp` |
 | `CALCWRITE` | data | supported | Evaluate an expression and write the result into a field in the current record, preserving type normalization, validation, memo conversion, table-buffer semantics, and direct-write index maintenance. | `src\cli\cmd_calcwrite.cpp` |
 | `CANARY` | metadata-dev | dev-canary | Dev canary for the metadata catalog reader adapter. Reads the current already-open SYSCMD area and reports adapter row/distribution counts. Invoked as CANARY (registered in shell_commands.cpp); cmd_CATALOGCANARY is the handler, not the command name. | `src\cli\cmd_catalogcanary.cpp` |
@@ -67,7 +67,7 @@ Source extraction snapshot: `237` registered command keys and `237` parsed usage
 | `COBOL` | education-toolchain | supported | Export STUDENTS data for COBOL exercises and build/run/test COBOL programs. | `src\edu\edu_cobol.cpp` |
 | `CODASYL` | education | supported | Provide a thin CODASYL teaching veneer over already-open DotTalk++ work areas, simulating owner/member set traversal without a second storage engine. | `src\cli\cmd_codasyl.cpp` |
 | `COLOR` | ui | supported | Report or set the console color theme and tree-color behavior. | `src\cli\cmd_color.cpp` |
-| `COMMANDSHELP` | help | supported | Build or report the current HELP DATA catalogs and their legacy compatibility views. (alias of CMDHELP) | `src\cli\cmdhelp.cpp` |
+| `COMMANDSHELP` | help | supported | Build or report the current HELP DATA catalogs and their legacy compatibility views. | `src\cli\cmdhelp.cpp` |
 | `COMMIT` | data | supported | Apply buffered TABLE changes to the current area or all open buffered areas, locking records at commit time and reporting persistence-stage failures. | `src\cli\cmd_commit.cpp` |
 | `CONCAT` | string | supported | Concatenate one or more expressions into a single string and print the result. | `src\cli\cmd_concat.cpp` |
 | `CONTINUE` | navigation | supported | Continue a previous LOCATE search, or continue with an explicit FOR predicate, following active order when present. | `src\cli\cmd_continue.cpp` |
@@ -108,9 +108,9 @@ Source extraction snapshot: `237` registered command keys and `237` parsed usage
 | `EVALDIFF` | diagnostics | experimental | Compare the classic DbArea predicate evaluator with the TupleRow-bound evaluator over every physical record in the current table. | `src\cli\cmd_evaldiff.cpp` |
 | `EVALUATE` | education-expression | supported | Evaluate a boolean predicate expression through xexpr and print .T. or .F. | `src\edu\edu_evaluate.cpp` |
 | `EXAMPLE` | diagnostics | supported | Minimal example/test command used to verify token parsing and command routing. | `src\cli\cmd_example.cpp` |
-| `EXIT` | shell | supported | Request DotTalk++ shell shutdown without mutating open table data, HELP data, metadata catalogs, manualgen artifacts, or source files. (alias of QUIT) | `src\cli\cmd_quit.cpp` |
+| `EXIT` | shell | supported | Request DotTalk++ shell shutdown without mutating open table data, HELP data, metadata catalogs, manualgen artifacts, or source files. | `src\cli\cmd_quit.cpp` |
 | `EXITS` | extension-control | document-control-readonly | Inspect and validate the reviewed DotTalk++ extension-exit manifest. | `src\cli\cmd_exits.cpp` |
-| `EXPFUNCs` | help | supported | Export the expression/function catalog to Markdown documentation. (alias of EXPORTFUNCTIONS) | `src\cli\cmd_export_functions.cpp` |
+| `EXPFUNCs` | help | supported | Export the expression/function catalog to Markdown documentation. | `src\cli\cmd_export_functions.cpp` |
 | `EXPORT` | io | supported | Export the current DBF rowset, or an already-open named work area, to a delimited file. | `src\cli\cmd_export.cpp` |
 | `EXPORTFUNCTIONS` | help | supported | Export the expression/function catalog to Markdown documentation. | `src\cli\cmd_export_functions.cpp` |
 | `EXPORTSQL` | export | supported-stub-mixed | Preview SQL export output and expose the file-export command surface. | `src\cli\cmd_importsql.cpp` |
@@ -122,11 +122,12 @@ Source extraction snapshot: `237` registered command keys and `237` parsed usage
 | `FOXHELP` | help | supported | List or search the static FoxPro-style command catalog. | `src\cli\cmd_foxhelp.cpp` |
 | `FOXPRO` | turbo-vision-ui | supported-conditional | Launch the FoxPro-style Turbo Vision workbench when TV support is available. | `src\tv\cmd_foxpro.cpp` |
 | `FOXSTANDARD` | help | supported | Render static historical FoxPro-standard reference topics. | `src\cli\cmd_foxstandard.cpp` |
-| `FOXTALK` | turbo-vision-ui | supported-conditional | Launch the ArcticTalk Turbo Vision shell when TV support is available. (alias of ARCTICTALK) | `src\tv\cmd_foxtalk.cpp` |
+| `FOXTALK` | turbo-vision-ui | supported-conditional | Launch the ArcticTalk Turbo Vision shell when TV support is available. | `src\tv\cmd_foxtalk.cpp` |
 | `GENERIC` | turbo-vision-developer-ui | developer | Launch the generic Turbo Vision developer workbench. | `src\tv\cmd_generic.cpp` |
 | `GO` | navigation | supported | Refresh the current record, move to table/order endpoints, move to an absolute record number, or skip relative to the current record. | `src\cli\cmd_go.cpp` |
 | `GOTO` | navigation | supported | Move the current work-area cursor to an absolute record number, first record, or last record through the shared navigation layer. | `src\cli\cmd_goto.cpp` |
 | `GPS` | report | supported | Report current work-area position, including area slot, table label, physical record number, and computed logical row. | `src\cli\cmd_gps.cpp` |
+| `GUI` | gui | supported | Launch the windowed Workbench GUI -- `dottalk_wb`, built with wxWidgets -- as a separate process, or report by name why it cannot be launched. | `src\cli\app_gui.cpp` |
 | `HANUKKAH` | education-demo | supported | Print the retro colored ASCII Hanukkah menorah demo. | `src\edu\edu_hanukkah.cpp` |
 | `HELP` | help | supported | Route user help requests across DotTalk command, function, FoxPro, PowerShell, SQL, beta, predicate, and educational help surfaces. | `src\cli\cmd_help.cpp` |
 | `HIER` | dev-hierarchy | dev-tool | Developer hierarchy service command for creating, moving, validating, and listing nested hierarchy nodes in the current DbArea. | `src\dewey\cmd_hier.cpp` |
@@ -178,7 +179,7 @@ Source extraction snapshot: `237` registered command keys and `237` parsed usage
 | `REINDEX` | index | supported | Canonical rebuild dispatcher for INX, CNX, CDX/LMDB, and student index families, choosing a default family by table flavor when no family is given. | `src\cli\cmd_reindex.cpp` |
 | `REL` | relations | supported | Dispatch relation list, refresh, join, enumeration, persistence, add, and clear operations. | `src\cli\cmd_rel.cpp` |
 | `RELATIONS` | relation | supported | Inspect and manage active relation definitions, relation files, and relation enumeration helpers. | `src\cli\cmd_relations.cpp` |
-| `REL_LIST` | relation | supported | Inspect and manage active relation definitions, relation files, and relation enumeration helpers. (alias of RELATIONS) | `src\cli\cmd_relations.cpp` |
+| `REL_LIST` | relation | supported | Inspect and manage active relation definitions, relation files, and relation enumeration helpers. | `src\cli\cmd_relations.cpp` |
 | `REL_REFRESH` | relation | supported | Refresh active relations for the current parent area. | `src\cli\cmd_relations.cpp` |
 | `REPLACE` | data | supported | Replace one field in the current record by field name or field index, preserving RHS expression evaluation, type validation, memo conversion, and table-buffer semantics. | `src\cli\cmd_replace.cpp` |
 | `RETRO` | display | supported | Display retro computer/system splash screens with system-specific terminal profiles. | `src\cli\cmd_retro.cpp` |
@@ -212,6 +213,7 @@ Source extraction snapshot: `237` registered command keys and `237` parsed usage
 | `SKIP` | navigation | supported | Move the current work-area cursor forward or backward using filter-aware navigation selection. | `src\cli\cmd_skip.cpp` |
 | `SMARTBROWSER` | browser | supported | Interactive tuple-stream smart browser with paging, relation child browsing, schema/json display toggles, filtering, navigation, and breadcrumbs. | `src\cli\app_smart_browser.cpp` |
 | `SMARTLIST` | report | supported | Filter-aware, order-aware table listing with optional projections, tuple output, debug tracing, deleted-record modes, and predicate filtering. | `src\cli\cmd_smartlist.cpp` |
+| `SMTP` | network | review-needed | Send mail through the tools/notify/smtp_probe.py helper, or probe the configured server without sending. | `src\cli\cmd_smtp.cpp` |
 | `SORT` | data | supported | Create a sorted DBF copy from the current table using expression keys, optional filters, projection fields, deleted-record selection, and UNIQUE. | `src\cli\cmd_sort.cpp` |
 | `SQL` | sql | experimental | Evaluate SQL-like COUNT/FOR predicates over the current DBF work area. | `src\cli\cmd_sql.cpp` |
 | `SQLERASE` | sql | experimental | Mark records deleted using SQL-like ERASE FROM &lt;table&gt; WHERE &lt;expr&gt; syntax. | `src\cli\cmd_sql_erase.cpp` |
@@ -221,7 +223,7 @@ Source extraction snapshot: `237` registered command keys and `237` parsed usage
 | `SQLVER` | sql | experimental | Report whether SQLite support is available and print the linked SQLite library version when available. | `src\cli\cmd_sqlver.cpp` |
 | `STATUS` | workspace | supported | Report current or all open work-area status, including workspace occupancy, DBF flavor, active order/index state, tags, records, and optional structure details. | `src\cli\cmd_status.cpp` |
 | `STOP_ON_ERROR` | diagnostics | supported | Set or report the severity threshold at which a running DotScript aborts. | `src\cli\cmd_stop_on_error.cpp` |
-| `STRCAT` | string | supported | Concatenate one or more expressions into a single string and print the result. (alias of CONCAT) | `src\cli\cmd_concat.cpp` |
+| `STRCAT` | string | supported | Concatenate one or more expressions into a single string and print the result. | `src\cli\cmd_concat.cpp` |
 | `STRUCT` | workspace | supported | Report DBF field structure and index/container information for the current area or all open areas. | `src\cli\cmd_struct.cpp` |
 | `SUM` | aggregate | supported | Sum a numeric expression over the visible record set. | `src\cli\cmd_aggs.cpp` |
 | `TABLEMETA` | table-metadata | supported | Report DBF structure and adjacent INI, memo, and index artifact facts. | `src\cli\tabledata.cpp` |
@@ -238,13 +240,13 @@ Source extraction snapshot: `237` registered command keys and `237` parsed usage
 | `TVISION` | diagnostics | stub | Confirm Turbo Vision/TUI support is linked; this is currently a stub. | `src\cli\cmd_tvision.cpp` |
 | `UNDEFCMD` | diagnostics | experimental | Remove a scratch command previously defined with DEFCMD. | `src\cli\cmd_defcmd.cpp` |
 | `UNDEFFN` | diagnostics | experimental | Remove a session custom function previously defined with DEFFN. | `src\cli\cmd_deffn.cpp` |
-| `UNDELETE` | table-mutation | supported | Clear deleted flags on the current record or selected deleted records. (alias of RECALL) | `src\cli\cmd_recall.cpp` |
+| `UNDELETE` | table-mutation | supported | Clear deleted flags on the current record or selected deleted records. | `src\cli\cmd_recall.cpp` |
 | `UNLOCK` | locking | supported | Release the current record lock, a specified record lock, or the table lock. | `src\cli\cmd_unlock.cpp` |
 | `UNTIL` | script | supported | Buffer and execute an UNTIL...ENDUNTIL loop from the current record until a boolean expression becomes true. | `src\cli\cmd_until.cpp` |
 | `UNTIL_BUFFER` | control-buffer-internal | developer | Internal shell target that captures one UNTIL body line. | `src\cli\cmd_until.cpp` |
 | `UPDATE` | sql | experimental | Update records in the current DBF work area using SQL-like SET/WHERE syntax. | `src\cli\cmd_sql_update.cpp` |
 | `USE` | workspace | supported | Open a DBF table into the current work area, with duplicate-open guard, memo auto-attach, optional index auto-attach, and NOINDEX physical-order mode. | `src\cli\cmd_use.cpp` |
-| `USER` | diagnostics | experimental | Inspect and administer the identity, authentication, and RBAC model (AIF-045): members, roles, permissions, authorization requests/grants, login state, owner-gated administration, DBF persistence, and the APH-5 round-trip proof. | `src\cli\cmd_user.cpp` |
+| `USER` | diagnostics | supported | Inspect and administer the identity, authentication, and RBAC model (AIF-045): members, roles, permissions, authorization requests/grants, login state, owner-gated administration, DBF persistence, and the APH-5 round-trip proof. | `src\cli\cmd_user.cpp` |
 | `VALIDATE` | validation | supported | Route validation subcommands such as VALIDATE UNIQUE to their handlers. | `src\cli\cmd_validate.cpp` |
 | `VAR` | scripting | supported | Evaluate an expression and store it as a scoped DotScript memory variable, referenced later as $name. | `src\cli\cmd_var.cpp` |
 | `VDISK` | storage | supported | Manage the in-process RAM virtual disk used by in-memory X64 DBF tables, native CDX-V64 indexes, and related transient storage (AIF-043). | `src\cli\cmd_vdisk.cpp` |
