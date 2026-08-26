@@ -1,0 +1,36 @@
+flowchart TD
+    A[Request or observed defect] --> B{Existing project?}
+    B -->|yes| C[Select project id]
+    B -->|no| B1[Owner decides project or standalone lane]
+    B1 --> C
+    C --> D{Existing AIF lane?}
+    D -->|yes| E[Reuse AIF-NNN]
+    D -->|no| D1[Atomically claim AIF-NNN]
+    D1 --> E
+    E --> F[Classify PDLC or SDLC mode and change class]
+    F --> G[Check in run and bind owner steward project lanes]
+    G --> H[Create or link typed work item]
+    H --> I[Read authority chain and contracts]
+    I --> J[Implement in D:/code/ccode development]
+    J --> K[Capture proof with state platform source time]
+    K --> L{Owner ruling needed?}
+    L -->|yes| L1[Allocate global R-number and record ruling]
+    L -->|no| M[Evaluate milestone or gate]
+    L1 --> M
+    M --> N{Development gates pass?}
+    N -->|no| N1[Record finding next gate and residual risk]
+    N1 --> J
+    N -->|yes| O[Close run with audited closeout and Session Log]
+    O --> P[Generate Portal status reports and crosswalk views]
+    P --> Q{Publication ascent separately authorized?}
+    Q -->|no| R[Stop at development_closeout]
+    Q -->|yes| S[Promote through curated staging and publication gates]
+    S --> T[Verify managed and public surfaces separately]
+    T --> U[Record publication receipt and final state]
+
+    classDef decision fill:#fff4ce,stroke:#8a6d1d,color:#222;
+    classDef authority fill:#e7f3ff,stroke:#1b5e9a,color:#222;
+    classDef evidence fill:#e9f7ef,stroke:#287a45,color:#222;
+    class B,D,L,N,Q decision;
+    class C,E,F,G,I authority;
+    class K,O,P,T,U evidence;

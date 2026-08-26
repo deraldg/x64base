@@ -58,6 +58,7 @@ renumbered.
 | M7 | Structured routing assertions | PASS -- six typed assertions with evidence anchors, measurement, and expiry |
 | M8 | Generated status projection | PASS -- deterministic JSON and Markdown from maintained registries |
 | M9 | Expanded advisory integration | PASS -- feed, assertion, and projection checks remain non-blocking |
+| M10 | Professional system model | PASS -- normalized hierarchy, schema catalog, PFD, and schema crosswalk DFD |
 
 ## Coordination finding
 
@@ -104,3 +105,13 @@ the six-feed inventory, six structured assertions, and the current documentation
 push without claiming promotion, deployment, or public publication. The recall
 graph routes the full-stack trigger to these maintained surfaces. Claude's
 `appgui`, multi-workplaces, and `minidb` areas remain outside the slice.
+
+## Professional model evidence -- CODEX-20260826-003
+
+The requested architecture package is now source-backed rather than inferred
+from the word `ticket`: one model defines the Project -> AIF lane -> milestone
+hierarchy and keeps lifecycle, ruling, run, task, proof, and report identities
+as typed related dimensions. It inventories 19 DBF table schemas registered by
+Portal CRUD plus the typed registry/report schemas, and crosswalks DotTalk++
+HELP, metadata, manuals, governance, evidence, Portal reports, and the website.
+Two Mermaid sources preserve the PFD and DFD as reviewable text.

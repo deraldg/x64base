@@ -166,7 +166,8 @@
         "trigger.capture_proof",
         "trigger.edit_website",
         "trigger.work_in_sandbox",
-        "trigger.fullstack_doc_push"
+        "trigger.fullstack_doc_push",
+        "trigger.understand_portal_system"
       ],
       "passed": true,
       "findings": 0

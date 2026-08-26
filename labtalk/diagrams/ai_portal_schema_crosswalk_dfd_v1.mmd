@@ -1,0 +1,57 @@
+flowchart LR
+    EXT[Owner and AI coworkers]
+    SRC[DotTalk++ source and usage contracts]
+    HELP[(HELP DBFs)]
+    META[(Metadata DBFs)]
+    MAN[(Accepted manual manifest and artifact)]
+    AIF[(AIF intake and atomic claims)]
+    RR[(Global R register and ruling sheets)]
+    RUN[(Run fragments and report envelopes)]
+    TASK[(Task and project registries)]
+    PROOF[(Proof registries and artifacts)]
+    ID[(Identity and RBAC DBFs)]
+    BBS[(BBS and Pseudo-Chat DBFs)]
+    TRACK[(Portal DBFs: ruling lane run runlane proof task)]
+    FEED[(Portal feed assertion and current-run registries)]
+    STATUS[Generated Portal status and reports]
+    LOCAL[Local AI Portal]
+    SITE[Website JSON and MDX projection]
+    PUBLIC[x64base.com reader]
+
+    EXT -->|authorize and contribute| AIF
+    EXT -->|attributed member| ID
+    EXT -->|messages and returns| BBS
+
+    SRC -->|harvest| HELP
+    SRC -->|metacollect| META
+    HELP -->|manualgen| MAN
+
+    AIF -->|lane identity| TRACK
+    RR -->|ruling identity and transitions| TRACK
+    RUN -->|run and lane crosswalk| TRACK
+    TASK -->|project and work-item state| TRACK
+    PROOF -->|evidence state| TRACK
+    ID -->|member permission grant| TRACK
+    BBS -->|author run grant references| TRACK
+
+    HELP -->|feed.dottalk.help_store| FEED
+    META -->|feed.dottalk.metadata_metacollect| FEED
+    MAN -->|feed.dottalk.manual_accepted| FEED
+    AIF -->|current work authority| FEED
+    RUN -->|current run pointer| FEED
+    PROOF -->|evidence anchors| FEED
+    TRACK -.->|future normalized read path| FEED
+
+    FEED -->|validate and generate| STATUS
+    STATUS -->|serve local views| LOCAL
+    STATUS -->|reviewed projection only| SITE
+    SITE -->|deployment and public verification| PUBLIC
+
+    PUBLIC -.->|correction request, never reverse derivation| EXT
+
+    classDef source fill:#e7f3ff,stroke:#1b5e9a,color:#222;
+    classDef store fill:#f2e9ff,stroke:#6941a5,color:#222;
+    classDef derived fill:#e9f7ef,stroke:#287a45,color:#222;
+    class SRC,EXT source;
+    class HELP,META,MAN,AIF,RR,RUN,TASK,PROOF,ID,BBS,TRACK,FEED store;
+    class STATUS,LOCAL,SITE,PUBLIC derived;

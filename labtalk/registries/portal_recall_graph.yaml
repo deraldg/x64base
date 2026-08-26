@@ -112,6 +112,8 @@ triggers:
     label: about to build, install tooling, or run anything inside the mounted Linux sandbox
   - id: trigger.fullstack_doc_push
     label: about to run or harden the full-stack documentation push or a Portal data feed
+  - id: trigger.understand_portal_system
+    label: about to understand or normalize the AI Portal hierarchy, schemas, process flow, or data-flow seams
 
 # ---------------------------------------------------------------- nodes
 nodes:
@@ -713,6 +715,30 @@ nodes:
     enforced_by: labtalk/ai_portal/build_portal_feed_status.py
     hard_fails: false
     tier: 2
+  - id: architecture.portal_professional_model
+    label: "professional AI Portal hierarchy, schema catalog, lifecycle vocabulary, and seam crosswalk"
+    path: docs/maintenance/AI_PORTAL_PROFESSIONAL_SYSTEM_MODEL_V1.md
+    anchor: ""
+    class: semantic
+    enforced_by: ""
+    hard_fails: false
+    tier: 2
+  - id: diagram.portal_professional_pfd
+    label: "AI Portal governed process flow from request through development closeout and separately authorized publication"
+    path: labtalk/diagrams/ai_portal_professional_pfd_v1.mmd
+    anchor: ""
+    class: semantic
+    enforced_by: ""
+    hard_fails: false
+    tier: 2
+  - id: diagram.portal_schema_crosswalk_dfd
+    label: "AI Portal data-flow and schema crosswalk across source, governance, evidence, Portal, and website projection"
+    path: labtalk/diagrams/ai_portal_schema_crosswalk_dfd_v1.mmd
+    anchor: ""
+    class: semantic
+    enforced_by: ""
+    hard_fails: false
+    tier: 2
   - id: procedure.fullstack_doc_push
     label: "the governed full-stack documentation push recipe -- content harvest, manual, development closeout, then separately authorized publication ascent"
     path: docs/maintenance/lanes/full_stack_documentation/FULL_STACK_DOC_PUSH_RECIPE_BOOK_V1.md
@@ -859,7 +885,11 @@ edges:
   - {from: trigger.fullstack_doc_push, to: registry.portal_feeds, type: fires_at}
   - {from: trigger.fullstack_doc_push, to: state.current_fullstack_doc_push, type: fires_at}
   - {from: trigger.fullstack_doc_push, to: report.portal_feed_status, type: fires_at}
+  - {from: trigger.understand_portal_system, to: architecture.portal_professional_model, type: fires_at}
+  - {from: trigger.understand_portal_system, to: contract.portal_feeds, type: fires_at}
   - {from: contract.portal_feeds, to: registry.portal_feeds, type: requires}
   - {from: contract.portal_feeds, to: registry.portal_assertions, type: requires}
   - {from: registry.portal_assertions, to: state.current_fullstack_doc_push, type: requires}
   - {from: registry.portal_feeds, to: report.portal_feed_status, type: requires}
+  - {from: architecture.portal_professional_model, to: diagram.portal_professional_pfd, type: requires}
+  - {from: architecture.portal_professional_model, to: diagram.portal_schema_crosswalk_dfd, type: requires}
