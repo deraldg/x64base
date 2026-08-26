@@ -78,7 +78,7 @@ tree.
 | E2 | HELP DATA current + reflection PASS | Gate 4 record; `CMDHELPCHK` structural PASS |
 | E3 | Source contracts complete | `source_census` 100 percent; `command_catalog_sync check` fallback 0 |
 | E4 | Reference guards clean | `refcheck_v1.py` PASS; `normcheck_v1.py` PASS |
-| E5 | Manual harvest reflects current HELP | HELP/META harvest re-exported AFTER the Phase-4 build (else the manual omits new commands). SEE "Known gap" below -- no exporter exists yet. |
+| E5 | Manual harvest reflects current HELP | Run `tools/fullstack_docs/check_help_meta_harvest_freshness.py` against the canonical `harvested/` workspace. It must report 14/14 tables matching the current HELP/META stores. A current candidate proves export readiness, not canonical readiness. |
 | E6 | Website catalog source current | `command-catalog.mdx` regenerated, fallback 0 |
 | E7 | Backups + rollback ready | HELP store backup exists; promotion rollback path named |
 | E8 | Owner authorization for mutation | manual acceptance, source staging, and website publish are distinct mutations; each needs its own owner go |
@@ -103,10 +103,10 @@ Status as of 2026-08-05 (DOCFLUSH-20260805-001):
 Fail-closed: if any row is unproven, Phase 8 stops and the dev-tree lane reopens
 the relevant phase. E5 was the deep one -- worse than a stale file -- see below.
 
-### Known gap: E5 has no producer (build it first)
+### E5 producer and promotion boundary
 
-The harvest is the hand-across artifact at the producer/consumer seam, but **no
-code produces it.** Confirmed 2026-08-05:
+The harvest is the hand-across artifact at the producer/consumer seam. At the
+start of the 2026-08-05 run, no code produced it:
 
 - The 14 required `harvested/*.csv` are a hand-made snapshot dated 2026-05-25;
   HELP DATA is current as of 2026-08-05.
@@ -117,13 +117,12 @@ code produces it.** Confirmed 2026-08-05:
   not write `harvested/`. Nothing else does either.
 - The engine's nearest export, `export_helpdata_v2_dbfs`, emits DBFs, not these CSVs.
 
-Consequence: E5 cannot be satisfied by anyone today. The **first Phase 8 work item
-is to build the harvest exporter** -- a defined HELP/META -> `harvested/*.csv`
-producer (the 14 files in `harvest.py`), executed from current HELP DATA, that
-flips the manifest from `PENDING_EXPORT` to a recorded method. Only then can the
-manual be made current. This is a source/tooling task in the dev tree, not a
-publication step; it is the true blocker the Phase-6 dry-run masked (it ran green
-on the May snapshot).
+That diagnosis is historical. The interim exporter described below corrected
+the missing-producer defect. E5 still fails until the canonical workspace, not
+only a candidate workspace, matches current HELP/META content. The freshness
+audit compares every normalized field of every row and validates all 14
+manifest bindings; it does not rely on checkout-sensitive timestamps and never
+promotes either workspace.
 
 **Placement (producer/consumer -- do not blur):** the exporter is PRODUCER-side.
 It dumps the HELP tables (`data/help/*.dbf`) and META `SYS*` tables

@@ -7,7 +7,7 @@ Owner: `member.derald`
 Steward: `member.ai.codex`
 
 Runs: `CODEX-20260826-001`, `CODEX-20260826-002`, `CODEX-20260826-003`,
-`CODEX-20260826-004`
+`CODEX-20260826-004`, `CODEX-20260826-005`
 
 ## Authorization
 
@@ -61,6 +61,7 @@ renumbered.
 | M9 | Expanded advisory integration | PASS -- feed, assertion, and projection checks remain non-blocking |
 | M10 | Professional system model | PASS -- normalized hierarchy, schema catalog, PFD, and schema crosswalk DFD |
 | M11 | Full-stack entry and contract-audit hardening | PASS -- maintained run pointer plus helper-aware usage and dotref advisory |
+| M12 | E5 semantic freshness gate | PASS -- report-only row-and-field comparison distinguishes current candidate from stale canonical harvest |
 
 ## Coordination finding
 
@@ -154,3 +155,31 @@ pass. Strict contract audit exits 1 as intended and names exactly the two
 remaining advisory debts. The wider SelfDoc suite has one unrelated existing
 failure: metadata-system registry entrypoint hashes no longer match ten source
 files. This slice does not rewrite those hashes or claim that lane is green.
+
+## E5 semantic freshness evidence -- CODEX-20260826-005
+
+The Phase 8 plan now routes E5 through an executable, content-level audit rather
+than a timestamp comparison. The audit reads the same 14 HELP/META DBFs as the
+interim exporter, applies the same memo-cell normalization, compares every CSV
+header and row, and verifies that the export manifest binds required status,
+method, and current row count. It is report-only and records
+`mutation_performed=0`.
+
+Measured against the current stores, the run candidate passes 14/14 tables with
+zero manifest findings. The canonical `harvested/` workspace passes 8/14 and
+fails all six HELP tables; its manifest also carries six stale row counts. This
+confirms E5 is open from content, not merely from file age. No canonical file or
+publication pointer was changed.
+
+Good Neighbor note for the full-stack documentation lane:
+
+- **WHAT CHANGED:** added the E5 semantic freshness audit and corrected the
+  Phase 8 plan's retired claim that no exporter exists.
+- **WHOSE AREA:** AIF-068 full-stack documentation entry controls, intersecting
+  AIF-132 Portal current-state routing.
+- **AUTHORIZATION:** owner instruction to continue the accepted hardening plan;
+  publication ascent remains separately gated.
+- **VERIFY OR UNDO:** run the focused freshness tests, then run the audit once
+  against the current run candidate and once against
+  `docs/manuals/developer/manualgen/harvested`; revert only the four paths in
+  this slice to remove the control. The audit performs no data mutation.
