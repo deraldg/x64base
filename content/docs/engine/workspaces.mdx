@@ -10,6 +10,11 @@ them, and -- since version 3 -- where every cursor sat and which area was
 selected. It is the difference between "the data" and "how the data is
 currently arranged for work."
 
+> **Alpha development boundary.** Saved workspaces and memo-to-RAM MINIDB
+> hydration are runtime-proven development capabilities. Concurrent, recursive
+> and nested workspace management is active early work; it is discussed here as
+> direction until its own runtime evidence and limits are recorded.
+
 Workspaces are ordinary text or ordinary table rows. There is nothing
 proprietary in the middle.
 
@@ -64,9 +69,16 @@ the workspaces root. Each row records a unique id, the name, the display
 schema name, measured flavor, OS-compatibility claim, payload format,
 size, the areas it opens, recursion-guard fields, the id of the row it
 superseded, the author (a real member identity), the timestamp, and the
-roots active at save. Saving again supersedes rather than overwrites, so the
-table keeps its own history -- and that lineage chain is, in practice, a
-commit log.
+roots active at save. Those columns form the envelope. The `SNAPSHOT` memo
+field carries the value: a posture for `DTSHEMA` rows, or the whole database
+container for `MINIDB 1` rows. In the second case the row does not point to a
+database elsewhere; the row contains its raw DBF, CDX and carried DTX members.
+Saving again supersedes rather than overwrites, so the table keeps its own
+history -- and that lineage chain is, in practice, a commit log.
+
+`WORKSPACES.dbf` is therefore heterogeneous by design: identity rows, posture
+rows and whole-database rows share one queryable outer table. Calling it only
+metadata misses the inversion that matters.
 
 Every memo save is verified: the payload is read back through the token
 stored *in the field* -- not the one held in memory -- and byte-compared. A
@@ -119,6 +131,17 @@ the private work itself.
 The design work for named, concurrent workspaces is registered as a lane with
 its costs already measured; these findings are its entry conditions rather
 than a to-do list written after the fact.
+
+### The emerging nested model
+
+A MINIDB is the portable database image: workspace posture plus member files in
+one memo payload. Hydration produces a live workspace. The emerging manager is
+examining how several such workspaces can be named and isolated, and how a
+parent can contain or reference children without merging their table names.
+
+Recursion and nesting therefore need explicit depth, cycle, ownership,
+resolution and close-order rules. Those are active Alpha design and
+implementation questions, not yet published here as completed behavior.
 
 ## Evidence
 

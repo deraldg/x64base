@@ -20,11 +20,11 @@ The public repository entry point is:
 
 [Open the x64base AI Portal on GitHub](https://github.com/deraldg/x64base/blob/main/AI_PORTAL.md)
 
-The GitHub portal above moves only on full engine snapshots. For the **freshest public
-current-state** — updated on the website's own cadence, for outside agents who cannot
-read the local drive — use the live digest:
+The GitHub portal above moves only on full engine snapshots. For the latest dated
+website coordination snapshot available to outside agents who cannot read the local
+drive, use:
 
-[AI Agent Sync — Live Current State](/docs/labtalk/agent-sync)
+[AI Agent Sync -- Reconciled Snapshot](/docs/labtalk/agent-sync)
 
 ## Mandatory Status
 
@@ -79,6 +79,60 @@ The present foundation includes:
 
 These pieces are useful and increasingly connected, but they do not yet
 constitute validated autonomous project memory.
+
+## Professional Identifier Model
+
+The Portal now treats its identifiers as related dimensions rather
+than variations of one generic ticket number:
+
+| Identity | Meaning | Relationship |
+|---|---|---|
+| `project.<domain>.<name>` | Durable project or program | Root authority for one or more lanes |
+| `AIF-NNN` | Governed intake or work lane | Belongs to a project; allocated atomically |
+| `PDLC` / `SDLC` | Process scale and method | Classification, not an identifier; PDLC may nest in SDLC |
+| `M<n>` or named gate | Evidence checkpoint | Belongs to an AIF lane |
+| `R<n>` | Global doctrine or owner ruling | One flat number space; never restarted inside a lane |
+| provider/date run id | Bounded execution session | Links members, projects, and lanes |
+| `task.*` | Work item | Links to its lane instead of impersonating the lane |
+| `proof.*` | Evidence record | Links source, lane, state, platform, and observation time |
+| `AIPR-*` | Durable AI-authored report | Links back to the execution run and authority envelope |
+
+The old `ticket` field remains readable for compatibility. The normalization
+check classifies each value as either an AIF `lane_id` or an
+`external_ticket_id`; it does not silently rewrite historical records. Older
+run fragments that placed an `AIPR-*` report identity in `run_id` are likewise
+reported as a compatibility seam. New records keep run and report identities
+separate.
+
+The model is checked in the development pre-push observation cycle alongside
+the Portal feed and assertion contracts. It is advisory while historical claim
+and ruling backfill is measured and reviewed.
+
+## Process and Data-Flow Views
+
+The normalized process begins with project and lane selection, validates typed
+identifiers before implementation, captures proofs and global rulings, closes
+the development run, and stops unless publication ascent is separately
+authorized.
+
+The companion DFD follows DotTalk++ source contracts, HELP and metadata stores,
+accepted manuals, AIF/R/run/task/proof authorities, the identifier crosswalk,
+Portal status generation, and finally reviewed website projections. The arrows
+do not run backward: a website page or generated report never becomes runtime
+authority.
+
+### Professional process flow
+
+![AI Portal professional process flow](/images/portal/ai-portal-pfd-v1.svg)
+
+### Schema and feed data flow
+
+![AI Portal schema and feed data flow](/images/portal/ai-portal-dfd-v1.svg)
+
+The complete public-safe catalog is maintained on the
+[AI Portal schema reference](/docs/labtalk/ai-portal-schemas). The diagrams and
+schema page are reviewed website projections of the engineering authorities;
+they do not replace source, runtime evidence, HELP, metadata, or owner rulings.
 
 ## The AI-BBS and Pseudo-Chat
 

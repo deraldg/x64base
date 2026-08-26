@@ -1,47 +1,59 @@
 flowchart LR
-  owner([Human Owner<br/>member.derald]):::ext
-  agent([AI Agents<br/>Claude / Codex / Grok]):::ext
-  model([Ollama model<br/>127.0.0.1:11434]):::ext
+    EXT[Owner and AI coworkers]
+    SRC[DotTalk++ source and usage contracts]
+    HELP[(HELP DBFs)]
+    META[(Metadata DBFs)]
+    MAN[(Accepted manual manifest and artifact)]
+    AIF[(AIF intake and atomic claims)]
+    RR[(Global R register and ruling sheets)]
+    RUN[(Run fragments and report envelopes)]
+    TASK[(Task and project registries)]
+    PROOF[(Proof registries and artifacts)]
+    ID[(Identity and RBAC DBFs)]
+    BBS[(BBS and Pseudo-Chat DBFs)]
+    TRACK[(Portal DBFs: ruling lane run runlane proof task)]
+    IDMODEL[(Identifier model and legacy crosswalk)]
+    FEED[(Portal feed assertion and current-run registries)]
+    STATUS[Generated Portal status and reports]
+    LOCAL[Local AI Portal]
+    SITE[Website JSON and MDX projection]
+    PUBLIC[x64base.com reader]
 
-  subgraph PORTAL[AI Portal processes]
-    auth[[1 Authenticate<br/>login / token AUTH]]
-    rbac[[2 RBAC resolve<br/>agent_permitted]]
-    bbs[[3 BBS read / post<br/>attributed, RBAC-gated]]
-    chat[[4 CHAT bridge<br/>agent to model]]
-    triage[[5 Triage / consolidate<br/>agent proposes, owner confirms]]
-    coord[[6 Coordination<br/>claim AIF + pre-push gate]]
-  end
+    EXT -->|authorize and contribute| AIF
+    EXT -->|attributed member| ID
+    EXT -->|messages and returns| BBS
+    SRC -->|harvest| HELP
+    SRC -->|metacollect| META
+    HELP -->|manualgen| MAN
+    AIF -->|lane identity| TRACK
+    RR -->|ruling identity and transitions| TRACK
+    RUN -->|run and lane crosswalk| TRACK
+    TASK -->|project and work-item state| TRACK
+    PROOF -->|evidence state| TRACK
+    ID -->|member permission grant| TRACK
+    BBS -->|author run grant references| TRACK
+    AIF -->|lane declarations and claims| IDMODEL
+    RR -->|global ruling declarations| IDMODEL
+    RUN -->|run and report identities| IDMODEL
+    TASK -->|work item project and legacy ticket fields| IDMODEL
+    PROOF -->|proof identities| IDMODEL
+    IDMODEL -->|validated typed references| TRACK
+    HELP -->|feed.dottalk.help_store| FEED
+    META -->|feed.dottalk.metadata_metacollect| FEED
+    MAN -->|feed.dottalk.manual_accepted| FEED
+    AIF -->|current work authority| FEED
+    RUN -->|current run pointer| FEED
+    PROOF -->|evidence anchors| FEED
+    TRACK -.->|future normalized read path| FEED
+    FEED -->|validate and generate| STATUS
+    STATUS -->|serve local views| LOCAL
+    STATUS -->|reviewed projection only| SITE
+    SITE -->|deployment and public verification| PUBLIC
+    PUBLIC -.->|correction request never reverse derivation| EXT
 
-  idb[(Identity DBF store<br/>SYSMEMBER ROLE PERM GRANT)]:::store
-  bbsdb[(BBS DBF store<br/>boards threads posts)]:::store
-  git[(Git repo<br/>source + docs)]:::store
-  ledger[(AIF ledger + Intake queue)]:::store
-  mem[(Human-side memory<br/>docs / memory files)]:::store
-
-  owner -->|credentials| auth
-  agent -->|member + token| auth
-  auth -->|acting member| rbac
-  rbac <-->|roles / perms / grants| idb
-
-  agent -->|POST or READ| bbs
-  bbs -->|permission check| rbac
-  bbs -->|attributed post / read| bbsdb
-  bbs -->|governance view| idb
-
-  agent -->|prompt| chat
-  chat <-->|completion| model
-
-  agent -->|working memory| triage
-  bbs -.->|durable posts| triage
-  chat -.->|model exchange| triage
-  triage -->|confirm promotion| owner
-  triage -->|normalized, attributed| bbsdb
-  triage -->|curated docs| mem
-  triage -->|source / commits| git
-
-  agent -->|claim lane| coord
-  coord -->|claim + intake row| ledger
-  coord -->|scoped commit| git
-
-  classDef ext fill:#eff6ff,stroke:#3b82f6,color:#0f172a;
-  classDef store fill:#f0fdf4,stroke:#22c55e,color:#0f172a;
+    classDef source fill:#e7f3ff,stroke:#1b5e9a,color:#222;
+    classDef store fill:#f2e9ff,stroke:#6941a5,color:#222;
+    classDef derived fill:#e9f7ef,stroke:#287a45,color:#222;
+    class SRC,EXT source;
+    class HELP,META,MAN,AIF,RR,RUN,TASK,PROOF,ID,BBS,TRACK,IDMODEL,FEED store;
+    class STATUS,LOCAL,SITE,PUBLIC derived;

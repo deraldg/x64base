@@ -5,7 +5,7 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { goatcounterEndpoint } from "@/config/analytics";
-import currentWork from "@/public/artifacts/current-work-v1.json";
+import documentationProgress from "@/public/artifacts/documentation-progress-v1.json";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const jetbrains = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
@@ -118,12 +118,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {" · "}
           {/* Owner ruling 2026-08-11: the bare word "Updated" mislabelled this
               date. It is NOT a per-edit or per-publish stamp -- it is the
-              current-work registry's as_of_date, which by contract advances
+              documentation-progress artifact's as_of_date, which by contract advances
               only after a full-stack documentation reconciliation. A site
               published today showing "Updated <older date>" reads as either
               staleness or a publish date, and it is neither. Label states
               what the date actually measures. */}
-          Full-stack docs reconciled {currentWork.as_of_date}
+          Full-stack docs reconciled {documentationProgress.as_of_date}
           {isLocalPreview ? (
             <>
               {" · "}

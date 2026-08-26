@@ -39,7 +39,10 @@ import { resolveMdxPath, walkMdx } from "@/lib/content";
  */
 
 export async function generateStaticParams() {
-  return walkMdx("lab").map((r) => ({ slug: r.slug }));
+  return [
+    { slug: [] as string[] },
+    ...walkMdx("lab").map((r) => ({ slug: r.slug }))
+  ];
 }
 
 export async function generateMetadata({

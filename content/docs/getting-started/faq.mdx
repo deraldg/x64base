@@ -5,6 +5,12 @@ description: "Common questions about x64base products, tools, lanes, formats, pr
 
 This FAQ is organized by how the project is actually described on the site: products, tools, lanes, formats, and proof status.
 
+> **FAQ reviewed 2026-08-26.** Each full-stack documentation reconciliation must
+> check this page against changed product, command, interface, workspace, and
+> contributor-operation claims. The matrix records `UPDATED` or `NO_CHANGE`, and
+> the site freshness gate binds this review date to the documentation-progress
+> authority.
+
 ## Products
 
 ### Is this a clone of classic xBase?
@@ -66,6 +72,29 @@ Workspaces are wrappers over active database areas. An area is the runtime place
 This is why x64base is described as an object-oriented hybrid: classic xBase ideas remain visible, but the runtime organizes them through explicit service objects and work-area state.
 
 See: [Engine Architecture](/docs/engine/architecture), [Getting Started Overview](/docs/getting-started/overview)
+
+### What is MINIDB -- is it only metadata about another database?
+
+No. A `MINIDB 1` memo container carries the database itself: workspace posture,
+table bytes, and native index bytes. The demonstrated development path can inspect
+that container and hydrate its members into the in-process RAM filesystem without
+using the original disk tables as its source.
+
+That makes the workspace catalog a database of databases, not merely a catalog of
+database descriptions. The feature is Alpha development work, and a stored snapshot
+does not imply that every recursive or concurrent workspace operation is complete.
+
+See: [In-Memory Databases](/docs/engine/in-memory-databases), [Workspaces](/docs/engine/workspaces)
+
+### Do MINIDBs have "minispaces," or can workspaces be nested?
+
+"Minispaces" is a useful joke, not a product name. The serious idea behind it is
+active Alpha work: multiple workspaces, recursive inspection, and nested containers.
+The site distinguishes the already demonstrated MINIDB save/inspect/hydrate path
+from the still-developing manager behavior around concurrency, recursion, nesting,
+and lifecycle control.
+
+See: [Workspaces](/docs/engine/workspaces), [Current Work Lanes](/docs/dev/current-lanes)
 
 ### What are TupTalk, TableTalk, and RelTalk?
 
@@ -131,9 +160,14 @@ See: [Important Documents](/docs/dev/important-documents), [Website Documentatio
 
 ### What is the application UI DSL lane?
 
-It is a planned lane for user-defined menus, windows, dialogs, controls, and event handlers in DotTalk++ / DotScript style.
+It is an **Alpha implementation lane** for user-defined menus, windows, dialogs,
+controls, and event handlers. A DBF/FPT design-table contract, importers,
+manifest/refusal checks, and early wxWidgets, Tk, HTML, and character-cell consumers
+exist in development.
 
-DotTalk++ can already write database/runtime programs. It does **not** yet provide a finished FoxPro-style screen/menu/dialog language for custom applications. That gap is documented honestly as planned work.
+The text-command layer is still planned. DotTalk++ does **not** yet provide a
+finished FoxPro-style `CREATE WINDOW` / `DEFINE BUTTON` language for custom
+applications, and the known target-specific proof limits remain visible.
 
 Example direction:
 
@@ -219,7 +253,11 @@ See: [Parallel GUI/TUI](/docs/talk-family/parallel-gui-tui), [Runtime Evidence G
 
 ### Can users build their own GUI screens in DotTalk++ today?
 
-Not yet as a finished user-facing language. Current GUI/TUI functionality is mainly supplied by existing templates, workbench surfaces, and external code. A DotTalk++ UI definition language is a proposed lane, not a completed feature.
+Not yet through a finished user-facing DotTalk++ language. The Alpha UIDEF lane can
+already describe an application in DBF/FPT design tables and feed early wxWidgets,
+Tk, HTML, and character-cell consumers. Existing Workbench surfaces can therefore
+exercise real implementation, but the proposed text verbs, cross-target parity, and
+remaining native proof are not complete.
 
 See: [Application UI DSL Lane](/docs/dev/application-ui-dsl-lane)
 
@@ -230,6 +268,42 @@ Yes, conceptually. The website is part of the product system because it publishe
 Practically, the website is currently a separate static site project. The intended direction is to keep aligning it with the SelfDoc/MDO vertical feed so source truth, HELP, contracts, manuals, and website pages do not drift.
 
 See: [Website Documentation Matrix](/docs/dev/website-documentation-matrix), [SelfDoc Website Publication](/docs/dev/selfdoc-website-publication)
+
+## Local Preview And Contributor Surfaces
+
+### What is the difference between ports 3000 and 3002 locally?
+
+The website development server listens on port `3002`. The local AI reports gateway
+listens on port `3000`: it serves `/AI/` and `/AI/console`, and proxies ordinary
+website routes to `3002`. Use the normal `start-ai.ps1` launcher so it verifies that
+the expected ports are free and checks gateway health instead of adopting or killing
+an unknown listener.
+
+Search needs a production-built Pagefind index. Use the launcher's built mode when
+testing search; ordinary Next development mode is for live editing.
+
+### What is `/lab`, and is it published?
+
+`/lab` is a local-only working surface for experiments, inventories, and
+review-needed material that should not yet become a public claim. Its index lists
+nested Lab pages such as `/lab/experimental` in local preview. The route is noindex,
+removed from publication output, and protected by a publication abort if it survives
+the strip step.
+
+Do not link public documentation to a Lab page. Promote the underlying content into
+the appropriate public documentation lane first.
+
+### Why can `/lab` still show a route-parameter error after its source is fixed?
+
+The Lab uses an optional catch-all route. Static export requires its parameter list
+to include both the empty root slug and every nested content slug. Changes to
+`generateStaticParams()` are startup-time route changes, so an already-running Next
+development server can keep the old list. Restart only the verified website server
+on port `3002`; preserve the reports gateway on port `3000`.
+
+The proof is not merely that the build exits successfully. The export must contain
+both `out/lab/index.html` and the expected nested Lab pages, and the proxied `/lab/`
+request must return the Lab index without a runtime error.
 
 ## Status And Proof
 

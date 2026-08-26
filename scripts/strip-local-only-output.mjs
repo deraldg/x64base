@@ -24,13 +24,17 @@ function assertInside(child, parent) {
  *              more authority on the public site than the work behind them
  *              justifies. First tenant: the Dewey / hierarchy experiments,
  *              moved out of /docs/dev/experimental.
+ *   portal  -- the maintainer's local AI Portal console and working views.
+ *              Public-safe Portal material is reviewed into /docs/labtalk;
+ *              ignored local content/portal files must never become a release
+ *              dependency or publication artifact.
  *
  * This list is the SECOND of three layers. The first is that the nav entry only
  * renders under local preview; the third is the publish script refusing outright
  * if a directory named here survived into out/. Any one layer failing leaves the
  * other two, which is the point.
  */
-export const LOCAL_ONLY_DIRS = ["reports", "retro", "lab"];
+export const LOCAL_ONLY_DIRS = ["reports", "retro", "lab", "portal"];
 
 export function stripLocalOnlyOutput({ root = process.cwd() } = {}) {
   const outDir = path.resolve(root, "out");

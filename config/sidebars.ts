@@ -76,7 +76,7 @@ export const docsSidebar: SidebarGroup[] = [
       { label: "Academic Start Here", href: "/docs/labtalk/academic-start" },
       { label: "Overview", href: "/docs/labtalk/overview" },
       { label: "AI Portal — Alpha/Experimental", href: "/docs/labtalk/ai-portal" },
-      { label: "AI Agent Sync — Live State", href: "/docs/labtalk/agent-sync" },
+      { label: "AI Agent Sync -- Snapshot", href: "/docs/labtalk/agent-sync" },
       { label: "Current Tasks & Projects", href: "/docs/labtalk/current-work" },
       { label: "Cases and Storyboard", href: "/docs/labtalk/cases-storyboard" },
       { label: "Database Evolution Path", href: "/docs/labtalk/database-evolution" },

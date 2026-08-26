@@ -2,11 +2,20 @@
 
 import Link from "@/components/StaticLink";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import clsx from "clsx";
 import type { SidebarGroup } from "@/config/sidebars";
 
 export function Sidebar({ groups }: { groups: SidebarGroup[] }) {
-  const pathname = usePathname();
+  const routePathname = usePathname();
+  const [mounted, setMounted] = useState(false);
+
+  // Active-link styling is cosmetic. The local gateway and the browser can
+  // report different rewritten paths during SSR and first hydration, so wait
+  // until mount before deriving classes from the client pathname.
+  useEffect(() => setMounted(true), []);
+
+  const pathname = mounted ? routePathname.replace(/\/+$/, "") || "/" : "";
 
   return (
     <aside className="sticky top-20 hidden h-[calc(100vh-6rem)] w-64 shrink-0 overflow-y-auto pr-2 md:block">
@@ -18,7 +27,8 @@ export function Sidebar({ groups }: { groups: SidebarGroup[] }) {
             </div>
             <div className="flex flex-col gap-1">
               {g.items.map((i) => {
-                const active = pathname === i.href;
+                const href = i.href.replace(/\/+$/, "") || "/";
+                const active = pathname === href;
                 return (
                   <Link
                     key={i.href}

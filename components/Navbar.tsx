@@ -2,7 +2,7 @@
 
 import Link from "@/components/StaticLink";
 import { usePathname } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import clsx from "clsx";
 import { Menu, X, ChevronDown } from "lucide-react";
 import { topNav, primaryNav, moreNav, localOnlyNav } from "@/config/nav";
@@ -11,14 +11,24 @@ import { topNav, primaryNav, moreNav, localOnlyNav } from "@/config/nav";
 const IS_LOCAL_PREVIEW = !process.env.NEXT_PUBLIC_SITE_VERSION;
 
 export function Navbar() {
-  const pathname = usePathname();
+  const routePathname = usePathname();
+  const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
 
-  const mark = (i: { label: string; href: string }) => ({
-    ...i,
-    active: pathname === i.href || (i.href !== "/" && pathname.startsWith(i.href + "/"))
-  });
+  // Route highlighting must not make the server and first client render
+  // disagree when a local gateway rewrites or normalizes the pathname.
+  useEffect(() => setMounted(true), []);
+
+  const pathname = mounted ? routePathname.replace(/\/+$/, "") || "/" : "";
+
+  const mark = (i: { label: string; href: string }) => {
+    const href = i.href.replace(/\/+$/, "") || "/";
+    return {
+      ...i,
+      active: pathname === href || (href !== "/" && pathname.startsWith(href + "/"))
+    };
+  };
 
   const withLocal = IS_LOCAL_PREVIEW ? [...moreNav, ...localOnlyNav] : moreNav;
   const items = useMemo(

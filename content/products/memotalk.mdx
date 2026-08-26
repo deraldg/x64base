@@ -19,9 +19,9 @@ carries.
 ## MiniDB -- what the carrier can hold
 
 `WORKSPACE SAVE <name> MEMO MINIDB` writes a container whose payload *is* the
-data: every open area's table bytes, plus its index bytes when an order is
-attached, plus a self-locating posture that says where those tables belong. One
-field. One row. A complete working database.
+database: every open area's raw table bytes, its index-container bytes, carried
+memo-sidecar bytes when present, plus a self-locating posture that says how the
+members stand up together. One field. One row. A complete working database.
 
 The measured reference case is a thirteen-table teaching database carried whole
 in a single memo field and hydrated onto a clean RAM disk with zero disk reads.
@@ -31,11 +31,18 @@ description of a workspace rather than its contents. Which tables are open, in
 which work areas, under which orders and relations. The tables stay where they
 are; the posture records where that is.
 
-Those saves land in `WORKSPACES.dbf`, an ordinary x64 table whose rows describe
-databases. You can `USE` it, `LIST` it and `SEEK` in it with the same commands
-you learned on any other table -- the map is drawn in the same ink as the
-territory. Saving a name again supersedes rather than overwrites, so the catalog
-keeps its own history and every earlier version's bytes remain.
+Those saves land in `WORKSPACES.dbf`, an ordinary x64 table with a memo field.
+The `FMT` column says what each row carries. A posture row describes how to
+reopen tables that live elsewhere. A `MINIDB 1` row contains the database
+itself. Its descriptor columns are an envelope for identity, lineage, size and
+provenance; they are not a substitute for the payload. You can `USE` the outer
+table, `LIST` it and `SEEK` in it with the same commands learned on any other
+table, then hydrate a complete inner database from one selected row. Saving a
+name again supersedes rather than overwrites, so the catalog keeps its own
+history and every earlier version's bytes remain.
+
+That makes `WORKSPACES.dbf` a literal database of databases, not a metadata
+catalog that merely points at databases stored somewhere else.
 
 ## The Quantum Memo Zoo -- whether the carrier can be trusted
 

@@ -25,6 +25,10 @@ is not positioned as one of the main products.
 
 ## The DotTalk++ Workbench, as it stands
 
+> **Alpha.** Workbench is an active development surface. Its screenshots are
+> runtime evidence, including visible warnings and development-build labels,
+> rather than release-polish claims.
+
 The Workbench is the wxWidgets front end. It is one window over the same engine
 the CLI drives -- not a second implementation of the table mechanics -- and it
 reaches the runtime through the command bridge, so a menu action and a typed
@@ -55,7 +59,9 @@ rather than a disk directory. The log pane says so in as many words --
 
 That is the whole arc visible in one window: a database stored inside a field of
 another database, hydrated into memory, and browsed through a normal GUI with
-its indexes attached.
+its indexes attached. `WORKSPACES.dbf` is not just pointing at that inner
+database. For a `MINIDB 1` row, the memo payload carries the member-file bytes
+themselves.
 
 [![DotTalk++ Workbench showing thirteen work areas loaded from a memo-resident mini-database, every table path resolving under the in-process RAM root, with the log pane reporting WORKSPACE LOAD (memo) and eleven index containers mirrored into the GUI areas](/images/evidence/dottalk-workbench-minidb-memo-hydrated-evidence-20260820.png)](/images/evidence/dottalk-workbench-minidb-memo-hydrated-evidence-20260820.png)
 
@@ -83,13 +89,44 @@ byte count and the reason the first line did not match.
 *Reading the catalog without hydrating it. The status bar states the bytes read
 and that nothing was hydrated; the disabled button carries its own reason.*
 
+### Inspect, rebuild, then open
+
+The catalog view also makes the format boundary visible. A `DTSHEMA 3` memo can
+carry a workspace posture without carrying the database bytes, and Workbench
+says exactly that instead of pretending it can hydrate the row. A `MINIDB 1`
+row exposes the other case: current Alpha evidence shows a 94,200-byte
+container, 24 member files, 92,139 hydrated bytes, 13 tables and 11 declared
+index containers. The rebuild reports `COMPLETE` before the database is opened
+in Workbench.
+
+[![Alpha Workbench evidence showing a selected DTSHEMA 3 posture-only memo that correctly reports no MINIDB 1 container](/images/evidence/dottalk-workbench-posture-only-inspection-alpha-20260826.png)](/images/evidence/dottalk-workbench-posture-only-inspection-alpha-20260826.png)
+
+*Negative-path evidence: this memo contains a workspace posture, not a MINIDB
+container. Inspection names the boundary and performs no hydration.*
+
+[![Alpha Workbench evidence inspecting a MINIDB 1 memo and reporting a complete rebuild of 13 tables and 11 index containers](/images/evidence/dottalk-workbench-minidb-rebuild-alpha-20260826.png)](/images/evidence/dottalk-workbench-minidb-rebuild-alpha-20260826.png)
+
+*A database as a value: inspect the carrier, validate its members, rebuild the
+database into RAM, then open the resulting workspace in the same Workbench.*
+
+### Early multi-workspace work
+
+The next Alpha increment is a manager for multiple named workspaces, including
+recursive and nested organization. The architectural issue is scope: each
+hydrated MINIDB needs an owned RAM root, area set, relation graph and lifecycle
+so that identical table names do not collapse into one global namespace.
+
+This page discusses that work while it is underway, but does not present
+co-residency, recursion or nesting as completed behavior. Those claims move to
+the proven surface only with runtime evidence and stated limits.
+
 The house rule behind both behaviours is the same one the engine follows: a
 surface that cannot do what you asked should refuse and name the reason, not
 proceed and look successful.
 
 ## Current Status
 
-This is an active beta lane. Runtime screenshots show real GUI, TUI, and CLI
+This is an active **Alpha** lane. Runtime screenshots show real GUI, TUI, and CLI
 states, but they are evidence artifacts, not final release-polish claims.
 
 Two things are visible in current Workbench evidence and are recorded here

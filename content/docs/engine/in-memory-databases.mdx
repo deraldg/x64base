@@ -1,6 +1,6 @@
 ---
 title: "In-Memory Databases"
-description: "The x64base in-memory database initiative: a self-owned RAM substrate that runs the full DBF and CDX-V64 stack in memory, its two-layer sizing governance, and the proposed virtual-workspace and memo-resident mini-database direction."
+description: "The x64base in-memory database initiative: a self-owned RAM substrate, memo-resident MINIDB hydration, and the early Alpha multi-workspace direction."
 ---
 
 In-memory databases are a distinct branch of x64base work: running the same
@@ -12,9 +12,10 @@ lives on [RAM DBF and VDISK](/docs/engine/ram-dbf-vdisk).
 
 > **Evidence boundary.** The VDISK / in-process RAM substrate below is
 > implemented development source with runtime proof (AIF-043), visible in the
-> local preview and not yet a tagged-release claim. The virtual-workspace and
-> memo-resident direction at the end of this page is **external design intake
-> only** — proposed, not implemented, and not runtime truth. See
+> local preview and not yet a tagged-release claim. Memo-resident `MINIDB 1`
+> save, inspection and RAM hydration now have development runtime evidence.
+> Concurrent, recursive and nested multi-workspace management remains active
+> **Alpha** work and is not yet claimed as complete. See
 > [Current Project Truth](/docs/dev/project-truth) for the evidence order.
 
 ## Two substrates
@@ -80,43 +81,42 @@ until a user opts in. It is a true INI file (not a DotScript), read by its own
 `[vdisk]` parser with keys for `enabled`, `root`, `mode`, `size_mb`, `percent`,
 `floor_mb`, `ceil_mb`, `warn_pct`, and `on_full`.
 
-## Proposed direction — virtual workspaces and memo-resident mini-databases
+## MINIDB today; multi-workspaces next
 
-> **Status: external design intake, not implemented.** Recorded on the
-> development side as intake package `AIPR-20260728-GROK-002` (proposed
-> `AIF-070`), an architecture proposal from xAI Grok reviewed by the local
-> workbench on 2026-07-28. It mutates no source and carries no runtime proof. It
-> is described here as a forward direction, not a current capability.
+> **Status: Alpha, with a split evidence boundary.** Memo-resident MINIDB save,
+> inspection and RAM hydration are runtime-proven in development. Named
+> concurrent workspaces, recursion and nesting are active early work. The
+> latter remain directional until their proof and operational limits are
+> recorded.
 
-The next design question builds on two existing primitives: the DTSHEMA workspace
-format (`src/workspace/schema_workspace.cpp`) and the payload-agnostic 64-bit
-memo reference (`MemoRef`, `src/memo/memo_ref.cpp`). The proposal explores
-**concurrent named workspaces** with first-class area ownership and **area
-budgeting**, replacing today's manual area-partitioning technique with a
-supported one; and **memo-resident mini-databases**, in which an entire
-serialized workspace — schema plus data — is stored as a memo payload, so a memo
-becomes a self-contained object-oriented mini-database. A student's private work
-could then live as a nested database inside a single memo, hydrated on demand
-(memo bytes → DTSHEMA and data → virtual areas or VDISK), which aligns closely
-with the Laboratory Campus teaching mission.
+The design builds on the DTSHEMA workspace format
+(`src/workspace/schema_workspace.cpp`) and the payload-agnostic 64-bit memo
+reference (`MemoRef`, `src/memo/memo_ref.cpp`). `MINIDB 1` carries the workspace
+posture plus raw DBF, CDX and carried DTX members as one binary-safe memo
+payload. The payload is the database, not metadata about one. It can be
+inspected, validated and hydrated into the RAM filesystem before the resulting
+database is opened in Workbench.
 
-The proposal carries explicit hard constraints: memos stay **payload-agnostic**
-(no privileged "workspace memo" type that would restrict other memo payloads);
-the classic destructive `WORKSPACE OPEN` remains available **with a warning** for
-existing scripts; and the work is **fenced away from the AI-BBS agent-server
-lane**. Illustrated future effects — a DTSHEMA version bump with a per-area
-`kind`, scoped `WORKSPACE SAVE` by named workspace, and the hydration path above —
-are planning sketches only. The design whitepaper is authored in the proposing
-agent's workspace and pending delivery into the local tree before it can be
-linked here.
+The next increment explores **concurrent named workspaces** with first-class
+area ownership and **area budgeting**. Each hydrated database needs an owned
+RAM subroot, area set, relation graph and lifecycle so identical table names do
+not collapse into one global namespace. A student's private database can travel
+inside a memo today; the Alpha question is how several hydrated instances can
+remain named, isolated, nested and navigable at once.
+
+The direction keeps explicit constraints: memos stay **payload-agnostic** (no
+privileged workspace-memo type), existing workspace forms remain compatible,
+and recursive ownership must define cycle, depth, resolution and teardown
+rules. These are active implementation questions, not shipped claims.
 
 ## Authority and provenance
 
 The implemented substrate is owned by `src/xbase/ramfs.cpp` /
 `include/xbase/ramfs.hpp` (the in-process VFS) and `src/cli/cmd_vdisk.cpp` (the
 `VDISK` command), with sizing governed by the AIF-043 spec *VDISK RAM Sizing &
-Admin Config v1*. The proposed workspace / memo-resident direction is preserved
-as review-needed intake evidence under the development tree's external-AI intake
-folder. See also [FPT64 Memo Format](/docs/engine/fpt64-memo-format),
+Admin Config v1*. The original workspace / memo-resident direction is preserved
+as intake evidence under the development tree; the current capability boundary
+is maintained on [Workspaces](/docs/engine/workspaces). See also
+[FPT64 Memo Format](/docs/engine/fpt64-memo-format),
 [CDX and LMDB Indexing](/docs/engine/cdx-lmdb-indexing), and
 [Current Work Lanes](/docs/dev/current-lanes).

@@ -27,6 +27,8 @@ export default function NewsPage() {
         </p>
       </header>
 
+      <WorkingLog limit={12} />
+
       <section className="rounded-2xl border border-border bg-card/30 p-6">
         <div className="flex items-end justify-between gap-4">
           <h2 className="text-lg font-semibold tracking-tight">Latest announcements</h2>
@@ -56,8 +58,6 @@ export default function NewsPage() {
           ))}
         </div>
       </section>
-
-      <WorkingLog limit={12} />
 
       <section className="rounded-2xl border border-dashed border-border bg-card/10 p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">

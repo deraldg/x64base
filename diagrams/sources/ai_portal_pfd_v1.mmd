@@ -1,30 +1,37 @@
 flowchart TD
-  start([AI session starts]):::term --> onboard[Onboard: read CLAUDE.md, git pull]
-  onboard --> claim[Claim AIF lane]
-  claim --> authp[Authenticate: token / AUTH<br/>acting member set]
-  authp --> work[Do work<br/>reasoning = short-term memory]
-  work --> writeq{Write to durable store?}
+    A[Request or observed defect] --> B{Existing project?}
+    B -->|yes| C[Select project id]
+    B -->|no| B1[Owner decides project or standalone lane]
+    B1 --> C
+    C --> D{Existing AIF lane?}
+    D -->|yes| E[Reuse AIF-NNN]
+    D -->|no| D1[Atomically claim AIF-NNN]
+    D1 --> E
+    E --> F[Classify PDLC or SDLC mode and change class]
+    F --> G[Check in run and bind owner steward project lanes]
+    G --> H[Create or link typed work item]
+    H --> I[Read authority chain and contracts]
+    I --> I1[Validate typed identifiers and classify legacy aliases]
+    I1 --> J[Implement in the authoritative development tree]
+    J --> K[Capture proof with state platform source time]
+    K --> L{Owner ruling needed?}
+    L -->|yes| L1[Allocate global R-number and record ruling]
+    L -->|no| M[Evaluate milestone or gate]
+    L1 --> M
+    M --> N{Development gates pass?}
+    N -->|no| N1[Record finding next gate and residual risk]
+    N1 --> J
+    N -->|yes| O[Close run with audited closeout and Session Log]
+    O --> P[Generate Portal status reports and crosswalk views]
+    P --> Q{Publication ascent separately authorized?}
+    Q -->|no| R[Stop at development_closeout]
+    Q -->|yes| S[Promote through curated staging and publication gates]
+    S --> T[Verify managed and public surfaces separately]
+    T --> U[Record publication receipt and final state]
 
-  writeq -->|no, keep exploring| work
-  writeq -->|yes| rbacq{RBAC allows?<br/>agent_permitted + attribution}
-  rbacq -->|denied| work
-  rbacq -->|allowed| propose[Triage: agent PROPOSES<br/>worthy normalized slice]
-
-  propose --> confirmq{Owner confirms?<br/>hybrid promotion}
-  confirmq -->|no| work
-  confirmq -->|yes| normalize[Normalize on collect<br/>atomic, deduped, typed-linked]
-
-  normalize --> commit[Scoped per-path commit<br/>attributed to acting member]
-  commit --> gate{Pre-push gate<br/>role guard + AIF collision + normalization}
-  gate -->|block| fix[Fix / re-scope]
-  fix --> commit
-  gate -->|pass| publish[Publish: git push to development]
-  publish --> intake[File intake row<br/>rule-conforming, evidence-anchored]
-
-  intake --> more{More work this session?}
-  more -->|yes| work
-  more -->|no| endc([Session ends]):::term
-  endc --> decay[Unpromoted working memory decays;<br/>durable store persists human-side]
-  decay --> gfs[[Later: grandfather rollups<br/>session to weekly to quarter]]
-
-  classDef term fill:#eff6ff,stroke:#3b82f6;
+    classDef decision fill:#fff4ce,stroke:#8a6d1d,color:#222;
+    classDef authority fill:#e7f3ff,stroke:#1b5e9a,color:#222;
+    classDef evidence fill:#e9f7ef,stroke:#287a45,color:#222;
+    class B,D,L,N,Q decision;
+    class C,E,F,G,I authority;
+    class K,O,P,T,U evidence;

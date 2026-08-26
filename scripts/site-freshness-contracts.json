@@ -1,0 +1,147 @@
+{
+  "schema": "x64base.site-freshness-contracts.v1",
+  "contracts": [
+    {
+      "id": "command-reference-current-snapshot",
+      "authority": "public/artifacts/documentation-progress-v1.json",
+      "target": "content/docs/dottalk/command-reference.mdx",
+      "mustContain": [
+        "## Current full-stack snapshot -- local, not deployed ({as_of_date})",
+        "| Website command keys / parsed contracts | {current_vertical.website_command_keys} / {current_vertical.website_command_rows_parsed} |",
+        "| Fallback command rows | {current_vertical.website_command_fallback_rows} |",
+        "| HELP commands / reachable topics | {current_vertical.help_commands} / {current_vertical.help_reachable_topics} |",
+        "| HELP lines | {current_vertical.help_lines:comma} |",
+        "| Manual candidate | `{current_vertical.manual_candidate_run}` |",
+        "publication gate {current_vertical.first_open_entry} open."
+      ]
+    },
+    {
+      "id": "news-current-status",
+      "authority": "public/artifacts/documentation-progress-v1.json",
+      "target": "content/news/milestones.json",
+      "mustContain": [
+        "\"date\": \"{as_of_date}\"",
+        "\"title\": \"The documentation stack reaches its owner gate\"",
+        "239 command keys matched to 239 parsed contracts"
+      ]
+    },
+    {
+      "id": "news-current-status-first",
+      "authority": "public/artifacts/documentation-progress-v1.json",
+      "target": "app/news/page.tsx",
+      "mustContain": [
+        "WorkingLog limit="
+      ],
+      "mustAppearBefore": [
+        ["WorkingLog limit=", ">Latest announcements</h2>"]
+      ]
+    },
+    {
+      "id": "current-work-freshness-disclosure",
+      "authority": "public/artifacts/documentation-progress-v1.json",
+      "target": "content/docs/labtalk/current-work.mdx",
+      "mustContain": [
+        "Freshness disposition: `{current_vertical.current_work_feed_state}`",
+        "through {as_of_date}."
+      ]
+    },
+    {
+      "id": "agent-sync-snapshot-disclosure",
+      "authority": "public/artifacts/documentation-progress-v1.json",
+      "target": "content/docs/labtalk/agent-sync.mdx",
+      "mustContain": [
+        "title: \"AI Agent Sync -- Reconciled Snapshot\"",
+        "**Reconciled snapshot: 2026-08-15a -- not a live feed.**",
+        "status is reconciled through {as_of_date}"
+      ]
+    },
+    {
+      "id": "downloads-staged-manual-snapshot",
+      "authority": "public/downloads/current/DEVELOPER_MANUAL_LATEST.json",
+      "target": "app/downloads/page.tsx",
+      "mustContain": [
+        "Latest staged assembled-manual snapshot",
+        "<strong> {generated_on}</strong>: {counts.parts} parts, {counts.command_pages_bound} bound command pages, and {total_lines:comma} lines.",
+        "A stable address is not an automatic freshness claim."
+      ]
+    },
+    {
+      "id": "developer-manual-staged-snapshot",
+      "authority": "public/downloads/current/DEVELOPER_MANUAL_LATEST.json",
+      "target": "content/docs/dev/developer-manual.mdx",
+      "mustContain": [
+        "**Staged snapshot:** generated {generated_on}; {counts.parts} parts, {counts.command_pages_bound} bound command pages,",
+        "and {total_lines:comma} lines."
+      ]
+    },
+    {
+      "id": "faq-reconciliation-check",
+      "authority": "public/artifacts/documentation-progress-v1.json",
+      "target": "content/docs/getting-started/faq.mdx",
+      "mustContain": [
+        "**FAQ reviewed {as_of_date}.**",
+        "### What is MINIDB -- is it only metadata about another database?",
+        "It is an **Alpha implementation lane**",
+        "## Local Preview And Contributor Surfaces"
+      ]
+    },
+    {
+      "id": "ai-portal-normalized-hierarchy",
+      "authority": "public/artifacts/documentation-progress-v1.json",
+      "target": "content/docs/labtalk/ai-portal.mdx",
+      "mustContain": [
+        "## Professional Identifier Model",
+        "| `AIF-NNN` | Governed intake or work lane |",
+        "| `R<n>` | Global doctrine or owner ruling |",
+        "reported as a compatibility seam. New records keep run and report identities",
+        "[AI Portal schema reference](/docs/labtalk/ai-portal-schemas)"
+      ]
+    },
+    {
+      "id": "ai-portal-development-overview",
+      "authority": "public/artifacts/documentation-progress-v1.json",
+      "target": "content/portal/overview.mdx",
+      "mustContain": [
+        "title: \"AI Portal -- Professional Architecture\"",
+        "## Normalized hierarchy",
+        "## Schema and Feed Flow (DFD)",
+        "## Professional Process Flow (PFD)",
+        "closeout does not imply publication ascent."
+      ]
+    },
+    {
+      "id": "ai-portal-registered-schemas",
+      "authority": "public/artifacts/documentation-progress-v1.json",
+      "target": "content/docs/labtalk/ai-portal-schemas.mdx",
+      "mustContain": [
+        "The registered surface contains 19 table schemas across five custody domains.",
+        "| Global rulings | `SYSRULING` |",
+        "| Portal tracking | `SYSLANE`, `SYSRUN`, `SYSRUNLANE`, `SYSPROOF`, `SYSTASK` |",
+        "| `dottalk.portal.identifiers.v1` |",
+        "New records keep execution and report identities separate."
+      ]
+    },
+    {
+      "id": "ai-portal-matrix-record",
+      "authority": "public/artifacts/documentation-progress-v1.json",
+      "target": "content/docs/dev/website-documentation-matrix.mdx",
+      "mustContain": [
+        "| AI Portal professional model |",
+        "19 registered DBF schemas across identity/RBAC, BBS, rulings, tracking, and SelfDoc",
+        "normalized AIF/R/run/task/proof/report hierarchy",
+        "Local `/portal/*` working references remain excluded and are not public dependencies."
+      ]
+    },
+    {
+      "id": "freshness-sweep-matrix-record",
+      "authority": "public/artifacts/documentation-progress-v1.json",
+      "target": "content/docs/dev/website-documentation-matrix.mdx",
+      "mustContain": [
+        "## {as_of_date} Site-Wide Freshness Sweep",
+        "| `/news` | `maintained` / generated feed |",
+        "| `/docs/labtalk/current-work` | `maintained_current` envelope / generated body |",
+        "| `/downloads`, `/docs/dev/developer-manual`, `/docs/dev/manual-assembly` |"
+      ]
+    }
+  ]
+}

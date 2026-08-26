@@ -224,13 +224,14 @@ export default function DownloadsPage() {
       </section>
 
       <section className="rounded-lg border border-brand/40 bg-card/40 p-5">
-        <h2 className="text-lg font-semibold tracking-tight">Latest assembled manual (always current)</h2>
+        <h2 className="text-lg font-semibold tracking-tight">Latest staged assembled-manual snapshot</h2>
         <p className="mt-2 text-sm leading-6 text-muted">
-          These are permanent links. Every rebuild of the manifest-driven assembler overwrites the
-          same files, so they always resolve to the newest build. This is an
-          <code> assembled-candidate</code> regenerated from source by the assembler and guarded by a
-          drift gate; the accepted snapshot above remains the reviewed baseline. See the build
-          manifest for the exact source commit, part counts, and checksums.
+          These permanent links currently resolve to the assembled candidate generated on
+          <strong> 2026-07-23</strong>: 26 parts, 191 bound command pages, and 14,542 lines.
+          A stable address is not an automatic freshness claim. A newer local documentation candidate
+          remains review-needed and does not replace these files until its acceptance and staging gates
+          pass. The accepted snapshot above remains the reviewed baseline; see the build manifest for
+          the exact source commit, counts, and checksums.
         </p>
         <div className="mt-3 flex flex-wrap gap-4 text-sm">
           <a href="/downloads/current/developer-manual-latest.html" className="font-medium text-brand hover:underline">

@@ -1,137 +1,156 @@
 ---
-title: "Application UI DSL Lane"
-description: "A proposed DotTalk++ lane for defining menus, windows, dialogs, controls, and event handlers without leaving the command/script environment."
+title: "Application UI DSL"
+description: "The Alpha UIDEF project: a DBF-backed portable application description with wxWidgets, Tk, HTML, and character-cell consumers."
 ---
 
-## Position
+> **Alpha -- chartered and in progress.** AIF-120 is no longer a planned lane
+> waiting to start. The design-table contract, importers, validators, generators
+> and four target backends exist in development. Every lane ruling remains
+> review-needed until the maintainer accepts it.
 
-DotTalk++ can already write database/runtime programs with commands and DotScript.
-It does not yet provide a general application UI definition language like the
-classic xBase environments did.
+The original website seed proposed commands such as `CREATE WINDOW`, `CREATE
+MENU`, `DEFINE BUTTON`, and `ON CLICK`. That was a useful vocabulary sketch, but
+it put the syntax before the portable object.
 
-This lane is a proposed development path for moving from scripts that operate on
-data to scripts that can define small database applications.
+The lane's actual deliverable is a **UI definition table**: a DBF document with
+a memo sidecar. A future text DSL can author that table, but generators do not
+need to parse the text language. They consume the documented table directly.
 
-### Why the API is being opened in spec
+## Why the interface is a database table
 
-The engine's schema, command surface, function catalog and metadata are
-documented to an unusual depth, and the AI portal exists so that an agent can
-onboard to them without a human relaying context. Taken together, that is a
-deliberate position rather than an accident of thoroughness:
+FoxPro screen, menu, class, and report designers stored their definitions in
+DBF-shaped files. That prior art fits x64base unusually well: the engine can
+open, browse, validate, index, transform, and transport its own application
+definitions.
 
-**UI development against this engine is AI-expected.** An agent should be able
-to read the published specification and generate a working front end from it --
-menus, browsers, forms, event wiring -- without anyone hand-holding it through
-the runtime's behaviour. That expectation is the reason the API is being opened
-*in specification* rather than left as an internal seam that only the engine's
-own authors could safely call.
-
-It also sets the standard the specification has to meet. A document that a
-person can follow with the author sitting beside them is not sufficient here; if
-an agent cannot build from it unaided, the specification is incomplete, and that
-is a defect in the documentation rather than a limitation of the reader.
-
-Cross-language **C++ and Python CRUD examples continue as the worked templates**
-for users. They are the reference implementations of the same contract: two
-languages, one engine, the same create/read/update/delete behaviour, so a
-newcomer or an agent can see what a correct consumer of the API looks like
-before writing a new one.
-
-## Current Boundary
-
-DotTalk++ currently has:
-
-- CLI command programs.
-- DotScript scripts.
-- Supplied GUI/TUI templates.
-- SmartList, SmartBrowser, Browse, and relation browser surfaces.
-- Arctic as the TUI code-name surface.
-- Parallel GUI/TUI as a supplied workbench lane.
-
-DotTalk++ does **not** yet have a user-facing UI definition language for custom
-menus, windows, dialogs, popups, toolbars, form controls, or event-driven
-application screens.
-
-## Proposed Syntax Seed
+The result is an interchange format rather than a toolkit wrapper:
 
 ```text
-CREATE MENU MainMenu
-CREATE WINDOW CustomerWin
-CREATE DIALOG EditCustomer
-DEFINE BUTTON Save
-ON CLICK DO save_customer
+future DSL text or a visual designer
+                |
+                v
+       UIDEF design table (DBF + memo)
+                |
+                +--> manifest and refusal report
+                +--> wxWidgets C++ generator
+                +--> Tk renderer
+                +--> HTML renderer
+                +--> character-cell renderer
 ```
 
-This is not implemented syntax yet. It is a lane seed for design, source
-contracts, examples, and eventual runtime proof.
+The rule shared by every target is simple: if a backend cannot honor something
+the document says, it reports the loss by name. Silent degradation is the
+defect.
 
-## Proposed Scope
+## The design table
 
-| UI construct | Intended purpose |
+The current contract uses three record kinds: `DOC`, `FONT`, and `OBJ`. Its
+fields carry identity, parentage, layout order, tab order, span, kind, flow,
+data binding, font reference, provenance, properties, original coordinates,
+handlers, data sources, and notes.
+
+The object vocabulary covers ordinary controls and application structure:
+
+```text
+form panel group pageset page splitter
+label text button check radio list combo image menu
+grid tree detail summary statusbar
+```
+
+Geometry is expressed as **layout intent**. `FLOW`, `ORDINAL`, `Weight`, and
+`Fill` describe containment and allocation. Imported absolute coordinates stay
+in `ORIGIN`, with their units, instead of pretending a pixel and a character
+cell mean the same thing.
+
+## What exists now
+
+### Import and authoring
+
+- Authoring tools produce UIDEF DBF/FPT documents and reproducible acceptance
+  and refusal fixtures.
+- Importers read FoxPro `.SCX`, `.VCX`, and `.MNX` design tables.
+- Class, implied-child, font, encoding, menu-nesting, binding, and layout rules
+  have explicit contracts rather than being inferred independently by each
+  renderer.
+
+### Validation before rendering
+
+The manifest reads what a document requires and compares it with a target's
+declared abilities. Unknown properties, invalid bindings, unresolved sources,
+unsupported layout, and target-specific losses are reported before a window is
+presented as successful.
+
+### Four backend views
+
+| Target | Current development role |
 | --- | --- |
-| `CREATE MENU` / `ENDMENU` | Define named application menus and menu items. |
-| `CREATE WINDOW` / `ENDWINDOW` | Define top-level windows or workbench panels. |
-| `CREATE DIALOG` / `ENDDIALOG` | Define modal or modeless dialogs. |
-| `DEFINE BUTTON` | Define buttons and bind them to commands or scripts. |
-| `DEFINE FIELD` | Bind form fields to DBF fields, variables, or expressions. |
-| `DEFINE GRID` / `DEFINE BROWSE` | Place data grids and browses inside application screens. |
-| `ON CLICK`, `ON CHANGE`, `ON SELECT` | Define event handlers that run DotTalk++ commands or DotScript routines. |
+| wxWidgets | Generates compiled C++ windows and connects to the native runtime. |
+| Tk | Independent graphical implementation used to test portability and threading rules. |
+| HTML | Browser-oriented projection of the same design document. |
+| Character cell | Text rendering that makes geometry loss and cell allocation explicit. |
 
-## Backend Strategy
+The `splitter` is a useful portability example. wxWidgets has a native sash;
+Tk and HTML preserve different subsets of its constraints; the character-cell
+backend derives a fixed separator. The document carries the full intent, and
+each target states what it cannot preserve.
 
-The same UI definition should be able to target more than one surface over time:
+### Engine integration
 
-- Arctic TUI first, for keyboard-oriented menus, windows, dialogs, and command
-  forms.
-- Parallel GUI/TUI next, through shared engine services.
-- wxWidgets GUI later, where native windows and controls are needed.
-- Web UI later, when a browser-facing application surface is appropriate.
+Generated wx frontends can open the tables named by their own UIDEF document,
+resolve location through a workspace, bind grids to the engine's tuple stream,
+and use the engine's typed locking services. The UIDEF document is also a CMake
+input: it can generate C++ and participate in building the resulting frontend.
 
-The UI DSL should not duplicate table mechanics. It should bind to existing
-engine services: work areas, relations, table buffers, commands, functions,
-validation, messaging, and help metadata.
+`APPGUI` and its alias `GUI` launch DotTalk++ Workbench through the product's
+registered GUI path. That proves a shell-to-window launcher, but it is not a
+UI-DSL command and should not be confused with `CREATE WINDOW` being live.
 
-## Comparison Context
+## Relationship to Workbench
 
-Classic xBase environments often treated interface construction as part of the
-application language:
+DotTalk++ Workbench is the project's first-party database application. UIDEF is
+the description and generation contract for application interfaces, including
+frontends the project does not own.
 
-- Visual FoxPro supported forms, menus, windows, popups, controls, and event
-  handlers.
-- dBASE Plus exposed form and menu designers that generated editable source.
-- Alaska Xbase++ supports character mode, GUI mode, hybrid mode, dialogs,
-  application windows, and menu systems.
-- Harbour and xHarbour rely heavily on GUI libraries such as MiniGUI, HwGUI,
-  wxHarbour, GTK, and Qt bindings.
-- XSharp can use .NET UI stacks such as WinForms and WPF.
+Workbench is therefore evidence and a demanding design specimen, not the only
+target. The lane has already described the Workbench frame as a UIDEF document
+and generated a recognizable wx structure back from it. That round trip exposed
+missing proportional-layout vocabulary, which was then added without changing
+older documents.
 
-The DotTalk++ lane should be described as **planned**, not implemented, until
-there is command registry evidence, runtime proof, examples, and generated
-manual coverage.
+## Evidence state
 
-## Proof Gates
+| Capability | Evidence state |
+| --- | --- |
+| DBF/FPT design-table contract | source-evidenced and exercised by generated documents |
+| FoxPro design-table import | runtime-proven on measured `.SCX`, `.VCX`, and `.MNX` specimens |
+| wx, Tk, HTML, and character-cell consumers | runtime-proven in development, within their stated target limits |
+| Generated wx frontend reading through the x64base engine | runtime-proven in development |
+| Engine lock and relation-domain integration | runtime-proven in the lane's targeted harnesses |
+| `APPGUI` / `GUI` Workbench launcher | runtime-proven development command |
+| Text commands such as `CREATE WINDOW` and `DEFINE BUTTON` | planned; not implemented |
 
-Before this lane is presented as active implementation, it needs:
+## Known Alpha boundaries
 
-1. Syntax contract and examples.
-2. Command registry entries.
-3. TUI proof for menu, window, dialog, button, and event handler.
-4. HELP/CMDHELP coverage.
-5. SelfDoc metadata coverage.
-6. Manualgen section.
-7. Website comparison update.
+- The user-facing text DSL has not been implemented. The design table is the
+  current authoring and interchange contract.
+- `menu` still lacks the same depth of first-class proof as the other kinds.
+- Data frames need fuller paging and refresh behavior as the cursor moves.
+- Nested splitter teardown is proven on Tk, but a wxWidgets lifetime probe
+  currently exposes a fatal teardown defect. Layout proof does not erase that
+  limitation.
+- Windows/MSVC support must be established by a current native build before it
+  is promoted as proven here.
+- Some engine naming and workspace behavior is being hardened alongside the
+  multi-workspace work; UIDEF must consume those shared services rather than
+  grow private alternatives.
 
-## Website Wording
+## Proof and publication gates
 
-Use:
+The lane advances when the same document remains intelligible across targets,
+losses are explicit, generated frontends use the real engine, and the source
+contracts feed HELP, SelfDoc, manuals, and this website. A successful render by
+one toolkit is not enough.
 
-- "planned application UI DSL lane"
-- "proposed syntax seed"
-- "future path for menus, windows, dialogs, controls, and event handlers"
-- "targeting Arctic TUI first, with GUI/web backends later"
-
-Avoid:
-
-- "DotTalk++ already has a FoxPro-style form designer"
-- "custom GUI applications can be built without code today"
-- "drop-in replacement for Visual FoxPro forms"
+This page is the website comparison gate for the Alpha lane. It describes
+development evidence, not a tagged release or a promise that the proposed text
+syntax is available today.
