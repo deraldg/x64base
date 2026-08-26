@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-08-26T01:43:27Z
+    generated_utc : 2026-08-26T01:53:10Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,9 +11,9 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : 898715432  (2026-08-25)
+    HEAD          : 3340f6b58  (2026-08-25)
     upstream      : a278b511e
-    unpushed      : 62 commit(s) ahead of upstream
+    unpushed      : 63 commit(s) ahead of upstream
 
 ## Declared target
 
@@ -23,19 +23,18 @@ cannot drift, because nothing here is written by hand.
 ## Newest closeout
 
     file          : SESSION_CLOSEOUT_PROMOTION_TO_MAIN_AND_WORKBENCH_RENAME_2026-08-21.md
-    commits behind HEAD : 148
+    commits behind HEAD : 149
 
 ## Staleness warnings
 
-- The newest closeout is 148 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
-- Claim(s) with no intake row, so they read as ABANDONED from HEAD: AIF-131. Same shape as AIF-062/078/080.
-- 62 commit(s) are unpushed and invisible to a clone.
+- The newest closeout is 149 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
+- 63 commit(s) are unpushed and invisible to a clone.
 
 ## Claimed lanes (newest first)
 
 | AIF | lane | steward | intake row |
 | --- | --- | --- | --- |
-| AIF-131 | dotref documents BUILD VECTORS / BUILD INFO as supported; shell_dispatch keys on the first token so they can never be typed | member.ai.claude.cowork | **MISSING** |
+| AIF-131 | dotref documents BUILD VECTORS / BUILD INFO as supported; shell_dispatch keys on the first token so they can never be typed | member.ai.claude.cowork | yes |
 | AIF-130 | AI_README says a sandbox cannot build; measured false 2026-08-12, uncorrected for 13 days | member.ai.claude.cowork | yes |
 | AIF-129 | contract-subblock-vocabularies-uncontrolled | member.ai.claude.cowork | yes |
 | AIF-128 | refcheck-guard-tests-the-union-not-the-authority | member.ai.claude.cowork | yes |
