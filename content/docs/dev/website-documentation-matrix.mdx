@@ -176,6 +176,7 @@ should have been preserved was overwritten during the pass.
 | Data-Mining Feed | Extracts | Website Targets | Proof Gate |
 | --- | --- | --- | --- |
 | Command registry and HELP scan | command names, aliases, usage, HELP text, mutation risk | command catalog, command families, DotScript guide, data mutators | `CMDHELPCHK` clean enough for reviewed promotion. |
+| Publication-entry freshness | engine executable provenance, canonical HELP producer state, HELP/META harvest freshness, catalog projection | every generated or maintained-current documentation consumer | **Fail closed.** `website_matrix_check.py` must pass `docpush_preflight.py`. The present cheap fallback compares executable/store order and therefore treats a later recompile as E2-open; this is conservative, not a claim that unrelated code changes HELP. The intended refinement is a content-addressed HELP-producer fingerprint. A clean site build cannot override a failed relationship. |
 | Source contract scan | `@dottalk.usage`, `@dottalk.contract`, comments, mutates/risk fields | coding standards, command/function pages, API docs | Source path and reviewed status preserved. |
 | Engine feature crosswalk | feature families, evidence status, source/HELP anchors | engine feature crosswalk, current lanes, product capability summaries | Runtime/source/help status labels retained. |
 | Manualgen inventory/validate/dry-run | manual sections, missing anchors, boundary warnings | important documents, generated manuals, downloadable manual artifacts | Validation result and Python/tooling version recorded. |
@@ -188,6 +189,30 @@ should have been preserved was overwritten during the pass.
 | Historical source inventory | path, size, timestamp, checksum, source family, truth level | historical source lineage, source museum artifacts | Checksums and truth-level labels preserved. |
 | Historical archive browser | exact archive members, byte size, archive timestamp, SHA-256, read-only text projection | historical family tree and source files | Required members fail closed; private roots are omitted; projected bytes retain the archive-member SHA-256. |
 | Ecosystem research matrix | outside product capability comparisons, current x64base status | ecosystem context, feature comparison, x64 capacity lesson | External claims separated from x64base source/runtime proof. |
+
+## Publication Matrix Check
+
+Before source push or deployment, run the governed matrix checker from the
+ccode authority tree against this website source tree. It is a hard publication
+gate, not an advisory report.
+
+The checker requires all of these relationships to pass together:
+
+1. every MDX route is classified exactly once;
+2. the full-stack publication entry passes, including engine -> canonical HELP
+   build/store order and HELP/META producer freshness;
+3. the command and function catalogs match current source;
+4. error-code rows match current source; and
+5. locale rows match current source.
+
+Today the second relationship uses a roughly one-second timestamp check because
+the HELP store does not yet carry a content-addressed producer fingerprint. That
+fallback conservatively treats a later engine recompile as E2-open. It is cheap
+to run but can require an unnecessary HELP rebuild after an unrelated code
+change. The gold refinement is to stamp the HELP build with a digest of the
+catalogs, extracted HELP contracts, and HELP generator implementation, then
+compare that digest here. Until that provenance exists, publication fails
+closed even when the website itself builds successfully.
 
 ## 2026-07-18 Publication Checkpoint
 
