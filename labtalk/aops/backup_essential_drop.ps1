@@ -1,23 +1,50 @@
 <#
 .SYNOPSIS
-  Curated local backup of source, scripts, schemas, contracts, and other
-  non-recreatable project assets.
+  Everything needed to rebuild this environment: the whole tracked tree, plus
+  new work not yet added, plus anything you name explicitly.
 
 .DESCRIPTION
-  Creates a timestamped backup under C:\Users\deral\OneDrive\ccode_drops by default.
+  Covers THIS REPOSITORY ONLY. D:\dev has its own backups and is not reached
+  from here.
 
-  This is wider than backup_source_drop.ps1 but still curated. It avoids build
-  directories, generated DBF/index/LMDB data, logs, repo-local drops, and bulky
-  generated manual/dist artifacts unless explicitly added later.
+  WHY THIS IS SHORT. The previous version carried a hand-written allowlist of
+  directories and a hand-written exclusion regex, and both drifted. It missed
+  labtalk (the AI portal, registries, proofs), tests, coordination, selfdoc,
+  gui, and docs/maintenance -- 608 tracked files holding every lane record and
+  session closeout. It also named six root files that no longer exist and
+  skipped them SILENTLY, while printing a healthy count.
+
+  THE FILTER IS GIT. A tracked file is one you already decided to keep; that
+  decision does not need restating in a second list that can fall behind it.
+  Nothing gitignored can arrive by accident -- no .venv, no build tree, no
+  node_modules, no vcpkg_installed -- so there is no exclusion regex to
+  maintain and no walk to prune.
+
+  Three sources, in order:
+    1. every tracked file, copied FROM THE WORKING TREE so uncommitted edits
+       are preserved;
+    2. every untracked file Git would not ignore -- new work that has not been
+       added yet, which is exactly what a backup taken mid-session must not
+       lose;
+    3. anything given with -ExtraPath, for an ignored asset or seed database
+       that cannot be regenerated.
+
+  Git metadata rides along: HEAD, status, and binary patches of both the
+  worktree and the index, so a restore can reproduce the exact working state
+  rather than just the files.
+
+.EXAMPLE
+  .\backup_essential_drop.ps1 -Plan
+  .\backup_essential_drop.ps1 -Zip
+  .\backup_essential_drop.ps1 -ExtraPath D:\data\seed.sqlite -Zip
 #>
 
 [CmdletBinding(SupportsShouldProcess = $true)]
 param(
-    [string]$RepoRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")).Path,
-    [string]$DevRoot = "D:\dev",
-    [string]$DropRoot = "C:\Users\deral\OneDrive\ccode_drops",
+    [string]$RepoRoot = "",
+    [string]$DropRoot = "D:\backups",
     [string]$Label = "essential",
-    [switch]$NoDev,
+    [string[]]$ExtraPath = @(),
     [switch]$Plan,
     [switch]$Zip
 )
@@ -25,258 +52,132 @@ param(
 $ErrorActionPreference = "Stop"
 $IsWhatIf = [bool]$WhatIfPreference
 
-function Resolve-ExistingDirectory {
-    param([Parameter(Mandatory = $true)][string]$Path)
-    $resolved = Resolve-Path -LiteralPath $Path
-    $item = Get-Item -LiteralPath $resolved.Path
-    if (-not $item.PSIsContainer) {
-        throw "Not a directory: $Path"
+function Resolve-RepositoryRoot {
+    param([string]$RequestedRoot)
+    $start = if ([string]::IsNullOrWhiteSpace($RequestedRoot)) {
+        (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")).Path
+    } else { $RequestedRoot }
+    $start = (Resolve-Path -LiteralPath $start).Path
+    $root = (& git -C $start rev-parse --show-toplevel 2>$null | Select-Object -First 1)
+    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($root)) {
+        throw "Not a Git working tree: $start. This script filters by 'git ls-files' and cannot run without it."
     }
-    return $item.FullName
+    return (Resolve-Path -LiteralPath ($root.Trim())).Path
+}
+
+function Test-UnderPath {
+    param([string]$Child, [string]$Parent)
+    $c = [System.IO.Path]::GetFullPath($Child).TrimEnd('\', '/')
+    $p = [System.IO.Path]::GetFullPath($Parent).TrimEnd('\', '/')
+    return $c.Equals($p, [System.StringComparison]::OrdinalIgnoreCase) -or
+           $c.StartsWith($p + [System.IO.Path]::DirectorySeparatorChar, [System.StringComparison]::OrdinalIgnoreCase)
+}
+
+function Convert-ToSafeRelativePath {
+    param([string]$RelativePath)
+    $parts = $RelativePath -split '[\\/]'
+    for ($i = 0; $i -lt $parts.Count; $i++) {
+        $name = $parts[$i].TrimEnd('.', ' ')
+        $base = [System.IO.Path]::GetFileNameWithoutExtension($name)
+        if ($base -match '^(?i:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$') { $name = '_device_' + $name }
+        $parts[$i] = $name
+    }
+    return ($parts -join [System.IO.Path]::DirectorySeparatorChar)
 }
 
 function Ensure-Directory {
-    param([Parameter(Mandatory = $true)][string]$Path)
+    param([string]$Path)
     if (-not (Test-Path -LiteralPath $Path)) {
         New-Item -ItemType Directory -Path $Path -Force -WhatIf:$IsWhatIf | Out-Null
     }
 }
 
-function Test-UnderPath {
-    param(
-        [Parameter(Mandatory = $true)][string]$Child,
-        [Parameter(Mandatory = $true)][string]$Parent
-    )
-    $childFull = [System.IO.Path]::GetFullPath($Child).TrimEnd('\')
-    $parentFull = [System.IO.Path]::GetFullPath($Parent).TrimEnd('\')
-    return $childFull.StartsWith($parentFull + '\', [System.StringComparison]::OrdinalIgnoreCase)
+$RepoRoot = Resolve-RepositoryRoot $RepoRoot
+$DropRoot = [System.IO.Path]::GetFullPath($DropRoot)
+if (Test-UnderPath -Child $DropRoot -Parent $RepoRoot) {
+    throw "DropRoot must be outside the repository. Refusing: $DropRoot"
 }
 
-function Add-TreeFiles {
-    param(
-        [Parameter(Mandatory = $true)][string]$Root,
-        [Parameter(Mandatory = $true)][string[]]$Extensions,
-        [string]$BaseRoot = $RepoRoot,
-        [string]$Prefix = ""
-    )
-
-    if (-not (Test-Path -LiteralPath $Root -PathType Container)) { return }
-    Get-ChildItem -LiteralPath $Root -Recurse -File -Force |
-        Where-Object {
-            $_.FullName -notmatch $script:excludePathRegex -and
-            $Extensions -contains $_.Extension.ToLowerInvariant()
-        } |
-        ForEach-Object {
-            $script:filesByPath[$_.FullName] = $_
-            $relative = $_.FullName.Substring($BaseRoot.Length).TrimStart('\')
-            if (-not [string]::IsNullOrWhiteSpace($Prefix)) {
-                $relative = Join-Path $Prefix $relative
-            }
-            $script:relativeByPath[$_.FullName] = $relative
-        }
-}
-
-function Add-RootFile {
-    param(
-        [Parameter(Mandatory = $true)][string]$Path,
-        [string]$BaseRoot = $RepoRoot,
-        [string]$Prefix = ""
-    )
-
-    if (Test-Path -LiteralPath $Path -PathType Leaf) {
-        $item = Get-Item -LiteralPath $Path
-        $script:filesByPath[$item.FullName] = $item
-        $relative = $item.FullName.Substring($BaseRoot.Length).TrimStart('\')
-        if (-not [string]::IsNullOrWhiteSpace($Prefix)) {
-            $relative = Join-Path $Prefix $relative
-        }
-        $script:relativeByPath[$item.FullName] = $relative
+# Destination-relative path -> source absolute path.
+$files = [ordered]@{}
+function Add-RepositoryFile {
+    param([string]$RelativePath)
+    if ([string]::IsNullOrWhiteSpace($RelativePath)) { return }
+    $source = Join-Path $RepoRoot $RelativePath
+    if (Test-Path -LiteralPath $source -PathType Leaf) {
+        $files[$RelativePath] = (Get-Item -LiteralPath $source).FullName
     }
 }
 
-$RepoRoot = Resolve-ExistingDirectory $RepoRoot
-$DevRoot = if (Test-Path -LiteralPath $DevRoot -PathType Container) { Resolve-ExistingDirectory $DevRoot } else { $DevRoot }
-$DropRoot = [System.IO.Path]::GetFullPath($DropRoot)
+$tracked = @(& git -C $RepoRoot ls-files)
+if ($LASTEXITCODE -ne 0) { throw 'git ls-files failed.' }
+foreach ($relative in $tracked) { Add-RepositoryFile $relative }
+$trackedCount = $files.Count
 
-if (Test-UnderPath -Child $DropRoot -Parent $RepoRoot) {
-    throw "DropRoot must be outside the repo. Refusing: $DropRoot"
+# New work not yet added. A backup taken mid-session that drops these has
+# missed the only copy that exists -- and in this repository that is most of
+# the documentation: measured 2026-08-25, 869 untracked files under
+# docs/maintenance and 1,914 under docs/datadict exist ONLY on disk.
+#
+# Two classes are withheld, and only from the UNTRACKED sweep. A tracked
+# table or fixture was committed on purpose and still travels.
+#
+#   1. Runtime table data under dottalkpp/data -- the live DBF/index root,
+#      regenerable and rewritten constantly (583 files). Evidence fixtures of
+#      the same kinds elsewhere, notably the 231 under docs/maintenance, are
+#      NOT withheld: those are attached to lane records and cannot be rebuilt.
+#   2. CMake build artifacts, which are only untracked here because
+#      scripts/build sits outside the ignore rule's anchor (22 files).
+$untrackedSkip = '(?i)^dottalkpp/data/.*\.(dbf|cdx|dbt|dtx|idx|cnx)$|CMakeFiles/|CMakeCache\.txt$|\.tlog/|\.recipe$|\.lastbuildstate$'
+
+$untracked = @(& git -C $RepoRoot ls-files --others --exclude-standard)
+if ($LASTEXITCODE -ne 0) { throw 'git ls-files --others failed.' }
+$untrackedSkipped = 0
+foreach ($relative in $untracked) {
+    if ($relative -match $untrackedSkip) { $untrackedSkipped++; continue }
+    Add-RepositoryFile $relative
+}
+$untrackedCount = $files.Count - $trackedCount
+
+# Explicit extras override every rule because the caller called them
+# indispensable. Stored beneath extras/ so they cannot collide with the tree.
+$extraNumber = 0
+foreach ($requested in $ExtraPath) {
+    if ([string]::IsNullOrWhiteSpace($requested)) { continue }
+    if (-not (Test-Path -LiteralPath $requested)) { throw "ExtraPath not found: $requested" }
+    $resolved = Get-Item -LiteralPath (Resolve-Path -LiteralPath $requested).Path
+    $extraNumber++
+    $prefix = Join-Path 'extras' ('{0:D2}_{1}' -f $extraNumber, $resolved.Name)
+    if ($resolved.PSIsContainer) {
+        Get-ChildItem -LiteralPath $resolved.FullName -Recurse -File -Force |
+            ForEach-Object {
+                $inside = [System.IO.Path]::GetRelativePath($resolved.FullName, $_.FullName)
+                $files[(Join-Path $prefix $inside)] = $_.FullName
+            }
+    } else {
+        $files[$prefix] = $resolved.FullName
+    }
 }
 
-$timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
+$timestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 $safeLabel = ($Label -replace '[^A-Za-z0-9_.-]+', '_').Trim('_')
-if ([string]::IsNullOrWhiteSpace($safeLabel)) { $safeLabel = "essential" }
+if ([string]::IsNullOrWhiteSpace($safeLabel)) { $safeLabel = 'essential' }
 $dropName = "ccode_${safeLabel}_${timestamp}"
 $outDir = Join-Path $DropRoot $dropName
 
-$script:excludePathRegex = @(
-    '\\.git($|\\)',
-    '\\.vs($|\\)',
-    '\\.vscode($|\\)',
-    '\\build[-\w]*($|\\)',
-    '\\vcpkg_installed($|\\)',
-    '\\_drops($|\\)',
-    '\\logs($|\\)',
-    '\\tmp($|\\)',
-    '\\__pycache__($|\\)',
-    '\\docs\\manuals\\dist($|\\)',
-    '\\docs\\manuals\\developer\\manualgen\\generated($|\\)',
-    '\\dottalkpp\\data\\dbf($|\\)',
-    '\\dottalkpp\\data\\indexes($|\\)',
-    '\\dottalkpp\\data\\lmdb($|\\)',
-    '\\dottalkpp\\data\\tmp($|\\)',
-    '\\dottalkpp\\data\\logs($|\\)',
-    '\\node_modules($|\\)',
-    '\\.next($|\\)',
-    '\\out($|\\)',
-    '\\.gh-pages-deploy($|\\)',
-    '\\.sites-artifact($|\\)',
-    '\\.next-dev\.(stdout|stderr)\.log$',
-    '\\x64base-sites-artifact\.tar\.gz$',
-    '\\x64base-IIS($|\\)',
-    '\\_github_scan($|\\)'
-) -join '|'
-
-$script:filesByPath = [ordered]@{}
-$script:relativeByPath = [ordered]@{}
-
-$sourceExt = @(
-    ".c", ".cc", ".cpp", ".cxx",
-    ".h", ".hh", ".hpp", ".hxx",
-    ".ipp", ".inl", ".tpp",
-    ".cmake", ".rc", ".def",
-    ".py", ".ps1", ".psm1", ".sh",
-    ".json", ".toml", ".txt", ".md", ".csv", ".tsv", ".yaml", ".yml"
-)
-
-$scriptExt = @(".dts", ".erz", ".dtschema", ".ps1", ".sh", ".bat", ".cmd", ".json", ".md", ".csv", ".txt")
-$docExt = @(".md", ".txt", ".csv", ".json", ".yaml", ".yml", ".svg", ".drawio")
-$devEssentialExt = @(
-    ".docx", ".pptx", ".pdf", ".md", ".txt", ".drawio", ".dts",
-    ".ps1", ".py", ".json", ".diff", ".patch", ".png",
-    ".cpp", ".hpp", ".h", ".csv", ".yaml", ".yml"
-)
-$siteExt = @(
-    ".ts", ".tsx", ".js", ".jsx", ".mjs", ".css", ".md", ".mdx",
-    ".json", ".yml", ".yaml", ".toml", ".html", ".txt", ".ps1",
-    ".svg", ".png", ".jpg", ".jpeg", ".webp", ".gif", ".ico",
-    ".xml", ".csv", ".drawio"
-)
-
-foreach ($dirName in @("src", "include", "bindings", "cmake", ".github")) {
-    Add-TreeFiles -Root (Join-Path $RepoRoot $dirName) -Extensions $sourceExt
-}
-
-foreach ($dirName in @(
-    "tools\contracts",
-    "tools\datadict",
-    "tools\gui",
-    "tools\gui_preview",
-    "tools\locale",
-    "tools\maintenance",
-    "tools\manualgen"
-)) {
-    Add-TreeFiles -Root (Join-Path $RepoRoot $dirName) -Extensions $sourceExt
-}
-
-Get-ChildItem -LiteralPath (Join-Path $RepoRoot "tools") -File -Filter "*.ps1" -ErrorAction SilentlyContinue |
-    ForEach-Object {
-        $script:filesByPath[$_.FullName] = $_
-        $script:relativeByPath[$_.FullName] = $_.FullName.Substring($RepoRoot.Length).TrimStart('\')
-    }
-
-foreach ($dirName in @(
-    "docs\contracts",
-    "docs\database",
-    "docs\gui",
-    "docs\ui",
-    "docs\messaging\active",
-    "docs\messaging\contracts",
-    "docs\messaging\scripts",
-    "docs\datadict\contracts",
-    "docs\datadict\definitions",
-    "docs\datadict\policies",
-    "docs\datadict\policy",
-    "docs\datadict\schemas",
-    "docs\datadict\specs",
-    "docs\datadict\templates"
-)) {
-    Add-TreeFiles -Root (Join-Path $RepoRoot $dirName) -Extensions $docExt
-}
-
-foreach ($dirName in @(
-    "dottalkpp\data\scripts",
-    "dottalkpp\data\schemas",
-    "dottalkpp\data\workspaces"
-)) {
-    Add-TreeFiles -Root (Join-Path $RepoRoot $dirName) -Extensions $scriptExt
-}
-
-$rootFileNames = @(
-    ".editorconfig",
-    ".gitattributes",
-    ".gitignore",
-    "CMakeLists.txt",
-    "CMakePresets.json",
-    "vcpkg.json",
-    "vcpkg-wsl.json",
-    "pyproject.toml",
-    "Makefile",
-    "README.md",
-    "README_NEW.md",
-    "MANIFEST.txt",
-    "WORKFLOW_X64BASE.md",
-    "X64BASE_DATA_STAGING_TRIAGE.md",
-    "X64BASE_HYGIENE_INVENTORY.md",
-    "X64BASE_REVERSE_NORMALIZATION_PLAN.md",
-    "DOTTALKPP_DBF_PATH_POLICY.md",
-    "DOTTALKPP_DOTSCRIPT_AND_DEV_HANDOFF_V1.md",
-    "build.ps1",
-    "datarun.ps1",
-    "datarun_wsl.sh",
-    "wslrun.sh",
-    "wx.run.ps1",
-    "wx.next.run.ps1",
-    "arctictalk.datarun.ps1"
-)
-
-Get-ChildItem -LiteralPath $RepoRoot -File -Filter "homegrown*.ps1" -ErrorAction SilentlyContinue |
-    ForEach-Object {
-        $script:filesByPath[$_.FullName] = $_
-        $script:relativeByPath[$_.FullName] = $_.FullName.Substring($RepoRoot.Length).TrimStart('\')
-    }
-
-foreach ($name in $rootFileNames) {
-    Add-RootFile -Path (Join-Path $RepoRoot $name)
-}
-
-if (-not $NoDev -and (Test-Path -LiteralPath $DevRoot -PathType Container)) {
-    Add-TreeFiles -Root (Join-Path $DevRoot "x64base-site") -Extensions $siteExt -BaseRoot $DevRoot -Prefix "dev"
-    Add-TreeFiles -Root (Join-Path $DevRoot "LabTalk_DotTalkpp_Systems_Storyboard_Deck") -Extensions $devEssentialExt -BaseRoot $DevRoot -Prefix "dev"
-
-    Get-ChildItem -LiteralPath $DevRoot -File -Force -ErrorAction SilentlyContinue |
-        Where-Object {
-            $_.Name -notlike '~$*' -and
-            $_.Extension.ToLowerInvariant() -ne ".exe" -and
-            $devEssentialExt -contains $_.Extension.ToLowerInvariant() -and
-            $_.FullName -notmatch $script:excludePathRegex
-        } |
-        ForEach-Object {
-            $script:filesByPath[$_.FullName] = $_
-            $script:relativeByPath[$_.FullName] = Join-Path "dev" $_.Name
-        }
-}
-
-if ($Plan) {
-    Write-Host "Essential drop plan"
-    Write-Host "  RepoRoot : $RepoRoot"
-    Write-Host "  DevRoot  : $DevRoot"
-    Write-Host "  DropRoot : $DropRoot"
-    Write-Host "  Files    : $($script:filesByPath.Count)"
-    $script:filesByPath.Values |
-        ForEach-Object { $script:relativeByPath[$_.FullName] } |
+if ($Plan -or $IsWhatIf) {
+    Write-Host 'Essential drop plan'
+    Write-Host "  RepoRoot  : $RepoRoot"
+    Write-Host "  DropRoot  : $DropRoot"
+    Write-Host "  Tracked   : $trackedCount"
+    Write-Host "  Untracked : $untrackedCount (not ignored by Git)"
+    Write-Host "  Withheld  : $untrackedSkipped untracked runtime/build artifact(s)"
+    Write-Host "  Extras    : $($files.Count - $trackedCount - $untrackedCount)"
+    Write-Host "  Files     : $($files.Count)"
+    $files.Keys |
         ForEach-Object { ($_ -split '[\\/]')[0] } |
-        Group-Object |
-        Sort-Object Name |
+        Group-Object | Sort-Object Count -Descending |
+        Select-Object -First 20 |
         ForEach-Object { Write-Host ("  {0}: {1}" -f $_.Name, $_.Count) }
     return
 }
@@ -284,60 +185,54 @@ if ($Plan) {
 Ensure-Directory $DropRoot
 Ensure-Directory $outDir
 
-$manifestRows = New-Object System.Collections.Generic.List[object]
-foreach ($file in $script:filesByPath.Values) {
-    $relative = $script:relativeByPath[$file.FullName]
-    $destination = Join-Path $outDir $relative
-    $destinationDir = Split-Path -Parent $destination
-    Ensure-Directory $destinationDir
+$manifestRows = [System.Collections.Generic.List[object]]::new()
+foreach ($relative in ($files.Keys | Sort-Object)) {
+    $source = $files[$relative]
+    $storedRelative = Convert-ToSafeRelativePath $relative
+    $destination = Join-Path $outDir $storedRelative
+    Ensure-Directory (Split-Path -Parent $destination)
     if ($PSCmdlet.ShouldProcess($destination, "Copy $relative")) {
-        Copy-Item -LiteralPath $file.FullName -Destination $destination -Force -WhatIf:$IsWhatIf
+        Copy-Item -LiteralPath $source -Destination $destination -Force
     }
+    $item = Get-Item -LiteralPath $source
     $manifestRows.Add([pscustomobject]@{
-        Relative = $relative
-        Source = $file.FullName
-        Destination = $destination
-        Extension = $file.Extension.ToLowerInvariant()
-        Bytes = $file.Length
-        LastWriteTimeUtc = $file.LastWriteTimeUtc.ToString("o")
+        Relative       = $relative
+        StoredRelative = $storedRelative
+        Source         = $item.FullName
+        Bytes          = $item.Length
+        LastWriteUtc   = $item.LastWriteTimeUtc.ToString('o')
+        SHA256         = (Get-FileHash -LiteralPath $source -Algorithm SHA256).Hash
     }) | Out-Null
 }
 
-$manifestCsv = Join-Path $outDir "MANIFEST.csv"
-$manifestTxt = Join-Path $outDir "MANIFEST.txt"
-if ($PSCmdlet.ShouldProcess($manifestCsv, "Write manifest")) {
-    $manifestRows | Sort-Object Relative | Export-Csv -NoTypeInformation -Encoding UTF8 -Path $manifestCsv -WhatIf:$IsWhatIf
-}
-if ($PSCmdlet.ShouldProcess($manifestTxt, "Write summary")) {
-    @(
-        "DotTalk++ essential backup drop"
-        "RepoRoot: $RepoRoot"
-        "DevRoot: $DevRoot"
-        "Drop: $outDir"
-        "Created: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
-        "Files: $($manifestRows.Count)"
-        "Excluded: builds, .git, repo-local drops, DBF/index/LMDB runtime data, logs/tmp, generated manual dist, node_modules, Next.js build output, old x64base-IIS copy"
-        ""
-        "Top-level counts:"
-    ) | Out-File -FilePath $manifestTxt -Encoding utf8 -WhatIf:$IsWhatIf
-
-    $manifestRows |
-        Group-Object { ($_.Relative -split '[\\/]')[0] } |
-        Sort-Object Name |
-        ForEach-Object { "  $($_.Name): $($_.Count)" } |
-        Out-File -FilePath $manifestTxt -Append -Encoding utf8 -WhatIf:$IsWhatIf
+$manifestRows | Export-Csv -NoTypeInformation -Encoding UTF8 -Path (Join-Path $outDir 'MANIFEST.csv')
+# -Value, not the pipeline. Piping empty output to Set-Content never invokes
+# it, so the file is simply not created -- and a MISSING patch file reads as
+# "not captured" when it means "nothing was staged". Measured 2026-08-25: the
+# first real drop had no GIT_STAGED.patch for exactly that reason. An explicit
+# empty file says the question was asked and the answer was zero.
+function Write-GitArtifact {
+    param([string]$Name, [string[]]$GitArgs)
+    $text = (& git -C $RepoRoot @GitArgs) -join "`r`n"
+    Set-Content -Encoding UTF8 -Path (Join-Path $outDir $Name) -Value $text
 }
 
-if ($Zip -and -not $IsWhatIf) {
-    $zipPath = Join-Path $DropRoot ($dropName + ".zip")
+Write-GitArtifact 'GIT_HEAD.txt'       @('rev-parse', 'HEAD')
+Write-GitArtifact 'GIT_STATUS.txt'     @('status', '--short', '--branch', '-uall')
+Write-GitArtifact 'GIT_WORKTREE.patch' @('diff', '--binary')
+Write-GitArtifact 'GIT_STAGED.patch'   @('diff', '--cached', '--binary')
+
+if ($Zip) {
+    $zipPath = Join-Path $DropRoot ($dropName + '.zip')
     if (Test-Path -LiteralPath $zipPath) { Remove-Item -LiteralPath $zipPath -Force }
-    Compress-Archive -Path (Join-Path $outDir "*") -DestinationPath $zipPath -Force
+    Compress-Archive -Path (Join-Path $outDir '*') -DestinationPath $zipPath -Force
 }
 
-Write-Host "Essential drop complete"
-Write-Host "  RepoRoot : $RepoRoot"
-Write-Host "  Drop     : $outDir"
-Write-Host "  Files    : $($manifestRows.Count)"
-if ($Zip -and -not $IsWhatIf) {
-    Write-Host "  Zip      : $zipPath"
-}
+Write-Host 'Essential drop complete'
+Write-Host "  RepoRoot  : $RepoRoot"
+Write-Host "  Drop      : $outDir"
+Write-Host "  Tracked   : $trackedCount"
+Write-Host "  Untracked : $untrackedCount"
+Write-Host "  Withheld  : $untrackedSkipped untracked runtime/build artifact(s)"
+Write-Host "  Files     : $($manifestRows.Count)"
+if ($Zip) { Write-Host "  Zip       : $zipPath" }

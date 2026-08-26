@@ -3,9 +3,12 @@
   Fast local backup of source and build-control files.
 
 .DESCRIPTION
-  Creates a timestamped source backup under C:\Users\deral\OneDrive\ccode_drops by default.
+  Creates a timestamped source backup under D:\backups by default.
   This is intentionally narrow: C++/CMake/Python source, headers, GUI source,
   build metadata, and a small set of root scripts/config files.
+
+  It covers this repository ONLY -- D:\dev has its own backup scripts and is
+  not reached from here.
 
   It is a backup drop, not a staging sync and not a GitHub packaging tool.
 #>
@@ -13,10 +16,8 @@
 [CmdletBinding(SupportsShouldProcess = $true)]
 param(
     [string]$RepoRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")).Path,
-    [string]$DevRoot = "D:\dev",
-    [string]$DropRoot = "C:\Users\deral\OneDrive\ccode_drops",
+    [string]$DropRoot = "D:\backups",
     [string]$Label = "source",
-    [switch]$NoDev,
     [switch]$Plan,
     [switch]$Zip
 )
@@ -52,7 +53,6 @@ function Test-UnderPath {
 }
 
 $RepoRoot = Resolve-ExistingDirectory $RepoRoot
-$DevRoot = if (Test-Path -LiteralPath $DevRoot -PathType Container) { Resolve-ExistingDirectory $DevRoot } else { $DevRoot }
 $DropRoot = [System.IO.Path]::GetFullPath($DropRoot)
 
 if (Test-UnderPath -Child $DropRoot -Parent $RepoRoot) {
@@ -137,29 +137,10 @@ foreach ($file in $rootFiles) {
     $relativeByPath[$item.FullName] = $item.FullName.Substring($RepoRoot.Length).TrimStart('\')
 }
 
-if (-not $NoDev -and (Test-Path -LiteralPath (Join-Path $DevRoot "x64base-site") -PathType Container)) {
-    $siteRoot = Join-Path $DevRoot "x64base-site"
-    $siteExt = @(
-        ".ts", ".tsx", ".js", ".jsx", ".mjs", ".css", ".md", ".mdx",
-        ".json", ".yml", ".yaml", ".toml", ".html", ".txt", ".ps1",
-        ".svg", ".png", ".jpg", ".jpeg", ".webp", ".gif", ".ico",
-        ".xml", ".csv", ".drawio"
-    )
-    Get-ChildItem -LiteralPath $siteRoot -Recurse -File -Force |
-        Where-Object {
-            $_.FullName -notmatch $excludePathRegex -and
-            $siteExt -contains $_.Extension.ToLowerInvariant()
-        } |
-        ForEach-Object {
-            $filesByPath[$_.FullName] = $_
-            $relativeByPath[$_.FullName] = Join-Path "dev" ($_.FullName.Substring($DevRoot.Length).TrimStart('\'))
-        }
-}
 
 if ($Plan) {
     Write-Host "Source drop plan"
     Write-Host "  RepoRoot : $RepoRoot"
-    Write-Host "  DevRoot  : $DevRoot"
     Write-Host "  DropRoot : $DropRoot"
     Write-Host "  Files    : $($filesByPath.Count)"
     $filesByPath.Values |

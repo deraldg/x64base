@@ -23,10 +23,9 @@ param(
 
     [string]$TaskName = "DotTalkpp Essential Backup",
 
-    [string]$Description = "Recurring DotTalk++ / x64base curated backup to OneDrive.",
+    [string]$Description = "Recurring DotTalk++ / x64base curated backup to D:\backups.",
 
-    [switch]$NoZip,
-    [switch]$NoDev
+    [switch]$NoZip
 )
 
 $ErrorActionPreference = "Stop"
@@ -46,7 +45,6 @@ $runnerArgs = @(
     "-BackupKind", $BackupKind
 )
 if ($NoZip) { $runnerArgs += "-NoZip" }
-if ($NoDev) { $runnerArgs += "-NoDev" }
 
 $action = New-ScheduledTaskAction `
     -Execute "powershell.exe" `

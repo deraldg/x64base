@@ -3,20 +3,28 @@
   Bundle only source + build scripts into a lean ZIP.
   Includes:  *.cpp, *.hpp, CMakeLists.txt, Makefile/makefile, *.ps1
   Excludes:  build artifacts and VCS folders.
+  Output:    D:\backups by default (override with -OutDir).
   Scans:     root, src, includes, tests, data, tools, results
 #>
 
 [CmdletBinding()]
 param(
-  [string]$OutDir = "_bundles",
+  [string]$OutDir = "D:\backups",
   [string]$Label  = "alpha-4.2"
 )
 
 $ErrorActionPreference = "Stop"
 
-# Resolve an absolute output path under the current repo
+# Resolve an absolute output path. An absolute -OutDir is honoured as given;
+# a relative one still resolves under the current repo. Join-Path does NOT
+# special-case a rooted second argument, so testing first is required --
+# otherwise "D:\backups" would become "<repo>\D:\backups".
 $repoRoot = (Get-Location).Path
-$absOut   = Join-Path $repoRoot $OutDir
+$absOut   = if ([System.IO.Path]::IsPathRooted($OutDir)) {
+    [System.IO.Path]::GetFullPath($OutDir)
+} else {
+    [System.IO.Path]::GetFullPath((Join-Path $repoRoot $OutDir))
+}
 
 # Ensure output directory exists
 if (-not (Test-Path -LiteralPath $absOut)) {
@@ -91,6 +99,6 @@ finally {
   $zip.Dispose()
 }
 
-Write-Host "✅ Created bundle:" -ForegroundColor Green
+Write-Host "Created bundle:" -ForegroundColor Green
 Write-Host "  $zipPath"
 Write-Host ("  Files included: {0}" -f $files.Count)
