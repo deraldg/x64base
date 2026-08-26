@@ -282,6 +282,7 @@
 #include <string>
 #include <type_traits>
 #include <unordered_set>
+#include <map>
 #include <set>
 #include <cstdint>
 #include <vector>
@@ -310,6 +311,7 @@
 #include "relations_boot.hpp"
 #include "tuple_builder.hpp"
 #include "cli/unique_registry.hpp"
+#include "xbase/workspace_naming.hpp"
 #include "workarea_util.hpp"
 
 #define HAVE_PATHS 1
@@ -1129,6 +1131,42 @@ static int table_enable_for_results(const std::vector<OpenResult>& results) {
 }
 #endif
 
+
+// R128. WHICH AREA, IF ANY, ALREADY HOLDS THIS FILE.
+//
+// Needed by the re-entry rule: a second OPEN of the same directory adds what is
+// new and touches nothing else, so it has to be able to ask the question. It is
+// the same question a bare USE already answers when it refuses a file that has
+// a work area -- asked here over the whole array rather than over one slot.
+//
+// COMPARISON IS BY CANONICAL PATH, case-insensitively on Windows, because the
+// two spellings that reach here are not the same string: the caller holds a
+// directory_entry path and the area holds whatever string it was opened with.
+// Comparing the raw strings would answer NO for a file that is plainly open,
+// and a wrong NO here reopens an area someone is working in.
+static int area_holding_dbf(const fs::path& want_in) {
+    std::error_code ec;
+    fs::path want = fs::weakly_canonical(want_in, ec);
+    if (ec) want = want_in;
+    const std::string wants = s8(want);
+
+    for (int area0 = 0; area0 < xbase::MAX_AREA; ++area0) {
+        try {
+            xbase::DbArea& A = get_area_0based(area0);
+            if (!area_open(A)) continue;
+            std::error_code ec2;
+            fs::path have = fs::weakly_canonical(fs::path(A.filename()), ec2);
+            if (ec2) have = fs::path(A.filename());
+#if defined(_WIN32)
+            if (ci_equal(s8(have), wants)) return area0;
+#else
+            if (s8(have) == wants) return area0;
+#endif
+        } catch (...) {}
+    }
+    return -1;
+}
+
 static std::vector<OpenResult> schema_open_directory(const fs::path& dir, IndexMode mode, bool fallback) {
     std::vector<OpenResult> results;
 
@@ -1152,12 +1190,39 @@ static std::vector<OpenResult> schema_open_directory(const fs::path& dir, IndexM
         return sa < sb;
     });
 
-    const int capacity = xbase::MAX_AREA;
-    const int toOpen   = static_cast<int>(std::min<size_t>(dbfs.size(), static_cast<size_t>(capacity)));
-    const bool overflow = static_cast<int>(dbfs.size()) > capacity;
+    // R128 (owner, 2026-08-26: "open should be additive"). THIS LOOP USED TO
+    // ASSUME IT OWNED THE AREA SPACE. It walked area0 = 0,1,2..N-1 and CLOSED
+    // whatever sat in each slot, which was safe only because the caller ran
+    // schema_close_all() first. Take that close away to make OPEN additive and
+    // this loop stops being additive-neutral and becomes actively destructive:
+    // it would stomp the low slots, which is exactly where another workspace's
+    // areas live. So the fix is not "remove the close" -- it is "stop assuming"
+    // and ASK THE ALLOCATOR, the same workspace-aware allocator USE has used
+    // since AIF-078 (IN FREE, owner ruling 2026-08-22). Areas therefore land in
+    // the CURRENT workspace's own contiguous run.
+    //
+    // From a clean session the answers are still 0,1,2... so nothing that
+    // depended on the first table landing in area 0 has moved.
+    std::vector<fs::path> already_open;
+    bool exhausted = false;
+    bool broke_contiguity_any = false;
 
-    for (int area0 = 0; area0 < toOpen; ++area0) {
-        const auto& de = dbfs[area0];
+    for (size_t idx = 0; idx < dbfs.size(); ++idx) {
+        const auto& de = dbfs[idx];
+
+        // RE-ENTRY (R128, owner: "add only what is new"). A second OPEN of a
+        // directory already open must not reopen what is already there --
+        // reopening would close and reopen an area the user may be sitting in,
+        // which is the destructive act this ruling exists to stop.
+        if (area_holding_dbf(de.path()) >= 0) {
+            already_open.push_back(de.path());
+            continue;
+        }
+
+        bool broke = false;
+        const int area0 = cli::find_free_area_for_current_workspace(broke);
+        if (area0 < 0 || area0 >= xbase::MAX_AREA) { exhausted = true; break; }
+        if (broke) broke_contiguity_any = true;
 
         OpenResult r;
         r.area = area0;
@@ -1189,14 +1254,19 @@ static std::vector<OpenResult> schema_open_directory(const fs::path& dir, IndexM
         results.push_back(std::move(r));
     }
 
-    if (overflow) {
-        OpenResult r;
-        r.area = -1;
-        const int skipped = static_cast<int>(dbfs.size()) - capacity;
-        r.error = "Exceeded MAX_AREA (" + std::to_string(capacity) + "). Only first " +
-                  std::to_string(capacity) + " table(s) opened; " +
-                  std::to_string(skipped) + " additional table(s) were skipped.";
-        results.push_back(std::move(r));
+    // WHAT IT DID NOT DO, IT SAYS. A bounded operation that stays quiet about
+    // its bound is indistinguishable from one that looked and found nothing.
+    if (!already_open.empty()) {
+        std::cout << "WORKSPACE OPEN: " << already_open.size()
+                  << " table(s) already open; left as they were.\n";
+    }
+    if (broke_contiguity_any) {
+        std::cout << "WORKSPACE OPEN: this workspace's run of areas is no longer "
+                     "contiguous; the allocator took the lowest free slot instead.\n";
+    }
+    if (exhausted) {
+        std::cout << "WORKSPACE OPEN: no free work area left (" << xbase::MAX_AREA
+                  << " slots); the remaining tables in this directory were NOT opened.\n";
     }
 
     return results;
@@ -1814,18 +1884,134 @@ static bool apply_relation_line(const std::string& body) {
 // --------- SAVE / LOAD ------------------------------------------------------
 
 // AIF-070 M1: serialization split from file I/O -- one format, two carriers.
+// ---------------------------------------------------------------------------
+// R128 (owner, 2026-08-26: "selective close/save"). THE SCOPE OF A SAVE.
+//
+// schema_save_to_string() swept all MAX_AREA slots and took every open area in
+// the process, with NO workspace discriminator anywhere in it. That was
+// harmless only while one workspace could be populated at a time, and AIF-078
+// stage 3 ended that on 2026-08-24 -- from then on WORKSPACE SAVE mcc_db could
+// write ANOTHER workspace's areas into a posture named mcc_db. THE COUNT
+// DISCIPLINE: a set taken from an authority that holds more than one KIND,
+// with no discriminator applied.
+//
+// SCOPE IS COMPUTED ONCE AND CONSULTED FOUR TIMES. The serializer has three
+// enumerations of its own (AREA, KEY, CURSOR) and measure_open_flavor() is a
+// fourth -- and that fourth matters as much as the others: a FLAVOR measured
+// over every open area reports MIXED because SOMEBODY ELSE'S workspace holds a
+// different one. Four copies of one predicate is four chances to disagree,
+// which is R5's shape, so the walk happens here and every consumer asks the
+// same object.
+//
+// SCOPED MEANS WHAT BARE CLOSE MEANS, DELIBERATELY. CLOSE walks the current
+// workspace TREE and honours SET RECURSION (close_workspace_tree, above). A
+// SAVE that meant something else by "this workspace" would give one question
+// two answers across two verbs.
+//
+// WHAT IT SKIPS, IT SAYS. A scoped save cannot see (a) areas in another
+// workspace or (b) areas in NO workspace -- CLOSE ALL's comment records that
+// unregistered areas exist and that only the full sweep reconciles them. Both
+// are counted and reported. A bounded operation that does not say what it did
+// not look at is indistinguishable from one that looked and found nothing.
+// ---------------------------------------------------------------------------
+struct SaveScope {
+    bool all = true;                 // ALL: the pre-R128 sweep, every open area
+    std::set<int> slots;             // scoped: engine slots of the current tree
+    int in_scope = 0;                // open areas this save WILL write
+    int skipped_other = 0;           // open areas owned by another workspace
+    int skipped_unregistered = 0;    // open areas owned by no workspace at all
+
+    bool contains(int area0) const { return all || slots.count(area0) != 0; }
+};
+
+// Mirrors close_workspace_tree's walk: same children(), same recursion switch,
+// same depth cap, same cycle guard. It collects instead of closing.
+static void collect_scope_slots(std::uint64_t h, bool recursive, int depth,
+                                std::set<std::uint64_t>& seen,
+                                std::set<int>& out_slots) {
+    if (!xbase::workspace::exists(h)) return;
+    if (!seen.insert(h).second) return;                      // cycle: already walked
+    if (depth > xbase::workspace::kMaxWorkspaceDepth) return; // same cap as CLOSE
+    if (recursive) {
+        for (const auto c : xbase::workspace::children(h)) {
+            collect_scope_slots(c, recursive, depth + 1, seen, out_slots);
+        }
+    }
+    for (const auto slot : xbase::workspace::members(h)) {
+        if (slot < 0 || slot >= xbase::MAX_AREA) continue;   // vacated / defensive
+        out_slots.insert(static_cast<int>(slot));
+    }
+}
+
+static SaveScope compute_save_scope(bool all) {
+    SaveScope sc;
+    sc.all = all;
+    if (!all) {
+        std::set<std::uint64_t> seen;
+        collect_scope_slots(xbase::workspace::current_handle(),
+                            xbase::workspace::recursion_enabled(),
+                            0, seen, sc.slots);
+    }
+    // The counts are measured over the SAME sweep the serializer used to do,
+    // so "skipped" is a real observation about real open areas and not an
+    // arithmetic difference between two numbers from two places.
+    for (int area0 = 0; area0 < xbase::MAX_AREA; ++area0) {
+        try {
+            xbase::DbArea& A = get_area_0based(area0);
+            if (!area_open(A)) continue;
+            if (sc.contains(area0)) { sc.in_scope++; continue; }
+            if (A.wsHandle() == 0) sc.skipped_unregistered++;
+            else                   sc.skipped_other++;
+        } catch (...) {}
+    }
+    return sc;
+}
+
+static void report_save_scope(const SaveScope& sc) {
+    if (sc.all) {
+        std::cout << "WORKSPACE SAVE: ALL -- " << sc.in_scope
+                  << " open area(s), every workspace.\n";
+    } else {
+        const std::uint64_t h = xbase::workspace::current_handle();
+        std::cout << "WORKSPACE SAVE: workspace " << h
+                  << " (" << xbase::workspace::name_of(h) << ")"
+                  << (xbase::workspace::recursion_enabled()
+                        ? " and any nested workspaces"
+                        : " only (RECURSION OFF)")
+                  << " -- " << sc.in_scope << " area(s).\n";
+        if (sc.skipped_other > 0) {
+            std::cout << "  NOT saved: " << sc.skipped_other
+                      << " open area(s) in other workspaces."
+                         " WORKSPACE SAVE <name> ALL takes everything.\n";
+        }
+        if (sc.skipped_unregistered > 0) {
+            std::cout << "  NOT saved: " << sc.skipped_unregistered
+                      << " open area(s) belonging to no workspace"
+                         " (only ALL reconciles those).\n";
+        }
+    }
+    // NOT a refusal, and that is a decision rather than an oversight: the
+    // pre-R128 verb also wrote an empty posture when nothing was open, and
+    // turning that into a refusal is a behaviour change nobody ruled. It is
+    // said LOUDLY because an empty posture written over a live catalog row is
+    // the expensive version of this mistake.
+    if (sc.in_scope == 0) {
+        std::cout << "  WARNING: nothing is in scope. This posture will be EMPTY.\n";
+    }
+}
+
 // schema_save_to_string() is the SINGLE serializer; the file writer below
 // (and the future memo carrier, M2) are thin shells around it. The returned
 // text is the byte-exact .dtschema payload (LF line endings, as the binary
 // file writer has always produced). Behavior of WORKSPACE SAVE: unchanged.
-static std::string measure_open_flavor();  // defined below (carrier section)
+static std::string measure_open_flavor(const SaveScope& sc);  // defined below (carrier section)
 
 // version: 2 = the proven format (default, untouched); 3 = owner-chartered
 // 2026-08-11, valid for all flavors -- SAME body as 2 plus declarative lines
 // (FLAVOR now; residence/TARGET arrives with the hydration step that gives it
 // semantics -- a line with no consumer is a paper claim). Coexistence rule:
 // v3 is opt-in per save; every v2 producer and consumer keeps working.
-static std::string schema_save_to_string(int version = 2) {
+static std::string schema_save_to_string(int version, const SaveScope& sc) {
     std::ostringstream out;
 
     auto weak_can = [](const fs::path& p) -> fs::path {
@@ -1875,7 +2061,7 @@ static std::string schema_save_to_string(int version = 2) {
         // LMDB root is recorded for disk residence; RAM lmdb is per-mount and
         // transient, so its application stays chartered (owner: "lmdb only
         // for disks").
-        const std::string fl = measure_open_flavor();
+        const std::string fl = measure_open_flavor(sc);
         if (!fl.empty()) out << "FLAVOR " << fl << "\n";
         out << "DBFROOT " << s8(rootDbf) << "\n";
         out << "IDXROOT " << s8(rootIdx) << "\n";
@@ -1886,6 +2072,7 @@ static std::string schema_save_to_string(int version = 2) {
         try {
             xbase::DbArea& A = get_area_0based(area0);
             if (!area_open(A)) continue;
+            if (!sc.contains(area0)) continue;   // R128: scope of this save
 
             fs::path dbfPath = fs::path(A.filename());
             std::string index = getOrderNameSafe(A);
@@ -1918,6 +2105,7 @@ static std::string schema_save_to_string(int version = 2) {
         try {
             xbase::DbArea& A = get_area_0based(area0);
             if (!area_open(A)) continue;
+            if (!sc.contains(area0)) continue;   // R128: scope of this save
             const std::string tname = getNameIf(A, 0);
             if (tname.empty()) continue;
             const std::string prim = unique_reg::primary_field(A);
@@ -1938,6 +2126,7 @@ static std::string schema_save_to_string(int version = 2) {
             try {
                 xbase::DbArea& A = get_area_0based(area0);
                 if (!area_open(A)) continue;
+                if (!sc.contains(area0)) continue;   // R128: scope of this save
                 const std::uint64_t rn = A.recno64();
                 if (rn > 0) out << "CURSOR " << area0 << " " << rn << "\n";
             } catch (...) {}
@@ -1968,12 +2157,13 @@ static std::string stamp_ws_id(std::string payload, const std::string& id) {
 // (owner nod 2026-08-11). versionByte 0x64 / kind V128 = X64; version
 // 0x30-0x32 = VFP; kind V32 (0x03/0x83/0xF5) = X32. All areas agree ->
 // that flavor; disagree -> MIXED; nothing open -> empty (claim withheld).
-static std::string measure_open_flavor() {
+static std::string measure_open_flavor(const SaveScope& sc) {
     std::string fl;
     for (int area0 = 0; area0 < xbase::MAX_AREA; ++area0) {
         try {
             xbase::DbArea& A = get_area_0based(area0);
             if (!area_open(A)) continue;
+            if (!sc.contains(area0)) continue;   // R128: scope of this save
             std::string f = "OTHER";
             const std::uint8_t vb = A.versionByte();
             if (vb == xbase::DBF_VERSION_64 || A.kind() == xbase::AreaKind::V128) f = "X64";
@@ -1999,7 +2189,7 @@ static std::string file_carrier_wsid() {
     return std::string("F") + buf;
 }
 
-static void schema_save_to_file(const fs::path& file, int version = 2) {
+static void schema_save_to_file(const fs::path& file, int version, const SaveScope& sc) {
     fs::path outPath = resolve_workspace_file_path(file, true);
 
     {
@@ -2015,7 +2205,7 @@ static void schema_save_to_file(const fs::path& file, int version = 2) {
         return;
     }
 
-    out << stamp_ws_id(schema_save_to_string(version), file_carrier_wsid());
+    out << stamp_ws_id(schema_save_to_string(version, sc), file_carrier_wsid());
     out.flush();
     std::cout << "WORKSPACE SAVE: wrote " << s8(outPath) << "\n";
 }
@@ -3031,9 +3221,9 @@ static bool delete_durable_workspace(const std::string& name,
     return ok;
 }
 
-static void save_to_memo(const std::string& name, int version = 2,
-                         bool minidb = false) {
-    const std::string base = schema_save_to_string(version);
+static void save_to_memo(const std::string& name, int version,
+                         bool minidb, const SaveScope& sc) {
+    const std::string base = schema_save_to_string(version, sc);
 
     std::string err;
     xbase::DbArea a;
@@ -3107,7 +3297,7 @@ static void save_to_memo(const std::string& name, int version = 2,
         bool ok = set_by_name(a, "WS_ID", std::to_string(newId), err)
                && set_by_name(a, "WS_NAME", name, err)
                && set_by_name(a, "SCHEMA_NAME", name, err)   // display name; defaults to handle until owner supplies one
-               && set_by_name(a, "FLAVOR", measure_open_flavor(), err)
+               && set_by_name(a, "FLAVOR", measure_open_flavor(sc), err)
                && set_by_name(a, "OS_COMPAT", "ALL", err)    // a CLAIM column, not a measurement
                && set_by_name(a, "FMT", minidb ? "MINIDB 1"
                                                : (version == 3 ? "DTSHEMA 3" : "DTSHEMA 2"), err)
@@ -4321,6 +4511,144 @@ std::string workspace_last_loaded_file() {
     return last_loaded_workspace_file();
 }
 
+// ---------------------------------------------------------------------------
+// R128. OPEN ENTERS A WORKSPACE NAMED FOR THE DIRECTORY.
+//
+// Owner, 2026-08-26: "we can also open two dir into two workspaces too", and
+// the name is the directory LEAF with `AS <name>` to override. Two directories
+// opened are two workspaces; the areas of each join their own.
+//
+// RE-ENTRY RATHER THAN REFUSAL OR A SUFFIX. WORKSPACE NEW refuses a duplicate
+// name outright, and rightly -- two live workspaces on one name is an
+// ambiguity. But a second OPEN of the same directory is not an attempt to make
+// a second workspace, it is a NAVIGATION back to the one that directory
+// already has. Refusing would make a harmless act an error; uniquifying
+// (SALES, SALES_2) would put two workspaces on one directory, which is the
+// ambiguity the refusal exists to prevent. So it SWITCHes.
+//
+// A COLLISION ACROSS ROOTS IS STILL REFUSED, and that is the honest case: two
+// different directories whose leaf is the same name really are two workspaces
+// wanting one handle. AS <name> is the way out, and the refusal says so.
+// ---------------------------------------------------------------------------
+// WHICH DIRECTORY A WORKSPACE WAS OPENED FROM, and why this table has to exist.
+//
+// FOUND BY RUNNING IT, 2026-08-26. The first cut decided re-entry on the NAME
+// alone, and that answers the SAME for two different questions: "the same
+// directory again, so re-enter" and "a DIFFERENT directory whose leaf happens
+// to match, so collide". Measured: with SALES open from dbf/SALES, a
+// `WORKSPACE OPEN other/SALES` walked straight into the first workspace and
+// opened a foreign table into it. The AIF-118 shape -- one answer for two
+// states -- in the guard written to prevent an ambiguity.
+//
+// THE MEMBERS CANNOT ANSWER IT. Deriving the origin from where member 0's file
+// lives works until the workspace is empty, and an empty workspace would then
+// answer the same as a mismatched one -- R6, the same defect one layer down.
+// So the origin is RECORDED, at the moment it is known.
+//
+// SESSION-LOCAL AND STATED AS SUCH: this is a process map, not a catalog
+// field. A workspace re-created in a later process has no recorded origin and
+// the first OPEN claims it (below). WORKSPACES.dbf carries DBF_ROOT and is the
+// place a durable answer belongs; wiring that is not this change.
+static std::map<std::uint64_t, std::string>& workspace_origin_table() {
+    static std::map<std::uint64_t, std::string> t;
+    return t;
+}
+
+static std::string canonical_dir_key(const fs::path& dir) {
+    std::error_code ec;
+    fs::path c = fs::weakly_canonical(dir, ec);
+    return s8(ec ? dir : c);
+}
+
+static bool same_dir_key(const std::string& a, const std::string& b) {
+#if defined(_WIN32)
+    return ci_equal(a, b);
+#else
+    return a == b;
+#endif
+}
+
+static bool workspace_enter_for_open(const std::string& nm, const fs::path& dir) {
+    const std::string want = canonical_dir_key(dir);
+    const std::uint64_t existing = xbase::workspace::find_by_name_ci(nm);
+    if (existing != 0) {
+        auto& origins = workspace_origin_table();
+        const auto it = origins.find(existing);
+        if (it == origins.end()) {
+            // No origin recorded -- the workspace came from WORKSPACE NEW, or
+            // from a previous process. The first OPEN claims it rather than
+            // refusing, because there is no evidence of a conflict and making
+            // a person rename around a workspace they created by hand would be
+            // ceremony, not safety.
+            origins[existing] = want;
+        } else if (!same_dir_key(it->second, want)) {
+            std::cout << "WORKSPACE OPEN: refused. The name " << nm
+                      << " is already the workspace for a DIFFERENT directory.\n"
+                      << "  open  : " << it->second << "\n"
+                      << "  asked : " << want << "\n"
+                      << "  Two directories cannot share one workspace name -- the name is the\n"
+                      << "  handle a person uses. Use WORKSPACE OPEN <dir> AS <name>.\n";
+            return false;
+        }
+        if (!xbase::workspace::set_current_handle(existing)) {
+            std::cout << "WORKSPACE OPEN: could not enter workspace " << nm << ".\n";
+            return false;
+        }
+        std::cout << "WORKSPACE OPEN: re-entering workspace " << existing
+                  << " (" << nm << "); adding only what is not already open.\n";
+        return true;
+    }
+
+    // Born durable, exactly as WORKSPACE NEW does it -- same helper, same
+    // order. A catalog that cannot be written is a refusal and not a warning,
+    // and it must fire BEFORE anything opens, so a refusal leaves the session
+    // exactly as it found it.
+    std::uint64_t wsId = 0;
+    bool adopted = false;
+    std::string derr;
+    if (!ws_memo::ensure_durable_workspace(nm, wsId, adopted, derr)) {
+        std::cout << (derr.empty()
+                        ? std::string("WORKSPACE OPEN: could not allocate a durable WS_ID.")
+                        : derr) << "\n";
+        std::cout << "  Nothing was opened.\n";
+        return false;
+    }
+    const std::uint64_t h = xbase::workspace::create(nm, 0);
+    if (h == 0) {
+        std::cout << "WORKSPACE OPEN: could not create workspace " << nm << ".\n";
+        return false;
+    }
+    if (!xbase::workspace::set_ws_id(h, wsId)) {
+        std::cout << "WORKSPACE OPEN: handle " << h << " would not take WS_ID " << wsId
+                  << ". The catalog row stands; the runtime handle does not know about it.\n";
+    }
+    if (!xbase::workspace::set_current_handle(h)) {
+        std::cout << "WORKSPACE OPEN: created workspace " << nm
+                  << " but could not enter it.\n";
+        return false;
+    }
+    workspace_origin_table()[h] = want;
+    std::cout << "WORKSPACE OPEN: workspace " << h << "  name " << nm
+              << "  WS_ID " << wsId << "  <- " << s8(dir) << "\n";
+    if (adopted) {
+        std::cout << "  ADOPTED the durable identity this name already holds in the "
+                     "catalog.\n";
+    }
+    return true;
+}
+
+// The rule moved to include/xbase/workspace_naming.hpp on 2026-08-26, so the
+// GUI's mirror of WORKSPACE OPEN can ask the same question and get the same
+// answer. R122 says src/gui does not link src/cli, so a rule left here would
+// have had to be written twice -- R5's shape. Same neutral-home precedent R124
+// used for the relation wire record; both targets already link xbase.
+static std::string workspace_name_for_directory(const fs::path& dir, std::string& err) {
+    std::string reason;
+    std::string nm = xbase::workspace::name_for_directory(dir, reason);
+    if (nm.empty()) err = "WORKSPACE OPEN: " + reason;
+    return nm;
+}
+
 void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
     string arg_line;
     std::getline(in, arg_line);
@@ -4620,6 +4948,10 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
                 return;
             }
 
+            // R128: the origin map is keyed by handle, so a retired handle's
+            // entry must go with it. A stale origin would make a later
+            // workspace of the same name refuse a directory it never saw.
+            workspace_origin_table().erase(h);
             if (!xbase::workspace::destroy(h)) {
                 // Every precondition destroy() checks was checked above, so
                 // reaching here means the two disagree. Say so loudly rather
@@ -4949,11 +5281,20 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
             bool want_recursive = false;
             bool want_fallback  = false;
             bool want_table     = false;
+            std::string as_name;                 // R128: AS <name> overrides the leaf
             IndexMode indexMode = IndexMode::Auto;
 
             for (size_t i = 1; i < toks.size(); ++i) {
                 const std::string& tok = toks[i];
 
+                if (ci_equal(tok, "as")) {
+                    if (i + 1 >= toks.size()) {
+                        std::cout << "WORKSPACE OPEN: AS needs a workspace name.\n";
+                        return;
+                    }
+                    as_name = toks[++i];
+                    continue;
+                }
                 if (parse_recursive_ci(tok)) { want_recursive = true; continue; }
                 if (parse_fallback_ci(tok))  { want_fallback  = true; continue; }
                 if (parse_table_ci(tok))     { want_table     = true; continue; }
@@ -4980,7 +5321,11 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
                 }
             } catch (...) {}
 
-            schema_close_all();
+            // R128. schema_close_all() STOOD HERE. Removing it is the ruling:
+            // "open should be additive or it will kill the other workspaces".
+            // Note what else it cost -- the close ran BEFORE the path was even
+            // resolved, so a mistyped directory closed the whole session and
+            // then reported Path not found. That is gone with it.
             spec = resolve_open_target(spec);
 
             auto mode_tag = [&]() -> const char* {
@@ -4993,6 +5338,19 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
             };
 
             if (fs::exists(spec) && fs::is_directory(spec)) {
+                // A DIRECTORY IS A WORKSPACE (R128). Entered BEFORE anything
+                // opens, because an area joins whichever workspace is current
+                // when it is OPENED -- the model is SWITCH-then-open, never
+                // open-then-assign, and this is that model obeyed rather than
+                // a second placement policy.
+                std::string nm = as_name;
+                if (nm.empty()) {
+                    std::string nerr;
+                    nm = workspace_name_for_directory(spec, nerr);
+                    if (nm.empty()) { std::cout << nerr << "\n"; return; }
+                }
+                if (!workspace_enter_for_open(nm, spec)) return;
+
                 std::cout << "WORKSPACE OPEN: scanning directory: " << s8(spec)
                           << (want_recursive ? " (recursive=stub)" : "")
                           << (mode_tag() ? (string(" [") + mode_tag() + "]") : "")
@@ -5057,9 +5415,9 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
                 std::cout << "  - Bare stems like WORKSPACE OPEN students try <DBF>/students.dbf.\n";
                 std::cout << "  - Without CNX/INX/CDX, indexes are chosen by DBF flavor: true x64/v128 CDX, classic VFP/v32 CNX.\n";
             }
-            // WORKSPACE OPEN performs a structural reset first (schema_close_all),
-            // then may open zero, one, or many tables. Refresh after the
-            // complete operation, not during partial opens.
+            // WORKSPACE OPEN is ADDITIVE since R128: it enters a workspace and
+            // then may open zero, one, or many tables into it, closing nothing.
+            // Refresh after the complete operation, not during partial opens.
             relations_boot::retry_pending_autoload();
             refresh_relations_if_enabled_safe();
 
@@ -5129,12 +5487,18 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
             std::string wsargs = trim_copy(rest_of_args);
             bool to_memo = false;
             bool as_minidb = false;
+            bool save_all = false;
             int  ver = 2;
             for (;;) {
                 const auto sp = wsargs.find_last_of(" \t");
                 if (sp == std::string::npos) break;
                 const std::string last = to_lower(trim_copy(wsargs.substr(sp + 1)));
                 if (last == "memo" && !to_memo)      { to_memo = true; wsargs = trim_copy(wsargs.substr(0, sp)); }
+                // R128. ALL is spelled exactly as CLOSE spells it -- bare is
+                // scoped, ALL is everywhere -- so nobody has to remember which
+                // way round each verb goes. It rides the same trailing-keyword
+                // loop, so it composes with MEMO / V3 / MINIDB in any order.
+                else if (last == "all" && !save_all) { save_all = true;  wsargs = trim_copy(wsargs.substr(0, sp)); }
                 else if (last == "v3" && ver == 2)   { ver = 3;        wsargs = trim_copy(wsargs.substr(0, sp)); }
                 else if (last == "minidb" && !as_minidb) {
                     // MINIDB implies v3: the container's posture must be
@@ -5143,15 +5507,22 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
                 }
                 else break;
             }
+            // R128: the scope is decided ONCE, announced, and then handed to
+            // whichever carrier runs. Announcing BEFORE the write is deliberate
+            // -- the count a reader most needs is what is about to be written,
+            // not what was.
+            const SaveScope scope = compute_save_scope(save_all);
+
             if (to_memo) {
                 if (wsargs.empty()) std::cout << "WORKSPACE SAVE: missing workspace name before MEMO.\n";
-                else ws_memo::save_to_memo(wsargs, ver, as_minidb);
+                else { report_save_scope(scope); ws_memo::save_to_memo(wsargs, ver, as_minidb, scope); }
             } else if (as_minidb) {
                 std::cout << "WORKSPACE SAVE: MINIDB is a memo carrier "
                              "(WORKSPACE SAVE <name> MEMO MINIDB).\n";
             } else {
                 fs::path out = wsargs.empty() ? fs::path("session") : fs::path(wsargs);
-                schema_save_to_file(out, ver);
+                report_save_scope(scope);
+                schema_save_to_file(out, ver, scope);
             }
 
         } else if (sub_command == "writeback") {

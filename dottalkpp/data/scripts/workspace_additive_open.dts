@@ -1,0 +1,95 @@
+* WORKSPACE ADDITIVE OPEN and SCOPED SAVE -- R128 (owner, 2026-08-26).
+* Explicit-run until soaked. Self-bootstrapping in SANDBOX, self-erasing.
+SET PATH DBF DBF/SANDBOX/WAOA
+ERASE WAOT1 CONFIRM
+CREATE X64 WAOT1 (ID N(4), MARK C(8))
+APPEND
+REPLACE ID WITH 1
+REPLACE MARK WITH "AAA"
+CLOSE
+SET PATH DBF DBF/SANDBOX/WAOB
+ERASE WAOT2 CONFIRM
+CREATE X64 WAOT2 (ID N(4), MARK C(8))
+APPEND
+REPLACE ID WITH 1
+REPLACE MARK WITH "BBB"
+CLOSE
+SET PATH DBF DBF/SANDBOX/WAOC
+ERASE WAOT3 CONFIRM
+CREATE X64 WAOT3 (ID N(4), MARK C(8))
+APPEND
+REPLACE ID WITH 1
+REPLACE MARK WITH "CCC"
+CLOSE
+WORKSPACE CLOSE ALL
+* GUARDS. Each fixture read ON ITS OWN, before any of them is opened as a
+* workspace. Without these an arm reading the wrong MARK cannot tell a broken
+* verb from a table that never carried the value.
+SET PATH DBF DBF/SANDBOX/WAOA
+USE WAOT1
+? "WAO_G0_fixture_a_reads_AAA:" + (ALLTRIM(MARK) = "AAA")
+CLOSE
+SET PATH DBF DBF/SANDBOX/WAOB
+USE WAOT2
+? "WAO_G1_fixture_b_reads_BBB:" + (ALLTRIM(MARK) = "BBB")
+CLOSE
+SET PATH DBF DBF/SANDBOX/WAOC
+USE WAOT3
+? "WAO_G2_fixture_c_reads_CCC:" + (ALLTRIM(MARK) = "CCC")
+CLOSE
+WORKSPACE CLOSE ALL
+SET PATH DBF DBF
+* T1/T2 -- ADDITIVE OPEN. T1 asks the answerable question: after opening WAOA
+* and then WAOB, does AREA 0 STILL HOLD WAOA'S TABLE. Under the replacing OPEN
+* it holds WAOB's, so this reads .F. rather than printing nothing.
+WORKSPACE OPEN DBF/SANDBOX/WAOA
+WORKSPACE OPEN DBF/SANDBOX/WAOB
+SELECT 0
+? "WAO_T1_first_workspace_survived_the_second_open:" + (ALLTRIM(MARK) = "AAA")
+SELECT 1
+? "WAO_T2_second_workspace_landed_beside_it:" + (ALLTRIM(MARK) = "BBB")
+* T3/T4 -- RE-ENTRY adds only what is not already open. T3 is green under BOTH
+* implementations and is NOT a discriminator; it is here because a re-entry
+* that disturbed the surviving area would show up nowhere else.
+WORKSPACE OPEN DBF/SANDBOX/WAOA
+SELECT 0
+? "WAO_T3_reentry_left_the_open_table_alone:" + (ALLTRIM(MARK) = "AAA")
+SELECT 1
+? "WAO_T4_reentry_spared_the_other_workspace:" + (ALLTRIM(MARK) = "BBB")
+* T5 -- SCOPED SAVE, asserted by WHERE THE NEXT AREA LANDS rather than by
+* counting what is absent. IT BUILDS ITS TWO WORKSPACES WITH NEW AND ADD, NOT
+* WITH OPEN, AND THAT IS THE WHOLE POINT: measured 2026-08-26, a first cut that
+* used OPEN read GREEN on both binaries, because under the replacing OPEN the
+* second one closes the first and there is never a second populated workspace
+* to save from. The additive defect was MASKING the save defect -- which is
+* also the reason the save defect was rarely reached in the field. NEW and ADD
+* are untouched by R128 and additive on both builds, so this arm tests the
+* serializer and nothing else. WAOX is saved while WAOY is also populated; the
+* posture should carry ONE area, so the reload leaves slot 1 free and the ADD
+* lands there. Under the unscoped sweep the posture carries BOTH, the reload
+* fills 0 and 1, the ADD lands at 2, and slot 1 reads BBB.
+WORKSPACE CLOSE ALL
+WORKSPACE NEW WAOX
+WORKSPACE SWITCH WAOX
+WORKSPACE ADD DBF/SANDBOX/WAOA/WAOT1.dbf
+WORKSPACE NEW WAOY
+WORKSPACE SWITCH WAOY
+WORKSPACE ADD DBF/SANDBOX/WAOB/WAOT2.dbf
+WORKSPACE SWITCH WAOX
+WORKSPACE SAVE waoscope MEMO
+WORKSPACE CLOSE ALL
+WORKSPACE LOAD waoscope MEMO
+WORKSPACE ADD DBF/SANDBOX/WAOC/WAOT3.dbf
+SELECT 1
+? "WAO_T5_scoped_save_carried_one_workspace:" + (ALLTRIM(MARK) = "CCC")
+WORKSPACE CLOSE ALL
+WORKSPACE DESTROY WAOA
+WORKSPACE DESTROY WAOB
+WORKSPACE DESTROY WAOX
+WORKSPACE DESTROY WAOY
+SET PATH DBF DBF/SANDBOX/WAOA
+ERASE WAOT1 CONFIRM
+SET PATH DBF DBF/SANDBOX/WAOB
+ERASE WAOT2 CONFIRM
+SET PATH DBF DBF/SANDBOX/WAOC
+ERASE WAOT3 CONFIRM
