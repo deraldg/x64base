@@ -54,6 +54,10 @@ def resolve_under(repo: Path, relative: str) -> Path:
     return path
 
 
+def resolve_argument(repo: Path, path: Path) -> Path:
+    return path.resolve() if path.is_absolute() else (repo / path).resolve()
+
+
 def inventory(root: Path, repo: Path) -> list[dict[str, Any]]:
     return [
         {
@@ -220,8 +224,11 @@ def apply_plan(
     process_probe: Callable[[], list[str]] = default_process_probe,
 ) -> dict[str, Any]:
     repo = repo.resolve()
-    plan_path = plan_path.resolve()
-    authorization_path = authorization_path.resolve()
+    plan_path = resolve_argument(repo, plan_path)
+    authorization_path = resolve_argument(repo, authorization_path)
+    backup_dir = resolve_argument(repo, backup_dir)
+    transcript_path = resolve_argument(repo, transcript_path)
+    execution_path = resolve_argument(repo, execution_path)
     plan = load_json(plan_path)
     auth = load_json(authorization_path)
     if confirm != CONFIRM_APPLY:
@@ -335,6 +342,8 @@ def rollback_execution(
     observed_at_utc: str,
 ) -> dict[str, Any]:
     repo = repo.resolve()
+    execution_path = resolve_argument(repo, execution_path)
+    record_out = resolve_argument(repo, record_out)
     execution = load_json(execution_path)
     if confirm != CONFIRM_ROLLBACK:
         raise ValueError("rollback confirmation phrase mismatch")

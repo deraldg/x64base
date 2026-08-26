@@ -127,6 +127,34 @@ class GuardedHelpRefreshTests(unittest.TestCase):
                     "2026-08-26T00:02:00Z",
                 )
 
+    def test_relative_output_paths_resolve_from_repo(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            plan_path, auth_path = self.prepare(root)
+            help_root = root / "dottalkpp" / "data" / "help"
+            transcript = "\n".join(
+                [
+                    "CMDHELP LEGACY wrote: 1 command rows, 1 arg rows",
+                    "Usage contracts mined directly: 1 row(s) from 1 file(s)",
+                    "OK no structural issues found",
+                    "DOCFLUSH-E2-REFRESH-END",
+                ]
+            )
+
+            def runner(_repo: Path, _script: Path) -> subprocess.CompletedProcess[str]:
+                (help_root / "HELP_TOPIC.dbf").write_bytes(b"after-topic")
+                return subprocess.CompletedProcess([], 0, transcript)
+
+            result = MODULE.apply_plan(
+                root, Path("plan.json"), Path("auth.json"), Path("backup"),
+                Path("out.txt"), Path("exec.json"), MODULE.CONFIRM_APPLY,
+                "2026-08-26T00:01:00Z", runner=runner,
+                semantic_validator=lambda _repo: (True, "clean"), process_probe=lambda: [],
+            )
+            self.assertEqual("APPLIED", result["status"])
+            self.assertTrue((root / "out.txt").is_file())
+            self.assertTrue((root / "exec.json").is_file())
+
 
 if __name__ == "__main__":
     unittest.main()

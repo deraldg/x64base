@@ -1,0 +1,17 @@
+{
+  "authorization_path": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260825-001/help_refresh_e2_v1/HELP_REFRESH_APPLY_AUTHORIZATION.json",
+  "authorization_sha256": "DFE3DD0A0403D1A868074A6E89FADB60D1786B194889B0BD0E19060FDAEC35D2",
+  "backup_dir": "D:\\code\\ccode\\dottalkpp\\data\\help.bak-20260826-guarded-e2-001",
+  "findings": [
+    "APPLY_ERROR:'docs\\\\maintenance\\\\lanes\\\\full_stack_documentation\\\\runs\\\\DOCFLUSH-20260825-001\\\\help_refresh_e2_v1\\\\HELP_REFRESH_E2_TRANSCRIPT_V1.txt' is not in the subpath of 'D:\\\\code\\\\ccode'"
+  ],
+  "observed_at_utc": "2026-08-26T11:58:48Z",
+  "plan_path": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260825-001/help_refresh_e2_v1/help_refresh_plan_v1.json",
+  "plan_sha256": "253FE9191A871A61D2B02009C4D67D4D12D25451A738BB6C69294C9426CDDCE2",
+  "protected_file_count": 39,
+  "publication_authority_claimed": 0,
+  "rollback_performed": 1,
+  "run_id": "DOCFLUSH-20260825-001-E2-001",
+  "schema": "dottalk.fullstack.guarded_help_refresh_execution.v1",
+  "status": "FAILED_ROLLED_BACK"
+}

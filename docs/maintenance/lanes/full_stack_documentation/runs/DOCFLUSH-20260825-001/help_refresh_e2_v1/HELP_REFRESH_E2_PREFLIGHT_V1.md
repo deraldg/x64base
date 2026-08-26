@@ -20,7 +20,7 @@ reflection/readback checks pass.
 - Command script SHA-256:
   `374AAF10F5088C93F774EB9B07206A3B4BB38E7403D55BE65F38F9E1464DDF61`
 - Apply control SHA-256:
-  `C98E55708E0D7C417E3518C10FB23CE876914FFC0FA2A6B278FF43981743D96E`
+  `646C44D60F5DAA2B072FB9E91CA615AC335A60069A069E945F9F93D4242374B8`
 - Protected before-set: 39 recursively inventoried files.
 - Command order: legacy build, current build, runtime reflection/readback.
 
@@ -46,3 +46,12 @@ failure after backup restores the complete recursive before-set.
   Before apply, delete only this package and control to undo. After apply, use
   the guarded rollback subcommand against the execution record and retained
   backup.
+
+## Attempt 1 correction
+
+Attempt 1 completed the runtime command sequence, then the evidence writer
+rejected a repository-relative transcript path. The guard rolled the complete
+39-file store back with zero hash mismatches. The only control change resolves
+user-supplied paths from the declared repository root; a focused regression
+test covers relative output paths. Attempt 1 transcript and failed execution
+record remain retained as evidence.
