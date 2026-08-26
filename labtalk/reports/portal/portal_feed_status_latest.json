@@ -1,6 +1,6 @@
 {
   "schema": "dottalk.portal.status.v1",
-  "generated_at_utc": "2026-08-26T04:29:19Z",
+  "generated_at_utc": "2026-08-26T11:28:49Z",
   "mode": "development_advisory",
   "current_documentation_push": {
     "run_id": "DOCFLUSH-20260825-001",
@@ -12,8 +12,8 @@
     "authority_path": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260825-001/GATE7_CLOSEOUT_V1.md",
     "next_process": "publication_ascent",
     "next_entry_state": "partial",
-    "first_open_entry": "E5",
-    "first_open_entry_summary": "canonical harvest remains older than the current candidate harvest"
+    "first_open_entry": "E2",
+    "first_open_entry_summary": "HELP store predates the current engine; rebuild and reflection readback required"
   },
   "summary": {
     "feeds": 6,

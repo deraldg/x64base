@@ -7,7 +7,8 @@ Owner: `member.derald`
 Steward: `member.ai.codex`
 
 Runs: `CODEX-20260826-001`, `CODEX-20260826-002`, `CODEX-20260826-003`,
-`CODEX-20260826-004`, `CODEX-20260826-005`, `CODEX-20260826-006`
+`CODEX-20260826-004`, `CODEX-20260826-005`, `CODEX-20260826-006`,
+`CODEX-20260826-007`, `CODEX-20260826-008`
 
 ## Authorization
 
@@ -64,6 +65,7 @@ renumbered.
 | M11 | Full-stack entry and contract-audit hardening | PASS -- maintained run pointer plus helper-aware usage and dotref advisory |
 | M12 | E5 semantic freshness gate | PASS -- report-only row-and-field comparison distinguishes current candidate from stale canonical harvest |
 | M13 | Canonical harvest promotion preflight | PASS -- exact seven-row replacement plan, eight verified no-ops, hash-bound ledger, backup and rollback contract, apply disabled |
+| M14 | Authorized canonical harvest apply | PASS -- seven hash-bound replacements, byte-preserved local backup, semantic E5 and manualgen readback, zero rollback findings |
 
 ## Coordination finding
 
@@ -217,3 +219,52 @@ Good Neighbor note for the full-stack documentation lane:
   observation timestamp, and compare all three package files byte-for-byte;
   remove the planner, test, and package directory to undo this report-only
   slice. No canonical rollback is needed because no canonical bytes changed.
+
+## Authorized canonical harvest apply -- CODEX-20260826-007/008
+
+The maintainer's instruction to begin was transcribed into a new authorization
+record bound to plan SHA-256
+`82DE396E110C6361B662FDD43C7FDE677692607DC2C5B3B0EBFC17A331E42AA0`,
+ledger SHA-256
+`E5B6A3D0E0918268AF9197A694E1BDF79A00EC872940ADA8089928A2ACDF5CA2`,
+and exactly seven mutation rows. The guarded apply/rollback implementation was
+committed before execution and proved successful apply, missing-authorization
+refusal, injected mid-write rollback, and manual after-hash-guarded rollback.
+
+The authorized apply then replaced the six changed HELP CSVs and their export
+manifest. Eight META/no-change files were not written. All seven before and
+staged-after byte sets are retained in the repository's deliberately ignored
+manualgen backup area, with hashes repeated in the tracked execution record.
+The canonical CSVs are also deliberately ignored regenerable state under
+`.gitignore`; durability therefore comes from the tracked producer, plan,
+authorization, ledger, and execution record rather than forcing generated CSVs
+into history.
+
+Independent readback:
+
+- canonical E5 semantic audit: PASS, 14/14 tables, zero manifest findings;
+- seven target after hashes: all match the authorized ledger;
+- seven backup before hashes: all match the authorized ledger;
+- manualgen inventory: 14/14 harvest files;
+- manualgen validation: zero FAIL, REVIEW, and boundary-fail rows;
+- rollback performed: no.
+
+The wider Phase 8 entry remains closed. Fresh measurement moved the maintained
+first-open pointer to E2 because the HELP store predates the current engine. E6
+also fails: the website catalog is missing APPGUI, BUILD, GUI, and SMTP, carries
+two names absent from the registry, and has snapshot-count drift. Neither HELP
+rebuild nor website mutation was authorized by this E5 apply.
+
+Good Neighbor note for the full-stack documentation lane:
+
+- **WHAT CHANGED:** authorized and applied the exact seven-row canonical harvest
+  plan; added guarded apply/rollback controls and reconciled the current pointer
+  to the earlier E2 blocker.
+- **WHOSE AREA:** AIF-068 full-stack documentation and manualgen harvest;
+  intersecting AIF-132 Portal current-state routing.
+- **AUTHORIZATION:** `member.derald` instruction to begin, bound in the tracked
+  authorization record to the exact plan, ledger, and row count.
+- **VERIFY OR UNDO:** run the semantic E5 audit against canonical `harvested/`
+  and manualgen validate. Before commit, run the tool's `rollback` command
+  against the tracked execution record and local backup; after commit, revert
+  the exact canonical-apply commit. No website or public rollback is required.

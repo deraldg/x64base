@@ -1,0 +1,75 @@
+{
+  "schema": "dottalk.fullstack.help_meta_harvest_apply.v1",
+  "observed_at_utc": "2026-08-26T11:27:28Z",
+  "run_id": "DOCFLUSH-20260825-001-E5-PLAN-001",
+  "plan_manifest": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260825-001/manualgen_phase/harvest_promotion_preflight_v1/help_meta_harvest_promotion_plan.json",
+  "plan_manifest_sha256": "82DE396E110C6361B662FDD43C7FDE677692607DC2C5B3B0EBFC17A331E42AA0",
+  "mutation_ledger": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260825-001/manualgen_phase/harvest_promotion_preflight_v1/help_meta_harvest_mutation_ledger.json",
+  "mutation_ledger_sha256": "E5B6A3D0E0918268AF9197A694E1BDF79A00EC872940ADA8089928A2ACDF5CA2",
+  "authorization_record": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260825-001/manualgen_phase/harvest_promotion_preflight_v1/CANONICAL_HARVEST_APPLY_AUTHORIZATION.md",
+  "authorization_sha256": "C269D5AA09F25FDEC97377216E81595FA239513B993B2C334DE0B80A5232B6D7",
+  "status": "APPLIED",
+  "findings": [],
+  "canonical_files_mutated": 7,
+  "rollback_performed": 0,
+  "backup_retention": "local_ignored",
+  "rows": [
+    {
+      "ordinal": 1,
+      "target": "docs/manuals/developer/manualgen/harvested/HELP_CMD_ARGS.csv",
+      "before_sha256": "D52AEF0A444BA87A262886FF1EC4B43343B44102C6E4394ED78FDE38D83B9829",
+      "after_sha256": "4E48A2E5DD63C4EF495368C2C133A589EC178A7C1B1BF2A60B359F471847469B",
+      "backup": "docs/manuals/developer/manualgen/backups/help_meta_harvest_DOCFLUSH-20260825-001-E5-PLAN-001/before/HELP_CMD_ARGS.csv",
+      "staged_after": "docs/manuals/developer/manualgen/backups/help_meta_harvest_DOCFLUSH-20260825-001-E5-PLAN-001/staged_after/HELP_CMD_ARGS.csv"
+    },
+    {
+      "ordinal": 2,
+      "target": "docs/manuals/developer/manualgen/harvested/HELP_COMMANDS.csv",
+      "before_sha256": "0C2EBC1DFFA07A2BC15B64891ADF076F97891CFBA12CB89FCBAF33C77B4DE93C",
+      "after_sha256": "166D55535BB9450BE746D2D1511659F464E2A841F21C84AF6499F2835FBC09B0",
+      "backup": "docs/manuals/developer/manualgen/backups/help_meta_harvest_DOCFLUSH-20260825-001-E5-PLAN-001/before/HELP_COMMANDS.csv",
+      "staged_after": "docs/manuals/developer/manualgen/backups/help_meta_harvest_DOCFLUSH-20260825-001-E5-PLAN-001/staged_after/HELP_COMMANDS.csv"
+    },
+    {
+      "ordinal": 3,
+      "target": "docs/manuals/developer/manualgen/harvested/HELP_HELP_ARTIFACTS.csv",
+      "before_sha256": "B6AA3C38C73759E8AE031709A80BCFCD44A061C435926A93D6DADFA449943D06",
+      "after_sha256": "95E28EA565D75C935F10F44BD0FA17C4CE956A9177D4D7CF767223C61B183DE5",
+      "backup": "docs/manuals/developer/manualgen/backups/help_meta_harvest_DOCFLUSH-20260825-001-E5-PLAN-001/before/HELP_HELP_ARTIFACTS.csv",
+      "staged_after": "docs/manuals/developer/manualgen/backups/help_meta_harvest_DOCFLUSH-20260825-001-E5-PLAN-001/staged_after/HELP_HELP_ARTIFACTS.csv"
+    },
+    {
+      "ordinal": 4,
+      "target": "docs/manuals/developer/manualgen/harvested/HELP_HELP_LINE.csv",
+      "before_sha256": "433E8ABC44C99614F072CA12C09E4218A5FBFECE3A0CE4655A2CDB46F84016DB",
+      "after_sha256": "82A56D9ED06F4E65B6596B9BD735F457BE9919C29CEB2BF0AF284F4D9415F210",
+      "backup": "docs/manuals/developer/manualgen/backups/help_meta_harvest_DOCFLUSH-20260825-001-E5-PLAN-001/before/HELP_HELP_LINE.csv",
+      "staged_after": "docs/manuals/developer/manualgen/backups/help_meta_harvest_DOCFLUSH-20260825-001-E5-PLAN-001/staged_after/HELP_HELP_LINE.csv"
+    },
+    {
+      "ordinal": 5,
+      "target": "docs/manuals/developer/manualgen/harvested/HELP_HELP_SECTION.csv",
+      "before_sha256": "19FA7B57B237FF45E677FA7B16712819A9ED86DDC9C669C2DD71A19F115172F3",
+      "after_sha256": "3579C55004EFDFB96462072DF58941E123AF32AA12DD87994E28D69A6BF1798E",
+      "backup": "docs/manuals/developer/manualgen/backups/help_meta_harvest_DOCFLUSH-20260825-001-E5-PLAN-001/before/HELP_HELP_SECTION.csv",
+      "staged_after": "docs/manuals/developer/manualgen/backups/help_meta_harvest_DOCFLUSH-20260825-001-E5-PLAN-001/staged_after/HELP_HELP_SECTION.csv"
+    },
+    {
+      "ordinal": 6,
+      "target": "docs/manuals/developer/manualgen/harvested/HELP_HELP_TOPIC.csv",
+      "before_sha256": "7EE030D8E5870E035910D1A34B09C0B6B0C0D71D554C0572AD2CAAFE7F5CF39A",
+      "after_sha256": "D3F40039AC5D20AC9989DB1B43C9D071C0325691D9EF1AEC2F5E7D9FD1FE69BF",
+      "backup": "docs/manuals/developer/manualgen/backups/help_meta_harvest_DOCFLUSH-20260825-001-E5-PLAN-001/before/HELP_HELP_TOPIC.csv",
+      "staged_after": "docs/manuals/developer/manualgen/backups/help_meta_harvest_DOCFLUSH-20260825-001-E5-PLAN-001/staged_after/HELP_HELP_TOPIC.csv"
+    },
+    {
+      "ordinal": 7,
+      "target": "docs/manuals/developer/manualgen/harvested/HELP_META_EXPORT_MANIFEST_v0.csv",
+      "before_sha256": "E5C1D7A76B8CAEFB59C62BAAAB32CC8CD89482E38B5464A13F000813E4A2E2D6",
+      "after_sha256": "91B3F4A242FE274851F1B64E490FC396FBF90BE792C47151CCEB001440E3B688",
+      "backup": "docs/manuals/developer/manualgen/backups/help_meta_harvest_DOCFLUSH-20260825-001-E5-PLAN-001/before/HELP_META_EXPORT_MANIFEST_v0.csv",
+      "staged_after": "docs/manuals/developer/manualgen/backups/help_meta_harvest_DOCFLUSH-20260825-001-E5-PLAN-001/staged_after/HELP_META_EXPORT_MANIFEST_v0.csv"
+    }
+  ],
+  "canonical_freshness_status": "PASS"
+}
