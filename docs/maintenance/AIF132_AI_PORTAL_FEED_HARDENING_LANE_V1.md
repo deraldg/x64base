@@ -70,6 +70,7 @@ renumbered.
 | M13 | Canonical harvest promotion preflight | PASS -- exact seven-row replacement plan, eight verified no-ops, hash-bound ledger, backup and rollback contract, apply disabled |
 | M14 | Authorized canonical harvest apply | PASS -- seven hash-bound replacements, byte-preserved local backup, semantic E5 and manualgen readback, zero rollback findings |
 | M15 | Guarded E2 HELP refresh | PASS -- complete 39-file backup, legacy-then-current runtime rebuild, reflection PASS, semantic join clean, and failed-attempt rollback proven |
+| M16 | Post-E2 canonical harvest refresh | PASS -- six hash-bound replacements, nine verified no-ops, semantic 14/14, and explicit Python 3.12 manualgen validation |
 
 ## Coordination finding
 
@@ -331,3 +332,29 @@ Good Neighbor note for the protected HELP lane:
   the guarded rollback command against `HELP_REFRESH_E2_EXECUTION_V2.json` and
   the retained `help.bak-20260826-guarded-e2-002` before later HELP changes, or
   revert the exact E2 data/evidence commit after it lands.
+
+## Post-E2 canonical harvest refresh -- CODEX-20260826-010
+
+E2 correctly invalidated five canonical HELP CSVs and five manifest row counts.
+The existing E5 chain exported a 63,217-row candidate, proved it current across
+14/14 HELP and META tables, planned six replacements and nine byte-identical
+no-ops, and applied the exact authorized ledger. Canonical semantic readback is
+14/14 with zero manifest findings and no rollback.
+
+The first manualgen validation was intentionally retained as a process finding:
+it used system Python 3.11 and implicit workspace defaults, producing one FAIL
+and two REVIEW rows. The corrected command used `.venv312` and explicitly named
+both assembly and harvest workspaces; inventory found 14/14 harvest files and
+validation returned zero FAIL, REVIEW, and boundary-fail rows.
+
+Good Neighbor note for the manualgen harvest lane:
+
+- **WHAT CHANGED:** refreshed the six canonical HELP-derived harvest artifacts
+  after E2 and corrected validation to the required Python/workspace contract.
+- **WHOSE AREA:** AIF-068 manualgen harvest, intersecting AIF-132 current-run
+  projection and SelfDoc `META-025`.
+- **AUTHORIZATION:** maintainer instruction to continue through the next open
+  entry, bound to the post-E2 plan and six-row ledger.
+- **VERIFY OR UNDO:** run the E5 semantic audit and explicit `.venv312`
+  manualgen validation; before later harvest changes, use the guarded rollback
+  command against the retained post-E2 execution record and backup.
