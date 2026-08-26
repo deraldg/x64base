@@ -73,6 +73,7 @@ renumbered.
 | M16 | Post-E2 canonical harvest refresh | PASS -- six hash-bound replacements, nine verified no-ops, semantic 14/14, and explicit Python 3.12 manualgen validation |
 | M17 | Website command catalog refresh | PASS -- restarted E0 audit, 239/239 parsed registry rows, zero fallback, alias-aware extraction, and local production build; no publication |
 | M18 | Website matrix-wide reconciliation | PASS LOCAL -- all 146 MDX routes classified exactly once, generated catalogs and diagram refreshed, maintained-current surfaces reconciled, and dirty/shared authorities explicitly deferred; owner rendering signoff and publication remain open |
+| M19 | Phase 8 entry preflight | FAIL CLOSED -- owner entry authorization received, but E2 was invalidated because canonical HELP predates the current executable; no source or public mutation |
 
 ## Coordination finding
 
@@ -434,3 +435,17 @@ Good Neighbor note for the matrix-wide website lane:
 - **VERIFY OR UNDO:** run the 69 full-stack tests, manifest validator, four
   catalog checks, and local site production build; revert only the exact site
   and ccode reconciliation commits to undo. No public rollback is required.
+
+## Phase 8 entry preflight -- CODEX-20260826-012
+
+Owner authorization entered the publication-ascent check, but the governed
+preflight failed at E2 before any push or deployment. Canonical HELP is older
+than the current engine executable, and that executable is bound to concurrent
+tracked work. Development HEAD also advanced to the AIF-133 workspace/FIELDMGR
+commit during the check. Using the existing binary to rebuild HELP would absorb
+another lane rather than merely publish the reviewed documentation candidate.
+
+The maintained pointer therefore moves from E8 back to E2. The exact evidence
+and re-entry sequence are recorded in
+`publication_phase/PHASE8_ENTRY_PREFLIGHT_2026-08-26.md`. Source push, GitHub
+Pages deployment, OpenAI Sites deployment, and live closeout all remain zero.

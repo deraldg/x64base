@@ -8,11 +8,11 @@ Generated from the typed feed, assertion, and current-run registries. Do not han
 | --- | --- |
 | run_id | `DOCFLUSH-20260825-001` |
 | canonical_process | `development_closeout` |
-| state | `closed_review_needed` |
+| state | `closed_publication_entry_failed` |
 | publication_state | `not_entered` |
 | next_process | `publication_ascent` |
-| next_entry_state | `partial` |
-| first_open_entry | `E8` |
+| next_entry_state | `blocked` |
+| first_open_entry | `E2` |
 
 ## Summary
 
