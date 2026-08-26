@@ -1,0 +1,86 @@
+[
+  {
+    "ordinal": 1,
+    "action": "replace",
+    "target": "docs/manuals/developer/manualgen/harvested/HELP_CMD_ARGS.csv",
+    "candidate": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260825-001/manualgen_phase/harvest_candidate_v1/HELP_CMD_ARGS.csv",
+    "before_sha256": "D52AEF0A444BA87A262886FF1EC4B43343B44102C6E4394ED78FDE38D83B9829",
+    "after_sha256": "4E48A2E5DD63C4EF495368C2C133A589EC178A7C1B1BF2A60B359F471847469B",
+    "before_bytes": 81374,
+    "after_bytes": 81688,
+    "backup_required": 1,
+    "rollback_guard_sha256": "4E48A2E5DD63C4EF495368C2C133A589EC178A7C1B1BF2A60B359F471847469B"
+  },
+  {
+    "ordinal": 2,
+    "action": "replace",
+    "target": "docs/manuals/developer/manualgen/harvested/HELP_COMMANDS.csv",
+    "candidate": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260825-001/manualgen_phase/harvest_candidate_v1/HELP_COMMANDS.csv",
+    "before_sha256": "0C2EBC1DFFA07A2BC15B64891ADF076F97891CFBA12CB89FCBAF33C77B4DE93C",
+    "after_sha256": "166D55535BB9450BE746D2D1511659F464E2A841F21C84AF6499F2835FBC09B0",
+    "before_bytes": 14944,
+    "after_bytes": 15002,
+    "backup_required": 1,
+    "rollback_guard_sha256": "166D55535BB9450BE746D2D1511659F464E2A841F21C84AF6499F2835FBC09B0"
+  },
+  {
+    "ordinal": 3,
+    "action": "replace",
+    "target": "docs/manuals/developer/manualgen/harvested/HELP_HELP_ARTIFACTS.csv",
+    "candidate": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260825-001/manualgen_phase/harvest_candidate_v1/HELP_HELP_ARTIFACTS.csv",
+    "before_sha256": "B6AA3C38C73759E8AE031709A80BCFCD44A061C435926A93D6DADFA449943D06",
+    "after_sha256": "95E28EA565D75C935F10F44BD0FA17C4CE956A9177D4D7CF767223C61B183DE5",
+    "before_bytes": 1462491,
+    "after_bytes": 1463010,
+    "backup_required": 1,
+    "rollback_guard_sha256": "95E28EA565D75C935F10F44BD0FA17C4CE956A9177D4D7CF767223C61B183DE5"
+  },
+  {
+    "ordinal": 4,
+    "action": "replace",
+    "target": "docs/manuals/developer/manualgen/harvested/HELP_HELP_LINE.csv",
+    "candidate": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260825-001/manualgen_phase/harvest_candidate_v1/HELP_HELP_LINE.csv",
+    "before_sha256": "433E8ABC44C99614F072CA12C09E4218A5FBFECE3A0CE4655A2CDB46F84016DB",
+    "after_sha256": "82A56D9ED06F4E65B6596B9BD735F457BE9919C29CEB2BF0AF284F4D9415F210",
+    "before_bytes": 4164489,
+    "after_bytes": 4165443,
+    "backup_required": 1,
+    "rollback_guard_sha256": "82A56D9ED06F4E65B6596B9BD735F457BE9919C29CEB2BF0AF284F4D9415F210"
+  },
+  {
+    "ordinal": 5,
+    "action": "replace",
+    "target": "docs/manuals/developer/manualgen/harvested/HELP_HELP_SECTION.csv",
+    "candidate": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260825-001/manualgen_phase/harvest_candidate_v1/HELP_HELP_SECTION.csv",
+    "before_sha256": "19FA7B57B237FF45E677FA7B16712819A9ED86DDC9C669C2DD71A19F115172F3",
+    "after_sha256": "3579C55004EFDFB96462072DF58941E123AF32AA12DD87994E28D69A6BF1798E",
+    "before_bytes": 1219426,
+    "after_bytes": 1219828,
+    "backup_required": 1,
+    "rollback_guard_sha256": "3579C55004EFDFB96462072DF58941E123AF32AA12DD87994E28D69A6BF1798E"
+  },
+  {
+    "ordinal": 6,
+    "action": "replace",
+    "target": "docs/manuals/developer/manualgen/harvested/HELP_HELP_TOPIC.csv",
+    "candidate": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260825-001/manualgen_phase/harvest_candidate_v1/HELP_HELP_TOPIC.csv",
+    "before_sha256": "7EE030D8E5870E035910D1A34B09C0B6B0C0D71D554C0572AD2CAAFE7F5CF39A",
+    "after_sha256": "D3F40039AC5D20AC9989DB1B43C9D071C0325691D9EF1AEC2F5E7D9FD1FE69BF",
+    "before_bytes": 100750,
+    "after_bytes": 101238,
+    "backup_required": 1,
+    "rollback_guard_sha256": "D3F40039AC5D20AC9989DB1B43C9D071C0325691D9EF1AEC2F5E7D9FD1FE69BF"
+  },
+  {
+    "ordinal": 7,
+    "action": "replace",
+    "target": "docs/manuals/developer/manualgen/harvested/HELP_META_EXPORT_MANIFEST_v0.csv",
+    "candidate": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260825-001/manualgen_phase/harvest_candidate_v1/HELP_META_EXPORT_MANIFEST_v0.csv",
+    "before_sha256": "E5C1D7A76B8CAEFB59C62BAAAB32CC8CD89482E38B5464A13F000813E4A2E2D6",
+    "after_sha256": "91B3F4A242FE274851F1B64E490FC396FBF90BE792C47151CCEB001440E3B688",
+    "before_bytes": 1192,
+    "after_bytes": 1192,
+    "backup_required": 1,
+    "rollback_guard_sha256": "91B3F4A242FE274851F1B64E490FC396FBF90BE792C47151CCEB001440E3B688"
+  }
+]

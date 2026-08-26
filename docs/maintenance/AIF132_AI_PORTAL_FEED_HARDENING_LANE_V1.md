@@ -7,7 +7,7 @@ Owner: `member.derald`
 Steward: `member.ai.codex`
 
 Runs: `CODEX-20260826-001`, `CODEX-20260826-002`, `CODEX-20260826-003`,
-`CODEX-20260826-004`, `CODEX-20260826-005`
+`CODEX-20260826-004`, `CODEX-20260826-005`, `CODEX-20260826-006`
 
 ## Authorization
 
@@ -35,7 +35,8 @@ development closeout with publication.
 
 - `appgui`, multi-workplaces, and `minidb`.
 - HELP, metadata, manual, DBF, CDX, or LMDB mutation.
-- Editing the active documentation-push run.
+- Mutating active documentation-push state or canonical outputs. Report-only
+  evidence packages may be retained under the owning run.
 - `C:\x64base`, GitHub `main`, website deployment, or public publication.
 - Hard-gate promotion before an advisory observation cycle and owner ruling.
 
@@ -62,6 +63,7 @@ renumbered.
 | M10 | Professional system model | PASS -- normalized hierarchy, schema catalog, PFD, and schema crosswalk DFD |
 | M11 | Full-stack entry and contract-audit hardening | PASS -- maintained run pointer plus helper-aware usage and dotref advisory |
 | M12 | E5 semantic freshness gate | PASS -- report-only row-and-field comparison distinguishes current candidate from stale canonical harvest |
+| M13 | Canonical harvest promotion preflight | PASS -- exact seven-row replacement plan, eight verified no-ops, hash-bound ledger, backup and rollback contract, apply disabled |
 
 ## Coordination finding
 
@@ -183,3 +185,35 @@ Good Neighbor note for the full-stack documentation lane:
   against the current run candidate and once against
   `docs/manuals/developer/manualgen/harvested`; revert only the four paths in
   this slice to remove the control. The audit performs no data mutation.
+
+## Canonical harvest promotion preflight -- CODEX-20260826-006
+
+The report-only planner converts the E5 finding into an exact selective mutation
+scope. It binds all 15 candidate and canonical files by SHA-256, classifies
+seven byte-changing replacements and eight byte-identical no-ops, and emits a
+seven-row mutation ledger. The plan names a future byte-preserved backup root,
+requires atomic replacement and complete rollback on any failure, and requires
+the semantic E5 audit as post-apply readback.
+
+Current package status is `PASS_PLAN_ONLY`: `apply_available=0`,
+`mutation_authorized=0`, `canonical_files_mutated=0`, and
+`publication_authority_claimed=0`. The plan manifest SHA-256 is
+`82DE396E110C6361B662FDD43C7FDE677692607DC2C5B3B0EBFC17A331E42AA0`;
+the mutation ledger SHA-256 is
+`E5B6A3D0E0918268AF9197A694E1BDF79A00EC872940ADA8089928A2ACDF5CA2`.
+The older 2026-07-18 manual authorization does not authorize this harvest plan;
+a new owner authorization must bind these exact artifacts before any apply tool
+or canonical write is permitted.
+
+Good Neighbor note for the full-stack documentation lane:
+
+- **WHAT CHANGED:** added a deterministic canonical-harvest promotion planner
+  and retained its plan-only package under the current documentation run.
+- **WHOSE AREA:** AIF-068 full-stack documentation E5 entry control,
+  intersecting AIF-132 Portal current-state routing.
+- **AUTHORIZATION:** owner instruction to begin the promotion package;
+  authorization to apply the package is explicitly absent.
+- **VERIFY OR UNDO:** run the focused planner tests, regenerate with the retained
+  observation timestamp, and compare all three package files byte-for-byte;
+  remove the planner, test, and package directory to undo this report-only
+  slice. No canonical rollback is needed because no canonical bytes changed.
