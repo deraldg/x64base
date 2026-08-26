@@ -229,18 +229,37 @@ small database now lives inside a field of another database -- versioned by
 the catalog's supersede chain, attributed, and verifiable, the design the
 2026-07-28 external intake chartered.
 
-What remains chartered: the commit/rollback writeback cycle from RAM to
-disk, and memo carriage for LMDB (out of the RAM filesystem's scope by its
-own contract). One correction from the same day is recorded rather than
-smoothed: an earlier RAM-memo demonstration claimed zero disk writes, and
-the day's own hydration tooling measured the memo sidecar landing on real
-disk -- the claim was corrected in place and RAM coverage for the memo
-store is now the chartered prerequisite.
+**The return leg is now proven too.** `WORKSPACE WRITEBACK` closes the
+cycle: a workspace living in RAM, hydrated from a memo, writes back out to a
+real disk root. Twelve markers, each shown to fail before its green was
+accepted -- values and record counts survive the round trip, the memo sidecar
+makes the trip, a collision refusal writes *nothing*, `CONFIRM` does replace,
+the `.__wbak` backup opens as a full table so the undo of last resort is
+recoverable rather than asserted, and `WITH INDEXES` lands the container bytes
+so the mirror works after the destination's `BUILDLMDB` rebuild. A shortfall
+aborts before writing anything at all: the enumeration authority is the
+posture -- what the workspace *is* -- never the session's current attach order,
+because the first cut asked the session and silently wrote 15 of 27 files while
+reporting success.
+
+Two corrections from this lane are recorded rather than smoothed, because both
+were the page's own standard failing before it held. An earlier RAM-memo
+demonstration claimed zero disk writes, and the day's own hydration tooling
+measured the memo sidecar landing on real disk; the claim was corrected in
+place. And writeback was briefly published here as proven on both toolchains
+when one of the two transcripts was a false green -- a run that wrote to one
+directory and asserted against another, closing green because it never read its
+own output. That claim was withdrawn, the path resolution was fixed so a
+relative token names one directory to writer, reader and teardown alike, and
+the second toolchain was only re-proven on 2026-08-21.
+
+What remains chartered: memo carriage for LMDB, which is outside the RAM
+filesystem's scope by its own contract.
 
 Evidence: `REGRESSION RUN WORKSPACE_MEMO` / `WORKSPACE_V3` / `WORKSPACE_RAM`
-/ `WORKSPACE_SESSION` / `WORKSPACE_MINIDB`; the `WORKSPACES` catalog in the
-runtime data root; the virtual-workspaces design package (2026-07-28), now
-partially realized at runtime.
+/ `WORKSPACE_SESSION` / `WORKSPACE_MINIDB` / `WORKSPACE_WRITEBACK`; the
+`WORKSPACES` catalog in the runtime data root; the virtual-workspaces design
+package (2026-07-28), now realized at runtime in both directions.
 
 ## SQLite in the same room, on purpose
 

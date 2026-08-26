@@ -23,10 +23,88 @@ is not positioned as one of the main products.
 - Shared command routing, HELP/SelfDoc metadata, workspaces, relations, table
   buffers, and output readback.
 
+## The DotTalk++ Workbench, as it stands
+
+The Workbench is the wxWidgets front end. It is one window over the same engine
+the CLI drives -- not a second implementation of the table mechanics -- and it
+reaches the runtime through the command bridge, so a menu action and a typed
+command travel the same path and report the same state.
+
+The main window carries a Workspace Areas list, a command box with a Run
+button, a log pane that names what it did, and a status bar reporting the
+active table, rows shown, record number, logical row and current order. Work is
+organised across tabs: **Tables**, **Indexes**, **Relations**, **DDict**,
+**Workspace Graph**, **Browse** and **Structure**. The DDict tab carries its
+own Fields / Tags / Relations / Evidence / Source panes over the live Data
+Dictionary. A Language menu switches the seeded GUI locales without a restart.
+
+The Tables grid shows one row per area with its workspace, area number, record
+and field counts, which area is active, and the resolved path on disk. The path
+column is not decoration -- it is how you can see *where a workspace actually
+lives*, which matters more than usual here.
+
+### A database out of a memo field, opened in the GUI
+
+`WORKSPACE LOAD ... MEMO RAM` hydrates a memo-resident mini-database into the
+in-process RAM filesystem and stands the areas up over it. Observed in the
+Workbench on a 2026-08-20 build: **13 areas opened from one memo field, with 11
+index containers mirrored into them**, every path resolving under the RAM root
+rather than a disk directory. The log pane says so in as many words --
+`WORKSPACE LOAD (memo)`, the workspace name, the area count, and an
+`indexes_mirrored` note giving the container count.
+
+That is the whole arc visible in one window: a database stored inside a field of
+another database, hydrated into memory, and browsed through a normal GUI with
+its indexes attached.
+
+[![DotTalk++ Workbench showing thirteen work areas loaded from a memo-resident mini-database, every table path resolving under the in-process RAM root, with the log pane reporting WORKSPACE LOAD (memo) and eleven index containers mirrored into the GUI areas](/images/evidence/dottalk-workbench-minidb-memo-hydrated-evidence-20260820.png)](/images/evidence/dottalk-workbench-minidb-memo-hydrated-evidence-20260820.png)
+
+*Thirteen areas out of one memo field. The Path column is the tell: every table
+resolves under the RAM root, not a disk directory.*
+
+### The memo browser refuses, and says why
+
+A separate window -- *Memo workspaces: what is inside the memo* -- reads the
+workspace catalog without hydrating anything. It lists each snapshot's id, name,
+format (`DTSHEMA 2`, `DTSHEMA 3`, `MINIDB 1`), stored size, estimated hydration
+cost, save time, and whether the row is **live** or **superseded**. Selecting a
+row reports what the payload actually is; the status bar states plainly how many
+bytes were read and that **nothing was hydrated**.
+
+Its *Open in Workbench* button is disabled for a superseded snapshot, and the
+reason is spelled out rather than left to be inferred: `WORKSPACE LOAD` resolves
+by name to the live row, so opening a superseded snapshot by selection would
+quietly give you a different one than the row under the cursor. A workspace
+carrying only a posture reports that it holds no `MINIDB 1` container, with the
+byte count and the reason the first line did not match.
+
+[![The memo workspace browser listing saved workspace snapshots with id, name, format, stored size, estimated hydration cost, save time and live-or-superseded state; the Open in Workbench button is disabled and the reason is stated, and the detail pane reports that the selected memo carries no MINIDB container](/images/evidence/dottalk-workbench-memo-workspace-browser-evidence-20260820.png)](/images/evidence/dottalk-workbench-memo-workspace-browser-evidence-20260820.png)
+
+*Reading the catalog without hydrating it. The status bar states the bytes read
+and that nothing was hydrated; the disabled button carries its own reason.*
+
+The house rule behind both behaviours is the same one the engine follows: a
+surface that cannot do what you asked should refuse and name the reason, not
+proceed and look successful.
+
 ## Current Status
 
 This is an active beta lane. Runtime screenshots show real GUI, TUI, and CLI
 states, but they are evidence artifacts, not final release-polish claims.
+
+Two things are visible in current Workbench evidence and are recorded here
+rather than smoothed. A directory scan can admit a table's own backup sidecar as
+an extra area, so an area count may exceed the table count for a directory; the
+scanner's admission rules are under review. And a workspace load whose posture
+names a CDX container without selecting a tag warns that the active order could
+not be used and falls back to physical order -- the warning is correct, and
+carrying a tag selection through the load is open work.
+
+[![DotTalk++ Workbench after opening a directory of tables from disk, showing fourteen areas where thirteen tables exist because a table's backup sidecar was admitted as an area, and a log pane warning that the active order could not be used and physical order was substituted](/images/evidence/dottalk-workbench-workspace-open-directory-evidence-20260820.png)](/images/evidence/dottalk-workbench-workspace-open-directory-evidence-20260820.png)
+
+*Both open items in one frame: fourteen areas over thirteen tables, and the
+order-unavailable warning. Published as-is rather than reshot, because a page
+that only shows the good frames is not evidence.*
 
 See [Parallel GUI/TUI docs](/docs/talk-family/parallel-gui-tui),
 [Arctic TUI docs](/docs/talk-family/arctic), and the
