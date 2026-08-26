@@ -66,3 +66,18 @@ Before Phase 8 can publish:
 - **VERIFY OR UNDO:** rerun `docpush_preflight.py` with the website catalog; undo
   by reverting the exact documentation-state commit. No website or public
   rollback is required because no publication mutation occurred.
+
+## Matrix-control follow-up
+
+Owner ruling: the failed E2 relationship belongs in the website matrix check.
+The machine manifest now requires `fullstack_publication_entry` as a hard gate,
+and `website_matrix_check.py` runs that gate through `docpush_preflight.py` before
+publication.
+
+The timestamp rule is necessary as a fail-closed fallback with today's
+provenance, but "every recompile semantically changes HELP" is not the durable
+rule. The efficient target is a content-addressed HELP-producer fingerprint.
+Until it exists, the later owner recompile supplies the negative proof: the
+complete matrix returns nonzero and publication remains closed. The first live
+matrix run also found `include/dottalk/scratch_sidecar.hpp` missing its universal
+source-census contract, independently keeping the publication entry red.

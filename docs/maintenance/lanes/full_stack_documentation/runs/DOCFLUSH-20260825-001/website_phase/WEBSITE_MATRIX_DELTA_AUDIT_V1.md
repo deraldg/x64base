@@ -85,6 +85,29 @@ proves 146 declared == 146 actual, with no duplicates, missing files, or phantom
 entries. Totals are 8 generated, 30 derived, 75 maintained, 9
 maintained-current, 5 reported, and 19 static.
 
+## Publication-freshness amendment -- 2026-08-26
+
+The Phase 8 entry failure exposed a missing relationship in this audit: page
+classification and website build success did not themselves assert that the
+canonical HELP producer state matched the selected engine state.
+
+The matrix now declares five hard publication gates and routes them through
+`tools/fullstack_docs/website_matrix_check.py`. The full-stack entry gate calls
+`docpush_preflight.py`, so the current engine/HELP order check, HELP join
+integrity, and producer freshness are part of the matrix result.
+
+The present order check is a cheap conservative fallback: because HELP carries
+no content-addressed producer fingerprint, a later recompile makes the matrix
+red even when the code change is unrelated to HELP. That is operationally cheap
+to detect but can trigger an unnecessary rebuild. The intended refinement is a
+digest over the catalogs, extracted HELP contracts, and HELP generator
+implementation. Until that provenance exists, the owner recompile is retained
+as the live negative arm and `fullstack_publication_entry` must return nonzero.
+The same live run also caught the newly tracked
+`include/dottalk/scratch_sidecar.hpp` outside the universal source census, so
+the matrix currently reports both producer freshness and 100-percent source
+coverage truth rather than stopping after the first failure.
+
 ## Remaining signoff boundary
 
 The matrix's `Last audited` stamp remains 2026-08-21 until the owner reviews the

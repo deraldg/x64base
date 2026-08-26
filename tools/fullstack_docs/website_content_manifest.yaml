@@ -6,6 +6,14 @@ generated_at: "2026-08-26"
 spine: simplex_duplex_direction_gates   # S-impl | S-rep | D-man | WO
 site_root: x64base-site/content
 totals: {generated: 8, derived: 30, maintained: 75, maintained_current: 9, reported: 5, static: 19, total: 146}
+publication_check:
+  runner: tools/fullstack_docs/website_matrix_check.py
+  required_gates:
+    - {id: content_inventory, mode: hard, proves: "all website MDX routes classified exactly once"}
+    - {id: fullstack_publication_entry, mode: hard, proves: "source coverage, command catalog, engine-to-HELP build/store order, HELP join, and producer freshness"}
+    - {id: function_catalog, mode: hard, proves: "website function catalog matches current source"}
+    - {id: error_codes, mode: hard, proves: "website error-code rows match current source"}
+    - {id: locales, mode: hard, proves: "website locale table matches current source"}
 classes:
   generated:
     direction: S-impl

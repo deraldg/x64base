@@ -74,6 +74,8 @@ renumbered.
 | M17 | Website command catalog refresh | PASS -- restarted E0 audit, 239/239 parsed registry rows, zero fallback, alias-aware extraction, and local production build; no publication |
 | M18 | Website matrix-wide reconciliation | PASS LOCAL -- all 146 MDX routes classified exactly once, generated catalogs and diagram refreshed, maintained-current surfaces reconciled, and dirty/shared authorities explicitly deferred; owner rendering signoff and publication remain open |
 | M19 | Phase 8 entry preflight | FAIL CLOSED -- owner entry authorization received, but E2 was invalidated because canonical HELP predates the current executable; no source or public mutation |
+| M20 | Executable website matrix gate | PASS CONTROL / CURRENTLY RED -- matrix runner binds complete page classification to full-stack E2 freshness and the four website catalogs; the current timestamp fallback is conservative pending a HELP-producer fingerprint |
+| M20 | Executable website matrix gate | PASS CONTROL / CURRENTLY RED -- matrix runner binds complete page classification to full-stack E2 freshness and the four website catalogs; owner recompile proves stale HELP fails the matrix |
 
 ## Coordination finding
 
@@ -449,3 +451,46 @@ The maintained pointer therefore moves from E8 back to E2. The exact evidence
 and re-entry sequence are recorded in
 `publication_phase/PHASE8_ENTRY_PREFLIGHT_2026-08-26.md`. Source push, GitHub
 Pages deployment, OpenAI Sites deployment, and live closeout all remain zero.
+
+## Executable matrix freshness gate -- CODEX-20260826-013
+
+The website matrix previously described producer/consumer relationships but its
+machine check only proved that 146 routes were classified exactly once. It did
+not bind publication to the engine -> canonical HELP freshness relationship
+that stopped Phase 8.
+
+`website_matrix_check.py` now combines the inventory check, the full-stack
+publication-entry preflight, and the function, error-code, and locale catalog
+checks. The manifest requires all five by identifier and requires `mode: hard`,
+so deleting or weakening the freshness relationship is itself a validation
+failure. The website matrix explains the same rule to readers.
+
+The existing timestamp control is efficient to execute but over-conservative in
+what it invalidates: an unrelated recompile also makes E2 red. It remains the
+fail-closed fallback because the HELP store does not carry a producer digest.
+The gold extension is a content-addressed fingerprint of catalogs, extracted
+HELP contracts, and the HELP generator implementation; a matching fingerprint
+would let unrelated code recompiles pass without rebuilding HELP.
+
+The first live run behaved as intended: inventory and all four website catalogs
+passed, while `fullstack_publication_entry` failed for the older HELP store and
+for one newly tracked source outside the universal census,
+`include/dottalk/scratch_sidecar.hpp`. The checker ran every row and reported the
+combined red state; it did not stop at the first failure or publish.
+
+## Executable matrix freshness gate -- CODEX-20260826-013
+
+The website matrix previously described producer/consumer relationships but its
+machine check only proved that 146 routes were classified exactly once. It did
+not bind publication to the engine -> canonical HELP build/store order that
+stopped Phase 8.
+
+`website_matrix_check.py` now combines the inventory check, the full-stack
+publication-entry preflight, and the function, error-code, and locale catalog
+checks. The manifest requires all five by identifier and requires `mode: hard`,
+so deleting or weakening the E2 relationship is itself a validation failure.
+The website matrix explains the same rule to readers.
+
+The maintainer recompiled after the first failed entry check. That is the live
+negative arm: the matrix must remain red at `fullstack_publication_entry` until
+guarded HELP and post-E2 harvest refresh are separately authorized and run.

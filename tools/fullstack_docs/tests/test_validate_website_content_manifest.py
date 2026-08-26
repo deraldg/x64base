@@ -32,6 +32,13 @@ class WebsiteContentManifestTests(unittest.TestCase):
   reported: {pages: []}
   static: {pages: []}
 totals: {generated: 1, derived: 0, maintained: 1, maintained_current: 0, reported: 0, static: 0, total: 2}
+publication_check:
+  required_gates:
+    - {id: content_inventory, mode: hard}
+    - {id: fullstack_publication_entry, mode: hard}
+    - {id: function_catalog, mode: hard}
+    - {id: error_codes, mode: hard}
+    - {id: locales, mode: hard}
 """,
                 encoding="utf-8",
             )
@@ -53,6 +60,9 @@ totals: {generated: 1, derived: 0, maintained: 1, maintained_current: 0, reporte
   reported: {pages: []}
   static: {pages: []}
 totals: {generated: 1, derived: 0, maintained: 0, maintained_current: 0, reported: 0, static: 0, total: 1}
+publication_check:
+  required_gates:
+    - {id: content_inventory, mode: advisory}
 """,
                 encoding="utf-8",
             )
@@ -61,6 +71,8 @@ totals: {generated: 1, derived: 0, maintained: 0, maintained_current: 0, reporte
             self.assertTrue(any("missing from manifest" in finding for finding in findings))
             self.assertTrue(any("missing on disk" in finding for finding in findings))
             self.assertTrue(any("total generated" in finding for finding in findings))
+            self.assertTrue(any("must be hard" in finding for finding in findings))
+            self.assertTrue(any("missing publication gates" in finding for finding in findings))
 
 
 if __name__ == "__main__":

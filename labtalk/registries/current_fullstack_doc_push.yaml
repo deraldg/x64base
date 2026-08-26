@@ -2,8 +2,8 @@ schema: dottalk.fullstack.current.v1
 owner: member.derald
 steward: member.ai.codex
 maintenance_class: maintained_current
-observed_at_utc: 2026-08-26T15:36:13Z
-source_commit: 892245854a0a919f5342da69f79e03c3c4ac71
+observed_at_utc: 2026-08-26T15:48:51Z
+source_commit: 4eb9ae3a3f08c9464892bf93cccebb2ab3afb298
 
 current:
   run_id: DOCFLUSH-20260825-001
@@ -16,7 +16,7 @@ current:
   next_process: publication_ascent
   next_entry_state: blocked
   first_open_entry: E2
-  first_open_entry_summary: Phase 8 owner entry authorization was received, but the fail-closed preflight found that canonical HELP predates the current engine executable; the executable is bound to concurrent tracked work, so no HELP refresh, source push, Pages deployment, or live publication was attempted
+  first_open_entry_summary: "Phase 8 owner entry authorization was received, but the executable website matrix is red: canonical HELP predates the current engine executable and include/dottalk/scratch_sidecar.hpp is outside the universal source census; the timestamp rule is a conservative fallback pending a content-addressed HELP-producer fingerprint, and no HELP refresh, source push, Pages deployment, or live publication was attempted"
 
 rules:
   - development closeout does not imply promotion

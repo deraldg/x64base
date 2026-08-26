@@ -19,6 +19,14 @@ CLASSES = {
     "static",
 }
 
+REQUIRED_PUBLICATION_GATES = {
+    "content_inventory",
+    "fullstack_publication_entry",
+    "function_catalog",
+    "error_codes",
+    "locales",
+}
+
 
 def page_path(value: object) -> str:
     if isinstance(value, str):
@@ -81,6 +89,33 @@ def validate(manifest: Path, content_root: Path) -> list[str]:
         findings.append(
             f"total: declared {totals.get('total')!r} != measured {len(declared)}"
         )
+
+    publication = data.get("publication_check")
+    if not isinstance(publication, dict):
+        findings.append("publication_check must be a mapping")
+        return findings
+    gates = publication.get("required_gates")
+    if not isinstance(gates, list):
+        findings.append("publication_check required_gates must be a list")
+        return findings
+    gate_ids: list[str] = []
+    for gate in gates:
+        if not isinstance(gate, dict) or not isinstance(gate.get("id"), str):
+            findings.append(f"invalid publication gate: {gate!r}")
+            continue
+        gate_ids.append(gate["id"])
+        if gate.get("mode") != "hard":
+            findings.append(f"publication gate {gate['id']} must be hard")
+    gate_counts = Counter(gate_ids)
+    duplicate_gates = sorted(gate for gate, count in gate_counts.items() if count != 1)
+    if duplicate_gates:
+        findings.append("duplicate publication gates: " + ", ".join(duplicate_gates))
+    missing_gates = sorted(REQUIRED_PUBLICATION_GATES - set(gate_ids))
+    unknown_gates = sorted(set(gate_ids) - REQUIRED_PUBLICATION_GATES)
+    if missing_gates:
+        findings.append("missing publication gates: " + ", ".join(missing_gates))
+    if unknown_gates:
+        findings.append("unknown publication gates: " + ", ".join(unknown_gates))
     return findings
 
 
