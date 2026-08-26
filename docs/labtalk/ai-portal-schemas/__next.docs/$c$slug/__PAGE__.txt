@@ -1,0 +1,190 @@
+1:"$Sreact.fragment"
+2:I[87771,["/_next/static/chunks/2gruyr6usi8zr.js","/_next/static/chunks/14mumt5_n0xhi.js","/_next/static/chunks/3xuq_c5klwj32.js"],"Sidebar"]
+8:I[97367,["/_next/static/chunks/2gruyr6usi8zr.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
+9:"$Sreact.suspense"
+0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"flex gap-8","children":[["$","$L2",null,{"groups":[{"label":"Getting Started","items":[{"label":"Overview","href":"/docs/getting-started/overview"},{"label":"Installation","href":"/docs/getting-started/installation"},{"label":"Quickstart","href":"/docs/getting-started/quickstart"},{"label":"FAQ","href":"/docs/getting-started/faq"}]},{"label":"x64base Engine","items":[{"label":"Architecture","href":"/docs/engine/architecture"},{"label":"Engine Specifications","href":"/docs/engine/specifications"},{"label":"Proven Capabilities","href":"/docs/engine/proven-capabilities"},{"label":"ACID and the Glass-Box Engine","href":"/docs/engine/acid-and-glass-box"},{"label":"Runtime Footprint","href":"/docs/engine/runtime-footprint"},{"label":"xBase Ecosystem Context","href":"/docs/engine/xbase-ecosystem-context"},{"label":"Ecosystem Feature Comparison","href":"/docs/engine/ecosystem-feature-comparison"},{"label":"x64 Capacity Math","href":"/docs/engine/x64-capacity-math"},{"label":"DBF Flavors and Index Defaults","href":"/docs/engine/dbf-flavors-and-indexes"},{"label":"DBF_64 Specification","href":"/docs/engine/dbf-64-specification"},{"label":"FPT64 Memo Format","href":"/docs/engine/fpt64-memo-format"},{"label":"RAM DBF and VDISK","href":"/docs/engine/ram-dbf-vdisk"},{"label":"Workspaces","href":"/docs/engine/workspaces"},{"label":"Indexing Rules","href":"/docs/engine/indexing-rules"},{"label":"CDX and LMDB Indexing","href":"/docs/engine/cdx-lmdb-indexing"},{"label":"Pinocchio Benchmarks","href":"/docs/engine/pinocchio-benchmarks"},{"label":"Regression & Proof Testing","href":"/docs/engine/regression-and-proof-testing"},{"label":"Engine Feature Crosswalk","href":"/docs/engine/feature-crosswalk"},{"label":"SQLsel and SQL Conformance","href":"/docs/engine/sqlsel-and-sql-conformance"},{"label":"Error Codes","href":"/docs/engine/error-codes"},{"label":"Messaging & Localization","href":"/docs/engine/messaging-and-localization"},{"label":"Identity, Authentication & RBAC","href":"/docs/engine/identity-security"},{"label":"API Reference","href":"/docs/engine/api-reference"},{"label":"Python Integration","href":"/docs/engine/python-integration"}]},{"label":"DotTalk++","items":[{"label":"Language Guide","href":"/docs/dottalk/language-guide"},{"label":"DotScript Language Guide","href":"/docs/dottalk/dotscript-language-guide"},{"label":"SET Family","href":"/docs/dottalk/set-family"},{"label":"Command Families","href":"/docs/dottalk/command-families"},{"label":"Data Mutators","href":"/docs/dottalk/data-mutators"},{"label":"Syntax","href":"/docs/dottalk/syntax"},{"label":"REPL","href":"/docs/dottalk/repl"},{"label":"Command Catalog","href":"/docs/dottalk/command-catalog"},{"label":"Command Reference","href":"/docs/dottalk/command-reference"},{"label":"Function Catalog","href":"/docs/dottalk/function-catalog"},{"label":"Examples","href":"/docs/dottalk/examples"},{"label":"Curriculum","href":"/docs/dottalk/curriculum"}]},{"label":"DotTalk++ Workbench","items":[{"label":"TupTalk","href":"/docs/talk-family/tuptalk"},{"label":"TableTalk","href":"/docs/talk-family/tabletalk"},{"label":"RelTalk","href":"/docs/talk-family/reltalk"},{"label":"SQLsel","href":"/docs/talk-family/sqlsel"},{"label":"Parallel GUI/TUI","href":"/docs/talk-family/parallel-gui-tui"},{"label":"Arctic TUI","href":"/docs/talk-family/arctic"}]},{"label":"Laboratory Campus","items":[{"label":"Academic Start Here","href":"/docs/labtalk/academic-start"},{"label":"Overview","href":"/docs/labtalk/overview"},{"label":"AI Portal — Alpha/Experimental","href":"/docs/labtalk/ai-portal"},{"label":"AI Agent Sync -- Snapshot","href":"/docs/labtalk/agent-sync"},{"label":"Current Tasks & Projects","href":"/docs/labtalk/current-work"},{"label":"Cases and Storyboard","href":"/docs/labtalk/cases-storyboard"},{"label":"Database Evolution Path","href":"/docs/labtalk/database-evolution"},{"label":"Education Features","href":"/docs/labtalk/education-features"},{"label":"Lesson Platform","href":"/docs/labtalk/lessons"},{"label":"LMS Communications Lane","href":"/docs/labtalk/lms-integration-lane"},{"label":"Student Lessons","href":"/docs/labtalk/student-lessons"},{"label":"Guided Lesson: Records, Fields, Tables","href":"/docs/labtalk/lesson-records-fields-tables"},{"label":"Career Lessons","href":"/docs/labtalk/career-lessons"},{"label":"Suggest a Lesson","href":"/docs/labtalk/suggest-a-lesson"},{"label":"Runtime Evidence Gallery","href":"/docs/labtalk/runtime-evidence"},{"label":"SelfDoc Lane Diagrams","href":"/docs/labtalk/selfdoc-lane"},{"label":"Non-Profit Guide","href":"/docs/labtalk/non-profit-guide"},{"label":"Examples","href":"/docs/labtalk/examples"},{"label":"Academic Positioning","href":"/docs/labtalk/academic-positioning"}]},{"label":"Developer Resources","items":[{"label":"Current Project Truth","href":"/docs/dev/project-truth"},{"label":"Recursive Co-development","href":"/docs/dev/recursive-co-development"},{"label":"Current Work Lanes","href":"/docs/dev/current-lanes"},{"label":"Roadmap","href":"/docs/dev/roadmap"},{"label":"Developer Manual (Assembled)","href":"/docs/dev/developer-manual"},{"label":"How the Manual Assembles Itself","href":"/docs/dev/manual-assembly"},{"label":"Documentation Progress","href":"/docs/dev/documentation-progress"},{"label":"Full-stack Documentation Push","href":"/docs/dev/full-stack-documentation-push"},{"label":"Site Improvement Plan","href":"/docs/dev/site-improvement-plan"},{"label":"Important Documents","href":"/docs/dev/important-documents"},{"label":"Website Documentation Matrix","href":"/docs/dev/website-documentation-matrix"},{"label":"Coined Vocabulary (Glossary)","href":"/docs/dev/coined-vocabulary"},{"label":"Historical Source Lineage","href":"/docs/dev/historical-source-lineage"},{"label":"Historical Family Tree","href":"/docs/dev/historical-family-tree"},{"label":"Historical Source Files","href":"/docs/dev/historical-source-files"},{"label":"Application UI DSL Lane","href":"/docs/dev/application-ui-dsl-lane"},{"label":"Developer Profile","href":"/docs/dev/developer-profile"},{"label":"Developer Handbook","href":"/docs/dev/developer-handbook"},{"label":"SelfDoc Website Publication","href":"/docs/dev/selfdoc-website-publication"},{"label":"Public Site Architecture","href":"/docs/dev/public-site-architecture"},{"label":"SelfDoc Feed Pipeline","href":"/docs/dev/selfdoc-feed-pipeline"},{"label":"HELP / Message / SelfDoc DFD","href":"/docs/dev/help-message-selfdoc-dfd"},{"label":"Onboarding Guide","href":"/docs/dev/onboarding-guide"},{"label":"Naming Conventions","href":"/docs/dev/naming-conventions"},{"label":"Coding Standards","href":"/docs/dev/coding-standards"},{"label":"Contribution Guide","href":"/docs/dev/contribution-guide"}]}]}],"$L3"]}],["$L4"],"$L5"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"ReLVmm34bFIX_kcXxqJEX"}
+6:T176f,<h2 id="status-and-authority"><a class="no-underline" href="#status-and-authority">Status and authority</a></h2>
+<p>This is an <strong>Alpha/Experimental public projection</strong> of the AI Portal schema and
+identifier model. It gives outside AI partners a stable, readable snapshot. It
+does not replace the implementation, runtime evidence, HELP and metadata
+stores, accepted manuals, or owner rulings that support it.</p>
+<h2 id="registered-dbf-schemas"><a class="no-underline" href="#registered-dbf-schemas">Registered DBF schemas</a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Domain</th><th>Tables</th><th>Upstream definition</th><th>Portal posture</th></tr></thead><tbody><tr><td>Identity and RBAC</td><td><code>SYSUSER</code>, <code>SYSMEMBER</code>, <code>SYSROLE</code>, <code>SYSPERM</code>, <code>SYSROLEPERM</code>, <code>SYSMEMROLE</code>, <code>SYSOVERRIDE</code>, <code>SYSASSIGN</code>, <code>SYSGRANT</code></td><td>identity schema</td><td>Governed per-table CRUD and close policies</td></tr><tr><td>AI-BBS and Pseudo-Chat</td><td><code>SYSBOARD</code>, <code>SYSTHREAD</code>, <code>SYSPOST</code></td><td>BBS schema</td><td>Generic Portal CRUD is read-only; the BBS daemon owns writes</td></tr><tr><td>Global rulings</td><td><code>SYSRULING</code></td><td>ruling schema</td><td>Append-only doctrine and owner decisions</td></tr><tr><td>Portal tracking</td><td><code>SYSLANE</code>, <code>SYSRUN</code>, <code>SYSRUNLANE</code>, <code>SYSPROOF</code>, <code>SYSTASK</code></td><td>tracking schema</td><td>Governed tracking; run history is append-only</td></tr><tr><td>SelfDoc command catalog</td><td><code>SYSCMD</code></td><td>reviewed SelfDoc catalog schema</td><td>Read-only metadata projection</td></tr></tbody></table>
+<p>The registered surface contains 19 table schemas across five custody domains.
+Registration does not assert that every table is seeded or current. Mutation
+policy follows each table's owner; the word "database" is not a permission
+model.</p>
+<h2 id="identity-crosswalk"><a class="no-underline" href="#identity-crosswalk">Identity crosswalk</a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Identity</th><th>Role</th><th>Primary relationship</th></tr></thead><tbody><tr><td><code>project.&#x3C;domain>.&#x3C;name></code></td><td>Durable program</td><td>Parent of governed lanes</td></tr><tr><td><code>AIF-NNN</code></td><td>Intake or work lane</td><td>Links project, lifecycle, work, proof, and closeout</td></tr><tr><td><code>PDLC</code> / <code>SDLC</code></td><td>Process classification</td><td>PDLC may nest inside SDLC; neither allocates identities</td></tr><tr><td><code>M&#x3C;n></code> or named gate</td><td>Evidence checkpoint</td><td>Belongs to one lane</td></tr><tr><td><code>R&#x3C;n></code></td><td>Doctrine or owner ruling</td><td>One global sequence shared by every lane</td></tr><tr><td>provider/date run id</td><td>Bounded execution</td><td>Links acting member, project, and one or more lanes</td></tr><tr><td><code>task.*</code></td><td>Work item</td><td>Links to a lane without becoming the lane identity</td></tr><tr><td><code>proof.*</code></td><td>Evidence record</td><td>Links lane, source, state, platform, and observation time</td></tr><tr><td><code>AIPR-*</code></td><td>Durable AI report</td><td>Links to the execution run and authority envelope</td></tr></tbody></table>
+<p>Historical <code>ticket</code> values remain readable. A value shaped like <code>AIF-NNN</code> is a
+legacy lane reference; another value is an external ticket reference. Older
+records that placed an <code>AIPR-*</code> report identity in <code>run_id</code> remain visible as a
+compatibility seam. New records keep execution and report identities separate.</p>
+<h2 id="typed-registry-schemas"><a class="no-underline" href="#typed-registry-schemas">Typed registry schemas</a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Schema</th><th>Purpose</th></tr></thead><tbody><tr><td><code>ai-report-audit-v1</code></td><td>Report identity, agent, baseline, and authorization envelope</td></tr><tr><td><code>ai-report-index-v1</code></td><td>Generated report discovery</td></tr><tr><td><code>ai-runs-v1</code></td><td>Attributed execution and lane links</td></tr><tr><td><code>labtalk.ai_portal.tasks.v1</code></td><td>Operational work-item projection</td></tr><tr><td><code>portal-recall-graph-v1</code></td><td>Triggered retrieval graph</td></tr><tr><td><code>dottalk.portal.feed.v1</code></td><td>DotTalk++ authority-to-consumer feed seam</td></tr><tr><td><code>dottalk.portal.assertions.v1</code></td><td>Evidence-anchored routing assertions</td></tr><tr><td><code>dottalk.fullstack.current.v1</code></td><td>Maintained current documentation-run pointer</td></tr><tr><td><code>dottalk.portal.status.v1</code></td><td>Generated feed, assertion, and current-run status</td></tr><tr><td><code>dottalk.portal.identifiers.v1</code></td><td>Canonical identifier classes and legacy mappings</td></tr><tr><td><code>dottalk.portal.identifier.status.v1</code></td><td>Generated cross-registry normalization findings</td></tr><tr><td><code>labtalk-database-ecology-v1</code></td><td>Database artifact classification and custody</td></tr></tbody></table>
+<h2 id="data-flow-rule"><a class="no-underline" href="#data-flow-rule">Data-flow rule</a></h2>
+<p>DotTalk++ source contracts feed HELP and metadata stores. Those stores feed
+manual generation, comparison, proofs, and Portal reports. AIF claims, global R
+rulings, runs, work items, and proofs pass through the identifier crosswalk
+before status is projected to the website.</p>
+<p>The arrows never make the website authoritative. A correction is made in the
+owning engineering source or registry, validated there, and then republished.</p>
+<p><img src="/images/portal/ai-portal-dfd-v1.svg" alt="AI Portal schema and feed data flow"></p>
+<p>Return to the <a href="/docs/labtalk/ai-portal">AI Portal overview</a>.</p>3:["$","div",null,{"className":"min-w-0 flex-1","children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=09167d0bf0a5","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/docs",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/docs/?v=09167d0bf0a5","children":"Documentation"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/docs/labtalk/ai-portal-schemas",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/docs/labtalk/ai-portal-schemas/?v=09167d0bf0a5","children":"AI Portal -- Schemas and Identity Crosswalk"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"AI Portal -- Schemas and Identity Crosswalk"}],["$","p",null,{"className":"mt-2 text-muted","children":"Alpha reference for the registered AI Portal DBF schemas, typed registries, identifiers, and authority boundaries."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose dark:prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:break-words prose-code:whitespace-normal prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30 prose-pre:text-fg [&_pre_code]:text-fg [&_pre_code_span]:text-inherit","dangerouslySetInnerHTML":{"__html":"$6"},"children":null}]}],"$L7"]}]
+4:["$","script","script-0",{"src":"/_next/static/chunks/3xuq_c5klwj32.js","async":true}]
+5:["$","$L8",null,{"children":["$","$9",null,{"name":"Next.MetadataOutlet","children":"$@a"}]}]
+7:["$","div",null,{"className":"mt-10 flex flex-col gap-3 border-t border-border pt-6 text-sm md:flex-row md:items-center md:justify-between","children":[["$","div",null,{"children":null}],["$","div",null,{"children":null}]]}]
+a:null

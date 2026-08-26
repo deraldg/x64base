@@ -1,7 +1,7 @@
 1:"$Sreact.fragment"
-3:I[97367,["/_next/static/chunks/42dx791suil-8.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
-4:"$Sreact.suspense"
-2:T5c1,<h2 id="overview"><a class="no-underline" href="#overview">Overview</a></h2>
+4:I[97367,["/_next/static/chunks/2gruyr6usi8zr.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
+5:"$Sreact.suspense"
+2:T286d,<h2 id="overview"><a class="no-underline" href="#overview">Overview</a></h2>
 <p>Parallel GUI/TUI is the DotTalk++ Workbench product lane for keeping graphical
 and terminal interfaces aligned over the same x64base and DotTalk++ runtime.</p>
 <p>The goal is a shared engine truth: the GUI, TUI, CLI, browser, and workbench
@@ -17,10 +17,100 @@ is not positioned as one of the main products.</p>
 <li>Shared command routing, HELP/SelfDoc metadata, workspaces, relations, table
 buffers, and output readback.</li>
 </ul>
+<h2 id="the-dottalk-workbench-as-it-stands"><a class="no-underline" href="#the-dottalk-workbench-as-it-stands">The DotTalk++ Workbench, as it stands</a></h2>
+<blockquote>
+<p><strong>Alpha.</strong> Workbench is an active development surface. Its screenshots are
+runtime evidence, including visible warnings and development-build labels,
+rather than release-polish claims.</p>
+</blockquote>
+<p>The Workbench is the wxWidgets front end. It is one window over the same engine
+the CLI drives -- not a second implementation of the table mechanics -- and it
+reaches the runtime through the command bridge, so a menu action and a typed
+command travel the same path and report the same state.</p>
+<p>The main window carries a Workspace Areas list, a command box with a Run
+button, a log pane that names what it did, and a status bar reporting the
+active table, rows shown, record number, logical row and current order. Work is
+organised across tabs: <strong>Tables</strong>, <strong>Indexes</strong>, <strong>Relations</strong>, <strong>DDict</strong>,
+<strong>Workspace Graph</strong>, <strong>Browse</strong> and <strong>Structure</strong>. The DDict tab carries its
+own Fields / Tags / Relations / Evidence / Source panes over the live Data
+Dictionary. A Language menu switches the seeded GUI locales without a restart.</p>
+<p>The Tables grid shows one row per area with its workspace, area number, record
+and field counts, which area is active, and the resolved path on disk. The path
+column is not decoration -- it is how you can see <em>where a workspace actually
+lives</em>, which matters more than usual here.</p>
+<h3 id="a-database-out-of-a-memo-field-opened-in-the-gui"><a class="no-underline" href="#a-database-out-of-a-memo-field-opened-in-the-gui">A database out of a memo field, opened in the GUI</a></h3>
+<p><code>WORKSPACE LOAD ... MEMO RAM</code> hydrates a memo-resident mini-database into the
+in-process RAM filesystem and stands the areas up over it. Observed in the
+Workbench on a 2026-08-20 build: <strong>13 areas opened from one memo field, with 11
+index containers mirrored into them</strong>, every path resolving under the RAM root
+rather than a disk directory. The log pane says so in as many words --
+<code>WORKSPACE LOAD (memo)</code>, the workspace name, the area count, and an
+<code>indexes_mirrored</code> note giving the container count.</p>
+<p>That is the whole arc visible in one window: a database stored inside a field of
+another database, hydrated into memory, and browsed through a normal GUI with
+its indexes attached. <code>WORKSPACES.dbf</code> is not just pointing at that inner
+database. For a <code>MINIDB 1</code> row, the memo payload carries the member-file bytes
+themselves.</p>
+<p><a href="/images/evidence/dottalk-workbench-minidb-memo-hydrated-evidence-20260820.png"><img src="/images/evidence/dottalk-workbench-minidb-memo-hydrated-evidence-20260820.png" alt="DotTalk++ Workbench showing thirteen work areas loaded from a memo-resident mini-database, every table path resolving under the in-process RAM root, with the log pane reporting WORKSPACE LOAD (memo) and eleven index containers mirrored into the GUI areas"></a></p>
+<p><em>Thirteen areas out of one memo field. The Path column is the tell: every table
+resolves under the RAM root, not a disk directory.</em></p>
+<h3 id="the-memo-browser-refuses-and-says-why"><a class="no-underline" href="#the-memo-browser-refuses-and-says-why">The memo browser refuses, and says why</a></h3>
+<p>A separate window -- <em>Memo workspaces: what is inside the memo</em> -- reads the
+workspace catalog without hydrating anything. It lists each snapshot's id, name,
+format (<code>DTSHEMA 2</code>, <code>DTSHEMA 3</code>, <code>MINIDB 1</code>), stored size, estimated hydration
+cost, save time, and whether the row is <strong>live</strong> or <strong>superseded</strong>. Selecting a
+row reports what the payload actually is; the status bar states plainly how many
+bytes were read and that <strong>nothing was hydrated</strong>.</p>
+<p>Its <em>Open in Workbench</em> button is disabled for a superseded snapshot, and the
+reason is spelled out rather than left to be inferred: <code>WORKSPACE LOAD</code> resolves
+by name to the live row, so opening a superseded snapshot by selection would
+quietly give you a different one than the row under the cursor. A workspace
+carrying only a posture reports that it holds no <code>MINIDB 1</code> container, with the
+byte count and the reason the first line did not match.</p>
+<p><a href="/images/evidence/dottalk-workbench-memo-workspace-browser-evidence-20260820.png"><img src="/images/evidence/dottalk-workbench-memo-workspace-browser-evidence-20260820.png" alt="The memo workspace browser listing saved workspace snapshots with id, name, format, stored size, estimated hydration cost, save time and live-or-superseded state; the Open in Workbench button is disabled and the reason is stated, and the detail pane reports that the selected memo carries no MINIDB container"></a></p>
+<p><em>Reading the catalog without hydrating it. The status bar states the bytes read
+and that nothing was hydrated; the disabled button carries its own reason.</em></p>
+<h3 id="inspect-rebuild-then-open"><a class="no-underline" href="#inspect-rebuild-then-open">Inspect, rebuild, then open</a></h3>
+<p>The catalog view also makes the format boundary visible. A <code>DTSHEMA 3</code> memo can
+carry a workspace posture without carrying the database bytes, and Workbench
+says exactly that instead of pretending it can hydrate the row. A <code>MINIDB 1</code>
+row exposes the other case: current Alpha evidence shows a 94,200-byte
+container, 24 member files, 92,139 hydrated bytes, 13 tables and 11 declared
+index containers. The rebuild reports <code>COMPLETE</code> before the database is opened
+in Workbench.</p>
+<p><a href="/images/evidence/dottalk-workbench-posture-only-inspection-alpha-20260826.png"><img src="/images/evidence/dottalk-workbench-posture-only-inspection-alpha-20260826.png" alt="Alpha Workbench evidence showing a selected DTSHEMA 3 posture-only memo that correctly reports no MINIDB 1 container"></a></p>
+<p><em>Negative-path evidence: this memo contains a workspace posture, not a MINIDB
+container. Inspection names the boundary and performs no hydration.</em></p>
+<p><a href="/images/evidence/dottalk-workbench-minidb-rebuild-alpha-20260826.png"><img src="/images/evidence/dottalk-workbench-minidb-rebuild-alpha-20260826.png" alt="Alpha Workbench evidence inspecting a MINIDB 1 memo and reporting a complete rebuild of 13 tables and 11 index containers"></a></p>
+<p><em>A database as a value: inspect the carrier, validate its members, rebuild the
+database into RAM, then open the resulting workspace in the same Workbench.</em></p>
+<h3 id="early-multi-workspace-work"><a class="no-underline" href="#early-multi-workspace-work">Early multi-workspace work</a></h3>
+<p>The next Alpha increment is a manager for multiple named workspaces, including
+recursive and nested organization. The architectural issue is scope: each
+hydrated MINIDB needs an owned RAM root, area set, relation graph and lifecycle
+so that identical table names do not collapse into one global namespace.</p>
+<p>This page discusses that work while it is underway, but does not present
+co-residency, recursion or nesting as completed behavior. Those claims move to
+the proven surface only with runtime evidence and stated limits.</p>
+<p>The house rule behind both behaviours is the same one the engine follows: a
+surface that cannot do what you asked should refuse and name the reason, not
+proceed and look successful.</p>
 <h2 id="current-status"><a class="no-underline" href="#current-status">Current Status</a></h2>
-<p>This is an active beta lane. Runtime screenshots show real GUI, TUI, and CLI
+<p>This is an active <strong>Alpha</strong> lane. Runtime screenshots show real GUI, TUI, and CLI
 states, but they are evidence artifacts, not final release-polish claims.</p>
+<p>Two things are visible in current Workbench evidence and are recorded here
+rather than smoothed. A directory scan can admit a table's own backup sidecar as
+an extra area, so an area count may exceed the table count for a directory; the
+scanner's admission rules are under review. And a workspace load whose posture
+names a CDX container without selecting a tag warns that the active order could
+not be used and falls back to physical order -- the warning is correct, and
+carrying a tag selection through the load is open work.</p>
+<p><a href="/images/evidence/dottalk-workbench-workspace-open-directory-evidence-20260820.png"><img src="/images/evidence/dottalk-workbench-workspace-open-directory-evidence-20260820.png" alt="DotTalk++ Workbench after opening a directory of tables from disk, showing fourteen areas where thirteen tables exist because a table&#x27;s backup sidecar was admitted as an area, and a log pane warning that the active order could not be used and physical order was substituted"></a></p>
+<p><em>Both open items in one frame: fourteen areas over thirteen tables, and the
+order-unavailable warning. Published as-is rather than reshot, because a page
+that only shows the good frames is not evidence.</em></p>
 <p>See <a href="/docs/talk-family/parallel-gui-tui">Parallel GUI/TUI docs</a>,
 <a href="/docs/talk-family/arctic">Arctic TUI docs</a>, and the
-<a href="/docs/labtalk/runtime-evidence">Runtime Evidence Gallery</a>.</p>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=cb357555628a","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/?v=cb357555628a","children":"Products"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products/parallel-gui-tui",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/parallel-gui-tui/?v=cb357555628a","children":"Parallel GUI/TUI"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Parallel GUI/TUI"}],["$","p",null,{"className":"mt-2 text-muted","children":"DotTalk++ Workbench product lane for aligned graphical and terminal interfaces over the same runtime."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose dark:prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:break-words prose-code:whitespace-normal prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30 prose-pre:text-fg [&_pre_code]:text-fg [&_pre_code_span]:text-inherit","dangerouslySetInnerHTML":{"__html":"$2"},"children":null}]}]]}],null,["$","$L3",null,{"children":["$","$4",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"yI-NaKSMRKCVSJozpjyiB"}
-5:null
+<a href="/docs/labtalk/runtime-evidence">Runtime Evidence Gallery</a>.</p>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=09167d0bf0a5","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/?v=09167d0bf0a5","children":"Products"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products/parallel-gui-tui",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/parallel-gui-tui/?v=09167d0bf0a5","children":"Parallel GUI/TUI"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Parallel GUI/TUI"}],["$","p",null,{"className":"mt-2 text-muted","children":"DotTalk++ Workbench product lane for aligned graphical and terminal interfaces over the same runtime."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose dark:prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:break-words prose-code:whitespace-normal prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30 prose-pre:text-fg [&_pre_code]:text-fg [&_pre_code_span]:text-inherit","dangerouslySetInnerHTML":{"__html":"$2"},"children":null}]}]]}],null,"$L3"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"ReLVmm34bFIX_kcXxqJEX"}
+3:["$","$L4",null,{"children":["$","$5",null,{"name":"Next.MetadataOutlet","children":"$@6"}]}]
+6:null

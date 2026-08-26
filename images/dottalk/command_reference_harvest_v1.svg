@@ -12,12 +12,12 @@
   <g font-family="Segoe UI, Arial, sans-serif" text-anchor="middle">
     <rect x="56" y="166" width="218" height="118" rx="7" fill="#e8f4ef" stroke="#26705a" stroke-width="2"/>
     <text x="165" y="205" font-size="18" font-weight="700" fill="#172334">Central registry</text>
-    <text x="165" y="235" font-size="27" font-weight="700" fill="#26705a">236</text>
+    <text x="165" y="235" font-size="27" font-weight="700" fill="#26705a">239</text>
     <text x="165" y="260" font-size="14" fill="#53626e">registered command keys</text>
 
     <rect x="326" y="166" width="218" height="118" rx="7" fill="#eef3fb" stroke="#416c9e" stroke-width="2"/>
     <text x="435" y="205" font-size="18" font-weight="700" fill="#172334">Usage contracts</text>
-    <text x="435" y="235" font-size="27" font-weight="700" fill="#416c9e">215</text>
+    <text x="435" y="235" font-size="27" font-weight="700" fill="#416c9e">239</text>
     <text x="435" y="260" font-size="14" fill="#53626e">matched source annotations</text>
 
     <rect x="596" y="166" width="218" height="118" rx="7" fill="#fff4dc" stroke="#a46a12" stroke-width="2"/>

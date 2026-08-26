@@ -1,7 +1,7 @@
 1:"$Sreact.fragment"
-4:I[97367,["/_next/static/chunks/42dx791suil-8.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
+4:I[97367,["/_next/static/chunks/2gruyr6usi8zr.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
 5:"$Sreact.suspense"
-2:T170e,<h2 id="overview"><a class="no-underline" href="#overview">Overview</a></h2>
+2:T1907,<h2 id="overview"><a class="no-underline" href="#overview">Overview</a></h2>
 <p>MemoTalk names the memo-facing workflow in the DotTalk++ / x64base system.</p>
 <p>Its subject is what a memo field can hold. In classic xBase a memo is a place to
 put text too long for a fixed-width column. Here it is a byte carrier with no
@@ -12,20 +12,26 @@ different questions you can ask about a carrier that does not care what it
 carries.</p>
 <h2 id="minidb----what-the-carrier-can-hold"><a class="no-underline" href="#minidb----what-the-carrier-can-hold">MiniDB -- what the carrier can hold</a></h2>
 <p><code>WORKSPACE SAVE &#x3C;name> MEMO MINIDB</code> writes a container whose payload <em>is</em> the
-data: every open area's table bytes, plus its index bytes when an order is
-attached, plus a self-locating posture that says where those tables belong. One
-field. One row. A complete working database.</p>
+database: every open area's raw table bytes, its index-container bytes, carried
+memo-sidecar bytes when present, plus a self-locating posture that says how the
+members stand up together. One field. One row. A complete working database.</p>
 <p>The measured reference case is a thirteen-table teaching database carried whole
 in a single memo field and hydrated onto a clean RAM disk with zero disk reads.</p>
 <p>Between the note and the database sits the middle case: a <strong>posture</strong>, the
 description of a workspace rather than its contents. Which tables are open, in
 which work areas, under which orders and relations. The tables stay where they
 are; the posture records where that is.</p>
-<p>Those saves land in <code>WORKSPACES.dbf</code>, an ordinary x64 table whose rows describe
-databases. You can <code>USE</code> it, <code>LIST</code> it and <code>SEEK</code> in it with the same commands
-you learned on any other table -- the map is drawn in the same ink as the
-territory. Saving a name again supersedes rather than overwrites, so the catalog
-keeps its own history and every earlier version's bytes remain.</p>
+<p>Those saves land in <code>WORKSPACES.dbf</code>, an ordinary x64 table with a memo field.
+The <code>FMT</code> column says what each row carries. A posture row describes how to
+reopen tables that live elsewhere. A <code>MINIDB 1</code> row contains the database
+itself. Its descriptor columns are an envelope for identity, lineage, size and
+provenance; they are not a substitute for the payload. You can <code>USE</code> the outer
+table, <code>LIST</code> it and <code>SEEK</code> in it with the same commands learned on any other
+table, then hydrate a complete inner database from one selected row. Saving a
+name again supersedes rather than overwrites, so the catalog keeps its own
+history and every earlier version's bytes remain.</p>
+<p>That makes <code>WORKSPACES.dbf</code> a literal database of databases, not a metadata
+catalog that merely points at databases stored somewhere else.</p>
 <h2 id="the-quantum-memo-zoo----whether-the-carrier-can-be-trusted"><a class="no-underline" href="#the-quantum-memo-zoo----whether-the-carrier-can-be-trusted">The Quantum Memo Zoo -- whether the carrier can be trusted</a></h2>
 <p>A memo store that quietly mangles a high byte or truncates at a NUL cannot carry
 a DBF image. Everything above depends on that not happening, so it was
@@ -74,6 +80,6 @@ payload-agnosticism they rest on soaked rather than assumed.</p>
 <p>Current evidence lives in the <a href="/docs/labtalk/runtime-evidence">runtime evidence</a>
 gallery; the workspace surface it rides on is documented under
 <a href="/docs/engine/workspaces">engine / workspaces</a>, and the catalog itself is
-described in <a href="/schemas">schemas</a>.</p>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=cb357555628a","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/?v=cb357555628a","children":"Products"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products/memotalk",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/memotalk/?v=cb357555628a","children":"MemoTalk"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"MemoTalk"}],["$","p",null,{"className":"mt-2 text-muted","children":"The memo carrier and everything it hosts: MiniDB, the Quantum Memo Zoo, and the hundred-idea memo challenge."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose dark:prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:break-words prose-code:whitespace-normal prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30 prose-pre:text-fg [&_pre_code]:text-fg [&_pre_code_span]:text-inherit","dangerouslySetInnerHTML":{"__html":"$2"},"children":null}]}]]}],null,"$L3"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"yI-NaKSMRKCVSJozpjyiB"}
+described in <a href="/schemas">schemas</a>.</p>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=09167d0bf0a5","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/?v=09167d0bf0a5","children":"Products"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products/memotalk",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/memotalk/?v=09167d0bf0a5","children":"MemoTalk"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"MemoTalk"}],["$","p",null,{"className":"mt-2 text-muted","children":"The memo carrier and everything it hosts: MiniDB, the Quantum Memo Zoo, and the hundred-idea memo challenge."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose dark:prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:break-words prose-code:whitespace-normal prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30 prose-pre:text-fg [&_pre_code]:text-fg [&_pre_code_span]:text-inherit","dangerouslySetInnerHTML":{"__html":"$2"},"children":null}]}]]}],null,"$L3"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"ReLVmm34bFIX_kcXxqJEX"}
 3:["$","$L4",null,{"children":["$","$5",null,{"name":"Next.MetadataOutlet","children":"$@6"}]}]
 6:null
