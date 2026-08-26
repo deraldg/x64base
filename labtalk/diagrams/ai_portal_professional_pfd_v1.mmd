@@ -11,7 +11,8 @@ flowchart TD
     F --> G[Check in run and bind owner steward project lanes]
     G --> H[Create or link typed work item]
     H --> I[Read authority chain and contracts]
-    I --> J[Implement in D:/code/ccode development]
+    I --> I1[Validate typed identifiers and classify legacy aliases]
+    I1 --> J[Implement in D:/code/ccode development]
     J --> K[Capture proof with state platform source time]
     K --> L{Owner ruling needed?}
     L -->|yes| L1[Allocate global R-number and record ruling]

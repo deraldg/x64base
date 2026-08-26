@@ -152,3 +152,45 @@ labtalk/registries/ai_portal.yaml
 ```
 
 The LabTalk portal exposes that registry as the `AI Portal Work` section.
+
+## Professional model and normalization status
+
+The maintained architecture and cross-registry identifier checks are:
+
+```text
+docs/maintenance/AI_PORTAL_PROFESSIONAL_SYSTEM_MODEL_V1.md
+labtalk/diagrams/ai_portal_professional_pfd_v1.mmd
+labtalk/diagrams/ai_portal_schema_crosswalk_dfd_v1.mmd
+labtalk/registries/portal_identifier_model.yaml
+labtalk/reports/portal/portal_identifier_status_latest.md
+```
+
+The generated status classifies the historical `ticket` field as either a
+lane reference or an external ticket reference. It does not rewrite historical
+records. AIF claim backfill and the older use of `AIPR-*` report identities in
+`run_id` remain explicit compatibility observations until an owner ruling
+promotes a migration or hard gate.
+
+### Cold-start and restart use
+
+A new chat reaches this model through the conditional Portal row in
+`AI_README.md`. A restarted chat, compacted chat, or handoff that will reason
+about Portal identity or data flow must not rely on remembered counts or an old
+chat summary. It should:
+
+1. read `AI_TIER1_SEED_V1.md` and the current resume sources named by
+   `AI_README.md`;
+2. read `AI_PORTAL_PROFESSIONAL_SYSTEM_MODEL_V1.md` for the normalized
+   relationships and authority boundary;
+3. inspect `portal_identifier_model.yaml` rather than inventing field meanings;
+4. run `python labtalk/ai_portal/validate_portal_identifiers.py --check` before
+   trusting `portal_identifier_status_latest.*`; and
+5. name which consumer it is updating: local dynamic `/AI/`, private local
+   `/portal`, or reviewed public `/docs/labtalk`.
+
+Those consumers are deliberately different. `/AI/` is a live local generated
+operations surface. `/portal` is an ignored website workbench and cannot be a
+public dependency. `/docs/labtalk/ai-portal` and
+`/docs/labtalk/ai-portal-schemas` are reviewed public projections for partners
+that cannot read the local development tree. None of the three becomes source,
+runtime, HELP, metadata, proof, or owner-ruling authority.

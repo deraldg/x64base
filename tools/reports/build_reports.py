@@ -704,13 +704,24 @@ else:
 
 portal_map="""<div class="note"><b>The portal front door, in order</b>
 <ol style="margin:7px 0 0">
-<li><code>AI_README.md</code> -- entry point; step 0b says check <code>board.worklog</code> first.</li>
+<li><code>AI_README.md</code> -- the one canonical entry point: Tier 1 seed first,
+then the newest closeout, optional <code>board.worklog</code> handoff, and current target.</li>
+<li><code>docs/maintenance/AI_PORTAL_PROFESSIONAL_SYSTEM_MODEL_V1.md</code> --
+projects, AIF lanes, R rulings, PDLC/SDLC, runs, tasks, proofs, reports, schemas,
+feeds, and the publication boundary.</li>
+<li><code>labtalk/registries/portal_identifier_model.yaml</code> plus
+<code>python labtalk/ai_portal/validate_portal_identifiers.py --check</code> --
+typed identity meanings and a fresh cross-registry readback.</li>
 <li><code>AI_PORTAL.md</code> -- what this repo is, and what <code>C:\\x64base</code> is not.</li>
 <li><code>labtalk/ai_portal/AI_ENGINEERING_STANDARDS_SEED_V1.md</code> -- contracts, regression doctrine,
 definition of done, house conventions, git hygiene.</li>
 <li><code>docs/ai-friendly/AI_ROLES_TAXONOMY_V1.md</code> -- which kind of AI you are talking to.</li>
 <li>The lane doc for whatever you are touching, then its newest run below.</li>
-</ol></div>"""
+</ol>
+<div class="small" style="margin-top:8px"><b>Do not conflate the consumers:</b>
+<code>/AI/</code> is this live local generated surface; local <code>/portal/</code>
+is a private website workbench; public <code>/docs/labtalk/ai-portal</code> and
+<code>/docs/labtalk/ai-portal-schemas</code> are reviewed projections.</div></div>"""
 if PUBLIC:
     portal_map = portal_map.replace('what <code>C:\\x64base</code> is not',
                                     'what the publication-staging tree is not')

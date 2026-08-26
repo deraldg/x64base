@@ -1,0 +1,71 @@
+schema: dottalk.portal.identifiers.v1
+registry:
+  lane: AIF-132
+  owner: member.derald
+  steward: member.ai.codex
+  status: active_advisory
+  validation_mode: report_only
+
+identifier_classes:
+  - class_id: project
+    field: project_id
+    pattern: '^project\.[a-z0-9_]+(?:\.[a-z0-9_]+)+$'
+    authority: labtalk/registries/projects.yaml
+  - class_id: lane
+    field: lane_id
+    pattern: '^AIF-[0-9]+$'
+    authority: docs/ai-friendly/AI_INTERACTION_INTAKE_QUEUE_V1.md
+    allocator: tools/coordination/session_coordinator.py
+    claim_ledger: coordination/aif
+    collision_gate: tools/coordination/aif_collision_gate.py
+  - class_id: lifecycle
+    field: lifecycle
+    values: [PDLC, SDLC]
+    authority: docs/ai-friendly/ENTITY_LIFECYCLE_AND_THE_BRIDGE_V1.md
+  - class_id: ruling
+    field: ruling_id
+    pattern: '^R[0-9]+$'
+    authority: docs/ai-friendly/R_RULING_REGISTER_V1.md
+    allocator: tools/coordination/next_r.py
+    collision_gate: tools/coordination/r_collision_gate.py
+  - class_id: run
+    field: run_id
+    pattern: '^[A-Z][A-Z0-9_]*-[0-9]{8}-(?:[0-9]+|[A-Z0-9_-]+)$'
+    authority: labtalk/registries/runs.d
+  - class_id: work_item
+    field: work_item_id
+    pattern: '^task\.[a-z0-9_]+(?:\.[a-z0-9_]+)+$'
+    authority: labtalk/registries/ai_portal_tasks.yaml
+  - class_id: proof
+    field: proof_id
+    pattern: '^proof\.[a-z0-9_]+(?:\.[a-z0-9_]+)+$'
+    authority: labtalk/registries/proofs.d
+  - class_id: report
+    field: report_id
+    pattern: '^AIPR-[0-9]{8}-(?:[0-9]+|[A-Z0-9_-]+)$'
+    authority: labtalk/registries/runs.d
+
+legacy_fields:
+  ticket:
+    rule: classify_only
+    mappings:
+      - when: '^AIF-[0-9]+$'
+        maps_to: lane_id
+      - when: '.+'
+        maps_to: external_ticket_id
+  owning_lifecycle:
+    rule: normalize_value
+    mappings:
+      - when: '.*pdlc.*'
+        maps_to: PDLC
+      - when: '.*sdlc.*'
+        maps_to: SDLC
+
+sources:
+  projects: labtalk/registries/projects.yaml
+  tasks: labtalk/registries/ai_portal_tasks.yaml
+  aif_intake: docs/ai-friendly/AI_INTERACTION_INTAKE_QUEUE_V1.md
+  aif_claims: coordination/aif
+  rulings: docs/ai-friendly/R_RULING_REGISTER_V1.md
+  runs: labtalk/registries/runs.d
+  proofs: labtalk/registries/proofs.d

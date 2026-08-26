@@ -12,6 +12,7 @@ flowchart LR
     ID[(Identity and RBAC DBFs)]
     BBS[(BBS and Pseudo-Chat DBFs)]
     TRACK[(Portal DBFs: ruling lane run runlane proof task)]
+    IDMODEL[(Identifier model and legacy crosswalk)]
     FEED[(Portal feed assertion and current-run registries)]
     STATUS[Generated Portal status and reports]
     LOCAL[Local AI Portal]
@@ -33,6 +34,12 @@ flowchart LR
     PROOF -->|evidence state| TRACK
     ID -->|member permission grant| TRACK
     BBS -->|author run grant references| TRACK
+    AIF -->|lane declarations and claims| IDMODEL
+    RR -->|global ruling declarations| IDMODEL
+    RUN -->|run and report identities| IDMODEL
+    TASK -->|work item project and legacy ticket fields| IDMODEL
+    PROOF -->|proof identities| IDMODEL
+    IDMODEL -->|validated typed references| TRACK
 
     HELP -->|feed.dottalk.help_store| FEED
     META -->|feed.dottalk.metadata_metacollect| FEED
@@ -53,5 +60,5 @@ flowchart LR
     classDef store fill:#f2e9ff,stroke:#6941a5,color:#222;
     classDef derived fill:#e9f7ef,stroke:#287a45,color:#222;
     class SRC,EXT source;
-    class HELP,META,MAN,AIF,RR,RUN,TASK,PROOF,ID,BBS,TRACK,FEED store;
+    class HELP,META,MAN,AIF,RR,RUN,TASK,PROOF,ID,BBS,TRACK,IDMODEL,FEED store;
     class STATUS,LOCAL,SITE,PUBLIC derived;

@@ -55,6 +55,7 @@ After that canonical start, use these task-specific sources only when relevant:
 - [`labtalk/ai_portal/DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md`](labtalk/ai_portal/DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md) when DotTalk++ or DotScript is involved
 - [`labtalk/ai_portal/EXTERNAL_AI_CHANGE_PACKAGE_V1.md`](labtalk/ai_portal/EXTERNAL_AI_CHANGE_PACKAGE_V1.md) when work will return as a patch or package
 - [`labtalk/ai_portal/README.md`](labtalk/ai_portal/README.md) for the complete Alpha/Experimental lane
+- [`docs/maintenance/AI_PORTAL_PROFESSIONAL_SYSTEM_MODEL_V1.md`](docs/maintenance/AI_PORTAL_PROFESSIONAL_SYSTEM_MODEL_V1.md) when projects, AIF lanes, R rulings, PDLC/SDLC, runs, tasks, proofs, AI reports, Portal schemas, feeds, or website projections are involved. Its identifier registry and validator are the maintained crosswalk; do not infer a hierarchy from legacy `ticket` fields.
 
 Then inspect only the contracts, source, tests, HELP, and proof material needed
 for the assigned task.

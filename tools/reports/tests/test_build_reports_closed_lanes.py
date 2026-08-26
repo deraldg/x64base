@@ -71,6 +71,12 @@ class ClosedLaneDisclosureTests(unittest.TestCase):
         # at least one closed lane must link to its evidence/claim on GitHub
         self.assertIn("blob/development/", self.html)
 
+    def test_portal_onboarding_names_normalized_model_and_consumers(self):
+        self.assertIn("AI_PORTAL_PROFESSIONAL_SYSTEM_MODEL_V1.md", self.html)
+        self.assertIn("validate_portal_identifiers.py --check", self.html)
+        self.assertIn("Do not conflate the consumers", self.html)
+        self.assertIn("/docs/labtalk/ai-portal-schemas", self.html)
+
     def test_console_copy_defers_to_runtime_write_posture(self):
         self.assertIn("posture shown at runtime", self.index_html)
         self.assertIn("--enable-write", self.index_html)

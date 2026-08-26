@@ -23,6 +23,8 @@ Authoritative diagrams:
 - feed contract: `docs/contracts/DOTTALK_PORTAL_FEED_CONTRACT_V1.md`
 - feed/status inventory: `labtalk/registries/portal_feeds.yaml` and
   `labtalk/reports/portal/portal_feed_status_latest.md`
+- identifier contract/status: `labtalk/registries/portal_identifier_model.yaml`
+  and `labtalk/reports/portal/portal_identifier_status_latest.md`
 
 ## 2. Normalized hierarchy and identifier model
 
@@ -112,6 +114,8 @@ seeded, current, or the sole active authority; runtime status must be measured.
 | `dottalk.portal.assertions.v1` | `portal_assertions.yaml` | typed evidence-anchored routing assertions |
 | `dottalk.fullstack.current.v1` | `current_fullstack_doc_push.yaml` | maintained current documentation-run pointer |
 | `dottalk.portal.status.v1` | generated Portal status JSON | combined feed/assertion/current-run projection |
+| `dottalk.portal.identifiers.v1` | `portal_identifier_model.yaml` | canonical identifier classes, authorities, and legacy-field mappings |
+| `dottalk.portal.identifier.status.v1` | generated identifier status JSON | cross-registry identity inventory, compatibility observations, and structural findings |
 | `labtalk-database-ecology-v1` | `database_ecology.yaml` | database artifact classification and custody |
 
 `projects.yaml`, `proofs.yaml`, `portal.yaml`, and the AIF/R Markdown registers
@@ -180,6 +184,10 @@ regenerated.
 - The public/current-work projection still uses the field name `ticket` for a
   mixture of AIF lanes and other work references. Keep it for compatibility,
   but generate it from a typed `lane_id` or `external_ticket_id` field.
+- Historical run fragments use `AIPR-*` report identities in the `run_id`
+  field. Keep those records readable, but new records should separate the
+  execution `run_id` from the durable `report_id`; the identifier status report
+  counts this compatibility seam without rewriting history.
 - `ai_portal_tasks.yaml` contains perishable counts and an older documentation
   run. The maintained current-run pointer now supplies the current routing fact;
   the task registry should eventually consume it rather than duplicate it.

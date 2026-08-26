@@ -38,6 +38,7 @@ Invariants first, then state: read the 8 KB seed before the perishable resume.
 | 1 | **Newest `docs/maintenance/SESSION_CLOSEOUT_*.md`** | Fastest true resume. What the last session did, and what it left open. If none exists, skip. |
 | 1b | If the BBS daemon is up: AUTH and `BBS READ board.worklog LAST 20` for your lane's live handoff; post one back on finishing (AIF-057, see `AI_BBS_OPERATIONS_RUNBOOK_V1.md` sec 11). | The live, identity-bound pickup/dropoff. Optional and simplex -- the closeout is authority; the board is the fast handoff. Skip if the daemon is down. |
 | 2 | `docs/agents/CURRENT_TARGET.md` | The active objective. |
+| 2a | If the task creates, interprets, or publishes Portal projects, AIF lanes, R rulings, runs, tasks, proofs, reports, feeds, or schemas: `docs/maintenance/AI_PORTAL_PROFESSIONAL_SYSTEM_MODEL_V1.md`, then `labtalk/ai_portal/README.md`. | The normalized identifier and data-flow model. It prevents a fresh or resumed chat from treating every number as a ticket, confusing a run with an AI report, or treating a website projection as authority. |
 | 3 | `labtalk/ai_portal/DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md` | Where the authoritative tree is; what you may and may not do. |
 | 4 | If you can **write** to the repo: `labtalk/ai_portal/LOCAL_ACCESS_AGENT_CHECKLIST_V1.md` | The failure modes specific to an agent that acts, not just proposes. |
 | 5 | `labtalk/ai_portal/SDLC_FAST_START_SEED_V1.md` | Which lifecycle owns the task; the gates. |
@@ -68,8 +69,53 @@ available repo-local source.
 
 ## AI Portal
 
-The canonical startup order is the table at the top of this file. The older AI
-assimilation portal remains a depth-on-demand context source:
+The canonical startup order is the table at the top of this file. For Portal
+work, the maintained professional model and its executable identifier contract
+are:
+
+```text
+docs/maintenance/AI_PORTAL_PROFESSIONAL_SYSTEM_MODEL_V1.md
+labtalk/diagrams/ai_portal_professional_pfd_v1.mmd
+labtalk/diagrams/ai_portal_schema_crosswalk_dfd_v1.mmd
+labtalk/registries/portal_identifier_model.yaml
+labtalk/ai_portal/validate_portal_identifiers.py
+labtalk/reports/portal/portal_identifier_status_latest.md
+```
+
+Use the relationships in that model instead of inventing a hierarchy from the
+spelling of old fields:
+
+- `project_id` is the durable program identity.
+- `AIF-NNN` is a governed lane or intake identity, not a generic ticket.
+- PDLC and SDLC classify lifecycle scope; they do not allocate identities.
+- `R<n>` is one global ruling/doctrine sequence, not a lane-local counter.
+- execution `run_id` and durable `AIPR-*` `report_id` are different identities.
+- `task.*` and `proof.*` records link to lanes; they do not replace lane identity.
+- legacy `ticket` and report-shaped `run_id` values are classified and exposed as
+  compatibility seams, not silently rewritten.
+
+After a restart, context compaction, or handoff that touches these identities,
+run the read-only freshness check before reasoning from the generated status:
+
+```powershell
+python .\labtalk\ai_portal\validate_portal_identifiers.py --check
+```
+
+### Portal consumer surfaces
+
+| Surface | Purpose | Authority posture |
+| --- | --- | --- |
+| `http://localhost:3000/AI/` | Dynamic local AI Operations and maintenance gateway; current registry/report views | Local, generated, read-only by default; not engineering authority |
+| `http://localhost:3000/portal/` | Local website workbench pages sourced from ignored `D:\dev\x64base-site\content\portal` files | Private design/review surface; never a publication dependency |
+| `/docs/labtalk/ai-portal` and `/docs/labtalk/ai-portal-schemas` | Reviewed public overview, PFD/DFD, schema catalog, and identifier crosswalk | Public projection for agents without local-disk access; never upstream authority |
+
+Start the local gateway from `D:\code\ccode` with `./start-ai`. If it refuses an
+occupied port, identify the listener and its command line before stopping it;
+the refusal is a safety control. The website upstream is separate on port 3002,
+and a production build performed while `next dev` is running may require that
+upstream to be restarted.
+
+The older AI assimilation portal remains a depth-on-demand context source:
 
 ```text
 docs/ai-friendly/AI_ASSIMILATION_PORTAL_V1.md

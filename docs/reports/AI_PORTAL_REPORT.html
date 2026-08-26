@@ -1,8 +1,19 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>DotTalk++ AI Portal -- Lanes, Runs and Proofs</title>
 <style>
-:root{--bg:#0f1419;--panel:#171e26;--line:#26323f;--tx:#dfe7ef;--dim:#8ba0b4;
---acc:#5cc8ff;--ok:#4ec9a0;--warn:#e8b84b;--bad:#e86a6a;--mono:ui-monospace,"Cascadia Code",Consolas,monospace}
+:root{--bg:#f6f9fc;--panel:#ffffff;--line:#d0ddeb;--tx:#0a1320;--dim:#374960;
+--acc:#0b8491;--ok:#15803d;--warn:#ba5c14;--bad:#b93030;
+--tdline:#e2eaf2;--pillbg:#eef3f8;--notebg:#eef5f8;
+--pok:#9fd3b8;--pwarn:#e0bb8a;--pbad:#e0a5a5;--pacc:#a9d6e2;
+--privbg:#fdecec;--privline:#e8a9a9;--privtx:#8c1d1d;
+--intbg:#eaf2f8;--intline:#b9d4e6;--inttx:#14506e;
+--mono:ui-monospace,"Cascadia Code",Consolas,monospace}
+html.dark{--bg:#0f1419;--panel:#171e26;--line:#26323f;--tx:#dfe7ef;--dim:#8ba0b4;
+--acc:#5cc8ff;--ok:#4ec9a0;--warn:#e8b84b;--bad:#e86a6a;
+--tdline:#1e2731;--pillbg:#1d262f;--notebg:#141c24;
+--pok:#2c5c4c;--pwarn:#5c4c22;--pbad:#5c2c2c;--pacc:#28516b;
+--privbg:#3a1d1d;--privline:#6b2f2f;--privtx:#ffb3b3;
+--intbg:#1d2a33;--intline:#2e4a5c;--inttx:#9fd0ea}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.55 -apple-system,Segoe UI,Roboto,sans-serif}
 .wrap{max-width:1080px;margin:0 auto;padding:32px 22px 80px}
@@ -14,13 +25,13 @@ h3{font-size:15px;margin:20px 0 8px;color:var(--tx)}
 table{width:100%;border-collapse:collapse;font-size:13.5px;margin:9px 0}
 th{text-align:left;color:var(--dim);font-weight:600;font-size:11.5px;letter-spacing:.5px;
 text-transform:uppercase;padding:7px 9px;border-bottom:1px solid var(--line)}
-td{padding:8px 9px;border-bottom:1px solid #1e2731;vertical-align:top}
+td{padding:8px 9px;border-bottom:1px solid var(--tdline);vertical-align:top}
 tr:last-child td{border-bottom:none}
 code,.m{font-family:var(--mono);font-size:12.5px}
 .pill{display:inline-block;padding:1.5px 8px;border-radius:11px;font-size:11px;font-family:var(--mono);
-border:1px solid var(--line);background:#1d262f;color:var(--dim)}
-.pill.ok{color:var(--ok);border-color:#2c5c4c}.pill.warn{color:var(--warn);border-color:#5c4c22}
-.pill.bad{color:var(--bad);border-color:#5c2c2c}.pill.acc{color:var(--acc);border-color:#28516b}
+border:1px solid var(--line);background:var(--pillbg);color:var(--dim)}
+.pill.ok{color:var(--ok);border-color:var(--pok)}.pill.warn{color:var(--warn);border-color:var(--pwarn)}
+.pill.bad{color:var(--bad);border-color:var(--pbad)}.pill.acc{color:var(--acc);border-color:var(--pacc)}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(178px,1fr));gap:11px;margin:14px 0}
 .kpi{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:13px 15px}
 .kpi .n{font-size:26px;font-weight:600;color:var(--acc);line-height:1.1}
@@ -29,33 +40,45 @@ border:1px solid var(--line);background:#1d262f;color:var(--dim)}
 .post .h{font-size:12px;color:var(--dim);font-family:var(--mono)}
 .post .b{margin-top:5px;white-space:pre-wrap;word-break:break-word}
 .dim{color:var(--dim)}.small{font-size:12.5px}
-.note{border-left:3px solid var(--acc);background:#141c24;padding:10px 14px;margin:13px 0;border-radius:0 6px 6px 0}
+.note{border-left:3px solid var(--acc);background:var(--notebg);padding:10px 14px;margin:13px 0;border-radius:0 6px 6px 0}
 .note.w{border-left-color:var(--warn)}
 ul{margin:7px 0;padding-left:20px}li{margin:3px 0}
 a{color:var(--acc)}
 .foot{margin-top:44px;padding-top:14px;border-top:1px solid var(--line);color:var(--dim);font-size:12px}
 .band{border-radius:7px;padding:9px 14px;margin:0 0 18px;font-size:12.5px;font-weight:600;
 letter-spacing:.3px}
-.band.priv{background:#3a1d1d;border:1px solid #6b2f2f;color:#ffb3b3}
-.band.int{background:#1d2a33;border:1px solid #2e4a5c;color:#9fd0ea}
-kbd{font-family:var(--mono);background:#1d262f;border:1px solid var(--line);border-radius:4px;padding:1px 6px;font-size:12px}
-</style></head><body><div class="wrap">
-<div class="band int">INTERNAL -- review before any publication to x64base.com or public main. See docs/reports/REPORTS_PUBLICATION_NOTE_V1.md</div>
+.band.priv{background:var(--privbg);border:1px solid var(--privline);color:var(--privtx)}
+.band.int{background:var(--intbg);border:1px solid var(--intline);color:var(--inttx)}
+kbd{font-family:var(--mono);background:var(--pillbg);border:1px solid var(--line);border-radius:4px;padding:1px 6px;font-size:12px}
+</style><script>(function(){try{var t=localStorage.getItem('theme')||'light';var d=t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);}catch(e){}})();</script></head><body><div class="wrap" data-pagefind-body>
+<div class="band int" data-pagefind-ignore>INTERNAL -- review before any publication to x64base.com or public main. See docs/reports/REPORTS_PUBLICATION_NOTE_V1.md</div>
+<div class="small" style="margin-bottom:10px"><a href="/">&larr; x64base main site</a></div>
 <h1>DotTalk++ AI Portal -- Lanes, Runs and Proofs</h1><div class="sub">Who worked what, what is proven, and where to pick the thread back up.</div>
 <div class="grid">
-<div class="kpi"><div class="n">16</div><div class="l">Tracked lanes</div></div>
-<div class="kpi"><div class="n">6</div><div class="l">Recorded runs</div></div>
-<div class="kpi"><div class="n">26</div><div class="l">Runtime-observed proofs</div></div>
-<div class="kpi"><div class="n">13</div><div class="l">Source-defined proofs</div></div>
+<div class="kpi"><div class="n">18</div><div class="l">Tracked lanes</div></div>
+<div class="kpi"><div class="n">8</div><div class="l">Recorded runs</div></div>
+<div class="kpi"><div class="n">41</div><div class="l">Runtime-observed proofs</div></div>
+<div class="kpi"><div class="n">20</div><div class="l">Source-defined proofs</div></div>
 </div><div class="note"><b>The portal front door, in order</b>
 <ol style="margin:7px 0 0">
-<li><code>AI_README.md</code> -- entry point; step 0b says check <code>board.worklog</code> first.</li>
+<li><code>AI_README.md</code> -- the one canonical entry point: Tier 1 seed first,
+then the newest closeout, optional <code>board.worklog</code> handoff, and current target.</li>
+<li><code>docs/maintenance/AI_PORTAL_PROFESSIONAL_SYSTEM_MODEL_V1.md</code> --
+projects, AIF lanes, R rulings, PDLC/SDLC, runs, tasks, proofs, reports, schemas,
+feeds, and the publication boundary.</li>
+<li><code>labtalk/registries/portal_identifier_model.yaml</code> plus
+<code>python labtalk/ai_portal/validate_portal_identifiers.py --check</code> --
+typed identity meanings and a fresh cross-registry readback.</li>
 <li><code>AI_PORTAL.md</code> -- what this repo is, and what <code>C:\x64base</code> is not.</li>
 <li><code>labtalk/ai_portal/AI_ENGINEERING_STANDARDS_SEED_V1.md</code> -- contracts, regression doctrine,
 definition of done, house conventions, git hygiene.</li>
 <li><code>docs/ai-friendly/AI_ROLES_TAXONOMY_V1.md</code> -- which kind of AI you are talking to.</li>
 <li>The lane doc for whatever you are touching, then its newest run below.</li>
-</ol></div><h2>Lanes -- and the newest run on each</h2><table><tr><th>Lane</th><th>What it is</th><th>Evidence</th>
+</ol>
+<div class="small" style="margin-top:8px"><b>Do not conflate the consumers:</b>
+<code>/AI/</code> is this live local generated surface; local <code>/portal/</code>
+is a private website workbench; public <code>/docs/labtalk/ai-portal</code> and
+<code>/docs/labtalk/ai-portal-schemas</code> are reviewed projections.</div></div><h2>Lanes -- and the newest run on each</h2><table><tr><th>Lane</th><th>What it is</th><th>Evidence</th>
 <th>Newest run (return here)</th></tr><tr><td><code>AIF-045</code></td>
 <td class="small">Identity/RBAC/authorization management for the AI Portal, 2026-07-21</td>
 <td><span class="pill ">**ACTIVE — core stack implemented, committed, and runtime-proven through 2d-3.** M0/M1 strong-ID domain and deny-precedence resolver; nine-table identity DBF persistence; APH-5 save/reload/compare proof; DBF boot adoption with degraded read-only fallback; USER admission/request/approve/grant/revoke/delete; low-privilege unauthenticated `member.public` startup; principal + acting-member session model; human credential and owner-issued rotatable AI/service token authentication. Real enforcement is wired into the AI dev-tools gate, `!` host shell, and SFTP; `DOTTALK_ALLOW_HOST_COMMANDS`/network policy remain independent final constraints. `SECURITY LOGIN` is explicitly a legacy diagnostic selector and grants no USER/RBAC access. Commits include `c59f688ca`, `b44a32fe2`, `0d4b9b407`, `be021e8b7`, `cf977b160`, `6b350ffed`, `2a89cc5c3`, `bfa6bb0fd`, `8afac8f63`. Open: M4 registry import, M5 portable YAML bootstrap, M6 teaching loop. Dev-stage, not promoted.</span></td>
@@ -104,33 +127,267 @@ definition of done, house conventions, git hygiene.</li>
 <td class="small"><code>AIPR-20260727-001</code></td></tr><tr><td><code>AIF-074</code></td>
 <td class="small">SQLSEL product lane -- gold-standard SQL over the Open Relationship Platform</td>
 <td><span class="pill ">**CHARTERED -- plan of record under review; no engine source changed; zero runtime evidence.** Maintainer-assigned lane run through Portal onboarding (task packet first). Findings: the early SQL group is abandoned pre-engine-maturity work published as `supported` (SQ-01: `SQLERASE` discards its FROM table and deletes from the current area, 0 corpus users; SQ-04: corpus scripts call `SQLSEL SELECT ... FROM ...`, an interface never built -- the parser greps clean of SELECT/FROM); `SHOW` (199 uses) and `sqlnorm` (5 external consumers) are live and excluded from the group. **Eleven owner rulings** (R1-R11, ledger in the lane doc): start-new-keep-SQLSEL; SQL mode with modal SELECT alias (`SET MODE SQL\</span></td>
-<td class="small"><code>AIPR-20260729-001</code></td></tr></table><div class="note w"><b>How to return to the last agent on a lane</b><br>
+<td class="small"><code>AIPR-20260729-001</code></td></tr><tr><td><code>AIF-078</code></td>
+<td class="small">Workspace qualifier namespace depth: decide the qualifier&#x27;s depth BEFORE AIF-074 P4.1 authors it</td>
+<td><span class="pill ">review_needed -- design only, NO engine source changed, zero runtime evidence</span></td>
+<td class="small"><code>AIPR-20260730-001</code></td></tr><tr><td><code>AIF-086</code></td>
+<td class="small">AI Systems Integration SDLC, Codex 2026-08-03; current steward and contributing-agent continuation through 2026-08-17</td>
+<td><span class="pill ">M0 accepted; M1 accepted 2026-08-05; M2 architecture active; bounded SYSCHATLNK M3 schema candidate has accepted disposable X64 proof; development-only, no production catalog, staging, or publication</span></td>
+<td class="small"><code>AIPR-20260803-003</code></td></tr></table><details style="margin-top:10px"><summary style="cursor:pointer">
+<b>Closed / documented-only lanes (112)</b> -- every AIF in the intake
+queue with no current run, linked to its record. Click to expand.</summary>
+<table style="margin-top:8px"><tr><th>Lane</th><th>What it is</th><th>Record</th></tr>
+<tr><td><code>AIF-001</code></td>
+<td class="small">AI Baby Bootstrap Card</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/agents/AI_BABY_BOOTSTRAP_CARD.md">docs/agents/AI_BABY_BOOTSTRAP_CARD.md</a></td></tr><tr><td><code>AIF-002</code></td>
+<td class="small">Contract lifecycle chat-to-contract rule</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/contracts/CONTRACT_LIFECYCLE_V1.md">docs/contracts/CONTRACT_LIFECYCLE_V1.md</a></td></tr><tr><td><code>AIF-003</code></td>
+<td class="small">LabTalk SelfDoc first lab</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development//code/ccode/labtalk/labs/self_documenting_systems/LAB_SELFDOC_COMMENTS_TO_CONTRACTS_v0.md">/code/ccode/labtalk/labs/self_documenting_systems/LAB_SELFDOC_COMMENTS_TO_CONTRACTS_v0.md</a></td></tr><tr><td><code>AIF-004</code></td>
+<td class="small">AI Friendly lane proposal</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/ai-friendly/AI_FRIENDLY_LANE_MANIFEST_V1.md">docs/ai-friendly/AI_FRIENDLY_LANE_MANIFEST_V1.md</a></td></tr><tr><td><code>AIF-005</code></td>
+<td class="small">New-AI assimilation portal/book</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/ai-friendly/AI_ASSIMILATION_PORTAL_V1.md">docs/ai-friendly/AI_ASSIMILATION_PORTAL_V1.md</a></td></tr><tr><td><code>AIF-006</code></td>
+<td class="small">Claude session 2026-07-13 (hosted, no repo access); re-evaluated 2026-07-14 with repo access</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/agents/CURRENT_TARGET.md">docs/agents/CURRENT_TARGET.md</a></td></tr><tr><td><code>AIF-007</code></td>
+<td class="small">Same session; withdrawn proposal</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/AI_PORTAL.md">AI_PORTAL.md</a></td></tr><tr><td><code>AIF-008</code></td>
+<td class="small">MCC databuild session 2026-07-14</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/SESSION_CLOSEOUT_MCC_DATABUILD_2026-07-14.md">docs/maintenance/SESSION_CLOSEOUT_MCC_DATABUILD_2026-07-14.md</a></td></tr><tr><td><code>AIF-009</code></td>
+<td class="small">MCC databuild session 2026-07-14</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/labtalk/ai_portal/LOCAL_ACCESS_AGENT_CHECKLIST_V1.md">labtalk/ai_portal/LOCAL_ACCESS_AGENT_CHECKLIST_V1.md</a></td></tr><tr><td><code>AIF-010</code></td>
+<td class="small">MCC databuild session 2026-07-14</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/AI_README.md">AI_README.md</a></td></tr><tr><td><code>AIF-011</code></td>
+<td class="small">MCC databuild session 2026-07-14</td>
+<td class="small"><span class="pill warn">doc missing</span> <code>SESSION_CLOSEOUT_MCC_DATABUILD_2026-07-14.md</code></td></tr><tr><td><code>AIF-012</code></td>
+<td class="small">Maintainer resume, 2026-07-14</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/labtalk/LABTALK_DEVELOPER_PROFILE_v0.md">labtalk/LABTALK_DEVELOPER_PROFILE_v0.md</a></td></tr><tr><td><code>AIF-013</code></td>
+<td class="small">Maintainer unique-system discussion, 2026-07-14</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/labtalk/docs/co-development/recursive_coproject_model_v1.md">labtalk/docs/co-development/recursive_coproject_model_v1.md</a></td></tr><tr><td><code>AIF-014</code></td>
+<td class="small">Maintainer build continuation, 2026-07-14</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/XBASE_OPTIONAL_INDEX_ARCHITECTURE_DECISION_V1.md">docs/maintenance/XBASE_OPTIONAL_INDEX_ARCHITECTURE_DECISION_V1.md</a></td></tr><tr><td><code>AIF-015</code></td>
+<td class="small">Maintainer product/build separation request, 2026-07-14</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/X64BASE_ENGINE_EDITION_SEPARATION_PLAN_V1.md">docs/maintenance/X64BASE_ENGINE_EDITION_SEPARATION_PLAN_V1.md</a></td></tr><tr><td><code>AIF-016</code></td>
+<td class="small">Cold-clone journey certification, 2026-07-15</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/SESSION_CLOSEOUT_CLONE_JOURNEY_CERTIFICATION_2026-07-15.md">docs/maintenance/SESSION_CLOSEOUT_CLONE_JOURNEY_CERTIFICATION_2026-07-15.md</a></td></tr><tr><td><code>AIF-017</code></td>
+<td class="small">Pinocchio stress-test lane, 2026-07-15</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/PINOCCHIO_STRESS_TEST_PLAN_V1.md">docs/maintenance/PINOCCHIO_STRESS_TEST_PLAN_V1.md</a></td></tr><tr><td><code>AIF-018</code></td>
+<td class="small">Messaging Normalization lane, 2026-07-15</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/MESSAGING_NORMALIZATION_LANE_PLAN_V1.md">docs/maintenance/MESSAGING_NORMALIZATION_LANE_PLAN_V1.md</a></td></tr><tr><td><code>AIF-019</code></td>
+<td class="small">Build-editions review, 2026-07-14; renumbered during development reconciliation 2026-07-15</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/BUILDING.md">BUILDING.md</a></td></tr><tr><td><code>AIF-020</code></td>
+<td class="small">Codex task `019f627a-4bbd-7b53-9d02-18cab01f91fb`, 2026-07-15</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/labtalk/ai_portal/AI_REPORT_AUDIT_CONTRACT_V1.md">labtalk/ai_portal/AI_REPORT_AUDIT_CONTRACT_V1.md</a></td></tr><tr><td><code>AIF-021</code></td>
+<td class="small">Claude Cowork report `AIPR-20260716-001`; Codex corrective audit `AIPR-20260716-002`, 2026-07-16</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/SESSION_CLOSEOUT_CLAUDE_MESSAGING_CORRECTIVE_AUDIT_2026-07-16.md">docs/maintenance/SESSION_CLOSEOUT_CLAUDE_MESSAGING_CORRECTIVE_AUDIT_2026-07-16.md</a></td></tr><tr><td><code>AIF-022</code></td>
+<td class="small">Claude audit response + Codex two-path proof, 2026-07-16</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/DOTSCRIPT_COMMENT_PREFIX_EXECUTION_PATH_DRIFT_V1.md">docs/maintenance/DOTSCRIPT_COMMENT_PREFIX_EXECUTION_PATH_DRIFT_V1.md</a></td></tr><tr><td><code>AIF-023</code></td>
+<td class="small">Table-buffer WAL/durability session `AIPR-20260719-003`, 2026-07-19</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/SESSION_CLOSEOUT_TABLE_BUFFER_WAL_2026-07-19.md">docs/maintenance/SESSION_CLOSEOUT_TABLE_BUFFER_WAL_2026-07-19.md</a></td></tr><tr><td><code>AIF-024</code></td>
+<td class="small">Maintainer directive, 2026-07-19</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/AI_PORTAL.md">AI_PORTAL.md</a></td></tr><tr><td><code>AIF-025</code></td>
+<td class="small">Website catalog-drift session `AIPR-20260719-004`, 2026-07-19</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/SESSION_CLOSEOUT_WEBSITE_SOURCE_DERIVED_CATALOG_HARVEST_2026-07-19.md">docs/maintenance/SESSION_CLOSEOUT_WEBSITE_SOURCE_DERIVED_CATALOG_HARVEST_2026-07-19.md</a></td></tr><tr><td><code>AIF-026</code></td>
+<td class="small">Engine limits session `AIPR-20260719-005`, 2026-07-19</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/SESSION_CLOSEOUT_ENGINE_LIMITS_AND_CORRECTIONS_2026-07-19.md">docs/maintenance/SESSION_CLOSEOUT_ENGINE_LIMITS_AND_CORRECTIONS_2026-07-19.md</a></td></tr><tr><td><code>AIF-027</code></td>
+<td class="small">Engine limits session `AIPR-20260719-005` follow-ups, 2026-07-19</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/RECNO64_END_TO_END_64BIT_ADDRESSING_LANE_V1.md">docs/maintenance/RECNO64_END_TO_END_64BIT_ADDRESSING_LANE_V1.md</a></td></tr><tr><td><code>AIF-028</code></td>
+<td class="small">RECNO64 M3 buffer-proof run, 2026-07-19</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/src/cli/cmd_replace.cpp">src/cli/cmd_replace.cpp</a></td></tr><tr><td><code>AIF-029</code></td>
+<td class="small">Maintainer design discussion during the RECNO64/limits documentation, 2026-07-20</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/RECNO64_END_TO_END_64BIT_ADDRESSING_LANE_V1.md">docs/maintenance/RECNO64_END_TO_END_64BIT_ADDRESSING_LANE_V1.md</a></td></tr><tr><td><code>AIF-030</code></td>
+<td class="small">Field-types investigation, 2026-07-20</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/FIELD_TYPE_CODEC_LANE_V1.md">docs/maintenance/FIELD_TYPE_CODEC_LANE_V1.md</a></td></tr><tr><td><code>AIF-031</code></td>
+<td class="small">FIELDTYPE M1 shakedown, 2026-07-19</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/src/cli/cmd_replace.cpp">src/cli/cmd_replace.cpp</a></td></tr><tr><td><code>AIF-032</code></td>
+<td class="small">Website reality audit — diagram drift, 2026-07-20</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/FULLSTACK_GENERATED_DIAGRAMS_LANE_V1.md">docs/maintenance/FULLSTACK_GENERATED_DIAGRAMS_LANE_V1.md</a></td></tr><tr><td><code>AIF-033</code></td>
+<td class="small">Website reality audit — no assembly/maintenance stream, 2026-07-20</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/WEBSITE_CONTENT_MANIFEST_AND_ASSEMBLY_LANE_V1.md">docs/maintenance/WEBSITE_CONTENT_MANIFEST_AND_ASSEMBLY_LANE_V1.md</a></td></tr><tr><td><code>AIF-034</code></td>
+<td class="small">Doc/SDLC model brainstorm, 2026-07-20</td>
+<td class="small"><span class="pill warn">no record on disk</span></td></tr><tr><td><code>AIF-035</code></td>
+<td class="small">MANUAL-ASSEMBLY lane, 2026-07-20</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/MANUAL_ASSEMBLY_LANE_V1.md">docs/maintenance/MANUAL_ASSEMBLY_LANE_V1.md</a></td></tr><tr><td><code>AIF-036</code></td>
+<td class="small">DotScript stop_on_error, 2026-07-20</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/DOTSCRIPT_STOP_ON_ERROR_LANE_V1.md">docs/maintenance/DOTSCRIPT_STOP_ON_ERROR_LANE_V1.md</a></td></tr><tr><td><code>AIF-037</code></td>
+<td class="small">Representative-by-design codex, 2026-07-20</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/AI_PORTAL.md">AI_PORTAL.md</a></td></tr><tr><td><code>AIF-038</code></td>
+<td class="small">DotScript arrays lane, 2026-07-20</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/DOTSCRIPT_ARRAYS_LANE_V1.md">docs/maintenance/DOTSCRIPT_ARRAYS_LANE_V1.md</a></td></tr><tr><td><code>AIF-039</code></td>
+<td class="small">PDLC student/working model, 2026-07-20</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/PDLC_STUDENT_WORKING_MODEL_LANE_V1.md">docs/maintenance/PDLC_STUDENT_WORKING_MODEL_LANE_V1.md</a></td></tr><tr><td><code>AIF-040</code></td>
+<td class="small">Projects/Lanes/Promotion tiering, 2026-07-20</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/AI_PORTAL.md">AI_PORTAL.md</a></td></tr><tr><td><code>AIF-041</code></td>
+<td class="small">BETA-1 stabilization &amp; regression validation lane, 2026-07-21</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/BETA1_STABILIZATION_REGRESSION_LANE_V1.md">docs/maintenance/BETA1_STABILIZATION_REGRESSION_LANE_V1.md</a></td></tr><tr><td><code>AIF-042</code></td>
+<td class="small">Script header contract (`@script.usage`) lane, 2026-07-21</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/SCRIPT_HEADER_CONTRACT_LANE_V1.md">docs/maintenance/SCRIPT_HEADER_CONTRACT_LANE_V1.md</a></td></tr><tr><td><code>AIF-044</code></td>
+<td class="small">Build vectors — generated build-capacity authority, 2026-07-21</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/BUILD_VECTORS_LANE_V1.md">docs/maintenance/BUILD_VECTORS_LANE_V1.md</a></td></tr><tr><td><code>AIF-047</code></td>
+<td class="small">HELP command UX — not-found feedback + did-you-mean + exhaustive GIANT ALL, 2026-07-22</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/HELP_COMMAND_UX_LANE_V1.md">docs/maintenance/HELP_COMMAND_UX_LANE_V1.md</a></td></tr><tr><td><code>AIF-048</code></td>
+<td class="small">Full-stack documentation flush II, 2026-07-22</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260722-001/FULLSTACK_DOCUMENTATION_FLUSH_COMPLETE_HANDOFF_V1.md">docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260722-001/FULLSTACK_DOCUMENTATION_FLUSH_COMPLETE_HANDOFF_V1.md</a></td></tr><tr><td><code>AIF-049</code></td>
+<td class="small">ArcticTalk retro TUI workbench lane, 2026-07-22</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/ARCTICTALK_RETRO_TUI_WORKBENCH_LANE_V1.md">docs/maintenance/ARCTICTALK_RETRO_TUI_WORKBENCH_LANE_V1.md</a></td></tr><tr><td><code>AIF-051</code></td>
+<td class="small">HELP DATA phantom/mis-keyed topic keys, 2026-07-23</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/HELP_COMMAND_UX_LANE_V1.md">docs/maintenance/HELP_COMMAND_UX_LANE_V1.md</a></td></tr><tr><td><code>AIF-063</code></td>
+<td class="small">DDL schema PDLC and JSON/DBF parity</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/DDL_SCHEMA_PDLC_LANE_V1.md">docs/maintenance/DDL_SCHEMA_PDLC_LANE_V1.md</a></td></tr><tr><td><code>AIF-064</code></td>
+<td class="small">Retro VM/emulator launchpad lane</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/RETRO_LANE_CHARTER_20260726.md">docs/maintenance/RETRO_LANE_CHARTER_20260726.md</a></td></tr><tr><td><code>AIF-065</code></td>
+<td class="small">LMDB mapsize override: BUILDLMDB&#x27;s documented size ladder is not honoured</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/src/cli/cmd_buildlmdb.cpp">src/cli/cmd_buildlmdb.cpp</a></td></tr><tr><td><code>AIF-066</code></td>
+<td class="small">Locale spine survey: messaging mature, HELP preview fixture stranded, manuals greenfield</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/src/cli/cmdhelp.cpp">src/cli/cmdhelp.cpp</a></td></tr><tr><td><code>AIF-067</code></td>
+<td class="small">Subcommand identity: `@dottalk.subusage` contract, generated SYSSUBCMD, derived `SET USAGE`</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/SUBCOMMAND_IDENTITY_CONTRACT_LANE_V1.md">docs/maintenance/SUBCOMMAND_IDENTITY_CONTRACT_LANE_V1.md</a></td></tr><tr><td><code>AIF-068</code></td>
+<td class="small">Manualgen harvest feeder: the DOCFLUSH-20260722 feeder lane, reactivated 2026-07-31 after its implementation entered version control</td>
+<td class="small"><span class="pill warn">doc missing</span> <code>ASCENT_INPUT_DOCFLUSH-20260722_V1.md</code> &middot; <a href="https://github.com/deraldg/x64base/blob/development/coordination/aif/AIF-068.claim">claim</a></td></tr><tr><td><code>AIF-070</code></td>
+<td class="small">xAI Grok external change package `AIPR-20260728-GROK-002` (maintainer design discussion 2026-07-27/28)</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/external_ai_intake/virtual_workspaces_memo_resident_2026-07-28/MANIFEST.md">docs/maintenance/external_ai_intake/virtual_workspaces_memo_resident_2026-07-28/MANIFEST.md</a></td></tr><tr><td><code>AIF-071</code></td>
+<td class="small">AI-portal report discoverability + audit-green + self-enforcing gate</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/labtalk/registries/ai_report_index.yaml">labtalk/registries/ai_report_index.yaml</a></td></tr><tr><td><code>AIF-072</code></td>
+<td class="small">Phase 7 manual web-ascent pick-up (DOCFLUSH full-stack push)</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/PROMOTION_CHECKLIST.md">PROMOTION_CHECKLIST.md</a></td></tr><tr><td><code>AIF-073</code></td>
+<td class="small">External Agent Memory &amp; Continuity -- GPTbase (ChatGPT) design proposal, 2026-07-28</td>
+<td class="small"><span class="pill warn">doc missing</span> <code>AGENT_MEMORY_MODEL_V1.md</code> &middot; <a href="https://github.com/deraldg/x64base/blob/development/coordination/aif/AIF-073.claim">claim</a></td></tr><tr><td><code>AIF-075</code></td>
+<td class="small">Interactive BBS auth/provenance fix: attribute + RBAC-gate shell POST/REPLY</td>
+<td class="small"><span class="pill warn">doc missing</span> <code>PLAN_bbs_shell_provenance_fix.md</code> &middot; <a href="https://github.com/deraldg/x64base/blob/development/coordination/aif/AIF-075.claim">claim</a></td></tr><tr><td><code>AIF-076</code></td>
+<td class="small">De-fuse BBS persistence substrate from pseudo-chat / CHAT lanes (doc-only)</td>
+<td class="small"><span class="pill warn">doc missing</span> <code>DESIGN_bbs_pseudochat_two_lanes.md</code> &middot; <a href="https://github.com/deraldg/x64base/blob/development/coordination/aif/AIF-076.claim">claim</a></td></tr><tr><td><code>AIF-077</code></td>
+<td class="small">Housekeeping: land Codex&#x27;s abandoned uncommitted engine WIP (Codex out of credit)</td>
+<td class="small"><span class="pill warn">doc missing</span> <code>cmd_evaldiff.cpp</code> &middot; <a href="https://github.com/deraldg/x64base/blob/development/coordination/aif/AIF-077.claim">claim</a></td></tr><tr><td><code>AIF-079</code></td>
+<td class="small">Declared-but-unreferenced capability detection (validator tier); opened from a house-index investigation</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/DECLARED_CAPABILITY_VALIDATOR_LANE_V1.md">docs/maintenance/DECLARED_CAPABILITY_VALIDATOR_LANE_V1.md</a></td></tr><tr><td><code>AIF-080</code></td>
+<td class="small">Index container/engine orthogonality: separate container FORMAT from maintenance ENGINE so both are selectable</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/INDEX_BACKEND_ORTHOGONALITY_LANE_V1.md">docs/maintenance/INDEX_BACKEND_ORTHOGONALITY_LANE_V1.md</a></td></tr><tr><td><code>AIF-081</code></td>
+<td class="small">Output capture completeness: `DOTSCRIPT ... OUT` discards the entire user-facing command surface, found by dogfooding the engine&#x27;s own transcript facility</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/OUTPUT_CAPTURE_COMPLETENESS_LANE_V1.md">docs/maintenance/OUTPUT_CAPTURE_COMPLETENESS_LANE_V1.md</a></td></tr><tr><td><code>AIF-082</code></td>
+<td class="small">Onboarding cost and acceptance: measure what a cold start costs, give the portal a stopping rule and a falsifiable acceptance test</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/ONBOARDING_COST_AND_ACCEPTANCE_LANE_V1.md">docs/maintenance/ONBOARDING_COST_AND_ACCEPTANCE_LANE_V1.md</a></td></tr><tr><td><code>AIF-083</code></td>
+<td class="small">BBS agency legs: finish the AIF-075 sweep on the verbs it did not name</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/BBS_AGENCY_LEGS_LANE_V1.md">docs/maintenance/BBS_AGENCY_LEGS_LANE_V1.md</a></td></tr><tr><td><code>AIF-084</code></td>
+<td class="small">Worktree lane isolation: stop every session sharing one working tree</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/AI_WORKTREE_LANE_ISOLATION_LANE_V1.md">docs/maintenance/AI_WORKTREE_LANE_ISOLATION_LANE_V1.md</a></td></tr><tr><td><code>AIF-085</code></td>
+<td class="small">Cross-platform tooling rule + ported workflow tools, tested; Cowork 2026-08-02</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/SESSION_CLOSEOUT_CROSS_PLATFORM_TOOLING_2026-08-02.md">docs/maintenance/SESSION_CLOSEOUT_CROSS_PLATFORM_TOOLING_2026-08-02.md</a></td></tr><tr><td><code>AIF-087</code></td>
+<td class="small">Triggers PDLC feature; hosted partner Grok/xAI (remote, hosted_proposal)</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/TRIGGERS_PHASE0_DECISIONS_SIGNOFF_V1.md">docs/maintenance/TRIGGERS_PHASE0_DECISIONS_SIGNOFF_V1.md</a></td></tr><tr><td><code>AIF-088</code></td>
+<td class="small">Command catalog/runtime drift (R-APPEND-BLANK), caught by CRUD `--emit --ram` fsram dry run; Cowork 2026-08-04</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/COMMAND_CATALOG_RUNTIME_DRIFT_PDLC_LANE_V1.md">docs/maintenance/COMMAND_CATALOG_RUNTIME_DRIFT_PDLC_LANE_V1.md</a></td></tr><tr><td><code>AIF-090</code></td>
+<td class="small">x64base agent skill as a distributable package; Cowork 2026-08-06, owner-assigned project</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/X64BASE_AGENT_SKILL_PDLC_LANE_V1.md">docs/maintenance/X64BASE_AGENT_SKILL_PDLC_LANE_V1.md</a></td></tr><tr><td><code>AIF-091</code></td>
+<td class="small">VFP field-type support deficiency; Cowork 2026-08-07, found comparing MS-DOS/VFP flavors against the dBASE 7 spec</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/ai-friendly/AI_ENGINE_VFP_TYPE_SUPPORT_DEFICIENCY_DESIGN_V1.md">docs/ai-friendly/AI_ENGINE_VFP_TYPE_SUPPORT_DEFICIENCY_DESIGN_V1.md</a></td></tr><tr><td><code>AIF-092</code></td>
+<td class="small">Publication surface recovery; Cowork 2026-08-07, discovered by the AIF-090 probe C finding</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/PUBLICATION_SURFACE_RECOVERY_PDLC_LANE_V1.md">docs/maintenance/PUBLICATION_SURFACE_RECOVERY_PDLC_LANE_V1.md</a></td></tr><tr><td><code>AIF-093</code></td>
+<td class="small">`.text` supported extension; Cowork 2026-08-07, owner-requested</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/ai-friendly/AI_DOTTALKPP_TEXT_EXTENSION_DESIGN_V1.md">docs/ai-friendly/AI_DOTTALKPP_TEXT_EXTENSION_DESIGN_V1.md</a></td></tr><tr><td><code>AIF-094</code></td>
+<td class="small">PLDC retired and merged into PDLC; Cowork 2026-08-07, owner-directed, claimed retroactively</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/SESSION_CLOSEOUT_PDLC_VOCABULARY_MERGE_2026-08-07.md">docs/maintenance/SESSION_CLOSEOUT_PDLC_VOCABULARY_MERGE_2026-08-07.md</a></td></tr><tr><td><code>AIF-095</code></td>
+<td class="small">dottalkpp.com site lane; closeout finished by Cowork 2026-08-07 at owner request (prior session was erroring)</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/DOTTALKPP_SITE_PICKUP_V1.md">docs/maintenance/DOTTALKPP_SITE_PICKUP_V1.md</a></td></tr><tr><td><code>AIF-096</code></td>
+<td class="small">Coordination ontology: two atoms (chat, project) + derived terms; Cowork 2026-08-07, owner-requested</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/COORDINATION_ONTOLOGY_TWO_ATOMS_V1.md">docs/maintenance/COORDINATION_ONTOLOGY_TWO_ATOMS_V1.md</a></td></tr><tr><td><code>AIF-097</code></td>
+<td class="small">Private-site auth + site search; Cowork 2026-08-08, owner-requested (dogfood the BBS auth to gate a private area of the live site; Pagefind for public search)</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/PRIVATE_SITE_AUTH_AND_SEARCH_SCOPE_V1.md">docs/maintenance/PRIVATE_SITE_AUTH_AND_SEARCH_SCOPE_V1.md</a></td></tr><tr><td><code>AIF-098</code></td>
+<td class="small">Frontal_Mem M2 Lane 1 write adapter -- consolidated-from-chat post kind; Cowork 2026-08-08, coworker Grok (Class B), owner member.derald</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/READY_TO_APPLY_PATCHES.md">READY_TO_APPLY_PATCHES.md</a></td></tr><tr><td><code>AIF-099</code></td>
+<td class="small">CNX-on-x64: warn-not-refuse + WORKSPACE OPEN index-source; Cowork 2026-08-09, owner-requested (&quot;clear the CNX block&quot;)</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/src/cli/cmd_setindex.cpp">src/cli/cmd_setindex.cpp</a></td></tr><tr><td><code>AIF-100</code></td>
+<td class="small">Gate governance -- document/record/maintain the build+commit+publish gates; Cowork 2026-08-09, owner-requested (&quot;they are getting to be good&quot;)</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/PREPUSH_GATE_REFERENCE_V1.md">docs/maintenance/PREPUSH_GATE_REFERENCE_V1.md</a></td></tr><tr><td><code>AIF-101</code></td>
+<td class="small">Development acceleration analysis -- measuring the six-week exponential; Cowork 2026-08-09, owner statement of record</td>
+<td class="small"><span class="pill warn">doc missing</span> <code>DEVELOPMENT_ACCELERATION_FINDINGS_V1.md</code> &middot; <a href="https://github.com/deraldg/x64base/blob/development/coordination/aif/AIF-101.claim">claim</a></td></tr><tr><td><code>AIF-103</code></td>
+<td class="small">Specialty LMS external intake -- received Copilot proposal preserved as prior art, assessed against the tree, LabTalk campus registries measured; Cowork 2026-08-09, owner-requested (&quot;we adopt it and process it into our system properly&quot;)</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/coordination/aif/AIF-103.claim">coordination/aif/AIF-103.claim</a></td></tr><tr><td><code>AIF-104</code></td>
+<td class="small">Clean-clone core CI link and profile repair; Codex 2026-08-10, owner-requested</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/src/cli/shell_commands.cpp">src/cli/shell_commands.cpp</a></td></tr><tr><td><code>AIF-105</code></td>
+<td class="small">Cascade ERP metadata, ETL, migration, and LabTalk learning gold standard; Codex 2026-08-10, owner-assigned</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/CASCADE_ERP_METADATA_ETL_LEARNING_GOLD_STANDARD_LANE_V1.md">docs/maintenance/CASCADE_ERP_METADATA_ETL_LEARNING_GOLD_STANDARD_LANE_V1.md</a></td></tr><tr><td><code>AIF-106</code></td>
+<td class="small">Earliest preserved AI-assisted DotTalk history evidence; Codex 2026-08-10, owner-requested web publication</td>
+<td class="small"><span class="pill warn">doc missing</span> <code>/dev/x64base-site/content/about/ai-assisted-history.md</code> &middot; <a href="https://github.com/deraldg/x64base/blob/development/coordination/aif/AIF-106.claim">claim</a></td></tr><tr><td><code>AIF-107</code></td>
+<td class="small">Low-key entry surface for x64base -- lean static site deployed to the dottalkpp.com apex; Cowork 2026-08-11, owner-directed (&quot;priority is the lean-site existence and pointing dottalkpp.com to it; ALL OTHER reorganization is a separate effort&quot;)</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/coordination/aif/AIF-107.claim">coordination/aif/AIF-107.claim</a></td></tr><tr><td><code>AIF-108</code></td>
+<td class="small">Memo Object Challenge: 100 test ideas for the memo object, opened as a governed challenge to external AI agents through the house BBS; Cowork 2026-08-11, owner-directed (&quot;we will make this an open challenge to other ai agents in the bbs, a good controllable exercise in AI cooperations and communications&quot;)</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/MEMO_OBJECT_CHALLENGE_LANE_V1.md">docs/maintenance/MEMO_OBJECT_CHALLENGE_LANE_V1.md</a></td></tr><tr><td><code>AIF-109</code></td>
+<td class="small">DotScript product-gap umbrella: functions/procedures + structured error handling, opened from an external AI gap evaluation; Cowork 2026-08-12, owner-directed (&quot;dotscript is a product... if dotscript doesn&#x27;t have its own lane and aif-ref fix it&quot;)</td>
+<td class="small"><span class="pill warn">doc missing</span> <code>DOTSCRIPT_FUNCTION_SURFACE_PRIOR_ART_V1.md</code> &middot; <a href="https://github.com/deraldg/x64base/blob/development/coordination/aif/AIF-109.claim">claim</a></td></tr><tr><td><code>AIF-110</code></td>
+<td class="small">FIELDMGR APPEND silently blank-corrupts x64 tables: the temp-swap rewrite does not preserve X64M vector metadata identity; found, measured, and guarded during AIF-070 Part B; Cowork 2026-08-12</td>
+<td class="small"><span class="pill warn">doc missing</span> <code>cmd_copy.cpp</code> &middot; <a href="https://github.com/deraldg/x64base/blob/development/coordination/aif/AIF-110.claim">claim</a></td></tr><tr><td><code>AIF-111</code></td>
+<td class="small">A Cowork sandbox CAN build and run the engine -- the documented `-fsyntax-only` ceiling measured FALSE, changing the cost model for every sandboxed session; Cowork 2026-08-12, found while proving AIF-070&#x27;s writeback arm</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/AI_README.md">AI_README.md</a></td></tr><tr><td><code>AIF-112</code></td>
+<td class="small">Document Control / Inventory / Check-in-Check-out PDLC (Grok-driven lane)</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/DOCUMENT_CONTROL_INVENTORY_CHECKINOUT_PDLC_LANE_V1.md">docs/maintenance/DOCUMENT_CONTROL_INVENTORY_CHECKINOUT_PDLC_LANE_V1.md</a></td></tr><tr><td><code>AIF-113</code></td>
+<td class="small">Lock release and recovery: the engine&#x27;s entire designed recovery path is dead code, and the user-facing LOCK command never releases; Cowork 2026-08-15, split out of AIF-112 after source access showed the defect does not touch that lane</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/LOCK_RELEASE_AND_RECOVERY_LANE_V1.md">docs/maintenance/LOCK_RELEASE_AND_RECOVERY_LANE_V1.md</a></td></tr><tr><td><code>AIF-114</code></td>
+<td class="small">Seven published SET options have no implementation: `set-family.mdx` lists eleven settings under &quot;Current documented surfaces include&quot; and seven do not exist in source; live on x64base.com with no status qualifier; Cowork 2026-08-15, found incidentally during AIF-112 Phase-1 Step 0</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/SET_FAMILY_PUBLISHED_WITHOUT_IMPLEMENTATION_LANE_V1.md">docs/maintenance/SET_FAMILY_PUBLISHED_WITHOUT_IMPLEMENTATION_LANE_V1.md</a></td></tr><tr><td><code>AIF-115</code></td>
+<td class="small">Tier 1 recall-graph drift: the seed&#x27;s &quot;Going deeper&quot; fallback table and `recall.py` have diverged in BOTH directions, and the table&#x27;s 1604 bytes are the demotion candidate blocking two doctrine rules; Cowork 2026-08-15</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/TIER1_SEED_BUDGET_DEMOTION_PROPOSAL_V1.md">docs/maintenance/TIER1_SEED_BUDGET_DEMOTION_PROPOSAL_V1.md</a></td></tr><tr><td><code>AIF-116</code></td>
+<td class="small">Locale grouping in the lock owner string defeats mutual exclusion: the sidecar records `pid=16,984`, `std::stoul` reads it back as `16`, and every live lock is therefore classified stale and force-removed; Cowork 2026-08-15, found on a live two-process run during AIF-112 Phase-1 Step 4</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/LOCK_OWNER_STRING_LOCALE_GROUPING_DEFEATS_MUTUAL_EXCLUSION_V1.md">docs/maintenance/LOCK_OWNER_STRING_LOCALE_GROUPING_DEFEATS_MUTUAL_EXCLUSION_V1.md</a></td></tr><tr><td><code>AIF-117</code></td>
+<td class="small">Silent predicate and store failures: a bare field used as a predicate is evaluated as &quot;is this field non-blank&quot;, so `COUNT FOR SUP` matches every row whether SUP is T or F, and an unresolvable field name matches nothing and reads as a real answer; Cowork 2026-08-15, found by running the AIF-112 ledger, not by reading the code</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/SILENT_PREDICATE_AND_STORE_FAILURES_LANE_V1.md">docs/maintenance/SILENT_PREDICATE_AND_STORE_FAILURES_LANE_V1.md</a></td></tr><tr><td><code>AIF-118</code></td>
+<td class="small">Guards that could not fail: five silent-pass defects found and closed in one session; Cowork 2026-08-16</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/AIF_118_SILENT_PASS_GUARD_LANE_V1.md">docs/maintenance/AIF_118_SILENT_PASS_GUARD_LANE_V1.md</a></td></tr><tr><td><code>AIF-119</code></td>
+<td class="small">PyDotTalk as a co-sourced product: four build defects that were all one missing ownership boundary; Cowork 2026-08-17</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/AIF_119_PYDOTTALK_CO_SOURCED_PRODUCT_LANE_V1.md">docs/maintenance/AIF_119_PYDOTTALK_CO_SOURCED_PRODUCT_LANE_V1.md</a></td></tr><tr><td><code>AIF-120</code></td>
+<td class="small">Application UI DSL: a published page called itself a lane with no claim, charter or intake row -- and the GUI it proposes building already exists; Cowork 2026-08-17</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/APPLICATION_UI_DSL_LANE_V1.md">docs/maintenance/APPLICATION_UI_DSL_LANE_V1.md</a></td></tr><tr><td><code>AIF-121</code></td>
+<td class="small">USE silently ignores arguments it does not understand, so the documented `USE &lt;table&gt; IN &lt;n&gt;` clause is swallowed and the table opens into the CURRENT area, destroying its occupant with no message; Cowork 2026-08-22, found by a probe that was looking for something else</td>
+<td class="small"><span class="pill warn">doc missing</span> <code>next_aif.py</code> &middot; <a href="https://github.com/deraldg/x64base/blob/development/coordination/aif/AIF-121.claim">claim</a></td></tr><tr><td><code>AIF-122</code></td>
+<td class="small">One edit rebuilds every .cpp: the git SHA is applied as a `-D` to every translation unit, so any commit recompiles ~400 files; plus two smaller configure-churn mechanisms; Cowork 2026-08-22, raised by the steward from the build loop itself (&quot;your rebuilds are usually costly, a single change and I am rebuilding every single .cpp&quot;)</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/AIF122_BUILD_STAMP_REBUILD_COST_RULING_V1.md">docs/maintenance/AIF122_BUILD_STAMP_REBUILD_COST_RULING_V1.md</a></td></tr><tr><td><code>AIF-123</code></td>
+<td class="small">SET DELETED is honoured by some read paths and not others, so &quot;is this record visible&quot; has different answers depending on which verb asks; Cowork 2026-08-24, found when a WORKSPACE PURGE spec arm asserted the opposite and inverted on its first run</td>
+<td class="small"><span class="pill warn">doc missing</span> <code>claude/FINDING_SET_DELETED_DOES_NOT_HIDE_FROM_LOCATE.md</code> &middot; <a href="https://github.com/deraldg/x64base/blob/development/coordination/aif/AIF-123.claim">claim</a></td></tr><tr><td><code>AIF-124</code></td>
+<td class="small">A workspace posture is TWO things wearing one file: the canonical DEFINITION (which tables, which indexes, which relations, which keys) and the SESSION STATE (where each cursor stood, which area was current). Nothing separates them, so a definition cannot be diffed or version-controlled without churning on state that legitimately changes every save; Cowork 2026-08-24, raised by the owner from a discussion about whether two posture saves could be compared byte for byte -- &quot;canonical workspace vs workspace state, we need to make those two different things, kinda like vmware but simpler&quot;</td>
+<td class="small"><span class="pill warn">doc missing</span> <code>claude/AIF124_DESIGN_POSTURE_TAXONOMY.md</code> &middot; <a href="https://github.com/deraldg/x64base/blob/development/coordination/aif/AIF-124.claim">claim</a></td></tr><tr><td><code>AIF-125</code></td>
+<td class="small">Grep does not scale as the tree grows, and an agent navigating this repo has been using it for DISCOVERY when the project already carries its own command registry as x64base tables; Cowork 2026-08-24, raised by the owner -- &quot;grep is becoming a weak point as the project grows, you need a neural network view... we already have source code indexing and usage contracts in each cmd file??? we need to work smarter, using dotscript features to feed you your data to disk&quot;</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/tools/coordination/cmd_source_index.py">tools/coordination/cmd_source_index.py</a></td></tr><tr><td><code>AIF-126</code></td>
+<td class="small">Nine percent of the HELP store could not be retrieved by any operator, and the store had been reporting the reason in every capture this lane ever took; Cowork 2026-08-25, found while re-validating Gate 4 of flush v5 -- the owner asked &quot;have you/can we resolve shared msg&quot; after the count was measured</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/tools/coordination/help_store_check.py">tools/coordination/help_store_check.py</a></td></tr><tr><td><code>AIF-127</code></td>
+<td class="small">An x64 table with thirteen rows cannot be read by the project&#x27;s own shared X64/DBF reader, and the same table with fourteen rows reads fine; Cowork 2026-08-25, found opening the manualgen MAN catalog for flush v5 Phase 6 -- seven of eight tables read and matched their MANUAL CATALOG COUNTS exactly, MANHASH declined with &quot;no real field descriptors found&quot;</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/tools/fullstack_docs/dbfread.py">tools/fullstack_docs/dbfread.py</a></td></tr><tr><td><code>AIF-128</code></td>
+<td class="small">A precondition guard names the command registry in its error message but tests the UNION of the registry with two alias sources, so when the registry is the thing that failed the guard passes and the program blames 270 innocent reference-catalog entries instead; Cowork 2026-08-25, found while making two adjacent authority labels agree in the same gate output -- the guard was four lines below the line being edited</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/tools/fullstack_docs/refcheck_v1.py">tools/fullstack_docs/refcheck_v1.py</a></td></tr><tr><td><code>AIF-129</code></td>
+<td class="small">Source contracts carry structured sub-blocks that LOOK machine-readable and are not, so a consumer that trusts them will be confidently wrong; Cowork 2026-08-25, found TWICE in one session one sub-block apart -- R127(b) needed `status=` to be load-bearing, and Gate 1 Q3 measured `risk:`</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/src/help/helpdata_source_miner.cpp">src/help/helpdata_source_miner.cpp</a></td></tr><tr><td><code>AIF-130</code></td>
+<td class="small">An entry document told every arriving agent that a sandbox cannot build or run the engine, thirteen days after that was measured false, and three agents in a row paid for it; Cowork 2026-08-25, found when the owner asked &quot;why aren&#x27;t you running dottalkpp in your sandbox? it compiles there&quot; -- the steward had been repeating the claim as doctrine without ever testing it</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/AI_README.md">AI_README.md</a></td></tr><tr><td><code>AIF-131</code></td>
+<td class="small">A registry key containing a space can never be dispatched, because the shell reads ONE token and looks that up -- so multiword registrations read as working wiring and are dead on arrival, and the catalogs then publish them as implemented; Cowork 2026-08-25/26, found when `BUILD VECTORS` answered `Unknown command: BUILD` at the prompt while `dotref` and the HELP store both said supported=yes</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/src/cli/shell_api.cpp">src/cli/shell_api.cpp</a></td></tr><tr><td><code>AIF-132</code></td>
+<td class="small">AI Portal typed-feed normalization and full-stack documentation crosswalk; Codex 2026-08-26, owner accepted and directed implementation</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/contracts/DOTTALK_PORTAL_FEED_CONTRACT_V1.md">docs/contracts/DOTTALK_PORTAL_FEED_CONTRACT_V1.md</a></td></tr><tr><td><code>AIF-133</code></td>
+<td class="small">A FIELDMGR restructure backup was opened as a work area and SORTED FIRST, so it took area 0 and shifted every area after it; Cowork 2026-08-26, found while auditing why STUDENTS.__fldbak.dbf was a 22,425-byte member of a live MINIDB container</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/src/core/fields_mgr.cpp">src/core/fields_mgr.cpp</a></td></tr></table></details><div class="note w"><b>How to return to the last agent on a lane</b><br>
 <code>current_by_lane[LANE]</code> -&gt; <code>runs[run_id]</code> -&gt; <code>chat_handle</code>.
 Every run here is <code>MAINTAINER_ATTESTED</code>: the platform stamps the session id
 <i>not_exposed</i>, so the <b>closeout is the recovery path</b>, not the chat link.
-That is by design -- the record lives in the repo, not in a vendor's session store.</div><h2>Runs</h2><div class="card"><b><code>AIPR-20260727-001</code></b>
+That is by design -- the record lives in the repo, not in a vendor's session store.</div><h2>Runs</h2><div class="card"><b><code>AIPR-20260722-004</code></b>
 <span class="pill ">closed</span>
-<span class="pill">Codex</span>
-<div class="small dim" style="margin:5px 0">member.ai.codex as <b>implementer</b>
-&middot; owner <code>member.derald</code> &middot; committer <code>member.derald</code>
-&middot; planned by <code>member.derald</code></div>
-<div style="margin:7px 0"><span class="pill acc">AIF-069</span></div>
-<div class="small dim">project <code>project.x64base.runtime</code>
-&middot; branch <code>development</code>
-&middot; started 2026-07-27
-&middot; handle <span class="pill warn">NOT_RESOLVABLE</span></div>
-<div style="margin-top:7px" class="small">closeouts:<br><span class="small dim">docs/maintenance/SESSION_CLOSEOUT_EXPORT_SDF_PDLC_2026-07-27.md</span></div></div><div class="card"><b><code>AIPR-20260725-001</code></b>
-<span class="pill ok">active</span>
 <span class="pill">Cowork</span>
 <div class="small dim" style="margin:5px 0">member.ai.claude.cowork as <b>implementer</b>
 &middot; owner <code>member.derald</code> &middot; committer <code>member.derald</code>
-</div>
-<div style="margin:7px 0"><span class="pill acc">AIF-050</span> <span class="pill acc">AIF-052</span> <span class="pill acc">AIF-053</span> <span class="pill acc">AIF-054</span> <span class="pill acc">AIF-055</span> <span class="pill acc">AIF-056</span> <span class="pill acc">AIF-057</span> <span class="pill acc">AIF-058</span> <span class="pill acc">AIF-059</span> <span class="pill acc">AIF-060</span> <span class="pill acc">AIF-061</span> <span class="pill acc">AIF-062</span></div>
-<div class="small dim">project <code>project.ai_friendly</code>
-&middot; branch <code>development</code>
-&middot; started 2026-07-25
+&middot; planned by <code>member.ai.chatgpt</code></div>
+<div style="margin:7px 0"><span class="pill acc">AIF-045</span></div>
+<div class="small dim">project <code>project.x64base.identity</code>
+
+&middot; started 2026-07-22
 &middot; handle <span class="pill warn">MAINTAINER_ATTESTED</span></div>
-<div style="margin-top:7px" class="small">closeouts:<br><span class="small dim">docs/maintenance/SESSION_CLOSEOUT_AI_BBS_LANE_BUILD_GREEN_2026-07-25.md</span><br><span class="small dim">docs/maintenance/SESSION_CLOSEOUT_AI_PORTAL_ONBOARDING_HARDENING_2026-07-25.md</span><br><span class="small dim">docs/maintenance/SESSION_CLOSEOUT_AIF050_FULLTREE_BACKFILL_2026-07-25.md</span></div></div><div class="card"><b><code>AIPR-20260722-007</code></b>
+<div style="margin-top:7px" class="small">closeouts:<br><span class="small dim">docs/maintenance/SESSION_CLOSEOUT_IDENTITY_2C_AGENT_SECURITY_2026-07-22.md</span></div></div><div class="card"><b><code>AIPR-20260722-005</code></b>
+<span class="pill ">closed</span>
+<span class="pill">Cowork</span>
+<div class="small dim" style="margin:5px 0">member.ai.claude.cowork as <b>implementer</b>
+&middot; owner <code>member.derald</code> &middot; committer <code>member.derald</code>
+&middot; planned by <code>member.ai.chatgpt</code></div>
+<div style="margin:7px 0"><span class="pill acc">AIF-045</span></div>
+<div class="small dim">project <code>project.x64base.identity</code>
+&middot; branch <code>homegrown-cnx-20251112-branch</code>
+&middot; started 2026-07-22
+&middot; handle <span class="pill warn">MAINTAINER_ATTESTED</span></div>
+<div style="margin-top:7px" class="small">closeouts:<br><span class="small dim">docs/maintenance/SESSION_CLOSEOUT_IDENTITY_2D_SESSION_AUTH_2026-07-22.md</span></div></div><div class="card"><b><code>AIPR-20260722-007</code></b>
 <span class="pill ok">active</span>
 <span class="pill">Cowork</span>
 <div class="small dim" style="margin:5px 0">member.ai.claude.cowork as <b>steward</b>
@@ -141,29 +398,29 @@ That is by design -- the record lives in the repo, not in a vendor's session sto
 &middot; branch <code>homegrown-cnx-20251112-branch</code>
 &middot; started 2026-07-22
 &middot; handle <span class="pill warn">MAINTAINER_ATTESTED</span></div>
-<div style="margin-top:7px" class="small">closeouts:<br><span class="small dim">docs/maintenance/SESSION_CLOSEOUT_SCAN_EVALUATOR_LANE_2026-07-22.md</span></div></div><div class="card"><b><code>AIPR-20260722-005</code></b>
-<span class="pill ">closed</span>
+<div style="margin-top:7px" class="small">closeouts:<br><span class="small dim">docs/maintenance/SESSION_CLOSEOUT_SCAN_EVALUATOR_LANE_2026-07-22.md</span></div></div><div class="card"><b><code>AIPR-20260725-001</code></b>
+<span class="pill ok">active</span>
 <span class="pill">Cowork</span>
 <div class="small dim" style="margin:5px 0">member.ai.claude.cowork as <b>implementer</b>
 &middot; owner <code>member.derald</code> &middot; committer <code>member.derald</code>
-&middot; planned by <code>member.ai.chatgpt</code></div>
-<div style="margin:7px 0"><span class="pill acc">AIF-045</span></div>
-<div class="small dim">project <code>project.x64base.identity</code>
-&middot; branch <code>homegrown-cnx-20251112-branch</code>
-&middot; started 2026-07-22
+</div>
+<div style="margin:7px 0"><span class="pill acc">AIF-050</span> <span class="pill acc">AIF-052</span> <span class="pill acc">AIF-053</span> <span class="pill acc">AIF-054</span> <span class="pill acc">AIF-055</span> <span class="pill acc">AIF-056</span> <span class="pill acc">AIF-057</span> <span class="pill acc">AIF-058</span> <span class="pill acc">AIF-059</span> <span class="pill acc">AIF-060</span> <span class="pill acc">AIF-061</span> <span class="pill acc">AIF-062</span></div>
+<div class="small dim">project <code>project.ai_friendly</code>
+&middot; branch <code>development</code>
+&middot; started 2026-07-25
 &middot; handle <span class="pill warn">MAINTAINER_ATTESTED</span></div>
-<div style="margin-top:7px" class="small">closeouts:<br><span class="small dim">docs/maintenance/SESSION_CLOSEOUT_IDENTITY_2D_SESSION_AUTH_2026-07-22.md</span></div></div><div class="card"><b><code>AIPR-20260722-004</code></b>
+<div style="margin-top:7px" class="small">closeouts:<br><span class="small dim">docs/maintenance/SESSION_CLOSEOUT_AI_BBS_LANE_BUILD_GREEN_2026-07-25.md</span><br><span class="small dim">docs/maintenance/SESSION_CLOSEOUT_AI_PORTAL_ONBOARDING_HARDENING_2026-07-25.md</span><br><span class="small dim">docs/maintenance/SESSION_CLOSEOUT_AIF050_FULLTREE_BACKFILL_2026-07-25.md</span></div></div><div class="card"><b><code>AIPR-20260727-001</code></b>
 <span class="pill ">closed</span>
-<span class="pill">Cowork</span>
-<div class="small dim" style="margin:5px 0">member.ai.claude.cowork as <b>implementer</b>
+<span class="pill">Codex</span>
+<div class="small dim" style="margin:5px 0">member.ai.codex as <b>implementer</b>
 &middot; owner <code>member.derald</code> &middot; committer <code>member.derald</code>
-&middot; planned by <code>member.ai.chatgpt</code></div>
-<div style="margin:7px 0"><span class="pill acc">AIF-045</span></div>
-<div class="small dim">project <code>project.x64base.identity</code>
-
-&middot; started 2026-07-22
-&middot; handle <span class="pill warn">MAINTAINER_ATTESTED</span></div>
-<div style="margin-top:7px" class="small">closeouts:<br><span class="small dim">docs/maintenance/SESSION_CLOSEOUT_IDENTITY_2C_AGENT_SECURITY_2026-07-22.md</span></div></div><div class="card"><b><code>AIPR-20260729-001</code></b>
+&middot; planned by <code>member.derald</code></div>
+<div style="margin:7px 0"><span class="pill acc">AIF-069</span></div>
+<div class="small dim">project <code>project.x64base.runtime</code>
+&middot; branch <code>development</code>
+&middot; started 2026-07-27
+&middot; handle <span class="pill warn">NOT_RESOLVABLE</span></div>
+<div style="margin-top:7px" class="small">closeouts:<br><span class="small dim">docs/maintenance/SESSION_CLOSEOUT_EXPORT_SDF_PDLC_2026-07-27.md</span></div></div><div class="card"><b><code>AIPR-20260729-001</code></b>
 <span class="pill ok">active</span>
 <span class="pill">Cowork</span>
 <div class="small dim" style="margin:5px 0">member.ai.claude.cowork as <b>planner_steward</b>
@@ -174,70 +431,165 @@ That is by design -- the record lives in the repo, not in a vendor's session sto
 
 &middot; started 2026-07-29
 &middot; handle <span class="pill warn">MAINTAINER_ATTESTED</span></div>
-<div style="margin-top:7px" class="small">closeouts:<br><span class="small dim">docs/maintenance/SQLSEL_PLDC_LANE_V1.md</span><br><span class="small dim">docs/maintenance/SESSION_CLOSEOUT_SQLSEL_P0_P1_2026-07-29.md</span></div></div><h2>Proof ledger</h2><table><tr><th>Proof</th><th>State</th><th>Evidence note</th></tr><tr><td><code>proof.export.sdf.fixed_width_export</code><br>
-<span class="small">EXPORT SDF writes fixed-width records using the shared TUPTALK row formatter</span></td>
-<td><span class="pill ok">runtime_observed</span></td>
-<td class="small dim">AIF-069 closed as a runtime-observed development slice. Debug build passed and REGRESSION RUN EXPORT_SDF exported two schema-width rows with no header: &quot;AB    7  12.3T&quot; and &quot;WXYZ123  -4.5F&quot;, each length 14. The generated temp SDF ...</td></tr><tr><td><code>proof.pdlc.csv_to_x64base.type_fidelity</code><br>
-<span class="small">CSV to x64base preserves types, NULLs and long names</span></td>
-<td><span class="pill ok">runtime_observed</span></td>
-<td class="small dim">18 rows, 13 fields from the sealed Cascade Items.csv. All 13 type letters matched a derivation taken from src/import/import_profile.cpp BEFORE the run: N C C C C C N N N N N C N. Two behaviours predicted from the code and confirme...</td></tr><tr><td><code>proof.pdlc.dbf_csv_dbf.roundtrip_lossless</code><br>
-<span class="small">DBF to CSV to DBF round trip is lossless</span></td>
-<td><span class="pill ok">runtime_observed</span></td>
-<td class="small dim">Origin and return legs both 18 rows / 13 fields, with IDENTICAL structure -- same type letters, same widths, same decimal counts. EXPORT rendered every value such that re-inference reproduced the origin schema exactly, which is st...</td></tr><tr><td><code>proof.pdlc.dialect_ladder.dbase3_to_x64</code><br>
-<span class="small">dBASE III to FoxPro 2.6 to VFP to x64 to x64 VECTOR, lossless</span></td>
-<td><span class="pill ok">runtime_observed</span></td>
-<td class="small dim">The historical migration demonstration proper, walked inside one engine with no external tool, from a genuine legacy artifact: dbf/og/STUDENTS.DBF, version byte 0x03, 200 records, 9 fields, every field name at or under the classic...</td></tr><tr><td><code>proof.pdlc.cobol_fixed_record.hop_closed</code><br>
-<span class="small">DBF to fixed-record to GnuCOBOL read, 200 records</span></td>
-<td><span class="pill ok">runtime_observed</span></td>
-<td class="small dim">COBOL EXPORT wrote 200 records; the file is 22,200 bytes = 200 x 111 EXACTLY. That division is the fidelity proof -- a fixed-record file carries no header count and no delimiters, so a short write is invisible to anything that mer...</td></tr><tr><td><code>proof.edref.topic_exists</code><br>
-<span class="small">EDREF topic exists</span></td>
+<div style="margin-top:7px" class="small">closeouts:<br><span class="small dim">docs/maintenance/SQLSEL_PDLC_LANE_V1.md</span><br><span class="small dim">docs/maintenance/SESSION_CLOSEOUT_SQLSEL_P0_P1_2026-07-29.md</span></div></div><div class="card"><b><code>AIPR-20260730-001</code></b>
+<span class="pill ok">active</span>
+<span class="pill">Cowork</span>
+<div class="small dim" style="margin:5px 0">member.ai.claude.cowork as <b>analyst</b>
+&middot; owner <code>member.derald</code> &middot; committer <code>member.derald</code>
+&middot; planned by <code>member.derald</code></div>
+<div style="margin:7px 0"><span class="pill acc">AIF-078</span></div>
+<div class="small dim">project <code>project.x64base.runtime</code>
+&middot; branch <code>development</code>
+&middot; started 2026-07-30
+&middot; handle <span class="pill warn">MAINTAINER_ATTESTED</span></div>
+<div style="margin-top:7px" class="small">closeouts:<br><span class="small dim">docs/maintenance/SESSION_CLOSEOUT_WORKSPACE_QUALIFIER_NAMESPACE_DEPTH_2026-07-30.md</span></div></div><div class="card"><b><code>AIPR-20260803-003</code></b>
+<span class="pill ">closed</span>
+<span class="pill">Codex</span>
+<div class="small dim" style="margin:5px 0">member.ai.codex.local as <b>systems_integrator</b>
+&middot; owner <code>member.derald</code> &middot; committer <code>member.derald</code>
+&middot; planned by <code>member.derald</code></div>
+<div style="margin:7px 0"><span class="pill acc">AIF-086</span></div>
+<div class="small dim">project <code>project.ai_systems.integration</code>
+&middot; branch <code>development</code>
+&middot; started 2026-08-03
+&middot; handle <span class="pill warn">SELF_REPORTED</span></div>
+<div style="margin-top:7px" class="small">closeouts:<br><span class="small dim">docs/maintenance/SESSION_CLOSEOUT_AI_SYSTEMS_INTEGRATION_SDLC_M0_2026-08-03.md</span></div></div><h2>Tasks <span class="pill acc">source: SYSTASK</span></h2>
+<div class="grid">
+<div class="kpi"><div class="n">14</div><div class="l">Tasks tracked</div></div>
+<div class="kpi"><div class="n">7</div><div class="l">Open</div></div>
+<div class="kpi"><div class="n">5</div><div class="l">In progress</div></div></div>
+<table><tr><th>Task</th><th>Lane</th><th>Channel</th><th>Status</th><th>Assignee</th></tr>
+<tr><td><code>task.command_catalog.append_blank_drift</code><br>
+<span class="small">Command catalog vs runtime drift reconciliation (R-APPEND-BLANK)</span></td>
+<td><code>AIF-088</code></td>
+<td class="small dim">ai_portal</td>
+<td><span class="pill ">open</span></td>
+<td class="small"><code>member.derald</code></td></tr><tr><td><code>task.docs.fullstack.flush.20260722</code><br>
+<span class="small">Full-stack documentation flush II</span></td>
+<td><code>AIF-048</code></td>
+<td class="small dim">ai_portal</td>
+<td><span class="pill ">open</span></td>
+<td class="small"><code>member.derald</code></td></tr><tr><td><code>task.metadata.metacollect.238</code><br>
+<span class="small">METACOLLECT 238-finding metadata mission</span></td>
+<td><code>METACOLLECT-238</code></td>
+<td class="small dim">ai_portal</td>
+<td><span class="pill ">open</span></td>
+<td class="small"><code>member.derald</code></td></tr><tr><td><code>task.retro.launchpad_lane</code><br>
+<span class="small">Retro VM/emulator launchpad lane</span></td>
+<td><code>AIF-064</code></td>
+<td class="small dim">ai_portal</td>
+<td><span class="pill ">open</span></td>
+<td class="small"><code>member.derald</code></td></tr><tr><td><code>task.scan.bulk_record_io</code><br>
+<span class="small">Bulk record-I/O scan follow-on</span></td>
+<td><code>AIF-046</code></td>
+<td class="small dim">ai_portal</td>
+<td><span class="pill ">open</span></td>
+<td class="small"><code>member.derald</code></td></tr><tr><td><code>task.script.header.contract</code><br>
+<span class="small">Script header and usage-contract lane</span></td>
+<td><code>AIF-042</code></td>
+<td class="small dim">ai_portal</td>
+<td><span class="pill ">open</span></td>
+<td class="small"><code>member.derald</code></td></tr><tr><td><code>task.x32.traditional_xbase_support</code><br>
+<span class="small">x32 traditional xBase support feasibility lane</span></td>
+<td><code>AIF-068</code></td>
+<td class="small dim">ai_portal</td>
+<td><span class="pill ">open</span></td>
+<td class="small"><code>member.derald</code></td></tr><tr><td><code>task.arctictalk.workbench</code><br>
+<span class="small">ArcticTalk retro TUI workbench</span></td>
+<td><code>AIF-049</code></td>
+<td class="small dim">ai_portal</td>
+<td><span class="pill ok">in progress</span></td>
+<td class="small"><code>member.derald</code></td></tr><tr><td><code>task.beta1.stabilization</code><br>
+<span class="small">BETA-1 stabilization and regression validation</span></td>
+<td><code>AIF-041</code></td>
+<td class="small dim">ai_portal</td>
+<td><span class="pill ok">in progress</span></td>
+<td class="small"><code>member.derald</code></td></tr><tr><td><code>task.ddl.schema_pdlc</code><br>
+<span class="small">DDL schema PDLC and JSON/DBF parity lane</span></td>
+<td><code>AIF-063</code></td>
+<td class="small dim">ai_portal</td>
+<td><span class="pill ok">in progress</span></td>
+<td class="small"><code>member.derald</code></td></tr><tr><td><code>task.historical_database_migration.empirical_pro</code><br>
+<span class="small">Historical database migration empirical progress</span></td>
+<td><code>AIF-058</code></td>
+<td class="small dim">ai_portal</td>
+<td><span class="pill ok">in progress</span></td>
+<td class="small"><code>member.derald</code></td></tr><tr><td><code>task.identity.rbac.m4_m6</code><br>
+<span class="small">Identity, authentication, RBAC, and authorization follow-through</span></td>
+<td><code>AIF-045</code></td>
+<td class="small dim">ai_portal</td>
+<td><span class="pill ok">in progress</span></td>
+<td class="small"><code>member.derald</code></td></tr><tr><td><code>task.export.sdf_fixed_width</code><br>
+<span class="small">EXPORT SDF fixed-width output</span></td>
+<td><code>AIF-069</code></td>
+<td class="small dim">ai_portal</td>
+<td><span class="pill acc">done</span></td>
+<td class="small"><code>member.derald</code></td></tr><tr><td><code>task.build.palette_stub_parking.v1</code><br>
+<span class="small">Palette generated-stub disposition</span></td>
+<td><code>PSEUDO-Q4</code></td>
+<td class="small dim">pseudo_chat</td>
+<td><span class="pill warn">returned</span></td>
+<td class="small"><code>member.derald</code></td></tr></table><h2>Proof ledger</h2><table><tr><th>Proof</th><th>State</th><th>Evidence note</th></tr><tr><td><code>proof.agency.model</code><br>
+<span class="small">Agency model -- capacity to act plus accountability for having acted</span></td>
 <td><span class="pill acc">source_defined</span></td>
-<td class="small dim"></td></tr><tr><td><code>proof.case.registry_exists</code><br>
-<span class="small">Case registry exists</span></td>
-<td><span class="pill ">case_registered</span></td>
-<td class="small dim"></td></tr><tr><td><code>proof.help.cmdhelp_source_exists</code><br>
-<span class="small">CMDHELP source exists</span></td>
-<td><span class="pill acc">source_defined</span></td>
-<td class="small dim"></td></tr><tr><td><code>proof.selfdoc.comments_workflow_exists</code><br>
-<span class="small">Comments to HELP workflow exists</span></td>
-<td><span class="pill acc">source_defined</span></td>
-<td class="small dim"></td></tr><tr><td><code>proof.lab.database_literacy_starter.first_run</code><br>
-<span class="small">Database Literacy Starter first portal/runtime transcript</span></td>
+<td class="small dim">Names a model the system had already IMPLEMENTED but never stated, so the mechanisms stop reading as unrelated engineering choices. Four legs: identity (SYSMEMBER), authority (SYSMEMROLE-&gt;SYSROLEPERM-&gt;SYSPERM), authentication (Arg...</td></tr><tr><td><code>proof.ai.agent_assignment_link_x64</code><br>
+<span class="small">SYSCHATLNK X64 schema create and identifier readback</span></td>
 <td><span class="pill ok">runtime_observed</span></td>
-<td class="small dim">Proves LabTalk portal registry item can run a DotTalk++ DTS script and capture EDREF output.</td></tr><tr><td><code>proof.lab.selfdoc.comments_to_contracts.first_run</code><br>
-<span class="small">SelfDoc comments-to-contracts first CMDHELP/CMDHELPCHK run</span></td>
-<td><span class="pill ">validated</span></td>
-<td class="small dim">Captures CMDHELP/CMDHELPCHK runtime output plus read-only comments/contracts crosswalk for CMDHELP and CMDHELPCHK.</td></tr><tr><td><code>proof.product.manualgen.board_preserved</code><br>
-<span class="small">Manualgen product board and map preservation</span></td>
-<td><span class="pill ">validated</span></td>
-<td class="small dim">Preserves the first Manualgen product board and records initial hardening evidence using repo-local vcpkg Python 3.12.9.</td></tr><tr><td><code>proof.portal.truth_audit.latest</code><br>
-<span class="small">Portal truth audit latest report</span></td>
-<td><span class="pill ">validated</span></td>
-<td class="small dim">Captures the portal collection-of-truths audit across LabTalk registries, local proof records, and x64base.com SelfDoc/SDLC publication pages.</td></tr><tr><td><code>proof.ai_friendly.assimilation_docs_seed</code><br>
+<td class="small dim">AIF-086 contribution run AIPR-20260816-001. The current development runtime validated the 35-field UTF-8 schema, created SYSCHATLNK as X64 under the configured TMP path, reopened the DBF, and passed LINKKEY, CONVKEY, ASSIGNID, LOC...</td></tr><tr><td><code>proof.ai.portal_live_fragment_maintenance</code><br>
+<span class="small">AI Portal live fragment reports and guarded maintenance console</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">AIF-086 continuation run AIPR-20260816-003. The development gateway rebuilt reports from authoritative run and proof fragments without writing the reviewed flat snapshot inputs. The local maintenance console exposed source drift, ...</td></tr><tr><td><code>proof.ai.roles_taxonomy</code><br>
+<span class="small">AI roles taxonomy - agents vs Ollama vs GPTbase</span></td>
+<td><span class="pill acc">source_defined</span></td>
+<td class="small dim">Names three non-interchangeable roles - DOERS (agent-members that authenticate + change source + leave handoffs), LOCAL BRAIN (Ollama, isolated inference, not a member, needs a harness), HOSTED ADVISOR (GPTbase, advisory not autho...</td></tr><tr><td><code>proof.ai_friendly.assimilation_docs_seed</code><br>
 <span class="small">AI Friendly assimilation portal and book seeded</span></td>
 <td><span class="pill acc">source_defined</span></td>
 <td class="small dim">Provides repo-local onboarding for future AI or second-opinion AI if hosted chat/provider context is unavailable.</td></tr><tr><td><code>proof.ai_friendly.maint_ai_assimilate.first_run</code><br>
 <span class="small">MAINT AI ASSIMILATE first portal/runtime transcript</span></td>
 <td><span class="pill ok">runtime_observed</span></td>
-<td class="small dim">Proves LabTalk portal can run the DotTalk++ MAINT AI ASSIMILATE read-only command and capture the onboarding readback.</td></tr><tr><td><code>proof.ai_portal.lane_registered</code><br>
-<span class="small">AI Portal Alpha/Experimental lane registered</span></td>
+<td class="small dim">Proves LabTalk portal can run the DotTalk++ MAINT AI ASSIMILATE read-only command and capture the onboarding readback.</td></tr><tr><td><code>proof.ai_portal.cold_resume_retention</code><br>
+<span class="small">Artifact-mediated cold resume -- an 11-day-dormant agent recovering position from a handoff</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">First recorded instance of the AI Portal memory model closing its intended loop with a self-verifying anchor. A Cowork session dormant since 2026-08-01 was resumed 2026-08-12, told only that a note existed, and without further ins...</td></tr><tr><td><code>proof.ai_portal.discoverability_caught_its_own_author</code><br>
+<span class="small">The discoverability fix caught its own maker -- Phase 7 was the next dropped thread</span></td>
 <td><span class="pill acc">source_defined</span></td>
-<td class="small dim">Records the governed Alpha/Experimental status, APH-0 through APH-6 gates, authority boundary, and requirement that the portal not be presented as production autonomous memory.</td></tr><tr><td><code>proof.ai_portal.dotscript_startup_readiness.v1</code><br>
+<td class="small dim">IRONY, RECORDED. On 2026-07-28 the AI Portal&#x27;s external-intake discoverability gap (AIF-071) was diagnosed and fixed: work that lives only in ephemeral memory -- a hosted chat, an assistant task list -- cannot be found later, so i...</td></tr><tr><td><code>proof.ai_portal.dotscript_startup_readiness.v1</code><br>
 <span class="small">DotTalk++ / DotScript startup readiness probe v1</span></td>
 <td><span class="pill ok">runtime_observed</span></td>
-<td class="small dim">Proves the current compiled runtime exposes the mandatory read-only learning surfaces and that the portal&#x27;s transcript acceptance gate accepts the green path. ORIENTED permits drafting and review only; it does not authorize a muta...</td></tr><tr><td><code>proof.ai_portal.source_mutation_contract_gate.v1</code><br>
-<span class="small">Source mutation contract preflight registered</span></td>
+<td class="small dim">Proves the current compiled runtime exposes the mandatory read-only learning surfaces and that the portal&#x27;s transcript acceptance gate accepts the green path. ORIENTED permits drafting and review only; it does not authorize a muta...</td></tr><tr><td><code>proof.ai_portal.engineering_standards_seed</code><br>
+<span class="small">AI Portal engineering-standards / definition-of-done seed on the mandatory path</span></td>
 <td><span class="pill acc">source_defined</span></td>
-<td class="small dim">Records the maintainer rule that AI source-code mutations require contract-shelf, lifecycle, subsystem-contract, and source-annotation review before a patch is applied. This record does not grant mutation authority.</td></tr><tr><td><code>proof.ai_portal.seed_connection_prototype_direction.v1</code><br>
-<span class="small">AI fast-start seed connection prototype direction registered</span></td>
-<td><span class="pill ">design_intended</span></td>
-<td class="small dim">Records that the AI Portal is a machine-facing fast-start system for AI development partners, not a student AI-access portal, and that the first connector prototype remains read-only and deterministic.</td></tr><tr><td><code>proof.ai_portal.root_entry_and_external_package.v1</code><br>
+<td class="small dim">Front-loads @dottalk.usage contracts, regression doctrine, the lane close-out checklist, and house conventions; wired into AI_README.md step 6 + AI_PORTAL.md + ROOT entry + fast-start closeout. Source_defined by nature; VERIFICATI...</td></tr><tr><td><code>proof.ai_portal.lane_registered</code><br>
+<span class="small">AI Portal Alpha/Experimental lane registered</span></td>
+<td><span class="pill acc">source_defined</span></td>
+<td class="small dim">Records the governed Alpha/Experimental status, APH-0 through APH-6 gates, authority boundary, and requirement that the portal not be presented as production autonomous memory.</td></tr><tr><td><code>proof.ai_portal.root_entry_and_external_package.v1</code><br>
 <span class="small">Root AI Portal entry and external change-package contract defined</span></td>
 <td><span class="pill acc">source_defined</span></td>
 <td class="small dim">Provides one repository-root fast-start link for outside AI engines, mandatory SDLC entry, and a required patch-package format tied to an exact public baseline commit. Source-defined only until promoted and verified in the public ...</td></tr><tr><td><code>proof.ai_portal.sdlc_fast_start.v1</code><br>
 <span class="small">AI Portal SDLC fast-start seed registered</span></td>
 <td><span class="pill acc">source_defined</span></td>
-<td class="small dim">Makes owning lifecycle, SDLC lane, truth state, proof state, risk, next gate, and closeout mandatory across AI Portal tasks and packages. PLDC and publication cannot bypass underlying SDLC evidence.</td></tr><tr><td><code>proof.bbs.m1_board</code><br>
+<td class="small dim">Makes owning lifecycle, SDLC lane, truth state, proof state, risk, next gate, and closeout mandatory across AI Portal tasks and packages. PDLC and publication cannot bypass underlying SDLC evidence.</td></tr><tr><td><code>proof.ai_portal.seed_connection_prototype_direction.v1</code><br>
+<span class="small">AI fast-start seed connection prototype direction registered</span></td>
+<td><span class="pill ">design_intended</span></td>
+<td class="small dim">Records that the AI Portal is a machine-facing fast-start system for AI development partners, not a student AI-access portal, and that the first connector prototype remains read-only and deterministic.</td></tr><tr><td><code>proof.ai_portal.source_mutation_contract_gate.v1</code><br>
+<span class="small">Source mutation contract preflight registered</span></td>
+<td><span class="pill acc">source_defined</span></td>
+<td class="small dim">Records the maintainer rule that AI source-code mutations require contract-shelf, lifecycle, subsystem-contract, and source-annotation review before a patch is applied. This record does not grant mutation authority.</td></tr><tr><td><code>proof.aif078.slot_cost_measured_per_toolchain</code><br>
+<span class="small">MAX_AREA per-slot cost measured on both supported toolchains; the two axes bind on different platforms</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">AIF-078 gate G0. MSVC (_MSC_VER=1944): DbArea 840, AreaState 144, fstream 280, 1016 B/slot. g++/libstdc++ x86-64: DbArea 1088, AreaState 176, fstream 528, 1296 B/slot. sizeof(XBaseEngine) is 4104 on both because it is only MAX_ARE...</td></tr><tr><td><code>proof.aif078.workspace_path_preserves_depth1</code><br>
+<span class="small">DataAddress workspace scalar widened to a path with no depth-1 behavior change</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">AIF-078 Q7. WorkspaceIdentity workspace_ became WorkspacePath workspace_path_ (outermost first); the scalar constructor kept its signature, delegates, and yields depth 1. Asserted rather than inspected: depth-1 renders exactly &quot;MC...</td></tr><tr><td><code>proof.aside.diagnostic_removed_and_called_a_fix</code><br>
+<span class="small">Silencing a warning was recorded as fixing it -- the commit message is wrong on the record</span></td>
+<td><span class="pill acc">source_defined</span></td>
+<td class="small dim">CORRECTION, RECORDED -- the site commit 49fd9f607 (x64base-site, branch codex/lean-sites-publish, 2026-08-13) carries the message &quot;eco: return links to the site, and a real html/head/body so search can index it&quot;. The second clause...</td></tr><tr><td><code>proof.aside.rule_caught_its_own_author</code><br>
+<span class="small">The aside rule caught its own author over-scoping -- the same session it was coined</span></td>
+<td><span class="pill acc">source_defined</span></td>
+<td class="small dim">ASIDE, RECORDED -- the rule caught its own author. On 2026-08-08 the term &quot;aside&quot; was coined and made a standing rule (AI_GLOSSARY_V1.md): a side trip to fix or check a side issue during a task in progress, which does NOT get its ...</td></tr><tr><td><code>proof.bbs.guest</code><br>
+<span class="small">AI-BBS guest leave-a-message (member.guest + board.guestbook)</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">As member.guest -&gt; POST board.guestbook OK posted</td></tr><tr><td><code>proof.bbs.m1_board</code><br>
 <span class="small">AI-BBS M1 board tables + BBS command</span></td>
 <td><span class="pill ok">runtime_observed</span></td>
 <td class="small dim">BBS BOARDS created SYSBOARD/THREAD/POST.dbf; POST/READ round-trip; board.governance projects SYSGRANT.</td></tr><tr><td><code>proof.bbs.m2_net_egress</code><br>
@@ -252,65 +604,142 @@ That is by design -- the record lives in the repo, not in a vendor's session sto
 <td class="small dim">127.0.0.1:8765 LISTENING (loopback only); AUTH OK; CHAT haiku from isolated Ollama while egress=Block; OK posted.</td></tr><tr><td><code>proof.bbs.m6_daemon</code><br>
 <span class="small">AI-BBS M6 standalone dottalk_bbsd daemon</span></td>
 <td><span class="pill ok">runtime_observed</span></td>
-<td class="small dim">Own binary; headless via DotTalkBBSD task (SYSTEM/session 0, no window); AUTH/CHAT/POST across restarts; SO_EXCLUSIVEADDRUSE; SIGPIPE guard.</td></tr><tr><td><code>proof.bbs.guest</code><br>
-<span class="small">AI-BBS guest leave-a-message (member.guest + board.guestbook)</span></td>
-<td><span class="pill ok">runtime_observed</span></td>
-<td class="small dim">As member.guest -&gt; POST board.guestbook OK posted</td></tr><tr><td><code>proof.ai_portal.engineering_standards_seed</code><br>
-<span class="small">AI Portal engineering-standards / definition-of-done seed on the mandatory path</span></td>
-<td><span class="pill acc">source_defined</span></td>
-<td class="small dim">Front-loads @dottalk.usage contracts, regression doctrine, the lane close-out checklist, and house conventions; wired into AI_README.md step 6 + AI_PORTAL.md + ROOT entry + fast-start closeout. Source_defined by nature; VERIFICATI...</td></tr><tr><td><code>proof.bbs.worklog</code><br>
+<td class="small dim">Own binary; headless via DotTalkBBSD task (SYSTEM/session 0, no window); AUTH/CHAT/POST across restarts; SO_EXCLUSIVEADDRUSE; SIGPIPE guard.</td></tr><tr><td><code>proof.bbs.worklog</code><br>
 <span class="small">AI-BBS worklog/handoff board + simplex cascade guard</span></td>
 <td><span class="pill ok">runtime_observed</span></td>
-<td class="small dim">2026-07-25 built + observed. board.worklog listed by BBS BOARDS (kind=2, post=bbs.post); as member.ai.grok.xai, POST board.worklog SESSION-20260725 :: RUN=... -&gt; OK posted #6, READ back OK. Handoff-post convention (RUN/STATE/DID/O...</td></tr><tr><td><code>proof.ai.roles_taxonomy</code><br>
-<span class="small">AI roles taxonomy - agents vs Ollama vs GPTbase</span></td>
+<td class="small dim">2026-07-25 built + observed. board.worklog listed by BBS BOARDS (kind=2, post=bbs.post); as member.ai.grok.xai, POST board.worklog SESSION-20260725 :: RUN=... -&gt; OK posted #6, READ back OK. Handoff-post convention (RUN/STATE/DID/O...</td></tr><tr><td><code>proof.build.gcc_linux_warning_baseline</code><br>
+<span class="small">GCC/Linux build of x64base under WSL -- warning baseline</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">Captured 2026-07-30 building the tree under WSL with GCC 13. 94 warning lines across 16 classes, of which MSVC reports none -- so this is the only non-MSVC build evidence the repository holds, for a project whose stated position i...</td></tr><tr><td><code>proof.case.registry_exists</code><br>
+<span class="small">Case registry exists</span></td>
+<td><span class="pill ">case_registered</span></td>
+<td class="small dim"></td></tr><tr><td><code>proof.cnx_orthogonality_recno_permutation</code><br>
+<span class="small">The cross-generation index cocktail works BY CONSTRUCTION -- a CNX is a table-agnostic recno permutation, and REINDEX self-heals a foreign container</span></td>
 <td><span class="pill acc">source_defined</span></td>
-<td class="small dim">Names three non-interchangeable roles - DOERS (agent-members that authenticate + change source + leave handoffs), LOCAL BRAIN (Ollama, isolated inference, not a member, needs a harness), HOSTED ADVISOR (GPTbase, advisory not autho...</td></tr><tr><td><code>proof.contract.dottalk_file_fulltree</code><br>
+<td class="small dim">THE ORTHOGONALITY DISCOVERY (owner, live, 2026-08-09). While exercising CNX-on-x64 (AIF-099) the owner observed an x64 STUDENTS.dbf running correctly under a CNX container built for its v32 twin, and named why: &quot;the system is acce...</td></tr><tr><td><code>proof.codev.system_corrects_its_extender</code><br>
+<span class="small">The tree&#x27;s own artifacts and gates corrected an outside AI extender, repeatedly</span></td>
+<td><span class="pill acc">source_defined</span></td>
+<td class="small dim">Eleven recorded corrections in one lane. Owner redirects (five) converted construction proposals into consumption of existing machinery -- locks, tuple carrier, buffering, unique registry -- with catch latency falling to zero by t...</td></tr><tr><td><code>proof.contract.dottalk_file_fulltree</code><br>
 <span class="small">@dottalk.file universal contract - full-tree backfill at 100% coverage</span></td>
 <td><span class="pill ok">runtime_observed</span></td>
-<td class="small dim">census 1034/1034 (100.0%) observed from source_census.py after the sweep; M3 --strict now exits 0 (gate passable, promotion is a maintainer decision). Schema v1 revised: path:/provenance: dropped (duplicated git tracking; path: go...</td></tr><tr><td><code>proof.agency.model</code><br>
-<span class="small">Agency model -- capacity to act plus accountability for having acted</span></td>
-<td><span class="pill acc">source_defined</span></td>
-<td class="small dim">Names a model the system had already IMPLEMENTED but never stated, so the mechanisms stop reading as unrelated engineering choices. Four legs: identity (SYSMEMBER), authority (SYSMEMROLE-&gt;SYSROLEPERM-&gt;SYSPERM), authentication (Arg...</td></tr><tr><td><code>proof.wal.dbf_record</code><br>
-<span class="small">TABLE BUFFER write-ahead log -- DBF record atomicity + crash recovery</span></td>
+<td class="small dim">census 1034/1034 (100.0%) observed from source_census.py after the sweep; M3 --strict now exits 0 (gate passable, promotion is a maintainer decision). Schema v1 revised: path:/provenance: dropped (duplicated git tracking; path: go...</td></tr><tr><td><code>proof.edref.storage_was_already_decided</code><br>
+<span class="small">The EDREF storage question was answered in July and half-built; the search nearly produced a duplicate schema instead</span></td>
 <td><span class="pill ok">runtime_observed</span></td>
-<td class="small dim">Built and PROVEN 2026-07-19 in three teed phases. Phase A: COMMIT/ROLLBACK over the .tbj redo log with retained edits preserved (three edits to one field kept as seq 1/2/3, COMMIT landing the highest-priority Edit3). Phase B: CRAS...</td></tr><tr><td><code>proof.wal.memo_atomicity</code><br>
-<span class="small">Whole-row atomicity including the memo store</span></td>
-<td><span class="pill warn">design-intended</span></td>
-<td class="small dim">GAP, not yet built. An x64 memo REPLACE converts text to a stored object-id and the DBF field holds the id, so the WAL journals the id and never the content. A crash between the durable WAL commit and the memo store&#x27;s own write le...</td></tr><tr><td><code>proof.evidence.layer_versioned</code><br>
+<td class="small dim">MEASURED 2026-08-16. An open lane item asked where the EDREF teaching catalog should live: compiled into the header, or seeded into a DBF and read at runtime. A design was proposed -- CSV as source, compiled fallback for lean, DBF...</td></tr><tr><td><code>proof.edref.topic_exists</code><br>
+<span class="small">EDREF topic exists</span></td>
+<td><span class="pill acc">source_defined</span></td>
+<td class="small dim"></td></tr><tr><td><code>proof.engine.append_blank_catalog_drift</code><br>
+<span class="small">Runtime APPEND rejects the BLANK token the command catalog documents (silent clobber)</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">AIF-086, repair R-APPEND-BLANK. The command catalog (src/cli/shell_commands.cpp -&gt; content/docs/dottalk/command-catalog.mdx) documents APPEND_BLANK with syntax &quot;APPEND BLANK&quot;, but the runtime APPEND parser rejects the BLANK token ...</td></tr><tr><td><code>proof.engine.key_metadata_survives_workspace_roundtrip</code><br>
+<span class="small">PRIMARY/UNIQUE key declarations persist through WORKSPACE SAVE and LOAD</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">Phase 2 of a registry whose own header asked for it (&quot;Phase 1: session-scoped ... storage/backfill policy belongs elsewhere&quot;). The registry was emptied between SAVE and LOAD, so restoration is proven, not assumed: LOAD echoed KEY ...</td></tr><tr><td><code>proof.engine.scan_limit_reports_truncation</code><br>
+<span class="small">Relation scans announce when the scan limit stopped them</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">AIF-073 finding RDB-06 closed. A scan that stopped at the cap previously returned a plausible-looking partial answer with no indication -- a wrong result indistinguishable from a right one. At limit 1 the run reports &quot;REL: scan li...</td></tr><tr><td><code>proof.engine.two_read_families_buffer_visibility</code><br>
+<span class="small">Two coherent read families; buffer-visibility defects occur only at the hybrid seam</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">Under TABLE BUFFER ON a REPLACE is buffered, not written to the DBF, so every reader must choose a source. Three probes established that x64base has TWO internally coherent families and that defects appear ONLY where they are mixe...</td></tr><tr><td><code>proof.engine.typed_equality_crosses_declared_types</code><br>
+<span class="small">Relation equality compares numerically whenever both sides are numeric literals</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">AIF-073 finding RDB-03 converted from divergence to conformance. Previously only a numerically DECLARED child field got numeric comparison, so a character child holding &quot;1&quot; failed against a numeric parent&#x27;s &quot;1.00&quot; -- an asymmetry ...</td></tr><tr><td><code>proof.evidence.layer_versioned</code><br>
 <span class="small">Proof transcripts un-ignored and committed -- registry claims now verifiable from a clone</span></td>
 <td><span class="pill ok">runtime_observed</span></td>
-<td class="small dim">MEASURED 2026-07-25: .gitignore line 36 carried a blanket *.log written for runtime noise; it also swallowed labtalk/proofs/runs/*.log, the transcripts proofs.yaml rows cite AS THEIR EVIDENCE. 71 proof artifacts on disk, 0 tracked...</td></tr><tr><td><code>proof.lmdb.mapsize_override_on_attach</code><br>
+<td class="small dim">MEASURED 2026-07-25: .gitignore line 36 carried a blanket *.log written for runtime noise; it also swallowed labtalk/proofs/runs/*.log, the transcripts proofs.yaml rows cite AS THEIR EVIDENCE. 71 proof artifacts on disk, 0 tracked...</td></tr><tr><td><code>proof.export.sdf.fixed_width_export</code><br>
+<span class="small">EXPORT SDF writes fixed-width records using the shared TUPTALK row formatter</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">AIF-069 closed as a runtime-observed development slice. Debug build passed and REGRESSION RUN EXPORT_SDF exported two schema-width rows with no header: &quot;AB    7  12.3T&quot; and &quot;WXYZ123  -4.5F&quot;, each length 14. The generated temp SDF ...</td></tr><tr><td><code>proof.golden_rule_verify_before_assert</code><br>
+<span class="small">The golden rule, earned -- host-only changes asserted &quot;done&quot; broke; ground truth came only on running</span></td>
+<td><span class="pill acc">source_defined</span></td>
+<td class="small dim">THE GOLDEN RULE, EARNED. On 2026-08-08 a run of host-only changes -- ones the sandbox cannot execute -- were each asserted &quot;done&quot; and each broke on the maintainer machine. (1) A data-pagefind-ignore added to the /AI page body brok...</td></tr><tr><td><code>proof.governance.availability_is_not_adoption</code><br>
+<span class="small">A foreign carrier was selected and signed because it was available -- a failure of proof, not of reasoning, and it passed two onboarded AI agencies</span></td>
+<td><span class="pill acc">source_defined</span></td>
+<td class="small dim">A PROOF FAILURE, and still a proof -- filed by subject (governance), not by valence, because a failure is evidence like any other: this registry holds 63 entries and every one records something that worked. That asymmetry is itsel...</td></tr><tr><td><code>proof.grok_lane1_coworker_kind_collision</code><br>
+<span class="small">First ai-ai coworker lane delivery (Grok) landed clean AND its one engine error was caught by ground-truthing before apply</span></td>
+<td><span class="pill acc">source_defined</span></td>
+<td class="small dim">THE TEAM MODEL, EXERCISED -- both halves recorded on purpose. On 2026-08-08 Grok, assigned as a coworker to the Frontal_Mem M2 Lane 1 write adapter (the engine-bound half Claude cannot build in the sandbox), returned a clean revie...</td></tr><tr><td><code>proof.help.cmdhelp_source_exists</code><br>
+<span class="small">CMDHELP source exists</span></td>
+<td><span class="pill acc">source_defined</span></td>
+<td class="small dim"></td></tr><tr><td><code>proof.lab.database_literacy_starter.first_run</code><br>
+<span class="small">Database Literacy Starter first portal/runtime transcript</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">Proves LabTalk portal registry item can run a DotTalk++ DTS script and capture EDREF output.</td></tr><tr><td><code>proof.lab.selfdoc.comments_to_contracts.first_run</code><br>
+<span class="small">SelfDoc comments-to-contracts first CMDHELP/CMDHELPCHK run</span></td>
+<td><span class="pill ">validated</span></td>
+<td class="small dim">Captures CMDHELP/CMDHELPCHK runtime output plus read-only comments/contracts crosswalk for CMDHELP and CMDHELPCHK.</td></tr><tr><td><code>proof.lmdb.mapsize_ladder_honoured_after_fix</code><br>
+<span class="small">BUILDLMDB TINY survives an index attach -- the size ladder is honoured</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">AIF-065 FIX VERIFIED. mdb_env_set_mapsize(env_, 0) replaces the hardcoded 1 GiB at cdx_backend.cpp and lmdb_backend.cpp, so the attach path ADOPTS the persisted mapsize instead of asserting one. SYSARGS rebuilt with BUILDLMDB CLEA...</td></tr><tr><td><code>proof.lmdb.mapsize_override_on_attach</code><br>
 <span class="small">LMDB env resizes 128 MiB -&gt; 1 GiB on index auto-attach, ignoring the BUILDLMDB ladder</span></td>
 <td><span class="pill ok">runtime_observed</span></td>
 <td class="small dim">AIF-065 promoted from source_defined to runtime_observed. SYSSUBCMD.cdx.d/data.mdb measured at 134,217,728 bytes immediately before the run and 1,073,741,824 bytes immediately after -- exactly 8x, on a 31-ROW TABLE, from a single ...</td></tr><tr><td><code>proof.lmdb.mapsize_override_replication_sysfunc</code><br>
 <span class="small">LMDB mapsize override replicates on a second table (SYSFUNC, 69 rows)</span></td>
 <td><span class="pill ok">runtime_observed</span></td>
-<td class="small dim">Independent replication of proof.lmdb.mapsize_override_on_attach on a different table. SYSFUNC.cdx.d/data.mdb measured 134,217,728 before and 1,073,741,824 after a single index auto-attach at USE -- delta 939,524,096 on a 69-row t...</td></tr><tr><td><code>proof.lmdb.mapsize_ladder_honoured_after_fix</code><br>
-<span class="small">BUILDLMDB TINY survives an index attach -- the size ladder is honoured</span></td>
+<td class="small dim">Independent replication of proof.lmdb.mapsize_override_on_attach on a different table. SYSFUNC.cdx.d/data.mdb measured 134,217,728 before and 1,073,741,824 after a single index auto-attach at USE -- delta 939,524,096 on a 69-row t...</td></tr><tr><td><code>proof.memo.object_challenge</code><br>
+<span class="small">Memo object challenge -- an open exercise in AI cooperation</span></td>
+<td><span class="pill ">design_intended</span></td>
+<td class="small dim">Chartered 2026-08-12. Lane AIF-108 (proposed -- claim-aif is the allocator, not grep, per the AIF-078 lesson; if the tool allocates otherwise, the doc header and the intake row change together). Owner member.derald, coworker and s...</td></tr><tr><td><code>proof.memo.zoo_orthogonality</code><br>
+<span class="small">Quantum Memo Zoo -- memo store stays payload-agnostic and orthogonal under adversarial chaos</span></td>
 <td><span class="pill ok">runtime_observed</span></td>
-<td class="small dim">AIF-065 FIX VERIFIED. mdb_env_set_mapsize(env_, 0) replaces the hardcoded 1 GiB at cdx_backend.cpp and lmdb_backend.cpp, so the attach path ADOPTS the persisted mapsize instead of asserting one. SYSARGS rebuilt with BUILDLMDB CLEA...</td></tr><tr><td><code>proof.ai_portal.discoverability_caught_its_own_author</code><br>
-<span class="small">The discoverability fix caught its own maker -- Phase 7 was the next dropped thread</span></td>
+<td class="small dim">QUANTUM MEMO ZOO / memo zoo / memo_zoo -- also the MINIDB and memo-resident workspace surface. Retrieval names first, on purpose: consumers of this registry truncate notes, so a record whose identifying words sit in the last parag...</td></tr><tr><td><code>proof.owner_dogfood_caught_cross_slot_leak</code><br>
+<span class="small">A green seven-phase regression missed what two minutes of owner dogfood caught -- the proof environment could not express the failure</span></td>
 <td><span class="pill acc">source_defined</span></td>
-<td class="small dim">IRONY, RECORDED. On 2026-07-28 the AI Portal&#x27;s external-intake discoverability gap (AIF-071) was diagnosed and fixed: work that lives only in ephemeral memory -- a hosted chat, an assistant task list -- cannot be found later, so i...</td></tr><tr><td><code>proof.sqlsel.select_statement_matches_sqlite</code><br>
+<td class="small dim">THE DOGFOOD PROOFED THE DOCUMENTATION, 2026-08-09 (AIF-099). Hours after the CNX-on-x64 lane was proven by a seven-phase regression -- all phases PASS, adjudicated from host transcripts -- the owner used the feature live in the re...</td></tr><tr><td><code>proof.pdlc.cobol_fixed_record.hop_closed</code><br>
+<span class="small">DBF to fixed-record to GnuCOBOL read, 200 records</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">COBOL EXPORT wrote 200 records; the file is 22,200 bytes = 200 x 111 EXACTLY. That division is the fidelity proof -- a fixed-record file carries no header count and no delimiters, so a short write is invisible to anything that mer...</td></tr><tr><td><code>proof.pdlc.csv_to_x64base.type_fidelity</code><br>
+<span class="small">CSV to x64base preserves types, NULLs and long names</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">18 rows, 13 fields from the sealed Cascade Items.csv. All 13 type letters matched a derivation taken from src/import/import_profile.cpp BEFORE the run: N C C C C C N N N N N C N. Two behaviours predicted from the code and confirme...</td></tr><tr><td><code>proof.pdlc.dbf_csv_dbf.roundtrip_lossless</code><br>
+<span class="small">DBF to CSV to DBF round trip is lossless</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">Origin and return legs both 18 rows / 13 fields, with IDENTICAL structure -- same type letters, same widths, same decimal counts. EXPORT rendered every value such that re-inference reproduced the origin schema exactly, which is st...</td></tr><tr><td><code>proof.pdlc.dialect_ladder.dbase3_to_x64</code><br>
+<span class="small">dBASE III to FoxPro 2.6 to VFP to x64 to x64 VECTOR, lossless</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">The historical migration demonstration proper, walked inside one engine with no external tool, from a genuine legacy artifact: dbf/og/STUDENTS.DBF, version byte 0x03, 200 records, 9 fields, every field name at or under the classic...</td></tr><tr><td><code>proof.peer_review.header_only_findings</code><br>
+<span class="small">A hosted peer with no tree access found three real defects from a header block</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">First exercise of a hosted peer-review seat, unprompted and on its first outing. HOSTED-20260813-001 was relayed ONLY the eight-line header of a publish handoff -- no body, no repository, no build output -- and returned three find...</td></tr><tr><td><code>proof.portal.truth_audit.latest</code><br>
+<span class="small">Portal truth audit latest report</span></td>
+<td><span class="pill ">validated</span></td>
+<td class="small dim">Captures the portal collection-of-truths audit across LabTalk registries, local proof records, and x64base.com SelfDoc/SDLC publication pages.
+AUDIT SCOPE INCLUDED THREE SITE PAGES, cited here until 2026-08-02: content/docs/labtal...</td></tr><tr><td><code>proof.product.manualgen.board_preserved</code><br>
+<span class="small">Manualgen product board and map preservation</span></td>
+<td><span class="pill ">validated</span></td>
+<td class="small dim">Preserves the first Manualgen product board and records initial hardening evidence using repo-local vcpkg Python 3.12.9.</td></tr><tr><td><code>proof.selfdoc.comments_workflow_exists</code><br>
+<span class="small">Comments to HELP workflow exists</span></td>
+<td><span class="pill acc">source_defined</span></td>
+<td class="small dim"></td></tr><tr><td><code>proof.site.invalid_opacity_renders_nothing</code><br>
+<span class="small">Seven Tailwind opacity values were off-scale, so the utilities generated nothing and a hero caption sat unreadable on the live site</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">MEASURED 2026-08-16 against the LIVE site (release 128), in the browser.
+The hero caption &quot;DotTalk++ CLI + DBF runtime + metadata validation&quot; rendered at 1.24:1 against the dark hero image in light mode, where 4.5:1 is the bar for...</td></tr><tr><td><code>proof.sqlsel.select_statement_matches_sqlite</code><br>
 <span class="small">SQLSEL SELECT ... FROM returns row sets equal to SQLite over the same data</span></td>
 <td><span class="pill ok">runtime_observed</span></td>
-<td class="small dim">The lane&#x27;s one genuinely new component. Projection, star, WHERE and LIMIT each returned the same rows as the in-process SQLite oracle over identical data (1|ADAMS|CSCI, 2|BAKER|MATH, 3|CARTER|CSCI; WHERE MAJOR=&#x27;CSCI&#x27; -&gt; ADAMS + CA...</td></tr><tr><td><code>proof.engine.typed_equality_crosses_declared_types</code><br>
-<span class="small">Relation equality compares numerically whenever both sides are numeric literals</span></td>
+<td class="small dim">The lane&#x27;s one genuinely new component. Projection, star, WHERE and LIMIT each returned the same rows as the in-process SQLite oracle over identical data (1|ADAMS|CSCI, 2|BAKER|MATH, 3|CARTER|CSCI; WHERE MAJOR=&#x27;CSCI&#x27; -&gt; ADAMS + CA...</td></tr><tr><td><code>proof.tooling.catalog_state_blindness</code><br>
+<span class="small">A guard returned the same answer for missing, empty, and healthy -- so an empty catalog advertised as supported went unseen</span></td>
 <td><span class="pill ok">runtime_observed</span></td>
-<td class="small dim">AIF-073 finding RDB-03 converted from divergence to conformance. Previously only a numerically DECLARED child field got numeric comparison, so a character child holding &quot;1&quot; failed against a numeric parent&#x27;s &quot;1.00&quot; -- an asymmetry ...</td></tr><tr><td><code>proof.engine.scan_limit_reports_truncation</code><br>
-<span class="small">Relation scans announce when the scan limit stopped them</span></td>
+<td class="small dim">MEASURED 2026-08-16. include/devref.hpp contained an empty namespace, declared &quot;status: supported&quot; in its @dottalk.file header, and was named in AI_TIER1_SEED_V1.md as one of six reference authorities that &quot;own a namespace&quot; -- a d...</td></tr><tr><td><code>proof.tooling.cross_platform</code><br>
+<span class="small">Workflow tooling ported to cross-platform Python, each tested</span></td>
 <td><span class="pill ok">runtime_observed</span></td>
-<td class="small dim">AIF-073 finding RDB-06 closed. A scan that stopped at the cap previously returned a plausible-looking partial answer with no indication -- a wrong result indistinguishable from a right one. At limit 1 the run reports &quot;REL: scan li...</td></tr><tr><td><code>proof.engine.key_metadata_survives_workspace_roundtrip</code><br>
-<span class="small">PRIMARY/UNIQUE key declarations persist through WORKSPACE SAVE and LOAD</span></td>
+<td class="small dim">Rule adopted 2026-08-02 at maintainer direction: no PowerShell-only or bash-only solutions; Python 3 + stdlib or DotScript, ASCII, shell only as a thin wrapper. The project is cross-platform C++ on cross-compatible libraries and t...</td></tr><tr><td><code>proof.tooling.local_path_detector_consolidation</code><br>
+<span class="small">Nine local-path detectors, seven blind to the environment the agents actually run in</span></td>
 <td><span class="pill ok">runtime_observed</span></td>
-<td class="small dim">Phase 2 of a registry whose own header asked for it (&quot;Phase 1: session-scoped ... storage/backfill policy belongs elsewhere&quot;). The registry was emptied between SAVE and LOAD, so restoration is proven, not assumed: LOAD echoed KEY ...</td></tr><tr><td><code>proof.engine.two_read_families_buffer_visibility</code><br>
-<span class="small">Two coherent read families; buffer-visibility defects occur only at the hybrid seam</span></td>
+<td class="small dim">MEASURED 2026-08-13/14. A task opened as &quot;consolidate the four local-path detectors&quot; found NINE on re-review: artifact_disposition.py:126, audit_manual_publication_readiness.py:19, build_gptbase_bundle.py:57 and :58, ecoschema_map...</td></tr><tr><td><code>proof.wal.dbf_record</code><br>
+<span class="small">TABLE BUFFER write-ahead log -- DBF record atomicity + crash recovery</span></td>
 <td><span class="pill ok">runtime_observed</span></td>
-<td class="small dim">Under TABLE BUFFER ON a REPLACE is buffered, not written to the DBF, so every reader must choose a source. Three probes established that x64base has TWO internally coherent families and that defects appear ONLY where they are mixe...</td></tr><tr><td><code>proof.codev.system_corrects_its_extender</code><br>
-<span class="small">The tree&#x27;s own artifacts and gates corrected an outside AI extender, repeatedly</span></td>
-<td><span class="pill acc">source_defined</span></td>
-<td class="small dim">Eleven recorded corrections in one lane. Owner redirects (five) converted construction proposals into consumption of existing machinery -- locks, tuple carrier, buffering, unique registry -- with catch latency falling to zero by t...</td></tr></table>
-<div class="foot">Generated 2026-07-31 22:45 UTC from live DotTalk++ state
+<td class="small dim">Built and PROVEN 2026-07-19 in three teed phases. Phase A: COMMIT/ROLLBACK over the .tbj redo log with retained edits preserved (three edits to one field kept as seq 1/2/3, COMMIT landing the highest-priority Edit3). Phase B: CRAS...</td></tr><tr><td><code>proof.wal.memo_atomicity</code><br>
+<span class="small">Whole-row atomicity including the memo store</span></td>
+<td><span class="pill ">design_intended</span></td>
+<td class="small dim">GAP, not yet built. An x64 memo REPLACE converts text to a stored object-id and the DBF field holds the id, so the WAL journals the id and never the content. A crash between the durable WAL commit and the memo store&#x27;s own write le...</td></tr><tr><td><code>proof.workspace.writeback</code><br>
+<span class="small">WORKSPACE WRITEBACK -- the memo/RAM to disk return leg, with its path resolution corrected</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">Closes AIF-070&#x27;s last arm: disk -&gt; memo -&gt; RAM -&gt; disk, with hydration as the proven inverse, so the round trip IS the test. Spec 44 WORKSPACE_WRITEBACK, WB_T1..WB_T11 plus fixture guard WB_G1, 13/13 .T. RETRACTION FIRST, because ...</td></tr><tr><td><code>proof.worktree.lane_isolation</code><br>
+<span class="small">Worktree-per-lane isolation -- sessions stop sharing one working tree</span></td>
+<td><span class="pill ">design_intended</span></td>
+<td class="small dim">MEASURED 2026-08-02: a Cowork session worked several hours against development and found 191 commits had landed from parallel work while it held a stale picture; three of four queued operations were already done by someone else, a...</td></tr></table>
+<div class="foot" data-pagefind-ignore>Generated 2026-08-26 21:26 UTC from live DotTalk++ state
 (<code>dottalkpp/data/metadata/</code>). Read-only snapshot -- regenerate with
 <code>tools/reports/build_reports.py</code>.</div>
 </div></body></html>
