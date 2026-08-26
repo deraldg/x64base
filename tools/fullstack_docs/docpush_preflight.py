@@ -10,6 +10,7 @@ This runs them in one command:
   3. house-style ASCII scan      -- no non-ASCII (em-dash etc.) in this plan doc        [advisory]
   4. help_build_order_check.py   -- catalogs -> exe -> LEGACY -> store, in that order   [HARD]
   5. help_store_check.py         -- every HELP_LINE row names a topic (the JOIN)        [HARD]
+  6. program_freshness_check.py  -- EVERY program the push runs is newer than its source [HARD]
 
 Steps 4 and 5 were added 2026-08-25. They exist because flush v5 lost cycles to
 four failures a transcript CANNOT show, all of them ordering facts: a store
@@ -18,6 +19,14 @@ rebuilt by an exe that predated the change; CMDHELP BUILD LEGACY and BUILD .
 a dirty worktree; and 2,757 HELP_LINE rows with a blank TOPICKEY that survived
 five rebuilds while CMDHELPCHK reported OK (AIF-126). Steps 1-3 check CONTENT.
 Steps 4-5 check ORDER and the join. Neither half sees the other's failures.
+
+Step 6 was added 2026-08-26, from the owner's structural note: "so step 1 is
+really compile all of the programs first in the fullstack push". Step 4 answers
+that for the ENGINE only. The push also runs `metacollect` -- a separate CMake
+target, default OFF -- whose staleness nothing was testing until it was checked
+BY HAND during v6 Phase 5, and a hand check is not a gate. Step 6 also reports
+the version guard each Python program declares, because on the same day a
+`!= (3, 12)` EQUALITY guard made a runnable tool read as blocked.
 
 Exit 0 only if the two HARD checks pass. Steps 1 and 2 shell out to the existing
 tools with the current interpreter, so run this on a host with Python 3.12
@@ -114,6 +123,20 @@ def main(argv=None):
     if rc == 1:
         fails.append("help_store_check: the store has unreachable rows "
                      "-- CMDHELPCHK cannot see this, it checks one table at a time")
+
+    # 6. every program the push runs is newer than its sources (HARD)
+    rc, out = _run([py, str(root / "tools/coordination/program_freshness_check.py"),
+                    "--root", str(root)])
+    for line in out.splitlines():
+        s = line.strip()
+        if s.startswith(("PASS", "FAIL", "skip", "ERROR", "note", "NOTE", "ok", "none")):
+            print("  6. %s" % s)
+    if rc == 1:
+        fails.append("program_freshness_check: a program the push runs is OLDER "
+                     "than its sources -- it would report the tree as it was "
+                     "BEFORE the change under test")
+    elif rc not in (0, 1):
+        print("  6. program freshness: could not measure (rc=%d)" % rc)
 
     print()
     if fails:

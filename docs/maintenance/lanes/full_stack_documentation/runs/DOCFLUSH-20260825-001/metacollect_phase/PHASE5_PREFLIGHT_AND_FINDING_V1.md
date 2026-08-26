@@ -365,3 +365,91 @@ misleads, is a ruling for the area that owns metacollect.
                       expect exactly one assignment, at 1329, inside
                       add_metadata_row_fact; and SYSCMD.dbf's six field names.
     Undo          : delete the CSVs and this section. Nothing cites them yet.
+
+---
+
+# 8. The contract that governs these candidates was never tracked -- and it exonerates the fold
+
+## 8.1 A live contract, on disk and outside history since 2026-07-17
+
+Staging the section 7 work put `METACOLLECT_RUNBOOK_V1.md` into a change set,
+which made `cited-paths` check it, which surfaced:
+
+    WIDOW  docs/maintenance/lanes/full_stack_documentation/
+           METACOLLECT_SYSCMD_CANDIDATE_CONTRACT_V1.md -- on disk, NOT tracked
+           cited by METACOLLECT_RUNBOOK_V1.md
+
+**It is not ignored.** `git check-ignore` returns nothing; it was simply never
+staged. 3,271 bytes, dated 2026-07-17, headed *"Status: active source-defined
+candidate contract"* -- and it is the document that defines the exact artifact
+Phase 5 emitted six hours ago. **Gate 5 binds these candidates by SHA against a
+contract that is not in history.** Untracked for over a month, and only visible
+because an unrelated edit dragged its citer into a change set.
+
+Staged in this commit. The gate's own instruction is "stage the file, or stop
+citing it", and a contract governing a live artifact is not a citation to drop.
+
+## 8.2 Checked against it before staging it
+
+A contract is worth tracking only if the thing it governs obeys it. Every clause
+that is cheaply testable, tested against the section 7 output:
+
+    "repeated runs over unchanged source must be byte-identical"
+      second emission, all three candidates:   BYTE-IDENTICAL
+      (the contract's own proof of determinism, and it is the strongest clause
+       in the document -- it makes a re-run a CHECK rather than a replacement)
+    "rows sort by CAN_NAME"                    True, 229 rows
+    unique ids / unique canonical names        True / True
+    "TYPE=syntax-command reserved ... other
+     rows use TYPE=command"                    {command, syntax-command}
+    "default rows VIS=public; included
+     developer rows VIS=developer"             {public, developer}
+    field order CMD_ID,CAN_NAME,TYPE,VIS,
+     HANDLER,ACTIVE                            exact
+
+## 8.3 CORRECTION to section 7.4 -- the fold is the CONTRACT, not concealment
+
+Section 7.4 called the disappearance of the three spaced `ERROR` registrations
+from SYSCMD "concealment that happens to point the right way". **That reads as a
+criticism of metacollect and it is wrong.** The contract's rule 4:
+
+> A unique compact match may map a registry token such as `SETORDER` to the
+> source-contract canonical name `SET ORDER`.
+
+The question is whether `ERROR_CLEAR` is a source-contract canonical name or
+merely another registry token -- because rule 3 says two exact registered names
+stay separate. Checked:
+
+    src/cli/cmd_error_clear.cpp:15    // command: ERROR_CLEAR
+    src/cli/cmd_error_status.cpp:15   // command: ERROR_STATUS
+    src/cli/cmd_error_test.cpp:15     // command: ERROR_TEST
+
+They are declared canonical in source contracts. So the registry token
+`ERROR CLEAR` maps to the source-contract canonical `ERROR_CLEAR` by unique
+compact match -- **rule 4 exactly, working as written.** metacollect is
+obeying its contract, and the underscore spelling is canonical because the
+SOURCE says so, not because a normalisation happened to swallow a defect.
+
+What survives from 7.4, restated correctly: the two catalogs still disagree,
+and the defect is still real, but neither belongs to metacollect. `COMMANDS.dbf`
+publishes `ERROR CLEAR` as `implemented=yes` because the REGISTRY has a row for
+it; SYSCMD does not carry it because the CONTRACT says the canonical name is
+`ERROR_CLEAR`. **The two catalogs are each right about their own authority.**
+The single thing that is wrong is upstream of both: `shell_commands.cpp:562-564`
+registers three spaced keys that no dispatcher can reach.
+
+That is worth stating plainly because it changes who the finding is FOR. It is
+not a metacollect bug and not a SYSCMD bug. It is three lines in
+`shell_commands.cpp`, and everything downstream is faithfully reporting them.
+
+## 8.4 Good Neighbor for section 8
+
+    What changed  : this section; METACOLLECT_SYSCMD_CANDIDATE_CONTRACT_V1.md
+                    STAGED (content untouched, first time in history); one
+                    unescaped pipe escaped in AIF-130's intake row.
+    Whose area    : lane full_stack_documentation.
+    Authorization : the owner's commit of 848273a77 raised both advisories; this
+                    answers them rather than carrying them.
+    Verify        : run the emit twice and `cmp` the three candidates.
+                    grep -n "command: ERROR" src/cli/cmd_error_*.cpp
+    Undo          : `git rm --cached` the contract restores the widow.
