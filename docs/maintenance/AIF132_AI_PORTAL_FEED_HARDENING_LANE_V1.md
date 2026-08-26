@@ -6,7 +6,8 @@ Owner: `member.derald`
 
 Steward: `member.ai.codex`
 
-Runs: `CODEX-20260826-001`, `CODEX-20260826-002`
+Runs: `CODEX-20260826-001`, `CODEX-20260826-002`, `CODEX-20260826-003`,
+`CODEX-20260826-004`
 
 ## Authorization
 
@@ -59,6 +60,7 @@ renumbered.
 | M8 | Generated status projection | PASS -- deterministic JSON and Markdown from maintained registries |
 | M9 | Expanded advisory integration | PASS -- feed, assertion, and projection checks remain non-blocking |
 | M10 | Professional system model | PASS -- normalized hierarchy, schema catalog, PFD, and schema crosswalk DFD |
+| M11 | Full-stack entry and contract-audit hardening | PASS -- maintained run pointer plus helper-aware usage and dotref advisory |
 
 ## Coordination finding
 
@@ -115,3 +117,40 @@ as typed related dimensions. It inventories 19 DBF table schemas registered by
 Portal CRUD plus the typed registry/report schemas, and crosswalks DotTalk++
 HELP, metadata, manuals, governance, evidence, Portal reports, and the website.
 Two Mermaid sources preserve the PFD and DFD as reviewable text.
+
+## Full-stack control evidence -- CODEX-20260826-004
+
+The full-stack lane README no longer embeds an active run ID, gate state, or
+dated handoff. It routes readers to the typed current-run registry and its
+generated Portal projection. The current architecture recipe and the
+operational command cookbook are named separately so their authority boundaries
+are visible.
+
+The source-contract audit now honors the established `@dottalk.file` field
+`layer: helper`. Before the correction it reported eight command-like filenames
+as missing usage contracts; seven already declared themselves helpers in their
+source headers. After the correction the repository measures ten helpers, one
+command file missing `@dottalk.usage`, and one declared command absent from
+`dotref.hpp`. The full-stack preflight reports those separate counts as an
+advisory during the observation cycle. Existing debt therefore becomes visible
+without silently converting an accepted advisory into a new hard gate.
+
+Good Neighbor note for the full-stack documentation lane:
+
+- **WHAT CHANGED:** helper-aware contract classification, an advisory preflight
+  summary, and a maintained-pointer README entry.
+- **WHOSE AREA:** AIF-068 full-stack documentation controls, intersecting the
+  AIF-132 Portal feed and process-model work.
+- **AUTHORIZATION:** owner instruction to continue accepted hardening while
+  Claude works separately on appgui, multi-workplaces, and minidb.
+- **VERIFY OR UNDO:** run the two focused unit-test modules, run
+  `tools/selfdoc/audit_contracts.py --strict` to observe the two remaining
+  debts, and run `tools/fullstack_docs/docpush_preflight.py`; revert only the
+  exact AIF-132/AIF-068 paths if the owning lane rejects the classification.
+
+Verification: five focused audit/preflight tests pass; the 48-test full-stack
+documentation suite passes; Python compilation and the integrated preflight
+pass. Strict contract audit exits 1 as intended and names exactly the two
+remaining advisory debts. The wider SelfDoc suite has one unrelated existing
+failure: metadata-system registry entrypoint hashes no longer match ten source
+files. This slice does not rewrite those hashes or claim that lane is green.

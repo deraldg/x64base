@@ -21,16 +21,16 @@ looks annotated, the generator reads it, and the command still has no help
 page because nothing pointed CMDHELP at it.
 
 EXEMPTIONS ARE DECLARED IN THE SOURCE, NOT HERE
-  A usage block carrying `status: implementation-helper` is exempt from the
-  dotref check, because such a file deliberately does not export a command --
-  cmd_setpath.cpp says so in its own header and hands ownership to
-  cmd_setpath_command.cpp. The exemption travels with the file rather than
-  living in this script, so moving the file cannot silently change its
-  obligations.
+  A file block carrying `layer: helper`, or a legacy usage block carrying
+  `status: implementation-helper`, is exempt from the usage and dotref checks.
+  Such a file deliberately does not own a command. The exemption travels with
+  the file rather than living in this script, so moving the file cannot
+  silently change its obligations.
 
 USAGE
   python tools/selfdoc/audit_contracts.py            # report, exit 0
   python tools/selfdoc/audit_contracts.py --strict   # exit 1 if anything fails
+  python tools/selfdoc/audit_contracts.py --root DIR # measure a named checkout
 """
 
 import os
@@ -48,6 +48,25 @@ FILE_TAG = "@dottalk.file"
 USAGE_TAG = "@dottalk.usage"
 CMD_FIELD = re.compile(r'^\s*//\s*command:\s*(.+?)\s*$', re.M)
 STATUS_FIELD = re.compile(r'^\s*//\s*status:\s*(.+?)\s*$', re.M)
+LAYER_FIELD = re.compile(r'^\s*//\s*layer:\s*(.+?)\s*$', re.M)
+
+
+def comment_block(text, tag):
+    """Return one tagged line-comment block, ending at the first code line."""
+    lines = text.split("\n")
+    start = next((n for n, ln in enumerate(lines) if tag in ln), None)
+    if start is None:
+        return ""
+    out = []
+    for ln in lines[start:]:
+        stripped = ln.strip()
+        if stripped.startswith("//"):
+            out.append(ln)
+        elif stripped == "":
+            continue
+        else:
+            break
+    return "\n".join(out)
 
 
 def usage_block(text):
@@ -81,20 +100,7 @@ def usage_block(text):
       not the code, but refusing to accept a number that improved after a change
       that was not supposed to improve it.
     """
-    lines = text.split("\n")
-    start = next((n for n, ln in enumerate(lines) if USAGE_TAG in ln), None)
-    if start is None:
-        return ""
-    out = []
-    for ln in lines[start:]:
-        s = ln.strip()
-        if s.startswith("//"):
-            out.append(ln)
-        elif s == "":
-            continue                     # blank lines inside the block are fine
-        else:
-            break                        # first real code line ends it
-    return "\n".join(out)
+    return comment_block(text, USAGE_TAG)
 
 
 def read(path):
@@ -131,15 +137,11 @@ def walk(root):
     return sorted(out)
 
 
-def main(argv):
-    root = os.getcwd()
-    strict = "--strict" in argv
-
+def audit(root):
+    """Measure file, usage, and dotref coverage without printing or exiting."""
     names = dotref_names(root)
     if names is None:
-        print("FAIL: %s not found. Refusing to report a clean dotref check "
-              "against a file that is not there." % DOTREF)
-        return 2
+        return None
 
     files = walk(root)
     no_file, no_usage, unregistered, helpers = [], [], [], []
@@ -149,6 +151,11 @@ def main(argv):
         if FILE_TAG not in text:
             no_file.append(rel)
         if not is_command_file(rel):
+            continue
+        file_block = comment_block(text, FILE_TAG)
+        layer = LAYER_FIELD.search(file_block)
+        if layer and layer.group(1).strip().lower() == "helper":
+            helpers.append(rel)
             continue
         if USAGE_TAG not in text:
             no_usage.append(rel)
@@ -163,6 +170,38 @@ def main(argv):
                 cmd = cmd.strip().upper()
                 if cmd and cmd not in names:
                     unregistered.append((rel, cmd))
+
+    return {
+        "files": files,
+        "dotref_names": names,
+        "helpers": helpers,
+        "no_file": no_file,
+        "no_usage": no_usage,
+        "unregistered": unregistered,
+    }
+
+
+def main(argv):
+    root = os.getcwd()
+    if "--root" in argv:
+        index = argv.index("--root")
+        if index + 1 >= len(argv):
+            print("FAIL: --root requires a directory")
+            return 2
+        root = os.path.abspath(argv[index + 1])
+    strict = "--strict" in argv
+    result = audit(root)
+    if result is None:
+        print("FAIL: %s not found. Refusing to report a clean dotref check "
+              "against a file that is not there." % DOTREF)
+        return 2
+
+    files = result["files"]
+    names = result["dotref_names"]
+    helpers = result["helpers"]
+    no_file = result["no_file"]
+    no_usage = result["no_usage"]
+    unregistered = result["unregistered"]
 
     print("=== contract audit ===")
     print("  C++ files scanned      : %d" % len(files))
@@ -184,6 +223,8 @@ def main(argv):
           lambda t: "%-52s declares %s" % (t[0], t[1]))
 
     bad = len(no_file) + len(no_usage) + len(unregistered)
+    print("SUMMARY file_missing=%d usage_missing=%d unregistered=%d helpers=%d"
+          % (len(no_file), len(no_usage), len(unregistered), len(helpers)))
     if bad == 0:
         print("  PASS -- every file carries a contract and every declared command is registered.")
         return 0

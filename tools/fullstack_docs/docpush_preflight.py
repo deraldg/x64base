@@ -6,6 +6,7 @@ FIRST, so contract/catalog gaps surface immediately instead of at commit time.
 This runs them in one command:
 
   1. source_census.py            -- @dottalk.file coverage must be 100% (0 uncovered)  [HARD]
+  1b. audit_contracts.py         -- helper-aware usage and dotref coverage [measure HARD; debt advisory]
   2. command_catalog_sync check  -- website catalog matches the registry (no drift)    [HARD]
   3. house-style ASCII scan      -- no non-ASCII (em-dash etc.) in this plan doc        [advisory]
   4. help_build_order_check.py   -- catalogs -> exe -> LEGACY -> store, in that order   [HARD]
@@ -28,7 +29,7 @@ BY HAND during v6 Phase 5, and a hand check is not a gate. Step 6 also reports
 the version guard each Python program declares, because on the same day a
 `!= (3, 12)` EQUALITY guard made a runnable tool read as blocked.
 
-Exit 0 only if the two HARD checks pass. Steps 1 and 2 shell out to the existing
+Exit 0 only if all HARD checks pass. Steps 1 and 2 shell out to the existing
 tools with the current interpreter, so run this on a host with Python 3.12
 (command_catalog_sync guards on 3.12). See
 docs/maintenance/lanes/full_stack_documentation/FULL_STACK_DOCUMENTATION_FLUSH_PLAN_V1.md
@@ -56,6 +57,24 @@ def _run(cmd):
     return r.returncode, (r.stdout or "") + (r.stderr or "")
 
 
+def contract_audit_summary(output):
+    """Parse the stable summary emitted by tools/selfdoc/audit_contracts.py."""
+    match = re.search(
+        r"^SUMMARY file_missing=(\d+) usage_missing=(\d+) "
+        r"unregistered=(\d+) helpers=(\d+)$",
+        output,
+        re.MULTILINE,
+    )
+    if not match:
+        return None
+    return {
+        "file_missing": int(match.group(1)),
+        "usage_missing": int(match.group(2)),
+        "unregistered": int(match.group(3)),
+        "helpers": int(match.group(4)),
+    }
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -80,6 +99,22 @@ def main(argv=None):
           % (cov.group(1) if cov else "?", unc.group(1) if unc else "?"))
     if not (cov and float(cov.group(1)) >= 100.0 and unc and unc.group(1) == "0"):
         fails.append("source_census: coverage < 100%% or uncovered files remain")
+
+    # 1b. command-contract coverage (advisory during the observation cycle)
+    rc, out = _run([py, str(root / "tools/selfdoc/audit_contracts.py"),
+                    "--root", str(root)])
+    summary = contract_audit_summary(out)
+    if summary:
+        problems = (summary["file_missing"] + summary["usage_missing"]
+                    + summary["unregistered"])
+        print("  1b. command contracts: file_missing=%d usage_missing=%d "
+              "unregistered=%d helpers=%d (%s)"
+              % (summary["file_missing"], summary["usage_missing"],
+                 summary["unregistered"], summary["helpers"],
+                 "clean" if problems == 0 else "advisory debt"))
+    else:
+        print("  1b. command contracts: unavailable (rc=%d)" % rc)
+        fails.append("audit_contracts: command-contract coverage could not be measured")
 
     # 2. catalog drift (HARD, if a catalog path was given)
     if a.catalog:

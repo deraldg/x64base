@@ -8,7 +8,9 @@ Start here each run:
 - The point (read first): `FULL_STACK_DOCUMENTATION_NORTH_STAR_V1.md` -- two towers,
   one bridge, normalize across the span.
 - Doctrine + gates: `FULL_STACK_DOCUMENTATION_FLUSH_PLAN_V1.md`
-- Recipe book (run-it-now commands per phase, refined every run):
+- Architecture, schema, and current process map:
+  `FULL_STACK_DOC_PUSH_RECIPE_BOOK_V1.md`
+- Operational command cookbook (run-it-now commands per phase):
   `FULL_STACK_DOCUMENTATION_FLUSH_COOKBOOK_V1.md`
 
 The full-stack flush is a standing, recurring part of the thesis; it never
@@ -44,18 +46,17 @@ comments, metadata, SelfDoc, manualgen, or publication lanes.
 3. Start the run's append-only progress log and CSV companion.
 4. Complete the report-only baseline before authorizing any generated-data mutation.
 
-The active run is `DOCFLUSH-20260722-001`. Start or resume from:
+Do not copy an active run ID or next-gate claim into this README. Resolve both
+from the maintained pointer:
 
-- `runs/DOCFLUSH-20260722-001/FULLSTACK_DOCUMENTATION_FLUSH_COMPLETE_HANDOFF_V1.md`;
-- `runs/DOCFLUSH-20260722-001/FULLSTACK_DOCUMENTATION_FLUSH_FILE_MANIFEST_V1.csv`;
-- `runs/DOCFLUSH-20260722-001/DOCUMENTATION_FLUSH_PROGRESS_LOG_V1.md`;
-- `runs/DOCFLUSH-20260722-001/documentation_flush_progress_ledger_v1.csv`.
+- `labtalk/registries/current_fullstack_doc_push.yaml` -- machine-readable
+  current run, lifecycle state, first open gate, and evidence paths;
+- `labtalk/reports/portal/portal_feed_status_latest.md` -- generated reader
+  projection across the Portal feed and current-run registries.
 
-At the 2026-07-26 handoff, Gates 0-5 pass locally and Gates 6-7 remain
-pending. The next gate is an exact selective source-promotion scope -- not a
-broad stage of the mixed worktree or its large rollback payloads. Update the
-log and ledger at every material pass, failure, reconciliation, authorization,
-or next-gate change. Do not wait for session closeout to reconstruct progress.
+Then open the run directory named by that pointer. Update its log and ledger at
+every material pass, failure, reconciliation, authorization, or next-gate
+change. Do not wait for session closeout to reconstruct progress.
 
 ## Engine benchmark history
 
