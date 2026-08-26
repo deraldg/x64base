@@ -508,8 +508,24 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     registry().add("DEFFN",        [](DbArea& A, std::istringstream& S){ cmd_DEFFN(A,S);       });
     registry().add("UNDEFFN",      [](DbArea& A, std::istringstream& S){ cmd_UNDEFFN(A,S);     });
     registry().add("BUILDVECTORS", [](DbArea& A, std::istringstream& S){ cmd_BUILDVECTORS(A,S); });
-    registry().add("BUILD VECTORS",[](DbArea& A, std::istringstream& S){ cmd_BUILDVECTORS(A,S); });
-    registry().add("BUILD INFO",   [](DbArea& A, std::istringstream& S){ cmd_BUILDVECTORS(A,S); });
+    // AIF-131. A ROUTER, not two multiword keys. shell_dispatch keys on the
+    // FIRST TOKEN only, so "BUILD VECTORS" and "BUILD INFO" were registered and
+    // could never be typed -- they read as working registrations and were dead.
+    // SET works because "SET" itself is registered (above) and reads its own
+    // next token; BUILD had no such parent. Proven at runtime before landing:
+    // "BUILD VECTORS" answered "Unknown command: BUILD".
+    registry().add("BUILD",        [](DbArea& A, std::istringstream& S){
+        std::string sub;
+        if (!(S >> sub)) {
+            std::cout << "Usage:\n    BUILD VECTORS\n    BUILD INFO\n"
+                         "Both are spaced spellings of BUILDVECTORS.\n";
+            return;
+        }
+        for (auto& c : sub) c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+        if (sub == "VECTORS" || sub == "INFO") { cmd_BUILDVECTORS(A,S); return; }
+        std::cout << "Unknown BUILD subcommand: " << sub
+                  << "\n    BUILD VECTORS | BUILD INFO\n";
+    });
     registry().add("USER",         [](DbArea& A, std::istringstream& S){ cmd_USER(A,S);         });
 #endif
     registry().add("BBS",          [](DbArea& A, std::istringstream& S){ cmd_BBS(A,S);          });

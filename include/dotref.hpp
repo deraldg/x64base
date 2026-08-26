@@ -54,6 +54,12 @@ inline const std::vector<Item>& catalog() {
         // as real commands, they matched nothing here, and both fell through to
         // the "curated DOTREF help is pending" placeholder. Documented and
         // undocumented looked identical from the generator's side.
+        // The PARENT. BUILD is a router (shell_commands.cpp), so it is the
+        // registered, dispatchable name; VECTORS and INFO are its subcommands
+        // and are typeable only through it -- the same shape as REL ENUM.
+        {"BUILD", "BUILD [VECTORS|INFO]",
+                 "Router for the spaced spellings of BUILDVECTORS; reports the compile-time engine capacity limits and configuration fingerprint; read-only.", true},
+
         {"BUILD VECTORS", "BUILD VECTORS",
                  "Spaced spelling of BUILDVECTORS: report the compile-time engine capacity limits and configuration fingerprint; read-only.", true},
 
