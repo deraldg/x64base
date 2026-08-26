@@ -9,7 +9,8 @@
 
 #include "dottalk/scratch_sidecar.hpp"
 #include "gui/core/session.hpp"
-#include "xbase/workspace_membership.hpp"   // I1.2: relations carry their owning workspace
+#include "xbase/workspace_membership.hpp"
+#include "xbase/workspace_naming.hpp"   // I1.2: relations carry their owning workspace
 
 #include "common/path_resolver.hpp"
 #include "common/path_state.hpp"
@@ -1666,6 +1667,38 @@ struct Session::Impl {
     }
 
     std::vector<std::unique_ptr<Area>> areas;
+
+    // R128. WHICH AREA, IF ANY, ALREADY HOLDS THIS FILE. The re-entry rule
+    // needs it: a second OPEN of the same directory adds what is new and
+    // touches nothing else. Compared by CANONICAL path, because the caller
+    // holds a directory_entry path and the Area holds whatever it was opened
+    // with -- comparing raw strings would answer NO for a file plainly open,
+    // and a wrong NO here reopens an area someone is working in.
+    Area* holding(const std::filesystem::path& want_in) {
+        std::error_code ec;
+        std::filesystem::path want = std::filesystem::weakly_canonical(want_in, ec);
+        if (ec) want = want_in;
+        for (const auto& a : areas) {
+            std::error_code ec2;
+            std::filesystem::path have = std::filesystem::weakly_canonical(a->path, ec2);
+            if (ec2) have = a->path;
+#if defined(_WIN32)
+            // Windows paths are case-insensitive; comparing case-sensitively
+            // would miss a file that is plainly open under another spelling.
+            std::string hs = have.string();
+            std::string ws = want.string();
+            std::transform(hs.begin(), hs.end(), hs.begin(),
+                           [](unsigned char c){ return static_cast<char>(std::tolower(c)); });
+            std::transform(ws.begin(), ws.end(), ws.begin(),
+                           [](unsigned char c){ return static_cast<char>(std::tolower(c)); });
+            if (hs == ws) return a.get();
+#else
+            if (have == want) return a.get();
+#endif
+        }
+        return nullptr;
+    }
+
     std::vector<WorkspaceRelationInfo> relations;
     AreaId active_area_id {0};
     std::unique_ptr<GuiShellRuntime> shell_runtime {make_script_shell_runtime()};
@@ -1779,6 +1812,105 @@ OpenTableResult Session::open_table(const OpenTableRequest& request) {
     return result;
 }
 
+
+// ---------------------------------------------------------------------------
+// R128 ON THE GUI SURFACE (owner, 2026-08-26).
+//
+// Two things were true here and neither was a display bug. The mirrors CLOSED
+// EVERY AREA before opening, so the Workbench could not hold two workspaces at
+// once; and `src/gui` called workspace::create() and set_current_handle() in
+// ZERO places, so an area opened here could only ever join DEFAULT. The second
+// is why `WS: DEFAULT` on every row after a load was a TRUE report -- the GUI
+// had no way to be anywhere else.
+//
+// WHAT THIS GIVES THE GUI AND WHAT IT DOES NOT. It gets a RUNTIME workspace:
+// a handle, a name, membership, and therefore an honest WS column and a
+// scopeable close. It does NOT get a WS_ID. The durable birth row is written
+// by ws_memo::ensure_durable_workspace in cmd_workspace.cpp, and R122 ruled
+// that src/gui does not link src/cli -- the GUI reaches the engine by SPAWNING
+// a dottalkpp. In the mirror case that is not a hole: the CLI subprocess this
+// call is mirroring ALREADY wrote the durable row for this name. It is a hole
+// for any workspace the GUI ever creates on its own, and this comment is here
+// so that is found by reading rather than by surprise.
+// ---------------------------------------------------------------------------
+namespace {
+
+// Enter the workspace `nm` in the GUI's OWN handle space, creating it if
+// needed. Returns 0 on refusal.
+std::uint64_t gui_enter_workspace(const std::string& nm,
+                                  std::vector<StatusMessage>& messages) {
+    if (nm.empty()) return 0;
+    std::uint64_t h = xbase::workspace::find_by_name_ci(nm);
+    if (h == 0) h = xbase::workspace::create(nm, 0);
+    if (h == 0) {
+        messages.push_back(warning("gui.workspace.create_failed",
+                                   "The GUI could not create a workspace for this open.",
+                                   nm));
+        return 0;
+    }
+    if (!xbase::workspace::set_current_handle(h)) {
+        messages.push_back(warning("gui.workspace.enter_failed",
+                                   "The GUI created a workspace but could not enter it.",
+                                   nm));
+        return 0;
+    }
+    return h;
+}
+
+
+// THE LABEL IS PROVENANCE, NOT A NAME, and the first cut of this change missed
+// that. mirror_workspace_posture takes `label` from three call sites and none
+// of them is a workspace name: the FILE carrier passes a whole
+// schema_path.string(), the memo carrier passes "memo:" + name, and the MINIDB
+// carrier passes "minidb:" + name. Handing that straight to a workspace would
+// have produced a handle named after an absolute path -- past WS_NAME's 32
+// characters more often than not.
+//
+// FOUND BY RUNNING THE FIXTURE, 2026-08-26: dottalkpp_gui_area_membership_test
+// went red, its own G1 guard still green (both tables opened), which is the
+// signature of a placement fault rather than an open fault.
+//
+// A LABEL THAT YIELDS NO USABLE NAME IS NOT AN ERROR HERE. The caller stays in
+// whatever workspace it was in, which is exactly the pre-R128 behaviour, and
+// says so. Refusing the whole load because its provenance string is long would
+// trade a naming inconvenience for a failure to open anything.
+std::string gui_workspace_name_from_label(const std::string& label) {
+    std::string body = label;
+    for (const std::string_view prefix : {std::string_view("memo:"), std::string_view("minidb:")}) {
+        if (body.rfind(prefix, 0) == 0) { body = body.substr(prefix.size()); break; }
+    }
+    if (body.empty()) return {};
+
+    // Anything still carrying a separator is a path; take its stem.
+    if (body.find('/') != std::string::npos || body.find('\\') != std::string::npos) {
+        body = std::filesystem::path(body).stem().string();
+    } else {
+        const std::filesystem::path as_path(body);
+        if (as_path.has_extension()) body = as_path.stem().string();
+    }
+    if (body.empty()) return {};
+    if (body.size() > xbase::workspace::kMaxWorkspaceNameChars) return {};
+    return body;
+}
+
+// The handles a scoped act covers: the current workspace and, when SET
+// RECURSION is ON, its descendants. Mirrors close_workspace_tree in
+// cmd_workspace.cpp -- same children(), same switch, same depth cap, same
+// cycle guard -- because a GUI that meant something different by "this
+// workspace" would give one question two answers across two surfaces.
+void gui_collect_scope(std::uint64_t h, bool recursive, int depth,
+                       std::set<std::uint64_t>& seen) {
+    if (!xbase::workspace::exists(h)) return;
+    if (!seen.insert(h).second) return;
+    if (depth > xbase::workspace::kMaxWorkspaceDepth) return;
+    if (!recursive) return;
+    for (const auto c : xbase::workspace::children(h)) {
+        gui_collect_scope(c, recursive, depth + 1, seen);
+    }
+}
+
+}  // namespace
+
 std::size_t Session::mirror_workspace_open_directory(const std::filesystem::path& dir,
                                                      const std::string& shell_output,
                                                      const std::string& index_mode,
@@ -1791,12 +1923,19 @@ std::size_t Session::mirror_workspace_open_directory(const std::filesystem::path
         return 0;
     }
 
-    for (auto& area : impl_->areas) {
-        area->area().close();
+    // R128. The close-all that stood here is gone: OPEN is additive, so a
+    // second directory joins the session rather than replacing it. Relations
+    // and the active area are left alone for the same reason -- clearing them
+    // would discard state belonging to workspaces this open never touched.
+    std::string name_err;
+    const std::string ws_name = xbase::workspace::name_for_directory(dir, name_err);
+    if (ws_name.empty()) {
+        messages.push_back(warning("gui.workspace.open_dir_unnameable",
+                                   "WORKSPACE OPEN did not mirror because the directory implies no usable workspace name.",
+                                   dir.string() + ": " + name_err));
+        return 0;
     }
-    impl_->areas.clear();
-    impl_->relations.clear();
-    impl_->active_area_id = 0;
+    if (gui_enter_workspace(ws_name, messages) == 0) return 0;
 
     std::vector<std::filesystem::path> dbfs;
     for (const auto& entry : std::filesystem::directory_iterator(dir, ec)) {
@@ -1807,7 +1946,12 @@ std::size_t Session::mirror_workspace_open_directory(const std::filesystem::path
     std::sort(dbfs.begin(), dbfs.end(), workspace_dbf_path_less_like_cli);
 
     std::size_t opened = 0;
+    std::size_t already = 0;
     for (const auto& dbf : dbfs) {
+        // R128 re-entry: a second OPEN of a directory already open adds only
+        // what is new. Reopening would close and reopen an area the user may
+        // be sitting in, which is the destructive act this ruling stops.
+        if (impl_->holding(dbf) != nullptr) { ++already; continue; }
         try {
             bool broke_contiguity = false;
             const int slot = impl_->claim_area_slot(broke_contiguity);
@@ -1840,8 +1984,13 @@ std::size_t Session::mirror_workspace_open_directory(const std::filesystem::path
         }
     }
 
-    if (!impl_->areas.empty()) {
+    if (!impl_->areas.empty() && impl_->active_area_id == 0) {
         impl_->active_area_id = impl_->areas.front()->id;
+    }
+    if (already > 0) {
+        messages.push_back(info("gui.workspace.open_reentry",
+                                "WORKSPACE OPEN re-entered a workspace and left its open tables alone.",
+                                std::to_string(already) + " table(s) already open in " + ws_name));
     }
 
     std::size_t indexes_attached = 0;
@@ -2035,6 +2184,28 @@ std::size_t Session::mirror_workspace_posture(const std::string& posture,
                                               const std::filesystem::path& dbf_root,
                                               const std::filesystem::path& index_root,
                                               std::vector<StatusMessage>& messages) {
+    // R128. ENTERED BEFORE THE POSTURE IS PARSED, and the order is the whole
+    // point: parse_relation_posture_line tags each relation with the CURRENT
+    // workspace handle, so parsing first would stamp every edge with whichever
+    // workspace the user happened to be in. The model is SWITCH-then-open, and
+    // that applies to the relation lines as much as to the areas.
+    //
+    // The label is the catalog row's name, so it came OUT of WS_NAME and fits
+    // in it by construction; it is not re-validated here.
+    const std::string wanted = gui_workspace_name_from_label(label);
+    std::uint64_t ws_handle = 0;
+    if (wanted.empty()) {
+        messages.push_back(info("gui.workspace.load_unnamed",
+                                "WORKSPACE LOAD could not derive a workspace name from this "
+                                "source, so its areas joined the current workspace.",
+                                label));
+        ws_handle = xbase::workspace::current_handle();
+    } else {
+        ws_handle = gui_enter_workspace(wanted, messages);
+        if (ws_handle == 0) return 0;
+    }
+    const std::string ws_name = xbase::workspace::name_of(ws_handle);
+
     std::vector<WorkspaceRelationInfo> schema_relations;
     std::istringstream posture_stream(posture);
     const auto schema_areas = load_dtschema2_areas_from_stream(posture_stream, schema_relations);
@@ -2045,12 +2216,31 @@ std::size_t Session::mirror_workspace_posture(const std::string& posture,
         return 0;
     }
 
-    for (auto& area : impl_->areas) {
-        area->area().close();
+    // R128. LOAD IS ADDITIVE. The close-all is gone; a posture loaded into one
+    // workspace leaves every other workspace standing.
+    //
+    // RELATIONS ARE REPLACED PER WORKSPACE, NOT WHOLESALE. This line used to
+    // read `impl_->relations = std::move(schema_relations)`, which was correct
+    // only while one workspace could exist: made additive without this change
+    // it would silently delete the edges of workspaces this load never touched
+    // -- the same destruction the ruling exists to stop, one layer down. The
+    // discriminator already exists and already has a writer:
+    // WorkspaceRelationInfo::workspace, written from owning_workspace_now at
+    // parse time. So THIS workspace's edges are dropped (a reload replaces
+    // them rather than duplicating them) and everyone else's are kept.
+    //
+    // NOT FIXED, and R128 sec 5 names it: a SCOPED CLOSE still clears
+    // relations globally in the CLI. This is the GUI's half only.
+    for (auto it = impl_->areas.begin(); it != impl_->areas.end(); ) {
+        if ((*it)->area().wsHandle() == ws_handle) it = impl_->areas.erase(it);
+        else ++it;
     }
-    impl_->areas.clear();
-    impl_->relations = std::move(schema_relations);
-    impl_->active_area_id = 0;
+    impl_->relations.erase(
+        std::remove_if(impl_->relations.begin(), impl_->relations.end(),
+                       [&](const WorkspaceRelationInfo& r) { return r.workspace == ws_name; }),
+        impl_->relations.end());
+    for (auto& r : schema_relations) impl_->relations.push_back(std::move(r));
+    if (impl_->areas.empty()) impl_->active_area_id = 0;
 
     std::size_t opened = 0;
     std::size_t indexes_attached = 0;
@@ -2753,16 +2943,60 @@ CommandResult Session::run_command(const CommandRequest& request) {
                     << (opened ? "GUI area selected/opened." : "No GUI area opened.");
             }
         } else if (action == "close") {
-            const std::size_t closed = impl_->areas.size();
-            for (auto& area : impl_->areas) {
-                area->area().close();
+            // R128. BARE CLOSE IS SCOPED, CLOSE ALL IS EVERYWHERE -- the same
+            // grammar the CLI has had since AIF-078 stage 3. This branch used
+            // to close every GUI area unconditionally and report "All GUI work
+            // areas were closed", while the CLI verb it shadows had been scoped
+            // for days: two surfaces, one verb name, two meanings.
+            const bool close_all = (words.size() > 2 && lower_ascii(words[2]) == "all");
+            const std::uint64_t current = xbase::workspace::current_handle();
+            std::set<std::uint64_t> scope;
+            if (!close_all) {
+                gui_collect_scope(current, xbase::workspace::recursion_enabled(), 0, scope);
             }
-            impl_->areas.clear();
-            impl_->relations.clear();
-            impl_->active_area_id = 0;
-            result.messages.push_back(info("gui.workspace.closed", "All GUI work areas were closed."));
-            out << "WORKSPACE CLOSE\n"
+
+            const std::size_t before = impl_->areas.size();
+            for (auto it = impl_->areas.begin(); it != impl_->areas.end(); ) {
+                const bool in_scope = close_all || scope.count((*it)->area().wsHandle()) != 0;
+                if (in_scope) it = impl_->areas.erase(it);   // ~Area() closes it
+                else ++it;
+            }
+            const std::size_t closed = before - impl_->areas.size();
+
+            // Relations: only this workspace's edges, for the reason the
+            // posture mirror gives -- clearing them all would delete edges
+            // belonging to workspaces this close never touched.
+            if (close_all) {
+                impl_->relations.clear();
+            } else {
+                const std::string nm = xbase::workspace::name_of(current);
+                impl_->relations.erase(
+                    std::remove_if(impl_->relations.begin(), impl_->relations.end(),
+                                   [&](const WorkspaceRelationInfo& r) { return r.workspace == nm; }),
+                    impl_->relations.end());
+            }
+
+            // The active area may have been one of the closed ones. Answered by
+            // LOOKING rather than by assuming: a stale id here addresses an area
+            // that no longer exists, which is the dangling-handle shape.
+            bool active_survives = false;
+            for (const auto& a : impl_->areas) {
+                if (a->id == impl_->active_area_id) { active_survives = true; break; }
+            }
+            if (!active_survives) {
+                impl_->active_area_id = impl_->areas.empty() ? 0 : impl_->areas.front()->id;
+            }
+
+            result.messages.push_back(info("gui.workspace.closed",
+                                           close_all
+                                             ? "Every GUI work area was closed."
+                                             : "The current workspace's GUI work areas were closed.",
+                                           std::to_string(closed) + " area(s)"));
+            out << "WORKSPACE CLOSE" << (close_all ? " ALL" : "") << "\n"
                 << "Closed GUI areas: " << closed;
+            if (!close_all && impl_->areas.size() > 0) {
+                out << "\nLeft open in other workspaces: " << impl_->areas.size();
+            }
         } else if (action == "graph") {
             out << "WORKSPACE GRAPH\n"
                 << "Areas: " << impl_->areas.size() << "\n"

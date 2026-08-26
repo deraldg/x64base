@@ -139,6 +139,25 @@ int main() {
     std::size_t during = 0;
     std::vector<std::int32_t> slots;
 
+    // R128 (owner, 2026-08-26). THE HANDLE THIS TEST MEASURES HAD TO MOVE, and
+    // the move is the ruling rather than a concession to it. WORKSPACE LOAD is
+    // now ADDITIVE and NAMES the workspace it loads into, so the areas no
+    // longer join whichever workspace happened to be current when this file
+    // started -- they join the one the load created. Reading `handle` after the
+    // load would count DEFAULT's members and find none.
+    //
+    // WHAT THIS DOES NOT COST: the discriminator. Against the pre-2b code the
+    // areas carried engine slot -1, join() matched the free-slot sentinel and
+    // claimed nothing, and this reads ZERO on WHICHEVER handle it is pointed
+    // at. Moving the pointer does not soften the arm.
+    //
+    // THE HANDLE IS READ OFF THE MODEL, NOT ASSUMED. AreaInfo::workspace is
+    // written from the area's REAL wsHandle (gui_workspace_of_area, O(1), no
+    // lookup), so this asks the areas where they went instead of predicting it
+    // from the posture's filename -- which would make the arm pass on a
+    // coincidence of naming.
+    std::uint64_t joined = 0;
+
     {
         dottalk::gui::Session session;
         const auto loaded = session.run_command(dottalk::gui::CommandRequest{
@@ -156,17 +175,39 @@ int main() {
             return EXIT_FAILURE;
         }
 
-        during = ws::member_count(handle);
-        slots  = ws::members(handle);
+        joined = ws::find_by_name_ci(model.tables.front().workspace);
+        // G2 GUARDS THE HANDLE THE ARMS READ, for the reason G1 guards the
+        // tables: a lookup that answered 0 would send every count below to the
+        // reserved not-a-workspace bucket and read as a membership failure.
+        if (!require(joined != 0,
+                     "the areas report a workspace the registry does not know: " +
+                     model.tables.front().workspace)) {
+            return EXIT_FAILURE;
+        }
+        during = ws::member_count(joined);
+        slots  = ws::members(joined);
     }
     // The Session is destroyed HERE. ~Area() runs, and with it the close()
     // that performs workspace::leave().
 
-    const std::size_t after = ws::member_count(handle);
+    const std::size_t after = ws::member_count(joined);
+
+    // AN ARM THAT ASSERTED THE LOAD DID NOT DISTURB THE PREVIOUSLY-CURRENT
+    // WORKSPACE STOOD HERE AND WAS DELETED, 2026-08-26. It ran after the
+    // Session was destroyed, where both sides are zero under every
+    // implementation -- it could not go red, which is the shape this house
+    // keeps naming. Moving it INSIDE the block would make it real, and would
+    // also make this AIF-078 fixture fail for an R128 reason; the additive
+    // property wants its own fixture rather than a lodger in this one. It does
+    // not have one yet, and that is recorded rather than papered over.
 
     // ---- T1: THE DISCRIMINATOR -- the workspace can see the GUI's areas ---
     // Old code: join(h, -1) claimed nothing and this reads `before`.
-    if (!require(during == before + 2,
+    // The joined workspace is created BY the load, so its baseline is 0 by
+    // construction -- `before` is the OTHER workspace's count and is asserted
+    // separately above. Stated rather than left as arithmetic that happens to
+    // agree while both numbers are zero.
+    if (!require(during == 2,
                  "workspace membership did not grow by two when the GUI opened two "
                  "tables (before=" + std::to_string(before) +
                  ", during=" + std::to_string(during) + ")")) {
@@ -199,7 +240,7 @@ int main() {
     }
 
     // ---- T3: destroying the Session RELEASES the slots --------------------
-    if (!require(after == before,
+    if (!require(after == 0,
                  "membership did not return to its baseline after the Session was "
                  "destroyed (before=" + std::to_string(before) +
                  ", after=" + std::to_string(after) +
