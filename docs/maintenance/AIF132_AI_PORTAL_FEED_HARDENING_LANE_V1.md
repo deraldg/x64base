@@ -268,3 +268,27 @@ Good Neighbor note for the full-stack documentation lane:
   and manualgen validate. Before commit, run the tool's `rollback` command
   against the tracked execution record and local backup; after commit, revert
   the exact canonical-apply commit. No website or public rollback is required.
+
+## SelfDoc guarded-harvest integration -- CODEX-20260826-009
+
+SelfDoc now registers the E5 freshness, planning, authorization, apply, and
+rollback chain as `META-025`. The tool and pipeline manifests describe it as a
+non-default protected mutation: registration grants neither execution nor
+promotion authority. A scoped validator option proves the new system's source
+hash while retaining every whole-registry structural check. The ten older
+entrypoint-hash drifts remain visible in the unscoped audit and were not
+rewritten as incidental cleanup.
+
+Good Neighbor note for the SelfDoc lane:
+
+- **WHAT CHANGED:** registered the guarded HELP/META harvest control, described
+  its non-default protected pipeline, and added scoped freshness validation.
+- **WHOSE AREA:** SelfDoc metadata-system governance, intersecting AIF-068
+  full-stack documentation and AIF-132 Portal process hardening.
+- **AUTHORIZATION:** maintainer explicitly allowed this run to enter SelfDoc to
+  streamline the process; no standing execution or promotion permission was
+  inferred.
+- **VERIFY OR UNDO:** run the focused SelfDoc unit tests and
+  `validate_metadata_system_registry.py --system-id META-025 --json`; the
+  unscoped validator must still report the pre-existing hash-drift debt. Revert
+  only this SelfDoc integration commit to remove the registration and scope.

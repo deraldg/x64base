@@ -24,8 +24,28 @@ class MetadataSystemRegistryTests(unittest.TestCase):
     def codes(self, registry: dict) -> list[str]:
         return [row["code"] for row in VALIDATOR.validate_registry(registry, REPO_ROOT)]
 
-    def test_current_registry_passes(self) -> None:
-        self.assertEqual([], VALIDATOR.validate_registry(self.registry, REPO_ROOT))
+    def test_current_registry_has_no_structural_findings(self) -> None:
+        findings = VALIDATOR.validate_registry(self.registry, REPO_ROOT)
+        structural = [row for row in findings if row["code"] != "ENTRYPOINT_HASH"]
+        self.assertEqual([], structural)
+
+    def test_guarded_harvest_system_passes_scoped_freshness(self) -> None:
+        self.assertEqual(
+            [],
+            VALIDATOR.validate_registry(self.registry, REPO_ROOT, {"META-025"}),
+        )
+
+    def test_unknown_scoped_system_fails(self) -> None:
+        self.assertIn(
+            "SYSTEM_SELECTION",
+            self.codes_for_scope(self.registry, {"META-999"}),
+        )
+
+    def codes_for_scope(self, registry: dict, system_ids: set[str]) -> list[str]:
+        return [
+            row["code"]
+            for row in VALIDATOR.validate_registry(registry, REPO_ROOT, system_ids)
+        ]
 
     def test_duplicate_id_fails(self) -> None:
         data = copy.deepcopy(self.registry)
@@ -47,6 +67,11 @@ class MetadataSystemRegistryTests(unittest.TestCase):
         data = copy.deepcopy(self.registry)
         data["systems"][0]["source_sha256"] = "0" * 64
         self.assertIn("ENTRYPOINT_HASH", self.codes(data))
+
+    def test_malformed_hash_fails_even_outside_freshness_scope(self) -> None:
+        data = copy.deepcopy(self.registry)
+        data["systems"][0]["source_sha256"] = "not-a-hash"
+        self.assertIn("SOURCE_SHA256", self.codes_for_scope(data, {"META-025"}))
 
 
 if __name__ == "__main__":

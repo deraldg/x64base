@@ -17,6 +17,7 @@ from typing import Any
 
 SCHEMA_VERSION = "metadata_system_registry_v1"
 SYSTEM_ID_RE = re.compile(r"^META-[0-9]{3}$")
+SHA256_RE = re.compile(r"^[0-9A-Fa-f]{64}$")
 LIFECYCLES = {"ACTIVE", "SUPPORTING", "PROTOTYPE", "HISTORICAL", "UTILITY"}
 MUTATION_CLASSES = {
     "READ_ONLY",
@@ -76,7 +77,11 @@ def load_registry(path: Path) -> dict[str, Any]:
     return data
 
 
-def validate_registry(data: dict[str, Any], repo_root: Path) -> list[dict[str, str]]:
+def validate_registry(
+    data: dict[str, Any],
+    repo_root: Path,
+    freshness_system_ids: set[str] | None = None,
+) -> list[dict[str, str]]:
     findings: list[dict[str, str]] = []
 
     def add(code: str, subject: str, detail: str) -> None:
@@ -156,14 +161,23 @@ def validate_registry(data: dict[str, Any], repo_root: Path) -> list[dict[str, s
         if system.get("promotion_authorized") is not False:
             add("SYSTEM_PROMOTION", subject, "promotion_authorized must be false")
 
+        expected_hash = system.get("source_sha256")
+        if not isinstance(expected_hash, str) or not SHA256_RE.fullmatch(expected_hash):
+            add("SOURCE_SHA256", subject, "source_sha256 must be 64 hexadecimal characters")
+
         entrypoints = system.get("canonical_entrypoints")
         if isinstance(entrypoints, list) and entrypoints and isinstance(entrypoints[0], str):
             primary = repo_root / entrypoints[0]
             if not primary.is_file():
                 add("ENTRYPOINT_MISSING", subject, entrypoints[0])
             else:
-                expected_hash = system.get("source_sha256")
-                if not isinstance(expected_hash, str) or sha256_file(primary) != expected_hash.upper():
+                check_freshness = freshness_system_ids is None or subject in freshness_system_ids
+                if (
+                    check_freshness
+                    and isinstance(expected_hash, str)
+                    and SHA256_RE.fullmatch(expected_hash)
+                    and sha256_file(primary) != expected_hash.upper()
+                ):
                     add("ENTRYPOINT_HASH", subject, f"primary SHA-256 mismatch: {entrypoints[0]}")
             for entrypoint in entrypoints[1:]:
                 if isinstance(entrypoint, str) and not (repo_root / entrypoint).is_file():
@@ -189,6 +203,10 @@ def validate_registry(data: dict[str, Any], repo_root: Path) -> list[dict[str, s
                     add("RELATED_SYSTEM", subject, f"{field} references unknown id: {related}")
                 if related == subject:
                     add("SELF_REFERENCE", subject, f"{field} must not reference itself")
+
+    if freshness_system_ids is not None:
+        for requested_id in sorted(freshness_system_ids - valid_ids):
+            add("SYSTEM_SELECTION", requested_id, "selected system id is not registered")
 
     registry_pointer = "selfdoc/metadata_system_registry_v1.json"
     contract_pointer = "docs/maintenance/lanes/full_stack_documentation/METADATA_SYSTEM_REGISTRY_CONTRACT_V1.md"
@@ -219,10 +237,14 @@ def validate_registry(data: dict[str, Any], repo_root: Path) -> list[dict[str, s
     return findings
 
 
-def audit(registry_path: Path, repo_root: Path) -> dict[str, Any]:
+def audit(
+    registry_path: Path,
+    repo_root: Path,
+    freshness_system_ids: set[str] | None = None,
+) -> dict[str, Any]:
     data = load_registry(registry_path)
-    findings = validate_registry(data, repo_root.resolve())
-    return {
+    findings = validate_registry(data, repo_root.resolve(), freshness_system_ids)
+    result = {
         "schema_version": SCHEMA_VERSION,
         "registry": str(registry_path.resolve()),
         "system_count": len(data.get("systems", [])) if isinstance(data.get("systems"), list) else 0,
@@ -230,6 +252,9 @@ def audit(registry_path: Path, repo_root: Path) -> dict[str, Any]:
         "status": "PASS" if not findings else "FAIL",
         "findings": findings,
     }
+    if freshness_system_ids is not None:
+        result["freshness_system_ids"] = sorted(freshness_system_ids)
+    return result
 
 
 def main() -> int:
@@ -237,12 +262,22 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo-root", type=Path, default=repo_default)
     parser.add_argument("--registry", type=Path)
+    parser.add_argument(
+        "--system-id",
+        action="append",
+        dest="system_ids",
+        help=(
+            "limit source-hash freshness checks to this META-NNN id; may be repeated. "
+            "All registry structure, relationship, gate, entrypoint-existence, and manifest checks still run."
+        ),
+    )
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
 
     repo_root = args.repo_root.resolve()
     registry_path = args.registry or (repo_root / "selfdoc" / "metadata_system_registry_v1.json")
-    result = audit(registry_path, repo_root)
+    freshness_system_ids = set(args.system_ids) if args.system_ids else None
+    result = audit(registry_path, repo_root, freshness_system_ids)
     if args.json:
         print(json.dumps(result, indent=2))
     else:

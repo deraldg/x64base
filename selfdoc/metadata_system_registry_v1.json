@@ -8,7 +8,7 @@
     "path": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260716-001/metadata_mining_phase/metadata_collection_systems_inventory_v1.csv",
     "sha256": "DD040D57043600AD194E7587CBA17294FC86A57EC89C2BDECF5CC5E4FE8FBCD7"
   },
-  "system_count": 24,
+  "system_count": 25,
   "mutation_authorized": false,
   "promotion_authorized": false,
   "systems": [
@@ -524,6 +524,28 @@
       "source_sha256": "9CD31B9BAD6F5FA4F906CC71CFB9F4383961702D316D39EC1ECA6215602C8556",
       "last_verified": {"run_id": "DOCFLUSH-20260716-001", "date": "2026-07-16"},
       "selfdoc_tool_manifest_entry": false,
+      "execution_default_allowed": false,
+      "promotion_authorized": false
+    },
+    {
+      "system_id": "META-025",
+      "name": "guarded HELP and META harvest promotion",
+      "canonical_entrypoints": ["tools/fullstack_docs/apply_help_meta_harvest_promotion.py", "tools/fullstack_docs/check_help_meta_harvest_freshness.py", "tools/fullstack_docs/build_help_meta_harvest_promotion_plan.py"],
+      "role": "Prove candidate freshness, bind exact canonical replacements in a plan and ledger, and apply only an explicitly authorized plan with byte-preserved rollback.",
+      "authority_domain": "MANUALGEN_HARVEST",
+      "authority_class": "AUTHORIZED_CANONICAL_HARVEST_CONTROL",
+      "mutation_class": "PROTECTED_HELP_MUTATOR",
+      "protected_targets": ["docs/manuals/developer/manualgen/harvested"],
+      "lifecycle": "ACTIVE",
+      "owner_lane": "full_stack_documentation",
+      "inputs": ["isolated HELP and META export candidate", "canonical harvest", "hash-bound promotion plan and ledger", "owner authorization record"],
+      "outputs": ["canonical harvest replacement", "byte-preserved rollback set", "tracked apply execution record", "semantic freshness readback"],
+      "dependencies": ["META-008"],
+      "overlaps": ["META-018"],
+      "source_sha256": "106E67E4EB2FAECC145D166F86ACC6F36EA87E81634BE44463819F12DDDF06AF",
+      "last_verified": {"run_id": "DOCFLUSH-20260825-001-E5-PLAN-001", "date": "2026-08-26"},
+      "selfdoc_tool_manifest_entry": true,
+      "selfdoc_tool_id": "guarded_help_meta_harvest_promotion_v1",
       "execution_default_allowed": false,
       "promotion_authorized": false
     }

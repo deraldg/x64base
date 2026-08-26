@@ -126,3 +126,42 @@ pipelines:
       - no_live_metadata_promotion
       - review_before_import
       - dev_only_commands_excluded_by_default
+
+  - name: guarded_help_meta_harvest_promotion_v1
+    pipeline_id: guarded_help_meta_harvest_promotion_v1
+    mode: protected_mutation
+    default: false
+    description: >
+      Reviewable three-stage control for canonical manualgen HELP and META
+      harvest replacement. Freshness proof and planning are report-only. Apply
+      remains unavailable until an owner authorization binds the exact plan,
+      ledger, and mutation-row count.
+    stages:
+      - semantic_freshness_audit
+      - exact_promotion_plan
+      - authorized_atomic_apply
+    stage_details:
+      - name: semantic_freshness_audit
+        tool: guarded_help_meta_harvest_promotion
+        entrypoint: tools/fullstack_docs/check_help_meta_harvest_freshness.py
+        mode: report_only
+      - name: exact_promotion_plan
+        tool: guarded_help_meta_harvest_promotion
+        entrypoint: tools/fullstack_docs/build_help_meta_harvest_promotion_plan.py
+        mode: report_only
+      - name: authorized_atomic_apply
+        tool: guarded_help_meta_harvest_promotion
+        entrypoint: tools/fullstack_docs/apply_help_meta_harvest_promotion.py
+        mode: protected_mutation
+        authorization_required: true
+        rollback_required: true
+    mutation_guards:
+      - exact_plan_sha256
+      - exact_ledger_sha256
+      - exact_mutation_row_count
+      - candidate_semantic_freshness_before_write
+      - atomic_same_directory_replacement
+      - complete_rollback_on_any_failure
+      - canonical_semantic_readback_after_write
+    execution_authority: false
+    promotion_authority: false
