@@ -7,6 +7,7 @@
 // owner: member.derald
 // status: supported
 
+#include "dottalk/scratch_sidecar.hpp"
 #include "xbase/fields.hpp"
 #include "xbase/dbf_create.hpp"
 #include "xbase/field_name_policy.hpp"
@@ -177,14 +178,14 @@ std::filesystem::path make_temp_dbf_path(const xbase::DbArea& db)
 {
     const std::filesystem::path finalPath(db.filename());
     return finalPath.parent_path() /
-        (finalPath.stem().string() + ".__fldtmp" + finalPath.extension().string());
+        (finalPath.stem().string() + std::string(dottalk::kFieldMgrTempMarker) + finalPath.extension().string());
 }
 
 std::filesystem::path make_backup_dbf_path(const xbase::DbArea& db)
 {
     const std::filesystem::path finalPath(db.filename());
     return finalPath.parent_path() /
-        (finalPath.stem().string() + ".__fldbak" + finalPath.extension().string());
+        (finalPath.stem().string() + std::string(dottalk::kFieldMgrBackupMarker) + finalPath.extension().string());
 }
 
 Result append_rewrite_table(xbase::DbArea& db,

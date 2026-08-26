@@ -7,6 +7,7 @@
 // owner: member.derald
 // status: supported
 
+#include "dottalk/scratch_sidecar.hpp"
 #include "gui/core/session.hpp"
 #include "xbase/workspace_membership.hpp"   // I1.2: relations carry their owning workspace
 
@@ -1254,7 +1255,11 @@ bool is_dbf_file(const std::filesystem::directory_entry& entry) {
     if (!entry.is_regular_file()) {
         return false;
     }
-    return lower_ascii(entry.path().extension().string()) == ".dbf";
+    if (lower_ascii(entry.path().extension().string()) != ".dbf") {
+        return false;
+    }
+    // Engine scratch is not a user table. See dottalk/scratch_sidecar.hpp.
+    return !dottalk::is_engine_scratch_table(entry.path());
 }
 
 bool workspace_dbf_path_less_like_cli(const std::filesystem::path& left,

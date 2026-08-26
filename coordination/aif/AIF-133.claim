@@ -1,0 +1,5 @@
+aif: AIF-133
+run_id: COWORK-20260825-001
+member: member.ai.claude.cowork
+lane: FIELDMGR scratch tables keep the .dbf extension, so every directory scan opened a restructure backup as a work area -- and it sorted first, taking area 0
+claimed_utc: 2026-08-26T13:14:29Z

@@ -73,6 +73,9 @@
 //   WORKSPACE
 //   WORKSPACE USAGE
 //   WORKSPACE ALL
+//   WORKSPACE REGISTRY
+//   WORKSPACE NEW <name> [UNDER <parent-name-or-handle>]
+//   WORKSPACE SWITCH <name-or-handle>
 //   WORKSPACE OPEN DBF
 //   WORKSPACE OPEN <dir>
 //   WORKSPACE OPEN <file.dbf>
@@ -84,6 +87,7 @@
 //   WORKSPACE OPEN <target> INX|IDX [FALLBACK] [recursive] [TABLE]
 //   WORKSPACE OPEN <target> CDX [FALLBACK] [recursive] [TABLE]
 //   WORKSPACE CLOSE
+//   WORKSPACE CLOSE ALL
 //   WORKSPACE CLOSE <n> [m ...]
 //   WORKSPACE CLOSE <name|file|stem|alias>[,...]
 //   WORKSPACE SAVE <file>              -- the CANONICAL SCHEMA (DTSHEMA 2)
@@ -123,7 +127,62 @@
 //   WORKSPACE ADD <file.dbf> opens one table into the first free work area without closing existing areas.
 //   WORKSPACE OPEN is replacement-style and resets area membership before opening.
 //   WORKSPACE ADD is additive and preserves existing open areas.
-//   WORKSPACE CLOSE closes all open work areas and clears relation/session state.
+//   MULTIPLE WORKSPACES (AIF-078 stage 3, added to this block 2026-08-24).
+//   NEW / SWITCH / REGISTRY / CLOSE ALL had all been shipping and NONE of them
+//   appeared here, so WORKSPACE USAGE showed a single-workspace command while
+//   the engine ran a tree of them. Same contract drift this header exists to
+//   prevent, and the second time it has happened to this file -- see the
+//   MEMO/MINIDB note above, dated 2026-08-12.
+//   A workspace is a NAMED GROUP OF WORK AREAS. You always start in one; it is
+//   called DEFAULT and you did not create it. An area joins whichever workspace
+//   is CURRENT when the area is OPENED, so the model is SWITCH-then-open, never
+//   open-then-assign.
+//   WORKSPACE NEW <name> creates one. Names must be unique: a name is the
+//   handle a person uses, and two of them is an ambiguity, not a convenience.
+//   UNDER <parent> nests the new workspace under an existing one. Both the
+//   parent token and SWITCH's target accept a NAME or a numeric HANDLE.
+//   NEW IS DURABLE, NOT RUNTIME-ONLY (D10.1, owner 2026-08-23). It either
+//   adopts the durable identity its name already means in the catalog or writes
+//   a birth row to mint one, so a workspace can be referred to from outside
+//   this process without being SAVED first. WORKSPACES.dbf remains the
+//   persistence authority. Ordering is deliberate: the durable identity is
+//   allocated BEFORE the runtime handle exists, so a catalog refusal leaves
+//   nothing half-born.
+//   WORKSPACE SWITCH <name-or-handle> changes which workspace is current, and
+//   therefore which one the NEXT opened area joins.
+//   WORKSPACE REGISTRY reports RUNTIME membership -- which areas belong to
+//   which workspace right now, plus current handle, recursion state, parent and
+//   depth. It is NOT the catalog: WORKSPACES.dbf answers what has been SAVED,
+//   REGISTRY answers what is open.
+//   BARE CLOSE IS SCOPED to the current workspace and costs one walk of ITS
+//   members rather than a sweep of every area slot. With one workspace open
+//   this is byte-identical to the old behaviour; with two it is the difference
+//   between closing your workspace and closing someone else's. CLOSE ALL keeps
+//   the old everywhere meaning and is the only form that also reconciles
+//   unregistered areas. This note previously said bare CLOSE "closes all open
+//   work areas", which stopped being true at stage 3.
+//   SET RECURSION ON|OFF (a SET verb, not a WORKSPACE one -- see cmd_set.cpp)
+//   decides whether a CLOSE DESCENDS into nested workspaces. It does not gate
+//   whether nesting may EXIST: OFF still permits multiple workspaces, they are
+//   simply parallel rather than swept together, and a skipped child is always
+//   reported rather than silently left open.
+//   ONE FILE CAN BE OPEN IN SEVERAL WORKSPACES, and this is the case that
+//   separates a per-workspace registry from a global one. A bare USE is REFUSED
+//   for a file that already has a work area; USE <table> AGAIN is the explicit
+//   way to ask for a second handle. Closing one workspace must not release the
+//   other's handle -- gated by WSM_T2 in
+//   dottalkpp/data/scripts/workspace_multi_regression.dts.
+//   A WORKSPACE NAME CANNOT BE RECLAIMED within a session. CLOSE ALL releases
+//   every area everywhere, and afterwards the registry STILL lists every
+//   workspace at members 0; there is no DROP, DELETE or REMOVE verb. A script
+//   that declares workspaces is therefore idempotent per PROCESS, not per
+//   session -- run it once, or restart rather than trusting a second pass.
+//   Relations are still cleared GLOBALLY on a scoped close: the relation graph
+//   is not workspace-scoped yet, so closing one workspace clears relations
+//   belonging to areas still open elsewhere. The engine reports that, naming
+//   the count. AIF-078 stage 3 limitation, not a defect in the caller.
+//   Worked usage: dottalkpp/data/scripts/workspace_multi_demo.dts (narrated
+//   tour, asserts nothing) and workspace_multi_regression.dts (the gate).
 //   WORKSPACE owns live areas, aliases, index/tag bindings, and relation/session layout.
 //   Default index policy is flavor-aware: true x64/v128 uses CDX(LMDB), classic VFP/v32 uses CNX.
 //   DDL owns schema/definition work; WORKSPACE owns live session/work-area state.
@@ -205,6 +264,7 @@
 //   STATUS
 //   VDISK
 //
+#include "dottalk/scratch_sidecar.hpp"
 #include <algorithm>
 #include "xbase/workspace_membership.hpp"
 #include <cctype>
@@ -339,7 +399,11 @@ static inline bool ieq_ext(const fs::path& p, const char* extDotLower) {
 }
 
 static inline bool is_dbf(const fs::directory_entry& de) {
-    return de.is_regular_file() && ieq_ext(de.path(), ".dbf");
+    if (!de.is_regular_file() || !ieq_ext(de.path(), ".dbf")) return false;
+    // Engine scratch is not a user table. See dottalk/scratch_sidecar.hpp --
+    // measured 2026-08-26, a FIELDMGR backup sorted BEFORE the real table and
+    // took area 0.
+    return !dottalk::is_engine_scratch_table(de.path());
 }
 
 static inline bool try_parse_int(const string& s, int& out) {
@@ -4237,8 +4301,14 @@ static void workspace_print_usage() {
     std::cout << "  - Without CNX/INX/CDX, index files are chosen by DBF flavor: true x64/v128 CDX, classic VFP/v32 CNX.\n";
     std::cout << "  - REGISTRY reports the RUNTIME workspace membership (which areas belong to\n";
     std::cout << "    which workspace right now), which is not the catalog: WORKSPACES.dbf is the\n";
-    std::cout << "    persistence authority and answers what has been SAVED. Workspaces declared\n";
-    std::cout << "    with NEW are runtime-only and do not survive a restart (AIF-078 stage 3).\n";
+    std::cout << "    persistence authority and answers what has been SAVED.\n";
+    std::cout << "  - NEW <name> [UNDER <parent>] declares a workspace, and it is BORN DURABLE:\n";
+    std::cout << "    it adopts the durable identity its name already means in the catalog, or\n";
+    std::cout << "    writes a birth row to mint one (D10.1). This line said NEW was runtime-only\n";
+    std::cout << "    until 2026-08-24; that stopped being true when D10.1 landed on 08-23.\n";
+    std::cout << "  - SWITCH <name-or-handle> sets which workspace the NEXT opened area joins.\n";
+    std::cout << "    The model is SWITCH-then-open. Names must be unique, and a name cannot be\n";
+    std::cout << "    reclaimed in a session -- there is no DROP verb.\n";
     std::cout << "  - Bare CLOSE is SCOPED to the current workspace and costs one walk of ITS\n";
     std::cout << "    members, not a sweep of every area slot. CLOSE ALL is the old everywhere\n";
     std::cout << "    behaviour and is the only form that also reconciles unregistered areas.\n";
