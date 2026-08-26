@@ -72,6 +72,7 @@ renumbered.
 | M15 | Guarded E2 HELP refresh | PASS -- complete 39-file backup, legacy-then-current runtime rebuild, reflection PASS, semantic join clean, and failed-attempt rollback proven |
 | M16 | Post-E2 canonical harvest refresh | PASS -- six hash-bound replacements, nine verified no-ops, semantic 14/14, and explicit Python 3.12 manualgen validation |
 | M17 | Website command catalog refresh | PASS -- restarted E0 audit, 239/239 parsed registry rows, zero fallback, alias-aware extraction, and local production build; no publication |
+| M18 | Website matrix-wide reconciliation | PASS LOCAL -- all 146 MDX routes classified exactly once, generated catalogs and diagram refreshed, maintained-current surfaces reconciled, and dirty/shared authorities explicitly deferred; owner rendering signoff and publication remain open |
 
 ## Coordination finding
 
@@ -390,3 +391,46 @@ Good Neighbor note for the website catalog lane:
 - **VERIFY OR UNDO:** run the focused unit test, catalog zero-fallback check, and
   site production build; revert the exact ccode E6 commit and site commit
   `27ce68e...` to undo. No public rollback is required.
+
+## Website matrix-wide reconciliation -- CODEX-20260826-011
+
+Phase 7 now has a complete local delta audit rather than a catalog-only sample.
+The detailed website content manifest covers all 146 MDX routes exactly once:
+8 generated, 30 derived, 75 maintained, 9 maintained-current, 5 reported, and
+19 static. A dedicated validator and regression tests make missing, phantom,
+duplicate, class, and total drift fail visibly.
+
+The local website revision refreshes the source-derived function catalog to 73
+core functions plus 2 self-registering extension examples and regenerates the
+command-harvest diagram at 239 registered keys / 239 parsed contracts. Current
+specification, roadmap, project-truth, lane, documentation-progress, full-stack,
+developer-manual, and website-matrix surfaces now name their authority and the
+normalization boundary among 245 runtime registrations, 239 central-shell keys,
+212 SYSCMD rows, and 75 implemented function specifications.
+
+Two rows were deliberately not regenerated. `docs/labtalk/current-work` depends
+on `labtalk/registries/ai_portal_tasks.yaml`, which contains concurrent unrelated
+work, and the ECO website row depends on an independently dirty generated
+authority. Their dispositions are `DEFERRED_SOURCE_DIRTY`, not false PASS.
+Private ignored portal pages remain `DEFERRED_PRIVATE_IGNORED`. The exact row
+dispositions and evidence are in
+`website_phase/WEBSITE_MATRIX_DELTA_AUDIT_V1.md` under the current run.
+
+This completes local Phase 7 reconciliation but does not advance the matrix's
+last-audited stamp. That stamp, website push, managed deployment, and public
+verification require owner review of the rendered revision and explicit entry
+to E8 publication ascent.
+
+Good Neighbor note for the matrix-wide website lane:
+
+- **WHAT CHANGED:** hardened the complete content inventory, regenerated the
+  current source-derived website consumers, and reconciled maintained-current
+  pages without rewriting deferred shared authorities.
+- **WHOSE AREA:** AIF-068 documentation ascent and AIF-132 Portal-feed
+  hardening, intersecting the website source tree only on the listed routes.
+- **AUTHORIZATION:** maintainer authorization covered the local matrix-wide
+  Phase 7 pass; the standing publication contract still requires a distinct
+  owner signoff before E8 mutation.
+- **VERIFY OR UNDO:** run the 69 full-stack tests, manifest validator, four
+  catalog checks, and local site production build; revert only the exact site
+  and ccode reconciliation commits to undo. No public rollback is required.

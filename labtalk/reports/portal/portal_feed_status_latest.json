@@ -1,6 +1,6 @@
 {
   "schema": "dottalk.portal.status.v1",
-  "generated_at_utc": "2026-08-26T12:27:42Z",
+  "generated_at_utc": "2026-08-26T13:03:28Z",
   "mode": "development_advisory",
   "current_documentation_push": {
     "run_id": "DOCFLUSH-20260825-001",
@@ -13,7 +13,7 @@
     "next_process": "publication_ascent",
     "next_entry_state": "partial",
     "first_open_entry": "E8",
-    "first_open_entry_summary": "E0 through E7 are proven for the current run; manual acceptance, source staging, and website publication remain distinct owner-authorized mutations, and no publication is authorized"
+    "first_open_entry_summary": "E0 through E7 are proven for the current run, including local matrix-wide website reconciliation; current-work and ECO consumers are explicitly deferred because their authorities contain concurrent dirty work; owner rendered-site acceptance, source staging, and website publication remain distinct mutations, and no publication is authorized"
   },
   "summary": {
     "feeds": 6,

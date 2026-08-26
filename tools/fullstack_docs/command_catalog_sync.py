@@ -64,6 +64,16 @@ FALLBACK_SOURCE = "src/cli/shell_commands.cpp"
 # self-register from src/ext/fn via register_builtin_fn(...).
 FN_DOC_RE = re.compile(r'FunctionDoc\{\s*"([^"]+)"\s*,\s*\{([^}]*)\}', re.S)
 FN_SELFREG_RE = re.compile(r'register_builtin_fn\(\{\s*"([^"]+)"')
+FN_DOC_DETAIL_RE = re.compile(
+    r'FunctionDoc\{\s*"([^"]+)"\s*,\s*\{([^}]*)\}\s*,\s*'
+    r'FunctionCategory::([A-Za-z0-9_]+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*'
+    r'"((?:\\.|[^"\\])*)"',
+    re.S,
+)
+FN_SELFREG_DETAIL_RE = re.compile(
+    r'register_builtin_fn\(\{\s*"([^"]+)"\s*,\s*(\d+)\s*,\s*(\d+)',
+    re.S,
+)
 FN_SNAPSHOT_RE = re.compile(
     r"`(\d+)` core documented expression functions"
     r"(?:, plus `(\d+)` self-registering)?"
@@ -485,16 +495,33 @@ Source extraction snapshot: `{keys}` registered command keys and `{parsed}` pars
 """
 
 
-def function_core(source_root: Path) -> dict[str, list[str]]:
-    """Core expression functions from function_catalog.cpp -> {NAME: [aliases]}."""
+def function_core_details(source_root: Path) -> list[dict[str, object]]:
+    """Read ordered FunctionDoc rows used to generate the website catalog."""
     text = (source_root / "src/cli/expr/function_catalog.cpp").read_text(
         encoding="utf-8", errors="replace"
     )
-    core: dict[str, list[str]] = {}
-    for m in FN_DOC_RE.finditer(text):
+    rows: list[dict[str, object]] = []
+    for m in FN_DOC_DETAIL_RE.finditer(text):
         aliases = [a.strip().strip('"') for a in m.group(2).split(",") if a.strip()]
-        core[m.group(1).upper()] = [a.upper() for a in aliases]
-    return core
+        rows.append(
+            {
+                "name": m.group(1).upper(),
+                "aliases": [a.upper() for a in aliases],
+                "category": m.group(3),
+                "min_args": int(m.group(4)),
+                "max_args": int(m.group(5)),
+                "summary": m.group(6).replace(r'\"', '"').replace(r"\\", "\\"),
+            }
+        )
+    return rows
+
+
+def function_core(source_root: Path) -> dict[str, list[str]]:
+    """Core expression functions from function_catalog.cpp -> {NAME: [aliases]}."""
+    return {
+        str(row["name"]): list(row["aliases"])
+        for row in function_core_details(source_root)
+    }
 
 
 def function_self_registered(source_root: Path) -> set[str]:
@@ -506,6 +533,100 @@ def function_self_registered(source_root: Path) -> set[str]:
             text = path.read_text(encoding="utf-8", errors="replace")
             names.update(n.upper() for n in FN_SELFREG_RE.findall(text))
     return names
+
+
+def function_self_registered_details(source_root: Path) -> list[dict[str, object]]:
+    """Read ordered extension registration rows for the open-architecture section."""
+    rows: list[dict[str, object]] = []
+    fn_dir = source_root / "src/ext/fn"
+    if not fn_dir.is_dir():
+        return rows
+    for path in sorted(fn_dir.rglob("*.cpp")):
+        text = path.read_text(encoding="utf-8", errors="replace")
+        for m in FN_SELFREG_DETAIL_RE.finditer(text):
+            name = m.group(1).upper()
+            summaries = {
+                "STU_UPPER": "Student extension sample: convert a string to uppercase.",
+                "STU_REPEAT": "Student extension sample: repeat a string a given number of times.",
+            }
+            rows.append(
+                {
+                    "name": name,
+                    "min_args": int(m.group(2)),
+                    "max_args": int(m.group(3)),
+                    "summary": summaries.get(
+                        name, "Self-registering student extension function example."
+                    ),
+                }
+            )
+    return rows
+
+
+def _fn_args(min_args: int, max_args: int) -> str:
+    return str(min_args) if min_args == max_args else f"{min_args}-{max_args}"
+
+
+def fn_emit(source_root: Path, out: Path) -> int:
+    """Generate the complete function-catalog page from source authorities."""
+    core = function_core_details(source_root)
+    extensions = function_self_registered_details(source_root)
+    core_rows = []
+    for row in core:
+        aliases = ", ".join(str(alias) for alias in row["aliases"])
+        core_rows.append(
+            "| `{name}` | {aliases} | {category} | {args} | {summary} |".format(
+                name=row["name"],
+                aliases=_md_cell(aliases),
+                category=_md_cell(str(row["category"])),
+                args=_fn_args(int(row["min_args"]), int(row["max_args"])),
+                summary=_md_cell(str(row["summary"])),
+            )
+        )
+    extension_rows = [
+        "| `{name}` |  | Extension | {args} | {summary} |".format(
+            name=row["name"],
+            args=_fn_args(int(row["min_args"]), int(row["max_args"])),
+            summary=_md_cell(str(row["summary"])),
+        )
+        for row in extensions
+    ]
+    text = f'''---
+title: "Function Catalog"
+description: "Source-derived DotTalk++ expression function catalog."
+---
+
+This page is generated from `src/cli/expr/function_catalog.cpp`, which is the
+current source-side documentation catalog for expression functions.
+
+The extension examples live separately under `src/ext/fn`; they demonstrate how
+learners can add self-registering functions without changing the core catalog.
+
+Source extraction snapshot: `{len(core)}` core documented expression functions,
+plus `{len(extensions)}` self-registering student function examples (listed below).
+
+## Source-Derived Functions
+
+| Function | Aliases | Category | Args | Summary |
+| --- | --- | --- | --- | --- |
+{chr(10).join(core_rows)}
+
+## Self-registering functions (open architecture)
+
+These are not part of the core `function_catalog.cpp` set. They are shipped
+student/extension examples registered at runtime through the same extension hook
+used by student commands. Copy an extension file to add a function without
+editing the core catalog.
+
+| Function | Aliases | Category | Args | Summary |
+| --- | --- | --- | --- | --- |
+{chr(10).join(extension_rows)}
+'''
+    out.write_text(text, encoding="utf-8")
+    print(
+        f"function_catalog emit -> {out} core={len(core)} "
+        f"self_registered={len(extensions)}"
+    )
+    return 0
 
 
 def sysfunc_names(path: Path) -> set[str]:
@@ -728,7 +849,11 @@ def main() -> int:
     fc.add_argument("--catalog", type=Path, required=True,
                     help="path to content/docs/dottalk/function-catalog.mdx")
     fc.add_argument("--sysfunc", type=Path, default=None,
-                    help="optional SYSFUNC DBF export CSV to cross-check against")
+                   help="optional SYSFUNC DBF export CSV to cross-check against")
+    fe = sub.add_parser("fn-emit", help="re-derive the function catalog page from source")
+    fe.add_argument("--source-root", type=Path, required=True)
+    fe.add_argument("--out", type=Path, required=True,
+                    help="path to content/docs/dottalk/function-catalog.mdx")
     ec = sub.add_parser("err-check", help="validate the website error-codes page against source")
     ec.add_argument("--source-root", type=Path, required=True)
     ec.add_argument("--page", type=Path, required=True,
@@ -744,6 +869,8 @@ def main() -> int:
     if args.mode == "fn-check":
         sysfunc = args.sysfunc.resolve() if args.sysfunc else None
         return fn_check(args.source_root.resolve(), args.catalog.resolve(), sysfunc)
+    if args.mode == "fn-emit":
+        return fn_emit(args.source_root.resolve(), args.out.resolve())
     if args.mode == "err-check":
         return err_check(args.source_root.resolve(), args.page.resolve())
     if args.mode == "loc-check":

@@ -57,5 +57,53 @@ int buildvectors;
             self.assertEqual("diagnostics", blocks[MODULE._norm("BUILD")]["category"])
 
 
+class FunctionCatalogEmitTests(unittest.TestCase):
+    def test_fn_emit_derives_details_counts_and_extension_rows(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            core = root / "src" / "cli" / "expr"
+            ext = root / "src" / "ext" / "fn"
+            core.mkdir(parents=True)
+            ext.mkdir(parents=True)
+            (core / "function_catalog.cpp").write_text(
+                '''FunctionDoc{
+    "RTRIM",
+    { "TRIM" },
+    FunctionCategory::String,
+    1, 1,
+    "Trim trailing spaces.",
+    {}, {}, {}, {}
+},
+FunctionDoc{
+    "PADL",
+    {},
+    FunctionCategory::String,
+    2, 3,
+    "Pad on the left.",
+    {}, {}, {}, {}
+},
+''',
+                encoding="utf-8",
+            )
+            (ext / "sample.cpp").write_text(
+                '''register_builtin_fn({
+    "STU_UPPER",
+    1, 1,
+    &fn_STU_UPPER
+});
+''',
+                encoding="utf-8",
+            )
+            out = root / "function-catalog.mdx"
+            self.assertEqual(0, MODULE.fn_emit(root, out))
+            text = out.read_text(encoding="utf-8")
+            self.assertIn("`2` core documented expression functions", text)
+            self.assertIn("plus `1` self-registering", text)
+            self.assertIn("| `RTRIM` | TRIM | String | 1 | Trim trailing spaces. |", text)
+            self.assertIn("| `PADL` |  | String | 2-3 | Pad on the left. |", text)
+            self.assertIn("| `STU_UPPER` |  | Extension | 1 |", text)
+            self.assertEqual(0, MODULE.fn_check(root, out))
+
+
 if __name__ == "__main__":
     unittest.main()
