@@ -3,11 +3,14 @@ title: "Function Catalog"
 description: "Source-derived DotTalk++ expression function catalog."
 ---
 
-This page is generated from `src/cli/expr/function_catalog.cpp`, which is the current source-side documentation catalog for expression functions.
+This page is generated from `src/cli/expr/function_catalog.cpp`, which is the
+current source-side documentation catalog for expression functions.
 
-The student extension function examples live separately in `src/ext/fn/fn_student_text_autoreg.cpp`; they demonstrate how learners can add self-registering functions without changing the core catalog.
+The extension examples live separately under `src/ext/fn`; they demonstrate how
+learners can add self-registering functions without changing the core catalog.
 
-Source extraction snapshot: `63` core documented expression functions, plus `2` self-registering student function examples (listed below).
+Source extraction snapshot: `73` core documented expression functions,
+plus `2` self-registering student function examples (listed below).
 
 ## Source-Derived Functions
 
@@ -17,6 +20,11 @@ Source extraction snapshot: `63` core documented expression functions, plus `2` 
 | `LOWER` |  | String | 1 | Convert text to lowercase. |
 | `ALLTRIM` |  | String | 1 | Trim leading and trailing spaces from a string value. |
 | `LTRIM` |  | String | 1 | Trim leading spaces from a string value. |
+| `PROPER` |  | String | 1 | Convert text to proper case: capitalize the first letter of each word and lowercase the rest. |
+| `PADL` |  | String | 2-3 | Pad a string on the left to a given length, optionally with a specified pad character. |
+| `PADR` |  | String | 2-3 | Pad a string on the right to a given length, optionally with a specified pad character. |
+| `PADC` |  | String | 2-3 | Pad a string on both sides to center it within a given length, optionally with a specified pad character. |
+| `STUFF` |  | String | 4 | Replace part of a string: remove &lt;length&gt; characters starting at &lt;start&gt; and insert the replacement text. |
 | `RTRIM` | TRIM | String | 1 | Trim trailing spaces from a string value. |
 | `LEFT` |  | String | 2 | Return the leftmost characters of a string. |
 | `RIGHT` |  | String | 2 | Return the rightmost characters of a string. |
@@ -33,16 +41,21 @@ Source extraction snapshot: `63` core documented expression functions, plus `2` 
 | `CHR` |  | String | 1 | Return the single-character string for a numeric character code. |
 | `CHRTRAN` |  | String | 3 | Replace characters in a string by position-mapped translation. |
 | `EMPTY` |  | Logical | 1 | Return whether a value is empty according to expression-engine rules. |
+| `FILE` |  | Logical | 1 | Return whether a file or directory exists at the given path. |
 | `RAT` |  | Search | 2 | Return the 1-based position of the last occurrence of a substring. |
 | `REPLICATE` |  | Construction | 2 | Repeat a string value a specified number of times. |
 | `SPACE` |  | Construction | 1 | Return a string containing the requested number of spaces. |
 | `STRTRAN` |  | String | 3 | Replace occurrences of a substring within a string. |
 | `TRANSFORM` |  | Conversion | 1-2 | Convert a value to display-oriented character form. |
-| `DATE` |  | Date | 0 | Return the current system date. |
-| `TODAY` |  | Date | 0 | Return the current system date. |
-| `NOW` |  | Date | 0 | Return the current date/time value. |
-| `DATETIME` |  | Date | 0 | Return the current date/time value. |
-| `TIME` |  | Date | 0 | Return the current system time. |
+| `DATE` |  | Date | 0-1 | Return the current system date, local by default or in a named zone. |
+| `UDATE` |  | Date | 0 | Return the current UTC date. Zero-argument alias for DATE("UTC"). |
+| `UTIME` |  | Date | 0 | Return the current UTC time. Zero-argument alias for TIME("UTC"). |
+| `UNOW` |  | Date | 0 | Return the current UTC date and time. Zero-argument alias for NOW("UTC"). |
+| `UDATETIME` |  | Date | 0 | Return the current UTC date and time. Alias of UNOW(). |
+| `TODAY` |  | Date | 0-1 | Return the current system date, local by default or in a named zone. |
+| `NOW` |  | Date | 0-1 | Return the current date/time value, local by default or in a named zone. |
+| `DATETIME` |  | Date | 0-1 | Return the current date/time value, local by default or in a named zone. |
+| `TIME` |  | Date | 0-1 | Return the current system time, local by default or in a named zone. |
 | `SECONDS` |  | Date | 0 | Return the current time expressed as seconds-of-day or equivalent engine-specific seconds value. |
 | `CTOD` |  | Date | 1 | Convert a character string to a date value. |
 | `DTOC` |  | Date | 1-2 | Convert a date value to character form. |
@@ -79,15 +92,12 @@ Source extraction snapshot: `63` core documented expression functions, plus `2` 
 
 ## Self-registering functions (open architecture)
 
-These are not part of the core `function_catalog.cpp` set above — they are the
-shipped **student/extension examples** in
-`src/ext/fn/fn_student_text_autoreg.cpp`, registered at runtime through the same
-self-registration hook (`register_extension_command`) used by the student
-commands `STUDENTECHO` / `STUDENTHELLO` on the
-[command catalog](/docs/dottalk/command-catalog). Copy the file to add your own
-self-registering functions without editing the core catalog.
+These are not part of the core `function_catalog.cpp` set. They are shipped
+student/extension examples registered at runtime through the same extension hook
+used by student commands. Copy an extension file to add a function without
+editing the core catalog.
 
 | Function | Aliases | Category | Args | Summary |
 | --- | --- | --- | --- | --- |
-| `STU_UPPER` |  | String | 1 | Student extension sample: convert a string to uppercase. |
-| `STU_REPEAT` |  | Construction | 2 | Student extension sample: repeat a string a given number of times. |
+| `STU_UPPER` |  | Extension | 1 | Student extension sample: convert a string to uppercase. |
+| `STU_REPEAT` |  | Extension | 2 | Student extension sample: repeat a string a given number of times. |

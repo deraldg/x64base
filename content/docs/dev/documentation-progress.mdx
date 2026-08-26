@@ -7,7 +7,7 @@ This page is the public progress surface for the full-stack documentation
 pipeline. It reports completed checkpoints and separately labels work that is
 still local, under review, or waiting for public-source promotion.
 
-> **Maintained current status -- as of 2026-08-06 (pass 4 owner-approved; publishing to live, Gate 9 live-readback pending).**
+> **Maintained current status -- as of 2026-08-26 (v6 development closeout and local website reconciliation; publication not entered).**
 > This permanent page contains both immutable publication checkpoints and a
 > replaceable current-state section. The current task registry and next gates are
 > available at [Current Tasks & Projects](/docs/labtalk/current-work); the full
@@ -43,45 +43,30 @@ and GitHub Pages commit `0ef77ea9`.
 - [Open the command-reference checkpoint](/docs/dottalk/command-reference).
 - [Inspect the machine-readable progress artifact](/artifacts/documentation-progress-v1.json).
 
-## Local preview — second vertical, 2026-07-22
+## Current development vertical -- 2026-08-26
 
-`DOCFLUSH-20260722-001` is a new bottom-to-top maintenance vertical. It is
-visible here for local review but is **not yet a public deployment**.
+`DOCFLUSH-20260825-001` completed its development-tree closeout and the local
+website delta pass. It is **review-needed and not publicly deployed**.
 
-| Layer | Local reviewed state |
+| Layer | Current measured state |
 | --- | --- |
-| Source comments/contracts | 1,032 files; 243 complete source contracts; guarded live COMMENTS reload independently read back |
-| HELP | 459 commands; 2,566 arguments; 575 current topics; 29,197 lines; `CMDHELPCHK` and focused command canaries pass |
-| Current command-reference candidate | 191 pages: 164 reader-linked, 19 supplemental, and 8 post-baseline repair pages; 4,604 combined lineage rows |
-| Manualgen command-reference lane (2026-07-28) | 164 reader-linked pages; 10,502 lineage rows; SYSCMD 212 / SYSFUNC 74; five FoxPro functions (`STUFF`, `PADL`, `PADR`, `PADC`, `PROPER`) accepted via gate-4 apply `MANRUN-20260728T041930Z-5DE4733C`; publication readiness `PASS`. Distinct assembly from the 191-page candidate above; not deployed. |
-| Accepted primary reader | Unchanged at 4,118 lines / 237 headings; publication readiness 26/26 |
-| Latest assembled candidate | 14,542 lines; 26 parts; 1,666 headings; 191 bound pages; 298-page Letter PDF |
-| Current gate | Gates 0–4 pass; Gate 5 website reconciliation passes locally and awaits human review |
+| Source contracts | 1,082 tracked source files carry `@dottalk.file`; 231 files carry `@dottalk.usage`; coverage is 100 percent |
+| HELP | 462 legacy command rows; 2,614 argument rows; 670 reachable topics; 29,480 line rows; structural and direct-join checks pass |
+| Canonical HELP/META harvest | 14/14 required tables current; 63,217 exported rows; guarded replacement and rollback evidence retained |
+| Function surface | 75 implemented specs and 75 SYSFUNC rows; website catalog regenerated as 73 core plus 2 extension examples |
+| Manual candidate | `MANRUN-20260826T012054Z-B9F8B8BD`; 25 sections, 19 media items, and 13 appendices; accepted as review-needed with no publication replacement |
+| Website source | 239/239 command rows, zero fallback; count-bound diagram regenerated; local production build 171 static pages and 164 indexed pages |
+| Current gate | E0-E7 proven; E8 separately governs manual acceptance, source staging, and website publication |
 
-The refresh also repaired documentation workflow assumptions that had treated
-historical fixed counts as permanent contracts. Current gates now validate
-relational invariants and preserve the separately accepted supplemental
-reference lane during later reader-linked refreshes.
+The first website regeneration preceded the required matrix read and was rejected
+as an E0 attempt. The pass restarted from the matrix, reclassified the touched
+surfaces, regenerated from source, and repeated the checks and full build. The
+process correction is retained rather than rewritten as an uninterrupted pass.
 
-The post-baseline repair closed eight current-source publication gaps:
-`BUILDVECTORS`, `DEFCMD`, `DEFFN`, `STOP_ON_ERROR`, `UNDEFCMD`, `UNDEFFN`,
-`USER`, and `VDISK`. The source-to-reference coverage audit now has zero
-blocking findings. Its 102 inherited historical backlog entries remain visible
-rather than being silently relabeled as current regressions.
-
-Two implementation lanes that had been materially understated on the site are
-now explicit:
-
-- [RAM DBF and VDISK](/docs/engine/ram-dbf-vdisk) documents process-local X64
-  DBF tables, native CDX-V64 indexes, path routing, and destructive lifetime
-  boundaries.
-- [Identity, Authentication, and RBAC](/docs/engine/identity-security)
-  distinguishes persisted members, sessions, roles, permissions, owner-gated
-  administration, runtime enforcement chokepoints, and the legacy diagnostic
-  selector exposed by `SECURITY`.
-
-`METACOLLECT-238` remains a separate 238-finding mission. This vertical neither
-closes nor silently absorbs it.
+The accepted public reader and the 2026-07-18 publication checkpoint below remain
+sealed. The current manual estate is treated collectively pending a separate
+hardening decision; the website links to it and does not claim that the v6
+candidate replaced the accepted reader.
 
 ## Promoted follow-up delta
 

@@ -3,12 +3,11 @@ title: "Full-stack Documentation Push"
 description: "Complete maintained record of the current source-to-comments-to-HELP-to-reference-to-manual-to-website documentation vertical."
 ---
 
-> **Current as of 2026-08-06 · `maintained_current` · pass 4 owner-approved.**
-> Pass 4 is owner-approved and is being committed and pushed to the live site;
-> public live-readback (Gate 9) is the remaining gate. The next scheduled run is
-> **Document FullStack push v5**. Earlier local-only runs (`DOCFLUSH-20260722-001`,
-> `DOCFLUSH-20260805-001`) are preserved in the history below; their event dates are
-> not rewritten.
+> **Current as of 2026-08-26 -- `maintained_current` -- v6 development closeout and local website reconciliation.**
+> `DOCFLUSH-20260825-001` is closed in the development tree and review-needed.
+> E0-E7 are proven; E8 remains the distinct owner gate for manual acceptance,
+> source staging, and website publication. No public mutation is claimed. Earlier
+> runs remain preserved below with their original event dates.
 
 ## Why this vertical exists
 
@@ -36,13 +35,14 @@ source and *ref.hpp contracts
 
 | Layer | Reviewed current state | Boundary |
 | --- | --- | --- |
-| Source harvest | 1,032 files; 243 complete source usage contracts | Source defines; contracts describe. |
+| Source harvest | 1,082 tracked source files with universal file-contract coverage; 231 usage-bearing files | Source defines; contracts describe. |
 | COMMENTS | Guarded reload with rollback set and independent readback | Snapshot/audit evidence; not permission to mutate source. |
-| HELP | 459 commands; 2,566 arguments; 575 topics; 29,197 lines | `CMDHELPCHK` and focused command/locale canaries pass. |
-| Command reference | 191 pages; 4,604 lineage rows | 164 reader-linked + 19 preserved supplemental + 8 post-baseline repairs. |
+| HELP | 462 legacy command rows; 2,614 argument rows; 670 reachable topics; 29,480 lines | `CMDHELPCHK`, direct table join, and topic-set checks pass. |
+| Canonical harvest | 14/14 tables current; 63,217 rows | Guarded apply, readback, retained backup, and rollback controls. |
+| Website catalogs | 239/239 command rows with zero fallback; 73 core plus 2 extension function rows | Derived from current source; count-bound diagram regenerated. |
 | Accepted reader | 4,118 lines; 237 headings; publication readiness 26/26 | Accepted reader remains pinned and unchanged. |
-| Assembled manual | 26 parts; 14,542 lines; 1,666 headings; 298-page PDF | Local candidate, not a published release claim. |
-| Website | Dedicated VDISK, identity/security, current-work, and full-vertical pages | Local build/review surface only. |
+| Manual candidate | `MANRUN-20260826T012054Z-B9F8B8BD`; 25 sections, 19 media items, 13 appendices | Accepted as review-needed; no publication replacement and no canonical-manual ruling. |
+| Website | Matrix delta reconciled for unblocked rows; production build generated 171 static pages and indexed 164 | Local build/review surface only; current-work feed deferred because its registry contains unrelated uncommitted work. |
 
 > **2026-07-28 update — manualgen command-reference lane advanced.** Past this
 > 07-23 snapshot, a manualgen gate-4 apply (`MANRUN-20260728T041930Z-5DE4733C`,

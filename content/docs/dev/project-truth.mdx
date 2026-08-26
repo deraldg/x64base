@@ -35,20 +35,17 @@ silently treating it as current public runtime truth.
 
 See [Documentation Progress](/docs/dev/documentation-progress).
 
-### 2026-07-28 update — full-stack documentation flush (DOCFLUSH-20260728)
+### 2026-08-26 update -- full-stack documentation flush (DOCFLUSH-20260825-001)
 
-A full-stack documentation flush re-harvested the live HELP / SelfDoc metadata
-(the SYSCMD, SYSFUNC, SYSARGS, and SYSSUBCMD catalogs) and re-ran the manualgen
-curation and data-driven command-reference lanes. The manualgen
-command-reference lane is **accepted in the development branch and not yet
-deployed to public `main`** — under the evidence order above it is development
-evidence, not public runtime truth. The development tree now carries 236
-registered command keys and 74 scalar functions, including five
-FoxPro-compatible string functions (`STUFF`, `PADL`, `PADR`, `PADC`, `PROPER`)
-added to the expression engine's string-function surface. These counts describe
-the development
-tree; the public `main` figures remain those of the last promoted release until
-this work is promoted through a reviewed public change.
+The current full-stack run refreshed HELP and the canonical HELP/META harvest,
+then re-derived the website catalogs. The development tree now projects 239
+central-shell command keys and 75 function rows (73 core `FunctionDoc` rows plus
+2 self-registering extension examples). HELP contains 670 reachable topics and
+29,480 line rows, while the canonical harvest matches all 14 required tables.
+These are development and local-site measurements, not public runtime truth.
+The public `main` figures remain those of the last promoted release until this
+work passes its distinct source-staging, website-signoff, publication, and live
+readback gates.
 
 ## Current status
 

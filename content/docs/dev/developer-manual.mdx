@@ -3,10 +3,10 @@ title: "Developer Manual (Assembled)"
 description: "Read the latest assembled DotTalk++ / x64base developer manual online, or download it as PDF or Markdown. Always-current permalinks, regenerated from source by the manifest-driven assembler and guarded by a drift gate."
 ---
 
-This is the reader entry for the **assembled developer manual** — the whole thing,
-built from source by the [manifest-driven assembler](/docs/dev/manual-assembly)
-and kept current by a drift gate. The links below are **permalinks**: every
-rebuild overwrites the same files, so they always resolve to the newest build.
+This is the reader entry for the **assembled developer-manual checkpoint**, built
+from source by the [manifest-driven assembler](/docs/dev/manual-assembly). The
+links are stable addresses, but stable does not mean automatically current: a
+new build replaces them only after its own acceptance gate.
 
 ## Read or download
 
@@ -24,23 +24,30 @@ diagrams:
 | Section | Contents |
 | --- | --- |
 | Front matter | Title, provenance & attestation, table of contents |
-| Spine | Command reference (191 pages), function reference (74 functions), SET family, error/message catalog |
+| Spine | Command reference (191 pages), function reference (73 core functions plus 2 extensions), SET family, error/message catalog |
 | Chapters | Tables & the data model, RAM DBF/VDISK, identity/authentication/RBAC, runtime definition and HELP controls, command dispatch, expressions, indexing, messages, HELP/metadata alignment, runtime evidence |
 | Diagrams | 12 promoted diagrams bound from the attachment matrix |
 | Back matter | AI Portal appendix, glossary, index, and a colophon that records how the manual assembled itself |
 
-The current local-preview assembly contains 26 parts, 14,542 lines, 1,666
+The currently linked local-preview assembly contains 26 parts, 14,542 lines, 1,666
 headings, and all 191 current command pages. Its HTML, Markdown, and 298-page
 Letter PDF are bound together by the build manifest; the website staging gate
 rejects a missing or stale companion format.
 
 ## Status and honesty
 
-The assembled manual is an **assembled-candidate** — regenerated from source on
-each build and guarded by the drift gate, but distinct from the gated, reviewed
+The linked manual is an **assembled-candidate** -- guarded by the drift gate but
+distinct from the gated, reviewed
 [accepted developer manual](/downloads) (the `manual-reviewed` baseline promoted
 from public source). Where the two differ, the accepted snapshot is the reviewed
-authority; the assembled build is the always-current working copy.
+authority; the assembled build is a working copy, not an automatic publication.
+
+Full-stack run `DOCFLUSH-20260825-001` accepted a newer manual candidate as
+review-needed (`MANRUN-20260826T012054Z-B9F8B8BD`) without replacing these files.
+The owner has ruled that the developer, student, and user manual estate is treated
+collectively until a separate hardening pass chooses the durable reader model.
+The website therefore links to the manual estate; it does not claim the v6
+candidate is already the public reader.
 
 For how the manual is built and kept honest, see
 [How the Manual Assembles Itself](/docs/dev/manual-assembly).
