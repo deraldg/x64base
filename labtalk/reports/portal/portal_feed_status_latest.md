@@ -12,7 +12,7 @@ Generated from the typed feed, assertion, and current-run registries. Do not han
 | publication_state | `not_entered` |
 | next_process | `publication_ascent` |
 | next_entry_state | `partial` |
-| first_open_entry | `E6` |
+| first_open_entry | `E8` |
 
 ## Summary
 

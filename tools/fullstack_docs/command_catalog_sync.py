@@ -132,15 +132,30 @@ def usage_blocks(source_root: Path) -> dict[str, dict[str, str]]:
             if not (category and status and summary):
                 continue
             rel = path.relative_to(source_root).as_posix().replace("/", "\\")
+            entry = {
+                "category": category,
+                "status": status,
+                "summary": summary,
+                "source": rel,
+            }
             # a block may own several names: "A / B"
             for name in (n.strip() for n in cmd.split("/")):
                 if name:
-                    out.setdefault(_norm(name), {
-                        "category": category,
-                        "status": status,
-                        "summary": summary,
-                        "source": rel,
-                    })
+                    out.setdefault(_norm(name), entry)
+            # Declared aliases are part of the same documentation identity.
+            # A spaced alias also proves its registered first-token router:
+            # BUILDVECTORS declares BUILD VECTORS / BUILD INFO while dispatch
+            # registers BUILD and lets it read the next token. Ignoring aliases
+            # made both BUILD and GUI fall back despite authoritative contracts.
+            aliases = _field(b, "aliases")
+            if aliases:
+                for alias in (name.strip() for name in aliases.split(",")):
+                    if not alias:
+                        continue
+                    out.setdefault(_norm(alias), entry)
+                    first, separator, _rest = alias.partition(" ")
+                    if separator:
+                        out.setdefault(_norm(first), entry)
     return out
 
 

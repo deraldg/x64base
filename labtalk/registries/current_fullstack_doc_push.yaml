@@ -2,8 +2,8 @@ schema: dottalk.fullstack.current.v1
 owner: member.derald
 steward: member.ai.codex
 maintenance_class: maintained_current
-observed_at_utc: 2026-08-26T12:17:30Z
-source_commit: aa9fd9c62848c133fd62324e18029661c35897ca
+observed_at_utc: 2026-08-26T12:27:42Z
+source_commit: 83cea9f4f2e63ef0c0d87c1c8e4e48fc993fbf45
 
 current:
   run_id: DOCFLUSH-20260825-001
@@ -15,8 +15,8 @@ current:
   authority_path: docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260825-001/GATE7_CLOSEOUT_V1.md
   next_process: publication_ascent
   next_entry_state: partial
-  first_open_entry: E6
-  first_open_entry_summary: website command catalog predates the current registry and HELP surfaces and requires regeneration plus fallback-zero validation
+  first_open_entry: E8
+  first_open_entry_summary: E0 through E7 are proven for the current run; manual acceptance, source staging, and website publication remain distinct owner-authorized mutations, and no publication is authorized
 
 rules:
   - development closeout does not imply promotion

@@ -71,6 +71,7 @@ renumbered.
 | M14 | Authorized canonical harvest apply | PASS -- seven hash-bound replacements, byte-preserved local backup, semantic E5 and manualgen readback, zero rollback findings |
 | M15 | Guarded E2 HELP refresh | PASS -- complete 39-file backup, legacy-then-current runtime rebuild, reflection PASS, semantic join clean, and failed-attempt rollback proven |
 | M16 | Post-E2 canonical harvest refresh | PASS -- six hash-bound replacements, nine verified no-ops, semantic 14/14, and explicit Python 3.12 manualgen validation |
+| M17 | Website command catalog refresh | PASS -- restarted E0 audit, 239/239 parsed registry rows, zero fallback, alias-aware extraction, and local production build; no publication |
 
 ## Coordination finding
 
@@ -358,3 +359,34 @@ Good Neighbor note for the manualgen harvest lane:
 - **VERIFY OR UNDO:** run the E5 semantic audit and explicit `.venv312`
   manualgen validation; before later harvest changes, use the guarded rollback
   command against the retained post-E2 execution record and backup.
+
+## E6 website command catalog refresh -- CODEX-20260826-010
+
+The website catalog now reflects the current 239-key registry with 239 parsed
+rows and zero fallback. The extractor was hardened to honor declared aliases and
+the registered first-token router of spaced aliases, closing false fallback for
+`GUI` and `BUILD` without touching Claude's concurrent APPGUI implementation.
+The local site production build passed all diagram, public-content, opacity,
+TypeScript, static-page, and Pagefind steps. The site source revision is
+`27ce68e005e42a8e1452b0bc247e8cb7ed64d14c` on
+`codex/lean-sites-publish`; it was not pushed or deployed.
+
+The first regeneration preceded the required website-matrix read and is recorded
+as a failed E0 attempt. E0 was restarted by consulting the matrix and navigation,
+classifying the catalog as a generated/reviewed derivative under the simplex
+implementation-to-website direction, and then regenerating, checking, and
+building again. That accepted regeneration was byte-identical to the site commit.
+The matrix closeout re-audit remains a later signoff gate because no publication
+was authorized.
+
+Good Neighbor note for the website catalog lane:
+
+- **WHAT CHANGED:** made catalog extraction alias-aware, added focused regression
+  coverage, and refreshed the generated website catalog from current source.
+- **WHOSE AREA:** AIF-068 documentation ascent and x64base-site's generated
+  DotTalk++ catalog, intersecting AIF-132's Portal feed crosswalk.
+- **AUTHORIZATION:** maintainer direction to continue covered local source
+  regeneration and validation only; it did not authorize push or deployment.
+- **VERIFY OR UNDO:** run the focused unit test, catalog zero-fallback check, and
+  site production build; revert the exact ccode E6 commit and site commit
+  `27ce68e...` to undo. No public rollback is required.
