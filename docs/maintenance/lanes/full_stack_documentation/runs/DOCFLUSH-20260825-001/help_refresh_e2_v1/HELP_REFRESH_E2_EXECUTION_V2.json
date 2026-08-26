@@ -1,0 +1,219 @@
+{
+  "after_file_count": 39,
+  "after_files": [
+    {
+      "bytes": 332236,
+      "path": "dottalkpp/data/help/CMD_ARGS.dbf",
+      "sha256": "2250190CA64C685ED4E6486F84E8B2F66F46E37701B8DA5C5DDE85D19575FC9F"
+    },
+    {
+      "bytes": 2872320,
+      "path": "dottalkpp/data/help/cmd_args.dbt",
+      "sha256": "B0FEB408FFCFC7D0DD888A27CAE466EDB023ED66E713CD9DE3D07F0849A4459F"
+    },
+    {
+      "bytes": 4096,
+      "path": "dottalkpp/data/help/CMD_ARGS.dtx",
+      "sha256": "06E393C255E0F0DFD027F43DE6BF672AB3626828CDF2BE44C15AB66433D271A5"
+    },
+    {
+      "bytes": 48800,
+      "path": "dottalkpp/data/help/COMMANDS.dbf",
+      "sha256": "6402AE16A3172F6829EC27D6BC742DB0011B152D30B264716A619D99A3229F6C"
+    },
+    {
+      "bytes": 499200,
+      "path": "dottalkpp/data/help/commands.dbt",
+      "sha256": "1D9E882E0304FDF8218BB0D57259F80C6FB33AD84121930F48F4489A43FB0E6D"
+    },
+    {
+      "bytes": 4096,
+      "path": "dottalkpp/data/help/COMMANDS.dtx",
+      "sha256": "06E393C255E0F0DFD027F43DE6BF672AB3626828CDF2BE44C15AB66433D271A5"
+    },
+    {
+      "bytes": 3074,
+      "path": "dottalkpp/data/help/DATA_INDEX_README.txt",
+      "sha256": "8B22408804A9AF610FA3FD9FC63A103FB7A9FB9B8F2BB0C7E645F05C1A536BD3"
+    },
+    {
+      "bytes": 304697,
+      "path": "dottalkpp/data/help/FULL/help_artifacts.dbf",
+      "sha256": "EFE4AE084E0689E60831918DB27BFBF300EF3CB8DC23C81F39080CFD99E633F4"
+    },
+    {
+      "bytes": 630784,
+      "path": "dottalkpp/data/help/FULL/help_artifacts.dbt",
+      "sha256": "3801F0BFB4F6A4E21EB29AEAD41F6C96F030C7EFEB023DA72CAC1F4643DE6ADA"
+    },
+    {
+      "bytes": 10489,
+      "path": "dottalkpp/data/help/HELP_ARTIFACT_LOCALE.dbf",
+      "sha256": "F5E558A787250B5E83685593995856AFEC0E2FD6D10C950F33BDCA52531DE491"
+    },
+    {
+      "bytes": 4100108,
+      "path": "dottalkpp/data/help/HELP_ARTIFACTS.dbf",
+      "sha256": "1379BC089B8D477A1E9CEE2889E167FB57B8FE3E9E15C7D61A0B0C0A0634A37F"
+    },
+    {
+      "bytes": 12899840,
+      "path": "dottalkpp/data/help/help_artifacts.dbt",
+      "sha256": "61B8F79C6327F7E72EFA2420A591952BC9E7F1D703DE243413FFBDBD2A158616"
+    },
+    {
+      "bytes": 4096,
+      "path": "dottalkpp/data/help/HELP_ARTIFACTS.dtx",
+      "sha256": "06E393C255E0F0DFD027F43DE6BF672AB3626828CDF2BE44C15AB66433D271A5"
+    },
+    {
+      "bytes": 14711002,
+      "path": "dottalkpp/data/help/HELP_LINE.dbf",
+      "sha256": "75EE6648AF9785A6ADDD65E10AE6176CDAD9F0295A75FB048B168F7B7A9D9EE0"
+    },
+    {
+      "bytes": 45257,
+      "path": "dottalkpp/data/help/HELP_LINE_LOCALE.dbf",
+      "sha256": "4B84359F1635DAF2C1A7C644610630EBF2D876EE3F25C4CCBC234285A4E664EE"
+    },
+    {
+      "bytes": 4096,
+      "path": "dottalkpp/data/help/HELP_LINE_LOCALE.dtx",
+      "sha256": "06E393C255E0F0DFD027F43DE6BF672AB3626828CDF2BE44C15AB66433D271A5"
+    },
+    {
+      "bytes": 3100820,
+      "path": "dottalkpp/data/help/HELP_SECTION.dbf",
+      "sha256": "CC30F03E0963485B8DC07BEC921E8F2433C8B6D0476122743FD9C9B2887FC2FC"
+    },
+    {
+      "bytes": 15301,
+      "path": "dottalkpp/data/help/HELP_SECTION_LOCALE.dbf",
+      "sha256": "3019D14A44B74E34FBB5D12C8D597ABF7BA2A56F96E6EDBB059B3A6698F78F87"
+    },
+    {
+      "bytes": 347542,
+      "path": "dottalkpp/data/help/HELP_TOPIC.dbf",
+      "sha256": "95323EFFBEF6F6FF28899C77CAE4A259609DD071BE37272BBBBA2C797563EB14"
+    },
+    {
+      "bytes": 21338,
+      "path": "dottalkpp/data/help/HELP_TOPIC_LOCALE.dbf",
+      "sha256": "68BDC0F6D54C4388EFAFB0CDE1580454CBB2C3EC793C84D76BE3DF5CC2D70558"
+    },
+    {
+      "bytes": 304697,
+      "path": "dottalkpp/data/help/MINEALL/help_artifacts.dbf",
+      "sha256": "EFE4AE084E0689E60831918DB27BFBF300EF3CB8DC23C81F39080CFD99E633F4"
+    },
+    {
+      "bytes": 630784,
+      "path": "dottalkpp/data/help/MINEALL/help_artifacts.dbt",
+      "sha256": "3801F0BFB4F6A4E21EB29AEAD41F6C96F030C7EFEB023DA72CAC1F4643DE6ADA"
+    },
+    {
+      "bytes": 264926,
+      "path": "dottalkpp/data/help/V32_help/cmd_args.dbf",
+      "sha256": "0A06790D838D999FFB2F33766D9B60052D798F1E5866B6E881926BE3084D745B"
+    },
+    {
+      "bytes": 2208256,
+      "path": "dottalkpp/data/help/V32_help/cmd_args.dbt",
+      "sha256": "D9C1FA34959A22828E5B21AB4CDD4AE2A762187D8E43754E791453BAADE94169"
+    },
+    {
+      "bytes": 4096,
+      "path": "dottalkpp/data/help/V32_help/cmd_args.dtx",
+      "sha256": "06E393C255E0F0DFD027F43DE6BF672AB3626828CDF2BE44C15AB66433D271A5"
+    },
+    {
+      "bytes": 43025,
+      "path": "dottalkpp/data/help/V32_help/commands.dbf",
+      "sha256": "07760BA203E6DC9A7BD89469322C2451091E67DB7BADA75CEFCB4124E3D673F7"
+    },
+    {
+      "bytes": 434176,
+      "path": "dottalkpp/data/help/V32_help/commands.dbt",
+      "sha256": "4CBA1D65BFA9AC9329B8AFE55D1C75161583F2FEF088808B9393753603A93A8D"
+    },
+    {
+      "bytes": 4096,
+      "path": "dottalkpp/data/help/V32_help/commands.dtx",
+      "sha256": "06E393C255E0F0DFD027F43DE6BF672AB3626828CDF2BE44C15AB66433D271A5"
+    },
+    {
+      "bytes": 2935,
+      "path": "dottalkpp/data/help/V32_help/DATA_INDEX_README.txt",
+      "sha256": "6DBF9E0618D04276A0C35750A25E2B111B8F892DC35584A1B1434C3C55C2DEBC"
+    },
+    {
+      "bytes": 304697,
+      "path": "dottalkpp/data/help/V32_help/FULL/help_artifacts.dbf",
+      "sha256": "EFE4AE084E0689E60831918DB27BFBF300EF3CB8DC23C81F39080CFD99E633F4"
+    },
+    {
+      "bytes": 630784,
+      "path": "dottalkpp/data/help/V32_help/FULL/help_artifacts.dbt",
+      "sha256": "3801F0BFB4F6A4E21EB29AEAD41F6C96F030C7EFEB023DA72CAC1F4643DE6ADA"
+    },
+    {
+      "bytes": 1400432,
+      "path": "dottalkpp/data/help/V32_help/help_artifacts.dbf",
+      "sha256": "E9D64EB332B356A5AE502685CA1CB30F18DEEB77E63B7A15C1C79E7351A3D357"
+    },
+    {
+      "bytes": 3401216,
+      "path": "dottalkpp/data/help/V32_help/help_artifacts.dbt",
+      "sha256": "F5B513B3F540127185D9EA721D589FEEB439D68BBF339D6749ED628042504220"
+    },
+    {
+      "bytes": 4096,
+      "path": "dottalkpp/data/help/V32_help/help_artifacts.dtx",
+      "sha256": "06E393C255E0F0DFD027F43DE6BF672AB3626828CDF2BE44C15AB66433D271A5"
+    },
+    {
+      "bytes": 3912582,
+      "path": "dottalkpp/data/help/V32_help/help_line.dbf",
+      "sha256": "C0E64DFBDA37E35D1EA70962594603994BC74A10D2F95182F9C05B3B1EDC2876"
+    },
+    {
+      "bytes": 1027016,
+      "path": "dottalkpp/data/help/V32_help/help_section.dbf",
+      "sha256": "945EFA683376FEFC91140ECDEF3C505B557E6092AA653A82D8D1D446C2C2476A"
+    },
+    {
+      "bytes": 224574,
+      "path": "dottalkpp/data/help/V32_help/help_topic.dbf",
+      "sha256": "A448A073B411F942C4DCD2CBA98C8A735289607CF83652580A09EDB18FD19172"
+    },
+    {
+      "bytes": 304697,
+      "path": "dottalkpp/data/help/V32_help/MINEALL/help_artifacts.dbf",
+      "sha256": "EFE4AE084E0689E60831918DB27BFBF300EF3CB8DC23C81F39080CFD99E633F4"
+    },
+    {
+      "bytes": 630784,
+      "path": "dottalkpp/data/help/V32_help/MINEALL/help_artifacts.dbt",
+      "sha256": "3801F0BFB4F6A4E21EB29AEAD41F6C96F030C7EFEB023DA72CAC1F4643DE6ADA"
+    }
+  ],
+  "authorization_path": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260825-001/help_refresh_e2_v1/HELP_REFRESH_APPLY_AUTHORIZATION.json",
+  "authorization_sha256": "35C664C1A8CDFF69F8E831955DEB642D6B994084B2FC65E7642C283DB90EACD3",
+  "backup_dir": "D:\\code\\ccode\\dottalkpp\\data\\help.bak-20260826-guarded-e2-002",
+  "changed_file_count": 7,
+  "findings": [],
+  "observed_at_utc": "2026-08-26T12:05:45Z",
+  "plan_path": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260825-001/help_refresh_e2_v1/help_refresh_plan_v1.json",
+  "plan_sha256": "253FE9191A871A61D2B02009C4D67D4D12D25451A738BB6C69294C9426CDDCE2",
+  "protected_file_count": 39,
+  "publication_authority_claimed": 0,
+  "rollback_performed": 0,
+  "run_id": "DOCFLUSH-20260825-001-E2-001",
+  "runtime_exit": 0,
+  "schema": "dottalk.fullstack.guarded_help_refresh_execution.v1",
+  "semantic_help_store_check": "PASS",
+  "semantic_help_store_check_output": "{\n  \"against\": null,\n  \"store\": {\n    \"blank_key_by_source\": {},\n    \"blank_key_rows\": 0,\n    \"line_gen\": \"2026-08-26\",\n    \"line_rows\": 29480,\n    \"orphan_header_claimed_lines\": 0,\n    \"orphan_headers\": [],\n    \"orphan_lines\": [],\n    \"pending_and_authoritative\": 167,\n    \"store\": \"D:\\\\code\\\\ccode\\\\dottalkpp\\\\data\\\\help\",\n    \"topic_gen\": \"2026-08-26\",\n    \"topic_rows\": 670,\n    \"topics_reachable\": 670\n  }\n}\n",
+  "status": "APPLIED",
+  "transcript_path": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260825-001/help_refresh_e2_v1/HELP_REFRESH_E2_TRANSCRIPT_V2.txt",
+  "transcript_sha256": "27773B4CDDAEB0008D11D683512366B9A73F4D5A98FBA3F9DE12FDD31DA58B47"
+}

@@ -8,7 +8,8 @@ Steward: `member.ai.codex`
 
 Runs: `CODEX-20260826-001`, `CODEX-20260826-002`, `CODEX-20260826-003`,
 `CODEX-20260826-004`, `CODEX-20260826-005`, `CODEX-20260826-006`,
-`CODEX-20260826-007`, `CODEX-20260826-008`
+`CODEX-20260826-007`, `CODEX-20260826-008`, `CODEX-20260826-009`,
+`CODEX-20260826-010`
 
 ## Authorization
 
@@ -35,7 +36,9 @@ development closeout with publication.
 ## Out of scope
 
 - `appgui`, multi-workplaces, and `minidb`.
-- HELP, metadata, manual, DBF, CDX, or LMDB mutation.
+- HELP, metadata, manual, DBF, CDX, or LMDB mutation inside the Portal-feed
+  slice. Separately authorized AIF-068 packages may mutate their own protected
+  targets and this lane may reconcile the maintained pointer afterward.
 - Mutating active documentation-push state or canonical outputs. Report-only
   evidence packages may be retained under the owning run.
 - `C:\x64base`, GitHub `main`, website deployment, or public publication.
@@ -66,6 +69,7 @@ renumbered.
 | M12 | E5 semantic freshness gate | PASS -- report-only row-and-field comparison distinguishes current candidate from stale canonical harvest |
 | M13 | Canonical harvest promotion preflight | PASS -- exact seven-row replacement plan, eight verified no-ops, hash-bound ledger, backup and rollback contract, apply disabled |
 | M14 | Authorized canonical harvest apply | PASS -- seven hash-bound replacements, byte-preserved local backup, semantic E5 and manualgen readback, zero rollback findings |
+| M15 | Guarded E2 HELP refresh | PASS -- complete 39-file backup, legacy-then-current runtime rebuild, reflection PASS, semantic join clean, and failed-attempt rollback proven |
 
 ## Coordination finding
 
@@ -292,3 +296,38 @@ Good Neighbor note for the SelfDoc lane:
   `validate_metadata_system_registry.py --system-id META-025 --json`; the
   unscoped validator must still report the pre-existing hash-drift debt. Revert
   only this SelfDoc integration commit to remove the registration and scope.
+
+## Guarded E2 HELP refresh -- CODEX-20260826-010
+
+The E2 control bound the current runtime, complete 39-file HELP before-set,
+command script, plan, and apply implementation by SHA-256. Attempt 1 completed
+the runtime sequence but failed while normalizing a relative evidence path; the
+guard restored all 39 files, independently verified with zero hash mismatches.
+The path-only repair gained a regression test and was committed before retry.
+
+Attempt 2 passed: legacy wrote 462 command and 2,614 argument rows; current
+mining read 3,507 usage rows from 207 files; HELP holds 29,480 line rows and 670
+reachable topics; `CMDHELPCHK` reported no structural issues; and the direct
+HELP table join is clean. The topic-set comparison lost nothing and gained
+`DOT|FOX PALETTE COMMAND`, `DOT|HELP RESOLVER`, and `DOT|SAMPLE`. Seven files
+changed from the plan's before-set. The retained backup is
+`dottalkpp/data/help.bak-20260826-guarded-e2-002`.
+
+The integrated preflight now passes E2. Correct sequencing makes E5 open again:
+five canonical HELP harvest CSVs and their manifest counts predate this rebuild.
+The maintained pointer therefore advances from E2 to E5 rather than claiming
+the entry sequence complete.
+
+Good Neighbor note for the protected HELP lane:
+
+- **WHAT CHANGED:** rebuilt canonical HELP through the current runtime with a
+  complete backup, reflection proof, semantic join proof, and automatic
+  rollback evidence from the first failed attempt.
+- **WHOSE AREA:** AIF-068 full-stack documentation and canonical HELP state,
+  intersecting the AIF-132 current-run projection.
+- **AUTHORIZATION:** maintainer instruction to continue after E2 was reported as
+  the first open entry, bound to the exact plan, control, and 39-file set.
+- **VERIFY OR UNDO:** run `docpush_preflight.py` and `help_store_check.py`; use
+  the guarded rollback command against `HELP_REFRESH_E2_EXECUTION_V2.json` and
+  the retained `help.bak-20260826-guarded-e2-002` before later HELP changes, or
+  revert the exact E2 data/evidence commit after it lands.
