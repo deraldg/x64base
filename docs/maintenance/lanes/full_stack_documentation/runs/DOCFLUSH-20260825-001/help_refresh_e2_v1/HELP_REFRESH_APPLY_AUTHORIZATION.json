@@ -1,0 +1,20 @@
+{
+  "schema": "dottalk.fullstack.guarded_help_refresh_authorization.v1",
+  "run_id": "DOCFLUSH-20260825-001-E2-001",
+  "authorized": true,
+  "authorized_by": "member.derald",
+  "authorization_basis": "Maintainer instruction to continue after E2 was reported as the first open entry.",
+  "authorized_at_utc": "2026-08-26T11:56:30Z",
+  "plan_sha256": "253FE9191A871A61D2B02009C4D67D4D12D25451A738BB6C69294C9426CDDCE2",
+  "control_sha256": "C98E55708E0D7C417E3518C10FB23CE876914FFC0FA2A6B278FF43981743D96E",
+  "protected_file_count": 39,
+  "authorized_mutation": "Run the exact legacy-then-current HELP refresh and readback command script against dottalkpp/data/help with complete backup and automatic rollback.",
+  "excluded_mutations": [
+    "source changes",
+    "COMMENTS changes",
+    "manual publication",
+    "website changes",
+    "C:\\x64base changes",
+    "git push"
+  ]
+}
