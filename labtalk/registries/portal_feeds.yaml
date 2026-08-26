@@ -256,3 +256,53 @@ feeds:
         mode: links
     freshness:
       policy: validate_on_change
+
+  - feed_id: feed.portal.status_projection
+    subject_class: portal_status_projection
+    status: active
+    phase:
+      canonical: development_closeout
+      legacy_labels: [AIF-132 observation cycle]
+    source_authorities:
+      - path: labtalk/registries/current_fullstack_doc_push.yaml
+        role: current_run_pointer
+        retention: tracked
+      - path: labtalk/registries/portal_feeds.yaml
+        role: feed_registry
+        retention: tracked
+      - path: labtalk/registries/portal_assertions.yaml
+        role: structured_assertions
+        retention: tracked
+    producer:
+      kind: generator
+      path: labtalk/ai_portal/build_portal_feed_status.py
+      retention: tracked
+    outputs:
+      - path: labtalk/reports/portal/portal_feed_status_latest.json
+        role: machine_status
+        retention: tracked
+      - path: labtalk/reports/portal/portal_feed_status_latest.md
+        role: reader_status
+        retention: tracked
+    evidence:
+      state: source-evidenced
+      platform: windows-host
+      proofs:
+        - id: proof.aif132.initial_closeout
+          path: docs/maintenance/SESSION_CLOSEOUT_AI_PORTAL_FEED_HARDENING_2026-08-26.md
+          retention: tracked
+    sensitivity: internal
+    derived_from:
+      - feed.dottalk.help_store
+      - feed.dottalk.metadata_metacollect
+      - feed.dottalk.manual_accepted
+      - feed.portal.current_work
+      - feed.portal.audit_reports
+    consumers:
+      - id: consumer.local_ai_portal
+        path: labtalk/portal/README.md
+        retention: tracked
+        visibility: internal
+        mode: links
+    freshness:
+      policy: validate_on_change

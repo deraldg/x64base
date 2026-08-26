@@ -6,7 +6,7 @@ Owner: `member.derald`
 
 Steward: `member.ai.codex`
 
-Run: `CODEX-20260826-001`
+Runs: `CODEX-20260826-001`, `CODEX-20260826-002`
 
 ## Authorization
 
@@ -54,6 +54,10 @@ renumbered.
 | M3 | Fault-injection suite | PASS -- nine focused arms, including five named failure classes |
 | M4 | Recall pointer | PASS -- recall validation and 18 recall tests green |
 | M5 | Advisory integration | PASS -- scoped pre-push invocation, explicitly non-blocking |
+| M6 | Current-run pointer | PASS -- typed development-closeout/publication-ascent state |
+| M7 | Structured routing assertions | PASS -- six typed assertions with evidence anchors, measurement, and expiry |
+| M8 | Generated status projection | PASS -- deterministic JSON and Markdown from maintained registries |
+| M9 | Expanded advisory integration | PASS -- feed, assertion, and projection checks remain non-blocking |
 
 ## Coordination finding
 
@@ -86,3 +90,17 @@ was modified.
 
 The lane remains active only for the advisory observation cycle. Hard-gate
 promotion, publication, and DBF-backed cutover each require a later owner ruling.
+
+## Continuation evidence -- CODEX-20260826-002
+
+The second isolated slice replaced informal current-state wording with a typed
+current-run pointer and evidence-anchored assertions. Perishable assertions
+carry a measurement timestamp and expiry; invariant assertions still require a
+tracked evidence file and an anchor occurring exactly once. The validator uses
+typed YAML value or collection checks and rejects free-text phrase matching.
+
+The generated Portal feed status is a development-only projection. It combines
+the six-feed inventory, six structured assertions, and the current documentation
+push without claiming promotion, deployment, or public publication. The recall
+graph routes the full-stack trigger to these maintained surfaces. Claude's
+`appgui`, multi-workplaces, and `minidb` areas remain outside the slice.

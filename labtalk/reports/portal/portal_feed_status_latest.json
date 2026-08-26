@@ -1,0 +1,196 @@
+{
+  "schema": "dottalk.portal.status.v1",
+  "generated_at_utc": "2026-08-26T04:29:19Z",
+  "mode": "development_advisory",
+  "current_documentation_push": {
+    "run_id": "DOCFLUSH-20260825-001",
+    "lane": "full_stack_documentation",
+    "canonical_process": "development_closeout",
+    "legacy_label": "Gate 7",
+    "state": "closed_review_needed",
+    "publication_state": "not_entered",
+    "authority_path": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260825-001/GATE7_CLOSEOUT_V1.md",
+    "next_process": "publication_ascent",
+    "next_entry_state": "partial",
+    "first_open_entry": "E5",
+    "first_open_entry_summary": "canonical harvest remains older than the current candidate harvest"
+  },
+  "summary": {
+    "feeds": 6,
+    "feed_findings": 0,
+    "feed_artifact_observations": 53,
+    "assertions": 6,
+    "assertion_findings": 0,
+    "assertions_passing": 6,
+    "feed_statuses": {
+      "active": 4,
+      "degraded": 2
+    },
+    "evidence_states": {
+      "planned": 1,
+      "runtime-proven": 1,
+      "source-evidenced": 4
+    }
+  },
+  "feeds": [
+    {
+      "feed_id": "feed.dottalk.help_store",
+      "subject_class": "help_catalog",
+      "status": "active",
+      "phase": "development_closeout",
+      "evidence_state": "source-evidenced",
+      "sensitivity": "internal",
+      "outputs": 10,
+      "consumers": 2,
+      "findings": 0
+    },
+    {
+      "feed_id": "feed.dottalk.metadata_metacollect",
+      "subject_class": "metadata_catalog",
+      "status": "degraded",
+      "phase": "development_closeout",
+      "evidence_state": "runtime-proven",
+      "sensitivity": "internal",
+      "outputs": 2,
+      "consumers": 2,
+      "findings": 0
+    },
+    {
+      "feed_id": "feed.dottalk.manual_accepted",
+      "subject_class": "accepted_manual",
+      "status": "active",
+      "phase": "development_closeout",
+      "evidence_state": "source-evidenced",
+      "sensitivity": "internal",
+      "outputs": 2,
+      "consumers": 2,
+      "findings": 0
+    },
+    {
+      "feed_id": "feed.portal.current_work",
+      "subject_class": "current_work_projection",
+      "status": "degraded",
+      "phase": "publication_ascent",
+      "evidence_state": "planned",
+      "sensitivity": "public",
+      "outputs": 2,
+      "consumers": 1,
+      "findings": 0
+    },
+    {
+      "feed_id": "feed.portal.audit_reports",
+      "subject_class": "portal_audit_projection",
+      "status": "active",
+      "phase": "development_closeout",
+      "evidence_state": "source-evidenced",
+      "sensitivity": "internal",
+      "outputs": 2,
+      "consumers": 1,
+      "findings": 0
+    },
+    {
+      "feed_id": "feed.portal.status_projection",
+      "subject_class": "portal_status_projection",
+      "status": "active",
+      "phase": "development_closeout",
+      "evidence_state": "source-evidenced",
+      "sensitivity": "internal",
+      "outputs": 2,
+      "consumers": 1,
+      "findings": 0
+    }
+  ],
+  "assertions": [
+    {
+      "claim_id": "assertion.fullstack.current_run",
+      "subject": "full_stack_documentation",
+      "predicate": "current_run_id",
+      "validity": "perishable",
+      "expected": "DOCFLUSH-20260825-001",
+      "actual": "DOCFLUSH-20260825-001",
+      "passed": true,
+      "findings": 0
+    },
+    {
+      "claim_id": "assertion.fullstack.canonical_process",
+      "subject": "full_stack_documentation",
+      "predicate": "canonical_process",
+      "validity": "perishable",
+      "expected": "development_closeout",
+      "actual": "development_closeout",
+      "passed": true,
+      "findings": 0
+    },
+    {
+      "claim_id": "assertion.fullstack.publication_state",
+      "subject": "full_stack_documentation",
+      "predicate": "publication_state",
+      "validity": "perishable",
+      "expected": "not_entered",
+      "actual": "not_entered",
+      "passed": true,
+      "findings": 0
+    },
+    {
+      "claim_id": "assertion.portal.feed_schema",
+      "subject": "ai_portal",
+      "predicate": "feed_registry_schema",
+      "validity": "invariant",
+      "expected": "dottalk.portal.feed.v1",
+      "actual": "dottalk.portal.feed.v1",
+      "passed": true,
+      "findings": 0
+    },
+    {
+      "claim_id": "assertion.portal.fullstack_trigger",
+      "subject": "ai_portal",
+      "predicate": "recall_trigger_registered",
+      "validity": "invariant",
+      "expected": "trigger.fullstack_doc_push",
+      "actual": [
+        "trigger.onboard",
+        "trigger.change_source",
+        "trigger.write_dotscript",
+        "trigger.open_lane",
+        "trigger.commit_or_push",
+        "trigger.publish",
+        "trigger.close_out",
+        "trigger.plan_gates",
+        "trigger.use_devtools",
+        "trigger.understand_why",
+        "trigger.release_or_license",
+        "trigger.persistent_memory",
+        "trigger.where_is",
+        "trigger.read_write_dbf",
+        "trigger.use_reference_authority",
+        "trigger.capture_proof",
+        "trigger.edit_website",
+        "trigger.work_in_sandbox",
+        "trigger.fullstack_doc_push"
+      ],
+      "passed": true,
+      "findings": 0
+    },
+    {
+      "claim_id": "assertion.portal.status_feed_registered",
+      "subject": "ai_portal",
+      "predicate": "status_projection_registered",
+      "validity": "invariant",
+      "expected": "feed.portal.status_projection",
+      "actual": [
+        "feed.dottalk.help_store",
+        "feed.dottalk.metadata_metacollect",
+        "feed.dottalk.manual_accepted",
+        "feed.portal.current_work",
+        "feed.portal.audit_reports",
+        "feed.portal.status_projection"
+      ],
+      "passed": true,
+      "findings": 0
+    }
+  ],
+  "findings": {
+    "feeds": [],
+    "assertions": []
+  }
+}

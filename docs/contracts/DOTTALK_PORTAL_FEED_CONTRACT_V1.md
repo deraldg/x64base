@@ -37,6 +37,18 @@ The registry is `labtalk/registries/portal_feeds.yaml`. Its root `schema` value
 must be exactly `dottalk.portal.feed.v1`. Feed identifiers are durable and must
 not be recycled.
 
+Two companion registries keep perishable state and truth claims out of prose:
+
+- `labtalk/registries/current_fullstack_doc_push.yaml` is the maintained pointer
+  to the current documentation run and its publication boundary.
+- `labtalk/registries/portal_assertions.yaml` carries typed claims with explicit
+  validity, platform, evidence, expiry, and a structured check.
+
+The assertion validator evaluates YAML values and collections. It does not use
+phrase matching to decide whether prose is true. Evidence anchors must exist
+exactly once, preventing a missing heading from silently widening a check to a
+whole file.
+
 Every feed contains:
 
 - `feed_id` -- unique durable identifier.

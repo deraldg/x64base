@@ -1,0 +1,122 @@
+schema: dottalk.portal.assertions.v1
+registry:
+  lane: AIF-132
+  owner: member.derald
+  steward: member.ai.codex
+  status: active_advisory
+  validation_mode: structured_only
+
+assertions:
+  - claim_id: assertion.fullstack.current_run
+    subject: full_stack_documentation
+    predicate: current_run_id
+    expected: DOCFLUSH-20260825-001
+    status: active
+    validity: perishable
+    platform: repository
+    measured_at_utc: 2026-08-26T04:29:19Z
+    expires_at_utc: 2026-09-02T04:29:19Z
+    evidence:
+      - path: docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260825-001/GATE7_CLOSEOUT_V1.md
+        retention: tracked
+        anchor: "Run           : DOCFLUSH-20260825-001"
+    check:
+      kind: yaml_value
+      path: labtalk/registries/current_fullstack_doc_push.yaml
+      selector: current.run_id
+      operator: equals
+      expected: DOCFLUSH-20260825-001
+
+  - claim_id: assertion.fullstack.canonical_process
+    subject: full_stack_documentation
+    predicate: canonical_process
+    expected: development_closeout
+    status: active
+    validity: perishable
+    platform: repository
+    measured_at_utc: 2026-08-26T04:29:19Z
+    expires_at_utc: 2026-09-02T04:29:19Z
+    evidence:
+      - path: docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260825-001/GATE7_CLOSEOUT_V1.md
+        retention: tracked
+        anchor: "Status        : **CLOSED** (development tree). review-needed."
+    check:
+      kind: yaml_value
+      path: labtalk/registries/current_fullstack_doc_push.yaml
+      selector: current.canonical_process
+      operator: equals
+      expected: development_closeout
+
+  - claim_id: assertion.fullstack.publication_state
+    subject: full_stack_documentation
+    predicate: publication_state
+    expected: not_entered
+    status: active
+    validity: perishable
+    platform: repository
+    measured_at_utc: 2026-08-26T04:29:19Z
+    expires_at_utc: 2026-09-02T04:29:19Z
+    evidence:
+      - path: docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260825-001/GATE7_CLOSEOUT_V1.md
+        retention: tracked
+        anchor: "NOT claimed   : no public promotion, no push to `main`, no website publish."
+    check:
+      kind: yaml_value
+      path: labtalk/registries/current_fullstack_doc_push.yaml
+      selector: current.publication_state
+      operator: equals
+      expected: not_entered
+
+  - claim_id: assertion.portal.feed_schema
+    subject: ai_portal
+    predicate: feed_registry_schema
+    expected: dottalk.portal.feed.v1
+    status: active
+    validity: invariant
+    platform: repository
+    evidence:
+      - path: docs/contracts/DOTTALK_PORTAL_FEED_CONTRACT_V1.md
+        retention: tracked
+        anchor: "Schema: `dottalk.portal.feed.v1`"
+    check:
+      kind: yaml_value
+      path: labtalk/registries/portal_feeds.yaml
+      selector: schema
+      operator: equals
+      expected: dottalk.portal.feed.v1
+
+  - claim_id: assertion.portal.fullstack_trigger
+    subject: ai_portal
+    predicate: recall_trigger_registered
+    expected: trigger.fullstack_doc_push
+    status: active
+    validity: invariant
+    platform: repository
+    evidence:
+      - path: labtalk/registries/portal_recall_graph.yaml
+        retention: tracked
+        anchor: "- id: trigger.fullstack_doc_push"
+    check:
+      kind: yaml_collection_has
+      path: labtalk/registries/portal_recall_graph.yaml
+      selector: triggers
+      match_field: id
+      expected: trigger.fullstack_doc_push
+
+  - claim_id: assertion.portal.status_feed_registered
+    subject: ai_portal
+    predicate: status_projection_registered
+    expected: feed.portal.status_projection
+    status: active
+    validity: invariant
+    platform: repository
+    evidence:
+      - path: labtalk/registries/portal_feeds.yaml
+        retention: tracked
+        anchor: "feed_id: feed.portal.status_projection"
+    check:
+      kind: yaml_collection_has
+      path: labtalk/registries/portal_feeds.yaml
+      selector: feeds
+      match_field: feed_id
+      expected: feed.portal.status_projection

@@ -154,12 +154,24 @@ REPORT_SURFACE_PREFIXES = (
 # real observation cycle establish acceptable noise. Do not turn a finding into
 # a hard block here; promotion is an owner ruling recorded by the feed contract.
 PORTAL_FEED_GATE = "labtalk/ai_portal/validate_portal_feeds.py"
+PORTAL_ASSERTION_GATE = "labtalk/ai_portal/validate_portal_assertions.py"
+PORTAL_FEED_STATUS_GATE = "labtalk/ai_portal/build_portal_feed_status.py"
 PORTAL_FEED_SURFACE_PREFIXES = (
     "docs/contracts/DOTTALK_PORTAL_FEED_CONTRACT_V1.md",
     "docs/maintenance/AIF132_AI_PORTAL_FEED_HARDENING_LANE_V1.md",
+    "docs/maintenance/SESSION_CLOSEOUT_AI_PORTAL_FEED_HARDENING_2026-08-26.md",
+    "docs/maintenance/SESSION_CLOSEOUT_AI_PORTAL_STRUCTURED_ASSERTIONS_2026-08-26.md",
+    "labtalk/ai_portal/build_portal_feed_status.py",
+    "labtalk/ai_portal/validate_portal_assertions.py",
     "labtalk/ai_portal/validate_portal_feeds.py",
+    "labtalk/ai_portal/tests/test_build_portal_feed_status.py",
+    "labtalk/ai_portal/tests/test_validate_portal_assertions.py",
     "labtalk/ai_portal/tests/test_validate_portal_feeds.py",
+    "labtalk/registries/current_fullstack_doc_push.yaml",
+    "labtalk/registries/portal_assertions.yaml",
     "labtalk/registries/portal_feeds.yaml",
+    "labtalk/reports/portal/portal_feed_status_latest.json",
+    "labtalk/reports/portal/portal_feed_status_latest.md",
 )
 
 # --- Normalization guards (refcheck / normcheck) -- catalog-drift enforcement ----
@@ -521,10 +533,12 @@ def main() -> int:
         p.replace("\\", "/").startswith(PORTAL_FEED_SURFACE_PREFIXES) for p in paths)
     if touches_portal_feed_surface:
         print("\n=== Portal feed contract (AIF-132, advisory) ===")
-        rc = _run_portal_check(PORTAL_FEED_GATE, [])
-        if rc != 0:
+        feed_rc = _run_portal_check(PORTAL_FEED_GATE, [])
+        assertion_rc = _run_portal_check(PORTAL_ASSERTION_GATE, [])
+        status_rc = _run_portal_check(PORTAL_FEED_STATUS_GATE, ["--check"])
+        if any(rc != 0 for rc in (feed_rc, assertion_rc, status_rc)):
             print("\n  ADVISORY -- Portal feed validation reported drift or could not "
-                  "evaluate the registry. NOT blocking during the AIF-132 "
+                  "evaluate the registries/status projection. NOT blocking during the AIF-132 "
                   "observation cycle; review the findings above before hardening.")
 
     touches_surface = any(

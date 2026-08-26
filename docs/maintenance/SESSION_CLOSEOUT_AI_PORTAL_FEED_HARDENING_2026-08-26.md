@@ -2,7 +2,7 @@
 ai_report_audit:
   schema: ai-report-audit-v1
   report_id: AIPR-20260826-001
-  recorded_at_utc: 2026-08-26T08:30:00Z
+  recorded_at_utc: 2026-08-26T04:17:30Z
   agent:
     provider: OpenAI
     product: Codex

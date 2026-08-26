@@ -689,6 +689,30 @@ nodes:
     enforced_by: labtalk/ai_portal/validate_portal_feeds.py
     hard_fails: false
     tier: 2
+  - id: registry.portal_assertions
+    label: "typed, evidence-anchored Portal routing assertions; perishable claims carry measurement and expiry"
+    path: labtalk/registries/portal_assertions.yaml
+    anchor: ""
+    class: semantic
+    enforced_by: labtalk/ai_portal/validate_portal_assertions.py
+    hard_fails: false
+    tier: 2
+  - id: state.current_fullstack_doc_push
+    label: "maintained pointer to the current full-stack documentation run and its publication boundary"
+    path: labtalk/registries/current_fullstack_doc_push.yaml
+    anchor: ""
+    class: semantic
+    enforced_by: labtalk/ai_portal/validate_portal_assertions.py
+    hard_fails: false
+    tier: 2
+  - id: report.portal_feed_status
+    label: "generated reader and machine status for Portal feeds, assertions, and current documentation push"
+    path: labtalk/reports/portal/portal_feed_status_latest.md
+    anchor: ""
+    class: semantic
+    enforced_by: labtalk/ai_portal/build_portal_feed_status.py
+    hard_fails: false
+    tier: 2
   - id: procedure.fullstack_doc_push
     label: "the governed full-stack documentation push recipe -- content harvest, manual, development closeout, then separately authorized publication ascent"
     path: docs/maintenance/lanes/full_stack_documentation/FULL_STACK_DOC_PUSH_RECIPE_BOOK_V1.md
@@ -833,4 +857,9 @@ edges:
   - {from: trigger.fullstack_doc_push, to: procedure.fullstack_doc_push, type: fires_at}
   - {from: trigger.fullstack_doc_push, to: contract.portal_feeds, type: fires_at}
   - {from: trigger.fullstack_doc_push, to: registry.portal_feeds, type: fires_at}
+  - {from: trigger.fullstack_doc_push, to: state.current_fullstack_doc_push, type: fires_at}
+  - {from: trigger.fullstack_doc_push, to: report.portal_feed_status, type: fires_at}
   - {from: contract.portal_feeds, to: registry.portal_feeds, type: requires}
+  - {from: contract.portal_feeds, to: registry.portal_assertions, type: requires}
+  - {from: registry.portal_assertions, to: state.current_fullstack_doc_push, type: requires}
+  - {from: registry.portal_feeds, to: report.portal_feed_status, type: requires}
