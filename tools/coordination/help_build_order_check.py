@@ -40,8 +40,11 @@ built before what -- and every one of them produced output that looked correct:
               join.
 
 Every one is cheap to detect and expensive to miss. This runs in about a second,
-reads only file times and DBF headers, needs no engine and no build, and works
-in a sandbox that cannot compile.
+reads only file times and DBF headers, and needs no engine and no build.
+
+  The last clause used to read "and works in a sandbox that cannot compile".
+  Corrected 2026-08-26: THE SANDBOX COMPILES (AIF-130). The virtue here is that
+  this check is CHEAP and needs no build -- not that nothing else is possible.
 
   $py12 tools\\coordination\\help_build_order_check.py         -- direct
   $py12 tools\\fullstack_docs\\docpush_preflight.py           -- THE preflight

@@ -137,3 +137,62 @@ leaving the phase silently becomes a line of output instead of an absence.
                     The 53: supported topics, CATALOG != DOT, TOPIC not among
                       any DOT topic's TOPIC, over HELP_HELP_TOPIC.csv.
     Undo          : delete this document. It asserts nothing the tools do not.
+
+---
+
+# 6. The version guard measured -- added 2026-08-26 at the owner's prompt
+
+Section 1 treated `!= (3, 12)` as a real constraint that simply had to be routed
+around. The owner's note -- *"in the sandbox, codex has had success with python
+3.8 and 3.10"* -- is the better question: **is the guard true?**
+
+Measured, with the guard neutralised in a COPY under `/tmp` and nothing in the
+tree touched. One-line diff, `if False:` in place of the version test:
+
+    python3.10   selected 1 key(s)  DOT\|BUILD  3 own  PASS_CANDIDATE_ONLY
+    python3.11   selected 1 key(s)  DOT\|BUILD  3 own  PASS_CANDIDATE_ONLY
+    python3.12   selected 1 key(s)  DOT\|BUILD  3 own  PASS_CANDIDATE_ONLY
+    python3.13   selected 1 key(s)  DOT\|BUILD  3 own  PASS_CANDIDATE_ONLY
+
+Byte-identical on all four. 3.8 was not present to run.
+
+**The code contradicts its own guard.** All 35 files -- the generator,
+`manualgen_lib`, `tools/common` -- open with `from __future__ import
+annotations`, which is precisely the measure that makes `dict[str, dict[str,
+str]]` and `str | None` legal on older interpreters: they become strings and are
+never evaluated. Parsed with `ast.parse(..., feature_version=(3, 8))`, all 35
+files are clean. Somebody wrote this to be portable and then pinned it to one
+version.
+
+**The real floor is 3.9, not 3.12**, and the reason is stdlib, not syntax:
+
+    manualgen_lib/validation.py:58                   str.removesuffix   3.9+
+    manualgen_lib/gate4_acceptance.py:150            str.removeprefix   3.9+
+    manualgen_lib/publication_structure_candidate.py:61  str.removeprefix
+
+So the owner's recollection lands almost exactly: **3.10 works and is now
+proven; 3.8 is the one that would actually stop**, on three `removeprefix` /
+`removesuffix` calls rather than on anything about types.
+
+The guard is wrong in BOTH directions. `!=` refuses 3.13, which works, as
+readily as 3.10, which works. `manualgen.py` already models the honest form --
+its `PYTHON_312` check is a validation ROW that reports and lets the run
+continue, which is how Phase 6a got a full inventory and dry run out of a 3.10
+interpreter with one FAIL correctly recorded.
+
+**NOT CHANGED HERE.** A version guard is a contract; loosening it is a ruling,
+not a cleanup, and the one-line change belongs to whoever owns that promise:
+
+    if sys.version_info[:2] != (3, 12):   ->   if sys.version_info < (3, 9):
+
+**NOT CLAIMED:** that one dry-run invocation on one dataset proves the tool is
+3.9-safe on every path. It exercised selection, composition and the R127
+allow-list check; it did not exercise the write path, and a write path is where
+a version difference would most plausibly bite.
+
+**What the three ceilings share.** "It is a Windows exe" is a fact about a FILE.
+"Requires Python 3.12" is a fact about an INTERPRETER. "Not buildable in the
+mounted sandbox" was a fact about a sandbox that no longer existed. None is a
+fact about the QUESTION, and none is a reason to file an item blocked while a
+compiler or an interpreter is one command away. AIF-130's intake row now carries
+all three.

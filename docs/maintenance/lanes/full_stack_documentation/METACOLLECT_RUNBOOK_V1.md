@@ -20,7 +20,18 @@ metadata/help/runtime/source.
   (external-kind `standalone-tool`). Concept:
   `labtalk/ai_portal/EXTERNAL_CALL_CONTRACT_V1.md`.
 
-## Build (host; not buildable in the mounted sandbox)
+## Build
+
+**Correction, 2026-08-26.** This heading read "host; not buildable in the
+mounted sandbox". That is false and it is the AIF-130 shape: a routing document
+telling an arriving agent a sandbox cannot build, which stops the agent before
+it tries. AIF-130 corrected `AI_README.md` and did not sweep for siblings; this
+was one of two left standing. **metacollect builds in a sandbox in under forty
+seconds, and it was measured, not estimated** -- Cowork 2026-08-26, flush v6
+Phase 5, which had been filed OWNER-BLOCKED for exactly this reason until the
+block was tested.
+
+### Host (MSVC)
 
 ```powershell
 cmake -S . -B build -DDOTTALK_BUILD_METACOLLECT=ON   # only needed if the option is off
@@ -28,6 +39,39 @@ cmake --build build --target metacollect --config Release
 # -> D:\code\ccode\build\Release\metacollect.exe
 # (an isolated variant also exists: build\metacollect-docflush\Release\metacollect.exe)
 ```
+
+### Sandbox (g++, no CMake)
+
+`dt_meta` at `CMakeLists.txt:771` is FULLY ENUMERATED -- eleven translation
+units, two include directories, `cxx_std_17` -- so the target needs no CMake to
+reproduce. Measured: g++ 11.4, `-O0`, `-j4`, twelve objects and a link, **under
+forty seconds**, and the binary ran a full source scan in one call.
+
+```sh
+CXXFLAGS="-std=c++17 -O0 -w -I include -I src/cli/expr"
+# TU list, from CMakeLists.txt:771 -- keep it in step with that block:
+#   src/cli/expr/date/date_arith.cpp   src/cli/expr/date/date_utils.cpp
+#   src/cli/expr/fn_date.cpp           src/cli/expr/fn_numeric.cpp
+#   src/cli/expr/fn_string.cpp         src/cli/expr/function_catalog.cpp
+#   src/datadict/ddict_read_helpers.cpp  src/datadict/ddict_dbf_reader.cpp
+#   src/meta/metacollect.cpp
+#   src/common/path_resolver.cpp       src/common/path_state.cpp
+# plus the entrypoint:
+#   src/tools/metacollect_main.cpp
+```
+
+**Build OUTSIDE the tree** -- a sandbox build is a measurement, not a product.
+Nothing should land in `build/`, and no `CMakeCache.txt` should be written.
+
+The last two TUs are there for the reason `CMakeLists.txt:771` records at
+length: `resolve_in_slot()` and the `dottalk::paths` state it sits on are
+compiled into TWO link closures, and only the engine's carried them. If the link
+fails on an undefined symbol, read that comment before adding a stub -- a local
+stub compiles and then resolves paths differently from the engine, which is
+worse than a link error, because a link error stops.
+
+**A sandbox green is still not a green on the maintainer's toolchain. Name the
+platform every time.**
 
 ## Run -- candidate-only seed emit (Phase 5)
 
