@@ -1,0 +1,175 @@
+{
+  "schema": "dottalk.fullstack.manual_pointer_audit.v1",
+  "repo_root": "D:\\code\\ccode",
+  "summary": {
+    "pass": 17,
+    "review": 5,
+    "fail": 0
+  },
+  "active_reader": {
+    "pointer": "docs/manuals/developer/manualgen/accepted_artifacts/ACTIVE_PRIMARY_READER_ARTIFACT.txt",
+    "target": "docs/manuals/developer/manualgen/published/developer_manual_publication_v1/developer_manual_publication_v1.md",
+    "sha256": "08343C235D447C57EF4A270F2580339B4933401D16C1603A612785025DDDAC95",
+    "lines": 3980,
+    "headings": 225
+  },
+  "canonical_manifest": "docs/manuals/developer/manualgen/accepted_manifests/developer_manual_canonical_manifest_v1.json",
+  "legacy_named_assembly_manifest": "docs/manuals/developer/manualgen/manifests/manualgen_current_publication_manifest_v1.json",
+  "selected_assembly_manifest": "docs/manuals/developer/manualgen/manifests/manualgen_selected_assembly_manifest_v1.json",
+  "checks": [
+    {
+      "check_id": "ACTIVE_READER_POINTER_EXISTS",
+      "status": "PASS",
+      "declared": "file",
+      "observed": "True",
+      "note": "docs/manuals/developer/manualgen/accepted_artifacts/ACTIVE_PRIMARY_READER_ARTIFACT.txt"
+    },
+    {
+      "check_id": "PRIMARY_READER_RECORD_EXISTS",
+      "status": "PASS",
+      "declared": "file",
+      "observed": "True",
+      "note": "docs/manuals/developer/manualgen/accepted_artifacts/primary_reader_artifact_v1.json"
+    },
+    {
+      "check_id": "ACTIVE_MANIFEST_POINTER_EXISTS",
+      "status": "PASS",
+      "declared": "file",
+      "observed": "True",
+      "note": "docs/manuals/developer/manualgen/accepted_manifests/ACTIVE_MANUALGEN_MANIFEST.txt"
+    },
+    {
+      "check_id": "LEGACY_NAMED_ASSEMBLY_MANIFEST_EXISTS",
+      "status": "PASS",
+      "declared": "file",
+      "observed": "True",
+      "note": "docs/manuals/developer/manualgen/manifests/manualgen_current_publication_manifest_v1.json"
+    },
+    {
+      "check_id": "SELECTED_ASSEMBLY_MANIFEST_EXISTS",
+      "status": "PASS",
+      "declared": "file",
+      "observed": "True",
+      "note": "docs/manuals/developer/manualgen/manifests/manualgen_selected_assembly_manifest_v1.json"
+    },
+    {
+      "check_id": "ACTIVE_READER_TARGET_EXISTS",
+      "status": "PASS",
+      "declared": "docs/manuals/developer/manualgen/published/developer_manual_publication_v1/developer_manual_publication_v1.md",
+      "observed": "True",
+      "note": "Primary reader pointer target."
+    },
+    {
+      "check_id": "PRIMARY_READER_RECORD_TARGET_MATCH",
+      "status": "PASS",
+      "declared": "docs/manuals/developer/manualgen/published/developer_manual_publication_v1/developer_manual_publication_v1.md",
+      "observed": "docs/manuals/developer/manualgen/published/developer_manual_publication_v1/developer_manual_publication_v1.md",
+      "note": "Record target should agree with the active pointer."
+    },
+    {
+      "check_id": "PRIMARY_READER_RECORDED_HASH_CURRENT",
+      "status": "REVIEW",
+      "declared": "777E9DC3AB492F4902F3B5335231DD95664663916DDB5F96F5F0590A03E0A8CC",
+      "observed": "08343C235D447C57EF4A270F2580339B4933401D16C1603A612785025DDDAC95",
+      "note": "A mismatch means the pointer target changed after its evidence record was written."
+    },
+    {
+      "check_id": "PRIMARY_READER_RECORDED_LINES_CURRENT",
+      "status": "REVIEW",
+      "declared": "2900",
+      "observed": "3980",
+      "note": "Line-count evidence should describe the current pointer target."
+    },
+    {
+      "check_id": "PRIMARY_READER_RECORDED_HEADINGS_CURRENT",
+      "status": "REVIEW",
+      "declared": "212",
+      "observed": "225",
+      "note": "Heading-count evidence should describe the current pointer target."
+    },
+    {
+      "check_id": "ACTIVE_MANIFEST_TARGET_EXISTS",
+      "status": "PASS",
+      "declared": "docs/manuals/developer/manualgen/accepted_manifests/developer_manual_canonical_manifest_v1.json",
+      "observed": "True",
+      "note": "Accepted canonical manifest pointer target."
+    },
+    {
+      "check_id": "CANONICAL_REFERENCE_MATCHES_ACTIVE_READER",
+      "status": "PASS",
+      "declared": "docs/manuals/developer/manualgen/published/developer_manual_publication_v1/developer_manual_publication_v1.md",
+      "observed": "docs/manuals/developer/manualgen/published/developer_manual_publication_v1/developer_manual_publication_v1.md",
+      "note": "Canonical current reference and primary reader should be intentionally reconciled."
+    },
+    {
+      "check_id": "CANONICAL_REFERENCE_RECORDED_HASH_CURRENT",
+      "status": "REVIEW",
+      "declared": "777E9DC3AB492F4902F3B5335231DD95664663916DDB5F96F5F0590A03E0A8CC",
+      "observed": "08343C235D447C57EF4A270F2580339B4933401D16C1603A612785025DDDAC95",
+      "note": "A mismatch means canonical evidence describes an earlier revision."
+    },
+    {
+      "check_id": "SELECTED_ASSEMBLY_WORKSPACE_EXISTS",
+      "status": "PASS",
+      "declared": "docs\\manuals\\developer\\manualgen\\published\\developer_manual_publication_v1_media_section_v1",
+      "observed": "True",
+      "note": "Manifest-selected assembly workspace."
+    },
+    {
+      "check_id": "SELECTED_ASSEMBLY_COMBINED_EXISTS",
+      "status": "PASS",
+      "declared": "docs/manuals/developer/manualgen/published/developer_manual_publication_v1_media_section_v1/developer_manual_publication_v1_media_section_v1.md",
+      "observed": "True",
+      "note": "Expected combined Markdown for the selected assembly id."
+    },
+    {
+      "check_id": "SELECTED_ASSEMBLY_AUTHORITY_NOT_CLAIMED",
+      "status": "PASS",
+      "declared": "role=selected_assembly_reference;publication_authority_claimed=0",
+      "observed": "role=selected_assembly_reference;publication_authority_claimed=0",
+      "note": "Assembly selection must not silently claim reader or publication authority."
+    },
+    {
+      "check_id": "PRIMARY_READER_ROLE_INDEXED",
+      "status": "PASS",
+      "declared": "developer_manual_publication_v1/developer_manual_publication_v1.md",
+      "observed": "True",
+      "note": "Published-lane role index should name the active primary reader."
+    },
+    {
+      "check_id": "SELECTED_ASSEMBLY_ROLE_INDEXED",
+      "status": "PASS",
+      "declared": "developer_manual_publication_v1_media_section_v1/",
+      "observed": "SUPPORTING",
+      "note": "A selected supporting workspace is valid only when its non-authoritative role is explicit and indexed."
+    },
+    {
+      "check_id": "SELECTED_ASSEMBLY_ROLE_SEPARATE_FROM_ACTIVE_READER",
+      "status": "PASS",
+      "declared": "docs/manuals/developer/manualgen/published/developer_manual_publication_v1_media_section_v1/developer_manual_publication_v1_media_section_v1.md",
+      "observed": "docs/manuals/developer/manualgen/published/developer_manual_publication_v1/developer_manual_publication_v1.md",
+      "note": "Different assembly and reader targets are an intentional role split when authority is not claimed."
+    },
+    {
+      "check_id": "CONTROLLED_PUBLICATION_TARGET_EXISTS",
+      "status": "PASS",
+      "declared": "docs/manuals/developer/manualgen/published/developer_manual_publication_v1_media_section_v1_man_cli_reference_v1/developer_manual_publication_v1_media_section_v1.md",
+      "observed": "True",
+      "note": "MDO-350E controlled publication replacement target."
+    },
+    {
+      "check_id": "CONTROLLED_PUBLICATION_RECORDED_HASH_CURRENT",
+      "status": "PASS",
+      "declared": "45706442FAA280A2BAB06C0E2FB01FC18525676C2052532A81F24D3D9FD8E8B2",
+      "observed": "45706442FAA280A2BAB06C0E2FB01FC18525676C2052532A81F24D3D9FD8E8B2",
+      "note": "MDO-350E target remains byte-identical when this passes."
+    },
+    {
+      "check_id": "CONTROLLED_PUBLICATION_MATCHES_PRIMARY_READER",
+      "status": "REVIEW",
+      "declared": "docs/manuals/developer/manualgen/published/developer_manual_publication_v1_media_section_v1_man_cli_reference_v1/developer_manual_publication_v1_media_section_v1.md",
+      "observed": "docs/manuals/developer/manualgen/published/developer_manual_publication_v1/developer_manual_publication_v1.md",
+      "note": "MDO-350E and the active primary-reader pointer currently name different publication roles."
+    }
+  ]
+}

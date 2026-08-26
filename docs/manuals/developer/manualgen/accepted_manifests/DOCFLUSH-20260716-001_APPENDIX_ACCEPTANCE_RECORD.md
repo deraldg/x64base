@@ -1,0 +1,9 @@
+# DOCFLUSH-20260716-001 Appendix Acceptance Record
+
+Status: ACCEPTED_BY_AUTHORIZED_APPLY
+Source run: `MANRUN-20260718T031554Z-F1F59445`
+Partial HELP SHA-256: `3846066EBC426877A03BD52C83E6CE4AAB9BAB8D61397D89CE93451EF015D568`
+
+Applied plan: `MANRUN-20260718T031714Z-1A3F1333`  
+Authorization: `docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260716-001/manualgen_phase/post_help_refresh_20260717/publication_ascent_preflight_v1/CANONICAL_APPLY_AUTHORIZATION_2026-07-18.md`  
+Accepted UTC: `2026-07-18T03:25:28Z`

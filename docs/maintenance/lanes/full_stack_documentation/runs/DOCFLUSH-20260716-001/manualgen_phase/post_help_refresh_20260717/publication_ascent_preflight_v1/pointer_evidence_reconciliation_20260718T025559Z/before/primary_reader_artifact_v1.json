@@ -1,0 +1,25 @@
+{
+  "mdo": "MDO-297E",
+  "status": "PRIMARY_READER_ARTIFACT_POINTER_EXECUTION_GREEN_POINTER_UPDATED",
+  "pointer": "docs/manuals/developer/manualgen/accepted_artifacts/ACTIVE_PRIMARY_READER_ARTIFACT.txt",
+  "primary_reader_artifact": "docs/manuals/developer/manualgen/published/developer_manual_publication_v1/developer_manual_publication_v1.md",
+  "artifact_sha256": "777e9dc3ab492f4902f3b5335231dd95664663916ddb5f96f5f0590a03e0a8cc",
+  "first_heading": "DotTalk++ / x64base Developer Manual",
+  "artifact_lines": 2900,
+  "artifact_heading_count": 212,
+  "classification": "primary_reader_manual_artifact",
+  "overlay_reference_artifacts": [
+    "docs/manuals/developer/manualgen/published/developer_manual_publication_v1_python_rebuild_candidate_v1/reference_current_media_section_publication_combined.md"
+  ],
+  "policy": {
+    "active_publication_mutation": 0,
+    "manifest_promotion": 0,
+    "man_catalog_mutation": 0,
+    "manstar_expansion": 0,
+    "source_mutation": 0,
+    "help_cmdhelpchk_dotref_mutation": 0,
+    "runtime_execution": 0,
+    "build_execution": 0,
+    "man_catalog_path_finalization": "deferred"
+  }
+}

@@ -1,0 +1,1 @@
+docs/manuals/developer/manualgen/accepted_manifests/developer_manual_canonical_manifest_v1.json

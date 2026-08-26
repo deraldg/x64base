@@ -1,0 +1,17 @@
+{
+  "mdo": "MDO-239",
+  "status": "CONTROLLED_PYTHON_REBUILD_PROMOTION_CANDIDATE_CREATED",
+  "repo_root": "D:\\code\\ccode",
+  "candidate_workspace": "D:\\code\\ccode\\docs\\manuals\\developer\\manualgen\\published\\developer_manual_publication_v1_python_rebuild_candidate_v1",
+  "staged_markdown_source": "D:\\code\\ccode\\docs\\manuals\\developer\\manualgen\\generated\\manualgen_python_rebuild_staging_v1\\developer_manual_python_rebuild_staged.md",
+  "candidate_markdown": "D:\\code\\ccode\\docs\\manuals\\developer\\manualgen\\published\\developer_manual_publication_v1_python_rebuild_candidate_v1\\developer_manual_publication_v1_python_rebuild_candidate.md",
+  "current_reference_combined": "D:\\code\\ccode\\docs\\manuals\\developer\\manualgen\\published\\developer_manual_publication_v1\\developer_manual_publication_v1.md",
+  "candidate_sha256": "5C45339E6DF0406913092991E85A37FAD77A03B5C241E0C53EB5DB89543F923A",
+  "staged_sha256": "5C45339E6DF0406913092991E85A37FAD77A03B5C241E0C53EB5DB89543F923A",
+  "current_reference_sha256": "777E9DC3AB492F4902F3B5335231DD95664663916DDB5F96F5F0590A03E0A8CC",
+  "exact_hash_match": 0,
+  "active_publication_replaced": 0,
+  "publication_replacement_authorized": 0,
+  "protected_system_mutations": 0,
+  "created_utc": "2026-05-27T12:31:57.2227550Z"
+}

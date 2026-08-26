@@ -90,7 +90,12 @@ If you are running in a mounted Linux sandbox rather than on the Windows host:
   `git log` / `ls-files` / `check-ignore` / `cat-file`. Use these to inspect the
   tree; still hand every mutating git to the maintainer. `claim-aif` shells out to
   `git grep`, so it stays host-side too. **Measured 2026-08-26: `git add` from a
-  sandbox WORKS and `git commit` does not** -- the `pre-commit` hook runs
+  sandbox works but LEAVES A LOCK IT CANNOT UNLINK** -- the add succeeds, then
+  warns `unable to unlink .git/index.lock`, and the NEXT add fails with "another
+  git process seems to be running" until that zero-byte lock is moved aside. So
+  pass every path to ONE `git add`, or clear between adds; and an `add` whose
+  stderr you filtered is not an `add` you verified -- one returned exit 0 here
+  and staged nothing. **`git commit` does not work from a sandbox at all** -- the `pre-commit` hook runs
   `repository_role_guard.py` then `prepush_gate.py`, minutes of work that
   outlives a sandbox tool's per-call timeout, and a killed commit leaves exactly
   the zero-byte lock this bullet warns about (it happened twice that night).
