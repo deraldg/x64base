@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-08-26T03:10:24Z
+    generated_utc : 2026-08-26T04:17:49Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,9 +11,9 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : 3cc553524  (2026-08-25)
+    HEAD          : 87d89b34c  (2026-08-25)
     upstream      : a278b511e
-    unpushed      : 69 commit(s) ahead of upstream
+    unpushed      : 70 commit(s) ahead of upstream
 
 ## Declared target
 
@@ -22,18 +22,18 @@ cannot drift, because nothing here is written by hand.
 
 ## Newest closeout
 
-    file          : SESSION_CLOSEOUT_PROMOTION_TO_MAIN_AND_WORKBENCH_RENAME_2026-08-21.md
-    commits behind HEAD : 155
+    file          : SESSION_CLOSEOUT_AI_PORTAL_FEED_HARDENING_2026-08-26.md
+    commits behind HEAD : ?
 
 ## Staleness warnings
 
-- The newest closeout is 155 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
-- 69 commit(s) are unpushed and invisible to a clone.
+- 70 commit(s) are unpushed and invisible to a clone.
 
 ## Claimed lanes (newest first)
 
 | AIF | lane | steward | intake row |
 | --- | --- | --- | --- |
+| AIF-132 | AI Portal typed feed contract, advisory validator, and documentation-push crosswalk | member.ai.codex | yes |
 | AIF-131 | dotref documents BUILD VECTORS / BUILD INFO as supported; shell_dispatch keys on the first token so they can never be typed | member.ai.claude.cowork | yes |
 | AIF-130 | AI_README says a sandbox cannot build; measured false 2026-08-12, uncorrected for 13 days | member.ai.claude.cowork | yes |
 | AIF-129 | contract-subblock-vocabularies-uncontrolled | member.ai.claude.cowork | yes |
@@ -45,13 +45,13 @@ cannot drift, because nothing here is written by hand.
 | AIF-123 | set-deleted-visibility-sweep | member.ai.claude.cowork | yes |
 | AIF-122 | build-stamp-rebuild-cost | member.ai.claude.cowork | yes |
 | AIF-121 | use-argument-validation | member.ai.claude.cowork | yes |
-| AIF-120 | application-ui-dsl | member.ai.claude.cowork | yes |
-| ... | 51 older claims omitted | | |
+| ... | 52 older claims omitted | | |
 
 ## Sessions, lineage, asides
 
     live   : 2026-07-31_cowork_bbs_agency_legs  (member.ai.claude.cowork)  [stale, reapable]
     live   : AIPR-20260729-001  (member.ai.claude.cowork)  [stale, reapable]
+    live   : CODEX-20260826-001  (member.ai.codex)
     live   : COWORK-20260816-002  (member.ai.claude.cowork)  [stale, reapable]
     live   : COWORK-20260818-001  (member.ai.claude.cowork)  [stale, reapable]
     live   : COWORK-20260821-002  (member.ai.claude.cowork)  [stale, reapable]
@@ -62,6 +62,7 @@ parent + born_utc from the durable lineage ledger, '-' until a run wakes.
 
 | run | member | parent | born_utc | asides |
 | --- | --- | --- | --- | --- |
+| CODEX-20260826-001 | member.ai.codex | - | - | AIF-132 |
 | COWORK-20260825-001 | member.ai.claude.cowork | - | - | AIF-128 -> AIF-129 -> AIF-130 -> AIF-131 |
 | COWORK-20260824-001 | member.ai.claude.cowork | - | - | AIF-123 -> AIF-124 -> AIF-125 -> AIF-126 -> AIF-127 |
 | COWORK-20260822-001 | member.ai.claude.cowork | - | - | AIF-121 -> AIF-122 |
@@ -69,8 +70,7 @@ parent + born_utc from the durable lineage ledger, '-' until a run wakes.
 | COWORK-20260816-001 | member.ai.claude.cowork | - | - | AIF-118 |
 | COWORK-20260815-001 | member.derald | - | - | AIF-113 -> AIF-114 -> AIF-115 -> AIF-116 -> AIF-117 |
 | COWORK-20260814-001 | member.ai.claude.cowork | - | - | AIF-112 |
-| AIPR-20260812-002 | member.ai.claude.cowork | - | - | AIF-111 |
-| ... | | | | 35 older run(s) omitted |
+| ... | | | | 36 older run(s) omitted |
 
 Perishable detail lives in the artifacts these point at. Do not
 restate anything above; regenerate it.

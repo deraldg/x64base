@@ -110,6 +110,8 @@ triggers:
   # than another document nobody is pointed at.
   - id: trigger.work_in_sandbox
     label: about to build, install tooling, or run anything inside the mounted Linux sandbox
+  - id: trigger.fullstack_doc_push
+    label: about to run or harden the full-stack documentation push or a Portal data feed
 
 # ---------------------------------------------------------------- nodes
 nodes:
@@ -671,6 +673,30 @@ nodes:
     enforced_by: ""
     hard_fails: false
     tier: 2
+  - id: contract.portal_feeds
+    label: "Portal feed contract: route authority, lineage, evidence, freshness, and visibility -- do not copy the source databases into the Portal"
+    path: docs/contracts/DOTTALK_PORTAL_FEED_CONTRACT_V1.md
+    anchor: ""
+    class: procedural
+    enforced_by: labtalk/ai_portal/validate_portal_feeds.py
+    hard_fails: false
+    tier: 2
+  - id: registry.portal_feeds
+    label: "the current DotTalk++ -> Portal feed inventory and its development-closeout/publication-ascent boundary"
+    path: labtalk/registries/portal_feeds.yaml
+    anchor: ""
+    class: semantic
+    enforced_by: labtalk/ai_portal/validate_portal_feeds.py
+    hard_fails: false
+    tier: 2
+  - id: procedure.fullstack_doc_push
+    label: "the governed full-stack documentation push recipe -- content harvest, manual, development closeout, then separately authorized publication ascent"
+    path: docs/maintenance/lanes/full_stack_documentation/FULL_STACK_DOC_PUSH_RECIPE_BOOK_V1.md
+    anchor: ""
+    class: procedural
+    enforced_by: tools/fullstack_docs/docpush_preflight.py
+    hard_fails: false
+    tier: 2
 
 # ---------------------------------------------------------------- edges
 # Types:
@@ -802,3 +828,9 @@ edges:
   - {from: trigger.edit_website, to: lane.website_assembly, type: fires_at}
   - {from: trigger.edit_website, to: contract.website_publication, type: fires_at}
   - {from: lane.website_assembly, to: contract.website_publication, type: requires}
+
+  # AIF-132: typed seam between documentation authorities and Portal consumers.
+  - {from: trigger.fullstack_doc_push, to: procedure.fullstack_doc_push, type: fires_at}
+  - {from: trigger.fullstack_doc_push, to: contract.portal_feeds, type: fires_at}
+  - {from: trigger.fullstack_doc_push, to: registry.portal_feeds, type: fires_at}
+  - {from: contract.portal_feeds, to: registry.portal_feeds, type: requires}

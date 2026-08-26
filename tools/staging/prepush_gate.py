@@ -149,6 +149,19 @@ REPORT_SURFACE_PREFIXES = (
     "labtalk/registries/projects.yaml",
 )
 
+# --- Portal feed registry (AIF-132, advisory observation cycle) ---------------
+# The typed feed seam is intentionally advisory until its known-bad tests and a
+# real observation cycle establish acceptable noise. Do not turn a finding into
+# a hard block here; promotion is an owner ruling recorded by the feed contract.
+PORTAL_FEED_GATE = "labtalk/ai_portal/validate_portal_feeds.py"
+PORTAL_FEED_SURFACE_PREFIXES = (
+    "docs/contracts/DOTTALK_PORTAL_FEED_CONTRACT_V1.md",
+    "docs/maintenance/AIF132_AI_PORTAL_FEED_HARDENING_LANE_V1.md",
+    "labtalk/ai_portal/validate_portal_feeds.py",
+    "labtalk/ai_portal/tests/test_validate_portal_feeds.py",
+    "labtalk/registries/portal_feeds.yaml",
+)
+
 # --- Normalization guards (refcheck / normcheck) -- catalog-drift enforcement ----
 # The command/function surface is described in several places (registry, SYSCMD,
 # SYSFUNC, the *ref help catalogs, command_catalog) authored by different hands at
@@ -503,6 +516,16 @@ def main() -> int:
                   "envelope(s) or renumber the id; intake-package findings are advisory and "
                   "never block.", file=sys.stderr)
             exit_code = 2  # hard block
+
+    touches_portal_feed_surface = any(
+        p.replace("\\", "/").startswith(PORTAL_FEED_SURFACE_PREFIXES) for p in paths)
+    if touches_portal_feed_surface:
+        print("\n=== Portal feed contract (AIF-132, advisory) ===")
+        rc = _run_portal_check(PORTAL_FEED_GATE, [])
+        if rc != 0:
+            print("\n  ADVISORY -- Portal feed validation reported drift or could not "
+                  "evaluate the registry. NOT blocking during the AIF-132 "
+                  "observation cycle; review the findings above before hardening.")
 
     touches_surface = any(
         p.replace("\\", "/").startswith(NORM_RELEVANT_PREFIXES) for p in paths)

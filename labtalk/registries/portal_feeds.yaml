@@ -1,0 +1,258 @@
+schema: dottalk.portal.feed.v1
+registry:
+  lane: AIF-132
+  owner: member.derald
+  steward: member.ai.codex
+  status: active_advisory
+  contract: docs/contracts/DOTTALK_PORTAL_FEED_CONTRACT_V1.md
+  validation_mode: report_only
+
+feeds:
+  - feed_id: feed.dottalk.help_store
+    subject_class: help_catalog
+    status: active
+    phase:
+      canonical: development_closeout
+      legacy_labels: [full-stack Gate 7]
+    source_authorities:
+      - path: src
+        role: usage_contract_sources
+        retention: tracked
+      - path: dottalkpp/data/schemas/help/help_locale_companions.dtschema
+        role: locale_schema
+        retention: transient
+        sha256: 2478ca5d59143ca8fa15364c1f2f99176a90d9707448ec4b47639a393e01b8ad
+    producer:
+      kind: governed_pipeline
+      path: docs/maintenance/lanes/full_stack_documentation/FULL_STACK_DOC_PUSH_RECIPE_BOOK_V1.md
+      retention: tracked
+    outputs:
+      - path: dottalkpp/data/help/COMMANDS.dbf
+        role: command_topics
+        retention: tracked
+      - path: dottalkpp/data/help/CMD_ARGS.dbf
+        role: command_arguments
+        retention: tracked
+      - path: dottalkpp/data/help/HELP_TOPIC.dbf
+        role: normalized_topics
+        retention: tracked
+      - path: dottalkpp/data/help/HELP_SECTION.dbf
+        role: normalized_sections
+        retention: tracked
+      - path: dottalkpp/data/help/HELP_LINE.dbf
+        role: normalized_lines
+        retention: tracked
+      - path: dottalkpp/data/help/HELP_ARTIFACTS.dbf
+        role: provenance_artifacts
+        retention: tracked
+      - path: dottalkpp/data/help/HELP_TOPIC_LOCALE.dbf
+        role: locale_topics
+        retention: tracked
+      - path: dottalkpp/data/help/HELP_SECTION_LOCALE.dbf
+        role: locale_sections
+        retention: tracked
+      - path: dottalkpp/data/help/HELP_LINE_LOCALE.dbf
+        role: locale_lines
+        retention: tracked
+      - path: dottalkpp/data/help/HELP_ARTIFACT_LOCALE.dbf
+        role: locale_artifacts
+        retention: tracked
+    evidence:
+      state: source-evidenced
+      platform: windows-host
+      proofs:
+        - id: proof.docflush.20260825.gate7
+          path: docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260825-001/GATE7_CLOSEOUT_V1.md
+          retention: tracked
+    sensitivity: internal
+    derived_from: []
+    consumers:
+      - id: consumer.manualgen
+        path: tools/manualgen/manualgen.py
+        retention: tracked
+        visibility: internal
+        mode: reads
+      - id: consumer.portal.feed_validator
+        path: labtalk/ai_portal/validate_portal_feeds.py
+        retention: tracked
+        visibility: internal
+        mode: observes
+    freshness:
+      policy: validate_on_change
+
+  - feed_id: feed.dottalk.metadata_metacollect
+    subject_class: metadata_catalog
+    status: degraded
+    phase:
+      canonical: development_closeout
+      legacy_labels: [full-stack Gate 5]
+    source_authorities:
+      - path: src/meta/metacollect.cpp
+        role: collector_implementation
+        retention: tracked
+      - path: dottalkpp/data/metadata/SYSCMD.dbf
+        role: command_metadata
+        retention: tracked
+      - path: dottalkpp/data/metadata/SYSFUNC.dbf
+        role: function_metadata
+        retention: tracked
+    producer:
+      kind: runtime_tool
+      path: src/tools/metacollect_main.cpp
+      retention: tracked
+    outputs:
+      - path: docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260825-001/metacollect_phase/metacollect_facts_v1.csv
+        role: source_fact_candidate
+        retention: transient
+        sha256: f8fbef8a636358ca55cce1b479bddcccf1f738a5cda0a4b79f5fd59463df636e
+      - path: docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260825-001/metacollect_phase/metacollect_compare_v1.csv
+        role: metadata_comparison
+        retention: transient
+        sha256: 3490c6794f68fe672fdebdafc54ac35586f4aaa368acc981e23f363749c1d193
+    evidence:
+      state: runtime-proven
+      platform: mounted-linux-sandbox
+      proofs:
+        - id: proof.docflush.20260825.gate5_binding
+          path: docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260825-001/metacollect_phase/GATE5_BINDING_V1.md
+          retention: tracked
+    sensitivity: internal
+    derived_from: []
+    consumers:
+      - id: consumer.fullstack_docs.compare
+        path: tools/fullstack_docs/compare_help_meta_harvest.py
+        retention: tracked
+        visibility: internal
+        mode: reads
+      - id: consumer.portal.feed_validator
+        path: labtalk/ai_portal/validate_portal_feeds.py
+        retention: tracked
+        visibility: internal
+        mode: observes
+    freshness:
+      policy: run_scoped
+
+  - feed_id: feed.dottalk.manual_accepted
+    subject_class: accepted_manual
+    status: active
+    phase:
+      canonical: development_closeout
+      legacy_labels: [full-stack Gate 6]
+    source_authorities:
+      - path: docs/manuals/developer/manualgen/accepted_manifests/ACTIVE_MANUALGEN_MANIFEST.txt
+        role: active_manifest_pointer
+        retention: tracked
+      - path: docs/manuals/developer/manualgen/accepted_artifacts/ACTIVE_PRIMARY_READER_ARTIFACT.txt
+        role: active_reader_pointer
+        retention: tracked
+    producer:
+      kind: governed_pipeline
+      path: tools/manualgen/manualgen.py
+      retention: tracked
+    outputs:
+      - path: docs/manuals/developer/manualgen/accepted_manifests/developer_manual_canonical_manifest_v1.json
+        role: canonical_manifest
+        retention: tracked
+      - path: docs/manuals/developer/manualgen/published/developer_manual_publication_v1/developer_manual_publication_v1.md
+        role: development_reader_artifact
+        retention: tracked
+    evidence:
+      state: source-evidenced
+      platform: windows-host
+      proofs:
+        - id: proof.docflush.20260825.gate6
+          path: docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260825-001/manualgen_phase/GATE6_ACCEPTANCE_V1.md
+          retention: tracked
+    sensitivity: internal
+    derived_from: [feed.dottalk.help_store]
+    consumers:
+      - id: consumer.publication_ascent
+        path: docs/maintenance/lanes/full_stack_documentation/FULL_STACK_DOCUMENTATION_PHASE8_PUBLICATION_ASCENT_PLAN_V1.md
+        retention: transient
+        visibility: internal
+        mode: links
+      - id: consumer.portal.feed_validator
+        path: labtalk/ai_portal/validate_portal_feeds.py
+        retention: tracked
+        visibility: internal
+        mode: observes
+    freshness:
+      policy: validate_on_change
+
+  - feed_id: feed.portal.current_work
+    subject_class: current_work_projection
+    status: degraded
+    phase:
+      canonical: publication_ascent
+      legacy_labels: [website feed step]
+    source_authorities:
+      - path: labtalk/registries/projects.yaml
+        role: project_registry
+        retention: tracked
+      - path: labtalk/registries/ai_portal_tasks.yaml
+        role: task_registry
+        retention: tracked
+    producer:
+      kind: generator
+      path: tools/fullstack_docs/build_current_work_feed.py
+      retention: tracked
+    outputs:
+      - uri: file:///D:/dev/x64base-site/public/artifacts/current-work-v1.json
+        role: website_json_projection
+        retention: external
+      - uri: file:///D:/dev/x64base-site/content/docs/labtalk/current-work.mdx
+        role: website_reader_projection
+        retention: external
+    evidence:
+      state: planned
+      platform: windows-host
+      proofs: []
+    sensitivity: public
+    derived_from: [feed.dottalk.help_store, feed.dottalk.manual_accepted]
+    consumers:
+      - id: consumer.x64base.website
+        uri: https://x64base.com/docs/labtalk/current-work
+        retention: external
+        visibility: public
+        mode: projects
+    freshness:
+      policy: manual_review
+
+  - feed_id: feed.portal.audit_reports
+    subject_class: portal_audit_projection
+    status: active
+    phase:
+      canonical: development_closeout
+      legacy_labels: [Portal report refresh]
+    source_authorities:
+      - path: labtalk/registries/portal.yaml
+        role: portal_registry
+        retention: tracked
+      - path: labtalk/registries/ai_portal_tasks.yaml
+        role: task_registry
+        retention: tracked
+    producer:
+      kind: generator
+      path: tools/reports/build_reports.py
+      retention: tracked
+    outputs:
+      - path: labtalk/reports/portal/portal_truth_audit_latest.json
+        role: truth_audit_machine_report
+        retention: tracked
+      - path: docs/reports/AI_PORTAL_REPORT.html
+        role: portal_reader_report
+        retention: tracked
+    evidence:
+      state: source-evidenced
+      platform: windows-host
+      proofs: []
+    sensitivity: internal
+    derived_from: [feed.portal.current_work]
+    consumers:
+      - id: consumer.local_ai_portal
+        path: labtalk/portal/README.md
+        retention: tracked
+        visibility: internal
+        mode: links
+    freshness:
+      policy: validate_on_change
