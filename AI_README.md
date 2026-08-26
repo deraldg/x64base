@@ -462,6 +462,24 @@ sandbox, full build, `REGRESSION RUN WORKSPACE_WRITEBACK` green twice) and again
 repository has said so all along: `.github/workflows/ci.yml` builds and `ctest`s
 the tree on `ubuntu-latest` on every push to `main`.
 
+**And not only dottalkpp -- the whole doc stack**, measured 2026-08-26 during
+flush v6:
+
+    metacollect      UNDER 40 SECONDS, g++ -O0 -j4, NO cmake -- `dt_meta` at
+                     CMakeLists.txt:771 enumerates every translation unit
+    store rebuild    CMDHELP BUILD LEGACY + BUILD . <src>, 2.9 seconds
+    python tooling   manualgen, the harvest exporter and the R127 page
+                     generator all ran; a sandbox may carry SEVERAL
+                     interpreters (3.10/3.11/3.12/3.13 side by side), so a
+                     tool pinned to one version is usually a routing problem
+                     rather than a wall
+
+Two items were filed OWNER-BLOCKED on "it is a Windows exe" and "it requires
+Python 3.12" before either was tested. Both are facts about a file and an
+interpreter; neither is a fact about the question. What this changes about the
+doc push:
+`docs/maintenance/lanes/full_stack_documentation/AI_PUSH_AUTOMATION_WHAT_THE_SANDBOX_CHANGES_V1.md`.
+
 The recipe, its traps, and the differences between the two sandbox shapes are in
 **`docs/agents/HANDOFF_CLAUDE_COWORK_SANDBOX_BUILD_2026-08-12.md`**. Read it
 before you start; three agents have now re-derived it independently because this

@@ -632,6 +632,14 @@ nodes:
     enforced_by: ""
     hard_fails: false
     tier: 2
+  - id: doctrine.sandbox_changes_the_push
+    label: "what the sandbox changes: build times measured per program, a gate can be a REHEARSAL not a clock, and three items filed blocked that were not"
+    path: docs/maintenance/lanes/full_stack_documentation/AI_PUSH_AUTOMATION_WHAT_THE_SANDBOX_CHANGES_V1.md
+    anchor: ""
+    class: procedural
+    enforced_by: tools/coordination/program_freshness_check.py
+    hard_fails: false
+    tier: 2
   - id: doctrine.sandbox_is_not_the_host
     label: "a sandbox is not the WSL host -- measure your own toolchain, never cite a doc for versions"
     path: AI_README.md
@@ -640,10 +648,17 @@ nodes:
     enforced_by: ""
     hard_fails: false
     tier: 1
+  # Label and anchor corrected 2026-08-26 (AIF-130 sweep). The label used to end
+  # "assume you cannot build, and VERIFY rather than trust that line" and the
+  # anchor named a heading that asserted the same. THIS NODE IS THE FIRST THING
+  # trigger.work_in_sandbox RETURNS, so the trigger added to route agents AWAY
+  # from the false ceiling was leading with it. The anchor also had to move
+  # because the heading changed -- a label is a claim and an anchor is a
+  # coupling, and both go stale when the target is corrected elsewhere.
   - id: doctrine.sandbox_git_and_build
-    label: "in a sandbox: NO mutating git and no plain `git status` (index.lock); assume you cannot build, and VERIFY rather than trust that line"
+    label: "in a sandbox: NO mutating git and no plain `git status` (index.lock) -- but you CAN build and run; stage here, commit from the host"
     path: CLAUDE.md
-    anchor: "## Sandbox agents: NO git, and you cannot build"
+    anchor: "## Sandbox agents: NO mutating git -- but you CAN build and run"
     class: procedural
     enforced_by: tools/staging/check_sandbox_git_guard.py
     hard_fails: false
@@ -781,6 +796,7 @@ edges:
   - {from: trigger.work_in_sandbox, to: doctrine.sandbox_git_and_build, type: fires_at}
   - {from: trigger.work_in_sandbox, to: handoff.sandbox_build, type: fires_at}
   - {from: trigger.work_in_sandbox, to: doctrine.sandbox_is_not_the_host, type: fires_at}
+  - {from: trigger.work_in_sandbox, to: doctrine.sandbox_changes_the_push, type: fires_at}
   - {from: handoff.sandbox_build, to: doctrine.sandbox_is_not_the_host, type: requires}
 
   - {from: trigger.edit_website, to: lane.website_assembly, type: fires_at}

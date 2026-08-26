@@ -76,7 +76,7 @@ WSL builds also exist (`build-wsl`, etc.); `.exe` cross-platform via guarded cod
   (not installed) and NOT the vcpkg python (minimal, no PyYAML -> `ModuleNotFoundError: yaml`).
   Recipes + the vcpkg-vs-venv rationale: the full-stack flush cookbook interpreters note.
 
-## Sandbox agents: NO git, and you cannot build (AIF-082, 2026-07-31)
+## Sandbox agents: NO mutating git -- but you CAN build and run (AIF-082 2026-07-31, corrected AIF-130 2026-08-26)
 
 If you are running in a mounted Linux sandbox rather than on the Windows host:
 
@@ -89,16 +89,48 @@ If you are running in a mounted Linux sandbox rather than on the Windows host:
   (equivalently `GIT_OPTIONAL_LOCKS=0`) for status, and the read-only plumbing
   `git log` / `ls-files` / `check-ignore` / `cat-file`. Use these to inspect the
   tree; still hand every mutating git to the maintainer. `claim-aif` shells out to
-  `git grep`, so it stays host-side too.
-- **Assume you cannot build or run the engine, and verify rather than trust this
-  line.** The sandbox has historically lagged the WSL host on glibc/GLIBCXX and
-  carried no cmake, ninja, or lmdb/sqlite3/nlohmann/sodium headers, so the staged
-  `dottalkpp/bin-wsl-lean/dottalkpp` will not execute and the ceiling is
-  `g++ -fsyntax-only` on single translation units. **Exact versions are
-  deliberately not recorded here** -- they are perishable, and you can measure
-  yours in one command (`ldd --version`, `command -v cmake ninja`). Measure, do
-  not cite this file. Builds and runs are maintainer-operated handoffs either
-  way. Host-vs-sandbox detail: `AI_README.md`, "A sandbox is not the WSL host".
+  `git grep`, so it stays host-side too. **Measured 2026-08-26: `git add` from a
+  sandbox WORKS and `git commit` does not** -- the `pre-commit` hook runs
+  `repository_role_guard.py` then `prepush_gate.py`, minutes of work that
+  outlives a sandbox tool's per-call timeout, and a killed commit leaves exactly
+  the zero-byte lock this bullet warns about (it happened twice that night).
+  **So: stage from here, commit from the host.** A sandbox cannot delete either,
+  so an orphaned lock must be `mv`d aside, not removed.
+- **YOU CAN BUILD AND RUN. Do not file work as blocked without trying it.**
+  This bullet used to read "assume you cannot build or run the engine" and drew
+  a `g++ -fsyntax-only` ceiling from a 2026-07-31 toolchain table. That was
+  measured false on 2026-08-12 and corrected in `AI_README.md` on 2026-08-25 --
+  and NOT here, which is where a Claude session actually starts. Four agents
+  re-derived it. **Measured, on the whole stack, not just the engine:**
+
+      dottalkpp        full build, ~9 min; REGRESSION RUN WORKSPACE_WRITEBACK
+                       green twice (2026-08-12 mounted sandbox; 2026-08-25
+                       cloud container)
+      metacollect      UNDER 40 SECONDS, g++ -O0 -j4, no cmake needed --
+                       `dt_meta` at CMakeLists.txt:771 enumerates every TU
+      store rebuild    CMDHELP BUILD LEGACY + BUILD . <src>, 2.9 seconds
+      python tooling   manualgen, the harvest exporter and the page generator
+                       all run; a sandbox may carry SEVERAL interpreters
+                       (3.10/3.11/3.12/3.13 seen side by side), so a tool
+                       pinned to one version is usually a routing problem,
+                       not a wall
+
+  **Measure your own; never cite this file for versions** -- `ldd --version`,
+  `command -v cmake ninja g++`, `ls /usr/bin/python3.*`. Absent by default is
+  not prevented: pip, apt, or a preinstalled image each fix it.
+
+  **What is still true:** the staged `dottalkpp/bin-wsl-lean/dottalkpp` is built
+  against the host's newer glibc/GLIBCXX and will not execute here. That is a
+  property of THAT BINARY, not a ceiling on the sandbox, and conflating the two
+  is what produced the false rule.
+
+  **A sandbox green is not a green on the maintainer's toolchain.** Name the
+  platform every time. The sandbox's job is to PREDICT and to REFUTE; it is
+  never the authority. Recipe and traps:
+  `docs/agents/HANDOFF_CLAUDE_COWORK_SANDBOX_BUILD_2026-08-12.md`. Host-vs-
+  sandbox detail: `AI_README.md`, "A sandbox is not the WSL host". What this
+  changes about the doc push:
+  `docs/maintenance/lanes/full_stack_documentation/AI_PUSH_AUTOMATION_WHAT_THE_SANDBOX_CHANGES_V1.md`.
 - **`repository_role_guard.py` will refuse a root it does not recognise.** In
   the sandbox that is correct and expected -- the mount path is unrelated to
   either declared root (`AI_PORTAL.md`, "Sandbox / non-host agents"). Verify the

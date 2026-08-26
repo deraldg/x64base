@@ -106,6 +106,7 @@ owns it.
 | What the last session did | newest `docs/maintenance/SESSION_CLOSEOUT_*.md` | may lag HEAD by commits |
 | Who is working now | `session_coordinator.py status` | **stale entries common** |
 | Build and run | `AI_README.md`, Runtime Start Points / WSL | maintained |
+| Build and run **in a sandbox** | you CAN -- `CLAUDE.md`, Sandbox agents; `recall.py work_in_sandbox` | corrected 2026-08-26 |
 | Your environment's versions | **measure** (`ldd --version`, `command -v cmake`) | never cite a doc |
 | Source layout | `AI_README.md`, Source Locations | maintained |
 
