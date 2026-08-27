@@ -1,0 +1,29 @@
+&& L0 -- does SETPATH WORKSPACES redirect the workspace catalog?
+&& AIF-078 lifecycle lane. Read-only against production: it opens the
+&& production catalog to COUNT it and never writes to it.
+&& Every path is absolute and spelled in full, on purpose.
+
+ECHO === production catalog, BEFORE ===
+USE D:\code\ccode\dottalkpp\data\workspaces\WORKSPACES.dbf
+COUNT
+
+ECHO === redirect to scratch, then mint one workspace ===
+SETPATH WORKSPACES D:\code\ccode\dottalkpp\data\tmp\wscat_l0
+WORKSPACE NEW L0PROBE
+
+ECHO === scratch catalog -- expect 1 ===
+USE D:\code\ccode\dottalkpp\data\tmp\wscat_l0\WORKSPACES.dbf
+COUNT
+
+ECHO === restore, then production AFTER -- must equal BEFORE ===
+SETPATH WORKSPACES D:\code\ccode\dottalkpp\data\workspaces
+USE D:\code\ccode\dottalkpp\data\workspaces\WORKSPACES.dbf
+COUNT
+
+ECHO === THE FORK: does a SHIPPED posture resolve under a redirect? ===
+SETPATH WORKSPACES D:\code\ccode\dottalkpp\data\tmp\wscat_l0
+WORKSPACE LOAD cascade_all
+
+ECHO === restore and confirm the slot really came back ===
+SETPATH WORKSPACES D:\code\ccode\dottalkpp\data\workspaces
+SETPATH
