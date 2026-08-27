@@ -1167,7 +1167,7 @@ static int area_holding_dbf(const fs::path& want_in) {
     return -1;
 }
 
-static std::vector<OpenResult> schema_open_directory(const fs::path& dir, IndexMode mode, bool fallback) {
+static std::vector<OpenResult> workspace_open_directory(const fs::path& dir, IndexMode mode, bool fallback) {
     std::vector<OpenResult> results;
 
     if (!fs::exists(dir) || !fs::is_directory(dir)) {
@@ -1193,7 +1193,7 @@ static std::vector<OpenResult> schema_open_directory(const fs::path& dir, IndexM
     // R128 (owner, 2026-08-26: "open should be additive"). THIS LOOP USED TO
     // ASSUME IT OWNED THE AREA SPACE. It walked area0 = 0,1,2..N-1 and CLOSED
     // whatever sat in each slot, which was safe only because the caller ran
-    // schema_close_all() first. Take that close away to make OPEN additive and
+    // workspace_close_all() first. Take that close away to make OPEN additive and
     // this loop stops being additive-neutral and becomes actively destructive:
     // it would stomp the low slots, which is exactly where another workspace's
     // areas live. So the fix is not "remove the close" -- it is "stop assuming"
@@ -1272,12 +1272,12 @@ static std::vector<OpenResult> schema_open_directory(const fs::path& dir, IndexM
     return results;
 }
 
-static std::vector<OpenResult> schema_open_directory_recursive(const fs::path& dir, IndexMode mode, bool fallback) {
+static std::vector<OpenResult> workspace_open_directory_recursive(const fs::path& dir, IndexMode mode, bool fallback) {
     std::cout << "WORKSPACE OPEN: 'recursive' requested -- stubbed; falling back to flat scan.\n";
-    return schema_open_directory(dir, mode, fallback);
+    return workspace_open_directory(dir, mode, fallback);
 }
 
-static OpenResult schema_open_single_into_current(xbase::DbArea& current, const fs::path& dbfPath, IndexMode mode, bool fallback) {
+static OpenResult workspace_open_single_into_current(xbase::DbArea& current, const fs::path& dbfPath, IndexMode mode, bool fallback) {
     OpenResult r;
     r.dbf = dbfPath;
     r.area = get_area_index(current);
@@ -1392,7 +1392,7 @@ static void print_open_results(const std::vector<OpenResult>& results) {
     std::cout << ".\n";
 }
 
-static void schema_list_open(bool show_all) {
+static void workspace_list_open(bool show_all) {
     std::cout << "WORKSPACE: Listing open work areas...\n";
 
     int open_count = 0;
@@ -1668,7 +1668,7 @@ static void close_common_teardown(int close_count, bool scoped) {
 // WORKSPACE LOAD) mean by "close all", and what WORKSPACE CLOSE ALL means:
 // leave nothing open anywhere. Roots are walked post-order; children reached
 // through their parents are skipped by the visited set.
-static void schema_close_all() {
+static void workspace_close_all() {
     std::cout << "WORKSPACE CLOSE: Closing all work areas...\n";
 
     std::set<std::uint64_t> seen;
@@ -1702,7 +1702,7 @@ static void schema_close_all() {
 // The CURRENT workspace only. Bare WORKSPACE CLOSE. Descends into nested
 // workspaces per SET RECURSION -- owner ruling: OFF still permits multiple
 // workspaces, it just keeps them parallel instead of nested.
-static void schema_close_current_workspace() {
+static void workspace_close_current() {
     const std::uint64_t h = xbase::workspace::current_handle();
     const bool recursive  = xbase::workspace::recursion_enabled();
 
@@ -1724,7 +1724,7 @@ static void schema_close_current_workspace() {
     close_common_teardown(close_count, /*scoped=*/true);
 }
 
-static int schema_close_matching_token(const string& token) {
+static int workspace_close_matching_token(const string& token) {
     const string t = to_lower(token);
     int close_count = 0;
 
@@ -1887,7 +1887,7 @@ static bool apply_relation_line(const std::string& body) {
 // ---------------------------------------------------------------------------
 // R128 (owner, 2026-08-26: "selective close/save"). THE SCOPE OF A SAVE.
 //
-// schema_save_to_string() swept all MAX_AREA slots and took every open area in
+// workspace_save_to_string() swept all MAX_AREA slots and took every open area in
 // the process, with NO workspace discriminator anywhere in it. That was
 // harmless only while one workspace could be populated at a time, and AIF-078
 // stage 3 ended that on 2026-08-24 -- from then on WORKSPACE SAVE mcc_db could
@@ -2000,7 +2000,7 @@ static void report_save_scope(const SaveScope& sc) {
     }
 }
 
-// schema_save_to_string() is the SINGLE serializer; the file writer below
+// workspace_save_to_string() is the SINGLE serializer; the file writer below
 // (and the future memo carrier, M2) are thin shells around it. The returned
 // text is the byte-exact .dtschema payload (LF line endings, as the binary
 // file writer has always produced). Behavior of WORKSPACE SAVE: unchanged.
@@ -2011,7 +2011,7 @@ static std::string measure_open_flavor(const SaveScope& sc);  // defined below (
 // (FLAVOR now; residence/TARGET arrives with the hydration step that gives it
 // semantics -- a line with no consumer is a paper claim). Coexistence rule:
 // v3 is opt-in per save; every v2 producer and consumer keeps working.
-static std::string schema_save_to_string(int version, const SaveScope& sc) {
+static std::string workspace_save_to_string(int version, const SaveScope& sc) {
     std::ostringstream out;
 
     auto weak_can = [](const fs::path& p) -> fs::path {
@@ -2189,7 +2189,7 @@ static std::string file_carrier_wsid() {
     return std::string("F") + buf;
 }
 
-static void schema_save_to_file(const fs::path& file, int version, const SaveScope& sc) {
+static void workspace_save_to_file(const fs::path& file, int version, const SaveScope& sc) {
     fs::path outPath = resolve_workspace_file_path(file, true);
 
     {
@@ -2205,7 +2205,7 @@ static void schema_save_to_file(const fs::path& file, int version, const SaveSco
         return;
     }
 
-    out << stamp_ws_id(schema_save_to_string(version, sc), file_carrier_wsid());
+    out << stamp_ws_id(workspace_save_to_string(version, sc), file_carrier_wsid());
     out.flush();
     std::cout << "WORKSPACE SAVE: wrote " << s8(outPath) << "\n";
 }
@@ -2264,7 +2264,7 @@ static std::string posture_area_field(const std::string& line, const char* key) 
 //
 // RESOLVE-ALL-BEFORE-CLOSING, the mirror of writeback's proven
 // gather-all-before-writing. The declared members are resolved and probed
-// BEFORE schema_close_all() runs, so a refused load leaves the CURRENT session
+// BEFORE workspace_close_all() runs, so a refused load leaves the CURRENT session
 // standing. That ordering is the whole point: the old code closed every area
 // first and only then discovered it could not refill them, so even an honest
 // error message would have been reporting damage already done.
@@ -2309,14 +2309,14 @@ static std::vector<std::string> preflight_missing_members(const std::string& pay
     return missing;
 }
 
-// AIF-070 M1: loader split from file I/O. schema_load_from_stream() is the
+// AIF-070 M1: loader split from file I/O. workspace_load_from_stream() is the
 // SINGLE parser; the file loader below (and the future memo carrier, M3)
 // feed it an open stream plus a source label used for messages and the
 // last-loaded-workspace state.
 //
 // allowPartial: WORKSPACE LOAD <name> PARTIAL. Default false -- a shortfall
 // refuses. See preflight_missing_members() for why.
-static void schema_load_from_stream(std::istream& in, const std::string& sourceLabel,
+static void workspace_load_from_stream(std::istream& in, const std::string& sourceLabel,
                                     bool allowPartial = false) {
 
     auto weak_can = [](const fs::path& p) -> fs::path {
@@ -2402,7 +2402,7 @@ static void schema_load_from_stream(std::istream& in, const std::string& sourceL
 
     last_loaded_workspace_file() = sourceLabel;
 
-    schema_close_all();
+    workspace_close_all();
 
     std::string line;
     int area_count = 0;
@@ -2587,7 +2587,7 @@ static void schema_load_from_stream(std::istream& in, const std::string& sourceL
     refresh_relations_if_enabled_safe();
 }
 
-static void schema_load_from_file(const fs::path& file, bool allowPartial = false) {
+static void workspace_load_from_file(const fs::path& file, bool allowPartial = false) {
     fs::path inPath = resolve_workspace_file_path(file, false);
 
     std::ifstream in(inPath, std::ios::binary);
@@ -2596,11 +2596,11 @@ static void schema_load_from_file(const fs::path& file, bool allowPartial = fals
         return;
     }
 
-    schema_load_from_stream(in, s8(inPath), allowPartial);
+    workspace_load_from_stream(in, s8(inPath), allowPartial);
 }
 
 // ===================== AIF-070 M2: the memo carrier =========================
-// One format, two carriers: the .dtschema text from schema_save_to_string()
+// One format, two carriers: the .dtschema text from workspace_save_to_string()
 // is stored byte-exact in a memo field of the WORKSPACES catalog (X64 table
 // in the workspaces root, standalone DbArea -- deliberately OUTSIDE the work
 // areas so saving never disturbs the state being saved; the bbs_store
@@ -3223,7 +3223,7 @@ static bool delete_durable_workspace(const std::string& name,
 
 static void save_to_memo(const std::string& name, int version,
                          bool minidb, const SaveScope& sc) {
-    const std::string base = schema_save_to_string(version, sc);
+    const std::string base = workspace_save_to_string(version, sc);
 
     std::string err;
     xbase::DbArea a;
@@ -3558,7 +3558,7 @@ static void load_from_memo(const std::string& name, bool allowPartial = false) {
     std::cout << "WORKSPACE LOAD: memo '" << name << "' (saved " << f.saved_at
               << ", " << f.text.size() << " B)\n";
     std::istringstream in(f.text);
-    schema_load_from_stream(in, "memo:" + name, allowPartial);
+    workspace_load_from_stream(in, "memo:" + name, allowPartial);
 }
 
 // ---- memo -> RAM hydration (owner lane, step 2, 2026-08-11) ----------------
@@ -3662,7 +3662,7 @@ static bool hydrate_minidb(const std::string& name, const std::string& payload,
     const std::string hydrated =
         dottalk::minidb::repoint_posture_to_ram(sc.posture, ramRoot, ramIdx);
     std::istringstream in(hydrated);
-    schema_load_from_stream(in, "minidb:" + name);
+    workspace_load_from_stream(in, "minidb:" + name);
 
     const auto t1 = std::chrono::steady_clock::now();
     const double ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
@@ -4138,7 +4138,7 @@ static void hydrate_to_ram(const std::string& name) {
         }
     }
     std::istringstream in(hydrated);
-    schema_load_from_stream(in, "ram-memo:" + name);
+    workspace_load_from_stream(in, "ram-memo:" + name);
 
     const auto t1 = std::chrono::steady_clock::now();
     const double ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
@@ -5321,7 +5321,7 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
                 }
             } catch (...) {}
 
-            // R128. schema_close_all() STOOD HERE. Removing it is the ruling:
+            // R128. workspace_close_all() STOOD HERE. Removing it is the ruling:
             // "open should be additive or it will kill the other workspaces".
             // Note what else it cost -- the close ran BEFORE the path was even
             // resolved, so a mistyped directory closed the whole session and
@@ -5359,8 +5359,8 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
                           << "\n";
 
                 auto results = want_recursive
-                    ? schema_open_directory_recursive(spec, indexMode, want_fallback)
-                    : schema_open_directory(spec, indexMode, want_fallback);
+                    ? workspace_open_directory_recursive(spec, indexMode, want_fallback)
+                    : workspace_open_directory(spec, indexMode, want_fallback);
 
                 print_open_results(results);
 
@@ -5384,7 +5384,7 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
                           << (want_table ? " [TABLE]" : "")
                           << "\n";
 
-                OpenResult r = schema_open_single_into_current(current, spec, indexMode, want_fallback);
+                OpenResult r = workspace_open_single_into_current(current, spec, indexMode, want_fallback);
                 print_open_results(std::vector<OpenResult>{r});
 
 #if HAVE_TABLE
@@ -5437,12 +5437,12 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
                 // the old full sweep, which is why the default suite does not
                 // move; with two it is the difference between closing your
                 // workspace and closing someone else's.
-                schema_close_current_workspace();
+                workspace_close_current();
             } else if (ci_equal(tokline, "all")) {
                 // CLOSE ALL keeps the old meaning of bare CLOSE -- every
                 // workspace, everywhere -- so nothing that relied on
                 // "close everything" has lost the ability to say it.
-                schema_close_all();
+                workspace_close_all();
             } else {
                 auto tokens = split_tokens(tokline);
                 std::unordered_set<int> closed_by_index;
@@ -5463,7 +5463,7 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
                                       << " (0.." << (xbase::MAX_AREA - 1) << ")\n";
                         }
                     } else {
-                        total_closed += schema_close_matching_token(tok);
+                        total_closed += workspace_close_matching_token(tok);
                     }
                 }
 
@@ -5522,7 +5522,7 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
             } else {
                 fs::path out = wsargs.empty() ? fs::path("session") : fs::path(wsargs);
                 report_save_scope(scope);
-                schema_save_to_file(out, ver, scope);
+                workspace_save_to_file(out, ver, scope);
             }
 
         } else if (sub_command == "writeback") {
@@ -5627,7 +5627,7 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
             } else if (wsargs.empty()) {
                 std::cout << "WORKSPACE LOAD: missing file path.\n";
             } else {
-                schema_load_from_file(fs::path(wsargs), allow_partial);
+                workspace_load_from_file(fs::path(wsargs), allow_partial);
             }
 
         } else if (sub_command == "catalog") {
@@ -5638,10 +5638,10 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
             workspace_print_tuples(current, rest_of_args);
 
         } else if (sub_command == "all") {
-            schema_list_open(true);
+            workspace_list_open(true);
 
         } else if (sub_command.empty()) {
-            schema_list_open(false);
+            workspace_list_open(false);
 
         } else {
             std::cout << "WORKSPACE: Unknown subcommand '" << sub_command << "'.\n";

@@ -258,7 +258,7 @@ bool SchemaWorkspace::apply_to_runtime(WorkAreaManager& wam)
 // loader matches "AREA " (with a space), so a pipe-form "AREA|0|..." line falls
 // through to tolerate-unknown and restores ZERO areas without an error.
 //
-// RULING: the CLI serializer (schema_save_to_string / schema_load_from_stream)
+// RULING: the CLI serializer (workspace_save_to_string / workspace_load_from_stream)
 // is authoritative for the .dtschema format and owns the DTSHEMA version
 // namespace -- one format, one writer, the same rule that keeps file and memo
 // carriers from drifting. THIS snapshot is a different artifact (runtime work
