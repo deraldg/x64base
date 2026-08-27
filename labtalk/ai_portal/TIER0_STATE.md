@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-08-27T19:50:16Z
+    generated_utc : 2026-08-27T20:20:47Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,9 +11,9 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : 385a2572b  (2026-08-27)
+    HEAD          : d682cfd53  (2026-08-27)
     upstream      : 372c5834f
-    unpushed      : 20 commit(s) ahead of upstream
+    unpushed      : 21 commit(s) ahead of upstream
 
 ## Declared target
 
@@ -23,17 +23,18 @@ cannot drift, because nothing here is written by hand.
 ## Newest closeout
 
     file          : SESSION_CLOSEOUT_R130_LOAD_IS_ADDITIVE_2026-08-27.md
-    commits behind HEAD : 4
+    commits behind HEAD : 5
 
 ## Staleness warnings
 
-- The newest closeout is 4 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
-- 20 commit(s) are unpushed and invisible to a clone.
+- The newest closeout is 5 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
+- 21 commit(s) are unpushed and invisible to a clone.
 
 ## Claimed lanes (newest first)
 
 | AIF | lane | steward | intake row |
 | --- | --- | --- | --- |
+| AIF-144 | identity-authority-fragmentation | member.ai.claude.cowork | yes |
 | AIF-143 | duplicate-settings-struct | member.ai.claude.cowork | yes |
 | AIF-142 | deleted-row-absent-from-order | member.ai.claude.cowork | yes |
 | AIF-141 | x64-name-vector-silent-drop | member.ai.claude.cowork | yes |
@@ -45,8 +46,7 @@ cannot drift, because nothing here is written by hand.
 | AIF-135 | Align claim-aif and next_aif on monotonic high-water allocation over the canonical intake-and-claims identity universe; prove gaps are never reused and preserve atomic collision handling | member.ai.codex | yes |
 | AIF-134 | ERROR CLEAR/STATUS/TEST are registered as multi-word keys with no bare ERROR router, so shell_dispatch cannot reach them -- the AIF-131 defect unfixed in a sibling family, while dotref publishes all three as supported | member.ai.claude.cowork | yes |
 | AIF-133 | FIELDMGR scratch tables keep the .dbf extension, so every directory scan opened a restructure backup as a work area -- and it sorted first, taking area 0 | member.ai.claude.cowork | yes |
-| AIF-132 | AI Portal typed feed contract, advisory validator, and documentation-push crosswalk | member.ai.codex | yes |
-| ... | 63 older claims omitted | | |
+| ... | 64 older claims omitted | | |
 
 ## Sessions, lineage, asides
 
