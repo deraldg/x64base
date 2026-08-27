@@ -1,0 +1,5 @@
+aif: AIF-138
+run_id: COWORK-20260827-001
+member: member.ai.claude.cowork
+lane: Engine::_current cannot express 'nothing selected': slot 0 means area 0, the startup position (shell.cpp:528 selectArea(0)), and 'no engine' (workareas.hpp:120 'if (!eng) return 0'). Absent is spelled with a present value (R6), and the no-engine fallback is the AIF-118 shape sitting in the accessor infer_parent_from_workarea() calls. Predates multi-workspace; R129 sec 6.1 makes an empty workspace a legal position and so makes it reachable
+claimed_utc: 2026-08-27T11:33:46Z

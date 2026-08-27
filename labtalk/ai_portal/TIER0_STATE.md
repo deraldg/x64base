@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-08-26T22:56:32Z
+    generated_utc : 2026-08-27T11:41:21Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,9 +11,9 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : 6c3809eed  (2026-08-26)
+    HEAD          : 21830b9a5  (2026-08-26)
     upstream      : 372c5834f
-    unpushed      : 3 commit(s) ahead of upstream
+    unpushed      : 4 commit(s) ahead of upstream
 
 ## Declared target
 
@@ -22,17 +22,20 @@ cannot drift, because nothing here is written by hand.
 
 ## Newest closeout
 
-    file          : SESSION_CLOSEOUT_R128_ADDITIVE_WORKSPACES_2026-08-26.md
+    file          : SESSION_CLOSEOUT_R129_AIF137_WORKSPACE_CURSOR_2026-08-27.md
     commits behind HEAD : ?
 
 ## Staleness warnings
 
-- 3 commit(s) are unpushed and invisible to a clone.
+- Claim(s) with no intake row, so they read as ABANDONED from HEAD: AIF-137, AIF-138. Same shape as AIF-062/078/080.
+- 4 commit(s) are unpushed and invisible to a clone.
 
 ## Claimed lanes (newest first)
 
 | AIF | lane | steward | intake row |
 | --- | --- | --- | --- |
+| AIF-138 | Engine::_current cannot express 'nothing selected': slot 0 means area 0, the startup position (shell.cpp:528 selectArea(0)), and 'no engine' (workareas.hpp:120 'if (!eng) return 0'). Absent is spelled with a present value (R6), and the no-engine fallback is the AIF-118 shape sitting in the accessor infer_parent_from_workarea() calls. Predates multi-workspace; R129 sec 6.1 makes an empty workspace a legal position and so makes it reachable | member.ai.claude.cowork | **MISSING** |
+| AIF-137 | The relation STORE is partitioned by workspace (AIF-078 I1.2) but the relation PARENT is not -- current_parent_override() is one global string and current_parent_name()/refresh_from_parent_name() resolve through the unscoped find_open_area_by_name_ci, so a refresh standing in one workspace reads another workspace's area; measured live 2026-08-27 with an EMPTY relation store, so it needs no SET RELATION to occur | member.ai.claude.cowork | **MISSING** |
 | AIF-136 | AI Portal frontal-memory tiering, document consolidation, long-term storage, retrieval, and governed retention lifecycle | member.ai.codex | yes |
 | AIF-135 | Align claim-aif and next_aif on monotonic high-water allocation over the canonical intake-and-claims identity universe; prove gaps are never reused and preserve atomic collision handling | member.ai.codex | yes |
 | AIF-134 | ERROR CLEAR/STATUS/TEST are registered as multi-word keys with no bare ERROR router, so shell_dispatch cannot reach them -- the AIF-131 defect unfixed in a sibling family, while dotref publishes all three as supported | member.ai.claude.cowork | yes |
@@ -43,9 +46,7 @@ cannot drift, because nothing here is written by hand.
 | AIF-129 | contract-subblock-vocabularies-uncontrolled | member.ai.claude.cowork | yes |
 | AIF-128 | refcheck-guard-tests-the-union-not-the-authority | member.ai.claude.cowork | yes |
 | AIF-127 | x64-reader-false-terminator-at-thirteen-rows | member.ai.claude.cowork | yes |
-| AIF-126 | help-store-shared-msg-unreachable-by-key | member.ai.claude.cowork | yes |
-| AIF-125 | agent-navigation-index-over-system-metadata | member.ai.claude.cowork | yes |
-| ... | 56 older claims omitted | | |
+| ... | 58 older claims omitted | | |
 
 ## Sessions, lineage, asides
 
@@ -54,7 +55,7 @@ cannot drift, because nothing here is written by hand.
     live   : COWORK-20260816-002  (member.ai.claude.cowork)  [stale, reapable]
     live   : COWORK-20260818-001  (member.ai.claude.cowork)  [stale, reapable]
     live   : COWORK-20260821-002  (member.ai.claude.cowork)  [stale, reapable]
-    live   : COWORK-20260826-001  (member.ai.claude.cowork)
+    live   : COWORK-20260826-001  (member.ai.claude.cowork)  [stale, reapable]
     live   : DECLARED-CAPABILITY-VALIDATOR-20260730  (member.ai.claude.cowork)  [stale, reapable]
 
 Aside chains -- a run's claims in order (its horizontal structure);
@@ -62,6 +63,7 @@ parent + born_utc from the durable lineage ledger, '-' until a run wakes.
 
 | run | member | parent | born_utc | asides |
 | --- | --- | --- | --- | --- |
+| COWORK-20260827-001 | member.ai.claude.cowork | - | - | AIF-137 -> AIF-138 |
 | CODEX-20260826-014 | member.ai.codex | - | - | AIF-135 -> AIF-136 |
 | COWORK-20260826-002 | member.ai.claude.cowork | - | - | AIF-134 |
 | COWORK-20260825-001 | member.ai.claude.cowork | - | - | AIF-128 -> AIF-129 -> AIF-130 -> AIF-131 -> AIF-133 |
@@ -69,8 +71,7 @@ parent + born_utc from the durable lineage ledger, '-' until a run wakes.
 | COWORK-20260824-001 | member.ai.claude.cowork | - | - | AIF-123 -> AIF-124 -> AIF-125 -> AIF-126 -> AIF-127 |
 | COWORK-20260822-001 | member.ai.claude.cowork | - | - | AIF-121 -> AIF-122 |
 | COWORK-20260817-001 | member.ai.claude.cowork | - | - | AIF-119 -> AIF-120 |
-| COWORK-20260816-001 | member.ai.claude.cowork | - | - | AIF-118 |
-| ... | | | | 38 older run(s) omitted |
+| ... | | | | 39 older run(s) omitted |
 
 Perishable detail lives in the artifacts these point at. Do not
 restate anything above; regenerate it.
