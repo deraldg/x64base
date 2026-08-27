@@ -64,9 +64,18 @@ static std::string make_owner_string() {
     return os.str();
 }
 
-const Owner& current_owner() {
-    static Owner g_owner{ make_owner_string() };
+// The process owner token. `id` is minted once and never changes. `member` is
+// pushed in by the shell (see set_current_member) and may change during a
+// session; it is attribution, never equality.
+static Owner& mutable_current_owner() {
+    static Owner g_owner{ make_owner_string(), std::string() };
     return g_owner;
+}
+
+const Owner& current_owner() { return mutable_current_owner(); }
+
+void set_current_member(std::string member) {
+    mutable_current_owner().member = std::move(member);
 }
 
 // ---------------- in-memory bookkeeping (this process only) -------------------
@@ -110,6 +119,8 @@ struct LockMeta {
     // could not be determined". pid==0 cannot carry that distinction, because
     // is_pid_alive(0) is false and would make an unreadable owner look dead.
     bool pid_valid{false};
+    std::string member;              // AIF-144 stage 1; empty means none recorded
+    bool has_member{false};
 };
 
 // Trailing CR / stray whitespace tolerated; anything else is a parse failure.
@@ -130,6 +141,15 @@ static bool read_lock_meta(const std::string& path, LockMeta& meta) {
     while (std::getline(f, line)) {
         if (line.rfind("owner=", 0) == 0) {
             meta.owner = line.substr(6);
+        } else if (line.rfind("member=", 0) == 0) {
+            // AIF-144 stage 1. An older writer emits no such line, and this
+            // reader then leaves has_member false -- which is the honest
+            // answer, not a degraded one. Conversely an OLDER READER skips this
+            // line entirely, because the loop only recognises keys it knows:
+            // the tolerate-unknown precedent (R130's posture KEY lines). So the
+            // sidecar format needs no version bump in either direction.
+            const std::string m = trim_ascii_ws(line.substr(7));
+            if (!m.empty()) { meta.member = m; meta.has_member = true; }
         } else if (line.rfind("pid=", 0) == 0) {
             // AIF-116: parse STRICTLY, and require the WHOLE field to be
             // consumed. std::stoul takes the longest valid prefix and does
@@ -194,6 +214,9 @@ static bool write_lock_file(const std::string& path, const Owner& owner, std::st
 
     f << "DotTalk++ lock\n";
     f << "owner=" << owner.id << "\n";
+    // Written ONLY when non-empty, so a reader can tell "no member recorded"
+    // from "a member whose name is blank". R6 at the file format.
+    if (!owner.member.empty()) f << "member=" << owner.member << "\n";
     f << "pid="   << pid      << "\n";
     f << "ms="    << ms       << "\n";
     f.flush();
@@ -393,6 +416,18 @@ bool unlock_record(DbArea& a, std::uint64_t recno, const Owner& me, std::string*
     return ok;
 }
 
+// -------- who holds it (AIF-144 stage 1) -------------------------------------
+static bool holder_from_file(const std::string& path, LockHolder* out) {
+    LockMeta meta;
+    if (!read_lock_meta(path, meta)) return false;
+    if (out) {
+        out->owner_id   = meta.owner;
+        out->member     = meta.member;
+        out->has_member = meta.has_member;
+    }
+    return true;
+}
+
 bool is_record_locked(const DbArea& a, std::uint64_t recno, std::string* owner_out) {
     if (recno == 0) {
         if (owner_out) owner_out->clear();
@@ -409,6 +444,29 @@ bool is_record_locked(const DbArea& a, std::uint64_t recno, std::string* owner_o
         (void)read_owner_from_file(rp, *owner_out);
     }
 
+    return true;
+}
+
+// AIF-144 stage 1. These mirror the two predicates above exactly -- same
+// existence guard, same recno==0 rejection -- and differ only in reading the
+// member alongside the owner id. Deliberately NOT folded into the existing
+// signatures: `is_*_locked(..., std::string*)` has callers throughout the
+// tree, and widening a predicate everyone already uses to answer a question
+// only one caller asks is how a small addition becomes a sweep.
+bool table_lock_holder(const DbArea& a, LockHolder* out) {
+    if (out) *out = LockHolder{};
+    const std::string lp = table_lock_path(a);
+    if (!fs::exists(lp)) return false;
+    (void)holder_from_file(lp, out);
+    return true;
+}
+
+bool record_lock_holder(const DbArea& a, std::uint64_t recno, LockHolder* out) {
+    if (out) *out = LockHolder{};
+    if (recno == 0) return false;
+    const std::string rp = record_lock_path(a, recno);
+    if (!fs::exists(rp)) return false;
+    (void)holder_from_file(rp, out);
     return true;
 }
 

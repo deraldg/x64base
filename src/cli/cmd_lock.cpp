@@ -80,6 +80,18 @@ static std::string lock_state_text(bool locked) {
             : dottalk::helpdata::MessageId::LockStateUnlockedText);
 }
 
+// AIF-144 stage 1. Render a holder for a human.
+//
+// The two shapes are deliberately different sentences, not one sentence with a
+// blank in it. R6: "no member was recorded" is a FACT about a lock taken by an
+// older build, and it must not look like a member whose name is empty. LOCK WHO
+// previously printed the process token alone -- a command named WHO answering
+// with a pid -- and a blank would have been the same defect with more spaces.
+static std::string holder_text(const xbase::locks::LockHolder& h) {
+    if (h.has_member) return h.member + " (" + h.owner_id + ")";
+    return h.owner_id + " (no member recorded)";
+}
+
 static std::string lock_owner_clause(const std::string& owner) {
     if (owner.empty()) {
         return std::string();
@@ -94,40 +106,43 @@ static void show_status(xbase::DbArea& a) {
         cli::cmdout::print_message(dottalk::helpdata::MessageId::LockStatusNoTableOpenText);
         return;
     }
-    std::string tab;
-    bool tlocked = xbase::locks::is_table_locked(a, &tab);
+    xbase::locks::LockHolder th;
+    const bool tlocked = xbase::locks::table_lock_holder(a, &th);
     cli::cmdout::print_message(
         dottalk::helpdata::MessageId::LockStatusTableLineText,
         {
             {"state", lock_state_text(tlocked)},
-            {"owner_clause", tlocked ? lock_owner_clause(tab) : std::string()}
+            {"owner_clause", tlocked ? lock_owner_clause(holder_text(th)) : std::string()}
         });
 
     const std::uint64_t rn = a.recno64();
     if (rn > 0) {
-        std::string row;
-        bool rlocked = xbase::locks::is_record_locked(a, rn, &row);
+        xbase::locks::LockHolder rh;
+        const bool rlocked = xbase::locks::record_lock_holder(a, rn, &rh);
         cli::cmdout::print_message(
             dottalk::helpdata::MessageId::LockStatusRecordLineText,
             {
                 {"recno", std::to_string(rn)},
                 {"state", lock_state_text(rlocked)},
-                {"owner_clause", rlocked ? lock_owner_clause(row) : std::string()}
+                {"owner_clause", rlocked ? lock_owner_clause(holder_text(rh)) : std::string()}
             });
     }
 }
 
 static void show_who(xbase::DbArea& a, std::uint64_t n) {
-    std::string owner;
-    if (!xbase::locks::is_record_locked(a, n, &owner)) {
+    xbase::locks::LockHolder h;
+    if (!xbase::locks::record_lock_holder(a, n, &h)) {
         cli::cmdout::print_message(
             dottalk::helpdata::MessageId::LockWhoNoneText,
             {{"recno", std::to_string(n)}});
         return;
     }
+    // The member rides in the existing {owner} placeholder, so the message
+    // catalog is untouched and no new MessageId is minted -- the same technique
+    // the GPS repair used for its state words on the same day.
     cli::cmdout::print_message(
         dottalk::helpdata::MessageId::LockWhoOwnedText,
-        {{"recno", std::to_string(n)}, {"owner", owner}});
+        {{"recno", std::to_string(n)}, {"owner", holder_text(h)}});
 }
 
 void cmd_LOCK(xbase::DbArea& a, std::istringstream& iss) {

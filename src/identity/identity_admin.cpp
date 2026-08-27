@@ -12,6 +12,7 @@
 // Compiled into dottalkpp via the src glob.
 
 #include "identity/identity_admin.hpp"
+#include "xbase_locks.hpp"   // AIF-144 stage 1: push the acting member to the lock layer
 #include "identity/identity_bootstrap.hpp"
 #include "security/token_crypto.hpp"     // M3: Argon2id + CSPRNG (libsodium)
 
@@ -364,7 +365,24 @@ const std::string& principal_key()   { return g_principal; }
 bool session_authenticated()         { return g_authenticated; }
 
 const std::string& acting_member_key() { return g_acting; }
-void set_acting_member(const std::string& key) { g_acting = key.empty() ? std::string(kAnon) : key; }
+
+// AIF-144 stage 1. ONE WRITER FOR g_acting, and it pushes the value to the
+// lock layer so a held lock records WHO took it.
+//
+// Before this there were SIX direct assignments to g_acting -- here, two in
+// login(), one in logout(), and two in act_as(). Six writers of one variable is
+// the shape this house keeps finding; routing them through one place is the
+// point of the identity lane, not a side effect of it.
+//
+// The push is one-way and the dependency points one way with it: identity knows
+// about xbase, xbase knows nothing about identity. `xbase::locks` stores the
+// string and never resolves it.
+static void assign_acting(const std::string& key) {
+    g_acting = key.empty() ? std::string(kAnon) : key;
+    xbase::locks::set_current_member(g_acting);
+}
+
+void set_acting_member(const std::string& key) { assign_acting(key); }
 
 // Single source of truth for authorship attribution (AIF-075). The socket server and the
 // interactive CLI both resolve the posting author through this, so a post can never be written
@@ -392,17 +410,17 @@ AdminResult login(const std::string& member_key, const std::string& secret) {
         if (!is_owner_member(member_key))
             return AdminResult::fail("'" + member_key + "' has no credential set — the owner must set one "
                                      "(USER PASSWD for humans, USER TOKEN for agents)");
-        g_principal = g_acting = member_key; g_authenticated = true;
+        g_principal = member_key; assign_acting(member_key); g_authenticated = true;
         return AdminResult::good("logged in as " + member_key + " (bootstrap: no password set — run USER PASSWD to secure)");
     }
     if (!verify_credential(u->credential_ref, secret))
         return AdminResult::fail("authentication failed for '" + member_key + "'");
-    g_principal = g_acting = member_key; g_authenticated = true;
+    g_principal = member_key; assign_acting(member_key); g_authenticated = true;
     return AdminResult::good("logged in as " + member_key);
 }
 
 AdminResult logout() {
-    g_principal = g_acting = kAnon; g_authenticated = false;
+    g_principal = kAnon; assign_acting(kAnon); g_authenticated = false;
     return AdminResult::good("logged out (now " + std::string(kAnon) + ")");
 }
 
@@ -427,12 +445,12 @@ AdminResult set_password(const std::string& member_key, const std::string& secre
 }
 
 AdminResult act_as(const std::string& member_key) {
-    if (member_key.empty() || member_key == g_principal) { g_acting = g_principal; return AdminResult::good("acting as " + g_acting); }
+    if (member_key.empty() || member_key == g_principal) { assign_acting(g_principal); return AdminResult::good("acting as " + g_acting); }
     if (!(g_authenticated && is_owner_member(g_principal)))
         return AdminResult::fail("USER AS requires an authenticated owner (login first)");
     if (!find_member_by_key(identity_store(), member_key))
         return AdminResult::fail("unknown member '" + member_key + "'");
-    g_acting = member_key;
+    assign_acting(member_key);
     return AdminResult::good("acting as " + member_key + " (owner sudo; principal " + g_principal + ")");
 }
 

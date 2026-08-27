@@ -288,7 +288,18 @@ today.
 
 ## 7. THREE RULINGS, STATED AND NOT TAKEN
 
-**R-a. Does `Owner::operator==` fold in the member?** It compares the whole
+**R-a -- TAKEN AND IMPLEMENTED 2026-08-27, stage 1. The member is carried as a
+field OUTSIDE `operator==`.** Equality remains the process token, so exclusion
+and stale-lock reclamation are untouched; the member is attribution only.
+RUNTIME-PROVEN the same day: `LOCK WHO` now answers
+`member.derald (GRIMWOOD:51772:1787863836752)`, and after `USER AS
+member.ai.claude.cowork` it STILL answers `member.derald` -- the lock records
+who TOOK it, not who is asking. `UNLOCK` still succeeds, deliberately: what
+changed is that the release is now VISIBLY attributed to someone else. The
+original reasoning is kept below because the trap it avoids is the reason the
+answer is not the obvious one.
+
+**R-a (as originally posed). Does `Owner::operator==` fold in the member?** It compares the whole
 `id` string. Append the member and lock identity changes MEANING: either each
 member's locks become their own -- right for accountability, and it means a
 process can no longer release locks it took before a `USER AS` -- or equality
