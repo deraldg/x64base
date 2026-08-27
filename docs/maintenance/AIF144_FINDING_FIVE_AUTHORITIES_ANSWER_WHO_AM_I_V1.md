@@ -12,16 +12,21 @@
     Lane    : identity / RBAC / concurrency. Predates multi-workspace, and
               multi-workspace is what makes it reachable.
     Status  : review-needed. The author does not self-approve.
-    Basis   : SOURCE-EVIDENCED, lines cited. **NOTHING HERE WAS RUN.** No
-              two-member session was driven, no lock contention was staged, no
-              threaded GUI exists to race. Every claim below is a reading of
-              the tree, and the two claims that would most repay a runtime
-              check are named in sec 8.
+    Basis   : MIXED, AMENDED 2026-08-27 the same day it was filed.
+              **Sec 2a is RUNTIME-PROVEN** -- both checks sec 8 named as owed
+              were run and both landed; the transcript is in sec 2a and the
+              prediction was written down before the run.
+              Everything else remains SOURCE-EVIDENCED. No threaded GUI exists
+              to race, so sec 4 stays latent by measurement.
     Shape   : R5 -- one question, five answers. With the aggravation that the
               five do not disagree about a VALUE, they disagree about what the
               question means, so no comparison between them can ever be wrong.
     Severity: SPLIT, and the split is the useful part.
-              ATTRIBUTION is wrong TODAY and reachable in two commands.
+              ATTRIBUTION is wrong TODAY -- PROVEN, sec 2a. It is OWNER-GATED
+              (an authenticated owner plus sudo), which is a real mitigation
+              this document originally failed to credit; see the correction in
+              sec 2a. But the consequence runs the wrong way: privilege flows
+              DOWNHILL, and a restricted member released the owner's lock.
               EXCLUSION is correct today and becomes wrong the day two
               sessions share one process -- which the GUI is now close to.
 
@@ -128,6 +133,79 @@ Accountability drops out at precisely the layer where two people contend.
 
 So the fix shape is BOTH, not INSTEAD: keep the process token for liveness, add
 the member for attribution.
+
+## 2a. RUNTIME-PROVEN, 2026-08-27, AND THE PREDICTION WAS WRITTEN FIRST
+
+Both checks sec 8 named as owed were run the same day this finding was filed.
+The predictions -- that the two `LOCK WHO` readings would be IDENTICAL across a
+member switch, and that `UNLOCK` would succeed under the second member -- were
+written down before the run.
+
+    . USER LOGIN member.derald
+    USER LOGIN: logged in as member.derald (bootstrap: no password set)
+    . USER WHOAMI
+    WHOAMI: acting as member.derald  [HUMAN]  role=MAINTAINER  OWNER
+    . LOCK 21
+    LOCK: record 21 locked.
+    . LOCK WHO 21
+    LOCK WHO: record 21 owned by GRIMWOOD:45492:1787860508740
+    . USER AS member.ai.claude.cowork
+    USER AS: acting as member.ai.claude.cowork (owner sudo; principal member.derald)
+    . USER WHOAMI
+    WHOAMI: acting as member.ai.claude.cowork  [AI]
+            role=AI_DEVELOPMENT_PARTNER  (must ask for limited permission)
+    . LOCK WHO 21
+    LOCK WHO: record 21 owned by GRIMWOOD:45492:1787860508740
+    . UNLOCK 21
+    UNLOCK: record 21 unlocked.
+
+**THE TWO WHOAMI READINGS ARE THE CONTROL** and they differ, so the switch
+happened and the unlock is evidence rather than coincidence. Both `LOCK WHO`
+readings are byte-identical across it, as predicted.
+
+**THE RESULT IS SHARPER THAN THIS DOCUMENT ORIGINALLY ARGUED, because the two
+members are not peers.** The first is the MAINTAINER and the OWNER. The second
+is an AI member the RBAC layer itself annotates *"must ask for limited
+permission"*. That restricted member released the owner's lock, and the lock
+layer had no opinion, because it never knew a member was involved.
+**Privilege flowed downhill and the concurrency layer could not see it.**
+
+### CORRECTION to this document's own severity line
+
+As filed, the Severity read *"reachable in two commands."* **That is
+overstated and the run is what showed it.** Measured:
+
+    . USER AS <member-b>
+    USER AS: USER AS requires an authenticated owner (login first)
+
+`USER AS` refuses without an authenticated owner. The divergence needs a real
+login AND owner privilege to sudo, so an unauthenticated session cannot produce
+it. That is a genuine mitigation and the first draft gave it no credit.
+Corrected in the header rather than removed here, because the overstatement and
+its correction are both evidence.
+
+Two further observations from the same run, neither sought:
+
+**`profile_home_key` IS NOT MERELY UNREAD -- IT IS MOSTLY UNSET.** `USER LIST`
+reports six members and exactly ONE carries a profile:
+
+    member.derald              [HUMAN]      role=MAINTAINER               profile=derald
+    member.ai.claude.cowork    [AI]         role=AI_DEVELOPMENT_PARTNER   profile=
+    member.ai.codex.local      [AI]         role=AI_DEVELOPMENT_PARTNER   profile=
+    member.public              [HUMAN]      role=STUDENT                  profile=public
+    member.ai.grok.xai         [AI]         role=AI_DEVELOPMENT_PARTNER   profile=
+    member.guest               [EXTERNAL]   role=GUEST                    profile=
+
+Two of six are populated. This BEARS DIRECTLY ON SEC 3's recommendation:
+`user_profile_root()` maps an empty name to `"default"`, so wiring authority 3
+to authority 2 today would silently place FOUR OF SIX MEMBERS IN ONE SHARED
+HOME while appearing to scope them. An argument against the obvious wire that
+is independent of, and additional to, the vanishing-postures argument.
+
+**The owner seat is unsecured.** `USER LOGIN member.derald` succeeded with
+*"bootstrap: no password set -- run USER PASSWD to secure"*, and owner login is
+what gates `USER AS`. Reported, not filed: it is a deployment state rather than
+a source defect, and it is the owner's to decide.
 
 ## 3. THE PATH-RESOLVER HALF, AND WHY THE OBVIOUS FIX IS WRONG
 
@@ -243,15 +321,16 @@ Read-only verification of every claim above:
     grep -n "current_owner" -A 4 src/xbase/xbase_locks.cpp
     grep -n "catalog_dir" -A 4 src/cli/cmd_workspace.cpp
 
-**Two things a run would settle, and neither was run:**
+**Both things a run would settle were RUN, 2026-08-27. See sec 2a.**
 
-1. **`USER AS` across a lock.** `USER LOGIN` as one member, lock a record,
-   `USER AS` a second member, `LOCK WHO` that record, then unlock. If the second
-   member can release it, sec 2's attribution claim is runtime-proven rather
-   than read. This is two commands away and should be done before any ruling.
-2. **`LOCK WHO` output shape.** Confirm it prints the raw `host:pid:ms` to a
-   user. Cited from `cmd_lock.cpp:39` and `:121-130`; seeing it is cheaper than
-   arguing it.
+1. **`USER AS` across a lock -- DONE, and it landed.** The restricted member
+   released the owner's lock. Sec 2 is runtime-proven.
+2. **`LOCK WHO` output shape -- DONE.** It prints
+   `GRIMWOOD:45492:1787860508740` at a person who asked who.
+
+**STILL NOT RUN:** anything involving two SESSIONS in one process (sec 5). No
+such arrangement exists yet, which is why sec 5 is an argument about the future
+and is labelled as one.
 
 ## 9. GOOD NEIGHBOUR
 
