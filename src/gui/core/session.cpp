@@ -1406,7 +1406,26 @@ struct Session::Impl {
     struct Area {
         // R6: an absent value must not be representable among present ones.
         // There is NO default constructor, so an unbound Area cannot exist and
-        // area() has no absent case to defend against across its 132 callers.
+        // the accessor below has no absent case to defend against, across its
+        // 111 call sites in this file: 110 through a pointer, 1 through a
+        // reference. Counted 2026-08-27.
+        //
+        // THE COUNT DISCIPLINE, applied to this comment, which used to say 132.
+        // 132 was the raw occurrence count of the accessor's spelling as a
+        // SUBSTRING -- an authority holding more than one KIND with no
+        // discriminator applied. It swept in the 111 real call sites, the 18
+        // tails of the neighbouring active-area lookup (whose name ENDS in the
+        // accessor's name), this accessor's own 2 declarations, and the comment
+        // line asserting the number, which spelled it and so counted itself.
+        // Same shape as a suppression marker that suppresses the line
+        // explaining it.
+        //
+        // This replacement deliberately does NOT spell the call-site search
+        // patterns, because a comment that spells them is a comment that
+        // pollutes the count it is telling you to trust. That mistake was made
+        // and reverted while writing this one. To re-verify, grep for the
+        // pointer-form and reference-form calls yourself; the numbers above are
+        // of CODE and exclude every comment in this file.
         Area(xbase::XBaseEngine& eng, int slot) noexcept : eng_(&eng), slot_(slot) {}
 
         // RAII PRESERVED ACROSS THE OWNERSHIP CHANGE, and this destructor is
