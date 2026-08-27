@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-08-27T18:32:53Z
+    generated_utc : 2026-08-27T19:36:35Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,9 +11,9 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : de25cb61a  (2026-08-27)
+    HEAD          : c6e202651  (2026-08-27)
     upstream      : 372c5834f
-    unpushed      : 18 commit(s) ahead of upstream
+    unpushed      : 19 commit(s) ahead of upstream
 
 ## Declared target
 
@@ -23,17 +23,18 @@ cannot drift, because nothing here is written by hand.
 ## Newest closeout
 
     file          : SESSION_CLOSEOUT_R130_LOAD_IS_ADDITIVE_2026-08-27.md
-    commits behind HEAD : 2
+    commits behind HEAD : 3
 
 ## Staleness warnings
 
-- The newest closeout is 2 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
-- 18 commit(s) are unpushed and invisible to a clone.
+- The newest closeout is 3 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
+- 19 commit(s) are unpushed and invisible to a clone.
 
 ## Claimed lanes (newest first)
 
 | AIF | lane | steward | intake row |
 | --- | --- | --- | --- |
+| AIF-142 | deleted-row-absent-from-order | member.ai.claude.cowork | yes |
 | AIF-141 | x64-name-vector-silent-drop | member.ai.claude.cowork | yes |
 | AIF-140 | load-alias-collision | member.ai.claude.cowork | yes |
 | AIF-139 | R112's migration gate is unassertable: sec 6a admits first-wins-plus-warning only as an instrumented phase whose counter must reach a measured zero, but ambiguity_count() has no DTS-visible reader -- cmd_workspace.cpp only PRINTS it -- and rel_name_ambiguity_regression.dts, which calls itself the tripwire for AIF-078 stage 4, runs WORKSPACE REGISTRY between two FORMULA markers with nothing checking. The comment at cmd_workspace.cpp:4736 claims the count is 'a FIELD of the registry, assertable by a spec' and no such reader exists. The tripwire fired on 2026-08-27 and no spec in the suite would have caught it | member.ai.claude.cowork | yes |
@@ -45,8 +46,7 @@ cannot drift, because nothing here is written by hand.
 | AIF-133 | FIELDMGR scratch tables keep the .dbf extension, so every directory scan opened a restructure backup as a work area -- and it sorted first, taking area 0 | member.ai.claude.cowork | yes |
 | AIF-132 | AI Portal typed feed contract, advisory validator, and documentation-push crosswalk | member.ai.codex | yes |
 | AIF-131 | dotref documents BUILD VECTORS / BUILD INFO as supported; shell_dispatch keys on the first token so they can never be typed | member.ai.claude.cowork | yes |
-| AIF-130 | AI_README says a sandbox cannot build; measured false 2026-08-12, uncorrected for 13 days | member.ai.claude.cowork | yes |
-| ... | 61 older claims omitted | | |
+| ... | 62 older claims omitted | | |
 
 ## Sessions, lineage, asides
 
@@ -63,7 +63,7 @@ parent + born_utc from the durable lineage ledger, '-' until a run wakes.
 
 | run | member | parent | born_utc | asides |
 | --- | --- | --- | --- | --- |
-| COWORK-20260827-001 | member.ai.claude.cowork | - | - | AIF-137 -> AIF-138 -> AIF-139 -> AIF-140 -> AIF-141 |
+| COWORK-20260827-001 | member.ai.claude.cowork | - | - | AIF-137 -> AIF-138 -> AIF-139 -> AIF-140 -> AIF-141 -> AIF-142 |
 | CODEX-20260826-014 | member.ai.codex | - | - | AIF-135 -> AIF-136 |
 | COWORK-20260826-002 | member.ai.claude.cowork | - | - | AIF-134 |
 | COWORK-20260825-001 | member.ai.claude.cowork | - | - | AIF-128 -> AIF-129 -> AIF-130 -> AIF-131 -> AIF-133 |

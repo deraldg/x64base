@@ -14,7 +14,7 @@
 // status: supported
 // noargs: report
 // effect: report
-// mutates: cursor
+// mutates: cursor-temporary
 // usage-access: GPS USAGE
 // summary:
 //   Report current work-area position, including area slot, table label,
@@ -27,12 +27,18 @@
 // notes:
 //   GPS with no arguments reports cursor position.
 //   GPS with no open table reports the current area and no-table state.
-//   GPS computes logical row by iterating visible ordered records.
-//   GPS is read-only for table data but may temporarily move the cursor while computing logical row.
+//   GPS computes logical row by streaming the active order and counting
+//   visible records up to the physical record the cursor is on.
+//   GPS is an instrument. It restores the cursor and the record buffer it
+//   moved, so the position it reports is the position that survives the call.
+//   GPS reports WHY there is no logical row when there is none. It never
+//   prints a row number that was not derived.
+//   GPS rejects arguments it does not recognize rather than treating an
+//   unrecognized argument as a request for a position report.
 //
 // risk:
 //   reads_table_records: yes when table is open
-//   mutates_cursor: temporary during logical-row computation
+//   mutates_cursor: temporary during logical-row computation, restored before return
 //   mutates_table_data: no
 //
 // related:
@@ -42,7 +48,55 @@
 //   STATUS
 //
 
+// ============================================================================
+// WHY THIS FILE IS SHAPED THIS WAY
+//
+// GPS answers one question -- "where am I" -- and that question is the whole
+// engine model in miniature:
+//
+//   which AREA      addressing   (R121: addressing is absolute)
+//   which TABLE     identity     (R130: identity is a key, not an address)
+//   which RECORD    position     (RECNO64: the physical recno is the anchor)
+//   which ROW       derivation   (R1: derivation downward only -- the logical
+//                                 row is derived FROM the physical recno under
+//                                 the active order and the visibility filter,
+//                                 never stored, never the other way round)
+//
+// Three rules bind every line below.
+//
+// R3  -- failure travels in the return value. The order walk can fail. When it
+//        does, GPS says so. It does not print the partial count it had reached.
+//
+// R6  -- absent must not be representable among present. "No logical row"
+//        (empty table / off-table cursor / current record filtered out / record
+//        not present in the active order / order unreadable) are five distinct
+//        states and none of them is the number zero. The previous version
+//        returned 0 for four of them and, for a deleted current record, ran the
+//        walk to completion and returned the TOTAL VISIBLE COUNT -- a number in
+//        the valid range that reads as "you are on the last row."
+//
+// THE COUNT DISCIPLINE -- a number is only reportable when the authority that
+//        produced it holds one kind. compute_logical_row() below returns a kind
+//        alongside the number, and the number is only read when the kind is
+//        Derived.
+//
+// RECNO64: recno() and recCount() are the 32-bit compatibility accessors. On a
+// table whose value exceeds INT32_MAX they return -1 by design, so that a
+// 32-bit consumer sees "out of range" instead of acting on a clamped value.
+// GPS was such a consumer: it read recno() into an int, so on the very table
+// class this engine exists for it reported "Physical Recno -1, Logical Row 0"
+// and called that a position. Everything here is recno64()/recCount64()/
+// gotoRec64().
+//
+// GPS also streams the order rather than materializing it. order_iterate_recnos
+// collects every recno into a vector first; asking "where am I" on a table with
+// 2^31 records would have allocated ~17 GB to count up to the cursor.
+// order_stream_display walks the backend cursor and yields in display order,
+// which is what a logical row is counted in.
+// ============================================================================
+
 #include <cctype>
+#include <cstdint>
 #include <sstream>
 #include <string>
 
@@ -54,128 +108,241 @@
 
 
 namespace {
-static std::string gps_trim(std::string s)
+
+const char* const GPS_CMD = "GPS";
+
+std::string gps_trim(std::string s)
 {
     while (!s.empty() && std::isspace(static_cast<unsigned char>(s.front()))) s.erase(s.begin());
     while (!s.empty() && std::isspace(static_cast<unsigned char>(s.back()))) s.pop_back();
     return s;
 }
 
-static std::string gps_upper(std::string s)
+std::string gps_upper(std::string s)
 {
     for (char& ch : s) ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
     return s;
 }
 
-static bool is_gps_usage_request(const std::string& raw)
+// Strip the leading verb, if the dispatcher handed us the whole line, and
+// return whatever the caller actually typed after it.
+std::string gps_arg_tail(const std::string& raw)
 {
     std::string t = gps_upper(gps_trim(raw));
-    if (t.rfind("GPS ", 0) == 0) {
-        t = gps_upper(gps_trim(t.substr(4)));
-    }
-    return t == "USAGE" || t == "HELP" || t == "?";
+    if (t == "GPS") return "";
+    if (t.rfind("GPS ", 0) == 0) t = gps_upper(gps_trim(t.substr(4)));
+    return t;
 }
 
-static void print_gps_usage()
+bool is_gps_usage_word(const std::string& tail)
+{
+    return tail == "USAGE" || tail == "HELP" || tail == "?";
+}
+
+void print_gps_usage()
 {
     cli::cmdout::print_message(dottalk::helpdata::MessageId::GpsUsageText);
 }
-} // namespace
 
-// ---------- minimal filter pass (GPS uses default LIST semantics) ----------
-static inline bool pass_deleted_filter(const xbase::DbArea& a)
+// ---------- visibility ------------------------------------------------------
+// Default reporting semantics: hide deleted rows from logical-row counting.
+//
+// OPEN ITEM -- this filter is hardcoded here rather than read from the session's
+// SET DELETED state. When SET DELETED is OFF, LIST shows deleted rows and counts
+// them, and GPS does not. That is two answers to one question about the same
+// table (R5). It is left as-is deliberately: changing it changes the number GPS
+// prints and is a ruling, not a repair. Recorded rather than silently altered.
+bool pass_deleted_filter(const xbase::DbArea& a)
 {
-    // Default reporting semantics: hide deleted rows from logical-row counting.
     return !a.isDeleted();
 }
 
-// ---------- logical row computation ----------
-static std::int64_t compute_logical_row(xbase::DbArea& a, int32_t physical)
-{
-    if (physical < 1 || physical > a.recCount()) return 0;
+// ---------- logical row derivation ------------------------------------------
+enum class LogicalRowKind {
+    Derived,      // walked the order, reached the physical record, counted to it
+    NoRecords,    // the table holds no records
+    OffTable,     // physical is outside 1..recCount64 (BOF / EOF / never positioned)
+    NotVisible,   // the record is present but filtered out -- it HAS no logical row
+    NotInOrder,   // the record is present and visible but the order never yielded it
+    OrderFailed,  // the active order could not be read
+};
 
-    std::int64_t logical = 0;
+struct LogicalRowResult {
+    LogicalRowKind kind = LogicalRowKind::OffTable;
+    std::uint64_t  row  = 0;  // read ONLY when kind == Derived
+    std::string    err;       // read ONLY when kind == OrderFailed
+};
+
+LogicalRowResult compute_logical_row(xbase::DbArea& a, std::uint64_t physical)
+{
+    LogicalRowResult out;
+
+    const std::uint64_t total = a.recCount64();
+    if (total == 0)                        { out.kind = LogicalRowKind::NoRecords; return out; }
+    if (physical < 1 || physical > total)  { out.kind = LogicalRowKind::OffTable;  return out; }
+
+    // GPS is an instrument: it must not move the thing it is measuring. The
+    // walk below repositions the cursor and refills the record buffer on every
+    // step. Both are restored before this function returns.
+    const std::uint64_t saved = a.recno64();
+
+    std::uint64_t logical             = 0;
+    bool          saw_physical        = false;
+    bool          visible_at_physical = false;
 
     cli::OrderIterSpec spec{};
     std::string err;
 
-    cli::order_iterate_recnos(
+    const bool walked = cli::order_stream_display(
         a,
-        [&](uint64_t rn64) -> bool
+        /*reverse=*/false,
+        [&](std::uint64_t rn) -> bool
         {
-            if (rn64 == 0 || rn64 > static_cast<uint64_t>(a.recCount64()))
+            if (rn == 0 || rn > total) return true;
+
+            const bool is_target = (rn == physical);
+
+            if (!a.gotoRec64(rn) || !a.readCurrent()) {
+                // Could not read the row. If it is the one we were asked about,
+                // stop: we cannot say whether it is visible, and guessing is
+                // what this file exists to stop doing.
+                if (is_target) { saw_physical = true; visible_at_physical = false; return false; }
                 return true;
+            }
 
-            const int32_t rn = static_cast<int32_t>(rn64);
+            const bool visible = pass_deleted_filter(a);
+            if (visible) ++logical;
 
-            if (!a.gotoRec(rn) || !a.readCurrent())
-                return true;
-
-            if (!pass_deleted_filter(a))
-                return true;
-
-            ++logical;
-
-            if (rn == physical)
-                return false;
-
+            if (is_target) {
+                saw_physical        = true;
+                visible_at_physical = visible;
+                return false;   // stop AT the target, visible or not
+            }
             return true;
         },
         &spec,
-        &err
-    );
+        &err);
 
-    return logical;
+    // Restore before classifying, so every exit below leaves the cursor where
+    // the caller had it.
+    if (saved >= 1 && saved <= total) {
+        a.gotoRec64(saved);
+        a.readCurrent();
+    }
+
+    if (!walked) {
+        out.kind = LogicalRowKind::OrderFailed;
+        out.err  = err.empty() ? std::string("active order could not be read") : err;
+        return out;
+    }
+    if (!saw_physical)        { out.kind = LogicalRowKind::NotInOrder; return out; }
+    if (!visible_at_physical) { out.kind = LogicalRowKind::NotVisible; return out; }
+
+    out.kind = LogicalRowKind::Derived;
+    out.row  = logical;
+    return out;
 }
 
-// ---------- main command ----------
+// The logical-row cell of the report. A number ONLY when one was derived.
+std::string logical_row_cell(const LogicalRowResult& r)
+{
+    switch (r.kind) {
+        case LogicalRowKind::Derived:     return std::to_string(r.row);
+        case LogicalRowKind::NoRecords:   return "none (table has no records)";
+        case LogicalRowKind::OffTable:    return "none (cursor is not on a record)";
+        case LogicalRowKind::NotVisible:  return "none (record is filtered out)";
+        case LogicalRowKind::NotInOrder:  return "none (record not present in the active order)";
+        case LogicalRowKind::OrderFailed: return "unknown (order walk failed)";
+    }
+    return "unknown";
+}
+
+// The physical-recno cell. recno64() is authoritative; the states that are not
+// a record are named, not printed as 0.
+std::string physical_recno_cell(const xbase::DbArea& a)
+{
+    const std::uint64_t rn    = a.recno64();
+    const std::uint64_t total = a.recCount64();
+
+    if (total == 0)          return "none (table has no records)";
+    if (rn == 0)             return "none (BOF)";
+    if (rn > total)          return "none (EOF)";
+    return std::to_string(rn);
+}
+
+} // namespace
+
+// ---------- main command ----------------------------------------------------
 void cmd_GPS(xbase::DbArea& current, std::istringstream& iss)
 {
-    const std::string raw_args = iss.str();
-    if (is_gps_usage_request(raw_args)) {
+    const std::string tail = gps_arg_tail(iss.str());
+
+    if (is_gps_usage_word(tail)) {
+        print_gps_usage();
+        return;
+    }
+    if (!tail.empty()) {
+        // An argument GPS does not understand is not a position request. The
+        // previous version reported the cursor for ANY argument, so a typo
+        // returned a plausible answer to a question that was not asked.
+        cli::cmdout::print_note(GPS_CMD, "unrecognized argument: " + tail);
         print_gps_usage();
         return;
     }
 
     const std::size_t cur_area = workareas::current_slot();
 
+    // R5 -- one tree, one ladder. The dispatcher hands GPS a DbArea reference;
+    // workareas is asked for the slot number. Nothing else in this function
+    // proves those are the same area. If they disagree, GPS must not print the
+    // pair as though it had been verified.
+    const xbase::DbArea* by_slot = workareas::current_db();
+    if (by_slot != &current) {
+        cli::cmdout::print_note(
+            GPS_CMD,
+            "engine current area (slot " + std::to_string(cur_area) +
+            ") is not the area handed to GPS -- slot and table below may not "
+            "describe the same area");
+    }
+
     if (!current.isOpen()) {
         cli::cmdout::print_message(
             dottalk::helpdata::MessageId::GpsNoTableCursorLineText,
             {
-                {"area", std::to_string(cur_area)},
+                {"area",     std::to_string(cur_area)},
                 {"occupied", workareas::occupied_desc()}
             });
         return;
     }
 
-    int recno = 0;
-    try {
-        recno = current.recno();
-    } catch (...) {
-        recno = 0;
-    }
-
+    // Identity. workareas::current() can be null (no engine bound, or the slot
+    // is out of range); the previous version dereferenced it inside a try/catch,
+    // which does not catch a null dereference. It also wrapped recno(), which is
+    // noexcept and cannot throw -- a guard that could only ever guard nothing.
     std::string table_name;
-    try {
-        table_name = workareas::current()->label();
-    } catch (...) {
-        table_name.clear();
+    if (const workareas::WorkArea* wa = workareas::current_const()) {
+        table_name = wa->label();
+    } else {
+        table_name = current.name();
     }
-
     if (table_name.empty()) {
         table_name = cli::cmdout::message_text(dottalk::helpdata::MessageId::GpsUnnamedTableText);
     }
 
-    const std::int64_t logical_row = compute_logical_row(current, recno);
+    const std::string      recno_cell = physical_recno_cell(current);
+    const LogicalRowResult logical    = compute_logical_row(current, current.recno64());
 
     cli::cmdout::print_message(
         dottalk::helpdata::MessageId::GpsCursorLineText,
         {
-            {"area", std::to_string(cur_area)},
-            {"occupied", workareas::occupied_desc()},
-            {"table", table_name},
-            {"recno", std::to_string(recno)},
-            {"logical_row", std::to_string(logical_row)}
+            {"area",        std::to_string(cur_area)},
+            {"occupied",    workareas::occupied_desc()},
+            {"table",       table_name},
+            {"recno",       recno_cell},
+            {"logical_row", logical_row_cell(logical)}
         });
+
+    if (logical.kind == LogicalRowKind::OrderFailed) {
+        cli::cmdout::print_note(GPS_CMD, "order walk failed: " + logical.err);
+    }
 }
