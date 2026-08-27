@@ -346,13 +346,24 @@ TIMES.**
 
 5. A good-neighbour note quoting four broken paths became a second source of
    the same advisories.
-6. Its explanatory line then spelled `cite-check:ignore` and suppressed itself.
+6. Its explanatory line then spelled the suppression marker and suppressed
+   itself.
 7. The `132 callers` correction spelled the two grep patterns it told the
    reader to trust, pushing 110 to 112 and 1 to 3. Reverted before shipping;
    the replacement describes the patterns without spelling them and records
    the mistake.
 
 **ANY TOOL THAT MATCHES ON TEXT WILL FIND THE SENTENCE DESCRIBING IT.**
+
+**7a. AND THEN THIS DOCUMENT DID IT AGAIN, IN THE PARAGRAPH ABOVE.** The first
+committed draft of item 6 spelled the marker while explaining that spelling the
+marker suppresses the line. So did the Session Log row. The gate caught both:
+*"2 suppression(s) hiding nothing that needed hiding"*, one of them blinding a
+real tracked citation in the dashboard. **Recorded rather than quietly fixed,
+because it is the strongest evidence the pattern is real:** an author who had
+just written the rule in capitals, in that same file, broke it twice in the
+sentence stating it. The rule is not a lesson anyone learns once. Both lines now say
+"the suppression marker"; this paragraph and that correction ship together.
 
 **And the one that is neither, and is the worst:**
 
@@ -382,9 +393,12 @@ persuasive empty result there is.**
 3. **GPS's three unfired arms** -- `GO 201` is the cheapest.
 4. **`occupied_desc()` and `current_slot()`** -- shared header, unclaimed.
 5. **`WSREPORT` scope** -- report the workspace, or say it reports the process.
-6. **AIF-141's advisory is permanent**: `include/xbase_64_phase1_contract.txt`
-   is gitignored and cited by three documents, so it fires on every commit
-   touching any of them. Leave, reword, or accept.
+6. **AIF-141's advisory is permanent.** The x64 phase-1 contract text under
+   `include/` is GITIGNORED, so it can never be staged, and three documents
+   cite it by path -- so it fires on every commit touching any of them. Leave,
+   reword, or accept. **This entry deliberately does not spell that path**,
+   because writing about an unstageable citation is itself a citation, and the
+   first draft of this line made the footprint four.
 7. **The owner seat has no password**, and owner login gates `USER AS`.
    Deployment state, owner's call.
 8. **`AI_TIER1_SEED_V1.md` is at 89% of its 8192 B budget**, 866 B headroom.
