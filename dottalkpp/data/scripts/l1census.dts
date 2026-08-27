@@ -1,0 +1,32 @@
+&& L1 CENSUS -- how many LIVE HEADS does the production catalog hold TODAY?
+&& AIF-078 lifecycle lane, step L1's prerequisite.
+&&
+&& READ-ONLY. Opens the production catalog and counts. Writes nothing.
+&& It does NOT retire anything: L1 is report-only until the owner authorizes it.
+&&
+&& The thirteen live heads named in the plan were measured 2026-08-24 and
+&& several REGRESSION ALL runs have happened since, so that list is stale by
+&& construction. This asks the engine rather than trusting the old number.
+&&
+&& SET DELETED is ON by default, so delete-flagged rows are already hidden and
+&& these counts are over the rows a user can see.
+
+ECHO === total visible rows ===
+USE D:\code\ccode\dottalkpp\data\workspaces\WORKSPACES.dbf
+COUNT
+
+ECHO === superseded (retired history) ===
+COUNT FOR SUPERSEDED = "1"
+
+ECHO === LIVE HEADS -- the number that matters for L1 ===
+COUNT FOR SUPERSEDED <> "1"
+
+ECHO === the live heads by name ===
+LIST ALL FOR SUPERSEDED <> "1"
+
+ECHO === same set, unlimited, so the 21st is not hidden by the row cap ===
+LIST ALL FOR SUPERSEDED = "0"
+
+ECHO === highest WS_ID in the catalog (allocation high-water) ===
+GO BOTTOM
+? WS_ID

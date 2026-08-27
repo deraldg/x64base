@@ -1,0 +1,82 @@
+&& L1 CLEANUP -- retire the spec-minted live heads so no future run ADOPTS them.
+&& AIF-078 lifecycle lane, step L1. Owner-authorized 2026-08-27.
+&&
+&& THIS WRITES TO THE PRODUCTION CATALOG. Backup taken first at
+&& tmp/catalog_backup/WORKSPACES.{dbf,dtx}.20260827T230621Z
+&&
+&& WHAT IT DOES AND DOES NOT DO. WORKSPACE DELETE flags a name's rows AND sets
+&& SUPERSEDED. Adoption is stopped by SUPERSEDED, not by the flag -- the verb
+&& says so itself. Nothing is packed: the rows stay on disk, stay readable
+&& under SET DELETED OFF, and the max(WS_ID)+1 high-water is preserved because
+&& the allocator still counts them.
+&&
+&& IT FLAGS THE WHOLE CHAIN, NOT JUST THE LIVE HEAD. These names have been
+&& running since 2026-08-11, so 110 of 252 rows carry them. Visible rows drop
+&& from 216 to 106. That was measured and shown to the owner before this ran.
+&&
+&& SEVEN LIVE HEADS ARE DELIBERATELY LEFT ALONE:
+&&   mcc_x64, mcc_v3, sess_cursor, mcc_db, mcc_minidb_memo -- real saved
+&&     workspaces, not spec residue.
+&&   x64, x32 -- DIRECTORY IDENTITIES. `workspace open dbf` ADOPTING these is
+&&     the D10.1 feature working as designed, not a defect. Retiring them would
+&&     break the thing the lane built.
+&&
+&& PREDICTIONS ARE WRITTEN DOWN BEFORE THE RUN, per house discipline. Each
+&& DELETE's reported row count is predicted inline; their sum must equal the
+&& drop in visible COUNT (216 - 106 = 110).
+
+ECHO === BEFORE ===
+USE D:\code\ccode\dottalkpp\data\workspaces\WORKSPACES.dbf
+COUNT
+COUNT FOR SUPERSEDED = "0"
+&& predict: 216 visible, 21 live heads
+
+ECHO === the fourteen, one per line so each row count is visible ===
+WORKSPACE DELETE partialprobe
+&& predict 1
+WORKSPACE DELETE goneprobe
+&& predict 1
+WORKSPACE DELETE goneprobe2
+&& predict 1
+WORKSPACE DELETE cycle_from_ram
+&& predict 1
+WORKSPACE DELETE v3_regress
+&& predict 12
+WORKSPACE DELETE LADDERTEST
+&& predict 1
+WORKSPACE DELETE lsfall
+&& predict 1
+WORKSPACE DELETE ls_probe
+&& predict 11
+WORKSPACE DELETE ls_idxprobe
+&& predict 11
+WORKSPACE DELETE wm_regress
+&& predict 14
+WORKSPACE DELETE sess_regress
+&& predict 9
+WORKSPACE DELETE ram_hydrate_src
+&& predict 14
+WORKSPACE DELETE minidb_regress
+&& predict 17
+WORKSPACE DELETE minidb_sidecar
+&& predict 16
+
+ECHO === AFTER -- visible rows and live heads ===
+USE D:\code\ccode\dottalkpp\data\workspaces\WORKSPACES.dbf
+COUNT
+COUNT FOR SUPERSEDED = "0"
+&& predict: 106 visible, 7 live heads
+
+ECHO === NOTHING WAS PACKED -- the rows are still on disk ===
+SET DELETED OFF
+COUNT
+&& predict 252, unchanged
+
+ECHO === and the allocation high-water is intact ===
+GO BOTTOM
+? WS_ID
+&& predict 252
+SET DELETED ON
+
+ECHO === the seven that remain, by name ===
+LIST ALL FOR SUPERSEDED = "0"
