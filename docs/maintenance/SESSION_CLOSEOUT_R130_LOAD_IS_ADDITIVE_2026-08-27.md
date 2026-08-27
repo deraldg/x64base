@@ -80,9 +80,10 @@ it and the key-to-slot map had to ship as one change.
 ## Commits
 
     f60d2d70d  (baseline) Rename the eleven schema_* workspace handlers
-    <pending>   R130: LOAD is additive, and a posture records a KEY not an
+    7a3b23828  R130: LOAD is additive, and a posture records a KEY not an
                 address  (src/cli x2, spec, registration, ruling, register
-                row, Session Log row)
+                row, Session Log row)   [hash back-filled by the amendment,
+                sec 11.1 -- it was <pending> when this block was written]
 
 
     Date    : 2026-08-27
@@ -325,3 +326,136 @@ by slot -- which is exactly the composition R128 ruled for replacement.
   files rather than about this change. Reverting the loader alone is safe;
   **reverting the map WITHOUT restoring the close is the NO MAP world of sec 3
   and must not be done.**
+
+---
+
+## 11. AMENDMENT, 2026-08-27, AFTER THE SIX CARRIER RUNS
+
+**The original text above is left standing.** Everything in this section either
+corrects it or completes it, and the corrections are stated rather than edited
+in, because a closeout that silently retunes its own claims stops being a
+record of what was known when.
+
+### 11.1 THE COMMIT
+
+    7a3b23828  R130: LOAD is additive, and a posture records a KEY not an
+               address  (src/cli x2, spec, registration, ruling, register
+               row, Session Log row)
+
+Gates passed on the second attempt. **The first attempt was BLOCKED and the
+author's gate prediction had missed it:** `ai_report_audit` requires a YAML
+`ai_report_audit` envelope on every `SESSION_CLOSEOUT_*.md` and this document
+shipped without one. **R75 on the author's own prediction** -- the earlier
+commits in this run passed that gate, and that silence was read as "not my
+concern" when it meant "those carried envelopes." Fixed with
+`report_id: AIPR-20260827-COWORK-003`, and the `(AIF-078)` lane token added to
+the H1 at the same time, which cleared `session-log-check`'s "names no lane in
+their title" advisory.
+
+### 11.2 THE FOUR CARRIERS ARE NOW PROVEN. SEC 6's LIMIT IS LIFTED.
+
+All six explicit-run specs were run. **`WORKSPACE_MEMO`, `WORKSPACE_SESSION`,
+`WORKSPACE_MINIDB`, `WORKSPACE_RAM`, `WORKSPACE_LOADSHORT` and `CASCADE_ENV`
+all read green**, so the memo, minidb and ram-memo carriers are measured rather
+than argued. `SS_T1` restored the parent at physical recno 6 and `SS_T2`
+re-slaved the child to 11 through the load's own refresh, on the 43-area
+posture, over the memo carrier.
+
+**THE LOADER IS SOUND ON ALL FOUR CARRIERS.** What is not sound is what specs
+may assume about where things land afterward -- see 11.4 and 11.5.
+
+### 11.3 A CORRECTION TO SEC 6, AND IT IS THE AUTHOR'S SURVEY THAT WAS WRONG
+
+Sec 6 states *"every shipped posture was checked and all are contiguous
+`0..n-1` except one."* **That survey covered
+`dottalkpp/data/workspaces/*.dtschema*` -- the FILE carrier -- and the claim was
+generalised to all postures.** Memo-carried postures live inside
+`WORKSPACES.dbf` and were never enumerated.
+
+**`minidb_sidecar` IS A SPARSE MEMO POSTURE.** `workspace_minidb.dts` did
+`SELECT 1` before `CREATE X64 MDMEMO`, so the posture records `AREA 1` with
+nothing at 0. Under R130 the allocator answered slot 0, the load announced the
+remap, and the spec's `SELECT 1` reached an empty area -- `DB_T3` and `DB_T4`
+both `.F.`, followed by `REPLACE: no file open.`
+
+**R75 AGAIN, ON THE AUTHOR'S OWN INSTRUMENT: the survey saw the shape it was
+built to see, and its silence was reported as coverage.**
+
+**FIXED AND VERIFIED.** `workspace_minidb.dts:89` now reads `SELECT MDMEMO`
+instead of `SELECT 1`, with the reason written into the file. Re-run
+2026-08-27: **`DB_T1` `DB_T2` `DB_T3` `DB_T4` all `.T.`**, `SELECT MDMEMO`
+resolved to **area 0**, and the remap line still printed. **The slot was the
+whole story; there is no memo-carriage defect.** That had been INFERRED from
+`REPLACE: no file open` and is now MEASURED, which is the difference this
+closeout kept insisting on elsewhere.
+
+The `SELECT 1` at `:65` is deliberately left alone -- it is the AUTHORING
+placement, it is what makes the posture sparse, and it is the only sparse memo
+posture found. Keeping it keeps the case in the suite.
+
+### 11.4 A FALSE GREEN THIS CHANGE CAUSED -- NOW AIF-140
+
+**`WORKSPACE_LOADSHORT`'s `L_T3` reads `.T.` while reading the wrong table.**
+It addresses by NAME, and the ledger fired on the line above it:
+
+    NAME: 'TEACHERS' is open in 2 areas (ws 3 area 10, ws 3 area 22);
+    resolved to area 10 [REL refresh parent].
+
+Area 10 is the x64 TEACHERS that survived the additive load; area 22 is the
+partially-restored one the arm exists to assert. First-wins took the wrong one,
+and both files descend from the same bytes so the field compared equal.
+
+**Both areas are in ONE workspace**, so workspace scoping and R129 sec 6.2 do
+not reach it. `WORKSPACE LOAD` assigns a posture's `alias=` with a bare
+`setLogicalNameIf()` while `USE` has a three-arm policy that refuses or renames
+and announces. **Claimed as AIF-140**; finding at
+`docs/maintenance/AIF140_FINDING_LOAD_DOES_NOT_RENAME_A_HELD_NAME_V1.md`.
+
+**AND IT DEFEATS THIS DOCUMENT'S OWN ADVICE.** Sec 6 offered name addressing as
+the robust alternative to slot addressing. `WORKSPACE_LOADSHORT` had ALREADY
+made that move -- its header records that ordinals produced two reds that were
+the spec's fault. **After an additive LOAD neither form is safe unassisted:
+ordinals move and names collide.**
+
+### 11.5 CASCADE_ENV IS GREEN OVER A DIFFERENT ARRANGEMENT
+
+It opened two tables with `USE`, then loaded a 43-area posture, and printed
+`43 table(s) landed at an engine slot other than the number recorded`. It ended
+with **45 areas open instead of 43**, `CASCADE_ITEMS` and
+`CASCADE_SALES_ORDERS` each open twice, and the ledger fired **five times**.
+All nine arms `.T.`
+
+**The green is real. It is not the same green.** Recorded so a later reader
+comparing transcripts does not treat the two runs as equivalent.
+
+**SEVEN LEDGER HITS ACROSS THE SESSION AND NO SPEC CAN READ ONE** -- AIF-139,
+demonstrated again rather than argued.
+
+### 11.6 A SECOND FINDING FROM THE SAME INVESTIGATION -- AIF-141
+
+Measuring whether CDX tags resolve against descriptor tokens or logical names
+(they resolve against logical names) turned up that **the X64M writer DROPS a
+name that exceeds the ceiling rather than truncating it** -- three sites, and
+the writer's is destructive because the long name is never written to the file
+at all. Latent: the ceiling is a build vector and no fixture comes near it.
+**Claimed as AIF-141**; finding at
+`docs/maintenance/AIF141_FINDING_A_LONG_NAME_THAT_DOES_NOT_FIT_IS_DROPPED_V1.md`.
+
+The design question that produced it is answered in
+`docs/maintenance/AIF078_DESIGN_NAME_TIERS_AND_CORRELATION_NAMES_V1.md`, which
+also records that **`_db_name`'s retirement note at `xbase.hpp:564` is now
+false** -- it justified the removal on the grounds that `_ws_handle` plus
+`_logical_name` covers the table-name-vs-alias split, and `_ws_handle` was
+EQUAL on both colliding areas in 11.4. Sound when written on 2026-08-22;
+R130 invalidated it on 2026-08-27.
+
+### 11.7 ONE UNEXPLAINED OBSERVATION, NOT DIAGNOSED
+
+`workspace_minidb.dts`'s header says its real-disk `MDMEMO.dtx` residue is
+*"harmless; truncated by the next run."* Two consecutive runs on 2026-08-27
+saved `MINIDB 1: 2 file(s), 6920 B` and then `2 file(s), 7016 B` -- **96 bytes
+of growth in the carried payload, which is not truncation.** Two transcripts,
+one comparison, no diagnosis offered. It may be ordinary memo-append behaviour
+and the header's wording may simply be loose. **Named because a per-run growth
+that a document calls truncation is the shape this house keeps finding**, and
+because nobody will notice it from one run.

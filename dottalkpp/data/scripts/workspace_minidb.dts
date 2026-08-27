@@ -76,7 +76,17 @@ CLOSE
 VDISK UNMOUNT
 DO mem
 WORKSPACE LOAD minidb_sidecar MEMO RAM
-SELECT 1
+* ADDRESSED BY NAME, NOT BY SLOT -- and this is the second time this file has
+* had to learn it. The container was authored with the table in area 1, so the
+* posture records AREA 1 and nothing at 0: a SPARSE posture. Under R130 a
+* posture's AREA number is a KEY, not an engine address, so the load allocates
+* the lowest free slot in the current workspace -- slot 0 -- and announces the
+* remap. `SELECT 1` then reached an EMPTY area and DB_T3/DB_T4 both read .F.
+* while the container bytes were perfectly fine (measured 2026-08-27: the arm
+* was followed by "REPLACE: no file open", which is what an empty area says).
+* MDMEMO is unique in this session, so the name is unambiguous here -- see
+* AIF-140 for when it is not.
+SELECT MDMEMO
 ? "DB_T3_memo_value_from_container:" + (NOTES = "carried through the container")
 REPLACE NOTES WITH "post-hydration write"
 ? "DB_T4_sidecar_writable_after_hydration:" + (NOTES = "post-hydration write")
