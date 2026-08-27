@@ -75,10 +75,19 @@ print.
 
 The stale headers, verbatim:
 
-    src/cli/cmd_dotscript.cpp:10   // src/commands/cmd_dotscript.cpp
-    src/cli/main.cpp:11            // File: src/main.cpp
+    src/cli/cmd_dotscript.cpp  line 10 declares itself to be:
+        // src/commands/cmd_dotscript.cpp                  (cite-check:ignore)
 
-Neither `src/commands/` nor `src/main.cpp` exists. The real paths are under
+    src/cli/main.cpp  line 11 declares itself to be:
+        // File: src/main.cpp                              (cite-check:ignore)
+
+The two marked lines are QUOTATIONS OF THE DEFECT, not citations. `cite-check`
+cannot tell a quoted-wrong path from a claimed one, so the marker says so
+explicitly and only on the quoting line -- the two real paths above stay under
+the gate. Same ruling shape as OI-017 on `dottalkpp/data/cdxdemo.dts`, where the
+bad path IS the subject matter and sterilising it would destroy the evidence.
+
+Neither `src/commands/` nor `src/main.cpp` exists. <!-- cite-check:ignore --> The real paths are under
 `src/cli/`. Cosmetic, but it is the kind of thing an agent greps for and fails
 to find, so it is recorded rather than fixed silently.
 
