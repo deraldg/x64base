@@ -214,6 +214,7 @@ static bool is_numeric_literal(const std::string& s) {
 // AIF-074 P0.2: find_open_area_by_name_ci moved to the shared home in
 // workarea_util.{hpp,cpp}; behavior unchanged.
 using cli::find_open_area_by_name_ci;
+using cli::find_open_area_in_workspace_ci;   // AIF-137, scoped variant
 
 // AIF-078 D8 sec 7, 2026-08-22. A file-local slot_of_area_ptr() used to live
 // here: a linear scan over workareas::count() -- which returns the CONFIGURED
@@ -447,13 +448,55 @@ static void clear_subtree_to_top(const std::string& parent_name,
     if (it == relations_store().end()) return;
 
     for (const auto& r : it->second) {
-        if (xbase::DbArea* child = find_open_area_by_name_ci(r.child, "REL clear_subtree")) {
+        if (xbase::DbArea* child = find_open_area_in_workspace_ci(
+                r.child, xbase::workspace::current_handle(), "REL clear_subtree")) {
             try { child->top(); child->readCurrent(); } catch (...) {}
         }
         clear_subtree_to_top(r.child, seen, depth + 1);
     }
 }
 
+// AIF-137, 2026-08-27. EVERY name resolution on the relation path is now
+// scoped to the CURRENT workspace.
+//
+// The store has been partitioned since AIF-078 I1.2 (`relations_store_for`,
+// above). The NAMES INSIDE IT WERE NOT, so a refresh standing in one workspace
+// resolved its parent -- and its child -- to whichever workspace happened to
+// hold the lowest engine slot. Measured live with an EMPTY relation store, so
+// it needed no SET RELATION to occur: `infer_parent_from_workarea()` HOLDS the
+// area and returns its NAME, and the caller then searched the process and
+// found a different one. The round trip lost identity.
+//
+// ELEVEN SITES, not the two the first reading found and not the six the
+// spec drove. COUNTED, after the first draft of this comment said twelve. `REL ADD` resolves both ends
+// (:579, :580) and validated against the wrong workspace's areas; the subtree
+// walker (:450) and the parent-override reader (:711) do the same. They were
+// enumerated by running the spec, which printed a distinct ledger tag for each.
+// A grep of this file AFTER those six were scoped found FIVE MORE the spec never
+// exercised -- REL matchcount parent/child, REL preview child, REL enum
+// parent/child -- all on REPORTING paths. Those are THE COUNT DISCIPLINE: a
+// number taken from an authority holding more than one KIND with no
+// discriminator applied. They are scoped here too, and they have NO ARM. The
+// spec covers ADD, REFRESH and CLEAR only; a future edit could unscope any of
+// the reporting five and the suite would stay green. Said plainly rather than
+// implied by their absence.
+//
+// AND ONE MORE THAT IS *NOT* FIXED HERE: `REL LIST ALL` does not use the
+// singular resolver at all. It builds a whole map through
+// `cli::build_open_area_index_ci()` (see the block above that function's
+// former home), which is built on the same UNSCOPED primitive, so a tree
+// listing can still walk into another workspace's areas. Scoping an INDEX is a
+// different change from scoping a LOOKUP -- the index has no single site to
+// filter and its callers expect a complete map -- so it is named here and left.
+// It belongs with the wider split, not with this fix.
+//
+// WHAT IS NOT FIXED HERE, AND IS NAMED RATHER THAN LEFT: the recursion below
+// still passes `rel.child` as a STRING after holding the child's `DbArea*` two
+// lines earlier, so the next frame resolves the same name again. That is now
+// REDUNDANT rather than WRONG -- the scoped resolver returns the same area --
+// but not lowering it at all is the deeper fix, and it belongs with the wider
+// split of `find_open_area_by_name_ci` into scoped / given-handle /
+// explicit-cross across its 36 call sites. That is its own lane.
 static void refresh_from_parent_name(const std::string& parent_name,
                                      std::unordered_set<std::string>& seen,
                                      int depth) {
@@ -461,7 +504,8 @@ static void refresh_from_parent_name(const std::string& parent_name,
     const std::string key = up_copy(parent_name);
     if (!seen.insert(key).second) return;
 
-    xbase::DbArea* parent = find_open_area_by_name_ci(parent_name, "REL refresh parent");
+    xbase::DbArea* parent = find_open_area_in_workspace_ci(
+        parent_name, xbase::workspace::current_handle(), "REL refresh parent");
     if (!parent || parent->recno() <= 0) return;
 
     try { parent->readCurrent(); } catch (...) {}
@@ -470,7 +514,8 @@ static void refresh_from_parent_name(const std::string& parent_name,
     if (it == relations_store().end()) return;
 
     for (const auto& rel : it->second) {
-        xbase::DbArea* child = find_open_area_by_name_ci(rel.child, "REL refresh child");
+        xbase::DbArea* child = find_open_area_in_workspace_ci(
+            rel.child, xbase::workspace::current_handle(), "REL refresh child");
         if (!child) continue;
 
         const auto kv = parent_values(*parent, rel.joins);
@@ -576,8 +621,10 @@ bool add_relation(const std::string& parent_area,
         return false;
     }
 
-    xbase::DbArea* P = find_open_area_by_name_ci(parent, "REL add parent");
-    xbase::DbArea* C = find_open_area_by_name_ci(child, "REL add child");
+    xbase::DbArea* P = find_open_area_in_workspace_ci(
+        parent, xbase::workspace::current_handle(), "REL add parent");
+    xbase::DbArea* C = find_open_area_in_workspace_ci(
+        child, xbase::workspace::current_handle(), "REL add child");
     if (!P || !C) {
         emit_rel_diag(dottalk::helpdata::MessageId::RelDiagAddFailedNotOpenText);
         return false;
@@ -708,7 +755,11 @@ void set_current_parent_name(const std::string& logical_name) noexcept {
 
 std::string current_parent_name() {
     if (!current_parent_override().empty()) {
-        if (find_open_area_by_name_ci(current_parent_override(), "REL current parent")) return current_parent_override();
+        if (find_open_area_in_workspace_ci(current_parent_override(),
+                                          xbase::workspace::current_handle(),
+                                          "REL current parent")) {
+            return current_parent_override();
+        }
         current_parent_override().clear();
     }
     return infer_parent_from_workarea();
@@ -743,7 +794,8 @@ int match_count_for_child(const std::string& child_area) {
         const std::string parent = current_parent_name();
         if (parent.empty()) return 0;
 
-        xbase::DbArea* parent_db = find_open_area_by_name_ci(parent, "REL matchcount parent");
+        xbase::DbArea* parent_db = find_open_area_in_workspace_ci(
+            parent, xbase::workspace::current_handle(), "REL matchcount parent");
         if (!parent_db || parent_db->recno() <= 0) return 0;
 
         auto it = relations_store().find(up_copy(parent));
@@ -754,7 +806,8 @@ int match_count_for_child(const std::string& child_area) {
                                 [&](const Relation& r){ return r.child == child; });
         if (rit == it->second.end()) return 0;
 
-        xbase::DbArea* child_db = find_open_area_by_name_ci(child, "REL matchcount child");
+        xbase::DbArea* child_db = find_open_area_in_workspace_ci(
+            child, xbase::workspace::current_handle(), "REL matchcount child");
         if (!child_db || !child_db->isOpen()) return 0;
 
         const int parent_recno = parent_db->recno();
@@ -856,7 +909,8 @@ void import_relations(const std::vector<RelationSpec>& specs, bool clear_existin
 // This function built its own UPPER-name -> area map with `out[key] = a`, an
 // unconditional assign, which made it LAST-match-wins: with two open areas
 // named STUDENTS it handed back the HIGHER slot, while
-// find_open_area_by_name_ci() -- the resolver every other REL path uses --
+// find_open_area_by_name_ci() -- then the resolver every other REL path used,
+// and since AIF-137 replaced on this path by its workspace-scoped variant --
 // returned the LOWER one. Two resolvers, one question, different answers, and
 // neither said which area it had picked. R112 sec 3 measured twelve basenames
 // shared across the x64/x32/vfp roots, so the collision is the demo corpus,
@@ -1043,7 +1097,8 @@ std::vector<relations_api::PreviewRow> preview_child(const std::string& child_ar
                                 [&](const Relation& r){ return r.child == child; });
         if (rit == it->second.end()) return out;
 
-        const xbase::DbArea* child_db = find_open_area_by_name_ci(child, "REL preview child");
+        const xbase::DbArea* child_db = find_open_area_in_workspace_ci(
+            child, xbase::workspace::current_handle(), "REL preview child");
 
         auto kv = parent_field_values_names(*A, *rit);
         const std::string for_expr = build_for_expr(child_db, kv);
@@ -1099,9 +1154,11 @@ static bool enum_chain_dfs(
         return true;
     }
 
-    xbase::DbArea* parent_db = find_open_area_by_name_ci(parent_up, "REL enum parent");
+    xbase::DbArea* parent_db = find_open_area_in_workspace_ci(
+        parent_up, xbase::workspace::current_handle(), "REL enum parent");
     const std::string child_up = up_copy(chain_children[idx]);
-    xbase::DbArea* child_db = find_open_area_by_name_ci(child_up, "REL enum child");
+    xbase::DbArea* child_db = find_open_area_in_workspace_ci(
+        child_up, xbase::workspace::current_handle(), "REL enum child");
     if (!parent_db || !child_db) return false;
 
     auto it = relations_store().find(parent_up);

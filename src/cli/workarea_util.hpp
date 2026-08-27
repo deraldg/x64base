@@ -54,6 +54,33 @@ xbase::DbArea* find_open_area_by_name_ci(const std::string& logical_or_name);
 xbase::DbArea* find_open_area_by_name_ci(const std::string& logical_or_name,
                                          const char* site);
 
+// THE SAME QUESTION, ASKED INSIDE ONE WORKSPACE (AIF-137, 2026-08-27).
+//
+// The unscoped resolver above sweeps EVERY open area, so a caller standing in
+// one workspace resolves a name to another workspace's table whenever both
+// hold it. Measured live: a relation refresh issued inside workspace 3 drove
+// workspace 2's child, with an EMPTY relation store, needing no SET RELATION
+// to occur. The relation STORE was partitioned by workspace at AIF-078 I1.2;
+// the NAMES INSIDE IT WERE NOT.
+//
+// ABSENT HERE IS ABSENT. This returns nullptr when the name is open only in
+// some OTHER workspace -- it does not fall back and it does not diagnose.
+// R129 sec 6.2 rules that a name present in the current workspace resolves to
+// it and a name absent here but present elsewhere is refused; on an ENGINE
+// path a refusal has nobody to tell, so the correct behaviour is to find
+// nothing and return. A fallback here would re-create the defect with an
+// apology attached.
+//
+// IT STILL RECORDS, and what it records is now the residue that matters. Two
+// areas can share a name INSIDE one workspace -- measured 2026-08-27: CREATE
+// opened a second RPCP into DEFAULT with no rename, so `cmd_regression.cpp`'s
+// claim that the ledger is "STRUCTURALLY ZERO ... until two workspaces can be
+// open at once" is false and has been since before R128. A hit here is that
+// case, and it is the number R112 sec 6a's measured zero is actually about.
+xbase::DbArea* find_open_area_in_workspace_ci(const std::string& logical_or_name,
+                                              std::uint64_t ws,
+                                              const char* site);
+
 // EVERY open area whose name matches, ascending by engine slot.
 //
 // This is the primitive both resolvers are now built on. Singular lookup is

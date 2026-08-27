@@ -163,6 +163,33 @@ xbase::DbArea* find_open_area_by_name_ci(const std::string& logical_or_name)
     return find_open_area_by_name_ci(logical_or_name, nullptr);
 }
 
+// AIF-137. Same primitive, same first-wins rule, one filter: membership.
+xbase::DbArea* find_open_area_in_workspace_ci(const std::string& logical_or_name,
+                                              std::uint64_t ws,
+                                              const char* site)
+{
+    const std::string target = up(trim(logical_or_name));
+    if (target.empty()) return nullptr;
+
+    const std::vector<xbase::DbArea*> all = find_open_areas_by_name_ci(target);
+    if (all.empty()) return nullptr;
+
+    std::vector<xbase::DbArea*> mine;
+    mine.reserve(all.size());
+    for (xbase::DbArea* a : all) {
+        if (a && a->wsHandle() == ws) mine.push_back(a);
+    }
+
+    // Absent HERE is absent, even when the name is open next door.
+    if (mine.empty()) return nullptr;
+
+    // Only an ambiguity WITHIN the workspace is an ambiguity now. The
+    // cross-workspace hits this used to record were not ambiguity, they were
+    // this defect.
+    if (mine.size() > 1) record_ambiguity(target, mine, site);
+    return mine.front();
+}
+
 // AIF-120 I1.1. This was a linear scan over the open areas, comparing pointers
 // to recover a number the area could simply have carried. It has 21 call sites
 // across 15 files; none of them changes, because the SIGNATURE does not -- only
