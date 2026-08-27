@@ -1,0 +1,5 @@
+aif: AIF-139
+run_id: COWORK-20260827-001
+member: member.ai.claude.cowork
+lane: R112's migration gate is unassertable: sec 6a admits first-wins-plus-warning only as an instrumented phase whose counter must reach a measured zero, but ambiguity_count() has no DTS-visible reader -- cmd_workspace.cpp only PRINTS it -- and rel_name_ambiguity_regression.dts, which calls itself the tripwire for AIF-078 stage 4, runs WORKSPACE REGISTRY between two FORMULA markers with nothing checking. The comment at cmd_workspace.cpp:4736 claims the count is 'a FIELD of the registry, assertable by a spec' and no such reader exists. The tripwire fired on 2026-08-27 and no spec in the suite would have caught it
+claimed_utc: 2026-08-27T12:33:04Z
