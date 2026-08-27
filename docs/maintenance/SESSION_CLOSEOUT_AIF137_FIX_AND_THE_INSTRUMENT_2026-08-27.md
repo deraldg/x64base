@@ -119,9 +119,19 @@ have proved only that the code and the test agreed.
     src/cli/cmd_regression.cpp          RELWSNAME registered, array 57 -> 58
     dottalkpp/data/scripts/relation_parent_workspace_crossing.dts
     docs/maintenance/AIF139_FINDING_THE_MIGRATION_GATE_CANNOT_BE_MEASURED_V1.md
-    docs/maintenance/AIF137_...WORKSPACE_BLIND_V1.md        sec 9 added
+    docs/maintenance/AIF137_FINDING_RELATION_PARENT_IS_WORKSPACE_BLIND_V1.md
+                                                        sec 9 added
     coordination/aif/AIF-139.claim                          allocator-written
     docs/ai-friendly/AI_INTERACTION_INTAKE_QUEUE_V1.md      AIF-139 row
+
+**PATHS IN THIS DOCUMENT ARE WRITTEN IN FULL, AND ONE WAS NOT.** The first cut
+of the block above abbreviated the AIF-137 finding as
+`AIF137_...WORKSPACE_BLIND_V1.md` to fit the column. The cited-paths gate
+extracts repo paths from prose and reported it MISSING -- cited, not on disk --
+which is a broken citation rather than an untracked file, and points at nothing
+at all. Corrected in `<pending>`; recorded here rather than silently fixed,
+because a shortened path inside a document whose paths are machine-read is a
+mistake that reads as tidiness.
 
 ## The finding that outlasts the fix
 
