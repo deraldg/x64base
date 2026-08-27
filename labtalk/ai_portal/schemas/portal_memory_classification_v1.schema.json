@@ -1,0 +1,89 @@
+{
+  "$id": "dottalk.portal.memory-classification.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AIF-136 AI Portal Memory Classification and Lineage",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema": {"const": "dottalk.portal.memory-classification.v1"},
+    "generated_at_utc": {"type": "string"},
+    "mode": {"const": "development_read_only"},
+    "classification_lane_id": {"const": "AIF-136"},
+    "source_inventory": {"type": "string"},
+    "source_inventory_generated_at_utc": {"type": "string"},
+    "policy": {"type": "object"},
+    "summary": {"type": "object"},
+    "exact_duplicate_groups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "group_id": {"type": "string", "pattern": "^duplicate\\.[0-9a-f]{16}$"},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "logical_size_bytes": {"type": "integer", "minimum": 0},
+          "memory_ids": {"type": "array", "items": {"type": "string"}, "minItems": 2},
+          "decision_state": {"const": "candidate_only"}
+        },
+        "required": ["group_id", "sha256", "logical_size_bytes", "memory_ids", "decision_state"]
+      }
+    },
+    "version_family_groups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "group_id": {"type": "string", "pattern": "^family\\.[0-9a-f]{16}$"},
+          "family_key": {"type": "string"},
+          "memory_ids": {"type": "array", "items": {"type": "string"}, "minItems": 2},
+          "decision_state": {"const": "candidate_only"}
+        },
+        "required": ["group_id", "family_key", "memory_ids", "decision_state"]
+      }
+    },
+    "classifications": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "memory_id": {"type": "string", "pattern": "^memory\\.file\\.[0-9a-f]{20}$"},
+          "source_uri": {"type": "string"},
+          "collection": {"type": "string"},
+          "artifact_kind": {"type": "string"},
+          "proposed_authority_class": {"enum": ["authority", "governance_authority", "reviewed_derivative", "generated_projection", "unknown"]},
+          "proposed_storage_tier": {"enum": ["F0", "F1", "W2", "C3", "R4", "Q5"]},
+          "sensitivity": {"enum": ["public", "development_only", "private", "secret", "unknown"]},
+          "classification_state": {"enum": ["heuristic_proposal", "owner_confirmed"]},
+          "owner_ruling_manifest": {"type": ["string", "null"]},
+          "rationale": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+          "exact_duplicate_group_id": {"type": ["string", "null"]},
+          "version_family_group_id": {"type": ["string", "null"]},
+          "lineage_state": {"enum": ["no_candidate", "exact_duplicate_candidate", "version_family_candidate", "exact_duplicate_and_version_family_candidate"]},
+          "related_memory_ids": {"type": "array", "items": {"type": "string"}},
+          "recovery_posture": {"enum": ["not_applicable", "candidate_inputs_found", "container_candidate_only", "source_candidate_only", "inputs_not_found"]},
+          "recovery_state": {"enum": ["not_applicable", "unverified"]},
+          "container_candidates": {"type": "array", "items": {"type": "string"}},
+          "source_candidates": {"type": "array", "items": {"type": "string"}},
+          "physical_action": {"const": "none_authorized"}
+        },
+        "required": [
+          "memory_id", "source_uri", "collection", "artifact_kind",
+          "proposed_authority_class", "proposed_storage_tier", "sensitivity",
+          "classification_state", "owner_ruling_manifest", "rationale", "exact_duplicate_group_id",
+          "version_family_group_id", "lineage_state", "related_memory_ids",
+          "recovery_posture", "recovery_state", "container_candidates",
+          "source_candidates", "physical_action"
+        ]
+      }
+    },
+    "findings": {"type": "array", "items": {"type": "string"}}
+  },
+  "required": [
+    "schema", "generated_at_utc", "mode", "classification_lane_id",
+    "source_inventory", "source_inventory_generated_at_utc", "policy",
+    "summary", "exact_duplicate_groups", "version_family_groups",
+    "classifications", "findings"
+  ]
+}

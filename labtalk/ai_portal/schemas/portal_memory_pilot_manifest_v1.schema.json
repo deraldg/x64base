@@ -1,0 +1,60 @@
+{
+  "$id": "dottalk.portal.memory-pilot-manifest.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AIF-136 M3 Cognitive Pilot Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema": {"const": "dottalk.portal.memory-pilot-manifest.v1"},
+    "manifest_id": {"pattern": "^AIF136-M3-PILOT-[0-9]{3}$"},
+    "lane_id": {"const": "AIF-136"},
+    "phase": {"const": "M3"},
+    "ruling_state": {"enum": ["awaiting_owner_ruling", "approved", "rejected", "withdrawn"]},
+    "operation": {"const": "cognitive_demotion_only"},
+    "physical_action": {"const": "none_authorized"},
+    "source_inventory": {"type": "string"},
+    "source_classification": {"type": "string"},
+    "proposed_store": {"const": "in_place_git_tracked_cold_body"},
+    "retrieval_trigger": {"const": "trigger.portal_history"},
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "memory_id": {"pattern": "^memory\\.file\\.[0-9a-f]{20}$"},
+          "source_uri": {"type": "string"},
+          "stored_uri": {"type": "string"},
+          "expected_sha256": {"pattern": "^[0-9a-f]{64}$"},
+          "expected_size_bytes": {"type": "integer", "minimum": 0},
+          "current_tier": {"const": "W2"},
+          "proposed_tier": {"const": "C3"},
+          "authority_class": {"const": "reviewed_derivative"},
+          "sensitivity": {"const": "development_only"},
+          "reason": {"type": "string"},
+          "portal_summary": {"type": "string"},
+          "lineage_note": {"type": "string"},
+          "physical_move": {"const": false},
+          "source_deletion": {"const": false}
+        },
+        "required": [
+          "memory_id", "source_uri", "stored_uri", "expected_sha256",
+          "expected_size_bytes", "current_tier", "proposed_tier",
+          "authority_class", "sensitivity", "reason", "portal_summary",
+          "lineage_note", "physical_move", "source_deletion"
+        ]
+      }
+    },
+    "rollback": {"type": "object"},
+    "exclusions": {"type": "array", "items": {"type": "string"}},
+    "owner_ruling": {"type": "object"}
+  },
+  "required": [
+    "schema", "manifest_id", "lane_id", "phase", "ruling_state",
+    "operation", "physical_action", "source_inventory",
+    "source_classification", "proposed_store", "retrieval_trigger", "items",
+    "rollback", "exclusions", "owner_ruling"
+  ]
+}

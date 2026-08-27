@@ -1,0 +1,88 @@
+{
+  "$id": "dottalk.portal.memory-inventory.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "schema": {"const": "dottalk.portal.memory-inventory.v1"},
+    "generated_at_utc": {"type": "string"},
+    "mode": {"const": "development_read_only"},
+    "inventory_lane_id": {"const": "AIF-136"},
+    "repo_root": {"type": "string"},
+    "policy": {"type": "object"},
+    "summary": {"type": "object"},
+    "collections": {"type": "array", "items": {"type": "object"}},
+    "hierarchy": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "path": {"type": "string"},
+          "direct_records": {"type": "integer", "minimum": 0},
+          "recursive_records": {"type": "integer", "minimum": 0},
+          "direct_documents": {"type": "integer", "minimum": 0},
+          "recursive_documents": {"type": "integer", "minimum": 0},
+          "recursive_logical_size_bytes": {"type": "integer", "minimum": 0}
+        },
+        "required": [
+          "path", "direct_records", "recursive_records", "direct_documents",
+          "recursive_documents", "recursive_logical_size_bytes"
+        ]
+      }
+    },
+    "records": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "memory_id": {"type": "string", "pattern": "^memory\\.file\\.[0-9a-f]{20}$"},
+          "title": {"type": "string"},
+          "project_id": {"type": "string"},
+          "inventory_lane_id": {"const": "AIF-136"},
+          "lane_ids": {"type": "array", "items": {"type": "string"}},
+          "collection": {"type": "string"},
+          "artifact_kind": {"type": "string"},
+          "authority_class": {"enum": ["authority", "governance_authority", "reviewed_derivative", "generated_projection", "unknown"]},
+          "evidence_state": {"enum": ["planned", "source-evidenced", "runtime-proven", "not_assessed"]},
+          "storage_tier": {"enum": ["F0", "F1", "W2", "C3", "R4", "Q5"]},
+          "classification_state": {"enum": ["measured_only", "heuristic_proposal", "owner_confirmed"]},
+          "classification_reason": {"type": "string"},
+          "source_uri": {"type": "string"},
+          "stored_uri": {"type": ["string", "null"]},
+          "sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+          "hash_state": {"enum": ["computed", "deferred_size_policy", "unreadable"]},
+          "logical_size_bytes": {"type": "integer", "minimum": 0},
+          "allocated_size_bytes": {"type": ["integer", "null"], "minimum": 0},
+          "modified_at_utc": {"type": "string"},
+          "git_posture": {"enum": ["tracked", "untracked", "ignored", "external"]},
+          "retention_policy": {"enum": ["keep", "review_after", "reconstructible", "owner_ruling_required"]},
+          "sensitivity": {"enum": ["public", "development_only", "private", "secret", "unknown"]},
+          "retrieval_trigger": {"type": "string"},
+          "recovery_state": {"enum": ["unverified", "verified", "not_applicable"]},
+          "recovery_method": {"type": "string"},
+          "portal_summary": {"type": "string"}
+        },
+        "required": [
+          "memory_id", "title", "project_id", "inventory_lane_id", "lane_ids",
+          "collection", "artifact_kind", "authority_class", "evidence_state",
+          "storage_tier", "classification_state", "classification_reason",
+          "source_uri", "stored_uri", "sha256", "hash_state",
+          "logical_size_bytes", "allocated_size_bytes", "modified_at_utc",
+          "git_posture", "retention_policy", "sensitivity",
+          "retrieval_trigger", "recovery_state", "recovery_method",
+          "portal_summary"
+        ]
+      }
+    },
+    "skipped_reparse_points": {"type": "array", "items": {"type": "string"}},
+    "findings": {"type": "array", "items": {"type": "string"}}
+  },
+  "required": [
+    "schema", "generated_at_utc", "mode", "inventory_lane_id", "repo_root",
+    "policy", "summary", "collections", "hierarchy", "records",
+    "skipped_reparse_points", "findings"
+  ],
+  "title": "AIF-136 AI Portal Memory Inventory",
+  "type": "object"
+}

@@ -1,0 +1,80 @@
+{
+  "schema": "dottalk.portal.memory-pilot-manifest.v1",
+  "manifest_id": "AIF136-M3-PILOT-001",
+  "lane_id": "AIF-136",
+  "phase": "M3",
+  "ruling_state": "approved",
+  "operation": "cognitive_demotion_only",
+  "physical_action": "none_authorized",
+  "source_inventory": "labtalk/reports/portal/memory_storage_inventory_latest.json",
+  "source_classification": "labtalk/reports/portal/memory_storage_classification_latest.json",
+  "proposed_store": "in_place_git_tracked_cold_body",
+  "retrieval_trigger": "trigger.portal_history",
+  "items": [
+    {
+      "memory_id": "memory.file.9a79a9a9f3af3b95d0f4",
+      "source_uri": "labtalk/ai_portal/AI_PORTAL_REONBOARDING_ASSESSMENT_2026-07-29.md",
+      "stored_uri": "labtalk/ai_portal/AI_PORTAL_REONBOARDING_ASSESSMENT_2026-07-29.md",
+      "expected_sha256": "17d581181d1bc2723cba5db1e9a389c27282d683ad33bb683b8faab6954304bc",
+      "expected_size_bytes": 8628,
+      "current_tier": "W2",
+      "proposed_tier": "C3",
+      "authority_class": "reviewed_derivative",
+      "sensitivity": "development_only",
+      "reason": "Dated re-onboarding assessment whose current-state observations are historical; useful as acceptance-test and drift-history evidence.",
+      "portal_summary": "Historical July 2026 cold-start assessment showing that the Portal could safely re-orient an AI while exposing synchronization drift. Use for Portal acceptance-test history, not current lane or service state.",
+      "lineage_note": "Current onboarding and recall authorities are cited by the AIF-136 packet; no supersession is declared by this manifest.",
+      "physical_move": false,
+      "source_deletion": false
+    },
+    {
+      "memory_id": "memory.file.35c21a34db10fadf5c73",
+      "source_uri": "labtalk/ai_portal/AI_ONBOARDING_TRUTH_REVIEW_2026-08-05_V1.md",
+      "stored_uri": "labtalk/ai_portal/AI_ONBOARDING_TRUTH_REVIEW_2026-08-05_V1.md",
+      "expected_sha256": "17d4a9f9ac7796d86e1a688116df3e05f9681f61d4bcccd3651df7e9a95fae65",
+      "expected_size_bytes": 5814,
+      "current_tier": "W2",
+      "proposed_tier": "C3",
+      "authority_class": "reviewed_derivative",
+      "sensitivity": "development_only",
+      "reason": "Dated incident review whose applied corrections now live in maintained onboarding and source authorities.",
+      "portal_summary": "Historical August 2026 review of skipped assimilation and missing x64 format guidance. Use to understand why the onboarding controls exist; use maintained seeds and source for current instructions.",
+      "lineage_note": "The body points to maintained onboarding and source authorities; no supersession is declared by this manifest.",
+      "physical_move": false,
+      "source_deletion": false
+    },
+    {
+      "memory_id": "memory.file.db8df9b3fb28e94a3d3b",
+      "source_uri": "labtalk/ai_portal/SEED_CONNECTION_PROTOTYPE_NOTE_V1.md",
+      "stored_uri": "labtalk/ai_portal/SEED_CONNECTION_PROTOTYPE_NOTE_V1.md",
+      "expected_sha256": "9d7b016937174e1631d059c8e0fd5912a44067275acd027929afe78e25fd6f1f",
+      "expected_size_bytes": 3080,
+      "current_tier": "W2",
+      "proposed_tier": "C3",
+      "authority_class": "reviewed_derivative",
+      "sensitivity": "development_only",
+      "reason": "Early design-intended prototype note retained as architectural history now that an explicit recall graph exists.",
+      "portal_summary": "Historical design note for selecting bounded task-relevant seeds. Use for design lineage; use the current recall graph, seed, and validators for operational behavior.",
+      "lineage_note": "The current recall graph is a related implementation, but owner review is required before recording a supersession relationship.",
+      "physical_move": false,
+      "source_deletion": false
+    }
+  ],
+  "rollback": {
+    "method": "Remove the pilot classification overrides and trigger projection; tracked bodies remain unchanged at their source paths.",
+    "data_restore_required": false
+  },
+  "exclusions": [
+    "F0 bootstrap and F1 frontal records",
+    "active claims and governance authorities",
+    "D:/code/Frontal_Mem private Q5 records",
+    "DBF, CDX, CNX, LMDB, backups, archives, and generated catalogs",
+    "source deletion, relocation, publication, or Git history rewriting"
+  ],
+  "owner_ruling": {
+    "owner": "member.derald",
+    "decision": "approved",
+    "decided_at_utc": "2026-08-27T00:10:00Z",
+    "recorded_in": "docs/maintenance/AIF136_M3_MEMORY_PILOT_RULING_PACKET_V1.md"
+  }
+}

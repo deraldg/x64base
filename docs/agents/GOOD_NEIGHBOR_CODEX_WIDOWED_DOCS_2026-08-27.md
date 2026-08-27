@@ -110,13 +110,70 @@ from the intake queue instead of six.
 The files stay on disk. Nothing was edited, so there is nothing to revert
 inside them.
 
+## ADDENDUM, SAME DAY -- THE FOUR DOCUMENTS EXPOSED THE WHOLE IMPLEMENTATION
+
+Committing the four documents put them in the cited-paths gate's scope, and it
+immediately reported **19 further widows**. They are not housekeeping.
+
+`AIF136_AI_PORTAL_MEMORY_TIERING_AND_RETENTION_PLAN_V1.md` says *"M4 cognitive
+pilot locally implemented and verified"*, and the implementation it names was
+**not in the repository at all**:
+
+    5 scripts  build_memory_storage_classification.py     29,722 B
+               build_memory_storage_inventory.py          32,945 B
+               build_portal_history_summary.py             3,681 B
+               validate_memory_pilot_manifest.py           7,684 B
+               verify_memory_pilot_recall.py               2,999 B
+    3 schemas  portal_memory_{classification,inventory,pilot_manifest}_v1
+    5 tests    ~23 KB
+    1 registry labtalk/registries/aif136_memory_pilot_manifest_v1.json
+
+**One disk, and the author is out until next week.** All 14 were committed on
+the owner's authorization.
+
+**The split is the tell.** Codex's AIF-132 tests ARE tracked; only the AIF-136
+ones are not, which matches "commit pending" in the documents' own status
+lines. He was mid-landing when the credits ran out.
+
+**VERIFIED PER PATH, not assumed:** all 14 exist, ZERO CRLF, ZERO non-ASCII,
+no `.gitignore` match (`check-ignore` rc=1), every `.py` parses under
+`ast.parse`, every `.json` loads under `json.load`. `house-style` could not
+have blocked them regardless -- `CHECKED_SUFFIXES` is `(".md",)` -- but they
+are clean on that axis anyway.
+
+**NOT DONE, SAID PLAINLY: THE TESTS WERE NOT RUN.** `pytest` is not installed
+on the reviewing side, and running another steward's build scripts would
+generate reports into his lane, which is his to do and was not authorized.
+**A parse is not a pass.** Nothing here claims this implementation works; the
+claim is that it is committable and should not sit on one disk for a week.
+
+**A REVIEWER MISS, RECORDED RATHER THAN QUIETLY FIXED.** The first commit
+verified the four documents were committable -- ASCII, headers, ignore rules,
+envelopes -- and **never checked what they cited**. That is not
+content-correctness, which was explicitly declined above; it is the same
+committability check the reviewer believed was underway. The gate found in one
+second what the review should have found first, and a plan document was
+committed while pointing at nothing. The same shape as R75, one turn later and
+by the same reviewer who had just written R75 into another document.
+
+**STILL WIDOWED ON PURPOSE**, now five rather than two, on the same reasoning
+as the section above: `PORTAL_HISTORY_SUMMARY_V1.md` (57 CRLF bytes), the
+`memory_storage_*_latest.md` pair, and the `memory_storage_*_latest.json`
+pair. Generated, self-declared do-not-hand-edit, and named for a moving
+pointer.
+
 ## FOR CODEX, WHEN YOU ARE BACK
 
 Two things are waiting for you and neither was decided in your absence:
 
-1. **The two `_latest` reports** -- track them (needs the CRLF fixed first),
-   stop citing them, or cite something that does not move. Section above has
-   the reasoning; the decision is yours.
+1. **The five generated artifacts** -- the `_latest` .md and .json pairs and
+   `PORTAL_HISTORY_SUMMARY_V1.md`. Track them (the three .md files need the
+   CRLF fixed first), stop citing them, or cite something that does not move.
+   The reasoning is above; the decision is yours.
+1a. **Your implementation is now committed and was never run by the person who
+   committed it.** 14 files, parse-checked and JSON-validated only. If any of
+   it was mid-edit when your credits ran out, it is in the repository in that
+   state. Check it before you build on it.
 2. **AIF-135 is your lane and it is now more urgent than it was.** Its subject
    is aligning `claim-aif` and `next_aif` on monotonic high-water allocation.
    Claude allocated AIF-137 and AIF-138 through `claim-aif` on 2026-08-27 with
