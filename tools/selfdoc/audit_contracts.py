@@ -99,8 +99,48 @@ def usage_block(text):
       Slice from the START OF THE LINE holding the tag. And note what caught it:
       not the code, but refusing to accept a number that improved after a change
       that was not supposed to improve it.
+
+    FOURTH BUG, SAME FAMILY, AND THE ONE THAT SURVIVED THREE FIXES
+      This returned only the FIRST block. A file may carry SEVERAL
+      `@dottalk.usage v1` blocks -- one per command it owns -- and 20+ files do;
+      `cmd_aggs.cpp` has five, one each for SUM/AVG/MIN/MAX. Every declaration
+      after the first was invisible to this audit: 18 of them, measured
+      2026-08-26, including `TRANSACTION` in `cmd_transaction.cpp` block 2,
+      which is genuinely absent from dotref.
+
+      Found because the maintainer pasted `cmd_dotscript.cpp` and its second
+      block was visible in the paste but not in this tool's output. The three
+      earlier bugs in this function all had the same shape -- a bound taken from
+      the wrong place -- and each fix narrowed the window without asking whether
+      the window should be singular at all.
+
+      `usage_blocks` (plural) is now the authority. `usage_block` is kept for the
+      helper-status check, which reads the FIRST block deliberately: a file's own
+      exemption belongs to its primary contract, not to a supplemental one.
     """
     return comment_block(text, USAGE_TAG)
+
+
+def usage_blocks(text):
+    """EVERY @dottalk.usage block in the file, in order. See usage_block's
+    fourth-bug note for why this exists and why the singular form is not enough.
+    """
+    lines = text.split("\n")
+    out = []
+    for n, ln in enumerate(lines):
+        if USAGE_TAG not in ln:
+            continue
+        blk = []
+        for cur in lines[n:]:
+            stripped = cur.strip()
+            if stripped.startswith("//"):
+                blk.append(cur)
+            elif stripped == "":
+                continue
+            else:
+                break
+        out.append("\n".join(blk))
+    return out
 
 
 def read(path):
@@ -165,11 +205,17 @@ def audit(root):
         if status and "implementation-helper" in status.group(1):
             helpers.append(rel)
             continue
-        for m in CMD_FIELD.finditer(block_text):
-            for cmd in re.split(r'[,\s|]+', m.group(1).strip()):
-                cmd = cmd.strip().upper()
-                if cmd and cmd not in names:
-                    unregistered.append((rel, cmd))
+        # EVERY block, not just the first -- see usage_block's fourth-bug note.
+        # A supplemental block declaring its own `command:` is a declaration like
+        # any other, and 18 of them were unchecked until 2026-08-26.
+        seen_here = set()
+        for blk in usage_blocks(text):
+            for m in CMD_FIELD.finditer(blk):
+                for cmd in re.split(r'[,\s|]+', m.group(1).strip()):
+                    cmd = cmd.strip().upper()
+                    if cmd and cmd not in names and cmd not in seen_here:
+                        seen_here.add(cmd)
+                        unregistered.append((rel, cmd))
 
     return {
         "files": files,

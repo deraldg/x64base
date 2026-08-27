@@ -76,6 +76,10 @@ triggers:
     label: cutting a release, defining an edition, or deciding licensing
   - id: trigger.persistent_memory
     label: working on AI memory, consolidation, recall, or the root Frontal_Mem project
+  - id: trigger.memory_retention
+    label: triaging Portal documents or storage into frontal, warm, cold, reconstructible, or quarantine tiers
+  - id: trigger.portal_history
+    label: recalling historical Portal assessments, incident reviews, or early seed-connection designs
   - id: trigger.where_is
     label: about to grep/find for a code or registry target -- check the search map first
   # Added 2026-08-16 (AIF-118) closing three of the four gaps AIF-115 measured:
@@ -449,6 +453,46 @@ nodes:
     hard_fails: false
     tier: 2
 
+  - id: lane.aif136_memory_tiering
+    label: AIF-136 -- Portal memory tiering, long-term storage, retrieval, and governed retention
+    path: docs/maintenance/AIF136_AI_PORTAL_MEMORY_TIERING_AND_RETENTION_PLAN_V1.md
+    class: procedural
+    enforced_by: null
+    hard_fails: false
+    tier: 2
+
+  - id: report.aif136_memory_classification
+    label: AIF-136 -- generated M2 memory classification and lineage report
+    path: labtalk/reports/portal/memory_storage_classification_latest.md
+    class: generated
+    enforced_by: labtalk/ai_portal/build_memory_storage_classification.py --check
+    hard_fails: false
+    tier: 2
+
+  - id: ruling.aif136_m3_memory_pilot
+    label: AIF-136 M3 -- exact cognitive-demotion pilot ruling packet
+    path: docs/maintenance/AIF136_M3_MEMORY_PILOT_RULING_PACKET_V1.md
+    class: procedural
+    enforced_by: labtalk/ai_portal/validate_memory_pilot_manifest.py
+    hard_fails: false
+    tier: 2
+
+  - id: summary.aif136_portal_history
+    label: AIF-136 -- bounded owner-approved Portal history summary
+    path: labtalk/ai_portal/PORTAL_HISTORY_SUMMARY_V1.md
+    class: generated
+    enforced_by: labtalk/ai_portal/build_portal_history_summary.py --check
+    hard_fails: false
+    tier: 1
+
+  - id: proof.aif136_m4_cognitive_demotion
+    label: AIF-136 M4 -- cognitive demotion and recall proof
+    path: docs/maintenance/AIF136_M4_COGNITIVE_DEMOTION_PROOF_V1.md
+    class: evidence
+    enforced_by: labtalk/ai_portal/verify_memory_pilot_recall.py
+    hard_fails: false
+    tier: 2
+
   - id: doc.private_site_auth
     label: Private-site auth + search scope (dogfood BBS auth gateway; Pagefind public search)
     path: docs/maintenance/PRIVATE_SITE_AUTH_AND_SEARCH_SCOPE_V1.md
@@ -500,6 +544,20 @@ nodes:
   - id: seed.dotscript_readiness
     label: DotTalk++ / DotScript Readiness Seeds
     path: labtalk/ai_portal/DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md
+    class: procedural
+    enforced_by: null
+    hard_fails: false
+    tier: 2
+
+  # Validated 2026-08-26 against 372c5834f. Answers the question the readiness
+  # seed does not: HOW a script is actually launched, and the difference between
+  # the argv option `--script` (redirects stdin, no resolver) and the in-shell
+  # DOTSCRIPT command (resolver, TRACE, transcript, one-level nesting). Reached
+  # from write_dotscript and from capture_proof, because OUT/OUTPUT is the tee
+  # a proof capture wants and it is absent from the @dottalk.usage block.
+  - id: doc.launch_and_dotscript_options
+    label: dottalkpp launch options and DOTSCRIPT -- validated; --script is NOT DOTSCRIPT
+    path: docs/maintenance/DOTTALKPP_LAUNCH_AND_DOTSCRIPT_OPTIONS_V1.md
     class: procedural
     enforced_by: null
     hard_fails: false
@@ -765,6 +823,14 @@ edges:
   - {from: doctrine.source_mutation, to: doctrine.representative_by_design, type: requires}
 
   - {from: trigger.write_dotscript, to: seed.dotscript_readiness, type: fires_at}
+  - {from: trigger.write_dotscript, to: doc.launch_and_dotscript_options, type: fires_at}
+  # Routed here as a TRAP WARNING, not as a method. A proof capture reaches for
+  # DOTSCRIPT ... OUT because the command's own contract line advertises it; that
+  # line is wrong (AIF-081, unfixed) and OUT drops everything routed through
+  # cli::cmdout -- 42 lines against SET ALTERNATE's 89, measured 2026-07-31. The
+  # AI_README node beside this one carries the correct method; this node explains
+  # why the obvious wrong one looks right in the source.
+  - {from: trigger.capture_proof, to: doc.launch_and_dotscript_options, type: fires_at}
 
   - {from: trigger.open_lane, to: doctrine.lanes_and_promotion, type: fires_at}
   - {from: trigger.open_lane, to: mechanism.next_aif_number, type: fires_at}
@@ -808,6 +874,15 @@ edges:
   # Portal synapse (2026-08-08): the triage-program PDLC lane (optimization project).
   - {from: trigger.persistent_memory, to: mechanism.triage_optimization, type: fires_at}
   - {from: mechanism.triage_optimization, to: mechanism.consolidation_service, type: requires}
+  # Portal synapse (2026-08-26): memory tiering and physical retention remain governed separately.
+  - {from: trigger.memory_retention, to: lane.aif136_memory_tiering, type: fires_at}
+  - {from: lane.aif136_memory_tiering, to: mechanism.triage_optimization, type: requires}
+  - {from: lane.aif136_memory_tiering, to: report.aif136_memory_classification, type: evidenced_by}
+  - {from: trigger.portal_history, to: ruling.aif136_m3_memory_pilot, type: fires_at}
+  - {from: lane.aif136_memory_tiering, to: ruling.aif136_m3_memory_pilot, type: requires}
+  - {from: trigger.portal_history, to: summary.aif136_portal_history, type: fires_at}
+  - {from: summary.aif136_portal_history, to: ruling.aif136_m3_memory_pilot, type: requires}
+  - {from: summary.aif136_portal_history, to: proof.aif136_m4_cognitive_demotion, type: evidenced_by}
   # Portal synapse (2026-08-08): the public-vs-gated site design (auth gateway + search).
   - {from: trigger.publish, to: doc.private_site_auth, type: fires_at}
   - {from: trigger.commit_or_push, to: doctrine.repository_roles, type: fires_at}
