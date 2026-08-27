@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-08-27T11:41:21Z
+    generated_utc : 2026-08-27T12:02:42Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,9 +11,9 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : 21830b9a5  (2026-08-26)
+    HEAD          : cdf875387  (2026-08-27)
     upstream      : 372c5834f
-    unpushed      : 4 commit(s) ahead of upstream
+    unpushed      : 5 commit(s) ahead of upstream
 
 ## Declared target
 
@@ -23,19 +23,18 @@ cannot drift, because nothing here is written by hand.
 ## Newest closeout
 
     file          : SESSION_CLOSEOUT_R129_AIF137_WORKSPACE_CURSOR_2026-08-27.md
-    commits behind HEAD : ?
+    commits behind HEAD : 0
 
 ## Staleness warnings
 
-- Claim(s) with no intake row, so they read as ABANDONED from HEAD: AIF-137, AIF-138. Same shape as AIF-062/078/080.
-- 4 commit(s) are unpushed and invisible to a clone.
+- 5 commit(s) are unpushed and invisible to a clone.
 
 ## Claimed lanes (newest first)
 
 | AIF | lane | steward | intake row |
 | --- | --- | --- | --- |
-| AIF-138 | Engine::_current cannot express 'nothing selected': slot 0 means area 0, the startup position (shell.cpp:528 selectArea(0)), and 'no engine' (workareas.hpp:120 'if (!eng) return 0'). Absent is spelled with a present value (R6), and the no-engine fallback is the AIF-118 shape sitting in the accessor infer_parent_from_workarea() calls. Predates multi-workspace; R129 sec 6.1 makes an empty workspace a legal position and so makes it reachable | member.ai.claude.cowork | **MISSING** |
-| AIF-137 | The relation STORE is partitioned by workspace (AIF-078 I1.2) but the relation PARENT is not -- current_parent_override() is one global string and current_parent_name()/refresh_from_parent_name() resolve through the unscoped find_open_area_by_name_ci, so a refresh standing in one workspace reads another workspace's area; measured live 2026-08-27 with an EMPTY relation store, so it needs no SET RELATION to occur | member.ai.claude.cowork | **MISSING** |
+| AIF-138 | Engine::_current cannot express 'nothing selected': slot 0 means area 0, the startup position (shell.cpp:528 selectArea(0)), and 'no engine' (workareas.hpp:120 'if (!eng) return 0'). Absent is spelled with a present value (R6), and the no-engine fallback is the AIF-118 shape sitting in the accessor infer_parent_from_workarea() calls. Predates multi-workspace; R129 sec 6.1 makes an empty workspace a legal position and so makes it reachable | member.ai.claude.cowork | yes |
+| AIF-137 | The relation STORE is partitioned by workspace (AIF-078 I1.2) but the relation PARENT is not -- current_parent_override() is one global string and current_parent_name()/refresh_from_parent_name() resolve through the unscoped find_open_area_by_name_ci, so a refresh standing in one workspace reads another workspace's area; measured live 2026-08-27 with an EMPTY relation store, so it needs no SET RELATION to occur | member.ai.claude.cowork | yes |
 | AIF-136 | AI Portal frontal-memory tiering, document consolidation, long-term storage, retrieval, and governed retention lifecycle | member.ai.codex | yes |
 | AIF-135 | Align claim-aif and next_aif on monotonic high-water allocation over the canonical intake-and-claims identity universe; prove gaps are never reused and preserve atomic collision handling | member.ai.codex | yes |
 | AIF-134 | ERROR CLEAR/STATUS/TEST are registered as multi-word keys with no bare ERROR router, so shell_dispatch cannot reach them -- the AIF-131 defect unfixed in a sibling family, while dotref publishes all three as supported | member.ai.claude.cowork | yes |

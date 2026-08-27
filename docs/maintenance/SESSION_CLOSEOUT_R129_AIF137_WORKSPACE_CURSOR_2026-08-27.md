@@ -121,13 +121,21 @@ its own crossing paths. Its count is a floor.
 
 ## What was ruled, and by whom
 
-- **Part 1 of R129 by the owner**: there is a workspace cursor and it is a
-  peer of the area and row cursors.
+- **Part 1 of R129 by the owner**, before the measurement: there is a
+  workspace cursor and it is a peer of the area and row cursors.
+- **R129 sec 6.1, 6.1a and 6.2 by the owner**, AFTER the measurement and after
+  the external answers: *"I think all in 6.x are valid, especially allowing an
+  empty workspace, there will be times we want to open and add to it. You have
+  to have a place to start."* / *"6.2 is valid"* -- with the risk accepted
+  explicitly: *"If it turns [out] wrong we will find out quickly."* **The
+  ordering matters: the first cut of 6.2 proposed a blanket refusal and would
+  have been ruled wrong. The transcript showed the case was a LOCAL name being
+  ignored, not a boundary policy being absent.**
 - **P6 (unqualified names) by the owner** in the Grok precepts packet
   `AIPR-20260827-GROK-001`, owner-accepted 2026-08-27. R129 CITES it and does
   not restate it; the section that duplicated it was struck.
-- **Nothing else.** R129 sec 6.1 and 6.2 carry Grok's recommendations marked
-  owner-final and are not ruled by the author.
+- **Nothing else.** No code is authorized and no fix is designed for either
+  finding.
 
 ## What the author got wrong, and where it is recorded
 
@@ -170,7 +178,15 @@ free; handles 2 and 3 are not reused. Precept P3 proposes ending that mint.
   caught both, in two words each.** Recorded in R129 sec 10 item 7: the method
   error was verifying whether CLOSE produced a safe READING instead of whether
   the cursor could SAY "nothing", when R6 is a rule about representation.
-- **R129 sec 6.1 / 6.2** -- recommended, owner-final, not ruled.
+- **AIF-138's REPRESENTATION** -- ruling 6.1a made the empty-workspace
+  position legal and deliberately did NOT choose how the cursor says it
+  (sentinel, `optional`, or a `hasCurrent()` predicate). Choosing a
+  representation before counting the `currentArea()` readers is what produced
+  the two withdrawn answers, so the count comes first.
+- **6.2 consequence (a), watch it in use** -- in an EMPTY workspace arm 1 can
+  never apply, so every name refuses or misses. Correct under the ruling, and
+  the owner accepted the risk knowing it would show up fast. If it reads badly
+  in practice, 6.1a is the section to reopen.
 - **AIF-137** -- no fix authorized. The split of 36 call sites into scoped /
   given-handle / explicit-cross is named, not designed.
 - **The R112 instrument** -- tag `cmd_select` before anyone treats the count

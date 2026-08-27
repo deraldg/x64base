@@ -6,12 +6,21 @@
               R128. Register row prepared and NOT self-inserted; see the
               closeout for why the two shared coordination files were
               left to the maintainer.
-    Ruled   : 2026-08-27 by member.derald, part 1 only.
+    Ruled   : 2026-08-27 by member.derald, IN TWO PASSES.
+              Part 1, before the measurement:
               "there needs to be a workspace cursor, we have an area
                cursor and the table/row cursor already I think"
-    Drafted : member.ai.claude.cowork. Sections 6.1 and 6.2 are
-              PROPOSALS and are marked so. They are not ruled and must
-              not be read as ruled.
+              Sections 6.1, 6.1a and 6.2, AFTER the measurement and
+              after the external answers:
+              "I think all in 6.x are valid, especially allowing an
+               empty workspace, there will be times we want to open
+               and add to it. You have to have a place to start."
+              "If it turns [out] wrong we will find out quickly"
+              "6.2 is valid"
+    Drafted : member.ai.claude.cowork. Sections 6.1, 6.1a and 6.2
+              were drafted as PROPOSALS, corrected twice, and are now
+              RULED -- see the Ruled line. What each section says about
+              its own drafting history is kept rather than tidied.
     Lane    : AIF-078 (multi-workspace), downstream of R128 (additive
               open), R112 (name ambiguity), R110 (WorkspacePath kept,
               reason struck).
@@ -281,22 +290,31 @@ P3 proposes to end.
 Separable, and each is a place where drift will settle the answer if a person
 does not.
 
-### 6.1 Does WORKSPACE SWITCH move the area cursor? -- PROPOSED: YES
+### 6.1 Does WORKSPACE SWITCH move the area cursor? -- RULED: YES
 
-**PROPOSAL, NOT RULED.** `WORKSPACE SWITCH mcc` moves the area cursor to that
-workspace's lowest-numbered member, and prints the slot it landed on. If the
-target workspace has NO members, the switch **refuses** rather than leaving the
-area cursor in a foreign workspace.
+**RULED 2026-08-27.** `WORKSPACE SWITCH mcc` moves the area cursor to that
+workspace's lowest-numbered member, and prints the slot it landed on.
+
+**The refusal-on-empty arm this section originally proposed is STRUCK** -- see
+below and 6.1a. An empty workspace is a legal position.
 
 The alternative -- switch the handle, leave the area cursor -- is what happens
 today, and it is the state where the two authorities in sec 4 disagree. A
 cursor that can point outside the thing it is scoped to is not scoped.
 
-**Cost named:** refusing a switch into an empty workspace makes
-`WORKSPACE NEW x` then `WORKSPACE SWITCH x` an error, which is a real
-regression on a real sequence. The alternative is a declared "empty" position,
-which is a null workspace by another name and I1 has no null workspace. This
-is the trade the owner should rule, not me.
+**THE OWNER'S REASON FOR THE EMPTY WORKSPACE IS THE PRODUCT REASON, AND IT IS
+STRONGER THAN THE FORMAL ONE.** The external reviewer argued from the
+invariant -- I1 forbids a NULL workspace, not an EMPTY one. The owner argued
+from use: *"there will be times we want to open and add to it. You have to
+have a place to start."* Both are recorded because they are different
+arguments and the second is the one a reader will need: an empty workspace is
+not a tolerated edge case, it is **the intended starting state for building
+one up.**
+
+**RISK ACCEPTED EXPLICITLY, AND RECORDED AS ACCEPTED RATHER THAN ABSENT.**
+Owner, same ruling: *"If it turns [out] wrong we will find out quickly."* That
+is a judgement that the cost of being wrong here is cheap and visible, not a
+claim that it cannot be wrong. 6.1a names precisely what would go wrong.
 
 **This is where the precepts stopped.** P7 said *"SWITCH is the named current
 pointer (SELECT-like)"* -- ambiguous exactly here -- and never named
@@ -325,7 +343,7 @@ straight back into the AIF-137 path.
 is the one Grok's answer makes legal.** This is not an objection to the
 answer; it is the sub-question the answer surfaces:
 
-**6.1a -- what does the area cursor point at inside an empty workspace?**
+**6.1a -- what does the area cursor point at inside an empty workspace? -- RULED: THE POSITION IS LEGAL; ITS REPRESENTATION IS AIF-138**
 
 **THE QUESTION IS MIS-ADDRESSED, AND THAT IS THE FINDING. IT IS NOT A
 WORKSPACE QUESTION.** `Engine::_current` cannot say "nothing selected" at all,
@@ -399,10 +417,38 @@ the question and defers the defect.
 R129 then keeps only what is its own: the workspace cursor is a peer, the
 three cursors do not nest, and the invariant above governs the pair.
 
-### 6.2 What does SELECT do across a workspace boundary? -- PROPOSAL WITHDRAWN
+**RULED 2026-08-27 -- AND THE RULING CHANGES AIF-138's STATUS, NOT ITS
+CONTENT.** The owner ruled the empty workspace legal: *"there will be times we
+want to open and add to it. You have to have a place to start."*
 
-**THE FIRST CUT OF THIS RULING PROPOSED "REFUSE AND NAME THE HOLDER". THAT WAS
-WRONG, AND P6 ALREADY ANSWERED IT.**
+**So AIF-138 moves from LATENT to ON THE PATH.** Before this ruling, "the area
+cursor cannot say nothing selected" was a defect nobody could reach on
+purpose. After it, the empty workspace is the **intended starting state**, and
+the engine has no value for the position a user is now invited to occupy.
+AIF-138 is not a curiosity found while drafting; it is the work this ruling
+depends on.
+
+**WHAT IS RULED AND WHAT IS NOT.** Ruled: the position exists and is legal.
+NOT ruled, and it belongs to AIF-138: how the cursor SAYS it -- a negative
+sentinel, an `optional`, or a `hasCurrent()` predicate -- and what happens to
+the callers. This ruling deliberately does not choose, because choosing a
+representation before counting the readers is what produced the two withdrawn
+answers above.
+
+**THE RISK THE OWNER ACCEPTED IS THIS ONE.** *"If it turns [out] wrong we will
+find out quickly"* -- and 6.2(a) names how it would show: in an empty
+workspace arm 1 never applies, so every name refuses or misses. If that reads
+badly in use, this is the section to reopen.
+
+The external reviewer was asked and the question did not reach him across four
+attempts; it is answered here rather than left open.
+
+### 6.2 What does SELECT do across a workspace boundary? -- RULED (three-way)
+
+**RULED 2026-08-27, owner: *"6.2 is valid"*, on the three-way rule below.**
+
+**THE FIRST CUT OF THIS RULING PROPOSED A BLANKET "REFUSE AND NAME THE
+HOLDER". THAT WAS WRONG, AND P6 ALREADY ANSWERED IT.**
 
 Grok's Q3 answer (owner-final): *"Finding 3 is both sides having STUDENTS. P6
 says use the current workspace's (area 21), not refuse and not follow. Refuse
@@ -427,9 +473,23 @@ The measured transcript is the FIRST case, not the third: WSX32 held STUDENTS
 at area 21 and `SELECT students` took WSX64's area 8 anyway. **That is P6
 being violated, not a boundary policy being absent.**
 
-**STILL OPEN, and it is the reason 6.1a matters:** the third arm needs the
-current workspace to be unambiguous, and per 6.1a it is not when the workspace
-is empty.
+**TWO CONSEQUENCES OF THIS RULING THAT ARE NOT OBVIOUS FROM THE THREE ARMS,
+STATED SO THEY ARE NOT DISCOVERED:**
+
+**(a) IN AN EMPTY WORKSPACE, ARM 1 CAN NEVER APPLY.** Nothing is present, so
+every name falls to arm 2 or arm 3 -- meaning an empty workspace is a place
+where nothing resolves and most names refuse with "it is over there." That is
+correct under 6.1's ruling and it is a real user-visible consequence of making
+the empty workspace the intended starting state. It is not a defect; it is
+what "you have to have a place to start" costs.
+
+**(b) THE REFUSAL ARM DOES NOT MEAN "PRINT AN ERROR" ON THE ENGINE'S OWN
+LOOKUPS.** P6 is a resolver rule (external Q1 answer), so arm 3 governs
+internal resolutions too -- but an internal refusal has nobody to tell. For
+`refresh_from_parent_name()` the correct behaviour under arm 3 is simply
+**find no parent and return**, which is what P6 implies and what closes
+AIF-137. Said explicitly because "refuse" reads as "diagnose", and a
+diagnostic on the refresh path would be wrong.
 
 ## 7. THE THIRD QUESTION IS ANSWERED ELSEWHERE -- AND IS STRUCK FROM HERE
 
@@ -552,7 +612,14 @@ without saying so is the drift this house keeps finding.
    out to mean area 0, the startup position, AND "no engine"
    (`workareas.hpp:120`), which is the AIF-118 shape sitting in the accessor
    the AIF-137 path calls.
-8. **A criticism of the packet's directory layout was withdrawn.** The reviewer
+8. **6.1, 6.1a and 6.2 were RULED AFTER the measurement and after the
+   external answers, not before either.** Worth recording as an ordering: the
+   first cut of 6.2 proposed a blanket refusal and would have been ruled
+   wrong, because the transcript showed the case was a LOCAL name being
+   ignored rather than a boundary policy being absent. **A ruling made before
+   its measurement would have shipped the wrong rule with the same
+   confidence.**
+9. **A criticism of the packet's directory layout was withdrawn.** The reviewer
    checked `git ls-files` inside `D:\code\ccode`, found no
    `change_packages/`, and concluded the layout was off-contract. The layout is
    an established convention six packages deep since 2026-07-24; the packages

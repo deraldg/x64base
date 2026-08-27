@@ -13,9 +13,12 @@
     Evidence: MEASURED in source, lines cited. Partly corroborated by
               the 2026-08-27 transcript recorded in AIF-137 sec 2.
               The no-engine arm (sec 2.3) is NOT runtime-proven.
-    Severity: latent today; load-bearing the moment "nothing selected"
-              becomes a position a user can occupy, which R129 sec 6.1
-              makes legal.
+    Severity: ON THE PATH, not latent. R129 sec 6.1 was RULED on
+              2026-08-27: the owner made the empty workspace legal and
+              called it the place you start from when building one up.
+              "Nothing selected" is now a position a user is INVITED
+              to occupy, and the engine has no value for it. This is
+              the work that ruling depends on.
 
 ## 1. THE FINDING IN ONE SENTENCE
 
@@ -78,10 +81,19 @@ instead.
 
 ## 4. WHAT MAKES IT REACHABLE NOW
 
-R129 sec 6.1, on the external reviewer's recommendation, makes an EMPTY
-workspace a legal position: `WORKSPACE NEW x` then `WORKSPACE SWITCH x`
-succeeds, with no current table and the next OPEN joining it. **I1 forbids a
-NULL workspace, not an EMPTY one.**
+**R129 sec 6.1 was RULED on 2026-08-27.** An EMPTY workspace is a legal
+position: `WORKSPACE NEW x` then `WORKSPACE SWITCH x` succeeds, with no
+current table and the next OPEN joining it.
+
+Two arguments were given and the owner's is the load-bearing one. The external
+reviewer argued from the invariant -- **I1 forbids a NULL workspace, not an
+EMPTY one.** The owner argued from use: *"there will be times we want to open
+and add to it. You have to have a place to start."*
+
+**That second reason is why this defect is not latent.** An empty workspace is
+not a tolerated edge case to be survived; it is the **intended starting
+state** for building a workspace up. The position is now on the ordinary path,
+and the engine cannot express it.
 
 An empty workspace has no lowest member, so there is nothing for the area
 cursor to point at -- which is precisely the state the engine cannot express.
