@@ -59,7 +59,32 @@ Two tables, joined on WS_ID.
 A birth stops being `FMT="BIRTH 1", SIZE_B=0` and becomes **a ledger row with no
 payload row.**
 
-## 4. FOUR ARGUMENTS, EACH GROUNDED IN SOMETHING MEASURED
+## 3a. THE STRONGEST ARGUMENT IS THAT THE HOUSE ALREADY DOES THIS -- TWICE
+
+Added 2026-08-27 after the owner showed the data tree. This design is NOT a
+novel proposal. It is the pattern this system already uses everywhere except
+here:
+
+    data/metadata/          SYSCMD  SYSFUNC  SYSARGS  SYSSUBCMD
+                            SYSHELP SYSMSG   SYSENTVAR  SYSFLDDIC
+    data/metadata/portal/   SYSLANE SYSPROOF SYSRUN  SYSTASK  SYSRUNLANE
+
+The command catalog is decomposed into entity, argument and sub-form tables.
+The portal metadata is decomposed AND CARRIES AN EXPLICIT LINK TABLE --
+`SYSRUNLANE`, runs joined to lanes, with its own CDX and LMDB. That is exactly
+the owner's "make a key to link them", already shipped.
+
+**`WORKSPACES.dbf` is the outlier**: the one fat table still holding identity,
+payload, dimensions and a 3 MB memo together. The question is not "should we
+split it" but "why is it the only one that is not."
+
+CORRECTION TO THIS DOCUMENT'S OWN SEC 6: it cited
+`docs/maintenance/PROOF_CURATION_LANE_V1.md` sec 4 as PROPOSING `SYSPROOF.dbf`.
+**`SYSPROOF.dbf` is on disk**, with a CDX and an LMDB index directory. The
+proposal landed. Reading a proposal section as current state is the same error
+this run recorded four other times; it is corrected here rather than quietly.
+
+## 4. FOUR MORE ARGUMENTS, EACH GROUNDED IN SOMETHING MEASURED
 
 **R6 -- absent must not be representable among present.** A birth is currently
 encoded as a payload-shaped row whose contents mean "there is no payload". That
@@ -111,9 +136,10 @@ the ledger. Listed to show the shape, not as commitments:
 - **locks** -- AIF-144 measured that a lock records `host:pid:ms` and no member.
   It records no workspace either. A lock that names the workspace it was taken
   in is a join away, once there is a narrow key to join to.
-- **proofs** -- `PROOF_CURATION_LANE_V1.md` sec 4 proposes `SYSPROOF.dbf` and
-  cites `WORKSPACES.dbf` as its precedent: "a table whose rows describe things
-  that live elsewhere". That precedent gets better if the thing has a key.
+- **proofs** -- `SYSPROOF.dbf` EXISTS (sec 3a), and
+  `PROOF_CURATION_LANE_V1.md` sec 4 cites `WORKSPACES.dbf` as its precedent:
+  "a table whose rows describe things that live elsewhere". The precedent it
+  named is the one table that has not been decomposed.
 - **regression runs** -- which spec minted which identity, on which run. Today
   that is inferred from SAVED_AT timestamps and name conventions; it took an
   hour on 2026-08-27 to establish that eight of twenty-one live heads came from
