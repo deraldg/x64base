@@ -96,6 +96,7 @@
 #include "cli/scan_selector.hpp"
 #include "cli/order_state.hpp"
 #include "cli/order_iterator.hpp"
+#include "cli/expr/api.hpp"          // compile_where: refuse an unparseable FOR
 #include "cli/expr/normalize_where.hpp"
 #include "cli/expr/text_compare.hpp"
 #include "cli/output_router.hpp"
@@ -409,6 +410,38 @@ void cmd_COUNT(xbase::DbArea& area, std::istringstream& args)
         // predicates such as SOUNDEX(LNAME)=SOUNDEX("WHITE") or LEFT(LNAME,1)="W".
         if (!expression_has_function_call(spec.expr)) {
             spec.expr = normalize_unquoted_rhs_literals(area, spec.expr);
+        }
+
+        // AIF-074 ED-01b, applied at the CONSUMER, 2026-08-27.
+        //
+        // COUNT never asked whether its predicate compiled. It handed the raw
+        // text to the scan, every record evaluated false, and it printed `0`.
+        // A confident zero. "No rows match" and "I could not evaluate your
+        // question" had the same output, and zero is a PLAUSIBLE ANSWER -- R6,
+        // absent represented among present, in the most-used counting verb in
+        // the shell.
+        //
+        // Measured 2026-08-27 against WORKSPACES.dbf:
+        //     COUNT                        216
+        //     COUNT FOR SUPERSEDED =  "1"  195
+        //     COUNT FOR SUPERSEDED <> "1"    0   <- twenty-one rows match
+        // The three numbers do not reconcile, which is the only reason anyone
+        // noticed. Nothing errored.
+        //
+        // Now the predicate is compiled FIRST and a failure REFUSES. COUNT
+        // prints an error and no number, because a number is a claim.
+        //
+        // Functions are exempt: the selector routes those to predx::eval_expr()
+        // and compile_where does not model that grammar, so compiling here
+        // would refuse predicates that work. Named rather than silently
+        // skipped -- it is a real hole in this guard and it is the reason the
+        // check sits inside the no-function-call branch above it.
+        if (!expression_has_function_call(spec.expr)) {
+            auto cr = dottalk::expr::compile_where(spec.expr);
+            if (!cr) {
+                print_line("COUNT FOR error: " + cr.error + " - refusing.");
+                return;
+            }
         }
     }
 

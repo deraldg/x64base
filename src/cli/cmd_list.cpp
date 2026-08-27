@@ -521,8 +521,22 @@ void cmd_LIST(xbase::DbArea& a, std::istringstream& iss) {
         if (cr) {
             _prog = std::shared_ptr<dottalk::expr::Expr>(std::move(cr.program));
         } else {
-            std::cout << "; LIST FOR error: " << cr.error << " - ignoring FOR.\n";
-            opt.haveCompiledFor = false;
+            // R3: failure travels in the return value -- and until 2026-08-27
+            // this branch RECEIVED the refusal, printed it, and then listed
+            // EVERY ROW. It announced that it could not answer the question
+            // asked, and then answered a different one, which is worse than
+            // silence because the output looks like a result set.
+            //
+            // compile_where is the ONE funnel AIF-074 ED-01b built precisely so
+            // a partly-parsed predicate could not be evaluated as though it were
+            // whole. Discarding its verdict here reopened that class one level
+            // up, at the consumer.
+            //
+            // Now LIST REFUSES. An unparseable FOR produces no rows, because
+            // "every row" is not a conservative answer to a filter nobody could
+            // compile -- it is the least conservative answer available.
+            std::cout << "; LIST FOR error: " << cr.error << " - refusing.\n";
+            return;
         }
     }
 

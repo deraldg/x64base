@@ -116,6 +116,25 @@ Token Lexer::next() {
     ++m_i; return Token{TokKind::Eq, "="};
   }
   if (c=='!' && peekch()=='=') { m_i+=2; return Token{TokKind::Ne, "!="}; }
+
+  // xBase NOT-EQUAL, added 2026-08-27. `<>` is the canonical spelling in dBase,
+  // FoxPro and Clipper, and `#` is its short form; `cmd_locate.cpp:260`,
+  // `predicate_chain.cpp`, `normalize_where.cpp` and `rhs_eval.cpp:317` all
+  // already accept them. This lexer accepted only the C spelling `!=`, so the
+  // engine understood the programmer's dialect and not its own.
+  //
+  // NOTHING ELSE NEEDED CHANGING, and that is why the omission survived so
+  // long: TokKind::Ne already existed and parser.cpp:84 already mapped it to
+  // CmpOp::NE. The operator was fully implemented and simply unspellable.
+  //
+  // `<>` previously lexed as Lt then Gt, so `A <> "1"` parsed as `A < ` and
+  // stopped, and compile_where correctly reported "unexpected input after the
+  // end of the expression: '>'". It was the CALLERS that then threw that
+  // report away -- see cmd_list.cpp and cmd_count.cpp, fixed in the same
+  // change.
+  if (c=='<' && peekch()=='>') { m_i+=2; return Token{TokKind::Ne, "<>"}; }
+  if (c=='#')                  { ++m_i;  return Token{TokKind::Ne, "#"};  }
+
   if (c=='<' && peekch()=='=') { m_i+=2; return Token{TokKind::Le, "<="}; }
   if (c=='>' && peekch()=='=') { m_i+=2; return Token{TokKind::Ge, ">="}; }
   if (c=='<') { ++m_i; return Token{TokKind::Lt, "<"}; }
