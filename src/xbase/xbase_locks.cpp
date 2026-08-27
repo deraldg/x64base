@@ -260,6 +260,33 @@ static bool is_pid_alive(unsigned long pid) {
 #endif
 }
 
+// AIF-144 stage 1b. ONE PLACE DECIDES WHETHER A LOCK IS MINE.
+//
+// Four sites used to compare the recorded owner field against this process's
+// token by hand -- remove_if_owned, create_or_validate_owned, and twice in the
+// table-lock check inside try_lock_record. Four hand-written implementations of
+// one rule, and nothing forced them to agree: unspell any single one and no
+// test would notice.
+//
+// This comment deliberately DESCRIBES that comparison instead of quoting it, so
+// a maintainer grepping for the old spelling to confirm none survive does not
+// match the paragraph explaining that none survive. Three separate documents
+// today were caught spelling the pattern they were warning about.
+//
+// It also left Owner::operator== with ZERO CALLERS in the whole tree, which is
+// the AIF-079 shape (registered and unreachable) and made stage 1's stated
+// decision -- "the member is deliberately outside operator==" -- a decision
+// about an operator nobody invoked. The rule was real; it was enforced by four
+// string comparisons rather than by the operator that claimed to express it.
+//
+// Today this is EXACTLY the liveness token, byte for byte what it replaced.
+// Its value is that AIF-144 sec 7's member-aware refusal rule -- "only the
+// principal may release across a member switch" -- now has ONE site to land in
+// rather than four to be applied consistently across.
+static bool lock_is_mine(const LockMeta& meta, const Owner& me) {
+    return Owner{meta.owner, meta.member} == me;
+}
+
 static bool remove_if_owned(const std::string& path, const Owner& me, std::string* err) {
     if (xbase::ramfs::is_virtual(path)) return true;  // RAM table: no OS lock file
     if (!fs::exists(path)) return true;
@@ -270,7 +297,7 @@ static bool remove_if_owned(const std::string& path, const Owner& me, std::strin
         return false;
     }
 
-    if (meta.owner != me.id) {
+    if (!lock_is_mine(meta, me)) {
         if (err) *err = "not lock owner";
         return false;
     }
@@ -297,7 +324,7 @@ static bool create_or_validate_owned(const std::string& path, const Owner& me, s
     }
 
     // Re-entrant lock in same process/session.
-    if (meta.owner == me.id) {
+    if (lock_is_mine(meta, me)) {
         return true;
     }
 
@@ -381,13 +408,13 @@ bool try_lock_record(DbArea& a, std::uint64_t recno, const Owner& me, std::strin
             // With an unparseable pid the old test evaluated is_pid_alive(0)
             // == false and fell straight through to the reclaim below, so a
             // malformed table lock granted a record lock underneath it.
-            if (tmeta.owner != me.id && (!tmeta.pid_valid || is_pid_alive(tmeta.pid))) {
+            if (!lock_is_mine(tmeta, me) && (!tmeta.pid_valid || is_pid_alive(tmeta.pid))) {
                 if (err) *err = "table locked";
                 return false;
             }
 
             // Stale table lock cleanup -- only when PROVABLY dead.
-            if (tmeta.owner != me.id && tmeta.pid_valid && !is_pid_alive(tmeta.pid)) {
+            if (!lock_is_mine(tmeta, me) && tmeta.pid_valid && !is_pid_alive(tmeta.pid)) {
                 std::string ignored;
                 (void)force_remove(tlp, &ignored);
             }
