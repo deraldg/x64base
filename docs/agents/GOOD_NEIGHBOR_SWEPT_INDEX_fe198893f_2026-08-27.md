@@ -51,10 +51,19 @@ being in. Verify with:
 Because `coordination/OPEN_ITEMS.md` entered the change set, `cited-paths` ran
 over it and reported four items that belong to your lane, not to R130:
 
-    WIDOW   docs/gui/GUI_LOCALIZATION_MESSAGE_CONTRACT_V1.md
-    WIDOW   docs/gui/GUI_SYNC_DEVELOPMENT_WORKFLOW_V1.md
-    WIDOW   docs/gui/UNIFIED_GUI_CORE_V1.md
-    MISSING docs/getting-started/BUILDING.md   -- cited, NOT ON DISK
+    WIDOW   docs/gui/GUI_LOCALIZATION_MESSAGE_CONTRACT_V1.md   <!-- cite-check:ignore -->
+    WIDOW   docs/gui/GUI_SYNC_DEVELOPMENT_WORKFLOW_V1.md        <!-- cite-check:ignore -->
+    WIDOW   docs/gui/UNIFIED_GUI_CORE_V1.md                     <!-- cite-check:ignore -->
+    MISSING docs/getting-started/BUILDING.md                    <!-- cite-check:ignore -->
+
+**The four lines above carry `cite-check:ignore`, and this document is the
+reason why.** It QUOTES those paths as the evidence; it does not CLAIM them.
+Without the marker this note becomes a second source of the same four
+advisories it was written to report -- a document that reproduces the defect it
+documents. Same ruling shape as `bd026fae2` earlier today and OI-017 before it:
+where the bad path IS the subject matter, sterilising it destroys the evidence.
+The marker suppresses only the line it sits on, so it cannot silence this
+document.
 
 The three WIDOWs are on disk and untracked. **The MISSING one is different and
 is the one worth a look**: `OPEN_ITEMS.md` cites a path that does not exist in

@@ -100,6 +100,18 @@ disagree, and the code comment beside the constants (`// was 256`) is the only
 hint. Not fixed here -- named so the next person reading the contract file
 knows to check the build vectors instead.
 
+**AND THE CONTRACT DOCUMENT CANNOT BE CORRECTED THROUGH THE NORMAL PATH.**
+Measured 2026-08-27 by the `cited-paths` gate on the commit that landed this
+finding: `include/xbase_64_phase1_contract.txt` reports as **IGNORED**, not
+merely untracked -- *"`git add` on it is a no-op (R42.1)"*, and the gate's own
+summary line says *"An IGNORED path can never be staged at all."* So a document
+that states this subsystem's name ceilings, and states them wrongly, is
+gitignored: it cannot be staged, reviewed in a diff, or gated. **The author
+first reported it as a plain WIDOW** after checking `ls-files --error-unmatch`
+and not `check-ignore` -- true and incomplete, corrected here rather than
+edited above. Whether that file should be tracked or retired is not this
+finding's call, but it is now part of why the stale ceiling persists.
+
 **So the honest severity is: cannot happen today, will happen silently the
 first day someone raises a ceiling or imports a schema from a system with
 longer names** -- which is precisely the CONVERT thesis this project is built
