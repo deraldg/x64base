@@ -2402,7 +2402,33 @@ static void workspace_load_from_stream(std::istream& in, const std::string& sour
 
     last_loaded_workspace_file() = sourceLabel;
 
-    workspace_close_all();
+    // R130 -- A POSTURE RECORDS A KEY, NOT AN ADDRESS (owner, 2026-08-27:
+    // "we don't save slots, we allocated them as they are available").
+    //
+    // THIS IS WHERE workspace_close_all() USED TO BE, AND IT WAS NOT A DEFECT.
+    // The loop below used to replay each recorded AREA number as an ENGINE
+    // ADDRESS -- open_into_area(n, ...) calls get_area_0based(n) and A.close()
+    // on that exact slot -- so it could only be safe if slot n was free, and
+    // emptying every workspace in the session was the only way to guarantee
+    // that. The close was the PRECONDITION of address replay, not a policy.
+    //
+    // Closing every workspace at once is still correct AT SHUTDOWN (owner:
+    // "everybody has database fun until they shutdown their app and all of the
+    // workspaces close at one time") and workspace_close_all() still exists
+    // for exactly that. What was wrong was LOAD borrowing shutdown's hammer.
+    //
+    // DELETING THIS LINE ALONE WOULD HAVE BEEN WORSE THAN THE DEFECT. Without
+    // the key->slot map below, the loader would allocate past an occupied
+    // range and a bare `CURSOR 8` would still reach engine slot 8 -- now
+    // another workspace's table -- and MOVE ITS CURSOR: AIF-137's shape as a
+    // WRITE, on user data, driven by a saved file. The close and the map are
+    // ONE change. Do not split them.
+    //
+    // To replace rather than add, compose it the way R128 spells it:
+    //   WORKSPACE CLOSE ALL   then   WORKSPACE LOAD <name>
+    //
+    // Proof: dottalkpp/data/scripts/workspace_load_posture_keys.dts (PK_T1/T2
+    // catch the missing close, PK_T3/T4/T5 catch a wrong map).
 
     std::string line;
     int area_count = 0;
@@ -2410,6 +2436,17 @@ static void workspace_load_from_stream(std::istream& in, const std::string& sour
     int relation_rejected_count = 0;
     int cursor_count = 0;       // v3 session state
     int pending_current = -1;   // v3 selected area; applied after the loop
+
+    // R130: recorded AREA number -> engine slot the allocator actually gave.
+    // -1 means "this posture never declared that key". Sized by MAX_AREA
+    // because the AREA branch already refuses anything outside that range, so
+    // a key can never index past the end.
+    std::vector<int> slot_of_key(static_cast<std::size_t>(xbase::MAX_AREA), -1);
+    int  keys_remapped     = 0;   // landed somewhere other than the recorded number
+    int  cursor_unmapped   = 0;   // CURSOR named a key this posture never declared
+    bool current_unmapped  = false;
+    bool broke_contiguity_any = false;
+    bool areas_exhausted   = false;
 
     while (std::getline(payloadIn, line)) {
         std::string t = trim_copy(line);
@@ -2454,26 +2491,54 @@ static void workspace_load_from_stream(std::istream& in, const std::string& sour
             }
             if (schemaVersion < 2) tag.clear();
 
+            // R130: ASK THE ALLOCATOR. Same workspace-scoped allocator USE
+            // has used since AIF-078 (IN FREE) and R128's additive OPEN uses
+            // at :1223. LOAD was the only opener in the tree still replaying
+            // addresses. Nothing new was built for this ruling.
+            bool broke = false;
+            const int slot = cli::find_free_area_for_current_workspace(broke);
+            if (slot < 0 || slot >= xbase::MAX_AREA) {
+                if (!areas_exhausted) {
+                    std::cout << "  ! AREA " << n << ": no free work area left ("
+                              << xbase::MAX_AREA << " slots); this and any later "
+                                 "table in the posture were NOT opened.\n";
+                }
+                areas_exhausted = true;
+                continue;
+            }
+            if (broke) broke_contiguity_any = true;
+
             std::string err;
-            bool ok = open_into_area(n, dbf_resolved, indexPath, &err);
+            bool ok = open_into_area(slot, dbf_resolved, indexPath, &err);
             if (!ok) {
-                std::cout << "  ! AREA " << n << ": open failed (" << err << ")\n";
+                // Report the KEY the user's file says AND the slot it was
+                // tried at. Reporting only one of them makes a load failure
+                // unreadable against either the posture or the session.
+                std::cout << "  ! AREA " << n << " (slot " << slot
+                          << "): open failed (" << err << ")\n";
             } else {
                 try {
-                    xbase::DbArea& A = get_area_0based(n);
+                    xbase::DbArea& A = get_area_0based(slot);
                     if (!alias.empty() && to_lower(alias) != "none") {
                         setLogicalNameIf(A, alias, 0);
                         setLegacyNameIf(A, alias, 0);
                     }
                     if (!tag.empty() && to_lower(tag) != "none") {
                         if (!setActiveTagSafe(A, tag)) {
-                            std::cout << "  ! AREA " << n << ": tag '" << tag
+                            std::cout << "  ! AREA " << n << " (slot " << slot
+                                      << "): tag '" << tag
                                       << "' could not be activated";
                             if (!indexType.empty()) std::cout << " (type=" << indexType << ")";
                             std::cout << ".\n";
                         }
                     }
                 } catch (...) {}
+                // The map is recorded ONLY on a successful open. A key whose
+                // table failed to open stays -1, so a later CURSOR naming it
+                // is counted as unmapped rather than steering a slot that
+                // holds something else entirely.
+                slot_of_key[static_cast<std::size_t>(n)] = slot;
+                if (slot != n) ++keys_remapped;
                 ++area_count;
             }
 
@@ -2528,19 +2593,40 @@ static void workspace_load_from_stream(std::istream& in, const std::string& sour
         } else if (to_lower(t).rfind("cursor ", 0) == 0) {
             // v3 session state: restore the physical recno (GPS anchor).
             // Emitted after AREA/REL lines, so the area is already open.
-            int n = -1; std::uint64_t rn = 0;
-            std::istringstream cs(t.substr(7)); cs >> n >> rn;
-            if (n >= 0 && n < xbase::MAX_AREA && rn > 0) {
+            // R130: the number on this line is the KEY an AREA line above
+            // declared, not an engine slot. Translate or refuse -- a CURSOR
+            // applied to an untranslated number is a WRITE into whichever
+            // workspace happens to hold that slot.
+            int key = -1; std::uint64_t rn = 0;
+            std::istringstream cs(t.substr(7)); cs >> key >> rn;
+            const int n = (key >= 0 && key < xbase::MAX_AREA)
+                        ? slot_of_key[static_cast<std::size_t>(key)]
+                        : -1;
+            if (n >= 0 && rn > 0) {
                 try {
                     xbase::DbArea& A = get_area_0based(n);
                     if (area_open(A) && A.gotoRec64(rn)) { A.readCurrent(); ++cursor_count; }
                 } catch (...) {}
+            } else if (rn > 0) {
+                ++cursor_unmapped;
             }
         } else if (to_lower(t).rfind("current ", 0) == 0) {
             // v3 session state: the selected area, applied after the loop.
-            int n = -1;
-            std::istringstream cs(t.substr(8)); cs >> n;
-            if (n >= 0 && n < xbase::MAX_AREA) pending_current = n;
+            // R130: same translation as CURSOR. AND THIS LINE CAN LEGITIMATELY
+            // NAME A KEY THIS POSTURE DOES NOT HAVE: workspace_save_to_string()
+            // filters every AREA and every CURSOR through sc.contains(area0)
+            // and then emits CURRENT from eng->currentArea() with NO scope
+            // check, so a scoped save taken while the engine sat in another
+            // workspace writes that foreign slot number into the file. An
+            // unmappable CURRENT is therefore IGNORED and REPORTED, never
+            // guessed at -- guessing would select somebody else's area.
+            int key = -1;
+            std::istringstream cs(t.substr(8)); cs >> key;
+            const int n = (key >= 0 && key < xbase::MAX_AREA)
+                        ? slot_of_key[static_cast<std::size_t>(key)]
+                        : -1;
+            if (n >= 0) pending_current = n;
+            else current_unmapped = true;
         } else if (to_lower(t).rfind("key ", 0) == 0) {
             // AIF-074 P1.1: KEY <table> <field> UNIQUE|PRIMARY -> unique_reg.
             std::string body = trim_copy(t.substr(4));
@@ -2549,7 +2635,15 @@ static void workspace_load_from_stream(std::istream& in, const std::string& sour
             ks >> tbl >> fld >> kind;
             if (tbl.empty() || fld.empty()) {
                 std::cout << "  ! KEY skipped (bad syntax): " << body << "\n";
-            } else if (xbase::DbArea* ka = cli::find_open_area_by_name_ci(tbl)) {
+            // R130 + AIF-137: scoped. This is a WRITE (set_unique_field /
+            // set_primary_field), and the unscoped resolver returns the LOWEST
+            // engine slot holding the name across EVERY workspace -- so under
+            // an additive LOAD a posture's KEY line would stamp a unique-key
+            // declaration onto another workspace's same-named table. Masked
+            // until now only because the close above emptied the session.
+            } else if (xbase::DbArea* ka = cli::find_open_area_in_workspace_ci(
+                           tbl, xbase::workspace::current_handle(),
+                           "WORKSPACE LOAD KEY")) {
                 const bool is_primary = (to_lower(kind) == "primary");
                 unique_reg::set_unique_field(*ka, fld, true);
                 if (is_primary) unique_reg::set_primary_field(*ka, fld);
@@ -2580,6 +2674,32 @@ static void workspace_load_from_stream(std::istream& in, const std::string& sour
 #endif
     if (cursor_count > 0) std::cout << " (+ " << cursor_count << " cursor(s))";
     std::cout << ".\n";
+
+    // R130: WHAT IT DID THAT THE POSTURE DOES NOT SAY, IT SAYS. A load that
+    // silently re-points the numbers a user reads in their own file is a load
+    // whose next SELECT surprises them. Same rule R128's OPEN follows for its
+    // already-open and contiguity reports.
+    if (keys_remapped > 0) {
+        std::cout << "WORKSPACE LOAD: " << keys_remapped
+                  << " table(s) landed at an engine slot other than the number "
+                     "recorded in the posture. The posture's AREA numbers are "
+                     "KEYS, not addresses (R130); use WORKSPACE REGISTRY to see "
+                     "where they are.\n";
+    }
+    if (broke_contiguity_any) {
+        std::cout << "WORKSPACE LOAD: this workspace's run of areas is no longer "
+                     "contiguous; the allocator took the lowest free slot instead.\n";
+    }
+    if (cursor_unmapped > 0) {
+        std::cout << "WORKSPACE LOAD: " << cursor_unmapped
+                  << " CURSOR line(s) named an area this posture never restored; "
+                     "ignored rather than applied to whatever holds that slot.\n";
+    }
+    if (current_unmapped) {
+        std::cout << "WORKSPACE LOAD: the posture's CURRENT line named an area it "
+                     "never restored, so the selection was left alone. A scoped "
+                     "SAVE can write a CURRENT from outside its own scope.\n";
+    }
     // WORKSPACE LOAD is a structural lifecycle operation: areas and
     // optional relations have now been fully restored. Refresh only after
     // the complete load so relation caches do not see a half-built state.
@@ -4469,7 +4589,11 @@ static void workspace_print_usage() {
     std::cout << "Notes:\n";
     std::cout << "  - WORKSPACE with no arguments is a read-only report of open areas.\n";
     std::cout << "  - For OPEN: <target> is always the first argument after OPEN.\n";
-    std::cout << "  - WORKSPACE OPEN replaces the current workspace contents; WORKSPACE ADD is additive.\n";
+    std::cout << "  - WORKSPACE OPEN and WORKSPACE LOAD are both ADDITIVE (R128, R130);\n";
+    std::cout << "    they differ from ADD in GRANULARITY (directory or posture vs one\n";
+    std::cout << "    table), not in whether they destroy your session. To replace, compose\n";
+    std::cout << "    it: WORKSPACE CLOSE ALL then WORKSPACE OPEN <dir>. This line claimed\n";
+    std::cout << "    OPEN replaces until 2026-08-27; that stopped being true on 08-26.\n";
     std::cout << "  - Relative targets resolve from SETPATH/INIT slots, primarily DBF.\n";
     std::cout << "  - WORKSPACE OPEN dbf uses the configured DBF slot directly.\n";
     std::cout << "  - Bare stems like WORKSPACE OPEN students try <DBF>/students.dbf.\n";
@@ -4480,10 +4604,14 @@ static void workspace_print_usage() {
     std::cout << "    so the payload IS the database. MINIDB implies V3 and requires MEMO.\n";
     std::cout << "  - Plain LOAD <name> MEMO REFUSES a MINIDB payload: its tables have no disk\n";
     std::cout << "    home, and empty areas over missing files is a silent failure. Use MEMO RAM.\n";
-    std::cout << "  - LOAD enumerates from the POSTURE too, and REFUSES a shortfall BEFORE it\n";
-    std::cout << "    closes anything -- a load that cannot complete leaves your current\n";
-    std::cout << "    workspace standing. Indexes are not checked (derived, rebuildable).\n";
+    std::cout << "  - LOAD enumerates from the POSTURE too, and REFUSES a shortfall BEFORE\n";
+    std::cout << "    it opens anything. Indexes are not checked (derived, rebuildable).\n";
     std::cout << "    PARTIAL restores only what exists.\n";
+    std::cout << "  - LOAD does not close anything at all any more (R130). A posture's AREA\n";
+    std::cout << "    numbers are KEYS, not engine addresses: its tables are allocated into\n";
+    std::cout << "    the CURRENT workspace wherever there is room, and the saved cursors\n";
+    std::cout << "    follow them there. LOAD says so when a table lands somewhere other\n";
+    std::cout << "    than its recorded number.\n";
     std::cout << "  - WRITEBACK enumerates from the POSTURE, never the session's attach order.\n";
     std::cout << "    A shortfall ABORTS having written nothing. CONFIRM is required to replace;\n";
     std::cout << "    replaced files are kept as <name>.__wbak. WITH INDEXES copies container\n";
