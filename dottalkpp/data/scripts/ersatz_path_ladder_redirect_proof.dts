@@ -1,0 +1,153 @@
+* ===========================================================================
+* ERSATZ_PATH_LADDER_REDIRECT_PROOF.DTS
+* Runtime proof for AIF-145 R-a steps 1-3b: ERSATZ now resolves workspace,
+* .erz and .dot targets through ladder 2 (dottalk::paths) instead of its own
+* private copy.
+*
+* Status:  PROOF / READ-ONLY
+* Safety:  NON-MUTATING. Every command below is either a report or a LOAD of
+*          a name chosen BECAUSE IT DOES NOT EXIST. Nothing is written, no
+*          table is opened, no workspace is saved.
+* Lane:    AIF-145 (path ladder divergence)
+* Commits: 3f6428921 step 1, b01ca5127 step 2, 65ddfe806 step 3a,
+*          97854db87 step 3b
+*
+* HOW TO RUN
+*   $env:X64BASE_ALLOW_DATA = "1"
+*   .\datarun.ps1
+*   Standalone:  DOTSCRIPT scripts/ersatz_path_ladder_redirect_proof.dts
+*   Capture:     SET ALTERNATE TO <file> / SET ALTERNATE ON  (never
+*                DOTSCRIPT OUT -- AIF-081, still unfixed)
+*
+* STOP_ON_ERROR IS OFF BELOW, AND THAT IS A HAZARD WORTH NAMING.
+* Every block here is SUPPOSED to fail: each one LOADs a name chosen because
+* it does not exist, and the failure text is the measurement. With
+* STOP_ON_ERROR ON the run would abort at B2. With it OFF, a run in which
+* NOTHING resolved would still finish looking calm -- this lane has already
+* had one fixture fail green. So the pass condition is NOT "the script ran".
+* It is: six blocks printed, and each printed path matches its prediction.
+* A missing block is a failure even though the run stayed green.
+*
+* WHY THE TARGETS DO NOT EXIST
+* The redirect is only OBSERVABLE on the not-found path. When a file exists,
+* both ladders return the same absolute path -- that is the whole claim, and
+* a passing "same file" tells you nothing about which ladder answered. The
+* INVENTED path is where the two ladders were always allowed to differ, so
+* that is where the proof has to look.
+*
+* ERSATZ prints the resolved path inside its failure text ("cannot open
+* file: <path>", "expected .erz file, not script file <path>"), so the
+* resolver's answer is visible without any new instrumentation.
+*
+* ===========================================================================
+* PREDICTIONS -- WRITTEN BEFORE THE RUN. Do not edit after running.
+* ===========================================================================
+*
+* Let USERWS = the USER WORK line printed by ERSATZ STATUS
+*     DATA   = the data root (parent of DATA WORK)
+*
+* B1  ERSATZ STATUS
+*     Prints ten root lines. USER WORK must end in \user\default\workspaces.
+*     This report still runs on LADDER 3 -- it was deliberately NOT switched
+*     in 3b. It agrees with ladder 2 today only because current_profile_name()
+*     returns the literal "default" and s.current_user defaults to "default".
+*     This line is the control: if it ever stops matching B2, identity has
+*     been wired and the report is the thing left behind.
+*
+* B2  ERSATZ LOAD zzz_no_such_profile
+*     BARE NAME, does not exist. Ladder 2 falls back to roots.front(), which
+*     IS the current-user workspaces root, so this must be UNCHANGED by the
+*     redirect.
+*     PREDICT: cannot open file: <USERWS>\zzz_no_such_profile.erz
+*
+* B3  ERSATZ LOAD zzz_sub/zzz_no_such_profile
+*     THE ONE CHANGED CASE. Separator-bearing and non-existent. Ladder 3
+*     invented <USERWS>\zzz_sub\...; ladder 2 invents under the DATA root.
+*     PREDICT: cannot open file: <DATA>\zzz_sub\zzz_no_such_profile.erz
+*     A <USERWS> answer here means the redirect did NOT take effect.
+*
+* B4  ERSATZ LOAD zzz_no_such_script.dot
+*     Reaches the .DOT guard, which resolves through the SCRIPT roots and
+*     rejects. Bare name, so roots.front() = current-user SCRIPTS root.
+*     PREDICT: expected .erz file, not script file
+*              <USER SCRIPT>\zzz_no_such_script.dot
+*
+* B5  ERSATZ LOAD zzz_sub/zzz_no_such_script.dot
+*     Same changed case, script side.
+*     PREDICT: expected .erz file, not script file
+*              <DATA>\zzz_sub\zzz_no_such_script.dot
+*
+* B6  ERSATZ WLOAD zzz_no_such_workspace
+*     Reaches resolve_workspace_target, redirected in step 2 (b01ca5127).
+*     Bare name, extension search .dtschema then .dtschemas, neither exists,
+*     so the conventional location under the PRIMARY extension is named.
+*     PREDICT: a path ending \zzz_no_such_workspace.dtschema -- NOT
+*              .dtschemas, and NOT a bare name with no extension.
+*
+* ===========================================================================
+* RUNTIME STATUS: GREEN 2026-08-28, 6/6 blocks, every path as predicted.
+* Ran against build "v0.6 (2026-08-27, 97854db8 dirty)" -- the banner hash is
+* commit 97854db87, step 3b itself, so the binary under test contained the
+* redirect. ("dirty" was this file, untracked at run time. The Aug 27 stamp is
+* local time; the commit is 02:xx UTC Aug 28.)
+*
+*   B1  USER WORK  = ...\dottalkpp\user\default\workspaces
+*   B2  ...\user\default\workspaces\zzz_no_such_profile.erz      UNCHANGED
+*   B3  ...\data\zzz_sub\zzz_no_such_profile.erz                  CHANGED
+*   B4  ...\user\default\scripts\zzz_no_such_script.dot          UNCHANGED
+*   B5  ...\data\zzz_sub\zzz_no_such_script.dot                   CHANGED
+*   B6  ...\zzz_no_such_workspace.dtschema  (primary ext, not .dtschemas)
+*
+* B3 is the load-bearing one. It is the ONLY input the redirect changes, and
+* it answered under the DATA root. B2 is its control and did not move. Both
+* had to hold: a run where B3 moved and B2 moved too would mean the fallback
+* changed wholesale, not that ERSATZ started using ladder 2.
+*
+* WHAT B1 ALSO SHOWED, WHICH WAS NOT PREDICTED
+* USER WORK and DEFAULT WORK print the SAME directory
+* (user\default\workspaces), and so do USER SCRIPT and DEFAULT SCRIPT. The
+* search-root list is written as four roots {current-user, public, default,
+* data} but holds THREE distinct directories today, because the current user
+* IS "default". Any test that believes it is distinguishing a current-user
+* rung from a default rung is not distinguishing anything yet -- the two
+* become distinct only when identity is wired (AIF-144). Recorded here so
+* that a future green on a "user beats default" assertion is not mistaken
+* for evidence.
+* ===========================================================================
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+? "=========================================================="
+? "AIF-145 R-a REDIRECT PROOF -- ladder 2 resolves ERSATZ paths"
+? "=========================================================="
+
+? " "
+? "--- B1: ERSATZ STATUS (roots report -- still ladder 3) ---"
+ERSATZ STATUS
+
+? " "
+? "--- B2: bare name, not found -- must be the USER workspaces root ---"
+ERSATZ LOAD zzz_no_such_profile
+
+? " "
+? "--- B3: separator + not found -- THE CHANGED CASE, expect DATA root ---"
+ERSATZ LOAD zzz_sub/zzz_no_such_profile
+
+? " "
+? "--- B4: bare .dot -- script roots, expect USER scripts root ---"
+ERSATZ LOAD zzz_no_such_script.dot
+
+? " "
+? "--- B5: separator + .dot -- changed case, script side ---"
+ERSATZ LOAD zzz_sub/zzz_no_such_script.dot
+
+? " "
+? "--- B6: WLOAD bare name -- expect .dtschema, not .dtschemas ---"
+ERSATZ WLOAD zzz_no_such_workspace
+
+? " "
+? "=========================================================="
+? "PROOF RUN COMPLETE -- compare each block against its"
+? "prediction in the header of this script."
+? "=========================================================="
