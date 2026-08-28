@@ -34,9 +34,14 @@
 //   REL ADD <parent> <child> ON <field>[,<field>...]
 //   REL ADD <parent> <child> ON <parent_field> TO <child_field>
 //   REL CLEAR <parent>|ALL
+//   REL SCANLIMIT [<n>]
 // notes:
 //   REL forwards each subcommand to the owning relation handler.
 //   REL ADD and REL CLEAR mutate relation definitions; REL REFRESH refreshes relation state.
+//   REL SCANLIMIT reports or sets the relation engine's PER-HOP record budget.
+//   It caps what a traversal FINDS, not what is displayed: lowering it changes
+//   match counts and drops join rows. ERSATZ LIMIT is the display cap.
+//   Shipped since AIF-074 P1.3 and absent from this contract until 2026-08-28.
 // related:
 //   SET RELATION, SET RELATIONS, RELATIONS, TUPLE, WORKSPACE
 //
