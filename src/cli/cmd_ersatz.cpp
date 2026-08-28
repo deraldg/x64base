@@ -383,100 +383,13 @@ namespace
         return out;
     }
 
-    static fs::path app_root()
-    {
-        return dottalk::paths::state().data_root.parent_path();
-    }
-
-    static fs::path data_workspaces_root()
-    {
-        return dottalk::paths::get_slot(dottalk::paths::Slot::WORKSPACES);
-    }
-
-    static fs::path data_scripts_root()
-    {
-        return dottalk::paths::get_slot(dottalk::paths::Slot::SCRIPTS);
-    }
-
-    static fs::path user_root_base()
-    {
-        return app_root() / "user";
-    }
-
-    static std::string current_profile_name()
-    {
-        // Replace later with real authenticated user selection.
-        return "default";
-    }
-
-    static fs::path profile_root(const std::string& profile_name)
-    {
-        const std::string name = trim(profile_name).empty() ? "default" : trim(profile_name);
-        return user_root_base() / name;
-    }
-
-    static fs::path current_user_root()
-    {
-        return profile_root(current_profile_name());
-    }
-
-    static fs::path public_root()
-    {
-        return profile_root("public");
-    }
-
-    static fs::path default_root()
-    {
-        return profile_root("default");
-    }
-
-    static fs::path current_user_workspaces_root()
-    {
-        return current_user_root() / "workspaces";
-    }
-
-    static fs::path public_workspaces_root()
-    {
-        return public_root() / "workspaces";
-    }
-
-    static fs::path default_workspaces_root()
-    {
-        return default_root() / "workspaces";
-    }
-
-    static fs::path current_user_scripts_root()
-    {
-        return current_user_root() / "scripts";
-    }
-
-    static std::string& ersatz_saved_setup_command()
+                                                        static std::string& ersatz_saved_setup_command()
     {
         static std::string command;
         return command;
     }
 
-    static fs::path public_scripts_root()
-    {
-        return public_root() / "scripts";
-    }
-
-    static fs::path default_scripts_root()
-    {
-        return default_root() / "scripts";
-    }
-
-    static std::vector<fs::path> workspace_search_roots()
-    {
-        return {
-            current_user_workspaces_root(),
-            public_workspaces_root(),
-            default_workspaces_root(),
-            data_workspaces_root()
-        };
-    }
-
-        static bool file_exists(const fs::path& p)
+                    static bool file_exists(const fs::path& p)
     {
         std::error_code ec;
         return fs::exists(p, ec) && !ec && fs::is_regular_file(p, ec) && !ec;
@@ -494,7 +407,10 @@ namespace
         if (ec)
             abs_source = source;
 
-        for (const auto& root : workspace_search_roots())
+        // AIF-145 R-a step 3c: ladder 2's roots, not ladder 3's. SAVE must
+        // normalise against the SAME list resolution searches, or a saved
+        // reference and the lookup that later resolves it disagree.
+        for (const auto& root : dottalk::paths::workspace_search_roots())
         {
             ec.clear();
             fs::path abs_root = fs::absolute(root, ec);
@@ -939,22 +855,39 @@ echo ============================================================
     {
         browser::ensure_session_root(current_area_name(area));
 
+        // AIF-145 R-a step 3c. This report used to be built from ladder 3's
+        // private root builders while resolution had already moved to ladder 2
+        // (steps 2 and 3b). It printed the roots ERSATZ NO LONGER SEARCHES.
+        //
+        // They are the same directories today, and only today: ladder 3
+        // recomputed app_root()/user/<current_profile_name()>/... where
+        // current_profile_name() returns the literal "default", and
+        // s.current_user also defaults to "default". The moment identity is
+        // wired (AIF-144) resolution would follow the acting user while this
+        // report kept printing "default" -- a report describing a search that
+        // no longer happens. Two declarations of one thing, AIF-143's shape.
+        //
+        // Both lists are {current-user, public, default, slot} in that order,
+        // so the printed values do not move; the SOURCE of them does.
+        const std::vector<fs::path> ws = dottalk::paths::workspace_search_roots();
+        const std::vector<fs::path> sc = dottalk::paths::script_search_roots();
+
         cli::cmdout::print_message(dottalk::helpdata::MessageId::ErsatzStatusHeaderText);
-        std::cout << "  PROFILE       : " << current_profile_name() << "\n";
+        std::cout << "  PROFILE       : " << dottalk::paths::current_user() << "\n";
         std::cout << "  ROOT          : "
                   << (browser::root_alias().empty() ? "(none)" : browser::root_alias())
                   << "\n";
         std::cout << "  LIMIT         : " << browser::limit() << "\n";
         std::cout << "  PATH          : " << browser::path_string() << "\n";
         std::cout << "  ACTIVE ORDER  : " << order_info_line(area) << "\n";
-        std::cout << "  USER WORK     : " << current_user_workspaces_root().string() << "\n";
-        std::cout << "  PUBLIC WORK   : " << public_workspaces_root().string() << "\n";
-        std::cout << "  DEFAULT WORK  : " << default_workspaces_root().string() << "\n";
-        std::cout << "  DATA WORK     : " << data_workspaces_root().string() << "\n";
-        std::cout << "  USER SCRIPT   : " << current_user_scripts_root().string() << "\n";
-        std::cout << "  PUBLIC SCRIPT : " << public_scripts_root().string() << "\n";
-        std::cout << "  DEFAULT SCRIPT: " << default_scripts_root().string() << "\n";
-        std::cout << "  DATA SCRIPT   : " << data_scripts_root().string() << "\n";
+        std::cout << "  USER WORK     : " << ws[0].string() << "\n";
+        std::cout << "  PUBLIC WORK   : " << ws[1].string() << "\n";
+        std::cout << "  DEFAULT WORK  : " << ws[2].string() << "\n";
+        std::cout << "  DATA WORK     : " << ws[3].string() << "\n";
+        std::cout << "  USER SCRIPT   : " << sc[0].string() << "\n";
+        std::cout << "  PUBLIC SCRIPT : " << sc[1].string() << "\n";
+        std::cout << "  DEFAULT SCRIPT: " << sc[2].string() << "\n";
+        std::cout << "  DATA SCRIPT   : " << sc[3].string() << "\n";
     }
 
     static std::string stem_upper_from_pathish(const std::string& pathish)
