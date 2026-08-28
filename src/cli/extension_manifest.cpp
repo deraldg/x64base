@@ -23,7 +23,6 @@
 
 #include "common/path_state.hpp"
 #include "textio.hpp"
-#include "user_scope_paths.hpp"
 
 namespace fs = std::filesystem;
 using nlohmann::json;
@@ -217,13 +216,23 @@ fs::path default_exit_root()
     } catch (...) {
     }
 
+    // AIF-145 R-a: this used to be TWO rungs. The second was
+    // `userpaths::user_root() / "exits"` -- ladder 1 -- and it could never be
+    // the answer:
+    //
+    //   get_slot(Slot::USER) returns s.user_root and throws only for an
+    //   UNKNOWN slot (path_state.cpp:214, and the throw at the default case).
+    //   USER is not unknown. So this rung can only fail if state() itself
+    //   throws -- and ladder 1's user_root() calls state() too, through
+    //   app_root(). Every condition that skipped this rung skipped that one
+    //   identically.
+    //
+    // It was not merely redundant. It recomputed data_root.parent_path()/"user"
+    // instead of reading s.user_root, so had it ever run it would have IGNORED
+    // a SETPATH USER that this rung honours. A worse answer, permanently out
+    // of reach. Removing it was the last call into ladder 1.
     try {
         return paths::get_slot(paths::Slot::USER) / "exits";
-    } catch (...) {
-    }
-
-    try {
-        return userpaths::user_root() / "exits";
     } catch (...) {
     }
 
