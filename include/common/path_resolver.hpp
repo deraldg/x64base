@@ -26,6 +26,13 @@ fs::path resolve_index(const std::string& token);
 fs::path resolve_lmdb_root();
 fs::path resolve_lmdb_env_for_cdx(const fs::path& public_cdx_path);
 fs::path resolve_workspace(const std::string& token);
+
+// AIF-145 R-a step 3. The two remaining private resolvers ERSATZ owned.
+// Both search the SAME roots as resolve_workspace / resolve_script; they
+// differ only in the extension they default to, which is why they are
+// named for the file kind and not for a search strategy.
+fs::path resolve_ersatz_profile(const std::string& token);  // .erz, workspace roots
+fs::path resolve_ersatz_script(const std::string& token);   // .dot, script roots
 fs::path resolve_test(const std::string& token);
 fs::path resolve_schema(const std::string& token);
 fs::path resolve_script(const std::string& token);

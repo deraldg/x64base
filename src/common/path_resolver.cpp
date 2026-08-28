@@ -223,9 +223,11 @@ fs::path resolve_lmdb_env_for_cdx(const fs::path& public_cdx_path)
 // A token that already carries an extension is taken as given, exactly as
 // before, and no extension is appended.
 //
-// This function still has NO CALLERS. Building the capability and switching the
-// callers are separate commits on purpose: the first cannot change behaviour,
-// and the second changes it observably.
+// Callers: ERSATZ's resolve_workspace_target redirects here (b01ca5127). The
+// comment that stood here said this function had NO CALLERS -- true when it
+// was written one commit earlier, false the moment step 2 landed. Building the
+// capability and switching the callers are still separate commits on purpose:
+// the first cannot change behaviour, the second changes it observably.
 fs::path resolve_workspace(const std::string& token)
 {
     std::string target = token;
@@ -270,6 +272,70 @@ fs::path resolve_script(const std::string& token)
 {
     return resolve_in_search_roots(token, script_search_roots());
 }
+
+// ---------------------------------------------------------------------------
+// AIF-145 R-a step 3: the last two resolvers ERSATZ kept to itself.
+//
+// Both are ladder-3 copies being brought home. Each is the ladder-2 search
+// applied to the roots that kind of file lives in, with the extension that
+// kind of file uses -- nothing more. They are separate functions rather than
+// an extension parameter because the extension is a property of the FILE KIND,
+// and a caller that has to name ".erz" at the call site is a caller that can
+// name the wrong one.
+//
+// ONE behavioural difference is carried over deliberately, and it is not a
+// silent one. For a token that CONTAINS A SEPARATOR AND DOES NOT EXIST:
+//
+//   ERSATZ's fallback invented   <current-user root>/<token>
+//   ladder 2 invents             <data root>/<token>
+//
+// For every token that resolves to a file that exists, and for every bare
+// name, the two agree exactly. The difference is only in the path that gets
+// NAMED when nothing was found -- an invented answer either way. Ladder 2's is
+// the one that wins, because the ruling was ladder 2, and because inventing
+// under the data root is what every other resolve_* in this file does. A
+// caller that treats "not found" as "here is where it would go" and then
+// writes there will write to a different directory than before. Both are
+// reported to the user as the resolved path, so this is visible, not silent.
+//
+// These functions have NO CALLERS as of this commit, by design.
+// ---------------------------------------------------------------------------
+
+namespace {
+
+// The empty-name default is ERSATZ's, preserved: an omitted target means
+// "default", not "the current directory".
+static std::string trimmed_or_default(const std::string& token)
+{
+    const auto b = token.find_first_not_of(" \t\r\n");
+    const auto e = token.find_last_not_of(" \t\r\n");
+    const std::string t =
+        (b == std::string::npos) ? std::string() : token.substr(b, e - b + 1);
+    return t.empty() ? std::string("default") : t;
+}
+
+} // namespace
+
+fs::path resolve_ersatz_profile(const std::string& token)
+{
+    return resolve_in_search_roots(trimmed_or_default(token),
+                                   workspace_search_roots(), ".erz");
+}
+
+fs::path resolve_ersatz_script(const std::string& token)
+{
+    return resolve_in_search_roots(trimmed_or_default(token),
+                                   script_search_roots(), ".dot");
+}
+
+// NOTE, not a change: resolve_script() above passes NO default extension,
+// while resolve_ersatz_script passes ".dot" and shell_resolve_script_path()
+// (src/cli/shell_api.cpp:228) defaults to ".dts" and searches the SCRIPT STACK
+// first. That is three different answers to "what is a script path", and the
+// live one for DO/DOTSCRIPT is shell_resolve_script_path -- resolve_script()
+// has zero callers. The workspace side of this divergence is what R-a rules
+// on; the script side is wider and is NOT settled here. Do not fold these
+// together on the assumption that R-a already did it.
 
 fs::path resolve_project(const std::string& token)
 {
