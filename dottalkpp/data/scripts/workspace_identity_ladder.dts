@@ -108,7 +108,18 @@ WORKSPACE CLOSE ALL
 
 WORKSPACE NEW WSLADR1
 
-SET PATH DBF workspaces
+&& AIF-078 sec 4: '&_WORKSPACES', NOT 'workspaces'. DO NOT SIMPLIFY THIS BACK.
+&& This spec WRITES through the WORKSPACES slot (WORKSPACE NEW) and READS
+&& through the DBF slot (USE WORKSPACES). 'SET PATH DBF workspaces' is
+&& DATA-relative and therefore PINNED TO PRODUCTION: bracket the WORKSPACES
+&& slot for isolation and the mint lands in scratch while the LOCATE below
+&& searches production, and every arm goes red for a reason unrelated to what
+&& it tests. '&_WORKSPACES' is the engine-owned variable for that slot,
+&& resolved from paths::state() at expansion time, so it FOLLOWS the bracket.
+&& Proven 2026-08-28: with the slot moved to scratch, 'workspaces' still
+&& resolved to data\workspaces while '&_WORKSPACES' resolved to the scratch
+&& root. Identical when nothing is bracketed, which is why this is inert today.
+SET PATH DBF &_WORKSPACES
 USE WORKSPACES
 LOCATE FOR ALLTRIM(WS_NAME) = "WSLADR1" .AND. ALLTRIM(SUPERSEDED) = "0"
 VAR id1 = WS_ID
@@ -126,7 +137,7 @@ CLOSE
 WORKSPACE DESTROY WSLADR1
 WORKSPACE NEW WSLADR1
 
-SET PATH DBF workspaces
+SET PATH DBF &_WORKSPACES
 USE WORKSPACES
 LOCATE FOR ALLTRIM(WS_NAME) = "WSLADR1" .AND. ALLTRIM(SUPERSEDED) = "0"
 ? "WSL_G2_live_row_located_after_recreate:" + (ALLTRIM(WS_NAME) = "WSLADR1")

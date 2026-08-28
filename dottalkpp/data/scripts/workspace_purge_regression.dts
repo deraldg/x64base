@@ -87,7 +87,18 @@ WORKSPACE DESTROY WSPRG3
 ; WS_IDs in the catalog, which is what makes the pack hazard reachable.
 
 WORKSPACE NEW WSPRG1
-SET PATH DBF workspaces
+&& AIF-078 sec 4: '&_WORKSPACES', NOT 'workspaces'. DO NOT SIMPLIFY THIS BACK.
+&& This spec WRITES through the WORKSPACES slot (WORKSPACE NEW) and READS
+&& through the DBF slot (USE WORKSPACES). 'SET PATH DBF workspaces' is
+&& DATA-relative and therefore PINNED TO PRODUCTION: bracket the WORKSPACES
+&& slot for isolation and the mint lands in scratch while the LOCATE below
+&& searches production, and every arm goes red for a reason unrelated to what
+&& it tests. '&_WORKSPACES' is the engine-owned variable for that slot,
+&& resolved from paths::state() at expansion time, so it FOLLOWS the bracket.
+&& Proven 2026-08-28: with the slot moved to scratch, 'workspaces' still
+&& resolved to data\workspaces while '&_WORKSPACES' resolved to the scratch
+&& root. Identical when nothing is bracketed, which is why this is inert today.
+SET PATH DBF &_WORKSPACES
 USE WORKSPACES
 LOCATE FOR ALLTRIM(WS_NAME) = "WSPRG1" .AND. ALLTRIM(SUPERSEDED) = "0"
 VAR pid1 = WS_ID
@@ -96,7 +107,7 @@ CLOSE
 
 WORKSPACE DESTROY WSPRG1
 WORKSPACE NEW WSPRG1
-SET PATH DBF workspaces
+SET PATH DBF &_WORKSPACES
 USE WORKSPACES
 LOCATE FOR ALLTRIM(WS_NAME) = "WSPRG1" .AND. ALLTRIM(SUPERSEDED) = "0"
 VAR pid2 = WS_ID
@@ -108,7 +119,7 @@ WORKSPACE DESTROY WSPRG1
 ; Both rows are now superseded and nothing holds the name. Confirm the chain is
 ; really two rows before purging it -- an arm that purges one row and reports
 ; success proves less than it looks.
-SET PATH DBF workspaces
+SET PATH DBF &_WORKSPACES
 USE WORKSPACES
 ; NOT RECCOUNT(). USE_AGAIN measured that RECNO()/FOUND() render EMPTY in a '?'
 ; marker and that STR() does not rescue them; RECCOUNT() serves compile_predicate
@@ -128,7 +139,7 @@ WORKSPACE DELETE WSPRG1
 ; had left the file, max would have fallen back below them and this reads .F.
 
 WORKSPACE NEW WSPRG2
-SET PATH DBF workspaces
+SET PATH DBF &_WORKSPACES
 USE WORKSPACES
 LOCATE FOR ALLTRIM(WS_NAME) = "WSPRG2" .AND. ALLTRIM(SUPERSEDED) = "0"
 ? "PG_G3_new_name_has_a_live_row:" + (ALLTRIM(WS_NAME) = "WSPRG2")
@@ -139,7 +150,7 @@ CLOSE
 ; Read the purged row itself, with deleted rows visible.
 
 SET DELETED OFF
-SET PATH DBF workspaces
+SET PATH DBF &_WORKSPACES
 USE WORKSPACES
 LOCATE FOR WS_ID = $pid2
 ? "PG_G4_purged_row_still_on_disk:" + (ALLTRIM(WS_NAME) = "WSPRG1")
@@ -178,7 +189,7 @@ CLOSE
 ; off the same row in the same breath.
 
 SET DELETED ON
-SET PATH DBF workspaces
+SET PATH DBF &_WORKSPACES
 USE WORKSPACES
 LOCATE FOR ALLTRIM(WS_NAME) = "WSPRG2" .AND. ALLTRIM(SUPERSEDED) = "0"
 ? "PG_G5_parked_on_a_live_row:" + (ALLTRIM(WS_NAME) = "WSPRG2")
@@ -205,7 +216,7 @@ LOCATE FOR WS_ID = $pid2
 CLOSE
 
 SET DELETED OFF
-SET PATH DBF workspaces
+SET PATH DBF &_WORKSPACES
 USE WORKSPACES
 LOCATE FOR WS_ID = $pid2
 ? "PG_T3B_and_set_deleted_off_still_reaches_it:" + (ALLTRIM(WS_NAME) = "WSPRG1")
@@ -217,7 +228,7 @@ CLOSE
 
 WORKSPACE NEW WSPRG3
 WORKSPACE DELETE WSPRG3
-SET PATH DBF workspaces
+SET PATH DBF &_WORKSPACES
 USE WORKSPACES
 LOCATE FOR ALLTRIM(WS_NAME) = "WSPRG3" .AND. ALLTRIM(SUPERSEDED) = "0"
 ? "PG_T4_declared_workspace_kept_its_live_row:" + (ALLTRIM(SUPERSEDED) = "0")
@@ -251,7 +262,7 @@ WORKSPACE DELETE WSPRG2
 WORKSPACE PURGE WSPRG3
 
 SET DELETED OFF
-SET PATH DBF workspaces
+SET PATH DBF &_WORKSPACES
 USE WORKSPACES
 LOCATE FOR ALLTRIM(WS_NAME) = "WSPRG3"
 ? "PG_T5_purge_alias_still_reaches_the_verb:" + (ALLTRIM(SUPERSEDED) = "1")
