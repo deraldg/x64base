@@ -45,6 +45,7 @@ FORMULA "RELSCAN-REGRESSION-BEGIN"
 
 ERASE TABLE RSLPAR CONFIRM
 ERASE TABLE RSLCHD CONFIRM
+ERASE TABLE RSLCHD2 CONFIRM
 REL CLEAR ALL
 
 CREATE X64 RSLPAR (PK C(4), PLBL C(10))
@@ -63,6 +64,15 @@ REPLACE CLBL WITH "C_A1"
 APPEND
 REPLACE CK WITH "A"
 REPLACE CLBL WITH "C_A2"
+CLOSE
+
+CREATE X64 RSLCHD2 (CK2 C(4), CLBL2 C(10))
+APPEND
+REPLACE CK2 WITH "A"
+REPLACE CLBL2 WITH "D_A1"
+APPEND
+REPLACE CK2 WITH "QQ"
+REPLACE CLBL2 WITH "D_TOP"
 CLOSE
 
 SELECT 1
@@ -94,16 +104,13 @@ FORMULA "RELSCAN-T4-END"
 * single child on purpose and their blocks are unchanged.
 * ============================================================================
 
-ERASE TABLE RSLCHD2 CONFIRM
-
-CREATE X64 RSLCHD2 (CK2 C(4), CLBL2 C(10))
-APPEND
-REPLACE CK2 WITH "A"
-REPLACE CLBL2 WITH "D_A1"
-APPEND
-REPLACE CK2 WITH "QQ"
-REPLACE CLBL2 WITH "D_TOP"
-CLOSE
+* RSLCHD2 is CREATED with the others above, deliberately. CREATE opens the new
+* table INTO THE CURRENT AREA, so creating it here -- after SELECT 1 / USE
+* RSLPAR -- displaced RSLPAR from area 1 and the following CLOSE left area 1
+* empty. Proven by a run 2026-08-28: SELECT RSLPAR then reported "no area
+* matches", REL ADD reported "parent/child not open", and T3/T5 rooted on
+* RSLCHD2 instead. Creating early and only OPENING here keeps T1/T2/T4
+* untouched, since RSLCHD2 has no relation until the REL ADD below.
 
 SELECT 3
 USE RSLCHD2
