@@ -87,6 +87,23 @@ struct RegressionSpec {
     const char* script;
     const char* summary;
     bool in_default_suite;
+
+    // AIF-078 L2. TRUE means this spec MINTS ROWS INTO THE WORKSPACE CATALOG,
+    // so it runs with the WORKSPACES slot redirected at a per-run scratch root
+    // and leaves production untouched.
+    //
+    // It is the FIFTH member, and it CARRIES A DEFAULT, on purpose. Both
+    // matter and the second was learned the hard way: aggregate initialisation
+    // does value-initialise a member no initialiser reaches, so the other 55
+    // entries did not have to be edited -- but WITHOUT the '= false' that is
+    // 55 hits of -Wmissing-field-initializers under -Wextra, measured. A
+    // member with a default initialiser is exempt, the struct stays an
+    // aggregate, and the array stays constexpr.
+    //
+    // The point of not spelling it 59 times is not typing: it is that an entry
+    // which says nothing says FALSE, which is the safe answer, and 55 hand-
+    // written falses would have been 55 chances to write the wrong one.
+    bool mints_catalog = false;
 };
 
 // SIZE IS HAND-MAINTAINED. Adding a row without bumping this count is a hard
@@ -451,7 +468,8 @@ constexpr std::array<RegressionSpec, 59> kRegressionSpecs{{
         "WORKSPACE_SCOPE",
         "workspace_scope_regression.dts",
         "WORKSPACE CLOSE is SCOPED to a workspace (AIF-078 stage 3, owner-directed 2026-08-22: 'close_all needs to be SCOPED to a specific workspace instead of 0-max_areas. workspaces have to know the group of areas that belong to them'). Until stage 3 the close ran for (area0 = 0; area0 < MAX_AREA; ++area0) and was correct only because exactly one workspace had ever existed; stage 2 built the membership group (14 tables opened -> 14 members -> 0 after close, measured 2026-08-22) and this is the first spec that can tell the two implementations apart. WS_T1 IS THAT DISCRIMINATOR: closing a nested workspace must leave DEFAULT's sentinel readable, which the old sweep could not do -- delete the scoping and exactly one line reds. The cost argument rides along and is not secondary: MAX_AREA is 512 for testing and the owner has stated the real ceiling is not 512 ('can you imagine how long it would take to give you a dotscript results of a 10 trillion max_area pass'), so an O(MAX_AREA) close does not survive that sentence while an O(members) close does not care. SET RECURSION ON|OFF is proven by WS_T2 and nowhere else -- owner ruling 'even with OFF we still allow multiple workspaces, just parallel', so the flag gates whether an operation DESCENDS, not whether nesting may exist; same script, same shape, one flag flipped, and the nested workspace's table is still readable afterward. WS_T4 proves CLOSE ALL reached the FILESYSTEM and not just the bookkeeping, by reopening and reading. WHAT IT DELIBERATELY DOES NOT ASSERT, stated rather than implied: that a recursively-closed workspace is EMPTY. USE_AGAIN established over three cuts that NO MARKER IN THIS LANGUAGE CAN ASSERT AN AREA IS EMPTY -- the marker evaluator binds a null area unless the area is OPEN (rhs_eval.cpp:969), which is the very thing under assertion, and an errored marker PRINTS NOTHING rather than going red, so a green count still reads full while a claim has silently left the suite. The recursive close is therefore proven by CONTRAST (WS_T2 under OFF against its absence under ON) plus the member counts in the two WORKSPACE REGISTRY blocks, read from the transcript -- external measurement, the IDXDIFF precedent. Every marker is a FIELD-VALUE comparison per the FIELDMGR_APPEND doctrine that a spec asserting SHAPE passes green on a blanked table. Two guards ride the close path in the engine and both ANNOUNCE rather than returning silently, which is the direct lesson of the relation depth cap (set_relations.cpp, hardcoded 24, twice, silent): a cycle in the workspace tree prints, and the depth cap prints what it did not close. Self-bootstrapping WSDEF/WSPAR/WSCHI in SANDBOX, self-erasing; leaves two workspaces declared and restores SET RECURSION ON. CORRECTED 2026-08-23 (AIF-078 D10.1, predicted in D10 sec 6 before the code landed): this line used to read 'two RUNTIME-ONLY workspaces declared (they hold no areas and do not survive a restart)', and the second half is now false -- WORKSPACE NEW writes a BIRTH ROW to the workspace catalog, because a workspace is born durable, so these two DO survive a restart as catalog rows. They still hold no areas. Its teardown now retires them: WORKSPACE DESTROY WSCHILD then WSPARENT -- child first, because DESTROY refuses a workspace that still has nested workspaces rather than cascading. Same principle as restoring SET RECURSION ON at the end, and for the same reason ERRORSTOP is the cautionary precedent: a spec that leaves residue poisons everything downstream of it, and rows accumulate more quietly than a flag does. Explicit-run until soaked, then promote to default. PROMOTED to the default suite 2026-08-23, WITH ITS COST STATED. Since D10.1 every WORKSPACE NEW writes a BIRTH ROW, and D10.3 retirement supersedes rather than deletes, so this spec adds catalog rows to WORKSPACES.dbf on EVERY run and a default-suite spec runs every time. Measured 2026-08-23: the catalog holds 143 rows, none deleted-flagged, 28 of them workspace-spec residue. Its teardown still retires what it declared, which is what keeps the NAMES free for the next run -- the rows are history by design (D10.3) and the growth is the price of keeping it. Named here so a future reader finds a decision rather than a surprise.",
-        true
+        true,
+        true  // AIF-078 L2: mints catalog rows -- bracket it
     },
     {
         "USE_ARGS",
@@ -469,7 +487,8 @@ constexpr std::array<RegressionSpec, 59> kRegressionSpecs{{
         "WSMULTI",
         "workspace_multi_regression.dts",
         "MULTIPLE WORKSPACES: siblings, nesting, and one FILE open in two of them (AIF-078 stage 3/4 evidence; registered 2026-08-22 under D8 sec 7 -- it existed, was mutation tested, and was UNREACHABLE BY NAME because nothing listed it here). Why it exists given workspace_scope_regression already passes: that file proves a scoped close spares DEFAULT, and DEFAULT is the ancestor of everything, so an implementation that closed 'everything except area 0' would pass it. SIBLINGS are the discriminator between 'scoped to a workspace' and 'scoped away from the root'. WSM_T1 is that arm -- WSALPHA and WSBETA are peers, WSALPHA is closed, BETA's sentinel must still read. WSM_T2 IS THE ARM THAT MATTERS MOST and it is about ONE file, not two: MWSHARE.DBF is opened in WSALPHA and again in WSBETA, so the two workspaces disagree about who owns a single handle; close WSALPHA and BETA must still read MWSHARE. If close releases by FILE rather than by workspace MEMBERSHIP, BETA loses a table it never closed -- a failure invisible in any test where each workspace holds distinct files. Every assertion is a POSITIVE READ of a sentinel that must survive: nothing here claims an area is EMPTY, because no marker in this language can (the evaluator binds a null area unless the area is OPEN, and an ERRORED MARKER PRINTS NOTHING RATHER THAN GOING RED, so a suite can lose a claim silently and still report a full green). Absence is proven only by contrast. WSM_G0..G5 are setup guards and WSM_G4 -- share actually open in ALPHA -- is the one that caught this file's own earlier FALSE GREEN, where WSM_T2 asserted a file survived that the arm had never opened; if a guard reds, treat every WSM_T* as UNPROVEN rather than passing. MUTATION TESTED 2026-08-22: WSM_T1 and WSM_T2 were both mutated to expect 'MUTANT' and the suite re-run, so the arms are demonstrated able to red and independent of one another. Prefix is WSM_ rather than WS_ so a combined run can tell these apart from the scope regression. NOTE for AIF-120 R112: this script does NOT drive the name-ambiguity ledger non-zero -- cmd_use.cpp auto-renames a duplicate stem, so it yields MWSHARE/MWSHARE2 rather than a collision, and R112's measured-zero gate needs its own fixture. Self-bootstrapping sentinels; teardown retires WSGAMMA, WSALPHA and WSBETA (AIF-078 D10.3, 2026-08-23 -- since D10.1 each WORKSPACE NEW writes a birth row, so without this the spec would leave three permanent catalog rows behind per run; the nested WSGAMMA goes first because DESTROY refuses a parent that still has children). Explicit-run until soaked, then promote to default. PROMOTED to the default suite 2026-08-23, WITH ITS COST STATED. Since D10.1 every WORKSPACE NEW writes a BIRTH ROW, and D10.3 retirement supersedes rather than deletes, so this spec adds catalog rows to WORKSPACES.dbf on EVERY run and a default-suite spec runs every time. Measured 2026-08-23: the catalog holds 143 rows, none deleted-flagged, 28 of them workspace-spec residue. Its teardown still retires what it declared, which is what keeps the NAMES free for the next run -- the rows are history by design (D10.3) and the growth is the price of keeping it. Named here so a future reader finds a decision rather than a surprise.",
-        true
+        true,
+        true  // AIF-078 L2: mints catalog rows -- bracket it
     },
     {
         "RELSCAN",
@@ -505,7 +524,8 @@ constexpr std::array<RegressionSpec, 59> kRegressionSpecs{{
         "WSLADDER",
         "workspace_identity_ladder.dts",
         "WORKSPACE IDENTITY LADDER: a workspace is born durable, and can die durable (AIF-078 D10.1/D10.2/D10.3, 2026-08-23). WSL_T4 IS THE DISCRIMINATOR and it is one line: destroy WSLADR1, create WSLADR1 again, and the second WS_ID must be GREATER than the first. That can only pass if retirement actually reached the catalog -- if WORKSPACE DESTROY silently no-ops, supersedes the wrong row, or writes a flag that does not stick, the name still has a live chain, the second NEW ADOPTS it, and the two ids are EQUAL. It separates a real retirement from a cheerful message, which is the defect shape this house keeps finding. ASSERTIONS READ THE CATALOG TABLE, not the console: WORKSPACES.dbf is an ordinary x64 table -- the map drawn in the same ink as the territory -- so the spec opens it and compares FIELDS, per the FIELDMGR_APPEND doctrine that a spec asserting SHAPE passes green on a blanked table. WSL_T1/T2/T3 read the birth row itself: FMT 'BIRTH 1' (self-describing rather than inferred), SIZE_B 0 (no payload), PREV_ID 0 (it IS the chain root, which is what D10.2 makes identity). WSL_T5 reads the RETIRED row and finds it still present and flagged SUPERSEDED -- retirement is supersession, not deletion, so a destroyed workspace leaves a record rather than a hole, and SUPERSEDED keeps ONE meaning ('no longer the current state of this name') whether a newer save replaced it or nothing did. WSL_T6/T7 are the refusal arms and neither claims anything is absent: USE_AGAIN established over three cuts that no marker in this language can assert emptiness and that an ERRORED marker PRINTS NOTHING rather than going red, so both ask the answerable question instead -- did the KNOWN OCCUPANT SURVIVE. T6: DEFAULT refuses destruction (invariant I1 needs it to outlive every other workspace) and its sentinel still reads. T7: a workspace still holding an area refuses, and the area is still readable -- destroy does not cascade, so it can never be the thing that silently orphaned an open area. NOT COVERED, stated rather than implied: ADOPTION ACROSS A PROCESS BOUNDARY. WORKSPACE NEW refuses a duplicate name within a session, so one process cannot ask a second NEW to adopt. It was proven by hand instead (2026-08-23, build 05:27:07: two datarun processes, 'WS_ID 110' then 'WS_ID 110' + ADOPTED), and a two-process fixture is the chartered follow-up; this spec does not claim it. GUARDS: if any WSL_G* reds, treat every WSL_T* as UNPROVEN -- the catalog predicates depend on locating the right row, and the refusal arms depend on a sentinel actually having been written. WSL_G4/G5 EXIST BECAUSE THE FIRST RUN NEEDED THEM: the fixture wrote APPEND BLANK, which this shell does not take -- BLANK falls through as an unrecognized argument, APPEND prints its usage, nothing is appended, and REPLACE reports 'no current record'. Both sentinel tables were created EMPTY, and WSL_T6 and WSL_T7 went RED while the verb under test had behaved perfectly, printing both refusals exactly as designed. A FIXTURE failure wearing a VERB failure's clothes -- and had the unwritten field happened to compare equal it would have been a FALSE GREEN instead. The spec had guarded its catalog reads and not its sentinel writes, the same omission WSMULTI's WSM_G4 was added to close: guard every input an arm reads, not only the interesting ones. This verb is also where xbase::workspace::destroy() finally gets a call site: defined, correct, and CALLED BY NOTHING since stage 3, the fifth AIF-079 instance this lane catalogued and the first it closed. Self-bootstrapping WSLDEF/WSLOCC in SANDBOX, erased at the end; leaves retired catalog rows behind BY DESIGN -- that is the history D10.3 keeps and what WSL_T5 reads. Explicit-run until soaked, then promote to default. PROMOTED to the default suite 2026-08-24, ON A STEWARD RULING ABOUT ITS COST AND AFTER THAT COST WAS ACTUALLY MEASURED. This spec was held back longer than any other in this lane because it carries the most catalog residue of any spec -- minting and retiring WS_IDs IS its subject matter -- and the residue question was open. It was framed as a disk question and that framing was wrong. MEASURED 2026-08-24 by parsing WORKSPACES.dbf at record boundaries: 150 rows, ZERO deleted-flagged, 132 SUPERSEDED, 18 live. SNAPSHOT is a memo field and WORKSPACES.dtx is 2.74 MB against a 104 KB table, so the worry was that each residue row drags a snapshot with it -- IT DOES NOT. 110 of 150 rows carry a memo pointer and ZERO of the 39 workspace-spec rows do. Residue is 703 bytes a row: one REGRESSION ALL costs 4,921 bytes of DBF and 0 bytes of memo, so a thousand runs is 4.7 MB. The steward accepted that cost. WHAT THE MEASUREMENT FOUND INSTEAD, and it is why this spec is safe to promote while others would not be: eighteen rows are SUPERSEDED=0, i.e. LIVE HEADS, and thirteen of those are test and probe fixtures that were never retired (goneprobe, goneprobe2, partialprobe, ls_probe, ls_idxprobe, cycle_from_ram, v3_regress, sess_regress, wm_regress, minidb_regress, minidb_sidecar, ram_hydrate_src, LADDERTEST). A spec that mints a name which already has a live row does not get a fresh workspace -- IT ADOPTS, inheriting whatever the previous run left there, which is history-dependence wearing a green suit. THIS SPEC RETIRES EVERYTHING IT MINTS and WSL_T4 is the arm that proves it: destroy WSLADR1, create it again, second WS_ID must be GREATER. That arm cannot pass if a live row survived. So the property promotion actually requires is the property this spec already asserts about itself. NOTE THE ONE ROW IT LEAVES LIVE: LADDERTEST (rec 110) is a live head in the catalog today and this spec does not create it -- it predates the lane and is listed above as one of the thirteen. It is not this spec's residue and is not this spec's to clean up; it is named here so a reader counting LADDER-ish rows does not attribute it to this file. A WORKSPACE PURGE verb was ruled in on the same day and is designed separately (claude/AIF078_DESIGN_WORKSPACE_PURGE.md); when it exists the thirteen live heads are what it should be pointed at first, NOT this spec's superseded rows, which are the history D10.3 exists to keep. VERIFIED IN-SUITE 2026-08-24, and it CORRECTS THE ARITHMETIC ABOVE. Promoted, then run inside REGRESSION ALL on the same build. All seven WSL_T* arms and all five WSL_G* guards read .T.; WSL_T4 saw WS_ID 156 retired and 157 minted, greater as required. Order-independence is demonstrated rather than assumed: this spec's own opening teardown printed 'WORKSPACE DESTROY: no such workspace: WSLADR1' -- the previous run's names had been properly retired, so it started from a clean slate INSIDE a suite that had already run fourteen specs ahead of it. THE PER-RUN COST IS NOT 7 ROWS, IT IS 10. The 4,921-byte figure above was measured BEFORE this promotion and is the pre-promotion number; this spec mints three of its own (WSLADR1 twice, because WSL_T4 destroys and re-creates it, plus WSLADR2). Measured on the promoting run: the catalog went 150 -> 160 rows, WS_IDs 151-160, of which 156/157/158 are this spec's. So one REGRESSION ALL now costs 10 rows = 7,030 bytes of DBF and still 0 bytes of memo, and a thousand runs is 6.7 MB. Recorded as a correction rather than by editing the 4,921 away, because both numbers are true of the moment they describe and a summary that silently retunes its own measurements is the defect this house keeps finding one layer up.",
-        true
+        true,
+        true  // AIF-078 L2: mints catalog rows -- bracket it
     },
     {
         "WSPURGE",
@@ -523,7 +543,8 @@ constexpr std::array<RegressionSpec, 59> kRegressionSpecs{{
         "RELSCOPE2",
         "relation_workspace_scope.dts",
         "THE RELATION STORE IS WORKSPACE-SCOPED (AIF-078 I1.2, 2026-08-23). Until this landed the relation graph was ONE process-global map, and cmd_workspace.cpp said so under a comment headed 'KNOWN OVER-REACH, STATED RATHER THAN HIDDEN': a scoped close had to clear EVERY relation, because leaving an edge pointing into an area it had just emptied is the dangling-parent shape and a dangling relation is worse than an over-eager clear. It PRINTED the cost when it could bite -- 'relations are cleared GLOBALLY ... (AIF-078 stage 3 limitation)' -- and it named its own fix. Both arms here FAIL against that implementation and PASS against the partitioned store; delete the partition and both go red. RS_T1: REL CLEAR ALL issued inside RSWSA leaves RSWSB's relation driving its child. RS_T2: a SCOPED WORKSPACE CLOSE of RSWSA does the same. ASSERTED BY FIELD VALUE, never console text: a relation's observable effect is refresh-driven slaving, so each arm moves RSWSB's parent to a DIFFERENT key, refreshes, and reads the CHILD's label -- if the relation survived the child follows and the label CHANGES; if it was collateral damage the child sits still. The two arms deliberately target different rows (B_BETA then back to B_ALPHA) because a spec that re-asserts the value it already saw proves nothing. NOTHING HERE ASSERTS RSWSA'S RELATIONS ARE GONE: no marker in this language can assert absence (USE_AGAIN, three cuts) and an errored marker PRINTS NOTHING rather than going red, so absence is proven by contrast -- and survival is the half that matters anyway, because the defect was never 'clears too little'. GUARDS: RS_G0 the fixture, RS_G1 THE RELATION WAS LIVE BEFORE THE ACT UNDER TEST -- without it an arm reading an unchanged label cannot tell 'survived' from 'never worked' -- and RS_G2 the other workspace's relation was actually rebuilt before the close. If any guard reds, treat both arms as UNPROVEN. RECORDED NOT FIXED: current_parent_override() in set_relations.cpp is still ONE global rather than per workspace; it is the REL parent shorthand and not the graph, so it does not affect these arms, but it is the next workspace-blind piece of relation state and should not be found by surprise. ALSO IN I1.2 and not covered here: set_current_handle() now REJECTS 0 at the API (D9 sec 4 item 4) -- harmless against a flat map, load-bearing against a partitioned one, since a stray 0 would drop a whole workspace's relations into the reserved 'no such workspace' bucket. Self-bootstrapping RSAP/RSAC/RSBP/RSBC in SANDBOX, erased at the end; both workspaces destroyed in teardown (D10.3). CORRECTED 2026-08-23, MEASURED: the clause that used to end here read so no catalog rows accumulate, and that is FALSE. D10.3 retirement is SUPERSESSION, not deletion -- WORKSPACE DESTROY prints History kept: every row in the chain is still there and still readable, a destroyed workspace leaves a record, not a hole. What teardown guarantees is that the NAME HAS NO LIVE ROW, so a later WORKSPACE NEW mints fresh rather than adopting; the rows themselves remain and this spec adds more on every run. Measured by parsing WORKSPACES.dbf at record boundaries: 143 rows, ZERO deleted-flagged, of which 28 are workspace-spec residue (RSWSA 4, RSWSB 4, WSLADR1 8, WSCHILD 3, WSPARENT 3, WSALPHA 2, WSBETA 2, WSGAMMA 2). The claim was inherited from this summary and repeated without measuring it, which is the defect this house keeps finding one layer up. PROMOTED to the default suite 2026-08-23. The soak was the AIF-078 slot-lane step 1 lift, which MOVED the code this spec covers -- find_free_area_for_workspace left cmd_use.cpp for workarea_util and took its engine and membership table as arguments -- and both arms read green afterward. THE REASON FOR PROMOTION IS A MEASURED COVERAGE HOLE, not the soak alone: REGRESSION ALL CANNOT REACH IN FREE. A grep of the whole .dts corpus finds the phrase in exactly two files, this one and the other of this pair, and both were explicit-run -- so a change to the free-slot allocator could pass the entire default suite and say nothing about the policy. That is what happened on 2026-08-23: ALL ran ten specs green over a commit that rewrote the allocator, and the allocator was not exercised once. This is also the only spec that runs IN FREE with TWO WORKSPACES OPEN AT ONCE, which is the arrangement the scoping exists for and which USE_ARGS cannot reach: measured 2026-08-23, RSWSA took engine areas 0 and 1 and RSWSB, starting with no members and so having no run to grow, took the lowest free slot 2 and then grew contiguously to 3.",
-        true
+        true,
+        true  // AIF-078 L2: mints catalog rows -- bracket it
     }
 }};
 
@@ -718,6 +739,109 @@ void print_regression_find(const std::string& terms_raw)
                  "  read it for worked usage, or REGRESSION RUN it to watch it work.\n";
 }
 
+// ---------------------------------------------------------------------------
+// AIF-078 L2 -- THE CATALOG BRACKET.
+//
+// A spec flagged mints_catalog runs with the WORKSPACES slot pointed at a
+// per-run scratch root, so its WORKSPACE NEW rows land in a throwaway catalog
+// and PRODUCTION IS NOT WRITTEN. Measured cost before this landed: exactly ten
+// rows per REGRESSION ALL, 252 -> 262 on 2026-08-28, from four specs.
+//
+// RAII, AND THAT IS THE REQUIREMENT RATHER THAN THE STYLE. The plan asked for
+// a restore that survives a throw, because L0 measured what the alternative
+// costs: a mistyped path was ACCEPTED -- SETPATH validates non-blockingly --
+// and the session ran several commands redirected at a garbage directory.
+// Nothing was damaged only because WORKSPACE NEW refused correctly. The engine
+// behaved well; that is not a substitute for an unconditional restore. A
+// destructor runs on the normal path, on a throw, and on an early return, and
+// there is no fourth path for someone to forget.
+//
+// THE SCRATCH ROOT IS PER RUN, NOT PER SESSION. l0probe and l1verify both use
+// a fixed directory and say so; that is fine for a probe run by hand and wrong
+// for a suite, because two sessions running REGRESSION ALL at once would share
+// one catalog and mint into each other. The name carries the process id and a
+// monotonic counter, so concurrent sessions cannot collide and successive
+// specs in one run cannot inherit each other's rows.
+//
+// ensure_catalog() calls fs::create_directories(catalog_dir()), so the root
+// does not have to exist first -- measured 2026-08-28. SETPATH will still warn
+// that it does not exist. That warning is EXPECTED here and is the same one a
+// typo produces, which is a defect recorded against SETPATH and not fixed by
+// this change.
+// UNIQUENESS BY CLAIMING THE DIRECTORY, NOT BY NAMING THE PROCESS.
+//
+// The obvious spelling is <tmp>/wscat_run_<pid>_<n>, and the first cut wrote
+// exactly that -- with ::_getpid(), which is Windows-only and would not have
+// survived the first portable build. The tree ALREADY has a portable answer,
+// dottalk::locks::current_pid() with the right #ifdef, but it sits in an
+// ANONYMOUS NAMESPACE in lock_cleanup.cpp and is not exported. Copying its
+// #ifdef here would put a second answer to "what is my process" in the tree,
+// which is the shape this project keeps finding and paying for.
+//
+// So this does not ask. fs::create_directory returns TRUE only if THIS CALL
+// created the directory, and FALSE if it already existed -- so the first n
+// that returns true is a root nobody else holds. Two processes racing the same
+// n cannot both win. That is stronger than a pid-derived name, which is unique
+// only because pids happen to be, and it needs no platform knowledge at all.
+//
+// The roots are NOT deleted on the way out. They are the evidence of what a
+// bracketed spec minted, they live under the TMP slot which is gitignored
+// scratch, and deleting them would throw away the only record of a run that
+// went wrong. Sweeping old ones is a follow-up, not this change.
+static std::filesystem::path claim_scratch_root()
+{
+    const std::filesystem::path base =
+        dottalk::paths::get_slot(dottalk::paths::Slot::TMP);
+
+    std::error_code ec;
+    std::filesystem::create_directories(base, ec);
+
+    for (unsigned n = 1; n < 100000; ++n) {
+        const std::filesystem::path cand =
+            base / ("wscat_run_" + std::to_string(n));
+        ec.clear();
+        if (std::filesystem::create_directory(cand, ec) && !ec)
+            return cand;
+    }
+
+    // Cannot happen short of 100k undeleted roots. Named rather than silent,
+    // because a bracket that quietly reused somebody's root would produce
+    // exactly the cross-contamination it exists to prevent.
+    std::cout << "REGRESSION: WARNING -- could not claim a fresh scratch "
+                 "catalog root under " << base.string()
+              << "; falling back to a shared one.\n";
+    return base / "wscat_run_overflow";
+}
+
+class CatalogBracket {
+public:
+    explicit CatalogBracket(const std::string& spec_name)
+        : saved_(dottalk::paths::get_slot(dottalk::paths::Slot::WORKSPACES))
+    {
+        const std::filesystem::path scratch = claim_scratch_root();
+        dottalk::paths::set_slot(dottalk::paths::Slot::WORKSPACES, scratch);
+        armed_ = true;
+
+        std::cout << "REGRESSION: catalog BRACKETED for " << spec_name << "\n"
+                  << "  production catalog : " << saved_.string() << "  (untouched)\n"
+                  << "  scratch catalog    : " << scratch.string() << "\n";
+    }
+
+    ~CatalogBracket()
+    {
+        if (!armed_) return;
+        dottalk::paths::set_slot(dottalk::paths::Slot::WORKSPACES, saved_);
+        std::cout << "REGRESSION: catalog restored to " << saved_.string() << "\n";
+    }
+
+    CatalogBracket(const CatalogBracket&) = delete;
+    CatalogBracket& operator=(const CatalogBracket&) = delete;
+
+private:
+    std::filesystem::path saved_;
+    bool armed_ = false;
+};
+
 void run_regression_script(DbArea& area, const RegressionSpec& spec)
 {
     const std::filesystem::path resolved = resolve_regression_script_path(spec);
@@ -729,6 +853,17 @@ void run_regression_script(DbArea& area, const RegressionSpec& spec)
     std::ostringstream dotscript_line;
     dotscript_line << '"' << resolved.string() << '"';
     std::istringstream dotscript_args(dotscript_line.str());
+
+    // The bracket lives in the ONE place a spec is run, so a new caller cannot
+    // acquire a spec and forget it. Scoped to the DOTSCRIPT call and nothing
+    // else -- resolve_regression_script_path above reads the SCRIPTS slot,
+    // which this must not disturb.
+    if (spec.mints_catalog) {
+        CatalogBracket bracket(spec.name);
+        cmd_DOTSCRIPT(area, dotscript_args);
+        return;
+    }
+
     cmd_DOTSCRIPT(area, dotscript_args);
 }
 
