@@ -21,17 +21,35 @@
 // risk: READ_ONLY
 // usage-access: MANSTAR USAGE
 // summary: Inspect the compiled MAN* catalog baseline and report manualgen visibility without mutating catalogs.
-// usage: MANSTAR
-// usage: MANSTAR USAGE
-// usage: MANSTAR HELP
+// usage: MANSTAR                            (no argument: same as USAGE)
+// usage: MANSTAR USAGE                      (alias: HELP)
 // usage: MANSTAR STATUS
-// usage: MANSTAR TABLES
-// usage: MANSTAR COUNTS
-// usage: MANSTAR SECTIONS
-// usage: MANSTAR MEDIA
-// usage: MANSTAR REVIEW
-// usage: MANSTAR ANCHORS
+// usage: MANSTAR TABLES                     (alias: COUNTS)
+// usage: MANSTAR SECTIONS                   (aliases: MEDIA, REVIEW, ANCHORS
+//                                            -- ALL FOUR ARE ONE STUB, see note)
 // note: MANSTAR is READ_ONLY and REPORT_ONLY.
+// note: TEN usage lines stood here for FOUR handlers, until 2026-08-28. The
+//   contract read as ten capabilities and there are four:
+//     USAGE|HELP                     -> manstar_usage()
+//     STATUS                         -> manstar_status()
+//     TABLES|COUNTS                  -> manstar_tables()
+//     SECTIONS|MEDIA|REVIEW|ANCHORS  -> manstar_stub_report(sub)
+// note: SECTIONS, MEDIA, REVIEW and ANCHORS DO NOTHING TABLE-SPECIFIC. All
+//   four reach one stub that echoes back the word you typed and then says
+//   deeper readers "should be wired in a later guarded package". Because the
+//   stub prints the subcommand name, its output LOOKS specific to whichever
+//   one you asked for. It is not. Four questions, one answer.
+// note: EVERY NUMBER THIS COMMAND PRINTS IS A COMPILE-TIME LITERAL. The file
+//   includes only <algorithm> <array> <cctype> <iostream> <sstream> <string>
+//   -- no xbase, no paths, no catalog reader -- and its DbArea parameter is
+//   discarded with (void)area. TABLES prints the constexpr kManstarTables
+//   array; STATUS prints "MAN* tables: 8" and "MAN* rows: 72" (the array's
+//   length and the sum of its row counts) plus "GREEN" twice, unconditionally.
+//   MANSTAR therefore CANNOT report a catalog that is empty, missing, stale
+//   or larger than it was when those numbers were typed in. "MANSTAR runtime
+//   catalog baseline: GREEN" contains the word runtime and is a string
+//   literal. Treat this command as a transcript of a past measurement, not a
+//   measurement. status: experimental is doing real work here.
 // note: Registration is owned by the normal command registry; this source package does not self-register.
 // note: Evidence includes MDO-268F, MDO-270F, MDO-274E, MDO-277E, and manual build linker review.
 // related: MANUAL

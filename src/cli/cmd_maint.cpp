@@ -22,26 +22,26 @@
 // risk: READ_ONLY
 // usage-access: MAINT USAGE
 // summary: Inspect DotTalk++ maintenance lanes, cookbooks, status, AI Portal onboarding, contracts, and protected-system boundaries.
-// syntax: MAINT [USAGE|STATUS|LANES|COOKBOOK|BOUNDARY|BBOX|DOCS|GUI|AI [USAGE|STATUS|DASHBOARD|ASSIMILATE|BOOK|INTAKE|GATES|VISIBILITY]|CONTRACTS [USAGE|STATUS|SCAN|REGISTRY|INTAKE|DRIFT|GATES]]
+// syntax: MAINT [USAGE|STATUS|LANES|COOKBOOK|BOUNDARY|BBOX|DOCS|GUI|AI [USAGE|STATUS|DASHBOARD|ASSIMILATE|INTAKE|GATES|VISIBILITY]|CONTRACTS [USAGE|STATUS|SCAN|REGISTRY|INTAKE|DRIFT|GATES]]
 // usage: MAINT
 // usage: MAINT USAGE
 // usage: MAINT STATUS
 // usage: MAINT LANES
 // usage: MAINT COOKBOOK
-// usage: MAINT BOUNDARY
-// usage: MAINT BBOX
-// usage: MAINT DOCS
-// usage: MAINT GUI
-// usage: MAINT AI
+// usage: MAINT BOUNDARY                     (alias: BOUNDARIES)
+// usage: MAINT BBOX                         (alias: BLACKBOX)
+// usage: MAINT DOCS                         (aliases: DOCUMENTS, DOCUMENTATION)
+// usage: MAINT GUI                          (aliases: UI, UIS)
+// usage: MAINT AI                           (aliases: AIFRIENDLY, AI-FRIENDLY, AI_FRIENDLY)
 // usage: MAINT AI USAGE
 // usage: MAINT AI STATUS
 // usage: MAINT AI DASHBOARD
-// usage: MAINT AI ASSIMILATE
-// usage: MAINT AI BOOK
-// usage: MAINT AI INTAKE
+// usage: MAINT AI ASSIMILATE                (aliases: ASSIMILATION, BOOK,
+//                                            PORTAL, ONBOARD, ONBOARDING)
+// usage: MAINT AI INTAKE                    (alias: QUEUE)
 // usage: MAINT AI GATES
-// usage: MAINT AI VISIBILITY
-// usage: MAINT CONTRACTS
+// usage: MAINT AI VISIBILITY                (alias: VISIBLE)
+// usage: MAINT CONTRACTS                    (alias: CONTRACT)
 // usage: MAINT CONTRACTS USAGE
 // usage: MAINT CONTRACTS STATUS
 // usage: MAINT CONTRACTS SCAN
@@ -55,6 +55,14 @@
 // note: The AI Portal is an Alpha Python/registry surface; MAINT AI does not launch it or authorize mutation.
 // note: MAINT CONTRACTS is the first contract-lane manager mode; it reports docs/tooling only and does not edit the registry.
 // note: MAINT explains the maintenance/SDLC control surface; BBOX teaches the Blackbox model.
+// note: MAINT AI BOOK was listed here as its own subcommand until 2026-08-28.
+//   It is not one. BOOK, ASSIMILATION, PORTAL, ONBOARD and ONBOARDING all
+//   reach print_ai_assimilate() -- the SAME handler as ASSIMILATE
+//   (cmd_maint.cpp:302-305). Listing two of six spellings as two entries
+//   advertised two capabilities where there is one.
+// note: sixteen spellings dispatch that this contract never named. They are
+//   now on their canonical subcommand's line. None is new behaviour; every
+//   one of them already worked.
 // related: BBOX
 // related: CMDHELP
 // related: DDICT
