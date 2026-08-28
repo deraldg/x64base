@@ -41,12 +41,14 @@ ai_report_audit:
     Lane    : path resolution / multi-workspace lifecycle. Blocks L2.
     Status  : review-needed. The author does not self-approve.
     Basis   : MIXED. Every line number below was read this session at baseline
-              `94b626a38`. Sec 5a and sec 6a are FILESYSTEM-MEASURED on
-              `grimwood` 2026-08-27/28, and each states its own provenance
-              because it is NOT uniform: **sec 5a walks the DEVELOPMENT tree
-              only**, sec 6a is the staging tree. No engine was run: the one
-              runtime fact (sec 6) is carried from this session's L0 probe and
-              labelled where it appears.
+              `94b626a38`. Sec 6a is the STAGING tree, walked read-only.
+              **Sec 5a rests on SOURCE and on SHIPPED SCRIPTS ONLY** -- the
+              owner has ruled the development tree's DATA untrustworthy as a
+              specimen ("it has mutated greatly and I refresh from time to
+              time"), so dev file measurements appear there as illustration and
+              carry no weight. No engine was run: the one runtime fact (sec 6)
+              is carried from this session's L0 probe and labelled where it
+              appears.
     Shape   : R5 -- one tree, four ladders. Aggravated by AIF-079: the ladder
               that is most nearly correct is the one nothing calls.
     Severity: LATENT TODAY, TIMED, AND THE BLAST RADIUS IS NOW MEASURED.
@@ -206,6 +208,27 @@ reason not to pull it.
 This section reads the **DEVELOPMENT** tree, `D:\code\ccode`, and the scripts
 that ship with it. Sec 6a is the staging tree.
 
+**AND THE DEVELOPMENT TREE'S DATA IS NOT EVIDENCE.** The owner, 2026-08-27:
+*"don't trust the quality of the data in dev, it has mutated greatly and I
+refresh from time to time."* That is a statement about the specimen, and it
+disqualifies a whole class of measurement. Every file size, count, mtime and
+`diff` taken from `dottalkpp/user/` or `dottalkpp/data/` on that machine
+describes **one working tree between refreshes**, not the product. A first
+draft of this section built an argument on exactly those numbers. It should not
+have.
+
+So this section now rests on two things only, and they are both durable:
+
+1. **SOURCE**, at baseline `94b626a38` -- what the resolvers and writers do.
+2. **SHIPPED SCRIPTS** -- `dottalkpp/data/scripts/mcc/` and
+   `dottalkpp/scripts/mcc/`, which sec 6a confirms are byte-identical in the
+   staging tree. A script that ships is an artifact, not working state.
+
+Dev file measurements appear below only as **illustration**, marked as such,
+and nothing is concluded from them. The house rule this is a second instance
+of: *an empty result is not a measurement.* The sharper form: **a measurement
+of a mutable working tree is not a measurement of the system, at any age.**
+
 **An earlier draft of this section was wrong and is withdrawn.** It read the
 1480-byte `tag=none` copies of `mcc.dtschema` as degraded files shadowing good
 ones, and warned that `public` -- rung 2 for every profile -- held one. The
@@ -255,12 +278,16 @@ permanently, because no stage of the documented chain ever writes or refreshes a
 user rung. Re-run the whole hydration and index build, and ERSATZ still resolves
 to whatever was on rung 1 before you started. Nothing reports this.
 
-The measurements read correctly once that is understood:
+**Illustration only, from the dev tree -- see the provenance warning above.
+Nothing below is offered as evidence.** What made the two-writer split visible
+was this shape:
 
     data/workspaces/mcc_x64.dtschema      13 areas   0 relations   <- stage 3 output
     user/*/workspaces/mcc_x64.dtschema    12 areas  15 relations   <- hand-authored
 
-13 is right and the README says so: `dbf/x64` also holds `TEST64.dbf`, which is
+The reading is consistent with the source and the shipped scripts, which is why
+it is retained; it is not what establishes them. 13 is right and the README
+says so: `dbf/x64` also holds `TEST64.dbf`, which is
 not part of MCC, *"so WORKSPACE reports 13 areas on that lane, not 12."* And 0
 relations is right too -- stage 3 does `WORKSPACE OPEN DBF` and saves; it never
 sets a relation. **The relations were never part of what the chain produces.**
@@ -306,12 +333,15 @@ staging tree may not be perfect, but we are trying to stay lean."* User profiles
 are per-installation state, not publication content. An earlier draft called the
 absence a gap; that framing was wrong and is withdrawn.
 
-`data/workspaces` is leaner too -- 50 entries against the dev tree's 56, with
-`cmdhelp`, `datadict`, `manuals`, `metadata`, `tmp` and `pk_posture.dtschema`
-only in dev. Four files differ (`WORKSPACES.dbf`, `WORKSPACES.dtx`,
-`mcc_vfp.dtschema`, `my_custom_workspace.dtschema`); the rest are byte-equal.
-The full MCC build chain ships intact and identical -- `data/scripts/mcc/`
-(seven files) and `scripts/mcc/` (three) are the same in both trees.
+`data/workspaces` holds 50 entries. It is leaner than the dev tree's 56, but
+per the sec 5a warning that comparison says only that the dev tree has drifted
+since its last refresh, which is expected and is not a finding.
+
+**The load-bearing staging fact is what SHIPS, not how it differs from dev:**
+the full MCC build chain ships intact -- `data/scripts/mcc/` (README plus six
+`.dts` stages) and `scripts/mcc/` (three PowerShell drivers) are present and
+byte-identical in both trees. That is what makes sec 5a's reading of those
+scripts admissible: they are a published artifact, not working state.
 
 **A second generalization is withdrawn.** An earlier draft said *"what ships is
 the zero-relations copy"*, implying loss. It is not loss. **What ships is
@@ -334,17 +364,16 @@ reads the same field; ladders 1 and 3 recompute from
 3 keep searching the old one** -- in the shipped product, with no message. That
 is R5 in its sharpest form, and it needs no staging tree to reach.
 
-**The catalog ships, and it is a snapshot.**
+**The catalog ships.** `C:/x64base/dottalkpp/data/workspaces/` carries
+`WORKSPACES.dbf` (75,785 B, 2026-08-12) and `WORKSPACES.dtx` (2,844,400 B,
+2026-08-21). **The durable workspace catalog is a publication artifact.** The
+catalog-split design (`AIF078_DESIGN_CATALOG_SPLIT_LEDGER_AND_PAYLOAD_V1.md`)
+and L2 both need that fact and neither currently states it: a split that
+changes the catalog's shape changes something that ships.
 
-    C:/x64base    .../data/workspaces/WORKSPACES.dbf     75,785 B  2026-08-12
-    D:/code/ccode .../data/workspaces/WORKSPACES.dbf    178,423 B  2026-08-27
-    C:/x64base    .../data/workspaces/WORKSPACES.dtx  2,844,400 B  2026-08-21
-    D:/code/ccode .../data/workspaces/WORKSPACES.dtx  3,125,392 B  2026-08-27
-
-The durable workspace catalog is a publication artifact, fifteen days and 2.35x
-behind the development copy. The catalog-split design
-(`AIF078_DESIGN_CATALOG_SPLIT_LEDGER_AND_PAYLOAD_V1.md`) and L2 both need that
-fact and neither currently states it.
+No claim is made here about how far the shipped catalog trails development.
+The dev copy is larger and newer, but per sec 5a that measures drift between
+refreshes, not a property of the product.
 
 One more same-name-at-two-levels pair, noted and not chased:
 `dottalkpp/scripts/{mcc,pinocchio}` and
