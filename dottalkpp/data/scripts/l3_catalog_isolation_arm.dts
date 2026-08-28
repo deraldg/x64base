@@ -59,6 +59,8 @@
 && though the run stayed green. Count them.
 && ===========================================================================
 && RUNTIME STATUS: GREEN 2026-08-28. 6/6 markers printed, all .T.
+&& ^^ SUPERSEDED. Left verbatim. Under L2's bracket D1 went .F. --
+&&    see AMENDMENT (SECOND) at the foot of this header.
 && Ran against build b30f27aa (dottalkpp v0.6).
 &&
 &&   L3_L0_arm_started                        .T.
@@ -118,6 +120,130 @@
 &&    message for "you made a typo" and for "this is a fresh scratch root and
 &&    is fine" -- a warning that cannot separate a mistake from correct usage.
 &&    AIF-118's shape, in the lifecycle lever itself. Recorded, not fixed.
+&&
+&& ===========================================================================
+&& AMENDMENT 2026-08-28 (SECOND), AFTER L2's BRACKET RAN: D1 WENT FALSE.
+&&
+&& L2 landed and a full REGRESSION ALL ran under it. Production read 262
+&& before the suite and 262 after; G1 and G2 both .T. on two separate arm
+&& runs. That is the result plan condition 2 asks for. IT IS NOT CLAIMABLE,
+&& because in those same two runs:
+&&
+&&   L3_D1_detector_sees_a_mint:.F.
+&&
+&& and this arm's own rule, written above and now applied to itself, says a
+&& false D1 voids G1. A blind detector reports peace.
+&&
+&& WHY D1 WENT FALSE -- TWO HISTORIES, NOT ONE, AND THE FIXTURE CARRIED BOTH.
+&& WORKSPACE NEW asks TWO authorities whether a name is taken, and they have
+&& different lifetimes:
+&&
+&&   xbase::workspace::find_by_name_ci    RUNTIME registry, lives for the
+&&     (cmd_workspace.cpp:4936)           SESSION. Refuses outright.
+&&   ws_memo::ensure_durable_workspace    CATALOG on disk, lives FOREVER.
+&&     (cmd_workspace.cpp:4948)           ADOPTS the existing WS_ID.
+&&
+&& The arm minted STABLE NAMES into a STABLE directory, so:
+&&   first arm run of the session, scratch already seeded by an earlier one
+&&     -> L3DET1 ADOPTED WS_ID 1. The bottom row was still the prior run's
+&&        L3DET2 at 2, so scr_hw_1 read 2 and L3DET2 adopted 2 as well.
+&&        scr_hw_2 > scr_hw_1 is false.
+&&   second arm run in the SAME session
+&&     -> "a workspace named L3DET1 already exists" -- the runtime registry
+&&        refused and nothing minted at all.
+&&
+&& That is history-dependence wearing a green suit -- the hazard the WSLADDER
+&& summary names -- committed INSIDE the arm written to detect mints. The
+&& instrument was sound. The FIXTURE was dirty. Note which way this cuts: the
+&& arm caught its own fixture before its green was spent on an alpha claim,
+&& which is what the detector-first rule was for.
+&&
+&& THE FIX IS PRIOR ART, NOT A NEW IDEA. ERASE DIR was owner-ruled 2026-08-12
+&& against this same failure and described in the same words
+&& (cmd_erase.cpp:34-41): "the WORKSPACE WRITEBACK regression needs
+&& clean-slate reruns (a leftover target makes the writeback refuse on
+&& collision while the markers read the PREVIOUS run's files: a stale false
+&& green)." Same shape, same lane, same remedy. So the arm now:
+&&
+&&   1. redirects to scratch FIRST, so every clean-up line below can only
+&&      ever reach scratch;
+&&   2. DESTROYs any detector workspaces an ABORTED prior run left in the
+&&      runtime registry -- a clean start prints "no such workspace" twice
+&&      and changes nothing;
+&&   3. ERASE DIRs the scratch root. Absence is the desired end state of a
+&&      teardown, so a first-ever run lands in that no-op branch by design;
+&&   4. mints, and D0 now asserts scr_hw_1 = 1 EXACTLY rather than > 0. That
+&&      is the pre-clean's own proof carried by the same marker: an ADOPTED
+&&      id cannot be 1 on a run that just erased the row holding 1;
+&&   5. DESTROYs both detector workspaces BEFORE the restore, so the next run
+&&      in the SAME session mints instead of being refused.
+&&
+&& STEP 5 MUST STAY ABOVE THE RESTORE. WORKSPACE DESTROY WRITES: it calls
+&& retire_durable_workspace before it touches the runtime registry
+&& (cmd_workspace.cpp:5066). The same two lines placed after the SETPATH
+&& restore would retire rows in PRODUCTION -- the arm would become the leak
+&& it is watching for. Ordering is the safety argument here for the same
+&& reason DESTROY makes that argument about itself.
+&&
+&& KNOWN LIMIT THAT REMAINS: if a run aborts between step 3 and step 5 the
+&& runtime registry keeps entries whose catalog is gone; step 2 of the next
+&& run cannot retire them and the mints are refused. The arm goes RED and
+&& says which line refused, rather than going green. A fresh session clears
+&& it. This is not fixed here because the durable fix is L2's per-run scratch
+&& root, which the arm should adopt once it is wired INTO the suite.
+&& ===========================================================================
+&&
+&& ===========================================================================
+&& MEASURED 2026-08-28 AFTER THE FIXTURE FIX. THIS IS ALPHA CONDITION 2.
+&&
+&& One session, build fbd22307 dirty (Aug 28 2026 11:32:20), three steps:
+&& arm -> REGRESSION ALL -> arm. BOTH arm runs printed 6/6 markers, all .T.
+&&
+&&   L3_L0_arm_started                        .T.
+&&   L3_L1_production_catalog_readable        .T.   262 records
+&&   L3_D0_scratch_catalog_minted             .T.   scratch WS_ID 1 EXACTLY
+&&   L3_D1_detector_sees_a_mint               .T.   scratch WS_ID 2 > 1
+&&   L3_G1_production_high_water_unchanged    .T.
+&&   L3_G2_production_bottom_row_is_the_same  .T.   262 records
+&&
+&& THE DETECTOR IS ALIVE AND THE GUARD IS GREEN IN THE SAME RUN, which is the
+&& pair this arm exists to produce. D1 was .F. on 2026-08-28 before the fix,
+&& so the arm has now been seen BOTH WAYS -- the only way to trust a green.
+&&
+&& THE FIXTURE FIX BEHAVED EXACTLY AS DESIGNED, read off the transcript:
+&&   WORKSPACE DESTROY: no such workspace: L3DET2     (clean start, twice)
+&&   WORKSPACE DESTROY: no such workspace: L3DET1
+&&   ERASE DIR: removed '...tmp/wscat_l3' (3 entrie(s)).
+&&   WORKSPACE NEW: ... name L3DET1 ... WS_ID 1       (MINTED, not ADOPTED)
+&&   WORKSPACE NEW: ... name L3DET2 ... WS_ID 2
+&& and the teardown retired both INSIDE the redirect, so the second arm run in
+&& the SAME session was neither refused nor forced to adopt. The pre-clean
+&& removed 3 entries on both runs, which is the prior run's catalog going away.
+&&
+&& WHAT L2 DID, MEASURED BETWEEN THE TWO ARM RUNS. All four minting specs
+&& bracketed, each into its own scratch root, each starting WS_IDs at 1:
+&&   WORKSPACE_SCOPE  -> data/tmp/wscat_run_17
+&&   WSMULTI          -> data/tmp/wscat_run_18
+&&   WSLADDER         -> data/tmp/wscat_run_19
+&&   RELSCOPE2        -> data/tmp/wscat_run_20
+&& with a 'catalog restored to ...data/workspaces' line closing each one.
+&&
+&& WSLADDER IS THE SPEC THAT PROVES THE SWITCH IN 8117f4c7f WAS LOAD-BEARING:
+&& it READS the catalog to assert on birth rows, and inside the bracket it read
+&& the SCRATCH catalog ('SETPATH: DBF = ...tmp/wscat_run_19', 'Record count 1')
+&& because it addresses that root through &_WORKSPACES rather than the pinned
+&& spelling. WSL_T4 -- destroy, re-mint, id must INCREASE -- held in a catalog
+&& one record deep, 1 then 2. Under the old pinned spelling this spec could not
+&& have been bracketed at all.
+&&
+&& THE ARM STILL USES THE PINNED SPELLING ON PURPOSE and is still the only file
+&& in the corpus that does. It must read PRODUCTION regardless of where the
+&& WORKSPACES slot points, because that is the whole measurement.
+&&
+&& RESIDUE, MEASURED AND NOT SWEPT: data/tmp now holds 20 wscat_run_* roots.
+&& They are the evidence of what each bracketed spec minted and they live under
+&& the gitignored TMP slot. A sweep is a follow-up, deliberately not done here.
+&& ===========================================================================
 && ===========================================================================
 
 SET ECHO OFF
@@ -150,11 +276,23 @@ CLOSE
 && ---------------------------------------------------------------------------
 SETPATH WORKSPACES D:\code\ccode\dottalkpp\data\tmp\wscat_l3
 
+&& FIXTURE PRE-CLEAN -- see AMENDMENT (SECOND). The redirect above is already
+&& in force, so nothing below can reach production. DESTROY comes BEFORE
+&& ERASE because retiring needs the row it is retiring; on a clean start both
+&& lines print "no such workspace" and change nothing.
+WORKSPACE DESTROY L3DET2
+WORKSPACE DESTROY L3DET1
+ERASE DIR D:\code\ccode\dottalkpp\data\tmp\wscat_l3 CONFIRM
+
 WORKSPACE NEW L3DET1
 USE D:\code\ccode\dottalkpp\data\tmp\wscat_l3\WORKSPACES.dbf
 GO BOTTOM
 VAR scr_hw_1 = WS_ID
-? "L3_D0_scratch_catalog_minted:" + ($scr_hw_1 > 0)
+&& = 1 EXACTLY, not > 0. A fresh catalog's first mint is 1, and an ADOPTED id
+&& cannot be 1 on a run that just erased the row holding 1 -- so this marker
+&& is the pre-clean's proof as much as the mint's. Under the old > 0 spelling
+&& an adopted 2 passed here and D1 carried the whole failure alone.
+? "L3_D0_scratch_catalog_minted:" + ($scr_hw_1 = 1)
 CLOSE
 
 WORKSPACE NEW L3DET2
@@ -163,6 +301,14 @@ GO BOTTOM
 VAR scr_hw_2 = WS_ID
 ? "L3_D1_detector_sees_a_mint:" + ($scr_hw_2 > $scr_hw_1)
 CLOSE
+
+&& TEARDOWN, AND IT MUST STAY ABOVE THE RESTORE BELOW. WORKSPACE DESTROY
+&& retires the durable row before it touches the runtime registry
+&& (cmd_workspace.cpp:5066), so these two lines moved below the SETPATH
+&& restore would write to PRODUCTION. They are here so the NEXT run in this
+&& same session mints rather than being refused by the runtime registry.
+WORKSPACE DESTROY L3DET2
+WORKSPACE DESTROY L3DET1
 
 && ---------------------------------------------------------------------------
 && RESTORE FIRST, ASSERT SECOND. The restore is unconditional and comes before
