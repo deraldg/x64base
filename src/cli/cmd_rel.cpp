@@ -166,5 +166,32 @@ void cmd_REL(xbase::DbArea& area, std::istringstream& in) {
         return;
     }
 
+    // AIF-147 sec 3a: this fallthrough printed usage and NOTHING ELSE, so an
+    // unknown subcommand was indistinguishable from a deliberate `REL USAGE`.
+    // Someone who typed a form the command does not have concluded they had
+    // mistyped their HELP request -- the one reading that guarantees they never
+    // report it. That is the AIF-118 shape wearing good manners: printing usage
+    // for an unknown subcommand is ordinarily courteous, and here it is what
+    // hid the defect.
+    //
+    // Naming the rejected token does NOT decide AIF-147 R-e -- whether
+    // `RELATIONS ALL` should reach cmd_RELATIONS_LIST at all. It is true under
+    // every one of that ruling's three options, which is why it can land first.
+    std::cout << "REL: unknown subcommand '" << sub << "'.\n";
+
+    // ALL is called out by name because it is the token this defect was found
+    // through. `RELATIONS ALL` is documented as a working form in three places
+    // (cmd_relations.cpp usage block, its notes, and dotref.hpp) and is
+    // rewritten to `REL ALL` before dispatch (shell_api_extras.cpp), so it
+    // lands HERE and was answered with usage. Pointing at the spelling that
+    // works is a HINT, not a routing change; the routing is R-e's to decide.
+    if (sub == "ALL") {
+        std::cout
+            << "REL: did you mean REL LIST ALL?\n"
+            << "REL: note -- RELATIONS ALL is rewritten to REL ALL before\n"
+            << "REL:         dispatch, so it arrives here rather than at the\n"
+            << "REL:         RELATIONS handler. See AIF-147.\n";
+    }
+
     rel_usage();
 }
