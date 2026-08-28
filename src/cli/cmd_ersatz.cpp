@@ -47,11 +47,14 @@
 //   ERSATZ LOAD <name>
 //   ERSATZ SAVE <name>
 //   ERSATZ WLOAD <name>
-//   ERSATZ DELTA MARK <name>
-//   ERSATZ DELTA SHOW <name>
+//   ERSATZ SAMPLE
+//   ERSATZ TESTSCRIPT
+//   ERSATZ DELTA MARK <name>        (aliases: BASELINE, SNAP, SNAPSHOT)
+//   ERSATZ DELTA SHOW <name>        (aliases: DIFF, COMPARE)
 //   ERSATZ DELTA CLEAR <name>
 //   ERSATZ DELTA CLEAR ALL
 //   ERSATZ DELTA STATUS
+//   ERSATZ TUPLEDELTA ...
 //   ERSATZ RESET
 //
 // notes:
@@ -61,7 +64,22 @@
 //   ROOT, LIMIT, PATH, CLEARPATH, and BACK mutate browser session settings.
 //   OPEN hands off to WORKSPACE.
 //   LOAD, SAVE, and WLOAD read or write workspace files.
-//   DELTA commands manage in-memory tuple-stream baselines.
+//   SAMPLE prints a sample ERSATZ script; TESTSCRIPT is the same command under
+//   a second spelling (cmd_ersatz.cpp: sub == "SAMPLE" || sub == "TESTSCRIPT").
+//   DELTA commands manage in-memory tuple-stream baselines. TUPLEDELTA is a
+//   second spelling of DELTA and takes the same subcommands.
+//   MARK accepts BASELINE, SNAP and SNAPSHOT; SHOW accepts DIFF and COMPARE
+//   (cmd_ersatz.cpp:1851 and :1857). So DELTA answered to SEVEN spellings and
+//   this contract named four.
+//   SAMPLE, TESTSCRIPT, TUPLEDELTA and those four aliases all dispatch and none
+//   appeared in this contract until 2026-08-28; found by sweeping every
+//   cmd_*.cpp for subcommands the code handles that its usage block does not
+//   name. The sweep was widened once and immediately found four more here,
+//   which is the argument for a detector over a reading: the first pass matched
+//   `sub ==` and missed every `action ==` one function deeper.
+//   ERSATZ LIMIT caps what is DISPLAYED. It is unrelated to REL SCANLIMIT,
+//   which caps what a relation traversal FINDS -- adjacent names, different
+//   jobs, and only one of them changes answers.
 //   RESET clears ERSATZ browser session state.
 //   ERSATZ is not table-data mutation by itself, but it can mutate cursor/session/workspace state.
 //
