@@ -41,10 +41,14 @@
 //
 // usage:
 //   AGGS USAGE
+//   AGGS ALL <value_expr> [FOR <pred>] [WHERE <pred>]     (alias: STATS)
+//   AGGS SUM|AVG|MIN|MAX <value_expr> [FOR <pred>] [WHERE <pred>]
+//     (AGGS AVG alias: AGGS AVERAGE)
 //   SUM USAGE
 //   SUM <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]
 //   AVG USAGE
 //   AVG <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]
+//     (AVG alias: AVERAGE)
 //   MIN USAGE
 //   MIN <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]
 //   MAX USAGE
@@ -53,6 +57,11 @@
 // notes:
 //   AGGS with no arguments prints aggregate-family usage.
 //   SUM, AVG, MIN, and MAX are the direct aggregate verbs; AGGS owns the aggregate family.
+//   AGGS also dispatches those four as subcommands (cmd_aggs.cpp:985-1003), so
+//   AGGS SUM <expr> and SUM <expr> reach the same run_agg call. Neither the
+//   family form nor AGGS ALL / STATS appeared in this contract until 2026-08-28.
+//   AGGS ALL is a SINGLE-PASS multi-aggregate -- COUNT, SUM, AVG, MIN and MAX
+//   from one scan -- not a repetition of the four verbs.
 //   Persistent SET FILTER and optional FOR/WHERE predicates both participate in visibility.
 //   Cursor position is restored best-effort after the aggregate scan.
 //   Aggregate commands report values; they do not mutate table data.
