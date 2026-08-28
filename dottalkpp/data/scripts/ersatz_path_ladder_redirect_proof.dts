@@ -85,6 +85,28 @@
 *              .dtschemas, and NOT a bare name with no extension.
 *
 * ===========================================================================
+* AMENDMENT 2026-08-28, AFTER STEP 3c (b30f27aad)
+*
+* B1's prediction above says the report "still runs on LADDER 3 -- it was
+* deliberately NOT switched in 3b." That was true when written and is now
+* FALSE: step 3c moved print_session_status onto ladder 2 and then deleted
+* ladder 3 outright. The prediction is left VERBATIM because this block is
+* dated evidence, not documentation -- rewriting a prediction after the fact
+* is how a fixture stops being a fixture. The B1 echo line in the body was
+* corrected, so a fresh run's B1 header differs by that one string from the
+* transcript recorded below.
+*
+* B1 still measures something, and arguably something better: it is now the
+* control proving 3c did NOT move any value. Third run 2026-08-28 against
+* build b30f27aa -- all ten root lines byte-identical to the two runs before
+* it, while their SOURCE changed from ladder 3 to ladder 2. A report whose
+* output is unchanged and whose authority moved is exactly what an inert
+* consolidation should look like.
+*
+* The day B1 and B2 disagree is the day identity was wired (AIF-144) -- and
+* now that both read ladder 2, they will follow the acting user together
+* instead of drifting apart. That was the point of 3c.
+* ===========================================================================
 * RUNTIME STATUS: GREEN 2026-08-28, 6/6 blocks, every path as predicted.
 * Ran against build "v0.6 (2026-08-27, 97854db8 dirty)" -- the banner hash is
 * commit 97854db87, step 3b itself, so the binary under test contained the
@@ -123,7 +145,7 @@ STOP_ON_ERROR OFF
 ? "=========================================================="
 
 ? " "
-? "--- B1: ERSATZ STATUS (roots report -- still ladder 3) ---"
+? "--- B1: ERSATZ STATUS (roots report -- ladder 2 since 3c) ---"
 ERSATZ STATUS
 
 ? " "
