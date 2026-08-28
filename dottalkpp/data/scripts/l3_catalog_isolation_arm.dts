@@ -70,6 +70,35 @@
 &&
 && TWO READINGS MATTER MORE THAN THE PASS.
 &&
+&& AMENDMENT 2026-08-28, AFTER A REGRESSION ALL RAN
+&&
+&& Reading 1 below is now FALSE and is left VERBATIM. A full REGRESSION ALL
+&& ran on build 785eb9a5 and the production catalog went 252 -> 262. The
+&& measurement is not rewritten because it was true, dated, and is what makes
+&& the change legible; a measurement that silently retunes itself is worth
+&& less than one that is superseded in the open.
+&&
+&& THE PLAN ESTIMATED "10 rows per REGRESSION ALL". IT IS NOW MEASURED, AND
+&& THE PROVENANCE IS EXACT -- ten mints, four specs, read off the transcript:
+&&
+&&   WORKSPACE_SCOPE   WSPARENT 253, WSCHILD 254                    2
+&&   WSMULTI           WSALPHA 255, WSBETA 256, WSGAMMA 257         3
+&&   WSLADDER          WSLADR1 258, WSLADR1 259 (re-mint), WSLADR2 260   3
+&&   RELSCOPE2         RSWSA 261, RSWSB 262                         2
+&&                                                            total 10
+&&
+&& The x32 and x64 workspaces cost NOTHING -- both ADOPTED an identity the
+&& catalog already held (WS_ID 214 and 207). Only NEW mints, and WSLADDER
+&& mints WSLADR1 twice because WSL_T4 destroys and re-creates it to prove the
+&& id moves. Every one of these specs retires what it declares, so no NAME
+&& keeps a live row; the ROWS remain, which is the history D10.3 keeps.
+&&
+&& WHAT THIS MEANS FOR G1, AND IT IS THE POINT: the arm said its own green
+&& was CHEAP because the suite had not run. The suite has now run. Bracket
+&& this arm around a REGRESSION ALL today and G1/G2 GO RED -- that is the
+&& demonstration plan sec 5 asked for, now available without contriving
+&& anything, and it is what L2's bracket exists to turn green.
+&&
 && 1. PRODUCTION IS STILL AT 252 RECORDS -- exactly the post-L1 baseline of
 &&    2026-08-27. No REGRESSION ALL has run since L1. So G1's green today is
 &&    cheap: production has not been touched because the suite has not run.
