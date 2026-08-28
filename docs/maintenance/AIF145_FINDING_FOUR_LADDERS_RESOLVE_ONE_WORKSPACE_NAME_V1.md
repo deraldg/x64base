@@ -41,7 +41,10 @@ ai_report_audit:
     Lane    : path resolution / multi-workspace lifecycle. Blocks L2.
     Status  : review-needed. The author does not self-approve.
     Basis   : MIXED. Every line number below was read this session at baseline
-              `94b626a38`. Sec 6a is the STAGING tree, walked read-only.
+              `94b626a38`. AMENDED 2026-08-28: sec 5a's WRITE-PATH claim is now
+              RUNTIME-PROVEN -- five `WORKSPACE SAVE` calls against the x64 MCC
+              lane on `grimwood`, destinations printed, transcript in that
+              section. The read half remains source-evidenced. Sec 6a is the STAGING tree, walked read-only.
               **Sec 5a rests on SOURCE and on SHIPPED SCRIPTS ONLY** -- the
               owner has ruled the development tree's DATA untrustworthy as a
               specimen ("it has mutated greatly and I refresh from time to
@@ -248,6 +251,19 @@ of user onboarding:
 
 That reframing does not remove a defect. It replaces a vague one with a precise
 one.
+
+**RUNTIME-PROVEN 2026-08-27/28, after this section was first written from
+source.** `dottalkpp/data/scripts/mcc_topology_workspaces.dts` (AIF-147 sec 6b)
+issued five `WORKSPACE SAVE` calls against the x64 MCC lane on `grimwood`. All
+five printed their destination:
+
+    WORKSPACE SAVE: wrote D:\code\ccode\dottalkpp\data\workspaces\topo_chain.dtschema
+    ... and topo_deep, topo_fan, topo_diamond, topo_flat
+
+Five for five under `data\workspaces`, and `dottalkpp/user/*/workspaces/topo_*`
+empty afterwards. **The write-path claim below is no longer an argument from
+source.** The reader half -- that ladders 1, 2 and 3 consult the user rungs
+first -- remains source-evidenced; no run has exercised ERSATZ's resolution.
 
 **Each build stage ends by saving a posture, and every save goes to the same
 rung.** `mcc_build_x32.dts:309`, `mcc_build_vfp.dts:279`,

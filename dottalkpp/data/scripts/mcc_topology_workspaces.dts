@@ -1,0 +1,357 @@
+* ===========================================================================
+* MCC_TOPOLOGY_WORKSPACES.DTS
+* Five purpose-built workspace postures, one per relation TOPOLOGY.
+*
+* Status:  CANDIDATE / REVIEW_BEFORE_EXECUTION
+* Safety:  MUTATING -- writes five workspace files. No table data is touched.
+* Lane:    AIF-146 (relation traversal surfaces). NOT part of the MCC
+*          three-stage build chain -- it CONSUMES that chain's output, the
+*          same way mcc_add_notes_memo.dts does, which is why it lives here
+*          at data/scripts/ and not in data/scripts/mcc/.
+* Inputs:  data/dbf/x64/*.dbf + data/indexes/x64/*.cdx  (mcc_build_x64.dts)
+* Outputs: data/workspaces/topo_chain.dtschema
+*          data/workspaces/topo_deep.dtschema
+*          data/workspaces/topo_fan.dtschema
+*          data/workspaces/topo_diamond.dtschema
+*          data/workspaces/topo_flat.dtschema
+* Gate:    mcc_build_x64.dts must have completed cleanly first.
+*
+* WHY THESE EXIST
+* `enum_emit_for_current_parent` (set_relations.hpp:121) infers a chain when
+* none is given by "repeatedly following the ONLY child relation at each
+* step". That inference therefore SUCCEEDS on a linear graph and CANNOT
+* succeed where any step has more than one child. The shipped `mcc` posture
+* has fifteen relations and a three-way fan at STUDENTS, so it can never
+* exercise the inference path -- it is the hard case only.
+*
+* These five isolate one property each, so traversal, and any future join
+* surface, can be tested against a graph whose answer is known in advance
+* rather than against the whole MCC graph at once.
+*
+* EVERY POSTURE IS WRITTEN BY `WORKSPACE SAVE`, DELIBERATELY.
+* AIF-146 sec 4 and AIF-145 sec 5a: WORKSPACE SAVE writes the WORKSPACES slot
+* and only that. Hand-authoring these files onto a user rung would put them
+* where nothing refreshes them and where ladder 4 would never find them.
+*
+*   $env:X64BASE_ALLOW_DATA = "1"
+*   .\datarun.ps1
+*   DOTSCRIPT TRACE scripts\mcc_topology_workspaces.dts OUT tmp\topo.log
+*
+* Paths are INLINED rather than `DO X64` -- the DOTSCRIPT resolver resolves
+* relative to the invoking script's directory, reports a miss, and CONTINUES
+* with the path slots unchanged (mcc/README.md, and AIF-145 sec 4).
+* ===========================================================================
+
+SET ECHO OFF
+
+ECHO ========================================================
+ECHO MCC TOPOLOGY WORKSPACES -- five postures, five shapes
+ECHO Writes workspace files only. No table data is mutated.
+ECHO ========================================================
+
+* ---------------------------------------------------------------------------
+* 1of5 -- topo_chain : PURE LINEAR. One child at every step.
+*         STUDENTS -> ENROLL -> CLASSES -> COURSES -> DEPT
+*         5 areas, 4 relations.
+* PREDICT: RELATIONS ALL shows a single unbranched spine, depth 4.
+* PREDICT: chain inference SUCCEEDS here -- `REL ENUM LIMIT 5 TUPLE ...`
+*          with NO explicit path emits rows, because every step has exactly
+*          one child. This is the control case for the inference contract.
+* ---------------------------------------------------------------------------
+
+WORKSPACE CLOSE
+SET PATH DBF DBF/x64
+SET PATH INDEXES INDEXES/x64
+SET PATH LMDB LMDB/x64
+ECHO [1/5] topo_chain -- STUDENTS ENROLL CLASSES COURSES DEPT
+
+SELECT 0
+USE STUDENTS
+SET INDEX TO STUDENTS
+SET ORDER TO TAG SID
+
+SELECT 1
+USE ENROLL
+SET INDEX TO ENROLL
+SET ORDER TO TAG SID
+
+SELECT 2
+USE CLASSES
+SET INDEX TO CLASSES
+SET ORDER TO TAG CLS_ID
+
+SELECT 3
+USE COURSES
+SET INDEX TO COURSES
+SET ORDER TO TAG CID
+
+SELECT 4
+USE DEPT
+SET INDEX TO DEPT
+SET ORDER TO TAG DEPT_ID
+
+SELECT STUDENTS
+SET RELATIONS CLEAR ALL
+SET RELATIONS ADD STUDENTS ENROLL ON SID
+SET RELATIONS ADD ENROLL CLASSES ON CLS_ID
+SET RELATIONS ADD CLASSES COURSES ON CID
+SET RELATIONS ADD COURSES DEPT ON DEPT_ID
+REL REFRESH
+
+SELECT STUDENTS
+TOP
+RELATIONS ALL
+ECHO --- inference control: NO explicit path given ---
+REL ENUM LIMIT 5 TUPLE STUDENTS.SID, ENROLL.CLS_ID, CLASSES.CID, COURSES.DEPT_ID, DEPT.DEPT_ID
+
+WORKSPACE SAVE topo_chain
+ECHO [1/5] saved topo_chain
+
+* ---------------------------------------------------------------------------
+* 2of5 -- topo_deep : LONGEST single-child path available. 5 hops.
+*         STUDENTS -> ENROLL -> CLASSES -> TASSIGN -> TEACHERS -> DEPT
+*         6 areas, 5 relations.
+* PREDICT: inference SUCCEEDS -- still exactly one child per step.
+* PREDICT: deeper than topo_chain by one hop; row counts per parent differ
+*          because TASSIGN fans per class.
+* ---------------------------------------------------------------------------
+
+WORKSPACE CLOSE
+SET PATH DBF DBF/x64
+SET PATH INDEXES INDEXES/x64
+SET PATH LMDB LMDB/x64
+ECHO [2/5] topo_deep -- STUDENTS ENROLL CLASSES TASSIGN TEACHERS DEPT
+
+SELECT 0
+USE STUDENTS
+SET INDEX TO STUDENTS
+SET ORDER TO TAG SID
+
+SELECT 1
+USE ENROLL
+SET INDEX TO ENROLL
+SET ORDER TO TAG SID
+
+SELECT 2
+USE CLASSES
+SET INDEX TO CLASSES
+SET ORDER TO TAG CLS_ID
+
+SELECT 3
+USE TASSIGN
+SET INDEX TO TASSIGN
+SET ORDER TO TAG CLS_ID
+
+SELECT 4
+USE TEACHERS
+SET INDEX TO TEACHERS
+SET ORDER TO TAG TID
+
+SELECT 5
+USE DEPT
+SET INDEX TO DEPT
+SET ORDER TO TAG DEPT_ID
+
+SELECT STUDENTS
+SET RELATIONS CLEAR ALL
+SET RELATIONS ADD STUDENTS ENROLL ON SID
+SET RELATIONS ADD ENROLL CLASSES ON CLS_ID
+SET RELATIONS ADD CLASSES TASSIGN ON CLS_ID
+SET RELATIONS ADD TASSIGN TEACHERS ON TID
+SET RELATIONS ADD TEACHERS DEPT ON DEPT_ID
+REL REFRESH
+
+SELECT STUDENTS
+TOP
+RELATIONS ALL
+ECHO --- inference: NO explicit path given ---
+REL ENUM LIMIT 5 TUPLE STUDENTS.SID, ENROLL.CLS_ID, CLASSES.CID, TASSIGN.TID, TEACHERS.LNAME, DEPT.DEPT_ID
+
+WORKSPACE SAVE topo_deep
+ECHO [2/5] saved topo_deep
+
+* ---------------------------------------------------------------------------
+* 3of5 -- topo_fan : ONE parent, THREE children, depth 1.
+*         STUDENTS -> ENROLL, STUD_MAJ, MAJORS
+*         4 areas, 3 relations.
+* PREDICT: chain inference CANNOT succeed -- step 1 has three children, so
+*          there is no "only child" to follow. A bare `REL ENUM LIMIT 5` with
+*          no path must NOT silently pick one.
+* PREDICT: an EXPLICIT single-child path still works: `REL ENUM ENROLL ...`.
+* THIS IS THE CASE TO WATCH. If the bare form emits rows anyway, it chose a
+* child without being told to, and that is a finding -- an ambiguous chain
+* resolved silently is the AIF-118 shape.
+* ---------------------------------------------------------------------------
+
+WORKSPACE CLOSE
+SET PATH DBF DBF/x64
+SET PATH INDEXES INDEXES/x64
+SET PATH LMDB LMDB/x64
+ECHO [3/5] topo_fan -- STUDENTS to ENROLL, STUD_MAJ, MAJORS
+
+SELECT 0
+USE STUDENTS
+SET INDEX TO STUDENTS
+SET ORDER TO TAG SID
+
+SELECT 1
+USE ENROLL
+SET INDEX TO ENROLL
+SET ORDER TO TAG SID
+
+SELECT 2
+USE STUD_MAJ
+SET INDEX TO STUD_MAJ
+SET ORDER TO TAG SID
+
+SELECT 3
+USE MAJORS
+SET INDEX TO MAJORS
+SET ORDER TO TAG MAJOR
+
+SELECT STUDENTS
+SET RELATIONS CLEAR ALL
+SET RELATIONS ADD STUDENTS ENROLL ON SID
+SET RELATIONS ADD STUDENTS STUD_MAJ ON SID
+SET RELATIONS ADD STUDENTS MAJORS ON MAJOR
+REL REFRESH
+
+SELECT STUDENTS
+TOP
+RELATIONS ALL
+ECHO --- AMBIGUOUS: no path given, three children. Rows here are a FINDING. ---
+REL ENUM LIMIT 5 TUPLE STUDENTS.SID, ENROLL.CLS_ID
+ECHO --- EXPLICIT single child: this one SHOULD emit ---
+REL ENUM ENROLL LIMIT 5 TUPLE STUDENTS.SID, ENROLL.CLS_ID
+
+WORKSPACE SAVE topo_fan
+ECHO [3/5] saved topo_fan
+
+* ---------------------------------------------------------------------------
+* 4of5 -- topo_diamond : TWO paths converge on one node.
+*         STUDENTS -> MAJORS        (direct, ON MAJOR)
+*         STUDENTS -> STUD_MAJ      (ON SID)
+*         STUD_MAJ -> MAJORS        (ON MAJOR)
+*         3 areas, 3 relations. MAJORS is reachable two ways.
+* PREDICT: RELATIONS ALL renders MAJORS TWICE -- once per path -- because the
+*          tree builder walks paths, not nodes.
+* PREDICT: STUDENTS has two children, so bare inference cannot proceed here
+*          either; the explicit form `REL ENUM STUD_MAJ MAJORS ...` is the
+*          one that names the longer arm.
+* ---------------------------------------------------------------------------
+
+WORKSPACE CLOSE
+SET PATH DBF DBF/x64
+SET PATH INDEXES INDEXES/x64
+SET PATH LMDB LMDB/x64
+ECHO [4/5] topo_diamond -- two paths from STUDENTS to MAJORS
+
+SELECT 0
+USE STUDENTS
+SET INDEX TO STUDENTS
+SET ORDER TO TAG SID
+
+SELECT 1
+USE STUD_MAJ
+SET INDEX TO STUD_MAJ
+SET ORDER TO TAG SID
+
+SELECT 2
+USE MAJORS
+SET INDEX TO MAJORS
+SET ORDER TO TAG MAJOR
+
+SELECT STUDENTS
+SET RELATIONS CLEAR ALL
+SET RELATIONS ADD STUDENTS MAJORS ON MAJOR
+SET RELATIONS ADD STUDENTS STUD_MAJ ON SID
+SET RELATIONS ADD STUD_MAJ MAJORS ON MAJOR
+REL REFRESH
+
+SELECT STUDENTS
+TOP
+RELATIONS ALL
+ECHO --- explicit long arm ---
+REL ENUM STUD_MAJ MAJORS LIMIT 5 TUPLE STUDENTS.SID, STUD_MAJ.MAJOR, MAJORS.DEPT_ID
+
+WORKSPACE SAVE topo_diamond
+ECHO [4/5] saved topo_diamond
+
+* ---------------------------------------------------------------------------
+* 5of5 -- topo_flat : areas open, ZERO relations.
+*         STUDENTS, ENROLL, CLASSES, DEPT. 4 areas, 0 relations.
+* PREDICT: RELATIONS ALL reports no relations from the current root.
+* PREDICT: this is the shape `WORKSPACE SAVE` produces after a plain
+*          `WORKSPACE OPEN DBF` -- which is exactly why the shipped
+*          mcc_x64 posture carries 0 relations (AIF-145 sec 5a). This posture
+*          makes that the DELIBERATE floor case rather than an accident.
+* ---------------------------------------------------------------------------
+
+WORKSPACE CLOSE
+SET PATH DBF DBF/x64
+SET PATH INDEXES INDEXES/x64
+SET PATH LMDB LMDB/x64
+ECHO [5/5] topo_flat -- four areas, no relations
+
+SELECT 0
+USE STUDENTS
+SET INDEX TO STUDENTS
+SET ORDER TO TAG SID
+
+SELECT 1
+USE ENROLL
+SET INDEX TO ENROLL
+SET ORDER TO TAG SID
+
+SELECT 2
+USE CLASSES
+SET INDEX TO CLASSES
+SET ORDER TO TAG CLS_ID
+
+SELECT 3
+USE DEPT
+SET INDEX TO DEPT
+SET ORDER TO TAG DEPT_ID
+
+SELECT STUDENTS
+SET RELATIONS CLEAR ALL
+REL REFRESH
+
+SELECT STUDENTS
+TOP
+RELATIONS ALL
+
+WORKSPACE SAVE topo_flat
+ECHO [5/5] saved topo_flat
+
+* ===========================================================================
+* PROOF
+* ===========================================================================
+* A green run is not proof. Read these five things:
+*
+*   1. topo_chain and topo_deep: the BARE `REL ENUM` (no path) EMITTED ROWS.
+*      If it did not, chain inference does not work on a linear graph and the
+*      contract at set_relations.hpp:121 is wrong.
+*   2. topo_fan: the BARE `REL ENUM` emitted NOTHING and said why. Rows there
+*      mean a child was chosen silently -- report it, do not work around it.
+*   3. topo_fan: the EXPLICIT `REL ENUM ENROLL` DID emit.
+*   4. topo_diamond: RELATIONS ALL showed MAJORS twice, once per path.
+*   5. Five `WORKSPACE SAVE` lines all reported success, and the five files
+*      landed in data\workspaces -- NOT under dottalkpp\user\. If any landed
+*      on a user rung, AIF-145 sec 5a is wrong about the write path and that
+*      is the more important finding.
+* ===========================================================================
+
+ECHO ========================================================
+ECHO TOPOLOGY WORKSPACES COMPLETE -- five postures written.
+ECHO
+ECHO   WORKSPACE LOAD topo_chain     linear, inference works
+ECHO   WORKSPACE LOAD topo_deep      linear, 5 hops
+ECHO   WORKSPACE LOAD topo_fan       3-way fan, inference must refuse
+ECHO   WORKSPACE LOAD topo_diamond   two paths to one node
+ECHO   WORKSPACE LOAD topo_flat      areas only, no relations
+ECHO
+ECHO Verify where they landed:
+ECHO   dir dottalkpp\data\workspaces\topo_*.dtschema
+ECHO   dir dottalkpp\user\default\workspaces\topo_*.dtschema   (expect none)
+ECHO ========================================================

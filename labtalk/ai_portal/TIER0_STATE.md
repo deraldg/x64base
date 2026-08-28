@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-08-28T00:22:11Z
+    generated_utc : 2026-08-28T01:04:22Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,9 +11,9 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : 41e06ef51  (2026-08-27)
+    HEAD          : 1efef54f6  (2026-08-27)
     upstream      : 372c5834f
-    unpushed      : 34 commit(s) ahead of upstream
+    unpushed      : 35 commit(s) ahead of upstream
 
 ## Declared target
 
@@ -23,17 +23,18 @@ cannot drift, because nothing here is written by hand.
 ## Newest closeout
 
     file          : SESSION_CLOSEOUT_R130_LOAD_IS_ADDITIVE_2026-08-27.md
-    commits behind HEAD : 18
+    commits behind HEAD : 19
 
 ## Staleness warnings
 
-- The newest closeout is 18 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
-- 34 commit(s) are unpushed and invisible to a clone.
+- The newest closeout is 19 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
+- 35 commit(s) are unpushed and invisible to a clone.
 
 ## Claimed lanes (newest first)
 
 | AIF | lane | steward | intake row |
 | --- | --- | --- | --- |
+| AIF-147 | relation-traversal-surface-asymmetry | member.ai.claude.cowork | yes |
 | AIF-145 | path-resolution-ladder-divergence | member.ai.claude.cowork | yes |
 | AIF-144 | identity-authority-fragmentation | member.ai.claude.cowork | yes |
 | AIF-143 | duplicate-settings-struct | member.ai.claude.cowork | yes |
@@ -45,8 +46,7 @@ cannot drift, because nothing here is written by hand.
 | AIF-137 | The relation STORE is partitioned by workspace (AIF-078 I1.2) but the relation PARENT is not -- current_parent_override() is one global string and current_parent_name()/refresh_from_parent_name() resolve through the unscoped find_open_area_by_name_ci, so a refresh standing in one workspace reads another workspace's area; measured live 2026-08-27 with an EMPTY relation store, so it needs no SET RELATION to occur | member.ai.claude.cowork | yes |
 | AIF-136 | AI Portal frontal-memory tiering, document consolidation, long-term storage, retrieval, and governed retention lifecycle | member.ai.codex | yes |
 | AIF-135 | Align claim-aif and next_aif on monotonic high-water allocation over the canonical intake-and-claims identity universe; prove gaps are never reused and preserve atomic collision handling | member.ai.codex | yes |
-| AIF-134 | ERROR CLEAR/STATUS/TEST are registered as multi-word keys with no bare ERROR router, so shell_dispatch cannot reach them -- the AIF-131 defect unfixed in a sibling family, while dotref publishes all three as supported | member.ai.claude.cowork | yes |
-| ... | 65 older claims omitted | | |
+| ... | 66 older claims omitted | | |
 
 ## Sessions, lineage, asides
 
