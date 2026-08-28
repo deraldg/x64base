@@ -358,12 +358,7 @@ namespace
         }
     }
 
-    static bool has_any_sep(const std::string& s)
-    {
-        return s.find('/') != std::string::npos || s.find('\\') != std::string::npos;
-    }
-
-    static std::vector<std::string> split_path_tokens(const std::string& raw)
+        static std::vector<std::string> split_path_tokens(const std::string& raw)
     {
         std::vector<std::string> out;
 
@@ -481,93 +476,13 @@ namespace
         };
     }
 
-    static std::vector<fs::path> script_search_roots()
-    {
-        return {
-            current_user_scripts_root(),
-            public_scripts_root(),
-            default_scripts_root(),
-            data_scripts_root()
-        };
-    }
-
-    static bool file_exists(const fs::path& p)
+        static bool file_exists(const fs::path& p)
     {
         std::error_code ec;
         return fs::exists(p, ec) && !ec && fs::is_regular_file(p, ec) && !ec;
     }
 
-    static fs::path absolute_if_exists(const fs::path& p)
-    {
-        std::error_code ec;
-        if (file_exists(p))
-            return fs::absolute(p, ec);
-        return {};
-    }
-
-    static fs::path resolve_in_roots(const std::string& target_in,
-                                     const std::vector<fs::path>& roots,
-                                     const std::string& default_ext)
-    {
-        std::string target = trim(target_in);
-        fs::path p(target);
-
-        if (!default_ext.empty() && !p.has_extension())
-            p.replace_extension(default_ext);
-
-        if (p.is_absolute())
-        {
-            fs::path abs = absolute_if_exists(p);
-            if (!abs.empty())
-                return abs;
-            return {};
-        }
-
-        {
-            fs::path abs = absolute_if_exists(p);
-            if (!abs.empty())
-                return abs;
-        }
-
-        if (has_any_sep(target))
-        {
-            fs::path data_relative = dottalk::paths::state().data_root / p;
-            fs::path abs = absolute_if_exists(data_relative);
-            if (!abs.empty())
-                return abs;
-
-            abs = absolute_if_exists(p);
-            if (!abs.empty())
-                return abs;
-        }
-
-        for (const auto& root : roots)
-        {
-            fs::path candidate = root / p;
-            fs::path abs = absolute_if_exists(candidate);
-            if (!abs.empty())
-                return abs;
-        }
-
-        return {};
-    }
-
-    static fs::path fallback_in_current_user_root(const std::string& target_in,
-                                                  const fs::path& root,
-                                                  const std::string& default_ext)
-    {
-        std::string target = trim(target_in);
-        if (target.empty())
-            target = "default";
-
-        fs::path p(target);
-        if (!default_ext.empty() && !p.has_extension())
-            p.replace_extension(default_ext);
-
-        return root / p;
-    }
-
-    static std::string normalize_workspace_reference_for_save(const std::string& path_in)
+                static std::string normalize_workspace_reference_for_save(const std::string& path_in)
     {
         const std::string trimmed = trim(path_in);
         if (trimmed.empty())
@@ -594,14 +509,20 @@ namespace
         return source.generic_string();
     }
 
+    // AIF-145 R-a step 3b. Was ladder 3's .erz copy; see the note on
+    // resolve_workspace_target below for why ladder 2 is the resolver.
+    //
+    // ONE input resolves differently now, and only one: a token that contains
+    // a separator and names a file that DOES NOT EXIST. This returned
+    // <current-user workspaces root>/<token>; ladder 2 returns
+    // <data root>/<token>. Every token that finds a real file, and every bare
+    // name, resolves to the same file as before. The changed case is an
+    // INVENTED path either way -- neither ladder found anything -- and the
+    // invented path is printed to the user as the resolved path, so the change
+    // is visible at the point it happens.
     static fs::path resolve_ersatz_file_path(const std::string& target_in)
     {
-        const std::string target = trim(target_in).empty() ? "default" : trim(target_in);
-        fs::path found = resolve_in_roots(target, workspace_search_roots(), ".erz");
-        if (!found.empty())
-            return found;
-
-        return fallback_in_current_user_root(target, current_user_workspaces_root(), ".erz");
+        return dottalk::paths::resolve_ersatz_profile(target_in);
     }
 
     // AIF-145 R-a, owner ruling 2026-08-28: ladder 2 is the resolver. This was
@@ -627,7 +548,8 @@ namespace
     //             what consolidating buys.
     //
     // Fallback is preserved exactly: this returned
-    // fallback_in_current_user_root(..., current_user_workspaces_root()), and
+    // fallback_in_current_user_root(..., current_user_workspaces_root()) -- a
+    // function DELETED in step 3b, so the name survives only in this history -- and
     // ladder 2 falls back to roots.front(), which IS the current-user root
     // because workspace_search_roots() is {cur, pub, def, slot}.
     //
@@ -639,14 +561,18 @@ namespace
         return dottalk::paths::resolve_workspace(target_in);
     }
 
+    // AIF-145 R-a step 3b. Was ladder 3's .dot copy. Same one changed case as
+    // resolve_ersatz_file_path above: a separator-bearing token that does not
+    // exist now names <data root>/<token> instead of the current-user scripts
+    // root.
+    //
+    // This is ERSATZ's .dot resolver and it is NOT the resolver DO and
+    // DOTSCRIPT use -- that is shell_resolve_script_path (shell_api.cpp:228),
+    // which defaults to .dts and searches the script stack first. R-a rules on
+    // workspaces; the script side still has three resolvers and is open.
     static fs::path resolve_script_target(const std::string& target_in)
     {
-        const std::string target = trim(target_in).empty() ? "default" : trim(target_in);
-        fs::path found = resolve_in_roots(target, script_search_roots(), ".dot");
-        if (!found.empty())
-            return found;
-
-        return fallback_in_current_user_root(target, current_user_scripts_root(), ".dot");
+        return dottalk::paths::resolve_ersatz_script(target_in);
     }
 
     static bool looks_like_workspace_or_script_file(const fs::path& p)
