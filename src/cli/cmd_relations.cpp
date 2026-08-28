@@ -762,6 +762,39 @@ void cmd_REL_JOIN(xbase::DbArea& A, std::istringstream& iss) {
     if (!saw_tuple) { cli::cmdout::print_prefixed_message("REL JOIN", dottalk::helpdata::MessageId::RelJoinMissingTupleText); return; }
     if (tuple_tail.empty()) { cli::cmdout::print_prefixed_message("REL JOIN", dottalk::helpdata::MessageId::RelJoinTupleRequiresExpressionText); return; }
 
+    // AIF-147 sec 4 / R-c: ONE parses a child chain, ACCEPTS it, and discards
+    // it. join_emit_one_for_current_parent takes the vector as
+    // `const std::vector<std::string>& /*child_chain*/` (join_engine.cpp) and
+    // its declaration says so plainly -- "Optional chain (currently ignored;
+    // reserved for future)" (set_relations.hpp:100). The command then reported
+    // SetRelationOkText either way: THE SAME ANSWER FOR APPLIED AND FOR
+    // IGNORED, which is the AIF-118 shape.
+    //
+    // Refusing rather than warning follows cmd_list.cpp, which stopped printing
+    // a predicate error and then listing every row. An argument a command
+    // cannot honour is not a preference to be noted, it is a question the
+    // command cannot answer.
+    //
+    // NARROW BY MEASUREMENT: only the form that SUPPLIES a chain is refused.
+    // `REL JOIN ONE LIMIT 0 TUPLE ...` passes no aliases and is what both
+    // existing fixtures use for the historical single-row behaviour
+    // (data/scripts/main/rel_join_enum_regression.dts TEST 06 and its legacy
+    // twin); that form is untouched.
+    if (one && !path.empty()) {
+        std::string names;
+        for (std::size_t i = 0; i < path.size(); ++i) {
+            if (i) names += ", ";
+            names += path[i];
+        }
+        cli::cmdout::print_line(
+            "REL JOIN ONE: a child chain was given (" + names + ") and ONE "
+            "cannot use it. ONE emits a single row from the CURRENT relation "
+            "pointers and ignores the chain entirely, so accepting it would "
+            "report success for a traversal that never happened. Drop ONE to "
+            "walk the chain, or drop the chain to keep the single-row form.");
+        return;
+    }
+
     std::size_t emitted = 0;
     const auto emit_row = [&]{
         ScopedEngineArea keep_area;
