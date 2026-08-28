@@ -383,6 +383,51 @@ static void show_relations_file_usage() {
     cli::cmdout::print_message(dottalk::helpdata::MessageId::RelationsFileUsageText);
 }
 
+// AIF-074 P1.3 (RDB-06) / AIF-078 R-6: the scan-limit latch had NO POLLERS.
+//
+// relations_api::scan_truncated() is set inside the child scan when it reaches
+// g_scan_limit, and that scan then RETURNS FALSE -- which is byte-for-byte what
+// a genuine "no matching child" returns. note_scan_truncated() prints once per
+// latch cycle at the MOMENT of truncation, which lands ABOVE the rows; by the
+// time a reader reaches the result they have scrolled past it, and a result set
+// that does not restate the fact reads as a complete answer.
+//
+// So every traversal verb now restates it AT THE RESULT, carrying the limit and
+// the row count the reader is actually looking at.
+//
+// DELIBERATELY NOT DONE: the OK line still prints. Suppressing it would change
+// what a script parsing this command sees, and that is a ruling (AIF-078 R-6),
+// not a cleanup. This warning is ADDITIVE, so the registered SCAN-LIMIT HONESTY
+// spec's read rule -- the truncating block MUST CONTAIN the warning and the
+// clean block MUST NOT -- continues to hold.
+// REL LIST's truncation is a DIFFERENT lie from REL ENUM's. ENUM loses rows;
+// LIST reports match COUNTS (relations_api::match_count_for_child), and a
+// truncated count is not a short list -- it is a WRONG NUMBER presented in the
+// same shape as a right one. Said separately so the reader is told which.
+static void note_counts_may_be_incomplete(const char* verb)
+{
+    if (!relations_api::scan_truncated()) return;
+
+    std::ostringstream os;
+    os << verb << ": scan limit (" << relations_api::scan_limit()
+       << ") was reached while counting matches -- the counts above are LOWER "
+          "BOUNDS, not totals. Raise it with REL SCANLIMIT <n> and re-run.";
+    cli::cmdout::print_line(os.str());
+}
+
+static void note_result_may_be_incomplete(const char* verb, std::size_t rows)
+{
+    if (!relations_api::scan_truncated()) return;
+
+    std::ostringstream os;
+    os << verb << ": scan limit (" << relations_api::scan_limit()
+       << ") was reached during this traversal -- " << rows
+       << " row(s) shown, and any match beyond the limit was NOT considered. "
+          "A missed match is indistinguishable from an absent one here. "
+          "Raise it with REL SCANLIMIT <n> and re-run to compare.";
+    cli::cmdout::print_line(os.str());
+}
+
 static std::string join_row_for_display(const rel_enum_engine::Row& row)
 {
     std::string out;
@@ -476,7 +521,7 @@ void cmd_SET_RELATIONS(xbase::DbArea& /*A*/, std::istringstream& iss) {
     cli::cmdout::print_prefixed_message("SET RELATIONS", dottalk::helpdata::MessageId::SetRelationsUnknownOpText);
 }
 
-void cmd_RELATIONS_LIST(xbase::DbArea& /*A*/, std::istringstream& iss) {
+static void relations_list_impl(xbase::DbArea& /*A*/, std::istringstream& iss) {
     std::streampos pos = iss.tellg();
     std::string maybe;
     if (iss >> maybe) {
@@ -533,6 +578,21 @@ void cmd_RELATIONS_LIST(xbase::DbArea& /*A*/, std::istringstream& iss) {
         const int cnt = relations_api::match_count_for_child(c);
         cli::cmdout::print_message(dottalk::helpdata::MessageId::RelListMatchLineText, {{"child", c}, {"count", std::to_string(cnt)}});
     }
+}
+
+// Entry point. RELATIONS and REL_LIST are registered DIRECTLY
+// (shell_commands.cpp:332-333) and therefore never pass through cmd_REL's
+// per-command latch clear (cmd_rel.cpp:86) -- so this command reached by those
+// names would inherit whatever the latch happened to hold, and could either
+// warn about a truncation that belonged to an earlier command or, having
+// already latched, stay silent about its own. It owns its cycle here.
+//
+// The body is unchanged and still returns from several branches; wrapping it
+// rather than editing each return keeps the branch logic exactly as ruled.
+void cmd_RELATIONS_LIST(xbase::DbArea& A, std::istringstream& iss) {
+    relations_api::clear_scan_truncated();
+    relations_list_impl(A, iss);
+    note_counts_may_be_incomplete("REL LIST");
 }
 
 // @dottalk.usage v1
@@ -734,6 +794,7 @@ void cmd_REL_JOIN(xbase::DbArea& A, std::istringstream& iss) {
     }
 
     if (!ok) return;
+    note_result_may_be_incomplete("REL JOIN", emitted);
     cli::cmdout::print_message(dottalk::helpdata::MessageId::SetRelationOkText);
 }
 
@@ -802,5 +863,6 @@ void cmd_REL_ENUM(xbase::DbArea& A, std::istringstream& iss) {
     for (const auto& row : res.rows)
         cli::cmdout::print_line(join_row_for_display(row));
 
+    note_result_may_be_incomplete("REL ENUM", res.rows.size());
     cli::cmdout::print_message(dottalk::helpdata::MessageId::SetRelationOkText);
 }

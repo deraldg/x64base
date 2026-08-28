@@ -302,7 +302,52 @@ namespace rel_enum_engine
 
             if (!ok) {
                 out.status = "ERROR";
-                out.warnings.push_back("REL ENUM engine: enum_emit_for_current_parent failed.");
+
+                // AIF-078 R-f: this used to say only
+                // "enum_emit_for_current_parent failed", which names WHERE the
+                // failure happened and never WHY. A correct refusal delivered as
+                // an internal function name reads as a crash, and the commonest
+                // cause -- an ambiguous chain -- is both recoverable and
+                // invisible in that wording.
+                //
+                // The cause is DERIVED, never guessed. enum_emit_for_current_parent
+                // returns false for several reasons; the only one determinable
+                // from here is the documented inference rule (set_relations.hpp:121):
+                // with no explicit path, a chain is inferred by following the ONLY
+                // child at each step, so a parent with any number of children other
+                // than one cannot yield a unique chain. When that is demonstrably
+                // the case we say so and name the children. When it is not, we say
+                // the engine refused and DO NOT invent a reason.
+                if (req.path_aliases.empty()) {
+                    const std::vector<std::string> kids =
+                        relations_api::child_areas_for_current_parent();
+                    if (kids.size() != 1) {
+                        std::string msg =
+                            "REL ENUM: no child path was given and one cannot be "
+                            "inferred -- the current parent has ";
+                        msg += std::to_string(kids.size());
+                        msg += " child relation(s)";
+                        if (!kids.empty()) {
+                            msg += " (";
+                            for (std::size_t i = 0; i < kids.size(); ++i) {
+                                if (i) msg += ", ";
+                                msg += kids[i];
+                            }
+                            msg += ")";
+                        }
+                        msg += ", and inference follows the ONLY child at each step. "
+                               "Name the chain explicitly, e.g. REL ENUM <child> "
+                               "[<child> ...] TUPLE <expr>.";
+                        out.warnings.push_back(msg);
+                        return false;
+                    }
+                }
+
+                out.warnings.push_back(
+                    "REL ENUM: the relation enumerator refused this traversal. "
+                    "No further cause is determinable here -- check that the "
+                    "parent area is selected, that each named child is open, and "
+                    "that a relation exists for every hop (REL LIST ALL).");
                 return false;
             }
 
