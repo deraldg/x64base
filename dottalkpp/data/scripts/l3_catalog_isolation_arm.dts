@@ -1,0 +1,172 @@
+&& ===========================================================================
+&& L3 CATALOG ISOLATION ARM -- AIF-078 multi-workspace lifecycle, plan sec 5
+&&
+&& Status:  ARM / CANDIDATE. Not yet registered in cmd_regression.cpp.
+&& Safety:  PRODUCTION IS READ, NEVER WRITTEN. Every mint below lands in a
+&&          scratch catalog under data/tmp. Production is opened read-only
+&&          through the DBF slot and closed.
+&& Lane:    AIF-078 lifecycle. Prior: l0probe.dts (the lever), l1verify.dts
+&&          (arms in opposite directions), workspace_purge_regression.dts
+&&          (the marker discipline this arm inherits).
+&&
+&& WHAT THIS ARM IS FOR
+&& Plan condition 2: "REGRESSION ALL leaves PRODUCTION unchanged." Today the
+&& suite mints ~10 catalog rows per run into production. This arm is the
+&& instrument that will say so BY FIELD VALUE, so that when L2's bracket
+&& lands, "isolation works" is measured rather than believed.
+&&
+&& THE INSTRUMENT IS THE HIGH-WATER WS_ID, NOT A ROW COUNT.
+&& Three reasons, all measured elsewhere, none guessed:
+&&   1. RECCOUNT(), RECNO() and FOUND() render EMPTY in a '?' marker and STR()
+&&      does not rescue them (USE_AGAIN, cited at workspace_purge_regression
+&&      .dts:113-117). A marker that errors PRINTS NOTHING rather than going
+&&      red, so a count-based guard would VANISH from the suite while the
+&&      catalog still filled. Field comparison only.
+&&   2. A mint always raises the high-water WS_ID. That is precisely the event
+&&      L2 exists to contain.
+&&   3. Deletes do NOT lower it -- PG_T1 proves the purge left the high-water
+&&      mark alone. So this instrument answers "did anything MINT here", which
+&&      is the question, and is not confused by retirement.
+&&
+&& A GREEN ARM THAT HAS NEVER FAILED PROVES THE SUITE RAN, NOT THAT ISOLATION
+&& WORKS. So the arm proves its own detector first, in disposable space:
+&& D1 mints twice into scratch and asserts the detector SEES the second mint.
+&& If D1 is green and G1 is green, G1 means something. If D1 is missing or
+&& false, ignore G1 entirely -- a blind detector reports peace.
+&&
+&& WHAT THIS ARM CANNOT DO, AND WHY THAT IS THE POINT
+&& It cannot verify its own restore. After SETPATH WORKSPACES is put back, no
+&& expression available to a script can read the WORKSPACES slot and compare
+&& it. Reading the catalog through 'SET PATH DBF workspaces' is DATA-relative
+&& and therefore pinned to production whatever the WORKSPACES slot says -- the
+&& exact write-here / read-there split the plan names in sec 4. So a script
+&& cannot say "the catalog, wherever it currently is", and cannot confirm it
+&& put the lever back. That is an argument FOR sec 4(a), made by a script that
+&& hits the wall.
+&&
+&& KNOWN LIMIT: the scratch root is a fixed absolute path, as in l0probe and
+&& l1verify. Two sessions running this at once would share it. The plan's
+&& per-run scratch root belongs in L2's C++ bracket, not here.
+&&
+&& HOW TO RUN
+&&   $env:X64BASE_ALLOW_DATA = "1"
+&&   .\datarun.ps1
+&&   Standalone:  DOTSCRIPT scripts/l3_catalog_isolation_arm.dts
+&&   Capture:     SET ALTERNATE TO <file> / SET ALTERNATE ON
+&&
+&& PASS CONDITION IS NOT "IT RAN". Six markers must PRINT and all six be .T.
+&& A marker that errors prints nothing, so a MISSING marker is a failure even
+&& though the run stayed green. Count them.
+&& ===========================================================================
+&& RUNTIME STATUS: GREEN 2026-08-28. 6/6 markers printed, all .T.
+&& Ran against build b30f27aa (dottalkpp v0.6).
+&&
+&&   L3_L0_arm_started                        .T.
+&&   L3_L1_production_catalog_readable        .T.
+&&   L3_D0_scratch_catalog_minted             .T.   scratch WS_ID 1
+&&   L3_D1_detector_sees_a_mint               .T.   scratch WS_ID 2 > 1
+&&   L3_G1_production_high_water_unchanged    .T.
+&&   L3_G2_production_bottom_row_is_the_same  .T.
+&&
+&& TWO READINGS MATTER MORE THAN THE PASS.
+&&
+&& 1. PRODUCTION IS STILL AT 252 RECORDS -- exactly the post-L1 baseline of
+&&    2026-08-27. No REGRESSION ALL has run since L1. So G1's green today is
+&&    cheap: production has not been touched because the suite has not run.
+&&    The arm is NOT yet evidence that isolation works. It is evidence that
+&&    the instrument works and that the baseline is intact. Those are
+&&    different claims and only D1 currently earns its keep.
+&&
+&& 2. SETPATH PRINTED "warning: path does not exist" FOR A CORRECT REDIRECT.
+&&    The scratch root did not exist; SETPATH accepted it non-blockingly and
+&&    warned; WORKSPACE NEW then SUCCEEDED because ensure_catalog() calls
+&&    fs::create_directories(catalog_dir()) (cmd_workspace.cpp). So the
+&&    directory was created moments later by a different function, and the
+&&    warning described a condition that was about to stop being true.
+&&
+&&    That is the same message the plan's L0 probe got for a MISTYPED path,
+&&    where the session really did run redirected at a garbage directory. One
+&&    message for "you made a typo" and for "this is a fresh scratch root and
+&&    is fine" -- a warning that cannot separate a mistake from correct usage.
+&&    AIF-118's shape, in the lifecycle lever itself. Recorded, not fixed.
+&& ===========================================================================
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+&& G1 AND G2 ARE TWO INDEPENDENT FIELDS, NOT ONE CLAIM TWICE. A first draft
+&& had G2 as ($prod_hw_after < $prod_hw_before + 1), which cannot disagree with
+&& G1 given that the high-water mark never falls -- two markers answering one
+&& question, which is the defect this project keeps finding elsewhere. G2 now
+&& compares the bottom row's WS_NAME, so a mint that somehow reused an ID
+&& would still move it.
+
+&& L0 -- liveness. If this line is absent, nothing below executed.
+? "L3_L0_arm_started:" + (1 = 1)
+
+&& ---------------------------------------------------------------------------
+&& PRODUCTION BEFORE -- read only, through the DBF slot.
+&& ---------------------------------------------------------------------------
+SET DELETED OFF
+SET PATH DBF workspaces
+USE WORKSPACES
+GO BOTTOM
+VAR prod_hw_before = WS_ID
+VAR prod_name_before = ALLTRIM(WS_NAME)
+? "L3_L1_production_catalog_readable:" + ($prod_hw_before > 0)
+CLOSE
+
+&& ---------------------------------------------------------------------------
+&& DETECTOR PROOF -- both mints land in scratch. Production is not open.
+&& ---------------------------------------------------------------------------
+SETPATH WORKSPACES D:\code\ccode\dottalkpp\data\tmp\wscat_l3
+
+WORKSPACE NEW L3DET1
+USE D:\code\ccode\dottalkpp\data\tmp\wscat_l3\WORKSPACES.dbf
+GO BOTTOM
+VAR scr_hw_1 = WS_ID
+? "L3_D0_scratch_catalog_minted:" + ($scr_hw_1 > 0)
+CLOSE
+
+WORKSPACE NEW L3DET2
+USE D:\code\ccode\dottalkpp\data\tmp\wscat_l3\WORKSPACES.dbf
+GO BOTTOM
+VAR scr_hw_2 = WS_ID
+? "L3_D1_detector_sees_a_mint:" + ($scr_hw_2 > $scr_hw_1)
+CLOSE
+
+&& ---------------------------------------------------------------------------
+&& RESTORE FIRST, ASSERT SECOND. The restore is unconditional and comes before
+&& any further measurement, so a failure below cannot leave the lever moved.
+&& ---------------------------------------------------------------------------
+SETPATH WORKSPACES D:\code\ccode\dottalkpp\data\workspaces
+
+&& ---------------------------------------------------------------------------
+&& PRODUCTION AFTER -- the claim.
+&& ---------------------------------------------------------------------------
+SET PATH DBF workspaces
+USE WORKSPACES
+GO BOTTOM
+VAR prod_hw_after = WS_ID
+? "L3_G1_production_high_water_unchanged:" + ($prod_hw_after = $prod_hw_before)
+? "L3_G2_production_bottom_row_is_the_same_row:" + (ALLTRIM(WS_NAME) = $prod_name_before)
+CLOSE
+SET DELETED ON
+
+&& ---------------------------------------------------------------------------
+&& HOW TO SEE THIS ARM GO RED, which is the only way to trust it green:
+&&
+&&   1. Run this arm.                          G1, G2 expected .T.
+&&   2. At the prompt, WORKSPACE NEW REDPROOF  (mints into PRODUCTION)
+&&   3. Run this arm again.                    G1, G2 must go .F.
+&&   4. WORKSPACE DESTROY REDPROOF then
+&&      WORKSPACE DELETE REDPROOF              retires the row; the high-water
+&&                                             mark stays raised BY DESIGN
+&&                                             (PG_T1), so step 1's baseline
+&&                                             does not come back. That is the
+&&                                             instrument behaving correctly,
+&&                                             not a leak.
+&&
+&& Step 2 WRITES ONE ROW TO THE PRODUCTION CATALOG and is therefore NOT part
+&& of this script. It needs an explicit go, exactly like L1 did.
+&& ---------------------------------------------------------------------------
