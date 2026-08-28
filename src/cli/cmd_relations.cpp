@@ -423,8 +423,11 @@ static void note_result_may_be_incomplete(const char* verb, std::size_t rows)
     os << verb << ": scan limit (" << relations_api::scan_limit()
        << ") was reached during this traversal -- " << rows
        << " row(s) shown, and any match beyond the limit was NOT considered. "
-          "A missed match is indistinguishable from an absent one here. "
-          "Raise it with REL SCANLIMIT <n> and re-run to compare.";
+          "That limit is the relation engine's PER-HOP record budget, so a hop "
+          "that exceeded it contributed FEWER MATCHES to the join; it is not a "
+          "display cap (for that, see ERSATZ LIMIT). A missed match is "
+          "indistinguishable from an absent one here. Raise it with "
+          "REL SCANLIMIT <n> and re-run to compare.";
     cli::cmdout::print_line(os.str());
 }
 

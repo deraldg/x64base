@@ -66,7 +66,8 @@ static void rel_usage() {
         << "  REL ADD <parent> <child> ON <field>[,<field>...]      # same-field relation\n"
         << "  REL ADD <parent> <child> ON <parent_field> TO <child_field>  # asymmetric relation\n"
         << "  REL CLEAR <parent>|ALL                   # alias of SET RELATIONS CLEAR\n"
-        << "  REL SCANLIMIT [<n>]                      # report or set the relation scan limit\n";
+        << "  REL SCANLIMIT [<n>]                      # records scanned PER HOP -- caps what is FOUND\n"
+        << "                                           # (for a shorter SCREEN, use ERSATZ LIMIT)\n";
 }
 
 static std::string up(std::string s) { return textio::up(std::move(s)); }
@@ -144,7 +145,12 @@ void cmd_REL(xbase::DbArea& area, std::istringstream& in) {
         // OQ-1). No argument reports; a positive integer sets.
         std::string nTok;
         if (!(in >> nTok)) {
-            std::cout << "REL: scan limit is " << relations_api::scan_limit() << ".\n";
+            std::cout
+                << "REL: scan limit is " << relations_api::scan_limit()
+                << " record(s) per relation hop.\n"
+                << "REL: this caps what the relation engine FINDS, not what is displayed --\n"
+                << "REL: lowering it changes match counts and drops join rows. For a shorter\n"
+                << "REL: screen without changing answers, use ERSATZ LIMIT <n>.\n";
             return;
         }
         char* end = nullptr;
@@ -154,7 +160,9 @@ void cmd_REL(xbase::DbArea& area, std::istringstream& in) {
             return;
         }
         relations_api::set_scan_limit(static_cast<std::size_t>(v));
-        std::cout << "REL: scan limit set to " << relations_api::scan_limit() << ".\n";
+        std::cout
+            << "REL: scan limit set to " << relations_api::scan_limit()
+            << " record(s) per relation hop -- this changes ANSWERS, not just display.\n";
         return;
     }
 
