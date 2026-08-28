@@ -166,6 +166,29 @@ list, every candidate printed with what it resolved to.
 The header ladder (`include/user_scope_paths.hpp:135-168`, `resolve_in_roots`)
 has the same three pre-rungs with the same ordering.
 
+**RUNTIME-CONFIRMED 2026-08-28, both halves, by an accidental typo at the
+prompt.** `do i_dont_exist.dts` printed:
+
+    DOTSCRIPT: script not found.
+      - i_dont_exist.dts         -> ...\dottalkpp\data\i_dont_exist.dts
+      - scripts\i_dont_exist.dts -> ...\dottalkpp\data\scripts\i_dont_exist.dts
+      - tests\i_dont_exist.dts   -> ...\dottalkpp\data\tests\i_dont_exist.dts
+
+Two things, and the second is the one that matters.
+
+**The attempts trail is real.** Three candidates, each printed with what it
+resolved to. The honest alternative this section holds up against line 103's
+one-path silence is not a proposal -- it ships, and a reader can see exactly
+where the engine looked.
+
+**And there is no user rung in it.** `script_search_roots()` puts
+`cur -> pub -> def` ahead of the slot on ladders 1 and 2, and NONE of the three
+appears among the candidates. Every path in the trail is DATA-relative. So the
+dead-ladder finding of sec 3 is not confined to workspaces: **the script side
+resolves without user levels too**, and it does so in the command a user is
+most likely to typo, where the absence is printed in full and still passes
+unremarked.
+
 ## 5. THE TIMED HAZARD -- WHY THIS IS AIF-144's PROBLEM
 
 `include/user_scope_paths.hpp:34`:
