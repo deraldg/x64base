@@ -44,9 +44,12 @@
 && put the lever back. That is an argument FOR sec 4(a), made by a script that
 && hits the wall.
 &&
-&& KNOWN LIMIT: the scratch root is a fixed absolute path, as in l0probe and
-&& l1verify. Two sessions running this at once would share it. The plan's
-&& per-run scratch root belongs in L2's C++ bracket, not here.
+&& KNOWN LIMIT: the scratch root is a FIXED name under the TMP slot -- as of
+&& 2026-08-28 it is spelled &_TMP\wscat_l3 rather than an absolute path, so it
+&& follows the slot, but two sessions running this at once would still share
+&& it. The plan's per-run scratch root belongs in L2's C++ bracket, not here;
+&& this arm should adopt it when it is wired INTO the suite rather than run
+&& around it.
 &&
 && HOW TO RUN
 &&   $env:X64BASE_ALLOW_DATA = "1"
@@ -244,6 +247,59 @@
 && They are the evidence of what each bracketed spec minted and they live under
 && the gitignored TMP slot. A sweep is a follow-up, deliberately not done here.
 && ===========================================================================
+&&
+&& ===========================================================================
+&& AMENDMENT 2026-08-28 (THIRD): SET VAR CANNOT STORE A MACRO'S VALUE, AND THE
+&& C++ BACKSTOP EARNED ITS KEEP ON ITS FIRST RUN.
+&&
+&& When this arm was wired INTO REGRESSION ALL its four hardcoded D:\code\ccode
+&& paths were replaced. Three worked. The fourth did not, and the transcript
+&& said so in one line:
+&&
+&&   SETPATH: WORKSPACES = D:\code\ccode\dottalkpp\data\&_WORKSPACES
+&&   warning: path does not exist
+&&
+&& The attempted spelling was 'SET VAR l3prod = &_WORKSPACES' at the top and
+&& 'SETPATH WORKSPACES &l3prod' at the bottom. &l3prod EXPANDED correctly -- to
+&& the literal text '&_WORKSPACES', because that is what had been STORED.
+&&
+&& THE CAUSE IS DISPATCH ORDER AND IT IS MEASURED, NOT SUPPOSED
+&& (shell_api.cpp):
+&&
+&&   :329   try_handle_var_command(area, prepared)   <- VAR/SET VAR handled HERE
+&&   :336   expand_macros_outside_quotes(prepared)   <- macros expanded HERE
+&&
+&& The VAR handler is given the RAW line and returns before the expander ever
+&& runs. So the one command whose entire job is to STORE A VALUE is the one
+&& command that cannot store a COMPUTED one: 'SET VAR x = &y' keeps the macro
+&& TEXT. Every other command on the line gets the expansion; this one is ahead
+&& of it. There is no comment at either site saying this is intended, and it
+&& FAILS SILENTLY -- the assignment succeeds, and the surprise surfaces later
+&& and elsewhere, wherever the text is finally used. Recorded, not fixed:
+&& changing that order would change how every VAR line in the corpus parses.
+&&
+&& AND IT PRODUCED THE THIRD WORLD FOR SETPATH'S ONE WARNING, exactly as the
+&& lifecycle plan sec 4 predicted before it had been seen: 'a genuine typo, a
+&& fresh scratch root ensure_catalog() is about to create, and an unresolved
+&& variable'. This is the third. One message, three conditions, one of them a
+&& correct usage -- AIF-118's shape, now with a measured instance for each arm.
+&&
+&& WHAT SAVED THE SUITE: the arm left the WORKSPACES slot pointing at a
+&& directory that does not exist, and the very next line of the transcript is
+&&
+&&   REGRESSION: catalog restored to D:\code\ccode\dottalkpp\data\workspaces
+&&
+&& -- the WorkspacesSlotGuard the wiring commit put around this arm, doing on
+&& its FIRST RUN precisely the job it was written for: a script that fails
+&& between its redirect and its restore must not hand the rest of the suite a
+&& moved catalog slot. It was written as a hedge against a hypothetical and was
+&& cashed by the change that introduced it.
+&&
+&& THE MEASUREMENT ITSELF WAS NEVER IN DOUBT, and this is worth stating rather
+&& than implying: L1 and G1 read production through 'SET PATH DBF workspaces',
+&& which is DATA-relative and does not consult the WORKSPACES slot at all. Both
+&& passes read 262. The broken line moved a LEVER, not a MEASUREMENT.
+&& ===========================================================================
 && ===========================================================================
 
 SET ECHO OFF
@@ -274,7 +330,7 @@ CLOSE
 && ---------------------------------------------------------------------------
 && DETECTOR PROOF -- both mints land in scratch. Production is not open.
 && ---------------------------------------------------------------------------
-SETPATH WORKSPACES D:\code\ccode\dottalkpp\data\tmp\wscat_l3
+SETPATH WORKSPACES &_TMP\wscat_l3
 
 && FIXTURE PRE-CLEAN -- see AMENDMENT (SECOND). The redirect above is already
 && in force, so nothing below can reach production. DESTROY comes BEFORE
@@ -282,10 +338,10 @@ SETPATH WORKSPACES D:\code\ccode\dottalkpp\data\tmp\wscat_l3
 && lines print "no such workspace" and change nothing.
 WORKSPACE DESTROY L3DET2
 WORKSPACE DESTROY L3DET1
-ERASE DIR D:\code\ccode\dottalkpp\data\tmp\wscat_l3 CONFIRM
+ERASE DIR &_TMP\wscat_l3 CONFIRM
 
 WORKSPACE NEW L3DET1
-USE D:\code\ccode\dottalkpp\data\tmp\wscat_l3\WORKSPACES.dbf
+USE &_TMP\wscat_l3\WORKSPACES.dbf
 GO BOTTOM
 VAR scr_hw_1 = WS_ID
 && = 1 EXACTLY, not > 0. A fresh catalog's first mint is 1, and an ADOPTED id
@@ -296,7 +352,7 @@ VAR scr_hw_1 = WS_ID
 CLOSE
 
 WORKSPACE NEW L3DET2
-USE D:\code\ccode\dottalkpp\data\tmp\wscat_l3\WORKSPACES.dbf
+USE &_TMP\wscat_l3\WORKSPACES.dbf
 GO BOTTOM
 VAR scr_hw_2 = WS_ID
 ? "L3_D1_detector_sees_a_mint:" + ($scr_hw_2 > $scr_hw_1)
@@ -314,7 +370,18 @@ WORKSPACE DESTROY L3DET1
 && RESTORE FIRST, ASSERT SECOND. The restore is unconditional and comes before
 && any further measurement, so a failure below cannot leave the lever moved.
 && ---------------------------------------------------------------------------
-SETPATH WORKSPACES D:\code\ccode\dottalkpp\data\workspaces
+&& RESTORE TO THE SAME PLACE THE READ SIDE NAMES. Both halves of this arm now
+&& resolve production through the DATA root: the reads use the pinned
+&& DATA-relative 'SET PATH DBF workspaces' and this puts the WORKSPACES slot
+&& back to the same directory, so read and restore AGREE BY CONSTRUCTION rather
+&& than by two people keeping one path in their heads.
+&&
+&& A capture-and-restore was tried first and was WRONG TWICE. It did not work
+&& (see AMENDMENT THIRD), and even had it worked it would have restored
+&& "wherever the slot pointed on entry", which is not necessarily the catalog
+&& this arm just MEASURED -- two authorities for one location, in the file
+&& whose whole subject is which catalog got written.
+SETPATH WORKSPACES &_DATA\workspaces
 
 && ---------------------------------------------------------------------------
 && PRODUCTION AFTER -- the claim.

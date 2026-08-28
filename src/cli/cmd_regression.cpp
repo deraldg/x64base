@@ -611,11 +611,16 @@ static std::string normalize_script_separators(const std::string& raw)
     return out;
 }
 
-std::filesystem::path resolve_regression_script_path(const RegressionSpec& spec)
+// Resolves a script TOKEN, not a spec. Split out 2026-08-28 so the L3
+// isolation arm -- which is deliberately NOT a registered spec -- resolves
+// through the same SCRIPTS-slot path every spec does. A second resolver for
+// the arm would be a second answer to "where do scripts live", which is the
+// shape this lane keeps finding.
+std::filesystem::path resolve_script_token(const std::string& token)
 {
     namespace fs = std::filesystem;
 
-    const std::string script = normalize_script_separators(spec.script);
+    const std::string script = normalize_script_separators(token);
     const fs::path raw(script);
     if (raw.is_absolute()) return raw.lexically_normal();
 
@@ -632,6 +637,11 @@ std::filesystem::path resolve_regression_script_path(const RegressionSpec& spec)
     }
 
     return shell_resolve_script_path(script);
+}
+
+std::filesystem::path resolve_regression_script_path(const RegressionSpec& spec)
+{
+    return resolve_script_token(spec.script);
 }
 
 void print_regression_usage()
@@ -759,9 +769,16 @@ void print_regression_find(const std::string& terms_raw)
 // THE SCRATCH ROOT IS PER RUN, NOT PER SESSION. l0probe and l1verify both use
 // a fixed directory and say so; that is fine for a probe run by hand and wrong
 // for a suite, because two sessions running REGRESSION ALL at once would share
-// one catalog and mint into each other. The name carries the process id and a
-// monotonic counter, so concurrent sessions cannot collide and successive
-// specs in one run cannot inherit each other's rows.
+// one catalog and mint into each other. Each bracket CLAIMS its own directory,
+// so concurrent sessions cannot collide and successive specs in one run cannot
+// inherit each other's rows.
+//
+// CORRECTED 2026-08-28: this paragraph used to end "the name carries the
+// process id and a monotonic counter". It never did -- that was the first
+// cut's ::_getpid() spelling, withdrawn before the commit for the reason the
+// next block gives, and the sentence survived the code it described. Two
+// statements of one mechanism, one of them false, three paragraphs apart in a
+// single comment: AIF-143's shape, in prose rather than in declarations.
 //
 // ensure_catalog() calls fs::create_directories(catalog_dir()), so the root
 // does not have to exist first -- measured 2026-08-28. SETPATH will still warn
@@ -813,33 +830,60 @@ static std::filesystem::path claim_scratch_root()
     return base / "wscat_run_overflow";
 }
 
+// ONE PLACE KNOWS HOW TO PUT THE SLOT BACK. Two things now move the WORKSPACES
+// slot inside a suite run -- the per-spec bracket below, and the L3 arm, which
+// moves it in DotScript. Both need the same unconditional restore, and two
+// copies of a restore is how one of them drifts. So the restore lives here and
+// is composed into the bracket rather than duplicated beside it.
+//
+// The saved value is captured in the MEMBER INITIALISER, before anything in
+// any owner's constructor body can move the slot, and the destructor takes no
+// condition: restoring a slot that never moved is a no-op, while skipping a
+// restore that was needed is the defect. The message text is unchanged from
+// the L2 commit on purpose -- transcripts and the AIF-078 record cite it.
+class WorkspacesSlotGuard {
+public:
+    WorkspacesSlotGuard()
+        : saved_(dottalk::paths::get_slot(dottalk::paths::Slot::WORKSPACES))
+    {
+    }
+
+    ~WorkspacesSlotGuard()
+    {
+        dottalk::paths::set_slot(dottalk::paths::Slot::WORKSPACES, saved_);
+        std::cout << "REGRESSION: catalog restored to " << saved_.string() << "\n";
+    }
+
+    const std::filesystem::path& saved() const { return saved_; }
+
+    WorkspacesSlotGuard(const WorkspacesSlotGuard&) = delete;
+    WorkspacesSlotGuard& operator=(const WorkspacesSlotGuard&) = delete;
+
+private:
+    std::filesystem::path saved_;
+};
+
 class CatalogBracket {
 public:
     explicit CatalogBracket(const std::string& spec_name)
-        : saved_(dottalk::paths::get_slot(dottalk::paths::Slot::WORKSPACES))
     {
         const std::filesystem::path scratch = claim_scratch_root();
         dottalk::paths::set_slot(dottalk::paths::Slot::WORKSPACES, scratch);
-        armed_ = true;
 
         std::cout << "REGRESSION: catalog BRACKETED for " << spec_name << "\n"
-                  << "  production catalog : " << saved_.string() << "  (untouched)\n"
+                  << "  production catalog : " << guard_.saved().string()
+                  << "  (untouched)\n"
                   << "  scratch catalog    : " << scratch.string() << "\n";
-    }
-
-    ~CatalogBracket()
-    {
-        if (!armed_) return;
-        dottalk::paths::set_slot(dottalk::paths::Slot::WORKSPACES, saved_);
-        std::cout << "REGRESSION: catalog restored to " << saved_.string() << "\n";
     }
 
     CatalogBracket(const CatalogBracket&) = delete;
     CatalogBracket& operator=(const CatalogBracket&) = delete;
 
 private:
-    std::filesystem::path saved_;
-    bool armed_ = false;
+    // Declared FIRST so it is constructed FIRST: it must read the production
+    // root before the constructor body redirects the slot, and it must be
+    // destroyed LAST.
+    WorkspacesSlotGuard guard_;
 };
 
 void run_regression_script(DbArea& area, const RegressionSpec& spec)
@@ -867,12 +911,91 @@ void run_regression_script(DbArea& area, const RegressionSpec& spec)
     cmd_DOTSCRIPT(area, dotscript_args);
 }
 
+// ---------------------------------------------------------------------------
+// AIF-078 L3 -- THE ISOLATION ARM, WIRED AROUND THE SUITE INSTEAD OF AROUND
+// ITSELF.
+//
+// The arm has existed and been red-capable since 785eb9a5c, and as a .dts it
+// could only bracket its OWN execution: run it and it measures the two seconds
+// it was running for. The measurement condition 2 actually asks for is around
+// the SUITE, and the only place that can be taken is here.
+//
+// THE ARM IS THE AUTHORITY AND THIS CODE IS NOT. The obvious alternative was
+// to read the catalog high-water in C++ before and after the loop and compare
+// two numbers. That would be a SECOND declaration of a measurement the arm
+// already owns, in a different language, free to drift from it -- and the arm's
+// instrument is not naive: it is the high-water WS_ID rather than a row count,
+// because RECCOUNT()/RECNO()/FOUND() render EMPTY in a marker, and it proves
+// its own detector in scratch before it reports on production. So this runs the
+// arm and stays out of the way. It prints no number of its own.
+//
+// IT IS DELIBERATELY NOT A REGISTERED SPEC. Registered, it would run inside the
+// loop like any other spec, bracket only itself, and pass trivially while
+// measuring nothing -- the exact false green the plan warned about.
+//
+// A MISSING ARM IS REPORTED, LOUDLY. If the script is not on disk this says the
+// run is UNMEASURED rather than saying nothing. "Nothing went wrong" and
+// "nothing was checked" must never print the same way (AIF-118), and an absent
+// instrument is the cheapest way to get a suite that reports peace forever.
+//
+// THE AFTER PASS IS NOT RAII, and that is a choice rather than an oversight.
+// If a spec throws, the suite unwinds and no AFTER pass runs -- so an aborted
+// suite yields NO isolation verdict instead of a verdict taken mid-unwind.
+// Running a DotScript from a destructor during stack unwinding is how a second
+// throw becomes std::terminate, and a measurement is not worth that.
+static const char* const kIsolationArmScript = "l3_catalog_isolation_arm.dts";
+
+void run_isolation_arm(DbArea& area, const char* phase)
+{
+    namespace fs = std::filesystem;
+
+    const fs::path resolved = resolve_script_token(kIsolationArmScript);
+
+    std::cout << "\nREGRESSION: L3 CATALOG ISOLATION ARM -- " << phase
+              << " the suite\n"
+              << "  Script  : " << kIsolationArmScript << "\n"
+              << "  Resolved: " << resolved.string() << "\n";
+
+    std::error_code ec;
+    if (!fs::exists(resolved, ec) || ec) {
+        std::cout << "  NOT RUN -- the arm is not on disk at that path.\n"
+                     "  THIS IS NOT A PASS. Catalog isolation is UNMEASURED for\n"
+                     "  this run. A missing instrument and a green one must not\n"
+                     "  read alike.\n";
+        return;
+    }
+
+    std::cout << "  READ RULE: six markers must PRINT and all six read .T.\n"
+                 "  An errored marker prints NOTHING rather than going red, so\n"
+                 "  COUNT them. If L3_D1 is .F. the detector is blind and L3_G1\n"
+                 "  means nothing -- never credit G1 without D1.\n";
+
+    // The arm moves the WORKSPACES slot itself, in DotScript, and puts it back
+    // by hand. This guard is the backstop: a script that aborts between its
+    // redirect and its restore would otherwise hand the REST OF THE SUITE a
+    // moved catalog slot, which is the failure L2 exists to prevent, arriving
+    // through the instrument built to detect it.
+    WorkspacesSlotGuard guard;
+
+    std::ostringstream dotscript_line;
+    dotscript_line << '"' << resolved.string() << '"';
+    std::istringstream dotscript_args(dotscript_line.str());
+    cmd_DOTSCRIPT(area, dotscript_args);
+}
+
 void run_regression_default_suite(DbArea& area)
 {
+    // Plan condition 2: "REGRESSION ALL leaves PRODUCTION unchanged." The arm
+    // reads production's high-water before and after everything below, and the
+    // BEFORE pass is also what proves the detector is alive on this build.
+    run_isolation_arm(area, "BEFORE");
+
     for (const auto& spec : kRegressionSpecs) {
         if (!spec.in_default_suite) continue;
         run_regression_script(area, spec);
     }
+
+    run_isolation_arm(area, "AFTER");
 }
 
 } // namespace
