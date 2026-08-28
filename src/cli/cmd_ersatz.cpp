@@ -120,6 +120,7 @@
 #include "cli/command_output.hpp"
 #include "colors.hpp"
 #include "common/path_state.hpp"
+#include "common/path_resolver.hpp"
 #include "db_tuple_stream.hpp"
 #include "help/helpdata_messages.hpp"
 #include "cli/order_state.hpp"
@@ -603,28 +604,39 @@ namespace
         return fallback_in_current_user_root(target, current_user_workspaces_root(), ".erz");
     }
 
+    // AIF-145 R-a, owner ruling 2026-08-28: ladder 2 is the resolver. This was
+    // ladder 3 -- a private copy of the same search, reachable only from ERSATZ.
+    //
+    // The two are equivalent TODAY and not equivalent FOREVER, which is the
+    // whole reason for the switch:
+    //
+    //   roots     both walk current-user, public, default, then the WORKSPACES
+    //             slot. Ladder 2 reads paths::State (s.cur_workspaces_root);
+    //             this copy recomputed app_root()/user/<profile>/workspaces.
+    //             Same directories.
+    //   profile   ladder 2 uses s.current_user, which paths::set_current_user()
+    //             can change. THIS copy called current_profile_name(), which
+    //             returns the literal "default" and cannot be changed at all.
+    //   today     s.current_user is "default" -- its default value, and
+    //             set_current_user() has NO CALLERS anywhere in the tree -- so
+    //             both spellings resolve to the same files right now and this
+    //             switch is INERT.
+    //   later     when identity is wired (AIF-144), ladder 2 follows the acting
+    //             user automatically. The deleted copy never would have, and
+    //             would have had to be found and patched separately. That is
+    //             what consolidating buys.
+    //
+    // Fallback is preserved exactly: this returned
+    // fallback_in_current_user_root(..., current_user_workspaces_root()), and
+    // ladder 2 falls back to roots.front(), which IS the current-user root
+    // because workspace_search_roots() is {cur, pub, def, slot}.
+    //
+    // The empty-name default and the extension-outer-loop that this function
+    // owned were moved into paths::resolve_workspace() first, in the preceding
+    // commit, precisely so this one could be a redirect and nothing else.
     static fs::path resolve_workspace_target(const std::string& target_in)
     {
-        const std::string target = trim(target_in).empty() ? "default" : trim(target_in);
-        fs::path direct(target);
-
-        if (direct.has_extension())
-        {
-            fs::path found = resolve_in_roots(target, workspace_search_roots(), "");
-            if (!found.empty())
-                return found;
-
-            return fallback_in_current_user_root(target, current_user_workspaces_root(), "");
-        }
-
-        for (const std::string ext : {std::string(".dtschema"), std::string(".dtschemas")})
-        {
-            fs::path found = resolve_in_roots(target, workspace_search_roots(), ext);
-            if (!found.empty())
-                return found;
-        }
-
-        return fallback_in_current_user_root(target, current_user_workspaces_root(), ".dtschema");
+        return dottalk::paths::resolve_workspace(target_in);
     }
 
     static fs::path resolve_script_target(const std::string& target_in)
