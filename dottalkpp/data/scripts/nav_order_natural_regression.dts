@@ -1,0 +1,224 @@
+* ============================================================================
+* NAV ORDER NATURAL REGRESSION v1
+*
+* AIF-148. An ATTACHED CONTAINER IS NOT AN ACTIVE ORDER.
+*
+* orderstate::hasOrder() returns `st && !st->container.empty()` -- it answers
+* "is a container attached". Six sites on the traversal path read it as "is an
+* order active". WORKSPACE OPEN attaches a .cdx and selects NO TAG, so the
+* predicate said true for a table sitting in natural order, and every verb
+* that trusted it went looking for a tag, found none, and returned failure.
+*
+* MEASURED 2026-08-29 on MCC STUDENTS (200 rows, CDX attached, no tag):
+*   TOP / BOTTOM / GO TOP / GO BOTTOM / GO FIRST / GO LAST -> "failed."
+*   SKIP  -> "SKIP: at end."  on record 1, cursor did not move
+*   GO 5  -> Recno: 5
+* GO <n> survived because R121 already ruled addressing absolute and traversal
+* filtered. SKIP is the severity: the other six REFUSED, which is a wrong
+* answer you can see. SKIP ANSWERED.
+*
+* WHY SIXTY REGISTERED SPECS SAID NOTHING, measured 2026-08-29:
+*   (a) 345 markers across the tracked corpus and NOT ONE mentions RECNO --
+*       and that is not laziness, it is a language limit this house has
+*       already recorded four times (cnx_persist_proof, cnx_realtime_*,
+*       index_maintenance_failure_proof): RECNO() RENDERS EMPTY IN A "?"
+*       MARKER, and STR() does not rescue it. So no arm in the tree can say
+*       "the cursor is at 1".
+*   (b) Every navigation line in the corpus is followed by a marker that
+*       reads a FIELD, and USE/SELECT/CREATE have already parked the cursor
+*       on record 1, so a failed TOP and a working TOP read identically.
+*       workspace_load_shortfall.dts:149 is the shape exactly:
+*           USE STUDENTS / TOP / ? "L_T4...:" + (SID >= 1)
+*       -- green from record 1 and green from record 400.
+*   (c) STOP_ON_ERROR is opt-in, so "TOP: failed." prints above green markers
+*       and the run continues.
+*
+* SO EVERY ARM HERE PARKS THE CURSOR SOMEWHERE ELSE FIRST and asserts by
+* FIELD VALUE, never by RECNO() and never by console text. An arm that reads
+* row 1 on a table already standing on row 1 cannot fail, which is the whole
+* reason this defect lived.
+*
+* THE FIXTURE SORTS BACKWARDS ON PURPOSE. ID descends as the physical order
+* ascends, so natural order and tag order name DIFFERENT rows. Without that a
+* fix that forced everything to natural would read green here, and forcing
+* natural is as wrong as refusing.
+*
+*   physical 1 2 3 4 5 6   ->  MARK ROW1 ROW2 ROW3 ROW4 ROW5 ROW6
+*   ID       60 50 40 30 20 10
+*   natural TOP -> ROW1        tag(ID asc) TOP -> ROW6
+*
+* SMARTLIST, not LIST, for every transcript dump (owner, 2026-08-29: "list is
+* my tool, use smartlist for tests").
+*
+* AND SMARTLIST MOVES THE CURSOR -- its own header says so, "mutates: cursor",
+* where LIST restores best-effort. So a dump is never allowed to sit between a
+* park and its assertion; both dumps here are followed by an explicit GO <n>.
+* This is the same trap as (b) above wearing different clothes: a spec that
+* listed a table and then asserted on "where the cursor is" would be reading
+* the listing, not the verb.
+*
+* Self-bootstrapping in SANDBOX, self-erasing. Mints no catalog rows: the
+* attached-no-tag state is reached with SET INDEX TO (cmd_setindex.cpp:237-239
+* sets the container and then setActiveTag(A, "")), which is the same state
+* WORKSPACE OPEN produces via attach_workspace_index (cmd_workspace.cpp:1123-
+* 1130) without needing a workspace to produce it.
+*
+*   Standalone:  DO nav_order_natural_regression
+*   Regression:  REGRESSION RUN NAV_NATURAL
+* ============================================================================
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+ECHO ============================================================
+ECHO NAV ORDER NATURAL REGRESSION v1
+ECHO ============================================================
+
+SET PATH DBF DBF/SANDBOX
+SET PATH INDEXES INDEXES/SANDBOX
+SET PATH LMDB LMDB/SANDBOX
+WORKSPACE CLOSE
+ERASE navtag CONFIRM
+
+FORMULA "NAV-NATURAL-PROOF-BEGIN"
+
+* --- the fixture -------------------------------------------------------------
+SELECT 0
+CREATE X64 NAVTAG (ID N(4), MARK C(10))
+APPEND
+REPLACE ID WITH 60
+REPLACE MARK WITH "ROW1"
+APPEND
+REPLACE ID WITH 50
+REPLACE MARK WITH "ROW2"
+APPEND
+REPLACE ID WITH 40
+REPLACE MARK WITH "ROW3"
+APPEND
+REPLACE ID WITH 30
+REPLACE MARK WITH "ROW4"
+APPEND
+REPLACE ID WITH 20
+REPLACE MARK WITH "ROW5"
+APPEND
+REPLACE ID WITH 10
+REPLACE MARK WITH "ROW6"
+
+ECHO
+ECHO --- the fixture, physical order ---
+SMARTLIST ID,MARK
+
+* --- G0/G1: the fixture and the PARK both work -------------------------------
+* G1 IS NOT CEREMONY. Every arm below parks with GO <n> and then reads MARK.
+* If GO does not move, an arm that reads ROW1 after TOP proves nothing at all,
+* because the cursor never left ROW1. G1 is the arm that makes the other arms
+* mean something, and it is asserted on a row that is NEITHER first NOR last.
+GO 1
+? "NAV_G0_fixture_row1_written:" + (ALLTRIM(MARK) = "ROW1")
+GO 4
+? "NAV_G1_park_moved_off_row1:" + (ALLTRIM(MARK) = "ROW4")
+GO 6
+? "NAV_G2_park_reaches_last_row:" + (ALLTRIM(MARK) = "ROW6")
+
+* --- build the container -----------------------------------------------------
+CDX CREATE
+CDX ADDTAG ID
+BUILDLMDB
+
+* --- THE STATE UNDER TEST: ATTACHED, NO TAG ----------------------------------
+* SET INDEX TO attaches the container and clears the active tag. This is the
+* same state WORKSPACE OPEN leaves every table it lands in, reached without
+* opening a workspace so this spec mints nothing.
+SET INDEX TO navtag
+
+ECHO
+ECHO --- attached, no tag: STATUS should read NATURAL with the file named ---
+STATUS
+* Expect: Order: NATURAL / Index file: ...navtag.cdx / Active tag: (none).
+* NOT ASSERTED -- markers in this language compare field values, never console
+* text (FIELDMGR_APPEND doctrine). Stated so a reader does not credit the arms
+* below with having checked it.
+
+ECHO
+ECHO --- G3: addressing still works with the container attached ---
+* R121: GO <n> is absolute and was never broken. If this reds, the fixture or
+* the attach is wrong and every arm below is unproven.
+GO 4
+? "NAV_G3_addressing_survives_attach:" + (ALLTRIM(MARK) = "ROW4")
+
+* --- ARM 1: TOP ---------------------------------------------------------------
+* Parked on ROW4. Pre-fix: "TOP: failed.", cursor stays, MARK reads ROW4, .F.
+GO 4
+TOP
+? "NAV_T1_top_reaches_first_physical:" + (ALLTRIM(MARK) = "ROW1")
+
+* --- ARM 2: BOTTOM ------------------------------------------------------------
+GO 1
+BOTTOM
+? "NAV_T2_bottom_reaches_last_physical:" + (ALLTRIM(MARK) = "ROW6")
+
+* --- ARM 3: SKIP FORWARD -- THE ONE THAT LIED ---------------------------------
+* Pre-fix this printed "SKIP: at end." on record 1 of 6 and did not move, so
+* the arm reads ROW1 and goes red. The other six verbs refused out loud; this
+* one answered, which is why it leads the finding.
+GO 1
+SKIP
+? "NAV_T3_skip_forward_moved_one_row:" + (ALLTRIM(MARK) = "ROW2")
+
+* --- ARM 4: SKIP BACKWARD -----------------------------------------------------
+GO 6
+SKIP -1
+? "NAV_T4_skip_backward_moved_one_row:" + (ALLTRIM(MARK) = "ROW5")
+
+* --- ARM 5/6: THE GO FORMS ----------------------------------------------------
+* GO TOP and GO BOTTOM route differently from bare TOP/BOTTOM and failed
+* separately in the 2026-08-29 transcript ("GO: failed." x4), so they are
+* separate arms rather than assumed to follow.
+GO 4
+GO TOP
+? "NAV_T5_go_top_reaches_first_physical:" + (ALLTRIM(MARK) = "ROW1")
+GO 1
+GO BOTTOM
+? "NAV_T6_go_bottom_reaches_last_physical:" + (ALLTRIM(MARK) = "ROW6")
+
+* --- ARM 7/8: A TAG IS ACTIVE -- NATURAL MUST NOT WIN -------------------------
+* THE COUNTERWEIGHT ARMS. Everything above asserts that a tagless container
+* falls back to natural. A fix that forced natural ALWAYS would pass all six
+* and be just as wrong, so these two assert the opposite direction on the same
+* fixture: with tag ID active, ascending, TOP is the LOWEST ID, which is
+* physical row 6.
+SET ORDER TO TAG ID
+
+ECHO
+ECHO --- tag order, which must not match physical ---
+SMARTLIST ID,MARK
+
+GO 1
+TOP
+? "NAV_T7_tag_top_follows_the_tag:" + (ALLTRIM(MARK) = "ROW6")
+GO 1
+BOTTOM
+? "NAV_T8_tag_bottom_follows_the_tag:" + (ALLTRIM(MARK) = "ROW1")
+
+* --- WHAT THIS SPEC DOES NOT COVER, stated rather than implied ----------------
+* (a) The REPORT sites that still read the container predicate where they make
+*     an ordering claim: status_helpers.cpp:28, index_summary.cpp:170,
+*     db_tuple_stream.cpp:483, cmd_workspace.cpp:4587. Console text, and no
+*     marker in this language can assert it.
+* (b) GO FIRST / GO LAST. They failed alongside GO TOP/GO BOTTOM in the same
+*     transcript and are believed to share the path, but believed is not
+*     measured and they are not armed here.
+* (c) A FILTERED view. cmd_skip.cpp's fast-path guard pairs the order question
+*     with view_is_filtered() deliberately (R121); this spec exercises the
+*     unfiltered half only.
+* (d) CNX. The predicate treats .cnx and .cdx alike (container_supports_tag),
+*     so the CNX arm should behave identically -- untested, unclaimed.
+
+* --- CLEANUP ------------------------------------------------------------------
+WORKSPACE CLOSE
+ERASE navtag CONFIRM
+* The navtag.cdx and its LMDB sidecar live under the SANDBOX index/lmdb slots
+* and are erased with the table.
+
+ECHO ============================================================
+ECHO NAV ORDER NATURAL REGRESSION v1 DONE
+ECHO ============================================================
