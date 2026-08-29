@@ -99,6 +99,48 @@ else()
     set(DOTTALKPP_GIT_DIRTY 0)
 endif()
 
+# AIF-122 follow-up (2026-08-29). THE STAMP WAS FROZEN AT THE LAST CONFIGURE.
+# Everything above is captured by execute_process at CONFIGURE time, and
+# `cmake --build` does not re-configure, so the SHA the banner printed was the
+# commit the tree was CONFIGURED at -- never the one it was BUILT from.
+# MEASURED 2026-08-29: `dottalk++ v0.6 (2026-08-29, ec3402e8 dirty)` printed by
+# a binary built three commits later, and that stale line was then used to
+# identify which commit a run had come from. A second declaration of build
+# identity, drifted from the thing it describes -- the shape this file's own
+# comments keep catching one layer down.
+#
+# Depending on HEAD and the branch ref it names makes a COMMIT re-trigger the
+# configure. That is the RIGHT FREQUENCY and specifically not the churn AIF-122
+# removed below: those 254 entries were runtime data that the regression suite
+# rewrote, so verifying the build dirtied the build. A ref moves once per
+# commit. It is also nearly free by construction -- configure_file is
+# copy-if-different and only two TUs include the stamp, so re-reading an
+# unchanged SHA costs nothing at all.
+#
+# DIRTY IS STILL AS-OF-CONFIGURE AND CANNOT BE OTHERWISE. It reports the
+# working tree at the moment CMake ran; no dependency can express "a tracked
+# file has changed since". Read dirty=1 as "the tree was dirty when this was
+# configured", never as "these bytes differ from HEAD". Stated rather than
+# implied, because the half that CAN be fixed being fixed is exactly what makes
+# a reader trust the half that cannot.
+if (IS_DIRECTORY "${CMAKE_SOURCE_DIR}/.git")
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+        "${CMAKE_SOURCE_DIR}/.git/HEAD")
+    # HEAD is usually a symref; depend on the ref it names so an ordinary
+    # commit (which moves the ref, not HEAD) is seen. A packed ref has no
+    # loose file and simply is not added -- a detached HEAD moves HEAD itself,
+    # which is already covered above.
+    file(READ "${CMAKE_SOURCE_DIR}/.git/HEAD" _dottalk_head_contents)
+    string(STRIP "${_dottalk_head_contents}" _dottalk_head_contents)
+    if (_dottalk_head_contents MATCHES "^ref: (.+)$")
+        set(_dottalk_head_ref "${CMAKE_SOURCE_DIR}/.git/${CMAKE_MATCH_1}")
+        if (EXISTS "${_dottalk_head_ref}")
+            set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+                "${_dottalk_head_ref}")
+        endif()
+    endif()
+endif()
+
 # ============================================================
 # User Options
 # ============================================================
