@@ -697,6 +697,10 @@ void print_regression_usage()
         << "    already know the NAME. All terms must match. THE SPEC IS THE HOW-TO --\n"
         << "    read the script for worked usage, or RUN it to watch it work.\n"
         << "  - ALL runs the curated default suite in declared order.\n"
+        << "  - EVERY run -- ALL or a single spec -- is bracketed by the L3 catalog\n"
+        << "    isolation arm, which reads the PRODUCTION workspace catalog before\n"
+        << "    and after and proves its own detector first. Count its markers: an\n"
+        << "    errored marker PRINTS NOTHING rather than going red.\n"
         << "  - HARVEST is the top-layer shakedown for newly promoted surfaces.\n"
         << "  - LANGUAGE proves es/fr/de/it USAGE rendering across the localized command surface.\n";
 }
@@ -1017,6 +1021,33 @@ void run_isolation_arm(DbArea& area, const char* phase)
     cmd_DOTSCRIPT(area, dotscript_args);
 }
 
+// AN EXPLICIT RUN GETS THE SAME INSTRUMENT THE SUITE GETS.
+//
+// `REGRESSION ALL` has carried the arm since cb92ef310. A single
+// `REGRESSION RUN <name>` did not, and that is the command a developer uses to
+// SOAK a spec -- so the one path where a spec is being evaluated for promotion
+// was the one path with no measurement. A spec that wrote production during a
+// soak looked exactly like one that did not.
+//
+// THE ARM IS DELIBERATELY *NOT* GATED ON spec.mints_catalog, and this is the
+// whole point rather than a detail. 19b1928c4 fixed ten specs that mint and
+// were flagged false; the flag is set BY HAND from a reading of three verbs,
+// and a reader who knows two of them under-flags in the direction of writing
+// production. Gate the DETECTOR on the same flag whose correctness it exists
+// to verify and it cannot fire on the only case that matters -- a spec that
+// mints and is not flagged. That is this project's recurring defect shape, and
+// it would have been introduced here by an optimisation that looked obvious.
+//
+// So the arm runs around EVERY explicit run, including specs believed inert.
+// The cost is one directory erase, two scratch mints and two production reads;
+// REGRESSION RUN is an interactive act, not a hot loop.
+void run_regression_script_measured(DbArea& area, const RegressionSpec& spec)
+{
+    run_isolation_arm(area, "BEFORE");
+    run_regression_script(area, spec);
+    run_isolation_arm(area, "AFTER");
+}
+
 void run_regression_default_suite(DbArea& area)
 {
     // Plan condition 2: "REGRESSION ALL leaves PRODUCTION unchanged." The arm
@@ -1082,13 +1113,13 @@ void cmd_REGRESSION(DbArea& area, std::istringstream& in)
         if (op == "SHOW") {
             print_regression_show(*spec);
         } else {
-            run_regression_script(area, *spec);
+            run_regression_script_measured(area, *spec);
         }
         return;
     }
 
     if (const RegressionSpec* spec = find_regression_spec(op)) {
-        run_regression_script(area, *spec);
+        run_regression_script_measured(area, *spec);
         return;
     }
 
