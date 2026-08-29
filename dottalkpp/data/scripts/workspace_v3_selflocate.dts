@@ -23,10 +23,39 @@ STOP_ON_ERROR OFF
 FORMULA "WS-V3-PROOF-BEGIN"
 
 * --- environment-first: the save leg runs from the real x64 roots -----------
+*
+* AMENDED 2026-08-28. THIS LEG USED TO READ 'WORKSPACE LOAD mcc_x64', AND THAT
+* LINE IS WHY THIS SPEC COULD NOT BE BRACKETED. mcc_x64 is a posture FILE in the
+* PRODUCTION workspaces directory, so the spec read production to build its own
+* fixture -- and once REGRESSION runs it with the WORKSPACES slot redirected at
+* a scratch root (AIF-078 L2), that file is not there and the load finds
+* nothing. The spec now BUILDS ITS OWN POSTURE, which is what every
+* self-bootstrapping spec in this corpus already does.
+*
+* IT ALSO REMOVES A DEPENDENCY ON A MUTABLE ARTIFACT NOBODY OWNS. mcc_x64
+* .dtschema can be re-saved by any session; if it changes, this spec's meaning
+* changes with NOTHING going red. That is history-dependence wearing a green
+* suit -- the same shape the identity ladder found in the thirteen live catalog
+* heads, one level up.
+*
+* THE FIXTURE IS THINNER AND THAT COST IS STATED: mcc_x64 restored THIRTEEN
+* areas, this restores TWO. The count was never the claim -- V3_T1 asserts that
+* a row is READABLE through a payload whose roots disagree with the live
+* environment, and one area proves that mechanism exactly as well as thirteen.
+* Two rather than one deliberately, so the posture is not degenerate.
+*
+* STUDENTS IS OPENED INTO AREA 8 ON PURPOSE: mcc_x64 held it at AREA 8 and the
+* assertion below reads SELECT 8. Keeping the slot keeps the marker and its
+* meaning untouched, so this amendment changes the FIXTURE and not the PROOF.
+* Addressing is by slot and never by name because SELECT <name> is unscoped
+* (see relation_parent_workspace_crossing.dts).
 SETPATH DBF DBF/X64
 SETPATH INDEXES INDEXES/X64
 WORKSPACE CLOSE
-WORKSPACE LOAD mcc_x64
+SELECT 1
+USE DEPT
+SELECT 8
+USE STUDENTS
 WORKSPACE SAVE v3_regress MEMO V3
 WORKSPACE CLOSE
 

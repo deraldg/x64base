@@ -32,9 +32,20 @@ FORMULA "WS-RAM-HYDRATE-BEGIN"
 * being 'none' replacing eleven .cdx names). The x64 CDX lane needs its LMDB
 * slot; DO x64 carries all three. The 13-vs-24 hydrated-file variance between
 * the first regression run and the hand run was THIS, not a hydrator defect.
+* AMENDED 2026-08-28. 'WORKSPACE LOAD mcc_x64' is why this spec could not be
+* bracketed: mcc_x64 is a posture FILE in the PRODUCTION workspaces directory,
+* so the spec read production to build its own fixture. Under the AIF-078 L2
+* bracket the WORKSPACES slot points at a scratch root and that file is absent.
+* It now builds its own posture, like every self-bootstrapping spec here.
+* STUDENTS stays in AREA 8 because mcc_x64 held it there and HYD_T1 reads
+* SELECT 8 -- the FIXTURE changes, the PROOF does not. Two areas rather than
+* thirteen; the count was never the claim, hydration of a readable row is.
 DO x64
 WORKSPACE CLOSE
-WORKSPACE LOAD mcc_x64
+SELECT 1
+USE DEPT
+SELECT 8
+USE STUDENTS
 WORKSPACE SAVE ram_hydrate_src MEMO V3
 WORKSPACE CLOSE
 

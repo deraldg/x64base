@@ -41,9 +41,25 @@ STOP_ON_ERROR OFF
 FORMULA "WS-MINIDB-PROOF-BEGIN"
 
 * --- author the container from the disk-resident MCC ------------------------
+* AMENDED 2026-08-28. 'WORKSPACE LOAD mcc_x64' read a posture FILE from the
+* PRODUCTION workspaces directory, which the AIF-078 L2 bracket redirects away
+* from. The posture is now built here.
+*
+* THE THREE AREAS THE ARMS READ ARE KEPT AT THEIR mcc_x64 SLOTS: DB_T1 reads
+* SELECT 8 (STUDENTS, LNAME) and DB_T2 reads SELECT 4 (ENROLL, SET ORDER TAG
+* SID). mcc_x64 held ENROLL at AREA 4 and STUDENTS at AREA 8, so opening them
+* into the same slots keeps both markers and their meanings untouched. DEPT is
+* opened at AREA 3, also its mcc_x64 slot, so the container is not degenerate.
+* Three areas rather than thirteen; the count was never the claim -- carriage
+* THROUGH the minidb container is.
 DO x64
 WORKSPACE CLOSE
-WORKSPACE LOAD mcc_x64
+SELECT 3
+USE DEPT
+SELECT 4
+USE ENROLL
+SELECT 8
+USE STUDENTS
 WORKSPACE SAVE minidb_regress MEMO MINIDB
 WORKSPACE CLOSE
 

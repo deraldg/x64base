@@ -54,9 +54,34 @@ ERASE DIR DBF/lsfall CONFIRM
 FORMULA "WS-LOADSHORT-PROOF-BEGIN"
 
 * --- land a real 13-table workspace, WITH indexes (L_T5 needs them) ---------
+* AMENDED 2026-08-28. THIS SPEC HAD TWO PRODUCTION DEPENDENCIES AND BOTH ARE
+* GONE. It loaded 'mcc_minidb_memo MEMO RAM' -- a memo row in the PRODUCTION
+* catalog, one of the five real saved workspaces L1 deliberately kept -- and
+* later 'mcc_x64', a posture FILE in the production workspaces directory.
+* Under the AIF-078 L2 bracket the WORKSPACES slot points at a scratch root, so
+* neither exists and every arm downstream of them is unreachable.
+*
+* IT NEVER NEEDED THOSE TWO ARTIFACTS, ONLY THEIR SHAPE: a minidb-in-memo
+* posture it can hydrate and write back. It builds one. STUDENTS and TEACHERS
+* are included because L_G1/L_T1 read FNAME 'Quinn' from STUDENTS and L_T3
+* reads TEACHERS after a PARTIAL load; DEPT rides along so the container is not
+* degenerate. The rows come from the shipped DBF/X64 fixtures exactly as they
+* did before -- what changed is that the POSTURE is built here instead of
+* being borrowed from a catalog any session can rewrite.
+DO x64
+WORKSPACE CLOSE
+SELECT 1
+USE DEPT
+SELECT 2
+USE TEACHERS
+SELECT 8
+USE STUDENTS
+WORKSPACE SAVE ls_src MEMO MINIDB
+WORKSPACE CLOSE
+
 DO mem
-WORKSPACE LOAD mcc_minidb_memo MEMO RAM
-WORKSPACE WRITEBACK mcc_minidb_memo TO DBF/lsfall WITH INDEXES
+WORKSPACE LOAD ls_src MEMO RAM
+WORKSPACE WRITEBACK ls_src TO DBF/lsfall WITH INDEXES
 WORKSPACE CLOSE
 VDISK UNMOUNT
 
@@ -113,9 +138,14 @@ GO 1
 WORKSPACE CLOSE
 
 * --- a healthy posture must be untouched by the new gate --------------------
+* Self-built rather than 'WORKSPACE LOAD mcc_x64' -- see the amendment above.
+* STUDENTS stays at AREA 8 because L_T4 reads SELECT 8.
 DO x64
-WORKSPACE LOAD mcc_x64
+WORKSPACE CLOSE
+SELECT 1
+USE DEPT
 SELECT 8
+USE STUDENTS
 TOP
 ? "L_T4_healthy_posture_unaffected:" + (SID >= 1)
 WORKSPACE CLOSE
@@ -126,8 +156,8 @@ WORKSPACE CLOSE
 * proceed -- indexes are derived.
 ERASE DIR DBF/lsfall CONFIRM
 DO mem
-WORKSPACE LOAD mcc_minidb_memo MEMO RAM
-WORKSPACE WRITEBACK mcc_minidb_memo TO DBF/lsfall WITH INDEXES
+WORKSPACE LOAD ls_src MEMO RAM
+WORKSPACE WRITEBACK ls_src TO DBF/lsfall WITH INDEXES
 WORKSPACE CLOSE
 VDISK UNMOUNT
 DO x64

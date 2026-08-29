@@ -24,14 +24,58 @@ FORMULA "WORKSPACE-MEMO-PROOF-BEGIN"
 
 * --- environment FIRST: .dtschema payloads are root-relative (measured
 * 2026-08-11: a load under the wrong roots resolves 0 areas, 58 rejected) ----
-SET PATH DBF SYSTEMS/CASCADE_ERP/DBF
-SET PATH INDEXES SYSTEMS/CASCADE_ERP/INDEXES
-SET PATH LMDB SYSTEMS/CASCADE_ERP/LMDB
+* AMENDED 2026-08-28. THIS SPEC USED TO LOAD cascade_all FROM THE PRODUCTION
+* WORKSPACES DIRECTORY, which is why it could not be bracketed (AIF-078 L2
+* points the WORKSPACES slot at a scratch root, where that file is absent) and
+* why its meaning depended on an artifact any session can re-save.
+*
+* THE PAIR IS REBUILT, NOT THINNED. WM_T1..T4 assert relation slaving in BOTH
+* directions plus a SQL walker agreeing with the navigational one, so the
+* fixture needs a real parent/child on SO_ID with more than one line per order.
+* cascade_all supplied CASCADE_Sales_Orders / CASCADE_SO_Lines; WMSO / WMSOL
+* below reproduce exactly the values the arms read -- orders 1..6, two lines
+* each, so order 6's first line is SOLINE_ID 11. EVERY MARKER KEEPS ITS NAME
+* AND ITS EXPECTED VALUE; only the ALIAS in the SELECT lines moved.
+*
+* THE ERP IS NOT TOUCHED. The old leg pointed three slots at
+* SYSTEMS/CASCADE_ERP; this one stays in SANDBOX.
+SET PATH DBF DBF/SANDBOX
+WORKSPACE CLOSE
+ERASE WMSO CONFIRM
+ERASE WMSOL CONFIRM
+
+SELECT 21
+CREATE X64 WMSO (SO_ID N(4,0), SLBL C(10))
+APPEND
+REPLACE SO_ID WITH 1
+REPLACE SLBL WITH "SO_ONE"
+APPEND
+REPLACE SO_ID WITH 6
+REPLACE SLBL WITH "SO_SIX"
+INDEX ON SO_ID TAG SO_ID
+
+SELECT 24
+CREATE X64 WMSOL (SOLINE_ID N(4,0), SO_ID N(4,0))
+APPEND
+REPLACE SOLINE_ID WITH 1
+REPLACE SO_ID WITH 1
+APPEND
+REPLACE SOLINE_ID WITH 2
+REPLACE SO_ID WITH 1
+APPEND
+REPLACE SOLINE_ID WITH 11
+REPLACE SO_ID WITH 6
+APPEND
+REPLACE SOLINE_ID WITH 12
+REPLACE SO_ID WITH 6
+INDEX ON SO_ID TAG SO_ID
+
+REL ADD WMSO WMSOL ON SO_ID TO SO_ID
+? "WM_G1_fixture_child_has_order6_line11:" + (SO_ID = 6)
 
 * --- stand the posture up from the FILE carrier, save to the MEMO carrier ---
 * The catalog self-creates on first touch (x64 flavor, planned descriptors,
 * memo sidecar); the save appends an attributed, timestamped, env-stamped row.
-WORKSPACE LOAD cascade_all
 WORKSPACE SAVE wm_regress MEMO
 WORKSPACE CLOSE
 
@@ -39,26 +83,26 @@ WORKSPACE CLOSE
 WORKSPACE LOAD wm_regress MEMO
 
 * WM_T1: the memo-restored posture relates -- parent TOP drives the child
-SELECT CASCADE_SALES_ORDERS
+SELECT WMSO
 SET ORDER TAG SO_ID
 TOP
 REL REFRESH
-SELECT CASCADE_SO_LINES
+SELECT WMSOL
 ? "WM_T1_child_follows_parent_top:" + (SO_ID = 1)
 
 * WM_T2: moving the parent re-drives the child (refresh-driven slaving,
 * over relations that lived in a memo between save and load)
-SELECT CASCADE_SALES_ORDERS
+SELECT WMSO
 BOTTOM
 REL REFRESH
-SELECT CASCADE_SO_LINES
+SELECT WMSOL
 ? "WM_T2_child_follows_parent_bottom:" + (SO_ID = 6)
 
 * WM_T3: the followed child record is real data, not just a position
 ? "WM_T3_child_line_is_order6_line1:" + (SOLINE_ID = 11)
 
 * --- walker #2 over the memo-restored graph ---------------------------------
-SQLSEL SOLINE_ID, SO_ID FROM CASCADE_SO_Lines WHERE SO_ID = 6
+SQLSEL SOLINE_ID, SO_ID FROM WMSOL WHERE SO_ID = 6
 * WM_T4: cursor-neutral walker agreement -- the C_T9 assertion, but over a
 * posture that round-tripped through the memo carrier.
 ? "WM_T4_walkers_agree_over_memo_restored_graph:" + (SOLINE_ID = 11)

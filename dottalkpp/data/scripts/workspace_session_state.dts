@@ -24,15 +24,74 @@ STOP_ON_ERROR OFF
 FORMULA "WS-SESSION-PROOF-BEGIN"
 
 * --- environment-first: the cascade bundle roots ----------------------------
-SETPATH DBF SYSTEMS/CASCADE_ERP/DBF
-SETPATH INDEXES SYSTEMS/CASCADE_ERP/INDEXES
-SETPATH LMDB SYSTEMS/CASCADE_ERP/LMDB
+* AMENDED 2026-08-28. THIS LEG USED TO LOAD cascade_all, AND THAT IS WHY THIS
+* SPEC COULD NOT BE BRACKETED: cascade_all.dtschema is a posture FILE in the
+* PRODUCTION workspaces directory, absent once AIF-078 L2 redirects the
+* WORKSPACES slot at a scratch root. It also made the spec depend on a mutable
+* artifact nobody owns -- re-save cascade_all and this spec's meaning changes
+* with nothing going red.
+*
+* THE FIXTURE HAD TO CARRY REAL STRUCTURE HERE, unlike the v3 and RAM specs.
+* SS_T1/SS_T2 assert that a saved SESSION restores a cursor AND its relation
+* slaving, so a two-table posture is not enough -- it needs a parent, a child,
+* an ORDER TAG, and a live relation. cascade_all supplied those at AREA 21
+* (CASCADE_Sales_Orders, tag SO_ID) and AREA 24 (CASCADE_SO_Lines, tag SO_ID),
+* related on SO_ID. That pair is reproduced below in SANDBOX, at THE SAME AREA
+* NUMBERS and on THE SAME KEY, so both markers keep their slots and their
+* values and the PROOF is untouched.
+*
+* SIX PARENT ROWS SO 'BOTTOM' LANDS ON SO_ID 6, which is what the arms read.
+* The tag is BUILT rather than dropped: SET ORDER is part of the session state
+* under test, so a fixture without one would quietly stop exercising half the
+* claim.
+*
+* GUARDS ADDED (SS_G1/SS_G2), which the spec did not have. WSL_G4/G5 exist
+* because a FIXTURE failure once wore a VERB failure's clothes, and RS_G1
+* because an arm reading an unchanged value cannot tell 'survived' from 'never
+* worked'. If either guard reds, treat BOTH arms as UNPROVEN.
+SET PATH DBF DBF/SANDBOX
 WORKSPACE CLOSE
-WORKSPACE LOAD cascade_all
+ERASE SSPAR CONFIRM
+ERASE SSCHI CONFIRM
+
+SELECT 21
+CREATE X64 SSPAR (SO_ID N(4,0), SLBL C(10))
+APPEND
+REPLACE SO_ID WITH 1
+REPLACE SLBL WITH "SO_ONE"
+APPEND
+REPLACE SO_ID WITH 2
+REPLACE SLBL WITH "SO_TWO"
+APPEND
+REPLACE SO_ID WITH 6
+REPLACE SLBL WITH "SO_SIX"
+INDEX ON SO_ID TAG SO_ID
+
+SELECT 24
+CREATE X64 SSCHI (SO_ID N(4,0), CLBL C(10))
+APPEND
+REPLACE SO_ID WITH 1
+REPLACE CLBL WITH "LINE_ONE"
+APPEND
+REPLACE SO_ID WITH 2
+REPLACE CLBL WITH "LINE_TWO"
+APPEND
+REPLACE SO_ID WITH 6
+REPLACE CLBL WITH "LINE_SIX"
+INDEX ON SO_ID TAG SO_ID
+
+REL ADD SSPAR SSCHI ON SO_ID TO SO_ID
+
+SELECT 21
+SET ORDER TAG SO_ID
+BOTTOM
+? "SS_G1_parent_fixture_at_bottom:" + (SO_ID = 6)
+REL REFRESH
+SELECT 24
+? "SS_G2_relation_live_before_the_save:" + (SO_ID = 6)
 
 * --- take the session somewhere specific ------------------------------------
 SELECT 21
-SET ORDER TAG SO_ID
 BOTTOM
 REL REFRESH
 
