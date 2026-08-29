@@ -15,16 +15,17 @@
 * HOW TO READ THIS SCRIPT -- four rules, each of them paid for
 * ---------------------------------------------------------------------------
 *
-* 1. COUNT THE MARKERS. 37 must PRINT -- 13 guards and 24 arms. An errored
+* 1. COUNT THE MARKERS. 40 must PRINT -- 14 guards and 26 arms. An errored
 *    marker PRINTS NOTHING rather than going red, so a full screen of .T.
-*    with 36 lines is a FAILURE, not a pass. The count is the check.
+*    with 39 lines is a FAILURE, not a pass. The count is the check.
 *
-*    THIS NUMBER HAS BEEN WRONG ONCE AND STALE ONCE, both recorded rather
-*    than quietly fixed. The first draft said 34 by miscounting; the first
-*    RUN then added two guards and left it reading 35. A hand-maintained
-*    count beside the thing it counts is a SECOND DECLARATION and it drifts
-*    exactly the way the WORKSPACE usage header drifted three times. Derive
-*    it, never trust it:  grep -c '^? "MWX_'
+*    THIS NUMBER HAS NOW BEEN WRONG ONCE AND STALE TWICE, each recorded
+*    rather than quietly fixed: 34 by miscounting; 35 after the first run's
+*    fix added two guards; 37 until section 5B added three more. A
+*    hand-maintained count beside the thing it counts is a SECOND
+*    DECLARATION and it drifts exactly the way the WORKSPACE usage header
+*    drifted three times -- which is the argument for deriving it every
+*    time rather than reading it here:  grep -c '^? "MWX_'
 *
 *    THIS NUMBER WAS WRONG IN THE FIRST DRAFT OF THIS FILE and is corrected
 *    here rather than quietly fixed. It read 34, from arithmetic that counted
@@ -95,6 +96,7 @@ WORKSPACE DESTROY MWXONE
 WORKSPACE DESTROY MWXTWO
 WORKSPACE DESTROY MWXAS
 WORKSPACE DESTROY MWXDB
+WORKSPACE DESTROY MWXORD
 
 SET PATH DBF DBF/SANDBOX/MWXA
 ERASE MWXP CONFIRM
@@ -662,6 +664,112 @@ GO 1
 ? "MWX_T22_missing_index_did_not_refuse_the_load:" + (ALLTRIM(KPLBL) = "SURVIVOR")
 
 * ===========================================================================
+* SECTION 5B -- DOES SET ORDER SURVIVE A SAVE/LOAD ROUND TRIP?
+*
+* ADDED 2026-08-28 TO PAY BACK A GAP THIS SESSION OPENED. Two specs carried
+* `SET ORDER TAG SO_ID` lines that printed "file not found" and did nothing --
+* their fixtures built indexes with INDEX ON, which writes .inx, while SET
+* ORDER TAG wants a CDX. The dead lines were removed rather than left looking
+* like coverage, and that left the corpus with NO spec proving the property.
+* This section restores it, and it is the LAST place in this file where a
+* rebuilt fixture would have been the wrong answer: the property needs a REAL
+* CDX, so it borrows a shipped one instead of pretending.
+*
+* THE TAG IS THE SUBJECT AND IT TRAVELS IN THE POSTURE. A DTSHEMA AREA line
+* carries `tag=`, so the order is part of the saved artifact rather than
+* session trivia -- which is exactly why losing it would be silent.
+*
+* SID WOULD NOT HAVE WORKED, AND CHECKING THAT IS THE WHOLE DESIGN. STUDENTS
+* is stored in SID order, so `SET ORDER TAG SID` then TOP lands on physical
+* record 1 -- the same row an engine that IGNORED SET ORDER would land on. An
+* arm built on SID passes green on a build with no ordering at all, which is
+* the SDVIS defect exactly. Measured before choosing: SID order == physical
+* order for all 200 rows.
+*
+* LNAME DIVERGES AND IS THEREFORE THE DISCRIMINATOR:
+*     physical record 1    Taylor      LNAME-order first   Anderson (rec 21)
+*     physical record 200  Davis       LNAME-order last    Wilson   (rec 157)
+* Both ends differ, so both arms can tell an ordered walk from a physical one.
+*
+* IT BORROWS A SHIPPED CDX, AND THE FIRST DRAFT GAVE THE WRONG REASON FOR
+* THAT. It said a fixture CANNOT build a CDX because INDEX ON writes .inx.
+* The first half is true and the conclusion was false: CDX is an index
+* MANAGER, not just a container, and a fixture can build one --
+*     CDX CREATE [<path.cdx>]        create the container
+*     CDX ADDTAG <name> [<path>]     define a tag
+*     BUILDLMDB YES                  build it (BUILDLMDB CLEAN YES to rebuild)
+* CNX is the same surface (plus WALK/TRACE) over a SORTED index rather than
+* LMDB. So the SET ORDER lines removed from the session and memo specs on
+* 2026-08-28 were FIXABLE, not merely removable -- a broken line was deleted
+* where an index could have been built. Recorded rather than quietly
+* corrected, because the wrong conclusion is what made the deletion look
+* like the only option.
+*
+* THIS SECTION STILL BORROWS, deliberately and for a smaller reason: the arm
+* under test is the SAVE/LOAD ROUND TRIP, and a self-built index would add
+* an untested build step INSIDE the proof it is supposed to isolate. A
+* built-CDX arm belongs beside this one, not inside it.
+*
+* ON THE VERB: `TO` IS AN OPTIONAL NOISE WORD, so there was never a question.
+*     cmd_setorder.cpp:647,684,720   if (ieq(toks[i], "TO")) ++i;
+* `SET ORDER TO LNAME` and `SET ORDER LNAME` are the SAME PARSE; `SET ORDER
+* TAG <tag>` is the explicit form. All three work. The command reference omits
+* TO because it is not a keyword; the SET subusage writes it because that is
+* the classic FoxPro spelling; the corpus uses it 303 times to 24 out of
+* habit. NOTHING DISAGREES.
+*
+* IT TOOK FOUR PASSES TO WRITE THAT SENTENCE, and the useful part is why. I
+* argued TAG-vs-TO from memory, then from a partial grep, then from a count,
+* and was drafting a "three declarations disagree" finding -- all without
+* opening docs/manuals/command_reference/command_reference_guide_v1.csv, which
+* is GENERATED FROM THE HANDLERS, carries 3402 rows with usage/notes/related,
+* and answers this in one row. LOOK IT UP BEFORE REASONING ABOUT A VERB.
+*
+* READ-ONLY ON A SHIPPED FIXTURE. STUDENTS is opened and navigated, never
+* written, and never erased by this file's teardown.
+* ===========================================================================
+
+WORKSPACE CLOSE ALL
+WORKSPACE SWITCH DEFAULT
+WORKSPACE DESTROY MWXORD
+
+SETPATH DBF DBF/X64
+SETPATH INDEXES INDEXES/X64
+WORKSPACE NEW MWXORD
+WORKSPACE SWITCH MWXORD
+
+SELECT 0
+USE STUDENTS
+SET ORDER TO LNAME
+TOP
+? "MWX_G6_order_is_live_before_the_save:" + (ALLTRIM(LNAME) = "Anderson")
+
+WORKSPACE SAVE mwx_order MEMO V3
+WORKSPACE CLOSE
+
+* ---------------------------------------------------------------------------
+* MWX_T25 / T26 -- THE ROUND TRIP.
+*
+* If the posture recorded and restored the TAG, TOP is Anderson and BOTTOM is
+* Wilson. If the tag was dropped anywhere between SAVE and LOAD, the walk is
+* physical and the same two reads return Taylor and Davis. Nothing else in
+* the file distinguishes those two worlds.
+*
+* Addressed BY NAME, because a posture's AREA numbers are KEYS (R130).
+* ---------------------------------------------------------------------------
+
+WORKSPACE LOAD mwx_order MEMO
+SELECT STUDENTS
+TOP
+? "MWX_T25_set_order_survived_the_round_trip:" + (ALLTRIM(LNAME) = "Anderson")
+BOTTOM
+? "MWX_T26_and_the_far_end_of_the_order_too:" + (ALLTRIM(LNAME) = "Wilson")
+
+WORKSPACE CLOSE
+WORKSPACE SWITCH DEFAULT
+WORKSPACE DESTROY MWXORD
+
+* ===========================================================================
 * SECTION 6 -- THE CATALOG IS A TABLE, AND IT SAYS WHAT IT IS.
 *
 * WORKSPACE CATALOG reports the memo catalog read-only. FMT is the PAYLOAD:
@@ -697,6 +805,7 @@ CLOSE
 
 WORKSPACE CLOSE ALL
 WORKSPACE SWITCH DEFAULT
+WORKSPACE DESTROY MWXORD
 WORKSPACE DESTROY MWXBACK
 WORKSPACE DESTROY MWXDB
 WORKSPACE DESTROY MWXKID
@@ -722,10 +831,10 @@ FORMULA "MWX-SHAKEDOWN-END"
 * ===========================================================================
 * READ RULE, REPEATED AT THE BOTTOM BECAUSE THIS IS WHERE A READER STOPS.
 *
-*   37 markers must PRINT.
-*     13 guards : MWX_G0a G0b G0c G0d G0e G1a G1b G1c G2 G3 G4a G4b G5
-*     24 arms   : MWX_T1 .. MWX_T24
-*   Derived, not asserted:  grep -c '^? "MWX_'  ->  37
+*   40 markers must PRINT.
+*     14 guards : MWX_G0a G0b G0c G0d G0e G1a G1b G1c G2 G3 G4a G4b G5 G6
+*     26 arms   : MWX_T1 .. MWX_T26
+*   Derived, not asserted:  grep -c '^? "MWX_'  ->  40
 *
 * AND ONE WARNING THE COUNT CANNOT GIVE YOU. A marker can be backed by a
 * real read of a real open table and still be worthless, if that table is
