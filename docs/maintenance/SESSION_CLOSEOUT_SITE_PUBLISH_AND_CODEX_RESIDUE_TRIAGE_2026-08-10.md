@@ -8,7 +8,7 @@ ai_report_audit:
     product: Claude Cowork
     model: Claude Fable 5
     member: member.ai.claude.cowork
-    access_mode: sandbox_read_host_handoff
+    access_mode: local_write
   attribution:
     authored_by: member.ai.claude.cowork
     planned_by: member.derald
@@ -22,12 +22,38 @@ ai_report_audit:
     handle_binding: NOT_RESOLVABLE
     continues_run: AIPR-20260810-006
   project:
-    id: project.x64base.dottalkpp
+    id: project.x64base.runtime
     root: D:/code/ccode
   git:
     branch: development
     baseline_commit: ff5f50058
     head_commit: cf5caa7bb
+  authorization:
+    requested_by: maintainer
+    scope: >
+      ENVELOPE COMPLETED 2026-08-29 during AIF-078 lane work. The block was
+      present but had never satisfied the contract in any commit: four required
+      fields were absent (authorization.requested_by, authorization.scope,
+      report.path, report.kind) and two present values were not valid. The audit
+      read green only while an uncommitted working-tree copy supplied the
+      difference, and a `git reset --hard` on 2026-08-29 removed that copy.
+      TWO CORRECTIONS, both recorded rather than silently applied.
+      (1) access_mode was `sandbox_read_host_handoff`, which is not in the
+      allowed set; it occurs exactly ONCE in 135 closeouts while 53 other Claude
+      Cowork closeouts use `local_write`, so it is a one-off improvisation
+      rather than a pattern the registry is missing, and it is corrected to the
+      house convention instead of the vocabulary being widened for a singleton.
+      (2) project.id was `project.x64base.dottalkpp`, which is not registered;
+      `project.x64base.runtime` is the only registered id whose root matches the
+      `D:/code/ccode` this envelope already declares, so the id is determined by
+      the document rather than chosen. Everything else is untouched.
+      Nothing about the session's authorization was witnessed by the
+      reconstructing agent, so requested_by carries the house's generic
+      `maintainer` rather than a quoted instruction. Correct it if you were
+      there.
+  report:
+    path: docs/maintenance/SESSION_CLOSEOUT_SITE_PUBLISH_AND_CODEX_RESIDUE_TRIAGE_2026-08-10.md
+    kind: session_closeout
 ---
 
 # Session closeout: site publish ownership + Codex residue triage (2026-08-10)

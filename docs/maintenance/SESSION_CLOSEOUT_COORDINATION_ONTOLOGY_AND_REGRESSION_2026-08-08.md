@@ -1,3 +1,46 @@
+---
+ai_report_audit:
+  schema: ai-report-audit-v1
+  report_id: AIPR-20260808-001
+  recorded_at_utc: 2026-08-08T00:00:00Z
+  agent:
+    provider: Anthropic
+    product: Claude (Cowork)
+    model: not_exposed
+    access_mode: local_write
+  session:
+    id: COWORK-20260807-005
+    chat_reference: cowork:COWORK-20260807-005
+  project:
+    id: project.x64base.runtime
+    root: D:/code/ccode
+  git:
+    branch: development
+    baseline_commit: d5b0cd2db
+  authorization:
+    requested_by: maintainer
+    scope: >
+      ENVELOPE RECONSTRUCTED 2026-08-29 during AIF-078 lane work, after the
+      portal report-audit began blocking every commit touching the report
+      surface. This closeout has carried NO front matter in any commit since it
+      landed in d5b0cd2db; the audit read green only while an uncommitted
+      working-tree copy supplied one, and a `git reset --hard` on 2026-08-29
+      removed that copy. Every value here is transcribed from the record rather
+      than supplied: session id and owner from this document's own header line
+      ("Cowork / member.ai.claude.cowork, run COWORK-20260807-005 ... Owner:
+      member.derald"); chat_reference, product, model and access_mode from
+      SESSION_CLOSEOUT_PORTAL_MEMORY_SYNAPSE_2026-08-08.md, which is the SAME
+      session (COWORK-20260807-005); baseline_commit from the commit that
+      introduced this file; report_id verified free against all 136 ids in the
+      corpus. Nothing about the session's authorization was witnessed by the
+      reconstructing agent, so requested_by carries the house's generic
+      `maintainer` rather than a quoted instruction. Correct it if you were
+      there.
+  report:
+    path: docs/maintenance/SESSION_CLOSEOUT_COORDINATION_ONTOLOGY_AND_REGRESSION_2026-08-08.md
+    kind: session_closeout
+---
+
 # Session Closeout -- coordination identity system + auto-generated regression catalog (AIF-096, AIF-074)
 
 **Session:** Cowork / `member.ai.claude.cowork`, run `COWORK-20260807-005` (checked out).
