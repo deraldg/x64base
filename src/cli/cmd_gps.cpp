@@ -18,7 +18,8 @@
 // usage-access: GPS USAGE
 // summary:
 //   Report current work-area position, including area slot, table label,
-//   physical record number, and computed logical row.
+//   physical record number, computed logical row, and the workspace that
+//   OWNS the area beside the session's CURRENT workspace.
 //
 // usage:
 //   GPS
@@ -35,9 +36,14 @@
 //   prints a row number that was not derived.
 //   GPS rejects arguments it does not recognize rather than treating an
 //   unrecognized argument as a request for a position report.
+//   GPS reports BOTH the owning and the current workspace, always, including
+//   when they agree -- "they agree" and "this build does not check" must not
+//   look alike (the R112 ledger's rule). An area owned by nothing reads
+//   "(none)", which is a real state rather than an error.
 //
 // risk:
 //   reads_table_records: yes when table is open
+//   reads_workspace_membership: yes -- owner of this slot, plus current handle
 //   mutates_cursor: temporary during logical-row computation, restored before return
 //   mutates_table_data: no
 //
@@ -101,6 +107,7 @@
 #include <string>
 
 #include "xbase.hpp"
+#include "xbase/workspace_membership.hpp"
 #include "workareas.hpp"
 #include "cli/command_output.hpp"
 #include "cli/order_iterator.hpp"
@@ -270,6 +277,45 @@ std::string physical_recno_cell(const xbase::DbArea& a)
     return std::to_string(rn);
 }
 
+
+// AIF-078 / 2026-08-29, owner instruction. ONE writer for the workspace line,
+// called from BOTH of GPS's exits -- the no-table one and the open-table one.
+// It is a function rather than two copies because two copies of an output
+// contract drift, which is the defect this file's own header warns about under
+// "three declarations of a command surface".
+//
+// owner 0 renders "(none)": an area owned by no workspace is a REAL state that
+// reconcile_unregistered_areas() calls a registration defect, and a zero
+// printed as a name is how you find one.
+void print_workspace_line(std::size_t cur_area)
+{
+    // x64: workareas::current_slot() answers std::size_t, while the membership
+    // table keys engine slots as std::int32_t (Entry::members is
+    // std::vector<std::int32_t>). NARROW ONCE, HERE, WITH THE BOUND STATED
+    // RATHER THAN ASSUMED -- an `int` parameter took the size_t silently on
+    // g++ and is C4267 on MSVC, which is how this was caught.
+    //
+    // xbase::MAX_AREA is the real domain bound, so a legal slot always fits.
+    // A value outside it cannot be a member of any workspace, and 0 is the
+    // "(none)" sentinel that says so rather than a value that pretends.
+    const std::uint64_t owner_h =
+        (cur_area < static_cast<std::size_t>(xbase::MAX_AREA))
+            ? xbase::workspace::owner_of_slot(static_cast<std::int32_t>(cur_area))
+            : 0;
+    const std::uint64_t cur_h = xbase::workspace::current_handle();
+    auto nm = [](std::uint64_t h) -> std::string {
+        return h == 0 ? std::string("(none)") : xbase::workspace::name_of(h);
+    };
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::GpsWorkspaceLineText,
+        {
+            {"owner",          nm(owner_h)},
+            {"owner_handle",   std::to_string(owner_h)},
+            {"current",        nm(cur_h)},
+            {"current_handle", std::to_string(cur_h)}
+        });
+}
+
 } // namespace
 
 // ---------- main command ----------------------------------------------------
@@ -312,6 +358,13 @@ void cmd_GPS(xbase::DbArea& current, std::istringstream& iss)
                 {"area",     std::to_string(cur_area)},
                 {"occupied", workareas::occupied_desc()}
             });
+        // "Both, ALWAYS" has to mean here too. The first cut returned before
+        // this line and GPS with no table open reported no workspace at all --
+        // which is the state a reader is MOST likely to be lost in, and the
+        // current workspace is perfectly well defined with nothing open.
+        // Caught on the first run, 2026-08-29, because the run began with a
+        // bare GPS and the new line simply was not there.
+        print_workspace_line(cur_area);
         return;
     }
 
@@ -341,6 +394,21 @@ void cmd_GPS(xbase::DbArea& current, std::istringstream& iss)
             {"recno",       recno_cell},
             {"logical_row", logical_row_cell(logical)}
         });
+
+    // 2026-08-29, owner instruction. BOTH workspaces, ALWAYS, even when they
+    // agree. The R112 ambiguity ledger's rule applied to a second instrument:
+    // it prints at zero so that "they agree" and "this build does not check"
+    // cannot look alike. They diverge the moment SELECT reaches an area another
+    // workspace owns -- the session is in one, the area belongs to the other --
+    // and a report naming only the session would be a label describing
+    // something other than the thing beneath it. AIF-148, written the same day,
+    // is exactly that failure one layer down.
+    //
+    // owner 0 renders "(none)", which is a REAL state and not an error: an area
+    // can be open and belong to no workspace, which reconcile_unregistered_areas
+    // calls a defect in registration. This line is therefore an instrument for
+    // that too, and it is the only place it would be visible on one area.
+    print_workspace_line(cur_area);
 
     if (logical.kind == LogicalRowKind::OrderFailed) {
         cli::cmdout::print_note(GPS_CMD, "order walk failed: " + logical.err);

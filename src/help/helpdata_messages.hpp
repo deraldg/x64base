@@ -1362,7 +1362,13 @@ enum class MessageId {
     CdxAddTagNoFileOpenText,
     CdxAddTagFieldNotFoundText,
     CnxAddTagNoFileOpenText,
-    CnxAddTagFieldNotFoundText
+    CnxAddTagFieldNotFoundText,
+    // 2026-08-29. Owner instruction: DBAREA and GPS report the workspace.
+    // APPENDED, not grouped with their Dbarea/Gps siblings, so no existing
+    // enumerator renumbers -- the same rule the ADDTAG ids followed.
+    DbareaOwningWorkspaceLineText,
+    DbareaCurrentWorkspaceLineText,
+    GpsWorkspaceLineText
 };
 
 struct MessageDef {

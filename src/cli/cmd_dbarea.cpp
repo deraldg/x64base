@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "xbase.hpp"
+#include "xbase/workspace_membership.hpp"
 #include "cli/command_output.hpp"
 #include "cli/order_state.hpp"
 #include "cli/order_report.hpp"
@@ -39,12 +40,28 @@ extern "C" xbase::XBaseEngine* shell_engine();
 // usage-access: DBAREA USAGE
 // summary:
 //   Report the current DbArea/work-area state, including file identity,
+//   the workspace that OWNS the area and the session's CURRENT workspace,
 //   logical name, record counts, current record, active order/index status,
 //   and field structure.
 //
 // usage:
 //   DBAREA
 //   DBAREA USAGE
+//
+// notes:
+//   DBAREA reports BOTH workspaces even when they are the same. They differ
+//   whenever SELECT has reached an area another workspace owns, and a report
+//   naming only the session would describe something other than the area
+//   beneath it.
+//   An area owned by no workspace reads "(none)". That is a real state, not
+//   an error -- see reconcile_unregistered_areas() in cmd_workspace.cpp --
+//   and DBAREA is the only place it is visible for a single area.
+//
+// risk:
+//   reads_table_records: no -- structure and counts only
+//   reads_workspace_membership: yes -- owner of this slot, plus current handle
+//   mutates_cursor: no
+//   mutates_table_data: no
 //
 // notes:
 //   DBAREA with no arguments is a read-only report for the current work area.
@@ -130,6 +147,33 @@ void cmd_DBAREA(xbase::DbArea& a, std::istringstream& iss){
 
     // Area slot
     kv(cli::cmdout::message_text(dottalk::helpdata::MessageId::DbareaAreaSlotLineText), area_slot_of(a));
+
+    // 2026-08-29, owner instruction. BOTH workspaces, ALWAYS, even when they
+    // agree. The R112 ambiguity ledger's rule applied to a second instrument:
+    // it prints at zero so that "they agree" and "this build does not check"
+    // cannot look alike. They diverge the moment SELECT reaches an area another
+    // workspace owns -- the session is in one, the area belongs to the other --
+    // and a report naming only the session would be a label describing
+    // something other than the thing beneath it. AIF-148, written the same day,
+    // is exactly that failure one layer down.
+    //
+    // owner 0 renders "(none)", which is a REAL state and not an error: an area
+    // can be open and belong to no workspace, which reconcile_unregistered_areas
+    // calls a defect in registration. This line is therefore an instrument for
+    // that too, and it is the only place it would be visible on one area.
+    {
+        const std::int32_t  slot    = static_cast<std::int32_t>(area_slot_of(a));
+        const std::uint64_t owner_h = xbase::workspace::owner_of_slot(slot);
+        const std::uint64_t cur_h   = xbase::workspace::current_handle();
+        auto describe = [](std::uint64_t h) -> std::string {
+            if (h == 0) return std::string("(none)");
+            return xbase::workspace::name_of(h) + "  handle " + std::to_string(h);
+        };
+        kv(cli::cmdout::message_text(dottalk::helpdata::MessageId::DbareaOwningWorkspaceLineText),
+           describe(owner_h));
+        kv(cli::cmdout::message_text(dottalk::helpdata::MessageId::DbareaCurrentWorkspaceLineText),
+           describe(cur_h));
+    }
 
     kv(cli::cmdout::message_text(dottalk::helpdata::MessageId::DbareaDbfAbsoluteLineText), dbf_abs);
     kv(cli::cmdout::message_text(dottalk::helpdata::MessageId::DbareaLogicalNameLineText), logical);

@@ -3050,6 +3050,14 @@ const std::vector<MessageDef>& all_messages()
             "Cursor: Area {area} of {occupied} ... Table {table} ... Physical Recno {recno}, Logical Row {logical_row}"
         },
         {
+            MessageId::GpsWorkspaceLineText,
+            "GPS_WORKSPACE_LINE_TEXT",
+            "COMMAND:GPS",
+            "STATUS",
+            "INFO",
+            "  Workspace: owning {owner} (handle {owner_handle}) ... current {current} (handle {current_handle})"
+        },
+        {
             MessageId::GpsUnnamedTableText,
             "GPS_UNNAMED_TABLE_TEXT",
             "COMMAND:GPS",
@@ -4700,6 +4708,22 @@ const std::vector<MessageDef>& all_messages()
             "STATUS",
             "INFO",
             "Area (slot)"
+        },
+        {
+            MessageId::DbareaOwningWorkspaceLineText,
+            "DBAREA_OWNING_WORKSPACE_LINE_TEXT",
+            "COMMAND:DBAREA",
+            "STATUS",
+            "INFO",
+            "Owning workspace"
+        },
+        {
+            MessageId::DbareaCurrentWorkspaceLineText,
+            "DBAREA_CURRENT_WORKSPACE_LINE_TEXT",
+            "COMMAND:DBAREA",
+            "STATUS",
+            "INFO",
+            "Current workspace"
         },
         {
             MessageId::DbareaDbfAbsoluteLineText,
@@ -12623,6 +12647,21 @@ const std::vector<MessageTextDef>& all_message_texts()
         ,{ MessageId::CdxAddTagNoFileOpenText, "en-US", "no file open. A tag names a FIELD, so the table must be open to check it exists. BUILDLMDB requires one too." }
         ,{ MessageId::CnxAddTagNoFileOpenText, "en-US", "no file open. A tag names a FIELD, so the table must be open to check it exists. REBUILD requires one too." }
         ,{ MessageId::CnxAddTagFieldNotFoundText, "en-US", "field not found: '{name}'. A CNX tag IS a field name, and neither build path will tell you otherwise later -- REBUILD reports OK for every tag in the directory whatever happened. Nothing was added." }
+        ,{ MessageId::DbareaOwningWorkspaceLineText, "en-US", "Owning workspace" }
+        ,{ MessageId::DbareaCurrentWorkspaceLineText, "en-US", "Current workspace" }
+        ,{ MessageId::GpsWorkspaceLineText, "en-US", "  Workspace: owning {owner} (handle {owner_handle}) ... current {current} (handle {current_handle})" }
+        ,{ MessageId::DbareaOwningWorkspaceLineText, "es", "Espacio de trabajo propietario" }
+        ,{ MessageId::DbareaOwningWorkspaceLineText, "fr", "Espace de travail propriétaire" }
+        ,{ MessageId::DbareaOwningWorkspaceLineText, "de", "Besitzender Arbeitsbereich" }
+        ,{ MessageId::DbareaOwningWorkspaceLineText, "it", "Spazio di lavoro proprietario" }
+        ,{ MessageId::DbareaCurrentWorkspaceLineText, "es", "Espacio de trabajo actual" }
+        ,{ MessageId::DbareaCurrentWorkspaceLineText, "fr", "Espace de travail actuel" }
+        ,{ MessageId::DbareaCurrentWorkspaceLineText, "de", "Aktueller Arbeitsbereich" }
+        ,{ MessageId::DbareaCurrentWorkspaceLineText, "it", "Spazio di lavoro corrente" }
+        ,{ MessageId::GpsWorkspaceLineText, "es", "  Espacio de trabajo: propietario {owner} (handle {owner_handle}) ... actual {current} (handle {current_handle})" }
+        ,{ MessageId::GpsWorkspaceLineText, "fr", "  Espace de travail : propriétaire {owner} (handle {owner_handle}) ... actuel {current} (handle {current_handle})" }
+        ,{ MessageId::GpsWorkspaceLineText, "de", "  Arbeitsbereich: Besitzer {owner} (handle {owner_handle}) ... aktuell {current} (handle {current_handle})" }
+        ,{ MessageId::GpsWorkspaceLineText, "it", "  Spazio di lavoro: proprietario {owner} (handle {owner_handle}) ... corrente {current} (handle {current_handle})" }
         ,{ MessageId::CdxAddTagFieldNotFoundText, "en-US", "field not found: '{name}'. A CDX tag IS a field name -- BUILDLMDB builds each tag FROM the field of that name -- so a tag naming no field could never be built. Nothing was added." }
         ,{ MessageId::CdxDropTagMissingNameText, "en-US", "missing <name>." }
         ,{ MessageId::CdxDropTagUnableResolvePathText, "en-US", "unable to resolve path." }

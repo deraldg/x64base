@@ -237,6 +237,34 @@ public:
         return e ? e->members : std::vector<std::int32_t>{};
     }
 
+    // AIF-078 / 2026-08-29. THE REVERSE OF members(), AND IT LIVES HERE FOR THE
+    // REASON EVERY OTHER RULE IN THIS CLASS DOES: an engine slot has exactly one
+    // owning workspace (invariant I1), so "who owns this slot" is a fact about
+    // the membership table and must have exactly one implementation. DBAREA and
+    // GPS both ask it; neither may carry its own scan, because two answers to
+    // one question is the shape this lane keeps finding (R112's two resolvers,
+    // AIF-137's unscoped parent, the four declarations of a field name).
+    //
+    // Returns 0 for "no workspace owns this slot". That is a REAL state, not an
+    // error: reconcile_unregistered_areas() in cmd_workspace.cpp exists because
+    // an area can be open and belong to nothing, and it calls that a defect in
+    // registration. A caller that prints 0 as "(none)" is therefore an
+    // instrument for it, which is why this returns a sentinel rather than
+    // asserting.
+    //
+    // Linear in workspaces x members. That is the right cost for a display
+    // path and the wrong one for a hot loop; if a hot caller ever appears,
+    // build an index HERE rather than caching a copy at the call site.
+    std::uint64_t owner_of_slot(std::int32_t engine_slot) const {
+        if (engine_slot < 0) return 0;
+        for (const auto& kv : entries_) {
+            for (const auto slot : kv.second.members) {
+                if (slot == engine_slot) return kv.first;
+            }
+        }
+        return 0;
+    }
+
     std::vector<std::uint64_t> handles() const {
         std::vector<std::uint64_t> out;
         out.reserve(entries_.size());
@@ -479,6 +507,7 @@ inline bool set_ws_id(std::uint64_t h, std::uint64_t id) { return default_table(
 
 inline std::size_t member_count(std::uint64_t h) { return default_table().member_count(h); }
 inline std::vector<std::int32_t> members(std::uint64_t h) { return default_table().members(h); }
+inline std::uint64_t owner_of_slot(std::int32_t engine_slot) { return default_table().owner_of_slot(engine_slot); }
 inline std::vector<std::uint64_t> handles() { return default_table().handles(); }
 inline bool exists(std::uint64_t h) { return default_table().exists(h); }
 
