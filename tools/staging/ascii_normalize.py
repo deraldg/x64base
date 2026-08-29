@@ -83,6 +83,10 @@ CHAR_MAP = {
     "\u2074": "^4",     # SUPERSCRIPT FOUR
     "\u00b5": "u",      # MICRO SIGN                    us, not microsecond glyph
     "\u00b7": "-",      # MIDDLE DOT                    observed as a separator
+    "\u2022": "-",      # BULLET                        observed as a Markdown list
+                        #                               marker ("  * item"); refusing
+                        #                               this blocked the manuals commit
+                        #                               2026-08-29, 18 of them in one file
     "\u2019": "'",      # RIGHT SINGLE QUOTATION MARK
     "\u2018": "'",      # LEFT SINGLE QUOTATION MARK
     "\u201c": '"',      # LEFT DOUBLE QUOTATION MARK

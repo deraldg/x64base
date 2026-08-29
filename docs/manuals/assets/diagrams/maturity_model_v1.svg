@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
+  <rect width="960" height="540" fill="#f8fafc"/>
+  <text x="48" y="54" font-family="Segoe UI, Arial, sans-serif" font-size="30" font-weight="700" fill="#111827">Manual Maturity Model</text>
+  <text x="48" y="86" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#4b5563">Manual claims mature from captured ideas to release-reviewed documentation.</text>
+  <defs><marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M2,2 L10,6 L2,10 Z" fill="#374151"/></marker></defs>
+  <g font-family="Segoe UI, Arial, sans-serif" text-anchor="middle" font-size="14">
+    <rect x="42" y="190" width="110" height="70" rx="8" fill="#fee2e2" stroke="#dc2626"/><text x="97" y="218">M0</text><text x="97" y="240">Captured</text>
+    <rect x="172" y="190" width="110" height="70" rx="8" fill="#ffedd5" stroke="#ea580c"/><text x="227" y="218">M1</text><text x="227" y="240">Anchored</text>
+    <rect x="302" y="190" width="110" height="70" rx="8" fill="#fef3c7" stroke="#d97706"/><text x="357" y="218">M2</text><text x="357" y="240">Source</text>
+    <rect x="432" y="190" width="110" height="70" rx="8" fill="#dcfce7" stroke="#16a34a"/><text x="487" y="218">M3</text><text x="487" y="240">Proven</text>
+    <rect x="562" y="190" width="110" height="70" rx="8" fill="#dbeafe" stroke="#2563eb"/><text x="617" y="218">M4</text><text x="617" y="240">Reader-ready</text>
+    <rect x="692" y="190" width="110" height="70" rx="8" fill="#ede9fe" stroke="#7c3aed"/><text x="747" y="218">M5</text><text x="747" y="240">Reference</text>
+    <rect x="822" y="190" width="110" height="70" rx="8" fill="#e5e7eb" stroke="#374151"/><text x="877" y="218">M6</text><text x="877" y="240">Reviewed</text>
+  </g>
+  <g stroke="#374151" stroke-width="2" fill="none" marker-end="url(#arrow)">
+    <path d="M152 225 H172"/><path d="M282 225 H302"/><path d="M412 225 H432"/><path d="M542 225 H562"/><path d="M672 225 H692"/><path d="M802 225 H822"/>
+  </g>
+  <text x="480" y="365" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="18" fill="#374151">Reader workflows require M3 or better. Publication wants M6.</text>
+</svg>

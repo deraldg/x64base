@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
+  <rect width="960" height="540" fill="#f8fafc"/>
+  <text x="48" y="54" font-family="Segoe UI, Arial, sans-serif" font-size="30" font-weight="700" fill="#111827">x64 Memo Direction: DTX Sidecar</text>
+  <text x="48" y="86" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#4b5563">The table stores object IDs; large memo payloads live in the DTX sidecar.</text>
+  <defs><marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M2,2 L10,6 L2,10 Z" fill="#374151"/></marker></defs>
+  <g font-family="Segoe UI, Arial, sans-serif" text-anchor="middle" font-size="16">
+    <rect x="110" y="150" width="270" height="240" rx="10" fill="#dbeafe" stroke="#2563eb"/>
+    <text x="245" y="198" font-size="22" font-weight="700" fill="#1e3a8a">DBF record</text>
+    <text x="245" y="240" fill="#1e40af">memo field slot</text>
+    <text x="245" y="266" fill="#1e40af">uint64 object_id</text>
+    <rect x="580" y="150" width="270" height="240" rx="10" fill="#dcfce7" stroke="#16a34a"/>
+    <text x="715" y="198" font-size="22" font-weight="700" fill="#14532d">DTX sidecar</text>
+    <text x="715" y="240" fill="#166534">payload bytes</text>
+    <text x="715" y="266" fill="#166534">append offsets</text>
+    <text x="715" y="292" fill="#166534">object versions</text>
+  </g>
+  <path d="M380 270 H580" stroke="#374151" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
+  <text x="480" y="255" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#374151">object_id lookup</text>
+</svg>

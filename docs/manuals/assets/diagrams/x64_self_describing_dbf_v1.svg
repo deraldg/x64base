@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
+  <rect width="960" height="540" fill="#fffdf7"/>
+  <text x="48" y="54" font-family="Segoe UI, Arial, sans-serif" font-size="30" font-weight="700" fill="#1f2937">Self-Describing x64 DBF</text>
+  <text x="48" y="86" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#4b5563">X64M carries logical table and field names inside the file before record data.</text>
+  <g font-family="Segoe UI, Arial, sans-serif" text-anchor="middle">
+    <rect x="70" y="150" width="130" height="210" fill="#dbeafe" stroke="#2563eb"/>
+    <text x="135" y="238" font-size="17" font-weight="700" fill="#1e3a8a">32-byte</text><text x="135" y="262" font-size="17" font-weight="700" fill="#1e3a8a">header</text>
+    <rect x="200" y="150" width="150" height="210" fill="#dcfce7" stroke="#16a34a"/>
+    <text x="275" y="238" font-size="17" font-weight="700" fill="#14532d">64-byte</text><text x="275" y="262" font-size="17" font-weight="700" fill="#14532d">x64 extension</text>
+    <rect x="350" y="150" width="145" height="210" fill="#fef3c7" stroke="#d97706"/>
+    <text x="422" y="238" font-size="17" font-weight="700" fill="#78350f">field</text><text x="422" y="262" font-size="17" font-weight="700" fill="#78350f">descriptors</text>
+    <rect x="495" y="150" width="150" height="210" fill="#ede9fe" stroke="#7c3aed"/>
+    <text x="570" y="226" font-size="20" font-weight="700" fill="#581c87">X64M</text><text x="570" y="252" font-size="15" fill="#6b21a8">name vector</text><text x="570" y="274" font-size="15" fill="#6b21a8">string pool</text>
+    <rect x="645" y="150" width="245" height="210" fill="#e5e7eb" stroke="#374151"/>
+    <text x="767" y="238" font-size="18" font-weight="700" fill="#111827">record data</text><text x="767" y="264" font-size="14" fill="#374151">data_start_64 points here</text>
+  </g>
+  <text x="480" y="420" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="17" fill="#374151">Descriptor tokens remain compatibility fallback. X64M names are authoritative when present and valid.</text>
+</svg>

@@ -1,0 +1,71 @@
+{
+  "artifact": "arctictalk_labtalk_runtime_evidence_20260703",
+  "status": "generated evidence section for manual review",
+  "generated_from_user_supplied_screenshots": true,
+  "evidence_date": "2026-07-03",
+  "boundary": "evidence-only; no HELP/CMDHELPCHK/DBF/CDX/LMDB/catalog/source/publication mutation",
+  "website_page": "https://x64base.com/docs/labtalk/runtime-evidence/",
+  "website_source": "D:/dev/x64base-site/content/docs/labtalk/runtime-evidence.mdx",
+  "evidence_items": [
+    {
+      "id": "EVID-ARCTIC-GUI-TEACHERS-BROWSE-CDX-20260703",
+      "original": "C:/Users/deral/Downloads/Screenshot 2026-07-03 210028.jpg",
+      "website_asset": "D:/dev/x64base-site/public/images/evidence/arctictalk-teachers-browse-cdx-evidence-20260703.jpg",
+      "supports": ["ArcticTalk GUI", "TEACHERS.DBF browse", "CDX/LMDB diagnostics", "ordered table browsing"]
+    },
+    {
+      "id": "EVID-ARCTIC-GUI-WORKSPACE-AREAS-20260703",
+      "original": "C:/Users/deral/Downloads/Screenshot 2026-07-03 205552.jpg",
+      "website_asset": "D:/dev/x64base-site/public/images/evidence/arctictalk-workspace-areas-12-relations-evidence-20260703.jpg",
+      "supports": ["workspace areas", "12 DBF areas", "15 relations", "GUI mirror"]
+    },
+    {
+      "id": "EVID-ARCTIC-GUI-COMMAND-OUTPUT-20260703",
+      "original": "C:/Users/deral/Downloads/Screenshot 2026-07-03 205950.jpg",
+      "website_asset": "D:/dev/x64base-site/public/images/evidence/arctictalk-workspace-command-output-evidence-20260703.jpg",
+      "supports": ["GUI command output", "diagnostic readback", "workspace state"]
+    },
+    {
+      "id": "EVID-LABTALK-PORTAL-DOCS-20260703",
+      "original": "C:/Users/deral/Downloads/Screenshot 2026-07-03 205327.jpg",
+      "website_asset": "D:/dev/x64base-site/public/images/evidence/labtalk-portal-docs-index-evidence-20260703.jpg",
+      "supports": ["LabTalk Portal", "documentation index", "proof/campus sections"]
+    },
+    {
+      "id": "EVID-ARCTIC-TUI-TUPLE-GRID-20260703",
+      "original": "C:/Users/deral/Downloads/Screenshot 2026-07-03 210533.jpg",
+      "website_asset": "D:/dev/x64base-site/public/images/evidence/arctictalk-tui-tuple-grid-record-evidence-20260703.jpg",
+      "supports": ["TUI", "tuple grid", "record popup", "relation browsing"]
+    },
+    {
+      "id": "EVID-DOTTALK-CLI-STARTUP-BIBLETALK-20260703",
+      "original": "C:/Users/deral/Downloads/Screenshot 2026-07-03 212624.jpg",
+      "website_asset": "D:/dev/x64base-site/public/images/evidence/dottalk-cli-startup-bibletalk-evidence-20260703.jpg",
+      "supports": ["DotTalk++ CLI", "startup readback", "SQLite availability", "EDU_BIBLETALK", "education hooks"]
+    },
+    {
+      "id": "EVID-DOTTALK-CLI-WORKSPACE-RELATION-LOAD-20260703",
+      "original": "C:/Users/deral/Downloads/Screenshot 2026-07-03 212639.jpg",
+      "website_asset": "D:/dev/x64base-site/public/images/evidence/dottalk-cli-workspace-relation-load-evidence-20260703.jpg",
+      "supports": ["DotTalk++ CLI", "ERSATZ", "workspace load", "SETPATH", "relations", "12 areas", "15 relations"]
+    },
+    {
+      "id": "EVID-DOTTALK-CLI-RELATION-TREE-TUPLE-GRID-20260703",
+      "original": "C:/Users/deral/Downloads/Screenshot 2026-07-03 212731.jpg",
+      "website_asset": "D:/dev/x64base-site/public/images/evidence/dottalk-cli-relation-tree-tuple-grid-evidence-20260703.jpg",
+      "supports": ["DotTalk++ CLI", "relation tree", "descendant summary", "tuple grid", "joined fields"]
+    },
+    {
+      "id": "EVID-DOTTALK-WORKBENCH-PREVIEW-EMPTY-WORKSPACE-20260703",
+      "original": "C:/Users/deral/Downloads/Screenshot 2026-07-03 211710.jpg",
+      "website_asset": "D:/dev/x64base-site/public/images/evidence/dottalk-workbench-preview-empty-workspace-evidence-20260703.jpg",
+      "supports": ["DotTalk++ Workbench Preview", "workspace graph", "bootstrap state", "pending service notes"]
+    },
+    {
+      "id": "EVID-X64BASE-WEBSITE-FAQ-LIVE-20260703",
+      "original": "C:/Users/deral/Downloads/Screenshot 2026-07-03 212533.jpg",
+      "website_asset": "D:/dev/x64base-site/public/images/evidence/x64base-website-faq-live-evidence-20260703.jpg",
+      "supports": ["x64base website", "FAQ", "documentation navigation", "website matriculation"]
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
+  <rect width="960" height="540" fill="#f9fafb"/>
+  <text x="48" y="54" font-family="Segoe UI, Arial, sans-serif" font-size="30" font-weight="700" fill="#1f2937">Work Areas and Cursor Control</text>
+  <text x="48" y="86" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#4b5563">Commands operate through the current work area and current record pointer.</text>
+  <g font-family="Segoe UI, Arial, sans-serif">
+    <rect x="92" y="142" width="230" height="270" rx="10" fill="#e0f2fe" stroke="#0284c7"/>
+    <text x="125" y="185" font-size="22" font-weight="700" fill="#075985">Area 0</text>
+    <text x="125" y="218" font-size="16" fill="#0369a1">STUDENTS.dbf</text>
+    <text x="125" y="250" font-size="16" fill="#0369a1">Current: yes</text>
+    <text x="125" y="282" font-size="16" fill="#0369a1">RECNO: 3</text>
+    <rect x="365" y="142" width="230" height="270" rx="10" fill="#ecfdf5" stroke="#059669"/>
+    <text x="398" y="185" font-size="22" font-weight="700" fill="#064e3b">Area 1</text>
+    <text x="398" y="218" font-size="16" fill="#047857">ENROLL.dbf</text>
+    <text x="398" y="250" font-size="16" fill="#047857">Current: no</text>
+    <text x="398" y="282" font-size="16" fill="#047857">RECNO: 12</text>
+    <rect x="638" y="142" width="230" height="270" rx="10" fill="#fef3c7" stroke="#d97706"/>
+    <text x="671" y="185" font-size="22" font-weight="700" fill="#78350f">Area 2</text>
+    <text x="671" y="218" font-size="16" fill="#92400e">COURSES.dbf</text>
+    <text x="671" y="250" font-size="16" fill="#92400e">Current: no</text>
+    <text x="671" y="282" font-size="16" fill="#92400e">RECNO: 1</text>
+  </g>
+  <text x="480" y="465" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="17" fill="#374151">Safe mutation starts by knowing the current area and current record.</text>
+</svg>
