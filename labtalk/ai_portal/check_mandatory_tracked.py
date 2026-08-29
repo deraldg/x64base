@@ -74,9 +74,31 @@ def declared(root: Path) -> tuple[set[str], set[str]]:
             continue
         text = path.read_text(encoding="utf-8", errors="replace")
         for hit in DOC_RE.findall(text):
+            # DOC_RE's character class has no backslash, so a Windows-spelled
+            # .md path is never MATCHED here rather than being matched and then
+            # mangled. Narrower hole, different shape, deliberately not widened
+            # in the same change: doing so would move the document count too,
+            # and one measured fix per commit.
             docs.add(hit.lstrip("./"))
         for hit in SCRIPT_RE.findall(text):
-            scripts.add(hit.lstrip("./").replace("\\", "/"))
+            # NORMALIZE SEPARATORS FIRST, THEN STRIP. The reverse order was
+            # silently discarding every Windows-spelled path in the portal, and
+            # AI_README.md spells its scripts that way (`.\\run-erp.ps1`, line
+            # 560). Worked through:
+            #
+            #   .\\run-erp.ps1  -lstrip("./")->  \\run-erp.ps1  -replace->  /run-erp.ps1
+            #
+            # -- a leading slash that matches nothing, so the is_file() filter
+            # below dropped it without a word. 27 hits in the entry documents,
+            # 10 survived. FOUR SCRIPTS THE PORTAL TELLS YOU TO RUN WERE
+            # UNTRACKED WHILE THIS GATE REPORTED PASS: launch_portal.ps1,
+            # run-cli.ps1, run-erp.ps1, run-pycrud.ps1.
+            #
+            # That is the 2026-07-31 defect described at the head of this file,
+            # recurring inside the checker written to catch it. A guard whose
+            # own input normalization drops the cases it exists for reports
+            # PASS over a smaller set every time and never says the set shrank.
+            scripts.add(hit.replace("\\", "/").lstrip("./"))
 
     docs = {f for f in docs if (root / f).is_file()}
     scripts = {f for f in scripts if (root / f).is_file()}
