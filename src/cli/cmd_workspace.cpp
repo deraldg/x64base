@@ -4556,13 +4556,22 @@ static void workspace_print_tuples(xbase::DbArea& current,
 
     const int32_t savedRecno = area->recno();
 
+    // AIF-148 RESIDUE, 2026-08-29. TWO PREDICATES BECAUSE THERE ARE TWO
+    // QUESTIONS. hasOrder answers "is a container attached", which is what the
+    // TAG= and INDEX= fields below are reporting and is correct for them.
+    // naturalOrder answers "which order does the cursor follow", which is what
+    // ORDER= is claiming -- and an attached .cdx with no tag selected made the
+    // old single predicate print ORDER=ASC over rows that came back in
+    // physical order.
     bool hasOrder = false;
+    bool naturalOrder = true;
     bool descending = false;
     std::string orderName;
     std::string tag;
     try {
         hasOrder = orderstate::hasOrder(*area);
-        descending = hasOrder && !orderstate::isAscending(*area);
+        naturalOrder = orderstate::isNaturalOrder(*area);
+        descending = !naturalOrder && !orderstate::isAscending(*area);
         orderName = orderstate::orderName(*area);
         tag = orderstate::activeTag(*area);
     } catch (...) {}
@@ -4591,7 +4600,7 @@ static void workspace_print_tuples(xbase::DbArea& current,
     if (areaIndex >= 0) std::cout << " AREA=" << areaIndex;
     std::cout << " TABLE=" << workspace_area_label(*area)
               << " RECS=" << area->recCount64()
-              << " ORDER=" << (hasOrder ? (descending ? "DESC" : "ASC") : "PHYSICAL")
+              << " ORDER=" << (naturalOrder ? "PHYSICAL" : (descending ? "DESC" : "ASC"))
               << " LIMIT=" << opt.limit
               << " OFFSET=" << opt.offset;
     if (hasOrder) {

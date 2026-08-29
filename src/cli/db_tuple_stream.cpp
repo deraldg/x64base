@@ -264,7 +264,18 @@ void DbTupleStream::refresh_bounds_and_order() {
 
     bool has_order = false;
     try {
-        has_order = (A && orderstate::hasOrder(*A));
+        // AIF-148 RESIDUE, 2026-08-29, AND THIS ONE IS NOT A REPORT. It
+        // selects the NAVIGATION MODE, so the question is "is the container's
+        // order in effect", not "is a container attached". With a .cdx attached
+        // and NO TAG the old predicate said true and this stream entered
+        // OrderVector mode; what kept it honest was the empty-vector fallback
+        // below, which demotes the mode back to Physical when the tagless
+        // collect returns nothing. That is correctness by luck -- it depends on
+        // what the collector happens to return rather than on the predicate
+        // asking the right thing, and a collector that returned a non-empty
+        // wrong vector would have navigated wrongly with no guard. The fallback
+        // stays; the question is now the one that was meant.
+        has_order = (A && !orderstate::isNaturalOrder(*A));
     } catch (...) {
         has_order = false;
     }
@@ -480,7 +491,9 @@ std::string DbTupleStream::current_order_hint() const {
     if (!A) return hint_.empty() ? "physical" : hint_;
 
     try {
-        if (!orderstate::hasOrder(*A)) return "physical";
+        // AIF-148 residue: the hint names the order the cursor follows, so an
+        // attached container with no tag selected is "physical".
+        if (orderstate::isNaturalOrder(*A)) return "physical";
 
         std::ostringstream oss;
 
