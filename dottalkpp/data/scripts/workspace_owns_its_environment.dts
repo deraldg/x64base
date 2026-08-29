@@ -77,6 +77,15 @@ USE RSPT
 * binding must have actually landed on A (T4, proven by switching to A and
 * opening without a SET PATH).
 SET PATH DBF DBF/SANDBOX/R131A IN RSEWSA
+* CLOSE FIRST OR T3 IS BLIND -- MEASURED 2026-08-29 on build 008e7cd2. Without
+* it the USE below answered "already open in current area 0": T2 had left B's
+* table sitting in area 0, the USE declined to open, and the marker read BBB
+* off a cursor the IN clause never touched. It would have read .T. whether or
+* not the clause wrongly moved the session slot -- the arm could not go red.
+* That is the AIF-148 shape this file's own header warns about, and T3 was the
+* only USE here not preceded by a SWITCH or a CLOSE.
+* A USE NOT PRECEDED BY A SWITCH OR A CLOSE IS NOT AN OPEN.
+CLOSE
 USE RSPT
 ? "RSE_T3_in_clause_left_the_session_alone:" + (ALLTRIM(MARK) = "BBB")
 WORKSPACE SWITCH RSEWSA

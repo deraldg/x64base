@@ -23,12 +23,25 @@
 * began with workspace_close_all() and the second call would have thrown away
 * the first. TWO_T1 is the arm that proves it did not.
 *
-* THE INDEX SLOT IS GLOBAL, NOT PER WORKSPACE. This is the sharp edge here and
-* the reason each open is preceded by its own three SET PATH lines: the two
-* systems keep their indexes in different roots, and attach happens AT OPEN
-* TIME against whatever the slot says then. Set the slots, open, set again,
-* open again. A posture records DBFROOT/IDXROOT and can re-point itself on
-* LOAD; the LIVE slots have no such per-workspace memory.
+* THE SLOTS RIDE THE WORKSPACE (R131, implemented 008e7cd2b, 2026-08-29).
+* THIS PARAGRAPH USED TO SAY the index slot was global and the live slots had
+* no per-workspace memory at all. That was true when it was written and is
+* false now: DBF/INDEXES/LMDB are STAMPED on the workspace, WORKSPACE SWITCH
+* restores them, and it PRINTS every slot it moves.
+*
+* WHAT THAT COSTS HERE, and it is a HAZARD rather than a note. The bare
+* SET PATH BINDS WHOEVER IS CURRENT. Setting the Cascade roots while standing
+* in MCC overwrites MCC'S OWN STAMP with the Cascade bundle -- and then
+* WORKSPACE SWITCH MCC faithfully RESTORES the wrong roots. That is R131's
+* founding defect made DURABLE instead of merely left lying in a global, and
+* it is strictly worse than what came before, because a switch now re-applies
+* it. This script hit it: it is the first thing that opens two systems, which
+* is exactly the shape R131 sec 7 calls the misordering hazard.
+*
+* THE REMEDY IS ONE LINE, below -- step out to DEFAULT before moving the slots
+* for the second system, so MCC's stamp is never in the line of fire. Where
+* you must retarget a workspace you are NOT standing in, NAME it:
+*   SET PATH DBF DBF/x64 IN MCC
 *
 * ---------------------------------------------------------------------------
 * READ RULE -- COUNT THE MARKERS FIRST, READ THE VERDICTS SECOND.
@@ -105,6 +118,12 @@ GO 1
 * Bundle layout, owner ruling 2026-08-10: everything Cascade lives under
 * systems/cascade_erp/. Slots move together or the indexes attach from the
 * wrong root.
+*
+* STEP OUT OF MCC FIRST -- R131, and this is load-bearing, not tidiness. These
+* three lines issued while standing in MCC would restamp MCC with the Cascade
+* bundle. Nothing about the open would look wrong; the damage surfaces later,
+* as WORKSPACE SWITCH MCC restoring Cascade's roots and saying so.
+WORKSPACE SWITCH DEFAULT
 SET PATH DBF SYSTEMS/CASCADE_ERP/DBF
 SET PATH INDEXES SYSTEMS/CASCADE_ERP/INDEXES
 SET PATH LMDB SYSTEMS/CASCADE_ERP/LMDB
@@ -149,30 +168,28 @@ GO 1
 ECHO
 ECHO === BOTH WORKSPACES ARE OPEN -- READ THIS BEFORE YOU SWITCH ===
 ECHO
-ECHO   WORKSPACE SWITCH MOVES MEMBERSHIP. IT DOES NOT MOVE THE PATH SLOTS.
-ECHO   Both systems stay open and readable either way, but anything that has
-ECHO   to RESOLVE a container or an LMDB env goes through the GLOBAL slot,
-ECHO   which belongs to whichever workspace was opened last. So a switch is
-ECHO   FOUR LINES, not one. Measured 2026-08-29: SET ORDER TO TAG SID on
-ECHO   MCC's STUDENTS answered
+ECHO   WORKSPACE SWITCH MOVES MEMBERSHIP AND, SINCE R131, THE PATH SLOTS.
+ECHO   A SWITCH IS ONE LINE NOW:
+ECHO
+ECHO     TO WORK IN MCC:      WORKSPACE SWITCH MCC
+ECHO     TO WORK IN CASCADE:  WORKSPACE SWITCH CASCERP
+ECHO
+ECHO   It PRINTS every slot it moves, so read the environment change rather
+ECHO   than trusting it.
+ECHO
+ECHO   THIS BANNER USED TO SAY FOUR LINES. Before R131 the slots were global
+ECHO   and belonged to whichever workspace opened last, so SET ORDER TO TAG
+ECHO   SID on MCC's STUDENTS answered, measured 2026-08-29:
 ECHO     "openCdx: LMDB env missing: ...SYSTEMS\CASCADE_ERP\LMDB\STUDENTS.cdx.d"
-ECHO   -- an MCC table looked up under the Cascade bundle.
+ECHO   -- an MCC table looked up under the Cascade bundle. That is the defect
+ECHO   R131 closed, and the reason this banner shrank.
 ECHO
-ECHO   TO WORK IN MCC:
-ECHO     WORKSPACE SWITCH MCC
-ECHO     SET PATH DBF DBF/x64
-ECHO     SET PATH INDEXES INDEXES/x64
-ECHO     SET PATH LMDB LMDB/x64
-ECHO
-ECHO   TO WORK IN CASCADE:
-ECHO     WORKSPACE SWITCH CASCERP
-ECHO     SET PATH DBF SYSTEMS/CASCADE_ERP/DBF
-ECHO     SET PATH INDEXES SYSTEMS/CASCADE_ERP/INDEXES
-ECHO     SET PATH LMDB SYSTEMS/CASCADE_ERP/LMDB
+ECHO   ONE THING TO WATCH: a bare SET PATH RESTAMPS THE WORKSPACE YOU ARE
+ECHO   STANDING IN. To retarget one you are not in, NAME it:
+ECHO     SET PATH DBF DBF/x64 IN MCC
 ECHO
 ECHO   WORKSPACE REGISTRY  -- who owns which engine slot
 ECHO   Address tables BY NAME after a switch, never by slot number.
-ECHO   The slots are left pointing at the CASCADE bundle by this script.
 ECHO
 
 * ===========================================================================
@@ -188,13 +205,14 @@ ECHO
 *     SELECT). Qualify by switching workspaces first, which this script does.
 *   - THE 13 AND THE 43. Console counts, which no marker can read; verify
 *     them in the transcript (the IDXDIFF precedent).
-*   - THAT EITHER WORKSPACE CAN DO INDEX WORK. It cannot, not without moving
-*     the slots first. NOTHING HERE ASSERTS THAT, and it is the sharpest
-*     limitation of running two systems at once: WORKSPACE SWITCH is scoped,
-*     SET PATH is not. A posture records DBFROOT/IDXROOT and re-points itself
-*     on LOAD; the LIVE slots have no per-workspace memory at all. An arm for
-*     it would need a field-value read AFTER a SET ORDER in each workspace,
-*     which is a spec of its own and is not this script's job.
+*   - THAT EITHER WORKSPACE CAN DO INDEX WORK AFTER A BARE SWITCH. R131 says
+*     it should now. NOTHING HERE ASSERTS IT. This bullet used to say it could
+*     NOT, which was true before 008e7cd2b, and the gap it leaves is the
+*     sharpest one left: WSENV proves the DBF SLOT MOVES, and never asks an
+*     INDEX or an LMDB env to RESOLVE through it -- which is what the founding
+*     measurement actually failed at. An arm needs a field-value read AFTER a
+*     SET ORDER in each workspace. That is a spec of its own and the natural
+*     successor to WSENV; it is not this script's job.
 *
 * IT ADOPTS, AND THAT IS DELIBERATE. WORKSPACE OPEN ... AS prints "ADOPTED the
 * durable identity this name already holds in the catalog" on every run after
