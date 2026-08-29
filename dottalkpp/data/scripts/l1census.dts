@@ -12,7 +12,14 @@
 && these counts are over the rows a user can see.
 
 ECHO === total visible rows ===
-USE D:\code\ccode\dottalkpp\data\workspaces\WORKSPACES.dbf
+&& AMENDED 2026-08-28: the hardcoded D:\code\ccode path is gone. It was
+&& OI-017's shape living in this lane's own tooling -- a TRACKED script that
+&& cannot run for anyone who clones. `&_WORKSPACES` is the engine-owned
+&& variable (fd0d6ef40): it resolves the WORKSPACES slot AT EXPANSION TIME, so
+&& this reads whatever catalog is actually in force. Run bare it reads
+&& production; run under an AIF-078 L2 bracket it reads the scratch root, which
+&& is the correct answer to "census the catalog I am using" in both cases.
+USE &_WORKSPACES\WORKSPACES.dbf
 COUNT
 
 ECHO === superseded (retired history) ===

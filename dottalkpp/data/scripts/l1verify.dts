@@ -11,7 +11,7 @@
 &&   L1A  minted, DESTROYed (so it is catalog-only), then DELETEd  -> expect SUCCESS
 &&   L1B  minted and left LIVE in this session, then DELETEd       -> expect REFUSAL
 
-SETPATH WORKSPACES D:\code\ccode\dottalkpp\data\tmp\wscat_l1
+SETPATH WORKSPACES &_TMP\wscat_l1
 
 ECHO === arm A: mint, then retire, so the name is CATALOG-ONLY ===
 WORKSPACE NEW L1A
@@ -21,7 +21,11 @@ ECHO === arm B: mint and LEAVE IT LIVE in this session ===
 WORKSPACE NEW L1B
 
 ECHO === catalog before any DELETE ===
-USE D:\code\ccode\dottalkpp\data\tmp\wscat_l1\WORKSPACES.dbf
+&& AMENDED 2026-08-28: hardcoded D:\code\ccode path replaced by `&_TMP`, the
+&& engine-owned variable for the TMP slot (fd0d6ef40). A TRACKED script with a
+&& machine-absolute path cannot run for anyone who clones -- OI-017's shape,
+&& here in the lifecycle lane's own tooling.
+USE &_TMP\wscat_l1\WORKSPACES.dbf
 COUNT
 COUNT FOR SUPERSEDED = "1"
 COUNT FOR SUPERSEDED = "0"
@@ -33,7 +37,7 @@ ECHO === B: DELETE a name still declared in this session -- expect REFUSAL ===
 WORKSPACE DELETE L1B
 
 ECHO === after: rows are FLAGGED, never packed, so the file does not shrink ===
-USE D:\code\ccode\dottalkpp\data\tmp\wscat_l1\WORKSPACES.dbf
+USE &_TMP\wscat_l1\WORKSPACES.dbf
 COUNT
 ECHO --- and with SET DELETED OFF the flagged rows are still there ---
 SET DELETED OFF
@@ -41,5 +45,10 @@ COUNT
 SET DELETED ON
 
 ECHO === restore and confirm ===
-SETPATH WORKSPACES D:\code\ccode\dottalkpp\data\workspaces
+&& RESTORE THROUGH THE DATA ROOT, NOT A CAPTURED VALUE. `&_DATA\workspaces`
+&& names the same place the reads above name, BY CONSTRUCTION. A captured
+&& SET VAR would have been worse than useless here: SET VAR is dispatched
+&& AHEAD of macro expansion (shell_api.cpp:329 vs :336), so it stores the
+&& TEXT `&_WORKSPACES` rather than its value, silently. Measured 2026-08-28.
+SETPATH WORKSPACES &_DATA\workspaces
 SETPATH

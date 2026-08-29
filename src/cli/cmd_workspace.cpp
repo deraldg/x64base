@@ -76,8 +76,12 @@
 //   WORKSPACE REGISTRY
 //   WORKSPACE NEW <name> [UNDER <parent-name-or-handle>]
 //   WORKSPACE SWITCH <name-or-handle>
+//   WORKSPACE DESTROY <name-or-handle>
+//   WORKSPACE DELETE <name>
+//   WORKSPACE PURGE <name>             -- retained ALIAS of DELETE; see notes
 //   WORKSPACE OPEN DBF
 //   WORKSPACE OPEN <dir>
+//   WORKSPACE OPEN <dir> AS <name>
 //   WORKSPACE OPEN <file.dbf>
 //   WORKSPACE ADD <file.dbf>
 //   WORKSPACE ADD <target> CNX [FALLBACK] [TABLE]
@@ -117,6 +121,8 @@
 //   WORKSPACE WRITEBACK <name> [TO <root>] [WITH INDEXES] [CONFIRM]
 //   WORKSPACE CATALOG
 //   WORKSPACE TUPLES [LIMIT <n>] [OFFSET <n>] [AREA <n>]
+//   WORKSPACE TUPLE|VIEW|ROWS ...      -- retained ALIASES of TUPLES
+//   WORKSPACE HELP | WORKSPACE ?       -- retained ALIASES of USAGE
 //
 // notes:
 //   WORKSPACE with no arguments is a report: it lists current open work areas.
@@ -181,6 +187,79 @@
 //   is not workspace-scoped yet, so closing one workspace clears relations
 //   belonging to areas still open elsewhere. The engine reports that, naming
 //   the count. AIF-078 stage 3 limitation, not a defect in the caller.
+//   RETIREMENT AND REMOVAL ARE TWO DIFFERENT VERBS AND THE DIFFERENCE IS THE
+//   WHOLE DESIGN (added to this block 2026-08-28 -- see the drift note below).
+//   WORKSPACE DESTROY <name> RETIRES a durable identity: it supersedes the
+//   name's live catalog row so the name has NO live row, and a later
+//   WORKSPACE NEW of that name mints a FRESH WS_ID instead of ADOPTING the old
+//   one. The rows all stay: a destroyed workspace leaves a RECORD, not a hole.
+//   The runtime handle is NOT reused either -- a stale handle held by an area
+//   must resolve to "gone" and never to somebody else. DESTROY refuses three
+//   things rather than cascading: DEFAULT (invariant I1 needs it to outlive
+//   every other workspace), a workspace still HOLDING AREAS, and a workspace
+//   with NESTED CHILDREN. Destroy the child first. Because it never cascades,
+//   it can never be the thing that silently orphaned an open area.
+//   WORKSPACE DELETE <name> FLAGS the name's rows deleted AND superseded, and
+//   THEY STAY ON DISK PERMANENTLY. THERE IS DELIBERATELY NO WORKSPACE PACK:
+//   allocation is max(WS_ID)+1 derived from the surviving rows, so the deleted
+//   rows MUST keep being counted or the next WORKSPACE NEW would inherit a
+//   deleted workspace's durable identity. The high-water mark is preserved and
+//   the verb says so when it runs. What stops an adoption is SUPERSEDED, not
+//   the delete flag. DELETE refuses a workspace DECLARED IN THIS SESSION:
+//   retire it with DESTROY first, because deleting a declared workspace's rows
+//   would leave it running with no durable identity.
+//   PURGE IS A RETAINED ALIAS AND ITS NAME IS WRONG. The verb was called PURGE
+//   until the owner read its output: "how could you ever locate a purged row,
+//   it is gone forever, delete is a flag and that means the row still exists
+//   just ignored." In xBase the pair is exact -- DELETE flags and the row is
+//   ignored, PACK removes it -- so "purge" belongs on the PACK side and this
+//   verb is on the flag side. The alias still dispatches so existing scripts
+//   and habits keep working; prefer DELETE in anything new. Gated by PG_T5 in
+//   workspace_purge_regression.dts, which asserts the alias still reaches the
+//   verb rather than assuming it.
+//   OPEN <dir> AS <name> OVERRIDES THE DEFAULT NAME (R128). A directory open
+//   names the workspace after the directory LEAF; two directories with the
+//   same leaf would ask for one handle, and the refusal points at this clause.
+//   It is also a MINTING form: like NEW, it births a catalog row, which is why
+//   a spec using it accumulates durable rows even with no NEW and no SAVE.
+//   TUPLE, VIEW and ROWS are retained ALIASES of TUPLES; HELP and ? are
+//   retained aliases of USAGE. Listed because a reflection surface that
+//   enumerates this block would otherwise report four verbs the dispatcher
+//   accepts as unknown.
+//   THIS IS THE THIRD CONTRACT DRIFT ON THIS FILE, and the two before it are
+//   recorded above in their own words -- MEMO/MINIDB/RAM/WRITEBACK
+//   (2026-08-12, "shipping and unlisted") and NEW/SWITCH/REGISTRY/CLOSE ALL
+//   (2026-08-24, "WORKSPACE USAGE showed a single-workspace command while the
+//   engine ran a tree of them"). MEASURED 2026-08-28 by parsing the dispatcher
+//   rather than reading this header: 21 subcommands are dispatched, SIX of
+//   them appeared nowhere here -- DESTROY, DELETE, PURGE, TUPLE, VIEW, ROWS --
+//   plus the OPEN ... AS clause. DESTROY has been shipping since 2026-08-23
+//   and DELETE since 2026-08-24, so both were absent from the contract for
+//   FOUR DAYS while WORKSPACE USAGE reported a verb set that could not retire
+//   or remove anything. The pattern is not that this header is neglected; it
+//   is that a header is a SECOND DECLARATION of what the dispatcher already
+//   says, and a second declaration drifts unless something compares them. The
+//   comparison is one grep -- `sub_command == "..."` -- and it is worth
+//   running whenever this file gains a branch.
+//   RESIDUE IS INVISIBLE UNLESS YOU LOOK, AND THERE IS A SCRIPT FOR LOOKING.
+//   Every WORKSPACE NEW and every OPEN ... AS writes a durable row, so a HAND
+//   session at this prompt mints into the PRODUCTION catalog with no
+//   instrument around it -- REGRESSION brackets a spec into a scratch root,
+//   but nothing brackets a person. What that leaves behind is not the rows
+//   (they are history by design) but LIVE HEADS: a name still holding a live
+//   row, which the next WORKSPACE NEW of that name will ADOPT rather than
+//   mint fresh. NEW says ADOPTED when it happens; the point is to not be
+//   surprised by it.
+//     do l1census    -- read-only. Counts rows, superseded, and LIVE HEADS,
+//                       and lists them by name. Reads through the WORKSPACES
+//                       slot, so it censuses whatever catalog is in force.
+//     do l1verify    -- the scratch-root arm.
+//     do l1cleanup   -- retires names, and it WRITES. Read it before running.
+//   Retire what you declared before you leave: WORKSPACE DESTROY <name>,
+//   children first. Seven live heads are INTENTIONAL and should stay --
+//   mcc_x64, mcc_v3, sess_cursor, mcc_db, mcc_minidb_memo (real saved
+//   workspaces) and x64, x32 (directory identities, where adoption IS the
+//   feature). Anything else live is probably yours.
 //   Worked usage: dottalkpp/data/scripts/workspace_multi_demo.dts (narrated
 //   tour, asserts nothing) and workspace_multi_regression.dts (the gate).
 //   WORKSPACE owns live areas, aliases, index/tag bindings, and relation/session layout.
