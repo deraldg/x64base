@@ -42,8 +42,13 @@ SET PATH DBF DBF
 * T1/T2 -- ADDITIVE OPEN. T1 asks the answerable question: after opening WAOA
 * and then WAOB, does AREA 0 STILL HOLD WAOA'S TABLE. Under the replacing OPEN
 * it holds WAOB's, so this reads .F. rather than printing nothing.
-WORKSPACE OPEN DBF/SANDBOX/WAOA
-WORKSPACE OPEN DBF/SANDBOX/WAOB
+* R131, 2026-08-29: THESE THREE OPENS GAINED AN EXPLICIT `AS`. They used to
+* rely on the directory LEAF naming the workspace, which R131 withdrew. The
+* SEMANTICS OF THIS SPEC ARE UNCHANGED -- WAOA and WAOB are still two separate
+* workspaces, which is what T1/T2/T4 were measured against on both binaries on
+* 2026-08-26. Only the spelling moved, from implicit to typed.
+WORKSPACE OPEN DBF/SANDBOX/WAOA AS WAOA
+WORKSPACE OPEN DBF/SANDBOX/WAOB AS WAOB
 SELECT 0
 ? "WAO_T1_first_workspace_survived_the_second_open:" + (ALLTRIM(MARK) = "AAA")
 SELECT 1
@@ -51,7 +56,7 @@ SELECT 1
 * T3/T4 -- RE-ENTRY adds only what is not already open. T3 is green under BOTH
 * implementations and is NOT a discriminator; it is here because a re-entry
 * that disturbed the surviving area would show up nowhere else.
-WORKSPACE OPEN DBF/SANDBOX/WAOA
+WORKSPACE OPEN DBF/SANDBOX/WAOA AS WAOA
 SELECT 0
 ? "WAO_T3_reentry_left_the_open_table_alone:" + (ALLTRIM(MARK) = "AAA")
 SELECT 1

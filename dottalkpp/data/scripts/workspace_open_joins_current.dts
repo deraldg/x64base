@@ -1,0 +1,133 @@
+* R131. WORKSPACE OPEN LANDS IN THE CURRENT WORKSPACE (owner ruling 2026-08-29).
+* Explicit-run until soaked. Self-bootstrapping in SANDBOX, self-erasing.
+*
+* WHAT CHANGED. A bare `WORKSPACE OPEN <dir>` used to derive a workspace name
+* from the resolved directory LEAF, mint or adopt that workspace, switch into
+* it, and open there -- so it walked OUT of the workspace the person was
+* standing in. `AS <name>` is now the only naming form. R128's capability,
+* "two directories into two workspaces", is unchanged; only the implicit name
+* is withdrawn.
+*
+* WHY IT NEEDED A SPEC. The defect is INVISIBLE TO AREA CONTENT. Under both
+* builds the opened table lands at the same slot with the same value in it,
+* because the allocator is asked for a free area of whatever workspace is
+* current -- and under the old build OPEN had just made that a different
+* workspace. So an arm that reads the opened table reads GREEN on both. The
+* discriminator has to ask WHICH WORKSPACE OWNS THE AREA, and the only thing
+* in this language that answers that is a SCOPED SAVE: save the workspace the
+* person made, reload it, and see how many areas came back. This is WAO_T5's
+* shape, reused deliberately.
+*
+* FIXTURE DIRECTORIES. DBF/SANDBOX/OJCA, OJCB and OJCC must exist. They are
+* EMPTY DIRECTORIES AND GIT DOES NOT TRACK THOSE, so a fresh clone will not
+* have them -- the same standing fragility WAOA/WAOB/WAOC, PKA/PKB and
+* RPCA/RPCB already carry. Stated rather than left to be discovered.
+SET PATH DBF DBF/SANDBOX/OJCA
+ERASE OJCT1 CONFIRM
+CREATE X64 OJCT1 (ID N(4), MARK C(8))
+APPEND
+REPLACE ID WITH 1
+REPLACE MARK WITH "AAA"
+CLOSE
+SET PATH DBF DBF/SANDBOX/OJCB
+ERASE OJCT2 CONFIRM
+CREATE X64 OJCT2 (ID N(4), MARK C(8))
+APPEND
+REPLACE ID WITH 1
+REPLACE MARK WITH "BBB"
+CLOSE
+SET PATH DBF DBF/SANDBOX/OJCC
+ERASE OJCT3 CONFIRM
+CREATE X64 OJCT3 (ID N(4), MARK C(8))
+APPEND
+REPLACE ID WITH 1
+REPLACE MARK WITH "CCC"
+CLOSE
+WORKSPACE CLOSE ALL
+* GUARDS. Each fixture read ON ITS OWN, before any of them is opened or added.
+* Without these an arm reading the wrong MARK cannot tell a broken OPEN from a
+* table that never carried the value -- WAO_G1 earned this paragraph by going
+* red on both binaries when a SET PATH was written in the wrong order.
+SET PATH DBF DBF/SANDBOX/OJCA
+USE OJCT1
+? "OJC_G0_fixture_a_reads_AAA:" + (ALLTRIM(MARK) = "AAA")
+CLOSE
+SET PATH DBF DBF/SANDBOX/OJCB
+USE OJCT2
+? "OJC_G1_fixture_b_reads_BBB:" + (ALLTRIM(MARK) = "BBB")
+CLOSE
+SET PATH DBF DBF/SANDBOX/OJCC
+USE OJCT3
+? "OJC_G2_fixture_c_reads_CCC:" + (ALLTRIM(MARK) = "CCC")
+CLOSE
+WORKSPACE CLOSE ALL
+SET PATH DBF DBF
+* ---------------------------------------------------------------------------
+* THE ARM. Make a workspace by hand, stand in it, put one table in it, then
+* open a directory. R131 says the opened table joins OJCWS.
+WORKSPACE NEW OJCWS
+WORKSPACE SWITCH OJCWS
+WORKSPACE ADD DBF/SANDBOX/OJCA/OJCT1.dbf
+WORKSPACE OPEN DBF/SANDBOX/OJCB
+* G3 -- the open happened at all, and the table is where a reader would look.
+* GREEN ON BOTH BUILDS AND NOT A DISCRIMINATOR, stated rather than implied: a
+* reader counting green arms would otherwise credit it with proving placement.
+* It is here so that a run where OPEN did nothing at all cannot be mistaken
+* for a run where OPEN landed in the wrong workspace.
+SELECT 1
+? "OJC_G3_the_open_landed_somewhere:" + (ALLTRIM(MARK) = "BBB")
+* T1 -- THE DISCRIMINATOR. Save OJCWS, close everything, reload it, and add a
+* third table. If OPEN joined OJCWS the posture carries TWO areas, the reload
+* fills 0 and 1, the ADD lands at 2, and slot 1 still reads BBB. Under the old
+* build OJCWS holds only OJCT1, the posture carries ONE area, the reload fills
+* 0, the ADD lands at 1, and slot 1 reads CCC -- a printed .F., not a silence.
+WORKSPACE SWITCH OJCWS
+WORKSPACE SAVE ojcscope MEMO
+WORKSPACE CLOSE ALL
+WORKSPACE LOAD ojcscope MEMO
+WORKSPACE ADD DBF/SANDBOX/OJCC/OJCT3.dbf
+SELECT 1
+? "OJC_T1_opened_table_was_in_the_current_workspace:" + (ALLTRIM(MARK) = "BBB")
+* T2 -- the placement half. WEAKER THAN T1 BY CONSTRUCTION: under the old
+* build area 2 is never opened, so this arm may print NOTHING rather than .F.,
+* which the harness sees as a missing marker rather than a red one. Kept
+* because a missing marker is still a failure and because T2 green with T1
+* green is the only combination that means what it says.
+SELECT 2
+? "OJC_T2_third_table_landed_past_both:" + (ALLTRIM(MARK) = "CCC")
+* ---------------------------------------------------------------------------
+* T3 -- THE COUNTERWEIGHT. A fix that made EVERY open join the current
+* workspace would pass T1 and T2 and be exactly as wrong as the defect, so
+* this arm asserts the opposite direction on the same fixtures: `AS <name>`
+* must still put the opened table in a workspace of its OWN. Same scoped-save
+* instrument, opposite expected answer -- OJCWS2 must come back carrying ONE
+* area, so the ADD lands at 1 and slot 1 reads CCC.
+* GREEN ON BOTH THE OLD AND THE NEW BUILD, which is the point: it does not
+* discriminate the defect, it discriminates the OVERSHOOT.
+WORKSPACE CLOSE ALL
+WORKSPACE NEW OJCWS2
+WORKSPACE SWITCH OJCWS2
+WORKSPACE ADD DBF/SANDBOX/OJCA/OJCT1.dbf
+WORKSPACE OPEN DBF/SANDBOX/OJCB AS OJCASWS
+WORKSPACE SWITCH OJCWS2
+WORKSPACE SAVE ojcasscope MEMO
+WORKSPACE CLOSE ALL
+WORKSPACE LOAD ojcasscope MEMO
+WORKSPACE ADD DBF/SANDBOX/OJCC/OJCT3.dbf
+SELECT 1
+? "OJC_T3_AS_kept_the_open_out_of_the_current_workspace:" + (ALLTRIM(MARK) = "CCC")
+* ---------------------------------------------------------------------------
+* CLEANUP. Every name this spec mints is destroyed, so the next run mints
+* fresh rather than adopting a live head. The superseded rows remain, which is
+* the history D10.3 exists to keep.
+WORKSPACE CLOSE ALL
+WORKSPACE DESTROY OJCWS
+WORKSPACE DESTROY OJCWS2
+WORKSPACE DESTROY OJCASWS
+SET PATH DBF DBF/SANDBOX/OJCA
+ERASE OJCT1 CONFIRM
+SET PATH DBF DBF/SANDBOX/OJCB
+ERASE OJCT2 CONFIRM
+SET PATH DBF DBF/SANDBOX/OJCC
+ERASE OJCT3 CONFIRM
+SET PATH DBF DBF

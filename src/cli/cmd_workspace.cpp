@@ -217,11 +217,15 @@
 //   and habits keep working; prefer DELETE in anything new. Gated by PG_T5 in
 //   workspace_purge_regression.dts, which asserts the alias still reaches the
 //   verb rather than assuming it.
-//   OPEN <dir> AS <name> OVERRIDES THE DEFAULT NAME (R128). A directory open
-//   names the workspace after the directory LEAF; two directories with the
-//   same leaf would ask for one handle, and the refusal points at this clause.
-//   It is also a MINTING form: like NEW, it births a catalog row, which is why
-//   a spec using it accumulates durable rows even with no NEW and no SAVE.
+//   OPEN <dir> AS <name> IS THE ONLY NAMING FORM (R131, 2026-08-29; supersedes
+//   the leaf-naming half of R128). A BARE `OPEN <dir>` opens into the CURRENT
+//   workspace and names nothing. `AS <name>` makes or re-enters the workspace
+//   called <name>; two DIFFERENT directories asking for one name is still
+//   refused, and the refusal points at this clause.
+//   AS IS ALSO THE MINTING FORM: like NEW, it births a catalog row, which is
+//   why a spec using it accumulates durable rows even with no NEW and no SAVE.
+//   A bare OPEN mints nothing -- which is the trade R131 took knowingly, and
+//   the reason DEFAULT still reports WS_ID (none yet).
 //   TUPLE, VIEW and ROWS are retained ALIASES of TUPLES; HELP and ? are
 //   retained aliases of USAGE. Listed because a reflection surface that
 //   enumerates this block would otherwise report four verbs the dispatcher
@@ -413,6 +417,9 @@
 #include "relations_boot.hpp"
 #include "tuple_builder.hpp"
 #include "cli/unique_registry.hpp"
+// R131 retired this file's only caller of name_for_directory(). The include is
+// kept because workspace_naming.hpp is the shared home of the naming rule and
+// this file still documents it; nothing here calls it today.
 #include "xbase/workspace_naming.hpp"
 #include "workarea_util.hpp"
 
@@ -4658,7 +4665,8 @@ static void workspace_print_usage() {
     std::cout << "  WORKSPACE USAGE                            (Show this usage)\n";
     std::cout << "  WORKSPACE ALL                              (List all areas, including closed slots)\n";
     std::cout << "  WORKSPACE OPEN DBF                         (Open tables from configured DBF slot)\n";
-    std::cout << "  WORKSPACE OPEN [<dir>]                     (Open all tables in dir)\n";
+    std::cout << "  WORKSPACE OPEN [<dir>]                     (Open all tables in dir INTO THE CURRENT workspace)\n";
+    std::cout << "  WORKSPACE OPEN <dir> AS <name>             (Open into a workspace called <name>; makes or re-enters it)\n";
     std::cout << "  WORKSPACE OPEN <dir> recursive             (STUB: accepts flag; non-recursive for now)\n";
     std::cout << "  WORKSPACE OPEN <file.dbf>                  (Open single table in current area)\n";
     std::cout << "  WORKSPACE ADD <file.dbf>                   (Add single table to first free area)\n";
@@ -4742,11 +4750,20 @@ std::string workspace_last_loaded_file() {
 }
 
 // ---------------------------------------------------------------------------
-// R128. OPEN ENTERS A WORKSPACE NAMED FOR THE DIRECTORY.
+// R128, AS AMENDED BY R131. OPEN ... AS <name> ENTERS A WORKSPACE.
 //
 // Owner, 2026-08-26: "we can also open two dir into two workspaces too", and
-// the name is the directory LEAF with `AS <name>` to override. Two directories
-// opened are two workspaces; the areas of each join their own.
+// the name was the directory LEAF with `AS <name>` to override. Two
+// directories opened are two workspaces; the areas of each join their own.
+//
+// R131 (2026-08-29) WITHDREW THE LEAF HALF AND KEPT THE REST. The capability
+// -- two directories, two workspaces -- is unchanged; it is now spelled with
+// AS. What went is the IMPLICIT name, because a name derived from the resolved
+// path made the ENVIRONMENT name the workspace, and R131 rules the dependency
+// the other way. Everything below this line is therefore reached only from an
+// `AS <name>` open, and the origin table it guards has exactly that many
+// writers. A bare OPEN reaches none of it: it joins the current workspace,
+// records no origin, and mints no catalog row.
 //
 // RE-ENTRY RATHER THAN REFUSAL OR A SUFFIX. WORKSPACE NEW refuses a duplicate
 // name outright, and rightly -- two live workspaces on one name is an
@@ -4777,8 +4794,10 @@ std::string workspace_last_loaded_file() {
 //
 // SESSION-LOCAL AND STATED AS SUCH: this is a process map, not a catalog
 // field. A workspace re-created in a later process has no recorded origin and
-// the first OPEN claims it (below). WORKSPACES.dbf carries DBF_ROOT and is the
-// place a durable answer belongs; wiring that is not this change.
+// the first OPEN ... AS claims it (below). WORKSPACES.dbf carries DBF_ROOT and
+// is the place a durable answer belongs; wiring that is R131 Q3 and is still
+// unruled -- and note WORKSPACES.dbf declares DBF_ROOT and IDX_ROOT only, so
+// the LMDB slot has no durable column to be written to at all.
 static std::map<std::uint64_t, std::string>& workspace_origin_table() {
     static std::map<std::uint64_t, std::string> t;
     return t;
@@ -4867,17 +4886,12 @@ static bool workspace_enter_for_open(const std::string& nm, const fs::path& dir)
     return true;
 }
 
-// The rule moved to include/xbase/workspace_naming.hpp on 2026-08-26, so the
-// GUI's mirror of WORKSPACE OPEN can ask the same question and get the same
-// answer. R122 says src/gui does not link src/cli, so a rule left here would
-// have had to be written twice -- R5's shape. Same neutral-home precedent R124
-// used for the relation wire record; both targets already link xbase.
-static std::string workspace_name_for_directory(const fs::path& dir, std::string& err) {
-    std::string reason;
-    std::string nm = xbase::workspace::name_for_directory(dir, reason);
-    if (nm.empty()) err = "WORKSPACE OPEN: " + reason;
-    return nm;
-}
+// R131, 2026-08-29. THE LEAF-NAMING WRAPPER STOOD HERE and is gone with the
+// ruling: no OPEN derives a workspace name from a directory any more, so this
+// file has no caller for it. xbase::workspace::name_for_directory() is NOT
+// removed -- it lives in include/xbase/workspace_naming.hpp for the GUI (R122:
+// src/gui does not link src/cli), and removing a shared rule because one of
+// its two callers stopped asking would be the R5 shape in reverse.
 
 void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
     string arg_line;
@@ -5573,13 +5587,40 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
                 // when it is OPENED -- the model is SWITCH-then-open, never
                 // open-then-assign, and this is that model obeyed rather than
                 // a second placement policy.
-                std::string nm = as_name;
-                if (nm.empty()) {
-                    std::string nerr;
-                    nm = workspace_name_for_directory(spec, nerr);
-                    if (nm.empty()) { std::cout << nerr << "\n"; return; }
+                // R131 (owner ruling, 2026-08-29). A BARE `OPEN <dir>`
+                // LANDS IN THE CURRENT WORKSPACE. It used to derive a name
+                // from the resolved directory LEAF and enter a workspace of
+                // that name, which let THE ENVIRONMENT NAME THE WORKSPACE.
+                // MEASURED 2026-08-29: the one typed command `workspace open
+                // dbf` produced workspace `dbf` under the default slots and
+                // workspace `x64` after `SET PATH DBF ...\DBF\x64` -- same
+                // command, different name, because the name was a function of
+                // the path slots. R131 says a workspace OWNS its environment;
+                // leaf naming ran that dependency backwards, and it is why the
+                // sanctioned sequence NEW / SWITCH / SET PATH / OPEN never
+                // worked: OPEN walked out of the workspace just created.
+                //
+                // R128 IS NOT REPEALED. "We can also open two dir into two
+                // workspaces too" (owner, 2026-08-26) survives verbatim as the
+                // AS form on the next line, together with its re-entry rule
+                // and its cross-root refusal. What is withdrawn is only the
+                // IMPLICIT name -- the one nobody typed.
+                //
+                // WHAT THIS COSTS, STATED: a bare OPEN no longer mints a
+                // durable catalog row, so "this workspace came from here" is
+                // no longer recorded for it. That record now requires AS.
+                // DEFAULT still carries no WS_ID; whether it should is R131 Q3
+                // and is deliberately NOT decided here.
+                if (!as_name.empty()) {
+                    if (!workspace_enter_for_open(as_name, spec)) return;
+                } else {
+                    const std::uint64_t cur_h = xbase::workspace::current_handle();
+                    std::string cur_nm = xbase::workspace::name_of(cur_h);
+                    if (cur_nm.empty()) cur_nm = "DEFAULT";
+                    std::cout << "WORKSPACE OPEN: opening into the CURRENT workspace "
+                              << cur_h << " (" << cur_nm << ").\n"
+                              << "  Use WORKSPACE OPEN <dir> AS <name> for a workspace of its own.\n";
                 }
-                if (!workspace_enter_for_open(nm, spec)) return;
 
                 std::cout << "WORKSPACE OPEN: scanning directory: " << s8(spec)
                           << (want_recursive ? " (recursive=stub)" : "")

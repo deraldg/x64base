@@ -197,6 +197,67 @@ nesting, and this is a different kind of inheritance:
 environment before an open" describes an expectation. (a) cannot produce a
 state with no answer. They differ only for a caller who skips step 3.
 
+## 7b. RULED 2026-08-29 -- `WORKSPACE OPEN` LANDS IN THE CURRENT WORKSPACE
+
+This was not one of the numbered questions. It surfaced as the thing BLOCKING
+the whole sanctioned sequence, and it was found by running it rather than by
+reading the source.
+
+**MEASURED, live session, build `cdc00895`.** Three commands:
+
+    workspace new mcc_x64     -> refused (name already live in the catalog)
+    switch mcc_x64            -> current handle 2 (mcc_x64), depth 0, members 0
+    do x64                    -> SETPATH DBF / INDEXES / LMDB = ...\x64
+    workspace open dbf        -> workspace 4, NAME `x64`, WS_ID 207, areas 16..28
+
+Three facts in that last line:
+
+1. **OPEN never joined the current workspace.** `mcc_x64` still reported ZERO
+   members while thirteen areas opened elsewhere.
+2. **OPEN named its workspace from the RESOLVED DIRECTORY LEAF.** The person
+   typed `dbf`. The workspace is called `x64`, because `SET PATH DBF` had just
+   pointed the slot at `...\DBF\x64`. The same typed command produces a
+   different workspace name in a different environment.
+3. **OPEN minted a durable catalog identity for that name** (WS_ID 207), from
+   an interactive session with no bracket around it.
+
+Fact 2 is the ruling's own thesis inverted. R131 sec 1 says a workspace owns
+its environment; leaf naming made **the environment name the workspace**. The
+dependency ran the wrong way, and that is precisely why steps 1-3 of the
+sanctioned sequence had no effect on step 4 -- OPEN walked out of the workspace
+the person had just made and stood in.
+
+### The ruling
+
+**A bare `WORKSPACE OPEN <dir>` opens into the CURRENT workspace and names
+nothing. `WORKSPACE OPEN <dir> AS <name>` is the only naming form, and remains
+the minting form.** Directory-leaf naming is withdrawn entirely.
+
+### What this does NOT repeal
+
+R128's capability is untouched. "We can also open two dir into two workspaces
+too" (owner, 2026-08-26) is still available, still additive, still re-entrant,
+and its cross-root collision refusal still stands -- all of it now reached
+through `AS`. **Only the implicit name goes**, the one nobody typed.
+
+### What it costs, stated rather than discovered later
+
+A bare OPEN no longer mints a durable row, so the "this workspace came from
+here" record is no longer written for it. Thirteen tracked specs use the bare
+form; they now land in DEFAULT, **which has no catalog identity** and reports
+`WS_ID (none yet)`. Four `mcc_build_*` specs that exist to populate a named
+home will want `AS` added -- a fixture edit, not a semantic loss. Whether
+DEFAULT should mint is deliberately left to Q3 rather than bundled in here: the
+naming defect and the minting policy are two problems, and only one of them was
+running backwards.
+
+### Rejected, and why it is worth recording
+
+**"Join the current workspace only if it is empty, mint otherwise."** That is
+the withdrawn y/n prompt wearing different clothes. The owner's own reason for
+withdrawing the prompt in Q1 applies unchanged: one grammar, no mode-dependent
+behaviour.
+
 ## 8. Not ruled, named so they are not settled by drift
 
 - Which of the three homes in sec 5 carries the roots, and whether live and
@@ -210,10 +271,30 @@ state with no answer. They differ only for a caller who skips step 3.
 - What retires the four-line switch idiom in `open_mcc_and_cascade.dts`, which
   is a workaround this ruling is meant to make unnecessary.
 
-## 9. NO CODE WAS WRITTEN FOR THIS RULING
+## 9. CODE STATUS
 
-`src/cli/**` and `src/xbase/**` are engine and want an explicit go. The
-measurements cited here were taken on build `c7c94e18` during the session that
-produced the ruling; every source claim is a read at that HEAD.
+**Sections 1-7a: NO CODE WRITTEN.** Q2 and Q3 are unruled, and nothing that
+depends on them has been built. The measurements cited in those sections were
+taken on build `c7c94e18` during the session that produced the ruling; every
+source claim there is a read at that HEAD.
+
+**Section 7b: IMPLEMENTED 2026-08-29 on the owner's explicit go.** One site in
+`src/cli/cmd_workspace.cpp` -- the directory branch of the OPEN dispatch --
+now enters a workspace only when `AS <name>` was typed, and otherwise prints
+which workspace it is opening into. The leaf-naming wrapper
+`workspace_name_for_directory()` is deleted from that file;
+`xbase::workspace::name_for_directory()` is NOT removed, because R122 keeps it
+as the shared rule the GUI reads. `workspace_additive_open.dts` gained an
+explicit `AS` on its three OPEN lines, which changes its spelling and not its
+semantics. `workspace_open_joins_current.dts` (spec `OPENJOIN`, explicit-run)
+is the discriminator, and it is registered but NOT YET RUN -- no green is
+claimed for it here, and it has not been run against the pre-change binary.
+
+**The roots half of R131 is still unbuilt and deliberately so.** 7b makes OPEN
+land in the right workspace; it does not make that workspace RECORD where it
+opened from. That is Q3, and `WORKSPACES.dbf` still declares `DBF_ROOT` and
+`IDX_ROOT` only -- there is **no LMDB column**, so the third slot has no
+durable home to be written to at all. That is a schema decision awaiting a
+ruling, not an omission to be patched around.
 
 Ships **review-needed** -- the author does not self-approve.
