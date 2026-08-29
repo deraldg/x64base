@@ -92,14 +92,20 @@ inline const std::unordered_map<std::string, std::string>& ShortcutResolver::get
         // SIMPLEBROWSER, which SB already covers (owner ruling, 2026-07-29).
         { "WS",           "WORKSPACE" },
 
-        // ---- “fast typist” / concatenation accidents ----------------------
+        // ---- "fast typist" / concatenation accidents ----------------------
         { "SMARTLISTFOR", "SMARTLIST" },
         { "SLFOR",        "SMARTLIST" },
         { "SEL",          "SELECT" },
         { "BOOL",         "BOOLEAN"},
         { "EVAL",         "EVALUATE"},
         { "S",            "SELECT"},
-        { "DESC",         "DESCEND"}
+        { "DESC",         "DESCEND"},
+
+        // ---- SWITCH reads as WORKSPACE SWITCH (owner, 2026-08-29) ----------
+        // "the user can call switch, like they can select, more natural".
+        // Two-word expansion: see the resolver body -- this map is consulted
+        // on the FIRST TOKEN, so the tail ("mcc") must survive the rewrite.
+        { "SWITCH",       "WORKSPACE SWITCH" }
 
     };
 
