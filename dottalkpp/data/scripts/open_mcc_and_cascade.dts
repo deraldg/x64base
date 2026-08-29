@@ -1,0 +1,220 @@
+* ===========================================================================
+* open_mcc_and_cascade.dts -- MCC (x64) and Cascade ERP (DBF side) OPEN AT
+* THE SAME TIME, in two workspaces, both live when the script ends.
+*
+* Run:  DOTSCRIPT D:\code\ccode\dottalkpp\data\scripts\open_mcc_and_cascade.dts
+* (DOTSCRIPT wants an ABSOLUTE path from the prompt.)
+*
+* THIS IS A SESSION OPENER, NOT A REGRESSION. It deliberately does NOT tear
+* down at the end -- leaving both workspaces open IS the deliverable. The
+* teardown block at the bottom is commented out for when you are done.
+*
+* ---------------------------------------------------------------------------
+* THE RULE THAT MAKES THIS WORK, AND THE ONE THAT MAKES IT POSSIBLE
+*
+* MEMBERSHIP: an area joins whichever workspace is CURRENT when it is OPENED.
+* Never open-then-assign. WORKSPACE OPEN <dir> AS <name> is itself a MINTING
+* form -- it creates the workspace and opens into it in one act, so there is
+* no window where a table can land in the wrong place.
+*
+* ADDITIVE OPEN (R128, owner 2026-08-26: "open should be additive or it will
+* kill the other workspaces"): the SECOND open does not close the first. That
+* ruling is the only reason this script can exist. Before it, WORKSPACE OPEN
+* began with workspace_close_all() and the second call would have thrown away
+* the first. TWO_T1 is the arm that proves it did not.
+*
+* THE INDEX SLOT IS GLOBAL, NOT PER WORKSPACE. This is the sharp edge here and
+* the reason each open is preceded by its own three SET PATH lines: the two
+* systems keep their indexes in different roots, and attach happens AT OPEN
+* TIME against whatever the slot says then. Set the slots, open, set again,
+* open again. A posture records DBFROOT/IDXROOT and can re-point itself on
+* LOAD; the LIVE slots have no such per-workspace memory.
+*
+* ---------------------------------------------------------------------------
+* READ RULE -- COUNT THE MARKERS FIRST, READ THE VERDICTS SECOND.
+*
+*   grep -c '^? "TWO_'   <-- run this; read the run against THAT
+*   Expect 5:  2 guards TWO_G0 TWO_G1, 3 arms TWO_T1 TWO_T2 TWO_T3
+*
+* An errored marker PRINTS NOTHING rather than going red, so a short count is
+* a FAILURE wearing a clean transcript. If either TWO_G* reads .F., treat every
+* TWO_T* as UNPROVEN rather than as failing -- an arm that reads an unchanged
+* value cannot tell "survived" from "never worked" without its guard.
+*
+* Every marker is a FIELD-VALUE comparison, never a read of console text.
+*
+* WHY THESE ARMS SAY `GO 1` AND NOT `TOP` -- MEASURED ON THE FIRST RUN,
+* 2026-08-29, AND IT IS THE MOST USEFUL THING THIS SCRIPT HAS PRODUCED.
+*
+* The first cut used TOP. It printed `TOP: failed.` before ALL FIVE markers
+* and ALL FIVE STILL READ .T. -- because SELECT had already left each freshly
+* opened table on Recno 1, which is where TOP was supposed to put it. A verb
+* announced its own failure in console text no marker can read, and the arms
+* were green for a reason that had nothing to do with them. That is a FALSE
+* GREEN of the third shape: a real read of a real open table that the step
+* under it never affected.
+*
+* THE CORRELATE, and it is stated as a correlate because the mechanism is NOT
+* yet proven: WORKSPACE OPEN auto-attaches a container and sets NO ACTIVE TAG
+* -- its scan line reads `[index: STUDENTS.cdx, attached]` and names no tag --
+* and order_nav.hpp:745 answers `if (tagName.empty()) return false;`. Specs
+* whose TOP works (MWXSHAKE section 5C) have no container attached at all, or
+* set an order tag first, which repositions the cursor by itself.
+*
+* THE ONE-LINE DISCRIMINATOR, not yet run: in a live session after this
+* script, `WORKSPACE SWITCH MCC` / `SELECT STUDENTS` / `SET ORDER TO TAG SID`
+* / `TOP`. If TOP succeeds with a tag and fails without one, the untagged
+* container is the cause. Ask the engine; do not infer it from the header.
+*
+* GO 1 IS THE RIGHT ADDRESSING HERE ANYWAY, tag or no tag: R121 ruled that
+* ADDRESSING IS ABSOLUTE AND TRAVERSAL IS FILTERED -- GO <n> names a record
+* and lands on it under any setting, while TOP names a position in a set. An
+* arm that means "physical record 1 of this table reads Taylor" should say so.
+*
+* ===========================================================================
+
+SET TALK ON
+ECHO === OPEN MCC + CASCADE ERP INTO TWO WORKSPACES ===
+
+* --- clean slate ---------------------------------------------------------
+* CLOSE ALL first, then DESTROY: destroy REFUSES a workspace that still holds
+* areas, and it does not cascade. On a first run the DESTROYs print "no such
+* workspace" -- that is correct and expected, not an error.
+WORKSPACE CLOSE ALL
+WORKSPACE SWITCH DEFAULT
+WORKSPACE DESTROY MCC
+WORKSPACE DESTROY CASCERP
+
+* --- workspace 1: MCC, the x64 teaching database -------------------------
+SET PATH DBF DBF/x64
+SET PATH INDEXES INDEXES/x64
+SET PATH LMDB LMDB/x64
+WORKSPACE OPEN DBF/x64 AS MCC
+
+&& Expect 13 tables, NOT 14. FMGRTST.__fldbak.dbf sits in that directory and
+&& is correctly skipped -- a FIELDMGR restructure leaves <stem>.__fldbak.dbf
+&& beside the real table, and it used to be opened as a work area AND SORT
+&& AHEAD OF IT into area 0 (AIF-133). If you ever see 14 here, that fix is gone.
+
+WORKSPACE SWITCH MCC
+SELECT STUDENTS
+GO 1
+? "TWO_G0_mcc_is_readable_before_cascade_opens:" + (ALLTRIM(LNAME) = "Taylor")
+
+* --- workspace 2: Cascade ERP, the DBF side ------------------------------
+* Bundle layout, owner ruling 2026-08-10: everything Cascade lives under
+* systems/cascade_erp/. Slots move together or the indexes attach from the
+* wrong root.
+SET PATH DBF SYSTEMS/CASCADE_ERP/DBF
+SET PATH INDEXES SYSTEMS/CASCADE_ERP/INDEXES
+SET PATH LMDB SYSTEMS/CASCADE_ERP/LMDB
+WORKSPACE OPEN SYSTEMS/CASCADE_ERP/DBF AS CASCERP
+
+&& Expect 43 tables. AS CASCERP is doing real work: the directory leaf here is
+&& "DBF", so without it this workspace would be named DBF.
+
+WORKSPACE SWITCH CASCERP
+SELECT CASCADE_Sales_Orders
+GO 1
+? "TWO_G1_cascade_is_readable_when_it_opens:" + (SO_ID = 1)
+
+* --- both open at once: the registry, then the arms ----------------------
+WORKSPACE REGISTRY
+
+&& TWO_T1 IS THE DISCRIMINATOR AND IT IS THE WHOLE POINT OF THE SCRIPT.
+&& Go back to MCC AFTER Cascade opened and read the same row TWO_G0 read.
+&& Under a replacing OPEN, MCC's 13 areas are gone and this reds. Under the
+&& additive OPEN it reads Taylor again.
+WORKSPACE SWITCH MCC
+SELECT STUDENTS
+GO 1
+? "TWO_T1_mcc_survived_the_second_open:" + (ALLTRIM(LNAME) = "Taylor")
+
+&& TWO_T2: and the traffic goes both ways -- Cascade is still there after
+&& switching away from it and back. A one-directional check would pass on an
+&& implementation that quietly kept only the workspace you asked for last.
+WORKSPACE SWITCH CASCERP
+SELECT CASCADE_Sales_Orders
+GO 1
+? "TWO_T2_cascade_survived_the_switch_away:" + (SO_ID = 1)
+
+&& TWO_T3: a DIFFERENT table in the second workspace, so the arm is not just
+&& re-reading the one cursor that happened to be parked. Items is the
+&& inventory hub, the most-referenced parent in the bundle.
+SELECT CASCADE_Items
+GO 1
+? "TWO_T3_a_second_cascade_table_is_live_too:" + (ITEM_ID >= 1)
+
+* --- where you are now ---------------------------------------------------
+ECHO
+ECHO === BOTH WORKSPACES ARE OPEN -- READ THIS BEFORE YOU SWITCH ===
+ECHO
+ECHO   WORKSPACE SWITCH MOVES MEMBERSHIP. IT DOES NOT MOVE THE PATH SLOTS.
+ECHO   Both systems stay open and readable either way, but anything that has
+ECHO   to RESOLVE a container or an LMDB env goes through the GLOBAL slot,
+ECHO   which belongs to whichever workspace was opened last. So a switch is
+ECHO   FOUR LINES, not one. Measured 2026-08-29: SET ORDER TO TAG SID on
+ECHO   MCC's STUDENTS answered
+ECHO     "openCdx: LMDB env missing: ...SYSTEMS\CASCADE_ERP\LMDB\STUDENTS.cdx.d"
+ECHO   -- an MCC table looked up under the Cascade bundle.
+ECHO
+ECHO   TO WORK IN MCC:
+ECHO     WORKSPACE SWITCH MCC
+ECHO     SET PATH DBF DBF/x64
+ECHO     SET PATH INDEXES INDEXES/x64
+ECHO     SET PATH LMDB LMDB/x64
+ECHO
+ECHO   TO WORK IN CASCADE:
+ECHO     WORKSPACE SWITCH CASCERP
+ECHO     SET PATH DBF SYSTEMS/CASCADE_ERP/DBF
+ECHO     SET PATH INDEXES SYSTEMS/CASCADE_ERP/INDEXES
+ECHO     SET PATH LMDB SYSTEMS/CASCADE_ERP/LMDB
+ECHO
+ECHO   WORKSPACE REGISTRY  -- who owns which engine slot
+ECHO   Address tables BY NAME after a switch, never by slot number.
+ECHO   The slots are left pointing at the CASCADE bundle by this script.
+ECHO
+
+* ===========================================================================
+* NOT COVERED, stated rather than implied:
+*
+*   - THAT A SCOPED CLOSE OF ONE SPARES THE OTHER. It does (RELSCOPE2 and
+*     WSMULTI both assert it), but closing is the opposite of this script's
+*     job, so nothing here reads it.
+*   - NAME COLLISION ACROSS THE TWO. These two systems share no table name,
+*     so SELECT <name> is unambiguous today. If that ever changes, know that
+*     SELECT resolves UNSCOPED and returns the LOWEST engine slot with no
+*     diagnostic (R112 first-wins; AIF-137 fixed the relation paths, not
+*     SELECT). Qualify by switching workspaces first, which this script does.
+*   - THE 13 AND THE 43. Console counts, which no marker can read; verify
+*     them in the transcript (the IDXDIFF precedent).
+*   - THAT EITHER WORKSPACE CAN DO INDEX WORK. It cannot, not without moving
+*     the slots first. NOTHING HERE ASSERTS THAT, and it is the sharpest
+*     limitation of running two systems at once: WORKSPACE SWITCH is scoped,
+*     SET PATH is not. A posture records DBFROOT/IDXROOT and re-points itself
+*     on LOAD; the LIVE slots have no per-workspace memory at all. An arm for
+*     it would need a field-value read AFTER a SET ORDER in each workspace,
+*     which is a spec of its own and is not this script's job.
+*
+* IT ADOPTS, AND THAT IS DELIBERATE. WORKSPACE OPEN ... AS prints "ADOPTED the
+* durable identity this name already holds in the catalog" on every run after
+* the first, because the opening DESTROYs only reach workspaces DECLARED IN
+* THIS SESSION and a fresh process has none. For a spec that would be
+* history-dependence wearing a green suit; for a session opener it is the
+* point -- MCC means the same durable workspace tomorrow that it means today.
+* CORRECTED 2026-08-29 BY READING THE CATALOG: this line used to end "Each
+* run still writes a birth row to the catalog either way", and that is FALSE.
+* ADOPTION DOES NOT MINT. Two runs of this script left exactly ONE MCC row and
+* ONE CASCERP row (both stamped 06:37:13, the first run); the second run
+* printed ADOPTED and added nothing. So the durable cost of this script is TWO
+* rows ONCE, not two rows per run -- which is the opposite of what a regression
+* spec pays, and the reason adoption is right here and wrong there. Measured by
+* reading WORKSPACE CATALOG, not by reasoning about the verb.
+*
+* TEARDOWN, when you are done with the session. Uncomment to use:
+*
+* WORKSPACE CLOSE ALL
+* WORKSPACE SWITCH DEFAULT
+* WORKSPACE DESTROY CASCERP
+* WORKSPACE DESTROY MCC
+* ===========================================================================
