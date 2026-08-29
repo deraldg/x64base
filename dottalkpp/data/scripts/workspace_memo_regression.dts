@@ -83,8 +83,12 @@ WORKSPACE CLOSE
 WORKSPACE LOAD wm_regress MEMO
 
 * WM_T1: the memo-restored posture relates -- parent TOP drives the child
+* SET ORDER TAG SO_ID removed -- it printed 'file not found: ...WMSO.cdx' and
+* did nothing (the fixture's INDEX ON writes .inx, not .cdx). The rows are
+* written in SO_ID order so TOP and BOTTOM land where WM_T1/WM_T2 expect. The
+* gap is the same one named in workspace_session_state.dts: no spec here now
+* proves SET ORDER survives a memo round trip.
 SELECT WMSO
-SET ORDER TAG SO_ID
 TOP
 REL REFRESH
 SELECT WMSOL

@@ -82,12 +82,23 @@ INDEX ON SO_ID TAG SO_ID
 
 REL ADD SSPAR SSCHI ON SO_ID TO SO_ID
 
-SELECT 21
-SET ORDER TAG SO_ID
+* THE 'SET ORDER TAG SO_ID' LINE THAT USED TO STAND HERE IS REMOVED, AND THAT
+* IS A STATED COVERAGE LOSS RATHER THAN A TIDY-UP. Measured 2026-08-28: the
+* fixture's INDEX ON writes SO_ID.inx (2INX) while SET ORDER TAG looks for a
+* CDX under the INDEXES root, so the line printed
+*     SET ORDER: file not found: ...\INDEXES\x64\SSPAR.cdx
+* and did NOTHING. SS_G1 passed anyway because the rows are written so that
+* PHYSICAL bottom is already SO_ID 6 -- which means the line was decorative and
+* the spec had quietly stopped exercising SET ORDER restoration while still
+* appearing to test it. A no-op line that looks like coverage is worse than an
+* absent one, so it is gone and the gap is named: THIS SPEC NO LONGER PROVES
+* THAT A SAVED SESSION RESTORES SET ORDER. Restoring that arm needs a real CDX
+* in the fixture, which INDEX ON does not produce; it is its own piece of work.
+SELECT SSPAR
 BOTTOM
 ? "SS_G1_parent_fixture_at_bottom:" + (SO_ID = 6)
 REL REFRESH
-SELECT 24
+SELECT SSCHI
 ? "SS_G2_relation_live_before_the_save:" + (SO_ID = 6)
 
 * --- take the session somewhere specific ------------------------------------
@@ -103,7 +114,18 @@ WORKSPACE CLOSE
 WORKSPACE LOAD sess_regress MEMO
 GPS
 ? "SS_T1_parent_restored_at_bottom:" + (SO_ID = 6)
-SELECT 24
+* CORRECTED 2026-08-28, SAME DAY, AFTER A FALSE GREEN. This addressed the table
+* by SLOT, and the amendment above kept the old slot on the reasoning that the
+* previous fixture held it there. THAT REASONING WAS VOID: R130 says a
+* posture's AREA numbers are KEYS, NOT ADDRESSES, and the load prints so --
+* tables land at slots 0..N-1. The old fixture only worked because mcc_x64
+* restored THIRTEEN areas, so the high slot was coincidentally occupied. With a
+* small posture the slot reaches NOTHING -- and the marker still printed .T.,
+* because a marker over a closed area does not error, it PICKS A SIDE (see
+* claude/FINDING_MARKER_OVER_A_CLOSED_AREA_PICKS_A_SIDE.md). ADDRESSING BY NAME
+* SURVIVES RELOCATION, which is why workspace_memo and workspace_load_shortfall
+* stayed sound through the same change.
+SELECT SSCHI
 ? "SS_T2_child_slaved_after_restore:" + (SO_ID = 6)
 
 FORMULA "WS-SESSION-PROOF-END"

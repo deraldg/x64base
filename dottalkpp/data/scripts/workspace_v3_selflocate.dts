@@ -65,7 +65,18 @@ SETPATH INDEXES INDEXES
 
 * --- self-location: the payload's roots must find the tables ----------------
 WORKSPACE LOAD v3_regress MEMO
-SELECT 8
+* CORRECTED 2026-08-28, SAME DAY, AFTER A FALSE GREEN. This assertion used to
+* address the table by SLOT (SELECT 8), and the amendment above kept slot 8 on
+* the reasoning that the old fixture held STUDENTS there. THAT REASONING WAS
+* VOID: R130 says a posture's AREA numbers are KEYS, NOT ADDRESSES, and the
+* load prints so -- tables land at slots 0..N-1. The old fixture only worked
+* because mcc_x64 restored THIRTEEN areas, so slot 8 coincidentally held
+* STUDENTS. With a small posture SELECT 8 reaches NOTHING -- and the marker
+* still printed .T., because a marker over a closed area does not error, it
+* picks a side (see claude/FINDING_MARKER_OVER_A_CLOSED_AREA_PICKS_A_SIDE.md).
+* ADDRESSING BY NAME SURVIVES RELOCATION, which is why workspace_memo and
+* workspace_load_shortfall stayed sound through the same change.
+SELECT STUDENTS
 TOP
 ? "V3_T1_selflocated_students_row:" + (SID >= 1)
 

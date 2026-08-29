@@ -69,10 +69,21 @@ WORKSPACE LOAD minidb_regress MEMO RAM
 
 * --- the database came out of the memo --------------------------------------
 VDISK STATUS
-SELECT 8
+* CORRECTED 2026-08-28, SAME DAY, AFTER A FALSE GREEN. This addressed the table
+* by SLOT, and the amendment above kept the old slot on the reasoning that the
+* previous fixture held it there. THAT REASONING WAS VOID: R130 says a
+* posture's AREA numbers are KEYS, NOT ADDRESSES, and the load prints so --
+* tables land at slots 0..N-1. The old fixture only worked because mcc_x64
+* restored THIRTEEN areas, so the high slot was coincidentally occupied. With a
+* small posture the slot reaches NOTHING -- and the marker still printed .T.,
+* because a marker over a closed area does not error, it PICKS A SIDE (see
+* claude/FINDING_MARKER_OVER_A_CLOSED_AREA_PICKS_A_SIDE.md). ADDRESSING BY NAME
+* SURVIVES RELOCATION, which is why workspace_memo and workspace_load_shortfall
+* stayed sound through the same change.
+SELECT STUDENTS
 TOP
 ? "DB_T1_students_from_memo:" + (LNAME > "")
-SELECT 4
+SELECT ENROLL
 SET ORDER TAG SID
 ? "DB_T2_index_from_memo:" + (SID >= 1)
 
