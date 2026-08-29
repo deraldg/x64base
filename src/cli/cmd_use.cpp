@@ -89,6 +89,7 @@
 #include <sstream>
 #include <string>
 #include <filesystem>
+#include <system_error>   // std::error_code -- used by the USE existence guard
 #include <algorithm>
 #include <cctype>
 #include <type_traits>
@@ -928,6 +929,41 @@ void cmd_USE(DbArea& current_area, std::istringstream& iss)
         }
     }
 
+    // --- THE FILE MUST EXIST BEFORE THIS AREA IS TOUCHED ---
+    // A MISTYPED FILENAME USED TO DESTROY THE OPEN TABLE.  The reset below
+    // closes the current area, and a.open() then threw "file does not exist"
+    // -- so `USE peoplle` printed a refusal AFTER emptying the area that had
+    // been holding a perfectly good table.  Measured 2026-08-29: area 0 held
+    // BIGCHAR_TEST, one typo closed it, and the next WORKSPACE OPEN correctly
+    // handed slot 0 out as free.  The workspace lost a member and the only
+    // message on screen was about a file that never existed.
+    //
+    // This is the SAME DEFECT CLASS the AGAIN+memo guard above was hoisted to
+    // fix on 2026-08-12 -- "refusing after the damage is not refusing" -- and
+    // it was sitting four lines below that comment the whole time.  Existence
+    // is the cheap half and the half a typo hits; it is checked here, before
+    // anything is closed.
+    //
+    // WHAT THIS DOES NOT COVER, stated rather than implied: a file that EXISTS
+    // and fails to open anyway -- a corrupt header, a lock, a truncated DBF --
+    // still resets first and destroys the area.  Closing that hole means
+    // opening into a scratch DbArea and swapping on success, which is a
+    // different change; this one removes the case a user reaches by typing.
+    {
+        std::error_code ec_exist;
+        const bool present = fs::exists(dbf_path, ec_exist) && !ec_exist &&
+                             fs::is_regular_file(dbf_path, ec_exist) && !ec_exist;
+        if (!present) {
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::UseOpenFailedWithReasonText,
+                {{"reason", "file does not exist: " + dbf_path.string()}});
+            cli::cmdout::print_line(
+                "USE: nothing was opened, and area " + std::to_string(cur_slot) +
+                " is untouched.");
+            return;
+        }
+    }
+
     // --- CLEANUP CURRENT AREA BEFORE USE ---
     // why:
     //   - prevent stale CDX/tag/LMDB binding from surviving table switch
@@ -1034,7 +1070,7 @@ void cmd_USE(DbArea& current_area, std::istringstream& iss)
         cli::cmdout::print_line(where);
     }
 
-    // NOINDEX → force physical order; stop
+    // NOINDEX -> force physical order; stop
     if (noindex) {
         clear_order_best_effort(a);
         cli::cmdout::print_message(dottalk::helpdata::MessageId::UseNoIndexSkippedText);
