@@ -134,6 +134,35 @@ struct Entry {
     // header never reaches up to it. A handle knows its WS_ID because it was
     // told; it cannot go and find out.
     std::uint64_t ws_id{0};
+
+    // R131 (owner, 2026-08-29): "Once we have a new named workspace, we switch
+    // to it and then we can set the environment etc. before an open."
+    // THE ENVIRONMENT ACQUIRES AN OWNER, and this is where it lives.
+    //
+    // A STAMP, EXACTLY LIKE ws_id ABOVE AND FOR THE SAME REASON. R1 of the
+    // identity ladder says derivation runs DOWNWARD ONLY, so this header must
+    // not reach up into dottalk::paths -- which is CLI-side, and which xbase
+    // cannot see. These are three strings the table HOLDS and cannot RESOLVE.
+    // The CLI stamps them and the CLI applies them; a workspace knows its
+    // roots because it was told, and it cannot go and find out.
+    //
+    // WHY THREE STRINGS AND NOT A WORKSPACE-AWARE RESOLVER (R131 sec 11.2):
+    // dottalk::paths::get_slot has 102 CALL SITES across thirty-odd files, and
+    // most of them are not workspace code at all -- bbs_store, cmd_smtp,
+    // cmd_drawio, edu_cobol, fn_string. Handing a workspace to code that has
+    // none is a rewrite, not a design option. So the global stays the single
+    // resolution authority and SWITCH re-points it; every one of those 102
+    // readers is untouched and keeps reading one slot.
+    //
+    // Q2 IS INHERIT (R131 sec 11.5). A workspace is stamped AT CREATION from
+    // whatever is current, so a workspace whose environment is a question with
+    // no answer never exists -- the AIF-148 floor, one lane over. EMPTY here
+    // therefore means only NOT STAMPED YET, and that is true of exactly one
+    // entry: DEFAULT, which exists before any command runs. The CLI stamps it
+    // lazily from the INIT slots the first time anything asks.
+    std::string dbf_root;
+    std::string idx_root;
+    std::string lmdb_root;
 };
 
 // ---------------------------------------------------------------------------
@@ -211,6 +240,38 @@ public:
     std::uint64_t ws_id_of(std::uint64_t h) const {
         const Entry* e = find(h);
         return e ? e->ws_id : 0;
+    }
+
+    // R131. Roots move as a SET of three, never one at a time, because a
+    // half-stamped workspace resolves its tables under one system and its
+    // indexes under another -- which is the exact failure R131 sec 3 measured
+    // (MCC's STUDENTS answering under the Cascade LMDB tree). A caller that
+    // wants to change one slot reads all three, edits one, and writes all
+    // three back; there is deliberately no per-slot setter.
+    bool roots_of(std::uint64_t h,
+                  std::string& dbf, std::string& idx, std::string& lmdb) const {
+        const Entry* e = find(h);
+        if (!e) return false;
+        dbf = e->dbf_root; idx = e->idx_root; lmdb = e->lmdb_root;
+        return true;
+    }
+
+    // TRUE only when all three are stamped. A partially stamped entry answers
+    // FALSE so the CLI re-stamps it whole rather than completing it piecemeal.
+    bool roots_stamped(std::uint64_t h) const {
+        const Entry* e = find(h);
+        return e && !e->dbf_root.empty() && !e->idx_root.empty()
+                 && !e->lmdb_root.empty();
+    }
+
+    bool set_roots(std::uint64_t h, const std::string& dbf,
+                   const std::string& idx, const std::string& lmdb) {
+        auto it = entries_.find(h);
+        if (it == entries_.end()) return false;
+        it->second.dbf_root  = dbf;
+        it->second.idx_root  = idx;
+        it->second.lmdb_root = lmdb;
+        return true;
     }
 
     // Stamp a durable identity onto a live handle. Returns false for an unknown
@@ -504,6 +565,17 @@ inline const Entry* find(std::uint64_t h) { return default_table().find(h); }
 inline std::string  name_of(std::uint64_t h) { return default_table().name_of(h); }
 inline std::uint64_t ws_id_of(std::uint64_t h) { return default_table().ws_id_of(h); }
 inline bool set_ws_id(std::uint64_t h, std::uint64_t id) { return default_table().set_ws_id(h, id); }
+
+// R131. Forwarders, holding no logic, exactly like the rest of this block.
+inline bool roots_of(std::uint64_t h, std::string& dbf, std::string& idx,
+                     std::string& lmdb) {
+    return default_table().roots_of(h, dbf, idx, lmdb);
+}
+inline bool roots_stamped(std::uint64_t h) { return default_table().roots_stamped(h); }
+inline bool set_roots(std::uint64_t h, const std::string& dbf,
+                      const std::string& idx, const std::string& lmdb) {
+    return default_table().set_roots(h, dbf, idx, lmdb);
+}
 
 inline std::size_t member_count(std::uint64_t h) { return default_table().member_count(h); }
 inline std::vector<std::int32_t> members(std::uint64_t h) { return default_table().members(h); }

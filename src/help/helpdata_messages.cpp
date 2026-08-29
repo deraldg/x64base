@@ -919,7 +919,7 @@ const std::vector<MessageDef>& all_messages()
             "COMMAND:SET PATH",
             "USAGE",
             "INFO",
-            "Usage:\n  SETPATH\n  SETPATH USAGE\n  SETPATH RESET\n  SETPATH <slot> [TO|=] <path>\n  SET PATH <slot> [TO|=] <path>\nSlots:\n  DATA DBF XDBF INDEXES LMDB WORKSPACES SCHEMAS PROJECTS SCRIPTS TESTS HELP LOGS TMP"
+            "Usage:\n  SETPATH\n  SETPATH USAGE\n  SETPATH RESET\n  SETPATH <slot> [TO|=] <path>\n  SET PATH <slot> [TO|=] <path>\n  SET PATH <slot> [TO|=] <path> IN <ws-or-handle>\nSlots:\n  DATA DBF XDBF INDEXES LMDB WORKSPACES SCHEMAS PROJECTS SCRIPTS TESTS HELP LOGS TMP\nNotes:\n  DBF, INDEXES and LMDB bind to the CURRENT workspace (R131); WORKSPACE SWITCH restores them.\n  IN <ws-or-handle> binds those three to a NAMED workspace and leaves the session slots alone."
         },
         {
             MessageId::SetPathResetText,
@@ -9920,7 +9920,7 @@ const std::vector<MessageTextDef>& all_message_texts()
         { MessageId::DisplayRecordHeaderText, "en-US", "Record {recno}{deleted_suffix}" },
         { MessageId::DisplayRecordDeletedSuffixText, "en-US", " [DELETED]" },
         { MessageId::DisplayFieldLineText,  "en-US", "  {field} = {value}" },
-        { MessageId::SetPathUsageText,      "en-US", "Usage:\n  SETPATH\n  SETPATH USAGE\n  SETPATH RESET\n  SETPATH <slot> [TO|=] <path>\n  SET PATH <slot> [TO|=] <path>\nSlots:\n  DATA DBF XDBF INDEXES LMDB WORKSPACES SCHEMAS PROJECTS SCRIPTS TESTS HELP LOGS TMP" },
+        { MessageId::SetPathUsageText,      "en-US", "Usage:\n  SETPATH\n  SETPATH USAGE\n  SETPATH RESET\n  SETPATH <slot> [TO|=] <path>\n  SET PATH <slot> [TO|=] <path>\n  SET PATH <slot> [TO|=] <path> IN <ws-or-handle>\nSlots:\n  DATA DBF XDBF INDEXES LMDB WORKSPACES SCHEMAS PROJECTS SCRIPTS TESTS HELP LOGS TMP\nNotes:\n  DBF, INDEXES and LMDB bind to the CURRENT workspace (R131); WORKSPACE SWITCH restores them.\n  IN <ws-or-handle> binds those three to a NAMED workspace and leaves the session slots alone." },
         { MessageId::SetPathResetText,      "en-US", "reset to defaults." },
         { MessageId::SetPathUnknownSlotText, "en-US", "unknown slot: {slot}" },
         { MessageId::SetPathAssignedText,   "en-US", "{slot} = {path}" },

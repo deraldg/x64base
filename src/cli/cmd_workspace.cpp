@@ -4876,6 +4876,11 @@ static bool workspace_enter_for_open(const std::string& nm, const fs::path& dir)
         std::cout << "WORKSPACE OPEN: could not create workspace " << nm << ".\n";
         return false;
     }
+    // R131 Q2 -- INHERIT. A workspace is stamped with the environment that was
+    // current when it was born, so "what are this workspace's roots" never has
+    // to answer "nothing". OPEN ... AS is a creating form and stamps like NEW.
+    cli::workspace_roots_ensure_stamped(xbase::workspace::current_handle());
+    cli::workspace_roots_bind_from_slots(h);
     if (!xbase::workspace::set_ws_id(h, wsId)) {
         std::cout << "WORKSPACE OPEN: handle " << h << " would not take WS_ID " << wsId
                   << ". The catalog row stands; the runtime handle does not know about it.\n";
@@ -5088,6 +5093,20 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
                 std::cout << "WORKSPACE NEW: refused.\n";
                 return;
             }
+            // R131 Q2 -- INHERIT, ruled 2026-08-29. The new workspace is
+            // stamped with the environment that is current RIGHT NOW, so the
+            // owner's sequence (NEW / SWITCH / SET PATH / OPEN) has something
+            // to resolve against at every step and the third line is
+            // CUSTOMARY rather than mandatory.
+            //
+            // The alternative -- start empty -- was rejected on measurement,
+            // not taste: dottalk::paths::get_slot has 102 call sites, many in
+            // code that never opted into workspaces (bbs_store, cmd_smtp,
+            // cmd_drawio), so a SWITCH into an unstamped workspace would blank
+            // a global all of them read. "Start empty" is not the stricter
+            // reading; it is a session-wide outage fired by a navigation verb.
+            cli::workspace_roots_ensure_stamped(xbase::workspace::current_handle());
+            cli::workspace_roots_bind_from_slots(h);
             // Checked, not assumed. set_ws_id refuses an unknown handle, a
             // zero id, and a RE-stamp with a different id -- and the house
             // rule is to count successes rather than attempts.
@@ -5401,11 +5420,30 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
                 std::cout << "WORKSPACE SWITCH: no such workspace: " << toks[0] << "\n";
                 return;
             }
+            // R131. STAMP THE ONE WE ARE LEAVING FIRST, and the order is
+            // load-bearing rather than tidy. Under Q2 every workspace the CLI
+            // creates is stamped at birth, which leaves exactly one that is
+            // not: DEFAULT, built inside xbase before any command has run. If
+            // DEFAULT were stamped lazily when it becomes a TARGET, it would
+            // be stamped from whatever the workspace we are leaving had set --
+            // so DEFAULT would inherit a foreign environment the first time
+            // anyone switched back to it. Stamping the OUTGOING handle means
+            // DEFAULT is captured while its own slots are still in force.
+            cli::workspace_roots_ensure_stamped(xbase::workspace::current_handle());
+
             xbase::workspace::set_current_handle(h);
             std::cout << "WORKSPACE SWITCH: current handle " << h
                       << " (" << xbase::workspace::name_of(h) << ")"
                       << ", depth " << xbase::workspace::depth_of(h)
                       << ", members " << xbase::workspace::member_count(h) << "\n";
+
+            // R131 sec 1 and 11.2: the environment follows the workspace. This
+            // is the line that closes sec 3's founding defect -- MCC's
+            // STUDENTS resolving its LMDB env under the Cascade bundle because
+            // Cascade was opened last. It ANNOUNCES what it moves; see
+            // workarea_util.hpp for why that is not decoration.
+            cli::workspace_roots_ensure_stamped(h);
+            (void)cli::workspace_roots_apply_to_slots(h);
 
         } else if (sub_command == "add") {
             auto toks = split_tokens(rest_of_args);

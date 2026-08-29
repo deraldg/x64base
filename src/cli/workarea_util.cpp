@@ -19,6 +19,10 @@
 #include "workareas.hpp"
 #include "textio.hpp"
 #include "command_output.hpp"
+#include "common/path_state.hpp"
+#include "xbase/workspace_membership.hpp"
+
+#include <iostream>
 
 extern "C" xbase::XBaseEngine* shell_engine();
 
@@ -265,6 +269,78 @@ ScopedEngineArea::~ScopedEngineArea() noexcept
 {
     if (!active_ || !eng_) return;
     try { eng_->selectArea(prev_); } catch (...) {}
+}
+
+// ---------------------------------------------------------------------------
+// R131 -- the joint between a workspace's stamped roots and the live slots.
+// See workarea_util.hpp for why this lives here and not in cmd_workspace.cpp.
+// ---------------------------------------------------------------------------
+
+namespace {
+
+// The three slots R131 governs, in one place. Adding a fourth is a ruling, not
+// an edit: every function below iterates THIS array, so a slot added here is
+// stamped, applied and announced by all three at once, and a slot added to one
+// of them by hand would be the R5 shape immediately.
+struct RootSlot {
+    dottalk::paths::Slot slot;
+    const char*          label;
+};
+
+const RootSlot kRootSlots[3] = {
+    { dottalk::paths::Slot::DBF,     "DBF"     },
+    { dottalk::paths::Slot::INDEXES, "INDEXES" },
+    { dottalk::paths::Slot::LMDB,    "LMDB"    },
+};
+
+} // namespace
+
+bool workspace_roots_bind_from_slots(std::uint64_t handle)
+{
+    if (handle == 0 || !xbase::workspace::exists(handle)) return false;
+    return xbase::workspace::set_roots(
+        handle,
+        dottalk::paths::get_slot(kRootSlots[0].slot).string(),
+        dottalk::paths::get_slot(kRootSlots[1].slot).string(),
+        dottalk::paths::get_slot(kRootSlots[2].slot).string());
+}
+
+bool workspace_roots_ensure_stamped(std::uint64_t handle)
+{
+    if (handle == 0 || !xbase::workspace::exists(handle)) return false;
+    if (xbase::workspace::roots_stamped(handle)) return true;
+    return workspace_roots_bind_from_slots(handle);
+}
+
+int workspace_roots_apply_to_slots(std::uint64_t handle)
+{
+    if (handle == 0 || !xbase::workspace::exists(handle)) return 0;
+
+    // An UNSTAMPED workspace asserts nothing. Under Q2 (inherit) this cannot
+    // happen for a workspace the CLI created, and DEFAULT is stamped on the
+    // way past by ensure_stamped -- but a return of 0 here is the honest
+    // answer for "this workspace has no environment to impose" and is not an
+    // error. Silently applying three empty strings would blank the session.
+    if (!xbase::workspace::roots_stamped(handle)) return 0;
+
+    std::string want[3];
+    if (!xbase::workspace::roots_of(handle, want[0], want[1], want[2])) return 0;
+
+    int moved = 0;
+    for (int i = 0; i < 3; ++i) {
+        const std::string have =
+            dottalk::paths::get_slot(kRootSlots[i].slot).string();
+        if (have == want[i]) continue;
+        dottalk::paths::set_slot(kRootSlots[i].slot, std::filesystem::path(want[i]));
+        if (moved == 0) {
+            std::cout << "  This workspace carries its own environment (R131); "
+                         "the following slot(s) moved:\n";
+        }
+        std::cout << "  SETPATH: " << kRootSlots[i].label << " = "
+                  << want[i] << "\n";
+        ++moved;
+    }
+    return moved;
 }
 
 std::vector<std::string> split_tuple_expr_csv(const std::string& s)

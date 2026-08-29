@@ -93,10 +93,14 @@
 #include "cli/command_output.hpp"
 #include "cli/cmd_setpath.hpp"
 #include "common/path_state.hpp"
+#include "workarea_util.hpp"
+#include "xbase/workspace_membership.hpp"
 
 #include <algorithm>
 #include <cctype>
 #include <filesystem>
+#include <iostream>
+#include <vector>
 #include <sstream>
 #include <string>
 #include <system_error>
@@ -213,6 +217,69 @@ static void skip_optional_tokens(std::istringstream& iss)
     }
 }
 
+// ---------------------------------------------------------------------------
+// R131 Q1 -- SET PATH <slot> <value> IN <ws-or-handle>
+//
+// `IN` IS ALREADY THE HOUSE WORD for "target something other than current" --
+// SET ORDER TAG <tag> IN <alias> and USE <table> IN <n>. Both of those take
+// AREAS. After SET PATH it can only mean a workspace, because a path has no
+// per-area meaning, so the keyword is reused with no namespace collision.
+//
+// WHY AN EXPLICIT CLAUSE RATHER THAN A PROMPT (R131 sec 7): the first form of
+// this ruling was a y/n confirmation fired when more than one workspace was
+// open. It was withdrawn on measurement -- this engine has NO script-mode
+// prompt suppression (g_suppress_prompts is set only on the QUIT path), so a
+// prompt inside a .dts blocks or eats the next script line as its answer, and
+// open_mcc_and_cascade.dts would have tripped it on the first script written
+// against this ruling. One grammar, no mode-dependent behaviour.
+//
+// AMBIGUITY, DISCLOSED RATHER THAN DISCOVERED: the clause is recognised only
+// as the LAST TWO tokens of the value. A directory genuinely ending in
+// "... IN <something>" would be misread. That is judged acceptable because the
+// alternative -- a separator that cannot occur in a path -- is a new
+// punctuation rule for one clause, and because the misread is loud: the slot
+// is assigned a shorter path and SETPATH prints the resolved result.
+static bool split_trailing_in_clause(std::string& value, std::string& ws_token)
+{
+    ws_token.clear();
+    // Tokenise on whitespace; we need the last two.
+    std::vector<std::string> toks;
+    {
+        std::istringstream ts(value);
+        std::string t;
+        while (ts >> t) toks.push_back(t);
+    }
+    if (toks.size() < 3) return false;                 // slot value IN ws needs a value too
+    if (up(toks[toks.size() - 2]) != "IN") return false;
+
+    ws_token = toks.back();
+    // Rebuild the value from everything before the IN.
+    std::string rebuilt;
+    for (std::size_t i = 0; i + 2 < toks.size(); ++i) {
+        if (!rebuilt.empty()) rebuilt += ' ';
+        rebuilt += toks[i];
+    }
+    if (rebuilt.empty()) { ws_token.clear(); return false; }
+    value = rebuilt;
+    return true;
+}
+
+// Name or handle, the same two forms WORKSPACE SWITCH accepts. 0 = no match.
+static std::uint64_t resolve_ws_token(const std::string& tok)
+{
+    if (tok.empty()) return 0;
+    const bool all_digits =
+        std::all_of(tok.begin(), tok.end(),
+                    [](unsigned char c) { return std::isdigit(c) != 0; });
+    if (all_digits) {
+        try {
+            const std::uint64_t h = std::stoull(tok);
+            return xbase::workspace::exists(h) ? h : 0;
+        } catch (...) { return 0; }
+    }
+    return xbase::workspace::find_by_name_ci(tok);
+}
+
 static fs::path resolve_setpath_target(dottalk::paths::Slot slot, const fs::path& input)
 {
     using dottalk::paths::Slot;
@@ -318,16 +385,68 @@ void cmd_SETPATH(xbase::DbArea&, std::istringstream& iss)
 
     skip_optional_tokens(iss);
 
-    const std::string path_value = read_rest(iss);
+    std::string path_value = read_rest(iss);
     if (path_value.empty()) {
         print_setpath_usage();
         return;
     }
 
-    const fs::path finalPath = resolve_setpath_target(slot, fs::path(path_value));
-    dottalk::paths::set_slot(slot, finalPath);
+    // R131 Q1. Peel a trailing IN <ws-or-handle> off the value before the path
+    // is resolved, so the clause never reaches the filesystem.
+    std::string ws_token;
+    const bool has_in = split_trailing_in_clause(path_value, ws_token);
 
-    const fs::path resolved = dottalk::paths::get_slot(slot);
+    std::uint64_t target_ws = 0;
+    if (has_in) {
+        target_ws = resolve_ws_token(ws_token);
+        if (target_ws == 0) {
+            std::cout << "SETPATH: no such workspace: " << ws_token << "\n"
+                      << "  Nothing was assigned. IN takes a workspace name or "
+                         "handle, as WORKSPACE SWITCH does.\n";
+            return;
+        }
+    }
+
+    const fs::path finalPath = resolve_setpath_target(slot, fs::path(path_value));
+
+    // THE EXPLICIT FORM DOES NOT MOVE THE SESSION unless it is aimed at the
+    // workspace the session is standing in. That is the whole point of the
+    // clause: R131 sec 7 records the misordering hazard it exists to answer --
+    // NEW then SET PATH then SWITCH binds the OLD workspace, and the remedy is
+    // to NAME the target rather than to rely on standing in it.
+    const std::uint64_t cur = xbase::workspace::current_handle();
+    const bool touches_session = (!has_in || target_ws == cur);
+
+    if (touches_session) dottalk::paths::set_slot(slot, finalPath);
+
+    const fs::path resolved =
+        touches_session ? dottalk::paths::get_slot(slot) : finalPath;
+
+    // R131 sec 1: SET PATH RETARGETS THE CURRENT WORKSPACE, NOT THE SESSION.
+    // The bare form binds whoever is current -- which also stamps DEFAULT the
+    // first time anyone sets a path in a fresh session, so DEFAULT never has
+    // to be stamped from a foreign workspace's slots later.
+    if (has_in) {
+        std::string d, i, l;
+        xbase::workspace::roots_of(target_ws, d, i, l);
+        if (d.empty() || i.empty() || l.empty()) {
+            // Not yet stamped: fill from the session first so the write below
+            // sets ONE slot rather than leaving the other two blank. Roots move
+            // as a set of three; a half-stamped workspace is the sec 3 defect.
+            d = dottalk::paths::get_slot(dottalk::paths::Slot::DBF).string();
+            i = dottalk::paths::get_slot(dottalk::paths::Slot::INDEXES).string();
+            l = dottalk::paths::get_slot(dottalk::paths::Slot::LMDB).string();
+        }
+        switch (slot) {
+            case dottalk::paths::Slot::DBF:     d = resolved.string(); break;
+            case dottalk::paths::Slot::INDEXES: i = resolved.string(); break;
+            case dottalk::paths::Slot::LMDB:    l = resolved.string(); break;
+            default: break;   // a slot R131 does not govern; nothing to bind
+        }
+        xbase::workspace::set_roots(target_ws, d, i, l);
+    } else {
+        cli::workspace_roots_bind_from_slots(cur);
+    }
 
     cli::cmdout::print_prefixed_message(
         "SETPATH",
@@ -337,5 +456,13 @@ void cmd_SETPATH(xbase::DbArea&, std::istringstream& iss)
             {"path", resolved.string()}
         });
 
-    validate_slot_path(slot, resolved);
+    if (has_in) {
+        std::cout << "  bound to workspace " << target_ws << " ("
+                  << xbase::workspace::name_of(target_ws) << ")";
+        if (!touches_session)
+            std::cout << "; the session's own slots are unchanged";
+        std::cout << ".\n";
+    }
+
+    if (touches_session) validate_slot_path(slot, resolved);
 }

@@ -188,4 +188,49 @@ private:
 // empty terms are dropped.
 std::vector<std::string> split_tuple_expr_csv(const std::string& s);
 
+// ---------------------------------------------------------------------------
+// R131 -- A WORKSPACE OWNS ITS ENVIRONMENT.
+//
+// THIS IS THE JOINT, and it is here rather than in cmd_workspace.cpp because
+// it has TWO callers in different translation units: the WORKSPACE verbs, and
+// SET PATH (cmd_setpath_command.cpp). The AIF-078 precedent is exact --
+// find_free_area_for_workspace was lifted out of cmd_use.cpp into this file
+// the moment a second opener needed it, for the same reason: a rule with two
+// callers and one home cannot drift, and a rule with two callers and two
+// homes always does (R5).
+//
+// The DIVISION OF LABOUR, stated because it is the whole design:
+//   xbase::workspace::Entry  HOLDS the three roots and cannot resolve them.
+//   These three functions are the ONLY code that moves a value between that
+//   stamp and the live dottalk::paths slots, in either direction.
+//   Everything else -- all 102 readers of get_slot -- is untouched.
+
+// Stamp <handle>'s roots FROM the live slots. This is the write direction:
+// SET PATH and workspace creation use it. Returns false if the handle is not
+// in the table.
+bool workspace_roots_bind_from_slots(std::uint64_t handle);
+
+// Stamp only if not already stamped. Q2 is INHERIT, so every workspace is
+// stamped at creation -- which leaves exactly one entry this exists for:
+// DEFAULT, created inside xbase before any command has run and therefore
+// before anything could have told it where it lives. Called on the paths that
+// could otherwise read an unstamped entry.
+bool workspace_roots_ensure_stamped(std::uint64_t handle);
+
+// Apply <handle>'s roots TO the live slots. This is the read direction, and
+// the only caller is WORKSPACE SWITCH.
+//
+// IT ANNOUNCES EVERY SLOT IT MOVES, and that is deliberate rather than
+// decorative. SWITCH acquiring the power to re-point path slots is the one
+// part of R131 that can change what an EXISTING script does, and this house's
+// habit for a state change is to name it (R131 sec 7 records the same
+// suggestion for SET PATH). A run where a spec breaks because its slots moved
+// under it should say so in its own transcript rather than leaving a reader to
+// infer it from a failed open three screens later.
+//
+// Returns the number of slots actually changed; 0 means the workspace's
+// environment already matched the session's, which is the common case and
+// prints nothing.
+int workspace_roots_apply_to_slots(std::uint64_t handle);
+
 } // namespace cli

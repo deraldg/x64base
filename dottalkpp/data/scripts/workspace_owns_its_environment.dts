@@ -1,0 +1,102 @@
+* R131. A WORKSPACE OWNS ITS ENVIRONMENT (owner ruling 2026-08-29).
+* Explicit-run until soaked. Self-bootstrapping in SANDBOX, self-erasing.
+*
+* WHAT CHANGED. The three path slots DBF, INDEXES and LMDB were GLOBAL, and
+* WORKSPACE SWITCH moved MEMBERSHIP without moving them. So with two systems
+* open, a table in one resolved its container under the other -- measured
+* 2026-08-29 as MCC's STUDENTS answering
+*   openCdx: LMDB env missing: ...SYSTEMS\CASCADE_ERP\LMDB\STUDENTS.cdx.d
+* because Cascade had been opened last. Now the three slots are STAMPED on the
+* workspace and SWITCH restores them.
+*
+* THE FIXTURE IS TWO TABLES WITH THE SAME NAME AND DIFFERENT CONTENT, and that
+* is the whole trick. An arm that opens a table only present in one directory
+* cannot go RED when the slot is wrong -- the open fails, the area is empty,
+* and a marker over a closed area PRINTS NOTHING rather than a verdict
+* (USE_AGAIN, three cuts). With RSPT.dbf in BOTH roots, a wrong slot opens the
+* WRONG TABLE and the marker reads .F. A failure has to be able to speak.
+*
+* FIXTURE DIRECTORIES. DBF/SANDBOX/R131A and R131B must exist. They are EMPTY
+* DIRECTORIES AND GIT DOES NOT TRACK THOSE -- the same standing gap WAOA/WAOB,
+* OJCA/OJCB, PKA/PKB and RPCA/RPCB already carry. Inherited, not introduced.
+SET PATH DBF DBF/SANDBOX/R131A
+ERASE RSPT CONFIRM
+CREATE X64 RSPT (ID N(4), MARK C(8))
+APPEND
+REPLACE ID WITH 1
+REPLACE MARK WITH "AAA"
+CLOSE
+SET PATH DBF DBF/SANDBOX/R131B
+ERASE RSPT CONFIRM
+CREATE X64 RSPT (ID N(4), MARK C(8))
+APPEND
+REPLACE ID WITH 1
+REPLACE MARK WITH "BBB"
+CLOSE
+WORKSPACE CLOSE ALL
+* GUARDS. Each fixture read ON ITS OWN, through its own slot, before any
+* workspace exists. Without these an arm reading the wrong MARK cannot tell a
+* broken SWITCH from a table that never carried the value.
+SET PATH DBF DBF/SANDBOX/R131A
+USE RSPT
+? "RSE_G0_fixture_a_reads_AAA:" + (ALLTRIM(MARK) = "AAA")
+CLOSE
+SET PATH DBF DBF/SANDBOX/R131B
+USE RSPT
+? "RSE_G1_fixture_b_reads_BBB:" + (ALLTRIM(MARK) = "BBB")
+CLOSE
+WORKSPACE CLOSE ALL
+SET PATH DBF DBF
+* ---------------------------------------------------------------------------
+* THE OWNER'S SANCTIONED SEQUENCE, TWICE: NEW / SWITCH / SET PATH / OPEN.
+WORKSPACE NEW RSEWSA
+WORKSPACE SWITCH RSEWSA
+SET PATH DBF DBF/SANDBOX/R131A
+USE RSPT
+? "RSE_G2_workspace_a_opened_its_own_table:" + (ALLTRIM(MARK) = "AAA")
+WORKSPACE NEW RSEWSB
+WORKSPACE SWITCH RSEWSB
+SET PATH DBF DBF/SANDBOX/R131B
+USE RSPT
+? "RSE_G3_workspace_b_opened_its_own_table:" + (ALLTRIM(MARK) = "BBB")
+* RSE_T1 -- THE DISCRIMINATOR. Switch back to A and open WITHOUT setting the
+* path again. Under the fix A's slots are restored and RSPT reads AAA. Before
+* it, the DBF slot is still B's, the SAME FILENAME opens out of the wrong root,
+* and this reads .F. -- a printed red, not a silence.
+WORKSPACE SWITCH RSEWSA
+USE RSPT
+? "RSE_T1_switch_restored_this_workspace_environment:" + (ALLTRIM(MARK) = "AAA")
+* RSE_T2 -- and the other direction, so a fix that simply pinned the slots to
+* the first workspace cannot pass. Same shape, opposite expected value.
+WORKSPACE SWITCH RSEWSB
+USE RSPT
+? "RSE_T2_switch_restores_the_other_way_too:" + (ALLTRIM(MARK) = "BBB")
+* ---------------------------------------------------------------------------
+* RSE_T3/T4 -- Q1's EXPLICIT CLAUSE. Standing in B, bind A's DBF root with
+* IN. Two claims, and both are needed: the session must NOT move (T3), and the
+* binding must have actually landed on A (T4, proven by switching to A and
+* opening without a SET PATH).
+SET PATH DBF DBF/SANDBOX/R131A IN RSEWSA
+USE RSPT
+? "RSE_T3_in_clause_left_the_session_alone:" + (ALLTRIM(MARK) = "BBB")
+WORKSPACE SWITCH RSEWSA
+USE RSPT
+? "RSE_T4_in_clause_bound_the_named_workspace:" + (ALLTRIM(MARK) = "AAA")
+* RSE_T5 -- THE MISORDERING HAZARD R131 sec 7 exists to answer. Bind B's root
+* to B while standing in A, using IN, then switch. Under the bare form this
+* would have bound A -- the "NEW then SET PATH then SWITCH binds the OLD
+* workspace" trap -- and the switch would then reopen A's table.
+SET PATH DBF DBF/SANDBOX/R131B IN RSEWSB
+WORKSPACE SWITCH RSEWSB
+USE RSPT
+? "RSE_T5_explicit_binding_survived_the_switch:" + (ALLTRIM(MARK) = "BBB")
+* ---------------------------------------------------------------------------
+* CLEANUP.
+WORKSPACE CLOSE ALL
+WORKSPACE DESTROY RSEWSA
+WORKSPACE DESTROY RSEWSB
+SET PATH DBF DBF/SANDBOX/R131A
+ERASE RSPT CONFIRM
+SET PATH DBF DBF/SANDBOX/R131B
+ERASE RSPT CONFIRM
+SET PATH DBF DBF
