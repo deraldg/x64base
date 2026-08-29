@@ -68,6 +68,56 @@ MASS_CHANGE_THRESHOLD = 60
 # --- Threshold for listing the staged set by name (stowaway visibility) --------
 STAGED_LIST_THRESHOLD = 15
 
+# --- The file that rides in every commit by design -----------------------------
+# tier0-refresh regenerates this at the end of every gate run, so it is dirty
+# again the moment a commit finishes. That is deliberate. The side effect is
+# that THE STAGED SET IS NEVER EMPTY, so git's own "nothing to commit" refusal
+# -- the thing that normally catches a re-run -- can never fire here.
+TIER0_STATE_PATH = "labtalk/ai_portal/TIER0_STATE.md"
+
+
+def is_tier0_only(paths, range_spec, allow):
+    """True when the staged set is EXACTLY the state file and nothing else.
+
+    Kept pure and separate from main() so it can be exercised without shelling
+    out to every portal gate -- the same reason repository_role_guard exposes
+    validate_worktree. STAGED INDEX ONLY: a --range check reads history that
+    may already contain such commits, and blocking a push on a mistake already
+    made is a permanently red gate, which is a switched-off gate.
+    """
+    if range_spec is not None or allow:
+        return False
+    return (len(paths) == 1
+            and paths[0].replace("\\", "/") == TIER0_STATE_PATH)
+
+
+def tier0_only_message():
+    """The block text, as lines.
+
+    THE FIRST INSTRUCTION IS TO READ THE LOG, NOT TO UNDO ANYTHING. On the
+    occasion that produced this guard, the reflex was to remove the duplicate
+    commit, and the reset reached for --hard in a shared worktree: 38 files of
+    a concurrent session's uncommitted work, gone, unrecoverable because
+    unstaged changes never enter the object database. The papercut cost
+    nothing; the reflex cost everything. So this message never names a
+    destructive verb.
+    """
+    return [
+        "BLOCKED -- the only staged file is TIER0_STATE.md, which rides in "
+        "every commit by design.",
+        "This is what an accidental re-run of an already-successful commit "
+        "looks like: the real change went in a moment ago, `git add` found "
+        "nothing left, and the commit went ahead anyway on the regenerated "
+        "state file alone -- carrying the previous message and none of its "
+        "content.",
+        "Check `git log --oneline -3` FIRST. If the message you are about to "
+        "use is already there, the work IS committed and there is nothing to "
+        "do; a duplicate that already exists is a cosmetic problem and not "
+        "worth a history rewrite in a shared worktree.",
+        "If a refresh-only commit really is what you want, re-run with "
+        "--allow-tier0-only (or set X64BASE_ALLOW_TIER0_ONLY=1).",
+    ]
+
 # --- HARD BLOCK patterns (never belong in a source commit) ---------------------
 # Directory-segment matches (any path containing the segment) and glob suffixes.
 HARD_BLOCK_DIR_SEGMENTS = (
@@ -386,6 +436,9 @@ def main() -> int:
                     help="acknowledge intentional data/fixture changes (the task named the mutation)")
     ap.add_argument("--allow-mass", action="store_true",
                     help="acknowledge a large change set")
+    ap.add_argument("--allow-tier0-only", action="store_true",
+                    help="acknowledge a commit whose only staged file is "
+                         "TIER0_STATE.md (normally an accidental re-run)")
     ap.add_argument("--install-hook", action="store_true",
                     help="install this gate as a git pre-commit hook and exit")
     ap.add_argument("--strict-aif", action="store_true",
@@ -422,8 +475,11 @@ def main() -> int:
         args.allow_mass = True
     if os.environ.get("X64BASE_ALLOW_DATA") == "1":
         args.allow_data = True
+    if os.environ.get("X64BASE_ALLOW_TIER0_ONLY") == "1":
+        args.allow_tier0_only = True
     for name, on in (("X64BASE_ALLOW_MASS", args.allow_mass),
-                     ("X64BASE_ALLOW_DATA", args.allow_data)):
+                     ("X64BASE_ALLOW_DATA", args.allow_data),
+                     ("X64BASE_ALLOW_TIER0_ONLY", args.allow_tier0_only)):
         if on and os.environ.get(name) == "1":
             print(f"prepush-gate: {name}=1 -- acknowledgement accepted from the "
                   f"environment. Every other check still runs.")
@@ -463,6 +519,33 @@ def main() -> int:
     if len(paths) <= STAGED_LIST_THRESHOLD:
         for p in sorted(paths):
             print(f"    = {p}")
+
+    # TIER0-ONLY COMMIT -- hard, staged index only (AIF-078, 2026-08-29).
+    #
+    # TIER0_STATE.md rides in every commit BY DESIGN, so the staged set is
+    # never empty and git's "nothing to commit" refusal -- the safety net that
+    # normally catches a re-run of an already-successful commit -- can never
+    # fire in this repository. Every accidental re-run therefore SUCCEEDS,
+    # producing a real commit that carries the previous one's message and none
+    # of its content.
+    #
+    # MEASURED, THREE TIMES IN ONE SESSION (2026-08-28/29). The third produced
+    # a70145a63, a duplicate of 272a00a54's message with 204 lines of the work
+    # missing, sitting one commit ABOVE the real one -- so `git log` shows the
+    # empty one first. Undoing that duplicate is what cost a concurrent session
+    # 38 files of uncommitted work. The guard is cheap; it sits upstream of an
+    # expensive reflex.
+    #
+    # THERE IS NO CASE where committing ONLY the regenerated state file is the
+    # intent: it is derived, it is refreshed automatically, and it rides in the
+    # next real commit anyway. A deliberate refresh-only commit stays reachable
+    # through the acknowledgement -- narrow, scoped and loud like the other two.
+    if is_tier0_only(paths, args.range_spec, args.allow_tier0_only):
+        print("", file=sys.stderr)
+        for line in tier0_only_message():
+            print(f"  {line}", file=sys.stderr)
+        print("\nprepush-gate: FAIL (exit 2).", file=sys.stderr)
+        return 2
 
     exit_code = 0
 
