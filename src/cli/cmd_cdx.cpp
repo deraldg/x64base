@@ -17,6 +17,9 @@
 // Policy enforced:
 //   - CREATE: refuse if file exists.
 //   - INFO/TAGS/ADDTAG/DROPTAG: require existing file (no implicit creation).
+//   - ADDTAG: additionally requires an open table, and refuses a name that is not
+//     one of its fields. See the block at the ADDTAG branch for why this is at
+//     definition time rather than at build time.
 //   - Default path (no path arg):
 //       1) if area has active CDX in orderstate: use it
 //       2) else <current_dbf_basename>.cdx resolved via INDEXES slot
@@ -53,6 +56,13 @@
 //   CREATE refuses to overwrite an existing file.
 //   INFO and TAGS are read-only inspection operations and require an existing file.
 //   ADDTAG and DROPTAG mutate the CDX container tag directory and require an existing file.
+//   ADDTAG requires an OPEN TABLE and refuses a <name> that does not resolve to one of its
+//     fields, through the same standard resolver REPLACE uses (xfg::resolve_field_index_std):
+//     a CDX tag IS a field name, and BUILDLMDB builds each tag FROM the field of that name.
+//     Before 2026-08-29 any string was accepted here and the miss was swallowed at BUILD time
+//     without a message, leaving a container carrying a tag nothing would ever fill.
+//   DROPTAG is deliberately NOT field-checked: removing a tag whose field is gone is exactly
+//     when you need it, so requiring the field to exist would fence off the repair.
 //   CDX manages container header/tag metadata; backend tag build data persistence is owned elsewhere.
 //
 // risk:
@@ -60,6 +70,8 @@
 //   creates_index_file: CREATE
 //   overwrites_index_file: no, CREATE refuses existing target
 //   mutates_index_metadata: ADDTAG DROPTAG
+//   requires_open_table: ADDTAG
+//   validates_field_name: ADDTAG (xfg::resolve_field_index_std, as REPLACE does)
 //   mutates_table_data: no
 //   default_path_uses_order_state: yes
 //   default_path_uses_indexes_slot: yes
@@ -79,6 +91,7 @@
 #include "cli/path_resolver.hpp"
 #include "cli/order_state.hpp"
 #include "help/helpdata_messages.hpp"
+#include "xbase_field_getters.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -315,6 +328,58 @@ void cmd_CDX(xbase::DbArea& area, std::istringstream& args)
         if (name.empty()) {
             cli::cmdout::print_prefixed_message(
                 "CDX ADDTAG", dottalk::helpdata::MessageId::CdxAddTagMissingNameText);
+            return;
+        }
+
+        // ------------------------------------------------------------------
+        // THE TAG NAME IS A FIELD NAME, SO CHECK IT HERE (AIF-078, 2026-08-29).
+        //
+        // ADDTAG used to accept ANY string. cmd_buildlmdb.cpp:465-481 --
+        // headed "Build one tag from a field name" -- then walked area.fields()
+        // looking for a match and gave up on a miss with
+        //
+        //     if (fld < 1) return false;
+        //
+        // and NOT ONE WORD PRINTED. Only the total is reported, so a container
+        // could carry a tag that nothing would ever fill and BUILDLMDB would
+        // still say "done OK=1 tags rebuilt" on the strength of a DIFFERENT
+        // tag. Definition time is where a typo is still fixable; build time is
+        // too late, the bad tag is already in the container's directory.
+        //
+        // REPLACE ALREADY HAD THIS RIGHT AND IS THE MODEL. It resolves through
+        // xfg::resolve_field_index_std and refuses on -1 (cmd_replace.cpp:822,
+        // ReplaceFieldNotFoundText). That resolver is the engine's STANDARD
+        // one: it trims, authoritative x64 logical names win, and the 10-byte
+        // DBF descriptor token is accepted as an alias when it maps uniquely
+        // (include/xbase_field_getters.hpp:117-176). BUILDLMDB's hand-rolled
+        // textio::ieq(Fs[i].name, tag) does none of that.
+        //
+        // SO THERE WERE THREE DECLARATIONS OF WHAT A FIELD NAME IS -- the
+        // standard resolver, BUILDLMDB's loop, and ADDTAG's nothing-at-all --
+        // and they did not agree. Calling the shared resolver here makes CDX
+        // agree with REPLACE rather than adding a fourth opinion. BUILDLMDB's
+        // loop is still its own and is NOT changed here: a container written
+        // by an older binary, or by hand, can still carry a dead tag, and that
+        // is a separate change with its own proof.
+        //
+        // AN OPEN TABLE IS NOW REQUIRED (owner ruling 2026-08-29). ADDTAG could
+        // previously define a tag on a container named by an explicit path with
+        // no table open at all. Validating only when the path happens to match
+        // the current area would have put the check on every path EXCEPT the
+        // one most likely to carry a typo -- a guard that cannot fire, which is
+        // the shape this lane keeps finding. BUILDLMDB already requires an open
+        // table, so a tag defined without one could not have been built in that
+        // session anyway.
+        // ------------------------------------------------------------------
+        if (!area.isOpen()) {
+            cli::cmdout::print_prefixed_message(
+                "CDX ADDTAG", dottalk::helpdata::MessageId::CdxAddTagNoFileOpenText);
+            return;
+        }
+        if (xfg::resolve_field_index_std(area, name) < 0) {
+            cli::cmdout::print_prefixed_message(
+                "CDX ADDTAG", dottalk::helpdata::MessageId::CdxAddTagFieldNotFoundText,
+                {{"name", name}});
             return;
         }
 

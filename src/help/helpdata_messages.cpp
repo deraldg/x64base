@@ -8590,7 +8590,7 @@ const std::vector<MessageDef>& all_messages()
             "COMMAND:CDX",
             "USAGE",
             "INFO",
-            "Usage:\n  CDX USAGE\n  CDX INFO [<path.cdx>]\n  CDX TAGS [<path.cdx>]\n  CDX CREATE [<path.cdx>]\n  CDX ADDTAG <name> [<path.cdx>]\n  CDX DROPTAG <name> [<path.cdx>]\nNotes:\n  - CDX with no arguments shows usage.\n  - CREATE refuses to overwrite an existing CDX file.\n  - INFO/TAGS inspect metadata; ADDTAG/DROPTAG mutate tag metadata."
+            "Usage:\n  CDX USAGE\n  CDX INFO [<path.cdx>]\n  CDX TAGS [<path.cdx>]\n  CDX CREATE [<path.cdx>]\n  CDX ADDTAG <name> [<path.cdx>]\n  CDX DROPTAG <name> [<path.cdx>]\nNotes:\n  - CDX with no arguments shows usage.\n  - CREATE refuses to overwrite an existing CDX file.\n  - INFO/TAGS inspect metadata; ADDTAG/DROPTAG mutate tag metadata.\n  - ADDTAG requires an OPEN TABLE and refuses a <name> that is not one of its fields: a tag IS a field name, and BUILDLMDB builds each tag from the field of that name."
         },
         {
             MessageId::CdxCreateUnableResolvePathText,
@@ -8737,6 +8737,41 @@ const std::vector<MessageDef>& all_messages()
             "added '{tag}'."
         },
         {
+            MessageId::CdxAddTagNoFileOpenText,
+            "CDX_ADDTAG_NO_FILE_OPEN_TEXT",
+            "COMMAND:CDX",
+            "ERROR",
+            "ERROR",
+            "no file open. A tag names a FIELD, so the table must be open to "
+            "check it exists. BUILDLMDB requires one too."
+        },
+        {
+            MessageId::CnxAddTagNoFileOpenText,
+            "CNX_ADDTAG_NO_FILE_OPEN_TEXT",
+            "COMMAND:CNX",
+            "ERROR",
+            "ERROR",
+            "no file open. A tag names a FIELD, so the table must be open to check it exists. REBUILD requires one too."
+        },
+        {
+            MessageId::CnxAddTagFieldNotFoundText,
+            "CNX_ADDTAG_FIELD_NOT_FOUND_TEXT",
+            "COMMAND:CNX",
+            "ERROR",
+            "ERROR",
+            "field not found: '{name}'. A CNX tag IS a field name, and neither build path will tell you otherwise later -- REBUILD reports OK for every tag in the directory whatever happened. Nothing was added."
+        },
+        {
+            MessageId::CdxAddTagFieldNotFoundText,
+            "CDX_ADDTAG_FIELD_NOT_FOUND_TEXT",
+            "COMMAND:CDX",
+            "ERROR",
+            "ERROR",
+            "field not found: '{name}'. A CDX tag IS a field name -- BUILDLMDB "
+            "builds each tag FROM the field of that name -- so a tag naming no "
+            "field could never be built. Nothing was added."
+        },
+        {
             MessageId::CdxDropTagMissingNameText,
             "CDX_DROPTAG_MISSING_NAME_TEXT",
             "COMMAND:CDX",
@@ -8790,7 +8825,7 @@ const std::vector<MessageDef>& all_messages()
             "COMMAND:CNX",
             "USAGE",
             "INFO",
-            "Usage:\n  CNX USAGE\n  CNX INFO [<path.cnx>]\n  CNX TAGS [<path.cnx>]\n  CNX CREATE [<path.cnx>]\n  CNX ADDTAG <name> [<path.cnx>]\n  CNX DROPTAG <name> [<path.cnx>]\n  CNX WALK <tag> [<path.cnx>]\n  CNX TRACE <tag> [<path.cnx>]\nNotes:\n  - CNX with no arguments shows usage.\n  - CREATE refuses to overwrite an existing CNX file.\n  - INFO/TAGS/WALK/TRACE inspect metadata; ADDTAG/DROPTAG mutate tag metadata."
+            "Usage:\n  CNX USAGE\n  CNX INFO [<path.cnx>]\n  CNX TAGS [<path.cnx>]\n  CNX CREATE [<path.cnx>]\n  CNX ADDTAG <name> [<path.cnx>]\n  CNX DROPTAG <name> [<path.cnx>]\n  CNX WALK <tag> [<path.cnx>]\n  CNX TRACE <tag> [<path.cnx>]\nNotes:\n  - CNX with no arguments shows usage.\n  - CREATE refuses to overwrite an existing CNX file.\n  - INFO/TAGS/WALK/TRACE inspect metadata; ADDTAG/DROPTAG mutate tag metadata.\n  - ADDTAG requires an OPEN TABLE and refuses a <name> that is not one of its fields: a tag IS a field name, and neither build path will say otherwise later -- REBUILD reports OK for every tag in the directory."
         },
         {
             MessageId::CnxCreateUnableResolvePathText,
@@ -12566,7 +12601,7 @@ const std::vector<MessageTextDef>& all_message_texts()
         ,{ MessageId::CloseUsageText, "en-US", "Usage:\n  CLOSE USAGE\n  CLOSE\n  CLOSE ALL\nNotes:\n  - CLOSE closes the current work area.\n  - CLOSE ALL clears all relations before closing the current work area.\n  - Dirty table-buffer state may prompt or cancel close." }
         ,{ MessageId::CloseCanceledText, "en-US", "CLOSE canceled." }
         ,{ MessageId::CloseCompletedText, "en-US", "Closed." }
-        ,{ MessageId::CdxUsageText, "en-US", "Usage:\n  CDX USAGE\n  CDX INFO [<path.cdx>]\n  CDX TAGS [<path.cdx>]\n  CDX CREATE [<path.cdx>]\n  CDX ADDTAG <name> [<path.cdx>]\n  CDX DROPTAG <name> [<path.cdx>]\nNotes:\n  - CDX with no arguments shows usage.\n  - CREATE refuses to overwrite an existing CDX file.\n  - INFO/TAGS inspect metadata; ADDTAG/DROPTAG mutate tag metadata." }
+        ,{ MessageId::CdxUsageText, "en-US", "Usage:\n  CDX USAGE\n  CDX INFO [<path.cdx>]\n  CDX TAGS [<path.cdx>]\n  CDX CREATE [<path.cdx>]\n  CDX ADDTAG <name> [<path.cdx>]\n  CDX DROPTAG <name> [<path.cdx>]\nNotes:\n  - CDX with no arguments shows usage.\n  - CREATE refuses to overwrite an existing CDX file.\n  - INFO/TAGS inspect metadata; ADDTAG/DROPTAG mutate tag metadata.\n  - ADDTAG requires an OPEN TABLE and refuses a <name> that is not one of its fields: a tag IS a field name, and BUILDLMDB builds each tag from the field of that name." }
         ,{ MessageId::CdxCreateUnableResolvePathText, "en-US", "unable to resolve path." }
         ,{ MessageId::CdxCreateFileExistsText, "en-US", "file already exists: \"{path}\"" }
         ,{ MessageId::CdxCreateOpenFailedText, "en-US", "open/create failed." }
@@ -12585,13 +12620,17 @@ const std::vector<MessageTextDef>& all_message_texts()
         ,{ MessageId::CdxAddTagOpenFailedText, "en-US", "open failed." }
         ,{ MessageId::CdxAddTagAlreadyExistsText, "en-US", "tag already exists." }
         ,{ MessageId::CdxAddTagAddedText, "en-US", "added '{tag}'." }
+        ,{ MessageId::CdxAddTagNoFileOpenText, "en-US", "no file open. A tag names a FIELD, so the table must be open to check it exists. BUILDLMDB requires one too." }
+        ,{ MessageId::CnxAddTagNoFileOpenText, "en-US", "no file open. A tag names a FIELD, so the table must be open to check it exists. REBUILD requires one too." }
+        ,{ MessageId::CnxAddTagFieldNotFoundText, "en-US", "field not found: '{name}'. A CNX tag IS a field name, and neither build path will tell you otherwise later -- REBUILD reports OK for every tag in the directory whatever happened. Nothing was added." }
+        ,{ MessageId::CdxAddTagFieldNotFoundText, "en-US", "field not found: '{name}'. A CDX tag IS a field name -- BUILDLMDB builds each tag FROM the field of that name -- so a tag naming no field could never be built. Nothing was added." }
         ,{ MessageId::CdxDropTagMissingNameText, "en-US", "missing <name>." }
         ,{ MessageId::CdxDropTagUnableResolvePathText, "en-US", "unable to resolve path." }
         ,{ MessageId::CdxDropTagOpenFailedText, "en-US", "open failed." }
         ,{ MessageId::CdxDropTagNotFoundText, "en-US", "not found." }
         ,{ MessageId::CdxDropTagRemovedText, "en-US", "removed '{tag}'." }
         ,{ MessageId::CdxUnknownSubcommandText, "en-US", "unknown subcommand: {subcommand}" }
-        ,{ MessageId::CnxUsageText, "en-US", "Usage:\n  CNX USAGE\n  CNX INFO [<path.cnx>]\n  CNX TAGS [<path.cnx>]\n  CNX CREATE [<path.cnx>]\n  CNX ADDTAG <name> [<path.cnx>]\n  CNX DROPTAG <name> [<path.cnx>]\n  CNX WALK <tag> [<path.cnx>]\n  CNX TRACE <tag> [<path.cnx>]\nNotes:\n  - CNX with no arguments shows usage.\n  - CREATE refuses to overwrite an existing CNX file.\n  - INFO/TAGS/WALK/TRACE inspect metadata; ADDTAG/DROPTAG mutate tag metadata." }
+        ,{ MessageId::CnxUsageText, "en-US", "Usage:\n  CNX USAGE\n  CNX INFO [<path.cnx>]\n  CNX TAGS [<path.cnx>]\n  CNX CREATE [<path.cnx>]\n  CNX ADDTAG <name> [<path.cnx>]\n  CNX DROPTAG <name> [<path.cnx>]\n  CNX WALK <tag> [<path.cnx>]\n  CNX TRACE <tag> [<path.cnx>]\nNotes:\n  - CNX with no arguments shows usage.\n  - CREATE refuses to overwrite an existing CNX file.\n  - INFO/TAGS/WALK/TRACE inspect metadata; ADDTAG/DROPTAG mutate tag metadata.\n  - ADDTAG requires an OPEN TABLE and refuses a <name> that is not one of its fields: a tag IS a field name, and neither build path will say otherwise later -- REBUILD reports OK for every tag in the directory." }
         ,{ MessageId::CnxCreateUnableResolvePathText, "en-US", "unable to resolve path." }
         ,{ MessageId::CnxCreateFileExistsText, "en-US", "file already exists: \"{path}\"" }
         ,{ MessageId::CnxCreateOpenFailedText, "en-US", "open/create failed." }

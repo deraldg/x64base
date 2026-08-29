@@ -890,6 +890,38 @@ BOTTOM
 ? "MWX_T28_and_the_far_end_of_the_built_order:" + (ALLTRIM(CLBL) = "ZULU")
 
 * ---------------------------------------------------------------------------
+* MWX_T31 -- A TAG NAMING NO FIELD IS REFUSED AT DEFINITION TIME.
+*
+* A CDX TAG IS A FIELD NAME. cmd_buildlmdb.cpp:465-481 is headed "Build one tag
+* from a field name" and resolves each tag by walking area.fields(), so a tag
+* naming no field can never be built. Until 2026-08-29 ADDTAG accepted ANY
+* string and the miss was swallowed at BUILD time --
+*
+*     if (fld < 1) return false;        && not one word printed
+*
+* -- so a container could carry a dead tag while BUILDLMDB still announced
+* "done OK=1 tags rebuilt" on the strength of a DIFFERENT tag. ADDTAG now
+* resolves the name through xfg::resolve_field_index_std, the same standard
+* resolver REPLACE refuses on (cmd_replace.cpp:822), and requires an open table
+* to do it.
+*
+* THE REFUSAL ITSELF IS CONSOLE TEXT AND NO MARKER CAN READ IT -- the IDXDIFF
+* precedent, the same reason MWX_T14 and MWX_T20 assert survival rather than
+* the refusal. Read the transcript for:
+*
+*     CDX ADDTAG: field not found: 'MWXNOSUCH'.
+*
+* WHAT THE ARM CAN ASSERT is that the refusal changed NOTHING: the built order
+* is still live afterwards. If ADDTAG had instead accepted the name and gone on
+* to touch the container, the tag directory it shares with CLBL is exactly what
+* would be disturbed.
+* ---------------------------------------------------------------------------
+
+CDX ADDTAG MWXNOSUCH
+TOP
+? "MWX_T31_addtag_refused_a_dead_tag_and_changed_nothing:" + (ALLTRIM(CLBL) = "ALPHA")
+
+* ---------------------------------------------------------------------------
 * MWX_T29 / T30 -- AND IT SURVIVES THE ROUND TRIP.
 *
 * 5B proved a SHIPPED container's tag travels in the posture. This proves it
@@ -1026,8 +1058,8 @@ FORMULA "MWX-SHAKEDOWN-END"
 *
 *     17 guards : MWX_G0a G0b G0c G0d G0e G1a G1b G1c G2 G3 G4a G4b G5 G6
 *                 G7a G7b G7c
-*     30 arms   : MWX_T1 .. MWX_T30
-*     47 total at the time this line was last touched (section 5C)
+*     31 arms   : MWX_T1 .. MWX_T31
+*     48 total at the time this line was last touched (5C addtag refusal)
 *
 * AND ONE WARNING THE COUNT CANNOT GIVE YOU. A marker can be backed by a
 * real read of a real open table and still be worthless, if that table is
