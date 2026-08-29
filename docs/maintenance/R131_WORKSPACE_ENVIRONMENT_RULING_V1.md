@@ -420,3 +420,181 @@ The measurements in sections 3 and 6 that came from RUNNING (the
 owning-workspace line) were not re-run. They are transcript facts from
 2026-08-29 and nothing since is known to have touched those paths, but "not
 known to have touched" is not a measurement and is not claimed as one.
+
+## 11. Q2 AND Q3 CLOSED -- 2026-08-29
+
+Reviewed with the owner the same day. **Three answers were RULED, two were
+FORCED by measurement rather than chosen, and one earlier finding in this very
+document is WITHDRAWN.** Each is labelled, because a ruling and a constraint
+are not the same kind of thing and a later reader must be able to tell which
+they are arguing with.
+
+### 11.1 RULED BY THE OWNER: LMDB IS DERIVED
+
+> "lmdb is not used in v32, it is not used in vdisks, when we do need lmdb
+> files we can regenerate them, wherever we set the lmdb path. there are times
+> when we want to keep lmdb on disk and that is when we are using x64base with
+> x64 dbf"
+
+**BOTH PREMISES MEASURED AND CONFIRMED, not taken on assertion.**
+`src/xindex/cnx_backend.cpp` and `src/xindex/inx_payload.cpp` mention LMDB
+ZERO times -- it lives only in `cdx_backend`, `lmdb_backend` and
+`index_manager` -- so the v32 index forms genuinely never reach it. And
+`include/xbase/ramfs.hpp:24` states *"LMDB is out of scope here (it must mmap a
+real OS file)"*, which is the same owner rule already recorded verbatim in the
+WORKSPACE_RAM regression entry from 2026-08-11: *"lmdb only for disks"*. This
+ruling is consistent with one made eighteen days earlier.
+
+**THE PRECEDENT IS ALREADY IN THIS HOUSE, one layer up.** WORKSPACE WRITEBACK
+ruled the same way about index FILES: *"derived, rebuildable at the
+destination, WITH INDEXES for a byte-mirror, while the CHOICE travels in the
+posture."* LMDB is the more derived of the two -- a CDX is the container, LMDB
+is the built form of its tags -- so the rule extends rather than being invented.
+
+### 11.2 FORCED, NOT CHOSEN: the live roots are `Entry` plus a SWITCH swap
+
+Section 5 offered three homes as if all three were live options. **They are
+not.** Measured 2026-08-29: `paths::get_slot` has **102 call sites across
+thirty-odd files**, and they are not workspace code -- `src/bbs/bbs_store.cpp`,
+`cmd_smtp.cpp`, `cmd_drawio.cpp`, `edu/edu_cobol.cpp`, `src/cli/expr/fn_string.cpp`.
+Making resolution workspace-aware means handing a workspace to code that has
+none and wants none. That is not a design option, it is a rewrite.
+
+So there is ONE live shape: **`Entry` gains the roots as a STAMP, and
+`WORKSPACE SWITCH` writes them into the global on the way in.** All 102
+readers are untouched; they keep reading one global that now happens to be the
+current workspace's.
+
+**AND IT IS THE DOCTRINE `Entry` ALREADY CARRIES**, written for `ws_id`
+(`workspace_membership.hpp:131-135`): *"derivation runs DOWNWARD ONLY, so this
+field is a STAMP and not a lookup... A handle knows its WS_ID because it was
+told; it cannot go and find out."* Roots on `Entry` are exactly that -- three
+strings xbase can hold and cannot resolve, told to it by the CLI. Same rule,
+second application, and the header does not have to reach up into `paths::`.
+
+### 11.3 RULED OUT: `profile_path` is not a candidate
+
+Not deferred -- excluded. It is a field on an ADDRESSING type
+(`data_address.hpp:32`) and it participates in `operator==`
+(`data_address.cpp:45,50`), so writing it changes equality across a call
+surface nobody has enumerated. It would buy a home we do not need, because
+`Entry` already carries per-workspace durable state and is the right layer.
+
+**A GREP TRAP, recorded:** `cmd_ersatz.cpp:1131` declares an unrelated LOCAL
+also named `profile_path`. A bare grep reports four hits; two are noise.
+
+### 11.4 THE DURABLE HALF: two roots keep, one does not exist
+
+- **`DBF_ROOT` / `IDX_ROOT` stay durable and stay where they are.** They are
+  already written at birth (`cmd_workspace.cpp:3216-3217`) and by SAVE
+  (`3548-3549`), and already read by LOAD (`3743-3744`, consumed `3974-3979`
+  and `4286`). What changes is their MEANING -- from "the session slot when
+  this row was written" to "this workspace's declared environment" -- not
+  their existence.
+- **NO LMDB COLUMN IN `WORKSPACES.dbf`.** Follows directly from 11.1: nothing
+  is lost by not recording a location for an artifact you can rebuild, and it
+  spares a schema change to a catalog with 269 live rows and a supersede chain.
+  The absence stops being a gap and becomes a decision.
+- **THE LMDB SLOT IS LIVE-ONLY.** Derived does NOT mean unowned. R131's own
+  founding measurement (sec 3) is an LMDB RESOLUTION failure -- MCC's STUDENTS
+  answering `openCdx: LMDB env missing: ...SYSTEMS\CASCADE_ERP\LMDB\...`
+  because Cascade was opened last. Regenerability does not help there: you
+  still have to resolve to the right place to find the env, or you rebuild it
+  into a neighbour's tree. So LMDB rides on `Entry` and is swapped by SWITCH
+  like the other two, and is simply never written to the catalog.
+
+**ONE ITEM LEFT INSIDE THIS, and it is a wording fix rather than a mechanism.**
+The v3 posture DOES carry `LMDBROOT` and the loader prints it as
+`(recorded, not applied)` -- observed on every v3 load in the 2026-08-29 suite
+run. Under 11.1 that label is wrong in a specific and inviting way: it reads as
+*not applied YET*, a wiring gap someone will eventually try to close. It is
+actually *not applicable as a source*, permanently, because the thing it names
+is regenerable and may legitimately not exist. **Author's recommendation: keep
+the line and relabel it.** A posture that records where its owner liked to
+build envs is useful, and deleting a field from a format four specs read is a
+larger change than a sentence.
+
+### 11.5 Q2 ANSWERS ITSELF: INHERIT
+
+Section 7a treated Q2 as independent. **It is not.** Under 11.2, "start empty"
+means a SWITCH into a fresh workspace blanks the global, and 102 call sites --
+including SMTP, BBS and drawio, which never opted into workspaces -- resolve
+against nothing. Option (b) is not the stricter reading; it is a session-wide
+outage triggered by a navigation verb.
+
+**So Q2 is settled by Q3's live shape rather than on its own merits: INHERIT
+whatever is current at NEW time.** The recommendation recorded in 7a stands,
+and the reason recorded there -- NO STATE WITHOUT AN ANSWER, the AIF-148 floor
+-- turns out to be the smaller of the two reasons.
+
+### 11.6 WITHDRAWN: sec 10.4's "two readers disagree about empty"
+
+Section 10.4 recorded that `WRITEBACK` REFUSES an empty `DBF_ROOT`
+(`3973-3977`) while `LOAD` silently falls back to the session global (`4286`),
+and filed it as the AIF-118 shape sitting inside the field Q3 wants to
+repurpose. **That reading is wrong and is withdrawn.**
+
+The two verbs read the same field for OPPOSITE PURPOSES:
+
+- **LOAD reads it as a SOURCE** -- where to find the tables.
+- **WRITEBACK reads it as a DESTINATION** -- where to put them.
+
+Falling back to a guess is reasonable for a source and unacceptable for a
+destination, because writing files into a guessed directory is not
+recoverable. Each behaviour is CORRECT FOR ITS OWN MEANING. This is not one
+answer for two states; it is two questions sharing a field.
+
+**AND THAT CLOSES Q3'S LAST OPEN ITEM.** If `DBF_ROOT` becomes "this
+workspace's declared environment", it is unambiguously the SOURCE meaning, and
+**LOAD needs no change at all.** WRITEBACK's use of it as a default destination
+becomes a BORROWING -- which is precisely what `TO <root>` already exists to
+make explicit. WRITEBACK keeps defaulting to it as a convenience and should say
+that it is doing so.
+
+Recorded as a withdrawal rather than an edit, because the observation was real
+and only the reading was wrong, and because it was overturned by the owner
+asking what the difference between SAVE and WRITEBACK actually is. The
+distinction that answered it: **SAVE writes the DESCRIPTION (the posture --
+tables, index choice, tag, cursors, relations; the tables never move);
+WRITEBACK writes the DATA (the table bytes, onto a real disk root); and
+SAVE ... MINIDB writes BOTH, into a memo.** MINIDB and WRITEBACK both move
+bytes and differ only in destination -- into the catalog, versus onto disk as
+tables you can `USE`.
+
+### 11.7 NO CHANGE NEEDED: LOAD already places areas correctly
+
+Asked and measured in the same review: does LOAD take contiguous areas, and
+land in DEFAULT when DEFAULT is where you are standing? **Yes to both, already,
+and it is R130.** `xbase::find_free_area_for_workspace`
+(`src/xbase/area_alloc.cpp`) prefers the slot immediately after the
+workspace's highest member; an EMPTY workspace has `highest == -1`, skips that
+branch, takes the lowest free slot, and correctly reports
+`broke_contiguity = false`, because starting a block is not breaking one. LOAD
+reaches it through `find_free_area_for_current_workspace`, which passes
+`current_handle()`.
+
+This was NOT always true -- LOAD was the last opener in the tree replaying the
+posture's recorded numbers as engine addresses, with `workspace_close_all()`
+as the precondition that made address replay safe. Demonstrated live in the
+2026-08-29 suite run: OPENJOIN's reload filled slots 0 and 1 and the next ADD
+landed at 2.
+
+### 11.8 STILL NOT RULED, and still no code
+
+- **Whether the live and durable roots are one thing or two.** 11.2 and 11.4
+  settle WHERE each lives; they do not settle whether `Entry`'s roots are
+  written through to the catalog on every change, only at SAVE, or never
+  automatically. R129's resolution/navigation split argues they are two things
+  saved into each other; that remains the author's reading and is not ruled.
+- **DEFAULT.** Section 8's item stands: are DEFAULT's roots the INIT slots by
+  definition, and what does `SET PATH` do while standing in DEFAULT? Under
+  11.2 plus 11.5 there is an easy answer -- DEFAULT is stamped from INIT at
+  startup and behaves like any other workspace -- but DEFAULT is also the one
+  workspace with no WS_ID, so it should be said rather than assumed.
+- **The four-line switch idiom in `open_mcc_and_cascade.dts`**, which this
+  ruling is meant to retire and has not yet.
+- **NO CODE HAS BEEN WRITTEN FOR SECTIONS 1-7a OR 11.** Section 7b is the only
+  implemented part of R131. `src/cli/**` and `src/xbase/**` are engine and want
+  an explicit go.
+
+Ships **review-needed** -- the author does not self-approve.
