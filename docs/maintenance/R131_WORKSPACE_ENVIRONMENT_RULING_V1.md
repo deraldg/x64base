@@ -70,6 +70,11 @@ derives:
 > field. ... **WORKSPACES.dbf carries DBF_ROOT and is the place a durable
 > answer belongs; wiring that is not this change.**
 
+**THAT QUOTE IS THE PRE-R131 TEXT AND IS KEPT because it is what the engine
+said when this ruling was written.** The implementation changed it the same
+day; see sec 10.2 for the current wording and the corrected line numbers
+(4773 -> 4799, 4779 -> 4804).
+
 **R129, "ALSO NOT RULED"**: `WorkspaceIdentity::profile_path`, *"a declared
 field with NO writer and NO reader anywhere in the tree and the natural home
 for per-workspace environment"*.
@@ -179,14 +184,8 @@ and creates no script hazard.
 
 ## 7a. Q2 REMAINS OPEN -- WHAT ARE A NEW WORKSPACE'S ROOTS BEFORE ANY SET PATH?
 
-**Author's recommendation: (a) INHERIT**, for the same reason AIF-148 puts
-`OrderBackend::Natural` at the floor -- NO STATE WITHOUT AN ANSWER. Empty roots
-is a question with no answer, which is the shape this lane keeps finding, and
-inheriting makes the change strictly additive so no existing script alters
-behaviour. Not ruled; recorded so the reasoning is not re-derived.
- Two answers, and
-the ruling on the TREE does not decide it -- "no parent, no child" is about
-nesting, and this is a different kind of inheritance:
+Two answers, and the ruling on the TREE does not decide it -- "no parent, no
+child" is about nesting, and this is a different kind of inheritance:
 
   (a) INHERIT whatever is current at NEW time. Never unresolvable;
       `WORKSPACE OPEN dbf` always has something to resolve against.
@@ -196,6 +195,12 @@ nesting, and this is a different kind of inheritance:
 (b) is the stricter reading of the owner's sentence -- "we CAN set the
 environment before an open" describes an expectation. (a) cannot produce a
 state with no answer. They differ only for a caller who skips step 3.
+
+**Author's recommendation: (a) INHERIT**, for the same reason AIF-148 puts
+`OrderBackend::Natural` at the floor -- NO STATE WITHOUT AN ANSWER. Empty roots
+is a question with no answer, which is the shape this lane keeps finding, and
+inheriting makes the change strictly additive so no existing script alters
+behaviour. Not ruled; recorded so the reasoning is not re-derived.
 
 ## 7b. RULED 2026-08-29 -- `WORKSPACE OPEN` LANDS IN THE CURRENT WORKSPACE
 
@@ -298,3 +303,120 @@ durable home to be written to at all. That is a schema decision awaiting a
 ruling, not an omission to be patched around.
 
 Ships **review-needed** -- the author does not self-approve.
+
+## 10. RE-REVIEW 2026-08-29, against HEAD `56bf6c4c`
+
+This ruling was written on build `c7c94e18` and its own section 9 promised
+that every source claim was a read at that HEAD. Four commits landed the same
+day, one of them in the exact region this document quotes. Every claim was
+therefore re-read. **Four hold, two had drifted, and one of the two is drift
+this ruling's own implementation introduced.**
+
+### 10.1 CONFIRMED, still true at `56bf6c4c`
+
+- **`profile_path`: ONE declaration, ZERO writers, TWO readers.** Declared
+  `include/reference/data_address.hpp:32`; read by `unspecified()` and
+  `operator==` at `src/reference/data_address.cpp:45,50`. Section 5 stands
+  unchanged, including the part that matters -- it participates in EQUALITY, so
+  every workspace compares equal on it today and writing it would silently flip
+  comparisons across a call surface nobody has enumerated.
+  **A GREP TRAP, recorded so the next reader does not lose an hour:**
+  `src/cli/cmd_ersatz.cpp:1131-1132` declares a LOCAL VARIABLE also called
+  `profile_path`. It is an unrelated filesystem path. A bare grep reports four
+  hits and two of them are noise.
+- **`g_suppress_prompts` (`src/cli/dirty_prompt.cpp:27`) is still set only on
+  the QUIT path and by one local save/restore.** Measured: 76-79 are the
+  save/restore pair; 130, 146 and 167 each gate on `is_quit_like`. Nothing in
+  `DOTSCRIPT` touches it. The reason the y/n prompt was withdrawn is intact.
+- **`g_dotscript_depth` is still there and still thread-local**
+  (`cmd_dotscript.cpp:340`, counted at 491/538). The gate that COULD have made
+  a prompt interactive-only still exists and is still declined.
+- **`SET ORDER TAG <tag> IN <alias>`** is still documented at
+  `cmd_setorder.cpp:19`, so `IN` remains the house word Q1 reuses.
+
+### 10.2 DRIFTED -- the section 4 block quote no longer matches its source
+
+Section 4 quotes `cmd_workspace.cpp:4779` as ending:
+
+> WORKSPACES.dbf carries DBF_ROOT and is the place a durable answer belongs;
+> **wiring that is not this change.**
+
+**THAT SENTENCE NO LONGER EXISTS.** The R131 implementation commit (`4fc5171`)
+rewrote it, and the comment now reads "wiring that is R131 Q3 and is still
+unruled -- and note WORKSPACES.dbf declares DBF_ROOT and IDX_ROOT only, so the
+LMDB slot has no durable column to be written to at all." The line numbers
+moved too: 4773 -> 4799, 4779 -> 4804.
+
+**THIS RULING BROKE ITS OWN CITATION, ON THE SAME DAY, IN A COMMIT THAT DID
+NOT NOTICE.** That is the drift shape this house keeps cataloguing -- a second
+declaration of what the source already says -- arriving in the document whose
+whole subject is a second declaration of where an environment lives. Recorded
+rather than silently repaired, because the mechanism is the lesson: nothing
+compares a block quote against the lines it quotes, and `cited-paths` checks
+that a PATH is tracked, not that a QUOTE still matches.
+
+### 10.3 DRIFTED -- "the whole body is" was a compression, and now reads false
+
+Section 6 quotes `WORKSPACE SWITCH` as having a two-line body. Measured now, the
+branch is sixteen lines: token split, an empty-target refusal, a
+`resolve_workspace_token` lookup with a no-such-workspace refusal, then
+`set_current_handle(h)` and the report line.
+
+**THE CLAIM SURVIVES AND THE SENTENCE DOES NOT.** What section 6 needs is that
+SWITCH does NOT move `_current` to the target's lowest member, so R129 6.1 is
+still unimplemented and the divergence window is still real. That is true: no
+line in the branch touches the area cursor. But "the whole body is" invites a
+reader to check a literal and find it wrong, which spends their trust on a
+paraphrase. **Read section 6 as: SWITCH sets the handle and reports; it does
+not touch the area cursor.** AIF-138 remains blocking, unchanged.
+
+### 10.4 MATERIALLY INCOMPLETE -- section 5's durable-roots row
+
+Section 5's table calls `DBF_ROOT`/`IDX_ROOT` "DURABLE catalog columns, already
+present on every row", which understates the situation in the direction that
+makes Q3 look easier than it is. Measured 2026-08-29:
+
+- They are **already WRITTEN**, twice: `ensure_durable_workspace()` writes both
+  at birth (`cmd_workspace.cpp:3216-3217`) and the SAVE path writes them again
+  (`3548-3549`). Both write `dbf_root()` / `idx_root()` -- **the SESSION slot at
+  that moment**, not anything the workspace owns.
+- They are **already READ**, and not by anybody wanting an environment:
+  `3743-3744` reads them back and `3974-3979` plus `4286` consume them in
+  `WORKSPACE LOAD`, **to relocate tables**.
+
+**SO Q3 IS NOT "SHOULD WE START WRITING THESE".** They are written and read
+today with a settled meaning. The question is what happens to LOAD's relocation
+when the same two fields start carrying a workspace's declared environment
+instead of a snapshot of the session that wrote the row. That is the
+`profile_path` trap in a second pair of fields, and this time the fields have
+real readers rather than vacuous ones.
+
+**AND THE THIRD SLOT HAS TWO DIFFERENT KINDS OF ABSENCE**, which section 5 does
+not distinguish and Q3 must:
+
+- **No catalog column at all.** The schema ends at `DBF_ROOT`/`IDX_ROOT`
+  (`cmd_workspace.cpp:2939`). There is nowhere durable to put an LMDB root.
+- **A posture line that is inert.** The v3 DTSHEMA payload DOES carry
+  `LMDBROOT`, and the loader prints it as `(recorded, not applied)` -- observed
+  in every v3 load in the 2026-08-29 suite run.
+
+So there are TWO durable surfaces for an environment, the catalog row and the
+posture, and the LMDB slot is ABSENT from one and INERT in the other. A ruling
+that says "record the roots" without saying WHICH surface has not decided
+anything.
+
+### 10.5 A FORMATTING DEFECT IN 7a, repaired
+
+The author's-recommendation paragraph was inserted INTO the middle of the
+sentence that introduces the two options, leaving " Two answers, and the ruling
+on the TREE does not decide it" dangling with a leading space and no subject.
+Repaired in place; no argument changed. Noted only because it was introduced by
+an edit to this file and would otherwise read as a thought that trailed off.
+
+### 10.6 WHAT THE RE-REVIEW DID NOT CHECK
+
+The measurements in sections 3 and 6 that came from RUNNING (the
+`SET ORDER TO TAG SID` cross-bundle resolution failure, the DBAREA/GPS
+owning-workspace line) were not re-run. They are transcript facts from
+2026-08-29 and nothing since is known to have touched those paths, but "not
+known to have touched" is not a measurement and is not claimed as one.
