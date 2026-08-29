@@ -49,7 +49,10 @@ OrderSpec buildActiveOrderSpec(DbArea& area)
     OrderSpec spec{};
     spec.direction = get_direction(area);
 
-    if (!orderstate::hasOrder(area)) {
+    // AIF-148: an attached tag container with no tag selected is NOT an active
+    // order spec -- materializing it yields an empty recno vector and the
+    // iterator reports a diagnostic instead of walking the table.
+    if (orderstate::isNaturalOrder(area)) {
         spec.kind = OrderContainerKind::None;
         spec.active = false;
         return spec;

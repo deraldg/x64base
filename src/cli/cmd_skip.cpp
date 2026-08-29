@@ -131,7 +131,12 @@ void cmd_SKIP(xbase::DbArea& A, std::istringstream& in)
     // the fix: an ordered SKIP with no SET FILTER would take the index shortcut
     // and step onto a deleted row while the slow path a line below refused to.
     // That is R5 with a performance excuse.
-    if (!filter::view_is_filtered(&A) && orderstate::hasOrder(A)) {
+    // AIF-148: the fast path needs AN INDEX CURSOR, which is a stricter thing
+    // than an attached container.  hasOrder() let a tagless .cdx in here, and
+    // the failure it produced was printed as NavAtEndText -- a FALSE ANSWER on
+    // record 1 of 6, not a refusal.  isNaturalOrder() sends that case to the
+    // physical walk below, which is what it was always in.
+    if (!filter::view_is_filtered(&A) && !orderstate::isNaturalOrder(A)) {
         if (order_skip(A, n)) {
             if (talk) {
                 cli::cmdout::print_message(

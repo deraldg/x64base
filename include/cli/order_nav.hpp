@@ -732,7 +732,10 @@ static inline bool cdx_cache_build(CnxCache& cache,
 static inline bool order_first_recno(xbase::DbArea& area, std::int64_t& out_recno) {
     out_recno = 0;
     if (!area.isOpen()) return false;
-    if (!orderstate::hasOrder(area)) return false;
+    // AIF-148: natural order has no index first-record to look up; false here
+    // means "not my job", and order_top() falls through to area.top().  Asking
+    // hasOrder() instead claimed the job and then failed at it.
+    if (orderstate::isNaturalOrder(area)) return false;
     const std::string path = orderstate::orderName(area);
 
     switch (order_nav_detail::detect_fmt(path)) {
@@ -797,7 +800,9 @@ static inline bool order_first_recno(xbase::DbArea& area, std::int64_t& out_recn
 static inline bool order_last_recno(xbase::DbArea& area, std::int64_t& out_recno) {
     out_recno = 0;
     if (!area.isOpen()) return false;
-    if (!orderstate::hasOrder(area)) return false;
+    // AIF-148: see order_first_recno above -- order_bottom() falls through to
+    // area.bottom() when this declines.
+    if (orderstate::isNaturalOrder(area)) return false;
     const std::string path = orderstate::orderName(area);
 
     switch (order_nav_detail::detect_fmt(path)) {
@@ -883,7 +888,11 @@ static inline bool order_skip(xbase::DbArea& area, int delta) {
     if (!area.isOpen()) return false;
     if (delta == 0) return area.readCurrent();
 
-    if (!orderstate::hasOrder(area)) {
+    // AIF-148: a tagless .cdx used to fall past this branch into the CDX arm,
+    // which has no tag to step and returns false -- and cmd_SKIP reads false
+    // as "already at the order boundary" and prints "SKIP: at end."  That is
+    // the worst shape in this family: TOP refused out loud, SKIP answered.
+    if (orderstate::isNaturalOrder(area)) {
         if (!area.skip(delta)) return false;
         return area.readCurrent();
     }

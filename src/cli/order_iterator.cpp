@@ -53,7 +53,12 @@ bool order_collect_recnos_asc(xbase::DbArea& area,
     OrderIterSpec spec{};
     spec.cdx_mode = CdxExecMode::Fallback;
 
-    if (!orderstate::hasOrder(area)) {
+    // AIF-148: isNaturalOrder(), NOT !hasOrder().  An attached .cdx with no
+    // tag selected is ATTACHED BUT NOT ORDERING, and asking the container
+    // question here sent it past this branch into the tag path below, which
+    // has no tag to walk and returns failure.  Natural is a real backend --
+    // OrderBackend::Natural, right here -- so it is the answer, not a gap.
+    if (orderstate::isNaturalOrder(area)) {
         spec.backend = OrderBackend::Natural;
         spec.ascending = true;
         if (out_spec) *out_spec = spec;
@@ -248,7 +253,13 @@ bool order_stream_display(xbase::DbArea& area,
         }
     };
 
-    if (!orderstate::hasOrder(area)) {
+    // AIF-148: isNaturalOrder(), NOT !hasOrder().  This is the stream every
+    // traversal verb ends up in -- logical_nav::first_recno/last_recno call
+    // it, and navsel::pick_recno calls those, which is how one container
+    // predicate took out TOP, BOTTOM, GO TOP, GO BOTTOM, GO FIRST and GO LAST
+    // at once while GO <n> kept working (R121: addressing is absolute,
+    // traversal is filtered).
+    if (orderstate::isNaturalOrder(area)) {
         spec.backend = OrderBackend::Natural;
         spec.ascending = true;
         if (out_spec) *out_spec = spec;
