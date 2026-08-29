@@ -97,6 +97,7 @@ WORKSPACE DESTROY MWXTWO
 WORKSPACE DESTROY MWXAS
 WORKSPACE DESTROY MWXDB
 WORKSPACE DESTROY MWXORD
+WORKSPACE DESTROY MWXCDXW
 
 SET PATH DBF DBF/SANDBOX/MWXA
 ERASE MWXP CONFIRM
@@ -770,6 +771,189 @@ WORKSPACE SWITCH DEFAULT
 WORKSPACE DESTROY MWXORD
 
 * ===========================================================================
+* SECTION 5C -- A FIXTURE THAT BUILDS ITS OWN CDX.
+*
+* 5B BORROWED A SHIPPED CDX AND SAID SO. That was the right call for the arm
+* it was isolating -- the ROUND TRIP -- because a self-built index inside
+* that proof would have put an untested build step in the middle of it. It
+* left a hole the entry admitted: nothing in the corpus builds an index and
+* then orders by it. This section is that arm, and it is deliberately AFTER
+* 5B so a failure here cannot be mistaken for a round-trip failure.
+*
+* THE VERB CHAIN, LOOKED UP BEFORE IT WAS WRITTEN (command_reference_guide
+* _v1.csv, then verified in the handlers because two of the four are newer
+* than the guide):
+*
+*   CDX CREATE [<path.cdx>]     container. REFUSES TO OVERWRITE an existing
+*                               file -- which is why pre-clean matters here
+*                               more than anywhere else in this file.
+*   CDX ADDTAG <name> [<path>]  tag directory entry. NAME ONLY, no key
+*                               expression: cmd_cdx.cpp:312-352 reads one
+*                               token and uppercases it.
+*   BUILDLMDB YES               builds the tag databases FROM CURRENT TABLE
+*                               DATA. Requires an OPEN TABLE.
+*   SET ORDER TAG <tag>         v64 tables default to CDX; attachment also
+*                               requires the LMDB environment to EXIST, which
+*                               is why the table is re-opened after the build.
+*
+* SO THE TAG NAME IS THE KEY. cmd_buildlmdb.cpp:465-481 is headed "Build one
+* tag from a field name" and walks area.fields() looking for a name match --
+* `if (fld < 1) return false;` and NOT ONE WORD PRINTED. A tag naming no
+* field is skipped in silence; only the total is reported. That is the count
+* discipline again (a number from an authority holding more than one kind,
+* with no discriminator) and it is NOT probed here -- stated so the next
+* person does not discover it as a surprise, and left for an arm of its own.
+*
+* THE FIXTURE IS BUILT SO THAT THE TWO ORDERS DISAGREE AT BOTH ENDS, which
+* is the same discipline 5B applied to STUDENTS and the reason SID was
+* rejected there:
+*
+*     physical    1 ZULU   2 MIKE   3 ALPHA   4 TANGO
+*     by CLBL       ALPHA    MIKE     TANGO     ZULU
+*
+* G7a and G7b READ THE PHYSICAL ENDS BEFORE ANY INDEX EXISTS. Without them
+* T27 reading ALPHA at TOP proves nothing -- it could be where an engine
+* that ignored the order would have landed anyway, and an arm that cannot
+* separate two implementations is the defect this file keeps hunting.
+*
+* IT CLEANS UP AFTER ITSELF IN ONE LINE, because ERASE <table> CONFIRM
+* sweeps same-stem sidecars across the DBF, INDEXES *and* LMDB roots --
+* cmd_erase.cpp:176-205 pushes <stem>.cdx through resolve_index() and the
+* backend <stem>.cdx.d through resolve_lmdb_env_for_cdx(). So the table, the
+* container and the LMDB environment go together, and CDX CREATE finds clean
+* ground on the next run. (The command reference lists only ERASE <table>
+* and ERASE TABLE <table>; ERASE DIR was owner-ruled 2026-08-12, after the
+* guide was generated. Handler newer than the guide -- verify in source --
+* and that is what the check found.)
+*
+* SCRATCH ROOTS ONLY: the container lands in INDEXES/SANDBOX beside the
+* other sandbox containers, never in INDEXES/X64. The slot is restored to
+* what 5B left before section 6 reads the catalog.
+* ===========================================================================
+
+WORKSPACE CLOSE ALL
+WORKSPACE SWITCH DEFAULT
+WORKSPACE DESTROY MWXCDXW
+
+SETPATH DBF DBF/SANDBOX
+SETPATH INDEXES INDEXES/SANDBOX
+
+&& THE TABLE, THE CONTAINER AND THE LMDB ENV IN ONE SWEEP. CDX CREATE refuses
+&& to overwrite, so a leftover .cdx from a previous run would fail the build
+&& and every arm below it.
+ERASE MWXCDX CONFIRM
+
+SELECT 0
+CREATE X64 MWXCDX (CK C(4), CLBL C(12))
+APPEND
+REPLACE CK WITH "C1"
+REPLACE CLBL WITH "ZULU"
+APPEND
+REPLACE CK WITH "C2"
+REPLACE CLBL WITH "MIKE"
+APPEND
+REPLACE CK WITH "C3"
+REPLACE CLBL WITH "ALPHA"
+APPEND
+REPLACE CK WITH "C4"
+REPLACE CLBL WITH "TANGO"
+
+USE MWXCDX
+TOP
+? "MWX_G7a_physical_first_is_ZULU_before_any_index:" + (ALLTRIM(CLBL) = "ZULU")
+BOTTOM
+? "MWX_G7b_physical_last_is_TANGO_before_any_index:" + (ALLTRIM(CLBL) = "TANGO")
+
+CDX CREATE
+CDX ADDTAG CLBL
+CDX TAGS
+BUILDLMDB YES
+
+&& RE-OPEN BEFORE ORDERING. The container and its LMDB environment did not
+&& exist when this area was first opened, and SET INDEX's contract is explicit
+&& that CDX attachment requires the environment to exist. Re-opening is the
+&& honest way to get the attachment the first USE could not have made.
+USE MWXCDX
+SET ORDER TAG CLBL
+
+* ---------------------------------------------------------------------------
+* MWX_T27 / T28 -- THE INDEX THIS FILE BUILT ACTUALLY ORDERS THE WALK.
+*
+* Both ends move: TOP goes ZULU -> ALPHA and BOTTOM goes TANGO -> ZULU. An
+* engine that accepted SET ORDER and walked physically anyway would leave
+* both where G7a/G7b found them.
+* ---------------------------------------------------------------------------
+
+TOP
+? "MWX_T27_self_built_cdx_orders_the_walk:" + (ALLTRIM(CLBL) = "ALPHA")
+BOTTOM
+? "MWX_T28_and_the_far_end_of_the_built_order:" + (ALLTRIM(CLBL) = "ZULU")
+
+* ---------------------------------------------------------------------------
+* MWX_T29 / T30 -- AND IT SURVIVES THE ROUND TRIP.
+*
+* 5B proved a SHIPPED container's tag travels in the posture. This proves it
+* for a container created THIS RUN under a different INDEXES slot, which is a
+* different path resolution and therefore a different thing to get wrong.
+* Addressed BY NAME (R130).
+*
+* THE CLOSE BELOW IS THE WHOLE ARM, AND ITS ABSENCE PRODUCED A FALSE GREEN ON
+* THIS SECTION'S FIRST RUN (2026-08-29). MWXCDX was opened above to build the
+* index, so it belongs to DEFAULT -- AN AREA JOINS WHICHEVER WORKSPACE IS
+* CURRENT WHEN IT IS OPENED, and `USE` on a table already open in the current
+* area is a NO-OP for membership: it prints "already open in current area 0"
+* and the area keeps the workspace it already had. So MWXCDXW was created
+* AROUND a table it did not own, held ZERO members, and the scoped SAVE wrote
+* an EMPTY posture:
+*
+*     WORKSPACE SAVE: workspace 15 (MWXCDXW) ... -- 0 area(s).
+*       NOT saved: 1 open area(s) in other workspaces.
+*       WARNING: nothing is in scope. This posture will be EMPTY.
+*     WORKSPACE LOAD: restored 0 area(s) and 0 relation(s).
+*
+* T29/T30 then read the copy STILL OPEN IN DEFAULT, order and all, and
+* reported .T. for a round trip that never happened. The engine warned twice
+* in console text, which no marker can read -- the same shape as MWX_T21 and
+* the reason the read rule at the foot of this file says to ask not only
+* whether something was open but whether it is what the verb was meant to
+* change.
+*
+* CLOSING FIRST ALSO MAKES THE SECTION SELF-CHECKING, which is why 5B never
+* had this problem: with no live copy anywhere, an empty posture leaves
+* SELECT MWXCDX with nothing to select, the marker ERRORS AND PRINTS NOTHING,
+* and the count comes up short. A short count is the failure signal.
+* ---------------------------------------------------------------------------
+
+WORKSPACE CLOSE ALL
+WORKSPACE SWITCH DEFAULT
+WORKSPACE NEW MWXCDXW
+WORKSPACE SWITCH MWXCDXW
+
+&& OPENED HERE, SO IT IS OWNED HERE. This USE really opens -- the close above
+&& dropped the copy DEFAULT held -- and the area therefore joins MWXCDXW.
+SELECT 0
+USE MWXCDX
+SET ORDER TAG CLBL
+TOP
+? "MWX_G7c_built_order_is_live_before_the_save:" + (ALLTRIM(CLBL) = "ALPHA")
+
+WORKSPACE SAVE mwx_cdxord MEMO V3
+WORKSPACE CLOSE
+WORKSPACE LOAD mwx_cdxord MEMO
+
+SELECT MWXCDX
+TOP
+? "MWX_T29_built_tag_survived_the_round_trip:" + (ALLTRIM(CLBL) = "ALPHA")
+BOTTOM
+? "MWX_T30_far_end_after_the_built_round_trip:" + (ALLTRIM(CLBL) = "ZULU")
+
+WORKSPACE CLOSE
+WORKSPACE SWITCH DEFAULT
+WORKSPACE DESTROY MWXCDXW
+
+SETPATH INDEXES INDEXES/X64
+
+* ===========================================================================
 * SECTION 6 -- THE CATALOG IS A TABLE, AND IT SAYS WHAT IT IS.
 *
 * WORKSPACE CATALOG reports the memo catalog read-only. FMT is the PAYLOAD:
@@ -805,6 +989,7 @@ CLOSE
 
 WORKSPACE CLOSE ALL
 WORKSPACE SWITCH DEFAULT
+WORKSPACE DESTROY MWXCDXW
 WORKSPACE DESTROY MWXORD
 WORKSPACE DESTROY MWXBACK
 WORKSPACE DESTROY MWXDB
@@ -821,7 +1006,10 @@ SET PATH DBF DBF/SANDBOX/MWXB
 ERASE MWXQ CONFIRM
 ERASE MWXSHARE CONFIRM
 SET PATH DBF DBF/SANDBOX
+SETPATH INDEXES INDEXES/SANDBOX
 ERASE MWXNOTE CONFIRM
+&& Sweeps MWXCDX.dbf, INDEXES/SANDBOX/MWXCDX.cdx and the LMDB env together.
+ERASE MWXCDX CONFIRM
 ERASE DIR DBF/mwxback CONFIRM
 
 DO x64
@@ -831,10 +1019,15 @@ FORMULA "MWX-SHAKEDOWN-END"
 * ===========================================================================
 * READ RULE, REPEATED AT THE BOTTOM BECAUSE THIS IS WHERE A READER STOPS.
 *
-*   40 markers must PRINT.
-*     14 guards : MWX_G0a G0b G0c G0d G0e G1a G1b G1c G2 G3 G4a G4b G5 G6
-*     26 arms   : MWX_T1 .. MWX_T26
-*   Derived, not asserted:  grep -c '^? "MWX_'  ->  40
+*   THE COUNT IS DERIVED, AND THE DERIVATION IS THE AUTHORITY:
+*       grep -c '^? "MWX_'  <-- run this, read the run against THAT
+*   The enumeration below is a CHECKLIST, not a second source of truth. It
+*   has already gone stale once (34 -> 35 -> 37 -> 40) and it will again.
+*
+*     17 guards : MWX_G0a G0b G0c G0d G0e G1a G1b G1c G2 G3 G4a G4b G5 G6
+*                 G7a G7b G7c
+*     30 arms   : MWX_T1 .. MWX_T30
+*     47 total at the time this line was last touched (section 5C)
 *
 * AND ONE WARNING THE COUNT CANNOT GIVE YOU. A marker can be backed by a
 * real read of a real open table and still be worthless, if that table is
