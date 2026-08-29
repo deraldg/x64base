@@ -256,7 +256,30 @@
 //     do l1verify    -- the scratch-root arm.
 //     do l1cleanup   -- retires names, and it WRITES. Read it before running.
 //   Retire what you declared before you leave: WORKSPACE DESTROY <name>,
-//   children first. Seven live heads are INTENTIONAL and should stay --
+//   children first.
+//   AND IF YOU ALREADY LEFT, DESTROY CANNOT REACH IT. DESTROY resolves its
+//   target through the RUNTIME registry (resolve_workspace_token), so a live
+//   head left by a PREVIOUS PROCESS answers "no such workspace" -- the name is
+//   live in the catalog and absent from this session, and DESTROY only knows
+//   the second. Measured 2026-08-28 by walking into it: WSP and WSC were
+//   minted in one session and DESTROY refused them in the next.
+//   RE-ADOPT IT FIRST. `WORKSPACE NEW <name>` on a name that still holds a
+//   live row ADOPTS that identity rather than minting a new one -- it says
+//   ADOPTED when it does -- and the workspace is then declared here and
+//   DESTROY can retire it:
+//       WORKSPACE NEW <name>       (reports ADOPTED, same WS_ID)
+//       WORKSPACE DESTROY <name>   (supersedes it; no new row is written)
+//   WORKSPACE DELETE <name> also reaches a catalog-only head, and needs no
+//   adoption, because it refuses only names DECLARED IN THIS SESSION. It is
+//   the heavier instrument: it sets the delete flag AS WELL as SUPERSEDED, so
+//   the rows go invisible under SET DELETED ON. Prefer adopt-then-DESTROY when
+//   the row is ordinary residue and you want the history to stay readable.
+//   THIS ASYMMETRY IS WHY DELETE REFUSES ON "DECLARED HERE" RATHER THAN ON
+//   "LIVE". The design first proposed refusing any name with a live catalog
+//   row and sending the caller to DESTROY -- which would have fenced off
+//   exactly the catalog-only heads the verb exists to reach, since DESTROY
+//   cannot see them either. Recorded in workspace_purge_regression.dts's
+//   PG_T4. Seven live heads are INTENTIONAL and should stay --
 //   mcc_x64, mcc_v3, sess_cursor, mcc_db, mcc_minidb_memo (real saved
 //   workspaces) and x64, x32 (directory identities, where adoption IS the
 //   feature). Anything else live is probably yours.
