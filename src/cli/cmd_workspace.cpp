@@ -67,7 +67,8 @@
 // mutates: session
 // usage-access: WORKSPACE USAGE
 // summary:
-//   Report and manage live work-area/session layout.
+//   Report and manage live work-area/session layout, and the path environment
+//   each workspace carries (R131).
 //
 // usage:
 //   WORKSPACE
@@ -75,10 +76,10 @@
 //   WORKSPACE ALL
 //   WORKSPACE REGISTRY
 //   WORKSPACE NEW <name> [UNDER <parent-name-or-handle>]
-//   WORKSPACE SWITCH <name-or-handle>
+//   WORKSPACE SWITCH <name-or-handle>   -- ALSO MOVES THE PATH SLOTS; see notes
 //   WORKSPACE DESTROY <name-or-handle>  -- resolves in the SESSION; see notes
 //   WORKSPACE DELETE <name>             -- resolves in the CATALOG; heavier
-//   WORKSPACE PURGE <name>             -- retained ALIAS of DELETE; see notes
+//   WORKSPACE PURGE <name>              -- retained ALIAS of DELETE; see notes
 //   WORKSPACE OPEN DBF
 //   WORKSPACE OPEN <dir>
 //   WORKSPACE OPEN <dir> AS <name>
@@ -156,6 +157,38 @@
 //   nothing half-born.
 //   WORKSPACE SWITCH <name-or-handle> changes which workspace is current, and
 //   therefore which one the NEXT opened area joins.
+//   SWITCH ALSO RESTORES THE WORKSPACE'S PATH ENVIRONMENT (R131, implemented
+//   2026-08-29). This sentence is new because the two above were the WHOLE
+//   truth until then and are now only half of it. A workspace OWNS its DBF,
+//   INDEXES and LMDB slots; SWITCH writes that workspace's stamped roots into
+//   the global slots on the way in, so a table opened after the switch
+//   resolves under the workspace you switched TO. Before R131 the slots were
+//   GLOBAL and SWITCH moved membership without moving them, which is the
+//   founding defect: with two systems open, a table in one resolved its
+//   container under the other -- measured as MCC's STUDENTS answering
+//   `openCdx: LMDB env missing: ...SYSTEMS\CASCADE_ERP\LMDB\STUDENTS.cdx.d`
+//   because Cascade had been opened last.
+//   THE THREE SLOTS MOVE AS A SET and there is deliberately no per-slot
+//   setter on the membership table, because a HALF-STAMPED workspace resolves
+//   tables under one system and indexes under another, which IS the founding
+//   defect rather than a lesser version of it.
+//   SWITCH ANNOUNCES EVERY SLOT IT MOVES, deliberately and at some cost in
+//   noise: this is the one part of R131 that can change what an EXISTING
+//   script does, and a run where a spec breaks because its slots moved under
+//   it should say so in its own transcript rather than leave a reader
+//   inferring it from a failed open three screens later.
+//   DEFAULT IS STAMPED LAZILY, ON THE WAY OUT, because it is built inside
+//   xbase before any command runs and so has no stamp to inherit at startup.
+//   The ORDER is load-bearing: `ensure_stamped(CURRENT)` runs BEFORE
+//   `set_current_handle(h)`. Stamping the TARGET instead would capture
+//   whatever the workspace being LEFT had set, and DEFAULT would inherit a
+//   foreign environment the first time anyone switched back.
+//   WHAT IS NOT RULED: whether the LIVE stamp and the DURABLE columns are one
+//   thing or two. R131 sec 11.8. `WORKSPACES.dbf` carries DBF_ROOT and
+//   IDX_ROOT and has NO LMDB COLUMN -- LMDB is derived (owner, 2026-08-29) and
+//   rides the live stamp only -- and both catalog write sites still record the
+//   SESSION slot rather than the workspace's stamp. Gated by spec WSENV, which
+//   asserts the LIVE stamp and reads no catalog.
 //   WORKSPACE REGISTRY reports RUNTIME membership -- which areas belong to
 //   which workspace right now, plus current handle, recursion state, parent and
 //   depth. It is NOT the catalog: WORKSPACES.dbf answers what has been SAVED,
