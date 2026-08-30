@@ -728,6 +728,15 @@ bool add_relation(const std::string& parent_area,
         // developed it yet." The FEATURE is parked and the gate stays open; this
         // is the hardening half, and it is true whichever way that lands --
         // saying where the boundary is costs nothing and asserts nothing.
+        // THIS UNSCOPED LOOKUP REPORTS; IT MUST NEVER RESOLVE. Only wsHandle()
+        // is read from it, and the function returns false either way. Using
+        // `elsewhere` AS the endpoint would implement the parked feature by
+        // accident and would re-open AIF-137, which
+        // relation_parent_workspace_crossing.dts exists to keep shut: the
+        // relation resolvers were name-addressed and unscoped, so a refresh in
+        // one workspace drove another workspace's child. That was fixed by
+        // scoping them. Reporting where an area is and reaching it are
+        // different acts, and only the first one is safe here.
         const std::string& missing = !P ? parent : child;
         const xbase::DbArea* elsewhere = cli::find_open_area_by_name_ci(missing);
         if (elsewhere) {

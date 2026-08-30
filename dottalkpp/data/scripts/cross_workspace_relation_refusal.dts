@@ -1,0 +1,158 @@
+* AIF-149. THE REFUSAL NAMES WHERE THE AREA IS. Explicit-run, mints_catalog.
+* Self-bootstrapping in SANDBOX, self-erasing. Owner ruling 2026-08-30.
+*
+* WHAT THIS PROTECTS. add_relation() resolves both endpoints through a resolver
+* SCOPED to the current workspace, so an area open in ANOTHER workspace is not
+* refused -- it is INVISIBLE, and until 22991263e the refusal reported
+* invisibility as absence: "add failed (parent/child not open)" for an area
+* that IS open. Nothing decided that a relation may not cross a workspace. The
+* FEATURE is parked with the gate open; this spec guards the HARDENING half,
+* which is true whichever way the feature eventually goes.
+*
+* AND THE SILENCE UNDER THE SILENCE, which is what made this worth a spec.
+* Every add-failure path reported through emit_rel_diag, which opens
+* `if (!g_verbose) return;`, and g_verbose defaults to
+* DOTTALK_EXTRA_DIAGNOSTICS -- ON under DOTTALK_PROFILE=DEV, OFF under PROD
+* (CMakeLists.txt:172-177) -- while the caller is a bare
+* `if (!add_relation(...)) return;` (cmd_relations.cpp:500). So on a PROD build
+* a failing SET RELATION could print NOTHING AT ALL. Refusals now go through
+* emit_rel_refusal, which is NOT verbosity-gated.
+*
+* THIS SPEC RUNS UNDER DEV AND THEREFORE CANNOT TELL THE TWO APART. Under DEV
+* both the old and the new code speak, so T1 and T2 discriminate the WORDING
+* and not the GATING. Naming this rather than implying it: proving the PROD
+* half needs a PROD-profile build, which no run has yet produced. The wording
+* arms are still the ones that catch a regression, because collapsing the two
+* messages back together is the likely edit.
+*
+* HOW IT ASSERTS, AND WHY NOT BY FIELD VALUE. relation_workspace_scope.dts
+* asserts by field value "never by console text", and that is the right default.
+* It cannot be followed here: the thing under test IS A REFUSAL, and a refusal
+* writes no field. So T1/T2/T3 are TRANSCRIPT-READ arms in the RELSCAN idiom --
+* a marked block that MUST CONTAIN a line, and for T2 a block that MUST NOT.
+* G0 and G1 are field-value guards, and they carry the weight the arms cannot:
+* if G1 reds, the relation machinery is broken and the refusal arms prove
+* nothing about scoping.
+*
+* WHAT THIS IS NOT, because a neighbour exists and the names look alike.
+* relation_parent_workspace_crossing.dts (AIF-137, spec RELWSNAME) asserts that
+* the relation resolvers do NOT reach across workspaces -- they were
+* name-addressed and unscoped, so a refresh issued in one workspace drove
+* another workspace's child, and scoping them is the fix that spec guards.
+* THIS SPEC DOES NOT RE-OPEN THAT. It asserts only that the REFUSAL says where
+* the area is. The unscoped lookup behind the message REPORTS and never
+* RESOLVES: add_relation reads a handle from it for the sentence and returns
+* false either way. If a future edit uses that lookup as the endpoint, AIF-137
+* comes back and RELWSNAME is the spec that should red, not this one.
+*
+* READ RULE -- five blocks, and the NEGATIVE in T2 is half the value:
+*   XWSREL-T1  MUST contain "is open in workspace XWSB"
+*   XWSREL-T2  MUST contain "not open"
+*              MUST NOT contain "is open in workspace"
+*   XWSREL-T3  see its own note; UNVERIFIED until the first run
+* Collapse the two messages into one and T2 gains a sentence it must not have.
+* Revert the scoped-resolver reporting and T1 loses one it must.
+SET ECHO OFF
+STOP_ON_ERROR OFF
+SET PATH DBF DBF/SANDBOX
+WORKSPACE CLOSE ALL
+WORKSPACE DESTROY XWSB
+WORKSPACE DESTROY XWSA
+ERASE xwsap CONFIRM
+ERASE xwsac CONFIRM
+ERASE xwsbc CONFIRM
+FORMULA "XWSREL-REGRESSION-BEGIN"
+REL CLEAR ALL
+SELECT 0
+CREATE X64 XWSAP (PK C(4))
+APPEND
+REPLACE PK WITH "A"
+APPEND
+REPLACE PK WITH "B"
+SELECT 1
+CREATE X64 XWSAC (CK C(4), CLBL C(10))
+APPEND
+REPLACE CK WITH "A"
+REPLACE CLBL WITH "A_ALPHA"
+APPEND
+REPLACE CK WITH "B"
+REPLACE CLBL WITH "A_BETA"
+SELECT 2
+CREATE X64 XWSBC (CK C(4), CLBL C(10))
+APPEND
+REPLACE CK WITH "A"
+REPLACE CLBL WITH "B_ALPHA"
+SELECT 1
+GO 2
+? "XWSREL_G0_child_fixture_written:" + (ALLTRIM(CLBL) = "A_BETA")
+WORKSPACE CLOSE ALL
+* ---------------------------------------------------------------------------
+* TWO WORKSPACES. A holds the parent and its own child; B holds the table the
+* cross attempt will name. Areas opened after a SWITCH join that workspace.
+WORKSPACE NEW XWSA
+WORKSPACE SWITCH XWSA
+USE xwsap IN FREE
+USE xwsac IN FREE
+WORKSPACE NEW XWSB
+WORKSPACE SWITCH XWSB
+USE xwsbc IN FREE
+WORKSPACE SWITCH XWSA
+* G1 -- THE RELATION MACHINERY IS LIVE, BY FIELD VALUE. Also the counterweight
+* for the change that ungated refusals: a same-workspace ADD must still SUCCEED.
+* If this reds, every arm below is UNPROVEN -- a refusal that prints for the
+* wrong reason reads exactly like one that prints for the right reason.
+SELECT xwsap
+REL ADD XWSAP XWSAC ON PK TO CK
+GO 1
+REL REFRESH
+SELECT xwsac
+? "XWSREL_G1_same_workspace_relation_slaves:" + (ALLTRIM(CLBL) = "A_ALPHA")
+* ---------------------------------------------------------------------------
+* T1 -- THE DISCRIMINATOR. XWSBC is OPEN, in XWSB, and invisible from here.
+* The refusal must say so and must name the workspace.
+SELECT xwsap
+FORMULA "XWSREL-T1-BEGIN"
+REL ADD XWSAP XWSBC ON PK TO CK
+FORMULA "XWSREL-T1-END"
+* T2 -- THE NEGATIVE, AND IT IS WHY T1 MEANS ANYTHING. XWSGONE is open NOWHERE.
+* A build that answers "open in workspace" here has not distinguished the two
+* conditions, it has merely renamed one message.
+FORMULA "XWSREL-T2-BEGIN"
+REL ADD XWSAP XWSGONE ON PK TO CK
+FORMULA "XWSREL-T2-END"
+* ---------------------------------------------------------------------------
+* T3 -- THE EDGE-SKIP LATCH, AND IT IS UNVERIFIED UNTIL THIS SPEC FIRST RUNS.
+* refresh_from_parent_name used a bare `if (!child) continue;`, so a refresh
+* that propagated down NONE of its edges printed what a complete one printed.
+* It now trips the relation truncation latch, naming the edge.
+*
+* THE FIXTURE MAY OR MAY NOT REACH IT, and that is stated rather than assumed:
+* the edge survives only if closing an AREA leaves the relation in the store.
+* If it does not, this block is EMPTY and that is a fact about CLOSE, not a
+* failure of the fix -- read it that way and say so, do not credit or condemn
+* the latch on it. G2 immediately below proves the edge was live one statement
+* before the close, so an empty T3 cannot be blamed on a dead fixture.
+SELECT xwsap
+GO 2
+REL REFRESH
+SELECT xwsac
+? "XWSREL_G2_edge_live_before_the_close:" + (ALLTRIM(CLBL) = "A_BETA")
+SELECT xwsac
+CLOSE
+SELECT xwsap
+FORMULA "XWSREL-T3-BEGIN"
+GO 1
+REL REFRESH
+FORMULA "XWSREL-T3-END"
+* ---------------------------------------------------------------------------
+* TEARDOWN. Leaves no workspace declared and no table behind. Restoring the
+* relation store matters as much as the tables: a spec that leaves residue
+* poisons everything downstream of it.
+REL CLEAR ALL
+WORKSPACE CLOSE ALL
+WORKSPACE DESTROY XWSB
+WORKSPACE DESTROY XWSA
+ERASE xwsap CONFIRM
+ERASE xwsac CONFIRM
+ERASE xwsbc CONFIRM
+FORMULA "XWSREL-REGRESSION-END"
