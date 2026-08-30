@@ -36,7 +36,7 @@ KEY_SOURCE_ANCHORS = [
     "include/xbase/fields.hpp",
     "include/xbase/field_name_policy.hpp",
     "src/xbase/dbf_file.cpp",
-    "src/core/fields_mgr.cpp",
+    "src/xbase/fields_mgr.cpp",
     "src/cli/dbf64_header_validate.cpp",
     "include/memo/memo_manager.hpp",
     "include/memo/memo_auto.hpp",

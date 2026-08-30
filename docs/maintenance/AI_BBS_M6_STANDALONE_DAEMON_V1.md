@@ -41,7 +41,7 @@ the index backend), so a bare daemon link produced 11 `LNK2019` for those symbol
 `src/cdx/*.cpp` to the `dottalk_bbsd` sources. The cascade was exactly that pair -- nothing further.
 The daemon's source set is therefore: `src/identity/*`, `src/bbs/*`, `src/security/*`,
 `src/selfdoc/*`, `src/cdx/*`, `src/common/path_state.cpp`, `src/common/path_resolver.cpp`,
-`src/core/fields_mgr.cpp` (defines `fields::findFieldCI`), and `src/tools/bbsd_main.cpp`; links
+`src/xbase/fields_mgr.cpp` (defines `fields::findFieldCI`), and `src/tools/bbsd_main.cpp`; links
 `xbase memo nlohmann_json unofficial-sodium::sodium` (+ `ws2_32` under `if(WIN32)`).
 
 > Proper end-state (not done here): carve the engine `src/` into a shared core library (or complete

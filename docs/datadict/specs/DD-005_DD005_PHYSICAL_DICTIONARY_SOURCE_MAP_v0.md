@@ -77,7 +77,7 @@ include/xbase.hpp
 include/xbase/fields.hpp
 include/xbase/dbf_create.hpp
 include/xbase/field_name_policy.hpp
-src/core/fields_mgr.cpp
+src/xbase/fields_mgr.cpp
 src/cli/cmd_fields.cpp
 src/cli/cmd_fieldmgr.cpp
 ```

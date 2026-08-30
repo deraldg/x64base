@@ -351,7 +351,7 @@ std::filesystem::path workspaces_catalog_path() {
 // This is the third such lookup in the tree and I would rather reuse one of the
 // existing two, but neither is reachable from here: DbArea's member version is
 // private (include/xbase.hpp:464), and the free function in the fields
-// namespace lives in src/core/fields_mgr.cpp -- 911 lines that include
+// namespace lives in src/xbase/fields_mgr.cpp -- 911 lines that include
 // xindex/attach.hpp and xindex/index_manager.hpp, so linking it would pull
 // xindex into dottalk_gui_core, which today needs only xbase and memo.
 // Expanding a library's dependency graph to reach one function is the worse
