@@ -1,0 +1,148 @@
+* TWO-LEVEL MEMO DATABASE -- A PROBE, NOT A SPEC. 2026-08-30.
+*
+* THE OWNER'S QUESTION, VERBATIM: "have we tested putting a database A in a
+* memo field and then move the containing Database B into database C?"
+*
+* THE ANSWER BEFORE RUNNING ANYTHING: one level ships and is proven
+* (workspace_minidb.dts, DB_T3/DB_T4; 30 of 37 MINIDB containers carry a nested
+* .dtx). TWO levels are NOT BLOCKED -- they are UNGUARDED, which is a different
+* problem and the reason this probe exists rather than a bug report.
+*
+* MEASURED IN SOURCE 2026-08-30, and this is what the probe is checking against:
+*
+*   DEPTH        cmd_workspace.cpp:3358 and :3690 -- TWO writers, BOTH write the
+*                literal "0". No hydration path ever writes it. A column whose
+*                own declaration calls it the "MANDATORY recursion declaration"
+*                answers the same for a leaf and for something nested five deep.
+*   PAYLOAD_SHA  NO WRITER AT ALL. Chartered as "integrity + cycle-detection
+*                material", so the cycle detector has no material.
+*   EST_HYD_B    the sum of the container's FILE lengths -- a nested container's
+*                SERIALIZED bytes, not its HYDRATED expansion. Admission control
+*                asks the wrong number at every level below the first.
+*   SELF_REF     posture.find("WORKSPACES") != npos. A substring test on posture
+*                text, wrong in both directions: a table named
+*                WORKSPACES_ARCHIVE flags T, an embedded catalog under another
+*                name flags F.
+*
+* PREDICTIONS, WRITTEN BEFORE THE RUN so a miss is visible rather than absorbed:
+*
+*   P1  level-1 save succeeds; FMT "MINIDB 1", DEPTH 0, SELF_REF F, SIZE_B > 0.
+*   P2  level-2 save SUCCEEDS -- the container format is length-prefixed and
+*       binary-safe, so a FILE section carries the catalog's .dtx whole.
+*   P3  level-2 DEPTH reads 0. THAT IS THE DEFECT: it is the number that should
+*       read 1, and nothing anywhere can produce a 1.
+*   P4  level-2 SELF_REF reads T -- correctly, but BY ACCIDENT, because the
+*       posture names WORKSPACES as a table rather than because anything
+*       inspected the payload.
+*   P5  hydrating the OUTER container lands a WORKSPACES table in RAM whose
+*       memo still carries the INNER container, so twl_inner is still a row.
+*       Two levels round-trip, uncounted and unguarded.
+*
+* IF P2 OR P5 FAIL the answer is better news than the predictions: the format
+* refuses what nothing declares, and the guard columns are describing a case
+* that cannot arise. Read a failure that way rather than as a defect.
+*
+* RESULTS, 2026-08-30, run against c773f8b7. ALL FIVE PREDICTIONS HELD.
+*
+*   twl_inner   MINIDB 1  DEPTH 0  SELF_REF F  SIZE_B  4763  EST_HYD_B  4438
+*   twl_outer   MINIDB 1  DEPTH 0  SELF_REF T  SIZE_B 28859  EST_HYD_B 28480
+*   P5          twl_inner is a readable row inside the hydrated outer catalog
+*
+* AND FOUR THINGS THE PREDICTIONS DID NOT REACH:
+*
+* COMPOUNDING. The transcript was run TWO -- row numbers gave it away and the
+* directory confirmed it. Run 1 produced outer 11,276 B; run 2 produced 28,859,
+* because the outer now carries a catalog holding run 1's inner AND outer. Each
+* save of the containing database swallows every container already in it. The
+* scratch catalog is 4,079 B of table against a 54,032 B sidecar.
+*
+* THE SIDECAR LANDS ON REAL DISK AND THE ARITHMETIC CLOSES EXACTLY.
+* data/ram/WORKSPACES.dtx, 25,104 B, timestamped at the run, SURVIVING the
+* unmount. VFS 3,376 + disk 25,104 = 28,480 = EST_HYD_B, to the byte. So
+* EST_HYD_B is exact as a TOTAL and wrong as what it is chartered to be, a RAM
+* budget input -- the non-sidecar subtotal it should carry is computed nowhere.
+*
+* TWO SHIPPED MESSAGES ARE FALSE FOR MEMO CONTENT. "zero disk reads" counts
+* disk bytes as RAM bytes; "all RAM files dropped" is true of the VFS and
+* structurally incapable of covering a real file. Seven stale sidecars under the
+* RAM root, 68 KB, oldest 2026-08-12 -- and NOTHING anywhere removes them.
+*
+* P5 IS WEAKER THAN IT LOOKS, SAID PLAINLY. It proves the inner ROW round-trips
+* (WS_NAME/FMT/DEPTH/SIZE_B all live in the .dbf). The inner PAYLOAD is proven
+* only indirectly, by the 25,104-byte sidecar on disk. The decisive arm nobody
+* has run is WORKSPACE LOAD twl_inner MEMO RAM from INSIDE the hydrated catalog.
+* It also tripped the blind-USE shape: "already open in current area 0", because
+* LOAD had opened it -- correct here by luck, since that cursor is the RAM file.
+*
+* Findings recorded in AIF-120 (grandfathered, R133), not given a number.
+*
+* SELF-ISOLATING. The WORKSPACES slot is re-pointed at a scratch root before
+* anything is written, the r131_durable_root_probe precedent, so the production
+* catalog is never opened. Run it with an ABSOLUTE path:
+*   DOTSCRIPT D:\code\ccode\dottalkpp\data\scripts\two_level_memo_probe.dts
+SET ECHO OFF
+STOP_ON_ERROR OFF
+SET PATH WORKSPACES tmp/ws2lvl
+SET PATH DBF DBF/SANDBOX
+WORKSPACE CLOSE ALL
+ERASE TWLA CONFIRM
+FORMULA "TWOLEVEL-PROBE-BEGIN"
+* ---------------------------------------------------------------------------
+* LEVEL 1 -- a table with a live memo field, saved into the catalog's memo.
+SELECT 0
+CREATE X64 TWLA (ID N(4,0), NOTES M)
+APPEND
+REPLACE ID WITH 1
+REPLACE NOTES WITH "level one payload"
+? "TWL_G0_inner_memo_written:" + (NOTES = "level one payload")
+WORKSPACE SAVE twl_inner MEMO MINIDB
+WORKSPACE CLOSE ALL
+* P1 -- what the catalog says about a LEAF container.
+SET PATH DBF tmp/ws2lvl
+FORMULA "TWOLEVEL-P1-BEGIN"
+SELECT 0
+USE WORKSPACES
+SMARTLIST WS_NAME,FMT,DEPTH,SELF_REF,SIZE_B,EST_HYD_B FOR ALLTRIM(WS_NAME) = "twl_inner"
+CLOSE
+FORMULA "TWOLEVEL-P1-END"
+* ---------------------------------------------------------------------------
+* LEVEL 2 -- put the CONTAINING database into a container. The catalog itself
+* is the table this posture opens, so its .dtx -- which is where level one now
+* lives -- rides along as a FILE section.
+FORMULA "TWOLEVEL-P2-BEGIN"
+SELECT 0
+USE WORKSPACES
+WORKSPACE SAVE twl_outer MEMO MINIDB
+FORMULA "TWOLEVEL-P2-END"
+WORKSPACE CLOSE ALL
+* P3/P4 -- the two guard columns on the NESTED row.
+FORMULA "TWOLEVEL-P3-BEGIN"
+SELECT 0
+USE WORKSPACES
+SMARTLIST WS_NAME,FMT,DEPTH,SELF_REF,SIZE_B,EST_HYD_B FOR ALLTRIM(WS_NAME) = "twl_outer"
+CLOSE
+FORMULA "TWOLEVEL-P3-END"
+* ---------------------------------------------------------------------------
+* P5 -- THE ROUND TRIP, AND THE ONE THAT ANSWERS THE QUESTION. Hydrate the
+* OUTER container into RAM and look for the INNER row inside the catalog it
+* carried. If twl_inner is listed, two levels survived a save and a load with
+* nothing counting them.
+DO mem
+FORMULA "TWOLEVEL-P5-BEGIN"
+WORKSPACE LOAD twl_outer MEMO RAM
+VDISK STATUS
+SELECT 0
+USE WORKSPACES
+SMARTLIST WS_NAME,FMT,DEPTH,SIZE_B FOR ALLTRIM(WS_NAME) = "twl_inner"
+CLOSE
+FORMULA "TWOLEVEL-P5-END"
+WORKSPACE CLOSE ALL
+VDISK UNMOUNT
+* ---------------------------------------------------------------------------
+* TEARDOWN. The scratch catalog root is left in place deliberately -- it is
+* under the gitignored TMP slot and it is the evidence.
+SET PATH DBF DBF/SANDBOX
+ERASE TWLA CONFIRM
+SET PATH WORKSPACES workspaces
+FORMULA "TWOLEVEL-PROBE-END"
+DO x64

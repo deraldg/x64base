@@ -52,10 +52,24 @@ struct MaterializeResult {
 // Write every member of a scanned container into the RAM VFS rooted at
 // `ram_root`, with "indexes/" members going to `ram_index_root`.
 //
-// Memo sidecars (.dtx/.dbt/.fpt) land on the REAL filesystem, not the VFS:
-// AIF-108 [SIDECAR] -- the DTX layer bypasses ramfs (bypass-ledger member 1),
+// Memo sidecars (.dtx/.dbt/.fpt) land on the REAL filesystem, not the VFS,
 // so a sidecar written into the VFS would sit exactly where memo I/O never
-// looks. The mount directory exists physically, so the sidecar is
+// looks.
+//
+// CITATION CORRECTED 2026-08-30. This read "AIF-108 [SIDECAR] -- the DTX layer
+// bypasses ramfs (bypass-ledger member 1)", and BOTH halves misdirect.
+// AIF-108 is a TEST-DESIGN lane whose own status column reads "chartered -- NO
+// engine change proposed"; the [SIDECAR] tag came from its challenge list and
+// was carried into code as though it were a design authority. This file's own
+// header says lane: AIF-120, which is where the finding is now recorded.
+// AIF-108 is asleep until 2026-09-29 (OI-021). And "bypass-ledger member 1" is
+// cited four times in this tree, always as member 1, with no member 2 and NO
+// LEDGER DOCUMENT -- a confident pointer at a register nobody wrote.
+//
+// THE SPLIT IS DECIDED HERE, NOT BY "THE DTX LAYER". materialize() below
+// branches on a three-extension whitelist. Anyone reading the old comment went
+// looking in the memo backend for a behaviour that lives twenty lines from the
+// budget check that does not know about it. The mount directory exists physically, so the sidecar is
 // disk-resident beside the virtual DBF. When ramfs memo coverage lands, that
 // branch collapses into the ordinary one.
 inline MaterializeResult materialize(const std::string& payload,

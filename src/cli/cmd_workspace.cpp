@@ -3198,10 +3198,15 @@ static std::string build_minidb_container(const std::string& posture,
                 const fs::path ip(idx);
                 add(ip, "indexes/" + s8(ip.filename()));
             }
-            // Memo sidecar carriage (AIF-108 [SIDECAR] unblock, 2026-08-12).
+            // Memo sidecar carriage, landed 2026-08-12. CITATION CORRECTED
+            // 2026-08-30: this named AIF-108, a TEST-DESIGN lane chartered
+            // "NO engine change proposed" and asleep until 2026-09-29
+            // (OI-021). The owning lane is AIF-120, which is where the
+            // hydration findings are recorded; "bypass-ledger member 1" is
+            // cited four times with no member 2 and no ledger document.
             // The attached backend names its own file -- no extension
             // guessing. flush() first: DTX I/O buffers and BYPASSES the
-            // ramfs (bypass-ledger member 1), so the bytes live on the real
+            // ramfs, so the bytes live on the real
             // disk under the mount dir and must be made current before
             // capture. read_all_bytes() handles the residence split already:
             // is_virtual(path) is true under the mount but exists() in the
