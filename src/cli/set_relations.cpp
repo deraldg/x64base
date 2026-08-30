@@ -168,6 +168,22 @@ static void note_depth_truncated(const char* where) {
                      " incomplete.");
 }
 
+// POSITION MUST STAY COMPUTABLE, AND THAT IS WHY THIS FUNCTION EXISTS.
+// Owner 2026-08-30: "one of the main points of our system is we can
+// mathematically determine our position." A refresh either moved a child or it
+// did not, and after a SILENT skip the operator cannot tell which -- the child
+// sits on some row, and nothing distinguishes "it matched there" from "it was
+// never visited." That is not an untidy message, it is a LOSS OF DETERMINACY,
+// in the one system property this house says it sells. An announced skip keeps
+// position computable: you know exactly which edge did not propagate and why.
+//
+// This is also the answer to the obvious "fix" -- teaching USE to clear
+// relations the way CLOSE does. Ruled the same day: USE STAYS A CURSOR
+// OPERATION ("you set your cursor -- use -- and return if you must"). Hiding
+// the state would make USE's effect depend on graph state the operator cannot
+// see from the command, which costs determinacy at the other end. So the state
+// is legitimate and the announcement is the whole treatment.
+//
 // A SKIPPED EDGE IS NEITHER A DEPTH TRIP NOR A SCAN TRIP: it is a child the
 // SCOPED resolver could not see. It trips the same latch because it means the
 // same thing about the result, and it draws the same distinction add_relation

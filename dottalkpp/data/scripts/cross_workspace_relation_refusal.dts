@@ -49,7 +49,7 @@
 *   XWSREL-T1  MUST contain "is open in workspace XWSB"
 *   XWSREL-T2  MUST contain "not open"
 *              MUST NOT contain "is open in workspace"
-*   XWSREL-T3  see its own note; UNVERIFIED until the first run
+*   XWSREL-T3  MUST contain "was NOT refreshed" naming XWSAP -> XWSAC
 * Collapse the two messages into one and T2 gains a sentence it must not have.
 * Revert the scoped-resolver reporting and T1 loses one it must.
 SET ECHO OFF
@@ -61,6 +61,7 @@ WORKSPACE DESTROY XWSA
 ERASE xwsap CONFIRM
 ERASE xwsac CONFIRM
 ERASE xwsbc CONFIRM
+ERASE xwsalt CONFIRM
 FORMULA "XWSREL-REGRESSION-BEGIN"
 REL CLEAR ALL
 SELECT 0
@@ -82,6 +83,13 @@ CREATE X64 XWSBC (CK C(4), CLBL C(10))
 APPEND
 REPLACE CK WITH "A"
 REPLACE CLBL WITH "B_ALPHA"
+* XWSALT exists only to be swapped INTO the child's area by T3. It is never
+* related to anything; its whole job is to evict XWSAC without telling the
+* relation store, which CLOSE would have done and USE does not.
+SELECT 3
+CREATE X64 XWSALT (ZK C(4))
+APPEND
+REPLACE ZK WITH "Z"
 SELECT 1
 GO 2
 ? "XWSREL_G0_child_fixture_written:" + (ALLTRIM(CLBL) = "A_BETA")
@@ -121,24 +129,45 @@ FORMULA "XWSREL-T2-BEGIN"
 REL ADD XWSAP XWSGONE ON PK TO CK
 FORMULA "XWSREL-T2-END"
 * ---------------------------------------------------------------------------
-* T3 -- THE EDGE-SKIP LATCH, AND IT IS UNVERIFIED UNTIL THIS SPEC FIRST RUNS.
+* T3 -- THE EDGE-SKIP LATCH, AND THE FIRST RUN REWROTE THIS ARM.
 * refresh_from_parent_name used a bare `if (!child) continue;`, so a refresh
 * that propagated down NONE of its edges printed what a complete one printed.
 * It now trips the relation truncation latch, naming the edge.
 *
-* THE FIXTURE MAY OR MAY NOT REACH IT, and that is stated rather than assumed:
-* the edge survives only if closing an AREA leaves the relation in the store.
-* If it does not, this block is EMPTY and that is a fact about CLOSE, not a
-* failure of the fix -- read it that way and say so, do not credit or condemn
-* the latch on it. G2 immediately below proves the edge was live one statement
-* before the close, so an empty T3 cannot be blamed on a dead fixture.
+* THE FIRST DRAFT REACHED IT WITH `CLOSE` AND THE BLOCK CAME BACK EMPTY.
+* Measured afterwards rather than guessed: CLOSE calls
+* clear_relations_involving_table (cmd_close.cpp:134, called at :265), which
+* drops EVERY relation the closed table appears in as parent OR as child. So
+* the edge was gone before the refresh ran and the loop was never entered --
+* a fact about CLOSE, not a failure of the latch, exactly as this header
+* predicted it might be.
+*
+* SO THE ARM NOW USES `USE`, AND THE DIFFERENCE IS THE FINDING. cmd_use.cpp
+* contains no relation handling whatsoever. There are TWO ways to take a table
+* out of an area and only ONE of them tells the relation store. CLOSE keeps the
+* store consistent; USE leaves an edge naming a table that is no longer open --
+* which is precisely the state the latch exists to announce, and the only
+* ordinary command sequence that reaches it.
+*
+* AND THE OWNER RULED THE ASYMMETRY INTENDED, THE HOUR IT WAS FOUND:
+* "i argue use needs [no] overcomplicating with relations -- you set your
+* cursor -- use -- and return if you must." So the two verbs are not
+* inconsistent, they are DIFFERENT ACTS: CLOSE retires a table and tidies the
+* store after it; USE re-points an area and the operator owns what that leaves.
+* THAT RULING IS WHAT MAKES THIS ARM PERMANENT. If USE is MEANT to leave an
+* edge naming a table that is no longer open, the state is legitimate and the
+* only defensible treatment is a refresh that SAYS SO when it walks past one.
+* The bare `if (!child) continue;` was never a missing USE fix -- it was
+* silence over a state the language deliberately allows. G2 proves the edge was live one
+* statement before the swap, so an empty T3 can never be blamed on a dead
+* fixture.
 SELECT xwsap
 GO 2
 REL REFRESH
 SELECT xwsac
-? "XWSREL_G2_edge_live_before_the_close:" + (ALLTRIM(CLBL) = "A_BETA")
+? "XWSREL_G2_edge_live_before_the_swap:" + (ALLTRIM(CLBL) = "A_BETA")
 SELECT xwsac
-CLOSE
+USE xwsalt
 SELECT xwsap
 FORMULA "XWSREL-T3-BEGIN"
 GO 1
@@ -155,4 +184,5 @@ WORKSPACE DESTROY XWSA
 ERASE xwsap CONFIRM
 ERASE xwsac CONFIRM
 ERASE xwsbc CONFIRM
+ERASE xwsalt CONFIRM
 FORMULA "XWSREL-REGRESSION-END"
