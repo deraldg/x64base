@@ -550,8 +550,9 @@ expression builtin, the OTHER platform's binary is stale by definition: say
 **A sandboxed agent must run NO git commands.** Even `git status` refreshes the
 index, takes `.git/index.lock`, and cannot reliably unlink it across the mount,
 which then blocks the maintainer's commits. This happened on 2026-07-31. Read
-files freely; run git only host-side. `claim-aif` shells out to `git grep`, so
-it is host-side too. See `labtalk/ai_portal/LOCAL_ACCESS_AGENT_CHECKLIST_V1.md`.
+files freely; run git only host-side. `claim-aif` stopped shelling out to
+`git grep` on 2026-08-30 (AIF-135) and no longer needs to be host-side; the
+`status` subcommand still greps and does. See `labtalk/ai_portal/LOCAL_ACCESS_AGENT_CHECKLIST_V1.md`.
 
 Convenience launchers from the repo root:
 

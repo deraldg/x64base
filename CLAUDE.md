@@ -88,8 +88,10 @@ If you are running in a mounted Linux sandbox rather than on the Windows host:
   2.34.1: no `index.lock` created): `git --no-optional-locks status`
   (equivalently `GIT_OPTIONAL_LOCKS=0`) for status, and the read-only plumbing
   `git log` / `ls-files` / `check-ignore` / `cat-file`. Use these to inspect the
-  tree; still hand every mutating git to the maintainer. `claim-aif` shells out to
-  `git grep`, so it stays host-side too. **Measured 2026-08-26: `git add` from a
+  tree; still hand every mutating git to the maintainer. **`claim-aif` no longer shells
+  out to git** (AIF-135, 2026-08-30: the repository-wide citation grep was
+  removed from the allocation universe), so the claim path itself runs
+  anywhere; `session_coordinator.py status` still greps and stays host-side. **Measured 2026-08-26: `git add` from a
   sandbox works but LEAVES A LOCK IT CANNOT UNLINK** -- the add succeeds, then
   warns `unable to unlink .git/index.lock`, and the NEXT add fails with "another
   git process seems to be running" until that zero-byte lock is moved aside. So

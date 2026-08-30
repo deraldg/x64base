@@ -22,6 +22,21 @@ def _inbox_count(root, run):
     return len(list(d.glob("*.quip"))) if d.exists() else 0
 
 
+def _seed_intake(root, numbers):
+    """Give the throwaway root an ALLOCATION AUTHORITY.
+
+    Before AIF-135 these tests ran against a bare directory, and the allocator
+    happily minted AIF-006 into it. That is now a REFUSAL -- an empty universe
+    is a broken path, not an empty project -- so a fixture that wants a number
+    has to say which numbers are already spent, exactly as the real register
+    does. The fixture had been hiding the very condition the tool must catch.
+    """
+    p = root / sc.INTAKE
+    p.parent.mkdir(parents=True, exist_ok=True)
+    rows = "".join("| AIF-%03d | seeded row | lane |\n" % n for n in numbers)
+    p.write_text("| id | subject | lane |\n|---|---|---|\n" + rows, encoding="utf-8")
+
+
 def test_quip_direct_and_broadcast_and_ack():
     with tempfile.TemporaryDirectory() as td:
         root = Path(td)
@@ -133,6 +148,7 @@ def test_wake_whoami_reads_identity_from_the_record():
     import io, contextlib
     with tempfile.TemporaryDirectory() as td:
         root = Path(td)
+        _seed_intake(root, [6, 7])
         n = sc.claim_aif(root, "m.a", "RUN-X", "lane-x")
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
@@ -145,11 +161,80 @@ def test_wake_whoami_reads_identity_from_the_record():
 def test_claim_is_atomic_and_unique():
     with tempfile.TemporaryDirectory() as td:
         root = Path(td)
+        _seed_intake(root, [6, 7, 8])
         n1 = sc.claim_aif(root, "m.a", "RUN-A", "lane-one")
         n2 = sc.claim_aif(root, "m.b", "RUN-B", "lane-two")
-        assert n1 is not None and n2 is not None and n1 != n2
+        assert n1 == 9 and n2 == 10                   # max+1, then max+1 again
         # re-claiming a specific taken number fails (no double-allocation)
         assert sc.claim_aif(root, "m.c", "RUN-C", "dup", want=n1) is None
+
+
+def test_allocator_is_monotonic_and_never_fills_a_gap():
+    """AIF-135, ruled 2026-08-30: max+1, never the lowest free number.
+
+    The old rule walked from AIF_LO and took the first hole, which is how a
+    live lane's number (AIF-043) was minted three times. Here 7, 8 and 9 are
+    holes and the allocator must walk straight past all of them.
+    """
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        _seed_intake(root, [6, 10])
+        assert sc.next_aif_number(root) == 11
+        assert sc.claim_aif(root, "m.a", "RUN-A", "lane") == 11
+        assert sc.claim_aif(root, "m.b", "RUN-B", "lane") == 12
+        assert not (root / sc.AIF_DIR / "AIF-007.claim").exists()
+
+
+def test_a_number_cited_but_not_rowed_is_still_seen():
+    """AIF-043's shape: three mentions inside other rows' Notes, no row of its
+    own, no claim file. The narrow universe must still see it, or max+1 lands
+    on it the moment it is the highest thing written down.
+    """
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        _seed_intake(root, [6, 7])
+        p = root / sc.INTAKE
+        p.write_text(p.read_text(encoding="utf-8")
+                     + "| AIF-007 | note mentioning AIF-020 | lane |\n", encoding="utf-8")
+        assert 20 in sc.taken(root)
+        assert sc.next_aif_number(root) == 21
+
+
+def test_empty_authority_fails_closed():
+    """A bare root is a BROKEN PATH, not an empty project. Returning AIF-006
+    on it is the AIF-118 shape -- one answer for "unreadable" and for "fine" --
+    inside the tool whose whole job is preventing collisions.
+    """
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        assert sc.next_aif_number(root) is None
+        assert sc.claim_aif(root, "m.a", "RUN-A", "lane") is None
+        # and it refused WITHOUT writing a claim file
+        assert list((root / sc.AIF_DIR).glob("AIF-*.claim")) == []
+
+
+def test_number_cannot_skip_forward():
+    """AIF-135 rule 3: --number mints only the next monotonic number. A hole
+    made on purpose is still a hole, and the sequence cannot say why it exists.
+    """
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        _seed_intake(root, [6, 7, 8])
+        assert sc.claim_aif(root, "m.a", "RUN-A", "lane", want=40) is None
+        assert list((root / sc.AIF_DIR).glob("AIF-*.claim")) == []
+        assert sc.claim_aif(root, "m.a", "RUN-A", "lane", want=9) == 9
+
+
+def test_backfill_of_an_existing_identity_must_be_explicit():
+    """Writing the row before running the claim is how AIF-146 was burned.
+    The allocator now makes re-declaring a known identity an explicit act.
+    """
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        _seed_intake(root, [6, 7, 8])
+        assert sc.claim_aif(root, "m.a", "RUN-A", "lane", want=8) is None
+        assert sc.claim_aif(root, "m.a", "RUN-A", "lane", want=8,
+                            backfill_existing=True) == 8
 
 
 if __name__ == "__main__":
@@ -159,4 +244,9 @@ if __name__ == "__main__":
     test_wake_records_durable_lineage_and_survives_checkout()
     test_wake_whoami_reads_identity_from_the_record()
     test_claim_is_atomic_and_unique()
+    test_allocator_is_monotonic_and_never_fills_a_gap()
+    test_a_number_cited_but_not_rowed_is_still_seen()
+    test_empty_authority_fails_closed()
+    test_number_cannot_skip_forward()
+    test_backfill_of_an_existing_identity_must_be_explicit()
     print("OK -- session_coordinator quip + claim tests passed")

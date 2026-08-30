@@ -47,7 +47,12 @@ negate (`!`) `aif/` and `lineage/`.
 
 ## 4. Command surface (function : CLI)
 
-    claim_aif(root, member, run, lane, want=None)   : claim-aif  --member --run --lane [--number]
+    claim_aif(root, member, run, lane, want=None,
+              backfill_existing=False)              : claim-aif  --member --run --lane [--number]
+                                                                 [--backfill-existing]
+    next_aif_number(root, used=None)                -- max+1, or None on an empty authority
+    taken(root)                                     -- the allocation universe (intake + claims)
+    unrowed_citations(root)                         -- report only; cited in prose, never rowed
     release_aif(root, number, run, force)           : release-aif --number --run [--force]
     checkin(root, member, run, lanes, files)        : checkin    --member --run [--lanes] [--files]
     checkout(root, run)                             : checkout   --run
@@ -62,6 +67,22 @@ negate (`!`) `aif/` and `lineage/`.
 - **Allocation is atomic, not hopeful.** `claim_aif` creates the claim file with
   `O_CREAT|O_EXCL`; if two sessions race for a number, exactly one wins the create. Grep
   is never an allocator -- a stale grep re-derives a taken number as free (AIF-078 scar).
+- **Allocation is MONOTONIC: max+1, never a gap.** AIF-135, ruled 2026-08-30 by
+  `member.derald`. The old rule walked from `AIF_LO` and took the lowest free number,
+  which minted AIF-043 -- a live lane -- three times. A racing claimant that loses the
+  `O_EXCL` create advances UPWARD; it never searches backward. `--number` may mint only
+  the next monotonic number; attaching a claim to an identity already in the universe is
+  a different operation and requires `--backfill-existing`.
+- **The allocation universe is the intake register plus the claim files, and NOTHING
+  ELSE.** The same universe `next_aif.py` reports on, so the allocator and the reporter
+  agree by construction. The repository-wide citation grep is a REPORT
+  (`unrowed_citations`), not an input: it holds arithmetic examples and quoted regexes
+  as well as citations, and max+1 over it yields AIF-1000000. Narrowing it is safe ONLY
+  because the rule is max+1 -- AIF-089, AIF-102 and AIF-146 are real spent numbers with
+  no row and no claim, and lowest-gap would have minted all three.
+- **An empty authority fails closed.** `next_aif_number` returns None rather than handing
+  out `AIF_LO`. An unreadable register and an empty project must not give one answer --
+  that is the AIF-118 shape inside the tool built to prevent collisions.
 - **Lineage is write-once.** `record_birth` uses `O_EXCL`; a resumed run re-waking keeps
   its original `born_utc` and `parent`. Re-waking never rewrites birth. It survives
   checkout, which is the whole reason it is a separate durable file from presence.

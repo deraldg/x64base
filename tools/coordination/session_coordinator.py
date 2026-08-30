@@ -8,9 +8,12 @@ once -- proven live when four sessions collided on AIF-047 -> 048 -> 050 in one 
 
 Three primitives, all over the filesystem (the only medium concurrent local sessions actually share):
 
-  claim-aif   Atomically claim the next-free (or a specific) AIF number. Uses O_CREAT|O_EXCL, so if
-              two sessions race for the same number exactly one wins the create -- a real allocator,
+  claim-aif   Atomically claim the next AIF number -- MAX+1, never a gap (AIF-135, ruled
+              2026-08-30) -- or a specific one with --number. Uses O_CREAT|O_EXCL, so if two
+              sessions race for the same number exactly one wins the create -- a real allocator,
               not a hope. Durable claim files under coordination/aif/ are the allocation ledger.
+              The universe is the intake register plus the claim files, the same universe
+              next_aif.py reports on, so the two tools cannot drift apart.
   checkin     Register this session's presence (member, run, lanes, files) so others can SEE it.
   lock/unlock Advisory (cooperative) file lock for a contested shared doc; check before you edit.
   status      Show active sessions, held locks, claimed AIF numbers, and unread quips.
@@ -62,7 +65,7 @@ def ensure_dirs(root: Path):
 
 
 def git_committed_aifs(root: Path):
-    """AIF numbers cited in COMMITTED prose. The only source that carries a
+    r"""AIF numbers cited in COMMITTED prose. The only source that carries a
     number CITED BUT NOT ROWED -- working_tree_aifs() is row-anchored and
     claimed_aifs() reads the claim directory, so a number like AIF-043 (cited
     in other rows' Notes, no row of its own, no claim file) exists HERE OR
@@ -96,13 +99,26 @@ def git_committed_aifs(root: Path):
          "REFUSING: found zero AIF numbers in either source. That is far more
          likely to be a broken path than an empty project."
 
-    NOT CHANGED HERE, AND IT NEEDS A RULING: the allocation rule itself.
-    claim_aif() takes the LOWEST FREE number; next_aif.py takes max+1 and says
-    gaps are never reusable. They are not interchangeable, because THE TWO
-    TOOLS DO NOT SHARE A UNIVERSE -- this function greps all of docs/, so
-    R126's allocator-range examples (AIF-998/999/1000/999999) are in scope and
-    max+1 over THIS universe yields AIF-1000000. Measured 2026-08-30. AIF-135
-    is the lane for that decision.
+    RULED 2026-08-30 (AIF-135, owner `member.derald`: "max+1"). THIS FUNCTION
+    IS NO LONGER AN ALLOCATION AUTHORITY. It is a HYGIENE REPORT, printed by
+    status() and read by a human. taken() no longer calls it.
+
+    WHY THE DEMOTION IS SAFE, AND IT IS ONLY SAFE BECAUSE THE RULE CHANGED.
+    Under the old LOWEST-FREE-GAP rule this scan was load-bearing: it was the
+    only sight the allocator had of a number CITED BUT NEITHER ROWED NOR
+    CLAIMED, and such numbers exist. Measured 2026-08-30 against the whole
+    tree: AIF-089, AIF-102 and AIF-146 are real, spent numbers with zero
+    intake rows and zero claim files. Lowest-gap would have minted all three.
+    Under max+1 they cannot be reached at all -- every one of them is BELOW
+    the register's high-water mark, and a gap is never handed out.
+
+    WHY THE WIDE SCAN COULD NOT BE THE max+1 UNIVERSE. It greps all of docs/,
+    so R126's allocator-range examples (AIF-998/999/1000/999999) are in scope
+    and max+1 over THIS universe yields AIF-1000000. Measured, same minute:
+    wide max 999999, narrow max 149. It also matches things that are not
+    numbers -- five hits resolve to "AIF-0", which is the regex `AIF-0*(\d+)`
+    quoted in prose. A scan built to over-count is the right shape for a
+    warning and the wrong shape for an allocator.
     """
     try:
         out = subprocess.check_output(
@@ -153,14 +169,139 @@ def claimed_aifs(root: Path):
     return {m.group(1) for f in d.glob("AIF-*.claim") if (m := re.match(r"AIF-0*(\d+)\.claim", f.name))}
 
 
+def intake_mentions(root: Path):
+    """Numbers written ANYWHERE in the intake register, not only as row ids.
+
+    This is the rung that carries a number cited inside another row's Notes --
+    AIF-043 was exactly that on 2026-08-25: three mentions, no row of its own.
+    Suppressible by `id-cite:ignore` because these are CITATIONS; row ids are
+    DECLARATIONS and are unioned in separately by working_tree_aifs(), which
+    honours no marker. Same split, same reasoning, as next_aif.py.
+    """
+    p = root / INTAKE
+    if not p.exists():
+        return set()
+    text = p.read_text(encoding="utf-8", errors="replace")
+    return set(re.findall(r"AIF-0*([0-9]+)\b(?!\{)", idcite.live_text(text)))
+
+
 def taken(root: Path):
-    return {int(x) for x in git_committed_aifs(root) | working_tree_aifs(root) | claimed_aifs(root)}
+    """THE ALLOCATION UNIVERSE. Intake register (rows AND mentions) plus claim
+    files -- exactly what next_aif.py reads, so the allocator and the reporter
+    agree BY CONSTRUCTION rather than by two people keeping two scans in step.
+
+    RULED 2026-08-30, AIF-135, owner `member.derald`: "max+1". The rule and the
+    width are one decision, not two. Lowest-gap makes the width safety-critical
+    (every unrowed citation anywhere in the tree must be visible or it gets
+    minted); max+1 makes it nearly irrelevant (only the maximum matters). This
+    tree took the rule, so it takes the narrow universe with it. The
+    repository-wide citation grep is REJECTED as an allocation source -- it
+    holds arithmetic examples and quoted regexes as well as citations, and one
+    authority holding two kinds with no discriminator is the count-discipline
+    defect R126 already ruled on. It survives as a report; see
+    git_committed_aifs().
+    """
+    return {int(x) for x in working_tree_aifs(root) | intake_mentions(root) | claimed_aifs(root)}
 
 
-def claim_aif(root: Path, member, run, lane, want=None):
+def unrowed_citations(root: Path):
+    r"""Numbers cited in committed prose that the allocation universe cannot
+    see. NOT a collision list -- under max+1 none of these is reachable. It is
+    a HYGIENE list: a number spent without a row is a number whose lane nobody
+    can look up. Measured 2026-08-30: AIF-089, AIF-102, AIF-146.
+
+    AIF-0 IS DROPPED, and it is worth saying why rather than filtering it
+    quietly: the five hits behind it are the matcher `AIF-0*(\d+)` QUOTED IN
+    PROSE, in the very files that document this allocator. Zero is not an
+    identity in this sequence -- AIF_LO is 6 -- so a report that lists it is
+    reporting on its own documentation.
+    """
+    # MEASURED AGAINST DECLARATIONS, NOT AGAINST taken(). A row id and a claim
+    # file DECLARE an identity; a mention inside another row's Notes does not.
+    # If this subtracted taken(), then citing a number anywhere in the register
+    # would SILENCE the report while the missing row stayed missing -- one
+    # answer for "rowed" and for "merely mentioned", in a report whose only
+    # question is which spent numbers have no row.
+    declared = {int(x) for x in working_tree_aifs(root) | claimed_aifs(root)}
+    wide = {int(x) for x in git_committed_aifs(root)}
+    return sorted(n for n in wide - declared if n > 0)
+
+
+def next_aif_number(root: Path, used=None):
+    """max + 1, and FAIL CLOSED on an empty authority.
+
+    An empty universe is far more likely to be a broken path than an empty
+    project, and handing out AIF-006 on it is a collision with sixty years of
+    ledger. next_aif.py has refused on this condition since it was written;
+    the allocator did not, and the allocator is the half that MINTS. Returns
+    None when it will not answer.
+    """
+    used = taken(root) if used is None else used
+    if not used:
+        print("REFUSING: found zero AIF numbers in the intake register or the",
+              file=sys.stderr)
+        print(f"  claim ledger. Expected authority: {INTAKE}", file=sys.stderr)
+        print(f"  and {AIF_DIR}/. That is a broken path, not an empty project.",
+              file=sys.stderr)
+        return None
+    nxt = max(used) + 1
+    if nxt > AIF_HI:
+        print(f"REFUSING: max+1 is AIF-{nxt}, past the scan ceiling AIF-{AIF_HI}.",
+              file=sys.stderr)
+        return None
+    return nxt
+
+
+def claim_aif(root: Path, member, run, lane, want=None, backfill_existing=False):
+    """Mint or reserve an AIF number.
+
+    AUTOMATIC (`want is None`): max+1 over taken(). MONOTONIC -- a gap is never
+    handed out. AIF-135, ruled 2026-08-30 by `member.derald`. The old rule
+    walked from AIF_LO and took the lowest free number, which is how run
+    COWORK-20260830-001 was issued AIF-043, a live lane, for the third time.
+
+    EXPLICIT (`--number`): may mint ONLY the next monotonic number. A forward
+    skip is refused, because a hole created deliberately is still a hole and
+    the sequence has no way to say why AIF-140 exists while 136..139 do not.
+    A number ALREADY IN THE UNIVERSE -- rowed, mentioned or claimed -- is a
+    different operation: attaching a missing claim file to a known identity,
+    which needs `--backfill-existing` said out loud. Writing the row before
+    running the claim is how AIF-146 was burned; the allocator should make
+    that an explicit act, not a silent one.
+
+    Rules 2, 3, 4, 5 and 6 of AIF-135's presented design, implemented here in
+    the development tree. The design is `member.ai.codex`'s
+    (`docs/maintenance/AIF135_MONOTONIC_AIF_ALLOCATOR_ALIGNMENT_V1.md`); it was
+    verified in another tree on 2026-08-26 and never landed here, which is how
+    the same defect minted AIF-043 a third time on 2026-08-30.
+    """
     ensure_dirs(root)
     used = taken(root)
-    candidates = [want] if want is not None else (n for n in range(AIF_LO, AIF_HI + 1) if n not in used)
+    if want is not None:
+        if want in used:
+            if not backfill_existing:
+                print(f"AIF-{want:03d} is already in the allocation universe "
+                      f"(intake row, intake citation, or claim file).", file=sys.stderr)
+                print("  Attaching a claim to a known identity is a different "
+                      "operation: pass --backfill-existing to say so.", file=sys.stderr)
+                return None
+        else:
+            nxt = next_aif_number(root, used)
+            if nxt is None:
+                return None
+            if want != nxt:
+                print(f"AIF-{want:03d} is not the next monotonic number; "
+                      f"AIF-{nxt:03d} is.", file=sys.stderr)
+                print("  A forward skip leaves a hole the sequence cannot "
+                      "explain. Re-run without --number, or ask for "
+                      f"AIF-{nxt:03d}.", file=sys.stderr)
+                return None
+        candidates = [want]
+    else:
+        start = next_aif_number(root, used)
+        if start is None:
+            return None
+        candidates = range(start, AIF_HI + 1)
     for n in candidates:
         path = root / AIF_DIR / f"AIF-{n:03d}.claim"
         try:
@@ -470,9 +611,32 @@ def status(root: Path):
     ensure_dirs(root)
     print("=== session coordinator status ===")
     used = sorted(taken(root))
-    nxt = next((n for n in range(AIF_LO, AIF_HI + 1) if n not in set(used)), None)
+    nxt = next_aif_number(root, set(used))
     print(f"AIF taken: {', '.join('%03d' % n for n in used) or '(none)'}")
-    print(f"next-free AIF: {nxt:03d}" if nxt else "next-free: (none)")
+    # max+1, AIF-135. Printing a lowest-gap number here would advertise a
+    # number claim-aif will refuse to mint -- two answers to one question.
+    print(f"next-free AIF (max+1): {nxt:03d}" if nxt else "next-free: (none -- authority unreadable)")
+    gaps = sorted(set(range(min(used), max(used))) - set(used)) if used else []
+    if gaps:
+        print(f"gaps, NOT reusable ({len(gaps)}): "
+              + ", ".join("AIF-%03d" % n for n in gaps))
+    # TWO KINDS, NAMED SEPARATELY -- the count-discipline rule R126 ruled on.
+    # Below the high-water mark, an unrowed citation is a SPENT NUMBER whose
+    # lane nobody can look up. Above it, it is an ARITHMETIC EXAMPLE (R126's
+    # allocator-range sentinels). One list holding both taught the old
+    # allocator that AIF-1000000 was next.
+    unrowed = unrowed_citations(root)
+    hi = max(used) if used else 0
+    spent = [n for n in unrowed if n <= hi]
+    sentinels = [n for n in unrowed if n > hi]
+    if spent:
+        print(f"cited in committed prose, NOT rowed or claimed ({len(spent)}): "
+              + ", ".join("AIF-%03d" % n for n in spent)
+              + "  -- spent, unreachable under max+1, but no row to look up")
+    if sentinels:
+        print(f"above the high-water mark, treated as range examples "
+              f"({len(sentinels)}): " + ", ".join("AIF-%d" % n for n in sentinels)
+              + "  -- NOT allocations, and NOT allocation input")
     print(f"claim ledger: {sorted(f.name for f in (root/AIF_DIR).glob('AIF-*.claim'))}")
     # AIF-082 6.8b, 2026-07-31: separate LIVE from CLOSED and STALE. Previously
     # everything under active_sessions/ printed as an active session with a
@@ -524,7 +688,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--root", default=".")
     sub = ap.add_subparsers(dest="cmd", required=True)
-    c = sub.add_parser("claim-aif"); c.add_argument("--member", required=True); c.add_argument("--run", required=True); c.add_argument("--lane", required=True); c.add_argument("--number", type=int, default=None)
+    c = sub.add_parser("claim-aif"); c.add_argument("--member", required=True); c.add_argument("--run", required=True); c.add_argument("--lane", required=True); c.add_argument("--number", type=int, default=None); c.add_argument("--backfill-existing", action="store_true")
     r = sub.add_parser("release-aif"); r.add_argument("--number", type=int, required=True); r.add_argument("--run", required=True); r.add_argument("--force", action="store_true")
     ci = sub.add_parser("checkin"); ci.add_argument("--member", required=True); ci.add_argument("--run", required=True); ci.add_argument("--lanes", default=""); ci.add_argument("--files", default="")
     co = sub.add_parser("checkout"); co.add_argument("--run", required=True)
@@ -538,7 +702,8 @@ def main() -> int:
     a = ap.parse_args()
     root = Path(a.root).resolve()
     if a.cmd == "claim-aif":
-        return 0 if claim_aif(root, a.member, a.run, a.lane, a.number) is not None else 1
+        return 0 if claim_aif(root, a.member, a.run, a.lane, a.number,
+                              a.backfill_existing) is not None else 1
     if a.cmd == "release-aif":
         return release_aif(root, a.number, a.run, a.force)
     if a.cmd == "checkin":
