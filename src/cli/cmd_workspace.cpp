@@ -222,10 +222,36 @@
 //   session's registry. A script
 //   that declares workspaces is therefore idempotent per PROCESS, not per
 //   session -- run it once, or restart rather than trusting a second pass.
-//   Relations are still cleared GLOBALLY on a scoped close: the relation graph
-//   is not workspace-scoped yet, so closing one workspace clears relations
-//   belonging to areas still open elsewhere. The engine reports that, naming
-//   the count. AIF-078 stage 3 limitation, not a defect in the caller.
+//   RELATIONS ARE WORKSPACE-SCOPED. A scoped close clears the relations of the
+//   workspaces it ACTUALLY CLOSED and nothing else; CLOSE ALL still clears
+//   everywhere, deliberately and through a function that says so. The store is
+//   partitioned by workspace handle (set_relations.hpp: clear_all_relations_for
+//   takes one workspace, clear_all_relations_everywhere takes all), and the key
+//   never leaves its workspace -- which is also why same-named parents in two
+//   workspaces cannot collide.
+//   THIS PARAGRAPH SAID THE OPPOSITE UNTIL 2026-08-30, and had been false since
+//   2026-08-23. It read: "Relations are still cleared GLOBALLY on a scoped
+//   close: the relation graph is not workspace-scoped yet, so closing one
+//   workspace clears relations belonging to areas still open elsewhere. The
+//   engine reports that, naming the count. AIF-078 stage 3 limitation, not a
+//   defect in the caller." AIF-078 I1.2 landed that prerequisite, and the
+//   implementation comment at the close path in THIS FILE has said so since --
+//   "THE OVER-REACH THIS USED TO STATE IS GONE". So the contract and the code
+//   contradicted each other, in the same file, for a week, and the contract is
+//   what a reader consults first. Kept on the record rather than deleted,
+//   because a reader who remembers the old behaviour needs to know when it
+//   stopped being true.
+//   NOT MEASURED, AND NAMED SO IT IS NOT ASSUMED EITHER WAY: whether SET
+//   RELATION can be ISSUED ACROSS workspaces -- parent in one, child in
+//   another. If it can, the edge files under the CURRENT workspace's map while
+//   pointing at an area another workspace owns, and closing that other
+//   workspace would leave it dangling. The scoping argument at the close path
+//   assumes edges do not cross ("the set of areas this close emptied is exactly
+//   the closed workspaces' members, so clearing exactly those workspaces' maps
+//   leaves nothing dangling"), and that assumption has not been tested. Raised
+//   by the owner 2026-08-30 asking whether links spanning workspaces survive a
+//   save; they cannot be lost by a save, because a relation belongs to one
+//   workspace -- but whether one can be MADE to span is a separate question.
 //   RETIREMENT AND REMOVAL ARE TWO DIFFERENT VERBS AND THE DIFFERENCE IS THE
 //   WHOLE DESIGN (added to this block 2026-08-28 -- see the drift note below).
 //   WORKSPACE DESTROY <name> RETIRES a durable identity: it supersedes the
