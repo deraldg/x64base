@@ -3994,12 +3994,28 @@ static bool hydrate_minidb(const std::string& name, const std::string& payload,
         const std::uint64_t budget = (cfg.present && cfg.enabled)
             ? dottalk::vdisk::recommended_budget_bytes(cfg) : 0;
         if (budget) {
+            // BOTH SIDES OF THIS COMPARISON MUST COUNT THE SAME POPULATION.
+            // used_bytes() sums the VFS only; `want` used to be
+            // sc.total_file_bytes, which includes memo sidecars that
+            // materialize() writes to the REAL filesystem and that therefore
+            // never occupy one byte of this budget. Measured 2026-08-30 on a
+            // two-level container: 28,480 B claimed against 3,376 B actually
+            // resident -- an 8.4x over-statement, and it errs TOWARDS refusal,
+            // so on_full=Fail could decline a hydration that would have fit.
+            // The more memo content a workspace carries the more conservative
+            // the guard became, which is backwards.
             const std::uint64_t used      = xbase::ramfs::used_bytes();
-            const std::uint64_t want      = sc.total_file_bytes;
+            const std::uint64_t want      = sc.ram_file_bytes;
             const std::uint64_t projected = used + want;
             if (projected > budget) {
                 std::cout << "WORKSPACE MINIDB: hydrating '" << name << "' needs "
-                          << want << " B on top of " << used
+                          << want << " B of RAM"
+                          << (sc.sidecar_file_bytes
+                                ? (" (plus " + std::to_string(sc.sidecar_file_bytes)
+                                   + " B of memo sidecars, which go to disk and are"
+                                     " not budgeted here)")
+                                : std::string())
+                          << " on top of " << used
                           << " B already resident, which exceeds the " << budget
                           << " B budget (mode=" << dottalk::vdisk::mode_name(cfg.mode)
                           << ", on_full=" << dottalk::vdisk::on_full_name(cfg.on_full)
@@ -4040,6 +4056,8 @@ static bool hydrate_minidb(const std::string& name, const std::string& payload,
     }
     const std::size_t files = mat.files;
     const std::uint64_t bytes = mat.bytes;
+    const std::uint64_t ram_bytes     = mat.ram_bytes;
+    const std::uint64_t sidecar_bytes = mat.sidecar_bytes;
 
     const std::string hydrated =
         dottalk::minidb::repoint_posture_to_ram(sc.posture, ramRoot, ramIdx);
@@ -4048,9 +4066,23 @@ static bool hydrate_minidb(const std::string& name, const std::string& payload,
 
     const auto t1 = std::chrono::steady_clock::now();
     const double ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
+    // "ZERO DISK READS" WAS TRUE OF THE READ AND FALSE OF THE WRITE, and it
+    // counted disk bytes as RAM bytes one line after materialize() wrote them
+    // to a disk. The payload does come entirely from the memo -- that part was
+    // always right -- but memo sidecars bypass the VFS by design, so a workspace
+    // carrying one is not RAM-resident in the way this sentence promised.
+    // Corrected 2026-08-30; the claim is now made only when it is true.
     std::cout << "WORKSPACE MINIDB: hydrated '" << name << "' FROM THE MEMO: "
-              << files << " file(s), " << bytes << " B in " << ms
-              << " ms (zero disk reads)\n";
+              << files << " file(s), " << bytes << " B in " << ms << " ms";
+    if (sidecar_bytes == 0) {
+        std::cout << " (read from the memo, nothing touched a disk)\n";
+    } else {
+        std::cout << "\n  " << ram_bytes << " B into the RAM disk, "
+                  << sidecar_bytes << " B of memo sidecar(s) onto REAL DISK"
+                     " under the mount dir -- the DTX layer bypasses the VFS,"
+                     " so those bytes are not RAM-resident and VDISK does not"
+                     " count them.\n";
+    }
     return true;
 }
 

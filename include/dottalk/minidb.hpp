@@ -65,12 +65,47 @@ struct Member {
     std::size_t length = 0;
 };
 
+// THE ONE DEFINITION OF WHICH MEMBERS BYPASS THE VFS. Added 2026-08-30.
+//
+// Memo sidecars are written to the REAL filesystem by materialize(), not into
+// xbase::ramfs. That branch used to be a three-extension literal inside
+// materialize() and nothing else in the tree knew about it -- which is how the
+// hydration budget came to compare VFS-only bytes against VFS-plus-disk bytes
+// (see ram_file_bytes below). Two copies of "which members bypass" is two
+// answers to one question, which is R5's definition of the defect, so there is
+// now exactly one and both the scanner and the writer call it.
+//
+// NOT A GUESS AT INTENT: the list is the one materialize() has always used.
+// Widening it is a behaviour change and belongs to whoever rules on ramfs memo
+// coverage, at which point this predicate returns false for everything and the
+// split collapses on its own.
+inline bool is_memo_sidecar(std::string_view relpath) noexcept {
+    const std::size_t dot = relpath.rfind('.');
+    if (dot == std::string_view::npos) return false;
+    std::string ext(relpath.substr(dot));
+    for (char& c : ext) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    return ext == ".dtx" || ext == ".dbt" || ext == ".fpt";
+}
+
 struct Scan {
     bool ok = false;
     std::string error;                          // set when !ok
     std::string posture;                        // the DTSHEMA text the container carries
     std::vector<Member> files;
-    std::uint64_t total_file_bytes = 0;         // EST_HYD_B: what hydration will cost
+
+    // THREE TOTALS, AND THE POINT IS THAT THEY ANSWER DIFFERENT QUESTIONS.
+    // total_file_bytes is every FILE member -- the honest size of what
+    // hydration materialises, and what EST_HYD_B stores. It is EXACT as a
+    // total and it is the WRONG INPUT TO A RAM BUDGET, because sidecars in it
+    // never touch RAM. Measured 2026-08-30 on a two-level container: 3,376 B
+    // reached the VFS, 25,104 B reached the disk, 28,480 B total -- and the
+    // admission check was comparing that 28,480 against a RAM budget, an 8.4x
+    // over-statement that errs TOWARDS refusing a hydration which would have
+    // fit. ram_file_bytes is the number a RAM budget wants.
+    std::uint64_t total_file_bytes = 0;         // EST_HYD_B: everything materialised
+    std::uint64_t ram_file_bytes = 0;           // what actually lands in the VFS
+    std::uint64_t sidecar_file_bytes = 0;       // what bypasses it onto real disk
+
     std::vector<std::string> ignored_sections;  // unknown section lines, verbatim
 };
 
@@ -145,6 +180,10 @@ inline Scan scan(const std::string& payload) {
             }
             r.files.push_back(Member{rel, pos, len});
             r.total_file_bytes += len;
+            // Split at scan time, from the same predicate the writer uses, so
+            // the budget can be asked before a byte is written -- which is the
+            // whole reason this scanner exists as a separate pass.
+            (is_memo_sidecar(rel) ? r.sidecar_file_bytes : r.ram_file_bytes) += len;
             pos += len;
         } else {
             // Faithful to the original loop: an unknown section is reported and

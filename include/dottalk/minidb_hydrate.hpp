@@ -45,7 +45,15 @@ struct MaterializeResult {
     bool ok = false;
     std::string error;                    // set when !ok
     std::size_t files = 0;
-    std::uint64_t bytes = 0;
+    std::uint64_t bytes = 0;              // every member written, RAM and disk
+
+    // REPORTED SEPARATELY BECAUSE THEY WENT TO DIFFERENT PLACES. Until
+    // 2026-08-30 the caller printed `bytes` under the words "zero disk reads",
+    // one line after this function had written some of them to a disk. The
+    // split is not new information -- it is the branch below, finally counted.
+    std::uint64_t ram_bytes = 0;          // landed in xbase::ramfs
+    std::uint64_t sidecar_bytes = 0;      // landed on the real filesystem
+
     std::vector<std::string> notes;       // non-fatal remarks, caller may print
 };
 
@@ -87,9 +95,10 @@ inline MaterializeResult materialize(const std::string& payload,
             ? ram_index_root / std::filesystem::path(rel.substr(8))
             : ram_root / std::filesystem::path(rel);
 
-        std::string ext = dst.extension().string();
-        for (char& ch : ext) ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
-        const bool memo_sidecar = (ext == ".dtx" || ext == ".dbt" || ext == ".fpt");
+        // ONE predicate, shared with the scanner (minidb.hpp). It used to be a
+        // three-extension literal here and nowhere else, so the budget upstream
+        // could not know this branch existed.
+        const bool memo_sidecar = is_memo_sidecar(rel);
 
         if (memo_sidecar) {
             std::error_code ec;
@@ -114,6 +123,7 @@ inline MaterializeResult materialize(const std::string& payload,
         }
         ++r.files;
         r.bytes += member.length;
+        (memo_sidecar ? r.sidecar_bytes : r.ram_bytes) += member.length;
     }
     r.ok = true;
     return r;
