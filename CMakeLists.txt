@@ -581,7 +581,14 @@ if (DOTTALK_BUILD_BBSD AND NOT TARGET dottalk_bbsd)
         ${_bbsd_identity} ${_bbsd_bbs} ${_bbsd_sec} ${_bbsd_self} ${_bbsd_cdx}
         "${CMAKE_SOURCE_DIR}/src/common/path_state.cpp"
         "${CMAKE_SOURCE_DIR}/src/common/path_resolver.cpp"
-        "${CMAKE_SOURCE_DIR}/src/core/fields_mgr.cpp"   # fields::findFieldCI (free fn)
+        # fields::findFieldCI came from src/core/fields_mgr.cpp until 2026-08-30, when the
+        # file moved to src/xbase/ to sit beside the header that already declared it
+        # (include/xbase/fields.hpp). It is now an xbase.lib member and dottalk_bbsd
+        # links xbase below, so listing the source here would compile a SECOND copy into
+        # this executable -- and an exe's own object silently wins over the static-library
+        # member. That is the AIF-043 shape exactly. NOTE: src/CMakeLists.txt's
+        # duplicate-basename shadow guard checks DOTTALKPP_SOURCES only and would NOT
+        # have caught it here.
     )
     target_include_directories(dottalk_bbsd PRIVATE "${CMAKE_SOURCE_DIR}/include")
     target_compile_features(dottalk_bbsd PRIVATE cxx_std_20)
