@@ -12365,6 +12365,11 @@ const std::vector<MessageTextDef>& all_message_texts()
         { MessageId::HelpTopLevelHint,         "it", "Digitare HELP GIANT, HELP BETA, HELP PS, HELP SQL, HELP FUNCTION <name> oppure HELP <command>" },
         { MessageId::CmdHelpCurrentLoadFailed, "it", "impossibile caricare le righe HELP DATA correnti da \"{dir}\"." },
         { MessageId::CmdHelpBuildTip,          "it", "Suggerimento: eseguire CMDHELP BUILD . <source-root>" },
+        { MessageId::SetPathUsageText, "it", "Uso:\n  SETPATH\n  SETPATH USAGE\n  SETPATH RESET\n  SETPATH <slot> [TO|=] <path>\n  SET PATH <slot> [TO|=] <path>\n  SET PATH <slot> [TO|=] <path> IN <ws-or-handle>\nSlot:\n  DATA DBF XDBF INDEXES LMDB WORKSPACES SCHEMAS PROJECTS SCRIPTS TESTS HELP LOGS TMP\nNote:\n  DBF, INDEXES e LMDB si legano allo spazio di lavoro CORRENTE (R131); WORKSPACE SWITCH li ripristina.\n  IN <ws-or-handle> lega quei tre a uno spazio di lavoro DENOMINATO e lascia invariati gli slot della sessione." },
+        { MessageId::SetPathResetText, "it", "ripristinato ai valori predefiniti." },
+        { MessageId::SetPathUnknownSlotText, "it", "slot sconosciuto: {slot}" },
+        { MessageId::SetPathWarnMissingText, "it", "avviso: il percorso non esiste" },
+        { MessageId::SetPathWarnExpectedDirectoryText, "it", "avviso: atteso una directory, trovato un file" },
         { MessageId::CmdHelpNoTopicMatched,    "it", "nessun argomento HELP DATA corrente corrisponde a \"{topic}\"." },
         { MessageId::CmdHelpSummaryTip,        "it", "Suggerimento: eseguire CMDHELP senza argomenti per un riepilogo HELP DATA." },
         { MessageId::CmdHelpCurrentBuildWritten, "it", "CMDHELP ha scritto HELP DATA corrente -> {dir}" },
@@ -12433,6 +12438,11 @@ const std::vector<MessageTextDef>& all_message_texts()
         { MessageId::HelpTopLevelHint,         "es", "Escriba HELP GIANT, HELP BETA, HELP PS, HELP SQL, HELP FUNCTION <name> o HELP <command>" },
         { MessageId::CmdHelpCurrentLoadFailed, "es", "no se pudieron cargar las lineas actuales de HELP DATA desde \"{dir}\"." },
         { MessageId::CmdHelpBuildTip,          "es", "Sugerencia: ejecute CMDHELP BUILD . <source-root>" },
+        { MessageId::SetPathUsageText, "es", "Uso:\n  SETPATH\n  SETPATH USAGE\n  SETPATH RESET\n  SETPATH <slot> [TO|=] <path>\n  SET PATH <slot> [TO|=] <path>\n  SET PATH <slot> [TO|=] <path> IN <ws-or-handle>\nSlots:\n  DATA DBF XDBF INDEXES LMDB WORKSPACES SCHEMAS PROJECTS SCRIPTS TESTS HELP LOGS TMP\nNotas:\n  DBF, INDEXES y LMDB se vinculan al espacio de trabajo ACTUAL (R131); WORKSPACE SWITCH los restaura.\n  IN <ws-or-handle> vincula esos tres a un espacio de trabajo NOMBRADO y deja intactos los slots de la sesion." },
+        { MessageId::SetPathResetText, "es", "restablecido a los valores predeterminados." },
+        { MessageId::SetPathUnknownSlotText, "es", "slot desconocido: {slot}" },
+        { MessageId::SetPathWarnMissingText, "es", "advertencia: la ruta no existe" },
+        { MessageId::SetPathWarnExpectedDirectoryText, "es", "advertencia: se esperaba un directorio, se encontro un archivo" },
         { MessageId::CmdHelpNoTopicMatched,    "es", "ningun tema actual de HELP DATA coincide con \"{topic}\"." },
         { MessageId::CmdHelpSummaryTip,        "es", "Sugerencia: ejecute CMDHELP sin argumentos para un resumen de HELP DATA." },
         { MessageId::CmdHelpCurrentBuildWritten, "es", "CMDHELP escribio HELP DATA actual -> {dir}" },
@@ -12501,6 +12511,11 @@ const std::vector<MessageTextDef>& all_message_texts()
         { MessageId::HelpTopLevelHint,         "fr", "Tapez HELP GIANT, HELP BETA, HELP PS, HELP SQL, HELP FUNCTION <name> ou HELP <command>" },
         { MessageId::CmdHelpCurrentLoadFailed, "fr", "impossible de charger les lignes HELP DATA actuelles depuis \"{dir}\"." },
         { MessageId::CmdHelpBuildTip,          "fr", "Conseil : executez CMDHELP BUILD . <source-root>" },
+        { MessageId::SetPathUsageText, "fr", "Utilisation:\n  SETPATH\n  SETPATH USAGE\n  SETPATH RESET\n  SETPATH <slot> [TO|=] <path>\n  SET PATH <slot> [TO|=] <path>\n  SET PATH <slot> [TO|=] <path> IN <ws-or-handle>\nEmplacements:\n  DATA DBF XDBF INDEXES LMDB WORKSPACES SCHEMAS PROJECTS SCRIPTS TESTS HELP LOGS TMP\nRemarques:\n  DBF, INDEXES et LMDB sont lies a l'espace de travail COURANT (R131) ; WORKSPACE SWITCH les restaure.\n  IN <ws-or-handle> lie ces trois a un espace de travail NOMME et laisse les emplacements de la session inchanges." },
+        { MessageId::SetPathResetText, "fr", "reinitialise aux valeurs par defaut." },
+        { MessageId::SetPathUnknownSlotText, "fr", "emplacement inconnu : {slot}" },
+        { MessageId::SetPathWarnMissingText, "fr", "avertissement : le chemin n'existe pas" },
+        { MessageId::SetPathWarnExpectedDirectoryText, "fr", "avertissement : repertoire attendu, fichier trouve" },
         { MessageId::CmdHelpNoTopicMatched,    "fr", "aucun sujet HELP DATA actuel ne correspond a \"{topic}\"." },
         { MessageId::CmdHelpSummaryTip,        "fr", "Conseil : executez CMDHELP sans arguments pour un resume HELP DATA." },
         { MessageId::CmdHelpCurrentBuildWritten, "fr", "CMDHELP a ecrit HELP DATA courant -> {dir}" },
@@ -12569,6 +12584,11 @@ const std::vector<MessageTextDef>& all_message_texts()
         ,{ MessageId::HelpTopLevelHint,         "de", "Geben Sie HELP GIANT, HELP BETA, HELP PS, HELP SQL, HELP FUNCTION <name> oder HELP <command> ein" }
         ,{ MessageId::CmdHelpCurrentLoadFailed, "de", "Aktuelle HELP-DATA-Zeilen aus \"{dir}\" konnten nicht geladen werden." }
         ,{ MessageId::CmdHelpBuildTip,          "de", "Hinweis: Fuehren Sie CMDHELP BUILD . <source-root> aus" }
+        ,{ MessageId::SetPathUsageText, "de", "Verwendung:\n  SETPATH\n  SETPATH USAGE\n  SETPATH RESET\n  SETPATH <slot> [TO|=] <path>\n  SET PATH <slot> [TO|=] <path>\n  SET PATH <slot> [TO|=] <path> IN <ws-or-handle>\nSlots:\n  DATA DBF XDBF INDEXES LMDB WORKSPACES SCHEMAS PROJECTS SCRIPTS TESTS HELP LOGS TMP\nHinweise:\n  DBF, INDEXES und LMDB sind an den AKTUELLEN Arbeitsbereich gebunden (R131); WORKSPACE SWITCH stellt sie wieder her.\n  IN <ws-or-handle> bindet diese drei an einen BENANNTEN Arbeitsbereich und laesst die Sitzungs-Slots unveraendert." }
+        ,{ MessageId::SetPathResetText, "de", "auf Standardwerte zurueckgesetzt." }
+        ,{ MessageId::SetPathUnknownSlotText, "de", "unbekannter Slot: {slot}" }
+        ,{ MessageId::SetPathWarnMissingText, "de", "Warnung: Pfad existiert nicht" }
+        ,{ MessageId::SetPathWarnExpectedDirectoryText, "de", "Warnung: Verzeichnis erwartet, Datei gefunden" }
         ,{ MessageId::CmdHelpNoTopicMatched,    "de", "Kein aktuelles HELP-DATA-Thema stimmt mit \"{topic}\" ueberein." }
         ,{ MessageId::CmdHelpSummaryTip,        "de", "Hinweis: Fuehren Sie CMDHELP ohne Argumente fuer eine HELP-DATA-Zusammenfassung aus." }
         ,{ MessageId::CmdHelpCurrentBuildWritten, "de", "CMDHELP hat aktuelle HELP DATA geschrieben -> {dir}" }
