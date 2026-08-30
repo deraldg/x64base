@@ -589,6 +589,20 @@ if (DOTTALK_BUILD_BBSD AND NOT TARGET dottalk_bbsd)
         # member. That is the AIF-043 shape exactly. NOTE: src/CMakeLists.txt's
         # duplicate-basename shadow guard checks DOTTALKPP_SOURCES only and would NOT
         # have caught it here.
+        #
+        # VERIFIED 2026-08-30, and it had to be done BY NAME:
+        #   cmake --build build --config Release --target dottalk_bbsd
+        # links clean, so fields::findFieldCI resolves out of xbase.lib. A first attempt
+        # failed LNK1104 -- cannot open the OUTPUT file -- because THE DAEMON WAS RUNNING
+        # and holding its own exe; the owner stopped it and the retry linked without
+        # recompiling. An unresolved symbol would have been LNK2019, so the error CODE is
+        # what said the change was not the cause. Worth knowing before the next rebuild:
+        # this target is a long-running daemon, so a locked exe is a RECURRING condition
+        # here and not a flake -- stop it first.
+        #
+        # WHY BY NAME: build.ps1 builds SEVEN targets and dottalk_bbsd is not one of them,
+        # though DOTTALK_BUILD_BBSD defaults ON. A change that breaks this executable
+        # therefore passes the house build in silence. Raised as OI-022.
     )
     target_include_directories(dottalk_bbsd PRIVATE "${CMAKE_SOURCE_DIR}/include")
     target_compile_features(dottalk_bbsd PRIVATE cxx_std_20)
