@@ -62,18 +62,83 @@ def ensure_dirs(root: Path):
 
 
 def git_committed_aifs(root: Path):
+    """AIF numbers cited in COMMITTED prose. The only source that carries a
+    number CITED BUT NOT ROWED -- working_tree_aifs() is row-anchored and
+    claimed_aifs() reads the claim directory, so a number like AIF-043 (cited
+    in other rows' Notes, no row of its own, no claim file) exists HERE OR
+    NOWHERE.
+
+    THIS FUNCTION FAILED SILENTLY ON WINDOWS AND HANDED OUT A LIVE NUMBER.
+    Measured 2026-08-30, same repository, same minute, two interpreters:
+
+        Linux   git_committed 154 entries -> lowest free AIF-150
+        Windows git_committed   0 entries -> lowest free AIF-043
+
+    `text=True` decodes with the LOCALE codec -- UTF-8 on Linux, cp1252 on
+    Windows -- and one byte in docs/ (0x81 at offset 338792) raised
+    UnicodeDecodeError, which `except Exception: return set()` turned into "the
+    repository contains no committed AIF citations." The universe silently lost
+    its only source for cited-but-unrowed numbers, AIF-043 became the lowest
+    gap, and the allocator issued a number belonging to the live ramfs/VDISK
+    lane. THIRD OCCURRENCE: 2026-08-26 twice (see AIF-132 and AIF-134 rows),
+    2026-08-30 once.
+
+    TWO REPAIRS, AND THE SECOND MATTERS MORE THAN THE FIRST:
+
+      1. Decode EXPLICITLY as utf-8 with errors="replace". The corpus is
+         utf-8; a replacement character in a prose scan costs nothing, because
+         the regex matches ASCII digits.
+      2. DO NOT SWALLOW THE FAILURE. A scan that cannot read its authority
+         must SAY SO. Returning an empty set is indistinguishable from a
+         genuinely empty corpus, which is the AIF-118 shape -- one answer for
+         "broken" and for "fine" -- inside the tool whose whole job is to
+         prevent collisions. next_aif.py already holds the right posture:
+         "REFUSING: found zero AIF numbers in either source. That is far more
+         likely to be a broken path than an empty project."
+
+    NOT CHANGED HERE, AND IT NEEDS A RULING: the allocation rule itself.
+    claim_aif() takes the LOWEST FREE number; next_aif.py takes max+1 and says
+    gaps are never reusable. They are not interchangeable, because THE TWO
+    TOOLS DO NOT SHARE A UNIVERSE -- this function greps all of docs/, so
+    R126's allocator-range examples (AIF-998/999/1000/999999) are in scope and
+    max+1 over THIS universe yields AIF-1000000. Measured 2026-08-30. AIF-135
+    is the lane for that decision.
+    """
     try:
         out = subprocess.check_output(
             # -hE not -hoE: grep returns LINES and the Python pattern below is the
             # single extractor, so the brace-shorthand rule lives in exactly one
             # place. POSIX ERE cannot express the negative lookahead at all.
             ["git", "-C", str(root), "grep", "-hE", r"AIF-[0-9]+", "HEAD", "--", "docs", "AI_PORTAL.md"],
-            text=True, stderr=subprocess.DEVNULL)
-        # Prose scan -> honours id-cite:ignore. working_tree_aifs() below is
-        # row-anchored (a DECLARATION) and deliberately does not.
-        return set(re.findall(r"\bAIF-0*([0-9]+)\b(?!\{)", idcite.live_text(out)))
-    except Exception:
+            # Explicit codec: never the locale's. See the docstring.
+            encoding="utf-8", errors="replace", stderr=subprocess.DEVNULL)
+    except subprocess.CalledProcessError as e:
+        # EXIT 1 IS AN ANSWER, NOT A FAILURE: git grep exits 1 when it matches
+        # nothing. Empty is honest here.
+        if e.returncode == 1:
+            return set()
+        # EXIT 128 is "not a repository" / "bad revision". Legitimate off a
+        # checkout -- the unit tests build temp roots with no git at all -- so
+        # empty is honest, but it is ANNOUNCED. The defect this function
+        # carried was not the empty set; it was the SILENCE around it.
+        print(f"WARNING: git grep could not scan committed AIF citations "
+              f"(exit {e.returncode}); allocator is running on claims and rows only",
+              file=sys.stderr)
         return set()
+    except FileNotFoundError:
+        print("WARNING: git not found; allocator is running on claims and rows only",
+              file=sys.stderr)
+        return set()
+    except Exception as e:
+        # ANYTHING ELSE MEANS GIT SPOKE AND WE COULD NOT HEAR IT. That is the
+        # 2026-08-30 defect exactly, and it must never again be indistinguishable
+        # from an empty corpus.
+        raise RuntimeError(
+            f"could not read committed AIF citations: {e.__class__.__name__}: {e}"
+        ) from e
+    # Prose scan -> honours id-cite:ignore. working_tree_aifs() below is
+    # row-anchored (a DECLARATION) and deliberately does not.
+    return set(re.findall(r"\bAIF-0*([0-9]+)\b(?!\{)", idcite.live_text(out)))
 
 
 def working_tree_aifs(root: Path):
