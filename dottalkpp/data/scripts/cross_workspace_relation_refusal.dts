@@ -160,7 +160,17 @@ FORMULA "XWSREL-T2-END"
 * The bare `if (!child) continue;` was never a missing USE fix -- it was
 * silence over a state the language deliberately allows. G2 proves the edge was live one
 * statement before the swap, so an empty T3 can never be blamed on a dead
-* fixture.
+* fixture.*
+* MEASURED ON THE RUN THAT PROVED IT, AND IT PRINTS TWICE ON PURPOSE. The
+* transcript carries the skip line ONCE BEFORE `XWSREL-T3-BEGIN` and once
+* inside it. That is not the latch spamming: `SELECT xwsap` performs its own
+* autorefresh (g_autorefresh defaults true) and trips the latch in its own
+* cycle, then `REL REFRESH` clears the latch at command dispatch and trips it
+* again inside the block. The read rule is unaffected -- the block MUST CONTAIN
+* the line and does -- and the arm is deliberately NOT rearranged to hide the
+* first one. A spec that tidied its own transcript would be teaching the next
+* reader that SELECT does not refresh, which is false and would cost them the
+* same twenty minutes it nearly cost here.
 SELECT xwsap
 GO 2
 REL REFRESH

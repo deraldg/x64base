@@ -178,11 +178,16 @@ static void note_depth_truncated(const char* where) {
 // position computable: you know exactly which edge did not propagate and why.
 //
 // This is also the answer to the obvious "fix" -- teaching USE to clear
-// relations the way CLOSE does. Ruled the same day: USE STAYS A CURSOR
-// OPERATION ("you set your cursor -- use -- and return if you must"). Hiding
-// the state would make USE's effect depend on graph state the operator cannot
-// see from the command, which costs determinacy at the other end. So the state
-// is legitimate and the announcement is the whole treatment.
+// relations the way CLOSE does. Ruled the same day, and the owner's word for it
+// is stronger than "cursor operation": USE IS AN ATOM. "you set your cursor --
+// use -- and return if you must", and "it should be the job of the relations
+// managers to worry about multiple ws relations." Indivisible: no bookkeeping,
+// no conditional side effects, nothing the operator cannot predict from the
+// command alone. THAT IS WHAT MAKES POSITION COMPUTABLE AT THIS END -- an atom
+// whose effect depended on graph state the operator cannot see from the command
+// would cost the determinacy this latch is protecting at the other end. So the
+// state is legitimate, the announcement is the whole treatment, and the concern
+// belongs to the relation managers rather than to USE.
 //
 // A SKIPPED EDGE IS NEITHER A DEPTH TRIP NOR A SCAN TRIP: it is a child the
 // SCOPED resolver could not see. It trips the same latch because it means the
