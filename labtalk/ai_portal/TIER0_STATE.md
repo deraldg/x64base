@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-08-30T18:27:35Z
+    generated_utc : 2026-08-30T18:49:43Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,9 +11,9 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : 939e6f5ee  (2026-08-30)
-    upstream      : c7c94e186
-    unpushed      : 28 commit(s) ahead of upstream
+    HEAD          : a83d8f9e2  (2026-08-30)
+    upstream      : a83d8f9e2
+    unpushed      : 0 commit(s) ahead of upstream
 
 ## Declared target
 
@@ -23,17 +23,17 @@ cannot drift, because nothing here is written by hand.
 ## Newest closeout
 
     file          : SESSION_CLOSEOUT_PATH_LADDERS_AND_TRAVERSAL_SURFACES_2026-08-28.md
-    commits behind HEAD : 79
+    commits behind HEAD : 80
 
 ## Staleness warnings
 
-- The newest closeout is 79 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
-- 28 commit(s) are unpushed and invisible to a clone.
+- The newest closeout is 80 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
 
 ## Claimed lanes (newest first)
 
 | AIF | lane | steward | intake row |
 | --- | --- | --- | --- |
+| AIF-149 | set-relation-crossing-workspaces | member.ai.claude.cowork | yes |
 | AIF-148 | hasorder-conflates-container-with-active-order | member.ai.claude.cowork | yes |
 | AIF-147 | relation-traversal-surface-asymmetry | member.ai.claude.cowork | yes |
 | AIF-145 | path-resolution-ladder-divergence | member.ai.claude.cowork | yes |
@@ -45,8 +45,7 @@ cannot drift, because nothing here is written by hand.
 | AIF-139 | R112's migration gate is unassertable: sec 6a admits first-wins-plus-warning only as an instrumented phase whose counter must reach a measured zero, but ambiguity_count() has no DTS-visible reader -- cmd_workspace.cpp only PRINTS it -- and rel_name_ambiguity_regression.dts, which calls itself the tripwire for AIF-078 stage 4, runs WORKSPACE REGISTRY between two FORMULA markers with nothing checking. The comment at cmd_workspace.cpp:4736 claims the count is 'a FIELD of the registry, assertable by a spec' and no such reader exists. The tripwire fired on 2026-08-27 and no spec in the suite would have caught it | member.ai.claude.cowork | yes |
 | AIF-138 | Engine::_current cannot express 'nothing selected': slot 0 means area 0, the startup position (shell.cpp:528 selectArea(0)), and 'no engine' (workareas.hpp:120 'if (!eng) return 0'). Absent is spelled with a present value (R6), and the no-engine fallback is the AIF-118 shape sitting in the accessor infer_parent_from_workarea() calls. Predates multi-workspace; R129 sec 6.1 makes an empty workspace a legal position and so makes it reachable | member.ai.claude.cowork | yes |
 | AIF-137 | The relation STORE is partitioned by workspace (AIF-078 I1.2) but the relation PARENT is not -- current_parent_override() is one global string and current_parent_name()/refresh_from_parent_name() resolve through the unscoped find_open_area_by_name_ci, so a refresh standing in one workspace reads another workspace's area; measured live 2026-08-27 with an EMPTY relation store, so it needs no SET RELATION to occur | member.ai.claude.cowork | yes |
-| AIF-136 | AI Portal frontal-memory tiering, document consolidation, long-term storage, retrieval, and governed retention lifecycle | member.ai.codex | yes |
-| ... | 67 older claims omitted | | |
+| ... | 68 older claims omitted | | |
 
 ## Sessions, lineage, asides
 
@@ -63,6 +62,7 @@ parent + born_utc from the durable lineage ledger, '-' until a run wakes.
 
 | run | member | parent | born_utc | asides |
 | --- | --- | --- | --- | --- |
+| COWORK-20260830-001 | member.ai.claude.cowork | - | - | AIF-149 |
 | COWORK-20260829-001 | member.ai.claude.cowork | - | - | AIF-148 |
 | COWORK-20260827-001 | member.ai.claude.cowork | - | - | AIF-137 -> AIF-138 -> AIF-139 -> AIF-140 -> AIF-141 -> AIF-142 ... |
 | CODEX-20260826-014 | member.ai.codex | - | - | AIF-135 -> AIF-136 |
@@ -70,8 +70,7 @@ parent + born_utc from the durable lineage ledger, '-' until a run wakes.
 | COWORK-20260825-001 | member.ai.claude.cowork | - | - | AIF-128 -> AIF-129 -> AIF-130 -> AIF-131 -> AIF-133 |
 | CODEX-20260826-001 | member.ai.codex | - | - | AIF-132 |
 | COWORK-20260824-001 | member.ai.claude.cowork | - | - | AIF-123 -> AIF-124 -> AIF-125 -> AIF-126 -> AIF-127 |
-| COWORK-20260822-001 | member.ai.claude.cowork | - | - | AIF-121 -> AIF-122 |
-| ... | | | | 40 older run(s) omitted |
+| ... | | | | 41 older run(s) omitted |
 
 Perishable detail lives in the artifacts these point at. Do not
 restate anything above; regenerate it.
