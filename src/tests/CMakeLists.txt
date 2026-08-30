@@ -261,6 +261,14 @@ if(TARGET xbase)
     ${CMAKE_SOURCE_DIR}/src/cli/workarea_util.cpp
     ${CMAKE_SOURCE_DIR}/src/cli/workareas.cpp
     ${CMAKE_SOURCE_DIR}/src/cli/workareas_engine_bridge.cpp
+    # R131 (2026-08-29): workarea_util.cpp gained workspace_roots_apply_to_slots,
+    # which calls dottalk::paths::get_slot/set_slot -- defined in path_state.cpp.
+    # This target compiles workarea_util.cpp directly and links only xbase+memo,
+    # so it went to LNK2019 the first time anything built ALL the targets. The
+    # GUI closure already pairs these two files (gui/uidef/CMakeLists.txt); this
+    # is the one place the pairing was missing. path_state.cpp is self-contained
+    # (its own header plus std), so it drags nothing else in.
+    ${CMAKE_SOURCE_DIR}/src/common/path_state.cpp
   )
   target_link_libraries(dottalkpp_area_alloc_test PRIVATE xbase memo)
   target_include_directories(dottalkpp_area_alloc_test PRIVATE
