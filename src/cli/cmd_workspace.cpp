@@ -241,17 +241,26 @@
 //   what a reader consults first. Kept on the record rather than deleted,
 //   because a reader who remembers the old behaviour needs to know when it
 //   stopped being true.
-//   NOT MEASURED, AND NAMED SO IT IS NOT ASSUMED EITHER WAY: whether SET
-//   RELATION can be ISSUED ACROSS workspaces -- parent in one, child in
-//   another. If it can, the edge files under the CURRENT workspace's map while
-//   pointing at an area another workspace owns, and closing that other
-//   workspace would leave it dangling. The scoping argument at the close path
-//   assumes edges do not cross ("the set of areas this close emptied is exactly
-//   the closed workspaces' members, so clearing exactly those workspaces' maps
-//   leaves nothing dangling"), and that assumption has not been tested. Raised
-//   by the owner 2026-08-30 asking whether links spanning workspaces survive a
-//   save; they cannot be lost by a save, because a relation belongs to one
-//   workspace -- but whether one can be MADE to span is a separate question.
+//   AN EDGE CANNOT CROSS WORKSPACES TODAY, MEASURED 2026-08-30, AND THE
+//   PARAGRAPH THAT STOOD HERE SAID THE OPPOSITE. It warned that a crossed edge
+//   could dangle and that the scoping argument above was therefore untested.
+//   Both halves were wrong. add_relation() (set_relations.cpp:608) resolves
+//   BOTH endpoints with find_open_area_in_workspace_ci(..., current_handle())
+//   and refuses if either is absent, so a cross-workspace edge is never
+//   created -- and THE SCOPING ARGUMENT ABOVE IS SOUND, not merely untested.
+//   CROSSING IS INTENDED AND NOT YET BUILT (owner ruling 2026-08-30: "set
+//   relation can cross workspace, we just have told x64base it has the
+//   tools"). The tools are named future work, not live capability:
+//   set_relations.cpp:498 charters "the wider split of
+//   find_open_area_by_name_ci into scoped / given-handle / EXPLICIT-CROSS
+//   across its 36 call sites. That is its own lane." That lane is AIF-149.
+//   TWO SILENCES SIT ON THE WAY THERE, and they are the useful part:
+//     - add_relation answers RelDiagAddFailedNotOpen -- "not open" -- for a
+//       child that IS open, in another workspace. The same words for "does not
+//       exist" and "exists elsewhere". AIF-118's shape; AIF-147 recorded the
+//       sibling, a correct refusal delivered as an internal error.
+//     - refresh_from_parent_name does `if (!child) continue;`, so an edge that
+//       did span would be skipped by traversal without a word.
 //   RETIREMENT AND REMOVAL ARE TWO DIFFERENT VERBS AND THE DIFFERENCE IS THE
 //   WHOLE DESIGN (added to this block 2026-08-28 -- see the drift note below).
 //   WORKSPACE DESTROY <name> RETIRES a durable identity: it supersedes the
