@@ -46,6 +46,43 @@ from which active development is reconstructed wholesale.
    lane. Neither lane authorizes a blanket copy or development-to-main merge.
 9. Branch creation, commit, push, merge, reset, cleaning, or publication still
    requires explicit maintainer authorization for the current task.
+10. A tag pushed from `D:\code\ccode` names a commit on `development` and
+    nothing else. It is a marker, not a promotion: it moves no branch, publishes
+    no artifact, and does not put `development` content behind `main`'s name.
+    Rules 3 to 8 are unaffected by it, and cutting a GitHub RELEASE is NOT
+    covered by this rule -- a release is a publication act and goes through the
+    staging workflow like any other.
+
+## Tag Convention
+
+**Added 2026-08-30, because the contract's silence was being read as an answer.**
+Rules 3 and 4 govern `refs/heads/*` and this document said NOTHING about
+`refs/tags/*`. That silence is not permission and it is not prohibition; it was
+a gap, and a gap in a contract gets filled by whoever guesses next.
+
+**MEASURED BEFORE WRITING THIS.** Ten tags exist in FOUR naming styles --
+`alpha-v3`, `alpha-5.0`, `v4.2-alpha`, `v0.5.0` -- with no document naming a
+rule. That is the same defect the R-number register was created to end: a
+sequence several people numbered independently while nothing declared the
+convention. The newest tag is `homegrown-cnx-20251112`; the newest
+version-series tag is `v0.5.0`, dated 2025-09-06.
+
+1. **`vMAJOR.MINOR.PATCH` is the canonical series.** The other three styles are
+   history and stay where they are; nothing is renamed, because a tag someone
+   may have cloned against is an identity and renaming it is worse than an
+   inconsistent set.
+2. **The version comes from the version authority, not from a person.**
+   `CMakeLists.txt`'s `project(... VERSION ...)` is the single declaration that
+   `check-version-coherence` already enforces on every commit. A tag whose
+   number disagrees with it is a second answer to a settled question.
+3. **Tags are ANNOTATED, never lightweight.** A snapshot with no message is a
+   date and a hash, which is what the log already gives you. The message says
+   what the tree could do at that commit and what was still open.
+4. **A tag is cut from a CLEAN tree that is level with `origin/development`.**
+   A tag on unpushed or dirty state names a commit nobody else can fetch.
+5. **A tag is never moved once pushed.** If it named the wrong commit, cut a new
+   one and say why in its message. The same rule the AIF and R sequences carry:
+   an identity that changes meaning is worse than a gap.
 
 ## Required Preflight
 
