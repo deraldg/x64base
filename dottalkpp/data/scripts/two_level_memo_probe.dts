@@ -74,6 +74,27 @@
 * It also tripped the blind-USE shape: "already open in current area 0", because
 * LOAD had opened it -- correct here by luck, since that cursor is the RAM file.
 *
+* RUN 3, 2026-08-30, AGAINST THE REPAIRED BUILD (72318f58) -- AND IT FALSIFIED
+* THIS PROBE'S OWN PREDICTION FOR THE REASON THIS PROBE EXISTS TO REPORT.
+* The repair was predicted to print "3376 B into the RAM disk, 25104 B of memo
+* sidecar(s) onto REAL DISK". It printed 4782 and 58864. The STRUCTURE was
+* right and the NUMBERS were run 2's: the probe is not self-cleaning, so run 3
+* carries run 2's containers and the outer grew 28,859 -> 64,025 B. COMPOUNDING
+* INVALIDATED THE PREDICTION ABOUT COMPOUNDING. Growth by generation: 2.56x
+* then 2.22x.
+*
+* THE SPLIT IS EXACT, AND AN INDEPENDENT COUNTER AGREES.
+*     4,782 + 58,864 = 63,646  = the reported total and EST_HYD_B
+*     VDISK RAM bytes = 4,782  -- the VFS counted separately, to the byte
+*     data/ram/WORKSPACES.dtx  = 58,864 B on disk, likewise
+* Two counters that could disagree and do not. "zero disk reads" is gone; the
+* line now names where each half of the payload went.
+*
+* AND THE OLD DEFECT GOT WORSE EVERY GENERATION, which is the argument for
+* having fixed it rather than documented it: admission would have claimed
+* 63,646 B of RAM budget for 4,782 B actually resident -- 13.3x, up from 8.4x
+* one run earlier. 92% of this payload is not RAM-resident.
+*
 * Findings recorded in AIF-120 (grandfathered, R133), not given a number.
 *
 * SELF-ISOLATING. The WORKSPACES slot is re-pointed at a scratch root before
