@@ -107,6 +107,7 @@ owns it.
 | Who is working now | `session_coordinator.py status` | **stale entries common** |
 | Build and run | `AI_README.md`, Runtime Start Points / WSL | maintained |
 | Build and run **in a sandbox** | you CAN -- `CLAUDE.md`, Sandbox agents; `recall.py work_in_sandbox` | corrected 2026-08-26 |
+| A number for what you found | **usually you need none** -- R133: a subset of a lane that already owns the files is GRANDFATHERED; amend that row | ruled 2026-08-30 |
 | Your environment's versions | **measure** (`ldd --version`, `command -v cmake`) | never cite a doc |
 | Source layout | `AI_README.md`, Source Locations | maintained |
 

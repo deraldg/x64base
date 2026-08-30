@@ -358,7 +358,7 @@ standing on assertion alone.
 AIF-043 (in-memory tables) burned days on a symptom that read as impossible:
 `CREATE X64` wrote the table to disk while `USE`/open read it back from RAM — same
 engine, same path string, same in-process registry, opposite results. The root
-cause was a *second* `create_dbf`: a stale `src/core/dbf_create.cpp` duplicating
+cause was a *second* `create_dbf`: a stale `src/core/dbf_create.cpp` duplicating <!-- cite-check:ignore -->
 `src/xbase/dbf_create.cpp`. Both defined the same symbol. The CLI glob compiled the
 `src/core` copy into the executable, and at link **an executable's own object
 silently wins over a static-library member**, so the exe ran the stale,
