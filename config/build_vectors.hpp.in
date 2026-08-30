@@ -18,6 +18,20 @@ inline constexpr std::size_t   max_fields             = @DOTTALK_MAX_FIELDS@;
 inline constexpr std::uint64_t max_rows               = @DOTTALK_MAX_ROWS@ull;
 inline constexpr std::size_t   legacy_max_index_slots = @DOTTALK_LEGACY_MAX_INDEX_SLOTS@;
 
+// TRAVERSAL DEPTH CAPS -- engine policy, so they are vectored. The doctrine at
+// the top of this file decides it: format geometry is fixed, acceptance and
+// creation policy is vectored, and a cap on how deep a walk goes is policy.
+// Owner 2026-08-30, on finding the relation cap hardcoded twice in
+// set_relations.cpp: "the 24 is an arbitrary limit we surmized for testing
+// safety, it should be metadata like max_areas."
+//
+// TWO NAMES ON PURPOSE. The relation graph and the workspace nesting tree are
+// different structures over the same areas, and they have never shared a bound.
+// One name for two graphs is the count-discipline defect R126 ruled on: name
+// what is in a count, and say which question it answers.
+inline constexpr std::size_t   max_relation_depth     = @DOTTALK_MAX_RELATION_DEPTH@;
+inline constexpr std::size_t   max_workspace_depth    = @DOTTALK_MAX_WORKSPACE_DEPTH@;
+
 namespace x64 {
 inline constexpr std::uint64_t max_record_bytes      = @DOTTALK_X64_MAX_RECORD_BYTES@ull;
 inline constexpr std::uint64_t record_advisory_bytes = @DOTTALK_X64_RECORD_ADVISORY_BYTES@ull;
@@ -39,6 +53,8 @@ inline constexpr char prompt_char_default = '@DOTTALK_PROMPT_CHAR@';
 // C++-side guards: reject an impossible generated contract.
 static_assert(max_fields > 0, "build vector max_fields must be positive");
 static_assert(max_areas  > 0, "build vector max_areas must be positive");
+static_assert(max_relation_depth  > 0, "build vector max_relation_depth must be positive");
+static_assert(max_workspace_depth > 0, "build vector max_workspace_depth must be positive");
 static_assert(max_fields <= std::numeric_limits<std::uint32_t>::max(),
               "build vector max_fields must fit a 32-bit field index");
 static_assert(max_areas  <= std::numeric_limits<std::uint32_t>::max(),

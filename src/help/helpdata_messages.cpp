@@ -1810,6 +1810,14 @@ const std::vector<MessageDef>& all_messages()
             "add failed (parent/child not open)"
         },
         {
+            MessageId::RelDiagAddFailedOpenElsewhereText,
+            "REL_DIAG_ADD_FAILED_OPEN_ELSEWHERE_TEXT",
+            "SUBSYSTEM:REL",
+            "STATUS",
+            "INFO",
+            "add failed ({area} is open in workspace {workspace}, not the current one)"
+        },
+        {
             MessageId::RelDiagParentFieldNotFoundText,
             "REL_DIAG_PARENT_FIELD_NOT_FOUND_TEXT",
             "SUBSYSTEM:REL",
@@ -10032,6 +10040,7 @@ const std::vector<MessageTextDef>& all_message_texts()
         { MessageId::RelDiagAddFailedNoFieldsText, "en-US", "add failed (no fields provided)" },
         { MessageId::RelDiagAddFailedFieldCountMismatchText, "en-US", "add failed (parent/child field counts differ)" },
         { MessageId::RelDiagAddFailedNotOpenText, "en-US", "add failed (parent/child not open)" },
+        { MessageId::RelDiagAddFailedOpenElsewhereText, "en-US", "add failed ({area} is open in workspace {workspace}, not the current one)" },
         { MessageId::RelDiagParentFieldNotFoundText, "en-US", "parent field not found: {field}" },
         { MessageId::RelDiagChildFieldNotFoundText, "en-US", "child field not found: {field}" },
         { MessageId::RelDiagAddedText, "en-US", "{parent} -> {child} ON {fields}" },

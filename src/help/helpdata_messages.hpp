@@ -1368,7 +1368,11 @@ enum class MessageId {
     // enumerator renumbers -- the same rule the ADDTAG ids followed.
     DbareaOwningWorkspaceLineText,
     DbareaCurrentWorkspaceLineText,
-    GpsWorkspaceLineText
+    GpsWorkspaceLineText,
+    // 2026-08-30, AIF-149. "not open" and "open, but in another workspace" had
+    // ONE sentence between them, which is the AIF-118 shape at the exact place
+    // a reader asks where the boundary is. APPENDED, same rule as above.
+    RelDiagAddFailedOpenElsewhereText
 };
 
 struct MessageDef {

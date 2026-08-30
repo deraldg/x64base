@@ -241,16 +241,30 @@
 //   what a reader consults first. Kept on the record rather than deleted,
 //   because a reader who remembers the old behaviour needs to know when it
 //   stopped being true.
-//   AN EDGE CANNOT CROSS WORKSPACES TODAY, MEASURED 2026-08-30, AND THE
-//   PARAGRAPH THAT STOOD HERE SAID THE OPPOSITE. It warned that a crossed edge
-//   could dangle and that the scoping argument above was therefore untested.
-//   Both halves were wrong. add_relation() (set_relations.cpp:608) resolves
-//   BOTH endpoints with find_open_area_in_workspace_ci(..., current_handle())
-//   and refuses if either is absent, so a cross-workspace edge is never
-//   created -- and THE SCOPING ARGUMENT ABOVE IS SOUND, not merely untested.
-//   CROSSING IS INTENDED AND NOT YET BUILT (owner ruling 2026-08-30: "set
-//   relation can cross workspace, we just have told x64base it has the
-//   tools"). The tools are named future work, not live capability:
+//   NO EDGE CROSSES WORKSPACES TODAY, MEASURED 2026-08-30 -- AND THAT IS AN
+//   ARTIFACT, NOT A RULE. The paragraph that stood here first warned a crossed
+//   edge could dangle; the paragraph that REPLACED it over-corrected and said
+//   an edge "cannot" cross and the scoping argument was therefore SOUND.
+//   Corrected again 2026-08-30 on the owner's reading: "I don't think we are
+//   saying relations can't exist outside of workspace, even nested, I think we
+//   mean we haven't developed it yet, or decided whether to leave that gate
+//   open." NOTHING DECIDED THIS. add_relation() (set_relations.cpp:608)
+//   resolves both endpoints with find_open_area_in_workspace_ci(...,
+//   current_handle()), so an endpoint open in ANOTHER workspace is not
+//   REFUSED -- it is INVISIBLE, and the diagnostic then reports invisibility
+//   as absence. There is no gate here. There is a scoped lookup, and a message
+//   that misnames its own result.
+//   SO THE SCOPING ARGUMENT ABOVE IS CONDITIONAL, NOT PROVEN. It holds for
+//   exactly as long as that resolver stays scoped, which makes it a DEPENDENCY
+//   of the resolver-split lane rather than a fact that lane can ignore. Read
+//   this before widening find_open_area_by_name_ci: the close path's reasoning
+//   is downstream of a lookup nobody chose as a policy.
+//   CROSSING IS INTENDED AND UNDEVELOPED, AND WHETHER THE GATE STAYS OPEN IS
+//   ITSELF UNDECIDED (owner 2026-08-30: "set relation can cross workspace, we
+//   just have told x64base it has the tools", and "whether to leave that gate
+//   open for if I ever get help"). Undeveloped is not the same as forbidden,
+//   and writing a limitation as prose is how the second becomes readable as
+//   the first. The tools are named future work, not live capability:
 //   set_relations.cpp:498 charters "the wider split of
 //   find_open_area_by_name_ci into scoped / given-handle / EXPLICIT-CROSS
 //   across its 36 call sites. That is its own lane." That lane is AIF-149.

@@ -22,6 +22,8 @@ set(DOTTALK_X64_TABLE_NAME_MAX       "256"                 CACHE STRING "Greates
 set(DOTTALK_X64_FIELD_NAME_DEFAULT   "128"                 CACHE STRING "x64 field-name default length")
 set(DOTTALK_X64_FIELD_NAME_MAX       "256"                 CACHE STRING "Greatest x64 field name this build accepts")
 set(DOTTALK_TABLE_BUFFER_MAX_CHANGES "10000"               CACHE STRING "Maximum buffered changes per area")
+set(DOTTALK_MAX_RELATION_DEPTH       "24"                  CACHE STRING "Maximum relation-graph traversal depth")
+set(DOTTALK_MAX_WORKSPACE_DEPTH      "32"                  CACHE STRING "Maximum workspace-nesting traversal depth")
 set(DOTTALK_PROMPT_CHAR              "."                   CACHE STRING "Default interactive shell prompt character (single char; runtime-mutable)")
 
 # --- Validation: fail configuration early on invalid combinations. ---
@@ -35,6 +37,17 @@ if (DOTTALK_MAX_FIELDS LESS 1)
 endif()
 if (DOTTALK_LEGACY_MAX_INDEX_SLOTS LESS 1)
   message(FATAL_ERROR "build_vectors: DOTTALK_LEGACY_MAX_INDEX_SLOTS must be >= 1")
+endif()
+# TWO GRAPHS, TWO CAPS, DELIBERATELY NOT ONE NUMBER. The relation graph and the
+# workspace nesting tree are different structures over the same areas and they
+# have never shared a bound (24 and 32, measured 2026-08-30). Vectoring them
+# under one name would silently change one of them; naming them separately puts
+# the mismatch where a reader can see it and rule on it.
+if (DOTTALK_MAX_RELATION_DEPTH LESS 1)
+  message(FATAL_ERROR "build_vectors: DOTTALK_MAX_RELATION_DEPTH must be >= 1")
+endif()
+if (DOTTALK_MAX_WORKSPACE_DEPTH LESS 1)
+  message(FATAL_ERROR "build_vectors: DOTTALK_MAX_WORKSPACE_DEPTH must be >= 1")
 endif()
 if (DOTTALK_X64_TABLE_NAME_DEFAULT GREATER DOTTALK_X64_TABLE_NAME_MAX)
   message(FATAL_ERROR "build_vectors: TABLE_NAME_DEFAULT must be <= TABLE_NAME_MAX")
@@ -59,4 +72,5 @@ endif()
 message(STATUS "== Build vectors (AIF-044) ==")
 message(STATUS "   areas=${DOTTALK_MAX_AREAS} fields=${DOTTALK_MAX_FIELDS} rows=${DOTTALK_MAX_ROWS} index_slots=${DOTTALK_LEGACY_MAX_INDEX_SLOTS}")
 message(STATUS "   x64 record hard=${DOTTALK_X64_MAX_RECORD_BYTES} advisory=${DOTTALK_X64_RECORD_ADVISORY_BYTES}")
+message(STATUS "   depth caps relation=${DOTTALK_MAX_RELATION_DEPTH} workspace=${DOTTALK_MAX_WORKSPACE_DEPTH}")
 message(STATUS "   x64 names default=${DOTTALK_X64_TABLE_NAME_DEFAULT}/${DOTTALK_X64_FIELD_NAME_DEFAULT} max=${DOTTALK_X64_TABLE_NAME_MAX}/${DOTTALK_X64_FIELD_NAME_MAX} table-buffer changes=${DOTTALK_TABLE_BUFFER_MAX_CHANGES} prompt='${DOTTALK_PROMPT_CHAR}'")

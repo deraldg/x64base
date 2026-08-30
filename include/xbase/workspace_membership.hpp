@@ -92,6 +92,11 @@
 #include <unordered_map>
 #include <vector>
 
+// The build-capacity authority (AIF-044). CMakeLists.txt adds
+// ${CMAKE_BINARY_DIR}/generated with include_directories() BEFORE any target,
+// so this resolves for every consumer of this header.
+#include "dottalk/build_vectors.hpp"
+
 namespace xbase::workspace {
 
 // The implicit, always-present workspace. Design invariant I1: an area belongs
@@ -104,11 +109,18 @@ inline constexpr const char*   kDefaultName   = "DEFAULT";
 // The number is a backstop, not a policy: real nesting is single digits, and a
 // walk that reaches 32 has found a cycle the structural guard missed.
 //
-// THE POINT OF THIS CONSTANT IS THAT SOMETHING PRINTS WHEN IT FIRES. The
-// relation depth cap (set_relations.cpp) is hardcoded twice and returns
-// SILENTLY at the limit, so a truncated traversal is indistinguishable from a
-// complete one. Every caller of this cap in stage 3 announces.
-inline constexpr int kMaxWorkspaceDepth = 32;
+// THE POINT OF THIS CONSTANT IS THAT SOMETHING PRINTS WHEN IT FIRES. Every
+// caller of this cap in stage 3 announces.
+//
+// VECTORED 2026-08-30 (owner: "the 24 is an arbitrary limit we surmized for
+// testing safety, it should be metadata like max_areas"). The number now lives
+// in config/build_vectors.cmake beside max_areas; this name survives as the
+// compiled alias so its call sites do not move -- the same shape xbase::MAX_AREA
+// already has. The RELATION cap was vectored in the same pass and stopped being
+// silent: it now trips the relation subsystem's own truncation latch, which had
+// three step-count callers and none at either depth site.
+inline constexpr int kMaxWorkspaceDepth =
+    static_cast<int>(dottalk::build::max_workspace_depth);
 
 struct Entry {
     std::string               name;

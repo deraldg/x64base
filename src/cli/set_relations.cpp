@@ -25,6 +25,7 @@
 #include "textio.hpp"
 #include "workarea_util.hpp"
 #include "xbase/workspace_membership.hpp"   // I1.2: the store is partitioned by workspace handle
+#include "dottalk/build_vectors.hpp"        // AIF-044: the depth cap is a build vector, not a literal
 
 #include <algorithm>
 #include <cctype>
@@ -119,14 +120,70 @@ bool        g_autorefresh = true;
 bool        g_verbose     = default_relation_verbose;
 std::size_t g_scan_limit  = 500000;
 
-// AIF-074 P1.3 (RDB-06): truncation latch. note_scan_truncated() warns ONCE
-// per latch cycle so cascaded refresh loops cannot spam the transcript.
+// THE RELATION GRAPH'S DEPTH CAP, VECTORED 2026-08-30. It was the literal 24,
+// written twice, thirty lines apart. Owner: "the 24 is an arbitrary limit we
+// surmized for testing safety, it should be metadata like max_areas." It now
+// comes from config/build_vectors.cmake beside max_areas, and it is a SEPARATE
+// vector from the workspace nesting cap (32) because they bound two different
+// graphs over the same areas -- see xbase::workspace::kMaxWorkspaceDepth.
+static constexpr int kRelationDepthCap =
+    static_cast<int>(dottalk::build::max_relation_depth);
+
+// AIF-074 P1.3 (RDB-06): truncation latch. Warns ONCE per latch cycle so
+// cascaded refresh loops cannot spam the transcript.
+//
+// THE LATCH NOW CARRIES A REASON, AND THAT IS THE REAL REPAIR HERE. This
+// subsystem built truncation honesty and then exempted its own depth cap from
+// it: note_scan_truncated() fired at three STEP-COUNT sites and at NEITHER
+// depth site, both of which returned bare. RELSCAN's registered read rule says
+// what that costs -- "an honest incomplete result announces itself, and a
+// silent truncation reads exactly like a complete answer." Vectoring the number
+// without this would have been worse than leaving it: a cap that can now be
+// CHANGED and still says nothing when it fires.
+//
+// The scan wording is byte-identical to what it has always emitted, because
+// RELSCAN T2 asserts that exact line and perturbing a registered assertion to
+// close a different gap is how a suite stops meaning what it says.
 bool g_scan_truncated = false;
-static void note_scan_truncated() {
+static void note_truncated(const std::string& text) {
     if (!g_scan_truncated) {
         g_scan_truncated = true;
-        std::cout << "REL: scan limit (" << g_scan_limit
-                  << ") reached; results may be incomplete.\n";
+        std::cout << "REL: " << text << "\n";
+    }
+}
+static void note_scan_truncated() {
+    note_truncated("scan limit (" + std::to_string(g_scan_limit)
+                   + ") reached; results may be incomplete.");
+}
+// A DEPTH TRIP IS NOT A SCAN TRIP AND MUST NOT BORROW ITS SENTENCE. Both mean
+// "this traversal is incomplete", so both set the one latch three consumers
+// already poll; they differ in WHY, and a message naming the wrong limiter is
+// honest about the incompleteness and wrong about the cause.
+static void note_edge_skipped(const std::string& parent, const std::string& child);
+
+static void note_depth_truncated(const char* where) {
+    note_truncated("relation depth cap (" + std::to_string(kRelationDepthCap)
+                   + ") reached in " + where
+                   + "; deeper relations were NOT visited and results may be"
+                     " incomplete.");
+}
+
+// A SKIPPED EDGE IS NEITHER A DEPTH TRIP NOR A SCAN TRIP: it is a child the
+// SCOPED resolver could not see. It trips the same latch because it means the
+// same thing about the result, and it draws the same distinction add_relation
+// now draws -- absent, or present elsewhere. Naming the workspace is the whole
+// point: it turns "nothing happened" into "the boundary is here."
+static void note_edge_skipped(const std::string& parent, const std::string& child) {
+    const xbase::DbArea* elsewhere = cli::find_open_area_by_name_ci(child);
+    const std::string edge = "relation " + parent + " -> " + child
+                           + " was NOT refreshed: ";
+    if (elsewhere) {
+        const std::uint64_t h = elsewhere->wsHandle();
+        note_truncated(edge + child + " is open in workspace "
+                       + (h ? xbase::workspace::name_of(h) : std::string("(none)"))
+                       + ", not the current one; results may be incomplete.");
+    } else {
+        note_truncated(edge + child + " is not open; results may be incomplete.");
     }
 }
 
@@ -145,6 +202,28 @@ static inline void emit_rel_diag(
     const std::unordered_map<std::string, std::string>& vars = {})
 {
     if (!g_verbose) return;
+    cli::cmdout::print_prefixed_message("REL", id, vars);
+}
+
+// A REFUSAL IS NOT A DIAGNOSTIC, AND THE DIFFERENCE WAS PROFILE-DEPENDENT.
+// Measured 2026-08-30 by reading CMakeLists.txt:172-177 and the gate above:
+// `g_verbose` defaults to DOTTALK_EXTRA_DIAGNOSTICS, which is ON under
+// DOTTALK_PROFILE=DEV and OFF under PROD. Every add-failure path in
+// add_relation() reported through emit_rel_diag, and the caller
+// (cmd_relations.cpp:500) is a bare `if (!add_relation(...)) return;`. So on a
+// PROD build SET RELATION could fail and print NOTHING AT ALL -- no reason, no
+// refusal, only the absence of the OK line. That is the same shape as the AIF
+// allocator's locale-dependent collapse fixed the same morning: a failure that
+// speaks on the developer's build and goes mute on the shipped one.
+//
+// LIMIT, STATED: read from the build files and the compile-time gate. A PROD
+// build has NOT been produced or run to observe it.
+//
+// A trace may be verbosity-gated. The answer to what someone asked may not.
+static inline void emit_rel_refusal(
+    dottalk::helpdata::MessageId id,
+    const std::unordered_map<std::string, std::string>& vars = {})
+{
     cli::cmdout::print_prefixed_message("REL", id, vars);
 }
 
@@ -440,7 +519,10 @@ static bool goto_first_match(xbase::DbArea& child,
 static void clear_subtree_to_top(const std::string& parent_name,
                                  std::unordered_set<std::string>& seen,
                                  int depth) {
-    if (depth > 24) return;
+    if (depth > kRelationDepthCap) {
+        note_depth_truncated("clear_subtree_to_top");
+        return;
+    }
     const std::string key = up_copy(parent_name);
     if (!seen.insert(key).second) return;
 
@@ -500,7 +582,10 @@ static void clear_subtree_to_top(const std::string& parent_name,
 static void refresh_from_parent_name(const std::string& parent_name,
                                      std::unordered_set<std::string>& seen,
                                      int depth) {
-    if (depth > 24) return;
+    if (depth > kRelationDepthCap) {
+        note_depth_truncated("refresh_from_parent_name");
+        return;
+    }
     const std::string key = up_copy(parent_name);
     if (!seen.insert(key).second) return;
 
@@ -516,7 +601,15 @@ static void refresh_from_parent_name(const std::string& parent_name,
     for (const auto& rel : it->second) {
         xbase::DbArea* child = find_open_area_in_workspace_ci(
             rel.child, xbase::workspace::current_handle(), "REL refresh child");
-        if (!child) continue;
+        if (!child) {
+            // AIF-149's second silence. An edge whose child the scoped resolver
+            // cannot see was skipped with a bare `continue`, so a refresh that
+            // propagated down NONE of its edges printed exactly what a complete
+            // one printed. Same latch as the caps: all three mean "this
+            // traversal is incomplete", they differ only in why.
+            note_edge_skipped(key, rel.child);
+            continue;
+        }
 
         const auto kv = parent_values(*parent, rel.joins);
 
@@ -613,11 +706,11 @@ bool add_relation(const std::string& parent_area,
     const std::string child  = up_copy(child_area);
 
     if (parent_fields.empty() || child_fields.empty()) {
-        emit_rel_diag(dottalk::helpdata::MessageId::RelDiagAddFailedNoFieldsText);
+        emit_rel_refusal(dottalk::helpdata::MessageId::RelDiagAddFailedNoFieldsText);
         return false;
     }
     if (parent_fields.size() != child_fields.size()) {
-        emit_rel_diag(dottalk::helpdata::MessageId::RelDiagAddFailedFieldCountMismatchText);
+        emit_rel_refusal(dottalk::helpdata::MessageId::RelDiagAddFailedFieldCountMismatchText);
         return false;
     }
 
@@ -626,7 +719,27 @@ bool add_relation(const std::string& parent_area,
     xbase::DbArea* C = find_open_area_in_workspace_ci(
         child, xbase::workspace::current_handle(), "REL add child");
     if (!P || !C) {
-        emit_rel_diag(dottalk::helpdata::MessageId::RelDiagAddFailedNotOpenText);
+        // AIF-149. THE RESOLVER IS SCOPED, SO AN AREA OPEN IN ANOTHER WORKSPACE
+        // IS NOT REFUSED -- IT IS INVISIBLE, and this refusal used to report
+        // invisibility as absence. Nothing decided that a relation may not cross
+        // a workspace; the lookup is scoped and the message inherited its blind
+        // spot. Owner 2026-08-30: "I don't think we are saying relations can't
+        // exist outside of workspace, even nested, I think we mean we haven't
+        // developed it yet." The FEATURE is parked and the gate stays open; this
+        // is the hardening half, and it is true whichever way that lands --
+        // saying where the boundary is costs nothing and asserts nothing.
+        const std::string& missing = !P ? parent : child;
+        const xbase::DbArea* elsewhere = cli::find_open_area_by_name_ci(missing);
+        if (elsewhere) {
+            const std::uint64_t h = elsewhere->wsHandle();
+            emit_rel_refusal(
+                dottalk::helpdata::MessageId::RelDiagAddFailedOpenElsewhereText,
+                {{"area", missing},
+                 {"workspace", h ? xbase::workspace::name_of(h)
+                                 : std::string("(none)")}});
+        } else {
+            emit_rel_refusal(dottalk::helpdata::MessageId::RelDiagAddFailedNotOpenText);
+        }
         return false;
     }
 
@@ -644,13 +757,13 @@ bool add_relation(const std::string& parent_area,
         const int pf = find_field_index_ci(*P, pf_name);
         const int cf = find_field_index_ci(*C, cf_name);
         if (pf <= 0) {
-            emit_rel_diag(
+            emit_rel_refusal(
                 dottalk::helpdata::MessageId::RelDiagParentFieldNotFoundText,
                 {{"field", pf_name}});
             return false;
         }
         if (cf <= 0) {
-            emit_rel_diag(
+            emit_rel_refusal(
                 dottalk::helpdata::MessageId::RelDiagChildFieldNotFoundText,
                 {{"field", cf_name}});
             return false;

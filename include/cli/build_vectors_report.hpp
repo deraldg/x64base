@@ -37,6 +37,8 @@ struct BuildVectors {
     std::uint16_t x64_field_name_default;
     std::uint16_t x64_field_name_max;
     std::uint32_t table_buffer_max_changes;
+    std::uint32_t max_relation_depth;
+    std::uint32_t max_workspace_depth;
     char          prompt_char;
 };
 
@@ -53,6 +55,8 @@ inline const BuildVectors& build_vectors() noexcept {
         x64::field_name_default,
         x64::field_name_max,
         static_cast<std::uint32_t>(table_buffer::max_changes),
+        static_cast<std::uint32_t>(max_relation_depth),
+        static_cast<std::uint32_t>(max_workspace_depth),
         ui::prompt_char_default
     };
     return v;
@@ -65,6 +69,12 @@ inline std::string build_vector_fingerprint() {
     const BuildVectors& v = build_vectors();
     mix(v.max_areas); mix(v.max_fields); mix(v.max_rows);
     mix(v.x64_max_record_bytes); mix(v.x64_field_name_max); mix(v.table_buffer_max_changes);
+    // ADDED 2026-08-30 with the depth vectors. They are capacity vectors, so they
+    // belong in the capacity fingerprint -- and adding them CHANGES IT, which is
+    // the point: a build whose traversal caps differ is a different build. Measured
+    // at the defaults (24 / 32): 3b276bee -> 45f7a2c6. Appended rather than
+    // interleaved so the existing mixes keep their order.
+    mix(v.max_relation_depth); mix(v.max_workspace_depth);
     mix(static_cast<std::uint64_t>(static_cast<unsigned char>(v.prompt_char)));
     char buf[9];
     std::snprintf(buf, sizeof(buf), "%08llx",
@@ -86,6 +96,8 @@ inline void print_build_vectors(std::ostream& os) {
        << "  X64 field names         default " << v.x64_field_name_default
        << ", maximum " << v.x64_field_name_max << "\n"
        << "  Table-buffer changes    " << v.table_buffer_max_changes << "\n"
+       << "  Relation depth cap      " << v.max_relation_depth << "\n"
+       << "  Workspace depth cap     " << v.max_workspace_depth << "\n"
        << "  Prompt character        " << v.prompt_char << "\n"
        << "  Fingerprint             " << build_vector_fingerprint() << "\n";
 }
