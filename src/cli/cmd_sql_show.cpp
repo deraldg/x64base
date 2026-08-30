@@ -146,7 +146,20 @@ static void show_table(DbArea& A)
             const bool asc = orderstate::isAscending(A);
             const std::string idx = orderstate::orderName(A);
             const std::string tag = orderstate::activeTag(A);
-            std::cout << "Order: " << (asc ? "ASCEND" : "DESCEND") << "\n";
+            // AIF-148 residue.  The gate above is hasOrder() and is RIGHT --
+            // it asks IS A CONTAINER ATTACHED, and an attached container has
+            // an Index and Tag line worth printing.  What was wrong is that
+            // reaching this branch was then treated as proof that an order
+            // was IN FORCE, so a .cdx attached with no tag selected printed
+            // ASCEND while TOP, BOTTOM and SKIP traversed the table
+            // physically.  The gate stays; the order WORD moves.
+            //
+            // PHYSICAL, not NATURAL, because that is the word this function
+            // already uses three lines up for the unattached case.  Each site
+            // keeps its own vocabulary and only the predicate moves.
+            std::cout << "Order: " << (orderstate::isNaturalOrder(A)
+                                           ? "PHYSICAL"
+                                           : (asc ? "ASCEND" : "DESCEND")) << "\n";
             std::cout << "Index: " << (idx.empty() ? std::string("(unknown)") : idx) << "\n";
             std::cout << "Tag  : " << (tag.empty() ? std::string("(none)") : tag) << "\n";
         }
@@ -196,7 +209,15 @@ static void show_index(DbArea& A)
         const bool asc = orderstate::isAscending(A);
         const std::string idx = orderstate::orderName(A);
         const std::string tag = orderstate::activeTag(A);
-        std::cout << "  Order      : " << (asc ? "ASCEND" : "DESCEND") << "\n";
+        // AIF-148 residue, the same shape as show_table() above and worth
+        // fixing in both rather than factoring: SHOW INDEX is the command a
+        // person runs to ASK what order is in force, so it is the worst place
+        // in the file to answer with the direction flag.  Under a .cdx with
+        // no tag it said `Order: ASCEND` beside `Active tag : (none)` -- the
+        // report holding both halves of its own contradiction.
+        std::cout << "  Order      : " << (orderstate::isNaturalOrder(A)
+                                               ? "PHYSICAL"
+                                               : (asc ? "ASCEND" : "DESCEND")) << "\n";
         std::cout << "  Index file : " << (idx.empty() ? std::string("(unknown)") : idx) << "\n";
         std::cout << "  Active tag : " << (tag.empty() ? std::string("(none)") : tag) << "\n";
     } catch (...) {

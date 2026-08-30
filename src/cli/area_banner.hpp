@@ -28,6 +28,21 @@ struct AreaFacts {
     uint32_t    recno {0};
 
     // Order info
+    //
+    // AIF-148 WARNING TO WHOEVER WIRES THIS UP.  This formatter has NO CALLER
+    // -- nothing in the tree constructs an AreaFacts -- so has_order is a
+    // contract nobody has filled yet, and order_phrase() below is correct or
+    // wrong depending entirely on how the first caller fills it.
+    //
+    // FILL IT FROM orderstate::isNaturalOrder(), INVERTED.  Do NOT fill it
+    // from orderstate::hasOrder(), whose name matches this field's name and
+    // whose meaning does not: hasOrder() answers IS A CONTAINER ATTACHED, and
+    // WORKSPACE OPEN attaches a .cdx to every table while selecting no tag.
+    // Filling this field from the identically-named function is the exact
+    // mistake AIF-148 was, and the matching names are the whole trap.
+    //
+    //     f.has_order = !orderstate::isNaturalOrder(area);   // correct
+    //     f.has_order =  orderstate::hasOrder(area);         // the defect
     bool        has_order {false};
     std::string tag;          // "LNAME" if CNX; optional for INX/IDX
     bool        asc {true};   // ASC/DESC

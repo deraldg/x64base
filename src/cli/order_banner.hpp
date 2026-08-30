@@ -12,6 +12,26 @@
 //
 // Wire-up: build an AreaFacts struct from your DbArea + order_state and
 // print the returned strings in AREA (or anywhere you show state).
+//
+// READ THIS BEFORE INCLUDING THIS HEADER.  It is a DUPLICATE of
+// area_banner.hpp + area_banner.cpp: same namespace, same AreaFacts, same
+// order_phrase() and format_banner(), same bodies.  Neither copy has a caller
+// today -- nothing in the tree constructs an AreaFacts -- but area_banner.cpp
+// is compiled into the binary by the source glob, so ITS definitions are in
+// every link.
+//
+// MEASURED 2026-08-30, not assumed: linking a TU that includes THIS header
+// against area_banner.o SUCCEEDS and prints no diagnostic.  These definitions
+// are inline and land as WEAK symbols; area_banner.cpp's land as STRONG, and
+// the linker silently keeps the strong ones (`nm -C`: W here, T there).  So
+// including this header does not get you this header's code -- IT GETS YOU
+// area_banner.cpp's.  Identical bodies make that invisible right now.  It
+// stops being invisible the moment someone edits one file and not the other:
+// the edit is discarded at link time with nothing said.  If you fix a bug
+// here, fix it in area_banner.cpp or your fix does not run.
+//
+// The honest resolution is to delete one of the two, which is an owner's call
+// and has not been made.  AIF-148 residue pass, 2026-08-30.
 
 #pragma once
 #include <string>
@@ -26,6 +46,21 @@ struct AreaFacts {
     uint32_t    recno {0};
 
     // Order info
+    //
+    // AIF-148 WARNING TO WHOEVER WIRES THIS UP.  This formatter has NO CALLER
+    // -- nothing in the tree constructs an AreaFacts -- so has_order is a
+    // contract nobody has filled yet, and order_phrase() below is correct or
+    // wrong depending entirely on how the first caller fills it.
+    //
+    // FILL IT FROM orderstate::isNaturalOrder(), INVERTED.  Do NOT fill it
+    // from orderstate::hasOrder(), whose name matches this field's name and
+    // whose meaning does not: hasOrder() answers IS A CONTAINER ATTACHED, and
+    // WORKSPACE OPEN attaches a .cdx to every table while selecting no tag.
+    // Filling this field from the identically-named function is the exact
+    // mistake AIF-148 was, and the matching names are the whole trap.
+    //
+    //     f.has_order = !orderstate::isNaturalOrder(area);   // correct
+    //     f.has_order =  orderstate::hasOrder(area);         // the defect
     bool        has_order {false};
     std::string tag;          // e.g., "LNAME" for CNX; empty for pure INX-ASC
     bool        asc {true};   // ASC/DESC flag

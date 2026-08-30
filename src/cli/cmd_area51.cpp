@@ -106,7 +106,34 @@ void cmd_AREA51(DbArea&, std::istringstream&) {
                               ? orderstate::orderName(cur) : std::string("(none)");
         const std::string tag = orderstate::hasOrder(cur)
                               ? orderstate::activeTag(cur) : std::string("(none)");
-        std::cout << "  Order: "        << (asc ? "ASCEND" : "DESCEND") << "\n"
+        // AIF-148 residue: this line had NO ORDER PREDICATE AT ALL, so it read
+        // the DIRECTION flag and printed it as the order.  isAscending()
+        // deliberately defaults true when no order state exists, so a table
+        // with no index reported ASCEND beside `Index file  : (none)` -- a
+        // probe contradicting itself two lines apart.  The `Order: ASCEND`
+        // with an empty index was OBSERVED on screen in the 2026-08-29 suite
+        // run; WHICH of the residue sites emitted that particular line was
+        // not pinned down, and this comment does not claim it was this one.
+        // The defect here is read off the code and needs no transcript: there
+        // is no order predicate on the line at all.
+        //
+        // A grep for hasOrder() could never find this site -- that is how it
+        // survived the first residue sweep.  The question that finds it is
+        // WHO PRINTS AN ORDER WORD.
+        //
+        // AREA51 is a HAND COPY of orderreport::print_area_report's format --
+        // same three lines, same indents, same "(none)" -- which is why it did
+        // not inherit that function's fix.  It keeps that function's word,
+        // NATURAL.  Each site keeps its own vocabulary and only the PREDICATE
+        // moves: STATUS says PHYSICAL, the tuple-stream hint says "physical",
+        // this and the area report say NATURAL.
+        //
+        // hasOrder() still gates idx and tag above, correctly: those ask IS A
+        // CONTAINER ATTACHED, and an attached .cdx with no tag has a filename
+        // worth printing.
+        std::cout << "  Order: "        << (orderstate::isNaturalOrder(cur)
+                                            ? "NATURAL"
+                                            : (asc ? "ASCEND" : "DESCEND")) << "\n"
                   << "  Index file  : " << idx << "\n"
                   << "  Active tag  : " << tag << "\n";
     } catch (...) {
