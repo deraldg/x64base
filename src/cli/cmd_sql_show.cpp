@@ -102,13 +102,38 @@ static void show_table(DbArea& A)
 {
     if (!A.isOpen()) { std::cout << "No file open\n"; return; }
 
-    // Try to get absolute path, fall back to A.name()
-    std::string path = A.name();
-    try {
-        path = fs::absolute(path).string();
-    } catch (...) {
-        // leave as-is
-    }
+    // THE AREA KNOWS ITS OWN PATH. ASK IT.
+    //
+    // This line used to read A.name() and hand it to fs::absolute(). name() is
+    // the LOGICAL ALIAS -- "STUDENTS" -- not a path, and fs::absolute resolves
+    // a bare token against the PROCESS CWD, which is the DATA root. So SHOW
+    // TABLE printed
+    //     Path : ...\dottalkpp\data\STUDENTS
+    // for a table living at ...\data\dbf\x64\STUDENTS.dbf -- the
+    // subdirectory and the extension both gone. Measured 2026-08-30. That is
+    // worse than printing nothing: the output is well formed, plausible, and
+    // names a file that does not exist, so a reader who copies it gets a
+    // "not found" from somewhere else entirely.
+    //
+    // THIS EXACT DEFECT WAS FOUND AND FIXED ONCE ALREADY, at a different site.
+    // cmd_workspace.cpp's notes on `TO <root>`: "resolves like every other
+    // path token (paths::resolve_in_slot) ... Corrected 2026-08-12; it
+    // previously followed the process CWD while SET PATH followed DATA."
+    // Same mistake, same cause, fifteen days apart, in a file nobody thought
+    // to check when the first one was fixed.
+    //
+    // No resolver is needed here and using one would be the same error in a
+    // politer form. DbArea CARRIES the absolute path it opened
+    // (_dbf_abs_path, set in dbarea.cpp on open and cleared on close) and
+    // hands it over as filename(). The AREA command has always done this --
+    // cmd_area.cpp reads A.filename() and prints "(unknown)" when it is empty,
+    // rather than reconstructing -- and this now matches it.
+    //
+    // The Table: line below deliberately keeps A.name(): that line reports the
+    // ALIAS, which is what name() is for. Two lines, two different questions,
+    // two different accessors.
+    const std::string& abs = A.filename();
+    const std::string path = abs.empty() ? std::string("(unknown)") : abs;
 
     // Deleted count (quick scan, position-preserving)
     int64_t deleted = 0;
