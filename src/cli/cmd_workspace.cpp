@@ -76,8 +76,8 @@
 //   WORKSPACE REGISTRY
 //   WORKSPACE NEW <name> [UNDER <parent-name-or-handle>]
 //   WORKSPACE SWITCH <name-or-handle>
-//   WORKSPACE DESTROY <name-or-handle>
-//   WORKSPACE DELETE <name>
+//   WORKSPACE DESTROY <name-or-handle>  -- resolves in the SESSION; see notes
+//   WORKSPACE DELETE <name>             -- resolves in the CATALOG; heavier
 //   WORKSPACE PURGE <name>             -- retained ALIAS of DELETE; see notes
 //   WORKSPACE OPEN DBF
 //   WORKSPACE OPEN <dir>
@@ -180,7 +180,13 @@
 //   dottalkpp/data/scripts/workspace_multi_regression.dts.
 //   A WORKSPACE NAME CANNOT BE RECLAIMED within a session. CLOSE ALL releases
 //   every area everywhere, and afterwards the registry STILL lists every
-//   workspace at members 0; there is no DROP, DELETE or REMOVE verb. A script
+//   workspace at members 0; NO VERB REMOVES A WORKSPACE FROM THE RUNTIME
+//   REGISTRY. This sentence read "there is no DROP, DELETE or REMOVE verb"
+//   until 2026-08-30 and had been false since 2026-08-24, when WORKSPACE
+//   DELETE landed: the claim was always about the RUNTIME registry, and it was
+//   written before a durable verb existed to collide with its wording. DELETE
+//   and DESTROY both act on the CATALOG; neither takes a name back out of this
+//   session's registry. A script
 //   that declares workspaces is therefore idempotent per PROCESS, not per
 //   session -- run it once, or restart rather than trusting a second pass.
 //   Relations are still cleared GLOBALLY on a scoped close: the relation graph
@@ -199,6 +205,66 @@
 //   every other workspace), a workspace still HOLDING AREAS, and a workspace
 //   with NESTED CHILDREN. Destroy the child first. Because it never cascades,
 //   it can never be the thing that silently orphaned an open area.
+//   THERE IS A FOURTH WAY DESTROY DOES NOT RUN AND IT IS NOT A REFUSAL, IT IS
+//   NAME RESOLUTION (measured 2026-08-30). The three above are refusals about
+//   LIVE STATE. This one is scope: DESTROY resolves a name against RUNTIME
+//   MEMBERSHIP, so a CATALOG-ONLY HEAD -- a name holding a live durable row
+//   with no handle in this session -- is invisible to it and the verb answers
+//   `WORKSPACE DESTROY: no such workspace: <name>`. That message is true about
+//   the session and misleading about the catalog, and a reader who checked the
+//   catalog first will not believe it. Measured on a residue head left by an
+//   interactive run: WORKSPACES.dbf carried WS_ID 269 name `dbf` SUPERSEDED 0,
+//   and DESTROY said no such workspace.
+//   THE REMEDY IS ADOPT-THEN-DESTROY, and it is two lines:
+//       WORKSPACE NEW <name>       -- reports ADOPTED, same WS_ID
+//       WORKSPACE DESTROY <name>   -- supersedes it; NO NEW ROW IS WRITTEN
+//   NEW gives the catalog-only head a runtime handle, which is exactly what
+//   DESTROY needs to resolve it. Measured on the same head: NEW reported
+//   `ADOPTED the durable identity this name already holds`, WS_ID 269 kept;
+//   DESTROY retired it; SUPERSEDED went 0 -> 1 and the record count stayed at
+//   271. The alternative is WORKSPACE DELETE <name>, which reaches a
+//   catalog-only head WITHOUT adoption -- but it is the heavier instrument and
+//   the paragraph below says why to prefer adopt-then-DESTROY for residue.
+//   WHY THIS IS IN THE CONTRACT AND NOT ONLY IN THE PROSE: adopt-then-DESTROY
+//   was already documented below, under the R131 naming paragraph, and was
+//   still missed by a reader who took DESTROY off the usage list and ran it.
+//   A synopsis that lists two verbs without their SCOPE sends that reader to
+//   the wrong one, and the failure message does not correct the mistake.
+//
+//   CHOOSING A RETIREMENT VERB -- the whole decision, in one place, because the
+//   facts needed to make it were spread over four paragraphs and a usage list:
+//
+//     the name has a LIVE HANDLE in this session
+//         -> WORKSPACE DESTROY <name>
+//            Subject to the three refusals above: not DEFAULT, not while it
+//            HOLDS AREAS, not while it has NESTED CHILDREN.
+//
+//     the name is a CATALOG-ONLY HEAD and is ordinary residue, and you want
+//     the history to stay readable
+//         -> WORKSPACE NEW <name>  then  WORKSPACE DESTROY <name>
+//            NEW reports ADOPTED and keeps the WS_ID. DESTROY supersedes.
+//            No new row is written and no delete flag is set. PREFERRED.
+//
+//     the name is a CATALOG-ONLY HEAD and you want its rows invisible under
+//     SET DELETED ON as well as superseded
+//         -> WORKSPACE DELETE <name>
+//            Needs no adoption -- it resolves in the catalog. Heavier: sets
+//            the delete flag AS WELL as SUPERSEDED. The rows STAY ON DISK.
+//
+//     the name is DECLARED IN THIS SESSION
+//         -> WORKSPACE DESTROY <name>. DELETE REFUSES this case deliberately,
+//            because deleting a declared workspace's rows would leave it
+//            running with no durable identity.
+//
+//     you want the row GONE FROM THE FILE
+//         -> NOT AVAILABLE, and the absence is deliberate. There is no
+//            WORKSPACE PACK: allocation is max(WS_ID)+1 over the surviving
+//            rows, so deleted rows MUST keep being counted or the next
+//            WORKSPACE NEW would inherit a deleted workspace's durable
+//            identity. The high-water mark is preserved and DELETE says so.
+//
+//   WHAT NONE OF THEM DO: take a name back out of the RUNTIME registry. See
+//   the name-reclamation paragraph above.
 //   WORKSPACE DELETE <name> FLAGS the name's rows deleted AND superseded, and
 //   THEY STAY ON DISK PERMANENTLY. THERE IS DELIBERATELY NO WORKSPACE PACK:
 //   allocation is max(WS_ID)+1 derived from the surviving rows, so the deleted
