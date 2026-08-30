@@ -63,12 +63,33 @@ USE RSPT
 * path again. Under the fix A's slots are restored and RSPT reads AAA. Before
 * it, the DBF slot is still B's, the SAME FILENAME opens out of the wrong root,
 * and this reads .F. -- a printed red, not a silence.
+*
+* THE CLOSE IS LOAD-BEARING AND THE SENTENCE ABOVE WAS FALSE WITHOUT IT.
+* MEASURED 2026-08-30 on ae8fbc9d, the pre-change binary: this USE answered
+* "already open in current area 0" and NOTHING OPENED. On that build SWITCH
+* does not move the slot, so RSPT resolves to the very file G3 left sitting in
+* area 0 and the USE declines. T1 still read .F. -- but by reading a stale
+* cursor, not by opening out of the wrong root as the paragraph above claims.
+* A red for the wrong reason is not the evidence the entry says it is.
 WORKSPACE SWITCH RSEWSA
+CLOSE
 USE RSPT
 ? "RSE_T1_switch_restored_this_workspace_environment:" + (ALLTRIM(MARK) = "AAA")
 * RSE_T2 -- and the other direction, so a fix that simply pinned the slots to
 * the first workspace cannot pass. Same shape, opposite expected value.
+*
+* T2 IS A COUNTERWEIGHT, NOT A DISCRIMINATOR, AND THE REGISTRY ENTRY USED TO
+* SAY OTHERWISE. MEASURED 2026-08-30 on ae8fbc9d: it reads .T. on the
+* PRE-CHANGE binary too. The reason is structural rather than accidental -- on
+* that build the global DBF slot is simply left wherever it was last set,
+* which is B, and B is what this arm expects. The CLOSE below makes the open
+* real instead of a decline off a stale cursor; it does NOT make this arm go
+* red, because nothing here can. Green on both builds is the CORRECT result
+* for a counterweight: it discriminates the OVERSHOOT -- a fix that pinned the
+* slots to the first workspace -- and never the defect. Same species as
+* OJC_T3 in workspace_open_joins_current.dts.
 WORKSPACE SWITCH RSEWSB
+CLOSE
 USE RSPT
 ? "RSE_T2_switch_restores_the_other_way_too:" + (ALLTRIM(MARK) = "BBB")
 * ---------------------------------------------------------------------------
@@ -82,13 +103,32 @@ SET PATH DBF DBF/SANDBOX/R131A IN RSEWSA
 * table sitting in area 0, the USE declined to open, and the marker read BBB
 * off a cursor the IN clause never touched. It would have read .T. whether or
 * not the clause wrongly moved the session slot -- the arm could not go red.
-* That is the AIF-148 shape this file's own header warns about, and T3 was the
-* only USE here not preceded by a SWITCH or a CLOSE.
-* A USE NOT PRECEDED BY A SWITCH OR A CLOSE IS NOT AN OPEN.
+* That is the AIF-148 shape this file's own header warns about.
+*
+* THE RULE AS FIRST WRITTEN WAS TOO LOOSE AND IS CORRECTED HERE. It said
+* A USE NOT PRECEDED BY A SWITCH OR A CLOSE IS NOT AN OPEN, and on that
+* reading T3 was the only offender, because T1/T2/T4/T5 all follow a SWITCH.
+* MEASURED 2026-08-30 on the pre-change binary ae8fbc9d, all four of those
+* answered "already open in current area 0" as well: a SWITCH that MOVES NO
+* SLOT changes nothing about what the name resolves to, so it does not stand
+* in for a CLOSE. The rule in its real form:
+*   A SWITCH ONLY COUNTS AS AN OPEN WHEN IT CHANGES WHAT THE NAME RESOLVES TO,
+*   AND A SPEC CANNOT ASSUME THE BUILD UNDER TEST IS ONE WHERE IT DOES.
+* The countermeasure is structural rather than a rule to remember: EVERY USE
+* IN THE T ARMS (T1 through T5) IS NOW PRECEDED BY A CLOSE, which a reader
+* checks by inspection instead of reasoning about slot behaviour per build.
+* G0 and G1 already were. G2 and G3 are the two deliberate exceptions and they
+* are safe for a reason that does not depend on the build: each is preceded by
+* an EXPLICIT SET PATH, and an explicit SET PATH changes what the name
+* resolves to on any binary, which is exactly what a bare SWITCH failed to do.
 CLOSE
 USE RSPT
 ? "RSE_T3_in_clause_left_the_session_alone:" + (ALLTRIM(MARK) = "BBB")
+* CLOSE before this USE for the same reason as T1 and T2: a SWITCH is only as
+* good as the slot move it performs, and on a binary that performs none it
+* leaves the previous open sitting in the area for the USE to decline.
 WORKSPACE SWITCH RSEWSA
+CLOSE
 USE RSPT
 ? "RSE_T4_in_clause_bound_the_named_workspace:" + (ALLTRIM(MARK) = "AAA")
 * RSE_T5 -- THE MISORDERING HAZARD R131 sec 7 exists to answer. Bind B's root
@@ -97,6 +137,7 @@ USE RSPT
 * workspace" trap -- and the switch would then reopen A's table.
 SET PATH DBF DBF/SANDBOX/R131B IN RSEWSB
 WORKSPACE SWITCH RSEWSB
+CLOSE
 USE RSPT
 ? "RSE_T5_explicit_binding_survived_the_switch:" + (ALLTRIM(MARK) = "BBB")
 * ---------------------------------------------------------------------------
