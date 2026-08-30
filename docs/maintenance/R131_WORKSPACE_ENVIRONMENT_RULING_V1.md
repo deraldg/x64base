@@ -279,7 +279,13 @@ behaviour.
 ## 9. CODE STATUS
 
 **Sections 1-7a: NO CODE WRITTEN.** Q2 and Q3 are unruled, and nothing that
-depends on them has been built. The measurements cited in those sections were
+depends on them has been built.
+
+> **STALE AS OF 2026-08-29 -- see section 12.** Q2 and Q3 were closed
+> (section 11) and the LIVE half of sections 1, 7 and 11.2 shipped in
+> `008e7cd2b`. The paragraph is left standing because it was true when it was
+> written, which is this document's own convention; it is no longer a
+> description of the tree. The measurements cited in those sections were
 taken on build `c7c94e18` during the session that produced the ruling; every
 source claim there is a read at that HEAD.
 
@@ -297,7 +303,13 @@ claimed for it here, and it has not been run against the pre-change binary.
 
 **The roots half of R131 is still unbuilt and deliberately so.** 7b makes OPEN
 land in the right workspace; it does not make that workspace RECORD where it
-opened from. That is Q3, and `WORKSPACES.dbf` still declares `DBF_ROOT` and
+opened from.
+
+> **HALF STALE AS OF 2026-08-29 -- see section 12.** The LIVE roots half
+> SHIPPED in `008e7cd2b`: `Entry` carries the three slots as a stamp and SWITCH
+> restores them. What remains unbuilt is the DURABLE half, which is what the
+> rest of this paragraph is actually about. Read "roots half" here as "durable
+> roots half" and the paragraph is still correct. That is Q3, and `WORKSPACES.dbf` still declares `DBF_ROOT` and
 `IDX_ROOT` only -- there is **no LMDB column**, so the third slot has no
 durable home to be written to at all. That is a schema decision awaiting a
 ruling, not an omission to be patched around.
@@ -586,15 +598,129 @@ landed at 2.
   written through to the catalog on every change, only at SAVE, or never
   automatically. R129's resolution/navigation split argues they are two things
   saved into each other; that remains the author's reading and is not ruled.
-- **DEFAULT.** Section 8's item stands: are DEFAULT's roots the INIT slots by
-  definition, and what does `SET PATH` do while standing in DEFAULT? Under
-  11.2 plus 11.5 there is an easy answer -- DEFAULT is stamped from INIT at
-  startup and behaves like any other workspace -- but DEFAULT is also the one
-  workspace with no WS_ID, so it should be said rather than assumed.
-- **The four-line switch idiom in `open_mcc_and_cascade.dts`**, which this
-  ruling is meant to retire and has not yet.
-- **NO CODE HAS BEEN WRITTEN FOR SECTIONS 1-7a OR 11.** Section 7b is the only
-  implemented part of R131. `src/cli/**` and `src/xbase/**` are engine and want
-  an explicit go.
+- **DEFAULT. ANSWERED BY CODE, STILL NOT RULED.** The question stands as a
+  RULING; the behaviour now exists and is not what this bullet guessed. The
+  guess was "stamped from INIT at startup". What `008e7cd2b` built is
+  **stamped LAZILY, on the way OUT**, because DEFAULT is constructed inside
+  xbase before any command runs and so has no stamp to take at startup. The
+  ORDER is load-bearing: `ensure_stamped(CURRENT)` runs BEFORE
+  `set_current_handle(h)`, or DEFAULT would inherit the environment of whatever
+  workspace was being LEFT. And `SET PATH` while standing in DEFAULT restamps
+  DEFAULT, because the bare form restamps the current workspace
+  (`cmd_setpath_command.cpp`). The bullet's closing point is UNCHANGED and is
+  the reason this stays open: DEFAULT is the one workspace with no WS_ID, and
+  that should be said rather than assumed.
+- ~~**The four-line switch idiom in `open_mcc_and_cascade.dts`**~~ **RETIRED
+  2026-08-29 in `dffbf8af4`**, and the retirement was load-bearing rather than
+  cosmetic: the idiom was silently REPAIRING a restamp hazard, so removing it
+  required adding `WORKSPACE SWITCH DEFAULT` before the second system's slots
+  move. Correcting the banner alone would have armed the defect.
+- ~~**NO CODE HAS BEEN WRITTEN FOR SECTIONS 1-7a OR 11.**~~ **FALSE AS OF
+  `008e7cd2b` (2026-08-29).** The LIVE half of sections 1, 7 and 11.2 shipped:
+  `Entry` gained `dbf_root` / `idx_root` / `lmdb_root` as a stamp, SWITCH
+  restores them and announces every slot it moves, and Q1's explicit
+  `SET PATH <slot> <path> IN <ws-or-handle>` clause shipped with it. Gated by
+  spec **WSENV**, promoted to the default suite in `aa55979c3` and verified
+  in-suite. `src/cli/**` and `src/xbase/**` remain engine and still want an
+  explicit go for anything further.
+
+Ships **review-needed** -- the author does not self-approve.
+
+## 12. RE-REVIEW 2026-08-30, against HEAD `018cf0b92`
+
+Second re-review, same method as section 10: read the document against the
+tree rather than against memory. Section 10 found drift in citations. This one
+finds drift in **status claims** -- the document describing an unbuilt lane
+that had shipped nine commits earlier.
+
+### 12.1 CORRECTED IN PLACE: three status claims that had gone false
+
+Marked at their sites rather than rewritten, per this document's convention of
+leaving a paragraph standing and dating what overtook it.
+
+- **Section 9, "Sections 1-7a: NO CODE WRITTEN"** -- false since `008e7cd2b`.
+- **Section 9, "The roots half of R131 is still unbuilt"** -- half false. The
+  LIVE half shipped; the DURABLE half is what the paragraph is really about.
+- **11.8, "NO CODE HAS BEEN WRITTEN FOR SECTIONS 1-7a OR 11"** -- false since
+  `008e7cd2b`, and the most misleading of the three, because it sits in the
+  list a reader consults to learn what is left to do.
+
+**HOW ALL THREE SURVIVED:** they are STATUS claims, and nothing checks a status
+claim. Section 10 built a method for catching stale CITATIONS -- read the
+quoted source, compare. A sentence that says "no code has been written" cites
+nothing and can only be falsified by someone who happens to know what shipped.
+The lane's own gates cannot help: `cited-paths` audits paths inside documents,
+and there is no path here to audit.
+
+### 12.2 ANSWERED BY CODE, STILL NOT RULED: DEFAULT
+
+11.8's DEFAULT bullet guessed "stamped from INIT at startup". The
+implementation stamps it **lazily, on the way OUT**, with a load-bearing
+ordering (`ensure_stamped(CURRENT)` before `set_current_handle(h)`). The bullet
+is updated to describe what exists. It stays OPEN because what it asks for is a
+RULING, and DEFAULT's missing WS_ID is still the reason to say it rather than
+assume it.
+
+### 12.3 THE ONE GENUINELY OPEN ITEM, NOW MEASURED AND REFRAMED
+
+11.8's first bullet -- whether the live and durable roots are one thing or two
+-- is the only item that was never anything but open. It now has a measurement
+under it instead of a reading, and the measurement CHANGED THE QUESTION.
+
+Probe: `dottalkpp/data/scripts/r131_durable_root_probe.dts`, run against an
+isolated catalog (`SET PATH WORKSPACES tmp/ws118c`) so production was never
+opened. Two findings, reproduced:
+
+- **Birth rows record the PREVIOUS workspace's root.** Under the sanctioned
+  NEW / SWITCH / SET PATH sequence, `DBF_ROOT` is written at `NEW` from the
+  session slot -- which is still the previous environment. Measured: `DURWSA`
+  reads R131B, `DURWSB` reads R131A. Neither names its own root.
+- **A memo spanning two roots records one.** `SAVE durall ALL MEMO` swept two
+  areas across two workspaces (217 B against the scoped save's 94 B) and its
+  single `DBF_ROOT` records the SAVER's root.
+
+**AND THE DIAGNOSIS THOSE FIRST SUGGESTED WAS WRONG.** They look like a writer
+defect and are not. AIF-075 states the column's charter at its definition:
+`DBF_ROOT` / `IDX_ROOT` record *"the SET PATH env active at save time, because
+.dtschema payloads are root-relative by design -- a snapshot declares its own
+preconditions (lesson measured 2026-08-11: a load under the wrong roots
+resolves 0/58)."* **The column is a REPLAY PRECONDITION and the writer writes
+it correctly.**
+
+WRITEBACK asks a different question of the same string -- *"where the workspace
+CAME from, which is what 'write it back' means by default"* -- which is
+PROVENANCE, and therefore a DESTINATION. **The two questions share an answer
+under exactly one condition: one workspace, one root, saved from inside it.**
+That was the whole world when AIF-075 wrote the column, so the borrowing was
+correct and free.
+
+**R131 PHASE 9 IS WHAT PULLED THEM APART**, by making several simultaneous
+roots ordinary. The two findings are precisely the two places the shared
+assumption breaks: a spanning save has no single precondition to declare, and a
+birth row has no payload and therefore no precondition at all.
+
+So 11.8 is narrower than it looked. **It is not "should the writer change".**
+It is:
+
+1. Should WRITEBACK REFUSE a payload that spans roots? The file already
+   contains this pattern and states it as deliberate: *"a born-in-RAM workspace
+   with no catalog row has no source to return to and must say TO explicitly;
+   that refusal is deliberate, not a limitation to route around."* A spanning
+   payload is the same species -- no single source to return to.
+2. Should a row with NO PAYLOAD carry a precondition column at all?
+
+Full write-up: the project finding titled **DBF_ROOT is a replay
+precondition read as provenance** (Claude project docs, 2026-08-30).
+
+### 12.4 WHAT THIS RE-REVIEW DID NOT CHECK
+
+Sections 1 through 7a were not re-read against the tree. Section 10 checked
+their citations at `56bf6c4c`; the engine has moved seven commits since, and
+`008e7cd2b` rewrote code those sections quote. **The same class of drift
+section 10.2 found is likely present again and is not claimed to be absent
+here.** Nor were the LMDB and INDEXES slots exercised by the probe: it reads
+through the DBF slot only, for the same reason WSENV does -- a marker is a
+field-value comparison and this language has no marker that reads where a
+container resolved.
 
 Ships **review-needed** -- the author does not self-approve.

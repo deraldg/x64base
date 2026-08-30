@@ -1,0 +1,135 @@
+* R131 sec 11.8 PROBE -- DOES A SAVED ROW'S DBF_ROOT DESCRIBE ITS CONTENTS?
+*
+* NOT A SPEC. No markers, no promotion, asserts nothing. It exists to turn a
+* source reading into a measurement before an owner rules on 11.8, because the
+* first source reading was WRONG and was withdrawn (see below).
+*
+* SELF-ISOLATING, AND THAT IS THE WHOLE REASON IT CAN BE RUN AT ALL. The
+* WORKSPACES slot is redirected to a scratch directory, so every row this
+* writes lands in a THROWAWAY catalog and the production catalog is never
+* opened. `SET PATH WORKSPACES <dir>` is a real form -- demonstrated live
+* 2026-08-30 by the owner. A prior claim in this lane that SET PATH could not
+* reach the WORKSPACES slot was wrong: it came from grepping Slot:: in
+* cmd_setpath_command.cpp, whose own line 75 says the forms route through
+* SETPATH.
+*
+* WHAT WAS WITHDRAWN. The first reading of 11.8 claimed that
+* `SET PATH DBF X IN WSA` followed by a save would record the SESSION's root
+* rather than WSA's stamp. It does not: SAVE saves the CURRENT workspace tree,
+* and after R131 phase 9 the current workspace's stamp and the session slots
+* are held EQUAL -- the bare SET PATH writes both, and SWITCH writes the global
+* FROM the stamp. For the ordinary save the column is right, by invariant
+* rather than by design.
+*
+* WHAT IS ACTUALLY IN QUESTION. SaveScope (cmd_workspace.cpp:2125) can span
+* MORE THAN ONE ENVIRONMENT two ways: `SAVE <name> ALL` sweeps every open area
+* INCLUDING areas owned by other workspaces, and the scoped walk descends into
+* CHILDREN, which may carry their own stamps. Both catalog write sites record
+* s8(dbf_root()) -- the SESSION slot, which is the SAVER's environment. So the
+* question this probe asks is narrow and answerable:
+*
+*   WHEN A MEMO SPANS TWO ROOTS, WHAT DOES ITS ONE DBF_ROOT COLUMN SAY?
+*
+* Expected if the column records the saver: DBF_ROOT reads R131B while the
+* memo also carries an area opened under R131A. That is not a defect on its
+* face -- the column may legitimately mean "where the saver stood" -- but the
+* notes at cmd_workspace.cpp:3983 call it "where the workspace CAME from" and
+* WRITEBACK uses it as a DEFAULT DESTINATION, and a destination may not be
+* guessed. That is the AIF-118 distinction R131 sec 11.6 already ruled with.
+* ---------------------------------------------------------------------------
+* A FRESH SCRATCH CATALOG PER RUN, because the row reads below are positional.
+* Run 1 left four rows in tmp/ws118; appending to them would make GO 1..4 read
+* run 1's rows and report a stale answer as a fresh one. Run 1's catalog is
+* left where it is -- it is the evidence for the truncation finding.
+SET PATH WORKSPACES tmp/ws118c
+* FIXTURES. Two tables, two roots, different content, so a row that names one
+* root can be checked against a memo that provably contains the other.
+SET PATH DBF DBF/SANDBOX/R131A
+ERASE DURA CONFIRM
+CREATE X64 DURA (ID N(4), MARK C(8))
+APPEND
+REPLACE ID WITH 1
+REPLACE MARK WITH "AAA"
+CLOSE
+SET PATH DBF DBF/SANDBOX/R131B
+ERASE DURB CONFIRM
+CREATE X64 DURB (ID N(4), MARK C(8))
+APPEND
+REPLACE ID WITH 1
+REPLACE MARK WITH "BBB"
+CLOSE
+WORKSPACE CLOSE ALL
+* TWO WORKSPACES, TWO DIFFERENT STAMPS, one table open in each.
+* NO CLOSE BEFORE THESE TWO USEs, AND THAT IS DELIBERATE -- run 1 of this
+* probe (2026-08-30) had one, carried over mechanically from WSENV's blind-arm
+* remedy, and IT CLOSED DURWSA'S TABLE ON THE WAY INTO DURWSB. SAVE ALL then
+* reported "1 open area(s), every workspace" and the two-environment condition
+* the probe exists to create was never built. The WSENV rule is about a USE
+* that must be a REAL OPEN in a test arm; here each USE lands in a fresh area
+* of a different workspace, and closing first destroys the other workspace's
+* area. A remedy is not a reflex.
+WORKSPACE NEW DURWSA
+WORKSPACE SWITCH DURWSA
+SET PATH DBF DBF/SANDBOX/R131A
+USE DURA
+WORKSPACE NEW DURWSB
+WORKSPACE SWITCH DURWSB
+SET PATH DBF DBF/SANDBOX/R131B
+* EXPLICIT AREA, AND RUN 2 IS WHY. A bare `USE DURB` here landed on ENGINE
+* SLOT 0 -- the slot DURA already occupied under DURWSA -- and evicted it.
+* WORKSPACE REGISTRY then read `handle 2 name DURWSA ... members 0`, and
+* SAVE ALL reported "1 open area(s), every workspace". Two workspaces, one
+* area, and nothing to span. Naming the area is what makes the two
+* environments coexist long enough to be saved together.
+*
+* WHETHER THAT EVICTION IS ITSELF A DEFECT IS NOT CLAIMED HERE. AIF-078 gave
+* the allocator find_free_area_for_workspace, and a second workspace's open
+* landing on an occupied slot owned by a FIRST workspace is at least worth
+* asking about -- but a bare USE is also documented to open in the CURRENT
+* area, and DURWSB's local 0 may simply map to engine slot 0. One reading is
+* an allocator defect and the other is USE behaving as specified. This probe
+* does not distinguish them and must not be cited as though it did.
+USE DURB IN 1
+* READ THE BASELINE FIRST, AND STOP IF IT IS WRONG. Standing in B, the scoped
+* save MUST report "1 area(s)" AND "NOT saved: 1 open area(s) in other
+* workspaces". Run 1 printed no NOT-saved line at all, which was the setup
+* failing in plain sight above an output nobody checked. If that line is
+* missing again, the rest of this probe measures nothing.
+WORKSPACE REGISTRY
+WORKSPACE SAVE durscoped MEMO
+* NOW THE QUESTION. Still standing in B, take everything. The memo will carry
+* A's area, opened under R131A, while the saver stands under R131B.
+WORKSPACE SAVE durall ALL MEMO
+* READ THE CATALOG WITH THE ENGINE, which is the only correct reader for a v64
+* table -- a generic DBF reader was pointed at this file on 2026-08-30 and
+* returned garbage field descriptors.
+* SMARTLIST TRUNCATES AND IT COST RUN 1 ITS ANSWER. Five columns of a 180-wide
+* field rendered as ~31 characters, so ...\data\DBF and ...\data\DBF\SANDBOX\
+* R131A printed IDENTICALLY. The tell was the next column: IDX_ROOT read
+* "...\data\IND", cut mid-word through INDEXES. A field-value read has to be
+* WIDER THAN THE FIELD or it is not a read. `?` renders a character field
+* whole, so each row is dumped on its own.
+SET PATH DBF tmp/ws118c
+USE WORKSPACES
+GO 1
+? "row1_name:" + ALLTRIM(WS_NAME)
+? "row1_dbf_root:" + ALLTRIM(DBF_ROOT)
+GO 2
+? "row2_name:" + ALLTRIM(WS_NAME)
+? "row2_dbf_root:" + ALLTRIM(DBF_ROOT)
+GO 3
+? "row3_name:" + ALLTRIM(WS_NAME)
+? "row3_dbf_root:" + ALLTRIM(DBF_ROOT)
+GO 4
+? "row4_name:" + ALLTRIM(WS_NAME)
+? "row4_dbf_root:" + ALLTRIM(DBF_ROOT)
+CLOSE
+* CLEANUP. The scratch catalog is left in place on purpose: it is the evidence.
+WORKSPACE CLOSE ALL
+WORKSPACE DESTROY DURWSA
+WORKSPACE DESTROY DURWSB
+SET PATH DBF DBF/SANDBOX/R131A
+ERASE DURA CONFIRM
+SET PATH DBF DBF/SANDBOX/R131B
+ERASE DURB CONFIRM
+SET PATH DBF DBF
