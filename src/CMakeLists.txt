@@ -215,7 +215,6 @@ if (NOT DOTTALK_HAS_XINDEX)
     "${CMAKE_SOURCE_DIR}/src/cli/cmd_setorder.cpp"
     "${CMAKE_SOURCE_DIR}/src/cli/index_legacy.cpp"
     "${CMAKE_SOURCE_DIR}/src/cli/index_legacy_loader.cpp"
-    "${CMAKE_SOURCE_DIR}/src/cli/index_resolver.cpp"
     "${CMAKE_SOURCE_DIR}/src/cli/index_summary.cpp"
     "${CMAKE_SOURCE_DIR}/src/cli/index_utils.cpp"
     "${CMAKE_SOURCE_DIR}/src/cli/inx_meta.cpp"
