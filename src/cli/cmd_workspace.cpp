@@ -3091,6 +3091,33 @@ static bool ensure_catalog(std::string& err) {
     // the token and broke fresh-session reads -- measured 2026-08-11.
     { xbase::dbf_create::FieldSpec m; m.name = "SNAPSHOT"; m.type = 'M'; m.len = 16; m.dec = 0; f.push_back(m); }
 
+    // AIF-078 / R135, added 2026-08-31 (owner: "two columns", "cheap to have
+    // both"). DEPTH above is a property of the PAYLOAD -- how deeply the saved
+    // thing nests BELOW itself. These two are properties of the WORKSPACE --
+    // where it sits in the containment tree. One column answering both
+    // questions is what depth_of()'s corrected comment describes.
+    //
+    // PARENT_ID carries the parent's DURABLE id (R135: a composition inherits
+    // durability and never confers it), never a session handle, which is
+    // monotonic-within-session and would name something else next launch.
+    // 0 = a root.
+    //
+    // TREE_DEPTH is DERIVABLE from PARENT_ID by walking rows, so it is a STAMP
+    // and not an authority (R135 rung 3): written from the single source at
+    // save time, never by hand. It exists because the catalog is read WITHOUT
+    // hydrating, where the runtime tree does not exist to walk.
+    //
+    // DECLARED LAST, AFTER THE MEMO FIELD, ON PURPOSE. The one existing
+    // catalog is converted by FIELDMGR APPEND, which adds at the END of the
+    // table. Declaring them anywhere else would give a converted catalog and a
+    // freshly created one DIFFERENT FIELD ORDER for the same schema. Nothing
+    // reads this table by offset today -- everything goes through
+    // findFieldCI -- but something did once, and it "produced nonsense on the
+    // first try" because the X64M metadata block shifts every offset after it.
+    // Same layout in both catalogs costs one comment and removes the class.
+    N("PARENT_ID", 10);    // durable WS_ID of the containing workspace; 0 = root
+    N("TREE_DEPTH", 2);    // stamped from the parent chain; derivable from PARENT_ID
+
     // Two name planes: physical descriptors planned like every x64 create.
     std::vector<std::string> names; names.reserve(f.size());
     for (const auto& s : f) names.push_back(s.name);
