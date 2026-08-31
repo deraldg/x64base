@@ -348,6 +348,62 @@ def development_is_ancestor(root: str, local_sha: str) -> bool:
     return False
 
 
+def sha_is_published_on(root: str, sha: str, ref: str) -> bool:
+    """True when `sha` is REACHABLE FROM `ref` -- i.e. already published there.
+
+    NOT ref_is_ancestor() WITH THE ARGUMENTS SWAPPED, and the distinction cost a
+    failing test to find. ref_is_ancestor(root, ref, sha) asks "is REF an
+    ancestor of SHA", which is what a branch-cut push needs: the pushed tip must
+    DESCEND from origin/main. A tag needs the opposite direction -- its target
+    must be CONTAINED IN the published branch -- and the first cut of the tag arm
+    called ref_is_ancestor and therefore accepted a tag naming an UNPUSHED
+    commit, because origin/development is indeed an ancestor of a commit built
+    on top of it. That is the exact smuggling route the arm exists to close, and
+    it read as correct because the helper's name is a true sentence about the
+    wrong relation.
+
+    Fails closed when `ref` is absent, same posture as ref_is_ancestor.
+    """
+    if not ref_exists(root, ref):
+        return False
+    return (
+        subprocess.run(
+            ["git", "-C", root, "merge-base", "--is-ancestor", sha, ref]
+        ).returncode
+        == 0
+    )
+
+
+def annotated_tag_target(root: str, sha: str) -> str | None:
+    """The commit an ANNOTATED tag object points at, or None.
+
+    None means "not an annotated tag object" -- a lightweight tag (whose ref is
+    the commit itself), a missing object, or anything else. The caller treats
+    None as a refusal, so this fails closed by construction.
+
+    WHY ANNOTATED ONLY. The tag convention in
+    docs/contracts/REPOSITORY_ROLE_AND_PROMOTION_CONTRACT_V1.md requires an
+    annotated tag, on the grounds that a snapshot with no message is a date and
+    a hash the log already gives you. Enforcing it here means the convention is
+    checked rather than merely written down -- the difference this project keeps
+    measuring between an obligation with a gate and one without.
+    """
+    kind = subprocess.run(
+        ["git", "-C", root, "cat-file", "-t", sha],
+        capture_output=True, text=True,
+    )
+    if kind.returncode != 0 or kind.stdout.strip() != "tag":
+        return None
+    peeled = subprocess.run(
+        ["git", "-C", root, "rev-list", "-n", "1", sha],
+        capture_output=True, text=True,
+    )
+    if peeled.returncode != 0:
+        return None
+    target = peeled.stdout.strip()
+    return target or None
+
+
 def validate_push_updates(
     role: RepositoryRole,
     updates: list[tuple[str, str, str, str]],
@@ -357,9 +413,75 @@ def validate_push_updates(
 ) -> list[str]:
     errors: list[str] = []
     expected_ref = f"refs/heads/{role.allowed_remote_branch}"
-    for local_ref, local_sha, remote_ref, _remote_sha in updates:
+    for local_ref, local_sha, remote_ref, remote_sha in updates:
         if local_sha == ZERO_SHA or local_ref == "(delete)":
             errors.append(f"branch or tag deletion is not permitted: {remote_ref}")
+            continue
+        if remote_ref.startswith("refs/tags/"):
+            # NARROWED 2026-08-30, owner-directed. Tags were refused wholesale
+            # by the "not refs/heads/" arm below, which was defensible and
+            # coarse: a tag is a ref that may point at ANY commit, so pushing
+            # one can publish content from any branch under a name, and the
+            # role check is about the branch being updated -- which a tag push
+            # does not update.
+            #
+            # THE FOUR CONDITIONS BELOW ARE THE CONVENTION, MECHANISED. Each
+            # maps to a numbered rule in the tag convention added to
+            # docs/contracts/REPOSITORY_ROLE_AND_PROMOTION_CONTRACT_V1.md, so
+            # the document and the gate cannot drift apart -- which is exactly
+            # what happened the hour this arm was written, when that document
+            # asserted tags were pushable while this file refused them.
+            #
+            # AND THE PR #13 LESSON IS THE REASON FOR CONDITION 3. That scar
+            # (see the branch-cut block below) was a check that validated the
+            # DESTINATION ref and never looked at what was actually being sent.
+            # A tag is the same trap wearing a different hat: "it is a tag" says
+            # nothing about which commit it names. Every pushed object must earn
+            # its own passage.
+            if role.branch_cut:
+                errors.append(
+                    f"a branch-cut role may not push tags: {remote_ref}"
+                )
+                continue
+            if not root:
+                errors.append(
+                    f"cannot validate a tag push without a repository root: {remote_ref}"
+                )
+                continue
+            if remote_sha != ZERO_SHA:
+                # Convention rule 5: a tag is never moved once pushed. The
+                # remote already has this name, so this push would repoint it.
+                errors.append(
+                    f"tag already exists on the remote and may not be moved: {remote_ref}"
+                )
+                continue
+            target = annotated_tag_target(root, local_sha)
+            if target is None:
+                # Convention rule 3.
+                errors.append(
+                    f"only an ANNOTATED tag may be pushed: {remote_ref} "
+                    f"is lightweight or unreadable"
+                )
+                continue
+            published = f"refs/remotes/origin/{role.allowed_remote_branch}"
+            if not sha_is_published_on(root, target, published):
+                # Convention rules 1 and 4, and the safety property that makes
+                # this arm defensible at all: the target must ALREADY BE PUBLIC
+                # on the declared branch. Deliberately the REMOTE ref and not
+                # the local branch -- a tag must not be the thing that publishes
+                # a commit. If origin/<branch> is absent this fails closed.
+                #
+                # THE DIRECTION HERE IS THE WHOLE CHECK AND THE FIRST CUT HAD IT
+                # BACKWARDS: it called ref_is_ancestor(root, published, target),
+                # which asks whether the BRANCH is an ancestor of the TAG, and
+                # that is true of every commit built on top of origin/development
+                # -- including unpushed ones. The test written alongside this arm
+                # caught it. See sha_is_published_on().
+                errors.append(
+                    f"a tag may name only a commit already published on "
+                    f"{published}; {remote_ref} names {target[:12]}, which is not"
+                )
+                continue
             continue
         if not remote_ref.startswith("refs/heads/"):
             errors.append(f"only the declared branch may be pushed: {remote_ref}")

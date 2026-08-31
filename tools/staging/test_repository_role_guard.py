@@ -363,5 +363,126 @@ class BranchCutFromMainTests(unittest.TestCase):
         )
 
 
+class AnnotatedTagPushTests(unittest.TestCase):
+    """The tag arm, against a REAL repository for the same reason the branch-cut
+    tests use one: every condition is a fact about Git state -- object type, and
+    whether a commit is reachable from a remote ref. A stubbed test would pass
+    while the guard misread a real tree.
+
+    Added 2026-08-30 with the arm itself. The arm exists because the contract
+    asserted tags were pushable while this file refused them; a widening with no
+    test would swap one undetected disagreement for another.
+    """
+
+    def _git(self, cwd, *args, check=True):
+        return subprocess.run(
+            ["git", "-c", "user.name=t", "-c", "user.email=t@t", *args],
+            cwd=str(cwd), check=check, capture_output=True, text=True,
+        )
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        base = Path(self._tmp.name)
+        origin = base / "origin.git"
+        self.dev = base / "dev"
+        subprocess.run(["git", "init", "-q", "--bare", str(origin)], check=True,
+                       capture_output=True)
+        subprocess.run(["git", "init", "-q", str(self.dev)], check=True,
+                       capture_output=True)
+        self._git(self.dev, "remote", "add", "origin", str(origin))
+        (self.dev / "f.txt").write_text("a\n", encoding="utf-8")
+        self._git(self.dev, "add", ".")
+        self._git(self.dev, "commit", "-qm", "base")
+        self._git(self.dev, "branch", "-M", "development")
+        self._git(self.dev, "push", "-q", "origin", "development")
+        self._git(self.dev, "fetch", "-q", "origin")
+        self.published = self._git(self.dev, "rev-parse", "HEAD").stdout.strip()
+
+        # A commit that exists locally and has NOT been pushed.
+        (self.dev / "g.txt").write_text("g\n", encoding="utf-8")
+        self._git(self.dev, "add", ".")
+        self._git(self.dev, "commit", "-qm", "not yet pushed")
+        self.unpublished = self._git(self.dev, "rev-parse", "HEAD").stdout.strip()
+
+        self.role = guard.RepositoryRole(
+            name="development",
+            root=str(self.dev),
+            required_branch="development",
+            allowed_remote_branch="development",
+        )
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def _tag(self, name, target, annotated=True):
+        if annotated:
+            self._git(self.dev, "tag", "-a", name, "-m", "snapshot", target)
+        else:
+            self._git(self.dev, "tag", name, target)
+        return self._git(self.dev, "rev-parse", f"refs/tags/{name}").stdout.strip()
+
+    def _push(self, name, sha, remote_sha=guard.ZERO_SHA):
+        return guard.validate_push_updates(
+            self.role,
+            [(f"refs/tags/{name}", sha, f"refs/tags/{name}", remote_sha)],
+            root=str(self.dev),
+        )
+
+    def test_annotated_tag_on_a_published_commit_is_allowed(self):
+        sha = self._tag("v9.9.9", self.published)
+        self.assertEqual(self._push("v9.9.9", sha), [])
+
+    def test_lightweight_tag_is_refused(self):
+        sha = self._tag("lw", self.published, annotated=False)
+        errors = self._push("lw", sha)
+        self.assertTrue(any("ANNOTATED" in e for e in errors), errors)
+
+    def test_tag_naming_an_unpublished_commit_is_refused(self):
+        """THE LOAD-BEARING ONE. A tag must not be the thing that publishes a
+        commit -- the check is against origin/development, not the local branch,
+        so tagging unpushed work cannot smuggle it out under a name."""
+        sha = self._tag("v9.9.8", self.unpublished)
+        errors = self._push("v9.9.8", sha)
+        self.assertTrue(any("already published" in e for e in errors), errors)
+
+    def test_tag_that_exists_on_the_remote_may_not_be_moved(self):
+        sha = self._tag("v9.9.7", self.published)
+        errors = self._push("v9.9.7", sha, remote_sha="b" * 40)
+        self.assertTrue(any("may not be moved" in e for e in errors), errors)
+
+    def test_tag_deletion_is_still_refused(self):
+        errors = guard.validate_push_updates(
+            self.role,
+            [("(delete)", guard.ZERO_SHA, "refs/tags/v9.9.9", "a" * 40)],
+            root=str(self.dev),
+        )
+        self.assertTrue(any("deletion is not permitted" in e for e in errors), errors)
+
+    def test_a_branch_cut_role_may_not_push_tags(self):
+        sha = self._tag("v9.9.6", self.published)
+        cut = guard.RepositoryRole(
+            name="branch-cut",
+            root=str(self.dev),
+            required_branch="ci/fix",
+            allowed_remote_branch="ci/fix",
+            branch_cut=True,
+        )
+        errors = guard.validate_push_updates(
+            cut,
+            [("refs/tags/v9.9.6", sha, "refs/tags/v9.9.6", guard.ZERO_SHA)],
+            root=str(self.dev),
+        )
+        self.assertTrue(any("branch-cut role may not push tags" in e for e in errors), errors)
+
+    def test_a_branch_ref_is_still_governed_by_the_branch_rules(self):
+        """The new arm must not have become a way around the old ones."""
+        errors = guard.validate_push_updates(
+            self.role,
+            [("refs/heads/development", "1" * 40, "refs/heads/other", "2" * 40)],
+            root=str(self.dev),
+        )
+        self.assertTrue(errors)
+
+
 if __name__ == "__main__":
     unittest.main()

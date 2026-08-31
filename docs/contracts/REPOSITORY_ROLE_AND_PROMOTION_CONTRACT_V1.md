@@ -46,12 +46,28 @@ from which active development is reconstructed wholesale.
    lane. Neither lane authorizes a blanket copy or development-to-main merge.
 9. Branch creation, commit, push, merge, reset, cleaning, or publication still
    requires explicit maintainer authorization for the current task.
-10. A tag pushed from `D:\code\ccode` names a commit on `development` and
-    nothing else. It is a marker, not a promotion: it moves no branch, publishes
-    no artifact, and does not put `development` content behind `main`'s name.
-    Rules 3 to 8 are unaffected by it, and cutting a GitHub RELEASE is NOT
-    covered by this rule -- a release is a publication act and goes through the
-    staging workflow like any other.
+10. **A TAG MAY BE PUSHED FROM `D:\\code\\ccode` ONLY UNDER FOUR CONDITIONS,
+    AND `repository_role_guard.py` CHECKS ALL FOUR.** It must be an ANNOTATED
+    tag; its target must ALREADY BE PUBLISHED on `refs/remotes/origin/development`;
+    the remote must not already carry that tag name; and the role must not be a
+    branch-cut. Deletion of any ref stays refused. Cutting a GitHub RELEASE is
+    outside this rule -- a release is a publication act and goes through the
+    staging workflow.
+
+    The safety property is the second condition: **a tag can never be the thing
+    that publishes a commit.** It may only name history that is already on the
+    declared branch's remote, so it adds a name and no content.
+
+    **THIS RULE WAS WRONG TWICE IN ONE HOUR AND BOTH ARE RECORDED, because the
+    failure mode is the subject.** The first draft said a tag from here is a
+    harmless marker; `git push origin v0.6.0` was then BLOCKED, because the
+    guard refused every ref outside `refs/heads/*` and had done so all along --
+    the policy lived in the tool and this document had filled its own silence
+    with the opposite. The second draft said no tag may ever be pushed, and the
+    owner ruled the guard should be narrowed instead. **A CONTRACT THAT
+    CONTRADICTS ITS OWN ENFORCEMENT IS THE DEFECT THIS PROJECT KEEPS FINDING**
+    -- a usage contract describing behaviour the code stopped having. Which is
+    why the narrowing and this rule shipped in ONE commit, with tests.
 
 ## Tag Convention
 
@@ -80,9 +96,15 @@ version-series tag is `v0.5.0`, dated 2025-09-06.
    what the tree could do at that commit and what was still open.
 4. **A tag is cut from a CLEAN tree that is level with `origin/development`.**
    A tag on unpushed or dirty state names a commit nobody else can fetch.
+   RULE 10 ENFORCES THIS MECHANICALLY: the guard requires the tag's target to
+   be reachable from `origin/<declared branch>`, so a tag on unpushed work is
+   refused rather than merely discouraged.
 5. **A tag is never moved once pushed.** If it named the wrong commit, cut a new
    one and say why in its message. The same rule the AIF and R sequences carry:
-   an identity that changes meaning is worse than a gap.
+   an identity that changes meaning is worse than a gap. RULE 10 ENFORCES THIS
+   TOO: a push whose remote already carries the tag name is refused. Re-cutting
+   a tag that was never pushed is untouched by this and is how `v0.6.0` was
+   moved off the commit carrying rule 10's first, wrong draft.
 
 ## Required Preflight
 
