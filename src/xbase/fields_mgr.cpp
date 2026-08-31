@@ -705,6 +705,20 @@ Result show(const xbase::DbArea& db)
     return r;
 }
 
+// WHAT THIS ASKS, AND WHAT IT THEREFORE CANNOT SEE.
+//
+// It asks whether an index manager is ATTACHED TO THIS OPEN AREA RIGHT NOW --
+// not whether the table HAS index containers on disk. A table whose .cdx sits
+// in the INDEXES root with no SET ORDER issued in this session answers None,
+// and the append then proceeds with no warning even though that container is
+// invalidated exactly the same way.
+//
+// So the warning this feeds is correct when it fires and INCOMPLETE when it
+// does not. Named here 2026-08-31 rather than fixed: answering the on-disk
+// question means resolving index paths for a table, which is xindex's job and
+// not this layer's, and guessing at it from src/xbase would be a second
+// authority on where a container lives. The attached case is the common one
+// (you set an order, then alter the table) and it is now honest.
 IndexImpact assessAppendIndexImpact(const xbase::DbArea& db,
                                     const xbase::FieldDef& fd)
 {
@@ -816,23 +830,57 @@ Result append(xbase::DbArea& db,
         return r;
     }
 
-    r.indexImpact = assessAppendIndexImpact(db, fd);
-    r.rebuildSuggested =
-        (r.indexImpact == IndexImpact::RebuildRecommended ||
-         r.indexImpact == IndexImpact::RebuildRequired);
+    // THE IMPACT IS HELD IN LOCALS, NOT IN r, AND THAT IS THE FIX.
+    //
+    // MEASURED 2026-08-31, runtime-proven: this block computed the impact into
+    // `r`, then executed `r = append_rewrite_table(...)`, which ASSIGNS A FRESH
+    // Result over it. append_rewrite_table opens with a default-constructed
+    // `Result r;` and never touches indexImpact or rebuildSuggested -- the only
+    // mentions of either in this file are here. So the flag was computed
+    // correctly, stored, overwritten with the struct default (false), and then
+    // tested one line later. `[index rebuild recommended]` WAS UNREACHABLE AND
+    // HAD NEVER ONCE PRINTED.
+    //
+    // Found by appending a field to a table carrying a live CDX: the append
+    // reported "field appended successfully" and nothing else, and the damage
+    // surfaced later at SET ORDER as an openCdx metadata mismatch (reclen 17
+    // vs 21, fields 2 vs 3). The DATA was intact and the INDEX was detached --
+    // a recoverable state that the operation which caused it did not mention.
+    const IndexImpact impact = assessAppendIndexImpact(db, fd);
+    const bool        rebuildNeeded =
+        (impact == IndexImpact::RebuildRecommended ||
+         impact == IndexImpact::RebuildRequired);
 
     if (opts.failIfIndexesPresent &&
-        (r.indexImpact == IndexImpact::RebuildRecommended ||
-         r.indexImpact == IndexImpact::RebuildRequired ||
-         r.indexImpact == IndexImpact::Blocked)) {
+        (impact == IndexImpact::RebuildRecommended ||
+         impact == IndexImpact::RebuildRequired ||
+         impact == IndexImpact::Blocked)) {
         r.status = Status::InvalidState;
+        r.indexImpact = impact;
+        r.rebuildSuggested = rebuildNeeded;
         r.message = "FIELDMGR APPEND: indexes present; structural rewrite refused by option";
         return r;
     }
 
     r = append_rewrite_table(db, fd, opts);
+
+    // Carried ACROSS the assignment above, deliberately and visibly. Anything
+    // computed before that line and read after it must be restored here or it
+    // is silently lost, which is what happened.
+    r.indexImpact      = impact;
+    r.rebuildSuggested = rebuildNeeded;
+
     if (r.status == Status::Ok && r.rebuildSuggested) {
-        r.message += " [index rebuild recommended]";
+        // Says what happened, not merely what is advisable. The old wording
+        // ("recommended") understated it: the index is not degraded, it will
+        // REFUSE TO OPEN -- openCdx compares a fingerprint of the table it was
+        // built against (kind, version, reclen, fields, hash) and this rewrite
+        // changed reclen and fields. That guard is why a stale index cannot
+        // silently answer, and it is the reason this message only has to be
+        // honest rather than load-bearing.
+        r.message += " [WARNING: attached index is now STALE and will refuse to"
+                     " open until rebuilt -- the table's reclen and field count"
+                     " no longer match the container's fingerprint]";
     }
     return r;
 }
