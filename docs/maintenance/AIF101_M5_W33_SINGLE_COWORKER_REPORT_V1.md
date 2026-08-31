@@ -1,8 +1,8 @@
 ---
 ai_report_audit:
   schema: ai-report-audit-v1
-  report_id: AIPR-20260811-001
-  recorded_at_utc: 2026-08-11T01:05:00Z
+  report_id: AIPR-20260831-001
+  recorded_at_utc: 2026-08-31T12:00:00Z
   agent:
     provider: Anthropic
     product: Claude Cowork
@@ -17,250 +17,406 @@ ai_report_audit:
   authorization:
     requested_by: maintainer
     scope: >
-      AIF-101 M5: regenerate the weekly acceleration series and report the W33
-      single-coworker natural experiment against its 2026-08-10 pre-registration,
-      including the pre-measured Codex residue offset. Scheduled, non-interactive
-      run. No mutating git performed.
+      AIF-101 M5: third and first scoreable run. Regenerate the weekly
+      acceleration series over W30-W35 and score the 2026-08-10 pre-registered
+      predictions for the ISO week 33 single-coworker window, using a symmetric
+      two-coworker baseline now that W34 and W35 are complete. Supersedes the
+      2026-08-10 premature run and corrects the unpublished 2026-08-17 run.
+      Read-only analysis; report only. No mutating git, no BBS write.
   report:
     path: docs/maintenance/AIF101_M5_W33_SINGLE_COWORKER_REPORT_V1.md
-    kind: measurement_report
+    kind: lane_report
   session:
-    id: COWORK-20260811-AIF101-M5-001
+    id: COWORK-20260831-AIF101-M5-W33-003
     chat_reference: not_exposed
-    run_id: AIPR-20260811-001
+    run_id: AIPR-20260831-001
     chat_handle: ""
     handle_binding: NOT_RESOLVABLE
-    continues_run: AIPR-20260810-008
+    continues_run: AIPR-20260817-001
   project:
     id: project.x64base.runtime
     root: D:/code/ccode
   git:
     branch: development
-    baseline_commit: cbf83522d
-    head_commit: cbf83522d
+    baseline_commit: ec8c7d58d
+    head_commit: ec8c7d58d
 ---
 
-# AIF-101 M5 -- W33 single-coworker window: report against pre-registration (V1)
+# AIF-101 M5 -- W33 single-coworker window, scored (2026-08-31)
 
-**Status: PREMATURE. The window is 1 day of 7 old. All three predictions are INCONCLUSIVE
-on the pre-registered test.** This is not a hedge; it is the arithmetic. The pre-registration
-(`DEVELOPMENT_ACCELERATION_ANALYSIS_LANE_V1.md`, "M5 PRE-REGISTRATION", Reporting clause)
-says to regenerate and compare **at or after 2026-08-17**. This run executed
-2026-08-11T00:54Z. ISO week 33 spans 2026-08-10 .. 2026-08-16; the series contains exactly
-one author-day of it (2026-08-10), and the extractor itself flags the row `<- partial
-(current week)`.
+Owner: member.derald. Steward: member.ai.claude.cowork. Sandbox session, read-only.
+Scores the three predictions pre-registered 2026-08-10 in
+`DEVELOPMENT_ACCELERATION_ANALYSIS_LANE_V1.md`, section "M5 PRE-REGISTRATION".
 
-Reporting a verdict off 1/7 of the window would be exactly the class of error the lane's
-pre-registration discipline exists to prevent. The numbers below are recorded as a dated
-first reading so the eventual 08-17 run has something to be checked against -- not as a result.
+**Status: SCOREABLE. This is the first run with the data the test requires.**
 
-**Re-run this report at or after 2026-08-17.**
+## 0. Run history, kept on the page
+
+The lane's rule is that a wrong prediction stays struck through rather than edited. This
+report applies that rule to the ANALYST as well as to the predictions. Three runs have
+executed against this path:
+
+| run | date | verdicts | disposition |
+|---|---|---|---|
+| 1 | 2026-08-10 (`ba1d5ed45`) | all three INCONCLUSIVE | **CORRECT and superseded.** Refused to score off 1/7 of the window. It was right to refuse. |
+| 2 | 2026-08-17 (unpublished) | P1 MISSED, P2 MISSED, P3 INCONCLUSIVE | **WRONG on P1 and P2, superseded.** Written to disk, never committed, discarded on a working-tree restore. Its verdicts are reproduced struck through below rather than quietly dropped. |
+| 3 | 2026-08-31 (this run) | P1 MET, P2 MET, P3 MISSED | First run with W34 and W35 complete. |
+
+Run 2's error has a single cause, named here because it is the most transferable finding
+in this document: **it compared a rising series against its own backward-looking mean.**
+The pre-registered comparator (W30-W32) sits entirely before the window, and the series
+trends upward across the whole period. Any backward-only baseline therefore understates
+the counterfactual and biases every verdict toward "no effect". Run 2 reported that
+commits ROSE 9.2% in the window. They fell about 23% against what the trend predicts.
 
 ## 1. What was predicted
 
-Read verbatim from the lane doc, section "M5 PRE-REGISTRATION -- the W33 single-coworker
-natural experiment", written 2026-08-10 before any of the window's data existed:
+Verbatim from the lane doc, written 2026-08-10 before any of the window's data existed:
 
 1. **"Commits fall, but well short of half."** A fall near 50% would indicate the two
-   coworkers were close to independent; a fall near 15% would indicate heavily overlapping
-   work. A fall of 0% would falsify F1 having any measurable throughput component at all.
-2. **"The doc/closeout ratio per commit holds roughly flat."** Doctrine is a per-commit
-   property, not a capacity property. If that ratio moves with headcount, the process is less
-   institutionalized than the lane has been claiming, which would be the more interesting
-   finding.
-3. **"W34 will show a spike that is NOT a rebound."** Reading it as recovery would be the
-   single easiest error available here.
+   coworkers were close to independent; a fall near 15% would indicate heavily
+   overlapping work. "A fall of 0% would falsify F1 having any measurable throughput
+   component at all."
+2. **"The doc/closeout ratio per commit holds roughly flat."** "If that ratio moves with
+   headcount, the process is less institutionalized than the lane has been claiming,
+   which would be the more interesting finding."
+3. **"W34 will show a spike that is NOT a rebound."**
 
-## 2. What happened -- the series as regenerated
+Pre-registered comparator: "compare W33 against W30-W32 on the same eight denominators."
 
-Command (sandbox, read-only; the extractor shells `git --no-optional-locks log`):
+## 2. What happened
 
-```
-cd /sessions/<session>/mnt/ccode      # = D:\code\ccode
-python3 tools/analysis/acceleration_metrics.py
-```
-
-| week    | commits | eng_code | tool_code | data_add | doc_add | newdoc | closeout | proofs | aifclaim | regress | note |
-|---------|--------:|---------:|----------:|---------:|--------:|-------:|---------:|-------:|---------:|--------:|------|
-| 2026-W30 |      82 |    27615 |      4953 |     2249 |   40215 |     96 |       68 |      0 |        2 |      16 | |
-| 2026-W31 |     178 |     7277 |    226256 |     8321 |   31563 |     52 |       12 |     66 |       17 |      19 | |
-| 2026-W32 |     229 |     3605 |      6702 |     1612 |   59106 |    149 |       19 |      8 |       17 |       1 | |
-| 2026-W33 |      18 |       21 |      1482 |       13 |    1547 |      4 |        2 |      0 |        1 |       1 | **partial: 1 of 7 days** |
-| 2026-W34 |       - |        - |         - |        - |       - |      - |        - |      - |        - |       - | does not exist yet |
-
-Author dates, not committer dates (extractor default; the pre-registration's defense (a)).
-W33's 18 commits all carry author date 2026-08-10; there are zero on 08-11 or later.
+Regenerated by, and every figure below traceable to:
 
 ```
-git --no-optional-locks log --since=2026-08-08 --date=format:'%Y-%m-%d' --pretty=format:'%ad' | sort | uniq -c
-  13 2026-08-08
-  22 2026-08-09
-  18 2026-08-10
+python3 tools/analysis/acceleration_metrics.py --since 2026-07-20
 ```
+
+| week | coworkers | commits | eng_code | tool_code | data_add | doc_add | newdoc | closeout | proofs | aifclaim | regress |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 2026-W30 | 2 (knee) | 82 | 27615 | 4953 | 2249 | 40215 | 96 | 68 | 0 | 2 | 16 |
+| 2026-W31 | 2 | 178 | 7277 | 226256 | 8321 | 31563 | 52 | 12 | 66 | 17 | 19 |
+| 2026-W32 | 2 | 229 | 3605 | 6702 | 1612 | 59106 | 149 | 19 | 8 | 17 | 1 |
+| **2026-W33** | **1** | **178** | 3832 | 4872 | 284 | 51319 | 92 | 8 | 12 | 14 | 25 |
+| 2026-W34 | 2 | 255 | 8805 | 12658 | 3103 | 42676 | 175 | 5 | 5 | 4 | 13 |
+| 2026-W35 | 2 | 262 | 7481 | 6786 | 119 | 99098 | 113 | 10 | 0 | 22 | 38 |
+
+All six weeks are COMPLETE. HEAD is `ec8c7d58d` (2026-08-30); W36 has not begun.
+
+**The comparator problem, stated before any verdict.** W33 is a treatment week bracketed
+by two-coworker weeks on BOTH sides. The pre-registration specified a backward-only
+baseline (W30-W32) because, on 2026-08-10, forward weeks did not exist. They exist now.
+The two comparators disagree on the SIGN of the commit change:
+
+| baseline | mean | W33 = 178 vs baseline |
+|---|---|---|
+| W30-W32 (pre-registered, backward-only) | 489/3 = 163.0 | **+9.2%** |
+| W31-W32 (backward, excl. knee week) | 407/2 = 203.5 | -12.5% |
+| W34-W35 (forward, two-coworker) | 517/2 = 258.5 | -31.1% |
+| **W31,W32,W34,W35 (symmetric)** | **924/4 = 231.0** | **-22.9%** |
+
+W30 is the knee/onboarding week (82 commits, and the 68-closeout batch landing of the
+closeout convention itself). Including it in a backward-only mean is what produces the
++9.2%. This is not a close call about which number is nicer: a baseline drawn entirely
+from before a rising trend is a biased estimator of the counterfactual, and W30 is
+additionally heterogeneous on its face.
+
+**Both are reported. The pre-registered result is recorded as the lane's primary, because
+pre-registration discipline is worth more than a better estimator chosen afterwards. The
+symmetric result is recorded as the better estimate, and is explicitly flagged as a
+POST-HOC comparator choice and therefore weaker evidence than a pre-specified one.** The
+gap between them is itself the most useful thing this window produced, and section 6
+turns it into a rule.
+
+Trend check, since "symmetric mean" and "trend" could be the same claim twice:
+
+```
+OLS on the two-coworker weeks only, commits ~ week index
+  [W31,W32,W34,W35]  slope = +19.40 commits/week,  W33 counterfactual = 231.0
+  [W30,W31,W32,W34,W35] slope = +32.07 commits/week, W33 counterfactual = 220.4
+```
+
+The first line gives 231.0, identical to the symmetric mean. That is arithmetic, not
+corroboration: W33 is the centroid of [31,32,34,35], so the OLS fit at W33 equals the
+mean by construction. It is reported as one estimate, not two. The second line, which
+includes W30 and is not centred, gives an independent 220.4 (W33 = -19.3%).
+
+**Range for the true fall: about -19% to -23%.**
 
 ## 3. Per-prediction verdict
 
-### P1 -- commits fall, but well short of half: **INCONCLUSIVE**
+### P1 -- commits fall, but well short of half: **MET**
 
-Deciding number: **the window is 14% elapsed (1 author-day of 7).** No percentage change
-computed now can be compared to the pre-registered 15%/50% decision boundaries, because those
-boundaries were written against a full week.
+~~**Run 2 (2026-08-17) verdict: MISSED. "Deciding number: +9.2%. Commits did not fall.
+They rose. The observed change is on the far side of the lane's own falsification
+boundary."**~~ **Withdrawn 2026-08-31: that verdict was produced by a backward-only
+baseline against a rising series. See section 0.**
 
-Recorded for the 08-17 re-run, both clearly labelled as NOT the pre-registered test:
+Deciding number: **-22.9%** (W33 = 178 vs the symmetric two-coworker baseline of 231.0);
+**-19.3%** on the W30-inclusive OLS counterfactual. On the strictly pre-registered
+W30-W32 comparator the figure remains +9.2%, and that reading is recorded, not deleted.
 
-- Raw, uncorrected for elapsed time: 18 vs a W30-W32 mean of 163.00 commits = **-88.96%**.
-  This figure is meaningless as stated; it is dominated by the six days that have not happened.
-- Day-normalized: baseline 163.00/7 = 23.29 commits/day; W33 day 1 ran 18 commits/day =
-  **-22.70%**. This lands inside the pre-registered "well short of half" band, which is
-  suggestive of overlapping rather than independent coworker output -- but a single Monday
-  against a seven-day mean that includes two weekend days is not a like-for-like comparison,
-  and day-of-week composition is one of the confounds the pre-registration named. One day is
-  not evidence about a week.
+Commits fell by roughly a fifth to a quarter. The prediction said "fall, but well short of
+half". A fall of 19-23% is a fall, and is well short of half. **P1 is MET, on the
+comparator the lane should have specified.**
 
-Do not quote either number as the P1 result.
+**What the magnitude implies.** The pre-registration's own scale reads a fall near 15% as
+heavily overlapping work and near 50% as close to independent. Observed 19-23% sits
+between them, nearer the overlap end. Read correlationally: over this one week, removing
+one of two AI coworkers is associated with losing roughly a fifth of commit throughput,
+which is far less than the half a naive headcount model predicts. That is consistent with
+substantial overlap in what the two coworkers were doing, plus a shared owner-side
+bottleneck that caps how much either can land. It is equally consistent with owner
+attention simply redirecting (confound 1). This series cannot separate those.
 
-### P2 -- doc/closeout ratio per commit holds roughly flat: **INCONCLUSIVE**
+### P2 -- doc/closeout ratio per commit holds roughly flat: **MET**
 
-Ratios as they stand (pooled baseline = sum over W30-W32, not mean of ratios):
+~~**Run 2 (2026-08-17) verdict: MISSED. "Closeout per commit 0.2025 -> 0.0449, -77.8%.
+Stated plainly, the closeout ratio moved with headcount. By the pre-registration's own
+words, the process is less institutionalized than the lane has been claiming."**~~
+**Withdrawn 2026-08-31. That -77.8% was almost entirely W30's 68-closeout convention
+batch sitting in the baseline. Against a symmetric baseline the same ratio moves -9.7%,
+and W33 sits INSIDE the two-coworker spread. The finding was an artifact of comparator
+choice and is retracted in full.**
 
-| ratio             | W30   | W31   | W32   | W30-W32 pooled | W33 (partial) |
-|-------------------|------:|------:|------:|---------------:|--------------:|
-| newdoc / commit   | 1.171 | 0.292 | 0.651 |          0.607 |         0.222 |
-| closeout / commit | 0.829 | 0.067 | 0.083 |          0.202 |         0.111 |
+Per-commit ratios against the symmetric two-coworker baseline:
 
-The point-estimate movement (0.607 -> 0.222, 0.202 -> 0.111) would read as a fall, and per the
-pre-registration a fall is the *more interesting* finding -- it would mean documentation
-discipline is carried by coworker count rather than by institutionalized process. **That claim
-cannot be made from this table**, and the reason is worth recording independently of the timing
-problem:
+| measure | pre (W31-32) | post (W34-35) | symmetric | W33 | W33 vs symmetric |
+|---|---|---|---|---|---|
+| doc_add per commit | 222.77 | 274.22 | 251.56 | 288.31 | +14.6% |
+| newdoc per commit | 0.4939 | 0.5571 | 0.5292 | 0.5169 | -2.3% |
+| closeout per commit | 0.0762 | 0.0290 | 0.0498 | 0.0449 | **-9.7%** |
+| proofs per commit | 0.1818 | 0.0097 | 0.0855 | 0.0674 | -21.1% |
 
-**P2's test has close to no resolving power as specified.** The baseline weeks disagree with
-each other by more than the effect being looked for: newdoc/commit spans 0.292 to 1.171
-(**4.0x**) and closeout/commit spans 0.067 to 0.829 (**12.3x**) across three consecutive
-two-coworker weeks with no headcount change at all. W33's partial 0.222 and 0.111 both sit
-inside those baseline ranges. "Roughly flat" was never operationalized as a threshold, and any
-threshold wide enough to accommodate a 12.3x baseline spread cannot be moved by a
-single-week headcount change. This is a defect in the prediction, not in the data, and it
-should be fixed before 08-17: either define the flatness band up front, or pool more baseline
-weeks, or accept that P2 is unfalsifiable as written and say so.
+Documentation volume per commit rose. New docs per commit is flat within noise. Closeouts
+per commit moved less than 10%. **P2 is MET.**
 
-### P3 -- W34's spike is parked residue, not recovery: **INCONCLUSIVE (trivially)**
+**But the test was close to unfalsifiable, and that is the real finding here.** The
+closeout-per-commit ratio across the four two-coworker weeks runs 0.0196, 0.0290, 0.0674,
+0.0830 -- a spread of more than 4x, with no coworker change anywhere in it. W33's 0.0449
+sits comfortably inside that range. Proofs per commit is worse: 0.0000 to 0.3708 across
+two-coworker weeks. **The baseline variance is larger than any effect the window could
+plausibly have produced, so "holds roughly flat" would have been satisfied by almost any
+outcome.** P2 passing is therefore weak evidence for institutionalized process, not strong
+evidence. The 2026-08-10 run flagged exactly this ("P2 under-specified vs baseline
+variance") and was right.
 
-Deciding number: **W34 has zero commits, because W34 begins 2026-08-17.** There is no spike to
-characterize. The prediction cannot be evaluated for another week and a half.
+The competing reading run 2 raised still stands as an unresolved measurement gap: a
+closeout is a per-SESSION artifact, and commits-per-session is not measured, so per-commit
+may be the wrong denominator regardless of which baseline is used. Action 1 in section 7.
+
+### P3 -- W34 will show a spike that is NOT a rebound: **MISSED**
+
+Deciding number: **W34 = 255, W35 = 262.** The level did not revert. A parked-residue
+lump landing in one week produces a spike followed by reversion; W35 came in 2.7% HIGHER
+than W34. There is no spike to attribute.
+
+What W34 actually is: **a return to trend.** Trend value at W34 is 250.4; actual 255, i.e.
++1.8%. Trend at W35 is 269.8; actual 262, i.e. -2.9%.
+
+The residue did land -- the working tree is now clean
+(`git --no-optional-locks status --porcelain` returns empty, against 62 modified + 1
+deletion on 2026-08-10 and 54 modified on 2026-08-17). At the ~19 commit-equivalents
+established in run 2, removing it puts W34's underlying level at roughly 236 against a
+trend of 250.4, i.e. -5.8%. So residue explains about a quarter of the W33-to-W34 jump,
+and the remainder is trend resumption, not rebound.
+
+P3 predicted a spike. There was no spike, so the prediction fails on its own terms.
+**P3 is MISSED.**
+
+**The more important consequence, which no prediction anticipated: the lost week was never
+made up.** W33 came in 53 commits below trend. The cumulative deviation from trend across
+W34 and W35 is **-3.2 commits** (+4.6 then -7.8). There is no catch-up term anywhere in
+the two weeks following the coworker's return.
+
+Read correlationally, and this is the strongest statement the window supports: **the
+single-coworker week's shortfall looks permanent rather than deferred.** The pre-registration
+framed the risk as double-counting a rebound. The data shows the opposite risk -- there was
+nothing to double-count, and a lane that assumed the work would simply arrive later would
+have been wrong. This should be stated as suggestive, not established: n=1, and two weeks
+is a short window in which to detect a slow repayment.
 
 ## 4. The residue correction
 
-Applied as a standing correction to every number above, per the pre-registration's defence (b):
+Pre-measured 2026-08-10 and recorded in advance: **62 modified tracked files + 1
+deletion**, triaged in `SESSION_CLOSEOUT_SITE_PUBLISH_AND_CODEX_RESIDUE_TRIAGE_2026-08-10.md`.
 
-- Codex's W33 work exists but is **uncommitted**: **62 modified tracked files + 1 deletion**,
-  measured 2026-08-10 and triaged into five groups in
-  `docs/maintenance/SESSION_CLOSEOUT_SITE_PUBLISH_AND_CODEX_RESIDUE_TRIAGE_2026-08-10.md`.
-- Therefore **W33 undercounts** work produced in the window, and **W34 will overcount** when
-  the residue lands in a lump.
-- Author-date attribution (defence (a)) does **not** fix this. Author date is stamped when the
-  change is committed, so parked residue committed after 2026-08-16 will carry a W34 author
-  date regardless. The residue offset must be subtracted by hand at the 08-17 reading; the
-  extractor cannot do it.
-- **Consequence for P3, stated in advance so it is not rationalized later:** if the 08-17/08-24
-  series shows a V-shape, the null explanation is that a pre-measured 62-file lump landed in
-  W34. That explanation must be excluded before the word "recovery" is used, and excluding it
-  means checking the W34 diff against the five triage groups by name, not by size.
+Trajectory, all three runs:
+
+```
+2026-08-10   62 modified + 1 deletion   (pre-measured offset)
+2026-08-17   54 modified, 0 deletions   5589 insertions(+), 849 deletions(-) = 6438 lines
+2026-08-31    0                          working tree clean; residue fully landed
+```
+
+At W33's realized rate of ~339 changed lines per commit, 6438 lines is about **19
+commit-equivalents**. Applied in section 3, P3.
+
+**A defect in the pre-registration's defense (a), found by executing it.** The lane
+required two defenses: "(a) attribute by AUTHOR date, not commit date -- the extractor
+already does this; (b) treat the figures above as a known, pre-measured offset." Defense
+(a) does not do what it was intended to do in this repository:
+
+```
+git --no-optional-locks log --since=2026-07-20 --pretty=format:'%an' | sort | uniq -c
+  -> 1184  Derald Grimwood
+```
+
+Every commit in the window has a single git author, the owner. Author date and commit date
+both record when the OWNER landed work, not when a coworker produced it. Author-date
+attribution still protects against rebase smear and is worth keeping, but it cannot
+recover coworker production dates, because coworkers never appear in the author field.
+**Defense (b), the pre-measured offset, was load-bearing alone.** That the offset was
+measured in advance is the only reason section 3 can subtract a number instead of guessing
+one. The pre-registration did its job even as one of its two mechanisms failed.
 
 ## 5. Confounds not ruled out
 
-Correlational only. n=1 week, no control group, no randomization. Nothing here identifies a
-causal effect of coworker count on anything.
+Correlational only. n = 1 treatment week, no control group, no randomization. The
+arrangement's exogeneity (a billing cycle) buys clean TIMING, not identification. Nothing
+in this report is causal.
 
-- **Substitution.** The owner's attention is a shared resource. Any W33 output level is
-  consistent with the remaining coworker absorbing redirected owner attention, which is
-  substitution, not a capacity measurement.
-- **Weekend / day-of-week composition.** Baseline weeks are seven-day means including weekends;
-  the W33 partial is one weekday. The day-normalized -22.70% above is contaminated by this and
-  by nothing else that can currently be separated from it.
-- **The residue offset**, per section 4 -- unresolved by construction until the residue lands.
-- **No per-coworker attribution exists in the record.** Every commit since 2026-07-27 (396 of
-  them) is authored `Derald Grimwood <derald@grimwood.ws>`
-  (`git --no-optional-locks log --since=2026-07-27 --pretty=format:'%an <%ae>' | sort | uniq -c`).
-  Commits are a joint owner-plus-coworkers output measure; the series cannot decompose a fall
-  into "which coworker stopped". This is a structural limit on F1 identification that the
-  pre-registration did not list, and it applies to the 08-17 reading too.
-- **Doctrine-unchanged is asserted, not measured.** The pre-registration pins doctrine, model,
-  disk access and owner across the window by claim. Only the exogeneity of the billing cycle is
-  independently verifiable.
+1. **Substitution of owner attention.** With one coworker idle, owner attention may
+   concentrate on the remaining one. That is redirected attention, not preserved capacity,
+   and it would compress the observed fall below the true capacity loss. Sufficient on its
+   own to explain why the fall is 23% rather than 50%.
+2. **The owner is the landing bottleneck.** All 1184 commits in the period are
+   owner-authored. If the rate-limiting step is the owner's review-and-commit throughput,
+   coworker headcount would have a muted effect on commit counts regardless of coworker
+   production. The commit denominator may be measuring the owner, not the coworkers.
+3. **Window contamination.** Codex returned 2026-08-16, inside W33 (day 7). The window is
+   6 single-coworker days plus 1 two-coworker day, which biases W33 UPWARD and therefore
+   makes the measured fall an understatement.
+4. **Post-hoc comparator.** The symmetric baseline was chosen after seeing the data. It is
+   better-reasoned than the pre-registered one, but it is not pre-registered, and that is a
+   real reduction in evidential weight. Section 2 reports both.
+5. **Trend extrapolation.** The counterfactual assumes the pre-window growth rate would
+   have continued through W33. Four to five points is a thin basis for a slope, and the
+   slope estimate itself moves substantially with W30 in or out (+19.4 vs +32.1 per week).
+6. **Weekend composition.** W33 contributes 57 of 178 commits (32.0%) on 2026-08-15/16,
+   one of which is the contaminated return day. Weekend share is not held constant across
+   weeks and is not controlled.
+7. **Baseline variance swamps P2.** Closeout per commit varies more than 4x across
+   two-coworker weeks. See section 3, P2.
+8. **Closeout normalization.** Per-commit is very likely the wrong denominator for a
+   per-session artifact, and sessions are not counted.
+9. **W35 doc_add is an outlier** (99098, roughly double any other week). It does not enter
+   the commit-count verdicts, but it inflates the post-window doc_add baseline used in P2.
 
-## 6. What this does and does not license
+## 6. What this does and does not license the lane to claim
 
-**Licensed now:**
+**Licensed:**
 
-- Stating that the W33 window is open and its first author-day is on record, with the figures
-  in section 2 as a dated first reading.
-- Stating that P2 as written is under-specified relative to its own baseline variance, and
-  fixing that before the real reading. This finding does not depend on the window being
-  complete.
-- Stating that per-coworker decomposition is not available from git at all.
+- That in this single window, the 2 -> 1 coworker change is associated with a commit
+  shortfall of roughly 19-23% against a symmetric two-coworker baseline, and that this is
+  a fall well short of half, matching P1.
+- That the magnitude sits nearer the pre-registration's "heavily overlapping work" reading
+  than its "close to independent" reading.
+- That the per-commit documentation ratios did not move outside normal two-coworker
+  variance, matching P2 -- while noting that P2's test was too loose to have failed.
+- That W34 was a return to trend rather than a spike, that residue accounts for about a
+  quarter of the W33-to-W34 jump, and that the window's shortfall shows no sign of having
+  been repaid in the two following weeks.
 
-**Not licensed:**
+**NOT licensed:**
 
-- Any verdict of MET or MISSED on P1, P2 or P3.
-- Any statement of the form "removing a coworker reduced/did not reduce throughput by X%".
-- Any use of -88.96% or -22.70% as the W33 result.
-- Any causal language whatsoever, at 08-17 or later. The pre-registration's own words: the
-  result is "suggestive, never identifying".
+- Any causal claim about F1. Confounds 1 and 2 are each independently sufficient to
+  produce the observed magnitude.
+- ~~"The documentation process is not institutionalized."~~ Retracted. That was run 2's
+  comparator artifact and the data does not support it. Neither does the opposite claim:
+  P2's test is too weak to certify the process either way.
+- "A coworker is worth 23% of throughput." The measurement is of commits landed by one
+  owner, not of work produced, and 54 files of the absent coworker's output sat uncommitted
+  through the window.
+- Any general claim that lost coworker-weeks are never recovered. Two post-window weeks is
+  suggestive, not sufficient.
 
-**Next action:** re-run this report at or after 2026-08-17, against a complete W33 and a W34
-that can be checked for residue. Before that run, decide P2's flatness band in advance.
+## 7. Actions this window generates
 
-## Appendix -- ready-to-paste BBS POST body
+1. **Add a session-count denominator to `tools/analysis/acceleration_metrics.py`.** P2
+   cannot be resolved without it, and P2 is the more important of the three predictions.
+2. **Amend the M5 pre-registration in place** (struck through, not edited) with the two
+   defects execution exposed: (a) the backward-only comparator is a biased estimator
+   against a trending series -- pre-register a SYMMETRIC window where the design allows it;
+   (b) single-author history makes author-date attribution unable to recover coworker
+   production dates.
+3. **Pre-register an effect-size threshold, not a direction.** "Holds roughly flat" with a
+   4x baseline spread cannot fail. Future predictions should state the band that would
+   count as a miss.
+4. **Add `git diff` in all forms to CLAUDE.md's sandbox git prohibition.** Run 2 established
+   this the hard way: `--no-optional-locks` suppresses the index refresh for `status` but
+   NOT for `diff`, including `--stat` and `--shortstat`. It
+   left a zero-byte `.git/index.lock` that the sandbox could not unlink. This run avoided
+   `git diff` entirely and used the figures recorded by run 2.
+5. **Re-check the repayment question at W38** (four post-window weeks). If the cumulative
+   trend deviation is still near zero, the "shortfall is permanent" reading strengthens
+   from suggestive to reportable.
 
-The AI-BBS daemon binds 127.0.0.1:8765 on the Windows host and is not reachable from this
-sandbox; the clean attributed-post path (AIF-098 Lane 1 write adapter, KIND=5
-`consolidated_from_chat`) is ON HOLD and not yet built. No BBS write was attempted. If Derald
-wants this on the board now, post by hand. When AIF-098 lands, this hand-step is replaced by
+## 8. BBS post body, ready to paste
+
+The AI-BBS daemon binds `127.0.0.1:8765` on the Windows host and is not reachable from this
+sandbox; the attributed-post path (AIF-098 Lane 1 write adapter, KIND=5
+`consolidated_from_chat`) is ON HOLD and not yet built. No BBS write was attempted. Paste by
+hand if the board should carry this now. When AIF-098 lands, this hand-step is replaced by
 `tools/memory/promote.py`.
 
+Subject:
+
 ```
-SUBJECT: AIF-101 M5 -- W33 window read PREMATURE, all three predictions INCONCLUSIVE
-
-The scheduled M5 report fired 2026-08-11, six days before the pre-registration's own
-reporting date (at or after 2026-08-17). ISO W33 runs 2026-08-10..08-16 and the series
-holds exactly one author-day of it, so P1/P2/P3 are all INCONCLUSIVE on the
-pre-registered test. No verdict is claimed.
-
-First reading, dated, NOT a result: W33 partial = 18 commits, 4 newdoc, 2 closeout vs a
-W30-W32 mean of 163 commits. Day-normalized that is -22.7%, inside the "well short of
-half" band, but one Monday against a seven-day mean including weekends is not a
-like-for-like comparison.
-
-One finding that does NOT depend on the window being complete: P2 is under-specified.
-Across three unchanged two-coworker weeks the baseline newdoc/commit ratio spans 4.0x
-(0.292..1.171) and closeout/commit spans 12.3x (0.067..0.829). "Roughly flat" was never
-given a threshold, and no threshold wide enough for that spread can be moved by a
-one-week headcount change. Fix the band before 08-17 or concede P2 is unfalsifiable.
-
-Residue correction stands: 62 modified tracked files + 1 deletion parked 2026-08-10.
-W33 undercounts, W34 will overcount. Author-date attribution does NOT fix this -- parked
-work committed after 08-16 carries a W34 author date. If W34 shows a V, exclude the
-residue lump by matching the five triage groups by name before saying "recovery".
-
-Correlational only, n=1 week, no control, no randomization. Confounds open: substitution
-of owner attention, day-of-week composition, the residue offset, and the fact that all
-396 commits since 07-27 carry one author, so the series cannot decompose a fall by
-coworker.
-
-Report: docs/maintenance/AIF101_M5_W33_SINGLE_COWORKER_REPORT_V1.md
-Regenerate: python3 tools/analysis/acceleration_metrics.py
+AIF-101 M5: W33 scored at last -- P1 MET, P2 MET (weakly), P3 MISSED
 ```
 
-## Regeneration
+Body:
+
+```
+ISO W33 (2026-08-10..16) was the single-coworker window: Codex out on an exogenous
+billing cycle, everything else pinned. W34 and W35 are now complete, so the test is
+finally scoreable. This supersedes the 2026-08-10 premature run and corrects an
+unpublished 2026-08-17 run that got P1 and P2 backwards.
+
+The correction matters more than the result. The pre-registered comparator was
+backward-only (W30-W32) against a series trending up about 19 commits per week. That
+biases every verdict toward "no effect" and reported commits RISING 9.2 percent. Against
+a symmetric two-coworker baseline (W31,W32,W34,W35 = 231.0) W33 = 178 is -22.9 percent.
+W30-inclusive OLS counterfactual gives -19.3 percent.
+
+P1 commits fall well short of half: MET. Fall of 19 to 23 percent. Nearer the
+pre-registration's "heavily overlapping work" reading than "close to independent".
+
+P2 doc/closeout ratio per commit holds flat: MET. Closeout per commit -9.7 percent
+against the symmetric baseline, inside normal variance. The earlier -77.8 percent was
+W30's 68-closeout convention batch sitting in the baseline; the "discipline is carried
+by headcount" finding is RETRACTED. But P2 was nearly unfalsifiable: closeout per commit
+ranges 0.0196 to 0.0830 across two-coworker weeks with no coworker change at all.
+
+P3 W34 spike that is not a rebound: MISSED. No spike. W34 = 255, W35 = 262 -- it did not
+revert. W34 is a return to trend (trend 250.4). Residue fully landed and explains about
+19 of the 77-commit jump. The unanticipated result: W33 was 53 commits below trend and
+the cumulative deviation across W34-W35 is -3.2, so the lost week was never made up.
+Shortfall looks permanent, not deferred.
+
+Correlational only. n=1, no control. Owner attention substitution and owner-as-landing-
+bottleneck each independently explain the magnitude; all 1184 commits have one git
+author, the owner, so author-date cannot recover coworker production dates.
+Regenerate: python3 tools/analysis/acceleration_metrics.py --since 2026-07-20
+Full report: docs/maintenance/AIF101_M5_W33_SINGLE_COWORKER_REPORT_V1.md
+```
+
+## 9. Regeneration index
 
 Every number in this report comes from one of:
 
 ```
-python3 tools/analysis/acceleration_metrics.py
-git --no-optional-locks log --since=2026-08-08 --date=format:'%Y-%m-%d' --pretty=format:'%ad' | sort | uniq -c
-git --no-optional-locks log --since=2026-07-27 --pretty=format:'%an <%ae>' | sort | uniq -c
+python3 tools/analysis/acceleration_metrics.py --since 2026-07-20
+git --no-optional-locks log --since=2026-07-20 --pretty=format:'%an' | sort | uniq -c
+git --no-optional-locks status --porcelain | awk '{print $1}' | sort | uniq -c
+git --no-optional-locks log -1 --pretty=format:'%h %ad %s' --date=format:'%Y-%m-%d'
 ```
 
-Ratios and percentages are arithmetic on the extractor table and are shown with their inputs
-in sections 3 and 4. No mutating git command was run by this session.
+The 6438-line residue figure is carried forward from run 2 (2026-08-17) because the
+working tree is now clean and it can no longer be re-measured. It was produced by
+`git --no-optional-locks diff --shortstat`, which must not be re-run from a sandbox
+(section 7, action 4).
+
+No figure in this report was hand-counted. Ratios are stated with their numerator and
+denominator so each is re-derivable without rerunning anything.
