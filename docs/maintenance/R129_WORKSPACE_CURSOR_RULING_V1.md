@@ -545,6 +545,54 @@ in `find_open_area_by_name_ci()`, which per sec 5 already has each candidate's
   `find_open_area_by_alias()` -- the workspace-blind one -- whether it is
   taken. Under a scoped cursor the name is NOT taken (it is taken in another
   workspace), so this uniquifies where it should not.
+
+  **CONFIRMED 2026-08-31. RUNTIME-PROVEN, FIRST ATTEMPT, NO TUNING -- this
+  bullet is no longer reasoned.** Probe:
+  `dottalkpp/data/scripts/derive_distinct_alias_workspace_probe.dts`, six
+  markers, FULL COUNT, predictions written into the file before the run. Two
+  directories holding one table name with different labels; `WORKSPACE NEW`
+  twice; `USE DDAT` in each. Guards G0a/G0b/G1a/G1b all `.T.`, so the
+  arrangement the probe reasons about is the arrangement that existed. The
+  engine named the defect in its own words:
+
+      USE: alias 'DDAT' is held by area 0; this instance is named 'DDAT2'.
+      Use ALIAS to choose your own.
+
+  `DDA_P1_second_use_was_uniquified` reads `.T.` -- the second `USE`, in a
+  DIFFERENT workspace, was renamed because the name was taken in the first.
+
+  **AND THE SEVERITY IS LOWER THAN THIS BULLET IMPLIES, WHICH IS WORTH SAYING
+  RATHER THAN LEAVING TO BE FOUND.** `derive_distinct_alias()`'s own comment
+  claims *"Deterministic and announced; never silent"*, and that claim is now
+  runtime-proven TRUE: the rename is printed, the holding area is named, and
+  the remedy (`ALIAS`) is offered in the same line. This is a WRONG-BUT-LOUD
+  defect, which is a different class from the silent crossings AIF-137
+  measured, and it should be triaged as one.
+
+  **THE COMPOUNDING IS WORTH MORE THAN THE CONFIRMATION.** The rename
+  MANUFACTURES the exact precondition sec 6.2's refusal arm exists to catch.
+  With B's copy renamed to `DDAT2`, the plain name `DDAT` is now ABSENT in
+  workspace B and PRESENT in workspace A -- and `SELECT DDAT` issued from
+  inside B selected **area 0, workspace A's copy**, with no refusal and no
+  ledger line. `DDA_P2_plain_name_inside_B_is_B` reads `.F.`, which is the
+  positive read of that crossing.
+
+  **STATED PRECISELY, BECAUSE IT IS NOT A DEFECT AGAINST SHIPPED BEHAVIOUR:**
+  sec 6.2 is RULED and NOT IMPLEMENTED -- the 2026-08-27 closeout says "no
+  code is authorized and no fix is designed for either finding" -- so this
+  measures the gap between the ruling and the engine, not a regression. It is
+  also invisible to the R112 counter by construction, because `cmd_select.cpp`
+  does not call the recording resolver (AIF-139). One run produced a LOUD
+  crossing on the `USE` path and a SILENT one on the `SELECT` path, four lines
+  apart.
+
+  **SO THE TWO ITEMS ARE NOT INDEPENDENT AND THE ORDER MATTERS.** Scoping the
+  alias resolver removes the precondition; implementing 6.2 catches it if the
+  alias resolver is not scoped. Either alone helps and neither is redundant.
+
+  **ALSO OBSERVED, unrelated to this bullet and recorded where it was seen:**
+  `WORKSPACE NEW` prints `parent 0  depth 0` on every declaration. The engine
+  COMPUTES and DISPLAYS both and the posture persists neither.
 - **`current_parent_override()`** in `set_relations.cpp` is still ONE global
   rather than per workspace. **PROMOTED out of this list by sec 5.2: it is no
   longer a thing this ruling would make wrong, it is a defect measured active,
