@@ -129,6 +129,85 @@ BEFORE anyone hydrates two containers."*
 A GUI whose recursion works by hydrating would be a machine for producing
 exactly the silent collision this codebase spends its days hunting.
 
+**AMENDED 2026-08-31 -- TWO OF THESE FOUR BLOCKERS WERE REMOVED THREE DAYS
+AFTER THIS PLAN WAS WRITTEN, AND NOTHING TOLD THE PLAN.** This section is dated
+2026-08-20. The two rows it calls decisive were both fixed on 2026-08-23 under
+AIF-078. The section's CONCLUSION still stands -- concurrent hydration is still
+unsupported -- but it now stands on its other two legs, and saying which is the
+point of this amendment.
+
+**GONE (1) -- the relation graph is partitioned.** `src/cli/set_relations.cpp`
+no longer holds one process-global map keyed by bare uppercased parent name.
+AIF-078 I1.2, D9.3 as amended by sec 9a, with the key spelling fixed by D10.4:
+EACH WORKSPACE OWNS ITS RELATION MAP, keyed on the interned `uint64` workspace
+handle that every area already carries as its `_ws_handle`. The file says it in
+its own comment -- *"Same-named parents in two workspaces cannot collide because
+the key never leaves its workspace, and no hash function has to be written to
+get that."* That is verbatim the collision this section quotes as a blocker.
+Note the second benefit the comment records: the partition also retired
+`WORKSPACE CLOSE`'s global relation clear, the over-reach that printed as
+"relations are cleared GLOBALLY ... (AIF-078 stage 3 limitation)".
+
+**GONE (2) -- name resolution has an ambiguity signal.**
+`src/cli/workarea_util.cpp` now exposes a PLURAL
+`find_open_areas_by_name_ci` returning every match in engine-slot order; the
+singular delegates to it and, on more than one candidate, calls
+`record_ambiguity` before returning the front. The recorder latches per
+name-plus-site, stores each candidate's engine slot AND workspace handle, names
+the slot it chose, and PRINTS -- *"Qualify the name -- first-wins is a migration
+step (R112)."* There is also a scoped `find_open_area_in_workspace_ci`. First
+match still wins; what changed is that it no longer wins in silence. **The
+recorder was checked for being a blind detector in its own right -- the AIF-118
+shape this tree keeps finding -- and it is not: it emits a line, it does not
+merely count.**
+
+**STANDS (3) -- the RAM root is still flat, and it is now the load-bearing
+one.** Measured 2026-08-31: `paths::Slot::RAM` resolves to a single `ram_root`
+field on a State returned by a function-local static, so there is one RAM root
+per PROCESS, not per workspace; `src/cli/cmd_workspace.cpp` reads it once and
+materializes every container into it, indexes into `ramRoot / "indexes"` by the
+VDISK mount convention. Two containers hydrated into one flat root collide on
+FILENAME, and nothing in `include/dottalk/minidb_hydrate.hpp` or its caller
+raises a hand. The MINIDB record already charters this as a decision rather than
+an oversight: *"the per-workspace RAM subroot decision should be made BEFORE
+anyone hydrates two containers."* It has not been made.
+
+**STANDS (4) -- the last-loaded workspace is still one `static std::string`.**
+Unchanged in `src/cli/cmd_workspace.cpp`.
+
+**SO THE SILENCE HAS MOVED RATHER THAN CLEARED, AND THAT IS THE USEFUL
+RESULT.** This section's original claim was a four-way silent failure. Two of
+the four now speak -- one cannot collide at all, and the other announces itself
+by name, slot and workspace handle. What remains silent is the filesystem
+layer, where a name collision is a file overwrite and there is no detector
+whatsoever. A narrower target with a chartered decision already attached is a
+better position than a broad one, and it is the position this feature is
+actually in.
+
+**WHAT THIS DOES NOT CHANGE.** Section 2.3's one-at-a-time hydration refusal is
+NOT relaxed by this amendment; if anything it is now the only thing standing
+between the UI and an overwrite, because the two failure modes that were fixed
+are precisely the two that would have spoken up. Section 3's "No nested SAVE"
+also stands: nothing here touches the format or answers Q-R5.
+
+**WHAT IT DOES CHANGE.** This section's framing made co-residence read as a
+PREREQUISITE for the feature. It is not, and section 1.6 already says why --
+the browser descends by reading bytes with zero engine state, so the read-only
+descent was never gated on any of these four rows. The descent is reachable
+now, and section 3 names it as the evidence Q-R5 has been waiting for.
+
+**THE METHOD NOTE, and it is the reason this amendment exists at all.** The
+plan is dated 2026-08-20, the fixes landed 2026-08-23, the plan carries no
+amendment, and nothing in this tree could have raised one -- the gates are
+change-set scoped by design, and this document was not in the change set that
+improved its subject. It is OI-023's moved-file shape INVERTED: there a
+citation broke when the code moved, and a gate reported it. Here a PREMISE
+broke when the code got better, and no gate can report that at all. **A stale
+citation gets caught; a stale blocker just quietly stops work that could have
+proceeded.** Also worth recording, as the second instance in one day: this plan
+was authored by `member.ai.claude.cowork` and a later session under the SAME
+member identity had to rediscover it by measurement rather than by finding it.
+
 ### 1.6 The seam that makes the feature safe
 
 A `MINIDB 1` container is **completely self-describing**. The posture gives
