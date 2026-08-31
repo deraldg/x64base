@@ -395,8 +395,26 @@ public:
         return false;
     }
 
-    // Depth of h measured from its root. 0 = a root, matching the catalog's
-    // "DEPTH 0 = leaf" field being the same integer read from the other end.
+    // Depth of h in the CONTAINMENT chain, measured from its root: 0 = a root.
+    //
+    // CORRECTED 2026-08-31, and the correction matters more than the function.
+    // This comment used to claim the value matched the catalog's "DEPTH 0 =
+    // leaf" field, "the same integer read from the other end." IT IS NOT THE
+    // SAME INTEGER AND THEY ARE NOT THE SAME QUESTION.
+    //
+    // This counts parents ABOVE a workspace. The catalog's DEPTH is declared
+    // beside SELF_REF ("payload references a workspace catalog") and is a
+    // property of the PAYLOAD -- how deeply the saved thing nests BELOW
+    // itself. A workspace two parents down, whose payload carries no nested
+    // container, is root-depth 2 and leaf-depth 0. The two coincide only in a
+    // one-node tree.
+    //
+    // The old sentence was an instruction to write the wrong fact into a field
+    // the schema calls MANDATORY, and nothing would have caught it: the
+    // catalog's DEPTH has ZERO engine readers (measured 2026-08-31 -- only
+    // tools/dbf/minidb_depth_census.py reads it, as a census). Ruled two
+    // columns by the owner the same day; this function feeds the workspace-
+    // tree one, never the payload one.
     int depth_of(std::uint64_t h) const {
         int d = 0;
         for (std::uint64_t up = parent_of(h); up != 0; up = parent_of(up)) {
