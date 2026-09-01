@@ -5,7 +5,7 @@ page_id: USER-WS-01
 title: Workspaces and MiniDBs
 audience: knows xBase, new to DotTalk++
 status: DRAFT
-last_verified: 2026-08-29
+last_verified: 2026-09-01
 ```
 
 ## Who this is for
@@ -18,6 +18,24 @@ actually make rather than around the verb list.
 `HELP` and `CMDHELP` own syntax -- what a command accepts, spelled exactly.
 Read them for that. Read this for what the commands MEAN together, where they
 surprise you, and how to get out of it.
+
+## What changed in this revision (2026-09-01)
+
+If you read the 2026-08-29 draft, four things are different and one of them is
+a correction rather than an addition.
+
+1. **`WORKSPACE OPEN` is additive, and this page said otherwise.** The old text
+   called it "replacement-style". It has not behaved that way since
+   2026-08-26. See Part 1. If you wrote scripts that close defensively before
+   every open, they still work -- they are just carrying a precaution they no
+   longer need.
+2. **Nesting is durable.** `NEW ... UNDER` now records containment in the
+   catalog, so a parent-child relationship survives the process. Part 2 has the
+   model, the refusal you will meet, and a worked session near the end.
+3. **Adding a field to an indexed table stops the index opening**, loudly and
+   recoverably. Part 6.
+4. **Catalog writes reach the disk before the prompt returns.** You will never
+   see this working; it is documented so you know what to expect after a crash.
 
 ---
 
@@ -64,11 +82,29 @@ If a table is already open somewhere and you want it in the workspace you are
 standing in, CLOSE it first and open it again -- or open a SECOND handle on
 purpose with `USE <table> AGAIN`, which is what that verb is for.
 
-### Two ways in, and they are not the same
+### Two ways in, and the difference is GRANULARITY
 
-- `WORKSPACE OPEN ...` is **replacement-style**: it resets area membership
-  before opening.
-- `WORKSPACE ADD ...` is **additive**: it preserves what is already open.
+This page said until 2026-09-01 that `OPEN` is replacement-style and resets
+area membership. **That was wrong, and it had been wrong since 2026-08-26.**
+The correction is worth stating plainly because the old rule made people
+defensively close things they did not need to close.
+
+- `WORKSPACE OPEN <dir>` opens a DIRECTORY of tables.
+- `WORKSPACE ADD <file.dbf>` opens ONE table.
+- `WORKSPACE LOAD <name>` opens a saved POSTURE.
+
+**All three are ADDITIVE. None of them closes anything.** They differ in how
+much they open at once, not in whether they destroy your session. If you want
+replacement, COMPOSE it and say so:
+
+```
+    WORKSPACE CLOSE ALL
+    WORKSPACE OPEN <dir>
+```
+
+The runtime carries the same correction in `WORKSPACE USAGE`, dated. If you
+read an older script that closes before every open, it is not wrong -- it is
+just carrying a precaution it no longer needs.
 
 `WORKSPACE OPEN <dir>` scans a directory and names the workspace after the
 directory LEAF. `WORKSPACE OPEN <dir> AS <name>` overrides that name, which you
@@ -155,6 +191,89 @@ new.
 **There is deliberately no `WORKSPACE PACK.`** Allocation is `max(WS_ID)+1`
 derived from surviving rows, so deleted rows MUST keep being counted. Pack this
 catalog and the next `NEW` would inherit a deleted workspace's identity.
+
+### `UNDER` declares a parent, and the catalog remembers it
+
+`WORKSPACE NEW <name> UNDER <parent>` nests one workspace inside another, and
+since 2026-09-01 that containment is DURABLE: the catalog row records the
+parent's identity and the child's depth, so nesting survives the process
+instead of living only in this session's registry.
+
+Two things follow that you will meet at the prompt.
+
+**The catalog records the parent's DURABLE id, not the handle you typed.**
+`REGISTRY` shows `parent 2` because 2 is a slot in this process's table; the
+catalog stores `276`, the parent's real identity. They are different numbers
+for the same parent and both are correct. A handle does not survive a restart;
+the durable id is the thing that does.
+
+**A parent that has no durable identity is REFUSED, not silently flattened.**
+
+```
+    . WORKSPACE NEW DURX UNDER DEFAULT
+    WORKSPACE NEW: refused -- the parent workspace has no durable identity yet,
+      so its containment cannot be recorded.
+      A parent must be durable before a child can name it. Nothing was created.
+```
+
+This is the answer to "why can I not nest under DEFAULT?" -- and note the
+refusal says nothing about DEFAULT. It is a general rule: a container that
+cannot be NAMED cannot be RECORDED. DEFAULT simply happens to be the one
+workspace with no catalog row, because you never declared it. Everything you
+create with `NEW` is durable from birth and can be a parent immediately.
+
+"Nothing was created" is literal. No catalog row is written and no runtime
+handle is left behind; `REGISTRY` afterwards shows exactly what it showed
+before.
+
+### Four kinds of "name", and which ones survive a restart
+
+Most confusion in this part of the system is one question wearing four hats:
+*what exactly am I holding when I hold a workspace?* The answer is that there
+are four different identities in play, they have different lifetimes, and
+mixing them up is what produces a script that works today and reads nonsense
+tomorrow.
+
+| what you hold | where the truth lives | survives a restart? |
+|---|---|---|
+| **session handle** (`handle 2`) | this process's table | NO |
+| **durable id** (`WS_ID 276`) | the catalog chain | YES -- it IS the persistence |
+| **derivable id** (depth, membership) | computed from something else | not stored, recomputed |
+| **composition** (a name plus a path, say) | its parts | only as long as its LEAST durable part |
+
+Two practical consequences.
+
+**Never write a handle into anything that outlives the process.** A handle is a
+slot number. Next run, slot 2 is somebody else's workspace, and a script that
+says `WORKSPACE SWITCH 2` will cheerfully switch to the wrong thing rather than
+fail. Address workspaces by NAME. The engine does the same thing internally:
+when `UNDER` records a parent it converts the handle you typed into the
+parent's durable id before writing it down, which is why the two numbers differ
+in the output.
+
+**A composition inherits durability; it never confers it.** If you build a
+label out of a workspace name and something transient, the label is only as
+durable as the transient half. This is the reasoning behind the `UNDER`
+refusal: a child's containment is a composition of "me" and "my parent", so it
+cannot be more durable than the parent, and a parent with no durable identity
+would produce a containment record that means nothing on the next run.
+
+### The catalog is written to disk before the prompt comes back
+
+`WORKSPACE NEW` does not just intend to write a row -- as of 2026-09-01 the
+write is pushed all the way to the physical disk before the command returns,
+with the memo sidecar synced before the table so the two can never disagree
+about which one is newer.
+
+Before this, the engine asked the operating system to write and the OS was free
+to hold it in cache. A power loss between `NEW` and the next flush could leave
+a catalog that had lost its most recent rows -- and worse, could leave the
+sidecar and the table disagreeing.
+
+You will not see this. That is the point. It is recorded here so that if you
+ever compare a catalog against a backup after a hard crash, you know the answer
+is supposed to be "the rows are there," and a missing row is a bug worth
+reporting rather than an expected cost of pulling the plug.
 
 ### `DESTROY` refuses three things, and never cascades
 
@@ -290,9 +409,11 @@ leg.
 
 ## Part 5 -- Loading, and what a load will not do to you
 
-**`LOAD` refuses a shortfall.** Declared members are resolved and probed BEFORE
-anything is closed, so a load that cannot complete leaves your CURRENT session
-STANDING rather than destroying it and then reporting the wreckage.
+**`LOAD` closes nothing at all**, and it refuses a shortfall. Declared members
+are resolved and probed before anything is opened, so a load that cannot
+complete leaves your current session exactly as it found it. A load that CAN
+complete also leaves it standing -- the saved tables are added alongside what
+you already had, into the workspace you are standing in.
 
 ```
     WORKSPACE LOAD: ABORTED -- the posture declares 2 table(s); 1 cannot be found:
@@ -344,9 +465,57 @@ what bites you in a workspace context.
 - Building differs by family: CDX builds with `BUILDLMDB` (`BUILDLMDB CLEAN
   YES` to rebuild an existing one); CNX builds with `REBUILD`. `REINDEX`
   dispatches to whichever your table's flavor implies.
+- **Adding a field to an indexed table stops the index opening.** A CDX
+  carries a fingerprint of the table it was built against -- kind, version,
+  record length, field count and a field-layout hash -- and `openCdx` REFUSES
+  on a mismatch. `FIELDMGR APPEND` changes the record length and the field
+  count, so afterwards `SET ORDER` fails with a `metadata mismatch` naming both
+  sides. Your DATA is intact; only the index refuses. Rebuild it
+  (`BUILDLMDB CLEAN YES` for CDX, `REBUILD` for CNX) and the order comes back.
+  This is deliberate: a stale index that ANSWERS is worse than one that
+  refuses, because nothing tells you the answer changed.
 - **Under RAM there is no disk for `.mdb` files**, so CDX falls back to sorted
   in-RAM indexes and does not use LMDB. This is why writeback's contract says
   the destination needs `BUILDLMDB`.
+
+### What the index refusal actually looks like
+
+Worth seeing once, because the message is long and the important half is at the
+end of it.
+
+```
+    . SET ORDER TAG CLBL
+    SET ORDER: CDX TAG 'CLBL' (ASC)
+
+    . FIELDMGR APPEND FMNEW N(4)
+    FIELDMGR APPEND: field appended successfully [WARNING: attached index is
+      now STALE and will refuse to open until rebuilt -- the table's reclen and
+      field count no longer match the container's fingerprint]
+
+    . SET ORDER TAG CLBL
+    SET ORDER: openCdx: metadata mismatch
+      [table reclen=21, fields=3, hash=9862171499522484533] vs
+      [cdx   reclen=17, fields=2, hash=10505654778912424209]
+```
+
+Read the two bracketed groups as before-and-after. The table now has 3 fields
+and a 21-byte record; the index was built against 2 fields and 17 bytes. That
+is the whole diagnosis.
+
+Two follow-on points that are easy to get wrong:
+
+**The warning only fires if the index is ATTACHED.** If you never issued
+`SET ORDER` in this session, the append proceeds with no warning at all -- and
+invalidates the on-disk container exactly the same way. You find out later, at
+the next `SET ORDER`, which is loud but not where you were looking. So after
+any `FIELDMGR APPEND`, rebuild the table's indexes whether or not you were
+warned.
+
+**A refusal that names identical numbers means something different.** If the
+record length and field count MATCH and only the hash differs, the message adds
+a clause saying the record shape is unchanged and the field LAYOUT is not --
+a rename, a same-width type change, or a reordering. Same remedy, rebuild; but
+it tells you the table's columns moved rather than grew.
 
 ---
 
@@ -380,6 +549,105 @@ posture.
 
 ---
 
+## A nested session, end to end
+
+The first session above uses one workspace. This one builds a parent and a
+child, proves the containment landed in the catalog rather than only in this
+process, and takes it all down again in the right order.
+
+```
+    WORKSPACE NEW COLLEGE
+    WORKSPACE NEW REGISTRAR UNDER COLLEGE
+```
+
+Read the two replies carefully, because they are not saying the same thing:
+
+```
+    WORKSPACE NEW: handle 2  name COLLEGE    parent 0  depth 0  WS_ID 276
+    WORKSPACE NEW: handle 3  name REGISTRAR  parent 2  depth 1  WS_ID 277
+```
+
+`COLLEGE` reports `parent 0`, which is a DECLARATION that it has no container
+-- not a gap, and not "unknown". `REGISTRAR` reports `parent 2`, the session
+handle, and `depth 1`. What went into the catalog for `REGISTRAR` is
+`PARENT_ID 276` -- `COLLEGE`'s durable id, not its handle. Same parent, two
+numbers, two lifetimes.
+
+Now fill the child and confirm membership before trusting it:
+
+```
+    WORKSPACE SWITCH REGISTRAR
+    SELECT 0
+    USE STUDENTS
+    SET ORDER TO LNAME
+
+    WORKSPACE REGISTRY
+```
+
+```
+    WORKSPACE REGISTRY (runtime membership)
+      current handle : 3
+      recursion      : ON
+      workspaces     : 3
+      handle 1  name DEFAULT    parent 0  depth 0  members 0  WS_ID (none yet)
+      handle 2  name COLLEGE    parent 0  depth 0  members 0  WS_ID 276
+      handle 3  name REGISTRAR  parent 2  depth 1  members 1  WS_ID 277
+```
+
+Three things in that block are worth pointing at.
+
+`DEFAULT` shows `WS_ID (none yet)`. It has no catalog row because you never
+declared it, which is exactly why nothing can nest under it.
+
+`COLLEGE` shows `members 0`. A parent does not gain its children's areas.
+Containment is about workspaces, not about work areas -- `COLLEGE` contains
+`REGISTRAR`, and `REGISTRAR` contains the area.
+
+`recursion : ON` decides what a close will do next.
+
+Taking it down, and the ORDER is not optional:
+
+```
+    WORKSPACE CLOSE               && closes REGISTRAR's members only
+    WORKSPACE SWITCH DEFAULT
+    WORKSPACE DESTROY REGISTRAR   && child first
+    WORKSPACE DESTROY COLLEGE     && now the parent is childless
+```
+
+Reverse those last two and the second is refused:
+
+```
+    WORKSPACE DESTROY: refused -- COLLEGE still has nested children.
+```
+
+That refusal is doing you a favour. A cascading destroy would retire identities
+you never named, and the rows it left behind would describe a tree that no
+longer exists.
+
+### What the catalog looks like afterwards
+
+Both rows are still there and still readable -- `DESTROY` supersedes, it does
+not delete. So the record of the nesting outlives the nesting:
+
+```
+    276  COLLEGE     PARENT_ID='0'    TREE_DEPTH='0'   SUPERSEDED='1'
+    277  REGISTRAR   PARENT_ID='276'  TREE_DEPTH='1'   SUPERSEDED='1'
+```
+
+A `PARENT_ID` of `0` means one thing and one thing only: **no container was
+declared**. It does not mean "unknown", it does not mean "DEFAULT", and it does
+not mean "not filled in yet". If you are reading rows written before
+2026-09-01 you may find the column BLANK -- that is genuinely "this row predates
+the feature", and blank and `0` are deliberately different so the two cannot be
+confused.
+
+`TREE_DEPTH` is the distance from the root: `0` for a workspace with no
+declared parent, `1` for a child, and so on. It is computed from the parent
+chain at the moment the row is written, so it cannot drift away from
+`PARENT_ID` later.
+
+---
+
 ## Traps, collected
 
 | symptom | cause | fix |
@@ -392,6 +660,9 @@ posture.
 | Plain `LOAD` refuses your MiniDB | by design -- its tables have no disk home | `VDISK MOUNT` then `LOAD ... MEMO RAM` |
 | A check reads green over nothing | slot-addressed after a load; the area is closed | address BY NAME |
 | Catalog fills with rows you did not save | every `NEW` and every `OPEN ... AS` mints | `do l1census`, then adopt-and-destroy |
+| `NEW ... UNDER DEFAULT` refused | DEFAULT has no catalog row, so it cannot be named as a container | nest under a workspace you declared; every `NEW` is durable from birth |
+| `SET ORDER` fails right after `FIELDMGR APPEND` | the added field changed the record length, so the index fingerprint no longer matches | rebuild the index; the data is untouched |
+| You closed everything before an `OPEN` out of habit | `OPEN`/`ADD`/`LOAD` have been additive since 2026-08-26 | only close when you actually mean to replace |
 
 ---
 
@@ -418,6 +689,9 @@ lines.
 - `docs/maintenance/RAM_MINIDB_MEMO_WORKSPACE_OPERATIONS_V1.md` -- the operator
   manual for the RAM/memo lane.
 - `docs/maintenance/MEMO_RESIDENT_MINIDB_V1.md` -- mechanism and design.
+- `dottalkpp/data/scripts/fieldmgr_append_live_cdx_probe.dts` -- the index
+  invalidation in Part 6, measured rather than described: it builds a table,
+  builds a tag, reads the keyed order, appends a field, and reads it again.
 - `docs/manuals/developer/dev/dev-12-relations-workspaces-and-tuple-traversal.md`
 - `docs/manuals/developer/dev/dev-09-indexing-inx-cnx-cdx-lmdb.md`
 
