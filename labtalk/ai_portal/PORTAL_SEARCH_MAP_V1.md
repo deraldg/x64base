@@ -24,7 +24,7 @@ next agent. A scan you did not record is a scan the next agent repeats.
 
 | Looking for | Go straight to | Crosslinks |
 | --- | --- | --- |
-| BBS POST/REPLY grammar, attribution | `src/cli/cmd_bbs.cpp` -- `bbs_usage`, `do_post`, `split_subject_body`, `current_member` (~L91-163) | `docs/maintenance/DESIGN_bbs_pseudochat_two_lanes.md`; `docs/maintenance/LANE_L1_WRITE_ADAPTER_ASSIGNMENT_GROK_V1.md` |
+| BBS POST/REPLY grammar, attribution | `src/cli/cmd_bbs.cpp` -- `bbs_usage`, `do_post`, `split_subject_body`, `current_member` (~L91-163) | `DESIGN_bbs_pseudochat_two_lanes.md` is **EXTERNAL to this repo** -- it lives in the Frontal_Mem project, see `labtalk/ai_portal/FRONTAL_MEM_POINTER_V1.md`; the repo-relative spelling here was never true and made `cited-paths` report it MISSING. `docs/maintenance/LANE_L1_WRITE_ADAPTER_ASSIGNMENT_GROK_V1.md` |
 | BBS store / post_new / kind | `src/bbs/bbs_store.cpp`, `src/bbs/bbs_server.cpp` | AIF-075 provenance |
 | Coordination: quip, claim-aif, wake, roster | `tools/coordination/session_coordinator.py` -- `main` subparsers (~L444-456) | `docs/maintenance/AI_SESSION_COORDINATION_PROTOCOL_V1.md`; `COORDINATION_DEVELOPER_MANUAL_V1.md` |
 | Project id registry (for report-audit) | `labtalk/registries/projects.yaml` (id -> root) | policy `labtalk/registries/ai_report_audit.yaml` |
