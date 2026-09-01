@@ -3370,10 +3370,23 @@ static std::uint64_t chain_root(const WsCatalogScan& s, std::uint64_t id) {
 //   BIRTH -- it does not, so write the birth row: WS_ID = max+1, PREV_ID = 0,
 //   no payload. FMT reads "BIRTH 1" so the row is self-describing and the
 //   catalog census can tell a birth from a save rather than inferring it.
+// R137 (2026-08-31): containment is DECLARED, never inferred. The caller passes
+// what it was TOLD -- `parent_ws_id` is the DURABLE id of a container named by
+// an explicit UNDER, and 0 means "no container was declared". This function
+// cannot work it out for itself and must not try: it runs BEFORE
+// xbase::workspace::create(), so the runtime handle does not exist yet and
+// there is nothing to ask. That ordering is why the parameter exists.
+//
+// `tree_depth` is the new node's distance from its root, which the caller can
+// compute as depth_of(parent) + 1 before the child exists. It is a STAMP of a
+// derivable value (R135 rung 3), written from the single source at write time,
+// never by hand -- the defect DEPTH carried for 106 rows.
 static bool ensure_durable_workspace(const std::string& name,
                                      std::uint64_t& ws_id_out,
                                      bool& adopted,
-                                     std::string& err) {
+                                     std::string& err,
+                                     std::uint64_t parent_ws_id = 0,
+                                     int tree_depth = 0) {
     ws_id_out = 0;
     adopted   = false;
 
@@ -3403,6 +3416,8 @@ static bool ensure_durable_workspace(const std::string& name,
               && set_by_name(a, "MAX_AREAS",  "0", err)
               && set_by_name(a, "DEPTH",      "0", err)
               && set_by_name(a, "SELF_REF",   "F", err)
+              && set_by_name(a, "PARENT_ID",  std::to_string(parent_ws_id), err)
+              && set_by_name(a, "TREE_DEPTH", std::to_string(tree_depth), err)
               && set_by_name(a, "PREV_ID",    "0", err)
               && set_by_name(a, "SUPERSEDED", "0", err)
               && set_by_name(a, "SAVED_AT",   now_stamp(), err)
@@ -3751,6 +3766,25 @@ static void save_to_memo(const std::string& name, int version,
                // (LOAD ... MEMO RAM refuses non-MINIDB by design).
                && (!minidb || set_by_name(a, "EST_HYD_B", std::to_string(mdBytes), err))
                && set_by_name(a, "MAX_AREAS", std::to_string(areaCount), err)
+               // PARENT_ID / TREE_DEPTH ARE DELIBERATELY NOT STAMPED HERE, and
+               // this is a decision rather than an omission (R137).
+               //
+               // A BIRTH row records a workspace being DECLARED, so its
+               // container is known at that moment and ensure_durable_workspace
+               // stamps it. A SAVE row records a POSTURE, and a posture's
+               // container belongs to the posture -- not to whoever happened to
+               // be saving. Two reasons it cannot be stamped from here:
+               //
+               //   1. SaveScope carries slots and counts, no workspace handle,
+               //      so there is no unambiguous subject to ask about; and
+               //   2. no posture carries a PARENT line yet. DTSHEMA 2 and 3
+               //      have no place to put one, and the version that will is
+               //      AIF-070's to design, not this lane's.
+               //
+               // So BLANK here is the TRUE answer, not a missing one: nothing
+               // has been recorded because nothing has been declared. When a
+               // posture can carry a declaration, this writer reads it and
+               // stamps what the payload says -- never the saver's position.
                && set_by_name(a, "DEPTH", "0", err)          // leaf until hydration says otherwise
                && set_by_name(a, "SELF_REF", selfRef ? "T" : "F", err)
                && set_by_name(a, "PREV_ID", std::to_string(prevId), err)
@@ -5351,7 +5385,29 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
             std::string derr;
             // ws_memo:: qualified for the same reason save_to_memo is at the
             // SAVE site -- the catalog helpers all live in that namespace.
-            if (!ws_memo::ensure_durable_workspace(nm, wsId, adopted, derr)) {
+            // R137: a container is stamped by its DURABLE id, never by the
+            // session handle, and a parent that EXISTS but has no durable id
+            // is REFUSED HERE rather than downgraded to 0 -- because 0 already
+            // means "no container declared", and one value must not carry two
+            // meanings. This refusal sits beside create()'s absent-parent
+            // refusal and would_cycle: declaration time, before anything is
+            // built on the edge.
+            std::uint64_t parentWsId = 0;
+            int           newDepth   = 0;
+            if (parent != 0) {
+                parentWsId = xbase::workspace::ws_id_of(parent);
+                if (parentWsId == 0) {
+                    std::cout << "WORKSPACE NEW: refused -- the parent workspace has no"
+                                 " durable identity yet, so its containment cannot be"
+                                 " recorded.\n";
+                    std::cout << "  A parent must be durable before a child can name it"
+                                 " (R137). Nothing was created.\n";
+                    return;
+                }
+                newDepth = xbase::workspace::depth_of(parent) + 1;
+            }
+            if (!ws_memo::ensure_durable_workspace(nm, wsId, adopted, derr,
+                                                   parentWsId, newDepth)) {
                 std::cout << (derr.empty()
                                 ? std::string("WORKSPACE NEW: could not allocate a durable "
                                               "WS_ID.")
