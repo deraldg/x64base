@@ -1,6 +1,14 @@
 # DOTSCRIPT-ARRAYS -- implementation lane (v1)
 
-Status: **proposed / not started** (dev). Arrays are **PLANNED** -- not implemented.
+Status: **PARTIAL** (dev). Corrected 2026-09-01 -- this line read "proposed / not
+started ... PLANNED -- not implemented" while the milestone ladder below recorded
+M1a, M1b-1, M1b-2a, M1b-2b and M1b-2c as **DONE and proven** (unit, MSVC and REPL,
+2026-07-20), and the runtime agrees with the ladder: `VAR`, `$name`, `{}` literals
+and `$a[n]` all work today, with two regression specs behind them. The header aged
+into being WRONG rather than merely stale. Open from here: M1b-3 (array functions +
+message-catalog errors, build-required), M2, M3. This lane's own Definition of Done
+demands "status truthful and runtime-proven (PLANNED->PARTIAL->SUPPORTED)"; the
+ladder existed and the row was never moved up it.
 Owning lifecycle: DotTalk++ SDLC - DotScript language + expression runtime.
 Parent project: `project.x64base.dotscript` (promoted per AIF-040).
 Design authority: `docs/maintenance/DOTSCRIPT_ARRAYS_SPEC_V1.md` (DOTSCRIPT-ARRAYS-SPEC-V1).
