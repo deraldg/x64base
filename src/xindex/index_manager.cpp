@@ -140,63 +140,67 @@ bool IndexManager::openCdx(const std::string& cdx_container_path,
 
     if (meta.has_value()) {
         if (!cdxmeta::matches(identity, *meta)) {
-            const bool core_ok = same_core_shape(identity, meta->table);
-
-            if (core_ok) {
-                cdxmeta::MetaRecord fresh = *meta;
-                fresh.table = identity;
-
-                if (!cdxmeta::write_meta(cdx_container_path, fresh, &meta_err)) {
-                    if (err) {
-                        std::ostringstream oss;
-                        oss.imbue(std::locale::classic());
-                        oss << "openCdx: stale metadata detected but refresh failed"
-                            << " [table kind=" << identity.kind
-                            << ", version=" << static_cast<unsigned>(identity.version)
-                            << ", reclen=" << identity.rec_len
-                            << ", fields=" << identity.field_count
-                            << ", hash=" << identity.schema_hash
-                            << "]"
-                            << " vs"
-                            << " [cdx kind=" << meta->table.kind
-                            << ", version=" << static_cast<unsigned>(meta->table.version)
-                            << ", reclen=" << meta->table.rec_len
-                            << ", fields=" << meta->table.field_count
-                            << ", hash=" << meta->table.schema_hash
-                            << "]"
-                            << " write_meta error=" << meta_err;
-                        *err = oss.str();
-                    }
-                    return false;
+            // ANY MISMATCH REFUSES. THERE IS NO REFRESH BRANCH, AND ITS REMOVAL
+            // IS THE POINT OF THIS BLOCK.
+            //
+            // Until 2026-09-01 a mismatch whose CORE SHAPE still matched -- same
+            // kind, version, reclen and field_count, differing only in
+            // schema_hash -- did not refuse. It OVERWROTE THE SIDECAR with the
+            // table's current identity and opened. That branch arrived inside a
+            // bulk checkpoint commit (fecc3951e, 2026-07-14) with no design note
+            // and nothing in the tree ever explained it.
+            //
+            // schema_hash is FNV-1a over NAME|TYPE|LENGTH|DECIMALS per field, so
+            // the cases it silently blessed are exactly: a field RENAME, a
+            // same-width TYPE change (C(8) -> D(8)), a DECIMALS change, and a
+            // field REORDER. Reorder is the worst -- same names, same widths, new
+            // positions -- and a tag re-pointed onto data at a different offset
+            // ANSWERS rather than refuses. A stale index that answers is worse
+            // than one that refuses, because nothing says the answer changed.
+            //
+            // NOT REACHABLE TODAY, and that is why it is safe to change now
+            // rather than later: modifyName and deleteField are stubs and there
+            // is no reorder verb, so nothing in the tree can produce this state.
+            // FIELDMGR APPEND cannot -- it moves reclen AND field_count, so it
+            // lands in the refusal above either way. This is a trap disarmed
+            // before the verb that would spring it exists, which is the only
+            // moment the change costs nothing to make and nothing to prove.
+            //
+            // THE COST, STATED: if hash_schema_ is ever changed, every existing
+            // container refuses until rebuilt. That is loud, bounded and fixed by
+            // BUILDLMDB. Gating the refresh on META_VERSION was considered and
+            // rejected -- it cannot fire today (everything writes version 1), and
+            // a switch that moves nothing is not an open.
+            if (err) {
+                const bool core_ok = same_core_shape(identity, meta->table);
+                std::ostringstream oss;
+                oss.imbue(std::locale::classic());
+                oss << "openCdx: metadata mismatch"
+                    << " [table kind=" << identity.kind
+                    << ", version=" << static_cast<unsigned>(identity.version)
+                    << ", reclen=" << identity.rec_len
+                    << ", fields=" << identity.field_count
+                    << ", hash=" << identity.schema_hash
+                    << "]"
+                    << " vs"
+                    << " [cdx kind=" << meta->table.kind
+                    << ", version=" << static_cast<unsigned>(meta->table.version)
+                    << ", reclen=" << meta->table.rec_len
+                    << ", fields=" << meta->table.field_count
+                    << ", hash=" << meta->table.schema_hash
+                    << "]";
+                // Without this the refusal is unreadable: every printed number
+                // agrees except a 64-bit hash, and a reader checks reclen, checks
+                // fields, sees them match, and concludes the guard misfired.
+                if (core_ok) {
+                    oss << " -- the record shape is UNCHANGED and the FIELD LAYOUT"
+                           " is not: a rename, a same-width type or decimals"
+                           " change, or a reordering. The container is keyed on"
+                           " the old layout and must be rebuilt.";
                 }
-
-                meta = cdxmeta::read_meta(cdx_container_path, &meta_err);
-                if (!meta.has_value()) {
-                    if (err) *err = "openCdx: refreshed metadata but could not re-read sidecar";
-                    return false;
-                }
-            } else {
-                if (err) {
-                    std::ostringstream oss;
-                    oss.imbue(std::locale::classic());
-                    oss << "openCdx: metadata mismatch"
-                        << " [table kind=" << identity.kind
-                        << ", version=" << static_cast<unsigned>(identity.version)
-                        << ", reclen=" << identity.rec_len
-                        << ", fields=" << identity.field_count
-                        << ", hash=" << identity.schema_hash
-                        << "]"
-                        << " vs"
-                        << " [cdx kind=" << meta->table.kind
-                        << ", version=" << static_cast<unsigned>(meta->table.version)
-                        << ", reclen=" << meta->table.rec_len
-                        << ", fields=" << meta->table.field_count
-                        << ", hash=" << meta->table.schema_hash
-                        << "]";
-                    *err = oss.str();
-                }
-                return false;
+                *err = oss.str();
             }
+            return false;
         }
     } else {
         cdxmeta::MetaRecord fresh{};
