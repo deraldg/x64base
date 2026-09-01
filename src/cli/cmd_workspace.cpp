@@ -521,6 +521,7 @@
 #include "dottalk/scratch_sidecar.hpp"
 #include <algorithm>
 #include "xbase/workspace_membership.hpp"
+#include "xbase/durable.hpp"
 #include <cctype>
 #include <climits>
 #include <cstdlib>
@@ -3135,8 +3136,21 @@ static bool open_catalog(xbase::DbArea& a, std::string& err) {
     catch (const std::exception& e) { err = std::string("WORKSPACE MEMO: cannot open catalog: ") + e.what(); return false; }
 
     // v1-catalog guard: a WORKSPACES.dbf without WS_ID predates the v2
-    // schema (2026-08-11). Refuse LOUDLY rather than mis-populate -- the
-    // no-ALTER-add-field gap means we cannot upgrade in place yet.
+    // schema (2026-08-11). Refuse LOUDLY rather than mis-populate.
+    //
+    // ITS ORIGINAL REASON EXPIRED 2026-08-31 AND IS CORRECTED RATHER THAN LEFT
+    // TO MISLEAD. This comment used to end "the no-ALTER-add-field gap means we
+    // cannot upgrade in place yet." There is no such gap now: FIELDMGR APPEND
+    // added PARENT_ID and TREE_DEPTH to this very catalog in place the same
+    // day, runtime-proven, with all 20 original column hashes identical and the
+    // memo sidecar byte-untouched.
+    //
+    // THE GUARD STAYS ANYWAY, on a better reason: a pre-v2 catalog is missing
+    // WS_ID, which is the DURABLE IDENTITY every other column hangs off (R135
+    // rung 2), and an in-place add would give every existing row a blank or
+    // invented one. Adding a column is cheap; inventing an identity is not.
+    // Recorded because a stale justification talks the next reader out of
+    // something they can now do -- and this one would have.
     if (fields::findFieldCI(a, "WS_ID") < 0) {
         err = "WORKSPACE MEMO: catalog at " + s8(catalog_path()) +
               " is pre-v2 (no WS_ID). Remove WORKSPACES.* in the workspaces "
@@ -3397,6 +3411,24 @@ static bool ensure_durable_workspace(const std::string& name,
               && set_by_name(a, "IDX_ROOT",   s8(idx_root()), err);
             if (ok) {
                 a.writeCurrent();
+                // DURABILITY COMMIT POINT, inside the FLOCK. writeCurrent()
+                // ends in io().flush(), which reaches the OPERATING SYSTEM and
+                // no further -- it survives a crash of this process and not a
+                // power cut. This is the catalog: a registry other processes
+                // read through a cross-process lock, so "the row is there" must
+                // mean it is there after the machine comes back. One file, no
+                // payload -- a BIRTH row carries no SNAPSHOT -- so there is no
+                // ordering constraint here and one sync is the whole story.
+                // A failed sync is REPORTED, never fatal: the row is already
+                // written and correct, and refusing at this point would leave
+                // the caller believing nothing happened when something did.
+                {
+                    std::string serr;
+                    if (!xbase::durable_sync(s8(catalog_path()), &serr)) {
+                        std::cout << "WORKSPACE: warning -- catalog written but not"
+                                     " synced to durable media (" << serr << ")\n";
+                    }
+                }
                 // Read the id back FROM THE FIELD, not from memory. A field
                 // width truncated a memo token past a memory-ref oracle once
                 // (2026-08-11) and WS_ID is N(10) carrying a value we intend
@@ -3753,6 +3785,37 @@ static void save_to_memo(const std::string& name, int version,
                 std::cout << "  MINIDB 1: " << mdFiles << " file(s), " << mdBytes
                           << " B of table+index bytes carried IN the memo"
                           << " (posture " << posture.size() << " B)\n";
+            }
+        }
+        // DURABILITY COMMIT POINT, inside the FLOCK -- AND THE ORDER IS THE
+        // GUARANTEE, NOT AN IMPLEMENTATION DETAIL.
+        //
+        // A memo save writes TWO files. The payload goes into the sidecar
+        // FIRST and the row into the table SECOND, deliberately, so that a
+        // crash between them leaves an ORPHAN PAYLOAD -- wasted bytes, and the
+        // benign failure -- rather than a row whose SNAPSHOT token names
+        // nothing. That is the only safe direction and it is already chosen.
+        //
+        // SYNCING MUST MIRROR IT. Sidecar first, then table. Reversed, the row
+        // can reach the platter before the payload it references and the
+        // crash-safe direction is undone by the call meant to secure it. This
+        // is the single reason these two lines are ordered rather than looped.
+        //
+        // This does NOT make the pair atomic -- R136 puts a two-file operation
+        // in the class that needs write-ahead intent, and no journal exists.
+        // It makes each file durable in an order under which the only
+        // reachable inconsistency is the harmless one.
+        {
+            std::string serr;
+            const std::string mp = a.memoPath();
+            if (!mp.empty() && !xbase::durable_sync(mp, &serr)) {
+                std::cout << "WORKSPACE SAVE: warning -- memo payload written but"
+                             " not synced to durable media (" << serr << ")\n";
+            }
+            serr.clear();
+            if (!xbase::durable_sync(s8(catalog_path()), &serr)) {
+                std::cout << "WORKSPACE SAVE: warning -- catalog row written but"
+                             " not synced to durable media (" << serr << ")\n";
             }
         }
     } // release FLOCK while area still open
