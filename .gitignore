@@ -355,6 +355,16 @@ dottalkpp/data/indexes/**/*.cdx.meta
 # per run, purely local safety copies -- never part of the history. Delete when satisfied.
 labtalk/registries/_pre_fragment_backup_*/
 
+# --- Stray CMake build tree under scripts/ (OI-008 triage, 2026-09-01) ---
+# `scripts/build/` is a complete configure output -- CMakeCache.txt, CMakeFiles/,
+# _deps/ -- 22 files, and it is the ONLY build artefact in the 7,449-file
+# untracked backlog. The pre-push gate hard-blocks build trees, and reported
+# `hard-block: 0` on every commit correctly, because it inspects the STAGED
+# INDEX and nobody was ever going to stage this. Ignoring it is what stops it
+# being staged by accident and removes the only genuinely disposable entries
+# from the backlog census.
+scripts/build/
+
 # AIF-093: `.text` is the curated "chosen to travel" marker -- never ignore it.
 # No rule above matches `.text`; this is an explicit durability guard (R1).
 !**/*.text
