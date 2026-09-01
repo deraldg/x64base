@@ -103,6 +103,9 @@
 #include "cli/order_nav.hpp"
 #include "cli/order_iterator.hpp"
 
+#include "xbase_error_context.hpp"   // STOP_ON_ERROR: generation + trip check
+#include "cli/table_state.hpp"       // TABLE buffering state: is a bail recoverable?
+#include "workarea_util.hpp"          // cli::slot_of_area
 #include "cli/expr/line_parse_utils.hpp"
 #include "cli/expr/normalize_where.hpp"
 #include "cli/expr/value_eval.hpp"
@@ -379,7 +382,18 @@ static std::vector<std::string> sanitize_body_lines(const std::vector<std::strin
     return out;
 }
 
-static void exec_lines(DbArea& A, const std::vector<std::string>& lines) {
+// STOP_ON_ERROR MEANS BAIL OUT -- steward ruling 2026-09-01.
+//
+// Returns FALSE when the run must stop. The check is at the LINE, not merely at
+// the record, because a body of three REPLACEs that fails on the first has no
+// business running the other two against the same row.
+//
+// gen_before is captured ONCE for the whole scan rather than per line. Once the
+// generation moves past it the trip stays tripped, which is what is wanted --
+// the first failure ends the run and no later check can un-see it.
+static bool exec_lines(DbArea& A,
+                       const std::vector<std::string>& lines,
+                       std::uint64_t gen_before) {
     auto* exec = loop_get_executor();
 
     for (const auto& raw : lines) {
@@ -401,31 +415,60 @@ static void exec_lines(DbArea& A, const std::vector<std::string>& lines) {
         } else if (!dli::registry().run(A, U, li)) {
             std::cout << "Unknown command in SCAN: " << cmd << "\n";
         }
+
+        if (xbase::error::errorstop_tripped(gen_before)) {
+            return false;
+        }
     }
+
+    return true;
 }
 
-static void run_scan_on_recno(DbArea& A,
+// Where a bailed-out scan stopped. Carried out by reference rather than
+// returned, because both runners need to report it and the iterator's callback
+// contract already owns the bool.
+struct ScanStop {
+    bool     stopped{false};
+    uint64_t recno{0};
+};
+
+// Returns FALSE when the scan must stop. A record that is SKIPPED (unreadable,
+// filtered out, not visible) returns TRUE -- skipping is not stopping.
+static bool run_scan_on_recno(DbArea& A,
                               uint64_t rn,
                               const std::vector<std::string>& lines,
                               const ScanFilter& filter,
                               int& matched,
-                              int& iterations) {
+                              int& iterations,
+                              std::uint64_t gen_before,
+                              ScanStop& stop) {
     try {
-        if (!A.gotoRec(static_cast<int32_t>(rn)) || !A.readCurrent()) return;
+        if (!A.gotoRec(static_cast<int32_t>(rn)) || !A.readCurrent()) return true;
     } catch (...) {
-        return;
+        return true;
     }
 
     relations_api::refresh_if_enabled();
 
     bool ok = false;
     try { ok = filter.matches(A) && filter::visible(&A, nullptr); } catch (...) { ok = false; }
-    if (!ok) return;
+    if (!ok) return true;
 
     ++matched;
-    exec_lines(A, lines);
+
+    if (!exec_lines(A, lines, gen_before)) {
+        // ITERATIONS IS NOT INCREMENTED, and that is the point: it counts
+        // records that COMPLETED. This one did not, so the summary can say
+        // truthfully that N completed and record rn was left part-done.
+        stop.stopped = true;
+        stop.recno   = rn;
+        std::cout.flush();
+        return false;
+    }
+
     ++iterations;
     std::cout.flush();
+    return true;
 }
 
 static void run_scan_physical(DbArea& A,
@@ -433,11 +476,16 @@ static void run_scan_physical(DbArea& A,
                               const ScanFilter& filter,
                               int nrecs,
                               int& matched,
-                              int& iterations) {
+                              int& iterations,
+                              std::uint64_t gen_before,
+                              ScanStop& stop) {
     if (nrecs <= 0) return;
 
     for (int32_t rn = 1; rn <= nrecs; ++rn) {
-        run_scan_on_recno(A, static_cast<uint64_t>(rn), lines, filter, matched, iterations);
+        if (!run_scan_on_recno(A, static_cast<uint64_t>(rn), lines, filter,
+                               matched, iterations, gen_before, stop)) {
+            break;
+        }
     }
 }
 
@@ -445,15 +493,19 @@ static bool run_scan_via_iterator(DbArea& A,
                                   const std::vector<std::string>& lines,
                                   const ScanFilter& filter,
                                   int& matched,
-                                  int& iterations) {
+                                  int& iterations,
+                                  std::uint64_t gen_before,
+                                  ScanStop& stop) {
     cli::OrderIterSpec spec{};
     std::string err;
 
+    // The callback's bool ALREADY meant continue-or-stop; it was simply always
+    // true. The bail-out needed no new plumbing here, only an honest answer.
     const bool ok = cli::order_iterate_recnos(
         A,
         [&](uint64_t rn) -> bool {
-            run_scan_on_recno(A, rn, lines, filter, matched, iterations);
-            return true;
+            return run_scan_on_recno(A, rn, lines, filter, matched, iterations,
+                                     gen_before, stop);
         },
         &spec,
         &err
@@ -582,16 +634,83 @@ void cmd_ENDSCAN(DbArea& A, std::istringstream& S)
     int matched = 0;
     int iterations = 0;
 
+    // STOP_ON_ERROR is captured ONCE, here, for the whole scan.
+    const std::uint64_t gen0 = xbase::error::error_generation();
+    ScanStop stop;
+
     {
         ScanExecGuard exec_guard;
 
         if (orderstate::hasOrder(A)) {
-            if (!run_scan_via_iterator(A, lines, filter, matched, iterations)) {
-                run_scan_physical(A, lines, filter, nrecs, matched, iterations);
+            if (!run_scan_via_iterator(A, lines, filter, matched, iterations,
+                                       gen0, stop)) {
+                // THE FALLBACK MUST NOT RE-RUN A SCAN THAT ALREADY STOPPED.
+                // run_scan_via_iterator returns false BOTH when the iterator
+                // could not be used at all AND when our callback stopped it,
+                // and those are opposite situations: the first wants the
+                // physical pass, the second has already done the work and
+                // deliberately quit part-way. Without this guard a bailed-out
+                // scan would silently restart from record 1 and run the body
+                // again over rows it had just failed on.
+                if (!stop.stopped) {
+                    run_scan_physical(A, lines, filter, nrecs, matched,
+                                      iterations, gen0, stop);
+                }
             }
         } else {
-            run_scan_physical(A, lines, filter, nrecs, matched, iterations);
+            run_scan_physical(A, lines, filter, nrecs, matched, iterations,
+                              gen0, stop);
         }
+    }
+
+    if (stop.stopped) {
+        // A BAILED SCAN LEAVES WORK HALF DONE, so the message has to say where
+        // it stopped AND WHAT CAN BE DONE ABOUT IT. Without the first the
+        // ruling buys "stop means stop" at the price of a silent partial
+        // state; without the second it talks the operator out of the recovery
+        // they actually have.
+        //
+        // THE RECOVERY DEPENDS ON TABLE BUFFERING AND THIS MESSAGE ASKS RATHER
+        // THAN ASSUMES. An earlier draft of this block said flatly "nothing is
+        // rolled back -- SCAN is not a transaction". That is true with
+        // buffering OFF and FALSE with it ON: REPLACE is buffered per area and
+        // cmd_ROLLBACK drops the change map, so a bailed scan's writes are
+        // discardable. Printing the pessimistic line unconditionally would
+        // have steered someone away from the one command that fixes their
+        // table.
+        //
+        // NOT COVERED BY ROLLBACK EVEN WHEN BUFFERING IS ON: DELETE is
+        // write-through (TABLE_BUFFER_WAL_DESIGN_2026-07-19, "Only REPLACE is
+        // buffered"), so a body that deletes has already deleted. The message
+        // does not claim otherwise -- it speaks of buffered CHANGES, which is
+        // what the buffer holds.
+        // NAMED table_buffering_on, NOT `buffered`. `buffered` is already taken
+        // in this function for lines.size() -- how many BODY LINES were
+        // buffered -- and the two mean entirely different things. The compiler
+        // caught the collision (C4456); the rename is the fix rather than a
+        // scope trick, because a reader should not have to work out which
+        // `buffered` a line is talking about.
+        const int  area0 = cli::slot_of_area(&A);
+        const bool table_buffering_on =
+            (area0 >= 0) && dottalk::table::is_enabled(area0);
+
+        std::cout << "ENDSCAN: STOPPED at record " << stop.recno
+                  << " (STOP_ON_ERROR "
+                  << xbase::error::errorstop_level_name(xbase::error::get_errorstop())
+                  << ").\n";
+        std::cout << "  " << iterations << " record(s) completed; record "
+                  << stop.recno << " was partially processed.\n";
+
+        if (table_buffering_on) {
+            std::cout << "  TABLE buffering is ON: the changes are held, not"
+                         " written. ROLLBACK discards them; COMMIT applies"
+                         " them. DELETEs are write-through and are NOT held.\n";
+        } else {
+            std::cout << "  TABLE buffering is OFF, so those writes went"
+                         " straight to the table and there is nothing to roll"
+                         " back.\n";
+        }
+        return;
     }
 
     std::cout << "ENDSCAN: " << matched
