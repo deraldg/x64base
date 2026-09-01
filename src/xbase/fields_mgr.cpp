@@ -730,7 +730,32 @@ IndexImpact assessAppendIndexImpact(const xbase::DbArea& db,
         return IndexImpact::None;
     }
 
-    return IndexImpact::RebuildRecommended;
+    // REQUIRED, not Recommended, and the probe measured the difference.
+    // A recommendation is something a caller may decline; this cannot be
+    // declined. openCdx carries a fingerprint of the table it was built
+    // against (kind, version, reclen, fields, hash -- AIF-110 lesson 2) and
+    // REFUSES to open on mismatch. Appending a field changes reclen and field
+    // count, so the container does not degrade, it stops opening:
+    //
+    //   FIELDMGR APPEND: ... [attached index is now STALE and will refuse
+    //                         to open until rebuilt]
+    //   SET ORDER: openCdx: metadata mismatch
+    //              [table reclen=21, fields=3] vs [cdx reclen=17, fields=2]
+    //   FMI_T1_keyed_first_still_ALPHA_after_append:.F.
+    //   FMI_T3_row3_data_intact_CK:.T.
+    //
+    // This function's own warning string already said REQUIRED while this
+    // return said Recommended -- one code path holding two answers.
+    //
+    // Not Blocked: T3/T4 show the DATA intact. Only the index refuses, and a
+    // rebuild recovers it fully. Blocked would overstate the damage.
+    //
+    // Behaviour-neutral when changed on 2026-09-01: IndexImpact has no
+    // consumer outside this file and fields.hpp, and inside this file the two
+    // values are only ever OR'd together (see append(), below). What changes
+    // is what the value MEANS to the next reader and to whatever first
+    // branches on it.
+    return IndexImpact::RebuildRequired;
 #else
     (void)db;
     return IndexImpact::None;
