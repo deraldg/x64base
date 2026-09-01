@@ -14,6 +14,49 @@ artifacts*. **No perishable literals** -- versions, counts, lane states, current
 targets. If an agent can cheaply measure it, say "measure it" instead of asserting
 it. Perishable state lives behind the pointer table in the Tier 1 seed.
 
+## Before designing anything: WALK THE PORTAL PROJECTS
+
+**A session has no memory. The tree does. Reading it is the one duty that does
+not depend on remembering.**
+
+Before reasoning about how a subsystem SHOULD work -- before proposing a design,
+opening a lane, or calling something an open question -- walk the portal, in this
+order. Steps 1 and 2 are cheap and answer most of it.
+
+1. **The projects walk.** `labtalk/registries/projects.yaml` -- every project,
+   its `lanes:` list and its `docs:`. A subsystem you are about to design almost
+   certainly sits in a lane that already exists. `AI_PORTAL.md` section
+   "Projects, Lanes, and Promotion (AIF-040)" is the governing doctrine.
+2. **The search map.** `labtalk/ai_portal/PORTAL_SEARCH_MAP_V1.md` -- go straight
+   there, do not scan. Its own rule: **"A scan you did not record is a scan the
+   next agent repeats"** -- so when you DO have to grep for something, ADD A ROW.
+   That is not optional tidiness; it is how the map stays worth reading.
+3. **The intake row.** `docs/ai-friendly/AI_INTERACTION_INTAKE_QUEUE_V1.md` --
+   one row per AIF, naming that lane's design documents.
+4. **The lane's plan.** Read the section headed **"decisions already made"**
+   FIRST. Several plans carry an explicit *agnostic-planner contract* stating
+   they assume no session memory and can be executed from the tree alone by a
+   reader with no context. They mean you.
+
+Resolve by intent when you can: `python3 labtalk/ai_portal/recall.py <trigger>`
+returns the smallest working set, measured. `trigger.where_is` surfaces the map.
+
+WHY THIS IS AN INVARIANT AND NOT A TIP. The gates are change-set scoped by
+deliberate design, so nothing surfaces an adjacent lane that solved your problem
+last month. **Nothing will prompt you.** On 2026-09-01 one session re-derived a
+buffering finding, a STOP_ON_ERROR measurement, an array reference-semantics
+ruling and a procedures lane -- all four already recorded, three in documents
+authored by the SAME member identity weeks earlier, and the owner had to point at
+prior art three times in one day. OI-024 records the same shape: an hour spent
+reasoning about how to govern external AI, in a tree whose external-AI governance
+was designed, built, running and published.
+
+Measurement is cheap and worth doing. Re-deriving a ruling is neither.
+
+COROLLARY, for reading code once you are in the right place: an include proves
+compilation, a comment proves nothing, and a measurement of one thing is not a
+fact about another. Check the CALL SITES, not the declaration.
+
 ## Running the CLI over the work directory
 
 Use **`./datarun.ps1`** from `D:\code\ccode`. Do NOT run the raw build exe by hand.
@@ -88,7 +131,16 @@ If you are running in a mounted Linux sandbox rather than on the Windows host:
   2.34.1: no `index.lock` created): `git --no-optional-locks status`
   (equivalently `GIT_OPTIONAL_LOCKS=0`) for status, and the read-only plumbing
   `git log` / `ls-files` / `check-ignore` / `cat-file`. Use these to inspect the
-  tree; still hand every mutating git to the maintainer. **`claim-aif` no longer shells
+  tree; still hand every mutating git to the maintainer.
+  **NOT `git diff`, in ANY form, including `--stat` / `--shortstat` / `--numstat`.**
+  `--no-optional-locks` suppresses the index refresh for `status` but NOT for
+  `diff`: measured 2026-08-17, `git --no-optional-locks diff --shortstat` created
+  `.git/index.lock`, could not unlink it (`Operation not permitted` across the
+  mount), and left the zero-byte lock this bullet exists to prevent. The
+  allow-list above is exhaustive, not illustrative -- a command's being
+  conceptually read-only does NOT mean it leaves the index alone. To size
+  uncommitted work from a sandbox use `git --no-optional-locks status --porcelain`
+  (file counts only); for line counts, ask the maintainer to run `diff` host-side. **`claim-aif` no longer shells
   out to git** (AIF-135, 2026-08-30: the repository-wide citation grep was
   removed from the allocation universe), so the claim path itself runs
   anywhere; `session_coordinator.py status` still greps and stays host-side. **Measured 2026-08-26: `git add` from a
