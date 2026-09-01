@@ -36,9 +36,52 @@ ai_report_audit:
     owner     : member.derald
     steward   : member.ai.claude.cowork
     sibling   : AIF-131 (same defect, fixed for BUILD in 90e5dce0b)
-    status    : RUNTIME-PROVEN 2026-08-27; awaiting owner ruling on the fix
+    status    : RUNTIME-PROVEN 2026-08-27; CORRECTED 2026-09-01 (see top:
+                already reported by stack_audit_v1 DEAD_REG; FIVE keys, not three);
+                awaiting owner ruling on the fix
     opened    : 2026-08-27 (host clock)
     proven    : 2026-08-27, build Aug 27 2026 09:47:07 (9e1376e1 dirty)
+
+## CORRECTION 2026-09-01 -- THIS WAS ALREADY KNOWN, AND IT IS FIVE KEYS NOT THREE
+
+**`tools/fullstack_docs/stack_audit_v1.py` reports this defect on every run.**
+
+    DEAD_REG/MULTIWORD_KEY: 5 registry key(s) contain a space and can never be
+    dispatched -- shell_dispatch keys on the FIRST TOKEN only. They read as
+    working registrations and are dead:
+        ERROR CLEAR, ERROR STATUS, ERROR TEST, SET RELATION, SET UNIQUE
+
+This lane was opened without running that tool first. It is the "re-derived a
+ruling already recorded" failure `CLAUDE.md` opens by warning about, and the
+sections below were written as discovery when they were rediscovery. Recorded
+here rather than quietly amended, because the discovery claim is the part that
+was wrong.
+
+**TWO SUBSTANTIVE CORRECTIONS, not just attribution:**
+
+1. **The family is FIVE keys.** Section "The measurement" below dismissed
+   `SET RELATION` and `SET UNIQUE` as OK because bare `SET` is registered. The
+   authority draws the finer line and it is the right one: the KEY is dead even
+   where the FUNCTION remains reachable through the `SET` router. A registration
+   that never fires is a false statement about how the command is reached,
+   whether or not another path happens to work. Any fix must cover all five.
+2. **`BUILD INFO`, added to `include/dottalk/dotref.hpp` earlier in the same
+   session as this lane, is itself flagged** by the same tool under
+   `DOTREF_COV/SUBCOMMAND_ONLY`: typeable through the router, but never
+   independently registered, so it has no contract, no SYSCMD row and no HELP
+   topic. Documenting it was necessary and not sufficient.
+
+**WHAT THIS LANE STILL CONTRIBUTES,** and why it is corrected rather than closed:
+
+- The **runtime proof** (2026-08-27, one process, `Unknown command: ERROR` beside
+  a green `ERROR_STATUS`) is evidence a WARN line does not carry. The second arm
+  in particular -- showing the handler is healthy and only the spelling is
+  unreachable -- is what separates "the ERROR family is broken" from "the
+  published spelling is unreachable."
+- The **AIF-131 sibling analysis** stands: `90e5dce0b` wrote the general rule
+  into its own comment and did not sweep for other parentless families.
+- The **ruling still needed** (router vs. delete the spaced registrations) is
+  unchanged, and now applies to five keys.
 
 ## Authorization
 
@@ -48,10 +91,12 @@ between them: that is an owner ruling, not a steward's call.
 
 ## Objective
 
-`ERROR CLEAR`, `ERROR STATUS` and `ERROR TEST` are registered as whole
-multi-word keys, no bare `ERROR` router exists, and the shell dispatches on the
-first whitespace token. The three spaced spellings can therefore never be typed,
-while `dotref` publishes all three as implemented and supported.
+`ERROR CLEAR`, `ERROR STATUS`, `ERROR TEST` -- and, per the correction above,
+`SET RELATION` and `SET UNIQUE` -- are registered as whole multi-word keys, and
+the shell dispatches on the FIRST whitespace token only. No bare `ERROR` router
+exists at all; `SET` has a router, but the spaced KEYS still never fire. So five
+registrations can never be reached as written, while `dotref` publishes the ERROR
+three as implemented and supported.
 
 ## The measurement
 
@@ -63,11 +108,17 @@ So a registry key containing a space is only reachable if the bare first word is
 ALSO registered and routes its own next token. Measured over all 239 registry
 keys in `src/cli/shell_commands.cpp`:
 
-    UNTYPABLE  'ERROR CLEAR'     bare 'ERROR' NOT registered
-    UNTYPABLE  'ERROR STATUS'    bare 'ERROR' NOT registered
-    UNTYPABLE  'ERROR TEST'      bare 'ERROR' NOT registered
-    OK         'SET RELATION'    bare 'SET' IS registered
-    OK         'SET UNIQUE'      bare 'SET' IS registered
+    DEAD  'ERROR CLEAR'     no bare 'ERROR' -- nothing reaches the handler by this spelling
+    DEAD  'ERROR STATUS'    no bare 'ERROR'
+    DEAD  'ERROR TEST'      no bare 'ERROR'
+    DEAD  'SET RELATION'    bare 'SET' IS registered and routes, so the FUNCTION is
+                            reachable -- but this KEY never fires. First read of
+                            this table called that OK. It is not: the registration
+                            is a false statement about how the command is reached.
+    DEAD  'SET UNIQUE'      same
+
+    Corrected 2026-09-01 against stack_audit_v1 DEAD_REG/MULTIWORD_KEY, which
+    counts all five.
 
 Registrations, both spellings, twelve lines apart in the same file:
 
@@ -108,9 +159,11 @@ measured across all 239 keys rather than asserted for one family.
 ## Out of scope
 
 - The underscore spellings. They work and are not in question.
-- Any other command family. The sweep found none; if one appears later it is a
-  new finding against this lane's invariant, not a reopening.
-- `SET` and its subcommands.
+- The underscore spellings and the working `SET` router path. Neither is in
+  question; what is in question is the five dead KEYS.
+- Any command family beyond those five. `stack_audit_v1 DEAD_REG` is the
+  authority on that list and reports exactly five at this baseline; if a sixth
+  appears it is a new finding against the invariant, not a reopening.
 
 ## Proof -- RUNTIME-PROVEN 2026-08-27
 

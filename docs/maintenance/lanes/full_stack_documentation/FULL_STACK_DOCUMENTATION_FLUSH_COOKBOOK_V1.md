@@ -93,11 +93,40 @@ apps/commands: `@dottalk.external`. Then prove coverage:
 
 ```powershell
 $py12 = "D:\code\ccode\.venv312\Scripts\python.exe"           # working 3.12 (has PyYAML); NOT py -3.12, NOT vcpkg python
+
+# RUN THIS FIRST, BEFORE ANY HAND ANALYSIS. It is the contract AUTHORITY.
+& $py12 .\tools\fullstack_docs\stack_audit_v1.py               # BANNER_CENSUS, CONTRACT_QA, DOTREF_COV, DEAD_REG, REG_POLICY
+
 & $py12 .\tools\fullstack_docs\docpush_preflight.py            # source_census + catalog check + ASCII scan
 & $py12 .\tools\fullstack_docs\command_catalog_sync.py check `
     --source-root D:\code\ccode `
     --catalog D:\dev\x64base-site\content\docs\dottalk\command-catalog.mdx
 ```
+
+**Why `stack_audit_v1.py` leads this block (added v7, 2026-09-01).** v7 spent a
+session hand-deriving three things it already reports, and got two of them wrong
+in the process:
+
+- the ERROR multiword-key family -- already `DEAD_REG/MULTIWORD_KEY`, and the
+  tool counts FIVE keys where the hand analysis found three;
+- per-command example coverage -- v7 called ~31% "the largest contract deficit in
+  the tree"; it is the documented design (the `.dts` corpus is the teaching
+  surface) and the owner corrected it;
+- the contract census -- v7's own scanner counted `@dottalk.usage.voluntary`
+  blocks and bare prose mentions as contracts. `CONTRACT_QA/MENTION_ONLY` names
+  that failure in its own output: *"naive marker counts are inflated by these."*
+
+**Read its output before deciding what to investigate.** Two of its findings
+change how the rest of this phase is read:
+
+    BANNER_CENSUS/DERIVED_ONLY  94.8% of @dottalk.file banners carry ZERO authored
+                                fields. "Coverage" measures banner PRESENCE, not
+                                knowledge. Do not report coverage as a quality
+                                figure, and do not read the 100 percent target
+                                below as meaning the contracts are populated.
+    CSV_VS_TABLE/STALE_CSV      SYSCMD table can run AHEAD of its CSV mirror; a
+                                tool reading the CSV reports a non-canonical
+                                number.
 
 Target: `source_census` 100 percent; catalog `fallback 0`. A block-form contract the
 extractor cannot read (the classic `DDICT` case) must be normalized to
