@@ -22,9 +22,11 @@ The command handlers make the current default behavior explicit:
 | Area flavor | `SET ORDER` default container | `SET INDEX` accepted containers | Notes |
 | --- | --- | --- | --- |
 | V32 classic/MS-DOS/FoxPro-like | `<table>.cnx` | `.inx` or `.cnx` | `INX` is single-order attachment. Tag activation through `SET ORDER` is handled through CNX, not INX. |
-| V64 VFP/x64 | `<table>.cdx` | `.cdx` | CDX is the command-facing container; LMDB is the physical backend where the CDX/LMDB environment is in use. |
+| V64 VFP/x64 | `<table>.cdx` | `.cdx` or `.cnx` | CDX is the command-facing container. Its physical backend depends on **residence**: LMDB on disk, native CDX-V64 in RAM. `.cnx` is accepted on v64 and auto-resolves only when a `.cnx` exists and no `.cdx` does; the default is untouched. |
 
 This should be documented as current implementation behavior, not a permanent restriction. The Open Index API lane is the right place to describe future backend-neutral expansion.
+
+`INX` and `IDX` are different things and are not interchangeable. `INX` is a single-tag on-disk container, listed above for V32. `IDX` is a memory-only educational index lab and is not a storage format for real work.
 
 ## Name policy
 

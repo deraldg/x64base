@@ -78,7 +78,7 @@ should never be cited on a page that carries evidence.
 LMDB deserves explicit credit in the x64base story because it gives the CDX indexing lane a durable, high-performance embedded backend. The x64base design keeps two ideas separate:
 
 - **CDX is the logical container** shown to users, students, and commands.
-- **LMDB is the physical backend** used to store and traverse built index data.
+- **LMDB is the physical backend on disk**, used to store and traverse built index data. (In RAM the same CDX container is served by a native CDX-V64 backend instead; the credit here is for the disk path.)
 
 That separation lets LabTalk teach database indexing at two levels. Beginners can learn records, logical order, tags, `SET ORDER`, and `SEEK` without needing backend vocabulary first. Advanced students can open the implementation layer and see how a memory-mapped key-value database can support ordered navigation, rebuild workflows, and index diagnostics.
 
