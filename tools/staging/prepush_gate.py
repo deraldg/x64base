@@ -652,9 +652,23 @@ def main() -> int:
         # check in the file.
         rc = _run_portal_check("tools/staging/check_sandbox_git_guard.py", ["--lock-only"])
         if rc == 2:
-            print("\n  BLOCKED -- a stale .git/index.lock is present. Remove it "
-                  "(no git process running) before committing.", file=sys.stderr)
+            print("\n  BLOCKED -- a STALE (zero-byte) .git/index.lock is present. "
+                  "That is the killed-git signature and it never clears on its own. "
+                  "Confirm no git is running, then remove it.", file=sys.stderr)
             exit_code = 2
+        elif rc == 5:
+            # R138. ADVISORY, NOT A BLOCK, AND THE WORDING IS THE POINT. Until
+            # 2026-09-01 this branch did not exist: ANY lock returned 2 and was
+            # summarized here as "a stale index.lock is present. Remove it",
+            # while the guard's own output for that same lock read "not the
+            # known-stale signature -- do not delete it blindly." The check
+            # proved NOT STALE and the summary asserted STALE, then instructed
+            # the deletion the check had just warned against. A reader trusting
+            # the summary deletes a live git's lock. Different codes now, so
+            # this line cannot flatten the two conditions again.
+            print("\n  ADVISORY -- a NON-EMPTY .git/index.lock outlived the settle "
+                  "window. A git may be mid-operation; the remedy is to WAIT and "
+                  "re-run, not to remove it. NOT blocking.")
 
         # 2. HOUSE STYLE -- hard, ADDED LINES ONLY. The 6,951-character backlog
         # never blocks anyone; new violations become impossible. Falsification

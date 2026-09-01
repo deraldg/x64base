@@ -21,6 +21,26 @@ TWO CHECKS, deliberately separate:
                  git process is the known-stale signature, and it is what a
                  killed or timed-out git leaves behind.
 
+R138. A LOCK THAT CLEARS ON ITS OWN WAS NEVER WEDGING ANYTHING. This check
+answers "is the repository wedged", and a wedged repository's lock does not go
+away while you look at it. Between 2026-09-01 15:14 and 15:16 this guard
+hard-failed the prepush gate twice on a 668857-byte lock that was gone seconds
+later both times, byte-identical across runs, with `.git/index` untouched --
+a live git mid-operation, not wreckage. So the lock is now SAMPLED, not
+stat'd once: a lock that survives the settle window is real, and one that does
+not is reported and passed over. The stale ZERO-BYTE case still hard-fails on
+the first sight of it, because that is the signature that cost an afternoon on
+2026-07-31 and it never clears by itself.
+
+A NON-EMPTY LOCK IS NOT A STALE LOCK AND MUST NOT BE REPORTED AS ONE. The
+prose below already said so -- "not the known-stale signature", "do not delete
+it blindly" -- while returning the same exit code as the stale case, which the
+caller then summarized as "a stale index.lock is present. Remove it." The check
+proved NOT STALE and the summary asserted STALE. That is the condensed
+restatement losing the qualifier, and here it inverted it into an instruction
+to delete a live git's lock. A persistent non-empty lock now returns its own
+code so the caller cannot flatten the two.
+
 The lock check is the one that pays for itself. Any session, host or sandbox, can
 run it in a second and know whether the repository is wedged before wasting an
 afternoon on it.
@@ -30,7 +50,9 @@ Usage (PowerShell 7, from D:\\code\\ccode):
     python tools\\staging\\check_sandbox_git_guard.py            # both checks
     python tools\\staging\\check_sandbox_git_guard.py --lock-only
 
-Exit codes: 0 clear, 2 stale lock present, 3 non-host root (advisory).
+Exit codes: 0 clear, 2 STALE lock (zero bytes) present, 3 non-host root
+(advisory), 5 a non-empty lock that outlived the settle window -- a git may
+be genuinely mid-operation, which is a WAIT, not a REMOVE.
 """
 
 from __future__ import annotations
@@ -38,6 +60,7 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+import time
 from pathlib import Path
 
 # The declared host roots, from the repository-role contract. Matching is done on
@@ -59,19 +82,42 @@ def on_host_root(root: Path) -> bool:
     return any(norm == r or norm.startswith(r + "/") for r in HOST_ROOTS)
 
 
+# How long to watch a lock before believing it. Three samples over two seconds
+# is enough to outlast a `git diff` index refresh and short enough that nobody
+# stops running the check. It is a WINDOW, not a proof of absence: a git that
+# takes longer than this is reported as persistent, which is the safe way to be
+# wrong here -- the guard says WAIT, and waiting costs seconds.
+SETTLE_SAMPLES = 3
+SETTLE_SECONDS = 1.0
+
+
+def _lock_stat(lock: Path):
+    """(size, mtime) or None. Never raises: the file we are watching for is the
+    file most likely to vanish between exists() and stat()."""
+    try:
+        st = lock.stat()
+        return st.st_size, st.st_mtime
+    except (FileNotFoundError, OSError):
+        return None
+
+
 def check_lock(root: Path) -> int:
     lock = root / ".git" / "index.lock"
-    if not lock.exists():
+    first = _lock_stat(lock)
+    if first is None:
         print("git-guard: no index.lock -- repository is not wedged")
         return 0
 
-    size = lock.stat().st_size
-    mtime = lock.stat().st_mtime
     import datetime
 
+    size, mtime = first
     when = datetime.datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M:%S")
-
     print(f"git-guard: index.lock PRESENT  {size} bytes  written {when}")
+
+    # ZERO BYTES IS DECIDED ON SIGHT. It is the killed-git signature, it does
+    # not clear on its own, and every commit downstream fails on it with a
+    # message that does not say why. Waiting two seconds to confirm a condition
+    # that is already unambiguous only makes the gate slower.
     if size == 0:
         print("")
         print("Zero bytes is the known-stale signature: git created the lock and was")
@@ -81,12 +127,35 @@ def check_lock(root: Path) -> int:
         print("If no git process is running, remove it:")
         print("    Get-Process git -ErrorAction SilentlyContinue")
         print("    Remove-Item .git\\index.lock")
-    else:
-        print("")
-        print("NON-EMPTY lock. That is not the known-stale signature -- a git process")
-        print("may genuinely be mid-operation. Do not delete it blindly; check for a")
-        print("running git first and inspect the file.")
-    return 2
+        return 2
+
+    # NON-EMPTY: sample it. A live git writes the refreshed index into the lock
+    # and renames it away; what we are looking at may already be gone.
+    for _ in range(SETTLE_SAMPLES):
+        time.sleep(SETTLE_SECONDS)
+        again = _lock_stat(lock)
+        if again is None:
+            print("")
+            print(f"CLEARED. The lock was gone within "
+                  f"{SETTLE_SAMPLES * SETTLE_SECONDS:.0f}s -- a git process was "
+                  f"mid-operation")
+            print("and finished. Nothing is wedged and nothing needs removing.")
+            return 0
+
+    size2, mtime2 = again
+    print("")
+    print(f"PERSISTENT after {SETTLE_SAMPLES * SETTLE_SECONDS:.0f}s "
+          f"({size2} bytes). NOT the known-stale signature -- a git")
+    print("process may genuinely be mid-operation, or may have died holding a")
+    print("written lock. DO NOT DELETE IT BLINDLY. Check for a running git first:")
+    print("")
+    print("    Get-Process git -ErrorAction SilentlyContinue")
+    print("")
+    print("If one is running, WAIT -- that is the whole remedy. If none is, compare")
+    print("the lock against .git/index before deciding; a lock LARGER than the")
+    print("index is a refresh that never landed and is safe to remove, and one")
+    print("that differs by more than that is worth a human look.")
+    return 5
 
 
 def check_root(root: Path) -> int:
