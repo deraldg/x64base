@@ -65,7 +65,7 @@ was wrong.
    where the FUNCTION remains reachable through the `SET` router. A registration
    that never fires is a false statement about how the command is reached,
    whether or not another path happens to work. Any fix must cover all five.
-2. **`BUILD INFO`, added to `include/dottalk/dotref.hpp` earlier in the same
+2. **`BUILD INFO`, added to `include/dotref.hpp` earlier in the same
    session as this lane, is itself flagged** by the same tool under
    `DOTREF_COV/SUBCOMMAND_ONLY`: typeable through the router, but never
    independently registered, so it has no contract, no SYSCMD row and no HELP
