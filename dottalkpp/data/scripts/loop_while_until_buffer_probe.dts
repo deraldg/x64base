@@ -1,0 +1,135 @@
+* ===========================================================================
+* DO LOOP / WHILE / UNTIL BUFFER UNDER DOTSCRIPT?  -- the bounded probe
+* ===========================================================================
+*
+* A PROBE, NOT A REGISTERED SPEC. Not in kRegressionSpecs; runs by DOTSCRIPT.
+*
+* WHY THIS WAS OWED. dotscript_control_flow_probe.dts proved SCAN was inert
+* under DOTSCRIPT and that wiring the reader's buffer gate fixed it. LOOP,
+* WHILE and UNTIL SHARE THAT GATE, so they came along -- unmeasured. That probe
+* deliberately excluded them and said why: if a body leaks, the closing verb
+* iterates an empty buffer, nothing can change the escape condition, and an
+* inert loop may NOT TERMINATE. Hanging the session is an unacceptable way to
+* find out.
+*
+* THEY ARE STUDENT TOOLS (owner, 2026-09-01), which is what moved this from
+* tidiness to safety. A student is exactly the person who writes a loop with a
+* broken escape, and is least equipped to tell a hang from a slow query.
+*
+* EVERY LOOP HERE IS EXTERNALLY BOUNDED, so a leak CANNOT hang:
+*   LOOP  -- bounded by its own FOR count (3)
+*   WHILE -- bounded by END OF FILE; advance_one_record breaks the loop
+*   UNTIL -- bounded by END OF FILE, the same way
+* A four-record fixture is the ceiling on all three.
+*
+* HOW IT ASSERTS. By FIELD VALUE, never console text. Each construct writes to
+* its OWN column, so all three results survive to be read together and one
+* failing construct cannot mask another.
+*
+* THE DISCRIMINATOR IS "DID THE BODY REACH A LATER RECORD". Each body writes
+* the current record and then moves on -- LOOP with an explicit SKIP, WHILE and
+* UNTIL by their own per-iteration advance. Buffered, the body runs many times
+* and later records are written. LEAKED, THE BODY RUNS ONCE against the record
+* the cursor was parked on, and only that one is written.
+*
+*   record 1 written  -- passes EITHER WAY. Guard, not verdict.
+*   record 3 or 4     -- THE DISCRIMINATOR.
+*
+* Every "ran at all" guard exists because these three can fail in a SECOND way
+* that has nothing to do with buffering: WHILE and UNTIL need a condition
+* evaluator, and without one ENDWHILE prints "no condition evaluator; nothing
+* executed" and does nothing. That failure and a leak both leave later records
+* untouched. The guards tell them apart -- if a guard reads .F., the construct
+* did not run and its arm proves NOTHING either way.
+*
+* COUNT: 4 guards + 4 arms = 8 LWU_ lines. An errored marker prints NOTHING,
+* so A SHORT COUNT IS ITSELF THE RESULT. Read the count before the values.
+*
+* NOT COVERED HERE, deliberately: the 10,000 iteration clamp. Exercising it
+* means running ten thousand iterations, which belongs at the prompt with an
+* empty body rather than inside a probe that has to stay quick and quiet:
+*
+*     LOOP FOR 999999
+*     ENDLOOP        && expect: "exceeds max 10000; clamping."
+*
+* Self-bootstrapping and self-erasing in DBF/SANDBOX.
+* ===========================================================================
+
+SETPATH DBF DBF/SANDBOX
+
+ERASE LWUCTL CONFIRM
+
+SELECT 0
+CREATE X64 LWUCTL (CK C(4), M1 C(8), M2 C(8), M3 C(8))
+APPEND
+REPLACE CK WITH "C1"
+REPLACE M1 WITH "ZERO"
+REPLACE M2 WITH "ZERO"
+REPLACE M3 WITH "ZERO"
+APPEND
+REPLACE CK WITH "C2"
+REPLACE M1 WITH "ZERO"
+REPLACE M2 WITH "ZERO"
+REPLACE M3 WITH "ZERO"
+APPEND
+REPLACE CK WITH "C3"
+REPLACE M1 WITH "ZERO"
+REPLACE M2 WITH "ZERO"
+REPLACE M3 WITH "ZERO"
+APPEND
+REPLACE CK WITH "C4"
+REPLACE M1 WITH "ZERO"
+REPLACE M2 WITH "ZERO"
+REPLACE M3 WITH "ZERO"
+
+SELECT LWUCTL
+GO 4
+? "LWU_G1_fixture_row4_is_C4:" + (ALLTRIM(CK) = "C4")
+
+* ---------------------------------------------------------------------------
+* LOOP -- bounded by FOR 3. Body writes, then SKIPs forward.
+* Buffered: records 1,2,3 written and record 4 left alone.
+* Leaked:   record 1 only.
+* ---------------------------------------------------------------------------
+
+GO 1
+LOOP FOR 3
+REPLACE M1 WITH "HIT"
+SKIP
+ENDLOOP
+
+GO 1
+? "LWU_G2_loop_ran_at_all:" + (ALLTRIM(M1) = "HIT")
+GO 3
+? "LWU_T1_loop_reached_record3_DISCRIMINATOR:" + (ALLTRIM(M1) = "HIT")
+GO 4
+? "LWU_T2_loop_stopped_at_3_did_not_overrun:" + (ALLTRIM(M1) = "ZERO")
+
+* ---------------------------------------------------------------------------
+* WHILE -- bounded by EOF. The condition never goes false; the record
+* advance is what ends it.
+* ---------------------------------------------------------------------------
+
+GO 1
+WHILE .T.
+REPLACE M2 WITH "HIT"
+ENDWHILE
+
+GO 1
+? "LWU_G3_while_ran_at_all:" + (ALLTRIM(M2) = "HIT")
+GO 4
+? "LWU_T3_while_reached_record4_DISCRIMINATOR:" + (ALLTRIM(M2) = "HIT")
+
+* ---------------------------------------------------------------------------
+* UNTIL -- bounded by EOF. The condition never becomes true.
+* ---------------------------------------------------------------------------
+
+GO 1
+UNTIL .F.
+REPLACE M3 WITH "HIT"
+ENDUNTIL
+
+GO 1
+? "LWU_G4_until_ran_at_all:" + (ALLTRIM(M3) = "HIT")
+GO 4
+? "LWU_T4_until_reached_record4_DISCRIMINATOR:" + (ALLTRIM(M3) = "HIT")

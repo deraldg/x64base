@@ -19,7 +19,10 @@
 //       same as above (compat with "FOR" phrasing)
 //   - LOOP FOR <expr>
 //       currently acts as a label only if not numeric
-//   - hard default max iterations: 1000
+//   - the requested iteration count is CLAMPED. The ceiling is declared
+//     ONCE, at kDefaultMaxLoopIterations, and is deliberately NOT repeated
+//     here -- this line said 1000 while the code said 100000000, five
+//     orders of magnitude apart, for as long as both existed.
 // ============================================================================
 // @dottalk.usage v1
 // owner: DOT|LOOP
@@ -120,10 +123,24 @@
 #include <sstream>
 #include <string>
 
+#include "xbase_error_context.hpp"   // STOP_ON_ERROR: generation + trip check
+
 namespace {
 
 static LoopExecFn g_loop_exec = nullptr;
-static constexpr size_t kDefaultMaxLoopIterations = 100000000;
+// THE CEILING IS A TEACHING GUARD, and 10,000 is the steward's value
+// (2026-09-01). It is not a performance limit.
+//
+// It was 100,000,000, with the header comment above claiming 1000 -- two
+// declarations of one number that disagreed by a factor of 100,000. Neither
+// was reachable as a useful stop: a hundred million iterations of a body that
+// touches a table is indistinguishable, from the operator's chair, from a
+// hang, and LOOP/WHILE/UNTIL are student tools. A guard that fires in under a
+// second and SAYS WHY teaches; a guard nobody lives to see does not.
+//
+// Bare LOOP still runs ONCE -- this clamps a count that was explicitly asked
+// for (LOOP FOR <n>), which is the only way to reach it.
+static constexpr size_t kDefaultMaxLoopIterations = 10000;
 
 static inline void upcase_ascii(std::string& s)
 {
@@ -399,8 +416,14 @@ void cmd_ENDLOOP(xbase::DbArea& A, std::istringstream& S)
 
     size_t iters_executed = 0;
 
+    // STOP_ON_ERROR MEANS BAIL OUT -- steward ruling 2026-09-01, the same rule
+    // SCAN follows. Captured ONCE for the whole loop; once the generation moves
+    // past it the trip stays tripped, which is what is wanted.
+    const std::uint64_t gen0 = xbase::error::error_generation();
+    bool stopped_on_error = false;
+
     if (g_loop_exec) {
-        for (; iters_executed < iters_requested; ++iters_executed) {
+        for (; iters_executed < iters_requested && !stopped_on_error; ++iters_executed) {
             for (const std::string& raw : st.lines) {
                 std::string t = trim_ascii(raw);
                 if (t.empty()) continue;
@@ -410,10 +433,25 @@ void cmd_ENDLOOP(xbase::DbArea& A, std::istringstream& S)
                 if (starts_with_ascii(up, "ENDLOOP")) continue;
 
                 g_loop_exec(A, t);
+
+                // At the LINE, not merely at the iteration: a body that fails
+                // on its first command should not run the rest of itself.
+                if (xbase::error::errorstop_tripped(gen0)) {
+                    stopped_on_error = true;
+                    break;
+                }
             }
         }
     } else if (!st.quiet) {
         std::cout << "LOOP: no executor; buffered lines not executed\n";
+    }
+
+    if (stopped_on_error) {
+        std::cout << "ENDLOOP: STOPPED after " << iters_executed
+                  << " iteration(s) (STOP_ON_ERROR "
+                  << xbase::error::errorstop_level_name(xbase::error::get_errorstop())
+                  << ").\n";
+        return;
     }
 
     if (!st.quiet) {
