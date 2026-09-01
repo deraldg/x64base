@@ -95,9 +95,13 @@
 //   WORKSPACE CLOSE ALL
 //   WORKSPACE CLOSE <n> [m ...]
 //   WORKSPACE CLOSE <name|file|stem|alias>[,...]
-//   WORKSPACE SAVE <file>              -- the CANONICAL SCHEMA (DTSHEMA 2)
+//   WORKSPACE SAVE <file> [V2]         -- the CANONICAL SCHEMA (DTSHEMA 2)
 //   WORKSPACE SAVE <file> V3           -- the SESSION (DTSHEMA 3)
-//   WORKSPACE SAVE <name> MEMO [V3]
+//   WORKSPACE SAVE <name> MEMO [V2|V3]
+//
+//   V2 IS THE DEFAULT AND IS ALSO SPELLABLE. Saying it changes nothing about
+//   what is written; it changes whether a reader can tell a DECISION from a
+//   default. V2 and MINIDB together are REFUSED rather than upgraded.
 //   WORKSPACE SAVE <name> MEMO MINIDB
 //
 //   V2 IS THE CANONICAL WORKSPACE SCHEMA; V3 IS THE SESSION (AIF-124,
@@ -5003,8 +5007,8 @@ static void workspace_print_usage() {
     std::cout << "  WORKSPACE CLOSE ALL                        (Close every workspace, everywhere)\n";
     std::cout << "  WORKSPACE CLOSE <n> [m ...]                (Close by area index)\n";
     std::cout << "  WORKSPACE CLOSE <name|file|stem|alias>[,...] (Close by name/alias; case-insensitive)\n";
-    std::cout << "  WORKSPACE SAVE <file>                      (Save areas [+relations if available])\n";
-    std::cout << "  WORKSPACE SAVE <name> MEMO [V3]            (Save POSTURE into the memo catalog)\n";
+    std::cout << "  WORKSPACE SAVE <file> [V2|V3]              (Save areas [+relations if available])\n";
+    std::cout << "  WORKSPACE SAVE <name> MEMO [V2|V3]         (Save POSTURE into the memo catalog)\n";
     std::cout << "  WORKSPACE SAVE <name> MEMO MINIDB          (Save CONTAINER: posture + table bytes)\n";
     std::cout << "  WORKSPACE LOAD <file>                      (Load areas [+relations]; relative/cross-OS paths supported)\n";
     std::cout << "  WORKSPACE LOAD <name> MEMO                 (Load a POSTURE from the catalog)\n";
@@ -6137,7 +6141,23 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
             bool to_memo = false;
             bool as_minidb = false;
             bool save_all = false;
-            int  ver = 2;
+            // V2 IS SPELLABLE, AND UNTIL 2026-09-01 IT WAS NOT. `ver` started at
+            // 2 and only V3 and MINIDB had keywords, so "I want the simple
+            // deskspace" was expressed as an ABSENCE -- a bare SAVE could not be
+            // told apart from a script whose author never considered the
+            // version. That is the shape this house has ruled against
+            // repeatedly: R137's PARENT_ID = 0 meaning exactly one thing rather
+            // than doubling as "unknown", and the backfilled `status: supported`
+            // banners that assert nothing because a default and a claim look
+            // identical. A default is not information; a declaration is.
+            //
+            // BEHAVIOUR IS UNCHANGED FOR EVERY COMMAND THAT ALREADY WORKED.
+            // Bare SAVE still writes DTSHEMA 2. What is new is that the author
+            // can now SAY so, and that two contradictions became EXPRESSIBLE
+            // for the first time and are refused rather than silently resolved.
+            int  ver          = 2;
+            bool ver_declared = false;   // V2 or V3 was typed
+            bool ver_twice    = false;   // ... more than once
             for (;;) {
                 const auto sp = wsargs.find_last_of(" \t");
                 if (sp == std::string::npos) break;
@@ -6146,16 +6166,55 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
                 // R128. ALL is spelled exactly as CLOSE spells it -- bare is
                 // scoped, ALL is everywhere -- so nobody has to remember which
                 // way round each verb goes. It rides the same trailing-keyword
-                // loop, so it composes with MEMO / V3 / MINIDB in any order.
+                // loop, so it composes with MEMO / V2 / V3 / MINIDB in any order.
                 else if (last == "all" && !save_all) { save_all = true;  wsargs = trim_copy(wsargs.substr(0, sp)); }
-                else if (last == "v3" && ver == 2)   { ver = 3;        wsargs = trim_copy(wsargs.substr(0, sp)); }
+                else if (last == "v2" || last == "v3") {
+                    // CONSUMED EVEN WHEN IT IS A REPEAT, deliberately: breaking
+                    // out here would leave the token on the front of wsargs and
+                    // it would be read as part of the NAME, so a doubled version
+                    // would save to a file called "mydesk v3" instead of being
+                    // refused. Record the conflict and decide after the loop.
+                    if (ver_declared) ver_twice = true;
+                    ver          = (last == "v3") ? 3 : 2;
+                    ver_declared = true;
+                    wsargs       = trim_copy(wsargs.substr(0, sp));
+                }
                 else if (last == "minidb" && !as_minidb) {
-                    // MINIDB implies v3: the container's posture must be
-                    // self-locating, since it will be re-pointed at RAM.
-                    as_minidb = true; ver = 3; wsargs = trim_copy(wsargs.substr(0, sp));
+                    // MINIDB no longer sets `ver` here. It IMPLIES v3 and that
+                    // is applied after the loop, so an explicit V2 is still
+                    // visible when the contradiction is judged -- the parse is
+                    // right-to-left, so deciding inside the loop would make the
+                    // answer depend on which order they were typed.
+                    as_minidb = true; wsargs = trim_copy(wsargs.substr(0, sp));
                 }
                 else break;
             }
+
+            // ---- version contradictions, judged once and order-independently -
+            if (ver_twice) {
+                std::cout << "WORKSPACE SAVE: refused -- the format version is named"
+                             " more than once.\n";
+                std::cout << "  Say V2 or V3 exactly once, or neither. Nothing was"
+                             " saved.\n";
+                return;
+            }
+            if (as_minidb && ver_declared && ver == 2) {
+                // REFUSED RATHER THAN UPGRADED. Before V2 was spellable, MINIDB
+                // set ver = 3 unconditionally and that was harmless because
+                // nobody could have said otherwise. Now they can, and silently
+                // promoting a DECLARED V2 to V3 would be the engine overruling a
+                // stated intent without saying so -- the same reason NEW ...
+                // UNDER a parent with no durable identity refuses instead of
+                // recording 0.
+                std::cout << "WORKSPACE SAVE: refused -- MINIDB cannot be saved as"
+                             " V2.\n";
+                std::cout << "  A MINIDB container carries table BYTES and its"
+                             " embedded posture must be self-locating to survive"
+                             " being re-pointed at RAM, which is what V3 adds.\n";
+                std::cout << "  Drop the V2, or say V3. Nothing was saved.\n";
+                return;
+            }
+            if (as_minidb) ver = 3;   // implied, and now stated in one place
             // R128: the scope is decided ONCE, announced, and then handed to
             // whichever carrier runs. Announcing BEFORE the write is deliberate
             // -- the count a reader most needs is what is about to be written,

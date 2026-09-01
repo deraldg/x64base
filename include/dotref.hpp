@@ -256,7 +256,7 @@ inline const std::vector<Item>& catalog() {
             WORKSPACE SAVE <file>
                 Save the posture to a file.
 
-            WORKSPACE SAVE <name> MEMO [V3]
+            WORKSPACE SAVE <name> MEMO [V2|V3]
                 Save the POSTURE into the WORKSPACES memo catalog. Tables stay
                 where they are; the posture records where that is.
 
