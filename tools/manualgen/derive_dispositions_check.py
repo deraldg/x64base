@@ -86,6 +86,36 @@ from manualgen_lib.inventory import collect_inventory  # noqa: E402
 from manualgen_lib.paths import ManualgenPaths  # noqa: E402
 from manualgen_lib.reference_candidate import _read_harvest  # noqa: E402
 
+# A PDLC block declares a command that does not exist yet. This is a DIFFERENT
+# vocabulary from @dottalk.usage, and confusing the two is what produced the
+# false claim corrected in `derive` below: an earlier version reached for a
+# `command:` usage contract, found none for these five, and had been told by a
+# run record that it would.
+PDLC_PLANNED = re.compile(r"^\s*//\s*planned-command:\s*(\S+)", re.M)
+
+
+def planned_commands(repo_root: Path) -> set[str]:
+    """Commands DECLARED in an @dottalk.pdlc block but not yet implemented.
+
+    The block states its own semantics: "Not counted as a command surface --
+    `planned-command` is not harvested into SYSCMD/HELP/dotref." So a planned
+    command is invisible to every store the derivation reads, which is precisely
+    why the rules could not see it and the hand-kept table could.
+
+    Exactly five exist (RPG, TRIGGER, TTESTAPP, VMWARE, VT200), all at
+    pdlc-step: design / proof-state: idea, measured 2026-09-02.
+    """
+    found: set[str] = set()
+    for path in list(repo_root.glob("src/**/*.cpp")) + list(repo_root.glob("src/**/*.hpp")):
+        try:
+            text = path.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        if "@dottalk.pdlc" not in text:
+            continue
+        found.update(m.group(1).strip().upper() for m in PDLC_PLANNED.finditer(text))
+    return found
+
 REVIEW_BUCKETS = {
     "02_dot_command_review",
     "04_fox_command_review",
@@ -119,22 +149,75 @@ def _alias_pairs(repo_root: Path) -> dict[str, str]:
             canonical = sorted(keys, key=len)[0]
         for key in keys:
             if key != canonical:
-                out[key.upper()] = canonical.upper()
+                out[key.upper().replace(" ", "_")] = canonical.upper()
     return out
 
 
 def derive(topic: dict[str, str], has_help: bool, has_runtime: bool,
-           aliases: dict[str, str]) -> tuple[str, str]:
-    """Return (disposition, target). Target is '' unless it is an alias merge."""
+           aliases: dict[str, str], has_planned: bool = False) -> tuple[str, str]:
+    """Return (disposition, target). Target is '' unless it is an alias merge.
+
+    has_planned IS THE FACT THE FIRST VERSION NEVER LOOKED AT, and finding it
+    corrected a FALSE CLAIM this file previously carried.
+
+    Thirteen of the seventeen disagreements were the table saying
+    DEFER_NO_RUNTIME_IDENTITY where the rules said ROUTE_SOURCE_FACT_APPENDIX.
+    Those are opposite claims -- DEFER means "a real command, deferred";
+    ROUTE_SOURCE_FACT means "not a command at all".
+
+    THE EARLIER EXPLANATION WAS WRONG. It said RPG, TRIGGER, VMWARE, VT200 and
+    TTESTAPP "each carry a `command:` usage contract", citing a grep. They do
+    not. The grep matched the PHRASE "@dottalk.usage contract" inside a sentence
+    about needing one -- the gate text "add the runtime command handler and a
+    @dottalk.usage contract IN THE SAME COMMIT as the handler". A grep that hits
+    prose ABOUT a thing is not evidence OF the thing, and that mistake was
+    written into a run record and then repeated here before being measured.
+
+    What those five actually carry is `@dottalk.pdlc v1` with `planned-command:`,
+    `pdlc-step: design`, `proof-state: idea`, and this line in their own words:
+
+        Not counted as a command surface -- `planned-command` is not harvested
+        into SYSCMD/HELP/dotref.
+
+    So they are DECLARED FUTURE COMMANDS with no handler. The table calling that
+    DEFER_NO_RUNTIME_IDENTITY is right, and the rules calling it a source fact
+    was wrong: a planned command is deferred, not "never a command". Exactly five
+    declarations exist in the tree and they are exactly those five topics.
+    """
     name = topic.get("TOPIC", "").strip().upper()
-    if name in aliases:
-        return "MERGE_ALIAS_TO_CANONICAL", aliases[name]
+    # Space and underscore are the same identity here, as
+    # `command_reference_candidate._normal_identity` already says and has a test
+    # pinning. The harvest spells topics with spaces (APPEND BLANK, LMDB UTIL,
+    # TABLE BUFFER); the registry spells handlers with underscores.
+    #
+    # THIS NORMALISATION CHANGED NOTHING, and that null result is the finding.
+    # Measured 2026-09-02: agreement stayed at 71.4%, because APPEND_BLANK,
+    # LMDB_UTIL, ORDER, TABLE_BUFFER, BROWSETV and GENERIC ARE NOT ALIAS PAIRS IN
+    # THE REGISTRY AT ALL -- they share no handler with anything, so
+    # registry_handler_map cannot pair them however the names are spelled. The
+    # table calls them MERGE_ALIAS_TO_CANONICAL on knowledge that exists nowhere
+    # in the registry.
+    #
+    # So six of the twelve remaining disagreements are NOT derivable from this
+    # source, and no amount of parser polishing will make them so. That is a
+    # ceiling, not a bug. It is kept because the normalisation is correct in
+    # principle and costs nothing; it is DOCUMENTED because the next person will
+    # otherwise try it again and get the same null.
+    key = name.replace(" ", "_")
+    if key in aliases:
+        return "MERGE_ALIAS_TO_CANONICAL", aliases[key]
     if has_runtime:
         return "INCLUDE_WITH_RUNTIME_EVIDENCE", ""
     if has_help:
         if _DEVELOPER_SURFACE.search(name):
             return "ROUTE_DEVELOPER_DIAGNOSTIC_APPENDIX", ""
         return "INCLUDE_PARTIAL_HELP_REFERENCE", ""
+    if has_planned:
+        # Declared in an @dottalk.pdlc block as a future command, with no handler
+        # and deliberately absent from SYSCMD/HELP/dotref. That is "a real command,
+        # deferred" -- NOT a source fact to be routed to an appendix as though it
+        # had never been declared.
+        return "DEFER_NO_RUNTIME_IDENTITY", ""
     if _auto_source_fact_policy(topic, has_help, has_runtime) is not None:
         return "ROUTE_SOURCE_FACT_APPENDIX", ""
     return "DEFER_NO_RUNTIME_IDENTITY", ""
@@ -162,6 +245,7 @@ def main(argv=None) -> int:
     command_keys = {r.get("CMDKEY", "") for r in commands}
     syscmd_by_name = {r.get("CAN_NAME", "").strip().upper(): r for r in syscmd}
     aliases = _alias_pairs(root)
+    planned = planned_commands(root)
 
     review = {r.get("TOPICKEY", ""): r for r in topics
               if classify_topic(r)[0] in REVIEW_BUCKETS}
@@ -173,7 +257,8 @@ def main(argv=None) -> int:
         has_help = key in command_keys
         has_runtime = bool(meta and meta.get("VIS") == "public"
                            and meta.get("ACTIVE", "").lower() == "t")
-        got, target = derive(topic, has_help, has_runtime, aliases)
+        got, target = derive(topic, has_help, has_runtime, aliases,
+                             has_planned=topic.get("TOPIC", "").strip().upper() in planned)
         if table is None:
             underived.append((key, got))
             continue

@@ -193,17 +193,52 @@ disagreement.
 the honest answer to "can this be derived" is NOT YET. The disagreements say why,
 and two are concrete and fixable:
 
-### (a) The rules do not check for a usage CONTRACT
+### (a) The rules do not check for a PLANNED-COMMAND declaration
 
-Thirteen disagreements are the table saying `DEFER_NO_RUNTIME_IDENTITY` where the
-rules say `ROUTE_SOURCE_FACT_APPENDIX`. Those are different claims:
-DEFER means "a real command, deferred"; ROUTE_SOURCE_FACT means "not a command at
-all". Verified by grep: `RPG`, `TRIGGER`, `VMWARE`, `VT200` and `TTESTAPP` each
-carry a `command:` usage contract in their own `cmd_*.cpp`.
+**CORRECTED 2026-09-02, LATER THE SAME DAY. THE ORIGINAL VERSION OF THIS SECTION
+WAS FALSE AND IS QUOTED HERE SO THE ERROR IS NOT REPEATED:**
 
-So the table encodes a fact the derivation never looks at, and that fact IS
-measurable. Adding a `has_contract` predicate should resolve most of these
-thirteen. That is the single highest-value improvement.
+> Verified by grep: `RPG`, `TRIGGER`, `VMWARE`, `VT200` and `TTESTAPP` each carry
+> a `command:` usage contract in their own `cmd_*.cpp`.
+
+They do not, and no grep verified it. The grep matched the PHRASE
+"@dottalk.usage contract" inside a sentence about needing one -- the gate text
+*"add the runtime command handler and a @dottalk.usage contract IN THE SAME
+COMMIT as the handler"*. **A grep that hits prose ABOUT a thing is not evidence
+OF the thing.** The claim was written into this record, and a later session read
+it, implemented against it, and only caught it because the predicate silently
+resolved nothing.
+
+The underlying observation was right. Thirteen disagreements are the table saying
+`DEFER_NO_RUNTIME_IDENTITY` where the rules say `ROUTE_SOURCE_FACT_APPENDIX`, and
+those are OPPOSITE claims: DEFER means "a real command, deferred";
+ROUTE_SOURCE_FACT means "not a command at all".
+
+What those five actually carry is `@dottalk.pdlc v1` -- a DIFFERENT vocabulary --
+with `planned-command:`, `pdlc-step: design`, `proof-state: idea`, and this line
+in their own words:
+
+    Not counted as a command surface -- `planned-command` is not harvested into
+    SYSCMD/HELP/dotref.
+
+Which is exactly why the rules could not see them: the declaration is
+deliberately absent from every store the derivation reads. Five such declarations
+exist in the tree and they are precisely those five topics.
+
+**IMPLEMENTED, and measured: agreement 59.5% -> 71.4%** (30 agree, 12 disagree).
+
+### (a2) Six of the remaining twelve are NOT DERIVABLE, and that is a ceiling
+
+`APPEND BLANK`, `LMDB UTIL`, `ORDER`, `TABLE BUFFER`, `BROWSETV` and `GENERIC`
+are `MERGE_ALIAS_TO_CANONICAL` in the table. Space-vs-underscore normalisation
+was the obvious suspect -- the harvest spells topics with spaces, the registry
+with underscores -- and it was implemented and measured: **it changed nothing.**
+Those six SHARE NO HANDLER WITH ANYTHING, so `registry_handler_map` cannot pair
+them however the names are spelled. The table knows an alias relationship that
+exists nowhere in the registry.
+
+The null result is recorded deliberately. Without it the next reader tries the
+same normalisation and gets the same nothing.
 
 ### (b) A handler name is not a canonicality signal
 
