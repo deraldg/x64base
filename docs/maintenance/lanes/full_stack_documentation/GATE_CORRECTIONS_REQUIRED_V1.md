@@ -192,6 +192,44 @@ contract-versus-manual disagreements (OI-028) and the 24 distinct
 RECOMMENDED: fold into OI-028 rather than treating it separately. Three surfaces,
 one underlying cause: a status field answering several questions at once.
 
+## G9 -- CITED-PATHS READS A PROPOSAL AS A REFERENCE
+
+**Found 2026-09-02, by causing it.** Correcting the July Grok MANIFEST's audit
+envelope brought that file into a change set for the first time, and
+`cited-paths` immediately reported:
+
+    MISSING labtalk/registries/ai_work_topics.yaml -- cited, not on disk
+            cited by .../virtual_workspaces_memo_resident_2026-07-28/MANIFEST.md
+
+**The citation is CORRECT and the gate is wrong.** That MANIFEST is an external-AI
+intake PROPOSAL, and it says so on the line the gate read:
+
+    Maintainer commits to the live `labtalk/registries/ai_work_topics.yaml`
+    if accepted. External AIs may only propose.
+
+The package has not been accepted, so the registry deliberately does not exist.
+A proposal naming what it proposes to create is the document doing its job.
+
+**THE SHAPE, which is this file's recurring theme:** one finding for two
+conditions that need opposite responses -- "cites a path that should exist and
+does not" (fix the citation or stage the file) versus "PROPOSES a path that must
+not exist yet" (do nothing). The steward's first instinct was to edit the
+MANIFEST to stop citing it, which would have destroyed the proposal's content to
+silence a false positive.
+
+**A FIX ALREADY EXISTS ONE GATE OVER, which is why this is cheap.** The
+report-audit gate ALREADY carves out this exact surface, per
+`labtalk/registries/ai_report_audit.yaml`: intake packages under
+`external_ai_intake/**` are "scanned advisorily ... findings do not fail the
+audit and report.path agreement is not enforced". `cited-paths` needs the same
+scoping. Two gates disagreeing about whether received external material is
+authoritative is the second source of truth this repo keeps paying for.
+
+**Severity LOW, and stated honestly:** already non-blocking, and it fires only
+when an intake MANIFEST is staged, which is rare. It is recorded because the
+NEXT reader will hit it with no context and may "fix" the document instead of
+the gate.
+
 ## Summary
 
     G1  publication gate: unrun reported as drift          HIGH    open
@@ -202,6 +240,7 @@ one underlying cause: a status field answering several questions at once.
     G6  reporter crashed on its own subject                MEDIUM  FIXED
     G7  disposition cannot record its own resolution       LOW     open
     G8  167 pending-and-authoritative rows                 ?       open, fold into OI-028
+    G9  cited-paths reads a proposal as a reference       LOW     open
 
 **G1, G2 and G3 are the ones that cost time on 2026-09-02.** G1 and G2 sent a
 run chasing drift that did not exist. G3 let the steward reintroduce, in a second
