@@ -90,58 +90,100 @@ again.
 Here the documentation has to be careful, because the honest answer has three
 parts.
 
-**What is true today.** Many workspaces can *exist* -- the catalog holds as
-many rows as you like, and today's teaching catalog holds well over a dozen.
-Any one of them can be loaded on demand, from a file, from a memo, or
-hydrated into RAM. But loading is a **swap, not co-residency**: `WORKSPACE
-LOAD` closes what is open and then restores the saved set. One workspace is
-live at a time.
+**What is true today.** Several workspaces can be open **at once**. Since
+2026-08-26 both `WORKSPACE OPEN` and `WORKSPACE LOAD` are **additive**: a load
+closes nothing, and a saved posture's area numbers are treated as *keys* rather
+than engine addresses, so its tables are placed into the current workspace
+wherever there is room. To get the old replacing behaviour you now compose it --
+`WORKSPACE CLOSE ALL` then `WORKSPACE OPEN <dir>`.
 
-**What that costs.** For a single operator moving between systems -- open
-the ERP, work, save, open the college, work, save -- swapping is exactly
-right, and RAM hydration makes it fast. What it does not yet support is two
-schemas open side by side for comparison, which is the natural next want.
+This page said the opposite until 2026-09-02, and the engine's own
+`WORKSPACE USAGE` text has carried the dated correction since 08-27. The
+correction is recorded here rather than quietly swapped, because a reader who
+built a habit on the old sentence should be able to see that it changed and
+when.
 
-**Why it is not simply switched on.** Co-residency is not a memory problem;
-it is a *naming* problem, and the hazards are known and written down before
-any code is committed to them:
+**What that costs.** Additive loading means a second `LOAD` adds to what you
+have rather than replacing it, which is what makes two schemas side by side
+possible -- and it means a careless load lands tables you did not expect. The
+scoped forms exist for exactly that: `CLOSE` and `SAVE` act on one workspace by
+default, with an explicit form for everywhere.
 
-- **Name resolution.** Table references resolve by first match across open
-  areas. Open two systems that both contain a `STUDENTS` table and a join
-  resolves to whichever loaded first -- returning plausible wrong rows rather
-  than an error. This is the sharp one, and it argues for scoping names to a
-  workspace before allowing two.
-- **RAM residency.** Hydration flattens tables to filenames under one virtual
-  root, so two hydrated workspaces would both want the same `STUDENTS.dbf`
-  slot. A per-workspace subroot is cheap to decide now and a migration to
-  decide later.
-- **Relation scope.** Declared relations and their refresh are engine-wide
-  today. With two workspaces live, a refresh has no notion of whose graph it
-  belongs to.
-- **Work-area budget.** Slots are allocated eagerly and shared; two
-  workspaces draw from one pool.
+**Why it was not simply switched on.** Co-residency was never a memory problem;
+it is a *naming* problem. Four hazards were named here before any code was
+committed to them, and they are worth keeping visible because three have since
+closed:
+
+- **Relation scope.** *Closed 2026-08-23.* The relation store is partitioned by
+  workspace, so a refresh knows whose graph it belongs to. A follow-on hole --
+  the refresh *parent* still resolving unscoped -- closed 08-27.
+- **Work-area budget.** *Closed.* Allocation is workspace-aware. Measured: one
+  workspace took areas 0-1, a second took the lowest free slot and grew
+  contiguously from there.
+- **Name resolution.** *Half closed.* Within one workspace two areas can no
+  longer share a logical name: `USE` refuses an explicit alias already held, and
+  auto-renames a stem collision to `<stem>2` and says so. The two resolvers that
+  used to disagree are now built on one primitive. **Still open:** `CREATE` will
+  open a second same-named table without renaming, and `SELECT <name>` is not
+  workspace-scoped. This remains the sharp one.
+- **RAM residency.** *Still open.* Hydration flattens tables to filenames under
+  one virtual root, so two hydrated workspaces would both want the same
+  `STUDENTS.dbf` slot. A per-workspace subroot is still a decision, not a
+  feature.
+
+A fifth hazard was not on the original list and turned out to matter as much as
+any of them:
+
+- **Environment ownership.** *Closed 2026-08-29.* The DBF, INDEXES and LMDB path
+  slots used to be global, and switching workspaces moved membership without
+  moving them -- so with two systems open, a table in one would resolve its
+  index container under the other. The slots are now stamped on the workspace and
+  restored on switch, with `SET PATH <slot> <value> IN <ws>` to bind another
+  workspace by name.
 
 **What sharing means.** The RAM virtual disk is in-process. Another user, or
 another process, cannot see your hydrated workspace at all -- so sharing is
 necessarily an explicit act: write it back to disk, or send it. That is a
 constraint, but a clarifying one, because it puts locking exactly where it
-belongs -- at the moment work crosses back into shared storage, not around
-the private work itself.
+belongs -- at the moment work crosses back into shared storage, not around the
+private work itself.
 
-The design work for named, concurrent workspaces is registered as a lane with
-its costs already measured; these findings are its entry conditions rather
-than a to-do list written after the fact.
-
-### The emerging nested model
+### Nesting
 
 A MINIDB is the portable database image: workspace posture plus member files in
-one memo payload. Hydration produces a live workspace. The emerging manager is
-examining how several such workspaces can be named and isolated, and how a
-parent can contain or reference children without merging their table names.
+one memo payload. Hydration produces a live workspace.
 
-Recursion and nesting therefore need explicit depth, cycle, ownership,
-resolution and close-order rules. Those are active Alpha design and
-implementation questions, not yet published here as completed behavior.
+Nesting needed explicit **depth, cycle, ownership, resolution and close-order**
+rules before it could be published. Four of those five now have answers:
+
+- **Ownership.** `WORKSPACE NEW <name> UNDER <parent>` records the parent's
+  *durable* catalog id, never the session handle -- a handle does not survive the
+  process, and the durable id is what persistence means.
+- **Depth.** Recorded as the parent's depth plus one, computed when the row is
+  written rather than asserted afterwards.
+- **Cycle.** Refused at creation, alongside a refusal for a parent that does not
+  exist.
+- **Close order.** `WORKSPACE DESTROY` retires only an empty, childless
+  workspace. A setting decides whether closing a workspace descends into nested
+  ones, and a skipped child is always reported rather than silently left behind.
+- **Resolution** is the one still genuinely open -- see the name-resolution
+  hazard above.
+
+The governing rule is that **containment is declared, never inferred.** A
+workspace with no recorded parent means exactly one thing: no container was
+declared. A workspace whose intended parent has no durable identity is refused
+at declaration rather than quietly recorded as a root -- because an intent
+expressed as an absence cannot be told apart from a default.
+
+One consequence reads as a limitation and is really the rule working: **you
+cannot currently nest under the default workspace**, not because of any rule
+about it, but because it has no durable catalog row, and a container that cannot
+be named cannot be recorded. Give it one and nesting under it follows with no
+change to the rules.
+
+**Nested MINIDB is a different claim and is not made here.** Workspace nesting
+is declared and durable; a container whose *payload* holds another container
+remains chartered and unexercised, with measured at-rest depth of one.
 
 ## Evidence
 
