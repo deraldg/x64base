@@ -756,6 +756,34 @@ def main() -> int:
                   "that is not tracked (see above). NOT blocking. Stage the file, "
                   "or stop citing it. An IGNORED path can never be staged at all.")
 
+        # 5d. MANUAL LINK INTEGRITY -- hard. Every page the accepted command
+        # reference links to must exist AND BE TRACKED.
+        #
+        # Measured 2026-09-02 from the commit output of `5c1a39f7f`: the accepted
+        # command reference had NEVER been tracked. All 165 pages landed as
+        # `create mode`. The reader was in the repository; the 164 pages it links
+        # to were not, so nothing looked wrong from either end.
+        #
+        # Every Gate 4 apply since 2026-07-18 therefore wrote into files git
+        # could not see, which means NO APPLY COULD BE REVIEWED AS A DIFF -- and
+        # that review is this lane's only real defence. Four Gate 4 plans were
+        # built that day and three were discarded on exactly that review; all
+        # three reported PASS_PLAN_ONLY findings=0.
+        #
+        # Hard rather than advisory, unlike 5c: a link that resolves only on the
+        # author's disk is broken for every other reader, and unlike a widowed
+        # citation it cannot be a staging oversight -- the file is either in the
+        # repository or it is not. Both arms falsification-tested against a
+        # fixture before being wired in here (missing, untracked-but-linked, and
+        # stray each report distinctly).
+        rc = _run_portal_check("tools/staging/check_manual_link_integrity.py", [])
+        if rc == 2:
+            print("\n  BLOCKED -- the accepted manual links to a page that is "
+                  "missing or untracked. A link to an untracked page resolves on "
+                  "one machine and nowhere else; the accepted manual is a "
+                  "deliverable and belongs in the repository.", file=sys.stderr)
+            exit_code = 2
+
         rc = _run_portal_check("tools/staging/check_seed_budget.py", [])
         if rc == 2:
             print("\n  BLOCKED -- a document is over the byte budget it declares "
