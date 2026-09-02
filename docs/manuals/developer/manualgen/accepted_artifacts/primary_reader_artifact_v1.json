@@ -1,16 +1,16 @@
 {
-  "acceptance_authorization_record": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260722-001/manualgen_phase/gate4_apply_authorization_docflush20260728_v1.json",
-  "acceptance_plan_run": "MANRUN-20260728T040202Z-333DC61D",
+  "acceptance_authorization_record": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260901-002/manualgen_phase/gate4_apply_authorization_v1.json",
+  "acceptance_plan_run": "MANRUN-20260902T154709Z-EEB3A07B",
   "acceptance_source_run": "MANRUN-20260718T031554Z-F1F59445",
   "acceptance_source_runs": [
-    "MANRUN-20260728T033919Z-E9B63E1A",
-    "MANRUN-20260728T034317Z-BB9D66A2"
+    "MANRUN-20260902T154553Z-14F5CEEE",
+    "MANRUN-20260902T154554Z-2F8C1F20"
   ],
-  "accepted_utc": "2026-07-28T04:19:31Z",
+  "accepted_utc": "2026-09-02T15:50:01Z",
   "artifact_heading_count": 237,
   "artifact_lines": 4118,
   "artifact_sha256": "EA2E12A9D3E1AD3799BFA40DBE27F1E2CB1107E34CA05684599E429D7F9A5A8F",
-  "authorization_record": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260722-001/manualgen_phase/gate4_apply_authorization_docflush20260728_v1.json",
+  "authorization_record": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260901-002/manualgen_phase/gate4_apply_authorization_v1.json",
   "classification": "primary_reader_manual_artifact",
   "command_reference_lineage_rows": 4604,
   "command_reference_pages": 183,

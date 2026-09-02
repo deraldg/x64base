@@ -38,6 +38,52 @@ KIND_ORDER = ("STATUS", "SUMMARY", "SYNTAX", "USAGE", "ARGUMENT", "EXAMPLE", "NO
 PROSE_KINDS = frozenset({"NOTE", "WARNING", "HINT", "DEPRECATION"})
 
 
+def _reassemble_parts(rows: list[dict]) -> list[dict]:
+    """Rejoin a spilled logical line from its PART_NO rows. NOT a heuristic.
+
+    HELP_LINE IS A PSEUDO-MEMO, BY DESIGN, and the design says how to read it.
+    `src/help/helpdata_export_dbf.cpp` (the comment headed "HELP_LINE IS A
+    PSEUDO-MEMO, AND THAT IS DELIBERATE. DO NOT 'FIX' IT."):
+
+        one logical line is split into 240-byte PARTS across numbered rows, and
+        the reader reassembles by LINE_NO + PART_NO
+
+    The store predates the engine having a memo field, so unbounded help text is
+    carried the only way a fixed-width DBF can carry it. PART_NO IS the
+    reassembly key the producer ships. Parts concatenate with NO separator --
+    the split is at a byte boundary, mid-token.
+
+    THIS FUNCTION EXISTS BECAUSE I DID NOT LOOK. An earlier version of this file
+    detected the spill by measuring line length against a hardcoded 240 and
+    guessing -- reimplementing, worse, a documented mechanism whose own comment
+    predicted the misreading: "An agent reading LINE_NO / PART_NO / TEXT(240)
+    cold reads it as an implementation quirk -- one did, the same week." Two did.
+    The counts I derived by hand (6 rows at exactly 240, PART_NO 1/2/3 =
+    29693/6/1) are printed in that comment, measured 2026-08-25.
+
+    The owner asked "do we have a simple problem of needing longer fields?" --
+    no. The field is not too short; it is a memo written in the vocabulary
+    dBase III had, and it is barely exercised: seven continuation rows out of
+    29262, longest reassembled line 719 chars (DOT|VDISK).
+    """
+    out: list[dict] = []
+    index: dict[tuple, int] = {}
+    for row in rows:
+        try:
+            part = int(str(row.get("PART_NO", "1")).strip() or "1")
+        except ValueError:
+            part = 1
+        key = (row.get("TOPICKEY", ""), row.get("KIND", ""), str(row.get("LINE_NO", "")).strip())
+        if part > 1 and key in index:
+            head = out[index[key]]
+            head["TEXT"] = head.get("TEXT", "").rstrip("\n") + row.get("TEXT", "")
+            continue
+        merged = dict(row)
+        index[key] = len(out)
+        out.append(merged)
+    return out
+
+
 def _rejoin_wrapped_prose(texts: list[str]) -> list[str]:
     """Rejoin hard-wrapped prose lines that the store holds as separate rows.
 
@@ -60,16 +106,54 @@ def _rejoin_wrapped_prose(texts: list[str]) -> list[str]:
     under-joining leaves the text readable, whereas over-joining would weld two
     genuinely separate notes into one false sentence.
 
+    BYTE-LEVEL SPILLS ARE NOT THIS FUNCTION'S JOB. A logical line split across
+    PART_NO rows is reassembled by `_reassemble_parts` before anything gets here,
+    using the key the producer ships. This function only ever sees whole logical
+    lines, so every join it makes takes a single space.
+
     The store is not at fault and is not changed. This is a rendering rule.
     """
     joined: list[str] = []
     for text in texts:
-        if joined and _continues_previous(joined[-1], text):
+        if joined and len(joined[-1].strip()) >= _WRAP_BAND_MIN and _continues_previous(joined[-1], text):
             joined[-1] = f"{joined[-1]} {text}"
         else:
             joined.append(text)
     return joined
 
+
+_WRAP_BAND_MIN = 60
+"""Shortest line that can plausibly have been WRAPPED rather than ended.
+
+Measured over the 764 joins the case rule makes in PROSE kinds:
+
+    prev len   0-19      5
+    prev len  20-39     10
+    prev len  40-59     13
+    prev len  60-69    116     <- the wrap band starts here, an order-of-
+    prev len  70-79    577        magnitude cliff at 60
+    prev len  80-99     43
+
+736 of 764 sit at 60 or above and the distribution is sharply bimodal. A line
+that stops at 6 or 13 characters did not run out of room; the author ended it.
+
+WITHOUT THIS FLOOR THE RULE WELDS LISTS. Caught in the Gate 4 plan review for
+MANRUN-20260902T153842Z-CBC1CCB6 by diffing staged against accepted:
+
+    model.md       'tables' 'records' 'fields' 'indexes' 'relations'
+    script.md      'sequential execution' 'decision blocks' 'loops'
+    expression.md  'numeric' 'character' 'date' 'logical'
+    buffering.md   'working state' 'persisted state'
+
+about thirty items across eight pages, each an item in a list introduced by a
+line ending in ':' -- the colon correctly stopped the FIRST item being absorbed,
+which is exactly why the damage started at the second and looked like prose.
+
+The floor costs some genuine short wraps (EXPORT's 35-character 'Named tokens
+may be an area number,' stays split). That is the intended trade: this rule
+under-joins on purpose, because a missed join is a fragment and a wrong join is
+a falsehood.
+"""
 
 _LIST_MARKER = re.compile(r"^\d+[.)]\s")
 
@@ -218,9 +302,14 @@ def _render_page(topic: dict[str, str], label: str, selected: list[dict[str, str
     summary = topic.get("SUMMARY", "").strip()
     distinct_summaries: list[str] = []
     summary_seen: set[str] = set()
+    # Reassemble PART_NO spills BEFORE dedup: the two halves of a spilled summary
+    # are distinct strings, so deduplicating first would keep both fragments and
+    # hide the join. Both of the corrupted summaries found in the Gate 4 review
+    # (CANARY, CDX) live on this path, not in the kind loop below -- the second
+    # time this branch has been missed by a change made only to that loop.
     summary_values = [
         row.get("TEXT", "").strip()
-        for row in (curated_summary_rows or summary_rows)
+        for row in _reassemble_parts(list(curated_summary_rows or summary_rows))
     ]
     if not summary_values and summary:
         summary_values.append(summary)
@@ -230,6 +319,12 @@ def _render_page(topic: dict[str, str], label: str, selected: list[dict[str, str
             summary_seen.add(normalized)
             distinct_summaries.append(value)
     if distinct_summaries:
+        # SUMMARY renders through this path, not the kind loop below, so adding
+        # it to PROSE_KINDS alone would have missed it -- and did. Measured
+        # 2026-09-02 after the first fix: 46 fragments remained across the 164
+        # pages and 29 of them were SUMMARY, the single largest group, because
+        # this branch was never touched. Same rejoin, applied here explicitly.
+        distinct_summaries = _rejoin_wrapped_prose(distinct_summaries)
         lines.extend(["## Summary", ""])
         for index, value in enumerate(distinct_summaries):
             escaped = "<br>".join(html.escape(part, quote=False) for part in value.replace("\r\n", "\n").replace("\r", "\n").split("\n"))
@@ -248,7 +343,7 @@ def _render_page(topic: dict[str, str], label: str, selected: list[dict[str, str
             continue
         lines.extend([f"## {kind.replace('_', ' ').title()}", ""])
         texts = [row.get("TEXT", "").strip().replace("\r\n", "\n").replace("\r", "\n")
-                 for row in rows]
+                 for row in _reassemble_parts(rows)]
         if kind in PROSE_KINDS:
             texts = _rejoin_wrapped_prose(texts)
         for text in texts:

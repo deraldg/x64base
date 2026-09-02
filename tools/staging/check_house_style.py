@@ -191,6 +191,19 @@ def audit(root: Path) -> int:
     return 0
 
 
+
+def _console_safe(text: str) -> str:
+    """Render a line so it survives whatever encoding stdout happens to have.
+
+    Non-ASCII becomes <U+XXXX>. The point of this checker is to name characters
+    that must not be in the tree, so printing them raw is both unnecessary and,
+    on a cp1252 console, fatal.
+    """
+    out = []
+    for ch in text:
+        out.append(ch if ord(ch) < 128 else f"<U+{ord(ch):04X}>")
+    return "".join(out)
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="ASCII-only gate for new documentation.")
     parser.add_argument("--range", dest="rng", default=None, help="commit range, e.g. HEAD~1..HEAD")
@@ -235,12 +248,19 @@ def main() -> int:
         print("house-style: PASS -- no non-ASCII in added documentation lines")
         return 0
 
+    # A checker that CANNOT PRINT THE CHARACTER IT IS COMPLAINING ABOUT is worse
+    # than one that stays quiet: it crashed mid-report on 2026-09-02, on the
+    # Windows console (cp1252) at the first U+26A0, so the operator saw a
+    # traceback instead of the remaining findings AND the exit code changed from
+    # 2 to 3 -- a different failure class, from a reporting bug. Escape for
+    # display only; the finding itself is unchanged.
+
     print(f"house-style: FAIL -- {len(findings)} added line(s) carry non-ASCII")
     for path, lineno, line, fixes in findings[:40]:
         print(f"  {path}:{lineno}")
         for fix in fixes:
             print(f"      {fix}")
-        print(f"      | {line.strip()[:100]}")
+        print(f"      | {_console_safe(line.strip()[:100])}")
     if len(findings) > 40:
         print(f"  ... {len(findings) - 40} more line(s)")
     print("")

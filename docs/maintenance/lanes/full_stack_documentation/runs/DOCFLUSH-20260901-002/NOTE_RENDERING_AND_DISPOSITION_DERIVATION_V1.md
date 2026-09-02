@@ -45,7 +45,130 @@ continuation begins with a date:
     ... It read `supported` until
     2026-08-30 while THIS PARAGRAPH already called it a developer probe
 
-Eight unit cases now cover it, including a numbered-list guard.
+Nine unit cases now cover it, including a numbered-list guard.
+
+**AND THAT SENTENCE WAS FALSE WHEN FIRST WRITTEN.** This document and the commit
+message both claimed "eight unit cases now cover it" while NOTHING in
+`tools/manualgen/tests/` referenced `_rejoin_wrapped_prose` -- caught on
+2026-09-02 by grepping for the symbol before opening a second Gate 4 cycle. The
+cases had been reasoned through and never committed to a file. A test asserted in
+prose is not a test, and a run record is exactly where that error is most
+expensive, because the next reader has no reason to check.
+
+`tests/test_command_reference_candidate.py::RejoinWrappedProseTests` now holds
+them, and each was mutation-checked rather than merely run green:
+
+    rule disabled (never joins)   3 cases fail
+    rule always joins             9 cases fail
+    digit case removed            1 case  fails
+    list-marker guard removed     1 case  fails
+    unmutated                     0 fail
+
+The last two matter most: they are the subtle arms, and a suite that passes when
+you delete them is not testing them.
+
+**A SECOND MISS, FOUND THE SAME WAY.** The first fix measured 399 -> 0 at the
+STORE level and was reported as done. Counting fragments in the RENDERED pages
+instead gave 114 -> 46, and the breakdown named the cause:
+
+    SUMMARY   29     <- the largest group, and never touched
+    NOTE       7        (the documented uppercase under-joins)
+    USAGE      5        (deliberately excluded)
+    SYNTAX     5        (deliberately excluded)
+
+`SUMMARY` renders through its own `distinct_summaries` branch, NOT the kind loop,
+so adding it to `PROSE_KINDS` would have done nothing -- the fix has to be applied
+in that branch explicitly, and now is. Predicted effect on the existing candidate:
+SUMMARY fragments 28 -> 5 across 8 pages.
+
+The lesson is the measurement, not the bug: **the store-level count answered a
+question nobody asked.** The reader sees pages. Measuring the artifact the reader
+actually reads is what found both the untouched code path and the missing tests.
+
+### A THIRD MISS, AND THE WORST ONE: THE FIX WAS CORRUPTING TEXT
+
+Caught in the Gate 4 plan review for MANRUN-20260902T153114Z-472B26D9, BEFORE
+apply, by diffing the 168 staged files against the accepted ones instead of
+trusting the fragment count to have gone down:
+
+    accepted: '...cmd_CATALOGCANARY is the handler, not the comm' + 'and name.'
+    staged  : '...is the handler, not the comm and name.'      WRONG
+    correct : '...is the handler, not the command name.'
+
+    accepted: '...with no file on disk (AIF-04' + '3).'
+    staged  : '(AIF-04 3).'                                    WRONG
+    correct : '(AIF-043).'
+
+`HELP_LINE.TEXT` is a FIXED-WIDTH 240-character field, so a long line is cut at
+the field boundary MID-TOKEN, not wrapped at a word. Joining those with a space
+does not merely fail to help -- it changes the words. Measured: max TEXT length
+across all 29700 rows is exactly 240, nothing exceeds it, six rows hit it, and
+ALL SIX were being corrupted.
+
+The rule now has two forms, and the separator is chosen by measurement:
+
+    previous row is exactly 240 chars -> MECHANICAL CUT, join with NO separator,
+                                         and unconditionally: the next row's
+                                         capitalisation carries no information
+    previous row is shorter           -> word wrap, join with a single space
+                                         (the conservative case rule applies)
+
+Each of the six was inspected by hand rather than pattern-matched: `doe`+`s not`,
+`n`+`ative`, `a`+`dmin`, `de`+`scribes`, `comm`+`and name.`, `(AIF-04`+`3).`.
+
+**WHY THIS MATTERS MORE THAN THE BUG.** Both earlier measurements said the fix
+was working -- store fragments 399 -> 0, page fragments 114 -> 46 -> 21. Both
+were true. Neither could see this, because a corrupted join REDUCES the fragment
+count exactly like a correct one. The metric was aligned with the intervention
+rather than with the goal, which is the AIF-118 shape wearing a different hat: a
+number that reads the same whether the thing is right or wrong.
+
+What caught it was comparing the artifact against its predecessor and demanding
+that every difference be EXPLAINED -- not counted. That check also produced the
+164 provenance-only diffs and one byte-identical page, which is what a review
+should look like: everything accounted for, nothing waved through.
+
+**Also corrected while here:** the first mutation harness for these tests
+reported "restored -> 2 failing", which is impossible. The harness was patching
+the module namespace while the tests hold direct references, so the mutations
+never applied and the counts were noise. Re-run against the test module's own
+namespace: baseline 0, space-only join 2, width off-by-one 2, width disabled 3,
+restored 0. A mutation harness that cannot show a clean baseline is not
+evidence, and it nearly got read as one.
+
+### APPLIED, AND VERIFIED IN THE ACCEPTED MANUAL
+
+    plan     MANRUN-20260902T154709Z-EEB3A07B
+    apply    MANRUN-20260902T155001Z-5BD6794D    PASS_APPLIED
+    backup   docs/manuals/developer/manualgen/backups/
+             docflush_gate4_acceptance_MANRUN-20260902T155001Z-5BD6794D
+    applied_rows 168   validation_findings 0   rollback_findings 0
+    reader_pointer_mutated 0   website_mutated 0
+
+Verified by reading the ACCEPTED pages on disk afterwards, not by trusting the
+apply's own status:
+
+    canary.md      'not the command name.'      spill reassembled
+    cdx.md         '(AIF-043).'                 spill reassembled
+    sql.md         'does not mutate table data.' spill reassembled
+    model.md       '- tables' '- records'       list intact
+    expression.md  '- numeric'                  list intact
+    buffering.md   '- working state' '- persisted state'  list intact
+    area51.md      NOTE joined into a paragraph
+    all pages      none of the six corrupted or welded forms present
+
+FOUR PLANS WERE BUILT IN THIS CYCLE AND THREE WERE DISCARDED. Every one of the
+three reported `PASS_PLAN_ONLY findings=0`, and every one would have damaged the
+manual. The gate was not wrong -- it checks what it was built to check -- but a
+green gate is not a reviewed change, and this cycle is the clearest evidence this
+lane has produced for that distinction.
+
+The check that actually worked, and the one to reach for next time: diff the
+staged artifact against the accepted one and require EVERY difference to fall
+into a named class, with an explicit count for each. Not a summary statistic --
+a partition. The three classes here were provenance-only (146), prose rejoin
+(18) and byte-identical (1), with zero unexplained, plus a whole-file assertion
+that the text is preserved exactly on all 165 files.
 
 **The store is not changed.** This is a rendering rule.
 

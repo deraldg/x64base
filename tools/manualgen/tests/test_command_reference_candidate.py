@@ -9,10 +9,14 @@ MANUALGEN_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(MANUALGEN_ROOT))
 
 from manualgen_lib.command_reference_candidate import (  # noqa: E402
+    PROSE_KINDS,
     _deduplicate_lines,
     _extract_command_links,
     _line_inclusion,
     _normal_identity,
+    _WRAP_BAND_MIN,
+    _reassemble_parts,
+    _rejoin_wrapped_prose,
     _resolve_topic,
     _shift_markdown_headings,
 )
@@ -26,6 +30,142 @@ from manualgen_lib.gate4_acceptance import (  # noqa: E402
 from manualgen_lib.gate4_acceptance_apply import (  # noqa: E402
     validate_gate4_authorization,
 )
+
+
+class RejoinWrappedProseTests(unittest.TestCase):
+    """HELP_LINE holds ONE ROW PER SOURCE LINE, so a wrapped contract comment
+    arrives as several rows with nothing marking paragraph membership. These
+    cases pin the rejoin rule, which is deliberately CONSERVATIVE: it must
+    under-join rather than weld two separate notes into one false sentence.
+
+    Written 2026-09-02. The run record and commit message for the fix both said
+    "eight unit cases now cover it" while NO test referenced the function --
+    caught by grepping for the symbol before a second Gate 4 cycle. The claim is
+    now true. A test asserted in prose is not a test.
+    """
+
+    def test_lowercase_continuation_joins(self) -> None:
+        head = "AREA51 is a developer/debug status probe, not a member of the AREA family,"
+        self.assertGreaterEqual(len(head), _WRAP_BAND_MIN)
+        self.assertEqual(
+            _rejoin_wrapped_prose([head, "and the status field above says so."]),
+            [f"{head} and the status field above says so."],
+        )
+
+    def test_terminated_sentence_does_not_absorb_the_next(self) -> None:
+        self.assertEqual(
+            _rejoin_wrapped_prose(["First note ends here.", "second note starts here"]),
+            ["First note ends here.", "second note starts here"],
+        )
+
+    def test_every_terminator_blocks_the_join(self) -> None:
+        for end in ".!?:;":
+            with self.subTest(terminator=end):
+                self.assertEqual(
+                    _rejoin_wrapped_prose([f"stops{end}", "and continues"]),
+                    [f"stops{end}", "and continues"],
+                )
+
+    def test_digit_continuation_joins(self) -> None:
+        """The real area51 wrap continues onto a date. A first draft tested only
+        islower() and left this split -- the failing test is why digits are in
+        the rule at all."""
+        head = "and `status: developer` above says so. It read `supported` until"
+        self.assertGreaterEqual(len(head), _WRAP_BAND_MIN)
+        self.assertEqual(
+            _rejoin_wrapped_prose([head, "2026-08-30 while this paragraph said otherwise."]),
+            [f"{head} 2026-08-30 while this paragraph said otherwise."],
+        )
+
+    def test_numbered_list_marker_is_not_a_continuation(self) -> None:
+        self.assertEqual(
+            _rejoin_wrapped_prose(["Do these in order", "1. first", "2) second"]),
+            ["Do these in order", "1. first", "2) second"],
+        )
+
+    def test_uppercase_continuation_stays_split_by_design(self) -> None:
+        """Documented UNDER-join. `DBAREAS, WA, WAMREPORT` really does continue
+        the previous row, but nothing distinguishes it from a new sentence, and
+        guessing here would weld unrelated notes together elsewhere."""
+        self.assertEqual(
+            _rejoin_wrapped_prose(["a crowded namespace -- AREA, DBAREA,", "DBAREAS, WA, WAMREPORT."]),
+            ["a crowded namespace -- AREA, DBAREA,", "DBAREAS, WA, WAMREPORT."],
+        )
+
+    def test_three_rows_fold_into_one_paragraph(self) -> None:
+        rows = [
+            "Order/tag reporting is best-effort; a throwing order-state query is",
+            "swallowed and the remaining lines still print, because a diagnostic that",
+            "hides the rest of its own output is worse than a missing field.",
+        ]
+        self.assertEqual(_rejoin_wrapped_prose(rows), [" ".join(rows)])
+
+    def test_empty_and_single_inputs_are_safe(self) -> None:
+        self.assertEqual(_rejoin_wrapped_prose([]), [])
+        self.assertEqual(_rejoin_wrapped_prose(["alone"]), ["alone"])
+        self.assertEqual(_rejoin_wrapped_prose(["", "lower"]), ["", "lower"])
+
+    def test_part_rows_reassemble_with_no_separator(self) -> None:
+        """The producer splits a long logical line into 240-byte PART_NO rows and
+        says the reader reassembles by LINE_NO + PART_NO. Parts join with NOTHING:
+        the split is at a byte boundary, mid-token."""
+        rows = [
+            {"TOPICKEY": "DOT|CANARY", "KIND": "SUMMARY", "LINE_NO": "1", "PART_NO": "1",
+             "TEXT": "cmd_CATALOGCANARY is the handler, not the comm"},
+            {"TOPICKEY": "DOT|CANARY", "KIND": "SUMMARY", "LINE_NO": "1", "PART_NO": "2",
+             "TEXT": "and name."},
+        ]
+        out = _reassemble_parts(rows)
+        self.assertEqual(1, len(out))
+        self.assertTrue(out[0]["TEXT"].endswith("not the command name."))
+
+    def test_three_part_spill_reassembles_in_order(self) -> None:
+        rows = [{"TOPICKEY": "DOT|VDISK", "KIND": "SUMMARY", "LINE_NO": "1",
+                 "PART_NO": str(i + 1), "TEXT": t}
+                for i, t in enumerate(["a" * 3, "b" * 3, "c" * 3])]
+        self.assertEqual("aaabbbccc", _reassemble_parts(rows)[0]["TEXT"])
+
+    def test_separate_logical_lines_are_not_merged(self) -> None:
+        """Different LINE_NO means different logical lines, however adjacent."""
+        rows = [
+            {"TOPICKEY": "DOT|X", "KIND": "NOTE", "LINE_NO": "1", "PART_NO": "1", "TEXT": "one"},
+            {"TOPICKEY": "DOT|X", "KIND": "NOTE", "LINE_NO": "2", "PART_NO": "1", "TEXT": "two"},
+        ]
+        self.assertEqual(2, len(_reassemble_parts(rows)))
+
+    def test_short_lines_are_never_joined(self) -> None:
+        """A line that stops at 13 characters did not run out of room -- the
+        author ended it. Without this floor the rule welded whole lists:
+        model.md 'tables'/'records'/'fields', buffering.md 'working state'/
+        'persisted state'. Caught in a Gate 4 plan review, before apply."""
+        self.assertEqual(
+            _rejoin_wrapped_prose(["working state", "persisted state"]),
+            ["working state", "persisted state"],
+        )
+        self.assertEqual(
+            _rejoin_wrapped_prose(["tables", "records", "fields", "indexes"]),
+            ["tables", "records", "fields", "indexes"],
+        )
+
+    def test_wrap_band_floor_is_the_measured_cliff(self) -> None:
+        """60 is where the join-length distribution jumps by an order of
+        magnitude: 13 joins in 40-59, 116 in 60-69, 577 in 70-79."""
+        self.assertEqual(_WRAP_BAND_MIN, 60)
+        short = "x" * (_WRAP_BAND_MIN - 1)
+        self.assertEqual(_rejoin_wrapped_prose([short, "continues"]), [short, "continues"])
+        long_enough = "x" * _WRAP_BAND_MIN
+        self.assertEqual(_rejoin_wrapped_prose([long_enough, "continues"]),
+                         [f"{long_enough} continues"])
+
+    def test_line_oriented_kinds_are_excluded_from_the_rule(self) -> None:
+        """USAGE shows 1954 apparent continuations and SYNTAX 1280, MORE than
+        NOTE's 756, because they are indented command forms where a lowercase
+        line is layout. Rejoining them would run a command form into the
+        description beneath it, so they must stay out of PROSE_KINDS."""
+        self.assertEqual(PROSE_KINDS, frozenset({"NOTE", "WARNING", "HINT", "DEPRECATION"}))
+        for kind in ("SYNTAX", "USAGE", "ARGUMENT", "EXAMPLE"):
+            with self.subTest(kind=kind):
+                self.assertNotIn(kind, PROSE_KINDS)
 
 
 class CommandReferenceCandidateTests(unittest.TestCase):
