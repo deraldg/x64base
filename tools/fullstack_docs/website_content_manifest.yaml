@@ -5,7 +5,7 @@ schema: dottalk.website.content_manifest.v2
 generated_at: "2026-08-26"
 spine: simplex_duplex_direction_gates   # S-impl | S-rep | D-man | WO
 site_root: x64base-site/content
-totals: {generated: 8, derived: 30, maintained: 75, maintained_current: 9, reported: 5, static: 19, total: 146}
+totals: {generated: 8, derived: 30, maintained: 78, maintained_current: 9, reported: 5, static: 19, total: 149}
 publication_check:
   runner: tools/fullstack_docs/website_matrix_check.py
   required_gates:
@@ -127,8 +127,11 @@ classes:
       - docs/engine/specifications
       - docs/engine/workspaces
       - docs/labtalk/academic-start
+      - docs/labtalk/ai-portal-schemas
       - docs/labtalk/lesson-records-fields-tables
+      - lab/ai-portal-human-guide
       - lab/experimental
+      - lab/website-matrix-inspector
       - memory/overview
       - memory/roadmap
       - memory/team-model
