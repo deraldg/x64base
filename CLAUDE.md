@@ -37,6 +37,15 @@ order. Steps 1 and 2 are cheap and answer most of it.
    FIRST. Several plans carry an explicit *agnostic-planner contract* stating
    they assume no session memory and can be executed from the tree alone by a
    reader with no context. They mean you.
+5. **`docs/manuals/`.** The NEWEST and most complete treatment of a subject is
+   often a MANUAL, and steps 1-4 will not reach it: they are indexed by lane,
+   AIF and design intent, while a manual is filed by AUDIENCE. **A concept
+   search does not find a teaching document.** List the directory -- it is small
+   -- rather than searching it. On 2026-09-02 a session wrote two subsystem
+   handoffs, each opening with a prior-art section, without finding the 701-line
+   manual on the same subject that THE SAME SESSION had written the day before;
+   its project search returned the design documents and the measurement records
+   and never the manual. The owner had to point at it.
 
 Resolve by intent when you can: `python3 labtalk/ai_portal/recall.py <trigger>`
 returns the smallest working set, measured. `trigger.where_is` surfaces the map.
