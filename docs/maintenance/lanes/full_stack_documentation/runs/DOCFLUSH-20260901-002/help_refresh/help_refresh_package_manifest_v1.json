@@ -1,0 +1,31 @@
+{
+  "contract": "guarded-help-refresh-package-v1",
+  "current_help_build_reason": "Messaging/help source inputs are dirty after the 2026-07-07 HELP artifacts and the current usage-contract snapshot has advanced.",
+  "current_help_build_required": false,
+  "help_root": "/sessions/sharp-great-euler/mnt/ccode/dottalkpp/data/help",
+  "legacy_build_reason": "DOTREF is not currently dirty; timestamps alone do not prove whether it diverged from the last legacy build.",
+  "legacy_build_trigger": "REVIEW_REQUIRED",
+  "mutation_authorized": false,
+  "pre_refresh_runtime_findings": {
+    "artifact_rows": 6926,
+    "cmdhelp_line_rows": 10846,
+    "cmdhelp_topics": 473,
+    "compact_set_canonicalization_errors": 9,
+    "orphan_cmdkey_rows": 461,
+    "reflection_structural_status": "PASS"
+  },
+  "proposed_current_command": "CMDHELP BUILD . D:\\code\\ccode\\src",
+  "proposed_legacy_command_if_trigger_confirmed": "CMDHELP BUILD LEGACY",
+  "protected_file_count": 18,
+  "protected_manifest_sha256": "36F8066B08B22679790398338A1920B81375AB32FD16E6CF492E8763261FF473",
+  "required_before_execution": [
+    "explicit maintainer authorization",
+    "copy every pre-refresh HELP file named by the protected manifest into a dated backup directory",
+    "hash-verify the backup",
+    "resolve the conditional legacy-build trigger",
+    "run approved build commands only",
+    "capture post-build file and row-count deltas",
+    "rerun CMDHELPCHK reflection, artifacts, and legacy checks"
+  ],
+  "rollback": "Restore the complete dated HELP backup, then rerun the same read-only runtime transcript."
+}

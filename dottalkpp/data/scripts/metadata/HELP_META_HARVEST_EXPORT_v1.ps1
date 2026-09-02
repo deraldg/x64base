@@ -45,9 +45,31 @@ $current = @(
 $stale = @('META_SYSENTVAR.csv','META_SYSFLDDIC.csv','META_SYSHELP.csv','META_SYSMSG.csv')
 
 function Csv-RowCount([string]$path) {
-  # rows minus the header line; EXPORT ... CSV writes a header row
-  $n = (Get-Content -LiteralPath $path | Measure-Object -Line).Lines
-  if ($n -gt 0) { return $n - 1 } else { return 0 }
+  # COUNT CSV RECORDS, NOT LINES.
+  #
+  # This was `(Get-Content | Measure-Object -Line).Lines - 1`, which counts
+  # PHYSICAL LINES. That is correct only while no field contains a newline.
+  #
+  # Measured 2026-09-02 (DOCFLUSH-20260901-002), run HELPMETA-20260902T012620Z:
+  #
+  #     HELP_HELP_TOPIC.csv   manifest said  1196
+  #                           actual records   666   <- and the engine agrees,
+  #                                                     "Exported 666 records"
+  #                           physical lines  1356
+  #
+  # The bug APPEARED THE MOMENT THE EXPORT STARTED BEING RIGHT: memo TEXT now
+  # resolves through `EXPORT ... CSV`, so quoted fields carry newlines. While
+  # the interim Python exporter blanked memo, every field was single-line and
+  # line-counting happened to agree with record-counting.
+  #
+  # Note 1196 is neither 666 nor 1356-1, so plain physical-line counting does
+  # not explain it either -- Get-Content/Measure-Object line semantics (CRLF,
+  # embedded CR, trailing-line handling) are involved. The exact arithmetic was
+  # never established and does not need to be: Import-Csv parses the CSV
+  # grammar, honours quoted embedded newlines, and treats row 1 as the header,
+  # so no subtraction is required.
+  $rows = @(Import-Csv -LiteralPath $path)
+  return $rows.Count
 }
 
 Write-Host "HELP/META harvest export -- run $run"

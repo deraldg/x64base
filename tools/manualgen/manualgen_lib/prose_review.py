@@ -101,34 +101,14 @@ PROSE_REVIEW_POLICY: dict[str, dict[str, str]] = {
         "candidate_action": "ADD_CONDITIONAL_UI_ENTRY_NOTE",
         "rationale": "Describe the record UI entry point with a build-availability caveat rather than presenting it as an always-present command.",
     },
-    "DOT|UDATE": {
-        "target_slug": PARTIAL_HELP_SLUG,
-        "review_disposition": "APPENDIX_ONLY",
-        "anchor_after": "NEW CANDIDATE APPENDIX",
-        "candidate_action": "ADD_PARTIAL_HELP_DATE_HELPER_ENTRY",
-        "rationale": "Keep the registered date/time helper visible while curated DOTREF support and behavior prose remain pending.",
-    },
-    "DOT|UDATETIME": {
-        "target_slug": PARTIAL_HELP_SLUG,
-        "review_disposition": "APPENDIX_ONLY",
-        "anchor_after": "NEW CANDIDATE APPENDIX",
-        "candidate_action": "ADD_PARTIAL_HELP_DATE_HELPER_ENTRY",
-        "rationale": "Keep the registered date/time helper visible while curated DOTREF support and behavior prose remain pending.",
-    },
-    "DOT|UNOW": {
-        "target_slug": PARTIAL_HELP_SLUG,
-        "review_disposition": "APPENDIX_ONLY",
-        "anchor_after": "NEW CANDIDATE APPENDIX",
-        "candidate_action": "ADD_PARTIAL_HELP_DATE_HELPER_ENTRY",
-        "rationale": "Keep the registered date/time helper visible while curated DOTREF support and behavior prose remain pending.",
-    },
-    "DOT|UTIME": {
-        "target_slug": PARTIAL_HELP_SLUG,
-        "review_disposition": "APPENDIX_ONLY",
-        "anchor_after": "NEW CANDIDATE APPENDIX",
-        "candidate_action": "ADD_PARTIAL_HELP_DATE_HELPER_ENTRY",
-        "rationale": "Keep the registered date/time helper visible while curated DOTREF support and behavior prose remain pending.",
-    },
+    # REMOVED 2026-09-02 by owner ruling on V6_HINTS section 4, candidate (b):
+    #   DOT|UDATE, DOT|UDATETIME, DOT|UNOW, DOT|UTIME
+    # AIF-068 added these as APPENDIX_ONLY on 2026-07-27 because they were
+    # publishing as UNSUPPORTED DOT COMMAND rows -- the exact defect section 4
+    # describes. Ruling (b) fixed the filter instead (c8aa6a583), so they are
+    # function-only and are no longer command topics at all. A prose packet
+    # entry for a topic that does not exist is inert at best, misleading at
+    # worst. Disposition counterparts: disposition.RETIRED_DISPOSITIONS.
 }
 
 

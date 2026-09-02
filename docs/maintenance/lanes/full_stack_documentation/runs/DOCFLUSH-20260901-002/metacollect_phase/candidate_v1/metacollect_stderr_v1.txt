@@ -1,0 +1,3 @@
+METACOLLECT syscmd export: 218 row(s)
+METACOLLECT sysfunc export: 75 row(s)
+METACOLLECT sysargs export: 231 row(s)

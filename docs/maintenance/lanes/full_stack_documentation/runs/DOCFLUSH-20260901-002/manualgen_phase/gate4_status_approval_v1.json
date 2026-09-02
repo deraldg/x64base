@@ -1,0 +1,14 @@
+{
+  "schema": "dottalk.fullstack.gate4_status_disposition_approval.v1",
+  "structure_candidate_run": "MANRUN-20260902T130837Z-AFAAC0E3",
+  "status_ledger_sha256": "1A0DBD33E3EC2F01AFF9699367EE6E8E58B9294A081446CB33F87A9C7160D47F",
+  "decision": "NO_CHANGES_ALREADY_ACCEPTED",
+  "approved_rows": 0,
+  "held_rows": 0,
+  "owner": "member.derald",
+  "run": "DOCFLUSH-20260901-002 (v8)",
+  "authorization": "Owner instruction in-session 2026-09-02: reviewed the command-reference candidate and said 'looks good to me -- go'. Drafted by member.ai.claude.cowork on that instruction; the approval it records is the owner's, the typing is the steward's. Same pattern as MANUALGEN_CANONICAL_ACCEPTANCE_CONTEXT_DECISION_2026-09-02.md.",
+  "basis": "Publication-structure candidate MANRUN-20260902T130837Z-AFAAC0E3 reports status_dispositions=0, remaining_review_statuses=0, findings=0, with begin/end markers balanced 24/24 and 14 historical status comments preserved. There are no per-section status promotions to approve, so this records the no-change disposition that lets Gate 4 project the 164-page command reference. decision=NO_CHANGES_ALREADY_ACCEPTED is derived, not chosen: gate4_acceptance.py sets the expected value from the row count, and 0 rows means this string and no other.",
+  "note": "The status ledger hash is byte-identical to the one approved on 2026-07-28 for MANRUN-20260728T034317Z-BB9D66A2. That is expected and is not a copied value: both runs report zero status dispositions, so both ledgers are the same empty artifact. It was recomputed from status_disposition_ledger.csv on disk and matched the manifest, rather than carried over from the July record.",
+  "publication_authority_claimed": 0
+}

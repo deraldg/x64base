@@ -18,15 +18,11 @@ def _d(disposition: str, targets: str = "", rationale: str = "") -> dict[str, st
 
 
 REVIEW_DISPOSITIONS = {
-    "DOT|BUILD INFO": _d("MERGE_ALIAS_TO_CANONICAL", "DOT|BUILDVECTORS", "Registered runtime alias resolves to the supported BUILDVECTORS topic."),
-    "DOT|BUILD VECTORS": _d("MERGE_ALIAS_TO_CANONICAL", "DOT|BUILDVECTORS", "Registered runtime alias resolves to the supported BUILDVECTORS topic."),
-    "DOT|CANARY": _d("INCLUDE_PARTIAL_HELP_REFERENCE", rationale="Physical HELP command exists; retain partial status and do not claim SYSCMD runtime authority."),
     "DOT|POLLING": _d("DEFER_NO_RUNTIME_IDENTITY", rationale="Usage contract exists but no HELP command or active public SYSCMD identity."),
+    "DOT|TRANSACTION": _d("DEFER_NO_RUNTIME_IDENTITY", rationale="Usage contract exists but no HELP command or active public SYSCMD identity. Same shape as DOT|POLLING; dissolves when dotref is generated from the contracts."),
     "MINER:SOURCE": _d("ROUTE_SOURCE_FACT_APPENDIX", rationale="Collector-owned source marker, not a command topic."),
     "DOT|APPEND BLANK": _d("MERGE_ALIAS_TO_CANONICAL", "DOT|APPEND_BLANK", "Spaced source-mined phrase resolves to the supported underscored command topic."),
     "DOT|CATALOGCANARY": _d("ROUTE_DEVELOPER_DIAGNOSTIC_APPENDIX", rationale="Authoritative diagnostic usage contract without public command identity."),
-    "DOT|CC PRINT": _d("ROUTE_SOURCE_FACT_APPENDIX", rationale="Source-mined phrase without command authority."),
-    "DOT|CODAYSL": _d("MERGE_ALIAS_TO_CANONICAL", "DOT|CODASYL", "Source-mined transposition resolves to the supported CODASYL topic."),
     "DOT|LMDB UTIL": _d("MERGE_ALIAS_TO_CANONICAL", "DOT|LMDB_UTIL", "Source-mined spaced phrase resolves to the supported underscored LMDB_UTIL command topic."),
     "DOT|TABLE BUFFER": _d("MERGE_ALIAS_TO_CANONICAL", "DOT|TABLE_BUFFER", "Source-mined spaced phrase resolves to the supported underscored TABLE_BUFFER command topic."),
     "DOT|ORDER": _d("MERGE_ALIAS_TO_CANONICAL", "ED|ORDER", "Source-mined ORDER phrase resolves to the supported education-reference ORDER command topic."),
@@ -37,14 +33,6 @@ REVIEW_DISPOSITIONS = {
     "DOT|VALIDATE UNIQUE": _d("DEFER_NO_RUNTIME_IDENTITY", rationale="Usage contract exists but no HELP command or active public SYSCMD identity."),
     "DOT|VMWARE": _d("DEFER_NO_RUNTIME_IDENTITY", rationale="Usage contract exists but no HELP command or active public SYSCMD identity."),
     "DOT|VT200": _d("DEFER_NO_RUNTIME_IDENTITY", rationale="Usage contract exists but no HELP command or active public SYSCMD identity."),
-    "DOT|CMDREL": _d("INCLUDE_WITH_RUNTIME_EVIDENCE", rationale="Active public SYSCMD identity exists; retain usage-contract catalog lineage."),
-    "DOT|BBS": _d("INCLUDE_WITH_RUNTIME_EVIDENCE", rationale="Active public SYSCMD identity and physical HELP command exist."),
-    "DOT|NET": _d("INCLUDE_WITH_RUNTIME_EVIDENCE", rationale="Active public SYSCMD identity and physical HELP command exist."),
-    "DOT|UDATE": _d("INCLUDE_PARTIAL_HELP_REFERENCE", rationale="Physical HELP command exists; retain partial status without runtime claim."),
-    "DOT|UDATETIME": _d("INCLUDE_PARTIAL_HELP_REFERENCE", rationale="Physical HELP command exists; retain partial status without runtime claim."),
-    "DOT|UNOW": _d("INCLUDE_PARTIAL_HELP_REFERENCE", rationale="Physical HELP command exists; retain partial status without runtime claim."),
-    "DOT|UTIME": _d("INCLUDE_PARTIAL_HELP_REFERENCE", rationale="Physical HELP command exists; retain partial status without runtime claim."),
-    "DOT|FORMULA": _d("MERGE_ALIAS_TO_CANONICAL", "EDU|FORMULA", "Source-mined DOT view of FORMULA resolves to the authoritative education topic."),
     "FOX|BROWSE": _d("INCLUDE_WITH_RUNTIME_EVIDENCE", rationale="Physical HELP command and active public SYSCMD identity exist; retain partial HELP status."),
     "FOX|APPEND BLANK": _d("MERGE_ALIAS_TO_CANONICAL", "FOX|APPEND_BLANK", "Spaced FOX phrase resolves to the supported underscored topic."),
     "FOX|DO": _d("INCLUDE_PARTIAL_HELP_REFERENCE", rationale="Physical FOX HELP command exists; retain partial status without runtime claim."),
@@ -72,6 +60,51 @@ REVIEW_DISPOSITIONS = {
     "UI|BROWSETV": _d("MERGE_ALIAS_TO_CANONICAL", "DOT|BROWSETV;FOX|BROWSETV", "UI contract resolves to existing supported command topics."),
     "UI|RECORDVIEW": _d("INCLUDE_WITH_RUNTIME_EVIDENCE", rationale="Active public SYSCMD identity exists."),
     "UI|RECORD": _d("INCLUDE_WITH_RUNTIME_EVIDENCE", rationale="Active public SYSCMD identity exists."),
+}
+
+
+# RETIRED -- decisions that did their job. Kept, not deleted.
+#
+# `extra_policy` flags any REVIEW_DISPOSITIONS key that is no longer a review
+# topic, and every entry below had become one. Deleting them would have cleared
+# the finding and thrown away the reasoning; moving them keeps the record and
+# takes them out of the active set. Measured 2026-09-02, DOCFLUSH-20260901-002.
+#
+# PROMOTED (7) -- still in the store, now classified 01_dot_supported_commands.
+#   BBS, BUILD INFO, BUILD VECTORS, CANARY, CMDREL, FORMULA, NET
+#   They graduated out of review, which is these entries succeeding.
+#
+# MINING ARTIFACTS (2) -- no longer surfaced at all, correctly.
+#   CC PRINT   a source-mined phrase with no command authority
+#   CODAYSL    a source-mined transposition of CODASYL
+#
+# CONSEQUENCE OF c8aa6a583 (4) -- UDATE, UDATETIME, UNOW, UTIME.
+#   These say 'Physical HELP command exists' and it no longer does. That commit
+#   replaced CMDHELP's 64-name literal expression-function list with a
+#   delegation to the function catalog. The catalog contains all four; the old
+#   literal list did not. cmdhelp.cpp returns an empty summary for any catalog
+#   member, so after the 2026-09-01 rebuild they stopped being DOT topics.
+#   THAT COMMIT IS V6_HINTS SECTION 4 CANDIDATE (b).
+#   RULED AND ACCEPTED by member.derald in-session on 2026-09-02: candidate (b)
+#   stands -- "fix the filter so they stay function-only and HELP stops
+#   publishing them as unsupported". These four are therefore correctly absent
+#   as command topics, and their retirement here is PERMANENT, not provisional.
+#   Their prose-review counterparts were removed under the same ruling; see
+#   prose_review.PROSE_REVIEW_POLICY.
+RETIRED_DISPOSITIONS = {
+    "DOT|BUILD INFO": _d("MERGE_ALIAS_TO_CANONICAL", "DOT|BUILDVECTORS", "Registered runtime alias resolves to the supported BUILDVECTORS topic."),
+    "DOT|BUILD VECTORS": _d("MERGE_ALIAS_TO_CANONICAL", "DOT|BUILDVECTORS", "Registered runtime alias resolves to the supported BUILDVECTORS topic."),
+    "DOT|CANARY": _d("INCLUDE_PARTIAL_HELP_REFERENCE", rationale="Physical HELP command exists; retain partial status and do not claim SYSCMD runtime authority."),
+    "DOT|CC PRINT": _d("ROUTE_SOURCE_FACT_APPENDIX", rationale="Source-mined phrase without command authority."),
+    "DOT|CODAYSL": _d("MERGE_ALIAS_TO_CANONICAL", "DOT|CODASYL", "Source-mined transposition resolves to the supported CODASYL topic."),
+    "DOT|CMDREL": _d("INCLUDE_WITH_RUNTIME_EVIDENCE", rationale="Active public SYSCMD identity exists; retain usage-contract catalog lineage."),
+    "DOT|BBS": _d("INCLUDE_WITH_RUNTIME_EVIDENCE", rationale="Active public SYSCMD identity and physical HELP command exist."),
+    "DOT|NET": _d("INCLUDE_WITH_RUNTIME_EVIDENCE", rationale="Active public SYSCMD identity and physical HELP command exist."),
+    "DOT|UDATE": _d("INCLUDE_PARTIAL_HELP_REFERENCE", rationale="Physical HELP command exists; retain partial status without runtime claim."),
+    "DOT|UDATETIME": _d("INCLUDE_PARTIAL_HELP_REFERENCE", rationale="Physical HELP command exists; retain partial status without runtime claim."),
+    "DOT|UNOW": _d("INCLUDE_PARTIAL_HELP_REFERENCE", rationale="Physical HELP command exists; retain partial status without runtime claim."),
+    "DOT|UTIME": _d("INCLUDE_PARTIAL_HELP_REFERENCE", rationale="Physical HELP command exists; retain partial status without runtime claim."),
+    "DOT|FORMULA": _d("MERGE_ALIAS_TO_CANONICAL", "EDU|FORMULA", "Source-mined DOT view of FORMULA resolves to the authoritative education topic."),
 }
 
 

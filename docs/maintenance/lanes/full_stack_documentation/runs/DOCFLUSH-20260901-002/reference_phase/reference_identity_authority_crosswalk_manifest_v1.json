@@ -1,0 +1,34 @@
+{
+  "authority_map": "selfdoc/reference_identity_authority_v1.json",
+  "authority_map_sha256": "17154D3AFF83BB3B96C233858DE573D892F788575D6D40EB34EA80AE58996561",
+  "contract": "docs/maintenance/lanes/full_stack_documentation/REFERENCE_IDENTITY_AUTHORITY_CONTRACT_V1.md",
+  "crosswalk_sha256": "03C8271D66D81A7249FE2AF7834F9123B0233D6D0457262C98294E75267187F0",
+  "duplicate_logical_ids": [],
+  "entity_counts": {
+    "ARGUMENT": 221,
+    "COMMAND": 299,
+    "FUNCTION": 65
+  },
+  "excluded_reference_topics": 24,
+  "excluded_sha256": "DAC572FCD672D8DB966045E12BDFF26B38CAE406449215E966FD441E1EF27EDD",
+  "input_hashes": {
+    "joined_reference_inventory": "B5A5B3EC92A39123D0F1DE2CB6FF07ED065B443FF1A59CED8298F14BAE86D728",
+    "sysargs_candidate": "3716E7AC7A46A5BF9713A4745BBA2B24F4E26DAF67EE219A8FB48D37EB1DA12C",
+    "sysfunc_candidate": "A59CD87B4675AF7D59A7E9FF4DC182C6C216AA82F3EAA2E1674C96D14A945135"
+  },
+  "input_paths": {
+    "joined_reference_inventory": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260716-001/reference_inventory/fullstack_reference_identity_inventory_v2.csv",
+    "sysargs_candidate": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260716-001/metacollect_phase/candidate_v1/SYSARGS_IMPORT_candidate_v1.csv",
+    "sysfunc_candidate": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260716-001/metacollect_phase/candidate_v1/SYSFUNC_IMPORT_candidate_v1.csv"
+  },
+  "promotion_authorized": false,
+  "report_only": true,
+  "row_count": 585,
+  "run_id": "DOCFLUSH-20260901-002",
+  "schema_version": "reference_authority_crosswalk_v1",
+  "validation_counts": {
+    "ALIGNED": 215,
+    "CANDIDATE_SOURCE_DEFINED": 286,
+    "REVIEW": 84
+  }
+}

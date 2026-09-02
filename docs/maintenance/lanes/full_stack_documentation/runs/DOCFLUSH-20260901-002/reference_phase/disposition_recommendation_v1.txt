@@ -1,0 +1,36 @@
+== reference disposition recommender (Phase 1 Gate-1, report-only) ==
+
+crosswalk REVIEW command rows: 84   duplicate rows: 16
+
+-- rows still needing a human decision (everything else auto-recommended deliberate) --
+   BUILD            -> NEEDS_HUMAN_DISPOSITION   (no rule matched)
+   BUILD INFO       -> NEEDS_HUMAN_DISPOSITION   (no rule matched)
+   BUILD VECTORS    -> NEEDS_HUMAN_DISPOSITION   (no rule matched)
+   DDICT            -> NEEDS_HUMAN_DISPOSITION   (no rule matched)
+   ERROR CLEAR      -> NEEDS_HUMAN_DISPOSITION   (no rule matched)
+   ERROR STATUS     -> NEEDS_HUMAN_DISPOSITION   (no rule matched)
+   ERROR TEST       -> NEEDS_HUMAN_DISPOSITION   (no rule matched)
+   SMTP             -> NEEDS_HUMAN_DISPOSITION   (no rule matched)
+   [registry] BBS            -> NEEDS_HUMAN_DISPOSITION   (src/cli/cmd_bbs.cpp:206 | src/cli/shell_commands.cpp:531)
+   [registry] NET            -> NEEDS_HUMAN_DISPOSITION   (src/cli/cmd_net.cpp:189 | src/cli/shell_commands.cpp:532)
+   [registry] SQLHELP        -> NEEDS_HUMAN_DISPOSITION   (src/cli/cmd_sql_help.cpp:209 | src/cli/shell_commands.cpp:453)
+   [usage] ERP            -> CLI_EDU_VARIANT   (src/cli/cmd_erp.cpp:10 | src/edu/edu_erp.cpp:53)
+   [usage] IDX            -> CLI_EDU_VARIANT   (src/cli/cmd_idx.cpp:25 | src/edu/edu_idx.cpp:10)
+   [usage] PSHELL         -> NEEDS_HUMAN_DISPOSITION   (src/cli/cmd_pshell.cpp:10 | src/cli/cmd_pshell_help.cpp:12)
+
+== recommendation counts ==
+   DELIBERATE_ALIAS: 12
+   DELIBERATE_DUAL_HOME: 7
+   DELIBERATE_SUBFORM: 19
+   EDUCATION_SURFACE: 4
+   EDUCATION_TOPIC: 2
+   FOXPRO_COMPAT_REFERENCE: 8
+   FUNCTION_AUTHORITY: 24
+   NEEDS_HUMAN_DISPOSITION: 8
+   dup:CLI_EDU_VARIANT: 2
+   dup:DELIBERATE_ALIAS: 1
+   dup:DELIBERATE_DUAL_HOME: 6
+   dup:EDUCATION_SURFACE: 3
+   dup:NEEDS_HUMAN_DISPOSITION: 4
+
+rows still needing a human decision: 14

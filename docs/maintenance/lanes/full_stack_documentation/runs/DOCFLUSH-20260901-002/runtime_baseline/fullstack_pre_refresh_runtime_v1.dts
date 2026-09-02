@@ -1,0 +1,67 @@
+* DOCFLUSH-20260901-002 pre-refresh runtime baseline (full-stack doc flush v8)
+* Report-only commands. No BUILD, IMPORT, CREATE, REPLACE, or publication action.
+*
+* Targeted topics are DERIVED, not chosen: every command file carrying an
+* @dottalk.usage contract that changed since the HELP store was built
+* (2026-08-26 05:09:48), read from git log, then the command: field read from
+* each contract. 26 commands from 27 changed files.
+*
+* This transcript is the BEFORE half of the Phase 4 comparison. Every topic
+* below is expected to reflect the 2026-08-26 store, NOT this baseline's source.
+* A topic that already looks current is the finding, not the ones that look old.
+
+ABOUT
+CMDHELP
+CMDHELP USAGE
+CMDHELPCHK
+CMDHELPCHK ARTIFACTS . 20
+CMDHELPCHK . 20
+DOTHELP
+FOXHELP
+HELP
+MANUAL STATUS
+MANUAL COUNTS
+
+* --- targeted: contracts changed since the store was built ---
+CMDHELP AGGS
+CMDHELP AREA51
+CMDHELP BBOX
+CMDHELP CDX
+CMDHELP CNX
+CMDHELP COUNT
+CMDHELP DBAREA
+CMDHELP DOTSCRIPT
+CMDHELP ERSATZ
+CMDHELP GPS
+CMDHELP LIST
+CMDHELP LOCK
+CMDHELP LOOP
+CMDHELP MAINT
+CMDHELP MANSTAR
+CMDHELP REGRESSION
+CMDHELP REL
+CMDHELP RELATIONS
+CMDHELP SCAN
+CMDHELP SFTP
+CMDHELP SHOW
+CMDHELP SKIP
+CMDHELP UNTIL
+CMDHELP USE
+CMDHELP WHILE
+CMDHELP WORKSPACE
+
+* --- targeted: the five dead multiword keys (AIF-134, ruling open) ---
+* Expected: 'Unknown command: ERROR' on the spaced spellings, and a healthy
+* handler on the underscore ones. Both arms, one process, per the AIF-134 proof.
+CMDHELP ERROR CLEAR
+CMDHELP ERROR STATUS
+CMDHELP ERROR TEST
+
+* --- targeted: dotref changed, so the spaced BUILD spellings are in scope ---
+CMDHELP BUILD VECTORS
+CMDHELP BUILD INFO
+
+* --- targeted: SET RECURSION dispatches but is absent from SetUsageText ---
+CMDHELP SET
+
+QUIT

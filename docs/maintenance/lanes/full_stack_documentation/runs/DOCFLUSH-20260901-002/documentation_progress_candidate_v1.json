@@ -1,0 +1,48 @@
+{
+  "as_of_date": "2026-09-01",
+  "authorities": {
+    "help": "dottalkpp/data/help/*.dbf (written by CMDHELP BUILD)",
+    "source": "tools/fullstack_docs/source_census.py",
+    "website": "tools/fullstack_docs/command_catalog_sync.py"
+  },
+  "current_vertical": {
+    "catalog_extra": [],
+    "catalog_missing": [],
+    "catalog_rows": 239,
+    "catalog_status": "PRESENT",
+    "first_open_entry": "E5",
+    "help_cmd_args": 2368,
+    "help_commands": 462,
+    "help_lines": 29700,
+    "help_orphan_headers": 0,
+    "help_reachable_topics": 666,
+    "help_store_generation": {
+      "line": "2026-09-01",
+      "topic": "2026-09-01"
+    },
+    "help_topic_rows": 666,
+    "manual_candidate_run": "MANRUN-20260902T000932Z-5DA5C656",
+    "registry_keys_hub": 239,
+    "source_file_contract_coverage_percent": 100.0,
+    "source_files": 1080,
+    "source_files_uncovered": 0,
+    "source_usage_contract_files": 231,
+    "website_command_fallback_rows": 0,
+    "website_command_keys": 239,
+    "website_command_rows_parsed": 239
+  },
+  "generator": "tools/fullstack_docs/build_documentation_progress.py",
+  "generator_note": "Every field below is DERIVED. Do not hand-edit: re-run the generator. A hand edit here is the defect this tool was built to remove.",
+  "registry_coverage": {
+    "hub_registered_keys": 239,
+    "invisible_to_catalog_generator": [
+      "PREDHELP",
+      "PREDICATES"
+    ],
+    "registered_only_outside_hub": {
+      "PREDHELP": "src/cli/help_predicates.cpp",
+      "PREDICATES": "src/cli/help_predicates.cpp"
+    }
+  },
+  "schema": "documentation-progress-v1"
+}

@@ -1,0 +1,35 @@
+{
+  "schema": "dottalk.manualgen.gate4_apply_authorization.v1",
+  "decision": "AUTHORIZED_FOR_CANONICAL_APPLY",
+  "plan_run": "MANRUN-20260902T131032Z-A898C760",
+  "plan_manifest_sha256": "8FC490940D9057E6F1556EA10D0EC70CFEA412E46E25C858693FDE4CEAE1A738",
+  "mutation_ledger_sha256": "ADE8053593856A58DE847E024550C6147543DC7DC16428386D3C04B82DE1E08E",
+  "mutation_rows_authorized": 168,
+  "required_interpreter": "Python 3.12",
+  "apply_time_finalization_targets": [
+    "docs/manuals/developer/manualgen/accepted_artifacts/primary_reader_artifact_v1.json",
+    "docs/manuals/developer/manualgen/accepted_manifests/developer_manual_canonical_manifest_v1.json",
+    "docs/manuals/developer/manualgen/accepted_artifacts/command_reference_artifact_v1.json"
+  ],
+  "owner": "member.derald",
+  "run": "DOCFLUSH-20260901-002 (v8)",
+  "authorization": "Owner authorized in-session 2026-09-02, answering a direct question that named the mutation scope before the answer: 164 command pages, the index README, and 3 accepted artifacts including the primary reader artifact and the canonical manifest. Drafted by member.ai.claude.cowork on that instruction. Same pattern as gate4_status_approval_v1.json and MANUALGEN_CANONICAL_ACCEPTANCE_CONTEXT_DECISION_2026-09-02.md.",
+  "scope_measured_before_authorizing": {
+    "planned_replacements": 168,
+    "creates": 0,
+    "no_op_replacements": 0,
+    "actually_changed": 168,
+    "command_pages": 164,
+    "index_readme": 1,
+    "accepted_artifacts_and_manifests": 3,
+    "reader_body_sections_touched": 0,
+    "reader_links_touched": 0,
+    "basis": "Every planned row has before_sha256 != staged_sha256, measured from the plan's own ledger. There are no no-op rows: each of the 164 pages differs from the July version because the harvest now carries memo TEXT resolved by the engine-backed exporter. This is the intended effect of the E5 work, not incidental churn."
+  },
+  "known_and_accepted_at_authorization": {
+    "note_prose_fragmentation": "28 of 164 pages contain 114 bullets where a wrapped NOTE paragraph renders as one bullet per source line, fragmenting sentences mid-clause. Raised in COMMAND_REFERENCE_REVIEW_FINDING_V1.md with the measurement and a recommendation to rule before Gate 4. Owner reviewed the sample page and ruled to proceed ('looks good to me -- go'). Recorded here so the acceptance is a documented choice rather than an oversight, and so a later reader can find the number without re-deriving it.",
+    "attention_pages": "FOX|DO and FOX|RUN, both status=partial, INCLUDE_PARTIAL_HELP_REFERENCE. Correct and expected; documented as 'use DOTSCRIPT instead'."
+  },
+  "not_authorized_by_this_record": "Website publication, staging to C:/x64base, committing, pushing, the controlled-acceptance prose chain, or any further pointer movement beyond the three finalization targets named above.",
+  "publication_authority_claimed": 0
+}

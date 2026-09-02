@@ -1,3 +1,13 @@
+// @dottalk.file v1
+// subsystem: dottalk
+// layer: header
+// owns: the __fldtmp / __fldbak scratch-table naming convention and the
+//       predicate every table scan uses to exclude them
+// project: project.x64base.runtime
+// lane: AIF-133
+// owner: member.derald
+// status: supported
+
 #pragma once
 
 // ENGINE SCRATCH TABLES, AND THE ONE PLACE THAT NAMES THEM.
