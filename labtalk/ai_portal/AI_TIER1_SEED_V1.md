@@ -18,7 +18,15 @@ working.
 | --- | --- | --- |
 | `D:\code\ccode` | `development` | Sole development and authoring workspace |
 | `C:\x64base` | `main` | Sterilized publication staging for GitHub `main` |
-| `D:\dev\x64base-site` | -- | Website source tree |
+| `D:\dev\x64base-site` | `codex/lean-sites-publish` | Website source tree |
+
+**All three push to ONE repo, `github.com/deraldg/x64base`, as ORPHAN branches
+with NO common ancestor** (roots: engine `7c56022a1`, which owns `main`; dev
+`ee49498b1`; site `6ee42f04c`; `gh-pages` `572f33cd5`). **A branch NAME
+identifies nothing here -- compare ROOT COMMITS first.** `log A..B` and `diff`
+run across unrelated histories and return confident nonsense. `main` is the
+ENGINE's front page; never repoint `origin/HEAD`. In the site tree local `main`
+is an abandoned SITE branch; `origin/main` is the ENGINE.
 
 Never author original work in `C:\x64base`. **Never push or merge `development`
 to `main`.** A push from `D:\code\ccode` may target only `development`. Work
@@ -134,7 +142,8 @@ If you can answer all five from this file plus the pointers above, you are
 onboarded. If you cannot, keep reading. If you can, **stop reading and start
 working** -- the rest loads by trigger.
 
-1. Which tree are you in, on which branch, and which tree may push to `main`?
+1. Which tree are you in, on which branch, which tree may push to `main`, and
+   which of the four unrelated histories does `main` belong to?
 2. What is the current declared target, and is it fresher or staler than HEAD?
 3. Name three things that are report-only unless the current task names them.
 4. What must you do before changing source, and what must you do after changing

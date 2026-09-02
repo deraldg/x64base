@@ -18,6 +18,24 @@ Known roles:
       never a branch that carries development history. See
       detect_branch_cut_role for the four conditions, all of which must hold.
 
+KNOWN, AND DELIBERATELY NOT A ROLE:
+  D:\dev\x64base-site -> the website source tree. detect_role() returns None for
+      it, so this guard REFUSES it, and that refusal is BY DESIGN rather than an
+      unrecognised path. It is recorded here because the two readings are not
+      distinguishable from the error text: "not a declared root" is emitted for
+      an unknown directory AND for this known one. Do NOT resolve that by adding
+      a website RepositoryRole -- granting a role grants a push target, which is
+      a change to the permitted set and needs the owner, not a docstring.
+
+      The site tree shares this repository. github.com/deraldg/x64base holds
+      FOUR UNRELATED HISTORIES as orphan branches, no common ancestor, proven by
+      `git rev-list --max-parents=0`: engine 7c56022a1 (owns main), development
+      ee49498b1, site 6ee42f04c (branch codex/lean-sites-publish), gh-pages
+      572f33cd5. So a branch NAME identifies no project here, and `main` belongs
+      to the ENGINE. Full statement, with the consequences and what each has
+      already cost: docs/contracts/REPOSITORY_ROLE_AND_PROMOTION_CONTRACT_V1.md,
+      "ONE REMOTE, FOUR UNRELATED HISTORIES".
+
 The pre-push mode reads Git's update records from stdin:
   <local-ref> <local-sha> <remote-ref> <remote-sha>
 

@@ -12,6 +12,26 @@ class RepositoryRoleGuardTests(unittest.TestCase):
         self.assertIs(guard.detect_role(guard.DEVELOPMENT_ROOT), guard.DEVELOPMENT_ROLE)
         self.assertIs(guard.detect_role(guard.STAGING_ROOT), guard.STAGING_ROLE)
 
+    def test_website_root_is_deliberately_not_a_role(self):
+        r"""The site tree must stay unrecognised, in BOTH path spellings.
+
+        D:\dev\x64base-site shares this repository -- github.com/deraldg/x64base
+        carries four unrelated histories as orphan branches -- so it is a real
+        tree an agent may be standing in, not a typo. The guard still refuses it,
+        and that refusal is a decision rather than an oversight.
+
+        THIS TEST EXISTS TO MAKE ADDING A WEBSITE ROLE A DELIBERATE ACT. Granting
+        a role grants a push target; that is a change to the permitted set and
+        belongs to the owner. If a future change makes this fail, do not delete
+        the test -- get the contract amended first.
+        See docs/contracts/REPOSITORY_ROLE_AND_PROMOTION_CONTRACT_V1.md.
+        """
+        for spelling in (r"D:\dev\x64base-site", "/mnt/d/dev/x64base-site"):
+            self.assertIsNone(
+                guard.detect_role(spelling),
+                f"{spelling} gained a role; the permitted push set changed",
+            )
+
     def test_development_worktree_requires_development_branch(self):
         self.assertEqual(
             guard.validate_worktree(guard.DEVELOPMENT_ROLE, "development"),

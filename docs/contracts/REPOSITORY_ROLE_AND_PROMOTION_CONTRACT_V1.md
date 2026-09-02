@@ -16,12 +16,49 @@ snapshot from being mistaken for interchangeable Git worktrees or branches.
 | --- | --- | --- | --- |
 | `D:\code\ccode` | `development` | Sole development and authoring authority | `development` only |
 | `C:\x64base` | `main` | Sterilized publication staging | `main` only |
+| `D:\dev\x64base-site` | `codex/lean-sites-publish` | Website source tree | `codex/lean-sites-publish` only |
 | `github.com/deraldg/x64base` | `main` | Public snapshot | not an authoring authority |
 
 `D:\code\ccode` defines active development truth. `C:\x64base` is a controlled
 publication worktree built from a reviewed public baseline plus explicitly
 selected development material. GitHub `main` is the public result, not a source
 from which active development is reconstructed wholesale.
+
+## ONE REMOTE, FOUR UNRELATED HISTORIES
+
+**Every tree above pushes to the SAME repository, `github.com/deraldg/x64base`.
+They are not forks or copies of one another: they are ORPHAN BRANCHES with NO
+COMMON ANCESTOR.** Proven by root commit, `git rev-list --max-parents=0 <ref>`:
+
+| Root commit | Project | Local tree | Branches |
+| --- | --- | --- | --- |
+| `7c56022a1` | Public C++ engine | `C:\x64base` (STAGING) | `main`, and the `ai-portal-*`, `ci/*`, `copilot/*` topics |
+| `ee49498b1` | Development tree | `D:\code\ccode` | `development` |
+| `6ee42f04c` | Website | `D:\dev\x64base-site` | `codex/lean-sites-publish` -- the ONLY site branch on the remote |
+| `572f33cd5` | Built site output | publisher worktree | `gh-pages` |
+
+**Read the first row carefully: `C:\x64base` IS the staging worktree, and the
+history it carries IS the public engine's.** Staging is a ROLE, not a separate
+project -- the sterilization rules exist precisely because that tree writes
+directly onto the published history. The other two roots never touch it.
+
+`git merge-base origin/main origin/codex/lean-sites-publish` returns nothing.
+
+**CONSEQUENCES, each of which has already cost someone time:**
+
+1. **A BRANCH NAME IDENTIFIES NOTHING HERE. Compare ROOT COMMITS before
+   comparing anything else.** `git log A..B` and `git diff` both run happily
+   across unrelated histories and produce confident, meaningless numbers.
+2. **`main` IS THE ENGINE'S BRANCH, NOT THE WEBSITE'S.** `origin/HEAD` resolves
+   to it because it is the public repository's front page. **Do not repoint
+   `origin/HEAD`** to make some other tree's branch the default.
+3. **THE SAME NAME CAN MEAN TWO DIFFERENT PROJECTS IN ONE WORKING DIRECTORY.**
+   In `D:\dev\x64base-site`, local `main` is an abandoned SITE branch (never
+   pushed, no upstream) while `origin/main` is the ENGINE. A comparison against
+   one, described using the other's name, is the failure this section exists to
+   prevent -- it happened on 2026-09-02.
+4. The `codex/` prefix on the website branch is an AUTHORSHIP artifact: Codex
+   scaffolded the site and named the branch. It encodes no workflow meaning.
 
 ## Non-Negotiable Rules
 
