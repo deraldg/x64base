@@ -1,0 +1,70 @@
+---
+title: "Website Matrix Inspection Desk"
+description: "Local-only checklist for inspecting website coverage, freshness, feeds, generation boundaries, and publication posture."
+---
+
+This is a **local-only inspection desk** for the website documentation matrix.
+It does not copy or replace the matrix. The maintained authority remains the
+[Website Documentation Matrix](/docs/dev/website-documentation-matrix).
+
+Use this page during the website phase of a full-stack documentation push and
+whenever a product, command, schema, diagram, FAQ answer, status item, or
+developer lane changes.
+
+## Inspection order
+
+1. Identify every website surface affected by the upstream change, including
+   nearby overview, FAQ, news/current-status, download, and command-reference
+   pages.
+2. Find the route in the matrix, or confirm that an explicit wildcard row owns
+   it.
+3. Confirm its maintenance class: `static`, `maintained`,
+   `maintained_current`, `derived`, `generated`, or `reported`.
+4. Follow the named source and feed direction. Never repair a generated or
+   derived page by editing the projection when its authority is elsewhere.
+5. Check date semantics. A current-status date, evidence observation date,
+   document-run date, and publication date are different facts.
+6. Regenerate every affected derived artifact, then inspect the result rather
+   than trusting generator success alone.
+7. Inspect child routes and adjacent pages. A single fresh page does not prove
+   that the subject is fresh across the site.
+8. Run the freshness, public-content, route, and build checks appropriate to
+   the changed class.
+9. Confirm that local-only routes are present in a local build and absent from
+   the publish build.
+10. Record one disposition for each inspected surface: updated, current with no
+    change, deferred with reason, or blocked with owner action.
+
+## What to look for
+
+| Question | Inspection target | Failure signal |
+| --- | --- | --- |
+| Is every route owned? | Matrix route rows and wildcard rows | An unclassified page or overlapping owners |
+| Is the page fresh? | `as_of_date`, current-state region, evidence date, and next gate | Old present-tense claims or an unexplained stale date |
+| Is the authority clear? | Source, runtime proof, HELP, metadata, SelfDoc, manual, or website-owned copy | The website becoming an accidental source of truth |
+| Is the update direction correct? | Feed and direction gates | Hand-editing generated output or copying website prose upstream |
+| Is the evidence honest? | Evidence tier and linked proof | Runtime claims supported only by source or a screenshot without provenance |
+| Is the public boundary intact? | Local build, publish build, and local-only strip gate | `/lab` or other private material surviving publication |
+| Was the whole subject swept? | Overview, feature page, FAQ, news, reference, downloads, and diagrams | A cherry-picked update surrounded by stale siblings |
+
+## Full-stack website gate
+
+The matrix check is both an entry gate and a closeout gate. At entry, classify
+the surfaces before editing. At closeout, re-audit the rendered site and update
+the matrix only after the owner signs off the website revision.
+
+Useful companion pages:
+
+- [Documentation Progress](/docs/dev/documentation-progress)
+- [Full-Stack Documentation Push](/docs/dev/full-stack-documentation-push)
+- [FAQ](/docs/getting-started/faq)
+- [DotTalk++ Command Reference](/docs/dottalk/command-reference)
+- [AI Portal Overview](/docs/labtalk/ai-portal)
+
+## Classification of this desk
+
+This page and the [AI Portal Human Guide](/lab/ai-portal-human-guide) are
+covered by the matrix's existing `Local-only Lab` row for `/lab/*`. They do not
+need separate public matrix rows. If either page is promoted into `/docs`, its
+new route must be classified explicitly, reviewed for public-safe content, and
+added to the appropriate navigation and freshness checks.

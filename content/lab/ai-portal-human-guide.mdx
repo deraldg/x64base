@@ -1,0 +1,118 @@
+---
+title: "AI Portal Glossary, Hierarchy, and Human Guide"
+description: "Local-only human orientation to AI Portal terms, identifiers, authority, lifecycle nesting, and safe operating practice."
+---
+
+This is the **local human operating guide** for the AI Portal. It explains how
+to read the system and make decisions; it is not a new registry and does not
+replace engineering authority.
+
+Start with the maintained [Vocabulary Index](/docs/dev/coined-vocabulary-index),
+then use the [AI Portal Overview](/docs/labtalk/ai-portal) and
+[Schemas and Identity Crosswalk](/docs/labtalk/ai-portal-schemas) for the
+public-safe architecture snapshot.
+
+## The hierarchy
+
+The Portal uses related identifiers, not one universal ticket number.
+
+| Level | Form | Human meaning | Relationship |
+| --- | --- | --- | --- |
+| Project | `project.<domain>.<name>` | Durable owner-controlled program or product context | Root for one or more governed lanes |
+| Lane | `AIF-NNN` | Governed intake or work lane | Belongs to a project and receives work, proof, and closeout records |
+| Lifecycle | `PDLC` or `SDLC` | Process classification, not an identifier | A product-development cycle may contain one or more software-development cycles |
+| Gate | `M<n>` or a named gate | Evidence checkpoint | Belongs to an AIF lane and states what must be proven next |
+| Ruling | `R<n>` | Global doctrine or owner decision | Uses one flat global sequence; it does not restart inside an AIF |
+| Run | Provider/date run id | One bounded execution session | Links the acting member, project, and lane or lanes |
+| Task | `task.*` | A specific unit of work | Links to a lane without becoming the lane identity |
+| Proof | `proof.*` | An evidence record | Links a source, lane, evidence state, platform, and observation time |
+| Report | `AIPR-*` | Durable AI-authored report | Links back to its run and authority envelope |
+
+`ticket` is a compatibility field, not the model. A historical `ticket` shaped
+like `AIF-NNN` is a legacy lane reference. Other values may be external ticket
+identifiers. Preserve the history and classify the seam; do not silently
+rewrite it.
+
+## Human instructions
+
+### Before work begins
+
+1. State the human intent and authority. Separate a request to inspect from
+   permission to mutate, commit, publish, or operate an external system.
+2. Name the project context. If the work is standalone, say so rather than
+   inventing a project.
+3. Reuse the existing AIF when the request belongs to an active lane. Allocate a
+   new AIF only for a genuinely distinct governed intake.
+4. Classify the lifecycle. PDLC and SDLC describe scope and method; they do not
+   allocate identity.
+5. Keep the lane, task, run, proof, ruling, report, and external ticket fields
+   distinct.
+6. Name the next gate and the evidence required to pass it.
+
+### While work is active
+
+- The current human request is the authority envelope. Do not let an older
+  handoff or generated page silently broaden it.
+- Source defines implementation, runtime proves behavior, HELP explains,
+  metadata organizes, SelfDoc preserves provenance, and the website projects
+  reviewed claims. Do not collapse those roles.
+- Record evidence at the tier actually reached: planned, chartered,
+  source-evidenced, runtime-proven, or reviewed publication.
+- Use tasks for work decomposition and proofs for observations. Neither is an
+  AIF replacement.
+- Use a global `R<n>` only for doctrine or an owner ruling, not for every design
+  note or chat decision.
+- Treat local Portal maintenance as read-only unless the owner explicitly
+  authorizes the guarded write path.
+- Preserve concurrent work in shared trees. Inspect first, edit only owned
+  paths, and avoid broad cleanup or staging.
+
+### At closeout
+
+1. Reconcile the lane, tasks, proofs, run, rulings, and report links.
+2. Run identifier and registry checks; a green generator alone is not proof.
+3. Write a closeout or handoff that distinguishes verified, inferred,
+   proposed, deferred, and blocked claims.
+4. Sweep the website matrix for every affected surface, including FAQ,
+   news/current status, command references, diagrams, and downloads.
+5. Treat website review, local build, publication build, deployment, and public
+   verification as separate gates. Do not report a local page as published.
+
+## Restart and onboarding checklist
+
+A new or restarted chat should establish context in this order:
+
+1. Read the repository role and mutation guard.
+2. Read the Tier 1 AI Portal seed and follow only the trigger needed for the
+   current task.
+3. Inspect the latest accepted closeout or handoff for the active AIF.
+4. Measure current branch, working-tree, runtime, registry, and health state;
+   do not reuse stale counts or process identifiers.
+5. Confirm the requested authority before writing, committing, publishing, or
+   enabling maintenance writes.
+6. Leave new evidence in the owning source or registry and project it outward
+   through the documented feed.
+
+## Human-readable surfaces
+
+| Surface | Purpose | Authority posture |
+| --- | --- | --- |
+| `ccode` on `development` | Sole development and authoring workspace | Engineering source of truth |
+| `http://localhost:3000/AI/` | Local AI-facing reports and onboarding | Read-oriented projection; verify health and freshness |
+| `http://localhost:3000/portal/` | Local maintenance console | Guarded local operations; write authority must be explicit |
+| `/docs/labtalk/ai-portal` | Public-safe overview, hierarchy, PFD, and DFD | Reviewed website projection |
+| `/docs/labtalk/ai-portal-schemas` | Public-safe schema and identifier snapshot | Reviewed website projection |
+| `/lab/*` | Local inspection and experimental guides | Local-only; stripped from publication |
+
+## Visual maps
+
+### Professional process flow
+
+![AI Portal professional process flow](/images/portal/ai-portal-pfd-v1.svg)
+
+### Schema and feed data flow
+
+![AI Portal schema and feed data flow](/images/portal/ai-portal-dfd-v1.svg)
+
+For the website inspection procedure, continue with the
+[Website Matrix Inspection Desk](/lab/website-matrix-inspector).
