@@ -5,16 +5,37 @@ Created: 2026-07-16
 Authority root: `D:\code\ccode`
 
 Start here each run:
-- The point (read first): `FULL_STACK_DOCUMENTATION_NORTH_STAR_V1.md` -- two towers,
-  one bridge, normalize across the span.
+- **RUN IT FROM: `FULL_STACK_DOCUMENTATION_FLUSH_COOKBOOK_V2.md`** -- the
+  operational runbook. Budget 2 hours, goal 1. Step 0 classifies the run and
+  routes you past the phases that do not apply, which is where the time goes.
+- The point (read first, once): `FULL_STACK_DOCUMENTATION_NORTH_STAR_V1.md` --
+  two towers, one bridge, normalize across the span.
 - Doctrine + gates: `FULL_STACK_DOCUMENTATION_FLUSH_PLAN_V1.md`
-- Architecture, schema, and current process map:
+- Architecture, schema, and process map:
   `FULL_STACK_DOC_PUSH_RECIPE_BOOK_V1.md`
-- Operational command cookbook (run-it-now commands per phase):
-  `FULL_STACK_DOCUMENTATION_FLUSH_COOKBOOK_V1.md`
+- Gate defects found and NOT yet fixed: `GATE_CORRECTIONS_REQUIRED_V1.md`.
+  **Read G1 and G2 before believing a publication-gate failure.**
+- Why the cookbook's warnings exist: `FLUSH_FIELD_NOTES_V1.md`. Not needed to
+  run; needed before deleting a rule that looks arbitrary.
+- SUPERSEDED: `FULL_STACK_DOCUMENTATION_FLUSH_COOKBOOK_V1.md`. Retained for
+  history per the widows-and-orphans policy; do not run from it.
 
 The full-stack flush is a standing, recurring part of the thesis; it never
 finishes. Each run leaves the cookbook more accurate.
+
+## The three rules that decide whether a run takes one hour or six
+
+Measured across v8 and v9 (2026-09-02). The mechanical path is about twenty
+minutes; both of those runs took a day, and none of the overrun was the commands.
+
+1. **CLASSIFY THE RUN BEFORE STARTING.** Most phases are no-ops most of the time.
+   "No source changed, so Gates 1-6 were correctly not run" is a valid and common
+   outcome, and it must be RECORDED as correct rather than left looking skipped.
+2. **A GREEN GATE IS NOT A REVIEWED CHANGE.** Four Gate 4 plans reported
+   `findings=0` on 2026-09-02; three would have damaged the manual. Partition
+   every difference into a named class and require zero unexplained.
+3. **UNRUN IS NOT PASS.** A tool that refused to start is not a finding, and an
+   inherited proof is never restated as a current one.
 
 ## Purpose
 

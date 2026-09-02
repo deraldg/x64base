@@ -724,7 +724,8 @@ is the smallest useful version of that.
     How to verify : every [RAN] figure is reproducible by the command beside it.
                     Table shapes: read the DBFs with tools/fullstack_docs/dbfread.py.
                     Tool counts: ls the directories named in part 4.
-                    The phase ladder: FULL_STACK_DOCUMENTATION_FLUSH_COOKBOOK_V1.md
+                    The phase ladder: FULL_STACK_DOCUMENTATION_FLUSH_COOKBOOK_V2.md
+                    (V1 SUPERSEDED 2026-09-02)
                     and FULL_STACK_DOCUMENTATION_RUNBOOK_V1.md, which is also
                     where the Phase 7 numbering collision is visible.
     How to undo   : delete this document. It asserts nothing the tree does not.

@@ -24,6 +24,14 @@ next agent. A scan you did not record is a scan the next agent repeats.
 
 | Looking for | Go straight to | Crosslinks |
 | --- | --- | --- |
+| **RUN a full-stack doc flush/push** (the runbook) | `docs/maintenance/lanes/full_stack_documentation/FULL_STACK_DOCUMENTATION_FLUSH_COOKBOOK_V2.md` -- Step 0 classifies the run | V1 SUPERSEDED; gate defects `GATE_CORRECTIONS_REQUIRED_V1.md`; reasoning `FLUSH_FIELD_NOTES_V1.md` |
+| Website page classes, design + retention policy, freshness sweep | `x64base-site/content/docs/dev/website-documentation-matrix.mdx` -- ENTRY and CLOSEOUT gate of the website phase | manifest `tools/fullstack_docs/website_content_manifest.yaml`; gate `tools/fullstack_docs/website_matrix_check.py` |
+| Which website pages are classified, and the class totals | `tools/fullstack_docs/website_content_manifest.yaml` (in CCODE, not the site repo) | validator `validate_website_content_manifest.py`; it checks the FILESYSTEM, not git -- see G3 |
+| The site's freshness contracts (13) and what each binds | `x64base-site/scripts/site-freshness-contracts.json`; runner `scripts/check-site-freshness.mjs` | authority for 11 of them: `x64base-site/public/artifacts/documentation-progress-v1.json` |
+| The website's single progress authority + its producer | `x64base-site/public/artifacts/documentation-progress-v1.json`; producer `tools/fullstack_docs/build_documentation_progress.py` | `--out` is a COMPARISON candidate, not a replacement; field sets differ |
+| Product/DotTalk++ glossary (controlled terms, do_not_confuse_with) | `docs/glossary/glossary_master_v0.csv`; policy `docs/governance/03_glossary_policy.md` | DISTINCT from the AI portal glossary `labtalk/ai_portal/AI_GLOSSARY_V1.md`; they must not disagree |
+| Why HELP_LINE splits text at 240 bytes (PART_NO) | `src/help/helpdata_export_dbf.cpp` -- comment headed "HELP_LINE IS A PSEUDO-MEMO" | reassembly is LINE_NO + PART_NO; do NOT reimplement by measuring length |
+| A command's declared maturity vs what the manual publishes | `tools/manualgen/check_contract_status_drift.py` (report-only) | OI-028; 33 disagreements, all one direction |
 | BBS POST/REPLY grammar, attribution | `src/cli/cmd_bbs.cpp` -- `bbs_usage`, `do_post`, `split_subject_body`, `current_member` (~L91-163) | `DESIGN_bbs_pseudochat_two_lanes.md` is **EXTERNAL to this repo** -- it lives in the Frontal_Mem project, see `labtalk/ai_portal/FRONTAL_MEM_POINTER_V1.md`; the repo-relative spelling here was never true and made `cited-paths` report it MISSING. `docs/maintenance/LANE_L1_WRITE_ADAPTER_ASSIGNMENT_GROK_V1.md` |
 | BBS store / post_new / kind | `src/bbs/bbs_store.cpp`, `src/bbs/bbs_server.cpp` | AIF-075 provenance |
 | Coordination: quip, claim-aif, wake, roster | `tools/coordination/session_coordinator.py` -- `main` subparsers (~L444-456) | `docs/maintenance/AI_SESSION_COORDINATION_PROTOCOL_V1.md`; `COORDINATION_DEVELOPER_MANUAL_V1.md` |

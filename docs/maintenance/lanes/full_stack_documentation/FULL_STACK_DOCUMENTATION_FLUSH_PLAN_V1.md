@@ -7,7 +7,8 @@ Initial scope: `include/*ref.hpp` through `CMDHELP`, `CMDHELPCHK`, SelfDoc,
 manualgen, and reviewed publication pointers
 
 Companion recipe book (operational how-to -- exact commands per phase and the
-standing footguns): `FULL_STACK_DOCUMENTATION_FLUSH_COOKBOOK_V1.md`. This plan is
+standing footguns): `FULL_STACK_DOCUMENTATION_FLUSH_COOKBOOK_V2.md` (V1 is
+SUPERSEDED; do not run from it). This plan is
 doctrine and gates; the cookbook is the run-it-now commands and is refined every run.
 
 ## Outcome

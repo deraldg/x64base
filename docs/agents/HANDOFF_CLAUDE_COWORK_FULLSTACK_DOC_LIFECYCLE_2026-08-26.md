@@ -7,7 +7,7 @@
                   docs/maintenance/lanes/full_stack_documentation/README.md
     command
     authority   : docs/maintenance/lanes/full_stack_documentation/
-                    FULL_STACK_DOCUMENTATION_FLUSH_COOKBOOK_V1.md
+                    FULL_STACK_DOCUMENTATION_FLUSH_COOKBOOK_V2.md
     posture     : the pipeline EXISTS and is mature -- 9 gates, ~50 tools, its own
                   contracts. This file is a MAP of it, not a copy of it.
     date        : 2026-08-26 (host clock)
@@ -42,7 +42,9 @@ else is source-evidenced and could have drifted since.
    order and the pointer set.
 3. `FULL_STACK_DOCUMENTATION_NORTH_STAR_V1.md` -- why the pipeline exists.
 4. `FULL_STACK_DOCUMENTATION_FLUSH_PLAN_V1.md` -- doctrine and gate definitions.
-5. `FULL_STACK_DOCUMENTATION_FLUSH_COOKBOOK_V1.md` -- run-it-now commands.
+5. `FULL_STACK_DOCUMENTATION_FLUSH_COOKBOOK_V2.md` -- run-it-now commands.
+   V1 is SUPERSEDED (2026-09-02). V2 adds Step 0 run classification, the
+   partition review, and `GATE_CORRECTIONS_REQUIRED_V1.md`.
 6. This file, for the map and the traps.
 
 ---

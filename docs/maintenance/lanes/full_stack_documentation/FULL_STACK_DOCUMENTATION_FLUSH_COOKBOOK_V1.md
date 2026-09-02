@@ -1,4 +1,17 @@
-# Full-stack documentation flush -- recipe book v1
+# Full-stack documentation flush -- recipe book v1 (SUPERSEDED)
+
+> **SUPERSEDED 2026-09-02 BY `FULL_STACK_DOCUMENTATION_FLUSH_COOKBOOK_V2.md`.
+> DO NOT RUN FROM THIS PAGE.**
+>
+> V2 is written from v8 and v9 and carries what this version could not: a Step 0
+> that classifies the run and skips the phases that do not apply, the partition
+> review that catches a green-but-wrong acceptance plan, and the traps that cost
+> those two runs a day between them.
+>
+> Retained per the widows-and-orphans policy -- RETIRE recorded, not silently
+> deleted. Its phase structure and gate names remain accurate and V2 follows them;
+> what it lacks is the warnings.
+
 
 Lane: `full_stack_documentation`
 Owner: `member.derald`

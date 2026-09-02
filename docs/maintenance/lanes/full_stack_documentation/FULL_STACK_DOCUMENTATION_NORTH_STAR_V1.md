@@ -59,6 +59,9 @@ load-bearing. Run it again; drive the next pylon. That is the thesis.
 ## Where to go next
 
 - Doctrine and gates: `FULL_STACK_DOCUMENTATION_FLUSH_PLAN_V1.md`
-- Run-it-now commands: `FULL_STACK_DOCUMENTATION_FLUSH_COOKBOOK_V1.md`
+- Run-it-now commands: `FULL_STACK_DOCUMENTATION_FLUSH_COOKBOOK_V2.md`
+  (V1 SUPERSEDED 2026-09-02). Budget 2 hours, goal 1.
+- Gate defects not yet fixed: `GATE_CORRECTIONS_REQUIRED_V1.md`
+- Why the warnings exist: `FLUSH_FIELD_NOTES_V1.md`
 - The consumer span (manual + website): `FULL_STACK_DOCUMENTATION_PHASE8_PUBLICATION_ASCENT_PLAN_V1.md`
 - What a real run looked like: `runs/DOCFLUSH-20260805-001/FLUSH_V4_STORY_V1.md`
