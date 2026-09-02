@@ -8,19 +8,39 @@
 
 ## Read this page before you run anything
 
-**The mechanical path takes about twenty minutes.** Measured across v8 and v9:
-harvest export ~1 min, every manualgen step seconds, the website matrix check
-~30s, the site build ~15s, the unit suite 0.2s.
+**TOOL EXECUTION IS SECONDS. YOUR TIME GOES TO REVIEW.** That is the single most
+useful thing to know before starting, and the budget below is built on it.
 
-v8 and v9 took a full day. **Not one minute of the overrun was the commands.**
-It went to: four Gate 4 cycles where one was needed, diagnosing a gate that
+What is actually MEASURED (run ids are timestamps; read them yourself):
+
+    ref -> disp -> cand -> struct     4 seconds   (MANRUN-...151703Z -> ...151707Z)
+    cand -> struct                    1 second    (...154358Z -> ...154359Z)
+    unit suite (72 tests)             0.209 s     (observed)
+    site npm run build               ~13.5 s      (sums from its own output)
+
+What is NOT measured, and is not claimed: the harvest export and the website
+matrix check were never timed. An earlier draft of this page gave both a figure
+and called the set "measured". They were estimates, and the correction is
+recorded rather than quietly edited because this document's own rule 5 is that
+unrun is not pass.
+
+**Beware the wall clock.** Elapsed time between run ids in a transcript is mostly
+CONVERSATION, not execution. In the v9 chain the 85 seconds between the structure
+candidate and the plan, and the 90 between the plan and the apply, are the
+steward writing the status approval and the apply authorization. **That is real
+work and it belongs in the budget -- it is just not the tool running.**
+
+So the shape of a run is: seconds of execution, minutes of writing approvals, and
+however long the partition review takes. Budget for the review.
+
+v8 and v9 took a full day between them. **None of the overrun was the commands.**
+It went to four Gate 4 cycles where one was needed, diagnosing a gate that
 reported a failure it had not found, and discovering that the accepted manual had
 never been in version control. Every one of those is preventable, and the
 prevention is in this document.
 
-So the budget is not aspirational. If you are past two hours, you are not running
-a flush -- you are debugging one, and you should stop and write down what you
-found before continuing.
+If you are past two hours, you are not running a flush -- you are debugging one,
+and you should stop and write down what you found before continuing.
 
 ## THE FIVE RULES THAT KEEP IT UNDER AN HOUR
 
@@ -296,16 +316,33 @@ The build measures two fields nothing else does: `website_static_pages_built` an
 
 ## Time budget
 
-    Step 0  classify                    5 min
-    Step 1  envelope                    5 min
-    Step 2  flush (skipped if no-op)   20 min
-    Step 3  commit                     10 min
-    Step 4  push                       30 min
-    Step 5  close                      10 min
+**These are ALLOWANCES, not measurements.** The only measured quantities are in
+the opening section, and they say tool execution is seconds. Everything below is
+budgeted human time: reading, reviewing, writing approvals, and deciding.
+
+    Step 0  classify                    5 min   reading git state, one decision
+    Step 1  envelope                    5 min   writing
+    Step 2  flush (skipped if no-op)   20 min   of which the tools are ~10 SECONDS;
+                                                the rest is the partition review
+                                                and writing two approval files
+    Step 3  commit                     10 min   building the path list, reading
+                                                the gate output
+    Step 4  push                       30 min   the authority update, the bound
+                                                markers, the build, the sweep
+    Step 5  close                      10 min   closeout and matrix re-audit
                                        -------
                                        80 min
 
-Website-only runs skip Step 2 and land near forty minutes.
+Website-only runs skip Step 2 and should land near forty minutes.
+
+**THE BUDGET HAS NEVER BEEN TESTED END TO END.** It is assembled from the parts,
+by the steward who wrote this page, and no run has yet been executed against V2
+from Step 0 to Step 5. The first one is the real measurement. **If it does not
+fit, correct these numbers rather than the expectation** -- an allowance that
+survives being wrong is how a schedule becomes a fiction.
+
+Record the actual elapsed time per step in the run closeout, so the second run
+has real figures and this note can be deleted.
 
 ## When something fails
 
