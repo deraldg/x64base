@@ -24,6 +24,78 @@ import local_paths as _lp  # one authority: tools/common/local_paths.json
 LOCAL_PATH_RE = _lp.any_local()
 CATALOG_PRIORITY = {name: index for index, name in enumerate(("DOT", "FOX", "ED", "EDU", "EXT", "UI", "DEV", "INTERNAL", "SYSTEM"))}
 KIND_ORDER = ("STATUS", "SUMMARY", "SYNTAX", "USAGE", "ARGUMENT", "EXAMPLE", "NOTE", "WARNING", "ERROR", "HINT", "ALIAS", "RELATED", "DEPRECATION", "MESSAGE")
+
+# Kinds whose rows are PROSE, and whose line breaks are therefore an artifact of
+# the source comment's column width rather than structure.
+#
+# NOT in this set, deliberately: SYNTAX, USAGE, ARGUMENT, EXAMPLE. Those are
+# line-oriented -- indented command forms where a lowercase continuation after
+# an unpunctuated line is normal layout, not a wrapped sentence. Measured
+# 2026-09-02: USAGE has 1954 apparent continuations and SYNTAX 1280, MORE than
+# NOTE's 756, and rejoining them would run `WORKSPACE SAVE <name> MEMO MINIDB`
+# into the description beneath it. The high count is the reason to leave them
+# alone, not a reason to include them.
+PROSE_KINDS = frozenset({"NOTE", "WARNING", "HINT", "DEPRECATION"})
+
+
+def _rejoin_wrapped_prose(texts: list[str]) -> list[str]:
+    """Rejoin hard-wrapped prose lines that the store holds as separate rows.
+
+    HELP_LINE keeps one row per SOURCE LINE: each wrapped line of a contract
+    comment is its own artifact (ARTID increments per line) and nothing in the
+    schema says which rows belong to one paragraph. Rendering one bullet per row
+    therefore split sentences mid-clause -- measured 2026-09-02 as 114 fragments
+    across 28 of 164 pages, worst on `area51` at 18:
+
+        - AREA51 is a developer/debug status probe, not a member of the AREA family,
+        - and `status: developer` above says so. It read `supported` until
+
+    A reader saw a list where the author wrote a paragraph.
+
+    THE RULE IS DELIBERATELY CONSERVATIVE, because it cannot be eyeballed across
+    164 pages: a row continues the previous one only when the previous does NOT
+    end in sentence-terminal punctuation AND this one starts with a lowercase
+    letter. Anything else stays a separate bullet. That under-joins -- a
+    continuation beginning with a backtick, quote or capital stays split -- and
+    under-joining leaves the text readable, whereas over-joining would weld two
+    genuinely separate notes into one false sentence.
+
+    The store is not at fault and is not changed. This is a rendering rule.
+    """
+    joined: list[str] = []
+    for text in texts:
+        if joined and _continues_previous(joined[-1], text):
+            joined[-1] = f"{joined[-1]} {text}"
+        else:
+            joined.append(text)
+    return joined
+
+
+_LIST_MARKER = re.compile(r"^\d+[.)]\s")
+
+
+def _continues_previous(previous: str, current: str) -> bool:
+    """A row continues the previous when the previous is unfinished and this
+    one does not start something new.
+
+    Lowercase OR DIGIT start. The digit case is not a loosening for its own
+    sake -- it is the measured area51 line, where the wrap falls in front of a
+    date:
+
+        ... It read `supported` until
+        2026-08-30 while THIS PARAGRAPH already called it a developer probe
+
+    A first draft tested only `islower()`, left that split, and the unit test
+    below caught it. Numbered list markers (`1.`, `2)`) are excluded so a real
+    list is never welded into a sentence.
+    """
+    if not previous or not current:
+        return False
+    if previous.rstrip()[-1:] in ".!?:;":
+        return False
+    if _LIST_MARKER.match(current):
+        return False
+    return current[:1].islower() or current[:1].isdigit()
 CONFIDENCE_PRIORITY = {"CURATED": 0, "AUTHORITATIVE": 1, "CATALOG": 2, "REFLECTED": 3, "INFERRED": 4}
 
 
@@ -175,8 +247,11 @@ def _render_page(topic: dict[str, str], label: str, selected: list[dict[str, str
         if not rows:
             continue
         lines.extend([f"## {kind.replace('_', ' ').title()}", ""])
-        for row in rows:
-            text = row.get("TEXT", "").strip().replace("\r\n", "\n").replace("\r", "\n")
+        texts = [row.get("TEXT", "").strip().replace("\r\n", "\n").replace("\r", "\n")
+                 for row in rows]
+        if kind in PROSE_KINDS:
+            texts = _rejoin_wrapped_prose(texts)
+        for text in texts:
             text = "<br>".join(html.escape(part, quote=False) for part in text.split("\n"))
             lines.append(f"- {text}")
         lines.append("")
