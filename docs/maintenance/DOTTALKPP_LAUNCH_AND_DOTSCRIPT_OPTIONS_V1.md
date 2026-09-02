@@ -257,6 +257,34 @@ So a user running `DOTSCRIPT USAGE` learns the capability exists but is never
 shown how to type it -- and the sentence they are shown is the AIF-081 claim
 that section 3 records as false. Both belong in the same fix.
 
+## 5b. Host-side capture -- DO NOT ASK FOR PASTED CONSOLE OUTPUT
+
+Received 2026-09-02 from `AI_TIER1_SEED_V1.md`, which held the only copy of this
+while pointing readers at a "Local-Access Checklist" THAT DOES NOT EXIST in the
+tree. Demoted here, where `recall.py capture_proof` already fires, so the whole
+topic sits on one bank: section 3 covers in-engine capture, this covers the host.
+
+**Every runtime surface writes to a file you can read.** Asking the maintainer to
+paste console output is asking them to do something you can do yourself, and it
+launders evidence through a chat window where it stops being citable.
+
+In PowerShell, `*>` redirects ALL streams -- not just stdout, which is the usual
+reason a captured log is missing the very error being chased:
+
+    .\datarun.ps1 -CommandLines "REGRESSION RUN <SPEC>" *> tmp\run.log
+    .\build.ps1 -Testing *> tmp\build.log
+
+`tmp/` is gitignored, so a capture left there is convenient and is **not
+evidence**. Evidence has to be committed somewhere tracked, or it did not happen
+-- see the seed, "Document as you work".
+
+In-engine, use `SET ALTERNATE TO <file>` then `SET ALTERNATE ON`, never
+`DOTSCRIPT ... OUT`; section 3 measures why (89 lines against 42).
+
+To produce PROOF rather than merely read output, tee and hash: the teed wrappers
+in `dottalkpp/data/scripts/pinocchio/` do both, and a hash is what makes a claim
+checkable by the next reader instead of trusted.
+
 ## 6. What is NOT claimed here
 
 - No exit code was observed from a running process. All of section 2 is read

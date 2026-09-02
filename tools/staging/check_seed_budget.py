@@ -47,6 +47,12 @@ DEFAULT_TARGETS = [
 BUDGET_RE = re.compile(r"^\s*budget\s*:\s*([0-9][0-9_,]*)\s*B\b", re.IGNORECASE)
 HEADER_LINES = 40
 
+# Headroom below this fraction of the budget prints a TIGHT notice. Chosen as
+# "several lines, not one" -- at the seed's 8192 B ceiling this is ~410 B, about
+# five lines of prose, which is enough warning to plan a demotion instead of
+# discovering the wall while mid-commit. Never blocking: see check().
+TIGHT_FRACTION = 0.05
+
 
 def repo_root() -> Path:
     here = Path(__file__).resolve()
@@ -85,8 +91,28 @@ def check(path: Path, rel: str, warn_only: bool) -> int:
     headroom = budget - actual
     if headroom >= 0:
         pct = round(100 * actual / budget)
-        print(f"check-seed-budget: PASS -- {rel} {actual} B of {budget} B "
-              f"({pct}%, {headroom} B headroom)")
+        head = (f"check-seed-budget: PASS -- {rel} {actual} B of {budget} B "
+                f"({pct}%, {headroom} B headroom")
+        # HEADROOM IN LINES, because bytes are not the unit an author edits in.
+        # "88 B headroom" reads as a number; "1 line of room" reads as a wall.
+        lines = [ln for ln in raw.split(b"\n") if ln.strip()]
+        mean = max(1, sum(len(ln) for ln in lines) // max(1, len(lines)))
+        room = headroom // mean
+        print(head + f" = ~{room} line(s))")
+        if headroom < budget * TIGHT_FRACTION:
+            # NOT a failure, and deliberately not exit 2 -- blocking here would
+            # punish the session that merely arrived last. It is a NOTICE, and
+            # it exists because this gate used to say "PASS" in exactly the same
+            # voice at 50% and at 99%. One answer for "comfortably within" and
+            # for "one line from breaching" is the defect shape this repo names
+            # everywhere else; a budget gate should not carry it.
+            print(f"check-seed-budget: TIGHT -- under "
+                  f"{round(100 * TIGHT_FRACTION)}% headroom. The NEXT session "
+                  f"with an invariant to add will hit the ceiling mid-task and "
+                  f"choose badly under pressure.")
+            print("  Do not raise the ceiling to make a commit pass. The "
+                  "document's contract is: adding requires DEMOTING, and "
+                  "demoting means MOVING to a tier-2 artifact, not restating.")
         return 0
 
     print(f"check-seed-budget: {'WARN' if warn_only else 'FAIL'} -- {rel} is "

@@ -21,12 +21,12 @@ working.
 | `D:\dev\x64base-site` | `codex/lean-sites-publish` | Website source tree |
 
 **All three push to ONE repo, `github.com/deraldg/x64base`, as ORPHAN branches
-with NO common ancestor** (roots: engine `7c56022a1`, which owns `main`; dev
-`ee49498b1`; site `6ee42f04c`; `gh-pages` `572f33cd5`). **A branch NAME
-identifies nothing here -- compare ROOT COMMITS first.** `log A..B` and `diff`
-run across unrelated histories and return confident nonsense. `main` is the
-ENGINE's front page; never repoint `origin/HEAD`. In the site tree local `main`
-is an abandoned SITE branch; `origin/main` is the ENGINE.
+with NO common ancestor. A branch NAME identifies nothing here -- compare ROOT
+COMMITS first** (`rev-list --max-parents=0`; the four-root table lives in the
+contract below). `log A..B` and `diff` run across unrelated histories and return
+confident nonsense. `main` is the ENGINE's front page; never repoint
+`origin/HEAD`. In the site tree local `main` is an abandoned SITE branch;
+`origin/main` is the ENGINE.
 
 Never author original work in `C:\x64base`. **Never push or merge `development`
 to `main`.** A push from `D:\code\ccode` may target only `development`. Work
@@ -86,6 +86,10 @@ modified and hundreds of untracked files belonging to other sessions.
 produced is treated as not proven. Write it down as it happens; a closeout is a
 rollup, not a reconstruction.
 
+So **never ask for pasted console output** -- every runtime surface writes to a
+file you can read, and a paste launders evidence through chat. How, on both
+banks: `recall.py capture_proof`.
+
 Lane protocol (claiming, registering, closing out, leaving a handoff) fires at
 specific moments: `recall.py open_lane`, then `close_out`.
 
@@ -118,17 +122,6 @@ owns it.
 | A number for what you found | **usually you need none** -- R133: a subset of a lane that already owns the files is GRANDFATHERED; amend that row | ruled 2026-08-30 |
 | Your environment's versions | **measure** (`ldd --version`, `command -v cmake`) | never cite a doc |
 | Source layout | `AI_README.md`, Source Locations | maintained |
-
-## Do not ask for pasted console output
-
-Every runtime surface writes to a file you can read. `*>` captures all streams:
-
-    .\datarun.ps1 -CommandLines "REGRESSION RUN <SPEC>" *> tmp\run.log
-    .\build.ps1 -Testing *> tmp\build.log
-
-`tmp/` is gitignored. In-engine: `SET ALTERNATE TO <file>` then `ON`. To produce
-PROOF rather than read output, tee and hash -- see the teed wrappers in
-`dottalkpp/data/scripts/pinocchio/`. Full section: the Local-Access Checklist.
 
 ## Going deeper -- retrieve by what you are about to do
 
