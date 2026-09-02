@@ -21,6 +21,23 @@ TWO CHECKS, deliberately separate:
                  git process is the known-stale signature, and it is what a
                  killed or timed-out git leaves behind.
 
+R138 AMENDED, SAME DAY, AND THE AMENDMENT MATTERS MORE THAN THE RULING.
+The three blocks on 2026-09-01 were NOT a race and the lock was NOT transient.
+This gate is invoked from `.git/hooks/pre-commit`, so it runs inside a commit
+git has already begun: `.git/index.lock` is git's own, guaranteed present for
+the duration of the hook, and sized to the pending index. The settle window
+below can never clear it there, and lengthening it would only make the gate
+slower. Worse, a STALE lock cannot reach a hook at all -- git refuses the
+commit before any hook runs -- so in that one context this check could only
+ever see the innocent lock. It has therefore been UNWIRED from
+`prepush_gate.py` and lives on as the standalone tool it always was.
+
+WHAT THE FIRST DIAGNOSIS GOT WRONG, recorded because the shape recurs: a
+mechanism was declared "not established, and a guard answering 'is it wedged'
+does not need to know". It was one `cat .git/hooks/pre-commit` away. Declining
+to look is not the same as the question not mattering, and dressing the decline
+up as a design principle is how a wrong model survives its own review.
+
 R138. A LOCK THAT CLEARS ON ITS OWN WAS NEVER WEDGING ANYTHING. This check
 answers "is the repository wedged", and a wedged repository's lock does not go
 away while you look at it. Between 2026-09-01 15:14 and 15:16 this guard

@@ -646,29 +646,35 @@ def main() -> int:
     if not args.skip_portal:
         print("\n=== AIF-082 portal gates ===")
 
-        # 1. STALE INDEX LOCK -- hard, and first. A zero-byte .git/index.lock
-        # blocks every commit downstream with a message that does not say why.
-        # It cost an afternoon on 2026-07-31. Catching it here is the cheapest
-        # check in the file.
-        rc = _run_portal_check("tools/staging/check_sandbox_git_guard.py", ["--lock-only"])
-        if rc == 2:
-            print("\n  BLOCKED -- a STALE (zero-byte) .git/index.lock is present. "
-                  "That is the killed-git signature and it never clears on its own. "
-                  "Confirm no git is running, then remove it.", file=sys.stderr)
-            exit_code = 2
-        elif rc == 5:
-            # R138. ADVISORY, NOT A BLOCK, AND THE WORDING IS THE POINT. Until
-            # 2026-09-01 this branch did not exist: ANY lock returned 2 and was
-            # summarized here as "a stale index.lock is present. Remove it",
-            # while the guard's own output for that same lock read "not the
-            # known-stale signature -- do not delete it blindly." The check
-            # proved NOT STALE and the summary asserted STALE, then instructed
-            # the deletion the check had just warned against. A reader trusting
-            # the summary deletes a live git's lock. Different codes now, so
-            # this line cannot flatten the two conditions again.
-            print("\n  ADVISORY -- a NON-EMPTY .git/index.lock outlived the settle "
-                  "window. A git may be mid-operation; the remedy is to WAIT and "
-                  "re-run, not to remove it. NOT blocking.")
+        # 1. INDEX LOCK -- DELIBERATELY NOT CHECKED HERE. R138, amended the
+        # same day it was made.
+        #
+        # This gate runs from .git/hooks/pre-commit, which means it executes
+        # INSIDE a commit that git has already begun. `.git/index.lock` is
+        # therefore ALWAYS present while this code runs, it is git's own, and
+        # its size is the pending index for the very commit being gated --
+        # measured at 668857 bytes for a one-file change and 668961 with a
+        # second file staged.
+        #
+        # WHICH MAKES THE CHECK LOGICALLY DEAD IN THIS CONTEXT, not merely
+        # noisy. The condition it exists to catch -- a STALE lock left by a
+        # killed git -- cannot reach here: git refuses the commit with "Unable
+        # to create .git/index.lock: File exists" before any hook runs. So the
+        # check could only ever see the one lock that is guaranteed to be
+        # innocent. A switch that moves nothing is not an open.
+        #
+        # It cost three false BLOCKs on 2026-09-01 before anyone read the hook
+        # file, and the summary it printed -- "a stale index.lock is present.
+        # Remove it" -- was instructing the maintainer to delete git's live
+        # commit lock mid-commit.
+        #
+        # THE CHECK ITSELF IS GOOD AND IS KEPT. It is correct wherever no
+        # commit is in flight, which is everywhere except here:
+        #
+        #     python tools\\staging\\check_sandbox_git_guard.py --lock-only
+        #
+        # Run it when a commit has ALREADY failed on a lock, or at session
+        # start. tools/staging/test_git_guard_lock.py holds its four states.
 
         # 2. HOUSE STYLE -- hard, ADDED LINES ONLY. The 6,951-character backlog
         # never blocks anyone; new violations become impossible. Falsification
