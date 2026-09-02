@@ -136,8 +136,21 @@
 //   WORKSPACE OPEN <dir> scans a specific directory and opens DBFs into work areas.
 //   WORKSPACE OPEN <file.dbf> opens a single table into the current work area.
 //   WORKSPACE ADD <file.dbf> opens one table into the first free work area without closing existing areas.
-//   WORKSPACE OPEN is replacement-style and resets area membership before opening.
+//   WORKSPACE OPEN IS ADDITIVE (R128, owner 2026-08-26; built d7ca31d6b). It was
+//   replacement-style until then, and this line said so until 2026-09-02. It does
+//   NOT close, reset, or discard area membership. Compose replacement explicitly:
+//   WORKSPACE CLOSE ALL, then WORKSPACE OPEN <dir>.
 //   WORKSPACE ADD is additive and preserves existing open areas.
+//   WHY THIS CORRECTION IS A REWRITE AND NOT AN APPENDED NOTE. The stale claim
+//   survived FOUR later edits to this block -- 2026-08-28, -29 and TWO on -30,
+//   including `018cf0b92` ("the contract did not know about R131") and
+//   `a83d8f9e2` ("the contract said relations were unscoped"), both of which
+//   exist SOLELY to repair drift in this header. Each asked "does the contract
+//   know about MY ruling?"; none asked "does the contract contradict itself?".
+//   R128's drift was the OLDEST in the block and therefore the least likely to
+//   be swept, because the ruling that would prompt it was furthest in the past.
+//   A dated note appended below does not retract the sentence above it: a reader
+//   stops at the first statement, not the newest. So correct in place.
 //   MULTIPLE WORKSPACES (AIF-078 stage 3, added to this block 2026-08-24).
 //   NEW / SWITCH / REGISTRY / CLOSE ALL had all been shipping and NONE of them
 //   appeared here, so WORKSPACE USAGE showed a single-workspace command while
@@ -499,8 +512,18 @@
 //   meanwhile grown the most destructive surface of the group. The absence was
 //   not a judgement that the verb is safe; it predated WRITEBACK entirely.
 //   reads_table_records: yes
-//   mutates_session: OPEN ADD CLOSE LOAD -- all replace or discard live areas
-//   closes_all_open_areas: LOAD, and OPEN (replacement-style); ADD is additive
+//   mutates_session: CLOSE discards live areas. OPEN, ADD and LOAD are ADDITIVE
+//     and discard nothing (R128 owner 2026-08-26 for OPEN, built d7ca31d6b;
+//     R130 owner 2026-08-27 for LOAD, built 7a3b23828).
+//   closes_all_open_areas: NONE. CLOSE ALL is the only form that closes
+//     everything; bare CLOSE closes the current workspace only.
+//     CORRECTED 2026-09-02. This field named BOTH of the verbs that had stopped
+//     closing anything -- LOAD and OPEN -- one day apart, and went on naming
+//     them for a week. A risk block that overstates destruction is not
+//     harmlessly conservative: it is the field a reader consults to decide
+//     whether a command is safe to run, so a false "this closes everything"
+//     teaches an operator to compose a defensive CLOSE ALL that now really does
+//     destroy the areas the additive verb was meant to preserve.
 //   writes_filesystem: WRITEBACK only
 //   overwrites_existing_files: WRITEBACK ... CONFIRM, which is required to
 //     replace and keeps every replaced file as <name>.__wbak
