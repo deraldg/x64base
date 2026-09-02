@@ -556,16 +556,18 @@ def build_command_reference_candidate(paths, reference_run: str, disposition_run
         "| ---: | --- | --- | --- | ---: |",
     ]
     for number, row in enumerate(ledger_rows, 1):
-        notice = " ⚠" if int(row["attention_label"]) else ""
+        notice = " (!)" if int(row["attention_label"]) else ""
         index_lines.append(
             f"| {number} | [{row['label']}](commands/{row['slug']}.md){notice} | `{row['topic_key']}` | `{row['status']}` | {row['included_help_rows']} |"
         )
-    index_lines.extend(["", "⚠ indicates a partial, pending, or unsupported source status.", ""])
+    index_lines.extend(["",
+                        "(!) indicates a partial, pending, or unsupported source status.",
+                        ""])
     index_path.write_text("\n".join(index_lines), encoding="utf-8")
 
     combined_lines = [
         "<!-- CANDIDATE ONLY: combined human review book; no publication authority. -->",
-        "# Command Reference Candidate — Combined Review Book",
+        "# Command Reference Candidate -- Combined Review Book",
         "",
         f"This report-only book contains all **{len(ledger_rows)}** candidate command pages in alphabetical order.",
         "",

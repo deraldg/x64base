@@ -1,7 +1,7 @@
 {
   "acceptance_authorization_record": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260901-002/manualgen_phase/gate4_apply_authorization_v1.json",
-  "acceptance_plan_run": "MANRUN-20260902T154709Z-EEB3A07B",
-  "accepted_utc": "2026-09-02T15:50:01Z",
+  "acceptance_plan_run": "MANRUN-20260902T163840Z-7EEC2040",
+  "accepted_utc": "2026-09-02T16:40:11Z",
   "attention_labelled_pages": 2,
   "authorization_record": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260901-002/manualgen_phase/gate4_apply_authorization_v1.json",
   "boundaries": {
@@ -26,9 +26,9 @@
   "reader_linked_pages": 164,
   "reader_sha256": "EA2E12A9D3E1AD3799BFA40DBE27F1E2CB1107E34CA05684599E429D7F9A5A8F",
   "schema": "dottalk.manualgen.accepted_command_reference.v1",
-  "source_command_manifest": "docs/manuals/developer/manualgen/generated/manualgen_command_reference_candidates/MANRUN-20260902T154553Z-14F5CEEE/command_reference_candidate_manifest.json",
-  "source_command_manifest_sha256": "8F84BD8518F1EBF5E15B04F569C9B7C3241D8A17048C556AACE710F5EAA7AFF4",
-  "source_command_run": "MANRUN-20260902T154553Z-14F5CEEE",
+  "source_command_manifest": "docs/manuals/developer/manualgen/generated/manualgen_command_reference_candidates/MANRUN-20260902T163714Z-F403AD2D/command_reference_candidate_manifest.json",
+  "source_command_manifest_sha256": "BF142C7C2EA5159BD68F3195897D6DE706586ABAD28C03A593FD51DF0FB1BE5C",
+  "source_command_run": "MANRUN-20260902T163714Z-F403AD2D",
   "status": "ACCEPTED_COMMAND_REFERENCE_183_PAGES",
   "supplemental_lineage_rows": 855,
   "supplemental_source_manifest": "docs/manuals/developer/manualgen/generated/manualgen_gate5_source_gap_candidates/MANRUN-20260718T131449Z-A1CA452C/gate5_source_gap_manifest.json",

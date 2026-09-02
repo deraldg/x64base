@@ -61,6 +61,42 @@ NAMED = {
 
 CHECKED_SUFFIXES = (".md",)
 
+# GENERATED OUTPUT IS NOT AUTHORED, SO THIS GATE MUST NOT JUDGE IT.
+#
+# The reasoning already existed in this file -- above PRUNE, for the --audit
+# walk: "mostly vendored and generated text that nobody authored and nobody
+# should edit". It was applied to the REPORTING mode and not to the ENFORCING
+# one, and on 2026-09-02 the enforcing one blocked a commit over three U+26A0 in
+# `command_reference_v1/README.md`, a file written by the manualgen renderer.
+#
+# That block was unsatisfiable in the terms it demanded. The only way to make a
+# generated page ASCII-clean is to edit the generator or its source; editing the
+# page is undone by the next regeneration. A rule whose fix is guaranteed to be
+# overwritten is enforcement on the far bank -- the missing-plank shape
+# NORTH_STAR names -- and its practical effect is a --no-verify, which is what
+# happened (OI-026).
+#
+# So the rule moves to the producer, where a fix survives: the renderer now
+# emits `(!)` rather than U+26A0, and source contracts are checked at candidate
+# stage. What lands here is DERIVED, and derived text inherits its correctness
+# from upstream or not at all.
+#
+# Authored documentation is still checked, hard, including run records and lane
+# plans that happen to live near generated trees. This excludes OUTPUT, not
+# subject matter.
+GENERATED_PREFIXES = (
+    "docs/manuals/developer/manualgen/published/",
+    "docs/manuals/developer/manualgen/generated/",
+    "docs/manuals/developer/manualgen/harvested/",
+    "docs/manuals/developer/manualgen/backups/",
+)
+
+
+def is_generated(path: str) -> bool:
+    """True for renderer output, which no human edits and no human should."""
+    norm = path.replace("\\", "/")
+    return norm.startswith(GENERATED_PREFIXES)
+
 
 def repo_root() -> Path:
     here = Path(__file__).resolve()
@@ -128,7 +164,8 @@ def added_lines(root: Path, rng: str | None) -> list[tuple[str, int, str]]:
             except (IndexError, ValueError):
                 lineno = 0
         elif raw.startswith("+") and not raw.startswith("+++"):
-            results.append((path, lineno, raw[1:]))
+            if not is_generated(path):
+                results.append((path, lineno, raw[1:]))
             lineno += 1
     return results
 

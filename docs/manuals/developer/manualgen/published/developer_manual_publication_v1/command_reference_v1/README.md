@@ -40,7 +40,7 @@ This index exposes all **164** generated pages for human review.
 | 30 | [DELETE](commands/delete.md) | `DOT|DELETE` | `supported` | 29 |
 | 31 | [DESCEND](commands/descend.md) | `DOT|DESCEND` | `supported` | 13 |
 | 32 | [DIR](commands/dir.md) | `DOT|DIR` | `supported` | 28 |
-| 33 | [DO](commands/do.md) ⚠ | `FOX|DO` | `partial` | 3 |
+| 33 | [DO](commands/do.md) (!) | `FOX|DO` | `partial` | 3 |
 | 34 | [DOTHELP](commands/dothelp.md) | `DOT|DOTHELP` | `supported` | 19 |
 | 35 | [DOTSCRIPT](commands/dotscript.md) | `DOT|DOTSCRIPT` | `supported` | 65 |
 | 36 | [DRAWIO](commands/drawio.md) | `DOT|DRAWIO` | `supported` | 41 |
@@ -119,7 +119,7 @@ This index exposes all **164** generated pages for human review.
 | 109 | [ROLLBACK](commands/rollback.md) | `DOT|ROLLBACK` | `supported` | 18 |
 | 110 | [RTRIM](commands/rtrim.md) | `FOX|RTRIM` | `supported` | 3 |
 | 111 | [RULE](commands/rule.md) | `DOT|RULE` | `supported` | 29 |
-| 112 | [RUN](commands/run.md) ⚠ | `FOX|RUN` | `partial` | 3 |
+| 112 | [RUN](commands/run.md) (!) | `FOX|RUN` | `partial` | 3 |
 | 113 | [SCAN](commands/scan.md) | `DOT|SCAN` | `supported` | 24 |
 | 114 | [SCAN_BUFFER](commands/scan_buffer.md) | `DOT|SCAN_BUFFER` | `supported` | 3 |
 | 115 | [SCRIPT](commands/script.md) | `ED|SCRIPT` | `supported` | 16 |
@@ -173,4 +173,4 @@ This index exposes all **164** generated pages for human review.
 | 163 | [ZAP](commands/zap.md) | `DOT|ZAP` | `supported` | 17 |
 | 164 | [ZIP](commands/zip.md) | `DOT|ZIP` | `supported` | 24 |
 
-⚠ indicates a partial, pending, or unsupported source status.
+(!) indicates a partial, pending, or unsupported source status.

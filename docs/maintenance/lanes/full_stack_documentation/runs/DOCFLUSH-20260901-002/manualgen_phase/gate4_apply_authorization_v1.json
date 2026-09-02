@@ -1,9 +1,9 @@
 {
   "schema": "dottalk.manualgen.gate4_apply_authorization.v1",
   "decision": "AUTHORIZED_FOR_CANONICAL_APPLY",
-  "plan_run": "MANRUN-20260902T154709Z-EEB3A07B",
-  "plan_manifest_sha256": "F6FD5A3915A2B3EC2394E9B01E80C3348573772CCD8CBF8E48E948B0C5720684",
-  "mutation_ledger_sha256": "CB1589253D5BC6AAA29B936C28CF1FA32CA1A500FA8ABD4C3CB5B095F9AEF03F",
+  "plan_run": "MANRUN-20260902T163840Z-7EEC2040",
+  "plan_manifest_sha256": "A9F550FD68AF38D2940CEE8C3148BD62FE1587C1B4E34B7CCE3F76017C6BA304",
+  "mutation_ledger_sha256": "E967A5F05D3E97A830EFB7DD58EF4485758FBC4BD56A72E87DCA11D503DC24F9",
   "mutation_rows_authorized": 168,
   "required_interpreter": "Python 3.12",
   "apply_time_finalization_targets": [
@@ -12,41 +12,32 @@
     "docs/manuals/developer/manualgen/accepted_artifacts/command_reference_artifact_v1.json"
   ],
   "owner": "member.derald",
-  "run": "DOCFLUSH-20260901-002 (v8), second Gate 4 cycle",
-  "authorization": "Owner authorized in-session 2026-09-02, answering a question that named the full mutation scope BEFORE the answer: 168 replacements across 164 command pages, the index README and 3 accepted artifacts, 167 actually changing and 1 no-op, with the classification of every difference (146 provenance-only, 18 prose rejoins, 1 byte-identical, 0 unexplained) and the whole-file text-preservation result stated in the question itself. Owner chose 'Authorize the apply' over 'Show me the 18 rejoin diffs first' and 'Hold the apply'. Drafted by member.ai.claude.cowork on that instruction and pre-validated against the plan hashes with validate_gate4_authorization (no findings) before the question was asked; the approval it records is the owner's, the typing is the steward's.",
+  "run": "DOCFLUSH-20260901-002 (v8), third Gate 4 cycle -- OI-026 producer fix",
+  "authorization": "Owner instruction in-session 2026-09-02: asked whether the U+26A0 attention marker should become ASCII, the owner replied '(!) works for me, proceed as planned'. 'As planned' names the plan agreed in the preceding discussion: exclude generated manualgen output from check_house_style, move the ASCII check to the producer, keep the gate hard on authored docs. Drafted by member.ai.claude.cowork and pre-validated against the plan hashes with validate_gate4_authorization before the apply command was issued.",
   "scope_measured_before_authorizing": {
     "planned_replacements": 168,
-    "creates": 0,
-    "no_op_replacements": 1,
-    "actually_changed": 167,
-    "command_pages": 164,
-    "index_readme": 1,
+    "actually_changed": 4,
+    "no_op_replacements": 164,
+    "command_pages_changed": 0,
+    "index_readme_changed": 1,
     "accepted_artifacts_and_manifests": 3,
-    "reader_body_sections_touched": 0,
-    "reader_links_touched": 0,
-    "basis": "Counted from the plan's own ledger. One row is a genuine no-op (before_sha256 == staged_sha256) and is named here rather than rounded away: the previous cycle's authorization recorded 0 no-ops out of 168, and a count that never varies is a count nobody is taking."
+    "lines_changed_in_the_readme": 3,
+    "basis": "The narrowest cycle in this run. 164 command pages are BYTE-IDENTICAL -- the reference and disposition runs are unchanged, so even the provenance footers did not move. The only markdown change is three lines in the index README where U+26A0 becomes '(!)'."
   },
   "every_difference_explained": {
-    "method": "Each of the 168 planned rows was diffed, staged against accepted, and required to fall into a named class. Counting fragments was NOT used as the acceptance test: it moved in the right direction for all three plans built during this cycle, including the two that were corrupting text.",
-    "provenance_only": 146,
-    "prose_rejoin_plus_provenance": 18,
-    "byte_identical": 1,
+    "method": "Each of the 168 planned rows diffed, staged against accepted, every difference required to fall into a named class.",
+    "byte_identical": 164,
+    "marker_change_only": 1,
     "non_markdown_artifacts": 3,
     "unexplained": 0,
-    "whole_file_text_preservation": "All 165 markdown files: the full text, normalised for whitespace and bullet markers and excluding provenance lines, is IDENTICAL before and after. Zero pages gained or lost text. Rejoining may only move bullet boundaries; if it ever adds or drops a word this check fails.",
-    "rejoin_pages_reviewed": "All 18 read individually: area51 (3 sites), autodbf, buildlmdb, canary, cdx (3), cnx, commit, dir, dotscript, educational_use, else, export, gps, rel, security, sftp, sql, sqlsel. Each renders as a coherent sentence; no welded list items and no mid-token joins."
+    "whole_file_text_preservation": "All markdown files: no text added or lost.",
+    "the_three_lines": [
+      "| 33 | [DO](commands/do.md) (!) | ...",
+      "| 112 | [RUN](commands/run.md) (!) | ...",
+      "(!) indicates a partial, pending, or unsupported source status."
+    ]
   },
-  "defects_found_and_fixed_during_this_cycle": {
-    "note": "THREE plans were built and discarded before this one, each on review rather than on a gate failure. Every one of them reported PASS_PLAN_ONLY with findings=0.",
-    "corruption_240_byte_spills": "A length heuristic joined field-boundary spills with a space, changing words: 'not the command name.' became 'not the comm and name.', '(AIF-043).' became '(AIF-04 3).'. Six rows affected, three of them in topics (VDISK, APPGUI) with no page among the 164, so half the damage was latent.",
-    "welding_of_lists": "With no minimum line length, wrapped-prose joining fused list items: model.md tables/records/fields/indexes/relations, expression.md numeric/character/date/logical, script.md loops, projection.md, buffering.md working/persisted state. About thirty items across eight pages.",
-    "resolution": "The spill join is no longer a heuristic. src/help/helpdata_export_dbf.cpp documents HELP_LINE as a deliberate pseudo-memo reassembled by LINE_NO + PART_NO, under a heading reading DO NOT 'FIX' IT; the renderer now uses that key on BOTH render paths. The prose join takes a measured 60-character wrap-band floor, where the join-length distribution jumps from 13 occurrences in the 40-59 band to 116 in 60-69 and 577 in 70-79."
-  },
-  "known_and_accepted_at_authorization": {
-    "residual_fragmentation": "Some bullets remain split where the rule deliberately under-joins: a continuation starting with a capital, and the line-oriented kinds SYNTAX/USAGE/ARGUMENT/EXAMPLE, which are excluded because they are indented command forms rather than prose. Under-joining leaves a fragment; over-joining creates a falsehood. This cycle produced examples of the second and they were caught by hand.",
-    "attention_pages": "FOX|DO and FOX|RUN, both status=partial, INCLUDE_PARTIAL_HELP_REFERENCE. Correct and expected; documented as 'use DOTSCRIPT instead'.",
-    "orphan_pages": "47 orphan pages in the accepted command reference, pre-existing since before 2026-07-18 and untouched by this cycle."
-  },
-  "not_authorized_by_this_record": "Website publication, staging to C:/x64base, committing, pushing, the controlled-acceptance prose chain, or any further pointer movement beyond the three finalization targets named above.",
+  "what_this_does_not_fix": "The 6 right-arrows in commands/pshell.md remain. They come from a SOURCE CONTRACT, not from the renderer, so they are not this cycle's to fix and editing the page would be undone by the next regeneration. tools/manualgen/check_harvest_ascii.py now reports the whole harvest backlog at candidate stage, attributed to producer: 22 arrows from SOURCE_MINER (PSHELL, SQL HELP) and 6 em-dashes from SHARED_MSG. Report-only by design.",
+  "not_authorized_by_this_record": "Website publication, staging to C:/x64base, committing, pushing, the controlled-acceptance prose chain, or any pointer movement beyond the three finalization targets.",
   "publication_authority_claimed": 0
 }

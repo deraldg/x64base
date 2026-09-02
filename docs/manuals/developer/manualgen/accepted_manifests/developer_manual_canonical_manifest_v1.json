@@ -1,12 +1,12 @@
 {
   "acceptance_authorization_record": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260901-002/manualgen_phase/gate4_apply_authorization_v1.json",
-  "acceptance_plan_run": "MANRUN-20260902T154709Z-EEB3A07B",
+  "acceptance_plan_run": "MANRUN-20260902T163840Z-7EEC2040",
   "acceptance_source_run": "MANRUN-20260718T031554Z-F1F59445",
   "acceptance_source_runs": [
-    "MANRUN-20260902T154553Z-14F5CEEE",
-    "MANRUN-20260902T154554Z-2F8C1F20"
+    "MANRUN-20260902T163714Z-F403AD2D",
+    "MANRUN-20260902T163715Z-70B77F92"
   ],
-  "accepted_utc": "2026-09-02T15:50:01Z",
+  "accepted_utc": "2026-09-02T16:40:11Z",
   "active_publication_replaced": 0,
   "authorization_record": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260901-002/manualgen_phase/gate4_apply_authorization_v1.json",
   "candidate_markdown": "D:\\code\\ccode\\docs\\manuals\\developer\\manualgen\\published\\developer_manual_publication_v1_python_rebuild_candidate_v1\\developer_manual_publication_v1_python_rebuild_candidate.md",
