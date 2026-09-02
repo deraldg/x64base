@@ -137,9 +137,9 @@ content/
 |  |- talk-family/tuptalk                                  maintained          
 |  |- talk-family/turbotalk                                maintained          
 |- lab/                    3 page(s)
-|  |- ai-portal-human-guide                                maintained             << UNTRACKED
+|  |- ai-portal-human-guide                                maintained          
 |  |- experimental                                         maintained          
-|  |- website-matrix-inspector                             maintained             << UNTRACKED
+|  |- website-matrix-inspector                             maintained          
 |- memory/                    3 page(s)
 |  |- overview                                             maintained          
 |  |- roadmap                                              maintained          
@@ -165,8 +165,8 @@ content/
 |  |- press-releases/open-architecture-doctrine-published  static              
 |  |- press-releases/version-0-1                           static              
 |- portal/                    2 page(s)
-|  |- overview                                             maintained             << UNTRACKED
-|  |- schemas                                              maintained             << UNTRACKED
+|  |- overview                                             maintained             [gitignored on purpose]
+|  |- schemas                                              maintained             [gitignored on purpose]
 |- products/                    12 page(s)
 |  |- arctictalk                                           derived             
 |  |- dotscript                                            derived             
@@ -259,10 +259,13 @@ service" -- and that sentence is load-bearing. Do not soften it.
 | `static` | 19 |
 | **total** | **149** |
 
-## FINDINGS
+## Declared and GITIGNORED -- deliberate, not a finding
 
-- DECLARED BUT UNTRACKED, resolves on one machine only: `content/lab/ai-portal-human-guide.mdx`
-- DECLARED BUT UNTRACKED, resolves on one machine only: `content/lab/website-matrix-inspector.mdx`
-- DECLARED BUT UNTRACKED, resolves on one machine only: `content/portal/overview.mdx`
-- DECLARED BUT UNTRACKED, resolves on one machine only: `content/portal/schemas.mdx`
+These pages are classified by the manifest and excluded from git ON
+PURPOSE. They exist for the local build only. Listed so the next reader
+does not 'fix' a decision, which an earlier version of this tool invited
+by reporting them as untracked.
+
+- `content/portal/overview.mdx`
+- `content/portal/schemas.mdx`
 

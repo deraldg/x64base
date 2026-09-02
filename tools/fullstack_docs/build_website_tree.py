@@ -23,19 +23,26 @@ its own:
 
     filesystem      content/**/*.mdx -- what pages exist
     manifest        tools/fullstack_docs/website_content_manifest.yaml -- the class
-    git             is the page actually tracked?
+    git             TRACKED, IGNORED, or UNTRACKED (see `git_state`)
 
 WHAT THE JOIN CATCHES FOR FREE, and this is the real reason it reads git:
 
   - a page on disk that NO class declares (the manifest gate catches this too)
-  - a page DECLARED by the manifest that git does not have -- which the manifest
-    gate does NOT catch, because it validates against the filesystem. Two Lab
-    pages were in exactly that state on 2026-09-02, hours after the identical
-    defect was found and gated for the accepted manual. See
-    GATE_CORRECTIONS_REQUIRED_V1.md, G3.
+  - a page DECLARED by the manifest that git neither tracks NOR ignores -- which
+    the manifest gate does NOT catch, because it validates against the
+    filesystem. Two Lab pages were in exactly that state on 2026-09-02, hours
+    after the identical defect was found and gated for the accepted manual. See
+    GATE_CORRECTIONS_REQUIRED_V1.md, G3. Both are now tracked.
+
+THE IGNORED CASE IS NOT A FINDING, and the first version of this tool got that
+wrong. `content/portal/*` is gitignored deliberately -- local-only working
+references -- and reporting it as "declared but untracked" reported a DECISION as
+a FAULT. Two conditions, one answer, which is the exact defect this lane spent
+the day cataloguing. The three-way split in `git_state` is the correction.
 
     exit 0   emitted (or --check found no drift)
-    exit 2   --check found drift, or an untracked declared page exists
+    exit 2   --check found drift, or a declared page is neither tracked nor
+             ignored
 """
 from __future__ import annotations
 
@@ -61,11 +68,35 @@ CLASS_NOTE = {
 }
 
 
-def tracked(site: Path, rel: str) -> bool:
-    return subprocess.run(
+def git_state(site: Path, rel: str) -> str:
+    """TRACKED | IGNORED | UNTRACKED.
+
+    THE THREE-WAY SPLIT IS THE POINT, and an earlier version of this tool did not
+    make it. It asked only "is this tracked?" and reported everything else as
+    "DECLARED BUT UNTRACKED", which flagged `content/portal/*` as a defect when
+    those pages are DELIBERATELY gitignored. A decision was reported as a fault.
+
+    That is the same shape this lane spent 2026-09-02 cataloguing: one answer for
+    two conditions that need different responses (GATE_CORRECTIONS_REQUIRED_V1,
+    G1). The prepush gate already states the distinction in its own message --
+    "an IGNORED path can never be staged at all" -- so the tool that reads git
+    should honour it.
+
+        TRACKED    in the index; a second machine has it, and a diff exists
+        IGNORED    excluded ON PURPOSE by .gitignore; not a finding
+        UNTRACKED  neither. Exists on ONE disk. This is the defect.
+    """
+    if subprocess.run(
         ["git", "--no-optional-locks", "ls-files", "--error-unmatch", rel],
         cwd=site, capture_output=True, timeout=30, check=False,
-    ).returncode == 0
+    ).returncode == 0:
+        return "TRACKED"
+    if subprocess.run(
+        ["git", "--no-optional-locks", "check-ignore", "-q", rel],
+        cwd=site, capture_output=True, timeout=30, check=False,
+    ).returncode == 0:
+        return "IGNORED"
+    return "UNTRACKED"
 
 
 def page_path(value) -> str:
@@ -107,7 +138,7 @@ def main(argv=None) -> int:
     for p in pages:
         by_bucket[p.split("/")[0]].append(p)
 
-    untracked_declared, unclassified = [], []
+    untracked_declared, unclassified, ignored_declared = [], [], []
     out: list[str] = []
     W = out.append
 
@@ -138,12 +169,15 @@ def main(argv=None) -> int:
         for p in by_bucket[bucket]:
             cls = classes.get(p)
             rel = f"content/{p}.mdx"
-            is_tracked = tracked(site, rel)
+            state = git_state(site, rel)
             if cls is None:
                 unclassified.append(p)
-            if cls is not None and not is_tracked:
+            if cls is not None and state == "UNTRACKED":
                 untracked_declared.append(p)
-            flag = "" if is_tracked else "   << UNTRACKED"
+            if cls is not None and state == "IGNORED":
+                ignored_declared.append(p)
+            flag = {"TRACKED": "", "IGNORED": "   [gitignored on purpose]",
+                    "UNTRACKED": "   << UNTRACKED"}[state]
             gen = f"  <- {generators[p]}" if p in generators else ""
             leaf = p.split("/", 1)[1] if "/" in p else p
             W(f"|  |- {leaf:<52} {cls or 'UNCLASSIFIED':<20}{flag}{gen}")
@@ -227,13 +261,26 @@ def main(argv=None) -> int:
     W(f"| **total** | **{len(pages)}** |")
     W("")
 
+    if ignored_declared:
+        W("## Declared and GITIGNORED -- deliberate, not a finding")
+        W("")
+        W("These pages are classified by the manifest and excluded from git ON")
+        W("PURPOSE. They exist for the local build only. Listed so the next reader")
+        W("does not 'fix' a decision, which an earlier version of this tool invited")
+        W("by reporting them as untracked.")
+        W("")
+        for p in ignored_declared:
+            W(f"- `content/{p}.mdx`")
+        W("")
+
     if unclassified or untracked_declared:
         W("## FINDINGS")
         W("")
         for p in unclassified:
             W(f"- UNCLASSIFIED, no manifest class declares it: `content/{p}.mdx`")
         for p in untracked_declared:
-            W(f"- DECLARED BUT UNTRACKED, resolves on one machine only: `content/{p}.mdx`")
+            W(f"- DECLARED, NOT IGNORED, AND NOT TRACKED. Exists on one disk only: "
+              f"`content/{p}.mdx`")
         W("")
 
     body = "\n".join(out) + "\n"
@@ -251,7 +298,8 @@ def main(argv=None) -> int:
         print(body)
 
     print(f"  pages {len(pages)}   unclassified {len(unclassified)}   "
-          f"declared-but-untracked {len(untracked_declared)}")
+          f"gitignored-by-design {len(ignored_declared)}   "
+          f"UNTRACKED {len(untracked_declared)}")
     return 2 if (unclassified or untracked_declared) else 0
 
 
