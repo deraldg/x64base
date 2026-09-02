@@ -8,9 +8,34 @@ It leads with the newest local snapshot, then preserves earlier candidates and
 the sealed public checkpoint without duplicating generated command pages into
 the website repository.
 
-## Current full-stack snapshot -- local, not deployed (2026-08-26)
+## Current full-stack snapshot -- local, not deployed (2026-09-02)
 
 | Measure | Current value |
+| --- | ---: |
+| Website command keys / parsed contracts | 239 / 239 |
+| Fallback command rows | 0 |
+| HELP commands / reachable topics | 462 / 666 |
+| HELP lines | 29,700 |
+| Manual candidate | `MANRUN-20260902T113417Z-BE63D201` |
+
+This is the newest source-to-website reference snapshot. It reflects the closed
+development run and regenerated [command catalog](/docs/dottalk/command-catalog),
+but remains review-needed with publication gate E8 open.
+
+Two figures moved in directions worth reading rather than skimming. **Reachable
+topics fell 670 to 666 and HELP lines rose 29,480 to 29,700**, and both come from
+the same correction: the harvest is now exported by the engine rather than by a
+Python scaffold, so memo text that was arriving blank now arrives resolved. Fewer
+topics, more lines, and the argument rows behind them fell 2,614 to 2,368. **This
+is a measurement becoming honest, not content being lost.**
+
+The command catalog, function catalog, error codes and locale tables were all
+re-checked against source on 2026-09-02 and are unchanged: 239/239 with zero
+fallback, 73 core functions plus 2 self-registered, 20 error codes, 5 locales.
+
+### Prior snapshot -- 2026-08-26 (retained)
+
+| Measure | Value as of 2026-08-26 |
 | --- | ---: |
 | Website command keys / parsed contracts | 239 / 239 |
 | Fallback command rows | 0 |
@@ -18,9 +43,8 @@ the website repository.
 | HELP lines | 29,480 |
 | Manual candidate | `MANRUN-20260826T012054Z-B9F8B8BD` |
 
-This is the newest source-to-website reference snapshot. It reflects the closed
-development run and regenerated [command catalog](/docs/dottalk/command-catalog),
-but remains review-needed with publication gate E8 open.
+Retained rather than overwritten, per the maintenance class: the present-state
+region is replaceable, prior events are not erased.
 
 ## Published checkpoint — sealed 2026-07-18
 

@@ -11,6 +11,20 @@
   ],
   "items": [
     {
+      "date": "2026-09-02",
+      "title": "Four acceptance plans, three discarded, every one of them green",
+      "summary": "A manual acceptance ran four times before it was allowed to land. Three plans were built and thrown away, and all four reported PASS_PLAN_ONLY with zero findings. The discarded ones would have joined text across a field boundary mid-word, turning 'not the command name' into 'not the comm and name', and welded list items into sentences on eight pages. The measurement in use, a fragment count, fell for a wrong join exactly as it fell for a right one. What caught them was diffing every staged page against its accepted counterpart and refusing to leave any difference unexplained.",
+      "href": "/docs/dev/full-stack-documentation-push",
+      "tag": "documentation"
+    },
+    {
+      "date": "2026-09-02",
+      "title": "The accepted manual had never been in version control",
+      "summary": "The command reference the site links to was accepted in July and tracked by git for the first time on 2026-09-02: all 165 pages landed as new files. The reader page was tracked; the pages it links to were not, so nothing looked wrong from either end. Every acceptance in that window wrote into files git could not see, which meant no acceptance could be reviewed as a diff. A link-integrity gate now asserts that every page the accepted index links to exists and is tracked, and 47 unreferenced orphan pages were removed.",
+      "href": "/docs/dottalk/command-reference",
+      "tag": "documentation"
+    },
+    {
       "date": "2026-08-26",
       "title": "The documentation stack reaches its owner gate",
       "summary": "The current documentation pass closed its development checks with 239 command keys matched to 239 parsed contracts, no fallback command rows, 670 reachable HELP topics, and a new 25-section manual candidate. The local website now carries those measurements, while publication remains deliberately held at the owner gate.",

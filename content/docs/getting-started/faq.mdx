@@ -5,11 +5,27 @@ description: "Common questions about x64base products, tools, lanes, formats, pr
 
 This FAQ is organized by how the project is actually described on the site: products, tools, lanes, formats, and proof status.
 
-> **FAQ reviewed 2026-08-26.** Each full-stack documentation reconciliation must
+> **FAQ reviewed 2026-09-02.** Each full-stack documentation reconciliation must
 > check this page against changed product, command, interface, workspace, and
 > contributor-operation claims. The matrix records `UPDATED` or `NO_CHANGE`, and
 > the site freshness gate binds this review date to the documentation-progress
 > authority.
+>
+> **Disposition: `UPDATED`.** No engine source changed between 2026-08-26 and this
+> review, so the product, format, workspace and interface answers were re-read and
+> left standing. Three things did change, and two were defects rather than
+> staleness. **A contradiction was corrected:** the status answer cited the
+> application UI DSL as the example of a planned lane, while the UIDEF answer 150
+> lines above already described it as an Alpha implementation lane -- two answers
+> in one FAQ disagreeing. **A gap was filled:** the FAQ mentioned SQL zero times
+> across 44 questions, while the product ships `SQLSEL`, `SQL`, `SQLHELP`,
+> `SQLITE`, `SQLVER` and `SQLERASE` and the site carries three SQL pages; a reader
+> asking whether this does SQL got no answer, and the several commands sharing the
+> name are easy to confuse. **A caveat was added:** what `supported` means on a
+> command page, because 33 commands publish it while their own contract says
+> something narrower.
+
+
 
 ## Products
 
@@ -105,6 +121,30 @@ See: [Workspaces](/docs/engine/workspaces), [Current Work Lanes](/docs/dev/curre
 These are lanes and product names around actual runtime concerns, not interchangeable labels.
 
 See: [TupTalk](/docs/talk-family/tuptalk), [TableTalk](/docs/talk-family/tabletalk), [RelTalk](/docs/talk-family/reltalk)
+
+### Does DotTalk++ support SQL, and which command is the real one?
+
+Yes, and the honest answer needs the distinction, because several commands carry
+`SQL` in the name and they are not the same thing.
+
+| Command | What it actually is |
+| --- | --- |
+| `SQLSEL` | **The working SELECT.** `SELECT <columns> FROM <table> [WHERE <predicate>] [LIMIT <n>]`, with bare column names in the current grammar slice. |
+| `SQL` | A **COUNT** command with `FOR <expr>` and optional `ALL` / `DELETED`. It does not execute SELECT statements; the name is historical. |
+| `REL` | The relational surface: relations, joins, and tuple views. |
+| `SQLITE` | The embedded SQLite bridge, used in the house as a **verification oracle** rather than as the storage engine. |
+| `SQLHELP` | A **reference catalogue only**, written before workspaces existed. It describes and searches SQL topics; it does not run queries. |
+
+**`SQLSEL` and `REL` are where real query work happens.** `SQLHELP` predates the
+workspace system and is kept as a reference surface, not as the query engine.
+
+Maturity, stated plainly: this family is **in progress**. It runs and is actively
+developed, and that is not the same as a claim of completeness. Joins and
+`GROUP BY` are not implemented in the SELECT slice, and a command's page may show
+a catalog status broader than its own contract claims (see below).
+
+See: [SQLsel](/docs/talk-family/sqlsel),
+[SQL conformance](/docs/engine/sqlsel-and-sql-conformance)
 
 ### What browsing and listing tools exist?
 
@@ -313,13 +353,38 @@ Runtime-proven means the behavior has current evidence: source, command output, 
 
 See: [Runtime Evidence Gallery](/docs/labtalk/runtime-evidence), [Feature Crosswalk](/docs/engine/feature-crosswalk)
 
+### What does `supported` mean on a command reference page?
+
+Narrower than it sounds, and this is worth knowing before you rely on it.
+
+In the command catalog, `supported` means the command is **registered and
+dispatchable** -- it exists and it runs. It is not a maturity rating, and it does
+not promise the surface is complete or that it will not change.
+
+A command's own `@dottalk.usage` contract in source carries a separate `status:`
+field, and the two can disagree. Measured 2026-09-02: of 109 commands that
+declare both, **33 publish `supported` while their contract says something
+narrower** -- `experimental`, `developer`, `stub`, `sample-extension`, or in one
+case `deprecated`. Every disagreement runs the same direction, because nothing
+currently compares the two.
+
+So: `supported` on a page answers "does this run", not "is this finished".
+Where a command's own page or contract says `experimental` or `developer`, take
+the narrower claim. The vocabulary is being split into separate axes (audience,
+completeness, lifecycle) so one word stops answering several questions at once.
+
 ### What is active beta versus alpha?
 
 x64base and DotTalk++ are active beta: real runtime behavior exists, but the project is still evolving.
 
 The Laboratory Campus is alpha: it combines collaboration planning, teaching material, existing screenshots, datasets, cases, and in-development tools.
 
-Planned lanes, such as the application UI DSL, should stay labeled as planned until implemented and proven.
+A lane stays labeled planned until it is implemented and proven. Where a lane has
+advanced, the label moves with it: the application UI DSL (UIDEF) is now an
+**Alpha implementation lane** rather than planned-only, while its text-command
+layer (`CREATE WINDOW`, `DEFINE BUTTON`) remains planned. Corrected 2026-09-02,
+when this answer still cited UIDEF as the example of a planned lane while the
+UIDEF answer above already called it Alpha -- two answers in one FAQ disagreeing.
 
 See: [Current Work Lanes](/docs/dev/current-lanes), [Laboratory Campus SDLC](/docs/labtalk/sdlc)
 

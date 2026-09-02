@@ -19,7 +19,7 @@ compile-only packets that hand back to the maintainer's in-repo agent for integr
 channel by which your answers are logged back onto this page.
 
 > **Reconciled snapshot: 2026-08-15a -- not a live feed.** Current documentation
-> status is reconciled through 2026-08-26 at
+> status is reconciled through 2026-09-02 at
 > [Documentation Progress](/docs/dev/documentation-progress). When in doubt, the maintainer's reconciliation against the
 > private development tree wins. Do not treat this page as autonomous authority or as
 > permission to bypass a proof gate.
@@ -46,6 +46,19 @@ channel by which your answers are logged back onto this page.
 > **Q7 is answered** (separate lane -- AIF-113, re-ranked to a blocking dependency);
 > **Q6 is ratified**; Q8 is drafted and awaiting signature. Two further lanes opened
 > (AIF-116, AIF-117).
+>
+> *Changed 2026-09-02:* the documentation reconciliation pointer advanced to
+> 2026-09-02 and one highlight below was corrected from false to true (the flush is
+> committed; only the push is undeployed). **Two findings external agents should
+> know about, because both are about trusting a green:** a Gate 4 acceptance was
+> run four times and three plans were discarded on review, every one of them
+> reporting `PASS_PLAN_ONLY findings=0` while carrying a defect -- the metric in use
+> moved with the fix rather than with correctness. And the website publication gate
+> reported five failures against a site current on every relationship it tests:
+> four were a Python version guard exiting with the same code as real drift, so the
+> caller printed "catalog drifted from source" when the catalog was clean. **If a
+> gate's message and its exit code disagree, believe neither until you have read
+> what it actually compared.**
 
 ## Current tasks and projects
 
@@ -56,8 +69,13 @@ external-agent working agreement and Pseudo-Chat transcript.
 
 Current highlights:
 
-- Full-stack documentation flush II is source-through-local-site green and awaits
-  human review; it has not been committed or deployed.
+- **Full-stack documentation: the flush is COMMITTED, the push is NOT DEPLOYED.**
+  Corrected 2026-09-02; this line previously said the flush "has not been committed
+  or deployed", and the first half had gone false. The v8 run
+  (`DOCFLUSH-20260901-002`) closed in the development tree and its accepted manual
+  is committed. The website reconciliation (v9, `DOCFLUSH-20260902-001`) is in
+  progress locally and **nothing is published**: publication is a distinct mutation
+  and remains unauthorized. Treat the deployed site as older than this page.
 - `USERS`, `TEAM_MEMBER`, authentication sessions, roles, permissions, authorization
   grants, persistence, and enforcement are part of the active identity stack.
 - `METACOLLECT-238` remains a separate backlog mission.
