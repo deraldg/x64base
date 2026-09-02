@@ -128,8 +128,14 @@ Full transcripts + the went-green record: `docs/maintenance/SESSION_CLOSEOUT_AI_
 
 ## 7. Outstanding (promotion + hardening)
 
-- **Flip `BBS`/`NET` `@dottalk.usage` `experimental` -> `supported`** so metacollect auto-publishes
-  them into the command reference (gates are green; this is the one publish step left).
+- ~~**Flip `BBS`/`NET` `@dottalk.usage` `experimental` -> `supported`**~~ **DONE -- measured 2026-09-02.**
+  `src/cli/cmd_bbs.cpp` and `src/cli/cmd_net.cpp` each carry exactly one `@dottalk.file` block and one
+  `@dottalk.usage` block, and all four read `status: supported`. This line called it "the one publish step
+  left" and stayed that way after the step was taken, so a reader arriving at this lane was told the
+  wrong thing about what remains. **STILL OPEN AND NOT THE SAME QUESTION:** whether metacollect has
+  actually auto-published them into the command reference. The flip is a precondition for that, not
+  evidence of it, and the HELP store is being written by a concurrent session, so it was not read here.
+  A measurement of one thing is not a fact about another.
 - **Promote transcripts** into `labtalk/proofs/runs/` + `proofs.yaml` (`runtime_observed`) and append
   the `ai_runs.yaml` RUN row. See `REGISTRY_ADDITIONS_AI_BBS_2026-07-25.md`.
 - **Commit** the lane + M6 target + SIGPIPE patch to `development` with an accurate message; mirror
