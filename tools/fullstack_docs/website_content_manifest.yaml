@@ -43,7 +43,9 @@ classes:
       - docs/engine/identity-security
       - docs/engine/ram-dbf-vdisk
       - docs/engine/api-reference
-      - docs/engine/sqlsel-and-sql-conformance
+      - path: docs/engine/sqlsel-and-sql-conformance
+        contract:
+          - src/cli/cmd_sql.cpp
       - docs/dottalk/data-mutators
       - docs/dottalk/dotscript-language-guide
       - docs/dottalk/set-family
@@ -60,7 +62,10 @@ classes:
       - products/tuptalk
       - products/turbotalk
       - products/x64base-engine
-      - docs/engine/in-memory-databases
+      - path: docs/engine/in-memory-databases
+        contract:
+          - src/cli/cmd_workspace.cpp
+          - include/dottalk/minidb.hpp
       - docs/engine/python-integration
       - products/memotalk
   maintained:
@@ -119,13 +124,17 @@ classes:
       - docs/talk-family/arctictalk
       - docs/talk-family/parallel-gui-tui
       - docs/talk-family/reltalk
-      - docs/talk-family/sqlsel
+      - path: docs/talk-family/sqlsel
+        contract:
+          - src/cli/cmd_sql.cpp
       - docs/talk-family/tabletalk
       - docs/talk-family/tuptalk
       - docs/talk-family/turbotalk
       - docs/engine/proven-capabilities
       - docs/engine/specifications
-      - docs/engine/workspaces
+      - path: docs/engine/workspaces
+        contract:
+          - src/cli/cmd_workspace.cpp
       - docs/labtalk/academic-start
       - docs/labtalk/ai-portal-schemas
       - docs/labtalk/lesson-records-fields-tables

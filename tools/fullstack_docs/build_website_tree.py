@@ -107,9 +107,9 @@ def page_path(value) -> str:
     return ""
 
 
-def load_classes(manifest: Path) -> tuple[dict, dict]:
+def load_classes(manifest: Path) -> tuple[dict, dict, dict]:
     data = yaml.safe_load(manifest.read_text(encoding="utf-8")) or {}
-    cls, gen = {}, {}
+    cls, gen, con = {}, {}, {}
     for name, spec in (data.get("classes") or {}).items():
         for value in (spec or {}).get("pages", []):
             p = page_path(value)
@@ -118,7 +118,98 @@ def load_classes(manifest: Path) -> tuple[dict, dict]:
             cls[p] = name
             if isinstance(value, dict) and value.get("generator"):
                 gen[p] = value["generator"]
-    return cls, gen
+            if isinstance(value, dict) and value.get("contract"):
+                c = value["contract"]
+                con[p] = [c] if isinstance(c, str) else list(c)
+    return cls, gen, con
+
+
+def last_touched(repo: Path, pathspec: str = ".") -> dict[str, str]:
+    """repo-relative path -> YYYY-MM-DD of the NEWEST commit touching it.
+
+    ONE git pass, not one per file. At ~150 pages against two repositories a
+    per-file `git log` is ~300 subprocesses; this is two. Read-only and
+    lock-free, so it is allowed from a mounted sandbox (CLAUDE.md, Sandbox
+    agents: `log` is on the exhaustive allow-list).
+
+    `git log` emits newest-first, so the FIRST date seen for a path is its
+    newest. Later (older) sightings are discarded.
+    """
+    try:
+        out = subprocess.run(
+            ["git", "--no-optional-locks", "log", "--format=%x00%ad",
+             "--date=short", "--name-only", "--", pathspec],
+            cwd=repo, capture_output=True, text=True, timeout=300, check=False,
+        ).stdout
+    except (FileNotFoundError, NotADirectoryError, subprocess.TimeoutExpired):
+        # A bad --engine-root must not end the run in a traceback. Returning {}
+        # leaves every binding UNDATED, which is a REPORTED state that names the
+        # problem, rather than a stack trace that names a Python line. Caught by
+        # test_missing_repo_returns_empty_not_an_exception, which failed against
+        # the first version of this function.
+        print(f"website-tree: cannot read git history at {repo} -- "
+              "bindings will report UNDATED", file=sys.stderr)
+        return {}
+    dates: dict[str, str] = {}
+    current = None
+    for line in out.splitlines():
+        if line.startswith("\x00"):
+            current = line[1:].strip()
+        elif line.strip() and current:
+            dates.setdefault(line.strip(), current)
+    return dates
+
+
+# FOUR STATES, DELIBERATELY, and the whole point of this check.
+#
+# The 2026-09-02 lane spent a day on gates that answered two different
+# conditions with one word. This comparison could easily do the same: collapse
+# "the page might be stale" into "the page is wrong", or collapse "nothing was
+# declared" into "nothing is wrong". Both would be false, and the second is how
+# `content/docs/engine/workspaces.mdx` sat six days behind its own engine
+# contract while every freshness gate passed it.
+#
+#   CURRENT      page last touched AT OR AFTER its contract. Says nothing about
+#                whether the page is CORRECT -- only that nobody changed the
+#                contract behind its back.
+#   UNVERIFIED   the contract moved AFTER the page. NOT a claim that the page is
+#                wrong. It is a claim that no human has looked since the
+#                authority changed, which is the only thing a date can prove.
+#   NO-CONTRACT  the manifest declares no contract for this page. NOT a finding.
+#                Most pages make no capability claim and need no binding.
+#   MISSING      a contract IS declared and the file is not there. A real defect,
+#                and the one state here that is unambiguously broken.
+CURRENCY_NOTE = {
+    "CURRENT": "page is at or ahead of its contract",
+    "UNVERIFIED": "CONTRACT MOVED AFTER THE PAGE -- needs a human read, not a rewrite",
+    "NO-CONTRACT": "no capability binding declared; not a finding",
+    "MISSING": "declared contract file does not exist -- fix the binding",
+    "UNDATED": "binding declared but no commit date resolved -- fix the binding path",
+}
+
+
+def currency(page_date, contract_dates: list, engine: Path, contracts: list) -> tuple[str, str]:
+    """Return (state, detail). Never asserts a page is WRONG -- only unverified."""
+    if not contracts:
+        return "NO-CONTRACT", ""
+    absent = [c for c in contracts if not (engine / c).exists()]
+    if absent:
+        return "MISSING", ", ".join(absent)
+    known = [d for d in contract_dates if d]
+    if not known or not page_date:
+        # UNDATED IS ITS OWN STATE, and collapsing it into NO-CONTRACT was a real
+        # bug in the first version of this function -- caught 2026-09-02 by
+        # running the tool, not by reading it. `last_touched` was scoped to
+        # `src`, so a contract declared under `include/` produced no date, and
+        # this branch reported "no binding declared" for a page that HAD one.
+        # A binding that cannot be dated is not a binding that does not exist:
+        # the first needs fixing, the second is normal. Exactly the defect the
+        # currency check was written to find, in the currency check.
+        return "UNDATED", "contract declared but no commit date resolved"
+    newest = max(known)
+    if newest > page_date:
+        return "UNVERIFIED", f"page {page_date} < contract {newest}"
+    return "CURRENT", f"page {page_date} >= contract {newest}"
 
 
 def main(argv=None) -> int:
@@ -127,11 +218,20 @@ def main(argv=None) -> int:
     ap.add_argument("--manifest", required=True, type=Path)
     ap.add_argument("--out", type=Path, help="write the tree here")
     ap.add_argument("--check", type=Path, help="compare against an existing tree; exit 2 on drift")
+    ap.add_argument("--engine-root", type=Path,
+                    help="D:\\code\\ccode -- enables the capability-currency column. "
+                         "Optional: without it the tool behaves exactly as before.")
     a = ap.parse_args(argv)
 
     site = a.site_root.resolve()
     content = site / "content"
-    classes, generators = load_classes(a.manifest)
+    classes, generators, contracts = load_classes(a.manifest)
+
+    engine = a.engine_root.resolve() if a.engine_root else None
+    page_dates = last_touched(site, "content") if engine else {}
+    # WHOLE REPO, not "src". Contracts live under include/ too -- scoping this
+    # to src/ silently undated every header binding (found 2026-09-02).
+    eng_dates = last_touched(engine) if engine else {}
 
     pages = sorted(p.relative_to(content).as_posix()[:-4] for p in content.rglob("*.mdx"))
     by_bucket: dict[str, list[str]] = collections.defaultdict(list)
@@ -139,6 +239,7 @@ def main(argv=None) -> int:
         by_bucket[p.split("/")[0]].append(p)
 
     untracked_declared, unclassified, ignored_declared = [], [], []
+    unverified: list[tuple] = []
     out: list[str] = []
     W = out.append
 
@@ -179,10 +280,57 @@ def main(argv=None) -> int:
             flag = {"TRACKED": "", "IGNORED": "   [gitignored on purpose]",
                     "UNTRACKED": "   << UNTRACKED"}[state]
             gen = f"  <- {generators[p]}" if p in generators else ""
+            cur = ""
+            if engine:
+                cs = contracts.get(p, [])
+                st, detail = currency(
+                    page_dates.get(rel), [eng_dates.get(c) for c in cs], engine, cs)
+                if st != "NO-CONTRACT":
+                    cur = f"   [{st}]"
+                if st in ("UNVERIFIED", "MISSING", "UNDATED"):
+                    unverified.append((p, st, detail, cs))
             leaf = p.split("/", 1)[1] if "/" in p else p
-            W(f"|  |- {leaf:<52} {cls or 'UNCLASSIFIED':<20}{flag}{gen}")
+            W(f"|  |- {leaf:<52} {cls or 'UNCLASSIFIED':<20}{flag}{gen}{cur}")
     W("```")
     W("")
+
+    if engine:
+        W("## Capability currency -- does the page still match the engine?")
+        W("")
+        W("A FRESHNESS AUDIT CANNOT CATCH THIS, and that is why the column exists.")
+        W("On 2026-09-02 `content/docs/engine/workspaces.mdx` still told readers")
+        W('"One workspace is live at a time" while the engine had been additive since')
+        W("R128 (2026-08-26). The page was not stale by date -- it was last touched")
+        W("2026-08-26, and the CONTRACT it describes was last touched 2026-08-30, six")
+        W("days NEWER. Every freshness gate passed it. Nothing asked whether the")
+        W("authority had moved underneath.")
+        W("")
+        W("This compares two commit dates across two repositories. It proves exactly")
+        W("one thing -- whether a human has read the page since its authority")
+        W("changed -- and deliberately does NOT claim the page is wrong.")
+        W("")
+        W("| State | Meaning |")
+        W("| --- | --- |")
+        for name, note in CURRENCY_NOTE.items():
+            W(f"| `{name}` | {note} |")
+        W("")
+        if unverified:
+            W("### Pages whose contract moved after them")
+            W("")
+            W("| Page | State | Evidence | Contract |")
+            W("| --- | --- | --- | --- |")
+            for p, st, detail, cs in unverified:
+                W(f"| `{p}` | **{st}** | {detail} | {', '.join(f'`{c}`' for c in cs)} |")
+        else:
+            W("No page with a declared contract is behind it.")
+        W("")
+        W("BINDINGS ARE DECLARED, NOT GUESSED. A page earns a contract by carrying")
+        W("`contract:` in `website_content_manifest.yaml`. Convention-matching a page")
+        W("name to `cmd_<name>.cpp` was rejected: it would silently bind the wrong")
+        W("file and report a confident comparison against it, which is worse than")
+        W("reporting nothing. An undeclared page is `NO-CONTRACT` and is not a")
+        W("finding -- most pages make no capability claim.")
+        W("")
 
     W("## Structures that are not pages")
     W("")

@@ -89,7 +89,7 @@ content/
 |  |- engine/feature-crosswalk                             derived             
 |  |- engine/fpt64-memo-format                             derived             
 |  |- engine/identity-security                             derived             
-|  |- engine/in-memory-databases                           derived             
+|  |- engine/in-memory-databases                           derived                [UNVERIFIED]
 |  |- engine/indexing-rules                                maintained          
 |  |- engine/messaging-and-localization                    generated             <- fullstack messaging harvest
 |  |- engine/pinocchio-benchmarks                          reported            
@@ -99,8 +99,8 @@ content/
 |  |- engine/regression-and-proof-testing                  maintained          
 |  |- engine/runtime-footprint                             maintained          
 |  |- engine/specifications                                maintained          
-|  |- engine/sqlsel-and-sql-conformance                    derived             
-|  |- engine/workspaces                                    maintained          
+|  |- engine/sqlsel-and-sql-conformance                    derived                [CURRENT]
+|  |- engine/workspaces                                    maintained             [UNVERIFIED]
 |  |- engine/x64-capacity-math                             derived             
 |  |- engine/xbase-ecosystem-context                       maintained          
 |  |- getting-started/faq                                  maintained          
@@ -132,7 +132,7 @@ content/
 |  |- talk-family/arctictalk                               maintained          
 |  |- talk-family/parallel-gui-tui                         maintained          
 |  |- talk-family/reltalk                                  maintained          
-|  |- talk-family/sqlsel                                   maintained          
+|  |- talk-family/sqlsel                                   maintained             [CURRENT]
 |  |- talk-family/tabletalk                                maintained          
 |  |- talk-family/tuptalk                                  maintained          
 |  |- talk-family/turbotalk                                maintained          
@@ -181,6 +181,42 @@ content/
 |  |- turbotalk                                            derived             
 |  |- x64base-engine                                       derived             
 ```
+
+## Capability currency -- does the page still match the engine?
+
+A FRESHNESS AUDIT CANNOT CATCH THIS, and that is why the column exists.
+On 2026-09-02 `content/docs/engine/workspaces.mdx` still told readers
+"One workspace is live at a time" while the engine had been additive since
+R128 (2026-08-26). The page was not stale by date -- it was last touched
+2026-08-26, and the CONTRACT it describes was last touched 2026-08-30, six
+days NEWER. Every freshness gate passed it. Nothing asked whether the
+authority had moved underneath.
+
+This compares two commit dates across two repositories. It proves exactly
+one thing -- whether a human has read the page since its authority
+changed -- and deliberately does NOT claim the page is wrong.
+
+| State | Meaning |
+| --- | --- |
+| `CURRENT` | page is at or ahead of its contract |
+| `UNVERIFIED` | CONTRACT MOVED AFTER THE PAGE -- needs a human read, not a rewrite |
+| `NO-CONTRACT` | no capability binding declared; not a finding |
+| `MISSING` | declared contract file does not exist -- fix the binding |
+| `UNDATED` | binding declared but no commit date resolved -- fix the binding path |
+
+### Pages whose contract moved after them
+
+| Page | State | Evidence | Contract |
+| --- | --- | --- | --- |
+| `docs/engine/in-memory-databases` | **UNVERIFIED** | page 2026-08-26 < contract 2026-09-02 | `src/cli/cmd_workspace.cpp`, `include/dottalk/minidb.hpp` |
+| `docs/engine/workspaces` | **UNVERIFIED** | page 2026-08-26 < contract 2026-09-02 | `src/cli/cmd_workspace.cpp` |
+
+BINDINGS ARE DECLARED, NOT GUESSED. A page earns a contract by carrying
+`contract:` in `website_content_manifest.yaml`. Convention-matching a page
+name to `cmd_<name>.cpp` was rejected: it would silently bind the wrong
+file and report a confident comparison against it, which is worse than
+reporting nothing. An undeclared page is `NO-CONTRACT` and is not a
+finding -- most pages make no capability claim.
 
 ## Structures that are not pages
 
