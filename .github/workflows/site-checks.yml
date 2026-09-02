@@ -1,0 +1,99 @@
+# Site checks -- verification only. This workflow DOES NOT DEPLOY.
+#
+# WHY THERE IS NO DEPLOY JOB HERE, deliberately:
+#
+# Publishing this site is `npm run publish:github-pages`, which builds `out/`,
+# strips the local-only routes, copies into the `.gh-pages-deploy` checkout and
+# pushes the `gh-pages` branch to x64base.com. It is a MANUAL, human-run step by
+# design, and the freshness contracts are the reason.
+#
+# `scripts/check-site-freshness.mjs` enforces thirteen contracts, and five of
+# them are ATTESTATIONS rather than measurements:
+#
+#     "**FAQ reviewed <date>.**"
+#     "status is reconciled through <date>"
+#     "## <date> Site-Wide Freshness Sweep"
+#
+# A human affirms those. An automated deploy that ran on every push would
+# either fail on them forever or invite someone to satisfy them by typing the
+# date, which is fabricating the attestation rather than earning it. So CI
+# VERIFIES and a person PUBLISHES, and that split is intentional.
+#
+# What this workflow is for: catching a broken build, a stale snapshot, a
+# missing diagram or a public-content violation BEFORE anyone reaches the
+# manual publish step -- so the publish is boring.
+
+name: site-checks
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: site-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: build and contract checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the site
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          # No `engines` field and no .nvmrc in this repo; 22.x matches the
+          # toolchain the site is developed against. Pin here until the repo
+          # declares one, then read it from the file instead of this comment.
+          node-version: "22"
+          cache: npm
+
+      - name: Install (lockfile-exact)
+        run: npm ci
+
+      # `npm run build` already chains these, but running them as named steps
+      # means a red X points at the failing contract instead of at "build".
+      # The freshness check is the one that fails most usefully.
+      - name: Diagrams are generated and current
+        run: node scripts/check-diagrams.mjs
+
+      - name: Public content policy
+        run: node scripts/check-public-content.mjs
+
+      - name: Freshness contracts (13)
+        run: node scripts/check-site-freshness.mjs
+
+      - name: Freshness checker self-test
+        run: node scripts/check-site-freshness.mjs --self-test
+
+      - name: Tailwind opacity scale
+        run: node scripts/check-opacity-scale.mjs
+
+      - name: Next build
+        run: |
+          node scripts/clean-build-output.mjs
+          npx next build
+
+      - name: Search index
+        run: npx pagefind --site out
+
+      - name: Confirm local-only routes are absent from the build
+        # /lab, /reports, /retro and /portal are LOCAL_ONLY_DIRS. They exist in
+        # the working tree and must never reach the published output. This
+        # asserts the strip actually happened rather than trusting that it did.
+        run: |
+          node scripts/strip-local-only-output.mjs
+          for d in reports retro lab portal; do
+            if [ -e "out/$d" ]; then
+              echo "LOCAL-ONLY ROUTE LEAKED INTO out/: $d"
+              exit 1
+            fi
+          done
+          echo "local-only routes absent from out/: reports retro lab portal"
