@@ -25,6 +25,38 @@ Registration does not assert that every table is seeded or current. Mutation
 policy follows each table's owner; the word "database" is not a permission
 model.
 
+## Physical format: these are x64base DBF, not classic DBF
+
+**Read this before opening any of the tables above with a standard DBF library.**
+The registered tables are written in the house flavor, version byte `0x64`, which
+the engine names **"x64base DBF"** (`dbf_version_token` -> `v64`). It resembles
+dBASE/FoxPro closely enough to open, and it does not have the same layout.
+
+| Property | Classic DBF | x64base DBF (`0x64`) |
+|---|---|---|
+| Version byte | `0x03`, `0x30`, `0xF5`, ... | `0x64` |
+| Field-name limit | 10 characters | wider |
+| Field-length limit | 255 | wider |
+| Record count | 32-bit, header offset 4 | 32-bit mirror **plus** a 64-bit count in an extended header block |
+| Descriptor array | begins at offset 32, all entries real | prefixed by **phantom descriptors** whose 11-byte name is not a printable identifier |
+
+**The phantoms are the trap.** A naive reader treats them as fields, shifts every
+subsequent column, and still produces plausible-looking output -- the record count
+and record length are correct, because those live at the classic offsets. The
+result is not an error. It is wrong data that looks like data.
+
+**How to read one correctly.** A descriptor is real only if its name begins with an
+ASCII letter, and a layout is trusted only when `sum(real field widths) + 1` equals
+the record length -- the `+1` being the leading deleted-flag byte. If it does not
+reconcile, refuse the read rather than guessing. Concretely: on `SYSBOARD` a
+correct reader reports **9 fields and 2 phantoms**; a classic reader reports 11
+fields, two of them named with control characters.
+
+**This section is a reading contract, not a file-format specification.** The
+authority is the engine source (`include/xbase_64.hpp`, `src/xbase/dbf_file.cpp`,
+`src/xbase/fields_mgr.cpp`); publishing table and field names without this note is
+what made an otherwise accurate schema page unusable to an outside reader.
+
 ## Identity crosswalk
 
 | Identity | Role | Primary relationship |
