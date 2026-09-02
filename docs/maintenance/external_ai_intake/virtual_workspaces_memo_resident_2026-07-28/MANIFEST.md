@@ -7,13 +7,29 @@ ai_report_audit:
     provider: xAI
     product: Grok
     model: not_exposed
-    access_mode: remote
+    # Corrected 2026-09-02 from the unregistered value "remote", which threw an
+    # advisory on every commit since July. "remote" was a synonym invented at
+    # write time; the registry's vocabulary already carried the exact term, and
+    # this package is its definition -- a hosted model proposing a design
+    # package with no repository access and no source mutation. Vocabulary:
+    # labtalk/registries/ai_report_audit.yaml, allowed_access_modes.
+    access_mode: hosted_proposal
   session:
     id: not_exposed
     chat_reference: not_exposed
   project:
     id: project.x64base.runtime
     root: D:/code/ccode
+  git:
+    # Both fields are required by the schema and both are genuinely absent for a
+    # hosted_proposal: this agent never had the repository, so there is no
+    # branch it stood on and no commit it worked from. Recorded with the same
+    # not_exposed sentinel this envelope already uses for model and session id,
+    # rather than back-filling a plausible-looking commit -- a fabricated
+    # baseline is worse than a stated gap, because the next reader cannot tell
+    # the two apart.
+    branch: not_exposed
+    baseline_commit: not_exposed
   authorization:
     requested_by: maintainer (design discussion 2026-07-27/28)
     scope: >
