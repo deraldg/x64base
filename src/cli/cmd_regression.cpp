@@ -474,24 +474,24 @@ constexpr std::array<RegressionSpec, 65> kRegressionSpecs{{
     {
         "SQLSEL_SELECT_V1",
         "sqlsel_select_v1_regression.dts",
-        "SQLSEL statement surface, gate G3 (AIF-074 P3): SELECT <cols|*> FROM <table> with WHERE, ORDER BY [ASC|DESC], LIMIT and COUNT(*), each row set compared against an in-process SQLite oracle over identical data in the same run. Asserts cursor neutrality by data (the cursor is parked on a known record before and after), corrective errors for an unopened table / expression select-item / bad LIMIT / unknown ORDER BY field / ORDER BY on COUNT(*), and that ORDER BY sorts the full match set BEFORE LIMIT applies. Legacy predicate form preserved. Self-bootstrapping throwaway SQLSTU table in SANDBOX; explicit-run because it mutates the filesystem.",
-        false,
+        "SQLSEL statement surface, gate G3 (AIF-074 P3): SELECT <cols|*> FROM <table> with WHERE, ORDER BY [ASC|DESC], LIMIT and COUNT(*), each row set compared against an in-process SQLite oracle over identical data in the same run. Asserts cursor neutrality by data (the cursor is parked on a known record before and after), corrective errors for an unopened table / expression select-item / bad LIMIT / unknown ORDER BY field / ORDER BY on COUNT(*), and that ORDER BY sorts the full match set BEFORE LIMIT applies. Legacy predicate form preserved. Self-bootstrapping throwaway SQLSTU table in SANDBOX; self-erasing. Promoted 2026-09-03 because the prior default suite invoked SQLSEL HELP but executed no SQLSEL statement, leaving the complete statement path unasserted.",
+        true,
         false,
         RegressionValidator::SqlselSelectOracleV1
     },
     {
         "SQLSEL_INNER_JOIN",
         "sqlsel_inner_join_regression.dts",
-        "SQLsel G4a (AIF-074 P4.1): two-table INNER JOIN with aliases, qualified fields, numeric equi-key matching, row multiplication, joined TupleRow WHERE, ORDER BY/LIMIT, COUNT(*), two-cursor restoration, corrective errors, and a reported nested-loop scan path. Four marked SQLsel row sets are automatically compared with an in-run SQLite oracle over identical data; a mismatch records an error and prints FAIL. Self-bootstrapping throwaway SQLJSTU/SQLJENR tables in SANDBOX; explicit-run because it mutates the filesystem.",
-        false,
+        "SQLsel G4a (AIF-074 P4.1): two-table INNER JOIN with aliases, qualified fields, numeric equi-key matching, row multiplication, joined TupleRow WHERE, ORDER BY/LIMIT, COUNT(*), two-cursor restoration, corrective errors, and a reported nested-loop scan path. Four marked SQLsel row sets are automatically compared with an in-run SQLite oracle over identical data; a mismatch records an error and prints FAIL. Self-bootstrapping throwaway SQLJSTU/SQLJENR tables in SANDBOX; self-erasing. Promoted 2026-09-03 because no other default spec executes SQL-syntax JOIN or asserts its access-path report.",
+        true,
         false,
         RegressionValidator::SqlselJoinOracleV1
     },
     {
         "EVALDIFF",
         "evaldiff_regression.dts",
-        "SQLSEL evaluator differential harness (AIF-074 P4.0a/P4.0b): self-bootstraps a mixed-type X64 fixture in SANDBOX, compares classic DbArea and TupleRow-bound predicate outcomes over the same physical records, restores the cursor, and self-erases. Its validator checks the exact ordered 22-case truth/error vector, not parity alone. The 2026-09-03 repair makes valid function/logical/deleted cases verdict-parity and missing-field/type/malformed controls parity-on-failure. Explicit-run while the repaired semantics soak.",
-        false,
+        "SQLSEL evaluator differential harness (AIF-074 P4.0a/P4.0b): self-bootstraps a mixed-type X64 fixture in SANDBOX, compares classic DbArea and TupleRow-bound predicate outcomes over the same physical records, restores the cursor, and self-erases. Its validator checks the exact ordered 22-case truth/error vector, not parity alone. The 2026-09-03 repair makes valid function/logical/deleted cases verdict-parity and missing-field/type/malformed controls parity-on-failure. Promoted 2026-09-03 because no other default spec compares both evaluator paths or pins the repaired function/fail-closed truth vectors.",
+        true,
         false,
         RegressionValidator::EvaldiffV1
     },
