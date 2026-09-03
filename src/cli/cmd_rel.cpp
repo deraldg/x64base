@@ -27,8 +27,8 @@
 //   REL USAGE
 //   REL LIST [ALL]
 //   REL REFRESH
-//   REL JOIN [LIMIT <n>] [<child1> <child2> ...] TUPLE <expr>
-//   REL ENUM [LIMIT <n>] [<child1> <child2> ...] TUPLE <expr>
+//   REL JOIN [ONE] [DISTINCT|ALL] [LIMIT <n>] [<child1> <child2> ...] TUPLE <alias>.<field>[, ...]
+//   REL ENUM [DISTINCT|ALL] [LIMIT <n>] [<child1> <child2> ...] TUPLE <alias>.<field>[, ...]
 //   REL SAVE [path] | REL SAVE AS <dataset>
 //   REL LOAD [path] | REL LOAD AS <dataset>
 //   REL ADD <parent> <child> ON <field>[,<field>...]
@@ -42,6 +42,32 @@
 //   It caps what a traversal FINDS, not what is displayed: lowering it changes
 //   match counts and drops join rows. ERSATZ LIMIT is the display cap.
 //   Shipped since AIF-074 P1.3 and absent from this contract until 2026-08-28.
+//   ONE is REL JOIN ONLY and REL ENUM DOES NOT ACCEPT IT -- the two lines are
+//   deliberately not identical. ONE emits a single row from the CURRENT relation
+//   pointers; given a child chain it REFUSES rather than discarding it (AIF-147),
+//   because reporting success for a traversal that never happened is the shape
+//   this codebase hunts.
+//   DISTINCT de-duplicates tuples (FIELD LISTS ONLY); ALL allows duplicates and
+//   is the default, overriding DISTINCT. Both are real on both verbs -- DISTINCT
+//   is backed by a seen-set, not parsed and ignored. Wording here is taken from
+//   MessageId::RelJoinUsageText rather than restated, because that catalog entry
+//   is the authority and had all three flags documented correctly the whole time.
+//   TUPLE takes a COMMA-SEPARATED <alias>.<field> list, not an expression. The
+//   proven spelling is in data/scripts/main/rel_join_enum_regression.dts.
+//   CONTRACT SWEEP, 2026-09-03. REL JOIN's usage had THREE HOMES and only the
+//   newest was right:
+//     1. this comment block            -- LIMIT and TUPLE only        (was stale)
+//     2. rel_usage() below, printed by REL USAGE  -- same omission     (was stale)
+//     3. MessageId::RelJoinUsageText, printed by a bare REL JOIN
+//        -- ONE, DISTINCT and ALL, each with a description            (CORRECT)
+//   So the answer a user got depended on HOW THEY ASKED: `REL USAGE` returned an
+//   incomplete list and `REL JOIN` with no arguments returned the complete one.
+//   Same question, two answers, decided by route. Homes 1 and 2 now quote home 3.
+//   The SCANLIMIT note above records this same defect closed for ONE keyword on
+//   2026-08-28; that fix corrected its line and did not sweep the block it was
+//   standing in, which is how the rest survived.
+//   WHEN A KEYWORD IS ADDED TO A PARSER HERE: update the catalog entry, then make
+//   BOTH copies in this file quote it. Do not restate it in a third voice.
 // related:
 //   SET RELATION, SET RELATIONS, RELATIONS, TUPLE, WORKSPACE
 //
@@ -64,8 +90,12 @@ static void rel_usage() {
         << "REL syntax\n"
         << "  REL LIST [ALL]\n"
         << "  REL REFRESH\n"
-        << "  REL JOIN [LIMIT <n>] [<child1> <child2> ...] TUPLE <expr>\n"
-        << "  REL ENUM [LIMIT <n>] [<child1> <child2> ...] TUPLE <expr>\n"
+        << "  REL JOIN [ONE] [DISTINCT|ALL] [LIMIT <n>] [<child> ...] TUPLE <alias>.<field>[, ...]\n"
+        << "  REL ENUM [DISTINCT|ALL] [LIMIT <n>] [<child> ...] TUPLE <alias>.<field>[, ...]\n"
+        << "      ONE       emit exactly one row using the current relation context (REL JOIN only;\n"
+        << "                refuses a child chain rather than discarding it)\n"
+        << "      DISTINCT  de-duplicate tuples (field lists only)\n"
+        << "      ALL       allow duplicates (default; overrides DISTINCT)\n"
         << "  REL SAVE [path] | REL SAVE AS <dataset>\n"
         << "  REL LOAD [path] | REL LOAD AS <dataset>\n"
         << "  REL ADD <parent> <child> ON <field>[,<field>...]      # same-field relation\n"
