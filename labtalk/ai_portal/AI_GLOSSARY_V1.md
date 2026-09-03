@@ -41,6 +41,17 @@ are the ontology, the seed-rise plan, and the recall graph named below.
 - Coordination surface home: `docs/maintenance/AI_SESSION_COORDINATION_PROTOCOL_V1.md`,
   `docs/maintenance/COORDINATION_DEVELOPER_MANUAL_V1.md` (+ operator manual).
 
+- **UIDEF** -- **UI DEFINITION**. A user-interface definition stored as an x64base DBF
+  design table with a memo sidecar, treated by the build as a SOURCE: author the
+  document, generate C++ from it, compile, link against the engine. AIF-120,
+  `project.x64base.gui`, R71-R88. Code `gui/uidef/` (62 tracked files); charter
+  `docs/maintenance/APPLICATION_UI_DSL_LANE_V1.md`. **The acronym was never
+  expanded anywhere -- not on the four website pages that use it, not in this
+  index, not in its own charter -- and on 2026-09-03 the owner read it as "user
+  id definitions".** Added for that reason. It is NOT identity, accounts, or BBS
+  work, and it is not the FoxPro-style text DSL (`CREATE WINDOW`), which remains
+  unimplemented; the design table is the current authoring contract.
+
 ## Recall / memory mechanism
 
 - **synapse** -- a typed, directed, strength-weighted link between two memories; the unit of the
