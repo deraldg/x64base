@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-09-03T22:27:18Z
+    generated_utc : 2026-09-03T22:57:01Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,9 +11,9 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : 8bb4f21a9  (2026-09-03)
-    upstream      : 099c939a4
-    unpushed      : 10 commit(s) ahead of upstream
+    HEAD          : e1217dc8c  (2026-09-03)
+    upstream      : e1217dc8c
+    unpushed      : 0 commit(s) ahead of upstream
 
 ## Declared target
 
@@ -23,11 +23,11 @@ cannot drift, because nothing here is written by hand.
 ## Newest closeout
 
     file          : SESSION_CLOSEOUT_SQLSEL_P4_4_JOIN_FAMILY_2026-09-03.md
-    commits behind HEAD : ?
+    commits behind HEAD : 0
 
 ## Staleness warnings
 
-- 10 commit(s) are unpushed and invisible to a clone.
+- none
 
 ## Claimed lanes (newest first)
 
@@ -51,7 +51,7 @@ cannot drift, because nothing here is written by hand.
 
     live   : 2026-07-31_cowork_bbs_agency_legs  (member.ai.claude.cowork)  [stale, reapable]
     live   : AIPR-20260729-001  (member.ai.claude.cowork)  [stale, reapable]
-    live   : CODEX-20260903-008  (member.ai.codex.local)
+    live   : CODEX-20260903-009  (Codex)
     live   : COWORK-20260816-002  (member.ai.claude.cowork)  [stale, reapable]
     live   : COWORK-20260818-001  (member.ai.claude.cowork)  [stale, reapable]
     live   : COWORK-20260821-002  (member.ai.claude.cowork)  [stale, reapable]

@@ -23,33 +23,34 @@
 //
 // usage:
 //   SQLSEL USAGE
-//   SQLSEL SELECT <col>[,<col>...] FROM <table> [[AS] <alias>] [WHERE <predicate>] [ORDER BY <field> [ASC|DESC]] [LIMIT <n>]
-//   SQLSEL SELECT * FROM <table>
-//   SQLSEL SELECT COUNT(*) FROM <table> [WHERE <predicate>]
-//   SQLSEL SELECT <list> FROM <table> [AS] <a> [INNER] JOIN <table> [AS] <b> ON <a.field> = <b.field>
-//   SQLSEL SELECT <list> FROM <table> [AS] <a> LEFT JOIN <table> [AS] <b> ON <a.field> = <b.field>
-//   SQLSEL SELECT <list> FROM <table> [AS] <a> RIGHT JOIN <table> [AS] <b> ON <a.field> = <b.field>
-//   SQLSEL SELECT <list> FROM <table> [AS] <a> FULL JOIN <table> [AS] <b> ON <a.field> = <b.field>
-//   SQLSEL SELECT <list> FROM <table> [AS] <a> CROSS JOIN <table> [AS] <b>
+//   SQLSEL <col>[,<col>...] FROM <table> [[AS] <alias>] [WHERE <predicate>] [ORDER BY <field> [ASC|DESC]] [LIMIT <n>]
+//   SQLSEL * FROM <table>
+//   SQLSEL COUNT(*) FROM <table> [WHERE <predicate>]
+//   SQLSEL <list> FROM <table> [AS] <a> [INNER] JOIN <table> [AS] <b> ON <a.field> = <b.field>
+//   SQLSEL <list> FROM <table> [AS] <a> LEFT JOIN <table> [AS] <b> ON <a.field> = <b.field>
+//   SQLSEL <list> FROM <table> [AS] <a> RIGHT JOIN <table> [AS] <b> ON <a.field> = <b.field>
+//   SQLSEL <list> FROM <table> [AS] <a> FULL JOIN <table> [AS] <b> ON <a.field> = <b.field>
+//   SQLSEL <list> FROM <table> [AS] <a> CROSS JOIN <table> [AS] <b>
 //   SQLSEL [COUNT] [ALL|DELETED] [FOR <expr> | <expr>]
 //
 // examples:
-//   SQLSEL SELECT SID,LNAME,FNAME FROM STUDENTS
-//   SQLSEL SELECT * FROM STUDENTS LIMIT 5
-//   SQLSEL SELECT SID,LNAME FROM STUDENTS WHERE MAJOR = "CSCI"
-//   SQLSEL SELECT SID,LNAME FROM STUDENTS ORDER BY LNAME DESC LIMIT 10
-//   SQLSEL SELECT COUNT(*) FROM STUDENTS WHERE GPA >= 3.0
-//   SQLSEL S.LNAME,E.COURSE FROM STUDENTS S JOIN ENROLL E ON S.SID = E.SID
-//   SQLSEL S.LNAME,E.COURSE FROM STUDENTS S LEFT JOIN ENROLL E ON S.SID = E.SID
-//   SQLSEL S.LNAME,E.COURSE FROM STUDENTS S RIGHT JOIN ENROLL E ON S.SID = E.SID
-//   SQLSEL S.LNAME,E.COURSE FROM STUDENTS S FULL JOIN ENROLL E ON S.SID = E.SID
-//   SQLSEL S.LNAME,E.COURSE FROM STUDENTS S CROSS JOIN ENROLL E
+//   SQLSEL SID,LNAME,FNAME FROM STUDENTS
+//   SQLSEL * FROM STUDENTS LIMIT 5
+//   SQLSEL SID,LNAME FROM STUDENTS WHERE MAJOR = "CSCI"
+//   SQLSEL SID,LNAME FROM STUDENTS ORDER BY LNAME DESC LIMIT 10
+//   SQLSEL COUNT(*) FROM STUDENTS WHERE GPA >= 3.0
+//   SQLSEL S.LNAME,E.CLS_ID FROM STUDENTS S JOIN ENROLL E ON S.SID = E.SID
+//   SQLSEL S.LNAME,E.CLS_ID FROM STUDENTS S LEFT JOIN ENROLL E ON S.SID = E.SID
+//   SQLSEL S.LNAME,E.CLS_ID FROM STUDENTS S RIGHT JOIN ENROLL E ON S.SID = E.SID
+//   SQLSEL S.LNAME,E.CLS_ID FROM STUDENTS S FULL JOIN ENROLL E ON S.SID = E.SID
+//   SQLSEL S.LNAME,E.CLS_ID FROM STUDENTS S CROSS JOIN ENROLL E
 //   SQLSEL COUNT
 //   SQLSEL COUNT FOR GPA >= 3.0
 //   SQLSEL LNAME = "SMITH"
 //
 // notes:
 //   SQLSEL USAGE prints usage before open-table checks.
+//   SQLSEL is the select verb; a leading SELECT keyword remains optional.
 //   A SELECT statement names its own table(s) in FROM; every table must be OPEN.
 //   A SELECT statement does not read or disturb session state -- not the
 //   current area, not the record pointer, not SET FILTER, not SET RELATION.
