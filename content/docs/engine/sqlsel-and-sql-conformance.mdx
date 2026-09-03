@@ -41,7 +41,7 @@ The regression also asserts the parts that are easy to get quietly wrong:
 
 | Not supported | Status |
 |---|---|
-| `JOIN` **as SQL syntax inside a `SQLSEL` statement** | Planned -- `sqlsel_statement.cpp` says "v1 reads a single table; joins arrive with the join phase". This is a limit of the SQL surface, **not of the engine**: three join forms ship and are proven, listed below |
+| `JOIN` **as SQL syntax inside a `SQLSEL` statement** | **Two-table equi `INNER JOIN` is runtime-proven in development** (2026-09-03, AIF-074 P4.1/P4.2) -- aliases, qualified columns, joined `WHERE`, `ORDER BY`, `LIMIT`, `COUNT(*)`, CDX-assisted seeking with scan fallback, and a reported access path. Four row sets are compared against an in-process SQLite oracle by an executable validator, and the validator was mutation-tested red. **Not yet in the public repository.** `LEFT` / `RIGHT` / `FULL` / `CROSS` remain planned (P4.3-P4.4) |
 | `GROUP BY` / `HAVING` | Not implemented anywhere in the engine |
 | Expression projection (`UPPER(name)` in the select list) | v1 accepts bare column names only |
 | `INSERT` / `UPDATE` / `DELETE` as SQL syntax | The engine mutates through `APPEND`, `REPLACE`, `DELETE`; SQL DML is planned |
@@ -86,7 +86,7 @@ new one does not replace the old one. Both are supported surfaces.
 | Setup | `REL ADD` wires parent to child on a key, ahead of time | Nothing declared; match any two columns on demand |
 | Shape | Walks a configured path in a direction, emitting one row per leaf combination | Matches two row sets |
 | Commands | `REL ADD`, `REL JOIN`, `REL ENUM`, `ERSATZ`, `SET RELATION` | `SQLSEL SELECT` |
-| Today | Supported -- **three join forms ship**: `SET RELATION` positional navigation, `REL JOIN` / `REL ENUM` enumeration (one tuple per combination, with `DISTINCT` / `ALL` / `LIMIT`), and `REL JOIN ONE` from the current pointers | `SELECT` supported; joining from `SELECT` syntax planned |
+| Today | Supported -- **three join forms ship**: `SET RELATION` positional navigation, `REL JOIN` / `REL ENUM` enumeration (one tuple per combination, with `DISTINCT` / `ALL` / `LIMIT`), and `REL JOIN ONE` from the current pointers | `SELECT` supported; two-table equi `INNER JOIN` runtime-proven in development, wider join family planned |
 
 The distinction is the navigational/relational one. The navigational model asks
 "where do I go from here?" - you position on a parent record and follow declared
@@ -136,10 +136,12 @@ reference itself, and covers equivalences as well as absences:
   reporting - SQLsel names its access path, and `GPS` shows physical record
   against logical row
 - `GROUP BY` - **not supported**, as above
-- `JOIN` - **equivalent, different surface.** Not available as SQL syntax inside
-  `SQLSEL`; available three ways through RelTalk (see the shipped forms above).
-  The engine's own reference is careful about which is meant, and so is this
-  line: what is missing is reaching a join *from a `SELECT`*, not joining
+- `JOIN` - **two-table equi `INNER JOIN` runtime-proven in development**
+  (2026-09-03), alongside the three RelTalk forms. It is statement-scoped: the
+  `ON` clause is declared per statement and **does not consult the declared
+  relation graph or workspace state**, so it is an independent join path rather
+  than a second route to the graph RelTalk walks. The outer joins and `CROSS`
+  are still planned
 
 Entries nobody has verified yet are left **empty on purpose**. Empty means
 unchecked, not absent - guessing would defeat the point of the map. A gate

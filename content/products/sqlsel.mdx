@@ -37,10 +37,37 @@ with a predicate and does not execute SQL statements, its name being historical.
 `SQLITE` bridges to an actual SQLite database. `SQLVER` reports SQLite
 availability. Each command states the boundary in its own `USAGE` output.
 
+## Two-table INNER JOIN -- runtime-proven in development
+
+**2026-09-03, AIF-074 P4.1/P4.2, not yet in the public repository.** SQLsel now
+joins two tables on an equality key:
+
+```text
+SQLSEL S.SID, S.LNAME, E.COURSE FROM SQLJSTU AS S
+  INNER JOIN SQLJENR AS E ON S.SID = E.SID ORDER BY E.COURSE
+```
+
+Aliases, qualified columns, a joined `WHERE`, `ORDER BY`, `LIMIT`, `COUNT(*)`,
+and refusals that name their reason -- an ambiguous bare column, an unqualified
+`ON` side, a table that is not open.
+
+**It reports which path it took**, and the proof asserts the path and the answer
+separately. A CDX seek names the inner table, the tag, the probe count and the
+candidate count; a nested-loop scan names both row counts. The regression
+compares four row sets against an in-process SQLite oracle **and** pins the
+access-path composition, so a join that returned the right rows by silently
+falling back to a scan fails. Both halves were mutation-tested red.
+
+It is **statement-scoped**: the `ON` clause is declared per statement and does
+not consult the declared relation graph or workspace state. That makes it an
+independent join path, not a second route to the graph
+[RelTalk](/products/reltalk) walks.
+
 ## Not yet implemented
 
-`JOIN`, `GROUP BY` / `HAVING`, expression projection in the select list, SQL
-`INSERT` / `UPDATE` / `DELETE`, and bare `SELECT` without the `SQLSEL` prefix.
+`LEFT` / `RIGHT` / `FULL` / `CROSS` joins, `GROUP BY` / `HAVING`, expression
+projection in the select list, SQL `INSERT` / `UPDATE` / `DELETE`, and bare
+`SELECT` without the `SQLSEL` prefix.
 
 `JOIN` here means SQL-syntax join inside a `SQLSEL` statement. Joining itself is
 not missing from the engine -- **three forms ship and are proven**, all through

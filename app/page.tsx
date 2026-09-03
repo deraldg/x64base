@@ -68,8 +68,8 @@ const ecosystem = [
   {
     title: "SQLsel",
     href: "/products/sqlsel",
-    desc: "The house SELECT over open work areas: selection, projection, ORDER BY, LIMIT, COUNT(*) -- every shipped operator verified against a SQLite oracle. An x64base set algebra under construction, operator by operator.",
-    state: { label: "operators oracle-proven; joins today through RelTalk, SQL-syntax joins next", stateIn: "runtime evidence", href: "/docs/labtalk/runtime-evidence" },
+    desc: "The house SELECT over open work areas: selection, projection, ORDER BY, LIMIT, COUNT(*), and a two-table equi INNER JOIN -- every shipped operator verified against a SQLite oracle, with the join asserting its access path separately from its answer. An x64base set algebra under construction, operator by operator.",
+    state: { label: "operators oracle-proven; two-table INNER JOIN runtime-proven in development", stateIn: "runtime evidence", href: "/docs/labtalk/runtime-evidence" },
     icon: BarChart3
   },
   {
