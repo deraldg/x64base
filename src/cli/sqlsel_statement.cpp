@@ -26,8 +26,10 @@
 #include "sqlsel_statement.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <cstdint>
+#include <filesystem>
 #include <iostream>
 #include <memory>
 #include <optional>
@@ -38,6 +40,8 @@
 
 #include "xbase.hpp"
 #include "xbase_field_getters.hpp"
+#include "xbase_locks.hpp"
+#include "cli/workarea_cursor_restore.hpp"
 #include "textio.hpp"
 #include "workarea_util.hpp"
 #include "tuple_builder.hpp"
@@ -233,19 +237,78 @@ bool resolve_join_column(const std::string& token,
     return true;
 }
 
-struct CursorRestoreTwo {
-    xbase::DbArea* left = nullptr;
-    xbase::DbArea* right = nullptr;
-    std::uint64_t left_recno = 0;
-    std::uint64_t right_recno = 0;
+// SQLSEL JOIN is a statement over two independently open xBase tables. Saving
+// two cursors makes the statement session-neutral; it does not make the two
+// reads one point in time. This guard does that with the engine's own
+// cooperative FLOCK seam. Both locks are taken without waiting, in a path-based
+// canonical order, so two reversed JOINs cannot form an AB-BA wait. A lock the
+// current owner already held is borrowed and never released by SQLSEL.
+struct JoinReadTransaction {
+    struct Held {
+        xbase::DbArea* area = nullptr;
+        bool acquired_here = false;
+    };
 
-    ~CursorRestoreTwo() {
-        const auto restore = [](xbase::DbArea* area, std::uint64_t recno) {
-            if (!area || recno == 0) return;
-            try { area->gotoRec64(recno); (void)area->readCurrent(); } catch (...) {}
-        };
-        restore(left, left_recno);
-        restore(right, right_recno);
+    std::array<Held, 2> held{};
+    std::size_t held_count = 0;
+    std::string first_name;
+    std::string second_name;
+    std::string error;
+    bool ready = false;
+
+    static std::string path_key(const xbase::DbArea& area) {
+        const std::string raw = std::filesystem::path(area.filename())
+                                    .lexically_normal().generic_string();
+        return up(raw) + "\n" + raw;
+    }
+
+    static std::string table_name(const xbase::DbArea& area) {
+        return up(std::filesystem::path(area.filename()).stem().string());
+    }
+
+    static bool owned_by_current_process(const xbase::DbArea& area) {
+        xbase::locks::LockHolder holder;
+        return xbase::locks::table_lock_holder(area, &holder) &&
+               holder.owner_id == xbase::locks::current_owner().id;
+    }
+
+    JoinReadTransaction(xbase::DbArea& a, xbase::DbArea& b) {
+        std::array<xbase::DbArea*, 2> order{{&a, &b}};
+        std::sort(order.begin(), order.end(), [](const auto* lhs, const auto* rhs) {
+            return path_key(*lhs) < path_key(*rhs);
+        });
+        first_name = table_name(*order[0]);
+        second_name = table_name(*order[1]);
+
+        for (xbase::DbArea* area : order) {
+            const bool borrowed = owned_by_current_process(*area);
+            std::string lock_error;
+            if (!xbase::locks::try_lock_table(*area, &lock_error)) {
+                error = table_name(*area) + ": " +
+                        (lock_error.empty() ? "table lock refused" : lock_error);
+                release_acquired();
+                return;
+            }
+            held[held_count++] = Held{area, !borrowed};
+        }
+        ready = true;
+    }
+
+    ~JoinReadTransaction() { release_acquired(); }
+
+    JoinReadTransaction(const JoinReadTransaction&) = delete;
+    JoinReadTransaction& operator=(const JoinReadTransaction&) = delete;
+
+private:
+    void release_acquired() noexcept {
+        while (held_count > 0) {
+            Held& one = held[--held_count];
+            if (one.acquired_here && one.area) {
+                std::string ignored;
+                (void)xbase::locks::unlock_table(
+                    *one.area, xbase::locks::current_owner(), &ignored);
+            }
+        }
     }
 };
 
@@ -420,10 +483,18 @@ bool execute_inner_join(const std::string& select_list,
         std::uint64_t right_recno = 0;
     };
     std::vector<JoinedRow> rows;
-    CursorRestoreTwo restore{left.area, right.area,
-                             static_cast<std::uint64_t>(left.area->recno()),
-                             static_cast<std::uint64_t>(right.area->recno())};
+    JoinReadTransaction read_transaction{*left.area, *right.area};
+    if (!read_transaction.ready) {
+        std::cout << "SQLSEL: INNER JOIN read transaction refused -- "
+                  << read_transaction.error << ".\n";
+        return true;
+    }
+    dottalk::tupleaugment::WorkAreaCursorRestore restore;
     cli::ScopedEngineArea keep_current_area;
+
+    std::cout << "SQLSEL: INNER JOIN read transaction -- table fence ("
+              << read_transaction.first_name << " -> "
+              << read_transaction.second_name << ").\n";
 
     const std::uint64_t left_count = static_cast<std::uint64_t>(left.area->recCount());
     const std::uint64_t right_count = static_cast<std::uint64_t>(right.area->recCount());
@@ -611,6 +682,8 @@ void print_statement_usage() {
         << "  The table must be OPEN (USE <table>) -- SQLSEL reads open work areas.\n"
         << "  P4.1 joins two open tables with one equi-key. WHERE evaluates the\n"
         << "  resulting qualified TupleRow; no REL or SET RELATION state is read.\n"
+        << "  JOIN takes a non-blocking two-table read fence; lock contention\n"
+        << "  refuses the statement before either table is read.\n"
         << "  v1 accepts column names; expression projection is not yet supported.\n"
         << "  A statement does not change the current area or any record pointer.\n";
 }

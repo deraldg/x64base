@@ -339,3 +339,51 @@ No push, main-tree promotion, website edit, or publication is claimed.
 - Both scripts remain explicit-run candidates pending independent review and
   soak. This evidence does not widen SQLsel syntax or semantics and does not
   claim a push, main-tree promotion, or website publication.
+
+**2026-09-03, SQLsel JOIN statement read transaction (candidate evidence):**
+
+- A successful two-table JOIN now holds x64base table locks on both source DBFs
+  from before the first record/count read until after the supported house
+  `WorkAreaCursorRestore` has restored the open work-area cursors. Locks are
+  acquired without waiting in canonical normalized-path order, so reversed
+  statement order cannot create an AB-BA wait. A table lock already owned by
+  the caller is borrowed and remains owned after SQLsel exits.
+- The shared x64base sidecar layer was tightened at the seam this exposed. Lock
+  files are now published with atomic create (`CREATE_NEW` on Windows,
+  `O_CREAT|O_EXCL` on POSIX), rather than an `exists()` plus truncating-open
+  race. Table and record locks use a two-sided handshake: a table fence rejects
+  an older foreign record lock after publication, while a record writer checks
+  for a foreign table fence both before and after publishing its record lock.
+  Unknown/unreadable ownership fails closed, and only provably stale locks are
+  reclaimed.
+- The native `dottalkpp_lock_protocol_test` passed five arms over real X64
+  `DbArea` objects and real sidecars: clean ownership, live foreign record
+  contention plus rollback, unreadable-owner refusal with evidence preserved,
+  reverse table-to-record exclusion, and same-owner re-entry.
+- `REGRESSION SQLSEL_JOIN_EDGES` passed four SQLite row-oracle pairs, four cursor
+  guards, four corrective refusals, four read-transaction reports, caller-lock
+  preservation, and the exact two-CDX/two-scan access composition. One numeric
+  statement reverses its FROM/JOIN order while the reported lock order remains
+  `SQLJNL -> SQLJNR`; this makes canonical acquisition observable rather than
+  an implementation-only claim.
+- A statement-order mutation left all four JOIN row sets and access paths
+  correct, but changed the reversed numeric report to `SQLJNR -> SQLJNL`. The
+  validator rejected the run with `FAIL -- expected 4 canonical read
+  transactions (2 numeric, 2 character)`. Restoring canonical path sorting
+  returned the intact fixture to green.
+- A real two-process DotTalk++ probe supplied the contention evidence the
+  one-process fixture cannot manufacture. Process A opened `SQLTXL` and issued
+  `LOCK TABLE`. Process B opened `SQLTXL` and `SQLTXR`; its JOIN refused before
+  producing a path or result with `SQLSEL: INNER JOIN read transaction refused
+  -- SQLTXL: lock exists.` After process A issued `UNLOCK TABLE`, a fresh process
+  ran the same JOIN and returned exactly `LEFT | RIGHT`, one row, under a
+  `SQLTXL -> SQLTXR` fence. Both temporary X64 tables then erased cleanly.
+- Boundary: this is a cooperative, exclusive, statement-duration read fence for
+  the current read-only two-table JOIN. It is not MVCC, snapshot history, joined
+  DML, rollback across tables, or the existing `COMMIT ALL` path (which remains
+  explicitly non-atomic). Other writers must use the x64base lock protocol for
+  the fence to protect them. Same-process ownership is intentionally re-entrant;
+  the current DotTalk++ command runtime is single-threaded.
+
+This implementation and evidence remain local to `development`, review-needed,
+and unpushed. No main-tree promotion, website edit, or publication is claimed.

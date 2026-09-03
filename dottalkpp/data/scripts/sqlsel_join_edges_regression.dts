@@ -14,6 +14,8 @@
 ;   JE5 an active tag on the wrong inner field selects scan, not false seek.
 ;   JE6 four source cursors survive all successful and refused statements.
 ;   JE7 duplicate aliases, same-side ON, a second JOIN, and self-join refuse.
+;   JE8 every JOIN holds a two-table read fence in canonical path order, even
+;       when statement order is reversed, and preserves a caller-owned FLOCK.
 ;   ORACLE four marked SQLsel row sets equal SQLite.
 ;
 ; Read rule: REGRESSION SQLSEL_JOIN_EDGES must print
@@ -154,16 +156,21 @@ SET ORDER TO TAG CKEY
 GO 6
 
 SELECT 1
+LOCK TABLE
 FORMULA "SQLSEL-JE-NUM-SEEK-BEGIN"
 SQLSEL L.LBL,R.PAYLOAD FROM SQLJNL L JOIN SQLJNR R ON L.ID = R.ID ORDER BY R.PAYLOAD
 FORMULA "SQLSEL-JE-NUM-SEEK-END"
+
+; SQLSEL may borrow this caller-owned lock, but it must not release it.
+? "JE_T1_caller_table_lock_preserved:" + FILE("DBF/SANDBOX/SQLJNL.dbf.lock")
+UNLOCK TABLE
 
 SELECT 2
 SET ORDER TO 0
 GO 5
 SELECT 1
 FORMULA "SQLSEL-JE-NUM-SCAN-BEGIN"
-SQLSEL L.LBL,R.PAYLOAD FROM SQLJNL L JOIN SQLJNR R ON L.ID = R.ID ORDER BY R.PAYLOAD
+SQLSEL L.LBL,R.PAYLOAD FROM SQLJNR R JOIN SQLJNL L ON R.ID = L.ID ORDER BY R.PAYLOAD
 FORMULA "SQLSEL-JE-NUM-SCAN-END"
 
 SELECT 4

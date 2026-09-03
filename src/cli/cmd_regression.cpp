@@ -494,7 +494,7 @@ constexpr std::array<RegressionSpec, 66> kRegressionSpecs{{
     {
         "SQLSEL_JOIN_EDGES",
         "sqlsel_join_edges_regression.dts",
-        "Adversarial SQLsel INNER JOIN proof (AIF-074 P4.2): numeric duplicates, deleted outer/inner rows, unmatched keys, CDX character-key case collisions that require typed row revalidation, active-tag mismatch scan fallback, cursor restoration, and four corrective refusals. Four marked SQLsel row sets are compared with an in-run SQLite oracle. The validator pins the access-path composition at exactly two CDX seeks, two nested-loop scans, zero hybrid, and pins the probe/candidate counts that make the duplicate and case-collision arms discriminating. Self-bootstrapping four-table SANDBOX fixture with self-erasing sidecars. Explicit-run pending independent review and soak.",
+        "Adversarial SQLsel INNER JOIN proof (AIF-074 P4.2): numeric duplicates, deleted outer/inner rows, unmatched keys, CDX character-key case collisions that require typed row revalidation, active-tag mismatch scan fallback, cursor restoration, caller-owned FLOCK preservation, canonical two-table read fences with reversed statement order, and four corrective refusals. Four marked SQLsel row sets are compared with an in-run SQLite oracle. The validator pins the access-path composition at exactly two CDX seeks, two nested-loop scans, zero hybrid, and pins the probe/candidate counts that make the duplicate and case-collision arms discriminating. Self-bootstrapping four-table SANDBOX fixture with self-erasing sidecars. Explicit-run pending independent review and soak.",
         false,
         false,
         RegressionValidator::SqlselJoinEdgesV1
@@ -1428,13 +1428,14 @@ bool validate_sqlsel_join_edges(const std::string& transcript)
         {"SQLSEL-JE-CHAR-SEEK", "SQLSEL-JE-OC1"},
         {"SQLSEL-JE-CHAR-SCAN", "SQLSEL-JE-OC2"}
     }};
-    static constexpr std::array<const char*, 8> required{{
+    static constexpr std::array<const char*, 9> required{{
         "JE_C1_numeric_left_cursor_restored:.T.",
         "JE_C2_numeric_right_cursor_restored:.T.",
         "JE_C3_char_left_cursor_restored:.T.",
         "JE_C4_char_right_cursor_restored:.T.",
+        "JE_T1_caller_table_lock_preserved:.T.",
         "SQLSEL: INNER JOIN access path -- CDX seek (inner=SQLJNR, tag=ID, probes=3, candidates=3).",
-        "SQLSEL: INNER JOIN access path -- nested-loop scan (outer=4 row(s), inner=5 row(s)).",
+        "SQLSEL: INNER JOIN access path -- nested-loop scan (outer=5 row(s), inner=4 row(s)).",
         "SQLSEL: INNER JOIN access path -- CDX seek (inner=SQLJCR, tag=CKEY, probes=3, candidates=8).",
         "SQLSEL: INNER JOIN access path -- nested-loop scan (outer=4 row(s), inner=6 row(s))."
     }};
@@ -1449,6 +1450,20 @@ bool validate_sqlsel_join_edges(const std::string& transcript)
         !require_exact_transcript_block(transcript, "SQLSEL JOIN EDGES ORACLE",
                                         "SQLSEL-JE-REFUSALS", refusals) ||
         !require_transcript_fragments(transcript, "SQLSEL JOIN EDGES ORACLE", required)) {
+        return false;
+    }
+
+    static const std::string transaction_prefix =
+        "SQLSEL: INNER JOIN read transaction -- table fence (";
+    static const std::string numeric_fence =
+        "SQLSEL: INNER JOIN read transaction -- table fence (SQLJNL -> SQLJNR).";
+    static const std::string character_fence =
+        "SQLSEL: INNER JOIN read transaction -- table fence (SQLJCL -> SQLJCR).";
+    if (transcript_count(transcript, transaction_prefix) != 4 ||
+        transcript_count(transcript, numeric_fence) != 2 ||
+        transcript_count(transcript, character_fence) != 2) {
+        std::cout << "SQLSEL JOIN EDGES ORACLE: FAIL -- expected 4 canonical read "
+                     "transactions (2 numeric, 2 character)\n";
         return false;
     }
 
@@ -1476,6 +1491,7 @@ bool validate_sqlsel_join_edges(const std::string& transcript)
 
     std::cout << "SQLSEL JOIN EDGES ORACLE: PASS -- " << pairs.size() << '/'
               << pairs.size() << " row sets equal SQLite; cursors 4/4; refusals 4/4; "
+              << "read transactions 4/4; caller lock preserved; "
               << "access paths 4/4 (CDX seek 2, scan 2, hybrid 0); "
               << "probe/candidate counts exact.\n";
     return true;

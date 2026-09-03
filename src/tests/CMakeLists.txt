@@ -181,6 +181,21 @@ if(TARGET xbase)
   add_test(NAME dottalkpp_field_codec_test COMMAND dottalkpp_field_codec_test)
 endif()
 
+# ---- Cooperative lock handshake: table fence vs record writers ------------
+# SQLSEL JOIN uses two table locks as its statement read transaction. The
+# underlying protocol must therefore close both publication races: a table
+# fence refuses an older foreign record lock, and a record writer refuses a
+# foreign table fence. The test writes live-owner sidecars deliberately; this
+# reaches contention paths a one-process DotScript cannot manufacture.
+if(TARGET xbase)
+  add_executable(dottalkpp_lock_protocol_test
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_lock_protocol.cpp
+  )
+  target_link_libraries(dottalkpp_lock_protocol_test PRIVATE xbase memo)
+  target_include_directories(dottalkpp_lock_protocol_test PRIVATE ${CMAKE_SOURCE_DIR}/include)
+  add_test(NAME dottalkpp_lock_protocol_test COMMAND dottalkpp_lock_protocol_test)
+endif()
+
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
 if (TARGET dottalkpp)
   add_test(

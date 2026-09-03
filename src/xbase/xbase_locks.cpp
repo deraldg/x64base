@@ -13,6 +13,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <algorithm>
 #include <unordered_map>
 #include <unordered_set>
 #include <chrono>
@@ -25,6 +26,7 @@
   #include <lmcons.h>
 #else
   #include <unistd.h>
+  #include <fcntl.h>
   #include <sys/utsname.h>
   #include <signal.h>
   #include <cerrno>
@@ -192,16 +194,11 @@ static bool read_owner_from_file(const std::string& path, std::string& out_owner
     return true;
 }
 
-static bool write_lock_file(const std::string& path, const Owner& owner, std::string* err) {
-    std::ofstream f(path, std::ios::binary | std::ios::trunc);
-    if (!f) {
-        if (err) *err = "cannot create lock";
-        return false;
-    }
-
+static std::string lock_file_body(const Owner& owner) {
     // AIF-116: the sidecar is a machine-read protocol file, not output. Its
     // numbers are parsed back by read_lock_meta and must be locale-immune.
-    f.imbue(std::locale::classic());
+    std::ostringstream out;
+    out.imbue(std::locale::classic());
 
 #ifdef _WIN32
     const unsigned long pid = static_cast<unsigned long>(::GetCurrentProcessId());
@@ -212,18 +209,81 @@ static bool write_lock_file(const std::string& path, const Owner& owner, std::st
     const auto now = std::chrono::system_clock::now().time_since_epoch();
     const auto ms  = std::chrono::duration_cast<std::chrono::milliseconds>(now).count();
 
-    f << "DotTalk++ lock\n";
-    f << "owner=" << owner.id << "\n";
+    out << "DotTalk++ lock\n";
+    out << "owner=" << owner.id << "\n";
     // Written ONLY when non-empty, so a reader can tell "no member recorded"
     // from "a member whose name is blank". R6 at the file format.
-    if (!owner.member.empty()) f << "member=" << owner.member << "\n";
-    f << "pid="   << pid      << "\n";
-    f << "ms="    << ms       << "\n";
-    f.flush();
+    if (!owner.member.empty()) out << "member=" << owner.member << "\n";
+    out << "pid="   << pid      << "\n";
+    out << "ms="    << ms       << "\n";
+    return out.str();
+}
 
-    const bool ok = static_cast<bool>(f);
-    if (!ok && err) *err = "write failed";
+// A lock is mutual exclusion only if creating its sidecar is atomic. The old
+// exists()+ofstream(trunc) pair left a race where two processes could both see
+// absence and the second could overwrite the first process's live owner token.
+// CREATE_NEW / O_EXCL makes exactly one creator win. The payload is complete
+// before the handle closes, and a failed write removes only the file this call
+// created.
+static bool write_lock_file(const std::string& path, const Owner& owner, std::string* err) {
+    if (xbase::ramfs::is_virtual(path)) return true;
+    const std::string body = lock_file_body(owner);
+
+#ifdef _WIN32
+    const fs::path lock_path(path);
+    HANDLE h = ::CreateFileW(lock_path.c_str(), GENERIC_WRITE, FILE_SHARE_READ,
+                             nullptr, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, nullptr);
+    if (h == INVALID_HANDLE_VALUE) {
+        const DWORD e = ::GetLastError();
+        if (err) *err = (e == ERROR_FILE_EXISTS || e == ERROR_ALREADY_EXISTS)
+                     ? "lock exists" : "cannot create lock";
+        return false;
+    }
+
+    std::size_t off = 0;
+    bool ok = true;
+    while (off < body.size()) {
+        const DWORD want = static_cast<DWORD>(std::min<std::size_t>(
+            body.size() - off, static_cast<std::size_t>(0xFFFFFFFFu)));
+        DWORD wrote = 0;
+        if (!::WriteFile(h, body.data() + off, want, &wrote, nullptr) || wrote == 0) {
+            ok = false;
+            break;
+        }
+        off += wrote;
+    }
+    if (ok) ok = ::FlushFileBuffers(h) != FALSE;
+    ::CloseHandle(h);
+    if (!ok) {
+        ::DeleteFileW(lock_path.c_str());
+        if (err) *err = "write failed";
+    }
     return ok;
+#else
+    const int fd = ::open(path.c_str(), O_WRONLY | O_CREAT | O_EXCL, 0666);
+    if (fd < 0) {
+        if (err) *err = (errno == EEXIST) ? "lock exists" : "cannot create lock";
+        return false;
+    }
+
+    std::size_t off = 0;
+    bool ok = true;
+    while (off < body.size()) {
+        const ssize_t wrote = ::write(fd, body.data() + off, body.size() - off);
+        if (wrote <= 0) {
+            ok = false;
+            break;
+        }
+        off += static_cast<std::size_t>(wrote);
+    }
+    if (ok) ok = (::fsync(fd) == 0);
+    if (::close(fd) != 0) ok = false;
+    if (!ok) {
+        (void)::unlink(path.c_str());
+        if (err) *err = "write failed";
+    }
+    return ok;
+#endif
 }
 
 static bool force_remove(const std::string& path, std::string* err) {
@@ -346,11 +406,104 @@ static bool create_or_validate_owned(const std::string& path, const Owner& me, s
     return false;
 }
 
+// A table fence and a record writer use a two-sided handshake:
+//
+//   table side  -- publish the table lock, then reject any older foreign
+//                  record lock that was already in flight;
+//   record side -- check the table lock, publish the record lock, then check
+//                  the table lock again before the caller may write.
+//
+// The second record-side check closes the only interleaving that a single
+// pre-check cannot: a writer checks an empty table-lock path just before a
+// reader publishes its table fence. Both operations are non-blocking.
+static bool table_lock_allows_owner(DbArea& a, const Owner& me, std::string* err) {
+    const std::string tlp = table_lock_path(a);
+    if (!fs::exists(tlp)) return true;
+
+    LockMeta meta;
+    if (!read_lock_meta(tlp, meta)) {
+        if (err) *err = "table locked (owner unreadable)";
+        return false;
+    }
+    if (lock_is_mine(meta, me)) return true;
+
+    if (meta.pid_valid && !is_pid_alive(meta.pid)) {
+        std::string remove_error;
+        if (!force_remove(tlp, &remove_error)) {
+            if (err) *err = "stale table lock exists";
+            return false;
+        }
+        return true;
+    }
+
+    if (err) *err = "table locked";
+    return false;
+}
+
+static bool table_has_foreign_record_lock(DbArea& a,
+                                          const Owner& me,
+                                          std::string* err) {
+    const std::string db_name = resolved_db_path(a);
+    if (xbase::ramfs::is_virtual(db_name)) return false;
+
+    const fs::path db_path(db_name);
+    const fs::path parent = db_path.has_parent_path() ? db_path.parent_path()
+                                                      : fs::current_path();
+    const std::string prefix = db_path.filename().string() + ".lock.";
+    std::error_code ec;
+    fs::directory_iterator it(parent, ec);
+    if (ec) {
+        if (err) *err = "cannot inspect record locks";
+        return true;
+    }
+
+    for (const auto& entry : it) {
+        const std::string name = entry.path().filename().string();
+        if (name.rfind(prefix, 0) != 0) continue;
+
+        LockMeta meta;
+        if (!read_lock_meta(entry.path().string(), meta)) {
+            if (err) *err = "record locked (owner unreadable)";
+            return true;
+        }
+        if (lock_is_mine(meta, me)) continue;
+
+        if (meta.pid_valid && !is_pid_alive(meta.pid)) {
+            std::string remove_error;
+            if (!force_remove(entry.path().string(), &remove_error)) {
+                if (err) *err = "stale record lock exists";
+                return true;
+            }
+            continue;
+        }
+
+        if (err) *err = "record locked";
+        return true;
+    }
+    return false;
+}
+
 // ---------------- Public API: Table ------------------------------------------
 
 bool try_lock_table(DbArea& a, const Owner& me, std::string* err) {
     const std::string lp = table_lock_path(a);
+    bool already_owned = false;
+    if (fs::exists(lp)) {
+        LockMeta prior;
+        already_owned = read_lock_meta(lp, prior) && lock_is_mine(prior, me);
+    }
     if (!create_or_validate_owned(lp, me, err)) return false;
+
+    std::string record_error;
+    if (table_has_foreign_record_lock(a, me, &record_error)) {
+        if (!already_owned) {
+            std::string ignored;
+            (void)remove_if_owned(lp, me, &ignored);
+        }
+        if (err) *err = record_error;
+        return false;
+    }
+
     book()[&a].table = true;
     return true;
 }
@@ -399,33 +552,28 @@ bool try_lock_record(DbArea& a, std::uint64_t recno, const Owner& me, std::strin
         return false;
     }
 
-    // If table is locked by someone else and still alive, deny.
-    const std::string tlp = table_lock_path(a);
-    if (fs::exists(tlp)) {
-        LockMeta tmeta;
-        if (read_lock_meta(tlp, tmeta)) {
-            // AIF-116: deny when the foreign owner is alive OR UNKNOWN.
-            // With an unparseable pid the old test evaluated is_pid_alive(0)
-            // == false and fell straight through to the reclaim below, so a
-            // malformed table lock granted a record lock underneath it.
-            if (!lock_is_mine(tmeta, me) && (!tmeta.pid_valid || is_pid_alive(tmeta.pid))) {
-                if (err) *err = "table locked";
-                return false;
-            }
-
-            // Stale table lock cleanup -- only when PROVABLY dead.
-            if (!lock_is_mine(tmeta, me) && tmeta.pid_valid && !is_pid_alive(tmeta.pid)) {
-                std::string ignored;
-                (void)force_remove(tlp, &ignored);
-            }
-        } else {
-            if (err) *err = "table locked";
-            return false;
-        }
-    }
+    if (!table_lock_allows_owner(a, me, err)) return false;
 
     const std::string rp = record_lock_path(a, recno);
+    bool already_owned = false;
+    if (fs::exists(rp)) {
+        LockMeta prior;
+        already_owned = read_lock_meta(rp, prior) && lock_is_mine(prior, me);
+    }
     if (!create_or_validate_owned(rp, me, err)) return false;
+
+    // Close the table-lock/record-lock publication race. A foreign table fence
+    // that appeared after our first check wins; a newly created record lock is
+    // rolled back before this function can authorize a write.
+    std::string table_error;
+    if (!table_lock_allows_owner(a, me, &table_error)) {
+        if (!already_owned) {
+            std::string ignored;
+            (void)remove_if_owned(rp, me, &ignored);
+        }
+        if (err) *err = table_error;
+        return false;
+    }
 
     book()[&a].recs.insert(recno);
     return true;
