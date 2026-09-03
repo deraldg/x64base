@@ -28,6 +28,9 @@
 //   SQLSEL SELECT COUNT(*) FROM <table> [WHERE <predicate>]
 //   SQLSEL SELECT <list> FROM <table> [AS] <a> [INNER] JOIN <table> [AS] <b> ON <a.field> = <b.field>
 //   SQLSEL SELECT <list> FROM <table> [AS] <a> LEFT JOIN <table> [AS] <b> ON <a.field> = <b.field>
+//   SQLSEL SELECT <list> FROM <table> [AS] <a> RIGHT JOIN <table> [AS] <b> ON <a.field> = <b.field>
+//   SQLSEL SELECT <list> FROM <table> [AS] <a> FULL JOIN <table> [AS] <b> ON <a.field> = <b.field>
+//   SQLSEL SELECT <list> FROM <table> [AS] <a> CROSS JOIN <table> [AS] <b>
 //   SQLSEL [COUNT] [ALL|DELETED] [FOR <expr> | <expr>]
 //
 // examples:
@@ -38,6 +41,9 @@
 //   SQLSEL SELECT COUNT(*) FROM STUDENTS WHERE GPA >= 3.0
 //   SQLSEL S.LNAME,E.COURSE FROM STUDENTS S JOIN ENROLL E ON S.SID = E.SID
 //   SQLSEL S.LNAME,E.COURSE FROM STUDENTS S LEFT JOIN ENROLL E ON S.SID = E.SID
+//   SQLSEL S.LNAME,E.COURSE FROM STUDENTS S RIGHT JOIN ENROLL E ON S.SID = E.SID
+//   SQLSEL S.LNAME,E.COURSE FROM STUDENTS S FULL JOIN ENROLL E ON S.SID = E.SID
+//   SQLSEL S.LNAME,E.COURSE FROM STUDENTS S CROSS JOIN ENROLL E
 //   SQLSEL COUNT
 //   SQLSEL COUNT FOR GPA >= 3.0
 //   SQLSEL LNAME = "SMITH"
@@ -49,15 +55,15 @@
 //   current area, not the record pointer, not SET FILTER, not SET RELATION.
 //   A SELECT statement reads committed table data; uncommitted TABLE BUFFER
 //   preview overlays remain TUP/TUPLE-facing until SQLSEL DML is promoted.
-//   INNER and LEFT JOIN are statement-scoped ad-hoc set matching. They do not
+//   All JOIN forms are statement-scoped ad-hoc set matching. They do not
 //   consult a declared relation; every run reports CDX seek or scan.
-//   LEFT JOIN renders produced-absent right cells as <UNMATCHED> and reports
-//   the left-extended row count. LEFT JOIN with WHERE refuses until the
-//   predicate engine supports SQL UNKNOWN.
+//   Outer joins render produced-absent cells as <UNMATCHED> and report their
+//   extension counts. Outer JOIN with WHERE refuses until the predicate
+//   engine supports SQL UNKNOWN. CROSS JOIN takes no ON clause.
 //   SELECT projects column names; expression projection is not yet
 //   supported and reports rather than emitting empty values.
 //   ORDER BY sorts the full match set before LIMIT applies, and reports its
-//   access path; GROUP BY and RIGHT/FULL/CROSS joins are not yet implemented.
+//   access path; GROUP BY and set operations are not yet implemented.
 //   LIMIT reports how many rows remain rather than truncating silently.
 //   The legacy predicate form reads records and may temporarily move the cursor.
 //   SQLSEL does not mutate table data.

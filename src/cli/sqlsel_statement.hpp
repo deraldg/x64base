@@ -7,7 +7,7 @@
 // owner: member.derald
 // status: supported
 
-// src/cli/sqlsel_statement.hpp -- SQLSEL set-oriented statement surface (P3/P4.3).
+// src/cli/sqlsel_statement.hpp -- SQLSEL set-oriented statement surface (P3/P4.4).
 //
 // The ONE new component of the SQLSEL lane: a SELECT statement parser.
 // Everything beneath it consumes proven engine seams (area resolution,

@@ -13,15 +13,14 @@
 ;   LJ4 a deleted outer row is absent and a deleted-only inner match extends.
 ;   LJ5 CDX seek and nested-loop scan return the same rows and counts.
 ;   LJ6 both source cursors survive, and a caller-owned FLOCK is preserved.
-;   LJ7 LEFT WHERE refuses until SQL three-valued predicates exist; RIGHT,
-;       FULL, and CROSS stay corrective P4.4 refusals.
+;   LJ7 LEFT WHERE refuses until SQL three-valued predicates exist.
 ;   ORACLE SQLite NULL is mapped explicitly to <UNMATCHED>.
 ;
 ; Read rule: REGRESSION SQLSEL_LEFT_JOIN must print
 ;   SQLSEL LEFT JOIN ORACLE: PASS.
 ; The validator compares four row sets, requires four exact left-extended
 ; reports, 2 seek + 2 scan paths, four read fences, cursor/lock evidence, and
-; the exact refusal block. A direct DOTSCRIPT run does not invoke it.
+; the exact LEFT-WHERE refusal block. A direct DOTSCRIPT run does not invoke it.
 ; ============================================================================
 
 SET ECHO OFF
@@ -129,9 +128,6 @@ SELECT 2
 
 FORMULA "SQLSEL-LJ-REFUSALS-BEGIN"
 SQLSEL L.LBL,R.PAYLOAD FROM SQLLJL L LEFT JOIN SQLLJR R ON L.ID = R.ID WHERE R.PAYLOAD = "R1A"
-SQLSEL L.LBL FROM SQLLJL L RIGHT JOIN SQLLJR R ON L.ID = R.ID
-SQLSEL L.LBL FROM SQLLJL L FULL JOIN SQLLJR R ON L.ID = R.ID
-SQLSEL L.LBL FROM SQLLJL L CROSS JOIN SQLLJR R ON L.ID = R.ID
 FORMULA "SQLSEL-LJ-REFUSALS-END"
 
 FORMULA "SQLSEL-LJ-ORACLE-BEGIN"

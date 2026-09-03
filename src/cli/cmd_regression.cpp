@@ -68,6 +68,7 @@
 
 #include "shell_commands.hpp"
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <filesystem>
@@ -93,6 +94,7 @@ enum class RegressionValidator {
     SqlselJoinOracleV1,
     SqlselJoinEdgesV1,
     SqlselLeftJoinOracleV1,
+    SqlselJoinFamilyV1,
     SqlselBufferVisibilityV1,
     EvaldiffV1
 };
@@ -156,7 +158,7 @@ struct RegressionSpec {
 // compile error ("too many initializers"), which is the safe failure -- but it
 // is a recurring papercut: it happened when CNXLIVE was added on 2026-07-31.
 // Bump it when you add a regression.
-constexpr std::array<RegressionSpec, 67> kRegressionSpecs{{
+constexpr std::array<RegressionSpec, 68> kRegressionSpecs{{
     {
         "NONDESTRUCTIVE",
         "dottalkpp_non_destructive_smoke.dts",
@@ -503,10 +505,18 @@ constexpr std::array<RegressionSpec, 67> kRegressionSpecs{{
     {
         "SQLSEL_LEFT_JOIN",
         "sqlsel_left_join_regression.dts",
-        "SQLsel G4c (AIF-074 P4.3): LEFT JOIN preserves duplicate matches, emits one produced-absent row for each unmatched non-deleted outer row, distinguishes genuine DBF blanks from absence through the one TupleRow marker plus an exact left-extended count, and returns identical rows through CDX-seek and scan paths. Four marked SQLsel row sets are compared with SQLite after explicit NULL-to-marker mapping. The validator also pins 2 seek/2 scan paths, four read fences, cursor restoration, caller-owned FLOCK preservation, and corrective refusal of LEFT WHERE until three-valued predicates exist plus the deferred P4.4 join forms. Self-erasing SANDBOX fixtures. Explicit-run pending independent review and soak.",
+        "SQLsel G4c (AIF-074 P4.3): LEFT JOIN preserves duplicate matches, emits one produced-absent row for each unmatched non-deleted outer row, distinguishes genuine DBF blanks from absence through the one TupleRow marker plus an exact left-extended count, and returns identical rows through CDX-seek and scan paths. Four marked SQLsel row sets are compared with SQLite after explicit NULL-to-marker mapping. The validator also pins 2 seek/2 scan paths, four read fences, cursor restoration, caller-owned FLOCK preservation, and corrective refusal of LEFT WHERE until three-valued predicates exist. Self-erasing SANDBOX fixtures. Explicit-run pending independent review and soak.",
         false,
         false,
         RegressionValidator::SqlselLeftJoinOracleV1
+    },
+    {
+        "SQLSEL_JOIN_FAMILY",
+        "sqlsel_join_family_regression.dts",
+        "SQLsel G4d (AIF-074 P4.4): RIGHT, FULL, and CROSS JOIN over two open tables. Ten marked SQLsel row sets are compared as SQL multisets with SQLite after explicit NULL-to-<UNMATCHED> mapping. The validator pins duplicate multiplication, unmatched rows from either side, genuine blank and stored-marker values, deleted-row exclusion, RIGHT/FULL CDX-seek versus scan parity, CROSS Cartesian count and present-cell WHERE, exact extension reports, ten canonical read fences, both cursors, caller-owned FLOCK preservation, and five corrective refusals. Self-erasing SANDBOX fixtures. Explicit-run pending independent review and soak.",
+        false,
+        false,
+        RegressionValidator::SqlselJoinFamilyV1
     },
     {
         "EVALDIFF",
@@ -1189,6 +1199,7 @@ bool sqlite_rows_from_block(const std::vector<std::string>& lines,
 struct SqlselOraclePair {
     const char* actual;
     const char* oracle;
+    bool unordered = false;
 };
 
 template <std::size_t N>
@@ -1215,9 +1226,14 @@ bool validate_sqlsel_oracle_rows(const std::string& transcript,
             return false;
         }
 
+        if (pair.unordered) {
+            std::sort(actual_rows.begin(), actual_rows.end());
+            std::sort(oracle_rows.begin(), oracle_rows.end());
+        }
         if (actual_rows != oracle_rows) {
             std::cout << label << ": FAIL -- " << pair.actual
-                      << " vs " << pair.oracle << " row mismatch\n"
+                      << " vs " << pair.oracle
+                      << (pair.unordered ? " row multiset mismatch\n" : " row mismatch\n")
                       << "  SQLSEL rows: " << actual_rows.size() << "\n";
             for (const std::string& row : actual_rows) {
                 std::cout << "    " << display_table_row(row) << "\n";
@@ -1451,7 +1467,7 @@ bool validate_sqlsel_join_edges(const std::string& transcript)
     static constexpr std::array<const char*, 4> refusals{{
         "SQLSEL: joined table aliases must be distinct.",
         "SQLSEL: JOIN ON must compare one column from each table.",
-        "SQLSEL: P4.1 accepts exactly one INNER JOIN.",
+        "SQLSEL: one statement accepts exactly one JOIN.",
         "SQLSEL: P4.1 joins two distinct open tables; self-join is not yet supported."
     }};
 
@@ -1525,11 +1541,8 @@ bool validate_sqlsel_left_join(const std::string& transcript)
         "L3 | <UNMATCHED>",
         "L5 | <UNMATCHED>"
     }};
-    static constexpr std::array<const char*, 4> refusals{{
-        "SQLSEL: LEFT JOIN with WHERE requires three-valued predicate support; P4.3 refuses it.",
-        "SQLSEL: RIGHT JOIN arrives with P4.4.",
-        "SQLSEL: FULL JOIN arrives with P4.4.",
-        "SQLSEL: CROSS JOIN arrives with P4.4."
+    static constexpr std::array<const char*, 1> refusals{{
+        "SQLSEL: LEFT JOIN with WHERE requires three-valued predicate support; P4.3 refuses it."
     }};
 
     if (!validate_sqlsel_oracle_rows(transcript, "SQLSEL LEFT JOIN ORACLE", pairs) ||
@@ -1560,8 +1573,92 @@ bool validate_sqlsel_left_join(const std::string& transcript)
 
     std::cout << "SQLSEL LEFT JOIN ORACLE: PASS -- " << pairs.size() << '/'
               << pairs.size() << " row sets equal SQLite; blank and produced absence distinct; "
-              << "left-extended reports 4/4; cursors 2/2; caller lock preserved; refusals 4/4; "
+              << "left-extended reports 4/4; cursors 2/2; caller lock preserved; refusals 1/1; "
               << "paths 2 seek/2 scan/0 hybrid; read fences 4/4.\n";
+    return true;
+}
+
+bool validate_sqlsel_join_family(const std::string& transcript)
+{
+    static constexpr std::array<SqlselOraclePair, 10> pairs{{
+        {"SQLSEL-JF-RIGHT-SEEK-ROWS", "SQLSEL-JF-O1", true},
+        {"SQLSEL-JF-RIGHT-SEEK-COUNT", "SQLSEL-JF-O2", true},
+        {"SQLSEL-JF-FULL-SEEK-ROWS", "SQLSEL-JF-O3", true},
+        {"SQLSEL-JF-FULL-SEEK-COUNT", "SQLSEL-JF-O4", true},
+        {"SQLSEL-JF-RIGHT-SCAN-ROWS", "SQLSEL-JF-O5", true},
+        {"SQLSEL-JF-RIGHT-SCAN-COUNT", "SQLSEL-JF-O6", true},
+        {"SQLSEL-JF-FULL-SCAN-ROWS", "SQLSEL-JF-O7", true},
+        {"SQLSEL-JF-FULL-SCAN-COUNT", "SQLSEL-JF-O8", true},
+        {"SQLSEL-JF-CROSS-ROWS", "SQLSEL-JF-O9", true},
+        {"SQLSEL-JF-CROSS-COUNT", "SQLSEL-JF-O10", true}
+    }};
+    static constexpr std::array<const char*, 12> required{{
+        "JF_C1_left_cursor_restored:.T.",
+        "JF_C2_right_cursor_restored:.T.",
+        "JF_T1_caller_table_lock_preserved:.T.",
+        "SQLSEL: RIGHT JOIN access path -- CDX seek (inner=SQLJFR, tag=ID, probes=5, candidates=5).",
+        "SQLSEL: RIGHT JOIN access path -- nested-loop scan (outer=6 row(s), inner=7 row(s)).",
+        "SQLSEL: FULL JOIN access path -- CDX seek (inner=SQLJFR, tag=ID, probes=5, candidates=5).",
+        "SQLSEL: FULL JOIN access path -- nested-loop scan (outer=6 row(s), inner=7 row(s)).",
+        "SQLSEL: CROSS JOIN access path -- nested-loop scan (outer=6 row(s), inner=7 row(s)).",
+        "2 |  | 2 | R2",
+        "<UNMATCHED> | <UNMATCHED> | 7 | ",
+        "3 | <UNMATCHED> | <UNMATCHED> | <UNMATCHED>",
+        "6 | L6_ONLY | <UNMATCHED> | <UNMATCHED>"
+    }};
+    static constexpr std::array<const char*, 5> refusals{{
+        "SQLSEL: RIGHT JOIN with WHERE requires three-valued predicate support; P4.4 refuses it.",
+        "SQLSEL: FULL JOIN with WHERE requires three-valued predicate support; P4.4 refuses it.",
+        "SQLSEL: CROSS JOIN does not accept an ON clause.",
+        "SQLSEL: RIGHT JOIN requires ON <left-column> = <right-column>.",
+        "SQLSEL: FULL JOIN requires ON <left-column> = <right-column>."
+    }};
+
+    if (!validate_sqlsel_oracle_rows(transcript, "SQLSEL JOIN FAMILY ORACLE", pairs) ||
+        !require_exact_transcript_block(transcript, "SQLSEL JOIN FAMILY ORACLE",
+                                        "SQLSEL-JF-REFUSALS", refusals) ||
+        !require_transcript_fragments(transcript, "SQLSEL JOIN FAMILY ORACLE", required)) {
+        return false;
+    }
+
+    const std::size_t right_seek = transcript_count(
+        transcript, "SQLSEL: RIGHT JOIN access path -- CDX seek");
+    const std::size_t right_scan = transcript_count(
+        transcript, "SQLSEL: RIGHT JOIN access path -- nested-loop scan");
+    const std::size_t full_seek = transcript_count(
+        transcript, "SQLSEL: FULL JOIN access path -- CDX seek");
+    const std::size_t full_scan = transcript_count(
+        transcript, "SQLSEL: FULL JOIN access path -- nested-loop scan");
+    const std::size_t cross_scan = transcript_count(
+        transcript, "SQLSEL: CROSS JOIN access path -- nested-loop scan");
+    const std::size_t hybrid = transcript_count(
+        transcript, "JOIN access path -- hybrid");
+    const std::size_t fence_count = transcript_count(
+        transcript, "JOIN read transaction -- table fence (SQLJFL -> SQLJFR).");
+    const std::size_t right_extended = transcript_count(
+        transcript, "SQLSEL: RIGHT JOIN right-extended 3 row(s) with <UNMATCHED> left-side cells.");
+    const std::size_t full_left_extended = transcript_count(
+        transcript, "SQLSEL: FULL JOIN left-extended 2 row(s) with <UNMATCHED> right-side cells.");
+    const std::size_t full_right_extended = transcript_count(
+        transcript, "SQLSEL: FULL JOIN right-extended 3 row(s) with <UNMATCHED> left-side cells.");
+    if (right_seek != 2 || right_scan != 2 || full_seek != 2 || full_scan != 2 ||
+        cross_scan != 2 || hybrid != 0 || fence_count != pairs.size() ||
+        right_extended != 4 || full_left_extended != 4 || full_right_extended != 4) {
+        std::cout << "SQLSEL JOIN FAMILY ORACLE: FAIL -- expected RIGHT 2 seek/2 scan, "
+                     "FULL 2 seek/2 scan, CROSS 2 scan, 0 hybrid, 10 fences, "
+                     "and extension reports RIGHT 4/FULL-left 4/FULL-right 4; got "
+                  << right_seek << '/' << right_scan << ", "
+                  << full_seek << '/' << full_scan << ", " << cross_scan << ", "
+                  << hybrid << ", " << fence_count << ", " << right_extended << '/'
+                  << full_left_extended << '/' << full_right_extended << "\n";
+        return false;
+    }
+
+    std::cout << "SQLSEL JOIN FAMILY ORACLE: PASS -- " << pairs.size() << '/'
+              << pairs.size() << " row multisets equal SQLite; RIGHT/FULL absence and "
+              << "CROSS product proven; cursors 2/2; caller lock preserved; refusals 5/5; "
+              << "paths RIGHT 2 seek/2 scan, FULL 2 seek/2 scan, CROSS 2 scan; "
+              << "hybrid 0; fences 10/10; extension reports 12/12.\n";
     return true;
 }
 
@@ -1707,6 +1804,8 @@ bool validate_regression_transcript(const RegressionSpec& spec,
             return validate_sqlsel_join_edges(transcript);
         case RegressionValidator::SqlselLeftJoinOracleV1:
             return validate_sqlsel_left_join(transcript);
+        case RegressionValidator::SqlselJoinFamilyV1:
+            return validate_sqlsel_join_family(transcript);
         case RegressionValidator::SqlselBufferVisibilityV1:
             return validate_sqlsel_buffer_visibility(transcript);
         case RegressionValidator::EvaldiffV1:
