@@ -61,15 +61,15 @@ const ecosystem = [
   {
     title: "RelTalk",
     href: "/products/reltalk",
-    desc: "A relation-focused layer for declared relation graphs, traversal, workspace persistence, and connected data exploration.",
-    state: { label: "core runtime-proven; join/browse surfaces explicit-run", stateIn: "runtime evidence", href: "/docs/labtalk/runtime-evidence" },
+    desc: "Declared relation graphs, traversal, and joins. REL JOIN walks a parent and its children into one tuple; on a 34-table ERP schema the relation walker and SQLsel answered the same question across 58 foreign-key relations and agreed down to the record.",
+    state: { label: "joins runtime-proven; alpha", stateIn: "runtime evidence", href: "/docs/labtalk/runtime-evidence" },
     icon: GitBranch
   },
   {
     title: "SQLsel",
     href: "/products/sqlsel",
     desc: "The house SELECT over open work areas: selection, projection, ORDER BY, LIMIT, COUNT(*) -- every shipped operator verified against a SQLite oracle. An x64base set algebra under construction, operator by operator.",
-    state: { label: "shipped operators oracle-proven; joins in a future phase", stateIn: "runtime evidence", href: "/docs/labtalk/runtime-evidence" },
+    state: { label: "operators oracle-proven; joins today through RelTalk, SQL-syntax joins next", stateIn: "runtime evidence", href: "/docs/labtalk/runtime-evidence" },
     icon: BarChart3
   },
   {
