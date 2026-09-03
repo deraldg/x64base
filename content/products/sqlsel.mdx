@@ -63,6 +63,19 @@ not consult the declared relation graph or workspace state. That makes it an
 independent join path, not a second route to the graph
 [RelTalk](/products/reltalk) walks.
 
+**And it reads under a fence.** A join takes a non-blocking two-table read
+fence, acquiring both tables in canonical path order before either is read, and
+**lock contention refuses the statement rather than returning a partial answer**
+-- proven with two real processes: while one held a lock on the left table, the
+other refused the join before emitting any row *or* any access path. Locks the
+caller already held are preserved, and only the fences SQLsel took are released.
+
+The limit is stated because the mechanism invites overreading: this is a
+**cooperative statement read fence, not MVCC and not cross-table write
+atomicity.** It stops a concurrent writer from producing a fractured joined
+result. It does not version rows, and joined `UPDATE` / `DELETE` remain out of
+scope -- `COMMIT ALL` is still partial across DBF, memo and index storage.
+
 ## Not yet implemented
 
 `LEFT` / `RIGHT` / `FULL` / `CROSS` joins, `GROUP BY` / `HAVING`, expression

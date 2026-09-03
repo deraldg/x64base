@@ -41,7 +41,7 @@ The regression also asserts the parts that are easy to get quietly wrong:
 
 | Not supported | Status |
 |---|---|
-| `JOIN` **as SQL syntax inside a `SQLSEL` statement** | **Two-table equi `INNER JOIN` is runtime-proven in development** (2026-09-03, AIF-074 P4.1/P4.2) -- aliases, qualified columns, joined `WHERE`, `ORDER BY`, `LIMIT`, `COUNT(*)`, CDX-assisted seeking with scan fallback, and a reported access path. Four row sets are compared against an in-process SQLite oracle by an executable validator, and the validator was mutation-tested red. **Not yet in the public repository.** `LEFT` / `RIGHT` / `FULL` / `CROSS` remain planned (P4.3-P4.4) |
+| `JOIN` **as SQL syntax inside a `SQLSEL` statement** | **Two-table equi `INNER JOIN` is runtime-proven in development** (2026-09-03, AIF-074 P4.1/P4.2) -- aliases, qualified columns, joined `WHERE`, `ORDER BY`, `LIMIT`, `COUNT(*)`, CDX-assisted seeking with scan fallback, a reported access path, and a non-blocking two-table read fence that refuses on contention rather than returning a fractured result. Four row sets are compared against an in-process SQLite oracle by an executable validator, and the validator was mutation-tested red. A cooperative statement read fence -- **not MVCC, not cross-table write atomicity**. **Not yet in the public repository.** `LEFT` / `RIGHT` / `FULL` / `CROSS` remain planned (P4.3-P4.4) |
 | `GROUP BY` / `HAVING` | Not implemented anywhere in the engine |
 | Expression projection (`UPPER(name)` in the select list) | v1 accepts bare column names only |
 | `INSERT` / `UPDATE` / `DELETE` as SQL syntax | The engine mutates through `APPEND`, `REPLACE`, `DELETE`; SQL DML is planned |
