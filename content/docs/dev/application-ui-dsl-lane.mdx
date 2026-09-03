@@ -3,6 +3,11 @@ title: "Application UI DSL"
 description: "The Alpha UIDEF project: a DBF-backed portable application description with wxWidgets, Tk, HTML, and character-cell consumers."
 ---
 
+> **UIDEF is UI DEFINITION** -- a user-interface definition stored as an
+> x64base DBF design table with a memo sidecar. Not identity, not accounts,
+> not BBS. The acronym went unexpanded on every page that used it until
+> 2026-09-03.
+>
 > **Alpha -- chartered and in progress.** AIF-120 is no longer a planned lane
 > waiting to start. The design-table contract, importers, validators, generators
 > and four target backends exist in development. Every lane ruling remains
@@ -99,7 +104,14 @@ each target states what it cannot preserve.
 Generated wx frontends can open the tables named by their own UIDEF document,
 resolve location through a workspace, bind grids to the engine's tuple stream,
 and use the engine's typed locking services. The UIDEF document is also a CMake
-input: it can generate C++ and participate in building the resulting frontend.
+input: author the document, generate C++ from it, compile it, and link it
+against the engine, all from `cmake --build`.
+
+**That target is standalone on purpose and is not reached by the root build.**
+Configuring the root build to produce one window would also build the whole
+shell, so the lane follows the pydottalk precedent (AIF-119) instead. The
+consequence worth knowing: a normal build never compiles this lane, so it
+will not appear in a build log.
 
 `APPGUI` and its alias `GUI` launch DotTalk++ Workbench through the product's
 registered GUI path. That proves a shell-to-window launcher, but it is not a
