@@ -309,3 +309,33 @@ No push, main-tree promotion, website edit, or publication is claimed.
 - Boundaries are explicit: P4.2 accelerates only an already-active CDX tag on the
   inner field. It does not choose join order, auto-activate another tag, use CNX,
   or add a cost model. Those are later optimizer decisions, not hidden behavior.
+
+**2026-09-03, adversarial regression expansion (candidate evidence):**
+
+- `SQLSEL_BUFFER_VIS` no longer depends on a prose read rule. Its attached
+  validator compares five committed-truth SQLsel blocks with SQLite across a
+  dirty buffer, rollback, and commit; it also pins the dirty TupleRow preview
+  before and after SQLsel and requires three cursor-restoration markers.
+- The intact buffer fixture passed `5/5` oracle pairs, `2/2` dirty previews, and
+  `3/3` cursor guards. Changing only SQLite's post-commit value to `HIST` made
+  the validator reject the S4/O4 block while showing SQLsel's `MATH` row against
+  the mutated oracle's `HIST`; restoration returned the exact fixture to green.
+- `SQLSEL_JOIN_EDGES` adds duplicate numeric keys, unmatched rows, deleted rows
+  on both sides under `SET DELETED OFF`, character keys that collide after CDX
+  normalization (`aa`/`AA`, `Bb`/`BB`), and an active wrong-tag fallback. Four
+  SQLsel result blocks match SQLite, four cursors are restored, and four invalid
+  JOIN shapes must be refused with their exact corrective messages.
+- Its access-path gate pins composition and work, not merely report count: two
+  CDX seeks, two nested-loop scans, zero hybrid reports, with exact probe and
+  candidate counts. Activating the wrong tag for one indexed arm preserved all
+  four row sets but changed the composition to one seek and three scans; the
+  validator rejected that run. Restoring the intended tag returned `4/4` oracle
+  parity and the exact `2/2/0` access composition.
+- An initial cursor assertion incorrectly asked the classic field reader to see
+  an uncommitted table-buffer overlay. The fixture was corrected to use TupleRow
+  as the overlay authority, repeated after SQLsel, while cursor restoration is
+  asserted independently against committed identity. No product defect is
+  claimed from that discarded assertion.
+- Both scripts remain explicit-run candidates pending independent review and
+  soak. This evidence does not widen SQLsel syntax or semantics and does not
+  claim a push, main-tree promotion, or website publication.

@@ -91,6 +91,8 @@ enum class RegressionValidator {
     None,
     SqlselSelectOracleV1,
     SqlselJoinOracleV1,
+    SqlselJoinEdgesV1,
+    SqlselBufferVisibilityV1,
     EvaldiffV1
 };
 
@@ -153,7 +155,7 @@ struct RegressionSpec {
 // compile error ("too many initializers"), which is the safe failure -- but it
 // is a recurring papercut: it happened when CNXLIVE was added on 2026-07-31.
 // Bump it when you add a regression.
-constexpr std::array<RegressionSpec, 65> kRegressionSpecs{{
+constexpr std::array<RegressionSpec, 66> kRegressionSpecs{{
     {
         "NONDESTRUCTIVE",
         "dottalkpp_non_destructive_smoke.dts",
@@ -468,8 +470,10 @@ constexpr std::array<RegressionSpec, 65> kRegressionSpecs{{
     {
         "SQLSEL_BUFFER_VIS",
         "sqlsel_buffer_visibility_regression.dts",
-        "SQLSEL/TUPLE TABLE BUFFER visibility split (AIF-074 follow-up): TUPLE remains buffer-preview, while SQLSEL SELECT projects the same committed table truth its WHERE predicate scans. Self-bootstrapping throwaway SQLBUFVIS table in SANDBOX; explicit-run because it mutates the filesystem.",
-        false
+        "SQLSEL/TUPLE TABLE BUFFER visibility split (AIF-074): TUPLE previews the dirty current-row buffer while SQLSEL reads committed table truth. Five marked SQLSEL result sets are compared with an in-run SQLite oracle across dirty preview, rollback, and commit; the dirty TUPLE row and three cursor guards are exact transcript requirements. Self-bootstrapping throwaway SQLBUFVIS table in SANDBOX; self-erasing. Explicit-run pending independent review and soak.",
+        false,
+        false,
+        RegressionValidator::SqlselBufferVisibilityV1
     },
     {
         "SQLSEL_SELECT_V1",
@@ -486,6 +490,14 @@ constexpr std::array<RegressionSpec, 65> kRegressionSpecs{{
         true,
         false,
         RegressionValidator::SqlselJoinOracleV1
+    },
+    {
+        "SQLSEL_JOIN_EDGES",
+        "sqlsel_join_edges_regression.dts",
+        "Adversarial SQLsel INNER JOIN proof (AIF-074 P4.2): numeric duplicates, deleted outer/inner rows, unmatched keys, CDX character-key case collisions that require typed row revalidation, active-tag mismatch scan fallback, cursor restoration, and four corrective refusals. Four marked SQLsel row sets are compared with an in-run SQLite oracle. The validator pins the access-path composition at exactly two CDX seeks, two nested-loop scans, zero hybrid, and pins the probe/candidate counts that make the duplicate and case-collision arms discriminating. Self-bootstrapping four-table SANDBOX fixture with self-erasing sidecars. Explicit-run pending independent review and soak.",
+        false,
+        false,
+        RegressionValidator::SqlselJoinEdgesV1
     },
     {
         "EVALDIFF",
@@ -1239,6 +1251,69 @@ bool require_transcript_fragments(const std::string& transcript,
     return true;
 }
 
+template <std::size_t N>
+bool require_exact_transcript_block(const std::string& transcript,
+                                    const char* label,
+                                    const char* marker,
+                                    const std::array<const char*, N>& expected)
+{
+    std::vector<std::string> actual;
+    std::string error;
+    if (!transcript_block(transcript, std::string(marker) + "-BEGIN",
+                          std::string(marker) + "-END", actual, error)) {
+        std::cout << label << ": FAIL -- " << error << "\n";
+        return false;
+    }
+    if (actual.size() != expected.size()) {
+        std::cout << label << ": FAIL -- " << marker << " expected "
+                  << expected.size() << " line(s), got " << actual.size() << "\n";
+        return false;
+    }
+    for (std::size_t i = 0; i < expected.size(); ++i) {
+        if (actual[i] != expected[i]) {
+            std::cout << label << ": FAIL -- " << marker << " line " << (i + 1)
+                      << " mismatch\n"
+                      << "  expected: " << expected[i] << "\n"
+                      << "  actual  : " << actual[i] << "\n";
+            return false;
+        }
+    }
+    return true;
+}
+
+bool validate_sqlsel_buffer_visibility(const std::string& transcript)
+{
+    static constexpr std::array<SqlselOraclePair, 5> pairs{{
+        {"SQLSEL-BV-S1", "SQLSEL-BV-O1"},
+        {"SQLSEL-BV-S2", "SQLSEL-BV-O2"},
+        {"SQLSEL-BV-S3", "SQLSEL-BV-O3"},
+        {"SQLSEL-BV-S4", "SQLSEL-BV-O4"},
+        {"SQLSEL-BV-S5", "SQLSEL-BV-O5"}
+    }};
+    static constexpr std::array<const char*, 1> dirty_preview{{
+        "1 | MATH"
+    }};
+    static constexpr std::array<const char*, 3> required{{
+        "BV_C1_dirty_query_cursor_restored:.T.",
+        "BV_C2_rollback_query_cursor_restored:.T.",
+        "BV_C3_commit_query_cursor_restored:.T."
+    }};
+
+    if (!validate_sqlsel_oracle_rows(transcript, "SQLSEL BUFFER ORACLE", pairs) ||
+        !require_exact_transcript_block(transcript, "SQLSEL BUFFER ORACLE",
+                                        "SQLSEL-BV-DIRTY-TUPLE", dirty_preview) ||
+        !require_exact_transcript_block(transcript, "SQLSEL BUFFER ORACLE",
+                                        "SQLSEL-BV-DIRTY-TUPLE-AFTER", dirty_preview) ||
+        !require_transcript_fragments(transcript, "SQLSEL BUFFER ORACLE", required)) {
+        return false;
+    }
+
+    std::cout << "SQLSEL BUFFER ORACLE: PASS -- " << pairs.size() << '/'
+              << pairs.size() << " committed row sets equal SQLite; dirty preview 2/2; "
+              << "cursors 3/3; rollback and commit distinguished.\n";
+    return true;
+}
+
 bool validate_sqlsel_select_oracle(const std::string& transcript)
 {
     static constexpr std::array<SqlselOraclePair, 11> pairs{{
@@ -1342,6 +1417,67 @@ bool validate_sqlsel_join_oracle(const std::string& transcript)
     std::cout << "SQLSEL JOIN ORACLE: PASS -- " << pairs.size() << '/' << pairs.size()
               << " row sets equal SQLite; cursors 2/2; refusals 3/3; access paths "
               << access_path_count << '/' << pairs.size() << " (CDX seek 2, scan 2).\n";
+    return true;
+}
+
+bool validate_sqlsel_join_edges(const std::string& transcript)
+{
+    static constexpr std::array<SqlselOraclePair, 4> pairs{{
+        {"SQLSEL-JE-NUM-SEEK", "SQLSEL-JE-ON1"},
+        {"SQLSEL-JE-NUM-SCAN", "SQLSEL-JE-ON2"},
+        {"SQLSEL-JE-CHAR-SEEK", "SQLSEL-JE-OC1"},
+        {"SQLSEL-JE-CHAR-SCAN", "SQLSEL-JE-OC2"}
+    }};
+    static constexpr std::array<const char*, 8> required{{
+        "JE_C1_numeric_left_cursor_restored:.T.",
+        "JE_C2_numeric_right_cursor_restored:.T.",
+        "JE_C3_char_left_cursor_restored:.T.",
+        "JE_C4_char_right_cursor_restored:.T.",
+        "SQLSEL: INNER JOIN access path -- CDX seek (inner=SQLJNR, tag=ID, probes=3, candidates=3).",
+        "SQLSEL: INNER JOIN access path -- nested-loop scan (outer=4 row(s), inner=5 row(s)).",
+        "SQLSEL: INNER JOIN access path -- CDX seek (inner=SQLJCR, tag=CKEY, probes=3, candidates=8).",
+        "SQLSEL: INNER JOIN access path -- nested-loop scan (outer=4 row(s), inner=6 row(s))."
+    }};
+    static constexpr std::array<const char*, 4> refusals{{
+        "SQLSEL: joined table aliases must be distinct.",
+        "SQLSEL: JOIN ON must compare one column from each table.",
+        "SQLSEL: P4.1 accepts exactly one INNER JOIN.",
+        "SQLSEL: P4.1 joins two distinct open tables; self-join is not yet supported."
+    }};
+
+    if (!validate_sqlsel_oracle_rows(transcript, "SQLSEL JOIN EDGES ORACLE", pairs) ||
+        !require_exact_transcript_block(transcript, "SQLSEL JOIN EDGES ORACLE",
+                                        "SQLSEL-JE-REFUSALS", refusals) ||
+        !require_transcript_fragments(transcript, "SQLSEL JOIN EDGES ORACLE", required)) {
+        return false;
+    }
+
+    static const std::string access_prefix =
+        "SQLSEL: INNER JOIN access path -- ";
+    static const std::string seek_path =
+        "SQLSEL: INNER JOIN access path -- CDX seek";
+    static const std::string scan_path =
+        "SQLSEL: INNER JOIN access path -- nested-loop scan";
+    static const std::string hybrid_path =
+        "SQLSEL: INNER JOIN access path -- hybrid";
+    const std::size_t access_path_count = transcript_count(transcript, access_prefix);
+    const std::size_t seek_path_count = transcript_count(transcript, seek_path);
+    const std::size_t scan_path_count = transcript_count(transcript, scan_path);
+    const std::size_t hybrid_path_count = transcript_count(transcript, hybrid_path);
+    if (access_path_count != 4 || seek_path_count != 2 || scan_path_count != 2 ||
+        hybrid_path_count != 0) {
+        std::cout << "SQLSEL JOIN EDGES ORACLE: FAIL -- expected 4 access paths"
+                  << " (2 CDX seek, 2 nested-loop scan, 0 hybrid); got "
+                  << access_path_count << " (" << seek_path_count << " CDX seek, "
+                  << scan_path_count << " nested-loop scan, " << hybrid_path_count
+                  << " hybrid)\n";
+        return false;
+    }
+
+    std::cout << "SQLSEL JOIN EDGES ORACLE: PASS -- " << pairs.size() << '/'
+              << pairs.size() << " row sets equal SQLite; cursors 4/4; refusals 4/4; "
+              << "access paths 4/4 (CDX seek 2, scan 2, hybrid 0); "
+              << "probe/candidate counts exact.\n";
     return true;
 }
 
@@ -1483,6 +1619,10 @@ bool validate_regression_transcript(const RegressionSpec& spec,
             return validate_sqlsel_select_oracle(transcript);
         case RegressionValidator::SqlselJoinOracleV1:
             return validate_sqlsel_join_oracle(transcript);
+        case RegressionValidator::SqlselJoinEdgesV1:
+            return validate_sqlsel_join_edges(transcript);
+        case RegressionValidator::SqlselBufferVisibilityV1:
+            return validate_sqlsel_buffer_visibility(transcript);
         case RegressionValidator::EvaldiffV1:
             return validate_evaldiff(transcript);
     }
