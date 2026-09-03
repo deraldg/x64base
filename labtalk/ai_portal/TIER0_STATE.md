@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-09-03T22:57:01Z
+    generated_utc : 2026-09-03T23:03:53Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,9 +11,9 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : e1217dc8c  (2026-09-03)
+    HEAD          : 6df5592df  (2026-09-03)
     upstream      : e1217dc8c
-    unpushed      : 0 commit(s) ahead of upstream
+    unpushed      : 1 commit(s) ahead of upstream
 
 ## Declared target
 
@@ -22,12 +22,12 @@ cannot drift, because nothing here is written by hand.
 
 ## Newest closeout
 
-    file          : SESSION_CLOSEOUT_SQLSEL_P4_4_JOIN_FAMILY_2026-09-03.md
-    commits behind HEAD : 0
+    file          : SESSION_CLOSEOUT_SQLSEL_USER_MANUAL_2026-09-03.md
+    commits behind HEAD : ?
 
 ## Staleness warnings
 
-- none
+- 1 commit(s) are unpushed and invisible to a clone.
 
 ## Claimed lanes (newest first)
 

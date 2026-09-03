@@ -119,7 +119,7 @@ projection, never a hand-authored sibling authority.
 | P3 | **DONE 2026-07-29.** Single-table `SELECT` (projection/WHERE/ORDER BY/LIMIT/COUNT(*)) | **G3 CLOSED** (SQLite oracle, registered `SQLSEL_SELECT_V1`) |
 | P4 | Relational algebra (roll-up of P4.0a-P4.7, R26): join family, set operations, grouping/aggregation, subqueries. Ad-hoc ON matching per R21 -- NO declared relation required (R27); chain nested-loop; index-nested-loop where a tag exists; minimal EXPLAIN | G4 (oracle + cross-algorithm identity) |
 | P5 | DML + transactions as assembly: buffer/WAL, FLOCK, delta-based affected-rows, BEGIN/COMMIT/ROLLBACK verbs; `DELETE` alias (R9) | G5 (crash regression + oracle) |
-| P6 | PDLC ascent: manual family, HELP, website promotion (closes OQ-9), LabTalk lessons, evidence gallery | G6 (nine-gate checkpoint) |
+| P6 | **IN PROGRESS 2026-09-03.** The first user-manual chapter now documents the current statement and legacy forms, session neutrality, the REL contrast, the complete implemented JOIN family, access-path and cooperative-fence reports, committed truth, blank-versus-produced-absence semantics, workspace name limits, corrective refusals, and the implemented-versus-planned boundary. The user-manual index links it. A dogfood run caught and corrected the source-owned `ENROLL.COURSE` example to the shipped `ENROLL.CLS_ID` schema. HELP-data harvest, developer-manual regeneration, LabTalk lessons, evidence gallery, and any further website promotion remain separate gates | G6 OPEN; USER MANUAL DRAFT LANDED |
 
 Out of scope, each returning as its own lane: window functions, common table
 expressions, recursive queries, x32 support, any second SQL dialect surface.
@@ -447,5 +447,26 @@ No push, main-tree promotion, website edit, or publication is claimed.
   and does not define duplicate logical names across concurrently open
   workspaces. Cross-workspace SQLsel is therefore not claimed by P4.4.
 
-This implementation and evidence remain local to `development`, review-needed,
-and unpushed. No main-tree promotion, website edit, or publication is claimed.
+**2026-09-03, P6 user-manual draft:**
+
+- `docs/manuals/user/sqlsel.md` is the first SQLsel-owned user chapter. It
+  describes current behavior as a workflow and keeps future algebra visibly
+  separate from implemented grammar.
+- The chapter carries the required side-by-side SQLsel versus REL/RelTalk
+  comparison, and it distinguishes statement SQLsel from the legacy
+  current-area predicate scan.
+- A live shipped-data probe rejected the harvested `E.COURSE` example because
+  `ENROLL` owns `CLS_ID`. The source usage contract was corrected, and the
+  replacement INNER JOIN ran over the shipped x64 tables while preserving both
+  source cursors.
+- A clean `dottalkpp` Release target at feature commit `6df5592df` passed all
+  seven named SQLsel/evaluator validators: 11 SELECT oracle pairs, 4 INNER
+  pairs, 4 adversarial JOIN pairs, 4 LEFT pairs, 10 RIGHT/FULL/CROSS pairs, 5
+  buffer-visibility pairs, and 22 exact evaluator cases.
+- The chapter is `DRAFT` and development-scoped. No HELP DBF mutation,
+  developer-manual regeneration, LabTalk lesson, main-tree promotion, website
+  edit, or public publication is claimed by this phase.
+
+The P4.4 implementation and closeout are pushed to `origin/development` through
+`e1217dc8c`. The P6 manual commit `6df5592df` is local and review-needed at this
+recording point. No main-tree promotion or public publication is claimed.
