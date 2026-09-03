@@ -1,7 +1,7 @@
 1:"$Sreact.fragment"
-3:I[97367,["/_next/static/chunks/3ibsrl5q8-x0a.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
-4:"$Sreact.suspense"
-2:T4c5,<h2 id="overview"><a class="no-underline" href="#overview">Overview</a></h2>
+4:I[97367,["/_next/static/chunks/0dm5rzn0_5wzu.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
+5:"$Sreact.suspense"
+2:Taa2,<h2 id="overview"><a class="no-underline" href="#overview">Overview</a></h2>
 <p>RelTalk names the relation-facing workflow in the DotTalk++ / x64base system.</p>
 <p>Its subject is connected data across work areas: declared relation edges,
 asymmetric same-field/cross-owner links, saved workspace relation state, and
@@ -14,11 +14,29 @@ REL ADD SYSSUBCMD SYSENTVAR ON QUAL_NAME TO HELP_OWNR
 <ul>
 <li><code>REL ADD</code></li>
 <li><code>REL LIST ALL</code></li>
-<li><code>REL ENUM</code></li>
+<li><code>REL JOIN [DISTINCT|ALL] [LIMIT &#x3C;n>] [&#x3C;child> ...] TUPLE &#x3C;alias>.&#x3C;field>[, ...]</code></li>
+<li><code>REL ENUM [LIMIT &#x3C;n>] [&#x3C;child> ...] TUPLE &#x3C;alias>.&#x3C;field>[, ...]</code></li>
 <li><code>REL REFRESH</code></li>
+<li><code>REL SCANLIMIT [&#x3C;n>]</code></li>
 <li><code>WORKSPACE SAVE</code> / <code>WORKSPACE LOAD</code></li>
 <li><code>ERSATZ</code>, <code>ERSATZ PATH</code>, and <code>RBROWSE</code></li>
 <li>workspace graph and GUI contract docs</li>
 </ul>
-<p>See <a href="/docs/talk-family/reltalk">RelTalk docs</a>, <a href="/docs/dev/project-truth">Current Project Truth</a>, and the canonical public repo <a href="https://github.com/deraldg/x64base">deraldg/x64base</a>.</p>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=f9cd1ff5ef3e","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/?v=f9cd1ff5ef3e","children":"Products"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products/reltalk",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/reltalk/?v=f9cd1ff5ef3e","children":"RelTalk"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"RelTalk"}],["$","p",null,{"className":"mt-2 text-muted","children":"Relation graphs, asymmetric links, workspace persistence, and ERSATZ traversal."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose dark:prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:break-words prose-code:whitespace-normal prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30 prose-pre:text-fg [&_pre_code]:text-fg [&_pre_code_span]:text-inherit","dangerouslySetInnerHTML":{"__html":"$2"},"children":null}]}]]}],null,["$","$L3",null,{"children":["$","$4",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"HlEwtTKseS8ApOvwpb_eT"}
-5:null
+<h2 id="the-join"><a class="no-underline" href="#the-join">The join</a></h2>
+<p><code>REL JOIN</code> walks a declared parent and its children and emits one tuple per
+combination, projecting the <code>&#x3C;alias>.&#x3C;field></code> list named after <code>TUPLE</code>. It is a true
+enumerator: it delegates to the same walker as <code>REL ENUM</code>
+(<code>src/cli/join_engine.cpp</code>). The historical single-row form -- one tuple built
+from wherever the relation pointers currently sit -- is preserved as
+<code>REL JOIN ONE</code>, and <code>ONE</code> given a child chain is <strong>refused rather than
+silently ignored</strong>, because a traversal that never happened should not report
+success (AIF-147).</p>
+<p><code>REL SCANLIMIT</code> sets the relation engine's per-hop record budget. It caps what a
+traversal <strong>finds</strong>, not what is displayed -- lowering it changes match counts
+and drops join rows, where <code>ERSATZ LIMIT</code> only shortens the screen. A truncated
+<code>REL JOIN</code> or <code>REL ENUM</code> restates the limit and the row count at the result, and
+<code>REL LIST</code> says it is reporting lower bounds, because a truncated count is not a
+short list: it is a wrong number in the shape of a right one.</p>
+<p>See <a href="/docs/talk-family/reltalk">RelTalk docs</a>, <a href="/docs/dev/project-truth">Current Project Truth</a>, and the canonical public repo <a href="https://github.com/deraldg/x64base">deraldg/x64base</a>.</p>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=471c570e60ed","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/?v=471c570e60ed","children":"Products"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products/reltalk",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/reltalk/?v=471c570e60ed","children":"RelTalk"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"RelTalk"}],["$","p",null,{"className":"mt-2 text-muted","children":"Relation graphs, asymmetric links, workspace persistence, and ERSATZ traversal."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose dark:prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:break-words prose-code:whitespace-normal prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30 prose-pre:text-fg [&_pre_code]:text-fg [&_pre_code_span]:text-inherit","dangerouslySetInnerHTML":{"__html":"$2"},"children":null}]}]]}],null,"$L3"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"fmcYfeA2NhhivxtsOVFDZ"}
+3:["$","$L4",null,{"children":["$","$5",null,{"name":"Next.MetadataOutlet","children":"$@6"}]}]
+6:null

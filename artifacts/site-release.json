@@ -1,10 +1,10 @@
 {
   "site": "x64base.com",
   "package_version": "0.1.0",
-  "release_number": 134,
+  "release_number": 135,
   "source_branch": "codex/lean-sites-publish",
-  "source_commit": "f9cd1ff5ef3e6eefb626cd9489254b413e946e44",
-  "published_at_utc": "2026-09-02T14:14:26.374Z",
+  "source_commit": "471c570e60ed9134a9b12e066dd8b31c4c5a83f8",
+  "published_at_utc": "2026-09-03T03:43:34.776Z",
   "publish_mode": "github-pages",
   "source_root": "website source tree",
   "deploy_branch": "gh-pages",

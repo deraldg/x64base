@@ -1,7 +1,7 @@
 1:"$Sreact.fragment"
-4:I[97367,["/_next/static/chunks/3ibsrl5q8-x0a.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
+4:I[97367,["/_next/static/chunks/0dm5rzn0_5wzu.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
 5:"$Sreact.suspense"
-2:Tb5f,<h2 id="overview"><a class="no-underline" href="#overview">Overview</a></h2>
+2:Te16,<h2 id="overview"><a class="no-underline" href="#overview">Overview</a></h2>
 <p>SQLsel names the SQL-facing query workflow in the DotTalk++ / x64base system.</p>
 <p>Its subject is set-oriented retrieval: a <code>SELECT</code> statement that describes the
 rows it wants and returns them, rather than positioning a cursor and navigating.
@@ -30,6 +30,16 @@ availability. Each command states the boundary in its own <code>USAGE</code> out
 <h2 id="not-yet-implemented"><a class="no-underline" href="#not-yet-implemented">Not yet implemented</a></h2>
 <p><code>JOIN</code>, <code>GROUP BY</code> / <code>HAVING</code>, expression projection in the select list, SQL
 <code>INSERT</code> / <code>UPDATE</code> / <code>DELETE</code>, and bare <code>SELECT</code> without the <code>SQLSEL</code> prefix.</p>
+<p><code>JOIN</code> here means SQL-syntax join inside a <code>SQLSEL</code> statement. Joining itself is
+not missing from the engine -- <strong>three forms ship and are proven</strong>, all through
+<a href="/products/reltalk">RelTalk</a>:</p>
+<ul>
+<li><code>SET RELATION</code> positional navigation, parent cursor driving the child</li>
+<li><code>REL JOIN</code> / <code>REL ENUM</code>, one tuple per parent/child combination, with
+<code>DISTINCT</code>, <code>ALL</code> and <code>LIMIT</code></li>
+<li><code>REL JOIN ONE</code>, a single row from wherever the relation pointers currently sit</li>
+</ul>
+<p>What is not yet implemented is reaching any of them from a <code>SELECT</code>.</p>
 <h2 id="relationship-to-reltalk"><a class="no-underline" href="#relationship-to-reltalk">Relationship to RelTalk</a></h2>
 <p>SQLsel and <a href="/products/reltalk">RelTalk</a> both reach connected data and are not the
 same thing. RelTalk is navigational: relations are declared with <code>REL ADD</code> and
@@ -38,6 +48,6 @@ RelTalk is the older model, inherited through the xBase line; SQLsel is the newe
 one. Neither replaces the other.</p>
 <p>See <a href="/docs/engine/sqlsel-and-sql-conformance">SQLsel and SQL Conformance</a> for the
 verification detail and the conformance map, <a href="/docs/talk-family/reltalk">RelTalk docs</a>,
-and the canonical public repo <a href="https://github.com/deraldg/x64base">deraldg/x64base</a>.</p>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=f9cd1ff5ef3e","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/?v=f9cd1ff5ef3e","children":"Products"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products/sqlsel",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/sqlsel/?v=f9cd1ff5ef3e","children":"SQLsel"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"SQLsel"}],["$","p",null,{"className":"mt-2 text-muted","children":"Set-oriented SELECT over open work areas, verified against a SQLite oracle."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose dark:prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:break-words prose-code:whitespace-normal prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30 prose-pre:text-fg [&_pre_code]:text-fg [&_pre_code_span]:text-inherit","dangerouslySetInnerHTML":{"__html":"$2"},"children":null}]}]]}],null,"$L3"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"HlEwtTKseS8ApOvwpb_eT"}
+and the canonical public repo <a href="https://github.com/deraldg/x64base">deraldg/x64base</a>.</p>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=471c570e60ed","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/?v=471c570e60ed","children":"Products"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products/sqlsel",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/sqlsel/?v=471c570e60ed","children":"SQLsel"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"SQLsel"}],["$","p",null,{"className":"mt-2 text-muted","children":"Set-oriented SELECT over open work areas, verified against a SQLite oracle."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose dark:prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:break-words prose-code:whitespace-normal prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30 prose-pre:text-fg [&_pre_code]:text-fg [&_pre_code_span]:text-inherit","dangerouslySetInnerHTML":{"__html":"$2"},"children":null}]}]]}],null,"$L3"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"fmcYfeA2NhhivxtsOVFDZ"}
 3:["$","$L4",null,{"children":["$","$5",null,{"name":"Next.MetadataOutlet","children":"$@6"}]}]
 6:null

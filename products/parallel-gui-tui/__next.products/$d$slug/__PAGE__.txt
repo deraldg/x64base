@@ -1,7 +1,7 @@
 1:"$Sreact.fragment"
-4:I[97367,["/_next/static/chunks/3ibsrl5q8-x0a.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
+4:I[97367,["/_next/static/chunks/0dm5rzn0_5wzu.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
 5:"$Sreact.suspense"
-2:T286d,<h2 id="overview"><a class="no-underline" href="#overview">Overview</a></h2>
+2:T2b73,<h2 id="overview"><a class="no-underline" href="#overview">Overview</a></h2>
 <p>Parallel GUI/TUI is the DotTalk++ Workbench product lane for keeping graphical
 and terminal interfaces aligned over the same x64base and DotTalk++ runtime.</p>
 <p>The goal is a shared engine truth: the GUI, TUI, CLI, browser, and workbench
@@ -23,10 +23,18 @@ buffers, and output readback.</li>
 runtime evidence, including visible warnings and development-build labels,
 rather than release-polish claims.</p>
 </blockquote>
-<p>The Workbench is the wxWidgets front end. It is one window over the same engine
-the CLI drives -- not a second implementation of the table mechanics -- and it
-reaches the runtime through the command bridge, so a menu action and a typed
-command travel the same path and report the same state.</p>
+<p>The Workbench is the wxWidgets front end, launched from the shell by <code>APPGUI</code>
+(alias <code>GUI</code>). It is one window over the same engine the CLI drives -- not a
+second implementation of the table mechanics -- and it reaches the runtime
+through the command bridge, so a menu action and a typed command travel the same
+path and report the same state.</p>
+<p><strong>It is built to display and explain the engine's features, and to be a threaded
+GUI over them.</strong> That is its job: not a shipping application, but a surface where
+what the engine does is visible while it does it. <code>dottalkpp</code> deliberately never
+links wxWidgets, so <code>APPGUI</code> launches a separate process rather than standing a
+second UI thread beside the shell's -- and the command is registered
+unconditionally, so on a build without the GUI it reports what it found instead
+of answering <code>Unknown command</code>.</p>
 <p>The main window carries a Workspace Areas list, a command box with a Run
 button, a log pane that names what it did, and a status bar reporting the
 active table, rows shown, record number, logical row and current order. Work is
@@ -85,13 +93,15 @@ container. Inspection names the boundary and performs no hydration.</em></p>
 <p><em>A database as a value: inspect the carrier, validate its members, rebuild the
 database into RAM, then open the resulting workspace in the same Workbench.</em></p>
 <h3 id="early-multi-workspace-work"><a class="no-underline" href="#early-multi-workspace-work">Early multi-workspace work</a></h3>
-<p>The next Alpha increment is a manager for multiple named workspaces, including
-recursive and nested organization. The architectural issue is scope: each
-hydrated MINIDB needs an owned RAM root, area set, relation graph and lifecycle
-so that identical table names do not collapse into one global namespace.</p>
-<p>This page discusses that work while it is underway, but does not present
-co-residency, recursion or nesting as completed behavior. Those claims move to
-the proven surface only with runtime evidence and stated limits.</p>
+<p>Co-residency and nesting have since landed. Several workspaces are resident at
+once (<code>OPEN</code> and <code>LOAD</code> are both additive since 2026-08-26), a workspace records
+its parent's durable id and its depth when it is created, cycles are refused, and
+<code>DESTROY</code> retires only an empty, childless workspace.</p>
+<p>What the architectural issue reduced to is <strong>scope</strong>: each hydrated MINIDB still
+needs an owned RAM root so identical table names do not collapse into one global
+namespace, and cross-workspace name resolution is still open. The lane stays
+Alpha because that surface is still moving -- not because the behaviour is
+unproven.</p>
 <p>The house rule behind both behaviours is the same one the engine follows: a
 surface that cannot do what you asked should refuse and name the reason, not
 proceed and look successful.</p>
@@ -111,6 +121,6 @@ order-unavailable warning. Published as-is rather than reshot, because a page
 that only shows the good frames is not evidence.</em></p>
 <p>See <a href="/docs/talk-family/parallel-gui-tui">Parallel GUI/TUI docs</a>,
 <a href="/docs/talk-family/arctic">Arctic TUI docs</a>, and the
-<a href="/docs/labtalk/runtime-evidence">Runtime Evidence Gallery</a>.</p>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=f9cd1ff5ef3e","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/?v=f9cd1ff5ef3e","children":"Products"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products/parallel-gui-tui",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/parallel-gui-tui/?v=f9cd1ff5ef3e","children":"Parallel GUI/TUI"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Parallel GUI/TUI"}],["$","p",null,{"className":"mt-2 text-muted","children":"DotTalk++ Workbench product lane for aligned graphical and terminal interfaces over the same runtime."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose dark:prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:break-words prose-code:whitespace-normal prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30 prose-pre:text-fg [&_pre_code]:text-fg [&_pre_code_span]:text-inherit","dangerouslySetInnerHTML":{"__html":"$2"},"children":null}]}]]}],null,"$L3"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"HlEwtTKseS8ApOvwpb_eT"}
+<a href="/docs/labtalk/runtime-evidence">Runtime Evidence Gallery</a>.</p>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=471c570e60ed","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/?v=471c570e60ed","children":"Products"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products/parallel-gui-tui",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/parallel-gui-tui/?v=471c570e60ed","children":"Parallel GUI/TUI"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Parallel GUI/TUI"}],["$","p",null,{"className":"mt-2 text-muted","children":"DotTalk++ Workbench product lane for aligned graphical and terminal interfaces over the same runtime."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose dark:prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:break-words prose-code:whitespace-normal prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30 prose-pre:text-fg [&_pre_code]:text-fg [&_pre_code_span]:text-inherit","dangerouslySetInnerHTML":{"__html":"$2"},"children":null}]}]]}],null,"$L3"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"fmcYfeA2NhhivxtsOVFDZ"}
 3:["$","$L4",null,{"children":["$","$5",null,{"name":"Next.MetadataOutlet","children":"$@6"}]}]
 6:null
