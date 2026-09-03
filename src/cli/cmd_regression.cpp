@@ -482,7 +482,7 @@ constexpr std::array<RegressionSpec, 65> kRegressionSpecs{{
     {
         "SQLSEL_INNER_JOIN",
         "sqlsel_inner_join_regression.dts",
-        "SQLsel G4a (AIF-074 P4.1): two-table INNER JOIN with aliases, qualified fields, numeric equi-key matching, row multiplication, joined TupleRow WHERE, ORDER BY/LIMIT, COUNT(*), two-cursor restoration, corrective errors, and a reported nested-loop scan path. Four marked SQLsel row sets are automatically compared with an in-run SQLite oracle over identical data; a mismatch records an error and prints FAIL. Self-bootstrapping throwaway SQLJSTU/SQLJENR tables in SANDBOX; self-erasing. Promoted 2026-09-03 because no other default spec executes SQL-syntax JOIN or asserts its access-path report.",
+        "SQLsel G4a/G4b (AIF-074 P4.1/P4.2): two-table INNER JOIN with aliases, qualified fields, numeric equi-key matching, row multiplication, joined TupleRow WHERE, ORDER BY/LIMIT, COUNT(*), two-cursor restoration, corrective errors, and reported CDX-seek or nested-loop access. Four marked SQLsel row sets are automatically compared with an in-run SQLite oracle over identical data; two run through the indexed inner side and two through scan fallback. A mismatch, a missing path, or a hybrid path records an error and prints FAIL. Self-bootstrapping throwaway SQLJSTU/SQLJENR tables and index sidecars in SANDBOX; self-erasing. Promoted 2026-09-03 because no other default spec executes SQL-syntax JOIN or asserts its access-path report.",
         true,
         false,
         RegressionValidator::SqlselJoinOracleV1
@@ -1317,18 +1317,31 @@ bool validate_sqlsel_join_oracle(const std::string& transcript)
         return false;
     }
 
-    static const std::string access_path =
+    static const std::string access_prefix =
+        "SQLSEL: INNER JOIN access path -- ";
+    static const std::string seek_path =
+        "SQLSEL: INNER JOIN access path -- CDX seek";
+    static const std::string scan_path =
         "SQLSEL: INNER JOIN access path -- nested-loop scan";
-    const std::size_t access_path_count = transcript_count(transcript, access_path);
-    if (access_path_count != pairs.size()) {
-        std::cout << "SQLSEL JOIN ORACLE: FAIL -- expected " << pairs.size()
-                  << " reported access paths, got " << access_path_count << "\n";
+    static const std::string hybrid_path =
+        "SQLSEL: INNER JOIN access path -- hybrid";
+    const std::size_t access_path_count = transcript_count(transcript, access_prefix);
+    const std::size_t seek_path_count = transcript_count(transcript, seek_path);
+    const std::size_t scan_path_count = transcript_count(transcript, scan_path);
+    const std::size_t hybrid_path_count = transcript_count(transcript, hybrid_path);
+    if (access_path_count != pairs.size() || seek_path_count != 2 ||
+        scan_path_count != 2 || hybrid_path_count != 0) {
+        std::cout << "SQLSEL JOIN ORACLE: FAIL -- expected 4 access paths"
+                  << " (2 CDX seek, 2 nested-loop scan, 0 hybrid); got "
+                  << access_path_count << " (" << seek_path_count << " CDX seek, "
+                  << scan_path_count << " nested-loop scan, " << hybrid_path_count
+                  << " hybrid)\n";
         return false;
     }
 
     std::cout << "SQLSEL JOIN ORACLE: PASS -- " << pairs.size() << '/' << pairs.size()
               << " row sets equal SQLite; cursors 2/2; refusals 3/3; access paths "
-              << access_path_count << '/' << pairs.size() << ".\n";
+              << access_path_count << '/' << pairs.size() << " (CDX seek 2, scan 2).\n";
     return true;
 }
 

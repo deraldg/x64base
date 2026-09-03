@@ -45,6 +45,8 @@
 #include "cli/expr/value_eval.hpp"
 #include "cli/expr/api.hpp"
 #include "expr_tuple_glue.hpp"
+#include "xindex/attach.hpp"
+#include "xindex/index_manager.hpp"
 
 namespace {
 
@@ -281,9 +283,10 @@ PredicateVerdict evaluate_tuple_predicate(const dottalk::expr::Expr* program,
     }
 }
 
-// P4.1 is deliberately independent of REL/SET RELATION (R17/R21/R27). It is
-// the correctness-first nested-loop matcher. P4.2 may replace the inner scan
-// with a reported seek path without changing this statement contract.
+// P4.1/P4.2 are deliberately independent of REL/SET RELATION (R17/R21/R27).
+// The correctness-first nested loop remains the fallback. When the inner ON
+// field is the active tag of an attached CDX/LMDB index, P4.2 probes that tag
+// and still re-verifies every landed row against the ON comparison.
 bool execute_inner_join(const std::string& select_list,
                         const std::string& from_clause,
                         const std::string& where_text,
@@ -424,6 +427,15 @@ bool execute_inner_join(const std::string& select_list,
 
     const std::uint64_t left_count = static_cast<std::uint64_t>(left.area->recCount());
     const std::uint64_t right_count = static_cast<std::uint64_t>(right.area->recCount());
+    xindex::IndexManager* inner_index = xindex::manager_if_attached(*right.area);
+    const bool index_candidate = inner_index != nullptr &&
+                                 inner_index->isCdx() &&
+                                 inner_index->activeTagMatchesField(
+                                     static_cast<int>(on_right.field_index) + 1);
+    std::size_t index_probes = 0;
+    std::size_t index_candidates = 0;
+    std::size_t scan_probes = 0;
+
     for (std::uint64_t li = 1; li <= left_count; ++li) {
         std::vector<std::string> lv;
         {
@@ -431,13 +443,9 @@ bool execute_inner_join(const std::string& select_list,
             left.area->gotoRec64(li);
             if (!read_area_row(*left.area, lv) || left.area->isDeleted()) continue;
         }
-        for (std::uint64_t ri = 1; ri <= right_count; ++ri) {
-            std::vector<std::string> rv;
-            {
-                cli::ScopedAreaSelect focus(right.area);
-                right.area->gotoRec64(ri);
-                if (!read_area_row(*right.area, rv) || right.area->isDeleted()) continue;
-            }
+
+        const auto append_match = [&](std::vector<std::string> rv,
+                                      std::uint64_t ri) -> bool {
             if (value_equal(lv[on_left.field_index], rv[on_right.field_index])) {
                 JoinedRow joined{lv, rv, li, ri};
                 if (where_program) {
@@ -463,12 +471,71 @@ bool execute_inner_join(const std::string& select_list,
                     const auto verdict = evaluate_tuple_predicate(where_program.get(), tuple);
                     if (verdict.state == PredicateState::Error) {
                         std::cout << "SQLSEL: predicate evaluation failed: " << verdict.error << "\n";
-                        return true;
+                        return false;
                     }
-                    if (verdict.state == PredicateState::False) continue;
+                    if (verdict.state == PredicateState::False) return true;
                 }
                 rows.push_back(std::move(joined));
             }
+            return true;
+        };
+
+        bool used_index_for_outer = false;
+        if (index_candidate) {
+            const std::size_t rows_before_probe = rows.size();
+            try {
+                const xindex::Key key = inner_index->buildActiveTagBaseKeyFromString(
+                    lv[on_left.field_index]);
+                if (!key.empty()) {
+                    auto cursor = inner_index->seek(key);
+                    if (cursor) {
+                        used_index_for_outer = true;
+                        bool probe_usable = true;
+                        ++index_probes;
+                        xindex::Key landed_key;
+                        xindex::RecNo ri = 0;
+                        bool found = cursor->first(landed_key, ri);
+                        while (found && landed_key == key) {
+                            ++index_candidates;
+                            std::vector<std::string> rv;
+                            {
+                                cli::ScopedAreaSelect focus(right.area);
+                                if (!right.area->gotoRec64(ri) ||
+                                    !read_area_row(*right.area, rv)) {
+                                    probe_usable = false;
+                                } else if (!right.area->isDeleted()) {
+                                    if (!append_match(std::move(rv), ri)) return true;
+                                }
+                            }
+                            if (!probe_usable) break;
+                            found = cursor->next(landed_key, ri);
+                        }
+                        if (!probe_usable) {
+                            rows.resize(rows_before_probe);
+                            used_index_for_outer = false;
+                        }
+                    }
+                }
+            } catch (...) {
+                // Correctness outranks acceleration. If a usable-looking index
+                // cannot serve this probe, scan this outer row and report the
+                // hybrid path rather than returning a partial answer silently.
+                rows.resize(rows_before_probe);
+                used_index_for_outer = false;
+            }
+        }
+
+        if (used_index_for_outer) continue;
+
+        ++scan_probes;
+        for (std::uint64_t ri = 1; ri <= right_count; ++ri) {
+            std::vector<std::string> rv;
+            {
+                cli::ScopedAreaSelect focus(right.area);
+                right.area->gotoRec64(ri);
+                if (!read_area_row(*right.area, rv) || right.area->isDeleted()) continue;
+            }
+            if (!append_match(std::move(rv), ri)) return true;
         }
     }
 
@@ -482,8 +549,20 @@ bool execute_inner_join(const std::string& select_list,
         });
     }
 
-    std::cout << "SQLSEL: INNER JOIN access path -- nested-loop scan (outer="
-              << left_count << " row(s), inner=" << right_count << " row(s)).\n";
+    if (index_probes > 0 && scan_probes == 0) {
+        std::cout << "SQLSEL: INNER JOIN access path -- CDX seek (inner="
+                  << right.name << ", tag=" << inner_index->activeTag()
+                  << ", probes=" << index_probes
+                  << ", candidates=" << index_candidates << ").\n";
+    } else if (index_probes > 0) {
+        std::cout << "SQLSEL: INNER JOIN access path -- hybrid CDX seek + nested-loop scan"
+                  << " (inner=" << right.name << ", tag=" << inner_index->activeTag()
+                  << ", index probes=" << index_probes
+                  << ", scan probes=" << scan_probes << ").\n";
+    } else {
+        std::cout << "SQLSEL: INNER JOIN access path -- nested-loop scan (outer="
+                  << left_count << " row(s), inner=" << right_count << " row(s)).\n";
+    }
     if (count_star) {
         std::cout << "COUNT(*)\n" << rows.size() << "\n1 row(s) selected.\n";
         return true;

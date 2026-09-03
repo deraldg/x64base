@@ -110,7 +110,7 @@ projection, never a hand-authored sibling authority.
 | P4.0a | **IMPLEMENTED 2026-07-30; parity repaired, machine-gated, and default-suite promoted 2026-09-03.** Permanent `EVALDIFF` observer + typed, self-erasing SANDBOX fixture. The original RED result remains historical evidence: it found ED-01/ED-02 and three shared silent-wrong-answer cases. The 2026-09-03 repair added function-call and logical-literal AST support, preserved end-of-input refusal, carried deleted/type metadata into TupleRow, and made unknown fields and incompatible numeric/string comparisons report. `REGRESSION EVALDIFF` checks the exact ordered 22-case predicate and truth/error vector, not parity alone: 17 valid cases, 5 fail-closed controls, two cursor guards. Changing the numeric equality case from 12.5 to 13.5 produced validator FAIL and canonical invalid-argument status; the intact fixture returned PASS and success. Promotion closes a measured default-suite hole: no other default spec compares both evaluator paths or pins these repaired truth vectors | G4.0a HARNESS CLOSED / EXACT CORRECTNESS VECTOR GREEN / DEFAULT SUITE |
 | P4.0b | **IMPLEMENTED, RUNTIME-OBSERVED, AND DEFAULT-SUITE PROMOTED 2026-09-03.** SQLsel `WHERE` compiles once through the repaired AST and evaluates committed-truth TupleRows through a `{TRUE,FALSE,ERROR}` seam. Unknown fields and incompatible comparisons fail closed. `REGRESSION SQLSEL_SELECT_V1` machine-compares 11 marked row sets with SQLite and requires three cursor guards, eight refusal messages, two LIMIT reports and four sort-path reports; the function predicate and both fail-closed cases are included. Promotion closes the measured hole that the old default suite invoked `SQLSEL HELP` but executed no SQLsel statement | G3 MACHINE VALIDATOR GREEN; MUTATION RED OBSERVED; DEFAULT SUITE |
 | P4.1 | **IMPLEMENTED, RUNTIME-OBSERVED, AND DEFAULT-SUITE PROMOTED 2026-09-03.** INNER JOIN over two distinct open tables, one equi-key, `FROM <table> [AS] <alias>`, qualified columns, joined-row WHERE, ORDER BY/LIMIT, COUNT(*), cursor neutrality, and an always-reported nested-loop scan path. It does not consult REL, SET RELATION, or ambient workspace state. `REGRESSION SQLSEL_INNER_JOIN` captures four marked SQLsel results and automatically compares values, order, and counts with four marked in-run SQLite results; it also requires two cursor guards, three corrective refusals, and four access-path reports. A one-row oracle mutation produced FAIL and canonical error status. Promotion closes the measured hole that no other default spec executes SQL-syntax JOIN or asserts its path report | G4a GREEN: validator PASS 4/4 on multiple process starts; mutation RED observed; DEFAULT SUITE |
-| P4.2 | Index-assisted inner side via `CdxBackend::seek` when the ON key has a usable tag; scan fallback; access path REPORTED every time (R21). Absorbs P1.5 | G4b (same oracle results, both paths, plus the path report asserted) |
+| P4.2 | **IMPLEMENTED AND RUNTIME-OBSERVED 2026-09-03.** When the inner ON field is the active tag of an attached CDX/LMDB index, SQLsel probes `IndexManager::seek()` once per non-deleted outer row, walks every duplicate-key record, and re-verifies each landed DBF row with the same ON comparison. An unavailable or throwing probe rolls back that outer row's partial candidates and scans it instead. With no usable active tag, the P4.1 nested loop remains the full fallback. Every statement reports `CDX seek`, `nested-loop scan`, or the honest hybrid. The default JOIN fixture runs two oracle pairs through CDX seek and two through scan; its validator requires exactly that 2/2 split and refuses hybrid. Disabling the active tag preserved the row oracle but produced validator FAIL and canonical invalid-argument status | G4b GREEN: same SQLite rows on both paths; path split asserted; mutation RED observed |
 | P4.3 | LEFT JOIN with the R22 unmatched marker, defined ONCE, plus a left-extended row count on every LEFT JOIN | G4c (oracle with SQLite NULL mapped explicitly to the marker) |
 | P4.4 | **RIGHT, FULL, CROSS (R26).** RIGHT = LEFT with operands swapped; FULL = LEFT plus right-side rows that never matched; CROSS = join with no ON. All reuse the ONE R22 marker and the same extended-row count -- no second convention | G4d (oracle across all four outer forms, SQLite NULL mapped to the marker) |
 | P4.5 | **DISTINCT and set operations (R26).** UNION / UNION ALL / INTERSECT / EXCEPT. Duplicate elimination and operand column-compatibility both reuse the ONE R16 ordering/equality model already shared by relation equality and ORDER BY -- a second comparison rule invented here is a defect. Blocked on OQ-11 | G4e (oracle, incl. duplicate counts which are where set operations actually go wrong) |
@@ -288,3 +288,24 @@ No push, main-tree promotion, website edit, or publication is claimed.
 - Promotion changes regression reachability only. It does not widen SQLsel syntax,
   alter evaluator semantics, push `development`, promote to `main`, or publish the
   website.
+
+**2026-09-03, P4.2 index-assisted inner JOIN:**
+
+- SQLsel now selects the CDX path only when the inner ON field is the attached
+  manager's active tag. It uses the shared `IndexManager` API, not raw LMDB state,
+  and does not change the user's active tag to manufacture an optimization.
+- Each outer row becomes one range-seek probe. Duplicate keys are consumed until
+  the cursor leaves the exact base key, which preserves J2's two enrollments for
+  one student. Every candidate is read from the DBF, checked for deletion, and
+  re-compared with the same typed ON equality before it can enter the result.
+- The scan path remains executable in the same fixture: J1/J3 run with the SID
+  tag active; the fixture then clears the order and J4/J5 run by nested loop. All
+  four SQLsel row sets matched SQLite, both cursor guards passed, and the path
+  report read `CDX seek 2, scan 2`.
+- Mutation proof targeted the new gate rather than the row oracle. Disabling the
+  active tag made all four queries scan; row values still matched SQLite, but the
+  validator rejected `0 CDX seek, 4 nested-loop scan` and set canonical invalid-
+  argument status. Restoring the tag returned the intact fixture to green.
+- Boundaries are explicit: P4.2 accelerates only an already-active CDX tag on the
+  inner field. It does not choose join order, auto-activate another tag, use CNX,
+  or add a cost model. Those are later optimizer decisions, not hidden behavior.

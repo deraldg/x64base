@@ -1,7 +1,7 @@
 * ============================================================================
-* AIF-074 P4.1 -- SQLsel two-table INNER JOIN, oracle-gated (G4a)
+* AIF-074 P4.1/P4.2 -- SQLsel two-table INNER JOIN, oracle-gated (G4a/G4b)
 *
-* Status: CANDIDATE / explicit-run
+* Status: DEFAULT SUITE
 * Safety: MUTATING (SANDBOX only; both fixtures self-erase)
 * Proves:
 *   J1 aliases + qualified projection + numeric equi-key
@@ -11,11 +11,13 @@
 *   J5 COUNT(*) counts joined rows
 *   J6 both source cursors are restored by data, not RECNO text
 *   J7 corrective errors: ambiguous projection, unqualified ON, unopened table
+*   J8 CDX-seek and nested-loop paths return identical oracle rows
 *   ORACLE identical data and queries in SQLite in the same run
 * Read rule: REGRESSION SQLSEL_INNER_JOIN must print SQLSEL JOIN ORACLE: PASS.
 *   The executable validator compares J1/J3/J4/J5 row values, order and counts
 *   with O1/O3/O4/O5; requires both cursor guards, all three corrective
-*   refusals and four reported access paths. Missing or silent output = FAIL.
+*   refusals, two CDX-seek paths and two nested-loop paths. Missing or silent
+*   output = FAIL.
 *   A direct DOTSCRIPT run prints both sides but does not invoke the validator.
 * ============================================================================
 
@@ -63,6 +65,11 @@ USE SQLJSTU
 GO 2
 SELECT 2
 USE SQLJENR
+CDX CREATE
+CDX ADDTAG SID
+BUILDLMDB CLEAN YES
+SET INDEX TO SQLJENR
+SET ORDER TO TAG SID
 GO 4
 
 FORMULA "SQLSEL-J1-J2-BEGIN"
@@ -72,6 +79,14 @@ FORMULA "SQLSEL-J1-J2-END"
 FORMULA "SQLSEL-J3-BEGIN"
 SQLSEL SELECT S.LNAME,E.COURSE FROM SQLJSTU S JOIN SQLJENR E ON S.SID = E.SID WHERE E.COURSE = 'CS102'
 FORMULA "SQLSEL-J3-END"
+
+* Disable the usable inner tag so J4/J5 prove the scan fallback against the
+* same data and SQLite oracle. SET ORDER TO 0 closes the area-local manager;
+* the table stays open and the cursor is then re-parked for J6.
+SELECT 2
+SET ORDER TO 0
+GO 4
+SELECT 1
 
 FORMULA "SQLSEL-J4-BEGIN"
 SQLSEL S.LNAME,E.COURSE FROM SQLJSTU S JOIN SQLJENR E ON S.SID = E.SID ORDER BY E.COURSE DESC LIMIT 2
