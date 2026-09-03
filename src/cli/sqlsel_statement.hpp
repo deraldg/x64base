@@ -7,11 +7,12 @@
 // owner: member.derald
 // status: supported
 
-// src/cli/sqlsel_statement.hpp -- SQLSEL set-oriented statement surface (P3).
+// src/cli/sqlsel_statement.hpp -- SQLSEL set-oriented statement surface (P3/P4.1).
 //
 // The ONE new component of the SQLSEL lane: a SELECT statement parser.
 // Everything beneath it consumes proven engine seams (area resolution,
-// predicate compile/eval, tuple projection, cursor guards).
+// predicate compile/eval, tuple projection, cursor guards, and P4.1's own
+// correctness-first two-table nested-loop matcher).
 //
 // Orthogonality (R16): a statement reads the table named in FROM. It does not
 // read or disturb session state -- not the current area, not the record

@@ -17,7 +17,7 @@ static bool is_ident_start(char c) {
   return std::isalpha(static_cast<unsigned char>(c)) || c=='_';
 }
 static bool is_ident_part(char c) {
-  return std::isalnum(static_cast<unsigned char>(c)) || c=='_';
+  return std::isalnum(static_cast<unsigned char>(c)) || c=='_' || c=='.';
 }
 
 Lexer::Lexer(std::string src): m_src(std::move(src)) {}
@@ -61,14 +61,18 @@ Token Lexer::readNumber() {
   return t;
 }
 
-Token Lexer::readString() {
+Token Lexer::readString(char quote) {
   std::string out;
   while (!eof()) {
     char c = cur(); ++m_i;
-    if (c=='"') break;
+    if (c==quote) {
+      // SQL/xBase doubled-quote escaping: 'DON''T' and "A""B".
+      if (!eof() && cur()==quote) { out.push_back(quote); ++m_i; continue; }
+      break;
+    }
     if (c=='\\' && !eof()) {
       char n = cur(); ++m_i;
-      if (n=='"' || n=='\\') out.push_back(n);
+      if (n==quote || n=='\\') out.push_back(n);
       else { out.push_back('\\'); out.push_back(n); }
     } else {
       out.push_back(c);
@@ -107,10 +111,11 @@ Token Lexer::next() {
 
   if (is_ident_start(c)) return readIdent();
   if (std::isdigit(static_cast<unsigned char>(c))) return readNumber();
-  if (c=='"') { ++m_i; return readString(); }
+  if (c=='"' || c=='\'') { ++m_i; return readString(c); }
 
   if (c=='(') { ++m_i; return Token{TokKind::LParen, "("}; }
   if (c==')') { ++m_i; return Token{TokKind::RParen, ")"}; }
+  if (c==',') { ++m_i; return Token{TokKind::Comma, ","}; }
   if (c=='=') {
     if (peekch()=='=') { m_i+=2; return Token{TokKind::EqEq, "=="}; }
     ++m_i; return Token{TokKind::Eq, "="};
@@ -148,7 +153,5 @@ Token Lexer::next() {
   ++m_i;
   return Token{TokKind::End, ""};
 }
-
-
 
 

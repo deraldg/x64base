@@ -41,8 +41,9 @@
 //   REGRESSION ALL
 //
 // notes:
-//   REGRESSION is a curated launcher, not a separate test executor.
-//   Actual script execution is delegated to DOTSCRIPT.
+//   REGRESSION delegates script execution to DOTSCRIPT. Selected specs also
+//   attach executable transcript validators that turn marked evidence into a
+//   final PASS/FAIL and canonical error status.
 //   Regression scripts are expected to bootstrap their own environment.
 //   LIST shows only curated stable entrypoints, not every historical script on disk.
 //   ALL runs the curated default suite in declared order.
@@ -68,19 +69,30 @@
 #include "shell_commands.hpp"
 
 #include <array>
+#include <cstddef>
 #include <filesystem>
 #include <iostream>
 #include <sstream>
+#include <streambuf>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "common/path_state.hpp"
 #include "shell_api.hpp"
 #include "textio.hpp"
+#include "xbase_error_context.hpp"
 
 using xbase::DbArea;
 
 namespace {
+
+enum class RegressionValidator {
+    None,
+    SqlselSelectOracleV1,
+    SqlselJoinOracleV1,
+    EvaldiffV1
+};
 
 struct RegressionSpec {
     const char* name;
@@ -130,13 +142,18 @@ struct RegressionSpec {
     // NOT AUDITED, stated rather than implied: a script that mints through a
     // script it CALLS. The scan reads each registered file directly.
     bool mints_catalog = false;
+
+    // Optional executable transcript contract. Most historical specs remain
+    // DotScript-only; selected oracle specs name the validator that turns
+    // their marked output into a verdict instead of relying on visual review.
+    RegressionValidator validator = RegressionValidator::None;
 };
 
 // SIZE IS HAND-MAINTAINED. Adding a row without bumping this count is a hard
 // compile error ("too many initializers"), which is the safe failure -- but it
 // is a recurring papercut: it happened when CNXLIVE was added on 2026-07-31.
 // Bump it when you add a regression.
-constexpr std::array<RegressionSpec, 64> kRegressionSpecs{{
+constexpr std::array<RegressionSpec, 65> kRegressionSpecs{{
     {
         "NONDESTRUCTIVE",
         "dottalkpp_non_destructive_smoke.dts",
@@ -458,13 +475,25 @@ constexpr std::array<RegressionSpec, 64> kRegressionSpecs{{
         "SQLSEL_SELECT_V1",
         "sqlsel_select_v1_regression.dts",
         "SQLSEL statement surface, gate G3 (AIF-074 P3): SELECT <cols|*> FROM <table> with WHERE, ORDER BY [ASC|DESC], LIMIT and COUNT(*), each row set compared against an in-process SQLite oracle over identical data in the same run. Asserts cursor neutrality by data (the cursor is parked on a known record before and after), corrective errors for an unopened table / expression select-item / bad LIMIT / unknown ORDER BY field / ORDER BY on COUNT(*), and that ORDER BY sorts the full match set BEFORE LIMIT applies. Legacy predicate form preserved. Self-bootstrapping throwaway SQLSTU table in SANDBOX; explicit-run because it mutates the filesystem.",
-        false
+        false,
+        false,
+        RegressionValidator::SqlselSelectOracleV1
+    },
+    {
+        "SQLSEL_INNER_JOIN",
+        "sqlsel_inner_join_regression.dts",
+        "SQLsel G4a (AIF-074 P4.1): two-table INNER JOIN with aliases, qualified fields, numeric equi-key matching, row multiplication, joined TupleRow WHERE, ORDER BY/LIMIT, COUNT(*), two-cursor restoration, corrective errors, and a reported nested-loop scan path. Four marked SQLsel row sets are automatically compared with an in-run SQLite oracle over identical data; a mismatch records an error and prints FAIL. Self-bootstrapping throwaway SQLJSTU/SQLJENR tables in SANDBOX; explicit-run because it mutates the filesystem.",
+        false,
+        false,
+        RegressionValidator::SqlselJoinOracleV1
     },
     {
         "EVALDIFF",
         "evaldiff_regression.dts",
-        "SQLSEL evaluator differential harness (AIF-074 P4.0a): self-bootstraps a mixed-type X64 fixture in SANDBOX, compares classic DbArea and TupleRow-bound predicate outcomes over the same physical records, reports verdict/failure parity and known differences, restores the cursor, and self-erases. Observer only; explicit-run while findings are being classified.",
-        false
+        "SQLSEL evaluator differential harness (AIF-074 P4.0a/P4.0b): self-bootstraps a mixed-type X64 fixture in SANDBOX, compares classic DbArea and TupleRow-bound predicate outcomes over the same physical records, restores the cursor, and self-erases. Its validator checks the exact ordered 22-case truth/error vector, not parity alone. The 2026-09-03 repair makes valid function/logical/deleted cases verdict-parity and missing-field/type/malformed controls parity-on-failure. Explicit-run while the repaired semantics soak.",
+        false,
+        false,
+        RegressionValidator::EvaldiffV1
     },
     {
         "EXPORT_SDF",
@@ -726,7 +755,8 @@ void print_regression_usage()
         << "  REGRESSION <name>\n"
         << "  REGRESSION ALL\n"
         << "Notes:\n"
-        << "  - REGRESSION is a curated launcher over DOTSCRIPT.\n"
+        << "  - REGRESSION launches DOTSCRIPT; selected specs also validate marked\n"
+        << "    transcript evidence and set final PASS/FAIL error status.\n"
         << "  - Scripts are expected to bootstrap their own environment.\n"
         << "  - LIST shows curated stable entrypoints rather than every historical script.\n"
         << "  - FIND is the question-to-spec bridge: LIST and SHOW both assume you\n"
@@ -960,6 +990,492 @@ private:
     WorkspacesSlotGuard guard_;
 };
 
+class TeeStreamBuf final : public std::streambuf {
+public:
+    TeeStreamBuf(std::streambuf* visible, std::streambuf* captured)
+        : visible_(visible), captured_(captured)
+    {
+    }
+
+protected:
+    int_type overflow(int_type ch) override
+    {
+        if (traits_type::eq_int_type(ch, traits_type::eof())) {
+            return traits_type::not_eof(ch);
+        }
+        const char c = traits_type::to_char_type(ch);
+        if (traits_type::eq_int_type(visible_->sputc(c), traits_type::eof()) ||
+            traits_type::eq_int_type(captured_->sputc(c), traits_type::eof())) {
+            return traits_type::eof();
+        }
+        return ch;
+    }
+
+    std::streamsize xsputn(const char* text, std::streamsize count) override
+    {
+        const std::streamsize visible_count = visible_->sputn(text, count);
+        const std::streamsize captured_count = captured_->sputn(text, count);
+        return (visible_count == count && captured_count == count) ? count : 0;
+    }
+
+    int sync() override
+    {
+        return (visible_->pubsync() == 0 && captured_->pubsync() == 0) ? 0 : -1;
+    }
+
+private:
+    std::streambuf* visible_;
+    std::streambuf* captured_;
+};
+
+std::string clean_transcript_line(std::string line)
+{
+    if (!line.empty() && line.back() == '\r') line.pop_back();
+    line = trim_copy(std::move(line));
+    while (line.size() >= 2 && line[0] == '.' && line[1] == ' ') {
+        line = trim_copy(line.substr(2));
+    }
+    return line;
+}
+
+bool transcript_block(const std::string& transcript,
+                      const std::string& begin_marker,
+                      const std::string& end_marker,
+                      std::vector<std::string>& lines,
+                      std::string& error)
+{
+    const std::size_t begin = transcript.find(begin_marker);
+    if (begin == std::string::npos) {
+        error = "missing marker " + begin_marker;
+        return false;
+    }
+
+    const std::size_t body = transcript.find('\n', begin);
+    if (body == std::string::npos) {
+        error = "marker has no body " + begin_marker;
+        return false;
+    }
+
+    const std::size_t end = transcript.find(end_marker, body + 1);
+    if (end == std::string::npos) {
+        error = "missing marker " + end_marker;
+        return false;
+    }
+
+    std::istringstream in(transcript.substr(body + 1, end - body - 1));
+    std::string line;
+    while (std::getline(in, line)) {
+        line = clean_transcript_line(std::move(line));
+        if (!line.empty() && line != ".") lines.push_back(std::move(line));
+    }
+    return true;
+}
+
+std::string canonical_table_row(const std::string& line)
+{
+    std::istringstream in(line);
+    std::string cell;
+    std::string row;
+    bool first = true;
+    while (std::getline(in, cell, '|')) {
+        if (!first) row.push_back('\x1f');
+        row += trim_copy(std::move(cell));
+        first = false;
+    }
+    return row;
+}
+
+std::string display_table_row(std::string row)
+{
+    std::string out;
+    for (char c : row) {
+        if (c == '\x1f') {
+            out += " | ";
+        } else {
+            out.push_back(c);
+        }
+    }
+    return out;
+}
+
+bool is_sqlite_separator(const std::string& line)
+{
+    bool saw_dash = false;
+    for (char c : line) {
+        if (c == '-') {
+            saw_dash = true;
+        } else if (c != '+' && c != '|' && c != ' ' && c != '\t') {
+            return false;
+        }
+    }
+    return saw_dash;
+}
+
+bool sqlsel_rows_from_block(const std::vector<std::string>& lines,
+                           std::vector<std::string>& rows,
+                           std::string& error)
+{
+    for (std::size_t i = 0; i < lines.size(); ++i) {
+        const std::size_t suffix = lines[i].find(" row(s) selected.");
+        if (suffix == std::string::npos) continue;
+
+        std::size_t count = 0;
+        std::istringstream count_in(lines[i].substr(0, suffix));
+        if (!(count_in >> count)) {
+            error = "cannot read SQLSEL row count";
+            return false;
+        }
+        if (count == 0) {
+            error = "SQLSEL block is silently empty";
+            return false;
+        }
+        if (i < count + 1) {
+            error = "SQLSEL block has fewer rows than its reported count";
+            return false;
+        }
+
+        const std::size_t first_row = i - count;
+        for (std::size_t r = first_row; r < i; ++r) {
+            rows.push_back(canonical_table_row(lines[r]));
+        }
+        return true;
+    }
+
+    error = "SQLSEL block has no row-count footer";
+    return false;
+}
+
+bool sqlite_rows_from_block(const std::vector<std::string>& lines,
+                           std::vector<std::string>& rows,
+                           std::string& error)
+{
+    for (std::size_t i = 0; i < lines.size(); ++i) {
+        if (!is_sqlite_separator(lines[i])) continue;
+        for (std::size_t r = i + 1; r < lines.size(); ++r) {
+            rows.push_back(canonical_table_row(lines[r]));
+        }
+        if (rows.empty()) {
+            error = "SQLite oracle block is silently empty";
+            return false;
+        }
+        return true;
+    }
+
+    error = "SQLite oracle block has no table separator";
+    return false;
+}
+
+struct SqlselOraclePair {
+    const char* actual;
+    const char* oracle;
+};
+
+template <std::size_t N>
+bool validate_sqlsel_oracle_rows(const std::string& transcript,
+                                 const char* label,
+                                 const std::array<SqlselOraclePair, N>& pairs)
+{
+    std::size_t passed = 0;
+    for (const SqlselOraclePair& pair : pairs) {
+        std::vector<std::string> actual_lines;
+        std::vector<std::string> oracle_lines;
+        std::vector<std::string> actual_rows;
+        std::vector<std::string> oracle_rows;
+        std::string error;
+
+        if (!transcript_block(transcript, std::string(pair.actual) + "-BEGIN",
+                              std::string(pair.actual) + "-END", actual_lines, error) ||
+            !sqlsel_rows_from_block(actual_lines, actual_rows, error) ||
+            !transcript_block(transcript, std::string(pair.oracle) + "-BEGIN",
+                              std::string(pair.oracle) + "-END", oracle_lines, error) ||
+            !sqlite_rows_from_block(oracle_lines, oracle_rows, error)) {
+            std::cout << label << ": FAIL -- " << pair.actual
+                      << " vs " << pair.oracle << ": " << error << "\n";
+            return false;
+        }
+
+        if (actual_rows != oracle_rows) {
+            std::cout << label << ": FAIL -- " << pair.actual
+                      << " vs " << pair.oracle << " row mismatch\n"
+                      << "  SQLSEL rows: " << actual_rows.size() << "\n";
+            for (const std::string& row : actual_rows) {
+                std::cout << "    " << display_table_row(row) << "\n";
+            }
+            std::cout << "  SQLite rows: " << oracle_rows.size() << "\n";
+            for (const std::string& row : oracle_rows) {
+                std::cout << "    " << display_table_row(row) << "\n";
+            }
+            return false;
+        }
+        ++passed;
+    }
+    return passed == pairs.size();
+}
+
+std::size_t transcript_count(const std::string& transcript,
+                             const std::string& fragment)
+{
+    std::size_t count = 0;
+    for (std::size_t pos = 0;
+         (pos = transcript.find(fragment, pos)) != std::string::npos;
+         pos += fragment.size()) {
+        ++count;
+    }
+    return count;
+}
+
+template <std::size_t N>
+bool require_transcript_fragments(const std::string& transcript,
+                                  const char* label,
+                                  const std::array<const char*, N>& required)
+{
+    for (const char* fragment : required) {
+        if (transcript.find(fragment) == std::string::npos) {
+            std::cout << label << ": FAIL -- missing required evidence: "
+                      << fragment << "\n";
+            return false;
+        }
+    }
+    return true;
+}
+
+bool validate_sqlsel_select_oracle(const std::string& transcript)
+{
+    static constexpr std::array<SqlselOraclePair, 11> pairs{{
+        {"SQLSEL-S1", "SQLSEL-O1"},
+        {"SQLSEL-S2", "SQLSEL-O2"},
+        {"SQLSEL-S3", "SQLSEL-O3"},
+        {"SQLSEL-S4", "SQLSEL-O4"},
+        {"SQLSEL-S8A", "SQLSEL-O8A"},
+        {"SQLSEL-S8D", "SQLSEL-O8D"},
+        {"SQLSEL-S9", "SQLSEL-O9"},
+        {"SQLSEL-S10A", "SQLSEL-O10A"},
+        {"SQLSEL-S10F", "SQLSEL-O10F"},
+        {"SQLSEL-S13Q", "SQLSEL-O13"},
+        {"SQLSEL-S14", "SQLSEL-O14"}
+    }};
+    static constexpr std::array<const char*, 11> required{{
+        "S5A_cursor_parked_before:.T.",
+        "S5B_cursor_unmoved_after:.T.",
+        "S12_cursor_unmoved_after_slice2:.T.",
+        "SQLSEL: table 'NOSUCHTABLE' is not open.",
+        "SQLSEL: 'ALLTRIM(LNAME)' is not a bare column name.",
+        "SQLSEL: LIMIT expects a non-negative integer (got 'abc').",
+        "SQLSEL: ORDER BY field 'NOSUCHFIELD' is not in SQLSTU.",
+        "SQLSEL: ORDER BY direction must be ASC or DESC (got 'SIDEWAYS').",
+        "SQLSEL: ORDER BY does not apply to COUNT(*).",
+        "SQLSEL: predicate evaluation failed: unknown field 'NOSUCH'",
+        "SQLSEL: predicate evaluation failed: incompatible field/literal types in comparison"
+    }};
+    static const std::string limit_report = "SQLSEL: LIMIT reached;";
+    static const std::string sort_report = " -- materialized sort over ";
+
+    if (!validate_sqlsel_oracle_rows(transcript, "SQLSEL SELECT ORACLE", pairs) ||
+        !require_transcript_fragments(transcript, "SQLSEL SELECT ORACLE", required)) {
+        return false;
+    }
+    const std::size_t limit_count = transcript_count(transcript, limit_report);
+    if (limit_count != 2) {
+        std::cout << "SQLSEL SELECT ORACLE: FAIL -- expected 2 LIMIT reports, got "
+                  << limit_count << "\n";
+        return false;
+    }
+    const std::size_t sort_count = transcript_count(transcript, sort_report);
+    if (sort_count != 4) {
+        std::cout << "SQLSEL SELECT ORACLE: FAIL -- expected 4 sort-path reports, got "
+                  << sort_count << "\n";
+        return false;
+    }
+
+    std::cout << "SQLSEL SELECT ORACLE: PASS -- " << pairs.size() << '/'
+              << pairs.size() << " row sets equal SQLite; cursors 3/3; "
+              << "refusals 8/8; LIMIT reports 2/2; sort paths 4/4.\n";
+    return true;
+}
+
+bool validate_sqlsel_join_oracle(const std::string& transcript)
+{
+    static constexpr std::array<SqlselOraclePair, 4> pairs{{
+        {"SQLSEL-J1-J2", "SQLSEL-O1"},
+        {"SQLSEL-J3", "SQLSEL-O3"},
+        {"SQLSEL-J4", "SQLSEL-O4"},
+        {"SQLSEL-J5", "SQLSEL-O5"}
+    }};
+
+    if (!validate_sqlsel_oracle_rows(transcript, "SQLSEL JOIN ORACLE", pairs)) {
+        return false;
+    }
+
+    static constexpr std::array<const char*, 5> required{{
+        "J6A_left_cursor_restored:.T.",
+        "J6B_right_cursor_restored:.T.",
+        "SQLSEL: column 'SID' is ambiguous; qualify it with a table alias.",
+        "SQLSEL: JOIN ON columns must be qualified (got 'SID').",
+        "SQLSEL: table 'NOSUCH' is not open."
+    }};
+    if (!require_transcript_fragments(transcript, "SQLSEL JOIN ORACLE", required)) {
+        return false;
+    }
+
+    static const std::string access_path =
+        "SQLSEL: INNER JOIN access path -- nested-loop scan";
+    const std::size_t access_path_count = transcript_count(transcript, access_path);
+    if (access_path_count != pairs.size()) {
+        std::cout << "SQLSEL JOIN ORACLE: FAIL -- expected " << pairs.size()
+                  << " reported access paths, got " << access_path_count << "\n";
+        return false;
+    }
+
+    std::cout << "SQLSEL JOIN ORACLE: PASS -- " << pairs.size() << '/' << pairs.size()
+              << " row sets equal SQLite; cursors 2/2; refusals 3/3; access paths "
+              << access_path_count << '/' << pairs.size() << ".\n";
+    return true;
+}
+
+std::string evaldiff_predicate_from_line(const std::string& line)
+{
+    static const std::string marker = " predicate=\"";
+    const std::size_t begin = line.find(marker);
+    if (begin == std::string::npos || line.empty() || line.back() != '"') {
+        return {};
+    }
+
+    const std::size_t first = begin + marker.size();
+    const std::string encoded = line.substr(first, line.size() - first - 1);
+    std::string predicate;
+    predicate.reserve(encoded.size());
+    for (std::size_t i = 0; i < encoded.size(); ++i) {
+        if (encoded[i] == '\\' && i + 1 < encoded.size() &&
+            (encoded[i + 1] == '\\' || encoded[i + 1] == '"')) {
+            predicate.push_back(encoded[++i]);
+        } else {
+            predicate.push_back(encoded[i]);
+        }
+    }
+    return predicate;
+}
+
+bool validate_evaldiff(const std::string& transcript)
+{
+    struct Expected {
+        const char* predicate;
+        const char* counts;
+        bool failure;
+    };
+    static constexpr std::array<Expected, 22> expected{{
+        {"CVAL = \"ALPHA\"", "1/3/0", false},
+        {"CVAL = \"ALPHA       \"", "1/3/0", false},
+        {"NVAL = 12.5", "1/3/0", false},
+        {"LVAL = .T.", "2/2/0", false},
+        {"EMPTY(CVAL)", "1/3/0", false},
+        {"EMPTY(NVAL)", "2/2/0", false},
+        {"NVAL >= 0 AND NVAL < 13", "2/2/0", false},
+        {"NOT (NVAL < 0) AND (LVAL = .T. OR EMPTY(CVAL))", "2/2/0", false},
+        {"DVAL = \"20240115\"", "1/3/0", false},
+        {"DTOS(DVAL) = \"20240115\"", "1/3/0", false},
+        {"DVAL = CTOD(\"01/15/2024\")", "1/3/0", false},
+        {"ALLTRIM(CVAL) = \"ALPHA\"", "1/3/0", false},
+        {"UPPER(CVAL) = \"ALPHA\"", "1/3/0", false},
+        {"SUBSTR(CVAL, 1, 2) = \"AL\"", "1/3/0", false},
+        {"ALLTRIM(CVAL) = \"ZZZZZ\"", "0/4/0", false},
+        {"UPPER(\"ALPHA\") = \"ALPHA\"", "4/0/0", false},
+        {"DELETED()", "1/3/0", false},
+        {"NOSUCH = \"X\"", "0/0/4", true},
+        {"NVAL = \"NOTNUM\"", "0/0/4", true},
+        {"(CVAL = \"ALPHA\"", "0/0/4", true},
+        {"NVAL = 12.5 GARBAGE", "0/0/4", true},
+        {"NVAL = 12.5 AND", "0/0/4", true}
+    }};
+
+    std::vector<std::string> block;
+    std::string error;
+    if (!transcript_block(transcript, "EVALDIFF-P4.0A-BEGIN",
+                          "EVALDIFF-P4.0A-END", block, error)) {
+        std::cout << "EVALDIFF ORACLE: FAIL -- " << error << "\n";
+        return false;
+    }
+
+    std::vector<std::string> results;
+    for (const std::string& line : block) {
+        if (line.rfind("EVALDIFF VERDICT-PARITY ", 0) == 0 ||
+            line.rfind("EVALDIFF PARITY-ON-FAILURE ", 0) == 0 ||
+            line.rfind("EVALDIFF DIFFERENCES ", 0) == 0) {
+            results.push_back(line);
+        }
+    }
+    if (results.size() != expected.size()) {
+        std::cout << "EVALDIFF ORACLE: FAIL -- expected " << expected.size()
+                  << " result lines, got " << results.size() << "\n";
+        return false;
+    }
+
+    std::size_t verdicts = 0;
+    std::size_t failures = 0;
+    for (std::size_t i = 0; i < expected.size(); ++i) {
+        const Expected& want = expected[i];
+        const std::string& line = results[i];
+        const std::string status = want.failure
+            ? "EVALDIFF PARITY-ON-FAILURE "
+            : "EVALDIFF VERDICT-PARITY ";
+        const std::string agreement = want.failure
+            ? "verdict_agreements=0 failure_parities=4"
+            : "verdict_agreements=4 failure_parities=0";
+        const std::string classic = std::string("classic[T/F/E]=") + want.counts;
+        const std::string tuple = std::string("tuple[T/F/E]=") + want.counts;
+        const std::string actual_predicate = evaldiff_predicate_from_line(line);
+
+        if (line.rfind(status, 0) != 0 ||
+            line.find("rows=4") == std::string::npos ||
+            line.find(agreement) == std::string::npos ||
+            line.find("divergences=0") == std::string::npos ||
+            line.find(classic) == std::string::npos ||
+            line.find(tuple) == std::string::npos ||
+            actual_predicate != want.predicate) {
+            std::cout << "EVALDIFF ORACLE: FAIL -- case " << (i + 1)
+                      << " did not match the expected result\n"
+                      << "  expected predicate: " << want.predicate << "\n"
+                      << "  expected counts   : " << want.counts << "\n"
+                      << "  actual             : " << line << "\n";
+            return false;
+        }
+        if (want.failure) {
+            ++failures;
+        } else {
+            ++verdicts;
+        }
+    }
+
+    static constexpr std::array<const char*, 3> required{{
+        "EVALDIFF_cursor_before:.T.",
+        "EVALDIFF_cursor_after:.T.",
+        "EVALDIFF FOR <predicate>"
+    }};
+    if (!require_transcript_fragments(transcript, "EVALDIFF ORACLE", required)) {
+        return false;
+    }
+
+    std::cout << "EVALDIFF ORACLE: PASS -- " << expected.size() << '/'
+              << expected.size() << " exact cases; verdict parity " << verdicts
+              << "; failure parity " << failures << "; cursors 2/2.\n";
+    return true;
+}
+
+bool validate_regression_transcript(const RegressionSpec& spec,
+                                    const std::string& transcript)
+{
+    switch (spec.validator) {
+        case RegressionValidator::None:
+            return true;
+        case RegressionValidator::SqlselSelectOracleV1:
+            return validate_sqlsel_select_oracle(transcript);
+        case RegressionValidator::SqlselJoinOracleV1:
+            return validate_sqlsel_join_oracle(transcript);
+        case RegressionValidator::EvaldiffV1:
+            return validate_evaldiff(transcript);
+    }
+    return false;
+}
+
 void run_regression_script(DbArea& area, const RegressionSpec& spec)
 {
     const std::filesystem::path resolved = resolve_regression_script_path(spec);
@@ -972,17 +1488,50 @@ void run_regression_script(DbArea& area, const RegressionSpec& spec)
     dotscript_line << '"' << resolved.string() << '"';
     std::istringstream dotscript_args(dotscript_line.str());
 
-    // The bracket lives in the ONE place a spec is run, so a new caller cannot
-    // acquire a spec and forget it. Scoped to the DOTSCRIPT call and nothing
-    // else -- resolve_regression_script_path above reads the SCRIPTS slot,
-    // which this must not disturb.
-    if (spec.mints_catalog) {
-        CatalogBracket bracket(spec.name);
+    const auto run_script = [&]() {
+        // The bracket lives in the ONE place a spec is run, so a new caller
+        // cannot acquire a spec and forget it. Scoped to the DOTSCRIPT call and
+        // nothing else -- resolve_regression_script_path above reads the
+        // SCRIPTS slot, which this must not disturb.
+        if (spec.mints_catalog) {
+            CatalogBracket bracket(spec.name);
+            cmd_DOTSCRIPT(area, dotscript_args);
+            return;
+        }
         cmd_DOTSCRIPT(area, dotscript_args);
+    };
+
+    if (spec.validator == RegressionValidator::None) {
+        run_script();
         return;
     }
 
-    cmd_DOTSCRIPT(area, dotscript_args);
+    // Oracle validators consume exactly what the operator sees. Tee stdout to
+    // the visible stream and a capture buffer at the same time; capture-then-
+    // replay would reorder cout lines around commands that use another output
+    // channel, changing the evidence while trying to validate it.
+    std::ostringstream captured;
+    std::streambuf* const original = std::cout.rdbuf();
+    TeeStreamBuf tee(original, captured.rdbuf());
+    std::cout.rdbuf(&tee);
+    try {
+        run_script();
+    } catch (...) {
+        std::cout.rdbuf(original);
+        throw;
+    }
+    std::cout.flush();
+    std::cout.rdbuf(original);
+
+    const std::string transcript = captured.str();
+    if (!validate_regression_transcript(spec, transcript)) {
+        xbase::error::set_last_error(xbase::error::e_invalid_argument());
+    } else {
+        // Expected corrective-error arms inside a spec may have recorded an
+        // error while proving the refusal. The regression command's final
+        // status is the validator verdict, so a validated PASS ends clear.
+        xbase::error::clear_last_error();
+    }
 }
 
 // ---------------------------------------------------------------------------

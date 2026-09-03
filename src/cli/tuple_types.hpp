@@ -53,6 +53,7 @@ struct TupleFragment {
     int             area_slot = -1;
     RecordNo        recno     = 0; // 1-based recno if known; 0 if unknown
     TupleSourceKind kind      = TupleSourceKind::Unknown;
+    bool            deleted   = false;
     std::string     note;          // optional breadcrumb
 };
 

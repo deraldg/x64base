@@ -15,7 +15,7 @@ namespace dottalk { namespace expr {
 enum class TokKind {
   End, Ident, Number, String,
   Eq, EqEq, Ne, Lt, Le, Gt, Ge,
-  LParen, RParen,
+  LParen, RParen, Comma,
   KW_NOT, KW_AND, KW_OR,
   Plus, Minus, Star, Slash        // <-- arithmetic
 };
@@ -27,6 +27,5 @@ struct Token {
 };
 
 }} // namespace
-
 
 

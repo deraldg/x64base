@@ -433,6 +433,7 @@ TupleBuildResult build_tuple_from_spec(const std::string& spec_in, const TupleBu
         f.area_slot = slot;
         f.recno = safe_recno(ar);
         f.kind = TupleSourceKind::DBF;
+        try { f.deleted = ar->isDeleted(); } catch (...) { f.deleted = false; }
 
         try {
             f.note = "DBF:" + basename_upper(ar->name());

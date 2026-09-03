@@ -43,7 +43,24 @@ std::unique_ptr<Expr> Parser::nud(Token t) {
   switch (t.kind) {
     case TokKind::Number:   return std::make_unique<LitNumber>(t.number);
     case TokKind::String:   return std::make_unique<LitString>(t.lexeme);
-    case TokKind::Ident:    return std::make_unique<FieldRef>(t.lexeme);
+    case TokKind::Ident: {
+      std::string U = t.lexeme;
+      for (char& c : U) c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+      if (U == ".T." || U == "TRUE") return std::make_unique<LitBool>(true);
+      if (U == ".F." || U == "FALSE") return std::make_unique<LitBool>(false);
+      if (m_lex.peek().kind != TokKind::LParen) return std::make_unique<FieldRef>(t.lexeme);
+      m_lex.consume();
+      std::vector<std::unique_ptr<Expr>> args;
+      if (m_lex.peek().kind != TokKind::RParen) {
+        for (;;) {
+          args.push_back(expression(0));
+          if (m_lex.peek().kind != TokKind::Comma) break;
+          m_lex.consume();
+        }
+      }
+      expect(TokKind::RParen, "Missing ')' after function arguments");
+      return std::make_unique<FunctionCall>(t.lexeme, std::move(args));
+    }
     case TokKind::KW_NOT:   return std::make_unique<Not>(expression(90));
     case TokKind::LParen: {
       auto e = expression(0);
@@ -117,7 +134,6 @@ std::unique_ptr<Expr> Parser::expression(int min_bp) {
 }
 
 std::unique_ptr<Expr> Parser::parse_expr() { return expression(0); }
-
 
 
 

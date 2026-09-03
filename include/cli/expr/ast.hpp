@@ -13,12 +13,14 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace dottalk { namespace expr {
 
 struct RecordView {
     std::function<std::string(std::string_view)> get_field_str;
     std::function<std::optional<double>(std::string_view)> get_field_num;
+    std::function<std::optional<char>(std::string_view)> get_field_type;
 };
 
 struct Expr {
@@ -48,11 +50,27 @@ struct LitNumber : Expr {
     }
 };
 
+struct LitBool : Expr {
+    bool v;
+    explicit LitBool(bool value) : v(value) {}
+    bool eval(const RecordView&) const override { return v; }
+    std::string evalString(const RecordView&) const override { return v ? ".T." : ".F."; }
+};
+
 struct FieldRef : Expr {
     std::string name;
     explicit FieldRef(std::string n) : name(std::move(n)) {}
     bool eval(const RecordView& rv) const override;
-    // Optional future: could add evalString if field is string
+    std::string evalString(const RecordView& rv) const override;
+};
+
+struct FunctionCall : Expr {
+    std::string name;
+    std::vector<std::unique_ptr<Expr>> args;
+    FunctionCall(std::string n, std::vector<std::unique_ptr<Expr>> a)
+        : name(std::move(n)), args(std::move(a)) {}
+    bool eval(const RecordView& rv) const override;
+    std::string evalString(const RecordView& rv) const override;
 };
 
 enum class CmpOp { EQ, NE, LT, LE, GT, GE };

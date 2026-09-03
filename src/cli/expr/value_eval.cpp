@@ -86,7 +86,7 @@ static bool predicate_chain_fast_allowed(const std::string& src) {
     return true;
 }
 
-// -------------------- “value-expr to string” subset --------------------
+// -------------------- "value-expr to string" subset --------------------
 // Field refs + literals + string/date/numeric builtins. No arithmetic operators.
 //
 // AIF-120 R115. Because this subset has NO operators, its lexer stops at the
@@ -524,7 +524,11 @@ static std::string expand_value_builtins_in_text(xbase::DbArea& A, const std::st
             std::string out;
             if (!dottalk::expr::eval_string_value_expr(A, callText, out)) continue;
 
-            const std::string literal = is_numeric_literal(out) ? out : quote_for_expr(out);
+            const std::string out_upper = up(trim(out));
+            const bool logical_literal = out_upper == ".T." || out_upper == ".F." ||
+                                         out_upper == "TRUE" || out_upper == "FALSE";
+            const std::string literal = (is_numeric_literal(out) || logical_literal)
+                                      ? out : quote_for_expr(out);
             s.replace(c.start, len, literal);
             changed = true;
         }
@@ -715,8 +719,13 @@ EvalValue eval_compiled_program(const Expr* prog, const RecordView& rv) {
         ev.kind = EvalValue::K_Bool;
         ev.tf = prog->eval(rv);
         return ev;
+    } catch (const std::exception& ex) {
+        ev.kind = EvalValue::K_None;
+        ev.text = ex.what();
+        return ev;
     } catch (...) {
         ev.kind = EvalValue::K_None;
+        ev.text = "unknown evaluation exception";
         return ev;
     }
 
@@ -800,7 +809,8 @@ bool eval_bool(xbase::DbArea& A, const std::string& exprText, bool& out, std::st
     if (ev.kind == EvalValue::K_Bool) { out = ev.tf; return true; }
     if (ev.kind == EvalValue::K_Number) { out = (ev.number != 0.0); return true; }
 
-    if (errOut) *errOut = "FOR/WHILE must evaluate to logical/boolean (or numeric truthy)";
+    if (errOut) *errOut = ev.text.empty()
+        ? "FOR/WHILE must evaluate to logical/boolean (or numeric truthy)" : ev.text;
     return false;
 }
 
@@ -871,7 +881,8 @@ bool eval_bool_compiled(CompiledPredicate& cp, xbase::DbArea& A, bool& out, std:
     if (ev.kind == EvalValue::K_Bool)   { out = ev.tf; return true; }
     if (ev.kind == EvalValue::K_Number) { out = (ev.number != 0.0); return true; }
 
-    if (errOut) *errOut = "FOR/WHILE must evaluate to logical/boolean (or numeric truthy)";
+    if (errOut) *errOut = ev.text.empty()
+        ? "FOR/WHILE must evaluate to logical/boolean (or numeric truthy)" : ev.text;
     return false;
 }
 

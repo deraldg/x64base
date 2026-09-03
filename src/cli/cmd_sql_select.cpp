@@ -23,9 +23,10 @@
 //
 // usage:
 //   SQLSEL USAGE
-//   SQLSEL SELECT <col>[,<col>...] FROM <table> [WHERE <predicate>] [ORDER BY <field> [ASC|DESC]] [LIMIT <n>]
+//   SQLSEL SELECT <col>[,<col>...] FROM <table> [[AS] <alias>] [WHERE <predicate>] [ORDER BY <field> [ASC|DESC]] [LIMIT <n>]
 //   SQLSEL SELECT * FROM <table>
 //   SQLSEL SELECT COUNT(*) FROM <table> [WHERE <predicate>]
+//   SQLSEL SELECT <list> FROM <table> [AS] <a> [INNER] JOIN <table> [AS] <b> ON <a.field> = <b.field>
 //   SQLSEL [COUNT] [ALL|DELETED] [FOR <expr> | <expr>]
 //
 // examples:
@@ -34,21 +35,24 @@
 //   SQLSEL SELECT SID,LNAME FROM STUDENTS WHERE MAJOR = "CSCI"
 //   SQLSEL SELECT SID,LNAME FROM STUDENTS ORDER BY LNAME DESC LIMIT 10
 //   SQLSEL SELECT COUNT(*) FROM STUDENTS WHERE GPA >= 3.0
+//   SQLSEL S.LNAME,E.COURSE FROM STUDENTS S JOIN ENROLL E ON S.SID = E.SID
 //   SQLSEL COUNT
 //   SQLSEL COUNT FOR GPA >= 3.0
 //   SQLSEL LNAME = "SMITH"
 //
 // notes:
 //   SQLSEL USAGE prints usage before open-table checks.
-//   A SELECT statement names its own table in FROM; the table must be OPEN.
+//   A SELECT statement names its own table(s) in FROM; every table must be OPEN.
 //   A SELECT statement does not read or disturb session state -- not the
 //   current area, not the record pointer, not SET FILTER, not SET RELATION.
 //   A SELECT statement reads committed table data; uncommitted TABLE BUFFER
 //   preview overlays remain TUP/TUPLE-facing until SQLSEL DML is promoted.
-//   SELECT projects bare column names; expression projection is not yet
+//   INNER JOIN is statement-scoped ad-hoc set matching. It does not consult a
+//   declared relation; P4.1 reports its nested-loop scan path on every run.
+//   SELECT projects column names; expression projection is not yet
 //   supported and reports rather than emitting empty values.
 //   ORDER BY sorts the full match set before LIMIT applies, and reports its
-//   access path; joins and GROUP BY are not yet implemented.
+//   access path; GROUP BY and outer joins are not yet implemented.
 //   LIMIT reports how many rows remain rather than truncating silently.
 //   The legacy predicate form reads records and may temporarily move the cursor.
 //   SQLSEL does not mutate table data.
@@ -593,6 +597,4 @@ void cmd_SQL_SELECT(xbase::DbArea& A, std::istringstream& iss) {
     std::cout << "SQL DEBUG ? scanned: " << scanned << "  matched: " << cnt << "\n";
     std::cout << cnt << "\n";
 }
-
-
 

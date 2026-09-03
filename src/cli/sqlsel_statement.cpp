@@ -16,7 +16,6 @@
 // consumes:
 //   cli::find_open_area_by_name_ci        workarea_util.hpp        (P0.2)
 //   cli::ScopedEngineArea                 workarea_util.hpp        (P0.2)
-//   sqlnorm::sql_to_dottalk_where         expr/sql_normalize.hpp
 //   dottalk::expr::compile_bool_predicate cli/expr/value_eval.hpp
 //   dottalk::expr::eval_bool_compiled     cli/expr/value_eval.hpp
 //   dottalk::build_tuple_from_spec        tuple_builder.hpp        (typed P1.2)
@@ -31,6 +30,7 @@
 #include <cstdint>
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -43,7 +43,8 @@
 #include "tuple_builder.hpp"
 #include "tuple_types.hpp"
 #include "cli/expr/value_eval.hpp"
-#include "expr/sql_normalize.hpp"
+#include "cli/expr/api.hpp"
+#include "expr_tuple_glue.hpp"
 
 namespace {
 
@@ -122,6 +123,395 @@ bool value_less(const std::string& a, const std::string& b) {
     return a < b;
 }
 
+bool value_equal(const std::string& a_raw, const std::string& b_raw) {
+    const std::string a = trim(a_raw);
+    const std::string b = trim(b_raw);
+    if (!a.empty() && !b.empty() && is_numeric_literal(a) && is_numeric_literal(b)) {
+        try { return std::stod(a) == std::stod(b); } catch (...) {}
+    }
+    return a == b;
+}
+
+bool is_identifier(const std::string& s) {
+    if (s.empty() || std::isdigit(static_cast<unsigned char>(s.front()))) return false;
+    return std::all_of(s.begin(), s.end(), [](unsigned char c) {
+        return std::isalnum(c) || c == '_';
+    });
+}
+
+struct TableRef {
+    std::string name;
+    std::string alias;
+    xbase::DbArea* area = nullptr;
+};
+
+bool parse_table_ref(const std::string& text, TableRef& out, std::string& error) {
+    std::istringstream in(text);
+    std::vector<std::string> words;
+    for (std::string word; in >> word;) words.push_back(word);
+    if (words.empty()) {
+        error = "expected a table name";
+        return false;
+    }
+    if (words.size() == 1) {
+        out.name = words[0];
+        out.alias = words[0];
+    } else if (words.size() == 2) {
+        out.name = words[0];
+        out.alias = words[1];
+    } else if (words.size() == 3 && up(words[1]) == "AS") {
+        out.name = words[0];
+        out.alias = words[2];
+    } else {
+        error = "expected <table> [AS] <alias>";
+        return false;
+    }
+    if (!is_identifier(out.name) || !is_identifier(out.alias)) {
+        error = "table names and aliases must be identifiers";
+        return false;
+    }
+    return true;
+}
+
+struct ResolvedColumn {
+    int side = -1;
+    std::size_t field_index = 0;
+    std::string label;
+    char type = ' ';
+};
+
+std::optional<std::size_t> field_index_ci(xbase::DbArea& area, const std::string& name) {
+    const auto& fields = area.fields();
+    const std::string want = up(name);
+    for (std::size_t i = 0; i < fields.size(); ++i) {
+        if (up(fields[i].name) == want) return i;
+    }
+    return std::nullopt;
+}
+
+bool qualifier_matches(const TableRef& table, const std::string& qualifier) {
+    return up(qualifier) == up(table.alias) || up(qualifier) == up(table.name);
+}
+
+bool resolve_join_column(const std::string& token,
+                         const TableRef& left,
+                         const TableRef& right,
+                         bool require_qualified,
+                         ResolvedColumn& out,
+                         std::string& error) {
+    if (!is_bare_column(token)) {
+        error = "'" + token + "' is not a column name";
+        return false;
+    }
+    const std::size_t dot = token.find('.');
+    const std::string qualifier = dot == std::string::npos ? "" : token.substr(0, dot);
+    const std::string field = dot == std::string::npos ? token : token.substr(dot + 1);
+    if (require_qualified && qualifier.empty()) {
+        error = "JOIN ON columns must be qualified (got '" + token + "')";
+        return false;
+    }
+
+    const bool may_left = qualifier.empty() || qualifier_matches(left, qualifier);
+    const bool may_right = qualifier.empty() || qualifier_matches(right, qualifier);
+    const auto li = may_left ? field_index_ci(*left.area, field) : std::nullopt;
+    const auto ri = may_right ? field_index_ci(*right.area, field) : std::nullopt;
+    if (li && ri) {
+        error = "column '" + token + "' is ambiguous; qualify it with a table alias";
+        return false;
+    }
+    if (!li && !ri) {
+        error = "column '" + token + "' was not found in either joined table";
+        return false;
+    }
+    out.side = li ? 0 : 1;
+    out.field_index = li ? *li : *ri;
+    const auto& fd = (li ? left.area : right.area)->fields()[out.field_index];
+    out.type = fd.type;
+    out.label = (li ? left.alias : right.alias) + "." + fd.name;
+    return true;
+}
+
+struct CursorRestoreTwo {
+    xbase::DbArea* left = nullptr;
+    xbase::DbArea* right = nullptr;
+    std::uint64_t left_recno = 0;
+    std::uint64_t right_recno = 0;
+
+    ~CursorRestoreTwo() {
+        const auto restore = [](xbase::DbArea* area, std::uint64_t recno) {
+            if (!area || recno == 0) return;
+            try { area->gotoRec64(recno); (void)area->readCurrent(); } catch (...) {}
+        };
+        restore(left, left_recno);
+        restore(right, right_recno);
+    }
+};
+
+bool read_area_row(xbase::DbArea& area, std::vector<std::string>& values) {
+    try {
+        if (!area.readCurrent()) return false;
+        values.clear();
+        values.reserve(area.fields().size());
+        for (const auto& fd : area.fields()) values.push_back(xfg::getFieldAsString(area, fd.name));
+        return true;
+    } catch (...) {
+        return false;
+    }
+}
+
+enum class PredicateState { True, False, Error };
+
+struct PredicateVerdict {
+    PredicateState state = PredicateState::Error;
+    std::string error;
+};
+
+// NULL-READY: predicate truth is an enum, never a bool. UNKNOWN can be added
+// without changing SQLsel's evaluator seam or every caller signature (R29).
+PredicateVerdict evaluate_tuple_predicate(const dottalk::expr::Expr* program,
+                                          const dottalk::TupleRow& row) {
+    if (!program) return {PredicateState::True, {}};
+    try {
+        const auto view = dottalk::exprglue::make_record_view(row);
+        return {program->eval(view) ? PredicateState::True : PredicateState::False, {}};
+    } catch (const std::exception& ex) {
+        return {PredicateState::Error, ex.what()};
+    } catch (...) {
+        return {PredicateState::Error, "unknown predicate evaluation error"};
+    }
+}
+
+// P4.1 is deliberately independent of REL/SET RELATION (R17/R21/R27). It is
+// the correctness-first nested-loop matcher. P4.2 may replace the inner scan
+// with a reported seek path without changing this statement contract.
+bool execute_inner_join(const std::string& select_list,
+                        const std::string& from_clause,
+                        const std::string& where_text,
+                        const std::string& order_token,
+                        bool order_desc,
+                        long long limit_n) {
+    const std::size_t join_pos = find_kw(from_clause, "JOIN");
+    if (join_pos == std::string::npos) return false;
+    if (find_kw(from_clause, "JOIN", join_pos + 4) != std::string::npos) {
+        std::cout << "SQLSEL: P4.1 accepts exactly one INNER JOIN.\n";
+        return true;
+    }
+
+    std::string left_text = trim(from_clause.substr(0, join_pos));
+    const std::size_t inner_pos = find_kw(left_text, "INNER");
+    if (inner_pos != std::string::npos) {
+        if (trim(left_text.substr(inner_pos)) != "INNER" && up(trim(left_text.substr(inner_pos))) != "INNER") {
+            std::cout << "SQLSEL: expected [INNER] JOIN.\n";
+            return true;
+        }
+        left_text = trim(left_text.substr(0, inner_pos));
+    }
+
+    const std::string after_join = trim(from_clause.substr(join_pos + 4));
+    const std::size_t on_pos = find_kw(after_join, "ON");
+    if (on_pos == std::string::npos) {
+        std::cout << "SQLSEL: INNER JOIN requires ON <left-column> = <right-column>.\n";
+        return true;
+    }
+    const std::string right_text = trim(after_join.substr(0, on_pos));
+    const std::string on_text = trim(after_join.substr(on_pos + 2));
+
+    TableRef left, right;
+    std::string error;
+    if (!parse_table_ref(left_text, left, error) || !parse_table_ref(right_text, right, error)) {
+        std::cout << "SQLSEL: " << error << ".\n";
+        return true;
+    }
+    if (up(left.alias) == up(right.alias)) {
+        std::cout << "SQLSEL: joined table aliases must be distinct.\n";
+        return true;
+    }
+    left.area = cli::find_open_area_by_name_ci(left.name);
+    right.area = cli::find_open_area_by_name_ci(right.name);
+    if (!left.area || !right.area) {
+        const std::string missing = !left.area ? left.name : right.name;
+        std::cout << "SQLSEL: table '" << missing << "' is not open.\n";
+        std::cout << "        Open both joined tables first -- SQLSEL reads open work areas.\n";
+        return true;
+    }
+    if (left.area == right.area) {
+        std::cout << "SQLSEL: P4.1 joins two distinct open tables; self-join is not yet supported.\n";
+        return true;
+    }
+    std::unique_ptr<dottalk::expr::Expr> where_program;
+    if (!where_text.empty()) {
+        // Qualified names and function calls are already part of the repaired
+        // AST grammar. The legacy SQL normalizer predates both and erases '.'.
+        auto compiled = dottalk::expr::compile_where(where_text);
+        if (!compiled) {
+            std::cout << "SQLSEL: could not compile the WHERE predicate: " << where_text
+                      << " (" << compiled.error << ")\n";
+            return true;
+        }
+        where_program = std::move(compiled.program);
+    }
+
+    const std::size_t eq = on_text.find('=');
+    if (eq == std::string::npos || on_text.find('=', eq + 1) != std::string::npos) {
+        std::cout << "SQLSEL: P4.1 JOIN ON requires one equi-key comparison.\n";
+        return true;
+    }
+    ResolvedColumn on_left, on_right;
+    if (!resolve_join_column(trim(on_text.substr(0, eq)), left, right, true, on_left, error) ||
+        !resolve_join_column(trim(on_text.substr(eq + 1)), left, right, true, on_right, error)) {
+        std::cout << "SQLSEL: " << error << ".\n";
+        return true;
+    }
+    if (on_left.side == on_right.side) {
+        std::cout << "SQLSEL: JOIN ON must compare one column from each table.\n";
+        return true;
+    }
+    if (on_left.side == 1) std::swap(on_left, on_right);
+
+    std::vector<ResolvedColumn> projection;
+    std::string count_norm;
+    for (const char c : select_list) {
+        if (!std::isspace(static_cast<unsigned char>(c))) count_norm.push_back(c);
+    }
+    const bool count_star = up(count_norm) == "COUNT(*)";
+    if (!count_star) {
+        if (trim(select_list) == "*") {
+            for (std::size_t i = 0; i < left.area->fields().size(); ++i) {
+                const auto& fd = left.area->fields()[i];
+                projection.push_back({0, i, left.alias + "." + fd.name, fd.type});
+            }
+            for (std::size_t i = 0; i < right.area->fields().size(); ++i) {
+                const auto& fd = right.area->fields()[i];
+                projection.push_back({1, i, right.alias + "." + fd.name, fd.type});
+            }
+        } else {
+            for (const auto& token : split_csv(select_list)) {
+                ResolvedColumn col;
+                if (!resolve_join_column(token, left, right, false, col, error)) {
+                    std::cout << "SQLSEL: " << error << ".\n";
+                    return true;
+                }
+                projection.push_back(std::move(col));
+            }
+        }
+    }
+
+    std::optional<ResolvedColumn> order_col;
+    if (!order_token.empty()) {
+        if (count_star) {
+            std::cout << "SQLSEL: ORDER BY does not apply to COUNT(*).\n";
+            return true;
+        }
+        ResolvedColumn col;
+        if (!resolve_join_column(order_token, left, right, false, col, error)) {
+            std::cout << "SQLSEL: " << error << ".\n";
+            return true;
+        }
+        order_col = std::move(col);
+    }
+
+    struct JoinedRow {
+        std::vector<std::string> left_values;
+        std::vector<std::string> right_values;
+        std::uint64_t left_recno = 0;
+        std::uint64_t right_recno = 0;
+    };
+    std::vector<JoinedRow> rows;
+    CursorRestoreTwo restore{left.area, right.area,
+                             static_cast<std::uint64_t>(left.area->recno()),
+                             static_cast<std::uint64_t>(right.area->recno())};
+    cli::ScopedEngineArea keep_current_area;
+
+    const std::uint64_t left_count = static_cast<std::uint64_t>(left.area->recCount());
+    const std::uint64_t right_count = static_cast<std::uint64_t>(right.area->recCount());
+    for (std::uint64_t li = 1; li <= left_count; ++li) {
+        std::vector<std::string> lv;
+        {
+            cli::ScopedAreaSelect focus(left.area);
+            left.area->gotoRec64(li);
+            if (!read_area_row(*left.area, lv) || left.area->isDeleted()) continue;
+        }
+        for (std::uint64_t ri = 1; ri <= right_count; ++ri) {
+            std::vector<std::string> rv;
+            {
+                cli::ScopedAreaSelect focus(right.area);
+                right.area->gotoRec64(ri);
+                if (!read_area_row(*right.area, rv) || right.area->isDeleted()) continue;
+            }
+            if (value_equal(lv[on_left.field_index], rv[on_right.field_index])) {
+                JoinedRow joined{lv, rv, li, ri};
+                if (where_program) {
+                    dottalk::TupleRow tuple;
+                    for (std::size_t i = 0; i < left.area->fields().size(); ++i) {
+                        const auto& fd = left.area->fields()[i];
+                        tuple.columns.push_back({left.alias + "." + fd.name,
+                                                 -1, fd.name, fd.type,
+                                                 static_cast<int>(fd.length), static_cast<int>(fd.decimals)});
+                        tuple.values.push_back(lv[i]);
+                    }
+                    for (std::size_t i = 0; i < right.area->fields().size(); ++i) {
+                        const auto& fd = right.area->fields()[i];
+                        tuple.columns.push_back({right.alias + "." + fd.name,
+                                                 -1, fd.name, fd.type,
+                                                 static_cast<int>(fd.length), static_cast<int>(fd.decimals)});
+                        tuple.values.push_back(rv[i]);
+                    }
+                    tuple.fragments.push_back({-1, li, dottalk::TupleSourceKind::DBF,
+                                               false, "SQLSEL:" + left.alias});
+                    tuple.fragments.push_back({-1, ri, dottalk::TupleSourceKind::DBF,
+                                               false, "SQLSEL:" + right.alias});
+                    const auto verdict = evaluate_tuple_predicate(where_program.get(), tuple);
+                    if (verdict.state == PredicateState::Error) {
+                        std::cout << "SQLSEL: predicate evaluation failed: " << verdict.error << "\n";
+                        return true;
+                    }
+                    if (verdict.state == PredicateState::False) continue;
+                }
+                rows.push_back(std::move(joined));
+            }
+        }
+    }
+
+    const auto cell = [](const JoinedRow& row, const ResolvedColumn& col) -> const std::string& {
+        return col.side == 0 ? row.left_values[col.field_index] : row.right_values[col.field_index];
+    };
+    if (order_col) {
+        std::stable_sort(rows.begin(), rows.end(), [&](const JoinedRow& a, const JoinedRow& b) {
+            return order_desc ? value_less(trim(cell(b, *order_col)), trim(cell(a, *order_col)))
+                              : value_less(trim(cell(a, *order_col)), trim(cell(b, *order_col)));
+        });
+    }
+
+    std::cout << "SQLSEL: INNER JOIN access path -- nested-loop scan (outer="
+              << left_count << " row(s), inner=" << right_count << " row(s)).\n";
+    if (count_star) {
+        std::cout << "COUNT(*)\n" << rows.size() << "\n1 row(s) selected.\n";
+        return true;
+    }
+
+    for (std::size_t i = 0; i < projection.size(); ++i) {
+        if (i) std::cout << " | ";
+        std::cout << projection[i].label;
+    }
+    std::cout << "\n";
+    const std::size_t shown = limit_n >= 0
+        ? std::min<std::size_t>(rows.size(), static_cast<std::size_t>(limit_n))
+        : rows.size();
+    for (std::size_t r = 0; r < shown; ++r) {
+        for (std::size_t i = 0; i < projection.size(); ++i) {
+            if (i) std::cout << " | ";
+            std::cout << trim(cell(rows[r], projection[i]));
+        }
+        std::cout << "\n";
+    }
+    std::cout << shown << " row(s) selected.\n";
+    if (shown < rows.size()) {
+        std::cout << "SQLSEL: LIMIT reached; " << (rows.size() - shown)
+                  << " more row(s) available.\n";
+    }
+    return true;
+}
+
 } // namespace
 
 namespace sqlsel {
@@ -129,16 +519,20 @@ namespace sqlsel {
 void print_statement_usage() {
     std::cout
         << "SQLSEL statement usage:\n"
-        << "  SQLSEL <col>[,<col>...] FROM <table>\n"
+        << "  SQLSEL <col>[,<col>...] FROM <table> [[AS] <alias>]\n"
         << "         [WHERE <predicate>] [ORDER BY <field> [ASC|DESC]] [LIMIT <n>]\n"
         << "  SQLSEL * FROM <table>\n"
         << "  SQLSEL COUNT(*) FROM <table> [WHERE <predicate>]\n"
+        << "  SQLSEL <list> FROM <table> [AS] <a> [INNER] JOIN\n"
+        << "         <table> [AS] <b> ON <a.field> = <b.field>\n"
         << "Notes:\n"
         << "  SQLSEL is itself the select verb; the SELECT keyword is OPTIONAL\n"
         << "  (SQLSEL SELECT ... still parses). Not to be confused with xBase\n"
         << "  SELECT <area>, which switches the active work area.\n"
         << "  The table must be OPEN (USE <table>) -- SQLSEL reads open work areas.\n"
-        << "  v1 accepts bare column names; expression projection is not yet supported.\n"
+        << "  P4.1 joins two open tables with one equi-key. WHERE evaluates the\n"
+        << "  resulting qualified TupleRow; no REL or SET RELATION state is read.\n"
+        << "  v1 accepts column names; expression projection is not yet supported.\n"
         << "  A statement does not change the current area or any record pointer.\n";
 }
 
@@ -180,21 +574,16 @@ bool try_execute_select(const std::string& tail_in) {
     if (limit_pos != std::string::npos) from_end = std::min(from_end, limit_pos);
 
     const std::string table_clause = trim(tail.substr(from_pos + 4, from_end - (from_pos + 4)));
+    const bool has_join = find_kw(table_clause, "JOIN") != std::string::npos;
     std::string table_name;
-    {
-        std::istringstream ts(table_clause);
-        ts >> table_name;
-        std::string extra;
-        if (ts >> extra) {
-            std::cout << "SQLSEL: unexpected token '" << extra << "' after the table name.\n";
-            std::cout << "        v1 reads a single table; joins arrive with the join phase.\n";
+    TableRef single_table;
+    if (!has_join) {
+        std::string table_error;
+        if (!parse_table_ref(table_clause, single_table, table_error)) {
+            std::cout << "SQLSEL: " << table_error << ".\n";
             return true;
         }
-    }
-    if (table_name.empty()) {
-        std::cout << "SQLSEL: expected a table name after FROM.\n";
-        print_statement_usage();
-        return true;
+        table_name = single_table.name;
     }
 
     std::string where_text;
@@ -242,8 +631,18 @@ bool try_execute_select(const std::string& tail_in) {
             return true;
         }
         // strip any TABLE. prefix for the field read
-        const std::size_t dot = order_field.find('.');
-        if (dot != std::string::npos) order_field = order_field.substr(dot + 1);
+        if (!has_join) {
+            const std::size_t dot = order_field.find('.');
+            if (dot != std::string::npos) {
+                const std::string qualifier = order_field.substr(0, dot);
+                if (!qualifier_matches(single_table, qualifier)) {
+                    std::cout << "SQLSEL: ORDER BY qualifier '" << qualifier
+                              << "' does not name table alias '" << single_table.alias << "'.\n";
+                    return true;
+                }
+                order_field = order_field.substr(dot + 1);
+            }
+        }
     }
 
     long long limit_n = -1;
@@ -257,6 +656,13 @@ bool try_execute_select(const std::string& tail_in) {
             std::cout << "SQLSEL: LIMIT expects a non-negative integer (got '" << limit_text << "').\n";
             return true;
         }
+    }
+
+    // P4.1 JOIN owns the full FROM clause. Keep it out of the single-table
+    // resolver below so no REL/session state can leak into matching.
+    if (has_join) {
+        return execute_inner_join(select_list, table_clause, where_text,
+                                  order_field, order_desc, limit_n);
     }
 
     // --- resolve FROM against OPEN work areas (statement-scoped) -------------
@@ -302,19 +708,31 @@ bool try_execute_select(const std::string& tail_in) {
                 return true;
             }
             if (!spec.empty()) spec.push_back(',');
-            spec += (c.find('.') == std::string::npos) ? (area_label + "." + c) : c;
+            const std::size_t dot = c.find('.');
+            if (dot == std::string::npos) {
+                spec += area_label + "." + c;
+            } else {
+                const std::string qualifier = c.substr(0, dot);
+                if (!qualifier_matches(single_table, qualifier)) {
+                    std::cout << "SQLSEL: select qualifier '" << qualifier
+                              << "' does not name table alias '" << single_table.alias << "'.\n";
+                    return true;
+                }
+                spec += area_label + "." + c.substr(dot + 1);
+            }
         }
     }
 
     // --- compile the predicate ONCE (not per row) ----------------------------
-    std::shared_ptr<dottalk::expr::CompiledPredicate> pred;
+    std::unique_ptr<dottalk::expr::Expr> pred;
     if (!where_text.empty()) {
-        const std::string dt_where = sqlnorm::sql_to_dottalk_where(where_text);
-        pred = dottalk::expr::compile_bool_predicate(*area, dt_where, /*allow_raw=*/false);
-        if (!pred) {
-            std::cout << "SQLSEL: could not compile the WHERE predicate: " << where_text << "\n";
+        auto compiled = dottalk::expr::compile_where(where_text);
+        if (!compiled) {
+            std::cout << "SQLSEL: could not compile the WHERE predicate: " << where_text
+                      << " (" << compiled.error << ")\n";
             return true;
         }
+        pred = std::move(compiled.program);
     }
 
     // --- scan, projecting each surviving row ---------------------------------
@@ -353,14 +771,21 @@ bool try_execute_select(const std::string& tail_in) {
                 } catch (...) { break; }
 
                 if (keep && pred) {
-                    bool tf = false;
-                    std::string perr;
-                    if (!dottalk::expr::eval_bool_compiled(*pred, *area, tf, &perr)) {
-                        scan_error = "predicate evaluation failed: " +
-                                     (perr.empty() ? where_text : perr);
+                    dottalk::TupleBuildResult predicate_row =
+                        dottalk::build_tuple_from_spec(area_label + ".*", opts);
+                    if (!predicate_row.ok) {
+                        scan_error = "predicate row build failed: " + predicate_row.error;
                         break;
                     }
-                    keep = tf;
+                    for (auto& column : predicate_row.row.columns) {
+                        column.name = single_table.alias + "." + column.field;
+                    }
+                    const auto verdict = evaluate_tuple_predicate(pred.get(), predicate_row.row);
+                    if (verdict.state == PredicateState::Error) {
+                        scan_error = "predicate evaluation failed: " + verdict.error;
+                        break;
+                    }
+                    keep = verdict.state == PredicateState::True;
                 }
 
                 if (keep) {

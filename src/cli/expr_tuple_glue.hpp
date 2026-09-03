@@ -16,6 +16,7 @@
 #include <unordered_map>
 #include <cctype>
 #include <algorithm>
+#include <stdexcept>
 
 #include "tuple_types.hpp"       // TupleRow, columns/values/fragments
 #include "cli/expr/eval.hpp"         // dottalk::expr::to_number, iequals
@@ -84,6 +85,10 @@ inline std::optional<double> tuple_recno_number(const TupleRow& row) {
     return static_cast<double>(row.fragments.front().recno);
 }
 
+inline bool tuple_deleted(const TupleRow& row) {
+    return !row.fragments.empty() && row.fragments.front().deleted;
+}
+
 inline std::string trim(std::string s) {
     auto issp = [](unsigned char c){ return c==' '||c=='\t'||c=='\r'||c=='\n'; };
     while (!s.empty() && issp((unsigned char)s.front())) s.erase(s.begin());
@@ -120,7 +125,7 @@ inline dottalk::expr::RecordView make_record_view(const TupleRow& row) {
             return {};
         }
         if (dottalk::expr::iequals(name, "DELETED()") || dottalk::expr::iequals(name, "DELETED")) {
-            return "0";
+            return tuple_deleted(row) ? "T" : "F";
         }
         if (auto em = try_eval_empty_identifier(std::string(name), idx, row)) {
             return (*em ? "1" : "0");
@@ -133,8 +138,8 @@ inline dottalk::expr::RecordView make_record_view(const TupleRow& row) {
             }
             return true;
         };
-        if (is_bare(name)) return norm_by_collation(std::string(name)); // treat as literal string
-        return {};
+        (void)is_bare;
+        throw std::runtime_error("unknown field '" + std::string(name) + "'");
     };
 
     rv.get_field_num = [row, idx](std::string_view name) -> std::optional<double> {
@@ -142,12 +147,31 @@ inline dottalk::expr::RecordView make_record_view(const TupleRow& row) {
             return tuple_recno_number(row);
         }
         if (dottalk::expr::iequals(name, "DELETED()") || dottalk::expr::iequals(name, "DELETED")) {
-            return 0.0;
+            return tuple_deleted(row) ? 1.0 : 0.0;
         }
         if (auto em = try_eval_empty_identifier(std::string(name), idx, row)) {
             return (*em ? 1.0 : 0.0);
         }
-        if (auto pos = idx.find(name)) return dottalk::expr::to_number(row.values[*pos]);
+        if (auto pos = idx.find(name)) {
+            const std::string value = trim(row.values[*pos]);
+            const char type = static_cast<char>(std::toupper(
+                static_cast<unsigned char>(row.columns[*pos].ftype)));
+            if (type == 'L') {
+                std::string logical = value;
+                for (char& c : logical) c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+                if (logical == ".T." || logical == "T" || logical == "TRUE" || logical == "Y") return 1.0;
+                if (logical == ".F." || logical == "F" || logical == "FALSE" || logical == "N") return 0.0;
+            }
+            return dottalk::expr::to_number(value);
+        }
+        return std::nullopt;
+    };
+
+    rv.get_field_type = [idx, row](std::string_view name) -> std::optional<char> {
+        if (dottalk::expr::iequals(name, "RECNO") ||
+            dottalk::expr::iequals(name, "RECCOUNT")) return 'N';
+        if (dottalk::expr::iequals(name, "DELETED")) return 'L';
+        if (auto pos = idx.find(name)) return row.columns[*pos].ftype;
         return std::nullopt;
     };
 

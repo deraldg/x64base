@@ -16,6 +16,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <stdexcept>
 #include <unordered_map>
 #include <cstdint>
 
@@ -175,6 +176,9 @@ RecordView make_record_view(xbase::DbArea& area) {
             if (up == "DELETED") {
                 return area.isDeleted() ? "T" : "F";
             }
+            if (up == "RECNO") {
+                return std::to_string(area.recno64());
+            }
             // Special symbol: RECCOUNT -- the DBF header's stored record count
             // (bytes 4-7, HeaderRec::num_of_recs), reached via recCount64().
             // Owner correction 2026-08-12: a DBF record count is a FACT IN THE
@@ -188,7 +192,7 @@ RecordView make_record_view(xbase::DbArea& area) {
         }
 
         int idx = field_index_ci_cached(area, name, *idx_cache);
-        if (idx <= 0) return std::string();
+        if (idx <= 0) throw std::runtime_error("unknown field '" + std::string(name) + "'");
         return get_logical_field_text(area, idx);
     };
 
@@ -201,6 +205,9 @@ RecordView make_record_view(xbase::DbArea& area) {
             for (char c: name) up.push_back((char)std::toupper((unsigned char)c));
             if (up == "DELETED") {
                 return area.isDeleted() ? 1.0 : 0.0;
+            }
+            if (up == "RECNO") {
+                return static_cast<double>(area.recno64());
             }
             if (up == "RECCOUNT") {
                 return static_cast<double>(area.recCount64());
@@ -239,6 +246,16 @@ RecordView make_record_view(xbase::DbArea& area) {
         return std::nullopt;
     };
 
+    rv.get_field_type = [&area, idx_cache](std::string_view name)->std::optional<char> {
+        std::string key;
+        for (char c : name) key.push_back(static_cast<char>(std::toupper(static_cast<unsigned char>(c))));
+        if (key == "DELETED") return 'L';
+        if (key == "RECNO" || key == "RECCOUNT") return 'N';
+        const int idx = field_index_ci_cached(area, name, *idx_cache);
+        if (idx <= 0) return std::nullopt;
+        return area.fields()[static_cast<std::size_t>(idx - 1)].type;
+    };
+
     return rv;
 }
 
@@ -261,6 +278,9 @@ RecordView make_record_view_raw(xbase::DbArea& area) {
             if (up == "DELETED") {
                 return area.isDeleted() ? "T" : "F";
             }
+            if (up == "RECNO") {
+                return std::to_string(area.recno64());
+            }
             // Special symbol: RECCOUNT -- the DBF header's stored record count
             // (bytes 4-7, HeaderRec::num_of_recs), reached via recCount64().
             // Owner correction 2026-08-12: a DBF record count is a FACT IN THE
@@ -274,7 +294,7 @@ RecordView make_record_view_raw(xbase::DbArea& area) {
         }
 
         int idx = field_index_ci_cached(area, name, *idx_cache);
-        if (idx <= 0) return std::string();
+        if (idx <= 0) throw std::runtime_error("unknown field '" + std::string(name) + "'");
         return get_logical_field_text_raw(area, idx);
     };
 
@@ -285,6 +305,9 @@ RecordView make_record_view_raw(xbase::DbArea& area) {
             for (char c: name) up.push_back((char)std::toupper((unsigned char)c));
             if (up == "DELETED") {
                 return area.isDeleted() ? 1.0 : 0.0;
+            }
+            if (up == "RECNO") {
+                return static_cast<double>(area.recno64());
             }
             if (up == "RECCOUNT") {
                 return static_cast<double>(area.recCount64());
@@ -326,6 +349,16 @@ RecordView make_record_view_raw(xbase::DbArea& area) {
             try { return std::stod(*canon); } catch (...) { /* fall through */ }
         }
         return std::nullopt;
+    };
+
+    rv.get_field_type = [&area, idx_cache](std::string_view name)->std::optional<char> {
+        std::string key;
+        for (char c : name) key.push_back(static_cast<char>(std::toupper(static_cast<unsigned char>(c))));
+        if (key == "DELETED") return 'L';
+        if (key == "RECNO" || key == "RECCOUNT") return 'N';
+        const int idx = field_index_ci_cached(area, name, *idx_cache);
+        if (idx <= 0) return std::nullopt;
+        return area.fields()[static_cast<std::size_t>(idx - 1)].type;
     };
 
     return rv;

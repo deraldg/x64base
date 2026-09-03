@@ -107,14 +107,14 @@ projection, never a hand-authored sibling authority.
 | P0 | Demote phantom SQL contracts (8 files, `supported` -> `experimental`); consolidate 5 duplicated helpers; resolve `cli::AliasRegistry`; run the AIF-073 harness | G0 |
 | P1 | Engine seams: PRIMARY/UNIQUE metadata (4 consumers), TupleRow type surface + null ruling (OQ-2), truncation honesty (RDB-06), typed equality, first production `seek()` consumer (+PS-01 gate), P1.6 route projection/print expression terms through expr (R12; until it lands, SQLSEL v1 projection is bare columns only with corrective errors) | G1 |
 | P2 | `src/sqlsel/` library target; `SET MODE`; `SELECT` router; R8 block; expression-fallback interception | G2 (`SQLMODE_SMOKE`) |
-| P4.0a | **IMPLEMENTED 2026-07-30; parity RED (R24c).** Permanent `EVALDIFF` observer + typed, self-erasing SANDBOX fixture + registered explicit-run corpus. Build and real-runtime run completed; cursor restored and fixture erased. Refined result: 20 predicates produced 10 `VERDICT-PARITY`, 2 `PARITY-ON-FAILURE`, and 8 `DIFFERENCES` summaries. The differing predicates reduce to TWO root-cause clusters, not six function defects: the TupleRow AST route does not parse function calls or require end-of-input (ED-01), and classic `EMPTY()` loses its logical type during expansion (ED-02). `DELETED()`, unknown-field, and incompatible-type probes are shared wrong answers proving parity is not correctness. Full result and disposition: `docs/maintenance/EVALUATOR_DIFFERENTIAL_HARNESS_SCOPE_V1.md`; transcript: `labtalk/proofs/runs/20260730_evaldiff_p4_0a.txt`. Observer only; no evaluator semantics changed | G4.0a HARNESS CLOSED / PARITY RED (registered `EVALDIFF`; findings block migration) |
-| P4.0b | **BLOCKED BY P4.0a FINDINGS. Evaluator seam + SQLsel migration (R24a/R24b).** One predicate-evaluation interface, two implementations; SQLsel's `WHERE` takes the tuple-bound one with `overlay_table_buffer=false` to preserve R18. Before migration, repair ED-01 and ED-02, then convert the shared `DELETED()` / unknown-field / incompatible-type wrong answers into reported failures under explicit oracle cases. A parity label alone never blesses correctness | G3 RE-RUN unchanged after parity and oracle repair -- if the SQLite oracle still matches row-for-row, the migration changed nothing |
-| P4.1 | INNER JOIN, two tables, one equi-key. Adds table ALIASES (`FROM STUDENTS S`) and QUALIFIED column names (`S.LNAME`), which every later slice needs. Nested loop, inner side SCANNED -- correctness before speed | G4a (SQLite oracle, incl. row multiplication) |
+| P4.0a | **IMPLEMENTED 2026-07-30; parity repaired and machine-gated 2026-09-03.** Permanent `EVALDIFF` observer + typed, self-erasing SANDBOX fixture + registered explicit-run corpus. The original RED result remains historical evidence: it found ED-01/ED-02 and three shared silent-wrong-answer cases. The 2026-09-03 repair added function-call and logical-literal AST support, preserved end-of-input refusal, carried deleted/type metadata into TupleRow, and made unknown fields and incompatible numeric/string comparisons report. `REGRESSION EVALDIFF` now checks the exact ordered 22-case predicate and truth/error vector, not parity alone: 17 valid cases, 5 fail-closed controls, two cursor guards. Changing the numeric equality case from 12.5 to 13.5 produced validator FAIL and canonical invalid-argument status; the intact fixture returned PASS and success | G4.0a HARNESS CLOSED / EXACT CORRECTNESS VECTOR GREEN |
+| P4.0b | **IMPLEMENTED AND RUNTIME-OBSERVED 2026-09-03.** SQLsel `WHERE` now compiles once through the repaired AST and evaluates a committed-truth TupleRow through a `{TRUE,FALSE,ERROR}` seam. Unknown fields and incompatible comparisons fail closed. `REGRESSION SQLSEL_SELECT_V1` now machine-compares 11 marked row sets with SQLite, requires three cursor guards, eight refusal messages, two LIMIT reports and four sort-path reports; the function predicate and both fail-closed cases are included | G3 MACHINE VALIDATOR GREEN; MUTATION RED OBSERVED |
+| P4.1 | **IMPLEMENTED AND RUNTIME-OBSERVED 2026-09-03; explicit-run candidate with a multi-process shallow soak.** INNER JOIN over two distinct open tables, one equi-key, `FROM <table> [AS] <alias>`, qualified columns, joined-row WHERE, ORDER BY/LIMIT, COUNT(*), cursor neutrality, and an always-reported nested-loop scan path. It does not consult REL, SET RELATION, or ambient workspace state. `REGRESSION SQLSEL_INNER_JOIN` captures four marked SQLsel results and automatically compares their values, order, and counts with four marked in-run SQLite results; it also requires two cursor guards, three corrective refusals, and four access-path reports. A one-row oracle mutation was observed to print FAIL and canonical error status | G4a GREEN: validator PASS 4/4 on at least three intact process starts; mutation RED observed; promotion not inferred |
 | P4.2 | Index-assisted inner side via `CdxBackend::seek` when the ON key has a usable tag; scan fallback; access path REPORTED every time (R21). Absorbs P1.5 | G4b (same oracle results, both paths, plus the path report asserted) |
 | P4.3 | LEFT JOIN with the R22 unmatched marker, defined ONCE, plus a left-extended row count on every LEFT JOIN | G4c (oracle with SQLite NULL mapped explicitly to the marker) |
 | P4.4 | **RIGHT, FULL, CROSS (R26).** RIGHT = LEFT with operands swapped; FULL = LEFT plus right-side rows that never matched; CROSS = join with no ON. All reuse the ONE R22 marker and the same extended-row count -- no second convention | G4d (oracle across all four outer forms, SQLite NULL mapped to the marker) |
 | P4.5 | **DISTINCT and set operations (R26).** UNION / UNION ALL / INTERSECT / EXCEPT. Duplicate elimination and operand column-compatibility both reuse the ONE R16 ordering/equality model already shared by relation equality and ORDER BY -- a second comparison rule invented here is a defect. Blocked on OQ-11 | G4e (oracle, incl. duplicate counts which are where set operations actually go wrong) |
-| P4.6 | **GROUP BY / HAVING and the aggregates (R26).** COUNT, SUM, AVG, MIN, MAX. Aggregates run over SQLsel-produced rows, never delegated to native COUNT FOR (which carries session-filter semantics SQLsel ignores) and never to a DbArea command, since a joined row has no DbArea. Blocked on OQ-10 | G4f (oracle, with the OQ-10 blank rule asserted explicitly row-by-row, not just on the totals) |
+| P4.6 | **GROUP BY / HAVING and the aggregates (R26).** COUNT, SUM, AVG, MIN, MAX. Aggregates run over SQLsel-produced rows, never delegated to native COUNT FOR (which carries session-filter semantics SQLsel ignores) and never to a DbArea command, since a joined row has no DbArea. **UNBLOCKED by R28:** numeric aggregates skip blank non-values and report the carried-value/blank split | G4f (oracle, with the R28 blank rule asserted explicitly row-by-row, not just on the totals) |
 | P4.7 | **Subqueries (R26).** Scalar, IN, EXISTS; UNCORRELATED first (evaluate once, reuse), CORRELATED second (re-evaluate per outer row). Requires the binder from P4.0b to resolve an inner reference to an outer table. Relational DIVISION becomes expressible here as NOT EXISTS over NOT EXISTS -- documented as a worked example, given no operator. Blocked on OQ-12 | G4g (oracle, incl. a correlated case whose inner result CHANGES per outer row -- an uncorrelated-only implementation passes a badly chosen fixture) |
 | P3 | **DONE 2026-07-29.** Single-table `SELECT` (projection/WHERE/ORDER BY/LIMIT/COUNT(*)) | **G3 CLOSED** (SQLite oracle, registered `SQLSEL_SELECT_V1`) |
 | P4 | Relational algebra (roll-up of P4.0a-P4.7, R26): join family, set operations, grouping/aggregation, subqueries. Ad-hoc ON matching per R21 -- NO declared relation required (R27); chain nested-loop; index-nested-loop where a tag exists; minimal EXPLAIN | G4 (oracle + cross-algorithm identity) |
@@ -133,7 +133,7 @@ The algebra itself is IN scope in full (R26).
 | OQ-10 aggregates over blank | **RULED -- see R28 (skip and report) and R29 (NULL-readiness).** Original question kept: SQL skips NULL in SUM/AVG/COUNT(col); x64base has no NULL and R16 ruled blank IS a value, so does AVG over a column containing blanks divide by 200 or by 160? Both defensible, and they differ on real data | P4.6 -- UNBLOCKED |
 | OQ-11 set-operation operands | P4.5 | UNION requires operands with compatible column counts and types. DBF types are not SQL types (C/N/D/L/M), so compatibility needs a stated rule. Proposed default: same column COUNT required; per-column comparison follows the R16 model; a type pairing with no R16 ordering is REPORTED and refused rather than coerced |
 | OQ-12 correlated subquery cost | P4.7 | A correlated subquery re-runs per outer row, so a 200-row outer over a 200-row inner is 40,000 evaluations. Proposed default: implement it correctly and REPORT the evaluation count every time, the same way P4.2 reports its access path; optimize only against a measured Pinocchio-scale case, never speculatively |
-| OQ-13 qualifier namespace DEPTH | **P4.1 -- and it expires there.** | **Cross-lane, owed from AIF-078** (`docs/maintenance/WORKSPACE_QUALIFIER_NAMESPACE_DEPTH_LANE_V1.md`). P4.1 is scheduled to add table ALIASES and QUALIFIED column names, "which every later slice needs". That qualifier's namespace is ONE level (table alias) or TWO (workspace + table alias), and the decision is free while the grammar is unwritten. Measured asymmetry: ~3 surfaces if ruled before P4.1 authors it, ~10 surfaces PLUS re-running every closed G4a-G4g oracle gate if retrofitted after P4.7. Per R23, priced as a ladder. **GOOD -- one level.** Table alias only; no workspace concept enters SQLsel. Cost: zero now, and forecloses nothing that a later rewrite could not reopen at the ~10-surface price. **BETTER (recommended) -- two levels, outer reserved and unreachable.** The qualifier grammar admits an outer level that always defaults to the current workspace and has no surface syntax in P4.1. Cost: a sigil reserved in the grammar (`@`; `#n` and `$v` are taken, `@` is absent from `TokKind` and has no `@ row,col SAY` surface -- searched and absent) plus a one-sentence R27 scope clause. Buys the option; builds no feature. **BEST -- two levels, addressable.** `FROM @MCC.STUDENTS S` resolves. Cost: requires a workspace runtime that does not exist and that AIF-070 owns, so this rung is NOT SQLsel's to price and is recorded only to show the ladder's top. **Load-bearing dependency: R27 needs a scope clause either way.** "Any two OPEN tables join with no registry lookup" is unambiguous at one workspace; at several with no scope, every join site inherits `find_open_area_by_name_ci`'s silent first-match (`src/cli/workarea_util.cpp:29-51`), and a mis-resolved join returns plausible WRONG ROWS rather than an error -- the defect class this lane has closed repeatedly. Proposed clause: *open means open WITHIN THE CURRENT WORKSPACE; the qualifier's outer level is reserved and defaults to it.* Related: AIF-078 Q8 proposes NO implicit ancestor walk if depth is ever resolved |
+| OQ-13 qualifier namespace DEPTH | **RULED BY AIF-149 AND IMPLEMENTED AT P4.1.** | SQLsel does not read ambient workspace session state. P4.1 uses exactly one qualifier level, `alias.field`. Future cross-workspace work belongs to the relation/name managers and uses an explicit `<alias> IN <ws>` name shape; it does not reserve or overload a dotted workspace level because that collides with `alias.field`. |
 | SET FILTER stance for SQL statements | P3 gate | statements ignore session filter; stated in contract |
 | Bare `SQL` command disposition | P2.4 | retire after P0 demotion |
 | Product name (SQLTalk?) | P6 | owner's call |
@@ -217,3 +217,51 @@ metadata; owner rulings OQ-2 (blank-vs-NULL) blocks P1.2.
 structure survived; 6 corrections (2 substantive: a cited regression filename that does
 not exist -- G5 respecified against `commit_rollback_test.dts` + the pinocchio WAL phase
 proofs -- and the AP-4 gate overclaim). Full appendix in the plan document.
+
+**2026-09-03, evaluator repair + P4.1 G4a:** the old P4.0b block was re-read
+against a freshly built `22a51e24 dirty` runtime before code moved. It was real:
+TupleRow function calls errored and the shared unknown-field/type-mismatch cases
+still returned silent false answers. The gate was therefore repaired, not waived.
+
+- `EVALDIFF` now reports `VERDICT-PARITY` for every valid corpus predicate,
+  including `EMPTY`, `ALLTRIM`, `UPPER`, `SUBSTR`, `DTOS`, `CTOD`, logical values,
+  and `DELETED()`. Unknown field, numeric-vs-nonnumeric literal, malformed paren,
+  and trailing-input controls report `PARITY-ON-FAILURE` on all four rows.
+- `REGRESSION EVALDIFF` no longer treats parity as correctness. Its attached
+  validator requires the exact ordered 22-case predicate and truth/error vector
+  (17 valid, 5 fail-closed), both cursor guards, and the usage evidence. A
+  mutation from `NVAL = 12.5` to `NVAL = 13.5` was observed to print case-3
+  `FAIL` and leave canonical invalid-argument status; restoration printed
+  `PASS -- 22/22` and success.
+- SQLsel single-table `WHERE` moved from the `DbArea` evaluator to a committed-truth
+  TupleRow. `REGRESSION SQLSEL_SELECT_V1` now machine-compares eleven separately
+  marked row sets with SQLite and requires three cursor guards, eight corrective
+  refusals, two LIMIT-honesty reports, and four sort-path reports. Changing only
+  SQLite's BAKER row to MUTANT produced row-mismatch `FAIL` and canonical
+  invalid-argument status; restoration printed `PASS -- 11/11` and success.
+- `REGRESSION SQLSEL_INNER_JOIN` is registered and ran with an executable
+  transcript validator. Four marked SQLsel row sets matched four marked SQLite
+  row sets in values, order, and counts; both cursor guards, three corrective
+  refusals, and four nested-loop path reports were present. The validator printed
+  `PASS -- 4/4` on the intact fixture. Changing only SQLite's `CS101` row to
+  `MUTANT` made the same registered run print `FAIL -- SQLSEL-J1-J2 vs SQLSEL-O1
+  row mismatch`; the fixture was then restored and re-run green. Both throwaway
+  tables erased, and the L3 catalog isolation arms stayed green before and after.
+- Statement spelling is covered on both sides of R14: the JOIN fixture uses the
+  canonical `SQLSEL <list> FROM ...` form and one joined-WHERE arm uses the
+  optional compatibility spelling `SQLSEL SELECT <list> FROM ...`; the existing
+  single-table S14 arm now uses the canonical spelling.
+- The registry edit and every newly registered fixture are one atomic landing
+  unit. This is an OI-019 recurrence, not a new OI: a partial commit would list
+  a regression a fresh clone cannot run.
+- At least three intact qualifying runs over separate process starts printed the complete
+  validator PASS and ended with canonical `ERROR_STATUS` success. A separate
+  mutation run printed FAIL and ended with `ERROR_STATUS` error / invalid argument.
+  This is a shallow explicit-run soak, not promotion. The 21-target CTest suite
+  passed independently and does not include either explicit-run SQLsel DotScript.
+- P4.1 is statement-scoped ad-hoc matching. It is not a walker over the declared
+  REL graph and must not extend the "two walkers, one graph" claim. Website and
+  publication surfaces remain unchanged until this local unit lands.
+
+This evidence and implementation remain local to the development repository.
+No push, main-tree promotion, website edit, or publication is claimed.

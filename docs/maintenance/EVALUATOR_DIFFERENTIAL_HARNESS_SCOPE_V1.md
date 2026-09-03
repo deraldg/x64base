@@ -197,3 +197,39 @@ P4.0b is not mechanical and must not migrate SQLsel's `WHERE` onto the tuple
 path until ED-01 and ED-02 are repaired and the shared silent-wrong-answer cases
 are converted to reported failures under explicit oracle cases. The harness
 itself changes neither evaluator.
+
+## 2026-09-03 repair result
+
+The blocking findings were re-observed on the current development runtime before
+repair, then fixed in the shared expression path rather than bypassed in SQLsel.
+
+- ED-01: the AST now parses function calls and comma-separated arguments, evaluates
+  the registered string/date/numeric/custom function families against either
+  RecordView, and retains the existing whole-input check.
+- ED-02: logical function results remain logical literals instead of being quoted
+  into strings; `.T.` and `.F.` are first-class AST values.
+- `DELETED()` reads record provenance in TupleRow and the live deletion flag in the
+  DbArea view. The four-row corpus now returns 1 true / 3 false on both paths.
+- Missing fields throw a named error. A numeric field compared with a nonnumeric
+  string literal throws an incompatible-types error. The classic shortcut falls
+  through to the same checked AST when it cannot normalize a field or value.
+- TupleRow now carries field type and deleted-record provenance needed by those
+  decisions. Logical field values coerce identically on both paths.
+
+Measured through `REGRESSION EVALDIFF` on the freshly built `22a51e24 dirty`
+runtime: all valid predicates report `VERDICT-PARITY`; the unknown-field,
+incompatible-type, malformed-parenthesis, and two trailing-input controls report
+`PARITY-ON-FAILURE`; no `DIFFERENCES` summary remains. Cursor restoration and
+fixture erasure both remained green.
+
+The registered regression now attaches a fail-closed transcript validator. It
+checks the exact ordered 22-case predicate and truth/error vector (17 valid
+verdict cases, 5 failure cases), not merely the absence of `DIFFERENCES`, and
+requires both cursor guards plus the usage evidence. A mutation changing the
+numeric equality case from `NVAL = 12.5` to `NVAL = 13.5` was observed to print
+case-3 `FAIL` and set canonical invalid-argument status. After restoration the
+same registered command printed `PASS -- 22/22` and ended with success.
+
+**Current gate disposition:** P4.0b is unblocked and was completed in the same run
+by moving SQLsel WHERE to the repaired TupleRow path. This section records local
+development evidence; it does not claim a push, promotion, or publication.

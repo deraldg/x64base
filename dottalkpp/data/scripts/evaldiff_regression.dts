@@ -11,9 +11,10 @@
 *   - the current record is restored after every comparison
 *   - DIFFERENCES are findings, not silently repaired semantics
 * Read rule:
-*   EVALDIFF VERDICT-PARITY means TRUE/FALSE outcome classes agreed; it is not
-*   a correctness oracle. PARITY-ON-FAILURE means both paths failed every row.
-*   EVALDIFF DIFFERENCES lists every record where TRUE/FALSE/ERROR differed.
+*   REGRESSION EVALDIFF machine-checks the exact 22-case truth/error vector,
+*   not parity alone, plus both cursor guards. Any missing, extra, reordered,
+*   or changed result fails closed. Direct DOTSCRIPT execution remains an
+*   observer transcript and does not invoke the REGRESSION validator.
 * ============================================================================
 
 SET ECHO OFF
@@ -50,8 +51,7 @@ REPLACE LVAL WITH ".T."
 DELETE
 
 GO 2
-FORMULA "EVALDIFF-CURSOR-BEFORE"
-? ALLTRIM(CVAL) = ""
+? "EVALDIFF_cursor_before:" + (ALLTRIM(CVAL) = "")
 
 * Character, padding and typed equality
 EVALDIFF FOR CVAL = "ALPHA"
@@ -111,8 +111,7 @@ EVALDIFF FOR (CVAL = "ALPHA"
 EVALDIFF FOR NVAL = 12.5 GARBAGE
 EVALDIFF FOR NVAL = 12.5 AND
 
-FORMULA "EVALDIFF-CURSOR-AFTER"
-? ALLTRIM(CVAL) = ""
+? "EVALDIFF_cursor_after:" + (ALLTRIM(CVAL) = "")
 
 EVALDIFF USAGE
 
