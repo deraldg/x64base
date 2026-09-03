@@ -22,7 +22,7 @@ export default function PortalIndex() {
         </li>
         <li>
           <Link href="/portal/schemas" className="text-muted hover:text-fg">
-            Affected schemas (12 DBF tables) →
+            Registered schemas →
           </Link>
         </li>
       </ul>

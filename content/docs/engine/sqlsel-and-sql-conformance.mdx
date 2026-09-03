@@ -41,7 +41,7 @@ The regression also asserts the parts that are easy to get quietly wrong:
 
 | Not supported | Status |
 |---|---|
-| `JOIN` (any form) | Planned. See the note on relational methodology below |
+| `JOIN` **as SQL syntax inside a `SQLSEL` statement** | Planned -- `sqlsel_statement.cpp` says "v1 reads a single table; joins arrive with the join phase". This is a limit of the SQL surface, **not of the engine**: three join forms ship and are proven, listed below |
 | `GROUP BY` / `HAVING` | Not implemented anywhere in the engine |
 | Expression projection (`UPPER(name)` in the select list) | v1 accepts bare column names only |
 | `INSERT` / `UPDATE` / `DELETE` as SQL syntax | The engine mutates through `APPEND`, `REPLACE`, `DELETE`; SQL DML is planned |
@@ -86,7 +86,7 @@ new one does not replace the old one. Both are supported surfaces.
 | Setup | `REL ADD` wires parent to child on a key, ahead of time | Nothing declared; match any two columns on demand |
 | Shape | Walks a configured path in a direction, emitting one row per leaf combination | Matches two row sets |
 | Commands | `REL ADD`, `REL JOIN`, `REL ENUM`, `ERSATZ`, `SET RELATION` | `SQLSEL SELECT` |
-| Today | Supported | `SELECT` supported; `JOIN` planned |
+| Today | Supported -- **three join forms ship**: `SET RELATION` positional navigation, `REL JOIN` / `REL ENUM` enumeration (one tuple per combination, with `DISTINCT` / `ALL` / `LIMIT`), and `REL JOIN ONE` from the current pointers | `SELECT` supported; joining from `SELECT` syntax planned |
 
 The distinction is the navigational/relational one. The navigational model asks
 "where do I go from here?" - you position on a parent record and follow declared
@@ -120,7 +120,11 @@ reference itself, and covers equivalences as well as absences:
 
 - `SELECT` basic and `COUNT(*)` - **supported**, SQLsel
 - `CREATE TABLE` - **equivalent, different syntax** (`CREATE X64`, `DDL CREATE DBF`);
-  xBase types are C/N/D/L/M, and there is no `AUTOINCREMENT`
+  xBase types are C/N/D/L/M. On `AUTOINCREMENT` the reference says more than a
+  bare absence, and the qualifier is the point: *"No `AUTOINCREMENT`: identity
+  columns are not a storage feature here."* Identity allocation itself exists and
+  is proven -- `max(id)+1` under the writer's lock, in the BBS store and the
+  workspace catalog -- it is simply not a property of a column
 - `CREATE INDEX` - **equivalent, two steps** (`INDEX ON ... TAG`, then `BUILDLMDB`)
 - `INSERT` - **equivalent, two steps** (`APPEND`, then `REPLACE`); cursor-oriented
 - `DELETE` - **equivalent with a real difference**: `DELETE` marks, `RECALL`
@@ -131,7 +135,11 @@ reference itself, and covers equivalences as well as absences:
   access paths are chosen by the operator, not a cost model. What exists is
   reporting - SQLsel names its access path, and `GPS` shows physical record
   against logical row
-- `GROUP BY`, `JOIN` - **not supported**, as above
+- `GROUP BY` - **not supported**, as above
+- `JOIN` - **equivalent, different surface.** Not available as SQL syntax inside
+  `SQLSEL`; available three ways through RelTalk (see the shipped forms above).
+  The engine's own reference is careful about which is meant, and so is this
+  line: what is missing is reaching a join *from a `SELECT`*, not joining
 
 Entries nobody has verified yet are left **empty on purpose**. Empty means
 unchecked, not absent - guessing would defeat the point of the map. A gate

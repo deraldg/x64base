@@ -43,9 +43,15 @@ availability. Each command states the boundary in its own `USAGE` output.
 `INSERT` / `UPDATE` / `DELETE`, and bare `SELECT` without the `SQLSEL` prefix.
 
 `JOIN` here means SQL-syntax join inside a `SQLSEL` statement. Joining itself is
-not missing from the engine: [`REL JOIN`](/products/reltalk) walks a declared
-parent and its children into tuples today. What is not yet implemented is
-reaching that from `SELECT`.
+not missing from the engine -- **three forms ship and are proven**, all through
+[RelTalk](/products/reltalk):
+
+- `SET RELATION` positional navigation, parent cursor driving the child
+- `REL JOIN` / `REL ENUM`, one tuple per parent/child combination, with
+  `DISTINCT`, `ALL` and `LIMIT`
+- `REL JOIN ONE`, a single row from wherever the relation pointers currently sit
+
+What is not yet implemented is reaching any of them from a `SELECT`.
 
 ## Relationship to RelTalk
 

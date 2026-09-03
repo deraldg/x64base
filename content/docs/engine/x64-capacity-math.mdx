@@ -109,19 +109,34 @@ documentation must separate **format direction** from **current runtime limit**.
 
 `MAX_AREA`, `MAX_FIELDS`, the record-size guardrails, and the name-length ceilings
 are **engineering choices, not format-forced values** — the DBF_64 format could
-represent larger, and these numbers are deliberately round. They are currently
-centralized as compile-time constants in `include/xbase.hpp` (with the
-table-buffer bitset width in `include/cli/table_state.hpp`), so raising one is a
-single-point edit plus a rebuild. A natural future direction is a proper
-**configuration layer** — runtime-tunable profile parameters in the style of
-enterprise systems, or an `xbase.meta` descriptor — so a deployment could set its
-own ceilings for `MAX_RECORDS`, `MAX_RECORD_SIZE`, `MAX_FIELDS`, and `MAX_AREAS`
-without a recompile. The values below are the current constants in the **public
-build** (2026-07); earlier builds carried the prior values.
+represent larger, and these numbers are deliberately round.
+
+**The configuration layer this page used to call a future direction now exists.**
+AIF-044 (the BUILD_VECTORS lane) moved them out of hand-maintained constants:
+`config/build_vectors.cmake` declares each as a CMake `CACHE STRING`, feeds it
+through `configure_file()` into `generated/dottalk/build_vectors.hpp`, and
+`include/xbase.hpp` now *derives* `MAX_AREA`, `MAX_FIELDS`, `MAX_INDEX` and the
+record-size ceilings from it rather than declaring them. Configuration validates
+itself — a `MAX_AREAS` below 1, or a name default above its own maximum, fails
+`cmake` rather than the build.
+
+So the honest statement about every number below is: **it is a selected build
+input with a named authority, not a limit the format imposes.** What remains
+future is the *runtime* half — setting a ceiling without a rebuild, via profile
+parameters or an `xbase.meta` descriptor.
+
+One number is worth stating plainly because it is the one that answers "is this
+really 64-bit": `DOTTALK_MAX_ROWS` is **9,223,372,036,854,775,807** — `INT64_MAX`,
+the engine's row-count policy. It is not a round compatibility number, and it is
+not narrowed anywhere in the vector file.
+
+The values below are the current defaults in the **public build** (2026-07);
+earlier builds carried the prior values, and any of them can be set on the
+`cmake` line.
 
 | Capacity item | Current x64base evidence | Documentation status |
 | --- | --- | --- |
-| Work areas / open table slots | `include/xbase.hpp` defines `MAX_AREA = 512` (raised from 256 in 2026-07). | Public build; raised from 256 (2026-07). |
+| Work areas / open table slots | `DOTTALK_MAX_AREAS = 512` in `config/build_vectors.cmake`, reaching the engine as `xbase::MAX_AREA`. **No architectural or format bound sits behind it.** The cost that sets the default is measured rather than assumed: areas are allocated eagerly as `std::array<std::unique_ptr<DbArea>, MAX_AREA>`, at roughly 1.3 KB per slot. | Public build default; selectable at configure time; raised from 256 (2026-07). |
 | Field count | `include/xbase.hpp` defines `MAX_FIELDS = 256` (raised from 128 in 2026-07; the table-buffer `kMaxFields` bitsets were already 256, so this only relaxes two guard checks). | Public build; raised from 128 (2026-07). |
 | Classic/VFP record count | Classic header uses signed 32-bit mirror; VFP header has a `uint32_t num_recs`, but some current paths mirror through signed 32-bit APIs. | Classic-compatible, with current runtime chokepoints. |
 | x64 record count | `include/xbase_64.hpp` stores `LargeHeaderExtension::record_count` as `uint64_t`; `DbArea` keeps `_rec_count64` and exposes `recCount64()`. In the public build (2026-07): navigation and command paths — `GOTO`/`GO`/`SKIP`/`RECNO`/`TOP`/`BOTTOM`/`FIRST`/`LAST`/`NEXT`/`PRIOR` — position through 64-bit `gotoRec64`/`recno64`. | 64-bit header state exists; navigation/command paths are widened and pass the CURSOR (x32/CNX) and INDEX_X64 (v64/CDX/LMDB) regression suites. The classic `recno()`/`recLength()`/`recCount()`/`cpr()` accessors now return `-1` past their 32-bit range (2026-07; no longer clamp to `INT_MAX`), and both a synthetic unit test and a **sparse-file end-to-end test** read distinct records at recno `2^31+1`/`+2` off disk. A fully populated multi-billion-row table is a volume question, not proven here. |
@@ -162,11 +177,11 @@ source-evidenced limits, not sales claims.
 | Capacity / specification | x64base / DotTalk++ Workbench | Visual FoxPro 9 | dBASE / BDE dBASE | Harbour / xHarbour DBF-family | Alaska Xbase++ DBFDBE | Python DBF libraries |
 | --- | --- | --- | --- | --- | --- | --- |
 | Primary intent | Educational-first open architecture and x64 DBF-style research system | Mature desktop database/runtime | Commercial DBF database/tooling lineage | Open Clipper/xBase compiler/runtime ecosystem | Commercial modernization/runtime platform | Utility libraries for reading/writing DBF files |
-| Open table/work areas | 512 work areas (`MAX_AREA`, raised from 256 in 2026-07; public build 512) | 65,535 tables open at one time, memory/file-handle limited | 256-512 open dBASE tables per system depending BDE generation | Implementation/runtime dependent | Runtime/DBE dependent | Not a work-area engine |
+| Open table/work areas | 512 work areas — **a configured default, not a ceiling.** `DOTTALK_MAX_AREAS` is a `cmake` cache variable; the number is chosen against a measured ~1.3 KB per eagerly-allocated slot, and nothing in the format or the engine bounds it. The figures in the columns to the right are mostly format or product ceilings, so this row does not compare like with like | 65,535 tables open at one time, memory/file-handle limited | 256-512 open dBASE tables per system depending BDE generation | Implementation/runtime dependent | Runtime/DBE dependent | Not a work-area engine |
 | Records per table | x64 header stores a 64-bit record count; navigation and command paths were widened to 64-bit (2026-07) and pass the CURSOR and INDEX_X64 regression suites. The classic `recno()` accessor now returns `-1` past `2^31 - 1` (no longer clamps); proven by a unit test **and a sparse-file end-to-end test** that reads distinct records at recno `2^31+1`/`+2` off disk. A fully populated multi-billion-row table is a volume question, not proven here. | 1 billion | 1 billion | Often described by DBF structure as up to `2^32 - 1` records, implementation dependent | `(lock offset - header - 1) / record size` | Follows target DBF dialect and library implementation |
 | DBF/table file size | Wide-offset design target exists, and open/read/write now honor wide x64 geometry; broader whole-file-scale proof is still pending across the full stack | 2 GB table file | 2 GB table file | Format/backend discussions cite much larger theoretical DBF ceilings, but product/backend dependent | Default lock-offset model around 1 GB unless configured | Usually inherits classic/VFP file limits and Python/runtime memory constraints |
 | Record size | x64 extension stores a 64-bit row size; a 16 MiB hard ceiling and 64 KiB soft advisory were added in 2026-07. The compatibility mirror may saturate at `65,535`, and the current canary proves live rows at `36,865` and `69,633` bytes. `CREATE X64` still caps one `C` field at `4096`. | 65,500 characters per record | 4,000 bytes dBASE 4; 32,767 bytes dBASE for Windows | Often tied to 16-bit record-size structure, around 65,535 bytes | Fixed-length DBF rows; character fields up to 64 KB | Dialect dependent |
-| Fields per table | 256 (`MAX_FIELDS`, raised from 128 in 2026-07; public build 256) | 255, or 254 when nullable-field overhead applies | 255 dBASE 4; 1024 dBASE for Windows | Backend/dialect dependent | Listed as not limited by DBFDBE table, but practical DBF/runtime limits apply | Dialect/library dependent |
+| Fields per table | 256 (`DOTTALK_MAX_FIELDS`, a configure-time cache variable; raised from 128 in 2026-07) — again a selected default rather than a ceiling | 255, or 254 when nullable-field overhead applies | 255 dBASE 4; 1024 dBASE for Windows | Backend/dialect dependent | Listed as not limited by DBFDBE table, but practical DBF/runtime limits apply | Dialect/library dependent |
 | Character field width | Wider x64 metadata exists and current CREATE allows x64 character fields beyond 255 bytes, but practical width is still bounded by the same row-size mirrors | 254 | 254 | Dialect/backend dependent; some readers note extended 16-bit character widths | Character values max 64 KB | Library/dialect dependent; `dbfread` documents up to 65,535 for reused length bytes |
 | Free-table field names | 10-byte fallback descriptor token; x64 metadata supports up to 256-byte names (public build 256; default 128) | 10 chars free table; 128 chars in database-contained table | dBASE/BDE table and field name size listed as 31 characters in general limits | Classic DBF-compatible fallback usually short names | DBF/Clipper-compatible rules | Dialect/library dependent |
 | Memo file / object scale | DTX uses 64-bit object ids, offsets, payload sizes, and append offsets; proof lane active | 2 GB FPT file | Memo/Blob limits product dependent; BDE Paradox lists 256 MB BLOB, dBASE memo limits vary by format | Backend dependent; public discussions cite large DBT/FPT/SMT ceilings | Memo text length and memo file size limited by system resources in DBFDBE docs | Dialect/library dependent |

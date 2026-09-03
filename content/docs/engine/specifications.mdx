@@ -27,7 +27,9 @@ roadmap item -- unbuilt things are marked chartered or absent, not implied.
 | Visual FoxPro | version bytes 0x30 / 0x31 / 0x32, incl. autoincrement and varchar headers; VFP currency supported |
 | x64 dialect | version byte 0x64; extended 64-bit header (`xbase_64`) |
 | Record addressing | 64-bit (`recno64` / `recCount64` authoritative; 32-bit accessors return -1 above INT32_MAX rather than clamping) |
-| Header sequence slot | `autoq_next` (64-bit next-autoincrement) present in the x64 header; hydrated at open; append-side wiring is a chartered lane, stated as such |
+| Identity allocation | **Runtime-proven.** `max(id)+1` taken under the writer's own lock -- `bbs_store::next_id` for `SYSTHREAD` / `SYSPOST`, and `WORKSPACE NEW` for `WS_ID` under a `FLOCK`. Ids are never reused, the scan counts deleted rows on purpose, and it self-heals after a hand-edited row |
+| Header sequence slot | `autoq_next` (64-bit) is present in the x64 header and hydrated at open, and is **reserved and deliberately unwired** -- steward ruling R119, 2026-08-24. Not a pending lane: the question it would answer is already answered by the allocator above, and making the header authoritative as well would give one question two ladders. `autoQNext64()` has zero callers by design, and the ruling ships the three-part recipe for wiring it should that change |
+| No `PACK` on the workspace catalog | A consequence of the row above, stated where it is decided: `max(WS_ID)+1` over a scan that counts deleted rows is the only thing preventing a reissued identity. Packing would renumber silently, so the verb does not exist |
 | Long names | up to 256-byte table/field names in x64 metadata (ceiling raised from 128 in 2026-07; default 128), with classic 10-byte fallback descriptors -- two name planes, both real |
 | Field types | classic types plus binary `I`/`B`/`Y`/`T` via a register-once codec registry; custom types register through the same path |
 | Boundary proof | `X64_METRICS` regression exercises structure above the legacy 16-bit record/header geometry ceilings |

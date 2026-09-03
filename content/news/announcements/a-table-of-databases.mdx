@@ -77,6 +77,22 @@ The day's own residency tooling measured the memo's sidecar landing on real
 disk -- the table was in memory, the memo was not. The claim was corrected in
 place, and RAM coverage for the memo store is now a named prerequisite.
 
+## Superseded since publication
+
+This post is dated 2026-08-11 and is kept as written. Two of the limits above
+have since been answered, and a reader arriving from the feed should know it:
+
+- **The write-back cycle was built the next day.** See
+  [The return leg](/news/announcements/the-return-leg), 2026-08-12, which opens
+  by naming this post.
+- **Two workspaces can be resident at once.** R128 and R130 made `OPEN` and
+  `LOAD` both additive on 2026-08-26; the first-match naming hazard described
+  above was the reason it had not been switched on, and it was addressed rather
+  than waited out. See [Workspaces](/docs/engine/workspaces).
+
+The sentences above are not edited. A post that quietly acquires the answers it
+said it did not have is no longer a record of anything.
+
 Details: [Workspaces](/docs/engine/workspaces) ·
 [Proven capabilities](/docs/engine/proven-capabilities) ·
 [Schemas: a table of databases](/schemas)
