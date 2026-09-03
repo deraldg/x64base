@@ -104,11 +104,16 @@ See: [In-Memory Databases](/docs/engine/in-memory-databases), [Workspaces](/docs
 
 ### Do MINIDBs have "minispaces," or can workspaces be nested?
 
-"Minispaces" is a useful joke, not a product name. The serious idea behind it is
-active Alpha work: multiple workspaces, recursive inspection, and nested containers.
-The site distinguishes the already demonstrated MINIDB save/inspect/hydrate path
-from the still-developing manager behavior around concurrency, recursion, nesting,
-and lifecycle control.
+"Minispaces" is a useful joke, not a product name. Workspaces can be nested: a
+workspace records its parent's durable id and its depth when it is created, cycles
+are refused, and `DESTROY` retires only an empty, childless workspace. Containers
+nest too -- a workspace holding a table whose memo field holds a container holding
+tables, opened and walked on 2026-08-21.
+
+The lane is **Alpha** because the surface is still moving, not because the
+behaviour is unproven. Still open: cross-workspace name resolution, a
+per-workspace RAM subroot, and deeper container recursion, which is chartered and
+untried.
 
 See: [Workspaces](/docs/engine/workspaces), [Current Work Lanes](/docs/dev/current-lanes)
 

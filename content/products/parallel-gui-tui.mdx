@@ -29,10 +29,19 @@ is not positioned as one of the main products.
 > runtime evidence, including visible warnings and development-build labels,
 > rather than release-polish claims.
 
-The Workbench is the wxWidgets front end. It is one window over the same engine
-the CLI drives -- not a second implementation of the table mechanics -- and it
-reaches the runtime through the command bridge, so a menu action and a typed
-command travel the same path and report the same state.
+The Workbench is the wxWidgets front end, launched from the shell by `APPGUI`
+(alias `GUI`). It is one window over the same engine the CLI drives -- not a
+second implementation of the table mechanics -- and it reaches the runtime
+through the command bridge, so a menu action and a typed command travel the same
+path and report the same state.
+
+**It is built to display and explain the engine's features, and to be a threaded
+GUI over them.** That is its job: not a shipping application, but a surface where
+what the engine does is visible while it does it. `dottalkpp` deliberately never
+links wxWidgets, so `APPGUI` launches a separate process rather than standing a
+second UI thread beside the shell's -- and the command is registered
+unconditionally, so on a build without the GUI it reports what it found instead
+of answering `Unknown command`.
 
 The main window carries a Workspace Areas list, a command box with a Run
 button, a log pane that names what it did, and a status bar reporting the
@@ -111,14 +120,16 @@ database into RAM, then open the resulting workspace in the same Workbench.*
 
 ### Early multi-workspace work
 
-The next Alpha increment is a manager for multiple named workspaces, including
-recursive and nested organization. The architectural issue is scope: each
-hydrated MINIDB needs an owned RAM root, area set, relation graph and lifecycle
-so that identical table names do not collapse into one global namespace.
+Co-residency and nesting have since landed. Several workspaces are resident at
+once (`OPEN` and `LOAD` are both additive since 2026-08-26), a workspace records
+its parent's durable id and its depth when it is created, cycles are refused, and
+`DESTROY` retires only an empty, childless workspace.
 
-This page discusses that work while it is underway, but does not present
-co-residency, recursion or nesting as completed behavior. Those claims move to
-the proven surface only with runtime evidence and stated limits.
+What the architectural issue reduced to is **scope**: each hydrated MINIDB still
+needs an owned RAM root so identical table names do not collapse into one global
+namespace, and cross-workspace name resolution is still open. The lane stays
+Alpha because that surface is still moving -- not because the behaviour is
+unproven.
 
 The house rule behind both behaviours is the same one the engine follows: a
 surface that cannot do what you asked should refuse and name the reason, not

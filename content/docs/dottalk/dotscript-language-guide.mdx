@@ -81,12 +81,18 @@ LOOP 10
 ENDLOOP
 ```
 
-Required documentation topics:
+**Error handling inside a loop.** `SET ERRORSTOP` decides what an errored line
+does. With it on, the line does not merely report -- the running construct
+**bails out**, and `SCAN`, `LOOP`, `WHILE` and `UNTIL` all honour it (owner
+ruling, 2026-09-01). With it off, execution continues past a recorded error.
 
-- loop condition evaluation.
-- loop variable mutation.
-- numeric repetition labels and quiet mode.
-- error handling inside a loop.
+**Iteration ceiling.** `LOOP` stops at 10,000 iterations and says so, rather
+than running away quietly.
+
+**Buffering in script files.** Before 2026-09-01, `SCAN`, `LOOP`, `WHILE` and
+`UNTIL` buffered only in the interactive shell: run from a `DOTSCRIPT` file the
+body was captured by the wrong reader and the construct executed over zero
+lines. It reported success. All four now buffer identically from a file.
 
 ## WHILE / ENDWHILE
 

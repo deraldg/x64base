@@ -14,8 +14,11 @@ lives on [RAM DBF and VDISK](/docs/engine/ram-dbf-vdisk).
 > implemented development source with runtime proof (AIF-043), visible in the
 > local preview and not yet a tagged-release claim. Memo-resident `MINIDB 1`
 > save, inspection and RAM hydration now have development runtime evidence.
-> Concurrent, recursive and nested multi-workspace management remains active
-> **Alpha** work and is not yet claimed as complete. See
+> Concurrent and nested multi-workspace management is **Alpha** -- proven, and
+> still moving. Several workspaces are resident at once (R128, R130, additive
+> `OPEN` and `LOAD`), containment is declared with depth and cycle rules (R137),
+> and seven default-suite regressions cover the lane. What Alpha means here is
+> that the surface is still changing, not that the behaviour is unproven. See
 > [Current Project Truth](/docs/dev/project-truth) for the evidence order.
 
 ## Two substrates
@@ -84,10 +87,12 @@ until a user opts in. It is a true INI file (not a DotScript), read by its own
 ## MINIDB today; multi-workspaces next
 
 > **Status: Alpha, with a split evidence boundary.** Memo-resident MINIDB save,
-> inspection and RAM hydration are runtime-proven in development. Named
-> concurrent workspaces, recursion and nesting are active early work. The
-> latter remain directional until their proof and operational limits are
-> recorded.
+> inspection and RAM hydration are runtime-proven in development. So are named
+> concurrent workspaces and nesting: ownership, depth, cycle and close-order all
+> have answers, and a 2026-08-21 descent opened a depth-2 container into 13
+> tables and 11 index containers. What remains directional is **deeper
+> recursion** -- a container whose payload holds another container is chartered
+> and untried, measured at at-rest depth of exactly one.
 
 The design builds on the DTSHEMA workspace format
 (`src/workspace/schema_workspace.cpp`) and the payload-agnostic 64-bit memo
@@ -101,13 +106,15 @@ The next increment explores **concurrent named workspaces** with first-class
 area ownership and **area budgeting**. Each hydrated database needs an owned
 RAM subroot, area set, relation graph and lifecycle so identical table names do
 not collapse into one global namespace. A student's private database can travel
-inside a memo today; the Alpha question is how several hydrated instances can
-remain named, isolated, nested and navigable at once.
+inside a memo today; several hydrated instances can already be named, nested and
+navigated at once, and the open Alpha question is **isolation** -- cross-workspace
+name resolution, and a per-workspace RAM subroot.
 
 The direction keeps explicit constraints: memos stay **payload-agnostic** (no
 privileged workspace-memo type), existing workspace forms remain compatible,
-and recursive ownership must define cycle, depth, resolution and teardown
-rules. These are active implementation questions, not shipped claims.
+and recursive ownership defines cycle, depth and teardown rules -- cycles are
+refused at creation, depth is computed at write time, and `DESTROY` retires only
+an empty, childless workspace. **Resolution is the one still open.**
 
 ## Authority and provenance
 

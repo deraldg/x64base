@@ -40,7 +40,7 @@ SET PAGING ON|OFF
 SET WRAP ON|OFF
 ```
 
-The settings registry also includes presentation and runtime flags such as `SET STATUS`, `SET TIME`, `SET TIMER`, `SET CLOCK`, `SET BELL`, `SET TYPEAHEAD`, and `SET REPROCESS`.
+The dispatcher also carries `SET STATUS` and `SET TIMER`.
 
 ## Data and editing behavior
 
@@ -51,14 +51,14 @@ SET TABLE BUFFER ON|OFF|ON ALL|OFF ALL
 SET DELETED ON|OFF
 SET CASE ON|OFF
 SET NEAR ON|OFF
-SET SAFETY ON|OFF
-SET EXACT ON|OFF
-SET ESCAPE ON|OFF
-SET CARRY ON|OFF
-SET CONFIRM ON|OFF
-SET EXCLUSIVE ON|OFF
-SET MULTILOCKS ON|OFF
 ```
+
+Until 2026-09-03 this block also listed `SET SAFETY`, `SET EXACT`, `SET ESCAPE`,
+`SET CARRY`, `SET CONFIRM`, `SET EXCLUSIVE` and `SET MULTILOCKS`, and the
+sentence above it listed `SET TIME`, `SET CLOCK`, `SET BELL`, `SET TYPEAHEAD`
+and `SET REPROCESS`. **None of those twelve is in the dispatcher.** They are
+removed rather than relabelled, because a familiar xBase name in a list of
+current surfaces is an invitation to type it.
 
 `SET TABLE BUFFER` toggles buffering for the current area or all open areas. `COMMIT` and `ROLLBACK` remain the commands that finish or discard buffered edits.
 
@@ -91,9 +91,27 @@ The index-related SET family is flavor-aware:
 | Area flavor | Default order container | Accepted SET INDEX containers |
 | --- | --- | --- |
 | V32 classic/MS-DOS/FoxPro-like | `.cnx` | `.inx`, `.cnx` |
-| V64 VFP/x64 | `.cdx` | `.cdx` |
+| V64 VFP/x64 | `.cdx` | `.cdx`, `.cnx` (an explicit `.cnx` attaches with an advisory; owner ruling 2026-08-09) |
 
 `SET ORDER 0`, `SET ORDER PHYSICAL`, `SET ORDER NATURAL`, and `SET ORDER PHYS` clear the active order. `SET ORDER TAG <tag>` activates a tag in the flavor-appropriate container. `INX` remains a single-order `SET INDEX` attachment path.
+
+## Filters and relations
+
+### Control and diagnostic settings
+
+These dispatch and were undocumented here until 2026-09-03:
+
+```text
+SET ERRORSTOP ...      an errored line bails out of the running construct
+SET RECURSION ON|OFF   whether WORKSPACE CLOSE descends into nested workspaces
+SET INDEXTXN ...       transactional in-COMMIT index maintenance
+SET CATALOG ...        catalog slot selection
+SET VALIDATE ...       validation behaviour
+SET MESSAGE ...        message-catalog surface
+SET POLLING ...        poll hooks
+SET PROOF ...          proof capture
+SET EXPORT ...         export behaviour
+```
 
 ## Filters and relations
 

@@ -106,12 +106,12 @@ Deeper: [CDX / LMDB Indexing](/docs/engine/cdx-lmdb-indexing) ·
 
 | Item | Value |
 | --- | --- |
-| Snapshot formats | `DTSHEMA 2` (default), `DTSHEMA 3` (opt-in: measured flavor, own roots, cursor + selection state), `MINIDB 1` (container: posture + table and index bytes) |
+| Snapshot formats | `DTSHEMA 2` (the canonical schema -- portable, diffable, no absolute paths) and `DTSHEMA 3` (the session -- measured flavor, own roots, cursor + selection state). Both are now spellable as `V2` / `V3`; v2 remains the default. `MINIDB 1` is the container -- posture plus table and index bytes -- and implies V3, so `MINIDB V2` is refused rather than silently upgraded |
 | Carriers | file or memo field -- one serializer, byte-identical text |
 | Catalog | self-creating `WORKSPACES` table: unique id, name, measured dimensions, size, recursion-guard fields, supersede lineage, author, timestamps, roots |
 | Verification | every memo save is read back through the token stored in the field and byte-compared |
 | Hydration | disk-to-RAM or memo-to-RAM (zero disk reads), timed on every run; ~70-95 ms for a 13-table / 92 KB set |
-| Simultaneity | one live workspace (load is a swap); co-residency blockers measured and registered, not discovered |
+| Simultaneity | several workspaces resident at once since 2026-08-26; `OPEN` and `LOAD` are both additive (R128, R130). Containment is declared, never inferred (R137): a workspace records its parent's durable id and its depth at birth. Open: cross-workspace name resolution, per-workspace RAM residency |
 
 Deeper: [Workspaces](/docs/engine/workspaces)
 
@@ -119,7 +119,7 @@ Deeper: [Workspaces](/docs/engine/workspaces)
 
 | Item | Value |
 | --- | --- |
-| Curated regressions | 42 registered specs, 8 in the default suite; the registry stores each spec's doctrine, and the public list is generated from that same table |
+| Curated regressions | 64 registered specs, 21 in the default suite (measured 2026-09-02); the registry stores each spec's doctrine, and the public list is generated from that same table. A spec joins the default suite on two green runs plus a measured coverage hole, not on judgement |
 | Oracles in use | SQLite (row sets), shadow-model byte-compare (memo store), read-from-the-field byte-compare (workspace saves), census cross-check (RAM residency), derived-vs-declared reconciliation (governance) |
 | Proof style | field-value markers in transcripts; a build stamp on every proof; corrections recorded in place rather than erased |
 

@@ -20,13 +20,18 @@ Teach tables, records, fields, order, search, scan, and output.
 Campus path:
 
 ```text
-EDREF MODEL
--> EDREF TABLE_RECORD_FIELD
--> EDREF INDEX
--> EDREF SCAN
+HELP /ED MODEL
+-> HELP /ED TABLE_RECORD_FIELD
+-> HELP /ED INDEX
+-> HELP /ED SCAN
 -> DotTalk++ runtime transcript
 -> student-facing lesson
 ```
+
+`EDREF` is the name of the instructional help *catalog* (`include/edref.hpp`),
+not a command. Until 2026-09-03 this path told a student to type it; the shell
+answers `Unknown command`. `HELP /ED <topic>` is the real route and is what the
+[guided lesson](/docs/labtalk/lesson-records-fields-tables) already uses.
 
 The first local campus portal slice already uses this path to run a read-only
 DotTalk++ script and capture a proof transcript.

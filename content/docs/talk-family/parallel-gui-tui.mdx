@@ -16,17 +16,25 @@ workspaces, table buffers, relation graphs, tuple output, and runtime evidence.
 
 ## Current Surfaces
 
-- DotTalk++ Workbench GUI and preview windows.
-- Arctic TUI, the code name for the terminal interface.
-- DotTalk++ CLI startup, relation tree, workspace load, and tuple-grid output.
-- LabTalk Portal and website/manual evidence views.
+Not all of these are the same kind of thing, and the difference matters:
+
+- **DotTalk++ Workbench GUI** -- the real one. A window over the same engine the
+  CLI drives, reaching the runtime through the command bridge. Alpha, and
+  screenshot-evidenced on the [product page](/products/parallel-gui-tui).
+- **Arctic TUI** -- a terminal-interface example (see below).
+- **DotTalk++ CLI** -- startup, relation tree, workspace load, tuple-grid output.
+- **Template and demonstration frontends** -- generated or hand-built examples in
+  C++ and Python that show a surface rather than carry advanced behaviour.
+- **LabTalk Portal and website/manual evidence views.**
 
 ## Boundaries
 
 Parallel GUI/TUI is not a separate storage engine. Database semantics remain in
 x64base and DotTalk++. Table buffering belongs to TableTalk. Relation traversal
 belongs to RelTalk. Tuple-facing output belongs to TupTalk. The Parallel GUI/TUI
-lane proves those engine features can be exposed consistently across interfaces.
+lane exists to keep those engine features exposed consistently across
+interfaces. It is a direction the surfaces are held to, not a proof: the
+Workbench demonstrates it, and the template frontends illustrate it.
 
 See [Arctic TUI](/docs/talk-family/arctic),
 [TableTalk](/docs/talk-family/tabletalk), and the
