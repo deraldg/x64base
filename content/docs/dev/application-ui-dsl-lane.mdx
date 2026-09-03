@@ -13,6 +13,28 @@ description: "The Alpha UIDEF project: a DBF-backed portable application descrip
 > and four target backends exist in development. Every lane ruling remains
 > review-needed until the maintainer accepts it.
 
+## What the lane is for
+
+**Traditional menus and forms as the interface to GUI generation and adaptation
+-- as a builder, or as an API.**
+
+Decades of application interfaces already exist as screen, menu and class
+definitions. The lane treats them as INPUT rather than as history: read an
+existing design into a portable table, then emit it against a toolkit chosen
+now. That is the ADAPTATION half. The GENERATION half is the same path with a
+new document at the front, authored by a tool or by hand.
+
+**The four backends are instruments, not products**, and that is why none of
+them is a rich application. Each one exists to answer a different question about
+the same document: whether it survives a second toolkit (Tk), whether it
+survives having no pixels at all (character cell), whether it reaches a browser
+(HTML), and whether it reaches the engine for real (wxWidgets). A backend that
+made things pretty would be worse at that job. The lane's own success test says
+so: a successful render by one toolkit is not enough, and a target that cannot
+honour something the document says must report the loss **by name**.
+
+## The vocabulary sketch that came first
+
 The original website seed proposed commands such as `CREATE WINDOW`, `CREATE
 MENU`, `DEFINE BUTTON`, and `ON CLICK`. That was a useful vocabulary sketch, but
 it put the syntax before the portable object.
