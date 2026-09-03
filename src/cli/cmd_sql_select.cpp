@@ -27,6 +27,7 @@
 //   SQLSEL SELECT * FROM <table>
 //   SQLSEL SELECT COUNT(*) FROM <table> [WHERE <predicate>]
 //   SQLSEL SELECT <list> FROM <table> [AS] <a> [INNER] JOIN <table> [AS] <b> ON <a.field> = <b.field>
+//   SQLSEL SELECT <list> FROM <table> [AS] <a> LEFT JOIN <table> [AS] <b> ON <a.field> = <b.field>
 //   SQLSEL [COUNT] [ALL|DELETED] [FOR <expr> | <expr>]
 //
 // examples:
@@ -36,6 +37,7 @@
 //   SQLSEL SELECT SID,LNAME FROM STUDENTS ORDER BY LNAME DESC LIMIT 10
 //   SQLSEL SELECT COUNT(*) FROM STUDENTS WHERE GPA >= 3.0
 //   SQLSEL S.LNAME,E.COURSE FROM STUDENTS S JOIN ENROLL E ON S.SID = E.SID
+//   SQLSEL S.LNAME,E.COURSE FROM STUDENTS S LEFT JOIN ENROLL E ON S.SID = E.SID
 //   SQLSEL COUNT
 //   SQLSEL COUNT FOR GPA >= 3.0
 //   SQLSEL LNAME = "SMITH"
@@ -47,12 +49,15 @@
 //   current area, not the record pointer, not SET FILTER, not SET RELATION.
 //   A SELECT statement reads committed table data; uncommitted TABLE BUFFER
 //   preview overlays remain TUP/TUPLE-facing until SQLSEL DML is promoted.
-//   INNER JOIN is statement-scoped ad-hoc set matching. It does not consult a
-//   declared relation; P4.1 reports its nested-loop scan path on every run.
+//   INNER and LEFT JOIN are statement-scoped ad-hoc set matching. They do not
+//   consult a declared relation; every run reports CDX seek or scan.
+//   LEFT JOIN renders produced-absent right cells as <UNMATCHED> and reports
+//   the left-extended row count. LEFT JOIN with WHERE refuses until the
+//   predicate engine supports SQL UNKNOWN.
 //   SELECT projects column names; expression projection is not yet
 //   supported and reports rather than emitting empty values.
 //   ORDER BY sorts the full match set before LIMIT applies, and reports its
-//   access path; GROUP BY and outer joins are not yet implemented.
+//   access path; GROUP BY and RIGHT/FULL/CROSS joins are not yet implemented.
 //   LIMIT reports how many rows remain rather than truncating silently.
 //   The legacy predicate form reads records and may temporarily move the cursor.
 //   SQLSEL does not mutate table data.
@@ -597,4 +602,3 @@ void cmd_SQL_SELECT(xbase::DbArea& A, std::istringstream& iss) {
     std::cout << "SQL DEBUG ? scanned: " << scanned << "  matched: " << cnt << "\n";
     std::cout << cnt << "\n";
 }
-

@@ -11,6 +11,7 @@
 
 #include <cstdint>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace dottalk {
@@ -57,13 +58,44 @@ struct TupleFragment {
     std::string     note;          // optional breadcrumb
 };
 
+// NULL-READY: a produced-absent outer-join cell is not a DBF blank and is not
+// a stored NULL. Keep that distinction in the row carrier so adding a future
+// StoredNull enumerator does not change TupleRow's shape. Present remains the
+// default for older producers that predate this aligned metadata vector.
+enum class TupleCellKind : std::uint8_t {
+    Present,
+    ProducedAbsent
+};
+
+inline constexpr std::string_view kProducedAbsentMarker = "<UNMATCHED>";
+
+// NULL-READY: every absent kind renders through this one routine. SQLsel LEFT
+// JOIN is the first producer; future stored NULL must extend this switch rather
+// than inventing a second surface-specific token.
+inline std::string render_tuple_cell(std::string_view value, TupleCellKind kind) {
+    switch (kind) {
+        case TupleCellKind::Present:
+            return std::string(value);
+        case TupleCellKind::ProducedAbsent:
+            return std::string(kProducedAbsentMarker);
+    }
+    return {};
+}
+
 struct TupleRow {
     std::vector<TupleColumn>   columns;    // stable ordering
     std::vector<std::string>   values;     // aligned with columns
+    std::vector<TupleCellKind> cell_kinds; // empty means all Present (legacy producers)
     std::vector<TupleFragment> fragments;  // provenance
 
     bool empty() const   { return values.empty(); }
-    bool aligned() const { return columns.size() == values.size(); }
+    bool aligned() const {
+        return columns.size() == values.size() &&
+               (cell_kinds.empty() || cell_kinds.size() == values.size());
+    }
+    TupleCellKind cell_kind(std::size_t index) const {
+        return cell_kinds.empty() ? TupleCellKind::Present : cell_kinds.at(index);
+    }
 };
 
 struct TupleBuildOptions {

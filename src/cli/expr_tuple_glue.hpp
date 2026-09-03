@@ -96,6 +96,15 @@ inline std::string trim(std::string s) {
     return s;
 }
 
+inline void require_present_cell(const TupleRow& row,
+                                 std::size_t pos,
+                                 std::string_view name) {
+    if (row.cell_kind(pos) == TupleCellKind::ProducedAbsent) {
+        throw std::runtime_error("field '" + std::string(name) +
+                                 "' is produced-absent");
+    }
+}
+
 // Best-effort parser for EMPTY(<FIELD>) when the engine treats it as an identifier.
 inline std::optional<bool> try_eval_empty_identifier(const std::string& ident, const CiIndex& idx, const TupleRow& row) {
     auto up = [](std::string s){ for (auto& c: s) c=(char)std::toupper((unsigned char)c); return s; };
@@ -105,6 +114,7 @@ inline std::optional<bool> try_eval_empty_identifier(const std::string& ident, c
     std::string inner = trim(std::string(ident.begin()+6, ident.end()-1));
     if (inner.empty()) return std::optional<bool>(true);
     if (auto pos = idx.find(inner)) {
+        require_present_cell(row, *pos, inner);
         const std::string& v = row.values[*pos];
         bool only_space = std::all_of(v.begin(), v.end(), [](unsigned char c){ return std::isspace(c); });
         return std::optional<bool>(only_space || v.empty());
@@ -130,7 +140,10 @@ inline dottalk::expr::RecordView make_record_view(const TupleRow& row) {
         if (auto em = try_eval_empty_identifier(std::string(name), idx, row)) {
             return (*em ? "1" : "0");
         }
-        if (auto pos = idx.find(name)) return norm_by_collation(row.values[*pos]);
+        if (auto pos = idx.find(name)) {
+            require_present_cell(row, *pos, name);
+            return norm_by_collation(row.values[*pos]);
+        }
         auto is_bare = [](std::string_view s){
             if (s.empty()) return false;
             for (unsigned char c : s) {
@@ -153,6 +166,7 @@ inline dottalk::expr::RecordView make_record_view(const TupleRow& row) {
             return (*em ? 1.0 : 0.0);
         }
         if (auto pos = idx.find(name)) {
+            require_present_cell(row, *pos, name);
             const std::string value = trim(row.values[*pos]);
             const char type = static_cast<char>(std::toupper(
                 static_cast<unsigned char>(row.columns[*pos].ftype)));

@@ -346,16 +346,20 @@ PredicateVerdict evaluate_tuple_predicate(const dottalk::expr::Expr* program,
     }
 }
 
-// P4.1/P4.2 are deliberately independent of REL/SET RELATION (R17/R21/R27).
+enum class JoinKind { Inner, Left };
+
+// P4.1/P4.2/P4.3 are deliberately independent of REL/SET RELATION
+// (R17/R21/R27). LEFT changes row production, not source resolution, locking,
+// ON equality, cursor restoration, or index selection.
 // The correctness-first nested loop remains the fallback. When the inner ON
 // field is the active tag of an attached CDX/LMDB index, P4.2 probes that tag
 // and still re-verifies every landed row against the ON comparison.
-bool execute_inner_join(const std::string& select_list,
-                        const std::string& from_clause,
-                        const std::string& where_text,
-                        const std::string& order_token,
-                        bool order_desc,
-                        long long limit_n) {
+bool execute_join(const std::string& select_list,
+                  const std::string& from_clause,
+                  const std::string& where_text,
+                  const std::string& order_token,
+                  bool order_desc,
+                  long long limit_n) {
     const std::size_t join_pos = find_kw(from_clause, "JOIN");
     if (join_pos == std::string::npos) return false;
     if (find_kw(from_clause, "JOIN", join_pos + 4) != std::string::npos) {
@@ -364,19 +368,44 @@ bool execute_inner_join(const std::string& select_list,
     }
 
     std::string left_text = trim(from_clause.substr(0, join_pos));
+    JoinKind join_kind = JoinKind::Inner;
+    bool saw_join_modifier = false;
     const std::size_t inner_pos = find_kw(left_text, "INNER");
     if (inner_pos != std::string::npos) {
-        if (trim(left_text.substr(inner_pos)) != "INNER" && up(trim(left_text.substr(inner_pos))) != "INNER") {
+        if (up(trim(left_text.substr(inner_pos))) != "INNER") {
             std::cout << "SQLSEL: expected [INNER] JOIN.\n";
             return true;
         }
+        saw_join_modifier = true;
         left_text = trim(left_text.substr(0, inner_pos));
     }
+    const std::size_t left_pos = find_kw(left_text, "LEFT");
+    if (left_pos != std::string::npos) {
+        if (saw_join_modifier) {
+            std::cout << "SQLSEL: choose one JOIN type.\n";
+            return true;
+        }
+        if (up(trim(left_text.substr(left_pos))) != "LEFT") {
+            std::cout << "SQLSEL: expected LEFT JOIN.\n";
+            return true;
+        }
+        saw_join_modifier = true;
+        join_kind = JoinKind::Left;
+        left_text = trim(left_text.substr(0, left_pos));
+    }
+    for (const char* deferred : {"RIGHT", "FULL", "CROSS"}) {
+        if (find_kw(left_text, deferred) != std::string::npos) {
+            std::cout << "SQLSEL: " << deferred << " JOIN arrives with P4.4.\n";
+            return true;
+        }
+    }
+    const std::string join_name = join_kind == JoinKind::Left ? "LEFT" : "INNER";
 
     const std::string after_join = trim(from_clause.substr(join_pos + 4));
     const std::size_t on_pos = find_kw(after_join, "ON");
     if (on_pos == std::string::npos) {
-        std::cout << "SQLSEL: INNER JOIN requires ON <left-column> = <right-column>.\n";
+        std::cout << "SQLSEL: " << join_name
+                  << " JOIN requires ON <left-column> = <right-column>.\n";
         return true;
     }
     const std::string right_text = trim(after_join.substr(0, on_pos));
@@ -402,6 +431,14 @@ bool execute_inner_join(const std::string& select_list,
     }
     if (left.area == right.area) {
         std::cout << "SQLSEL: P4.1 joins two distinct open tables; self-join is not yet supported.\n";
+        return true;
+    }
+    if (join_kind == JoinKind::Left && !where_text.empty()) {
+        // NULL-READY: Expr currently returns bool, not SQL TRUE/FALSE/UNKNOWN.
+        // Evaluating a predicate over a produced-absent right cell as either a
+        // blank or the display marker would be a plausible wrong answer. Refuse
+        // the composition until UNKNOWN is added to the predicate seam.
+        std::cout << "SQLSEL: LEFT JOIN with WHERE requires three-valued predicate support; P4.3 refuses it.\n";
         return true;
     }
     std::unique_ptr<dottalk::expr::Expr> where_program;
@@ -481,18 +518,20 @@ bool execute_inner_join(const std::string& select_list,
         std::vector<std::string> right_values;
         std::uint64_t left_recno = 0;
         std::uint64_t right_recno = 0;
+        dottalk::TupleCellKind right_kind = dottalk::TupleCellKind::Present;
     };
     std::vector<JoinedRow> rows;
+    std::size_t left_extended_rows = 0;
     JoinReadTransaction read_transaction{*left.area, *right.area};
     if (!read_transaction.ready) {
-        std::cout << "SQLSEL: INNER JOIN read transaction refused -- "
+        std::cout << "SQLSEL: " << join_name << " JOIN read transaction refused -- "
                   << read_transaction.error << ".\n";
         return true;
     }
     dottalk::tupleaugment::WorkAreaCursorRestore restore;
     cli::ScopedEngineArea keep_current_area;
 
-    std::cout << "SQLSEL: INNER JOIN read transaction -- table fence ("
+    std::cout << "SQLSEL: " << join_name << " JOIN read transaction -- table fence ("
               << read_transaction.first_name << " -> "
               << read_transaction.second_name << ").\n";
 
@@ -515,18 +554,22 @@ bool execute_inner_join(const std::string& select_list,
             if (!read_area_row(*left.area, lv) || left.area->isDeleted()) continue;
         }
 
+        bool matched_outer = false;
         const auto append_match = [&](std::vector<std::string> rv,
                                       std::uint64_t ri) -> bool {
             if (value_equal(lv[on_left.field_index], rv[on_right.field_index])) {
-                JoinedRow joined{lv, rv, li, ri};
+                JoinedRow joined{lv, rv, li, ri, dottalk::TupleCellKind::Present};
                 if (where_program) {
                     dottalk::TupleRow tuple;
+                    tuple.cell_kinds.reserve(left.area->fields().size() +
+                                             right.area->fields().size());
                     for (std::size_t i = 0; i < left.area->fields().size(); ++i) {
                         const auto& fd = left.area->fields()[i];
                         tuple.columns.push_back({left.alias + "." + fd.name,
                                                  -1, fd.name, fd.type,
                                                  static_cast<int>(fd.length), static_cast<int>(fd.decimals)});
                         tuple.values.push_back(lv[i]);
+                        tuple.cell_kinds.push_back(dottalk::TupleCellKind::Present);
                     }
                     for (std::size_t i = 0; i < right.area->fields().size(); ++i) {
                         const auto& fd = right.area->fields()[i];
@@ -534,6 +577,7 @@ bool execute_inner_join(const std::string& select_list,
                                                  -1, fd.name, fd.type,
                                                  static_cast<int>(fd.length), static_cast<int>(fd.decimals)});
                         tuple.values.push_back(rv[i]);
+                        tuple.cell_kinds.push_back(dottalk::TupleCellKind::Present);
                     }
                     tuple.fragments.push_back({-1, li, dottalk::TupleSourceKind::DBF,
                                                false, "SQLSEL:" + left.alias});
@@ -546,9 +590,18 @@ bool execute_inner_join(const std::string& select_list,
                     }
                     if (verdict.state == PredicateState::False) return true;
                 }
+                matched_outer = true;
                 rows.push_back(std::move(joined));
             }
             return true;
+        };
+
+        const auto append_unmatched = [&]() {
+            if (join_kind == JoinKind::Left && !matched_outer) {
+                rows.push_back(JoinedRow{lv, {}, li, 0,
+                                         dottalk::TupleCellKind::ProducedAbsent});
+                ++left_extended_rows;
+            }
         };
 
         bool used_index_for_outer = false;
@@ -558,11 +611,11 @@ bool execute_inner_join(const std::string& select_list,
                 const xindex::Key key = inner_index->buildActiveTagBaseKeyFromString(
                     lv[on_left.field_index]);
                 if (!key.empty()) {
+                    used_index_for_outer = true;
+                    ++index_probes;
                     auto cursor = inner_index->seek(key);
                     if (cursor) {
-                        used_index_for_outer = true;
                         bool probe_usable = true;
-                        ++index_probes;
                         xindex::Key landed_key;
                         xindex::RecNo ri = 0;
                         bool found = cursor->first(landed_key, ri);
@@ -596,7 +649,10 @@ bool execute_inner_join(const std::string& select_list,
             }
         }
 
-        if (used_index_for_outer) continue;
+        if (used_index_for_outer) {
+            append_unmatched();
+            continue;
+        }
 
         ++scan_probes;
         for (std::uint64_t ri = 1; ri <= right_count; ++ri) {
@@ -608,31 +664,51 @@ bool execute_inner_join(const std::string& select_list,
             }
             if (!append_match(std::move(rv), ri)) return true;
         }
+        append_unmatched();
     }
 
-    const auto cell = [](const JoinedRow& row, const ResolvedColumn& col) -> const std::string& {
-        return col.side == 0 ? row.left_values[col.field_index] : row.right_values[col.field_index];
+    struct CellView {
+        std::string_view value;
+        dottalk::TupleCellKind kind = dottalk::TupleCellKind::Present;
+    };
+    const auto cell = [](const JoinedRow& row, const ResolvedColumn& col) -> CellView {
+        if (col.side == 0) return {row.left_values[col.field_index], dottalk::TupleCellKind::Present};
+        if (row.right_kind == dottalk::TupleCellKind::ProducedAbsent) {
+            return {{}, row.right_kind};
+        }
+        return {row.right_values[col.field_index], row.right_kind};
+    };
+    const auto rendered_cell = [&](const JoinedRow& row, const ResolvedColumn& col) {
+        const CellView one = cell(row, col);
+        return trim(dottalk::render_tuple_cell(one.value, one.kind));
     };
     if (order_col) {
+        // NULL-READY: ProducedAbsent orders by its visible marker today. Stored
+        // NULL will need an explicit NULLS FIRST/LAST ruling at this site.
         std::stable_sort(rows.begin(), rows.end(), [&](const JoinedRow& a, const JoinedRow& b) {
-            return order_desc ? value_less(trim(cell(b, *order_col)), trim(cell(a, *order_col)))
-                              : value_less(trim(cell(a, *order_col)), trim(cell(b, *order_col)));
+            return order_desc ? value_less(rendered_cell(b, *order_col), rendered_cell(a, *order_col))
+                              : value_less(rendered_cell(a, *order_col), rendered_cell(b, *order_col));
         });
     }
 
     if (index_probes > 0 && scan_probes == 0) {
-        std::cout << "SQLSEL: INNER JOIN access path -- CDX seek (inner="
+        std::cout << "SQLSEL: " << join_name << " JOIN access path -- CDX seek (inner="
                   << right.name << ", tag=" << inner_index->activeTag()
                   << ", probes=" << index_probes
                   << ", candidates=" << index_candidates << ").\n";
     } else if (index_probes > 0) {
-        std::cout << "SQLSEL: INNER JOIN access path -- hybrid CDX seek + nested-loop scan"
+        std::cout << "SQLSEL: " << join_name << " JOIN access path -- hybrid CDX seek + nested-loop scan"
                   << " (inner=" << right.name << ", tag=" << inner_index->activeTag()
                   << ", index probes=" << index_probes
                   << ", scan probes=" << scan_probes << ").\n";
     } else {
-        std::cout << "SQLSEL: INNER JOIN access path -- nested-loop scan (outer="
+        std::cout << "SQLSEL: " << join_name << " JOIN access path -- nested-loop scan (outer="
                   << left_count << " row(s), inner=" << right_count << " row(s)).\n";
+    }
+    if (join_kind == JoinKind::Left) {
+        std::cout << "SQLSEL: LEFT JOIN left-extended " << left_extended_rows
+                  << " row(s) with " << dottalk::kProducedAbsentMarker
+                  << " right-side cells.\n";
     }
     if (count_star) {
         std::cout << "COUNT(*)\n" << rows.size() << "\n1 row(s) selected.\n";
@@ -650,7 +726,7 @@ bool execute_inner_join(const std::string& select_list,
     for (std::size_t r = 0; r < shown; ++r) {
         for (std::size_t i = 0; i < projection.size(); ++i) {
             if (i) std::cout << " | ";
-            std::cout << trim(cell(rows[r], projection[i]));
+            std::cout << rendered_cell(rows[r], projection[i]);
         }
         std::cout << "\n";
     }
@@ -675,13 +751,18 @@ void print_statement_usage() {
         << "  SQLSEL COUNT(*) FROM <table> [WHERE <predicate>]\n"
         << "  SQLSEL <list> FROM <table> [AS] <a> [INNER] JOIN\n"
         << "         <table> [AS] <b> ON <a.field> = <b.field>\n"
+        << "  SQLSEL <list> FROM <table> [AS] <a> LEFT JOIN\n"
+        << "         <table> [AS] <b> ON <a.field> = <b.field>\n"
         << "Notes:\n"
         << "  SQLSEL is itself the select verb; the SELECT keyword is OPTIONAL\n"
         << "  (SQLSEL SELECT ... still parses). Not to be confused with xBase\n"
         << "  SELECT <area>, which switches the active work area.\n"
         << "  The table must be OPEN (USE <table>) -- SQLSEL reads open work areas.\n"
-        << "  P4.1 joins two open tables with one equi-key. WHERE evaluates the\n"
-        << "  resulting qualified TupleRow; no REL or SET RELATION state is read.\n"
+        << "  INNER and LEFT join two open tables with one equi-key. INNER WHERE\n"
+        << "  evaluates the resulting qualified TupleRow; LEFT WHERE refuses until\n"
+        << "  three-valued predicates exist. No REL or SET RELATION state is read.\n"
+        << "  Unmatched LEFT cells render as " << dottalk::kProducedAbsentMarker
+        << "; genuine DBF blanks remain blank.\n"
         << "  JOIN takes a non-blocking two-table read fence; lock contention\n"
         << "  refuses the statement before either table is read.\n"
         << "  v1 accepts column names; expression projection is not yet supported.\n"
@@ -810,11 +891,11 @@ bool try_execute_select(const std::string& tail_in) {
         }
     }
 
-    // P4.1 JOIN owns the full FROM clause. Keep it out of the single-table
+    // P4 JOIN owns the full FROM clause. Keep it out of the single-table
     // resolver below so no REL/session state can leak into matching.
     if (has_join) {
-        return execute_inner_join(select_list, table_clause, where_text,
-                                  order_field, order_desc, limit_n);
+        return execute_join(select_list, table_clause, where_text,
+                            order_field, order_desc, limit_n);
     }
 
     // --- resolve FROM against OPEN work areas (statement-scoped) -------------

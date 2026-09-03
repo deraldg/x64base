@@ -318,6 +318,7 @@ TupleBuildResult build_tuple_from_spec(const std::string& spec_in, const TupleBu
     TupleRow row;
     row.columns.reserve(items.size());
     row.values.reserve(items.size());
+    row.cell_kinds.reserve(items.size());
 
     std::unordered_set<int> touched_slots;
 
@@ -420,6 +421,7 @@ TupleBuildResult build_tuple_from_spec(const std::string& spec_in, const TupleBu
         }
         row.columns.push_back(col);
         row.values.push_back(val);
+        row.cell_kinds.push_back(TupleCellKind::Present);
 
         if (have_area) touched_slots.insert(slot);
     }

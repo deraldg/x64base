@@ -111,7 +111,7 @@ projection, never a hand-authored sibling authority.
 | P4.0b | **IMPLEMENTED, RUNTIME-OBSERVED, AND DEFAULT-SUITE PROMOTED 2026-09-03.** SQLsel `WHERE` compiles once through the repaired AST and evaluates committed-truth TupleRows through a `{TRUE,FALSE,ERROR}` seam. Unknown fields and incompatible comparisons fail closed. `REGRESSION SQLSEL_SELECT_V1` machine-compares 11 marked row sets with SQLite and requires three cursor guards, eight refusal messages, two LIMIT reports and four sort-path reports; the function predicate and both fail-closed cases are included. Promotion closes the measured hole that the old default suite invoked `SQLSEL HELP` but executed no SQLsel statement | G3 MACHINE VALIDATOR GREEN; MUTATION RED OBSERVED; DEFAULT SUITE |
 | P4.1 | **IMPLEMENTED, RUNTIME-OBSERVED, AND DEFAULT-SUITE PROMOTED 2026-09-03.** INNER JOIN over two distinct open tables, one equi-key, `FROM <table> [AS] <alias>`, qualified columns, joined-row WHERE, ORDER BY/LIMIT, COUNT(*), cursor neutrality, and an always-reported nested-loop scan path. It does not consult REL, SET RELATION, or ambient workspace state. `REGRESSION SQLSEL_INNER_JOIN` captures four marked SQLsel results and automatically compares values, order, and counts with four marked in-run SQLite results; it also requires two cursor guards, three corrective refusals, and four access-path reports. A one-row oracle mutation produced FAIL and canonical error status. Promotion closes the measured hole that no other default spec executes SQL-syntax JOIN or asserts its path report | G4a GREEN: validator PASS 4/4 on multiple process starts; mutation RED observed; DEFAULT SUITE |
 | P4.2 | **IMPLEMENTED AND RUNTIME-OBSERVED 2026-09-03.** When the inner ON field is the active tag of an attached CDX/LMDB index, SQLsel probes `IndexManager::seek()` once per non-deleted outer row, walks every duplicate-key record, and re-verifies each landed DBF row with the same ON comparison. An unavailable or throwing probe rolls back that outer row's partial candidates and scans it instead. With no usable active tag, the P4.1 nested loop remains the full fallback. Every statement reports `CDX seek`, `nested-loop scan`, or the honest hybrid. The default JOIN fixture runs two oracle pairs through CDX seek and two through scan; its validator requires exactly that 2/2 split and refuses hybrid. Disabling the active tag preserved the row oracle but produced validator FAIL and canonical invalid-argument status | G4b GREEN: same SQLite rows on both paths; path split asserted; mutation RED observed |
-| P4.3 | LEFT JOIN with the R22 unmatched marker, defined ONCE, plus a left-extended row count on every LEFT JOIN | G4c (oracle with SQLite NULL mapped explicitly to the marker) |
+| P4.3 | **IMPLEMENTED AND RUNTIME-OBSERVED 2026-09-03; explicit-run candidate pending independent review and soak.** LEFT JOIN reuses the P4.1/P4.2 statement-scoped resolver, typed ON equality, CDX/scan paths, canonical two-table read fence, and cursor guard. Produced-absent right cells carry `TupleCellKind::ProducedAbsent` and render only through `render_tuple_cell()` as the one R22 marker `<UNMATCHED>`; genuine DBF blanks remain present values. Every statement reports its left-extended row count. `REGRESSION SQLSEL_LEFT_JOIN` machine-compares four row sets with SQLite after explicit NULL-to-marker mapping and pins blank-vs-absent, duplicates, deleted rows, a genuine stored marker string, 2 seek/2 scan paths, four read fences, both cursors, caller FLOCK preservation, and four corrective refusals. LEFT JOIN with WHERE refuses until the predicate seam supports SQL UNKNOWN; interpreting produced absence as blank or marker text was rejected as a silent wrong answer | G4c GREEN: 4/4 SQLite pairs; extension counts 4/4; mutation RED observed; explicit-run candidate |
 | P4.4 | **RIGHT, FULL, CROSS (R26).** RIGHT = LEFT with operands swapped; FULL = LEFT plus right-side rows that never matched; CROSS = join with no ON. All reuse the ONE R22 marker and the same extended-row count -- no second convention | G4d (oracle across all four outer forms, SQLite NULL mapped to the marker) |
 | P4.5 | **DISTINCT and set operations (R26).** UNION / UNION ALL / INTERSECT / EXCEPT. Duplicate elimination and operand column-compatibility both reuse the ONE R16 ordering/equality model already shared by relation equality and ORDER BY -- a second comparison rule invented here is a defect. Blocked on OQ-11 | G4e (oracle, incl. duplicate counts which are where set operations actually go wrong) |
 | P4.6 | **GROUP BY / HAVING and the aggregates (R26).** COUNT, SUM, AVG, MIN, MAX. Aggregates run over SQLsel-produced rows, never delegated to native COUNT FOR (which carries session-filter semantics SQLsel ignores) and never to a DbArea command, since a joined row has no DbArea. **UNBLOCKED by R28:** numeric aggregates skip blank non-values and report the carried-value/blank split | G4f (oracle, with the R28 blank rule asserted explicitly row-by-row, not just on the totals) |
@@ -356,10 +356,15 @@ No push, main-tree promotion, website edit, or publication is claimed.
   for a foreign table fence both before and after publishing its record lock.
   Unknown/unreadable ownership fails closed, and only provably stale locks are
   reclaimed.
-- The native `dottalkpp_lock_protocol_test` passed five arms over real X64
+- The native `dottalkpp_lock_protocol_test` passed six arms over real X64
   `DbArea` objects and real sidecars: clean ownership, live foreign record
   contention plus rollback, unreadable-owner refusal with evidence preserved,
-  reverse table-to-record exclusion, and same-owner re-entry.
+  reverse table-to-record exclusion, same-owner re-entry, and sixteen rounds of
+  synchronized two-process atomic publication. The last arm requires exactly
+  one winner and verifies that winner's owner token while the sidecar is held.
+  A check-then-overwrite mutation made both children report `WIN` in every round
+  and turned the test red. AIF-150 records this cross-cutting lock finding apart
+  from the SQLsel feature that exposed it.
 - `REGRESSION SQLSEL_JOIN_EDGES` passed four SQLite row-oracle pairs, four cursor
   guards, four corrective refusals, four read-transaction reports, caller-lock
   preservation, and the exact two-CDX/two-scan access composition. One numeric
@@ -384,6 +389,34 @@ No push, main-tree promotion, website edit, or publication is claimed.
   explicitly non-atomic). Other writers must use the x64base lock protocol for
   the fence to protect them. Same-process ownership is intentionally re-entrant;
   the current DotTalk++ command runtime is single-threaded.
+
+**2026-09-03, P4.3 LEFT JOIN (candidate evidence):**
+
+- `TupleRow` now carries an optional aligned `TupleCellKind` vector. Existing
+  producers default to `Present`; new tuple construction records it explicitly.
+  `ProducedAbsent` is a distinct carrier state, and `render_tuple_cell()` is the
+  single display seam for it. This implements R29's kind-tag and one-renderer
+  readiness without claiming stored NULL or three-valued logic.
+- LEFT JOIN extends each non-deleted outer row that has no non-deleted ON match.
+  The extension uses no fabricated right-side DBF bytes. Projection and ORDER BY
+  ask the shared renderer for the cell text, and every LEFT statement prints the
+  number of extended rows independently of the marker.
+- `REGRESSION SQLSEL_LEFT_JOIN` passed four SQLite oracle pairs: projection and
+  COUNT(*) through CDX seek, then the same two through nested-loop scan. The
+  fixture includes duplicate keys, an unmatched key, a deleted outer row, a
+  deleted-only right match, a genuine blank right value, and a matched right
+  value whose stored text is literally `<UNMATCHED>`. SQLite maps NULL with
+  `COALESCE` in the oracle, so the equivalence is explicit.
+- The validator also required four exact `left-extended 2` reports, 2 seek and
+  2 scan paths with no hybrid, four canonical read fences, two cursor guards,
+  caller-owned FLOCK preservation, and the exact P4.3/P4.4 refusals. Mutating
+  only SQLite's final outer label from `L6` to `L6X` produced a row-mismatch FAIL;
+  restoring the fixture returned the same build to green.
+- LEFT JOIN plus WHERE is deliberately refused. The expression AST currently
+  returns bool, so treating produced absence as either a DBF blank or the marker
+  text would make NOT/composed predicates silently disagree with SQL UNKNOWN.
+  P4.3 ships the row-production and display contract; WHERE over an outer join
+  waits for the already-shaped predicate enum to gain UNKNOWN.
 
 This implementation and evidence remain local to `development`, review-needed,
 and unpushed. No main-tree promotion, website edit, or publication is claimed.
