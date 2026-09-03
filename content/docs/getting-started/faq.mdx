@@ -119,9 +119,15 @@ See: [Workspaces](/docs/engine/workspaces), [Current Work Lanes](/docs/dev/curre
 
 ### What are TupTalk, TableTalk, and RelTalk?
 
-- **TupTalk** names tuple-facing relation output and joined record views.
+- **TupTalk** names tuple-facing relation output: the row as a tuple, projected
+  across related areas. Those projections read like joined records and are not
+  join result sets -- they are correlated traversal from wherever the parent
+  cursor is positioned, so moving the parent changes the output.
 - **TableTalk** names table buffering, including dirty and stale table state.
-- **RelTalk** names relation-facing workflows such as relation trees, descendant summaries, and relation-aware browse output.
+- **RelTalk** names relation-facing workflows such as relation trees, descendant
+  summaries, and relation-aware browse output -- and it is where joining lives:
+  `REL JOIN` walks a parent and its children and emits one tuple per
+  combination, which is a different output from the positioned projection above.
 
 These are lanes and product names around actual runtime concerns, not interchangeable labels.
 
