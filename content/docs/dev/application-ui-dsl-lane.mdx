@@ -139,6 +139,16 @@ will not appear in a build log.
 registered GUI path. That proves a shell-to-window launcher, but it is not a
 UI-DSL command and should not be confused with `CREATE WINDOW` being live.
 
+[![The DotTalk++ CLI and the Workbench side by side: appgui typed at the prompt launches dottalk_wb.exe, and the CLI then reports zero open work areas while the Workbench beside it holds thirteen](/images/evidence/dottalk-appgui-launcher-process-boundary-20260826.png)](/images/evidence/dottalk-appgui-launcher-process-boundary-20260826.png)
+
+*The launcher, and the limit of what it proves, in one frame (2026-08-26).
+`appgui` prints the path of the executable it starts and starts it. What the
+same frame shows is that this is all it did: the shell that launched the window
+reports `0 area(s) open` immediately afterwards, while the window holds thirteen
+areas of its own. A process was started. No interface was described, generated
+or bound -- which is the distance between `APPGUI` and `CREATE WINDOW`.
+Unrelated desktop windows are masked.*
+
 ## Relationship to Workbench
 
 DotTalk++ Workbench is the project's first-party database application. UIDEF is

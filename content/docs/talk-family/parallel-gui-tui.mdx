@@ -27,6 +27,53 @@ Not all of these are the same kind of thing, and the difference matters:
   C++ and Python that show a surface rather than carry advanced behaviour.
 - **LabTalk Portal and website/manual evidence views.**
 
+## The Workbench, in the frames
+
+`APPGUI` (alias `GUI`) launches the Workbench. These are runtime captures, not
+mockups, and they are published including their warnings.
+
+[![DotTalk++ Workbench with thirteen work areas opened from a memo-resident mini-database, every table path resolving under the in-process RAM root](/images/evidence/dottalk-workbench-minidb-memo-hydrated-evidence-20260820.png)](/images/evidence/dottalk-workbench-minidb-memo-hydrated-evidence-20260820.png)
+
+*Thirteen areas out of one memo field, 2026-08-20. The Path column is the tell:
+every table resolves under the RAM root rather than a disk directory.*
+
+[![The memo workspace browser listing saved snapshots with format, stored size and live-or-superseded state, its Open in Workbench button disabled with the reason stated](/images/evidence/dottalk-workbench-memo-workspace-browser-evidence-20260820.png)](/images/evidence/dottalk-workbench-memo-workspace-browser-evidence-20260820.png)
+
+*Reading the catalog without hydrating it. The status bar states how many bytes
+were read and that nothing was hydrated; the disabled button carries its own
+reason.*
+
+[![Workbench after opening a directory of tables, showing fourteen areas where thirteen tables exist because a backup sidecar was admitted, and a log warning that the active order could not be used](/images/evidence/dottalk-workbench-workspace-open-directory-evidence-20260820.png)](/images/evidence/dottalk-workbench-workspace-open-directory-evidence-20260820.png)
+
+*Two open defects in one frame -- fourteen areas over thirteen tables because a
+table's backup sidecar was admitted as an area, and an order-unavailable
+warning. Published as shot rather than reshot.*
+
+[![The DotTalk++ CLI and the Workbench side by side: appgui typed at the prompt launches dottalk_wb.exe, and the CLI then reports zero open work areas while the Workbench beside it holds thirteen](/images/evidence/dottalk-appgui-launcher-process-boundary-20260826.png)](/images/evidence/dottalk-appgui-launcher-process-boundary-20260826.png)
+
+*What `APPGUI` actually does, 2026-08-26. Typing `appgui` at the `.` prompt
+prints `APPGUI: launching ...\bin\dottalk_wb.exe` -- the executable it is about
+to run -- and starts it as a **separate process**. The proof of that is in the same frame: run
+`WORKSPACE` in the shell straight afterwards and it answers `0 area(s) open`,
+twice, while the Workbench next to it has thirteen areas open on `mcc_db` with
+every path under the RAM root. `APPGUI` is a launcher, not an in-process mode,
+and the two sides do not share state. Unrelated desktop windows are masked.*
+
+[![Workbench log showing a MINIDB container hydrated into a per-process RAM disk and thirteen areas mirrored, then an APPEND routed to the external CLI failing because that process cannot see the RAM disk](/images/evidence/dottalk-workbench-ram-disk-per-process-defect-20260821.png)](/images/evidence/dottalk-workbench-ram-disk-per-process-defect-20260821.png)
+
+*The same boundary as a defect, 2026-08-21, and the log explains itself. Loading
+`cycle_from_ram` mounts the RAM disk with the reason attached -- "A RAM disk is
+per-process, so the Workbench keeps its own" -- hydrates 15 files and 95,579
+bytes out of the memo, and mirrors 13 tables; Browse then shows 200 of 200
+STUDENTS rows. Two lines later `APPEND` is routed to the external CLI, which is
+a different process, and it fails with `Open failed: DbArea: file does not exist`
+on the RAM-disk path to `STUDENTS.dbf`. The table is open in the window and
+absent from the process asked to append to it. Published as shot.*
+
+More frames, including the negative-path inspection and the container rebuild,
+are on the [Parallel GUI/TUI product page](/products/parallel-gui-tui) and in the
+[Runtime Evidence Gallery](/docs/labtalk/runtime-evidence).
+
 ## Boundaries
 
 Parallel GUI/TUI is not a separate storage engine. Database semantics remain in

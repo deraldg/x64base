@@ -7,13 +7,17 @@ description: "Relation graphs, asymmetric links, workspace persistence, and ERSA
 
 RelTalk names the relation-facing workflows in DotTalk++ / x64base.
 
-Its subject is connected data across work areas, not just SQL-style joins. It
-covers:
+Its subject is connected data across work areas. It covers:
 
 - declared parent/child relation edges
 - asymmetric same-field and cross-owner relations
+- joining a parent and its children into tuples through `REL JOIN`
 - saved workspace relation state
 - rooted traversal and browser output through `ERSATZ`
+
+RelTalk is navigational rather than set-oriented, but navigational does not mean
+join-less: `REL JOIN` is where joins live today. SQL-syntax `JOIN` inside a
+`SQLSEL` statement is [not yet implemented](/products/sqlsel).
 
 Real local command surfaces include:
 
@@ -22,8 +26,13 @@ REL ADD STUDENTS ENROLL ON SID
 REL ADD SYSCMD SYSSUBCMD ON CAN_NAME TO PARENT
 REL ADD SYSSUBCMD SYSENTVAR ON QUAL_NAME TO HELP_OWNR
 REL LIST ALL
-REL ENUM
+REL JOIN LIMIT 0 TUPLE STUDENTS.SID, ENROLL.CLS_ID, CLASSES.CID, TEACHERS.LNAME
+REL JOIN DISTINCT LIMIT 0 TUPLE STUDENTS.SID, ENROLL.CLS_ID, TEACHERS.LNAME
+REL JOIN ENROLL CLASSES TASSIGN TEACHERS LIMIT 0 TUPLE STUDENTS.SID, CLASSES.SEC
+REL JOIN ONE LIMIT 0 TUPLE STUDENTS.SID, ENROLL.CLS_ID
+REL ENUM LIMIT 0 TUPLE STUDENTS.SID, ENROLL.CLS_ID, CLASSES.CID, TEACHERS.LNAME
 REL REFRESH
+REL SCANLIMIT 500000
 WORKSPACE SAVE <name>
 WORKSPACE LOAD <name>
 ERSATZ
@@ -41,6 +50,12 @@ Diagram attachment: `DIAG-WORKAREA-008`
 
 Canonical source:
 `docs/manuals/assets/diagrams/workareas_cursor_control_v1.svg`
+
+`REL JOIN` emits one tuple per parent/child combination and delegates to the same
+enumerator as `REL ENUM`; `REL JOIN ONE` keeps the historical single-row form and
+refuses a child chain rather than accepting one it cannot walk. `REL SCANLIMIT`
+caps what a traversal finds -- not what is displayed -- and a truncated result
+says so at the result.
 
 Relation work is active and important because it connects work areas, metadata tables, browser output, and workspace persistence.
 

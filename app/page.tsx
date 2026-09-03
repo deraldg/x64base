@@ -61,7 +61,7 @@ const ecosystem = [
   {
     title: "RelTalk",
     href: "/products/reltalk",
-    desc: "Declared relation graphs, traversal, and joins. REL JOIN walks a parent and its children into one tuple; on a 34-table ERP schema the relation walker and SQLsel answered the same question across 58 foreign-key relations and agreed down to the record.",
+    desc: "Declared relation graphs, traversal, and joins. REL JOIN walks a parent and its children into one tuple per combination, with a scan limit that reports when it truncates. Separately, on a 34-table ERP schema, SET RELATION navigation and SQLsel answered the same question across 58 foreign-key relations and agreed down to the record.",
     state: { label: "joins runtime-proven; alpha", stateIn: "runtime evidence", href: "/docs/labtalk/runtime-evidence" },
     icon: GitBranch
   },

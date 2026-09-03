@@ -42,6 +42,11 @@ availability. Each command states the boundary in its own `USAGE` output.
 `JOIN`, `GROUP BY` / `HAVING`, expression projection in the select list, SQL
 `INSERT` / `UPDATE` / `DELETE`, and bare `SELECT` without the `SQLSEL` prefix.
 
+`JOIN` here means SQL-syntax join inside a `SQLSEL` statement. Joining itself is
+not missing from the engine: [`REL JOIN`](/products/reltalk) walks a declared
+parent and its children into tuples today. What is not yet implemented is
+reaching that from `SELECT`.
+
 ## Relationship to RelTalk
 
 SQLsel and [RelTalk](/products/reltalk) both reach connected data and are not the
