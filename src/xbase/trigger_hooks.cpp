@@ -8,6 +8,13 @@
 // status: experimental
 //
 // AIF-087 Phase-1: per-area trigger callback table. GLOB'd into xbase STATIC.
+//
+// M1, 2026-09-03: split into two registration tables, Before and After. The
+// After table and fire_field_replace are UNCHANGED -- same table type, same
+// lock, same Guard, same order of operations. The Before table is new, is
+// registered into by set_before_callback, and is read only by
+// allow_field_replace, WHICH HAS NO CALLER YET. Wiring it at commit entry is
+// M2. See trigger_hooks.hpp for why the two phases cannot be one flag.
 #include "xbase/trigger_hooks.hpp"
 #include <mutex>
 #include <unordered_map>
@@ -17,6 +24,10 @@ struct Entry {
     TriggerFn fn = nullptr;
     void*     user = nullptr;
 };
+struct BeforeEntry {
+    BeforeTriggerFn fn = nullptr;
+    void*           user = nullptr;
+};
 std::mutex& table_mu() noexcept
 {
     static std::mutex mu;
@@ -25,6 +36,13 @@ std::mutex& table_mu() noexcept
 std::unordered_map<DbArea*, Entry>& table() noexcept
 {
     static std::unordered_map<DbArea*, Entry> t;
+    return t;
+}
+// Separate table, SAME mutex. One lock keeps register/fire ordering total
+// across both phases; the tables are small and contention is not a concern.
+std::unordered_map<DbArea*, BeforeEntry>& before_table() noexcept
+{
+    static std::unordered_map<DbArea*, BeforeEntry> t;
     return t;
 }
 thread_local int g_suppress_depth = 0;
@@ -42,9 +60,43 @@ void clear_callback(DbArea& area) noexcept
 {
     set_callback(area, nullptr, nullptr);
 }
+void set_before_callback(DbArea& area, BeforeTriggerFn fn, void* user) noexcept
+{
+    std::lock_guard<std::mutex> lock(table_mu());
+    if (!fn) {
+        before_table().erase(&area);
+        return;
+    }
+    before_table()[&area] = BeforeEntry{fn, user};
+}
+void clear_before_callback(DbArea& area) noexcept
+{
+    set_before_callback(area, nullptr, nullptr);
+}
+bool allow_field_replace(DbArea& area, int field1, std::uint64_t recno) noexcept
+{
+    // No Before callback registered -> the write proceeds. An area that never
+    // asked for a veto must behave exactly as it did before M1.
+    if (g_suppress_depth > 0) return true;
+    BeforeTriggerFn fn = nullptr;
+    void* user = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(table_mu());
+        const auto it = before_table().find(&area);
+        if (it == before_table().end() || !it->second.fn) return true;
+        fn = it->second.fn;
+        user = it->second.user;
+    }
+    // A Before callback MUST NOT mutate -- it would re-enter the buffer being
+    // committed. The Guard makes any write it attempts fire no further trigger,
+    // which contains the damage but does not license the mutation.
+    Guard nested;
+    return fn(area, "field_replace", field1, recno, user);
+}
 void detach(DbArea& area) noexcept
 {
     clear_callback(area);
+    clear_before_callback(area);
 }
 void fire_field_replace(DbArea& area, int field1, std::uint64_t recno) noexcept
 {

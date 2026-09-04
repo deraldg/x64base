@@ -31,6 +31,47 @@ Maintainer sign-off for the Triggers PDLC lane (Q5 on the Agent Sync page).
 Status: **SIGNED 2026-08-04** (AIF-087). A-G below carry the maintainer's chosen
 options and rationale; the Phase-1 spike scope is authorized (patch-package only).
 
+## AMENDMENT 2026-09-03 -- what changed under this sheet
+
+Signed 2026-08-04. Re-read against the tree today at the owner's direction
+("change the specs to match today's reality and goals"). **The decisions are not
+rewritten; they are dated and amended, because a sign-off sheet edited silently
+stops being a record of what was signed.**
+
+**Three things moved.**
+
+1. **PHASE-1 LANDED THE SAME DAY IT WAS AUTHORIZED, AND THIS SHEET STILL SAYS
+   IT DID NOT.** `include/xbase/trigger_hooks.hpp` and `src/xbase/trigger_hooks.cpp`
+   exist (both 2026-08-04 16:10), and `src/xbase/dbarea.cpp:330` calls
+   `trigger_hooks::fire_field_replace(*this, field1, rn)` after a successful
+   `index_hooks::apply_replace`. **The seam is live.** The sign-off box below
+   reads `Phase-1 source unblocked: [ ]` and is stale.
+
+2. **THE SEAM IS LIVE AND UNREACHABLE.** `cmd_trigger.cpp` is still a design
+   stub with no handler, so there is no user-facing `TRIGGER` command. Triggers
+   today are a C++ callback an engine caller can register and nothing a user can
+   attach. That is exactly what Decision A and the stub gate intended -- the
+   command was always a separate lane -- but the two halves read as a
+   contradiction to anyone checking, and they produced a real defect: the public
+   ecosystem comparison table said **"Database triggers | Yes"** until it was
+   corrected today. Someone saw the firing seam; someone else saw the stub. Both
+   were looking at real things.
+
+3. **DECISION E IS THE ONE TODAY INVALIDATES.** E1 deferred firing on buffered
+   edits, and the rationale held at the time: `dbarea.cpp` excluded buffering
+   from the direct-write path, so nothing important used it. **SQLsel P5 DML is
+   now built on exactly that path** -- `sqlsel_statement.cpp:3178`, "typed SQL
+   DML over the house table-buffer / WAL / lock machinery", with TBJ1 WAL and an
+   explicit transaction state. So under E1 as signed, **a trigger does not fire
+   for any SQL `INSERT` / `UPDATE` / `DELETE`.** A mechanism that fires for
+   `REPLACE` and stays silent for `SQLSEL UPDATE` is a trap, not a deferral.
+
+**And the delivery model changed.** The Phase-1 scope below authorizes a
+PATCH-PACKAGE only, with `src/**` NO-GO, because the drafter was a hosted partner
+(Grok/xAI) who could not write to the tree. Work is now done in-tree by an agent
+with owner authorization. That gate describes a workflow that no longer exists;
+it is retained below as history, not as a live constraint.
+
 ## Hard gate
 
 **Phase-1 trigger source is NO-GO until every row below is Signed AND the AIF is
@@ -77,12 +118,52 @@ kinds of question a trigger feature must settle before code:
   `stop_on_error` governs it (AIF-036), not free-form strings.
 - Rollback / transaction interaction (triggers under `TABLE BUFFER` / COMMIT).
 
+## Amended decisions -- 2026-09-03, review-needed
+
+The 2026-08-04 signatures above stand as signed. These are the deltas today's
+tree and today's goals require. **None is signed; each needs the maintainer.**
+
+| # | As signed 2026-08-04 | State 2026-09-03 | Proposed amendment |
+|---|---|---|---|
+| A | x64base engine SDLC owns it | Unchanged and correct. The stub's `owning-lifecycle: labtalk_pdlc` marker is **still wrong** in `cmd_trigger.cpp` | No change to the decision; fix the stale marker when the stub becomes a handler |
+| B | Fire at `replaceFieldStored` only | **Achieved** -- `dbarea.cpp:330` | Keep, and state the consequence plainly: this covers the direct write path and **nothing else** |
+| C | C++ callback only; DotScript deferred | Unchanged | Keep for the engine seam. DotScript bodies belong with the user-facing command, not here |
+| D | Per `DbArea` | Unchanged, but the axis grew: workspaces are co-resident since R128/R130 and SQLsel resolves names per workspace | Keep per-area, and state that a callback on an area in one workspace must not fire for a same-named table in another |
+| E | **No fire on buffered edits** | **Invalidated.** SQLsel DML is built on TableBuffer + TBJ1 WAL, so as signed a trigger is silent for every SQL write | **Reopen.** The question is no longer "defer buffering" but "at which point in commit does a trigger fire, and can it refuse" -- and it must be answered before triggers are called real |
+| F | POLLING stays diagnostics-only | Unchanged and correct | No change |
+| G | C++ unit smoke | **Below today's bar.** The SQLsel lane established fail-closed validators, oracle comparison, and mutation-tested red | **Raise.** A trigger proof must show the trigger FIRED, fired ONCE, fired in the right ORDER against `index_hooks`, and **must be mutation-tested red** -- a trigger test that cannot fail is worth less than none |
+
+## What "make triggers real" now means, in order
+
+Recorded as scope, not as authorization.
+
+1. **Decide E.** Firing point relative to buffer commit; whether a trigger may
+   refuse a write; behaviour on `ROLLBACK`. Everything else is blocked on this,
+   and it is a maintainer ruling rather than an implementation choice.
+2. **Recursion and re-entrancy.** A trigger that writes re-enters
+   `replaceFieldStored`. The signed sheet lists this under "candidate question
+   areas" and it was never decided; the seam shipped without a guard.
+3. **Error model.** The 2026-08-04 sheet already specified it: failure yields a
+   message-catalog `MessageId` plus severity so `STOP_ON_ERROR` governs it
+   (AIF-036), not free-form strings. Still owed.
+4. **The user-facing `TRIGGER` command**, with its `@dottalk.usage` contract in
+   the same commit as the handler -- the stub's own gate.
+5. **Compose with `RULE`, do not duplicate it.** `RULE` is a declarative
+   constraint checked by `VALIDATE`; a trigger is an imperative action on an
+   event. If a trigger can refuse a write, the obvious first use is enforcing a
+   declared `RULE` **at write time** -- which would close the gap between
+   x64base's automatic domain integrity and its opt-in `CHECK` layer, and is the
+   same hook entity and referential integrity would need.
+
 ## Sign-off record
 
 - All A-G signed: [x]  date: 2026-08-04
 - AIF claimed: [x]  assigned: AIF-087  (replaces AIF-NEXT in the partner package)
-- Phase-1 source unblocked: [ ]  SCOPE authorized for a spike PATCH-PACKAGE only;
-  tree `src/**` stays NO-GO until the maintainer reviews + cold-clone-builds and applies.
+- Phase-1 source unblocked: [x]  **LANDED 2026-08-04** -- `trigger_hooks.{hpp,cpp}`
+  plus the `dbarea.cpp:330` fire point. The patch-package restriction below is
+  HISTORY: it described a hosted partner who could not write to the tree.
+- Phase-2 (user-facing `TRIGGER`, buffered/transactional firing): **NOT authorized.**
+  Blocked on the amended Decision E.
 
 ## Phase-1 spike -- authorized named-file scope (Source Mutation Gate)
 
