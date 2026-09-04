@@ -1,0 +1,78 @@
+Echo is OFF
+STOP_ON_ERROR: threshold set to OFF
+SETPATH: DBF = D:\code\ccode\dottalkpp\data\DBF\SANDBOX
+SETPATH: INDEXES = D:\code\ccode\dottalkpp\data\INDEXES\SANDBOX
+SETPATH: LMDB = D:\code\ccode\dottalkpp\data\LMDB\SANDBOX
+CLV-BEGIN
+ERASE: Table not found: CLVFIX.dbf
+Created D:\code\ccode\dottalkpp\data\DBF\SANDBOX\CLVFIX.dbf [X64]
+Opened D:\code\ccode\dottalkpp\data\dbf\sandbox\CLVFIX.dbf with 0 records.
+REL: cleared all
+Closed.
+Opened CLVFIX (v64) : Record count 5
+Valid Index/Indices   : CDX, CNX
+CLV-T0-BEGIN
+5
+CLV-T0-END
+CLV-T1-BEGIN
+[rec 1] GPA="3.50" (num=3.5)
+[rec 3] GPA="3.90" (num=3.9)
+[rec 5] GPA="3.10" (num=3.1)
+3
+CLV-T1-END
+CLV-T2-BEGIN
+[rec 1] GPA="3.50" (num=3.5) => true
+[rec 2] GPA="2.10" (num=2.1) => false
+[rec 3] GPA="3.90" (num=3.9) => true
+[rec 4] GPA="1.80" (num=1.8) => false
+[rec 5] GPA="3.10" (num=3.1) => true
+scanned 5, matched 3
+3
+CLV-T2-END
+CLV-T3-BEGIN
+SET FILTER: TO MAJOR = "CSCI"
+[rec 1] GPA="3.50" (num=3.5) => true
+[rec 2] GPA="2.10" (num=2.1) => false
+[rec 5] GPA="3.10" (num=3.1) => true
+scanned 3, matched 2
+2
+SET FILTER: cleared.
+CLV-T3-END
+CLV-T4-BEGIN
+SQL: reserved verb -- it no longer scans records.
+
+  Predicate scans and counts are COUNT's, on the one selection path
+  that honours SET FILTER and SET DELETED:
+    COUNT                          count the current logical rowset
+    COUNT FOR <expr>               count matches
+    COUNT LIST FOR <expr>          list the matching rows, then the count
+    COUNT VERBOSE FOR <expr>       every in-scope row with its verdict
+    COUNT DELETED | NOT DELETED    select by deletion state
+
+  Statements are SQLSEL:  SQLSEL <cols> FROM <table> [WHERE] [ORDER BY] [LIMIT]
+  An actual SQLite database is SQLITE:  SQLITE USAGE
+
+  Retired 2026-09-04: the old SQL scanner kept its own idea of which
+  rows were in scope and could disagree with COUNT without saying so.
+SQL: reserved verb -- it no longer scans records.
+
+  Predicate scans and counts are COUNT's, on the one selection path
+  that honours SET FILTER and SET DELETED:
+    COUNT                          count the current logical rowset
+    COUNT FOR <expr>               count matches
+    COUNT LIST FOR <expr>          list the matching rows, then the count
+    COUNT VERBOSE FOR <expr>       every in-scope row with its verdict
+    COUNT DELETED | NOT DELETED    select by deletion state
+
+  Statements are SQLSEL:  SQLSEL <cols> FROM <table> [WHERE] [ORDER BY] [LIMIT]
+  An actual SQLite database is SQLITE:  SQLITE USAGE
+
+  Retired 2026-09-04: the old SQL scanner kept its own idea of which
+  rows were in scope and could disagree with COUNT without saying so.
+CLV-T4-END
+REL: cleared all
+Closed.
+ERASE: deleting 1 file(s) for table: CLVFIX
+  Deleted: CLVFIX.dbf
+ERASE complete. Deleted: 1, Failed: 0
+CLV-END

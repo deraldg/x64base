@@ -250,13 +250,31 @@ static Agg aggregate_for_recno(const dottalk::table::TableBuffer& tb, std::uint6
     return a;
 }
 
+// The changed-field set for one folded record. ONE DERIVATION, used by the
+// BEFORE pre-pass and the AFTER fire -- if each built its own, a change to the
+// fold would silently give the two phases different views of the same write.
+static std::vector<int> changed_fields_of(const Agg& agg)
+{
+    std::vector<int> fields;
+    fields.reserve(agg.field_values.size());
+    for (const auto& kv : agg.field_values) fields.push_back(kv.first);
+    return fields;
+}
+
 // Stable event_kind literal for a buffered record write. DELETE dominates
 // because apply_one_recno writes fields and THEN deletes, so a record both
 // updated and deleted inside one transaction ends the transaction deleted.
+//
+// "record_update", NOT "field_replace". Every event from this path is a RECORD
+// write that may carry N changed fields -- a MULTIREP of two fields reported
+// kind=field_replace with field_count=2, so the label contradicted the count in
+// the same struct. "field_replace" belongs to DbArea::replaceFieldStored, where
+// one field genuinely is the whole write; reusing it here made the general case
+// wear the degenerate case's name.
 static const char* event_kind_for_flags(std::uint64_t flags) noexcept {
     if (flags & dottalk::table::CHANGE_DELETE) return "record_delete";
     if (flags & dottalk::table::CHANGE_INSERT) return "record_insert";
-    return "field_replace";
+    return "record_update";
 }
 
 static bool apply_one_recno(xbase::DbArea& A, const Agg& agg, bool talk,
@@ -291,6 +309,7 @@ static bool apply_one_recno(xbase::DbArea& A, const Agg& agg, bool talk,
 #endif
 
     bool ok = true;
+    bool index_failed = false;
 
     if (agg.flags & (dottalk::table::CHANGE_INSERT |
                      dottalk::table::CHANGE_UPDATE)) {
@@ -319,6 +338,7 @@ static bool apply_one_recno(xbase::DbArea& A, const Agg& agg, bool talk,
             after_snap = xbase::index_hooks::capture(A);
         }
         if (!xbase::index_hooks::apply_replace(A, before_snap, after_snap, rn)) {
+            index_failed = true;
             if (talk) cli::cmdout::print_prefixed_message(
                 "COMMIT", dottalk::helpdata::MessageId::CommitIndexFinalizeFailedText);
         }
@@ -326,6 +346,40 @@ static bool apply_one_recno(xbase::DbArea& A, const Agg& agg, bool talk,
 #endif
 
     xbase::locks::unlock_record(A, rn);
+
+    // AIF-087 M3: THE AFTER PHASE FIRES HERE -- per record, once that record's
+    // apply has succeeded, and AFTER THE RECORD LOCK IS RELEASED.
+    //
+    // Per record and not per transaction, because partial_commit_possible is
+    // yes: a per-transaction AFTER would fire for records that never landed.
+    //
+    // After the unlock, matching DbArea::replaceFieldStored, which unlocks at
+    // dbarea.cpp:289 and fires at :330. That is not incidental -- Decision E 4.3
+    // lets an AFTER trigger write in its own transaction, and a trigger that
+    // touched this record while we still held its lock would deadlock against
+    // the write that notified it.
+    //
+    // Silent when index maintenance failed, also matching replaceFieldStored
+    // ("No fire when index maintenance failed"). The rule is arguable -- the
+    // DATA is durable either way -- but ONE RULE ACROSS BOTH AFTER PATHS beats
+    // a defensible second one. A divergence here would be the same claim with
+    // two homes, which is the defect this lane keeps finding.
+    //
+    // RECOVERY CANNOT REACH THIS. recover_table_buffer_journal replays with
+    // area.set + writeCurrent and never calls apply_one_recno, so replay does
+    // not re-fire BY CONSTRUCTION rather than by a suppression flag. Anyone
+    // refactoring replay to share this function reopens the double-fire defect,
+    // and that refactor would look like tidiness.
+    if (ok && !index_failed) {
+        const std::vector<int> fields = changed_fields_of(agg);
+        xbase::trigger_hooks::WriteEvent ev;
+        ev.event_kind  = event_kind_for_flags(agg.flags);
+        ev.recno       = rn;
+        ev.fields      = fields.empty() ? nullptr : fields.data();
+        ev.field_count = fields.size();
+        xbase::trigger_hooks::fire_record_write(A, ev);
+    }
+
     return ok;
 }
 
@@ -466,9 +520,7 @@ static CommitResult commit_one_area(xbase::DbArea& A,
 
             // The changed-field set for THIS record, folded exactly as
             // apply_one_recno will fold it. One decision per physical write.
-            std::vector<int> fields;
-            fields.reserve(agg.field_values.size());
-            for (const auto& kv : agg.field_values) fields.push_back(kv.first);
+            const std::vector<int> fields = changed_fields_of(agg);
 
             xbase::trigger_hooks::WriteEvent ev;
             ev.event_kind  = event_kind_for_flags(agg.flags);

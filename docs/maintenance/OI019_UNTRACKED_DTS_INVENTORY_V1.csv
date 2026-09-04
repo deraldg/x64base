@@ -1,0 +1,207 @@
+tier,path,bytes,mtime,tracked_citations,untracked_citation_count,cited_by_tracked
+A,dottalkpp/data/scripts/commit_rollback_test.dts,147,2026-02-08,6,1,docs/maintenance/BETA1_STABILIZATION_REGRESSION_LANE_V1.md; docs/maintenance/SESSION_HANDOFF_2026-07-21_CLAUDE_COWORK.md; docs/maintenance/SQLSEL_PDLC_LANE_V1.md; src/AIPortal/sessions/2026-07-21_claude_recno64_indextxn_onboarding/DTS_AUTHORING_AND_DATA_ENV_RULES_V1_20260721.md; src/AIPortal/sessions/2026-07-21_claude_recno64_indextxn_onboarding/cmd_regression.cpp.INDEX_TXN.d8123d2a4.patch; src/cli/cmd_regression.cpp
+A,dottalkpp/data/scripts/limits/limits_record_advisory_shakedown.dts,2685,2026-07-19,2,0,docs/maintenance/SESSION_CLOSEOUT_ENGINE_LIMITS_AND_CORRECTIONS_2026-07-19.md; src/tests/test_x64_record_limit.cpp
+A,dottalkpp/data/scripts/pinocchio/wal_phaseA_proof.dts,3116,2026-08-12,4,0,docs/maintenance/BETA1_STABILIZATION_REGRESSION_LANE_V1.md; docs/maintenance/TABLE_BUFFER_WAL_DESIGN_2026-07-19.md; src/AIPortal/sessions/2026-07-21_claude_recno64_indextxn_onboarding/cmd_regression.cpp.INDEX_TXN.d8123d2a4.patch; src/cli/cmd_regression.cpp
+A,dottalkpp/data/scripts/suites/commit_rollback_test.dts,157,2026-07-06,6,1,docs/maintenance/BETA1_STABILIZATION_REGRESSION_LANE_V1.md; docs/maintenance/SESSION_HANDOFF_2026-07-21_CLAUDE_COWORK.md; docs/maintenance/SQLSEL_PDLC_LANE_V1.md; src/AIPortal/sessions/2026-07-21_claude_recno64_indextxn_onboarding/DTS_AUTHORING_AND_DATA_ENV_RULES_V1_20260721.md; src/AIPortal/sessions/2026-07-21_claude_recno64_indextxn_onboarding/cmd_regression.cpp.INDEX_TXN.d8123d2a4.patch; src/cli/cmd_regression.cpp
+A,dottalkpp/data/scripts/x32.dts,50,2026-04-25,8,4,docs/ai-friendly/AI_FRIENDLY_DASHBOARD_V1.md; docs/ai-friendly/AI_INTERACTION_INTAKE_QUEUE_V1.md; docs/maintenance/AIF145_FINDING_FOUR_LADDERS_RESOLVE_ONE_WORKSPACE_NAME_V1.md; docs/maintenance/ARCTICTALK_MENU_REGRESSION_ENVIRONMENT_PREFLIGHT_2026-07-22.md; docs/maintenance/ARCTICTALK_RETRO_TUI_WORKBENCH_LANE_V1.md; docs/maintenance/SESSION_CLOSEOUT_ARCTICTALK_REGRESSION_ENVIRONMENT_MENU_2026-07-22.md
+A,dottalkpp/data/scripts/x64.dts,73,2026-06-22,14,2,docs/WORKFLOW_RUNBOOK_v1.md; docs/ai-friendly/AI_FRIENDLY_DASHBOARD_V1.md; docs/getting-started/POSIX_WSL_QUICKSTART.md; docs/maintenance/AIF120_DOTSCRIPT_V1.md; docs/maintenance/AIF120_FIXTURE_CORPUS_V1.md; docs/maintenance/AIF120_ORDER_VOCABULARY_V1.md
+B,dottalkpp/data/scripts/SYSTEM_METADATA_BOOLEAN_FIX.dts,134,2026-06-26,2,3,tests/manual/dotscript/README.md; tests/manual/dotscript/quarantine/SYSTEM_METADATA_BOOLEAN_FIX.dts
+B,dottalkpp/data/scripts/SYSTEM_METADATA_SEED_v1.dts,9231,2026-06-26,1,5,tests/manual/dotscript/metadata/legacy/SYSTEM_METADATA_SEED_v1.dts
+B,dottalkpp/data/scripts/SYSTEM_METADATA_SEED_v2.dts,10134,2026-06-26,2,7,tests/manual/dotscript/README.md; tests/manual/dotscript/metadata/SYSTEM_METADATA_SEED_v2.dts
+B,dottalkpp/data/scripts/SYSTEM_METADATA_VALIDATE.dts,128,2026-06-26,1,3,tests/manual/dotscript/metadata/SYSTEM_METADATA_VALIDATE.dts
+B,dottalkpp/data/scripts/SYSTEM_METADATA_VALIDATE_v0.dts,3153,2026-06-26,2,5,tests/manual/dotscript/README.md; tests/manual/dotscript/metadata/SYSTEM_METADATA_VALIDATE_v0.dts
+B,dottalkpp/data/scripts/buffer_visibility_probe_v3_smartbrowser.dts,3294,2026-07-29,1,0,docs/maintenance/BUFFER_VISIBILITY_TWO_FAMILIES_V1.md
+B,dottalkpp/data/scripts/canaries/full_baseline.dts,317,2026-06-27,2,7,DOTSCRIPT_README_TESTING.md; tests/README_TESTING.md
+B,dottalkpp/data/scripts/canaries/list_order_flip.dts,305,2026-06-27,2,7,DOTSCRIPT_README_TESTING.md; tests/README_TESTING.md
+B,dottalkpp/data/scripts/comments/SOURCE_COMMENT_IMPORT_ONLY.dts,1562,2026-06-21,1,1,tools/tracking/load_tracking_tables.dts
+B,dottalkpp/data/scripts/comments/SOURCE_COMMENT_READBACK_VALIDATION.dts,931,2026-06-21,1,2,tools/fullstack_docs/reload_src_comments.ps1
+B,dottalkpp/data/scripts/comments/SOURCE_COMMENT_RESET_RELOAD.dts,3662,2026-06-21,2,13,docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260722-001/FULLSTACK_DOCUMENTATION_FLUSH_COMPLETE_HANDOFF_V1.md; tools/fullstack_docs/reload_src_comments.ps1
+B,dottalkpp/data/scripts/ersatz_rel_enum_browser.dts,1002,2026-04-28,2,3,docs/maintenance/AIF112_PHASE1_EVIDENCE_AND_STEWARD_HANDOFF_4_V1.md; dottalkpp/data/dbf/sandbox/aif112_step4.dts
+B,dottalkpp/data/scripts/help/cmdhelpchk_metadata_expand_matrix_v1.dts,3111,2026-06-26,1,3,AUTOLOG_CMDHELPCHK_v2_PHASE2_EXPAND_MATRIX_v1_2026-05-10.md
+B,dottalkpp/data/scripts/legacy/banner_consistency.dts,524,2026-03-16,2,7,DOTSCRIPT_README_TESTING.md; tests/README_TESTING.md
+B,dottalkpp/data/scripts/legacy/cnx_tag_keyword_form.dts,559,2026-03-16,2,7,DOTSCRIPT_README_TESTING.md; tests/README_TESTING.md
+B,dottalkpp/data/scripts/legacy/command_test_script.dts,1515,2026-03-16,1,3,testingrunforclaude.ps1
+B,dottalkpp/data/scripts/legacy/inxi_attach_switching.dts,458,2026-03-16,2,7,DOTSCRIPT_README_TESTING.md; tests/README_TESTING.md
+B,dottalkpp/data/scripts/legacy/script.dts,164,2026-03-16,3,5,docs/maintenance/SESSION_CLOSEOUT_DEV_TREE_HYGIENE_UNTRACKED_SOURCE_RECOVERY_2026-07-24.md; docs/manuals/developer/manualgen/published/developer_manual_publication_v1_media_section_v1_man_cli_reference_v1/developer_manual_publication_v1_media_section_v1.md; tools/staging/regression_fixture_gate.py
+B,dottalkpp/data/scripts/legacy/struct_cnx_tags.dts,374,2026-03-16,2,8,DOTSCRIPT_README_TESTING.md; tests/README_TESTING.md
+B,dottalkpp/data/scripts/legacy/struct_inx_active.dts,116,2026-03-16,2,8,DOTSCRIPT_README_TESTING.md; tests/README_TESTING.md
+B,dottalkpp/data/scripts/legacy/version.dts,2021,2026-03-16,1,3,testingrunforclaude.ps1
+B,dottalkpp/data/scripts/limits/limits_close_all_shakedown.dts,1821,2026-07-19,1,0,docs/maintenance/SESSION_CLOSEOUT_ENGINE_LIMITS_AND_CORRECTIONS_2026-07-19.md
+B,dottalkpp/data/scripts/limits/limits_max_area_shakedown.dts,1864,2026-07-19,1,0,docs/maintenance/SESSION_CLOSEOUT_ENGINE_LIMITS_AND_CORRECTIONS_2026-07-19.md
+B,dottalkpp/data/scripts/limits/limits_name_length_shakedown.dts,3197,2026-07-19,1,0,docs/maintenance/SESSION_CLOSEOUT_ENGINE_LIMITS_AND_CORRECTIONS_2026-07-19.md
+B,dottalkpp/data/scripts/manual/ersatz_rel_enum_browser.dts,1013,2026-03-16,2,3,docs/maintenance/AIF112_PHASE1_EVIDENCE_AND_STEWARD_HANDOFF_4_V1.md; dottalkpp/data/dbf/sandbox/aif112_step4.dts
+B,dottalkpp/data/scripts/messaging/RUNTIME_MESSAGE_CATALOG_IMPORT_v1.dts,415,2026-06-28,1,0,dottalkpp/docs/messaging/RUNTIME_MESSAGE_CATALOG_SEED_WORKFLOW_v1.md
+B,dottalkpp/data/scripts/messaging/RUNTIME_MESSAGE_CATALOG_RESET_RELOAD_v1.dts,431,2026-06-28,1,0,dottalkpp/docs/messaging/RUNTIME_MESSAGE_CATALOG_SEED_WORKFLOW_v1.md
+B,dottalkpp/data/scripts/messaging/RUNTIME_MESSAGE_CATALOG_RESET_v1.dts,456,2026-06-28,1,0,dottalkpp/docs/messaging/RUNTIME_MESSAGE_CATALOG_SEED_WORKFLOW_v1.md
+B,dottalkpp/data/scripts/messaging/RUNTIME_MESSAGE_CATALOG_VERIFY_v1.dts,440,2026-06-28,1,1,dottalkpp/docs/messaging/RUNTIME_MESSAGE_CATALOG_SEED_WORKFLOW_v1.md
+B,dottalkpp/data/scripts/messaging_priority_a_seed_apply_v1.dts,782,2026-06-28,1,0,dottalkpp/docs/messaging/RUNTIME_MESSAGE_CATALOG_SEED_WORKFLOW_v1.md
+B,dottalkpp/data/scripts/messaging_priority_a_seed_verify_v1.dts,551,2026-06-28,1,0,dottalkpp/docs/messaging/RUNTIME_MESSAGE_CATALOG_SEED_WORKFLOW_v1.md
+B,dottalkpp/data/scripts/metadata/SYSCMD_NATIVE_CREATE_IMPORT_v1.RUN_METADATA_REVIEWED.dts,365,2026-05-20,1,4,docs/WORKFLOW_RUNBOOK_v1.md
+B,dottalkpp/data/scripts/metadata/SYSCMD_NATIVE_CREATE_IMPORT_v2.RUN_METADATA_REVIEWED.dts,1747,2026-07-26,1,0,docs/maintenance/lanes/full_stack_documentation/SESSION_RECORD_CLAUDE_COWORK_2026-07-26_V1.md
+B,dottalkpp/data/scripts/metadata/SYSCMD_READBACK_v1.dts,161,2026-05-20,1,4,docs/WORKFLOW_RUNBOOK_v1.md
+B,dottalkpp/data/scripts/metadata/SYSCMD_SEED_v1.dts,1019,2026-07-27,4,1,docs/maintenance/lanes/full_stack_documentation/FULL_STACK_DOCUMENTATION_RUNBOOK_V1.md; docs/maintenance/lanes/full_stack_documentation/SESSION_RECORD_CLAUDE_COWORK_2026-07-27_V1.md; docs/maintenance/unfiled/RECIPE_sysfunc_five_functions_runsheet.txt; tools/fullstack_docs/generate_syscmd.py
+B,dottalkpp/data/scripts/pinocchio/nav_deleted_smoke.dts,4983,2026-07-17,1,0,docs/maintenance/SESSION_CLOSEOUT_PINOCCHIO_NAV_PERFORMANCE_2026-07-18.md
+B,dottalkpp/data/scripts/pinocchio/pinocchio_aggs_all_proof.dts,1692,2026-07-19,2,0,docs/maintenance/PINOCCHIO_SCALE_VERB_RESULTS_2026-07-18.md; docs/maintenance/SESSION_CLOSEOUT_PINOCCHIO_AGGS_ALL_2026-07-19.md
+B,dottalkpp/data/scripts/pinocchio/pinocchio_build.dts,2343,2026-07-15,4,5,docs/maintenance/AIF120_ENGINE_SURFACE_V1.md; docs/maintenance/PINOCCHIO_STRESS_TEST_PLAN_V1.md; docs/maintenance/SESSION_CLOSEOUT_PINOCCHIO_PHASE1_2026-07-15.md; docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260716-001/source_promotion/SOURCEPROMOTE-20260718T181000Z/before/docs/maintenance/SESSION_CLOSEOUT_PINOCCHIO_PHASE1_2026-07-15.md
+B,dottalkpp/data/scripts/pinocchio/pinocchio_measure.dts,1630,2026-07-15,1,6,docs/maintenance/PINOCCHIO_STRESS_TEST_PLAN_V1.md
+B,dottalkpp/data/scripts/pinocchio/pinocchio_measure_repl.dts,1077,2026-07-15,2,0,docs/maintenance/SESSION_CLOSEOUT_PINOCCHIO_PHASE1_2026-07-15.md; docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260716-001/source_promotion/SOURCEPROMOTE-20260718T181000Z/before/docs/maintenance/SESSION_CLOSEOUT_PINOCCHIO_PHASE1_2026-07-15.md
+B,dottalkpp/data/scripts/pinocchio/pinocchio_nav_defect_proof.dts,5712,2026-07-17,2,0,docs/maintenance/SESSION_CLOSEOUT_PINOCCHIO_NAV_PERFORMANCE_2026-07-18.md; labtalk/proofs/runs/20260718_pinocchio_nav_after_capture_v1.md
+B,dottalkpp/data/scripts/pinocchio/pinocchio_nav_filter_boundary.dts,4484,2026-07-17,2,0,docs/maintenance/SESSION_CLOSEOUT_PINOCCHIO_NAV_PERFORMANCE_2026-07-18.md; labtalk/proofs/runs/20260718_pinocchio_nav_after_capture_v1.md
+B,dottalkpp/data/scripts/pinocchio/pinocchio_recall_batch_proof.dts,3304,2026-07-19,1,0,docs/maintenance/SESSION_CLOSEOUT_PINOCCHIO_DELETE_BATCH_2026-07-19.md
+B,dottalkpp/data/scripts/pinocchio/pinocchio_scale_destructive.dts,5861,2026-07-18,2,0,docs/maintenance/PINOCCHIO_SCALE_VERB_RESULTS_2026-07-18.md; docs/maintenance/PINOCCHIO_STRESS_TEST_PLAN_V1.md
+B,dottalkpp/data/scripts/pinocchio/pinocchio_scale_readonly.dts,7454,2026-07-18,2,0,docs/maintenance/PINOCCHIO_SCALE_VERB_RESULTS_2026-07-18.md; docs/maintenance/PINOCCHIO_STRESS_TEST_PLAN_V1.md
+B,dottalkpp/data/scripts/pinocchio/pinocchio_seek_fix_proof.dts,3125,2026-07-18,1,0,docs/maintenance/SESSION_CLOSEOUT_PINOCCHIO_SEEK_FIX_2026-07-18.md
+B,dottalkpp/data/scripts/pinocchio/wal_phaseB_setup.dts,1511,2026-08-12,1,0,docs/maintenance/TABLE_BUFFER_WAL_DESIGN_2026-07-19.md
+B,dottalkpp/data/scripts/pinocchio/wal_phaseC_proof.dts,2172,2026-08-12,1,0,docs/maintenance/TABLE_BUFFER_WAL_DESIGN_2026-07-19.md
+B,dottalkpp/data/scripts/stable_demo.dts,489,2026-07-06,1,3,src/AIPortal/sessions/2026-07-21_claude_recno64_indextxn_onboarding/XIDX_RELATIONS_JOINS_CONSIDERATION_V1_20260721.md
+B,dottalkpp/data/scripts/suites/set_relations_test.dts,629,2026-03-16,1,2,docs/maintenance/AIF120_I1_PRICE_V1.md
+B,dottalkpp/data/scripts/workspace_wbak_scan.dts,6775,2026-08-12,2,1,docs/maintenance/COWORK_SESSION_HANDOFF_2026-08-12.md; docs/maintenance/PEER_REVIEW_WORKSPACE_SCANNER_AND_WBAK_PLACEMENT_V1.md
+C,dottalkpp/data/scripts/CREATE TABLE command_avatars.dts,283,2026-04-24,0,1,
+C,dottalkpp/data/scripts/Expression Comparison Shake-Down.dts,4043,2026-04-01,0,1,
+C,dottalkpp/data/scripts/LIST_CURSOR_SHAKEDOWN.DTS.dts,3651,2026-07-06,0,1,
+C,dottalkpp/data/scripts/MCC EXHAUSTIVE FULL X64 REGRESSION CANARIES.dts,3178,2026-05-03,0,1,
+C,dottalkpp/data/scripts/MCCV6.dts,13410,2026-03-18,0,2,
+C,dottalkpp/data/scripts/MCC_EXHAUSTIVE_FULL_X64_REGRESSION_CANARIES_FIXED_20260513.dts,17913,2026-05-13,0,3,
+C,dottalkpp/data/scripts/MCC_EXHAUSTIVE_FULL_X64_REGRESSION_CANARIES_REDACTED_20260513.dts,17024,2026-05-13,0,2,
+C,dottalkpp/data/scripts/SET LANGUAGE TO.dts,231,2026-05-23,0,1,
+C,dottalkpp/data/scripts/SYSTEM_METADATA_SCHEMA_v0.dts,5954,2026-05-04,0,5,
+C,dottalkpp/data/scripts/SYSTEM_METADATA_SCHEMA_v0_flat.dts,4350,2026-06-26,0,8,
+C,dottalkpp/data/scripts/SYSTEM_METADATA_SCHEMA_v1.dts,6829,2026-06-26,0,13,
+C,dottalkpp/data/scripts/SYSTEM_METADATA_SCHEMA_v4_safe10.dts,7389,2026-06-26,0,2,
+C,dottalkpp/data/scripts/SYSTEM_METADATA_SCHEMA_v4_safe10_FIXED.dts,9224,2026-06-27,0,4,
+C,dottalkpp/data/scripts/SYSTEM_METADATA_SEED_v4_safe10.dts,11880,2026-06-26,0,2,
+C,dottalkpp/data/scripts/SYSTEM_METADATA_SEED_v4_safe10_FIXED.dts,12276,2026-06-26,0,3,
+C,dottalkpp/data/scripts/SYSTEM_METADATA_SEED_v4_safe10_FIXED2.dts,12783,2026-06-26,0,2,
+C,dottalkpp/data/scripts/SYSTEM_METADATA_SEED_v4_safe10_MULTIREP.dts,10485,2026-06-26,0,2,
+C,dottalkpp/data/scripts/SYSTEM_METADATA_VALIDATE_v4_safe10.dts,997,2026-06-26,0,2,
+C,dottalkpp/data/scripts/SYSTEM_METADATA_VALIDATE_v4_safe10_FIXED.dts,883,2026-06-26,0,3,
+C,dottalkpp/data/scripts/SYSTEM_METADATA_VALIDATE_v4_safe10_FIXED2.dts,903,2026-06-26,0,2,
+C,dottalkpp/data/scripts/Single_Dottalk.dts,9774,2026-08-12,0,1,
+C,dottalkpp/data/scripts/VAR_LOOP_ X64.dts,704,2026-03-17,0,1,
+C,dottalkpp/data/scripts/X64_lmdb.dts,175,2026-03-29,0,1,
+C,dottalkpp/data/scripts/arctictalk.dts,74,2026-07-02,0,1,
+C,dottalkpp/data/scripts/beta-0_shakedown.dts,1793,2026-06-16,0,3,
+C,dottalkpp/data/scripts/calc_write_test.dts,599,2026-01-26,0,3,
+C,dottalkpp/data/scripts/canaries/awsome_combo_test.dts,1947,2026-03-16,0,1,
+C,dottalkpp/data/scripts/canaries/canaries.dts,8370,2026-03-16,0,3,
+C,dottalkpp/data/scripts/canaries/create_sample_dbf_matrix.dts,672,2026-07-05,0,3,
+C,dottalkpp/data/scripts/canaries/echo_enum_shakedown_refresh.dts,1172,2026-03-16,0,1,
+C,dottalkpp/data/scripts/canaries/enum_shakedown_v0.dts,1345,2026-07-06,0,1,
+C,dottalkpp/data/scripts/canaries/enum_shakedown_v1.dts,1345,2026-07-06,0,1,
+C,dottalkpp/data/scripts/canaries/final_blowout_test.dts,2336,2026-03-16,0,1,
+C,dottalkpp/data/scripts/canaries/lmdb_nav_append_shakedown_01.dts,3537,2026-03-16,0,2,
+C,dottalkpp/data/scripts/canaries/lmdb_open_shakedown.dts,635,2026-03-16,0,2,
+C,dottalkpp/data/scripts/canaries/lmdb_persist_check.dts,1380,2026-03-16,0,1,
+C,dottalkpp/data/scripts/canaries/lmdb_routing_gap_repro.dts,1398,2026-03-16,0,1,
+C,dottalkpp/data/scripts/canaries/mcc_mutation_trinity_disposable_driver.dts,1075,2026-07-06,0,1,
+C,dottalkpp/data/scripts/canaries/mcc_mutation_vfp_disposable_canary.dts,3991,2026-07-06,0,1,
+C,dottalkpp/data/scripts/canaries/mcc_mutation_x32_disposable_canary.dts,3847,2026-07-06,0,1,
+C,dottalkpp/data/scripts/canaries/mcc_mutation_x64_disposable_canary.dts,3730,2026-07-06,0,1,
+C,dottalkpp/data/scripts/canaries/mcc_super_regressive_shakedown_canaries.dts,11177,2026-03-16,0,1,
+C,dottalkpp/data/scripts/canaries/memo_shakedown.dts,3981,2026-03-16,0,5,
+C,dottalkpp/data/scripts/canaries/order_engine_shakedown.dts,695,2026-06-27,0,2,
+C,dottalkpp/data/scripts/canaries/pack_test_shakedown.dts,424,2026-03-16,0,1,
+C,dottalkpp/data/scripts/canaries/rel_enum_x64.dts,1347,2026-07-05,0,2,
+C,dottalkpp/data/scripts/canaries/seek_permutations.dts,526,2026-06-27,0,3,
+C,dottalkpp/data/scripts/canaries/set_var_shakedown.dts,585,2026-07-06,0,1,
+C,dottalkpp/data/scripts/canaries/shakedown_dottalkpp.dts,4628,2026-03-16,0,2,
+C,dottalkpp/data/scripts/canaries/smartlist_order_matrix.dts,522,2026-06-27,0,1,
+C,dottalkpp/data/scripts/canaries/workspace_load_x64_canary.dts,475,2026-07-05,0,2,
+C,dottalkpp/data/scripts/cases/calc_date.dts,335,2026-07-06,0,1,
+C,dottalkpp/data/scripts/cases/calc_regression_test.dts,7120,2026-07-06,0,1,
+C,dottalkpp/data/scripts/cases/create_sample_dbf.dts,259,2026-07-06,0,1,
+C,dottalkpp/data/scripts/cases/date_implementation_dev.dts,3363,2026-07-06,0,2,
+C,dottalkpp/data/scripts/cases/datestringbool.dts,2445,2026-07-06,0,1,
+C,dottalkpp/data/scripts/cases/dtoc_concat_var.dts,2558,2026-07-06,0,1,
+C,dottalkpp/data/scripts/cases/ersatz_mini_test.dts,419,2026-07-06,0,1,
+C,dottalkpp/data/scripts/cases/workaroun.dts,9200,2026-07-06,0,2,
+C,dottalkpp/data/scripts/comments/SOURCE_COMMENT_REL_COMMAND_SCHEMA.dts,530,2026-06-21,0,1,
+C,dottalkpp/data/scripts/comments/SOURCE_COMMENT_REL_FILE_SCHEMA.dts,528,2026-06-21,0,1,
+C,dottalkpp/data/scripts/comments/SOURCE_COMMENT_SCHEMA_CREATE.dts,2506,2026-06-21,0,3,
+C,dottalkpp/data/scripts/create x64 all field dbf AND populate.dts,15544,2026-05-28,0,4,
+C,dottalkpp/data/scripts/create x64 all field dbf.dts,821,2026-04-23,0,2,
+C,dottalkpp/data/scripts/dewey_regression_script.dts,334,2026-04-13,0,1,
+C,dottalkpp/data/scripts/dotscript_var_validation_01.dts,301,2026-03-28,0,1,
+C,dottalkpp/data/scripts/enum_shakedown.dts,1052,2026-05-01,0,1,
+C,dottalkpp/data/scripts/ersatz_browser.dts,1027,2026-04-28,0,3,
+C,dottalkpp/data/scripts/export/EXPORT_FILTER_CANARY_v1.dts,146,2026-07-06,0,3,
+C,dottalkpp/data/scripts/export/EXPORT_NAMED_TABLE_TOKEN_CANARY_v1.dts,207,2026-07-06,0,3,
+C,dottalkpp/data/scripts/help/cmdhelpchk_known_ascii.dts,349,2026-06-26,0,5,
+C,dottalkpp/data/scripts/help/cmdhelpchk_known_nocomment.dts,358,2026-06-26,0,5,
+C,dottalkpp/data/scripts/help/cmdhelpchk_metadata_expand_tup_v1.dts,1046,2026-06-26,0,3,
+C,dottalkpp/data/scripts/help/cmdhelpchk_syscmd_locate_matrix_v1.dts,1410,2026-06-26,0,5,
+C,dottalkpp/data/scripts/help/cmdhelpchk_syscmd_tup_evidence_v1.dts,606,2026-06-26,0,5,
+C,dottalkpp/data/scripts/help/dotscript_fresh_area_canary.dts,439,2026-06-26,0,3,
+C,dottalkpp/data/scripts/help/dotscript_select_locate_canary_v3.dts,760,2026-06-26,0,1,
+C,dottalkpp/data/scripts/help/script_runner_area_canary.dts,339,2026-06-26,0,3,
+C,dottalkpp/data/scripts/legacy/REL_JOINENUM regression.dts,2139,2026-07-06,0,1,
+C,dottalkpp/data/scripts/legacy/build_full_rel.dts,1168,2026-03-16,0,1,
+C,dottalkpp/data/scripts/legacy/command_help_test_script.dts,800,2026-03-16,0,1,
+C,dottalkpp/data/scripts/legacy/command_sweep.dts,2843,2026-03-16,0,1,
+C,dottalkpp/data/scripts/legacy/data_types_calc_test.dts,7117,2026-03-16,0,1,
+C,dottalkpp/data/scripts/legacy/dotnest_test.dts,36,2026-03-16,0,1,
+C,dottalkpp/data/scripts/legacy/dottalk_commands_on_the_command_line.dts,284,2026-03-16,0,1,
+C,dottalkpp/data/scripts/legacy/enum_shakedown.v0.dts,1337,2026-07-06,0,1,
+C,dottalkpp/data/scripts/legacy/lmdb.dts,795,2026-03-16,0,1,
+C,dottalkpp/data/scripts/legacy/memo_more_testing.dts,4033,2026-08-12,0,2,
+C,dottalkpp/data/scripts/legacy/multi_area_x64_memo_harmony_test.dts,3444,2026-03-16,0,1,
+C,dottalkpp/data/scripts/legacy/nest_test.dts,42,2026-03-16,0,1,
+C,dottalkpp/data/scripts/legacy/one.dts,12,2026-03-16,0,2,
+C,dottalkpp/data/scripts/legacy/pydottalk.dts,340,2026-03-16,0,2,
+C,dottalkpp/data/scripts/legacy/schema_create_empty_dbf.dts,380,2026-03-16,0,1,
+C,dottalkpp/data/scripts/legacy/schema_validate_all.dts,288,2026-03-16,0,1,
+C,dottalkpp/data/scripts/legacy/single_dottalk.dts,10224,2026-03-16,0,1,
+C,dottalkpp/data/scripts/legacy/test2.dts,7543,2026-03-16,0,2,
+C,dottalkpp/data/scripts/legacy/test3.dts,8300,2026-03-16,0,1,
+C,dottalkpp/data/scripts/legacy/test4.dts,8300,2026-03-16,0,1,
+C,dottalkpp/data/scripts/legacy/three.dts,14,2026-03-16,0,2,
+C,dottalkpp/data/scripts/legacy/two.dts,12,2026-03-16,0,2,
+C,dottalkpp/data/scripts/legacy/x64_memo_growth_stage2.dts,9192,2026-03-16,0,2,
+C,dottalkpp/data/scripts/main/beta0_readiness_test.dts,4485,2026-07-06,0,1,
+C,dottalkpp/data/scripts/main/dt_shakedown_main.dts,487,2026-07-06,0,1,
+C,dottalkpp/data/scripts/main/full_resolver_suite.dts,1930,2026-07-06,0,1,
+C,dottalkpp/data/scripts/memo_maintenance_test.dts,4167,2026-03-15,0,3,
+C,dottalkpp/data/scripts/memo_tests.dts,124,2026-03-11,0,1,
+C,dottalkpp/data/scripts/messaging_surface_demo.dts,2376,2026-06-25,0,1,
+C,dottalkpp/data/scripts/metadata/SYSCMD_NATIVE_CREATE_IMPORT_v1.RUN_REVIEWED.dts,1136,2026-05-20,0,2,
+C,dottalkpp/data/scripts/metadata/SYSMSG_NATIVE_CREATE_IMPORT_v1.RUN_REVIEWED.dts,895,2026-06-27,0,1,
+C,dottalkpp/data/scripts/modified.dts,96,2026-04-27,0,3,
+C,dottalkpp/data/scripts/regression.dts,1502,2026-04-22,0,3,
+C,dottalkpp/data/scripts/smartlist_regression.dts,188,2026-03-16,0,1,
+C,dottalkpp/data/scripts/sub/child_ok.dts,101,2026-03-16,0,1,
+C,dottalkpp/data/scripts/sub/child_tries_nested.dts,135,2026-03-16,0,1,
+C,dottalkpp/data/scripts/sub/self_call.dts,75,2026-03-16,0,1,
+C,dottalkpp/data/scripts/suites/advanced_relations_cnx_build.dts,2071,2026-07-06,0,2,
+C,dottalkpp/data/scripts/suites/fox_relations_test.dts,751,2026-07-06,0,1,
+C,dottalkpp/data/scripts/suites/mccbuild_full_relations_graph_cnx_backed.dts,1168,2026-03-16,0,1,
+C,dottalkpp/data/scripts/suites/my_community_college_cdx_indexing.dts,1293,2026-07-06,0,2,
+C,dottalkpp/data/scripts/suites/my_community_college_indexing.dts,1149,2026-07-06,0,2,
+C,dottalkpp/data/scripts/suites/predicates_help_test_verification.dts,4505,2026-07-06,0,1,
+C,dottalkpp/data/scripts/suites/replace_dates.dts,4059,2026-07-06,0,1,
+C,dottalkpp/data/scripts/suites/reporting_snapshot.dts,243,2026-07-06,0,4,
+C,dottalkpp/data/scripts/suites/schemas.dts,927,2026-07-06,0,3,
+C,dottalkpp/data/scripts/suites/tuple_buffer_test.dts,3696,2026-07-06,0,1,
+C,dottalkpp/data/scripts/suites/tuptalk.dts,277,2026-07-06,0,1,
+C,dottalkpp/data/scripts/test.dts,259,2026-06-05,0,2,
+C,dottalkpp/data/scripts/test_replace_direct_indexing.dts,1822,2026-03-30,0,1,
+C,dottalkpp/data/scripts/test_script.dts,1063,2026-03-16,0,2,
+C,dottalkpp/data/scripts/test_table_buffer_visibility.dts,2201,2026-04-27,0,1,
+C,dottalkpp/data/scripts/v5.dts,9429,2026-04-06,0,1,
+C,dottalkpp/data/scripts/x64_currency_shakedown.dts,175,2026-03-24,0,1,
+D,dottalkpp/data/scripts/SET PATH DBF TO MESSAGING.dts,149,2026-06-06,0,0,
+D,dottalkpp/data/scripts/_to_delete/multirep_buffering_regression.dts,2213,2026-09-04,0,0,
+D,dottalkpp/data/scripts/aif120/aif120_r83_v3_probe.dts,1537,2026-08-20,0,0,
+D,dottalkpp/data/scripts/developer_assignments.dts,246,2026-07-06,0,0,
+D,dottalkpp/data/scripts/login_developer.dts,265,2026-07-06,0,0,
+D,dottalkpp/data/scripts/login_student.dts,263,2026-07-06,0,0,
+D,dottalkpp/data/scripts/login_teacher.dts,263,2026-07-06,0,0,
+D,dottalkpp/data/scripts/metadata/SYSMSG_NATIVE_CREATE_IMPORT_v1.RUN_METADATA_REVIEWED.dts,670,2026-06-27,0,0,
+D,dottalkpp/data/scripts/metadata/reclaim_lmdb_oversized_v1.dts,4113,2026-07-27,0,0,
+D,dottalkpp/data/scripts/pinocchio/pinocchio_setfilter_fix_proof.dts,2092,2026-07-18,0,0,
+D,dottalkpp/data/scripts/pinocchio/wal_phaseB_verify.dts,1066,2026-08-12,0,0,
+D,dottalkpp/data/scripts/rdb_truth_proof_v1.dts,14386,2026-07-29,0,0,
+D,dottalkpp/data/scripts/rebuild_dd058_promotion_backup_lmdb_128m_20260622.dts,1391,2026-06-22,0,0,
+D,dottalkpp/data/scripts/rebuild_stage_lmdb_snapshot_128m.dts,5657,2026-06-26,0,0,
+D,dottalkpp/data/scripts/stage_mcc_vfp_from_x32.dts,1543,2026-06-25,0,0,
+D,dottalkpp/data/scripts/student_assignments.dts,244,2026-07-06,0,0,
+D,dottalkpp/data/scripts/teacher_assignments.dts,244,2026-07-06,0,0,

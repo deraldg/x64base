@@ -75,6 +75,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <sstream>
 #include <streambuf>
 #include <string>
@@ -110,7 +111,8 @@ enum class RegressionValidator {
     SqlselWorkspaceScopeV1,
     SqlmodeSmokeV1,
     SqlselBufferVisibilityV1,
-    EvaldiffV1
+    EvaldiffV1,
+    CountListVerboseV1
 };
 
 struct RegressionSpec {
@@ -166,13 +168,58 @@ struct RegressionSpec {
     // DotScript-only; selected oracle specs name the validator that turns
     // their marked output into a verdict instead of relying on visual review.
     RegressionValidator validator = RegressionValidator::None;
+
+    // TRUE means THIS SPEC'S EVIDENCE IS ON THE ROUTED CHANNEL, so its validator
+    // is handed a SET ALTERNATE capture instead of the std::cout tee. See the
+    // AlternateCapture comment above run_regression_script for why the two are
+    // different instruments and why the alternate file is the superset.
+    //
+    // SILENCE SAYS FALSE AND THAT IS THE SAFE ANSWER HERE, unlike mints_catalog
+    // above: a spec that does not need the routed channel is not harmed by the
+    // tee, and the failure mode of a WRONGLY FALSE flag is loud -- an empty
+    // block or a missing fragment -- not silent. The failure mode of a wrongly
+    // TRUE one is also loud: the FORMULA markers would still be there, so the
+    // block still resolves. Neither direction can go quietly green.
+    //
+    // Set it on any spec that asserts on a MESSAGE rather than on DATA ROWS --
+    // an error, a refusal, a warning, a diagnostic, or the output of a command
+    // that prints through cli::cmdout / OutputRouter::out() rather than through
+    // `?` and FORMULA.
+    bool capture_routed_channel = false;
 };
 
 // SIZE IS HAND-MAINTAINED. Adding a row without bumping this count is a hard
 // compile error ("too many initializers"), which is the safe failure -- but it
 // is a recurring papercut: it happened when CNXLIVE was added on 2026-07-31.
 // Bump it when you add a regression.
-constexpr std::array<RegressionSpec, 75> kRegressionSpecs{{
+constexpr std::array<RegressionSpec, 76> kRegressionSpecs{{
+    {
+        "COUNT_LIST_VERBOSE",
+        "count_list_verbose_regression.dts",
+        "COUNT LIST and COUNT VERBOSE (owner ruling 2026-09-04): the two behaviours "
+        "the retired `SQL` scanner had and COUNT did not, refitted onto "
+        "cli::scan::collect_selected_recnos. THE POINT IS NOT THE OUTPUT, IT IS THE "
+        "ROWSET. `SQL` carried a private DelMode and a raw skip-walk that never "
+        "consulted SET FILTER, so `SQL COUNT FOR <x>` and `COUNT FOR <x>` could "
+        "return different numbers over the same table and neither said so. Five-row "
+        "self-bootstrapping SANDBOX fixture, erased at both ends. CLV_T3 IS THE "
+        "DISCRIMINATOR and the rest support it: with SET FILTER TO MAJOR = \"CSCI\" "
+        "the logical rowset is three rows and two match, so `scanned 3, matched 2` is "
+        "a reading only a filter-honouring implementation produces -- the retired "
+        "scanner would have reported the unfiltered five. The unfiltered arm above it "
+        "reads the same either way and is there to localize a failure to the filter "
+        "rather than the fixture. CLV_T0 is a NON-REGRESSION arm: the fold must not "
+        "change what a bare COUNT prints, so the block is required to be EXACTLY one "
+        "line, which no fragment check could see. CLV_T4 asserts the reserved verb "
+        "answers with direction instead of `unknown command` AND does not scan -- "
+        "enforced by counting scanned/matched summaries in the whole transcript, "
+        "because a reserved verb that still counted would otherwise pass every "
+        "fragment above. NOT PROMOTED: explicit-run until it has soaked.",
+        false,
+        false,
+        RegressionValidator::CountListVerboseV1,
+        true                       // evidence is COUNT's own output: routed channel
+    },
     {
         "NONDESTRUCTIVE",
         "dottalkpp_non_destructive_smoke.dts",
@@ -1434,6 +1481,71 @@ bool validate_sqlsel_buffer_visibility(const std::string& transcript)
     return true;
 }
 
+// COUNT LIST / COUNT VERBOSE -- the behaviours folded out of the retired `SQL`
+// scanner (owner ruling 2026-09-04).
+//
+// CLV_T3 IS THE ONLY ARM THAT CAN REFUTE THE DEFECT THIS CHANGE WAS MADE FOR,
+// and the others exist to keep it honest. The retired scanner walked the table
+// with a private loop that never consulted SET FILTER, so it reported the
+// UNFILTERED population. With `SET FILTER TO MAJOR = "CSCI"` the fixture's
+// logical rowset is three rows, two of them matching -- so `scanned 3,
+// matched 2` is the reading only a filter-honouring implementation produces.
+// The unfiltered arm above it (`scanned 5, matched 3`) would read identically
+// against the defect and proves nothing on its own; it is here so that a
+// failure can be localized to the filter rather than to the fixture.
+//
+// CLV_T0 IS A NON-REGRESSION ARM, not a feature arm. The fold must not have
+// changed what a bare COUNT prints, so this asserts the block is EXACTLY one
+// line carrying the number. An extra row line leaking into the default path
+// would be invisible to every fragment check in this file.
+// THIS VALIDATOR READS THE ALTERNATE CAPTURE, NOT THE std::cout TEE, and the
+// difference is the whole reason the first run of this spec went red. Every
+// line COUNT prints -- the number, the row lines, the scanned/matched summary --
+// goes through cmd_count.cpp's local print_line, whose sink is
+// OutputRouter::out(). The tee cannot see that channel, so on 2026-09-04 CLV-T0
+// read "expected 1 line(s), got 0" while the operator watched the line print.
+// The spec carries capture_routed_channel = true and run_regression_script
+// hands this function the SET ALTERNATE file instead.
+bool validate_count_list_verbose(const std::string& transcript)
+{
+    static constexpr std::array<const char*, 1> t0{{"5"}};
+    if (!require_exact_transcript_block(transcript, "COUNT LIST/VERBOSE", "CLV-T0", t0)) {
+        return false;
+    }
+
+    static constexpr std::array<const char*, 6> required{{
+        // T1: LIST names the predicate's field and prints no verdict.
+        "[rec 1] GPA=",
+        "[rec 5] GPA=",
+        // T2: unfiltered scope.
+        "scanned 5, matched 3",
+        // T3: THE DISCRIMINATOR -- the filtered scope.
+        "scanned 3, matched 2",
+        // T4: the reserved verb answers, and points at the command that replaced it.
+        "SQL: reserved verb -- it no longer scans records.",
+        "COUNT VERBOSE FOR <expr>"
+    }};
+    if (!require_transcript_fragments(transcript, "COUNT LIST/VERBOSE", required)) {
+        return false;
+    }
+
+    // The reserved verb must not have COUNTED. Two verbose runs are expected in
+    // the whole transcript (T2 and T3); a third would mean `SQL COUNT FOR ...`
+    // still scanned something, which is the retirement failing silently.
+    const std::size_t summaries = transcript_count(transcript, "scanned ");
+    if (summaries != 2) {
+        std::cout << "COUNT LIST/VERBOSE: FAIL -- expected exactly 2 scanned/matched "
+                     "summaries, got " << summaries
+                  << ". A third means the reserved SQL verb still scans.\n";
+        return false;
+    }
+
+    std::cout << "COUNT LIST/VERBOSE: PASS -- default output unchanged, LIST and\n"
+                 "  VERBOSE report from the same selection, and SET FILTER narrows\n"
+                 "  the rowset the retired scanner ignored.\n";
+    return true;
+}
+
 bool validate_sqlsel_select_oracle(const std::string& transcript)
 {
     static constexpr std::array<SqlselOraclePair, 12> pairs{{
@@ -2260,8 +2372,103 @@ bool validate_regression_transcript(const RegressionSpec& spec,
             return validate_sqlsel_buffer_visibility(transcript);
         case RegressionValidator::EvaldiffV1:
             return validate_evaldiff(transcript);
+        case RegressionValidator::CountListVerboseV1:
+            return validate_count_list_verbose(transcript);
     }
     return false;
+}
+
+// CATALOG MESSAGES DO NOT GO THROUGH std::cout, and the AIF-087 veto arm is
+// where that was found. cli::cmdout writes to cli::OutputRouter::out(), which
+// returns `impl_->routed_stream`, whose sink pointer is captured ONCE at router
+// construction (output_router.cpp:372) and is the real console buffer forever
+// after. Swapping std::cout's rdbuf, which is how every other validator here
+// captures a transcript, CANNOT SEE IT. That is not a bug in the router; it is
+// why SET ALTERNATE exists as the sanctioned capture (AIF-081).
+//
+// SECOND INSTANCE, 2026-09-04, and the reason this is no longer the veto arm's
+// private workaround: COUNT_LIST_VERBOSE asserts on COUNT's own output, which is
+// entirely on that channel (cmd_count.cpp:159-161 -- the count, the row lines
+// and the scanned/matched summary all go through one local print_line whose sink
+// is OutputRouter::out()). It failed with "CLV-T0 expected 1 line(s), got 0"
+// while the operator watched the line print. The FORMULA fences were found and
+// the body was not, because the fences are on std::cout and the body is not.
+// That is the instrument reporting accurately on a channel it cannot see.
+//
+// THE ALTERNATE FILE IS A SUPERSET, NOT A SECOND PARTIAL CAPTURE, and the reason
+// is worth stating because it is not obvious: shell.cpp:574 wraps every shell
+// command in push_cout_redirect(), so during a command std::cout ALSO flows
+// through the router's MultiBuf, and MultiBuf writes to alt_file regardless of
+// destination. Both channels, one stream, correct interleaving. That holds
+// BECAUSE the spec runs under the shell guard -- run outside it and the FORMULA
+// markers never reach the file, which fails as "missing marker". Loud, and right.
+//
+// NOT THE GENERAL FIX. The general fix is to capture at the SINK -- a scoped
+// swap of the router's console_buf -- which would let every validator in this
+// file see the channel. It is one pointer swap and a full-suite soak, because
+// every existing transcript would suddenly contain the catalog channel too, and
+// every exact-block and transcript_count assertion here would have to be
+// re-measured against it. That is a lane with a number, not a patch.
+//
+// The capture OWNS the path rather than agreeing on a filename with the script:
+// one fact, one declaration.
+class AlternateCapture {
+public:
+    AlternateCapture(std::filesystem::path path, std::string label)
+        : path_(std::move(path)), label_(std::move(label))
+    {
+        auto& router = cli::OutputRouter::instance();
+
+        // REFUSE RATHER THAN CLOBBER. If the operator already has SET ALTERNATE
+        // running -- capturing this very run -- taking the channel would end
+        // their capture, and set_alternate_to TRUNCATES (AIF-081), so it cannot
+        // be handed back afterwards without destroying what they collected.
+        // There is no safe save/restore here, so the caller declines and says why.
+        existing_ = router.alternate_to_path();
+        if (!existing_.empty()) {
+            std::cout << label_ << ": NOT RUN -- SET ALTERNATE is already active on\n"
+                      << "  " << existing_ << "\n"
+                         "  This run needs that channel to read output std::cout cannot\n"
+                         "  see, and taking it would TRUNCATE your capture. Close it\n"
+                         "  (SET ALTERNATE TO) and re-run.\n"
+                         "  START-TRANSCRIPT IS NOT AN ALTERNATIVE, measured 2026-09-04:\n"
+                         "  it captured its own headers and NOTHING from the engine,\n"
+                         "  because the engine writes to the console directly. The\n"
+                         "  capture has to be inside the process.\n"
+                         "  THIS IS NOT A PASS AND NOT A FAILURE: the claim is UNMEASURED.\n";
+            return;
+        }
+
+        ok_ = router.set_alternate_to(path_.string());
+        if (ok_) router.set_alternate(true);
+    }
+    ~AlternateCapture()
+    {
+        if (!ok_) return;              // never took the channel; leave it alone
+        auto& router = cli::OutputRouter::instance();
+        router.set_alternate(false);
+        router.close_alternate_to();   // closes and flushes; read the file after
+    }
+    bool ok() const noexcept { return ok_; }
+    const std::filesystem::path& path() const noexcept { return path_; }
+
+    AlternateCapture(const AlternateCapture&)            = delete;
+    AlternateCapture& operator=(const AlternateCapture&) = delete;
+
+private:
+    std::filesystem::path path_;
+    std::string           label_;
+    std::string           existing_;
+    bool                  ok_ = false;
+};
+
+std::string slurp_capture_file(const std::filesystem::path& path)
+{
+    std::ifstream in(path, std::ios::binary);
+    if (!in) return {};
+    std::ostringstream ss;
+    ss << in.rdbuf();
+    return ss.str();
 }
 
 void run_regression_script(DbArea& area, const RegressionSpec& spec)
@@ -2301,6 +2508,30 @@ void run_regression_script(DbArea& area, const RegressionSpec& spec)
     std::ostringstream captured;
     std::streambuf* const original = std::cout.rdbuf();
     TeeStreamBuf tee(original, captured.rdbuf());
+
+    // A ROUTED-CHANNEL SPEC ALSO TAKES SET ALTERNATE, AND MUST NEVER FALL BACK
+    // TO THE TEE IF IT CANNOT GET IT. The fallback is precisely the failure this
+    // flag exists to end: the tee sees the FORMULA fences and not the body, so
+    // it reports an EMPTY BLOCK -- an instrument failure wearing the exact shape
+    // of a product failure. An unmeasured claim and a refuted one must not read
+    // alike, so this returns without a verdict and says so.
+    std::filesystem::path alt_path;
+    std::unique_ptr<AlternateCapture> alt;
+    if (spec.capture_routed_channel) {
+        alt_path = dottalk::paths::get_slot(dottalk::paths::Slot::TMP) /
+                   (std::string("regression_") + spec.name + ".alt");
+        std::error_code ec;
+        std::filesystem::create_directories(alt_path.parent_path(), ec);
+        alt = std::make_unique<AlternateCapture>(alt_path, std::string(spec.name));
+        if (!alt->ok()) {
+            std::cout << "REGRESSION " << spec.name << ": UNMEASURED -- its evidence is on\n"
+                         "  the routed channel and the ALTERNATE capture was not taken.\n"
+                         "  Nothing was validated. THIS IS NOT A PASS AND NOT A FAILURE.\n";
+            xbase::error::set_last_error(xbase::error::e_invalid_argument());
+            return;
+        }
+    }
+
     std::cout.rdbuf(&tee);
     try {
         run_script();
@@ -2311,7 +2542,19 @@ void run_regression_script(DbArea& area, const RegressionSpec& spec)
     std::cout.flush();
     std::cout.rdbuf(original);
 
-    const std::string transcript = captured.str();
+    std::string transcript = captured.str();
+    if (spec.capture_routed_channel) {
+        alt.reset();   // closes and flushes; the file is only complete after this
+        transcript = slurp_capture_file(alt_path);
+        std::cout << "  Routed-channel capture: " << alt_path.string() << "\n";
+        if (transcript.empty()) {
+            std::cout << "REGRESSION " << spec.name << ": UNMEASURED -- the ALTERNATE\n"
+                         "  capture is EMPTY. The channel was taken and nothing arrived,\n"
+                         "  which is an instrument failure, not a verdict.\n";
+            xbase::error::set_last_error(xbase::error::e_invalid_argument());
+            return;
+        }
+    }
     if (!validate_regression_transcript(spec, transcript)) {
         xbase::error::set_last_error(xbase::error::e_invalid_argument());
     } else {
@@ -2541,6 +2784,49 @@ bool trigger_veto_refuse(xbase::DbArea& /*area*/,
     return false;
 }
 
+// AIF-087 M3 -- the AFTER probe. Notification only; it cannot refuse.
+struct AfterProbe {
+    int           fires             = 0;
+    std::uint64_t last_recno        = 0;
+    std::size_t   last_field_count  = 0;
+    std::string   last_kind;
+};
+
+void trigger_after_observe(xbase::DbArea& /*area*/,
+                           const xbase::trigger_hooks::WriteEvent& ev,
+                           void* user) noexcept
+{
+    auto* p = static_cast<AfterProbe*>(user);
+    if (!p) return;
+    p->fires += 1;
+    p->last_recno = ev.recno;
+    p->last_field_count = ev.field_count;
+    try { p->last_kind = ev.event_kind ? ev.event_kind : ""; } catch (...) {}
+}
+
+class AfterRegistration {
+public:
+    explicit AfterRegistration(AfterProbe* probe) noexcept
+    {
+        if (auto* eng = shell_engine()) {
+            for (int i = 0; i < xbase::MAX_AREA; ++i) {
+                xbase::trigger_hooks::set_after_callback(
+                    eng->area(i), &trigger_after_observe, probe);
+            }
+        }
+    }
+    ~AfterRegistration() noexcept
+    {
+        if (auto* eng = shell_engine()) {
+            for (int i = 0; i < xbase::MAX_AREA; ++i) {
+                xbase::trigger_hooks::clear_after_callback(eng->area(i));
+            }
+        }
+    }
+    AfterRegistration(const AfterRegistration&)            = delete;
+    AfterRegistration& operator=(const AfterRegistration&) = delete;
+};
+
 // REGISTERS ON EVERY AREA, and that is deliberate rather than lazy. The work
 // script picks its own work area, and binding the callback to a slot guessed
 // here would produce a NO-FIRE if the guess were wrong. A no-fire in this arm
@@ -2569,68 +2855,6 @@ public:
     VetoRegistration& operator=(const VetoRegistration&) = delete;
 };
 
-// CATALOG MESSAGES DO NOT GO THROUGH std::cout, and this arm is where that was
-// found. cli::cmdout writes to cli::OutputRouter::out(), which returns
-// `impl_->routed_stream` -- a stream with its own buffer that writes to the
-// console directly. Swapping std::cout's rdbuf, which is how every other
-// validator here captures a transcript, CANNOT SEE IT. That is not a bug in the
-// router; it is why SET ALTERNATE exists as the sanctioned capture (AIF-081).
-//
-// So the arm captures that channel too, and OWNS the path rather than agreeing
-// on a filename with the script -- one fact, one declaration.
-class AlternateCapture {
-public:
-    explicit AlternateCapture(std::filesystem::path path) : path_(std::move(path))
-    {
-        auto& router = cli::OutputRouter::instance();
-
-        // REFUSE RATHER THAN CLOBBER. If the operator already has SET ALTERNATE
-        // running -- capturing this very proof -- taking the channel would end
-        // their capture, and set_alternate_to TRUNCATES (AIF-081), so it cannot
-        // be handed back afterwards without destroying what they collected.
-        // There is no safe save/restore here, so the arm declines the run and
-        // says why. Capture the session with Start-Transcript instead.
-        existing_ = router.alternate_to_path();
-        if (!existing_.empty()) {
-            std::cout << "TRIGGER VETO: NOT RUN -- SET ALTERNATE is already active on\n"
-                      << "  " << existing_ << "\n"
-                         "  The arm needs that channel to read the refusal message, and\n"
-                         "  taking it would TRUNCATE your capture. Close it (SET ALTERNATE\n"
-                         "  TO) and re-run, or capture the session with Start-Transcript.\n"
-                         "  THIS IS NOT A PASS AND NOT A FAILURE: the veto is UNMEASURED.\n";
-            return;
-        }
-
-        ok_ = router.set_alternate_to(path_.string());
-        if (ok_) router.set_alternate(true);
-    }
-    ~AlternateCapture()
-    {
-        if (!ok_) return;              // never took the channel; leave it alone
-        auto& router = cli::OutputRouter::instance();
-        router.set_alternate(false);
-        router.close_alternate_to();   // closes and flushes; read the file after
-    }
-    bool ok() const noexcept { return ok_; }
-    const std::filesystem::path& path() const noexcept { return path_; }
-
-    AlternateCapture(const AlternateCapture&)            = delete;
-    AlternateCapture& operator=(const AlternateCapture&) = delete;
-
-private:
-    std::filesystem::path path_;
-    std::string           existing_;
-    bool                  ok_ = false;
-};
-
-std::string trigger_veto_slurp(const std::filesystem::path& path)
-{
-    std::ifstream in(path, std::ios::binary);
-    if (!in) return {};
-    std::ostringstream ss;
-    ss << in.rdbuf();
-    return ss.str();
-}
 
 // Read the write-ahead journal and answer the two questions that separate a
 // refusal from a commit. The COMMIT-marker test is THE SAME TEST RECOVERY USES
@@ -2732,7 +2956,7 @@ bool run_trigger_veto_refusal(DbArea& area, xbase::trigger_hooks::BeforeWriteFn 
     std::string work_out;
     std::string routed_out;
     {
-        AlternateCapture alt(alt_path);
+        AlternateCapture alt(alt_path, "TRIGGER VETO");
         if (!alt.ok()) {
             std::cout << "TRIGGER VETO: FAIL -- could not open the ALTERNATE capture at "
                       << alt_path.string() << "\n"
@@ -2743,7 +2967,7 @@ bool run_trigger_veto_refusal(DbArea& area, xbase::trigger_hooks::BeforeWriteFn 
         VetoRegistration registered(fn, &probe);
         if (!trigger_veto_run_script(area, kTriggerVetoWorkScript, work_out)) return false;
     }
-    routed_out = trigger_veto_slurp(alt_path);
+    routed_out = slurp_capture_file(alt_path);
 
     // Echo the routed capture into std::cout. Not decoration: these lines are
     // INVISIBLE to std::cout, to a PowerShell transcript, and to every existing
@@ -2879,6 +3103,7 @@ void trigger_veto_write_proof(const std::string& body, bool verdict, const std::
     const char* stem = "trigger_veto_arm_proof.txt";
     if (mode == "SELFTEST") stem = "trigger_veto_arm_selftest_proof.txt";
     else if (mode == "MULTIREP") stem = "trigger_veto_arm_multirep_proof.txt";
+    else if (mode == "AFTER") stem = "trigger_veto_arm_after_proof.txt";
     const fs::path out = dottalk::paths::get_slot(dottalk::paths::Slot::LOGS) / stem;
 
     std::error_code ec;
@@ -2982,9 +3207,89 @@ bool run_trigger_multirep_visibility(DbArea& area)
     return true;
 }
 
+// AIF-087 M3 -- DOES THE AFTER PHASE FIRE ON THE BUFFERED PATH?
+//
+// Reuses the MULTIREP work script deliberately, because it runs THREE MULTIREPs
+// and only one of them may notify:
+//
+//   rolled back   -> never commits          -> MUST NOT fire
+//   committed     -> apply_one_recno lands  -> fires ONCE, TWO fields
+//   TABLE OFF     -> direct write           -> MUST NOT fire, because MULTIREP
+//                    MIRRORS replaceFieldStored instead of calling it and never
+//                    inherited the fire. That is the unfixed half of
+//                    AIF-151's finding, and this arm re-measures it rather than
+//                    trusting yesterday's reading.
+//
+// So "fires == 1 with field_count == 2" is four claims in one number, exactly
+// as the BEFORE side is.
+bool run_trigger_after_visibility(DbArea& area)
+{
+    std::cout << "\nREGRESSION: AIF-087 M3 -- DOES THE AFTER PHASE FIRE AFTER APPLY?\n"
+                 "  Notification only; the callback cannot refuse.\n"
+                 "  Three MULTIREPs, ONE commit. Expect ONE fire of TWO fields:\n"
+                 "  a ROLLBACK must not notify, and an unbuffered direct write\n"
+                 "  still does not fire at all (AIF-151's unfixed half).\n";
+
+    std::string setup_out;
+    if (!trigger_veto_run_script(area, kTriggerVetoSetupScript, setup_out)) return false;
+    static constexpr std::array<const char*, 2> setup_required{{
+        "TRGVETO-SETUP-BEGIN", "TRGVETO-SETUP-END"
+    }};
+    if (!require_transcript_fragments(setup_out, "AFTER SETUP", setup_required)) return false;
+
+    AfterProbe probe;
+    std::string work_out;
+    {
+        AfterRegistration registered(&probe);
+        if (!trigger_veto_run_script(area, kTriggerMultirepScript, work_out)) return false;
+    }
+
+    bool ok = true;
+    static constexpr std::array<const char*, 3> required{{
+        "TRGMULTI-WORK-END",
+        "TRG_MR3_both_fields_landed:.T.",
+        "TRG_MR4_direct_write_immediate:.T."
+    }};
+    if (!require_transcript_fragments(work_out, "AFTER VISIBILITY", required)) ok = false;
+
+    std::cout << "  After callback fired " << probe.fires
+              << " time(s); last recno=" << probe.last_recno
+              << " changed-field count=" << probe.last_field_count
+              << " kind=" << (probe.last_kind.empty() ? "<none>" : probe.last_kind) << "\n";
+
+    if (probe.fires == 0) {
+        std::cout << "AFTER VISIBILITY: FAIL -- the AFTER phase never fired.\n"
+                     "  A committed buffered write notified nobody.\n";
+        ok = false;
+    } else if (probe.fires != 1) {
+        std::cout << "AFTER VISIBILITY: FAIL -- " << probe.fires
+                  << " fires for ONE commit.\n"
+                     "  Either a ROLLBACK notified, or an unbuffered direct write\n"
+                     "  did, or the fire unit reverted to the field.\n";
+        ok = false;
+    } else if (probe.last_field_count != 2) {
+        std::cout << "AFTER VISIBILITY: FAIL -- the event carried "
+                  << probe.last_field_count << " field(s), expected 2.\n";
+        ok = false;
+    } else if (probe.last_kind != "record_update") {
+        // The label must agree with the count. A two-field write reported as
+        // "field_replace" contradicted its own field_count, and a consumer
+        // reading kind alone would have misclassified it.
+        std::cout << "AFTER VISIBILITY: FAIL -- kind was '" << probe.last_kind
+                  << "', expected 'record_update' for a multi-field record write.\n";
+        ok = false;
+    }
+
+    if (!ok) return false;
+    std::cout << "AFTER VISIBILITY: PASS -- one notification, two fields, and only\n"
+                 "  for the write that actually became true.\n";
+    return true;
+}
+
 bool run_trigger_veto_arm_inner(DbArea& area, const std::string& mode)
 {
     if (mode == "MULTIREP") return run_trigger_multirep_visibility(area);
+    if (mode == "AFTER")    return run_trigger_after_visibility(area);
 
     const bool selftest = (mode == "SELFTEST");
     const bool control_ok = run_trigger_veto_control(area);
@@ -3179,9 +3484,9 @@ void cmd_REGRESSION(DbArea& area, std::istringstream& in)
         in >> mode;
         std::string up = upper_copy(mode);
         if (up.empty()) up = "NORMAL";
-        if (up != "NORMAL" && up != "SELFTEST" && up != "MULTIREP") {
+        if (up != "NORMAL" && up != "SELFTEST" && up != "MULTIREP" && up != "AFTER") {
             std::cout << "REGRESSION TRIGGERVETO: unknown mode '" << mode
-                      << "'. Use NORMAL, SELFTEST or MULTIREP.\n";
+                      << "'. Use NORMAL, SELFTEST, MULTIREP or AFTER.\n";
             return;
         }
         run_trigger_veto_arm(area, up);

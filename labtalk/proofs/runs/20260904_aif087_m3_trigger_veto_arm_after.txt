@@ -1,0 +1,29 @@
+AIF-087 M2c -- BEFORE-trigger veto arm, captured proof
+mode     : AFTER
+unix_time: 1788546649
+verdict  : PASS
+note     : both output channels are folded into this file. The routed
+           channel (catalog messages) is marked with a leading '|'.
+----------------------------------------------------------------
+
+REGRESSION: AIF-087 M3 -- DOES THE AFTER PHASE FIRE AFTER APPLY?
+  Notification only; the callback cannot refuse.
+  Three MULTIREPs, ONE commit. Expect ONE fire of TWO fields:
+  a ROLLBACK must not notify, and an unbuffered direct write
+  still does not fire at all (AIF-151's unfixed half).
+  Script  : trigger_veto_arm_setup.dts
+  Resolved: D:\code\ccode\dottalkpp\data\scripts\trigger_veto_arm_setup.dts
+TRGVETO-SETUP-BEGIN
+TRGVETO-SETUP-END
+  Script  : trigger_veto_arm_multirep.dts
+  Resolved: D:\code\ccode\dottalkpp\data\scripts\trigger_veto_arm_multirep.dts
+TRGMULTI-WORK-BEGIN
+TRG_MR0_fixture_row1_is_alpha:.T.
+TRG_MR1_staged_not_written:.T.
+TRG_MR2_rollback_discarded:.T.
+TRG_MR3_both_fields_landed:.T.
+TRG_MR4_direct_write_immediate:.T.
+TRGMULTI-WORK-END
+  After callback fired 1 time(s); last recno=1 changed-field count=2 kind=record_update
+AFTER VISIBILITY: PASS -- one notification, two fields, and only
+  for the write that actually became true.
