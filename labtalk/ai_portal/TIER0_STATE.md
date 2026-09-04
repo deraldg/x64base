@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-09-04T19:18:01Z
+    generated_utc : 2026-09-04T19:52:02Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,9 +11,9 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : a3243e7aa  (2026-09-04)
+    HEAD          : 68e80d359  (2026-09-04)
     upstream      : 8df02addf
-    unpushed      : 12 commit(s) ahead of upstream
+    unpushed      : 13 commit(s) ahead of upstream
 
 ## Declared target
 
@@ -23,17 +23,18 @@ cannot drift, because nothing here is written by hand.
 ## Newest closeout
 
     file          : SESSION_CLOSEOUT_SQLSEL_USER_MANUAL_2026-09-03.md
-    commits behind HEAD : 14
+    commits behind HEAD : 15
 
 ## Staleness warnings
 
-- The newest closeout is 14 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
-- 12 commit(s) are unpushed and invisible to a clone.
+- The newest closeout is 15 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
+- 13 commit(s) are unpushed and invisible to a clone.
 
 ## Claimed lanes (newest first)
 
 | AIF | lane | steward | intake row |
 | --- | --- | --- | --- |
+| AIF-152 | null-semantics | member.derald | yes |
 | AIF-151 | triggers-pdlc | member.derald | yes |
 | AIF-150 | atomic lock race proof and SQLsel P4.3 LEFT JOIN | member.ai.codex.local | yes |
 | AIF-149 | set-relation-crossing-workspaces | member.ai.claude.cowork | yes |
@@ -45,8 +46,7 @@ cannot drift, because nothing here is written by hand.
 | AIF-142 | deleted-row-absent-from-order | member.ai.claude.cowork | yes |
 | AIF-141 | x64-name-vector-silent-drop | member.ai.claude.cowork | yes |
 | AIF-140 | load-alias-collision | member.ai.claude.cowork | yes |
-| AIF-139 | R112's migration gate is unassertable: sec 6a admits first-wins-plus-warning only as an instrumented phase whose counter must reach a measured zero, but ambiguity_count() has no DTS-visible reader -- cmd_workspace.cpp only PRINTS it -- and rel_name_ambiguity_regression.dts, which calls itself the tripwire for AIF-078 stage 4, runs WORKSPACE REGISTRY between two FORMULA markers with nothing checking. The comment at cmd_workspace.cpp:4736 claims the count is 'a FIELD of the registry, assertable by a spec' and no such reader exists. The tripwire fired on 2026-08-27 and no spec in the suite would have caught it | member.ai.claude.cowork | yes |
-| ... | 70 older claims omitted | | |
+| ... | 71 older claims omitted | | |
 
 ## Sessions, lineage, asides
 
@@ -63,6 +63,7 @@ parent + born_utc from the durable lineage ledger, '-' until a run wakes.
 
 | run | member | parent | born_utc | asides |
 | --- | --- | --- | --- | --- |
+| AIFGEN-20260904-124821 | member.derald | - | - | AIF-152 |
 | AIFGEN-20260904-064818 | member.derald | - | - | AIF-151 |
 | CODEX-20260903-007 | member.ai.codex.local | - | - | AIF-150 |
 | COWORK-20260830-001 | member.ai.claude.cowork | - | - | AIF-149 |
@@ -70,8 +71,7 @@ parent + born_utc from the durable lineage ledger, '-' until a run wakes.
 | COWORK-20260827-001 | member.ai.claude.cowork | - | - | AIF-137 -> AIF-138 -> AIF-139 -> AIF-140 -> AIF-141 -> AIF-142 ... |
 | CODEX-20260826-014 | member.ai.codex | - | - | AIF-135 -> AIF-136 |
 | COWORK-20260826-002 | member.ai.claude.cowork | - | - | AIF-134 |
-| COWORK-20260825-001 | member.ai.claude.cowork | - | - | AIF-128 -> AIF-129 -> AIF-130 -> AIF-131 -> AIF-133 |
-| ... | | | | 43 older run(s) omitted |
+| ... | | | | 44 older run(s) omitted |
 
 Perishable detail lives in the artifacts these point at. Do not
 restate anything above; regenerate it.
