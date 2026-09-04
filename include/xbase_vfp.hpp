@@ -14,6 +14,7 @@
 
 #include "xbase.hpp"
 
+#include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <fstream>
@@ -31,6 +32,9 @@ namespace xbase {
 struct VfpFieldExtras {
     bool        nullable      {false};
     bool        binary        {false};
+    // Flag 0x01. The `_NullFlags` column is a SYSTEM field and must be kept out of
+    // the user field vector; nothing decoded this before AIF-091 M1.
+    bool        system        {false};
     bool        autoincrement {false};
     uint32_t    next_autoinc  {0};
     uint8_t     step_autoinc  {0};
@@ -112,23 +116,94 @@ static_assert(sizeof(VfpHeader) == 32, "VfpHeader must be 32 bytes");
 
 // ------------------------------------------------------------------------
 // VFP field descriptor (32 bytes)
+//
+// CORRECTED 2026-09-04, AIF-091 M1. This struct used to place `flags` at BYTE 23
+// and carried `workarea` at 20 -- which is the dBASE III field descriptor
+// (work-area id at 20, SET FIELDS flag at 23), not the VFP one. Microsoft's table
+// file structure is unambiguous:
+//
+//     18      Field flags: 0x01 system, 0x02 can store null, 0x04 binary,
+//             0x0C autoincrementing
+//     19-22   Autoincrement NEXT value
+//     23      Autoincrement STEP value
+//     24-31   Reserved
+//
+// So `ex.nullable = (vf.flags & 0x02)` was reading bit 1 of the AUTOINCREMENT STEP
+// BYTE, and the real flags byte was swallowed inside `reserved1`. It has never
+// decoded a nullable field. It never reported one either, which is why nothing
+// caught it: measured 2026-09-04, every VFP- and x64-flavor table in this tree
+// carries ZERO at byte 18 AND ZERO at byte 23, so the wrong byte and the right
+// byte give the same answer on every file we own. The first genuinely nullable
+// table to arrive would have been read as non-nullable IN SILENCE.
+//
+// Same shape as AIF-123: a default that never changed on any path anyone ran, so
+// nothing could go red. The static_asserts below are what stop it drifting back --
+// they state the documented layout as a compile-time claim rather than a comment.
+//
+// Source: Microsoft, "Table File Structure", VFP field subrecord layout; and
+// Hentzen et al., Hacker's Guide to VFP, s1c2 ("bit 0 of byte 18").
 // ------------------------------------------------------------------------
 #pragma pack(push, 1)
 struct VfpField {
-    char        name[11];
-    char        type;
-    uint32_t    displacement;
-    uint8_t     length;
-    uint8_t     decimals;
-    uint16_t    reserved1;
-    uint8_t     workarea;
-    uint16_t    reserved2;
-    uint8_t     flags;
-    uint8_t     reserved3[8];
+    char        name[11];       // 0-10
+    char        type;           // 11
+    uint32_t    displacement;   // 12-15
+    uint8_t     length;         // 16
+    uint8_t     decimals;       // 17
+    uint8_t     flags;          // 18  <- THE FIELD FLAGS. Byte 18, not 23.
+    uint32_t    autoinc_next;   // 19-22
+    uint8_t     autoinc_step;   // 23
+    uint8_t     reserved[8];    // 24-31
 };
 #pragma pack(pop)
 
 static_assert(sizeof(VfpField) == 32, "VfpField must be 32 bytes");
+static_assert(offsetof(VfpField, type)         == 11, "VFP descriptor: type at byte 11");
+static_assert(offsetof(VfpField, displacement) == 12, "VFP descriptor: displacement at 12");
+static_assert(offsetof(VfpField, length)       == 16, "VFP descriptor: length at byte 16");
+static_assert(offsetof(VfpField, decimals)     == 17, "VFP descriptor: decimals at byte 17");
+static_assert(offsetof(VfpField, flags)        == 18, "VFP descriptor: FIELD FLAGS at byte 18");
+static_assert(offsetof(VfpField, autoinc_next) == 19, "VFP descriptor: autoinc next at 19");
+static_assert(offsetof(VfpField, autoinc_step) == 23, "VFP descriptor: autoinc step at 23");
+static_assert(offsetof(VfpField, reserved)     == 24, "VFP descriptor: reserved at 24");
+
+// The classic descriptor's `reserved` block STARTS AT THE SAME BYTE, which is what
+// lets an x64 table carry field flags without changing its parse shape: the flags
+// byte is already in the file, inherited, and simply was not being read.
+static_assert(offsetof(FieldRec, reserved) == 18,
+              "classic descriptor: reserved[0] must BE byte 18 (the VFP flags byte)");
+
+// ------------------------------------------------------------------------
+// DOES THIS FLAVOR'S FIELD DESCRIPTOR CARRY FIELD FLAGS AT BYTE 18?
+//
+// VFP lineage does, and X64 (0x64) inherits the descriptor shape, so it does too.
+// CLASSIC FLAVORS DO NOT and must not be read that way: in dBASE III the same
+// region is a work-area id and a SET FIELDS flag, so reading byte 18 as flags
+// there would invent nullability out of unrelated bytes.
+// ------------------------------------------------------------------------
+inline bool descriptor_carries_field_flags(uint8_t version) noexcept
+{
+    return version == 0x30 || version == 0x31 || version == 0x32 || version == 0x64;
+}
+
+// ------------------------------------------------------------------------
+// ONE PLACE THAT READS THE FLAGS BYTE.
+//
+// AUTOINCREMENT IS CHECKED FIRST AND IT IS NOT OPTIONAL. Microsoft lists 0x0C for
+// "column is autoincrementing", and 0x0C is 0x04|0x08 -- so an autoincrementing
+// field ALSO has the 0x04 bit set, and a naive `& 0x04` reports it as a BINARY
+// column. Decoding autoinc first and excluding it from binary is the difference
+// between reading the table and reading a plausible fiction.
+// ------------------------------------------------------------------------
+inline VfpFieldExtras decode_field_flags(uint8_t flags) noexcept
+{
+    VfpFieldExtras ex;
+    ex.autoincrement = ((flags & 0x0C) == 0x0C);
+    ex.nullable      = (flags & 0x02) != 0;
+    ex.binary        = !ex.autoincrement && ((flags & 0x04) != 0);
+    ex.system        = (flags & 0x01) != 0;
+    return ex;
+}
 
 // ------------------------------------------------------------------------
 // Version-aware loader helpers
@@ -234,12 +309,9 @@ inline void readFields(DbArea& area,
             fr.decimal_places     = area.fields().back().decimals;
             area.addRawField(std::move(fr));
 
-            VfpFieldExtras ex;
-            ex.nullable      = (vf.flags & 0x02) != 0;
-            ex.binary        = (vf.flags & 0x04) != 0;
-            ex.autoincrement = false;
-            ex.next_autoinc  = 0;
-            ex.step_autoinc  = 0;
+            VfpFieldExtras ex = decode_field_flags(vf.flags);
+            ex.next_autoinc  = vf.autoinc_next;
+            ex.step_autoinc  = vf.autoinc_step;
             extras.push_back(std::move(ex));
         } else {
             FieldRec fr{};
@@ -257,7 +329,14 @@ inline void readFields(DbArea& area,
             fd.decimals = fr.decimal_places;
             area.addField(std::move(fd));
 
-            extras.push_back(VfpFieldExtras{});
+            // X64 INHERITS THE DESCRIPTOR, so its flags byte is already in the
+            // file at 18 -- which is exactly where the classic descriptor's
+            // `reserved` block begins (static_assert above). Read it for the
+            // flavors that carry it and leave the genuinely classic ones alone.
+            if (descriptor_carries_field_flags(area.versionByte()))
+                extras.push_back(decode_field_flags(fr.reserved[0]));
+            else
+                extras.push_back(VfpFieldExtras{});
         }
     }
 

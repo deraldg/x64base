@@ -314,3 +314,22 @@ add_executable(dottalkpp_vfp_null_bits_test
 )
 target_include_directories(dottalkpp_vfp_null_bits_test PRIVATE ${CMAKE_SOURCE_DIR}/include)
 add_test(NAME dottalkpp_vfp_null_bits_test COMMAND dottalkpp_vfp_null_bits_test)
+
+# ---- VFP/x64 field descriptor flags byte (AIF-091 M1) ------------------------
+# `VfpField::flags` sat at byte 23 -- the autoincrement STEP value -- while the
+# format puts field flags at byte 18. The struct was a dBASE III descriptor wearing
+# a VFP name, so nullable and binary have never been decoded correctly, and nothing
+# noticed because every VFP- and x64-flavor table in the tree carries zero at BOTH
+# bytes: the wrong byte and the right byte agree on all existing data.
+#
+# The decoy case is the discriminator -- 0x02 at byte 18 and 0x04 at byte 23 give
+# opposite readings under the two layouts. Links xbase for the generated build
+# vectors that xbase.hpp pulls in.
+if(TARGET xbase)
+  add_executable(dottalkpp_vfp_field_descriptor_test
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_vfp_field_descriptor.cpp
+  )
+  target_link_libraries(dottalkpp_vfp_field_descriptor_test PRIVATE xbase memo)
+  target_include_directories(dottalkpp_vfp_field_descriptor_test PRIVATE ${CMAKE_SOURCE_DIR}/include)
+  add_test(NAME dottalkpp_vfp_field_descriptor_test COMMAND dottalkpp_vfp_field_descriptor_test)
+endif()

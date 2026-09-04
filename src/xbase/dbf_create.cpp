@@ -263,23 +263,20 @@ struct VfpHeaderDisk
     std::uint16_t reserved3;
 };
 
-struct VFPFieldRec
-{
-    char          name[11];
-    char          type;
-    std::uint32_t offset;
-    std::uint8_t  length;
-    std::uint8_t  decimals;
-    std::uint16_t reserved1;
-    std::uint8_t  workarea;
-    std::uint16_t reserved2;
-    std::uint8_t  flags;
-    std::uint8_t  reserved3[8];
-};
+// VFPFieldRec DELETED 2026-09-04, AIF-091 M1. It was a SECOND DECLARATION of the
+// VFP field descriptor -- byte for byte the same shape as xbase::VfpField, including
+// the same wrong one: `flags` at BYTE 23 (the autoincrement STEP value) instead of
+// byte 18, with the dBASE III `workarea` member that VFP does not have.
+//
+// One claim, two homes, and both of them wrong the same way. The write path used
+// this copy and the read path used the header's, so correcting one would have left
+// the engine writing descriptors it could no longer read correctly -- which is worse
+// than the defect. Both create sites now use `xbase::VfpField` (xbase_vfp.hpp is
+// already included above), so the descriptor layout is declared ONCE and the
+// compile-time offset asserts that guard it guard every user of it.
 #pragma pack(pop)
 
 static_assert(sizeof(VfpHeaderDisk) == 32, "VfpHeaderDisk must be 32 bytes");
-static_assert(sizeof(VFPFieldRec) == 32, "VFPFieldRec must be 32 bytes");
 
 static bool write_vfp_dbf(const std::string& path,
                           const std::vector<FieldSpec>& fields,
@@ -295,7 +292,7 @@ static bool write_vfp_dbf(const std::string& path,
     }
 
     const std::uint16_t hdrLen =
-        static_cast<std::uint16_t>(32 + fields.size() * sizeof(VFPFieldRec) + 1 + 263);
+        static_cast<std::uint16_t>(32 + fields.size() * sizeof(xbase::VfpField) + 1 + 263);
 
     std::error_code ec;
     std::filesystem::create_directories(std::filesystem::path(path).parent_path(), ec);
@@ -347,19 +344,21 @@ static bool write_vfp_dbf(const std::string& path,
 
     for (const auto& f : fields)
     {
-        VFPFieldRec vf{};
+        xbase::VfpField vf{};
         std::string fn = descriptor_name_for(f);
         std::memcpy(vf.name, fn.c_str(), fn.size());
 
-        vf.type      = f.type;
-        vf.offset    = offset;
-        vf.length    = descriptor_length_for(f, false);
-        vf.decimals  = f.dec;
-        vf.reserved1 = 0;
-        vf.workarea  = 0;
-        vf.reserved2 = 0;
-        vf.flags     = 0;
-        std::memset(vf.reserved3, 0, sizeof(vf.reserved3));
+        vf.type         = f.type;
+        vf.displacement = offset;
+        vf.length       = descriptor_length_for(f, false);
+        vf.decimals     = f.dec;
+        // Field flags at BYTE 18, where the format puts them. Zero until CREATE
+        // learns to declare a nullable column (AIF-091 M1, still owed) -- but zero
+        // IN THE RIGHT BYTE, so a reader that looks where the format says finds it.
+        vf.flags        = 0;
+        vf.autoinc_next = 0;
+        vf.autoinc_step = 0;
+        std::memset(vf.reserved, 0, sizeof(vf.reserved));
 
         out.write(reinterpret_cast<const char*>(&vf), sizeof(vf));
         if (!out) {
@@ -517,11 +516,13 @@ bool serialize_x64_dbf(std::ostream& out,
         vf.displacement = static_cast<std::uint32_t>(offset);
         vf.length       = descriptor_length_for(f, true);
         vf.decimals     = f.dec;
-        vf.reserved1    = 0;
-        vf.workarea     = 0;
-        vf.reserved2    = 0;
+        // Same descriptor, same byte. X64 writes VfpField descriptors -- which is
+        // the write-side proof of what the read side now assumes: the x64 flavor
+        // carries the VFP field descriptor BY INHERITANCE, flags byte included.
         vf.flags        = 0;
-        std::memset(vf.reserved3, 0, sizeof(vf.reserved3));
+        vf.autoinc_next = 0;
+        vf.autoinc_step = 0;
+        std::memset(vf.reserved, 0, sizeof(vf.reserved));
 
         out.write(reinterpret_cast<const char*>(&vf), sizeof(vf));
         if (!out) {

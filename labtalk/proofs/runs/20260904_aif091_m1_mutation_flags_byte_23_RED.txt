@@ -1,0 +1,55 @@
+AIF-091 M1 -- FIELD FLAGS BYTE, MUTATION RED (defense in depth, two mutants)
+mutation : include/xbase_vfp.hpp VfpField restored to the pre-fix layout, with
+           `flags` back at BYTE 23 (the autoincrement STEP value) and the dBASE III
+           `reserved1`/`workarea`/`reserved2` members reinstated. That is exactly
+           what shipped until 2026-09-04.
+verdict  : MUTANT A refuses to compile. MUTANT B (someone deletes the asserts) reds
+           8 runtime expectations. Both correct.
+
+WHERE THIS RAN: g++ 12 -std=c++20 in the Linux container with the mutant headers
+shadowed on the include path; the repository was never modified. The GREEN reading
+is MSVC on the maintainer's machine.
+
+WHY TWO MUTANTS. The static_asserts are the primary guard and they stop the defect
+at BUILD time -- but an assert is only a guard while it exists, and the realistic
+way this defect returns is someone reordering the struct and deleting the asserts
+that then "fail for no reason". Mutant B is that person. The runtime test catches
+them anyway.
+
+----------------------------------------------------------------
+MUTANT A -- old layout, static_asserts present. DOES NOT COMPILE.
+
+  xbase_vfp.hpp:168: error: static assertion failed: VFP descriptor: FIELD FLAGS at byte 18
+  xbase_vfp.hpp:169: error: static assertion failed: VFP descriptor: autoinc next at 19
+  xbase_vfp.hpp:170: error: static assertion failed: VFP descriptor: autoinc step at 23
+  xbase_vfp.hpp:171: error: static assertion failed: VFP descriptor: reserved at 24
+
+----------------------------------------------------------------
+MUTANT B -- old layout, static_asserts deleted. Compiles, and the test reds.
+
+  VFP field subrecord layout (Microsoft table file structure)
+    FAIL: FIELD FLAGS @18 -- got 23, want 18
+    FAIL: autoinc next @19 -- got 24, want 19
+    FAIL: autoinc step @23 -- got 28, want 23
+    FAIL: reserved @24 -- got 29, want 24
+  Flag byte decode
+  Which flavors carry field flags at byte 18
+  Decoy descriptor: 0x02 at byte 18, 0x04 at byte 23
+    FAIL: flags reads byte 18 -- got 4, want 2
+    FAIL: autoinc step reads byte 23 -- got 0, want 4
+    FAIL: decoy field is NULLABLE  (under the old layout it was not)
+    FAIL: decoy field is NOT binary (under the old layout it was)
+
+  FAIL -- 8 expectation(s) missed.
+
+----------------------------------------------------------------
+READ THE DECOY LINES, because they are the defect stated in one number.
+
+The decoy descriptor puts 0x02 (can store null) at byte 18 and 0x04 (binary) at
+byte 23. `flags reads byte 18 -- got 4, want 2` is the old code picking up the
+BYTE 23 value. The field then decodes as binary-and-not-nullable when the format
+says nullable-and-not-binary: not a near miss, an exact inversion.
+
+WHAT DID NOT MOVE, and it is the reason this survived so long: the FLAG DECODE
+block and the FLAVOR block stayed green in mutant B. The decoding logic was always
+right. It was being handed the wrong byte.
