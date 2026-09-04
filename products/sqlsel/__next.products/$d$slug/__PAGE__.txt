@@ -1,7 +1,7 @@
 1:"$Sreact.fragment"
-4:I[97367,["/_next/static/chunks/0dm5rzn0_5wzu.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
+4:I[97367,["/_next/static/chunks/2lcosjb9fdn2m.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
 5:"$Sreact.suspense"
-2:Te16,<h2 id="overview"><a class="no-underline" href="#overview">Overview</a></h2>
+2:T2826,<h2 id="overview"><a class="no-underline" href="#overview">Overview</a></h2>
 <p>SQLsel names the SQL-facing query workflow in the DotTalk++ / x64base system.</p>
 <p>Its subject is set-oriented retrieval: a <code>SELECT</code> statement that describes the
 rows it wants and returns them, rather than positioning a cursor and navigating.
@@ -27,19 +27,101 @@ SQLsel, the statement surface described above. <code>SQL</code> scans the curren
 with a predicate and does not execute SQL statements, its name being historical.
 <code>SQLITE</code> bridges to an actual SQLite database. <code>SQLVER</code> reports SQLite
 availability. Each command states the boundary in its own <code>USAGE</code> output.</p>
-<h2 id="not-yet-implemented"><a class="no-underline" href="#not-yet-implemented">Not yet implemented</a></h2>
-<p><code>JOIN</code>, <code>GROUP BY</code> / <code>HAVING</code>, expression projection in the select list, SQL
-<code>INSERT</code> / <code>UPDATE</code> / <code>DELETE</code>, and bare <code>SELECT</code> without the <code>SQLSEL</code> prefix.</p>
-<p><code>JOIN</code> here means SQL-syntax join inside a <code>SQLSEL</code> statement. Joining itself is
-not missing from the engine -- <strong>three forms ship and are proven</strong>, all through
-<a href="/products/reltalk">RelTalk</a>:</p>
+<h2 id="joins-and-how-they-are-proven"><a class="no-underline" href="#joins-and-how-they-are-proven">Joins, and how they are proven</a></h2>
+<p><strong>Pushed to <code>development</code> 2026-09-03 as <code>e7d6ef130</code>.</strong> SQLsel joins two tables
+on an equality key:</p>
+<pre><code class="language-text">SQLSEL S.SID, S.LNAME, E.COURSE FROM SQLJSTU AS S
+  INNER JOIN SQLJENR AS E ON S.SID = E.SID ORDER BY E.COURSE
+</code></pre>
+<p>Aliases, qualified columns, a joined <code>WHERE</code>, <code>ORDER BY</code>, <code>LIMIT</code>, <code>COUNT(*)</code>,
+and refusals that name their reason -- an ambiguous bare column, an unqualified
+<code>ON</code> side, a table that is not open.</p>
+<p><strong>It reports which path it took</strong>, and the proof asserts the path and the answer
+separately. A CDX seek names the inner table, the tag, the probe count and the
+candidate count; a nested-loop scan names both row counts. The regression
+compares four row sets against an in-process SQLite oracle <strong>and</strong> pins the
+access-path composition, so a join that returned the right rows by silently
+falling back to a scan fails. Both halves were mutation-tested red.</p>
+<p>It is <strong>statement-scoped</strong>: the <code>ON</code> clause is declared per statement and does
+not consult the declared relation graph or workspace state. That makes it an
+independent join path, not a second route to the graph
+<a href="/products/reltalk">RelTalk</a> walks.</p>
+<p><strong>And it reads under a fence.</strong> A join takes a non-blocking two-table read
+fence, acquiring both tables in canonical path order before either is read, and
+<strong>lock contention refuses the statement rather than returning a partial answer</strong>
+-- proven with two real processes: while one held a lock on the left table, the
+other refused the join before emitting any row <em>or</em> any access path. Locks the
+caller already held are preserved, and only the fences SQLsel took are released.</p>
+<p>The limit is stated because the mechanism invites overreading: this is a
+<strong>cooperative statement read fence, not MVCC and not cross-table write
+atomicity.</strong> It stops a concurrent writer from producing a fractured joined
+result. It does not version rows, and joined <code>UPDATE</code> / <code>DELETE</code> remain out of
+scope -- <code>COMMIT ALL</code> is still partial across DBF, memo and index storage.</p>
+<h2 id="the-join-family-and-a-refusal-worth-reading"><a class="no-underline" href="#the-join-family-and-a-refusal-worth-reading">The join family, and a refusal worth reading</a></h2>
+<p><code>INNER</code>, <code>LEFT</code>, <code>RIGHT</code>, <code>FULL</code> and <code>CROSS</code> all ship (P4.1-P4.4), alongside
+<code>DISTINCT</code>, the set operations, <code>GROUP BY</code> / <code>HAVING</code> with aggregates,
+subqueries, <code>SET MODE SQL</code>, and transactional single-table <code>INSERT</code> / <code>UPDATE</code> /
+<code>DELETE</code>. Ten result multisets are compared against the SQLite
+oracle, outer joins on both indexed and scan paths, and <code>CROSS</code> on both a
+filtered result and a full 30-row Cartesian product.</p>
+<p>An unmatched side produces an <strong>explicit absence cell</strong> -- a distinct kind from a
+real blank, so "nobody entered a value" and "no row matched" never collapse into
+the same thing. The regression asserts blank-versus-absence directly.</p>
+<p>Then it stops, deliberately:</p>
+<pre><code class="language-text">SQLSEL: LEFT JOIN with WHERE requires three-valued predicate support;
+P4.3 refuses it.
+</code></pre>
+<p><code>WHERE</code> over a produced absence needs TRUE / FALSE / <strong>UNKNOWN</strong>, and x64base's
+predicate evaluator is two-valued. Rather than answer the question wrongly, the
+statement is refused and the reason is named. <strong>This is the interesting half of
+the feature</strong>: the boundary is enforced in the engine, not written down in a
+document and hoped for.</p>
+<p>It is also the first consumer of a discipline set in July. R29 ruled that stored
+<code>NULL</code> would not be implemented but that everything authored afterwards should be
+<em>shaped</em> so adding it later is an extension rather than a rewrite. The absence
+cell renders through a single routine, and its own comment says so: <em>"future
+stored NULL must extend this switch."</em></p>
+<h2 id="the-guards-run-by-default-and-promoting-them-found-a-bug"><a class="no-underline" href="#the-guards-run-by-default-and-promoting-them-found-a-bug">The guards run by default, and promoting them found a bug</a></h2>
+<p>Fourteen fail-closed regression specifications cover SQLsel, and as of
+<code>8df02addf</code> the four guarding the hardest surface -- outer joins, join edges,
+the full family, and buffer visibility -- <strong>run in the default suite</strong> rather
+than only on request. The default suite went from 22 specs to 26, green on both
+Windows and WSL/GCC.</p>
+<p>The promotion is worth reporting because of what it cost. Running those specs by
+default exposed a real defect in an unrelated command: <strong><code>ERASE TABLE</code> was
+leaving <code>.cdx.meta</code> sidecars behind.</strong> Teardown looked clean and was not. <code>ERASE</code>
+now removes that metadata, and five cleanup assertions fail closed if any residue
+survives; the fix was mutation-tested red before it was believed.</p>
+<p>That is the argument for the house promotion rule stated as a result rather than
+a principle. A specification that exists but is never run by default is coverage
+already paid for and not collected -- and the first time these four were
+collected, they found something nobody was looking for.</p>
+<h2 id="names-resolve-inside-the-current-workspace"><a class="no-underline" href="#names-resolve-inside-the-current-workspace">Names resolve inside the current workspace</a></h2>
+<p>Workspaces are co-resident -- <code>OPEN</code> and <code>LOAD</code> are both additive since
+R128/R130 -- so "which <code>STUDENTS</code>?" is a real question. SQLsel answers it by
+resolving table names <strong>within the current workspace</strong>, keyed on the work area's
+own workspace handle, and refusing rather than guessing:</p>
+<pre><code class="language-text">SQLSEL: table 'ORDERS' is not open in the current workspace.
+</code></pre>
+<p>The source states the reason it is done once rather than re-derived: repeating a
+logical-name lookup later "would throw the workspace decision away and become
+ambiguous when another workspace has the same table name."</p>
+<p>This closes the hazard the <a href="/docs/engine/workspaces">workspaces page</a> calls the
+sharp one, for SQLsel's surface. <code>SELECT &#x3C;name></code> in the native shell is a
+separate resolver and is not covered by it.</p>
+<h2 id="deliberate-boundaries"><a class="no-underline" href="#deliberate-boundaries">Deliberate boundaries</a></h2>
+<p>Stated as boundaries rather than a to-do list, because each is a decision with a
+reason:</p>
 <ul>
-<li><code>SET RELATION</code> positional navigation, parent cursor driving the child</li>
-<li><code>REL JOIN</code> / <code>REL ENUM</code>, one tuple per parent/child combination, with
-<code>DISTINCT</code>, <code>ALL</code> and <code>LIMIT</code></li>
-<li><code>REL JOIN ONE</code>, a single row from wherever the relation pointers currently sit</li>
+<li><strong>No stored SQL <code>NULL</code>.</strong> Blank is a value (R16); outer-join absence is a
+produced cell, a distinct kind. R29 declined stored NULL while requiring
+everything since be shaped so adding it is an extension.</li>
+<li><strong>No memo-field transactional DML</strong>, and <strong>no cross-table atomic commit</strong> --
+<code>COMMIT ALL</code> remains partial across DBF, memo and index storage.</li>
+<li><strong>No generalized multi-chain <code>RIGHT</code> / <code>FULL</code> join.</strong></li>
 </ul>
-<p>What is not yet implemented is reaching any of them from a <code>SELECT</code>.</p>
+<p>The surface moves faster than this page. <a href="https://github.com/deraldg/x64base/blob/development/docs/manuals/user/sqlsel.md">The SQLsel manual</a>
+is the authority for what the command accepts today.</p>
 <h2 id="relationship-to-reltalk"><a class="no-underline" href="#relationship-to-reltalk">Relationship to RelTalk</a></h2>
 <p>SQLsel and <a href="/products/reltalk">RelTalk</a> both reach connected data and are not the
 same thing. RelTalk is navigational: relations are declared with <code>REL ADD</code> and
@@ -48,6 +130,6 @@ RelTalk is the older model, inherited through the xBase line; SQLsel is the newe
 one. Neither replaces the other.</p>
 <p>See <a href="/docs/engine/sqlsel-and-sql-conformance">SQLsel and SQL Conformance</a> for the
 verification detail and the conformance map, <a href="/docs/talk-family/reltalk">RelTalk docs</a>,
-and the canonical public repo <a href="https://github.com/deraldg/x64base">deraldg/x64base</a>.</p>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=471c570e60ed","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/?v=471c570e60ed","children":"Products"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products/sqlsel",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/sqlsel/?v=471c570e60ed","children":"SQLsel"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"SQLsel"}],["$","p",null,{"className":"mt-2 text-muted","children":"Set-oriented SELECT over open work areas, verified against a SQLite oracle."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose dark:prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:break-words prose-code:whitespace-normal prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30 prose-pre:text-fg [&_pre_code]:text-fg [&_pre_code_span]:text-inherit","dangerouslySetInnerHTML":{"__html":"$2"},"children":null}]}]]}],null,"$L3"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"fmcYfeA2NhhivxtsOVFDZ"}
+and the canonical public repo <a href="https://github.com/deraldg/x64base">deraldg/x64base</a>.</p>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=ab21ed9fa594","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/?v=ab21ed9fa594","children":"Products"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products/sqlsel",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/sqlsel/?v=ab21ed9fa594","children":"SQLsel"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"SQLsel"}],["$","p",null,{"className":"mt-2 text-muted","children":"Set-oriented SELECT over open work areas, verified against a SQLite oracle."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose dark:prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:break-words prose-code:whitespace-normal prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30 prose-pre:text-fg [&_pre_code]:text-fg [&_pre_code_span]:text-inherit","dangerouslySetInnerHTML":{"__html":"$2"},"children":null}]}]]}],null,"$L3"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"DFVPyWcJuRd0xSNXB4Wu8"}
 3:["$","$L4",null,{"children":["$","$5",null,{"name":"Next.MetadataOutlet","children":"$@6"}]}]
 6:null
