@@ -37,15 +37,21 @@ The regression also asserts the parts that are easy to get quietly wrong:
   `ORDER BY` on `COUNT(*)` each report what is wrong.
 - **`LIMIT` says what it withheld**, and `ORDER BY` names its access path.
 
-## What it does not do
+## What it does and does not do
 
-| Not supported | Status |
+Corrected 2026-09-03 after this table contradicted itself: the `JOIN` row was
+updated when the joins landed and the rows beside it were not, so the same page
+announced `GROUP BY` shipping in one cell and "not implemented anywhere in the
+engine" in the next. **When one row here changes, re-read the others** -- the
+lane moves faster than a table does.
+
+| Surface | Status |
 |---|---|
 | `JOIN` **as SQL syntax inside a `SQLSEL` statement** | **Ships.** `INNER`, `LEFT`, `RIGHT`, `FULL` and `CROSS`, with `DISTINCT`, the set operations, `GROUP BY` / `HAVING` and aggregates, subqueries, and workspace-scoped name resolution -- pushed to `development` as `e7d6ef130`. Result sets are compared against an in-process SQLite oracle by executable validators, which also assert the reported access path **separately from the answer** -- fourteen specifications, with the four covering outer joins, join edges, the full family and buffer visibility running **in the default suite** since `8df02addf`. Outer-join `WHERE` is refused, naming the reason: three-valued predicate support does not exist yet. The frontier moves faster than this page; [the SQLsel manual](https://github.com/deraldg/x64base/blob/development/docs/manuals/user/sqlsel.md) is the authority |
-| `GROUP BY` / `HAVING` | Not implemented anywhere in the engine |
-| Expression projection (`UPPER(name)` in the select list) | v1 accepts bare column names only |
-| `INSERT` / `UPDATE` / `DELETE` as SQL syntax | The engine mutates through `APPEND`, `REPLACE`, `DELETE`; SQL DML is planned |
-| Bare `SELECT ...` without the `SQLSEL` prefix | Planned convenience layer |
+| `GROUP BY` / `HAVING` | **Ships** (P4.6), with `COUNT`, `SUM`, `AVG`, `MIN` and `MAX`. Numeric aggregates skip blank non-values and **report the split** -- a blank numeric field holds spaces, and reading spaces as zero would invent a data point nobody entered (R28) |
+| Expression projection (`UPPER(name)` in the select list) | **Ships**, evaluated by the TupleRow projection stage. The multi-join direct path takes bare columns and hands expressions to that stage, which is an internal fast-path rather than a limit on what you may write |
+| `INSERT` / `UPDATE` / `DELETE` as SQL syntax | **Ships, single-table and transactional** -- `SQLSEL INSERT INTO ... VALUES`, `SQLSEL UPDATE ... SET ... WHERE`, `SQLSEL DELETE FROM ... WHERE`, built on the engine's own `APPEND` / `REPLACE` / `DELETE`, cursor, lock, TableBuffer and WAL facilities. **No memo-field DML and no cross-table atomic commit**: `COMMIT ALL` is still partial across DBF, memo and index storage |
+| Bare `SELECT ...` without the `SQLSEL` prefix | **Still planned, and worth being precise about.** `SET MODE [TO] NATIVE\|SQL\|OTHER` exists and is session-only, and SQL mode changes the prompt to `sql>` -- but **routing is not wired**: `sqlsel::session_mode()` is read only by the prompt. The mode announces itself; it does not yet change what the shell accepts |
 
 The table must already be open (`USE <table>`). SQLsel reads open work areas; it
 does not open files for you.
@@ -126,7 +132,7 @@ reference itself, and covers equivalences as well as absences:
   is proven -- `max(id)+1` under the writer's lock, in the BBS store and the
   workspace catalog -- it is simply not a property of a column
 - `CREATE INDEX` - **equivalent, two steps** (`INDEX ON ... TAG`, then `BUILDLMDB`)
-- `INSERT` - **equivalent, two steps** (`APPEND`, then `REPLACE`); cursor-oriented
+- `INSERT` - **supported as SQL syntax** (`SQLSEL INSERT INTO ... VALUES`), single-table and transactional; the two-step `APPEND` then `REPLACE` form remains the native path
 - `DELETE` - **equivalent with a real difference**: `DELETE` marks, `RECALL`
   un-marks, `PACK` removes. Closer to a soft delete than SQL's
 - `BEGIN TRANSACTION` / `COMMIT` / `ROLLBACK` - **supported**, via `TABLE BUFFER ON`,
@@ -135,7 +141,7 @@ reference itself, and covers equivalences as well as absences:
   access paths are chosen by the operator, not a cost model. What exists is
   reporting - SQLsel names its access path, and `GPS` shows physical record
   against logical row
-- `GROUP BY` - **not supported**, as above
+- `GROUP BY` - **supported** (P4.6), with the aggregate family; blanks are skipped and the split is reported (R28)
 - `JOIN` - **ships**, the full family, alongside the three RelTalk forms. It is
   statement-scoped: the `ON` clause is declared per statement and **does not
   consult the declared relation graph**, so it is an independent join path
