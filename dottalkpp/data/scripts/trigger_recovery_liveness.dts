@@ -1,0 +1,43 @@
+; ============================================================================
+; AIF-087 M4 -- RECOVERY NON-REFIRE, STEP 4: PROVE THE PROBE WAS ALIVE
+;
+; Status: CANDIDATE / explicit-run, driven from C++ by
+;         run_trigger_recovery_nonrefire (REGRESSION TRIGGERVETO RECOVERY).
+; Safety: MUTATING (SANDBOX only; erases the fixture on the way out)
+;
+; THIS IS THE ARM'S D1 AND IT IS THE WHOLE REASON THE ARM IS WORTH RUNNING.
+; The step before it asserted that the AFTER phase fired ZERO times while a
+; journal was replayed. A dead callback reads zero too -- an unregistered
+; probe, a registration on the wrong area, a suppression depth left set by an
+; earlier arm. So immediately afterwards, in the SAME registration, on the SAME
+; area, this does an ordinary unbuffered REPLACE, which reaches the AFTER phase
+; through DbArea::replaceFieldStored (dbarea.cpp:330 -> fire_field_replace ->
+; fire_record_write). The arm requires exactly one fire for it.
+;
+; Zero then one. The first number is a measured absence; without the second it
+; is only a silence.
+;
+; The event's kind must be "field_replace" and not "record_update": this is the
+; degenerate one-field write where the field genuinely IS the whole write, and
+; the arm checks it, so the M2a/M3 unit-and-label split is re-measured here as
+; well as in the AFTER arm.
+; ============================================================================
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+SET PATH DBF DBF/SANDBOX
+SET PATH INDEXES INDEXES/SANDBOX
+SET PATH LMDB LMDB/SANDBOX
+
+FORMULA "TRGRECOV-LIVE-BEGIN"
+
+SELECT 1
+GO 1
+REPLACE NAME WITH "LIVE"
+GO 1
+? "TRG_R2_liveness_write_landed:" + (ALLTRIM(NAME) = "LIVE")
+
+CLOSE
+ERASE TABLE TRGVETO CONFIRM
+
+FORMULA "TRGRECOV-LIVE-END"

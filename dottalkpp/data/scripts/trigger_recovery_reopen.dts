@@ -1,0 +1,38 @@
+; ============================================================================
+; AIF-087 M4 -- RECOVERY NON-REFIRE, STEP 3: OPEN AND LET RECOVERY RUN
+;
+; Status: CANDIDATE / explicit-run, driven from C++ by
+;         run_trigger_recovery_nonrefire (REGRESSION TRIGGERVETO RECOVERY).
+; Safety: MUTATING (SANDBOX only; the arm erases the fixture when it finishes)
+;
+; The C++ arm has just restored a REAL committed journal -- captured from this
+; engine at the one instant it exists, between journal_begin_commit's COMMIT
+; marker and journal_note_commit's delete -- next to the DBF. cmd_use.cpp:990
+; calls recover_table_buffer_journal on open, which replays it.
+;
+; TRG_R1 IS THE DISCRIMINATOR FOR REPLAY, AND IT IS ALSO THE CONTROL FOR THE
+; CLAIM THE ARM ACTUALLY MAKES. The arm asserts that the AFTER phase fired ZERO
+; times across this window. Zero is also what you observe when nothing happened
+; at all -- when the journal was not restored, or the table did not open, or
+; recovery discarded the log. So the C++ side may not credit its zero unless
+; this marker says the replay DID run. Never credit G1 without D1.
+;
+; Deliberately does NOT close: the liveness step needs this open area to prove
+; the probe that read zero was alive the whole time.
+; ============================================================================
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+SET PATH DBF DBF/SANDBOX
+SET PATH INDEXES INDEXES/SANDBOX
+SET PATH LMDB LMDB/SANDBOX
+
+FORMULA "TRGRECOV-REOPEN-BEGIN"
+
+SELECT 1
+CLOSE
+USE TRGVETO
+GO 1
+? "TRG_R1_replay_restored_committed_value:" + (ALLTRIM(NAME) = "VETOED")
+
+FORMULA "TRGRECOV-REOPEN-END"

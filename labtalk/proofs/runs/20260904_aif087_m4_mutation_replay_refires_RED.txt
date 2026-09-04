@@ -1,0 +1,84 @@
+AIF-087 M2c -- BEFORE-trigger veto arm, captured proof
+mode     : RECOVERY
+unix_time: 1788549181
+verdict  : FAIL
+note     : both output channels are folded into this file. The routed
+           channel (catalog messages) is marked with a leading '|'.
+----------------------------------------------------------------
+
+REGRESSION: AIF-087 M4 -- DOES REPLAY RE-FIRE THE AFTER PHASE?
+  Decision E 4.4: recovery replays with area.set + writeCurrent and
+  never calls apply_one_recno, so the fire is unreachable BY
+  CONSTRUCTION. This arm makes that construction loud if removed.
+  The fixture is a REAL committed journal, captured by an AFTER
+  callback at the one instant such a file exists.
+  READ RULE: zero fires means nothing unless TRG_R1 says the replay
+  ran AND the liveness step then fires exactly once.
+  Script  : trigger_veto_arm_setup.dts
+  Resolved: D:\code\ccode\dottalkpp\data\scripts\trigger_veto_arm_setup.dts
+TRGVETO-SETUP-BEGIN
+TRGVETO-SETUP-END
+  Script  : trigger_veto_arm_work.dts
+  Resolved: D:\code\ccode\dottalkpp\data\scripts\trigger_veto_arm_work.dts
+TRGVETO-WORK-BEGIN
+TRG_W0_fixture_row1_is_alpha:.T.
+SQLSEL: UPDATE affected 1 row(s); committed through table buffer + WAL.
+TRG_W1_row1_took_the_write:.T.
+TRG_W2_journal_survived:.F.
+TRGVETO-WORK-END
+  Captured a committed journal: D:\code\ccode\dottalkpp\data\tmp\trigger_recovery_committed.tbj (85 bytes, COMMIT marker present)
+  Script  : trigger_recovery_poison.dts
+  Resolved: D:\code\ccode\dottalkpp\data\scripts\trigger_recovery_poison.dts
+TRGRECOV-POISON-BEGIN
+TRG_R0_poison_landed:.T.
+TRGRECOV-POISON-END
+  Script  : trigger_recovery_reopen.dts
+  Resolved: D:\code\ccode\dottalkpp\data\scripts\trigger_recovery_reopen.dts
+TRGRECOV-REOPEN-BEGIN
+TRG_R1_replay_restored_committed_value:.T.
+TRGRECOV-REOPEN-END
+  Script  : trigger_recovery_liveness.dts
+  Resolved: D:\code\ccode\dottalkpp\data\scripts\trigger_recovery_liveness.dts
+TRGRECOV-LIVE-BEGIN
+TRG_R2_liveness_write_landed:.T.
+TRGRECOV-LIVE-END
+  ---- routed-channel capture (1241 bytes; std::cout cannot see these) ----
+  |   Script  : trigger_recovery_reopen.dts
+  |   Resolved: D:\code\ccode\dottalkpp\data\scripts\trigger_recovery_reopen.dts
+  | Echo is OFF
+  | STOP_ON_ERROR: threshold set to OFF
+  | SETPATH: DBF = D:\code\ccode\dottalkpp\data\DBF\SANDBOX
+  | SETPATH: INDEXES = D:\code\ccode\dottalkpp\data\INDEXES\SANDBOX
+  | SETPATH: LMDB = D:\code\ccode\dottalkpp\data\LMDB\SANDBOX
+  | TRGRECOV-REOPEN-BEGIN
+  | Selected area 1.
+  | Current area: 1
+  | Closed.
+  | USE: recovered a committed table-buffer journal (.tbj).
+  | Opened TRGVETO (v64) : Record count 2
+  | Valid Index/Indices   : CDX, CNX
+  | TRG_R1_replay_restored_committed_value:.T.
+  | TRGRECOV-REOPEN-END
+  |   Script  : trigger_recovery_liveness.dts
+  |   Resolved: D:\code\ccode\dottalkpp\data\scripts\trigger_recovery_liveness.dts
+  | Echo is OFF
+  | STOP_ON_ERROR: threshold set to OFF
+  | SETPATH: DBF = D:\code\ccode\dottalkpp\data\DBF\SANDBOX
+  | SETPATH: INDEXES = D:\code\ccode\dottalkpp\data\INDEXES\SANDBOX
+  | SETPATH: LMDB = D:\code\ccode\dottalkpp\data\LMDB\SANDBOX
+  | TRGRECOV-LIVE-BEGIN
+  | Selected area 1.
+  | Current area: 1
+  |   File: D:\code\ccode\dottalkpp\data\dbf\sandbox\TRGVETO.dbf  Recs: 2  Recno: 1
+  | TRG_R2_liveness_write_landed:.T.
+  | Closed.
+  | ERASE: deleting 1 file(s) for table: TRGVETO
+  |   Deleted: TRGVETO.dbf
+  | ERASE complete. Deleted: 1, Failed: 0
+  | TRGRECOV-LIVE-END
+  ---- end routed capture ----
+  After callback fired 1 time(s) across the replay; 1 time(s) for the liveness write (kind=field_replace)
+RECOVERY: FAIL -- replay fired the AFTER phase 1 time(s).
+  A replayed write is not a new write. Either the fire moved into
+  a path recovery reaches, or recovery was refactored to share
+  apply_one_recno -- which would look like tidiness.

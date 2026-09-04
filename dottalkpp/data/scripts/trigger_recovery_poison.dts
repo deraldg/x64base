@@ -1,0 +1,46 @@
+; ============================================================================
+; AIF-087 M4 -- RECOVERY NON-REFIRE, STEP 2: POISON THE RECORD
+;
+; Status: CANDIDATE / explicit-run, driven from C++ by
+;         run_trigger_recovery_nonrefire (REGRESSION TRIGGERVETO RECOVERY).
+; Safety: MUTATING (SANDBOX only; the arm erases the fixture when it finishes)
+;
+; WHY THIS STEP EXISTS AT ALL. The committed write already put VETOED in the
+; record, so replaying the journal would write the value that is ALREADY THERE
+; and a green read would not distinguish "replay ran" from "replay did nothing".
+; This overwrites the record with a THIRD value, so the later read has two
+; possible answers and only one of them means the journal was replayed.
+;
+; THE WRITE IS DELIBERATELY UNBUFFERED -- a plain REPLACE under TABLE OFF, the
+; direct-write path -- so it leaves NO journal of its own. A buffered write here
+; would either need its own COMMIT (writing a second journal over the one the
+; arm is about to restore) or would not land at all.
+;
+; SELF-CHECKING: if buffering were somehow still on from the SQLsel DML scope,
+; the marker path reads the DBF rather than the buffer (measured: TRG_MR1 in
+; trigger_veto_arm_multirep.dts asserts exactly that), so TRG_R0 would read .F.
+; and the arm reds here rather than producing a meaningless recovery reading.
+; ============================================================================
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+SET PATH DBF DBF/SANDBOX
+SET PATH INDEXES INDEXES/SANDBOX
+SET PATH LMDB LMDB/SANDBOX
+
+FORMULA "TRGRECOV-POISON-BEGIN"
+
+; The work script deliberately does not close. Close before opening: a USE over
+; a table already open in the current area is a NO-OP, not an open (the WSENV
+; finding, 2026-08-30), and a no-op here would leave the cursor on a table
+; whose state this script has not established.
+SELECT 1
+CLOSE
+USE TRGVETO
+GO 1
+REPLACE NAME WITH "STALE"
+GO 1
+? "TRG_R0_poison_landed:" + (ALLTRIM(NAME) = "STALE")
+CLOSE
+
+FORMULA "TRGRECOV-POISON-END"

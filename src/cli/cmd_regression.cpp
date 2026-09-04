@@ -2378,6 +2378,25 @@ bool validate_regression_transcript(const RegressionSpec& spec,
     return false;
 }
 
+// Echo a routed-channel capture into std::cout. Not decoration: these lines are
+// INVISIBLE to std::cout, to a PowerShell transcript, and to every existing
+// validator in this file, because cli::cmdout writes to the console through
+// OutputRouter's own stream. Folding them into cout is what lets ONE proof file
+// hold both channels -- and it is ONE function because two arms now do it, and
+// a second copy would be a second declaration of what a folded proof looks like.
+void fold_routed_into_cout(const std::string& routed)
+{
+    std::cout << "  ---- routed-channel capture (" << routed.size()
+              << " bytes; std::cout cannot see these) ----\n";
+    std::istringstream rin(routed);
+    std::string rline;
+    while (std::getline(rin, rline)) {
+        while (!rline.empty() && (rline.back() == '\r')) rline.pop_back();
+        std::cout << "  | " << rline << "\n";
+    }
+    std::cout << "  ---- end routed capture ----\n";
+}
+
 // CATALOG MESSAGES DO NOT GO THROUGH std::cout, and the AIF-087 veto arm is
 // where that was found. cli::cmdout writes to cli::OutputRouter::out(), which
 // returns `impl_->routed_stream`, whose sink pointer is captured ONCE at router
@@ -2692,6 +2711,9 @@ static const char* const kTriggerVetoSetupScript = "trigger_veto_arm_setup.dts";
 static const char* const kTriggerVetoWorkScript  = "trigger_veto_arm_work.dts";
 static const char* const kTriggerVetoTeardownScript = "trigger_veto_arm_teardown.dts";
 static const char* const kTriggerMultirepScript     = "trigger_veto_arm_multirep.dts";
+static const char* const kTriggerRecoveryPoisonScript   = "trigger_recovery_poison.dts";
+static const char* const kTriggerRecoveryReopenScript   = "trigger_recovery_reopen.dts";
+static const char* const kTriggerRecoveryLivenessScript = "trigger_recovery_liveness.dts";
 
 // Run one arm script through DOTSCRIPT, teeing stdout so the operator sees it
 // and the arm can read it. Same capture shape as run_isolation_arm: tee rather
@@ -2806,12 +2828,17 @@ void trigger_after_observe(xbase::DbArea& /*area*/,
 
 class AfterRegistration {
 public:
-    explicit AfterRegistration(AfterProbe* probe) noexcept
+    // TAKES THE FUNCTION, NOT JUST THE USER POINTER, because M4 registers a
+    // DIFFERENT observer through the same registration discipline. A second
+    // registration class would be a second declaration of "register on every
+    // area", and the reason for registering on every area (the work script
+    // picks its own area; a guessed slot yields a NO-FIRE, which reads exactly
+    // like a mechanism that did not fire) would then live in two places.
+    AfterRegistration(xbase::trigger_hooks::AfterWriteFn fn, void* user) noexcept
     {
         if (auto* eng = shell_engine()) {
             for (int i = 0; i < xbase::MAX_AREA; ++i) {
-                xbase::trigger_hooks::set_after_callback(
-                    eng->area(i), &trigger_after_observe, probe);
+                xbase::trigger_hooks::set_after_callback(eng->area(i), fn, user);
             }
         }
     }
@@ -2969,22 +2996,7 @@ bool run_trigger_veto_refusal(DbArea& area, xbase::trigger_hooks::BeforeWriteFn 
     }
     routed_out = slurp_capture_file(alt_path);
 
-    // Echo the routed capture into std::cout. Not decoration: these lines are
-    // INVISIBLE to std::cout, to a PowerShell transcript, and to every existing
-    // validator in this file, because cli::cmdout writes to the console through
-    // OutputRouter's own stream. Folding them into cout here is what lets ONE
-    // proof file hold both channels.
-    std::cout << "  ---- routed-channel capture (" << routed_out.size()
-              << " bytes; std::cout cannot see these) ----\n";
-    {
-        std::istringstream rin(routed_out);
-        std::string rline;
-        while (std::getline(rin, rline)) {
-            while (!rline.empty() && (rline.back() == '\r')) rline.pop_back();
-            std::cout << "  | " << rline << "\n";
-        }
-    }
-    std::cout << "  ---- end routed capture ----\n";
+    fold_routed_into_cout(routed_out);
 
     bool ok = true;
 
@@ -3104,6 +3116,7 @@ void trigger_veto_write_proof(const std::string& body, bool verdict, const std::
     if (mode == "SELFTEST") stem = "trigger_veto_arm_selftest_proof.txt";
     else if (mode == "MULTIREP") stem = "trigger_veto_arm_multirep_proof.txt";
     else if (mode == "AFTER") stem = "trigger_veto_arm_after_proof.txt";
+    else if (mode == "RECOVERY") stem = "trigger_veto_arm_recovery_proof.txt";
     const fs::path out = dottalk::paths::get_slot(dottalk::paths::Slot::LOGS) / stem;
 
     std::error_code ec;
@@ -3240,7 +3253,7 @@ bool run_trigger_after_visibility(DbArea& area)
     AfterProbe probe;
     std::string work_out;
     {
-        AfterRegistration registered(&probe);
+        AfterRegistration registered(&trigger_after_observe, &probe);
         if (!trigger_veto_run_script(area, kTriggerMultirepScript, work_out)) return false;
     }
 
@@ -3286,10 +3299,301 @@ bool run_trigger_after_visibility(DbArea& area)
     return true;
 }
 
+// ---------------------------------------------------------------------------
+// AIF-087 M4 -- RECOVERY REPLAYS THE DATA AND DOES NOT RE-FIRE THE TRIGGER.
+//
+// Decision E 4.4 says replay cannot reach the AFTER fire BY CONSTRUCTION rather
+// than by a suppression flag: recover_table_buffer_journal (table_state.cpp:393)
+// replays with area.set + writeCurrent + deleteCurrent and never calls
+// apply_one_recno, which is where M3 put the fire. A property that holds by
+// construction is exactly the kind that a later tidying refactor removes without
+// anyone noticing, so this arm exists to make the removal loud.
+//
+// THE HARD PART IS THE FIXTURE, AND M3 MAKES IT. A committed journal is not
+// something a passing run leaves behind: journal_begin_commit writes the COMMIT
+// marker and fsyncs, apply runs, and journal_note_commit DELETES the log
+// (table_state.cpp:366-375). The file exists only between those two points --
+// which is precisely the window the AFTER phase fires in. So the arm registers
+// an AFTER callback whose side effect is to COPY THE LIVE JOURNAL, and gets a
+// real, engine-written, marker-carrying .tbj out of an ordinary successful
+// commit. The mechanism M3 built is the instrument M4 needs.
+//
+// WHAT THAT IS AND IS NOT. The bytes are identical to what a crash between the
+// marker and apply completion would leave: the log is append-only and NOTHING
+// writes to it between journal_begin_commit and journal_note_commit -- measured
+// by reading table_state.cpp, whose only writers are journal_note_change during
+// staging, the marker itself, and rollback's R line. So the on-disk state this
+// arm restores is the crash state. What it does NOT prove is anything about the
+// crash itself: fsync semantics under a real kill, torn lines, a partially
+// written marker. THAT IS STILL THE CRASH TEST'S JOB AND IT IS STILL OWED.
+// This is the guard, and it says so.
+//
+// THE READING DISCIPLINE, which is the whole design:
+//
+//   TRG_R0  the poison landed          -- without it, TRG_R1 reading VETOED
+//                                         cannot mean replay ran; it could mean
+//                                         nothing ever changed the record.
+//   TRG_R1  the replay landed          -- D1 for the zero below. Zero fires is
+//                                         also what you get when the journal was
+//                                         never restored or the table never
+//                                         opened. NEVER CREDIT G1 WITHOUT D1.
+//   fires == 0 across the reopen       -- G1, the claim.
+//   TRG_R2 + fires == 1 afterwards     -- D1 for the PROBE. A dead callback
+//                                         reads zero too. Zero then one: the
+//                                         first number is a measured absence,
+//                                         and without the second it is a
+//                                         silence.
+//
+// The liveness write is an ordinary unbuffered REPLACE, which reaches the AFTER
+// phase through DbArea::replaceFieldStored (dbarea.cpp:330 -> fire_field_replace
+// -> fire_record_write), so its kind must be "field_replace" and not
+// "record_update" -- the degenerate one-field case where the field genuinely IS
+// the whole write. Checking it here re-measures the M2a/M3 unit-and-label split
+// from the other side.
+// ---------------------------------------------------------------------------
+struct RecoveryProbe {
+    int         fires = 0;
+    std::string last_kind;
+
+    // Snatch mode: copy the live journal at the instant the AFTER phase fires,
+    // which is the only instant a committed .tbj exists on disk.
+    bool                  snatch   = false;
+    bool                  snatched = false;
+    std::filesystem::path snatch_to;
+    std::string           snatched_from;
+};
+
+void trigger_recovery_observe(xbase::DbArea& area,
+                              const xbase::trigger_hooks::WriteEvent& ev,
+                              void* user) noexcept
+{
+    auto* p = static_cast<RecoveryProbe*>(user);
+    if (!p) return;
+    p->fires += 1;
+    // noexcept: every allocating or throwing step is inside the try. A probe
+    // that terminates the process would take the run with it.
+    try {
+        p->last_kind = ev.event_kind ? ev.event_kind : "";
+        if (p->snatch && !p->snatched) {
+            const std::filesystem::path live = area.filename() + ".tbj";
+            p->snatched_from = live.string();
+            std::error_code ec;
+            std::filesystem::copy_file(
+                live, p->snatch_to,
+                std::filesystem::copy_options::overwrite_existing, ec);
+            p->snatched = !ec && std::filesystem::exists(p->snatch_to, ec);
+        }
+    } catch (...) {}
+}
+
+bool trigger_recovery_journal_is_committed(const std::filesystem::path& p)
+{
+    // The SAME test recovery uses (table_state.cpp: a line whose first field is
+    // "C"), on purpose. A second, differently-written test could agree with
+    // recovery today and drift from it tomorrow, and the drift would be silent.
+    std::istringstream in(slurp_capture_file(p));
+    std::string line;
+    while (std::getline(in, line)) {
+        while (!line.empty() && (line.back() == '\r' || line.back() == '\n')) line.pop_back();
+        if (!line.empty() && line[0] == 'C' && (line.size() == 1 || line[1] == ' ')) return true;
+    }
+    return false;
+}
+
+bool run_trigger_recovery_nonrefire(DbArea& area)
+{
+    namespace fs = std::filesystem;
+
+    std::cout << "\nREGRESSION: AIF-087 M4 -- DOES REPLAY RE-FIRE THE AFTER PHASE?\n"
+                 "  Decision E 4.4: recovery replays with area.set + writeCurrent and\n"
+                 "  never calls apply_one_recno, so the fire is unreachable BY\n"
+                 "  CONSTRUCTION. This arm makes that construction loud if removed.\n"
+                 "  The fixture is a REAL committed journal, captured by an AFTER\n"
+                 "  callback at the one instant such a file exists.\n"
+                 "  READ RULE: zero fires means nothing unless TRG_R1 says the replay\n"
+                 "  ran AND the liveness step then fires exactly once.\n";
+
+    const fs::path stash =
+        dottalk::paths::get_slot(dottalk::paths::Slot::TMP) / "trigger_recovery_committed.tbj";
+    std::error_code ec;
+    fs::create_directories(stash.parent_path(), ec);
+    fs::remove(stash, ec);   // a leftover from an aborted run must not be reused
+
+    // --- 1. fixture ---------------------------------------------------------
+    std::string setup_out;
+    if (!trigger_veto_run_script(area, kTriggerVetoSetupScript, setup_out)) return false;
+    static constexpr std::array<const char*, 2> setup_required{{
+        "TRGVETO-SETUP-BEGIN", "TRGVETO-SETUP-END"
+    }};
+    if (!require_transcript_fragments(setup_out, "RECOVERY SETUP", setup_required)) return false;
+
+    // --- 2. one committed write, and steal the journal on the way past ------
+    RecoveryProbe snatcher;
+    snatcher.snatch = true;
+    snatcher.snatch_to = stash;
+
+    std::string work_out;
+    {
+        AfterRegistration registered(&trigger_recovery_observe, &snatcher);
+        if (!trigger_veto_run_script(area, kTriggerVetoWorkScript, work_out)) return false;
+    }
+
+    bool ok = true;
+    static constexpr std::array<const char*, 3> work_required{{
+        "TRG_W0_fixture_row1_is_alpha:.T.",
+        "TRG_W1_row1_took_the_write:.T.",
+        "TRG_W2_journal_survived:.F."
+    }};
+    if (!require_transcript_fragments(work_out, "RECOVERY COMMIT", work_required)) ok = false;
+
+    if (snatcher.fires != 1) {
+        std::cout << "RECOVERY: FAIL -- the AFTER phase fired " << snatcher.fires
+                  << " time(s) for one committed write.\n"
+                     "  The fixture is produced BY that fire, so nothing below is evidence.\n";
+        ok = false;
+    }
+    if (!snatcher.snatched) {
+        std::cout << "RECOVERY: NOT RUN -- could not capture the live journal at\n"
+                     "  " << snatcher.snatched_from << "\n"
+                     "  There is no fixture, so replay is UNMEASURED -- not proven,\n"
+                     "  and not refuted.\n";
+        return false;
+    }
+    if (!trigger_recovery_journal_is_committed(stash)) {
+        std::cout << "RECOVERY: NOT RUN -- the captured journal carries NO COMMIT marker,\n"
+                     "  so recovery would DISCARD it and the arm would be measuring a\n"
+                     "  discard while reporting on a replay.\n";
+        return false;
+    }
+    std::cout << "  Captured a committed journal: " << stash.string() << " ("
+              << fs::file_size(stash, ec) << " bytes, COMMIT marker present)\n";
+    if (!ok) return false;
+
+    // --- 3. poison the record so replay has something to undo ---------------
+    std::string poison_out;
+    if (!trigger_veto_run_script(area, kTriggerRecoveryPoisonScript, poison_out)) return false;
+    static constexpr std::array<const char*, 1> poison_required{{
+        "TRG_R0_poison_landed:.T."
+    }};
+    if (!require_transcript_fragments(poison_out, "RECOVERY POISON", poison_required)) return false;
+
+    // --- 4. put the crash state back on disk --------------------------------
+    const fs::path live_journal =
+        dottalk::paths::get_slot(dottalk::paths::Slot::DBF) / "TRGVETO.dbf.tbj";
+    fs::copy_file(stash, live_journal, fs::copy_options::overwrite_existing, ec);
+    if (ec || !fs::exists(live_journal, ec)) {
+        std::cout << "RECOVERY: NOT RUN -- could not restore the journal to\n"
+                     "  " << live_journal.string() << "\n";
+        return false;
+    }
+
+    // --- 5. open, let recovery run, and watch a live probe read zero --------
+    const fs::path alt_path =
+        dottalk::paths::get_slot(dottalk::paths::Slot::TMP) / "trigger_recovery_arm.alt";
+
+    RecoveryProbe probe;
+    std::string reopen_out;
+    std::string live_out;
+    std::string routed_out;
+    int fires_after_recovery = -1;
+    {
+        // The recovery announcement is a catalog message (cmd_use.cpp:991) and
+        // travels on the routed channel, so std::cout cannot see it. Capturing
+        // it gives a THIRD independent witness that replay ran, beside the data
+        // and the fire count.
+        AlternateCapture alt(alt_path, "RECOVERY");
+        if (!alt.ok()) {
+            std::cout << "RECOVERY: NOT RUN -- could not open the ALTERNATE capture at "
+                      << alt_path.string() << "\n";
+            return false;
+        }
+        AfterRegistration registered(&trigger_recovery_observe, &probe);
+        if (!trigger_veto_run_script(area, kTriggerRecoveryReopenScript, reopen_out)) return false;
+        fires_after_recovery = probe.fires;
+        if (!trigger_veto_run_script(area, kTriggerRecoveryLivenessScript, live_out)) return false;
+    }
+    routed_out = slurp_capture_file(alt_path);
+    fold_routed_into_cout(routed_out);
+
+    // D1 for the claim: the replay actually ran.
+    static constexpr std::array<const char*, 1> reopen_required{{
+        "TRG_R1_replay_restored_committed_value:.T."
+    }};
+    if (!require_transcript_fragments(reopen_out, "RECOVERY REPLAY", reopen_required)) ok = false;
+
+    static constexpr std::array<const char*, 1> routed_required{{
+        "recovered a committed table-buffer journal"
+    }};
+    if (!require_transcript_fragments(routed_out, "RECOVERY REPLAY (routed)", routed_required)) {
+        std::cout << "  The engine did not announce a recovery. The data reading above\n"
+                  << "  and this are independent witnesses; disagreement between them is\n"
+                  << "  itself the finding.\n";
+        ok = false;
+    }
+
+    std::cout << "  After callback fired " << fires_after_recovery
+              << " time(s) across the replay; " << (probe.fires - fires_after_recovery)
+              << " time(s) for the liveness write (kind="
+              << (probe.last_kind.empty() ? "<none>" : probe.last_kind) << ")\n";
+
+    // G1: the claim itself.
+    if (fires_after_recovery != 0) {
+        std::cout << "RECOVERY: FAIL -- replay fired the AFTER phase "
+                  << fires_after_recovery << " time(s).\n"
+                     "  A replayed write is not a new write. Either the fire moved into\n"
+                     "  a path recovery reaches, or recovery was refactored to share\n"
+                     "  apply_one_recno -- which would look like tidiness.\n";
+        ok = false;
+    }
+
+    // D1 for the probe: it could have fired, and did, immediately afterwards.
+    static constexpr std::array<const char*, 1> live_required{{
+        "TRG_R2_liveness_write_landed:.T."
+    }};
+    if (!require_transcript_fragments(live_out, "RECOVERY LIVENESS", live_required)) ok = false;
+
+    const int liveness_fires = probe.fires - fires_after_recovery;
+    if (liveness_fires != 1) {
+        std::cout << "RECOVERY: FAIL -- the liveness write produced " << liveness_fires
+                  << " fire(s), expected 1.\n"
+                     "  THE ZERO ABOVE IS THEREFORE NOT EVIDENCE. A probe that cannot\n"
+                     "  fire reads zero for a replay exactly as it reads zero for a\n"
+                     "  write, and this arm cannot tell you which one you have.\n";
+        ok = false;
+    } else if (probe.last_kind != "field_replace") {
+        std::cout << "RECOVERY: FAIL -- the liveness event carried kind '"
+                  << probe.last_kind << "', expected 'field_replace'.\n"
+                     "  A one-field direct write IS the degenerate case; if it now\n"
+                     "  reports 'record_update' the unit and the label have parted\n"
+                     "  company again.\n";
+        ok = false;
+    }
+
+    // The replayed log must be gone: recovery removes it, and a survivor would
+    // replay again on the next open, forever.
+    if (fs::exists(live_journal, ec)) {
+        std::cout << "RECOVERY: FAIL -- the journal survived the replay at\n"
+                     "  " << live_journal.string() << "\n"
+                     "  It would be replayed again on every open.\n";
+        ok = false;
+    }
+
+    fs::remove(stash, ec);
+    fs::remove(alt_path, ec);
+
+    if (!ok) return false;
+    std::cout << "RECOVERY: PASS -- a real committed journal replayed its data and\n"
+                 "  notified nobody, and the probe that read zero fired one line later.\n"
+                 "  STILL OWED: the crash test. This restores the state a crash leaves;\n"
+                 "  it does not prove what a crash leaves.\n";
+    return true;
+}
+
 bool run_trigger_veto_arm_inner(DbArea& area, const std::string& mode)
 {
     if (mode == "MULTIREP") return run_trigger_multirep_visibility(area);
     if (mode == "AFTER")    return run_trigger_after_visibility(area);
+    if (mode == "RECOVERY") return run_trigger_recovery_nonrefire(area);
 
     const bool selftest = (mode == "SELFTEST");
     const bool control_ok = run_trigger_veto_control(area);
@@ -3484,9 +3788,10 @@ void cmd_REGRESSION(DbArea& area, std::istringstream& in)
         in >> mode;
         std::string up = upper_copy(mode);
         if (up.empty()) up = "NORMAL";
-        if (up != "NORMAL" && up != "SELFTEST" && up != "MULTIREP" && up != "AFTER") {
+        if (up != "NORMAL" && up != "SELFTEST" && up != "MULTIREP" &&
+            up != "AFTER" && up != "RECOVERY") {
             std::cout << "REGRESSION TRIGGERVETO: unknown mode '" << mode
-                      << "'. Use NORMAL, SELFTEST, MULTIREP or AFTER.\n";
+                      << "'. Use NORMAL, SELFTEST, MULTIREP, AFTER or RECOVERY.\n";
             return;
         }
         run_trigger_veto_arm(area, up);
