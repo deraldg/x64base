@@ -1,7 +1,7 @@
 ; ============================================================================
 ; AIF-074 -- SQLsel committed truth vs TUPLE buffer preview
 ;
-; Status: CANDIDATE / explicit-run
+; Status: PROMOTED / default suite (2026-09-03)
 ; Safety: MUTATING (SANDBOX only; fixture self-erases)
 ;
 ; Proves:

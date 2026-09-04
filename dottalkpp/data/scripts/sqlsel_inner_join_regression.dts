@@ -16,8 +16,8 @@
 * Read rule: REGRESSION SQLSEL_INNER_JOIN must print SQLSEL JOIN ORACLE: PASS.
 *   The executable validator compares J1/J3/J4/J5 row values, order and counts
 *   with O1/O3/O4/O5; requires both cursor guards, all three corrective
-*   refusals, two CDX-seek paths and two nested-loop paths. Missing or silent
-*   output = FAIL.
+*   refusals, two CDX-seek paths, two nested-loop paths, and 1/1 CDX metadata
+*   cleanup. Missing or silent output = FAIL.
 *   A direct DOTSCRIPT run prints both sides but does not invoke the validator.
 * ============================================================================
 

@@ -425,19 +425,20 @@ No push, main-tree promotion, website edit, or publication is claimed.
   row with produced-absent left cells. FULL also retains P4.3's unmatched-left
   production. Both sides render through the same `TupleCellKind` seam and the
   same `<UNMATCHED>` marker; no alternate NULL-like representation was added.
-- CROSS takes no ON clause, uses the nested-loop scan deliberately, and applies
-  the repaired joined-TupleRow WHERE only while every cell is present. RIGHT and
-  FULL with WHERE refuse because the predicate state still lacks SQL UNKNOWN.
-- `REGRESSION SQLSEL_JOIN_FAMILY` passed ten SQLite comparisons as row
-  multisets: RIGHT projection/count by CDX and scan, FULL projection/count by
-  CDX and scan, and CROSS filtered projection plus Cartesian count. The fixture
+- CROSS takes no ON clause and uses the nested-loop scan deliberately. RIGHT,
+  FULL, and CROSS apply joined-TupleRow WHERE with SQL TRUE/FALSE/UNKNOWN after
+  outer extension.
+- `REGRESSION SQLSEL_JOIN_FAMILY` passed fourteen SQLite comparisons as row
+  multisets: RIGHT projection/count/outer-WHERE by CDX and scan, FULL
+  projection/count/outer-WHERE by CDX and scan, and CROSS filtered projection
+  plus Cartesian count. The fixture
   proves duplicate multiplication, absence from both sides, deleted-row
   exclusion, a genuine blank, a stored `<UNMATCHED>` value, and 30 live CROSS
   pairs. SQLite `COALESCE` maps NULL to the marker explicitly.
-- The validator separately required RIGHT 2 seek/2 scan, FULL 2 seek/2 scan,
-  CROSS 2 scan, zero hybrid paths, ten canonical two-table fences, twelve exact
-  extension reports, two cursor guards, caller FLOCK preservation, and five
-  exact refusal messages. Changing only SQLite's right-only `R4_ONLY` value to
+- The validator separately required RIGHT 3 seek/3 scan, FULL 3 seek/3 scan,
+  CROSS 2 scan, zero hybrid paths, fourteen canonical two-table fences, eighteen
+  exact extension reports, two cursor guards, caller FLOCK preservation, and
+  three exact refusal messages. Changing only SQLite's right-only `R4_ONLY` value to
   `R4_MUTATED` produced a named row-multiset FAIL; restoring it returned green.
 - Existing `SQLSEL_LEFT_JOIN`, `SQLSEL_JOIN_EDGES`, `SQLSEL_INNER_JOIN`,
   `SQLSEL_SELECT_V1`, and `EVALDIFF` validators all remained green. The Release
@@ -509,6 +510,31 @@ recording point. No main-tree promotion or public publication is claimed.
   and this phase register now describe the implemented runtime. Generated HELP
   DBFs and public-site publication remain a later, deliberate documentation pass.
 
-This unit is prepared in the sole development workspace. Its eventual push may
-target only `origin/development`; it is not a promotion to `main` and makes no
-public-site claim.
+This unit landed in `e7d6ef130` and was pushed to `origin/development`. It is
+not a promotion to `main`; public-site publication remains a separate surface.
+
+**2026-09-03, default-suite promotion:**
+
+- `SQLSEL_BUFFER_VIS`, `SQLSEL_JOIN_EDGES`, `SQLSEL_LEFT_JOIN`, and
+  `SQLSEL_JOIN_FAMILY` moved from explicit-only to the default suite. The suite
+  now executes the committed-truth buffer boundary, adversarial access-path and
+  lock cases, produced absence plus SQL UNKNOWN, and RIGHT/FULL/CROSS semantics
+  on every default run.
+- The promotion sweep found five ignored `.cdx.meta` files left by the JOIN
+  fixtures. `ERASE TABLE` enumerated `.cdx` and its LMDB directory but omitted
+  the adjacent metadata file. ERASE now includes it, and the four JOIN
+  validators fail closed on cleanup counts 1/1, 2/2, 1/1, and 1/1. Disabling
+  the repair made INNER JOIN fail on the surviving path and set invalid argument.
+- Three post-repair fresh-process `REGRESSION ALL` runs each executed 26 default
+  specs. Every promoted validator passed: 5/5 buffer row sets, 4/4 edge row
+  sets, 7/7 LEFT row sets, and 14/14 RIGHT/FULL/CROSS row multisets. Both L3
+  catalog-isolation brackets passed 6/6 before and after the suite, with no
+  gated failure line. Filesystem readback found all five metadata files absent.
+- The complete runs took 11.60, 12.29, and 11.42 seconds including launcher
+  overhead. Native CTest passed 22/22. The maintained WSL/GCC build linked and
+  its fresh 26-spec default run produced the same validator and cleanup counts.
+  The four fixtures mutate only self-erasing SANDBOX data and mint no workspace
+  catalog rows, so the added coverage has no durable catalog cost.
+- Durable proof details, transcript hashes, exact validator summaries, and the
+  coverage rationale are in
+  `docs/maintenance/SQLSEL_DEFAULT_SUITE_PROMOTION_PROOF_2026-09-03.md`.

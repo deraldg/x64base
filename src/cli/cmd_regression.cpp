@@ -80,6 +80,7 @@
 #include <vector>
 
 #include "common/path_state.hpp"
+#include "cli/path_resolver.hpp"
 #include "shell_api.hpp"
 #include "textio.hpp"
 #include "xbase_error_context.hpp"
@@ -488,8 +489,8 @@ constexpr std::array<RegressionSpec, 75> kRegressionSpecs{{
     {
         "SQLSEL_BUFFER_VIS",
         "sqlsel_buffer_visibility_regression.dts",
-        "SQLSEL/TUPLE TABLE BUFFER visibility split (AIF-074): TUPLE previews the dirty current-row buffer while SQLSEL reads committed table truth. Five marked SQLSEL result sets are compared with an in-run SQLite oracle across dirty preview, rollback, and commit; the dirty TUPLE row and three cursor guards are exact transcript requirements. Self-bootstrapping throwaway SQLBUFVIS table in SANDBOX; self-erasing. Explicit-run pending independent review and soak.",
-        false,
+        "SQLSEL/TUPLE TABLE BUFFER visibility split (AIF-074): TUPLE previews the dirty current-row buffer while SQLSEL reads committed table truth. Five marked SQLSEL result sets are compared with an in-run SQLite oracle across dirty preview, rollback, and commit; the dirty TUPLE row and three cursor guards are exact transcript requirements. Self-bootstrapping throwaway SQLBUFVIS table in SANDBOX; self-erasing. Promoted 2026-09-03 because no other default spec asserts the committed-truth boundary while a native TableBuffer is dirty.",
+        true,
         false,
         RegressionValidator::SqlselBufferVisibilityV1
     },
@@ -504,7 +505,7 @@ constexpr std::array<RegressionSpec, 75> kRegressionSpecs{{
     {
         "SQLSEL_INNER_JOIN",
         "sqlsel_inner_join_regression.dts",
-        "SQLsel G4a/G4b (AIF-074 P4.1/P4.2): two-table INNER JOIN with aliases, qualified fields, numeric equi-key matching, row multiplication, joined TupleRow WHERE, ORDER BY/LIMIT, COUNT(*), two-cursor restoration, corrective errors, and reported CDX-seek or nested-loop access. Four marked SQLsel row sets are automatically compared with an in-run SQLite oracle over identical data; two run through the indexed inner side and two through scan fallback. A mismatch, a missing path, or a hybrid path records an error and prints FAIL. Self-bootstrapping throwaway SQLJSTU/SQLJENR tables and index sidecars in SANDBOX; self-erasing. Promoted 2026-09-03 because no other default spec executes SQL-syntax JOIN or asserts its access-path report.",
+        "SQLsel G4a/G4b (AIF-074 P4.1/P4.2): two-table INNER JOIN with aliases, qualified fields, numeric equi-key matching, row multiplication, joined TupleRow WHERE, ORDER BY/LIMIT, COUNT(*), two-cursor restoration, corrective errors, and reported CDX-seek or nested-loop access. Four marked SQLsel row sets are automatically compared with an in-run SQLite oracle over identical data; two run through the indexed inner side and two through scan fallback. A mismatch, a missing path, a hybrid path, or surviving CDX metadata records an error and prints FAIL. Self-bootstrapping throwaway SQLJSTU/SQLJENR tables and index sidecars in SANDBOX; cleanup asserted 1/1. Promoted 2026-09-03 because no other default spec executes SQL-syntax JOIN or asserts its access-path report.",
         true,
         false,
         RegressionValidator::SqlselJoinOracleV1
@@ -512,24 +513,24 @@ constexpr std::array<RegressionSpec, 75> kRegressionSpecs{{
     {
         "SQLSEL_JOIN_EDGES",
         "sqlsel_join_edges_regression.dts",
-        "Adversarial SQLsel INNER JOIN proof (AIF-074 P4.2): numeric duplicates, deleted outer/inner rows, unmatched keys, CDX character-key case collisions that require typed row revalidation, active-tag mismatch scan fallback, cursor restoration, caller-owned FLOCK preservation, canonical two-table read fences with reversed statement order, and two corrective refusals. Four marked SQLsel row sets are compared with an in-run SQLite oracle. The validator pins the access-path composition at exactly two CDX seeks, two nested-loop scans, zero hybrid, and pins the probe/candidate counts that make the duplicate and case-collision arms discriminating. Self-bootstrapping four-table SANDBOX fixture with self-erasing sidecars. Explicit-run pending independent review and soak.",
-        false,
+        "Adversarial SQLsel INNER JOIN proof (AIF-074 P4.2): numeric duplicates, deleted outer/inner rows, unmatched keys, CDX character-key case collisions that require typed row revalidation, active-tag mismatch scan fallback, cursor restoration, caller-owned FLOCK preservation, canonical two-table read fences with reversed statement order, and two corrective refusals. Four marked SQLsel row sets are compared with an in-run SQLite oracle. The validator pins the access-path composition at exactly two CDX seeks, two nested-loop scans, zero hybrid, pins the probe/candidate counts that make the duplicate and case-collision arms discriminating, and asserts CDX metadata cleanup 2/2. Self-bootstrapping four-table SANDBOX fixture. Promoted 2026-09-03 because the basic INNER JOIN oracle does not cover collision revalidation, wrong-tag fallback, reversed lock order, or caller-owned FLOCK preservation.",
+        true,
         false,
         RegressionValidator::SqlselJoinEdgesV1
     },
     {
         "SQLSEL_LEFT_JOIN",
         "sqlsel_left_join_regression.dts",
-        "SQLsel G4c (AIF-074 P4.3): LEFT JOIN preserves duplicate matches, emits one produced-absent row for each unmatched non-deleted outer row, distinguishes genuine DBF blanks from absence through the one TupleRow marker plus an exact left-extended count, and returns identical rows through CDX-seek and scan paths. Four marked SQLsel row sets are compared with SQLite after explicit NULL-to-marker mapping. The validator also pins 2 seek/2 scan paths, four read fences, cursor restoration, caller-owned FLOCK preservation, and corrective refusal of LEFT WHERE until three-valued predicates exist. Self-erasing SANDBOX fixtures. Explicit-run pending independent review and soak.",
-        false,
+        "SQLsel G4c (AIF-074 P4.3): LEFT JOIN preserves duplicate matches, emits one produced-absent row for each unmatched non-deleted outer row, distinguishes genuine DBF blanks from absence through the one TupleRow marker plus an exact left-extended count, and returns identical rows through CDX-seek and scan paths. Seven marked SQLsel row sets are compared with SQLite after explicit NULL-to-marker mapping. The validator also pins 3 seek/4 scan paths, seven read fences, cursor restoration, caller-owned FLOCK preservation, ON -> extension -> WHERE ordering, SQL UNKNOWN behavior, and CDX metadata cleanup 1/1. Self-bootstrapping SANDBOX fixtures. Promoted 2026-09-03 because this is the default suite's only assertion of produced absence, blank/absence distinction, LEFT extension counts, and outer-WHERE three-valued logic.",
+        true,
         false,
         RegressionValidator::SqlselLeftJoinOracleV1
     },
     {
         "SQLSEL_JOIN_FAMILY",
         "sqlsel_join_family_regression.dts",
-        "SQLsel G4d (AIF-074 P4.4): RIGHT, FULL, and CROSS JOIN over two open tables. Fourteen marked SQLsel row sets are compared as SQL multisets with SQLite after explicit NULL-to-<UNMATCHED> mapping. The validator pins duplicate multiplication, unmatched rows from either side, genuine blank and stored-marker values, deleted-row exclusion, RIGHT/FULL CDX-seek versus scan parity, SQL three-valued outer WHERE, CROSS Cartesian count, exact extension reports, fourteen canonical read fences, both cursors, caller-owned FLOCK preservation, and three corrective malformed-ON refusals. Self-erasing SANDBOX fixtures. Explicit-run pending independent review and soak.",
-        false,
+        "SQLsel G4d (AIF-074 P4.4): RIGHT, FULL, and CROSS JOIN over two open tables. Fourteen marked SQLsel row sets are compared as SQL multisets with SQLite after explicit NULL-to-<UNMATCHED> mapping. The validator pins duplicate multiplication, unmatched rows from either side, genuine blank and stored-marker values, deleted-row exclusion, RIGHT/FULL CDX-seek versus scan parity, SQL three-valued outer WHERE, CROSS Cartesian count, exact extension reports, fourteen canonical read fences, both cursors, caller-owned FLOCK preservation, three corrective malformed-ON refusals, and CDX metadata cleanup 1/1. Self-bootstrapping SANDBOX fixtures. Promoted 2026-09-03 because no other default spec executes or oracle-checks RIGHT, FULL, or CROSS JOIN.",
+        true,
         false,
         RegressionValidator::SqlselJoinFamilyV1
     },
@@ -1325,6 +1326,31 @@ std::size_t transcript_count(const std::string& transcript,
 }
 
 template <std::size_t N>
+bool require_cdx_metadata_erased(const char* label,
+                                 const std::array<const char*, N>& table_stems)
+{
+    for (const char* stem : table_stems) {
+        std::filesystem::path meta =
+            dottalk::paths::resolve_index(std::string(stem) + ".cdx");
+        meta += ".meta";
+
+        std::error_code ec;
+        const bool exists = std::filesystem::exists(meta, ec);
+        if (ec) {
+            std::cout << label << ": FAIL -- could not inspect cleanup path '"
+                      << meta.string() << "': " << ec.message() << "\n";
+            return false;
+        }
+        if (exists) {
+            std::cout << label << ": FAIL -- cleanup left CDX metadata '"
+                      << meta.string() << "'\n";
+            return false;
+        }
+    }
+    return true;
+}
+
+template <std::size_t N>
 bool require_transcript_fragments(const std::string& transcript,
                                   const char* label,
                                   const std::array<const char*, N>& required)
@@ -1503,9 +1529,15 @@ bool validate_sqlsel_join_oracle(const std::string& transcript)
         return false;
     }
 
+    static constexpr std::array<const char*, 1> cleanup_tables{{"SQLJENR"}};
+    if (!require_cdx_metadata_erased("SQLSEL JOIN ORACLE", cleanup_tables)) {
+        return false;
+    }
+
     std::cout << "SQLSEL JOIN ORACLE: PASS -- " << pairs.size() << '/' << pairs.size()
               << " row sets equal SQLite; cursors 2/2; refusals 3/3; access paths "
-              << access_path_count << '/' << pairs.size() << " (CDX seek 2, scan 2).\n";
+              << access_path_count << '/' << pairs.size()
+              << " (CDX seek 2, scan 2); cleanup 1/1.\n";
     return true;
 }
 
@@ -1576,11 +1608,16 @@ bool validate_sqlsel_join_edges(const std::string& transcript)
         return false;
     }
 
+    static constexpr std::array<const char*, 2> cleanup_tables{{"SQLJNR", "SQLJCR"}};
+    if (!require_cdx_metadata_erased("SQLSEL JOIN EDGES ORACLE", cleanup_tables)) {
+        return false;
+    }
+
     std::cout << "SQLSEL JOIN EDGES ORACLE: PASS -- " << pairs.size() << '/'
               << pairs.size() << " row sets equal SQLite; cursors 4/4; refusals 2/2; "
               << "read transactions 4/4; caller lock preserved; "
               << "access paths 4/4 (CDX seek 2, scan 2, hybrid 0); "
-              << "probe/candidate counts exact.\n";
+              << "probe/candidate counts exact; cleanup 2/2.\n";
     return true;
 }
 
@@ -1630,10 +1667,16 @@ bool validate_sqlsel_left_join(const std::string& transcript)
         return false;
     }
 
+    static constexpr std::array<const char*, 1> cleanup_tables{{"SQLLJR"}};
+    if (!require_cdx_metadata_erased("SQLSEL LEFT JOIN ORACLE", cleanup_tables)) {
+        return false;
+    }
+
     std::cout << "SQLSEL LEFT JOIN ORACLE: PASS -- " << pairs.size() << '/'
               << pairs.size() << " row sets equal SQLite; blank and produced absence distinct; "
               << "outer WHERE and UNKNOWN proven; left-extended reports 7/7; cursors 2/2; "
-              << "caller lock preserved; paths 3 seek/4 scan/0 hybrid; read fences 7/7.\n";
+              << "caller lock preserved; paths 3 seek/4 scan/0 hybrid; read fences 7/7; "
+              << "cleanup 1/1.\n";
     return true;
 }
 
@@ -1715,11 +1758,17 @@ bool validate_sqlsel_join_family(const std::string& transcript)
         return false;
     }
 
+    static constexpr std::array<const char*, 1> cleanup_tables{{"SQLJFR"}};
+    if (!require_cdx_metadata_erased("SQLSEL JOIN FAMILY ORACLE", cleanup_tables)) {
+        return false;
+    }
+
     std::cout << "SQLSEL JOIN FAMILY ORACLE: PASS -- " << pairs.size() << '/'
               << pairs.size() << " row multisets equal SQLite; RIGHT/FULL absence and "
               << "outer WHERE/UNKNOWN and CROSS product proven; cursors 2/2; caller lock "
               << "preserved; refusals 3/3; paths RIGHT 3 seek/3 scan, FULL 3 seek/3 scan, "
-              << "CROSS 2 scan; hybrid 0; fences 14/14; extension reports 18/18.\n";
+              << "CROSS 2 scan; hybrid 0; fences 14/14; extension reports 18/18; "
+              << "cleanup 1/1.\n";
     return true;
 }
 

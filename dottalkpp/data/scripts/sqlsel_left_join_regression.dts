@@ -1,7 +1,7 @@
 ; ============================================================================
 ; AIF-074 P4.3 -- SQLsel LEFT JOIN, produced absence, and oracle gate G4c
 ;
-; Status: CANDIDATE / explicit-run pending this widened oracle gate
+; Status: PROMOTED / default suite (2026-09-03)
 ; Safety: MUTATING (SANDBOX only; two fixtures and sidecars self-erase)
 ;
 ; Proves:
@@ -21,7 +21,8 @@
 ;   SQLSEL LEFT JOIN ORACLE: PASS.
 ; The validator compares seven row sets, requires seven exact left-extended
 ; reports, 3 seek + 4 scan paths, seven read fences, cursor/lock evidence, and
-; explicit UNKNOWN truth-table behavior. A direct DOTSCRIPT run does not invoke it.
+; explicit UNKNOWN truth-table behavior plus 1/1 CDX metadata cleanup. A direct
+; DOTSCRIPT run does not invoke it.
 ; ============================================================================
 
 SET ECHO OFF

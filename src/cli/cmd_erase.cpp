@@ -26,7 +26,7 @@
 //   - Deletes the DBF plus known DBF-sidecars in the same directory:
 //       .fpt .dbt .dtx .dti.json .schema.json
 //   - Also deletes matching public index files through the active INDEXES slot:
-//       .inx .cnx .cdx .idx
+//       .inx .cnx .cdx .cdx.meta .idx
 //   - Also deletes the matching LMDB backend directory for the public .cdx
 //     through the active LMDB slot:
 //       <stem>.cdx.d
@@ -67,7 +67,7 @@
 // notes:
 //   ERASE USAGE prints usage and does not inspect or delete files.
 //   Without CONFIRM, ERASE performs a dry-run and lists files that would be deleted.
-//   CONFIRM physically deletes the DBF, matching index containers/files, and matching LMDB backend directory when present.
+//   CONFIRM physically deletes the DBF, matching index containers/files and CDX metadata, and matching LMDB backend directory when present.
 //   ERASE DIR deletes the named directory and everything under it; cwd-relative or absolute path, no SETPATH resolution, no sidecar sweep. Dry-run without CONFIRM.
 //
 // risk:
@@ -179,7 +179,7 @@ static std::vector<fs::path> build_sidecar_list(const fs::path& dbf_path) {
     const std::string stem = dbf_path.stem().string(); // "clients" from "clients.dbf"
 
     std::vector<fs::path> files;
-    files.reserve(16);
+    files.reserve(17);
 
     // Primary
     files.push_back(dbf_path);
@@ -196,9 +196,12 @@ static std::vector<fs::path> build_sidecar_list(const fs::path& dbf_path) {
     const fs::path cnx = dottalk::paths::resolve_index(stem + ".cnx");
     const fs::path cdx = dottalk::paths::resolve_index(stem + ".cdx");
     const fs::path idx = dottalk::paths::resolve_index(stem + ".idx");
+    fs::path cdx_meta = cdx;
+    cdx_meta += ".meta";
     files.push_back(inx);
     files.push_back(cnx);
     files.push_back(cdx);
+    files.push_back(cdx_meta);
     files.push_back(idx);
 
     // LMDB backend env for the public CDX container (optional, active LMDB root)

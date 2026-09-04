@@ -1,7 +1,7 @@
 ; ============================================================================
 ; AIF-074 P4.2 -- adversarial SQLsel INNER JOIN paths and edge semantics
 ;
-; Status: CANDIDATE / explicit-run
+; Status: PROMOTED / default suite (2026-09-03)
 ; Safety: MUTATING (SANDBOX only; four fixtures and sidecars self-erase)
 ;
 ; Proves:
@@ -21,7 +21,8 @@
 ; Read rule: REGRESSION SQLSEL_JOIN_EDGES must print
 ;   SQLSEL JOIN EDGES ORACLE: PASS.
 ; The validator requires exactly 2 CDX seek, 2 nested-loop scan, 0 hybrid and
-; exact probe/candidate counts. Same rows through an unproven path are a FAIL.
+; exact probe/candidate counts plus 2/2 CDX metadata cleanup. Same rows through
+; an unproven path or a surviving sidecar are a FAIL.
 ; A direct DOTSCRIPT run prints evidence but does not invoke the validator.
 ; ============================================================================
 

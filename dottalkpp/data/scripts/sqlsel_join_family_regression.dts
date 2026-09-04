@@ -1,11 +1,11 @@
 ; ============================================================================
 ; AIF-074 P4.4 -- SQLsel RIGHT, FULL, and CROSS JOIN oracle gate G4d
 ;
-; Status: CANDIDATE / explicit-run
+; Status: PROMOTED / default suite (2026-09-03)
 ; Safety: MUTATING (SANDBOX only; two fixtures and sidecars self-erase)
 ; Purpose: Prove the remaining two-table JOIN family against SQLite.
 ; Inputs: none; creates SQLJFL and SQLJFR in DBF/SANDBOX.
-; Outputs: transcript only; fixture DBF/CDX/LMDB artifacts are erased.
+; Outputs: transcript only; fixture DBF/CDX/LMDB artifacts and CDX metadata are erased.
 ; Mutation: disposable DBF/CDX/LMDB fixtures under SANDBOX.
 ; Gate: REGRESSION SQLSEL_JOIN_FAMILY must print SQLSEL JOIN FAMILY ORACLE: PASS.
 ;
@@ -21,7 +21,8 @@
 ;   JF9 malformed ON forms refuse explicitly.
 ;   ORACLE SQLite NULL is mapped explicitly to <UNMATCHED>.
 ;
-; Read rule: REGRESSION SQLSEL_JOIN_FAMILY invokes the machine validator.
+; Read rule: REGRESSION SQLSEL_JOIN_FAMILY invokes the machine validator and
+; requires 1/1 CDX metadata cleanup.
 ; A direct DOTSCRIPT run does not validate the paired blocks.
 ; ============================================================================
 
