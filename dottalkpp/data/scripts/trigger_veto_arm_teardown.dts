@@ -1,0 +1,56 @@
+; ============================================================================
+; AIF-087 M2c -- BEFORE-trigger veto arm, TEARDOWN AND THE RETRY PROOF
+;
+; Status: CANDIDATE / explicit-run, driven from C++ by run_trigger_veto_arm.
+; Safety: MUTATING (SANDBOX only; erases the fixture on the way out)
+;
+; Runs AFTER the arm has unregistered the callback and read the journal.
+;
+; This is not only cleanup. On the veto pass it proves the property that makes
+; the refusal SAFE rather than merely obstructive: the buffer was retained, so
+; the same change COMMITS on retry once the refusal is lifted. A veto that
+; discarded the user's work would satisfy every other assertion in this arm and
+; still be the wrong behaviour.
+;
+; On the control pass the buffer is already empty, COMMIT reports no changes,
+; and the marker still reads .T. because the work pass committed the same value.
+; Same script, same expected marker, both passes.
+; ============================================================================
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+SET PATH DBF DBF/SANDBOX
+SET PATH INDEXES INDEXES/SANDBOX
+SET PATH LMDB LMDB/SANDBOX
+
+FORMULA "TRGVETO-TEARDOWN-BEGIN"
+
+SELECT 1
+
+; RETRY THROUGH SQL MODE, NOT A NATIVE COMMIT, and the difference is not
+; cosmetic. A refused autocommit leaves the SQLsel transaction ACTIVE by design
+; ("retry or rollback"). A native COMMIT commits the buffer through cmd_COMMIT
+; and NEVER TOUCHES sql_transaction_state, so the data lands and the scope stays
+; open -- and every later DML in the session then STAGES instead of committing,
+; because finish_dml_statement only autocommits when the scope is implicit.
+; SQL-mode COMMIT routes through commit_sql_transaction, which releases it.
+SET MODE SQL
+COMMIT
+SET MODE NATIVE
+
+GO 1
+? "TRG_T1_retry_committed:" + (ALLTRIM(NAME) = "VETOED")
+? "TRG_T2_journal_cleared:" + NOT FILE("DBF/SANDBOX/TRGVETO.dbf.tbj")
+
+; TRG_T3 -- THE SCOPE REALLY CLOSED. This is the guard on the defect above, and
+; it exists because a leaked scope is INVISIBLE until the next statement: an
+; autocommit that has quietly become a staged write reports success either way.
+; If the scope leaked, this UPDATE stages, nothing reaches the record, and a
+; committed-truth read still returns BETA.
+SQLSEL UPDATE TRGVETO SET NAME = 'CLEAN' WHERE ID = 2
+GO 2
+? "TRG_T3_scope_released:" + (ALLTRIM(NAME) = "CLEAN")
+
+CLOSE ALL
+ERASE TABLE TRGVETO CONFIRM
+FORMULA "TRGVETO-TEARDOWN-END"

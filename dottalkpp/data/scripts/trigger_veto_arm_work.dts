@@ -1,0 +1,50 @@
+; ============================================================================
+; AIF-087 M2c -- BEFORE-trigger veto arm, THE WORK
+;
+; Status: CANDIDATE / explicit-run, driven from C++ by run_trigger_veto_arm.
+; Safety: MUTATING (SANDBOX only; the arm erases the fixture when it finishes)
+;
+; RUN TWICE, UNCHANGED. The C++ arm runs this once with NO trigger registered
+; (the CONTROL pass) and once with a refusing BEFORE callback (the VETO pass).
+; Two markers are expected to FLIP between the passes and one is expected to
+; stay the same:
+;
+;   TRG_W0  same in both  -- the fixture was really built and really opened.
+;   TRG_W1  .T. control, .F. veto -- did the UPDATE reach the record?
+;   TRG_W2  .F. control, .T. veto -- a successful COMMIT DELETES the journal
+;                                    (journal_note_commit), so a journal that
+;                                    SURVIVES is the refusal's fingerprint.
+;
+; W0 is this arm's control marker and it is not decoration. "Nothing was
+; written" is also what you observe when the table never opened or the WHERE
+; matched no row, so W1 and W2 mean NOTHING unless W0 is .T. in both passes.
+; Never credit W1/W2 without W0.
+; ============================================================================
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+SET PATH DBF DBF/SANDBOX
+SET PATH INDEXES INDEXES/SANDBOX
+SET PATH LMDB LMDB/SANDBOX
+
+FORMULA "TRGVETO-WORK-BEGIN"
+
+SELECT 1
+USE TRGVETO
+GO 1
+? "TRG_W0_fixture_row1_is_alpha:" + (ALLTRIM(NAME) = "ALPHA")
+
+; The single act under test. Autocommit SQLsel DML: begin_dml_scope forces
+; buffering on, stages the change, and commits through the house cmd_COMMIT --
+; which is where the BEFORE phase now fires.
+SQLSEL UPDATE TRGVETO SET NAME = 'VETOED' WHERE ID = 1
+
+GO 1
+? "TRG_W1_row1_took_the_write:" + (ALLTRIM(NAME) = "VETOED")
+? "TRG_W2_journal_survived:" + FILE("DBF/SANDBOX/TRGVETO.dbf.tbj")
+
+; DELIBERATELY DOES NOT CLOSE. On the veto pass the buffer is RETAINED by
+; design, and CLOSE ALL over a retained buffer raises the interactive
+; "COMMIT changes? (y/N)" prompt -- which would hang the arm forever waiting
+; for a human. The arm reads the journal here, then runs the teardown script.
+FORMULA "TRGVETO-WORK-END"

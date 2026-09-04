@@ -1,0 +1,85 @@
+AIF-087 M2c -- BEFORE-trigger veto arm, captured proof
+mode     : NORMAL
+unix_time: 1788528747
+verdict  : FAIL
+note     : both output channels are folded into this file. The routed
+           channel (catalog messages) is marked with a leading '|'.
+----------------------------------------------------------------
+
+REGRESSION: AIF-087 BEFORE-TRIGGER VETO ARM -- PASS 1, CONTROL
+  Registers NO trigger.
+  READ RULE: the veto pass may not be credited unless this is
+  green. A red control makes a refusal UNMEASURABLE, not proven.
+  Script  : trigger_veto_arm_setup.dts
+  Resolved: D:\code\ccode\dottalkpp\data\scripts\trigger_veto_arm_setup.dts
+TRGVETO-SETUP-BEGIN
+TRGVETO-SETUP-END
+  Script  : trigger_veto_arm_work.dts
+  Resolved: D:\code\ccode\dottalkpp\data\scripts\trigger_veto_arm_work.dts
+TRGVETO-WORK-BEGIN
+TRG_W0_fixture_row1_is_alpha:.T.
+SQLSEL: UPDATE affected 1 row(s); committed through table buffer + WAL.
+TRG_W1_row1_took_the_write:.T.
+TRG_W2_journal_survived:.F.
+TRGVETO-WORK-END
+  Script  : trigger_veto_arm_teardown.dts
+  Resolved: D:\code\ccode\dottalkpp\data\scripts\trigger_veto_arm_teardown.dts
+TRGVETO-TEARDOWN-BEGIN
+SQLSEL: no SQL transaction is active.
+TRG_T1_retry_committed:.T.
+TRG_T2_journal_cleared:.T.
+SQLSEL: UPDATE affected 1 row(s); committed through table buffer + WAL.
+TRG_T3_scope_released:.T.
+TRGVETO-TEARDOWN-END
+TRIGGER VETO CONTROL: PASS -- record took the write, journal deleted.
+
+REGRESSION: AIF-087 BEFORE-TRIGGER VETO ARM -- PASS 2, VETO
+  Same work script, byte for byte. The ONLY difference is a
+  registered BEFORE callback that refuses every write.
+  Script  : trigger_veto_arm_setup.dts
+  Resolved: D:\code\ccode\dottalkpp\data\scripts\trigger_veto_arm_setup.dts
+TRGVETO-SETUP-BEGIN
+TRGVETO-SETUP-END
+  Script  : trigger_veto_arm_work.dts
+  Resolved: D:\code\ccode\dottalkpp\data\scripts\trigger_veto_arm_work.dts
+TRGVETO-WORK-BEGIN
+TRG_W0_fixture_row1_is_alpha:.T.
+SQLSEL: UPDATE commit failed -- the house COMMIT path retained buffered changes; the transaction remains active for retry or rollback.
+TRG_W1_row1_took_the_write:.F.
+TRG_W2_journal_survived:.T.
+TRGVETO-WORK-END
+  ---- routed-channel capture (820 bytes; std::cout cannot see these) ----
+  |   Script  : trigger_veto_arm_work.dts
+  |   Resolved: D:\code\ccode\dottalkpp\data\scripts\trigger_veto_arm_work.dts
+  | Echo is OFF
+  | STOP_ON_ERROR: threshold set to OFF
+  | SETPATH: DBF = D:\code\ccode\dottalkpp\data\DBF\SANDBOX
+  | SETPATH: INDEXES = D:\code\ccode\dottalkpp\data\INDEXES\SANDBOX
+  | SETPATH: LMDB = D:\code\ccode\dottalkpp\data\LMDB\SANDBOX
+  | TRGVETO-WORK-BEGIN
+  | Selected area 1.
+  | Current area: 1
+  | Opened TRGVETO (v64) : Record count 2
+  | Valid Index/Indices   : CDX, CNX
+  | TRG_W0_fixture_row1_is_alpha:.T.
+  | COMMIT: refused by a BEFORE trigger at record 1 (reason 87087); nothing was journaled and the buffer is retained.
+  | SQLSEL: UPDATE commit failed -- the house COMMIT path retained buffered changes; the transaction remains active for retry or rollback.
+  | TRG_W1_row1_took_the_write:.F.
+  | TRG_W2_journal_survived:.T.
+  | TRGVETO-WORK-END
+  ---- end routed capture ----
+  Before callback consulted 1 time(s); first event recno=1 changed-field count=1
+  Journal D:\code\ccode\dottalkpp\data\DBF\SANDBOX\TRGVETO.dbf.tbj: redo=yes commit-marker=YES
+  (redo on disk is EXPECTED to be absent: the only fsync is
+   the one the veto prevents.)
+TRIGGER VETO: FAIL -- a COMMIT marker was written. The
+  veto did not fire before journal_begin_commit.
+  Script  : trigger_veto_arm_teardown.dts
+  Resolved: D:\code\ccode\dottalkpp\data\scripts\trigger_veto_arm_teardown.dts
+TRGVETO-TEARDOWN-BEGIN
+SQLSEL: transaction committed.
+TRG_T1_retry_committed:.T.
+TRG_T2_journal_cleared:.T.
+SQLSEL: UPDATE affected 1 row(s); committed through table buffer + WAL.
+TRG_T3_scope_released:.T.
+TRGVETO-TEARDOWN-END

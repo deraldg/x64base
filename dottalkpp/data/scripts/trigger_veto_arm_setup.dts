@@ -1,0 +1,39 @@
+; ============================================================================
+; AIF-087 M2c -- BEFORE-trigger veto arm, FIXTURE SETUP
+;
+; Status: CANDIDATE / explicit-run, driven from C++ by run_trigger_veto_arm.
+; Safety: MUTATING (SANDBOX only; the arm erases the fixture when it finishes)
+;
+; This is HALF an experiment. It builds the fixture and stops, so the C++ arm
+; can hash the DBF and install (or not install) a BEFORE callback between the
+; fixture and the work. trigger_veto_arm_work.dts is the other half and is
+; IDENTICAL in both passes -- if the two passes ran different work scripts the
+; comparison would be between two different experiments.
+;
+; Deliberately does NOT erase on the way out. The arm has to read
+; TRGVETO.dbf.tbj after the work runs, and an erase here would take the very
+; evidence the arm exists to read. Cleanup is the arm's job.
+; ============================================================================
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+SET PATH DBF DBF/SANDBOX
+SET PATH INDEXES INDEXES/SANDBOX
+SET PATH LMDB LMDB/SANDBOX
+
+FORMULA "TRGVETO-SETUP-BEGIN"
+
+; Erase on the way IN, not out. A leftover from an aborted run must not be
+; mistaken for a fixture this pass built.
+ERASE TABLE TRGVETO CONFIRM
+
+CREATE X64 TRGVETO (ID N(6,0), NAME C(12))
+APPEND
+REPLACE ID WITH "1"
+REPLACE NAME WITH "ALPHA"
+APPEND
+REPLACE ID WITH "2"
+REPLACE NAME WITH "BETA"
+CLOSE ALL
+
+FORMULA "TRGVETO-SETUP-END"

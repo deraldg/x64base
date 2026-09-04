@@ -71,7 +71,9 @@
 #include <algorithm>
 #include <array>
 #include <cstddef>
+#include <ctime>
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <streambuf>
@@ -84,8 +86,12 @@
 #include "shell_api.hpp"
 #include "textio.hpp"
 #include "xbase_error_context.hpp"
+#include "xbase/trigger_hooks.hpp"   // AIF-087 M2c: the veto arm registers a BEFORE callback
+#include "cli/output_router.hpp"     // AIF-087 M2c: catalog messages bypass std::cout
 
 using xbase::DbArea;
+
+extern "C" xbase::XBaseEngine* shell_engine();
 
 namespace {
 
@@ -2420,6 +2426,530 @@ bool run_isolation_arm(DbArea& area, const char* phase)
     return true;
 }
 
+// ---------------------------------------------------------------------------
+// AIF-087 M2c -- THE BEFORE-TRIGGER VETO ARM, CONTROL PASS.
+//
+// Driven from C++ and DELIBERATELY NOT A REGISTERED SPEC, for the same reason
+// the L3 arm is not: a registered spec runs inside the suite loop and could not
+// install a C++ callback around its own execution. Nothing in the language can
+// register a trigger yet -- that is M5 -- so the veto pass has no other way in.
+//
+// WHY A CONTROL PASS EXISTS AT ALL, which is the whole design:
+// "nothing was written" is ALSO what you observe when the .dts had a typo, the
+// table never opened, or the WHERE matched no row. Every one of those produces
+// a perfect green on a naive veto test. The L3 arm already states the rule this
+// obeys -- prove the detector before crediting the result, never credit G1
+// without D1 -- and this is that rule applied to a refusal.
+//
+// SHIPPED HERE: the control only. The veto pass is deliberately absent rather
+// than stubbed, so no reader can mistake a half-built arm for a proven veto.
+// ---------------------------------------------------------------------------
+
+static const char* const kTriggerVetoSetupScript = "trigger_veto_arm_setup.dts";
+static const char* const kTriggerVetoWorkScript  = "trigger_veto_arm_work.dts";
+static const char* const kTriggerVetoTeardownScript = "trigger_veto_arm_teardown.dts";
+
+// Run one arm script through DOTSCRIPT, teeing stdout so the operator sees it
+// and the arm can read it. Same capture shape as run_isolation_arm: tee rather
+// than capture-then-replay, because replay reorders cout around commands that
+// use another output channel -- changing the evidence while validating it.
+bool trigger_veto_run_script(DbArea& area, const char* token, std::string& captured_out)
+{
+    namespace fs = std::filesystem;
+
+    const fs::path resolved = resolve_script_token(token);
+    std::cout << "  Script  : " << token << "\n"
+              << "  Resolved: " << resolved.string() << "\n";
+
+    std::error_code ec;
+    if (!fs::exists(resolved, ec) || ec) {
+        std::cout << "  NOT RUN -- the arm script is not on disk at that path.\n"
+                     "  THIS IS NOT A PASS. A missing instrument and a green one\n"
+                     "  must not read alike (AIF-118).\n";
+        return false;
+    }
+
+    std::ostringstream dotscript_line;
+    dotscript_line << '"' << resolved.string() << '"';
+    std::istringstream dotscript_args(dotscript_line.str());
+
+    std::ostringstream captured;
+    std::streambuf* const original = std::cout.rdbuf();
+    TeeStreamBuf tee(original, captured.rdbuf());
+    std::cout.rdbuf(&tee);
+    try {
+        cmd_DOTSCRIPT(area, dotscript_args);
+    } catch (...) {
+        std::cout.rdbuf(original);
+        throw;
+    }
+    std::cout.flush();
+    std::cout.rdbuf(original);
+
+    captured_out = captured.str();
+    return true;
+}
+
+// The arm's refusing callback. Refuses EVERY write it is offered, which is the
+// unambiguous form for a proof: any commit that survives this did not consult
+// the Before phase at all.
+constexpr xbase::trigger_hooks::RefusalCode kVetoReasonCode = 87087;
+
+struct VetoProbe {
+    int           calls             = 0;
+    std::uint64_t first_recno       = 0;
+    std::size_t   first_field_count = 0;
+};
+
+// THE MUTATION, AS A PERMANENT CONTROL RATHER THAN A ONE-OFF EDIT.
+// A source mutation run by hand proves the arm could fail ON THE DAY SOMEBODY
+// RAN IT. This one is registered the same way and simply ALLOWS the write, so
+// `REGRESSION TRIGGERVETO SELFTEST` re-proves on every run that the arm's
+// detectors actually fire. A green arm and an arm that cannot go red read
+// identically, and this is the difference.
+bool trigger_veto_allow(xbase::DbArea& /*area*/,
+                        const xbase::trigger_hooks::WriteEvent& ev,
+                        xbase::trigger_hooks::RefusalCode* /*reason*/,
+                        void* user) noexcept
+{
+    auto* p = static_cast<VetoProbe*>(user);
+    if (p) {
+        if (p->calls == 0) {
+            p->first_recno       = ev.recno;
+            p->first_field_count = ev.field_count;
+        }
+        p->calls += 1;
+    }
+    return true;   // consulted, and permits the write
+}
+
+bool trigger_veto_refuse(xbase::DbArea& /*area*/,
+                         const xbase::trigger_hooks::WriteEvent& ev,
+                         xbase::trigger_hooks::RefusalCode* reason,
+                         void* user) noexcept
+{
+    auto* p = static_cast<VetoProbe*>(user);
+    if (p) {
+        if (p->calls == 0) {
+            p->first_recno       = ev.recno;
+            p->first_field_count = ev.field_count;
+        }
+        p->calls += 1;
+    }
+    if (reason) *reason = kVetoReasonCode;
+    return false;
+}
+
+// REGISTERS ON EVERY AREA, and that is deliberate rather than lazy. The work
+// script picks its own work area, and binding the callback to a slot guessed
+// here would produce a NO-FIRE if the guess were wrong. A no-fire in this arm
+// reads as "the veto did not work" -- safe, since it fails red rather than
+// green, but it would be a red for the wrong reason and cost a run to diagnose.
+// Registration is a map insert per area and this is not a hot path.
+class VetoRegistration {
+public:
+    VetoRegistration(xbase::trigger_hooks::BeforeWriteFn fn, VetoProbe* probe) noexcept
+    {
+        if (auto* eng = shell_engine()) {
+            for (int i = 0; i < xbase::MAX_AREA; ++i) {
+                xbase::trigger_hooks::set_before_callback(eng->area(i), fn, probe);
+            }
+        }
+    }
+    ~VetoRegistration() noexcept
+    {
+        if (auto* eng = shell_engine()) {
+            for (int i = 0; i < xbase::MAX_AREA; ++i) {
+                xbase::trigger_hooks::clear_before_callback(eng->area(i));
+            }
+        }
+    }
+    VetoRegistration(const VetoRegistration&)            = delete;
+    VetoRegistration& operator=(const VetoRegistration&) = delete;
+};
+
+// CATALOG MESSAGES DO NOT GO THROUGH std::cout, and this arm is where that was
+// found. cli::cmdout writes to cli::OutputRouter::out(), which returns
+// `impl_->routed_stream` -- a stream with its own buffer that writes to the
+// console directly. Swapping std::cout's rdbuf, which is how every other
+// validator here captures a transcript, CANNOT SEE IT. That is not a bug in the
+// router; it is why SET ALTERNATE exists as the sanctioned capture (AIF-081).
+//
+// So the arm captures that channel too, and OWNS the path rather than agreeing
+// on a filename with the script -- one fact, one declaration.
+class AlternateCapture {
+public:
+    explicit AlternateCapture(std::filesystem::path path) : path_(std::move(path))
+    {
+        auto& router = cli::OutputRouter::instance();
+
+        // REFUSE RATHER THAN CLOBBER. If the operator already has SET ALTERNATE
+        // running -- capturing this very proof -- taking the channel would end
+        // their capture, and set_alternate_to TRUNCATES (AIF-081), so it cannot
+        // be handed back afterwards without destroying what they collected.
+        // There is no safe save/restore here, so the arm declines the run and
+        // says why. Capture the session with Start-Transcript instead.
+        existing_ = router.alternate_to_path();
+        if (!existing_.empty()) {
+            std::cout << "TRIGGER VETO: NOT RUN -- SET ALTERNATE is already active on\n"
+                      << "  " << existing_ << "\n"
+                         "  The arm needs that channel to read the refusal message, and\n"
+                         "  taking it would TRUNCATE your capture. Close it (SET ALTERNATE\n"
+                         "  TO) and re-run, or capture the session with Start-Transcript.\n"
+                         "  THIS IS NOT A PASS AND NOT A FAILURE: the veto is UNMEASURED.\n";
+            return;
+        }
+
+        ok_ = router.set_alternate_to(path_.string());
+        if (ok_) router.set_alternate(true);
+    }
+    ~AlternateCapture()
+    {
+        if (!ok_) return;              // never took the channel; leave it alone
+        auto& router = cli::OutputRouter::instance();
+        router.set_alternate(false);
+        router.close_alternate_to();   // closes and flushes; read the file after
+    }
+    bool ok() const noexcept { return ok_; }
+    const std::filesystem::path& path() const noexcept { return path_; }
+
+    AlternateCapture(const AlternateCapture&)            = delete;
+    AlternateCapture& operator=(const AlternateCapture&) = delete;
+
+private:
+    std::filesystem::path path_;
+    std::string           existing_;
+    bool                  ok_ = false;
+};
+
+std::string trigger_veto_slurp(const std::filesystem::path& path)
+{
+    std::ifstream in(path, std::ios::binary);
+    if (!in) return {};
+    std::ostringstream ss;
+    ss << in.rdbuf();
+    return ss.str();
+}
+
+// Read the write-ahead journal and answer the two questions that separate a
+// refusal from a commit. The COMMIT-marker test is THE SAME TEST RECOVERY USES
+// (table_state.cpp: first field "C"), on purpose -- a second, differently
+// written test of the same condition is how the two drift.
+bool trigger_veto_read_journal(const std::filesystem::path& path,
+                               bool& has_redo, bool& has_commit)
+{
+    has_redo = false;
+    has_commit = false;
+
+    std::ifstream in(path, std::ios::binary);
+    if (!in) return false;
+
+    std::string line;
+    while (std::getline(in, line)) {
+        while (!line.empty() && (line.back() == '\r' || line.back() == '\n')) line.pop_back();
+        if (line.empty()) continue;
+        if (line[0] == 'I' || line[0] == 'U' || line[0] == 'D') has_redo = true;
+        if (line[0] == 'C' && (line.size() == 1 || line[1] == ' ')) has_commit = true;
+    }
+    return true;
+}
+
+// PASS 1 -- CONTROL. No trigger registered. Proves the work script drives a
+// real buffered commit, so that a later refusal is distinguishable from a
+// script that never committed anything.
+bool run_trigger_veto_control(DbArea& area)
+{
+    std::cout << "\nREGRESSION: AIF-087 BEFORE-TRIGGER VETO ARM -- PASS 1, CONTROL\n"
+                 "  Registers NO trigger.\n"
+                 "  READ RULE: the veto pass may not be credited unless this is\n"
+                 "  green. A red control makes a refusal UNMEASURABLE, not proven.\n";
+
+    std::string setup_out;
+    if (!trigger_veto_run_script(area, kTriggerVetoSetupScript, setup_out)) return false;
+    static constexpr std::array<const char*, 2> setup_required{{
+        "TRGVETO-SETUP-BEGIN", "TRGVETO-SETUP-END"
+    }};
+    if (!require_transcript_fragments(setup_out, "TRIGGER VETO SETUP", setup_required)) return false;
+
+    std::string work_out;
+    if (!trigger_veto_run_script(area, kTriggerVetoWorkScript, work_out)) return false;
+
+    // W1 AND W2 TOGETHER are the control's proof, and the pair matters more than
+    // either half. W1 says the record took the write. W2 says the journal is
+    // GONE -- journal_note_commit deletes the log on success -- so the write went
+    // through a COMPLETED transaction rather than around one.
+    static constexpr std::array<const char*, 4> control_required{{
+        "TRGVETO-WORK-END",
+        "TRG_W0_fixture_row1_is_alpha:.T.",
+        "TRG_W1_row1_took_the_write:.T.",
+        "TRG_W2_journal_survived:.F."
+    }};
+    if (!require_transcript_fragments(work_out, "TRIGGER VETO CONTROL", control_required)) {
+        std::cout << "TRIGGER VETO CONTROL: FAIL -- no commit was observed.\n"
+                     "  With the control red, a refusal and a script that never\n"
+                     "  ran are THE SAME OBSERVATION.\n"
+                     "  LOOK FIRST for \"staged N row(s) in the active transaction\"\n"
+                     "  above. That means a SQLsel transaction was ALREADY OPEN when\n"
+                     "  the arm started, so the work script never autocommitted and\n"
+                     "  this red says nothing about triggers. Close it (SET MODE SQL,\n"
+                     "  then COMMIT or ROLLBACK) and re-run.\n";
+        return false;
+    }
+    std::string teardown_out;
+    if (!trigger_veto_run_script(area, kTriggerVetoTeardownScript, teardown_out)) return false;
+    static constexpr std::array<const char*, 2> teardown_required{{
+        "TRGVETO-TEARDOWN-END",
+        "TRG_T3_scope_released:.T."
+    }};
+    if (!require_transcript_fragments(teardown_out, "TRIGGER VETO CONTROL TEARDOWN",
+                                      teardown_required)) return false;
+
+    std::cout << "TRIGGER VETO CONTROL: PASS -- record took the write, journal deleted.\n";
+    return true;
+}
+
+// PASS 2 -- VETO. Same work script, unchanged, with a refusing callback.
+bool run_trigger_veto_refusal(DbArea& area, xbase::trigger_hooks::BeforeWriteFn fn)
+{
+    namespace fs = std::filesystem;
+
+    std::cout << "\nREGRESSION: AIF-087 BEFORE-TRIGGER VETO ARM -- PASS 2, VETO\n"
+                 "  Same work script, byte for byte. The ONLY difference is a\n"
+                 "  registered BEFORE callback that refuses every write.\n";
+
+    std::string setup_out;
+    if (!trigger_veto_run_script(area, kTriggerVetoSetupScript, setup_out)) return false;
+    static constexpr std::array<const char*, 2> setup_required{{
+        "TRGVETO-SETUP-BEGIN", "TRGVETO-SETUP-END"
+    }};
+    if (!require_transcript_fragments(setup_out, "TRIGGER VETO SETUP", setup_required)) return false;
+
+    const fs::path alt_path =
+        dottalk::paths::get_slot(dottalk::paths::Slot::TMP) / "trigger_veto_arm.alt";
+
+    VetoProbe probe;
+    std::string work_out;
+    std::string routed_out;
+    {
+        AlternateCapture alt(alt_path);
+        if (!alt.ok()) {
+            std::cout << "TRIGGER VETO: FAIL -- could not open the ALTERNATE capture at "
+                      << alt_path.string() << "\n"
+                         "  The refusal message is on a channel std::cout cannot see,\n"
+                         "  so without this capture it is UNMEASURED, not absent.\n";
+            return false;
+        }
+        VetoRegistration registered(fn, &probe);
+        if (!trigger_veto_run_script(area, kTriggerVetoWorkScript, work_out)) return false;
+    }
+    routed_out = trigger_veto_slurp(alt_path);
+
+    // Echo the routed capture into std::cout. Not decoration: these lines are
+    // INVISIBLE to std::cout, to a PowerShell transcript, and to every existing
+    // validator in this file, because cli::cmdout writes to the console through
+    // OutputRouter's own stream. Folding them into cout here is what lets ONE
+    // proof file hold both channels.
+    std::cout << "  ---- routed-channel capture (" << routed_out.size()
+              << " bytes; std::cout cannot see these) ----\n";
+    {
+        std::istringstream rin(routed_out);
+        std::string rline;
+        while (std::getline(rin, rline)) {
+            while (!rline.empty() && (rline.back() == '\r')) rline.pop_back();
+            std::cout << "  | " << rline << "\n";
+        }
+    }
+    std::cout << "  ---- end routed capture ----\n";
+
+    bool ok = true;
+
+    // 1. The callback was actually consulted. Without this, everything below is
+    //    equally consistent with a commit that never reached the Before phase.
+    if (probe.calls < 1) {
+        std::cout << "TRIGGER VETO: FAIL -- the BEFORE callback was never called.\n"
+                     "  Nothing below this line is evidence about a veto.\n";
+        ok = false;
+    } else {
+        std::cout << "  Before callback consulted " << probe.calls
+                  << " time(s); first event recno=" << probe.first_recno
+                  << " changed-field count=" << probe.first_field_count << "\n";
+    }
+
+    // 2. The refusal was reported through the message catalog, carrying the
+    //    arm's own reason code so the code round-tripped rather than being lost.
+    static constexpr std::array<const char*, 1> cout_required{{
+        "TRG_W0_fixture_row1_is_alpha:.T."
+    }};
+    if (!require_transcript_fragments(work_out, "TRIGGER VETO", cout_required)) ok = false;
+
+    static constexpr std::array<const char*, 2> routed_required{{
+        "refused by a BEFORE trigger at record 1",
+        "(reason 87087)"
+    }};
+    if (!require_transcript_fragments(routed_out, "TRIGGER VETO (routed)", routed_required)) {
+        std::cout << "  (routed capture was " << routed_out.size() << " bytes at "
+                  << alt_path.string() << ")\n";
+        ok = false;
+    }
+
+    // 3. The journal SURVIVED, which is the refusal's fingerprint: a completed
+    //    commit deletes it.
+    static constexpr std::array<const char*, 1> journal_marker{{
+        "TRG_W2_journal_survived:.T."
+    }};
+    if (!require_transcript_fragments(work_out, "TRIGGER VETO", journal_marker)) ok = false;
+
+    // 4. And it contains the staged redo WITHOUT a COMMIT marker -- the write
+    //    was recorded as intended and never made true.
+    const fs::path tbj =
+        dottalk::paths::get_slot(dottalk::paths::Slot::DBF) / "TRGVETO.dbf.tbj";
+    bool has_redo = false, has_commit = false;
+    if (!trigger_veto_read_journal(tbj, has_redo, has_commit)) {
+        std::cout << "TRIGGER VETO: FAIL -- could not read the journal at "
+                  << tbj.string() << "\n";
+        ok = false;
+    } else {
+        std::cout << "  Journal " << tbj.string() << ": redo=" << (has_redo ? "yes" : "no")
+                  << " commit-marker=" << (has_commit ? "YES" : "no") << "\n";
+        // has_redo IS NOT ASSERTED, and the reason is the veto working.
+        // journal_note_change defers durability to journal_begin_commit's single
+        // fsync (table_state.cpp), and the refusal returns BEFORE that call --
+        // so the staged redo lines are still in the stdio buffer and the file on
+        // disk is empty. Measured 2026-09-04: redo=no on a correct refusal.
+        // Requiring redo here would demand that a refused transaction leave
+        // durable evidence, which is the opposite of what a refusal is for.
+        std::cout << "  (redo on disk is EXPECTED to be absent: the only fsync is\n"
+                     "   the one the veto prevents.)\n";
+        if (has_commit) {
+            std::cout << "TRIGGER VETO: FAIL -- a COMMIT marker was written. The\n"
+                         "  veto did not fire before journal_begin_commit.\n";
+            ok = false;
+        }
+    }
+
+    // MEASURED 2026-09-04, NOW ASSERTED. The open question was whether a native
+    // read after a refused SQLsel UPDATE shows the committed value or the
+    // still-buffered one. Observed: .F. -- the record still holds ALPHA, so the
+    // read reports COMMITTED TRUTH and the retained buffer does not overlay it.
+    // Asserted from here on, because a change to that behaviour would mean a
+    // refused write had become visible to a reader.
+    static constexpr std::array<const char*, 1> w1_required{{
+        "TRG_W1_row1_took_the_write:.F."
+    }};
+    if (!require_transcript_fragments(work_out, "TRIGGER VETO", w1_required)) ok = false;
+
+    // 5. THE PROPERTY THAT MAKES A REFUSAL SAFE RATHER THAN MERELY OBSTRUCTIVE.
+    //    The callback is unregistered by now, so this retries the SAME buffered
+    //    change and it must land. A veto that DISCARDED the user's work would
+    //    satisfy every assertion above and still be the wrong behaviour.
+    //    This also clears the buffer, which is what stops CLOSE ALL raising the
+    //    interactive "COMMIT changes? (y/N)" prompt that would hang the arm.
+    std::string teardown_out;
+    if (!trigger_veto_run_script(area, kTriggerVetoTeardownScript, teardown_out)) return false;
+    static constexpr std::array<const char*, 4> retry_required{{
+        "TRGVETO-TEARDOWN-END",
+        "TRG_T1_retry_committed:.T.",
+        "TRG_T2_journal_cleared:.T.",
+        "TRG_T3_scope_released:.T."
+    }};
+    if (!require_transcript_fragments(teardown_out, "TRIGGER VETO RETRY", retry_required)) {
+        std::cout << "TRIGGER VETO: FAIL -- the refused change did not survive for\n"
+                     "  retry. The veto is destructive, not correctable.\n";
+        ok = false;
+    }
+
+    if (!ok) return false;
+    std::cout << "TRIGGER VETO: PASS -- the write was staged, refused, reported,\n"
+                 "  never marked committed, and STILL COMMITTED ON RETRY.\n";
+    return true;
+}
+
+// Write the arm's own proof. EVIDENCE IS CAPTURED BY THE INSTRUMENT, not around
+// it -- measured 2026-09-04: PowerShell's Start-Transcript captured 817 bytes of
+// its own headers and NOTHING from the engine, because the engine writes to the
+// console directly. An outside capture cannot see this run. The arm can.
+void trigger_veto_write_proof(const std::string& body, bool verdict, bool selftest)
+{
+    namespace fs = std::filesystem;
+    // ONE FILE PER MODE. A single path meant the SELFTEST run overwrote the
+    // real run's proof and nothing said so -- the same shape AIF-081 fixed in
+    // SET ALTERNATE, where one transcript held three runs and a conclusion was
+    // drawn from the wrong one. Truncate is right; sharing a name is not.
+    const fs::path out =
+        dottalk::paths::get_slot(dottalk::paths::Slot::LOGS) /
+        (selftest ? "trigger_veto_arm_selftest_proof.txt"
+                  : "trigger_veto_arm_proof.txt");
+
+    std::error_code ec;
+    fs::create_directories(out.parent_path(), ec);
+
+    std::ofstream f(out, std::ios::out | std::ios::trunc | std::ios::binary);
+    if (!f) {
+        std::cout << "TRIGGER VETO: WARNING -- could not write the proof to "
+                  << out.string() << "; this run is UNCAPTURED.\n";
+        return;
+    }
+    const std::time_t now = std::time(nullptr);
+    f << "AIF-087 M2c -- BEFORE-trigger veto arm, captured proof\n"
+      << "mode     : " << (selftest ? "SELFTEST (the arm must go RED)" : "NORMAL")
+      << "\n"
+      << "unix_time: " << static_cast<long long>(now) << "\n"
+      << "verdict  : " << (verdict ? "PASS" : "FAIL") << "\n"
+      << "note     : both output channels are folded into this file. The routed\n"
+      << "           channel (catalog messages) is marked with a leading '|'.\n"
+      << "----------------------------------------------------------------\n"
+      << body;
+    f.close();
+    std::cout << "  Proof written: " << out.string() << "\n";
+}
+
+bool run_trigger_veto_arm_inner(DbArea& area, bool selftest)
+{
+    const bool control_ok = run_trigger_veto_control(area);
+    if (!control_ok) {
+        std::cout << "\nTRIGGER VETO ARM: NOT RUN -- control red, veto pass skipped.\n"
+                     "  THIS IS NOT A PASS AND NOT A FAILURE OF THE VETO. The veto\n"
+                     "  is UNMEASURED for this run.\n";
+        xbase::error::set_last_error(xbase::error::e_invalid_argument());
+        return false;
+    }
+
+    if (selftest) {
+        // Register a callback that IS consulted and ALLOWS the write. Every
+        // veto-pass assertion must now fail. If the arm still reports PASS, its
+        // detectors do not depend on the refusal and the normal green means
+        // nothing.
+        std::cout << "\nREGRESSION: TRIGGER VETO SELFTEST -- the arm must go RED.\n"
+                     "  Same arm, same scripts, callback ALLOWS instead of refusing.\n"
+                     "  A PASS below is a FAILURE of the selftest.\n";
+        const bool mutated_ok = run_trigger_veto_refusal(area, &trigger_veto_allow);
+        if (mutated_ok) {
+            std::cout << "\nTRIGGER VETO SELFTEST: FAIL -- THE ARM PASSED WITH THE VETO\n"
+                         "  REMOVED. Its assertions do not depend on the refusal, so a\n"
+                         "  green run proves nothing about the veto.\n";
+            xbase::error::set_last_error(xbase::error::e_invalid_argument());
+            return false;
+        }
+        std::cout << "\nTRIGGER VETO SELFTEST: PASS -- the arm went red when the veto\n"
+                     "  was removed. Its detectors fire on the refusal, not on the\n"
+                     "  scaffolding around it.\n";
+        xbase::error::clear_last_error();
+        return true;
+    }
+
+    const bool veto_ok = run_trigger_veto_refusal(area, &trigger_veto_refuse);
+    if (!veto_ok) {
+        xbase::error::set_last_error(xbase::error::e_invalid_argument());
+        return false;
+    }
+
+    std::cout << "\nTRIGGER VETO ARM: PASS -- control green, veto green.\n"
+                 "  Fixture TRGVETO and its journal are left on disk on purpose,\n"
+                 "  so the evidence can be read by hand; setup erases on the way in.\n";
+    xbase::error::clear_last_error();
+    return true;
+}
+
 // AN EXPLICIT RUN GETS THE SAME INSTRUMENT THE SUITE GETS.
 //
 // `REGRESSION ALL` has carried the arm since cb92ef310. A single
@@ -2466,6 +2996,28 @@ void run_regression_default_suite(DbArea& area)
     if (!before_ok || !after_ok) {
         xbase::error::set_last_error(xbase::error::e_invalid_argument());
     }
+}
+
+bool run_trigger_veto_arm(DbArea& area, bool selftest)
+{
+    std::ostringstream captured;
+    std::streambuf* const original = std::cout.rdbuf();
+    TeeStreamBuf tee(original, captured.rdbuf());
+    std::cout.rdbuf(&tee);
+
+    bool verdict = false;
+    try {
+        verdict = run_trigger_veto_arm_inner(area, selftest);
+    } catch (...) {
+        std::cout.flush();
+        std::cout.rdbuf(original);
+        trigger_veto_write_proof(captured.str(), false, selftest);
+        throw;
+    }
+    std::cout.flush();
+    std::cout.rdbuf(original);
+    trigger_veto_write_proof(captured.str(), verdict, selftest);
+    return verdict;
 }
 
 } // namespace
@@ -2520,6 +3072,13 @@ void cmd_REGRESSION(DbArea& area, std::istringstream& in)
         } else {
             run_regression_script_measured(area, *spec);
         }
+        return;
+    }
+
+    if (op == "TRIGGERVETO") {
+        std::string mode;
+        in >> mode;
+        run_trigger_veto_arm(area, upper_copy(mode) == "SELFTEST");
         return;
     }
 
