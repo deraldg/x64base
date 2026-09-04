@@ -4,7 +4,7 @@
     owner       : member.derald   steward: member.ai.claude.cowork
     created_utc : 2026-07-31T13:25:00Z
     updated_utc : 2026-09-04T00:00:00Z
-    budget      : 8192 B hard ceiling (see "Maintenance contract")
+    budget      : 16384 B hard ceiling (raised from 8192, 2026-09-04; see "Maintenance contract")
 
 The smallest set that makes you **safe to act**. Engine knowledge loads per
 task. If you can answer the five questions at the end, stop reading and start

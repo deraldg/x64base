@@ -9,7 +9,9 @@ WHY THIS EXISTS (AIF-118, 2026-08-16)
          -- VERIFY BEFORE DEMOTING."
 
     A precondition nobody can run is a wish. This is that precondition as a
-    query. The seed's 8192 B ceiling is the forcing function for demotion, and
+    query. The seed's declared byte ceiling is the forcing function for
+    demotion (the number lives in the seed's own header and is not copied
+    here; it was raised from 8192 on 2026-09-04), and
     demotion is only safe while every trigger still answers -- so this test is
     what stands between "the table moved" and "the guidance vanished".
 

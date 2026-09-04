@@ -723,8 +723,11 @@ def main() -> int:
                   "in the closeout why none is owed.")
 
         # 5. SELF-DECLARED BYTE BUDGETS -- ADVISORY for one cycle, then hard
-        # (AIF-090 R4). The Tier 1 seed declares an 8,192 B ceiling about itself
-        # and AI_PORTAL.md cites that ceiling as the project's exemplar of a
+        # (AIF-090 R4). The Tier 1 seed declares a ceiling about itself -- the
+        # NUMBER lives in that header and nowhere else, so it is not repeated
+        # here; it was raised from 8,192 on 2026-09-04 and a copy in this
+        # comment would already be wrong. AI_PORTAL.md cites that ceiling as
+        # the project's exemplar of a
         # BOUNDED metric. Measured 2026-08-06 by a cold probe: the seed was
         # 8,990 B, over by 798, and nothing had noticed -- because the ceiling
         # was enforced by whoever happened to be watching. This is that rule

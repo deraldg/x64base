@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 """Enforce the byte budget a document declares about itself.
 
-AIF-090 D4. `AI_TIER1_SEED_V1.md` declares `budget: 8192 B hard ceiling` in its
-own header and `AI_PORTAL.md` holds that ceiling up as the project's exemplar of
-a BOUNDED metric:
+AIF-090 D4. `AI_TIER1_SEED_V1.md` declares a `budget:` line in its own header
+and `AI_PORTAL.md` holds that ceiling up as the project's exemplar of a BOUNDED
+metric. THE NUMBER IS NOT REPEATED HERE and this docstring used to repeat it:
+it said 8192, which went stale the moment the owner raised the ceiling on
+2026-09-04 (see `TIER1_MAINTENANCE_CONTRACT_V1.md`, amendment). Read the
+current value from the seed's header, or run this gate, which prints it. The
+quote below is HISTORICAL and correct as written -- it records what the 8 KB
+ceiling did while it was in force:
 
     "A bounded metric is a gate; the Tier-1 seed's 8,192-byte ceiling caught its
      author three times in one sitting, which an unbounded byte count would not
@@ -48,9 +53,14 @@ BUDGET_RE = re.compile(r"^\s*budget\s*:\s*([0-9][0-9_,]*)\s*B\b", re.IGNORECASE)
 HEADER_LINES = 40
 
 # Headroom below this fraction of the budget prints a TIGHT notice. Chosen as
-# "several lines, not one" -- at the seed's 8192 B ceiling this is ~410 B, about
-# five lines of prose, which is enough warning to plan a demotion instead of
-# discovering the wall while mid-commit. Never blocking: see check().
+# "several lines, not one": a fraction rather than a byte count, so the warning
+# band scales with whatever ceiling the document declares and this comment does
+# not go stale when the ceiling moves (it did, 2026-09-04, and the byte figure
+# that used to sit here went stale immediately). Enough warning to plan a
+# demotion instead of discovering the wall mid-commit. Never blocking: see
+# check(). NOTE THE COROLLARY, recorded as OI-030: because the band is relative,
+# RAISING the ceiling silences this notice, and a gate that stops firing looks
+# identical to a problem that went away. Its silence is not a measurement.
 TIGHT_FRACTION = 0.05
 
 
