@@ -2448,6 +2448,7 @@ bool run_isolation_arm(DbArea& area, const char* phase)
 static const char* const kTriggerVetoSetupScript = "trigger_veto_arm_setup.dts";
 static const char* const kTriggerVetoWorkScript  = "trigger_veto_arm_work.dts";
 static const char* const kTriggerVetoTeardownScript = "trigger_veto_arm_teardown.dts";
+static const char* const kTriggerMultirepScript     = "trigger_veto_arm_multirep.dts";
 
 // Run one arm script through DOTSCRIPT, teeing stdout so the operator sees it
 // and the arm can read it. Same capture shape as run_isolation_arm: tee rather
@@ -2868,17 +2869,17 @@ bool run_trigger_veto_refusal(DbArea& area, xbase::trigger_hooks::BeforeWriteFn 
 // it -- measured 2026-09-04: PowerShell's Start-Transcript captured 817 bytes of
 // its own headers and NOTHING from the engine, because the engine writes to the
 // console directly. An outside capture cannot see this run. The arm can.
-void trigger_veto_write_proof(const std::string& body, bool verdict, bool selftest)
+void trigger_veto_write_proof(const std::string& body, bool verdict, const std::string& mode)
 {
     namespace fs = std::filesystem;
     // ONE FILE PER MODE. A single path meant the SELFTEST run overwrote the
     // real run's proof and nothing said so -- the same shape AIF-081 fixed in
     // SET ALTERNATE, where one transcript held three runs and a conclusion was
     // drawn from the wrong one. Truncate is right; sharing a name is not.
-    const fs::path out =
-        dottalk::paths::get_slot(dottalk::paths::Slot::LOGS) /
-        (selftest ? "trigger_veto_arm_selftest_proof.txt"
-                  : "trigger_veto_arm_proof.txt");
+    const char* stem = "trigger_veto_arm_proof.txt";
+    if (mode == "SELFTEST") stem = "trigger_veto_arm_selftest_proof.txt";
+    else if (mode == "MULTIREP") stem = "trigger_veto_arm_multirep_proof.txt";
+    const fs::path out = dottalk::paths::get_slot(dottalk::paths::Slot::LOGS) / stem;
 
     std::error_code ec;
     fs::create_directories(out.parent_path(), ec);
@@ -2891,8 +2892,7 @@ void trigger_veto_write_proof(const std::string& body, bool verdict, bool selfte
     }
     const std::time_t now = std::time(nullptr);
     f << "AIF-087 M2c -- BEFORE-trigger veto arm, captured proof\n"
-      << "mode     : " << (selftest ? "SELFTEST (the arm must go RED)" : "NORMAL")
-      << "\n"
+      << "mode     : " << mode << "\n"
       << "unix_time: " << static_cast<long long>(now) << "\n"
       << "verdict  : " << (verdict ? "PASS" : "FAIL") << "\n"
       << "note     : both output channels are folded into this file. The routed\n"
@@ -2903,8 +2903,90 @@ void trigger_veto_write_proof(const std::string& body, bool verdict, bool selfte
     std::cout << "  Proof written: " << out.string() << "\n";
 }
 
-bool run_trigger_veto_arm_inner(DbArea& area, bool selftest)
+// AIF-151 x AIF-087 -- IS A BUFFERED MULTIREP VISIBLE TO A TRIGGER?
+//
+// The claim the whole AIF-151/AIF-087 connection rests on, and it was INFERRED
+// until this ran. Before AIF-151 MULTIREP wrote through regardless of TABLE ON,
+// never reached a commit, and was invisible to BOTH phases.
+//
+// Registers a callback that is CONSULTED and ALLOWS -- refusing would prove
+// visibility too, but would prove nothing about the fields actually landing.
+//
+// SELF-CONTROLLED, so it needs no separate control pass: TRG_MR1 fails if
+// MULTIREP did not buffer, TRG_MR2 fails if the commit did not land, and
+// calls==0 fails if the hook never fired. The three cannot all pass by accident.
+//
+// AND IT DISCRIMINATES THE GRANULARITY. One call carrying two fields is the
+// AIF-087 M2a design. A per-field hook would report TWO calls of ONE field; a
+// dead hook reports zero. The assertion below can tell all three apart.
+bool run_trigger_multirep_visibility(DbArea& area)
 {
+    std::cout << "\nREGRESSION: AIF-151 -- IS A BUFFERED MULTIREP VISIBLE TO A TRIGGER?\n"
+                 "  Callback ALLOWS; the assertion is on WHAT IT WAS SHOWN.\n"
+                 "  Expect ONE call carrying TWO changed fields -- and only one,\n"
+                 "  across THREE MULTIREPs: a rolled-back one, a committed one, and\n"
+                 "  an unbuffered direct write. Only the committed one may fire.\n";
+
+    std::string setup_out;
+    if (!trigger_veto_run_script(area, kTriggerVetoSetupScript, setup_out)) return false;
+    static constexpr std::array<const char*, 2> setup_required{{
+        "TRGVETO-SETUP-BEGIN", "TRGVETO-SETUP-END"
+    }};
+    if (!require_transcript_fragments(setup_out, "MULTIREP SETUP", setup_required)) return false;
+
+    VetoProbe probe;
+    std::string work_out;
+    {
+        VetoRegistration registered(&trigger_veto_allow, &probe);
+        if (!trigger_veto_run_script(area, kTriggerMultirepScript, work_out)) return false;
+    }
+
+    bool ok = true;
+
+    static constexpr std::array<const char*, 6> required{{
+        "TRGMULTI-WORK-END",
+        "TRG_MR0_fixture_row1_is_alpha:.T.",
+        "TRG_MR1_staged_not_written:.T.",
+        "TRG_MR2_rollback_discarded:.T.",
+        "TRG_MR3_both_fields_landed:.T.",
+        "TRG_MR4_direct_write_immediate:.T."
+    }};
+    if (!require_transcript_fragments(work_out, "MULTIREP VISIBILITY", required)) ok = false;
+
+    std::cout << "  Before callback consulted " << probe.calls
+              << " time(s); first event recno=" << probe.first_recno
+              << " changed-field count=" << probe.first_field_count << "\n";
+
+    if (probe.calls == 0) {
+        std::cout << "MULTIREP VISIBILITY: FAIL -- the trigger was never consulted.\n"
+                     "  A buffered MULTIREP is still invisible to the BEFORE phase.\n";
+        ok = false;
+    } else if (probe.calls != 1) {
+        std::cout << "MULTIREP VISIBILITY: FAIL -- " << probe.calls
+                  << " calls, expected exactly 1.\n"
+                     "  Either the fire unit reverted to the field (AIF-087 M2a), or\n"
+                     "  a ROLLBACK or an unbuffered direct write fired a trigger --\n"
+                     "  neither reaches a commit and neither may.\n";
+        ok = false;
+    } else if (probe.first_field_count != 2) {
+        std::cout << "MULTIREP VISIBILITY: FAIL -- the event carried "
+                  << probe.first_field_count << " changed field(s), expected 2.\n"
+                     "  The commit-entry fold does not match what MULTIREP staged.\n";
+        ok = false;
+    }
+
+    if (!ok) return false;
+    std::cout << "MULTIREP VISIBILITY: PASS -- one event, two fields, both landed.\n"
+                 "  A buffered MULTIREP now arrives at commit entry as ONE decision\n"
+                 "  over the whole record, which is what M2a reshaped the fire unit for.\n";
+    return true;
+}
+
+bool run_trigger_veto_arm_inner(DbArea& area, const std::string& mode)
+{
+    if (mode == "MULTIREP") return run_trigger_multirep_visibility(area);
+
+    const bool selftest = (mode == "SELFTEST");
     const bool control_ok = run_trigger_veto_control(area);
     if (!control_ok) {
         std::cout << "\nTRIGGER VETO ARM: NOT RUN -- control red, veto pass skipped.\n"
@@ -2943,9 +3025,26 @@ bool run_trigger_veto_arm_inner(DbArea& area, bool selftest)
         return false;
     }
 
+    // WHERE THE EVIDENCE ACTUALLY IS. This banner used to promise that TRGVETO
+    // and its journal were left on disk to be read by hand. They are not, and
+    // COULD NOT BE, and the second half is why the wording had to change rather
+    // than the behaviour: teardown ends with ERASE TABLE TRGVETO CONFIRM, and
+    // TRG_T2_journal_cleared ASSERTS the journal is gone after the retry commit.
+    // An arm that left a readable journal behind would be an arm reporting a
+    // FAILURE. So the promise was not merely stale, it contradicted an assertion
+    // in the same run -- and a reader who followed it found an empty sandbox
+    // with nothing saying what the emptiness meant.
+    //
+    // The proof file named on the next line is the evidence, and it is the only
+    // capture that HAS the routed channel: the engine writes catalog messages
+    // past std::cout, so an outside transcript cannot see them (see
+    // trigger_veto_write_proof). Point the reader at the instrument's own
+    // capture, never at a fixture the run is required to destroy.
     std::cout << "\nTRIGGER VETO ARM: PASS -- control green, veto green.\n"
-                 "  Fixture TRGVETO and its journal are left on disk on purpose,\n"
-                 "  so the evidence can be read by hand; setup erases on the way in.\n";
+                 "  Fixture TRGVETO and its journal are GONE, by design: teardown\n"
+                 "  erases the table and TRG_T2 asserts the journal was cleared.\n"
+                 "  The proof file named on the next line IS the evidence -- it\n"
+                 "  folds in the routed channel, which no outside capture sees.\n";
     xbase::error::clear_last_error();
     return true;
 }
@@ -2998,7 +3097,7 @@ void run_regression_default_suite(DbArea& area)
     }
 }
 
-bool run_trigger_veto_arm(DbArea& area, bool selftest)
+bool run_trigger_veto_arm(DbArea& area, const std::string& mode)
 {
     std::ostringstream captured;
     std::streambuf* const original = std::cout.rdbuf();
@@ -3007,16 +3106,16 @@ bool run_trigger_veto_arm(DbArea& area, bool selftest)
 
     bool verdict = false;
     try {
-        verdict = run_trigger_veto_arm_inner(area, selftest);
+        verdict = run_trigger_veto_arm_inner(area, mode);
     } catch (...) {
         std::cout.flush();
         std::cout.rdbuf(original);
-        trigger_veto_write_proof(captured.str(), false, selftest);
+        trigger_veto_write_proof(captured.str(), false, mode);
         throw;
     }
     std::cout.flush();
     std::cout.rdbuf(original);
-    trigger_veto_write_proof(captured.str(), verdict, selftest);
+    trigger_veto_write_proof(captured.str(), verdict, mode);
     return verdict;
 }
 
@@ -3078,7 +3177,14 @@ void cmd_REGRESSION(DbArea& area, std::istringstream& in)
     if (op == "TRIGGERVETO") {
         std::string mode;
         in >> mode;
-        run_trigger_veto_arm(area, upper_copy(mode) == "SELFTEST");
+        std::string up = upper_copy(mode);
+        if (up.empty()) up = "NORMAL";
+        if (up != "NORMAL" && up != "SELFTEST" && up != "MULTIREP") {
+            std::cout << "REGRESSION TRIGGERVETO: unknown mode '" << mode
+                      << "'. Use NORMAL, SELFTEST or MULTIREP.\n";
+            return;
+        }
+        run_trigger_veto_arm(area, up);
         return;
     }
 
