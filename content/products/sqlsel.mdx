@@ -37,10 +37,10 @@ with a predicate and does not execute SQL statements, its name being historical.
 `SQLITE` bridges to an actual SQLite database. `SQLVER` reports SQLite
 availability. Each command states the boundary in its own `USAGE` output.
 
-## Two-table INNER JOIN -- runtime-proven in development
+## Joins, and how they are proven
 
-**2026-09-03, AIF-074 P4.1/P4.2, not yet in the public repository.** SQLsel now
-joins two tables on an equality key:
+**Pushed to `development` 2026-09-03 as `e7d6ef130`.** SQLsel joins two tables
+on an equality key:
 
 ```text
 SQLSEL S.SID, S.LNAME, E.COURSE FROM SQLJSTU AS S
@@ -76,22 +76,90 @@ atomicity.** It stops a concurrent writer from producing a fractured joined
 result. It does not version rows, and joined `UPDATE` / `DELETE` remain out of
 scope -- `COMMIT ALL` is still partial across DBF, memo and index storage.
 
-## Not yet implemented
+## The join family, and a refusal worth reading
 
-`LEFT` / `RIGHT` / `FULL` / `CROSS` joins, `GROUP BY` / `HAVING`, expression
-projection in the select list, SQL `INSERT` / `UPDATE` / `DELETE`, and bare
-`SELECT` without the `SQLSEL` prefix.
+`INNER`, `LEFT`, `RIGHT`, `FULL` and `CROSS` all ship (P4.1-P4.4), alongside
+`DISTINCT`, the set operations, `GROUP BY` / `HAVING` with aggregates,
+subqueries, `SET MODE SQL`, and transactional single-table `INSERT` / `UPDATE` /
+`DELETE`. Ten result multisets are compared against the SQLite
+oracle, outer joins on both indexed and scan paths, and `CROSS` on both a
+filtered result and a full 30-row Cartesian product.
 
-`JOIN` here means SQL-syntax join inside a `SQLSEL` statement. Joining itself is
-not missing from the engine -- **three forms ship and are proven**, all through
-[RelTalk](/products/reltalk):
+An unmatched side produces an **explicit absence cell** -- a distinct kind from a
+real blank, so "nobody entered a value" and "no row matched" never collapse into
+the same thing. The regression asserts blank-versus-absence directly.
 
-- `SET RELATION` positional navigation, parent cursor driving the child
-- `REL JOIN` / `REL ENUM`, one tuple per parent/child combination, with
-  `DISTINCT`, `ALL` and `LIMIT`
-- `REL JOIN ONE`, a single row from wherever the relation pointers currently sit
+Then it stops, deliberately:
 
-What is not yet implemented is reaching any of them from a `SELECT`.
+```text
+SQLSEL: LEFT JOIN with WHERE requires three-valued predicate support;
+P4.3 refuses it.
+```
+
+`WHERE` over a produced absence needs TRUE / FALSE / **UNKNOWN**, and x64base's
+predicate evaluator is two-valued. Rather than answer the question wrongly, the
+statement is refused and the reason is named. **This is the interesting half of
+the feature**: the boundary is enforced in the engine, not written down in a
+document and hoped for.
+
+It is also the first consumer of a discipline set in July. R29 ruled that stored
+`NULL` would not be implemented but that everything authored afterwards should be
+*shaped* so adding it later is an extension rather than a rewrite. The absence
+cell renders through a single routine, and its own comment says so: *"future
+stored NULL must extend this switch."*
+
+## The guards run by default, and promoting them found a bug
+
+Fourteen fail-closed regression specifications cover SQLsel, and as of
+`8df02addf` the four guarding the hardest surface -- outer joins, join edges,
+the full family, and buffer visibility -- **run in the default suite** rather
+than only on request. The default suite went from 22 specs to 26, green on both
+Windows and WSL/GCC.
+
+The promotion is worth reporting because of what it cost. Running those specs by
+default exposed a real defect in an unrelated command: **`ERASE TABLE` was
+leaving `.cdx.meta` sidecars behind.** Teardown looked clean and was not. `ERASE`
+now removes that metadata, and five cleanup assertions fail closed if any residue
+survives; the fix was mutation-tested red before it was believed.
+
+That is the argument for the house promotion rule stated as a result rather than
+a principle. A specification that exists but is never run by default is coverage
+already paid for and not collected -- and the first time these four were
+collected, they found something nobody was looking for.
+
+## Names resolve inside the current workspace
+
+Workspaces are co-resident -- `OPEN` and `LOAD` are both additive since
+R128/R130 -- so "which `STUDENTS`?" is a real question. SQLsel answers it by
+resolving table names **within the current workspace**, keyed on the work area's
+own workspace handle, and refusing rather than guessing:
+
+```text
+SQLSEL: table 'ORDERS' is not open in the current workspace.
+```
+
+The source states the reason it is done once rather than re-derived: repeating a
+logical-name lookup later "would throw the workspace decision away and become
+ambiguous when another workspace has the same table name."
+
+This closes the hazard the [workspaces page](/docs/engine/workspaces) calls the
+sharp one, for SQLsel's surface. `SELECT <name>` in the native shell is a
+separate resolver and is not covered by it.
+
+## Deliberate boundaries
+
+Stated as boundaries rather than a to-do list, because each is a decision with a
+reason:
+
+- **No stored SQL `NULL`.** Blank is a value (R16); outer-join absence is a
+  produced cell, a distinct kind. R29 declined stored NULL while requiring
+  everything since be shaped so adding it is an extension.
+- **No memo-field transactional DML**, and **no cross-table atomic commit** --
+  `COMMIT ALL` remains partial across DBF, memo and index storage.
+- **No generalized multi-chain `RIGHT` / `FULL` join.**
+
+The surface moves faster than this page. [The SQLsel manual](https://github.com/deraldg/x64base/blob/development/docs/manuals/user/sqlsel.md)
+is the authority for what the command accepts today.
 
 ## Relationship to RelTalk
 
