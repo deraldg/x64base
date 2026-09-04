@@ -293,3 +293,24 @@ if(TARGET xbase)
   )
   add_test(NAME dottalkpp_area_alloc_test COMMAND dottalkpp_area_alloc_test)
 endif()
+
+# ---- VFP _NullFlags bit assignment, the R1 guard (AIF-091 M1) ----------------
+# The M1 design named the bit-assignment order as its one open ambiguity and said
+# "do not ship M1 on the assumption alone". The assumption was BACKWARDS: Microsoft's
+# VFP 9 chapter 9 states that for a field which is both nullable and Varchar/Varbinary
+# the LOWER bit is the "full" status and the HIGHER bit is the null status. This test
+# is what keeps the corrected order from drifting back.
+#
+# IT ASSERTS HAND-COMPUTED BYTES, NOT A ROUND TRIP, and that is deliberate: there is
+# no VFP fixture with a nullable field anywhere in this tree (21 VFP tables measured
+# 2026-09-04, all with zero nullable and zero system fields), so a create-then-read
+# proof would only show our encoder and our decoder agreeing with each other -- which
+# they do just as happily with the order inverted. Every expectation is derived from
+# the documentation so a human can check it against the documentation.
+#
+# Header-only against xbase/vfp_null_bits.hpp: no table, no index, no engine link.
+add_executable(dottalkpp_vfp_null_bits_test
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_vfp_null_bits.cpp
+)
+target_include_directories(dottalkpp_vfp_null_bits_test PRIVATE ${CMAKE_SOURCE_DIR}/include)
+add_test(NAME dottalkpp_vfp_null_bits_test COMMAND dottalkpp_vfp_null_bits_test)

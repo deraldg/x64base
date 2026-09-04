@@ -28,7 +28,11 @@ in **physical field order**. Each field can contribute:
 - a **null bit** if the field is nullable (flag `0x02`), and
 - a **varlength bit** if the field is variable-length (`V` Varchar / `Q` Varbinary).
 
-A field that is both nullable and varchar contributes **two** bits. Bit meanings:
+A field that is both nullable and varchar contributes **two** bits, and **THE FULL/VARLENGTH
+BIT IS THE LOWER OF THE TWO** -- Microsoft, *What's New in Visual FoxPro 9.0* ch. 9: "If a
+field is both nullable and Varchar or Varbinary, two bits are used to represent a field.
+The lower bit represents the 'full' status and the higher bit represents the null status."
+Bit meanings:
 
 - **Null bit = 1** -> the field's value in this row is NULL.
 - **Varlength bit = 1** -> the value does NOT fill the field; its true length is stored
@@ -44,9 +48,15 @@ Varchar/Varbinary/Blob (already in `detectDbfLevel`).
    route any `system` field (the `0`/`_NullFlags` column) to a hidden slot, NOT the
    user field vector. Record its record-offset + length.
 2. **Build the bit map.** Walk user fields in physical order; assign the next bitmap
-   bit index to each field's null bit (if nullable) then its varlength bit (if V/Q).
-   Persist the per-field `(null_bit_index?, varlen_bit_index?)`. (Bit-assignment
-   ORDER is the one ambiguity across implementations -- see risk R1; gate on a fixture.)
+   bit index to each field's **varlength bit (if V/Q) FIRST, then its null bit (if
+   nullable)**. Persist the per-field `(varlen_bit_index?, null_bit_index?)`.
+   **CORRECTED 2026-09-04, AND THIS IS THE ONE LINE R1 WAS ABOUT.** This step used to
+   read "null bit (if nullable) then its varlength bit (if V/Q)", which is the
+   OPPOSITE of what the format's author documents (section 2, quoted). It was an
+   assumption, this document said "do not ship M1 on the assumption alone", and it was
+   wrong. The order now lives in exactly one place in code --
+   `include/xbase/vfp_null_bits.hpp`, `assign_null_bits()` -- as this document
+   instructed, so a future flip is one edit and one test.
 3. **Per row:** read the `_NullFlags` bytes at its offset. For each field:
    - if it has a null bit and that bit is set -> value is NULL (short-circuit).
    - else if V/Q with a varlength bit: length = bit set ? `last_field_byte` :
@@ -87,12 +97,33 @@ Varchar/Varbinary/Blob (already in `detectDbfLevel`).
 
 ## 7. Risks
 
-- **R1 -- bit-assignment order.** Implementations differ on whether all null bits
-  precede all varlength bits, or bits interleave per field. This spec assumes
-  per-field interleave (null then varlength, walking fields in order). **Do not ship
-  M1 on the assumption alone** -- the real-fixture proof (6) is what fixes the order;
-  encode it as a single documented function so a flip is one edit. Good task to hand
-  Grok: verify the order against several real VFP tables and report the bit map.
+- **R1 -- bit-assignment order. ANSWERED FROM THE PRIMARY SOURCE 2026-09-04, AND THE
+  ANSWER INVERTED THIS SPEC'S ASSUMPTION.** The original text read: *"This spec assumes
+  per-field interleave (null then varlength, walking fields in order). Do not ship M1
+  on the assumption alone."* Per-field interleave was right. The pair order was not.
+  Microsoft's *What's New in Visual FoxPro 9.0* ch. 9 -- a source this document already
+  cited in section 9 -- states the **lower** bit is "full" status and the **higher** is
+  null status; Hentzen et al. confirm the walk is "in the physical order of the fields
+  in the table". Encoded once in `include/xbase/vfp_null_bits.hpp` and guarded by
+  `src/tests/test_vfp_null_bits.cpp`, whose Arrangement-A discriminator reads `0x04`
+  under the corrected order and `0x02` under the old one. **Mutation-tested: flipping
+  the two lines in `assign_null_bits()` reds 10 expectations, and the single-bit fields
+  stay green -- the exact blast radius of the defect.**
+- **R1a -- THE FIXTURE PROOF IS STILL OWED, AND CANNOT BE RUN TODAY.** Measured
+  2026-09-04: **21 VFP-flavor tables exist in this repository (13 tracked, 8 untracked),
+  every one version `0x30`, every one with ZERO nullable fields and ZERO system
+  fields.** There is no `_NullFlags` column anywhere in the tree, so the section-6
+  accept gate's "decode proof against a real VFP fixture" has nothing to decode. The
+  Grok seam (section 8) was never answered. **CONSEQUENCE FOR HOW M1 IS PROVEN:** a
+  create-then-read round trip cannot settle the layout, because our encoder and our
+  decoder agree with each other whether or not the order is right -- a closed loop
+  reporting green on a file VFP could not open. Until a real fixture exists, the proof
+  is a HAND-COMPUTED BYTE TABLE derived from the documentation, which a reader can
+  check against the documentation instead of against us. When a fixture arrives it is
+  added beside the byte table, and if the two disagree THE FIXTURE WINS.
+- **R1b -- one assumption remains, and no source read states it:** that bit index 0 is
+  the LEAST SIGNIFICANT bit of byte 0. Conventional, unconfirmed. It is isolated in
+  `bit_is_set`/`set_bit` so that it too is one edit.
 - **R2 -- offset math.** The `_NullFlags` column consumes record bytes; mis-sizing it
   shifts every field offset. Gate on the byte-exact round-trip before trusting reads.
 - **R3 -- `0x32` gating.** Writing V/Q without bumping the version byte to `0x32`

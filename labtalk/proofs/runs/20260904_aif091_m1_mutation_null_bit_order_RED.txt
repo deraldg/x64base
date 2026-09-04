@@ -1,0 +1,42 @@
+AIF-091 M1 -- R1 GUARD, MUTATION RED (the bit order flipped back)
+mutation : include/xbase/vfp_null_bits.hpp assign_null_bits() -- the two assignment
+           lines swapped, so the NULL bit is allocated before the FULL bit. That is
+           the order AI_ENGINE_VFP_M1_NULLFLAGS_DECODE_DESIGN_V1.md section 3
+           originally instructed, and it is the defect this test exists to catch.
+verdict  : FAIL (correct -- the guard fires)
+
+WHERE THIS RAN, STATED RATHER THAN IMPLIED: g++ 12 -std=c++20 -Wall -Wextra in the
+Linux container, against the same source, with the mutated header shadowed on the
+include path so the repository was never modified. The GREEN reading is from MSVC
+on the maintainer's machine (ctest -C Release, test 23, passed 0.47 sec). This is
+header-only integer arithmetic with no platform dependence, so the red is expected
+to be identical under MSVC -- expected, not measured.
+
+WHAT MOVED AND WHAT DID NOT, which is the reading that matters: every failure below
+is a field that contributes BOTH bits. The single-bit fields (f1 nullable-only,
+f3 varlength-only), the all-bits byte, the out-of-range guards and the varchar
+length-byte arithmetic ALL STAYED GREEN. That is the exact blast radius of an
+inverted pair order, and an arm whose assertions moved together would not be
+measuring them separately.
+----------------------------------------------------------------
+AIF-091 M1 -- VFP _NullFlags bit assignment (R1 guard)
+  Rule: physical field order; a field that is BOTH nullable and
+  Varchar/Varbinary gets TWO bits, FULL lower and NULL higher.
+  Source: Microsoft, What's New in VFP 9, chapter 9.
+
+Arrangement A: N-nullable, V-nullable, V-plain, C-plain
+  FAIL: A f2 FULL bit is the LOWER of its pair -- got 2, want 1
+  FAIL: A f2 NULL bit is the HIGHER of its pair -- got 1, want 2
+  FAIL: A f2 short value -> full bit 1 -> 0x02 -- got 4, want 2
+  FAIL: A f2 NULL -> bit 2 -> 0x04  (0x02 here means the order flipped) -- got 2, want 4
+Arrangement B: five nullable Varchar fields (crosses a byte)
+  FAIL: B f1 full -- got 1, want 0
+  FAIL: B f1 null -- got 0, want 1
+  FAIL: B f5 full -- got 9, want 8
+  FAIL: B f5 null -- got 8, want 9
+  FAIL: B f4 null -> bit 7 -> byte0 0x80 -- got 64, want 128
+  FAIL: B f5 null -> bit 9 -> byte1 0x02 -- got 1, want 2
+Varchar true length from the last field byte
+
+FAIL -- 10 expectation(s) missed.
+exit=1
