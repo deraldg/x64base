@@ -555,6 +555,7 @@ enum class MessageId {
     CommitMemoFlushFailedText,
     CommitIndexFinalizeFailedText,
     CommitJournalFinalizeFailedText,
+    CommitRefusedByTriggerText,
     CommitCompleteText,
     CommitEngineUnavailableText,
     CommitCannotDetermineAreaText,

@@ -63,6 +63,13 @@
 //   marker before applying buffered changes to the DBF, and aborts the commit if
 //   that durable sync fails. Committed journals are replayed on crash recovery at
 //   open. Atomicity and durability are partial (ACID beta-1), not a full transaction.
+//   A registered BEFORE trigger is asked, at commit entry, whether each buffered
+//   record may be written, and may refuse. A refusal aborts the WHOLE area
+//   transaction -- one COMMIT marker covers the area, so one record cannot be
+//   refused while the rest commit durably. Nothing is journaled, the buffer is
+//   retained for correction and retry, and the refusal is reported at ERROR
+//   severity so STOP_ON_ERROR governs it.
+//   No BEFORE trigger registered means no cost and no behaviour change.
 //
 // risk:
 //   writes_dbf_records: yes when buffered changes exist
@@ -71,6 +78,7 @@
 //   clears_table_buffer_changes: on successful commit
 //   writes_write_ahead_journal: yes (durable redo log + COMMIT marker before apply)
 //   partial_commit_possible: yes
+//   refusable_by_before_trigger: yes (whole transaction; nothing journaled)
 //   cdx_lmdb_rebuild: no
 //
 // related:
@@ -94,6 +102,7 @@
 
 #include "xbase.hpp"
 #include "xbase_locks.hpp"
+#include "xbase/trigger_hooks.hpp"   // AIF-087 M2b: BEFORE phase at commit entry
 
 #include "cli/command_output.hpp"
 #include "cli/settings.hpp"
@@ -125,6 +134,7 @@ enum class CommitStatus {
     Complete,
     PartialRecordFailure,
     FinalizeFailure,
+    RefusedByTrigger,   // AIF-087 M2b: a BEFORE trigger vetoed; nothing journaled
 };
 
 struct CommitResult {
@@ -238,6 +248,15 @@ static Agg aggregate_for_recno(const dottalk::table::TableBuffer& tb, std::uint6
     }
 
     return a;
+}
+
+// Stable event_kind literal for a buffered record write. DELETE dominates
+// because apply_one_recno writes fields and THEN deletes, so a record both
+// updated and deleted inside one transaction ends the transaction deleted.
+static const char* event_kind_for_flags(std::uint64_t flags) noexcept {
+    if (flags & dottalk::table::CHANGE_DELETE) return "record_delete";
+    if (flags & dottalk::table::CHANGE_INSERT) return "record_insert";
+    return "field_replace";
 }
 
 static bool apply_one_recno(xbase::DbArea& A, const Agg& agg, bool talk,
@@ -417,6 +436,74 @@ static CommitResult commit_one_area(xbase::DbArea& A,
     // disappear. Inserts, updates, and deletes are idempotent at their reserved
     // record number and are safe to reapply on retry.
     const auto pending_before = tb.changes;
+
+    // AIF-087 M2b: THE BEFORE PHASE FIRES HERE -- after the locks are held and
+    // pending_before is snapshotted, and BEFORE the WAL COMMIT marker below.
+    //
+    // Why here and not when the edit was staged: a change staged by REPLACE may
+    // be discarded by ROLLBACK, so a validation that passed where the INTENTION
+    // was expressed can be stale by the time the DECISION is made. Validate
+    // where the decision is made.
+    //
+    // ALL OR NOTHING, and that is a property of the journal, not a shortcut.
+    // journal_begin_commit writes ONE COMMIT marker for the whole area's
+    // transaction, so there is no way to refuse one record and durably commit
+    // the rest without writing a partial transaction. One refusal aborts the
+    // whole commit with NOTHING journaled and the buffer intact -- which is what
+    // the buffer is for: correct it and retry.
+    //
+    // Costs nothing when no trigger is registered: allow_record_write returns
+    // true immediately for an area with no Before callback.
+    {
+        xbase::trigger_hooks::RefusalCode reason = xbase::trigger_hooks::kNoReason;
+        std::uint64_t refused_recno = 0;
+        bool refused = false;
+
+        for (auto it = tb.changes.begin(); it != tb.changes.end(); ) {
+            const std::uint64_t recno = it->first;
+            const auto range = tb.changes.equal_range(recno);
+            const Agg agg = aggregate_for_recno(tb, recno);
+
+            // The changed-field set for THIS record, folded exactly as
+            // apply_one_recno will fold it. One decision per physical write.
+            std::vector<int> fields;
+            fields.reserve(agg.field_values.size());
+            for (const auto& kv : agg.field_values) fields.push_back(kv.first);
+
+            xbase::trigger_hooks::WriteEvent ev;
+            ev.event_kind  = event_kind_for_flags(agg.flags);
+            ev.recno       = recno;
+            ev.fields      = fields.empty() ? nullptr : fields.data();
+            ev.field_count = fields.size();
+
+            if (!xbase::trigger_hooks::allow_record_write(A, ev, &reason)) {
+                refused = true;
+                refused_recno = recno;
+                break;
+            }
+            it = range.second;
+        }
+
+        if (refused) {
+            dottalk::table::set_dirty(area0, true);
+            // The refusal reaches STOP_ON_ERROR as a catalog MessageId at ERROR
+            // severity, per Decision E 4.2 / AIF-036. NOT YET DONE: mapping the
+            // callback's RefusalCode to a message OF ITS OWN. That needs a
+            // validated code -> MessageId table, and an unvalidated uint32
+            // would print an unrelated message, so the code is reported as
+            // detail rather than trusted as an index.
+            std::string detail;
+            if (reason != xbase::trigger_hooks::kNoReason) {
+                detail = " (reason " + std::to_string(reason) + ")";
+            }
+            cli::cmdout::print_prefixed_message(
+                "COMMIT", dottalk::helpdata::MessageId::CommitRefusedByTriggerText,
+                {{"rn", std::to_string(refused_recno)}, {"detail", detail}});
+            // Nothing applied and nothing attempted: the veto ran before any
+            // record was touched, so 0/0 is the honest count.
+            return {CommitStatus::RefusedByTrigger, 0, 0};
+        }
+    }
 
     // Write-ahead: durably fsync the redo log + COMMIT marker BEFORE applying the
     // buffered changes to the DBF. If the durable sync fails, abort the commit and
