@@ -1,0 +1,46 @@
+AIF-091 M1 -- REAL VFP OUTPUT DISAGREES WITH BYTE 23
+captured 2026-09-04, D:\code\ccode, branch development, after dfd7cf15e
+
+The commit dfd7cf15e claimed: 'every VFP- and x64-flavor table in this
+repository carries ZERO at byte 18 AND ZERO at byte 23 (measured, 21 tables)'.
+That measurement globbed *.dbf. Visual FoxPro does not name all of its tables
+.dbf -- an .SCX is a form, a .VCX a class library, both DBF-format tables.
+
+Re-measured by enumerating git ls-files (5,846 tracked paths) and selecting
+files by MAGIC BYTE rather than extension:
+
+----------------------------------------------------------------------
+tracked DBF-format files (selected by MAGIC BYTE, not extension): 59
+    0x03 classic          34
+    0x30 VFP              25
+
+FIELDS WHERE BYTE 18 != BYTE 23 -- the right byte and the byte this
+engine used to read DISAGREE.  These are the only files in the tree
+that can tell the two layouts apart: 7
+    tools/vfp/fixtures/ACCOUNTS.SCX            0x30  OBJCODE     M len=4    byte18=0x04 [binary]  byte23=0x00
+    tools/vfp/fixtures/STUDENTS.SCX            0x30  OBJCODE     M len=4    byte18=0x04 [binary]  byte23=0x00
+    tools/vfp/fixtures/TEST_APP.VCX            0x30  OBJCODE     M len=4    byte18=0x04 [binary]  byte23=0x00
+    tools/vfp/fixtures/X64FORM_SAMEDIR.SCX     0x30  OBJCODE     M len=4    byte18=0x04 [binary]  byte23=0x00
+    tools/vfp/fixtures/X64FORM_VFPSAVED.SCX    0x30  OBJCODE     M len=4    byte18=0x04 [binary]  byte23=0x00
+    tools/vfp/fixtures/form1.scx               0x30  OBJCODE     M len=4    byte18=0x04 [binary]  byte23=0x00
+    tools/vfp/generated/x64form.scx            0x30  OBJCODE     M len=4    byte18=0x04 [binary]  byte23=0x00
+
+----------------------------------------------------------------------
+
+READING:
+
+  OBJCODE is the memo holding compiled object code in a VFP form or class
+  library. VFP marks it BINARY (0x04 at byte 18) deliberately, so that no
+  codepage translation is ever applied to compiled code. Byte 23 is 0x00.
+
+    OLD code: flags = byte 23 = 0x00  ->  binary = FALSE   WRONG
+    NEW code: flags = byte 18 = 0x04  ->  binary = TRUE    RIGHT
+
+  Seven tracked files, written by Visual FoxPro, on which the two layouts
+  give opposite answers. They were in this repository the whole time and
+  were excluded by a file-extension filter, not absent from the tree.
+
+SCOPE, so this is not oversold: this is real-VFP evidence for the BINARY
+bit only. No tracked file carries 0x02 at byte 18, so nullability and the
+_NullFlags bitmap remain proven against hand-computed byte tables alone.
+R1a -- a nullable table authored in VFP -- is still owed for that half.

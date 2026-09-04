@@ -13,12 +13,27 @@
 // The struct was a faithful dBASE III descriptor (work-area id at 20, SET FIELDS
 // flag at 23) wearing a VFP name.
 //
-// WHY NOTHING CAUGHT IT: measured the same day, every VFP- and x64-flavor table in
-// this repository carries ZERO at byte 18 AND ZERO at byte 23. The wrong byte and
-// the right byte give the same answer on every file we own, so the decoder was
-// correct by coincidence on all existing data and would have been silently wrong on
-// the first real nullable table. A default that never changes on any path anyone
-// runs cannot go red -- the AIF-123 shape.
+// WHY NOTHING CAUGHT IT -- AS FIRST WRITTEN, AND WRONG. Left standing because how
+// it was wrong is worth more than the sentence was:
+//
+//     "measured the same day, every VFP- and x64-flavor table in this repository
+//     carries ZERO at byte 18 AND ZERO at byte 23. The wrong byte and the right
+//     byte give the same answer on every file we own, so the decoder was correct
+//     by coincidence on all existing data."
+//
+// CORRECTED the same day. That sweep globbed `*.dbf`, and VFP does not name all of
+// its tables `.dbf`. Re-measured over `git ls-files` by MAGIC BYTE instead of
+// extension: 59 tracked DBF-format files (34 classic, 25 VFP), and SEVEN of them
+// disagree between byte 18 and byte 23 -- .SCX forms and a .VCX class library, all
+// authored by Visual FoxPro, all carrying 0x04 (binary) at byte 18 on OBJCODE and
+// 0x00 at byte 23. The counterexamples were tracked, in the tree, and excluded by
+// the filter. See dottalkpp_vfp_real_fixture_flags_test, which reads them.
+//
+// So the accurate statement is narrower: the decoder was correct by coincidence on
+// every table THIS ENGINE WROTE, because this engine never set byte 18 at all. On
+// VFP's own output it was wrong, and had been all along. A default that never
+// changes on any path anyone runs cannot go red -- the AIF-123 shape -- and an
+// instrument narrower than its question will report a clean absence.
 //
 // THE DISCRIMINATOR IS `descriptor_decoy_bytes`: it puts 0x02 (nullable) at byte 18
 // and 0x04 (binary) at byte 23, so the two layouts give OPPOSITE answers. Under the

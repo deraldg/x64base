@@ -30,13 +30,32 @@ incomplete in three graded ways:
    al. s1c2, "bit 0 of byte 18"). The struct was a faithful dBASE III descriptor
    (work-area id at 20, SET FIELDS flag at 23) wearing a VFP name, so
    `nullable = flags & 0x02` read bit 1 of the step byte and the real flags byte was
-   swallowed inside `reserved1`. Nothing caught it because every VFP- and x64-flavor
-   table in this repository carries ZERO at byte 18 AND ZERO at byte 23 (measured,
-   21 tables): the wrong byte and the right byte agree on every file we own, so the
-   decoder was correct by coincidence and would have gone silently wrong on the
-   first real nullable table -- the AIF-123 shape. Fixed with compile-time offset
-   asserts plus a runtime decoy test; `0x64` now reads the same byte, which it has
-   always carried by inheriting the descriptor shape. There is still NO decoder for the
+   swallowed inside `reserved1`. ~~Nothing caught it because every VFP- and
+   x64-flavor table in this repository carries ZERO at byte 18 AND ZERO at byte 23
+   (measured, 21 tables): the wrong byte and the right byte agree on every file we
+   own.~~ **CORRECTED LATER THE SAME DAY -- THAT MEASUREMENT WAS FALSE, AND IT WAS
+   FALSE IN THE DIRECTION THAT MADE THE DEFECT LOOK HARMLESS.** The sweep globbed
+   `*.dbf`; Visual FoxPro does not name all of its tables `.dbf`. Re-measured over
+   `git ls-files` by MAGIC BYTE rather than extension: **59 tracked DBF-format files
+   (34 classic, 25 VFP), of which SEVEN disagree between byte 18 and byte 23** --
+   six `.SCX` forms and one `.VCX` class library under `tools/vfp/`, every one of
+   them written by Visual FoxPro itself, every one carrying `0x04` (BINARY) at byte
+   18 on the `OBJCODE` memo and `0x00` at byte 23. VFP sets that bit deliberately:
+   `OBJCODE` holds compiled object code and must not be codepage-translated. So the
+   old reader called those fields not-binary and the corrected reader calls them
+   binary, and the counterexamples were tracked, in this tree, the whole time --
+   excluded by a filter, not absent. The accurate statement is narrower: the decoder
+   was correct by coincidence on every table THIS ENGINE WROTE, because this engine
+   never set byte 18 at all. On VFP's own output it was wrong from the start. Still
+   the AIF-123 shape, plus a second lesson: an instrument narrower than its question
+   will report a clean absence. Fixed with compile-time offset asserts, a runtime
+   decoy test, and -- since the round trip that made this invisible was
+   writer-and-reader agreeing with each other -- `dottalkpp_vfp_real_fixture_flags_test`,
+   which reads tables this project did not write. `0x64` now reads the same byte,
+   which it has always carried by inheriting the descriptor shape.
+   NOTE ON SCOPE: real-VFP evidence exists for the BINARY bit only. No tracked file
+   carries `0x02` at byte 18, so nullability remains proven against hand-computed
+   byte tables, and a nullable table authored in VFP is still owed (R1a). There is still NO decoder for the
    per-row null bitmap that VFP stores in the hidden `_NullFlags` system column
    (field type `0`), and NO handling of the `system` field flag (bit `0x01`).
    Consequences: (a) the engine cannot tell which rows are actually NULL; (b) the

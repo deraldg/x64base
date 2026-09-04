@@ -333,3 +333,29 @@ if(TARGET xbase)
   target_include_directories(dottalkpp_vfp_field_descriptor_test PRIVATE ${CMAKE_SOURCE_DIR}/include)
   add_test(NAME dottalkpp_vfp_field_descriptor_test COMMAND dottalkpp_vfp_field_descriptor_test)
 endif()
+
+# ---- VFP field flags read from files Visual FoxPro wrote (AIF-091 M1) --------
+# Every other test in this lane grades the decoder against byte tables computed by
+# hand. Necessary, not sufficient: until 2026-09-04 dbf_create.cpp held its OWN
+# declaration of the field subrecord with the SAME wrong layout as the reader, so
+# the writer put flags at byte 23 and the reader took them from 23 and agreed
+# perfectly. A create-then-read round trip cannot tell that from correct.
+#
+# These fixtures are .SCX/.VCX -- VFP forms and class libraries, which are
+# DBF-format tables authored by Visual FoxPro and NOT named `.dbf`. That naming is
+# why the first sweep of this tree missed them and wrongly reported that byte 18
+# and byte 23 agree everywhere. OBJCODE carries 0x04 (binary) at byte 18 and 0x00
+# at byte 23, so this test goes red under the old layout on a file we did not write.
+#
+# VFP_FIXTURE_ROOT is passed rather than discovered: a test that hunts for its own
+# fixtures can quietly find none and pass. Missing fixture is a FAILURE here.
+if(TARGET xbase)
+  add_executable(dottalkpp_vfp_real_fixture_flags_test
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_vfp_real_fixture_flags.cpp
+  )
+  target_link_libraries(dottalkpp_vfp_real_fixture_flags_test PRIVATE xbase memo)
+  target_include_directories(dottalkpp_vfp_real_fixture_flags_test PRIVATE ${CMAKE_SOURCE_DIR}/include)
+  target_compile_definitions(dottalkpp_vfp_real_fixture_flags_test
+    PRIVATE VFP_FIXTURE_ROOT="${CMAKE_SOURCE_DIR}/tools/vfp")
+  add_test(NAME dottalkpp_vfp_real_fixture_flags_test COMMAND dottalkpp_vfp_real_fixture_flags_test)
+endif()
