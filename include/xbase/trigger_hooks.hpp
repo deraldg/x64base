@@ -26,17 +26,34 @@
 //   After  -- fires once the change is true. CANNOT refuse. May write, in its
 //             own transaction, bounded by a depth cap.
 //
-// On the UNBUFFERED path the two instants coincide, which is why the original
-// single-callback spike never had to distinguish them. `fire_field_replace`
-// keeps its exact prior behaviour and is now explicitly the AFTER phase.
+// M2a, 2026-09-04 -- THE FIRE UNIT IS THE PHYSICAL WRITE, NOT THE FIELD.
 //
-// NOT YET WIRED: the Before phase has a registration slot and a fire entry point
-// and NOTHING CALLS IT. Commit-entry wiring is M2 and is not authorized here.
+// M1 modelled a fire as one field. Measuring the three write paths showed that
+// is the special case, not the general one:
+//
+//   DbArea::replaceFieldStored -- 1 field, 1 write. The two coincide, which is
+//                                 why the original spike never had to choose.
+//   MULTIREP                   -- N fields, ONE record lock, ONE physical write.
+//   COMMIT's apply_one_recno   -- N fields folded by aggregate_for_recno, then
+//                                 one set() loop and ONE writeCurrent().
+//
+// Firing N times for one physical write misreports what happened, and for the
+// Before phase it is incoherent: N independent vetoes over one indivisible
+// write, when YOU CANNOT HALF-WRITE A RECORD. A veto is a veto of the write.
+//
+// So the general callback takes a WriteEvent carrying the changed-field set,
+// and the per-field form is retained as the degenerate one-element case that
+// `replaceFieldStored` still uses. `fire_field_replace` keeps its exact prior
+// behaviour and is now explicitly the After phase.
+//
+// NOT YET WIRED: the Before phase has registration and a fire entry point and
+// NOTHING CALLS IT. Commit-entry wiring is M2b and is not authorized here.
 // A registration that can never fire is stated rather than implied, so nobody
 // reads this header as evidence that BEFORE triggers work.
 //
 // Does NOT use cursor_hook (shell/TUI global slot).
 #pragma once
+#include <cstddef>
 #include <cstdint>
 namespace xbase {
 class DbArea;
@@ -44,38 +61,74 @@ namespace trigger_hooks {
 // Which side of the WAL COMMIT marker a callback fires on.
 enum class Phase { Before, After };
 
-// event_kind values are stable string literals (e.g. "field_replace").
+// Why a Before callback refused. OPAQUE TO THIS LAYER BY DESIGN: the message
+// catalog (dottalk::helpdata::MessageId) lives in the CLI, and src/xbase must
+// not depend on it. The CLI maps this back to a catalog id so STOP_ON_ERROR
+// governs the refusal per AIF-036. Zero means "no reason supplied".
+using RefusalCode = std::uint32_t;
+inline constexpr RefusalCode kNoReason = 0;
+
+// One physical record write, and the fields it changed. `fields` points at
+// `field_count` 1-based field numbers owned by the CALLER and valid only for
+// the duration of the call -- a callback that needs them longer must copy.
+// field_count may be 0 for a write that changes no field (a delete).
+struct WriteEvent {
+    const char*   event_kind   = nullptr;  // stable literal, e.g. "field_replace"
+    std::uint64_t recno        = 0;
+    const int*    fields       = nullptr;
+    std::size_t   field_count  = 0;
+};
+
+// Per-field After callback. THE DEGENERATE CASE, kept because
+// DbArea::replaceFieldStored is genuinely one field per write. Unchanged since
+// the 2026-08-04 spike.
 using TriggerFn = void (*)(DbArea& area,
                            const char* event_kind,
                            int field1,
                            std::uint64_t recno,
                            void* user) noexcept;
 
-// A Before callback returns false to REFUSE the write. Its signature is fixed
-// here, at M1, so that wiring it in M2 is not an API change to a shipped type.
-using BeforeTriggerFn = bool (*)(DbArea& area,
-                                 const char* event_kind,
-                                 int field1,
-                                 std::uint64_t recno,
-                                 void* user) noexcept;
+// Per-write After callback. The general form.
+using AfterWriteFn = void (*)(DbArea& area,
+                              const WriteEvent& ev,
+                              void* user) noexcept;
 
-// Associate an AFTER callback with a specific DbArea (D2). Null fn clears.
-// Retained unchanged: this is the phase that has always existed.
+// Per-write Before callback. Returns false to REFUSE, and may set *reason.
+using BeforeWriteFn = bool (*)(DbArea& area,
+                               const WriteEvent& ev,
+                               RefusalCode* reason,
+                               void* user) noexcept;
+
+// -- After registration (D2). At most one shape per area; the last set wins for
+// its own shape, and a per-write callback takes precedence over a per-field one.
 void set_callback(DbArea& area, TriggerFn fn, void* user) noexcept;
 void clear_callback(DbArea& area) noexcept;
+void set_after_callback(DbArea& area, AfterWriteFn fn, void* user) noexcept;
+void clear_after_callback(DbArea& area) noexcept;
 
-// Associate a BEFORE callback. Registration works; NOTHING FIRES IT YET (M2).
-void set_before_callback(DbArea& area, BeforeTriggerFn fn, void* user) noexcept;
+// -- Before registration. Registration works; NOTHING FIRES IT YET (M2b).
+void set_before_callback(DbArea& area, BeforeWriteFn fn, void* user) noexcept;
 void clear_before_callback(DbArea& area) noexcept;
 
-// Ask the registered Before callback whether a field replace may proceed.
-// Returns true when there is no callback, so an unregistered area is unaffected.
-// NO CALLER IN M1 -- commit entry wires this in M2.
-bool allow_field_replace(DbArea& area, int field1, std::uint64_t recno) noexcept;
-// AFTER phase. Invoked by DbArea::replaceFieldStored after successful
-// apply_replace. No-op if no callback is set. Nested fires suppressed by Guard.
-// Behaviour is byte-for-byte what it was before M1.
+// Ask the registered Before callback whether a write may proceed. Returns true
+// when there is no callback, so an unregistered area is unaffected. On refusal,
+// *reason receives the callback's code (kNoReason if it set none).
+// NO CALLER IN M2a -- commit entry wires this in M2b.
+bool allow_record_write(DbArea& area,
+                        const WriteEvent& ev,
+                        RefusalCode* reason = nullptr) noexcept;
+// One-field convenience over allow_record_write.
+bool allow_field_replace(DbArea& area,
+                         int field1,
+                         std::uint64_t recno,
+                         RefusalCode* reason = nullptr) noexcept;
+
+// -- After fire. No-op if nothing is registered. Nested fires suppressed by Guard.
+void fire_record_write(DbArea& area, const WriteEvent& ev) noexcept;
+// Invoked by DbArea::replaceFieldStored after successful apply_replace.
+// Behaviour is what it was before M1: one call, event_kind "field_replace".
 void fire_field_replace(DbArea& area, int field1, std::uint64_t recno) noexcept;
+
 // Optional: drop registration when an area is destroyed/closed by higher layers.
 void detach(DbArea& area) noexcept;
 // Suppress nested trigger fire within a scope (same idea as cursor_hook::Guard).
