@@ -303,8 +303,9 @@ bool journal_note_buffer_on(int area0, const std::string& table_name) {
     return true;
 }
 
-// Append one redo record (UPDATE or DELETE) for the change just buffered.
-// Idempotent on replay: "set recno's field to this value" / "mark deleted".
+// Append one redo record (INSERT, UPDATE, or DELETE) for the change just
+// buffered. Idempotent on replay: insert reserves its final recno while a table
+// lock is held, then replay either appends that record or finishes its fields.
 bool journal_note_change(int area0, const ChangeEntry& entry) {
     if (!is_persistent_enabled(area0)) return true;
 
@@ -316,6 +317,7 @@ bool journal_note_change(int area0, const ChangeEntry& entry) {
 
     // Full-fidelity retained-edit record. Each buffered write is one line, so the
     // multiple-retained-edits-per-field capability is preserved in the log:
+    //   I <recno> <priority> <H|S> <field>:<hex> [<field>:<hex> ...]
     //   U <recno> <priority> <H|S> <field>:<hex> [<field>:<hex> ...]
     //   D <recno> <priority>
     // <priority> is the buffer's per-write priority; the H/S flag says whether the
@@ -327,7 +329,8 @@ bool journal_note_change(int area0, const ChangeEntry& entry) {
         line = "D " + std::to_string(entry.recno)
              + " " + std::to_string(entry.priority) + "\n";
     } else {
-        line = "U " + std::to_string(entry.recno)
+        const char tag = (entry.dirty_flags & CHANGE_INSERT) ? 'I' : 'U';
+        line = std::string(1, tag) + " " + std::to_string(entry.recno)
              + " " + std::to_string(entry.priority)
              + " " + std::string(1, mode);
         for (const auto& kv : entry.new_values) {
@@ -421,17 +424,22 @@ bool recover_table_buffer_journal(xbase::DbArea& area) {
         return false;
     }
 
-    // Replay U/D redo records in append order. Append order == priority order, so
+    // Replay I/U/D redo records in append order. Append order == priority order, so
     // the last write per field wins == highest priority (matches COMMIT's fold).
     for (const auto& ln : lines) {
         if (ln.empty()) continue;
-        if (ln[0] == 'U') {
+        if (ln[0] == 'I' || ln[0] == 'U') {
             std::istringstream is(ln);
             std::string tag, prio, mode;
             std::uint64_t recno = 0;
-            is >> tag >> recno >> prio >> mode;  // "U" <recno> <priority> <H|S>
-            if (recno == 0 || recno > area.recCount64()) continue;
-            if (!area.gotoRec64(recno) || !area.readCurrent()) continue;
+            is >> tag >> recno >> prio >> mode;  // "I|U" <recno> <priority> <H|S>
+            if (recno == 0) continue;
+            if (tag == "I" && recno == area.recCount64() + 1) {
+                if (!area.appendBlank() || !area.readCurrent()) continue;
+            } else {
+                if (recno > area.recCount64()) continue;
+                if (!area.gotoRec64(recno) || !area.readCurrent()) continue;
+            }
 
             std::string pair;
             bool wrote = false;
@@ -498,7 +506,12 @@ const TableBuffer& get_tb_const(int area0) {
 int TableBuffer::add_change(std::uint64_t recno, std::uint64_t flags,
                             const std::uint64_t* source_field_bits,
                             int field1, const std::string& new_value) {
-    if (changes.size() >= kMaxChanges) {
+    // In snapshot mode, a second field for an already-buffered record merges
+    // into that record and consumes no capacity. Test capacity only when this
+    // call would create a new entry; otherwise the final record at the limit
+    // could accept its first field and incorrectly reject all remaining fields.
+    const bool existing_snapshot = !history_enabled && changes.find(recno) != changes.end();
+    if (!existing_snapshot && changes.size() >= kMaxChanges) {
         std::cout << "Warning: TableBuffer max changes reached (" << kMaxChanges << ").";
         return 0;
     }

@@ -92,29 +92,28 @@ inline const std::vector<Item>& catalog() {
         {"INSERT",
          "INSERT INTO users (name, email) VALUES ('Alice', 'alice@example.com');",
          "Insert single row", "DML", true,
-         "EQUIVALENT, two steps -- APPEND adds a record and positions on it, then "
-         "REPLACE <field> WITH <value> fills each field. Cursor-oriented rather than "
-         "set-oriented: you land on the new row. SQL INSERT syntax is not accepted "
-         "(planned, phase P5). See APPEND USAGE and REPLACE USAGE."},
+         "SUPPORTED -- SQLSEL INSERT targets an open table in the current workspace, "
+         "validates typed values through the REPLACE storage gate, stages the row in "
+         "TableBuffer/TBJ1, and commits through the house APPEND path. In SET MODE SQL, "
+         "the SQLSEL prefix is optional. See SQLSEL USAGE."},
         {"INSERT-MULTI",
          "INSERT INTO users (name, email) VALUES ('Bob','bob@ex.com'), ('Charlie','charlie@ex.com');",
          "Insert multiple rows", "DML", true,
-         "NOT SUPPORTED as one statement. Repeat the APPEND/REPLACE pair, or script it. "
-         "Under TABLE BUFFER ON the whole batch commits or rolls back together, which "
-         "recovers the atomicity a multi-row INSERT would give you."},
+         "SUPPORTED -- one explicit field list may be followed by multiple parenthesized "
+         "VALUES groups. The complete statement is staged before commit; an error refuses "
+         "the batch. Explicit SQL transactions remain limited to one target table."},
         {"UPDATE",
          "UPDATE users SET status = 'active' WHERE id = 5;",
          "Update matching rows", "DML", true,
-         "EQUIVALENT, different shape -- REPLACE <field> WITH <value> acts on the CURRENT "
-         "record; scope it across rows with a FOR predicate. SQL UPDATE syntax is not "
-         "accepted (planned, phase P5). Buffered when TABLE BUFFER is ON. See REPLACE USAGE."},
+         "SUPPORTED -- SQLSEL UPDATE evaluates the typed house expression engine for every "
+         "row retained by the required WHERE predicate and writes through the same field "
+         "normalization, TableBuffer, WAL, and COMMIT machinery as REPLACE."},
         {"DELETE",
          "DELETE FROM users WHERE id = 42;",
          "Delete matching rows", "DML", true,
-         "EQUIVALENT, with a real semantic difference -- DELETE only MARKS a record "
-         "deleted, and RECALL un-marks it; the row stays until PACK removes it. SET DELETED "
-         "controls whether marked rows are visible to scans. SQL DELETE is immediate and "
-         "has no undo; this is closer to a soft delete. See DELETE USAGE and RECALL USAGE."},
+         "SUPPORTED -- SQLSEL DELETE requires WHERE and stages the existing xBase delete "
+         "flag through TableBuffer/TBJ1. It marks rows deleted; RECALL can unmark them and "
+         "PACK is still the physical removal boundary. See SQLSEL and DELETE USAGE."},
         {"TRUNCATE", 
          "TRUNCATE TABLE users;", 
          "Remove all rows quickly (MSSQL only)", "DML", false},
@@ -125,8 +124,9 @@ inline const std::vector<Item>& catalog() {
         {"SELECT-BASIC",
          "SELECT name, email FROM users WHERE age > 30 ORDER BY name LIMIT 10;",
          "Basic query with WHERE, ORDER, LIMIT", "Query", true,
-         "SUPPORTED -- SQLsel. The table must already be OPEN (USE <table>). Bare "
-         "column names only in v1: no expression projection. See SQLSEL USAGE."},
+         "SUPPORTED -- SQLsel over an open table in the current workspace. Projection may "
+         "use typed expressions and aliases; WHERE, multi-column ORDER BY, and LIMIT compose "
+         "over the result. See SQLSEL USAGE."},
         {"SELECT-COUNT",
          "SELECT COUNT(*) FROM users WHERE status = 'active';",
          "Count matching rows", "Query", true,
@@ -134,25 +134,21 @@ inline const std::vector<Item>& catalog() {
         {"SELECT-GROUP",
          "SELECT department, AVG(salary) FROM employees GROUP BY department HAVING COUNT(*) > 5;",
          "Aggregate + GROUP BY + HAVING", "Query", true,
-         "NOT SUPPORTED. No GROUP BY or HAVING anywhere in the engine. AGGS "
-         "(SUM/AVG/MIN/MAX) aggregates a whole scope with an optional FOR predicate, "
-         "so it answers 'average salary where dept=X' one department at a time, but "
-         "cannot partition a scan into groups in a single pass."},
+         "SUPPORTED -- SQLsel implements GROUP BY and HAVING with COUNT, SUM, AVG, MIN, "
+         "and MAX over typed TupleRows. Numeric blanks are skipped by field aggregates and "
+         "the contributing/blank counts are reported. See SQLSEL USAGE."},
         {"SELECT-JOIN-INNER",
          "SELECT u.name, o.product FROM users u INNER JOIN orders o ON u.id = o.user_id;",
          "Matching rows from both tables", "Join", true,
-         "NOT SUPPORTED as SQL syntax (planned, phase P4). The engine reaches related "
-         "data by DECLARED TRAVERSAL instead: REL ADD wires parent->child on a key, "
-         "then TUPLE/SMARTBROWSER project across the graph. That is a different "
-         "relational methodology, not a join -- it follows configured paths rather "
-         "than matching two row sets, and it does not produce a joined result set."},
+         "SUPPORTED -- SQLsel INNER JOIN matches typed row sets from open tables. It accepts "
+         "self-joins, composite ON predicates, and INNER/LEFT/CROSS chains, while reporting "
+         "the table fence and access path. This is statement-scoped and does not read REL."},
         {"SELECT-JOIN-LEFT",
          "SELECT u.name, o.product FROM users u LEFT JOIN orders o ON u.id = o.user_id;",
          "All left rows + matching right rows", "Join", true,
-         "NOT SUPPORTED as SQL syntax (planned, phase P4). See SELECT-JOIN-INNER: "
-         "REL traversal keeps the parent row regardless of child matches, which "
-         "RESEMBLES a left join in effect, but outer-join semantics are not defined "
-         "or tested here. Do not rely on the resemblance."},
+         "SUPPORTED -- SQLsel LEFT JOIN preserves left rows, carries produced absence as a "
+         "typed cell state, renders it as <UNMATCHED>, and applies SQL three-valued WHERE "
+         "logic. RIGHT and FULL are supported for two-table joins."},
 
         // ────────────────────────────────────────────────
         // Indexing & Optimization
@@ -181,8 +177,10 @@ inline const std::vector<Item>& catalog() {
         {"BEGIN-TRAN",
          "BEGIN TRANSACTION;",
          "Start transaction", "Transaction", true,
-         "EQUIVALENT -- TABLE BUFFER ON opens the buffered editing scope that COMMIT "
-         "and ROLLBACK close. Per-area rather than per-connection. See TABLE BUFFER USAGE."},
+         "SUPPORTED -- in SET MODE SQL, BEGIN [TRANSACTION] opens an explicit SQLsel DML "
+         "scope. It acquires one target table fence on first write and uses TableBuffer + "
+         "TBJ1 WAL. Cross-table atomic commit is refused. Native TABLE BUFFER remains the "
+         "cursor-oriented equivalent."},
         {"COMMIT",
          "COMMIT;",
          "Save changes", "Transaction", true,

@@ -82,6 +82,8 @@
 //   REBUILD
 //
 
+#include <algorithm>
+#include <iostream>
 #include <sstream>
 #include <string>
 #include <unordered_map>
@@ -171,6 +173,32 @@ struct CursorRestore {
     CursorRestore& operator=(const CursorRestore&) = delete;
 };
 
+struct InsertTableLockGuard {
+    xbase::DbArea* area = nullptr;
+    bool acquired_here = false;
+    bool ready = true;
+    std::string error;
+
+    InsertTableLockGuard(xbase::DbArea& value, bool required) : area(&value) {
+        if (!required) return;
+        xbase::locks::LockHolder holder;
+        const bool borrowed = xbase::locks::table_lock_holder(value, &holder) &&
+                              holder.owner_id == xbase::locks::current_owner().id;
+        if (!xbase::locks::try_lock_table(value, &error)) {
+            ready = false;
+            return;
+        }
+        acquired_here = !borrowed;
+    }
+
+    ~InsertTableLockGuard() {
+        if (!acquired_here || !area) return;
+        std::string ignored;
+        (void)xbase::locks::unlock_table(
+            *area, xbase::locks::current_owner(), &ignored);
+    }
+};
+
 struct Agg {
     std::uint64_t recno = 0;
     std::uint64_t flags = 0;
@@ -215,10 +243,15 @@ static Agg aggregate_for_recno(const dottalk::table::TableBuffer& tb, std::uint6
 static bool apply_one_recno(xbase::DbArea& A, const Agg& agg, bool talk,
                             bool maintain_index) {
     const std::uint64_t rn = agg.recno;
-    if (rn == 0 || rn > A.recCount64()) return false;
-
-    if (!A.gotoRec64(rn)) return false;
-    if (!A.readCurrent()) return false;
+    if (rn == 0) return false;
+    const bool inserting = (agg.flags & dottalk::table::CHANGE_INSERT) != 0;
+    bool appended_now = false;
+    if (inserting && rn == A.recCount64() + 1) {
+        if (!A.appendBlank() || !A.readCurrent()) return false;
+        appended_now = true;
+    } else {
+        if (rn > A.recCount64() || !A.gotoRec64(rn) || !A.readCurrent()) return false;
+    }
 
     // Lock at commit time (per-record). If you later add table locks, this is where it goes.
     std::string lock_err;
@@ -233,14 +266,15 @@ static bool apply_one_recno(xbase::DbArea& A, const Agg& agg, bool talk,
     // Pre-image key snapshot (all field-backed tags) BEFORE mutating field bytes.
     // Routes onto the open bulk txn via the installed index_hooks seam.
     xbase::index_hooks::Snapshot before_snap;
-    if (maintain_index) before_snap = xbase::index_hooks::capture(A);
+    if (maintain_index && !appended_now) before_snap = xbase::index_hooks::capture(A);
 #else
     (void)maintain_index;
 #endif
 
     bool ok = true;
 
-    if (agg.flags & dottalk::table::CHANGE_UPDATE) {
+    if (agg.flags & (dottalk::table::CHANGE_INSERT |
+                     dottalk::table::CHANGE_UPDATE)) {
         for (const auto& kv : agg.field_values) {
             const int f1 = kv.first;
             const std::string& v = kv.second;
@@ -365,11 +399,23 @@ static CommitResult commit_one_area(xbase::DbArea& A,
         return {};
     }
 
+    const bool has_insert = std::any_of(tb.changes.begin(), tb.changes.end(),
+        [](const auto& entry) {
+            return (entry.second.dirty_flags & dottalk::table::CHANGE_INSERT) != 0;
+        });
+    InsertTableLockGuard insert_lock(A, has_insert);
+    if (!insert_lock.ready) {
+        std::cout << "COMMIT: insert table lock refused";
+        if (!insert_lock.error.empty()) std::cout << " (" << insert_lock.error << ")";
+        std::cout << ".\n";
+        return {CommitStatus::PartialRecordFailure, 0, 1};
+    }
+
     CursorRestore restore(A);
 
     // A later memo/index/journal failure must not make the pending operation
-    // disappear. Updates and deletes are safe to reapply on retry; COMMIT does
-    // not currently materialize CHANGE_INSERT in apply_one_recno().
+    // disappear. Inserts, updates, and deletes are idempotent at their reserved
+    // record number and are safe to reapply on retry.
     const auto pending_before = tb.changes;
 
     // Write-ahead: durably fsync the redo log + COMMIT marker BEFORE applying the

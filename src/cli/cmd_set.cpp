@@ -127,6 +127,8 @@
 #include "cli/command_output.hpp"
 #include "cli/output_router.hpp"
 #include "cli/settings.hpp"
+#include "sqlsel/mode.hpp"
+#include "sqlsel_statement.hpp"
 #include "xbase_error_context.hpp"   // SET ERRORSTOP -> stop_on_error[severity]
 #include "cli/table_state.hpp"
 
@@ -688,6 +690,56 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
     //   SET ?
     if (opt == "USAGE" || opt == "HELP" || opt == "?") {
         print_set_usage();
+        return;
+    }
+
+    // @dottalk.subusage v1
+    // parent: SET
+    // sub: MODE
+    // category: sql
+    // tier: public
+    // status: supported
+    // disp-style: inline
+    // handler: cmd_SET
+    // usage-access: SET MODE
+    // summary:
+    //   Select the session-only command language. Types and stored values are
+    //   mode-invariant; SQL mode changes aliases and relation-command access.
+    // usage:
+    //   SET MODE
+    //   SET MODE [TO] NATIVE|SQL|OTHER
+    if (opt == "MODE") {
+        std::string value;
+        if (!(args >> value)) {
+            out << "MODE: " << sqlsel::session_mode_name() << " (session only).\n";
+            return;
+        }
+        value = up_copy(value);
+        if (value == "TO") {
+            if (!(args >> value)) {
+                out << "SET MODE: expected NATIVE, SQL, or OTHER.\n";
+                return;
+            }
+            value = up_copy(value);
+        }
+        std::string trailing;
+        if (args >> trailing) {
+            out << "SET MODE: unexpected trailing input '" << trailing << "'.\n";
+            return;
+        }
+        if (sqlsel::transaction_active() && value != "SQL") {
+            out << "SET MODE: COMMIT or ROLLBACK the active SQL transaction first.\n";
+            return;
+        }
+        if (value == "NATIVE") sqlsel::set_session_mode(sqlsel::SessionMode::Native);
+        else if (value == "SQL") sqlsel::set_session_mode(sqlsel::SessionMode::Sql);
+        else if (value == "OTHER") sqlsel::set_session_mode(sqlsel::SessionMode::Other);
+        else {
+            out << "SET MODE: expected NATIVE, SQL, or OTHER (got '" << value << "').\n";
+            return;
+        }
+        out << "MODE: " << sqlsel::session_mode_name()
+            << " (session only; prompt and aliases updated).\n";
         return;
     }
 

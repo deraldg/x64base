@@ -7,18 +7,15 @@
 // owner: member.derald
 // status: supported
 
-// src/cli/sqlsel_statement.hpp -- SQLSEL set-oriented statement surface (P3/P4.4).
+// src/cli/sqlsel_statement.hpp -- SQLSEL set-oriented statement surface.
 //
-// The ONE new component of the SQLSEL lane: a SELECT statement parser.
-// Everything beneath it consumes proven engine seams (area resolution,
-// predicate compile/eval, tuple projection, cursor guards, and P4's own
-// correctness-first two-table matcher with an optional CDX inner seek).
+// This is the SQL statement coordinator. Everything beneath it consumes house
+// engine seams: workspace-scoped area resolution, typed TupleRows, expression
+// compile/eval, cursor guards, locks, table buffers, TBJ1 WAL, and COMMIT.
 //
-// Orthogonality (R16): a statement reads the table named in FROM. It does not
-// read or disturb session state -- not the current area, not the record
-// pointer, not SET FILTER, not SET RELATION. Read-only in v1 (DML is P5).
-//
-// Flip status to supported when gate G3 is green (the flip is the publish).
+// SELECT does not read or disturb the current area, record pointers, SET FILTER,
+// or SET RELATION. DML deliberately mutates one workspace-local target through
+// the same storage and transaction machinery as native xBase commands.
 
 #pragma once
 
@@ -26,12 +23,18 @@
 
 namespace sqlsel {
 
-// Try to execute `tail` as a SELECT statement.
-//   tail: everything after the SQLSEL verb.
-// Returns true when the tail began with SELECT and was handled here (whether
-// it succeeded or reported a corrective error). Returns false when the tail is
-// not a SELECT statement, so the caller keeps its legacy predicate-scan path.
+// Try to execute `tail` as a SELECT statement. Returns false only when the text
+// is not statement-shaped, allowing the caller's legacy predicate-scan path.
 bool try_execute_select(const std::string& tail);
+
+// Execute any canonical SQLsel statement. SELECT remains backward-compatible
+// with the keyword-optional SQLSEL form; INSERT/UPDATE/DELETE and transaction
+// control require their SQL keyword.
+bool try_execute_statement(const std::string& statement);
+
+// SET MODE uses this to prevent a live SQL transaction from being orphaned by
+// changing command languages before COMMIT or ROLLBACK.
+bool transaction_active() noexcept;
 
 // The ONE runtime description of the statement grammar. Exported so the SQLSEL
 // usage printer shares it instead of keeping a second copy -- three authorities

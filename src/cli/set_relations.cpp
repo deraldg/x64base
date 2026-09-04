@@ -26,6 +26,7 @@
 #include "workarea_util.hpp"
 #include "xbase/workspace_membership.hpp"   // I1.2: the store is partitioned by workspace handle
 #include "dottalk/build_vectors.hpp"        // AIF-044: the depth cap is a build vector, not a literal
+#include "sqlsel/mode.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -917,7 +918,9 @@ void refresh_for_current_parent() noexcept {
     } catch (...) {}
 }
 
-void refresh_if_enabled() noexcept { if (g_autorefresh) refresh_for_current_parent(); }
+void refresh_if_enabled() noexcept {
+    if (!sqlsel::sql_mode() && g_autorefresh) refresh_for_current_parent();
+}
 
 std::vector<std::string> child_areas_for_current_parent() {
     std::vector<std::string> out;

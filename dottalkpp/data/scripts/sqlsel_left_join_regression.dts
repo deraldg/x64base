@@ -1,7 +1,7 @@
 ; ============================================================================
 ; AIF-074 P4.3 -- SQLsel LEFT JOIN, produced absence, and oracle gate G4c
 ;
-; Status: CANDIDATE / explicit-run
+; Status: CANDIDATE / explicit-run pending this widened oracle gate
 ; Safety: MUTATING (SANDBOX only; two fixtures and sidecars self-erase)
 ;
 ; Proves:
@@ -13,14 +13,15 @@
 ;   LJ4 a deleted outer row is absent and a deleted-only inner match extends.
 ;   LJ5 CDX seek and nested-loop scan return the same rows and counts.
 ;   LJ6 both source cursors survive, and a caller-owned FLOCK is preserved.
-;   LJ7 LEFT WHERE refuses until SQL three-valued predicates exist.
+;   LJ7 LEFT WHERE follows ON -> extension -> WHERE operator order.
+;   LJ8 produced-absent comparisons yield UNKNOWN; WHERE keeps only TRUE.
 ;   ORACLE SQLite NULL is mapped explicitly to <UNMATCHED>.
 ;
 ; Read rule: REGRESSION SQLSEL_LEFT_JOIN must print
 ;   SQLSEL LEFT JOIN ORACLE: PASS.
-; The validator compares four row sets, requires four exact left-extended
-; reports, 2 seek + 2 scan paths, four read fences, cursor/lock evidence, and
-; the exact LEFT-WHERE refusal block. A direct DOTSCRIPT run does not invoke it.
+; The validator compares seven row sets, requires seven exact left-extended
+; reports, 3 seek + 4 scan paths, seven read fences, cursor/lock evidence, and
+; explicit UNKNOWN truth-table behavior. A direct DOTSCRIPT run does not invoke it.
 ; ============================================================================
 
 SET ECHO OFF
@@ -105,6 +106,10 @@ FORMULA "SQLSEL-LJ-SEEK-COUNT-BEGIN"
 SQLSEL COUNT(*) FROM SQLLJL L LEFT JOIN SQLLJR R ON L.ID = R.ID
 FORMULA "SQLSEL-LJ-SEEK-COUNT-END"
 
+FORMULA "SQLSEL-LJ-SEEK-WHERE-BEGIN"
+SQLSEL L.LBL,R.PAYLOAD FROM SQLLJL L LEFT JOIN SQLLJR R ON L.ID = R.ID WHERE R.PAYLOAD = "R1A" ORDER BY L.ID
+FORMULA "SQLSEL-LJ-SEEK-WHERE-END"
+
 ? "LJ_T1_caller_table_lock_preserved:" + FILE("DBF/SANDBOX/SQLLJL.dbf.lock")
 UNLOCK TABLE
 
@@ -121,14 +126,18 @@ FORMULA "SQLSEL-LJ-SCAN-COUNT-BEGIN"
 SQLSEL COUNT(*) FROM SQLLJL L LEFT JOIN SQLLJR R ON L.ID = R.ID
 FORMULA "SQLSEL-LJ-SCAN-COUNT-END"
 
+FORMULA "SQLSEL-LJ-SCAN-WHERE-BEGIN"
+SQLSEL L.LBL,R.PAYLOAD FROM SQLLJL L LEFT JOIN SQLLJR R ON L.ID = R.ID WHERE R.PAYLOAD = "R1A" ORDER BY L.ID
+FORMULA "SQLSEL-LJ-SCAN-WHERE-END"
+
+FORMULA "SQLSEL-LJ-UNKNOWN-OR-TRUE-BEGIN"
+SQLSEL L.LBL,R.PAYLOAD FROM SQLLJL L LEFT JOIN SQLLJR R ON L.ID = R.ID WHERE R.PAYLOAD = "NOPE" OR L.LBL = "L3" ORDER BY L.ID
+FORMULA "SQLSEL-LJ-UNKNOWN-OR-TRUE-END"
+
 SELECT 1
 ? "LJ_C1_left_cursor_restored:" + (ID = 6 AND ALLTRIM(LBL) = "L6")
 SELECT 2
 ? "LJ_C2_right_cursor_restored:" + (ID = 9 AND ALLTRIM(PAYLOAD) = "ORPHAN")
-
-FORMULA "SQLSEL-LJ-REFUSALS-BEGIN"
-SQLSEL L.LBL,R.PAYLOAD FROM SQLLJL L LEFT JOIN SQLLJR R ON L.ID = R.ID WHERE R.PAYLOAD = "R1A"
-FORMULA "SQLSEL-LJ-REFUSALS-END"
 
 FORMULA "SQLSEL-LJ-ORACLE-BEGIN"
 SQLITE OPEN :memory:
@@ -152,6 +161,18 @@ FORMULA "SQLSEL-LJ-O3-END"
 FORMULA "SQLSEL-LJ-O4-BEGIN"
 SQLITE SELECT SELECT COUNT(*) FROM SQLLJL L LEFT JOIN SQLLJR R ON L.ID=R.ID AND R.D=0 WHERE L.D=0;
 FORMULA "SQLSEL-LJ-O4-END"
+
+FORMULA "SQLSEL-LJ-O5-BEGIN"
+SQLITE SELECT SELECT L.LBL,COALESCE(R.PAYLOAD,'<UNMATCHED>') FROM SQLLJL L LEFT JOIN SQLLJR R ON L.ID=R.ID AND R.D=0 WHERE L.D=0 AND R.PAYLOAD='R1A' ORDER BY L.ID;
+FORMULA "SQLSEL-LJ-O5-END"
+
+FORMULA "SQLSEL-LJ-O6-BEGIN"
+SQLITE SELECT SELECT L.LBL,COALESCE(R.PAYLOAD,'<UNMATCHED>') FROM SQLLJL L LEFT JOIN SQLLJR R ON L.ID=R.ID AND R.D=0 WHERE L.D=0 AND R.PAYLOAD='R1A' ORDER BY L.ID;
+FORMULA "SQLSEL-LJ-O6-END"
+
+FORMULA "SQLSEL-LJ-O7-BEGIN"
+SQLITE SELECT SELECT L.LBL,COALESCE(R.PAYLOAD,'<UNMATCHED>') FROM SQLLJL L LEFT JOIN SQLLJR R ON L.ID=R.ID AND R.D=0 WHERE L.D=0 AND (R.PAYLOAD='NOPE' OR L.LBL='L3') ORDER BY L.ID;
+FORMULA "SQLSEL-LJ-O7-END"
 
 SQLITE CLOSE
 FORMULA "SQLSEL-LJ-ORACLE-END"

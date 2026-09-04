@@ -79,6 +79,13 @@ if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/xexpr/CMakeLists.txt")
   add_subdirectory(xexpr)
 endif()
 
+# SQLsel is a statement engine consumer over xbase/xexpr/tuple seams. Keep its
+# object code out of the CLI executable so other frontends can link it without
+# inheriting the command registry.
+if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/sqlsel/CMakeLists.txt")
+  add_subdirectory(sqlsel)
+endif()
+
 # ---- DotTalk Value (DTV) domain foundation -----------------------------------
 # Canonical domain value + qualified-reference parser + DataAddress (tuple/PDLC,
 # AIF-038 shared Phase-0). Compile-only foundation; no DbArea/tuple/expression/array
@@ -128,6 +135,7 @@ set(_EXCLUDE_DIRS
   "${CMAKE_CURRENT_SOURCE_DIR}/xbase"
   "${CMAKE_CURRENT_SOURCE_DIR}/xindex"
   "${CMAKE_CURRENT_SOURCE_DIR}/xexpr"
+  "${CMAKE_CURRENT_SOURCE_DIR}/sqlsel"
   "${CMAKE_CURRENT_SOURCE_DIR}/value"      # dottalk_value (DTV) built as a separate lib
   "${CMAKE_CURRENT_SOURCE_DIR}/reference"  # dottalk_value (DTV) built as a separate lib
   "${CMAKE_CURRENT_SOURCE_DIR}/memo"
@@ -178,6 +186,7 @@ set(DOTTALKPP_SOURCES "${DOTTALKPP_SOURCES_FILTERED}")
 # implementation is owned exclusively by xbase.lib.
 list(REMOVE_ITEM DOTTALKPP_SOURCES
   "${CMAKE_SOURCE_DIR}/src/cli/record_view.cpp"
+  "${CMAKE_SOURCE_DIR}/src/cli/sqlsel_statement.cpp"
   "${CMAKE_SOURCE_DIR}/src/cli/index_summary_none.cpp"
   # Stale duplicate of xbase::dbf_create::create_dbf. When globbed into the CLI
   # it links into the exe and shadows xbase.lib's ramfs-aware create_dbf (the
@@ -405,6 +414,7 @@ file(GLOB_RECURSE _dottalk_lib_srcs CONFIGURE_DEPENDS
   "${CMAKE_CURRENT_SOURCE_DIR}/xbase/*.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/xindex/*.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/xexpr/*.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/sqlsel/*.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/value/*.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/memo/*.cpp"
 )
@@ -553,6 +563,10 @@ endif()
 
 if (TARGET dottalk_value)
   target_link_libraries(dottalkpp PRIVATE dottalk_value)
+endif()
+
+if (TARGET sqlsel)
+  target_link_libraries(dottalkpp PRIVATE sqlsel)
 endif()
 
 # AI-BBS lane libs (libsodium/ws2_32) are linked at the top level, where

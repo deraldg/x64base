@@ -10,14 +10,14 @@
 *   S3  WHERE predicate filters
 *   S4  LIMIT caps AND says so (honesty, P1.3 pattern)
 *   S5  cursor neutrality: recno before == recno after (R16b)
-*   S6  corrective errors: unopened table, expression select-item
+*   S6  typed expression projection plus corrective errors
 *   S7  legacy path preserved: SQLSEL USAGE still works
 *   S13 tuple-evaluator migration: function predicate and fail-closed errors
 *   S14 single-table alias + qualified projection/WHERE/ORDER BY
 *   ORACLE  the same queries over the same data in SQLite, for row comparison
 * Read rule: REGRESSION SQLSEL_SELECT_V1 machine-compares every marked SQLSEL
 *   row set with its paired SQLite oracle, requires all three cursor guards,
-*   all eight corrective refusals, both LIMIT reports, and all four sort-path
+*   all seven corrective refusals, both LIMIT reports, and all four sort-path
 *   reports. Missing or empty evidence fails closed. Direct DOTSCRIPT execution
 *   still prints the same evidence but does not invoke the REGRESSION validator.
 * ============================================================================
@@ -80,10 +80,12 @@ FORMULA "SQLSEL-S4-END"
 * --- S5: cursor neutrality after all of the above ---
 ? "S5B_cursor_unmoved_after:" + (ALLTRIM(LNAME) = "BAKER")
 
-* --- S6: corrective errors (must NOT be silent, must NOT emit rows) ---
+* --- S6: typed expression projection, then corrective errors ---
 FORMULA "SQLSEL-S6-BEGIN"
 SQLSEL SELECT SID FROM NOSUCHTABLE
-SQLSEL SELECT ALLTRIM(LNAME) FROM SQLSTU
+FORMULA "SQLSEL-S6Q-BEGIN"
+SQLSEL SELECT ALLTRIM(LNAME) AS TRIMMED FROM SQLSTU
+FORMULA "SQLSEL-S6Q-END"
 SQLSEL SELECT SID,LNAME FROM SQLSTU LIMIT abc
 FORMULA "SQLSEL-S6-END"
 
@@ -162,6 +164,9 @@ FORMULA "SQLSEL-O3-END"
 FORMULA "SQLSEL-O4-BEGIN"
 SQLITE SELECT SELECT SID, LNAME FROM SQLSTU ORDER BY SID LIMIT 2;
 FORMULA "SQLSEL-O4-END"
+FORMULA "SQLSEL-O6-BEGIN"
+SQLITE SELECT SELECT TRIM(LNAME) FROM SQLSTU ORDER BY SID;
+FORMULA "SQLSEL-O6-END"
 FORMULA "SQLSEL-O8A-BEGIN"
 SQLITE SELECT SELECT SID, LNAME FROM SQLSTU ORDER BY LNAME ASC;
 FORMULA "SQLSEL-O8A-END"

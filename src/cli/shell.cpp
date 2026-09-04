@@ -81,6 +81,7 @@
 #include "cli/dirty_prompt.hpp"
 #include "cli/rel_refresh_suppress.hpp"
 #include "cli/settings.hpp"
+#include "sqlsel/mode.hpp"
 #include "cmd_polling.hpp"
 #include "shell_commands.hpp"
 #include "shell_shortcuts.hpp"
@@ -590,6 +591,8 @@ int run_shell()
     std::string line;
     while (true) {
         if (block_state().active || loop_capture_state().active) std::cout << ".. ";
+        else if (sqlsel::session_mode() == sqlsel::SessionMode::Sql) std::cout << "sql> ";
+        else if (sqlsel::session_mode() == sqlsel::SessionMode::Other) std::cout << "other> ";
         else std::cout << prompt_char << " ";
         dt_cli_outbuf::flush_prompt();
 

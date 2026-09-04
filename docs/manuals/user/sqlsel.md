@@ -1,729 +1,497 @@
-# SQLsel: Set-Oriented Queries in x64base
+# SQLsel: Typed SQL Over x64base Work Areas
 
 ```yaml
 page_id: USER-SQLSEL-01
 title: SQLsel
 audience: knows xBase, new to SQLsel
-status: DRAFT
+status: DEVELOPMENT-RUNTIME-VERIFIED
 last_verified: 2026-09-03
 runtime_scope: development
 ```
 
-## Who this is for
+## Purpose and authority
 
-This chapter is for an xBase user who wants a row set without changing the
-way the surrounding session is positioned. It assumes you already know how to
-open a table with `USE`, choose a work area with xBase `SELECT <area>`, and
-inspect ordinary DBF fields.
+SQLsel is the house SQL surface for x64base. It provides SQL-shaped selection,
+joins, set operations, grouping, subqueries, and guarded data changes without
+replacing the x64base storage engine.
 
-`SQLSEL HELP` and `SQLSEL USAGE` own the exact grammar accepted by the running
-program. This chapter explains what the grammar means, how the pieces compose,
-where SQLsel deliberately differs from a general SQL engine, and how to recover
-from the refusals you are likely to meet.
+The important architectural fact is simple: SQLsel is not a second database.
+It resolves existing open work areas, carries their declared field types in
+typed TupleRows, evaluates through the house expression engine, and sends data
+changes through the existing table buffer, TBJ1 write-ahead journal, locks,
+index maintenance, and COMMIT path.
 
-This revision documents the current `development` runtime. Single-table
-selection and INNER JOIN are default-suite features. LEFT, RIGHT, FULL, and
-CROSS JOIN are runtime-proven candidates with named regression gates. They may
-not yet exist in an older public or staged build.
+`SQLSEL HELP` and `SQLSEL USAGE` are the grammar authority for the executable
+you are actually running. This chapter explains the model and the boundaries.
+It documents the current `development` runtime; an older staged or public build
+may expose less.
 
----
+## 1. Two ways to type SQLsel
 
-## Part 1 -- The model
-
-### SQLsel is the select verb
-
-The product name is **SQLsel**. The command is typed as `SQLSEL`.
-
-The canonical statement starts with one select verb:
+In native mode, prefix a statement with `SQLSEL`:
 
 ```text
-SQLSEL SID,LNAME FROM STUDENTS
+SQLSEL SID,LNAME FROM STUDENTS WHERE MAJOR = 'CSCI'
+SQLSEL INSERT INTO STUDENTS (SID,LNAME) VALUES (9,'SMITH')
 ```
 
-The compatibility spelling with a second `SELECT` is still accepted:
+`SQLSEL` is itself the select verb. A second `SELECT` is accepted for
+compatibility, but is optional:
 
 ```text
 SQLSEL SELECT SID,LNAME FROM STUDENTS
 ```
 
-Prefer the first form in new work. Do not confuse either form with xBase
-`SELECT <area>`, which changes the current work area.
+SQL mode supplies familiar aliases:
 
-### SQLsel reads open work areas
+```text
+SET MODE SQL
+SELECT SID,LNAME FROM STUDENTS
+UPDATE STUDENTS SET LNAME = UPPER(LNAME) WHERE SID = 9
+SET MODE NATIVE
+```
 
-`FROM STUDENTS` does not open a file. It resolves an already-open work area by
-name. Open every source table first:
+In SQL mode, `SELECT`, `INSERT`, `UPDATE`, `DELETE`, `BEGIN`, `COMMIT`, and
+`ROLLBACK` route to SQLsel. Native `SELECT <area>` and REL commands are not
+available until you return to native mode. `SQLSEL` itself remains accepted in
+either mode.
+
+## 2. Tables, workspaces, and session state
+
+### Open the tables first
+
+SQLsel does not open files named in `FROM`, `INSERT INTO`, `UPDATE`, or
+`DELETE FROM`. Open the tables with the ordinary xBase commands first:
 
 ```text
 SET PATH DBF DBF/x64
 SELECT 1
 USE STUDENTS
-
-SQLSEL SID,LNAME,MAJOR FROM STUDENTS LIMIT 5
+SELECT 2
+USE ENROLL
 ```
 
-A table does not have to be current when SQLsel reads it. It only has to be
-open and uniquely identifiable by its table name.
+### Names are scoped to the current workspace
 
-### A statement is session-neutral
+SQLsel resolves table names only among areas belonging to the current
+workspace. If workspace A and workspace B both have a table named `STUDENTS`,
+a SQLsel statement issued while A is current reaches A's table. It does not
+pick the lowest matching slot from another workspace.
 
-A SQLsel statement names its own table or tables and produces a row set. It
-does not use these parts of the ambient xBase session:
+SQLsel does not currently accept a `workspace.table` qualifier. Switch to the
+workspace you intend to query, then issue the statement. One statement cannot
+join across two workspaces.
 
-- the current work area;
+### SELECT is cursor-neutral
+
+A SQLsel SELECT does not consume:
+
 - the current record pointer;
 - `SET FILTER`;
 - `REL` or `SET RELATION` state.
 
-When the statement finishes, the current area and every source cursor are put
-back where they were. This is true on ordinary success and on the guarded
-failure paths covered by the regression suite.
+It restores the current area and every source cursor after success or guarded
+failure. Statement SELECT excludes records marked deleted.
 
-The statement does honor the data actually stored in the open tables. Records
-marked deleted are excluded from statement-form SQLsel queries.
+SQLsel JOIN and RelTalk answer different questions. JOIN matches sets described
+inside one statement. REL follows a declared, cursor-oriented relationship
+graph. A JOIN does not declare a relation, and a declared relation does not
+change SQLsel's result.
 
-### SQLsel and RelTalk are different relational tools
+## 3. SELECT grammar and typed expressions
 
-| Question | SQLsel | REL / RelTalk |
-|---|---|---|
-| Starting point | all live rows named by the statement | the current parent record |
-| Relationship | written ad hoc in `JOIN ... ON` | declared relation graph |
-| Session state | ignored and restored | intentionally cursor-oriented |
-| Result | a row set | a traversal projection |
-| Best use | selection, sorting, counting, ad hoc matching | walking a known relationship from the current record |
-
-Neither surface is a replacement for the other. A declared `REL` does not make
-a SQLsel JOIN, and a SQLsel JOIN does not declare or alter a relationship.
-
----
-
-## Part 2 -- Statement grammar at a glance
-
-The current statement family is:
+The general query shape is:
 
 ```text
-SQLSEL <columns> FROM <table> [[AS] <alias>]
+SQLSEL [SELECT] [DISTINCT] <select-list>
+       FROM <source>
        [WHERE <predicate>]
-       [ORDER BY <field> [ASC|DESC]]
-       [LIMIT <n>]
-
-SQLSEL * FROM <table>
-
-SQLSEL COUNT(*) FROM <table> [WHERE <predicate>]
-
-SQLSEL <columns> FROM <left> [[AS] <left-alias>]
-       [INNER] JOIN <right> [[AS] <right-alias>]
-       ON <left-alias.field> = <right-alias.field>
-       [WHERE <predicate>]
-       [ORDER BY <field> [ASC|DESC]]
-       [LIMIT <n>]
-
-SQLSEL <columns> FROM <left> [[AS] <left-alias>]
-       LEFT|RIGHT|FULL JOIN <right> [[AS] <right-alias>]
-       ON <left-alias.field> = <right-alias.field>
-       [ORDER BY <field> [ASC|DESC]]
-       [LIMIT <n>]
-
-SQLSEL <columns> FROM <left> [[AS] <left-alias>]
-       CROSS JOIN <right> [[AS] <right-alias>]
-       [WHERE <predicate>]
-       [ORDER BY <field> [ASC|DESC]]
-       [LIMIT <n>]
+       [GROUP BY <group-list>]
+       [HAVING <predicate>]
+       [ORDER BY <item> [ASC|DESC] [, ...]]
+       [LIMIT <non-negative-integer>]
 ```
 
-The brackets above mean optional syntax; do not type the brackets.
-
-Current structural limits are important:
-
-- one source table, or exactly two tables joined once;
-- two distinct open tables for a JOIN; self-join is not yet supported;
-- a select list of column names or `*`, not computed expressions;
-- one `ORDER BY` field;
-- one equality condition in `ON` for non-CROSS joins;
-- qualified `ON` fields, such as `S.SID = E.SID`;
-- no `ON` clause for CROSS JOIN.
-
-When a request falls outside those limits, SQLsel reports a corrective error.
-It does not silently replace the unsupported request with a scan or an empty
-result.
-
----
-
-## Part 3 -- Single-table queries
-
-### Project selected columns
+The select list may contain stored columns, `*`, aggregates, and supported
+house expressions with optional aliases:
 
 ```text
-SQLSEL SID,LNAME,FNAME FROM STUDENTS
-```
-
-SQLsel prints a header, one result line per selected row, and a row count. The
-select list may contain unqualified columns or columns qualified by the table
-name or alias:
-
-```text
-SQLSEL S.SID,S.LNAME FROM STUDENTS AS S
-```
-
-Names and aliases are matched without regard to letter case. A qualifier must
-name the table or the alias used in the `FROM` clause.
-
-### Project every column
-
-```text
+SQLSEL SID,LNAME FROM STUDENTS
 SQLSEL * FROM STUDENTS LIMIT 5
+SQLSEL UPPER(LNAME) AS SURNAME,GPA + 0.25 AS PROJECTED_GPA FROM STUDENTS
 ```
 
-Use `*` when you want the complete stored row. SQLsel v1 does not mix `*` with
-other select-list items.
+The expression engine sees the TupleRow's field types. Numeric, logical, date,
+and character values do not become an untyped bag of strings merely because
+the result is printed as text. Unknown columns, malformed trailing input, and
+incompatible operations refuse instead of silently returning an empty set.
 
-### Filter with WHERE
+`WHERE` retains rows for which the predicate is TRUE:
 
 ```text
-SQLSEL SID,LNAME,MAJOR FROM STUDENTS WHERE MAJOR = "CSCI"
+SQLSEL SID,LNAME,GPA FROM STUDENTS
+       WHERE ALLTRIM(MAJOR) = 'CSCI' AND GPA >= 3.0
 ```
 
-The predicate is compiled once, then evaluated against each candidate row.
-Logical combinations and supported expression functions work through the
-shared expression engine:
+`ORDER BY` may name multiple result columns. Sorting happens before `LIMIT`:
 
 ```text
-SQLSEL SID,LNAME,GPA FROM STUDENTS WHERE ALLTRIM(MAJOR) = "CSCI" AND GPA >= 3.0
+SQLSEL MAJOR,LNAME,SID FROM STUDENTS
+       ORDER BY MAJOR ASC,LNAME DESC LIMIT 20
 ```
 
-Unknown fields, malformed trailing input, and incompatible comparisons report
-an error. A misspelled field must not look like a legitimate empty result.
+SQLsel reports materialized sorting and reports when LIMIT hides additional
+rows. Without `ORDER BY`, observed output order is not a durable contract.
 
-### Sort before limiting
+## 4. Joins
+
+### Two-table joins
+
+SQLsel supports INNER, LEFT, RIGHT, FULL, and CROSS joins over open tables:
 
 ```text
-SQLSEL SID,LNAME,MAJOR FROM STUDENTS WHERE MAJOR = "CSCI" ORDER BY LNAME LIMIT 3
+SQLSEL S.SID,S.LNAME,E.CLS_ID
+       FROM STUDENTS S
+       JOIN ENROLL E ON S.SID = E.SID
+
+SQLSEL S.SID,S.LNAME,E.CLS_ID
+       FROM STUDENTS S
+       LEFT JOIN ENROLL E ON S.SID = E.SID
 ```
 
-`ORDER BY` is applied to the full matching set. `LIMIT` is applied after the
-sort. SQLsel reports both the number of hidden rows after a limit and the sort
-access path. The current single-table path is a materialized sort.
+`JOIN` means `INNER JOIN`. CROSS JOIN has no ON clause. Aliases should be
+distinct, and qualification is required when a bare name would be ambiguous.
 
-Use `DESC` for descending order:
+ON is a typed predicate, not just a single textual key comparison. Composite
+conditions work:
 
 ```text
-SQLSEL SID,LNAME FROM STUDENTS ORDER BY LNAME DESC LIMIT 10
+SQLSEL E.NAME,B.AMT
+       FROM EMPLOYEE E
+       JOIN BONUS B ON E.ID = B.ID AND E.DEPT = B.DEPT
 ```
 
-Without `ORDER BY`, do not treat the observed row order as a durable contract.
-
-`LIMIT` accepts zero or a positive integer. `LIMIT 0` selects no display rows
-but still represents a deliberate limit, not a syntax error.
-
-### Count rows
+Self-joins work when aliases distinguish the two roles:
 
 ```text
-SQLSEL COUNT(*) FROM STUDENTS
-SQLSEL COUNT(*) FROM STUDENTS WHERE GPA >= 3.0
+SQLSEL E.NAME,M.NAME
+       FROM EMPLOYEE E
+       JOIN EMPLOYEE M ON E.MGR = M.ID
 ```
 
-`COUNT(*)` is the one aggregate implemented in the current statement surface.
-It returns one output row. `ORDER BY` does not apply to `COUNT(*)` and is
-refused.
+### Join chains
 
-`COUNT(field)`, `SUM`, `AVG`, `MIN`, `MAX`, `GROUP BY`, and `HAVING` are planned
-but are not current grammar. When numeric aggregates arrive, the recorded
-x64base rule is to skip blank non-numeric cells and report both the contributing
-and blank counts. That future rule does not turn a DBF blank into SQL NULL.
-
----
-
-## Part 4 -- Joining two open tables
-
-Open both inputs in separate work areas before running the statement:
+Three or more sources can be chained with INNER, LEFT, and CROSS stages:
 
 ```text
-SET PATH DBF DBF/x64
-
-SELECT 1
-USE STUDENTS
-
-SELECT 2
-USE ENROLL
-
-SELECT 1
-SQLSEL S.LNAME,E.CLS_ID FROM STUDENTS S JOIN ENROLL E ON S.SID = E.SID ORDER BY E.CLS_ID LIMIT 5
+SQLSEL E.NAME,B.KIND,C.LABEL
+       FROM EMPLOYEE E
+       JOIN BONUS B ON E.ID = B.ID
+       JOIN CATEGORY C ON B.KIND = C.KIND
+       ORDER BY E.NAME
 ```
 
-The shipped x64 `ENROLL` table stores the class identifier in `CLS_ID`. Use
-`E.CLS_ID`, not a generic `E.COURSE` name copied from another schema.
+RIGHT and FULL remain two-table forms. A chain containing a RIGHT or FULL stage
+refuses rather than rewriting the query.
 
-### Aliases are more than decoration
+### Outer absence and three-valued logic
 
-Aliases make ownership explicit:
-
-```text
-FROM STUDENTS AS S JOIN ENROLL AS E ON S.SID = E.SID
-```
-
-The `AS` keyword is optional:
-
-```text
-FROM STUDENTS S JOIN ENROLL E ON S.SID = E.SID
-```
-
-Use aliases for every join and qualify every projected field. SQLsel refuses an
-ambiguous unqualified column instead of guessing which table you meant. The two
-`ON` operands must be qualified.
-
-### INNER JOIN
-
-`JOIN` and `INNER JOIN` mean the same thing. Only matched pairs are emitted:
-
-```text
-SQLSEL S.SID,S.LNAME,E.CLS_ID FROM STUDENTS S INNER JOIN ENROLL E ON S.SID = E.SID
-```
-
-If one student matches three enrollment records, the result contains three
-rows. That multiplication is relational behavior, not a duplicate-removal bug.
-
-INNER JOIN permits a `WHERE` predicate over the joined row:
-
-```text
-SQLSEL S.LNAME,E.CLS_ID FROM STUDENTS S JOIN ENROLL E ON S.SID = E.SID WHERE E.CLS_ID = "F25ARTS102"
-```
-
-### LEFT JOIN
-
-LEFT JOIN preserves every live left row. A left row with no match receives
-produced-absent cells on the right:
-
-```text
-SQLSEL S.SID,S.LNAME,E.CLS_ID FROM STUDENTS S LEFT JOIN ENROLL E ON S.SID = E.SID
-```
-
-### RIGHT JOIN
-
-RIGHT JOIN preserves every live right row. An enrollment with no matching
-student receives produced-absent cells on the left:
-
-```text
-SQLSEL S.SID,S.LNAME,E.CLS_ID FROM STUDENTS S RIGHT JOIN ENROLL E ON S.SID = E.SID
-```
-
-### FULL JOIN
-
-FULL JOIN preserves unmatched rows from both inputs:
-
-```text
-SQLSEL S.SID,S.LNAME,E.CLS_ID FROM STUDENTS S FULL JOIN ENROLL E ON S.SID = E.SID
-```
-
-### CROSS JOIN
-
-CROSS JOIN emits the Cartesian product of the live rows in both tables. It has
-no `ON` clause:
-
-```text
-SQLSEL S.SID,E.CLS_ID FROM STUDENTS S CROSS JOIN ENROLL E LIMIT 10
-```
-
-The full shipped example is large: 200 students by 686 enrollments before
-deleted-row exclusions means up to 137,200 pairs. Use a selective `WHERE` or a
-small `LIMIT` while exploring, but remember that the current implementation
-forms and filters the candidate pairs before `LIMIT` trims the displayed set.
-
-CROSS JOIN permits `WHERE` because every result cell comes from an actual input
-row:
-
-```text
-SQLSEL S.LNAME,E.CLS_ID FROM STUDENTS S CROSS JOIN ENROLL E WHERE S.SID = 50000112 AND E.SID = 50000112
-```
-
-### Outer JOIN and WHERE
-
-`WHERE` on LEFT, RIGHT, or FULL JOIN is currently refused. The predicate seam
-has true, false, and error, but does not yet have SQL's UNKNOWN truth state for
-produced-absent cells. Refusal is safer than treating absence as a DBF blank and
-returning a plausible wrong answer.
-
-Prepare a filtered source table explicitly when that is appropriate, or wait
-for the three-valued predicate phase. Do not rewrite an outer join as an inner
-join and assume it means the same thing.
-
----
-
-## Part 5 -- Blanks, absence, and the lack of SQL NULL
-
-x64base DBF data has no stored SQL NULL literal in SQLsel v1. A blank character
-or numeric cell is a value in the xBase model.
-
-Outer joins still need to show that one side did not produce a row. SQLsel
-carries that state internally as produced absence and renders it as:
+x64base DBFs do not store SQL NULL. Nevertheless, an outer join needs to carry
+the fact that no row was produced on one side. SQLsel represents that fact as
+a typed `ProducedAbsent` cell and renders it as:
 
 ```text
 <UNMATCHED>
 ```
 
-This marker is display, not stored table data and not a new NULL literal.
-SQLsel also reports how many rows were extended on each absent side.
+Produced absence is not a DBF blank, and stored text that happens to equal
+`<UNMATCHED>` is still ordinary text. Comparisons involving produced absence
+evaluate to SQL UNKNOWN. WHERE keeps TRUE and rejects FALSE or UNKNOWN, so
+outer-join filters behave without pretending that a blank is NULL.
 
-Three cases must stay distinct even if two look alike on screen:
+### Read fences and access paths
 
-| Case | Meaning |
+A multi-table SELECT takes cooperative table locks in canonical path order. It
+refuses immediately on contention, before reading a partial set. Locks already
+owned by the caller are borrowed and preserved; locks acquired by SQLsel are
+released when the statement finishes.
+
+This is a statement read fence, not MVCC and not a historical snapshot. A
+process that ignores x64base locking is outside the guarantee.
+
+For a two-table equi-join, SQLsel can use the active attached CDX/LMDB tag on
+the right key. It reports `CDX seek`, `nested-loop scan`, or an honest hybrid.
+Join chains currently report correctness-first nested-loop stages. Equal row
+sets do not prove the requested access path; read the report.
+
+## 5. DISTINCT and set operations
+
+DISTINCT removes duplicate typed rows:
+
+```text
+SQLSEL DISTINCT MAJOR FROM STUDENTS
+```
+
+SQLsel supports:
+
+```text
+<select> UNION <select>
+<select> UNION ALL <select>
+<select> INTERSECT <select>
+<select> EXCEPT <select>
+```
+
+Example:
+
+```text
+SQLSEL SID,LNAME FROM STUDENTS
+UNION
+SELECT SID,LNAME FROM ALUMNI
+```
+
+Each operand must return the same number of columns with compatible TupleRow
+types. SQLsel refuses incompatible operands instead of coercing them. UNION,
+INTERSECT, and EXCEPT remove duplicates; UNION ALL preserves them. INTERSECT
+binds more tightly than UNION and EXCEPT.
+
+The current set-expression surface does not accept an outer ORDER BY or LIMIT.
+Filter or materialize the operands before combining them.
+
+## 6. Grouping and aggregates
+
+Supported aggregates are `COUNT`, `SUM`, `AVG`, `MIN`, and `MAX`:
+
+```text
+SQLSEL COUNT(*),COUNT(SALARY),SUM(SALARY),AVG(SALARY),MIN(SALARY),MAX(SALARY)
+       FROM STAFF
+
+SQLSEL DEPT AS DEPARTMENT,
+       COUNT(*) AS ROWS,
+       AVG(SALARY) AS MEAN_PAY
+       FROM STAFF
+       WHERE ACTIVE = .T.
+       GROUP BY DEPT
+       HAVING COUNT(*) >= 2
+       ORDER BY DEPARTMENT
+```
+
+`COUNT(*)` counts input rows. `COUNT(field)` counts contributing nonblank field
+values. Numeric aggregates skip blank numeric cells and report both the
+contributing count and the blank count. Therefore AVG divides by the number of
+contributing nonblank values, matching the SQL result without declaring the DBF
+blank to be a stored NULL.
+
+SUM and AVG require numeric input. MIN and MAX preserve the relevant field
+type, including dates. A projected nonaggregate column must appear in GROUP BY.
+Aggregate arguments are columns or `*` where the aggregate permits it; arbitrary
+expressions such as `SUM(SALARY+1)` are currently refused.
+
+Grouping can consume a joined result as well as one table:
+
+```text
+SQLSEL D.LABEL,COUNT(*),AVG(A.SALARY)
+       FROM STAFF A JOIN DEPARTMENT D ON A.DEPT = D.DEPT
+       GROUP BY D.LABEL ORDER BY D.LABEL
+```
+
+## 7. Subqueries
+
+SQLsel supports scalar subqueries, IN, NOT IN, EXISTS, and NOT EXISTS:
+
+```text
+SQLSEL SID,NAME FROM STUDENTS S
+       WHERE S.SID IN (SELECT E.SID FROM ENROLL E)
+
+SQLSEL SID,NAME FROM STUDENTS S
+       WHERE EXISTS (SELECT E.SID FROM ENROLL E WHERE E.SID = S.SID)
+
+SQLSEL SID,NAME FROM STUDENTS S
+       WHERE S.SID = (SELECT MAX(SID) FROM STUDENTS WHERE SID < 100)
+```
+
+Uncorrelated subqueries are cached. Correlated subqueries are evaluated against
+the current outer TupleRow and report the actual evaluation count. Scalar
+subqueries must produce at most one row and one column. IN operands must have
+compatible types.
+
+A subquery may correlate to a single-table outer query. Correlation against a
+joined outer scope is currently refused explicitly.
+
+## 8. INSERT, UPDATE, and DELETE
+
+In native mode, use the SQLSEL prefix:
+
+```text
+SQLSEL INSERT INTO STAFF (ID,NAME,SALARY,ACTIVE)
+       VALUES (10,'ALPHA',100.00,.T.),(11,'BETA',125.00,.T.)
+
+SQLSEL UPDATE STAFF
+       SET NAME = UPPER(NAME), SALARY = SALARY + 5
+       WHERE ID = 10
+
+SQLSEL DELETE FROM STAFF WHERE ID = 11
+```
+
+INSERT requires an explicit field list. UPDATE and DELETE require an explicit,
+nonempty WHERE predicate. This is a safety rule: a whole-table change must be
+expressed through a deliberately different house operation, not by omitting a
+clause accidentally.
+
+SQLsel validates field type, width, decimals, logical syntax, and date shape
+through the same storage gate used by REPLACE. INSERT ends at the existing
+`appendBlank()` storage primitive during COMMIT. UPDATE and DELETE likewise use
+the existing change flags and commit machinery. SQLsel does not maintain a
+second physical write implementation.
+
+DELETE marks matching xBase records deleted. It does not PACK the table.
+RECALL can unmark a record according to the normal xBase rules.
+
+Outside an explicit SQL transaction, each DML statement is atomic for its one
+target table and commits automatically through TableBuffer and TBJ1 WAL.
+
+## 9. Explicit transactions
+
+Explicit SQL transactions require SQL mode:
+
+```text
+SET MODE SQL
+BEGIN TRANSACTION
+UPDATE STAFF SET SALARY = SALARY + 5 WHERE DEPT = 'ENG'
+INSERT INTO STAFF (ID,NAME,SALARY,ACTIVE) VALUES (12,'GAMMA',90.00,.T.)
+COMMIT
+SET MODE NATIVE
+```
+
+Use `ROLLBACK` instead of `COMMIT` to discard the staged changes.
+
+The first DML statement takes the target table fence and opens a private
+TableBuffer/TBJ1 scope. Later DML in the transaction reads its own inserts,
+updates, and deletes. A SQLsel SELECT issued before COMMIT deliberately remains
+a committed-truth view; it does not overlay the pending DML buffer.
+
+The transaction is atomic for one target table. A statement targeting a second
+table refuses because x64base does not claim cross-table atomic commit across
+DBF, memo, and index stores. Changing out of SQL mode also refuses while a SQL
+transaction is active, so native COMMIT cannot bypass SQLsel's state.
+
+If COMMIT cannot clear the buffered work, the transaction remains available
+for retry or rollback. A caller-owned table lock remains owned by the caller.
+
+## 10. Blanks, NULL, and memo fields
+
+SQLsel does not add a stored NULL representation to x64base. DBF blanks remain
+typed xBase values. This rule is why aggregate blank handling and outer-join
+absence are explicit rather than implicit conversions.
+
+In DML, the literal `NULL` refuses with guidance to write an explicit typed
+blank instead. Memo-field DML also refuses for now. A memo write can allocate a
+separate object, and that store has not joined the DBF WAL atomicity boundary;
+claiming one transaction across both would be false.
+
+These are deliberate boundaries, not parser omissions:
+
+| Request | Current result |
 |---|---|
-| an ordinary blank cell | the input row exists and the field is blank |
-| produced `<UNMATCHED>` | no input row existed on that side of the outer join |
-| stored text `<UNMATCHED>` | the input row exists and literally contains those characters |
+| ordinary DBF blank | stored typed blank value |
+| outer-join missing side | transient ProducedAbsent / UNKNOWN |
+| INSERT or UPDATE with NULL | refused |
+| INSERT or UPDATE of memo text | refused in SQLsel DML |
+| native REPLACE of memo text | continues through native memo machinery |
 
-The internal row carrier distinguishes all three. Plain text output cannot
-visually distinguish the last two by their cell text alone, so use the join's
-extension report and key columns when interpreting or testing output.
+## 11. Refusals that protect correctness
 
----
+Common corrective results include:
 
-## Part 6 -- Access paths and the JOIN read fence
+- table not open in the current workspace: switch/open the intended workspace;
+- ambiguous column: qualify it with the table alias;
+- incompatible set columns: align arity and TupleRow types;
+- scalar subquery returned more than one row: make it scalar deliberately;
+- RIGHT/FULL in a multi-join chain: use a two-table form or materialize a stage;
+- second DML target inside one transaction: commit/rollback, then begin another;
+- DML NULL or memo field: use a supported typed value/native memo workflow;
+- UPDATE or DELETE without WHERE: supply an explicit predicate;
+- table-buffer capacity exceeded: reduce the transaction batch;
+- lock contention: let the competing owner finish, then retry.
 
-### Every JOIN says how it ran
+Do not recover from a refusal by weakening the query until it merely runs. Read
+the message, preserve the intended semantics, and change the data preparation
+or statement shape deliberately.
 
-For an equality join, SQLsel looks at the right-hand table. If that work area
-has an attached CDX/LMDB index whose active tag matches the right `ON` field,
-SQLsel can seek once per live left row. Otherwise it uses a nested-loop scan.
+## 12. Current development capability boundary
 
-The statement reports one of these paths:
-
-- `CDX seek`;
-- `nested-loop scan`;
-- `hybrid CDX seek + nested-loop scan` if a seek attempt must fall back.
-
-The path report is part of the result evidence. Equal rows do not prove that an
-index was used. If performance matters, read the path line instead of inferring
-the plan from which index files exist on disk.
-
-An index must be attached and its tag active in the right work area. Merely
-having a `.cdx` file beside the DBF is not enough. Use the ordinary index and
-order commands for that area, then run SQLsel and confirm the path it reports.
-
-CROSS JOIN has no equality key and therefore reports the scan path.
-
-### A JOIN takes a cooperative statement read fence
-
-Before reading either table, a JOIN requests cooperative table locks for both
-inputs in canonical path order. The order prevents two SQLsel statements from
-creating an A-then-B versus B-then-A deadlock. The request is non-blocking: if a
-cooperating writer owns either table, the whole statement refuses before it
-reads one side.
-
-If the caller already owns one of the table locks in the current process,
-SQLsel borrows it and leaves it owned when the statement ends. Locks acquired
-by SQLsel are released by SQLsel.
-
-This fence gives one statement a stable cooperative read interval across two
-tables. It is not:
-
-- MVCC or a historical snapshot;
-- a general SQL transaction;
-- cross-table write atomicity;
-- a repair for a non-cooperating process that ignores x64base locks.
-
-Single-table SQLsel does not use this two-table fence. SQLsel does not mutate
-table data.
-
----
-
-## Part 7 -- Committed truth and TABLE BUFFER
-
-SQLsel statement form reads committed table data. An uncommitted TABLE BUFFER
-edit that a preview surface can show is not overlaid onto either projection or
-`WHERE` evaluation.
-
-That split is deliberate:
-
-- `TUP` and `TUPLE` may be preview surfaces for buffered edits;
-- SQLsel is a statement surface and reads committed truth until SQLsel DML is
-  implemented.
-
-Projection and filtering within one SQLsel statement therefore observe the
-same committed source. Commit the buffered edit before expecting a SQLsel
-statement to see it.
-
----
-
-## Part 8 -- Workspaces and name resolution
-
-SQLsel works with open work areas, not with the workspace catalog as a query
-namespace. Its resolver currently sees process-wide open table names.
-
-This leads to a strict practical rule:
-
-> Keep every table name used by one SQLsel statement unique among the open work
-> areas in the process.
-
-A table opened as `STUDENTS` in one workspace and a different `STUDENTS` opened
-in another do not become addressable as `workspace.STUDENTS`. SQLsel has no
-`IN <workspace>` qualifier and does not consult the workspace relation graph.
-Behavior with duplicate open table names is not a cross-workspace contract.
-
-SQLsel can join two areas that happen to belong to different workspaces when
-their process-wide table names are unique. That is an implementation consequence
-of area resolution, not proof of a supported multi-workspace SQL namespace.
-
-If names collide, close the unneeded handle or reopen the tables under a session
-posture that makes the names unique. Do not depend on whichever duplicate a
-particular build happens to find first.
-
-See [Workspaces and MiniDBs](workspaces-and-minidbs.md) for workspace membership
-and duplicate-handle behavior.
-
----
-
-## Part 9 -- The legacy predicate-scan form
-
-Before statement-form SQLsel, the command also supplied a diagnostic count over
-the current area. That form remains for compatibility:
-
-```text
-SQLSEL COUNT
-SQLSEL COUNT ALL
-SQLSEL COUNT DELETED
-SQLSEL COUNT FOR GPA >= 3.0
-SQLSEL LNAME = "SMITH"
-```
-
-Its model is different from a statement:
-
-| Legacy scan | Statement form |
+| Capability | State |
 |---|---|
-| reads the current area | names tables in `FROM` |
-| may move the current cursor | restores all source cursors |
-| `ALL` and `DELETED` select deletion modes | statement rows always exclude deleted records |
-| emits per-record diagnostic lines and a count | emits a row set or `COUNT(*)` |
-| no `FROM` keyword | identified by top-level `FROM` |
+| typed column and expression projection | implemented |
+| WHERE with fail-closed parsing | implemented |
+| multi-column ORDER BY and LIMIT | implemented |
+| two-table INNER/LEFT/RIGHT/FULL/CROSS | implemented |
+| self-join and composite ON | implemented |
+| INNER/LEFT/CROSS join chains | implemented |
+| RIGHT/FULL inside a join chain | refused |
+| outer-join UNKNOWN semantics | implemented |
+| CDX-assisted two-table equi-join | implemented and path-reported |
+| DISTINCT and UNION/UNION ALL/INTERSECT/EXCEPT | implemented |
+| GROUP BY, HAVING, COUNT/SUM/AVG/MIN/MAX | implemented |
+| scalar/IN/NOT IN/EXISTS/NOT EXISTS subqueries | implemented |
+| correlation to a single-table outer scope | implemented and counted |
+| correlation to a joined outer scope | refused |
+| INSERT/UPDATE/DELETE | implemented through house write machinery |
+| autocommit DML | implemented, one target table |
+| BEGIN/COMMIT/ROLLBACK | implemented in SQL mode, one target table |
+| duplicate table names in simultaneous workspaces | current-workspace scoped |
+| workspace-qualified table syntax | not implemented |
+| stored SQL NULL | not present |
+| memo-field SQLsel DML | refused pending an atomic store boundary |
+| cross-table write atomicity | not claimed |
+| cost-based optimizer or EXPLAIN | not implemented |
 
-Use statement form for new set-oriented work. Use the legacy form when you
-specifically want its current-area diagnostic scan.
+## 13. Maintainer verification
 
-`SQLSEL COUNT` is legacy. `SQLSEL COUNT(*) FROM STUDENTS` is statement form.
-The parentheses and `FROM` are not cosmetic.
+The SQLsel regression fixtures are executable specifications. Where SQLite can
+act as a referee, validators compare marked x64base and SQLite result blocks and
+fail closed on missing output. Separate assertions pin access-path reports,
+cursor restoration, lock behavior, transaction evidence, and refusal text.
 
----
-
-## Part 10 -- Common refusals and recovery
-
-### `table '<name>' is not open`
-
-Cause: `FROM` names no open work area.
-
-Recovery: select any convenient area, `USE <name>`, then rerun the statement.
-The source table does not have to remain current.
-
-### `column '<name>' is ambiguous`
-
-Cause: both joined tables own the unqualified projected or ordered name.
-
-Recovery: qualify it with the alias, such as `S.SID` or `E.SID`.
-
-### `JOIN ON columns must be qualified`
-
-Cause: one side of `ON` was written as a bare field.
-
-Recovery:
+Run the focused gates from a clean enough runtime session:
 
 ```text
-ON S.SID = E.SID
+REGRESSION RUN SQLMODE_SMOKE
+REGRESSION RUN SQLSEL_SELECT_V1
+REGRESSION RUN SQLSEL_INNER_JOIN
+REGRESSION RUN SQLSEL_JOIN_EDGES
+REGRESSION RUN SQLSEL_LEFT_JOIN
+REGRESSION RUN SQLSEL_JOIN_FAMILY
+REGRESSION RUN SQLSEL_SET_OPS
+REGRESSION RUN SQLSEL_AGGREGATES
+REGRESSION RUN SQLSEL_SUBQUERIES
+REGRESSION RUN SQLSEL_ADVANCED_JOIN
+REGRESSION RUN SQLSEL_BUFFER_VIS
+REGRESSION RUN EVALDIFF
+REGRESSION RUN SQLSEL_DML
+REGRESSION RUN SQLSEL_WORKSPACE
 ```
 
-### `one statement accepts exactly one JOIN`
+The DML and workspace fixtures are self-erasing. The workspace fixture mints
+catalog rows and therefore must run inside the regression catalog bracket, not
+as an unguarded copied script.
 
-Cause: the statement tries to join three or more tables.
+Parity is not correctness. EVALDIFF pins exact truth-table counts so two
+evaluators cannot agree on the same wrong answer and call that green. The JOIN
+gates compare row answers and access paths separately. Mutation runs have also
+shown that changing an oracle row makes the DML and workspace validators fail.
 
-Recovery: split the work into supported two-table queries. Do not assume the
-intermediate text output can be fed back as a table without an explicit export
-and import step.
+## Quick working checklist
 
-### `self-join is not yet supported`
-
-Cause: both table references resolve to the same open area, even if aliases
-differ.
-
-Recovery: redesign the query or use two deliberately distinct table handles
-only after checking whether the current resolver can identify them uniquely.
-Aliases alone do not create a second handle.
-
-### `CROSS JOIN does not accept an ON clause`
-
-Cause: CROSS was combined with `ON`.
-
-Recovery: remove `ON`. Put a supported filter in `WHERE`, or use INNER JOIN if
-the equality condition is the relationship you intend.
-
-### Outer JOIN with WHERE refuses
-
-Cause: SQLsel has not yet promoted SQL UNKNOWN semantics.
-
-Recovery: do not coerce produced absence to a blank. Use a query shape that
-does not require filtering the outer result, or wait for the tri-state phase.
-
-### `not a bare column name`
-
-Cause: the select list contains an expression such as `ALLTRIM(LNAME)`.
-
-Recovery: project stored columns only. Functions belong in a supported `WHERE`
-predicate today, not in the select list.
-
-### `LIMIT expects a non-negative integer`
-
-Cause: the limit is negative, non-numeric, or has trailing text.
-
-Recovery: use `LIMIT 0` or a positive whole number.
-
-### The query is correct but slow
-
-Read the reported access path. For a JOIN, make sure the right work area has an
-attached CDX/LMDB index with an active tag on the right `ON` field. For a CROSS
-JOIN, reduce the inputs or add a selective supported `WHERE`; there is no join
-key to seek.
-
----
-
-## Part 11 -- Current capability boundary
-
-| Capability | Current development state |
-|---|---|
-| single-table column projection and `*` | supported |
-| `WHERE` through the shared expression engine | supported |
-| one-field `ORDER BY`, `ASC` or `DESC` | supported |
-| `LIMIT` after sort/filter | supported |
-| `COUNT(*)` | supported |
-| two-table INNER JOIN | supported and default-suite gated |
-| LEFT JOIN | runtime-proven candidate |
-| RIGHT, FULL, CROSS JOIN | runtime-proven candidate |
-| CDX-assisted equality join with reported fallback | runtime-proven |
-| DISTINCT | not implemented |
-| UNION, UNION ALL, INTERSECT, EXCEPT | not implemented |
-| GROUP BY, HAVING, SUM, AVG, MIN, MAX | not implemented |
-| subqueries, IN, EXISTS | not implemented |
-| expression projection | not implemented |
-| more than one JOIN | not implemented |
-| self-join | not implemented |
-| outer-join WHERE | refused pending UNKNOWN semantics |
-| stored SQL NULL literal | not present in v1 |
-| SQLsel INSERT, UPDATE, DELETE | not implemented |
-| SQL BEGIN, COMMIT, ROLLBACK | not implemented |
-| workspace-qualified table names | not implemented |
-
-The implementation plan includes the remaining modern relational algebra, but
-a plan is not a runtime feature. If `SQLSEL HELP` in your build does not show a
-form listed as a candidate here, treat the running build as authoritative.
-
----
-
-## Part 12 -- Three complete working patterns
-
-### Pattern A: a small sorted report
-
-```text
-SET PATH DBF DBF/x64
-SELECT 1
-USE STUDENTS
-GO 2
-
-SQLSEL SID,LNAME,MAJOR FROM STUDENTS WHERE MAJOR = "CSCI" ORDER BY LNAME LIMIT 10
-
-? "cursor still here: " + ALLTRIM(LNAME)
-CLOSE
-```
-
-What to check:
-
-- the result contains only `CSCI` rows;
-- the visible rows are in `LNAME` order;
-- a limit report says whether more rows existed;
-- the final expression reads the same record parked by `GO 2`.
-
-### Pattern B: an ad hoc two-table match
-
-```text
-SET PATH DBF DBF/x64
-
-SELECT 1
-USE STUDENTS
-GO 2
-
-SELECT 2
-USE ENROLL
-GO 4
-
-SELECT 1
-SQLSEL S.LNAME,E.CLS_ID FROM STUDENTS S JOIN ENROLL E ON S.SID = E.SID ORDER BY E.CLS_ID LIMIT 5
-
-SELECT 1
-? "left cursor: " + ALLTRIM(LNAME)
-SELECT 2
-? "right cursor: " + ALLTRIM(CLS_ID)
-
-CLOSE
-SELECT 1
-CLOSE
-```
-
-What to check:
-
-- SQLsel reports the two-table read fence;
-- SQLsel reports CDX seek, scan, or an honest hybrid;
-- both final expressions read the records parked before the query.
-
-### Pattern C: preserve unmatched rows
-
-```text
-SQLSEL S.SID,S.LNAME,E.CLS_ID FROM STUDENTS S LEFT JOIN ENROLL E ON S.SID = E.SID ORDER BY S.SID
-```
-
-What to check:
-
-- students with multiple enrollments produce multiple rows;
-- students without an enrollment remain present;
-- produced right-side absence displays as `<UNMATCHED>`;
-- SQLsel reports the count of left-extended rows;
-- no `WHERE` follows the LEFT JOIN in the current grammar.
-
----
-
-## Part 13 -- Maintainer verification
-
-The SQLsel regressions create disposable SANDBOX tables, compare result blocks
-with SQLite where applicable, and fail closed when expected evidence is absent.
-Run the named gates rather than treating a clean launch or a visual sample as a
-correctness proof:
-
-```text
-REGRESSION SQLSEL_SELECT_V1
-REGRESSION SQLSEL_INNER_JOIN
-REGRESSION SQLSEL_JOIN_EDGES
-REGRESSION SQLSEL_LEFT_JOIN
-REGRESSION SQLSEL_JOIN_FAMILY
-REGRESSION SQLSEL_BUFFER_VIS
-REGRESSION EVALDIFF
-```
-
-The JOIN validators check answers and access paths separately. The SELECT and
-JOIN validators compare marked result sets with embedded SQLite oracles. The
-evaluator gate pins exact true, false, and error counts rather than accepting
-mere parity between two evaluators.
-
-These commands are verification tools, not a substitute for reading the
-corrective text from the query you are actually running.
-
----
-
-## Quick reference
-
-For a new SQLsel statement:
-
-1. Open every source table with `USE`.
-2. Keep source table names unique among the process's open work areas.
-3. Start with `SQLSEL <columns> FROM <table>`.
-4. Use aliases and qualify every join field.
-5. Add `WHERE`, then `ORDER BY`, then `LIMIT` in that order.
-6. Read the limit, sort, join-path, extension, and fence reports.
-7. Remember that statement SQLsel excludes deleted records and reads committed
-   truth.
-8. Treat `<UNMATCHED>` as an outer-join display marker, not stored NULL.
-9. Expect outer-join `WHERE`, expression projection, set operations, grouping,
-   and subqueries to refuse until their phases are implemented.
-10. Use `SQLSEL HELP` against the exact executable you are running.
+1. Open every source or target table before entering SQL mode.
+2. Switch to the workspace that owns those areas.
+3. Use aliases and qualify names in joins.
+4. Read fence, access-path, aggregate-blank, subquery-evaluation, and LIMIT
+   reports; they are part of the statement evidence.
+5. Remember that SELECT sees committed truth, while DML inside one transaction
+   reads its own staged writes.
+6. Treat `<UNMATCHED>` as produced outer-join absence, not stored NULL.
+7. Keep an explicit transaction to one target table.
+8. COMMIT or ROLLBACK before leaving SQL mode.
+9. Use native REPLACE for memo writes until the memo store shares the SQLsel
+   atomicity boundary.
+10. Check `SQLSEL HELP` on the exact executable you are running.

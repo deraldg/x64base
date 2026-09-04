@@ -96,12 +96,17 @@ inline std::string trim(std::string s) {
     return s;
 }
 
+class ProducedAbsentCellAccess : public std::runtime_error {
+public:
+    explicit ProducedAbsentCellAccess(const std::string& field)
+        : std::runtime_error("field '" + field + "' is produced-absent") {}
+};
+
 inline void require_present_cell(const TupleRow& row,
                                  std::size_t pos,
                                  std::string_view name) {
     if (row.cell_kind(pos) == TupleCellKind::ProducedAbsent) {
-        throw std::runtime_error("field '" + std::string(name) +
-                                 "' is produced-absent");
+        throw ProducedAbsentCellAccess(std::string(name));
     }
 }
 

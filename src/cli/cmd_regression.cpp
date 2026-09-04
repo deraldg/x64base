@@ -95,6 +95,13 @@ enum class RegressionValidator {
     SqlselJoinEdgesV1,
     SqlselLeftJoinOracleV1,
     SqlselJoinFamilyV1,
+    SqlselSetOperationsV1,
+    SqlselAggregatesV1,
+    SqlselSubqueriesV1,
+    SqlselAdvancedJoinV1,
+    SqlselDmlTransactionV1,
+    SqlselWorkspaceScopeV1,
+    SqlmodeSmokeV1,
     SqlselBufferVisibilityV1,
     EvaldiffV1
 };
@@ -158,7 +165,7 @@ struct RegressionSpec {
 // compile error ("too many initializers"), which is the safe failure -- but it
 // is a recurring papercut: it happened when CNXLIVE was added on 2026-07-31.
 // Bump it when you add a regression.
-constexpr std::array<RegressionSpec, 68> kRegressionSpecs{{
+constexpr std::array<RegressionSpec, 75> kRegressionSpecs{{
     {
         "NONDESTRUCTIVE",
         "dottalkpp_non_destructive_smoke.dts",
@@ -471,6 +478,14 @@ constexpr std::array<RegressionSpec, 68> kRegressionSpecs{{
         false
     },
     {
+        "SQLMODE_SMOKE",
+        "sqlmode_smoke_regression.dts",
+        "SQLsel G2 (AIF-074): the sqlsel library target owns statement execution and session mode state; SQL mode routes SELECT to SQLSEL, blocks REL/SET RELATION and relation auto-refresh, intercepts native expression fallback, and marks the prompt. NATIVE/OTHER retain work-area SELECT, canonical SQLSEL is mode-invariant, and mode is process-local. Two SELECT/SQLSEL row sets are compared with SQLite; four behavioral mode/cursor markers and three exact refusals are required. Self-erasing SANDBOX fixtures. Explicit-run pending mutation proof, independent review, and soak.",
+        false,
+        false,
+        RegressionValidator::SqlmodeSmokeV1
+    },
+    {
         "SQLSEL_BUFFER_VIS",
         "sqlsel_buffer_visibility_regression.dts",
         "SQLSEL/TUPLE TABLE BUFFER visibility split (AIF-074): TUPLE previews the dirty current-row buffer while SQLSEL reads committed table truth. Five marked SQLSEL result sets are compared with an in-run SQLite oracle across dirty preview, rollback, and commit; the dirty TUPLE row and three cursor guards are exact transcript requirements. Self-bootstrapping throwaway SQLBUFVIS table in SANDBOX; self-erasing. Explicit-run pending independent review and soak.",
@@ -481,7 +496,7 @@ constexpr std::array<RegressionSpec, 68> kRegressionSpecs{{
     {
         "SQLSEL_SELECT_V1",
         "sqlsel_select_v1_regression.dts",
-        "SQLSEL statement surface, gate G3 (AIF-074 P3): SELECT <cols|*> FROM <table> with WHERE, ORDER BY [ASC|DESC], LIMIT and COUNT(*), each row set compared against an in-process SQLite oracle over identical data in the same run. Asserts cursor neutrality by data (the cursor is parked on a known record before and after), corrective errors for an unopened table / expression select-item / bad LIMIT / unknown ORDER BY field / ORDER BY on COUNT(*), and that ORDER BY sorts the full match set BEFORE LIMIT applies. Legacy predicate form preserved. Self-bootstrapping throwaway SQLSTU table in SANDBOX; self-erasing. Promoted 2026-09-03 because the prior default suite invoked SQLSEL HELP but executed no SQLSEL statement, leaving the complete statement path unasserted.",
+        "SQLSEL statement surface, gate G3 (AIF-074 P3): SELECT <cols|*> FROM <table> with typed expression projection, WHERE, ORDER BY [ASC|DESC], LIMIT and COUNT(*), each row set compared against an in-process SQLite oracle over identical data in the same run. Asserts cursor neutrality by data, corrective errors for an unopened table / bad LIMIT / unknown ORDER BY field / ORDER BY on COUNT(*), and that ORDER BY sorts the full match set BEFORE LIMIT applies. Legacy predicate form preserved. Self-bootstrapping throwaway SQLSTU table in SANDBOX; self-erasing. Promoted 2026-09-03 because the prior default suite invoked SQLSEL HELP but executed no SQLSEL statement, leaving the complete statement path unasserted.",
         true,
         false,
         RegressionValidator::SqlselSelectOracleV1
@@ -497,7 +512,7 @@ constexpr std::array<RegressionSpec, 68> kRegressionSpecs{{
     {
         "SQLSEL_JOIN_EDGES",
         "sqlsel_join_edges_regression.dts",
-        "Adversarial SQLsel INNER JOIN proof (AIF-074 P4.2): numeric duplicates, deleted outer/inner rows, unmatched keys, CDX character-key case collisions that require typed row revalidation, active-tag mismatch scan fallback, cursor restoration, caller-owned FLOCK preservation, canonical two-table read fences with reversed statement order, and four corrective refusals. Four marked SQLsel row sets are compared with an in-run SQLite oracle. The validator pins the access-path composition at exactly two CDX seeks, two nested-loop scans, zero hybrid, and pins the probe/candidate counts that make the duplicate and case-collision arms discriminating. Self-bootstrapping four-table SANDBOX fixture with self-erasing sidecars. Explicit-run pending independent review and soak.",
+        "Adversarial SQLsel INNER JOIN proof (AIF-074 P4.2): numeric duplicates, deleted outer/inner rows, unmatched keys, CDX character-key case collisions that require typed row revalidation, active-tag mismatch scan fallback, cursor restoration, caller-owned FLOCK preservation, canonical two-table read fences with reversed statement order, and two corrective refusals. Four marked SQLsel row sets are compared with an in-run SQLite oracle. The validator pins the access-path composition at exactly two CDX seeks, two nested-loop scans, zero hybrid, and pins the probe/candidate counts that make the duplicate and case-collision arms discriminating. Self-bootstrapping four-table SANDBOX fixture with self-erasing sidecars. Explicit-run pending independent review and soak.",
         false,
         false,
         RegressionValidator::SqlselJoinEdgesV1
@@ -513,10 +528,58 @@ constexpr std::array<RegressionSpec, 68> kRegressionSpecs{{
     {
         "SQLSEL_JOIN_FAMILY",
         "sqlsel_join_family_regression.dts",
-        "SQLsel G4d (AIF-074 P4.4): RIGHT, FULL, and CROSS JOIN over two open tables. Ten marked SQLsel row sets are compared as SQL multisets with SQLite after explicit NULL-to-<UNMATCHED> mapping. The validator pins duplicate multiplication, unmatched rows from either side, genuine blank and stored-marker values, deleted-row exclusion, RIGHT/FULL CDX-seek versus scan parity, CROSS Cartesian count and present-cell WHERE, exact extension reports, ten canonical read fences, both cursors, caller-owned FLOCK preservation, and five corrective refusals. Self-erasing SANDBOX fixtures. Explicit-run pending independent review and soak.",
+        "SQLsel G4d (AIF-074 P4.4): RIGHT, FULL, and CROSS JOIN over two open tables. Fourteen marked SQLsel row sets are compared as SQL multisets with SQLite after explicit NULL-to-<UNMATCHED> mapping. The validator pins duplicate multiplication, unmatched rows from either side, genuine blank and stored-marker values, deleted-row exclusion, RIGHT/FULL CDX-seek versus scan parity, SQL three-valued outer WHERE, CROSS Cartesian count, exact extension reports, fourteen canonical read fences, both cursors, caller-owned FLOCK preservation, and three corrective malformed-ON refusals. Self-erasing SANDBOX fixtures. Explicit-run pending independent review and soak.",
         false,
         false,
         RegressionValidator::SqlselJoinFamilyV1
+    },
+    {
+        "SQLSEL_SET_OPS",
+        "sqlsel_set_operations_regression.dts",
+        "SQLsel P4.5 (AIF-074): SELECT DISTINCT plus typed UNION, UNION ALL, INTERSECT, and EXCEPT over TupleRow results. Seven marked SQLsel row multisets are compared with an in-run SQLite oracle. The validator pins duplicate preservation/removal, SQL INTERSECT precedence, date-family set compatibility, deleted-row exclusion, exact operation cardinality reports, three cursor restorations, and six corrective refusals including column-count, numeric/text and date/text type mismatches, unsupported INTERSECT ALL, dangling UNION, and set-level ORDER BY/LIMIT. Self-erasing SANDBOX fixtures. Explicit-run pending mutation proof, independent review, and soak.",
+        false,
+        false,
+        RegressionValidator::SqlselSetOperationsV1
+    },
+    {
+        "SQLSEL_AGGREGATES",
+        "sqlsel_group_aggregate_regression.dts",
+        "SQLsel P4.6 (AIF-074): typed GROUP BY and HAVING plus COUNT(*), COUNT(column), SUM, AVG, MIN, and MAX over single-table and joined TupleRow sources. Seven marked SQLsel row sets are compared with an in-run SQLite oracle whose blank numeric inputs are mapped to NULL. The validator pins R28 skip-and-report counts, SQL clause order, date MIN/MAX typing, join-source aggregation, two cursor restorations, one join fence/path, and five corrective aggregate/grouping refusals. Self-erasing SANDBOX fixtures. Explicit-run pending mutation proof, independent review, and soak.",
+        false,
+        false,
+        RegressionValidator::SqlselAggregatesV1
+    },
+    {
+        "SQLSEL_SUBQUERIES",
+        "sqlsel_subquery_regression.dts",
+        "SQLsel P4.7 (AIF-074): typed uncorrelated and correlated scalar, IN, NOT IN, EXISTS, and NOT EXISTS subqueries over single-table outer scopes, including double-NOT-EXISTS relational division. Seven marked SQLsel row sets are compared with an in-run SQLite oracle. The validator pins one-evaluation caching for uncorrelated subqueries, per-outer-row correlated evaluation counts, three cursor restorations, typed IN mismatch and scalar cardinality refusals, and the explicit joined-outer boundary. Self-erasing SANDBOX fixtures. Explicit-run pending mutation proof, independent review, and soak.",
+        false,
+        false,
+        RegressionValidator::SqlselSubqueriesV1
+    },
+    {
+        "SQLSEL_ADVANCED_JOIN",
+        "sqlsel_advanced_join_regression.dts",
+        "SQLsel generalized JOIN proof (AIF-074): self-join aliases over one physical table, composite boolean ON, three-table INNER/LEFT chains, shared-AST expression projection, independent multi-column ORDER BY directions, chain COUNT(*), empty-right typed schema preservation, and canonical read fencing across distinct physical tables. Eight marked SQLsel row sets are compared with an in-run SQLite oracle; three nonempty source cursors and exact access-path/report composition are pinned. The empty source has no readable row on which this language can assert cursor position. Self-erasing SANDBOX fixtures. Explicit-run pending mutation proof, independent review, and soak.",
+        false,
+        false,
+        RegressionValidator::SqlselAdvancedJoinV1
+    },
+    {
+        "SQLSEL_DML",
+        "sqlsel_dml_transaction_regression.dts",
+        "SQLsel P5 (AIF-074): typed INSERT, UPDATE, and DELETE over the house table buffer, TBJ1 WAL, owner-aware table fence, and workspace-wide cursor guard. Six committed row sets are compared with SQLite. The validator pins autocommit, explicit rollback/commit, read-your-writes across buffered INSERT/arithmetic UPDATE, committed-view SELECT during a transaction, WAL cleanup, caller-owned FLOCK preservation, and fail-closed type/NULL/width/unknown-column/unsafe-delete controls. Transactions intentionally refuse a second target table because x64base has no cross-table atomic commit protocol. Self-erasing SANDBOX fixtures. Explicit-run pending mutation proof, second-compiler proof, independent review, and soak.",
+        false,
+        false,
+        RegressionValidator::SqlselDmlTransactionV1
+    },
+    {
+        "SQLSEL_WORKSPACE",
+        "sqlsel_workspace_scope_regression.dts",
+        "SQLsel workspace-scope proof (AIF-074): two simultaneously open workspaces carry the same two table names with different typed values. Four SQLsel SELECT/JOIN/DML row sets are compared with SQLite. Every block discriminates against engine-global lowest-slot resolution; cursor markers prove both workspaces remain parked, and UPDATE must modify only the current workspace's table. Self-erasing SANDBOX fixtures. Explicit-run pending mutation proof, second-compiler proof, independent review, and soak.",
+        false,
+        true,
+        RegressionValidator::SqlselWorkspaceScopeV1
     },
     {
         "EVALDIFF",
@@ -1341,11 +1404,12 @@ bool validate_sqlsel_buffer_visibility(const std::string& transcript)
 
 bool validate_sqlsel_select_oracle(const std::string& transcript)
 {
-    static constexpr std::array<SqlselOraclePair, 11> pairs{{
+    static constexpr std::array<SqlselOraclePair, 12> pairs{{
         {"SQLSEL-S1", "SQLSEL-O1"},
         {"SQLSEL-S2", "SQLSEL-O2"},
         {"SQLSEL-S3", "SQLSEL-O3"},
         {"SQLSEL-S4", "SQLSEL-O4"},
+        {"SQLSEL-S6Q", "SQLSEL-O6"},
         {"SQLSEL-S8A", "SQLSEL-O8A"},
         {"SQLSEL-S8D", "SQLSEL-O8D"},
         {"SQLSEL-S9", "SQLSEL-O9"},
@@ -1354,12 +1418,11 @@ bool validate_sqlsel_select_oracle(const std::string& transcript)
         {"SQLSEL-S13Q", "SQLSEL-O13"},
         {"SQLSEL-S14", "SQLSEL-O14"}
     }};
-    static constexpr std::array<const char*, 11> required{{
+    static constexpr std::array<const char*, 10> required{{
         "S5A_cursor_parked_before:.T.",
         "S5B_cursor_unmoved_after:.T.",
         "S12_cursor_unmoved_after_slice2:.T.",
         "SQLSEL: table 'NOSUCHTABLE' is not open.",
-        "SQLSEL: 'ALLTRIM(LNAME)' is not a bare column name.",
         "SQLSEL: LIMIT expects a non-negative integer (got 'abc').",
         "SQLSEL: ORDER BY field 'NOSUCHFIELD' is not in SQLSTU.",
         "SQLSEL: ORDER BY direction must be ASC or DESC (got 'SIDEWAYS').",
@@ -1389,7 +1452,8 @@ bool validate_sqlsel_select_oracle(const std::string& transcript)
 
     std::cout << "SQLSEL SELECT ORACLE: PASS -- " << pairs.size() << '/'
               << pairs.size() << " row sets equal SQLite; cursors 3/3; "
-              << "refusals 8/8; LIMIT reports 2/2; sort paths 4/4.\n";
+              << "typed expression projection proven; refusals 7/7; "
+              << "LIMIT reports 2/2; sort paths 4/4.\n";
     return true;
 }
 
@@ -1464,11 +1528,9 @@ bool validate_sqlsel_join_edges(const std::string& transcript)
         "SQLSEL: INNER JOIN access path -- CDX seek (inner=SQLJCR, tag=CKEY, probes=3, candidates=8).",
         "SQLSEL: INNER JOIN access path -- nested-loop scan (outer=4 row(s), inner=6 row(s))."
     }};
-    static constexpr std::array<const char*, 4> refusals{{
+    static constexpr std::array<const char*, 2> refusals{{
         "SQLSEL: joined table aliases must be distinct.",
-        "SQLSEL: JOIN ON must compare one column from each table.",
-        "SQLSEL: one statement accepts exactly one JOIN.",
-        "SQLSEL: P4.1 joins two distinct open tables; self-join is not yet supported."
+        "SQLSEL: JOIN ON must compare one column from each table."
     }};
 
     if (!validate_sqlsel_oracle_rows(transcript, "SQLSEL JOIN EDGES ORACLE", pairs) ||
@@ -1515,7 +1577,7 @@ bool validate_sqlsel_join_edges(const std::string& transcript)
     }
 
     std::cout << "SQLSEL JOIN EDGES ORACLE: PASS -- " << pairs.size() << '/'
-              << pairs.size() << " row sets equal SQLite; cursors 4/4; refusals 4/4; "
+              << pairs.size() << " row sets equal SQLite; cursors 4/4; refusals 2/2; "
               << "read transactions 4/4; caller lock preserved; "
               << "access paths 4/4 (CDX seek 2, scan 2, hybrid 0); "
               << "probe/candidate counts exact.\n";
@@ -1524,11 +1586,14 @@ bool validate_sqlsel_join_edges(const std::string& transcript)
 
 bool validate_sqlsel_left_join(const std::string& transcript)
 {
-    static constexpr std::array<SqlselOraclePair, 4> pairs{{
+    static constexpr std::array<SqlselOraclePair, 7> pairs{{
         {"SQLSEL-LJ-SEEK-ROWS", "SQLSEL-LJ-O1"},
         {"SQLSEL-LJ-SEEK-COUNT", "SQLSEL-LJ-O2"},
         {"SQLSEL-LJ-SCAN-ROWS", "SQLSEL-LJ-O3"},
-        {"SQLSEL-LJ-SCAN-COUNT", "SQLSEL-LJ-O4"}
+        {"SQLSEL-LJ-SCAN-COUNT", "SQLSEL-LJ-O4"},
+        {"SQLSEL-LJ-SEEK-WHERE", "SQLSEL-LJ-O5"},
+        {"SQLSEL-LJ-SCAN-WHERE", "SQLSEL-LJ-O6"},
+        {"SQLSEL-LJ-UNKNOWN-OR-TRUE", "SQLSEL-LJ-O7"}
     }};
     static constexpr std::array<const char*, 9> required{{
         "LJ_C1_left_cursor_restored:.T.",
@@ -1541,13 +1606,7 @@ bool validate_sqlsel_left_join(const std::string& transcript)
         "L3 | <UNMATCHED>",
         "L5 | <UNMATCHED>"
     }};
-    static constexpr std::array<const char*, 1> refusals{{
-        "SQLSEL: LEFT JOIN with WHERE requires three-valued predicate support; P4.3 refuses it."
-    }};
-
     if (!validate_sqlsel_oracle_rows(transcript, "SQLSEL LEFT JOIN ORACLE", pairs) ||
-        !require_exact_transcript_block(transcript, "SQLSEL LEFT JOIN ORACLE",
-                                        "SQLSEL-LJ-REFUSALS", refusals) ||
         !require_transcript_fragments(transcript, "SQLSEL LEFT JOIN ORACLE", required)) {
         return false;
     }
@@ -1562,10 +1621,10 @@ bool validate_sqlsel_left_join(const std::string& transcript)
         transcript, "SQLSEL: LEFT JOIN read transaction -- table fence (SQLLJL -> SQLLJR).");
     const std::size_t extended_count = transcript_count(
         transcript, "SQLSEL: LEFT JOIN left-extended 2 row(s) with <UNMATCHED> right-side cells.");
-    if (seek_count != 2 || scan_count != 2 || hybrid_count != 0 ||
-        fence_count != 4 || extended_count != 4) {
-        std::cout << "SQLSEL LEFT JOIN ORACLE: FAIL -- expected paths 2 seek/2 scan/0 hybrid, "
-                  << "fences 4, extension reports 4; got "
+    if (seek_count != 3 || scan_count != 4 || hybrid_count != 0 ||
+        fence_count != pairs.size() || extended_count != pairs.size()) {
+        std::cout << "SQLSEL LEFT JOIN ORACLE: FAIL -- expected paths 3 seek/4 scan/0 hybrid, "
+                  << "fences 7, extension reports 7; got "
                   << seek_count << '/' << scan_count << '/' << hybrid_count << ", "
                   << fence_count << ", " << extended_count << "\n";
         return false;
@@ -1573,14 +1632,14 @@ bool validate_sqlsel_left_join(const std::string& transcript)
 
     std::cout << "SQLSEL LEFT JOIN ORACLE: PASS -- " << pairs.size() << '/'
               << pairs.size() << " row sets equal SQLite; blank and produced absence distinct; "
-              << "left-extended reports 4/4; cursors 2/2; caller lock preserved; refusals 1/1; "
-              << "paths 2 seek/2 scan/0 hybrid; read fences 4/4.\n";
+              << "outer WHERE and UNKNOWN proven; left-extended reports 7/7; cursors 2/2; "
+              << "caller lock preserved; paths 3 seek/4 scan/0 hybrid; read fences 7/7.\n";
     return true;
 }
 
 bool validate_sqlsel_join_family(const std::string& transcript)
 {
-    static constexpr std::array<SqlselOraclePair, 10> pairs{{
+    static constexpr std::array<SqlselOraclePair, 14> pairs{{
         {"SQLSEL-JF-RIGHT-SEEK-ROWS", "SQLSEL-JF-O1", true},
         {"SQLSEL-JF-RIGHT-SEEK-COUNT", "SQLSEL-JF-O2", true},
         {"SQLSEL-JF-FULL-SEEK-ROWS", "SQLSEL-JF-O3", true},
@@ -1590,7 +1649,11 @@ bool validate_sqlsel_join_family(const std::string& transcript)
         {"SQLSEL-JF-FULL-SCAN-ROWS", "SQLSEL-JF-O7", true},
         {"SQLSEL-JF-FULL-SCAN-COUNT", "SQLSEL-JF-O8", true},
         {"SQLSEL-JF-CROSS-ROWS", "SQLSEL-JF-O9", true},
-        {"SQLSEL-JF-CROSS-COUNT", "SQLSEL-JF-O10", true}
+        {"SQLSEL-JF-CROSS-COUNT", "SQLSEL-JF-O10", true},
+        {"SQLSEL-JF-RIGHT-SEEK-WHERE", "SQLSEL-JF-O11", true},
+        {"SQLSEL-JF-FULL-SEEK-WHERE", "SQLSEL-JF-O12", true},
+        {"SQLSEL-JF-RIGHT-SCAN-WHERE", "SQLSEL-JF-O13", true},
+        {"SQLSEL-JF-FULL-SCAN-WHERE", "SQLSEL-JF-O14", true}
     }};
     static constexpr std::array<const char*, 12> required{{
         "JF_C1_left_cursor_restored:.T.",
@@ -1606,9 +1669,7 @@ bool validate_sqlsel_join_family(const std::string& transcript)
         "3 | <UNMATCHED> | <UNMATCHED> | <UNMATCHED>",
         "6 | L6_ONLY | <UNMATCHED> | <UNMATCHED>"
     }};
-    static constexpr std::array<const char*, 5> refusals{{
-        "SQLSEL: RIGHT JOIN with WHERE requires three-valued predicate support; P4.4 refuses it.",
-        "SQLSEL: FULL JOIN with WHERE requires three-valued predicate support; P4.4 refuses it.",
+    static constexpr std::array<const char*, 3> refusals{{
         "SQLSEL: CROSS JOIN does not accept an ON clause.",
         "SQLSEL: RIGHT JOIN requires ON <left-column> = <right-column>.",
         "SQLSEL: FULL JOIN requires ON <left-column> = <right-column>."
@@ -1641,12 +1702,12 @@ bool validate_sqlsel_join_family(const std::string& transcript)
         transcript, "SQLSEL: FULL JOIN left-extended 2 row(s) with <UNMATCHED> right-side cells.");
     const std::size_t full_right_extended = transcript_count(
         transcript, "SQLSEL: FULL JOIN right-extended 3 row(s) with <UNMATCHED> left-side cells.");
-    if (right_seek != 2 || right_scan != 2 || full_seek != 2 || full_scan != 2 ||
+    if (right_seek != 3 || right_scan != 3 || full_seek != 3 || full_scan != 3 ||
         cross_scan != 2 || hybrid != 0 || fence_count != pairs.size() ||
-        right_extended != 4 || full_left_extended != 4 || full_right_extended != 4) {
-        std::cout << "SQLSEL JOIN FAMILY ORACLE: FAIL -- expected RIGHT 2 seek/2 scan, "
-                     "FULL 2 seek/2 scan, CROSS 2 scan, 0 hybrid, 10 fences, "
-                     "and extension reports RIGHT 4/FULL-left 4/FULL-right 4; got "
+        right_extended != 6 || full_left_extended != 6 || full_right_extended != 6) {
+        std::cout << "SQLSEL JOIN FAMILY ORACLE: FAIL -- expected RIGHT 3 seek/3 scan, "
+                     "FULL 3 seek/3 scan, CROSS 2 scan, 0 hybrid, 14 fences, "
+                     "and extension reports RIGHT 6/FULL-left 6/FULL-right 6; got "
                   << right_seek << '/' << right_scan << ", "
                   << full_seek << '/' << full_scan << ", " << cross_scan << ", "
                   << hybrid << ", " << fence_count << ", " << right_extended << '/'
@@ -1656,9 +1717,329 @@ bool validate_sqlsel_join_family(const std::string& transcript)
 
     std::cout << "SQLSEL JOIN FAMILY ORACLE: PASS -- " << pairs.size() << '/'
               << pairs.size() << " row multisets equal SQLite; RIGHT/FULL absence and "
-              << "CROSS product proven; cursors 2/2; caller lock preserved; refusals 5/5; "
-              << "paths RIGHT 2 seek/2 scan, FULL 2 seek/2 scan, CROSS 2 scan; "
-              << "hybrid 0; fences 10/10; extension reports 12/12.\n";
+              << "outer WHERE/UNKNOWN and CROSS product proven; cursors 2/2; caller lock "
+              << "preserved; refusals 3/3; paths RIGHT 3 seek/3 scan, FULL 3 seek/3 scan, "
+              << "CROSS 2 scan; hybrid 0; fences 14/14; extension reports 18/18.\n";
+    return true;
+}
+
+bool validate_sqlsel_set_operations(const std::string& transcript)
+{
+    static constexpr std::array<SqlselOraclePair, 7> pairs{{
+        {"SQLSEL-SO-DISTINCT", "SQLSEL-SO-O1", true},
+        {"SQLSEL-SO-UNION", "SQLSEL-SO-O2", true},
+        {"SQLSEL-SO-UNION-ALL", "SQLSEL-SO-O3", true},
+        {"SQLSEL-SO-INTERSECT", "SQLSEL-SO-O4", true},
+        {"SQLSEL-SO-EXCEPT", "SQLSEL-SO-O5", true},
+        {"SQLSEL-SO-PRECEDENCE", "SQLSEL-SO-O6", true},
+        {"SQLSEL-SO-DATE", "SQLSEL-SO-O7", true}
+    }};
+    static constexpr std::array<const char*, 3> cursors{{
+        "SO_C1_left_cursor_restored:.T.",
+        "SO_C2_right_cursor_restored:.T.",
+        "SO_C3_third_cursor_restored:.T."
+    }};
+    static constexpr std::array<const char*, 6> refusals{{
+        "SQLSEL: set operands have 1 and 2 columns; counts must match.",
+        "SQLSEL: set operand column 1 has incompatible types 'N' and 'C'.",
+        "SQLSEL: set operand column 1 has incompatible types 'D' and 'C'.",
+        "SQLSEL: INTERSECT ALL is not part of the SQLsel P4.5 set-operation contract.",
+        "SQLSEL: every set operator requires a SELECT operand on both sides.",
+        "SQLSEL: P4.5 set expressions do not accept ORDER BY or LIMIT; materialize or filter each source before combining it."
+    }};
+    static constexpr std::array<const char*, 8> operation_reports{{
+        "SQLSEL: DISTINCT reduced 5 row(s) to 4 row(s).",
+        "SQLSEL: UNION set operation -- left=5, right=5, output=6.",
+        "SQLSEL: UNION ALL set operation -- left=5, right=5, output=10.",
+        "SQLSEL: INTERSECT set operation -- left=5, right=5, output=2.",
+        "SQLSEL: EXCEPT set operation -- left=5, right=5, output=2.",
+        "SQLSEL: INTERSECT set operation -- left=5, right=1, output=1.",
+        "SQLSEL: UNION set operation -- left=5, right=1, output=5.",
+        "SQLSEL: UNION set operation -- left=4, right=3, output=3."
+    }};
+
+    if (!validate_sqlsel_oracle_rows(transcript, "SQLSEL SET OPERATIONS ORACLE", pairs) ||
+        !require_exact_transcript_block(transcript, "SQLSEL SET OPERATIONS ORACLE",
+                                        "SQLSEL-SO-REFUSALS", refusals) ||
+        !require_transcript_fragments(transcript, "SQLSEL SET OPERATIONS ORACLE", cursors) ||
+        !require_transcript_fragments(transcript, "SQLSEL SET OPERATIONS ORACLE",
+                                      operation_reports)) {
+        return false;
+    }
+
+    std::cout << "SQLSEL SET OPERATIONS ORACLE: PASS -- " << pairs.size() << '/'
+              << pairs.size() << " row multisets equal SQLite; DISTINCT and four set "
+                 "operators proven; typed date compatibility and two typed refusals proven; "
+                 "INTERSECT precedence proven; cursors 3/3; refusals 6/6.\n";
+    return true;
+}
+
+bool validate_sqlsel_aggregates(const std::string& transcript)
+{
+    static constexpr std::array<SqlselOraclePair, 7> pairs{{
+        {"SQLSEL-GA-GLOBAL", "SQLSEL-GA-O1"},
+        {"SQLSEL-GA-GROUPED", "SQLSEL-GA-O2"},
+        {"SQLSEL-GA-HAVING-COUNT", "SQLSEL-GA-O3"},
+        {"SQLSEL-GA-HAVING-AVG", "SQLSEL-GA-O4"},
+        {"SQLSEL-GA-WHERE", "SQLSEL-GA-O5"},
+        {"SQLSEL-GA-DATE", "SQLSEL-GA-O6"},
+        {"SQLSEL-GA-JOIN", "SQLSEL-GA-O7"}
+    }};
+    static constexpr std::array<const char*, 2> cursors{{
+        "GA_C1_fact_cursor_restored:.T.",
+        "GA_C2_dimension_cursor_restored:.T."
+    }};
+    static constexpr std::array<const char*, 5> refusals{{
+        "SQLSEL: SUM(DEPT) requires a numeric column (got type 'C').",
+        "SQLSEL: selected column 'SCORE' must appear in GROUP BY.",
+        "SQLSEL: column 'NOSUCH' was not found in the aggregate source.",
+        "SQLSEL: aggregate argument 'SALARY+1' must be a column name.",
+        "SQLSEL: AVG(*) is not supported; only COUNT(*) accepts '*'."
+    }};
+    static constexpr std::array<const char*, 10> required{{
+        "SQLSEL: COUNT(SALARY) aggregate -- 3 of 6 row(s) carried a value; 3 blank.",
+        "SQLSEL: SUM(SALARY) aggregate -- 3 of 6 row(s) carried a value; 3 blank.",
+        "SQLSEL: AVG(SALARY) aggregate -- 3 of 6 row(s) carried a value; 3 blank.",
+        "SQLSEL: MIN(SALARY) aggregate -- 3 of 6 row(s) carried a value; 3 blank.",
+        "SQLSEL: MAX(SALARY) aggregate -- 3 of 6 row(s) carried a value; 3 blank.",
+        "SQLSEL: COUNT(SALARY) aggregate -- 2 of 5 row(s) carried a value; 3 blank.",
+        "SQLSEL: aggregation produced 2 group row(s) from 6 source row(s).",
+        "SQLSEL: aggregation produced 1 group row(s) from 6 source row(s).",
+        "SQLSEL: INNER JOIN read transaction -- table fence (SQLAGG -> SQLDEPT).",
+        "SQLSEL: INNER JOIN access path -- nested-loop scan (outer=7 row(s), inner=4 row(s))."
+    }};
+
+    if (!validate_sqlsel_oracle_rows(transcript, "SQLSEL AGGREGATE ORACLE", pairs) ||
+        !require_exact_transcript_block(transcript, "SQLSEL AGGREGATE ORACLE",
+                                        "SQLSEL-GA-REFUSALS", refusals) ||
+        !require_transcript_fragments(transcript, "SQLSEL AGGREGATE ORACLE", cursors) ||
+        !require_transcript_fragments(transcript, "SQLSEL AGGREGATE ORACLE", required)) {
+        return false;
+    }
+    const std::size_t aggregate_reports = transcript_count(
+        transcript, "SQLSEL: aggregation produced ");
+    const std::size_t join_fences = transcript_count(
+        transcript, "SQLSEL: INNER JOIN read transaction -- table fence (SQLAGG -> SQLDEPT).");
+    if (aggregate_reports != pairs.size() || join_fences != 1) {
+        std::cout << "SQLSEL AGGREGATE ORACLE: FAIL -- expected 7 aggregation reports and "
+                     "one joined-source read fence; got "
+                  << aggregate_reports << " and " << join_fences << ".\n";
+        return false;
+    }
+
+    std::cout << "SQLSEL AGGREGATE ORACLE: PASS -- " << pairs.size() << '/'
+              << pairs.size() << " ordered row sets equal SQLite; GROUP BY/HAVING, aliases, and six "
+                 "aggregates proven; R28 blank split reported; typed date and joined TupleRow "
+                 "sources proven; cursors 2/2; refusals 5/5.\n";
+    return true;
+}
+
+bool validate_sqlsel_subqueries(const std::string& transcript)
+{
+    static constexpr std::array<SqlselOraclePair, 7> pairs{{
+        {"SQLSEL-SQ-IN", "SQLSEL-SQ-O1"},
+        {"SQLSEL-SQ-NOT-IN", "SQLSEL-SQ-O2"},
+        {"SQLSEL-SQ-SCALAR", "SQLSEL-SQ-O3"},
+        {"SQLSEL-SQ-EXISTS", "SQLSEL-SQ-O4"},
+        {"SQLSEL-SQ-NOT-EXISTS", "SQLSEL-SQ-O5"},
+        {"SQLSEL-SQ-DIVISION", "SQLSEL-SQ-O6"},
+        {"SQLSEL-SQ-SCALAR-AGG", "SQLSEL-SQ-O7"}
+    }};
+    static constexpr std::array<const char*, 3> cursors{{
+        "SQ_C1_student_cursor_restored:.T.",
+        "SQ_C2_enrollment_cursor_restored:.T.",
+        "SQ_C3_requirement_cursor_restored:.T."
+    }};
+    static constexpr std::array<const char*, 3> refusals{{
+        "SQLSEL: subquery predicate failed: IN subquery compares incompatible typed columns",
+        "SQLSEL: subquery predicate failed: scalar subquery must return exactly one row and one column (got 5 row(s), 1 column(s))",
+        "SQLSEL: P4.7 subquery predicates currently require a single-table outer query; joined outer scopes arrive with generalized JOIN."
+    }};
+
+    if (!validate_sqlsel_oracle_rows(transcript, "SQLSEL SUBQUERY ORACLE", pairs) ||
+        !require_exact_transcript_block(transcript, "SQLSEL SUBQUERY ORACLE",
+                                        "SQLSEL-SQ-REFUSALS", refusals) ||
+        !require_transcript_fragments(transcript, "SQLSEL SUBQUERY ORACLE", cursors)) {
+        return false;
+    }
+    const std::size_t cached_once = transcript_count(
+        transcript, "SQLSEL: subquery evaluation count -- correlated=0, uncorrelated=1.");
+    const std::size_t correlated_four = transcript_count(
+        transcript, "SQLSEL: subquery evaluation count -- correlated=4, uncorrelated=0.");
+    const std::size_t division_twelve = transcript_count(
+        transcript, "SQLSEL: subquery evaluation count -- correlated=12, uncorrelated=0.");
+    if (cached_once != 4 || correlated_four != 2 || division_twelve != 1) {
+        std::cout << "SQLSEL SUBQUERY ORACLE: FAIL -- expected evaluation reports "
+                     "uncorrelated-once=4, correlated-four=2, division-twelve=1; got "
+                  << cached_once << '/' << correlated_four << '/' << division_twelve << ".\n";
+        return false;
+    }
+
+    std::cout << "SQLSEL SUBQUERY ORACLE: PASS -- " << pairs.size() << '/'
+              << pairs.size() << " ordered row sets equal SQLite; scalar/IN/EXISTS and "
+                 "relational division proven; uncorrelated cache and correlated cost counts "
+                 "pinned; cursors 3/3; refusals 3/3.\n";
+    return true;
+}
+
+bool validate_sqlsel_advanced_join(const std::string& transcript)
+{
+    static constexpr std::array<SqlselOraclePair, 8> pairs{{
+        {"SQLSEL-AJ-SELF", "SQLSEL-AJ-O1"},
+        {"SQLSEL-AJ-COMPOSITE", "SQLSEL-AJ-O2"},
+        {"SQLSEL-AJ-CHAIN", "SQLSEL-AJ-O3"},
+        {"SQLSEL-AJ-LEFT-CHAIN", "SQLSEL-AJ-O4"},
+        {"SQLSEL-AJ-EXPRESSION", "SQLSEL-AJ-O5"},
+        {"SQLSEL-AJ-MULTIORDER", "SQLSEL-AJ-O6"},
+        {"SQLSEL-AJ-COUNT", "SQLSEL-AJ-O7"},
+        {"SQLSEL-AJ-EMPTY-RIGHT", "SQLSEL-AJ-O8"}
+    }};
+    static constexpr std::array<const char*, 3> cursors{{
+        "AJ_C1_employee_cursor_restored:.T.",
+        "AJ_C2_bonus_cursor_restored:.T.",
+        "AJ_C3_category_cursor_restored:.T."
+    }};
+    static constexpr std::array<const char*, 5> required{{
+        "SQLSEL: multi-join read transaction -- table fence (SQLADV -> SQLBON -> SQLCAT).",
+        "SQLSEL: INNER JOIN stage 1 access path -- nested-loop scan",
+        "SQLSEL: INNER JOIN stage 2 access path -- nested-loop scan",
+        "SQLSEL: LEFT JOIN stage 1 access path -- nested-loop scan",
+        "SQLSEL: LEFT JOIN stage 2 access path -- nested-loop scan"
+    }};
+    if (!validate_sqlsel_oracle_rows(transcript, "SQLSEL ADVANCED JOIN ORACLE", pairs) ||
+        !require_transcript_fragments(transcript, "SQLSEL ADVANCED JOIN ORACLE", cursors) ||
+        !require_transcript_fragments(transcript, "SQLSEL ADVANCED JOIN ORACLE", required)) {
+        return false;
+    }
+    const std::size_t multi_fences = transcript_count(
+        transcript, "SQLSEL: multi-join read transaction -- table fence");
+    const std::size_t expression_reports = transcript_count(
+        transcript, "SQLSEL: expression projection evaluated");
+    const std::size_t multi_order_reports = transcript_count(
+        transcript, "result column(s) -- materialized sort");
+    if (multi_fences != 4 || expression_reports != 2 || multi_order_reports != 2) {
+        std::cout << "SQLSEL ADVANCED JOIN ORACLE: FAIL -- expected multi fences 4, "
+                     "TupleRow projection reports 2, multi-order reports 2; got "
+                  << multi_fences << '/' << expression_reports << '/'
+                  << multi_order_reports << ".\n";
+        return false;
+    }
+    std::cout << "SQLSEL ADVANCED JOIN ORACLE: PASS -- " << pairs.size() << '/'
+              << pairs.size() << " ordered row sets equal SQLite; self/composite/chain JOIN, "
+                 "typed expression projection, empty-right typed schema, multi-order, cursors 3/3, and canonical "
+                 "multi-table fences proven.\n";
+    return true;
+}
+
+bool validate_sqlsel_dml_transaction(const std::string& transcript)
+{
+    static constexpr std::array<SqlselOraclePair, 6> pairs{{
+        {"SQLSEL-DML-S1", "SQLSEL-DML-O1"},
+        {"SQLSEL-DML-S2", "SQLSEL-DML-O2"},
+        {"SQLSEL-DML-S3", "SQLSEL-DML-O3"},
+        {"SQLSEL-DML-S4", "SQLSEL-DML-O4"},
+        {"SQLSEL-DML-S5", "SQLSEL-DML-O5"},
+        {"SQLSEL-DML-S6", "SQLSEL-DML-O6"}
+    }};
+    static constexpr std::array<const char*, 12> required{{
+        "DML_C1_autocommit_cursor_restored:.T.",
+        "DML_C2_final_cursor_restored:.T.",
+        "DML_W1_autocommit_wal_closed:.T.",
+        "DML_W2_rollback_wal_closed:.T.",
+        "DML_W3_commit_wal_closed:.T.",
+        "DML_L1_caller_table_lock_preserved:.T.",
+        "SQLSEL: UPDATE refused -- one SQL transaction may modify one table; cross-table atomic commit is not available.",
+        "SQLSEL: UPDATE refused -- ACTIVE: invalid logical for field.",
+        "SQLSEL: INSERT refused -- NULL is not a stored x64base value; use an explicit typed blank.",
+        "SQLSEL: UPDATE refused -- value for 'NAME' exceeds its declared width 12.",
+        "SQLSEL: UPDATE column 'NOSUCH' was not found.",
+        "SQLSEL: DELETE without WHERE is refused."
+    }};
+    if (!validate_sqlsel_oracle_rows(transcript, "SQLSEL DML ORACLE", pairs) ||
+        !require_transcript_fragments(transcript, "SQLSEL DML ORACLE", required)) {
+        return false;
+    }
+    const std::size_t begun = transcript_count(
+        transcript, "SQLSEL: transaction begun; the first DML statement will take its table fence.");
+    const std::size_t committed = transcript_count(transcript, "SQLSEL: transaction committed.");
+    const std::size_t rolled_back = transcript_count(transcript, "SQLSEL: transaction rolled back.");
+    const std::size_t autocommitted = transcript_count(
+        transcript, "committed through table buffer + WAL.");
+    if (begun != 3 || committed != 1 || rolled_back != 2 || autocommitted != 4) {
+        std::cout << "SQLSEL DML ORACLE: FAIL -- expected transaction reports "
+                     "begin=3, commit=1, rollback=2, autocommit=4; got "
+                  << begun << '/' << committed << '/' << rolled_back << '/'
+                  << autocommitted << ".\n";
+        return false;
+    }
+    std::cout << "SQLSEL DML ORACLE: PASS -- " << pairs.size() << '/'
+              << pairs.size() << " committed row sets equal SQLite; typed DML, "
+                 "read-your-writes, rollback/commit, WAL cleanup, cursor/lock preservation, "
+                 "and fail-closed boundaries proven.\n";
+    return true;
+}
+
+bool validate_sqlsel_workspace_scope(const std::string& transcript)
+{
+    static constexpr std::array<SqlselOraclePair, 4> pairs{{
+        {"SQLSEL-WS-S1", "SQLSEL-WS-O1"},
+        {"SQLSEL-WS-S2", "SQLSEL-WS-O2"},
+        {"SQLSEL-WS-S3", "SQLSEL-WS-O3"},
+        {"SQLSEL-WS-S4", "SQLSEL-WS-O4"}
+    }};
+    static constexpr std::array<const char*, 5> required{{
+        "SQLWS_C1_A_parent_cursor_restored:.T.",
+        "SQLWS_C2_A_child_cursor_restored:.T.",
+        "SQLWS_C3_B_child_cursor_restored:.T.",
+        "SQLWS_C4_B_parent_cursor_restored:.T.",
+        "SQLSEL: UPDATE affected 1 row(s); committed through table buffer + WAL."
+    }};
+    if (!validate_sqlsel_oracle_rows(transcript, "SQLSEL WORKSPACE ORACLE", pairs) ||
+        !require_transcript_fragments(transcript, "SQLSEL WORKSPACE ORACLE", required)) {
+        return false;
+    }
+    const std::size_t fences = transcript_count(
+        transcript, "SQLSEL: INNER JOIN read transaction -- table fence");
+    if (fences != 2) {
+        std::cout << "SQLSEL WORKSPACE ORACLE: FAIL -- expected 2 JOIN table fences, got "
+                  << fences << ".\n";
+        return false;
+    }
+    std::cout << "SQLSEL WORKSPACE ORACLE: PASS -- " << pairs.size() << '/'
+              << pairs.size() << " row sets equal SQLite; duplicate table names resolve "
+                 "inside the current workspace; JOIN/DML and cursors 4/4 proven.\n";
+    return true;
+}
+
+bool validate_sqlmode_smoke(const std::string& transcript)
+{
+    static constexpr std::array<SqlselOraclePair, 2> pairs{{
+        {"SQLMODE-SELECT-ALIAS", "SQLMODE-O1"},
+        {"SQLMODE-CANONICAL", "SQLMODE-O2"}
+    }};
+    static constexpr std::array<const char*, 4> cursors{{
+        "SQLMODE_C0_native_default_select:.T.",
+        "SQLMODE_C1_sql_query_cursor_restored:.T.",
+        "SQLMODE_C2_other_keeps_native_select:.T.",
+        "SQLMODE_C3_native_select_restored:.T."
+    }};
+    static constexpr std::array<const char*, 2> refusals{{
+        "SQL MODE: REL and SET RELATION are unavailable; use SQLSEL JOIN or SET MODE NATIVE.",
+        "SQL MODE: REL and SET RELATION are unavailable; use SQLSEL JOIN or SET MODE NATIVE."
+    }};
+    static constexpr std::array<const char*, 1> expression_refusal{{
+        "SQL MODE: expected a SQL command; native expression fallback is disabled. Use SQLSEL or SET MODE NATIVE."
+    }};
+    if (!validate_sqlsel_oracle_rows(transcript, "SQLMODE SMOKE", pairs) ||
+        !require_exact_transcript_block(transcript, "SQLMODE SMOKE",
+                                        "SQLMODE-REFUSALS", refusals) ||
+        !require_exact_transcript_block(transcript, "SQLMODE SMOKE",
+                                        "SQLMODE-EXPR-REFUSAL", expression_refusal) ||
+        !require_transcript_fragments(transcript, "SQLMODE SMOKE", cursors)) {
+        return false;
+    }
+    std::cout << "SQLMODE SMOKE: PASS -- SELECT alias and canonical SQLSEL 2/2 equal "
+                 "SQLite; mode transitions, relation/expression blocks 3/3, and cursors 4/4 proven.\n";
     return true;
 }
 
@@ -1806,6 +2187,20 @@ bool validate_regression_transcript(const RegressionSpec& spec,
             return validate_sqlsel_left_join(transcript);
         case RegressionValidator::SqlselJoinFamilyV1:
             return validate_sqlsel_join_family(transcript);
+        case RegressionValidator::SqlselSetOperationsV1:
+            return validate_sqlsel_set_operations(transcript);
+        case RegressionValidator::SqlselAggregatesV1:
+            return validate_sqlsel_aggregates(transcript);
+        case RegressionValidator::SqlselSubqueriesV1:
+            return validate_sqlsel_subqueries(transcript);
+        case RegressionValidator::SqlselAdvancedJoinV1:
+            return validate_sqlsel_advanced_join(transcript);
+        case RegressionValidator::SqlselDmlTransactionV1:
+            return validate_sqlsel_dml_transaction(transcript);
+        case RegressionValidator::SqlselWorkspaceScopeV1:
+            return validate_sqlsel_workspace_scope(transcript);
+        case RegressionValidator::SqlmodeSmokeV1:
+            return validate_sqlmode_smoke(transcript);
         case RegressionValidator::SqlselBufferVisibilityV1:
             return validate_sqlsel_buffer_visibility(transcript);
         case RegressionValidator::EvaldiffV1:
@@ -1906,7 +2301,7 @@ void run_regression_script(DbArea& area, const RegressionSpec& spec)
 // throw becomes std::terminate, and a measurement is not worth that.
 static const char* const kIsolationArmScript = "l3_catalog_isolation_arm.dts";
 
-void run_isolation_arm(DbArea& area, const char* phase)
+bool run_isolation_arm(DbArea& area, const char* phase)
 {
     namespace fs = std::filesystem;
 
@@ -1923,7 +2318,8 @@ void run_isolation_arm(DbArea& area, const char* phase)
                      "  THIS IS NOT A PASS. Catalog isolation is UNMEASURED for\n"
                      "  this run. A missing instrument and a green one must not\n"
                      "  read alike.\n";
-        return;
+        xbase::error::set_last_error(xbase::error::e_invalid_argument());
+        return false;
     }
 
     std::cout << "  READ RULE: six markers must PRINT and all six read .T.\n"
@@ -1941,7 +2337,38 @@ void run_isolation_arm(DbArea& area, const char* phase)
     std::ostringstream dotscript_line;
     dotscript_line << '"' << resolved.string() << '"';
     std::istringstream dotscript_args(dotscript_line.str());
-    cmd_DOTSCRIPT(area, dotscript_args);
+
+    // The arm's own header says a missing or false marker voids the isolation
+    // claim. Make that rule executable. A human read rule allowed the WSL path
+    // separator defect to print D0/D1 false while REGRESSION still returned
+    // success -- exactly the silent-green family this arm exists to prevent.
+    std::ostringstream captured;
+    std::streambuf* const original = std::cout.rdbuf();
+    TeeStreamBuf tee(original, captured.rdbuf());
+    std::cout.rdbuf(&tee);
+    try {
+        cmd_DOTSCRIPT(area, dotscript_args);
+    } catch (...) {
+        std::cout.rdbuf(original);
+        throw;
+    }
+    std::cout.flush();
+    std::cout.rdbuf(original);
+
+    static constexpr std::array<const char*, 6> required{{
+        "L3_L0_arm_started:.T.",
+        "L3_L1_production_catalog_readable:.T.",
+        "L3_D0_scratch_catalog_minted:.T.",
+        "L3_D1_detector_sees_a_mint:.T.",
+        "L3_G1_production_high_water_unchanged:.T.",
+        "L3_G2_production_bottom_row_is_the_same_row:.T."
+    }};
+    if (!require_transcript_fragments(captured.str(), "L3 CATALOG ISOLATION", required)) {
+        xbase::error::set_last_error(xbase::error::e_invalid_argument());
+        return false;
+    }
+    std::cout << "L3 CATALOG ISOLATION: PASS -- 6/6 markers true.\n";
+    return true;
 }
 
 // AN EXPLICIT RUN GETS THE SAME INSTRUMENT THE SUITE GETS.
@@ -1966,9 +2393,12 @@ void run_isolation_arm(DbArea& area, const char* phase)
 // REGRESSION RUN is an interactive act, not a hot loop.
 void run_regression_script_measured(DbArea& area, const RegressionSpec& spec)
 {
-    run_isolation_arm(area, "BEFORE");
+    const bool before_ok = run_isolation_arm(area, "BEFORE");
     run_regression_script(area, spec);
-    run_isolation_arm(area, "AFTER");
+    const bool after_ok = run_isolation_arm(area, "AFTER");
+    if (!before_ok || !after_ok) {
+        xbase::error::set_last_error(xbase::error::e_invalid_argument());
+    }
 }
 
 void run_regression_default_suite(DbArea& area)
@@ -1976,14 +2406,17 @@ void run_regression_default_suite(DbArea& area)
     // Plan condition 2: "REGRESSION ALL leaves PRODUCTION unchanged." The arm
     // reads production's high-water before and after everything below, and the
     // BEFORE pass is also what proves the detector is alive on this build.
-    run_isolation_arm(area, "BEFORE");
+    const bool before_ok = run_isolation_arm(area, "BEFORE");
 
     for (const auto& spec : kRegressionSpecs) {
         if (!spec.in_default_suite) continue;
         run_regression_script(area, spec);
     }
 
-    run_isolation_arm(area, "AFTER");
+    const bool after_ok = run_isolation_arm(area, "AFTER");
+    if (!before_ok || !after_ok) {
+        xbase::error::set_last_error(xbase::error::e_invalid_argument());
+    }
 }
 
 } // namespace

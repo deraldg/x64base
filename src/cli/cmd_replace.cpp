@@ -105,6 +105,7 @@
 #include "textio.hpp"
 #include "cli/settings.hpp"
 #include "cli/table_state.hpp"
+#include "cli/field_store_validation.hpp"
 #include "cli/cli_currency.hpp"
 #include "cli/command_output.hpp"
 
@@ -795,6 +796,13 @@ static void print_replace_usage()
 
 } // namespace
 
+bool dottalk::fieldstore::validate_and_normalize(const xbase::DbArea& area,
+                                                 int field1,
+                                                 std::string& stored_value,
+                                                 std::string& error) {
+    return validate_field_value_for_store(area, field1, stored_value, error);
+}
+
 void cmd_REPLACE(xbase::DbArea& A, std::istringstream& in) {
     const std::string raw_args = in.str();
     if (is_replace_usage_request(raw_args)) {
@@ -926,7 +934,8 @@ void cmd_REPLACE(xbase::DbArea& A, std::istringstream& in) {
     }
 
     std::string validate_err;
-    if (!validate_field_value_for_store(A, field1, stored_value, validate_err)) {
+    if (!dottalk::fieldstore::validate_and_normalize(
+            A, field1, stored_value, validate_err)) {
         cli::cmdout::print_prefixed_message(
             "REPLACE",
             dottalk::helpdata::MessageId::ReplaceDetailText,

@@ -18,19 +18,18 @@
 // mutates: cursor-temporary
 // usage-access: SQLSEL USAGE
 // summary:
-//   Set-oriented SELECT statement over an open work area, plus the legacy
-//   predicate-scan form over the current area.
+//   Typed set-oriented SELECT and DML over open x64base work areas, plus the
+//   legacy predicate-scan form over the current area.
 //
 // usage:
 //   SQLSEL USAGE
-//   SQLSEL <col>[,<col>...] FROM <table> [[AS] <alias>] [WHERE <predicate>] [ORDER BY <field> [ASC|DESC]] [LIMIT <n>]
-//   SQLSEL * FROM <table>
-//   SQLSEL COUNT(*) FROM <table> [WHERE <predicate>]
-//   SQLSEL <list> FROM <table> [AS] <a> [INNER] JOIN <table> [AS] <b> ON <a.field> = <b.field>
-//   SQLSEL <list> FROM <table> [AS] <a> LEFT JOIN <table> [AS] <b> ON <a.field> = <b.field>
-//   SQLSEL <list> FROM <table> [AS] <a> RIGHT JOIN <table> [AS] <b> ON <a.field> = <b.field>
-//   SQLSEL <list> FROM <table> [AS] <a> FULL JOIN <table> [AS] <b> ON <a.field> = <b.field>
-//   SQLSEL <list> FROM <table> [AS] <a> CROSS JOIN <table> [AS] <b>
+//   SQLSEL [SELECT] [DISTINCT] <list> FROM <source> [WHERE <predicate>]
+//          [GROUP BY <list>] [HAVING <predicate>]
+//          [ORDER BY <item>[,<item>...]] [LIMIT <n>]
+//   SQLSEL <select> UNION [ALL] <select> | <select> INTERSECT <select> | <select> EXCEPT <select>
+//   SQLSEL INSERT INTO <table> (<fields>) VALUES (<values>)[,(<values>)...]
+//   SQLSEL UPDATE <table> [[AS] <alias>] SET <field>=<expr>[,...] WHERE <predicate>
+//   SQLSEL DELETE FROM <table> [[AS] <alias>] WHERE <predicate>
 //   SQLSEL [COUNT] [ALL|DELETED] [FOR <expr> | <expr>]
 //
 // examples:
@@ -44,6 +43,12 @@
 //   SQLSEL S.LNAME,E.CLS_ID FROM STUDENTS S RIGHT JOIN ENROLL E ON S.SID = E.SID
 //   SQLSEL S.LNAME,E.CLS_ID FROM STUDENTS S FULL JOIN ENROLL E ON S.SID = E.SID
 //   SQLSEL S.LNAME,E.CLS_ID FROM STUDENTS S CROSS JOIN ENROLL E
+//   SQLSEL DEPT,COUNT(*),AVG(SALARY) FROM STAFF GROUP BY DEPT
+//   SQLSEL SID FROM STUDENTS UNION SELECT SID FROM ALUMNI
+//   SQLSEL SID FROM STUDENTS S WHERE EXISTS (SELECT SID FROM ENROLL E WHERE E.SID=S.SID)
+//   SQLSEL INSERT INTO STUDENTS (SID,LNAME) VALUES (9,'SMITH')
+//   SQLSEL UPDATE STUDENTS SET LNAME=UPPER(LNAME) WHERE SID=9
+//   SQLSEL DELETE FROM STUDENTS WHERE SID=9
 //   SQLSEL COUNT
 //   SQLSEL COUNT FOR GPA >= 3.0
 //   SQLSEL LNAME = "SMITH"
@@ -51,29 +56,30 @@
 // notes:
 //   SQLSEL USAGE prints usage before open-table checks.
 //   SQLSEL is the select verb; a leading SELECT keyword remains optional.
-//   A SELECT statement names its own table(s) in FROM; every table must be OPEN.
-//   A SELECT statement does not read or disturb session state -- not the
-//   current area, not the record pointer, not SET FILTER, not SET RELATION.
-//   A SELECT statement reads committed table data; uncommitted TABLE BUFFER
-//   preview overlays remain TUP/TUPLE-facing until SQLSEL DML is promoted.
+//   A statement names open tables inside the current workspace. SELECT restores
+//   the current area and source cursors and ignores SET FILTER/SET RELATION.
+//   SELECT reads committed data. DML in one explicit transaction reads its own
+//   buffered writes; SELECT during that transaction remains a committed view.
 //   All JOIN forms are statement-scoped ad-hoc set matching. They do not
-//   consult a declared relation; every run reports CDX seek or scan.
+//   consult a declared relation; every run reports its fence and access path.
 //   Outer joins render produced-absent cells as <UNMATCHED> and report their
-//   extension counts. Outer JOIN with WHERE refuses until the predicate
-//   engine supports SQL UNKNOWN. CROSS JOIN takes no ON clause.
-//   SELECT projects column names; expression projection is not yet
-//   supported and reports rather than emitting empty values.
-//   ORDER BY sorts the full match set before LIMIT applies, and reports its
-//   access path; GROUP BY and set operations are not yet implemented.
+//   extension counts. WHERE uses SQL three-valued logic for that absence.
+//   CROSS JOIN takes no ON clause. Multi-join chains support INNER/LEFT/CROSS;
+//   RIGHT/FULL remain two-table forms.
+//   Projection uses the typed TupleRow expression engine. Aggregates are
+//   COUNT/SUM/AVG/MIN/MAX; numeric blanks are skipped and reported.
+//   Set operands require equal arity and compatible tuple types.
 //   LIMIT reports how many rows remain rather than truncating silently.
+//   DML reuses APPEND/REPLACE/DELETE semantics through TableBuffer + TBJ1 WAL.
+//   Explicit BEGIN/COMMIT/ROLLBACK requires SET MODE SQL and is atomic for one
+//   target table only. NULL and memo-field DML refuse; DBF blanks remain values.
 //   The legacy predicate form reads records and may temporarily move the cursor.
-//   SQLSEL does not mutate table data.
 //
 // risk:
 //   requires_open_table: yes except usage
 //   scans_records: yes
 //   mutates_cursor: temporary
-//   mutates_table_data: no
+//   mutates_table_data: DML only
 //
 // related:
 //   SQL
@@ -451,7 +457,8 @@ static void print_sqlsel_usage_contract()
         << "Notes:\n"
         << "  - SQLSEL USAGE does not require an open table.\n"
         << "  - The legacy form scans the CURRENT area and may temporarily move its cursor.\n"
-        << "  - SQLSEL does not mutate table data.\n";
+        << "  - Statement SELECT restores the current area and source cursors.\n"
+        << "  - INSERT, UPDATE, and DELETE use typed TableBuffer + WAL writes.\n";
 }
 
 static bool sqlsel_usage_contract(std::string tok)
@@ -497,7 +504,7 @@ void cmd_SQL_SELECT(xbase::DbArea& A, std::istringstream& iss) {
         }
         iss.clear();
         if (stmt_pos != std::streampos(-1)) iss.seekg(stmt_pos);
-        if (sqlsel::try_execute_select(stmt_tail)) return;
+        if (sqlsel::try_execute_statement(stmt_tail)) return;
         iss.clear();
         if (stmt_pos != std::streampos(-1)) iss.seekg(stmt_pos);
     }

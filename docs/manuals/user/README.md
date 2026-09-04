@@ -8,8 +8,8 @@ Generated HELP/CMDHELP owns command existence and syntax. The User Manual explai
 
 ## Available chapters
 
-- [SQLsel: set-oriented queries](sqlsel.md) -- single-table queries, joins,
-  result semantics, safety boundaries, and current limitations.
+- [SQLsel: typed SQL over x64base work areas](sqlsel.md) -- queries, joins,
+  sets, aggregates, subqueries, DML, transactions, and safety boundaries.
 - [Workspaces and MiniDBs](workspaces-and-minidbs.md) -- workspace membership,
   durable identity, nesting, and MiniDB lifecycle.
 

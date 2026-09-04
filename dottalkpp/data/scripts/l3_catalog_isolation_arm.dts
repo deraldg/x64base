@@ -45,7 +45,7 @@
 && hits the wall.
 &&
 && KNOWN LIMIT: the scratch root is a FIXED name under the TMP slot -- as of
-&& 2026-08-28 it is spelled &_TMP\wscat_l3 rather than an absolute path, so it
+&& 2026-09-03 it is spelled &_TMP/wscat_l3 rather than an absolute path, so it
 && follows the slot, but two sessions running this at once would still share
 && it. The plan's per-run scratch root belongs in L2's C++ bracket, not here;
 && this arm should adopt it when it is wired INTO the suite rather than run
@@ -330,7 +330,7 @@ CLOSE
 && ---------------------------------------------------------------------------
 && DETECTOR PROOF -- both mints land in scratch. Production is not open.
 && ---------------------------------------------------------------------------
-SETPATH WORKSPACES &_TMP\wscat_l3
+SETPATH WORKSPACES &_TMP/wscat_l3
 
 && FIXTURE PRE-CLEAN -- see AMENDMENT (SECOND). The redirect above is already
 && in force, so nothing below can reach production. DESTROY comes BEFORE
@@ -338,10 +338,10 @@ SETPATH WORKSPACES &_TMP\wscat_l3
 && lines print "no such workspace" and change nothing.
 WORKSPACE DESTROY L3DET2
 WORKSPACE DESTROY L3DET1
-ERASE DIR &_TMP\wscat_l3 CONFIRM
+ERASE DIR &_TMP/wscat_l3 CONFIRM
 
 WORKSPACE NEW L3DET1
-USE &_TMP\wscat_l3\WORKSPACES.dbf
+USE &_TMP/wscat_l3/WORKSPACES.dbf
 GO BOTTOM
 VAR scr_hw_1 = WS_ID
 && = 1 EXACTLY, not > 0. A fresh catalog's first mint is 1, and an ADOPTED id
@@ -352,7 +352,7 @@ VAR scr_hw_1 = WS_ID
 CLOSE
 
 WORKSPACE NEW L3DET2
-USE &_TMP\wscat_l3\WORKSPACES.dbf
+USE &_TMP/wscat_l3/WORKSPACES.dbf
 GO BOTTOM
 VAR scr_hw_2 = WS_ID
 ? "L3_D1_detector_sees_a_mint:" + ($scr_hw_2 > $scr_hw_1)
@@ -381,7 +381,7 @@ WORKSPACE DESTROY L3DET1
 && "wherever the slot pointed on entry", which is not necessarily the catalog
 && this arm just MEASURED -- two authorities for one location, in the file
 && whose whole subject is which catalog got written.
-SETPATH WORKSPACES &_DATA\workspaces
+SETPATH WORKSPACES &_DATA/workspaces
 
 && ---------------------------------------------------------------------------
 && PRODUCTION AFTER -- the claim.

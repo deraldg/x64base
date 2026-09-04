@@ -40,6 +40,7 @@
 #include "cli/rel_refresh_suppress.hpp"
 #include "set_relations.hpp"          // relations_api::refresh_if_enabled()
 #include "cli/settings.hpp"
+#include "sqlsel/mode.hpp"
 
 #if __has_include("cli/path_resolver.hpp") && __has_include("cli/cmd_setpath.hpp")
   #include "cli/path_resolver.hpp"
@@ -326,6 +327,13 @@ bool shell_execute_line(xbase::DbArea& area, const std::string& rawLine)
     if (dottalk::shell_if_is_suppressed() && !dottalk::is_if_control_command(U0))
         return true;
 
+    if (sqlsel::sql_mode() && registry().map().find(U0) == registry().map().end() &&
+        looks_like_expression_candidate(area, prepared)) {
+        std::cout << "SQL MODE: expected a SQL command; native expression fallback "
+                     "is disabled. Use SQLSEL or SET MODE NATIVE.\n";
+        return true;
+    }
+
     {
         dottalk::VarCmdResult vr = dottalk::try_handle_var_command(area, prepared);
         if (vr.handled) return vr.ok;
@@ -346,6 +354,37 @@ bool shell_execute_line(xbase::DbArea& area, const std::string& rawLine)
     if (cmdToken.empty()) return true;
 
     const std::string U = textio::up(cmdToken);
+    std::string routed_command = U;
+
+    // Modes own aliases, never canonical commands or data semantics. In SQL
+    // mode SELECT is the SQLSEL alias, while SQLSEL itself remains available in
+    // every mode. Native relation state is blocked so a statement cannot
+    // silently inherit cursor-oriented REL behavior.
+    if (sqlsel::sql_mode()) {
+        bool relation_command =
+            U == "REL" || U == "RELATIONS" || U == "REL_LIST" || U == "REL_REFRESH";
+        if (U == "SET") {
+            std::string set_sub;
+            tok >> set_sub;
+            set_sub = textio::up(set_sub);
+            relation_command = set_sub == "RELATION" || set_sub == "RELATIONS";
+            tok.clear();
+            tok.seekg(static_cast<std::streamoff>(cmdToken.size()));
+        }
+        if (relation_command) {
+            std::cout << "SQL MODE: REL and SET RELATION are unavailable; "
+                         "use SQLSEL JOIN or SET MODE NATIVE.\n";
+            return true;
+        }
+        if (U == "SELECT" || U == "INSERT" || U == "UPDATE" || U == "DELETE" ||
+            U == "BEGIN" || U == "COMMIT" || U == "ROLLBACK") {
+            routed_command = "SQLSEL";
+            // SQLSEL normally receives the tail after its own command token.
+            // SQL-mode aliases need the SQL verb as part of the statement.
+            tok.clear();
+            tok.str(macroLine);
+        }
+    }
 
     // SET TIMER instrumentation. This is the single canonical executor every
     // front-end routes through (interactive REPL, DO/DOTSCRIPT, init/shutdown
@@ -369,9 +408,13 @@ bool shell_execute_line(xbase::DbArea& area, const std::string& rawLine)
 
     bool ok;
     {
-        RelRefreshGuard guard(shell_is_rel_refresh_suppression_command(U));
-        if (!registry().run(area, U, tok)) {
-            if (try_shell_expression_fallback(area, macroLine, true)) {
+        RelRefreshGuard guard(shell_is_rel_refresh_suppression_command(routed_command));
+        if (!registry().run(area, routed_command, tok)) {
+            if (!sqlsel::sql_mode() && try_shell_expression_fallback(area, macroLine, true)) {
+                ok = true;
+            } else if (sqlsel::sql_mode()) {
+                std::cout << "SQL MODE: expected a SQL command; native expression fallback "
+                             "is disabled. Use SQLSEL or SET MODE NATIVE.\n";
                 ok = true;
             } else {
                 cli::cmdout::print_message(
@@ -408,7 +451,7 @@ bool shell_execute_line(xbase::DbArea& area, const std::string& rawLine)
     // after COUNT/LIST/SUM over a large table would cost a full child scan per
     // call. This is the SAME predicate RelRefreshGuard uses above, so the
     // suppress-during and skip-after halves of the policy cannot drift apart.
-    if (!shell_is_rel_refresh_suppression_command(U))
+    if (!shell_is_rel_refresh_suppression_command(routed_command))
         relations_api::refresh_if_enabled();
 
     if (timer_on) {
