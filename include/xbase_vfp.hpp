@@ -27,19 +27,14 @@
 namespace xbase {
 
 // ------------------------------------------------------------------------
-// VFP-specific field extras (not baked into FieldDef)
+// VfpFieldExtras MOVED TO xbase.hpp, 2026-09-04 (AIF-091 M1).
+//
+// It became DbArea state, so it has to be visible where DbArea is declared, and
+// xbase.hpp cannot include this header (this one includes IT). The alternative --
+// a second, simpler struct declared over there for DbArea's use -- is exactly the
+// defect this lane spent a day removing: one concept, two declarations that agree
+// with each other and with nothing else. One fact, one declaration.
 // ------------------------------------------------------------------------
-struct VfpFieldExtras {
-    bool        nullable      {false};
-    bool        binary        {false};
-    // Flag 0x01. The `_NullFlags` column is a SYSTEM field and must be kept out of
-    // the user field vector; nothing decoded this before AIF-091 M1.
-    bool        system        {false};
-    bool        autoincrement {false};
-    uint32_t    next_autoinc  {0};
-    uint8_t     step_autoinc  {0};
-    std::string long_name     {};
-};
 
 // ------------------------------------------------------------------------
 // DBF level / flavor detection
@@ -345,6 +340,44 @@ inline void readFields(DbArea& area,
         if (!fp) {
             throw std::runtime_error("Failed to skip VFP backlink block");
         }
+    }
+
+    // ---- AIF-091 M1: hand the decoded flags to the area, and partition -------
+    //
+    // ONE WRITER. The x64 path reaches this same function (xbase_64.hpp
+    // delegates), so both flavors get the promotion here rather than each
+    // loader remembering to do it. DbArea::readFields() has an early `return`
+    // on the x64 branch, which would have skipped a promotion written there --
+    // for exactly the flavor that carries the flags byte by inheritance.
+    area.setFieldExtras(extras);
+
+    // The `_NullFlags` column is a SYSTEM field (flag 0x01) and VFP writes it
+    // LAST. Partitioning it out is what stops it being surfaced as a junk
+    // binary column. DbArea declines the partition if a system field turns up
+    // anywhere but last, because field offsets are computed by accumulation --
+    // see partitionTrailingSystemField() for why declining is the safe answer.
+    //
+    // Today this changes nothing on any table in the tree: no tracked file
+    // carries 0x01 at byte 18, because no writer has ever set it. It is the
+    // seam being put in place before the writer exists, not a live behaviour
+    // change.
+    // CALLED UNCONDITIONALLY, AND THAT IS THE FIX FOR A BUG THIS BLOCK HAD ON ITS
+    // FIRST RUN. The guard here used to read `extras.back().system && ...`, which
+    // meant the function was only entered when the LAST field was a system field
+    // -- so the "system field in the wrong place" detection inside it could never
+    // run, because a misplaced system field is precisely the case where the last
+    // one is NOT system. THE ANOMALY DETECTOR SAT BEHIND A GUARD THE ANOMALY
+    // FALSIFIES. Case (3) of dottalkpp_vfp_null_partition_test caught it.
+    //
+    // The decision belongs to ONE place. partitionTrailingSystemField() handles
+    // every case -- no system field, a trailing one, a misplaced one, a length
+    // mismatch -- and reports which happened. A caller that pre-screens is a
+    // second decision site that can disagree with the first, which is the shape
+    // this whole lane exists to remove.
+    const std::string trailing_name =
+        area.fields().empty() ? std::string() : area.fields().back().name;
+    if (area.partitionTrailingSystemField(trailing_name)) {
+        extras.pop_back();   // keep the caller's copy parallel to fields()
     }
 }
 

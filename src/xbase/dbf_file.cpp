@@ -301,9 +301,17 @@ void DbArea::readFields()
     io().seekg(sizeof(HeaderRec), std::ios::beg);
     vfp_loader::readFields(*this, io(), extras);
 
-    // extras currently remain loader-local by design.
-    // If/when VFP nullable/binary/autoinc metadata becomes first-class runtime
-    // state, store them on DbArea here rather than re-parsing elsewhere.
+    // EXTRAS ARE NO LONGER LOADER-LOCAL, as of AIF-091 M1. They are promoted
+    // onto the area inside vfp_loader::readFields() -- NOT here.
+    //
+    // Here would have been the wrong place, and the reason is three lines up:
+    // the x64 branch RETURNS EARLY, so a promotion written at this comment
+    // would have run for classic and VFP and silently skipped x64 -- exactly
+    // the flavor that carries the flags byte by inheriting the descriptor. The
+    // seam that works for both is the one function both paths funnel through.
+    //
+    // Read them back with area.fieldExtras(), which is parallel to fields() by
+    // index, and area.nullFlagsColumn() for the hidden bitmap's position.
 }
 
 // Authoritative 64-bit record positioning (RECNO64). Offset math is already

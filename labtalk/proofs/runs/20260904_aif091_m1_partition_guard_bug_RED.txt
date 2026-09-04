@@ -1,0 +1,86 @@
+AIF-091 M1 -- THE ANOMALY DETECTOR SAT BEHIND A GUARD THE ANOMALY FALSIFIES
+captured 2026-09-04, D:\code\ccode, branch development
+
+This is not a mutation proof. It is a REAL DEFECT the new test caught on its
+first execution, recorded because that is the strongest thing that can be said
+about a test.
+
+WHAT WAS WRONG
+
+  vfp_loader::readFields() called the partition behind a pre-screen:
+
+      if (!extras.empty() && extras.back().system && !area.fields().empty()) {
+          const std::string sys_name = area.fields().back().name;
+          if (area.partitionTrailingSystemField(sys_name)) {
+              extras.pop_back();
+          }
+      }
+
+  DbArea::partitionTrailingSystemField() contains the detection for a system
+  field found in the WRONG PLACE -- it scans every entry but the last, sets
+  _system_field_not_last, and declines. That detection COULD NEVER RUN, because
+  the caller only entered the function when `extras.back().system` was true, and
+  a misplaced system field is precisely the case where the last field is NOT a
+  system field.
+
+  The guard admitted exactly the inputs the code behind it did not need to
+  examine, and excluded exactly the input it existed to catch.
+
+THE RED RUN
+
+  .\build\src\tests\Release\dottalkpp_vfp_null_partition_test.exe
+
+  AIF-091 M1 -- _NullFlags partition and the offset hazard
+  (1) trailing _NullFlags is partitioned out
+  (2) partitioning does not move any visible field
+  (3) a system field that is not last blocks the partition
+    FAIL: the anomaly is REPORTED, not swallowed
+  (4) a table with no system field is untouched
+  (5) decoded flags reach DbArea, not just the loader's local
+  FAIL -- 1 expectation(s) missed.
+
+  Cases (1), (2), (4) and (5) all passed. The partition arithmetic was right,
+  the offsets were right, the promotion was right. ONLY the case that needed the
+  detector failed -- which is what a well-aimed test looks like when it fires.
+
+  Note what the failure did NOT say: nothing was corrupted, no offset moved, no
+  field went missing. The misplaced system field stayed visible and the record
+  decoded correctly. The defect was that the engine could not TELL YOU it had
+  met one. An unreported anomaly is the same shape as the byte-18 defect this
+  whole lane is about: correct-looking output with no way to know it is wrong.
+
+THE FIX
+
+  Delete the pre-screen. partitionTrailingSystemField() handles every case --
+  no system field, a trailing one, a misplaced one, a size mismatch -- and
+  reports which happened. A caller that pre-screens is a SECOND DECISION SITE
+  that can disagree with the first, which is the same shape as the second
+  descriptor declaration removed in dfd7cf15e, at a much smaller scale.
+
+      const std::string trailing_name =
+          area.fields().empty() ? std::string() : area.fields().back().name;
+      if (area.partitionTrailingSystemField(trailing_name)) {
+          extras.pop_back();
+      }
+
+THE GREEN RUN
+
+  (1) trailing _NullFlags is partitioned out
+  (2) partitioning does not move any visible field
+  (3) a system field that is not last blocks the partition
+  (4) a table with no system field is untouched
+  (5) decoded flags reach DbArea, not just the loader's local
+  PASS -- the hidden column is hidden, and nothing else moved.
+
+  ctest -C Release -R "dottalkpp_vfp_"  ->  4/4 passed.
+
+FOURTH INSTANCE OF ONE SHAPE IN ONE LANE
+
+  1. the closed create/read loop -- writer and reader agreed with each other;
+  2. `| head -20` -- truncation reported a clean absence, and cost a build;
+  3. the `*.dbf` glob -- an extension filter reported a clean absence, and put a
+     false reassurance into a landed commit message;
+  4. this guard -- a precondition that excluded its own failure case.
+
+  Every one of them is an instrument that could not see the thing it was for.
+  Three of the four were caught by something other than reading the code.

@@ -170,6 +170,43 @@ struct FieldDef {
     uint8_t     decimals{};   // for 'N'
 };
 
+// ------------------------------------------------------------------------
+// Per-field metadata carried by the VFP/x64 field descriptor's flags byte
+// (byte 18) but NOT baked into FieldDef. Lives here rather than in
+// xbase_vfp.hpp because DbArea holds it as state and xbase_vfp.hpp includes
+// this header, not the other way round.
+//
+// The flags byte is decoded in exactly one place, xbase::decode_field_flags().
+// Note that autoincrement (0x0C) CARRIES the binary bit (0x04), so `binary`
+// here is already corrected for that -- do not re-derive it from raw flags.
+// ------------------------------------------------------------------------
+struct VfpFieldExtras {
+    bool        nullable      {false};
+    bool        binary        {false};
+    // Flag 0x01. The `_NullFlags` column is a SYSTEM field and must be kept out
+    // of the user field vector; nothing decoded this before AIF-091 M1.
+    bool        system        {false};
+    bool        autoincrement {false};
+    uint32_t    next_autoinc  {0};
+    uint8_t     step_autoinc  {0};
+    std::string long_name     {};
+};
+
+// ------------------------------------------------------------------------
+// Where the hidden `_NullFlags` column lives in a record, once it has been
+// partitioned out of the visible field vector.
+//
+// `present` false means this table has no null bitmap -- which today is every
+// table this engine has ever written. `offset` is the byte offset within the
+// record buffer (record byte 0 is the deleted flag, so a real offset is >= 1).
+// ------------------------------------------------------------------------
+struct NullFlagsColumn {
+    bool        present {false};
+    std::size_t offset  {0};      // byte offset within the record buffer
+    std::size_t length  {0};      // width of the bitmap in bytes
+    std::string name    {};       // as the descriptor spelled it
+};
+
 namespace {
     static inline void clear() {
     #ifdef _WIN32
@@ -341,6 +378,26 @@ public:
 
     // ---- Field access (1-based) -------------------------------------------
     const std::vector<FieldDef>& fields() const { return _fields; }
+
+    // ---- VFP/x64 per-field metadata (AIF-091 M1) --------------------------
+    // PARALLEL TO fields() BY INDEX, and that invariant is load-bearing: it is
+    // what lets a caller ask "is field 3 nullable" without re-parsing the
+    // header. The loader is the only writer. Empty on a classic table, which
+    // genuinely carries no flags byte -- an empty vector here means "this
+    // flavor has nothing to say", never "not looked at".
+    const std::vector<VfpFieldExtras>& fieldExtras() const noexcept { return _extras; }
+
+    // The hidden `_NullFlags` column, if this table has one. Partitioned OUT of
+    // fields() so it is not surfaced as a junk binary column; its position is
+    // kept here because the record still contains it and the bitmap still has
+    // to be read from somewhere.
+    const NullFlagsColumn& nullFlagsColumn() const noexcept { return _null_flags; }
+
+    // TRUE when a SYSTEM field was found somewhere other than the last physical
+    // position, in which case the partition was DECLINED and the field is still
+    // visible in fields(). See setNullFlagsColumn() for why refusing to
+    // partition is the safe answer rather than the timid one.
+    bool systemFieldNotLast() const noexcept { return _system_field_not_last; }
     std::string get(int idx) const;
     bool        set(int idx, const std::string& val);
 
@@ -400,6 +457,59 @@ public:
     void clearFields() noexcept {
         _fields.clear();
         _rawFields.clear();
+        _extras.clear();
+        _null_flags = NullFlagsColumn{};
+        _system_field_not_last = false;
+    }
+
+    // ---- AIF-091 M1 loader hand-off -----------------------------------------
+    // The loader parses the descriptors; DbArea keeps what it found. Both the
+    // VFP and the x64 path funnel through vfp_loader::readFields, so there is
+    // ONE writer for this state.
+    void setFieldExtras(std::vector<VfpFieldExtras> ex) noexcept {
+        _extras = std::move(ex);
+    }
+
+    // Partition the hidden `_NullFlags` column out of the visible field vector.
+    //
+    // WHY ONLY THE LAST FIELD. DbArea::fieldByteOffset_() computes a field's
+    // position by ACCUMULATING the lengths of the fields before it and ignores
+    // the descriptor's own `displacement` (bytes 12-15). So removing a field
+    // from _fields shifts every field AFTER it. VFP always writes _NullFlags
+    // last, which makes the partition safe -- but "always" is an assumption
+    // about someone else's writer, and this is where it gets checked instead of
+    // asserted in a comment.
+    //
+    // If a system field turns up anywhere else, we DECLINE to partition and
+    // leave it visible. That is not timidity: a visible system column is
+    // exactly today's behaviour and is merely ugly, whereas silently shifting
+    // every subsequent field's byte offset would decode the whole record wrong.
+    // Degrade to the status quo, loudly, rather than to corruption, quietly.
+    bool partitionTrailingSystemField(const std::string& name) noexcept {
+        if (_fields.empty() || _extras.size() != _fields.size()) return false;
+
+        // Any system field that is NOT the final one blocks the partition.
+        for (std::size_t i = 0; i + 1 < _extras.size(); ++i) {
+            if (_extras[i].system) {
+                _system_field_not_last = true;
+                return false;
+            }
+        }
+        if (!_extras.back().system) return false;
+
+        std::size_t off = 1;                       // byte 0 is the deleted flag
+        for (std::size_t i = 0; i + 1 < _fields.size(); ++i)
+            off += _fields[i].length;
+
+        _null_flags.present = true;
+        _null_flags.offset  = off;
+        _null_flags.length  = _fields.back().length;
+        _null_flags.name    = name;
+
+        _fields.pop_back();
+        _extras.pop_back();
+        if (!_rawFields.empty()) _rawFields.pop_back();
+        return true;
     }
     void addField(FieldDef fd) {
         _fields.push_back(std::move(fd));
@@ -492,6 +602,10 @@ private:
     // ===== Schema & buffers ===============================================
     std::vector<FieldDef>  _fields;
     std::vector<FieldRec>  _rawFields;
+    // AIF-091 M1. Parallel to _fields by index; see fieldExtras().
+    std::vector<VfpFieldExtras> _extras;
+    NullFlagsColumn             _null_flags;
+    bool                        _system_field_not_last {false};
     std::vector<char>      _recbuf;
 
     // Current record values (1-based indexing: slot 0 unused)

@@ -359,3 +359,22 @@ if(TARGET xbase)
     PRIVATE VFP_FIXTURE_ROOT="${CMAKE_SOURCE_DIR}/tools/vfp")
   add_test(NAME dottalkpp_vfp_real_fixture_flags_test COMMAND dottalkpp_vfp_real_fixture_flags_test)
 endif()
+
+# ---- _NullFlags partition and the offset hazard (AIF-091 M1) -----------------
+# DbArea::fieldByteOffset_() accumulates field lengths and ignores the descriptor
+# `displacement`, so removing a field shifts everything after it. Only a TRAILING
+# system field can be partitioned out safely; a system field anywhere else makes
+# partitionTrailingSystemField() decline and report, which case (3) proves.
+#
+# Descriptors are BUILT here rather than read from a file: no tracked table
+# carries 0x01 at byte 18, because no writer has ever set it. What is under test
+# is our partition arithmetic, not our reading of someone else's format -- the
+# real-file evidence lives in dottalkpp_vfp_real_fixture_flags_test.
+if(TARGET xbase)
+  add_executable(dottalkpp_vfp_null_partition_test
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_vfp_null_partition.cpp
+  )
+  target_link_libraries(dottalkpp_vfp_null_partition_test PRIVATE xbase memo)
+  target_include_directories(dottalkpp_vfp_null_partition_test PRIVATE ${CMAKE_SOURCE_DIR}/include)
+  add_test(NAME dottalkpp_vfp_null_partition_test COMMAND dottalkpp_vfp_null_partition_test)
+endif()
