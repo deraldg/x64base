@@ -3,7 +3,7 @@
     status      : seed (lane AIF-082; ruling state lives in the lane doc)
     owner       : member.derald   steward: member.ai.claude.cowork
     created_utc : 2026-07-31T13:25:00Z
-    updated_utc : 2026-08-10T00:00:00Z
+    updated_utc : 2026-09-04T00:00:00Z
     budget      : 8192 B hard ceiling (see "Maintenance contract")
 
 The smallest set that makes you **safe to act**. Engine knowledge loads per
@@ -119,7 +119,7 @@ owns it.
 | Who is working now | `session_coordinator.py status` | **stale entries common** |
 | Build and run | `AI_README.md`, Runtime Start Points / WSL | maintained |
 | Build and run **in a sandbox** | you CAN -- `CLAUDE.md`, Sandbox agents; `recall.py work_in_sandbox` | corrected 2026-08-26 |
-| A number for what you found | **usually you need none** -- R133: a subset of a lane that already owns the files is GRANDFATHERED; amend that row | ruled 2026-08-30 |
+| A number for what you found | **usually you need none** -- `docs/ai-friendly/R_RULING_REGISTER_V1.md`, R133 | ruled 2026-08-30 |
 | Your environment's versions | **measure** (`ldd --version`, `command -v cmake`) | never cite a doc |
 | Source layout | `AI_README.md`, Source Locations | maintained |
 
