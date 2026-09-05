@@ -95,12 +95,21 @@
 //           at 1 and VFULL's at 3, which is physical field order with the full bit
 //           lower.
 //
-// ONE THING IS STILL NOT MEASURED. The fixture's row 2 nulls BOTH nullable fields at
-// once, so bits 0 and 2 are only ever observed set as a pair; exchanging them fits
-// the file. That bit 0 belongs to the FIRST field is inference from field order, not
-// measurement. R1c is the missing row -- ID null with VNAME short and NOT null --
-// which reads 0x03 if this function is right and 0x06 if it is not. The fixture's
-// load-bearing row was built wrong; that is recorded rather than glossed.
+//   PROVEN 2026-09-05 (R1c): the null bits belong to the fields PHYSICAL FIELD ORDER
+//           says they do. Bit 0 is the FIRST field's, bit 2 the SECOND's. Until rows
+//           4 and 5 were appended this was inference: the fixture's row 2 nulled both
+//           nullable fields at once, so bits 0 and 2 were only ever seen set as a
+//           pair, and exchanging them fit the file. Rows 4 and 5 null exactly one
+//           field each, in opposite directions, and read 0x03 and 0x06 -- predicted
+//           0x03 and 0x06.
+//
+// HOW MUCH THAT COST TO LEARN, because it is the transferable part. Against the
+// three-row fixture the R1a test DID red when the two null bits were exchanged --
+// but only through its own `check_eq(lay.fields[i].null_bit, N)` lines, which it had
+// labelled "(INFERRED from field order)". Those assert this function's belief back to
+// itself. Delete exactly those two lines and the same mutation goes GREEN on the same
+// file: the evidence never objected, only the restatement did. A red tells you
+// nothing until you know which of the two it was.
 //
 // If a fixture ever contradicts the LSB convention after all, the fix is in
 // bit_is_set/set_bit below and nowhere else -- which is why those two exist.

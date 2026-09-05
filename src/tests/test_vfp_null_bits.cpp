@@ -50,10 +50,15 @@
 //
 //   "M1's real accept gate cannot be run" was true for about eighteen hours.
 //
-// STILL NOT MEASURED, and Arrangement A cannot see it either: the fixture's row 2
-// nulls both nullable fields at once, so bits 0 and 2 are only ever observed as a
-// pair. Which of them belongs to the first field is inference from field order.
-// R1c -- first field null, second short and not null -- is the row that would say.
+// MEASURED 2026-09-05 (R1c). The gap this paragraph used to record -- "the fixture's
+// row 2 nulls both nullable fields at once, so bits 0 and 2 are only ever observed as
+// a pair" -- is closed. Rows 4 and 5 of the fixture null exactly one field each, in
+// opposite directions, and read 0x03 and 0x06. Bit 0 is the FIRST field's null bit,
+// by measurement rather than by field-order inference.
+//
+// Arrangement A below still cannot see that, and that is not a defect in it: a
+// hand-computed byte table asserts the rule, so it cannot also be evidence for the
+// rule. Only the file can be that.
 
 #include "xbase/vfp_null_bits.hpp"
 

@@ -19,10 +19,14 @@
 //     INSERT INTO nullfix VALUES (1,      "ABC",        "0123456789", "XY")
 //     INSERT INTO nullfix VALUES (.NULL., .NULL.,       "AB",         "ZZ")
 //     INSERT INTO nullfix VALUES (2,      "0123456789", "C",          "QQ")
+//     INSERT INTO nullfix VALUES (.NULL., "AB",         "0123456789", "RR")   <- R1c
+//     INSERT INTO nullfix VALUES (3,      .NULL.,       "0123456789", "SS")   <- R1c
 //
-// Nothing in this repository wrote a byte of it. The three `_NullFlags` bytes it
-// came back with -- 0x02, 0x0F, 0x08 -- are three of the bytes Arrangement A had
-// already computed from the documentation the day before.
+// Nothing in this repository wrote a byte of it. The first three `_NullFlags` bytes
+// it came back with -- 0x02, 0x0F, 0x08 -- are three of the bytes Arrangement A had
+// already computed from the documentation the day before. Rows 4 and 5 were appended
+// 2026-09-05 to close R1c; the original three are byte-identical across the
+// regeneration, which is itself worth something: the generator is deterministic.
 //
 // ---------------------------------------------------------------------------
 // WHAT ROW 2 IS FOR, AND WHY ROWS 1 AND 3 ARE NOT ENOUGH
@@ -40,20 +44,43 @@
 // rule produces bytes that cannot be a value.
 //
 // ---------------------------------------------------------------------------
-// WHAT THIS FIXTURE DOES *NOT* PROVE -- READ BEFORE TRUSTING IT FURTHER
+// R1c -- WHAT THE FIRST THREE ROWS COULD NOT SEE, AND HOW ROWS 4 AND 5 SEE IT
 // ---------------------------------------------------------------------------
 //
-// Row 2 nulls ID and VNAME TOGETHER, so bits 0 and 2 are only ever observed set
-// as a pair. Exchanging them fits this file. Physical-field-order allocation says
-// bit 0 is ID's, and that is what assign_null_bits() computes, but here that is
-// INFERENCE AND NOT MEASUREMENT. The missing row is R1c: ID null with VNAME short
-// and NOT null, which reads 0x03 if the shipped rule holds and 0x06 if it does
-// not. The fixture's load-bearing row nulls both nullable fields at once; that is
-// a defect in how it was built, and it is recorded here rather than papered over.
+// This section used to read: "Row 2 nulls ID and VNAME TOGETHER, so bits 0 and 2
+// are only ever observed set as a pair. Exchanging them fits this file. Physical-
+// field-order allocation says bit 0 is ID's, and that is what assign_null_bits()
+// computes, but here that is INFERENCE AND NOT MEASUREMENT."
+//
+// It was true, and it was a defect in how the fixture was built rather than in any
+// code. Rows 4 and 5 fix it, and they are MIRRORS of each other on purpose:
+//
+//   row 4   ID null, VNAME = "AB" (short, NOT null)   -> 0x03   b0 set, b2 clear
+//   row 5   ID = 3 (NOT null), VNAME null             -> 0x06   b0 clear, b2 set
+//
+// Row 4 is the one that settles it. Its ID field is BLANK and its VNAME field
+// holds real content ('AB' + spaces + CHR(2)) -- so the null field and the
+// non-null field are distinguishable IN THE DATA, without consulting the bitmap.
+// The bit that is set is bit 0. If bit 2 were ID's, row 4 would read 0x06.
+//
+// A single row would only have told us which of two hypotheses fits. The mirrored
+// PAIR additionally forces the two bytes to come back DIFFERENT, which rules out
+// any rule that collapses the two null bits into one.
+//
+// PREDICTED 0x03 and 0x06 in tools/vfp/make_nullfix.prg BEFORE the run; measured
+// 0x03 and 0x06. Recorded because the previous prediction block in that same file
+// was wrong on all three counts, and a method that only gets written up when it
+// succeeds is not a method.
 //
 // The file is parsed here BY HAND rather than through the loader, on purpose:
 // what is under test is the format claim, not our reading of it. The loader's own
 // behaviour on real VFP files is graded by dottalkpp_vfp_real_fixture_flags_test.
+//
+// THE REGENERATION IS BYTE-STABLE. make_nullfix.prg recreates the whole table, so
+// adding rows 4 and 5 rewrote rows 1-3 as well. Truncating the new file back to
+// three records reproduces the committed R1a blob EXACTLY -- sha256
+// 3c43b26e0e9daab883b9cef52bcf20f886618df04869a06163e3d6ed046b34a3 -- so the R1a
+// measurement was not quietly re-based by the R1c edit.
 //
 // A MISSING FIXTURE IS A FAILURE, NOT A SKIP. A test that quietly finds no file
 // and reports green is the fifth instrument in one day that could not see what it
@@ -62,11 +89,32 @@
 // MUTATION-TESTED against the real file, 2026-09-04 PM, blast radius recorded so a
 // later reader knows exactly what this guard can and cannot see:
 //
-//   swap the pair order in assign_null_bits (null bit lower)  -> 3 red
-//   invert the polarity in varlength_value_length             -> 4 red
-//   make bit 0 the MSB of byte 0 in bit_is_set                -> 6 red
-//   exchange ID's null bit with VNAME's null bit              -> GREEN. That is
-//     R1c, and it is why R1c is still open: THE FILE CANNOT SEE IT.
+//   M1  swap the pair order in assign_null_bits (null bit lower)   ->  5 red
+//   M2  invert the polarity in varlength_value_length              ->  6 red
+//   M3  make bit 0 the MSB of byte 0 in bit_is_set                 -> 10 red
+//   M4  walk the fields in REVERSE physical order                  ->  5 red
+//   M5  exchange the FIRST field's null bit with the SECOND's      ->  6 red
+//
+// M5 IS THE ONE ROWS 4 AND 5 BOUGHT, and the way it was measured matters more
+// than the number. Against the THREE-row fixture, the previous version of this
+// test also went red on M5 -- but only through its two
+// `check_eq(lay.fields[i].null_bit, N)` lines, which it had itself labelled
+// "(INFERRED from field order)". Those assert OUR BELIEF back to us; a mutation
+// of the belief reds them by construction. That is not evidence.
+//
+// Strip exactly those two lines and re-run the old test on the old fixture:
+//
+//   control                            0 red
+//   M5 exchange the two null bits      0 red      <- THE FILE WAS BLIND
+//
+// Rows 4 and 5 are what make the FILE object, because they tie each null bit to a
+// field whose nullness is visible in the record bytes without reading the bitmap.
+// Same mutation, same code, five rows instead of three: 6 red.
+//
+// The lesson is not about VFP. A test can red on a mutation for two reasons -- the
+// evidence contradicts it, or the test restates the hypothesis -- and the red looks
+// identical from the outside. Labelling the inferred assertions is what made the
+// difference visible; deleting them is what proved it.
 
 #include "xbase/vfp_null_bits.hpp"
 
@@ -162,7 +210,7 @@ int main()
     const std::size_t rec_len = le16(&b[10]);
     const std::size_t rec_cnt = le32(&b[4]);
     check_eq((long long)rec_len, 31, "record length");
-    check_eq((long long)rec_cnt,  3, "record count");
+    check_eq((long long)rec_cnt,  5, "record count -- 3 for R1a, plus 2 for R1c");
 
     // ---- field descriptors -------------------------------------------------
     std::vector<Desc> flds;
@@ -213,9 +261,9 @@ int main()
     check_eq((long long)lay.byte_count, 1, "one byte");
     check_eq((long long)lay.byte_count, flds[4].length,
              "computed bitmap width equals the _NullFlags width VFP wrote");
-    check_eq(lay.fields[0].null_bit, 0, "ID null bit  (INFERRED from field order -- see R1c note)");
+    check_eq(lay.fields[0].null_bit, 0, "ID null bit -- MEASURED by rows 4 and 5 (was INFERRED until R1c)");
     check_eq(lay.fields[1].full_bit, 1, "VNAME varlength bit -- MEASURED by rows 1 and 3");
-    check_eq(lay.fields[1].null_bit, 2, "VNAME null bit  (INFERRED -- see R1c note)");
+    check_eq(lay.fields[1].null_bit, 2, "VNAME null bit -- MEASURED by rows 4 and 5 (was INFERRED until R1c)");
     check_eq(lay.fields[2].full_bit, 3, "VFULL varlength bit -- MEASURED by rows 1 and 3");
     check_eq(lay.fields[3].full_bit, -1, "PLAIN contributes nothing");
     check_eq(lay.fields[3].null_bit, -1, "PLAIN contributes nothing");
@@ -224,14 +272,16 @@ int main()
     // Bit index 0 is the LSB of byte 0. vfp_null_bits.hpp called that assumption
     // "conventional, unconfirmed". It is now measured: under MSB-first numbering
     // row 1 would read 0x40.
-    const std::uint8_t want_flags[3] = { 0x02, 0x0F, 0x08 };
-    const char* row_why[3] = {
+    const std::uint8_t want_flags[5] = { 0x02, 0x0F, 0x08, 0x03, 0x06 };
+    const char* row_why[5] = {
         "row 1 -- VNAME short (bit 1), VFULL full, nothing null",
         "row 2 -- ID and VNAME null (bits 0,2) AND both V short (bits 1,3)",
-        "row 3 -- VNAME full, VFULL short (bit 3), nothing null"
+        "row 3 -- VNAME full, VFULL short (bit 3), nothing null",
+        "row 4 -- R1c: ID null (bit 0) ALONE, VNAME short and not null, VFULL full",
+        "row 5 -- R1c: VNAME null (bit 2) ALONE, ID not null, VFULL full"
     };
 
-    for (std::size_t r = 0; r < 3; ++r) {
+    for (std::size_t r = 0; r < 5; ++r) {
         const std::uint8_t* row = &b[hdr_len + r * rec_len];
         check_eq(row[0], ' ', "record is not deleted");
 
@@ -280,6 +330,50 @@ int main()
               "row 2 -- BOTH varlength bits set while BOTH fields hold a length byte");
         check(row[1] == ' ' && row[2] == ' ' && row[3] == ' ' && row[4] == ' ',
               "row 2 -- the null N field is stored blank");
+    }
+
+    // ---- R1c: THE MIRRORED PAIR THAT SEPARATES THE TWO NULL BITS ----------
+    //
+    // Rows 1-3 can only ever show bits 0 and 2 set TOGETHER (row 2 nulls both
+    // nullable fields), so they cannot say which field owns which. Rows 4 and 5
+    // null exactly one field each, in opposite directions.
+    //
+    // The witness is the DATA, not the bitmap: in row 4 the ID field is BLANK and
+    // the VNAME field holds real content, so which one is null is visible without
+    // consulting _NullFlags at all. The bit that is set is bit 0.
+    {
+        const std::uint8_t* r4 = &b[hdr_len + 3 * rec_len];
+        const std::uint8_t* r5 = &b[hdr_len + 4 * rec_len];
+        const std::uint8_t  nf4 = r4[rec_len - 1];
+        const std::uint8_t  nf5 = r5[rec_len - 1];
+
+        const int id_null    = lay.fields[0].null_bit;   // 0 under the shipped rule
+        const int vname_null = lay.fields[1].null_bit;   // 2 under the shipped rule
+
+        // Record layout: [0] delete, [1..4] ID, [5..14] VNAME, [15..24] VFULL,
+        // [25..29] PLAIN, [30] _NullFlags.
+        check(r4[1] == ' ' && r4[2] == ' ' && r4[3] == ' ' && r4[4] == ' ',
+              "row 4 -- ID is blank, i.e. the null one (data witness, not the bitmap)");
+        check(r4[5] == 'A' && r4[6] == 'B' && r4[14] == 2,
+              "row 4 -- VNAME holds 'AB' + length byte 2, i.e. NOT null (data witness)");
+        check(bit_is_set(&nf4, 1, id_null),
+              "row 4 -- the FIRST field's null bit is SET, and the first field is the"
+              " one the data shows as null");
+        check(!bit_is_set(&nf4, 1, vname_null),
+              "row 4 -- the SECOND field's null bit is CLEAR (if these were exchanged,"
+              " row 4 would read 0x06)");
+
+        check(r5[4] == '3',
+              "row 5 -- ID holds 3, i.e. NOT null (data witness)");
+        check(!bit_is_set(&nf5, 1, id_null),
+              "row 5 -- the first field's null bit is CLEAR");
+        check(bit_is_set(&nf5, 1, vname_null),
+              "row 5 -- the second field's null bit is SET");
+
+        // Belt and braces: a rule that collapsed both nulls onto one bit would make
+        // these two bytes equal.
+        check(nf4 != nf5,
+              "row 4 and row 5 differ -- the two null bits are TWO bits, not one");
     }
 
     if (g_failures) {

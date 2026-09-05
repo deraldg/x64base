@@ -239,7 +239,7 @@ void one_fixture(const Fixture& fx)
 //
 // Read the file with a hex dump beside this list; every number here came out of it:
 //
-//   ver 0x32   hdrlen 456   reclen 31   3 records
+//   ver 0x32   hdrlen 456   reclen 31   5 records (3 for R1a, 2 appended for R1c)
 //   ID          N   4   byte18 0x02   nullable
 //   VNAME       V  10   byte18 0x02   nullable          <- also varlength: TWO bits
 //   VFULL       V  10   byte18 0x00

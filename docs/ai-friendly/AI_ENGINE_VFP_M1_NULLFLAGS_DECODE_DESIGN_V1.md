@@ -172,16 +172,36 @@ Varchar/Varbinary/Blob (already in `detectDbfLevel`).
   unconfirmed.~~ **Measured.** Under MSB-first numbering within the byte, row 1 of the
   R1a fixture would have read `0x40`; it reads `0x02`. Bit index 0 is the least
   significant bit of byte 0. It stays isolated in `bit_is_set`/`set_bit` regardless.
-- **R1c -- OPEN, AND IT IS A DEFECT IN THE FIXTURE, NOT IN THE CODE.** The R1a fixture's
-  row 2 nulls **both** nullable fields at once, so bits 0 and 2 are only ever observed
-  set as a pair; exchanging them fits the file exactly as well. That bit 0 belongs to
-  the **first** field is inference from physical field order -- which is what
-  `assign_null_bits()` computes and what Hentzen states -- but it is **not measured**.
-  The missing row is: first field null, second field short and NOT null. It reads
-  `0x03` if the shipped rule holds and `0x06` if it does not. **Append a fourth row to
-  `make_nullfix.prg`; do not edit the three that carry the R1a result.** M1 may ship on
-  the inference, but the accept gate should not claim the pair order is measured until
-  this row exists.
+- **R1c -- ANSWERED 2026-09-05.** ~~OPEN, AND IT IS A DEFECT IN THE FIXTURE, NOT IN THE
+  CODE. The R1a fixture's row 2 nulls **both** nullable fields at once, so bits 0 and 2
+  are only ever observed set as a pair; exchanging them fits the file exactly as well.~~
+  Two rows were **appended** to `make_nullfix.prg` (the R1a three untouched, and
+  byte-identical after regeneration -- truncating the new file to three records
+  reproduces the committed blob, sha256 `3c43b26e...46b34a3`). They are mirrors:
+
+  | row | contents | predicted | measured |
+  |---|---|---|---|
+  | 4 | `(.NULL., "AB", "0123456789", "RR")` -- first field null only | `0x03` | **`0x03`** |
+  | 5 | `(3, .NULL., "0123456789", "SS")` -- second field null only | `0x06` | **`0x06`** |
+
+  Bit 0 is the **first** field's null bit and bit 2 the **second**'s, by measurement.
+  Row 4 is the one that settles it: its ID field is blank and its VNAME field holds
+  real content, so which field is null is visible in the record bytes **without
+  consulting the bitmap**, and the bit that is set is bit 0.
+
+  **WHAT THIS COST TO LEARN, and it generalizes past this lane.** Against the three-row
+  fixture the R1a test *did* go red when the two null bits were exchanged -- but only
+  through its own `check_eq(lay.fields[i].null_bit, N)` lines, which it had labelled
+  `(INFERRED from field order)`. Those assert the implementation's belief back to
+  itself. Delete exactly those two lines and the same mutation goes **green on the same
+  file**: the evidence never objected, only the restatement did. A mutation-test red
+  proves nothing until you know which of the two produced it. Labelling the inferred
+  assertions is what made the difference visible; deleting them is what proved it.
+
+  Mutation battery against the five-row fixture: pair order 5 red, varlength polarity
+  6 red, MSB-first bit numbering 10 red, reverse field walk 5 red, **exchange the two
+  null bits 6 red** (0 red on the three-row fixture once the self-referential
+  assertions are removed).
 - **R2 -- offset math.** The `_NullFlags` column consumes record bytes; mis-sizing it
   shifts every field offset. Gate on the byte-exact round-trip before trusting reads.
 - **R3 -- `0x32` gating.** Writing V/Q without bumping the version byte to `0x32`
