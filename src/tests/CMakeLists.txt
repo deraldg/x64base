@@ -301,12 +301,17 @@ endif()
 # the LOWER bit is the "full" status and the HIGHER bit is the null status. This test
 # is what keeps the corrected order from drifting back.
 #
-# IT ASSERTS HAND-COMPUTED BYTES, NOT A ROUND TRIP, and that is deliberate: there is
-# no VFP fixture with a nullable field anywhere in this tree (21 VFP tables measured
-# 2026-09-04, all with zero nullable and zero system fields), so a create-then-read
-# proof would only show our encoder and our decoder agreeing with each other -- which
-# they do just as happily with the order inverted. Every expectation is derived from
-# the documentation so a human can check it against the documentation.
+# IT ASSERTS HAND-COMPUTED BYTES, NOT A ROUND TRIP, and that is deliberate: a
+# create-then-read proof would only show our encoder and our decoder agreeing with
+# each other -- which they do just as happily with the order inverted. Every
+# expectation is derived from the documentation so a human can check it against the
+# documentation.
+#
+# This block used to add "there is no VFP fixture with a nullable field anywhere in
+# this tree (21 VFP tables measured 2026-09-04)". Both halves were wrong: the sweep
+# globbed *.dbf and missed the .SCX/.VCX tables VFP also writes (see 7a46a4a01), and
+# a nullable fixture was authored in VFP later the same day. It is graded by
+# dottalkpp_vfp_nullfix_r1a_test below, which AGREED with the hand-computed bytes.
 #
 # Header-only against xbase/vfp_null_bits.hpp: no table, no index, no engine link.
 add_executable(dottalkpp_vfp_null_bits_test
@@ -377,4 +382,34 @@ if(TARGET xbase)
   target_link_libraries(dottalkpp_vfp_null_partition_test PRIVATE xbase memo)
   target_include_directories(dottalkpp_vfp_null_partition_test PRIVATE ${CMAKE_SOURCE_DIR}/include)
   add_test(NAME dottalkpp_vfp_null_partition_test COMMAND dottalkpp_vfp_null_partition_test)
+endif()
+
+# ---- R1a: the bit assignment read out of a VFP-authored file (AIF-091 M1) ----
+# dottalkpp_vfp_null_bits_test grades the bit order against bytes computed BY HAND
+# from Microsoft's sentence, and its own header says that is not proof against a
+# real file. tools/vfp/fixtures/nullfix.DBF is the real file: created inside Visual
+# FoxPro 9 on 2026-09-04 by tools/vfp/make_nullfix.prg, with a Varchar field that is
+# also nullable -- the only shape where the two-bit order can be observed at all.
+#
+# It came back 0x02 / 0x0F / 0x08, which are three of the bytes Arrangement A had
+# already computed. Row 2 is the load-bearing one: both Varchar fields carry a
+# length byte there and both their bits are SET, which is what rules out "the bit
+# is set when the field is full".
+#
+# Header-only. The file is parsed by hand rather than through the loader because
+# what is under test is the format claim, not our reading of it.
+if(EXISTS "${CMAKE_SOURCE_DIR}/tools/vfp/fixtures/nullfix.DBF")
+  add_executable(dottalkpp_vfp_nullfix_r1a_test
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_vfp_nullfix_r1a.cpp
+  )
+  target_include_directories(dottalkpp_vfp_nullfix_r1a_test PRIVATE ${CMAKE_SOURCE_DIR}/include)
+  target_compile_definitions(dottalkpp_vfp_nullfix_r1a_test
+    PRIVATE VFP_FIXTURE_ROOT="${CMAKE_SOURCE_DIR}/tools/vfp")
+  add_test(NAME dottalkpp_vfp_nullfix_r1a_test COMMAND dottalkpp_vfp_nullfix_r1a_test)
+else()
+  message(FATAL_ERROR
+    "AIF-091 R1a fixture missing: tools/vfp/fixtures/nullfix.DBF. It is tracked; "
+    "rebuild it with tools/vfp/make_nullfix.prg inside Visual FoxPro 9 if it was lost. "
+    "This is a configure FAILURE and not a skip on purpose -- a lane whose only "
+    "real-file proof can silently vanish has no real-file proof.")
 endif()

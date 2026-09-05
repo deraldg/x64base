@@ -22,6 +22,14 @@ field: **`_NullFlags`**, field type **`0`**, marked with the **system** flag
 (nullable) and `0x04` (binary) but NOT `0x01` (`xbase_vfp.hpp:238-239`), so the column
 is neither recognized as system nor decoded.
 
+> **MEASURED 2026-09-04 PM -- VFP WRITES `0x05`, NOT `0x01`.** In
+> `tools/vfp/fixtures/nullfix.DBF`, authored inside Visual FoxPro 9, the `_NullFlags`
+> descriptor carries **`0x05` at byte 18 -- system AND binary**. Reading is unaffected
+> (`decode_field_flags()` reports both bits, and the partition tests on `0x01`, which is
+> present in `0x05`). **The write path is affected: see section 4.** The sentence above
+> is left as written because it is what the CREATE instruction in section 4 was derived
+> from.
+
 `_NullFlags` holds a **bitmap**, length = `ceil(bits / 8)` bytes, with bits assigned
 in **physical field order**. Each field can contribute:
 
@@ -68,8 +76,11 @@ Varchar/Varbinary/Blob (already in `detectDbfLevel`).
 ## 4. Write path (create + update)
 
 - **CREATE nullable / V / Q:** append the hidden `_NullFlags` `0`/system field sized to
-  `ceil(total_bits / 8)`; set flags `0x01` on it, `0x02`/varlength on the members.
-  Bump the version byte to `0x32` when any V/Q/Blob field exists.
+  `ceil(total_bits / 8)`; ~~set flags `0x01` on it~~ **set flags `0x05` on it (system
+  `0x01` | binary `0x04`) -- measured from a VFP-authored file 2026-09-04; writing
+  `0x01` produces a column VFP does not mark the way VFP marks its own** -- and
+  `0x02`/varlength on the members. Bump the version byte to `0x32` when any V/Q/Blob
+  field exists.
 - **APPEND/REPLACE:** on write, set/clear each field's null bit and (for V/Q) its
   varlength bit + last-byte length; keep the bitmap and the row in sync in one place.
 - Add `V` (and later `Q`) to `supports_type_now`; keep CREATE fail-closed for the rest.
@@ -92,6 +103,19 @@ Varchar/Varbinary/Blob (already in `detectDbfLevel`).
   a second process and re-assert (the shared-store restart rule).
 - **Real-fixture decode:** read a known VFP `0x32` table (external fixture, tracked;
   never `.mdb`) with nullable + V/Q fields; assert against an expected null/value map.
+  **PARTIALLY MET 2026-09-04 PM by `tools/vfp/fixtures/nullfix.DBF`**, in two tests that
+  deliberately do not overlap:
+  - `dottalkpp_vfp_nullfix_r1a_test` parses the file BY HAND and grades the **format** --
+    which bit means what, in which order. It must not ask the loader what the loader
+    thinks, so it does not use it.
+  - `dottalkpp_vfp_real_fixture_flags_test` reads the same file **through
+    `vfp_loader::readFields` and `DbArea::partitionTrailingSystemField`** and grades the
+    **decode path**: the partition, the field set, the nullable count, and the record
+    offset cross-checked against the `displacement` VFP itself wrote.
+
+  **STILL OWED ON THIS LINE:** the per-row bitmap read THROUGH THE GETTERS, so a caller
+  asking for a value on row 2 is told it is null. That does not exist yet -- there is no
+  null-aware getter -- so this gate is **not closed**.
 - **Negative:** CREATE still fails closed on `G`/`P`/`W` until their milestones land.
 - Record both under `labtalk/proofs/runs/`.
 
@@ -109,21 +133,55 @@ Varchar/Varbinary/Blob (already in `detectDbfLevel`).
   under the corrected order and `0x02` under the old one. **Mutation-tested: flipping
   the two lines in `assign_null_bits()` reds 10 expectations, and the single-bit fields
   stay green -- the exact blast radius of the defect.**
-- **R1a -- THE FIXTURE PROOF IS STILL OWED, AND CANNOT BE RUN TODAY.** Measured
-  2026-09-04: **21 VFP-flavor tables exist in this repository (13 tracked, 8 untracked),
-  every one version `0x30`, every one with ZERO nullable fields and ZERO system
-  fields.** There is no `_NullFlags` column anywhere in the tree, so the section-6
-  accept gate's "decode proof against a real VFP fixture" has nothing to decode. The
-  Grok seam (section 8) was never answered. **CONSEQUENCE FOR HOW M1 IS PROVEN:** a
-  create-then-read round trip cannot settle the layout, because our encoder and our
-  decoder agree with each other whether or not the order is right -- a closed loop
-  reporting green on a file VFP could not open. Until a real fixture exists, the proof
-  is a HAND-COMPUTED BYTE TABLE derived from the documentation, which a reader can
-  check against the documentation instead of against us. When a fixture arrives it is
-  added beside the byte table, and if the two disagree THE FIXTURE WINS.
-- **R1b -- one assumption remains, and no source read states it:** that bit index 0 is
-  the LEAST SIGNIFICANT bit of byte 0. Conventional, unconfirmed. It is isolated in
-  `bit_is_set`/`set_bit` so that it too is one edit.
+- **R1a -- ANSWERED 2026-09-04 PM. THE FIXTURE EXISTS AND IT AGREED.**
+  `tools/vfp/fixtures/nullfix.DBF` was created inside Visual FoxPro 9 by
+  `tools/vfp/make_nullfix.prg`: version `0x32`, `id N(4) NULL`, `vname V(10) NULL`,
+  `vfull V(10)`, `plain C(5)`, three rows chosen to separate the cases. Its three
+  `_NullFlags` bytes came back **`0x02`, `0x0F`, `0x08`** -- three of the bytes
+  `test_vfp_null_bits.cpp` Arrangement A had already asserted from the documentation,
+  on a file nothing in this tree wrote. Guarded by
+  `src/tests/test_vfp_nullfix_r1a.cpp` (target `dottalkpp_vfp_nullfix_r1a_test`); a missing fixture is a **configure-time
+  FATAL_ERROR**, not a skip.
+  - **The varlength bit is set when the field is NOT full** -- when the trailing length
+    byte is in use. Rows 1 and 3 alone are ambiguous (the inverted polarity with the two
+    varlength bits exchanged fits both); **row 2 settles it**, because both Varchar
+    fields carry a length byte there and both bits are SET.
+  - **`assign_null_bits()` and `varlength_value_length()` were already correct.** What
+    was wrong was the prediction written into `make_nullfix.prg`'s header before the
+    run, which inverted the polarity. That comment is left standing with the measured
+    bytes beside it.
+  - **The R1a fixture is built wrong in one place** and R1c below records it.
+  - THE ORIGINAL RISK TEXT, kept because it is the record of what was believed, and
+    because its first sentence was already false when written (the `*.dbf` glob missed
+    the `.SCX`/`.VCX` tables VFP also writes -- re-measured by magic byte in
+    `7a46a4a01`: 59 tracked DBF-format files, seven disagreeing):
+    > **R1a -- THE FIXTURE PROOF IS STILL OWED, AND CANNOT BE RUN TODAY.** Measured
+    > 2026-09-04: **21 VFP-flavor tables exist in this repository (13 tracked, 8 untracked),
+    > every one version `0x30`, every one with ZERO nullable fields and ZERO system
+    > fields.** There is no `_NullFlags` column anywhere in the tree, so the section-6
+    > accept gate's "decode proof against a real VFP fixture" has nothing to decode. The
+    > Grok seam (section 8) was never answered. **CONSEQUENCE FOR HOW M1 IS PROVEN:** a
+    > create-then-read round trip cannot settle the layout, because our encoder and our
+    > decoder agree with each other whether or not the order is right -- a closed loop
+    > reporting green on a file VFP could not open. Until a real fixture exists, the proof
+    > is a HAND-COMPUTED BYTE TABLE derived from the documentation, which a reader can
+    > check against the documentation instead of against us. When a fixture arrives it is
+    > added beside the byte table, and if the two disagree THE FIXTURE WINS.
+- **R1b -- ANSWERED 2026-09-04 PM.** ~~one assumption remains, and no source read
+  states it: that bit index 0 is the LEAST SIGNIFICANT bit of byte 0. Conventional,
+  unconfirmed.~~ **Measured.** Under MSB-first numbering within the byte, row 1 of the
+  R1a fixture would have read `0x40`; it reads `0x02`. Bit index 0 is the least
+  significant bit of byte 0. It stays isolated in `bit_is_set`/`set_bit` regardless.
+- **R1c -- OPEN, AND IT IS A DEFECT IN THE FIXTURE, NOT IN THE CODE.** The R1a fixture's
+  row 2 nulls **both** nullable fields at once, so bits 0 and 2 are only ever observed
+  set as a pair; exchanging them fits the file exactly as well. That bit 0 belongs to
+  the **first** field is inference from physical field order -- which is what
+  `assign_null_bits()` computes and what Hentzen states -- but it is **not measured**.
+  The missing row is: first field null, second field short and NOT null. It reads
+  `0x03` if the shipped rule holds and `0x06` if it does not. **Append a fourth row to
+  `make_nullfix.prg`; do not edit the three that carry the R1a result.** M1 may ship on
+  the inference, but the accept gate should not claim the pair order is measured until
+  this row exists.
 - **R2 -- offset math.** The `_NullFlags` column consumes record bytes; mis-sizing it
   shifts every field offset. Gate on the byte-exact round-trip before trusting reads.
 - **R3 -- `0x32` gating.** Writing V/Q without bumping the version byte to `0x32`

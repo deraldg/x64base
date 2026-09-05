@@ -50,26 +50,60 @@
 // Measured 2026-09-04 by reading the primary source the spec had already cited.
 //
 // ---------------------------------------------------------------------------
-// WHAT IS STILL NOT PROVEN, AND WHY IT MATTERS MORE THAN USUAL
+// SUPERSEDED 2026-09-04 PM -- THE FIXTURE ARRIVED. Original text kept verbatim
+// because it is the record of what was known when the rule was written:
 // ---------------------------------------------------------------------------
 //
-// THERE IS NO VFP FIXTURE WITH A NULLABLE FIELD ANYWHERE IN THIS REPOSITORY.
-// Measured the same day: 21 VFP-flavor tables (13 tracked, 8 untracked), every one
-// version 0x30, every one with ZERO nullable fields and ZERO system fields. So the
-// M1 accept gate's "decode proof against a real VFP fixture" CANNOT BE RUN TODAY.
+//   | WHAT IS STILL NOT PROVEN, AND WHY IT MATTERS MORE THAN USUAL
+//   |
+//   | THERE IS NO VFP FIXTURE WITH A NULLABLE FIELD ANYWHERE IN THIS REPOSITORY.
+//   | Measured the same day: 21 VFP-flavor tables (13 tracked, 8 untracked), every
+//   | one version 0x30, every one with ZERO nullable fields and ZERO system fields.
+//   | So the M1 accept gate's "decode proof against a real VFP fixture" CANNOT BE
+//   | RUN TODAY.
+//   |
+//   | That is why this header exists separately from any encoder, and why its test
+//   | asserts HAND-COMPUTED BYTES rather than a round trip. [...] It is not proof
+//   | against a real file; it is the strongest thing available without one, and it
+//   | is honest about which it is.
+//   |
+//   | ONE ASSUMPTION REMAINS AND IS NOT DOCUMENTED BY ANY SOURCE READ: that bit
+//   | index 0 is the LEAST SIGNIFICANT bit of byte 0. Conventional, unconfirmed.
 //
-// That is why this header exists separately from any encoder, and why its test
-// asserts HAND-COMPUTED BYTES rather than a round trip. A create-then-read round
-// trip would have our writer and our reader agreeing with each other whether or not
-// the layout is right -- a closed loop reporting green on a file VFP could not open.
-// A byte table derived from the documentation can be checked by a human against the
-// documentation. It is not proof against a real file; it is the strongest thing
-// available without one, and it is honest about which it is.
+// TWO OF THOSE SENTENCES WERE ALREADY WRONG WHEN WRITTEN. The "21 VFP-flavor
+// tables" sweep globbed `*.dbf`; VFP also writes DBF-format tables named .SCX and
+// .VCX. Re-measured by MAGIC BYTE the same day: 59 tracked DBF-format files, seven
+// of which disagree with the reassuring claim. See commit 7a46a4a01.
 //
-// ONE ASSUMPTION REMAINS AND IS NOT DOCUMENTED BY ANY SOURCE READ: that bit index 0
-// is the LEAST SIGNIFICANT bit of byte 0. Conventional, unconfirmed. If a real
-// fixture ever contradicts it, the fix is in bit_is_set/set_bit below and nowhere
-// else -- which is the whole reason those two functions exist.
+// ---------------------------------------------------------------------------
+// WHAT IS PROVEN NOW, AND BY WHAT
+// ---------------------------------------------------------------------------
+//
+// tools/vfp/fixtures/nullfix.DBF was created INSIDE Visual FoxPro 9 on 2026-09-04
+// by tools/vfp/make_nullfix.prg -- version 0x32, a nullable N, a field that is both
+// nullable and Varchar, a plain Varchar, and a plain C. Nothing here wrote a byte
+// of it. Its three `_NullFlags` bytes came back 0x02, 0x0F, 0x08, which are three of
+// the bytes the hand-computed test had already asserted. dottalkpp_vfp_nullfix_r1a_test
+// is that measurement; read its header for the derivation.
+//
+//   PROVEN: the varlength bit is set when the field is NOT full -- when the trailing
+//           length byte is in use. Row 2 of the fixture settles it: both Varchar
+//           fields carry a length byte and both bits are SET.
+//   PROVEN: bit index 0 IS the least significant bit of byte 0. Under MSB-first
+//           numbering row 1 would have read 0x40. The assumption above is retired.
+//   PROVEN: the varlength bits land at the indices this function computes -- VNAME's
+//           at 1 and VFULL's at 3, which is physical field order with the full bit
+//           lower.
+//
+// ONE THING IS STILL NOT MEASURED. The fixture's row 2 nulls BOTH nullable fields at
+// once, so bits 0 and 2 are only ever observed set as a pair; exchanging them fits
+// the file. That bit 0 belongs to the FIRST field is inference from field order, not
+// measurement. R1c is the missing row -- ID null with VNAME short and NOT null --
+// which reads 0x03 if this function is right and 0x06 if it is not. The fixture's
+// load-bearing row was built wrong; that is recorded rather than glossed.
+//
+// If a fixture ever contradicts the LSB convention after all, the fix is in
+// bit_is_set/set_bit below and nowhere else -- which is why those two exist.
 
 #pragma once
 

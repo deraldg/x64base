@@ -30,6 +30,30 @@
 // one. When a real fixture arrives, this test stays and the fixture proof is added
 // beside it; if they disagree, the fixture wins and the flip is one edit in
 // include/xbase/vfp_null_bits.hpp.
+//
+// -------------------------------------------------------------------------
+// THE FIXTURE ARRIVED THE SAME DAY, AND THEY AGREED. 2026-09-04 PM.
+// -------------------------------------------------------------------------
+//
+// tools/vfp/fixtures/nullfix.DBF was created inside Visual FoxPro 9 -- a nullable
+// N, a nullable Varchar, a plain Varchar, a plain C. Its three `_NullFlags` bytes
+// are 0x02, 0x0F and 0x08: three of the bytes Arrangement A below asserts, on a
+// file nothing here wrote. The promise above is kept -- THIS TEST STAYS, and the
+// fixture proof sits beside it as dottalkpp_vfp_nullfix_r1a_test.
+//
+// TWO CORRECTIONS TO THE PARAGRAPH ABOVE, both measured, both left standing rather
+// than edited away:
+//
+//   The "21 VFP-flavor tables, all 0x30" sweep globbed `*.dbf` and so could not see
+//   the .SCX and .VCX tables VFP also writes. Re-measured by magic byte: 59 tracked
+//   DBF-format files, seven of which disagree (commit 7a46a4a01).
+//
+//   "M1's real accept gate cannot be run" was true for about eighteen hours.
+//
+// STILL NOT MEASURED, and Arrangement A cannot see it either: the fixture's row 2
+// nulls both nullable fields at once, so bits 0 and 2 are only ever observed as a
+// pair. Which of them belongs to the first field is inference from field order.
+// R1c -- first field null, second short and not null -- is the row that would say.
 
 #include "xbase/vfp_null_bits.hpp"
 
