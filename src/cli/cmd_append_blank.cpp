@@ -31,7 +31,14 @@
 //
 // notes:
 //   APPEND_BLANK with no arguments appends one blank record.
-//   APPEND BLANK is the friendly command spelling when routed by the dispatcher.
+//   APPEND BLANK is rewritten to APPEND_BLANK by cli::preprocess_for_dispatch in
+//     src/cli/shell_api_extras.cpp, which is the only thing that makes the
+//     two-word spelling work. UNTIL 2026-09-05 THIS LINE READ "the friendly
+//     command spelling when routed by the dispatcher" AND NOTHING ROUTED IT:
+//     the claim was conditional, the condition was false, and a reader who
+//     checked here before typing the command got a wrong answer from the most
+//     authoritative-looking place available. Name the mechanism, or do not
+//     make the claim.
 //   The implementation delegates to dottalk_append_blank_core.
 //   APPEND_BLANK is a table-data mutation command; do not classify it as read-only.
 //
@@ -89,6 +96,26 @@ void cmd_APPEND_BLANK(xbase::DbArea& A, std::istringstream& iss)
 {
     const std::string raw_args = iss.str();
     if (is_append_blank_usage_request(raw_args)) {
+        print_append_blank_usage();
+        return;
+    }
+
+    // AN UNRECOGNIZED TRAILING WORD IS REFUSED, NOT IGNORED.
+    //
+    // Credit where it is due: this arm exists because a second reviewer
+    // (Grok, reviewing the public snapshot on 2026-09-05) specified
+    // "extra words after BLANK still print usage", and the version of this
+    // repair that did not have it was measured and found wanting --
+    // dottalk_append_blank_core takes its istringstream UNNAMED and reads
+    // nothing from it, so `APPEND BLANK GARBAGE` would have appended a record
+    // and dropped GARBAGE without a word.
+    //
+    // That is the SAME DEFECT SHAPE this whole file is being repaired for:
+    // BLANK itself was a word cmd_APPEND did not recognize, and the cost of
+    // ignoring it quietly was a silently empty table. A repair that fixes one
+    // silently-swallowed token by introducing another has not learned anything.
+    std::string extra;
+    if (iss >> extra) {
         print_append_blank_usage();
         return;
     }

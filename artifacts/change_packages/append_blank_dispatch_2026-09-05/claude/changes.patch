@@ -1,0 +1,116 @@
+--- a/src/cli/shell_api_extras.cpp
++++ b/src/cli/shell_api_extras.cpp
+@@ -85,7 +85,28 @@
+         return "REL " + line.substr(after_prefix);
+     }
+ 
+-    // 3) pass-through
++    // 3) APPEND BLANK <args...> -> APPEND_BLANK <args...>
++    //
++    // MEASURED 2026-09-05: the registry holds only "APPEND_BLANK", with an
++    // underscore, and nothing routed the two-word spelling. "APPEND BLANK"
++    // therefore reached cmd_APPEND, whose first token was BLANK -- not a count,
++    // not RAW, not MANY -- so it fell through to print_append_usage() and
++    // APPENDED NOTHING. Every REPLACE after it then answered "no current
++    // record" and the table was silently left empty: a no-op that prints
++    // something helpful-looking, which is the worst available combination.
++    //
++    // This is the seam that already exists for exactly this job, which is why
++    // the fix belongs here and not in cmd_APPEND. Rewriting the LINE keeps one
++    // implementation of the verb (cmd_APPEND_BLANK -> dottalk_append_blank_core)
++    // instead of teaching a second command to answer to the first one's name.
++    //
++    // APPEND BLANK USAGE survives the rewrite: it becomes APPEND_BLANK USAGE,
++    // and cmd_APPEND_BLANK's usage check strips the "APPEND_BLANK " prefix.
++    if (starts_with_tokens_ci(line, "APPEND", "BLANK", &after_prefix)) {
++        return "APPEND_BLANK " + line.substr(after_prefix);
++    }
++
++    // 4) pass-through
+     return line;
+ }
+ 
+--- a/src/cli/cmd_browsetui.cpp
++++ b/src/cli/cmd_browsetui.cpp
+@@ -78,6 +78,7 @@
+ extern void cmd_CREATE  (xbase::DbArea&, std::istringstream&);
+ extern void cmd_APPEND  (xbase::DbArea&, std::istringstream&);
+ extern void cmd_DELETE  (xbase::DbArea&, std::istringstream&);
++extern void cmd_APPEND_BLANK(xbase::DbArea&, std::istringstream&);
+ 
+ extern std::vector<std::string>
+ build_browse_lines(int inner_w, int inner_h, int recno, const std::vector<FieldView>& fields);
+@@ -743,8 +744,26 @@
+             case Key::F5:
+                 if (!maybe_save_staged(true)) { render(status); continue; }
+                 if (area.isOpen()) {
+-                    std::istringstream s("APPEND BLANK");
+-                    cmd_APPEND(area, s);
++                    // THE STREAM MUST BE POSITIONED PAST THE VERB, because that
++                    // is the contract the dispatcher establishes: shell_dispatch
++                    // does `tok >> cmd` and hands the command what is LEFT. A
++                    // command called directly gets whatever position we leave.
++                    //
++                    // This call site read `istringstream s("APPEND BLANK")` and
++                    // passed it to cmd_APPEND at position ZERO, so cmd_APPEND's
++                    // first token was "APPEND" -- not a count, not RAW, not MANY
++                    // -- and it printed its usage block into the TUI and APPENDED
++                    // NOTHING. F5 has never worked. Two independent reasons for
++                    // one silent no-op: the missing dispatcher route (fixed in
++                    // shell_api_extras.cpp) and this position, which the route
++                    // does NOT fix, because this call bypasses the dispatcher.
++                    //
++                    // An empty stream is the honest spelling of "no arguments".
++                    // NOTE FOR THE NEIGHBOURS: F4 above uses the same idiom with
++                    // cmd_DELETE and survives only because cmd_DELETE ignores
++                    // positional arguments. The idiom is unsafe, not correct.
++                    std::istringstream s;
++                    cmd_APPEND_BLANK(area, s);
+                 }
+                 break;
+ 
+--- a/src/cli/cmd_append_blank.cpp
++++ b/src/cli/cmd_append_blank.cpp
+@@ -31,7 +31,14 @@
+ //
+ // notes:
+ //   APPEND_BLANK with no arguments appends one blank record.
+-//   APPEND BLANK is the friendly command spelling when routed by the dispatcher.
++//   APPEND BLANK is rewritten to APPEND_BLANK by cli::preprocess_for_dispatch in
++//     src/cli/shell_api_extras.cpp, which is the only thing that makes the
++//     two-word spelling work. UNTIL 2026-09-05 THIS LINE READ "the friendly
++//     command spelling when routed by the dispatcher" AND NOTHING ROUTED IT:
++//     the claim was conditional, the condition was false, and a reader who
++//     checked here before typing the command got a wrong answer from the most
++//     authoritative-looking place available. Name the mechanism, or do not
++//     make the claim.
+ //   The implementation delegates to dottalk_append_blank_core.
+ //   APPEND_BLANK is a table-data mutation command; do not classify it as read-only.
+ //
+@@ -92,6 +99,26 @@
+         print_append_blank_usage();
+         return;
+     }
++
++    // AN UNRECOGNIZED TRAILING WORD IS REFUSED, NOT IGNORED.
++    //
++    // Credit where it is due: this arm exists because a second reviewer
++    // (Grok, reviewing the public snapshot on 2026-09-05) specified
++    // "extra words after BLANK still print usage", and the version of this
++    // repair that did not have it was measured and found wanting --
++    // dottalk_append_blank_core takes its istringstream UNNAMED and reads
++    // nothing from it, so `APPEND BLANK GARBAGE` would have appended a record
++    // and dropped GARBAGE without a word.
++    //
++    // That is the SAME DEFECT SHAPE this whole file is being repaired for:
++    // BLANK itself was a word cmd_APPEND did not recognize, and the cost of
++    // ignoring it quietly was a silently empty table. A repair that fixes one
++    // silently-swallowed token by introducing another has not learned anything.
++    std::string extra;
++    if (iss >> extra) {
++        print_append_blank_usage();
++        return;
++    }
+ 
+     (void)dottalk_append_blank_core(A, iss);
+ }
