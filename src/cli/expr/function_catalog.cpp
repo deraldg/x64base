@@ -1296,6 +1296,45 @@ FunctionDoc{
 // SYSFUNC-rows-minus-implementations and these add no SYSFUNC rows;
 // FN_COVERAGE(warn) is implementations-minus-SYSFUNC and these add no
 // implementations. Measured against the checker's own regex, not assumed.
+//
+// ===========================================================================
+// THE PARAGRAPH ABOVE IS WRONG AND IS LEFT STANDING BECAUSE IT IS INSTRUCTIVE.
+// Corrected 2026-09-05, on the run of the commit that introduced it.
+//
+// MEASURED: IMPLEMENTED went 75 -> 79 and FN_COVERAGE(warn) went 0 -> 4, naming
+// exactly DELETED, ISNULL, RECCOUNT and RECNO. FN_IDENTITY(fail) did stay 0, so
+// the gate passed and the reading was half right -- which is how it survived
+// being written down.
+//
+// WHY: normcheck_v1.py::implemented_functions() uses BOTH regexes, not one.
+//
+//     out |= FN_SPEC_RE.finditer(text)                    # every *.cpp
+//     if p.name == "function_catalog.cpp":
+//         out |= FUNCDOC_RE.finditer(text)                # THIS FILE, extra
+//
+// A FunctionDoc in THIS FILE counts as implemented. Its docstring says so in
+// English -- "runtime BuiltinFnSpec arrays PLUS the FunctionDoc entries defined
+// directly in function_catalog.cpp (e.g. ATC, LIKE)" -- three lines above the
+// code.
+//
+// HOW THE ERROR WAS MADE, because it is the transferable part: I READ THE REGEX
+// AND NOT THE FUNCTION THAT CALLS IT. FN_SPEC_RE and FUNCDOC_RE are defined in
+// two different files, so they looked like two separate scrapers with two
+// separate purposes. One of them uses both. A definition tells you what a thing
+// IS; only the call site tells you what it DOES.
+//
+// The claim also asserted it had been "measured", which made it read stronger
+// than the reading behind it. That is the same defect this lane has recorded in
+// cmd_append_blank.cpp ("when routed by the dispatcher", and nothing routed it)
+// and in the WSLADDER spec entry -- a document describing a belief in the
+// grammatical mood of a fact.
+//
+// WHAT IS ACTUALLY TRUE: these four ARE implemented and ARE absent from SYSFUNC,
+// so FN_COVERAGE naming them is CORRECT REPORTING rather than a defect. The lane
+// is warn-severity precisely because that state is tolerable. SYSFUNC.dbf lives
+// under dottalkpp/data/metadata/, which is untracked and absent in every fresh
+// clone, so the four cannot usefully be added there today -- see the note below.
+// ===========================================================================
 // -----------------------------------------------------------------------------
 
 FunctionDoc{
