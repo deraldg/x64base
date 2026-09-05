@@ -98,7 +98,15 @@ namespace foxpro_header
     // ---------------------------------------------------------------------
     // Pick a version byte from flavor + memo presence
     // ---------------------------------------------------------------------
-    inline std::uint8_t choose_version(TableFlavor flavor, bool hasMemo) noexcept
+    // `hasVarlength` is AIF-091 M2. VER_VFP_VARCHAR was defined here and had
+    // ZERO CALL SITES until then -- the sixth "declared, never called" instance
+    // this lane has catalogued -- with a comment promising "this version byte is
+    // already ready". A constant nothing selects is a plan, not a behaviour.
+    //
+    // It defaults false so every existing caller keeps emitting exactly the byte
+    // it emitted before. Only a table that actually carries a V/Q field moves.
+    inline std::uint8_t choose_version(TableFlavor flavor, bool hasMemo,
+                                       bool hasVarlength = false) noexcept
     {
         switch (flavor)
         {
@@ -110,9 +118,11 @@ namespace foxpro_header
             return hasMemo ? VER_FOX26_WITH_MEMO : VER_CLASSIC_NO_MEMO;
 
         case TableFlavor::VFP:
-            // First cut: VFP base table. If you later add true VFP field
-            // descriptors/backlink logic, this version byte is already ready.
-            return VER_VFP_BASE;
+            // 0x32 is the varchar-capable flavor and a V/Q field CANNOT exist
+            // below it -- a reader that trusts the version byte would not look
+            // for one. Measured on VFP's own output: tools/vfp/fixtures/nullfix.DBF,
+            // written by Visual FoxPro 9 with two V fields, carries 0x32.
+            return hasVarlength ? VER_VFP_VARCHAR : VER_VFP_BASE;
         }
 
         return hasMemo ? VER_CLASSIC_WITH_MEMO : VER_CLASSIC_NO_MEMO;
@@ -125,9 +135,10 @@ namespace foxpro_header
                              TableFlavor flavor,
                              bool hasMemo,
                              bool hasStructuralCdx = false,
-                             std::uint8_t cp = CP_DOS_437) noexcept
+                             std::uint8_t cp = CP_DOS_437,
+                             bool hasVarlength = false) noexcept
     {
-        hdr.version = choose_version(flavor, hasMemo);
+        hdr.version = choose_version(flavor, hasMemo, hasVarlength);
 
         clear_table_flags(hdr);
 

@@ -36,6 +36,15 @@ struct FieldSpec {
     // x64 callers use this to preserve long authoritative names while writing
     // unique 10-byte fallback descriptor tokens.
     std::string  descriptor_name;
+
+    // AIF-091 M2. Declared nullable by the CREATE statement (`... NULL`).
+    //
+    // A nullable field costs a BIT in the table's hidden `_NullFlags` column,
+    // not a byte in this field -- so nothing here changes width. The writer
+    // appends that column itself; a caller never builds one, and must not,
+    // because the column's width is derived from the WHOLE field list and a
+    // caller holding one field cannot know it.
+    bool         nullable {false};
 };
 
 std::string flavor_name(Flavor flavor);

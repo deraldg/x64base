@@ -278,10 +278,68 @@ struct VfpHeaderDisk
 
 static_assert(sizeof(VfpHeaderDisk) == 32, "VfpHeaderDisk must be 32 bytes");
 
+// AIF-091 M2. Does this field type carry its length in the `_NullFlags` bitmap?
+static bool is_varlength_type(char t) noexcept
+{
+    const char T = (char)std::toupper((unsigned char)t);
+    return T == 'V' || T == 'Q';
+}
+
+// The hidden `_NullFlags` column, or nothing.
+//
+// WHY THIS RETURNS A PLAIN FieldSpec AND THE CALLER APPENDS IT TO THE FIELD
+// LIST, rather than the writer special-casing it downstream: record length,
+// header length and every descriptor `displacement` are computed by ONE loop
+// over that list. Append the column and all four numbers follow. Special-case
+// it instead and there are two places that know how wide a record is -- which
+// is the exact shape of the defect this lane spent two commits on
+// (fieldByteOffset_ accumulating lengths while the descriptor carried its own
+// displacement). One list, one loop, one answer.
+//
+// Bit budget, in physical field order: a V/Q field contributes a varlength bit,
+// a nullable field contributes a null bit, a field that is both contributes
+// TWO. That is assign_null_bits() in include/xbase/vfp_null_bits.hpp, and the
+// width here MUST agree with what it computes or the reader and the writer
+// disagree about how many bytes the row has.
+static bool build_null_flags_column(const std::vector<FieldSpec>& fields,
+                                    FieldSpec& out)
+{
+    std::size_t bits = 0;
+    for (const auto& f : fields) {
+        if (is_varlength_type(f.type)) ++bits;
+        if (f.nullable)                ++bits;
+    }
+    if (bits == 0) return false;
+
+    out = FieldSpec{};
+    out.name = "_NullFlags";
+    out.type = '0';                                  // the digit zero, not NUL
+    out.len  = static_cast<std::uint32_t>((bits + 7) / 8);
+    out.dec  = 0;
+    return true;
+}
+
 static bool write_vfp_dbf(const std::string& path,
-                          const std::vector<FieldSpec>& fields,
+                          const std::vector<FieldSpec>& fields_in,
                           std::string& err)
 {
+    // ---- the field list the FILE will carry ------------------------------
+    // Everything below iterates `fields`, never `fields_in`.
+    std::vector<FieldSpec> fields = fields_in;
+
+    bool hasVarlength = false;
+    for (const auto& f : fields_in) {
+        if (is_varlength_type(f.type)) hasVarlength = true;
+    }
+
+    FieldSpec nullflags{};
+    const bool hasNullFlags = build_null_flags_column(fields_in, nullflags);
+    std::size_t nullflags_index = 0;
+    if (hasNullFlags) {
+        nullflags_index = fields.size();             // it is ALWAYS last
+        fields.push_back(nullflags);
+    }
+
     bool hasMemo = false;
     std::uint16_t recLen = 1; // delete flag
 
@@ -309,7 +367,8 @@ static bool write_vfp_dbf(const std::string& path,
         TableFlavor::VFP,
         hasMemo,
         false,
-        foxpro_header::CP_WINDOWS_ANSI
+        foxpro_header::CP_WINDOWS_ANSI,
+        hasVarlength                     // -> version byte 0x32 (AIF-091 M2)
     );
 
     std::time_t t = std::time(nullptr);
@@ -342,8 +401,10 @@ static bool write_vfp_dbf(const std::string& path,
 
     std::uint32_t offset = 1; // delete flag byte
 
-    for (const auto& f : fields)
+    for (std::size_t i = 0; i < fields.size(); ++i)
     {
+        const FieldSpec& f = fields[i];
+
         xbase::VfpField vf{};
         std::string fn = descriptor_name_for(f);
         std::memcpy(vf.name, fn.c_str(), fn.size());
@@ -352,10 +413,22 @@ static bool write_vfp_dbf(const std::string& path,
         vf.displacement = offset;
         vf.length       = descriptor_length_for(f, false);
         vf.decimals     = f.dec;
-        // Field flags at BYTE 18, where the format puts them. Zero until CREATE
-        // learns to declare a nullable column (AIF-091 M1, still owed) -- but zero
-        // IN THE RIGHT BYTE, so a reader that looks where the format says finds it.
-        vf.flags        = 0;
+
+        // Field flags at BYTE 18, where the format puts them. This used to read
+        // "Zero until CREATE learns to declare a nullable column (AIF-091 M1,
+        // still owed)". It learned.
+        //
+        // 0x05 ON THE HIDDEN COLUMN, NOT 0x01, and that is a MEASUREMENT rather
+        // than a reading of the spec: the M1 design doc said to write 0x01, and
+        // tools/vfp/fixtures/nullfix.DBF -- written by Visual FoxPro 9 itself --
+        // carries 0x05. VFP marks its own system column system AND BINARY, so
+        // no codepage translation is ever applied to a bitmap. Writing 0x01
+        // would produce a column VFP does not mark the way VFP marks its own.
+        if (hasNullFlags && i == nullflags_index) {
+            vf.flags = 0x05;                    // system (0x01) | binary (0x04)
+        } else {
+            vf.flags = f.nullable ? 0x02 : 0x00;
+        }
         vf.autoinc_next = 0;
         vf.autoinc_step = 0;
         std::memset(vf.reserved, 0, sizeof(vf.reserved));
@@ -648,7 +721,31 @@ bool supports_type_now(char code, Flavor flavor) noexcept
             return false;
         }
 
+    // VFP AND X64 ARE SPLIT HERE, AND THE SPLIT IS THE POINT. They shared one
+    // case block until AIF-091 M2, so adding a type to one silently added it to
+    // the other. `V` is a VFP format feature whose length lives in the hidden
+    // `_NullFlags` column; whether x64 wants that mechanism, a different one, or
+    // none is an OPEN DESIGN QUESTION and not something to answer by accident
+    // through a shared switch. x64's list is byte-for-byte what it was.
     case Flavor::VFP:
+        switch (T)
+        {
+        case 'C':
+        case 'N':
+        case 'F':
+        case 'D':
+        case 'L':
+        case 'M':
+        case 'I':
+        case 'B':
+        case 'Y':
+        case 'T':
+        case 'V':          // AIF-091 M2: Varchar. Q (Varbinary) is NOT yet here.
+            return true;
+        default:
+            return false;
+        }
+
     case Flavor::X64:
         switch (T)
         {
