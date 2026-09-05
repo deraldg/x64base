@@ -112,7 +112,8 @@ enum class RegressionValidator {
     SqlmodeSmokeV1,
     SqlselBufferVisibilityV1,
     EvaldiffV1,
-    CountListVerboseV1
+    CountListVerboseV1,
+    DefFamilyV1
 };
 
 struct RegressionSpec {
@@ -480,8 +481,11 @@ constexpr std::array<RegressionSpec, 77> kRegressionSpecs{{
     {
         "DEF_FAMILY",
         "dotscript\\def_family_regression.dts",
-        "Runtime DEF-family testbed: DEFCMD/DEFFN/EXAMPLE define-invoke-arg-compose-list-remove, session-only, no rebuild (RUNTIME_DEF_FAMILY lane). Self-bootstrapping; opens/mutates no table or file (only the session command/function registries, which it cleans up). Permanent worked example of the AI-friendly dev-tools. Explicit-run until proven green in-suite, then promote to default.",
-        false
+        "Runtime DEF-family testbed: DEFCMD/DEFFN/EXAMPLE define-invoke-arg-compose-list-remove, session-only, no rebuild (RUNTIME_DEF_FAMILY lane). Self-bootstrapping; opens/mutates no table or file (only the session command/function registries, which it cleans up). Permanent worked example of the AI-friendly dev-tools. IT HAD NO VALIDATOR UNTIL 2026-09-05, AND THAT IS WHY IT WAS NOT PROMOTED THAT DAY EITHER. It carried DEF-FAMILY-REGRESSION-BEGIN/-END -- the exact affordance require_exact_transcript_block consumes -- and NOTHING IN THIS FILE CONSUMED THEM, so REGRESSION RUN DEF_FAMILY printed a transcript and returned NO VERDICT: measured 2026-09-05, both L3 arms read 6/6 and this spec reported neither PASS nor FAIL nor a count. A spec that cannot go red is a permanently green line, so promoting it would have made REGRESSION ALL say something it had not checked. DefFamilyV1 is that missing instrument: a 22-line EXACT block, asserted in ORDER, on the ROUTED CHANNEL -- capture_routed_channel is true because the arm `Unknown command: PINGCMD` is cli::cmdout::print_line and a std::cout rdbuf swap cannot see it (the CLV lesson of 2026-09-04, one day old here). WHAT A GREEN DEF_FAMILY DOES NOT MEAN: that a DEFFN body can use its arguments. It cannot -- the MVP body returns stored text and ignores argv -- so the one argument arm is DEFCMD_args, about a COMMAND. STILL EXPLICIT-RUN: the flag moves after a green run OF THE VALIDATOR, not before it. Promoting on the strength of runs taken while nothing was grading is the mistake this entry now exists to prevent.",
+        false,
+        false,
+        RegressionValidator::DefFamilyV1,
+        true                       // "Unknown command:" is cmdout, not cout
     },
     {
         "MEM",
@@ -1552,6 +1556,96 @@ bool validate_count_list_verbose(const std::string& transcript)
     return true;
 }
 
+// DEF_FAMILY -- the runtime DEF-family testbed (RUNTIME_DEF_FAMILY lane).
+//
+// WHY THIS EXISTS AT ALL, and it is the finding rather than the feature: until
+// 2026-09-05 THIS SPEC HAD NO VALIDATOR. It carried DEF-FAMILY-REGRESSION-BEGIN
+// and -END -- the exact affordance require_exact_transcript_block consumes, the
+// same one BV_C1, S5A and J6A use -- and NOTHING IN THIS FILE CONSUMED THEM. Its
+// own header said "Expected (grep the transcript between BEGIN/END)": the grader
+// was a human eye. MEASURED, not inferred: on 2026-09-05 REGRESSION RUN DEF_FAMILY
+// printed its transcript, both L3 arms reported 6/6, and DEF_FAMILY reported NO
+// VERDICT OF ANY KIND -- neither PASS nor FAIL nor a marker count. A spec in that
+// state CANNOT GO RED, so promoting it to the default suite would have added a
+// permanently green line that means nothing. An unrunnable gate reads exactly like
+// an ungated lane, and this one had the SHAPE of a graded spec, which is worse
+// than having no shape at all.
+//
+// WHY AN EXACT BLOCK AND NOT FRAGMENTS. Nothing here is a data row. Every claim is
+// "this label is IMMEDIATELY FOLLOWED BY this answer", and fragments prove presence,
+// not adjacency: `hello` appearing somewhere in the transcript is not evidence that
+// GREETFN() returned it. The block asserts content, order and COUNT at once, and the
+// count is what catches an arm that quietly stopped printing.
+//
+// WHY NOT .T. MARKERS, which is the house default and is wrong here: DEFCMD's whole
+// subject is the output of an EXECUTED COMMAND, and a marker cannot see console text
+// -- the standing limit recorded against NULLASSERT one entry-family over. The
+// transcript block can see it. For DEFCMD it is the only instrument that can.
+//
+// TWO KNOWN BRITTLENESSES, STATED HERE RATHER THAN DISCOVERED IN A RED RUN:
+//   - LOCALE. "Unknown command: PINGCMD" is MessageId::UnknownCommand rendered
+//     en-US; helpdata_messages.cpp carries it/es/fr/de renderings of that same id.
+//     Run the suite under another locale and this arm reds for a reason that is not
+//     a defect. No other arm in this block is localized.
+//   - UI TEXT. Any added echo line in cmd_defcmd/cmd_deffn breaks the block. That is
+//     the POINT for an undeliberate change, and one edit to this array for a
+//     deliberate one.
+//
+// ROUTED CHANNEL -- the spec carries capture_routed_channel = true, and it must.
+// "Unknown command: PINGCMD" is CommandRegistry::run -> cli::cmdout::print_line
+// (command_registry.cpp:203), a channel a std::cout rdbuf swap CANNOT SEE. That is
+// the CLV lesson of 2026-09-04, one day old when this was written, and skipping it
+// here would have cost the same red run for the same instrument reason. The other
+// twenty-one lines are raw std::cout out of cmd_defcmd/cmd_deffn and reach the same
+// file because shell.cpp:574 wraps every shell command in push_cout_redirect(), so
+// both channels share one stream and interleave correctly.
+//
+// NOT CLAIMED, stated rather than implied: that a DEFFN body can USE its arguments.
+// It cannot -- the MVP body returns its stored text and ignores argv -- so the one
+// argument arm here (DEFCMD_args) is about a COMMAND, not a function. When the
+// formula body lands this block grows an arm; until then the gap is the spec's and
+// not the validator's, and a reader should not mistake a green DEF_FAMILY for
+// evidence that custom functions take parameters.
+bool validate_def_family(const std::string& transcript)
+{
+    static constexpr std::array<const char*, 22> expected{{
+        "EXAMPLE_TEST_expect_OK:",
+        "OK",
+        "DEFCMD: defined PINGCMD",
+        "DEFCMD_invoke_expect_DEFCMD_BODY_OK:",
+        "DEFCMD_BODY_OK",
+        "DEFCMD_args_expect_DEFCMD_BODY_OK_a_b:",
+        "DEFCMD_BODY_OK a b",
+        "Scratch commands (1):",
+        "PINGCMD = DEFCMD_BODY_OK",
+        "UNDEFCMD: removed PINGCMD",
+        "DEFCMD_removed_expect_Unknown_PINGCMD:",
+        "Unknown command: PINGCMD",
+        "DEFFN: defined GREETFN",
+        "DEFFN_resolve_expect_hello:",
+        "hello",
+        "DEFFN_compose_expect_HELLO:",
+        "HELLO",
+        "Custom functions (1):",
+        "GREETFN",
+        "UNDEFFN: removed GREETFN",
+        "DEFFN_removed_expect_error:",
+        "FORMULA error: function evaluation failed -- in: GREETFN()"
+    }};
+
+    if (!require_exact_transcript_block(transcript, "DEF FAMILY",
+                                        "DEF-FAMILY-REGRESSION", expected)) {
+        return false;
+    }
+
+    std::cout << "DEF FAMILY: PASS -- 22 line(s), exact and in order. DEFCMD and DEFFN\n"
+                 "  each DEFINE, INVOKE, LIST and REMOVE at runtime with no rebuild;\n"
+                 "  DEFFN resolves inside `?` and composes with a builtin (UPPER);\n"
+                 "  both are GONE after removal -- the command unknown, the function\n"
+                 "  refusing to evaluate.\n";
+    return true;
+}
+
 bool validate_sqlsel_select_oracle(const std::string& transcript)
 {
     static constexpr std::array<SqlselOraclePair, 12> pairs{{
@@ -2380,6 +2474,8 @@ bool validate_regression_transcript(const RegressionSpec& spec,
             return validate_evaldiff(transcript);
         case RegressionValidator::CountListVerboseV1:
             return validate_count_list_verbose(transcript);
+        case RegressionValidator::DefFamilyV1:
+            return validate_def_family(transcript);
     }
     return false;
 }
