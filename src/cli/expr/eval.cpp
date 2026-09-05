@@ -74,6 +74,40 @@ std::string FunctionCall::evalString(const RecordView& rv) const {
     return rv.get_field_str(fn);
   }
 
+  // ISNULL(<field>) -- THE ARGUMENT IS NOT EVALUATED, AND THAT IS THE POINT.
+  //
+  // Handled here, before the generic argument loop below, for the same reason
+  // DELETED() is: it asks about the ROW rather than about a value. But it is
+  // stricter than DELETED, because evaluating its argument would DESTROY the
+  // information it needs -- a null field and a blank field both evaluate to the
+  // empty string, so by the time a normal function received its argument the
+  // distinction would already be gone.
+  //
+  // The argument must therefore be a bare FIELD REFERENCE. ISNULL("x"),
+  // ISNULL(1+2) and ISNULL(UPPER(f)) are refused rather than silently answered,
+  // because there is no honest answer to give: a literal is not a cell and has
+  // no null bit.
+  if (fn == "ISNULL") {
+    if (args.size() != 1) {
+      throw std::runtime_error("ISNULL() takes exactly one field name");
+    }
+    const auto* fref = dynamic_cast<const FieldRef*>(args[0].get());
+    if (!fref) {
+      throw std::runtime_error(
+          "ISNULL() takes a field name, not an expression -- only a stored cell "
+          "has a null bit");
+    }
+    if (!rv.get_field_is_null) {
+      throw std::runtime_error(
+          "ISNULL() is unavailable for this row source");
+    }
+    const std::optional<bool> answer = rv.get_field_is_null(fref->name);
+    if (!answer) {
+      throw std::runtime_error("ISNULL(): unknown field '" + fref->name + "'");
+    }
+    return *answer ? ".T." : ".F.";
+  }
+
   std::vector<std::string> argv;
   argv.reserve(args.size());
   for (const auto& arg : args) argv.push_back(arg->evalString(rv));

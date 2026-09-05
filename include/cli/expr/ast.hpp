@@ -21,6 +21,22 @@ struct RecordView {
     std::function<std::string(std::string_view)> get_field_str;
     std::function<std::optional<double>(std::string_view)> get_field_num;
     std::function<std::optional<char>(std::string_view)> get_field_type;
+
+    // ISNULL()'s accessor, and it is deliberately NOT a value accessor.
+    //
+    // A null field's value is the empty string. So is a blank field's. Every
+    // accessor above therefore returns the SAME thing for both, which is why
+    // ISNULL cannot be an ordinary function over an evaluated argument: it
+    // would be handed "" and asked to distinguish null from blank, the one
+    // question it exists to answer.
+    //
+    // nullopt means "no such field" and becomes an error at the call site,
+    // matching how an unknown field behaves everywhere else. A field that
+    // EXISTS but cannot be null answers false -- that is the true answer, not
+    // an error. A row source that has no null concept at all leaves this unset,
+    // and ISNULL() then refuses rather than answering "not null", because a
+    // confident false here is a wrong answer that looks like a right one.
+    std::function<std::optional<bool>(std::string_view)> get_field_is_null;
 };
 
 struct Expr {

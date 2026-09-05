@@ -43,6 +43,13 @@
 //   Under TABLE buffering a PENDING value outranks the physical null: a cell that
 //     is null on disk but carries a buffered edit shows the EDIT, because this
 //     view is what COMMIT would produce.
+//   ISNULL(<field>) tests for a null in a FOR predicate: LIST FOR ISNULL(VNAME).
+//     Its argument must be a bare field name -- ISNULL("x") and ISNULL(1+2) are
+//     refused, because only a stored cell has a null bit and evaluating the
+//     argument would erase the very distinction being asked about (a null field
+//     and a blank field both evaluate to the empty string).
+//   ISNULL on a field that CANNOT be null answers .F. rather than erroring: that
+//     is the true answer. An unknown field name is an error, as it is anywhere.
 //   LIST requires an open table except for LIST USAGE.
 //   LIST with no arguments displays from the current cursor position.
 //   LIST ALL starts at the top and removes the default output limit.

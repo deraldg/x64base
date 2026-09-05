@@ -256,6 +256,17 @@ RecordView make_record_view(xbase::DbArea& area) {
         return area.fields()[static_cast<std::size_t>(idx - 1)].type;
     };
 
+    // ISNULL(). nullopt ONLY for a field that does not exist -- the call site
+    // turns that into an error, matching an unknown field anywhere else.
+    // fieldIsNullFromBuffer() already fails closed for a table with no bitmap
+    // and for a field with no null bit, both of which answer false because that
+    // is TRUE: a field that cannot be null is not null.
+    rv.get_field_is_null = [&area, idx_cache](std::string_view name)->std::optional<bool> {
+        const int idx = field_index_ci_cached(area, name, *idx_cache);
+        if (idx <= 0) return std::nullopt;
+        return area.fieldIsNullFromBuffer(idx);
+    };
+
     return rv;
 }
 
@@ -359,6 +370,17 @@ RecordView make_record_view_raw(xbase::DbArea& area) {
         const int idx = field_index_ci_cached(area, name, *idx_cache);
         if (idx <= 0) return std::nullopt;
         return area.fields()[static_cast<std::size_t>(idx - 1)].type;
+    };
+
+    // ISNULL(). nullopt ONLY for a field that does not exist -- the call site
+    // turns that into an error, matching an unknown field anywhere else.
+    // fieldIsNullFromBuffer() already fails closed for a table with no bitmap
+    // and for a field with no null bit, both of which answer false because that
+    // is TRUE: a field that cannot be null is not null.
+    rv.get_field_is_null = [&area, idx_cache](std::string_view name)->std::optional<bool> {
+        const int idx = field_index_ci_cached(area, name, *idx_cache);
+        if (idx <= 0) return std::nullopt;
+        return area.fieldIsNullFromBuffer(idx);
     };
 
     return rv;

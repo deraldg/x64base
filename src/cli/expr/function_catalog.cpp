@@ -1283,6 +1283,94 @@ FunctionDoc{
 },
 
 // -----------------------------------------------------------------------------
+// CURSOR STATE
+//
+// THESE FOUR ARE DOCUMENTED HERE BUT ARE NOT FUNCTION SPECS, and the difference
+// is deliberate. tools/fullstack_docs/normcheck_v1.py scrapes implemented
+// functions with FN_SPEC_RE -- `{"NAME", min, max, &fn}` -- so a spec is an entry
+// with an EVALUATOR POINTER. None of these have one: they are handled in
+// FunctionCall::evalString() before the builtin lookup, because none can be
+// expressed as a function over evaluated arguments.
+//
+// So documenting them moves NEITHER normcheck lane. FN_IDENTITY(fail) is
+// SYSFUNC-rows-minus-implementations and these add no SYSFUNC rows;
+// FN_COVERAGE(warn) is implementations-minus-SYSFUNC and these add no
+// implementations. Measured against the checker's own regex, not assumed.
+// -----------------------------------------------------------------------------
+
+FunctionDoc{
+    "DELETED",
+    {},
+    FunctionCategory::Cursor,
+    0, 0,
+    "Is the current record flagged deleted?",
+    { "DELETED()" },
+    { "LIST FOR DELETED()", "COUNT FOR .NOT. DELETED()" },
+    {
+        "Reads the record the area is parked on; takes no argument.",
+        "Requires an open table."
+    },
+    {}
+},
+
+FunctionDoc{
+    "RECNO",
+    {},
+    FunctionCategory::Cursor,
+    0, 0,
+    "Record number of the current record.",
+    { "RECNO()" },
+    { "LIST FOR RECNO() > 100" },
+    {
+        "Reads the cursor; takes no argument.",
+        "RECNO() renders EMPTY in a '?' marker inside a .dts script -- measured "
+        "over four specs (cnx_persist_proof, cnx_realtime_buffer_proof, "
+        "cnx_realtime_index_proof, index_maintenance_failure_proof) -- and STR() "
+        "does not rescue it. Spec markers compare FIELD VALUES for this reason."
+    },
+    {}
+},
+
+FunctionDoc{
+    "RECCOUNT",
+    {},
+    FunctionCategory::Cursor,
+    0, 0,
+    "Number of records in the current table.",
+    { "RECCOUNT()" },
+    { "? RECCOUNT()" },
+    {
+        "About the TABLE rather than the row, but still needs an open area and "
+        "still takes no argument, which is why it sits in this category.",
+        "RECCOUNT() serves the predicate path rather than the marker path; like "
+        "RECNO() it renders empty in a '?' marker."
+    },
+    {}
+},
+
+FunctionDoc{
+    "ISNULL",
+    {},
+    FunctionCategory::Cursor,
+    1, 1,
+    "Is this field NULL in the current record?",
+    { "ISNULL(<field>)" },
+    { "LIST FOR ISNULL(VNAME)", "COUNT FOR ISNULL(ID)", "? ISNULL(VNAME)" },
+    {
+        "THE ARGUMENT IS A FIELD NAME AND IS NOT EVALUATED. A null cell and a "
+        "blank cell both evaluate to the empty string, so a function handed an "
+        "evaluated argument could not tell them apart -- the one question this "
+        "answers. min_args/max_args count a TOKEN here, not a value.",
+        "ISNULL(\"x\") and ISNULL(1+2) are refused: only a stored cell has a "
+        "null bit.",
+        "A field that CANNOT be null answers .F. rather than erroring -- that is "
+        "the true answer. An unknown field name is an error, as it is anywhere.",
+        "Only VFP-flavour tables carrying a _NullFlags column can hold a null."
+    },
+    {}
+},
+
+// -----------------------------------------------------------------------------
 // ALL DOCS
 // -----------------------------------------------------------------------------
 
@@ -1337,6 +1425,7 @@ const char* to_string(FunctionCategory cat)
         case FunctionCategory::Logical:      return "Logical";
         case FunctionCategory::Numeric:      return "Numeric";
         case FunctionCategory::Date:         return "Date";
+        case FunctionCategory::Cursor:       return "Cursor";
         case FunctionCategory::Misc:
         default:                             return "Misc";
     }
