@@ -294,6 +294,50 @@ void DbArea::storeFieldsToBuffer()
 {
     const bool is_x64 = (versionByte() == DBF_VERSION_64);
 
+    // ---- PRESERVE THE PARTITIONED `_NullFlags` COLUMN ---------------------
+    //
+    // The space-fill below clears the WHOLE record, and the loop after it writes
+    // one field per entry in `_fields`. Since fbd7e5ee5 the `_NullFlags` column is
+    // NOT in `_fields` -- the partition removed it so it would stop surfacing as a
+    // junk one-byte binary column -- so its bytes were cleared and never written
+    // back. A write left the bitmap at 0x20: EVERY NULL BECAME NOT-NULL and every
+    // short Varchar claimed to be full.
+    //
+    // The record kept its length, its field values and its deleted flag. Only the
+    // nulls were gone, which is why nothing caught it: that is the AIF-110 shape,
+    // and its spec says the lesson in one line -- a test that asserts SHAPE passes
+    // green on a blanked table. Proved at runtime 2026-09-05 by
+    // dottalkpp_vfp_null_write_guard_test, which does the most harmless write
+    // available (re-setting a field to the value it already holds) and watched
+    // 0x03 become 0x20.
+    //
+    // Honest about the history: before the partition this column was a visible
+    // field, so `_fd` held its byte as text and the fixed-width text codec
+    // re-encoded it -- rtrimming, so 0x20 decoded to empty and wrote back as a
+    // space while other values survived by luck. It was an unreliable round trip
+    // and the partition made it deterministic destruction. Both halves are true.
+    //
+    // PRESERVE IS NOT THE WHOLE ANSWER, AND THIS IS THE HONEST BOUNDARY OF IT.
+    // Carrying the bitmap across a write is correct for every field this engine
+    // can currently write, because none of them can change a null bit: there is no
+    // API to SET a value to null, and V/Q values (whose varlength bit lives in this
+    // same bitmap) cannot be written correctly yet either. When set-to-null and
+    // Varchar writes land in M2, this must become a RECOMPUTE from the field
+    // values, not a carry-forward. Until then, carrying the row's own bits forward
+    // is exactly right and destroying them is exactly wrong.
+    std::vector<char> saved_null_flags;
+    const bool have_bitmap =
+        _null_flags.present &&
+        _null_flags.length > 0 &&
+        _null_flags.offset < _recbuf.size() &&
+        _null_flags.length <= _recbuf.size() - _null_flags.offset;
+    if (have_bitmap) {
+        const auto first = _recbuf.begin() +
+            static_cast<std::ptrdiff_t>(_null_flags.offset);
+        saved_null_flags.assign(first,
+            first + static_cast<std::ptrdiff_t>(_null_flags.length));
+    }
+
     std::fill(_recbuf.begin(), _recbuf.end(), ' ');
     _recbuf[0] = _del;
 
@@ -327,6 +371,14 @@ void DbArea::storeFieldsToBuffer()
         }
 
         off += f.length;
+    }
+
+    // ---- and put it back --------------------------------------------------
+    // After the field loop, so a mis-sized field that overran into the bitmap's
+    // bytes cannot silently win over the row's real null state.
+    if (have_bitmap) {
+        std::copy(saved_null_flags.begin(), saved_null_flags.end(),
+                  _recbuf.begin() + static_cast<std::ptrdiff_t>(_null_flags.offset));
     }
 }
 

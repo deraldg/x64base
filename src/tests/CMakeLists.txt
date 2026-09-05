@@ -437,3 +437,30 @@ if(TARGET xbase)
     PRIVATE VFP_FIXTURE_ROOT="${CMAKE_SOURCE_DIR}/tools/vfp")
   add_test(NAME dottalkpp_vfp_null_rowdecode_test COMMAND dottalkpp_vfp_null_rowdecode_test)
 endif()
+
+# ---- does a write preserve the row's null bitmap? (AIF-091 M1) --------------
+# storeFieldsToBuffer() space-fills the whole record and then re-encodes one field
+# per entry in `_fields`. Since fbd7e5ee5 the `_NullFlags` column is NOT in
+# `_fields` -- the partition removed it -- and nothing writes its bytes back, so a
+# write leaves the bitmap as 0x20: every null becomes not-null and every short
+# Varchar claims to be full.
+#
+# The record keeps its length, its field values and its deleted flag. Only the
+# nulls are gone. That is the AIF-110 shape exactly, whose spec says it in one
+# line: a test that asserts SHAPE passes green on a blanked table.
+#
+# No existing write test could see this, because every write test in this project
+# runs on tables THIS ENGINE created and this engine cannot yet create a nullable
+# table. The fixture is the only nullable table in the tree.
+#
+# It writes to a COPY. The fixture is never opened writable.
+if(TARGET xbase)
+  add_executable(dottalkpp_vfp_null_write_guard_test
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_vfp_null_write_preserves_bitmap.cpp
+  )
+  target_link_libraries(dottalkpp_vfp_null_write_guard_test PRIVATE xbase memo)
+  target_include_directories(dottalkpp_vfp_null_write_guard_test PRIVATE ${CMAKE_SOURCE_DIR}/include)
+  target_compile_definitions(dottalkpp_vfp_null_write_guard_test
+    PRIVATE VFP_FIXTURE_ROOT="${CMAKE_SOURCE_DIR}/tools/vfp")
+  add_test(NAME dottalkpp_vfp_null_write_guard_test COMMAND dottalkpp_vfp_null_write_guard_test)
+endif()

@@ -368,6 +368,28 @@ bool DbArea::appendBlank() {
     std::vector<char> blank(checked_record_buffer_size_(*this), ' ');
     blank[0] = NOT_DELETED;
 
+    // The `_NullFlags` column is not in _fields (partitionTrailingSystemField()
+    // removed it), so a blank record would ship 0x20 in the bitmap -- a SPACE,
+    // whose bit 5 is a claim no field ever made, and whose low bits happen to read
+    // as "nothing null". Zero it instead: every bit clear is the coherent reading
+    // for a blank row -- nothing is null, and a Varchar of all spaces IS full, so
+    // it carries no length byte.
+    //
+    // NOT MEASURED, AND SAID SO RATHER THAN GUESSED QUIETLY: what Visual FoxPro's
+    // own APPEND BLANK writes into `_NullFlags` for a nullable column has not been
+    // measured. It is answerable with the same technique the rest of this lane
+    // used -- append a row in VFP, read the byte -- and until it is, zero is the
+    // defensible choice because it asserts nothing, where 0x20 asserts a bit that
+    // belongs to no field.
+    if (_null_flags.present && _null_flags.length > 0 &&
+        _null_flags.offset < blank.size() &&
+        _null_flags.length <= blank.size() - _null_flags.offset) {
+        std::fill(blank.begin() + static_cast<std::ptrdiff_t>(_null_flags.offset),
+                  blank.begin() + static_cast<std::ptrdiff_t>(_null_flags.offset +
+                                                              _null_flags.length),
+                  '\0');
+    }
+
     // For an empty DBF created with a trailing 0x1A EOF marker, append should
     // overwrite that marker with the new record and then write a new EOF marker.
     io().seekg(0, std::ios::end);
