@@ -113,9 +113,21 @@ Varchar/Varbinary/Blob (already in `detectDbfLevel`).
     **decode path**: the partition, the field set, the nullable count, and the record
     offset cross-checked against the `displacement` VFP itself wrote.
 
-  **STILL OWED ON THIS LINE:** the per-row bitmap read THROUGH THE GETTERS, so a caller
-  asking for a value on row 2 is told it is null. That does not exist yet -- there is no
-  null-aware getter -- so this gate is **not closed**.
+  **MET on the read side 2026-09-05.** `dottalkpp_vfp_null_rowdecode_test` reads the
+  per-row bitmap THROUGH `DbArea::open()` -> `gotoRec()` -> `fieldIsNullFromBuffer()`,
+  and `dottalkpp_vfp_varchar_roundtrip_test` covers this line's "exact string lengths"
+  clause: a short Varchar now reads back as its VALUE rather than the value plus its
+  trailing length byte.
+
+  **STILL OWED:** the round-trip half of this gate -- CREATE a nullable table, APPEND
+  rows including NULLs and short Varchars, and re-assert in a second process. That
+  needs the write side of section 4, which does not exist: there is still no API to
+  SET a value to null, and CREATE fails closed on `V`. The gate is **not closed**.
+
+  **A NOTE FOR WHOEVER WRITES THAT ROUND-TRIP.** It will be the first test here that
+  can run on a table this engine created, and that is exactly why it is not
+  sufficient on its own: a create-then-read loop ratifies our encoder against our
+  decoder. It has to be run BESIDE the VFP-authored fixture, never instead of it.
 - **Negative:** CREATE still fails closed on `G`/`P`/`W` until their milestones land.
 - Record both under `labtalk/proofs/runs/`.
 

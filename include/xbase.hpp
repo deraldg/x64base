@@ -751,6 +751,19 @@ private:
     // after the deleted flag). Returns SIZE_MAX if idx1 is out of range.
     std::size_t fieldByteOffset_(int idx1) const;
 
+    // ---- Varchar (V/Q) helpers -------------------------------------------
+    // WHY THESE ARE NOT CODECS. fieldcodec::Codec::decode takes a field's OWN
+    // bytes and its FULL width; a Varchar's true length lives in the
+    // `_NullFlags` column -- a DIFFERENT field. `V` is the first type whose
+    // decode depends on state outside its own byte span, and the seam cannot
+    // express that. So Varchar is handled BESIDE the registry, the way the
+    // x64-memo path already is, rather than by registering a codec that would
+    // only work when the area secretly pre-chewed its arguments. A registry
+    // entry that lies about what it can do on its own is worse than no entry.
+    bool        isVarlengthField_(int idx1) const noexcept;
+    // Effective value length for a V/Q field in the CURRENT buffer.
+    std::size_t varlengthValueLen_(int idx1, std::size_t off) const noexcept;
+
     // Index helpers
     int         findFieldCI(const std::string& name) const;
     int         firstCharField() const;

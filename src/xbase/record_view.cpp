@@ -152,6 +152,47 @@ bool DbArea::fieldIsNullFromBuffer(int idx1) const noexcept
         reinterpret_cast<const std::uint8_t*>(_recbuf.data()) + off, len, bit);
 }
 
+// A field is variable-length exactly when the bit layout gave it a "full" bit.
+// That is derived from the descriptor (type V/Q) in ONE place -- see
+// partitionTrailingSystemField() -- so this never re-decides it from f.type.
+bool DbArea::isVarlengthField_(int idx1) const noexcept
+{
+    if (idx1 < 1 || idx1 > static_cast<int>(_null_layout.fields.size())) return false;
+    return _null_layout.fields[static_cast<std::size_t>(idx1 - 1)].full_bit >= 0;
+}
+
+// How many of this V/Q field's bytes are the value, for the record in the buffer.
+//
+// The varlength bit SET means the trailing byte holds the length; CLEAR means the
+// value fills the field. FAILS TOWARD THE DATA, like fieldIsNullFromBuffer(): with
+// no readable bitmap the answer is "full", which shows every stored byte. Claiming
+// a short length we could not verify would HIDE bytes that are really there.
+std::size_t DbArea::varlengthValueLen_(int idx1, std::size_t off) const noexcept
+{
+    if (idx1 < 1 || idx1 > static_cast<int>(_fields.size()))
+        return 0;
+    const std::size_t width = _fields[static_cast<std::size_t>(idx1 - 1)].length;
+    if (off + width > _recbuf.size()) return 0;
+
+    const int bit = isVarlengthField_(idx1)
+        ? _null_layout.fields[static_cast<std::size_t>(idx1 - 1)].full_bit
+        : -1;
+    if (bit < 0) return width;
+
+    bool length_byte_in_use = false;
+    if (_null_flags.present && _null_flags.length > 0 &&
+        _null_flags.offset < _recbuf.size() &&
+        _null_flags.length <= _recbuf.size() - _null_flags.offset) {
+        length_byte_in_use = vfp::bit_is_set(
+            reinterpret_cast<const std::uint8_t*>(_recbuf.data()) + _null_flags.offset,
+            _null_flags.length, bit);
+    }
+
+    return vfp::varlength_value_length(
+        reinterpret_cast<const std::uint8_t*>(_recbuf.data()) + off,
+        width, length_byte_in_use);
+}
+
 std::string DbArea::decodeFieldFromBuffer(int idx1) const
 {
     if (idx1 < 1 || idx1 > static_cast<int>(_fields.size())) return {};
@@ -168,6 +209,15 @@ std::string DbArea::decodeFieldFromBuffer(int idx1) const
         const std::uint64_t object_id = read_u64_le(_recbuf.data() + off);
         if (object_id == 0) return {};
         return std::to_string(object_id);
+    }
+
+    // VARCHAR/VARBINARY: return exactly the stored value, and DO NOT rtrim it.
+    // Trailing blanks inside the stored length are significant -- that is the
+    // whole difference between `V` and `C`, and rtrimming would erase it. The
+    // codec registry is bypassed here for the reason given in xbase.hpp.
+    if (isVarlengthField_(idx1)) {
+        const std::size_t n = varlengthValueLen_(idx1, off);
+        return std::string(_recbuf.data() + off, n);
     }
 
     return fieldcodec::codec_for(f.type)
@@ -274,6 +324,11 @@ bool DbArea::loadFieldsFromBuffer()
             else
                 _fd[i + 1] = std::to_string(object_id);
 
+        } else if (isVarlengthField_(static_cast<int>(i) + 1)) {
+            // Varchar: the value, without its trailing length byte, un-rtrimmed.
+            const std::size_t n = varlengthValueLen_(static_cast<int>(i) + 1, off);
+            _fd[i + 1].assign(_recbuf.data() + off, n);
+
         } else {
             // Field-type codec: text (default) for C/N/F/D/L/M, binary for I (and
             // later B/Y/T / custom types). The text codec reproduces the legacy
@@ -317,14 +372,25 @@ void DbArea::storeFieldsToBuffer()
     // space while other values survived by luck. It was an unreliable round trip
     // and the partition made it deterministic destruction. Both halves are true.
     //
-    // PRESERVE IS NOT THE WHOLE ANSWER, AND THIS IS THE HONEST BOUNDARY OF IT.
-    // Carrying the bitmap across a write is correct for every field this engine
-    // can currently write, because none of them can change a null bit: there is no
-    // API to SET a value to null, and V/Q values (whose varlength bit lives in this
-    // same bitmap) cannot be written correctly yet either. When set-to-null and
-    // Varchar writes land in M2, this must become a RECOMPUTE from the field
-    // values, not a carry-forward. Until then, carrying the row's own bits forward
-    // is exactly right and destroying them is exactly wrong.
+    // THE BITMAP IS NOW HALF CARRIED AND HALF RECOMPUTED, and the split is exactly
+    // "what can this write change?":
+    //
+    //   NULL bits       CARRIED. Nothing here can change one -- there is still no
+    //                   API to set a value to null. When set-to-null lands, these
+    //                   must be recomputed too, and this comment is the place that
+    //                   will be wrong until they are.
+    //   VARLENGTH bits  RECOMPUTED, below, from the value actually being written.
+    //                   They HAVE to be: a Varchar write changes whether the field
+    //                   is full, and a carried-forward varlength bit would describe
+    //                   the value that used to be there. Measured before it was
+    //                   changed (dottalkpp_vfp_varchar_roundtrip_test): setting a
+    //                   10-byte Varchar to a full-width value left the bit SET,
+    //                   claiming a length byte that was now data.
+    //
+    // The earlier version of this comment said the carry-forward was correct
+    // "because none of them can change a null bit ... when Varchar writes land in
+    // M2 this must become a RECOMPUTE". They landed; this is that recompute, for
+    // the half it applies to.
     std::vector<char> saved_null_flags;
     const bool have_bitmap =
         _null_flags.present &&
@@ -360,6 +426,32 @@ void DbArea::storeFieldsToBuffer()
             }
 
             write_u64_le(_recbuf.data() + off, object_id);
+
+        } else if (isVarlengthField_(static_cast<int>(i) + 1)) {
+            // VARCHAR/VARBINARY. Three things must agree or the row is malformed:
+            // the value bytes, the trailing length byte, and the varlength bit.
+            // Only this function can see all three, which is why V is not a codec.
+            const std::size_t width = f.length;
+            std::size_t n = src.size();
+            if (n > width) n = width;           // over-long truncates, and is then full
+
+            std::copy(src.begin(), src.begin() + static_cast<std::ptrdiff_t>(n),
+                      _recbuf.begin() + static_cast<std::ptrdiff_t>(off));
+
+            // A value that fills the field leaves NO ROOM for a length byte, so the
+            // bit must be CLEAR. Anything shorter stores its length in the last byte
+            // and sets the bit. The longest "short" value is width-1.
+            const bool full = (n >= width);
+            if (!full) {
+                _recbuf[off + width - 1] =
+                    static_cast<char>(static_cast<unsigned char>(n));
+            }
+
+            const int bit = _null_layout.fields[i].full_bit;
+            if (have_bitmap && bit >= 0) {
+                vfp::set_bit(reinterpret_cast<std::uint8_t*>(saved_null_flags.data()),
+                             saved_null_flags.size(), bit, !full);
+            }
 
         } else {
             // Field-type codec encodes into the field's byte region (pre-filled with

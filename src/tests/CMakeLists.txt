@@ -464,3 +464,28 @@ if(TARGET xbase)
     PRIVATE VFP_FIXTURE_ROOT="${CMAKE_SOURCE_DIR}/tools/vfp")
   add_test(NAME dottalkpp_vfp_null_write_guard_test COMMAND dottalkpp_vfp_null_write_guard_test)
 endif()
+
+# ---- Varchar read/write behaviour, measured before it is changed (AIF-091) --
+# The 6a10c9353 finding: read-without-create format features are invisible to
+# every write test, and `V` is next in line for that hole. The mitigation named
+# there was to ask what the WRITE path does with a feature BEFORE adding read
+# support for it. This is that question.
+#
+# Every expectation is a FORMAT CONTRACT, not a description of current behaviour,
+# so its reds name defects instead of pinning them in place. Expected to fail when
+# first added; it is the specification for the Varchar work, not a guard on it.
+#
+# The load-bearing case is the NO-OP WRITE. If that is byte-clean today only
+# because an unaware read and an unaware write cancel out, then landing read
+# trimming ALONE introduces a corruption that does not currently exist -- and the
+# read fix and the write fix have to land together.
+if(TARGET xbase)
+  add_executable(dottalkpp_vfp_varchar_roundtrip_test
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_vfp_varchar_roundtrip.cpp
+  )
+  target_link_libraries(dottalkpp_vfp_varchar_roundtrip_test PRIVATE xbase memo)
+  target_include_directories(dottalkpp_vfp_varchar_roundtrip_test PRIVATE ${CMAKE_SOURCE_DIR}/include)
+  target_compile_definitions(dottalkpp_vfp_varchar_roundtrip_test
+    PRIVATE VFP_FIXTURE_ROOT="${CMAKE_SOURCE_DIR}/tools/vfp")
+  add_test(NAME dottalkpp_vfp_varchar_roundtrip_test COMMAND dottalkpp_vfp_varchar_roundtrip_test)
+endif()
