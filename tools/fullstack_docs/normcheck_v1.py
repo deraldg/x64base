@@ -84,6 +84,25 @@ def sysfunc_state(root: Path) -> tuple[str, set[str]]:
     not gitignored -- 16 files, 580,299 bytes, 0 in git -- so absent is the
     state of every fresh clone.
 
+    THE PARAGRAPH ABOVE IS NOW STALE AND IS LEFT STANDING BECAUSE IT WAS TRUE
+    WHEN IT WAS WRITTEN. Re-measured 2026-09-05: `git ls-files
+    dottalkpp/data/metadata/` returns SIXTEEN TRACKED FILES and SYSFUNC.dbf is
+    one of them (20 files on disk, 16 in git). So "absent is the state of every
+    fresh clone" is FALSE today -- a fresh clone gets the catalogue.
+
+    THE GUARD IS STILL RIGHT AND ITS REASON IS UNCHANGED: an authority that is
+    not there cannot agree with anything, and reporting zero findings for a
+    missing file is indistinguishable from perfect agreement (AIF-118). What
+    changed is only how one reaches the absent state -- no longer "every clone",
+    now a deleted or moved file. The lane severity and the three-state return
+    are untouched.
+
+    WHAT THE STALENESS COST, because it is the transferable part: this docstring
+    was the reason given for treating a SYSFUNC gap as structural rather than as
+    a backlog item. A tracked catalogue can simply be REGENERATED, and an
+    untracked one cannot usefully be. The motivation went out of date without
+    the conclusion doing so, which is the harder half of this shape to notice.
+
     A corrupt or unreadable file RAISES rather than returning empty. Forty lines
     below, catalog_rows() has always read SYSCMD with no guard at all and raised
     FileNotFoundError, which is the correct behaviour; the two authorities in

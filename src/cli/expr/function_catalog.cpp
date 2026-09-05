@@ -1334,6 +1334,67 @@ FunctionDoc{
 // is warn-severity precisely because that state is tolerable. SYSFUNC.dbf lives
 // under dottalkpp/data/metadata/, which is untracked and absent in every fresh
 // clone, so the four cannot usefully be added there today -- see the note below.
+//
+// ===========================================================================
+// THIRD CORRECTION, 2026-09-05, owner-directed ("fix it all"). THE CLAUSE ABOVE
+// IS STALE AND IS LEFT STANDING BECAUSE IT WAS TRUE WHEN IT WAS WRITTEN. Both
+// of its halves have to go, and they fail for different reasons.
+//
+// (a) THE TRACKING CLAIM IS OUT OF DATE. `git ls-files dottalkpp/data/metadata/`
+//     returns SIXTEEN TRACKED FILES and SYSFUNC.dbf is one of them (20 on disk,
+//     16 in git). It is inherited from normcheck_v1.py::sysfunc_state()'s
+//     docstring, which said the same thing and has been corrected in place.
+//     A stale MOTIVATION outlived its conclusion, which is the harder half of
+//     this shape to catch: the sentence still parses, still sounds measured,
+//     and the number in it was even right once.
+//
+// (b) THE CONCLUSION WAS NEVER LOAD-BEARING, because SYSFUNC IS GENERATED AND
+//     THESE FOUR ARE ALREADY IN THE GENERATOR'S INPUT. metacollect's
+//     build_sysfunc_seed_rows() (src/meta/metacollect.cpp:178) opens by walking
+//     dottalk::expr::all_function_docs() -- EVERY FunctionDoc, these four
+//     included -- and emits a complete row per doc, taking FUNC_CAT straight
+//     from to_string(doc->category), which already yields "Cursor". The three
+//     BuiltinFnSpec tables are applied AFTERWARDS as an OVERLAY that refines
+//     min/max args and src_file. A FunctionDoc alone therefore produces a full
+//     catalogue row and needs no spec table and no source file of its own.
+//
+//     SO THE FOUR ARE NOT UNADDABLE. THE CATALOGUE IS SIMPLY STALE: SYSFUNC.dbf
+//     was seeded before these FunctionDocs existed, and re-running metacollect
+//     with --sysfunc-import-out emits them. FN_COVERAGE is reporting a stale
+//     artifact, not an unreachable state.
+//
+// AND THE REGENERATION WOULD HAVE WRITTEN SOMETHING FALSE, which is why the
+// generator was fixed in the same change rather than after. build_sysfunc_seed_rows
+// set row.calc_call = true for EVERY FunctionDoc unconditionally, so a regenerated
+// SYSFUNC would have asserted that these four are reachable from the CALC / `?`
+// path -- the one claim this lane has disproved four separate ways, including by
+// running NL_P2 and watching `? "NAME:" + ISNULL(f)` print a bare `0` with the
+// label swallowed. calc_call is now derived from the category.
+//
+// COULD THEY BE THEIR OWN SOURCE FILE, e.g. an fn_cursor.cpp beside fn_string /
+// fn_date / fn_numeric? NOT UNDER THE CURRENT CONTRACT, and it is one line:
+//
+//     using BuiltinFnEval = std::string (*)(const std::vector<std::string>& argv);
+//
+// A raw function pointer over ALREADY-EVALUATED arguments: no area, no cursor,
+// no row. THE FOUR SPLIT INTO TWO CLASSES AGAINST IT. DELETED, RECNO and
+// RECCOUNT take no arguments and are answered straight off the row
+// (`return rv.get_field_str(fn);` in FunctionCall::evalString) -- they need only
+// CONTEXT, so a spec contract carrying an area could hold them in a table.
+// ISNULL needs context AND AN UNEVALUATED ARGUMENT: it takes a bare field
+// reference and refuses ISNULL("x"), ISNULL(1+2) and ISNULL(UPPER(f)) because
+// only a stored cell has a null bit, and any argv-shaped spec has evaluated that
+// away before the callee sees it. A context parameter alone would reach three of
+// the four.
+//
+// THE SHAPE THAT COULD CARRY CONTEXT ALREADY EXISTS IN THIS TREE, and it is not
+// in this file: include/cli/expr/fn_custom.hpp uses
+// std::function<std::string(const std::vector<std::string>&)> rather than a raw
+// pointer, EXPLICITLY so a body can CAPTURE -- and a capture can hold the area.
+// That is the RUNTIME_DEF_FAMILY seam (AIF-155). So "should the cursor functions
+// be their own source file" is really "should the function-spec contract carry
+// context", and the lane that already built a context-carrying contract is the
+// one chartered the same day. Recorded here because nothing else connects them.
 // ===========================================================================
 // -----------------------------------------------------------------------------
 

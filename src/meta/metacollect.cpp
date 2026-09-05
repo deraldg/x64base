@@ -199,7 +199,31 @@ std::vector<SysFuncSeedRow> build_sysfunc_seed_rows() {
         row.src_auth = "function_catalog";
         row.src_file = "src/cli/expr/function_catalog.cpp";
         row.handler.clear();
-        row.calc_call = true;
+
+        // CALC_CALL IS NOT UNIFORMLY TRUE, AND IT USED TO BE WRITTEN THAT WAY.
+        // Corrected 2026-09-05 (AIF-091 / AIF-155). Every FunctionDoc got
+        // calc_call = true unconditionally, so the catalogue asserted that each
+        // documented function is reachable from the CALC / `?` path. For
+        // FunctionCategory::Cursor that is FALSE, and this lane measured it four
+        // separate ways before the row was ever written:
+        //
+        //   - `?` is a SHORTCUT for FORMULA, FORMULA calls eval_rhs, and
+        //     eval_rhs tries its OWN scalar parser first -- whose four builtin
+        //     tables contain none of DELETED, RECNO, RECCOUNT or ISNULL.
+        //   - the fallback AST (cli/expr/eval.cpp) does know them, but there `+`
+        //     is Arith and Arith::evalString returns a NUMBER, so a concatenated
+        //     marker cannot render one.
+        //   - MEASURED by the NULLASSERT spec's own NL_P2 probe: `? "NAME:" +
+        //     ISNULL(f)` printed a bare `0` AND SWALLOWED THE LABEL.
+        //   - the function catalogue already files the same note about RECNO one
+        //     entry above ISNULL's.
+        //
+        // A cursor function asks about the ROW, not about evaluated arguments,
+        // which is exactly why it is hand-branched in FunctionCall::evalString()
+        // ahead of the builtin lookup and is not in any BuiltinFnSpec table.
+        // Writing calc_call = true for it puts a claim in a tracked catalogue
+        // that four instruments in this tree contradict.
+        row.calc_call = (doc->category != dottalk::expr::FunctionCategory::Cursor);
         row.pub_surf = true;
         row.self_reg = false;
         row.msg_cat = false;
