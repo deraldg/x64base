@@ -25,7 +25,8 @@ void print_row(const xbase::DbArea& a, int recw);
 void print_row(const xbase::DbArea& schema_area,
                const dottalk::table::Row& row,
                int recw,
-               bool physical_deleted = false);
+               bool physical_deleted = false,
+               const dottalk::table::Overlay* overlay = nullptr);
 
 void print_footer(bool all, int limit, int printed);
 

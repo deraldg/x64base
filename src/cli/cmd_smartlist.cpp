@@ -50,6 +50,14 @@
 //   SMARTLIST FOR <pred>
 //
 // notes:
+//   A NULL cell prints as `.NULL.` -- the token Visual FoxPro prints -- and a
+//     nullable column is widened to at least six characters so the marker is
+//     never truncated into something that reads as data. Only VFP-flavour tables
+//     carrying a `_NullFlags` column can hold a null, so no other table's column
+//     widths change.
+//   Under TABLE buffering a PENDING value outranks the physical null: a cell that
+//     is null on disk but carries a buffered edit shows the EDIT, because this
+//     view is what COMMIT would produce.
 //   SMARTLIST requires an open table except for SMARTLIST USAGE.
 //   SMARTLIST with no arguments preserves existing behavior and prints usage before continuing with default listing.
 //   Field projections are comma-separated.
@@ -76,6 +84,7 @@
 //   DUMP
 //
 
+#include "cli/null_display.hpp"
 #include "workarea_util.hpp"
 #include "xbase.hpp"
 #include "textio.hpp"
@@ -324,7 +333,10 @@ static int projected_width_for(const xbase::DbArea& a, int field1) {
     int w = std::max<int>(static_cast<int>(f.name.size()), static_cast<int>(f.length));
     if (f.type == 'C' || f.type == 'M') w = std::min(std::max(w, 8), 32);
     else w = std::min(std::max(w, 8), 18);
-    return w;
+    // Floor of 8 already exceeds the six-character marker, so this changes
+    // nothing today -- it is here so the projection path cannot drift out of
+    // agreement with the full-row path if that floor is ever lowered.
+    return cli::nulldisp::widen_for_null(a, field1, w);
 }
 
 static void print_projection_header(const xbase::DbArea& a,
@@ -347,8 +359,14 @@ static void print_projection_row(xbase::DbArea& a,
         const auto& f = a.fields().at(static_cast<std::size_t>(field1 - 1));
         const int w = projected_width_for(a, field1);
         std::string v = trim(a.get(field1));
+        // Applied before the clamp; the column is wide enough for the marker.
+        const bool is_null = cli::nulldisp::apply(a, field1, v);
         if (static_cast<int>(v.size()) > w) v = v.substr(0, static_cast<std::size_t>(w));
-        if (f.type == 'N' || f.type == 'I' || f.type == 'Y' || f.type == 'B') {
+        // A NULL is LEFT-aligned even in a numeric column: `.NULL.` is not a
+        // number, and right-aligning it under a column of digits invites reading
+        // it as one.
+        if (!is_null &&
+            (f.type == 'N' || f.type == 'I' || f.type == 'Y' || f.type == 'B')) {
             std::cout << std::right << std::setw(w) << v << ' ';
         } else {
             std::cout << std::left << std::setw(w) << v << ' ';

@@ -35,6 +35,14 @@
 //   LIST BOTTOM <limit>
 //
 // notes:
+//   A NULL cell prints as `.NULL.` -- the token Visual FoxPro prints -- and a
+//     nullable column is widened to at least six characters so the marker is
+//     never truncated into something that reads as data. Only VFP-flavour tables
+//     carrying a `_NullFlags` column can hold a null, so no other table's column
+//     widths change.
+//   Under TABLE buffering a PENDING value outranks the physical null: a cell that
+//     is null on disk but carries a buffered edit shows the EDIT, because this
+//     view is what COMMIT would produce.
 //   LIST requires an open table except for LIST USAGE.
 //   LIST with no arguments displays from the current cursor position.
 //   LIST ALL starts at the top and removes the default output limit.
@@ -172,7 +180,13 @@ static void print_list_row(xbase::DbArea& area,
         try {
             const bool physical_deleted = area.isDeleted();
             dottalk::table::Row row = table_view->snapshot_view(static_cast<int>(rn));
-            cli::smartlist::print_row(area, row, recw, physical_deleted);
+            // The overlay is passed through so the row printer can tell a
+            // PENDING buffered value from a physical NULL. Without it the
+            // printer would paint `.NULL.` over an edit that is about to
+            // replace it -- reporting the opposite of what COMMIT will do.
+            const dottalk::table::Overlay ov =
+                table_view->overlay_for(static_cast<int>(rn));
+            cli::smartlist::print_row(area, row, recw, physical_deleted, &ov);
             return;
         } catch (...) {
             // LIST is a developer tool; if the overlay path is unavailable,
