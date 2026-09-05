@@ -413,3 +413,27 @@ else()
     "This is a configure FAILURE and not a skip on purpose -- a lane whose only "
     "real-file proof can silently vanish has no real-file proof.")
 endif()
+
+# ---- per-row null decode through a real open (AIF-091 M1) -------------------
+# Everything else in this lane stops at the field descriptors. This goes through
+# DbArea::open() -> gotoRec() -> fieldIsNullFromBuffer(), which is the path a
+# consumer takes, and is the "getters" half of the section-6 accept gate.
+#
+# IT OPENS A COPY. DbArea::open() uses ios::in|ios::out and fixtures here are
+# report-only; a test that opened nullfix.DBF writable would leave the lane's only
+# real-file evidence one stray write from being evidence of nothing, silently.
+#
+# Its expectations are transcribed from make_nullfix.prg -- the statements that
+# told VFP which cells to null -- and NOT derived from the _NullFlags bytes.
+# Deriving them from the bytes would make the test agree with the decoder by
+# construction, which is the closed loop this whole lane exists to correct.
+if(TARGET xbase)
+  add_executable(dottalkpp_vfp_null_rowdecode_test
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_vfp_null_rowdecode.cpp
+  )
+  target_link_libraries(dottalkpp_vfp_null_rowdecode_test PRIVATE xbase memo)
+  target_include_directories(dottalkpp_vfp_null_rowdecode_test PRIVATE ${CMAKE_SOURCE_DIR}/include)
+  target_compile_definitions(dottalkpp_vfp_null_rowdecode_test
+    PRIVATE VFP_FIXTURE_ROOT="${CMAKE_SOURCE_DIR}/tools/vfp")
+  add_test(NAME dottalkpp_vfp_null_rowdecode_test COMMAND dottalkpp_vfp_null_rowdecode_test)
+endif()

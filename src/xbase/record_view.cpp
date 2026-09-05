@@ -116,6 +116,42 @@ std::size_t DbArea::fieldByteOffset_(int idx1) const
     return off;
 }
 
+// AIF-091 M1 -- IS THIS FIELD NULL IN THE RECORD CURRENTLY IN THE BUFFER?
+//
+// The bitmap lives in the `_NullFlags` column, which partitionTrailingSystemField()
+// removed from fields() but whose record offset it kept. So the bytes are still in
+// `_recbuf` at `_null_flags.offset`; what was removed is the pretence that it is a
+// user column.
+//
+// EVERY FAILURE PATH RETURNS FALSE, and that direction is chosen, not incidental.
+// "Not null" makes the caller read the field's bytes -- which are really there, and
+// which are what every caller saw before this function existed. "Null" would make a
+// caller DISCARD a value on the strength of a bitmap we could not read. Given a
+// short buffer or a missing layout, showing the stored bytes is the error that can
+// be noticed; hiding them is the error that cannot.
+//
+// Nullability is a property of the TABLE (fieldIsNullable); nullness is a property
+// of the ROW. A field with no null bit is not "not null" -- it is a field where the
+// question does not apply, and both answer false here on purpose: a caller that
+// needs to tell those apart asks fieldIsNullable() first.
+bool DbArea::fieldIsNullFromBuffer(int idx1) const noexcept
+{
+    if (!_null_flags.present) return false;
+    if (idx1 < 1 || idx1 > static_cast<int>(_fields.size())) return false;
+    if (idx1 > static_cast<int>(_null_layout.fields.size())) return false;
+
+    const int bit = _null_layout.fields[static_cast<std::size_t>(idx1 - 1)].null_bit;
+    if (bit < 0) return false;                       // field is not nullable
+
+    const std::size_t off = _null_flags.offset;
+    const std::size_t len = _null_flags.length;
+    if (len == 0) return false;
+    if (off > _recbuf.size() || len > _recbuf.size() - off) return false;
+
+    return vfp::bit_is_set(
+        reinterpret_cast<const std::uint8_t*>(_recbuf.data()) + off, len, bit);
+}
+
 std::string DbArea::decodeFieldFromBuffer(int idx1) const
 {
     if (idx1 < 1 || idx1 > static_cast<int>(_fields.size())) return {};

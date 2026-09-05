@@ -27,6 +27,9 @@
 #include <limits>
 #include <utility>
 
+// AIF-091 M1. THE ONE PLACE that answers "which bit belongs to which field"
+// in the VFP `_NullFlags` column. Header-only, no dependency on this file.
+#include "xbase/vfp_null_bits.hpp"
 #include "memo/memo_context.hpp"
 #include "dottalk/build_vectors.hpp"   // AIF-044 generated build-vector authority
 
@@ -398,6 +401,27 @@ public:
     // visible in fields(). See setNullFlagsColumn() for why refusing to
     // partition is the safe answer rather than the timid one.
     bool systemFieldNotLast() const noexcept { return _system_field_not_last; }
+
+    // Where each user field's bits live in the `_NullFlags` bitmap. Parallel to
+    // fields(), 0-based; a -1 index means "this field has no such bit". Empty
+    // when the table has no `_NullFlags` column.
+    const vfp::NullBitLayout& nullBitLayout() const noexcept { return _null_layout; }
+
+    // CAN this field be null -- i.e. did its descriptor carry flag 0x02? This is a
+    // property of the TABLE. Distinct from fieldIsNullFromBuffer(), which is a
+    // property of the current ROW. A caller that conflates them reports every
+    // non-nullable field as "not null" and cannot tell that apart from a nullable
+    // field that happens to hold a value.
+    bool fieldIsNullable(int idx1) const noexcept {
+        if (idx1 < 1 || idx1 > static_cast<int>(_null_layout.fields.size())) return false;
+        return _null_layout.fields[static_cast<std::size_t>(idx1 - 1)].null_bit >= 0;
+    }
+
+    // Is this field NULL in the record currently in the buffer? Reads the bitmap
+    // out of `_recbuf` at the partitioned column's offset. FAILS CLOSED (false)
+    // when there is no bitmap, when the field has no null bit, or when the buffer
+    // is too short -- "not null" is the answer that cannot invent data.
+    bool fieldIsNullFromBuffer(int idx1) const noexcept;
     std::string get(int idx) const;
     bool        set(int idx, const std::string& val);
 
@@ -509,6 +533,29 @@ public:
         _fields.pop_back();
         _extras.pop_back();
         if (!_rawFields.empty()) _rawFields.pop_back();
+
+        // THE BIT LAYOUT IS BUILT HERE AND NOWHERE ELSE, for the same reason the
+        // rule itself lives in one function: a second site that derives bit
+        // indices is a second site that can drift. It is built AFTER the pops, so
+        // it is indexed by the USER field vector the caller will actually see --
+        // `_null_layout.fields[i]` is parallel to `_fields[i]`, 0-based.
+        //
+        // A field contributes a "full" bit if it is variable-length (V/Q) and a
+        // null bit if flag 0x02 is set; the full bit is the LOWER of the two.
+        // Measured against a Visual FoxPro-authored fixture, not assumed --
+        // see include/xbase/vfp_null_bits.hpp.
+        {
+            std::vector<vfp::FieldNullSpec> specs;
+            specs.reserve(_fields.size());
+            for (std::size_t i = 0; i < _fields.size(); ++i) {
+                vfp::FieldNullSpec sp;
+                const char t = _fields[i].type;
+                sp.varlength = (t == 'V' || t == 'v' || t == 'Q' || t == 'q');
+                sp.nullable  = _extras[i].nullable;
+                specs.push_back(sp);
+            }
+            _null_layout = vfp::assign_null_bits(specs);
+        }
         return true;
     }
     void addField(FieldDef fd) {
@@ -605,6 +652,8 @@ private:
     // AIF-091 M1. Parallel to _fields by index; see fieldExtras().
     std::vector<VfpFieldExtras> _extras;
     NullFlagsColumn             _null_flags;
+    // Built by partitionTrailingSystemField(); parallel to _fields, 0-based.
+    vfp::NullBitLayout          _null_layout;
     bool                        _system_field_not_last {false};
     std::vector<char>      _recbuf;
 
