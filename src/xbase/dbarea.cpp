@@ -347,11 +347,59 @@ bool DbArea::replaceFieldEnveloped_(int field1,
     return true;
 }
 
+// A VALUE ASSIGNMENT ENDS A NULL, AND UNTIL 2026-09-05 IT DID NOT.
+//
+// set() writes `_fd[idx]` and has never touched `_fd_null[idx]` -- correctly, it
+// is a bare stager. storeFieldsToBuffer() then RECOMPUTES every null bit FROM
+// `_fd_null`. So a value written over a null cell put the new value on disk and
+// RE-COMMITTED THE STALE NULL BIT in the same record write. The cell then
+// answered two different things depending on who asked:
+//
+//     LIST     ->  .NULL.
+//     ? VNAME  ->  restored
+//     ? ISNULL(VNAME) -> .T.
+//
+// Measured 2026-09-05 on rec 3 of NULLSPEC, and it survived a close and reopen
+// because it reached the disk. Found by vfp_null_assertions.dts on its first run
+// (NL_T11/T12/T14/T16), which is the only instrument that ever asked -- every
+// earlier proof in this lane ran one direction, set-then-read, including the VFP
+// acceptance scripts. A feature proven in one direction is not proven.
+//
+// AND THERE WAS NO WAY BACK. replaceFieldNull(field, false) has been correct and
+// callable since f641fb38a and its ONLY caller in the tree was a unit test
+// (test_vfp_set_null.cpp arm C). No command path passed false, so once a cell was
+// null the shell could not un-null it. Sixth AIF-079 instance in this lane and
+// the first that was costing something rather than merely sitting there.
+//
+// WHY THE CLEAR IS HERE AND NOT IN set(). set() has callers in cmd_calcwrite,
+// cmd_commit, cmd_replace_multi, cmd_validate_unique, hierarchy_service,
+// edu_text, trigger_hooks and index_manager. Giving it an opinion about nulls
+// would hand that opinion to all of them at once, including paths that stage a
+// value they did not author. This funnel is where a cell is REPLACED, which is
+// the act that ends a null, so this is where the two halves are kept in step.
+//
+// WHY THE fieldIsNullable() GUARD IS LOAD-BEARING. setFieldNull() returns false
+// for a field whose descriptor carries no null flag -- which is EVERY field of
+// every non-VFP table in the product. Staged as `setFieldNull(f,false) &&
+// set(f,v)` it would short-circuit and make every REPLACE everywhere fail. The
+// guard asks the table first and the return is deliberately ignored: past the
+// guard the only remaining failure is an out-of-range index, and the envelope
+// has already rejected those.
+//
+// Every caller of this funnel writes a real value, so clearing is right for all
+// of them -- including cmd_commit, whose buffered path cannot carry a NULL at
+// all (the buffer stores one value string per field and refuses NULL for exactly
+// that reason), so a committed value is always a value.
 bool DbArea::replaceFieldStored(int field1, const std::string& stored_value,
                                 std::string* err)
 {
     return replaceFieldEnveloped_(
-        field1, [&] { return set(field1, stored_value); }, err);
+        field1,
+        [&] {
+            if (fieldIsNullable(field1)) setFieldNull(field1, false);
+            return set(field1, stored_value);
+        },
+        err);
 }
 
 // Set (or clear) this field's NULL state and write the record, through the SAME

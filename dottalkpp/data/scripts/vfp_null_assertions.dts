@@ -1,0 +1,431 @@
+; ============================================================================
+; A NULL IS ASSERTABLE -- AIF-091, the coverage the null lane never had
+; ============================================================================
+;
+; WHY THIS SPEC EXISTS.
+;
+; Between 2026-09-04 and 2026-09-05 this engine learned to CREATE a nullable
+; VFP table, WRITE a null, READ a null, SEE a null (LIST prints .NULL.) and
+; FILTER on a null (LIST FOR ISNULL(f)). Every one of those legs was proven
+; against bytes Visual FoxPro itself wrote, and NONE of them is reachable by
+; REGRESSION ALL, because no .dts spec asserts a null. The capability shipped
+; five commits ahead of its coverage.
+;
+; That is the whole subject of this file: the suite could not tell a build that
+; writes nulls from a build that silently drops them on the floor.
+;
+; ----------------------------------------------------------------------------
+; HOW A NULL IS ASSERTED HERE, AND WHY *NOT* WITH `? ISNULL(f)`
+; ----------------------------------------------------------------------------
+;
+; The obvious spec is `? "NL_T1:" + ISNULL(VNAME)`, and it was the plan. IT IS
+; NOT USED, and the reason is measured from the code rather than assumed:
+;
+;   `?` is a SHORTCUT for FORMULA (shortcut_resolver.hpp: { "?", "FORMULA" }).
+;   FORMULA calls xexpr::evaluate_expression -> dottalk::expr::eval_rhs.
+;   eval_rhs tries its OWN scalar parser first (rhs_eval.cpp), and that parser
+;   is where string concatenation with `+` lives. Its function table is
+;   call_string_builtin / call_date_builtin / call_numeric_builtin /
+;   call_custom_builtin. ISNULL IS IN NONE OF THEM -- it exists only in
+;   FunctionCall::evalString (cli/expr/eval.cpp), which is the PREDICATE AST.
+;   In that AST `+` is Arith, and Arith::evalString returns
+;   std::to_string(evalNumber(...)) -- a NUMBER, not a concatenation.
+;
+; So the marker path and the ISNULL path do not meet. This is the same shape
+; the catalogue already records one entry above ISNULL's own:
+;
+;   "RECNO() renders EMPTY in a '?' marker inside a .dts script -- measured
+;    over four specs -- and STR() does not rescue it. Spec markers compare
+;    FIELD VALUES for this reason."
+;
+; That note was written about RECNO. It is true of every FunctionCategory::Cursor
+; function for the same structural reason, ISNULL included. A spec built on
+; `? "NAME:" + ISNULL(f)` would therefore have rendered a label with nothing
+; after it, or a number -- and an unreadable marker is not a red one.
+;
+; WHAT THIS FILE DOES INSTEAD. It asserts nulls through the path that IS wired:
+; the FOR predicate. LOCATE FOR ISNULL(<field>) goes through compile_predicate
+; -> compile_where_program -> the AST where ISNULL lives, which is exactly the
+; path LIST FOR / COUNT FOR use and the path the feature was built for. The
+; cursor lands on a row, and the arm then reads an ORDINARY CHARACTER FIELD of
+; that row. Every marker below is a FIELD-VALUE comparison, per the
+; FIELDMGR_APPEND doctrine, and not one of them depends on the marker path
+; being able to see a null.
+;
+; Two ungraded PROBES at the very end of the file record what the marker path
+; actually does with ISNULL, bare and concatenated, so the paragraph above is
+; measured on every run instead of inherited from this comment. They are placed
+; last so that nothing depends on them.
+;
+; ----------------------------------------------------------------------------
+; THE DISCRIMINATOR, AND WHY THE FIXTURE IS ORDERED THE WAY IT IS
+; ----------------------------------------------------------------------------
+;
+; A NULL CELL AND A BLANK CELL BOTH EVALUATE TO THE EMPTY STRING. That is not a
+; defect, it is the reason ISNULL has to exist: no value comparison can tell
+; them apart, which is why ISNULL refuses to evaluate its argument at all.
+;
+; So a spec that only nulls a cell and finds it proves nothing -- it passes on
+; a build where ISNULL answers .T. for anything empty. The fixture is built to
+; make that build fail:
+;
+;   rec 1  VNAME "alpha"    PLAIN "control"   -- populated, never touched
+;   rec 2  VNAME <blank>    PLAIN "blankvn"   -- BLANK AND NOT NULL
+;   rec 3  VNAME "gamma"    PLAIN "nullvn"    -- VNAME nulled, bare NULL
+;   rec 4  VNAME "delta"    PLAIN "nullid"    -- ID nulled
+;   rec 5  VNAME "epsilon"  PLAIN "nulltwo"   -- VNAME nulled, .NULL. spelling
+;
+; REC 2 PRECEDES REC 3 ON PURPOSE. LOCATE returns the FIRST match from the top,
+; so a build that confuses blank with null lands on rec 2 and NL_T1 reads
+; "blankvn" instead of "nullvn". The arm is positive -- it names the row it
+; expects -- because the negative form ("not blankvn") also passes when LOCATE
+; went nowhere, hit end of file, or failed outright.
+;
+; NL_T5 and NL_T6 are the pair that states the problem out loud: the nulled cell
+; and the blank cell BOTH read empty by value. They are asserted, not implied,
+; so a reader can see that NL_T1 separates two rows that nothing else here can.
+;
+; ----------------------------------------------------------------------------
+; WHAT ELSE IS ASSERTED AND WHY EACH ARM CAN GO RED
+; ----------------------------------------------------------------------------
+;
+; NL_T2 -- BIT INDEX. ID is field 1 and VNAME is field 2, and in a VFP null
+;   bitmap they do not own adjacent bits: VNAME is a Varchar, so it owns a
+;   VARLENGTH bit as well as a NULL bit and the assignment runs
+;   bit0 = ID null, bit1 = VNAME varlength, bit2 = VNAME null. Two of this
+;   lane's own commits exist because that order was got wrong (45af198b5, the
+;   order was backwards; dfd7cf15e, the flags byte was read from offset 23
+;   where the format puts it at 18). Null the NUMERIC and this arm demands the
+;   cursor land on rec 4 -- an off-by-one in the bit assignment lands it on
+;   rec 3 or nowhere.
+;
+; NL_T3, NL_T4, NL_T7 -- ISOLATION. Nulling a cell must change exactly one bit.
+;   T3 and T7 read the OTHER FIELD of the same row; T4 reads the SAME FIELD of
+;   another row. The bitmap is fully recomputed on every write (record_view.cpp),
+;   which is the correct design and also the one that can erase a neighbour --
+;   6a10c9353 exists because a write was erasing the row's null bitmap.
+;
+; NL_T8, NL_T9, NL_T12 -- THE WRITE REACHED THE DISK. Everything above them is
+;   satisfied by an in-memory bit that a close would discard. These three close
+;   the table and reopen it, which is the only question a regression suite can
+;   ask that a staged row cannot answer for itself.
+;
+; NL_T10, NL_T11 -- THE BIT CLEARS. A null that cannot be replaced by a value is
+;   half a feature. T10 reads the new value back; T11 is the stronger half --
+;   with rec 3 cleared, LOCATE FOR ISNULL(VNAME) must now find REC 5, and rec 5
+;   was nulled with the DOTTED spelling `.NULL.`. So T11 proves three things at
+;   once: rec 3's bit was actually cleared and not merely overwritten in the
+;   value area, rec 5's bit was set by the second spelling, and the two rows'
+;   bits are independent. If `.NULL.` were silently ignored, T11 reds.
+;
+; NL_T13, NL_T14 -- REFUSAL ON A NON-NULLABLE FIELD. PLAIN is C(8) with no null
+;   flag, so there is no bit to record a null in and REPLACE refuses. Neither
+;   arm claims the refusal message appeared -- console text is not readable by a
+;   marker. They ask the answerable questions instead: did the value survive
+;   (T13), and did the refusal leave the rest of the bitmap alone (T14). A
+;   refusal that corrupted the bitmap on its way out would pass T13 and red T14.
+;
+; NL_T15, NL_T16 -- REFUSAL UNDER TABLE BUFFERING. The table buffer stores one
+;   VALUE STRING per field and has no way to say NULL; buffering "" would commit
+;   a blank that reads back not-null, so REPLACE ... WITH NULL is refused while
+;   buffering is on. Same two answerable questions. These arms run LAST because
+;   they touch a session-scoped setting, and the file turns buffering back OFF
+;   before it closes -- a spec that leaves a setting flipped changes the next
+;   spec's answers, which is how a suite starts depending on its running order.
+;
+; ----------------------------------------------------------------------------
+; WHAT THIS SPEC DELIBERATELY DOES NOT CLAIM
+; ----------------------------------------------------------------------------
+;
+; * THAT NO OTHER ROW IS NULL. No marker in this language can assert an absence
+;   (USE_AGAIN, three cuts) and an ERRORED MARKER PRINTS NOTHING RATHER THAN
+;   GOING RED, so absence is proven only by contrast. Every arm here names a row
+;   it expects to find.
+; * THAT LIST PRINTS .NULL. That is real and was proven by hand (11b40895a),
+;   and it is CONSOLE TEXT. No marker can read it. Stated rather than implied.
+; * ANYTHING ABOUT NULL ORDERING UNDER AN INDEX. This table is opened NOINDEX
+;   throughout. What a CDX/CNX/LMDB backend makes of a null key is unclaimed by
+;   this lane and must not be inferred from a green run here.
+; * ANYTHING ABOUT ISNULL OVER A JOINED OR TUPLE ROW SOURCE. One row source is
+;   exercised: an open area.
+; * ANYTHING ABOUT WHAT VFP'S OWN APPEND BLANK WRITES INTO THE BITMAP. We write
+;   zero bits; that is this house's choice and it is not yet measured against
+;   VFP. Rec 2 is blank because nothing wrote it, and no arm here reads its
+;   null bit.
+;
+; ----------------------------------------------------------------------------
+; MARKER COUNT: 21 GRADED LINES -- 5 guards (NL_G*) and 16 arms (NL_T*).
+; COUNT THEM. An errored marker prints nothing rather than going red, so a
+; transcript with 20 is a spec that lost a claim, not a spec that passed.
+; Four further lines (NL_P*) are UNGRADED PROBES and are not part of the 21.
+;
+; If any NL_G* reds, treat every NL_T* as UNPROVEN: the arms read fields of
+; rows the guards are what establish.
+;
+; Disposable table, rebuilt every run. Leaves NULLSPEC.dbf in the sandbox, the
+; same way set_deleted_visibility.dts leaves SDVIS.dbf -- CREATE overwrites it
+; on the next run.
+; ============================================================================
+
+; ============================================================================
+; FIRST RUN -- 2026-09-05, build Sep 05 2026 08:29:36 (11b40895 dirty)
+;
+;   17 of 21 GREEN. FOUR RED: NL_T11, NL_T12, NL_T14, NL_T16.
+;
+; THE FOUR REDS ARE ONE DEFECT, NOT FOUR. All four assert the same thing --
+; that after rec 3's null is replaced by a value, LOCATE FOR ISNULL(VNAME) finds
+; REC 5. All four found REC 3, still null.
+;
+;   A VALUE WRITE DOES NOT CLEAR THE NULL BIT.
+;
+; DbArea::set() (record_view.cpp:298) writes `_fd[idx]` and never touches
+; `_fd_null[idx]`. replaceFieldStored() stages through set(). storeFieldsToBuffer()
+; then RECOMPUTES the null bitmap FROM `_fd_null` -- so the write stores the new
+; value and re-commits the stale null bit in the same record write. It survives a
+; close and reopen, because it reached the disk.
+;
+; And nothing can undo it: DbArea::replaceFieldNull(field, false) is correct and
+; callable, and its ONLY caller in the tree is a unit test
+; (test_vfp_set_null.cpp:352, arm C). No command path clears a null. So ONCE A
+; CELL IS NULL, THE SHELL CANNOT UN-NULL IT.
+;
+; CONFIRMED AT THE PROMPT, same build, on the table this script left behind:
+;
+;     LIST     -> rec 3 VNAME reads  .NULL.
+;     GO 3
+;     ? VNAME  -> restored
+;     ? ISNULL(VNAME) -> .T.
+;
+; One cell, three instruments, two answers. The bytes hold "restored" and the bit
+; says null, and the display believes the bit.
+;
+; THESE FOUR ARMS ARE NOT RETUNED, AND THAT IS DELIBERATE. They assert the
+; correct behaviour -- VFP clears NULL when you assign a value -- and they are red
+; because the engine is wrong, not because the arms are. Repointing them at the
+; measured behaviour would convert a finding into a fixture, which is the defect
+; this house keeps finding one layer up. They go green when the engine is fixed;
+; until then this file reads 17/21 BY DESIGN and a reader is told why here.
+;
+; NL_T13 and NL_T15 -- the two refusal arms -- went GREEN, and both refusals
+; printed the message they were designed to print. NL_T14 and NL_T16 ride behind
+; them and red for the reason above, not because a refusal misbehaved.
+;
+; ----------------------------------------------------------------------------
+; SECOND RUN -- 2026-09-05, build Sep 05 2026 09:20:12. 21 of 21 GREEN.
+;
+; The engine was fixed the same day: replaceFieldStored()'s stage lambda now
+; clears the field's null before writing the value, guarded on fieldIsNullable()
+; because setFieldNull() refuses a field with no null flag and an unguarded
+; `setFieldNull(f,false) && set(f,v)` would have short-circuited every REPLACE on
+; every non-VFP table in the product.
+;
+; ARM E of dottalkpp_vfp_set_null_test is the byte-level half and landed with it:
+; write "ABC" over row 5's null VNAME in nullfix.DBF and the row must become,
+; byte for byte, what VFP wrote on row 1 -- bitmap 0x02 and
+; 41 42 43 20 20 20 20 20 20 03. Both expectations are read out of the fixture at
+; run time. ctest -R vfp: 11/11.
+;
+; SO THIS FILE'S FIRST ACT WAS TO FIND A DEFECT, AND THAT IS THE ARGUMENT FOR IT.
+; The four arms that caught it were written before anyone suspected anything --
+; they exist because a null that cannot be cleared is half a feature, not because
+; a bug was being chased. Both paragraphs above are kept: a spec that quietly
+; becomes all-green loses the only evidence that it was ever worth writing.
+;
+; STILL NOT ASKED, AND IT IS THE ONE LEG WITH NO INDEPENDENT WITNESS: Visual
+; FoxPro has never been asked whether a cell WE UN-NULLED reads as not-null.
+; Arm E grades our bytes against bytes VFP wrote, which is strong, but our engine
+; still did the writing. Every acceptance .prg in tools/vfp asks the other
+; direction -- are the cells we nulled null. A short .prg that opens a cleared
+; table and asserts ISNULL() is .F. would close it.
+; ----------------------------------------------------------------------------
+; ============================================================================
+
+SET PATH DBF DBF/SANDBOX
+
+; ============================================================================
+; FIXTURE -- five rows, nothing null yet
+; ============================================================================
+
+SELECT 1
+CREATE VFP NULLSPEC (ID N(6,0) NULL, VNAME V(10) NULL, PLAIN C(8))
+
+APPEND
+REPLACE ID WITH 1
+REPLACE VNAME WITH "alpha"
+REPLACE PLAIN WITH "control"
+
+; rec 2 -- VNAME is NEVER WRITTEN. This is the blank-and-not-null control, and
+; it sits ahead of every nulled row so that LOCATE reaches it first.
+APPEND
+REPLACE ID WITH 2
+REPLACE PLAIN WITH "blankvn"
+
+APPEND
+REPLACE ID WITH 3
+REPLACE VNAME WITH "gamma"
+REPLACE PLAIN WITH "nullvn"
+
+APPEND
+REPLACE ID WITH 4
+REPLACE VNAME WITH "delta"
+REPLACE PLAIN WITH "nullid"
+
+APPEND
+REPLACE ID WITH 5
+REPLACE VNAME WITH "epsilon"
+REPLACE PLAIN WITH "nulltwo"
+
+CLOSE
+
+; ============================================================================
+; GUARDS -- the fixture is what the arms below assume it is
+; ============================================================================
+
+USE NULLSPEC NOINDEX
+
+GO 1
+? "NL_G0_row1_is_the_untouched_control:" + (ALLTRIM(PLAIN) = "control")
+
+GO 2
+? "NL_G1_row2_is_blank_before_any_null_exists:" + (ALLTRIM(VNAME) = "")
+
+GO 3
+? "NL_G2_row3_holds_a_value_before_it_is_nulled:" + (ALLTRIM(VNAME) = "gamma")
+
+GO 4
+? "NL_G3_row4_holds_a_value_before_it_is_nulled:" + (ALLTRIM(VNAME) = "delta")
+
+GO 5
+? "NL_G4_row5_holds_a_value_before_it_is_nulled:" + (ALLTRIM(VNAME) = "epsilon")
+
+; ============================================================================
+; WRITE THE NULLS -- both spellings, two fields, three rows
+; ============================================================================
+
+GO 3
+REPLACE VNAME WITH NULL
+
+GO 5
+REPLACE VNAME WITH .NULL.
+
+GO 4
+REPLACE ID WITH NULL
+
+; ============================================================================
+; THE DISCRIMINATOR AND THE ISOLATION ARMS
+; ============================================================================
+
+; Rec 2 is blank and comes first. A build that answers ISNULL from emptiness
+; lands here and reads "blankvn".
+LOCATE FOR ISNULL(VNAME)
+? "NL_T1_isnull_finds_the_nulled_row_and_not_the_blank_one:" + (ALLTRIM(PLAIN) = "nullvn")
+
+LOCATE FOR ISNULL(ID)
+? "NL_T2_isnull_on_the_numeric_finds_the_row_whose_number_was_nulled:" + (ALLTRIM(PLAIN) = "nullid")
+
+GO 4
+? "NL_T3_nulling_id_left_vname_readable_in_the_same_row:" + (ALLTRIM(VNAME) = "delta")
+
+GO 1
+? "NL_T4_nulling_vname_left_the_neighbour_row_readable:" + (ALLTRIM(VNAME) = "alpha")
+
+GO 3
+? "NL_T5_the_nulled_cell_reads_empty_by_value:" + (ALLTRIM(VNAME) = "")
+
+GO 2
+? "NL_T6_the_blank_cell_reads_empty_by_value_too:" + (ALLTRIM(VNAME) = "")
+
+GO 3
+? "NL_T7_nulling_vname_left_id_readable_in_the_same_row:" + (ID = 3)
+
+; ============================================================================
+; THE NULL REACHED THE DISK
+; ============================================================================
+
+CLOSE
+USE NULLSPEC NOINDEX
+
+LOCATE FOR ISNULL(VNAME)
+? "NL_T8_the_varchar_null_survived_close_and_reopen:" + (ALLTRIM(PLAIN) = "nullvn")
+
+LOCATE FOR ISNULL(ID)
+? "NL_T9_the_numeric_null_survived_close_and_reopen:" + (ALLTRIM(PLAIN) = "nullid")
+
+; ============================================================================
+; THE BIT CLEARS -- and rec 5, nulled with the DOTTED spelling, is what proves it
+; ============================================================================
+
+GO 3
+REPLACE VNAME WITH "restored"
+
+GO 3
+? "NL_T10_a_written_value_replaced_the_null:" + (ALLTRIM(VNAME) = "restored")
+
+LOCATE FOR ISNULL(VNAME)
+? "NL_T11_with_row3_cleared_isnull_finds_row5_nulled_by_the_dotted_spelling:" + (ALLTRIM(PLAIN) = "nulltwo")
+
+CLOSE
+USE NULLSPEC NOINDEX
+
+LOCATE FOR ISNULL(VNAME)
+? "NL_T12_the_cleared_bit_survived_close_and_reopen:" + (ALLTRIM(PLAIN) = "nulltwo")
+
+; ============================================================================
+; REFUSAL ONE -- a field with no null flag
+; ============================================================================
+
+GO 1
+REPLACE PLAIN WITH NULL
+
+GO 1
+? "NL_T13_a_refused_null_left_the_non_nullable_value_intact:" + (ALLTRIM(PLAIN) = "control")
+
+LOCATE FOR ISNULL(VNAME)
+? "NL_T14_a_refused_null_left_the_rest_of_the_bitmap_intact:" + (ALLTRIM(PLAIN) = "nulltwo")
+
+; ============================================================================
+; REFUSAL TWO -- under table buffering. Runs last: it touches a session setting.
+; ============================================================================
+
+TABLE BUFFER ON
+
+GO 1
+REPLACE VNAME WITH NULL
+
+TABLE BUFFER OFF
+
+GO 1
+? "NL_T15_a_buffered_null_was_refused_and_the_value_survived:" + (ALLTRIM(VNAME) = "alpha")
+
+LOCATE FOR ISNULL(VNAME)
+? "NL_T16_the_bitmap_survived_the_buffered_refusal:" + (ALLTRIM(PLAIN) = "nulltwo")
+
+; ============================================================================
+; UNGRADED PROBES -- what the '?' marker path actually does with ISNULL.
+;
+; NOT ARMS. Nothing above depends on them and they are placed last so that a
+; FORMULA error here cannot cost a claim. They exist so the header's reasoning
+; about eval_rhs is MEASURED on every run rather than inherited from a comment.
+;
+; The cursor is parked by the LOCATE above on rec 5, whose VNAME is null.
+;
+; PREDICTED, from reading the code and not from running it:
+;   NL_P1 -- the bare form reaches eval_any and should print .T.
+;   NL_P2 -- the concatenated form should NOT print ":.T.". Expected instead:
+;            an empty tail, a number, or a FORMULA error. Whatever it prints is
+;            the finding; record it rather than repairing it here.
+;
+; MEASURED 2026-09-05, FIRST RUN. NL_P1 printed `.T.`. NL_P2 printed `0` -- not
+; the label, not a tail, a bare zero. That is Arith::evalString returning
+; std::to_string(evalNumber(...)) over a string literal and a function that the
+; scalar parser could not resolve. THE LABEL ITSELF WAS SWALLOWED: the marker did
+; not merely lose its verdict, it lost its NAME, so a spec written this way would
+; have printed one anonymous `0` per arm and a reader counting labels would have
+; found nothing to count. The trace in the header is confirmed by measurement.
+; ============================================================================
+
+? "NL_P1_bare_isnull_marker_probe_the_next_line_is_the_answer"
+? ISNULL(VNAME)
+? "NL_P2_concatenated_isnull_probe:" + ISNULL(VNAME)
+
+CLOSE

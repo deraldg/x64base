@@ -27,6 +27,13 @@
 // decoder. This compares our encoder against VFP's, offline, using a file neither
 // this test nor this engine wrote.
 //
+// ARM E (added 2026-09-05) RUNS THE OTHER DIRECTION and is graded the same way:
+// write "ABC" over row 5's null VNAME and the row must become, byte for byte,
+// what VFP wrote on ROW 1 -- bitmap 0x02 and 41 42 43 20 20 20 20 20 20 03. Both
+// expectations are read out of the fixture at run time. It exists because every
+// other instrument in this lane pointed ONE WAY, set-then-read, and a value write
+// was silently re-committing the stale null bit.
+//
 // ---------------------------------------------------------------------------
 // TWO COPIES, NOT ONE, AND THAT IS NOT FASTIDIOUSNESS
 // ---------------------------------------------------------------------------
@@ -363,6 +370,136 @@ int main()
                                after.begin() + static_cast<std::ptrdiff_t>(rec_off(1)));
                 check(row1_same,
                       "arm C: a refused setFieldNull changed nothing on disk");
+            }
+            drop(work);
+        }
+    }
+
+    // ===================================================================
+    // ARM E -- CLEARING A NULL BY WRITING A VALUE, GRADED THE SAME WAY.
+    //
+    // WHY THIS ARM EXISTS. Arms A and B prove we can SET a null and that the
+    // bytes are VFP's. Arm C proves the ENGINE can clear one -- by calling
+    // replaceFieldNull(f, false) directly, which until 2026-09-05 was the only
+    // caller of that spelling anywhere in the tree. NOTHING proved that WRITING
+    // A VALUE clears the null, and it did not: DbArea::set() never touched
+    // _fd_null, storeFieldsToBuffer() recomputes the bitmap FROM _fd_null, and
+    // so a value written over a null cell put the value on disk and re-committed
+    // the stale null bit beside it. Found by vfp_null_assertions.dts, not here.
+    //
+    // A FEATURE PROVEN IN ONE DIRECTION IS NOT PROVEN. Every instrument this lane
+    // built pointed the same way -- set a null, read it back, compare to VFP --
+    // including the VFP acceptance scripts, which asked whether the cells we
+    // nulled are null and never whether a cell we un-nulled is not null.
+    //
+    // AND IT IS GRADED WITHOUT A HAND-COMPUTED NUMBER, by the same trick the rest
+    // of this file uses. Write "ABC" into row 5's null VNAME and the row must
+    // become, byte for byte, what VFP wrote on ROW 1:
+    //
+    //   row 5 before   20 20 20 20 20 20 20 20 20 00   bitmap 0x06  (VNAME null)
+    //   row 1 (VFP)    41 42 43 20 20 20 20 20 20 03   bitmap 0x02  (VNAME "ABC")
+    //
+    // The expected bitmap and the expected ten value bytes are both READ OUT OF
+    // THE FIXTURE at run time rather than written here. On the defective code the
+    // bitmap comes out 0x06 and this arm is the thing that reds.
+    // ===================================================================
+    {
+        const fs::path work = tmp / "x64base_setnull_clear.DBF";
+        std::string cperr;
+        if (!stage_writable_copy(src, work, cperr)) {
+            check(false, "arm E: could not stage the fixture -- " + cperr);
+        } else {
+            const std::vector<char> before = slurp(work);
+
+            // The expectations, lifted from rows VFP authored.
+            const unsigned char vfp_row1_bits =
+                static_cast<unsigned char>(before[rec_off(1) + kOffBits]);
+            const std::string vfp_row1_vname(before.data() + rec_off(1) + kOffVname, 10);
+            const unsigned char vfp_row5_bits =
+                static_cast<unsigned char>(before[rec_off(5) + kOffBits]);
+
+            check(vfp_row5_bits == 0x06,
+                  "arm E: fixture row 5 starts at VFP's 0x06, got " +
+                  hexbyte(vfp_row5_bits));
+            check(vfp_row1_bits == 0x02,
+                  "arm E: fixture row 1 carries VFP's 0x02, got " +
+                  hexbyte(vfp_row1_bits));
+
+            bool opened = true;
+            {
+                xbase::DbArea a;
+                try { a.open(work.string()); }
+                catch (const std::exception& e) {
+                    check(false, std::string("arm E open() threw: ") + e.what());
+                    opened = false;
+                }
+                if (opened) {
+                    check(a.gotoRec(5), "arm E: gotoRec(5)");
+                    check(a.fieldIsNullFromBuffer(2),
+                          "arm E: row 5 VNAME starts null -- the guard, without which"
+                          " this arm proves nothing");
+
+                    std::string err;
+                    check(a.replaceFieldStored(2, "ABC", &err),
+                          "arm E: replaceFieldStored(VNAME, \"ABC\") succeeded -- " + err);
+
+                    // The staged view must agree immediately. If this passes and
+                    // the byte check below fails, the clear happened in memory and
+                    // did not reach storeFieldsToBuffer.
+                    check(!a.fieldIsNull(2),
+                          "arm E: the staged row no longer calls VNAME null");
+                    check(!a.fieldIsNullFromBuffer(2),
+                          "arm E: the record buffer no longer calls VNAME null");
+                }
+            }
+
+            const std::vector<char> after = slurp(work);
+            if (opened && before.size() == after.size() && after.size() >= 612) {
+                const unsigned char our_bits =
+                    static_cast<unsigned char>(after[rec_off(5) + kOffBits]);
+                check(our_bits == vfp_row1_bits,
+                      "arm E: after clearing, our bitmap is the byte VFP wrote for a"
+                      " row with a short non-null VNAME -- expected " +
+                      hexbyte(vfp_row1_bits) + ", got " + hexbyte(our_bits));
+
+                const std::string our_vname(after.data() + rec_off(5) + kOffVname, 10);
+                check(our_vname == vfp_row1_vname,
+                      "arm E: our ten VNAME bytes are VFP's ten VNAME bytes for"
+                      " \"ABC\" -- value, padding and trailing length byte");
+
+                // The neighbour field in the same row: ID was not null on row 5
+                // and was not written. A clear that widened past its own bit
+                // shows up here.
+                const bool id_same =
+                    std::equal(before.begin() + static_cast<std::ptrdiff_t>(rec_off(5) + kOffId),
+                               before.begin() + static_cast<std::ptrdiff_t>(rec_off(5) + kOffId + 4),
+                               after.begin()  + static_cast<std::ptrdiff_t>(rec_off(5) + kOffId));
+                check(id_same, "arm E: row 5 ID bytes untouched");
+
+                // The neighbour row. Row 4 has ID null (0x03) and must stay that
+                // way -- a clear that reached the wrong record is the shape this
+                // lane already paid for once (6a10c9353).
+                const bool row4_same =
+                    std::equal(before.begin() + static_cast<std::ptrdiff_t>(rec_off(4)),
+                               before.begin() + static_cast<std::ptrdiff_t>(rec_off(4) + kRecLen),
+                               after.begin()  + static_cast<std::ptrdiff_t>(rec_off(4)));
+                check(row4_same, "arm E: row 4 is byte-identical -- its ID is still null");
+            }
+
+            // AND IT SURVIVES A REOPEN. Everything above reads a buffer this
+            // process filled. This asks the file.
+            {
+                xbase::DbArea a;
+                try {
+                    a.open(work.string());
+                    check(a.gotoRec(5), "arm E: reopen gotoRec(5)");
+                    check(!a.fieldIsNullFromBuffer(2),
+                          "arm E: reopened, row 5 VNAME is not null");
+                    check(a.get(2) == "ABC",
+                          "arm E: reopened, row 5 VNAME reads ABC, got '" + a.get(2) + "'");
+                } catch (const std::exception& e) {
+                    check(false, std::string("arm E reopen threw: ") + e.what());
+                }
             }
             drop(work);
         }
