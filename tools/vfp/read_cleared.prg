@@ -70,6 +70,30 @@
 * Database box.
 * ============================================================
 * ------------------------------------------------------------
+* RUN AND PASSED IN VISUAL FOXPRO, 2026-09-05, against the
+* fixture vfp_null_assertions.dts left behind on build
+* Sep 05 2026 10:00:01. Every prediction in this header held.
+*
+*   C3 LIST -- .NULL. on rows 4 and 5 ONLY; row 3 reads restored
+*   C4 row 1  ID .F.  VNAME .F.
+*      row 2  ID .F.  VNAME .F.   <- BLANK IS NOT NULL
+*      row 3  ID .F.  VNAME .F.   value [restored]  <- THE WITNESS
+*      row 4  ID .T.  VNAME .F.   value [delta]
+*      row 5  ID .F.  VNAME .T.
+*   C5 row 3 not null, row 5 NULL
+*
+* THE CLEAR DIRECTION NOW HAS AN OUTSIDE WITNESS. Until this run
+* every proof in this lane pointed one way -- set a null, read it
+* back, compare to VFP -- and a value write was re-committing the
+* stale null bit underneath all of it (fixed 22c748381).
+*
+* AND ROW 2 SETTLED A QUESTION NOBODY HAD ASKED IN EITHER
+* DIRECTION. Our BLANK encoding and our NULL encoding are
+* DIFFERENT BYTE PATTERNS TO VFP, measured rather than assumed
+* because our own reader agreed with our own writer. Had it read
+* .T. the distinction this lane is built on would have been
+* wrong, and no test in the tree could have said so.
+* ------------------------------------------------------------
 * WRONG-SHELL BANNER. `DO <path>` IS A LEGAL COMMAND IN BOTH
 * SHELLS: Visual FoxPro runs a .prg with it, and DotTalk++
 * resolves DO to DOTSCRIPT (shortcut_resolver.hpp). So a handover
