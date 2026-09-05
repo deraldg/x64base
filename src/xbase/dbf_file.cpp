@@ -200,6 +200,7 @@ void DbArea::open(const std::string& filename)
     // 1-based field values
     _fd.assign(_fields.size() + 1, std::string{});
     _fd_snapshot.assign(_fields.size() + 1, std::string{});
+    _fd_null.assign(_fields.size() + 1, char{0});   // lockstep with _fd
 
     // Fresh open must not inherit any externally attached index state.
     index_hooks::detach(*this);
@@ -460,6 +461,7 @@ bool DbArea::appendBlank() {
     _recbuf.assign(checked_record_buffer_size_(*this), ' ');
     _fd.assign(_fields.size() + 1, std::string{});
     _fd_snapshot.assign(_fields.size() + 1, std::string{});
+    _fd_null.assign(_fields.size() + 1, char{0});   // lockstep with _fd
     _del = NOT_DELETED;
 
     const bool ok = gotoRec64(_rec_count64);

@@ -556,3 +556,34 @@ if(TARGET xbase)
       "dottalkpp_vfp_foreign_write_test is not built.")
   endif()
 endif()
+
+# ---- set-to-null (AIF-091) --------------------------------------------------
+# THE EXPECTED BYTES ARE NOT IN THE TEST. It nulls a field with our engine and
+# compares the result to the bytes Visual FoxPro wrote for a row already in that
+# state -- nullfix.DBF row 4 has a null numeric and row 5 a null Varchar, so the
+# fixture carries its own answer key.
+#
+# That inversion is the point. A create-then-read test of set-to-null proves our
+# encoder agrees with our decoder, which is exactly how dbf_create.cpp and the
+# reader shared a wrong field-flags offset for years while staying green.
+#
+# Each arm starts from a PRISTINE copy: arm B's expected bitmap is only correct
+# while ID is not null, so sharing one copy between arms would silently turn a
+# VFP-written expectation into a number this suite made up -- and still pass.
+if(TARGET xbase)
+  if(EXISTS "${CMAKE_SOURCE_DIR}/tools/vfp/fixtures/nullfix.DBF")
+    add_executable(dottalkpp_vfp_set_null_test
+      ${CMAKE_CURRENT_SOURCE_DIR}/test_vfp_set_null.cpp
+    )
+    target_link_libraries(dottalkpp_vfp_set_null_test PRIVATE xbase memo)
+    target_include_directories(dottalkpp_vfp_set_null_test PRIVATE ${CMAKE_SOURCE_DIR}/include)
+    target_compile_definitions(dottalkpp_vfp_set_null_test
+      PRIVATE VFP_FIXTURE_ROOT="${CMAKE_SOURCE_DIR}/tools/vfp")
+    add_test(NAME dottalkpp_vfp_set_null_test COMMAND dottalkpp_vfp_set_null_test)
+  else()
+    message(STATUS
+      "AIF-091 set-to-null fixture missing: tools/vfp/fixtures/nullfix.DBF. "
+      "It is tracked; rebuild it with tools/vfp/make_nullfix.prg inside Visual "
+      "FoxPro 9 if it was lost. dottalkpp_vfp_set_null_test is not built.")
+  endif()
+endif()

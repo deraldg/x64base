@@ -305,6 +305,9 @@ bool DbArea::set(int idx, const std::string& val)
 bool DbArea::loadFieldsFromBuffer()
 {
     _fd.assign(_fields.size() + 1, std::string{});
+    // LOCKSTEP WITH _fd. Populated below from the bitmap the buffer carries, so
+    // that the staged view starts out agreeing with the row on disk.
+    _fd_null.assign(_fields.size() + 1, char{0});
 
     const bool is_x64 = (versionByte() == DBF_VERSION_64);
 
@@ -340,7 +343,46 @@ bool DbArea::loadFieldsFromBuffer()
         off += f.length;
     }
 
+    // The staged null view is READ BACK OUT OF THE BITMAP rather than derived
+    // from the values: an empty string and a NULL are different things and only
+    // the bitmap can tell them apart. fieldIsNullFromBuffer() already fails
+    // closed on a missing bitmap, a field with no null bit, or a short buffer.
+    for (std::size_t i = 0; i < _fields.size(); ++i)
+        _fd_null[i + 1] =
+            fieldIsNullFromBuffer(static_cast<int>(i) + 1) ? char{1} : char{0};
+
     _fd_snapshot = _fd;
+
+    return true;
+}
+
+bool DbArea::fieldIsNull(int idx1) const noexcept
+{
+    if (idx1 < 1 || idx1 >= static_cast<int>(_fd_null.size())) return false;
+    return _fd_null[static_cast<std::size_t>(idx1)] != 0;
+}
+
+bool DbArea::setFieldNull(int idx1, bool make_null)
+{
+    if (idx1 < 1 || idx1 > static_cast<int>(_fields.size())) return false;
+    if (idx1 >= static_cast<int>(_fd_null.size()))           return false;
+
+    // THE TABLE DECIDES. A field whose descriptor never carried 0x02 has no null
+    // bit, so there is nowhere to record the answer; setting one anyway would
+    // write a bit that belongs to some other field or to nothing at all. Refuse
+    // rather than succeed silently -- this is the AIF-118 shape, and a cheerful
+    // return here would be indistinguishable from having worked.
+    if (!fieldIsNullable(idx1)) return false;
+
+    _fd_null[static_cast<std::size_t>(idx1)] = make_null ? char{1} : char{0};
+
+    // A null cell has no value. Clearing it keeps get() honest about what the
+    // next write will put on disk (spaces), and -- for a Varchar -- it is also
+    // what makes the byte encoding come out right without a special case: an
+    // empty value is not full, so storeFieldsToBuffer() writes a trailing length
+    // byte of 0x00 and SETS the varlength bit, which is exactly what Visual
+    // FoxPro wrote for a null Varchar in nullfix.DBF rows 2 and 5.
+    if (make_null) _fd[static_cast<std::size_t>(idx1)].clear();
 
     return true;
 }
@@ -372,25 +414,38 @@ void DbArea::storeFieldsToBuffer()
     // space while other values survived by luck. It was an unreliable round trip
     // and the partition made it deterministic destruction. Both halves are true.
     //
-    // THE BITMAP IS NOW HALF CARRIED AND HALF RECOMPUTED, and the split is exactly
-    // "what can this write change?":
+    // THE BITMAP IS NOW FULLY RECOMPUTED. Every bit any field owns is written from
+    // the staged row; the save/restore below survives only for bits NO FIELD OWNS
+    // -- padding in a multi-byte bitmap -- which nothing here is entitled to
+    // invent or destroy.
     //
-    //   NULL bits       CARRIED. Nothing here can change one -- there is still no
-    //                   API to set a value to null. When set-to-null lands, these
-    //                   must be recomputed too, and this comment is the place that
-    //                   will be wrong until they are.
-    //   VARLENGTH bits  RECOMPUTED, below, from the value actually being written.
-    //                   They HAVE to be: a Varchar write changes whether the field
-    //                   is full, and a carried-forward varlength bit would describe
+    //   NULL bits       RECOMPUTED, from `_fd_null`, which setFieldNull() stages
+    //                   and loadFieldsFromBuffer() seeds from the bitmap already
+    //                   on disk. So a row that is merely re-written keeps its
+    //                   nulls (the staged view was loaded from those same bits),
+    //                   and a row whose null state was changed writes the change.
+    //   VARLENGTH bits  RECOMPUTED, from the value actually being written. They
+    //                   HAVE to be: a Varchar write changes whether the field is
+    //                   full, and a carried-forward varlength bit would describe
     //                   the value that used to be there. Measured before it was
     //                   changed (dottalkpp_vfp_varchar_roundtrip_test): setting a
     //                   10-byte Varchar to a full-width value left the bit SET,
     //                   claiming a length byte that was now data.
     //
-    // The earlier version of this comment said the carry-forward was correct
-    // "because none of them can change a null bit ... when Varchar writes land in
-    // M2 this must become a RECOMPUTE". They landed; this is that recompute, for
-    // the half it applies to.
+    // THIS COMMENT HAS NOW BEEN WRONG TWICE AND SAID SO BOTH TIMES, which is the
+    // only reason it was cheap to correct. Version one said the carry-forward was
+    // correct "because none of them can change a null bit ... when Varchar writes
+    // land in M2 this must become a RECOMPUTE". Version two said the split was
+    // half and half and that "when set-to-null lands, these must be recomputed
+    // too, and this comment is the place that will be wrong until they are".
+    // Set-to-null landed. This is that recompute.
+    //
+    // A NULL VARCHAR NEEDS NO SPECIAL CASE HERE, and that is a measurement rather
+    // than a convenience: setFieldNull() clears the staged value, an empty value
+    // is not full, so the branch below writes a trailing length byte of 0x00 and
+    // SETS the varlength bit -- which is byte-for-byte what Visual FoxPro wrote
+    // for a null Varchar in nullfix.DBF rows 2 and 5. If that rule is ever found
+    // to be wrong, the fix belongs in the V branch and not here.
     std::vector<char> saved_null_flags;
     const bool have_bitmap =
         _null_flags.present &&
@@ -460,6 +515,22 @@ void DbArea::storeFieldsToBuffer()
             std::string cerr;
             (void)fieldcodec::codec_for(f.type)
                       .encode(src, f, _recbuf.data() + off, &cerr);
+        }
+
+        // ---- THE NULL BIT, WRITTEN FOR EVERY FIELD THAT OWNS ONE ---------
+        // Outside the type branches on purpose: nullness is orthogonal to how a
+        // value is encoded, and a null memo, a null Varchar and a null numeric
+        // all record it in the same place. The value area is left as whatever the
+        // branch above wrote -- for a null field that is the space fill, which is
+        // what VFP writes too.
+        if (have_bitmap && i < _null_layout.fields.size()) {
+            const int nbit = _null_layout.fields[i].null_bit;
+            if (nbit >= 0) {
+                const bool is_null =
+                    (i + 1) < _fd_null.size() && _fd_null[i + 1] != 0;
+                vfp::set_bit(reinterpret_cast<std::uint8_t*>(saved_null_flags.data()),
+                             saved_null_flags.size(), nbit, is_null);
+            }
         }
 
         off += f.length;

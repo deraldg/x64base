@@ -15,6 +15,7 @@
 //        higher layers without exposing CLI behavior here.
 
 #pragma once
+#include <functional>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -302,6 +303,12 @@ public:
     // - no TABLE buffering / shell integration behavior belongs here
     bool replaceFieldStored(int field1, const std::string& stored_value, std::string* err = nullptr);
 
+    // Stage NULL (or not-null) and write, through the SAME lock / index-snapshot /
+    // index-maintenance / trigger envelope replaceFieldStored() uses. Returns
+    // false without writing when the field is not nullable. See the note in
+    // dbarea.cpp on why this cannot be a bare setFieldNull() + writeCurrent().
+    bool replaceFieldNull(int field1, bool make_null = true, std::string* err = nullptr);
+
     // ---- Record size ------------------------------------------------------
     // RECNO64: legacy 32-bit accessor. When the x64 value exceeds INT_MAX it returns
     // -1 (an impossible length) rather than clamping to INT_MAX, so a 32-bit consumer
@@ -422,6 +429,38 @@ public:
     // when there is no bitmap, when the field has no null bit, or when the buffer
     // is too short -- "not null" is the answer that cannot invent data.
     bool fieldIsNullFromBuffer(int idx1) const noexcept;
+
+    // ---- set-to-null ------------------------------------------------------
+    //
+    // THREE PREDICATES, NOT ONE, AND THE DIFFERENCE IS THE WHOLE POINT:
+    //
+    //   fieldIsNullable(i)        the TABLE: does the descriptor carry 0x02
+    //   fieldIsNullFromBuffer(i)  the ROW ON DISK: what the bitmap in _recbuf says
+    //   fieldIsNull(i)            the STAGED row: what the next write WILL say
+    //
+    // `fieldIsNull` mirrors get()/set(): it reads the pending value that
+    // storeFieldsToBuffer() has not written yet. Immediately after gotoRec() the
+    // two row predicates agree; after setFieldNull() they disagree until the
+    // record is written, exactly as get() disagrees with the buffer after set().
+    // A caller that wants "what is on disk right now" wants the FromBuffer one.
+    bool fieldIsNull(int idx1) const noexcept;
+
+    // Stage this field NULL (or, with make_null=false, not-null).
+    //
+    // REFUSES a field the TABLE says cannot be null, and refuses a table with no
+    // `_NullFlags` column at all -- returning false rather than setting a bit no
+    // field owns. Nulling a field also CLEARS its staged value, because a null
+    // cell has no value and leaving the old text behind would make get() describe
+    // a cell that will be written as blanks. That mirrors what the bytes do:
+    // Visual FoxPro writes a null field's value area as spaces (measured on
+    // nullfix.DBF rows 2 and 5, and on the row VFP wrote into nullwrote.DBF).
+    //
+    // Clearing null does NOT restore the old value -- there is nothing to restore.
+    // The caller sets one.
+    //
+    // The write itself still happens in storeFieldsToBuffer()/writeCurrent().
+    bool setFieldNull(int idx1, bool make_null = true);
+
     std::string get(int idx) const;
     bool        set(int idx, const std::string& val);
 
@@ -661,6 +700,11 @@ private:
     std::vector<std::string> _fd;
     // Snapshot retained for physical before/after record state.
     std::vector<std::string> _fd_snapshot;
+    // STAGED null state, 1-based and parallel to `_fd`. Kept in lockstep with it
+    // at every site that sizes or clears `_fd` -- if the two ever differ in
+    // length the indices desync and a null lands on the wrong field, which is
+    // the one failure mode here that no test would obviously catch.
+    std::vector<char> _fd_null;
 
     // ===== Cursor state ====================================================
     int32_t  _crn{0};
@@ -744,6 +788,9 @@ private:
     void        readHeader();
     void        readFields();
     bool        loadFieldsFromBuffer();
+    bool        replaceFieldEnveloped_(int field1,
+                                       const std::function<bool()>& stage,
+                                       std::string* err);
     void        storeFieldsToBuffer();
     static std::string rtrim(std::string s);
 

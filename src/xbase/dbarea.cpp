@@ -30,6 +30,7 @@
 
 #include "xbase_locks.hpp"
 
+#include <functional>
 #include <algorithm>
 #include <cctype>
 #include <filesystem>
@@ -91,6 +92,7 @@ void DbArea::close() {
     _recbuf.clear();
     _fd.clear();
     _fd_snapshot.clear();
+    _fd_null.clear();   // lockstep with _fd
 
     _crn = 0;
     _crn64 = 0;
@@ -244,7 +246,19 @@ dottalk::memo::MemoManager& DbArea::memoManager() {
 // - No cursor_hook notifications here.
 // - No shell area lookup here.
 // - Higher layers may wrap this function with buffering/events as needed.
-bool DbArea::replaceFieldStored(int field1, const std::string& stored_value, std::string* err)
+// ONE ENVELOPE, TWO STAGERS.
+//
+// replaceFieldStored() and replaceFieldNull() differ by a single line -- WHAT they
+// stage before the write -- and agree on everything that makes a write safe: the
+// record lock, the index snapshot taken BEFORE the change, the write itself, the
+// unlock, index maintenance, and the trigger fire. Duplicating that for the null
+// path would have produced two 90-line functions obliged to stay in step, which is
+// the defect shape this project keeps finding one layer up. The body below is the
+// original replaceFieldStored() moved verbatim; only the staging call is a
+// parameter now.
+bool DbArea::replaceFieldEnveloped_(int field1,
+                                    const std::function<bool()>& stage,
+                                    std::string* err)
 {
     if (err) err->clear();
 
@@ -280,7 +294,7 @@ bool DbArea::replaceFieldStored(int field1, const std::string& stored_value, std
     try {
         before_snap = index_hooks::capture(*this);
 
-        ok = set(field1, stored_value) && writeCurrent();
+        ok = stage() && writeCurrent();
     }
     catch (...) {
         ok = false;
@@ -331,6 +345,33 @@ bool DbArea::replaceFieldStored(int field1, const std::string& stored_value, std
     }
 
     return true;
+}
+
+bool DbArea::replaceFieldStored(int field1, const std::string& stored_value,
+                                std::string* err)
+{
+    return replaceFieldEnveloped_(
+        field1, [&] { return set(field1, stored_value); }, err);
+}
+
+// Set (or clear) this field's NULL state and write the record, through the SAME
+// envelope a value write uses.
+//
+// THE INDEX SNAPSHOT IS WHY THIS GOES THROUGH THE ENVELOPE AT ALL. Nulling an
+// indexed field changes what that record sorts as, exactly as replacing its value
+// does. A null written outside the envelope would leave the index pointing at the
+// old key with nothing marked stale -- the IDXSTALE shape, and the same one
+// VALIDATE UNIQUE ... REPAIR was caught in when it used set()+writeCurrent()
+// directly (VUREPAIR). What the index backends make of a null key is NOT settled
+// here and is not claimed: this guarantees the maintenance hook RUNS, not that
+// every backend orders nulls the way anyone expects.
+//
+// Refuses via setFieldNull() when the field is not nullable or the table has no
+// `_NullFlags` column; the record is not written in that case.
+bool DbArea::replaceFieldNull(int field1, bool make_null, std::string* err)
+{
+    return replaceFieldEnveloped_(
+        field1, [&] { return setFieldNull(field1, make_null); }, err);
 }
 
 } // namespace xbase

@@ -41,11 +41,14 @@
 //   REPLACE USAGE
 //   REPLACE <field_index> WITH <value>
 //   REPLACE <field_name> WITH <value>
+//   REPLACE <field_index|field_name> WITH NULL
+//   REPLACE <field_index|field_name> WITH .NULL.
 //
 // examples:
 //   REPLACE LNAME WITH "Smith"
 //   REPLACE 3 WITH TODAY
 //   REPLACE NOTES WITH "updated memo text"
+//   REPLACE VNAME WITH NULL
 //
 // notes:
 //   REPLACE requires an open table and a current record.
@@ -53,6 +56,16 @@
 //   RHS values pass through the expression/RHS evaluator and legacy string/date function handling.
 //   X64 memo text is converted into stored object-id text before DBF storage.
 //   Field values are validated and normalized before storage.
+//   WITH NULL (or .NULL.) sets the field's null bit and clears its value. It is
+//     intercepted before the value pipeline, so a null is never evaluated,
+//     normalized or width-validated into the string "NULL".
+//   WITH NULL is REFUSED on a field whose descriptor carries no null flag: there
+//     is no bit to record the answer in, and nothing is written.
+//   WITH NULL is REFUSED while TABLE buffering is ON. The buffer stores one value
+//     string per field and cannot represent NULL; buffering one would commit a
+//     blank, which reads back as not-null. COMMIT or ROLLBACK first.
+//   Only VFP-flavour tables carrying a `_NullFlags` column can hold a null at all;
+//     on every other table every field answers not-nullable and WITH NULL refuses.
 //   When TABLE buffering is ON, REPLACE records a buffered field change and marks the field stale/dirty.
 //   When TABLE buffering is OFF, REPLACE writes immediately through DbArea storage.
 //   COMMIT owns durable application of buffered table changes.
@@ -847,6 +860,75 @@ void cmd_REPLACE(xbase::DbArea& A, std::istringstream& in) {
             "REPLACE",
             dottalk::helpdata::MessageId::ReplaceCannotDetermineCurrentAreaText);
         return;
+    }
+
+    // ---- REPLACE <field> WITH NULL --------------------------------------
+    //
+    // Intercepted BEFORE the value pipeline, because a null is not a value: it
+    // must not be evaluated, currency-normalized, memo-encoded or width-validated,
+    // and every one of those steps would happily turn it into the string "NULL".
+    // Both spellings are taken -- bare NULL and the FoxPro .NULL. -- for the same
+    // reason APPEND BLANK is now routed: the spelling a FoxPro user types should
+    // reach the thing it names.
+    {
+        const std::string nv = to_upper_copy(textio::trim(value_raw));
+        if (nv == "NULL" || nv == ".NULL.") {
+            if (!A.fieldIsNullable(field1)) {
+                cli::cmdout::print_prefixed_message(
+                    "REPLACE", dottalk::helpdata::MessageId::ReplaceDetailText,
+                    {{"detail", "field '" + field_name +
+                                "' is not nullable; its descriptor carries no null "
+                                "flag, so there is no bit to record NULL in. "
+                                "Nothing was written."}});
+                return;
+            }
+
+            // TABLE BUFFER STAGES STRINGS, AND A NULL IS NOT ONE. add_change()
+            // carries a std::string per field, so a buffered null would have to be
+            // spelled as some value -- and "" would COMMIT AN EMPTY VALUE, which
+            // reads back as not-null. That is a wrong answer wearing a success
+            // message, so it is refused instead. Buffered NULL wants its own
+            // representation in the change record; it is not a REPLACE fix.
+            if (dottalk::table::is_enabled(area0)) {
+                cli::cmdout::print_prefixed_message(
+                    "REPLACE", dottalk::helpdata::MessageId::ReplaceDetailText,
+                    {{"detail", "NULL cannot be buffered -- the table buffer stores "
+                                "a value per field and has no way to say NULL, so "
+                                "buffering one would commit a blank instead. "
+                                "COMMIT or ROLLBACK, then REPLACE ... WITH NULL "
+                                "with TABLE BUFFER off. Nothing was written."}});
+                return;
+            }
+
+            std::string null_err;
+            if (!A.replaceFieldNull(field1, true, &null_err)) {
+                cli::cmdout::print_prefixed_message(
+                    "REPLACE", dottalk::helpdata::MessageId::ReplaceDetailText,
+                    {{"detail", (null_err.empty() ? std::string("write failed")
+                                                  : null_err) + "."}});
+                return;
+            }
+
+            // A true return with a NON-EMPTY err means "record written, index NOT
+            // maintained" -- replaceFieldStored's contract, inherited here because
+            // both go through the same envelope. Say so rather than printing a
+            // clean success over a stale index.
+            if (!null_err.empty()) {
+                cli::cmdout::print_prefixed_message(
+                    "REPLACE", dottalk::helpdata::MessageId::ReplaceDetailText,
+                    {{"detail", "NULL written, but the index was not maintained: " +
+                                null_err + ". Treat the index as stale for this "
+                                "field."}});
+                return;
+            }
+
+            if (Settings::instance().talk_on.load()) {
+                cli::cmdout::print_prefixed_message(
+                    "REPLACE", dottalk::helpdata::MessageId::ReplaceDetailText,
+                    {{"detail", "field " + std::to_string(field1) + " set to NULL"}});
+            }
+            return;
+        }
     }
 
     std::string user_value = value_raw;
