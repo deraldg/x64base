@@ -308,12 +308,17 @@
 //   NAME RESOLUTION (measured 2026-08-30). The three above are refusals about
 //   LIVE STATE. This one is scope: DESTROY resolves a name against RUNTIME
 //   MEMBERSHIP, so a CATALOG-ONLY HEAD -- a name holding a live durable row
-//   with no handle in this session -- is invisible to it and the verb answers
-//   `WORKSPACE DESTROY: no such workspace: <name>`. That message is true about
-//   the session and misleading about the catalog, and a reader who checked the
-//   catalog first will not believe it. Measured on a residue head left by an
-//   interactive run: WORKSPACES.dbf carried WS_ID 269 name `dbf` SUPERSEDED 0,
-//   and DESTROY said no such workspace.
+//   with no handle in this session -- is invisible to it. The verb USED TO
+//   answer `WORKSPACE DESTROY: no such workspace: <name>`, which is true about
+//   the session and reads as false about the catalog, and a reader who checked
+//   the catalog first will not believe it. Measured on a residue head left by
+//   an interactive run: WORKSPACES.dbf carried WS_ID 269 name `dbf`
+//   SUPERSEDED 0, and DESTROY said no such workspace. Measured AGAIN 2026-09-06
+//   on WS_ID 280 name MWXORD, minted by an interactive paste.
+//   SINCE 2026-09-06 THE REFUSAL PROBES THE CATALOG AND SAYS SO: no live row
+//   still gives the bare `no such workspace` line the specs rely on for a clean
+//   start, and a live row names the WS_ID and prints adopt-then-DESTROY. See
+//   catalog_live_head_id().
 //   THE REMEDY IS ADOPT-THEN-DESTROY, and it is two lines:
 //       WORKSPACE NEW <name>       -- reports ADOPTED, same WS_ID
 //       WORKSPACE DESTROY <name>   -- supersedes it; NO NEW ROW IS WRITTEN
@@ -328,7 +333,9 @@
 //   was already documented below, under the R131 naming paragraph, and was
 //   still missed by a reader who took DESTROY off the usage list and ran it.
 //   A synopsis that lists two verbs without their SCOPE sends that reader to
-//   the wrong one, and the failure message does not correct the mistake.
+//   the wrong one. THE FAILURE MESSAGE NOW CORRECTS THE MISTAKE -- it did not,
+//   through three sightings of this shape, which is what finally moved the fix
+//   out of the comment and into the code.
 //
 //   CHOOSING A RETIREMENT VERB -- the whole decision, in one place, because the
 //   facts needed to make it were spread over four paragraphs and a usage list:
@@ -3571,6 +3578,60 @@ static bool retire_durable_workspace(const std::string& name,
 }
 
 // ---------------------------------------------------------------------------
+// A CATALOG-ONLY HEAD IS INVISIBLE TO DESTROY, AND THE REFUSAL SAID IT WRONG.
+//
+// DESTROY resolves its target through the RUNTIME registry, so a name holding a
+// LIVE durable row with NO HANDLE in this session answers `no such workspace`.
+// That sentence is true about the session and reads as false about the catalog,
+// and the NAME RESOLUTION note at the top of this file has said so since
+// 2026-08-30 without the code changing. Documenting it was not enough:
+//
+//   2026-08-30  WS_ID 269 name `dbf`, SUPERSEDED 0, left by an interactive run
+//               -- DESTROY said no such workspace.
+//   2026-08-24  the census found THIRTEEN such heads at once.
+//   2026-09-06  an interactive paste minted WS_ID 280 name MWXORD; DESTROY
+//               denied it existed while the row sat in WORKSPACES.dbf.
+//
+// Three sightings of one shape is not a documentation problem. This probe lets
+// the REFUSAL CARRY THE REMEDY the contract already spells out, so the reader
+// who checked the catalog first is told what to run instead of being sent to
+// look for a bug that is not there.
+//
+// IT DECIDES WHAT TO PRINT AND NOTHING ELSE. Read-only, and it takes NO FLOCK,
+// matching report_catalog(): the worst a racing writer can cost is one stale
+// sentence in an error message, which is not worth serialising a refusal on.
+//
+// IT WILL NOT CREATE A CATALOG TO ANSWER A TYPO. open_catalog() calls
+// ensure_catalog(), which MINTS WORKSPACES.dbf when it is absent -- acceptable
+// on a write path that is about to need one, never on a refusal path where the
+// user misspelled a name. The fs::exists guard is that whole argument.
+//
+// It answers only "is there a live row under this name". Adoption stays
+// WORKSPACE NEW's job, because NEW is the step that gives the head the runtime
+// handle DESTROY needs -- which is why the remedy is two verbs and not one.
+// ---------------------------------------------------------------------------
+static std::uint64_t catalog_live_head_id(const std::string& name) {
+    std::error_code ec;
+    if (!fs::exists(catalog_path(), ec)) return 0;
+
+    std::string err;
+    xbase::DbArea a;
+    if (!open_catalog(a, err)) return 0;
+
+    std::uint64_t id = 0;
+    try {
+        const WsCatalogScan scan = scan_catalog(a, name);
+        if (scan.live_id != 0) id = chain_root(scan, scan.live_id);
+    } catch (...) {
+        id = 0;
+    }
+
+    cli_memo::memo_auto_on_close(a);
+    a.close();
+    return id;
+}
+
+// ---------------------------------------------------------------------------
 // AIF-078 -- WORKSPACE DELETE (spelled PURGE until 2026-08-24; that alias is
 // still accepted). Steward ruling 2026-08-24: "A -- flag, never
 // pack." Design: claude/AIF078_DESIGN_WORKSPACE_PURGE.md.
@@ -5521,7 +5582,34 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
 
             const std::uint64_t h = resolve_workspace_token(toks[0]);
             if (h == 0) {
-                std::cout << "WORKSPACE DESTROY: no such workspace: " << toks[0] << "\n";
+                // THE OLD ANSWER IS STILL THE ANSWER WHEN IT IS THE WHOLE TRUTH.
+                // Specs depend on this exact line for a clean start: MWXSHAKE's
+                // section 1 header and l3_catalog_isolation_arm's teardown both
+                // say "on a clean start every line here prints 'no such
+                // workspace' and changes nothing". No live row, no change.
+                // ws_memo:: qualified for the same reason retire_durable_workspace
+                // is at the DESTROY write below: the catalog helpers live in that
+                // namespace and the dispatch does not.
+                const std::uint64_t head = ws_memo::catalog_live_head_id(toks[0]);
+                if (head == 0) {
+                    std::cout << "WORKSPACE DESTROY: no such workspace: " << toks[0] << "\n";
+                    return;
+                }
+                std::cout << "WORKSPACE DESTROY: no handle for '" << toks[0]
+                          << "' in this session -- but the CATALOG HOLDS A LIVE ROW"
+                             " for that name, WS_ID " << head << ".\n";
+                std::cout << "  This is a CATALOG-ONLY HEAD. DESTROY resolves names through the\n"
+                             "  RUNTIME registry, so it cannot reach the row, and the bare\n"
+                             "  'no such workspace' it used to answer read as though the name\n"
+                             "  were free. It is not: the next WORKSPACE NEW would ADOPT it.\n";
+                std::cout << "  Retire it with adopt-then-DESTROY, which is the two lines that\n"
+                             "  give the head a handle and then supersede it:\n";
+                std::cout << "      WORKSPACE NEW " << toks[0] << "\n";
+                std::cout << "      WORKSPACE DESTROY " << toks[0] << "\n";
+                std::cout << "  NEW reports ADOPTED and keeps WS_ID " << head << "; DESTROY then\n"
+                             "  supersedes it. No new row is written and no delete flag is set,\n"
+                             "  so the history stays readable. WORKSPACE DELETE reaches the same\n"
+                             "  head without adoption -- heavier, and it flags the row.\n";
                 return;
             }
             if (h == xbase::workspace::kDefaultHandle) {

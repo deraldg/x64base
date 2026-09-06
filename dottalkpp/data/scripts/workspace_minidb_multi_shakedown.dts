@@ -736,6 +736,18 @@ WORKSPACE DESTROY MWXORD
 
 SETPATH DBF DBF/X64
 SETPATH INDEXES INDEXES/X64
+
+&& THE THIRD SLOT IS NOT OPTIONAL HERE (R131). The WORKSPACE SWITCH DEFAULT
+&& three lines up restores DEFAULT'S OWN environment -- all three path slots,
+&& not membership alone -- so the LMDB slot that `DO x64` set back in section
+&& 4 is gone by the time this line is read. STUDENTS is a SHIPPED CDX and its
+&& LMDB env lives in LMDB/x64 and NOWHERE ELSE, so without this SET ORDER TO
+&& LNAME below opens nothing, and G6/T25/T26 read the PHYSICAL order and go
+&& red. Two of the three slots were already re-set here because the author
+&& knew a switch clobbers them; the third was missed, and it could be missed
+&& because this file was last edited at 04:54 on 2026-08-29 and R131's live
+&& half landed at 15:49 the same day.
+SETPATH LMDB LMDB/X64
 WORKSPACE NEW MWXORD
 WORKSPACE SWITCH MWXORD
 
@@ -837,6 +849,15 @@ WORKSPACE DESTROY MWXCDXW
 
 SETPATH DBF DBF/SANDBOX
 SETPATH INDEXES INDEXES/SANDBOX
+
+&& THE LMDB SLOT IS NOT SET HERE, AND THIS SECTION SURVIVES THAT BECAUSE IT
+&& BUILDS WHAT IT READS. The switch above put LMDB back to DEFAULT'S value,
+&& so MWXCDX's env is created under THAT slot and read back under the same
+&& one -- build and read agree, and the arm is green on agreement rather
+&& than on placement. 5B could not survive it: 5B borrows a SHIPPED index
+&& and cannot move the env to meet the slot. Setting LMDB explicitly here
+&& would move where the env lands and the teardown sweep must move with it,
+&& so it is a separate change and not this one.
 
 && THE TABLE, THE CONTAINER AND THE LMDB ENV IN ONE SWEEP. CDX CREATE refuses
 && to overwrite, so a leftover .cdx from a previous run would fail the build
@@ -1040,6 +1061,8 @@ ERASE MWXSHARE CONFIRM
 SET PATH DBF DBF/SANDBOX
 SETPATH INDEXES INDEXES/SANDBOX
 ERASE MWXNOTE CONFIRM
+&& The env is swept from whatever the LMDB slot holds RIGHT HERE, which is
+&& the same slot 5C built under -- see the note there before changing either.
 && Sweeps MWXCDX.dbf, INDEXES/SANDBOX/MWXCDX.cdx and the LMDB env together.
 ERASE MWXCDX CONFIRM
 ERASE DIR DBF/mwxback CONFIRM

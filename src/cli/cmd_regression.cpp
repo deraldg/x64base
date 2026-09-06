@@ -756,7 +756,9 @@ constexpr std::array<RegressionSpec, 78> kRegressionSpecs{{
         "workspace_purge_regression.dts",
         "WORKSPACE DELETE (spelled PURGE until 2026-08-24; the alias is still accepted and PG_T5 keeps it exercised): catalog rows are FLAGGED, never packed (AIF-078, steward ruling 2026-08-24 \"A -- flag, never pack\"; design claude/AIF078_DESIGN_WORKSPACE_PURGE.md). THE VERB WAS RENAMED BECAUSE THE OWNER READ ITS OUTPUT: \"how could you ever locate a purged row, it is gone forever, delete is a flag and that means the row still exists just ignored.\" Correct -- the verb sets the delete flag and SUPERSEDED and the row stays on disk PERMANENTLY, which is the whole design since max(WS_ID)+1 needs those rows COUNTED. The name promised removal and the code guaranteed the opposite; in xBase the pair is exact, DELETE flags and PACK removes. The name misled the OWNER reading output written by its own author, which is the proof that a name reaches further than any definition beneath it. The spec file and this spec id keep the WSPURGE spelling deliberately -- a spec id is an allocated identifier with run history behind it. PG_T5 IS A FIELD-VALUE MARKER, NOT A COMMAND RUN: its first draft was the WORKSPACE PURGE line plus a comment naming itself PG_T5, asserting nothing, so a dead alias would have printed an error and left the spec all green -- the FIELDMGR_APPEND defect committed inside the arm written to prevent it, caught before it ran. PG_T1 IS THE DISCRIMINATOR and it exists because WS_ID allocation is max(WS_ID)+1 DERIVED by scanning surviving rows -- nothing persists a high-water mark. Physically remove the newest rows and the next WORKSPACE NEW re-mints an id a purged workspace already used; D10.2 makes the chain-root WS_ID the DURABLE IDENTITY, so that is two workspaces sharing one identity across time, R5 on the time axis, undetectable after the fact. The fixture arranges the trap on purpose: WSPRG1 is minted, retired, minted and retired again so its two rows are the two HIGHEST in the catalog, both are purged, and then a NEW name must mint ABOVE the highest purged id. Pack, and PG_T1 reads .F. PG_T2/PG_T3 ARE A PAIR because ruling A has two halves and a row is WORSE OFF if only one lands: the delete flag hides the row, SUPERSEDED=1 stops scan_catalog ELECTING it live -- and that scan does not filter deleted rows, it elects on WS_NAME plus SUPERSEDED alone, so a flag-only purge would leave a row invisible to the user and still adoptable by the next NEW, the AIF-118 shape exactly. PG_T2 reads the purged row with SET DELETED OFF and asserts SUPERSEDED=1. PG_T3 WAS WRITTEN TO SHOW THE ROW GOES AWAY UNDER SET DELETED ON AND INVERTED ON ITS FIRST RUN, 2026-08-24 -- which is the most valuable thing this spec has produced. LOCATE printed 'Located.' and moved the cursor onto the purged row with the shell reporting 'Deleted visibility: HIDE (ON)' one line earlier: a DELETE-FLAGGED RECORD IS STILL REACHED BY LOCATE. The flag itself landed -- purge_durable_workspace re-reads isDeleted() from the record before counting a row done and refuses to continue if it is false, and the verb reported both rows purged -- so this is LOCATE not consulting the setting, not a write that failed. WHAT IT CORRECTS: the delete flag is NOT what protects the catalog. SUPERSEDED is. The flag's value is that scan_catalog still COUNTS the row, which is exactly what preserves the high-water mark PG_T1 asserts. Hiding was assumed rather than measured, in the design and in this spec's own header, and the assumption was wrong. PG_T3 is now a TRIPWIRE recording the measured behaviour, with PG_T3B reading the protection that actually holds off the same row in the same breath; if PG_T3 ever reads .F. again, LOCATE has GAINED delete-filtering and the arm should be repointed deliberately rather than allowed to retune itself (the IDXSTALE precedent). THE TRIPWIRE FIRED THE SAME DAY AND HAS BEEN REPOINTED DELIBERATELY. AIF-123 found the cause: filter::visible() -- the ONE gate LIST, COUNT, SMARTLIST, LOCATE, FIND, SCAN, EXPORT and logical_nav all ask, twelve callers -- applied SET FILTER and FOR and NEVER consulted SET DELETED. Not a LOCATE defect at all; LOCATE was behaving like every other caller of a gate with a missing rung. The rung had been absent since 06ba79e93 (2025-08-16), which rewrote LIST, replaced its Settings::deletedOn() read with a per-command flag, and PRESERVED THE DEFAULT WHILE SEVERING THE CONTROL -- so nothing changed on the path anyone ran and nothing could go red, for fourteen months. With the rung restored LOCATE reports 'Not Located.' and PG_T3 is INVERTED to assert that. PG_T3B is REPURPOSED rather than deleted: it used to read SUPERSEDED off the row LOCATE landed on, and with no landing it was reading a stale cursor and would have gone red for a reason unrelated to its own name; it now carries the OTHER HALF, that SET DELETED OFF still reaches the row. Both-halves is the point -- 'hidden under ON' asserts nothing without 'visible under OFF' beside it, because a build that hides unconditionally passes the first and fails the second. See SDVIS, which is built entirely on that principle. PG_T4 IS THE REFUSAL ARM AND IT GUARDS A RULE THAT CHANGED BETWEEN DESIGN AND CODE: the design said PURGE would refuse any name with a LIVE catalog row and send the caller to DESTROY first, until DESTROY's dispatch was actually read -- it resolves its target through resolve_workspace_token(), the RUNTIME registry, and answers 'no such workspace' for anything not currently declared. A catalog-only live head (the thirteen the 2026-08-24 census found: goneprobe, ls_probe, wm_regress and ten others) would have been reachable by NEITHER verb. The clause would have fenced off the exact rows the verb was ruled in to deal with -- the same mistake as calling workarea_util 'a shared home' before checking the second consumer could link it. What is refused instead is a workspace DECLARED IN THIS SESSION, whose identity must not be yanked out from under it. PG_G2 DELIBERATELY DOES NOT USE RECCOUNT(): USE_AGAIN measured that RECNO()/FOUND() render EMPTY in a '?' marker, RECCOUNT() serves compile_predicate rather than the marker path, and a marker that errors prints nothing rather than going red -- so that guard would have vanished from the suite while the count still read full. Every marker is a FIELD-VALUE comparison against WORKSPACES.dbf per the FIELDMGR_APPEND doctrine. Leaves its own rows behind flagged and superseded BY DESIGN: the file never shrinks, which is what ruling A chose, and the honest cost is 4 rows per run. SUPERSEDED 2026-08-29 BY THE L2 CATALOG BRACKET, and the clause above is LEFT STANDING because it was true when it was written. These rows no longer land in WORKSPACES.dbf at all. A spec flagged mints_catalog runs inside CatalogBracket, which re-points the WORKSPACES slot at a per-run scratch root and restores it from a destructor; it sits in run_regression_script, the ONE place any spec is run, so an EXPLICIT single-spec run is bracketed exactly as REGRESSION ALL is. This spec is flagged mints_catalog and is EXPLICIT-RUN, so it is bracketed on the same code path -- but it was NOT run on 2026-08-29 and its 4 is therefore NOT RE-MEASURED, stated rather than assumed. What is established is the DESTINATION, which follows from the flag plus the bracket's placement and needs no run of this spec to be true: whatever it mints goes to a per-run scratch root, and 'the file never shrinks' now describes a throwaway file. Re-measure the 4 when this spec is next run. NOT COVERED, stated rather than implied: that a purged row is genuinely delete-FLAGGED as opposed to merely hidden -- DELETED() is a predicate-path function, not a marker-path one, so PG_T3 proves reachability rather than the flag byte; a unit fixture over DbArea::isDeleted() is the honest home for that claim. RE-PURGE IS IDEMPOTENT AND IS NOW REPORTED AS SUCH, which this spec's own SECOND run exposed: the fixture uses stable names, so run two found run one's rows still carrying WSPRG1 and re-purged them, and the verb announced 'Purged 4 row(s), WS_ID 161,162,165,166' when only 165 and 166 had moved. The outcome was correct -- setting SUPERSEDED on a superseded row and re-flagging a flagged one changes nothing -- but the COUNT was not, and left alone every run would report a larger number for the same work: 2, then 4, then 6, with nothing saying why. WORKSPACE WRITEBACK's rule pointed at a different loop -- a count is a fact about a loop until something declares what it SHOULD be. The verb now reads each row's state before touching it and reports transitioned and already-purged rows separately. NOT ASSERTED BY AN ARM, stated rather than implied: no marker reads those counts, because markers are field-value comparisons and counts are console text; the idempotence is visible in the transcript and verified by reading it, the IDXDIFF precedent. Explicit-run until soaked.",
         false,
-        true  // AIF-078 L2: mints catalog rows -- bracket it (NEW x4)
+        true  // AIF-078 L2: mints catalog rows -- bracket it (NEW x6; WSPRG4 is
+              // minted twice by the 2026-09-06 adopt-then-DESTROY arm, and the
+              // second is an ADOPTION that writes no row)
     },
     {
         "SDVIS",
@@ -1157,6 +1159,89 @@ private:
     // root before the constructor body redirects the slot, and it must be
     // destroyed LAST.
     WorkspacesSlotGuard guard_;
+};
+
+// PATH-SLOT BRACKET -- the leak CatalogBracket's reasoning never covered.
+//
+// MEASURED 2026-09-06, one fresh session, three commands:
+//     REGRESSION CNXLIVE    -> 7/7 green
+//     REGRESSION MWXSHAKE   -> MWX_G6, MWX_T25, MWX_T26 RED, and the engine
+//                              printed the cause: "SET ORDER: openCdx: LMDB env
+//                              missing: ...\data\lmdb\STUDENTS.cdx.d"
+//     REGRESSION CNXLIVE    -> 7/7 green again
+//
+// MWXSHAKE did not fail on its own behaviour. CNXLIVE ran first, its `DO x32`
+// moved the INDEXES slot to INDEXES\x32 and left LMDB where it found it, and
+// MWXSHAKE inherited both. The same MWXSHAKE line that printed
+// "INDEXES = ...\INDEXES\SANDBOX, LMDB = ...\LMDB\SANDBOX" inside REGRESSION
+// ALL printed "INDEXES = ...\INDEXES\x32, LMDB = ...\data\lmdb" here. Same
+// spec, same line, different session history.
+//
+// THE CHANNEL IS R131. A workspace carries its own environment, DEFAULT
+// included, and DEFAULT captures whatever the session slots hold. So a spec
+// that moves a slot writes it into DEFAULT, and the NEXT spec gets it back the
+// moment it does WORKSPACE SWITCH DEFAULT. The leak runs in both directions and
+// through every spec, which is why it reads as "the suite poisons whatever runs
+// after it" rather than as one bad actor.
+//
+// WHAT MAKES IT BITE is a spec setting SOME of the three slots. `DO x32` moves
+// DBF and INDEXES and not LMDB; several specs do the same. A spec that sets two
+// of three inherits the third from whoever ran before it, and inherits it
+// silently -- openCdx then fails on a path nothing in the spec ever named.
+//
+// UNCONDITIONAL, unlike CatalogBracket's mints_catalog flag. A spec that mints
+// catalog rows can be identified by reading it; a spec that moves a path slot
+// cannot, because DO, SET PATH and WORKSPACE SWITCH all move slots and any of
+// them can arrive through a nested script. Restoring a slot that never moved is
+// a no-op; skipping a restore that was needed is the defect -- the same
+// argument WorkspacesSlotGuard's destructor already makes.
+//
+// THE THREE R131 SLOTS ONLY. Not SCRIPTS -- resolve_regression_script_path
+// reads it and the note at the call site says this must not disturb it. Not
+// WORKSPACES -- CatalogBracket owns that one and nesting two owners over one
+// slot is how a restore gets skipped.
+//
+// IT ANNOUNCES ONLY WHEN A SLOT ACTUALLY MOVED. A line per spec would drown the
+// transcript and teach people to skim it; a line only when something leaked is
+// the signal, and it names the spec so the leak has an owner.
+class PathSlotBracket {
+public:
+    explicit PathSlotBracket(std::string spec_name)
+        : spec_(std::move(spec_name)),
+          dbf_(dottalk::paths::get_slot(dottalk::paths::Slot::DBF)),
+          indexes_(dottalk::paths::get_slot(dottalk::paths::Slot::INDEXES)),
+          lmdb_(dottalk::paths::get_slot(dottalk::paths::Slot::LMDB))
+    {
+    }
+
+    ~PathSlotBracket()
+    {
+        restore_one(dottalk::paths::Slot::DBF,     dbf_,     "DBF");
+        restore_one(dottalk::paths::Slot::INDEXES, indexes_, "INDEXES");
+        restore_one(dottalk::paths::Slot::LMDB,    lmdb_,    "LMDB");
+    }
+
+    PathSlotBracket(const PathSlotBracket&) = delete;
+    PathSlotBracket& operator=(const PathSlotBracket&) = delete;
+
+private:
+    void restore_one(dottalk::paths::Slot slot,
+                     const std::filesystem::path& saved,
+                     const char* label) const
+    {
+        const std::filesystem::path now = dottalk::paths::get_slot(slot);
+        if (now == saved) return;
+        dottalk::paths::set_slot(slot, saved);
+        std::cout << "REGRESSION: path slot " << label
+                  << " was left at " << now.string()
+                  << " by " << spec_
+                  << "; restored to " << saved.string() << "\n";
+    }
+
+    std::string spec_;
+    std::filesystem::path dbf_;
+    std::filesystem::path indexes_;
+    std::filesystem::path lmdb_;
 };
 
 class TeeStreamBuf final : public std::streambuf {
@@ -2739,6 +2824,13 @@ void run_regression_script(DbArea& area, const RegressionSpec& spec)
         // cannot acquire a spec and forget it. Scoped to the DOTSCRIPT call and
         // nothing else -- resolve_regression_script_path above reads the
         // SCRIPTS slot, which this must not disturb.
+        //
+        // PathSlotBracket is declared FIRST so it is destroyed LAST: DBF,
+        // INDEXES and LMDB go back after CatalogBracket has already returned
+        // WORKSPACES, so neither restore can observe the other mid-flight. It
+        // is unconditional because any spec can move a path slot -- see the
+        // note on the class.
+        PathSlotBracket paths(spec.name);
         if (spec.mints_catalog) {
             CatalogBracket bracket(spec.name);
             cmd_DOTSCRIPT(area, dotscript_args);

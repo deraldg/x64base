@@ -61,6 +61,24 @@
 ; what PURGE refuses is a workspace DECLARED IN THIS SESSION, which is what
 ; actually needs protecting.
 ;
+; PG_G6/T6/T7/T8 ARE THE OTHER HALF OF THAT SENTENCE, added 2026-09-06. The
+; paragraph above says a catalog-only live head is reachable by neither verb and
+; stops there, which is where a reader stops too. It IS reachable -- by the two
+; of them in order, ADOPT-THEN-DESTROY -- and until now nothing in the corpus
+; ran that sequence, so the remedy the contract has recommended since 2026-08-30
+; was documentation with no proof under it. The occasion was a third sighting of
+; the shape: WS_ID 269 name `dbf`, the thirteen heads the 2026-08-24 census
+; found, and WS_ID 280 name MWXORD minted by an interactive paste on 2026-09-06.
+;
+; WHAT THESE FOUR DO NOT COVER, said plainly rather than left to be assumed.
+; DESTROY's refusal was changed the same day to PROBE THE CATALOG and print the
+; remedy instead of a bare "no such workspace". That message is a CONSOLE LINE
+; and this file asserts nothing about console lines -- so the text is UNTESTED
+; here and stays untested until a harness exists that can grade one. What these
+; arms hold down is the BEHAVIOUR the message points at: if adopt-then-DESTROY
+; ever stops retiring a head, the message becomes advice that does not work, and
+; PG_T7/T8 go red before a reader follows it.
+;
 ; Every marker is a FIELD-VALUE comparison against WORKSPACES.dbf, per the
 ; doctrine FIELDMGR_APPEND paid for: a spec that asserts SHAPE passes green on a
 ; blanked table. Nothing here reads a console line.
@@ -69,7 +87,7 @@
 ; on the two-row chain having actually been built, and on the ids being known.
 ;
 ; Leaves its own rows behind, flagged and superseded, BY DESIGN -- the file never
-; shrinks and that is what ruling A chose. Cost is 4 rows per run.
+; shrinks and that is what ruling A chose. Cost is 5 rows per run.
 ; Explicit-run until soaked.
 ; ============================================================================
 
@@ -81,6 +99,7 @@ SET DELETED ON
 WORKSPACE DESTROY WSPRG1
 WORKSPACE DESTROY WSPRG2
 WORKSPACE DESTROY WSPRG3
+WORKSPACE DESTROY WSPRG4
 
 ; --- BUILD A TWO-ROW CHAIN AT THE TOP OF THE CATALOG ------------------------
 ; Mint, retire, mint again, retire again. WSPRG1 now owns the two highest
@@ -266,6 +285,90 @@ SET PATH DBF &_WORKSPACES
 USE WORKSPACES
 LOCATE FOR ALLTRIM(WS_NAME) = "WSPRG3"
 ? "PG_T5_purge_alias_still_reaches_the_verb:" + (ALLTRIM(SUPERSEDED) = "1")
+CLOSE
+
+; ============================================================================
+; PG_G6 / PG_T6 / PG_T7 / PG_T8 -- A CATALOG-ONLY HEAD, AND THE TWO VERBS.
+;
+; A CATALOG-ONLY HEAD IS A CROSS-SESSION SHAPE AND THIS ARM MANUFACTURES IT IN
+; ONE, WHICH IS THE ONE LIBERTY TAKEN HERE AND IT IS TAKEN ON PURPOSE. In the
+; wild the row outlives the process that minted it: WORKSPACES.dbf keeps a live
+; row, the runtime registry that held its handle is gone, and the next session
+; meets a name the catalog calls live and the session has never heard of. A
+; regression spec runs inside ONE process and cannot wait for a restart, so the
+; state is built directly: mint WSPRG4, DESTROY it (handle gone, SUPERSEDED=1),
+; then REPLACE SUPERSEDED back to "0" in the table. Live row, no handle. That is
+; the shape, reached by a different road.
+;
+; THE REPLACE IS A WRITE TO THE PRODUCTION CATALOG AND IS NOT SMUGGLED. This
+; file already writes there through the verbs and says so in its header. What is
+; new is a HAND write, so it is confined to ONE row this file minted moments
+; earlier, under a name no other spec uses, and the arm retires that row before
+; it ends. It never touches a row it did not create.
+;
+; WHY DELETED VISIBILITY IS OFF THROUGHOUT. WSPRG4 is retired by DESTROY, which
+; sets SUPERSEDED and does NOT set the delete flag -- so the row is readable
+; either way. OFF is set explicitly anyway rather than inherited from PG_T5,
+; because an arm that depends on a setting made forty lines above it is an arm
+; that breaks when someone reorders the file.
+;
+; THE DISCRIMINATOR IS PG_T7 AND IT IS ONE COMPARISON: the WS_ID. Adoption is
+; the claim that NEW hands back the identity the name ALREADY MEANS. If NEW ever
+; mints instead of adopting -- the failure retire_durable_workspace calls "the
+; worst failure this verb has", a destroyed workspace's identity handed to a new
+; one -- the live row after NEW carries max_id+1, not the id captured before it.
+; Nothing else in the corpus separates those two worlds.
+; ============================================================================
+
+SET DELETED OFF
+
+; --- build the head: mint, retire, then make the row live again -------------
+
+WORKSPACE NEW WSPRG4
+WORKSPACE DESTROY WSPRG4
+
+SET PATH DBF &_WORKSPACES
+USE WORKSPACES
+LOCATE FOR ALLTRIM(WS_NAME) = "WSPRG4"
+VAR hid = WS_ID
+REPLACE SUPERSEDED WITH "0"
+? "PG_G6_head_row_is_live_again:" + (ALLTRIM(SUPERSEDED) = "0")
+CLOSE
+
+; --- PG_T6: DESTROY ALONE CANNOT REACH IT -----------------------------------
+; The handle died with the DESTROY above. This second DESTROY resolves through
+; the RUNTIME registry, finds nothing, and must change no row. A refusal that
+; quietly retired the head anyway would make the whole scope rule a fiction.
+
+WORKSPACE DESTROY WSPRG4
+
+SET PATH DBF &_WORKSPACES
+USE WORKSPACES
+LOCATE FOR WS_ID = $hid
+? "PG_T6_destroy_alone_left_the_head_live:" + (ALLTRIM(SUPERSEDED) = "0")
+CLOSE
+
+; --- PG_T7: NEW ADOPTS THE IDENTITY RATHER THAN MINTING A SECOND ONE --------
+
+WORKSPACE NEW WSPRG4
+
+SET PATH DBF &_WORKSPACES
+USE WORKSPACES
+LOCATE FOR ALLTRIM(WS_NAME) = "WSPRG4" .AND. ALLTRIM(SUPERSEDED) = "0"
+? "PG_T7_new_adopted_the_same_ws_id:" + (WS_ID = $hid)
+CLOSE
+
+; --- PG_T8: AND THE SECOND DESTROY RETIRES THAT VERY ROW --------------------
+; Addressed BY WS_ID, not by name. A name lookup would be satisfied by any row
+; the pair happened to leave behind; the id is what proves the head itself was
+; the thing retired.
+
+WORKSPACE DESTROY WSPRG4
+
+SET PATH DBF &_WORKSPACES
+USE WORKSPACES
+LOCATE FOR WS_ID = $hid
+? "PG_T8_adopt_then_destroy_retired_the_head:" + (ALLTRIM(SUPERSEDED) = "1")
 CLOSE
 
 SET DELETED ON
