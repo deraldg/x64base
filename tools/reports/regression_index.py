@@ -30,11 +30,32 @@ REG_CPP = "src/cli/cmd_regression.cpp"
 SCRIPT_ROOT = "dottalkpp/data/scripts"
 GH = "https://github.com/deraldg/x64base/blob"
 
-# Each entry: { "NAME", "script\\path.dts", "summary", true|false }. The char class
-# handles escaped quotes and the doubled backslashes in Windows-style script paths.
+# Each entry OPENS { "NAME", "script\\path.dts", "summary", true|false ... and may
+# then carry MORE FIELDS. The char class handles escaped quotes and the doubled
+# backslashes in Windows-style script paths.
+#
+# THE TRAILING TOKEN IS `,` OR `}` AND THAT IS THE WHOLE BUG THIS LINE ONCE HAD.
+# RegressionSpec has SEVEN members -- name, script, summary, in_default_suite,
+# mints_catalog, validator, capture_routed_channel -- and the last three carry
+# defaults, so an entry may be written in the 4-field short form OR with any of
+# the trailing three supplied. The original pattern ended `(true|false)\s*\}`,
+# which matches ONLY the short form. Every richer entry was dropped SILENTLY.
+#
+# MEASURED 2026-09-05, before the fix: kRegressionSpecs holds 77 entries and this
+# parser found 40 -- and the 37 it lost were systematically the MOST INSTRUMENTED
+# ones, because supplying a validator or a catalog bracket is exactly what makes
+# an entry too long to match. Every SQLSEL_* spec, MWXSHAKE, WSENV, WSLADDER and
+# NULLASSERT were invisible. So the page said "no join specs" for the same reason
+# the prose pages said "no JOIN": the instrument could not see them.
+#
+# DEF_FAMILY IS THE PROOF THAT THIS GETS WORSE WITH CARE, not better. It matched
+# while it was a bare 4-field entry and appeared on the page as [explicit]. The
+# day it gained DefFamilyV1 and capture_routed_channel it DROPPED OUT -- adding a
+# grader to a spec removed the spec from the published catalogue. A generator
+# whose blind spot grows as the code improves is worse than one that fails loudly.
 _STR = r'"((?:[^"\\]|\\.)*)"'
 SPEC_RE = re.compile(
-    r"\{\s*" + _STR + r"\s*,\s*" + _STR + r"\s*,\s*" + _STR + r"\s*,\s*(true|false)\s*\}",
+    r"\{\s*" + _STR + r"\s*,\s*" + _STR + r"\s*,\s*" + _STR + r"\s*,\s*(true|false)\s*(?:,|\})",
     re.DOTALL,
 )
 
@@ -57,13 +78,89 @@ def _clean_paths(s: str) -> str:
     return _WINPATH.sub(lambda m: m.group(0).replace('\\', '/').rsplit('/', 1)[-1], s)
 
 
+def _split_entries(body: str) -> list[str]:
+    """Split the registry body into top-level { ... } entries, brace-aware.
+
+    A REGEX CANNOT DO THIS AND TWO DIFFERENT REGEXES ALREADY FAILED AT IT.
+    The first ended `(true|false)\\s*\\}`, which matched only the 4-field short
+    form and silently dropped all 37 entries carrying a validator or a catalog
+    bracket. Widening the tail to `,|\\}` recovered 32 of them and still lost
+    five, for a SECOND and unrelated reason: a C++ summary may be written as
+    ADJACENT STRING LITERALS across several lines, so the scanner meets
+    `"..." "..."` where it expects `"...",`.
+
+    Two failures with two causes is the signal to stop widening a pattern and
+    parse the structure instead. This walks brace depth while respecting string
+    literals and escapes, so neither extra fields nor split literals can hide an
+    entry -- and a THIRD field arriving later cannot either.
+    """
+    entries, depth, start, i, n = [], 0, None, 0, len(body)
+    while i < n:
+        c = body[i]
+        if c == '"':                      # skip a literal whole, escapes included
+            i += 1
+            while i < n and body[i] != '"':
+                i += 2 if body[i] == '\\' else 1
+        elif c == '{':
+            if depth == 0:
+                start = i
+            depth += 1
+        elif c == '}':
+            depth -= 1
+            if depth == 0 and start is not None:
+                entries.append(body[start:i + 1])
+                start = None
+        i += 1
+    return entries
+
+
+_LIT = re.compile(r'"((?:[^"\\]|\\.)*)"')
+_BOOL = re.compile(r"\b(true|false)\b")
+
+
+_LINE_COMMENT = re.compile(r"//[^\n]*")
+
+
+def _literal_runs(entry: str) -> list[tuple[str, int]]:
+    """Concatenated adjacent C++ literals with each run's END OFFSET, in order:
+    name, script, summary, ...
+
+    THE OFFSET IS RETURNED BECAUSE THE FIRST VERSION OF THIS PARSER SEARCHED FOR
+    THE BOOL AFTER THE ENTRY'S *LAST* QUOTE, AND A TRAILING COMMENT CAN CONTAIN
+    ONE. DEF_FAMILY's final field carries `// "Unknown command:" is cmdout, not
+    cout`, so the scan started inside that comment, found no bool, defaulted to
+    false, and reported a DEFAULT-SUITE spec as explicit -- the single wrong row
+    in an otherwise complete 77. Caught by diffing the generated default set
+    against the 28 specs REGRESSION ALL actually ran, rather than by stopping at
+    "77 entries, that's all of them."
+    """
+    runs, cur, start, last_end = [], [], None, None
+    for m in _LIT.finditer(entry):
+        if last_end is not None and entry[last_end:m.start()].strip(" \t\r\n"):
+            runs.append(("".join(cur), last_end)); cur = []   # something broke the run
+        cur.append(m.group(1)); last_end = m.end()
+    if cur:
+        runs.append(("".join(cur), last_end))
+    return runs
+
+
 def parse_specs(root: Path) -> list[dict]:
     """Parse kRegressionSpecs from cmd_regression.cpp into ordered dicts."""
     text = (root / REG_CPP).read_text(encoding="utf-8", errors="replace")
-    block = re.search(r"kRegressionSpecs\{\{(.*?)\}\};", text, re.DOTALL)
+    block = re.search(r"kRegressionSpecs\{\{(.*?)\n\}\};", text, re.DOTALL)
     body = block.group(1) if block else text
+    parsed: list[tuple[str, str, str, str]] = []
+    for entry in _split_entries(body):
+        runs = _literal_runs(entry)
+        if len(runs) < 3:
+            continue                                  # not a spec entry
+        after = entry[runs[2][1]:]                    # the fields past the SUMMARY
+        after = _LINE_COMMENT.sub("", after)          # a comment may say true/false
+        b = _BOOL.search(after)
+        parsed.append((runs[0][0], runs[1][0], runs[2][0],
+                       b.group(1) if b else "false"))
     specs: list[dict] = []
-    for name, script, summary, default in SPEC_RE.findall(body):
+    for name, script, summary, default in parsed:
         rel = _unescape(script).replace('\\', '/')
         cat = rel.split('/', 1)[0] if '/' in rel else "core"
         specs.append({
