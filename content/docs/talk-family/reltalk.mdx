@@ -15,9 +15,14 @@ Its subject is connected data across work areas. It covers:
 - saved workspace relation state
 - rooted traversal and browser output through `ERSATZ`
 
-RelTalk is navigational rather than set-oriented, but navigational does not mean
-join-less: `REL JOIN` is where joins live today. SQL-syntax `JOIN` inside a
-`SQLSEL` statement is [not yet implemented](/products/sqlsel).
+RelTalk is navigational rather than set-oriented, and both surfaces now join.
+`REL JOIN` walks a **declared** graph -- edges you established in advance with
+`REL ADD` -- and answers "where do I go from here?". SQL-syntax `JOIN` inside a
+[`SQLSEL`](/docs/talk-family/sqlsel) statement declares nothing, names its own
+tables and `ON` columns in the statement, reads no `REL` or `SET RELATION` state,
+and answers "which rows satisfy this?". Neither replaces the other: one follows a
+structure you asserted about your data, the other asks a question that stands on
+its own.
 
 Real local command surfaces include:
 

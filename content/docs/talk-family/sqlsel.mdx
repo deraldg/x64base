@@ -9,18 +9,32 @@ SQLsel names the SQL-facing query workflows in DotTalk++ / x64base.
 
 Its subject is set-oriented retrieval rather than cursor navigation. It covers:
 
-- a `SELECT` statement over an open work area
-- `WHERE` filtering, `ORDER BY` with direction, `LIMIT`
-- `COUNT(*)` with or without a predicate
-- statement scoping: no session state read, no cursor moved
+- a `SELECT` statement over one or more open work areas
+- `WHERE` filtering, `ORDER BY` with direction, `LIMIT`, `DISTINCT`
+- `INNER`, `LEFT`, `RIGHT`, `FULL` and `CROSS` joins
+- aggregates -- `COUNT`, `SUM`, `AVG`, `MIN`, `MAX` -- with `GROUP BY` and `HAVING`
+- set operations: `UNION`, `UNION ALL`, `INTERSECT`, `EXCEPT`
+- subqueries: `IN (<select>)` and `[NOT] EXISTS (<select>)`
+- expression projection, so `TRIM(LNAME)` is a column
+- DML -- `INSERT`, `UPDATE`, `DELETE` -- and explicit transactions under SQL mode
+- statement scoping: no session state read, no cursor left moved
+
+`SELECT` is optional. `SQLSEL` is itself the verb, and `SQLSEL SELECT ...` also
+parses -- not to be confused with xBase `SELECT <area>`, which switches the
+active work area.
 
 Real local command surfaces include:
 
 ```text
-SQLSEL SELECT SID,LNAME FROM STUDENTS
-SQLSEL SELECT * FROM STUDENTS WHERE MAJOR = "CSCI"
-SQLSEL SELECT SID,LNAME FROM STUDENTS ORDER BY LNAME DESC LIMIT 2
-SQLSEL SELECT COUNT(*) FROM STUDENTS WHERE GPA >= 3.0
+SQLSEL SID,LNAME FROM STUDENTS WHERE MAJOR = "CSCI"
+SQLSEL SID,LNAME FROM STUDENTS ORDER BY LNAME DESC LIMIT 2
+SQLSEL COUNT(*) FROM STUDENTS WHERE GPA >= 3.0
+SQLSEL S.LNAME,E.COURSE FROM STUDENTS AS S JOIN ENROLL AS E ON S.SID = E.SID
+SQLSEL S.LNAME,E.COURSE FROM STUDENTS AS S LEFT JOIN ENROLL AS E ON S.SID = E.SID
+SQLSEL MAJOR,COUNT(*),AVG(GPA) FROM STUDENTS GROUP BY MAJOR HAVING COUNT(*) > 5
+SQLSEL DISTINCT MAJOR FROM STUDENTS
+SQLSEL SID FROM STUDENTS WHERE SID IN (SQLSEL SID FROM ENROLL)
+SQLSEL UPDATE STUDENTS SET GPA = 4.0 WHERE SID = 50000000
 SQLSEL USAGE
 ```
 
@@ -41,20 +55,59 @@ visibly fails its own `WHERE` clause.
 
 ## Verification
 
-`REGRESSION SQLSEL_SELECT_V1` compares every result set against an in-process
-SQLite oracle over identical data in the same run, and asserts:
+Every SQLsel regression compares its result sets against an **in-process SQLite
+oracle over identical data in the same run** -- not against a recorded expectation,
+so a shared misunderstanding between our writer and our reader cannot pass.
 
-- `ORDER BY` sorts the full match set before `LIMIT` cuts it
-- cursor position is unchanged, checked by data
-- corrective errors for an unopened table, an expression where a column belongs,
-  a bad `LIMIT`, an unknown `ORDER BY` field, and `ORDER BY` on `COUNT(*)`
-- `LIMIT` reports what it withheld; `ORDER BY` reports its access path
+**Six run in the default suite on every `REGRESSION ALL`:**
 
-## Not yet implemented
+| spec | what it holds |
+|---|---|
+| `SQLSEL_SELECT_V1` | projection, `WHERE`, `ORDER BY` before `LIMIT`, `COUNT(*)`, expression projection, seven corrective refusals, cursor restoration checked by data |
+| `SQLSEL_INNER_JOIN` | inner join, alias qualification, both access paths, cursor restoration on both sides |
+| `SQLSEL_LEFT_JOIN` | left join, `<UNMATCHED>` distinct from a genuine blank, outer `WHERE` and UNKNOWN, the left-extension count reported |
+| `SQLSEL_JOIN_FAMILY` | `RIGHT`, `FULL` and `CROSS`, including the Cartesian count |
+| `SQLSEL_JOIN_EDGES` | numeric and character keys, seek and scan agreeing row for row, a caller's table lock preserved across the statement |
+| `SQLSEL_BUFFER_VIS` | committed-versus-buffered visibility, rollback and commit distinguished |
 
-`JOIN`, `GROUP BY` / `HAVING`, expression projection, SQL DML, and the bare
-`SELECT` alias. The table must already be open: SQLsel reads open work areas and
-does not open files.
+**Seven more are explicit-run rather than default**, and that distinction is worth
+stating rather than blurring: `SQLSEL_SET_OPS`, `SQLSEL_AGGREGATES`,
+`SQLSEL_SUBQUERIES`, `SQLSEL_ADVANCED_JOIN`, `SQLSEL_DML`, `SQLSEL_WORKSPACE` and
+`SQLMODE_SMOKE`. Those features ship and have oracle-compared specs; those specs
+are not yet in the suite that runs every time.
+
+## What a join does that a reader should know in advance
+
+- **Nothing is declared.** No `REL` or `SET RELATION` state is read. A join names
+  its own tables and its own `ON` columns.
+- **Both tables must already be open.** SQLsel reads open work areas and does not
+  open files. `INNER`, `LEFT` and `CROSS` may chain across three or more.
+- **Produced absence is not a blank.** An unmatched outer row renders
+  `<UNMATCHED>`; a genuine empty cell in the DBF stays empty. The two are
+  different facts and the output says which one it is.
+- **`WHERE` runs after outer extension**, so a comparison against a produced-absent
+  cell is UNKNOWN and `WHERE` keeps only TRUE -- which is what makes
+  `WHERE <right column> IS absent` behave the way SQL readers expect.
+- **The access path is reported**, not guessed at: a join prints whether it took a
+  CDX seek on the inner table with its probe and candidate counts, or a
+  nested-loop scan with both row counts.
+- **A join takes a non-blocking two-table read fence.** Lock contention refuses
+  the statement before either table is read, rather than half-reading it.
+
+## Gaps, stated
+
+- **The bare `SELECT ...` alias is still planned.** `SET MODE [TO] NATIVE|SQL|OTHER`
+  exists and is session-only; the prefix-free form is not the same thing and is
+  not shipped.
+- **Explicit transactions require SQL mode and accept ONE target table.**
+  Cross-table atomic commit is refused.
+- **No stored NULL in DML, and no memo-field DML.** Both are refused rather than
+  silently coerced.
+- **A subquery over a joined outer scope is refused.** Correlated subqueries over
+  a single outer table work and report their actual evaluation count.
+- **It reads committed table truth.** Under `TABLE BUFFER ON` an uncommitted edit
+  is not visible to a statement -- see Statement scoping above, where that is
+  argued as a ruling rather than a limitation.
 
 ## SQLsel and RelTalk
 

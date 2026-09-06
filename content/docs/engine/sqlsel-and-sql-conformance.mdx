@@ -106,17 +106,31 @@ by the arrival of SQL; the two answer different questions.
 
 **They are related** in that both ultimately read the same DBF tables through the
 same indexes, and both can produce join-shaped rows. They are **not the same
-thing**, and this documentation will not describe one as the other. When SQL
-joins arrive they will be built as their own set-matching path rather than
-compiled down to declared traversal, specifically so the distinction survives
-contact with the implementation.
+thing**, and this documentation will not describe one as the other. That was
+written before SQL joins existed, predicting they would be built as their own
+set-matching path rather than compiled down to declared traversal, specifically
+so the distinction survived contact with the implementation. **They have since
+arrived and the prediction held**: a `SQLSEL` join names its own tables and `ON`
+columns in the statement and reads no `REL` or `SET RELATION` state at all.
 
 See [RelTalk](/docs/talk-family/reltalk) for the relation-graph surface in full.
 
-There is one further honest wrinkle: SQL `LEFT JOIN` fills unmatched columns with
-`NULL`, and **x64base has no NULL** - a blank is a value. Unmatched rows will
-therefore carry an explicit marker rather than a blank that could be mistaken for
-real data, and the count of extended rows will be reported.
+There is one further honest wrinkle, and it has two halves that must not be
+collapsed. SQL `LEFT JOIN` fills unmatched columns with `NULL`. **x64base now HAS
+a NULL** -- VFP-flavour tables carrying a `_NullFlags` column store a real null
+bit, `.NULL.` is a writable value, `ISNULL(<field>)` answers in a `FOR` predicate,
+and the encoding is byte-verified against files Visual FoxPro itself wrote. A
+blank is still a value, and a null is now a *different* value: the whole point of
+`ISNULL` is that a null cell and a blank cell both read as the empty string, so no
+value comparison can separate them.
+
+**Outer joins do not use it.** An unmatched row carries the explicit
+`<UNMATCHED>` marker rather than a blank that could be mistaken for real data or
+a null that would claim more than the join knows, and the count of extended rows
+is reported. `SQLSEL` DML likewise **refuses** to store a null rather than
+coercing one. Those are deliberate rulings, not gaps: produced absence in a
+result set and a stored null in a cell are different facts, and the output says
+which one it is looking at.
 
 ## SQL conformance map
 

@@ -97,7 +97,7 @@ Deeper: [CDX / LMDB Indexing](/docs/engine/cdx-lmdb-indexing) ·
 | --- | --- |
 | Work areas | 512 slots (a compatibility default with no architectural upper bound; per-slot cost measured at ~1.3 KB, allocated eagerly) |
 | Relations | declared graph; traversal is refresh-driven; proven at 58 foreign-key relations over 43 open areas, walked by two independent consumers that agree by value |
-| SELECT | `SQLSEL`: WHERE, ORDER BY, LIMIT, COUNT(*), verified against an in-process SQLite oracle; no JOIN or GROUP BY yet, stated plainly |
+| SELECT | `SQLSEL`: WHERE, ORDER BY, LIMIT, DISTINCT, COUNT(*); INNER / LEFT / RIGHT / FULL / CROSS join; aggregates with GROUP BY and HAVING; UNION / INTERSECT / EXCEPT; IN and EXISTS subqueries; expression projection; INSERT / UPDATE / DELETE with single-table transactions. Every result set verified against an in-process SQLite oracle over identical data in the same run. Six specs in the default suite, seven more explicit-run. Still absent, stated plainly: the bare `SELECT` alias without the `SQLSEL` prefix, cross-table atomic commit, stored NULL and memo-field DML, and subqueries over a joined outer scope |
 | Transactions | WAL-backed COMMIT / ROLLBACK on buffered writes (proven at the record level) |
 | Uniqueness | a uniqueness registry with declaration (SET UNIQUE), validation, and index-maintaining repair |
 | RAM virtual disk | in-process, path-keyed byte files; hosts tables and native CDX; LMDB excluded by its own mmap contract; census-reporting; budget config with sizing recommendation and soft high-water |

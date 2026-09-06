@@ -125,9 +125,13 @@ See: [Workspaces](/docs/engine/workspaces), [Current Work Lanes](/docs/dev/curre
   cursor is positioned, so moving the parent changes the output.
 - **TableTalk** names table buffering, including dirty and stale table state.
 - **RelTalk** names relation-facing workflows such as relation trees, descendant
-  summaries, and relation-aware browse output -- and it is where joining lives:
-  `REL JOIN` walks a parent and its children and emits one tuple per
-  combination, which is a different output from the positioned projection above.
+  summaries, and relation-aware browse output -- and it is where **declared**
+  joining lives: `REL JOIN` walks a parent and its children along edges you
+  established with `REL ADD`, emitting one tuple per combination, which is a
+  different output from the positioned projection above. SQL-syntax joining lives
+  in [SQLsel](/docs/talk-family/sqlsel) instead, declares nothing in advance, and
+  reads no relation state at all -- two join surfaces answering two different
+  questions.
 
 These are lanes and product names around actual runtime concerns, not interchangeable labels.
 
@@ -150,9 +154,13 @@ Yes, and the honest answer needs the distinction, because several commands carry
 workspace system and is kept as a reference surface, not as the query engine.
 
 Maturity, stated plainly: this family is **in progress**. It runs and is actively
-developed, and that is not the same as a claim of completeness. Joins and
-`GROUP BY` are not implemented in the SELECT slice, and a command's page may show
-a catalog status broader than its own contract claims (see below).
+developed, and that is not the same as a claim of completeness. The SELECT slice
+now carries the full join family, grouping and aggregates, set operations,
+subqueries and single-table transactional DML -- each verified against an
+in-process SQLite oracle -- while the bare `SELECT` alias without the `SQLSEL`
+prefix, cross-table atomic commit, stored NULL in DML and subqueries over a
+joined outer scope remain absent. A command's page may also show a catalog status
+broader than its own contract claims (see below).
 
 See: [SQLsel](/docs/talk-family/sqlsel),
 [SQL conformance](/docs/engine/sqlsel-and-sql-conformance)
