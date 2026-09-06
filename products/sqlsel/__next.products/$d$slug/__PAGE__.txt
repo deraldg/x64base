@@ -1,7 +1,7 @@
 1:"$Sreact.fragment"
-4:I[97367,["/_next/static/chunks/3pk--bqe2jwv9.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
+4:I[97367,["/_next/static/chunks/0384zzsp-3hoq.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
 5:"$Sreact.suspense"
-2:T2826,<h2 id="overview"><a class="no-underline" href="#overview">Overview</a></h2>
+2:T2c42,<h2 id="overview"><a class="no-underline" href="#overview">Overview</a></h2>
 <p>SQLsel names the SQL-facing query workflow in the DotTalk++ / x64base system.</p>
 <p>Its subject is set-oriented retrieval: a <code>SELECT</code> statement that describes the
 rows it wants and returns them, rather than positioning a cursor and navigating.
@@ -76,11 +76,16 @@ predicate evaluator is two-valued. Rather than answer the question wrongly, the
 statement is refused and the reason is named. <strong>This is the interesting half of
 the feature</strong>: the boundary is enforced in the engine, not written down in a
 document and hoped for.</p>
-<p>It is also the first consumer of a discipline set in July. R29 ruled that stored
-<code>NULL</code> would not be implemented but that everything authored afterwards should be
-<em>shaped</em> so adding it later is an extension rather than a rewrite. The absence
-cell renders through a single routine, and its own comment says so: <em>"future
-stored NULL must extend this switch."</em></p>
+<p>It is also the first consumer of a discipline set in July: stored <code>NULL</code> would
+not be implemented then, but everything authored afterwards should be <em>shaped</em>
+so adding it later is an extension rather than a rewrite. The absence cell
+renders through a single routine, and its own comment says so: <em>"future stored
+NULL must extend this switch."</em></p>
+<p>That discipline has since been vindicated on the engine side. Stored <code>NULL</code>
+arrived on 2026-09-05 -- a VFP-flavour table carries a real <code>_NullFlags</code> bit,
+proven on every <code>REGRESSION ALL</code> by the <code>NULLASSERT</code> spec -- and it arrived as
+an extension, not a rewrite. SQLsel's own write surface is a separate question,
+and the boundary below states it.</p>
 <h2 id="the-guards-run-by-default-and-promoting-them-found-a-bug"><a class="no-underline" href="#the-guards-run-by-default-and-promoting-them-found-a-bug">The guards run by default, and promoting them found a bug</a></h2>
 <p>Fourteen fail-closed regression specifications cover SQLsel, and as of
 <code>8df02addf</code> the four guarding the hardest surface -- outer joins, join edges,
@@ -113,12 +118,20 @@ separate resolver and is not covered by it.</p>
 <p>Stated as boundaries rather than a to-do list, because each is a decision with a
 reason:</p>
 <ul>
-<li><strong>No stored SQL <code>NULL</code>.</strong> Blank is a value (R16); outer-join absence is a
-produced cell, a distinct kind. R29 declined stored NULL while requiring
-everything since be shaped so adding it is an extension.</li>
+<li><strong>SQLsel DML will not WRITE a stored <code>NULL</code>.</strong> It refuses rather than
+coercing a blank, a fail-closed control the <code>SQLSEL_DML</code> spec pins. Read the
+narrowing carefully, because an earlier wording of this bullet said "no
+stored SQL <code>NULL</code>" flatly and that is no longer true of the engine: x64base
+HAS a stored null on VFP-flavour tables. What this boundary describes is
+SQLsel's write path, not the database. Inside a statement, blank remains a
+value (R16) and outer-join absence remains a produced cell -- three distinct
+kinds, not two.</li>
 <li><strong>No memo-field transactional DML</strong>, and <strong>no cross-table atomic commit</strong> --
 <code>COMMIT ALL</code> remains partial across DBF, memo and index storage.</li>
-<li><strong>No generalized multi-chain <code>RIGHT</code> / <code>FULL</code> join.</strong></li>
+<li><strong>No generalized multi-chain <code>RIGHT</code> / <code>FULL</code> join.</strong> The two-table forms
+ship and are oracle-checked on every run (<code>SQLSEL_JOIN_FAMILY</code> covers
+<code>RIGHT</code>, <code>FULL</code> and <code>CROSS</code>); it is the three-table CHAINS that remain
+<code>INNER</code> / <code>LEFT</code> only (<code>SQLSEL_ADVANCED_JOIN</code>). The bullet is about chains.</li>
 </ul>
 <p>The surface moves faster than this page. <a href="https://github.com/deraldg/x64base/blob/development/docs/manuals/user/sqlsel.md">The SQLsel manual</a>
 is the authority for what the command accepts today.</p>
@@ -130,6 +143,6 @@ RelTalk is the older model, inherited through the xBase line; SQLsel is the newe
 one. Neither replaces the other.</p>
 <p>See <a href="/docs/engine/sqlsel-and-sql-conformance">SQLsel and SQL Conformance</a> for the
 verification detail and the conformance map, <a href="/docs/talk-family/reltalk">RelTalk docs</a>,
-and the canonical public repo <a href="https://github.com/deraldg/x64base">deraldg/x64base</a>.</p>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=050ff09f54d2","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/?v=050ff09f54d2","children":"Products"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products/sqlsel",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/sqlsel/?v=050ff09f54d2","children":"SQLsel"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"SQLsel"}],["$","p",null,{"className":"mt-2 text-muted","children":"Set-oriented SELECT over open work areas, verified against a SQLite oracle."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose dark:prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:break-words prose-code:whitespace-normal prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30 prose-pre:text-fg [&_pre_code]:text-fg [&_pre_code_span]:text-inherit","dangerouslySetInnerHTML":{"__html":"$2"},"children":null}]}]]}],null,"$L3"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"XsBO3bT7ylpx8agw46F9N"}
+and the canonical public repo <a href="https://github.com/deraldg/x64base">deraldg/x64base</a>.</p>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=c9662a1a5602","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/?v=c9662a1a5602","children":"Products"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products/sqlsel",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/sqlsel/?v=c9662a1a5602","children":"SQLsel"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"SQLsel"}],["$","p",null,{"className":"mt-2 text-muted","children":"Set-oriented SELECT over open work areas, verified against a SQLite oracle."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose dark:prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:break-words prose-code:whitespace-normal prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30 prose-pre:text-fg [&_pre_code]:text-fg [&_pre_code_span]:text-inherit","dangerouslySetInnerHTML":{"__html":"$2"},"children":null}]}]]}],null,"$L3"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"VkitOKElM3CSa3kTv_OMZ"}
 3:["$","$L4",null,{"children":["$","$5",null,{"name":"Next.MetadataOutlet","children":"$@6"}]}]
 6:null
