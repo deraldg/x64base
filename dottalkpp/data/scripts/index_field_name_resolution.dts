@@ -49,20 +49,33 @@
 * an engine that accepted SET ORDER and walked physically anyway reads T1. The
 * three worlds are separated by one comparison each.
 *
-* WHAT THIS FIRST CUT DOES NOT COVER, said here rather than left to be assumed:
+* THE SECOND CUT LANDED 2026-09-06 AND SECTION 3 IS IT. The first cut left two
+* branches uncovered and named them; both are now covered, so the note is
+* rewritten rather than left standing as a to-do that is done:
 *
 *   - THE MANGLED TOKEN. Two fields whose first ten bytes collide get DOS-style
-*     ~n aliases (COURSE_~1). No arm here builds that collision, so the
-*     mangling branch of plan_x64_unique_fallback is UNPROVEN through the index
-*     layer. It was left out deliberately: '~' in a tag argument is an
-*     unmeasured question about the tokenizer, and putting an untested parse
-*     inside the arm that proves the resolver would muddy both results.
+*     ~n aliases. Deferred at first because '~' in a tag argument was an
+*     unmeasured question about the tokenizer. MEASURED: cmd_SETORDER reads its
+*     arguments with `args >> t`, which is whitespace-delimited; '#' is the
+*     ordinal sigil (cmd_setorder.cpp:389) and '~' is special to nothing in the
+*     script reader, dotscript or xexpr. T11 covers it.
 *
-*   - LOGICAL WINS OVER A COLLIDING TOKEN. Policy rule 1 says an authoritative
-*     name beats an alias. Proving it needs a field whose logical name IS
-*     another field's token, which is the same collision as above.
+*   - LOGICAL WINS OVER A COLLIDING TOKEN. Policy rule 1. T10 covers it, and
+*     building the collision took a specific insight -- see section 3.
 *
-* Both want a second cut. Neither is covered by anything else in the corpus.
+* WHAT IS STILL NOT COVERED, and it is not coverable from a fixture: the
+* resolver's AMBIGUITY branch, which returns -1 when a token maps to two fields.
+* plan_x64_unique_fallback inserts descriptor_key(token) into a `used` set and
+* re-mangles until the key is free, so tokens are DISTINCT BY CONSTRUCTION; and
+* for a generated token field_name_core_ and descriptor_key agree exactly, since
+* a token comes out of normalize_descriptor_base as [A-Z0-9_] plus a possible
+* '~' -- never whitespace to trim, never a NUL to truncate. At most one field
+* can match. THE BRANCH CANNOT FIRE, and no fixture can make it. It is not dead
+* weight: it is defence-in-depth against a future planner that stops
+* guaranteeing uniqueness. What IS wrong is the resolver's own comment, which
+* says fallback aliases "are accepted only when they map uniquely" and reads as
+* though the resolver decides uniqueness. The PLANNER decides it; the resolver
+* re-checks.
 *
 * THE THREE PATH SLOTS ARE ALL SET, AND THAT IS NOT BOILERPLATE. This file was
 * written the day MWXSHAKE was found red because section 5B re-set DBF and
@@ -70,7 +83,7 @@
 * had put it (R131). A CDX on real disk is LMDB-backed; a wrong LMDB slot is
 * `openCdx: LMDB env missing` and three markers reading the physical order.
 *
-* READ RULE: ten markers must PRINT and all ten read .T.
+* READ RULE: fourteen markers must PRINT and all fourteen read .T.
 *   grep -c '^? "TAGF_'  <-- run this, read the run against THAT
 * An errored marker prints NOTHING rather than going red, so COUNT them. If
 * TAGF_G0/G1 are not both .T. the fixture is not what the arms assume and no
@@ -260,6 +273,107 @@ BOTTOM
 CLOSE
 
 * ===========================================================================
+* SECTION 3 -- THE COLLISION, WHICH IS WHERE THE POLICY ACTUALLY HAS TO CHOOSE.
+*
+* SECTIONS 1 AND 2 NEVER MADE THE RESOLVER DECIDE ANYTHING. Every name there
+* matched exactly one field by exactly one rule, so "logical names win" was
+* never tested -- there was nothing for them to win against. This section builds
+* the case where one spelling is BOTH a logical name and another field's alias,
+* and the answer differs depending on which rule fires.
+*
+* THE FIXTURE TOOK A SPECIFIC INSIGHT AND THE FIRST TWO ATTEMPTS WERE DUDS.
+* plan_x64_unique_fallback walks fields IN ORDER and gives the plain token to
+* whoever asks first, mangling everyone after. So ordering the long field SECOND
+* does not create a contest -- the planner has already settled it, and both
+* spellings land on the same field. The competition only exists when the field
+* whose LOGICAL NAME is the contested spelling comes AFTER the field that took
+* that spelling as its TOKEN. Traced against the planner:
+*
+*     STUDENT_LAST_NAME  ->  STUDENT_LA     (takes the plain token, field 1)
+*     STUDENT_LABEL      ->  STUDENT_~1     (collides, mangled,     field 2)
+*     STUDENT_LA         ->  STUDENT_~2     (collides, mangled,     field 3)
+*     TAILKEY            ->  TAILKEY                              (field 4)
+*
+* Now `STUDENT_LA` means TWO things: field 3's authoritative name, and field 1's
+* descriptor token. Rule 1 says field 3 wins. Nothing else in the corpus asks.
+*
+* FOUR ROWS, BECAUSE THREE CANNOT SEPARATE FOUR WORLDS. The physical order and
+* the three tag orders must each land on a different row, or an arm cannot tell
+* a correct answer from a lucky one:
+*
+*     physical                   T1
+*     by STUDENT_LAST_NAME       T2      (field 1, reached by its logical name)
+*     by STUDENT_LABEL           T3      (field 2, reached by its MANGLED token)
+*     by STUDENT_LA              T4      (field 3, reached by LOGICAL WIN)
+*
+* T9 IS NOT A FORMALITY. Without it, T10's claim -- "STUDENT_LA resolved to
+* field 3, NOT field 1" -- is unfalsifiable, because nothing would have shown
+* field 1 is reachable at all. T9 orders by field 1's own logical name and
+* demands T2, which is the only thing that makes T10's negative meaningful.
+* ===========================================================================
+
+SET PATH DBF DBF/SANDBOX
+SET PATH INDEXES INDEXES/SANDBOX
+SET PATH LMDB LMDB/SANDBOX
+ERASE TAGFLD2 CONFIRM
+
+SELECT 0
+CREATE X64 TAGFLD2 (STUDENT_LAST_NAME C(12), STUDENT_LABEL C(12), STUDENT_LA C(12), TAILKEY C(6))
+APPEND
+REPLACE STUDENT_LAST_NAME WITH "BBB"
+REPLACE STUDENT_LABEL WITH "BBB"
+REPLACE STUDENT_LA WITH "BBB"
+REPLACE TAILKEY WITH "T1"
+APPEND
+REPLACE STUDENT_LAST_NAME WITH "AAA"
+REPLACE STUDENT_LABEL WITH "CCC"
+REPLACE STUDENT_LA WITH "CCC"
+REPLACE TAILKEY WITH "T2"
+APPEND
+REPLACE STUDENT_LAST_NAME WITH "CCC"
+REPLACE STUDENT_LABEL WITH "AAA"
+REPLACE STUDENT_LA WITH "DDD"
+REPLACE TAILKEY WITH "T3"
+APPEND
+REPLACE STUDENT_LAST_NAME WITH "DDD"
+REPLACE STUDENT_LABEL WITH "DDD"
+REPLACE STUDENT_LA WITH "AAA"
+REPLACE TAILKEY WITH "T4"
+
+USE TAGFLD2
+TOP
+? "TAGF_G2_collision_fixture_physical_first:" + (ALLTRIM(TAILKEY) = "T1")
+
+CDX CREATE
+
+&& THREE TAGS, THREE SPELLING RULES. The first is a plain logical name. The
+&& second is a MANGLED token and belongs to a field whose logical name it is
+&& not. The third is the contested spelling: logical name of field 3, token of
+&& field 1.
+CDX ADDTAG STUDENT_LAST_NAME
+CDX ADDTAG STUDENT_~1
+CDX ADDTAG STUDENT_LA
+
+CDX TAGS
+BUILDLMDB YES
+
+USE TAGFLD2
+
+SET ORDER TAG STUDENT_LAST_NAME
+TOP
+? "TAGF_T9_first_field_is_reachable_by_its_logical_name:" + (ALLTRIM(TAILKEY) = "T2")
+
+SET ORDER TAG STUDENT_~1
+TOP
+? "TAGF_T10_mangled_token_resolves_to_its_own_field:" + (ALLTRIM(TAILKEY) = "T3")
+
+SET ORDER TAG STUDENT_LA
+TOP
+? "TAGF_T11_logical_name_beats_another_fields_token:" + (ALLTRIM(TAILKEY) = "T4")
+
+CLOSE
+
+* ===========================================================================
 * TEARDOWN. ERASE sweeps the table, the container, its .cdx.meta sidecar and
 * the LMDB env together -- all four live under the three slots set at the top,
 * which is why they are set there and not inherited.
@@ -269,5 +383,6 @@ SET PATH DBF DBF/SANDBOX
 SET PATH INDEXES INDEXES/SANDBOX
 SET PATH LMDB LMDB/SANDBOX
 ERASE TAGFLD CONFIRM
+ERASE TAGFLD2 CONFIRM
 
 DO x64
