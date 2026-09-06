@@ -19,6 +19,7 @@
 #include <string>
 
 #include "xbase.hpp"
+#include "xbase_field_getters.hpp"   // AIF-157: the ONE field resolver
 #include "xbase/ramfs.hpp"
 #include "cdx/cdx_meta.hpp"
 #include "cli/path_resolver.hpp"
@@ -379,18 +380,43 @@ bool IndexManager::lmdbSeekUserKey(const std::string& user_key,
     return cdx->seekRecnoUserKey(user_key, out_recno, out_err);
 }
 
+// AIF-157 -- ONE RESOLVER. This used to compare to_upper_copy_ascii_(defs[i].name)
+// against the uppercased tag: no trim, no NUL truncation, and no x64 descriptor
+// token alias.
+//
+// WHY THAT WAS A KEY DEFECT AND NOT A TIDINESS COMPLAINT. ADDTAG resolves through
+// xfg::resolve_field_index_std (cmd_cdx.cpp, AIF-078 2026-08-29) and REPLACE
+// resolves through the same function and refuses on -1 (cmd_replace.cpp). So a
+// tag DEFINED by the generated 10-byte descriptor alias and EDITED through
+// REPLACE succeeded on both of those paths and resolved to 0 HERE. Zero is not an
+// error anywhere: activeTagMatchesField opens with `if (field1 <= 0) return
+// false;`, which reads as "the edited field is not this tag's field", so no
+// maintenance was attempted, stale_ was therefore never set, the wasStale()
+// false->true transition never fired, and NOTHING PRINTED. Strictly worse than
+// the no-op backends IDXSTALE polices -- those at least go stale loudly.
+//
+// The exposure was specific to x64, the engine's own format: logical field names
+// longer than 10 bytes are permitted only when versionByte() == 0x64
+// (fields_mgr.cpp:826), which is the entire reason the alias exists.
+//
+// AIF-078 counted THREE declarations of what a field name is -- the standard
+// resolver, BUILDLMDB's loop, and ADDTAG's nothing-at-all -- and moved ADDTAG
+// onto the standard one. It fixed the DEFINITION path. This is the MAINTENANCE
+// path, which was not among the three it counted.
+//
+// STILL OWED, and deliberately not done in this change: after this, an
+// unresolvable tag means a GENUINELY DEAD TAG -- the container AIF-078 says
+// BUILDLMDB can still write -- and returning 0 for it continues to read as "not
+// indexed". Making that announce needs a once-per-tag latch, not a bare print:
+// activeTagMatchesField is called per record from sqlsel_statement.cpp:1124, so
+// an unlatched diagnostic would flood a join. Separate change, separate proof.
 int IndexManager::activeTagFieldIndex1() const {
     const auto tag = activeTag();
     if (tag.empty()) return 0;
 
     try {
-        const auto defs = area_.fields();
-        const auto want = to_upper_copy_ascii_(tag);
-        for (std::size_t i = 0; i < defs.size(); ++i) {
-            if (to_upper_copy_ascii_(defs[i].name) == want) {
-                return static_cast<int>(i) + 1;
-            }
-        }
+        const int idx0 = xfg::resolve_field_index_std(area_, tag);
+        if (idx0 >= 0) return idx0 + 1;
     } catch (...) {
     }
     return 0;

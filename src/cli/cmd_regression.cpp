@@ -194,7 +194,7 @@ struct RegressionSpec {
 // compile error ("too many initializers"), which is the safe failure -- but it
 // is a recurring papercut: it happened when CNXLIVE was added on 2026-07-31.
 // Bump it when you add a regression.
-constexpr std::array<RegressionSpec, 78> kRegressionSpecs{{
+constexpr std::array<RegressionSpec, 79> kRegressionSpecs{{
     {
         "COUNT_LIST_VERBOSE",
         "count_list_verbose_regression.dts",
@@ -815,6 +815,13 @@ constexpr std::array<RegressionSpec, 78> kRegressionSpecs{{
         false,
         RegressionValidator::PkPolicyV1,
         true // VALIDATE UNIQUE and the shell both print through routed channels
+    }
+    ,
+    {
+        "IDXNAME",
+        "index_field_name_resolution.dts",
+        "A CDX TAG IS A FIELD NAME, AND THE INDEX LAYER NOW ASKS THE SAME RESOLVER EVERYONE ELSE ASKS (AIF-157 step 3, 2026-09-06). xfg::resolve_field_index_std is the house answer to 'which field is this name' -- it trims, lets logical names win, and for x64 tables accepts the generated 10-byte DBF descriptor token as an alias when it maps uniquely. Eleven files called it and NOTHING UNDER src/xindex/ DID: activeTagFieldIndex1() was upper-only with no trim and no alias, cdx_native_backend and cnx_backend each carried a field_index_for_tag_() (byte-for-byte copies of each other), dbarea_adapt carried a seventh-hand field_index_ci(), and BUILDLMDB had its own loop. All are routed onto the standard resolver and nothing in the corpus exercised what that changed. TWO CLAIMS, TWO MECHANISMS. (1) A tag name LONGER THAN TEN BYTES: the CDX tag directory stores names in char name[32] NUL-padded, trim_copy strips only isspace, and NUL is not isspace -- so field_name_core_ had to absorb the NUL handling that was the ONE capability the retired backend matchers had and the standard resolver lacked. Without it the consolidation was a quiet downgrade. (2) The X64 DESCRIPTOR TOKEN as an alias: COURSE_TITLE_LONG is 17 bytes and its token is COURSE_TIT, which the old upper-only compare could never have matched. THE DISCRIMINATOR IS THE ROW, NOT THE VALUE -- every marker reads TAILKEY, six bytes with nothing about its own resolution in question, and the three orders disagree at both ends, so a tag resolved to the WRONG FIELD reads T2 where T3 is demanded and an engine that walked physically reads T1. UNCOVERED AND NAMED: the mangled ~n token for two fields colliding at ten bytes, and logical-wins-over-a-colliding-token. Both want a second cut; '~' in a tag argument is an unmeasured question about the tokenizer and putting an untested parse inside the arm that proves the resolver would muddy both results. Sets all THREE path slots explicitly -- written the day MWXSHAKE was found red for re-setting two of three after a WORKSPACE SWITCH (R131). READ RULE: eight markers must print and all eight read .T.; grep -c '^? \"IDXN_'.",
+        false
     }
 }};
 

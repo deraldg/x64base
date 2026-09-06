@@ -1,0 +1,215 @@
+* ===========================================================================
+* A CDX TAG IS A FIELD NAME, AND THE INDEX LAYER NOW ASKS THE SAME RESOLVER
+* EVERYONE ELSE ASKS (AIF-157 step 3, written 2026-09-06).
+*
+* WHY THIS FILE EXISTS. xfg::resolve_field_index_std (include/xbase_field_
+* getters.hpp) is the house answer to "which field is this name". It trims,
+* lets logical names win, and -- for x64 tables only -- accepts the generated
+* 10-byte DBF descriptor token as an alias when it maps uniquely. Eleven files
+* called it. NOTHING UNDER src/xindex/ DID. The index layer carried FOUR more
+* opinions of its own:
+*
+*   index_manager.cpp     activeTagFieldIndex1()  upper-only, no trim, no alias
+*   cdx_native_backend    field_index_for_tag_()  its own matcher
+*   cnx_backend           field_index_for_tag_()  a byte-for-byte copy of it
+*   dbarea_adapt.cpp      field_index_ci()        a seventh-hand version
+*
+* plus BUILDLMDB's own loop. All are now routed onto the standard resolver.
+* Nothing in the corpus exercised what that changed, which is the hole this
+* file fills.
+*
+* THE TWO CLAIMS UNDER TEST, and they are different mechanisms:
+*
+*   1. A TAG NAME LONGER THAN TEN BYTES. The CDX tag directory stores a name in
+*      `char name[32]` (include/cdx/cdx.hpp:52), NUL-padded. Read back as a
+*      string that is "STUDENT_LAST_NAME" followed by NULs, and trim_copy only
+*      strips isspace -- NUL is not isspace -- so an untruncated name never
+*      equals its own trimmed spelling. field_name_core_ absorbs that, and it
+*      was added FOR this consolidation: NUL handling was the one capability
+*      the two hand-rolled backend matchers had that the standard resolver
+*      lacked. Without it the merge would have been a quiet downgrade. T1/T2
+*      are what make that claim answerable instead of asserted.
+*
+*   2. THE X64 DESCRIPTOR TOKEN AS AN ALIAS. COURSE_TITLE_LONG is 17 bytes;
+*      plan_x64_unique_fallback gives it the 10-byte token COURSE_TIT. The old
+*      activeTagFieldIndex1() compared upper-cased logical names only and could
+*      never have matched it. T3/T4 name the tag by the TOKEN and demand the
+*      walk come back ordered by that field.
+*
+* THE DISCRIMINATOR IS THE ROW, NOT THE VALUE. Every marker reads TAILKEY --
+* six bytes, no truncation, no alias, nothing about its resolution in question
+* -- so an arm can only go green by LANDING ON THE RIGHT ROW. The three orders
+* disagree at both ends on purpose:
+*
+*     physical            T1  T2  T3      (as appended)
+*     by STUDENT_LAST_NAME T2  T3  T1     (Anderson, Morgan, Wilson)
+*     by COURSE_TITLE_LONG T3  T2  T1     (ALPHA, MIKE, ZULU)
+*
+* So a tag that resolved to the WRONG FIELD reads T2 where T3 is demanded, and
+* an engine that accepted SET ORDER and walked physically anyway reads T1. The
+* three worlds are separated by one comparison each.
+*
+* WHAT THIS FIRST CUT DOES NOT COVER, said here rather than left to be assumed:
+*
+*   - THE MANGLED TOKEN. Two fields whose first ten bytes collide get DOS-style
+*     ~n aliases (COURSE_~1). No arm here builds that collision, so the
+*     mangling branch of plan_x64_unique_fallback is UNPROVEN through the index
+*     layer. It was left out deliberately: '~' in a tag argument is an
+*     unmeasured question about the tokenizer, and putting an untested parse
+*     inside the arm that proves the resolver would muddy both results.
+*
+*   - LOGICAL WINS OVER A COLLIDING TOKEN. Policy rule 1 says an authoritative
+*     name beats an alias. Proving it needs a field whose logical name IS
+*     another field's token, which is the same collision as above.
+*
+* Both want a second cut. Neither is covered by anything else in the corpus.
+*
+* THE THREE PATH SLOTS ARE ALL SET, AND THAT IS NOT BOILERPLATE. This file was
+* written the day MWXSHAKE was found red because section 5B re-set DBF and
+* INDEXES after a WORKSPACE SWITCH and left LMDB where DEFAULT's environment
+* had put it (R131). A CDX on real disk is LMDB-backed; a wrong LMDB slot is
+* `openCdx: LMDB env missing` and three markers reading the physical order.
+*
+* READ RULE: eight markers must PRINT and all eight read .T.
+*   grep -c '^? "IDXN_'  <-- run this, read the run against THAT
+* An errored marker prints NOTHING rather than going red, so COUNT them. If
+* IDXN_G0/G1 are not both .T. the fixture is not what the arms assume and no
+* T-arm below means anything.
+*
+* Explicit-run until soaked.
+* ===========================================================================
+
+SET PATH DBF DBF/SANDBOX
+SET PATH INDEXES INDEXES/SANDBOX
+SET PATH LMDB LMDB/SANDBOX
+
+&& THE TABLE, THE CONTAINER AND THE LMDB ENV IN ONE SWEEP. CDX CREATE refuses
+&& to overwrite, so a leftover .cdx from a previous run would fail the build
+&& and every arm under it.
+ERASE IDXNAME CONFIRM
+
+SELECT 0
+CREATE X64 IDXNAME (STUDENT_LAST_NAME C(12), COURSE_TITLE_LONG C(12), TAILKEY C(6))
+APPEND
+REPLACE STUDENT_LAST_NAME WITH "Wilson"
+REPLACE COURSE_TITLE_LONG WITH "ZULU"
+REPLACE TAILKEY WITH "T1"
+APPEND
+REPLACE STUDENT_LAST_NAME WITH "Anderson"
+REPLACE COURSE_TITLE_LONG WITH "MIKE"
+REPLACE TAILKEY WITH "T2"
+APPEND
+REPLACE STUDENT_LAST_NAME WITH "Morgan"
+REPLACE COURSE_TITLE_LONG WITH "ALPHA"
+REPLACE TAILKEY WITH "T3"
+
+* ---------------------------------------------------------------------------
+* IDXN_G0 / G1 -- THE PHYSICAL ORDER, BEFORE ANY INDEX EXISTS.
+*
+* These are the baseline both T-pairs are measured against. If an engine ever
+* walks physically while claiming an order, it lands back here.
+* ---------------------------------------------------------------------------
+
+USE IDXNAME
+TOP
+? "IDXN_G0_physical_first_row_before_any_index:" + (ALLTRIM(TAILKEY) = "T1")
+BOTTOM
+? "IDXN_G1_physical_last_row_before_any_index:" + (ALLTRIM(TAILKEY) = "T3")
+
+CDX CREATE
+
+&& NAMED BY ITS FULL 17-BYTE LOGICAL NAME. This is the NUL-padding arm: the
+&& name fits in char name[32] and comes back padded, so every reader of that
+&& tag has to truncate at the NUL before comparing.
+CDX ADDTAG STUDENT_LAST_NAME
+
+&& NAMED BY ITS 10-BYTE DESCRIPTOR TOKEN, NOT ITS LOGICAL NAME. The field is
+&& COURSE_TITLE_LONG. Only the x64 alias branch can connect the two.
+CDX ADDTAG COURSE_TIT
+
+CDX TAGS
+BUILDLMDB YES
+
+&& RE-OPEN BEFORE ORDERING. The container and its LMDB environment did not
+&& exist when this area was first opened, and CDX attachment requires the
+&& environment to exist. Re-opening is the honest way to get the attachment
+&& the first USE could not have made.
+USE IDXNAME
+
+* ---------------------------------------------------------------------------
+* IDXN_T1 / T2 -- A TAG NAMED BY A 17-BYTE LOGICAL NAME ORDERS THE WALK.
+*
+* Both ends move off the physical order: TOP goes T1 -> T2 and BOTTOM goes
+* T3 -> T1. Green here is the whole NUL-padding claim, end to end, through
+* ADDTAG, BUILDLMDB, SET ORDER and the walk.
+* ---------------------------------------------------------------------------
+
+SET ORDER TAG STUDENT_LAST_NAME
+TOP
+? "IDXN_T1_long_logical_name_orders_the_walk:" + (ALLTRIM(TAILKEY) = "T2")
+BOTTOM
+? "IDXN_T2_and_the_far_end_of_that_order:" + (ALLTRIM(TAILKEY) = "T1")
+
+* ---------------------------------------------------------------------------
+* IDXN_T3 / T4 -- A TAG NAMED BY THE DESCRIPTOR TOKEN LANDS ON THE RIGHT FIELD.
+*
+* T3 IS THE ARM THIS FILE WAS WRITTEN FOR and it separates three worlds with
+* one comparison:
+*
+*     T3  the token resolved to COURSE_TITLE_LONG   -- correct
+*     T2  it resolved to STUDENT_LAST_NAME instead  -- wrong field
+*     T1  the order was accepted and ignored        -- physical walk
+*
+* Nothing else in the corpus tells those three apart.
+* ---------------------------------------------------------------------------
+
+SET ORDER TAG COURSE_TIT
+TOP
+? "IDXN_T3_descriptor_token_orders_by_its_own_field:" + (ALLTRIM(TAILKEY) = "T3")
+BOTTOM
+? "IDXN_T4_and_the_far_end_of_that_order:" + (ALLTRIM(TAILKEY) = "T1")
+
+* ---------------------------------------------------------------------------
+* IDXN_T5 -- THE ORDER SURVIVES A RETURN TO THE FIRST TAG.
+*
+* Switching back proves the second SET ORDER replaced the active tag rather
+* than leaving the first one latched, which a resolver returning field 0 would
+* look identical to at T3 if the engine simply kept the previous order.
+* ---------------------------------------------------------------------------
+
+SET ORDER TAG STUDENT_LAST_NAME
+TOP
+? "IDXN_T5_switching_back_re_resolves_the_first_tag:" + (ALLTRIM(TAILKEY) = "T2")
+
+* ---------------------------------------------------------------------------
+* IDXN_T6 -- A NAME THAT IS NEITHER A FIELD NOR A TOKEN IS REFUSED.
+*
+* IDXNOSUCH matches no logical name and no descriptor token, so the resolver
+* returns -1 and ADDTAG refuses at definition time. THE REFUSAL IS CONSOLE TEXT
+* AND NO MARKER CAN READ IT -- the IDXDIFF precedent. Read the transcript for:
+*
+*     CDX ADDTAG: field not found: 'IDXNOSUCH'.
+*
+* WHAT THE ARM CAN ASSERT is that the refusal changed NOTHING: the active order
+* is still live afterwards. The tag directory it would have disturbed is the
+* same one holding both working tags.
+* ---------------------------------------------------------------------------
+
+CDX ADDTAG IDXNOSUCH
+TOP
+? "IDXN_T6_refusal_left_the_live_order_alone:" + (ALLTRIM(TAILKEY) = "T2")
+
+CLOSE
+
+* ===========================================================================
+* TEARDOWN. ERASE sweeps the table, the container, its .cdx.meta sidecar and
+* the LMDB env together -- all four live under the three slots set at the top,
+* which is why they are set there and not inherited.
+* ===========================================================================
+
+SET PATH DBF DBF/SANDBOX
+SET PATH INDEXES INDEXES/SANDBOX
+SET PATH LMDB LMDB/SANDBOX
+ERASE IDXNAME CONFIRM
+
+DO x64

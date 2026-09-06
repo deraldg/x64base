@@ -105,6 +105,7 @@
 
 #include "xbase.hpp"
 #include "textio.hpp"
+#include "xbase_field_getters.hpp"   // AIF-157: the ONE field resolver
 #include "cli/command_output.hpp"
 #include "cli/path_resolver.hpp"
 #include "cli/order_state.hpp"
@@ -469,15 +470,21 @@ static bool build_tag_lmdb_from_field(xbase::DbArea& area,
 {
     if (!area.isOpen()) return false;
 
-    int fld = -1;
+    // AIF-157 -- ONE RESOLVER. This loop is the one AIF-078 named and knowingly
+    // left behind on 2026-08-29: "BUILDLMDB's hand-rolled textio::ieq(Fs[i].name,
+    // tag) does none of that", flagged there as "a separate change with its own
+    // proof". This is that change.
+    //
+    // ieq compares the STORED name byte for byte with no trim, no NUL handling
+    // and no x64 descriptor-token alias, so it disagreed with ADDTAG -- which
+    // AIF-078 moved onto the standard resolver -- about what a tag names. A tag
+    // ADDTAG accepted could therefore be one BUILDLMDB silently declined to fill,
+    // and the miss returned false with NOT ONE WORD PRINTED while the run still
+    // reported "done OK=N tags rebuilt" on the strength of a different tag.
     const auto& Fs = area.fields();
-    for (int i = 0; i < (int)Fs.size(); ++i) {
-        if (textio::ieq(Fs[(size_t)i].name, tag_name_uc)) {
-            fld = i + 1;
-            break;
-        }
-    }
-    if (fld < 1) return false;
+    const int idx0 = xfg::resolve_field_index_std(area, tag_name_uc);
+    if (idx0 < 0) return false;
+    const int fld = idx0 + 1;
 
     const auto& fdef = Fs[(size_t)(fld - 1)];
     const int keylen = (int)fdef.length;

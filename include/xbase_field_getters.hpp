@@ -128,13 +128,31 @@ inline bool is_memo_type(char t) noexcept {
 // This keeps x64 metadata names canonical while making non-destructive
 // 10-byte descriptor tokens useful as aliases.
 // -----------------------------------------------------------------------------
+// AIF-157: truncate a stored field name at the first NUL before comparing.
+//
+// The DBF field descriptor carries an 11-byte NUL-padded name, so a stored name
+// can arrive as "SID\0\0\0\0" depending on the reader. trim_copy only strips
+// isspace, and NUL is not isspace, so an untruncated name never equals its own
+// trimmed spelling.
+//
+// This is not a new opinion -- it is the ONE capability the hand-rolled matchers
+// in cdx_native_backend.cpp and cnx_backend.cpp had that this resolver lacked.
+// Those two were retired onto this function, so absorbing their NUL handling
+// here is what makes the consolidation lossless rather than a quiet downgrade.
+// A name with no NUL is completely unaffected.
+inline std::string field_name_core_(std::string s) {
+    const auto nul = s.find('\0');
+    if (nul != std::string::npos) s.resize(nul);
+    return up_copy(trim_copy(std::move(s)));
+}
+
 inline int resolve_field_index_std(const xbase::DbArea& db, const std::string& nameIn) {
-    const std::string want = up_copy(trim_copy(nameIn));
+    const std::string want = field_name_core_(nameIn);
     const auto& F = db.fields();
 
     // 1. Authoritative/logical field names always win.
     for (int i = 0; i < static_cast<int>(F.size()); ++i) {
-        if (up_copy(trim_copy(F[static_cast<std::size_t>(i)].name)) == want) {
+        if (field_name_core_(F[static_cast<std::size_t>(i)].name) == want) {
             return i;
         }
     }
@@ -156,7 +174,7 @@ inline int resolve_field_index_std(const xbase::DbArea& db, const std::string& n
 
         for (int i = 0; i < static_cast<int>(plans.size()); ++i) {
             const std::string token =
-                up_copy(trim_copy(plans[static_cast<std::size_t>(i)].descriptor_name));
+                field_name_core_(plans[static_cast<std::size_t>(i)].descriptor_name);
 
             if (token == want) {
                 if (found >= 0 && found != i) {
