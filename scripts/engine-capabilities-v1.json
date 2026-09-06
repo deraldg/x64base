@@ -1,0 +1,255 @@
+{
+  "schema_version": 1,
+  "generated_by": "tools/reports/engine_capabilities.py",
+  "generated_from": "src/cli/cmd_regression.cpp (kRegressionSpecs)",
+  "spec_totals": {
+    "registered": 77,
+    "default_suite": 28
+  },
+  "capabilities": [
+    {
+      "id": "sql.join.inner",
+      "title": "SQL INNER JOIN",
+      "state": "default-suite",
+      "severity": "flag",
+      "specs": [
+        "SQLSEL_INNER_JOIN",
+        "SQLSEL_JOIN_EDGES"
+      ],
+      "default_specs": [
+        "SQLSEL_INNER_JOIN",
+        "SQLSEL_JOIN_EDGES"
+      ],
+      "tokens": [
+        "join",
+        "inner join",
+        "sql join",
+        "join support"
+      ]
+    },
+    {
+      "id": "sql.join.outer",
+      "title": "SQL outer joins (LEFT / RIGHT / FULL)",
+      "state": "default-suite",
+      "severity": "flag",
+      "specs": [
+        "SQLSEL_LEFT_JOIN",
+        "SQLSEL_JOIN_FAMILY"
+      ],
+      "default_specs": [
+        "SQLSEL_LEFT_JOIN",
+        "SQLSEL_JOIN_FAMILY"
+      ],
+      "tokens": [
+        "left join",
+        "right join",
+        "full join",
+        "outer join"
+      ]
+    },
+    {
+      "id": "sql.join.cross",
+      "title": "SQL CROSS JOIN",
+      "state": "default-suite",
+      "severity": "flag",
+      "specs": [
+        "SQLSEL_JOIN_FAMILY"
+      ],
+      "default_specs": [
+        "SQLSEL_JOIN_FAMILY"
+      ],
+      "tokens": [
+        "cross join",
+        "cartesian product"
+      ]
+    },
+    {
+      "id": "sql.join.advanced",
+      "title": "Self-joins, composite ON, multi-table chains",
+      "state": "explicit-run",
+      "severity": "review",
+      "specs": [
+        "SQLSEL_ADVANCED_JOIN"
+      ],
+      "default_specs": [],
+      "tokens": [
+        "self-join",
+        "self join",
+        "three-table join",
+        "composite on"
+      ]
+    },
+    {
+      "id": "sql.group_by",
+      "title": "GROUP BY / HAVING with aggregates",
+      "state": "explicit-run",
+      "severity": "review",
+      "specs": [
+        "SQLSEL_AGGREGATES"
+      ],
+      "default_specs": [],
+      "tokens": [
+        "group by",
+        "having clause",
+        "aggregate function"
+      ]
+    },
+    {
+      "id": "sql.subquery",
+      "title": "Correlated and uncorrelated subqueries",
+      "state": "explicit-run",
+      "severity": "review",
+      "specs": [
+        "SQLSEL_SUBQUERIES"
+      ],
+      "default_specs": [],
+      "tokens": [
+        "subquery",
+        "subqueries",
+        "correlated subquery"
+      ]
+    },
+    {
+      "id": "sql.set_ops",
+      "title": "SELECT DISTINCT and the set operations",
+      "state": "explicit-run",
+      "severity": "review",
+      "specs": [
+        "SQLSEL_SET_OPS"
+      ],
+      "default_specs": [],
+      "tokens": [
+        "union all",
+        "intersect",
+        "except clause",
+        "select distinct"
+      ]
+    },
+    {
+      "id": "sql.dml",
+      "title": "Typed INSERT / UPDATE / DELETE with WAL-backed transactions",
+      "state": "explicit-run",
+      "severity": "review",
+      "specs": [
+        "SQLSEL_DML"
+      ],
+      "default_specs": [],
+      "tokens": [
+        "sql dml",
+        "sql insert",
+        "sql update",
+        "sql delete"
+      ]
+    },
+    {
+      "id": "sql.select",
+      "title": "The SQLsel statement surface",
+      "state": "default-suite",
+      "severity": "flag",
+      "specs": [
+        "SQLSEL_SELECT_V1",
+        "SQLSEL_BUFFER_VIS",
+        "EVALDIFF"
+      ],
+      "default_specs": [
+        "SQLSEL_SELECT_V1",
+        "SQLSEL_BUFFER_VIS",
+        "EVALDIFF"
+      ],
+      "tokens": [
+        "sql select",
+        "set-oriented select",
+        "relational select"
+      ]
+    },
+    {
+      "id": "store.null",
+      "title": "Stored NULL on VFP-flavor tables (_NullFlags)",
+      "state": "default-suite",
+      "severity": "flag",
+      "specs": [
+        "NULLASSERT"
+      ],
+      "default_specs": [
+        "NULLASSERT"
+      ],
+      "tokens": [
+        "null",
+        "stored null",
+        "null value",
+        "_nullflags",
+        "isnull"
+      ]
+    },
+    {
+      "id": "workspace.multi",
+      "title": "Several workspaces resident at once, each owning its paths",
+      "state": "default-suite",
+      "severity": "flag",
+      "specs": [
+        "WSMULTI",
+        "WSENV",
+        "RELSCOPE2",
+        "WORKSPACE_SCOPE"
+      ],
+      "default_specs": [
+        "WSMULTI",
+        "WSENV",
+        "RELSCOPE2",
+        "WORKSPACE_SCOPE"
+      ],
+      "tokens": [
+        "multiple workspaces",
+        "simultaneous workspaces",
+        "workspace scope"
+      ]
+    },
+    {
+      "id": "workspace.memo",
+      "title": "Workspaces and whole mini-databases carried in a memo",
+      "state": "explicit-run",
+      "severity": "review",
+      "specs": [
+        "WORKSPACE_MEMO",
+        "WORKSPACE_MINIDB",
+        "WORKSPACE_WRITEBACK"
+      ],
+      "default_specs": [],
+      "tokens": [
+        "memo-resident",
+        "workspace in a memo",
+        "mini-database"
+      ]
+    },
+    {
+      "id": "index.cnx_on_x64",
+      "title": "CNX explicitly attached to an x64 table",
+      "state": "explicit-run",
+      "severity": "review",
+      "specs": [
+        "INDEX_X64_CNX"
+      ],
+      "default_specs": [],
+      "tokens": [
+        "cross-generation index",
+        "cnx on x64"
+      ]
+    },
+    {
+      "id": "ram.vdisk",
+      "title": "Whole tables and their indexes resident in RAM",
+      "state": "explicit-run",
+      "severity": "review",
+      "specs": [
+        "MEM",
+        "WORKSPACE_RAM"
+      ],
+      "default_specs": [],
+      "tokens": [
+        "ram disk",
+        "in-memory table",
+        "virtual disk"
+      ]
+    }
+  ]
+}

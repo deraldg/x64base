@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { sweep, report, selfTest } from "./check-capability-contradictions.mjs";
 
 const root = process.cwd();
 const configPath = path.join(root, "scripts", "site-freshness-contracts.json");
@@ -96,3 +97,17 @@ if (process.argv.includes("--self-test")) {
 }
 
 console.log(`Site freshness check passed: ${loaded.length} contract(s).`);
+
+// TIER 2. The contracts above compare EXACT VALUES and are blind to a page
+// that contradicts the engine without getting a number wrong -- which is the
+// failure that actually shipped on 2026-09-05. This sweep reads a generated
+// capability authority and is ADVISORY: it never sets a non-zero exit, because
+// it is a prose heuristic and a false positive must not stop a release. It is
+// loud instead, and it rides in the publish output, where staleness is about
+// to become public.
+const capResult = sweep(root);
+report(capResult);
+
+if (process.argv.includes("--self-test")) {
+  selfTest(root);
+}

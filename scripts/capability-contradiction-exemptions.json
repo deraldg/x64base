@@ -1,0 +1,20 @@
+{
+  "note": "Every entry states WHY the negative is true. An exemption without a reason is rejected by the checker: muting a check silently is how a check dies. Review these when a capability's state changes.",
+  "exemptions": [
+    {
+      "file": "content/docs/engine/regression-and-proof-testing.mdx",
+      "capability": "*",
+      "reason": "Generated page. Its body is the engine's own spec summaries quoted verbatim, and those summaries are written in the negative on purpose -- 'no other default spec executes CROSS JOIN' is a promotion argument, not a claim the engine lacks CROSS JOIN. Sweeping a generated quotation of the authority against the authority is circular."
+    },
+    {
+      "file": "content/docs/talk-family/sqlsel.mdx",
+      "capability": "store.null",
+      "reason": "TRUE negative, and load-bearing. SQLsel DML refuses to store a NULL rather than coercing a blank -- see the SQLSEL_DML spec, which pins the fail-closed NULL control. Stored NULL exists on VFP-flavor tables; writing one THROUGH SQLsel DML does not, and the page must stay able to say so."
+    },
+    {
+      "file": "content/docs/engine/sqlsel-and-sql-conformance.mdx",
+      "capability": "sql.group_by",
+      "reason": "The page narrates its own past error -- it quotes the 2026-09-03 incident where the conformance table announced GROUP BY shipping in one cell and 'not implemented' one row away. Keeping the incident visible is the point of the paragraph; the quotation is history, not a current claim."
+    }
+  ]
+}
