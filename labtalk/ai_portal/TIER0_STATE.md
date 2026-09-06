@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-09-05T22:52:09Z
+    generated_utc : 2026-09-06T00:07:46Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,9 +11,9 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : cb6b26911  (2026-09-05)
+    HEAD          : 94782c434  (2026-09-05)
     upstream      : 8df02addf
-    unpushed      : 40 commit(s) ahead of upstream
+    unpushed      : 41 commit(s) ahead of upstream
 
 ## Declared target
 
@@ -23,20 +23,19 @@ cannot drift, because nothing here is written by hand.
 ## Newest closeout
 
     file          : SESSION_CLOSEOUT_SQLSEL_USER_MANUAL_2026-09-03.md
-    commits behind HEAD : 42
+    commits behind HEAD : 43
 
 ## Staleness warnings
 
-- The newest closeout is 42 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
-- Claim(s) with no intake row, so they read as ABANDONED from HEAD: AIF-154. Same shape as AIF-062/078/080.
-- 40 commit(s) are unpushed and invisible to a clone.
+- The newest closeout is 43 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
+- 41 commit(s) are unpushed and invisible to a clone.
 
 ## Claimed lanes (newest first)
 
 | AIF | lane | steward | intake row |
 | --- | --- | --- | --- |
 | AIF-155 | runtime-def-family | member.ai.claude.cowork | yes |
-| AIF-154 | runtime-def-family | member.ai.claude.cowork | **MISSING** |
+| AIF-154 | metadata-catalogue-pipeline | member.ai.claude.cowork | yes |
 | AIF-153 | browsetui-student-app | member.ai.claude.cowork | yes |
 | AIF-152 | null-semantics | member.derald | yes |
 | AIF-151 | triggers-pdlc | member.derald | yes |
