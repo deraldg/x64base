@@ -68,9 +68,90 @@ row sets are additionally verified against an in-process SQLite oracle in its
 own regression, so the second walker's correctness is anchored to an external
 implementation.
 
+That second walker has since grown a full join family, grouping, subqueries and
+DML -- the entry below. This entry claims only what it says: that the two
+walkers, asked the same question over the same declared graph, agree.
+
 Evidence: `REGRESSION RUN CASCADE_ENV` (both walkers in one run);
 `SQLSEL_SELECT_V1` (the oracle harness); the [Schemas](/schemas) page for the
 graph itself.
+
+## A relational SELECT, refereed by SQLite
+
+**Runtime-proven; the join family runs on every `REGRESSION ALL`.** SQLsel is
+not a `SELECT`-shaped wrapper around navigational reads -- it is a typed,
+set-oriented statement surface, and its answers are checked against an in-run
+SQLite oracle over identical data rather than against expectations written by
+the same hand that wrote the query. What executes on every default suite: the
+statement surface itself (projection, expression columns, `WHERE`, `ORDER BY`,
+`LIMIT`, `COUNT(*)`), `INNER JOIN` with aliases and qualified fields,
+`LEFT JOIN`, and `RIGHT` / `FULL` / `CROSS JOIN` -- fourteen oracle-compared row
+multisets in the join-family spec alone, alongside an adversarial inner-join
+spec that pins the access path at exactly two CDX seeks, two nested-loop scans
+and zero hybrid.
+
+Four further surfaces are proven and run explicitly rather than on every pass,
+each pending mutation proof, independent review and soak: `GROUP BY` /
+`HAVING` with `COUNT` / `SUM` / `AVG` / `MIN` / `MAX` over single-table and
+joined sources; uncorrelated and correlated scalar, `IN`, `NOT IN`, `EXISTS`
+and `NOT EXISTS` subqueries, including double-`NOT EXISTS` relational division;
+`SELECT DISTINCT` with `UNION`, `UNION ALL`, `INTERSECT` and `EXCEPT`; and typed
+`INSERT`, `UPDATE` and `DELETE` over the house table buffer with WAL-backed
+rollback and commit.
+
+Three things the oracle discipline buys that self-written assertions do not.
+Joins run through CDX seek *and* through scan fallback, and both paths are
+compared against the same SQLite answer -- so an index that quietly changes the
+result set is a red line rather than a faster wrong answer. Outer joins are
+checked under SQL's own three-valued logic, with unmatched rows mapped
+explicitly to a marker before comparison, which is what makes *produced absence*
+distinguishable from a genuine DBF blank. And the committed-truth boundary is
+asserted while a native table buffer is dirty: `TUPLE` previews the uncommitted
+current row, `SQLSEL` reads committed table truth, and the two are compared
+against the oracle across preview, rollback and commit.
+
+Not claimed, and refused in code rather than caveated in prose: cross-table
+atomic commit. A SQLsel transaction deliberately refuses a second target table,
+because x64base has no cross-table commit protocol.
+
+Evidence: `REGRESSION RUN SQLSEL_SELECT_V1` / `SQLSEL_INNER_JOIN` /
+`SQLSEL_LEFT_JOIN` / `SQLSEL_JOIN_FAMILY` / `SQLSEL_JOIN_EDGES` /
+`SQLSEL_BUFFER_VIS` / `EVALDIFF` (all default-suite);
+`SQLSEL_ADVANCED_JOIN` / `SQLSEL_AGGREGATES` / `SQLSEL_SUBQUERIES` /
+`SQLSEL_SET_OPS` / `SQLSEL_DML` / `SQLSEL_WORKSPACE` (explicit-run); the
+[SQLsel](/docs/talk-family/sqlsel) reference and the
+[SQL conformance](/docs/engine/sqlsel-and-sql-conformance) page.
+
+## NULL is a stored fact, not an empty cell
+
+**Runtime-proven -- and the spec is known to be capable of failing.** A
+VFP-flavor table created with nullable fields carries a real `_NullFlags`
+bitmap: a null is a bit, not a blank. The engine writes one (`REPLACE ... WITH
+NULL`, and the dotted `.NULL.` spelling), reads it back after a close and
+reopen, clears it, filters on it through `ISNULL()` in a `FOR` predicate, and
+refuses the write both on a field that was never declared nullable and while
+`TABLE BUFFER` is on. The discriminating arm is the one that separates null from
+empty: the fixture deliberately places a row whose field is *blank but not null*
+ahead of the nulled row, so a build that answers `ISNULL` from emptiness lands
+on the wrong record and reads the wrong value.
+
+The reason this entry can be trusted is that the spec has been red. Its first
+run scored 17 of 21, with exactly four arms failing, and the four were one
+defect: a value write stored the value and re-committed the null bit, so
+`REPLACE VNAME WITH "restored"` left a cell that `?` displayed as `restored`
+while `LIST` displayed `.NULL.` -- and it survived a close and reopen. The four
+arms were deliberately not retuned after the fix; the markers that went red are
+the markers that ship.
+
+Not claimed, stated rather than implied: null *ordering*. The lane opens
+`NOINDEX` throughout, and what a CDX / CNX / LMDB backend makes of a null key is
+unclaimed by it. Nor is `ISNULL` claimed over a joined or TupleRow source. One
+debt stays open and is recorded rather than smoothed: that 17-of-21 was taken by
+the DotScript runner, so the bracketed regression path -- the grader
+`REGRESSION ALL` actually reports through -- has only ever seen this spec green.
+
+Evidence: `REGRESSION RUN NULLASSERT` -- 21 graded markers (5 guards, 16 arms),
+promoted to the default suite 2026-09-05 and verified in-suite the same day.
 
 ## A workspace that restores a whole working session
 
@@ -100,6 +181,40 @@ Two later increments turned a schema snapshot into a session snapshot:
 Evidence: `workspaces/cascade_all.dtschema`; `REGRESSION RUN CASCADE_ENV`
 Section 2; `WORKSPACE_V3` (self-location from a broken environment);
 `WORKSPACE_SESSION` (cursors, selection, refresh).
+
+## Many workspaces at once, each owning its environment
+
+**Runtime-proven.** A workspace is not a synonym for "the session". Several can
+be open at once, as siblings or nested; the same physical table can be open in
+two of them at different positions; and closing one leaves the others standing.
+The sibling case is the discriminator, not the nested one -- an implementation
+that merely spared the root would pass a parent/child test and fail this.
+
+Three things that were process-global became workspace-scoped, each with a spec
+that goes red if the partition is removed. The close sweep is scoped to a
+workspace's own membership group rather than running `0..MAX_AREA`. The relation
+store is partitioned, so `REL CLEAR ALL` issued inside one workspace leaves
+another's relation still driving its child. And the three path slots `DBF`,
+`INDEXES` and `LMDB` are stamped on the workspace and restored by `WORKSPACE
+SWITCH` -- that last one with its founding defect on the record: with two
+systems open, a table in one resolved its LMDB container under the other,
+because the slots were global and `SWITCH` moved membership without moving them.
+`WORKSPACE OPEN` now lands in the workspace you are standing in, rather than
+deriving a name from the resolved directory leaf and walking out of it.
+
+Workspace identity is durable in both directions. Destroy a workspace, create it
+again under the same name, and the new one must carry a *greater* id -- an
+assertion that reads fields of the `WORKSPACES` catalog table rather than the
+console, and that fails if retirement never actually reached the catalog. The
+catalog is an ordinary x64 table: the map is drawn in the same ink as the
+territory.
+
+Evidence: `REGRESSION RUN WSMULTI` (siblings, nesting, one file in two
+workspaces) / `WORKSPACE_SCOPE` (scoped close) / `RELSCOPE2` (partitioned
+relation store) / `WSENV` (path slots owned by the workspace) / `OPENJOIN` /
+`WSLADDER` (durable identity) / `MWXSHAKE` (multi-workspace meets the
+memo-resident mini-database) -- all default-suite; the
+[Workspaces](/docs/engine/workspaces) reference.
 
 ## GUI-orthogonal by construction
 

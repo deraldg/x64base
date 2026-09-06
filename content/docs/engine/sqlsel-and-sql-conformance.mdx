@@ -172,8 +172,11 @@ this, and how?" for someone who already knows SQL, and to show where the gaps
 are. It is not a compatibility claim: x64base does not offer to run SQLite or
 MSSQL work, and an "equivalent" row means the engine achieves the same intent by
 different syntax with its own semantics - `DELETE` marks rather than removes,
-there is no `NULL`, and types are C/N/D/L/M rather than SQL types. Read those
-rows as translation guidance, not as portability.
+stored `NULL` is a VFP-flavor feature rather than a universal one (a real
+`_NullFlags` bit, asserted every run by the `NULLASSERT` regression; classic
+x64 and x32 fields carry blanks, not nulls, and SQLsel DML refuses to write a
+stored null rather than coercing one), and types are C/N/D/L/M rather than SQL
+types. Read those rows as translation guidance, not as portability.
 
 ## Checking these claims
 

@@ -9,7 +9,13 @@ current source-side documentation catalog for expression functions.
 The extension examples live separately under `src/ext/fn`; they demonstrate how
 learners can add self-registering functions without changing the core catalog.
 
-Source extraction snapshot: `73` core documented expression functions,
+This page is regenerated rather than hand-edited: the whole file is rewritten by
+the emitter, so a hand-added line is destroyed by the next run. From the
+repository root, `python tools/fullstack_docs/command_catalog_sync.py fn-emit
+--source-root . --out <this-file>` rewrites it, and the same tool's `fn-check
+--source-root . --catalog <this-file>` reports drift without writing.
+
+Source extraction snapshot: `77` core documented expression functions,
 plus `2` self-registering student function examples (listed below).
 
 ## Source-Derived Functions
@@ -89,6 +95,10 @@ plus `2` self-registering student function examples (listed below).
 | `FLOOR` |  | Numeric | 1 | Return the largest integer less than or equal to the numeric value. |
 | `BETWEEN` |  | Numeric | 3 | Return whether a numeric value lies within an inclusive lower and upper bound. |
 | `RAND` |  | Numeric | 0 | Return a pseudo-random numeric value. |
+| `DELETED` |  | Cursor | 0 | Is the current record flagged deleted? |
+| `RECNO` |  | Cursor | 0 | Record number of the current record. |
+| `RECCOUNT` |  | Cursor | 0 | Number of records in the current table. |
+| `ISNULL` |  | Cursor | 1 | Is this field NULL in the current record? |
 
 ## Self-registering functions (open architecture)
 
