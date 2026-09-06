@@ -601,6 +601,12 @@ current source-side documentation catalog for expression functions.
 The extension examples live separately under `src/ext/fn`; they demonstrate how
 learners can add self-registering functions without changing the core catalog.
 
+This page is regenerated rather than hand-edited: the whole file is rewritten by
+the emitter, so a hand-added line is destroyed by the next run. From the
+repository root, `python tools/fullstack_docs/command_catalog_sync.py fn-emit
+--source-root . --out <this-file>` rewrites it, and the same tool's `fn-check
+--source-root . --catalog <this-file>` reports drift without writing.
+
 Source extraction snapshot: `{len(core)}` core documented expression functions,
 plus `{len(extensions)}` self-registering student function examples (listed below).
 
