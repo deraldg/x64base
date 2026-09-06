@@ -88,10 +88,48 @@ formats themselves. The defect is that they are not consulted.
 
 | mechanism | declared | written | read |
 |---|---|---|---|
-| `CDX_HDRF_DIRTY` | `include/cdx/cdx.hpp:34` | set and cleared, `src/cdx/cdx_file.cpp:159-160` | **nowhere in the tree** |
+| `CDX_HDRF_DIRTY` | `include/cdx/cdx.hpp:34` | **never -- `cdxfile::set_dirty` has ZERO callers** (defined `src/cdx/cdx_file.cpp:153`) | **nowhere in the tree** |
 | `CNX_HDRF_DIRTY` | `include/cnx/cnx.hpp:26` | `src/cnx/cnx_file.cpp:275-276`, raised at `src/xindex/cnx_backend.cpp:870` | `src/xindex/cnx_backend.cpp:440` -- **torn-save only** |
-| `SNX_HDRF_DIRTY` | `include/snx/snx.hpp:40` | **never set** | **never read** |
+| `SNX_HDRF_DIRTY` | `include/snx/snx.hpp:40` | n/a -- SNX has no implementation at all | n/a -- see the correction below |
 | `TagDirEntry.updated_ts` | `include/cdx/cdx.hpp:62`, `include/cnx/cnx.hpp:54` | every rebuild: `src/xindex/cdx_native_backend.cpp:469`, `src/xindex/cnx_backend.cpp:608` | **never compared to anything** |
+
+**CORRECTED 2026-09-06, RE-MEASURED. TWO CELLS OF THIS TABLE WERE WRONG, and
+one of them was wrong in the direction that would have wasted the next session.**
+
+`CDX_HDRF_DIRTY` was recorded as WRITE-ONLY -- "set and cleared", read by nobody.
+It is not written either. `cdxfile::set_dirty` is declared at `include/cdx/cdx.hpp:114`,
+defined at `src/cdx/cdx_file.cpp:153`, and **called from nowhere in the tree**;
+`CDX_HDRF_DIRTY` itself appears at exactly three lines, all inside that
+uncalled setter and its enum. The flag is therefore ALWAYS ZERO on every CDX
+container ever written.
+
+That changes step 2's dependency order, which is why it matters rather than
+being a footnote. Step 2 item 1 said "give `CDX_HDRF_DIRTY` a reader". A reader
+added today would read a permanently-zero flag: a currency check that checks
+nothing while LOOKING like coverage -- strictly worse than no check, and the
+exact false-green shape this lane exists to catch. **The writer comes first, or
+with it. Never the reader alone.**
+
+`SNX_HDRF_DIRTY` was recorded as "declared and never set", which invited step 2
+item 4's "either wire it or delete the declaration". Both options are void.
+There is no `src/snx/` directory, no CMake target names snx, and no `.cpp` in
+the tree includes `snx/snx.hpp` -- only `snx_catalog.hpp` does. Every function
+the header declares (`open`, `close`, `read_header`, `flush_header`,
+`set_dirty`, `page_size`) is a declaration with no definition, and the header
+carries no `inline`. It links today only because nothing calls it.
+
+**AND THAT IS DELIBERATE, WHICH IS WHY THIS IS A CORRECTION AND NOT A FINDING.**
+The header's own purpose block opens with "Future custom compound index family
+(peer to CNX/CDX)". SNX is a format SPECIFICATION written ahead of its
+implementation, not an implementation that lost its body. You cannot wire a flag
+into a format with no body, and deleting one flag declaration from a file that
+is entirely declarations is arbitrary. Item 4 dissolves.
+
+The one residue worth an owner's eye is a single word: `include/snx/snx.hpp`
+carries `status: supported` in its frontmatter while its purpose block says
+"Future". That is machine-readable metadata disagreeing with the prose beside
+it. `reserved` or `planned` would make the two agree; `supported` is a claim the
+file does not keep.
 
 `updated_ts` is the sharpest of the four. It is not a reserved field awaiting a
 design -- it is **written on every rebuild, persisted in the tag directory, and
@@ -183,7 +221,10 @@ looked like a defect until the code that handles it was read.
 ## What is unfinished
 
 1. **The sidecar does not travel.** 0 of 41 containers ship one.
-2. **`CDX_HDRF_DIRTY` is write-only** and `updated_ts` is never compared.
+2. **`CDX_HDRF_DIRTY` is not written AT ALL** -- corrected 2026-09-06; it was
+   recorded here as write-only, and `cdxfile::set_dirty` has zero callers, so
+   the flag is always zero. `updated_ts` is written on every rebuild and never
+   compared.
 3. **No spec asserts either half.** Still true, and `IDXNAME` does not change
    it -- that spec proves TAG -> FIELD RESOLUTION and asserts nothing about the
    sidecar or about a durable dirty flag being read. Said explicitly because a
@@ -323,19 +364,64 @@ consulting it do?**
 
 Concretely, in dependency order:
 
-1. **Give `CDX_HDRF_DIRTY` a reader.** It is set and cleared and read nowhere.
-   The CNX side already shows the shape (`src/xindex/cnx_backend.cpp:440`).
-2. **Decide what a dirty container means at open.** The in-code principle says a
-   stale index that answers is worse than one that refuses -- but applied
-   literally, every unclean shutdown becomes a mandatory REINDEX. This needs an
-   owner ruling in the shape of R139 before code is written.
+1. **Give `CDX_HDRF_DIRTY` a WRITER, then a reader -- in that order.**
+   *Re-measured 2026-09-06 and this item was backwards.* It is not "set and
+   cleared and read nowhere"; `cdxfile::set_dirty` has zero callers, so the flag
+   is always zero. A reader alone would check nothing while looking like a
+   check. The CNX side shows the whole shape, both halves:
+
+   - **written** by `cmd_pack.cpp:259` and `cmd_zap.cpp:222` through
+     `cnxfile::set_dirty`, and raised directly around the save protocol at
+     `src/xindex/cnx_backend.cpp:872`;
+   - **read** at `src/xindex/cnx_backend.cpp:465`.
+
+2. **Decide what a dirty container means at open. THE QUESTION IS SMALLER THAN
+   THIS DOCUMENT ORIGINALLY POSED IT, because CNX already answered it and has
+   been shipping the answer.** This item used to read as an open design
+   question -- "the in-code principle says a stale index that answers is worse
+   than one that refuses, but applied literally every unclean shutdown becomes a
+   mandatory REINDEX". CNX resolved exactly that tension, and **not by
+   refusing**. `src/xindex/cnx_backend.cpp:465`, after the document is known to
+   load:
+
+   ```
+   if (container_is_dirty_(cnx_path_.string())) {
+       std::cout << "[CNX DIRTY] container was not cleanly saved; rebuilding: " ...
+       rebuild();
+   }
+   ```
+
+   with the argument stated above it: an interrupted save left the directory
+   pointing at the PREVIOUS blocks, which are intact, so this is **not repairing
+   corruption -- it is discarding an ordering we cannot prove.** `close()`
+   completes it: "The cost of losing this race is a rebuild, not a wrong answer."
+
+   **So the owner ruling is now a yes/no, not a design.** Does CDX adopt CNX's
+   answer -- rebuild at open, announced, after the container is proven to load --
+   or does CDX differ?
+
+   **The one measurable reason it might differ, and the crux the ruling turns
+   on:** a CNX rebuild reloads in-process structures. A disk CDX is LMDB-backed,
+   so its equivalent is a BUILDLMDB pass over the whole table. At the scale this
+   engine has already been measured against (Pinocchio, 1M students / 5.5M
+   enrollments) those are not the same cost, and an automatic rebuild at open is
+   a very different promise there than on a four-row sandbox table. **That, and
+   not the principle, is what the ruling has to weigh.** The principle is
+   settled; the price is not.
 3. **Decide whether `updated_ts` earns a comparison.** Per-tag freshness against
    the table's own modification time is the cheapest currency test available and
    costs no format change, because the field is already written. It is also the
    one most likely to produce false alarms, which is the argument against it.
-4. **`SNX_HDRF_DIRTY` is declared and never set.** Either wire it or delete the
-   declaration; a flag that is neither written nor read is a claim the format
-   makes and does not keep.
+4. ~~**`SNX_HDRF_DIRTY` is declared and never set.** Either wire it or delete
+   the declaration.~~ **DISSOLVED 2026-09-06, re-measured.** Both options were
+   void: SNX has no implementation to wire a flag into, and no `src/snx/`, no
+   CMake target and no `.cpp` that includes its header. Every function it
+   declares is a declaration with no definition. **This is deliberate** -- the
+   header's own purpose block opens "Future custom compound index family (peer
+   to CNX/CDX)". A specification written ahead of its implementation is not a
+   promise broken. See the correction under the mechanism table. The only
+   residue is one word of frontmatter: `status: supported` on a file whose prose
+   says "Future".
 
 ### Step 3 -- a spec that can actually see it -- DONE 2026-09-06 (`403cb4072`)
 
