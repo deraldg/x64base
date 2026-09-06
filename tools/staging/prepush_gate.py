@@ -759,6 +759,56 @@ def main() -> int:
                   "that is not tracked (see above). NOT blocking. Stage the file, "
                   "or stop citing it. An IGNORED path can never be staged at all.")
 
+        # 5c-bis. HEADER REACHABILITY -- ADVISORY, and the inverse of every other
+        # check in this block. The rest ask whether a POINTER has a TARGET:
+        # cited-paths finds a document citing a path it does not ship,
+        # mandatory-tracked finds a declared file that is not tracked, 5d finds
+        # a link with no page. This one finds a file that ships, is tracked,
+        # declares `status: supported`, and that NO TRANSLATION UNIT CAN SEE.
+        # It is not a widow. It is the thing no pointer reaches.
+        #
+        # Measured 2026-09-06: 61 of 348 headers under include/ are unreachable
+        # from every .cpp in src/ and tests/ following #include TRANSITIVELY,
+        # and 58 of them say `supported`. The lone `reserved` is
+        # include/devref.hpp -- whose value the normalization guards already
+        # print as "empty by declaration" every commit, so the vocabulary has a
+        # right answer and 58 files are not using it.
+        #
+        # ADVISORY, NEVER HARD, for three reasons and each is a real one. The
+        # backlog is 61, and a gate that fails every commit until someone
+        # triages 61 files gets switched off rather than obeyed. Writing a
+        # header in one commit and its .cpp in the next is legitimate practice,
+        # and a hard gate teaches people to bundle unrelated work. And what
+        # `status: supported` actually asserts is not written down anywhere this
+        # session could find -- blocking on an unread contract is guessing.
+        #
+        # UNREACHABLE IS NOT WRONG, which is why it reports rather than judges:
+        # include/snx/snx.hpp is in the set and its own purpose block opens
+        # "Future custom compound index family", a specification written ahead
+        # of its implementation. Some of the other 57 will be the same.
+        #
+        # It is baselined so it says what MOVED instead of repeating a count
+        # nobody reads by the third day -- the same lesson 5c records. NEW means
+        # a header arrived that no build can see, or the last include of one was
+        # removed. FIXED means a baseline line is stale.
+        #
+        # Cost: it reads ~950 files, and only when the change set touches a
+        # header or a source. That is under half what the R-number gate already
+        # walks every commit (137 citations over 2054 files), which is the
+        # measured precedent this is priced against.
+        #
+        # Five arms falsification-tested on a synthetic tree 2026-09-06 before
+        # being wired in here: out-of-scope, no-baseline backlog, matching
+        # baseline PASS, a NEW orphan, and a FIXED one. The fixture also proves
+        # the transitive half -- a header reached ONLY through another header
+        # counts as reachable. A first cut without that counted 78 and would
+        # have named seventeen working files.
+        rc = _run_portal_check("tools/staging/check_header_reachability.py", [])
+        if rc == 1:
+            print("\n  ADVISORY -- the unreachable-header set moved (see above). "
+                  "NOT blocking. Update the baseline when the move is intended, "
+                  "or give the header a `status:` that says what it is.")
+
         # 5d. MANUAL LINK INTEGRITY -- hard. Every page the accepted command
         # reference links to must exist AND BE TRACKED.
         #
