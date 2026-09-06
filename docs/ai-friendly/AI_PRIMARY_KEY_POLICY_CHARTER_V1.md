@@ -104,19 +104,52 @@ The house pattern already exists and is the obvious fit: `WORKSPACES` is an
 ordinary x64 table -- the map drawn in the same ink as the territory. A key
 declaration belongs in a catalog table read at USE time, or in the DBF header.
 
-**OPEN DECISION, OWNER'S TO MAKE, AND IT IS A SCHEMA COMMITMENT:** catalog
-table or header?
+**RULED 2026-09-06 BY THE OWNER: A CATALOG TABLE.** R-number pending claim.
 
-- *Catalog table* -- queryable, attributed, versionable by the same supersede
-  chain the workspace catalog uses; costs a read at open; a table can be
-  missing.
-- *Header* -- travels with the file, cannot be separated from the data it
-  describes; costs a format change and a compatibility question for every
-  reader, including the VFP-flavour and x32 paths.
+The alternative was a DBF header descriptor, and it was not dismissed -- it is
+the philosophically stronger answer, because a primary key is a property of the
+data and a header carries it wherever the file goes. What decided it was
+REVERSIBILITY and RISK SURFACE:
+
+- The house already has the machinery. `WORKSPACES` is an ordinary x64 table
+  with a supersede chain, attribution and history; a key catalog is the same
+  shape and needs no new concepts.
+- A header change touches EVERY reader -- x64, x32, the VFP-flavour path, both
+  x64 DBF readers (one of which this tree has already recorded as silently
+  wrong), and Visual FoxPro itself, which must still open the file. That risk
+  is measured rather than hypothetical: the `_NullFlags` bit-order work in the
+  same header cost two commits in this tree because the order was got wrong.
+- A catalog can later be superseded by a header. A shipped header format is
+  very hard to walk back.
+
+**THE COST OF THE RULING, STATED SO IT IS NOT FOUND BY SURPRISE:** the
+constraint is NOT carried by the file. Copy a `.dbf` out of the tree and its
+primary key does not go with it. For a primary key that is a real semantic
+loss, not a technicality, and it is the strongest argument the header option
+had. Anyone revisiting this should revisit it on those grounds and not on
+convenience.
 
 Step 1 makes `PKP_T4..T6` no less red. It is sequenced first because it is the
 only step that changes nothing about writes, and because the answer determines
 what step 2 reads.
+
+**CONCRETE SHAPE, NOW THAT IT IS RULED.** A key catalog table holding at least
+`(table identity, field name, kind)` where kind distinguishes UNIQUE from
+PRIMARY; written by `SET UNIQUE FIELD <f> ON|PRIMARY`; read at `USE` and cached
+onto the area so step 2's choke point does not pay a catalog read per write.
+Two questions this raises that the ruling does not answer and that should be
+settled before code rather than during it: what invalidates the cached copy,
+and whether a table opened with no catalog row present is an error or simply a
+table with no declared key. The second is the one that decides whether existing
+tables keep working.
+
+**THE PARTIAL CARRIER THAT ALREADY EXISTS.** A workspace posture writes
+`KEY <table> <field>` lines and replays them into `set_unique_field` /
+`set_primary_field` on LOAD (`cmd_workspace.cpp`). That is a second declaration
+of where a key lives, and once the catalog exists it becomes a THIRD ROUTE to
+the same state. It should be reconciled rather than left to drift -- the
+`field_constraints.hpp` lesson in this same lane is what four live declarations
+of one concept costs.
 
 ### Step 2 -- one choke point (engine; needs an explicit go for `src/xbase`)
 
@@ -129,6 +162,143 @@ It belongs where writes converge -- around `replaceFieldStored` /
 
 Risk, stated plainly: this is the step where a mistake corrupts data rather
 than annoying a user. It wants its own proof before it lands, not after.
+
+#### Step 2 dependency: the write path cannot name a field's obligations
+
+Measured 2026-09-06 while asking a different question -- how does the table
+layer know a field is indexed, so it can mark the index stale. It does not.
+
+`mark_stale_field(area0, field1)` at `table_write.hpp:94` fires
+UNCONDITIONALLY on every buffered field write, next to `set_dirty` and with no
+index question anywhere near it. So `stale_bits` records FIELDS WRITTEN, not
+INDEX FIELDS THAT WENT STALE, and from the automatic path `dirty` and `stale`
+now carry identical information. The one consumer, `stale_fields_string_for_
+area()` in `table_buffer.cpp:166`, turns the bitmap into names for a display
+string capped at 120 characters. Every other reference is a `clear_`. The
+`TABLE BUFFER STALE|FRESH|STALEALL|FRESHALL` verbs set the flag BY HAND.
+
+THE DISTINCTION IS VESTIGIAL AND THE STRUCTURE PROVES IT. `AreaState` carries
+BOTH `bool stale_any` and `std::uint64_t stale_bits[kWords]`, and `is_stale()`
+returns the OR of them. A per-field bitmap only earns its place if something
+once asked a question about each field individually; `stale_any` alone serves
+every surviving use. The owner's recollection is that the original design
+marked an indexed field DIRTY AND STALE and a plain field DIRTY ONLY. The
+shape of that design is still standing with its predicate removed.
+
+CAUSE NOT ESTABLISHED, stated rather than guessed. The pickaxe over
+`mark_stale_field` finds exactly one commit: `fecc3951e`, 2026-07-14,
+"Checkpoint runtime source and separate engine profiles" -- which reads as a
+bulk import, and a bulk import flattens what came before it. The CNX
+transactional work (XIDX-TXN-02) is 2026-07-31, two weeks LATER, so the
+batch-to-transactional hypothesis is NOT supported by this repository's
+history. The history that would settle it may not be here.
+
+AND THE CONTAINER CANNOT ANSWER IT EITHER, which is the part that makes this a
+step 2 dependency rather than a separate cleanup. The x64 CDX is an LMDB
+environment with ONE NAMED LMDB DATABASE PER TAG -- `std::unordered_map<
+std::string, MDB_dbi> dbis_`, keyed by tag name. That name is the ENTIRE
+per-tag metadata: no key expression, no field index, no descriptor. Nothing in
+the tree parses a FoxPro compound-index tag header.
+
+So "which field does this tag index" is answered by MATCHING THE TAG NAME
+AGAINST THE FIELD NAME, in two duplicate implementations that do not agree:
+`field_index_for_tag_()` at `cdx_native_backend.cpp:72` trims and handles an
+embedded NUL; `IndexManager::activeTagFieldIndex1()` at `index_manager.cpp:382`
+does neither. Consequences:
+
+- `CDX ADDTAG SID` works BY CONVENTION, not by knowledge. A tag named `BYNAME`
+  over field `LNAME` resolves to 0 -- "no field" -- and any caller asking
+  whether that field carries a tag gets a confidently wrong answer.
+- AN EXPRESSION TAG CAN NEVER RESOLVE. `UPPER(LNAME)` matches no field name,
+  ever. This is the same blocker recorded in `compute_next_numeric()` against
+  an index-backed autokey fast path, now confirmed STRUCTURAL rather than a
+  hedge.
+- It is the FIFTH live declaration of what a field name is, joining the
+  ADDTAG/REPLACE pair (unified via `xfg::resolve_field_index_std`) and
+  BUILDLMDB's raw `textio::ieq` and REBUILD's `normalize_field_name`, both
+  recorded against MWXSHAKE.
+
+#### The CDX sidecar already exists, and it changes the cost of this
+
+**A `.cdx.meta` SIDECAR SHIPS TODAY.** Measured 2026-09-06: plain `KEY=VALUE`
+text, 130-166 bytes, written and read by `src/xindex/cdx_meta.cpp`. It is
+ALREADY VERSIONED:
+
+    META_VERSION=1
+    BACKEND=lmdb
+    KIND=v64
+    VERSION=100
+    RECLEN=47
+    FIELDS=2
+    HASH=415,126,891,304,751,935
+    SOURCE=dbf\x64\BUILDING.DBF
+
+It describes THE TABLE THE CONTAINER WAS BUILT FROM -- record length, field
+count, a fingerprint, the source path. NOT ONE WORD ABOUT TAGS.
+
+THIS MAKES THE FIX MUCH CHEAPER THAN A CONTAINER FORMAT CHANGE. A `TAG=<name>,
+<field_index1>` line per tag needs no change to the `.cdx` itself, raises no
+VFP compatibility question, and `META_VERSION` is already there to gate it: an
+old reader skips a line it does not know, a new reader gets the answer without
+name-matching. The earlier draft of this section assumed a container format
+change was required; it is not.
+
+**THE SIDECAR IS NOT RELIABLY PAIRED, AND ANYTHING READING IT MUST SAY SO.**
+Measured on the x64 index root: `CLASSES.cdx`, `COURSES.cdx`, `DEPT.cdx`,
+`MAJORS.cdx`, `ROOMS.cdx`, `STUD_MAJ.cdx` and `table.cdx` have NO meta;
+`IDXBENCH.cdx.meta`, `IDXFAIL.cdx.meta`, `PHYSICAL.cdx.meta` and
+`VUREP.cdx.meta` are ORPHANS with no container. So absence must mean UNKNOWN,
+never "this table has no tags" -- the same shape as the missing-catalog-row
+question step 1 is already holding. There is also case duplication
+(`CLASSES.cdx` beside `classes.cdx.meta`, and five more), which on a
+case-insensitive filesystem is one stem reached two ways: a sixth spelling of
+identity sitting next to the five spellings of what a field name is.
+
+**CNX HAS NO SIDECAR AT ALL.** `.cnx` files exist under `INDEXES/vfp/` and
+`INDEXES/sandbox/` with nothing beside them, and `cmd_erase.cpp` builds a
+`.cdx.meta` path and no `.cnx.meta`. A sidecar-based answer therefore covers
+CDX and leaves CNX exactly where it is, which matters because
+`container_supports_tag()` treats the two identically.
+
+**NO EVIDENCE THE SIDECAR EVER CARRIED PRIMARY / STALE / DIRTY.** The owner's
+recollection is that it did. It was checked both ways and this tree does not
+support it: all 86 `.cdx.meta` files on disk carry EXACTLY the eight keys
+above, none more and none fewer; and `cdx_meta.cpp` knows exactly those eight
+literals, with no orphan parsing for a key it no longer writes -- which is
+usually where a removed feature leaves its fingerprint. As with the
+`mark_stale_field` history, the evidence may simply live where the subapp did
+rather than in this repository. RECORDED AS UNSUPPORTED RATHER THAN DISPROVED:
+absence of a trace in one tree is not proof about another.
+
+**THE SIDECAR IS NOT YET FIT TO CARRY A LOAD-BEARING CLAIM, AND THAT IS A
+PREREQUISITE RATHER THAN A CAVEAT.** Measured 2026-09-06 and written up
+separately because it is index-metadata durability rather than primary keys:
+`.cdx.meta` is GITIGNORED (0 tracked, 86 on disk), so a fresh clone has none
+and `index_manager.cpp:205` MINTS ONE FROM THE TABLE'S CURRENT IDENTITY on
+first open. The fingerprint guard is hardened and correct, and it cannot be
+older than the sidecar -- so after a clone every container is trusted exactly
+once, unconditionally. Pairing is broken in both directions in four of ten
+index roots, and `SOURCE` is unvalidated (49 absolute, 37 relative, 14 that
+resolve to nothing, one empty) because `cdxmeta::matches()` never reads it.
+
+Putting `TAG=<name>,<field_index1>` into that file today would mount the
+primary-key answer on the same foundation. The sidecar repair is sequenced
+BEFORE step 2 can use it.
+
+**OPEN DECISION, OWNER'S.** Restoring the dirty/stale distinction on top of
+name-matching would produce a flag that is right for conventionally-named tags
+and quietly wrong for every other kind -- WORSE than today's
+over-broad-but-safe behaviour, because it would look precise. The real options
+are: put `TAG=<name>,<field_index1>` in the existing `.cdx.meta` (cheapest, no
+format change, leaves CNX unanswered); put the field index in the container
+itself, for which the precedent is already in this tree in a sibling format --
+`TagDesc` in `local_index_stub.hpp` carries `uint32_t field_index1`, and the
+x64 CDX design dropped it; or parse a real VFP key expression, which is a NEW
+CAPABILITY rather than a restoration, since no code reads that header today.
+
+Whichever is chosen, step 2's choke point needs to answer THREE questions
+about a field and can name NONE of them today: is it indexed, is it unique, is
+it the primary key. They are one predicate short each, at the same seam.
 
 ### Step 3 -- refuse, do not renumber
 
