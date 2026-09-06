@@ -113,7 +113,8 @@ enum class RegressionValidator {
     SqlselBufferVisibilityV1,
     EvaldiffV1,
     CountListVerboseV1,
-    DefFamilyV1
+    DefFamilyV1,
+    PkPolicyV1
 };
 
 struct RegressionSpec {
@@ -193,7 +194,7 @@ struct RegressionSpec {
 // compile error ("too many initializers"), which is the safe failure -- but it
 // is a recurring papercut: it happened when CNXLIVE was added on 2026-07-31.
 // Bump it when you add a regression.
-constexpr std::array<RegressionSpec, 77> kRegressionSpecs{{
+constexpr std::array<RegressionSpec, 78> kRegressionSpecs{{
     {
         "COUNT_LIST_VERBOSE",
         "count_list_verbose_regression.dts",
@@ -802,6 +803,16 @@ constexpr std::array<RegressionSpec, 77> kRegressionSpecs{{
         "vfp_null_assertions.dts",
         "NULL IS ASSERTABLE (AIF-091, 2026-09-05). The lane could CREATE a nullable VFP table, write a null, read it, display it and filter on it -- every leg graded against bytes Visual FoxPro wrote -- and REGRESSION ALL could reach NONE of it, because no .dts asserted a null. THIS SPEC'S FIRST RUN WAS 17/21 AND THE FOUR REDS WERE ONE DEFECT: a value write stored the value AND re-committed the null bit (DbArea::set() never touched _fd_null; storeFieldsToBuffer() recomputes the bitmap FROM _fd_null), so REPLACE VNAME WITH \"restored\" left a cell that read `restored` to `?` and `.NULL.` to LIST, and survived a close and reopen. Fixed in 22c748381; the four arms are the regression. NL_T1 IS THE DISCRIMINATOR AND THE FIXTURE IS ORDERED FOR IT: rec 2's VNAME is BLANK AND NOT NULL and sits AHEAD of the nulled rec 3, and LOCATE takes the first match from the top, so a build that answers ISNULL from emptiness lands on rec 2 and reads `blankvn`. NL_T5/T6 state the problem out loud -- the nulled cell and the blank cell BOTH read empty by value, which is why ISNULL has to exist and why its argument is never evaluated. NL_T11 is the strongest single arm: with rec 3 cleared, LOCATE FOR ISNULL(VNAME) must find REC 5, which proves three things at once -- rec 3's bit actually cleared rather than being overwritten in the value area, rec 5's bit was set by the DOTTED `.NULL.` spelling, and the two rows' bits are independent. WHY NO ARM USES `? \"NAME:\" + ISNULL(f)`, WHICH WAS THE PLAN: `?` is a SHORTCUT FOR FORMULA (shortcut_resolver.hpp), FORMULA calls eval_rhs, and eval_rhs tries its OWN scalar parser first -- which is where `+` string concatenation lives and whose four builtin tables do not contain ISNULL. Only the fallback (eval_any -> compile_where_program) knows it, and in THAT AST `+` is Arith and Arith::evalString returns a NUMBER. PREDICTED FROM THE CODE, THEN MEASURED by the spec's own NL_P2 probe, which printed a bare `0` AND SWALLOWED THE LABEL -- so a spec written that way would have emitted one anonymous zero per arm and the marker-count discipline could not have seen it. This is a property of the whole FunctionCategory::Cursor category, not of one function; the catalogue already files the same note one entry above ISNULL's, about RECNO. So every marker here is a FIELD-VALUE comparison and the nulls are asserted through LOCATE FOR ISNULL(<field>), the FOR-predicate path the feature was built for. COVERAGE: bit index (T2 -- ID and VNAME do not own adjacent bits, because a Varchar owns a varlength bit too; two commits in this lane exist because that order was got wrong); field and row isolation (T3, T4, T7); the write reached DISK (T8, T9, T12 -- close and reopen, the only question a suite can ask that a staged row cannot answer for itself); the bit CLEARS (T10, T11); refusal on a non-nullable field (T13, T14); refusal under TABLE BUFFER (T15, T16, run LAST because they touch a session setting, and buffering is restored OFF). Neither refusal arm claims a MESSAGE appeared -- console text is unreadable by a marker -- so both ask the answerable questions instead: did the value survive, and did the refusal leave the rest of the bitmap alone. NOT CLAIMED, stated rather than implied: that no OTHER row is null (no marker in this language can assert an absence, and an errored marker PRINTS NOTHING rather than going red); that LIST prints `.NULL.` (true, proven by hand in 11b40895a, and console text); anything about null ORDERING (opened NOINDEX throughout, and what a CDX/CNX/LMDB backend makes of a null key is unclaimed by this lane); ISNULL over a JOINED or TupleRow source; what VFP's own APPEND BLANK writes into a bitmap. 21 GRADED MARKERS -- 5 NL_G* guards, 16 NL_T* arms -- plus 3 UNGRADED NL_P* probes that are not part of the 21. COUNT THEM: a transcript with 20 is a spec that lost a claim, not a spec that passed. If any NL_G* reds, treat every NL_T* as UNPROVEN; the arms read fields of rows the guards establish. Disposable table, rebuilt every run, mints no catalog rows. Explicit-run until soaked: TWO GREEN 21/21 RUNS, 2026-09-05, the second on a build nobody had changed anything on -- the first proved the fix, the second proves the spec. PROMOTED TO THE DEFAULT SUITE 2026-09-05. THREE GREEN 21/21 RUNS BEFORE THE FLAG MOVED: two by DOTSCRIPT (the second on a build nobody had changed anything on -- the first proved the fix, the second proves the spec) and one by REGRESSION RUN NULLASSERT, which is a DIFFERENT measurement and was treated as one: it exercises the bracketed path and the L3 isolation arm, machinery a bare DOTSCRIPT never touches (L3 6/6 before, 21/21, L3 6/6 after, production catalog 279 rows on both reads). THE REASON FOR PROMOTION IS A MEASURED COVERAGE HOLE, NOT THE SOAK ALONE -- the RELSCOPE2 precedent. REGRESSION ALL COULD NOT REACH ONE INCH OF THIS LANE: not CREATE VFP with NULL, not REPLACE ... WITH NULL, not the .NULL. spelling, not ISNULL in a predicate, not the clear path, not either refusal. Six commits of engine work behind a suite that would have stayed green through all of it. THE COST IS THE CHEAPEST IN THE SUITE: no catalog rows (none of the three minting verbs), no LMDB, no index containers, one disposable VFP table rebuilt and overwritten every run in DBF/SANDBOX -- the SDVIS pattern. IT RUNS LAST BY DECLARATION ORDER AND THAT IS THE SAFE POSITION: it re-points the DBF slot to SANDBOX and does NOT restore it (SDVIS does the same), and nothing in the suite runs after it except the L3 AFTER arm, which sets its own slots. It restores TABLE BUFFER to OFF, which is the only session setting it touches. It inherits INDEXES and LMDB rather than re-pointing them -- the same standing fixture omission recorded against MWXSHAKE section 5C and OPENJOIN, harmless here because this spec builds no containers, and it will stop being harmless the moment an arm needs an index. NOT YET VERIFIED IN-SUITE at the time of writing, which is the property a single-spec run cannot prove: order-independence when it inherits WSENV's open areas and path slots. VERIFIED IN-SUITE 2026-09-05 ON THE PROMOTING BUILD (c1678d167 plus this uncommitted registry edit; build/src/Release/dottalkpp.exe stamped Sep 5 2026 17:39), and every clause above is LEFT STANDING because it was true when it was written. THE LISTING WAS READ BEFORE THE RUN, which is the check the sentence below demands and the one NAV_NATURAL's entry records a wasted REGRESSION ALL for: REGRESSION LIST showed NULLASSERT [default], so the rebuild took and the entry was live rather than merely edited. Run as the TWENTY-SEVENTH AND LAST spec of REGRESSION ALL: 21 of 21, full count, five NL_G* guards and sixteen NL_T* arms, with the two ungraded probes behaving exactly as this entry predicts -- NL_P1 printing .T., and NL_P2 printing a bare anonymous `0` with its label swallowed, so the `+` finding above is now reproduced INSIDE THE SUITE and not only in a single-spec run. IT MINTED NOTHING, measured rather than assumed: seven specs took scratch brackets this run, wscat_run_298 through 304, and NULLASSERT WAS NOT AMONG THEM; the L3 isolation arm read six of six at both ends and the production catalog at 279 rows before and after. ORDER-INDEPENDENCE IS DEMONSTRATED RATHER THAN ASSUMED, which is the one thing this run adds over the three that preceded it: it inherited WSENV's session with the DBF slot left on the bare data/DBF root rather than the DBF/SANDBOX its earlier greens started from, re-pointed ONLY DBF in its own opening line, and built its fixture from a slate WSENV's teardown had cleared -- so it depended on nothing it inherited, and the single-slot re-pointing noted against MWXSHAKE section 5C is confirmed harmless HERE while remaining the same standing omission everywhere. WHAT THIS RUN STILL DOES NOT SETTLE -- AND THIS PARAGRAPH IS A CORRECTION, because the sentence first committed here (a46fa95c9) said something THE SPEC'S OWN HEADER REFUTES ON LINE 171. IT IS NOT TRUE that NULLASSERT has never run against a pre-fix binary. Its FIRST RUN -- 2026-09-05, build Sep 05 2026 08:29:36 (11b40895 dirty) -- was 17 OF 21, with exactly NL_T11, NL_T12, NL_T14 and NL_T16 red and all five guards green, which is the prediction element for element; and the header records that the four arms were DELIBERATELY NOT RETUNED afterwards, so the markers that went red are the markers that ship. The four reds are a MEASUREMENT. This spec is known to be capable of failing, and it failed for the reason the fix addresses. THE REAL REMAINING GAP IS NARROWER, AND IT IS THE ONE THAT MATTERS FOR A PROMOTED SPEC: that 17/21 was taken by DOTSCRIPT. THE BRACKETED REGRESSION PATH -- the grader REGRESSION ALL actually runs through, with its L3 isolation arm and its pass/fail rollup -- HAS ONLY EVER SEEN THIS SPEC GREEN. Nothing here shows the SUITE REPORTS the failure rather than merely containing a spec that can fail; that would take one REGRESSION RUN NULLASSERT against a binary with 22c748381 backed out. That debt is smaller than the one first written here and it is still open. THE ERROR IS WORTH KEEPING RATHER THAN ERASING: it is the sixth AIF-079 instance in this lane and the same shape as the others -- a claim asserted about a file without reading the file, when the file being described contained the disproof. THE FLAG FLIP NEEDS A REBUILD -- the registry is compiled in, and NAV_NATURAL's entry records a whole REGRESSION ALL wasted on exactly that mistake, a full green over a spec that never executed, caught only because the curated listing showed it without its [default] tag. Read REGRESSION LIST for the tag before believing the run.",
         true    // PROMOTED 2026-09-05 -- three green 21/21 runs before the flag moved (two DOTSCRIPT, one REGRESSION RUN), then VERIFIED IN-SUITE the same day, 27th and last in REGRESSION ALL; see the summary for the coverage argument and for what the run still does not settle
+    }
+    ,
+    {
+        "PKPOLICY",
+        "pk_policy_regression.dts",
+        "PRIMARY KEY POLICY: WHAT HOLDS TODAY, AND WHAT THE POLICY WORK MUST MAKE HOLD (AIF-156, 2026-09-06). x64base DECLARES a primary key (SET UNIQUE FIELD <f> PRIMARY), GENERATES it on APPEND into a BLANK key field inside try_lock_table/unlock_table so max+1 is taken by one writer at a time, and RESERVES a deleted row's key until PACK because a deleted row can be RECALLed -- all three deliberate, all three worth keeping, and NONE of them enforcement. IT ENFORCES THE KEY NOWHERE, MEASURED 2026-09-06 on build Sep 05 2026 21:18:51: a native REPLACE wrote a duplicate over a PRIMARY key and it SURVIVED A CLOSE AND REOPEN, and SQLSEL INSERT committed a second duplicate through the table buffer and WAL. VALIDATE UNIQUE then found what it was built to find. ELEVEN GRADED MARKERS, DERIVED NOT DECLARED: five guards PKP_G1..G5 and six arms PKP_T1..T6, contiguous -- count them, because an errored marker in this language PRINTS NOTHING rather than going red and a transcript with ten is a spec that lost a claim. PKP_G5 EXISTS BECAUSE THE FIRST RUN OF THIS SPEC WAS BLIND ON PART B: Part A closes PKPOL to build the dirty fixture, a bare SELECT 1 then selected an area with NO FILE OPEN, and T4/T5/T6 printed .F. because NOTHING RAN -- the value this spec expects today, so it PASSED. The right answer for the wrong reason, and a ratchet that could never have fired when enforcement arrived. G5 reopens the table and is a HARD GATE on the acceptance count. A CLOSE FOLLOWED BY A SELECT IS NOT AN OPEN, which is the USE_AGAIN/WSENV/MWXSHAKE-5C shape arriving for the fifth recorded time, in a spec whose own header warns about it. THE HALVES ARE GRADED DIFFERENTLY AND THAT IS THE DESIGN. PART A (G1..G4, T1..T3) is green today and locks in what already works; PKP_T1 deletes record 3 and requires the next APPEND to issue 4, PKP_T2 recalls record 3 and requires it to still read 3, which is the pair that would red if the generator ever stopped scanning deleted rows -- the exact trap an index-backed fast path falls into, and the reason compute_next_numeric() is still an O(n) scan on purpose. PART B (T4..T6) is the ACCEPTANCE CRITERION for write-time refusal and is RED TODAY BY DESIGN, asserted as three arms rather than one because native REPLACE, SQLSEL INSERT and SQLSEL UPDATE reach the table buffer by different paths and a fix wired into one is not evidence about the other. THE VALIDATOR IS A RATCHET THAT FAILS IN BOTH DIRECTIONS: kPkAcceptanceExpected records how many Part B arms were green when this spec was last reviewed, so enforcement ARRIVING fails the spec until a human bumps the constant deliberately, and enforcement REGRESSING fails it too. Without that, a permanently-red half is DEF_FAMILY's mistake repeated -- markers with no grader, green by construction. NOT CLAIMED, stated rather than implied: PERSISTENCE ACROSS A RESTART (the declaration lives in a process-local map that unique_registry.cpp calls 'not persistent schema metadata'; a .dts runs in ONE process so no marker here can ask the question, and a two-run harness is step 1 of the lane); CONCURRENCY (one writer cannot exercise the table lock); REFERENTIAL INTEGRITY (out of scope, nothing here declares a foreign key). EVERY ANSWER IS A FIELD READ, never console text: if the cell still holds its original value the write was refused, if it holds the new one it was not. EXPLICIT-RUN AND IT MUST STAY THAT WAY WHILE PART B IS RED -- a partially-red spec must not enter REGRESSION ALL. Promote on the NULLASSERT precedent only after Part B is green and soaked: two green runs on a build nobody changed anything on, then the flag moves, then a REBUILD, then read REGRESSION LIST for the [default] tag BEFORE believing the run. Disposable PKPOL/PKPDIRTY tables in DBF/SANDBOX, erased at both ends; mints no catalog rows.",
+        false,
+        false,
+        RegressionValidator::PkPolicyV1,
+        true // VALIDATE UNIQUE and the shell both print through routed channels
     }
 }};
 
@@ -2438,6 +2449,123 @@ bool validate_evaldiff(const std::string& transcript)
     return true;
 }
 
+// AIF-156 -- PRIMARY KEY POLICY.
+//
+// Eleven graded markers, derived not declared: five guards PKP_G1..G5 and six
+// arms PKP_T1..T6, contiguous. COUNT THEM. An errored marker in this language PRINTS
+// NOTHING rather than going red, so a transcript with nine is a spec that lost a
+// claim, not a spec that passed.
+//
+// THE SPEC IS WRITTEN IN TWO HALVES AND THEY ARE GRADED DIFFERENTLY.
+//
+// PART A -- PKP_G1..G4 and PKP_T1..T3 -- is what x64base ALREADY DOES and it
+// must be green: declaration, generation into a blank key under the writer's
+// table lock, the reservation of a deleted row's key until PACK, the recall
+// that proves the reservation mattered, and VALIDATE UNIQUE finding a duplicate
+// in data that arrived dirty. If Part A reds, the policy work broke something
+// that already worked.
+//
+// PART B -- PKP_T4..T6 -- is the ACCEPTANCE CRITERION for write-time refusal on
+// the native REPLACE path, on SQLSEL INSERT and on SQLSEL UPDATE. Asserted as
+// three arms rather than one because INSERT and UPDATE reach the table buffer
+// by different paths and a fix wired into one is not evidence about the other.
+// MEASURED 2026-09-06 ON BUILD Sep 05 2026 21:18:51: all three RED. A native
+// REPLACE wrote a duplicate over a PRIMARY key and it survived a close and
+// reopen; SQLSEL INSERT committed a second duplicate through the buffer and WAL.
+//
+// THIS VALIDATOR IS A RATCHET AND IT FAILS IN BOTH DIRECTIONS, which is the
+// whole reason a permanently-red half is admissible at all. kPkAcceptanceExpected
+// records how many Part B arms were green on the build this spec was last
+// reviewed against. If the count RISES, enforcement arrived and somebody must
+// bump the constant DELIBERATELY -- an acknowledgement, not an accident. If it
+// FALLS, enforcement regressed and the suite says so. A spec that can only fail
+// one way is half a spec; a red half that can never fail is DEF_FAMILY's mistake
+// repeated -- markers with no grader, permanently green by construction.
+constexpr int kPkAcceptanceExpected = 0;
+
+bool validate_pk_policy(const std::string& transcript)
+{
+    static constexpr std::array<const char*, 8> partA{{
+        "PKP_G1_declared_and_generated:.T.",
+        "PKP_G2_second_key_is_2:.T.",
+        "PKP_G3_third_key_is_3:.T.",
+        "PKP_G4_parked_on_GAMMA:.T.",
+        "PKP_T1_deleted_key_not_reused:.T.",
+        "PKP_T2_recalled_row_keeps_its_key:.T.",
+        "PKP_T3_dirty_duplicate_is_present:.T.",
+        "PKP_G5_partB_fixture_is_open:.T."
+    }};
+    static constexpr std::array<const char*, 3> partBNames{{
+        "PKP_T4_native_replace_refused:",
+        "PKP_T5_sqlsel_insert_refused:",
+        "PKP_T6_sqlsel_update_refused:"
+    }};
+
+    bool ok = true;
+
+    for (const char* marker : partA) {
+        if (transcript.find(marker) == std::string::npos) {
+            std::cout << "PK POLICY: FAIL -- Part A marker missing or red: "
+                      << marker << "\n";
+            ok = false;
+        }
+    }
+
+    // PKP_G5 IS A HARD GATE ON THE ACCEPTANCE COUNT, not just another guard.
+    // The first run of this spec had no G5: Part A had closed PKPOL, `SELECT 1`
+    // selected an area with no file, and T4/T5/T6 printed .F. because NOTHING
+    // RAN. That is the value this spec expects today, so it passed -- the right
+    // answer for the wrong reason, and a ratchet that could never fire. If the
+    // Part B fixture is not open, the count is not evidence of anything.
+    if (transcript.find("PKP_G5_partB_fixture_is_open:.T.") == std::string::npos) {
+        std::cout << "PK POLICY: FAIL -- the Part B fixture was not open, so the "
+                     "acceptance arms did not run. Their verdicts are UNPROVEN, not "
+                     "red. A CLOSE followed by a SELECT is not an open.\n";
+        return false;
+    }
+
+    int green = 0;
+    for (const char* name : partBNames) {
+        const std::string t = std::string(name) + ".T.";
+        const std::string f = std::string(name) + ".F.";
+        const bool sawT = transcript.find(t) != std::string::npos;
+        const bool sawF = transcript.find(f) != std::string::npos;
+        if (!sawT && !sawF) {
+            std::cout << "PK POLICY: FAIL -- acceptance marker did not print at all: "
+                      << name << " (an errored arm prints nothing; it did not pass)\n";
+            ok = false;
+            continue;
+        }
+        if (sawT) ++green;
+    }
+
+    if (green != kPkAcceptanceExpected) {
+        std::cout << "PK POLICY: FAIL -- acceptance count changed: "
+                  << green << " of 3 Part B arms green, expected "
+                  << kPkAcceptanceExpected << ".\n";
+        if (green > kPkAcceptanceExpected) {
+            std::cout << "  Write-time enforcement APPEARS TO HAVE ARRIVED. That is the "
+                         "good direction, and it is still a failure until a human bumps "
+                         "kPkAcceptanceExpected to " << green
+                      << " and says so in the commit. See AIF-156.\n";
+        } else {
+            std::cout << "  Write-time enforcement REGRESSED. A duplicate primary key can "
+                         "now be written on a path that previously refused it.\n";
+        }
+        ok = false;
+    }
+
+    if (!ok) return false;
+
+    std::cout << "PK POLICY: PASS -- Part A green (8 markers), acceptance "
+              << green << " of 3 as expected. AIF-156: "
+              << (green == 3 ? "enforcement is in place."
+                             : "write-time enforcement is NOT built yet; this spec is "
+                               "the acceptance criterion for it, not a claim that it works.")
+              << "\n";
+    return true;
+}
+
 bool validate_regression_transcript(const RegressionSpec& spec,
                                     const std::string& transcript)
 {
@@ -2474,6 +2602,8 @@ bool validate_regression_transcript(const RegressionSpec& spec,
             return validate_evaldiff(transcript);
         case RegressionValidator::CountListVerboseV1:
             return validate_count_list_verbose(transcript);
+        case RegressionValidator::PkPolicyV1:
+            return validate_pk_policy(transcript);
         case RegressionValidator::DefFamilyV1:
             return validate_def_family(transcript);
     }

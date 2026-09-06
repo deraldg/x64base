@@ -1,0 +1,210 @@
+; ============================================================================
+; pk_policy_regression.dts -- PRIMARY KEY POLICY: what holds today, and what
+;                             the policy work must make hold.
+;
+; Status: CANDIDATE / explicit-run. EXPECTED PARTIALLY RED ON ARRIVAL.
+; Safety: MUTATING (SANDBOX only: throwaway PKPOL / PKPDIRTY, erased at end).
+; Lane:   AIF-156 primary-key policy (claimed 2026-09-06,
+;         run COWORK-20260906-001, member.ai.claude.cowork)
+;
+; THIS SPEC IS DELIBERATELY RED IN ITS SECOND HALF AND THAT IS THE POINT.
+; Measured 2026-09-06 on build Sep 05 2026 21:18:51: x64base declares a primary
+; key, generates it, and never reuses it -- and enforces it nowhere. A native
+; REPLACE wrote a duplicate over a PRIMARY key and it survived a close and
+; reopen; SQLSEL INSERT committed a second duplicate through the table buffer
+; and WAL. field_constraints.hpp says so in one line that is easy to read past:
+; "Metadata flags. UNIQUE / PRIMARY enforcement remains index-backed" --
+; describing enforcement that exists in no file.
+;
+; So the spec is written in two halves and the halves are graded differently.
+;
+;   PART A -- TRUE TODAY. Guards and arms that MUST be green on the current
+;   binary. They lock in the behaviour that IS designed and is worth keeping:
+;   declaration, generation under the writer's table lock, and the reservation
+;   of a deleted row's key until PACK. If Part A ever reds, the policy work
+;   broke something that already worked.
+;
+;   PART B -- THE ACCEPTANCE CRITERION. Arms that are RED TODAY and go green
+;   when write-time enforcement lands. Do not "fix" them by weakening them.
+;   A green Part B on a build with no enforcement means the arm stopped
+;   discriminating, not that the engine improved.
+;
+; MARKER COUNT IS 11 AND IT IS DERIVED, NOT DECLARED: 5 guards (PKP_G*) and
+; 6 arms (PKP_T1..T6), contiguous. COUNT THEM. A transcript with 10 is a spec
+; that lost a claim, not a spec that passed. An errored marker in this language
+; PRINTS NOTHING rather than going red, so a missing line is a silent loss.
+;
+; EVERY ANSWER IS A FIELD READ, never console text. RECNO is a command, not an
+; expression function, and console messages are unreadable by a marker -- so
+; position and refusal are both asserted through DATA: if the cell still holds
+; its original value the write was refused, if it holds the new one it was not.
+;
+; NOT CLAIMED BY THIS SPEC, stated rather than implied:
+;   - PERSISTENCE ACROSS A RESTART. The declaration lives in a process-local
+;     registry (unique_registry.cpp: "process-local shell state, not persistent
+;     schema metadata"). A .dts runs in ONE process, so no marker here can ask
+;     whether a key survives a restart. That needs a two-run harness and it is
+;     step 1 of the policy work.
+;   - CONCURRENCY. Generation is taken under try_lock_table, which this spec
+;     cannot exercise with one writer.
+;   - REFERENTIAL INTEGRITY. Out of scope; nothing here declares a foreign key.
+; ============================================================================
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+SET PATH DBF DBF/SANDBOX
+SET PATH INDEXES INDEXES/SANDBOX
+SET PATH LMDB LMDB/SANDBOX
+
+FORMULA "PKPOLICY-BEGIN"
+
+ERASE TABLE PKPOL CONFIRM
+ERASE TABLE PKPDIRTY CONFIRM
+
+; ---------------------------------------------------------------------------
+; PART A -- what is true today and must stay true
+; ---------------------------------------------------------------------------
+
+CREATE X64 PKPOL (SID N(6,0), LNAME C(12))
+CLOSE
+
+SELECT 1
+USE PKPOL
+
+; PKP_G1 -- the PRIMARY spelling is accepted. NOTE: this keyword ships with no
+; usage line; SET UNIQUE USAGE documents ON|OFF only. If G1 reds, either the
+; keyword was removed or the registry did not take, and every arm below is
+; meaningless -- treat them as UNPROVEN rather than as failing.
+SET UNIQUE FIELD SID PRIMARY
+APPEND
+REPLACE LNAME WITH "ALPHA"
+? "PKP_G1_declared_and_generated:" + (SID = 1)
+
+APPEND
+REPLACE LNAME WITH "BETA"
+? "PKP_G2_second_key_is_2:" + (SID = 2)
+
+APPEND
+REPLACE LNAME WITH "GAMMA"
+? "PKP_G3_third_key_is_3:" + (SID = 3)
+
+; PKP_G4 -- the generator only fills a BLANK key. Prove the cursor is where the
+; arms below expect before any of them run.
+? "PKP_G4_parked_on_GAMMA:" + (ALLTRIM(LNAME) = "GAMMA")
+
+; PKP_T1 -- A DELETED ROW'S KEY IS RESERVED. compute_next_numeric() scans
+; deleted physical records ON PURPOSE: a deleted row can be RECALLed and its
+; key must not have been handed to somebody else meanwhile. Delete record 3,
+; append, and the new key must be 4 -- NOT 3.
+DELETE
+APPEND
+REPLACE LNAME WITH "DELTA"
+? "PKP_T1_deleted_key_not_reused:" + (SID = 4)
+
+; PKP_T2 -- and the reservation was worth making. Recall record 3; it must
+; still read 3, which now coexists with the 4 just issued rather than colliding
+; with it. This is the arm that would red if T1's scan ever skipped deleted
+; rows -- the exact trap an index-backed fast path would fall into.
+GO 3
+RECALL
+? "PKP_T2_recalled_row_keeps_its_key:" + (SID = 3)
+
+; PKP_T3 -- VALIDATE UNIQUE finds duplicates in data that arrived dirty. The
+; duplicate is planted the ONLY way that stays legal after enforcement lands:
+; the rows exist BEFORE the key is declared. Declaring a primary key over
+; legacy data is precisely the case VALIDATE ... REPAIR is for, so this arm
+; must survive the policy work unchanged.
+CLOSE
+CREATE X64 PKPDIRTY (SID N(6,0), TXT C(8))
+APPEND
+REPLACE SID WITH "7"
+REPLACE TXT WITH "FIRST"
+APPEND
+REPLACE SID WITH "7"
+REPLACE TXT WITH "SECOND"
+CLOSE
+
+SELECT 2
+USE PKPDIRTY
+SET UNIQUE FIELD SID PRIMARY
+GO 2
+? "PKP_T3_dirty_duplicate_is_present:" + (SID = 7)
+VALIDATE UNIQUE FIELD SID
+
+; ---------------------------------------------------------------------------
+; PART B -- THE ACCEPTANCE CRITERION. RED TODAY, BY DESIGN.
+; Each arm reads .F. on a build with no write-time enforcement and .T. when
+; the policy lands. Do not weaken them to make the suite green.
+; ---------------------------------------------------------------------------
+
+; PKP_G5 -- REOPEN PKPOL AND PROVE IT IS OPEN BEFORE ANY ACCEPTANCE ARM RUNS.
+;
+; THIS GUARD EXISTS BECAUSE THE FIRST RUN OF THIS SPEC DID NOT HAVE IT AND WAS
+; BLIND. Part A closes PKPOL to build PKPDIRTY; a bare `SELECT 1` then selects
+; an area with NO FILE OPEN, and the transcript said so three times -- "GO: no
+; file open.", "REPLACE: no file open.", "SQLSEL: table 'PKPOL' is not open in
+; the current workspace." T4, T5 and T6 all printed .F., which is the answer
+; this spec expects TODAY, so the validator passed and the acceptance count
+; read 0 of 3 exactly as predicted. IT WAS THE RIGHT ANSWER FOR THE WRONG
+; REASON, and the ratchet would never have fired when enforcement arrived.
+;
+; The house has recorded this shape four times -- USE_AGAIN over three cuts,
+; WSENV's blind RSE_T3, MWXSHAKE 5C's empty posture, OJC_T2 -- and it arrived
+; here anyway, in a spec whose own header warns about it. A CLOSE FOLLOWED BY
+; A SELECT IS NOT AN OPEN.
+;
+; If PKP_G5 reds, every acceptance arm below is UNPROVEN rather than failing,
+; and the validator treats it that way.
+SELECT 1
+USE PKPOL
+GO 1
+? "PKP_G5_partB_fixture_is_open:" + (ALLTRIM(LNAME) = "ALPHA")
+
+; PKP_T4 -- a native REPLACE must not be able to duplicate a primary key.
+; Record 1 holds SID 1. Try to make it 2, which record 2 already holds.
+; MEASURED RED 2026-09-06: the write went through and survived a reopen.
+REPLACE SID WITH "2"
+? "PKP_T4_native_replace_refused:" + (SID = 1)
+
+; PKP_T5 -- SQLsel INSERT must not be able to duplicate it either.
+;
+; THIS ARM WAS WRONG ON ITS FIRST RUN AND THE RATCHET CAUGHT IT. It did GO 1
+; and read LNAME = "ALPHA", which an INSERT CANNOT CHANGE EITHER WAY -- an
+; INSERT APPENDS. The transcript said "INSERT affected 1 row(s); committed
+; through table buffer + WAL" and the marker printed .T. for "refused". The
+; acceptance count went 0 -> 1, the validator failed the spec, and the reason
+; was a bad arm rather than enforcement arriving. That is the ratchet earning
+; its place: an unexplained change in the count is not allowed to pass.
+;
+; The answerable question is whether the APPENDED ROW EXISTS. After a
+; successful insert record 5 holds DUPE; after a refusal there is no record 5,
+; GO 5 fails, and the cursor stays where it was. Both branches read by data:
+;   refused    -> GO 5 fails, cursor still on 1, LNAME is ALPHA, ALPHA <> DUPE
+;   not refused-> GO 5 lands on 5, LNAME is DUPE, DUPE <> DUPE is false
+SQLSEL INSERT INTO PKPOL (SID,LNAME) VALUES (3,'DUPE')
+GO 5
+? "PKP_T5_sqlsel_insert_refused:" + (ALLTRIM(LNAME) <> "DUPE")
+
+; PKP_T6 -- and neither must SQLsel UPDATE. Asserted separately from T5
+; because INSERT and UPDATE reach the buffer by different paths and a fix
+; wired into one is not evidence about the other.
+;
+; IT TARGETS BETA, NOT ALPHA, AND THAT MATTERS: T4 has already written over
+; record 1's key, so an arm reading record 1 would be measuring T4's damage
+; rather than its own. The first cut did exactly that. Record 2 is untouched
+; by every arm above it and holds SID 2; the update tries to make it 4, which
+; DELTA already holds.
+SQLSEL UPDATE PKPOL SET SID = 4 WHERE LNAME = 'BETA'
+GO 2
+? "PKP_T6_sqlsel_update_refused:" + (SID = 2)
+
+; ---------------------------------------------------------------------------
+SELECT 2
+CLOSE
+SELECT 1
+CLOSE
+ERASE TABLE PKPOL CONFIRM
+ERASE TABLE PKPDIRTY CONFIRM
+
+FORMULA "PKPOLICY-END"
