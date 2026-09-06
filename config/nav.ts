@@ -72,7 +72,18 @@ export const moreNav: NavItem[] = [
   // static snapshot in `public/reports/` is served the same way when the gateway
   // is not in front.
   { label: "AI", href: "/AI/index.html" },
-  { label: "News", href: "/news" }
+  { label: "News", href: "/news" },
+  // RDBMS, added 2026-09-05 on owner request: "we should have a menu opt on the
+  // main page for rdbms - dottalkpp is a dbms and a rdbms."
+  //
+  // Placed in moreNav rather than primaryNav BECAUSE THIS FILE SAYS TO. The
+  // header comment records a measurement -- primaryNav is ~940px against a fixed
+  // max-w-6xl 1152px cap -- and instructs: add to moreNav unless you have
+  // measured that primaryNav still fits. That measurement needs a rendered page
+  // at desktop width, which the authoring session could not take. It still shows
+  // on the main page (the More menu) and in the mobile list via topNav below.
+  // Promote it to primaryNav once someone measures; something may have to leave.
+  { label: "RDBMS", href: "/docs/engine/rdbms" }
 ];
 
 /**
@@ -105,6 +116,6 @@ export const topNav: NavItem[] = [
   primaryNav[0], primaryNav[1], primaryNav[2], primaryNav[3],
   moreNav[0], moreNav[1], moreNav[2],
   primaryNav[4],
-  moreNav[3], moreNav[4],
+  moreNav[3], moreNav[4], moreNav[5],
   primaryNav[5], primaryNav[6]
 ];

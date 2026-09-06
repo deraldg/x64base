@@ -77,9 +77,26 @@ built-in binary types use that same registry.
 Memo (`M`) fields store a reference, not the payload — see
 [FPT64 Memo Format](/docs/engine/fpt64-memo-format).
 
-The catalog also reserves `V` (Varchar), `Q` (Varbinary), `W` (Blob), `G`
-(General), and the SQL-native extensions (`BigInt`, `Timestamp`, `Uuid`, …) as
-**planned** types; these are not yet accepted by `CREATE`.
+`V` (Varchar) **ships and is accepted by `CREATE`** on VFP-flavour tables --
+`CREATE VFP <name> (VNAME V(10) NULL)` builds a real Varchar column. The width
+rule is a property of the format rather than a house choice: a value filling the
+field leaves no room for the trailing length byte, so the widest value a `V(n)`
+holds is `n` and the widest *short* value is `n-1`, and the length is capped at
+254 to match VFP. A Varchar that is also nullable owns **two** bits in the hidden
+`_NullFlags` column -- varlength first, then null -- and that order is verified
+against files Visual FoxPro itself wrote.
+
+The catalog still reserves `Q` (Varbinary), `W` (Blob), `G` (General), and the
+SQL-native extensions (`BigInt`, `Timestamp`, `Uuid`, …) as **planned** types;
+those four are not accepted by `CREATE`. Measured 2026-09-05 by reading the type
+branches in `cmd_create.cpp`, which are `C`, `V`, `N`/`F`, `D`, `L`, `M`, `I`,
+`B`, `Y`, `T`.
+
+> **The shell's own `CREATE USAGE` text is stale here, not the engine.** It lists
+> the implemented VFP/X64 types as `C`, `N`, `F`, `D`, `L`, `M`, `I`, `B`, `Y`,
+> `T` and omits `V`, while `CREATE` accepts `V` and builds the column. The usage
+> string is a localized message (`MessageId::CreateUsageText`), so correcting it
+> touches five locales and the messaging catalogue rather than one line.
 
 ## Records
 

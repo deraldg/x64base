@@ -1,0 +1,86 @@
+---
+title: "DotTalk++ as a DBMS and an RDBMS"
+description: "What makes x64base a database management system, what makes it relational, and exactly where a purist would say it stops."
+---
+
+DotTalk++ / x64base is a **DBMS** — it owns its storage, its indexes, its
+locking and its recovery — and it is also an **RDBMS**: it stores relations,
+declares relationships between them, and answers questions with relational
+algebra rather than only with cursor navigation.
+
+Both halves are stated here with their evidence, and so is the boundary. A
+system that claims the word "relational" without saying where it stops is
+selling, not documenting.
+
+## The DBMS half
+
+| Capability | What it means here |
+| --- | --- |
+| Storage engine | Its own DBF-family formats including the 64-bit `x64` dialect — real binary field types, 64-bit record addressing, and a memo store with its own object model. See [DBF_64 Specification](/docs/engine/dbf-64-specification). |
+| Indexing | Native CDX and CNX containers, single-tag INX, and an LMDB-backed ordered key store, with tags resolved to fields at build time. See [CDX and LMDB Indexing](/docs/engine/cdx-lmdb-indexing). |
+| Concurrency | Cross-process cooperative record and table locks, pid-stamped, with stale-owner recovery. |
+| Transactions | Buffered writes with `COMMIT` / `ROLLBACK` and a durable redo log under `TABLE BUFFER PERSISTENT`. Scoped, not a full-ACID claim — see [ACID and the Glass-Box Engine](/docs/engine/acid-and-glass-box). |
+| Catalogs | The engine's own metadata tables describe its commands, functions, messages and workspaces — the map drawn in the same ink as the territory. |
+| Sessions and scope | Work areas, workspaces that own their own path environment, and a durable workspace identity. See [Workspaces](/docs/engine/workspaces). |
+
+## The relational half
+
+A relation here is an ordinary table, and relationships between them are
+expressed **two different ways on purpose**.
+
+**Declared, navigational — RelTalk.** `REL ADD parent child ON key` establishes an
+edge in advance; `REL JOIN` walks it and emits one tuple per leaf combination.
+The question it answers is *"where do I go from here?"*. See
+[RelTalk](/docs/talk-family/reltalk).
+
+**Undeclared, set-oriented — SQLsel.** A `SQLSEL` statement names its own tables
+and `ON` columns, reads no `REL` or `SET RELATION` state at all, and answers
+*"which rows satisfy this?"*. It carries the operators a relational engine is
+expected to have:
+
+- selection and projection, `DISTINCT`, `ORDER BY`, `LIMIT`
+- `INNER`, `LEFT`, `RIGHT`, `FULL` and `CROSS` joins
+- `COUNT`, `SUM`, `AVG`, `MIN`, `MAX` with `GROUP BY` and `HAVING`
+- `UNION`, `UNION ALL`, `INTERSECT`, `EXCEPT`
+- `IN (<select>)` and `[NOT] EXISTS (<select>)` subqueries
+- expression projection, so `TRIM(LNAME)` is a column
+- `INSERT`, `UPDATE`, `DELETE` with single-table transactions
+
+Neither surface replaces the other. One follows a structure you asserted about
+your data; the other asks a question that stands on its own.
+
+## How the relational claim is checked
+
+Every SQLsel regression compares its result sets against an **in-process SQLite
+oracle over identical data in the same run** — not against a recorded
+expectation. That distinction is the point: a stored expectation only proves our
+reader agrees with our writer, and a shared misunderstanding passes. An
+independent engine answering the same question over the same rows does not.
+
+Six of those specs run on every `REGRESSION ALL`; seven more are explicit-run.
+See [Regression and Proof Testing](/docs/engine/regression-and-proof-testing) and
+[SQLsel and SQL Conformance](/docs/engine/sqlsel-and-sql-conformance).
+
+## Where it stops, stated plainly
+
+> **Referential integrity is not enforced on write.** Relations are declared for
+> *traversal*, not as constraints. Deleting a parent does not refuse, cascade, or
+> null out its children. This is the sharpest gap between x64base and a
+> constraint-enforcing RDBMS, and it is a design position rather than an
+> oversight — but a reader should not infer enforcement from the word
+> "relational".
+
+Also absent, and each refused rather than silently approximated:
+
+- **Cross-table atomic commit.** An explicit transaction accepts one target table.
+- **Stored `NULL` through DML.** `SQLSEL INSERT`/`UPDATE` refuse a null rather
+  than coercing a blank. Stored nulls themselves *do* exist — VFP-flavour tables
+  carry a real `_NullFlags` bit, byte-verified against files Visual FoxPro wrote
+  — but the DML path does not write one.
+- **Subqueries over a joined outer scope.**
+- **The bare `SELECT ...` form** without the `SQLSEL` prefix.
+- **Memo-field DML.**
+
+Produced absence and stored absence are also kept apart deliberately: an
+unmatched outer-join row renders `<UNMATCHED>`, never a blank that could be
+mistaken for data and never a null that would claim more than the join knows.
