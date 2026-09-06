@@ -104,7 +104,7 @@ The house pattern already exists and is the obvious fit: `WORKSPACES` is an
 ordinary x64 table -- the map drawn in the same ink as the territory. A key
 declaration belongs in a catalog table read at USE time, or in the DBF header.
 
-**RULED 2026-09-06 BY THE OWNER: A CATALOG TABLE.** R-number pending claim.
+**RULED 2026-09-06 BY THE OWNER: A CATALOG TABLE. R139.**
 
 The alternative was a DBF header descriptor, and it was not dismissed -- it is
 the philosophically stronger answer, because a primary key is a property of the

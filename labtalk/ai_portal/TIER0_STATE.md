@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-09-06T12:59:09Z
+    generated_utc : 2026-09-06T13:20:42Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,9 +11,9 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : 2abbd0c8f  (2026-09-06)
+    HEAD          : eaa569cc5  (2026-09-06)
     upstream      : 8df02addf
-    unpushed      : 47 commit(s) ahead of upstream
+    unpushed      : 48 commit(s) ahead of upstream
 
 ## Declared target
 
@@ -23,12 +23,12 @@ cannot drift, because nothing here is written by hand.
 ## Newest closeout
 
     file          : SESSION_CLOSEOUT_SQLSEL_USER_MANUAL_2026-09-03.md
-    commits behind HEAD : 49
+    commits behind HEAD : 50
 
 ## Staleness warnings
 
-- The newest closeout is 49 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
-- 47 commit(s) are unpushed and invisible to a clone.
+- The newest closeout is 50 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
+- 48 commit(s) are unpushed and invisible to a clone.
 
 ## Claimed lanes (newest first)
 
