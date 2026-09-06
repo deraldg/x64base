@@ -114,6 +114,7 @@
 #include "cli/order_state.hpp"
 #include "cli/path_resolver.hpp"
 #include "cli/nav_move.hpp"
+#include "xbase_field_getters.hpp"   // AIF-157: the standard field resolver
 
 namespace fs = std::filesystem;
 
@@ -395,13 +396,32 @@ static bool cnx_has_tag(const xbase::DbArea& area,
         }
     }
 
-    for (const auto& f : Fs) {
-        if (up_copy(textio::trim(f.name)) == want) {
-            return true;
-        }
-    }
-
-    return false;
+    // AIF-157 (2026-09-06): THE SEVENTH DECLARATION OF WHAT A FIELD NAME IS, and
+    // the one the first sweep missed. That sweep went through src/xindex/ plus
+    // BUILDLMDB and stopped; this site is in src/cli/ and answers the same
+    // question for the CNX branch of SET ORDER TAG (see the call at the bottom
+    // of cmd_SETORDER). It walked area.fields() with up_copy+trim and NO NUL
+    // handling and NO x64 descriptor-token alias, so it DISAGREED with
+    // xfg::resolve_field_index_std in a way that is reachable:
+    //
+    //   x64 table + an ATTACHED CNX -- legal, and by the AIF-099 note above an
+    //   attached container wins tag resolution -- plus a tag named by a field's
+    //   10-byte descriptor token. The resolver accepts that name. This gate
+    //   refused it, and the refusal came first, so SET ORDER answered "tag not
+    //   available" for a tag that was available.
+    //
+    // THE ORDINAL FORM ABOVE IS NOT ROUTED AND MUST NOT BE. `#3` is a capability
+    // this function has and the standard resolver does not -- resolve_field_
+    // index_std returns -1 for it. Folding it away while consolidating would be
+    // the same quiet downgrade that adding field_name_core_ to the resolver
+    // existed to prevent: when private copies are retired, what only they could
+    // do gets LIFTED, never dropped. So the ordinal branch stays here, above,
+    // and only the name walk moves.
+    //
+    // Passed the RAW argument, not the pre-uppercased `want`: the resolver does
+    // its own trimming, NUL truncation and casing, and handing it a
+    // half-normalised string is how two normalisations start to disagree again.
+    return xfg::resolve_field_index_std(area, wantedTag) >= 0;
 }
 
 static bool attached_container_is_tag_container(const xbase::DbArea& area) {

@@ -70,11 +70,30 @@
 * had put it (R131). A CDX on real disk is LMDB-backed; a wrong LMDB slot is
 * `openCdx: LMDB env missing` and three markers reading the physical order.
 *
-* READ RULE: eight markers must PRINT and all eight read .T.
-*   grep -c '^? "IDXN_'  <-- run this, read the run against THAT
+* READ RULE: ten markers must PRINT and all ten read .T.
+*   grep -c '^? "TAGF_'  <-- run this, read the run against THAT
 * An errored marker prints NOTHING rather than going red, so COUNT them. If
-* IDXN_G0/G1 are not both .T. the fixture is not what the arms assume and no
+* TAGF_G0/G1 are not both .T. the fixture is not what the arms assume and no
 * T-arm below means anything.
+*
+* ON THE NAME. This spec was registered as `IDXNAME` on 2026-09-06 and renamed
+* the same day, before it soaked, because the owner read it and had to ask
+* whether it meant the IDX/INX family. It did not, and that was the whole
+* problem: `.inx` IS a real index family here alongside CDX and CNX -- SO_ID.inx
+* ships in INDEXES/x64 and SET ORDER reports `INX` as a container type -- so a
+* spec id built from "IDX" plus "NAME" reads as a statement about that family
+* rather than about field-NAME resolution. `TAGFIELD` says the thesis instead:
+* A TAG IS A FIELD NAME. The table is `TAGFLD` and the markers are `TAGF_` for
+* the same reason. Recorded rather than silently corrected, because the id
+* appears under IDXNAME in commit 403cb4072 and a reader following that trail
+* needs to land here.
+*
+* AND INX IS NOT A GAP THIS FILE LEAVES. Checked while renaming:
+* cmd_setorder.cpp:33 states that INX is valid for SET INDEX attachment but
+* that "tag activation via SET ORDER is intentionally not handled", and :816
+* sends an INX caller to SET INDEX TO <file>.inx. INX carries ONE order and no
+* tag directory, so there is no tag -> field question in it to answer wrongly.
+* CDX and CNX are the entire surface, and both are covered here.
 *
 * Explicit-run until soaked.
 * ===========================================================================
@@ -86,10 +105,10 @@ SET PATH LMDB LMDB/SANDBOX
 && THE TABLE, THE CONTAINER AND THE LMDB ENV IN ONE SWEEP. CDX CREATE refuses
 && to overwrite, so a leftover .cdx from a previous run would fail the build
 && and every arm under it.
-ERASE IDXNAME CONFIRM
+ERASE TAGFLD CONFIRM
 
 SELECT 0
-CREATE X64 IDXNAME (STUDENT_LAST_NAME C(12), COURSE_TITLE_LONG C(12), TAILKEY C(6))
+CREATE X64 TAGFLD (STUDENT_LAST_NAME C(12), COURSE_TITLE_LONG C(12), TAILKEY C(6))
 APPEND
 REPLACE STUDENT_LAST_NAME WITH "Wilson"
 REPLACE COURSE_TITLE_LONG WITH "ZULU"
@@ -104,17 +123,17 @@ REPLACE COURSE_TITLE_LONG WITH "ALPHA"
 REPLACE TAILKEY WITH "T3"
 
 * ---------------------------------------------------------------------------
-* IDXN_G0 / G1 -- THE PHYSICAL ORDER, BEFORE ANY INDEX EXISTS.
+* TAGF_G0 / G1 -- THE PHYSICAL ORDER, BEFORE ANY INDEX EXISTS.
 *
 * These are the baseline both T-pairs are measured against. If an engine ever
 * walks physically while claiming an order, it lands back here.
 * ---------------------------------------------------------------------------
 
-USE IDXNAME
+USE TAGFLD
 TOP
-? "IDXN_G0_physical_first_row_before_any_index:" + (ALLTRIM(TAILKEY) = "T1")
+? "TAGF_G0_physical_first_row_before_any_index:" + (ALLTRIM(TAILKEY) = "T1")
 BOTTOM
-? "IDXN_G1_physical_last_row_before_any_index:" + (ALLTRIM(TAILKEY) = "T3")
+? "TAGF_G1_physical_last_row_before_any_index:" + (ALLTRIM(TAILKEY) = "T3")
 
 CDX CREATE
 
@@ -134,10 +153,10 @@ BUILDLMDB YES
 && exist when this area was first opened, and CDX attachment requires the
 && environment to exist. Re-opening is the honest way to get the attachment
 && the first USE could not have made.
-USE IDXNAME
+USE TAGFLD
 
 * ---------------------------------------------------------------------------
-* IDXN_T1 / T2 -- A TAG NAMED BY A 17-BYTE LOGICAL NAME ORDERS THE WALK.
+* TAGF_T1 / T2 -- A TAG NAMED BY A 17-BYTE LOGICAL NAME ORDERS THE WALK.
 *
 * Both ends move off the physical order: TOP goes T1 -> T2 and BOTTOM goes
 * T3 -> T1. Green here is the whole NUL-padding claim, end to end, through
@@ -146,12 +165,12 @@ USE IDXNAME
 
 SET ORDER TAG STUDENT_LAST_NAME
 TOP
-? "IDXN_T1_long_logical_name_orders_the_walk:" + (ALLTRIM(TAILKEY) = "T2")
+? "TAGF_T1_long_logical_name_orders_the_walk:" + (ALLTRIM(TAILKEY) = "T2")
 BOTTOM
-? "IDXN_T2_and_the_far_end_of_that_order:" + (ALLTRIM(TAILKEY) = "T1")
+? "TAGF_T2_and_the_far_end_of_that_order:" + (ALLTRIM(TAILKEY) = "T1")
 
 * ---------------------------------------------------------------------------
-* IDXN_T3 / T4 -- A TAG NAMED BY THE DESCRIPTOR TOKEN LANDS ON THE RIGHT FIELD.
+* TAGF_T3 / T4 -- A TAG NAMED BY THE DESCRIPTOR TOKEN LANDS ON THE RIGHT FIELD.
 *
 * T3 IS THE ARM THIS FILE WAS WRITTEN FOR and it separates three worlds with
 * one comparison:
@@ -165,12 +184,12 @@ BOTTOM
 
 SET ORDER TAG COURSE_TIT
 TOP
-? "IDXN_T3_descriptor_token_orders_by_its_own_field:" + (ALLTRIM(TAILKEY) = "T3")
+? "TAGF_T3_descriptor_token_orders_by_its_own_field:" + (ALLTRIM(TAILKEY) = "T3")
 BOTTOM
-? "IDXN_T4_and_the_far_end_of_that_order:" + (ALLTRIM(TAILKEY) = "T1")
+? "TAGF_T4_and_the_far_end_of_that_order:" + (ALLTRIM(TAILKEY) = "T1")
 
 * ---------------------------------------------------------------------------
-* IDXN_T5 -- THE ORDER SURVIVES A RETURN TO THE FIRST TAG.
+* TAGF_T5 -- THE ORDER SURVIVES A RETURN TO THE FIRST TAG.
 *
 * Switching back proves the second SET ORDER replaced the active tag rather
 * than leaving the first one latched, which a resolver returning field 0 would
@@ -179,25 +198,64 @@ BOTTOM
 
 SET ORDER TAG STUDENT_LAST_NAME
 TOP
-? "IDXN_T5_switching_back_re_resolves_the_first_tag:" + (ALLTRIM(TAILKEY) = "T2")
+? "TAGF_T5_switching_back_re_resolves_the_first_tag:" + (ALLTRIM(TAILKEY) = "T2")
 
 * ---------------------------------------------------------------------------
-* IDXN_T6 -- A NAME THAT IS NEITHER A FIELD NOR A TOKEN IS REFUSED.
+* TAGF_T6 -- A NAME THAT IS NEITHER A FIELD NOR A TOKEN IS REFUSED.
 *
-* IDXNOSUCH matches no logical name and no descriptor token, so the resolver
+* TAGFNOSUCH matches no logical name and no descriptor token, so the resolver
 * returns -1 and ADDTAG refuses at definition time. THE REFUSAL IS CONSOLE TEXT
 * AND NO MARKER CAN READ IT -- the IDXDIFF precedent. Read the transcript for:
 *
-*     CDX ADDTAG: field not found: 'IDXNOSUCH'.
+*     CDX ADDTAG: field not found: 'TAGFNOSUCH'.
 *
 * WHAT THE ARM CAN ASSERT is that the refusal changed NOTHING: the active order
 * is still live afterwards. The tag directory it would have disturbed is the
 * same one holding both working tags.
 * ---------------------------------------------------------------------------
 
-CDX ADDTAG IDXNOSUCH
+CDX ADDTAG TAGFNOSUCH
 TOP
-? "IDXN_T6_refusal_left_the_live_order_alone:" + (ALLTRIM(TAILKEY) = "T2")
+? "TAGF_T6_refusal_left_the_live_order_alone:" + (ALLTRIM(TAILKEY) = "T2")
+
+* ===========================================================================
+* SECTION 2 -- THE SAME QUESTION ON THE CNX BRANCH, WHICH IS A DIFFERENT GATE.
+*
+* EVERY ARM ABOVE WENT THROUGH cdx_has_tag(). SET ORDER TAG has TWO validation
+* gates and they are not the same code: cmd_setorder.cpp:804 asks cdx_has_tag()
+* for a CDX, and :811 asks cnx_has_tag() for a CNX. Only the second one walks
+* area.fields() -- the first checks names in the container's tag directory --
+* so cnx_has_tag() is a FIELD-NAME MATCHER and was the seventh in this lane.
+*
+* IT DISAGREED WITH THE RESOLVER AND THE DISAGREEMENT WAS REACHABLE. Until
+* 2026-09-06 it compared up_copy(trim(f.name)) with no NUL handling and no x64
+* descriptor-token alias, so on THIS EXACT SHAPE -- an x64 table with a CNX
+* attached, ordered by a tag named with a field's 10-byte token -- the gate
+* refused a tag the resolver accepts, and the refusal came first. SET ORDER
+* answered "tag not available for CNX" about a tag that was available.
+*
+* CNX ON AN X64 TABLE IS LEGAL AND ATTACHING ONE IS EXPECTED TO ADVISE, NOT
+* REFUSE (owner ruling 2026-08-09, and the AIF-099 note in cmd_setorder.cpp:
+* an ATTACHED container wins tag resolution whichever legal family it is). An
+* advisory line in the transcript here is the ruling working, not a fault.
+*
+* T7 IS THE DISCRIMINATOR FOR THE FIX. Before it, this arm cannot reach TOP at
+* all -- SET ORDER refuses and the walk stays physical, reading T1. After it,
+* the CNX orders by COURSE_TITLE_LONG and TOP is T3, the same row the CDX
+* branch reached at T3. The two branches agreeing on the same token is the
+* whole claim.
+* ===========================================================================
+
+CNX CREATE
+CNX ADDTAG COURSE_TIT
+REBUILD
+SET INDEX TO TAGFLD.cnx
+SET ORDER TAG COURSE_TIT
+
+TOP
+? "TAGF_T7_cnx_gate_accepts_the_descriptor_token:" + (ALLTRIM(TAILKEY) = "T3")
+BOTTOM
+? "TAGF_T8_cnx_far_end_agrees_with_the_cdx_branch:" + (ALLTRIM(TAILKEY) = "T1")
 
 CLOSE
 
@@ -210,6 +268,6 @@ CLOSE
 SET PATH DBF DBF/SANDBOX
 SET PATH INDEXES INDEXES/SANDBOX
 SET PATH LMDB LMDB/SANDBOX
-ERASE IDXNAME CONFIRM
+ERASE TAGFLD CONFIRM
 
 DO x64
