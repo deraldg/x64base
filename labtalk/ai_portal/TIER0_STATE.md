@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-09-06T03:01:55Z
+    generated_utc : 2026-09-06T12:11:04Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,9 +11,9 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : 674003423  (2026-09-05)
+    HEAD          : d16639c75  (2026-09-05)
     upstream      : 8df02addf
-    unpushed      : 44 commit(s) ahead of upstream
+    unpushed      : 45 commit(s) ahead of upstream
 
 ## Declared target
 
@@ -23,17 +23,18 @@ cannot drift, because nothing here is written by hand.
 ## Newest closeout
 
     file          : SESSION_CLOSEOUT_SQLSEL_USER_MANUAL_2026-09-03.md
-    commits behind HEAD : 46
+    commits behind HEAD : 47
 
 ## Staleness warnings
 
-- The newest closeout is 46 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
-- 44 commit(s) are unpushed and invisible to a clone.
+- The newest closeout is 47 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
+- 45 commit(s) are unpushed and invisible to a clone.
 
 ## Claimed lanes (newest first)
 
 | AIF | lane | steward | intake row |
 | --- | --- | --- | --- |
+| AIF-156 | primary-key-policy | member.ai.claude.cowork | yes |
 | AIF-155 | runtime-def-family | member.ai.claude.cowork | yes |
 | AIF-154 | metadata-catalogue-pipeline | member.ai.claude.cowork | yes |
 | AIF-153 | browsetui-student-app | member.ai.claude.cowork | yes |
@@ -45,8 +46,7 @@ cannot drift, because nothing here is written by hand.
 | AIF-147 | relation-traversal-surface-asymmetry | member.ai.claude.cowork | yes |
 | AIF-145 | path-resolution-ladder-divergence | member.ai.claude.cowork | yes |
 | AIF-144 | identity-authority-fragmentation | member.ai.claude.cowork | yes |
-| AIF-143 | duplicate-settings-struct | member.ai.claude.cowork | yes |
-| ... | 74 older claims omitted | | |
+| ... | 75 older claims omitted | | |
 
 ## Sessions, lineage, asides
 
@@ -63,6 +63,7 @@ parent + born_utc from the durable lineage ledger, '-' until a run wakes.
 
 | run | member | parent | born_utc | asides |
 | --- | --- | --- | --- | --- |
+| COWORK-20260906-001 | member.ai.claude.cowork | - | - | AIF-156 |
 | COWORK-20260905-002 | member.ai.claude.cowork | - | - | AIF-154 -> AIF-155 |
 | COWORK-20260905-001 | member.ai.claude.cowork | - | - | AIF-153 |
 | AIFGEN-20260904-124821 | member.derald | - | - | AIF-152 |
@@ -70,8 +71,7 @@ parent + born_utc from the durable lineage ledger, '-' until a run wakes.
 | CODEX-20260903-007 | member.ai.codex.local | - | - | AIF-150 |
 | COWORK-20260830-001 | member.ai.claude.cowork | - | - | AIF-149 |
 | COWORK-20260829-001 | member.ai.claude.cowork | - | - | AIF-148 |
-| COWORK-20260827-001 | member.ai.claude.cowork | - | - | AIF-137 -> AIF-138 -> AIF-139 -> AIF-140 -> AIF-141 -> AIF-142 ... |
-| ... | | | | 46 older run(s) omitted |
+| ... | | | | 47 older run(s) omitted |
 
 Perishable detail lives in the artifacts these point at. Do not
 restate anything above; regenerate it.

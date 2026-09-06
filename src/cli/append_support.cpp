@@ -141,16 +141,58 @@ namespace
         return 0;
     }
 
+    // Highest numeric value currently held in `field1`, plus one.
+    //
+    // THIS IS A FULL-TABLE SCAN AND THAT IS O(n) PER APPEND, so appending m rows
+    // into a table of n costs O(m*(n+m)). Invisible on teaching data, quadratic
+    // on anything real. THE FAST PATH IS NOT WRITTEN HERE ON PURPOSE and the
+    // reason is a correctness trap rather than effort -- see the note below, so
+    // the next person does not "optimise" this into a duplicate-key generator.
+    //
+    // WHY NOT ASK THE INDEX. cli/order_nav.hpp::order_last_recno() would give
+    // the highest key in one seek instead of n reads, and index_manager carries
+    // activeTagMatchesField(). Two things must be settled first, and neither is
+    // settleable by reading:
+    //   1. DELETED ROWS. The scan below walks them DELIBERATELY -- a deleted row
+    //      can be RECALLed and its key stays reserved until PACK. An ordered
+    //      container may omit deleted rows depending on SET DELETED. If the
+    //      highest key sits on a deleted row the index does not show, the fast
+    //      path issues a key that is already taken, and the collision only
+    //      appears when somebody recalls the row. That is worse than slow.
+    //   2. TAG IDENTITY. A tag can be built on an expression, not a bare field.
+    //      Matching by tag NAME (tags are conventionally named for their field,
+    //      as CDX ADDTAG SID does) is a guess, and a wrong guess here reads the
+    //      wrong column's maximum.
+    // Both are answerable with a runtime proof against a table with a deleted
+    // high key and an expression tag. Until that proof exists, correct and slow
+    // beats fast and occasionally wrong.
+    //
+    // RECNO64: this loop addresses records through the 64-bit accessors. It used
+    // int32_t recno()/recCount()/gotoRec(), whose own declaration in xbase.hpp
+    // says "use recno64()/recCount64() for the authoritative value" -- so the key
+    // generator could not reach the record space X64_METRICS proves in the
+    // default suite on every run. The engine's headline claim and its key
+    // generator disagreed, and nothing in the suite could see it.
     static long long compute_next_numeric(xbase::DbArea& A, int field1)
     {
         long long mx = std::numeric_limits<long long>::min();
 
-        const int32_t save = A.recno();
-        const int32_t total = A.recCount();
+        const std::uint64_t save  = A.recno64();
+        const std::uint64_t total = A.recCount64();
 
-        for (int32_t r = 1; r <= total; ++r)
+        // A value that is present but not parseable as an integer cannot be
+        // compared, so it cannot raise the maximum. SILENCE WAS THE DEFECT: the
+        // old catch(...) swallowed these, so an overflowing or corrupt key made
+        // the maximum read LOW and the next APPEND could hand out a number that
+        // is already in the table -- the one way uniqueness-by-construction
+        // fails while everybody is doing everything right. Counted and reported.
+        std::uint64_t unreadable = 0;
+        std::uint64_t first_unreadable_rec = 0;
+        std::string   first_unreadable_val;
+
+        for (std::uint64_t r = 1; r <= total; ++r)
         {
-            if (!A.gotoRec(r)) continue;
+            if (!A.gotoRec64(r)) continue;
             if (!A.readCurrent()) continue;
 
             // Autokey / unique generation must scan deleted physical records too.
@@ -165,12 +207,26 @@ namespace
             }
             catch (...)
             {
+                if (unreadable == 0) {
+                    first_unreadable_rec = r;
+                    first_unreadable_val = v;
+                }
+                ++unreadable;
             }
         }
 
         if (save > 0) {
-            A.gotoRec(save);
+            A.gotoRec64(save);
             A.readCurrent();
+        }
+
+        if (unreadable > 0) {
+            std::cout << "APPEND: WARNING -- " << unreadable
+                      << " value(s) in the key field could not be read as a number "
+                      << "and were skipped when computing the next key (first at "
+                      << "record " << first_unreadable_rec << ": \""
+                      << first_unreadable_val << "\"). The generated key may "
+                      << "collide with one of them.\n";
         }
 
         if (mx == std::numeric_limits<long long>::min())
