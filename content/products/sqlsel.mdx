@@ -102,11 +102,17 @@ statement is refused and the reason is named. **This is the interesting half of
 the feature**: the boundary is enforced in the engine, not written down in a
 document and hoped for.
 
-It is also the first consumer of a discipline set in July. R29 ruled that stored
-`NULL` would not be implemented but that everything authored afterwards should be
-*shaped* so adding it later is an extension rather than a rewrite. The absence
-cell renders through a single routine, and its own comment says so: *"future
-stored NULL must extend this switch."*
+It is also the first consumer of a discipline set in July: stored `NULL` would
+not be implemented then, but everything authored afterwards should be *shaped*
+so adding it later is an extension rather than a rewrite. The absence cell
+renders through a single routine, and its own comment says so: *"future stored
+NULL must extend this switch."*
+
+That discipline has since been vindicated on the engine side. Stored `NULL`
+arrived on 2026-09-05 -- a VFP-flavour table carries a real `_NullFlags` bit,
+proven on every `REGRESSION ALL` by the `NULLASSERT` spec -- and it arrived as
+an extension, not a rewrite. SQLsel's own write surface is a separate question,
+and the boundary below states it.
 
 ## The guards run by default, and promoting them found a bug
 
@@ -151,12 +157,20 @@ separate resolver and is not covered by it.
 Stated as boundaries rather than a to-do list, because each is a decision with a
 reason:
 
-- **No stored SQL `NULL`.** Blank is a value (R16); outer-join absence is a
-  produced cell, a distinct kind. R29 declined stored NULL while requiring
-  everything since be shaped so adding it is an extension.
+- **SQLsel DML will not WRITE a stored `NULL`.** It refuses rather than
+  coercing a blank, a fail-closed control the `SQLSEL_DML` spec pins. Read the
+  narrowing carefully, because an earlier wording of this bullet said "no
+  stored SQL `NULL`" flatly and that is no longer true of the engine: x64base
+  HAS a stored null on VFP-flavour tables. What this boundary describes is
+  SQLsel's write path, not the database. Inside a statement, blank remains a
+  value (R16) and outer-join absence remains a produced cell -- three distinct
+  kinds, not two.
 - **No memo-field transactional DML**, and **no cross-table atomic commit** --
   `COMMIT ALL` remains partial across DBF, memo and index storage.
-- **No generalized multi-chain `RIGHT` / `FULL` join.**
+- **No generalized multi-chain `RIGHT` / `FULL` join.** The two-table forms
+  ship and are oracle-checked on every run (`SQLSEL_JOIN_FAMILY` covers
+  `RIGHT`, `FULL` and `CROSS`); it is the three-table CHAINS that remain
+  `INNER` / `LEFT` only (`SQLSEL_ADVANCED_JOIN`). The bullet is about chains.
 
 The surface moves faster than this page. [The SQLsel manual](https://github.com/deraldg/x64base/blob/development/docs/manuals/user/sqlsel.md)
 is the authority for what the command accepts today.

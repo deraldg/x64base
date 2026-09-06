@@ -15,6 +15,11 @@
       "file": "content/docs/engine/sqlsel-and-sql-conformance.mdx",
       "capability": "sql.group_by",
       "reason": "The page narrates its own past error -- it quotes the 2026-09-03 incident where the conformance table announced GROUP BY shipping in one cell and 'not implemented' one row away. Keeping the incident visible is the point of the paragraph; the quotation is history, not a current claim."
+    },
+    {
+      "file": "content/products/sqlsel.mdx",
+      "capability": "sql.join.inner",
+      "reason": "TRUE negative, and the sweep was right to make someone check it. Two-table RIGHT/FULL/CROSS ship and are oracle-checked on every run (SQLSEL_JOIN_FAMILY, default-suite), but three-table CHAINS are INNER/LEFT only (SQLSEL_ADVANCED_JOIN's summary names 'three-table INNER/LEFT chains' and nothing wider). The bullet says multi-chain and means it. Revisit this exemption the day a spec proves a RIGHT or FULL chain."
     }
   ]
 }
