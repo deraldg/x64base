@@ -58,6 +58,22 @@ SCOPE. The walk reads ~950 files, so it runs only when the change set touches a
 header or a source. A documentation commit prints one line and returns.
 
 Exit: 0 clean or out of scope, 1 advisory. NEVER 2 -- see above.
+
+OBSERVED ON THE REAL TREE 2026-09-06, both paths:
+
+  in 385563746, whose change set was two tools/staging files --
+    "no headers or sources in scope -- nothing to check"      (scope guard)
+
+  against 7f9bc25db~1, a range reaching back past source commits --
+    "348 header(s), 287 reachable, 61 UNREACHABLE
+     (58 declare status: supported)
+     PASS -- unreachable set matches the baseline exactly."   (the walk)
+
+The second run also settles the cost question empirically. It was priced by
+ANALOGY when wired in -- the R-number gate already walks 2054 files every
+commit and this walks 950 -- and it returns promptly on the host disk. The
+two-minute figure seen while authoring it was the mounted worktree, not the
+algorithm.
 """
 
 import os
