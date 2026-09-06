@@ -57,9 +57,25 @@ not a step in this plan and this session has not done it.**
 
 `src/xindex/index_manager.cpp:114` returns before the sidecar for virtual
 containers, routing them to the native CDX-V64 backend instead. That is not the
-defect. A container that lives in RAM and dies with the process has nothing to
-carry forward, so it has nothing to fingerprint. The owner's reading -- "an index
-file was assigned a `.meta` only if it needed one" -- is correct.
+defect. The owner's reading -- "an index file was assigned a `.meta` only if it
+needed one" -- is correct.
+
+**CORRECTED 2026-09-06, and the correction matters because the original reason
+was the weaker one.** This section first argued that a container living in RAM
+dies with the process, so it has nothing to carry forward and nothing to
+fingerprint. True, and a POLICY argument -- the kind that can be revisited by
+someone who decides RAM containers should be fingerprinted after all.
+
+The owner's ruling is a CAPABILITY BOUNDARY and it cannot be revisited that way:
+**CDX automatically falls back to "cnx" mode in a vdisk, because LMDB indexes
+cannot be used there.** There was never an LMDB-backed index inside a virtual
+container for a sidecar to describe or a staleness flag to describe it. The
+exemption is not a choice about what deserves a fingerprint; it is the absence
+of the thing a fingerprint would be about.
+
+This distinction is load-bearing for step 3. Under the lifetime argument a
+RAM-VFS fixture is merely USELESS. Under the capability boundary it is
+IMPOSSIBLE -- see that step.
 
 ## Half two -- currency has a durable home, and nothing reads it
 
@@ -168,19 +184,25 @@ looked like a defect until the code that handles it was read.
 
 1. **The sidecar does not travel.** 0 of 41 containers ship one.
 2. **`CDX_HDRF_DIRTY` is write-only** and `updated_ts` is never compared.
-3. **No spec asserts either half.** See below.
-4. **Tag -> field is answered by NAME MATCHING in two implementations that
-   disagree**: `src/xindex/cdx_native_backend.cpp:72 field_index_for_tag_()`
-   trims and handles NUL; `src/xindex/index_manager.cpp:382
-   activeTagFieldIndex1()` does neither. Also the second blocker on the
-   `compute_next_numeric` index fast path in `src/cli/append_support.cpp`.
+3. **No spec asserts either half.** Still true, and `IDXNAME` does not change
+   it -- that spec proves TAG -> FIELD RESOLUTION and asserts nothing about the
+   sidecar or about a durable dirty flag being read. Said explicitly because a
+   new green spec in this lane is exactly the thing that could be mistaken for
+   coverage it does not have. See below.
+4. ~~**Tag -> field is answered by NAME MATCHING in two implementations that
+   disagree.**~~ **RESOLVED 2026-09-06 (`403cb4072`).** It was FIVE, not two,
+   and the fix was to route them onto `xfg::resolve_field_index_std` rather than
+   collapse them into a sixth. See step 4. This also clears the second blocker
+   on the `compute_next_numeric` index fast path in `src/cli/append_support.cpp`.
 
 ## Why no gate could see this
 
-Eight index specs exist. `INDEX_X32` and `INDEX_X64` are default-suite;
-`INDEX_X64_CNX`, `INDEX_TXN`, `IDXDIFF`, `VUREPAIR`, `IDXSTALE` and `CNXLIVE`
-are explicit-run. **Not one asserts anything about the sidecar, and not one
-asserts that a durable dirty flag is ever read.**
+Eight index specs existed when this was written; `IDXNAME` (2026-09-06) makes
+nine. `INDEX_X32` and `INDEX_X64` are default-suite; `INDEX_X64_CNX`,
+`INDEX_TXN`, `IDXDIFF`, `VUREPAIR`, `IDXSTALE`, `CNXLIVE` and now `IDXNAME` are
+explicit-run. **Not one asserts anything about the sidecar, and not one asserts
+that a durable dirty flag is ever read** -- `IDXNAME` included, which is why
+item 3 above is still open.
 
 The only reference to `.cdx.meta` in the entire `.dts` corpus is a hand-cleanup
 comment at `dottalkpp/data/scripts/mcc_add_notes_memo.dts:29-42`, warning a human
@@ -315,29 +337,73 @@ Concretely, in dependency order:
    declaration; a flag that is neither written nor read is a claim the format
    makes and does not keep.
 
-### Step 3 -- a spec that can actually see it
+### Step 3 -- a spec that can actually see it -- DONE 2026-09-06 (`403cb4072`)
 
 Two hard constraints, both learned here:
 
-- **It CANNOT use a RAM VFS fixture.** ramfs is sidecar-exempt by design, so a
-  RAM-VFS fixture would assert nothing and go green -- the exact failure this
-  lane was opened to name. It needs a real on-disk container and a teardown that
-  actually erases.
+- **It CANNOT use a RAM VFS fixture.** *Recorded first as: ramfs is
+  sidecar-exempt, so a RAM-VFS fixture would assert nothing and go green. That
+  understated it.* The owner's ruling makes the constraint stronger than
+  "useless": **a vdisk cannot hold an LMDB-backed CDX at all**, because CDX falls
+  back to "cnx" mode there. The fixture does not go green having asserted
+  nothing -- it cannot be BUILT. The failure is at construction, not at
+  assertion, and that is a better constraint to have written down because it
+  cannot be worked around by a cleverer marker.
 - **It must assert on FIELD VALUES**, per the `IDXSTALE` and `CNXLIVE` note that
   `RECNO()` and `FOUND()` render EMPTY in a `?` marker and `STR()` does not
   rescue them.
 
-Lands in `src/cli/cmd_regression.cpp` plus a new `.dts`. Does NOT touch
-`src/xbase` and therefore does not need the engine go-ahead.
+**Delivered as `IDXNAME`** (`index_field_name_resolution.dts`, 8 markers,
+explicit-run until soaked; `kRegressionSpecs` 78 -> 79). Real on-disk container
+under `DBF/SANDBOX`, all three path slots set explicitly, teardown that erases
+the table, the `.cdx`, the `.cdx.meta` sidecar and the LMDB env together.
+
+Every marker reads `TAILKEY` -- six bytes, no truncation, no alias -- so an arm
+can only go green by landing on the right row. `IDXN_T3` is a three-way
+discriminator: `T3` is the descriptor token finding its own field, `T2` is it
+finding the OTHER field, `T1` is `SET ORDER` accepted and ignored.
+
+**Two branches remain uncovered and are named in the spec rather than left to be
+assumed:** the mangled `~n` token for two fields colliding at ten bytes, and the
+rule that a logical name beats another field's token. Both need the same
+collision, and `~` in a tag argument is an unmeasured question about the
+tokenizer. They want a second cut; nothing else in the corpus covers them.
 
 `kRegressionSpecs` is a hand-maintained `std::array<..., N>`; adding an entry
 without bumping N is a hard compile error, which is the intended behaviour.
 
-### Step 4 -- one implementation of tag -> field
+### Step 4 -- one implementation of tag -> field -- DONE 2026-09-06 (`403cb4072`)
 
-Collapse `field_index_for_tag_()` and `activeTagFieldIndex1()` to a single
-implementation with the trimming and NUL handling. Engine work; needs an explicit
-go. Unblocks the `compute_next_numeric` index fast path in AIF-156.
+*Recorded first as: "Collapse `field_index_for_tag_()` and
+`activeTagFieldIndex1()` to a single implementation with the trimming and NUL
+handling." Both halves of that sentence were wrong, and they were wrong in ways
+worth keeping visible.*
+
+**The count was two and it was five.** Measured across the tree:
+
+| site | what it was |
+| --- | --- |
+| `index_manager.cpp` `activeTagFieldIndex1()` | upper-only; no trim, no NUL, no alias |
+| `cdx_native_backend` `field_index_for_tag_()` | its own matcher |
+| `cnx_backend` `field_index_for_tag_()` | a BYTE-FOR-BYTE copy of the above |
+| `dbarea_adapt.cpp` `field_index_ci()` | a seventh-hand version |
+| `cmd_buildlmdb.cpp` | its own `textio::ieq` loop |
+
+**And "collapse to a single implementation" was the wrong instruction.** A
+single implementation already existed -- `xfg::resolve_field_index_std`, called
+by eleven files and by `REPLACE` itself. The work was not to invent a sixth
+opinion for the index layer to share; it was to ROUTE the five onto the
+authority that was already there. Writing "collapse" invited exactly the
+outcome this lane keeps cataloguing: a new mechanism where a used one existed.
+
+**One capability had to move INTO the shared resolver for the merge to be
+lossless.** The CDX tag directory stores names in `char name[32]`, NUL-padded;
+`trim_copy` strips only `isspace` and NUL is not `isspace`. The two retired
+backend matchers handled that and the standard resolver did not, so
+`field_name_core_` absorbs it. Deleting private copies without lifting what they
+alone could do would have been a quiet downgrade wearing a cleanup's name.
+
+Unblocks the `compute_next_numeric` index fast path in AIF-156.
 
 ## Two questions this lane deliberately leaves open
 
