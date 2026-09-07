@@ -237,12 +237,29 @@ content**:
     dottalkpp/data/scripts/cases/date_implementation_dev.dts vs tests/manual/dotscript/legacy/  (cite-check:ignore -- tier C/D, untracked by ruling)
 
 Five of the six are tier B and are now tracked under the ruling above, which
-makes the ambiguity VISIBLE in git rather than latent on one machine. It does
-not make it safe: `DO <name>` resolves through the SCRIPTS path slot, so which
-copy runs depends on a runtime setting. **Two files with the same name and
-different content, reachable by one unqualified verb, is a defect waiting for a
-day when the answer matters.** Owner ruling owed; recommend an OI of its own
-rather than folding it into this one.
+makes the ambiguity VISIBLE in git rather than latent on one machine.
+
+**CORRECTED THE SAME DAY, AND THE CORRECTION IS THE INTERESTING PART. This walk
+compared UNTRACKED against TRACKED, so it could only ever find six.** It never
+asked whether the TRACKED corpus collides with itself, because the question it
+was built for was "what is missing", not "what is ambiguous". Re-measured over
+all 287 tracked `.dts`: 270 distinct basenames, 15 with more than one tracked
+copy, **FOURTEEN of them differing in content**, and `regression.dts` and
+`version.dts` have THREE copies each. The count here was not wrong; the SCOPE
+was -- and a scope error reads exactly like a clean result.
+
+**And the resolution claim above was overstated.** Read rather than assumed
+(`src/cli/cmd_dotscript.cpp`, `build_candidate_specs` and
+`resolve_existing_script_path`): candidates are built in a fixed order --
+`scripts/<spec>`, `scripts/<spec>.dts`, `tests/<spec>`, `tests/<spec>.dts` --
+and the first that exists wins. It is DETERMINISTIC FIRST-MATCH and does NOT
+recurse into subdirectories. So a bare `DO <name>` never picks at random, and a
+subdirectory copy is not reachable by a bare name at all. The real defect is
+narrower and reader-facing: a name in BOTH the scripts and tests trees always
+yields the scripts copy, silently, and possibly not the one the reader has open.
+
+Carried out of this sheet to **OI-034**, with the per-pair judgment and the
+question of whether `DO` should warn when more than one candidate existed.
 
 ### Status
 
