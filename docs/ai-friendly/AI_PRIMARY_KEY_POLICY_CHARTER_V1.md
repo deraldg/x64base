@@ -340,10 +340,21 @@ field-name resolvers -- `xfg::resolve_field_index_std`, `fields::findFieldCI`,
 regardless of how each verb found its field index.
 
 **GENERATION IS THE BIGGER HOLE, AND IT IS NOT AN ENFORCEMENT PROBLEM.**
-Measured 2026-09-06: key generation lives in `src/cli/append_support.hpp`,
-whose own comment says "This keeps autokey generation in APPEND, not in
-rebuild." That header is included by EXACTLY TWO FILES -- `cmd_append.cpp` and
-`cmd_append_blank.cpp`. `DbArea::appendBlank()` has TWENTY-ONE callers.
+Measured 2026-09-06: key generation lives in `src/cli/append_support.cpp`
+(18 KB), whose own comment says "This keeps autokey generation in APPEND, not
+in rebuild." It is reached through the 605-byte header
+`include/cli/append_support.hpp`, and that header is included by EXACTLY TWO
+FILES -- `cmd_append.cpp:80` and `cmd_append_blank.cpp:64`, both spelling it
+`#include "cli/append_support.hpp"`. `DbArea::appendBlank()` has TWENTY-ONE
+callers.
+
+*(This paragraph first cited the header under src/ rather than include/ -- a
+path that exists nowhere, since the header is under include/ and only the code
+is under src/. The `cited-paths` gate caught it on the commit that introduced
+it, `e00820efe`: the sixth instance in this lane of a record pointing at
+something a reader cannot follow, and the first caught by a gate rather than by
+hand. The wrong spelling is described here rather than quoted, because quoting
+it would make this note itself a permanent widow -- the state AIF-141 is in.)*
 
 So NINETEEN row-creating paths mint no key at all: `cmd_sql_insert`,
 `cmd_import`, `cmd_importsql`, `cmd_copy`, `cmd_sort`, `cmd_ddl`,
