@@ -24,7 +24,7 @@ housekeeping note is worth keeping rather than performing.
     ERASE complete. Deleted: 1, Failed: 0
 
 and left a 56-byte table-buffer journal beside it -- `PKPOL.dbf.tbj` under the
-sandbox DBF root.  <!-- cite-check:ignore -->
+sandbox DBF root.
 
 `grep -n "tbj" src/cli/cmd_erase.cpp` returns **NOTHING**. ERASE sweeps
 same-stem `.cdx`, `.dtx` and the LMDB environment across the DBF, INDEXES and

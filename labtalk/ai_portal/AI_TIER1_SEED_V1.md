@@ -94,7 +94,10 @@ Lane protocol (claiming, registering, closing out, leaving a handoff) fires at
 specific moments: `recall.py open_lane`, then `close_out`.
 
 **A task is not done until the housekeeping is finished** -- and housekeeping
-here is a governed state-reconciliation cycle, not tidying prose.
+here is a governed state-reconciliation cycle, not tidying prose. What the
+cycle IS -- four measured checks, including naming what a concurrent session
+owns and reporting residue you cannot delete -- is
+`docs/ai-friendly/AI_SESSION_CLOSEOUT_CONTRACT_V1.md`. Tidying finds defects.
 
 ## 6. The one habit that matters
 

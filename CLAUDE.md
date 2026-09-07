@@ -128,6 +128,29 @@ WSL builds also exist (`build-wsl`, etc.); `.exe` cross-platform via guarded cod
   (not installed) and NOT the vcpkg python (minimal, no PyYAML -> `ModuleNotFoundError: yaml`).
   Recipes + the vcpkg-vs-venv rationale: the full-stack flush cookbook interpreters note.
 
+## Close out before you stop (AIF-156 2026-09-07)
+
+Four measured checks, not a wave at the end. Full contract with the reasoning and
+a worked example: `docs/ai-friendly/AI_SESSION_CLOSEOUT_CONTRACT_V1.md`.
+
+1. **`git --no-optional-locks status -uall`** -- name every modified file as yours
+   or somebody else's. `-uall` is required: this clone sets
+   `status.showUntrackedFiles=no`, so a bare status reports nothing for a file you
+   just created.
+2. **Say what the concurrent session owns and that you left it alone.** This tree
+   is worked by more than one agent; a reader of `git status` cannot tell which of
+   28 dirty files you deliberately did not touch unless you write it down.
+3. **Report the residue you created** -- fixtures, captures, scratch dirs, grants,
+   env vars, catalog rows. A device shell cannot delete; reporting what you cannot
+   remove is still the job, not an excuse to skip it.
+4. **Write the state a next session needs**: anything time-boxed, anything living
+   only in an environment variable, anything green here that would be red on a
+   clean clone.
+
+**Tidying finds defects.** The 2026-09-07 pass turned up `ERASE` reporting
+`Deleted: 1, Failed: 0` while leaving the TBJ1 journal beside the table it had
+just removed -- nobody was looking for it.
+
 ## Sandbox agents: NO mutating git -- but you CAN build and run (AIF-082 2026-07-31, corrected AIF-130 2026-08-26)
 
 If you are running in a mounted Linux sandbox rather than on the Windows host:
