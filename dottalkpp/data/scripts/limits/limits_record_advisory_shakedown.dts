@@ -1,0 +1,58 @@
+* ============================================================
+*  LIMITS SHAKEDOWN -- RECORD-SIZE SOFT ADVISORY (64 KiB)
+*
+*  Status:  CANDIDATE / REVIEW_BEFORE_EXECUTION.
+*  Safety:  MUTATING on throwaway tables only, ERASEd at the end.
+*  Proves:  The soft advisory (X64_RECORD_SIZE_ADVISORY = 64 KiB) fires on
+*           CREATE when the fixed record width exceeds 64 KiB, warns, and does
+*           NOT block table creation. A control table under 64 KiB gets no note.
+*
+*  REACH NOTE (honest scope)
+*  -------------------------
+*  The 16 MiB HARD ceiling (X64_MAX_RECORD_SIZE) is NOT reachable from CREATE:
+*  the CLI parser caps an X64 C field at 4096 bytes, so 128 fields x 4096 =
+*  512 KiB is the largest record a script can build. The hard guard is a
+*  programmatic / corrupt-DBF backstop (enforced in dbf_create create + the
+*  dbf_file open buffer check) and is proven by a unit test / crafted-fixture
+*  open -- NOT by this script.
+*
+*  EXPECTED OBSERVATIONS
+*  ---------------------
+*    R1. small record (~101 bytes) -> NO "CREATE: note:" advisory line.
+*    R2. wide record ~69 KiB (17 x C(4096) = 69633 bytes) ->
+*          "CREATE: note: fixed record width 69633 bytes exceeds 65536 ..."
+*          AND the table is still created (DBAREAS shows RECWIDE open).
+*
+*  RUN
+*  ---
+*  DOTSCRIPT TRACE scripts\limits\limits_record_advisory_shakedown.dts OUT tmp\limits\record_advisory.log
+* ============================================================
+SET ECHO OFF
+SET TALK ON
+
+ECHO ############################################################
+ECHO # RECORD-SIZE ADVISORY SHAKEDOWN -- soft warn at 64 KiB
+ECHO ############################################################
+
+ECHO === R1. control: small record (~101 bytes) -> expect NO advisory note ===
+SELECT 0
+CREATE X64 RECSMALL ( A C(50), B C(50) )
+ERROR_STATUS
+
+ECHO === R2. wide record ~69 KiB (17 x C(4096)) -> expect advisory note + table created ===
+* NOTE: single physical line -- DOTSCRIPT TRACE does not join ';' continuations
+* (the interactive/datarun path does). Keep the field list on one line.
+SELECT 0
+CREATE X64 RECWIDE ( C01 C(4096), C02 C(4096), C03 C(4096), C04 C(4096), C05 C(4096), C06 C(4096), C07 C(4096), C08 C(4096), C09 C(4096), C10 C(4096), C11 C(4096), C12 C(4096), C13 C(4096), C14 C(4096), C15 C(4096), C16 C(4096), C17 C(4096) )
+DBAREAS
+ERROR_STATUS
+
+ECHO NOTE: the 16 MiB HARD ceiling is not reachable via CREATE (parser caps X64 C
+ECHO   at 4096; 128 x 4096 = 512 KiB max). It is a backstop proven by unit test /
+ECHO   crafted-fixture open, not by this script.
+
+ECHO === R3. cleanup ===
+CLOSE ALL
+ERASE RECSMALL CONFIRM
+ERASE RECWIDE CONFIRM
+ECHO RECORD-SIZE ADVISORY SHAKEDOWN COMPLETE.

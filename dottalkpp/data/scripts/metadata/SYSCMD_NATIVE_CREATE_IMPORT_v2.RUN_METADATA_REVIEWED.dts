@@ -1,0 +1,38 @@
+* SYSCMD_NATIVE_CREATE_IMPORT_v2 -- WITHDRAWN / DO NOT EXECUTE
+* Status: INERT. Every operational line is deliberately commented out.
+*
+* WHY THIS WAS WITHDRAWN (2026-07-26):
+* Drafted to seed 176 "missing" SYSCMD rows after the dotref generator reported
+* 14.9% metadata coverage. That premise was WRONG.
+*
+* The generator defaults to reading the CSV snapshot
+*   dottalkpp\data\scripts\metadata\SYSCMD_IMPORT_v1.csv   (40 rows, stale since 2026-05-20)
+* but the CANONICAL table is
+*   dottalkpp\data\metadata\SYSCMD.dbf                     (203 rows, already seeded)
+*
+* True coverage measured against the live table is 78.4% (200/255), not 14.9%.
+*
+* Executing this script would have:
+*   1. ERASEd the canonical SYSCMD table, and
+*   2. re-imported a 216-row CSV that OMITS 15 rows present in the live table:
+*      BUILDLMDB, PREDHELP, SETPATH, WHERECACHE, STUDENTECHO, STUDENTHELLO,
+*      SET CASE, SET CDX, SET CNX, SET FILTER, SET INDEX, SET NEAR,
+*      SET ORDER, SET RELATION, SET UNIQUE
+*   ...destroying deliberate maintainer seeding decisions.
+*
+* ALSO NOTE: the v1 reviewed script points SETPATH DBF at data\dbf\metadata,
+* which does not exist. The live table lives at data\metadata. Running the v1
+* script as-is would create a SECOND, divergent SYSCMD table.
+*
+* THE REAL DEFECT is not a seeding gap. It is that the generator reads a stale
+* CSV instead of the canonical DBF, violating the authority model
+* (metadata table = canonical authoring lane).
+*
+* CORRECT NEXT ACTION: refresh the CSV FROM the live table (export, not import),
+* or point the generator at the DBF. Do not erase the table.
+*
+* Safe readback for reference (uncomment to run):
+* SETPATH DBF D:\code\ccode\dottalkpp\data\metadata
+* USE SYSCMD
+* LIST
+* QUIT

@@ -1,0 +1,148 @@
+* ============================================================
+*  NAV DELETED-RECORD SMOKE TEST  (self-contained, throwaway table)
+*
+*  Status:  CANDIDATE / REVIEW_BEFORE_EXECUTION.
+*  Safety:  MUTATING, but only on a throwaway table (NAVDELTMP) that is ERASEd
+*           at the end. Does NOT touch the pinocchio (or any other) fixtures.
+*  Purpose: Document how ordered navigation behaves with SET DELETED ON and a
+*           deleted record sitting at an endpoint / in the middle of the order.
+*
+*  WHY A THROWAWAY TABLE
+*  ---------------------
+*  DELETE on a CDX table marks the DBF record and best-effort updates the LMDB
+*  index; RECALL may not fully restore the index entry. To avoid leaving the big
+*  fixtures' index out of sync with their DBF, this test builds its own tiny
+*  table, mutates that, and erases it.
+*
+*  WHAT TO OBSERVE
+*  ---------------
+*  Rows are inserted OUT OF SID ORDER so index order differs from record order:
+*    recno 1..6  =  SID 30,10,50,20,60,40
+*    SID order   =  10(r2) 20(r4) 30(r1) 40(r6) 50(r3) 60(r5)
+*  So an ordered TOP must land on recno 2 (SID 10), proving index order.
+*  The deleted sections then show whether TOP/SKIP under SET DELETED ON skip a
+*  deleted record or land on it -- read the "Recno:" (TALK) lines and DISPLAY.
+*
+*  RUN
+*  ---
+*  DOTSCRIPT TRACE scripts\pinocchio\nav_deleted_smoke.dts OUT tmp\pinocchio\deleted_smoke.log
+* ============================================================
+SET ECHO OFF
+SET TIMER ON
+SET TALK ON
+
+* Use the default roots (guaranteed to exist); the table is temporary.
+ECHO === G0. build throwaway x64 table NAVDELTMP, indexed by SID ===
+CREATE X64 NAVDELTMP (SID N(8), LNAME C(20))
+
+* NOTE: bare APPEND (no args) appends one blank record and positions on it;
+* "APPEND BLANK" is only a compatibility spelling and is not implemented here.
+APPEND
+REPLACE SID WITH "30"
+REPLACE LNAME WITH "Thirty"
+APPEND
+REPLACE SID WITH "10"
+REPLACE LNAME WITH "Ten"
+APPEND
+REPLACE SID WITH "50"
+REPLACE LNAME WITH "Fifty"
+APPEND
+REPLACE SID WITH "20"
+REPLACE LNAME WITH "Twenty"
+APPEND
+REPLACE SID WITH "60"
+REPLACE LNAME WITH "Sixty"
+APPEND
+REPLACE SID WITH "40"
+REPLACE LNAME WITH "Forty"
+
+COUNT
+CDX CREATE
+CDX ADDTAG SID
+BUILDLMDB CLEAN YES
+CDX TAGS
+
+SET INDEX TO NAVDELTMP
+SET ORDER TO TAG SID
+
+ECHO === G1. baseline ordered walk (no deletes): expect recno 2,4,1,6,3,5 ===
+TOP
+DISPLAY
+SKIP
+SKIP
+SKIP
+SKIP
+SKIP
+BOTTOM
+DISPLAY
+
+* ------------------------------------------------------------
+* G2. deleted record AT THE TOP endpoint, unfiltered, SET DELETED ON
+* ------------------------------------------------------------
+ECHO === G2. delete SID 10 (recno 2, the ordered TOP), then SET DELETED ON ===
+GO 2
+DELETE
+SET DELETED ON
+ECHO --- G2a. TOP: skips deleted SID 10 -> recno 4 (SID 20), or lands recno 2 if RawOrder ignores DELETED ---
+TOP
+DISPLAY
+ECHO --- restore ---
+SET DELETED OFF
+GO 2
+RECALL
+
+* ------------------------------------------------------------
+* G3. deleted record in the MIDDLE of the order, unfiltered SKIP
+* ------------------------------------------------------------
+ECHO === G3. delete SID 30 (recno 1, the 3rd in SID order), SET DELETED ON ===
+GO 1
+DELETE
+SET DELETED ON
+ECHO --- G3a. TOP=SID10(r2); SKIP->SID20(r4); SKIP-> SID40(r6) if deleted SID30 skipped, else SID30(r1) ---
+TOP
+SKIP
+DISPLAY
+SKIP
+DISPLAY
+ECHO --- restore ---
+SET DELETED OFF
+GO 1
+RECALL
+
+* ------------------------------------------------------------
+* G4. deleted record honored under an ACTIVE FILTER (LogicalView path)
+* ------------------------------------------------------------
+ECHO === G4. filter to a 2-row set, delete the first, confirm filtered TOP moves ===
+SET FILTER TO LNAME = "Ten"
+COUNT
+TOP
+DISPLAY
+DELETE
+SET FILTER TO
+SET FILTER TO LNAME = "Ten"
+SET DELETED ON
+ECHO --- G4a. filtered TOP with the only match deleted -> no visible row (nav reports end) ---
+TOP
+ECHO --- restore ---
+SET DELETED OFF
+SET FILTER TO
+RECALL ALL
+
+* ------------------------------------------------------------
+* Cleanup: drop the throwaway table.
+* ------------------------------------------------------------
+ECHO === G5. cleanup: ERASE the throwaway table ===
+CLOSE
+ERASE TABLE NAVDELTMP CONFIRM
+
+ECHO ============================================================
+ECHO DELETED-RECORD SMOKE COMPLETE. Record for each section whether a deleted
+ECHO record was SKIPPED or LANDED ON:
+ECHO   G2 (unfiltered TOP, deleted endpoint): recno 4 = skipped; recno 2 = landed.
+ECHO   G3 (unfiltered SKIP, deleted middle) : SID 40 = skipped; SID 30 = landed.
+ECHO   G4 (filtered TOP, only match deleted) : "at end" = correctly hidden.
+ECHO These document the SET DELETED semantics for ordered CDX navigation so the
+ECHO behavior is intentional rather than incidental. If G2/G3 LAND ON the deleted
+ECHO record, that is the RawOrder-does-not-consult-DELETED path and is the next
+ECHO thing to decide on (route unfiltered nav through the visibility gate too).
+ECHO ============================================================

@@ -1,5 +1,10 @@
 # OI-019 half (2) -- triage of the untracked DotScript corpus
 
+**SUPERSEDED IN PART, 2026-09-07 -- read RESOLUTION at the end first.** The
+counts in the body are the 2026-09-04 reading and are kept verbatim as the record
+of what was believed then. They have since moved, and two of this sheet's own
+methods were wrong in ways the resolution names.
+
     status      : mechanical triage, REPORT-ONLY; the ruling is the owner's
     raised      : 2026-09-04 (OI-019, half 2)
     owner       : member.derald   prepared by: member.ai.claude.cowork
@@ -128,3 +133,119 @@ That is a decision, not a cleanup.
 4. Decide C and D as a class: ignore-by-policy, or leave and stop counting them.
 
 Only step 1 is mechanical. The rest is the ruling this sheet exists to inform.
+
+---
+
+## RESOLUTION 2026-09-07 -- half (2) is ruled and actioned
+
+Owner rulings taken this session, in response to the three questions this sheet
+left open. Re-measured from scratch first, because this row's own METHOD WARNING
+says a wrong measurement that agrees with a stale headline is the most expensive
+kind, and the 2026-09-04 numbers were three days and two authoring sessions old.
+
+### The re-measurement
+
+| | 2026-08-24 | 2026-09-04 | 2026-09-07 |
+| --- | --- | --- | --- |
+| `.dts` on disk | 332 | 350 | **366** |
+| tracked | 87 | 144 | **154** |
+| untracked | 245 | 206 | **212** |
+| gitignored | 0 | 0 | **0** |
+| untracked bytes | -- | 533 KB | **557 KB** |
+
+Tracked-but-missing-from-disk: **zero**. The registration side is sound; this
+was only ever an omission of the targets.
+
+### Two method corrections, and both inflated a tier
+
+**1. THE SHEET'S OWN INVENTORY WAS BEING COUNTED AS A CITATION.**
+`OI019_UNTRACKED_DTS_INVENTORY_V1.csv` is tracked and names every untracked
+script. A citation walk that reads it therefore reports "cited by a tracked
+file" for the entire corpus. First pass this session returned **tier B = 196**
+on that basis. Excluding this sheet, its inventory, and `OPEN_ITEMS.md` brings
+it to 54. **Bookkeeping ABOUT a set is not a citation OF it**, and a ledger that
+counts itself will always report that everything is load-bearing.
+
+**2. SUBSTRING MATCHING MADE FOUR PHANTOM TIER-A ENTRIES.**
+Matching a bare basename found `x64.dts` inside `mcc_build_x64.dts`,
+`regression.dts` inside `cascade_env_regression.dts`, and `test.dts` inside
+`commit_rollback_test.dts`. That reported **tier A = 8**. Requiring the name to
+stand alone -- a left boundary that permits `/` and `\` and quotes but not
+filename characters -- gives **tier A = 5 names / 6 files**, which is what the
+2026-09-04 pass found by hand. Same family as the doubled-separator bug this
+sheet already records: **the path arithmetic is where these measurements break,
+every time.**
+
+### Tier A -- DONE
+
+Read, not counted. The four tracked and the two retired divide on what the
+citing line actually SAYS, not on how many lines mention them:
+
+| file | citing line | disposition |
+| --- | --- | --- |
+| `x64.dts` | `src/tv/foxtalk_menu.cpp:40` -- live `TMenuItem` shipping `DO X64` | **tracked** |
+| `x32.dts` | `src/tv/foxtalk_menu.cpp:41` -- live `TMenuItem` shipping `DO X32` | **tracked** |
+| `limits/limits_record_advisory_shakedown.dts` | `src/tests/test_x64_record_limit.cpp:17` -- "Complements ..." | **tracked** |
+| `pinocchio/wal_phaseA_proof.dts` | `cmd_regression.cpp:502` -- "the self-contained basis is ..." | **tracked** |
+| `commit_rollback_test.dts` | `cmd_regression.cpp:499` -- "this entry REPLACES the legacy ..." | **retired** |
+| `suites/commit_rollback_test.dts` | same note | **retired** |
+
+`foxtalk_menu.cpp` is in the build (`src/tv/CMakeLists.txt:20`), so the urgent
+finding is confirmed: **a fresh clone shipped a menu with two items that could
+not resolve.** That is now closed.
+
+The two retirements were verified before moving, not inferred from the note:
+both open with `select students` against a table they do not create, and both
+have the terminal verb commented out (`* commit`), so run standalone they
+measure nothing. They were never tracked, so nothing left the repository; they
+sit in `dottalkpp/data/scripts/_to_delete/` for the owner's removal, since the
+device bridge cannot delete. The note at `cmd_regression.cpp:499` now says it is
+an epitaph and dates the retirement.
+
+### Tier B -- RULED: track all 53 (131 KB)
+
+Owner ruling 2026-09-07. The argument that closed half (1) applies unchanged:
+tracked prose names them, so either they are in the repository or the citation
+is a lie. Nine are named by tracked TEST-PROCEDURE documents
+(`tests/README_TESTING.md`, `DOTSCRIPT_README_TESTING.md`,
+`docs/WORKFLOW_RUNBOOK_v1.md`), which means a clean clone could not follow its
+own documented procedures.
+
+### Tier C/D -- RULED: leave untracked, and this is the record of why
+
+Owner ruling 2026-09-07. **153 files, 420 KB, named by no tracked file.**
+Deliberately untracked scratch: one-off canaries, superseded metadata seeds,
+and experiments, many with spaces in the filename. `.gitignore` is NOT changed
+-- this paragraph is the policy, so the next measurement reads 153 uncited
+`.dts` as a decision rather than re-finding it as an omission.
+
+**A future walk should expect this number to be non-zero and should not file it
+as a finding.** What WOULD be a finding is a tier C/D file acquiring a tracked
+citation, which moves it to tier B by definition.
+
+### One hazard this triage surfaced and did not resolve
+
+Eleven untracked scripts share a basename with a file already tracked
+elsewhere. Five are byte-identical; **six are forks -- same name, different
+content**:
+
+    dottalkpp/data/scripts/SYSTEM_METADATA_BOOLEAN_FIX.dts   vs tests/manual/dotscript/quarantine/
+    dottalkpp/data/scripts/SYSTEM_METADATA_SEED_v1.dts       vs tests/manual/dotscript/metadata/legacy/
+    dottalkpp/data/scripts/SYSTEM_METADATA_SEED_v2.dts       vs tests/manual/dotscript/metadata/
+    dottalkpp/data/scripts/SYSTEM_METADATA_VALIDATE_v0.dts   vs tests/manual/dotscript/metadata/
+    dottalkpp/data/scripts/legacy/version.dts                vs dottalkpp/data/tests/version.dts
+    dottalkpp/data/scripts/cases/date_implementation_dev.dts vs tests/manual/dotscript/legacy/  (cite-check:ignore -- tier C/D, untracked by ruling)
+
+Five of the six are tier B and are now tracked under the ruling above, which
+makes the ambiguity VISIBLE in git rather than latent on one machine. It does
+not make it safe: `DO <name>` resolves through the SCRIPTS path slot, so which
+copy runs depends on a runtime setting. **Two files with the same name and
+different content, reachable by one unqualified verb, is a defect waiting for a
+day when the answer matters.** Owner ruling owed; recommend an OI of its own
+rather than folding it into this one.
+
+### Status
+
+Half (1): closed `1f61c22e4`. Half (2): closed here. The inventory CSV remains
+the **2026-09-04** snapshot and is not regenerated -- it is a dated record, and
+this section is the authority for what changed after it.

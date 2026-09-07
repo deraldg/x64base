@@ -1,0 +1,184 @@
+* ============================================================
+*  PINOCCHIO SCALE -- READ-ONLY VERB BATTERY (Phase 1.3a)
+*
+*  Status:  CANDIDATE / REVIEW_BEFORE_EXECUTION. READ-ONLY (no mutation).
+*  Purpose: Characterize which command verbs stay FLAT vs scale LINEARLY with
+*           table size, by running the same battery on STUDENTS (1,000,000) and
+*           ENROLL (5,501,358). Compare each ELAPSED across the two tables:
+*             - FLAT verbs must not grow ~5.5x from STUDENTS to ENROLL.
+*             - LINEAR verbs are EXPECTED to grow ~with the row ratio.
+*
+*  EXPECTED COMPLEXITY (from source, 2026-07-18)
+*  ---------------------------------------------
+*    FLAT / O(1) or O(log n): COUNT (no filter, header recCount), GO n / GO TOP /
+*      GO BOTTOM, TOP, BOTTOM, SKIP +-N (unfiltered CDX cursor -- already fixed).
+*    LINEAR / O(n): COUNT FOR, COUNT under SET FILTER, SUM/AVG/MIN/MAX, LIST FOR,
+*      LOCATE / CONTINUE, SCAN...ENDSCAN.
+*    SENTINEL -- SHOULD be O(log n) but is currently O(scan-distance): SEEK.
+*      cmd_seek.cpp walks the CDX cursor linearly instead of a keyed range-seek,
+*      so seeking a near-END key costs a near-full index walk. Group C profiles
+*      this by seeking the FIRST key vs a near-LAST key, and (value-safe) by
+*      seeking the guaranteed canary under ascending vs descending order.
+*
+*  RUNTIME: this is a MULTI-MINUTE run. Every LINEAR verb makes a full pass over
+*    the table (tens of seconds each on ENROLL). Each command's ELAPSED (printed
+*    by SET TIMER ON) is the datum -- do not abort early.
+*
+*  RUN (host, top-level runner so per-command SET TIMER fires):
+*    powershell -ExecutionPolicy Bypass -File .\dottalkpp\data\scripts\pinocchio\run_pinocchio_scale_teed.ps1
+* ============================================================
+SET ECHO OFF
+SET TIMER ON
+SET TALK ON
+
+SET PATH DBF DBF/pinocchio
+SET PATH INDEXES INDEXES/pinocchio
+SET PATH LMDB LMDB/pinocchio
+
+* ============================================================
+* TABLE 1 -- STUDENTS (1,000,000 rows), key SID, secondary LNAME
+* ============================================================
+ECHO ############################################################
+ECHO # STUDENTS (1,000,000) -- scale point A
+ECHO ############################################################
+SELECT 0
+USE STUDENTS
+SET INDEX TO STUDENTS
+SET ORDER TO TAG SID
+
+ECHO === A-GROUP: FLAT verbs (should be ~identical on both tables) ===
+ECHO --- A1. COUNT (no filter) -> header recCount, expect 1000000, O(1) ---
+COUNT
+ECHO --- A2. GO TOP / GO BOTTOM / GO 500000 -> absolute positioning, O(1) ---
+GO TOP
+GO BOTTOM
+ECHO (max SID printed below; SEEK Group C assumes the ENROLL/STUDENTS max is 50999999) ---
+SMARTLIST SID,LNAME,FNAME NEXT 1
+GO 500000
+ECHO --- A3. TOP -> canary must read 50000000 Taylor Quinn, O(log n) ---
+TOP
+SMARTLIST SID,LNAME,FNAME NEXT 1
+ECHO --- A4. BOTTOM -> O(log n) ---
+BOTTOM
+ECHO --- A5. SKIP +100000 / SKIP -100000 -> CDX cursor, O(log n) ---
+TOP
+SKIP 100000
+SKIP -100000
+
+ECHO === B-GROUP: LINEAR verbs (EXPECTED to scale ~5.5x on ENROLL) ===
+ECHO --- B1. COUNT FOR MAJOR = CSCI -> predicate full scan, O(n) ---
+COUNT FOR MAJOR = CSCI
+ECHO --- B2. COUNT under SET FILTER -> filter forces scan (no header shortcut), O(n) ---
+SET FILTER TO MAJOR = CSCI
+COUNT
+SET FILTER TO
+ECHO --- B3. aggregates over GPA -> each is an independent full scan, O(n) each ---
+AVG GPA
+SUM GPA
+MIN GPA
+MAX GPA
+ECHO --- B4. LIST FOR SID = 50999999 -> selective predicate (small output), full scan, O(n) ---
+LIST FOR SID = 50999999
+ECHO --- B5. LOCATE near-front vs near-end (physical scan distance) ---
+ECHO       B5a LOCATE FOR SID = 50000000 -> record 1, near-instant baseline
+LOCATE FOR SID = 50000000
+ECHO       B5b LOCATE FOR SID = 50999999 -> near-end physical, full scan
+LOCATE FOR SID = 50999999
+ECHO       B5c CONTINUE -> resume the last LOCATE predicate
+CONTINUE
+ECHO --- B6. SCAN...ENDSCAN empty body -> pure full iteration cost, O(n) ---
+SCAN
+ENDSCAN
+
+ECHO === C-GROUP: SEEK positional profile (SENTINEL -- currently linear on CDX) ===
+SET ORDER TO TAG SID
+ECHO --- C1. SEEK 50000000 -> FIRST key ascending, should be fast ---
+SEEK 50000000
+SMARTLIST SID,LNAME,FNAME NEXT 1
+ECHO --- C2. SEEK 50999999 -> near-LAST key ascending, full index walk if linear ---
+SEEK 50999999
+SMARTLIST SID,LNAME,FNAME NEXT 1
+ECHO --- C3. value-safe: same canary, DESCENDING order -> canary is now LAST key ---
+DESCEND
+SEEK 50000000
+SMARTLIST SID,LNAME,FNAME NEXT 1
+ASCEND
+
+* ============================================================
+* TABLE 2 -- ENROLL (5,501,358 rows), key SID (5-8 dup per student)
+* ============================================================
+ECHO ############################################################
+ECHO # ENROLL (5,501,358) -- scale point B
+ECHO ############################################################
+SELECT 1
+USE ENROLL
+SET INDEX TO ENROLL
+SET ORDER TO TAG SID
+
+ECHO === A-GROUP: FLAT verbs ===
+ECHO --- A1. COUNT (no filter) -> expect 5501358, O(1) ---
+COUNT
+ECHO --- A2. GO TOP / GO BOTTOM / GO 2750000 -> O(1) ---
+GO TOP
+GO BOTTOM
+SMARTLIST SID,CLS_ID NEXT 1
+GO 2750000
+ECHO --- A3. TOP -> canary 50000000, O(log n) ---
+TOP
+SMARTLIST SID,CLS_ID NEXT 1
+ECHO --- A4. BOTTOM -> O(log n) ---
+BOTTOM
+ECHO --- A5. SKIP +100000 / SKIP -100000 -> CDX cursor, O(log n) ---
+TOP
+SKIP 100000
+SKIP -100000
+
+ECHO === B-GROUP: LINEAR verbs (compare each ELAPSED to the STUDENTS value) ===
+ECHO --- B1. COUNT FOR SID = 50500000 -> predicate full scan, O(n) ---
+COUNT FOR SID = 50500000
+ECHO --- B2. COUNT under SET FILTER -> O(n) ---
+SET FILTER TO SID = 50500000
+COUNT
+SET FILTER TO
+ECHO --- B3. aggregates over SID -> full scan each, O(n) ---
+AVG SID
+MIN SID
+MAX SID
+ECHO --- B4. LIST FOR SID = 50999999 -> full scan, small output, O(n) ---
+LIST FOR SID = 50999999
+ECHO --- B5. LOCATE near-front vs near-end ---
+ECHO       B5a LOCATE FOR SID = 50000000 -> near-front baseline
+LOCATE FOR SID = 50000000
+ECHO       B5b LOCATE FOR SID = 50999999 -> near-end physical, full scan
+LOCATE FOR SID = 50999999
+ECHO       B5c CONTINUE -> resume last LOCATE
+CONTINUE
+ECHO --- B6. SCAN...ENDSCAN empty body -> pure full iteration cost, O(n) ---
+SCAN
+ENDSCAN
+
+ECHO === C-GROUP: SEEK positional profile (SENTINEL) ===
+SET ORDER TO TAG SID
+ECHO --- C1. SEEK 50000000 -> FIRST key ascending, should be fast ---
+SEEK 50000000
+SMARTLIST SID,CLS_ID NEXT 1
+ECHO --- C2. SEEK 50999999 -> near-LAST key ascending, full index walk if linear ---
+SEEK 50999999
+SMARTLIST SID,CLS_ID NEXT 1
+ECHO --- C3. value-safe: same canary, DESCENDING order -> canary is now LAST key ---
+DESCEND
+SEEK 50000000
+SMARTLIST SID,CLS_ID NEXT 1
+ASCEND
+
+ECHO ============================================================
+ECHO SCALE READ-ONLY BATTERY COMPLETE. How to read it:
+ECHO   FLAT check   : A-GROUP ELAPSED on ENROLL ~= on STUDENTS (NOT ~5.5x).
+ECHO                  If any A verb grows with rows, it fell off the index path.
+ECHO   LINEAR check : B-GROUP ELAPSED on ENROLL ~= 5.5x the STUDENTS value.
+ECHO   SEEK sentinel: C2 (near-last) and C3 (canary descending) should be much
+ECHO                  slower than C1 (first). That gap is SEEK's linear walk --
+ECHO                  the next optimization target (make it a keyed range-seek).
+ECHO   Correctness  : COUNT = 1000000 / 5501358; TOP canary = 50000000 Taylor
+ECHO                  Quinn; every SEEK/LOCATE lands the expected SID.
+ECHO ============================================================

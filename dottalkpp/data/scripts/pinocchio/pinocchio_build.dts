@@ -1,0 +1,51 @@
+* ============================================================
+*  PINOCCHIO BUILD -- CREATE x64 table -> IMPORT csv -> CDX + LMDB
+*  Mature path: CREATE (supported) + IMPORT (tested). No AUTODBF.
+*  x64 (DBF_64) supports ADVANCED field types (I integer, Y currency, M memo, ...).
+*  FINDING (Pinocchio 1M): bare I came back as I(4) and truncated the 8-digit SID
+*  to 4 significant digits (50000000 -> 5000), breaking SID order / SEEK / display,
+*  while LNAME (C20) indexed perfectly. SID is N(8) here for a correct 8-digit key;
+*  revisit I / an explicit integer width once its wide-key semantics are confirmed.
+*  CANDIDATE / REVIEW_BEFORE_EXECUTION.
+*  Its own lane -- never the MCC foundation.
+* ============================================================
+SET ECHO OFF
+SET TIMER ON
+
+SET PATH DBF DBF/pinocchio
+SET PATH INDEXES INDEXES/pinocchio
+SET PATH LMDB LMDB/pinocchio
+
+ECHO === STUDENTS: create x64 structure (advanced types), then IMPORT the rows ===
+CREATE X64 STUDENTS (SID N(8), LNAME C(20), FNAME C(15), DOB D, GENDER C(1), MAJOR C(4), ENROLL_D D, GPA N(4,2), EMAIL C(40))
+IMPORT tmp/pinocchio/students.csv
+SHOW COLUMNS
+COUNT
+CDX CREATE
+CDX ADDTAG SID
+CDX ADDTAG LNAME
+CDX ADDTAG MAJOR
+* BUILDLMDB size ladder: TINY/SMALL/MEDIUM/LARGE/XL/HUGE = 32M..1G, or MAPSIZE <n>K|M|G. HUGE(1G) holds 1M x 3 tags.
+BUILDLMDB HUGE CLEAN YES
+CDX TAGS
+
+ECHO === ENROLL: create x64 structure, then IMPORT the rows (the big child) ===
+CREATE X64 ENROLL (SID N(8), CLS_ID C(12))
+IMPORT tmp/pinocchio/enroll.csv
+SHOW COLUMNS
+COUNT
+CDX CREATE
+CDX ADDTAG SID
+CDX ADDTAG CLS_ID
+* No LMDB limit hit even at 8G for 5.5M rows. MAPSIZE 2G is conservative headroom; the clean build shows the real footprint (drop to HUGE if it fits).
+BUILDLMDB MAPSIZE 2G CLEAN YES
+CDX TAGS
+
+ECHO ============================================================
+ECHO BUILD COMPLETE. A zero exit code is NOT proof -- confirm:
+ECHO   - each CREATE reported an x64 (v64) table; SHOW COLUMNS matches the spec (SID is N(8))
+ECHO   - STUDENTS COUNT == generated N; ENROLL COUNT == generated total
+ECHO   - record 1 by SID reads 50000000 Taylor Quinn (the canary)
+ECHO   - every BUILDLMDB reported OK, no mapsize FAIL
+ECHO Next: DOTSCRIPT TRACE scripts\pinocchio\pinocchio_measure.dts OUT tmp\pinocchio\measure.log
+ECHO ============================================================

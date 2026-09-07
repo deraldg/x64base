@@ -1,0 +1,103 @@
+* buffer_visibility_probe_v3_smartbrowser.dts
+* ============================================================================
+* AIF-074 -- PROBE v3: SMARTBROWSER, the tuple-stream family, at RUNTIME
+*
+* v2 established at runtime: SMARTLIST filters on committed values but displays
+* buffered ones (a row printed under a filter it fails). SMARTBROWSER is claimed
+* -- from SOURCE ONLY -- to be self-consistent, because its FOR filter binds to
+* TupleRow (`expr_tuple_glue.hpp:11`, BETA-6.2) rather than to the DbArea.
+* This probe converts that claim from source_defined to runtime_observed.
+*
+* SMARTBROWSER is an interactive pager, but it paints the FIRST PAGE BEFORE
+* reading input, and a failed std::getline(std::cin) returns Quit -- so under a
+* script it renders one page and exits.
+*
+* THE DECISIVE TEST. Record 1 is buffered CSCI -> MATH (uncommitted).
+*   If the filter reads TUPLE values (buffered), then:
+*       FOR MAJOR = "CSCI"  -> record 1 does NOT appear
+*       FOR MAJOR = "MATH"  -> records 1 AND 2 appear
+*   If the filter reads COMMITTED values, then:
+*       FOR MAJOR = "CSCI"  -> record 1 appears, DISPLAYING "MATH"  (a split)
+*       FOR MAJOR = "MATH"  -> only record 2 appears
+*
+* Safety: MUTATING (SANDBOX only; ROLLBACK discards; table erased at the end).
+* Asserts nothing. No predictions stated here on purpose.
+* ============================================================================
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+SET PATH DBF DBF/SANDBOX
+SET PATH INDEXES INDEXES/SANDBOX
+SET PATH LMDB LMDB/SANDBOX
+
+FORMULA "BUFVIS3-PROBE-BEGIN"
+
+ERASE TABLE BUFVIS3 CONFIRM
+
+CREATE X64 BUFVIS3 (SID N(6,0), MAJOR C(4))
+APPEND
+REPLACE SID WITH "1"
+REPLACE MAJOR WITH "CSCI"
+APPEND
+REPLACE SID WITH "2"
+REPLACE MAJOR WITH "MATH"
+APPEND
+REPLACE SID WITH "3"
+REPLACE MAJOR WITH "HIST"
+CLOSE
+
+SELECT 1
+USE BUFVIS3
+
+FORMULA "BUFVIS3-BASELINE-BEGIN"
+SMARTBROWSER BUFVIS3.SID,BUFVIS3.MAJOR
+FORMULA "BUFVIS3-BASELINE-END"
+
+* --- buffer record 1: CSCI -> MATH, uncommitted ---
+TABLE BUFFER ON
+GO 1
+REPLACE MAJOR WITH "MATH"
+
+FORMULA "BUFVIS3-STATUS-BEGIN"
+TABLE BUFFER STATUS
+FORMULA "BUFVIS3-STATUS-END"
+
+* --- A. unfiltered: does the DISPLAY show buffered MATH for record 1? ---
+FORMULA "BUFVIS3-A-UNFILTERED-BEGIN"
+SMARTBROWSER BUFVIS3.SID,BUFVIS3.MAJOR
+FORMULA "BUFVIS3-A-UNFILTERED-END"
+
+* --- B. THE DECISIVE PAIR ---
+FORMULA "BUFVIS3-B-FOR-CSCI-BEGIN"
+SMARTBROWSER BUFVIS3.SID,BUFVIS3.MAJOR FOR MAJOR = "CSCI"
+FORMULA "BUFVIS3-B-FOR-CSCI-END"
+
+FORMULA "BUFVIS3-B-FOR-MATH-BEGIN"
+SMARTBROWSER BUFVIS3.SID,BUFVIS3.MAJOR FOR MAJOR = "MATH"
+FORMULA "BUFVIS3-B-FOR-MATH-END"
+
+* --- C. control: the same two filters on SMARTLIST (known split from v2) ---
+FORMULA "BUFVIS3-C-SMARTLIST-CONTROL-BEGIN"
+SMARTLIST FOR MAJOR = "CSCI"
+SMARTLIST FOR MAJOR = "MATH"
+FORMULA "BUFVIS3-C-SMARTLIST-CONTROL-END"
+
+* --- D. control: SQLSEL, self-consistent since R18 ---
+FORMULA "BUFVIS3-D-SQLSEL-CONTROL-BEGIN"
+SQLSEL SELECT SID,MAJOR FROM BUFVIS3 WHERE MAJOR = "CSCI"
+SQLSEL SELECT SID,MAJOR FROM BUFVIS3 WHERE MAJOR = "MATH"
+FORMULA "BUFVIS3-D-SQLSEL-CONTROL-END"
+
+* --- discard ---
+ROLLBACK
+TABLE BUFFER OFF
+
+FORMULA "BUFVIS3-AFTER-ROLLBACK-BEGIN"
+SMARTBROWSER BUFVIS3.SID,BUFVIS3.MAJOR
+FORMULA "BUFVIS3-AFTER-ROLLBACK-END"
+
+CLOSE
+ERASE TABLE BUFVIS3 CONFIRM
+
+FORMULA "BUFVIS3-PROBE-END"

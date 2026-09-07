@@ -1,0 +1,51 @@
+* SOURCE_COMMENT_IMPORT_ONLY.dts
+* Status: STABLE_CANONICAL_SCRIPT / APPEND_ONLY
+* Purpose: Import staged source-comment CSVs into existing COMMENTS-lane tables.
+
+SET ECHO OFF
+ECHO ===== SOURCE COMMENT IMPORT ONLY START =====
+SETPATH DBF COMMENTS
+SETPATH INDEXES INDEXES/COMMENTS
+SETPATH LMDB LMDB/COMMENTS
+
+SELECT 0
+USE SRCFILE
+IMPORT D:\code\ccode\dottalkpp\docs\generated\staging\source_comment_metadata_import_v1\SRCFILE_IMPORT.csv
+BUILDLMDB CLEAN YES
+
+SELECT 1
+USE SRCBLOCK
+IMPORT D:\code\ccode\dottalkpp\docs\generated\staging\source_comment_metadata_import_v1\SRCBLOCK_IMPORT.csv
+BUILDLMDB CLEAN YES
+
+SELECT 2
+USE SRCLINE
+IMPORT D:\code\ccode\dottalkpp\docs\generated\staging\source_comment_metadata_import_v1\SRCLINE_IMPORT.csv
+BUILDLMDB CLEAN YES
+
+SELECT 3
+USE SRCUSAGE
+IMPORT D:\code\ccode\dottalkpp\docs\generated\staging\source_comment_metadata_import_v1\SRCUSAGE_IMPORT.csv
+BUILDLMDB CLEAN YES
+
+SELECT 4
+USE SRCCLASS
+IMPORT D:\code\ccode\dottalkpp\docs\generated\staging\source_comment_metadata_import_v1\SRCCLASS_IMPORT.csv
+BUILDLMDB CLEAN YES
+
+SELECT 5
+USE SRCDISP
+IMPORT D:\code\ccode\dottalkpp\docs\generated\staging\source_comment_metadata_import_v1\SRCDISP_IMPORT.csv
+BUILDLMDB CLEAN YES
+
+SELECT 6
+USE SRCALIAS
+IMPORT D:\code\ccode\dottalkpp\docs\generated\staging\source_comment_metadata_import_v1\SRCALIAS_IMPORT.csv
+BUILDLMDB CLEAN YES
+
+SELECT 7
+USE MEMO_LINES
+IMPORT D:\code\ccode\dottalkpp\docs\generated\staging\source_comment_metadata_import_v1\MEMO_LINES_IMPORT.csv
+BUILDLMDB CLEAN YES
+
+ECHO ===== SOURCE COMMENT IMPORT ONLY END =====

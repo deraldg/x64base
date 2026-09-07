@@ -1,0 +1,20 @@
+* ============================================================
+* messaging_priority_a_seed_apply_v1.dts
+* Status: LEGACY_COMPAT_WRAPPER
+* Purpose:
+*   Preserve the older Priority A apply entry point while routing all
+*   SYSTEM_MESSAGES / SYSTEM_MESSAGE_TEXT mutation through the reviewed
+*   full-catalog reset + reload cycle.
+*
+* Boundary:
+*   - Mutates only the runtime messaging lane.
+*   - Does not seed a partial handcrafted subset anymore.
+*   - Uses the reviewed scripts under data/scripts/messaging.
+* ============================================================
+
+SET ECHO OFF
+ECHO === LEGACY PRIORITY A APPLY -> REVIEWED RUNTIME CATALOG RESET/RELOAD ===
+
+DO messaging\RUNTIME_MESSAGE_CATALOG_RESET_RELOAD_v1.RUN_REVIEWED.dts
+
+ECHO === LEGACY PRIORITY A APPLY COMPLETE ===

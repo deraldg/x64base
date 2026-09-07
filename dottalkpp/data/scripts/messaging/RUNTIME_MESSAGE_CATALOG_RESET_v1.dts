@@ -1,0 +1,12 @@
+* ============================================================
+* RUNTIME_MESSAGE_CATALOG_RESET_v1.dts
+* Status:
+*   CANONICAL_WRAPPER
+* Purpose:
+*   Stable operator entrypoint for the reviewed destructive reset step.
+* Boundary:
+*   - Delegates only to the reviewed runtime messaging reset script.
+*   - Does not widen the messaging lane.
+* ============================================================
+
+DO RUNTIME_MESSAGE_CATALOG_RESET_v1.RUN_REVIEWED.dts

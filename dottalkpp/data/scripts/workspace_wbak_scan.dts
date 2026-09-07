@@ -1,0 +1,137 @@
+* ============================================================================
+* workspace_wbak_scan.dts -- the backup sidecars a destructive verb leaves
+* behind become TABLES to the next directory scan.
+*
+* Status: CANDIDATE, unregistered. Not in kRegressionSpecs; run explicitly with
+*   dottalkpp --script <path>            (or DO workspace_wbak_scan)
+*   datarun.ps1 -CommandLines 'DO workspace_wbak_scan'
+* Authored 2026-08-12 by member.ai.claude.cowork after the finding surfaced in
+* the maintainer's own console: a routine WORKSPACE OPEN DBF over the x64 root
+* opened 'FMGRTST.__fldbak.dbf' as Area 5.
+*
+* THE INTERACTION. Two features, each defensible alone:
+*
+*   WORKSPACE WRITEBACK ... CONFIRM preserves every file it replaces as
+*   <name>.__wbak, in the target root. That is the undo of last resort and it
+*   is proven recoverable (WB_T9 in workspace_writeback.dts).
+*
+*   WORKSPACE OPEN DBF scans the DBF slot and opens every .dbf it finds.
+*
+* Jointly: the directory a destructive verb writes INTO is the directory the
+* scanner reads FROM, so each CONFIRM seeds N more tables for the next scan.
+* Measured on the 13-table MCC posture: the second writeback made the scan
+* open 26 areas. Worse than the count -- each backup attached the LIVE table's
+* index (Area 12: 'ROOMS.__wbak.dbf' [index: ROOMS.cdx, attached]), an index
+* built over different records, so an ordered read or SEEK on a backup follows
+* an ordering that was never built for it AND reports success.
+*
+* WHY IT COMPOUNDS: WORKSPACE SAVE <name> MEMO MINIDB walks every OPEN area.
+* writeback -> OPEN DBF -> SAVE MEMO MINIDB therefore mints a container whose
+* posture DECLARES the backups as members, and the next cycle backs those up
+* too. The manifest inherits the contamination, which is the one place this
+* subsystem cannot tolerate it -- the posture is the enumeration authority.
+*
+* WHAT THIS SPEC ASSERTS, AND WHAT IT ONLY DEMONSTRATES. Stated rather than
+* implied, because the difference is the whole point:
+*
+*   ASSERTED BY VALUE -- the PRODUCER half. WB_S1/WB_S2 prove that a confirmed
+*   writeback deposits .__wbak files into the target root beside the live
+*   tables, and WB_S3 proves such a file is a fully valid, openable table (not
+*   an inert blob the scanner might reasonably skip). That is exactly why the
+*   scanner opens it.
+*
+*   DEMONSTRATED BY TRANSCRIPT ONLY -- the CONSUMER half. That WORKSPACE OPEN
+*   DBF then opens them is not asserted here. Read the area list this spec
+*   prints; the AREA / DBAREA / DBAREAS commands report the same thing
+*   interactively.
+*
+*   WHY IT IS NOT ASSERTED, stated carefully because the first draft of this
+*   header got it wrong. It is NOT that the names do not exist -- RECNO is
+*   declared in expr_tuple_glue.hpp:115. It is that they do not RESOLVE.
+*   Measured 2026-08-12 on this build, three contexts, one binary:
+*     ? "x" + STR(RECNO())          -> empty
+*     TUPLE RECNO,LNAME  (at rec 3) -> "" | Ramirez   (LNAME resolves; RECNO does not)
+*     SQLSEL COUNT FOR RECNO > 195  -> [rec 199] RECNO="" => false ... 0
+*   The last is the dangerous one: no error, every record false, a confident
+*   zero. DELETED and ALIAS differ -- they hit rhs_eval's bare-string fallback
+*   and return their own NAMES, so ? "x" + DELETED prints "DELETED" and every
+*   comparison against it reads .F.
+*
+*   NOT a blanket claim that RECNO is broken -- it resolves fine as a
+*   PROJECTION. SMARTLIST prints a RECNO column per row, and SMARTLIST is the
+*   cursor-controlled listing command to reach for (LIST is a developer
+*   command with a MANUAL cursor -- its own contract says "mutates_cursor:
+*   temporary during scan / cursor_restore: best effort", and its footer
+*   reports the scan position by design, not the session's). The gap is
+*   narrower and more specific: RECNO resolves in projection and NOT as a
+*   predicate identifier, and the mismatch is silent. Control measured in the
+*   same run: SMARTLIST ... FOR GPA >= 3.98 returns 2 records; SMARTLIST ...
+*   FOR RECNO > 195 returns 0, with no error and a confident count.
+*
+*   Both shapes report absence rather than failure, which is why this spec
+*   asserts FIELD VALUES instead, the same
+*   discipline IDXSTALE records ("RECNO() and FOUND() render EMPTY in a '?'
+*   marker and STR() does not rescue them") and the same reason the writeback
+*   lane proved its enumeration defect with a file-count oracle rather than by
+*   interrogating the session.
+*
+* Disposable: writes to dbf/wbscan, ERASE DIR'd at bootstrap AND teardown.
+* Requires the mcc_minidb_memo catalog row.
+* ============================================================================
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+* --- bootstrap: clean slate -------------------------------------------------
+ERASE DIR DBF/wbscan CONFIRM
+
+FORMULA "WBAK-SCAN-PROOF-BEGIN"
+
+* --- first writeback: lands the workspace, nothing to replace yet -----------
+DO mem
+WORKSPACE LOAD mcc_minidb_memo MEMO RAM
+WORKSPACE WRITEBACK mcc_minidb_memo TO DBF/wbscan
+WORKSPACE CLOSE
+VDISK UNMOUNT
+
+? "WB_S0_first_pass_left_no_backups:" + (FILE("DBF/wbscan/STUDENTS.__wbak.dbf") = .F.)
+
+* --- second writeback WITH CONFIRM: every replaced file is preserved --------
+DO mem
+WORKSPACE LOAD mcc_minidb_memo MEMO RAM
+WORKSPACE WRITEBACK mcc_minidb_memo TO DBF/wbscan CONFIRM
+WORKSPACE CLOSE
+VDISK UNMOUNT
+
+* The producer, by value: backups now sit in the same root as the live tables.
+? "WB_S1_confirm_minted_wbak:" + FILE("DBF/wbscan/STUDENTS.__wbak.dbf")
+* Bare AND, not .AND. -- the dotted xBase-canonical forms .AND./.OR./.NOT. are
+* NOT accepted by this evaluator and fail with "FORMULA error: scalar
+* evaluation failed", a message naming neither the operator nor the fix.
+* Measured 2026-08-12 while authoring this spec; the first draft used .AND.
+* and lost a marker to it. Bare AND / OR / NOT all work.
+? "WB_S2_wbak_sits_beside_live:" + (FILE("DBF/wbscan/STUDENTS.dbf") AND FILE("DBF/wbscan/STUDENTS.__wbak.dbf"))
+
+* --- the backup is a REAL table, which is why a scanner cannot ignore it ----
+DO x64
+SET PATH DBF DBF/wbscan
+SET PATH INDEXES DBF/wbscan/indexes
+SELECT 1
+USE STUDENTS.__wbak.dbf NOINDEX
+GO 1
+? "WB_S3_wbak_opens_and_reads:" + (ALLTRIM(LNAME) > "")
+CLOSE
+
+* --- the consumer half: READ THE AREA LIST BELOW ----------------------------
+* No assertion is possible here -- see the header. The area list is the
+* evidence: every '*.__wbak.dbf' line is a backup the scan admitted as a
+* table, and every '[index: <LIVE>.cdx, attached]' beside one is a backup
+* bound to an index built over different records.
+WORKSPACE OPEN DBF
+WORKSPACE
+
+FORMULA "WBAK-SCAN-PROOF-END"
+
+* --- teardown: nothing left on disk -----------------------------------------
+WORKSPACE CLOSE
+ERASE DIR DBF/wbscan CONFIRM
+DO x64

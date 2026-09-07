@@ -1,0 +1,18 @@
+* List order flips are stable across CNX tags
+COLOR DEFAULT
+USE dbf\x32\students.dbf NOINDEX
+SETCNX indexes\x32\students.cnx
+SETORDER indexes\x32\students.cnx SID --asc
+LIST
+DESCEND
+LIST
+ASCEND
+LIST
+* Switch tag and repeat
+SETORDER indexes\x32\students.cnx MAJOR --asc
+LIST
+DESCEND
+LIST
+ASCEND
+LIST
+* end

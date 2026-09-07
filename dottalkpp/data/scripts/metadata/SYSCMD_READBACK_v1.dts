@@ -1,0 +1,7 @@
+SETPATH DBF D:\code\ccode\dottalkpp\data\dbf\metadata
+SETPATH INDEXES D:\code\ccode\dottalkpp\data\indexes\metadata
+WORKSPACE CLOSE
+USE SYSCMD
+FIELDS
+LIST
+QUIT

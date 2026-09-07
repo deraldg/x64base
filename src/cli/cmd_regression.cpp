@@ -499,7 +499,17 @@ constexpr std::array<RegressionSpec, 80> kRegressionSpecs{{
     // NOTE: this WAL_COMMIT_ROLLBACK entry replaces the legacy commit_rollback_test.dts,
     // which assumed an already-open `students` table, did not self-bootstrap (regression
     // doctrine violation), and silently no-op'd when run standalone. The self-contained
-    // basis is pinocchio\wal_phaseA_proof.dts (throwaway table, ERASEd at end).
+    // basis is pinocchio\wal_phaseA_proof.dts (throwaway table, ERASEd at end) -- and
+    // THAT file is TRACKED as of 2026-09-07, because a provenance claim a reader cannot
+    // open is not a provenance claim.
+    //
+    // BOTH COPIES OF commit_rollback_test.dts WERE RETIRED 2026-09-07 under OI-019:
+    // dottalkpp/data/scripts/ and .../suites/, moved to scripts/_to_delete/. Neither was
+    // ever tracked, so nothing left the repository. Read the sentence above as an
+    // EPITAPH and NOT as a pointer -- it records what this entry replaced, and a reader
+    // should not expect to find the file. Verified before retiring: both opened with
+    // `select students` against a table they did not create, and both had the terminal
+    // verb commented out, so run standalone they measured nothing at all.
     {
         "INDEX_TXN",
         "migrated\\index_txn_lmdb_maintenance.dts",

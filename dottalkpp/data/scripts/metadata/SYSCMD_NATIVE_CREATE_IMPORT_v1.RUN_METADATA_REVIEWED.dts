@@ -1,0 +1,11 @@
+SETPATH DBF D:\code\ccode\dottalkpp\data\dbf\metadata
+SETPATH INDEXES D:\code\ccode\dottalkpp\data\indexes\metadata
+WORKSPACE CLOSE
+SET TALK ON
+ERASE SYSCMD CONFIRM
+SELECT 0
+CREATE x64 SYSCMD (CMD_ID C(32), CAN_NAME C(80), TYPE C(20), VIS C(20), HANDLER C(96), ACTIVE L)
+FIELDS
+IMPORT D:\code\ccode\dottalkpp\data\scripts\metadata\SYSCMD_IMPORT_v1.csv
+FIELDS
+QUIT

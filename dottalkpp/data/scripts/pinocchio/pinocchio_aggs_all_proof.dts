@@ -1,0 +1,46 @@
+* ============================================================
+*  PINOCCHIO AGGS ALL (single-pass multi-aggregate) PROOF
+*
+*  Status:  CANDIDATE / REVIEW_BEFORE_EXECUTION. READ-ONLY (no mutation).
+*  Purpose: Prove `AGGS ALL <expr>` computes COUNT/SUM/AVG/MIN/MAX in ONE scan,
+*           matching the four separate aggregate verbs but at ~1/4 the cost.
+*
+*  EXPECT (STUDENTS.GPA, 1,000,000 rows):
+*    Baseline SUM/AVG/MIN/MAX = 4 full scans (~17 s each, ~68 s total).
+*    AGGS ALL GPA -> one scan (~17 s), printing
+*      COUNT=1000000 SUM=2.99933e+06 AVG=2.99933 MIN=2 MAX=4
+*    i.e. same values, ~4x faster than running the four separately.
+*
+*  RUN (host):
+*    powershell -ExecutionPolicy Bypass -File .\dottalkpp\data\scripts\pinocchio\run_pinocchio_aggs_proof_teed.ps1
+* ============================================================
+SET ECHO OFF
+SET TIMER ON
+SET TALK OFF
+
+SET PATH DBF DBF/pinocchio
+SET PATH INDEXES INDEXES/pinocchio
+SET PATH LMDB LMDB/pinocchio
+
+SELECT 0
+USE STUDENTS
+SET INDEX TO STUDENTS
+
+ECHO === A. baseline: four separate full scans over GPA ===
+SUM GPA
+AVG GPA
+MIN GPA
+MAX GPA
+
+ECHO === B. AGGS ALL GPA -- one scan, all five values ===
+AGGS ALL GPA
+
+ECHO === C. AGGS ALL with a predicate (FOR MAJOR = CSCI; expect COUNT 90700) ===
+AGGS ALL GPA FOR MAJOR = CSCI
+
+ECHO ============================================================
+ECHO AGGS ALL PROOF COMPLETE. Confirm:
+ECHO   B matches A: SUM 2.99933e+06, AVG 2.99933, MIN 2, MAX 4, COUNT 1000000.
+ECHO   B ELAPSED ~= ONE aggregate (~17 s), not the four combined (~68 s).
+ECHO   C COUNT = 90700 (predicate path matches COUNT FOR MAJOR = CSCI).
+ECHO ============================================================
