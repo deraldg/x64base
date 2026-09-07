@@ -42,7 +42,22 @@ struct FieldConstraint {
     // Regex pattern. First-pass rule: apply only to character fields.
     std::optional<std::string> pattern;
 
-    // Metadata flags. UNIQUE / PRIMARY enforcement remains index-backed.
+    // Metadata flags.
+    //
+    // CORRECTED 2026-09-06 (AIF-156). This read "UNIQUE / PRIMARY enforcement
+    // remains index-backed", which deferred to a mechanism that does not
+    // exist: no index writer carries a unique flag and CDX ADDTAG has no
+    // UNIQUE keyword. The sentence sent every reader looking for enforcement
+    // somewhere else, which is why there was none anywhere.
+    //
+    // PRIMARY IS NOW ENFORCED HERE, and it needs no index. Owner rulings
+    // 2026-09-06: a primary key is never edited, never reused, and minted on
+    // creation. Uniqueness is therefore a CONSEQUENCE of those three, not a
+    // property to be checked -- so the question is never "does this value
+    // already exist" (which would need an index probe) but "is this field the
+    // primary key", which is field identity and costs one comparison.
+    //
+    // UNIQUE-without-PRIMARY is NOT enforced here and is not claimed to be.
     bool unique{false};
     bool primary{false};
 

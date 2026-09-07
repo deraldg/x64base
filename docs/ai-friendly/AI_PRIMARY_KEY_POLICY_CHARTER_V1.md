@@ -500,3 +500,54 @@ capability, so no page could contradict one. **A gate generated from the
 regression registry can only see what has a spec.** That is a real limit of
 that mechanism and this lane is its first demonstration -- which is an argument
 for step 0 independent of everything else.
+
+## What actually shipped, 2026-09-07 -- the first enforcement increment
+
+MEASURED, not predicted: build `Sep 07 2026 08:41:32`, `REGRESSION PKPOLICY`
+first command in a fresh `datarun` session. Part A green, eight guards and arms
+present and counted. **`PKP_T5` and `PKP_T6` turned `.T.`** -- SQLSEL `INSERT`
+and SQLSEL `UPDATE` are now refused with a named reason and the transaction
+rolled back. **`PKP_T4` is still `.F.`** -- native `REPLACE` still writes over a
+primary key. The suite then reported `PK POLICY: FAIL -- acceptance count
+changed: 2 of 3 Part B arms green, expected 0`, which is the ratchet doing its
+job, and `kPkAcceptanceExpected` was raised to `2` as the deliberate
+acknowledgement it demanded. **Two of three doors are shut. The key is not yet
+enforced.**
+
+### Where the refusal lives, and why there
+
+`src/cli/field_constraints.cpp`. `constraint_for_field()` gained a third source:
+after the rules table and the bootstrap name match, `is_primary_field_()` asks
+`unique_reg::primary_field()` for the declared name and, on a match, sets
+`primary` and `unique` on the returned constraint.
+`validate_field_constraint_for_store()` refuses at the top when `c.primary` is
+set. Both SQL paths reach it because `evaluate_store_expression()` calls that
+validator, and `CHANGE_INSERT` and `CHANGE_UPDATE` both route through
+`evaluate_store_expression()`. **One wiring, two arms** -- which is precisely why
+Part B was written as three arms and not one. Had it been one arm, this
+transcript would have read as a completed feature.
+
+### The generator is exempted by ROUTE, not by a flag
+
+`append_support` writes the minted key with `A.set()` directly and never calls
+the validator, so no `is_generator` bypass flag exists to be set wrongly, left
+on, or discovered by something else. Same shape as `PACK` being the only thing
+that removes a deleted row. A flag would have been a second way in; a route is
+not.
+
+### `validate_current_record_constraints()` skips primary fields, deliberately
+
+It must. That function walks a populated record, and after the mint the primary
+field IS populated -- with a value the engine itself wrote. Without the skip,
+wiring the third call site would refuse every record the engine had just minted
+a key into. Recorded here because it looks like a hole and is not.
+
+### What the third call site still needs
+
+`PKP_T4` is the open arm. Native `REPLACE` does not route through
+`evaluate_store_expression()`, so it needs the validator called explicitly
+before its `A.set()`. That is a larger step than this one and is not blocked on
+any owner ruling -- unlike the four decisions still open above (where the
+designation lives, index-or-name-or-both, VFP autoinc, and the `src/xbase`
+go-ahead), none of which this increment touched: **it is `src/cli` only, no
+engine change.**

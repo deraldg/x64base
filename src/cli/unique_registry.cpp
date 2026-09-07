@@ -40,7 +40,7 @@ static std::string upcopy(std::string s) {
 
 namespace unique_reg {
 
-std::string current_alias_or_area_name(xbase::DbArea& A) {
+std::string current_alias_or_area_name(const xbase::DbArea& A) {
     // Phase 2 (AIF-074 P1.1): bucket by table identity so per-table
     // declarations do not collide and match the dtschema KEY <table> identity
     // (the header's own Phase-1 note asked for this). Falls back to the
@@ -82,7 +82,7 @@ void set_primary_field(xbase::DbArea& A, const std::string& field_name) {
     primary_store()[bucket] = key;        // one primary per table; last set wins
 }
 
-std::string primary_field(xbase::DbArea& A) {
+std::string primary_field(const xbase::DbArea& A) {
     const std::string bucket = current_alias_or_area_name(A);
     std::lock_guard<std::mutex> lk(unique_mutex());
     const auto it = primary_store().find(bucket);
