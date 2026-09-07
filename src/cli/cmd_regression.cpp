@@ -2663,12 +2663,28 @@ bool validate_pk_policy(const std::string& transcript)
 
     if (!ok) return false;
 
+    // THREE STATES, NOT TWO. This line was binary until 2026-09-07 and it read
+    // "write-time enforcement is NOT built yet" on a run whose own transcript,
+    // four lines above, showed two refusals firing with a named reason. The
+    // constant, the comment block and the registry summary had all been
+    // updated; this string had not, and it is the one line a person actually
+    // reads. A partial state needs its own sentence or it gets reported as the
+    // state it left.
+    const char* posture =
+        (green == 3)
+            ? "all three write paths refuse a write to a declared PRIMARY key. "
+              "That is the three PATHS, and nothing more: persistence across a "
+              "restart and concurrency are still unasserted here."
+        : (green == 0)
+            ? "write-time enforcement is NOT built; this spec is the acceptance "
+              "criterion for it, not a claim that it works."
+            : "write-time enforcement is PARTIAL. The arms above name which "
+              "paths refuse and which still write. Do not read this PASS as a "
+              "working primary key -- it means the count matches what a human "
+              "last acknowledged, no more.";
+
     std::cout << "PK POLICY: PASS -- Part A green (8 markers), acceptance "
-              << green << " of 3 as expected. AIF-156: "
-              << (green == 3 ? "enforcement is in place."
-                             : "write-time enforcement is NOT built yet; this spec is "
-                               "the acceptance criterion for it, not a claim that it works.")
-              << "\n";
+              << green << " of 3 as expected. AIF-156: " << posture << "\n";
     return true;
 }
 
