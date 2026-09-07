@@ -794,3 +794,32 @@ could be inserted mid-struct because every entry stopped short of it; entries DO
 initialise `validator` positionally, so the new member silently shifted an enum
 into a bool for all of them. Caught by the compiler, not by reading, and the
 struct now carries the warning.
+
+## CORRECTION 2026-09-07 -- the backlog is 27, not 86
+
+Two places above say **"roughly 86 candidate direct field-write call sites
+across 21 files"** (sections at lines 599 and 728). **They are wrong and are
+left standing because they were written in good faith from the measurement
+available at the time.** The real figure is **28 sites in 19 files**, 27 after
+CALCWRITE was routed onto the funnel the same day.
+
+**Where 86 came from:** a crude `grep` that counted comments; counted the
+regression registry summaries, which discuss `replaceFieldStored` at length
+*inside string literals*; and counted name-keyed wrapper calls like
+`w.set("ID", ...)` in `identity_dbf_store` and `bbs_store`, which take a field
+NAME and are not `DbArea::set(field1, value)` at all. Those two files alone
+contributed 65 of the 86.
+
+**The measurement is now a tool, not a grep:**
+`tools/staging/check_field_write_callers.py`, baselined and wired into the
+prepush gate as advisory. It took four cuts and **three of them under-reported
+while reporting cleanly** -- a char literal holding a quote blanked an entire
+file, a first-argument shape test missed `a.set(i + 1, v)`, and stripping
+string literals destroyed the only evidence that separates a field write from a
+wrapper. Each is recorded in the checker's own header, because a gate that
+under-reports is worse than no gate and the next person to touch it needs to
+know which mistakes were already made.
+
+**What does not change:** the conclusion. Three green arms were never a claim
+about 86 sites or 27 -- they were a claim about three. The gate is what turns
+the remainder from an estimate into a list that can only shrink.

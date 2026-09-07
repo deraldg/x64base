@@ -82,6 +82,7 @@
 #include <ctime>
 
 #include "xbase.hpp"
+#include "xbase_cli.hpp"
 #include "xbase_64.hpp"
 #include "xbase_locks.hpp"
 
@@ -863,33 +864,35 @@ void cmd_CALCWRITE(xbase::DbArea& area, std::istringstream& in) {
         return;
     }
 
-    if (dottalk::table::is_enabled(area0)) {
-        auto& tb = dottalk::table::get_tb(area0);
+    // ---- THE WRITE, THROUGH THE FUNNEL ---------------------------------
+    //
+    // CALCWRITE and REPLACE hand-rolled the SAME TABLE ON / TABLE OFF fork,
+    // byte for byte -- the buffer staging, the persistent-journal note, the
+    // stale marking, the direct replaceFieldStored call. Two copies of one
+    // fork is two doors, and AIF-156 needed ONE place to refuse a write to a
+    // PRIMARY key. xbase::cli::replaceFieldStored() owns all of it now.
+    //
+    // THE COMMENT THIS REPLACES WAS RIGHT AND IS WORTH KEEPING: a direct
+    // area.set() + area.writeCurrent() here would bypass the CDX/LMDB replace
+    // snapshot path and leave active indexes stale when the written field
+    // participates in a tag. The funnel delegates to
+    // DbArea::replaceFieldStored() for exactly that reason.
+    //
+    // The prose stays here. CALCWRITE and REPLACE say different things about
+    // the same write, so the funnel returns outcomes and never prints; ask the
+    // table state ourselves for which sentence to use.
+    const bool buffered = dottalk::table::is_enabled(area0);
 
-        std::uint64_t field_mask[dottalk::table::kWords]{};
-        const int fldIndex0 = field1 - 1;
-        const int word = fldIndex0 / 64;
-        const int bit  = fldIndex0 % 64;
-        if (word >= 0 && word < dottalk::table::kWords) field_mask[word] |= (std::uint64_t{1} << bit);
+    std::string write_err;
+    if (!xbase::cli::replaceFieldStored(area, field1, to_store, &write_err)) {
+        cli::cmdout::print_prefixed_message(
+            "CALCWRITE",
+            dottalk::helpdata::MessageId::CalcWriteDetailText,
+            {{"detail", (write_err.empty() ? std::string("write failed") : write_err) + "."}});
+        return;
+    }
 
-        const int je_priority = tb.add_change(
-            rn, dottalk::table::CHANGE_UPDATE, field_mask, field1, to_store);
-
-        // Write-ahead redo log (no-op unless TABLE BUFFER PERSISTENT/JOURNAL),
-        // so CALCWRITE's buffered edits are captured in the WAL like REPLACE.
-        if (dottalk::table::is_persistent_enabled(area0)) {
-            dottalk::table::ChangeEntry je;
-            je.recno = rn;
-            je.dirty_flags = dottalk::table::CHANGE_UPDATE;
-            je.priority = je_priority;
-            je.new_values[field1] = to_store;
-            (void)dottalk::table::journal_note_change(area0, je);
-        }
-
-        if (!dottalk::table::is_dirty(area0)) dottalk::table::set_dirty(area0, true);
-
-        dottalk::table::mark_stale_field(area0, field1);
-
+    if (buffered) {
         if (Settings::instance().talk_on.load()) {
             cli::cmdout::print_prefixed_message(
                 "CALCWRITE",
@@ -904,25 +907,8 @@ void cmd_CALCWRITE(xbase::DbArea& area, std::istringstream& in) {
         return;
     }
 
+
     std::string after;
-
-    // Direct-write CALCWRITE must use the engine mutation funnel.
-    // Do not call area.set() + area.writeCurrent() here: that bypasses the
-    // CDX/LMDB replace snapshot path and can leave active indexes stale when
-    // the written field participates in an index tag.
-    //
-    // DbArea::replaceFieldStored() owns the record lock, physical write, and
-    // index replace-snapshot update for TABLE OFF/direct-write mode.
-    std::string write_err;
-    if (!area.replaceFieldStored(field1, to_store, &write_err)) {
-        if (write_err.empty()) write_err = "write failed";
-        cli::cmdout::print_prefixed_message(
-            "CALCWRITE",
-            dottalk::helpdata::MessageId::CalcWriteDetailText,
-            {{"detail", write_err + "."}});
-        return;
-    }
-
     try { after = get_logical_field_text(area, field1); } catch (...) { after.clear(); }
 
     if (visible_before != after) dottalk::table::mark_stale_field(area0, field1);

@@ -1,0 +1,39 @@
+# AIF-156 -- direct DbArea field writes outside the engine that do NOT go
+# through xbase::cli::replaceFieldStored / replaceFieldNull.
+#
+# Frozen 2026-09-07 at 28 sites in 19 files; 27 after CALCWRITE was routed
+# onto the funnel in the same commit -- the gate reported that as FIXED, which is
+# the shrink direction it exists to measure. ADVISORY, AND THIS LIST MAY ONLY
+# SHRINK. A NEW line means somebody added a direct write: route it through the
+# funnel, or -- if it is a deliberate below-the-funnel writer like the key
+# generator -- add the FILE to EXEMPT_FILES in the checker WITH ITS REASON,
+# never to this baseline. A baseline that grows stops being a measurement.
+#
+# Regenerate: python tools/staging/check_field_write_callers.py
+src/bbs/bbs_store.cpp:334:set
+src/bbs/bbs_store.cpp:350:set
+src/bbs/bbs_store.cpp:49:set
+src/cli/app_simple_browser.cpp:796:set
+src/cli/browse/browse_edit.cpp:40:set
+src/cli/cmd_autodbf.cpp:985:set
+src/cli/cmd_commit.cpp:319:set
+src/cli/cmd_copy.cpp:583:set
+src/cli/cmd_importsql.cpp:723:set
+src/cli/cmd_replace_multi.cpp:960:set
+src/cli/cmd_replace_multi.cpp:967:set
+src/cli/cmd_sort.cpp:886:set
+src/cli/cmd_sql_insert.cpp:197:set
+src/cli/cmd_sql_insert.cpp:227:set
+src/cli/cmd_sql_update.cpp:296:set
+src/cli/cmd_workspace.cpp:3057:set
+src/cli/table_state.cpp:453:set
+src/dewey/hierarchy_service.cpp:74:replaceFieldStored
+src/dewey/hierarchy_service.cpp:80:replaceFieldStored
+src/help/message_catalog.cpp:844:set
+src/identity/identity_dbf_store.cpp:63:set
+src/tv/cmd_recordview.cpp:328:set
+src/tv/cmd_recordview.cpp:407:set
+src/tv/cmd_recordview.cpp:601:set
+src/tv/cmd_recordview.cpp:614:set
+src/tv/cmd_recordview.cpp:655:set
+src/tv/foxtalk_command_window.cpp:92:set

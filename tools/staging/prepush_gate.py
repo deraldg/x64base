@@ -809,6 +809,29 @@ def main() -> int:
                   "NOT blocking. Update the baseline when the move is intended, "
                   "or give the header a `status:` that says what it is.")
 
+        # 5c-bis. FIELD-WRITE CALLERS -- advisory, baselined (AIF-156).
+        #
+        # ARMS PROVE ROUTES; A GATE PROVES THERE ARE NO OTHER ROUTES. PKPOLICY
+        # proves three write paths refuse a write to a declared PRIMARY key and
+        # CANNOT prove they are the only paths, because no runtime marker can
+        # enumerate a call site. This walks src/ outside the engine for direct
+        # calls to DbArea::replaceFieldStored / replaceFieldNull / set and
+        # compares against a frozen baseline.
+        #
+        # FROZEN AT 28 SITES IN 19 FILES, and that number replaces an earlier
+        # "roughly 86 across 21 files" which was a crude grep counting comments,
+        # registry summaries and name-keyed wrapper calls. The checker took four
+        # cuts and three of them UNDER-reported while looking clean -- a char
+        # literal holding a quote blanked a whole file, a first-argument shape
+        # test missed `a.set(i + 1, v)`, and stripping strings destroyed the one
+        # piece of evidence that tells a field write from a wrapper. Its header
+        # records each, because a gate that under-reports is worse than none.
+        rc = _run_portal_check("tools/staging/check_field_write_callers.py", [])
+        if rc == 1:
+            print("\n  ADVISORY -- the direct field-write set moved (see above). "
+                  "NOT blocking. Route the new call through the funnel, or exempt "
+                  "the file BY ROUTE with a reason.")
+
         # 5d. MANUAL LINK INTEGRITY -- hard. Every page the accepted command
         # reference links to must exist AND BE TRACKED.
         #
