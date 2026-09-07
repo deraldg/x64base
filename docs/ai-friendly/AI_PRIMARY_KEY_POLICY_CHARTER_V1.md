@@ -613,3 +613,75 @@ parameter: **a parameter can be passed by anyone, a route cannot.**
 The static gate over the callers, written advisory with a full baseline so the
 86 become a visible shrinking list rather than a claim. Until it exists, the
 honest statement is that three named paths refuse and the rest are unmeasured.
+
+## The designation lives in the x64 header -- OWNER RULING 2026-09-07
+
+**"ok header it is."** And the argument that settled it, in the owner's words:
+**"it is a self describing header you called it."**
+
+That is the whole reason. The x64 header already carries the table's logical
+name, its field names and the authoritative field lengths. A table that
+describes its own schema describes its own key. Anything else makes the key a
+fact *about* the table held somewhere else -- which is exactly how it ended up
+in a `static std::unordered_map` that died at exit.
+
+### The question that forced the ruling
+
+The owner asked it directly: **"how can we have a pk if we don't already know
+where the designation lives, how we answer, affects the VFP autoinc?"**
+
+Measured on the spot: `unique_registry.cpp` stored the PRIMARY designation in a
+process-local map, under its own boundary comment reading *"This is
+process-local shell state, not persistent schema metadata."* So
+`SET UNIQUE FIELD SID PRIMARY` was forgotten at exit. Reopen the table in a
+fresh session without redeclaring, and REPLACE overwrote the key in silence --
+**on the same build where all three PKPOLICY arms read green.**
+
+PKPOLICY structurally cannot catch that. A `.dts` runs in ONE process, and the
+spec's own header says so under NOT CLAIMED. Everything committed before this
+was the enforcement MECHANISM. None of it was the key.
+
+### Two declared-and-unbuilt slots were already waiting
+
+- **`X64FieldMetaEntry.flags`** -- 16 bits, commented "reserved / policy",
+  written as a hardcoded `0` by the metadata builder and **read by nobody**.
+  The reader pulled it into a local and dropped it.
+- **`DBF64_FLAG_HAS_RECID_PK`** -- declared in `DBF64_KNOWN_TABLE_FLAGS` since
+  the format was defined, **never set and never tested anywhere in the tree**.
+
+Third and fourth instances of this session's recurring shape, after
+`xbase_cli.hpp` and `autoq_next`. The storage the ruling needed was already
+carved out and empty.
+
+### The meta block had no writer, and that is why the map existed
+
+`x64_build_name_metadata()` is called from `dbf_create.cpp` and **nothing has
+ever rewritten a block afterwards.** That absence -- not a design preference --
+is why the designation went into a process map: there was nowhere durable to
+put it. `DbArea::setFieldPrimaryDurable()` is the block's first writer, a
+fixed-size in-place patch in the idiom the append path already uses for
+`record_count`.
+
+### What follows from the ruling, stated because it is a cost
+
+**A VFP or classic table can never carry a durable PRIMARY key.** It has no x64
+header to record one in. `SET UNIQUE FIELD <f> PRIMARY` therefore **REFUSES**
+on such a table rather than falling back to the process map -- a key that holds
+until you quit is worse than no key, because it looks like one. The VFP autoinc
+question (honour / refuse / keep ignoring) is now forced and explicit rather
+than silent, which is what the owner's question predicted.
+
+**An older binary reads the flag as zero and enforces nothing, in silence.**
+Inherent in giving a previously-ignored field a meaning. It is why the
+table-level `DBF64_FLAG_HAS_RECID_PK` earns its place: `DBF64_KNOWN_TABLE_FLAGS`
+gives an old reader something to compare against, so a table can announce a
+capability its reader does not have. A per-field bit can never raise that
+question.
+
+### Not proven
+
+**That the designation survives a restart.** The stamp is in the file and the
+spec passes, but a `.dts` runs in one process, so nothing has measured a fresh
+process reading the flag back and refusing on it. **The two-run harness is the
+only instrument that can ask.** Until it exists, the honest claim is that the
+designation is now WRITTEN durably, not that it is READ durably.

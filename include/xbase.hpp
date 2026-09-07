@@ -172,6 +172,23 @@ struct FieldDef {
     char        type{};       // 'C','N','D','L', etc.
     uint32_t    length{};     // total bytes (runtime truth; X64 may exceed legacy descriptor byte)
     uint8_t     decimals{};   // for 'N'
+
+    // X64FieldMetaEntry.flags, carried through from the x64 metadata block.
+    //
+    // THE HEADER IS SELF-DESCRIBING AND THIS IS WHERE THE KEY DESIGNATION LIVES
+    // (AIF-156). The x64 header already carries the table's logical name, its
+    // field names and the authoritative field lengths; a table that describes
+    // its own schema describes its own key too. Before this, the PRIMARY
+    // designation lived in a process-local std::unordered_map in
+    // unique_registry.cpp -- whose own boundary comment called it "not
+    // persistent schema metadata" -- so the key was forgotten at exit and a
+    // REPLACE in a fresh session overwrote it in silence.
+    //
+    // These 16 bits were written as a hardcoded zero by the metadata builder
+    // and READ BY NOBODY from the day the format was defined. Non-x64 tables
+    // and x64 tables with no metadata block leave this at 0, which reads as
+    // "no designation" -- the same answer they gave before.
+    uint16_t    x64_flags{};
 };
 
 // ------------------------------------------------------------------------
@@ -294,6 +311,32 @@ public:
     // false for non-N/F types or an unparseable value (caller should fall back
     // to decodeFieldFromBuffer()).
     bool fieldNumFromBuffer(int idx1, double& out) const;
+
+    // ---- Durable PRIMARY designation (AIF-156) ----------------------------
+    //
+    // Stamp field1 as the table's PRIMARY key IN THE FILE, by setting
+    // X64_FIELD_FLAG_PRIMARY in that field's X64FieldMetaEntry and
+    // DBF64_FLAG_HAS_RECID_PK in the table flags. Clears the bit from every
+    // other field first, because a table has at most one primary key and a
+    // second stamp must move the designation rather than add one.
+    //
+    // THIS IS THE META BLOCK'S FIRST WRITER. The block has only ever been built
+    // at CREATE (dbf_create.cpp); nothing has ever rewritten one. That absence
+    // is the whole reason the designation lived in a process-local map and did
+    // not survive a close.
+    //
+    // Fixed-size patch in place, in the idiom the append path already uses for
+    // record_count: no string moves, so no offset moves and total_length is
+    // unchanged. Writes through this area's own stream rather than a second
+    // handle on the same file.
+    //
+    // make_primary == false with field1 == 0 clears the designation entirely.
+    // Returns false with a reason in *err on a non-x64 table, a table with no
+    // metadata block, or a field that has no entry in that block.
+    bool setFieldPrimaryDurable(int field1, bool make_primary, std::string* err = nullptr);
+
+    // Field carrying X64_FIELD_FLAG_PRIMARY, or 0 if this table designates none.
+    int primaryFieldIndex() const noexcept;
 
     // Core engine-owned replace entry point.
     // Contract:
@@ -512,6 +555,35 @@ public:
         return true;
     }
 
+    bool setFieldX64Flags(int field1, std::uint16_t flags) {
+        if (field1 < 1 || field1 > static_cast<int>(_fields.size())) return false;
+        _fields[static_cast<std::size_t>(field1 - 1)].x64_flags = flags;
+        return true;
+    }
+
+    std::uint16_t fieldX64Flags(int field1) const noexcept {
+        if (field1 < 1 || field1 > static_cast<int>(_fields.size())) return 0;
+        return _fields[static_cast<std::size_t>(field1 - 1)].x64_flags;
+    }
+
+    // ---- Where this table's own x64 metadata block lives ------------------
+    //
+    // Recorded at open so a later writer can patch one fixed-size entry in
+    // place instead of re-deriving the location by walking the descriptors
+    // again. The block runs from x64MetaStart() to dataStart64(); a zero start
+    // means this table has no metadata block and nothing may be patched into
+    // one. table_flags is kept for the same reason -- the summary bit that says
+    // "somebody in this table is a key" lives there.
+    void setX64MetaExtent(std::uint64_t start, std::uint32_t len) noexcept {
+        _x64_meta_start = start;
+        _x64_meta_len   = len;
+    }
+    std::uint64_t x64MetaStart()  const noexcept { return _x64_meta_start; }
+    std::uint32_t x64MetaLength() const noexcept { return _x64_meta_len; }
+
+    void setX64TableFlags(std::uint32_t f) noexcept { _x64_table_flags = f; }
+    std::uint32_t x64TableFlags() const noexcept { return _x64_table_flags; }
+
     // ---- Internal lifecycle helpers --------------------------------------
     void _compute_paths_and_names_(const std::string& abs_dbf_path);
     void _clear_paths_and_names_() noexcept;
@@ -711,6 +783,9 @@ private:
     uint64_t _crn64{0};
     uint64_t _rec_count64{0};
     uint64_t _data_start64{0};
+    uint64_t _x64_meta_start{0};
+    uint32_t _x64_meta_len{0};
+    uint32_t _x64_table_flags{0};
     uint64_t _record_length64{0};
     char     _del{NOT_DELETED};
 

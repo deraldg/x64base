@@ -189,6 +189,31 @@ constexpr uint32_t DBF64_FLAG_HAS_RECID_PK          = 0x00000002;
 constexpr uint32_t DBF64_FLAG_STRICT_FALLBACK_NAMES = 0x00000004;
 constexpr uint32_t DBF64_FLAG_HAS_META_BLOCK        = 0x00000008;
 
+// -----------------------------------------------------------------------------
+// X64 PER-FIELD META FLAGS -- X64FieldMetaEntry.flags
+// -----------------------------------------------------------------------------
+//
+// The 16-bit `flags` word has been in X64FieldMetaEntry since the format was
+// defined, written as a hardcoded zero and read by nobody. AIF-156 gives it its
+// first meaning, because the x64 header is SELF-DESCRIBING: it already carries
+// the table's logical name, its field names and the authoritative field
+// lengths, so the key designation belongs there too rather than in a
+// process-local map that forgets it at exit.
+//
+// AN OLDER BINARY READS THIS AS ZERO AND ENFORCES NOTHING, SILENTLY. That is
+// inherent in giving a previously-ignored field a meaning, and it is the reason
+// DBF64_FLAG_HAS_RECID_PK exists on the TABLE flags as the coarse summary: an
+// old reader comparing against DBF64_KNOWN_TABLE_FLAGS can at least see that a
+// table claims a key it does not understand, which is a question a per-field
+// bit can never raise.
+constexpr uint16_t X64_FIELD_FLAG_PRIMARY = 0x0001;
+
+constexpr uint16_t X64_KNOWN_FIELD_FLAGS = X64_FIELD_FLAG_PRIMARY;
+
+inline bool x64_field_is_primary(uint16_t field_flags) noexcept {
+    return (field_flags & X64_FIELD_FLAG_PRIMARY) != 0;
+}
+
 constexpr uint32_t DBF64_KNOWN_TABLE_FLAGS =
     DBF64_FLAG_HAS_MEMO |
     DBF64_FLAG_HAS_RECID_PK |
@@ -442,6 +467,7 @@ inline void x64_apply_name_metadata(DbArea& area,
         uint32_t name_offset = 0;
         uint16_t name_length = 0;
         uint32_t field_length = 0;
+        uint16_t meta_flags = 0;
 
         const std::size_t pos = static_cast<std::size_t>(mh.field_entry_offset) +
                                 static_cast<std::size_t>(i) * entry_size;
@@ -459,6 +485,13 @@ inline void x64_apply_name_metadata(DbArea& area,
             name_offset = e.name_offset;
             name_length = e.name_length;
             field_length = e.field_length;
+            // Carried through from 2026-09-07. Until then this word was read
+            // into a local and dropped on the floor, which is why the PRIMARY
+            // designation had nowhere durable to live. Version 1 entries
+            // (X64FieldNameEntry) have a flags word too, but it has never been
+            // written as anything but zero, so it is left alone rather than
+            // given a meaning retroactively.
+            meta_flags = e.flags;
         }
 
         if (field_index == 0 || field_index > static_cast<uint32_t>(area.fieldCount())) {
@@ -473,6 +506,11 @@ inline void x64_apply_name_metadata(DbArea& area,
         if (field_length != 0) {
             area.setFieldLength(static_cast<int>(field_index), field_length);
         }
+
+        // Unconditional: zero is a real answer here ("no designation"), so a
+        // guard on non-zero would leave a stale flag standing after one is
+        // cleared.
+        area.setFieldX64Flags(static_cast<int>(field_index), meta_flags);
     }
 
     if (why) why->clear();
@@ -594,6 +632,8 @@ inline void readFields(DbArea& area,
     // exactly like classic/VFP descriptors until the 0x0D terminator.
     vfp_loader::readFields(area, fp, extras);
 
+    area.setX64TableFlags(ext.table_flags);
+
     if (!x64_has_name_vector_metadata(ext.table_flags)) {
         return;
     }
@@ -618,6 +658,11 @@ inline void readFields(DbArea& area,
     if (!fp) {
         throw std::runtime_error("Failed to read x64 metadata block");
     }
+
+    // Remember where this table's own metadata lives, so a later writer can
+    // patch one fixed-size entry in place rather than walk the descriptors
+    // again to re-derive the offset.
+    area.setX64MetaExtent(meta_start, static_cast<std::uint32_t>(meta_len64));
 
     x64_apply_name_metadata(area, block);
 }
