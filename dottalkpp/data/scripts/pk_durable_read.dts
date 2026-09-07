@@ -11,12 +11,18 @@
 * third answer and no message to misparse.
 *
 * THE GUARDS ARE NOT DECORATION. A marker over a CLOSED area does not error --
-* it prints a verdict whose polarity depends on the operator (measured
-* 2026-08-28, see FINDING_MARKER_OVER_A_CLOSED_AREA_PICKS_A_SIDE.md), so
-* (SID = 1) over a table that never opened would read .F. and be reported as a
-* durability failure when the real failure was the fixture. PKD_G1 reads LNAME,
-* which run 1's PKD_W4 already proved, so a red guard means the table is not
-* there and PKD_T1 is UNPROVEN rather than failing.
+* it prints a VERDICT, and the polarity depends on the OPERATOR: measured
+* 2026-08-28, (SID >= 1) and (LNAME > "") both read .T. over an area with
+* nothing open, while (SO_ID = 6) reads .F. So the house rule COUNT THE MARKERS
+* does not catch this one: these markers do not vanish, they print and they lie.
+* Here (SID = 1) over a table that never opened would read .F. and be reported
+* as a durability failure when the real failure was the fixture. PKD_G1 reads
+* LNAME, which run 1's PKD_W4 already proved, so a red guard means the table is
+* not there and PKD_T1 is UNPROVEN rather than failing.
+*
+* The finding is written up under the Claude project namespace rather than in
+* this repository, so it is DESCRIBED here rather than cited: a path a reader
+* of this tree cannot open is worse than no path at all.
 *
 * ERASES THE FIXTURE. Run 1 deliberately leaves it behind; cleanup is here so a
 * second execution of the pair starts from nothing rather than adopting.

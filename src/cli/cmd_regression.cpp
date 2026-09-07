@@ -70,6 +70,7 @@
 
 #include <algorithm>
 #include <array>
+#include <optional>
 #include <cstddef>
 #include <ctime>
 #include <filesystem>
@@ -77,6 +78,8 @@
 #include <iostream>
 #include <memory>
 #include <sstream>
+
+#include "identity/identity_admin.hpp"
 #include <streambuf>
 #include <string>
 #include <utility>
@@ -114,7 +117,8 @@ enum class RegressionValidator {
     EvaldiffV1,
     CountListVerboseV1,
     DefFamilyV1,
-    PkPolicyV1
+    PkPolicyV1,
+    PkDurabilityV1
 };
 
 struct RegressionSpec {
@@ -188,13 +192,41 @@ struct RegressionSpec {
     // that prints through cli::cmdout / OutputRouter::out() rather than through
     // `?` and FORMULA.
     bool capture_routed_channel = false;
+
+    // ORDER IS LOAD-BEARING AND THIS MEMBER IS LAST ON PURPOSE. mints_catalog
+    // could be added in the middle because it carries a default AND every entry
+    // that stopped short of it was unaffected -- but entries DO initialise
+    // `validator` and `capture_routed_channel` positionally, so a new member
+    // placed above either of those silently shifts an enum into a bool for
+    // every one of them. Caught at compile time here; it would not have been
+    // caught by reading.
+    // AIF-156, OWNER RULING 2026-09-07 ("3 -- my authority for the test").
+    // TRUE means this spec runs as kShellIdentity instead of the boot identity,
+    // so it can reach a `!` shell-out. IT IS THE SIXTH MEMBER AND IT CARRIES A
+    // DEFAULT for the same reason mints_catalog does: aggregate initialisation
+    // value-initialises a member no initialiser reaches, but WITHOUT the
+    // '= false' every other entry becomes a -Wmissing-field-initializers hit.
+    //
+    // WHY A PER-SPEC OPT-IN AND NOT A SUITE-WIDE ONE. `!` is std::system() --
+    // arbitrary shell. Eighty specs run in this suite and any of them could
+    // later grow a `!` line; a blanket assumption would hand shell access to
+    // all eighty on every run. This flag is set on exactly one spec, and the
+    // identity is assumed for the DURATION OF THAT SPEC and restored after.
+    //
+    // IT DOES NOT BYPASS THE SECOND GATE. cmd_bang.cpp asks identity FIRST and
+    // cli::security::authorize_external_process SECOND, and the second reads
+    // the off-by-default host-command policy that only the operator sets. So a
+    // flagged spec still cannot run a shell unless the owner has separately
+    // enabled host commands for that session. Both gates survive; this flag
+    // moves only the first, and only for one spec.
+    bool requires_host_shell = false;
 };
 
 // SIZE IS HAND-MAINTAINED. Adding a row without bumping this count is a hard
 // compile error ("too many initializers"), which is the safe failure -- but it
 // is a recurring papercut: it happened when CNXLIVE was added on 2026-07-31.
 // Bump it when you add a regression.
-constexpr std::array<RegressionSpec, 79> kRegressionSpecs{{
+constexpr std::array<RegressionSpec, 80> kRegressionSpecs{{
     {
         "COUNT_LIST_VERBOSE",
         "count_list_verbose_regression.dts",
@@ -818,6 +850,17 @@ constexpr std::array<RegressionSpec, 79> kRegressionSpecs{{
     }
     ,
     {
+        "PKDURABLE",
+        "pk_durability_regression.dts",
+        "A PRIMARY KEY DECLARATION SURVIVES A RESTART, AND THIS IS THE ONLY SPEC IN THE TREE THAT CAN SAY SO (AIF-156, 2026-09-07). A .dts RUNS IN ONE PROCESS -- not a gap in PKPOLICY but a LIMIT OF THE INSTRUMENT, and PKPOLICY's own header says so under NOT CLAIMED: no marker in it can distinguish a designation READ BACK from the x64 header from one merely remembered in a map that had not died yet. Until 2026-09-07 the answer was the second. unique_registry.cpp held the designation in a static std::unordered_map under its own boundary comment 'not persistent schema metadata', so a fresh session without a redeclare let REPLACE overwrite a primary key IN SILENCE on a build where all three PKPOLICY arms read green. THE SPEC IS A THIN WRAPPER AND ASSERTS ALMOST NOTHING ITSELF. The measurement runs in TWO CHILD PROCESSES: run 1 creates PKDUR, declares SET UNIQUE FIELD SID PRIMARY, mints keys 1 and 2, and EXITS LEAVING THE TABLE ON DISK -- deliberately, because every other fixture in this tree cleans up after itself and this one must outlive its process or there is nothing to reopen; run 2 opens it, ISSUES NO DECLARATION AT ALL, and tries to duplicate the key. GRADING HAPPENS IN C++ BECAUSE IT MUST: `!` is std::system(), so a child's stdout never passes through the stream AlternateCapture swaps, and a transcript-reading validator would see NONE of the child markers. The children write theirs through SET ALTERNATE and validate_pk_durability() READS THOSE CAPTURES OFF DISK. A VALIDATOR CAN OPEN A FILE AND A MARKER CANNOT -- that asymmetry is the only reason a cross-process claim is assertable here at all. WHAT THE SPEC ITSELF CONTRIBUTES is the one thing the captures cannot supply: PKDUR_G0 prints before the shell-out and PKDUR_G1 after it, so a transcript with G0 and no G1 says the launch DIED -- PowerShell, an execution policy, an unbuilt runtime -- which is a different finding from a durability failure and must not be reported as one. EIGHT CHILD MARKERS, SIX OF THEM GUARDS. PKD_W3 is the load-bearing one: it proves the refusal fires IN THE DECLARING PROCESS, so a red in run 2 cannot be confused with enforcement being broken on this build entirely, and the validator reports UNPROVEN rather than FAIL when a guard reds. PKD_T2 closes and reopens after the refusal, because a write that got through and merely failed to flush would read green on T1 and red there. MISSING IS COUNTED SEPARATELY FROM RED, the house COUNT THE MARKERS rule applied to a file instead of a transcript: an errored marker prints nothing rather than going red, so seven of eight green is a lost claim wearing a clean face. THE CHILD LAUNCHER INVOKES THE EXE DIRECTLY and does not go through datarun.ps1, because that calls Update-DotTalkRuntimeExe which may COPY the runtime -- and the parent process holding the launcher open IS that runtime; copying over a running binary fails on Windows. It copies nothing and sets no environment. FIRST MEASURED 2026-09-07 by the standalone driver tools/staging/pk_durability_two_run.ps1 on build Sep 07 2026 12:55:02: 8 markers, 8 green, 0 red, 0 missing, with 'REPLACE: SID: is the PRIMARY key and cannot be written.' printed by a process that never declared the key. NOT CLAIMED, stated rather than implied: THE LONG-NAME HAZARD -- primary_field() returns a NAME and is_primary_field_() compares it against field_name_upper(), and SID is three characters, so this fixture CANNOT expose a mismatch between a long logical name and its 10-byte descriptor token, the exact class AIF-157 consolidated onto xfg::resolve_field_index_std; CONCURRENCY (two processes in sequence, not at once); and everything the write funnel does not cover -- CALCWRITE, REPLACE_MULTI, BROWSE and RECORDVIEW editing, COPY, SORT, IMPORTSQL. Durability of the DESIGNATION says nothing about completeness of the REFUSAL. EXPLICIT-RUN, and it should stay that way until the nesting is understood: this is the first spec that LAUNCHES PROCESSES, and what a `!` shell-out does inside REGRESSION ALL -- to the routed channel, to path slots, to a suite that already holds files open -- is UNMEASURED. Mints no catalog rows. The two child scripts carry absolute paths and that is a known debt recorded in their commit.",
+        false,
+        false,
+        RegressionValidator::PkDurabilityV1,
+        true, // the spec's own markers print through the routed channel
+        true  // AIF-156: needs a `!` shell-out; see ActingIdentityBracket
+    }
+    ,
+    {
         "TAGFIELD",
         "index_field_name_resolution.dts",
         "A CDX TAG IS A FIELD NAME, AND THE INDEX LAYER NOW ASKS THE SAME RESOLVER EVERYONE ELSE ASKS (AIF-157 step 3, 2026-09-06). xfg::resolve_field_index_std is the house answer to 'which field is this name' -- it trims, lets logical names win, and for x64 tables accepts the generated 10-byte DBF descriptor token as an alias when it maps uniquely. Eleven files called it and NOTHING UNDER src/xindex/ DID: activeTagFieldIndex1() was upper-only with no trim and no alias, cdx_native_backend and cnx_backend each carried a field_index_for_tag_() (byte-for-byte copies of each other), dbarea_adapt carried a seventh-hand field_index_ci(), and BUILDLMDB had its own loop. All are routed onto the standard resolver and nothing in the corpus exercised what that changed. TWO CLAIMS, TWO MECHANISMS. (1) A tag name LONGER THAN TEN BYTES: the CDX tag directory stores names in char name[32] NUL-padded, trim_copy strips only isspace, and NUL is not isspace -- so field_name_core_ had to absorb the NUL handling that was the ONE capability the retired backend matchers had and the standard resolver lacked. Without it the consolidation was a quiet downgrade. (2) The X64 DESCRIPTOR TOKEN as an alias: COURSE_TITLE_LONG is 17 bytes and its token is COURSE_TIT, which the old upper-only compare could never have matched. THE DISCRIMINATOR IS THE ROW, NOT THE VALUE -- every marker reads TAILKEY, six bytes with nothing about its own resolution in question, and the three orders disagree at both ends, so a tag resolved to the WRONG FIELD reads T2 where T3 is demanded and an engine that walked physically reads T1. UNCOVERED AND NAMED: the mangled ~n token for two fields colliding at ten bytes, and logical-wins-over-a-colliding-token. Both want a second cut; '~' in a tag argument is an unmeasured question about the tokenizer and putting an untested parse inside the arm that proves the resolver would muddy both results. Sets all THREE path slots explicitly -- written the day MWXSHAKE was found red for re-setting two of three after a WORKSPACE SWITCH (R131). SECTION 2 ADDS THE CNX BRANCH (2026-09-06): SET ORDER TAG has TWO validation gates and they are different code -- cmd_setorder.cpp:804 asks cdx_has_tag() (which checks the CONTAINER's tag directory) and :811 asks cnx_has_tag() (which walks area.fields(), making it the SEVENTH field-name matcher in this lane and the one the first sweep missed, because that sweep went through src/xindex/ plus BUILDLMDB and stopped). It compared up_copy(trim(f.name)) with no NUL handling and no alias, so on an x64 table with an ATTACHED CNX -- legal, and by AIF-099 an attached container wins tag resolution -- it REFUSED a descriptor-token tag the resolver accepts, refusal first. Its `#n` ordinal form is NOT routed and must not be: the resolver returns -1 for `#3`, so folding it away would be the quiet downgrade field_name_core_ existed to prevent. SECTION 3 IS THE SECOND CUT (2026-09-06) AND IT IS WHERE THE POLICY ACTUALLY HAS TO CHOOSE: sections 1 and 2 never made the resolver decide anything, because every name there matched one field by one rule, so 'logical names win' had nothing to win against. plan_x64_unique_fallback walks fields IN ORDER and gives the plain token to whoever asks first, so the contest only exists when the field whose LOGICAL NAME is the contested spelling comes AFTER the field that took it as a TOKEN: STUDENT_LAST_NAME -> STUDENT_LA, STUDENT_LABEL -> STUDENT_~1, STUDENT_LA -> STUDENT_~2. Now `STUDENT_LA` is both field 3's authoritative name and field 1's descriptor token, and rule 1 says field 3 wins (T11). T10 is the MANGLED token, deferred in the first cut until '~' was measured: cmd_SETORDER reads arguments with `args >> t` (whitespace-delimited), '#' is the ordinal sigil and '~' is special to nothing. T9 is not a formality -- without it T11's negative ('not field 1') is unfalsifiable, since nothing else shows field 1 is reachable. FOUR ROWS because three cannot separate four worlds: physical T1, field 1 T2, field 2 T3, field 3 T4. STILL NOT COVERABLE FROM A FIXTURE: the resolver's ambiguity branch, which cannot fire -- the planner guarantees distinct tokens and for a generated token field_name_core_ and descriptor_key agree exactly, so at most one field can match. It is defence-in-depth, not dead weight; what is wrong is the resolver's comment implying the RESOLVER decides uniqueness when the PLANNER does. READ RULE: fourteen markers must print and all fourteen read .T.; grep -c '^? \"TAGF_'.",
@@ -1143,6 +1186,55 @@ public:
 
 private:
     std::filesystem::path saved_;
+};
+
+// ---------------------------------------------------------------------------
+// ACTING-IDENTITY BRACKET -- AIF-156, owner ruling 2026-09-07.
+//
+// THE MEASUREMENT THIS EXISTS FOR CANNOT BE MADE ANY OTHER WAY. A .dts runs in
+// ONE process, so no marker in the corpus can assert anything across a restart;
+// the only route is a `!` shell-out, and `!` is refused because the shell BOOTS
+// as member.public (identity_admin.cpp: g_acting = kAnon) and never
+// authenticates. That refusal is CORRECT and is not being removed -- BANG is
+// arbitrary shell execution and gating it is the right default.
+//
+// WHAT THIS DOES INSTEAD is assume a NAMED identity for the duration of ONE
+// flagged spec and put the previous one back. The grant lives in the identity
+// tables where an auditor can read it, not in this code: nothing here creates a
+// member, and nothing here grants a permission. If member.ai.regression does
+// not exist or has no live host.shell grant, the shell-out is refused exactly
+// as it is today and the spec's own guards report an unrun measurement rather
+// than a passing one.
+//
+// SCOPE IS THE POINT. Restoration is by destructor so an exception or an early
+// return cannot leave the suite elevated, and the previous key is captured by
+// VALUE because acting_member_key() returns a reference to the very global this
+// overwrites.
+class ActingIdentityBracket {
+public:
+    explicit ActingIdentityBracket(const std::string& spec_name)
+        : prev_(dottalk::identity::acting_member_key())   // by value, deliberately
+    {
+        dottalk::identity::set_acting_member(kShellIdentity);
+        std::cout << "REGRESSION: " << spec_name << " runs as " << kShellIdentity
+                  << " (was " << prev_ << ") -- it needs a host shell.\n"
+                  << "  The host-command policy still applies on top of this; the "
+                     "identity is restored when the spec returns.\n";
+    }
+
+    ~ActingIdentityBracket()
+    {
+        dottalk::identity::set_acting_member(prev_);
+        std::cout << "REGRESSION: acting identity restored to " << prev_ << "\n";
+    }
+
+    ActingIdentityBracket(const ActingIdentityBracket&) = delete;
+    ActingIdentityBracket& operator=(const ActingIdentityBracket&) = delete;
+
+    static constexpr const char* kShellIdentity = "member.ai.regression";
+
+private:
+    std::string prev_;
 };
 
 class CatalogBracket {
@@ -2604,6 +2696,144 @@ bool validate_evaldiff(const std::string& transcript)
 // not by another marker, because no runtime marker can enumerate call sites.
 constexpr int kPkAcceptanceExpected = 3;
 
+// ---------------------------------------------------------------------------
+// PKDURABLE -- THE ONLY VALIDATOR IN THIS FILE THAT READS A FILE.
+//
+// Every other one grades a transcript, because every other spec's evidence is
+// produced by the process doing the grading. This one cannot: the measurement
+// happens in TWO CHILD PROCESSES launched by `!`, which is std::system(), so
+// their stdout never passes through the stream the routed capture swaps. The
+// children write their markers through SET ALTERNATE and this reads those
+// captures off disk.
+//
+// A VALIDATOR CAN OPEN A FILE AND A MARKER CANNOT, and that asymmetry is the
+// only reason a cross-process claim is assertable here at all.
+//
+// MISSING IS NOT RED AND BOTH ARE REPORTED SEPARATELY. An errored marker in
+// this language PRINTS NOTHING rather than going red, so seven of eight green
+// is a lost claim wearing a clean face -- the house COUNT THE MARKERS rule,
+// applied to a file instead of a transcript.
+//
+// A GUARD FAILURE IS "UNPROVEN", NOT "FAIL". PKD_W3 proves the refusal fires
+// in the DECLARING process; if it reds, enforcement is broken on this build
+// entirely and run 2 says nothing about durability. Those are different
+// findings with different fixes and must not be collapsed.
+bool validate_pk_durability(const std::string& transcript)
+{
+    // The spec's own two markers. They claim only that the shell-out was
+    // reached and returned; without them, absent captures cannot be told apart
+    // from children that ran and wrote nothing.
+    if (transcript.find("PKDUR_G0_reached_the_shellout:.T.") == std::string::npos) {
+        std::cout << "PK DURABILITY: FAIL -- the spec did not reach the shell-out line.\n";
+        return false;
+    }
+    if (transcript.find("PKDUR_G1_shellout_returned:.T.") == std::string::npos) {
+        std::cout << "PK DURABILITY: FAIL -- the shell-out did not return. PowerShell, the "
+                     "execution policy or the built runtime is the suspect, NOT the primary "
+                     "key -- no durability claim is made either way.\n";
+        return false;
+    }
+
+    // THE TMP SLOT, NOT A RELATIVE PATH. The first cut wrote "data/tmp/..."
+    // and the children's captures were never found: the shell's working
+    // directory IS the runtime data root, so that resolved to data/data/tmp.
+    // The bug printed the SAME message a genuinely unrun measurement prints,
+    // which is why it took a run to see -- and it is the reason the routed
+    // capture a few lines up asks the slot rather than assuming a cwd. One
+    // authority for where TMP is; this now shares it.
+    const std::filesystem::path tmp_dir =
+        dottalk::paths::get_slot(dottalk::paths::Slot::TMP);
+    const std::filesystem::path run1_path = tmp_dir / "pkdur_run1.alt";
+    const std::filesystem::path run2_path = tmp_dir / "pkdur_run2.alt";
+
+    struct Expect { int run; const char* name; bool guard; };
+    static constexpr std::array<Expect, 8> kExpect{{
+        {1, "PKD_W1_first_key_is_1",               true},
+        {1, "PKD_W2_second_key_is_2",              true},
+        {1, "PKD_W3_refused_in_declaring_process", true},
+        {1, "PKD_W4_row1_is_ALPHA",                true},
+        {2, "PKD_G1_fixture_reopened",             true},
+        {2, "PKD_G2_key_survived_as_1",            true},
+        {2, "PKD_T1_primary_survived_restart",     false},
+        {2, "PKD_T2_still_1_after_reopen",         false}
+    }};
+
+    // A LOCAL READER, not slurp_capture_file. That helper is defined some three
+    // hundred lines BELOW this function and C++ will not look forward for it --
+    // the same declared-after-use error this session already made once, in
+    // cmd_workspace.cpp. Kept local rather than hoisting the shared one,
+    // because moving a function to satisfy a caller reorders a file for a
+    // reason a later reader cannot see.
+    const auto slurp = [](const std::filesystem::path& path) -> std::string {
+        std::ifstream in(path, std::ios::binary);
+        if (!in) return {};
+        std::ostringstream ss;
+        ss << in.rdbuf();
+        return ss.str();
+    };
+
+    const std::string run1 = slurp(run1_path);
+    const std::string run2 = slurp(run2_path);
+    if (run1.empty() || run2.empty()) {
+        std::cout << "  looked for: " << run1_path.string() << "\n"
+                  << "  looked for: " << run2_path.string() << "\n";
+        std::cout << "PK DURABILITY: FAIL -- a child capture is missing. The shell-out "
+                     "returned but wrote no evidence; treat this as an unrun measurement, "
+                     "not as a passing one.\n";
+        return false;
+    }
+
+    int green = 0;
+    int red = 0;
+    int missing = 0;
+    bool guard_failed = false;
+
+    for (const Expect& e : kExpect) {
+        const std::string& text = (e.run == 1) ? run1 : run2;
+        const std::string t = std::string(e.name) + ":.T.";
+        const std::string f = std::string(e.name) + ":.F.";
+        if (text.find(t) != std::string::npos) {
+            ++green;
+        } else if (text.find(f) != std::string::npos) {
+            ++red;
+            if (e.guard) guard_failed = true;
+            std::cout << "  RED: " << e.name << "\n";
+        } else {
+            ++missing;
+            std::cout << "  MISSING (printed nothing, which is not a pass): " << e.name << "\n";
+        }
+    }
+
+    if (missing > 0) {
+        std::cout << "PK DURABILITY: FAIL -- " << missing
+                  << " marker(s) did not print. An errored marker prints nothing rather "
+                     "than going red; that is a lost claim, not a pass.\n";
+        return false;
+    }
+
+    if (guard_failed) {
+        std::cout << "PK DURABILITY: UNPROVEN -- a guard failed, so the arms say nothing "
+                     "about durability. A red PKD_W3 means enforcement is broken on this "
+                     "build ENTIRELY, which is a different finding from a lost "
+                     "declaration.\n";
+        return false;
+    }
+
+    if (red > 0) {
+        std::cout << "PK DURABILITY: FAIL -- the declaration did NOT survive the restart. "
+                     "A fresh process reopened the table, did not redeclare, and a REPLACE "
+                     "overwrote the primary key. See AIF-156.\n";
+        return false;
+    }
+
+    std::cout << "PK DURABILITY: PASS -- " << green
+              << " of " << kExpect.size()
+              << " markers green across TWO PROCESSES. The designation was written by one "
+                 "process and honoured by another, which is the one thing a .dts cannot "
+                 "assert on its own.\n";
+    return true;
+}
+
 bool validate_pk_policy(const std::string& transcript)
 {
     static constexpr std::array<const char*, 8> partA{{
@@ -2745,6 +2975,8 @@ bool validate_regression_transcript(const RegressionSpec& spec,
             return validate_count_list_verbose(transcript);
         case RegressionValidator::PkPolicyV1:
             return validate_pk_policy(transcript);
+        case RegressionValidator::PkDurabilityV1:
+            return validate_pk_durability(transcript);
         case RegressionValidator::DefFamilyV1:
             return validate_def_family(transcript);
     }
@@ -2887,6 +3119,13 @@ void run_regression_script(DbArea& area, const RegressionSpec& spec)
         // is unconditional because any spec can move a path slot -- see the
         // note on the class.
         PathSlotBracket paths(spec.name);
+
+        // Declared before the catalog bracket so it is destroyed after it: the
+        // identity goes back last, once every path and catalog restore has run
+        // under whatever identity performed them.
+        std::optional<ActingIdentityBracket> identity;
+        if (spec.requires_host_shell) identity.emplace(spec.name);
+
         if (spec.mints_catalog) {
             CatalogBracket bracket(spec.name);
             cmd_DOTSCRIPT(area, dotscript_args);

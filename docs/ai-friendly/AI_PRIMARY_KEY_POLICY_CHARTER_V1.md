@@ -731,3 +731,66 @@ about the completeness of the *refusal*.
 
 **Concurrency.** One writer cannot exercise the table lock, and two processes
 run in sequence here rather than at once.
+
+## The .dts language cannot launch a process, and what that costs
+
+**OWNER RULING 2026-09-07: "3 -- my authority for the test."** Recorded here
+because it outlives AIF-156 and constrains what the regression corpus can ever
+assert.
+
+### The ceiling
+
+A `.dts` runs in ONE process. The only route out is `!`, and `!` is
+`std::system()` -- arbitrary shell -- so it is refused: the shell BOOTS as
+`member.public` (`identity_admin.cpp`, `g_acting = kAnon`) and never
+authenticates. **That refusal is correct and was not removed.** It means every
+cross-process claim has the same ceiling: restart durability, concurrency,
+two-writer locking, anything needing a second process.
+
+### What was built instead, and how narrow it is
+
+`RegressionSpec` gained a seventh member, `requires_host_shell`, defaulted
+false and **placed last**. A flagged spec runs inside `ActingIdentityBracket`,
+which assumes `member.ai.regression` for the duration and restores the previous
+identity by destructor. **Exactly one spec sets the flag.** A suite-wide
+assumption would have handed shell access to all eighty on every run.
+
+**TWO GATES SURVIVE AND ONLY ONE MOVED.** `cmd_bang.cpp` asks identity first and
+`cli::security::authorize_external_process` second, and for `host.*` the
+resolver folds the host-command policy in as a FINAL, independent stage. So the
+grant alone is not enough -- measured: with the grant stored,
+`USER CAN host.shell FOR member.ai.regression` still read
+`DENY (denied by runtime security policy (final))` until
+`DOTTALK_ALLOW_HOST_COMMANDS=1` was set in the environment. **The stored grant
+and the runtime policy are independent, and only one of them travels with the
+data.**
+
+The grant lives in the identity tables, not in code: nothing in
+`cmd_regression.cpp` creates a member or grants a permission. It was made by
+the owner's hand (`USER ADD` / `USER GRANT` / `USER SAVE`) and is time-boxed at
++24h by `USER GRANT` itself, so the spec returns to reporting an unrun
+measurement when it lapses -- the correct resting state.
+
+### Measured
+
+Build `Sep 07 2026 13:38:08`, `REGRESSION PKDURABLE`:
+`PK DURABILITY: PASS -- 8 of 8 markers green across TWO PROCESSES`, bracketed by
+`runs as member.ai.regression (was member.public)` and
+`acting identity restored to member.public`.
+
+### Two errors worth keeping
+
+**The validator's paths were relative** (`data/tmp/...`) and the shell's working
+directory IS the runtime data root, so they resolved to `data/data/tmp`. The
+routed-capture code twelve lines above asks
+`dottalk::paths::get_slot(Slot::TMP)` for exactly this reason. **It printed the
+same message a genuinely unrun measurement prints** -- one sentence, two causes,
+indistinguishable from the transcript. That is a status string with fewer states
+than the thing it describes, for the third time in one day, in code written
+after fixing the previous two. The `looked for:` lines are the third state.
+
+**`requires_host_shell` was first placed before `validator`.** `mints_catalog`
+could be inserted mid-struct because every entry stopped short of it; entries DO
+initialise `validator` positionally, so the new member silently shifted an enum
+into a bool for all of them. Caught by the compiler, not by reading, and the
+struct now carries the warning.
