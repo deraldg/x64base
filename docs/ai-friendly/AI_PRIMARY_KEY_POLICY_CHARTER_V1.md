@@ -685,3 +685,49 @@ spec passes, but a `.dts` runs in one process, so nothing has measured a fresh
 process reading the flag back and refusing on it. **The two-run harness is the
 only instrument that can ask.** Until it exists, the honest claim is that the
 designation is now WRITTEN durably, not that it is READ durably.
+
+## PROVEN 2026-09-07 -- the declaration survives a restart
+
+The section above ends **"Not proven ... the two-run harness is the only
+instrument that can ask."** It is **left standing because it was true when it
+was written**, and it was true for about an hour. The harness was built and it
+answered.
+
+MEASURED, build `Sep 07 2026 12:55:02`, `tools/staging/pk_durability_two_run.ps1`,
+two separate processes: **8 markers, 8 green, 0 red, 0 missing.** The line that
+carries it was printed by **run 2, a process that never declared the key**:
+
+```
+REPLACE: SID: is the PRIMARY key and cannot be written.
+```
+
+Run 1 created `PKDUR`, declared `SET UNIQUE FIELD SID PRIMARY`, minted keys 1
+and 2, confirmed the refusal fires **in the declaring process** (`PKD_W3` -- so a
+red in run 2 could not be confused with enforcement being broken outright), and
+exited leaving the table on disk. Run 2 opened it, **issued no declaration at
+all**, and was refused; `PKD_T2` then closed and reopened to prove the value had
+not merely failed to flush.
+
+**So the designation is now written durably AND read durably.** The write-back
+loop is closed end to end: `setFieldPrimaryDurable()` stamps
+`X64FieldMetaEntry.flags`, `x64_apply_name_metadata()` carries it into
+`FieldDef.x64_flags` at USE, `primaryFieldIndex()` finds it, and
+`unique_reg::primary_field()` asks the file before it asks the map.
+
+### What this still does not clear
+
+**The long-name hazard.** `primary_field()` returns a NAME and
+`is_primary_field_()` compares it against `field_name_upper(A, field1)`. `SID` is
+three characters, so this fixture **cannot** expose a mismatch between a long
+logical name and its 10-byte descriptor token -- the exact class AIF-157 spent a
+day consolidating onto `xfg::resolve_field_index_std`. A green here is not
+evidence about a field named `STUDENT_IDENTIFIER`. That wants its own arm and
+does not have one.
+
+**Everything the funnel does not cover.** Unchanged: CALCWRITE, REPLACE_MULTI,
+BROWSE and RECORDVIEW editing, COPY, SORT, IMPORTSQL, and the ~86 candidate
+direct-write sites across 21 files. Durability of the *designation* says nothing
+about the completeness of the *refusal*.
+
+**Concurrency.** One writer cannot exercise the table lock, and two processes
+run in sequence here rather than at once.

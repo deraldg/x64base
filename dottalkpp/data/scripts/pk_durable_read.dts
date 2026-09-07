@@ -1,0 +1,69 @@
+* pk_durable_read.dts -- AIF-156 two-run harness, RUN 2 of 2.
+*
+* A SEPARATE PROCESS. IT NEVER DECLARES THE KEY. That omission is the entire
+* experiment: if the designation lives only in unique_registry.cpp's static map
+* it died with run 1, and the REPLACE below succeeds in silence. If it lives in
+* the x64 header where the owner ruled it should, the reader picks it up at USE
+* and the write is refused.
+*
+* PKD_T1 IS THE DISCRIMINATOR AND IT READS A FIELD, never console text. If SID
+* still reads 1 the write was refused; if it reads 2 it was not. There is no
+* third answer and no message to misparse.
+*
+* THE GUARDS ARE NOT DECORATION. A marker over a CLOSED area does not error --
+* it prints a verdict whose polarity depends on the operator (measured
+* 2026-08-28, see FINDING_MARKER_OVER_A_CLOSED_AREA_PICKS_A_SIDE.md), so
+* (SID = 1) over a table that never opened would read .F. and be reported as a
+* durability failure when the real failure was the fixture. PKD_G1 reads LNAME,
+* which run 1's PKD_W4 already proved, so a red guard means the table is not
+* there and PKD_T1 is UNPROVEN rather than failing.
+*
+* ERASES THE FIXTURE. Run 1 deliberately leaves it behind; cleanup is here so a
+* second execution of the pair starts from nothing rather than adopting.
+
+SET TALK OFF
+STOP_ON_ERROR OFF
+
+SETPATH DBF D:\code\ccode\dottalkpp\data\DBF\SANDBOX
+SETPATH INDEXES D:\code\ccode\dottalkpp\data\INDEXES\SANDBOX
+SETPATH LMDB D:\code\ccode\dottalkpp\data\LMDB\SANDBOX
+
+SET ALTERNATE TO D:\code\ccode\dottalkpp\data\tmp\pkdur_run2.alt
+SET ALTERNATE ON
+
+FORMULA "PKDUR-RUN2-BEGIN"
+
+SELECT 1
+USE PKDUR
+GO 1
+
+* PKD_G1 -- the fixture survived run 1 and this is the row we think it is.
+? "PKD_G1_fixture_reopened:" + (ALLTRIM(LNAME) = "ALPHA")
+
+* PKD_G2 -- and it carries the key run 1 minted, before anything tries to
+* change it. Without this, PKD_T1 reading 1 cannot distinguish "the write was
+* refused" from "the write succeeded and happened to land on 1".
+? "PKD_G2_key_survived_as_1:" + (SID = 1)
+
+* NO SET UNIQUE HERE. THIS IS THE POINT.
+
+* PKD_T1 -- the arm. Record 2 already holds SID 2, so this is an attempt to
+* duplicate a primary key from a process that never declared one.
+REPLACE SID WITH "2"
+? "PKD_T1_primary_survived_restart:" + (SID = 1)
+
+* PKD_T2 -- and it survived the write to DISK rather than only in the buffer.
+* A refusal that let the value through and merely failed to flush would read
+* green above and red here.
+CLOSE
+USE PKDUR
+GO 1
+? "PKD_T2_still_1_after_reopen:" + (SID = 1)
+
+CLOSE
+ERASE TABLE PKDUR CONFIRM
+
+FORMULA "PKDUR-RUN2-END"
+
+SET ALTERNATE OFF
+QUIT

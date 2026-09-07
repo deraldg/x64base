@@ -1,0 +1,71 @@
+* pk_durable_write.dts -- AIF-156 two-run harness, RUN 1 of 2.
+*
+* THE QUESTION THIS PAIR EXISTS TO ASK, AND THE ONLY INSTRUMENT THAT CAN ASK IT.
+* PKPOLICY proves the PRIMARY key is REFUSED on three write paths. It cannot
+* prove the DECLARATION SURVIVES A RESTART, because a .dts runs in ONE process
+* and the spec's own header says so under NOT CLAIMED. Until 2026-09-07 the
+* designation lived in a process-local std::unordered_map -- unique_registry.cpp
+* calls it "not persistent schema metadata" in its own boundary comment -- so it
+* was forgotten at exit and a REPLACE in a fresh session overwrote the key IN
+* SILENCE, on a build where all three arms read green.
+*
+* RUN 1 DECLARES AND WRITES. RUN 2 IS A SEPARATE PROCESS THAT NEVER REDECLARES.
+* Nothing in this file asserts anything: the whole claim is in run 2, and this
+* run exists to leave a table behind with the designation stamped into its x64
+* header. Its guards are here so that a run 2 failure cannot be blamed on a
+* fixture that was never built.
+*
+* DELIBERATELY NOT ERASED AT THE END. Every other fixture in this tree cleans up
+* after itself; this one MUST outlive its process or there is nothing to reopen.
+* Run 2 erases it.
+
+SET TALK OFF
+STOP_ON_ERROR OFF
+
+SETPATH DBF D:\code\ccode\dottalkpp\data\DBF\SANDBOX
+SETPATH INDEXES D:\code\ccode\dottalkpp\data\INDEXES\SANDBOX
+SETPATH LMDB D:\code\ccode\dottalkpp\data\LMDB\SANDBOX
+
+SET ALTERNATE TO D:\code\ccode\dottalkpp\data\tmp\pkdur_run1.alt
+SET ALTERNATE ON
+
+FORMULA "PKDUR-RUN1-BEGIN"
+
+ERASE TABLE PKDUR CONFIRM
+
+CREATE X64 PKDUR (SID N(6,0), LNAME C(12))
+CLOSE
+
+SELECT 1
+USE PKDUR
+
+* The declaration under test. On a build that stamps the x64 header this writes
+* X64_FIELD_FLAG_PRIMARY into SID's X64FieldMetaEntry and
+* DBF64_FLAG_HAS_RECID_PK into the table flags. On a build that does not, it
+* only touches a map that dies with this process.
+SET UNIQUE FIELD SID PRIMARY
+
+APPEND
+REPLACE LNAME WITH "ALPHA"
+? "PKD_W1_first_key_is_1:" + (SID = 1)
+
+APPEND
+REPLACE LNAME WITH "BETA"
+? "PKD_W2_second_key_is_2:" + (SID = 2)
+
+* PKD_W3 -- the refusal works IN THIS PROCESS. Without this, a red in run 2
+* cannot separate "the declaration did not survive" from "enforcement is broken
+* on this build entirely", which are different findings with different fixes.
+GO 1
+REPLACE SID WITH "2"
+? "PKD_W3_refused_in_declaring_process:" + (SID = 1)
+
+* PKD_W4 -- the row run 2 will read is on disk and says what run 2 expects.
+? "PKD_W4_row1_is_ALPHA:" + (ALLTRIM(LNAME) = "ALPHA")
+
+CLOSE
+
+FORMULA "PKDUR-RUN1-END"
+
+SET ALTERNATE OFF
+QUIT
