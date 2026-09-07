@@ -122,13 +122,26 @@ def strip_comments_and_strings(text, keep_strings=False):
                 i += 1
         elif c == '"':
             if keep_strings:
+                # KEEP THE QUOTES, BLANK THE INTERIOR. Keeping the interior was
+                # the FIFTH cut's bug and it was found by this checker firing on
+                # the very commit that added it: the registry summary sentence
+                # explaining the w.set("ID", ...) false positive became one,
+                # because `set(` inside summary PROSE stayed visible and the
+                # escaped \" that followed it is a backslash, not a quote, so
+                # the "first argument is not a quote" test passed.
+                #
+                # Blanking the interior while preserving the delimiters gives
+                # both halves at once: real code reads w.set("  ", ...) and is
+                # correctly excluded, while prose inside a literal disappears
+                # entirely. Newlines are preserved so line numbers stay true.
                 out.append(c)
                 i += 1
                 while i < n and text[i] != '"':
                     if text[i] == "\\" and i + 1 < n:
-                        out.append(text[i]); out.append(text[i + 1]); i += 2
+                        out.append("  "); i += 2
                         continue
-                    out.append(text[i]); i += 1
+                    out.append("\n" if text[i] == "\n" else " ")
+                    i += 1
                 if i < n:
                     out.append(text[i]); i += 1
                 continue
