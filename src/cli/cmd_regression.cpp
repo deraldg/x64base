@@ -82,6 +82,7 @@
 #include "identity/identity_admin.hpp"
 #include <streambuf>
 #include <string>
+#include <system_error>   // std::error_code for the PKDURABLE pre-clear
 #include <utility>
 #include <vector>
 
@@ -852,7 +853,7 @@ constexpr std::array<RegressionSpec, 80> kRegressionSpecs{{
     {
         "PKDURABLE",
         "pk_durability_regression.dts",
-        "A PRIMARY KEY DECLARATION SURVIVES A RESTART, AND THIS IS THE ONLY SPEC IN THE TREE THAT CAN SAY SO (AIF-156, 2026-09-07). A .dts RUNS IN ONE PROCESS -- not a gap in PKPOLICY but a LIMIT OF THE INSTRUMENT, and PKPOLICY's own header says so under NOT CLAIMED: no marker in it can distinguish a designation READ BACK from the x64 header from one merely remembered in a map that had not died yet. Until 2026-09-07 the answer was the second. unique_registry.cpp held the designation in a static std::unordered_map under its own boundary comment 'not persistent schema metadata', so a fresh session without a redeclare let REPLACE overwrite a primary key IN SILENCE on a build where all three PKPOLICY arms read green. THE SPEC IS A THIN WRAPPER AND ASSERTS ALMOST NOTHING ITSELF. The measurement runs in TWO CHILD PROCESSES: run 1 creates PKDUR, declares SET UNIQUE FIELD SID PRIMARY, mints keys 1 and 2, and EXITS LEAVING THE TABLE ON DISK -- deliberately, because every other fixture in this tree cleans up after itself and this one must outlive its process or there is nothing to reopen; run 2 opens it, ISSUES NO DECLARATION AT ALL, and tries to duplicate the key. GRADING HAPPENS IN C++ BECAUSE IT MUST: `!` is std::system(), so a child's stdout never passes through the stream AlternateCapture swaps, and a transcript-reading validator would see NONE of the child markers. The children write theirs through SET ALTERNATE and validate_pk_durability() READS THOSE CAPTURES OFF DISK. A VALIDATOR CAN OPEN A FILE AND A MARKER CANNOT -- that asymmetry is the only reason a cross-process claim is assertable here at all. WHAT THE SPEC ITSELF CONTRIBUTES is the one thing the captures cannot supply: PKDUR_G0 prints before the shell-out and PKDUR_G1 after it, so a transcript with G0 and no G1 says the launch DIED -- PowerShell, an execution policy, an unbuilt runtime -- which is a different finding from a durability failure and must not be reported as one. EIGHT CHILD MARKERS, SIX OF THEM GUARDS. PKD_W3 is the load-bearing one: it proves the refusal fires IN THE DECLARING PROCESS, so a red in run 2 cannot be confused with enforcement being broken on this build entirely, and the validator reports UNPROVEN rather than FAIL when a guard reds. PKD_T2 closes and reopens after the refusal, because a write that got through and merely failed to flush would read green on T1 and red there. MISSING IS COUNTED SEPARATELY FROM RED, the house COUNT THE MARKERS rule applied to a file instead of a transcript: an errored marker prints nothing rather than going red, so seven of eight green is a lost claim wearing a clean face. THE CHILD LAUNCHER INVOKES THE EXE DIRECTLY and does not go through datarun.ps1, because that calls Update-DotTalkRuntimeExe which may COPY the runtime -- and the parent process holding the launcher open IS that runtime; copying over a running binary fails on Windows. It copies nothing and sets no environment. FIRST MEASURED 2026-09-07 by the standalone driver tools/staging/pk_durability_two_run.ps1 on build Sep 07 2026 12:55:02: 8 markers, 8 green, 0 red, 0 missing, with 'REPLACE: SID: is the PRIMARY key and cannot be written.' printed by a process that never declared the key. NOT CLAIMED, stated rather than implied: THE LONG-NAME HAZARD -- primary_field() returns a NAME and is_primary_field_() compares it against field_name_upper(), and SID is three characters, so this fixture CANNOT expose a mismatch between a long logical name and its 10-byte descriptor token, the exact class AIF-157 consolidated onto xfg::resolve_field_index_std; CONCURRENCY (two processes in sequence, not at once); and everything the write funnel does not cover -- CALCWRITE, REPLACE_MULTI, BROWSE and RECORDVIEW editing, COPY, SORT, IMPORTSQL. Durability of the DESIGNATION says nothing about completeness of the REFUSAL. EXPLICIT-RUN, and it should stay that way until the nesting is understood: this is the first spec that LAUNCHES PROCESSES, and what a `!` shell-out does inside REGRESSION ALL -- to the routed channel, to path slots, to a suite that already holds files open -- is UNMEASURED. Mints no catalog rows. The two child scripts carry absolute paths and that is a known debt recorded in their commit.",
+        "A PRIMARY KEY DECLARATION SURVIVES A RESTART, AND THIS IS THE ONLY SPEC IN THE TREE THAT CAN SAY SO (AIF-156, 2026-09-07). A .dts RUNS IN ONE PROCESS -- not a gap in PKPOLICY but a LIMIT OF THE INSTRUMENT, and PKPOLICY's own header says so under NOT CLAIMED: no marker in it can distinguish a designation READ BACK from the x64 header from one merely remembered in a map that had not died yet. Until 2026-09-07 the answer was the second. unique_registry.cpp held the designation in a static std::unordered_map under its own boundary comment 'not persistent schema metadata', so a fresh session without a redeclare let REPLACE overwrite a primary key IN SILENCE on a build where all three PKPOLICY arms read green. THE SPEC IS A THIN WRAPPER AND ASSERTS ALMOST NOTHING ITSELF. The measurement runs in TWO CHILD PROCESSES: run 1 creates PKDUR, declares SET UNIQUE FIELD SID PRIMARY, mints keys 1 and 2, and EXITS LEAVING THE TABLE ON DISK -- deliberately, because every other fixture in this tree cleans up after itself and this one must outlive its process or there is nothing to reopen; run 2 opens it, ISSUES NO DECLARATION AT ALL, and tries to duplicate the key. GRADING HAPPENS IN C++ BECAUSE IT MUST: `!` is std::system(), so a child's stdout never passes through the stream AlternateCapture swaps, and a transcript-reading validator would see NONE of the child markers. The children write theirs through SET ALTERNATE and validate_pk_durability() READS THOSE CAPTURES OFF DISK. A VALIDATOR CAN OPEN A FILE AND A MARKER CANNOT -- that asymmetry is the only reason a cross-process claim is assertable here at all. WHAT THE SPEC ITSELF CONTRIBUTES is the one thing the captures cannot supply: PKDUR_G0 prints before the shell-out and PKDUR_G1 after it, so a transcript with G0 and no G1 says the launch DIED -- PowerShell, an execution policy, an unbuilt runtime -- which is a different finding from a durability failure and must not be reported as one. EIGHT CHILD MARKERS, SIX OF THEM GUARDS. PKD_W3 is the load-bearing one: it proves the refusal fires IN THE DECLARING PROCESS, so a red in run 2 cannot be confused with enforcement being broken on this build entirely, and the validator reports UNPROVEN rather than FAIL when a guard reds. PKD_T2 closes and reopens after the refusal, because a write that got through and merely failed to flush would read green on T1 and red there. MISSING IS COUNTED SEPARATELY FROM RED, the house COUNT THE MARKERS rule applied to a file instead of a transcript: an errored marker prints nothing rather than going red, so seven of eight green is a lost claim wearing a clean face. THE CHILD LAUNCHER INVOKES THE EXE DIRECTLY and does not go through datarun.ps1, because that calls Update-DotTalkRuntimeExe which may COPY the runtime -- and the parent process holding the launcher open IS that runtime; copying over a running binary fails on Windows. It copies nothing and sets no environment. FIRST MEASURED 2026-09-07 by the standalone driver tools/staging/pk_durability_two_run.ps1 on build Sep 07 2026 12:55:02: 8 markers, 8 green, 0 red, 0 missing, with 'REPLACE: SID: is the PRIMARY key and cannot be written.' printed by a process that never declared the key. NOT CLAIMED, stated rather than implied: THE LONG-NAME HAZARD -- primary_field() returns a NAME and is_primary_field_() compares it against field_name_upper(), and SID is three characters, so this fixture CANNOT expose a mismatch between a long logical name and its 10-byte descriptor token, the exact class AIF-157 consolidated onto xfg::resolve_field_index_std; CONCURRENCY (two processes in sequence, not at once); and everything the write funnel does not cover -- CALCWRITE, REPLACE_MULTI, BROWSE and RECORDVIEW editing, COPY, SORT, IMPORTSQL. Durability of the DESIGNATION says nothing about completeness of the REFUSAL. THE VALIDATOR HAS BEEN OBSERVED REPORTING PASS ON A RUN THAT NEVER HAPPENED, AND THE FIX WAS WHERE THE GUARD SITS, NOT WHAT IT CHECKS. MEASURED 2026-09-07 on build Sep 07 2026 14:24:17: a session started WITHOUT DOTTALK_ALLOW_HOST_COMMANDS=1 printed BANG: refused for member.ai.regression, the children never ran, and the validator graded the .alt captures left on disk by the PREVIOUS successful run and reported PASS -- 8 of 8 markers green across TWO PROCESSES. G0 and G1 were honestly green and COULD NOT have caught it: the bang command RETURNS NORMALLY AFTER A REFUSAL, so reached-the-shell-out and shell-out-returned are both true on a run where nothing launched. They separate a launcher that DIED from one that RAN, never one that was never permitted to start. The stale-capture hazard was KNOWN -- it was written into the commit message that introduced it -- and the deletion was placed in the CHILD LAUNCHER, downstream of the very gate that refuses to start the launcher. THE FIRST REPLACEMENT WAS ALSO WRONG AND ALSO MEASURED, the same day: a transcript check for the launcher's own completion line, which a child process CANNOT deliver, because its stdout goes to the console handle and never passes through the stream the routed capture swaps. It turned a passing measurement red while the children's lines sat on the operator's screen, and pk_durability_child.ps1's own header comment had already said so in as many words. WHAT HOLDS NOW: the PARENT clears both captures in run_regression_script BEFORE anything the host-command policy can refuse, confirms they are gone by asking the filesystem rather than reading remove()'s verdict, and prints a pre-clear sentinel that validate_pk_durability() requires. A refused shell-out therefore leaves NO capture at all and is reported as an unrun measurement. THE TRANSFERABLE RULE, worth more than this spec: A GUARD AGAINST EVIDENCE SURVIVING A RUN HAS TO SIT WHERE THE RUN CANNOT SKIP IT, AND IT HAS TO ANNOUNCE ITSELF ON A CHANNEL THE GRADER ACTUALLY READS. EXPLICIT-RUN, and it should stay that way until the nesting is understood: this is the first spec that LAUNCHES PROCESSES, and what a `!` shell-out does inside REGRESSION ALL -- to the routed channel, to path slots, to a suite that already holds files open -- is UNMEASURED. Mints no catalog rows. The two child scripts carry absolute paths and that is a known debt recorded in their commit.",
         false,
         false,
         RegressionValidator::PkDurabilityV1,
@@ -2734,6 +2735,32 @@ bool validate_pk_durability(const std::string& transcript)
         return false;
     }
 
+    // THE PRE-CLEAR MUST HAVE RUN *THIS TIME*, AND THIS CHECK EXISTS BECAUSE
+    // ITS ABSENCE PRODUCED A FALSE GREEN AND ITS FIRST REPLACEMENT PRODUCED A
+    // PERMANENT RED. See the note on clear_pk_durability_child_captures() for
+    // both measurements.
+    //
+    // What makes this line usable where the launcher's own completion line was
+    // not: it is printed by the PARENT process -- the one whose stdout the
+    // routed capture swaps -- so it reaches this transcript. A child's stdout
+    // never can.
+    //
+    // Its presence means both captures were confirmed ABSENT immediately before
+    // the shell-out, so any capture read below was written by THIS run. Its
+    // absence means either a stale capture could not be deleted, or this
+    // validator was reached without the runner's pre-clear step; in both cases
+    // the files on disk are unattributable and must not be graded.
+    if (transcript.find("PKDURABLE pre-clear -- both child captures removed") ==
+        std::string::npos) {
+        std::cout << "PK DURABILITY: FAIL -- the pre-clear sentinel is absent, so the "
+                     "captures on disk cannot be attributed to THIS run. Grading them "
+                     "would risk reporting a measurement that did not happen.\n"
+                     "  Either a stale capture could not be deleted -- a message above "
+                     "names the file -- or this validator was reached without the "
+                     "runner's pre-clear step.\n";
+        return false;
+    }
+
     // THE TMP SLOT, NOT A RELATIVE PATH. The first cut wrote "data/tmp/..."
     // and the children's captures were never found: the shell's working
     // directory IS the runtime data root, so that resolved to data/data/tmp.
@@ -2777,9 +2804,17 @@ bool validate_pk_durability(const std::string& transcript)
     if (run1.empty() || run2.empty()) {
         std::cout << "  looked for: " << run1_path.string() << "\n"
                   << "  looked for: " << run2_path.string() << "\n";
-        std::cout << "PK DURABILITY: FAIL -- a child capture is missing. The shell-out "
-                     "returned but wrote no evidence; treat this as an unrun measurement, "
-                     "not as a passing one.\n";
+        std::cout << "PK DURABILITY: FAIL -- a child capture is missing. The pre-clear "
+                     "ran, so this is not a stale-evidence problem: the shell-out returned "
+                     "but wrote no evidence. Treat it as an unrun measurement, not as a "
+                     "passing one.\n"
+                     "  MOST LIKELY: the host-command policy refused the shell-out. Look "
+                     "for a BANG refusal above. `!` RETURNS NORMALLY AFTER A REFUSAL, so "
+                     "PKDUR_G0 and PKDUR_G1 are both honestly green on a run where nothing "
+                     "was launched -- absent captures are the only signal.\n"
+                     "  DOTTALK_ALLOW_HOST_COMMANDS=1 must be set in the ENVIRONMENT before "
+                     "the process starts. The identity grant alone is not enough, and the "
+                     "env var does not travel with the repo.\n";
         return false;
     }
 
@@ -3095,6 +3130,73 @@ std::string slurp_capture_file(const std::filesystem::path& path)
     return ss.str();
 }
 
+// PKDURABLE'S STALE-EVIDENCE GUARD, AND IT LIVES HERE BECAUSE HERE IS WHERE THE
+// RUN CANNOT SKIP IT.
+//
+// This spec's evidence is two .alt files written by CHILD PROCESSES. Nothing a
+// validator can read tells this run's file from last run's, so something must
+// delete them first. TWO EARLIER PLACEMENTS WERE WRONG, both measured:
+//
+//   1. THE CHILD LAUNCHER deleted them -- correct, and useless. The launcher is
+//      DOWNSTREAM of the host-command policy that refuses to start it. MEASURED
+//      2026-09-07: a session started without DOTTALK_ALLOW_HOST_COMMANDS=1
+//      printed "BANG: refused for member.ai.regression", the children never
+//      ran, and the validator graded the PREVIOUS run's captures and reported
+//      "PASS -- 8 of 8 markers green across TWO PROCESSES".
+//
+//   2. A TRANSCRIPT CHECK for the launcher's own completion line. Structurally
+//      unsatisfiable: `!` is std::system(), so a child's stdout goes to the
+//      console handle and never passes through the C++ stream the routed
+//      capture swaps. MEASURED 2026-09-07: a run in which the children
+//      demonstrably executed -- their lines were on the operator's screen --
+//      produced a routed capture holding only the parent's output, and the spec
+//      went red on a passing measurement. pk_durability_child.ps1's own header
+//      states this; the check was written past it.
+//
+// So the PARENT deletes and the PARENT prints. A transcript check can only rely
+// on a line written by the process being captured. The sentinel is emitted ONLY
+// when both files are confirmed GONE afterwards -- a delete that failed must
+// never read like a delete that worked.
+//
+// This is the transferable shape, not a detail of this spec: A GUARD AGAINST
+// EVIDENCE SURVIVING A RUN HAS TO SIT WHERE THE RUN CANNOT SKIP IT, AND IT HAS
+// TO ANNOUNCE ITSELF ON A CHANNEL THE GRADER ACTUALLY READS.
+bool clear_pk_durability_child_captures()
+{
+    const std::filesystem::path tmp_dir =
+        dottalk::paths::get_slot(dottalk::paths::Slot::TMP);
+
+    bool cleared = true;
+    for (const char* name : {"pkdur_run1.alt", "pkdur_run2.alt"}) {
+        const std::filesystem::path target = tmp_dir / name;
+        std::error_code ec;
+        std::filesystem::remove(target, ec);
+        // remove() reports "it was not there" as success, and reports a locked
+        // file as failure -- but the only question that matters is whether the
+        // file is gone NOW. Ask the filesystem instead of reading the verdict.
+        if (std::filesystem::exists(target)) {
+            std::cout << "REGRESSION: PKDURABLE pre-clear could NOT remove a stale child "
+                         "capture: " << target.string() << "\n";
+            cleared = false;
+        }
+    }
+
+    if (!cleared) {
+        std::cout << "REGRESSION: PKDURABLE pre-clear FAILED. The sentinel is deliberately "
+                     "NOT printed, so the validator will refuse to grade rather than read "
+                     "a file it cannot date.\n";
+        return false;
+    }
+
+    std::cout << "REGRESSION: PKDURABLE pre-clear -- both child captures removed BEFORE the "
+                 "shell-out.\n"
+                 "  Any pkdur_run*.alt found after this line was written by THIS run. If "
+                 "the host-command policy refuses the shell-out, no capture appears at all "
+                 "and the validator reports an unrun measurement -- which is what it should "
+                 "have reported the day it graded last run's evidence instead.\n";
+    return true;
+}
+
 void run_regression_script(DbArea& area, const RegressionSpec& spec)
 {
     const std::filesystem::path resolved = resolve_regression_script_path(spec);
@@ -3108,6 +3210,15 @@ void run_regression_script(DbArea& area, const RegressionSpec& spec)
     std::istringstream dotscript_args(dotscript_line.str());
 
     const auto run_script = [&]() {
+        // BEFORE any bracket. Nothing here touches a path slot, and the
+        // deletion has to precede everything the host-command policy is able to
+        // refuse -- which is the whole point of it not living in the launcher.
+        // Keyed on the validator, so the spec cannot be renamed out of its own
+        // guard.
+        if (spec.validator == RegressionValidator::PkDurabilityV1) {
+            clear_pk_durability_child_captures();
+        }
+
         // The bracket lives in the ONE place a spec is run, so a new caller
         // cannot acquire a spec and forget it. Scoped to the DOTSCRIPT call and
         // nothing else -- resolve_regression_script_path above reads the

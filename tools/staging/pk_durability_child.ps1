@@ -38,8 +38,20 @@ foreach ($p in @($run1, $run2)) {
     }
 }
 
-# A stale capture would be graded as this run's evidence. The validator cannot
-# tell an old file from a new one, so the deletion has to happen here.
+# THIS DELETION IS NO LONGER THE GUARD, AND IT NEVER COULD HAVE BEEN.
+#
+# A stale capture would be graded as this run's evidence, and the validator
+# cannot tell an old file from a new one -- both still true. But deleting HERE
+# only helps on runs that reach here, and the run that needed the guard is
+# exactly the run that does not: MEASURED 2026-09-07, the host-command policy
+# refused the shell-out, this script never started, and the validator graded the
+# previous run's captures as PASS -- 8 of 8.
+#
+# The real pre-clear now lives in run_regression_script (src/cli/cmd_regression.cpp),
+# upstream of the policy that can refuse this launcher, and prints a sentinel the
+# validator requires. What remains below is defence in depth and the ONLY clear
+# for the standalone driver pk_durability_two_run.ps1, which has no C++ runner in
+# front of it.
 foreach ($p in @($alt1, $alt2)) {
     if (Test-Path -LiteralPath $p) { Remove-Item -LiteralPath $p -Force }
 }
