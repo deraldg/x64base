@@ -300,6 +300,170 @@ Whichever is chosen, step 2's choke point needs to answer THREE questions
 about a field and can name NONE of them today: is it indexed, is it unique, is
 it the primary key. They are one predicate short each, at the same seam.
 
+### ADDENDUM 2026-09-06 (evening) -- owner rulings, and step 2 moves
+
+Four owner rulings arrived after this plan was written, and together they make
+step 2 SMALLER, CHEAPER and LOCATED SOMEWHERE ELSE. Recorded here rather than
+by rewriting step 2, so the reasoning that produced the original location stays
+readable.
+
+**THE RULINGS.** "We will never edit a primary key." "We don't reuse primary
+key." "INSERT is NEW, so the next number up." And: x32 and VFP did not have
+autokey/primary key -- half right, see below.
+
+**UNIQUENESS STOPS BEING ENFORCED AND BECOMES A CONSEQUENCE.** Step 2 was
+written as enforcement -- a check that a value does not already exist, which
+needs an index probe or a scan, and which drags `unique_reg` toward the engine.
+Under the rulings none of that is needed:
+
+    generated on APPEND  +  never edited  +  never reused  =  unique
+
+So the check is not "does this VALUE exist" but "is this FIELD the primary
+key". Field identity, not value identity. O(1), no probe, no scan, no
+comparison. The three questions step 2 says it must answer -- is it indexed, is
+it unique, is it the primary key -- collapse to the THIRD ONE ALONE for the
+write path. Indexed and unique remain open for other reasons; they stop
+blocking enforcement.
+
+**THE CHOKE POINT IS `DbArea::set()`, NOT `writeCurrent`.** Measured
+2026-09-06. `writeCurrent` is RECORD-level: by the time it runs the value is
+already staged in the buffer, so a check there must compare buffer against disk
+to notice the key moved -- reintroducing the value comparison the rulings just
+removed. `replaceFieldStored` is field-level but is not the convergence point
+either: it calls `set(field1, stored_value)` internally, and SQL INSERT calls
+`A.set(idx, vals[k])` directly without passing through it.
+
+`DbArea::set(int field1, value)` is where ALL paths meet. Every one of the
+field-name resolvers -- `xfg::resolve_field_index_std`, `fields::findFieldCI`,
+`cmd_calcwrite.cpp:183`'s private `field_index_ci`, `cmd_sql_insert.cpp`'s
+`idx_of` lambda -- ends there. PKP_T4, T5 and T6 close from that one site
+regardless of how each verb found its field index.
+
+**GENERATION IS THE BIGGER HOLE, AND IT IS NOT AN ENFORCEMENT PROBLEM.**
+Measured 2026-09-06: key generation lives in `src/cli/append_support.hpp`,
+whose own comment says "This keeps autokey generation in APPEND, not in
+rebuild." That header is included by EXACTLY TWO FILES -- `cmd_append.cpp` and
+`cmd_append_blank.cpp`. `DbArea::appendBlank()` has TWENTY-ONE callers.
+
+So NINETEEN row-creating paths mint no key at all: `cmd_sql_insert`,
+`cmd_import`, `cmd_importsql`, `cmd_copy`, `cmd_sort`, `cmd_ddl`,
+`cmd_autodbf`, `cmd_commit`, `table_state`, `cmd_workspace`, `bbs_store`,
+`identity_dbf_store`, `hierarchy_service`, `message_catalog` and more.
+`cmd_workspace.cpp:3988` already carries a comment counting them.
+
+THIS REDIAGNOSES PKP_T5. The spec reads it as SQLSEL INSERT committing a
+duplicate through the buffer and WAL. The measurement says INSERT NEVER MINTS A
+KEY -- it calls `A.appendBlank()` on the engine directly, bypassing the CLI
+generation entirely, then writes whatever columns the caller named. That is not
+an enforcement failure; it is a generation failure wearing one.
+
+**SO THE WORK IS TWO ENGINE FUNCTIONS, NOT ONE:**
+
+| rule | site | today |
+| --- | --- | --- |
+| generated | `DbArea::appendBlank()` mints | in the CLI, 2 of 21 callers |
+| immutable | `DbArea::set()` refuses the primary field, except from the mint | nothing, anywhere |
+| never reused | `compute_next_numeric` scans deleted rows | correct, reachable from those 2 only |
+
+`compute_next_numeric` moves down with the generation it serves. Its
+correctness argument is already written and holds unchanged: it walks ALL
+physical records INCLUDING DELETED ones, because a deleted row can be RECALLed
+and its key stays reserved until PACK.
+
+**A FOURTH STORAGE OPTION THIS PLAN'S OPEN DECISION DOES NOT LIST.** The three
+options above concern WHICH FIELD A TAG INDEXES and all live in or beside the
+index. The primary-key DESIGNATION is a different fact and has a home the index
+options do not: the x64 header itself carries `uint64_t autoq_next` (reserved,
+unwired), `uint32_t reserved32` and `uint64_t reserved[3]`, and `DbArea`
+already hydrates that header at open.
+
+That dodges every objection this document raises against the sidecar -- it is
+gitignored, unpaired in four of ten index roots, minted-from-the-table on first
+open after a clone, and absent for CNX entirely. A header slot needs no index
+to exist, survives ramfs, cannot be regenerated from the table, travels INSIDE
+the table, and needs no new file. It is also correctly unavailable to x32 and
+classic VFP, which makes "is this an x64 table" a declaration-time refusal
+rather than a promise the format cannot keep.
+
+**R119 DOES NOT FORECLOSE THIS, AND THE DISTINCTION MUST BE STATED OR IT WILL
+BE MISREAD.** R119 ruled `autoq_next` stays unwired because `max+1` self-heals
+after a hand-edited row and a high-water mark cannot. That ruling is about THE
+NEXT VALUE -- a derivable fact. WHICH COLUMN IS PRIMARY is derivable from
+nothing and must be stored. Do not read R119 as closing the header to this.
+
+**THE DECLARATION VALIDATES NOTHING TODAY.** `SET UNIQUE FIELD <f> PRIMARY`
+(`cmd_setunique.cpp:116`) calls `set_primary_field`, which uppercases a string
+and stores it. It does not resolve the field, check its type, or look at the
+data. `SET UNIQUE FIELD NOSUCHFIELD PRIMARY` reports success.
+
+Declaration is the moment to check, for the reason the ADDTAG work already
+gives: a tag IS a field name, so check it where it is still fixable. Three
+checks, all O(1) or once-only:
+
+1. the field EXISTS -- route through `xfg::resolve_field_index_std`, the same
+   fix ADDTAG got, same reasoning, different verb;
+2. the field CAN CARRY a generated key -- `compute_next_numeric` returns
+   `max+1`; a character field has no `max+1`, so every value reads unparseable,
+   the maximum never rises, and it mints `1` forever. `MWXKEEP (KPK C(4))` in
+   MWXSHAKE is that shape;
+3. the EXISTING DATA already parses -- the same scan `compute_next_numeric`
+   already runs, moved from EVERY APPEND FOREVER to ONCE, at the moment someone
+   asserts "this is my key", and REFUSING rather than warning.
+
+Today, an unparseable value makes the maximum read low and `compute_next_
+numeric` prints "APPEND: WARNING -- ... The generated key may collide with one
+of them" and mints it anyway: a diagnostic announcing a defect it is in the act
+of committing.
+
+ONE SCAN AT DECLARATION IS SUFFICIENT BECAUSE IMMUTABILITY CLOSES EVERY OTHER
+DOOR. After a successful declaration, REPLACE/CALCWRITE/UPDATE cannot write the
+field, INSERT mints instead of supplying, APPEND generates. No path can
+introduce an unparseable value, so the invariant established at the boundary is
+preserved by construction rather than policed. That is the same architecture as
+the rest of this design, and the reason it needs no duplicate detector.
+
+**x32 AND VFP: THE RULING IS HALF RIGHT, AND THE OTHER HALF CHANGES SCOPE.**
+
+- **x32: correct.** No autoincrement anywhere in its headers.
+- **VFP AUTOKEY: INCORRECT, AND THIS ENGINE ALREADY PARSES IT.** VFP has
+  autoincrement as a per-field attribute with its own DBF version byte --
+  `foxpro_header.hpp:24 VER_VFP_AUTOINC = 0x31` -- flag `0x0C` at descriptor
+  byte 18, next value at bytes 19-22, step at byte 23, with `static_assert`s
+  pinning the offsets (`xbase_vfp.hpp:120-162`). `FieldDef` carries
+  `autoincrement`, `next_autoinc` and `step_autoinc` (`xbase.hpp:193-195`).
+- **VFP PRIMARY KEY: true in effect, false about the product.** VFP has PRIMARY
+  KEY only for tables bound to a database container; free tables get CANDIDATE.
+  This tree knows `FLAG_DATABASE_DBC` exists and models no DBC, so every VFP
+  table x64base sees behaves as a free table with no primary key. True HERE,
+  not true of VFP.
+
+**AND VFP'S AUTOKEY IS PARSED, THEN IGNORED -- THE FIFTH INSTANCE OF THIS
+LANE'S RECURRING SHAPE.** `FieldDef::autoincrement`, `next_autoinc` and
+`step_autoinc` are consumed by exactly two files, both tests:
+`test_vfp_field_descriptor.cpp` and `test_vfp_real_fixture_flags.cpp`. No
+production path reads them. Append to a VFP autoinc table today and the field
+stays blank while `autoinc_next` in the descriptor never advances -- x64base
+silently declines to honour a key rule the file declares, writing rows VFP
+itself would call malformed.
+
+Joining: `CDX_HDRF_DIRTY` declared and never written, `updated_ts` written and
+never compared, `SNX_HDRF_DIRTY` declared with no implementation, and 58
+headers declaring `status: supported` that no translation unit can reach.
+
+THIS ARRIVES IN THE SAME SEAM WHETHER OR NOT IT IS WANTED. `appendBlank()` is
+the same function for x64 and VFP tables, and it already holds the `FieldDef`
+carrying those three members. Moving generation down makes the choice explicit
+rather than accidental: HONOUR it (read `next_autoinc`, write, advance the
+descriptor), REFUSE it (decline to append to a table whose declared key rule
+will not be kept), or KEEP IGNORING it -- which is today, and is the worst of
+the three because it is silent.
+
+R119 AND VFP DISAGREE ON PURPOSE, AND THE ENTRY SHOULD SAY SO. VFP stores the
+high-water mark per field, on disk. R119 refused to store one for x64 because
+`max+1` self-heals after a hand-edit. That is a considered divergence from the
+format family's own prior art, not an oversight -- so nobody later "restores
+compatibility" by wiring `autoq_next` to match VFP.
+
 ### Step 3 -- refuse, do not renumber
 
 `VALIDATE UNIQUE ... REPAIR` survives as a tool for inherited data. It stops
