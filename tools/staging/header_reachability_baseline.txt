@@ -68,7 +68,6 @@ include/tuptalk_buffer.hpp
 include/utils.hpp
 include/workspace/relation_state.hpp
 include/xbase/nav_select.hpp
-include/xbase_cli.hpp
 include/xbase_security_signatures.hpp
 include/xindex/bptree.hpp
 include/xindex/dbarea_config.hpp

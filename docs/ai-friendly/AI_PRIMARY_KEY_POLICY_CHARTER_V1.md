@@ -551,3 +551,65 @@ any owner ruling -- unlike the four decisions still open above (where the
 designation lives, index-or-name-or-both, VFP autoinc, and the `src/xbase`
 go-ahead), none of which this increment touched: **it is `src/cli` only, no
 engine change.**
+
+## 2026-09-07, later -- the funnel, and why three arms was still too few
+
+MEASURED on build `Sep 07 2026 09:20:18`: **`PKP_T4` green, 3 of 3**, the
+ratchet fired a second time in one day, and `kPkAcceptanceExpected` moved
+`2 -> 3`. The transcript now shows `REPLACE: SID: is the PRIMARY key and cannot
+be written.` on the line where the write used to succeed.
+
+### The consolidation, not the wiring, is the result
+
+The obvious move was to add the constraint check to `cmd_replace.cpp`. Tracing
+first showed that would have been wrong: **native REPLACE is three doors, not
+one** -- buffered, direct, and `REPLACE ... WITH NULL`, which is intercepted
+BEFORE the value pipeline by design and which a gate on the value path could
+never see. A nulled key is worse than an overwritten one: the row keeps its
+place and loses its identity. And REPLACE is not the only native writer --
+`cmd_replace_multi` and `cmd_calcwrite` each hand-roll their own version of the
+same buffered/direct fork.
+
+So the answer was not more arms. **It was one route.**
+
+### The funnel already existed and had never been built
+
+`include/xbase_cli.hpp` declared `xbase::cli::replaceFieldStored()` on
+2026-07-30 with exactly the right contract -- buffers under TABLE ON, delegates
+to `DbArea::replaceFieldStored()` under TABLE OFF. **Nothing ever defined it,
+included it, or called it.** A session manifest recorded it the same day as "a
+link error waiting for its first caller." The header reachability gate found the
+file independently on 2026-09-06 and baselined it as unreachable. Two
+detections, six weeks apart, neither reaching the write path -- because an
+unreachable header reads as dead weight rather than as a missing floor.
+
+AIF-156 built it out, added a `replaceFieldNull()` sibling for the second door,
+and retired the baseline entry (61 unreachable -> 60).
+
+### Arms prove routes; a gate proves there are no other routes
+
+This is the durable lesson and it generalises past primary keys. **No runtime
+marker can enumerate call sites.** A regression spec can prove that a route
+refuses; it cannot prove that the route is the only way in. That second claim is
+static, and it needs a static check.
+
+Which is why **three of three is not an enforced primary key**, and both the
+spec's PASS line and the constant's comment now say so outright. PKPOLICY has
+never asked about CALCWRITE, REPLACE_MULTI, BROWSE editing, RECORDVIEW editing,
+COPY, SORT or IMPORTSQL. A crude count -- **roughly 86 candidate direct
+field-write call sites across 21 files**, needing per-file verification -- is
+the real size of the backlog, and BROWSE and RECORDVIEW are the two that most
+plausibly let a person overwrite a key by hand today.
+
+### Exemption stayed route-based
+
+`append_support` (the generator) and `VALIDATE UNIQUE ... REPAIR` (the
+inherited-data renumber tool this charter's step 3 preserves) both call the
+`DbArea::` methods directly, below the funnel. There is deliberately no bypass
+parameter: **a parameter can be passed by anyone, a route cannot.**
+
+### Still open
+
+The static gate over the callers, written advisory with a full baseline so the
+86 become a visible shrinking list rather than a claim. Until it exists, the
+honest statement is that three named paths refuse and the rest are unmeasured.

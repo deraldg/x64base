@@ -110,6 +110,7 @@
 #include <cstdint>
 
 #include "xbase.hpp"
+#include "xbase_cli.hpp"
 #include "xbase/field_codec.hpp"
 #include "cli/memo_field_store.hpp"
 #include "xbase_64.hpp"
@@ -873,38 +874,25 @@ void cmd_REPLACE(xbase::DbArea& A, std::istringstream& in) {
     {
         const std::string nv = to_upper_copy(textio::trim(value_raw));
         if (nv == "NULL" || nv == ".NULL.") {
-            if (!A.fieldIsNullable(field1)) {
-                cli::cmdout::print_prefixed_message(
-                    "REPLACE", dottalk::helpdata::MessageId::ReplaceDetailText,
-                    {{"detail", "field '" + field_name +
-                                "' is not nullable; its descriptor carries no null "
-                                "flag, so there is no bit to record NULL in. "
-                                "Nothing was written."}});
-                return;
-            }
-
-            // TABLE BUFFER STAGES STRINGS, AND A NULL IS NOT ONE. add_change()
-            // carries a std::string per field, so a buffered null would have to be
-            // spelled as some value -- and "" would COMMIT AN EMPTY VALUE, which
-            // reads back as not-null. That is a wrong answer wearing a success
-            // message, so it is refused instead. Buffered NULL wants its own
-            // representation in the change record; it is not a REPLACE fix.
-            if (dottalk::table::is_enabled(area0)) {
-                cli::cmdout::print_prefixed_message(
-                    "REPLACE", dottalk::helpdata::MessageId::ReplaceDetailText,
-                    {{"detail", "NULL cannot be buffered -- the table buffer stores "
-                                "a value per field and has no way to say NULL, so "
-                                "buffering one would commit a blank instead. "
-                                "COMMIT or ROLLBACK, then REPLACE ... WITH NULL "
-                                "with TABLE BUFFER off. Nothing was written."}});
-                return;
-            }
-
+            // THE FUNNEL OWNS THE NULLABILITY CHECK AND THE BUFFERED
+            // REFUSAL NOW, along with the constraint gate that is the reason
+            // this branch had to be wired at all. REPLACE <pk> WITH NULL was a
+            // SECOND DOOR: a null is intercepted above BEFORE the value
+            // pipeline -- correctly, since it must not be evaluated,
+            // currency-normalized, memo-encoded or width-validated -- so a gate
+            // on the value path alone never saw it. A nulled key is worse than
+            // an overwritten one: the row keeps its place and loses its
+            // identity.
             std::string null_err;
-            if (!A.replaceFieldNull(field1, true, &null_err)) {
+            if (!xbase::cli::replaceFieldNull(A, field1, true, &null_err)) {
+                // The funnel does not know the spelling the user typed, so the
+                // field name is prefixed here. It was part of the nullability
+                // message before the funnel and a reason without a name is a
+                // worse message than the one it replaced.
                 cli::cmdout::print_prefixed_message(
                     "REPLACE", dottalk::helpdata::MessageId::ReplaceDetailText,
-                    {{"detail", (null_err.empty() ? std::string("write failed")
+                    {{"detail", field_name + ": " +
+                                (null_err.empty() ? std::string("write failed")
                                                   : null_err) + "."}});
                 return;
             }
@@ -1025,52 +1013,24 @@ void cmd_REPLACE(xbase::DbArea& A, std::istringstream& in) {
         return;
     }
 
-    if (dottalk::table::is_enabled(area0)) {
-        auto& tb = dottalk::table::get_tb(area0);
-
-        std::uint64_t field_mask[dottalk::table::kWords]{};
-        const int word = fldIndex0 / 64;
-        const int bit  = fldIndex0 % 64;
-        if (word >= 0 && word < dottalk::table::kWords) {
-            field_mask[word] |= (std::uint64_t{1} << bit);
-        }
-
-        const int je_priority = tb.add_change(
-            rn, dottalk::table::CHANGE_UPDATE, field_mask, field1, stored_value);
-
-        // Write-ahead redo log (only under TABLE BUFFER PERSISTENT / RamJournal).
-        // Journal the exact buffered edit -- recno, the priority add_change
-        // assigned, and the field value -- so the log preserves every retained
-        // edit per field (history mode) rather than a last-write-wins snapshot.
-        if (dottalk::table::is_persistent_enabled(area0)) {
-            dottalk::table::ChangeEntry je;
-            je.recno = rn;
-            je.dirty_flags = dottalk::table::CHANGE_UPDATE;
-            je.priority = je_priority;
-            je.new_values[field1] = stored_value;
-            (void)dottalk::table::journal_note_change(area0, je);
-        }
-
-        if (!dottalk::table::is_dirty(area0)) dottalk::table::set_dirty(area0, true);
-        dottalk::table::mark_stale_field(area0, field1);
-
-        if (Settings::instance().talk_on.load()) {
-            cli::cmdout::print_prefixed_message(
-                "REPLACE",
-                dottalk::helpdata::MessageId::ReplaceBufferedFieldRecordText,
-                {{"field", std::to_string(field1)}, {"recno", std::to_string(rn)}});
-        }
-        return;
-    }
-
-    std::string before;
-    std::string after;
+    // ---- THE WRITE, THROUGH THE FUNNEL ---------------------------------
+    //
+    // This function used to hand-roll the TABLE ON / TABLE OFF fork here, and
+    // cmd_calcwrite.cpp hand-rolled the same one. Two copies of a fork is two
+    // doors, and AIF-156 needed ONE place to refuse a write to a PRIMARY key.
+    // xbase::cli::replaceFieldStored() now owns the fork, the buffer staging,
+    // the persistent-journal note, the stale marking and the constraint gate.
+    //
+    // WHAT STAYS HERE IS THE PROSE. REPLACE and CALCWRITE say different things
+    // about the same write, so the funnel returns outcomes and never prints.
+    // Ask the table state ourselves for which sentence to use -- the funnel
+    // does not report the route, because a caller that needs to know already
+    // knows how to ask.
+    const bool buffered = dottalk::table::is_enabled(area0);
 
     try {
-        try { before = A.get(field1); } catch (...) { before.clear(); }
-
         std::string write_err;
-        const bool ok = A.replaceFieldStored(field1, stored_value, &write_err);
+        const bool ok = xbase::cli::replaceFieldStored(A, field1, stored_value, &write_err);
 
         if (!ok) {
             cli::cmdout::print_prefixed_message(
@@ -1080,23 +1040,18 @@ void cmd_REPLACE(xbase::DbArea& A, std::istringstream& in) {
             return;
         }
 
-        try { after = A.get(field1); } catch (...) { after.clear(); }
-
-        if (before != after) dottalk::table::mark_stale_field(area0, field1);
-
-        // replaceFieldStored() returns true for a successful record write even
-        // when index maintenance afterwards failed; that case is reported as a
-        // non-empty write_err. The record is on disk, so this is a warning and
-        // not a failure -- but the index no longer tracks this record, so mark
-        // the field stale rather than letting the divergence go unrecorded.
+        // A TRUE RETURN WITH A NON-EMPTY err MEANS "WRITTEN, INDEX NOT
+        // MAINTAINED" -- the record is on disk and the index no longer tracks
+        // it. That is a warning, not a failure, and flattening the two would
+        // print a clean-looking error over a committed record. The funnel has
+        // already marked the field stale; this reports it.
         //
-        // NOTE: this reuses ReplaceDetailText, which is also the hard-failure
-        // detail id. The text is prefixed so a reader can tell them apart, but
-        // a caller keying on the message id alone would read this success as a
-        // failure. A dedicated warning id belongs in the message catalog; that
-        // is a catalog change and is deliberately not smuggled into this slice.
+        // NOTE, UNCHANGED FROM BEFORE THE FUNNEL: this reuses ReplaceDetailText,
+        // which is also the hard-failure detail id. The text is prefixed so a
+        // reader can tell them apart, but a caller keying on the message id
+        // alone would read this success as a failure. A dedicated warning id is
+        // a message-catalog change and is still not smuggled into this slice.
         if (!write_err.empty()) {
-            dottalk::table::mark_stale_field(area0, field1);
             cli::cmdout::print_prefixed_message(
                 "REPLACE",
                 dottalk::helpdata::MessageId::ReplaceDetailText,
@@ -1105,10 +1060,17 @@ void cmd_REPLACE(xbase::DbArea& A, std::istringstream& in) {
         }
 
         if (Settings::instance().talk_on.load()) {
-            cli::cmdout::print_prefixed_message(
-                "REPLACE",
-                dottalk::helpdata::MessageId::ReplaceReplacedFieldRecordText,
-                {{"field", std::to_string(field1)}, {"recno", std::to_string(A.recno())}});
+            if (buffered) {
+                cli::cmdout::print_prefixed_message(
+                    "REPLACE",
+                    dottalk::helpdata::MessageId::ReplaceBufferedFieldRecordText,
+                    {{"field", std::to_string(field1)}, {"recno", std::to_string(rn)}});
+            } else {
+                cli::cmdout::print_prefixed_message(
+                    "REPLACE",
+                    dottalk::helpdata::MessageId::ReplaceReplacedFieldRecordText,
+                    {{"field", std::to_string(field1)}, {"recno", std::to_string(A.recno())}});
+            }
         }
     } catch (const std::exception& e) {
         cli::cmdout::print_prefixed_message(
