@@ -863,7 +863,7 @@ constexpr std::array<RegressionSpec, 80> kRegressionSpecs{{
     {
         "PKDURABLE",
         "pk_durability_regression.dts",
-        "A PRIMARY KEY DECLARATION SURVIVES A RESTART, AND THIS IS THE ONLY SPEC IN THE TREE THAT CAN SAY SO (AIF-156, 2026-09-07). A .dts RUNS IN ONE PROCESS -- not a gap in PKPOLICY but a LIMIT OF THE INSTRUMENT, and PKPOLICY's own header says so under NOT CLAIMED: no marker in it can distinguish a designation READ BACK from the x64 header from one merely remembered in a map that had not died yet. Until 2026-09-07 the answer was the second. unique_registry.cpp held the designation in a static std::unordered_map under its own boundary comment 'not persistent schema metadata', so a fresh session without a redeclare let REPLACE overwrite a primary key IN SILENCE on a build where all three PKPOLICY arms read green. THE SPEC IS A THIN WRAPPER AND ASSERTS ALMOST NOTHING ITSELF. The measurement runs in TWO CHILD PROCESSES: run 1 creates PKDUR, declares SET UNIQUE FIELD SID PRIMARY, mints keys 1 and 2, and EXITS LEAVING THE TABLE ON DISK -- deliberately, because every other fixture in this tree cleans up after itself and this one must outlive its process or there is nothing to reopen; run 2 opens it, ISSUES NO DECLARATION AT ALL, and tries to duplicate the key. GRADING HAPPENS IN C++ BECAUSE IT MUST: `!` is std::system(), so a child's stdout never passes through the stream AlternateCapture swaps, and a transcript-reading validator would see NONE of the child markers. The children write theirs through SET ALTERNATE and validate_pk_durability() READS THOSE CAPTURES OFF DISK. A VALIDATOR CAN OPEN A FILE AND A MARKER CANNOT -- that asymmetry is the only reason a cross-process claim is assertable here at all. WHAT THE SPEC ITSELF CONTRIBUTES is the one thing the captures cannot supply: PKDUR_G0 prints before the shell-out and PKDUR_G1 after it, so a transcript with G0 and no G1 says the launch DIED -- PowerShell, an execution policy, an unbuilt runtime -- which is a different finding from a durability failure and must not be reported as one. EIGHT CHILD MARKERS, SIX OF THEM GUARDS. PKD_W3 is the load-bearing one: it proves the refusal fires IN THE DECLARING PROCESS, so a red in run 2 cannot be confused with enforcement being broken on this build entirely, and the validator reports UNPROVEN rather than FAIL when a guard reds. PKD_T2 closes and reopens after the refusal, because a write that got through and merely failed to flush would read green on T1 and red there. MISSING IS COUNTED SEPARATELY FROM RED, the house COUNT THE MARKERS rule applied to a file instead of a transcript: an errored marker prints nothing rather than going red, so seven of eight green is a lost claim wearing a clean face. THE CHILD LAUNCHER INVOKES THE EXE DIRECTLY and does not go through datarun.ps1, because that calls Update-DotTalkRuntimeExe which may COPY the runtime -- and the parent process holding the launcher open IS that runtime; copying over a running binary fails on Windows. It copies nothing and sets no environment. FIRST MEASURED 2026-09-07 by the standalone driver tools/staging/pk_durability_two_run.ps1 on build Sep 07 2026 12:55:02: 8 markers, 8 green, 0 red, 0 missing, with 'REPLACE: SID: is the PRIMARY key and cannot be written.' printed by a process that never declared the key. NOT CLAIMED, stated rather than implied: THE LONG-NAME HAZARD -- primary_field() returns a NAME and is_primary_field_() compares it against field_name_upper(), and SID is three characters, so this fixture CANNOT expose a mismatch between a long logical name and its 10-byte descriptor token, the exact class AIF-157 consolidated onto xfg::resolve_field_index_std; CONCURRENCY (two processes in sequence, not at once); and everything the write funnel does not cover -- CALCWRITE, REPLACE_MULTI, BROWSE and RECORDVIEW editing, COPY, SORT, IMPORTSQL. Durability of the DESIGNATION says nothing about completeness of the REFUSAL. THE VALIDATOR HAS BEEN OBSERVED REPORTING PASS ON A RUN THAT NEVER HAPPENED, AND THE FIX WAS WHERE THE GUARD SITS, NOT WHAT IT CHECKS. MEASURED 2026-09-07 on build Sep 07 2026 14:24:17: a session started WITHOUT DOTTALK_ALLOW_HOST_COMMANDS=1 printed BANG: refused for member.ai.regression, the children never ran, and the validator graded the .alt captures left on disk by the PREVIOUS successful run and reported PASS -- 8 of 8 markers green across TWO PROCESSES. G0 and G1 were honestly green and COULD NOT have caught it: the bang command RETURNS NORMALLY AFTER A REFUSAL, so reached-the-shell-out and shell-out-returned are both true on a run where nothing launched. They separate a launcher that DIED from one that RAN, never one that was never permitted to start. The stale-capture hazard was KNOWN -- it was written into the commit message that introduced it -- and the deletion was placed in the CHILD LAUNCHER, downstream of the very gate that refuses to start the launcher. THE FIRST REPLACEMENT WAS ALSO WRONG AND ALSO MEASURED, the same day: a transcript check for the launcher's own completion line, which a child process CANNOT deliver, because its stdout goes to the console handle and never passes through the stream the routed capture swaps. It turned a passing measurement red while the children's lines sat on the operator's screen, and pk_durability_child.ps1's own header comment had already said so in as many words. WHAT HOLDS NOW: the PARENT clears both captures in run_regression_script BEFORE anything the host-command policy can refuse, confirms they are gone by asking the filesystem rather than reading remove()'s verdict, and prints a pre-clear sentinel that validate_pk_durability() requires. A refused shell-out therefore leaves NO capture at all and is reported as an unrun measurement. THE TRANSFERABLE RULE, worth more than this spec: A GUARD AGAINST EVIDENCE SURVIVING A RUN HAS TO SIT WHERE THE RUN CANNOT SKIP IT, AND IT HAS TO ANNOUNCE ITSELF ON A CHANNEL THE GRADER ACTUALLY READS. EXPLICIT-RUN, and it should stay that way until the nesting is understood: this is the first spec that LAUNCHES PROCESSES, and what a `!` shell-out does inside REGRESSION ALL -- to the routed channel, to path slots, to a suite that already holds files open -- is UNMEASURED. Mints no catalog rows. The two child scripts carry absolute paths and that is a known debt recorded in their commit.",
+        "A PRIMARY KEY DECLARATION SURVIVES A RESTART, AND THIS IS THE ONLY SPEC IN THE TREE THAT CAN SAY SO (AIF-156, 2026-09-07). A .dts RUNS IN ONE PROCESS -- not a gap in PKPOLICY but a LIMIT OF THE INSTRUMENT, and PKPOLICY's own header says so under NOT CLAIMED: no marker in it can distinguish a designation READ BACK from the x64 header from one merely remembered in a map that had not died yet. Until 2026-09-07 the answer was the second. unique_registry.cpp held the designation in a static std::unordered_map under its own boundary comment 'not persistent schema metadata', so a fresh session without a redeclare let REPLACE overwrite a primary key IN SILENCE on a build where all three PKPOLICY arms read green. THE SPEC IS A THIN WRAPPER AND ASSERTS ALMOST NOTHING ITSELF. The measurement runs in TWO CHILD PROCESSES: run 1 creates PKDUR, declares SET UNIQUE FIELD EMPNO PRIMARY, mints keys 1 and 2, and EXITS LEAVING THE TABLE ON DISK -- deliberately, because every other fixture in this tree cleans up after itself and this one must outlive its process or there is nothing to reopen; run 2 opens it, ISSUES NO DECLARATION AT ALL, and tries to duplicate the key. GRADING HAPPENS IN C++ BECAUSE IT MUST: `!` is std::system(), so a child's stdout never passes through the stream AlternateCapture swaps, and a transcript-reading validator would see NONE of the child markers. The children write theirs through SET ALTERNATE and validate_pk_durability() READS THOSE CAPTURES OFF DISK. A VALIDATOR CAN OPEN A FILE AND A MARKER CANNOT -- that asymmetry is the only reason a cross-process claim is assertable here at all. WHAT THE SPEC ITSELF CONTRIBUTES is the one thing the captures cannot supply: PKDUR_G0 prints before the shell-out and PKDUR_G1 after it, so a transcript with G0 and no G1 says the launch DIED -- PowerShell, an execution policy, an unbuilt runtime -- which is a different finding from a durability failure and must not be reported as one. FIFTEEN CHILD MARKERS, TEN OF THEM GUARDS, AND TWO ARMS THAT ARE SUPPOSED TO PRINT .F. -- the validator grades against an EXPECTED VALUE rather than against green, because a spec whose correct reading includes a red cannot be graded any other way. PKD_W3 is the load-bearing one: it proves the refusal fires IN THE DECLARING PROCESS, so a red in run 2 cannot be confused with enforcement being broken on this build entirely, and the validator reports UNPROVEN rather than FAIL when a guard reds. PKD_T2 closes and reopens after the refusal, because a write that got through and merely failed to flush would read green on T1 and red there. MISSING IS COUNTED SEPARATELY FROM RED, the house COUNT THE MARKERS rule applied to a file instead of a transcript: an errored marker prints nothing rather than going red, so seven of eight green is a lost claim wearing a clean face. THE CHILD LAUNCHER INVOKES THE EXE DIRECTLY and does not go through datarun.ps1, because that calls Update-DotTalkRuntimeExe which may COPY the runtime -- and the parent process holding the launcher open IS that runtime; copying over a running binary fails on Windows. It copies nothing and sets no environment. FIRST MEASURED 2026-09-07 by the standalone driver tools/staging/pk_durability_two_run.ps1 on build Sep 07 2026 12:55:02: 8 markers, 8 green, 0 red, 0 missing, with 'REPLACE: SID: is the PRIMARY key and cannot be written.' printed by a process that never declared the key. NOT CLAIMED, stated rather than implied: THE LONG-NAME HAZARD -- primary_field() returns a NAME and is_primary_field_() compares it against field_name_upper(), and SID is three characters, so this fixture CANNOT expose a mismatch between a long logical name and its 10-byte descriptor token, the exact class AIF-157 consolidated onto xfg::resolve_field_index_std; CONCURRENCY (two processes in sequence, not at once); and everything the write funnel does not cover -- CALCWRITE, REPLACE_MULTI, BROWSE and RECORDVIEW editing, COPY, SORT, IMPORTSQL. Durability of the DESIGNATION says nothing about completeness of the REFUSAL. THE VALIDATOR HAS BEEN OBSERVED REPORTING PASS ON A RUN THAT NEVER HAPPENED, AND THE FIX WAS WHERE THE GUARD SITS, NOT WHAT IT CHECKS. MEASURED 2026-09-07 on build Sep 07 2026 14:24:17: a session started WITHOUT DOTTALK_ALLOW_HOST_COMMANDS=1 printed BANG: refused for member.ai.regression, the children never ran, and the validator graded the .alt captures left on disk by the PREVIOUS successful run and reported PASS -- 8 of 8 markers green across TWO PROCESSES. G0 and G1 were honestly green and COULD NOT have caught it: the bang command RETURNS NORMALLY AFTER A REFUSAL, so reached-the-shell-out and shell-out-returned are both true on a run where nothing launched. They separate a launcher that DIED from one that RAN, never one that was never permitted to start. The stale-capture hazard was KNOWN -- it was written into the commit message that introduced it -- and the deletion was placed in the CHILD LAUNCHER, downstream of the very gate that refuses to start the launcher. THE FIRST REPLACEMENT WAS ALSO WRONG AND ALSO MEASURED, the same day: a transcript check for the launcher's own completion line, which a child process CANNOT deliver, because its stdout goes to the console handle and never passes through the stream the routed capture swaps. It turned a passing measurement red while the children's lines sat on the operator's screen, and pk_durability_child.ps1's own header comment had already said so in as many words. WHAT HOLDS NOW: the PARENT clears both captures in run_regression_script BEFORE anything the host-command policy can refuse, confirms they are gone by asking the filesystem rather than reading remove()'s verdict, and prints a pre-clear sentinel that validate_pk_durability() requires. A refused shell-out therefore leaves NO capture at all and is reported as an unrun measurement. THE TRANSFERABLE RULE, worth more than this spec: A GUARD AGAINST EVIDENCE SURVIVING A RUN HAS TO SIT WHERE THE RUN CANNOT SKIP IT, AND IT HAS TO ANNOUNCE ITSELF ON A CHANNEL THE GRADER ACTUALLY READS. EXPLICIT-RUN, and it should stay that way until the nesting is understood: this is the first spec that LAUNCHES PROCESSES, and what a `!` shell-out does inside REGRESSION ALL -- to the routed channel, to path slots, to a suite that already holds files open -- is UNMEASURED. Mints no catalog rows. The two child scripts carry absolute paths and that is a known debt recorded in their commit. AIF-158, 2026-09-08 -- THE FIXTURE WAS RENAMED AND THE RENAME WAS THE INSTRUMENT. PKDUR is now (EMPNO N(6,0), SID N(6,0), LNAME C(12)) with EMPNO declared PRIMARY and SID declared NOWHERE. SID stays as a LIVE CONTROL riding in the same row as the arm, written by the same APPEND: plan_sid_if_needed() mints any field with that spelling and asks no registry and no header, so PKD_G5 green beside PKD_T3 tells generation-by-name apart from generation-by-stamp. AN EARLIER CUT OF THIS MEASUREMENT HAD NO SUCH CONTROL, READ GREEN, AND PROVED ONLY THAT THE FIXTURE'S KEY FIELD WAS NAMED SID. The rename immediately exposed a defect no spec in the tree could see: finalize_appended_record() ran two generators in sequence and compute_next_numeric() restores its cursor with A.readCurrent(), which RELOADS THE RECORD BUFFER FROM DISK -- so the second generator's scan destroyed the first one's value and the declared primary key reached disk BLANK, in the declaring process, unfillable afterwards because the funnel refuses every write to a primary key. Every fixture in this tree that generates a key names it SID, so exactly one generator ever fired and there was nothing to destroy. Fixed by planning all key values first and applying them in one pass. IT THEN MEASURED THE ASYMMETRY IT WAS EXTENDED FOR, and the answer was a defect: unique_reg::primary_field() read the FILE while unique_reg::list_unique_fields() read the process map only, so a fresh process ENFORCED a key it would not MINT. PKD_T3 read .F. Fixed by merging the header-stamped primary into list_unique_fields, file first and cache second, the shape primary_field() has used since AIF-156; PKD_T3 now reads .T. PKD_T3B AND PKD_T4 ARE EXPECTED RED AND THAT IS NOT A CONCESSION. T3B is the complementary half of T3 -- both read EMPNO, one asks '= 3' and the other '= 0' -- and it exists so the arm cannot be made unfalsifiable by writing down only the outcome its author expected; measured the same day, a BLANK numeric field is not zero, so T3B reads .F. either way. T4 tries to overwrite a minted key by hand and the refusal IS the policy, so a GREEN T4 would mean enforcement had been lost.",
         false,
         false,
         RegressionValidator::PkDurabilityV1,
@@ -2810,16 +2810,42 @@ bool validate_pk_durability(const std::string& transcript)
     const std::filesystem::path run1_path = tmp_dir / "pkdur_run1.alt";
     const std::filesystem::path run2_path = tmp_dir / "pkdur_run2.alt";
 
-    struct Expect { int run; const char* name; bool guard; };
-    static constexpr std::array<Expect, 8> kExpect{{
-        {1, "PKD_W1_first_key_is_1",               true},
-        {1, "PKD_W2_second_key_is_2",              true},
-        {1, "PKD_W3_refused_in_declaring_process", true},
-        {1, "PKD_W4_row1_is_ALPHA",                true},
-        {2, "PKD_G1_fixture_reopened",             true},
-        {2, "PKD_G2_key_survived_as_1",            true},
-        {2, "PKD_T1_primary_survived_restart",     false},
-        {2, "PKD_T2_still_1_after_reopen",         false}
+    // AN EXPECTED VALUE, NOT "GREEN", AND THE DIFFERENCE IS LOAD-BEARING.
+    // Two arms are SUPPOSED to print .F., so a validator that equates green
+    // with correct would have to be lied to about them -- or, worse, would go
+    // green on the day they flip.
+    //   PKD_T3B is the complementary half of PKD_T3: both read EMPNO, one asks
+    //   "= 3" and the other "= 0", and at most one can be right. It exists so
+    //   the arm cannot be made unfalsifiable by writing down only the outcome
+    //   its author expected. MEASURED 2026-09-08: a BLANK numeric field is not
+    //   zero, so T3B reads .F. whether or not the key was minted.
+    //   PKD_T4 tries to overwrite a minted primary key by hand. The refusal IS
+    //   the policy -- a key is minted at creation and never edited -- so .F. is
+    //   correct here and a green T4 would mean enforcement had been lost.
+    //
+    // PKD_G5 IS A CONTROL AND IT IS GRADED AS A GUARD. Nothing declares SID,
+    // and generate/plan_sid_if_needed mints any field with that spelling. It
+    // rides in the SAME ROW as PKD_T3, written by the SAME APPEND, so if it
+    // contradicts, generation did not run at all in that process and T3 says
+    // nothing. An earlier cut of this measurement had no such control, read
+    // green, and proved only that the fixture's key field was named SID.
+    struct Expect { int run; const char* name; bool guard; bool expect_true; };
+    static constexpr std::array<Expect, 15> kExpect{{
+        {1, "PKD_W1_first_key_is_1",                           true,  true},
+        {1, "PKD_W5_undeclared_SID_minted_by_name",            true,  true},
+        {1, "PKD_W2_second_key_is_2",                          true,  true},
+        {1, "PKD_W3_refused_in_declaring_process",             true,  true},
+        {1, "PKD_W4_row1_is_ALPHA",                            true,  true},
+        {2, "PKD_G1_fixture_reopened",                         true,  true},
+        {2, "PKD_G2_key_survived_as_1",                        true,  true},
+        {2, "PKD_T1_primary_survived_restart",                 false, true},
+        {2, "PKD_T2_still_1_after_reopen",                     false, true},
+        {2, "PKD_G3_undeclared_append_parked_on_a_blank_row",  true,  true},
+        {2, "PKD_G5_undeclared_SID_minted_by_name",            true,  true},
+        {2, "PKD_T3_stamped_key_minted_without_a_declaration", false, true},
+        {2, "PKD_T3B_stamped_key_left_at_zero",                false, false},
+        {2, "PKD_T4_the_key_could_be_filled_by_hand",          false, false},
+        {2, "PKD_G4_the_new_row_accepts_a_non_key_write",      true,  true}
     }};
 
     // A LOCAL READER, not slurp_capture_file. That helper is defined some three
@@ -2855,8 +2881,8 @@ bool validate_pk_durability(const std::string& transcript)
         return false;
     }
 
-    int green = 0;
-    int red = 0;
+    int agreed = 0;
+    int contradicted = 0;
     int missing = 0;
     bool guard_failed = false;
 
@@ -2864,15 +2890,27 @@ bool validate_pk_durability(const std::string& transcript)
         const std::string& text = (e.run == 1) ? run1 : run2;
         const std::string t = std::string(e.name) + ":.T.";
         const std::string f = std::string(e.name) + ":.F.";
+
+        bool actual = false;
         if (text.find(t) != std::string::npos) {
-            ++green;
+            actual = true;
         } else if (text.find(f) != std::string::npos) {
-            ++red;
-            if (e.guard) guard_failed = true;
-            std::cout << "  RED: " << e.name << "\n";
+            actual = false;
         } else {
             ++missing;
-            std::cout << "  MISSING (printed nothing, which is not a pass): " << e.name << "\n";
+            std::cout << "  MISSING (printed nothing, which is not a pass): "
+                      << e.name << "\n";
+            continue;
+        }
+
+        if (actual == e.expect_true) {
+            ++agreed;
+        } else {
+            ++contradicted;
+            if (e.guard) guard_failed = true;
+            std::cout << "  CONTRADICTED: " << e.name << " printed ."
+                      << (actual ? 'T' : 'F') << ". and this spec expects ."
+                      << (e.expect_true ? 'T' : 'F') << ".\n";
         }
     }
 
@@ -2885,24 +2923,36 @@ bool validate_pk_durability(const std::string& transcript)
 
     if (guard_failed) {
         std::cout << "PK DURABILITY: UNPROVEN -- a guard failed, so the arms say nothing "
-                     "about durability. A red PKD_W3 means enforcement is broken on this "
-                     "build ENTIRELY, which is a different finding from a lost "
-                     "declaration.\n";
+                     "about durability. A contradicted PKD_W3 means enforcement is broken "
+                     "on this build ENTIRELY, which is a different finding from a lost "
+                     "declaration; a contradicted PKD_G5 means the undeclared SID "
+                     "generator did not fire, so PKD_T3 is measuring the wrong thing.\n";
         return false;
     }
 
-    if (red > 0) {
-        std::cout << "PK DURABILITY: FAIL -- the declaration did NOT survive the restart. "
-                     "A fresh process reopened the table, did not redeclare, and a REPLACE "
-                     "overwrote the primary key. See AIF-156.\n";
+    if (contradicted > 0) {
+        std::cout << "PK DURABILITY: FAIL -- an arm printed the opposite of what this spec "
+                     "expects. Read the CONTRADICTED line above rather than assuming which "
+                     "half broke:\n"
+                     "  PKD_T1/T2 contradicted -- the declaration did NOT survive the "
+                     "restart. A fresh process reopened the table, did not redeclare, and a "
+                     "REPLACE overwrote the primary key (AIF-156).\n"
+                     "  PKD_T3 contradicted -- a fresh process ENFORCES a key it will not "
+                     "MINT. The appended row takes a blank primary key that the write funnel "
+                     "then refuses to let anyone fill. That is generation reading the "
+                     "process map while enforcement reads the stamped header.\n"
+                     "  PKD_T4 contradicted -- a minted primary key was OVERWRITTEN by hand. "
+                     "The refusal is the policy, so a green T4 is lost enforcement.\n";
         return false;
     }
 
-    std::cout << "PK DURABILITY: PASS -- " << green
+    std::cout << "PK DURABILITY: PASS -- " << agreed
               << " of " << kExpect.size()
-              << " markers green across TWO PROCESSES. The designation was written by one "
-                 "process and honoured by another, which is the one thing a .dts cannot "
-                 "assert on its own.\n";
+              << " markers agree with this spec across TWO PROCESSES (13 green and 2 "
+                 "deliberately red). The designation was written by one process and both "
+                 "HONOURED and ACTED ON by another -- refused on a write it must refuse, "
+                 "and minted on an APPEND that declared nothing -- which is the one thing "
+                 "a .dts cannot assert on its own.\n";
     return true;
 }
 
