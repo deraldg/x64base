@@ -15,6 +15,8 @@
 #pragma once
 
 #include <string>
+#include <utility>
+#include <vector>
 #include "xbase.hpp"
 
 // THE NATIVE FIELD-WRITE FUNNEL.
@@ -77,6 +79,39 @@ bool replaceFieldStored(DbArea& area, int field1, const std::string& stored_valu
 // and has no way to say NULL, so buffering one would commit a blank that reads
 // back as not-null -- a wrong answer wearing a success message.
 bool replaceFieldNull(DbArea& area, int field1, bool make_null = true, std::string* err = nullptr);
+
+// THE GATE ON ITS OWN, AND IT EXISTS BECAUSE REPLACE_MULTI MUST NOT CALL
+// replaceFieldStored() ONCE PER FIELD.
+//
+// replaceFieldStored() bundles three things -- ask the gate, stage or write,
+// maintain the index -- which is exactly right for a caller writing ONE field.
+// REPLACE_MULTI writes MANY fields under ONE record lock, with ONE physical
+// writeCurrent() and ONE before/after index snapshot pair. Calling the
+// single-field funnel N times would replace that with N locks, N writes and N
+// snapshot pairs: slower, and far worse, NOT ATOMIC -- a refusal on the third
+// field would leave the first two already on disk and the record half-written
+// under a message saying the write failed.
+//
+// So the funnel is SPLIT rather than DUPLICATED. This is the same gate
+// replaceFieldStored() asks, exposed so a multi-field writer can ask it about
+// EVERY field BEFORE writing ANY of them. One definition of "may this field be
+// written", two callers whose write strategies legitimately differ.
+//
+// ALL OR NOTHING, AND THAT IS THE WHOLE POINT. It returns false on the FIRST
+// refusal and nothing has been written, because by contract the caller has not
+// written yet. `refused_field1` receives the 1-based field that refused so the
+// caller can name it; pass nullptr if the message does not need it.
+//
+// THE VALUE IS PASSED BUT NOT CONSULTED TODAY. The only constraint enforced
+// here is PRIMARY, which refuses a write to the field regardless of what is
+// being written. Callers therefore pass whatever they are ABOUT to store --
+// for a memo field that is the payload, not the handle it will become. That is
+// safe only while the gate ignores the value, and this sentence is the marker
+// for whoever adds a constraint that does not.
+bool gateFieldWrites(const DbArea& area,
+                     const std::vector<std::pair<int, std::string>>& writes,
+                     std::string* err = nullptr,
+                     int* refused_field1 = nullptr);
 
 // Optional helper for CLI-side stale-field marking after a core mutation.
 // Safe to call from command code; non-CLI consumers should not depend on it.

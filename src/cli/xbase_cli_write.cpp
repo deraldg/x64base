@@ -87,6 +87,26 @@ bool gate(const DbArea& area, int field1, const std::string& stored_value,
 
 } // namespace
 
+bool gateFieldWrites(const DbArea& area,
+                     const std::vector<std::pair<int, std::string>>& writes,
+                     std::string* err,
+                     int* refused_field1)
+{
+    if (err) err->clear();
+    if (refused_field1) *refused_field1 = 0;
+
+    // Ask about EVERY field before the caller writes ANY of them. The loop
+    // stops at the first refusal because that is already the whole answer:
+    // the caller must abandon the entire edit, so enumerating the rest would
+    // cost work to produce a message nobody acts on differently.
+    for (const auto& w : writes) {
+        if (gate(area, w.first, w.second, err)) continue;
+        if (refused_field1) *refused_field1 = w.first;
+        return false;
+    }
+    return true;
+}
+
 bool replaceFieldStored(DbArea& area, int field1, const std::string& stored_value,
                         std::string* err)
 {

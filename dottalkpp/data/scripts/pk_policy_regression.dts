@@ -29,10 +29,18 @@
 ;   A green Part B on a build with no enforcement means the arm stopped
 ;   discriminating, not that the engine improved.
 ;
-; MARKER COUNT IS 11 AND IT IS DERIVED, NOT DECLARED: 5 guards (PKP_G*) and
-; 6 arms (PKP_T1..T6), contiguous. COUNT THEM. A transcript with 10 is a spec
+; MARKER COUNT IS 15 AND IT IS DERIVED, NOT DECLARED: 7 guards (PKP_G*) and
+; 8 arms (PKP_T1..T8), contiguous. COUNT THEM. A transcript with 14 is a spec
 ; that lost a claim, not a spec that passed. An errored marker in this language
 ; PRINTS NOTHING rather than going red, so a missing line is a silent loss.
+;
+; IT WAS 11 UNTIL 2026-09-07. T7 and T8 were added because T4..T6 measured
+; native REPLACE, SQLSEL INSERT and SQLSEL UPDATE and NOTHING ELSE, and the
+; bare verbs INSERT and UPDATE -- registered at shell_commands.cpp:458-459,
+; a different pair of files from SQLSEL entirely -- were a second, unguarded
+; door onto the same tables. Three of three read like an enforced key and was
+; not one. G6 and G7 arrived with them, because an arm that asks whether a
+; verb REFUSED cannot tell a refusal from a verb that did nothing at all.
 ;
 ; EVERY ANSWER IS A FIELD READ, never console text. RECNO is a command, not an
 ; expression function, and console messages are unreadable by a marker -- so
@@ -198,6 +206,65 @@ GO 5
 SQLSEL UPDATE PKPOL SET SID = 4 WHERE LNAME = 'BETA'
 GO 2
 ? "PKP_T6_sqlsel_update_refused:" + (SID = 2)
+
+; PKP_G6 -- THE LEGACY INSERT VERB APPENDS. A GUARD, NOT AN ARM.
+;
+; PKP_T7 below asks whether the bare INSERT verb REFUSES a duplicate primary
+; key, and it reads the answer from the absence of an appended row. A verb that
+; failed to parse, or that is not registered at all, also appends no row -- and
+; would print .T. for "refused". That is the PKP_G5 shape a second time: the
+; right answer for the wrong reason. So prove the verb WORKS first, with a
+; write it has no reason to refuse.
+;
+; SID is deliberately not supplied. This form appends through appendBlank() and
+; writes only the listed fields, so no key is written and the gate is never
+; consulted -- which is what makes this a guard on the VERB and not a second
+; measurement of the policy. The row lands as record 5; T5 has already proved
+; there was no record 5 before it.
+INSERT (LNAME) VALUES ("EPS")
+GO 5
+? "PKP_G6_legacy_insert_verb_appends:" + (ALLTRIM(LNAME) = "EPS")
+
+; PKP_T7 -- the bare INSERT verb must not be able to duplicate a primary key
+; either. This is NOT SQLSEL INSERT: cmd_sql_insert.cpp is a separate command
+; reached by a separate registration, and PKP_T5 is no evidence about it.
+;
+; ONE FIELD READ ANSWERS THREE OUTCOMES, and the third is the one worth having:
+;   refused, nothing appended -> GO 6 fails, cursor stays on 5, LNAME is EPS
+;   refused AFTER appendBlank -> GO 6 lands on a blank row, LNAME is empty
+;   not refused               -> GO 6 lands on 6, LNAME is DUP7
+; Only the first reads .T. The middle case is the reason the gate has to run
+; BEFORE the append rather than before the field write: a refusal that leaves a
+; blank record behind has still changed the table, and an arm that only asked
+; "is LNAME different from DUP7" would have called that a pass.
+INSERT (SID,LNAME) VALUES (3,"DUP7")
+GO 6
+? "PKP_T7_legacy_insert_refused:" + (ALLTRIM(LNAME) = "EPS")
+
+; PKP_T8 -- and neither must the bare UPDATE verb. Record 3 holds SID 3 and is
+; untouched by every arm above it except T1/T2, which deleted and recalled it
+; and left the key at 3. The update tries to make it 4, which DELTA holds.
+UPDATE SET SID=4 WHERE LNAME = "GAMMA"
+GO 3
+? "PKP_T8_legacy_update_refused:" + (SID = 3)
+
+; PKP_G7 -- THE LEGACY UPDATE VERB REACHES RECORD 3. A GUARD, AND IT RUNS AFTER
+; THE ARM IT GUARDS, WHICH IS DELIBERATE.
+;
+; T8 reads "refused" from SID still being 3. A WHERE that matched no row leaves
+; SID at 3 as well, so without this the arm cannot tell enforcement from a
+; predicate that never fired. The guard runs the SAME verb with the SAME WHERE
+; and writes a NON-KEY field, so a green G7 says that predicate reaches that
+; record through that verb.
+;
+; It runs after T8 rather than before because it has to leave the fixture T8
+; needs, and it can only do that by writing LNAME -- which changes the very
+; string the predicate matches on. Running it first would have guarded a
+; predicate T8 then no longer used. T8 writes SID and nothing else, so record 3
+; still answers to "GAMMA" when this line runs, whichever way T8 went.
+UPDATE SET LNAME="GAMMAX" WHERE LNAME = "GAMMA"
+GO 3
+? "PKP_G7_legacy_update_verb_reaches_the_row:" + (ALLTRIM(LNAME) = "GAMMAX")
 
 ; ---------------------------------------------------------------------------
 SELECT 2

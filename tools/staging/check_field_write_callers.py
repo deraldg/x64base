@@ -61,6 +61,23 @@ EXEMPT_FILES = {
     os.path.join("src", "cli", "xbase_cli_write.cpp"),      # is the funnel
     os.path.join("src", "cli", "append_support.cpp"),       # the generator
     os.path.join("src", "cli", "cmd_validate_unique.cpp"),  # REPAIR
+
+    # GATED MULTI-FIELD WRITERS (AIF-156, 2026-09-07). Each of these calls
+    # xbase::cli::gateFieldWrites() for EVERY field BEFORE writing ANY of them,
+    # then does its own write. They are exempt because routing them through
+    # replaceFieldStored() per field would be a REGRESSION, not a fix: it would
+    # turn one record lock into N, one physical write into N, and one index
+    # snapshot pair into N -- and it would destroy atomicity, since a refusal on
+    # the third field would leave the first two already on disk.
+    #
+    # THE COST OF EXEMPTING A WHOLE FILE IS REAL AND IS ACCEPTED KNOWINGLY: a
+    # future ungated write added to one of these files will not be seen here.
+    # The reason it is still the right trade is that the alternative -- keeping
+    # them in the baseline -- makes the baseline a list of things that are FINE,
+    # which is how a measurement stops meaning anything.
+    os.path.join("src", "cli", "cmd_replace_multi.cpp"),    # gates in multirep_validate_and_normalize
+    os.path.join("src", "cli", "cmd_sql_insert.cpp"),       # legacy INSERT verb; gates before APPEND
+    os.path.join("src", "cli", "cmd_sql_update.cpp"),       # legacy UPDATE verb; gates before the scan
 }
 
 # `set(` IS DISCRIMINATED BY THE SHAPE OF ITS FIRST ARGUMENT, and this took

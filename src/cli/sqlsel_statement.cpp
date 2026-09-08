@@ -3274,6 +3274,29 @@ bool split_value_groups(const std::string& text,
 
 void release_sql_transaction(bool restore_buffer_policy) noexcept {
     auto& state = sql_transaction_state();
+
+    // AIF-156: enlist_sql_transaction OPENED the write-ahead journal, so this --
+    // its only pair -- is what has to close it. Nothing on this path closed it.
+    // cmd_ROLLBACK calls journal_note_rollback only inside `if (!tb.empty())`, and
+    // a transaction the primary-key gate refuses never buffers a change, so the
+    // buffer is empty ("ROLLBACK: discarded 0 change(s)") and the FILE* survived
+    // for the life of the process. Measured 2026-09-07: PKPOLICY left a 56-byte
+    // header-only PKPOL.dbf.tbj that ERASE could not remove -- the process's own
+    // handle, which Windows reports as "used by another process".
+    //
+    // This MUST run BEFORE the persistence-mode restore below. The restore puts
+    // the area back to its prior mode, and every journal_* entry point returns
+    // early on !is_persistent_enabled, so after the restore nothing can clean up.
+    //
+    // Rollback and not commit: a journal that reached COMMIT was already closed
+    // and deleted by journal_note_commit, which leaves path empty and fp null, so
+    // the call is a no-op there. An uncommitted log carries no C marker and
+    // recovery discards it on the next open anyway -- this just does it eagerly,
+    // while the handle is still ours to close.
+    if (state.area && state.area0 >= 0) {
+        (void)dottalk::table::journal_note_rollback(state.area0);
+    }
+
     if (state.area && state.area0 >= 0 && restore_buffer_policy) {
         dottalk::table::set_history_enabled(state.area0, state.prior_history_enabled);
         dottalk::table::set_persistence_mode(state.area0, state.prior_persistence);

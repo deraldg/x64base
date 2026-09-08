@@ -125,6 +125,7 @@
 
 #include "cli/command_output.hpp"
 #include "cli/table_state.hpp"
+#include "xbase_cli.hpp"   // AIF-156: the shared constraint gate
 #include "workarea_util.hpp"          // AIF-151: cli::slot_of_area
 #include "cli/cli_currency.hpp"
 #include "cli/expr/rhs_eval.hpp"
@@ -744,6 +745,42 @@ static bool multirep_validate_and_normalize(xbase::DbArea& A,
         }
         r.storeValue = normCur;
     }
+
+    // THE CONSTRAINT GATE, ASKED ONCE FOR EVERY FIELD AND BEFORE ANY OF THEM IS
+    // WRITTEN (AIF-156).
+    //
+    // It sits HERE, at the end of the validate-and-normalize pass, for two
+    // reasons. It must see the value that will actually be STORED, so it has to
+    // follow normalization. And this pass is the ONE place both write paths
+    // agree on: the TABLE ON branch calls it, the TABLE OFF branch calls it, and
+    // a gate placed in either branch alone would leave the other one open --
+    // which is the several-doors shape this whole funnel was built to close.
+    //
+    // MULTIREP DELIBERATELY DOES NOT CALL replaceFieldStored() PER FIELD. It
+    // holds ONE record lock, performs ONE writeCurrent() and takes ONE
+    // before/after index snapshot pair, and looping the single-field funnel
+    // would turn that into N of each and stop the edit being atomic. So it takes
+    // the gate and keeps its own write. See gateFieldWrites() in xbase_cli.hpp.
+    {
+        std::vector<std::pair<int, std::string>> writes;
+        writes.reserve(resolved.size());
+        for (const auto& r : resolved) writes.emplace_back(r.field1, r.storeValue);
+
+        // nullptr for refused_field1: the constraint error already NAMES the
+        // field ("SID: is the PRIMARY key and cannot be written"), so capturing
+        // the number to not use it would be decoration.
+        std::string gate_err;
+        if (!xbase::cli::gateFieldWrites(A, writes, &gate_err, nullptr)) {
+            // No new message id: the help tables belong to another session, and
+            // ReplaceMultiDetailText is the existing passthrough the currency
+            // check above already uses for exactly this kind of detail.
+            local_error = cli::cmdout::message_text(
+                dottalk::helpdata::MessageId::ReplaceMultiDetailText,
+                {{"detail", gate_err}});
+            return false;
+        }
+    }
+
     return true;
 }
 

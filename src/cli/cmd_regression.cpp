@@ -853,7 +853,7 @@ constexpr std::array<RegressionSpec, 80> kRegressionSpecs{{
     {
         "PKPOLICY",
         "pk_policy_regression.dts",
-        "PRIMARY KEY POLICY: WHAT HOLDS TODAY, AND WHAT THE POLICY WORK MUST MAKE HOLD (AIF-156, 2026-09-06). x64base DECLARES a primary key (SET UNIQUE FIELD <f> PRIMARY), GENERATES it on APPEND into a BLANK key field inside try_lock_table/unlock_table so max+1 is taken by one writer at a time, and RESERVES a deleted row's key until PACK because a deleted row can be RECALLed -- all three deliberate, all three worth keeping, and NONE of them enforcement. IT ENFORCED THE KEY NOWHERE, MEASURED 2026-09-06 on build Sep 05 2026 21:18:51: a native REPLACE wrote a duplicate over a PRIMARY key and it SURVIVED A CLOSE AND REOPEN, and SQLSEL INSERT committed a second duplicate through the table buffer and WAL. ALL THREE ARMS ARE NOW GREEN, RE-MEASURED 2026-09-07 on build Sep 07 2026 09:20:18: SQLSEL INSERT and SQLSEL UPDATE are refused at validate_field_constraint_for_store, which both reach through evaluate_store_expression, and native REPLACE now writes through xbase::cli::replaceFieldStored() -- the field-write funnel declared in include/xbase_cli.hpp on 2026-07-30 and never defined until AIF-156 built it. THREE OF THREE IS NOT AN ENFORCED KEY: this spec has never asked about CALCWRITE, REPLACE_MULTI, BROWSE or RECORDVIEW editing, COPY, SORT or IMPORTSQL, and a crude count found roughly 86 candidate direct-write call sites across 21 files -- CORRECTED 2026-09-07 TO 28 SITES IN 19 FILES, 27 after CALCWRITE was routed. The 86 was a crude grep that counted comments, counted these very registry summaries (which discuss replaceFieldStored at length inside string literals), and counted name-keyed wrapper calls like w.set(\"ID\", ...) that are not field writes. tools/staging/check_field_write_callers.py is the measurement -- CORRECTED 2026-09-07 TO 28 SITES IN 19 FILES, 27 after CALCWRITE was routed. The 86 was a crude grep that counted comments, counted these very registry summaries (which discuss replaceFieldStored at length inside string literals), and counted name-keyed wrapper calls like w.set(\"ID\", ...) that are not field writes. tools/staging/check_field_write_callers.py is the measurement. What closes that gap is a STATIC gate over the callers, because no runtime marker can enumerate a call site. VALIDATE UNIQUE then found what it was built to find. ELEVEN GRADED MARKERS, DERIVED NOT DECLARED: five guards PKP_G1..G5 and six arms PKP_T1..T6, contiguous -- count them, because an errored marker in this language PRINTS NOTHING rather than going red and a transcript with ten is a spec that lost a claim. PKP_G5 EXISTS BECAUSE THE FIRST RUN OF THIS SPEC WAS BLIND ON PART B: Part A closes PKPOL to build the dirty fixture, a bare SELECT 1 then selected an area with NO FILE OPEN, and T4/T5/T6 printed .F. because NOTHING RAN -- the value this spec expects today, so it PASSED. The right answer for the wrong reason, and a ratchet that could never have fired when enforcement arrived. G5 reopens the table and is a HARD GATE on the acceptance count. A CLOSE FOLLOWED BY A SELECT IS NOT AN OPEN, which is the USE_AGAIN/WSENV/MWXSHAKE-5C shape arriving for the fifth recorded time, in a spec whose own header warns about it. THE HALVES ARE GRADED DIFFERENTLY AND THAT IS THE DESIGN. PART A (G1..G4, T1..T3) is green today and locks in what already works; PKP_T1 deletes record 3 and requires the next APPEND to issue 4, PKP_T2 recalls record 3 and requires it to still read 3, which is the pair that would red if the generator ever stopped scanning deleted rows -- the exact trap an index-backed fast path falls into, and the reason compute_next_numeric() is still an O(n) scan on purpose. PART B (T4..T6) is the ACCEPTANCE CRITERION for write-time refusal and is GREEN AS OF 2026-09-07, asserted as three arms rather than one because native REPLACE, SQLSEL INSERT and SQLSEL UPDATE reach the table buffer by different paths and a fix wired into one is not evidence about the other -- which is exactly what happened: the first increment turned T5 and T6 green and left T4 untouched, and had this been one arm instead of three that transcript would have read as a win. THE SAME LESSON THEN ARRIVED ONE LEVEL UP: three arms is itself too few for the native side, which has at least five doors across three files, and the answer was to CONSOLIDATE THE ROUTE rather than mint arms -- one funnel, plus a static gate proving nobody goes around it. THE VALIDATOR IS A RATCHET THAT FAILS IN BOTH DIRECTIONS: kPkAcceptanceExpected records how many Part B arms were green when this spec was last reviewed, so enforcement ARRIVING fails the spec until a human bumps the constant deliberately, and enforcement REGRESSING fails it too. Without that, a permanently-red half is DEF_FAMILY's mistake repeated -- markers with no grader, green by construction. NOT CLAIMED, stated rather than implied: PERSISTENCE ACROSS A RESTART (the declaration lives in a process-local map that unique_registry.cpp calls 'not persistent schema metadata'; a .dts runs in ONE process so no marker here can ask the question, and a two-run harness is step 1 of the lane); CONCURRENCY (one writer cannot exercise the table lock); REFERENTIAL INTEGRITY (out of scope, nothing here declares a foreign key). EVERY ANSWER IS A FIELD READ, never console text: if the cell still holds its original value the write was refused, if it holds the new one it was not. EXPLICIT-RUN AND IT MUST STAY THAT WAY WHILE PART B IS RED -- a partially-red spec must not enter REGRESSION ALL. Promote on the NULLASSERT precedent only after Part B is green and soaked: two green runs on a build nobody changed anything on, then the flag moves, then a REBUILD, then read REGRESSION LIST for the [default] tag BEFORE believing the run. Disposable PKPOL/PKPDIRTY tables in DBF/SANDBOX, erased at both ends; mints no catalog rows.",
+        "PRIMARY KEY POLICY: WHAT HOLDS TODAY, AND WHAT THE POLICY WORK MUST MAKE HOLD (AIF-156, 2026-09-06). x64base DECLARES a primary key (SET UNIQUE FIELD <f> PRIMARY), GENERATES it on APPEND into a BLANK key field inside try_lock_table/unlock_table so max+1 is taken by one writer at a time, and RESERVES a deleted row's key until PACK because a deleted row can be RECALLed -- all three deliberate, all three worth keeping, and NONE of them enforcement. IT ENFORCED THE KEY NOWHERE, MEASURED 2026-09-06 on build Sep 05 2026 21:18:51: a native REPLACE wrote a duplicate over a PRIMARY key and it SURVIVED A CLOSE AND REOPEN, and SQLSEL INSERT committed a second duplicate through the table buffer and WAL. ALL THREE OF THE ARMS THAT EXISTED THAT DAY WENT GREEN, RE-MEASURED 2026-09-07 on build Sep 07 2026 09:20:18: SQLSEL INSERT and SQLSEL UPDATE are refused at validate_field_constraint_for_store, which both reach through evaluate_store_expression, and native REPLACE now writes through xbase::cli::replaceFieldStored() -- the field-write funnel declared in include/xbase_cli.hpp on 2026-07-30 and never defined until AIF-156 built it. AND THREE OF THREE WAS NOT AN ENFORCED KEY: this spec has never asked about CALCWRITE, REPLACE_MULTI, BROWSE or RECORDVIEW editing, COPY, SORT or IMPORTSQL, and a crude count found roughly 86 candidate direct-write call sites across 21 files -- CORRECTED 2026-09-07 TO 28 SITES IN 19 FILES, 27 after CALCWRITE was routed. The 86 was a crude grep that counted comments, counted these very registry summaries (which discuss replaceFieldStored at length inside string literals), and counted name-keyed wrapper calls like w.set(\"ID\", ...) that are not field writes. tools/staging/check_field_write_callers.py is the measurement -- CORRECTED 2026-09-07 TO 28 SITES IN 19 FILES, 27 after CALCWRITE was routed. The 86 was a crude grep that counted comments, counted these very registry summaries (which discuss replaceFieldStored at length inside string literals), and counted name-keyed wrapper calls like w.set(\"ID\", ...) that are not field writes. tools/staging/check_field_write_callers.py is the measurement. What closes that gap is a STATIC gate over the callers, because no runtime marker can enumerate a call site. VALIDATE UNIQUE then found what it was built to find. FIFTEEN GRADED MARKERS, DERIVED NOT DECLARED: seven guards PKP_G1..G7 and eight arms PKP_T1..T8, contiguous -- count them, because an errored marker in this language PRINTS NOTHING rather than going red and a transcript with fourteen is a spec that lost a claim. PKP_G5 EXISTS BECAUSE THE FIRST RUN OF THIS SPEC WAS BLIND ON PART B: Part A closes PKPOL to build the dirty fixture, a bare SELECT 1 then selected an area with NO FILE OPEN, and T4/T5/T6 printed .F. because NOTHING RAN -- the value this spec expects today, so it PASSED. The right answer for the wrong reason, and a ratchet that could never have fired when enforcement arrived. G5 reopens the table and is a HARD GATE on the acceptance count. A CLOSE FOLLOWED BY A SELECT IS NOT AN OPEN, which is the USE_AGAIN/WSENV/MWXSHAKE-5C shape arriving for the fifth recorded time, in a spec whose own header warns about it. THE HALVES ARE GRADED DIFFERENTLY AND THAT IS THE DESIGN. PART A (G1..G4, T1..T3) is green today and locks in what already works; PKP_T1 deletes record 3 and requires the next APPEND to issue 4, PKP_T2 recalls record 3 and requires it to still read 3, which is the pair that would red if the generator ever stopped scanning deleted rows -- the exact trap an index-backed fast path falls into, and the reason compute_next_numeric() is still an O(n) scan on purpose. PART B (T4..T8) is the ACCEPTANCE CRITERION for write-time refusal and is GREEN AS OF 2026-09-07, asserted as FIVE SEPARATE ARMS rather than one because native REPLACE, SQLSEL INSERT, SQLSEL UPDATE and the two legacy verbs each reach a field write by their own path and a fix wired into one is not evidence about the other -- which is exactly what happened: the first increment turned T5 and T6 green and left T4 untouched, and had this been one arm instead of three that transcript would have read as a win. THE SAME LESSON THEN ARRIVED ONE LEVEL UP: three arms is itself too few for the native side, which has at least five doors across three files, and the answer was to CONSOLIDATE THE ROUTE rather than mint arms -- one funnel, plus a static gate proving nobody goes around it. THE VALIDATOR IS A RATCHET THAT FAILS IN BOTH DIRECTIONS: kPkAcceptanceExpected records how many Part B arms were green when this spec was last reviewed, so enforcement ARRIVING fails the spec until a human bumps the constant deliberately, and enforcement REGRESSING fails it too. Without that, a permanently-red half is DEF_FAMILY's mistake repeated -- markers with no grader, green by construction. NOT CLAIMED, stated rather than implied: PERSISTENCE ACROSS A RESTART (the declaration lives in a process-local map that unique_registry.cpp calls 'not persistent schema metadata'; a .dts runs in ONE process so no marker here can ask the question, and a two-run harness is step 1 of the lane); CONCURRENCY (one writer cannot exercise the table lock); REFERENTIAL INTEGRITY (out of scope, nothing here declares a foreign key). EVERY ANSWER IS A FIELD READ, never console text: if the cell still holds its original value the write was refused, if it holds the new one it was not. EXPLICIT-RUN AND IT MUST STAY THAT WAY WHILE PART B IS RED -- a partially-red spec must not enter REGRESSION ALL. Promote on the NULLASSERT precedent only after Part B is green and soaked: two green runs on a build nobody changed anything on, then the flag moves, then a REBUILD, then read REGRESSION LIST for the [default] tag BEFORE believing the run. SECOND INCREMENT 2026-09-07, RATCHET 3 -> 5: PKP_T7 and PKP_T8 measure the LEGACY bare INSERT and UPDATE verbs -- cmd_sql_insert.cpp and cmd_sql_update.cpp, registered at shell_commands.cpp:458-459. THEY ARE A SECOND DOOR AND T5/T6 NEVER TOUCHED IT: those two measure SQLSEL INSERT and SQLSEL UPDATE, which are different files reached by a different registration, so 'three of three' had described an enforced key for a day while a bare INSERT could still write a duplicate primary key. PKP_G6 AND PKP_G7 SHIPPED WITH THEM AND ARE THE MORE INTERESTING HALF: T7 and T8 both read 'refused' from a write NOT HAPPENING, and a verb that did nothing at all -- unregistered, unparsed, or a WHERE matching no row -- reads identically. G6 proves the INSERT verb appends, G7 proves the UPDATE verb's WHERE reaches record 3, and both write a NON-KEY field so neither is a second measurement of the policy. That is PKP_G5's lesson for the sixth recorded time in this tree and the first time it was designed in rather than discovered after. T7 ALSO ASKS WHETHER THE REFUSAL LEFT A BLANK ROW: the legacy INSERT appends first and writes second, so a gate before the field write rather than before appendBlank() would refuse the duplicate and still grow the table, which is why the arm reads LNAME = 'EPS' and not LNAME <> 'DUP7'. REPLACE_MULTI WAS GATED THE SAME DAY AND IS STILL UNASSERTED HERE, named rather than counted, because multirep_buffering_regression.dts was retired to _to_delete/ on 2026-09-04 and nothing replaced it -- a fix with no arm, recorded as one. AND THIS SPEC'S OWN ERASE FOUND A SEPARATE DEFECT ON 2026-09-07: it reported 'FAILED: PKPOL.dbf.tbj (used by another process)', which was the process's own leaked handle. enlist_sql_transaction opens the write-ahead journal before any change exists, cmd_ROLLBACK calls journal_note_rollback only inside `if (!tb.empty())`, and a transaction the primary-key gate refuses never buffers a change -- so an EMPTY transaction leaked the FILE* for the life of the process and orphaned a header-only .tbj. Fixed by closing the journal in release_sql_transaction, the pair of the enlist that opened it. IT WAS ONLY VISIBLE BECAUSE ERASE HAD JUST LEARNED TO SWEEP .tbj: the orphan had been landing silently for as long as the journal has existed, and an older one with a WSL-era path was sitting in the same directory. Disposable PKPOL/PKPDIRTY tables in DBF/SANDBOX, erased at both ends; mints no catalog rows.",
         false,
         false,
         RegressionValidator::PkPolicyV1,
@@ -2646,10 +2646,10 @@ bool validate_evaldiff(const std::string& transcript)
 
 // AIF-156 -- PRIMARY KEY POLICY.
 //
-// Eleven graded markers, derived not declared: five guards PKP_G1..G5 and six
-// arms PKP_T1..T6, contiguous. COUNT THEM. An errored marker in this language PRINTS
-// NOTHING rather than going red, so a transcript with nine is a spec that lost a
-// claim, not a spec that passed.
+// Fifteen graded markers, derived not declared: seven guards PKP_G1..G7 and
+// eight arms PKP_T1..T8, contiguous. COUNT THEM. An errored marker in this
+// language PRINTS NOTHING rather than going red, so a transcript with fourteen
+// is a spec that lost a claim, not a spec that passed.
 //
 // THE SPEC IS WRITTEN IN TWO HALVES AND THEY ARE GRADED DIFFERENTLY.
 //
@@ -2660,10 +2660,11 @@ bool validate_evaldiff(const std::string& transcript)
 // in data that arrived dirty. If Part A reds, the policy work broke something
 // that already worked.
 //
-// PART B -- PKP_T4..T6 -- is the ACCEPTANCE CRITERION for write-time refusal on
-// the native REPLACE path, on SQLSEL INSERT and on SQLSEL UPDATE. Asserted as
-// three arms rather than one because INSERT and UPDATE reach the table buffer
-// by different paths and a fix wired into one is not evidence about the other.
+// PART B -- PKP_T4..T8 -- is the ACCEPTANCE CRITERION for write-time refusal on
+// the native REPLACE path, on SQLSEL INSERT and SQLSEL UPDATE, and on the
+// LEGACY bare INSERT and UPDATE verbs. Asserted as five arms rather than one
+// because each reaches the table buffer by its own path and a fix wired into
+// one is not evidence about the other.
 // MEASURED 2026-09-06 ON BUILD Sep 05 2026 21:18:51: all three RED. A native
 // REPLACE wrote a duplicate over a PRIMARY key and it survived a close and
 // reopen; SQLSEL INSERT committed a second duplicate through the buffer and WAL.
@@ -2695,17 +2696,43 @@ bool validate_evaldiff(const std::string& transcript)
 // because a null is intercepted before the value pipeline and a gate on the
 // value path alone never saw it.
 //
-// THREE OF THREE IS NOT A PRIMARY KEY THAT IS ENFORCED, AND THIS IS THE MOST
-// IMPORTANT SENTENCE NEXT TO THIS CONSTANT. Part B names three arms because
-// three paths were measured red in September 2026. It does not name CALCWRITE,
-// REPLACE_MULTI, BROWSE editing, RECORDVIEW editing, SQL UPDATE's own command,
-// COPY, SORT or IMPORTSQL -- all of which reach a field write by their own
+// FIVE OF FIVE IS NOT A PRIMARY KEY THAT IS ENFORCED, AND THIS IS THE MOST
+// IMPORTANT SENTENCE NEXT TO THIS CONSTANT. Part B names five arms because five
+// paths were measured in September 2026. It does not name CALCWRITE, BROWSE
+// editing, RECORDVIEW editing, COPY, SORT or IMPORTSQL. REPLACE_MULTI was gated
+// on 2026-09-07 and IS STILL UNASSERTED HERE: multirep_buffering_regression.dts
+// was retired to _to_delete/ on 2026-09-04 and nothing replaced it, so that one
+// is a fix with no arm and is named as such rather than counted -- all of which reach a field write by their own
 // route, none of which this spec has ever asked about, and a crude count of
 // which found roughly 86 candidate direct-write call sites across 21 files -- CORRECTED 2026-09-07 TO 28 SITES IN 19 FILES, 27 after CALCWRITE was routed. The 86 was a crude grep that counted comments, counted these very registry summaries (which discuss replaceFieldStored at length inside string literals), and counted name-keyed wrapper calls like w.set(\"ID\", ...) that are not field writes. tools/staging/check_field_write_callers.py is the measurement.
 // This constant measures the arms that exist. The gap between "the arms are
 // green" and "the key is enforced" is closed by a STATIC gate over the callers,
 // not by another marker, because no runtime marker can enumerate call sites.
-constexpr int kPkAcceptanceExpected = 3;
+//
+// RAISED 3 -> 5 ON 2026-09-07 (AIF-156, second increment), AND THE ARMS CAME
+// WITH THE FIX RATHER THAN AFTER IT. PKP_T7 and PKP_T8 measure the LEGACY bare
+// INSERT and UPDATE verbs -- cmd_sql_insert.cpp and cmd_sql_update.cpp,
+// registered at shell_commands.cpp:458-459, a SECOND door onto the same tables
+// that PKP_T5 and PKP_T6 never touched because those two measure SQLSEL, which
+// is different files reached by a different registration. Three of three had
+// read as an enforced key for a day and was not one.
+//
+// PKP_G6 AND PKP_G7 ARE PART OF THAT CHANGE AND ARE THE MORE INTERESTING HALF.
+// T7 and T8 both read "refused" from a write NOT HAPPENING, and a verb that did
+// nothing at all -- unregistered, unparsed, or a WHERE that matched no row --
+// produces exactly the same reading. G6 proves the INSERT verb appends; G7
+// proves the UPDATE verb's WHERE reaches record 3. Both write a NON-KEY field,
+// so neither is a second measurement of the policy. This is PKP_G5's lesson
+// arriving for the sixth recorded time in this tree, and the first time it was
+// designed in rather than discovered afterwards.
+//
+// T7 ALSO ASKS WHETHER THE REFUSAL LEFT A BLANK ROW BEHIND, not merely whether
+// the duplicate landed. The legacy INSERT appends first and writes second, so a
+// gate placed before the field write rather than before appendBlank() would
+// refuse the duplicate and still grow the table by one. That is why the arm
+// reads LNAME = "EPS" (the row G6 left) instead of LNAME <> "DUP7": the weaker
+// spelling calls a blank-row refusal a pass.
+constexpr int kPkAcceptanceExpected = 5;
 
 // ---------------------------------------------------------------------------
 // PKDURABLE -- THE ONLY VALIDATOR IN THIS FILE THAT READS A FILE.
@@ -2881,7 +2908,7 @@ bool validate_pk_durability(const std::string& transcript)
 
 bool validate_pk_policy(const std::string& transcript)
 {
-    static constexpr std::array<const char*, 8> partA{{
+    static constexpr std::array<const char*, 10> partA{{
         "PKP_G1_declared_and_generated:.T.",
         "PKP_G2_second_key_is_2:.T.",
         "PKP_G3_third_key_is_3:.T.",
@@ -2889,12 +2916,23 @@ bool validate_pk_policy(const std::string& transcript)
         "PKP_T1_deleted_key_not_reused:.T.",
         "PKP_T2_recalled_row_keeps_its_key:.T.",
         "PKP_T3_dirty_duplicate_is_present:.T.",
-        "PKP_G5_partB_fixture_is_open:.T."
+        "PKP_G5_partB_fixture_is_open:.T.",
+        // AIF-156 2026-09-07: the two verb guards. They are Part A because they
+        // assert what the LEGACY INSERT and UPDATE verbs already do -- append a
+        // row, reach a row through a WHERE -- and neither writes a key, so
+        // neither is a second measurement of the policy. They exist because
+        // T7 and T8 read "refused" from a write NOT HAPPENING, and a verb that
+        // did nothing at all produces the same reading. That is PKP_G5's
+        // lesson arriving for the sixth recorded time in this tree.
+        "PKP_G6_legacy_insert_verb_appends:.T.",
+        "PKP_G7_legacy_update_verb_reaches_the_row:.T."
     }};
-    static constexpr std::array<const char*, 3> partBNames{{
+    static constexpr std::array<const char*, 5> partBNames{{
         "PKP_T4_native_replace_refused:",
         "PKP_T5_sqlsel_insert_refused:",
-        "PKP_T6_sqlsel_update_refused:"
+        "PKP_T6_sqlsel_update_refused:",
+        "PKP_T7_legacy_insert_refused:",
+        "PKP_T8_legacy_update_refused:"
     }};
 
     bool ok = true;
@@ -2937,7 +2975,7 @@ bool validate_pk_policy(const std::string& transcript)
 
     if (green != kPkAcceptanceExpected) {
         std::cout << "PK POLICY: FAIL -- acceptance count changed: "
-                  << green << " of 3 Part B arms green, expected "
+                  << green << " of 5 Part B arms green, expected "
                   << kPkAcceptanceExpected << ".\n";
         if (green > kPkAcceptanceExpected) {
             std::cout << "  Write-time enforcement APPEARS TO HAVE ARRIVED. That is the "
@@ -2961,14 +2999,19 @@ bool validate_pk_policy(const std::string& transcript)
     // reads. A partial state needs its own sentence or it gets reported as the
     // state it left.
     const char* posture =
-        (green == 3)
-            ? "the three write paths THIS SPEC ASKS ABOUT refuse a write to a "
+        (green == 5)
+            ? "the five write paths THIS SPEC ASKS ABOUT refuse a write to a "
               "declared PRIMARY key -- native REPLACE, SQLSEL INSERT, SQLSEL "
-              "UPDATE. It does not ask about CALCWRITE, REPLACE_MULTI, BROWSE "
-              "or RECORDVIEW editing, COPY, SORT or IMPORTSQL, each of which "
-              "reaches a field write by its own route. Three of three is the "
-              "arms that exist, NOT a key that is enforced; the static gate "
-              "over the callers is what closes that gap."
+              "UPDATE, and the LEGACY bare INSERT and UPDATE verbs, which are "
+              "a different pair of files reached by a different registration "
+              "and about which three-of-three said nothing whatever. It still "
+              "does not ask about CALCWRITE, BROWSE or RECORDVIEW editing, "
+              "COPY, SORT or IMPORTSQL, each of which reaches a field write by "
+              "its own route; REPLACE_MULTI is gated as of 2026-09-07 and is "
+              "UNASSERTED HERE because the multirep spec was retired on "
+              "2026-09-04 and nothing replaced it. Five of five is the arms "
+              "that exist, NOT a key that is enforced; the static gate over "
+              "the callers is what closes that gap."
         : (green == 0)
             ? "write-time enforcement is NOT built; this spec is the acceptance "
               "criterion for it, not a claim that it works."
@@ -2977,8 +3020,8 @@ bool validate_pk_policy(const std::string& transcript)
               "working primary key -- it means the count matches what a human "
               "last acknowledged, no more.";
 
-    std::cout << "PK POLICY: PASS -- Part A green (8 markers), acceptance "
-              << green << " of 3 as expected. AIF-156: " << posture << "\n";
+    std::cout << "PK POLICY: PASS -- Part A green (10 markers), acceptance "
+              << green << " of 5 as expected. AIF-156: " << posture << "\n";
     return true;
 }
 

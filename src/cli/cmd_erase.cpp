@@ -191,6 +191,26 @@ static std::vector<fs::path> build_sidecar_list(const fs::path& dbf_path) {
     files.push_back(dir / (stem + ".dti.json"));    // indexing stub sidecar
     files.push_back(dir / (stem + ".schema.json")); // schema sidecar
 
+    // THE TABLE-BUFFER REDO LOG, AND ITS NAME IS NOT STEM-BASED.
+    //
+    // Every other entry above is <stem> + extension. This one is the WHOLE DBF
+    // FILENAME plus ".tbj" -- table_state.cpp builds it as `area.filename() +
+    // ".tbj"`, so the file beside students.dbf is students.dbf.tbj and NOT
+    // students.tbj. Adding it to this list the obvious way would have named a
+    // path that never exists, and ERASE reports only what it actually deleted,
+    // so the omission would have looked exactly like success.
+    //
+    // WHY IT BELONGS HERE: the .tbj is a COMMITTED redo log, and cmd_use.cpp
+    // replays one it finds on open ("USE: recovered a committed table-buffer
+    // journal"). Erase the table, recreate it under the same name, and a
+    // surviving journal from the erased table is replayed into the new one --
+    // writes from a table that no longer exists, arriving silently.
+    //
+    // NOT SWEPT, deliberately: the areaN.tbj form table_state.cpp falls back to
+    // when a journal has no table name. That one is keyed to a work-area slot
+    // rather than to this stem, so ERASE <table> has no claim on it.
+    files.push_back(dir / (dbf_path.filename().string() + ".tbj"));
+
     // Public index containers/files (optional, active INDEXES root)
     const fs::path inx = dottalk::paths::resolve_index(stem + ".inx");
     const fs::path cnx = dottalk::paths::resolve_index(stem + ".cnx");
