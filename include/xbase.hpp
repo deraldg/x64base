@@ -594,6 +594,18 @@ public:
         _rawFields.clear();
         _extras.clear();
         _null_flags = NullFlagsColumn{};
+        // LOCKSTEP WITH _fields, and the reason this line exists. _null_layout
+        // is assigned in ONE place (partitionTrailingSystemField(), below) and
+        // that assignment happens only on its SUCCESS path -- a table with no
+        // trailing system field returns early and never touches it. So without
+        // this reset the layout of the PREVIOUS table survives into the next
+        // one opened in this area, isVarlengthField_() answers from it, and
+        // storeFieldsToBuffer() writes a varchar length byte into the last byte
+        // of a plain C() field. Measured 2026-09-08: the value is written
+        // correctly and then a CHR(5) is glued to its end, on disk, with nothing
+        // refused and nothing printed. The same hazard is recorded against
+        // _fd_null at its declaration; _null_layout never got the guarantee.
+        _null_layout = vfp::NullBitLayout{};
         _system_field_not_last = false;
     }
 

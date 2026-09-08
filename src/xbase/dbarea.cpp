@@ -94,6 +94,15 @@ void DbArea::close() {
     _fd_snapshot.clear();
     _fd_null.clear();   // lockstep with _fd
 
+    // Lockstep with _fields, for the same reason _fd_null is lockstep with _fd.
+    // A closed area must not carry the previous table's varchar bit layout: see
+    // clearFields(). close() and clearFields() are two hand-maintained teardown
+    // lists over the same members, which is HOW this member came to be missed --
+    // recorded here rather than unified, because collapsing them changes what a
+    // closed area reports about _extras and _null_flags and that is a separate
+    // change with its own arm to write.
+    _null_layout = vfp::NullBitLayout{};
+
     _crn = 0;
     _crn64 = 0;
     _rec_count64 = 0;
