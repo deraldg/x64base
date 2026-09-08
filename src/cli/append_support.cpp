@@ -235,23 +235,40 @@ namespace
         return mx + 1;
     }
 
-    static void generate_sid_if_needed(xbase::DbArea& A, bool& wrote)
-    {
-        const int sid = field_index_by_name_ci(A, "SID");
-        if (sid <= 0) return;
+    // A PLANNED WRITE AND NOT AN IMMEDIATE ONE, AND THE REASON IS MEASURED.
+    //
+    // compute_next_numeric() SCANS THE TABLE, and a scan MOVES THE RECORD
+    // BUFFER: it ends with A.gotoRec64(save); A.readCurrent();, and
+    // readCurrent() RELOADS THAT BUFFER FROM DISK. Anything an earlier
+    // generator had set in the buffer and not yet written is gone.
+    //
+    // MEASURED 2026-09-08 on build Sep 07 2026 16:35:05. Table
+    // (EMPNO N(6,0), SID N(6,0), LNAME C(12)), EMPNO declared PRIMARY: APPEND
+    // produced SID=1 and EMPNO BLANK -- IN THE DECLARING PROCESS, on a build
+    // where every PKPOLICY generation marker read green. The declared,
+    // header-stamped primary key was computed, set in the buffer, and then
+    // destroyed by the NEXT generator's scan; only the last generator's field
+    // survived to writeCurrent(). The row came out with a blank primary key
+    // that the write funnel then REFUSES to let anyone fill, because a primary
+    // key is minted at creation and never edited.
+    //
+    // WHY NO SPEC SAW IT: every fixture in this tree that generates a key uses
+    // a field named SID, which is both the registry's declared field and the
+    // one the SID planner below mints by name. One generator, nothing to
+    // destroy. A THROWAWAY PROBE separated the two candidate causes in one
+    // process: a lone declared field NOT named SID minted correctly, so the
+    // registry path works, and the same field beside a SID column did not. It
+    // is described rather than cited -- it lived under the ignored tmp/, and a
+    // path a reader of this tree cannot open is worse than no path at all.
+    //
+    // WHY THIS SHAPE rather than re-setting the value after the last scan: the
+    // fix has to survive a THIRD generator being added by somebody who never
+    // reads this comment. Planning first and applying once makes the invariant
+    // STRUCTURAL -- no generator may write into a buffer another generator is
+    // still going to disturb -- instead of a rule the next author has to know.
+    struct PlannedKey { int field1; std::string value; };
 
-        const std::string v = A.get(sid);
-        if (!trim_copy(v).empty()) return;
-
-        const long long next = compute_next_numeric(A, sid);
-        if (append_trace_enabled()) {
-            std::cout << "[APPEND TRACE] SID field #" << sid << " next=" << next << "\n";
-        }
-        A.set(sid, std::to_string(next));
-        wrote = true;
-    }
-
-    static void generate_registered_uniques(xbase::DbArea& A, bool& wrote)
+    static void plan_registered_uniques(xbase::DbArea& A, std::vector<PlannedKey>& plan)
     {
         std::vector<std::string> uniq;
 
@@ -277,9 +294,34 @@ namespace
                 std::cout << "[APPEND TRACE] unique field " << f
                           << " (#" << idx << ") next=" << next << "\n";
             }
-            A.set(idx, std::to_string(next));
-            wrote = true;
+            plan.push_back(PlannedKey{idx, std::to_string(next)});
         }
+    }
+
+    static void plan_sid_if_needed(xbase::DbArea& A, std::vector<PlannedKey>& plan)
+    {
+        const int sid = field_index_by_name_ci(A, "SID");
+        if (sid <= 0) return;
+
+        // ALREADY PLANNED BY THE REGISTRY, AND THE BLANK CHECK BELOW CANNOT SEE
+        // THAT. A field can be declared PRIMARY and also be named SID -- the
+        // PKPOLICY fixture is exactly that table -- and the plan has not been
+        // applied to the buffer yet, so A.get() still reads blank. Without this
+        // the same field is planned twice; the two values agree today because
+        // both come from the same scan of the same column, and relying on that
+        // agreement is how a duplicate-key generator gets written by accident.
+        for (const PlannedKey& p : plan) {
+            if (p.field1 == sid) return;
+        }
+
+        const std::string v = A.get(sid);
+        if (!trim_copy(v).empty()) return;
+
+        const long long next = compute_next_numeric(A, sid);
+        if (append_trace_enabled()) {
+            std::cout << "[APPEND TRACE] SID field #" << sid << " next=" << next << "\n";
+        }
+        plan.push_back(PlannedKey{sid, std::to_string(next)});
     }
 
     // Shared post-append record initialization.
@@ -293,8 +335,26 @@ namespace
             if (!A.readCurrent())
                 return false;
 
-            generate_registered_uniques(A, wrote);
-            generate_sid_if_needed(A, wrote);
+            // PLAN FIRST, APPLY ONCE. Every compute_next_numeric() call inside
+            // these planners reloads the record buffer from disk, so nothing
+            // may be SET until the last scan has finished.
+            std::vector<PlannedKey> plan;
+            plan_registered_uniques(A, plan);
+            plan_sid_if_needed(A, plan);
+
+            if (!plan.empty()) {
+                // Re-read rather than trusting the buffer the last scan left
+                // behind. A planner that returns early never scans at all, so
+                // what the buffer holds here depends on which branch ran --
+                // and depending on that is the defect this fix removes.
+                if (!A.readCurrent())
+                    return false;
+
+                for (const PlannedKey& p : plan) {
+                    A.set(p.field1, p.value);
+                }
+                wrote = true;
+            }
 
             if (wrote) {
                 if (!A.writeCurrent())
