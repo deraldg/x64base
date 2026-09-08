@@ -267,6 +267,83 @@ GO 3
 ? "PKP_G7_legacy_update_verb_reaches_the_row:" + (ALLTRIM(LNAME) = "GAMMAX")
 
 ; ---------------------------------------------------------------------------
+; UNGRADED PROBE (AIF-158, 2026-09-08). NOT PART OF THE FIFTEEN GRADED MARKERS
+; AND NOT READ BY validate_pk_policy -- the NL_P* precedent in NULLASSERT. It is
+; here because THIS SPEC IS THE ONLY PLACE THE QUESTION CAN BE ASKED.
+;
+; MEASURED THE SAME DAY, same binary, same file: DOTSCRIPT of this script reads
+; 15 of 15 GREEN and REGRESSION PKPOLICY reads G4/G5/G6/G7 RED, and the whole
+; difference is that under REGRESSION THE LNAME VALUES ARE ABSENT. The engine,
+; the magic name, the declaration alone, a second APPEND, the L3 arm, the routed
+; capture and a stale DbArea were each refuted by a run or a read. What is left
+; is the validator path's std::cout.rdbuf(&tee) swap -- and NOT EVERY TEE'D SPEC
+; FAILS: SQLSEL_BUFFER_VIS and EVALDIFF write and read back under the same tee
+; and are green. THIS IS THE ONLY TEE'D SPEC THAT DECLARES A PRIMARY KEY.
+;
+; So the suspect is a CONJUNCTION, and PKPOL alone cannot test one. PKPPROBE is
+; the SAME SHAPE declaring NOTHING, appended and read back in the SAME RUN under
+; the SAME TEE. The control cannot diverge from the arm for any reason except
+; the one under test -- PKD_W5's design, reused.
+;
+;   P2 GREEN beside a red G4 -> THE DECLARATION IS IN THE MECHANISM.
+;   P2 RED   beside a red G4 -> THE TEE ALONE BREAKS NON-KEY WRITES, and the
+;                               declaration is incidental. That is the wider
+;                               finding: every validator-carrying spec runs
+;                               under this tee, and any arm whose predicate
+;                               stops matching goes GREEN rather than red.
+;   BOTH GREEN under DOTSCRIPT -> expected, and measures nothing. This probe is
+;                               only meaningful under REGRESSION.
+;
+; P1 is the guard and uses SID, the channel that stayed green throughout the
+; failing run, so it proves the row exists without depending on what is under
+; test. It doubles as the magic-name control: PKPPROBE declares nothing, so a
+; green P1 is plan_sid_if_needed minting by spelling alone.
+;
+; ----------------------------------------------------------------------------
+; CORRECTED 2026-09-08. THE READING RULE ABOVE IS WRONG AND IS LEFT STANDING.
+; ----------------------------------------------------------------------------
+;
+; THE TEE HYPOTHESIS WAS REFUTED. The tee does not break non-key writes and the
+; declaration is not in the mechanism. What actually broke was DbArea's
+; _null_layout: assigned in ONE place (partitionTrailingSystemField) and reset in
+; NONE, because clearFields() and DbArea::close() are two hand-maintained
+; teardown lists over the same members and BOTH skipped it. NULLASSERT's
+; CREATE VFP NULLSPEC left a VARCHAR bit layout in AREA 1; PKPOL opens in AREA 1;
+; isVarlengthField_() answered from the stale layout and storeFieldsToBuffer()
+; wrote a LENGTH BYTE into the last byte of LNAME. Fixed in 5e54df79e, and
+; VARCHARRESET (8885ab999, promoted 50b85c3b4) is the arm.
+;
+; WHY THESE PROBES READ GREEN, AND WHY THAT WAS NOT THE REASON GIVEN ABOVE.
+; PKPPROBE differs from PKPOL in TWO WAYS, not one: it declares nothing AND IT
+; OPENS IN AREA 3. Areas are contaminated INDEPENDENTLY, so a green P2 beside a
+; red G4 is fully explained by the AREA and says nothing whatever about the
+; declaration. The rule above reads one variable off a two-variable comparison,
+; which is the exact defect this lane spent the day being caught by:
+; A COMPARISON IS ONLY A MEASUREMENT WHEN EXACTLY ONE THING DIFFERS.
+; tmp/pk_area_probe.dts is the run that separated them, holding the declaration
+; CONSTANT and varying only the area number.
+;
+; THE PROBES ARE KEPT ANYWAY, and not out of sentiment. Their greens were real
+; evidence at the time -- they proved an undeclared table of the same shape
+; appended and wrote its non-key field correctly in the same process, which
+; eliminated the generator, the magic name and APPEND itself. They were wrong
+; about WHICH remaining difference mattered, not about what they observed.
+; P1 still doubles as the magic-name control described above, and that reading
+; is unaffected.
+ERASE TABLE PKPPROBE CONFIRM
+CREATE X64 PKPPROBE (SID N(6,0), LNAME C(12))
+CLOSE
+
+SELECT 3
+USE PKPPROBE
+APPEND
+REPLACE LNAME WITH "PROBE"
+? "PKP_P1_undeclared_key_minted_by_name:" + (SID = 1)
+? "PKP_P2_undeclared_nonkey_write_landed:" + (ALLTRIM(LNAME) = "PROBE")
+CLOSE
+ERASE TABLE PKPPROBE CONFIRM
+
+; ---------------------------------------------------------------------------
 SELECT 2
 CLOSE
 SELECT 1
