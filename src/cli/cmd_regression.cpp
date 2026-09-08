@@ -119,7 +119,8 @@ enum class RegressionValidator {
     CountListVerboseV1,
     DefFamilyV1,
     PkPolicyV1,
-    PkDurabilityV1
+    PkDurabilityV1,
+    VarcharAreaResetV1
 };
 
 struct RegressionSpec {
@@ -227,7 +228,7 @@ struct RegressionSpec {
 // compile error ("too many initializers"), which is the safe failure -- but it
 // is a recurring papercut: it happened when CNXLIVE was added on 2026-07-31.
 // Bump it when you add a regression.
-constexpr std::array<RegressionSpec, 80> kRegressionSpecs{{
+constexpr std::array<RegressionSpec, 81> kRegressionSpecs{{
     {
         "COUNT_LIST_VERBOSE",
         "count_list_verbose_regression.dts",
@@ -876,6 +877,16 @@ constexpr std::array<RegressionSpec, 80> kRegressionSpecs{{
         "index_field_name_resolution.dts",
         "A CDX TAG IS A FIELD NAME, AND THE INDEX LAYER NOW ASKS THE SAME RESOLVER EVERYONE ELSE ASKS (AIF-157 step 3, 2026-09-06). xfg::resolve_field_index_std is the house answer to 'which field is this name' -- it trims, lets logical names win, and for x64 tables accepts the generated 10-byte DBF descriptor token as an alias when it maps uniquely. Eleven files called it and NOTHING UNDER src/xindex/ DID: activeTagFieldIndex1() was upper-only with no trim and no alias, cdx_native_backend and cnx_backend each carried a field_index_for_tag_() (byte-for-byte copies of each other), dbarea_adapt carried a seventh-hand field_index_ci(), and BUILDLMDB had its own loop. All are routed onto the standard resolver and nothing in the corpus exercised what that changed. TWO CLAIMS, TWO MECHANISMS. (1) A tag name LONGER THAN TEN BYTES: the CDX tag directory stores names in char name[32] NUL-padded, trim_copy strips only isspace, and NUL is not isspace -- so field_name_core_ had to absorb the NUL handling that was the ONE capability the retired backend matchers had and the standard resolver lacked. Without it the consolidation was a quiet downgrade. (2) The X64 DESCRIPTOR TOKEN as an alias: COURSE_TITLE_LONG is 17 bytes and its token is COURSE_TIT, which the old upper-only compare could never have matched. THE DISCRIMINATOR IS THE ROW, NOT THE VALUE -- every marker reads TAILKEY, six bytes with nothing about its own resolution in question, and the three orders disagree at both ends, so a tag resolved to the WRONG FIELD reads T2 where T3 is demanded and an engine that walked physically reads T1. UNCOVERED AND NAMED: the mangled ~n token for two fields colliding at ten bytes, and logical-wins-over-a-colliding-token. Both want a second cut; '~' in a tag argument is an unmeasured question about the tokenizer and putting an untested parse inside the arm that proves the resolver would muddy both results. Sets all THREE path slots explicitly -- written the day MWXSHAKE was found red for re-setting two of three after a WORKSPACE SWITCH (R131). SECTION 2 ADDS THE CNX BRANCH (2026-09-06): SET ORDER TAG has TWO validation gates and they are different code -- cmd_setorder.cpp:804 asks cdx_has_tag() (which checks the CONTAINER's tag directory) and :811 asks cnx_has_tag() (which walks area.fields(), making it the SEVENTH field-name matcher in this lane and the one the first sweep missed, because that sweep went through src/xindex/ plus BUILDLMDB and stopped). It compared up_copy(trim(f.name)) with no NUL handling and no alias, so on an x64 table with an ATTACHED CNX -- legal, and by AIF-099 an attached container wins tag resolution -- it REFUSED a descriptor-token tag the resolver accepts, refusal first. Its `#n` ordinal form is NOT routed and must not be: the resolver returns -1 for `#3`, so folding it away would be the quiet downgrade field_name_core_ existed to prevent. SECTION 3 IS THE SECOND CUT (2026-09-06) AND IT IS WHERE THE POLICY ACTUALLY HAS TO CHOOSE: sections 1 and 2 never made the resolver decide anything, because every name there matched one field by one rule, so 'logical names win' had nothing to win against. plan_x64_unique_fallback walks fields IN ORDER and gives the plain token to whoever asks first, so the contest only exists when the field whose LOGICAL NAME is the contested spelling comes AFTER the field that took it as a TOKEN: STUDENT_LAST_NAME -> STUDENT_LA, STUDENT_LABEL -> STUDENT_~1, STUDENT_LA -> STUDENT_~2. Now `STUDENT_LA` is both field 3's authoritative name and field 1's descriptor token, and rule 1 says field 3 wins (T11). T10 is the MANGLED token, deferred in the first cut until '~' was measured: cmd_SETORDER reads arguments with `args >> t` (whitespace-delimited), '#' is the ordinal sigil and '~' is special to nothing. T9 is not a formality -- without it T11's negative ('not field 1') is unfalsifiable, since nothing else shows field 1 is reachable. FOUR ROWS because three cannot separate four worlds: physical T1, field 1 T2, field 2 T3, field 3 T4. STILL NOT COVERABLE FROM A FIXTURE: the resolver's ambiguity branch, which cannot fire -- the planner guarantees distinct tokens and for a generated token field_name_core_ and descriptor_key agree exactly, so at most one field can match. It is defence-in-depth, not dead weight; what is wrong is the resolver's comment implying the RESOLVER decides uniqueness when the PLANNER does. READ RULE: fourteen markers must print and all fourteen read .T.; grep -c '^? \"TAGF_'.",
         false
+    }
+    ,
+    {
+        "VARCHARRESET",
+        "varchar_area_reset_regression.dts",
+        "A CLOSED VARCHAR TABLE MUST NOT POISON ITS AREA (2026-09-08). DbArea::_null_layout is assigned in ONE place -- partitionTrailingSystemField() -- and was reset in NONE, because clearFields() and DbArea::close() are TWO HAND-MAINTAINED TEARDOWN LISTS over the same members and both skipped it. So a VFP table with a VARCHAR field left its bit layout in the work area when it closed; the next table opened there had isVarlengthField_() answer from the stale layout, and storeFieldsToBuffer() took the VARCHAR BRANCH for a plain C() field -- writing the value correctly and then a LENGTH BYTE into that field's last byte. have_bitmap was false on the new table, so NOTHING WAS REFUSED AND NOTHING WAS PRINTED, and the bad byte reached DISK. THE VALUE WAS NEVER LOST: \"GAMMA\" was written correctly and CHR(5) was glued to its end, where ALLTRIM cannot remove it because it is not a space -- which is why the symptom read as a lost write and was not one. THIS SPEC EXISTS BECAUSE THE FIX SHIPPED WITHOUT AN ARM. The defect was found by a SECOND-ORDER symptom -- REGRESSION ALL then an explicit REGRESSION PKPOLICY went red on four markers while PKPOLICY alone read 15 of 15 -- and EIGHT hypotheses were refuted by measurement before the AREA was suspected at all: the magic name SID, the declaration, a second APPEND, is_unique_field(), the std::cout rdbuf swap, TABLE BUFFER, the nullable table, and the regression harness itself. Nothing in the corpus asserted that closing a varchar table leaves an area clean, so nothing could see it. FOUR CASES IN FOUR AREAS, EACH DROPPING ONE PROPERTY of the caught shape, so a future red says WHICH property returned rather than merely that something did: A intervening X64 three-field (shape change alone), B intervening VFP with no varchar and no null (VFP-ness alone), C intervening VFP with V(10) AND NO NULL (the varchar alone), D the caught shape with V(10) NULL. MEASURED PRE-FIX: A green, B green, C RED, D RED -- B and C differ by ONE CHARACTER, C(10) against V(10), which is what identified the varchar and exonerated nullability, VFP-ness and shape change. AREAS ARE CONTAMINATED INDEPENDENTLY (area 2 stayed clean while area 1 was broken in the same process) and that is what lets four cases share one run without poisoning each other. NINE GUARDS AND SIX ARMS, FIFTEEN GRADED MARKERS -- count them, an errored marker PRINTS NOTHING rather than going red. Every case carries intervening_live and arm_key_minted because a red arm and a case that NEVER EXECUTED read identically; a failed guard returns UNPROVEN, not FAIL. VAR_TD_survived_reopen closes and reopens because the corruption was DURABLE and a buffer read cannot see that. NOT CLAIMED: that _extras and _null_flags are cleared on close -- as of 2026-09-08 DbArea::close() still leaves BOTH standing and no marker here can see them; that any field index other than #2 is safe; that a different varchar WIDTH behaves the same; anything across a RESTART. EXPLICIT-RUN UNTIL SOAKED on the NULLASSERT precedent -- two green runs on a build nobody changed anything on, THEN the flag moves, THEN a REBUILD, THEN read REGRESSION LIST for the [default] tag BEFORE believing the run. Disposable tables in DBF/SANDBOX, erased at both ends; mints no catalog rows.",
+        false,
+        false,
+        RegressionValidator::VarcharAreaResetV1,
+        true // markers are `?` output; the routed capture is a SUPERSET, per PKPOLICY
     }
 }};
 
@@ -3075,6 +3086,104 @@ bool validate_pk_policy(const std::string& transcript)
     return true;
 }
 
+// VARCHARRESET (2026-09-08). A ratchet over a defect that shipped SILENTLY and
+// was found by a SECOND-ORDER symptom rather than by any arm: REGRESSION ALL
+// followed by an explicit REGRESSION PKPOLICY went red on four markers while
+// PKPOLICY alone read 15 of 15. Nothing in the corpus asserted that closing a
+// varchar table leaves its area clean, so nothing could see it.
+//
+// EVERY MARKER MUST BE GREEN, which is unusual in this file. PKPOLICY grades two
+// halves differently because its Part B is an acceptance criterion still being
+// built; there is no half of THIS that is allowed to be red. The engine either
+// clears _null_layout in lockstep with _fields or it does not.
+//
+// THE GUARDS ARE CHECKED FIRST AND A FAILED GUARD RETURNS UNPROVEN, NOT FAIL.
+// An arm reads "the write landed" from a field value, and a case that never
+// executed reads IDENTICALLY to a case that executed and lost the write. That is
+// PKP_G5's lesson, and it is designed in here rather than discovered later.
+//
+// EACH ARM CARRIES WHAT ITS RED MEANS, because the four cases differ by one
+// property each and a future red should say WHICH property came back.
+bool validate_varchar_area_reset(const std::string& transcript)
+{
+    static constexpr std::array<const char*, 9> guards{{
+        "VAR_G0_control_key_minted:.T.",
+        "VAR_GA_intervening_live:.T.",
+        "VAR_GA_arm_key_minted:.T.",
+        "VAR_GB_intervening_live:.T.",
+        "VAR_GB_arm_key_minted:.T.",
+        "VAR_GC_intervening_live:.T.",
+        "VAR_GC_arm_key_minted:.T.",
+        "VAR_GD_intervening_live:.T.",
+        "VAR_GD_arm_key_minted:.T."
+    }};
+
+    struct Arm { const char* marker; const char* means; };
+    static constexpr std::array<Arm, 6> arms{{
+        {"VAR_T0_control_write_landed:.T.",
+         "the CONTROL is red, so this fixture is broken BEFORE any VFP table "
+         "exists and no other marker here means anything. Read the spec, not "
+         "the engine."},
+        {"VAR_TA_shape_change_alone:.T.",
+         "a MERE SHAPE CHANGE in a reused area loses a write. That is LARGER "
+         "than the 2026-09-08 defect, which needed a varchar, and has nothing "
+         "to do with VFP or with nulls."},
+        {"VAR_TB_vfp_alone:.T.",
+         "opening a VFP table poisons its area with NO varchar and NO null. "
+         "Also wider than the original defect."},
+        {"VAR_TC_varchar_alone:.T.",
+         "THE 2026-09-08 DEFECT IS BACK. A closed VFP varchar table left its "
+         "bit layout in the area, isVarlengthField_() answered from it, and "
+         "storeFieldsToBuffer() wrote a length byte into the last byte of a "
+         "plain C() field. Check that clearFields() AND DbArea::close() still "
+         "reset _null_layout -- there are two teardown lists and the original "
+         "bug was both of them skipping the same member."},
+        {"VAR_TD_caught_shape:.T.",
+         "the caught shape is broken again. If VAR_TC is GREEN and this is RED "
+         "the difference is the NULL COLUMN DECLARATION and its hidden "
+         "_NullFlags column, which is a NARROWER defect than the original."},
+        {"VAR_TD_survived_reopen:.T.",
+         "the write was correct in memory and WRONG ON DISK. That is the "
+         "durable half of the corruption, and the reason this arm closes and "
+         "reopens rather than trusting the buffer."}
+    }};
+
+    bool guards_ok = true;
+    for (const char* g : guards) {
+        if (transcript.find(g) == std::string::npos) {
+            std::cout << "VARCHAR AREA RESET: guard missing or red: " << g << "\n";
+            guards_ok = false;
+        }
+    }
+    if (!guards_ok) {
+        std::cout << "VARCHAR AREA RESET: UNPROVEN -- a guard failed, so the arms say "
+                     "NOTHING about the defect. A red intervening_live means the "
+                     "contaminating table never existed; a red arm_key_minted means the "
+                     "arm's APPEND never ran. Either way the arms beside it are measuring "
+                     "a case that did not happen, which is not the same as a case that "
+                     "lost its write.\n";
+        return false;
+    }
+
+    bool ok = true;
+    for (const Arm& a : arms) {
+        if (transcript.find(a.marker) == std::string::npos) {
+            std::cout << "VARCHAR AREA RESET: FAIL -- " << a.marker << "\n    " 
+                      << a.means << "\n";
+            ok = false;
+        }
+    }
+    if (!ok) return false;
+
+    std::cout << "VARCHAR AREA RESET: PASS -- 15 of 15. Closing a VFP table with a "
+                 "VARCHAR field leaves its area clean, measured in FOUR areas that differ "
+                 "by ONE property each (shape, VFP-ness, the varchar, the null "
+                 "declaration), plus a close-and-reopen proving the bytes on disk. THIS "
+                 "IS NOT A CLAIM THAT _extras AND _null_flags ARE CLEARED ON CLOSE -- as "
+                 "of 2026-09-08 they are NOT, and no marker here can see them.\n";
+    return true;
+}
+
 bool validate_regression_transcript(const RegressionSpec& spec,
                                     const std::string& transcript)
 {
@@ -3117,6 +3226,8 @@ bool validate_regression_transcript(const RegressionSpec& spec,
             return validate_pk_durability(transcript);
         case RegressionValidator::DefFamilyV1:
             return validate_def_family(transcript);
+        case RegressionValidator::VarcharAreaResetV1:
+            return validate_varchar_area_reset(transcript);
     }
     return false;
 }

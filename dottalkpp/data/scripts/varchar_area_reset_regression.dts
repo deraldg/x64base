@@ -1,0 +1,234 @@
+; ============================================================================
+; A CLOSED VARCHAR TABLE MUST NOT POISON ITS AREA -- the arm the fix shipped without
+; ============================================================================
+;
+; WHY THIS SPEC EXISTS.
+;
+; On 2026-09-08 a VFP table with a VARCHAR field left its null-bit layout behind
+; in the work area when it closed. DbArea::_null_layout is assigned in ONE place
+; -- partitionTrailingSystemField() -- and was reset in NONE: clearFields() and
+; DbArea::close() are two hand-maintained teardown lists over the same members
+; and BOTH skipped it. The next table opened in that area inherited the layout,
+; isVarlengthField_() answered from it, and storeFieldsToBuffer() took the
+; VARCHAR BRANCH for a plain C() field -- writing the value correctly and then a
+; LENGTH BYTE into that field's last byte. have_bitmap was false on the new
+; table, so nothing was refused and nothing was printed. THE BAD BYTE REACHED
+; DISK. Fixed in the commit that ships this file.
+;
+; THE VALUE WAS NEVER LOST. "GAMMA" was written correctly and CHR(5) was glued to
+; the end of the same field, where ALLTRIM cannot remove it because it is not a
+; space. That is why the symptom read as a lost write and was not one.
+;
+; ----------------------------------------------------------------------------
+; WHAT THE SUITE COULD NOT SEE, AND WHY IT TOOK A DAY TO FIND
+; ----------------------------------------------------------------------------
+;
+; NOTHING IN THE CORPUS ASSERTED THAT CLOSING A VARCHAR TABLE LEAVES AN AREA
+; CLEAN. The defect surfaced only as a SECOND-ORDER symptom: REGRESSION ALL
+; followed by an explicit REGRESSION PKPOLICY went red on four markers, while
+; PKPOLICY alone in a fresh process read 15 of 15. Every red marker read a
+; character field in AREA 1; every green one read a numeric key, or a table in
+; another area. Eight hypotheses were refuted by measurement before the area was
+; suspected at all -- the magic name SID, the declaration, a second APPEND,
+; is_unique_field(), the std::cout rdbuf swap, TABLE BUFFER, the nullable table,
+; and the regression harness itself.
+;
+; A FIX WITH NO ARM IS A FIX THAT CAN REGRESS SILENTLY, which is what this file
+; is for. It is also the DEF_FAMILY lesson: markers with no grader are green by
+; construction, so this spec ships WITH a validator (VarcharAreaResetV1) rather
+; than printing a transcript nobody counts.
+;
+; ----------------------------------------------------------------------------
+; THE DESIGN: FOUR CASES, FOUR AREAS, ONE VARIABLE EACH
+; ----------------------------------------------------------------------------
+;
+; The intervening table in the caught case differed from the arm in FOUR ways at
+; once -- VFP not X64, three fields not two, field #2 a VARCHAR, two columns
+; NULLABLE. Each case below drops one, so a future red says WHICH property came
+; back rather than merely that something did:
+;
+;   A  intervening X64, three fields, no varchar, no null   -- shape change alone
+;   B  intervening VFP, three fields, no varchar, no null   -- VFP-ness alone
+;   C  intervening VFP with V(10), STILL NO NULL           -- the varchar alone
+;   D  intervening VFP with V(10) NULL -- THE CAUGHT SHAPE
+;
+; MEASURED BEFORE THE FIX: A green, B green, C RED, D RED. B and C differ by ONE
+; CHARACTER, C(10) against V(10), which is what identified the varchar and
+; exonerated nullability, VFP-ness and shape change. AFTER THE FIX: all green.
+; A red C with a green D would be incoherent and means the spec, not the engine,
+; needs reading.
+;
+; EACH CASE GETS ITS OWN AREA ON PURPOSE. Areas are contaminated INDEPENDENTLY --
+; measured 2026-09-08, area 2 stayed clean while area 1 was broken in the same
+; process -- so four areas is what stops one case poisoning the next and turning
+; four measurements into one. It is also the property that made the bug findable.
+;
+; THE CONTROL RUNS FIRST AND BEFORE ANY VFP TABLE EXISTS. If VAR_T0 is red the
+; fixture itself is broken and NO other marker here means anything.
+;
+; EVERY CASE CARRIES TWO GUARDS. VAR_G*_intervening_live proves the contaminating
+; table was really created and written; VAR_G*_arm_key_minted proves the arm's
+; APPEND really ran. Without them a red arm and a case that never executed read
+; IDENTICALLY -- which is PKP_G5's lesson, recorded in this tree at least six
+; times before this file was written.
+;
+; VAR_TD_survived_reopen CLOSES AND REOPENS, because the defect wrote its bad
+; byte TO DISK: a write that reached a buffer and never reached disk reads green
+; before the close and red after it. It is on case D only, deliberately -- D is
+; the shape that actually shipped broken, and one disk check is enough to say
+; whether the corruption is durable.
+;
+; ----------------------------------------------------------------------------
+; WHAT THIS SPEC DOES NOT CLAIM
+; ----------------------------------------------------------------------------
+;
+; NOT CLAIMED, stated rather than implied: that _extras and _null_flags are
+; cleared on close (they are NOT, as of 2026-09-08 -- DbArea::close() still
+; leaves both standing, and no marker here can see them); that any field index
+; other than #2 is safe (every fixture here puts the varchar at #2 because that
+; is where the caught case had it); that a varchar at a different WIDTH behaves
+; the same; that anything is true across a RESTART (a .dts runs in ONE process).
+;
+; FIFTEEN GRADED MARKERS: nine VAR_G* guards and six VAR_T* arms. COUNT THEM --
+; an errored marker in this language PRINTS NOTHING rather than going red, so a
+; transcript with fourteen is a spec that lost a claim, not a spec that passed.
+;
+; Disposable tables in DBF/SANDBOX, erased at both ends; mints no catalog rows.
+; EXPLICIT-RUN until soaked, on the NULLASSERT precedent: two green runs on a
+; build nobody changed anything on, THEN the flag moves, THEN a REBUILD, THEN
+; read REGRESSION LIST for the [default] tag BEFORE believing the run.
+; ============================================================================
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+SET PATH DBF DBF/SANDBOX
+SET PATH INDEXES INDEXES/SANDBOX
+SET PATH LMDB LMDB/SANDBOX
+
+FORMULA "VARCHARRESET-BEGIN"
+
+ERASE TABLE VARCTL CONFIRM
+ERASE TABLE VARAV CONFIRM
+ERASE TABLE VARBV CONFIRM
+ERASE TABLE VARCV CONFIRM
+ERASE TABLE VARDV CONFIRM
+ERASE TABLE VARA CONFIRM
+ERASE TABLE VARB CONFIRM
+ERASE TABLE VARC CONFIRM
+ERASE TABLE VARD CONFIRM
+
+; ---- CONTROL: the fixture works at all, before any VFP table exists ---------
+CREATE X64 VARCTL (SID N(6,0), LNAME C(12))
+CLOSE
+SELECT 1
+USE VARCTL
+SET UNIQUE FIELD SID PRIMARY
+APPEND
+REPLACE LNAME WITH "CONTROL"
+? "VAR_G0_control_key_minted:" + (SID = 1)
+? "VAR_T0_control_write_landed:" + (ALLTRIM(LNAME) = "CONTROL")
+CLOSE
+
+; ---- CASE A -- area 2 -- intervening X64, three fields, no varchar, no null --
+SELECT 2
+CREATE X64 VARAV (ID N(6,0), VNAME C(10), PLAIN C(8))
+APPEND
+REPLACE PLAIN WITH "live"
+? "VAR_GA_intervening_live:" + (ALLTRIM(PLAIN) = "live")
+CLOSE
+
+CREATE X64 VARA (SID N(6,0), LNAME C(12))
+CLOSE
+SELECT 2
+USE VARA
+SET UNIQUE FIELD SID PRIMARY
+APPEND
+REPLACE LNAME WITH "ALPHA"
+? "VAR_GA_arm_key_minted:" + (SID = 1)
+? "VAR_TA_shape_change_alone:" + (ALLTRIM(LNAME) = "ALPHA")
+CLOSE
+
+; ---- CASE B -- area 3 -- intervening VFP, no varchar, no null ----------------
+SELECT 3
+CREATE VFP VARBV (ID N(6,0), VNAME C(10), PLAIN C(8))
+APPEND
+REPLACE PLAIN WITH "live"
+? "VAR_GB_intervening_live:" + (ALLTRIM(PLAIN) = "live")
+CLOSE
+
+CREATE X64 VARB (SID N(6,0), LNAME C(12))
+CLOSE
+SELECT 3
+USE VARB
+SET UNIQUE FIELD SID PRIMARY
+APPEND
+REPLACE LNAME WITH "BETA"
+? "VAR_GB_arm_key_minted:" + (SID = 1)
+? "VAR_TB_vfp_alone:" + (ALLTRIM(LNAME) = "BETA")
+CLOSE
+
+; ---- CASE C -- area 4 -- intervening VFP with VARCHAR, still no null ---------
+SELECT 4
+CREATE VFP VARCV (ID N(6,0), VNAME V(10), PLAIN C(8))
+APPEND
+REPLACE PLAIN WITH "live"
+? "VAR_GC_intervening_live:" + (ALLTRIM(PLAIN) = "live")
+CLOSE
+
+CREATE X64 VARC (SID N(6,0), LNAME C(12))
+CLOSE
+SELECT 4
+USE VARC
+SET UNIQUE FIELD SID PRIMARY
+APPEND
+REPLACE LNAME WITH "GAMMA"
+? "VAR_GC_arm_key_minted:" + (SID = 1)
+? "VAR_TC_varchar_alone:" + (ALLTRIM(LNAME) = "GAMMA")
+CLOSE
+
+; ---- CASE D -- area 5 -- the caught shape, plus the disk check ---------------
+SELECT 5
+CREATE VFP VARDV (ID N(6,0) NULL, VNAME V(10) NULL, PLAIN C(8))
+APPEND
+REPLACE PLAIN WITH "live"
+? "VAR_GD_intervening_live:" + (ALLTRIM(PLAIN) = "live")
+CLOSE
+
+CREATE X64 VARD (SID N(6,0), LNAME C(12))
+CLOSE
+SELECT 5
+USE VARD
+SET UNIQUE FIELD SID PRIMARY
+APPEND
+REPLACE LNAME WITH "DELTA"
+? "VAR_GD_arm_key_minted:" + (SID = 1)
+? "VAR_TD_caught_shape:" + (ALLTRIM(LNAME) = "DELTA")
+CLOSE
+USE VARD
+GO 1
+? "VAR_TD_survived_reopen:" + (ALLTRIM(LNAME) = "DELTA")
+CLOSE
+
+SELECT 5
+CLOSE
+SELECT 4
+CLOSE
+SELECT 3
+CLOSE
+SELECT 2
+CLOSE
+SELECT 1
+CLOSE
+
+ERASE TABLE VARCTL CONFIRM
+ERASE TABLE VARAV CONFIRM
+ERASE TABLE VARBV CONFIRM
+ERASE TABLE VARCV CONFIRM
+ERASE TABLE VARDV CONFIRM
+ERASE TABLE VARA CONFIRM
+ERASE TABLE VARB CONFIRM
+ERASE TABLE VARC CONFIRM
+ERASE TABLE VARD CONFIRM
+
+FORMULA "VARCHARRESET-END"
