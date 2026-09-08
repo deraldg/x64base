@@ -87,21 +87,43 @@ void DbArea::close() {
 
     // Clear schema/buffers & cursor flags
     _hdr = {};
-    _fields.clear();
-    _rawFields.clear();
+
+    // ONE TEARDOWN LIST, NOT TWO. This used to spell out _fields and _rawFields
+    // here while clearFields() spelled out those two PLUS _extras, _null_flags
+    // and _system_field_not_last -- two hand-maintained lists over the same
+    // members, drifting independently. That is not an aesthetic complaint: it is
+    // exactly HOW _null_layout came to be missed by BOTH of them, which cost a
+    // day on 2026-09-08 and shipped silent on-disk corruption (see clearFields()
+    // and VARCHARRESET). Adding a member to the struct now means updating ONE
+    // teardown, and a reader checking whether a member is cleared has ONE place
+    // to look.
+    //
+    // WHAT THIS CHANGES AT RUNTIME, MEASURED RATHER THAN ASSUMED: NOTHING
+    // OBSERVABLE. The three members close() did not previously clear are
+    // _extras, _null_flags and _system_field_not_last, and they were already
+    // UNREACHABLE while stale. clearFields() resets all three on EVERY open --
+    // every open funnels through vfp_loader::readFields, which calls it before
+    // reading a single descriptor -- so none of them could ever leak into the
+    // next table the way _null_layout did. The only window is between close()
+    // and the next open, and every reader in that window is guarded by state
+    // close() DOES clear: fieldIsNullFromBuffer() checks _fields.size() and
+    // _recbuf.size(), varlengthValueLen_() checks _fields.size(),
+    // storeFieldsToBuffer()'s have_bitmap needs a non-empty _recbuf, and
+    // partitionTrailingSystemField() returns early on _fields.empty().
+    //
+    // SO THIS IS HYGIENE, NOT A BUG FIX, AND IT IS RECORDED AS SUCH. It carries
+    // NO ARM because no marker can observe it -- there is nothing to observe.
+    // The earlier note here claimed collapsing the lists "changes what a closed
+    // area reports about _extras and _null_flags"; that was asserted without
+    // checking the readers, and it is wrong. The value is that the next member
+    // added to DbArea cannot be missed by a second list, because there is not
+    // one.
+    clearFields();      // _fields, _rawFields, _extras, _null_flags,
+                        // _null_layout, _system_field_not_last
     _recbuf.clear();
     _fd.clear();
     _fd_snapshot.clear();
     _fd_null.clear();   // lockstep with _fd
-
-    // Lockstep with _fields, for the same reason _fd_null is lockstep with _fd.
-    // A closed area must not carry the previous table's varchar bit layout: see
-    // clearFields(). close() and clearFields() are two hand-maintained teardown
-    // lists over the same members, which is HOW this member came to be missed --
-    // recorded here rather than unified, because collapsing them changes what a
-    // closed area reports about _extras and _null_flags and that is a separate
-    // change with its own arm to write.
-    _null_layout = vfp::NullBitLayout{};
 
     _crn = 0;
     _crn64 = 0;
