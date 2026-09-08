@@ -832,6 +832,27 @@ def main() -> int:
                   "NOT blocking. Route the new call through the funnel, or exempt "
                   "the file BY ROUTE with a reason.")
 
+        # 5c-bis. SOAK EVIDENCE -- HARD, and only ever in scope when a spec's
+        # in_default_suite flag flips false -> true. Promotion doctrine wants two
+        # green runs on a build nobody changed anything on; until 2026-09-08
+        # NOTHING CHECKED IT, and on that day it came within one edit of being
+        # silently unmet -- two green runs were taken either side of a one-line
+        # string change and only a deliberately taken third run made the soak
+        # real. This compares the engine's own startup banners, which carry the
+        # commit hash, the dirty flag and the build timestamp, so two rows that
+        # differ were not the same build of the same tree whatever anyone
+        # believes about the change between them. IT CANNOT PROVE A RUN
+        # HAPPENED -- captures live in gitignored tmp/ -- and the check says so
+        # itself rather than letting a green be read as more than it is.
+        rc = _run_portal_check("tools/staging/check_soak_evidence.py", [])
+        if rc == 2:
+            print("\n  BLOCKED -- a spec entered the default suite without "
+                  "naming two PASS runs on ONE build in "
+                  "coordination/SOAK_EVIDENCE.md. Promotion makes REGRESSION ALL "
+                  "claim something on every run; the soak is what makes that "
+                  "claim survive a build nobody looked at.", file=sys.stderr)
+            exit_code = 2
+
         # 5d. MANUAL LINK INTEGRITY -- hard. Every page the accepted command
         # reference links to must exist AND BE TRACKED.
         #
