@@ -255,11 +255,14 @@ namespace
     // WHY NO SPEC SAW IT: every fixture in this tree that generates a key uses
     // a field named SID, which is both the registry's declared field and the
     // one the SID planner below mints by name. One generator, nothing to
-    // destroy. A THROWAWAY PROBE separated the two candidate causes in one
-    // process: a lone declared field NOT named SID minted correctly, so the
-    // registry path works, and the same field beside a SID column did not. It
-    // is described rather than cited -- it lived under the ignored tmp/, and a
-    // path a reader of this tree cannot open is worse than no path at all.
+    // destroy. A PROBE separated the two candidate causes in one process: a
+    // lone declared field NOT named SID minted correctly, so the registry path
+    // works, and the same field beside a SID column did not. It is
+    // dottalkpp/data/scripts/pk_gen_probe.dts, and it was WRITTEN AS SCRATCH
+    // UNDER THE IGNORED tmp/ AND PROMOTED so this comment could cite a path a
+    // reader can open. It is still the only instrument in the tree that tells
+    // this defect apart from a dead registry path in one run, so a red
+    // PROBE_B1 on a later build is this bug coming back.
     //
     // WHY THIS SHAPE rather than re-setting the value after the last scan: the
     // fix has to survive a THIRD generator being added by somebody who never

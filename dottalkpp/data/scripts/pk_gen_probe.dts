@@ -1,0 +1,113 @@
+* dottalkpp/data/scripts/pk_gen_probe.dts
+*
+* THE PROBE THAT SEPARATED TWO CANDIDATE MECHANISMS, KEPT BECAUSE IT CAN STILL
+* TELL THEM APART. Written 2026-09-08 as scratch under tmp/ -- which is
+* gitignored, so it would have vanished and taken the only instrument that can
+* distinguish these two failures with it. Promoted here, beside the three other
+* .dts of this lane (pk_policy_regression, pk_durable_write, pk_durable_read),
+* rather than to tools/staging: that directory holds .ps1 and .py tooling and
+* not one .dts, and DOTSCRIPT resolves names out of scripts/ (see OI-034).
+*
+* WHAT IT ASKS. A table (EMPNO N(6,0), SID N(6,0), LNAME C(12)) with EMPNO
+* declared PRIMARY came out of APPEND with SID minted and EMPNO BLANK -- IN THE
+* DECLARING PROCESS. Two mechanisms explain that and they need different fixes:
+*
+*   A -- THE REGISTRY PATH IS DEAD. The registry generator never mints for any
+*        field, and every green generation marker in this tree is really the
+*        magic name "SID" doing the work.
+*   B -- THE SECOND GENERATOR DESTROYS THE FIRST ONE'S WRITE. Both generators
+*        call compute_next_numeric(), which restores its cursor with
+*        A.gotoRec64(save); A.readCurrent(); -- and readCurrent() RELOADS THE
+*        RECORD BUFFER FROM DISK. The SID scan therefore wipes the EMPNO value
+*        set moments earlier, and only the last generator's field survives to
+*        writeCurrent().
+*
+* THE DISCRIMINATOR IS THE PAIR, NOT EITHER TABLE ALONE: PKGEN1 has ONE
+* generated field and it is NOT named SID, so nothing can trample it; PKGEN2
+* has two. PROBE_A green with PROBE_B1 red is B. PROBE_A red is A. Both are
+* defects and they are not the same defect.
+*
+* MEASURED 2026-09-08, before the fix: PROBE_A .T., PROBE_B1 .F., PROBE_B2 .T.
+* -- mechanism B, unambiguously, and the registry path was working all along.
+* Fixed at commit 86f628026 by planning every key value first and applying the
+* plan in one pass after the last scan has finished.
+*
+* WHAT IT READS NOW, AND WHY THAT IS WORTH KEEPING: all five markers green,
+* MEASURED 2026-09-08 on build Sep 08 2026 10:07:32 (65765897 dirty) -- the
+* first run of this file from its promoted path, and PROBE_B1 is the marker
+* that had to move: it read .F. before the fix and .T. here.
+* A RED PROBE_B1 ON A LATER BUILD IS THE TRAMPLE COMING BACK, and it is the
+* only marker in the tree that says so in one line. No suite runs this -- it is
+* an explicit-run instrument, and it is NOT registered in kRegressionSpecs.
+*
+* HOW TO RUN IT: DOTSCRIPT with an ABSOLUTE path, in a session whose data lane
+* is acknowledged. IT ENDS IN QUIT, deliberately, so it can be launched as a
+* child process the way pk_durability_child.ps1 launches the other two -- run it
+* in a session you are willing to lose. It creates, uses and ERASEs PKGEN1 and
+* PKGEN2 in SANDBOX and touches nothing else.
+*
+* KNOWN DEBT, shared with pk_durable_write.dts and pk_durable_read.dts and
+* recorded in their commit: the paths below are ABSOLUTE.
+*
+* EACH TABLE CARRIES A GUARD BESIDE ITS ARMS because an errored marker in this
+* runtime PRINTS NOTHING rather than going red, so four green out of five is a
+* lost claim wearing a clean face. COUNT THE MARKERS: there are FIVE -- THREE
+* ARMS (PROBE_A, PROBE_B1, PROBE_B2) AND TWO GUARDS, one per table. PKGEN2's
+* two arms share one guard, so a guard green there proves the ROW exists and
+* says nothing about which of the two fields was minted; that is what the arms
+* are for.
+
+SET TALK OFF
+STOP_ON_ERROR OFF
+
+SETPATH DBF D:\code\ccode\dottalkpp\data\DBF\SANDBOX
+SETPATH INDEXES D:\code\ccode\dottalkpp\data\INDEXES\SANDBOX
+SETPATH LMDB D:\code\ccode\dottalkpp\data\LMDB\SANDBOX
+
+SET ALTERNATE TO D:\code\ccode\dottalkpp\data\tmp\pkgen_probe.alt
+SET ALTERNATE ON
+
+FORMULA "PKGEN-PROBE-BEGIN"
+
+* ---- ONE generated field, and it is NOT named SID ------------------------
+ERASE TABLE PKGEN1 CONFIRM
+CREATE X64 PKGEN1 (EMPNO N(6,0), LNAME C(12))
+CLOSE
+
+SELECT 1
+USE PKGEN1
+SET UNIQUE FIELD EMPNO PRIMARY
+
+APPEND
+? "PROBE_A_lone_declared_field_minted:" + (EMPNO = 1)
+
+REPLACE LNAME WITH "ROW1"
+? "PROBE_A_GUARD_row_exists_and_accepts_writes:" + (ALLTRIM(LNAME) = "ROW1")
+
+CLOSE
+
+* ---- TWO generated fields in one table -----------------------------------
+ERASE TABLE PKGEN2 CONFIRM
+CREATE X64 PKGEN2 (EMPNO N(6,0), SID N(6,0), LNAME C(12))
+CLOSE
+
+SELECT 2
+USE PKGEN2
+SET UNIQUE FIELD EMPNO PRIMARY
+
+APPEND
+? "PROBE_B1_declared_field_minted_beside_SID:" + (EMPNO = 1)
+? "PROBE_B2_magic_name_SID_minted:" + (SID = 1)
+
+REPLACE LNAME WITH "ROW1"
+? "PROBE_B_GUARD_row_exists_and_accepts_writes:" + (ALLTRIM(LNAME) = "ROW1")
+
+CLOSE
+
+ERASE TABLE PKGEN1 CONFIRM
+ERASE TABLE PKGEN2 CONFIRM
+
+FORMULA "PKGEN-PROBE-END"
+
+SET ALTERNATE OFF
+QUIT

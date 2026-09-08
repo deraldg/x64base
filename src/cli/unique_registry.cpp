@@ -114,12 +114,43 @@ std::string primary_field(const xbase::DbArea& A) {
     return it == primary_store().end() ? std::string() : it->second;
 }
 
+// FILE FIRST, THEN CACHE -- the shape primary_field() has used since AIF-156
+// and the one list_unique_fields() was corrected to on 2026-09-08 (AIF-158).
+// PRIMARY IMPLIES UNIQUE, which set_primary_field() asserts by inserting into
+// the cache, so the header-stamped primary field must answer YES here even in
+// a process that never declared it: the stamp outlives the process and the
+// map does not.
+//
+// NO CALLER IN src/ OR include/ AS OF 2026-09-08, and it is corrected anyway
+// rather than left. It is a PUBLIC declaration (cli/unique_registry.hpp), so
+// the next author to reach for the obvious-sounding question would have got
+// the pre-AIF-158 answer -- true in the declaring process and false in every
+// other one -- with nothing to suggest the answer depended on who was asking.
+// A dormant function that returns a wrong answer is worse than a missing one,
+// because it will be believed.
+//
+// The header read sits OUTSIDE the mutex on purpose: it touches the TABLE and
+// unique_store() is not involved in it, so holding the registry lock across it
+// would couple two things that have no reason to be coupled.
 bool is_unique_field(xbase::DbArea& A, const std::string& field_name) {
+    const std::string want = upcopy(field_name);
+
+    try {
+        const int f = A.primaryFieldIndex();
+        if (f >= 1 && f <= static_cast<int>(A.fields().size())) {
+            if (upcopy(A.fields()[static_cast<std::size_t>(f - 1)].name) == want)
+                return true;
+        }
+    } catch (...) {
+        // A table that cannot answer -- VFP, classic, closed -- falls through
+        // to the cache and behaves exactly as it did before.
+    }
+
     const std::string bucket = current_alias_or_area_name(A);
     std::lock_guard<std::mutex> lk(unique_mutex());
     const auto it = unique_store().find(bucket);
     if (it == unique_store().end()) return false;
-    return it->second.count(upcopy(field_name)) != 0;
+    return it->second.count(want) != 0;
 }
 
 // THE FILE FIRST, THEN THE CACHE -- the shape primary_field() has used since
