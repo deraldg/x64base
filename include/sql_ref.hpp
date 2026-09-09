@@ -56,8 +56,22 @@ inline const std::vector<Item>& catalog() {
          "Create table with columns, constraints, primary key", "DDL", true,
          "EQUIVALENT, different syntax -- CREATE X64 <name> (<field> <type>(<len>[,<dec>]), ...) "
          "for the interactive form, or DDL CREATE DBF ... FROM <schema.json> to build from a "
-         "schema file. xBase types are C/N/D/L/M, not SQL types. No AUTOINCREMENT: identity "
-         "columns are not a storage feature here. See CREATE USAGE and DDL USAGE."},
+         "schema file. xBase types are C/N/D/L/M, not SQL types. AUTOINCREMENT has an "
+         "EQUIVALENT IN A SECOND STEP, corrected 2026-09-09: this entry used to read "
+         "\"No AUTOINCREMENT: identity columns are not a storage feature here\", and "
+         "that stopped being true on 2026-09-07. SET UNIQUE FIELD <field> PRIMARY "
+         "designates a column; the engine mints max+1 into a blank key on APPEND under "
+         "the writer's table lock, reserves a deleted row's key until PACK because "
+         "RECALL can bring the row back, and REFUSES a write that would change a minted "
+         "key. The designation is stamped into the x64 field metadata "
+         "(X64_FIELD_FLAG_PRIMARY), so it survives a restart. TWO REAL DIFFERENCES "
+         "REMAIN and neither is \"not supported\": it is declared in a SEPARATE "
+         "STATEMENT rather than inside CREATE TABLE, and it is x64-FLAVOR-SCOPED -- the "
+         "flag lives in x64 metadata, and a reader that does not know it reads zero and "
+         "enforces nothing, in silence. Enforcement is proven on the five write paths "
+         "the PKPOLICY regression asserts; a static gate still counts 22 direct "
+         "field-write sites in 15 files outside the funnel. See CREATE USAGE, DDL "
+         "USAGE and SET UNIQUE USAGE."},
         {"CREATE-TABLE-MSSQL",
          "CREATE TABLE users (id INT IDENTITY(1,1) PRIMARY KEY, name NVARCHAR(100) NOT NULL, email NVARCHAR(255) UNIQUE);",
          "MSSQL version using IDENTITY", "DDL", false,
