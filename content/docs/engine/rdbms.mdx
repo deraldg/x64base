@@ -90,6 +90,10 @@ follow and both matter to a reader: it is **x64-flavour-scoped**, because the
 flag has nowhere to live in a classic or VFP descriptor, and a reader that does
 not know the flag reads zero and enforces nothing, in silence.
 
+The policy in full — what each behaviour is, which spec proves it, why two of
+that spec's arms are expected red, and the write paths enforcement does not yet
+reach — is on [Primary Keys](/docs/engine/primary-keys).
+
 ## How the relational claim is checked
 
 Every SQLsel regression compares its result sets against an **in-process SQLite
@@ -140,7 +144,8 @@ Also absent, and each refused rather than silently approximated:
   `CALCWRITE`, browse and record-view editing, `COPY`, `SORT` and `IMPORTSQL`
   are unasserted. Five of five is the arms that exist, not a key that is
   enforced everywhere; closing that is a static-analysis job, because no
-  runtime marker can enumerate a call site.
+  runtime marker can enumerate a call site. See
+  [Primary Keys](/docs/engine/primary-keys).
 
 - **Cross-table atomic commit.** An explicit transaction accepts one target table.
 - **Stored `NULL` through DML.** `SQLSEL INSERT`/`UPDATE` refuse a null rather

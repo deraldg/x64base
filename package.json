@@ -10,6 +10,8 @@
     "check:public-content": "node scripts/check-public-content.mjs",
     "check:freshness": "node scripts/check-site-freshness.mjs",
     "check:freshness:self-test": "node scripts/check-site-freshness.mjs --self-test",
+    "derive:pk-authority": "node scripts/derive-primary-key-authority.mjs",
+    "check:pk-authority": "node scripts/derive-primary-key-authority.mjs --check",
     "build": "node scripts/check-diagrams.mjs && node scripts/check-public-content.mjs && node scripts/check-site-freshness.mjs && node scripts/check-opacity-scale.mjs && node scripts/clean-build-output.mjs && next build && pagefind --site out",
     "index:search": "pagefind --site out",
     "start": "next start",

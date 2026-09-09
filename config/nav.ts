@@ -12,7 +12,7 @@ export type NavItem = { label: string; href: string };
  * bug, it was every screen.
  *
  * primaryNav is what a first-time visitor needs to orient: who, what, docs,
- * get it, contact, find. Measured ~940px including logo and padding, which
+ * get it, what it IS, find. Measured ~940px including logo and padding, which
  * fits 1152 with room for another item later.
  *
  * moreNav is everything a returning or deep reader wants. Nothing is deleted
@@ -28,7 +28,15 @@ export const primaryNav: NavItem[] = [
   { label: "LabTalk", href: "/products/labtalk" },
   { label: "Documentation", href: "/docs" },
   { label: "Downloads", href: "/downloads" },
-  { label: "Contact", href: "/contact" },
+  // RDBMS took Contact's slot on 2026-09-09, on owner request: make it more
+  // prominent. This is a SWAP, not an addition, so the measurement this file
+  // demands is satisfied without a rendered page: "RDBMS" is five characters
+  // where "Contact" was seven, at identical px-2 padding and text-sm, so the
+  // bar's requirement went DOWN from the measured 972px, against an lg
+  // breakpoint of 1024. A swap that shortens the longest-fitting row cannot
+  // overflow a row that already fit. Contact moved to moreNav in exchange;
+  // nothing was deleted, and topNav below still lists all thirteen.
+  { label: "RDBMS", href: "/docs/engine/rdbms" },
   { label: "Search", href: "/search" }
 ];
 
@@ -73,17 +81,13 @@ export const moreNav: NavItem[] = [
   // is not in front.
   { label: "AI", href: "/AI/index.html" },
   { label: "News", href: "/news" },
-  // RDBMS, added 2026-09-05 on owner request: "we should have a menu opt on the
-  // main page for rdbms - dottalkpp is a dbms and a rdbms."
-  //
-  // Placed in moreNav rather than primaryNav BECAUSE THIS FILE SAYS TO. The
-  // header comment records a measurement -- primaryNav is ~940px against a fixed
-  // max-w-6xl 1152px cap -- and instructs: add to moreNav unless you have
-  // measured that primaryNav still fits. That measurement needs a rendered page
-  // at desktop width, which the authoring session could not take. It still shows
-  // on the main page (the More menu) and in the mobile list via topNav below.
-  // Promote it to primaryNav once someone measures; something may have to leave.
-  { label: "RDBMS", href: "/docs/engine/rdbms" }
+  // Contact took RDBMS's slot on 2026-09-09. RDBMS was placed here on
+  // 2026-09-05 with the note "promote it to primaryNav once someone measures;
+  // something may have to leave" -- this is that promotion, and Contact is the
+  // something. Contact is the item that loses least by moving: it is one page
+  // with no children, it is still in the More menu, still in the mobile list,
+  // and still linked from the footer, which RDBMS was not.
+  { label: "Contact", href: "/contact" }
 ];
 
 /**
@@ -116,6 +120,11 @@ export const topNav: NavItem[] = [
   primaryNav[0], primaryNav[1], primaryNav[2], primaryNav[3],
   moreNav[0], moreNav[1], moreNav[2],
   primaryNav[4],
-  moreNav[3], moreNav[4], moreNav[5],
-  primaryNav[5], primaryNav[6]
+  // These two read across the arrays deliberately. The 2026-09-09 swap moved
+  // RDBMS into primaryNav[5] and Contact into moreNav[5]; reading them in this
+  // order keeps the MOBILE list byte-identical to what it rendered before the
+  // swap (... AI, News, RDBMS, Contact, Search). The swap is a desktop-header
+  // change only, which is what was asked for.
+  moreNav[3], moreNav[4], primaryNav[5],
+  moreNav[5], primaryNav[6]
 ];

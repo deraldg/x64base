@@ -1,0 +1,159 @@
+---
+title: "Primary Keys: Policy, Proof and Boundary"
+description: "What a declared primary key does in x64base -- generate, reserve, refuse -- which spec proves each claim, where enforcement stops, and how this page is held to the engine."
+---
+
+x64base enforces a declared primary key on write. That sentence became true on
+**2026-09-07** and was false before it, which is recent enough that a reader who
+last looked earlier would reasonably still believe otherwise — so this page
+states the claim, names the evidence for each half of it, and marks the edge
+where the claim stops.
+
+**Declared with `SET UNIQUE FIELD <field> PRIMARY`.** The designation does three
+separate things, and they are worth separating because each can be lost
+independently.
+
+## The three behaviours
+
+**It generates.** An `APPEND` into a blank key field mints `max+1`. The mint
+happens inside the writer's table lock — `try_lock_table` / `unlock_table` — so
+two writers cannot take the same value. The scan that finds `max` is a full
+`O(n)` pass on purpose: an index-backed fast path would skip deleted rows, and
+deleted rows are exactly the ones whose keys are still spoken for.
+
+**It reserves.** A deleted row keeps its key until `PACK`. `RECALL` can bring
+that row back, and a key reissued in the meantime would collide with a row that
+returned from the dead. Deletion in this engine is a flag, not an erasure, so
+key reuse has to wait for the erasure to actually happen.
+
+**It refuses.** A write that would change an already-minted key is rejected
+rather than quietly accepted. The refusal is the part that did not exist before
+2026-09-07: everything above worked, and a duplicate written over a primary key
+still survived a close and a reopen.
+
+## It is schema, not session state
+
+The designation is stamped into the x64 field metadata as
+`X64_FIELD_FLAG_PRIMARY` (`0x0001`), so a process that opens the table cold —
+having issued no declaration of its own — still refuses the write.
+
+That was not true until 2026-09-07 either. The declaration lived in a
+process-local map, under a comment in the engine describing itself as *not*
+persistent schema metadata, and the comment was accurate: a fresh session
+without a redeclare let `REPLACE` overwrite a primary key in silence, on a build
+where every arm that existed read green. The arms were not lying. They could
+not ask the question, because a script runs in one process.
+
+Two consequences follow from where the flag lives, and both matter more than
+they look:
+
+- It is **x64-flavour-scoped**. A classic dBASE or Visual FoxPro field
+  descriptor has nowhere to put the flag, so the designation cannot be carried
+  by those flavours at all.
+- A reader that does not know the flag **reads zero and enforces nothing, in
+  silence**. There is no version byte that makes an old reader refuse the file.
+  A primary key is therefore a promise between this engine and its own tables,
+  not a property of the bytes that any tool would honour.
+
+## How each claim is proved
+
+There is no oracle for *"was this write refused"*. The SQLsel specs compare
+result sets against an in-process SQLite oracle over identical data, but SQLite
+would simply have refused the duplicate too, and two engines agreeing to refuse
+proves nothing about whether ours did. So the key specs ask the answerable
+question instead: **every arm reads a field value back after the attempt.** If
+the cell holds its original value the write was refused; if it holds the new one
+it was not. Console text is never the evidence — an errored marker in this
+language prints nothing rather than going red, which is why the marker counts
+below are load-bearing and why a transcript that is one short is a lost claim
+rather than a pass.
+
+`PKPOLICY` carries 15 graded markers — 7 guards and 8 arms — over generation,
+reservation and refusal. Its five refusal arms cover five different doors into a
+field write: native `REPLACE`, `SQLSEL INSERT`, `SQLSEL UPDATE`, and the two
+legacy bare `INSERT` / `UPDATE` verbs, which are different files reached by a
+different registration. They are five arms and not one because a fix wired into
+one door is not evidence about another — which is not hypothetical: the first
+increment turned two of them green and left the third untouched, and as a single
+arm that transcript would have read as a win.
+
+`PKDURABLE` carries 15 child markers — 10 guards and 5 arms, 2 of which are
+expected red — and it is the only spec in the tree that can say a designation
+survived a restart. It runs two child processes: one declares and writes, the
+other starts cold, issues no declaration, and must still refuse. The grading
+happens in C++ rather than in the script because a child's output never passes
+through the stream a script capture swaps; the validator reads the children's
+captures off disk. A validator can open a file and a marker cannot, and that
+asymmetry is the only reason a cross-process claim is assertable here at all.
+
+| | `PKPOLICY` | `PKDURABLE` |
+| --- | --- | --- |
+| Graded markers | 15 | 15 (in the children) |
+| Guards / arms | 7 / 8 | 10 / 5 |
+| In the default suite | false | false |
+| Answers | generation, reservation, refusal | the designation survives a restart |
+
+Both are explicit-run. Of the engine's 81 registered specs, 29 run on every
+`REGRESSION ALL`; these two are not among them, and a page that implied
+otherwise would be overclaiming.
+
+### Why two arms are expected red
+
+`PKDURABLE` grades against an **expected value**, not against green, because two
+of its arms are supposed to fail and a spec whose correct reading includes a red
+cannot be graded any other way.
+
+One of them tries to fill a minted key by hand. The refusal *is* the policy, so
+a green there would mean enforcement had been lost. The other is the
+complementary half of a passing arm — both read the same field, one asking
+whether it equals 3 and the other whether it equals 0 — and it exists so the
+arm above it cannot be made unfalsifiable by writing down only the outcome its
+author expected. A blank numeric field turns out not to be zero, so it reads red
+either way, and that is recorded rather than tuned away.
+
+## Where enforcement stops
+
+**Five write paths are proven. The engine has more.** A static gate counts
+**22 direct field-write call sites across 15 files** that do not go through
+the write funnel — `CALCWRITE`, browse and record-view editing, `COPY`,
+`SORT`, `IMPORTSQL` among them. Five of five is *the arms that exist*, not a
+key that is enforced everywhere.
+
+That gap is closed by static analysis rather than by more arms, and the reason
+is worth stating: **no runtime marker can enumerate a call site.** A spec can
+prove that one door is locked; only a gate over the source can prove there is no
+sixth door. The count above is that gate's output, and the list it compares
+against may only shrink.
+
+**Referential integrity is still not enforced on write.** Relations are declared
+for traversal, not as constraints; deleting a parent does not refuse, cascade or
+null out its children. See [DBMS and RDBMS](/docs/engine/rdbms) for that
+boundary in full. It is worth noting that this gap got *sharper* in 2026-09
+rather than softer: the engine can now demonstrably decline a write on integrity
+grounds. It simply does not decline this one.
+
+**Concurrency is unasserted.** The mint holds a table lock and that is a design
+statement, not a measurement — one writer cannot exercise a lock, and neither
+spec runs two processes at once. `PKDURABLE` runs two processes *in sequence*,
+which is a different question.
+
+## How this page is kept honest
+
+The numbers above are not typed. They are derived from the engine tree by
+`scripts/derive-primary-key-authority.mjs` into
+`public/artifacts/primary-key-policy-v1.json`, and a freshness contract holds
+this page to that artifact — change a count in the engine without changing this
+page and the build fails, naming the sentence.
+
+**Derived from engine commit `0bd135e93` (2026-09-08).**
+
+The limit of that arrangement is stated because it is the one that has already
+bitten. Every freshness contract on this site resolves its authority against the
+site root, so a contract can prove this page agrees with the artifact beside it
+and can prove nothing about the engine directly. In 2026-09 a page and its
+authority agreed with each other for two days while both were wrong about the
+engine. What the generator changes is that re-deriving is now one command
+against a checked-out engine tree instead of an audit, and the commit stamped
+above makes staleness visible without reading a single fact. What it does not
+change is that nobody is forced to run it. Closing that needs the engine's own
+pre-push gate to refuse a drifted artifact, and that is not built.

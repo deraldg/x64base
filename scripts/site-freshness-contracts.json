@@ -33,7 +33,10 @@
         "WorkingLog limit="
       ],
       "mustAppearBefore": [
-        ["WorkingLog limit=", ">Latest announcements</h2>"]
+        [
+          "WorkingLog limit=",
+          ">Latest announcements</h2>"
+        ]
       ]
     },
     {
@@ -141,6 +144,22 @@
         "| `/news` | `maintained` / generated feed |",
         "| `/docs/labtalk/current-work` | `maintained_current` envelope / generated body |",
         "| `/downloads`, `/docs/dev/developer-manual`, `/docs/dev/manual-assembly` |"
+      ]
+    },
+    {
+      "id": "primary-key-policy",
+      "authority": "public/artifacts/primary-key-policy-v1.json",
+      "target": "content/docs/engine/primary-keys.mdx",
+      "mustContain": [
+        "**Declared with `{declaration}`.**",
+        "**{enforced_since}** and was false before it",
+        "`{flag.name}` (`{flag.value}`)",
+        "`PKPOLICY` carries {specs.pkpolicy.markers} graded markers — {specs.pkpolicy.guards} guards and {specs.pkpolicy.arms} arms",
+        "`PKDURABLE` carries {specs.pkdurable.child_markers} child markers — {specs.pkdurable.guards} guards and {specs.pkdurable.arms} arms, {specs.pkdurable.expected_red_arms} of which are",
+        "| In the default suite | {specs.pkpolicy.in_default_suite} | {specs.pkdurable.in_default_suite} |",
+        "Of the engine's {registry.total_specs} registered specs, {registry.in_default_suite} run on every",
+        "**{unrouted_direct_writes.sites} direct field-write call sites across {unrouted_direct_writes.files} files**",
+        "**Derived from engine commit `{engine.commit_short}` ({engine.commit_date}).**"
       ]
     }
   ]
