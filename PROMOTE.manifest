@@ -216,7 +216,10 @@ DOTTALKPP_COMMAND_REFERENCE*.md
 #     run-bible.ps1 biblerun.ps1 run-erp.ps1 erprun.ps1 artic*.datarun.*
 #   Dev stress-test:
 #     **/pinocchio/**   docs/maintenance/PINOCCHIO_*
-#   Non-publish MDO content lanes (versioned in dev, never public):
+#   Non-publish MDO content lanes (never public; SUPPOSED to be versioned in
+#   dev and largely are NOT -- measured 2026-09-09, docs/messaging is 419 files
+#   with 0 tracked. The exclusion below does not imply development holds these.
+#   See PROMOTION_PROCESS.md section 7, OI-036, R141):
 #     **/messaging/**   **/metadata/**   **/sandbox/**
 #   Never-version junk (also gitignored):
 #     **/__pycache__/**  **/*.pyc  build*/  **/*.exe  **/*.lib  **/*.pdb

@@ -76,9 +76,11 @@ Rules:
 3. **`.gitignore` is a hard guard.** The rebuild re-applies the deny-list after
    matching, so an over-broad glob still cannot leak LMDB, `*.cdx.d`, `*.exe`,
    `og/`, `__pycache__`, or scratch.
-4. **Non-publish lanes stay out.** `messaging`, `metadata`, and `sandbox` are
-   versioned in development but deliberately not published. They must never
-   appear in the allow-list, and must not linger in `main`.
+4. **Non-publish lanes stay out.** `messaging`, `metadata` and `sandbox` are
+   deliberately not published. They must never appear in the allow-list, and
+   must not linger in `main`. **Versioning them in development is a SEPARATE
+   requirement, and as of 2026-09-09 it is largely UNMET** -- see section 7.
+   Do not read the exclusion as evidence that development is holding them.
 
 ## 5. Promotion procedure
 
@@ -120,8 +122,20 @@ Target state: after a promotion run, off-allow-list DIFF = 0 and no
 
 - **Bytecode / build junk:** `__pycache__/`, `*.pyc` — gitignore and
   `git rm -r --cached` from `main`.
-- **`messaging` / `metadata` / `sandbox`:** versioned in development, never
-  published. If present in `main`, remove them.
+- **`messaging` / `metadata` / `sandbox`:** never published. If present in
+  `main`, remove them. **These lanes are SUPPOSED to be versioned in
+  development and largely are not.** Measured 2026-09-09: `docs/messaging` is
+  419 files with **0 tracked**; `dottalkpp/data/messaging` is 4 files with 1
+  tracked (`gui_messages.csv`), the other three being two `.dbf` tables and a
+  `.dtx` memo sidecar. Until 2026-09-09 this line and rule 4 in section 4 both
+  said "versioned in development" AS A STATEMENT OF FACT. It was false, and the
+  exclusion from `PROMOTE.manifest` was resting on it: these lanes are kept out
+  of publication on the understanding that development holds them, and for
+  `docs/messaging` development holds nothing. The rule being served is the
+  durability rule -- "if development has no history, those lanes are gone"
+  (`PROMOTION_MODEL_SEED_V1.md`) -- so for that lane the loss this rule exists
+  to prevent is not a risk, it is the present state. The work is tracked as
+  OI-036; the correction is R141.
 
 ## 8. Cadence & responsibilities
 
