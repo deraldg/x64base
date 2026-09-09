@@ -8,11 +8,16 @@ description: "The SELECT surface x64base actually implements, verified against S
 `SQLsel` is a set-oriented `SELECT` statement over an open work area. It is a
 supported surface as of 2026-07-29.
 
+`SQLSEL` **is itself the verb** -- a leading `SELECT` keyword parses but is
+redundant, and the syntax below omits it. The separate verb exists because
+xBase already spends `SELECT` on `SELECT <area>`, which switches the active
+work area rather than querying anything.
+
 ```text
-SQLSEL SELECT <col>[,<col>...] FROM <table>
+SQLSEL <col>[,<col>...] FROM <table>
        [WHERE <predicate>] [ORDER BY <field> [ASC|DESC]] [LIMIT <n>]
-SQLSEL SELECT * FROM <table>
-SQLSEL SELECT COUNT(*) FROM <table> [WHERE <predicate>]
+SQLSEL * FROM <table>
+SQLSEL COUNT(*) FROM <table> [WHERE <predicate>]
 ```
 
 It is deliberately **statement-scoped**. A statement names its own table, ignores
@@ -91,7 +96,7 @@ new one does not replace the old one. Both are supported surfaces.
 | How you ask | **Navigate** - declare the links, then follow them | **Declare** - describe the result, let the engine find it |
 | Setup | `REL ADD` wires parent to child on a key, ahead of time | Nothing declared; match any two columns on demand |
 | Shape | Walks a configured path in a direction, emitting one row per leaf combination | Matches two row sets |
-| Commands | `REL ADD`, `REL JOIN`, `REL ENUM`, `ERSATZ`, `SET RELATION` | `SQLSEL SELECT` |
+| Commands | `REL ADD`, `REL JOIN`, `REL ENUM`, `ERSATZ`, `SET RELATION` | `SQLSEL` |
 | Today | Supported -- **three join forms ship**: `SET RELATION` positional navigation, `REL JOIN` / `REL ENUM` enumeration (one tuple per combination, with `DISTINCT` / `ALL` / `LIMIT`), and `REL JOIN ONE` from the current pointers | `SELECT` and the full SQL join family both ship; the two remain different models, not one replacing the other |
 
 The distinction is the navigational/relational one. The navigational model asks

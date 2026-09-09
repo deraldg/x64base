@@ -12,9 +12,9 @@ rows it wants and returns them, rather than positioning a cursor and navigating.
 It is a supported surface as of 2026-07-29.
 
 ```text
-SQLSEL SELECT SID,LNAME,FNAME FROM STUDENTS WHERE MAJOR = "CSCI" ORDER BY LNAME LIMIT 10
-SQLSEL SELECT * FROM STUDENTS
-SQLSEL SELECT COUNT(*) FROM STUDENTS WHERE GPA >= 3.0
+SQLSEL SID,LNAME,FNAME FROM STUDENTS WHERE MAJOR = "CSCI" ORDER BY LNAME LIMIT 10
+SQLSEL * FROM STUDENTS
+SQLSEL COUNT(*) FROM STUDENTS WHERE GPA >= 3.0
 ```
 
 A statement is scoped to itself: it names its own table, ignores session filter
@@ -23,8 +23,8 @@ truth. The table must already be open.
 
 Current SQL-facing surfaces include:
 
-- `SQLSEL SELECT ... FROM ... WHERE ... ORDER BY ... LIMIT`
-- `SQLSEL SELECT COUNT(*)`
+- `SQLSEL ... FROM ... WHERE ... ORDER BY ... LIMIT`
+- `SQLSEL COUNT(*)`
 - `SQLSEL USAGE` for the runtime grammar
 - `REGRESSION SQLSEL_SELECT_V1`, an oracle comparison against SQLite
 - a SQL conformance map in `include/sql_ref.hpp`
