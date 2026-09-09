@@ -37,9 +37,9 @@ src/cli/app_simple_browser.cpp:796:set
 src/cli/browse/browse_edit.cpp:40:set
 src/cli/cmd_autodbf.cpp:985:set
 src/cli/cmd_commit.cpp:319:set
-src/cli/cmd_copy.cpp:583:set
+src/cli/cmd_copy.cpp:589:set
 src/cli/cmd_importsql.cpp:723:set
-src/cli/cmd_sort.cpp:886:set
+src/cli/cmd_sort.cpp:923:set
 src/cli/cmd_workspace.cpp:3057:set
 src/cli/table_state.cpp:453:set
 src/help/message_catalog.cpp:844:set
