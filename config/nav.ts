@@ -87,7 +87,15 @@ export const moreNav: NavItem[] = [
   // something. Contact is the item that loses least by moving: it is one page
   // with no children, it is still in the More menu, still in the mobile list,
   // and still linked from the footer, which RDBMS was not.
-  { label: "Contact", href: "/contact" }
+  { label: "Contact", href: "/contact" },
+  // Workspaces, added 2026-09-09 on owner observation: a major feature with a
+  // full documentation page and no navigation entry anywhere -- `workspace`
+  // did not occur in this file at all. APPENDED rather than inserted, because
+  // topNav below indexes moreNav by position and an insertion would silently
+  // renumber the mobile list. It is NOT in primaryNav: this file measures that
+  // bar at ~972px against a 1024 breakpoint and requires a fresh measurement
+  // for any addition, which a ten-character label does not get for free.
+  { label: "Workspaces", href: "/docs/engine/workspaces" }
 ];
 
 /**
@@ -126,5 +134,9 @@ export const topNav: NavItem[] = [
   // swap (... AI, News, RDBMS, Contact, Search). The swap is a desktop-header
   // change only, which is what was asked for.
   moreNav[3], moreNav[4], primaryNav[5],
+  // Workspaces sits beside RDBMS deliberately: both are engine-capability
+  // pages rather than site sections, and a reader who wants one usually wants
+  // the other. Everything after it keeps its previous relative order.
+  moreNav[6],
   moreNav[5], primaryNav[6]
 ];

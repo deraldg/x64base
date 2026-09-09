@@ -10,6 +10,7 @@ import {
   FileCode2,
   GitBranch,
   GraduationCap,
+  Layers,
   ScrollText,
   TerminalSquare
 } from "lucide-react";
@@ -78,6 +79,13 @@ const ecosystem = [
     desc: "The memo as a byte carrier rather than a text field: notes, workspace postures, and whole databases living inside a single memo field, with a catalog table whose rows are databases.",
     state: { label: "runtime-proven; container format and catalog landed", stateIn: "runtime evidence", href: "/docs/labtalk/runtime-evidence" },
     icon: Database
+  },
+  {
+    title: "Workspaces",
+    href: "/docs/engine/workspaces",
+    desc: "A named database posture -- which tables are open, where every cursor sat, which area was selected -- saved, restored, declared UNDER a parent, and carried whole inside a memo field.",
+    state: { label: "nesting declared and durable; name resolution still open", stateIn: "the workspaces page", href: "/docs/engine/workspaces" },
+    icon: Layers
   },
   {
     title: "Laboratory Campus / LabTalk",
