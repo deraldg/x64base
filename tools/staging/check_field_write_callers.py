@@ -42,6 +42,34 @@ COMMENTS AND STRING LITERALS ARE STRIPPED BEFORE MATCHING, and that is not
 tidiness -- this tree's registry summaries discuss replaceFieldStored at length
 in prose, and cmd_regression.cpp alone would contribute a dozen phantom hits.
 A gate that counts its own documentation is worse than no gate.
+
+THE RECEIVER IS CHECKED, NOT JUST THE ARGUMENT (2026-09-09). Every cut of the
+`set(` test above discriminates by the shape of the FIRST ARGUMENT and none of
+them ever looked at WHAT THE METHOD IS CALLED ON. So every object in this tree
+with a `set(x)` method counted as a DbArea write, and six of the twenty-two
+baseline entries were not field writes at all:
+
+    src/tv/cmd_recordview.cpp x5    view_->set(lines) -- view_ is a LinesView*,
+                                    a TScroller subclass; the file performs NO
+                                    DbArea write of any kind, it is a VIEWER
+    src/tv/foxtalk_command_window.cpp x1  msgLine_->set(s) -- a TMsgLine widget;
+                                    the string DbArea occurs ZERO times there
+
+The header above worries at length about UNDER-reporting and calls it "the one
+failure a gate must not have". It is, and this is the other one. An
+over-reporting gate inflates a number that is published on x64base.com and pads
+the backlog with work that does not exist, so the list stops being a list of
+things to do.
+
+THE FIX MUST NOT INTRODUCE THE FAILURE IT CURES, so receivers land in THREE
+buckets and only one of them is dropped:
+
+    receiver is a DbArea in this file      COUNTED
+    receiver is some other declared name   EXCLUDED, and the count is PRINTED
+    receiver is not a plain identifier     COUNTED ANYWAY and listed as
+      (arr[i].set(...), f().set(...))      UNCLASSIFIED
+
+Unknown means counted. A gate may refuse to guess; it may never guess quiet.
 """
 
 import os
@@ -96,6 +124,23 @@ PATTERNS = [
     ("replaceFieldNull",   re.compile(r"(?:\.|->)\s*replaceFieldNull\s*\(")),
     ("set",                re.compile(r"(?:\.|->)\s*set\s*\(\s*(?![\"'])")),
 ]
+
+
+# A DbArea-typed name, as declared or received in this file. Deliberately
+# generous -- it matches declarations, parameters, references and pointers,
+# with or without namespace or const -- because a name this MISSES becomes an
+# exclusion, and an exclusion is the direction that loses a real write.
+DBAREA_DECL = re.compile(
+    r"(?:^|[^\w:])(?:(?:::)?xbase::)?DbArea\s*(?:const\s+)?[&*\s]*([A-Za-z_]\w*)"
+)
+
+# The receiver of a `x.set(` / `x->set(` call, when it is a plain identifier.
+RECEIVER = re.compile(r"([A-Za-z_]\w*)\s*(?:\.|->)\s*set\s*\(")
+
+
+def dbarea_names(code_no_strings):
+    """Identifiers this file declares or receives as a DbArea."""
+    return set(DBAREA_DECL.findall(code_no_strings))
 
 
 def strip_comments_and_strings(text, keep_strings=False):
@@ -182,6 +227,8 @@ def strip_comments_and_strings(text, keep_strings=False):
 
 def scan():
     hits = []
+    excluded = []
+    unclassified = []
     for dirpath, _dirnames, filenames in os.walk(SRC):
         rel_dir = os.path.relpath(dirpath, ROOT)
         if any(rel_dir == s or rel_dir.startswith(s + os.sep) for s in SKIP_DIRS):
@@ -212,16 +259,28 @@ def scan():
             # Stripping first made the discriminator match everything.
             no_strings = strip_comments_and_strings(text)
             with_strings = strip_comments_and_strings(text, keep_strings=True)
+            areas = dbarea_names(no_strings)
             for label, pat in PATTERNS:
                 code = with_strings if label == "set" else no_strings
                 for lineno, line in enumerate(code.split("\n"), 1):
-                    if pat.search(line):
-                        hits.append("%s:%d:%s" % (rel.replace("\\", "/"), lineno, label))
-    return sorted(set(hits))
+                    if not pat.search(line):
+                        continue
+                    rel_slash = rel.replace("\\", "/")
+                    if label == "set":
+                        m = RECEIVER.search(line)
+                        if m is None:
+                            # Not a plain identifier. COUNT IT and say so.
+                            unclassified.append("%s:%d:%s" % (rel_slash, lineno, label))
+                        elif m.group(1) not in areas:
+                            excluded.append("%s:%d  (%s is not a DbArea here)"
+                                            % (rel_slash, lineno, m.group(1)))
+                            continue
+                    hits.append("%s:%d:%s" % (rel_slash, lineno, label))
+    return sorted(set(hits)), sorted(set(excluded)), sorted(set(unclassified))
 
 
 def main():
-    hits = scan()
+    hits, excluded, unclassified = scan()
 
     by_file = {}
     for h in hits:
@@ -230,6 +289,17 @@ def main():
 
     print("field-write-callers: %d direct call site(s) in %d file(s) outside the engine"
           % (len(hits), len(by_file)))
+    if excluded:
+        print("  %d `set(` call(s) excluded -- the receiver is not a DbArea in that file:"
+              % len(excluded))
+        for e in excluded:
+            print("    " + e)
+    if unclassified:
+        print("  %d `set(` call(s) COUNTED but not attributable to a named receiver."
+              % len(unclassified))
+        print("  Unknown is counted, never dropped. Read these by hand:")
+        for u in unclassified:
+            print("    " + u)
 
     have_baseline = os.path.exists(BASELINE)
     if not have_baseline:

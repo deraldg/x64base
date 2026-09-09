@@ -14,6 +14,16 @@
 # never to this baseline. A baseline that grows stops being a measurement.
 #
 # Regenerate: python tools/staging/check_field_write_callers.py
+# CORRECTED 2026-09-09 FROM 22 SITES TO 16, AND NOT ONE OF THE SIX WAS ROUTED.
+# They were never field writes. The `set(` test discriminated by the shape of
+# the first ARGUMENT and never looked at the RECEIVER, so every object in the
+# tree with a set(x) method counted: five view_->set(lines) on a LinesView (a
+# TScroller subclass) in src/tv/cmd_recordview.cpp, which performs no DbArea
+# write of any kind and is a VIEWER, and one msgLine_->set(s) on a TMsgLine in
+# src/tv/foxtalk_command_window.cpp, a file where the string DbArea does not
+# occur. The checker now checks the receiver and PRINTS every exclusion. See
+# R142 and the finding filed the same day.
+#
 src/bbs/bbs_store.cpp:334:set
 src/bbs/bbs_store.cpp:350:set
 src/bbs/bbs_store.cpp:49:set
@@ -30,9 +40,3 @@ src/dewey/hierarchy_service.cpp:74:replaceFieldStored
 src/dewey/hierarchy_service.cpp:80:replaceFieldStored
 src/help/message_catalog.cpp:844:set
 src/identity/identity_dbf_store.cpp:63:set
-src/tv/cmd_recordview.cpp:328:set
-src/tv/cmd_recordview.cpp:407:set
-src/tv/cmd_recordview.cpp:601:set
-src/tv/cmd_recordview.cpp:614:set
-src/tv/cmd_recordview.cpp:655:set
-src/tv/foxtalk_command_window.cpp:92:set
