@@ -113,6 +113,67 @@ bool gateFieldWrites(const DbArea& area,
                      std::string* err = nullptr,
                      int* refused_field1 = nullptr);
 
+
+// THE KEY TRAVELS ONLY IF THE DESTINATION CAN HOLD IT.
+//
+// R142 -- "the key declaration travels, the key values are the operator's
+// call." COPY and SORT are two of the NINETEEN row-creating paths the primary
+// key charter records as minting no key at all. They build their destination
+// through dbf_create::create_dbf(), and the only writer of the x64 metadata
+// block on that path -- x64_build_name_metadata() -- has NO FLAGS PARAMETER
+// and writes X64FieldMetaEntry.flags as a hardcoded zero. A destination is
+// therefore born with no designation, and nothing in the creation path can
+// give it one. This is the shared disposition that decides whether the
+// source's designation follows, and it is ONE function rather than a rule per
+// verb for the same reason the write funnel is one door.
+//
+// IT IS CALLED AFTER THE ROWS ARE WRITTEN, NEVER BEFORE, AND THAT ORDER IS
+// LOAD-BEARING. COPY and SORT populate their destination with DbArea::set() --
+// the engine primitive, BELOW this funnel. Stamping first would copy cleanly
+// on today's build only because the immutability rule does not yet live in
+// DbArea::set(); the charter's own rule table records that cell as "nothing,
+// anywhere". On the day it does, a pre-stamped destination refuses its own
+// rows and the failure reads as a key bug rather than as an ordering bug.
+// Stamping last also means the designation lands on a column the source has
+// already filled.
+//
+// A BLANK OR DUPLICATED COLUMN IS REFUSED, INCLUDING WHEN THE OPERATOR ASKS
+// FOR IT. FINDING_A_FRESH_PROCESS_ENFORCES_A_KEY_IT_WILL_NOT_MINT measured
+// what such a table does: the row is born with a blank key, the funnel then
+// refuses every attempt to fill it, and it can never be completed. SORT makes
+// this reachable -- SORT ... UNIQUE de-duplicates on the SORT KEYS, not on the
+// key column, so a sort keyed on any other column can emit duplicates beneath
+// a stamp claiming there are none. THE OPERATOR MAY CHOOSE TO DROP A KEY. THEY
+// MAY NOT CHOOSE TO MINT A FALSE ONE.
+//
+// THIS IS NOT THE BYPASS PARAMETER THE CHARTER REFUSED, and the distinction
+// has to be stated or it will be misread. "A parameter can be passed by anyone
+// and a route cannot" governs BYPASSING THE FUNNEL'S REFUSAL. These options
+// govern OPERATOR INTENT ABOUT A KEY ON A NEW TABLE -- a question the funnel
+// does not answer and cannot. Nothing here licenses a bypass parameter.
+enum class KeyTravel {
+    // Carry the designation when it can be carried truthfully; REFUSE the
+    // operation when it cannot. The default, because both quiet alternatives
+    // are worse: dropping in silence loses a key the operator believed in,
+    // and stamping in silence mints one the engine cannot honour.
+    RefuseIfBlocked = 0,
+
+    // Proceed without the designation, by explicit request. The destination is
+    // a plain table. Reported, never silent.
+    Drop,
+};
+
+struct KeyTravelResult {
+    bool        proceed{false};  // may the operation report success
+    bool        stamped{false};  // the designation was written to the destination
+    std::string detail;          // what happened, for the CALLER to render
+};
+
+// dst must be OPEN AND FULLY POPULATED: this scans it and then stamps it.
+// Returns rather than prints, like everything else in this funnel -- COPY and
+// SORT say different things about the same outcome.
+KeyTravelResult carryPrimaryKey(const DbArea& src, DbArea& dst, KeyTravel choice);
+
 // Optional helper for CLI-side stale-field marking after a core mutation.
 // Safe to call from command code; non-CLI consumers should not depend on it.
 void mark_all_fields_stale_best_effort(DbArea& area, int area0);

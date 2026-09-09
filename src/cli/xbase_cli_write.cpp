@@ -32,11 +32,14 @@
 
 #include "xbase_cli.hpp"
 
+#include <cctype>
 #include <cstdint>
 #include <exception>
 #include <string>
+#include <unordered_set>
 
 #include "cli/field_constraints.hpp"
+#include "xbase_field_getters.hpp"
 #include "cli/table_state.hpp"
 #include "workarea_util.hpp"
 
@@ -247,6 +250,131 @@ bool replaceFieldNull(DbArea& area, int field1, bool make_null, std::string* err
     // maintained.
     if (!write_err.empty() && err) *err = write_err;
     return true;
+}
+
+
+namespace {
+
+// A BLANK IS NOT A VALUE A KEY CAN HOLD, and ONE blank is enough to block. A
+// stamped column with a blank row is precisely the state
+// FINDING_A_FRESH_PROCESS_ENFORCES_A_KEY_IT_WILL_NOT_MINT measured: the row
+// cannot be completed by the engine, which will not mint it, nor by the
+// operator, whom the funnel refuses. Refusing the stamp leaves a plain table,
+// which is recoverable; allowing it leaves rows that are not.
+bool blank_key_value(const std::string& v)
+{
+    for (const char c : v) {
+        if (!std::isspace(static_cast<unsigned char>(c))) return false;
+    }
+    return true;
+}
+
+} // namespace
+
+KeyTravelResult carryPrimaryKey(const DbArea& src, DbArea& dst, KeyTravel choice)
+{
+    KeyTravelResult r;
+
+    int sf1 = 0;
+    try { sf1 = src.primaryFieldIndex(); } catch (...) { sf1 = 0; }
+    if (sf1 < 1 || sf1 > static_cast<int>(src.fields().size())) {
+        // The source designates nothing. There is nothing to carry and nothing
+        // to report; a message here would be noise on every unkeyed COPY.
+        r.proceed = true;
+        return r;
+    }
+
+    const std::string key_name = src.fields()[static_cast<std::size_t>(sf1) - 1].name;
+
+    if (choice == KeyTravel::Drop) {
+        r.proceed = true;
+        r.detail  = "primary key " + key_name + " not carried (dropped by request)";
+        return r;
+    }
+
+    // BY NAME, NOT BY INDEX. SORT emits a caller-chosen column subset in a
+    // caller-chosen order, so the source's field number means nothing at the
+    // destination. Routed through the resolver AIF-157 consolidated ADDTAG and
+    // SET UNIQUE ... PRIMARY onto, because a 10-byte descriptor token is not a
+    // long logical name.
+    int df0 = -1;
+    try { df0 = xfg::resolve_field_index_std(dst, key_name); } catch (...) { df0 = -1; }
+    if (df0 < 0) {
+        r.detail = "primary key " + key_name +
+                   " cannot travel: the destination has no field of that name";
+        return r;
+    }
+    const int df1 = df0 + 1;
+
+    // THE SCAN WALKS ALL PHYSICAL RECORDS INCLUDING DELETED ONES, on the same
+    // argument compute_next_numeric already stands on: a deleted row can be
+    // RECALLed and its key stays reserved until PACK, so a duplicate hiding
+    // under a deletion flag is still a duplicate.
+    //
+    // 64-bit throughout. recCount()/gotoRec() are 32-bit compatibility
+    // adapters and this tree's build vector allows more rows than they can
+    // address; a truncating scan would report a clean column it never finished
+    // reading.
+    std::uint64_t saved = 0;
+    try { saved = dst.recno64(); } catch (...) { saved = 0; }
+
+    std::uint64_t n = 0;
+    try { n = dst.recCount64(); } catch (...) { n = 0; }
+
+    std::unordered_set<std::string> seen;
+
+    for (std::uint64_t rn = 1; rn <= n; ++rn) {
+        if (!dst.gotoRec64(rn) || !dst.readCurrent()) {
+            r.detail = "primary key " + key_name +
+                       " cannot travel: destination record " +
+                       std::to_string(rn) + " could not be read";
+            break;
+        }
+
+        const std::string v = dst.get(df1);
+
+        if (blank_key_value(v)) {
+            r.detail = "primary key " + key_name +
+                       " cannot travel: destination record " +
+                       std::to_string(rn) +
+                       " has a blank key, and a stamped blank can never be filled";
+            break;
+        }
+
+        if (!seen.insert(v).second) {
+            r.detail = "primary key " + key_name +
+                       " cannot travel: destination record " +
+                       std::to_string(rn) + " duplicates an earlier value";
+            break;
+        }
+    }
+
+    if (r.detail.empty()) {
+        // setFieldPrimaryDurable() is the metadata block's only writer and it
+        // already refuses a destination that cannot record the flag -- a VFP or
+        // classic header has nowhere to put one. Its wording is reused rather
+        // than duplicated, so one refusal keeps one explanation.
+        std::string stamp_err;
+        if (dst.setFieldPrimaryDurable(df1, true, &stamp_err)) {
+            r.proceed = true;
+            r.stamped = true;
+            r.detail  = "primary key " + key_name + " carried";
+        } else {
+            r.detail = "primary key " + key_name + " cannot travel: " + stamp_err;
+        }
+    }
+
+    // The scan moved the cursor. Put it back: this function is a disposition,
+    // not a navigation, and a caller that reads dst afterwards must not have to
+    // know that.
+    if (saved != 0) {
+        try {
+            (void)dst.gotoRec64(saved);
+            (void)dst.readCurrent();
+        } catch (...) { }
+    }
+
+    return r;
 }
 
 } // namespace xbase::cli
