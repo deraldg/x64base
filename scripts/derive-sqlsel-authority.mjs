@@ -28,10 +28,32 @@ import {
 
 const TOOL = "derive-sqlsel-authority";
 const args = process.argv.slice(2);
+const OUT = path.join(process.cwd(), "public", "artifacts", "sqlsel-conformance-v1.json");
+
+// Two read-only modes, both used by the ENGINE-SIDE gate
+// (tools/staging/check_site_artifacts.py in the x64base tree):
+//
+//   --artifact-path  print where this generator's artifact lives,
+//                    relative to the site root, and exit. The gate
+//                    globs scripts/derive-*-authority.mjs and ASKS
+//                    each one, rather than keeping its own list of
+//                    generator/artifact pairs -- a second list of the
+//                    same fact is how the two drift, and this repo has
+//                    paid for that shape more than once.
+//   --print          write the freshly derived JSON to stdout and
+//                    write nothing to disk, so the gate can compare
+//                    FACTS while ignoring provenance. --check cannot
+//                    serve that: it compares whole files, so every
+//                    engine commit would read as drift even when no
+//                    fact moved, and a gate that cries wolf on every
+//                    push is a gate that gets switched off.
+if (args.includes("--artifact-path")) {
+  console.log(path.relative(process.cwd(), OUT).split(path.sep).join("/"));
+  process.exit(0);
+}
 const CHECK_ONLY = args.includes("--check");
 const engine = resolveEngine(args, TOOL);
 const read = reader(engine);
-const OUT = path.join(process.cwd(), "public", "artifacts", "sqlsel-conformance-v1.json");
 
 const registry = read("src", "cli", "cmd_regression.cpp");
 const flags = suiteFlags(registry);
@@ -248,6 +270,11 @@ const authority = {
 };
 
 const rendered = JSON.stringify(authority, null, 2) + "\n";
+
+if (args.includes("--print")) {
+  process.stdout.write(rendered);
+  process.exit(0);
+}
 
 if (CHECK_ONLY) {
   process.exit(checkAgainstDisk(OUT, rendered, engineProv, "sqlsel authority"));
