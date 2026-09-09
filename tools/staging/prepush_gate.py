@@ -853,6 +853,40 @@ def main() -> int:
                   "claim survive a build nobody looked at.", file=sys.stderr)
             exit_code = 2
 
+        # 5c-ter. PUBLISHED SITE ARTIFACTS -- hard when a FACT moved, advisory
+        # when only the commit stamp is behind, and LOUD when it cannot run.
+        #
+        # x64base.com publishes authority artifacts derived from THIS tree, and
+        # the site's freshness contracts hold its pages to them. That half is
+        # mechanical. The other half was VOLUNTARY until 2026-09-09, because the
+        # site's checker resolves every authority against the SITE root and can
+        # prove nothing about this tree -- which is how a false AUTOINCREMENT
+        # claim survived two days, and how five pages came to call a SHIPPED
+        # feature "still planned". Both were changes made HERE.
+        #
+        # THE SPLIT IS THE POINT. Comparing whole artifacts would flag drift on
+        # every engine commit, because an artifact records the commit it was
+        # derived at; a gate that fires on every push is one somebody turns off.
+        # So facts are compared and provenance is not: FACTS DIFFER blocks,
+        # a stale stamp is advisory.
+        #
+        # NOT CONFIGURED does not block -- a clone with no site checkout is a
+        # normal state -- but it prints every run, because a silent skip and a
+        # real pass look identical. CONFIGURED AND BROKEN does block: missing is
+        # counted separately from wrong, the same discipline PKDURABLE's
+        # validator applies to its markers.
+        rc = _run_portal_check("tools/staging/check_site_artifacts.py", [])
+        if rc == 2:
+            print("\n  BLOCKED -- a published site artifact disagrees with this "
+                  "tree, or the site tree it was told to check is unusable. The "
+                  "site's own gates CANNOT see this; only this one can.",
+                  file=sys.stderr)
+            exit_code = 2
+        elif rc == 1:
+            print("\n  ADVISORY -- the site's artifacts are TRUE but were derived "
+                  "at an older commit of this tree. NOT blocking; re-derive when "
+                  "convenient so the stamp the public pages print matches.")
+
         # 5d. MANUAL LINK INTEGRITY -- hard. Every page the accepted command
         # reference links to must exist AND BE TRACKED.
         #
