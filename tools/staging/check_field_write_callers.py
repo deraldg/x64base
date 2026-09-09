@@ -106,6 +106,20 @@ EXEMPT_FILES = {
     os.path.join("src", "cli", "cmd_replace_multi.cpp"),    # gates in multirep_validate_and_normalize
     os.path.join("src", "cli", "cmd_sql_insert.cpp"),       # legacy INSERT verb; gates before APPEND
     os.path.join("src", "cli", "cmd_sql_update.cpp"),       # legacy UPDATE verb; gates before the scan
+
+    # src/dewey/hierarchy_service.cpp (2026-09-09). Joined the pattern above
+    # rather than being routed, because it writes ROWS: create_root, add_child
+    # and insert_between each set up to seven fields under one appendBlank()
+    # and one writeCurrent(). It now asks gateFieldWrites() for every field of
+    # a row before writing any, through a local gate_row()/write_row() pair.
+    #
+    # IT WAS ALSO THE ONLY FILE IN THE BASELINE WHOSE CALLERS DISCARDED EVERY
+    # RETURN -- all seventeen. That was survivable while the writes could not
+    # fail for a policy reason; it would not have been once they could, because
+    # a dropped refusal leaves a hierarchy node with no path_key and says
+    # nothing. Both helpers are [[nodiscard]] now, which is what made the
+    # compiler name every site.
+    os.path.join("src", "dewey", "hierarchy_service.cpp"),
 }
 
 # `set(` IS DISCRIMINATED BY THE SHAPE OF ITS FIRST ARGUMENT, and this took

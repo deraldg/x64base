@@ -9,6 +9,8 @@
 
 #include "hierarchy_service.hpp"
 
+#include "xbase_cli.hpp"
+
 #include <algorithm>
 #include <cctype>
 #include <map>
@@ -16,6 +18,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace {
@@ -68,16 +71,67 @@ std::string field_get(xbase::DbArea& area, int fld)
     return trim_copy(area.get(fld));
 }
 
-bool field_set(xbase::DbArea& area, int fld, const std::string& value)
+// EVERY RETURN HERE WAS DISCARDED BY EVERY CALLER UNTIL 2026-09-09, and that
+// was survivable only because these writes COULD NOT FAIL for a policy reason:
+// area.replaceFieldStored() is the engine primitive and asks no constraint
+// gate. Routing this file to the funnel makes a write REFUSABLE, and a
+// refusable write whose result is dropped is worse than an ungated one -- the
+// record keeps its other fields and silently loses the refused one, which for
+// a hierarchy means a node with no path_key or no node_id.
+//
+// So [[nodiscard]] lands FIRST and the compiler names all seventeen sites.
+// Making the failure visible is not a tidy-up that accompanies the gate; it is
+// the precondition for the gate being an improvement at all.
+[[nodiscard]] bool field_set(xbase::DbArea& area, int fld, const std::string& value)
 {
     if (fld <= 0) return false;
     return area.replaceFieldStored(fld, value);
 }
 
-bool field_set_bool(xbase::DbArea& area, int fld, bool value)
+// field_set_bool() was REMOVED here, not left unused. Its only three callers
+// wrote the `active` flag, and those are now rows built by gate_row(), which
+// carries {f.active, in.active ? "T" : "F"} as an ordinary pair -- the same
+// two characters it always produced. An unused function in an anonymous
+// namespace is a warning, and in a -Werror build it is a broken build.
+
+// ASK THE GATE ABOUT EVERY FIELD OF A ROW BEFORE WRITING ANY OF THEM.
+//
+// This file writes ROWS -- create_root, add_child and insert_between each set
+// up to seven fields under one appendBlank() and one writeCurrent(). Routing
+// those through the single-field funnel would be a REGRESSION and the funnel's
+// own header says why: N locks instead of one, N physical writes, N index
+// snapshot pairs, and -- worse -- NOT ATOMIC, because a refusal on the third
+// field leaves the first two already on disk. xbase::cli::gateFieldWrites()
+// exists for exactly this caller shape: one definition of "may this field be
+// written", two legitimate write strategies.
+//
+// Fields the schema does not carry (fld <= 0) are dropped before asking, the
+// same test field_set() makes, so the gate is never asked about slot 0.
+//
+// THE GATE IS ASKED BEFORE appendBlank(), not after, matching cmd_sql_insert.
+// It answers a question about the SCHEMA -- may this field be written -- and
+// not about the row, so it needs no record to exist. A row that names a
+// declared PRIMARY field is refused here, which is the policy working: the key
+// is the generator's to mint, not a caller's to supply.
+bool gate_row(const xbase::DbArea& area,
+              const std::vector<std::pair<int, std::string>>& writes)
 {
-    if (fld <= 0) return false;
-    return area.replaceFieldStored(fld, value ? "T" : "F");
+    std::vector<std::pair<int, std::string>> live;
+    live.reserve(writes.size());
+    for (const auto& w : writes)
+        if (w.first > 0) live.push_back(w);
+    if (live.empty()) return true;
+    return xbase::cli::gateFieldWrites(area, live);
+}
+
+// Write a row that gate_row() has already cleared. Kept beside it so the two
+// are read together: nothing calls this without the gate above it.
+bool write_row(xbase::DbArea& area,
+               const std::vector<std::pair<int, std::string>>& writes)
+{
+    for (const auto& w : writes)
+        if (w.first > 0 && !field_set(area, w.first, w.second)) return false;
+    return true;
 }
 
 std::vector<std::string> split_path(const std::string& path)
@@ -359,7 +413,10 @@ bool renumber_children(xbase::DbArea& area, const FieldMap& f, const std::string
             else
                 suffix = row.path_key.substr(old_root.size());
 
-            field_set(area, f.path_key, new_root + suffix);
+            const std::vector<std::pair<int, std::string>> w{
+                {f.path_key, new_root + suffix}};
+            if (!gate_row(area, w)) return false;
+            if (!write_row(area, w)) return false;
 
             if (!area.writeCurrent()) return false;
         }
@@ -404,7 +461,9 @@ bool rebuild_children(xbase::DbArea& area, const FieldMap& f,
         area.readCurrent();
 
         const std::string new_path = join_path(parent_path, format_segment(seg));
-        field_set(area, f.path_key, new_path);
+        const std::vector<std::pair<int, std::string>> w{{f.path_key, new_path}};
+        if (!gate_row(area, w)) return false;
+        if (!write_row(area, w)) return false;
         if (!area.writeCurrent()) return false;
 
         if (!rebuild_children(area, f, child.node_id, new_path)) return false;
@@ -439,14 +498,19 @@ bool HierarchyService::create_root(const HierNodeInput& in)
 
     const int new_root = (max_root == 0) ? 100 : max_root + 100;
 
+    const std::vector<std::pair<int, std::string>> row{
+        {f.node_id,   in.node_id},
+        {f.parent_id, ""},
+        {f.path_key,  std::to_string(new_root)},
+        {f.name,      in.name},
+        {f.type,      in.type},
+        {f.sort_hint, std::to_string(in.sort_hint)},
+        {f.active,    in.active ? "T" : "F"},
+    };
+    if (!gate_row(_area, row)) return false;
+
     _area.appendBlank();
-    field_set(_area, f.node_id, in.node_id);
-    field_set(_area, f.parent_id, "");
-    field_set(_area, f.path_key, std::to_string(new_root));
-    if (f.name > 0)      field_set(_area, f.name, in.name);
-    if (f.type > 0)      field_set(_area, f.type, in.type);
-    if (f.sort_hint > 0) field_set(_area, f.sort_hint, std::to_string(in.sort_hint));
-    if (f.active > 0)    field_set_bool(_area, f.active, in.active);
+    if (!write_row(_area, row)) return false;
 
     return _area.writeCurrent();
 }
@@ -466,14 +530,19 @@ bool HierarchyService::add_child(const std::string& parent_id, const HierNodeInp
     const int next_seg = next_available_segment(siblings);
     const std::string new_path = join_path(parent.path_key, format_segment(next_seg));
 
+    const std::vector<std::pair<int, std::string>> row{
+        {f.node_id,   in.node_id},
+        {f.parent_id, parent_id},
+        {f.path_key,  new_path},
+        {f.name,      in.name},
+        {f.type,      in.type},
+        {f.sort_hint, std::to_string(in.sort_hint)},
+        {f.active,    in.active ? "T" : "F"},
+    };
+    if (!gate_row(_area, row)) return false;
+
     _area.appendBlank();
-    field_set(_area, f.node_id, in.node_id);
-    field_set(_area, f.parent_id, parent_id);
-    field_set(_area, f.path_key, new_path);
-    if (f.name > 0)      field_set(_area, f.name, in.name);
-    if (f.type > 0)      field_set(_area, f.type, in.type);
-    if (f.sort_hint > 0) field_set(_area, f.sort_hint, std::to_string(in.sort_hint));
-    if (f.active > 0)    field_set_bool(_area, f.active, in.active);
+    if (!write_row(_area, row)) return false;
 
     return _area.writeCurrent();
 }
@@ -517,14 +586,19 @@ bool HierarchyService::insert_between(const std::string& left_id,
 
     const std::string new_path = join_path(base_parent_path, format_segment(mid));
 
+    const std::vector<std::pair<int, std::string>> row{
+        {f.node_id,   in.node_id},
+        {f.parent_id, left.parent_id},
+        {f.path_key,  new_path},
+        {f.name,      in.name},
+        {f.type,      in.type},
+        {f.sort_hint, std::to_string(in.sort_hint)},
+        {f.active,    in.active ? "T" : "F"},
+    };
+    if (!gate_row(_area, row)) return false;
+
     _area.appendBlank();
-    field_set(_area, f.node_id, in.node_id);
-    field_set(_area, f.parent_id, left.parent_id);
-    field_set(_area, f.path_key, new_path);
-    if (f.name > 0)      field_set(_area, f.name, in.name);
-    if (f.type > 0)      field_set(_area, f.type, in.type);
-    if (f.sort_hint > 0) field_set(_area, f.sort_hint, std::to_string(in.sort_hint));
-    if (f.active > 0)    field_set_bool(_area, f.active, in.active);
+    if (!write_row(_area, row)) return false;
 
     return _area.writeCurrent();
 }
@@ -562,10 +636,13 @@ bool HierarchyService::move_subtree(const std::string& moving_id,
         else
             suffix = row.path_key.substr(old_root.size());
 
-        field_set(_area, f.path_key, new_root + suffix);
-
+        std::vector<std::pair<int, std::string>> w{
+            {f.path_key, new_root + suffix}};
         if (row.node_id == moving_id)
-            field_set(_area, f.parent_id, new_parent_id);
+            w.push_back({f.parent_id, new_parent_id});
+
+        if (!gate_row(_area, w)) return false;
+        if (!write_row(_area, w)) return false;
 
         if (!_area.writeCurrent()) return false;
     }
@@ -628,7 +705,9 @@ bool HierarchyService::rebuild_paths()
         _area.readCurrent();
 
         const std::string root_path = std::to_string(root_num);
-        field_set(_area, f.path_key, root_path);
+        const std::vector<std::pair<int, std::string>> w{{f.path_key, root_path}};
+        if (!gate_row(_area, w)) return false;
+        if (!write_row(_area, w)) return false;
 
         if (!_area.writeCurrent()) return false;
         if (!rebuild_children(_area, f, root.node_id, root_path)) return false;

@@ -24,6 +24,12 @@
 # occur. The checker now checks the receiver and PRINTS every exclusion. See
 # R142 and the finding filed the same day.
 #
+# 2026-09-09, SECOND CORRECTION: hierarchy_service.cpp leaves as an EXEMPTION,
+# not as a routing. It called DbArea::replaceFieldStored -- the ENGINE
+# PRIMITIVE, a different function from the xbase::cli funnel of the same name
+# -- so it reached disk with no constraint gate. It now asks gateFieldWrites()
+# for a whole row before writing any of it, which is the cmd_replace_multi
+# shape, and is exempted BY ROUTE like the others. 16 -> 14.
 src/bbs/bbs_store.cpp:334:set
 src/bbs/bbs_store.cpp:350:set
 src/bbs/bbs_store.cpp:49:set
@@ -36,7 +42,5 @@ src/cli/cmd_importsql.cpp:723:set
 src/cli/cmd_sort.cpp:886:set
 src/cli/cmd_workspace.cpp:3057:set
 src/cli/table_state.cpp:453:set
-src/dewey/hierarchy_service.cpp:74:replaceFieldStored
-src/dewey/hierarchy_service.cpp:80:replaceFieldStored
 src/help/message_catalog.cpp:844:set
 src/identity/identity_dbf_store.cpp:63:set
