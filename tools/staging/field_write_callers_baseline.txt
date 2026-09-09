@@ -30,6 +30,12 @@
 # -- so it reached disk with no constraint gate. It now asks gateFieldWrites()
 # for a whole row before writing any of it, which is the cmd_replace_multi
 # shape, and is exempted BY ROUTE like the others. 16 -> 14.
+#
+# 2026-09-09, THIRD: table_state.cpp leaves as an EXEMPTION on a different
+# argument from every one before it. It is not that gating WAL replay would be
+# slow; it is that gating it would be WRONG. Replay writes values the gate
+# already accepted at COMMIT, and it removes the log when it finishes, so a
+# refusal at replay would discard a committed record and say nothing. 14 -> 13.
 src/bbs/bbs_store.cpp:334:set
 src/bbs/bbs_store.cpp:350:set
 src/bbs/bbs_store.cpp:49:set
@@ -41,6 +47,5 @@ src/cli/cmd_copy.cpp:589:set
 src/cli/cmd_importsql.cpp:723:set
 src/cli/cmd_sort.cpp:923:set
 src/cli/cmd_workspace.cpp:3057:set
-src/cli/table_state.cpp:453:set
 src/help/message_catalog.cpp:844:set
 src/identity/identity_dbf_store.cpp:63:set

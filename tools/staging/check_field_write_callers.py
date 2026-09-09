@@ -120,6 +120,23 @@ EXEMPT_FILES = {
     # nothing. Both helpers are [[nodiscard]] now, which is what made the
     # compiler name every site.
     os.path.join("src", "dewey", "hierarchy_service.cpp"),
+
+    # src/cli/table_state.cpp (2026-09-09). EXEMPT FOR A DIFFERENT REASON THAN
+    # EVERY FILE ABOVE, and the difference is the point. The others are exempt
+    # because gating them per field would be slower and would break atomicity.
+    # This one is exempt because GATING IT AT ALL WOULD BE WRONG.
+    #
+    # recover_table_buffer_journal() REPLAYS A WRITE-AHEAD LOG. Every value it
+    # writes was already accepted by the gate at COMMIT time and is already
+    # durable in the journal; replay only puts back what a crash interrupted.
+    # Asking the gate again would let a constraint added AFTER the log was
+    # written refuse a write that is already committed -- and since replay ends
+    # by removing the log, a refusal there loses the record permanently while
+    # reporting nothing. A recovery that can disagree with the commit it is
+    # recovering is not a recovery.
+    #
+    # THE GATE BELONGS AT THE MOMENT OF THE ORIGINAL WRITE, NOT AT REPLAY.
+    os.path.join("src", "cli", "table_state.cpp"),
 }
 
 # `set(` IS DISCRIMINATED BY THE SHAPE OF ITS FIRST ARGUMENT, and this took
