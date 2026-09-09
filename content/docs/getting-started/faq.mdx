@@ -157,9 +157,10 @@ Maturity, stated plainly: this family is **in progress**. It runs and is activel
 developed, and that is not the same as a claim of completeness. The SELECT slice
 now carries the full join family, grouping and aggregates, set operations,
 subqueries and single-table transactional DML -- each verified against an
-in-process SQLite oracle -- while the bare `SELECT` alias without the `SQLSEL`
-prefix, cross-table atomic commit, stored NULL in DML and subqueries over a
-joined outer scope remain absent. A command's page may also show a catalog status
+in-process SQLite oracle. The bare `SELECT` alias without the `SQLSEL` prefix
+ships behind the session switch `SET MODE SQL` -- corrected 2026-09-09, this
+answer called it absent -- while cross-table atomic commit, stored NULL in DML
+and subqueries over a joined outer scope remain absent. A command's page may also show a catalog status
 broader than its own contract claims (see below).
 
 See: [SQLsel](/docs/talk-family/sqlsel),

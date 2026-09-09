@@ -34,52 +34,27 @@
  * in scanned source. This file is in scripts/, which that guard also scans.
  */
 
-import fs from "node:fs";
 import path from "node:path";
-import { execFileSync } from "node:child_process";
+import {
+  resolveEngine,
+  reader,
+  provenance,
+  suiteFlags,
+  registryTotal,
+  checkAgainstDisk,
+  writeArtifact
+} from "./lib/engine-facts.mjs";
 
+const TOOL = "derive-primary-key-authority";
 const args = process.argv.slice(2);
 const CHECK_ONLY = args.includes("--check");
-
-function argValue(flag) {
-  const i = args.indexOf(flag);
-  return i >= 0 && i + 1 < args.length ? args[i + 1] : null;
-}
-
-const engine = argValue("--engine") ?? process.env.X64BASE_ENGINE_TREE ?? null;
-if (!engine) {
-  console.error(
-    "derive-primary-key-authority: --engine <path-to-engine-tree> is required\n" +
-      "  (or set X64BASE_ENGINE_TREE). There is deliberately no default: a\n" +
-      "  hardcoded clone path is both machine-specific and blocked by\n" +
-      "  check-public-content.mjs."
-  );
-  process.exit(2);
-}
-if (!fs.existsSync(path.join(engine, "src", "cli", "cmd_regression.cpp"))) {
-  console.error(
-    `derive-primary-key-authority: ${engine} does not look like the engine tree\n` +
-      "  (src/cli/cmd_regression.cpp not found)."
-  );
-  process.exit(2);
-}
+const engine = resolveEngine(args, TOOL);
+const read = reader(engine);
 
 const OUT = path.join(process.cwd(), "public", "artifacts", "primary-key-policy-v1.json");
 
-const read = (...p) => fs.readFileSync(path.join(engine, ...p), "utf8");
-
-/* --- provenance ------------------------------------------------------ */
-// Read-only git only, and never through a pipe: a SIGPIPE on a git child can
-// leave a zero-byte .git/index.lock behind. execFileSync captures directly.
-function git(...a) {
-  return execFileSync("git", ["--no-optional-locks", "-C", engine, ...a], {
-    encoding: "utf8"
-  }).trim();
-}
-const commit = git("log", "-1", "--format=%H");
-const commitDate = git("log", "-1", "--format=%cs");
-
 /* --- the flag -------------------------------------------------------- */
+const engineProv = provenance(engine);
 const x64hdr = read("include", "xbase_64.hpp");
 const flagMatch = x64hdr.match(
   /constexpr\s+uint16_t\s+X64_FIELD_FLAG_PRIMARY\s*=\s*(0x[0-9A-Fa-f]+)/
@@ -106,26 +81,8 @@ const pkdRows = [
 if (!pkdRows.length) throw new Error("PKDURABLE marker table not found in cmd_regression.cpp");
 
 /* --- default-suite membership ---------------------------------------- */
-// The registry is a constexpr array of brace-initialised structs whose fourth
-// member is in_default_suite. Bound each entry's scan by the NEXT entry rather
-// than by a fixed lookahead: an earlier cut of this parser used 40 lines and
-// silently read 80 of 81 entries, because one summary is longer than that.
-function suiteFlags(text) {
-  const starts = [...text.matchAll(/^\s*\{\s*$\s*^\s*"([A-Z0-9_]+)",\s*$/gm)];
-  const flags = {};
-  for (let i = 0; i < starts.length; i += 1) {
-    const from = starts[i].index;
-    const to = i + 1 < starts.length ? starts[i + 1].index : text.length;
-    const body = text.slice(from, to);
-    const flag = body.match(/^\s*(true|false),?\s*(?:\/\/.*)?$/m);
-    flags[starts[i][1]] = flag ? flag[1] === "true" : null;
-  }
-  return flags;
-}
 const flags = suiteFlags(validator);
-const totalSpecs = Number(
-  (validator.match(/std::array<RegressionSpec,\s*(\d+)>/) ?? [])[1] ?? 0
-);
+const totalSpecs = registryTotal(validator);
 
 /* --- unrouted direct field writes ------------------------------------ */
 const baseline = read("tools", "staging", "field_write_callers_baseline.txt")
@@ -141,11 +98,7 @@ const authority = {
     "tree. Do not hand-edit: re-derive instead, or the next run reverts you " +
     "and the site quietly disagrees with the engine.",
   derived_on: new Date().toISOString().slice(0, 10),
-  engine: {
-    commit,
-    commit_short: commit.slice(0, 9),
-    commit_date: commitDate
-  },
+  engine: engineProv,
   declaration: "SET UNIQUE FIELD <field> PRIMARY",
   enforced_since: "2026-09-07",
   flag: {
@@ -187,31 +140,13 @@ const authority = {
 const rendered = JSON.stringify(authority, null, 2) + "\n";
 
 if (CHECK_ONLY) {
-  const onDisk = fs.existsSync(OUT) ? fs.readFileSync(OUT, "utf8") : "";
-  // derived_on is a timestamp, not a fact about the engine; comparing it would
-  // make this check fail every day for no reason.
-  const strip = (s) => s.replace(/"derived_on": "[^"]*",\n/, "");
-  if (strip(onDisk) === strip(rendered)) {
-    console.log(
-      `primary-key authority: MATCHES the engine at ${authority.engine.commit_short}.`
-    );
-    process.exit(0);
-  }
-  console.error(
-    "primary-key authority: DRIFTED from the engine tree.\n" +
-      `  engine HEAD: ${authority.engine.commit_short} (${commitDate})\n` +
-      "  Re-derive with the same command minus --check, then re-run\n" +
-      "  `npm run check:freshness` -- the page contract will name every\n" +
-      "  sentence that has to change."
-  );
-  process.exit(1);
+  process.exit(checkAgainstDisk(OUT, rendered, engineProv, "primary-key authority"));
 }
 
-fs.mkdirSync(path.dirname(OUT), { recursive: true });
-fs.writeFileSync(OUT, rendered, "utf8");
+writeArtifact(OUT, rendered);
 console.log(
   `primary-key authority written: ${authority.specs.pkpolicy.markers} PKPOLICY markers, ` +
     `${authority.specs.pkdurable.child_markers} PKDURABLE child markers, ` +
     `${authority.unrouted_direct_writes.sites} unrouted sites in ` +
-    `${authority.unrouted_direct_writes.files} files, engine ${authority.engine.commit_short}.`
+    `${authority.unrouted_direct_writes.files} files, engine ${engineProv.commit_short}.`
 );

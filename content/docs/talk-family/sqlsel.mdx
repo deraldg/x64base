@@ -96,9 +96,13 @@ are not yet in the suite that runs every time.
 
 ## Gaps, stated
 
-- **The bare `SELECT ...` alias is still planned.** `SET MODE [TO] NATIVE|SQL|OTHER`
-  exists and is session-only; the prefix-free form is not the same thing and is
-  not shipped.
+Corrected 2026-09-09: this list opened with "the bare `SELECT ...` alias is
+still planned", one line above a bullet stating that explicit transactions
+*require SQL mode*. Both cannot be true, and the second one was. `SET MODE SQL`
+routes `SELECT` (and six other verbs) to `SQLSEL`, proven against SQLite by the
+`SQLMODE_SMOKE` regression. See
+[SQLsel and SQL Conformance](/docs/engine/sqlsel-and-sql-conformance).
+
 - **Explicit transactions require SQL mode and accept ONE target table.**
   Cross-table atomic commit is refused.
 - **No stored NULL in DML, and no memo-field DML.** Both are refused rather than

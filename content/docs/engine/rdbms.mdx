@@ -69,6 +69,13 @@ expected to have:
 - **typed empty results**: a join whose right side matches nothing preserves the
   column schema rather than collapsing to no shape at all
 
+The verb is `SQLSEL` because xBase already spends `SELECT` on `SELECT <area>`,
+which switches the active work area rather than querying anything. **The bare
+`SELECT ... FROM ...` form does ship**, behind the session switch
+`SET MODE SQL`, which routes seven verbs to `SQLSEL` and blocks the
+cursor-oriented surfaces that would otherwise be reachable inside a statement.
+See [SQLsel and SQL Conformance](/docs/engine/sqlsel-and-sql-conformance).
+
 Neither of those two query surfaces replaces the other. One follows a
 structure you asserted about your data; the other asks a question that
 stands on its own.
@@ -102,7 +109,9 @@ expectation. That distinction is the point: a stored expectation only proves our
 reader agrees with our writer, and a shared misunderstanding passes. An
 independent engine answering the same question over the same rows does not.
 
-Six of those specs run on every `REGRESSION ALL`; seven more are explicit-run.
+Thirteen specs are graded that way. Six run on every `REGRESSION ALL` and seven
+are explicit-run; twelve of the thirteen are named `SQLSEL_*` and the
+thirteenth, `SQLMODE_SMOKE`, grades the mode router the same way.
 See [Regression and Proof Testing](/docs/engine/regression-and-proof-testing) and
 [SQLsel and SQL Conformance](/docs/engine/sqlsel-and-sql-conformance).
 
@@ -153,10 +162,6 @@ Also absent, and each refused rather than silently approximated:
   carry a real `_NullFlags` bit, byte-verified against files Visual FoxPro wrote
   — but the DML path does not write one.
 - **Subqueries over a joined outer scope.**
-- **The bare `SELECT ...` form** without the `SQLSEL` verb. xBase already spends
-  `SELECT` on `SELECT <area>`, which switches the active work area rather than
-  querying anything, so the two senses collide on the same word. `SQLSEL` is
-  the disambiguating verb; a leading `SELECT` after it parses but is redundant.
 - **Memo-field DML.**
 
 Produced absence and stored absence are also kept apart deliberately: an

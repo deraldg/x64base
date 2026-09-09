@@ -161,6 +161,32 @@
         "**{unrouted_direct_writes.sites} direct field-write call sites across {unrouted_direct_writes.files} files**",
         "**Derived from engine commit `{engine.commit_short}` ({engine.commit_date}).**"
       ]
+    },
+    {
+      "id": "sqlsel-conformance",
+      "authority": "public/artifacts/sqlsel-conformance-v1.json",
+      "target": "content/docs/engine/sqlsel-and-sql-conformance.mdx",
+      "mustContain": [
+        "`{verb}` **is itself the verb**",
+        "**{specs.sqlsel_total} `SQLSEL_*` specifications, {specs.in_default_suite} of them in the default suite**",
+        "and {specs.explicit_run} explicit-run",
+        "**{specs.oracle_graded} oracle-graded specs**",
+        "`{sql_prefixed_commands.names}`",
+        "registers {sql_prefixed_commands.count} commands whose names begin with `SQL`",
+        "{sql_mode.aliased_count} verbs become aliases for `SQLSEL`",
+        "`{sql_mode.aliased_to_sqlsel}`",
+        "**{conformance_map.entries} entries, {conformance_map.with_x64_mapping} mapped and {conformance_map.not_yet_mapped} not yet mapped**",
+        "**Derived from engine commit `{engine.commit_short}` ({engine.commit_date}).**"
+      ]
+    },
+    {
+      "id": "specifications-sqlsel-counts",
+      "authority": "public/artifacts/sqlsel-conformance-v1.json",
+      "target": "content/docs/engine/specifications.mdx",
+      "mustContain": [
+        "{specs.oracle_graded} specs are graded against that oracle: {specs.oracle_in_default_suite} in the default suite, {specs.oracle_explicit_run} explicit-run",
+        "The bare `SELECT` alias ships behind `SET MODE SQL`"
+      ]
     }
   ]
 }
