@@ -1,12 +1,20 @@
 ---
 title: "DotTalk++ as a DBMS and an RDBMS"
-description: "What makes x64base a database management system, what makes it relational, and exactly where a purist would say it stops."
+description: "What makes x64base a database management system, what makes it relational -- including enforced primary keys -- and exactly where a purist would say it stops."
 ---
 
 DotTalk++ / x64base is a **DBMS** — it owns its storage, its indexes, its
 locking and its recovery — and it is also an **RDBMS**: it stores relations,
-declares relationships between them, and answers questions with relational
-algebra rather than only with cursor navigation.
+declares relationships between them, **enforces a declared primary key on
+write**, and answers questions with relational algebra rather than only with
+cursor navigation.
+
+Keys came last and are stated first here because they are the relational
+primitive. A column designated `PRIMARY` is generated on `APPEND`, held
+against reuse until `PACK`, refused on rewrite, and stamped into the table's
+own metadata so a fresh process still refuses. That is a real key, not a
+convention — and it landed on 2026-09-07, which is recent enough that a
+reader who last looked earlier would reasonably still believe otherwise.
 
 Both halves are stated here with their evidence, and so is the boundary. A
 system that claims the word "relational" without saying where it stops is
@@ -38,16 +46,49 @@ and `ON` columns, reads no `REL` or `SET RELATION` state at all, and answers
 *"which rows satisfy this?"*. It carries the operators a relational engine is
 expected to have:
 
-- selection and projection, `DISTINCT`, `ORDER BY`, `LIMIT`
-- `INNER`, `LEFT`, `RIGHT`, `FULL` and `CROSS` joins
+- selection and projection, `DISTINCT`, `LIMIT`, and `ORDER BY` with
+  independent per-column directions
+- `INNER`, `LEFT`, `RIGHT`, `FULL` and `CROSS` joins; **self-joins through
+  aliases** over a single physical table; **composite boolean `ON`**; and
+  three-table `INNER`/`LEFT` chains
 - `COUNT`, `SUM`, `AVG`, `MIN`, `MAX` with `GROUP BY` and `HAVING`
 - `UNION`, `UNION ALL`, `INTERSECT`, `EXCEPT`
-- `IN (<select>)` and `[NOT] EXISTS (<select>)` subqueries
-- expression projection, so `TRIM(LNAME)` is a column
+- subqueries: scalar, `IN`, `NOT IN`, `EXISTS` and `NOT EXISTS`, both
+  **uncorrelated and correlated** — including double-`NOT EXISTS`
+  **relational division**, which is the "for all" question and the operator
+  most often missing from things that call themselves relational
+- expression projection, so `TRIM(LNAME)` is a column, over an AST shared
+  between projection and predicate
 - `INSERT`, `UPDATE`, `DELETE` with single-table transactions
+- **workspace-scoped name resolution**: two open workspaces may hold the same
+  table name with different rows, and a statement resolves within the current
+  workspace rather than to the engine's lowest matching slot
+- **committed-read isolation**: inside an explicit transaction `SQLSEL` reads
+  committed table truth while `TUPLE` previews the dirty row buffer, so the two
+  surfaces disagree on purpose and each says which it is showing
+- **typed empty results**: a join whose right side matches nothing preserves the
+  column schema rather than collapsing to no shape at all
 
-Neither surface replaces the other. One follows a structure you asserted about
-your data; the other asks a question that stands on its own.
+Neither of those two query surfaces replaces the other. One follows a
+structure you asserted about your data; the other asks a question that
+stands on its own.
+
+**Declared, enforced — a primary key.** As of 2026-09-07 a column can be
+designated with `SET UNIQUE FIELD <field> PRIMARY`, and the designation does
+three separate things. It **generates**: an `APPEND` into a blank key mints
+`max+1` inside the writer's table lock, so two writers cannot mint the same
+value. It **reserves**: a deleted row keeps its key until `PACK`, because
+`RECALL` can bring that row back and a reissued key would collide with it. And
+it **refuses**: a write that would change a minted key is rejected rather than
+quietly accepted.
+
+It is real schema, not session state. The designation is stamped into the x64
+field metadata as `X64_FIELD_FLAG_PRIMARY`, so a fresh process reopens the table
+and still refuses — which was not true until 2026-09-07, when the designation
+lived only in a process-local map that a restart discarded. Two consequences
+follow and both matter to a reader: it is **x64-flavour-scoped**, because the
+flag has nowhere to live in a classic or VFP descriptor, and a reader that does
+not know the flag reads zero and enforces nothing, in silence.
 
 ## How the relational claim is checked
 
@@ -61,6 +102,21 @@ Six of those specs run on every `REGRESSION ALL`; seven more are explicit-run.
 See [Regression and Proof Testing](/docs/engine/regression-and-proof-testing) and
 [SQLsel and SQL Conformance](/docs/engine/sqlsel-and-sql-conformance).
 
+The key claims are checked differently, and the difference is worth stating.
+There is no oracle for "was this write refused" — SQLite would simply have
+refused it too. So `PKPOLICY` asks the answerable question instead: every arm
+reads a FIELD VALUE back after the attempt. If the cell holds its original
+value the write was refused; if it holds the new one it was not. Console text
+is never the evidence. Five arms cover five different doors into a field write
+— native `REPLACE`, `SQLSEL INSERT`, `SQLSEL UPDATE`, and the two legacy bare
+`INSERT`/`UPDATE` verbs, which are different files reached by a different
+registration — because a fix wired into one is not evidence about another.
+
+Persistence needs a second process, which no single script can provide, so
+`PKDURABLE` is a two-run harness: one process declares and writes, another
+starts cold and must still refuse. It is the only spec in the tree that can say
+a designation survived a restart.
+
 ## Where it stops, stated plainly
 
 > **Referential integrity is not enforced on write.** Relations are declared for
@@ -69,8 +125,22 @@ See [Regression and Proof Testing](/docs/engine/regression-and-proof-testing) an
 > constraint-enforcing RDBMS, and it is a design position rather than an
 > oversight — but a reader should not infer enforcement from the word
 > "relational".
+>
+> This gap got **sharper** in 2026-09, not softer. A declared primary key is
+> now refused on write, so the engine demonstrably can decline a write on
+> integrity grounds — it simply does not decline this one. "Not built yet" and
+> "built elsewhere and deliberately not here" are different statements, and
+> this is now the second.
 
 Also absent, and each refused rather than silently approximated:
+
+- **Universal primary-key enforcement.** What is proven is five write paths
+  — the ones `PKPOLICY` asserts. A static gate counts **22 direct field-write
+  call sites across 15 files** that do not go through the funnel, and
+  `CALCWRITE`, browse and record-view editing, `COPY`, `SORT` and `IMPORTSQL`
+  are unasserted. Five of five is the arms that exist, not a key that is
+  enforced everywhere; closing that is a static-analysis job, because no
+  runtime marker can enumerate a call site.
 
 - **Cross-table atomic commit.** An explicit transaction accepts one target table.
 - **Stored `NULL` through DML.** `SQLSEL INSERT`/`UPDATE` refuse a null rather
@@ -78,7 +148,10 @@ Also absent, and each refused rather than silently approximated:
   carry a real `_NullFlags` bit, byte-verified against files Visual FoxPro wrote
   — but the DML path does not write one.
 - **Subqueries over a joined outer scope.**
-- **The bare `SELECT ...` form** without the `SQLSEL` prefix.
+- **The bare `SELECT ...` form** without the `SQLSEL` verb. xBase already spends
+  `SELECT` on `SELECT <area>`, which switches the active work area rather than
+  querying anything, so the two senses collide on the same word. `SQLSEL` is
+  the disambiguating verb; a leading `SELECT` after it parses but is redundant.
 - **Memo-field DML.**
 
 Produced absence and stored absence are also kept apart deliberately: an
