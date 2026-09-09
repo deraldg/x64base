@@ -140,11 +140,19 @@ reference itself, and covers equivalences as well as absences:
 
 - `SELECT` basic and `COUNT(*)` - **supported**, SQLsel
 - `CREATE TABLE` - **equivalent, different syntax** (`CREATE X64`, `DDL CREATE DBF`);
-  xBase types are C/N/D/L/M. On `AUTOINCREMENT` the reference says more than a
-  bare absence, and the qualifier is the point: *"No `AUTOINCREMENT`: identity
-  columns are not a storage feature here."* Identity allocation itself exists and
-  is proven -- `max(id)+1` under the writer's lock, in the BBS store and the
-  workspace catalog -- it is simply not a property of a column
+  xBase types are C/N/D/L/M. **`AUTOINCREMENT` is now an equivalent in a second
+  step, and this page said otherwise until 2026-09-09.** The reference used to
+  read *"No `AUTOINCREMENT`: identity columns are not a storage feature here"* --
+  true when written, false since 2026-09-07. `SET UNIQUE FIELD <field> PRIMARY`
+  designates a column; the engine mints `max+1` into a blank key on `APPEND`
+  under the writer's table lock, reserves a deleted row's key until `PACK`
+  because `RECALL` can bring the row back, and **refuses** a write that would
+  change a minted key. The designation is stamped into the x64 field metadata
+  (`X64_FIELD_FLAG_PRIMARY`), so it survives a restart. Two real differences
+  remain, and neither is "not supported": it is declared in a **separate
+  statement** rather than inside `CREATE TABLE`, and it is **x64-flavor-scoped**
+  -- the flag lives in x64 metadata, and a reader that does not know it reads
+  zero and enforces nothing, in silence
 - `CREATE INDEX` - **equivalent, two steps** (`INDEX ON ... TAG`, then `BUILDLMDB`)
 - `INSERT` - **supported as SQL syntax** (`SQLSEL INSERT INTO ... VALUES`), single-table and transactional; the two-step `APPEND` then `REPLACE` form remains the native path
 - `DELETE` - **equivalent with a real difference**: `DELETE` marks, `RECALL`
