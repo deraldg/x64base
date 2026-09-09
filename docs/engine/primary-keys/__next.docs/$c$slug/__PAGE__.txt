@@ -1,0 +1,162 @@
+1:"$Sreact.fragment"
+2:I[87771,["/_next/static/chunks/44pq19ahy4jdq.js","/_next/static/chunks/14mumt5_n0xhi.js","/_next/static/chunks/3xuq_c5klwj32.js"],"Sidebar"]
+8:I[97367,["/_next/static/chunks/44pq19ahy4jdq.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
+9:"$Sreact.suspense"
+0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"flex gap-8","children":[["$","$L2",null,{"groups":[{"label":"Getting Started","items":[{"label":"Overview","href":"/docs/getting-started/overview"},{"label":"Installation","href":"/docs/getting-started/installation"},{"label":"Quickstart","href":"/docs/getting-started/quickstart"},{"label":"FAQ","href":"/docs/getting-started/faq"}]},{"label":"x64base Engine","items":[{"label":"Architecture","href":"/docs/engine/architecture"},{"label":"Engine Specifications","href":"/docs/engine/specifications"},{"label":"Proven Capabilities","href":"/docs/engine/proven-capabilities"},{"label":"ACID and the Glass-Box Engine","href":"/docs/engine/acid-and-glass-box"},{"label":"Runtime Footprint","href":"/docs/engine/runtime-footprint"},{"label":"xBase Ecosystem Context","href":"/docs/engine/xbase-ecosystem-context"},{"label":"Ecosystem Feature Comparison","href":"/docs/engine/ecosystem-feature-comparison"},{"label":"x64 Capacity Math","href":"/docs/engine/x64-capacity-math"},{"label":"DBF Flavors and Index Defaults","href":"/docs/engine/dbf-flavors-and-indexes"},{"label":"DBF_64 Specification","href":"/docs/engine/dbf-64-specification"},{"label":"FPT64 Memo Format","href":"/docs/engine/fpt64-memo-format"},{"label":"RAM DBF and VDISK","href":"/docs/engine/ram-dbf-vdisk"},{"label":"Workspaces","href":"/docs/engine/workspaces"},{"label":"In-Memory Databases","href":"/docs/engine/in-memory-databases"},{"label":"Indexing Rules","href":"/docs/engine/indexing-rules"},{"label":"CDX and LMDB Indexing","href":"/docs/engine/cdx-lmdb-indexing"},{"label":"Pinocchio Benchmarks","href":"/docs/engine/pinocchio-benchmarks"},{"label":"Regression & Proof Testing","href":"/docs/engine/regression-and-proof-testing"},{"label":"Engine Feature Crosswalk","href":"/docs/engine/feature-crosswalk"},{"label":"DBMS and RDBMS","href":"/docs/engine/rdbms"},{"label":"Primary Keys","href":"/docs/engine/primary-keys"},{"label":"SQLsel and SQL Conformance","href":"/docs/engine/sqlsel-and-sql-conformance"},{"label":"Error Codes","href":"/docs/engine/error-codes"},{"label":"Messaging & Localization","href":"/docs/engine/messaging-and-localization"},{"label":"Identity, Authentication & RBAC","href":"/docs/engine/identity-security"},{"label":"API Reference","href":"/docs/engine/api-reference"},{"label":"Python Integration","href":"/docs/engine/python-integration"}]},{"label":"DotTalk++","items":[{"label":"Language Guide","href":"/docs/dottalk/language-guide"},{"label":"DotScript Language Guide","href":"/docs/dottalk/dotscript-language-guide"},{"label":"SET Family","href":"/docs/dottalk/set-family"},{"label":"Command Families","href":"/docs/dottalk/command-families"},{"label":"Data Mutators","href":"/docs/dottalk/data-mutators"},{"label":"Syntax","href":"/docs/dottalk/syntax"},{"label":"REPL","href":"/docs/dottalk/repl"},{"label":"Command Catalog","href":"/docs/dottalk/command-catalog"},{"label":"Command Reference","href":"/docs/dottalk/command-reference"},{"label":"Function Catalog","href":"/docs/dottalk/function-catalog"},{"label":"Examples","href":"/docs/dottalk/examples"},{"label":"Curriculum","href":"/docs/dottalk/curriculum"}]},{"label":"DotTalk++ Workbench","items":[{"label":"TupTalk","href":"/docs/talk-family/tuptalk"},{"label":"TableTalk","href":"/docs/talk-family/tabletalk"},{"label":"RelTalk","href":"/docs/talk-family/reltalk"},{"label":"SQLsel","href":"/docs/talk-family/sqlsel"},{"label":"Parallel GUI/TUI","href":"/docs/talk-family/parallel-gui-tui"},{"label":"Arctic TUI","href":"/docs/talk-family/arctic"}]},{"label":"Laboratory Campus","items":[{"label":"Academic Start Here","href":"/docs/labtalk/academic-start"},{"label":"Overview","href":"/docs/labtalk/overview"},{"label":"AI Portal — Alpha/Experimental","href":"/docs/labtalk/ai-portal"},{"label":"AI Agent Sync -- Snapshot","href":"/docs/labtalk/agent-sync"},{"label":"Current Tasks & Projects","href":"/docs/labtalk/current-work"},{"label":"Cases and Storyboard","href":"/docs/labtalk/cases-storyboard"},{"label":"Database Evolution Path","href":"/docs/labtalk/database-evolution"},{"label":"Education Features","href":"/docs/labtalk/education-features"},{"label":"Lesson Platform","href":"/docs/labtalk/lessons"},{"label":"LMS Communications Lane","href":"/docs/labtalk/lms-integration-lane"},{"label":"Student Lessons","href":"/docs/labtalk/student-lessons"},{"label":"Guided Lesson: Records, Fields, Tables","href":"/docs/labtalk/lesson-records-fields-tables"},{"label":"Career Lessons","href":"/docs/labtalk/career-lessons"},{"label":"Suggest a Lesson","href":"/docs/labtalk/suggest-a-lesson"},{"label":"Runtime Evidence Gallery","href":"/docs/labtalk/runtime-evidence"},{"label":"SelfDoc Lane Diagrams","href":"/docs/labtalk/selfdoc-lane"},{"label":"Non-Profit Guide","href":"/docs/labtalk/non-profit-guide"},{"label":"Examples","href":"/docs/labtalk/examples"},{"label":"Academic Positioning","href":"/docs/labtalk/academic-positioning"}]},{"label":"Developer Resources","items":[{"label":"Current Project Truth","href":"/docs/dev/project-truth"},{"label":"Recursive Co-development","href":"/docs/dev/recursive-co-development"},{"label":"Current Work Lanes","href":"/docs/dev/current-lanes"},{"label":"Roadmap","href":"/docs/dev/roadmap"},{"label":"Developer Manual (Assembled)","href":"/docs/dev/developer-manual"},{"label":"How the Manual Assembles Itself","href":"/docs/dev/manual-assembly"},{"label":"Documentation Progress","href":"/docs/dev/documentation-progress"},{"label":"Full-stack Documentation Push","href":"/docs/dev/full-stack-documentation-push"},{"label":"Site Improvement Plan","href":"/docs/dev/site-improvement-plan"},{"label":"Important Documents","href":"/docs/dev/important-documents"},{"label":"Website Documentation Matrix","href":"/docs/dev/website-documentation-matrix"},{"label":"Coined Vocabulary (Glossary)","href":"/docs/dev/coined-vocabulary"},{"label":"Historical Source Lineage","href":"/docs/dev/historical-source-lineage"},{"label":"Historical Family Tree","href":"/docs/dev/historical-family-tree"},{"label":"Historical Source Files","href":"/docs/dev/historical-source-files"},{"label":"Application UI DSL Lane","href":"/docs/dev/application-ui-dsl-lane"},{"label":"Developer Profile","href":"/docs/dev/developer-profile"},{"label":"Developer Handbook","href":"/docs/dev/developer-handbook"},{"label":"SelfDoc Website Publication","href":"/docs/dev/selfdoc-website-publication"},{"label":"Public Site Architecture","href":"/docs/dev/public-site-architecture"},{"label":"SelfDoc Feed Pipeline","href":"/docs/dev/selfdoc-feed-pipeline"},{"label":"HELP / Message / SelfDoc DFD","href":"/docs/dev/help-message-selfdoc-dfd"},{"label":"Onboarding Guide","href":"/docs/dev/onboarding-guide"},{"label":"Naming Conventions","href":"/docs/dev/naming-conventions"},{"label":"Coding Standards","href":"/docs/dev/coding-standards"},{"label":"Contribution Guide","href":"/docs/dev/contribution-guide"}]}]}],"$L3"]}],["$L4"],"$L5"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"Oen1J88C4Mvd4GtMMngWr"}
+6:T2729,<p>x64base enforces a declared primary key on write. That sentence became true on
+<strong>2026-09-07</strong> and was false before it, which is recent enough that a reader who
+last looked earlier would reasonably still believe otherwise — so this page
+states the claim, names the evidence for each half of it, and marks the edge
+where the claim stops.</p>
+<p><strong>Declared with <code>SET UNIQUE FIELD &#x3C;field> PRIMARY</code>.</strong> The designation does three
+separate things, and they are worth separating because each can be lost
+independently.</p>
+<h2 id="the-three-behaviours"><a class="no-underline" href="#the-three-behaviours">The three behaviours</a></h2>
+<p><strong>It generates.</strong> An <code>APPEND</code> into a blank key field mints <code>max+1</code>. The mint
+happens inside the writer's table lock — <code>try_lock_table</code> / <code>unlock_table</code> — so
+two writers cannot take the same value. The scan that finds <code>max</code> is a full
+<code>O(n)</code> pass on purpose: an index-backed fast path would skip deleted rows, and
+deleted rows are exactly the ones whose keys are still spoken for.</p>
+<p><strong>It reserves.</strong> A deleted row keeps its key until <code>PACK</code>. <code>RECALL</code> can bring
+that row back, and a key reissued in the meantime would collide with a row that
+returned from the dead. Deletion in this engine is a flag, not an erasure, so
+key reuse has to wait for the erasure to actually happen.</p>
+<p><strong>It refuses.</strong> A write that would change an already-minted key is rejected
+rather than quietly accepted. The refusal is the part that did not exist before
+2026-09-07: everything above worked, and a duplicate written over a primary key
+still survived a close and a reopen.</p>
+<h2 id="it-is-schema-not-session-state"><a class="no-underline" href="#it-is-schema-not-session-state">It is schema, not session state</a></h2>
+<p>The designation is stamped into the x64 field metadata as
+<code>X64_FIELD_FLAG_PRIMARY</code> (<code>0x0001</code>), so a process that opens the table cold —
+having issued no declaration of its own — still refuses the write.</p>
+<p>That was not true until 2026-09-07 either. The declaration lived in a
+process-local map, under a comment in the engine describing itself as <em>not</em>
+persistent schema metadata, and the comment was accurate: a fresh session
+without a redeclare let <code>REPLACE</code> overwrite a primary key in silence, on a build
+where every arm that existed read green. The arms were not lying. They could
+not ask the question, because a script runs in one process.</p>
+<p>Two consequences follow from where the flag lives, and both matter more than
+they look:</p>
+<ul>
+<li>It is <strong>x64-flavour-scoped</strong>. A classic dBASE or Visual FoxPro field
+descriptor has nowhere to put the flag, so the designation cannot be carried
+by those flavours at all.</li>
+<li>A reader that does not know the flag <strong>reads zero and enforces nothing, in
+silence</strong>. There is no version byte that makes an old reader refuse the file.
+A primary key is therefore a promise between this engine and its own tables,
+not a property of the bytes that any tool would honour.</li>
+</ul>
+<h2 id="how-each-claim-is-proved"><a class="no-underline" href="#how-each-claim-is-proved">How each claim is proved</a></h2>
+<p>There is no oracle for <em>"was this write refused"</em>. The SQLsel specs compare
+result sets against an in-process SQLite oracle over identical data, but SQLite
+would simply have refused the duplicate too, and two engines agreeing to refuse
+proves nothing about whether ours did. So the key specs ask the answerable
+question instead: <strong>every arm reads a field value back after the attempt.</strong> If
+the cell holds its original value the write was refused; if it holds the new one
+it was not. Console text is never the evidence — an errored marker in this
+language prints nothing rather than going red, which is why the marker counts
+below are load-bearing and why a transcript that is one short is a lost claim
+rather than a pass.</p>
+<p><code>PKPOLICY</code> carries 15 graded markers — 7 guards and 8 arms — over generation,
+reservation and refusal. Its five refusal arms cover five different doors into a
+field write: native <code>REPLACE</code>, <code>SQLSEL INSERT</code>, <code>SQLSEL UPDATE</code>, and the two
+legacy bare <code>INSERT</code> / <code>UPDATE</code> verbs, which are different files reached by a
+different registration. They are five arms and not one because a fix wired into
+one door is not evidence about another — which is not hypothetical: the first
+increment turned two of them green and left the third untouched, and as a single
+arm that transcript would have read as a win.</p>
+<p><code>PKDURABLE</code> carries 15 child markers — 10 guards and 5 arms, 2 of which are
+expected red — and it is the only spec in the tree that can say a designation
+survived a restart. It runs two child processes: one declares and writes, the
+other starts cold, issues no declaration, and must still refuse. The grading
+happens in C++ rather than in the script because a child's output never passes
+through the stream a script capture swaps; the validator reads the children's
+captures off disk. A validator can open a file and a marker cannot, and that
+asymmetry is the only reason a cross-process claim is assertable here at all.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th></th><th><code>PKPOLICY</code></th><th><code>PKDURABLE</code></th></tr></thead><tbody><tr><td>Graded markers</td><td>15</td><td>15 (in the children)</td></tr><tr><td>Guards / arms</td><td>7 / 8</td><td>10 / 5</td></tr><tr><td>In the default suite</td><td>false</td><td>false</td></tr><tr><td>Answers</td><td>generation, reservation, refusal</td><td>the designation survives a restart</td></tr></tbody></table>
+<p>Both are explicit-run. Of the engine's 81 registered specs, 29 run on every
+<code>REGRESSION ALL</code>; these two are not among them, and a page that implied
+otherwise would be overclaiming.</p>
+<h3 id="why-two-arms-are-expected-red"><a class="no-underline" href="#why-two-arms-are-expected-red">Why two arms are expected red</a></h3>
+<p><code>PKDURABLE</code> grades against an <strong>expected value</strong>, not against green, because two
+of its arms are supposed to fail and a spec whose correct reading includes a red
+cannot be graded any other way.</p>
+<p>One of them tries to fill a minted key by hand. The refusal <em>is</em> the policy, so
+a green there would mean enforcement had been lost. The other is the
+complementary half of a passing arm — both read the same field, one asking
+whether it equals 3 and the other whether it equals 0 — and it exists so the
+arm above it cannot be made unfalsifiable by writing down only the outcome its
+author expected. A blank numeric field turns out not to be zero, so it reads red
+either way, and that is recorded rather than tuned away.</p>
+<h2 id="where-enforcement-stops"><a class="no-underline" href="#where-enforcement-stops">Where enforcement stops</a></h2>
+<p><strong>Five write paths are proven. The engine has more.</strong> A static gate counts
+<strong>22 direct field-write call sites across 15 files</strong> that do not go through
+the write funnel — <code>CALCWRITE</code>, browse and record-view editing, <code>COPY</code>,
+<code>SORT</code>, <code>IMPORTSQL</code> among them. Five of five is <em>the arms that exist</em>, not a
+key that is enforced everywhere.</p>
+<p>That gap is closed by static analysis rather than by more arms, and the reason
+is worth stating: <strong>no runtime marker can enumerate a call site.</strong> A spec can
+prove that one door is locked; only a gate over the source can prove there is no
+sixth door. The count above is that gate's output, and the list it compares
+against may only shrink.</p>
+<p><strong>Referential integrity is still not enforced on write.</strong> Relations are declared
+for traversal, not as constraints; deleting a parent does not refuse, cascade or
+null out its children. See <a href="/docs/engine/rdbms">DBMS and RDBMS</a> for that
+boundary in full. It is worth noting that this gap got <em>sharper</em> in 2026-09
+rather than softer: the engine can now demonstrably decline a write on integrity
+grounds. It simply does not decline this one.</p>
+<p><strong>Concurrency is unasserted.</strong> The mint holds a table lock and that is a design
+statement, not a measurement — one writer cannot exercise a lock, and neither
+spec runs two processes at once. <code>PKDURABLE</code> runs two processes <em>in sequence</em>,
+which is a different question.</p>
+<h2 id="how-this-page-is-kept-honest"><a class="no-underline" href="#how-this-page-is-kept-honest">How this page is kept honest</a></h2>
+<p>The numbers above are not typed. They are derived from the engine tree by
+<code>scripts/derive-primary-key-authority.mjs</code> into
+<code>public/artifacts/primary-key-policy-v1.json</code>, and a freshness contract holds
+this page to that artifact — change a count in the engine without changing this
+page and the build fails, naming the sentence.</p>
+<p><strong>Derived from engine commit <code>0bd135e93</code> (2026-09-08).</strong></p>
+<p>The limit of that arrangement is stated because it is the one that has already
+bitten. Every freshness contract on this site resolves its authority against the
+site root, so a contract can prove this page agrees with the artifact beside it
+and can prove nothing about the engine directly. In 2026-09 a page and its
+authority agreed with each other for two days while both were wrong about the
+engine. What the generator changes is that re-deriving is now one command
+against a checked-out engine tree instead of an audit, and the commit stamped
+above makes staleness visible without reading a single fact. What it does not
+change is that nobody is forced to run it. Closing that needs the engine's own
+pre-push gate to refuse a drifted artifact, and that is not built.</p>3:["$","div",null,{"className":"min-w-0 flex-1","children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=3e5ce450c829","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/docs",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/docs/?v=3e5ce450c829","children":"Documentation"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/docs/engine/primary-keys",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/docs/engine/primary-keys/?v=3e5ce450c829","children":"Primary Keys: Policy, Proof and Boundary"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Primary Keys: Policy, Proof and Boundary"}],["$","p",null,{"className":"mt-2 text-muted","children":"What a declared primary key does in x64base -- generate, reserve, refuse -- which spec proves each claim, where enforcement stops, and how this page is held to the engine."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose dark:prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:break-words prose-code:whitespace-normal prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30 prose-pre:text-fg [&_pre_code]:text-fg [&_pre_code_span]:text-inherit","dangerouslySetInnerHTML":{"__html":"$6"},"children":null}]}],"$L7"]}]
+4:["$","script","script-0",{"src":"/_next/static/chunks/3xuq_c5klwj32.js","async":true}]
+5:["$","$L8",null,{"children":["$","$9",null,{"name":"Next.MetadataOutlet","children":"$@a"}]}]
+7:["$","div",null,{"className":"mt-10 flex flex-col gap-3 border-t border-border pt-6 text-sm md:flex-row md:items-center md:justify-between","children":[["$","div",null,{"children":["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs/engine/rdbms/?v=3e5ce450c829","children":["← ","DBMS and RDBMS"]}]}],["$","div",null,{"children":["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs/engine/sqlsel-and-sql-conformance/?v=3e5ce450c829","children":["SQLsel and SQL Conformance"," →"]}]}]]}]
+a:null
