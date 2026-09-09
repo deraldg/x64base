@@ -114,13 +114,13 @@ either way, and that is recorded rather than tuned away.
 ## Where enforcement stops
 
 **Five write paths are proven. The engine has more.** A static gate counts
-**14 direct field-write call sites across 12 files** that do not go through
+**13 direct field-write call sites across 11 files** that do not go through
 the write funnel — `CALCWRITE`, browse editing, `COPY`, `SORT` and `IMPORTSQL`
 among them. Five of five is *the arms that exist*, not a key that is enforced
 everywhere.
 
-That count was **22 across 15 files on 2026-09-08**, and it has come down twice
-for two different reasons worth keeping apart. **Six were never writes at all.**
+That count was **22 across 15 files on 2026-09-08**, and it has come down three
+times for three different reasons worth keeping apart. **Six were never writes at all.**
 The gate matched any `.set(` whose first argument was not a quoted string and
 never checked what the call was made *on*, so five `view_->set(lines)` calls on
 a text-scroller widget and one on a message-line widget counted as field writes.
@@ -131,6 +131,13 @@ rows — up to seven fields under one append — so it was not routed through th
 single-field funnel but made to ask the same gate about every field of a row
 before writing any of it, which is the pattern the multi-field writers already
 use.
+
+**And one is exempt because gating it would be wrong.** Write-ahead-log replay
+puts back values the gate already accepted at `COMMIT`; asking again would let a
+later constraint refuse a write that is already durable, and since replay
+removes the log when it finishes, that refusal would discard a committed record
+in silence. Every other exemption on this list is an argument about speed and
+atomicity. That one is an argument about correctness.
 
 That gap is closed by static analysis rather than by more arms, and the reason
 is worth stating: **no runtime marker can enumerate a call site.** A spec can
@@ -158,7 +165,7 @@ The numbers above are not typed. They are derived from the engine tree by
 this page to that artifact — change a count in the engine without changing this
 page and the build fails, naming the sentence.
 
-**Derived from engine commit `22bcf74e0` (2026-09-09).**
+**Derived from engine commit `d778bad5c` (2026-09-09).**
 
 The limit of that arrangement is stated because it is the one that has already
 bitten. Every freshness contract on this site resolves its authority against the

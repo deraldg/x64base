@@ -148,12 +148,13 @@ a designation survived a restart.
 Also absent, and each refused rather than silently approximated:
 
 - **Universal primary-key enforcement.** What is proven is five write paths
-  — the ones `PKPOLICY` asserts. A static gate counts **14 direct field-write
-  call sites across 12 files** that do not go through the funnel, and
+  — the ones `PKPOLICY` asserts. A static gate counts **13 direct field-write
+  call sites across 11 files** that do not go through the funnel, and
   `CALCWRITE`, browse editing, `COPY`, `SORT` and `IMPORTSQL` are unasserted.
-  That count was 22 across 15 on 2026-09-08 and has come down twice: six were
-  never writes at all — record-view turns out to be a viewer — and two were
-  real and are now gated. Five of five is the arms that exist, not a key that is
+  That count was 22 across 15 on 2026-09-08 and has come down three times: six
+  were never writes at all — record-view turns out to be a viewer — two were
+  real and are now gated, and one is exempt because gating it would be *wrong*:
+  log replay puts back what `COMMIT` already accepted. Five of five is the arms that exist, not a key that is
   enforced everywhere; closing that is a static-analysis job, because no
   runtime marker can enumerate a call site. See
   [Primary Keys](/docs/engine/primary-keys).
