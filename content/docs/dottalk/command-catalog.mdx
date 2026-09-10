@@ -215,11 +215,11 @@ Source extraction snapshot: `239` registered command keys and `239` parsed usage
 | `SMARTLIST` | report | supported | Filter-aware, order-aware table listing with optional projections, tuple output, debug tracing, deleted-record modes, and predicate filtering. | `src\cli\cmd_smartlist.cpp` |
 | `SMTP` | network | review-needed | Send mail through the tools/notify/smtp_probe.py helper, or probe the configured server without sending. | `src\cli\cmd_smtp.cpp` |
 | `SORT` | data | supported | Create a sorted DBF copy from the current table using expression keys, optional filters, projection fields, deleted-record selection, and UNIQUE. | `src\cli\cmd_sort.cpp` |
-| `SQL` | sql | experimental | Evaluate SQL-like COUNT/FOR predicates over the current DBF work area. | `src\cli\cmd_sql.cpp` |
+| `SQL` | sql | reserved | Reserved verb. Reports where the scanning and statement surfaces now live. | `src\cli\cmd_sql.cpp` |
 | `SQLERASE` | sql | experimental | Mark records deleted using SQL-like ERASE FROM &lt;table&gt; WHERE &lt;expr&gt; syntax. | `src\cli\cmd_sql_erase.cpp` |
 | `SQLHELP` | reference | experimental | Display or search the SQL helper/reference catalog. | `src\cli\cmd_sql_help.cpp` |
 | `SQLITE` | sql | supported | Thin SQLite command wrapper for status, connection management, Bible seed helpers, metadata inspection, SELECT queries, and EXEC statements. | `src\cli\cmd_sqlite.cpp` |
-| `SQLSEL` | sql | supported | Set-oriented SELECT statement over an open work area, plus the legacy predicate-scan form over the current area. | `src\cli\cmd_sql_select.cpp` |
+| `SQLSEL` | sql | supported | Typed set-oriented SELECT and DML over open x64base work areas. | `src\cli\cmd_sql_select.cpp` |
 | `SQLVER` | sql | experimental | Report whether SQLite support is available and print the linked SQLite library version when available. | `src\cli\cmd_sqlver.cpp` |
 | `STATUS` | workspace | supported | Report current or all open work-area status, including workspace occupancy, DBF flavor, active order/index state, tags, records, and optional structure details. | `src\cli\cmd_status.cpp` |
 | `STOP_ON_ERROR` | diagnostics | supported | Set or report the severity threshold at which a running DotScript aborts. | `src\cli\cmd_stop_on_error.cpp` |

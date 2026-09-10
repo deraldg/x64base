@@ -129,7 +129,7 @@ The registered tokens, read out of the shell's own registration list:
 | Command | What it is |
 |---|---|
 | `SQLSEL` | **SQLsel.** The `SELECT` statement surface, over a named table that is already open |
-| `SQL` | A **predicate scan or count over the CURRENT work area**. It does not execute SQL statements; the name is historical |
+| `SQL` | **A reserved name.** Retired as a scanner on 2026-09-04; it answers with direction to `COUNT` and `SQLSEL`, and the name is held for a real SQL surface later |
 | `SQLHELP` | The SQL reference and conformance map, rendered at runtime |
 | `SQLERASE` | Row removal through the SQL surface |
 | `SQLITE` | The **bridge to an actual SQLite database** |
@@ -142,9 +142,21 @@ parsed as a *predicate* and returned a confusing failure; it now detects the
 leading `SELECT` and redirects to `SQLSEL` with the real grammar rather than
 answering a question nobody asked.
 
-`SQL COUNT FOR <expr>` and `SQLSEL COUNT FOR <expr>` are **equivalent**. SQLsel
-kept the predicate-scan form when it gained statements, so the overlap is
-deliberate rather than accidental.
+**Neither `SQL` nor `SQLSEL` scans a predicate any more.** This section said
+until 2026-09-10 that `SQL COUNT FOR <expr>` and `SQLSEL COUNT FOR <expr>` were
+equivalent, and that the overlap was deliberate. It was, and then it was
+measured. `COUNT` treats `SET FILTER` and `SET DELETED` as part of the logical
+rowset and selects through the shared row selector; the two predicate forms did
+neither, each declaring its own deleted-row policy and walking the table by
+hand. So they could return **different numbers over the same table** and none of
+the three said so.
+
+Both were retired into `COUNT`, which carries the two behaviours it had been
+missing as `COUNT LIST` and `COUNT VERBOSE`: `SQL`'s on 2026-09-04, `SQLSEL`'s
+on 2026-09-10. A bare predicate after `SQLSEL` now answers with a corrective
+error naming `COUNT`. `COUNT` owns predicate scans over the current work area,
+`SQLSEL` owns statements over named tables, and neither answers the other's
+question.
 
 ## RelTalk and SQLsel: two ways to reach connected data
 

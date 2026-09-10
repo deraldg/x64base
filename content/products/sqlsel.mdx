@@ -31,11 +31,18 @@ Current SQL-facing surfaces include:
 
 ## The SQL family
 
-Four commands share the `SQL` prefix and are not interchangeable. `SQLSEL` is
-SQLsel, the statement surface described above. `SQL` scans the current work area
-with a predicate and does not execute SQL statements, its name being historical.
-`SQLITE` bridges to an actual SQLite database. `SQLVER` reports SQLite
-availability. Each command states the boundary in its own `USAGE` output.
+Six commands share the `SQL` prefix and are not interchangeable. `SQLSEL` is
+SQLsel, the statement surface described above. `SQL` is a **reserved name**: it
+scanned the current work area with a predicate until 2026-09-04, when that job
+moved to `COUNT`, and it now reports where the scanning and statement surfaces
+live. `SQLHELP` renders the SQL reference and conformance map. `SQLERASE`
+removes rows through the SQL surface. `SQLITE` bridges to an actual SQLite
+database. `SQLVER` reports SQLite availability. Each command states the boundary
+in its own `USAGE` output.
+
+For a predicate scan or count over the current work area the verb is `COUNT`,
+which honours `SET FILTER` and `SET DELETED` as the logical rowset and carries
+the listing and tracing forms as `COUNT LIST` and `COUNT VERBOSE`.
 
 ## Joins, and how they are proven
 
