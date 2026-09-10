@@ -9,7 +9,11 @@ PROMOTED 2026-09-10 by owner ruling per AIF-040 doctrine; registered in
 **Plan of record:** `IMPLEMENTATION_PLAN_SQLSEL_V1_20260729.md` in the AIF-074 change
 package, summarized in Sec. 4. **THE PACKAGE PATH THIS LINE CARRIED IS NOT IN THE TREE.**
 It named `outputs/2026-07-29_claude_gold_standard_sql_integration/`; measured 2026-09-10,
-`outputs/` does not exist at the repository root at all. The `cited-paths` gate never
+`outputs/` does not exist at the repository root at all, and
+`git ls-files "*IMPLEMENTATION_PLAN_SQLSEL*"` returns EMPTY -- so the plan was never
+tracked in this repository rather than moved or deleted. The distinction matters because
+it changes the remedy: there is nothing to locate in history, only a document that lived
+in a working directory and was cited as though it had been committed. The `cited-paths` gate never
 flagged it because the token ends in `/` and reads as a directory rather than a file. So
 the charter's own Plan of Record has been unreachable for six weeks, and Sec. 4 -- which
 is IN this document and IS current -- has been carrying the load alone. Locating or
