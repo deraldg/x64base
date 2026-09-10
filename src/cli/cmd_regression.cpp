@@ -3881,12 +3881,13 @@ bool run_trigger_veto_control(DbArea& area)
     // from its own successful commit. Asserting the .F. is what stops an
     // over-broad guard -- one that refused EVERY native COMMIT -- from passing
     // this arm unnoticed. See AIF-159 section 3.
-    static constexpr std::array<const char*, 5> control_required{{
+    static constexpr std::array<const char*, 6> control_required{{
         "TRGVETO-WORK-END",
         "TRG_W0_fixture_row1_is_alpha:.T.",
         "TRG_W1_row1_took_the_write:.T.",
         "TRG_W2_journal_survived:.F.",
-        "TRG_W3_native_commit_did_not_write:.F."
+        "TRG_W3_native_commit_did_not_write:.F.",
+        "TRG_W4_native_rollback_left_the_row:.F."
     }};
     if (!require_transcript_fragments(work_out, "TRIGGER VETO CONTROL", control_required)) {
         std::cout << "TRIGGER VETO CONTROL: FAIL -- no commit was observed.\n"
@@ -4039,15 +4040,26 @@ bool run_trigger_veto_refusal(DbArea& area, xbase::trigger_hooks::BeforeWriteFn 
     // This pair is what makes the guard measured rather than argued. On a
     // pre-guard binary the marker reads .F., so this arm goes red on the code
     // it was written against.
-    static constexpr std::array<const char*, 2> native_guard_required{{
-        "a SQL transaction is active; end it with COMMIT or ROLLBACK in SQL mode",
-        "TRG_W3_native_commit_did_not_write:.T."
+    // AIF-159 s7.6 adds the ROLLBACK twin to this same block. Note what proves
+    // which: the COMMIT half is proven by TRG_W3 (the vetoed write did not
+    // land), but the ROLLBACK half is proven by TRG_T1 IN THE TEARDOWN -- if
+    // the native ROLLBACK had been obeyed, the buffer would be gone and the
+    // retry would have nothing to commit. TRG_W4 is the control-side guard
+    // against an over-broad refusal, not the discriminator for this half.
+    static constexpr std::array<const char*, 4> native_guard_required{{
+        "COMMIT: a SQL transaction is active; end it with COMMIT or ROLLBACK in SQL mode",
+        "TRG_W3_native_commit_did_not_write:.T.",
+        "ROLLBACK: a SQL transaction is active; end it with COMMIT or ROLLBACK in SQL mode",
+        "TRG_W4_native_rollback_left_the_row:.T."
     }};
     if (!require_transcript_fragments(work_out, "TRIGGER VETO (native guard)",
                                       native_guard_required)) {
-        std::cout << "TRIGGER VETO: FAIL -- a native COMMIT was able to act inside\n"
-                     "  the still-open SQL transaction. That is the AIF-159 s3\n"
-                     "  defect: the vetoed write lands and the scope stays open.\n";
+        std::cout << "TRIGGER VETO: FAIL -- a native COMMIT or ROLLBACK was able to\n"
+                     "  act inside the still-open SQL transaction. That is the\n"
+                     "  AIF-159 defect: COMMIT lands the vetoed write, ROLLBACK\n"
+                     "  discards the buffer, and either way the scope stays open.\n"
+                     "  If TRG_T1 is also red below, the ROLLBACK was obeyed and\n"
+                     "  the buffered change no longer exists to retry.\n";
         ok = false;
     }
 

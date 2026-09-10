@@ -3313,9 +3313,12 @@ void release_sql_transaction(bool restore_buffer_policy) noexcept {
 void rollback_sql_transaction(const char* reason = nullptr) {
     auto& state = sql_transaction_state();
     if (state.area && state.area0 >= 0) {
+        // AIF-159 s7.6: call the SHARED BODY, not cmd_ROLLBACK. The command now
+        // refuses while a SQL transaction is active, and this is the SQL path --
+        // it must reach the buffer, not be turned away by its own guard.
         cli::ScopedAreaSelect focus(state.area);
-        std::istringstream empty;
-        cmd_ROLLBACK(*state.area, empty);
+        cli::rollback::Outcome discarded;
+        cli::rollback::rollback_area(*state.area, discarded);
     }
     release_sql_transaction(true);
     if (reason && *reason) std::cout << "SQLSEL: transaction rolled back -- " << reason << ".\n";

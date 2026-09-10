@@ -10,6 +10,7 @@
 #pragma once
 
 #include <sstream>
+#include <cstddef>
 #include <string>
 
 namespace xbase { class DbArea; }
@@ -77,3 +78,34 @@ std::string describe(const Outcome& outcome);
 void commit_area(xbase::DbArea& A, bool interactive_rebuild, Outcome& out);
 
 }} // namespace cli::commit
+
+// ---------------------------------------------------------------------------
+// AIF-159 section 7.6 -- the ROLLBACK twin of the above.
+//
+// cmd_ROLLBACK had the identical blindness: it never consulted
+// sql_transaction_state, so a native ROLLBACK DISCARDED THE BUFFER and left the
+// SQL scope open. Same shape as the COMMIT half, and worse in one respect --
+// COMMIT at least wrote the data before leaking the scope; ROLLBACK throws the
+// user's staged work away and still leaves them inside a transaction they never
+// opened.
+//
+// It could not be guarded in place. rollback_sql_transaction calls cmd_ROLLBACK
+// DIRECTLY, so a guard on the command would refuse the SQL path itself. Hence
+// the same split commit_area() got: the body lives here and the SQL path calls
+// it, while the command wraps it behind the guard.
+// ---------------------------------------------------------------------------
+namespace cli { namespace rollback {
+
+struct Outcome {
+    std::size_t discarded_changes{0};
+    int areas_touched{0};
+};
+
+// Discard the buffered changes of ONE area and report what was thrown away.
+//
+// This is the body a bare ROLLBACK runs, minus the argument parsing. It prints
+// exactly what ROLLBACK prints; the only difference is that the counts come
+// back instead of being dropped.
+void rollback_area(xbase::DbArea& A, Outcome& out);
+
+}} // namespace cli::rollback

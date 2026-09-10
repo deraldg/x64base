@@ -66,6 +66,25 @@ COMMIT
 GO 1
 ? "TRG_W3_native_commit_did_not_write:" + (ALLTRIM(NAME) = "ALPHA")
 
+; ---------------------------------------------------------------------------
+; TRG_W4 -- AIF-159 s7.6. THE SAME DOOR, THE OTHER VERB.
+;
+; A native ROLLBACK had the identical blindness and a worse consequence: it
+; DISCARDED the buffered changes and still left the scope open. Read that
+; against TRG_T1 in the teardown, which retries the SAME buffered change and
+; requires it to land -- if this ROLLBACK threw the buffer away, TRG_T1 goes
+; RED. THAT is the discriminator for this half, and it is stated here because
+; W4 ALONE IS WEAK: a rollback does not change committed truth, so the row
+; reads ALPHA on the veto pass whether the verb was refused or obeyed.
+;
+; W4 is still worth its line. It is the CONTROL-side assertion -- .F. there,
+; where no transaction is active and the row holds its own committed VETOED --
+; so a guard that refused EVERY native ROLLBACK fails the control instead of
+; passing quietly. The refusal itself is asserted by text on the veto pass.
+ROLLBACK
+GO 1
+? "TRG_W4_native_rollback_left_the_row:" + (ALLTRIM(NAME) = "ALPHA")
+
 ; DELIBERATELY DOES NOT CLOSE. On the veto pass the buffer is RETAINED by
 ; design, and CLOSE ALL over a retained buffer raises the interactive
 ; "COMMIT changes? (y/N)" prompt -- which would hang the arm forever waiting
