@@ -1,0 +1,48 @@
+AIF-074 -- SQLSEL legacy predicate form retired: corrective-error proof
+======================================================================
+
+WHAT THIS IS
+  A verbatim console transcript from an interactive `.\datarun.ps1` session on
+  2026-09-10, pasted by the owner. It is NOT a `SET ALTERNATE` capture and does
+  not claim to be one (AIF-081: `DOTSCRIPT ... OUT` is not a proof capture
+  either). It proves one thing only: that the corrective error added to
+  `cmd_SQL_SELECT` actually fires at the prompt.
+
+WHAT IT RAN AGAINST
+  Build stamp Sep 09 2026 19:40:48, source `a76cbb37 dirty` -- HEAD a76cbb37b
+  plus the uncommitted `src/cli/cmd_sql_select.cpp` reduction this proof
+  belongs to. Data lane acknowledged via X64BASE_ALLOW_DATA=1 in a
+  try/finally wrapper; the session was ended with QUIT.
+
+WHY IT EXISTS
+  The guard is one line of new behaviour on a `supported` surface and no spec
+  in the tree can reach it: every SQLSEL line in the tree carries a FROM, is a
+  comment, or is `SQLSEL HELP`. Earlier in this same lane a planned hand proof
+  failed for exactly this reason and the guard it was meant to prove was held
+  back rather than committed unproven. This transcript is that debt paid.
+
+TRANSCRIPT
+----------
+. SQLSEL LNAME = "SMITH"
+SQLSEL: that is not a statement, and the legacy predicate form has been retired.
+  SQLSEL is the statement verb: SQLSEL <list> FROM <table> [WHERE ...].
+  For a predicate scan over the current work area use COUNT, which carries
+  the listing and verbose forms: COUNT FOR <expr>, COUNT LIST, COUNT VERBOSE.
+  COUNT honours SET FILTER and SET DELETED as the logical rowset; this form
+  did not, which is why it is gone.
+. QUIT
+
+READING
+  The text matches `src/cli/cmd_sql_select.cpp`'s dispatch tail verbatim,
+  five lines, no leading scan and no row count -- so control reached the tail
+  rather than any surviving legacy path. `LNAME = "SMITH"` is the exact shape
+  the retired form accepted: a bare predicate with no FROM. Before this change
+  it would have been parsed as a predicate and scanned against the current
+  work area using the file's own private DelMode and raw walk, with no regard
+  for SET FILTER or SET DELETED.
+
+NOT PROVEN HERE
+  Nothing about the statement path. That is covered separately by
+  SQLSEL_INNER_JOIN (PASS: 4/4 row sets equal SQLite, cursors 2/2, refusals
+  3/3, access paths 4/4 -- CDX seek 2, scan 2; cleanup 1/1) and by
+  NONDESTRUCTIVE, which also exercises the amended `SQLSEL HELP` usage block.
