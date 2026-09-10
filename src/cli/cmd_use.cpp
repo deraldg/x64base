@@ -468,8 +468,36 @@ static bool alias_is_addressable(const std::string& s)
     return false;
 }
 
-// Slot holding `alias`, ignoring `except_slot` (the area being opened into).
-static int find_open_area_by_alias(const std::string& alias, int except_slot)
+// Slot holding `alias` IN ONE WORKSPACE, ignoring `except_slot` (the area
+// being opened into).
+//
+// SCOPED 2026-09-11, AND THE SCOPE IS THE POINT.
+//
+// This swept all MAX_AREA engine slots with no workspace filter, so a bare
+// `USE STUDENTS` standing in ws3 -- resolving through ws3's own R131 DBF root,
+// landing in ws3's own area -- was RENAMED to STUDENTS2 on account of a
+// collision in DEFAULT, a workspace the caller was not standing in.
+// Unqualified opened in the current workspace and then got NAMED by a
+// different one. Measured 2026-09-10: three workspaces, twelve doubled names.
+//
+// R134 (2026-08-31) is what makes the old sweep wrong rather than merely
+// awkward: THE ALIAS IS THE PATH, COMPOSED NOT STORED. The alias namespace is
+// global and the alias is `WS:TABLE`, unique by construction;
+// `logicalName()` keeps returning the BARE name and the qualified form is
+// derived. So `DEFAULT:STUDENTS` and `ws3:STUDENTS` are already distinct and
+// there was never a collision to resolve. The global uniquing was defending a
+// bare-name uniqueness that ruling abolished.
+//
+// WHAT IS UNCHANGED: two areas sharing a name INSIDE one workspace is still a
+// real collision and is still renamed and announced. That is the case
+// USE_AGAIN's alias arms cover (T6/T7/T8, one table opened twice in DEFAULT),
+// and it is the residue the R112 ambiguity ledger is actually about.
+//
+// A slot owned by workspace 0 is skipped rather than matched. For an OPEN area
+// that is invariant I1 violated; WORKDESK reports it, and quietly renaming
+// around it would make it harder to see, not easier.
+static int find_open_area_by_alias(const std::string& alias, int except_slot,
+                                   std::uint64_t ws)
 {
     auto* eng = shell_engine(); if (!eng) return -1;
     const std::string target = up_copy(alias);
@@ -477,6 +505,7 @@ static int find_open_area_by_alias(const std::string& alias, int except_slot)
 
     for (int i = 0; i < xbase::MAX_AREA; ++i) {
         if (i == except_slot) continue;
+        if (xbase::workspace::owner_of_slot(static_cast<std::int32_t>(i)) != ws) continue;
         try {
             DbArea& A = eng->area(i);
             if (!A.isOpen()) continue;
@@ -489,11 +518,17 @@ static int find_open_area_by_alias(const std::string& alias, int except_slot)
 // STUDENTS taken -> STUDENTS2, STUDENTS3, ... Deterministic and announced;
 // never silent. Returns empty if it somehow cannot find a free name, which
 // the caller treats as a refusal rather than opening unaddressably.
-static std::string derive_distinct_alias(const std::string& stem, int except_slot)
+//
+// Takes the same workspace as the probe above and for the same reason: a name
+// is free if it is free HERE. Deriving against every workspace's names would
+// hand back STUDENTS4 in an empty workspace because three other workspaces
+// happened to hold the first three.
+static std::string derive_distinct_alias(const std::string& stem, int except_slot,
+                                         std::uint64_t ws)
 {
     for (int n = 2; n <= 999; ++n) {
         std::string cand = stem + std::to_string(n);
-        if (find_open_area_by_alias(cand, except_slot) < 0) return cand;
+        if (find_open_area_by_alias(cand, except_slot, ws) < 0) return cand;
     }
     return {};
 }
@@ -894,28 +929,43 @@ void cmd_USE(DbArea& current_area, std::istringstream& iss)
     // afternoon by getting it wrong).
     std::string alias_final = alias_requested;
     {
+        // THE WORKSPACE THIS AREA IS ABOUT TO JOIN. An area joins whichever
+        // workspace is CURRENT when it is opened -- switch-then-open, never
+        // open-then-assign -- so the name it must be unique against is the
+        // current workspace's, and no other. See the probe above for why.
+        const std::uint64_t scope = xbase::workspace::current_handle();
+
         const std::string stem = dbf_path.stem().string();
         const std::string wanted = alias_final.empty() ? stem : alias_final;
-        const int holder = find_open_area_by_alias(wanted, cur_slot);
+        const int holder = find_open_area_by_alias(wanted, cur_slot, scope);
 
         if (holder >= 0 && !alias_final.empty()) {
-            // Explicit and taken: REFUSE. Silently renaming a name the user
-            // typed would defeat the reason they typed it.
+            // Explicit and taken IN THIS WORKSPACE: REFUSE. Silently renaming a
+            // name the user typed would defeat the reason they typed it. A name
+            // held only in ANOTHER workspace is no longer a conflict -- under
+            // R134 the two aliases compose to WS:TABLE and are already distinct.
             cli::cmdout::print_line(
                 "USE: refused -- alias '" + alias_final + "' is already held by area " +
-                std::to_string(holder) + ". Choose another, or close that area. "
-                "Nothing was opened.");
+                std::to_string(holder) + " in this workspace (" +
+                xbase::workspace::name_of(scope) + "). Choose another, or close "
+                "that area. Nothing was opened.");
             return;
         }
 
         if (holder >= 0) {
-            // Derived from the file stem and taken -- the ordinary AGAIN case,
-            // and also two same-named files from different directories. Before
-            // this arm both instances answered to one name and
-            // find_open_area_by_name_ci() returned the lower slot to SET
-            // RELATION and every other name-based verb, with no diagnostic:
-            // the second instance was open but unreachable by name.
-            alias_final = derive_distinct_alias(stem, cur_slot);
+            // Derived from the file stem and taken IN THIS WORKSPACE -- the
+            // ordinary AGAIN case, and also two same-named files from different
+            // directories opened into the SAME workspace. Before this arm both
+            // instances answered to one name and find_open_area_by_name_ci()
+            // returned the lower slot to SET RELATION and every other name-based
+            // verb, with no diagnostic: the second instance was open but
+            // unreachable by name.
+            //
+            // THE CROSS-WORKSPACE CASE NO LONGER REACHES HERE, and that is the
+            // 2026-09-11 change. It is not a collision: WORKDESK reports the
+            // shared bare name under "Names open in more than one area", the
+            // qualified aliases differ, and nothing is renamed.
+            alias_final = derive_distinct_alias(stem, cur_slot, scope);
             if (alias_final.empty()) {
                 cli::cmdout::print_line(
                     "USE: refused -- cannot derive a free alias from '" + stem +
@@ -924,7 +974,7 @@ void cmd_USE(DbArea& current_area, std::istringstream& iss)
             }
             cli::cmdout::print_line(
                 "USE: alias '" + wanted + "' is held by area " + std::to_string(holder) +
-                "; this instance is named '" + alias_final +
+                " in this workspace; this instance is named '" + alias_final +
                 "'. Use ALIAS to choose your own.");
         }
     }

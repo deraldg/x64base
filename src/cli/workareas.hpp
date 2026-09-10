@@ -19,6 +19,12 @@
 #include <memory>
 #include <string>
 #include <vector>
+// <iostream> IS NO LONGER USED BY THIS HEADER and is kept deliberately.
+// WorkAreaSet::print() and workareas::print() were the only consumers and were
+// removed 2026-09-11 (see the note on the class). This header is included by
+// hundreds of translation units, an unknown number of which have been getting
+// <iostream> transitively; dropping it is a separate change with its own blast
+// radius, not a tidy-up to ride along with a behaviour fix.
 #include <iostream>
 
 #include "xbase.hpp"
@@ -63,12 +69,27 @@ public:
         return isOpen() ? db_->name() : "";
     }
 
+    // THE ALIAS. What this INSTANCE answers to -- DbArea::name() is
+    // _logical_name, which USE may have derived as <stem>2 when the stem was
+    // already held. Correct here, and deliberately NOT the same string as
+    // file_name() below.
     std::string label() const {
         return name();
     }
 
+    // THE FILE. Absolute path, because that is the only field that can tell
+    // two open areas apart once two workspaces hold different files sharing a
+    // basename -- measured 2026-09-10, twelve such pairs in one session across
+    // an x64 and an x32 workspace.
+    //
+    // UNTIL 2026-09-11 THIS RETURNED name(), THE ALIAS. Its only consumers are
+    // in cmd_wsreport.cpp, one of which prints it under the literal label
+    // `FILE`, so the report answered "which file" with a name that is not a
+    // file and that both same-named areas share. A caller wanting the short
+    // form takes the basename of this; a caller wanting the alias calls
+    // label(). They must not collapse back into one function.
     std::string file_name() const {
-        return name();
+        return isOpen() ? db_->filename() : std::string();
     }
 
     std::size_t slot() const { return slot0_; }
@@ -124,21 +145,19 @@ public:
         return static_cast<std::size_t>(eng->currentArea());
     }
 
-    void print(std::ostream& os) const {
-        os << "Slot Cur Name\n";
-
-        const std::size_t cur = current_slot();
-
-        for (std::size_t i = 0; i < areas_.size(); ++i) {
-            const auto* wa = areas_[i].get();
-            if (!wa || !wa->isOpen()) continue;
-
-            os << i << " "
-               << (i == cur ? "*" : " ")
-               << " "
-               << wa->label() << "\n";
-        }
-    }
+    // print() LIVED HERE AND HAD ZERO CALLERS. Removed 2026-09-11.
+    //
+    // It emitted `Slot Cur Name` over every open slot with a `*` on the engine
+    // current area. Nothing in the tree ever called it -- not WSREPORT, not
+    // AREA, not STATUS -- and the only surviving mentions of that format were
+    // COMMENTS citing it as what this class does. A dead formatter that a
+    // header describes as canonical is worse than no formatter: it teaches a
+    // shape nobody emits, and the next reader builds against it.
+    //
+    // It is not replaced here. The report it looked like it should feed wants
+    // a WORKSPACE COLUMN, and this class is flat by design -- no workspace
+    // dimension, one engine, MAX_AREA slots. That join is published once, by
+    // cli::workdesk::observe(), and belongs to the caller.
 
 private:
     void rebind_if_needed() const {
@@ -240,6 +259,29 @@ inline std::size_t open_count() {
     return n;
 }
 
+// WHICH SLOTS ARE OPEN, rendered as runs. `{}`, `{5}`, `{0..16}`,
+// `{0..19,50..54}`.
+//
+// UNTIL 2026-09-11 THIS PRINTED `{front..back}` AND WAS A RANGE OVER A SET.
+// Open slots {0,3} rendered as `{0..3}` -- four areas claimed, two open. It
+// needed no second workspace to be wrong: `USE <t> IN 3` with area 0 already
+// open produces exactly that, which is the arrangement USE_ARGS U_T4 sets up
+// on purpose. Two workspaces only made it routine.
+//
+// THE CONTRACT WAS NEVER LOST, ONLY THE CODE THAT MET IT. The four-line
+// example above is copied from src/workspace/workarea_utils.hpp:17-21, which
+// still DECLARES this function; its definition moved here and left the
+// documentation behind (src/workspace/workarea_utils.cpp:15 records the move).
+// The implementation that inherited the name did not inherit the spec.
+//
+// Eight call sites in four verbs -- STATUS, GPS, AREA, WSREPORT. Nothing in
+// the .dts corpus or cmd_regression.cpp asserts the token, checked before
+// changing the rendering.
+//
+// STILL FLAT, DELIBERATELY. These are ENGINE slots with no workspace
+// dimension, so `{0..12,13..25}` says two runs and not two workspaces. The
+// caller that wants ownership asks cli::workdesk::observe(). What is fixed
+// here is the arithmetic, not the model.
 inline std::string occupied_desc() {
     std::vector<std::size_t> slots;
 
@@ -251,18 +293,25 @@ inline std::string occupied_desc() {
 
     if (slots.empty()) return "{}";
 
+    // all() walks 0..count()-1, so `slots` is ascending and a run is a plain
+    // forward scan. Do not sort here -- a sort would hide a future change that
+    // made all() unordered, which is the ordering trap observe() already had
+    // to answer for handles().
     std::string out = "{";
-    out += std::to_string(slots.front());
-    if (slots.size() > 1) {
-        out += "..";
-        out += std::to_string(slots.back());
+    for (std::size_t i = 0; i < slots.size(); ) {
+        std::size_t j = i;
+        while (j + 1 < slots.size() && slots[j + 1] == slots[j] + 1) ++j;
+
+        if (i != 0) out += ",";
+        out += std::to_string(slots[i]);
+        if (j > i) {
+            out += "..";
+            out += std::to_string(slots[j]);
+        }
+        i = j + 1;
     }
     out += "}";
     return out;
-}
-
-inline void print(std::ostream& os) {
-    global().print(os);
 }
 
 } // namespace workareas

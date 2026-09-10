@@ -15,9 +15,17 @@
 * HOW TO READ THIS SCRIPT -- four rules, each of them paid for
 * ---------------------------------------------------------------------------
 *
-* 1. COUNT THE MARKERS. 40 must PRINT -- 14 guards and 26 arms. An errored
+* 1. COUNT THE MARKERS. 48 must PRINT -- 17 guards and 31 arms. An errored
 *    marker PRINTS NOTHING rather than going red, so a full screen of .T.
-*    with 39 lines is a FAILURE, not a pass. The count is the check.
+*    with 47 lines is a FAILURE, not a pass. The count is the check.
+*
+*    STALE A FOURTH TIME, FOUND 2026-09-10. It read 40 / 14 / 26 while the
+*    artifact held 48 / 17 / 31, and it had been wrong through every run
+*    since Section 5C was added. Nothing in this file's edits that day moved
+*    it -- it was already eight short. The paragraph below predicted this in
+*    writing and the prediction did not save it, which is the argument for
+*    deriving the number rather than declaring it, one level stronger than
+*    it was three corrections ago.
 *
 *    THIS NUMBER HAS NOW BEEN WRONG ONCE AND STALE TWICE, each recorded
 *    rather than quietly fixed: 34 by miscounting; 35 after the first run's
@@ -53,6 +61,23 @@
 *    prints so. Tables land at 0..N-1 regardless of what the posture said.
 *    Four specs carried slot-addressed arms into 2026-08-28 and produced
 *    FALSE GREENS the moment their fixtures shrank.
+*
+*    AND -- ACROSS WORKSPACES -- QUALIFIED. Added 2026-09-10. Rule 4 was
+*    written when a bare name was resolved by sweeping every area in the
+*    session and taking the lowest that answered, so BY NAME was a complete
+*    address. It is not one any more. Q8 (closed 2026-08-27) rules that an
+*    unqualified name resolves inside the CURRENT workspace and R134 gives
+*    the qualified form WS:TABLE, so a bare name is now an address RELATIVE
+*    to wherever the script happens to be standing. Every arm in this file
+*    that reaches into a workspace it is not currently in says so out loud.
+*
+*    THE COST OF THE OLD HALF-RULE, MEASURED: three arms in Section 2 and 3
+*    were reading tables belonging to OTHER workspaces and calling the
+*    reading proof of THEIR OWN. See MWX_T1, MWX_T2 and MWX_T5 for what each
+*    one actually proved, which in two cases was nothing at all. First-wins
+*    did not just tolerate the mistake; it CONCEALED it, because a wrong
+*    address that still finds a table with the right field in it produces a
+*    green indistinguishable from a right one.
 *
 * ---------------------------------------------------------------------------
 * WHAT IT COSTS, STATED RATHER THAN DISCOVERED
@@ -153,11 +178,21 @@ APPEND
 REPLACE QK WITH "B1"
 REPLACE QLBL WITH "BETA_ONE"
 
+&& TWO ROWS IN B'S COPY, ONE IN A'S, AND THE ASYMMETRY IS DELIBERATE.
+&& Added 2026-09-10 because MWX_T2 could not do its job with one row: it
+&& claimed to park the cursor on a NON-DEFAULT row and then prove the park
+&& survived a re-entry, but the only row it could park on was row 1, which
+&& is where a RE-OPEN would have left it too. The arm could not tell the two
+&& outcomes apart and had been green since 2026-08-28 on that basis. A park
+&& needs somewhere to park.
 SELECT 3
 CREATE X64 MWXSHARE (SK C(4), SLBL C(12))
 APPEND
 REPLACE SK WITH "S1"
 REPLACE SLBL WITH "SHARED_IN_B"
+APPEND
+REPLACE SK WITH "S2"
+REPLACE SLBL WITH "SHARED_B_TWO"
 
 SELECT 0
 GO 2
@@ -204,10 +239,10 @@ WORKSPACE ADD MWXK.dbf
 
 WORKSPACE REGISTRY
 
-SELECT MWXP
+SELECT MWXONE:MWXP
 GO 1
 ? "MWX_G1a_one_holds_its_area:" + (ALLTRIM(PLBL) = "ALPHA_ONE")
-SELECT MWXQ
+SELECT MWXTWO:MWXQ
 GO 1
 ? "MWX_G1b_two_holds_its_area:" + (ALLTRIM(QLBL) = "BETA_ONE")
 SELECT MWXK
@@ -221,13 +256,32 @@ GO 1
 * the same leaf would ask for one handle; AS is the way out. It is also a
 * MINTING form -- it births a catalog row like NEW does -- which is why this
 * script retires MWXAS in teardown even though no NEW created it.
+*
+* THIS ARM READ THE WRONG TABLE FROM 2026-08-28 UNTIL 2026-09-10 and was green
+* the whole time. It read MWXQ, and MWXQ CANNOT BE A MEMBER OF MWXAS. The
+* re-entry guard inside the directory open --
+*
+*     if (area_holding_dbf(de.path()) >= 0) { already_open.push_back(...); continue; }
+*         -- src/cli/cmd_workspace.cpp:1509
+*
+* -- asks whether the FILE is open ANYWHERE, not whether it is open HERE.
+* MWXTWO opened DBF/SANDBOX/MWXB/MWXQ.dbf twenty lines above, so the AS open
+* SKIPS it and MWXAS is born holding only MWXSHARE. The old arm then resolved
+* the bare name MWXQ across every workspace, first-wins, landed on MWXTWO's
+* area, and reported .T. for a workspace it had never touched. Scoping SELECT
+* to the current workspace (Q8, 2026-09-10) is what surfaced it: the arm went
+* red, and the red was correct.
+*
+* IT NOW READS THE MEMBER MWXAS ACTUALLY HAS, qualified, so the assertion says
+* what the arm's own name claims: a workspace called MWXAS exists and holds a
+* table out of the directory that was opened.
 * ---------------------------------------------------------------------------
 
 WORKSPACE SWITCH DEFAULT
 WORKSPACE OPEN DBF/SANDBOX/MWXB AS MWXAS
-SELECT MWXQ
+SELECT MWXAS:MWXSHARE
 GO 1
-? "MWX_T1_open_as_named_the_workspace:" + (ALLTRIM(QLBL) = "BETA_ONE")
+? "MWX_T1_open_as_named_the_workspace:" + (ALLTRIM(SLBL) = "SHARED_IN_B")
 
 * ---------------------------------------------------------------------------
 * MWX_T2 -- ADDITIVE RE-ENTRY LEAVES OPEN TABLES ALONE (R128).
@@ -236,13 +290,25 @@ GO 1
 * the cursor on a NON-DEFAULT row first: if re-entry had re-opened the table
 * the cursor would be back at row 1, so the assertion is that the PARK
 * SURVIVED, which a re-open cannot fake.
+*
+* THE PARAGRAPH ABOVE DESCRIBED AN ARM THAT DID NOT EXIST. The arm parked with
+* `GO 1` -- row 1, the row a re-open lands on -- over a fixture that had ONE
+* ROW, so there was no other row to park on. It could not distinguish the
+* outcome it was named for from its opposite, and it passed either way. Two
+* separate defects, one green: the wrong table (see T1) and a park that was
+* not a park.
+*
+* Both are paid off here. B's MWXSHARE gained a second row in Section 1, the
+* park is `GO 2`, and the read is qualified to the workspace under test. A
+* re-open now moves the cursor back to S1 and the arm goes red, which is what
+* it was always supposed to do.
 * ---------------------------------------------------------------------------
 
-SELECT MWXQ
-GO 1
+SELECT MWXAS:MWXSHARE
+GO 2
 WORKSPACE OPEN DBF/SANDBOX/MWXB AS MWXAS
-SELECT MWXQ
-? "MWX_T2_reentry_left_the_open_table_alone:" + (ALLTRIM(QLBL) = "BETA_ONE")
+SELECT MWXAS:MWXSHARE
+? "MWX_T2_reentry_left_the_open_table_alone:" + (ALLTRIM(SLBL) = "SHARED_B_TWO")
 
 * ---------------------------------------------------------------------------
 * MWX_T3 / T4 -- SCOPED CLOSE, AND THE FLAG THAT DECIDES WHETHER IT DESCENDS.
@@ -274,10 +340,10 @@ SET RECURSION OFF
 WORKSPACE SWITCH MWXONE
 WORKSPACE CLOSE
 
-SELECT MWXQ
+SELECT MWXTWO:MWXQ
 GO 1
 ? "MWX_T3_sibling_workspace_survived_a_scoped_close:" + (ALLTRIM(QLBL) = "BETA_ONE")
-SELECT MWXK
+SELECT MWXKID:MWXK
 GO 1
 ? "MWX_T4_recursion_off_left_the_nested_workspace_open:" + (ALLTRIM(KLBL) = "CHILD_TABLE")
 SET RECURSION ON
@@ -295,6 +361,44 @@ SET RECURSION ON
 * is a migration step (R112)". That is the ledger doing its job, not an
 * error, and it is why T5 reads through the CURRENT area after an explicit
 * SELECT rather than trusting the bare name.
+*
+* ---------------------------------------------------------------------------
+* THE FIVE PARAGRAPHS ABOVE DESCRIBE A SITUATION THIS SCRIPT NEVER CREATES,
+* AND THE ARM HAS BEEN GREEN ON THAT BASIS SINCE 2026-08-28. LEFT STANDING
+* AND UNCHANGED 2026-09-10, deliberately, because what it needs is a RULING
+* and not an edit. Three facts, each read off the tree rather than inferred:
+*
+*   1. A'S COPY IS NEVER OPENED. Section 2 opens MWXP and MWXK out of MWXA
+*      and MWXQ out of MWXB. Nothing in this file ever opens
+*      DBF/SANDBOX/MWXA/MWXSHARE.dbf. The premise "while A's is already
+*      open" is false, so there is no second handle to test for and the
+*      ambiguity ledger this arm claims to exercise never fires.
+*
+*   2. B'S COPY IS ALREADY OPEN BY THE TIME T5 ASKS FOR IT -- MWX_T1's
+*      `WORKSPACE OPEN DBF/SANDBOX/MWXB AS MWXAS` opened it into MWXAS.
+*
+*   3. WORKSPACE ADD REFUSES THE SECOND OPEN OUTRIGHT:
+*
+*          const int dup_area = find_open_area_for_path(spec);
+*          if (dup_area >= 0) { ...already open in area...; select; return; }
+*              -- src/cli/cmd_workspace.cpp:5946
+*
+*      It searches EVERY area, not the current workspace's areas, then
+*      SELECTS the one it found and returns. So T5 does not open a second
+*      handle in MWXTWO; it silently borrows MWXAS's, reads SHARED_IN_B off
+*      it, and reports .T. for the exact behaviour it was written to rule
+*      OUT.
+*
+* THE OPEN QUESTION, STATED AND NOT ANSWERED HERE: is the duplicate-open
+* guard GLOBAL or PER-WORKSPACE? It is global in all three verbs that have
+* one -- WORKSPACE OPEN (:1509), WORKSPACE ADD (:5946), and USE -- and all
+* three were written when there was one workspace, which is the same reason
+* the metadata reports scanned on 2026-09-10 contain no notion of one. This
+* arm's whole design says the answer should be PER-WORKSPACE. That is a
+* ruling, it belongs with the USE duplicate-open item already open, and it
+* is not taken by the author of a spec that wants it to be true.
+*
+* UNTIL IT IS RULED, READ THIS ARM AS UNPROVEN RATHER THAN AS PASSING.
 * ---------------------------------------------------------------------------
 
 WORKSPACE SWITCH MWXTWO
@@ -338,7 +442,7 @@ GO 1
 
 WORKSPACE SWITCH DEFAULT
 WORKSPACE DESTROY DEFAULT
-SELECT MWXQ
+SELECT MWXTWO:MWXQ
 GO 1
 ? "MWX_T7_default_refused_destruction_and_still_works:" + (ALLTRIM(QLBL) = "BETA_ONE")
 
