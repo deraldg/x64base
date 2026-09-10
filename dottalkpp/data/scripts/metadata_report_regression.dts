@@ -1,0 +1,141 @@
+* metadata_report_regression.dts -- METAREPORT
+*
+* THE REPORTS THAT NAME A CONTAINER, AN ENV OR AN ORDER MUST NAME THE ONE THE
+* ENGINE ACTUALLY USES (2026-09-10, from the metadata scan of the same day).
+*
+* EVERY CLAIM IN THIS FILE IS CONSOLE TEXT AND NOT ONE OF THEM IS A MARKER.
+* A marker in this language is a FIELD-VALUE comparison, so it cannot read a
+* path, an envdir or a parenthetical -- the limit already recorded against
+* LIST, COUNT and RECNO (the IDXDIFF precedent). The instrument here is
+* MetadataReportV1 in cmd_regression.cpp, which reads the ROUTED CAPTURE and
+* grades eight fenced blocks. If a block is MISSING the validator says so and
+* fails: a lost claim is not a pass, which is the COUNT THE MARKERS rule
+* applied to fences instead of verdicts.
+*
+* NOTHING IS COMPARED AGAINST A LITERAL PATH, ON PURPOSE. Absolute paths are
+* machine-specific and this tree already carries that debt elsewhere. Every
+* path assertion here is RELATIONAL: a value read from one verb must equal a
+* value read from another verb, or must carry a given extension. A clone with
+* a different drive letter grades identically.
+*
+* READ-ONLY. Opens shipped fixtures, creates nothing, erases nothing, mints no
+* catalog row (none of the three minting verbs appear). It re-points the DBF,
+* INDEXES and LMDB slots and the harness restores them.
+*
+* WHAT IS NOT CLAIMED, stated rather than implied:
+*   - That CDX INFO's per-tag counts are right. They are not asserted; see the
+*     open question recorded 2026-09-10 -- every tag prints root_off=0 recs=0
+*     over a 200-row table while the CNX reader prints entries=200 for the same
+*     six names. That is a separate finding and a separate fix.
+*   - Anything about a SECOND workspace. The discriminator here is a SLOT THAT
+*     MOVES, which is strictly cheaper and reaches the same defect.
+*   - That these arms have ever gone RED. They have not been run against a
+*     pre-fix binary; the predictions are in the registry entry.
+
+*
+* PATHS ARE RELATIVE TO THE DATA ROOT, like every other spec in this tree.
+* An absolute path in a TRACKED spec is the debt the PKDURABLE child scripts
+* already carry and it is recorded there as a debt, not as a pattern. If a
+* relative token ever failed to resolve, the fixture would not open and the
+* validator would report the EMPTY BLOCK explicitly -- "the verb inside it
+* printed nothing" -- which is a different finding from a wrong answer and is
+* reported as one.
+
+SET ECHO OFF
+SET STOP_ON_ERROR OFF
+
+? "METAREPORT-BEGIN"
+
+WORKSPACE CLOSE
+
+SET PATH DBF DBF\x64
+SET PATH INDEXES INDEXES\x64
+SET PATH LMDB LMDB\x64
+
+USE STUDENTS
+SET ORDER TAG SID
+
+* ---- P1 CONTROL. The slot still agrees with the attachment, so BOTH a fixed
+* ---- and a broken build answer the same thing here. Its only job is to hand
+* ---- P2 a reference value. Graded as a control, never as evidence.
+? "MR-P1-BEGIN"
+CDX INFO
+? "MR-P1-END"
+
+* ---- P2 MEASUREMENT. The INDEXES slot now points somewhere the container is
+* ---- NOT. A build whose reuse branch fires answers from the ATTACHMENT and
+* ---- still names P1's container; a build that falls through to
+* ---- resolve_cdx_token(stem) answers from the SLOT and names SANDBOX.
+SET PATH INDEXES INDEXES\SANDBOX
+? "MR-P2-BEGIN"
+CDX INFO
+? "MR-P2-END"
+
+* ---- P3 THE MIRROR, and the half that actually bit. With a .CNX attached the
+* ---- old predicate FIRED and handed the .cnx path back to a CDX verb, which
+* ---- then reported not-found on a file that exists. READ THE EXTENSION, NOT
+* ---- THE VERDICT: not-found is the correct answer here because the x32 tree
+* ---- has no .cdx. What is graded is that the path ends .cdx and that no .cnx
+* ---- appears in the block at all.
+SET PATH DBF DBF\x32
+SET PATH INDEXES INDEXES\x32
+WORKSPACE CLOSE
+USE STUDENTS
+SET CNX STUDENTS.cnx
+? "MR-P3-BEGIN"
+CDX INFO
+? "MR-P3-END"
+
+WORKSPACE CLOSE
+SET PATH DBF DBF\x64
+SET PATH INDEXES INDEXES\x64
+SET PATH LMDB LMDB\x64
+USE STUDENTS
+
+* ---- P4 THE ORACLE, from a verb nobody changed. SET INDEX prints the env the
+* ---- backend opens. This is what makes P5 assertable without a literal path.
+? "MR-P4-BEGIN"
+SET INDEX TO STUDENTS.cdx
+? "MR-P4-END"
+
+* ---- P5 MEASUREMENT. The echoed envdir must EQUAL P4's. The old form glued
+* ---- ".d" onto the container path, which lands under INDEXES; the backend
+* ---- opens what resolve_lmdb_env_for_cdx returns, rooted at LMDB. The two
+* ---- slots are deliberately different roots in this run.
+? "MR-P5-BEGIN"
+SET LMDB STUDENTS SID
+? "MR-P5-END"
+
+WORKSPACE CLOSE
+USE STUDENTS
+SET INDEX TO STUDENTS.cdx
+
+* ---- P6 AIF-148 on SET LMDB. A container is attached and NO tag is chosen,
+* ---- which is the state WORKSPACE OPEN leaves behind. The line used to say
+* ---- TAG '' (ASC) -- an empty tag beside a direction, refuting itself in one
+* ---- breath.
+? "MR-P6-BEGIN"
+SET LMDB
+? "MR-P6-END"
+
+* ---- P7 the same shape on the verb NAMED SET ORDER, which was the last one
+* ---- still wrong after order_report, index_summary and status_helpers were
+* ---- repaired for exactly this.
+? "MR-P7-BEGIN"
+SET ORDER
+? "MR-P7-END"
+
+* ---- P8 THE COUNTERWEIGHT, and the reason the fix cannot overshoot. A change
+* ---- that forced PHYSICAL unconditionally would pass P6 and P7 and be exactly
+* ---- as wrong as the defect. Choose a tag and a real direction must come back.
+SET ORDER TAG LNAME
+? "MR-P8-BEGIN"
+SET ORDER
+? "MR-P8-END"
+
+WORKSPACE CLOSE
+SET PATH DBF DBF\x64
+SET PATH INDEXES INDEXES\x64
+SET PATH LMDB LMDB\x64
+
+? "METAREPORT-END"

@@ -121,7 +121,8 @@ enum class RegressionValidator {
     PkPolicyV1,
     PkDurabilityV1,
     VarcharAreaResetV1,
-    WorkdeskV1
+    WorkdeskV1,
+    MetadataReportV1
 };
 
 struct RegressionSpec {
@@ -229,7 +230,7 @@ struct RegressionSpec {
 // compile error ("too many initializers"), which is the safe failure -- but it
 // is a recurring papercut: it happened when CNXLIVE was added on 2026-07-31.
 // Bump it when you add a regression.
-constexpr std::array<RegressionSpec, 82> kRegressionSpecs{{
+constexpr std::array<RegressionSpec, 83> kRegressionSpecs{{
     {
         "COUNT_LIST_VERBOSE",
         "count_list_verbose_regression.dts",
@@ -928,6 +929,17 @@ constexpr std::array<RegressionSpec, 82> kRegressionSpecs{{
         false,
         RegressionValidator::VarcharAreaResetV1,
         true // markers are `?` output; the routed capture is a SUPERSET, per PKPOLICY
+    },
+    {
+        "METAREPORT",
+        "metadata_report_regression.dts",
+        "THE REPORTS THAT NAME A CONTAINER, AN ENV OR AN ORDER MUST NAME THE ONE THE ENGINE ACTUALLY USES (2026-09-10, from the metadata scan of the same day). Four verified falsehoods shipped as ab9905e56 and NOT ONE OF THEM HAD AN ARM: REGRESSION ALL was green through the whole defect and would have stayed green through its return. This spec is that missing instrument. IT IS GRADED BY A VALIDATOR AND NOT BY MARKERS, AND THAT IS FORCED RATHER THAN CHOSEN. Every claim here is CONSOLE TEXT -- a path, an envdir, a parenthetical -- and a marker in this language is a FIELD-VALUE comparison, the limit already recorded against LIST, COUNT and RECNO (the IDXDIFF precedent). MetadataReportV1 reads the routed capture and grades EIGHT FENCED BLOCKS, MR-P1 through MR-P8. A MISSING BLOCK IS A FAILURE, never a skipped check: that is the house COUNT THE MARKERS rule applied to fences, because a spec that quietly stops printing one of its eight would otherwise pass while asserting seven things. NOT ONE ASSERTION IS A LITERAL PATH. Every path claim is either an EQUALITY BETWEEN TWO VERBS' ANSWERS or a claim about an EXTENSION, so a clone on another drive letter grades identically and renaming the fixture touches nothing in the validator. Comparisons fold case, because these are Windows paths and a case-only difference is not a defect; the ORIGINALS are printed on failure. THE DISCRIMINATOR IS A SLOT THAT MOVES, AND THAT CORRECTS THIS TREE'S OWN WRITTEN ASSUMPTION. Both the scan and ab9905e56's commit message said proving the CDX INFO repair needed a two-workspace fixture with doubled basenames and divergent INDEXES/LMDB roots, and that no such fixture existed. IT NEEDS NO FIXTURE AT ALL. Attach a container, then re-point the INDEXES slot somewhere the container is not: a build whose reuse branch fires answers from the ATTACHMENT, a build that falls through to resolve_cdx_token(stem) answers from the SLOT. One SET PATH line replaced a fixture nobody had built. MR-P1 IS A CONTROL AND IS NOT EVIDENCE, stated so it is never read as one: while the slot still agrees with the attachment BOTH builds answer the same thing, and P1's only job is to supply the value P2 is measured against. If P1 names no container the validator reports UNPROVEN rather than FAIL, because an arm with no reference value has not failed, it has not run. MR-P3 IS THE MIRROR AND THE HALF THAT BIT HARDEST, and it must be READ BY THE EXTENSION AND NOT BY THE VERDICT. With a .cnx attached the old predicate FIRED and handed the .cnx path to a CDX verb, which then reported not-found on a file that exists. In this block 'file not found' is the CORRECT answer -- the x32 tree has no .cdx -- so what is graded is that the path ends .cdx and that no .cnx appears anywhere in the block. An arm that graded the verdict would have read this backwards. MR-P4 IS AN ORACLE FROM CODE NOBODY CHANGED. SET INDEX prints the env the backend opens; P5's echoed envdir must equal it. That is what makes the claim assertable without a literal path, and it is the same shape as the SQLSEL specs' use of SQLite: the reference comes from an instrument the change under test cannot have moved. The two slots are DIFFERENT ROOTS in this run on purpose, so gluing '.d' onto the container path lands under INDEXES while the backend opens what resolve_lmdb_env_for_cdx() returns, rooted at LMDB. MR-P8 IS THE COUNTERWEIGHT AND IS THE REASON THE FIX CANNOT OVERSHOOT. A change that forced PHYSICAL unconditionally would pass P6 and P7 and be EXACTLY as wrong as the defect was, so a chosen tag must still bring a real direction back -- asserted in the SAME run, four lines below the PHYSICAL readings, so the two cannot both be accidents. EXPLICIT-RUN, AND IT MUST STAY THAT WAY UNTIL IT IS SOAKED. Promotion doctrine is the NULLASSERT precedent: two green runs on a build NOBODY CHANGED ANYTHING ON, then the flag moves, then a REBUILD, then read REGRESSION LIST for the [default] tag BEFORE believing the run -- NAV_NATURAL's entry records a whole REGRESSION ALL wasted on skipping that last step. The soak is now enforced by tools/staging/check_soak_evidence.py, which blocks a false->true flip that does not name two PASS runs on ONE build in coordination/SOAK_EVIDENCE.md. THE VALIDATOR HAS NEVER GONE RED, AND THAT IS NAMED HERE RATHER THAN LEFT FOR A LATER READER. This is DEF_FAMILY's recorded mistake and the condition its own entry was written to correct: a validator that has only ever passed has an unmeasured FAIL path. The four repairs WERE measured against the fixed binary on 2026-09-10 by a scratch probe, but THIS SPEC HAS NEVER BEEN RUN AGAINST A PRE-FIX BINARY. The predictions, so a later run can check them element for element: with ab9905e56 backed out, MR-P2 names a container under INDEXES\\SANDBOX and fails; MR-P3 names the attached .cnx and fails; MR-P5 echoes an envdir under INDEXES rather than LMDB and fails; MR-P6 reads TAG '' (ASC) and MR-P7 reads a direction, both failing. MR-P1, MR-P4 and MR-P8 stay GREEN on both builds -- P1 and P4 because they are references, P8 because it discriminates the OVERSHOOT and never the defect. If the controls red too, the fixture broke and the arms prove nothing either way. NOT CLAIMED, stated rather than implied: CDX INFO'S PER-TAG COUNTS. Both readings print root_off=0 and recs=0 for EVERY tag of a container over a 200-row table, while the CNX reader in the same transcript prints entries=200 for the same six tag names. Two readings fit -- the fields are wrong, or CDX INFO does a header-only read and displays two unpopulated fields as though authoritative -- and this spec cannot separate them. It is the same species as the four repaired here and was found the same way, by reading a report instead of trusting it. Also not claimed: anything about a SECOND workspace, and anything about the ORDER a cursor actually walks (that is NAV_NATURAL's job; this spec asserts only what the reports SAY). COST AND FOOTPRINT: READ-ONLY. It opens shipped fixtures, creates no table, erases nothing, and mints NO catalog row -- none of the three minting verbs appear, so mints_catalog is false. It re-points the DBF, INDEXES and LMDB slots and the harness restores them. It sets ECHO OFF and STOP_ON_ERROR OFF and does not restore them, which is the DEF_FAMILY shape and harmless where it sits. FIXTURE DEPENDENCIES, so a red is diagnosable: DBF/x64 STUDENTS with INDEXES/x64/STUDENTS.cdx and its LMDB env, and DBF/x32 STUDENTS with INDEXES/x32/STUDENTS.cnx. All ship. P2 is only a discriminator because INDEXES/SANDBOX is a DIFFERENT root from INDEXES/x64; it does not matter whether a STUDENTS.cdx happens to sit there.",
+        false,  // EXPLICIT-RUN until soaked -- two green runs on ONE unchanged
+                // build, then the flag, then a REBUILD, then read REGRESSION LIST
+        false,  // mints no catalog row: none of the three minting verbs appear
+        RegressionValidator::MetadataReportV1,
+        true    // SET ORDER: / SET LMDB: are cli::cmdout; a cout rdbuf swap
+                // cannot see them (the COUNT_LIST_VERBOSE lesson)
     }
 }};
 
@@ -3349,6 +3361,260 @@ bool validate_varchar_area_reset(const std::string& transcript)
     return true;
 }
 
+// METAREPORT -- the reports that NAME a container, an env or an order.
+//
+// NOT ONE ASSERTION IN HERE IS A LITERAL PATH, and that is the design rather
+// than a convenience. Absolute paths are machine-specific -- this tree already
+// carries that debt in the PKDURABLE child scripts and it is recorded as a
+// debt, not as a pattern to copy. Every path claim below is either an EQUALITY
+// BETWEEN TWO VERBS' ANSWERS or a claim about an EXTENSION, so a clone on a
+// different drive letter grades identically and a rename of the fixture does
+// not touch this function.
+//
+// A MISSING BLOCK IS A FAILURE, never a skipped check. That is the house COUNT
+// THE MARKERS rule applied to fences: a spec that quietly stops printing one of
+// its eight blocks would otherwise pass while asserting seven things, which is
+// exactly the shape an errored marker takes in the .dts language.
+//
+// PATHS ARE COMPARED CASE-INSENSITIVELY. These are Windows paths, two verbs may
+// spell the same file with different case, and a case-only difference is not a
+// defect. The ORIGINALS are printed on failure so a reader sees what actually
+// came back rather than the folded form the comparison used.
+bool metareport_block(const std::string& transcript,
+                      const char* tag,
+                      std::vector<std::string>& lines)
+{
+    std::string error;
+    if (!transcript_block(transcript, std::string(tag) + "-BEGIN",
+                          std::string(tag) + "-END", lines, error)) {
+        std::cout << "METADATA REPORTS: FAIL -- " << error
+                  << "\n  A MISSING BLOCK IS A LOST CLAIM, not a skipped check.\n";
+        return false;
+    }
+    if (lines.empty()) {
+        std::cout << "METADATA REPORTS: FAIL -- " << tag
+                  << " fenced an EMPTY block: the verb inside it printed nothing.\n"
+                     "  That is a different finding from a wrong answer and must not "
+                     "be reported as one.\n";
+        return false;
+    }
+    return true;
+}
+
+std::string metareport_line_with(const std::vector<std::string>& lines,
+                                 const char* needle)
+{
+    for (const std::string& l : lines) {
+        if (l.find(needle) != std::string::npos) return l;
+    }
+    return std::string();
+}
+
+// Everything after the FIRST colon, trimmed. Lifts the path out of
+// "CDX file : <p>", "  LMDB env : <p>" and "  envdir: <p>" without this
+// function caring which of the three spellings produced it. The drive letter's
+// own colon is safe because only the first is consumed.
+std::string metareport_value_after_colon(const std::string& line)
+{
+    const std::size_t c = line.find(':');
+    if (c == std::string::npos) return std::string();
+    return trim_copy(line.substr(c + 1));
+}
+
+bool metareport_paths_agree(const std::string& a, const std::string& b)
+{
+    return lower_copy(a) == lower_copy(b);
+}
+
+bool validate_metadata_reports(const std::string& transcript)
+{
+    std::vector<std::string> p1, p2, p3, p4, p5, p6, p7, p8;
+    if (!metareport_block(transcript, "MR-P1", p1)) return false;
+    if (!metareport_block(transcript, "MR-P2", p2)) return false;
+    if (!metareport_block(transcript, "MR-P3", p3)) return false;
+    if (!metareport_block(transcript, "MR-P4", p4)) return false;
+    if (!metareport_block(transcript, "MR-P5", p5)) return false;
+    if (!metareport_block(transcript, "MR-P6", p6)) return false;
+    if (!metareport_block(transcript, "MR-P7", p7)) return false;
+    if (!metareport_block(transcript, "MR-P8", p8)) return false;
+
+    // ---- P1 / P2 -- CDX INFO names the ATTACHED container ------------------
+    //
+    // P1 IS A CONTROL AND IS NOT EVIDENCE. Both a fixed and a broken build
+    // answer the same thing while the INDEXES slot still agrees with the
+    // attachment; its only job is to supply the value P2 is measured against.
+    const std::string ref_cdx =
+        metareport_value_after_colon(metareport_line_with(p1, "CDX file"));
+    const std::string moved_cdx =
+        metareport_value_after_colon(metareport_line_with(p2, "CDX file"));
+
+    if (ref_cdx.empty()) {
+        std::cout << "METADATA REPORTS: UNPROVEN -- P1 control named no container, so "
+                     "P2 has nothing to be measured against.\n"
+                     "  Treat every arm below as unproven rather than failing.\n";
+        return false;
+    }
+    if (moved_cdx.empty()) {
+        std::cout << "METADATA REPORTS: FAIL -- P2 CDX INFO named no container at all "
+                     "after the INDEXES slot moved.\n"
+                     "  attached (P1 control): " << ref_cdx << "\n";
+        return false;
+    }
+    if (!metareport_paths_agree(ref_cdx, moved_cdx)) {
+        std::cout << "METADATA REPORTS: FAIL -- P2 CDX INFO followed the INDEXES SLOT "
+                     "instead of the ATTACHED container.\n"
+                     "  attached (P1 control): " << ref_cdx << "\n"
+                     "  after the slot moved : " << moved_cdx << "\n"
+                     "  default_cdx_path() in cmd_cdx.cpp is testing the wrong "
+                     "container predicate, so the reuse branch never fires and the "
+                     "verb re-resolves the STEM through whatever the session slot "
+                     "now points at. Under R131 that is a report about one "
+                     "workspace's tree for a table opened from another's.\n";
+        return false;
+    }
+
+    // ---- P3 -- a CDX verb must never be handed a CNX -----------------------
+    //
+    // READ THE EXTENSION, NOT THE VERDICT. "file not found" is the CORRECT
+    // answer in this block: the x32 tree has no .cdx. What is graded is that
+    // the path the verb reasoned about ends .cdx and that no .cnx appears at
+    // all. The old predicate fired on an attached .cnx and handed it back, so
+    // the verb reported not-found on a file that exists.
+    bool saw_cdx = false;
+    bool saw_cnx = false;
+    for (const std::string& l : p3) {
+        const std::string low = lower_copy(l);
+        if (low.find(".cdx") != std::string::npos) saw_cdx = true;
+        if (low.find(".cnx") != std::string::npos) saw_cnx = true;
+    }
+    if (saw_cnx) {
+        std::cout << "METADATA REPORTS: FAIL -- P3 a CDX verb was handed the attached "
+                     "CNX.\n  block line(s) mentioning a .cnx:\n";
+        for (const std::string& l : p3) {
+            if (lower_copy(l).find(".cnx") != std::string::npos) {
+                std::cout << "    " << l << "\n";
+            }
+        }
+        std::cout << "  This is the MIRROR of the P2 defect and the half that bit "
+                     "hardest: the verb reports not-found on a file that exists.\n";
+        return false;
+    }
+    if (!saw_cdx) {
+        std::cout << "METADATA REPORTS: FAIL -- P3 named neither a .cdx nor a .cnx, so "
+                     "the block proves nothing in either direction.\n";
+        return false;
+    }
+
+    // ---- P4 / P5 -- the echoed envdir is the env the BACKEND opens ---------
+    //
+    // P4 comes from SET INDEX, which nobody changed, and that is exactly what
+    // makes it usable as the oracle. The two slots are different roots in this
+    // run, so gluing ".d" onto the container path lands under INDEXES while the
+    // backend opens what resolve_lmdb_env_for_cdx() returns, rooted at LMDB.
+    const std::string ref_env =
+        metareport_value_after_colon(metareport_line_with(p4, "LMDB env"));
+    const std::string echoed_env =
+        metareport_value_after_colon(metareport_line_with(p5, "envdir"));
+
+    if (ref_env.empty()) {
+        std::cout << "METADATA REPORTS: UNPROVEN -- P4 oracle printed no 'LMDB env' "
+                     "line, so P5 has no reference value.\n";
+        return false;
+    }
+    if (echoed_env.empty()) {
+        std::cout << "METADATA REPORTS: FAIL -- P5 SET LMDB echoed no envdir at all.\n"
+                     "  backend env (P4 oracle): " << ref_env << "\n";
+        return false;
+    }
+    if (!metareport_paths_agree(ref_env, echoed_env)) {
+        std::cout << "METADATA REPORTS: FAIL -- P5 SET LMDB echoed a directory the "
+                     "engine never opens.\n"
+                     "  backend env (P4 oracle): " << ref_env << "\n"
+                     "  echoed by SET LMDB     : " << echoed_env << "\n"
+                     "  The echoed path cannot be used to find, inspect or delete the "
+                     "env that was just opened.\n";
+        return false;
+    }
+
+    // ---- P6 / P7 -- AIF-148: an attached container is not an active order --
+    const std::string lmdb_line = metareport_line_with(p6, "SET LMDB:");
+    if (lmdb_line.empty()) {
+        std::cout << "METADATA REPORTS: FAIL -- P6 bare SET LMDB printed no status "
+                     "line.\n";
+        return false;
+    }
+    if (lmdb_line.find("TAG '(none)'") == std::string::npos ||
+        lmdb_line.find("(PHYSICAL)") == std::string::npos) {
+        std::cout << "METADATA REPORTS: FAIL -- P6 bare SET LMDB reported an order over "
+                     "a container with no tag selected.\n"
+                     "  got: " << lmdb_line << "\n"
+                     "  want TAG '(none)' and (PHYSICAL). hasOrder() answers IS A "
+                     "CONTAINER ATTACHED; isNaturalOrder() answers WHICH ORDER THE "
+                     "CURSOR FOLLOWS, and only the second belongs in that "
+                     "parenthetical.\n";
+        return false;
+    }
+
+    const std::string order_line = metareport_line_with(p7, "SET ORDER:");
+    if (order_line.empty()) {
+        std::cout << "METADATA REPORTS: FAIL -- P7 bare SET ORDER printed no status "
+                     "line.\n";
+        return false;
+    }
+    if (order_line.find("(PHYSICAL)") == std::string::npos) {
+        std::cout << "METADATA REPORTS: FAIL -- P7 bare SET ORDER claimed a direction "
+                     "for a table the navigation verbs walk in record order.\n"
+                     "  got: " << order_line << "\n"
+                     "  WORKSPACE OPEN attaches a .cdx and selects NO TAG, so this is "
+                     "the state a great many sessions are actually in.\n";
+        return false;
+    }
+    if (order_line.find("TAG") != std::string::npos) {
+        std::cout << "METADATA REPORTS: FAIL -- P7 named a TAG where none was chosen.\n"
+                     "  got: " << order_line << "\n";
+        return false;
+    }
+
+    // ---- P8 -- the counterweight ------------------------------------------
+    //
+    // A change that forced PHYSICAL unconditionally would pass P6 and P7 and be
+    // EXACTLY as wrong as the defect. This arm is the reason the fix cannot
+    // overshoot, and it is asserted in the same run so the two readings cannot
+    // both be accidents.
+    const std::string tagged_line = metareport_line_with(p8, "SET ORDER:");
+    if (tagged_line.empty()) {
+        std::cout << "METADATA REPORTS: FAIL -- P8 counterweight printed no status "
+                     "line.\n";
+        return false;
+    }
+    if (tagged_line.find("TAG 'LNAME'") == std::string::npos ||
+        tagged_line.find("(ASC)") == std::string::npos ||
+        tagged_line.find("PHYSICAL") != std::string::npos) {
+        std::cout << "METADATA REPORTS: FAIL -- P8 counterweight: a CHOSEN tag did not "
+                     "bring a real direction back.\n"
+                     "  got: " << tagged_line << "\n"
+                     "  want TAG 'LNAME' and (ASC) and no PHYSICAL. If this arm reads "
+                     "PHYSICAL beside P6 and P7, the repair overshot into "
+                     "always-physical and is as wrong as the defect was.\n";
+        return false;
+    }
+
+    std::cout << "METADATA REPORTS: PASS -- 8 of 8 blocks. CDX INFO names the ATTACHED "
+                 "container and not the session INDEXES slot (P2, measured against the "
+                 "P1 control after the slot MOVED); a CDX verb is never handed an "
+                 "attached CNX (P3, graded on the EXTENSION -- not-found is the correct "
+                 "answer there); SET LMDB echoes the env the backend opens, equal to "
+                 "the one SET INDEX reports from code nobody changed (P5 against the P4 "
+                 "oracle); and an attached container with no tag reads PHYSICAL on both "
+                 "SET LMDB and SET ORDER (P6, P7) while a chosen tag still reads ASC "
+                 "(P8, the counterweight against overshoot). NO LITERAL PATH IS "
+                 "ASSERTED ANYWHERE -- every path claim is an equality between two "
+                 "verbs or a claim about an extension. NOT CLAIMED: CDX INFO's per-tag "
+                 "counts, which print root_off=0 recs=0 for every tag over a 200-row "
+                 "table and are a separate open question.\n";
+    return true;
+}
+
 bool validate_regression_transcript(const RegressionSpec& spec,
                                     const std::string& transcript)
 {
@@ -3395,6 +3661,8 @@ bool validate_regression_transcript(const RegressionSpec& spec,
             return validate_varchar_area_reset(transcript);
         case RegressionValidator::WorkdeskV1:
             return validate_workdesk(transcript);
+        case RegressionValidator::MetadataReportV1:
+            return validate_metadata_reports(transcript);
     }
     return false;
 }
