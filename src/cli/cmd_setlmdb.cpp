@@ -85,6 +85,7 @@
 #include "textio.hpp"
 #include "cli/command_output.hpp"
 #include "cli/cmd_setpath.hpp"
+#include "cli/path_resolver.hpp"   // resolve_lmdb_env_for_cdx -- the env the engine opens
 #include "cli/order_state.hpp"
 
 namespace {
@@ -171,12 +172,27 @@ void cmd_SETLMDB(xbase::DbArea& db, std::istringstream& iss) {
             cli::cmdout::print_prefixed_message("SET LMDB", MessageId::SetOrderNonePhysicalText);
             return;
         }
+        // AIF-148. hasOrder() above gates the BLOCK; isNaturalOrder() decides
+        // the parenthetical. This line used to refute itself in one breath --
+        // it printed TAG '' beside (ASC), an empty tag being exactly the state
+        // in which there is no order to have a direction. A reader had to know
+        // which half to believe.
+        //
+        // PHYSICAL matches SetOrderNonePhysicalText, which this verb already
+        // prints one branch up. The empty tag now renders (none), the same way
+        // order_report.hpp spells an unselected tag, rather than as two quotes
+        // around nothing.
+        const std::string lmdb_tag = orderstate::activeTag(db);
+        const std::string lmdb_order =
+            orderstate::isNaturalOrder(db) ? "PHYSICAL"
+                                           : (orderstate::isAscending(db) ? "ASC" : "DESC");
+
         cli::cmdout::print_prefixed_message(
             "SET LMDB",
             MessageId::SetLmdbStatusText,
             {{"container", orderstate::orderName(db)},
-             {"tag", orderstate::activeTag(db)},
-             {"direction", orderstate::isAscending(db) ? "ASC" : "DESC"}});
+             {"tag", lmdb_tag.empty() ? "(none)" : lmdb_tag},
+             {"direction", lmdb_order}});
         if (const auto* im = xindex::manager_if_attached(db); im && im->hasBackend()) {
             cli::cmdout::print_message(
                 MessageId::SetLmdbBackendLineText,
@@ -242,7 +258,21 @@ void cmd_SETLMDB(xbase::DbArea& db, std::istringstream& iss) {
         {{"container", container},
          {"tag", tag},
          {"direction", asc ? "ASC" : "DESC"}});
+    // THE ENVDIR IS NOT THE CONTAINER PATH WITH ".d" GLUED ON, and printing it
+    // that way named a directory the engine never opens.
+    //
+    // resolve_container_path() above resolves through the INDEXES slot, so
+    // `container + ".d"` lands under INDEXES. The backend opens what
+    // resolve_lmdb_env_for_cdx() returns, and that is rooted at the LMDB slot:
+    // INDEXES-relative when the container sits under INDEXES, filename-only
+    // otherwise. Two different trees under R131, where a workspace owns both
+    // roots independently -- so the echoed path could not be used to find,
+    // inspect or delete the env that had just been opened.
+    //
+    // cmd_buildlmdb.cpp:239 and cmd_setindex.cpp:526 already resolve it this
+    // way; this line is the odd one out, not a new convention.
     cli::cmdout::print_message(
         MessageId::SetLmdbEnvdirLineText,
-        {{"path", container + ".d"}});
+        {{"path", dottalk::paths::resolve_lmdb_env_for_cdx(
+                      std::filesystem::path(container)).string()}});
 }

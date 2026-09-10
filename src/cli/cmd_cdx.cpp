@@ -142,7 +142,21 @@ static fs::path resolve_cdx_token(const std::string& tok)
 static fs::path default_cdx_path(xbase::DbArea& area)
 {
     // 1) If a CDX is currently active in orderstate, reuse its path directly.
-    if (orderstate::hasOrder(area) && orderstate::isCnx(area)) {
+    //
+    // THE PREDICATE WAS isCnx UNTIL 2026-09-10, and the comment above it has
+    // always said CDX. This function is a transcription of default_cnx_path()
+    // in cmd_cnx.cpp:143, where isCnx IS the right test; the container name was
+    // the one token not translated.
+    //
+    // What it cost, and why it is not cosmetic: with a .cdx genuinely attached
+    // the reuse branch NEVER fired, so CDX INFO / CDX TAGS fell through to
+    // resolve_cdx_token(stem), which resolves through the SESSION INDEXES slot.
+    // Under R131 a workspace owns its own INDEXES root, so the report named the
+    // tag directory of a DIFFERENT STEM.cdx than the one the workspace actually
+    // attached -- the x64 tree's copy for a table opened out of x32. The mirror
+    // is just as bad: with a .cnx attached the branch DID fire and handed back
+    // the .cnx path, so CDX INFO reported "not found" on a file that exists.
+    if (orderstate::hasOrder(area) && orderstate::isCdx(area)) {
         const std::string active = orderstate::orderName(area);
         if (!active.empty()) return fs::path(active);
     }

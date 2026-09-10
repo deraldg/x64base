@@ -653,13 +653,40 @@ void cmd_SETORDER(xbase::DbArea& currentArea, std::istringstream& args)
         if (!tag.empty()) {
             tag_clause = msg(MessageId::SetOrderTagClauseText, {{"tag", tag}});
         }
+
+        // AIF-148, and the verb NAMED SET ORDER was the last one still wrong.
+        // hasOrder() above gates the BLOCK -- a container IS attached and its
+        // filename is worth printing. isNaturalOrder() decides what goes in the
+        // parenthetical, because that is the ORDER THE CURSOR FOLLOWS.
+        //
+        // WORKSPACE OPEN attaches a .cdx to every table it lands and selects NO
+        // TAG, so before this the report read `CDX 'STUDENTS.cdx' (ASC)` while
+        // TOP, SKIP and BOTTOM walked the very same table in record order.
+        // isAscending() defaults true when no direction was ever set, so the ASC
+        // was not even a stale reading -- it was the default, printed as a fact.
+        //
+        // PHYSICAL is this verb's own word for it: SetOrderNonePhysicalText, one
+        // branch up, already says "none (physical order)." order_report.hpp says
+        // NATURAL and status_helpers.cpp says PHYSICAL; each surface keeps its
+        // own vocabulary rather than acquiring a second one here.
+        //
+        // The placeholder is named `direction` and now carries the order in
+        // force. Rendered output is unaffected -- SetOrderStatusText is
+        // "{type} '{name}'{tag_clause} ({direction})", an unlabelled
+        // parenthetical -- but the NAME is now wrong, and a message-catalogue
+        // rename is owed. Not taken here: it is a help-surface edit and this
+        // change is meant to stay inside the verb it repairs.
+        const std::string order_in_force =
+            orderstate::isNaturalOrder(currentArea) ? "PHYSICAL"
+                                                    : (asc ? "ASC" : "DESC");
+
         cli::cmdout::print_prefixed_message(
             "SET ORDER",
             MessageId::SetOrderStatusText,
             {{"type", typeStr},
              {"name", name},
              {"tag_clause", tag_clause},
-             {"direction", asc ? "ASC" : "DESC"}});
+             {"direction", order_in_force}});
         return;
     }
 
