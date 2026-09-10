@@ -3375,13 +3375,30 @@ bool commit_sql_transaction(std::string& error) {
         release_sql_transaction(false);
         return true;
     }
+    cli::commit::Outcome outcome;
     {
         cli::ScopedAreaSelect focus(state.area);
-        std::istringstream empty;
-        cmd_COMMIT(*state.area, empty);
+        cli::commit::commit_area(*state.area, false, outcome);
     }
-    if (!dottalk::table::get_tb_const(state.area0).empty()) {
-        error = "the house COMMIT path retained buffered changes; the transaction remains active for retry or rollback";
+
+    // AIF-159: READ the verdict, do not infer it.
+    //
+    // What stood here asked whether the table buffer was empty afterwards and
+    // called that success. That proxy is true only while every failing arm of
+    // COMMIT happens to retain the buffer -- which it does today, by policy
+    // rather than by contract. It also named retention as the cause of every
+    // refusal, so a BEFORE-trigger veto and an unresolvable work area both
+    // reported themselves as a house path that "retained buffered changes".
+    if (!outcome.durable()) {
+        // Option (3) of the finding: name the exit. Only the SQL-mode forms
+        // route through commit_sql_transaction / rollback_sql_transaction and
+        // release the scope. "retry or rollback" alone sent people to a native
+        // COMMIT, which applies the buffer and leaves the transaction open --
+        // and every later autocommit DML then stages instead of committing.
+        error = cli::commit::describe(outcome) +
+                "; the transaction is still open -- retry the statement, or end "
+                "it with COMMIT or ROLLBACK in SQL mode (a native COMMIT applies "
+                "the buffer but does not release the transaction)";
         return false;
     }
     release_sql_transaction(true);

@@ -36,13 +36,21 @@
 # slow; it is that gating it would be WRONG. Replay writes values the gate
 # already accepted at COMMIT, and it removes the log when it finishes, so a
 # refusal at replay would discard a committed record and say nothing. 14 -> 13.
+#
+# 2026-09-09, FOURTH -- AN ANCHOR MOVE AND NOT A CHANGE OF SUBSTANCE.
+# cmd_commit.cpp:319 -> :320. AIF-159 added ONE include line near the top of
+# that file, which pushed the site down by one. It is the same A.set(f1, v)
+# inside apply_one_recno, doing the same thing for the same reason. Re-anchored
+# here so the gate does not report it as one site FIXED and another NEW, which
+# is what happened at d778bad5c when the same shift went unrecorded. The count
+# is unchanged: 13 sites in 11 files.
 src/bbs/bbs_store.cpp:334:set
 src/bbs/bbs_store.cpp:350:set
 src/bbs/bbs_store.cpp:49:set
 src/cli/app_simple_browser.cpp:796:set
 src/cli/browse/browse_edit.cpp:40:set
 src/cli/cmd_autodbf.cpp:985:set
-src/cli/cmd_commit.cpp:319:set
+src/cli/cmd_commit.cpp:320:set
 src/cli/cmd_copy.cpp:589:set
 src/cli/cmd_importsql.cpp:723:set
 src/cli/cmd_sort.cpp:923:set

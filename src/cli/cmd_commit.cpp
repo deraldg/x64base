@@ -107,6 +107,7 @@
 #include "cli/command_output.hpp"
 #include "cli/settings.hpp"
 #include "cli/table_state.hpp"
+#include "cli/table_buffer.hpp"   // AIF-159: the verdict type this file fills in
 #include "cli/order_state.hpp"
 #include "memo/memo_manager.hpp"
 
@@ -742,6 +743,68 @@ static CommitResult commit_one_area(xbase::DbArea& A,
 
 } // namespace
 
+// ---------------------------------------------------------------------------
+// AIF-159: hand the verdict out.
+//
+// commit_area() is the single-area body of cmd_COMMIT lifted verbatim, so the
+// two cannot drift: cmd_COMMIT now calls it. Everything observable is the same
+// -- slot_of_area first, the same CommitCannotDetermineAreaText on failure, the
+// same SET TALK read, the same commit_one_area call. Only the return differs.
+// ---------------------------------------------------------------------------
+namespace cli { namespace commit {
+
+std::string describe(const Outcome& outcome)
+{
+    switch (outcome.verdict) {
+        case Verdict::Complete:
+            return "the buffered changes are committed";
+        case Verdict::NoChanges:
+            return "there were no buffered changes to commit";
+        case Verdict::PartialRecordFailure:
+            return "COMMIT applied " + std::to_string(outcome.applied_ok) +
+                   " record(s) and could not apply " + std::to_string(outcome.applied_fail) +
+                   "; the unapplied changes are still buffered";
+        case Verdict::FinalizeFailure:
+            return "COMMIT applied the records but a finalize step failed "
+                   "(memo, index, or journal); the buffered changes were restored";
+        case Verdict::RefusedByTrigger:
+            return "a BEFORE trigger refused the commit; nothing was applied and "
+                   "the changes are still buffered";
+        case Verdict::AreaUnknown:
+            return "the work area holding the buffered changes could not be "
+                   "determined; nothing was attempted";
+    }
+    return "COMMIT reported an unrecognized verdict";
+}
+
+void commit_area(xbase::DbArea& A, bool interactive_rebuild, Outcome& out)
+{
+    out = Outcome{};
+
+    const int area0 = cli::slot_of_area(&A);
+    if (area0 < 0) {
+        cli::cmdout::print_prefixed_message(
+            "COMMIT", dottalk::helpdata::MessageId::CommitCannotDetermineAreaText);
+        out.verdict = Verdict::AreaUnknown;
+        return;
+    }
+
+    const bool talk = Settings::instance().talk_on.load();
+    const CommitResult result = commit_one_area(A, area0, talk, interactive_rebuild);
+
+    out.applied_ok   = result.applied_ok;
+    out.applied_fail = result.applied_fail;
+    switch (result.status) {
+        case CommitStatus::NoChanges:            out.verdict = Verdict::NoChanges;            break;
+        case CommitStatus::Complete:             out.verdict = Verdict::Complete;             break;
+        case CommitStatus::PartialRecordFailure: out.verdict = Verdict::PartialRecordFailure; break;
+        case CommitStatus::FinalizeFailure:      out.verdict = Verdict::FinalizeFailure;      break;
+        case CommitStatus::RefusedByTrigger:     out.verdict = Verdict::RefusedByTrigger;     break;
+    }
+}
+
+}} // namespace cli::commit
+
 void cmd_COMMIT(xbase::DbArea& A, std::istringstream& in) {
     auto* eng = shell_engine();
     if (!eng) {
@@ -775,13 +838,9 @@ void cmd_COMMIT(xbase::DbArea& A, std::istringstream& in) {
     const bool talk = Settings::instance().talk_on.load();
 
     if (!all) {
-        const int area0 = cli::slot_of_area(&A);
-        if (area0 < 0) {
-            cli::cmdout::print_prefixed_message(
-                "COMMIT", dottalk::helpdata::MessageId::CommitCannotDetermineAreaText);
-            return;
-        }
-        (void)commit_one_area(A, area0, talk, interactive_rebuild);
+        // AIF-159: same work, same output; the verdict is simply available now.
+        cli::commit::Outcome outcome;
+        cli::commit::commit_area(A, interactive_rebuild, outcome);
         return;
     }
 
