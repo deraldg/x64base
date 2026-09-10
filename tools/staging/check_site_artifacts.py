@@ -36,6 +36,15 @@ green was truthful about its own scope and lying about the sentence it printed.
 An instrument that overstates its reach is worse than one that is missing: the
 missing one sends somebody looking.
 
+AND THE POINTER THIS FILE HANDS OUT IS NARROWER THAN IT SOUNDS, which is the
+same fault one turn later. The site's prose sweep detects pages UNDERSTATING a
+shipped capability -- that is what its authority is, a list of what ships, and
+what its 2026-09-05 incident was. A page asserting a RETIRED surface is the
+opposite polarity and has no entry to match, so both tiers of that check were
+green through these six days as well. The advisory says so rather than implying
+coverage that does not exist. Giving the capability authority a retired-entry
+polarity would close it; that is a site-tree change and its own decision.
+
 THAT SPLIT IS THE WHOLE DESIGN. Comparing whole artifacts would flag drift on
 EVERY engine commit, because the artifact records the commit it was derived at
 and any commit changes it. A gate that fires on every push is a gate somebody
@@ -252,9 +261,17 @@ def main(argv):
               "site is false' for six days while four sentences across two "
               "pages described a scanner retired 2026-09-04 and a SQLSEL "
               "predicate form retired 2026-09-10. Neither retirement changed a "
-              "counted fact. For prose, run the site tree's "
-              "`npm run check:freshness`; its TIER 2 sweep is the instrument "
-              "that reads pages, and it is advisory there too.")
+              "counted fact.")
+        print("  AND NOTHING ELSE CAUGHT THEM EITHER, so do not read the line "
+              "above as a handoff. The site tree's `npm run check:freshness` "
+              "is the prose instrument and BOTH ITS TIERS WERE GREEN "
+              "throughout: tier 1 compares exact values and no number was "
+              "stale; tier 2 sweeps pages for a SHIPPED capability described "
+              "as planned or missing, and its authority is a list of what "
+              "ships, so a page asserting a REMOVED surface has no entry to "
+              "match. That is one polarity, and a retirement is the other. "
+              "Run it anyway -- it catches what it was built for -- but the "
+              "sweep that found these four sentences was a person asking.")
         return 1
     return 0
 
