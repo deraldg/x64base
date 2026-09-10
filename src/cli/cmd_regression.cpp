@@ -120,7 +120,8 @@ enum class RegressionValidator {
     DefFamilyV1,
     PkPolicyV1,
     PkDurabilityV1,
-    VarcharAreaResetV1
+    VarcharAreaResetV1,
+    WorkdeskV1
 };
 
 struct RegressionSpec {
@@ -228,7 +229,7 @@ struct RegressionSpec {
 // compile error ("too many initializers"), which is the safe failure -- but it
 // is a recurring papercut: it happened when CNXLIVE was added on 2026-07-31.
 // Bump it when you add a regression.
-constexpr std::array<RegressionSpec, 81> kRegressionSpecs{{
+constexpr std::array<RegressionSpec, 82> kRegressionSpecs{{
     {
         "COUNT_LIST_VERBOSE",
         "count_list_verbose_regression.dts",
@@ -255,6 +256,41 @@ constexpr std::array<RegressionSpec, 81> kRegressionSpecs{{
         false,
         RegressionValidator::CountListVerboseV1,
         true                       // evidence is COUNT's own output: routed channel
+    },
+    {
+        "WORKDESK",
+        "workdesk_arm_regression.dts",
+        "WORKDESK reports the desk -- every open workspace with its areas, identity, "
+        "lineage and roots (AIF-078 membership table joined to the engine's areas). "
+        "THE FIRST SPEC TO ASSERT A BYTE OF THIS SURFACE: WSREPORT is `status: "
+        "supported` and appeared ZERO times in this file before 2026-09-10, and its "
+        "old `Workspace` block could not have been asserted anyway -- it showed AREA "
+        "slots under a workspace heading, never called the workspace table, and named "
+        "no workspace at all. WORKDESK is assertable because the desk is ordered on "
+        "purpose: handles ascending, DEFAULT always handle 1 and therefore first. Two "
+        "phases of the SAME command: once standing in DEFAULT with nothing of ours "
+        "open, once with TWO WORKSPACES EACH HOLDING A DIFFERENT FILE NAMED WDARM, "
+        "opened from DBF/SANDBOX/R131A and .../R131B. THE TOPOLOGY IS THE POINT AND "
+        "THE FIRST TWO CUTS HAD IT WRONG: they used `USE <t> AGAIN`, which is the one "
+        "route that CANNOT double a name -- cmd_use.cpp uniquifies the alias to "
+        "WDARM2 and says so, and the fanout pass keys on DbArea::name(). The "
+        "condition that occurs in production is two DIFFERENT files sharing a "
+        "basename, opened by a route that skips that arm (WORKSPACE OPEN dedupes on "
+        "PATH only), first seen as x64\\BUILDING.dbf and x32\\BUILDING.dbf in one "
+        "live session. WD_FANOUT IS THE DISCRIMINATOR -- the 'Names open in more than "
+        "one area' section must appear EXACTLY ONCE across both phases, so a fanout "
+        "block emitted unconditionally fails as loudly as one never emitted. "
+        "WD_G0/WD_G1 read each fixture alone before any workspace exists and "
+        "WD_W0/WD_W1 read them through the two workspaces, so a doubled NAME cannot "
+        "be confused with one file counted twice. Handles and WS_IDs are never "
+        "asserted by value except DEFAULT's handle 1, which is an invariant. "
+        "RE-RUNNABLE: the preamble DESTROYS both workspace names before opening "
+        "them. Self-bootstrapping SANDBOX fixture, erased at both ends. Explicit-run "
+        "until soaked.",
+        false,                     // explicit-run until soaked
+        true,                      // AIF-078 L2: WORKSPACE OPEN ... AS mints a catalog row
+        RegressionValidator::WorkdeskV1,
+        true                       // evidence is WORKDESK's own routed output
     },
     {
         "NONDESTRUCTIVE",
@@ -1735,6 +1771,130 @@ bool validate_sqlsel_buffer_visibility(const std::string& transcript)
 // read "expected 1 line(s), got 0" while the operator watched the line print.
 // The spec carries capture_routed_channel = true and run_regression_script
 // hands this function the SET ALTERNATE file instead.
+// WORKDESK -- the desk, asserted.
+//
+// THE FIRST VALIDATOR OVER THIS SURFACE. WSREPORT is `status: supported` and
+// carried no spec at all; its old `Workspace` block showed AREA slots under a
+// workspace heading and never called the workspace table, so there was nothing
+// stable to assert even in principle. What makes WORKDESK checkable is that its
+// order is chosen rather than inherited: xbase::workspace::handles() walks an
+// unordered_map, and observe() sorts, which also puts DEFAULT (handle 1) first
+// on every run.
+//
+// NOTHING HERE ASSERTS A HANDLE OR A WS_ID BY VALUE except DEFAULT's handle 1,
+// which is an invariant of the membership table ("there is no state in which
+// handle 1 does not exist"). WDKA's and WDKB's handles depend on how many
+// workspaces the session already made and their WS_IDs are ADOPTED from the
+// catalog when the name has a live chain -- asserting either would fail this
+// spec for a reason that has nothing to do with the desk.
+//
+// AND THE ARM'S TOPOLOGY IS LOAD-BEARING, not incidental. What the desk's
+// fanout section detects is ONE NAME IN TWO AREAS, and `USE <t> AGAIN` -- the
+// obvious way to write this fixture, and the way the first two cuts did write
+// it -- provably cannot produce that: cmd_use.cpp resolves the alias before it
+// touches the area and renames the second instance to WDARM2. The arm opens
+// two DIFFERENT files that share a basename, from two directories, through
+// WORKSPACE OPEN, which dedupes on path and not on name. That is the shape the
+// condition actually takes in a live session.
+bool validate_workdesk(const std::string& transcript)
+{
+    static constexpr std::array<const char*, 12> required{{
+        "WORKDESK-ARM-BEGIN",
+
+        // GUARDS. The two fixtures read ALONE, before a workspace exists.
+        // They share a basename and differ in content, which is the only
+        // thing that can tell "the desk reported a doubled NAME" from "the
+        // desk reported one file twice". Without them an absent fanout
+        // section proves nothing either -- the TRG_W0 lesson, applied.
+        "WD_G0_fixture_a_reads_AAA:.T.",
+        "WD_G1_fixture_b_reads_BBB:.T.",
+
+        // THE SAME TWO FILES, NOW THROUGH TWO WORKSPACES. W1 is the
+        // discriminator: if the desk's doubled name were one file seen
+        // twice, area 1 would read AAA.
+        "WD_W0_area0_is_workspace_a_and_reads_AAA:.T.",
+        "WD_W1_area1_is_workspace_b_and_reads_BBB:.T.",
+
+        // Phase 1: standing in DEFAULT. Handle 1 is safe to assert -- there
+        // is no state in which handle 1 does not exist.
+        "Current ws  : DEFAULT (handle 1)",
+
+        // Phase 2: the header FOLLOWS the switch, and the current marker
+        // lands on the row it names. Handles deliberately unasserted.
+        "Current ws  : WDKB (handle ",
+        "* WDKB  (handle ",
+
+        // The current AREA belongs to WDKA while the current WORKSPACE is
+        // WDKB -- legal, and the desk must say so. The owning handle is
+        // session-dependent, so the sentence is asserted and the number is
+        // not; it is split in two because that is what pins both ends of it.
+        "-- NOTE: area 0 belongs to workspace ",
+        ", not to the current workspace",
+
+        // The doubled name is reported with its owning workspaces.
+        "    WDARM :",
+
+        "WORKDESK-ARM-END"
+    }};
+    if (!require_transcript_fragments(transcript, "WORKDESK", required)) {
+        std::cout << "WORKDESK: FAIL.\n"
+                     "  LOOK FIRST at the two fixture directories. This arm needs\n"
+                     "  DBF/SANDBOX/R131A and DBF/SANDBOX/R131B to EXIST -- they are\n"
+                     "  empty directories and git does not track those, the same\n"
+                     "  standing gap WAOA/WAOB, OJCA/OJCB, PKA/PKB and RPCA/RPCB\n"
+                     "  already carry. Missing directories fail the guards first, at\n"
+                     "  WD_G0, for a reason that is not about WORKDESK.\n";
+        return false;
+    }
+
+    // THE DISCRIMINATOR. The desk renders twice; the fanout section must appear
+    // EXACTLY ONCE -- phase 2 and not phase 1. A block emitted unconditionally
+    // fails here as loudly as one never emitted, which is the whole reason to
+    // count rather than to check presence.
+    const std::size_t fanout =
+        transcript_count(transcript, "Names open in more than one area");
+    if (fanout != 1) {
+        std::cout << "WORKDESK: FAIL -- expected the name-fanout section EXACTLY "
+                     "once across two renders, got " << fanout << ".\n"
+                     "  0 means the doubled name was not detected. NOTE WHAT DOES NOT\n"
+                     "  CAUSE THAT: `USE <t> AGAIN` never doubles a name -- cmd_use.cpp\n"
+                     "  uniquifies the alias (WDARM -> WDARM2) and announces it, so a\n"
+                     "  second handle on ONE file is invisible here by design. Two\n"
+                     "  cuts of this spec were written that way and were wrong. The\n"
+                     "  condition is two DIFFERENT files sharing a basename, opened by\n"
+                     "  a route that skips that arm.\n"
+                     "  2 means the block is printed whether or not a name is doubled,\n"
+                     "  which would make its presence meaningless.\n";
+        return false;
+    }
+
+    // Both phases rendered. The desk header line is unique to this report.
+    const std::size_t renders = transcript_count(transcript, "  Recursion   : ");
+    if (renders != 2) {
+        std::cout << "WORKDESK: FAIL -- expected 2 desk renders, got "
+                  << renders << ".\n";
+        return false;
+    }
+
+    // INVARIANT I1. An open area owned by no workspace cannot legally exist,
+    // so this arm must never produce one. Asserted as an ABSENCE because a
+    // fragment check can only ever prove something IS there.
+    if (transcript.find("INVARIANT I1 VIOLATED") != std::string::npos) {
+        std::cout << "WORKDESK: FAIL -- the desk reported an I1 violation: an open\n"
+                     "  area owned by no workspace. This arm opens two areas, both\n"
+                     "  through WORKSPACE OPEN into a named workspace, so this should\n"
+                     "  be unreachable.\n";
+        return false;
+    }
+
+    std::cout << "WORKDESK: PASS -- the header follows SWITCH, DEFAULT sorts first,\n"
+                 "  the current marker lands on the named workspace, the current area\n"
+                 "  is reported as belonging to a workspace that is not the current\n"
+                 "  one, and two different files sharing one name are reported exactly\n"
+                 "  once and only when it is true. No I1 violation.\n";
+    return true;
+}
+
 bool validate_count_list_verbose(const std::string& transcript)
 {
     static constexpr std::array<const char*, 1> t0{{"5"}};
@@ -3230,6 +3390,8 @@ bool validate_regression_transcript(const RegressionSpec& spec,
             return validate_def_family(transcript);
         case RegressionValidator::VarcharAreaResetV1:
             return validate_varchar_area_reset(transcript);
+        case RegressionValidator::WorkdeskV1:
+            return validate_workdesk(transcript);
     }
     return false;
 }

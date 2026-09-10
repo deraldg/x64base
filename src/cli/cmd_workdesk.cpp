@@ -172,8 +172,12 @@ Desk observe() {
         }
     }
 
-    // One name, more than one open area. Supported and deliberate; reported so
-    // a caller can qualify rather than take first-wins by accident.
+    // One NAME, more than one open area -- a name collision, NOT a second
+    // handle on one file. `USE <t> AGAIN` cannot land here: it uniquifies the
+    // alias first. What lands here is two DIFFERENT files sharing a basename,
+    // opened by a route that skips that arm (WORKSPACE OPEN/ADD/LOAD, the
+    // schema restores, CREATE, AUTODBF). Reported so a caller can qualify
+    // rather than take first-wins by accident. See NameFanout in the header.
     for (auto& kv : fanout) {
         if (kv.second.slots.size() > 1) {
             desk.name_fanout.push_back(std::move(kv.second));
@@ -287,9 +291,11 @@ void render(const Desk& desk, std::ostream& os) {
         os << "\n";
     }
 
-    // One table, more than one open area. SUPPORTED and deliberate -- `USE <t>
-    // AGAIN` asks for it. Reported so a caller qualifies on purpose instead of
-    // taking first-wins by accident.
+    // One NAME, more than one open area. NOT the `USE <t> AGAIN` case -- that
+    // one renames the second instance and so is invisible here by design. This
+    // is two different files that share a basename, reached through an opener
+    // that does not uniquify. Reported so a caller qualifies on purpose
+    // instead of taking first-wins by accident.
     if (!desk.name_fanout.empty()) {
         os << "  Names open in more than one area\n";
         for (const NameFanout& f : desk.name_fanout) {

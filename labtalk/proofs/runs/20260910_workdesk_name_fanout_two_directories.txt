@@ -1,0 +1,177 @@
+WORKDESK -- name fanout, proven against the topology that produces it
+=====================================================================
+
+Build     : dottalk++ v0.6 (2026-09-10, 88ffa9c5 dirty)  (Sep 10 2026 11:01:16)
+Command   : REGRESSION WORKDESK
+Result    : PASS -- 4 markers, 4 true; fanout section present exactly once
+            across two renders; no I1 violation.
+Bracket   : scratch catalog data/tmp/wscat_run_416; production catalog read
+            281 rows by the L3 isolation arm BOTH BEFORE AND AFTER.
+
+WHAT THIS RUN SETTLES, and it is a correction to a comment I wrote myself.
+
+The first two cuts of this spec used `USE WDARM AGAIN` and expected WORKDESK's
+name-fanout section to appear. It never did, and the code was right.
+`USE ... AGAIN` is the ONE route that cannot double a name: cmd_use.cpp
+resolves the alias before it touches the area (find_open_area_by_alias at :472,
+derive_distinct_alias at :492), renames the second instance to WDARM2 and
+announces the rename. Two handles, two NAMES. The fanout pass keys on
+DbArea::name(), which IS the logical name, so on that path it can never fire.
+
+Every other opener skips that arm. WORKSPACE OPEN <dir> dedupes on PATH and not
+on name (cmd_workspace.cpp:1511); WORKSPACE ADD, WORKSPACE LOAD and both
+schema-restore paths apply a saved alias verbatim; CREATE and AUTODBF take the
+file stem straight from DbArea::open(). cmd_use.cpp is the only uniquifier in
+the tree.
+
+So the arm reproduces the TOPOLOGY, not merely the condition: two DIFFERENT
+files sharing a basename, opened from two directories into two workspaces --
+the shape first seen live as x64\BUILDING.dbf and x32\BUILDING.dbf. Forcing the
+collision with an explicit ALIAS clause was available and was refused; a spec
+adjusted to match what the code did stops meaning anything.
+
+OBSERVED IN THE SAME RUN AND NOT CLAIMED BY ANY ARM: WDKA and WDKB each report
+the SESSION roots rather than the directory they were opened from, while their
+tables demonstrably came from R131A and R131B (the SELECT lines print the real
+paths). That is OPENJOIN's stated uncovered item (a) -- R131 wants a workspace
+to record the directory it was opened from, Q3, still unruled -- observed here
+rather than argued. Nothing in this change touches it.
+
+-----------------------------------------------------------------------------
+TRANSCRIPT (WORKDESK arm, verbatim)
+-----------------------------------------------------------------------------
+
+REGRESSION: running WORKDESK
+  Script: workdesk_arm_regression.dts
+  Resolved: D:\code\ccode\dottalkpp\data\scripts\workdesk_arm_regression.dts
+REGRESSION: catalog BRACKETED for WORKDESK
+  production catalog : D:\code\ccode\dottalkpp\data\workspaces  (untouched)
+  scratch catalog    : D:\code\ccode\dottalkpp\data\tmp\wscat_run_416
+Echo is OFF
+STOP_ON_ERROR: threshold set to OFF
+WORKDESK-ARM-BEGIN
+WORKSPACE CLOSE: Closing all work areas...
+REL: cleared all
+WORKSPACE: 0 area(s) closed.
+WORKSPACE DESTROY: no such workspace: WDKA
+WORKSPACE DESTROY: no such workspace: WDKB
+WORKSPACE SWITCH: current handle 1 (DEFAULT), depth 0, members 0
+SETPATH: DBF = D:\code\ccode\dottalkpp\data\DBF\SANDBOX\R131A
+ERASE: Table not found: WDARM.dbf
+Created D:\code\ccode\dottalkpp\data\DBF\SANDBOX\R131A\WDARM.dbf [X64]
+Opened D:\code\ccode\dottalkpp\data\dbf\sandbox\R131A\WDARM.dbf with 0 records.
+Closed.
+SETPATH: DBF = D:\code\ccode\dottalkpp\data\DBF\SANDBOX\R131B
+ERASE: Table not found: WDARM.dbf
+Created D:\code\ccode\dottalkpp\data\DBF\SANDBOX\R131B\WDARM.dbf [X64]
+Opened D:\code\ccode\dottalkpp\data\dbf\sandbox\R131B\WDARM.dbf with 0 records.
+Closed.
+WORKSPACE CLOSE: Closing all work areas...
+REL: cleared all
+WORKSPACE: 0 area(s) closed.
+SETPATH: DBF = D:\code\ccode\dottalkpp\data\DBF\SANDBOX\R131A
+Opened WDARM (v64) : Record count 1
+Valid Index/Indices   : CDX, CNX
+WD_G0_fixture_a_reads_AAA:.T.
+Closed.
+SETPATH: DBF = D:\code\ccode\dottalkpp\data\DBF\SANDBOX\R131B
+Opened WDARM (v64) : Record count 1
+Valid Index/Indices   : CDX, CNX
+WD_G1_fixture_b_reads_BBB:.T.
+Closed.
+WORKSPACE CLOSE: Closing all work areas...
+REL: cleared all
+WORKSPACE: 0 area(s) closed.
+SETPATH: DBF = D:\code\ccode\dottalkpp\data\DBF
+WORKSPACE SWITCH: current handle 1 (DEFAULT), depth 0, members 0
+Workspaces
+----------------------------------------
+  Open        : 1
+  Open areas  : 0
+  Recursion   : ON
+  Max depth   : 32
+  Current ws  : DEFAULT (handle 1)
+  Current area: 0
+
+  * DEFAULT  (handle 1, ws_id unallocated, root, depth 0)
+      roots  : dbf D:\code\ccode\dottalkpp\data\DBF | idx D:\code\ccode\dottalkpp\data\indexes | lmdb D:\code\ccode\dottalkpp\data\lmdb
+      areas  : none
+
+WORKSPACE OPEN: workspace 4  name WDKA  WS_ID 1  <- DBF/SANDBOX/R131A
+WORKSPACE OPEN: scanning directory: DBF/SANDBOX/R131A [AUTO INDEX]
+  Area 0: opened 'WDARM.dbf'
+WORKSPACE: 1 table(s) opened into area(s) 0..0.
+WORKSPACE OPEN: workspace 5  name WDKB  WS_ID 2  <- DBF/SANDBOX/R131B
+WORKSPACE OPEN: scanning directory: DBF/SANDBOX/R131B [AUTO INDEX]
+  Area 1: opened 'WDARM.dbf'
+WORKSPACE: 1 table(s) opened into area(s) 1..1.
+Selected area 0.
+Current area: 0
+  File: D:\code\ccode\dottalkpp\data\dbf\sandbox\R131A\WDARM.dbf  Recs: 1  Recno: 1
+WD_W0_area0_is_workspace_a_and_reads_AAA:.T.
+Selected area 1.
+Current area: 1
+  File: D:\code\ccode\dottalkpp\data\dbf\sandbox\R131B\WDARM.dbf  Recs: 1  Recno: 1
+WD_W1_area1_is_workspace_b_and_reads_BBB:.T.
+WORKSPACE SWITCH: current handle 5 (WDKB), depth 0, members 1
+Selected area 0.
+Current area: 0
+  File: D:\code\ccode\dottalkpp\data\dbf\sandbox\R131A\WDARM.dbf  Recs: 1  Recno: 1
+Workspaces
+----------------------------------------
+  Open        : 3
+  Open areas  : 2
+  Recursion   : ON
+  Max depth   : 32
+  Current ws  : WDKB (handle 5)
+  Current area: 0  -- NOTE: area 0 belongs to workspace 4, not to the current workspace
+
+    DEFAULT  (handle 1, ws_id unallocated, root, depth 0)
+      roots  : dbf D:\code\ccode\dottalkpp\data\DBF | idx D:\code\ccode\dottalkpp\data\indexes | lmdb D:\code\ccode\dottalkpp\data\lmdb
+      areas  : none
+
+    WDKA  (handle 4, ws_id 1, root, depth 0)
+      roots  : dbf D:\code\ccode\dottalkpp\data\DBF | idx D:\code\ccode\dottalkpp\data\indexes | lmdb D:\code\ccode\dottalkpp\data\lmdb
+      areas  : 1 open of 1 claimed
+          0 * WDARM
+
+  * WDKB  (handle 5, ws_id 2, root, depth 0)
+      roots  : dbf D:\code\ccode\dottalkpp\data\DBF | idx D:\code\ccode\dottalkpp\data\indexes | lmdb D:\code\ccode\dottalkpp\data\lmdb
+      areas  : 1 open of 1 claimed
+          1   WDARM
+
+  Names open in more than one area
+    WDARM : (ws 4 area 0) (ws 5 area 1)
+  Not an error. First-wins is a migration step, not a promise --
+  qualify the name.
+
+WORKSPACE CLOSE: Closing all work areas...
+REL: cleared all
+WORKSPACE: 2 area(s) closed.
+WORKSPACE DESTROY: handle 4  name WDKA
+  Durable identity RETIRED: WS_ID 1 -- its live catalog row is now SUPERSEDED, so the name has no live row and a future WORKSPACE NEW WDKA will mint a FRESH WS_ID rather than adopt this one.
+  History kept: every row in the chain is still there and still readable. A destroyed workspace leaves a record, not a hole.
+  Handle 4 is NOT reused: a stale handle held by an area must resolve to 'gone' and never to somebody else.
+WORKSPACE DESTROY: handle 5  name WDKB
+  Durable identity RETIRED: WS_ID 2 -- its live catalog row is now SUPERSEDED, so the name has no live row and a future WORKSPACE NEW WDKB will mint a FRESH WS_ID rather than adopt this one.
+  History kept: every row in the chain is still there and still readable. A destroyed workspace leaves a record, not a hole.
+  Handle 5 is NOT reused: a stale handle held by an area must resolve to 'gone' and never to somebody else.
+WORKSPACE SWITCH: current handle 1 (DEFAULT), depth 0, members 0
+SETPATH: DBF = D:\code\ccode\dottalkpp\data\DBF\SANDBOX\R131A
+ERASE: deleting 1 file(s) for table: WDARM
+  Deleted: WDARM.dbf
+ERASE complete. Deleted: 1, Failed: 0
+SETPATH: DBF = D:\code\ccode\dottalkpp\data\DBF\SANDBOX\R131B
+ERASE: deleting 1 file(s) for table: WDARM
+  Deleted: WDARM.dbf
+ERASE complete. Deleted: 1, Failed: 0
+SETPATH: DBF = D:\code\ccode\dottalkpp\data\DBF
+WORKDESK-ARM-END
+REGRESSION: catalog restored to D:\code\ccode\dottalkpp\data\workspaces
+REGRESSION: path slot DBF was left at D:\code\ccode\dottalkpp\data\DBF by WORKDESK; restored to D:\code\ccode\dottalkpp\data\workspaces
+  Routed-channel capture: D:\code\ccode\dottalkpp\data\tmp\regression_WORKDESK.alt
+WORKDESK: PASS -- the header follows SWITCH, DEFAULT sorts first,
+  the current marker lands on the named workspace, the current area
+  is reported as belonging to a workspace that is not the current
+  one, and two different files sharing one name are reported exactly
+  once and only when it is true. No I1 violation.
