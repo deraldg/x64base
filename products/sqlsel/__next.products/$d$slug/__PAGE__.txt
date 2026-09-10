@@ -1,7 +1,7 @@
 1:"$Sreact.fragment"
-4:I[97367,["/_next/static/chunks/266pl32z8kblr.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
+4:I[97367,["/_next/static/chunks/0suhhotz_hbm1.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
 5:"$Sreact.suspense"
-2:T2c1f,<h2 id="overview"><a class="no-underline" href="#overview">Overview</a></h2>
+2:T2e26,<h2 id="overview"><a class="no-underline" href="#overview">Overview</a></h2>
 <p>SQLsel names the SQL-facing query workflow in the DotTalk++ / x64base system.</p>
 <p>Its subject is set-oriented retrieval: a <code>SELECT</code> statement that describes the
 rows it wants and returns them, rather than positioning a cursor and navigating.
@@ -22,11 +22,17 @@ truth. The table must already be open.</p>
 <li>a SQL conformance map in <code>include/sql_ref.hpp</code></li>
 </ul>
 <h2 id="the-sql-family"><a class="no-underline" href="#the-sql-family">The SQL family</a></h2>
-<p>Four commands share the <code>SQL</code> prefix and are not interchangeable. <code>SQLSEL</code> is
-SQLsel, the statement surface described above. <code>SQL</code> scans the current work area
-with a predicate and does not execute SQL statements, its name being historical.
-<code>SQLITE</code> bridges to an actual SQLite database. <code>SQLVER</code> reports SQLite
-availability. Each command states the boundary in its own <code>USAGE</code> output.</p>
+<p>Six commands share the <code>SQL</code> prefix and are not interchangeable. <code>SQLSEL</code> is
+SQLsel, the statement surface described above. <code>SQL</code> is a <strong>reserved name</strong>: it
+scanned the current work area with a predicate until 2026-09-04, when that job
+moved to <code>COUNT</code>, and it now reports where the scanning and statement surfaces
+live. <code>SQLHELP</code> renders the SQL reference and conformance map. <code>SQLERASE</code>
+removes rows through the SQL surface. <code>SQLITE</code> bridges to an actual SQLite
+database. <code>SQLVER</code> reports SQLite availability. Each command states the boundary
+in its own <code>USAGE</code> output.</p>
+<p>For a predicate scan or count over the current work area the verb is <code>COUNT</code>,
+which honours <code>SET FILTER</code> and <code>SET DELETED</code> as the logical rowset and carries
+the listing and tracing forms as <code>COUNT LIST</code> and <code>COUNT VERBOSE</code>.</p>
 <h2 id="joins-and-how-they-are-proven"><a class="no-underline" href="#joins-and-how-they-are-proven">Joins, and how they are proven</a></h2>
 <p><strong>Pushed to <code>development</code> 2026-09-03 as <code>e7d6ef130</code>.</strong> SQLsel joins two tables
 on an equality key:</p>
@@ -143,6 +149,6 @@ RelTalk is the older model, inherited through the xBase line; SQLsel is the newe
 one. Neither replaces the other.</p>
 <p>See <a href="/docs/engine/sqlsel-and-sql-conformance">SQLsel and SQL Conformance</a> for the
 verification detail and the conformance map, <a href="/docs/talk-family/reltalk">RelTalk docs</a>,
-and the canonical public repo <a href="https://github.com/deraldg/x64base">deraldg/x64base</a>.</p>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=619ec6456f1f","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/?v=619ec6456f1f","children":"Products"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products/sqlsel",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/sqlsel/?v=619ec6456f1f","children":"SQLsel"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"SQLsel"}],["$","p",null,{"className":"mt-2 text-muted","children":"Set-oriented SELECT over open work areas, verified against a SQLite oracle."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose dark:prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:break-words prose-code:whitespace-normal prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30 prose-pre:text-fg [&_pre_code]:text-fg [&_pre_code_span]:text-inherit","dangerouslySetInnerHTML":{"__html":"$2"},"children":null}]}]]}],null,"$L3"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"2Sh9kZruLD27D6xNbZDJ-"}
+and the canonical public repo <a href="https://github.com/deraldg/x64base">deraldg/x64base</a>.</p>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=07db783aab72","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/?v=07db783aab72","children":"Products"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products/sqlsel",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/sqlsel/?v=07db783aab72","children":"SQLsel"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"SQLsel"}],["$","p",null,{"className":"mt-2 text-muted","children":"Set-oriented SELECT over open work areas, verified against a SQLite oracle."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose dark:prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:break-words prose-code:whitespace-normal prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30 prose-pre:text-fg [&_pre_code]:text-fg [&_pre_code_span]:text-inherit","dangerouslySetInnerHTML":{"__html":"$2"},"children":null}]}]]}],null,"$L3"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"ssxaIefP5mu1oRiqSHvTu"}
 3:["$","$L4",null,{"children":["$","$5",null,{"name":"Next.MetadataOutlet","children":"$@6"}]}]
 6:null
