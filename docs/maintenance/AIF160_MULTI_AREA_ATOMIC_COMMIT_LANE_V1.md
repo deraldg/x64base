@@ -25,7 +25,11 @@ ai_report_audit:
       step in our work"), answered four design questions, ran AIFgen to claim
       AIF-160 on lane multi-area-commit, instructed a prior-art sweep ("it is
       important you take another look at prior art, we often miss it"), and
-      then said "do it".
+      then said "do it". AMENDED 2026-09-10 at baseline 3122e9ded on the
+      owner's challenge -- "why are you afraid of b? if you look at the first
+      page of the website. we advertise codevelopment. dogfooding improves and
+      proofs our engine. what is the costs?" -- and his "yes and yes" to
+      writing the correction and flipping the recommendation. See section 3.4.
     scope: |
       Lane charter for AIF-160 (multi-area atomic commit). DESIGN AND
       MEASUREMENT ONLY. No source change is authorized by this document.
@@ -50,19 +54,32 @@ ai_report_audit:
     steward   : member.ai.claude.cowork
     design    : claude/DESIGN_ONE_DECISION_THAT_SPANS_N_JOURNALS.md
     status    : CHARTERED. NOTHING IS BUILT. Four decisions taken, one
-                recommended, and M0 below REOPENS one of the four on evidence.
+                recommended. M0 reopened one of them and SECTION 3.4 THEN
+                REVERSED THAT REOPENING -- read 3.4 before 3.1-3.3.
     opened    : 2026-09-10
-    baseline  : a616863fe
+    baseline  : a616863fe (amended at 3122e9ded, section 3.4)
+
+> **CORRECTION 2026-09-10, SAME DAY.** Sections 3.1-3.3 argued against decision
+> 6.2 on a fact that was six weeks stale. **Decision 6.2 was right and this
+> charter was wrong.** The argument is left standing verbatim because the way it
+> failed is worth more than the conclusion it reached; **section 3.4 is the
+> correction and the recommendation that replaces it.**
 
 ## 0. What this document is, and what it is not
 
 It opens the lane and stages the work. **It authorizes no source change.**
 
-It also does one thing a charter does not usually do: **it reopens a decision
-the owner already took.** Section 3 is a measurement that was supposed to be
-milestone one, turned out to be answerable by reading, and came back against
-the choice. Recording that in the charter rather than discovering it in
-implementation is the entire point of writing this before writing code.
+It also does two things a charter does not usually do. Section 3 **reopened a
+decision the owner had already taken** -- M0 was to be milestone one, turned out
+to be answerable by reading, and came back against the choice. Then section 3.4
+**reversed that reopening on the same day**, because the reading had rested on a
+six-week-old obstacle that the tree had since answered.
+
+**Both are left standing.** The charter is more useful as a record of an
+argument that was made, tested and withdrawn than as a clean statement of the
+conclusion, because the conclusion was never in doubt to anyone who knew
+`xbase::durable_sync` existed, and the author did not. Section 3.6 is the part
+to read if only one section gets read.
 
 ## 1. Why the lane exists
 
@@ -213,6 +230,136 @@ without putting an un-syncable file at the instant the group becomes true.
 on evidence found afterwards, and saying so plainly rather than implementing
 around it.** If the owner prefers Route B, the lane's first milestone becomes
 the DBF durability upgrade and the schedule below changes shape.
+
+### 3.4 CORRECTION -- 3.1-3.3 ARE WRONG, AND THE ERROR IS THE INSTRUCTIVE PART
+
+**`xbase::durable_sync()` has existed since 2026-08-31.** Header
+`include/xbase/durable.hpp`, implementation `src/xbase/durable.cpp`, lane
+AIF-078, `status: supported`.
+
+**It does not need the `fstream`'s handle.** It opens a **second handle by
+path**: `CreateFileW(GENERIC_WRITE)` then `FlushFileBuffers` on Windows,
+`open(O_RDONLY)` then `fsync` on POSIX. It is ramfs-aware -- a virtual path
+returns true having done nothing, because an in-memory table has no platter and
+reporting failure there would make every RAM-resident caller look broken -- and
+it never throws.
+
+So the premise of 3.1 is void. **A DBF can be made durable today, by a facility
+already in the tree, and the `fstream` is simply not in the way.**
+
+**And the precedent is the exact file 6.2 named.** `src/cli/cmd_workspace.cpp`
+calls it three times, twice on the workspaces catalog:
+
+```
+:3476   durable_sync(catalog_path())      after a.writeCurrent(), inside the FLOCK
+:3933   durable_sync(a.memoPath())        payload first
+:3938   durable_sync(catalog_path())      then the row -- ordering is the point
+```
+
+The comment at `:3462` states the commit-point doctrine this design needs, in
+the tree, before this lane existed: *`writeCurrent()` ends in `io().flush()`,
+which reaches the OPERATING SYSTEM and no further -- it survives a crash of this
+process and not a power cut.* **A DBF catalog synced at a commit point is not a
+proposal here. It ships, and it has shipped for ten days.**
+
+The convention comes with it: a failed sync is **reported, never fatal** --
+the row is already written and correct, and refusing at that point would leave
+the caller believing nothing happened when something did.
+
+**The bootstrap worry never arises.** `a.writeCurrent()` is the direct engine
+path, not `TABLE BUFFER`, so a catalog row appended during a group commit does
+not re-enter the machinery it is recording. The shipped call sites prove it.
+
+### 3.5 AND THE ARGUMENT REVERSES: ROUTE A HAS THE DURABILITY GAP, NOT ROUTE B
+
+`include/xbase/durable.hpp` states what it does **not** cover, and it is decisive
+here: it syncs a file's CONTENTS and **not the DIRECTORY, which is what makes a
+CREATE or a RENAME durable** -- R136's multi-file class, with its own answer
+still owed.
+
+**Route A creates a new file.** Its own creation is the case the facility does
+not cover, so a flat group log would need the directory answer before its first
+record could be called durable.
+
+**Route B appends to a catalog that already exists.** It needs the directory
+sync exactly once, at creation, off the critical path -- and after that never
+again.
+
+**RECOMMENDATION, REVERSED: ROUTE B, decision 6.2 as the owner took it.** The
+group log is a DBF catalog under its own path slot, written through the direct
+path and synced with `xbase::durable_sync` at the group decision point, in the
+same pattern `WORKSPACE SAVE` already uses.
+
+**The costs, stated plainly because they were asked for:**
+
+| cost | measure |
+|---|---|
+| durability engineering | **none.** One call, already used twice on this file |
+| runtime, per GROUP commit | one `fsync`: a handle open/close pair plus one platter round trip. Not per record |
+| ordering discipline | every area's prepare sync, THEN the group decision. Costs attention, not work |
+| directory sync | once, at catalog creation, off the critical path. Still R136's open class |
+| handle churn | `durable_sync` opens and closes per call. Optimizable by holding a handle if it ever profiles; local either way |
+| bootstrap | none. The direct write path does not re-enter `TABLE BUFFER` |
+
+### 3.6 WHY THE CHARTER GOT THIS WRONG, KEPT BECAUSE IT WILL HAPPEN AGAIN
+
+The author read AIF-023's 2026-07-19 sentence -- *"fstream doesn't expose the OS
+handle portably"* -- confirmed it against `include/xbase.hpp:767`, found the
+confirmation genuine, and stopped. **The sentence was true when written and had
+been answered six weeks later by a facility that does not use the `fstream`'s
+handle at all.** Confirming a stale fact against the tree is not the same as
+asking whether the tree has since answered it, and the confirmation made the
+staleness invisible.
+
+This is `claude/FINDING_A_TRUE_FACT_ABOUT_THE_WRONG_SPELLING_DENIED_A_SHIPPED_FEATURE.md`
+recurring, one day later, inside a document whose own section 8.6 says a design
+is finished only *"when it has been asked what the house already knows."* The
+sweep that produced this charter asked that question of the intake queue and the
+journal, and did not ask it of the word `fsync`.
+
+**THE TRANSFERABLE RULE: a prior finding's OBSTACLE has a shelf life, and
+verifying that the obstacle is still literally true is NOT verifying that it is
+still binding.** Grep for the capability, not only for the barrier.
+
+**And the second-order cost was nearly paid.** The recommendation this replaces
+would have routed a durable-decision mechanism around the engine's own storage
+because the engine looked incapable, in a project whose front page advertises
+co-development and whose method is proof-by-use. **Scheduling caution presented
+itself as a technical finding.** The owner named it -- *"why are you afraid of
+b?"* -- before it reached code.
+
+### 3.7 A THIRD CONSUMER, FOUND IN THE SAME READING
+
+`src/cli/cmd_workspace.cpp:3927` says of the memo-payload-plus-catalog-row pair:
+*"This does NOT make the pair atomic -- R136 puts a two-file operation in the
+class that needs write-ahead intent, **and no journal exists**."*
+
+**AIF-160 builds that journal.** `WORKSPACE SAVE` is a third consumer of the
+group decision, alongside SQLSEL cross-table and tuple writeback rung 3. Section
+1 says two lanes are blocked on this mechanism; there are three, and the third
+already has its ordering discipline worked out and written down.
+
+### 3.8 AND ONE LIVE HOLE THIS EXPOSED -- NOT VERIFIED, NAMED FOR CHECKING
+
+`journal_note_commit` (`src/cli/table_state.cpp:366`) does `fclose` then
+`std::remove` on the log. The reading below is from the code and **has not been
+proven by a crash test, and it is presented as a question, not a finding:**
+
+Between the apply loop and that removal there appears to be **no
+`xbase::durable_sync` on the DBF** -- only `io().flush()`, which by
+`durable.hpp`'s own opening paragraph *"reaches the OPERATING SYSTEM and no
+further."* If that holds, a power cut after the log is deleted but before the
+pages land loses data the WAL can no longer recover, **because the WAL deleted
+itself on the strength of an apply that had not reached the platter.**
+
+That is AIF-023's open hardening item, still open, with the tool to close it
+three files away and unwired. **Bounded:** it needs `TABLE BUFFER PERSISTENT`;
+under the default RamOnly there is no journal at all, and AIF-023 already says
+"scoped gain, not full ACID".
+
+**What would settle it:** trace every path from `apply_one_recno` to
+`journal_note_commit` for a contents sync, and if none exists, decide whether it
+belongs to this lane or to AIF-023. It is named here so it is not rediscovered.
 
 ## 4. M1 -- the format bump belongs to two lanes, not one
 
@@ -372,8 +519,11 @@ the owner rules on whether that row is amended or annotated.
 
 ## 11. Sequence
 
-1. **M0 ruling** -- Route A, B or C for the group log. Blocks everything, and
-   section 3 recommends C-via-A against decision 6.2 as taken.
+1. **M0 -- SETTLED, NOT A RULING.** Decision 6.2 stands: the group log is a DBF
+   catalog, synced with `xbase::durable_sync` at the group decision point. The
+   charter's argument against it was withdrawn in section 3.4. What remains is
+   work, not a choice: pick the path slot, and confirm the ordering discipline
+   at the new call site.
 2. **M1 joint decision with AIF-061** -- one version bump or two. Blocks any
    journal write.
 3. **M4 first step** -- confirm the G6 harness builds. Cheap, and it sizes M4.
@@ -381,24 +531,30 @@ the owner rules on whether that row is amended or annotated.
 5. **M3** -- SQLSEL enlist becomes many, with the four surfaces moving together.
 6. **M5** -- gated on the 6.5 ruling.
 
-Nothing after step 1 should start before step 1 is answered, because the group
-log is the only new durable authority in the design and everything else writes
-to it or reads it.
+Step 1 is no longer a gate on the others -- it is answered. **The new first
+question is 3.8**: whether the apply-to-DBF window is a live durability hole,
+because if it is, this lane inherits it N times over and the answer belongs
+above M2 rather than beside it.
 
 ## 12. What is measured here and what is not
 
-**Measured 2026-09-10 by reading the tree at `a616863fe`:** the WAL contract in
-section 2; `wal_durable_sync` and the `FILE*` handle route; `include/xbase.hpp:767`
-as an `fstream`; `TBJ1` still being the written header with no TBJ2 anywhere;
+**Measured 2026-09-10 by reading the tree at `a616863fe` and, for section 3.4
+onward, at `3122e9ded`:** the WAL contract in section 2; `wal_durable_sync` and
+the `FILE*` handle route; `include/xbase.hpp:767` as an `fstream`;
+**`xbase::durable_sync` in `include/xbase/durable.hpp` and `src/xbase/durable.cpp`,
+and its three call sites in `src/cli/cmd_workspace.cpp` -- two of them on the
+workspaces catalog DBF**; `TBJ1` still being the written header with no TBJ2 anywhere;
 `SqlTransactionState`'s singleton shape; the second refusal at `:3344`; the
 pinned transcript fragment at `cmd_regression.cpp:2612`; the `COMMIT ALL` loop
 not stopping on failure; the G6 harness's existence.
 
 **NOT measured, and not claimed:** that G6 is wired to a build target; that a
-`FILE*`-based group log meets the durability requirement **at runtime** (the
-technique is shipped, the group log is not, and a shipped technique is an
-argument rather than a measurement); that any of this is built; that a
-deterministic acquisition order has been chosen; that 6.5 is ruled; that the
-gate scripts or the build files were read for this charter.
+DBF group log meets the durability requirement **at runtime** (the technique is
+shipped and proven on the workspaces catalog, the group log is not built, and a
+shipped technique is an argument rather than a measurement); **that the
+apply-to-DBF window in 3.8 is a real hole -- that is a reading of the code, not
+a crash test, and it is deliberately posed as a question**; that any of this is
+built; that a deterministic acquisition order has been chosen; that 6.5 is
+ruled; that the gate scripts or the build files were read for this charter.
 
 Ships **review-needed**. The author does not self-approve.
