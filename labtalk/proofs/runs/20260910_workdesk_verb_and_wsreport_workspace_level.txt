@@ -1,0 +1,116 @@
+WORKDESK as a verb, and WSREPORT reporting workspaces: runtime proof
+====================================================================
+
+WHAT THIS IS
+  A verbatim console transcript from an interactive `.\datarun.ps1` session on
+  2026-09-10, pasted by the owner. NOT a `SET ALTERNATE` capture and it does not
+  claim to be one (AIF-081). It proves four things no spec in the tree can
+  reach, because neither WSREPORT nor WORKDESK is exercised by any regression:
+  WSREPORT appears ZERO times in src/cli/cmd_regression.cpp, the host carrying
+  81 specs.
+
+WHAT IT RAN AGAINST
+  Build stamp Sep 10 2026 07:20:28, source a2dd3c72 dirty. DEVELOPMENT profile,
+  LMDB index mode, areas=512, workspace depth cap 32.
+
+1. THE VERB EXISTS AND TAKES NO ARGUMENTS
+---------------------------------------------------------------------------
+. WORKDESK
+Workspaces
+----------------------------------------
+  Open        : 1
+  Open areas  : 0
+  Recursion   : ON
+  Max depth   : 32
+  Current ws  : DEFAULT (handle 1)
+  Current area: 0
+
+  * DEFAULT  (handle 1, ws_id unallocated, root, depth 0)
+      roots  : not stamped yet
+      areas  : none
+
+  READING: a bare launch has exactly one workspace and it is DEFAULT, handle 1,
+  with no durable identity and no roots -- which is what the membership header
+  says must be true ("allocated LAZILY so that a bare launch never touches the
+  catalog"; roots empty means NOT STAMPED YET, true of exactly this entry).
+
+2. USAGE ON BOTH VERBS -- THE REGRESSION THAT WAS INTRODUCED AND FIXED
+---------------------------------------------------------------------------
+. WORKDESK USAGE
+Usage:
+  WORKDESK
+  WORKDESK USAGE
+Notes:
+  - WORKDESK reports every OPEN WORKSPACE and the areas it holds.
+  - It is a collective noun, not a desktop. Nothing visual.
+  - Read-only. An invariant violation is reported, never repaired.
+  - The same section appears inside WSREPORT, from the same call.
+
+. WSREPORT USAGE
+Usage:
+  WSREPORT
+  WSREPORT USAGE
+  WSREPORT ALL
+
+  READING: both had been answering "unknown argument 'workdesk'" and printing
+  nothing respectively, because the handlers read args.str() -- the WHOLE LINE,
+  verb included -- instead of the STREAM, whose read position is already past
+  the verb. Fixed in both files, and the trap is written into both.
+
+3. TWO WORKSPACES, AND THE JOIN NOTHING PUBLISHED BEFORE
+---------------------------------------------------------------------------
+. WORKDESK
+  Open        : 2
+  Open areas  : 26
+  Current ws  : ws2 (handle 2)
+  Current area: 0  -- NOTE: area 0 belongs to workspace 1, not to the current workspace
+
+    DEFAULT  (handle 1, ws_id unallocated, root, depth 0)
+      roots  : dbf ...\DBF\x64 | idx ...\INDEXES\x64 | lmdb ...\LMDB\x64
+      areas  : 13 open of 13 claimed   (slots 0..12)
+
+  * ws2  (handle 2, ws_id 281, root, depth 0)
+      roots  : dbf ...\DBF\x32 | idx ...\INDEXES\x32 | lmdb ...\LMDB\x64
+      areas  : 13 open of 13 claimed   (slots 13..25)
+
+  Names open in more than one area
+    BUILDING : (ws 1 area 0) (ws 2 area 13)
+    ... 12 names in all ...
+
+  THREE THINGS THIS RUN FOUND THAT NOTHING COULD SHOW BEFORE:
+
+  (a) ws2's LMDB ROOT POINTS AT x64. `do x32` sets DBF and INDEXES and not
+      LMDB, so the workspace is stamped with another workspace's LMDB tree.
+      WORKSPACE REGISTRY prints no roots; the old WSREPORT had no workspace
+      level at all. Reported here, not diagnosed -- whether the .dts is wrong
+      or the intent is shared LMDB is an owner question.
+
+  (b) CURRENT WORKSPACE AND CURRENT AREA DIVERGED. Standing in ws2 with area 0,
+      which belongs to DEFAULT. Legal -- SWITCH moves the workspace, never the
+      cursor -- and it means a bare command then operates on a DEFAULT table.
+      The NOTE line exists because the first run of this report printed only
+      "Current area" and left the divergence to be inferred from an asterisk.
+
+  (c) TWELVE NAMES OPEN TWICE, each with its owning workspace. The manual calls
+      this "the case a global registry cannot represent"; `USE <t> AGAIN` asks
+      for it deliberately. Reported as a fact with the qualify-the-name note.
+
+4. WSREPORT ALL STILL MEANS ALL
+---------------------------------------------------------------------------
+. WSREPORT ALL
+  Areas / Index Summary listed all 26 open areas (0..25) with FILE, Records and
+  Recno -- against the bare form, which lists only the current area.
+
+  READING: ALL is now matched as a TOKEN. It was `raw.find("ALL") != npos` over
+  the whole argument text, so any argument containing those three letters
+  enabled it -- `WSREPORT FALLBACK` among them.
+
+NOT PROVEN HERE
+  Nothing about an I1 violation: no orphan open area occurred, so the
+  orphan_open_slots branch has never executed. That path is written and
+  unexercised, and producing one deliberately needs a way to open an area
+  outside every workspace -- which invariant I1 says cannot happen. Stated so
+  the branch is not mistaken for tested.
+
+  No regression protects any of this. WSREPORT had none before today and has
+  none now; WORKDESK is new and has none. That is owed work, not a claim.
