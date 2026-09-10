@@ -3,10 +3,17 @@
 **Status:** `active_development`
 **Owner:** `member.derald` - **Steward/author:** `member.ai.claude.cowork`
 **Intake:** AIF-074 - **Claim:** `coordination/aif/AIF-074.claim` - **Run:** `SQLGOLD-SCOPING-20260729`
-**Parent project:** `project.x64base.runtime` (a `project.x64base.sqlsel` promotion is drafted
-as a candidate in the AIF-074 change package, per AIF-040 doctrine; owner decides)
+**Parent project:** `project.x64base.runtime` - **Own project:** `project.x64base.sqlsel`,
+PROMOTED 2026-09-10 by owner ruling per AIF-040 doctrine; registered in
+`labtalk/registries/projects.yaml`
 **Plan of record:** `IMPLEMENTATION_PLAN_SQLSEL_V1_20260729.md` in the AIF-074 change
-package (`outputs/2026-07-29_claude_gold_standard_sql_integration/`), summarized in Sec. 4.
+package, summarized in Sec. 4. **THE PACKAGE PATH THIS LINE CARRIED IS NOT IN THE TREE.**
+It named `outputs/2026-07-29_claude_gold_standard_sql_integration/`; measured 2026-09-10,
+`outputs/` does not exist at the repository root at all. The `cited-paths` gate never
+flagged it because the token ends in `/` and reads as a directory rather than a file. So
+the charter's own Plan of Record has been unreachable for six weeks, and Sec. 4 -- which
+is IN this document and IS current -- has been carrying the load alone. Locating or
+re-deriving the plan is an open item; until then Sec. 4 is the plan of record in fact.
 
 ---
 
@@ -169,7 +176,16 @@ gets skipped.
 - Intake row AIF-074 -- applied to `AI_INTERACTION_INTAKE_QUEUE_V1.md` with this charter.
 - `labtalk/registries/ai_runs.yaml` RUN row -- see the AIF-074 registry-additions file;
   apply with care, the file may carry other in-flight modifications.
-- `labtalk/registries/projects.yaml` promotion -- candidate only, owner decides.
+- `labtalk/registries/projects.yaml` promotion -- **APPLIED 2026-09-10 on the owner's
+  ruling.** `project.x64base.sqlsel`, `kind: pdlc_project`, parent and upstream authority
+  `project.x64base.runtime`, `related_aifs: [AIF-074, AIF-159]`. Every field name used is
+  one already in service elsewhere in that registry: the AIF link is spelled three
+  different ways across existing rows (`related_aifs:`, a bare `aifs:`, and AIF numbers
+  used AS lane names), and adding a fourth spelling to complain about three would be the
+  defect this house keeps recording. `owning_lifecycle` carries the governing SDLC and
+  `sdlc_lane` the phase actually open (publication, P6); the split described in Sec. 1 --
+  P0-P5 under the DotTalk++ SDLC, P6 as PDLC gated on it -- does not fit in two scalar
+  fields and is stated in the row's notes instead of being flattened into one.
 - `docs/agents/CURRENT_TARGET.md` -- NOT modified by this lane; AIF-072 remains the named
   next target. This lane runs beside it by owner direction, stated here per the
   closeout-updates-startup rule rather than silently.

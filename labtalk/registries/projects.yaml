@@ -32,6 +32,60 @@ projects:
     publication_target: github.com/deraldg/x64base
     notes: Authoritative active development source and runtime truth for DotTalk++ / x64base. The current workspace branch is inspected, not invented per AI chat. Clean relevant work is selectively promoted to C:/x64base for publication.
 
+  - id: project.x64base.sqlsel
+    name: SQLsel -- Set-Oriented SQL Surface
+    kind: pdlc_project
+    status: active_development
+    root: D:/code/ccode
+    owner: member.derald
+    initial_steward: member.ai.claude.cowork
+    owner_repo: deraldg/x64base
+    parent: project.x64base.runtime
+    upstream_authority: project.x64base.runtime
+    owning_lifecycle: dottalkpp_sdlc
+    sdlc_lane: publication
+    related_aifs: [AIF-074, AIF-159]
+    lanes: [engine_seams, mode_switch, statement_surface, joins, set_operations, aggregates, subqueries, dml, packaging]
+    docs:
+      - docs/maintenance/SQLSEL_PDLC_LANE_V1.md
+      - docs/manuals/user/sqlsel.md
+    source_surfaces:
+      - src/cli/cmd_sql_select.cpp
+      - src/cli/sqlsel_statement.cpp
+      - src/cli/cmd_sql.cpp
+      - src/cli/cmd_commit.cpp
+      - src/cli/cmd_rollback.cpp
+      - include/sql_ref.hpp
+    consumers:
+      - project.x64base.website
+    proofs:
+      - >-
+        P0-P5 closed and runtime-observed: 12 SQLSEL_* specs, 13 oracle-graded
+        against an in-process SQLite oracle, six in the default suite; gates
+        G0-G5 green with mutation RED observed on each; MSVC and GCC/WSL.
+      - >-
+        Legacy predicate form retired 2026-09-10 (1a96dac9b). Runtime-proven by
+        hand because no spec in the tree could reach the corrective error that
+        replaced it -- every SQLSEL line in the tree carries a FROM, is a
+        comment, or is SQLSEL HELP. Transcript:
+        labtalk/proofs/runs/20260910_aif074_sqlsel_legacy_predicate_retired.txt
+    notes: >-
+      Promoted from lane to project 2026-09-10 by owner ruling, closing the
+      "candidate only, owner decides" item that had stood in the charter's
+      section 6 since 2026-07-29 (AIF-040 doctrine). LIFECYCLE IS SPLIT AND THE
+      TWO FIELDS ABOVE CANNOT SAY SO ALONE: per the charter's section 1, phases
+      P0-P5 (engine seams, mode, statement surface, DML) run under the DotTalk++
+      SDLC with each phase itself a full PDLC, while phase P6 (library identity,
+      manual family, HELP, website claims, LabTalk lessons) is PDLC gated on the
+      SDLC evidence beneath it. PDLC cannot outrun SDLC proof. owning_lifecycle
+      records the governing SDLC; sdlc_lane records the phase actually open,
+      which is P6 publication. AIF-159 is carried here because SQLsel's
+      transaction verdict lane ran inside this surface, not beside it. P6
+      remains PARTIAL: generated HELP DBFs await a clean help set (they carry a
+      concurrent session's uncommitted work), no LabTalk lessons exist yet,
+      no evidence gallery exists under any name searched, and public-site
+      promotion is substantially discharged by site release 144.
+
   - id: project.x64base.public_staging
     name: x64base Curated Public Staging
     kind: publication_staging_project
