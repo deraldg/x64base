@@ -3876,11 +3876,17 @@ bool run_trigger_veto_control(DbArea& area)
     // either half. W1 says the record took the write. W2 says the journal is
     // GONE -- journal_note_commit deletes the log on success -- so the write went
     // through a COMPLETED transaction rather than around one.
-    static constexpr std::array<const char*, 4> control_required{{
+    // W3 IS ASSERTED .F. HERE ON PURPOSE. With no transaction active the work
+    // script's native COMMIT is a silent no-op and the row still reads VETOED
+    // from its own successful commit. Asserting the .F. is what stops an
+    // over-broad guard -- one that refused EVERY native COMMIT -- from passing
+    // this arm unnoticed. See AIF-159 section 3.
+    static constexpr std::array<const char*, 5> control_required{{
         "TRGVETO-WORK-END",
         "TRG_W0_fixture_row1_is_alpha:.T.",
         "TRG_W1_row1_took_the_write:.T.",
-        "TRG_W2_journal_survived:.F."
+        "TRG_W2_journal_survived:.F.",
+        "TRG_W3_native_commit_did_not_write:.F."
     }};
     if (!require_transcript_fragments(work_out, "TRIGGER VETO CONTROL", control_required)) {
         std::cout << "TRIGGER VETO CONTROL: FAIL -- no commit was observed.\n"
@@ -4020,6 +4026,30 @@ bool run_trigger_veto_refusal(DbArea& area, xbase::trigger_hooks::BeforeWriteFn 
         "TRG_W1_row1_took_the_write:.F."
     }};
     if (!require_transcript_fragments(work_out, "TRIGGER VETO", w1_required)) ok = false;
+
+    // 4b. AIF-159 s3 -- THE NATIVE COMMIT DID NOT REACH AROUND THE SQL SCOPE.
+    //
+    // A refused autocommit leaves the transaction ACTIVE with the session still
+    // in NATIVE mode. Before the guard, a bare COMMIT in that window committed
+    // the very write the trigger had just refused and left the scope open, so
+    // every later autocommit staged instead of committing -- success reported
+    // at every step and nothing written. Both halves are required: the refusal
+    // must be SAID, and the record must still hold ALPHA.
+    //
+    // This pair is what makes the guard measured rather than argued. On a
+    // pre-guard binary the marker reads .F., so this arm goes red on the code
+    // it was written against.
+    static constexpr std::array<const char*, 2> native_guard_required{{
+        "a SQL transaction is active; end it with COMMIT or ROLLBACK in SQL mode",
+        "TRG_W3_native_commit_did_not_write:.T."
+    }};
+    if (!require_transcript_fragments(work_out, "TRIGGER VETO (native guard)",
+                                      native_guard_required)) {
+        std::cout << "TRIGGER VETO: FAIL -- a native COMMIT was able to act inside\n"
+                     "  the still-open SQL transaction. That is the AIF-159 s3\n"
+                     "  defect: the vetoed write lands and the scope stays open.\n";
+        ok = false;
+    }
 
     // 5. THE PROPERTY THAT MAKES A REFUSAL SAFE RATHER THAN MERELY OBSTRUCTIVE.
     //    The callback is unregistered by now, so this retries the SAME buffered

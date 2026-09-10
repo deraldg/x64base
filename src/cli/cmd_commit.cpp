@@ -112,6 +112,7 @@
 #include "memo/memo_manager.hpp"
 
 #include "workarea_util.hpp"
+#include "sqlsel_statement.hpp"   // AIF-159 s3: sqlsel::transaction_active()
 #if DOTTALK_HAS_XINDEX
 // Legacy index rebuild commands. CDX/LMDB is not rebuilt by COMMIT.
 void cmd_REINDEX(xbase::DbArea& A, std::istringstream& args);
@@ -833,6 +834,36 @@ void cmd_COMMIT(xbase::DbArea& A, std::istringstream& in) {
             print_commit_usage();
             return;
         }
+    }
+
+
+    // AIF-159 section 3 -- REFUSE A NATIVE COMMIT INSIDE A SQL TRANSACTION.
+    //
+    // The hazard: this command knows nothing about sql_transaction_state, so a
+    // native COMMIT applies the buffer and leaves the SQL scope OPEN. Every
+    // later autocommit DML then sees state.active and STAGES instead of
+    // committing. The user opened no transaction, is now in one, and nothing
+    // says so -- each statement reports success while the writes pile up
+    // unapplied.
+    //
+    // Refuse rather than release, on the owner's ruling 2026-09-09, because
+    // SET MODE already refuses on exactly this hazard: "SET MODE: COMMIT or
+    // ROLLBACK the active SQL transaction first" (src/cli/cmd_set.cpp:730).
+    // One policy for one hazard beats two answers in one codebase.
+    //
+    // THE GUARD IS ON THE COMMAND, NOT ON cli::commit::commit_area(). That
+    // separation is the whole reason the earlier refactor was worth doing:
+    // commit_sql_transaction calls the shared body, so a SQL-mode COMMIT still
+    // reaches the buffer and cannot refuse itself here.
+    //
+    // Placed after the argument loop so COMMIT USAGE still prints, and before
+    // both branches so COMMIT ALL is covered too -- ALL would otherwise walk
+    // into the enlisted area from the side.
+    if (sqlsel::transaction_active()) {
+        std::cout << "COMMIT: a SQL transaction is active; end it with COMMIT or "
+                     "ROLLBACK in SQL mode (SET MODE SQL). A native COMMIT would "
+                     "apply the buffer and leave the transaction open.\n";
+        return;
     }
 
     const bool talk = Settings::instance().talk_on.load();

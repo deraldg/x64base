@@ -43,6 +43,29 @@ GO 1
 ? "TRG_W1_row1_took_the_write:" + (ALLTRIM(NAME) = "VETOED")
 ? "TRG_W2_journal_survived:" + FILE("DBF/SANDBOX/TRGVETO.dbf.tbj")
 
+; ---------------------------------------------------------------------------
+; TRG_W3 -- AIF-159 s3. A NATIVE COMMIT MUST NOT REACH AROUND THE SQL SCOPE.
+;
+; On the VETO pass the refused autocommit leaves the SQLsel transaction ACTIVE
+; while the session is still in NATIVE mode. That window is the ONLY way to
+; reach a native COMMIT with a live scope -- SQLSEL BEGIN refuses outside SQL
+; mode, and SET MODE refuses to leave SQL mode with a transaction open -- and
+; it is the window this marker stands in.
+;
+; BEFORE THE GUARD, the COMMIT below COMMITTED THE WRITE THE TRIGGER HAD JUST
+; REFUSED, then left the scope open so every later autocommit staged instead of
+; committing. So this marker reads .F. on a pre-guard binary and .T. after: it
+; is a discriminator, not a decoration.
+;
+; Same line in both passes, as the whole arm requires. On the CONTROL pass no
+; transaction is active and the buffer is empty, so COMMIT is a silent no-op and
+; the row still reads VETOED from its own successful commit -- .F. there, and
+; that .F. is asserted too, so a guard that refused EVERY native COMMIT would
+; fail the control rather than pass unnoticed.
+COMMIT
+GO 1
+? "TRG_W3_native_commit_did_not_write:" + (ALLTRIM(NAME) = "ALPHA")
+
 ; DELIBERATELY DOES NOT CLOSE. On the veto pass the buffer is RETAINED by
 ; design, and CLOSE ALL over a retained buffer raises the interactive
 ; "COMMIT changes? (y/N)" prompt -- which would hang the arm forever waiting
