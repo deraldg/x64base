@@ -21,9 +21,20 @@ published, and it separates two different failures rather than lumping them:
   FACTS DIFFER          the site is now saying something this tree contradicts.
                         HARD. Re-derive, fix the sentences the site's own
                         freshness contract will name, and commit both.
-  ONLY PROVENANCE STALE every fact still holds; the artifact's engine commit
-                        stamp is behind. ADVISORY -- the site is TRUE, merely
-                        older than this tree.
+  ONLY PROVENANCE STALE every fact IT COMPARES still holds; the artifact's
+                        engine commit stamp is behind. ADVISORY.
+
+SAY WHAT IS ACTUALLY CHECKED. That second line read "the site is TRUE, merely
+older than this tree" until 2026-09-10, and the advisory printed the same claim.
+It was never in scope. This file compares GENERATED JSON against generators; the
+site's PROSE is checked by the site tree's own TIER 2 sweep and by nobody here.
+On 2026-09-10 four sentences on two pages were found describing two retired
+predicate surfaces -- `SQL`'s, gone since 2026-09-04, and `SQLSEL`'s, gone that
+morning -- while every artifact number stayed correct, because neither
+retirement changed anything either artifact counts. Six days of green, and the
+green was truthful about its own scope and lying about the sentence it printed.
+An instrument that overstates its reach is worse than one that is missing: the
+missing one sends somebody looking.
 
 THAT SPLIT IS THE WHOLE DESIGN. Comparing whole artifacts would flag drift on
 EVERY engine commit, because the artifact records the commit it was derived at
@@ -231,10 +242,19 @@ def main(argv):
               "that has to change.", file=sys.stderr)
         return 2
     if advisory:
-        print("\n  ADVISORY -- every fact still holds, so nothing on the site is "
-              "false. The artifacts were derived at an older commit of this "
-              "tree; re-derive when convenient so the stamp the pages print "
-              "matches. NOT blocking.")
+        print("\n  ADVISORY -- every fact IN THE ARTIFACTS still holds. They "
+              "were derived at an older commit of this tree; re-derive when "
+              "convenient so the stamp the pages print matches. NOT blocking.")
+        print("  THIS SAYS NOTHING ABOUT THE SITE'S PROSE. This check reads the "
+              "generated JSON authorities and compares numbers. A page can "
+              "contradict this tree without any artifact number moving, and "
+              "this line used to claim otherwise -- it read 'nothing on the "
+              "site is false' for six days while four sentences across two "
+              "pages described a scanner retired 2026-09-04 and a SQLSEL "
+              "predicate form retired 2026-09-10. Neither retirement changed a "
+              "counted fact. For prose, run the site tree's "
+              "`npm run check:freshness`; its TIER 2 sweep is the instrument "
+              "that reads pages, and it is advisory there too.")
         return 1
     return 0
 
