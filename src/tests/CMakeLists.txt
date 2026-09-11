@@ -509,6 +509,12 @@ if(TARGET xbase)
   add_executable(dottalkpp_journal_version_gate_test
     ${CMAKE_CURRENT_SOURCE_DIR}/test_journal_version_gate.cpp
     ${CMAKE_SOURCE_DIR}/src/cli/table_state.cpp
+    # AIF-160: table_state.cpp now asks dottalk::paths::get_slot(SYS) whether a
+    # table is engine state, and the test sets that slot. path_state.cpp is
+    # self-contained (its own header plus std), so it drags nothing else in --
+    # the same pairing dottalkpp_area_alloc_test records, added UP FRONT rather
+    # than after the LNK2019 that comment was written about.
+    ${CMAKE_SOURCE_DIR}/src/common/path_state.cpp
   )
   target_link_libraries(dottalkpp_journal_version_gate_test PRIVATE xbase memo)
   target_include_directories(dottalkpp_journal_version_gate_test PRIVATE
@@ -518,6 +524,35 @@ if(TARGET xbase)
   )
   add_test(NAME dottalkpp_journal_version_gate_test
            COMMAND dottalkpp_journal_version_gate_test)
+endif()
+
+# ---- The multi-area commit group log (AIF-160) ------------------------------
+# One row in this catalog is the instant a group of tables becomes true. It is
+# graded before anything depends on it, and three of its arms are the mechanism
+# rather than formalities: presumed abort (an unknown key must read NOT
+# committed, because there is no abort row); a lookup must not MINT the catalog
+# it is asking (recovery asks this question on a machine that may have just
+# crashed, and an empty catalog answers "not committed" to everything); and the
+# catalog must be recognised as engine state, which is what keeps it out of the
+# table buffer and out of journal recovery.
+#
+# Compiles the two CLI translation units it needs plus path_state, the pattern
+# dottalkpp_area_alloc_test established -- table_state for is_engine_state_file,
+# path_state because both it and group_log read the SYS slot.
+if(TARGET xbase)
+  add_executable(dottalkpp_group_log_test
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_group_log.cpp
+    ${CMAKE_SOURCE_DIR}/src/cli/group_log.cpp
+    ${CMAKE_SOURCE_DIR}/src/cli/table_state.cpp
+    ${CMAKE_SOURCE_DIR}/src/common/path_state.cpp
+  )
+  target_link_libraries(dottalkpp_group_log_test PRIVATE xbase memo)
+  target_include_directories(dottalkpp_group_log_test PRIVATE
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/cli
+  )
+  add_test(NAME dottalkpp_group_log_test COMMAND dottalkpp_group_log_test)
 endif()
 
 # ---- CREATE for nullable / Varchar columns (AIF-091 M2) ---------------------

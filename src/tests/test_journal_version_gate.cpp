@@ -35,8 +35,12 @@
 //     the only way to produce a version this build cannot write.
 //   - Nothing about a pre-header journal. Every log this family has written
 //     carries the header; whether one ever existed without it was not swept.
+//   - S0/S1 assert the SYS RECOVERY exemption. Its twin -- TABLE BUFFER
+//     refusing a SYS table -- lives in table_buffer.cpp behind shell_engine()
+//     and is NOT exercised here; this target deliberately links no shell.
 
 #include "cli/table_state.hpp"
+#include "common/path_state.hpp"
 #include "xbase.hpp"
 #include "xbase/dbf_create.hpp"
 
@@ -225,9 +229,61 @@ int main() {
               "an empty log was PRESERVED -- it would warn on every USE forever");
     }
 
+    // ---- S0: the SYS predicate itself ---------------------------------------
+    // AIF-160. Tables under the SYS slot are engine state: written directly,
+    // never buffered, never recovered. The rule is LOCATION, so the predicate is
+    // what everything else leans on and it is asserted before it is trusted.
+    {
+        const fs::path sys_root = root / "sys";
+        fs::create_directories(sys_root, ec);
+        fs::create_directories(root / "sysx", ec);
+        dottalk::paths::set_slot(dottalk::paths::Slot::SYS, sys_root);
+
+        check(dottalk::table::is_engine_state_file((sys_root / "GROUPS.dbf").string()),
+              "JVG_S0_a_file_under_sys_is_engine_state",
+              "a file directly under the SYS slot was not recognised");
+        // The discriminator: a STRING prefix test passes this and must not.
+        check(!dottalk::table::is_engine_state_file((root / "sysx" / "T.dbf").string()),
+              "JVG_S0_a_sys_prefixed_sibling_is_not",
+              "'sysx' matched the SYS slot -- the check is a string prefix, not "
+              "component-wise, and any directory starting with the slot name is "
+              "now silently exempt from recovery");
+        check(!dottalk::table::is_engine_state_file((root / "G0.dbf").string()),
+              "JVG_S0_an_ordinary_table_is_not",
+              "an ordinary table outside SYS was treated as engine state -- "
+              "recovery is now disabled for it");
+    }
+
+    // ---- S1: recovery SKIPS a SYS table, and leaves its log alone -----------
+    // The fixture is G0's exactly -- a valid, committed TBJ1 log that WOULD
+    // replay. Only the table's location differs, so a green here is the guard
+    // and nothing else.
+    {
+        const fs::path sys_root = root / "sys";
+        const fs::path dbf = sys_root / "S1.dbf";
+        std::string err;
+        if (!make_table(dbf, err) || !seed_row(dbf)) {
+            std::cerr << "FAIL: S1 fixture could not be built (" << err << ")\n";
+            return 1;
+        }
+        write_text(dbf.string() + ".tbj", forged_log("TBJ1 S1"));
+
+        bool present = false;
+        const bool replayed = recover(dbf, present);
+        check(!replayed,                  "JVG_S1_recovery_skips_a_sys_table",
+              "a committed journal under SYS was replayed -- engine state can now "
+              "be recovered, and the group log could be asked to recover itself");
+        check(read_mark(dbf) == "BEFORE", "JVG_S1_the_sys_row_was_not_touched",
+              "MARK is '" + read_mark(dbf) + "', expected 'BEFORE'");
+        check(present,                    "JVG_S1_the_sys_log_was_left_alone",
+              "the log was DELETED. A .tbj under SYS is a BUG TO BE FOUND, not a "
+              "file to be quietly consumed -- recovery must neither replay it nor "
+              "remove it");
+    }
+
     fs::remove_all(root, ec);
 
     std::cout << "JOURNAL VERSION GATE: " << (g_failures == 0 ? "PASS" : "FAIL")
-              << " -- 12 marker(s), " << g_failures << " red.\n";
+              << " -- 18 marker(s), " << g_failures << " red.\n";
     return g_failures == 0 ? 0 : 1;
 }

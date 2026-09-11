@@ -94,13 +94,29 @@
 # matched text would have required no edit at all on any of the four occasions.
 # STILL NOT PROPOSED AS A CHANGE -- the checker belongs to AIF-156 -- but the
 # evidence has moved and the owner should know that it moved.
+#
+# 2026-09-11, EIGHTH -- cmd_commit.cpp:336 -> :396. Caused by AIF-160's
+# RecordLockGuard (29337dca2), about sixty lines inserted ABOVE the site.
+# Nothing was added and nothing was routed: same call, same receiver, same
+# field, moved by an edit this gate does not measure. Count unchanged.
+#
+# THE NUMBER ABOVE IS THE GATE'S OWN READING OF THE FINAL FILE, not the author's
+# arithmetic. That distinction is not pedantry -- it is precisely how the sixth
+# entry went wrong, in the commit that was explaining the hazard, and repeating
+# it while writing the eighth entry about it would have been the second
+# self-inflicted instance in three days.
+#
+# src/cli/group_log.cpp IS NOT LISTED HERE, and its five writes are not a
+# shrink. They went to EXEMPT_FILES with their reason, per the rule at the top
+# of this file: a new writer is routed or exempted, never added here, because a
+# baseline that grows stops being a measurement.
 src/bbs/bbs_store.cpp:334:set
 src/bbs/bbs_store.cpp:350:set
 src/bbs/bbs_store.cpp:49:set
 src/cli/app_simple_browser.cpp:796:set
 src/cli/browse/browse_edit.cpp:40:set
 src/cli/cmd_autodbf.cpp:985:set
-src/cli/cmd_commit.cpp:336:set
+src/cli/cmd_commit.cpp:396:set
 src/cli/cmd_copy.cpp:589:set
 src/cli/cmd_importsql.cpp:723:set
 src/cli/cmd_sort.cpp:923:set

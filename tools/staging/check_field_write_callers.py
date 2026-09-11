@@ -137,6 +137,41 @@ EXEMPT_FILES = {
     #
     # THE GATE BELONGS AT THE MOMENT OF THE ORIGINAL WRITE, NOT AT REPLAY.
     os.path.join("src", "cli", "table_state.cpp"),
+
+    # src/cli/group_log.cpp (AIF-160, 2026-09-11). The table_state.cpp reason
+    # one layer further along: gating this AT ALL would be wrong, and here it
+    # would also be DANGEROUS rather than merely slow.
+    #
+    # This file writes ONE ROW, and that row IS the instant a multi-table group
+    # becomes true. Four things the funnel does are each wrong for it:
+    #
+    #   ATOMICITY. replaceFieldStored gates and writes PER FIELD. A refusal on
+    #   the third of five leaves the first two on disk -- a HALF-WRITTEN
+    #   DECISION ROW, which is the worst state this design has, because a
+    #   partial row can be read as a committed group by a recovery that finds
+    #   the key. The gated multi-field writers above are exempt to avoid exactly
+    #   this shape; here the consequence is not an untidy record, it is a
+    #   transaction that half-happened.
+    #
+    #   TRIGGERS. The funnel fires BEFORE/AFTER triggers (AIF-087). A trigger
+    #   firing at the decision point could start a transaction, which could
+    #   start a group, which would write HERE. This is the one write in the
+    #   system that must be a single durable append with no reentrancy.
+    #
+    #   LOCKS. The funnel takes a record lock per field -- five lock FILES on
+    #   engine state under the SYS slot, which is refused the table buffer for
+    #   the neighbouring reason, in a lane whose locking ruling was specifically
+    #   to stop creating n lock files.
+    #
+    #   POLICY. The funnel enforces primary-key policy over USER data.
+    #   GROUPS.dbf declares no key and holds no user data. It is the engine's
+    #   own ledger, written directly, the same way WORKSPACES.dbf is.
+    #
+    # THE WHOLE-FILE COST IS ACCEPTED KNOWINGLY, as it is for every entry above:
+    # a future ungated write added to group_log.cpp will not be seen here. The
+    # file is a hundred lines with one writer in it, which is the smallest that
+    # cost gets.
+    os.path.join("src", "cli", "group_log.cpp"),
 }
 
 # `set(` IS DISCRIMINATED BY THE SHAPE OF ITS FIRST ARGUMENT, and this took

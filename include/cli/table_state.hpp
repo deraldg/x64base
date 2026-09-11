@@ -164,6 +164,19 @@ bool journal_begin_commit(int area0);
 bool journal_note_commit(int area0);
 bool journal_note_rollback(int area0);
 
+// Is this file engine-owned state under the SYS slot? (AIF-160)
+//
+// SYS holds tables that cannot be rebuilt from anything -- the multi-area commit
+// group log first among them -- and two rules follow, both ENFORCED rather than
+// documented: a SYS table is refused the table buffer, and it is skipped by
+// journal recovery. The second is why the first exists: recovering a prepared
+// span means asking the group log whether its group committed, so a group log
+// that could carry a journal would have to be recovered by consulting itself.
+//
+// A RULE ABOUT LOCATION, not a registry of exempt paths -- a guard that depends
+// on something registering at startup is off whenever registration is missed.
+bool is_engine_state_file(const std::string& file_path);
+
 // Crash recovery: on table open, if a `<dbf>.tbj` redo log exists, replay it into
 // the DBF when it carries a COMMIT marker (idempotent) or discard it otherwise,
 // then remove the log. Returns true iff a committed log was replayed. Safe to

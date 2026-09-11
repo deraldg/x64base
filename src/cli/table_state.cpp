@@ -10,6 +10,7 @@
 #include "cli/table_state.hpp"
 
 #include <array>
+#include <cctype>
 #include <cstring>
 #include <stdexcept>
 #include <iostream>
@@ -18,6 +19,10 @@
 
 #include "xbase.hpp"
 #include "xbase/durable.hpp"   // AIF-161: durable_sync before the log dies
+#include "common/path_state.hpp"  // AIF-160: the SYS slot, and what it exempts
+
+#include <filesystem>
+#include <vector>
 
 #ifdef _WIN32
   #include <io.h>
@@ -281,6 +286,71 @@ static std::string default_journal_path_for_area(int area0) {
 }
 
 // ---------------------------------------------------------------------------
+// ENGINE STATE IS WRITTEN DIRECTLY, AND THAT IS ENFORCED RATHER THAN ASSUMED.
+//
+// The SYS slot holds engine-owned tables that cannot be rebuilt from anything --
+// the multi-area commit group log first among them. Two things must be true of
+// every table under it, and BOTH are structural rather than conventional:
+//
+//   1. IT IS NEVER TABLE-BUFFERED. A buffered write goes through the WAL, so a
+//      SYS table could acquire a `.tbj`.
+//   2. IT IS NEVER RECOVERED. Which is the reason for (1): recovering a `P`
+//      span requires asking the group log whether its group committed, and if
+//      the group log itself could carry a journal, recovering it would require
+//      asking the file being recovered. That is not a deadlock -- it is a table
+//      opening itself -- and it has to be made IMPOSSIBLE rather than avoided.
+//
+// `writeCurrent()` is the direct path and does not re-enter TABLE BUFFER, which
+// is why there is no bootstrap problem today. THAT IS A PROPERTY OF THE CURRENT
+// CODE, NOT A GUARANTEE. A convention that is only documented is one refactor
+// away from being untrue, and this tree has a folder of findings about exactly
+// that gap. So the rule is a predicate, and the predicate is called.
+//
+// IT IS A RULE ABOUT LOCATION, NOT A REGISTRY OF PATHS. A list of exempt files
+// has to be populated by somebody at startup, and a guard that depends on
+// registration is off whenever registration is missed -- "a gate that does not
+// read a file can still depend on it". Being UNDER SYS is intrinsic: a table
+// cannot be moved there by accident and cannot forget to register.
+bool is_engine_state_file(const std::string& file_path) {
+    namespace fs = std::filesystem;
+    if (file_path.empty()) return false;
+
+    fs::path sys_root;
+    try { sys_root = dottalk::paths::get_slot(dottalk::paths::Slot::SYS); }
+    catch (...) { return false; }
+    if (sys_root.empty()) return false;
+
+    std::error_code ec;
+    fs::path file = fs::weakly_canonical(fs::path(file_path), ec);
+    if (ec) { ec.clear(); file = fs::path(file_path).lexically_normal(); }
+    fs::path root = fs::weakly_canonical(sys_root, ec);
+    if (ec) { ec.clear(); root = sys_root.lexically_normal(); }
+
+    // COMPONENT-WISE, never a string prefix: "<data>/system" must not match
+    // "<data>/sys". And case-folded, because these are Windows paths and a
+    // case-only difference is not a different directory.
+    auto parts = [](const fs::path& p) {
+        std::vector<std::string> out;
+        for (const auto& c : p) {
+            std::string t = c.string();
+            if (t.empty()) continue;
+            for (auto& ch : t) ch = static_cast<char>(
+                std::tolower(static_cast<unsigned char>(ch)));
+            out.push_back(t);
+        }
+        return out;
+    };
+
+    const std::vector<std::string> f = parts(file);
+    const std::vector<std::string> r = parts(root);
+    if (r.empty() || f.size() < r.size()) return false;
+    for (std::size_t i = 0; i < r.size(); ++i) {
+        if (f[i] != r[i]) return false;
+    }
+    return true;
+}
+
+// ---------------------------------------------------------------------------
 // THE JOURNAL FORMAT VERSION, AND THE READER THAT NEVER LOOKED AT IT
 //
 // journal_note_buffer_on has written a "TBJ1 <table>" header since this WAL
@@ -459,6 +529,13 @@ bool journal_note_rollback(int area0) {
 // Crash recovery: replay a committed <dbf>.tbj on open, else discard it.
 bool recover_table_buffer_journal(xbase::DbArea& area) {
     if (!area.isOpen()) return false;
+
+    // SYS IS NEVER RECOVERED -- see is_engine_state_file above. This returns
+    // BEFORE the log is even looked for, so a stray .tbj under SYS is neither
+    // replayed nor deleted: an engine-state table that somehow acquired a
+    // journal is a bug to be found, not a file to be quietly consumed.
+    if (is_engine_state_file(area.filename())) return false;
+
     const std::string path = area.filename() + ".tbj";
 
     std::FILE* fp = std::fopen(path.c_str(), "rb");

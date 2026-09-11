@@ -296,6 +296,7 @@ void cmd_INIT(xbase::DbArea& current, std::istringstream& in) {
     std::cout << "  TESTS      : " << get_slot(Slot::TESTS).string() << "\n";
     std::cout << "  HELP       : " << get_slot(Slot::HELP).string() << "\n";
     std::cout << "  LOGS       : " << get_slot(Slot::LOGS).string() << "\n";
+    std::cout << "  SYS        : " << get_slot(Slot::SYS).string() << "\n";
     std::cout << "  TMP        : " << get_slot(Slot::TMP).string() << "\n";
 
     try {

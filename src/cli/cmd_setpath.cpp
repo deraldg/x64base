@@ -115,6 +115,7 @@ std::string dump()
     os << "  TESTS           = " << get_slot(Slot::TESTS).string() << "\n";
     os << "  HELP            = " << get_slot(Slot::HELP).string() << "\n";
     os << "  LOGS            = " << get_slot(Slot::LOGS).string() << "\n";
+    os << "  SYS             = " << get_slot(Slot::SYS).string() << "\n";
     os << "  TMP             = " << get_slot(Slot::TMP).string() << "\n";
 
     return os.str();

@@ -133,6 +133,7 @@ void build_all_paths(State& s)
     s.tests_root = s.data_root / "tests";
     s.help_root = s.data_root / "help";
     s.logs_root = s.data_root / "logs";
+    s.sys_root = s.data_root / "sys";
     s.tmp_root = s.data_root / "tmp";
     s.tmp_out_root = s.tmp_root / "out";
     s.tmp_system_root = s.tmp_root / "system";
@@ -207,6 +208,7 @@ fs::path get_slot(Slot slot)
     case Slot::TESTS: return s.tests_root;
     case Slot::HELP: return s.help_root;
     case Slot::LOGS: return s.logs_root;
+    case Slot::SYS: return s.sys_root;
     case Slot::TMP: return s.tmp_root;
     case Slot::TMP_OUT: return s.tmp_out_root;
     case Slot::TMP_SYSTEM: return s.tmp_system_root;
@@ -273,6 +275,7 @@ void set_slot(Slot slot, const fs::path& value)
     case Slot::TESTS: s.tests_root = abs; break;
     case Slot::HELP: s.help_root = abs; break;
     case Slot::LOGS: s.logs_root = abs; break;
+    case Slot::SYS: s.sys_root = abs; break;
     case Slot::TMP: s.tmp_root = abs; break;
     case Slot::TMP_OUT: s.tmp_out_root = abs; break;
     case Slot::TMP_SYSTEM: s.tmp_system_root = abs; break;
@@ -357,6 +360,7 @@ std::optional<Slot> slot_from_string(const std::string& name)
     if (key == "TESTS") return Slot::TESTS;
     if (key == "HELP") return Slot::HELP;
     if (key == "LOGS") return Slot::LOGS;
+    if (key == "SYS") return Slot::SYS;
     if (key == "TMP") return Slot::TMP;
     if (key == "TMP_OUT" || key == "TMPOUT") return Slot::TMP_OUT;
     if (key == "TMP_SYSTEM" || key == "TMPSYSTEM") return Slot::TMP_SYSTEM;
@@ -428,6 +432,7 @@ std::string slot_name(Slot slot)
     case Slot::TESTS: return "TESTS";
     case Slot::HELP: return "HELP";
     case Slot::LOGS: return "LOGS";
+    case Slot::SYS: return "SYS";
     case Slot::TMP: return "TMP";
     case Slot::TMP_OUT: return "TMP_OUT";
     case Slot::TMP_SYSTEM: return "TMP_SYSTEM";
@@ -512,6 +517,7 @@ void ensure_directories()
         s.tests_root,
         s.help_root,
         s.logs_root,
+        s.sys_root,
         s.tmp_root,
         s.tmp_out_root,
         s.tmp_system_root,

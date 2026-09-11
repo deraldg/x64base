@@ -45,6 +45,32 @@ enum class Slot {
     TESTS,
     HELP,
     LOGS,
+
+    // SYS -- ENGINE STATE THAT IS IRREPLACEABLE AND IS NEVER SWEPT (AIF-160).
+    //
+    // Slots in this tree are grouped by CONSEQUENCE OF LOSS AND LIFETIME, not by
+    // subject matter. TMP is what can be regenerated on demand and anyone may
+    // delete. LOGS is what happened once and wants curating. RAM is volatile by
+    // definition. SYS is the one that cannot be rebuilt from anything and must
+    // never be cleaned up by any sweeper, ever.
+    //
+    // Its founding tenant is the multi-area commit group log, where deleting a
+    // row SILENTLY LOSES A COMMITTED TRANSACTION and nothing detects it -- the
+    // highest consequence-of-loss class in the tree, because every other loss
+    // announces itself. A lost index is noticed; a lost log is noticed; a lost
+    // group decision turns a committed transaction into a discarded one at the
+    // next USE, quietly.
+    //
+    // THE RULE ALSO SAYS WHAT MUST NEVER GO IN HERE, and that half is what
+    // protects it: nothing regenerable. The moment SYS holds one rebuildable
+    // thing, somebody reasonably writes a cleaner for it, and the cleaner cannot
+    // tell the two apart.
+    //
+    // Tables under SYS are engine-owned and written DIRECTLY: they are refused
+    // the table buffer and skipped by journal recovery, both enforced rather
+    // than documented (see is_engine_state_file in cli/table_state.hpp).
+    SYS,
+
     TMP,
     TMP_OUT,
     TMP_SYSTEM,
@@ -107,6 +133,7 @@ struct State {
     fs::path tests_root;
     fs::path help_root;
     fs::path logs_root;
+    fs::path sys_root;
     fs::path tmp_root;
     fs::path tmp_out_root;
     fs::path tmp_system_root;

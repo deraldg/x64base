@@ -1056,7 +1056,7 @@ void print_regression_usage()
         << "  REGRESSION RUN <name>\n"
         << "  REGRESSION <name>\n"
         << "  REGRESSION ALL\n"
-        << "  ... LIST | SHOW <name> | RUN <name> | <name> | ALL  [LOG [<path>]]\n"
+        << "  ... LIST | SHOW <name> | RUN <name> | <name> | ALL  [LOG [KEEP|<path>]]\n"
         << "Notes:\n"
         << "  - REGRESSION launches DOTSCRIPT; selected specs also validate marked\n"
         << "    transcript evidence and set final PASS/FAIL error status.\n"
@@ -1076,6 +1076,12 @@ void print_regression_usage()
         << "    COUNT THE MARKERS is not enforceable on screen. Default path is the\n"
         << "    TMP slot: regression_<target>_<YYYYMMDD_HHMMSS>.log, timestamped so a\n"
         << "    later run cannot destroy the transcript you want to compare against.\n"
+        << "    LOG KEEP puts it in the LOGS slot instead. TMP is the default because a\n"
+        << "    regression transcript is REGENERABLE -- rerun the suite and another one\n"
+        << "    appears -- and tmp is the place anyone may delete. KEEP is for the run\n"
+        << "    that is NOT regenerable: an intermittent red nobody can summon again is\n"
+        << "    the only copy of the condition. Temporary until PROMOTED, rather than\n"
+        << "    permanent until curated.\n"
         << "    LOG does NOT take SET ALTERNATE -- that channel belongs to the specs\n"
         << "    that need it, and taking it would make them report NOT RUN. Their\n"
         << "    captures are folded into the log after each spec instead. Output from\n"
@@ -1691,20 +1697,39 @@ void fold_routed_into_log(const std::string& routed, const std::string& spec_nam
     f.flush();
 }
 
-// The default lives in the TMP slot beside the .alt captures it folds, and it
-// is TIMESTAMPED rather than fixed. A fixed name would be easier to quote, and
-// would have destroyed the green run the moment the red one was taken -- which
-// is precisely the comparison that makes an intermittent red readable.
-std::filesystem::path default_regression_log_path(const std::string& target)
+// TMP BY DEFAULT, LOGS ON REQUEST, AND THE RULE THAT PICKS BETWEEN THEM.
+//
+// Slots here are chosen by CONSEQUENCE OF LOSS, not by subject: tmp is what can
+// be regenerated on demand and anyone may delete; logs is what happened once and
+// wants curating. A regression transcript is REGENERABLE -- rerun the suite and
+// another one appears -- so tmp is its home, beside the .alt captures it folds.
+//
+// THE EXCEPTION THAT EARNED THE `KEEP` VERB. On 2026-09-11 a REGRESSION ALL went
+// red on six markers, then green, then red again, with no commit between and the
+// variable still unidentified. THAT transcript was not regenerable: in exactly
+// the case where a run matters most, it is the only copy of a condition nobody
+// can summon on demand. `LOG KEEP` promotes it to the LOGS slot, where the
+// suite already writes its trigger-veto proofs.
+//
+// So the posture is NOT "permanent until curated". It is TEMPORARY UNTIL
+// PROMOTED, and promotion is a deliberate act by whoever noticed the run
+// mattered -- which is the only moment anyone actually knows.
+//
+// TIMESTAMPED IN BOTH SLOTS, never fixed. A fixed name is easier to quote and
+// would have destroyed the green run the moment the red one was taken, which is
+// precisely the comparison that makes an intermittent red readable at all.
+std::filesystem::path default_regression_log_path(const std::string& target, bool keep)
 {
-    return dottalk::paths::get_slot(dottalk::paths::Slot::TMP) /
+    const auto slot = keep ? dottalk::paths::Slot::LOGS : dottalk::paths::Slot::TMP;
+    return dottalk::paths::get_slot(slot) /
            ("regression_" + target + "_" + regression_log_stamp("%Y%m%d_%H%M%S") + ".log");
 }
 
 struct RegressionLogRequest {
     bool                  requested = false;
-    std::filesystem::path path;        // empty => default
-    std::string           bad_token;   // non-empty => trailing junk, refuse
+    bool                  keep      = false;  // promote to the LOGS slot
+    std::filesystem::path path;               // empty => default for the slot
+    std::string           bad_token;          // non-empty => trailing junk, refuse
 };
 
 // LOG is a TRAILING modifier, optionally followed by an explicit path that runs
@@ -1721,7 +1746,11 @@ RegressionLogRequest take_trailing_log_option(std::istringstream& in)
             std::string rest;
             std::getline(in, rest);
             rest = trim_copy(rest);
-            if (!rest.empty()) req.path = std::filesystem::path(rest);
+            if (upper_copy(rest) == "KEEP") {
+                req.keep = true;           // LOGS slot, curated, not swept
+            } else if (!rest.empty()) {
+                req.path = std::filesystem::path(rest);   // explicit wins over both
+            }
             return req;
         }
         req.bad_token = tok;
@@ -1741,7 +1770,7 @@ void run_under_optional_log(const RegressionLogRequest& req,
     }
 
     const std::filesystem::path path =
-        req.path.empty() ? default_regression_log_path(target) : req.path;
+        req.path.empty() ? default_regression_log_path(target, req.keep) : req.path;
 
     RegressionLog logger(path, target);
     if (!logger.ok()) {
@@ -1755,6 +1784,9 @@ void run_under_optional_log(const RegressionLogRequest& req,
     }
 
     std::cout << "REGRESSION: logging this run to\n  " << path.string() << "\n";
+    if (req.keep) {
+        std::cout << "  KEEP: this run is in the LOGS slot, which is not swept.\n";
+    }
     fn();
     logger.close();   // the file is complete only after this
     std::cout << "REGRESSION: log written to\n  " << path.string() << "\n";
