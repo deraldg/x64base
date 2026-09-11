@@ -294,6 +294,65 @@ static const char* event_kind_for_flags(std::uint64_t flags) noexcept {
     return "record_update";
 }
 
+// AIF-160, 2026-09-11. THE RECORD LOCK GETS THE GUARD ITS SIBLING ALREADY HAD.
+//
+// InsertTableLockGuard above is RAII: the destructor returns the table lock on
+// any scope exit. The per-record lock was a MANUAL PAIR -- try_lock_record at
+// the top of apply_one_recno, unlock_record forty lines later -- with nothing
+// structural between them.
+//
+// MEASURED BEFORE CHANGING IT, because the difference matters: there is NO
+// EARLY RETURN between the two. Every ordinary failure path inside deliberately
+// falls through to the unlock, so this is not a leak that has been happening.
+// What it is, is a span with no defence: A.set(), A.writeCurrent() and the
+// xbase::index_hooks capture/apply calls all sit inside it and NONE is noexcept,
+// so a throw from any of them skips the release. Whether any of them actually
+// throws was NOT swept, and this guard is written so that question stops
+// mattering rather than being answered.
+//
+// The leak was survivable only by accident: DbArea::close() calls
+// xbase::locks::release_held (AIF-113, wired the same morning for the unrelated
+// reason that six leak routes converge there), so an escaped record lock came
+// back when the area closed. A backstop found by accident is not a guard placed
+// on purpose, and the owner's shape for this engine is that a record is held for
+// "milliseconds, microseconds we hope" -- holding one until close is a different
+// product.
+//
+// RELEASE IS EXPLICIT AND THE DESTRUCTOR IS THE BACKSTOP, never the other way
+// round. The unlock point is LOAD-BEARING: the AIF-087 M3 AFTER trigger fires
+// immediately after it, deliberately, because a trigger that touched this record
+// while the lock was still held would deadlock against the write that notified
+// it. Letting the guard run to end of scope would move the release PAST the
+// trigger and reintroduce exactly that deadlock. So release() is called where
+// the old unlock stood, and ~RecordLockGuard only ever fires on a path that
+// never reached it.
+struct RecordLockGuard {
+    xbase::DbArea* area  = nullptr;
+    std::uint64_t  recno = 0;
+    bool           held  = false;
+
+    RecordLockGuard(xbase::DbArea& value, std::uint64_t rn, std::string* err)
+        : area(&value), recno(rn)
+    {
+        held = xbase::locks::try_lock_record(value, rn, err);
+    }
+
+    ~RecordLockGuard() { release(); }
+
+    // Idempotent: the normal path calls this, the destructor calls it again.
+    void release()
+    {
+        if (!held) return;
+        held = false;
+        xbase::locks::unlock_record(*area, recno);
+    }
+
+    bool ok() const noexcept { return held; }
+
+    RecordLockGuard(const RecordLockGuard&)            = delete;
+    RecordLockGuard& operator=(const RecordLockGuard&) = delete;
+};
+
 static bool apply_one_recno(xbase::DbArea& A, const Agg& agg, bool talk,
                             bool maintain_index) {
     const std::uint64_t rn = agg.recno;
@@ -309,11 +368,12 @@ static bool apply_one_recno(xbase::DbArea& A, const Agg& agg, bool talk,
 
     // Lock at commit time (per-record). If you later add table locks, this is where it goes.
     std::string lock_err;
-    if (!xbase::locks::try_lock_record(A, rn, &lock_err)) {
+    RecordLockGuard rec_lock(A, rn, &lock_err);
+    if (!rec_lock.ok()) {
         if (talk) cli::cmdout::print_prefixed_message(
             "COMMIT", dottalk::helpdata::MessageId::CommitRecLockedText,
             {{"rn", std::to_string(rn)}, {"detail", lock_err}});
-        return false;
+        return false;   // never acquired; the guard releases nothing
     }
 
 #if DOTTALK_HAS_XINDEX
@@ -362,7 +422,9 @@ static bool apply_one_recno(xbase::DbArea& A, const Agg& agg, bool talk,
     }
 #endif
 
-    xbase::locks::unlock_record(A, rn);
+    // EXPLICIT, and the position is the contract -- see RecordLockGuard above.
+    // The AFTER trigger below must run with this lock already gone.
+    rec_lock.release();
 
     // AIF-087 M3: THE AFTER PHASE FIRES HERE -- per record, once that record's
     // apply has succeeded, and AFTER THE RECORD LOCK IS RELEASED.
