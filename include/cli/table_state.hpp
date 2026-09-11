@@ -161,6 +161,20 @@ bool journal_note_change(int area0, const ChangeEntry& entry);
 // buffered changes are applied to the DBF. Returns false if the durable sync
 // fails (caller must abort the commit). No-op (true) unless RamJournal is active.
 bool journal_begin_commit(int area0);
+// Write-ahead for one member of a MULTI-AREA GROUP (AIF-160). Appends
+// `P <group-key> <members>` in place of the `C <count>` marker, promotes this
+// log's header to TBJ2, and durably fsyncs -- all before the buffered changes
+// reach the DBF, exactly as journal_begin_commit does.
+//
+// A PREPARED SPAN IS DURABLE AND UNDECIDED. It commits only when
+// dottalk::group::decide_committed lands its single row; until then every
+// reader discards it by presumed abort. False means this member did not
+// prepare, and the caller must abort the WHOLE group.
+//
+// Never call this on an area that also gets journal_begin_commit: a log
+// carrying both markers names two authorities for one question and recovery
+// refuses it outright.
+bool journal_begin_prepare(int area0, const std::string& group_key, int members);
 bool journal_note_commit(int area0);
 bool journal_note_rollback(int area0);
 

@@ -53,17 +53,32 @@ ai_report_audit:
     owner     : member.derald
     steward   : member.ai.claude.cowork
     design    : claude/DESIGN_ONE_DECISION_THAT_SPANS_N_JOURNALS.md
-    status    : CHARTERED. NOTHING IS BUILT. Four decisions taken, one
-                recommended. M0 reopened one of them and SECTION 3.4 THEN
-                REVERSED THAT REOPENING -- read 3.4 before 3.1-3.3.
+    status    : PARTLY BUILT. The READ side ships and is graded; the WRITE
+                side is one mechanical split away. Section 13 is the current
+                state and OVERRIDES every "not built" in sections 1-12.
     opened    : 2026-09-10
-    baseline  : a616863fe (amended at 3122e9ded, section 3.4)
+    baseline  : a616863fe (amended at 3122e9ded, section 3.4;
+                state-corrected at 1896a4ceb, section 13)
 
 > **CORRECTION 2026-09-10, SAME DAY.** Sections 3.1-3.3 argued against decision
 > 6.2 on a fact that was six weeks stale. **Decision 6.2 was right and this
 > charter was wrong.** The argument is left standing verbatim because the way it
 > failed is worth more than the conclusion it reached; **section 3.4 is the
 > correction and the recommendation that replaces it.**
+>
+> **STATE CORRECTION 2026-09-11, ONE DAY LATER. THIS DOCUMENT'S OWN STATUS LINE
+> WAS THE STALE FACT THIS TIME.** It read "NOTHING IS BUILT" while
+> `src/cli/group_log.cpp`, `include/cli/group_log.hpp`, the TBJ2 `P` reader and
+> a passing `dottalkpp_group_log_test` were all in the tree. **Section 13 is the
+> measured state; read it before sections 1-12, all of which describe a lane
+> that has since moved.** Section 3.8's open question is ALSO closed -- by
+> AIF-161, on both paths -- and 3.8 still poses it.
+>
+> A charter is the map a session with no memory walks in. This one went stale in
+> under twenty-four hours, and nothing in the gates noticed, because a status
+> line is prose and the freshness instruments count facts. That is the same
+> polarity gap `check-site-artifacts` describes two sections further down its own
+> output. **The sweep that found this was a person asking.**
 
 ## 0. What this document is, and what it is not
 
@@ -558,3 +573,122 @@ built; that a deterministic acquisition order has been chosen; that 6.5 is
 ruled; that the gate scripts or the build files were read for this charter.
 
 Ships **review-needed**. The author does not self-approve.
+
+## 13. MEASURED STATE, 2026-09-11 at 1896a4ceb -- OVERRIDES SECTIONS 1-12
+
+Measured by reading the tree, not by running it: **this session had no sandbox**
+(the 2026-09-08 Windows update broke the mount), so nothing below was compiled
+or executed by its author. Every "ships" here means "is in the tree and is
+called"; the one "graded" claim cites the maintainer's own ctest run.
+
+### 13.1 The read side ships
+
+| piece | where | state |
+|---|---|---|
+| group catalog, under SYS | `src/cli/group_log.cpp`, `include/cli/group_log.hpp` | ships |
+| `mint_group_key` (reuses `locks::current_owner`, no sixth identity) | `group_log.cpp:186` | ships |
+| `decide_committed` -- the single durable row | `group_log.cpp:192` | ships |
+| `is_committed` -- presumed abort on absence | `group_log.cpp:233` | ships |
+| members table (`record_members` / `members_of`) | `group_log.cpp:284,328` | ships |
+| directory sync, paid once at creation | `group_log.cpp:111` | ships -- closes 3.5's R136 worry for this catalog |
+| TBJ2 `P <group-key> <n>` understood by the reader | `table_state.cpp:460` | ships, version-scoped |
+| recovery consults the group log | `table_state.cpp:820` | ships |
+| the three refusals (C+P together, two P, malformed P) | `table_state.cpp:762-797` | ship |
+| unknown-record refusal, the thing that makes accepting TBJ2 safe | `table_state.cpp:472` | ships (this commit) |
+| `dottalkpp_group_log_test` | `src/tests/test_group_log.cpp` | **graded green**, Test #32 |
+
+**M2 is therefore half-answered, not unanswered.** Group identity is chosen and
+built; only retention is open, and 13.4 says why it must stay open.
+
+### 13.2 Section 3.8 IS CLOSED, and this charter still asks it
+
+AIF-161 put `xbase::durable_sync` on **both** paths, gating log removal on it:
+
+- recovery: `table_state.cpp:894-902` -- on sync failure the log is **kept** and
+  replays at the next `USE`, which is safe because replay is idempotent
+- commit: `cmd_commit.cpp:826` syncs, `:838` gates `journal_note_commit` on it
+
+Section 3.8 asked for exactly this trace and named it the lane's first question.
+**It is answered, and the answer is that the hole was real and is now filled.**
+3.8's text is left standing under the same rule as 3.1-3.3.
+
+### 13.3 What this session added -- the write side's first piece
+
+`journal_begin_prepare(area0, group_key, members)`
+(`table_state.cpp`, `include/cli/table_state.hpp`). Appends `P <key> <n>` where
+`journal_begin_commit` appends `C <count>`, and fsyncs once.
+
+**The header is promoted TBJ1 -> TBJ2 in place, per log, rather than by moving
+the default.** `journal_note_buffer_on` runs before anyone knows whether a
+transaction will join a group, so writing TBJ2 there stamps the new version on
+every single-table commit -- and an older build refuses a TBJ2 header outright
+and keeps the log forever. Promoting at prepare costs one seek and one byte, and
+**confines the downgrade cost to the logs that actually contain a record an old
+build cannot honour.** `kJournalVersionWritten` stays 1; `kJournalVersionGrouped`
+is 2. A log's declared version now tracks WHAT IT CONTAINS rather than which
+build wrote it. The promotion rides the same fsync as the `P` record, so no
+state exists where a TBJ2 header is durable and its `P` is not.
+
+**This answers M1's open question** ("whether `P` is a version bump at all")
+without taking the joint decision away from AIF-061: per-log promotion means
+AIF-061's `M` record can claim TBJ2 as well, or TBJ3, and neither lane's choice
+strands the other's logs.
+
+The group key is refused if it contains whitespace. The reader recovers it with
+`is >> prepare_key`, so a key with a space reads back as its own prefix -- a
+different, probably absent, group -- and presumed abort would then discard a
+committed transaction **in silence**. It is the one field in the record whose
+corruption is undetectable.
+
+### 13.4 RETENTION IS RULED AND DELIBERATELY NOT BUILT
+
+The owner ruled on 2026-09-11: reap a group row once every member has settled.
+**It is not implemented, and building it as ruled would have been a defect.**
+Two prerequisites, both already written down before this session:
+
+- `table_state.cpp:811` -- *"RETIREMENT MUST NOT SHIP BEFORE THE WATERMARK."*
+  Presumed abort is sound only while nothing removes rows. The moment it does,
+  an absent key means "never decided **OR** decided and since forgotten", and
+  the discard branch silently drops a committed transaction. The watermark
+  (absent **and** older than the watermark refuses instead of discarding) is
+  designed and unbuilt.
+- `group_log.hpp:97` -- retirement needs the **strong-key** liveness test, the
+  whole owner token, because a bare pid is recycled; the cited finding measured
+  the permanent wedge that follows from asking the weak one.
+
+And the ruled rule has a trap of its own: `members_of` returns **empty for an
+unknown key**, which is indistinguishable from "no members left" unless the
+caller reads empty as KEEP. `group_log.hpp:118` says so explicitly.
+
+**The asymmetry that settles it:** a row wrongly kept is wasted bytes; a row
+wrongly retired is a committed transaction discarded with nothing to detect it.
+Unbounded growth is the safe direction to be wrong in, and every long-lived row
+is already the residue of a crash rather than normal traffic.
+
+### 13.5 What is left, and it is one mechanical split
+
+`commit_one_area` (`cmd_commit.cpp:541-860`) does validate -> triggers ->
+`journal_begin_commit` -> apply -> sync -> `journal_note_commit` in one body. A
+group needs those phases interleaved **across** areas:
+
+    pass 1   BEFORE triggers, every area          (two-pass, ruled 2026-09-11)
+    pass 2   journal_begin_prepare, every area    -- N durable prepares, N nothings
+    DECIDE   decide_committed, ONCE               -- the instant the group is true
+    pass 3   apply + durable_sync + note_commit, every area
+
+**The seam is `cmd_commit.cpp:642`**, the `journal_begin_commit` call: everything
+above it is decide-whether, everything below is do-it. Splitting there yields
+`commit_prepare_area` and `commit_apply_area`, with today's `commit_one_area`
+becoming prepare-then-apply so the single-area path is the same code in the same
+order. `COMMIT` and `COMMIT ALL` do not change (decision 6.4).
+
+Also still owed, unchanged from sections 6 and 9: a deterministic acquisition
+order (without one, refuse-on-contention converts a deadlock into a livelock),
+`SqlTransactionState`'s singleton -> collection, and the four published surfaces
+moving together with the pinned regression fragment.
+
+### 13.6 Line drift corrected
+
+Section 6.3 cites the pinned transcript fragment at `cmd_regression.cpp:2612`.
+It is at **`:2949`**. Sections 1-12 cite line numbers at `a616863fe`; treat every
+one of them as approximate and grep the quoted string instead.

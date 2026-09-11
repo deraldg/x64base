@@ -20,6 +20,7 @@
 #include "xbase.hpp"
 #include "xbase/durable.hpp"   // AIF-161: durable_sync before the log dies
 #include "common/path_state.hpp"  // AIF-160: the SYS slot, and what it exempts
+#include "cli/group_log.hpp"      // AIF-160: the P marker asks the group log
 
 #include <filesystem>
 #include <vector>
@@ -390,8 +391,35 @@ bool is_engine_state_file(const std::string& file_path) {
 // may be a committed transaction a NEWER build can still replay; removing it
 // converts "unreadable here" into "gone". The cost is a repeated warning until
 // someone acts, which is the correct direction for a durability instrument.
-constexpr int kJournalVersionWritten = 1;
-constexpr int kJournalVersionMaxRead = 1;
+//
+// 2026-09-11, THE READ SIDE MOVES TO 2 AND THE WRITE SIDE DOES NOT.
+//
+// TBJ2 adds one record, `P <group-key> <n>`: this transaction is one member of
+// a group, and whether it committed is recorded in the group log rather than in
+// this file. Accepting it is safe NOW and was not safe an hour ago, and the
+// difference is the unknown-record refusal below: a TBJ2 log carrying AIF-061's
+// 'M' payloads, which this build does not know, refuses instead of replaying
+// the records around them. Version acceptance without that refusal is a promise
+// a reader cannot keep.
+//
+// THE WRITER STAYS AT 1 because nothing produces a P marker yet. A header
+// claiming a version whose records this build never emits would strand older
+// builds for nothing, and the fleet gains the ability to READ before anything
+// starts writing -- the same ordering that put the version gate before the
+// bump, one step further along.
+//
+// 2026-09-11, LATER: THE WRITER STILL DEFAULTS TO 1, AND NOW PROMOTES.
+//
+// journal_begin_prepare writes a P record and promotes THAT LOG's header to 2
+// in place. The default is unchanged because the reason above is unchanged: a
+// single-table commit emits no TBJ2 record, so stamping it TBJ2 would stand an
+// older build off a log it could have replayed perfectly. The version a log
+// declares now tracks WHAT IT CONTAINS rather than which build wrote it, which
+// is what a compatibility rule is for -- and it means the downgrade cost is
+// paid by exactly the logs that earn it.
+constexpr int kJournalVersionWritten = 1;   // default: what a plain commit writes
+constexpr int kJournalVersionGrouped = 2;   // promoted to, per log, by a P record
+constexpr int kJournalVersionMaxRead = 2;
 
 // "TBJ<digits>", followed by a space or end of line. Returns 0 when the line is
 // not a header this family wrote -- deliberately strict, because the whole
@@ -436,16 +464,40 @@ static std::string journal_record_tag(const std::string& line) {
     return (end == std::string::npos) ? line : line.substr(0, end);
 }
 
-// EVERY RECORD A TBJ1 LOG CAN CONTAIN, and nothing else.
+// EVERY RECORD A LOG OF THIS VERSION CAN CONTAIN, and nothing else.
 //
-//   I  insert redo     U  update redo     D  delete redo
-//   C  commit marker   R  rollback marker
+//   TBJ1   I  insert redo     U  update redo     D  delete redo
+//          C  commit marker   R  rollback marker
+//   TBJ2   + P  prepare marker
+//
+// THE SET IS VERSION-SCOPED, not global. A TBJ1 log carrying a P record is
+// malformed -- the header says a format in which that record does not exist --
+// and treating it as known because a LATER version defines it would accept a
+// file whose own header says it cannot contain one. The version is the reader's
+// only statement about what the bytes mean; spending it and then ignoring it is
+// how the gate above came to be needed in the first place.
 //
 // The header is deliberately NOT in this set. It is line one, already read and
 // accepted by the version gate, and admitting "TBJ1" as a record would let a
 // second header appear mid-log without complaint.
-static bool journal_record_is_known(const std::string& tag) {
-    return tag == "I" || tag == "U" || tag == "D" || tag == "C" || tag == "R";
+static bool journal_record_is_known(const std::string& tag, int version) {
+    if (tag == "I" || tag == "U" || tag == "D" || tag == "C" || tag == "R") return true;
+    if (version >= 2 && tag == "P") return true;
+    return false;
+}
+
+// ONE SPELLING OF THE REFUSAL. Every branch that declines to replay says the
+// same thing about what it did with the file, because every one of them did the
+// same thing with it: kept it. Four hand-written copies of that paragraph would
+// be four chances for one of them to start saying something else.
+static void journal_refuse(const std::string& path, const std::string& why) {
+    std::cout << "RECOVER: REFUSED -- " << path << "\n"
+              << why
+              << "  THE LOG IS KEPT, NOT DISCARDED, and NOTHING was replayed -- not even\n"
+                 "  the records this build does understand. A log this build cannot\n"
+                 "  resolve may still be a committed transaction that another build can;\n"
+                 "  deleting it would turn 'unreadable here' into 'gone'. This table is\n"
+                 "  open and usable; the journal is not applied.\n";
 }
 
 // A tag from a log we are refusing has not been validated by anything, so it
@@ -548,6 +600,69 @@ bool journal_begin_commit(int area0) {
     return wal_durable_sync(j.fp);
 }
 
+// Write-ahead for ONE MEMBER OF A GROUP (AIF-160). Appends `P <group-key>
+// <members>` where journal_begin_commit appends `C <count>`, and fsyncs once.
+// False -> the caller must abort the WHOLE group, not just this member.
+//
+// THE TWO MARKERS ARE ALTERNATIVES AND THE READER REFUSES BOTH TOGETHER
+// (see the prepare-marker scan in recover_table_buffer_journal). C says this
+// transaction decided itself; P says the group log decided it. A journal
+// carrying both names two authorities for one question, so this function is
+// never called on an area that will also be given a C.
+//
+// WHAT THIS DOES NOT DO, AND IT IS THE POINT: it does not make anything true.
+// A P span is durable and undecided. It becomes a commit only when
+// dottalk::group::decide_committed lands one row, and until then every reader
+// discards it by presumed abort. That is why this can be called N times with no
+// atomicity risk -- N durable prepares are still N nothings.
+//
+// THE HEADER IS PROMOTED IN PLACE, TBJ1 -> TBJ2, RATHER THAN WRITTEN AS TBJ2 AT
+// BUFFER-ON. journal_note_buffer_on runs before anyone knows whether this
+// transaction will join a group, so writing TBJ2 there would stamp the new
+// version on EVERY log, including the single-table commits that are almost all
+// of them -- and an older build refuses a TBJ2 header outright, keeping the log
+// forever. Promoting here costs one byte and one seek, and confines the
+// downgrade cost to the logs that genuinely carry a record an older build
+// cannot honour. A single-table commit keeps writing TBJ1 and keeps recovering
+// on a build that predates this lane.
+//
+// The promotion rides the SAME fsync as the P record, so no state exists in
+// which a TBJ2 header is durable and its P record is not.
+bool journal_begin_prepare(int area0, const std::string& group_key, int members) {
+    if (!is_persistent_enabled(area0)) return true;
+
+    auto& j = state_store()[area0].journal;
+    if (!j.fp) return true;   // nothing was logged (e.g. empty transaction)
+
+    // A KEY IS A TOKEN, and the reader recovers it with `is >> prepare_key`.
+    // A key carrying a space would be read back as its own prefix -- a
+    // DIFFERENT, probably absent, group -- and presumed abort would then
+    // silently discard a committed transaction. Refuse rather than encode:
+    // this is the one field in the record whose corruption is undetectable.
+    if (group_key.empty() ||
+        group_key.find_first_of(" \t\r\n") != std::string::npos) {
+        return false;
+    }
+    if (members < 1) return false;
+
+    // Promote the header. "TBJ" is three bytes and the version that follows is
+    // a single digit here, so offset 3 is the digit exactly. Asserted against
+    // kJournalVersionWritten rather than assumed, because a future two-digit
+    // written version makes this seek wrong and silent.
+    static_assert(kJournalVersionWritten >= 1 && kJournalVersionWritten <= 9,
+                  "in-place header promotion assumes a single-digit version");
+    static_assert(kJournalVersionGrouped >= 1 && kJournalVersionGrouped <= 9,
+                  "in-place header promotion assumes a single-digit version");
+    if (std::fseek(j.fp, 3, SEEK_SET) != 0) return false;
+    if (std::fputc('0' + kJournalVersionGrouped, j.fp) == EOF) return false;
+    if (std::fseek(j.fp, 0, SEEK_END) != 0) return false;
+
+    const std::string marker =
+        "P " + group_key + " " + std::to_string(members) + "\n";
+    if (std::fwrite(marker.data(), 1, marker.size(), j.fp) != marker.size()) return false;
+    return wal_durable_sync(j.fp);
+}
+
 // Finalize a successful commit: the redo is now applied to the DBF, so close and
 // delete the log. A crash before this leaves a committed log that recovery
 // replays; a crash after leaves the DBF as the source of truth.
@@ -627,33 +742,55 @@ bool recover_table_buffer_journal(xbase::DbArea& area) {
             why = "  it is TBJ" + std::to_string(version) + " and this build reads TBJ"
                 + std::to_string(kJournalVersionMaxRead) + " and older.\n";
         }
-        std::cout << "RECOVER: REFUSED -- " << path << "\n"
-                  << why
-                  << "  THE LOG IS KEPT, NOT DISCARDED, and nothing was replayed. A log this\n"
-                     "  build cannot read may still be a committed transaction that a newer\n"
-                     "  build can replay; deleting it would turn 'unreadable here' into\n"
-                     "  'gone'. This table is open and usable; the journal is not applied.\n";
+        journal_refuse(path, why);
         return false;
     }
 
-    // Committed iff a "C" marker record is present. The delimiter rule used to
-    // be spelled out here by hand -- ln[0] == 'C' and (size == 1 or ln[1] == ' ')
-    // -- which was correct, and was the ONLY place in this reader that knew a
-    // tag is a token. journal_record_tag now holds that rule once.
-    bool committed = false;
+    // ---- THE TERMINAL MARKERS: what this log CLAIMS about itself ----------
+    //
+    // Two records make that claim, and they are ALTERNATIVES, not a pair:
+    //
+    //   C <count>             this transaction committed on its own. The claim
+    //                         is in this file and nothing else is consulted.
+    //   P <group-key> <n>     this transaction is one member of a group, and
+    //                         whether it committed is recorded ELSEWHERE -- in
+    //                         the group log, the single durable write that
+    //                         decides all n members at once.
+    //
+    // The delimiter rule used to be spelled out here by hand -- ln[0] == 'C'
+    // and (size == 1 or ln[1] == ' ') -- which was correct, and was the ONLY
+    // place in this reader that knew a tag is a token. journal_record_tag holds
+    // it once now, and this scan reads both markers with it.
+    bool        has_commit = false;
+    std::size_t prepare_count = 0;
+    std::string prepare_line;
     for (const auto& ln : lines) {
-        if (!ln.empty() && journal_record_tag(ln) == "C") {
-            committed = true;
-            break;
+        if (ln.empty()) continue;
+        const std::string tag = journal_record_tag(ln);
+        if (tag == "C") {
+            has_commit = true;
+        } else if (tag == "P") {
+            ++prepare_count;
+            if (prepare_line.empty()) prepare_line = ln;
         }
     }
 
-    if (!committed) {
+    // NEITHER MARKER MEANS THE TRANSACTION NEVER REACHED A DECISION POINT.
+    // Discard exactly as before: nothing claims this log is worth anything, the
+    // DBF was never touched, and there is nothing to replay.
+    //
+    // THIS IS ALSO THE ONLY BRANCH A TORN LOG CAN REACH, and everything below
+    // depends on that. The markers are the fsync points -- journal_begin_commit
+    // syncs after C, and a PREPARE must sync before the group decision it is
+    // published for -- so a log that carries either one is COMPLETE up to it. A
+    // log carrying neither was never synced and may end mid-record, which is
+    // why no record below is inspected until we are past this line.
+    if (!has_commit && prepare_count == 0) {
         std::remove(path.c_str());               // uncommitted -> discard; DBF untouched
         return false;
     }
 
-    // THE WHOLE LOG IS READ BEFORE THE FIRST WRITE.
+    // ---- THE WHOLE LOG IS READ BEFORE THE FIRST WRITE ---------------------
     //
     // Discovering an unreadable record halfway through a replay would leave the
     // table HALF APPLIED and the log then refused -- strictly worse than either
@@ -662,47 +799,104 @@ bool recover_table_buffer_journal(xbase::DbArea& area) {
     // verdicts second.
     //
     // THE RECORD THAT IS NOT SAFE BY ACCIDENT is why this is worth a pass. A
-    // TBJ2 PREPARE marker degrades correctly against an old reader: no 'C', so
-    // no replay. AIF-061's memo record does not. A committed TBJ2 log carries
-    // 'M' payloads, 'U' writes and a 'C'; a reader that honours the 'C',
-    // replays the 'U's and drops the 'M's produces rows pointing at memo
-    // objects the memo store was never told to write. The table opens clean and
-    // the damage is one field deep.
+    // TBJ2 PREPARE marker degrades correctly against a build that predates it:
+    // no 'C', so no replay. AIF-061's memo record does not. A committed TBJ2
+    // log carries 'M' payloads, 'U' writes and a 'C', and a reader that honours
+    // the 'C', replays the 'U's and drops the 'M's produces rows pointing at
+    // memo objects the memo store was never told to write. The table opens
+    // clean and the damage is one field deep. THIS build is that reader for
+    // 'M' -- it reads TBJ2 and does not know the record -- and this pass is the
+    // whole of why accepting TBJ2 is safe for it.
     //
-    // COMMITTED LOGS ONLY, AND THAT PLACEMENT IS LOAD-BEARING. An uncommitted
-    // log is discarded above without a record being read, and it carries NO
-    // durability guarantee: this WAL performs exactly one fsync, in
-    // journal_begin_commit, AFTER the C marker is appended. So every byte
-    // preceding a durable 'C' is complete, and a torn tail can exist only in a
-    // log that has no 'C' -- one already on the discard path. Validating those
-    // would turn every interrupted transaction into a permanent warning about a
-    // file that is correctly deletable.
+    // IT RUNS BEFORE THE GROUP LOG IS ASKED, deliberately. A log we cannot read
+    // is one whose P record we cannot trust either, and an unreadable log must
+    // never be DISCARDED on the strength of a key parsed out of it.
     {
         bool        unknown_found = false;
         std::string unknown_tag;
         for (std::size_t i = 1; i < lines.size(); ++i) {
             if (lines[i].empty()) continue;    // a blank line is not a record
             const std::string tag = journal_record_tag(lines[i]);
-            if (!journal_record_is_known(tag)) {
+            if (!journal_record_is_known(tag, version)) {
                 unknown_found = true;
                 unknown_tag   = tag;
                 break;
             }
         }
         if (unknown_found) {
-            std::cout
-                << "RECOVER: REFUSED -- " << path << "\n"
-                << "  it is TBJ" << version << ", which this build reads, but it carries"
-                   " a record\n"
-                << "  this build does not know: '" << journal_tag_for_display(unknown_tag)
-                << "'.\n"
-                << "  THE LOG IS KEPT, NOT DISCARDED, and NOTHING was replayed -- not"
-                   " even the\n"
-                   "  records this build does understand. A log half applied and then\n"
-                   "  refused is worse than either half. This table is open and usable;\n"
-                   "  the journal is not applied.\n";
+            journal_refuse(path,
+                "  it is TBJ" + std::to_string(version) + ", which this build reads, but"
+                " it carries a record\n"
+                "  this build does not know: '" + journal_tag_for_display(unknown_tag)
+                + "'.\n");
             return false;
         }
+    }
+
+    // ---- THE PREPARE MARKER, AND THE THREE SHAPES THAT ARE NOT ONE --------
+    //
+    // Everything here refuses rather than picks. A log that contradicts itself
+    // is not a log with a most-likely reading; it is a file whose producer this
+    // build cannot identify, and every wrong pick in this function silently
+    // discards or silently duplicates a committed transaction.
+    std::string prepare_key;
+    if (prepare_count > 0) {
+        if (has_commit) {
+            journal_refuse(path,
+                "  it carries BOTH a C commit marker and a P prepare marker. Those are\n"
+                "  alternatives -- C says this transaction decided itself, P says a group\n"
+                "  log decided it -- and no protocol in this tree writes both.\n");
+            return false;
+        }
+        if (prepare_count > 1) {
+            journal_refuse(path,
+                "  it carries " + std::to_string(prepare_count) + " P prepare markers."
+                " A journal belongs to at most one\n"
+                "  group, and choosing among several group keys is guessing.\n");
+            return false;
+        }
+
+        std::istringstream is(prepare_line);
+        std::string tag;
+        long long   members = 0;
+        is >> tag >> prepare_key >> members;
+        if (!is || prepare_key.empty() || members < 1) {
+            journal_refuse(path,
+                "  its P prepare marker is malformed. The record is"
+                " 'P <group-key> <members>',\n"
+                "  and without a key there is no question this build can ask the group"
+                " log.\n");
+            return false;
+        }
+    }
+
+    // ---- WHO DECIDED, AND WHERE THE ANSWER LIVES --------------------------
+    //
+    // PRESUMED ABORT. There is no abort row in the group log: absence already
+    // means "did not commit", and writing one would add a durable write to the
+    // path that is ALREADY FAILING in order to record what the missing row says
+    // better.
+    //
+    // THAT IS CORRECT ONLY WHILE NOTHING REMOVES ROWS, and nothing does yet.
+    // The moment retirement ships, an absent key stops meaning "never decided"
+    // and starts meaning "never decided, OR decided and since forgotten" -- and
+    // this branch would silently discard a committed transaction. The design
+    // answers that with a watermark: absent and OLDER than the watermark
+    // refuses instead of discarding. RETIREMENT MUST NOT SHIP BEFORE THE
+    // WATERMARK, and this comment is the whole of what enforces that today.
+    //
+    // NO RECURSION. is_committed opens the group catalog with a bare DbArea,
+    // and recovery is driven from cmd_use, not from DbArea::open -- so nothing
+    // re-enters this function. The SYS skip at the top of it is the second
+    // guard, and it holds even if the first ever stops being true.
+    bool committed = has_commit;
+    if (!committed) {
+        committed = dottalk::group::is_committed(prepare_key);
+    }
+
+    if (!committed) {
+        std::remove(path.c_str());               // presumed abort -> discard
+        return false;
     }
 
     // Replay I/U/D redo records in append order. Append order == priority order, so
@@ -744,9 +938,12 @@ bool recover_table_buffer_journal(xbase::DbArea& area) {
             if (recno == 0 || recno > area.recCount64()) continue;
             if (area.gotoRec64(recno) && area.readCurrent()) (void)area.deleteCurrent();
         }
-        // Header, C, R lines: ignored HERE -- the header was already read
-        // and accepted by the version gate above, which is what makes
-        // ignoring the remaining lines safe rather than merely quiet.
+        // Header, C, P, R lines: ignored HERE, and only here. Every one of
+        // them was read above -- the header by the version gate, C and P by
+        // the marker scan, and ALL of them by the known-record pass -- which
+        // is what makes skipping them now safe rather than merely quiet. The
+        // difference from the reader this replaced is that "not a redo record"
+        // is established before this loop instead of assumed inside it.
     }
 
     // THE REPLAYED ROWS ARE IN THE PAGE CACHE, NOT ON THE PLATTER.

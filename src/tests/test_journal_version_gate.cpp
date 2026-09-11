@@ -29,10 +29,14 @@
 // this test says so rather than reporting three greens.
 //
 // WHAT THIS TEST DOES NOT CLAIM.
-//   - Nothing about TBJ2. No M record and no P marker exists yet; this build
-//     still writes TBJ1 deliberately. The U arms forge an 'M'-shaped line to
-//     stand for a record from the future; they say nothing about what AIF-061's
-//     memo record will actually contain.
+//   - Nothing about what this build WRITES. kJournalVersionWritten is still 1
+//     and nothing in the tree emits a P marker yet; every TBJ2 log here is
+//     forged, which is the only way to produce one. The P lane grades the
+//     READER, and the reader shipping first is the point.
+//   - Nothing about AIF-061's memo record. The U arms forge an 'M'-shaped line
+//     to stand for a record from the future, and 'M' is unknown at every
+//     version this build reads; what the real record contains is not decided
+//     here.
 //   - Nothing about a record this build knows but writes WRONGLY. The U lane
 //     asks only whether an unrecognised tag is refused.
 //   - Nothing about a real crash. The logs here are forged by hand, which is
@@ -43,6 +47,7 @@
 //     refusing a SYS table -- lives in table_buffer.cpp behind shell_engine()
 //     and is NOT exercised here; this target deliberately links no shell.
 
+#include "cli/group_log.hpp"
 #include "cli/table_state.hpp"
 #include "common/path_state.hpp"
 #include "xbase.hpp"
@@ -80,7 +85,7 @@ int g_checks   = 0;
 //
 // Adding a marker means editing this number. That cost is paid in the file
 // being edited, and forgetting it fails loudly rather than quietly.
-constexpr int kDeclaredMarkers = 29;
+constexpr int kDeclaredMarkers = 56;   // 44 reader arms + 12 writer arms (W0-W3)
 
 void check(bool condition, const std::string& marker, const std::string& detail) {
     ++g_checks;
@@ -423,6 +428,380 @@ int main() {
               "file to be quietly consumed -- recovery must neither replay it nor "
               "remove it");
     }
+
+    // ---- P0: the DETECTOR for the prepare lane -----------------------------
+    // AIF-160. A TBJ2 log carries `P <group-key> <n>` INSTEAD of a C marker:
+    // this member prepared, and whether it committed is recorded in the group
+    // log. Here the group IS decided, so the log must replay.
+    //
+    // Three of the four arms below assert that nothing happened. This one is
+    // the reason they mean anything -- same log shape, same key spelling, the
+    // only difference being that the decision row exists.
+    {
+        const fs::path sys_root = root / "sys";
+        fs::create_directories(sys_root, ec);
+        dottalk::paths::set_slot(dottalk::paths::Slot::SYS, sys_root);
+
+        const std::string key = "testhost:1234:5678#1";
+        std::string derr;
+        if (!dottalk::group::decide_committed(key, 2, &derr)) {
+            std::cerr << "FAIL: P0 fixture could not decide the group (" << derr << ")\n";
+            return 1;
+        }
+
+        const fs::path dbf = root / "P0.dbf";
+        std::string err;
+        if (!make_table(dbf, err) || !seed_row(dbf)) {
+            std::cerr << "FAIL: P0 fixture could not be built (" << err << ")\n";
+            return 1;
+        }
+        write_text(dbf.string() + ".tbj",
+                   std::string("TBJ2 P0\n")
+                 + "U 1 1 S 2:" + hex_of("AFTER   ") + "\n"
+                 + "P " + key + " 2\n");
+
+        bool present = true;
+        const bool replayed = recover(dbf, present);
+        check(replayed,                   "JVG_P0_a_decided_group_replays_its_member",
+              "a prepared log whose group IS committed did not replay -- every P arm"
+              " below is blind");
+        check(read_mark(dbf) == "AFTER",  "JVG_P0_the_replay_reached_the_row",
+              "MARK is '" + read_mark(dbf) + "', expected 'AFTER'");
+        check(!present,                   "JVG_P0_a_replayed_log_is_removed",
+              "the log survived a successful replay");
+    }
+
+    // ---- P1: presumed abort. No decision row means it did not commit -------
+    // The same shape as P0 with a key nobody decided. There is no abort row in
+    // the group log by design -- absence IS the answer -- so this discards.
+    {
+        const fs::path dbf = root / "P1.dbf";
+        std::string err;
+        if (!make_table(dbf, err) || !seed_row(dbf)) {
+            std::cerr << "FAIL: P1 fixture could not be built (" << err << ")\n";
+            return 1;
+        }
+        write_text(dbf.string() + ".tbj",
+                   std::string("TBJ2 P1\n")
+                 + "U 1 1 S 2:" + hex_of("AFTER   ") + "\n"
+                 + "P testhost:1234:5678#99 2\n");
+
+        bool present = true;
+        const bool replayed = recover(dbf, present);
+        check(!replayed,                  "JVG_P1_an_undecided_group_does_not_replay",
+              "a prepared log with NO decision row was replayed -- an aborted group"
+              " just landed on disk");
+        check(read_mark(dbf) == "BEFORE", "JVG_P1_the_row_was_not_touched",
+              "MARK is '" + read_mark(dbf) + "', expected 'BEFORE'");
+        check(!present,                   "JVG_P1_a_presumed_abort_is_discarded",
+              "the log was PRESERVED -- presumed abort must clear the file");
+    }
+
+    // ---- P2: the record set is VERSION-SCOPED ------------------------------
+    // A TBJ1 header with a P record inside it. P exists in TBJ2 and not in
+    // TBJ1, so this file's own header says it cannot contain one. Accepting it
+    // because a LATER version defines the record would spend the version number
+    // and then ignore it, which is how the gate above came to be needed.
+    {
+        const fs::path dbf = root / "P2.dbf";
+        std::string err;
+        if (!make_table(dbf, err) || !seed_row(dbf)) {
+            std::cerr << "FAIL: P2 fixture could not be built (" << err << ")\n";
+            return 1;
+        }
+        write_text(dbf.string() + ".tbj",
+                   std::string("TBJ1 P2\n")
+                 + "U 1 1 S 2:" + hex_of("AFTER   ") + "\n"
+                 + "P testhost:1234:5678#1 2\n");
+
+        bool present = false;
+        const bool replayed = recover(dbf, present);
+        check(!replayed,                  "JVG_P2_a_P_record_in_TBJ1_is_refused",
+              "a TBJ1 log carrying a TBJ2 record was accepted");
+        check(read_mark(dbf) == "BEFORE", "JVG_P2_the_row_was_not_touched",
+              "MARK is '" + read_mark(dbf) + "', expected 'BEFORE'");
+        check(present,                    "JVG_P2_the_refused_log_was_preserved",
+              "the log was DELETED -- and its key names a group that IS committed");
+    }
+
+    // ---- P3: C and P are alternatives, not a pair --------------------------
+    // C says this transaction decided itself; P says a group log decided it.
+    // No protocol here writes both, and picking the "most likely" one is the
+    // guessing this reader is being taken out of. Note the key is the DECIDED
+    // one, so a reader that preferred either marker would replay.
+    {
+        const fs::path dbf = root / "P3.dbf";
+        std::string err;
+        if (!make_table(dbf, err) || !seed_row(dbf)) {
+            std::cerr << "FAIL: P3 fixture could not be built (" << err << ")\n";
+            return 1;
+        }
+        write_text(dbf.string() + ".tbj",
+                   std::string("TBJ2 P3\n")
+                 + "U 1 1 S 2:" + hex_of("AFTER   ") + "\n"
+                 + "P testhost:1234:5678#1 2\n"
+                 + "C 1\n");
+
+        bool present = false;
+        const bool replayed = recover(dbf, present);
+        check(!replayed,                  "JVG_P3_both_markers_is_refused",
+              "a log claiming both C and P was replayed");
+        check(read_mark(dbf) == "BEFORE", "JVG_P3_the_row_was_not_touched",
+              "MARK is '" + read_mark(dbf) + "', expected 'BEFORE'");
+    }
+
+    // ---- P4: a journal belongs to at most one group ------------------------
+    // Two P records, the FIRST naming the decided group. A reader that took
+    // the first it found would replay; one that took the last would discard.
+    // Both are guesses and the fixture does not say which is preferable.
+    {
+        const fs::path dbf = root / "P4.dbf";
+        std::string err;
+        if (!make_table(dbf, err) || !seed_row(dbf)) {
+            std::cerr << "FAIL: P4 fixture could not be built (" << err << ")\n";
+            return 1;
+        }
+        write_text(dbf.string() + ".tbj",
+                   std::string("TBJ2 P4\n")
+                 + "U 1 1 S 2:" + hex_of("AFTER   ") + "\n"
+                 + "P testhost:1234:5678#1 2\n"
+                 + "P testhost:1234:5678#99 2\n");
+
+        bool present = false;
+        const bool replayed = recover(dbf, present);
+        check(!replayed,                  "JVG_P4_two_prepare_markers_is_refused",
+              "a log naming two groups was replayed");
+        check(read_mark(dbf) == "BEFORE", "JVG_P4_the_row_was_not_touched",
+              "MARK is '" + read_mark(dbf) + "', expected 'BEFORE'");
+    }
+
+    // ---- P5: a malformed P names no question -------------------------------
+    // The record is `P <group-key> <members>`. With the member count missing
+    // there is no reason to trust the key either, and a log we cannot read must
+    // never be DISCARDED on the strength of something parsed out of it.
+    {
+        const fs::path dbf = root / "P5.dbf";
+        std::string err;
+        if (!make_table(dbf, err) || !seed_row(dbf)) {
+            std::cerr << "FAIL: P5 fixture could not be built (" << err << ")\n";
+            return 1;
+        }
+        write_text(dbf.string() + ".tbj",
+                   std::string("TBJ2 P5\n")
+                 + "U 1 1 S 2:" + hex_of("AFTER   ") + "\n"
+                 + "P testhost:1234:5678#1\n");
+
+        bool present = false;
+        const bool replayed = recover(dbf, present);
+        check(!replayed,                  "JVG_P5_a_malformed_prepare_is_refused",
+              "a P record with no member count was accepted");
+        check(present,                    "JVG_P5_the_malformed_log_was_preserved",
+              "the log was DELETED -- it may name a group that committed");
+    }
+
+    // ======================================================================
+    // W0-W4: THE WRITER. Everything above hand-wrote its log with write_text
+    // and therefore graded the READER. journal_begin_prepare had, until this
+    // block, never executed -- it compiled, linked, and was called from
+    // nowhere, which a green build reports as success.
+    //
+    // These arms are the only place the two halves meet. P0 proves the reader
+    // accepts a log of the right shape; W0 proves the writer PRODUCES that
+    // shape. Either alone is a half-measure that passes.
+    // ======================================================================
+
+    // ---- W0: the round trip, and the detector for W1-W4 --------------------
+    // A real buffered transaction: open a log, journal one redo record, prepare
+    // it into a decided group, and recover. If this does not replay, the writer
+    // and the reader disagree about the format and every arm below is blind.
+    {
+        const fs::path sys_root = root / "sys";
+        fs::create_directories(sys_root, ec);
+        dottalk::paths::set_slot(dottalk::paths::Slot::SYS, sys_root);
+
+        const int area0 = 0;
+        const std::string key = "testhost:1234:5678#W0";
+        std::string derr;
+        if (!dottalk::group::decide_committed(key, 1, &derr)) {
+            std::cerr << "FAIL: W0 fixture could not decide the group (" << derr << ")\n";
+            return 1;
+        }
+
+        const fs::path dbf = root / "W0.dbf";
+        std::string err;
+        if (!make_table(dbf, err) || !seed_row(dbf)) {
+            std::cerr << "FAIL: W0 fixture could not be built (" << err << ")\n";
+            return 1;
+        }
+
+        dottalk::table::set_persistence_mode(
+            area0, dottalk::table::BufferPersistenceMode::RamJournal);
+        if (!dottalk::table::journal_note_buffer_on(area0, dbf.string())) {
+            std::cerr << "FAIL: W0 could not open a journal\n";
+            return 1;
+        }
+
+        dottalk::table::ChangeEntry entry;
+        entry.recno       = 1;
+        entry.dirty_flags = dottalk::table::CHANGE_UPDATE;
+        entry.priority    = 1;
+        entry.new_values[2] = "AFTER   ";
+        if (!dottalk::table::journal_note_change(area0, entry)) {
+            std::cerr << "FAIL: W0 could not journal a redo record\n";
+            return 1;
+        }
+
+        const bool prepared =
+            dottalk::table::journal_begin_prepare(area0, key, 1);
+        // Close the handle WITHOUT deleting the log. journal_note_commit and
+        // journal_note_rollback both remove the file; clear_journal_state is
+        // the only exit that leaves it on disk, which is what recovery needs
+        // to find -- and is exactly the state a crash between prepare and
+        // apply leaves behind.
+        dottalk::table::clear_journal_state(area0);
+
+        check(prepared,                   "JVG_W0_the_writer_prepared",
+              "journal_begin_prepare returned false on a well-formed group");
+
+        bool present = true;
+        const bool replayed = recover(dbf, present);
+        check(replayed,                   "JVG_W0_what_the_writer_wrote_replays",
+              "the reader refused a log this build's own writer produced -- the"
+              " writer and the reader disagree about TBJ2");
+        check(read_mark(dbf) == "AFTER",  "JVG_W0_the_replay_reached_the_row",
+              "MARK is '" + read_mark(dbf) + "', expected 'AFTER'");
+        check(!present,                   "JVG_W0_a_replayed_log_is_removed",
+              "the log survived a successful replay");
+    }
+
+    // ---- W1: the header was promoted, and nothing else was trampled --------
+    // The promotion is a one-byte overwrite at offset 3 followed by a seek to
+    // end. Byte 3 is asserted directly because that seek is the single most
+    // fragile line in the writer, and the TABLE NAME is asserted because a
+    // wrong offset would silently eat it and still leave a log that parses.
+    {
+        const int area0 = 0;
+        const fs::path dbf = root / "W1.dbf";
+        std::string err;
+        if (!make_table(dbf, err) || !seed_row(dbf)) {
+            std::cerr << "FAIL: W1 fixture could not be built (" << err << ")\n";
+            return 1;
+        }
+
+        dottalk::table::set_persistence_mode(
+            area0, dottalk::table::BufferPersistenceMode::RamJournal);
+        dottalk::table::journal_note_buffer_on(area0, dbf.string());
+        const bool prepared = dottalk::table::journal_begin_prepare(
+            area0, "testhost:1234:5678#W1", 3);
+        dottalk::table::clear_journal_state(area0);
+
+        std::ifstream in(dbf.string() + ".tbj", std::ios::binary);
+        std::string header, body, line;
+        std::getline(in, header);
+        while (std::getline(in, line)) body += line + "\n";
+        in.close();
+
+        check(prepared && header.rfind("TBJ2 ", 0) == 0,
+              "JVG_W1_the_header_was_promoted_to_TBJ2",
+              "header is '" + header + "', expected it to start 'TBJ2 '");
+        check(header.find(dbf.filename().string()) != std::string::npos,
+              "JVG_W1_the_promotion_left_the_table_name_intact",
+              "header is '" + header + "' -- the seek overwrote more than the"
+              " version digit");
+        check(body.find("P testhost:1234:5678#W1 3\n") != std::string::npos,
+              "JVG_W1_the_prepare_record_is_well_formed",
+              "no 'P <key> <members>' record found; body was:\n" + body);
+
+        fs::remove(dbf.string() + ".tbj", ec);
+    }
+
+    // ---- W2: A PLAIN COMMIT STILL WRITES TBJ1 ------------------------------
+    // THE NEGATIVE ARM, and the whole argument for promoting per log instead of
+    // moving kJournalVersionWritten. If an ordinary single-table commit starts
+    // stamping TBJ2, every build that predates this lane refuses a log it could
+    // have replayed perfectly, and keeps it forever. Nothing else in this file
+    // would notice, because every other arm here is about logs that DO carry a
+    // P record.
+    {
+        const int area0 = 0;
+        const fs::path dbf = root / "W2.dbf";
+        std::string err;
+        if (!make_table(dbf, err) || !seed_row(dbf)) {
+            std::cerr << "FAIL: W2 fixture could not be built (" << err << ")\n";
+            return 1;
+        }
+
+        dottalk::table::set_persistence_mode(
+            area0, dottalk::table::BufferPersistenceMode::RamJournal);
+        dottalk::table::journal_note_buffer_on(area0, dbf.string());
+        dottalk::table::journal_begin_commit(area0);
+        dottalk::table::clear_journal_state(area0);
+
+        std::ifstream in(dbf.string() + ".tbj", std::ios::binary);
+        std::string header;
+        std::getline(in, header);
+        in.close();
+
+        check(header.rfind("TBJ1 ", 0) == 0,
+              "JVG_W2_an_ungrouped_commit_still_writes_TBJ1",
+              "header is '" + header + "' -- a plain commit is stamping a"
+              " version older builds refuse, for a record it does not contain");
+
+        fs::remove(dbf.string() + ".tbj", ec);
+    }
+
+    // ---- W3: a key with whitespace is refused, and writes NOTHING ----------
+    // The reader recovers the key with `is >> prepare_key`, so a key containing
+    // a space reads back as its own PREFIX -- a different, almost certainly
+    // absent, group -- and presumed abort then discards a committed
+    // transaction with nothing to detect it. It is the one field in the record
+    // whose corruption is invisible, so the writer refuses rather than encodes.
+    //
+    // The second arm matters as much as the first: a refusal that had already
+    // promoted the header would leave a TBJ2 log with no P record in it.
+    {
+        const int area0 = 0;
+        const fs::path dbf = root / "W3.dbf";
+        std::string err;
+        if (!make_table(dbf, err) || !seed_row(dbf)) {
+            std::cerr << "FAIL: W3 fixture could not be built (" << err << ")\n";
+            return 1;
+        }
+
+        dottalk::table::set_persistence_mode(
+            area0, dottalk::table::BufferPersistenceMode::RamJournal);
+        dottalk::table::journal_note_buffer_on(area0, dbf.string());
+        const bool refused_space =
+            !dottalk::table::journal_begin_prepare(area0, "host:1 2:3#1", 1);
+        const bool refused_empty =
+            !dottalk::table::journal_begin_prepare(area0, "", 1);
+        const bool refused_members =
+            !dottalk::table::journal_begin_prepare(area0, "testhost:1:1#W3", 0);
+        dottalk::table::clear_journal_state(area0);
+
+        std::ifstream in(dbf.string() + ".tbj", std::ios::binary);
+        std::string header, body, line;
+        std::getline(in, header);
+        while (std::getline(in, line)) body += line + "\n";
+        in.close();
+
+        check(refused_space,   "JVG_W3_a_key_with_whitespace_is_refused",
+              "a key containing a space was written -- recovery would read its"
+              " prefix and discard a committed group");
+        check(refused_empty,   "JVG_W3_an_empty_key_is_refused",
+              "an empty group key was accepted");
+        check(refused_members, "JVG_W3_a_zero_member_count_is_refused",
+              "members=0 was accepted; the reader treats it as malformed");
+        check(header.rfind("TBJ1 ", 0) == 0 && body.find("P ") == std::string::npos,
+              "JVG_W3_a_refused_prepare_wrote_nothing_at_all",
+              "header is '" + header + "' and body was:\n" + body
+              + "-- a refusal promoted the header or left a partial record");
+
+        fs::remove(dbf.string() + ".tbj", ec);
+    }
+
+    dottalk::table::set_persistence_mode(
+        0, dottalk::table::BufferPersistenceMode::RamOnly);
 
     fs::remove_all(root, ec);
 
