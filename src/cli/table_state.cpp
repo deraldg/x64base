@@ -410,6 +410,57 @@ static int journal_header_version(const std::string& line) {
     return v;
 }
 
+// ---------------------------------------------------------------------------
+// THE RECORD TAG, AND THE SILENCE UNDER THE VERSION GATE
+//
+// The gate above compares ONE NUMBER. It stops a log whose header names a
+// version this build cannot read, and that is the whole of what it can do. It
+// says nothing about a record this build does not understand inside a version
+// it DOES read -- which is exactly what every future format bump produces for
+// every build older than it.
+//
+// AND THE REPLAY LOOP DID NOT MERELY IGNORE SUCH A RECORD. It matched on ONE
+// BYTE: `ln[0] == 'I' || ln[0] == 'U'`, with no check that the byte was the
+// whole tag. A future record spelled `UPDATE_META ...` or `INDEX ...` is
+// therefore not dropped -- it is READ AS A WRITE. istringstream takes the token
+// as the tag, the next integer as a recno, and any `<n>:<hex>` pair that
+// follows as a field to set. That is worse than the silence the note above
+// describes, and it was one byte away from the `C` test three lines below it,
+// which had spelled the delimiter rule by hand since it shipped.
+//
+// A tag is a TOKEN, delimited by a space or end of line. 'C' and 'CX' are
+// different records, and a reader matching one character cannot tell them
+// apart.
+static std::string journal_record_tag(const std::string& line) {
+    const auto end = line.find(' ');
+    return (end == std::string::npos) ? line : line.substr(0, end);
+}
+
+// EVERY RECORD A TBJ1 LOG CAN CONTAIN, and nothing else.
+//
+//   I  insert redo     U  update redo     D  delete redo
+//   C  commit marker   R  rollback marker
+//
+// The header is deliberately NOT in this set. It is line one, already read and
+// accepted by the version gate, and admitting "TBJ1" as a record would let a
+// second header appear mid-log without complaint.
+static bool journal_record_is_known(const std::string& tag) {
+    return tag == "I" || tag == "U" || tag == "D" || tag == "C" || tag == "R";
+}
+
+// A tag from a log we are refusing has not been validated by anything, so it
+// reaches the console as bytes of unknown provenance. Bound it and strip what
+// a terminal would interpret.
+static std::string journal_tag_for_display(const std::string& tag) {
+    std::string out;
+    for (std::size_t i = 0; i < tag.size() && i < 16; ++i) {
+        const unsigned char c = static_cast<unsigned char>(tag[i]);
+        out.push_back((c >= 0x20 && c < 0x7F) ? static_cast<char>(c) : '?');
+    }
+    if (tag.size() > 16) out += "...";
+    return out;
+}
+
 // (Re)open a fresh append-only redo log for a new transaction on this area.
 // The log is a sidecar of the DBF (`<dbf>.tbj`) so recovery-on-open can find it.
 bool journal_note_buffer_on(int area0, const std::string& table_name) {
@@ -585,10 +636,13 @@ bool recover_table_buffer_journal(xbase::DbArea& area) {
         return false;
     }
 
-    // Committed iff a "C" marker line is present.
+    // Committed iff a "C" marker record is present. The delimiter rule used to
+    // be spelled out here by hand -- ln[0] == 'C' and (size == 1 or ln[1] == ' ')
+    // -- which was correct, and was the ONLY place in this reader that knew a
+    // tag is a token. journal_record_tag now holds that rule once.
     bool committed = false;
     for (const auto& ln : lines) {
-        if (!ln.empty() && ln[0] == 'C' && (ln.size() == 1 || ln[1] == ' ')) {
+        if (!ln.empty() && journal_record_tag(ln) == "C") {
             committed = true;
             break;
         }
@@ -599,11 +653,64 @@ bool recover_table_buffer_journal(xbase::DbArea& area) {
         return false;
     }
 
+    // THE WHOLE LOG IS READ BEFORE THE FIRST WRITE.
+    //
+    // Discovering an unreadable record halfway through a replay would leave the
+    // table HALF APPLIED and the log then refused -- strictly worse than either
+    // outcome alone, and unrecoverable by repeating, because the next USE sees
+    // the same refusal over a table that has already moved. Count first, read
+    // verdicts second.
+    //
+    // THE RECORD THAT IS NOT SAFE BY ACCIDENT is why this is worth a pass. A
+    // TBJ2 PREPARE marker degrades correctly against an old reader: no 'C', so
+    // no replay. AIF-061's memo record does not. A committed TBJ2 log carries
+    // 'M' payloads, 'U' writes and a 'C'; a reader that honours the 'C',
+    // replays the 'U's and drops the 'M's produces rows pointing at memo
+    // objects the memo store was never told to write. The table opens clean and
+    // the damage is one field deep.
+    //
+    // COMMITTED LOGS ONLY, AND THAT PLACEMENT IS LOAD-BEARING. An uncommitted
+    // log is discarded above without a record being read, and it carries NO
+    // durability guarantee: this WAL performs exactly one fsync, in
+    // journal_begin_commit, AFTER the C marker is appended. So every byte
+    // preceding a durable 'C' is complete, and a torn tail can exist only in a
+    // log that has no 'C' -- one already on the discard path. Validating those
+    // would turn every interrupted transaction into a permanent warning about a
+    // file that is correctly deletable.
+    {
+        bool        unknown_found = false;
+        std::string unknown_tag;
+        for (std::size_t i = 1; i < lines.size(); ++i) {
+            if (lines[i].empty()) continue;    // a blank line is not a record
+            const std::string tag = journal_record_tag(lines[i]);
+            if (!journal_record_is_known(tag)) {
+                unknown_found = true;
+                unknown_tag   = tag;
+                break;
+            }
+        }
+        if (unknown_found) {
+            std::cout
+                << "RECOVER: REFUSED -- " << path << "\n"
+                << "  it is TBJ" << version << ", which this build reads, but it carries"
+                   " a record\n"
+                << "  this build does not know: '" << journal_tag_for_display(unknown_tag)
+                << "'.\n"
+                << "  THE LOG IS KEPT, NOT DISCARDED, and NOTHING was replayed -- not"
+                   " even the\n"
+                   "  records this build does understand. A log half applied and then\n"
+                   "  refused is worse than either half. This table is open and usable;\n"
+                   "  the journal is not applied.\n";
+            return false;
+        }
+    }
+
     // Replay I/U/D redo records in append order. Append order == priority order, so
     // the last write per field wins == highest priority (matches COMMIT's fold).
     for (const auto& ln : lines) {
         if (ln.empty()) continue;
-        if (ln[0] == 'I' || ln[0] == 'U') {
+        const std::string rec_tag = journal_record_tag(ln);
+        if (rec_tag == "I" || rec_tag == "U") {
             std::istringstream is(ln);
             std::string tag, prio, mode;
             std::uint64_t recno = 0;
@@ -629,7 +736,7 @@ bool recover_table_buffer_journal(xbase::DbArea& area) {
                 }
             }
             if (wrote) (void)area.writeCurrent();
-        } else if (ln[0] == 'D') {
+        } else if (rec_tag == "D") {
             std::istringstream is(ln);
             std::string tag;
             std::uint64_t recno = 0;

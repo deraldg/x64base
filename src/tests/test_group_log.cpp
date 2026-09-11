@@ -49,8 +49,32 @@
 namespace {
 
 int g_failures = 0;
+int g_checks   = 0;
+
+// THE DECLARED TOTAL, hand-written on purpose.
+//
+// Every other number this file prints is derived from what ran, which is
+// exactly why none of them can contradict what ran. This one is written down
+// separately so it CAN disagree, and a disagreement is red.
+//
+// It catches the arm that stops running without failing: a guard that turned
+// false, a block that returned early, a section someone commented out while
+// chasing something else. Those do not print .F. -- they print nothing, and a
+// count derived from what happened would happily report the smaller number as
+// a pass. Marker-count discipline says count first and read verdicts second;
+// this makes the binary do it.
+//
+// IT DOES NOT DETECT A STALE BINARY. A binary built from older source carries
+// the older markers AND the older total, and the two agree. Nothing inside a
+// program can tell that it is the wrong program -- that is the build's job,
+// and build.ps1 now derives its test-target list from src/tests for it.
+//
+// Adding a marker means editing this number. That cost is paid in the file
+// being edited, and forgetting it fails loudly rather than quietly.
+constexpr int kDeclaredMarkers = 27;
 
 void check(bool condition, const std::string& marker, const std::string& detail) {
+    ++g_checks;
     std::cout << marker << ":" << (condition ? ".T." : ".F.") << "\n";
     if (!condition) {
         std::cerr << "FAIL: " << marker << " -- " << detail << "\n";
@@ -218,7 +242,16 @@ int main() {
 
     fs::remove_all(root, ec);
 
+    if (g_checks != kDeclaredMarkers) {
+        std::cerr << "FAIL: GRP_MARKER_COUNT -- ran " << g_checks
+                  << " marker(s), this file declares " << kDeclaredMarkers
+                  << ". An arm stopped running, or the declared total was not "
+                     "updated when one was added.\n";
+        ++g_failures;
+    }
+
     std::cout << "GROUP LOG: " << (g_failures == 0 ? "PASS" : "FAIL")
-              << " -- 27 marker(s), " << g_failures << " red.\n";
+              << " -- " << g_checks << " of " << kDeclaredMarkers
+              << " marker(s), " << g_failures << " red.\n";
     return g_failures == 0 ? 0 : 1;
 }

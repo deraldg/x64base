@@ -30,7 +30,11 @@
 //
 // WHAT THIS TEST DOES NOT CLAIM.
 //   - Nothing about TBJ2. No M record and no P marker exists yet; this build
-//     still writes TBJ1 deliberately.
+//     still writes TBJ1 deliberately. The U arms forge an 'M'-shaped line to
+//     stand for a record from the future; they say nothing about what AIF-061's
+//     memo record will actually contain.
+//   - Nothing about a record this build knows but writes WRONGLY. The U lane
+//     asks only whether an unrecognised tag is refused.
 //   - Nothing about a real crash. The logs here are forged by hand, which is
 //     the only way to produce a version this build cannot write.
 //   - Nothing about a pre-header journal. Every log this family has written
@@ -54,8 +58,32 @@
 namespace {
 
 int g_failures = 0;
+int g_checks   = 0;
+
+// THE DECLARED TOTAL, hand-written on purpose.
+//
+// Every other number this file prints is derived from what ran, which is
+// exactly why none of them can contradict what ran. This one is written down
+// separately so it CAN disagree, and a disagreement is red.
+//
+// It catches the arm that stops running without failing: a guard that turned
+// false, a block that returned early, a section someone commented out while
+// chasing something else. Those do not print .F. -- they print nothing, and a
+// count derived from what happened would happily report the smaller number as
+// a pass. Marker-count discipline says count first and read verdicts second;
+// this makes the binary do it.
+//
+// IT DOES NOT DETECT A STALE BINARY. A binary built from older source carries
+// the older markers AND the older total, and the two agree. Nothing inside a
+// program can tell that it is the wrong program -- that is the build's job,
+// and build.ps1 now derives its test-target list from src/tests for it.
+//
+// Adding a marker means editing this number. That cost is paid in the file
+// being edited, and forgetting it fails loudly rather than quietly.
+constexpr int kDeclaredMarkers = 29;
 
 void check(bool condition, const std::string& marker, const std::string& detail) {
+    ++g_checks;
     std::cout << marker << ":" << (condition ? ".T." : ".F.") << "\n";
     if (!condition) {
         std::cerr << "FAIL: " << marker << " -- " << detail << "\n";
@@ -229,6 +257,121 @@ int main() {
               "an empty log was PRESERVED -- it would warn on every USE forever");
     }
 
+    // ---- U1: a record this build does not know, in a version it does -------
+    // The version gate cannot see this one. The header says TBJ1, which this
+    // build reads; the unknown record sits INSIDE the log. It is placed after a
+    // valid U and before the C deliberately: a reader that validated lazily
+    // would already have written the row by the time it met the record it
+    // cannot read, and would then refuse a log it had half applied.
+    {
+        const fs::path dbf = root / "U1.dbf";
+        std::string err;
+        if (!make_table(dbf, err) || !seed_row(dbf)) {
+            std::cerr << "FAIL: U1 fixture could not be built (" << err << ")\n";
+            return 1;
+        }
+        write_text(dbf.string() + ".tbj",
+                   std::string("TBJ1 U1\n")
+                 + "U 1 1 S 2:" + hex_of("AFTER   ") + "\n"
+                 + "M 1 objid:7f devnull\n"
+                 + "C 1\n");
+
+        bool present = false;
+        const bool replayed = recover(dbf, present);
+        check(!replayed,                  "JVG_U1_an_unknown_record_is_refused",
+              "a log carrying an unknown record was replayed");
+        check(read_mark(dbf) == "BEFORE", "JVG_U1_not_even_the_known_records_ran",
+              "MARK is '" + read_mark(dbf) + "', expected 'BEFORE' -- the log was"
+              " half applied before it was refused");
+        check(present,                    "JVG_U1_the_refused_log_was_preserved",
+              "the log was DELETED -- a commit a newer build could replay is now gone");
+    }
+
+    // ---- U2: a tag is a TOKEN, and this is the arm that costs something -----
+    // `UPD` is not a record. Against the one-byte match this reader shipped
+    // with -- `ln[0] == 'I' || ln[0] == 'U'` -- it was not dropped, it was READ
+    // AS AN UPDATE: the token became the tag, the next integer a recno, and the
+    // `<n>:<hex>` pair a field to set. So the old reader writes WRONG into the
+    // row. That is not a record ignored; it is a record misread, and it is the
+    // reason the tag rule had to move out of the C test and into one place.
+    {
+        const fs::path dbf = root / "U2.dbf";
+        std::string err;
+        if (!make_table(dbf, err) || !seed_row(dbf)) {
+            std::cerr << "FAIL: U2 fixture could not be built (" << err << ")\n";
+            return 1;
+        }
+        write_text(dbf.string() + ".tbj",
+                   std::string("TBJ1 U2\n")
+                 + "UPD 1 1 S 2:" + hex_of("WRONG   ") + "\n"
+                 + "C 1\n");
+
+        bool present = false;
+        const bool replayed = recover(dbf, present);
+        check(!replayed,                  "JVG_U2_a_prefix_collision_is_refused",
+              "'UPD' was accepted as a record by a build that knows only 'U'");
+        check(read_mark(dbf) == "BEFORE", "JVG_U2_the_row_was_not_written",
+              "MARK is '" + read_mark(dbf) + "', expected 'BEFORE' -- 'UPD' was"
+              " misread as an update and wrote a field");
+        check(present,                    "JVG_U2_the_refused_log_was_preserved",
+              "the log was DELETED");
+    }
+
+    // ---- U3: a blank line is not a record ----------------------------------
+    // The control for U1 and U2. If the refusal fired on anything that is not
+    // a known tag, an empty line would refuse too, and every arm above would be
+    // green for the wrong reason.
+    {
+        const fs::path dbf = root / "U3.dbf";
+        std::string err;
+        if (!make_table(dbf, err) || !seed_row(dbf)) {
+            std::cerr << "FAIL: U3 fixture could not be built (" << err << ")\n";
+            return 1;
+        }
+        write_text(dbf.string() + ".tbj",
+                   std::string("TBJ1 U3\n")
+                 + "\n"
+                 + "U 1 1 S 2:" + hex_of("AFTER   ") + "\n"
+                 + "\n"
+                 + "C 1\n");
+
+        bool present = true;
+        const bool replayed = recover(dbf, present);
+        check(replayed,                   "JVG_U3_blank_lines_do_not_refuse",
+              "a blank line was treated as an unknown record");
+        check(read_mark(dbf) == "AFTER",  "JVG_U3_the_replay_reached_the_row",
+              "MARK is '" + read_mark(dbf) + "', expected 'AFTER'");
+    }
+
+    // ---- U4: an UNCOMMITTED log with an unknown record is still DISCARDED ---
+    // This pins the PLACEMENT, which is the part of the design that could
+    // silently drift. The validation pass runs only for committed logs, because
+    // this WAL fsyncs exactly once -- in journal_begin_commit, after the C
+    // marker -- so a torn tail can only exist in a log with no C. Validating
+    // those would convert every interrupted transaction into a permanent
+    // warning about a file that is correctly deletable.
+    {
+        const fs::path dbf = root / "U4.dbf";
+        std::string err;
+        if (!make_table(dbf, err) || !seed_row(dbf)) {
+            std::cerr << "FAIL: U4 fixture could not be built (" << err << ")\n";
+            return 1;
+        }
+        write_text(dbf.string() + ".tbj",
+                   std::string("TBJ1 U4\n")
+                 + "U 1 1 S 2:" + hex_of("AFTER   ") + "\n"
+                 + "M 1 objid:7f devnull\n");   // no C marker
+
+        bool present = true;
+        const bool replayed = recover(dbf, present);
+        check(!replayed,                  "JVG_U4_an_uncommitted_log_replays_nothing",
+              "an uncommitted log reported a replay");
+        check(read_mark(dbf) == "BEFORE", "JVG_U4_the_row_was_not_touched",
+              "MARK is '" + read_mark(dbf) + "', expected 'BEFORE'");
+        check(!present,                   "JVG_U4_an_uncommitted_log_is_still_discarded",
+              "an uncommitted log was PRESERVED -- it would warn on every USE forever");
+    }
+
     // ---- S0: the SYS predicate itself ---------------------------------------
     // AIF-160. Tables under the SYS slot are engine state: written directly,
     // never buffered, never recovered. The rule is LOCATION, so the predicate is
@@ -283,7 +426,16 @@ int main() {
 
     fs::remove_all(root, ec);
 
+    if (g_checks != kDeclaredMarkers) {
+        std::cerr << "FAIL: JVG_MARKER_COUNT -- ran " << g_checks
+                  << " marker(s), this file declares " << kDeclaredMarkers
+                  << ". An arm stopped running, or the declared total was not "
+                     "updated when one was added.\n";
+        ++g_failures;
+    }
+
     std::cout << "JOURNAL VERSION GATE: " << (g_failures == 0 ? "PASS" : "FAIL")
-              << " -- 18 marker(s), " << g_failures << " red.\n";
+              << " -- " << g_checks << " of " << kDeclaredMarkers
+              << " marker(s), " << g_failures << " red.\n";
     return g_failures == 0 ? 0 : 1;
 }
