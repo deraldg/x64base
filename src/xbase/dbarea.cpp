@@ -59,6 +59,25 @@ DbArea::DbArea() = default;
 DbArea::~DbArea() { try { close(); } catch(...) {} }
 
 void DbArea::close() {
+    // AIF-113: RELEASE THIS PROCESS'S LOCKS BEFORE ANYTHING ELSE IN close().
+    //
+    // The charter proposed wiring release_held into the CLI's
+    // close_area_if_open. That site cannot see the other routes the charter's
+    // own "Runtime leg supplied" section measured as leaking: CLOSE, CLEAR,
+    // USE/OPEN, DbArea::close() called directly, ~DbArea(), and process exit.
+    // Here covers all of them, because every one arrives through this function.
+    //
+    // ORDER IS LOAD-BEARING, AND IS WHY THIS IS THE FIRST STATEMENT. A lock
+    // sidecar's path is derived from filename(), and _clear_paths_and_names_()
+    // below erases it. Release after that point and the computed paths are
+    // empty, nothing is removed, and the call still looks like it worked --
+    // the failure mode this lane exists to stop.
+    //
+    // NEVER THROWS OUT OF close(). ~DbArea() already swallows, but close() is
+    // also called directly by code that does not expect to catch, and the
+    // release path reaches the throwing fs::exists overload.
+    try { xbase::locks::release_held(*this); } catch (...) {}
+
     _fp.clear();
 
     // An indexed composition may have attached external state.  Detach it

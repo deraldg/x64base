@@ -688,7 +688,20 @@ void release_held(DbArea& a) {
     auto it = book().find(&a);
     if (it == book().end()) return;
 
-    for (auto r : it->second.recs) {
+    // AIF-113: ITERATE A SNAPSHOT. unlock_record() below does
+    // `book()[&a].recs.erase(recno)` -- it erases from the very set this loop
+    // walks. Range-for over a container an inner call mutates is undefined
+    // behaviour, and it was latent here for as long as this function had no
+    // callers: the defect could not fire because nothing ever entered the
+    // loop. Wiring release_held into DbArea::close() is what makes it
+    // reachable, so the snapshot lands in the same change as the wiring.
+    //
+    // A DEAD FUNCTION IS NOT A TESTED FUNCTION. This lane's charter asks
+    // whether release_held should gain a call site or be deleted with a
+    // reason; it did not ask whether the body was correct, because nothing
+    // had exercised it.
+    const std::unordered_set<std::uint64_t> held = it->second.recs;
+    for (const auto r : held) {
         std::string ignored;
         (void)unlock_record(a, r, me, &ignored);
     }
@@ -699,6 +712,19 @@ void release_held(DbArea& a) {
         (void)unlock_table(a, me, &ignored);
         it->second.table = false;
     }
+
+    // AIF-113: DROP THE ROW, do not merely empty it. book() is a
+    // process-global keyed on `const DbArea*` and NOTHING in this translation
+    // unit ever erased from it, so every area this process locked left a
+    // permanent entry and a long session that opens and closes many areas grew
+    // the map without bound.
+    //
+    // Size is the lesser half. This function now runs immediately before an
+    // area is destroyed, and a destroyed DbArea's ADDRESS can be reused by the
+    // next one. A surviving row would hand the new area the old one's
+    // bookkeeping. Empty is not the same as absent: a lock taken on a reused
+    // address must start from no entry, which is what erase gives it.
+    book().erase(it);
 }
 
 } // namespace xbase::locks
