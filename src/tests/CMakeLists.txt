@@ -502,9 +502,13 @@ endif()
 # half-replay; this target is what keeps it honest.
 #
 # Compiles src/cli/table_state.cpp directly rather than linking the shell, the
-# pattern dottalkpp_area_alloc_test established. table_state.cpp includes only
-# its own header, the standard library, xbase.hpp and xbase/durable.hpp, so it
-# drags in nothing that needs the CLI's output layer.
+# pattern dottalkpp_area_alloc_test established. table_state.cpp includes its
+# own header, the standard library, xbase.hpp, xbase/durable.hpp, path_state
+# and group_log -- all of which are themselves self-contained, so this target
+# still drags in nothing that needs the CLI's output layer. That list has grown
+# twice and is spelled out here rather than summarised, because "includes only
+# its own header" is the kind of sentence that stops being true without anyone
+# editing it.
 if(TARGET xbase)
   add_executable(dottalkpp_journal_version_gate_test
     ${CMAKE_CURRENT_SOURCE_DIR}/test_journal_version_gate.cpp
@@ -515,6 +519,14 @@ if(TARGET xbase)
     # the same pairing dottalkpp_area_alloc_test records, added UP FRONT rather
     # than after the LNK2019 that comment was written about.
     ${CMAKE_SOURCE_DIR}/src/common/path_state.cpp
+    # AIF-160, TBJ2: recovery now ASKS THE GROUP LOG whether a prepared member
+    # committed, so this target compiles group_log.cpp for the same reason it
+    # compiles the other two. The dependency runs one way -- the reader calls
+    # is_committed, and is_committed opens the catalog with a bare DbArea --
+    # and recovery is driven from cmd_use rather than from DbArea::open, so
+    # nothing re-enters. dottalkpp_group_log_test already compiles this exact
+    # trio; this target is now the second of the pair.
+    ${CMAKE_SOURCE_DIR}/src/cli/group_log.cpp
   )
   target_link_libraries(dottalkpp_journal_version_gate_test PRIVATE xbase memo)
   target_include_directories(dottalkpp_journal_version_gate_test PRIVATE

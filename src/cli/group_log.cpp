@@ -245,11 +245,24 @@ bool is_committed(const std::string& key) {
     try { a.open(p); } catch (...) { return false; }
     if (!a.isOpen()) return false;
 
-    // A LINEAR SCAN, AND THE DESIGN SAYS THIS IS NOT GOOD ENOUGH FOR LONG.
-    // The catalog is append-only and never packed, so this is O(rows) per member
-    // table per USE and grows without bound. An index on GRP_KEY is OWED before
-    // this carries real traffic; it is left out of the first cut so the decision
-    // path can be measured and graded without index machinery in the way.
+    // A LINEAR SCAN, AND IT IS NOT ON THE PATH THIS COMMENT USED TO CLAIM.
+    //
+    // It said "O(rows) per member table per USE" and that an index on GRP_KEY
+    // was OWED. The first half is false and the second followed from it.
+    // Recovery runs at every USE; recovery REACHES THIS FUNCTION only when a
+    // member journal carries a P prepare marker and no local C -- nothing else
+    // in recover_table_buffer_journal can call it.
+    //
+    // And a P span surviving to recovery is a CRASH ARTIFACT. The committing
+    // process discards the journals of a group it knows failed (the eager-abort
+    // ruling), and a healthy commit removes its own journal in
+    // journal_note_commit. So this is a per-crash cost, once per member table
+    // of the group that was in flight -- not a per-open one.
+    //
+    // MEASURED: 12.2 us/row, so 100,000 rows is about 1.2 seconds, once, on a
+    // machine that has already failed. The index is DEFERRED rather than owed.
+    // If a measurement ever asks for one, the catalog is a DBF and cdx ships;
+    // nothing here blocks it. Corrected 2026-09-11, owner accepted.
     bool found = false;
     const std::uint64_t total = a.recCount64();
     for (std::uint64_t rn = 1; rn <= total && !found; ++rn) {
