@@ -18,7 +18,7 @@ endif()
 # Project
 # ============================================================
 
-project(DotTalkpp VERSION 0.6 LANGUAGES CXX)
+project(DotTalkpp VERSION 1.1 LANGUAGES CXX)
 
 # DOTTALK_ROOT -- the repository root, as the SHARED libraries should refer to it.
 #
@@ -53,6 +53,38 @@ endif()
 # ============================================================
 
 set(DOTTALKPP_VERSION_LABEL "${PROJECT_VERSION}")
+
+# THE MATURITY WORD, AND WHY THE NUMBER ABOVE MOVED FROM 0.6 TO 1.1 (2026-09-11).
+#
+# The product read v0.6 for months. Not because nothing changed -- because the
+# numeral was the only thing anyone saw, and a numeral nobody can interpret is a
+# numeral nobody bumps. The label a reader wants is "which beta is this", and
+# that is not a second fact to keep in step: it is these same two numbers,
+# rendered by dottalk::version::release_label().
+#
+#     major -> the cycle      1
+#     minor -> a letter       0 -> a, 1 -> b, 2 -> c ...
+#
+# so VERSION 1.1 with maturity `beta` displays as "beta 1.b", and the next bump
+# is this one line. Nothing else in the tree restates it.
+#
+# THE BARE NUMERAL IS NOT DISPLAYED WHILE MATURITY IS PRE-RELEASE, which is what
+# makes a 1.x numbering honest at this stage: "1.1" reaches nobody until the
+# word below says `release`, so the number cannot be mistaken for a shipped one.
+# At release the word changes and the SAME numbers render "1.1" -- the version
+# line never has to jump to tell the truth.
+#
+# HAND-KEEPING THE LABEL WAS THE ALTERNATIVE AND IT WAS THE WORSE ONE. AIF-120
+# collapsed five hand-typed copies of the version and check_version_coherence.py
+# blocks a sixth -- but it finds copies by looking for MAJOR.MINOR, and a
+# hand-kept "beta 1.b" holds none. It would have been the one copy the gate
+# could not see, drifting silently and permanently. Derived, it cannot drift.
+#
+# Alpha features and the campus's other programs sit at their own maturities;
+# this variable is per-project by construction, so each one answers for itself.
+set(DOTTALKPP_MATURITY "beta" CACHE STRING
+    "Product maturity word: alpha, beta, rc or release")
+set_property(CACHE DOTTALKPP_MATURITY PROPERTY STRINGS alpha beta rc release)
 
 execute_process(
     COMMAND git -C "${CMAKE_SOURCE_DIR}" rev-parse --short=8 HEAD
@@ -817,7 +849,11 @@ message(STATUS "  DOTTALK_WITH_WX       : ${DOTTALK_WITH_WX}")
 message(STATUS "  DOTTALK_TV_TESTS      : ${DOTTALK_TV_TESTS}")
 message(STATUS "  BUILD_PYDOTTALK       : ${BUILD_PYDOTTALK}")
 message(STATUS "  BUILD_TESTING         : ${BUILD_TESTING}")
-message(STATUS "  version metadata      : v${DOTTALKPP_VERSION_LABEL} ${DOTTALKPP_VERSION_DATE} ${DOTTALKPP_GIT_SHA} dirty=${DOTTALKPP_GIT_DIRTY}")
+# dirty= stays HERE and is gone from the product banner. This line is a
+# configure-time diagnostic read by whoever is building; the banner is read by
+# whoever is running, and in a shared worktree dirty is true on every build ever
+# made, which makes it furniture there and information here.
+message(STATUS "  version metadata      : ${DOTTALKPP_MATURITY} ${DOTTALKPP_VERSION_LABEL} ${DOTTALKPP_VERSION_DATE} ${DOTTALKPP_GIT_SHA} dirty=${DOTTALKPP_GIT_DIRTY}")
 message(STATUS "  TVISION_ROOT          : ${TVISION_ROOT}")
 message(STATUS "  VCPKG_ROOT            : ${VCPKG_ROOT}")
 message(STATUS "  sqlite found          : ${_sqlite_found}")

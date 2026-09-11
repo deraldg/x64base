@@ -12,6 +12,11 @@
 // moves only when one of these four values actually changes, so a configure
 // that re-reads the same SHA costs nothing.
 //
+// DOTTALKPP_MATURITY joined them on 2026-09-11. It is the one half of the
+// product label a human sets on purpose -- alpha, beta, rc, release -- and it
+// changes far less often than the SHA does, so it adds nothing to the rebuild
+// cost the note below is about.
+//
 // AIF-122. These four values used to be target_compile_definitions applied to
 // every target, i.e. a -D on the command line of ~400 translation units. A
 // commit changed the SHA, which changed every command line, which rebuilt the
@@ -25,3 +30,4 @@
 #define DOTTALKPP_VERSION_DATE "@DOTTALKPP_VERSION_DATE@"
 #define DOTTALKPP_GIT_SHA      "@DOTTALKPP_GIT_SHA@"
 #define DOTTALKPP_GIT_DIRTY    @DOTTALKPP_GIT_DIRTY@
+#define DOTTALKPP_MATURITY     "@DOTTALKPP_MATURITY@"
