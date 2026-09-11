@@ -103,6 +103,7 @@
 #include "xbase.hpp"
 #include "xbase_locks.hpp"
 #include "xbase/trigger_hooks.hpp"   // AIF-087 M2b: BEFORE phase at commit entry
+#include "xbase/durable.hpp"        // AIF-161: durable_sync before the log dies
 
 #include "cli/command_output.hpp"
 #include "cli/settings.hpp"
@@ -715,9 +716,50 @@ static CommitResult commit_one_area(xbase::DbArea& A,
     }
 #endif
 
+    // THE LAST MOMENT THE TRANSACTION EXISTS IN TWO PLACES.
+    //
+    // apply_one_recno ends at writeCurrent()/deleteCurrent(), which reach
+    // io().flush() -- the OS page cache and NO FURTHER. journal_note_commit
+    // below DELETES the redo log. Between those two facts sat a window in which
+    // a power cut lost the rows AND the log that could have replayed them.
+    //
+    // THE COMMENT THAT USED TO DEFER THIS said std::fstream does not expose the
+    // OS handle portably. That was true at AIF-023 (2026-07-19) and stopped
+    // being binding on 2026-08-31: xbase::durable_sync opens a SECOND HANDLE BY
+    // PATH, so the fstream is not in the way. See AIF-161 -- verifying that an
+    // obstacle is still literally true is not verifying that it is still
+    // binding.
+    //
+    // GATED ON PERSISTENCE, deliberately. This sync exists to protect the
+    // LOG-DELETION invariant, and RamOnly has no log. The default path pays
+    // nothing, exactly as AIF-023 left it.
+    //
+    // ON FAILURE: report, mark stale, and DO NOT DELETE THE LOG. The rows are
+    // applied and correct; the log replays idempotently at the next USE, so a
+    // surviving log costs one repeat and a deleted one costs the transaction.
+    // KNOWN BOUND, stated rather than discovered: journal_note_buffer_on opens
+    // with "wb", so the NEXT transaction on this area truncates the retained
+    // log. Closing that needs a refuse-to-start-over-a-retained-log state and
+    // is a decision, not a line -- it is NOT made here.
+    //
+    // std::cout rather than the catalogue matches the three shipped
+    // durable_sync warnings in cmd_workspace.cpp.
+    bool dbf_durable = true;
+    if (dottalk::table::is_persistent_enabled(area0)) {
+        std::string sync_err;
+        dbf_durable = xbase::durable_sync(A.filename(), &sync_err);
+        if (!dbf_durable) {
+            dottalk::table::set_stale(area0, true);
+            std::cout << "COMMIT: warning -- " << applied_ok
+                      << " record(s) applied but the table was not synced to"
+                         " durable media (" << sync_err << "); the redo log is"
+                         " KEPT and replays at the next USE\n";
+        }
+    }
+
     // Persistent TABLE BUFFER stub hook. A future implementation must return
     // false when the durable journal cannot record/finalize the commit.
-    if (!dottalk::table::journal_note_commit(area0)) {
+    if (dbf_durable && !dottalk::table::journal_note_commit(area0)) {
         tb.changes = pending_before;
         dottalk::table::set_dirty(area0, true);
         cli::cmdout::print_prefixed_message(

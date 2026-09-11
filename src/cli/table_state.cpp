@@ -17,6 +17,7 @@
 #include <sstream>
 
 #include "xbase.hpp"
+#include "xbase/durable.hpp"   // AIF-161: durable_sync before the log dies
 
 #ifdef _WIN32
   #include <io.h>
@@ -465,9 +466,35 @@ bool recover_table_buffer_journal(xbase::DbArea& area) {
         // TBJ1 header, C, R lines: ignored.
     }
 
-    // writeCurrent already flushed the DBF's fstream to the OS. A hardened DBF
-    // fsync before removing the log is a follow-up (std::fstream does not expose
-    // the OS handle portably). Remove the replayed log.
+    // THE REPLAYED ROWS ARE IN THE PAGE CACHE, NOT ON THE PLATTER.
+    //
+    // writeCurrent() ends in io().flush(), which reaches the OS and no further.
+    // Removing the log here used to leave a second power cut with neither the
+    // rows nor the log -- and this is the CRASH PATH, so a machine that already
+    // failed once is exactly where that matters. Idempotent replay is the
+    // property that makes recovery safe, and deleting the log before the replay
+    // is durable throws it away at the moment it is most needed.
+    //
+    // THIS COMMENT USED TO DEFER THE FIX because std::fstream does not expose
+    // the OS handle portably. True at AIF-023 (2026-07-19); not binding since
+    // 2026-08-31, because xbase::durable_sync opens a SECOND HANDLE BY PATH and
+    // never asks the fstream for anything. AIF-161 is about how that sentence
+    // survived eleven days after it stopped mattering.
+    //
+    // ON FAILURE, KEEP THE LOG: replay is idempotent, so the cost is one repeat
+    // at the next USE. Reported loudly, because a table that will not sync is a
+    // fact the operator needs, and std::cout matches the shipped durable_sync
+    // warnings in cmd_workspace.cpp.
+    {
+        std::string sync_err;
+        if (!xbase::durable_sync(area.filename(), &sync_err)) {
+            std::cout << "RECOVER: warning -- journal replayed but the table was"
+                         " not synced to durable media (" << sync_err << "); the"
+                         " journal is KEPT and replays again at the next USE\n";
+            return true;   // replayed; log deliberately retained
+        }
+    }
+
     std::remove(path.c_str());
     return true;
 }
