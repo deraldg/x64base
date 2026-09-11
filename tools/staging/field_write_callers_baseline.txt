@@ -68,13 +68,39 @@
 # signal (a NEW site that is genuinely a new writer) would stop sharing a
 # channel with a line shift. NOT PROPOSED AS A CHANGE HERE, and recorded
 # rather than silently re-anchored a third time.
+#
+# 2026-09-11, SEVENTH -- AND THE SIXTH ENTRY WAS WRONG WHEN IT WAS COMMITTED.
+# The true move is cmd_commit.cpp:321 -> :336, not :322. The sixth entry
+# measured the shift caused by 70aa4fa60's single include and re-anchored to
+# 322 -- correct for the file AS IT STOOD WHEN THAT NUMBER WAS COMPUTED. The
+# SAME COMMIT (1c0669ead) then expanded this file's notes: and risk: contract
+# blocks by about fourteen lines, all of them ABOVE the site, so the re-anchor
+# was stale before it landed. The gate caught it on the next run: NEW :336,
+# FIXED :322. Nothing was added and nothing was routed. Count unchanged: 13
+# sites in 11 files.
+#
+# THE COMMIT THAT SHIPPED THE WRONG NUMBER IS THE ONE WHOSE MESSAGE ARGUED THAT
+# A file:line BASELINE DRIFTS ON ANY INSERTION ABOVE THE SITE. The author could
+# not hold it correct for the length of a single commit while writing the
+# paragraph explaining why it goes stale -- because the paragraph and the
+# insertion were the same edit.
+#
+# THAT IS THE FOURTH DRIFT IN THREE DAYS AND THE FIRST CAUSED BY THE WARNING
+# ITSELF. Recorded in full rather than quietly corrected, because a
+# self-inflicted instance is the strongest evidence this list can carry for what
+# the sixth entry could only assert: THE DEFECT IS NOT CARELESSNESS. Any scheme
+# that makes a human re-derive a line number by hand, in the same edit that
+# moves it, fails this way. Keying by file plus the enclosing function or the
+# matched text would have required no edit at all on any of the four occasions.
+# STILL NOT PROPOSED AS A CHANGE -- the checker belongs to AIF-156 -- but the
+# evidence has moved and the owner should know that it moved.
 src/bbs/bbs_store.cpp:334:set
 src/bbs/bbs_store.cpp:350:set
 src/bbs/bbs_store.cpp:49:set
 src/cli/app_simple_browser.cpp:796:set
 src/cli/browse/browse_edit.cpp:40:set
 src/cli/cmd_autodbf.cpp:985:set
-src/cli/cmd_commit.cpp:322:set
+src/cli/cmd_commit.cpp:336:set
 src/cli/cmd_copy.cpp:589:set
 src/cli/cmd_importsql.cpp:723:set
 src/cli/cmd_sort.cpp:923:set
