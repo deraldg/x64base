@@ -280,6 +280,66 @@ static std::string default_journal_path_for_area(int area0) {
     return oss.str();
 }
 
+// ---------------------------------------------------------------------------
+// THE JOURNAL FORMAT VERSION, AND THE READER THAT NEVER LOOKED AT IT
+//
+// journal_note_buffer_on has written a "TBJ1 <table>" header since this WAL
+// shipped, and until 2026-09-11 NOTHING EVER READ IT. recover_table_buffer_
+// journal scanned for a line starting with 'C', replayed 'I'/'U'/'D', and
+// skipped every other line without comment -- its own closing note said so:
+// "TBJ1 header, C, R lines: ignored." There was no default branch, so an
+// unrecognised record was not an error and not a refusal. It was silence.
+//
+// THE HALF THAT WAS NEVER AT RISK is the one both format designs wrote down:
+// "TBJ2 still accepts TBJ1". Nothing here could ever have REJECTED a TBJ1 log,
+// because nothing here read a version.
+//
+// THE HALF THAT IS AT RISK is the reverse, and it splits in two:
+//
+//   The PREPARE marker would be safe BY ACCIDENT. A prepared-but-undecided
+//   span carries 'P' and no 'C'; an old reader finds no 'C', calls it
+//   uncommitted and discards. That is presumed abort -- the right answer,
+//   reached for the wrong reason, and only while no future marker is spelled
+//   with a leading 'C'.
+//
+//   The MEMO record would NOT be. A committed TBJ2 log carries 'M' memo
+//   payloads, 'U' record writes and a 'C'. An old reader honours the 'C',
+//   replays every 'U', and drops every 'M' -- so the recovered rows reference
+//   memo object ids the memo store was never told to write. The table opens
+//   clean and the damage is one field deep. Worse than a refusal and worse
+//   than a discard.
+//
+// SO THIS GATE SHIPS BEFORE THE BUMP, NOT WITH IT. A version bump is only a
+// compatibility rule if something enforces it, and adding the check after TBJ2
+// exists means the fleet already holds binaries that half-replay in silence.
+// This build still WRITES TBJ1 -- kJournalVersionWritten is unmoved -- because
+// a header claiming a version whose records do not exist would strand older
+// builds for nothing.
+//
+// REFUSE AND PRESERVE, never refuse and delete. A log this build cannot read
+// may be a committed transaction a NEWER build can still replay; removing it
+// converts "unreadable here" into "gone". The cost is a repeated warning until
+// someone acts, which is the correct direction for a durability instrument.
+constexpr int kJournalVersionWritten = 1;
+constexpr int kJournalVersionMaxRead = 1;
+
+// "TBJ<digits>", followed by a space or end of line. Returns 0 when the line is
+// not a header this family wrote -- deliberately strict, because the whole
+// point is to stop guessing at bytes whose meaning is unknown.
+static int journal_header_version(const std::string& line) {
+    if (line.rfind("TBJ", 0) != 0) return 0;
+    std::size_t i = 3;
+    if (i >= line.size() || line[i] < '0' || line[i] > '9') return 0;
+    int v = 0;
+    while (i < line.size() && line[i] >= '0' && line[i] <= '9') {
+        v = v * 10 + (line[i] - '0');
+        if (v > 9999) return 0;          // a runaway number, not a version
+        ++i;
+    }
+    if (i < line.size() && line[i] != ' ') return 0;
+    return v;
+}
+
 // (Re)open a fresh append-only redo log for a new transaction on this area.
 // The log is a sidecar of the DBF (`<dbf>.tbj`) so recovery-on-open can find it.
 bool journal_note_buffer_on(int area0, const std::string& table_name) {
@@ -293,8 +353,14 @@ bool journal_note_buffer_on(int area0, const std::string& table_name) {
     j.fp = std::fopen(j.path.c_str(), "wb");   // truncate: one log per transaction
     if (!j.fp) { j.open = false; return false; }
 
+    // The version we write is kJournalVersionWritten and NOT a literal. It was a
+    // literal "TBJ1 " until 2026-09-11, three hundred lines from the reader that
+    // was supposed to agree with it and never looked -- which is the same
+    // two-declarations-of-one-fact shape the version-coherence gate exists to
+    // stop one layer up, in a file that gate does not scan.
     const std::string hdr =
-        "TBJ1 " + (table_name.empty() ? j.path : table_name) + "\n";
+        "TBJ" + std::to_string(kJournalVersionWritten) + " "
+        + (table_name.empty() ? j.path : table_name) + "\n";
     if (std::fwrite(hdr.data(), 1, hdr.size(), j.fp) != hdr.size()) {
         std::fclose(j.fp); j.fp = nullptr; j.open = false;
         return false;
@@ -411,6 +477,37 @@ bool recover_table_buffer_journal(xbase::DbArea& area) {
     }
     std::fclose(fp);
 
+    // AN EMPTY LOG IS NOT A VERSION PROBLEM. fopen(path, "wb") creates the file
+    // and the header is written immediately after, so a zero-byte .tbj is a
+    // transaction that died in that gap -- nothing was logged, nothing can be
+    // replayed. Discard it exactly as before. Routing it through the refusal
+    // below would leave an empty file warning on every USE forever, which is a
+    // regression this gate would otherwise introduce and this branch removes.
+    if (lines.empty()) {
+        std::remove(path.c_str());
+        return false;
+    }
+
+    // THE VERSION GATE. See the note above kJournalVersionWritten.
+    const int version = journal_header_version(lines.front());
+    if (version <= 0 || version > kJournalVersionMaxRead) {
+        std::string why;
+        if (version <= 0) {
+            why = "  its first line is not a TBJ journal header, so this build cannot tell\n"
+                  "  what the rest of the file means.\n";
+        } else {
+            why = "  it is TBJ" + std::to_string(version) + " and this build reads TBJ"
+                + std::to_string(kJournalVersionMaxRead) + " and older.\n";
+        }
+        std::cout << "RECOVER: REFUSED -- " << path << "\n"
+                  << why
+                  << "  THE LOG IS KEPT, NOT DISCARDED, and nothing was replayed. A log this\n"
+                     "  build cannot read may still be a committed transaction that a newer\n"
+                     "  build can replay; deleting it would turn 'unreadable here' into\n"
+                     "  'gone'. This table is open and usable; the journal is not applied.\n";
+        return false;
+    }
+
     // Committed iff a "C" marker line is present.
     bool committed = false;
     for (const auto& ln : lines) {
@@ -463,7 +560,9 @@ bool recover_table_buffer_journal(xbase::DbArea& area) {
             if (recno == 0 || recno > area.recCount64()) continue;
             if (area.gotoRec64(recno) && area.readCurrent()) (void)area.deleteCurrent();
         }
-        // TBJ1 header, C, R lines: ignored.
+        // Header, C, R lines: ignored HERE -- the header was already read
+        // and accepted by the version gate above, which is what makes
+        // ignoring the remaining lines safe rather than merely quiet.
     }
 
     // THE REPLAYED ROWS ARE IN THE PAGE CACHE, NOT ON THE PLATTER.

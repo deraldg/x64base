@@ -490,6 +490,36 @@ if(TARGET xbase)
   add_test(NAME dottalkpp_vfp_varchar_roundtrip_test COMMAND dottalkpp_vfp_varchar_roundtrip_test)
 endif()
 
+# ---- The journal version gate (AIF-160 / AIF-061) ---------------------------
+# recover_table_buffer_journal() never read the "TBJ<n>" header it has always
+# written: it scanned for a 'C' marker, replayed I/U/D, and skipped every other
+# line with no default branch. A log from a newer build would be HALF replayed
+# -- its commit marker honoured, its unknown records dropped in silence. For the
+# memo records AIF-061 designed, that leaves recovered rows pointing at memo
+# objects the store was never told to write.
+#
+# The gate must exist BEFORE TBJ2 does, or the fleet already holds binaries that
+# half-replay; this target is what keeps it honest.
+#
+# Compiles src/cli/table_state.cpp directly rather than linking the shell, the
+# pattern dottalkpp_area_alloc_test established. table_state.cpp includes only
+# its own header, the standard library, xbase.hpp and xbase/durable.hpp, so it
+# drags in nothing that needs the CLI's output layer.
+if(TARGET xbase)
+  add_executable(dottalkpp_journal_version_gate_test
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_journal_version_gate.cpp
+    ${CMAKE_SOURCE_DIR}/src/cli/table_state.cpp
+  )
+  target_link_libraries(dottalkpp_journal_version_gate_test PRIVATE xbase memo)
+  target_include_directories(dottalkpp_journal_version_gate_test PRIVATE
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/cli
+  )
+  add_test(NAME dottalkpp_journal_version_gate_test
+           COMMAND dottalkpp_journal_version_gate_test)
+endif()
+
 # ---- CREATE for nullable / Varchar columns (AIF-091 M2) ---------------------
 # THE EXPECTED VALUES ARE NOT IN THIS TEST. They are read out of
 # tools/vfp/fixtures/nullfix.DBF, which Visual FoxPro 9 wrote, and our CREATE is

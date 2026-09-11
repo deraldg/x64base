@@ -136,7 +136,8 @@ void reset_all();
 // redo log (format TBJ1; `U`/`D` records carrying priority + H/S retention mode, values
 // hex-encoded), durably fsynced with a `C <count>` COMMIT marker BEFORE the buffered
 // changes are applied to the DBF, and replayed idempotently on open by
-// recover_table_buffer_journal(). See src/cli/table_state.cpp.
+// recover_table_buffer_journal(), which refuses a format version it does not
+// understand rather than half-replaying it. See src/cli/table_state.cpp.
 //
 // SCOPE (AIF-061): the log covers DBF RECORD writes. It does NOT yet cover the memo
 // store -- an x64 memo REPLACE converts text to a stored object-id and journals only
@@ -167,6 +168,26 @@ bool journal_note_rollback(int area0);
 // the DBF when it carries a COMMIT marker (idempotent) or discard it otherwise,
 // then remove the log. Returns true iff a committed log was replayed. Safe to
 // call on every USE (a quick no-op when no log is present).
+//
+// THE VERSION IS CHECKED FIRST (2026-09-11), and it was not before. The header
+// this WAL has always written was never read: the reader scanned for a `C`
+// marker, replayed `I`/`U`/`D`, and skipped anything else with no default
+// branch. A log from a NEWER build was therefore half replayed -- commit marker
+// honoured, unknown records dropped in silence -- which for AIF-061's memo
+// records means recovered rows referencing objects the memo store never wrote.
+//
+// A version this build does not understand is now REFUSED AND PRESERVED: no
+// replay, and the log is deliberately NOT deleted, because it may be a
+// committed transaction a newer build can still replay. The refusal prints and
+// this function returns false; the table is open and usable either way. An
+// EMPTY log is not a version problem -- it is a transaction that died before
+// its header -- and is discarded as it always was.
+//
+// This build still WRITES TBJ1. The gate ships BEFORE the TBJ2 bump on purpose:
+// a rule nothing enforces is not a compatibility rule, and adding the check
+// afterwards leaves binaries in the field that half-replay silently.
+// Graded by src/tests/test_journal_version_gate.cpp, whose G0 control proves
+// the fixture can replay at all before the refusal arms are believed.
 bool recover_table_buffer_journal(xbase::DbArea& area);
 
 // History mode control
