@@ -148,9 +148,77 @@ int main() {
               "an empty key read as committed");
     }
 
+    // ---- M: the members table, which is what lets a row ever be retired ----
+    // A group row is needed only while some member carries a P span, so
+    // retirement needs to know the members. These arms cover the two readings
+    // that must never be confused: "this group had no members recorded" and
+    // "this group had members and they are these".
+    {
+        const std::string mk1 = dottalk::group::mint_group_key();
+        const std::string mk2 = dottalk::group::mint_group_key();
+        const std::string mpath = dottalk::group::members_path();
+
+        check(!mpath.empty() && !fs::exists(mpath, ec),
+              "GRP_M0_members_table_absent_before_any_prepare",
+              "a members table existed before anything recorded members");
+
+        // The read path must not mint the table it is asking -- same rule as
+        // is_committed, and here it fails safe only by accident of retirement
+        // reading "empty" as KEEP. Assert it so that stays deliberate.
+        check(dottalk::group::members_of(mk1).empty(),
+              "GRP_M1_unknown_group_has_no_members",
+              "an unrecorded group reported members");
+        check(!fs::exists(mpath, ec),
+              "GRP_M1B_a_members_lookup_did_not_create_the_table",
+              "members_of() CREATED the members table. A table minted by the "
+              "asking answers 'no members' to everything, and retirement reads "
+              "'no members' as KEEP -- safe today, a silent trap the moment that "
+              "reading changes");
+
+        std::string err;
+        const std::vector<std::string> want = {
+            "D:\\data\\dbf\\ALPHA.dbf",
+            "D:\\data\\dbf\\BETA.dbf",
+            "D:\\data\\dbf\\GAMMA.dbf",
+        };
+        check(dottalk::group::record_members(mk1, want, &err),
+              "GRP_M2_members_recorded", "record_members failed: " + err);
+
+        const std::vector<std::string> got = dottalk::group::members_of(mk1);
+        check(got == want, "GRP_M2_members_read_back_in_order",
+              "got " + std::to_string(got.size()) + " member(s), expected "
+              + std::to_string(want.size()));
+
+        // The discriminator: a second group must not inherit the first's
+        // members. Retirement acting on the wrong member set would retire a
+        // decision whose real members are still carrying P spans.
+        check(dottalk::group::members_of(mk2).empty(),
+              "GRP_M3_a_different_group_has_none_of_them",
+              "a group that recorded nothing inherited another group's members");
+
+        check(dottalk::group::record_members(mk2, {"D:\\data\\dbf\\DELTA.dbf"}, &err),
+              "GRP_M3_second_group_recorded", "record_members failed: " + err);
+        check(dottalk::group::members_of(mk1) == want &&
+              dottalk::group::members_of(mk2).size() == 1,
+              "GRP_M3_both_member_sets_survive",
+              "recording a second group disturbed the first");
+
+        // An empty list is not an error and writes nothing: a group that spans
+        // no tables is degenerate, not broken.
+        check(dottalk::group::record_members(mk1, {}, &err),
+              "GRP_M4_an_empty_member_list_is_not_an_error",
+              "recording zero members was refused: " + err);
+        check(dottalk::group::members_of(mk1) == want,
+              "GRP_M4_and_it_wrote_nothing",
+              "an empty member list disturbed the recorded rows");
+        check(!dottalk::group::record_members("", {"X"}, &err),
+              "GRP_M4_an_empty_key_is_refused",
+              "an empty group key accepted members");
+    }
+
     fs::remove_all(root, ec);
 
     std::cout << "GROUP LOG: " << (g_failures == 0 ? "PASS" : "FAIL")
-              << " -- 16 marker(s), " << g_failures << " red.\n";
+              << " -- 27 marker(s), " << g_failures << " red.\n";
     return g_failures == 0 ? 0 : 1;
 }

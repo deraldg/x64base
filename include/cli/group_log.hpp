@@ -10,6 +10,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 // THE GROUP LOG: ONE ROW IS THE DECISION (AIF-160).
 //
@@ -71,5 +72,50 @@ bool is_committed(const std::string& key);
 // How many decision rows the catalog holds. For arms and for an operator; no
 // part of recovery reads it.
 long long decision_count();
+
+// ---------------------------------------------------------------------------
+// THE MEMBERS TABLE, WHICH EXISTS SO THE DECISION ROW CAN EVER BE RETIRED.
+//
+// A group row is needed only while some member still carries a `P` span, and a
+// `P` span lives from PREPARE to apply-complete -- MILLISECONDS for a healthy
+// commit. Every long-lived row is the residue of a CRASH. Retirement therefore
+// needs two facts: that the owning process is provably dead, and that every
+// member has settled. The first is in GRP_KEY already; the second is this.
+//
+// A SEPARATE TABLE AND NOT A MEMO ON THE DECISION ROW. A memo would make the
+// decision a TWO-FILE write, and cmd_workspace.cpp:3927 already puts the
+// memo-payload-plus-row pair in "the class that needs write-ahead intent, and
+// no journal exists". The decision staying ONE atomic append is the whole
+// design; nothing is allowed to cost that.
+//
+// WRITTEN DURING PREPARE, AND DELIBERATELY NOT SYNCED. It is off the critical
+// path, so it costs the decision nothing. And losing it is SAFE BY
+// CONSTRUCTION: with no member rows, retirement cannot establish that a group
+// has settled, so it keeps the decision row. The failure direction is the
+// conservative one without anything having to choose it.
+//
+// RETIREMENT ITSELF IS NOT BUILT. It waits on the process-creation-time test
+// that FINDING_THE_LOCK_RECORDS_A_STRONG_KEY_AND_ASKS_LIVENESS_WITH_A_WEAK_ONE
+// describes and explicitly does not propose. Retention must ask the STRONG key
+// -- the whole owner token -- because a bare pid is recycled, and that finding
+// measured the permanent wedge that follows from asking the weak one. Here the
+// asymmetry is sharper: a row wrongly kept is wasted bytes, a row wrongly
+// retired is a committed transaction discarded in silence.
+
+// Where the members table lives. Under SYS beside the group log; empty if that
+// slot is unset.
+std::string members_path();
+
+// Record the member tables a group spans. Called at PREPARE, before any
+// decision. Appending the same key twice appends rows twice -- this is a log,
+// not a set, and nothing here reads it back during a commit.
+bool record_members(const std::string& key,
+                    const std::vector<std::string>& member_paths,
+                    std::string* err);
+
+// The member tables recorded for a group, in the order they were written.
+// EMPTY for an unknown key, which retirement must read as "cannot establish
+// that this group settled" and therefore as KEEP -- never as "no members".
+std::vector<std::string> members_of(const std::string& key);
 
 } // namespace dottalk::group

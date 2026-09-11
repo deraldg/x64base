@@ -45,6 +45,12 @@ constexpr int F_MEMBERS    = 3;   // N(4)  areas the group spanned
 constexpr int F_AUTHOR     = 4;   // C(48) attribution, as every catalog carries
 constexpr int F_HOST       = 5;   // C(48) split out of the key for READING only
 
+// The members table: two columns and no more. It answers exactly one question
+// -- which tables did this group span -- and every column that is not part of
+// that answer is a column retirement would have to skip.
+constexpr int M_GRP_KEY    = 1;   // C(64) the group, matched whole
+constexpr int M_MEMBER     = 2;   // C(180) the member table path, as opened
+
 std::string trim(std::string s) {
     const auto sp = [](char c) { return c == ' ' || c == '\t' || c == '\r' || c == '\n'; };
     while (!s.empty() && sp(s.front())) s.erase(s.begin());
@@ -74,7 +80,13 @@ std::string host_of(const std::string& owner_id) {
     return colon == std::string::npos ? owner_id : owner_id.substr(0, colon);
 }
 
-bool ensure_catalog(const fs::path& path, std::string* err) {
+// One creator for both SYS tables, because they differ only in their columns.
+// A second hand-written create would be a second place for the flavor ruling and
+// the directory-sync note to drift apart.
+bool ensure_table(const fs::path& path,
+                  const std::vector<xbase::dbf_create::FieldSpec>& fields,
+                  const char* what,
+                  std::string* err) {
     std::error_code ec;
     if (fs::exists(path, ec)) return true;
 
@@ -84,25 +96,15 @@ bool ensure_catalog(const fs::path& path, std::string* err) {
         return false;
     }
 
-    std::vector<xbase::dbf_create::FieldSpec> f;
-    auto C = [&](const char* n, std::uint32_t len) {
-        xbase::dbf_create::FieldSpec s; s.name = n; s.type = 'C'; s.len = len; s.dec = 0;
-        f.push_back(s);
-    };
-    auto N = [&](const char* n, std::uint32_t len) {
-        xbase::dbf_create::FieldSpec s; s.name = n; s.type = 'N'; s.len = len; s.dec = 0;
-        f.push_back(s);
-    };
-    C("GRP_KEY", 64);
-    C("DECIDED_AT", 19);
-    N("MEMBERS", 4);
-    C("AUTHOR", 48);
-    C("HOST", 48);
-
+    // x64 BY THE SYS RULING (owner, 2026-09-11): every table under the SYS slot
+    // is x64 unless a stated reason says otherwise. The default is declared in
+    // the slot's own doctrine in common/path_state.hpp rather than re-argued
+    // here. Nothing about these schemas requires it -- 32 bits is four billion
+    // rows, every field name is under ten bytes, and no VFP feature is used.
     std::string cerr;
-    if (!xbase::dbf_create::create_dbf(path.string(), f,
+    if (!xbase::dbf_create::create_dbf(path.string(), fields,
                                        xbase::dbf_create::Flavor::X64, cerr)) {
-        if (err) *err = "cannot create the group log: " + cerr;
+        if (err) *err = std::string("cannot create the ") + what + ": " + cerr;
         return false;
     }
 
@@ -121,6 +123,38 @@ bool ensure_catalog(const fs::path& path, std::string* err) {
     std::string serr;
     (void)xbase::durable_sync(path.string(), &serr);
     return true;
+}
+
+bool ensure_catalog(const fs::path& path, std::string* err) {
+    std::vector<xbase::dbf_create::FieldSpec> f;
+    auto C = [&](const char* n, std::uint32_t len) {
+        xbase::dbf_create::FieldSpec s; s.name = n; s.type = 'C'; s.len = len; s.dec = 0;
+        f.push_back(s);
+    };
+    auto N = [&](const char* n, std::uint32_t len) {
+        xbase::dbf_create::FieldSpec s; s.name = n; s.type = 'N'; s.len = len; s.dec = 0;
+        f.push_back(s);
+    };
+    C("GRP_KEY", 64);
+    C("DECIDED_AT", 19);
+    N("MEMBERS", 4);
+    C("AUTHOR", 48);
+    C("HOST", 48);
+    return ensure_table(path, f, "group log", err);
+}
+
+bool ensure_members(const fs::path& path, std::string* err) {
+    std::vector<xbase::dbf_create::FieldSpec> f;
+    auto C = [&](const char* n, std::uint32_t len) {
+        xbase::dbf_create::FieldSpec s; s.name = n; s.type = 'C'; s.len = len; s.dec = 0;
+        f.push_back(s);
+    };
+    C("GRP_KEY", 64);
+    // 180 matches DBF_ROOT in the workspaces catalog. A member is named by the
+    // path it was OPENED as, because that is the string a `.tbj` sidecar sits
+    // beside and therefore the only spelling retirement can check.
+    C("MEMBER", 180);
+    return ensure_table(path, f, "group members table", err);
 }
 
 bool open_catalog(xbase::DbArea& a, std::string* err) {
@@ -224,6 +258,85 @@ bool is_committed(const std::string& key) {
     }
     a.close();
     return found;
+}
+
+std::string members_path() {
+    fs::path sys;
+    try { sys = dottalk::paths::get_slot(dottalk::paths::Slot::SYS); }
+    catch (...) { return {}; }
+    if (sys.empty()) return {};
+    return (sys / "GROUPMEM.dbf").string();
+}
+
+bool record_members(const std::string& key,
+                    const std::vector<std::string>& member_paths,
+                    std::string* err) {
+    if (trim(key).empty()) {
+        if (err) *err = "an empty group key has no members to record";
+        return false;
+    }
+    if (member_paths.empty()) return true;   // nothing to say; not an error
+
+    const std::string p = members_path();
+    if (p.empty()) {
+        if (err) *err = "the SYS path slot is not set";
+        return false;
+    }
+    if (!ensure_members(fs::path(p), err)) return false;
+
+    xbase::DbArea a;
+    try { a.open(p); }
+    catch (const std::exception& e) {
+        if (err) *err = std::string("cannot open the group members table: ") + e.what();
+        return false;
+    }
+    catch (...) { if (err) *err = "cannot open the group members table"; return false; }
+    if (!a.isOpen()) { if (err) *err = "the group members table would not open"; return false; }
+
+    bool ok = true;
+    for (const auto& m : member_paths) {
+        if (!a.appendBlank() || !a.readCurrent()) { ok = false; break; }
+        if (!a.set(M_GRP_KEY, key) || !a.set(M_MEMBER, m) || !a.writeCurrent()) {
+            ok = false;
+            break;
+        }
+    }
+    a.close();
+
+    // DELIBERATELY NO durable_sync. This is written at PREPARE, off the critical
+    // path, and losing it is SAFE BY CONSTRUCTION: retirement that finds no
+    // member rows cannot establish that a group has settled, so it keeps the
+    // decision row. Syncing here would buy nothing and would put an fsync on a
+    // path whose whole value is that it costs the decision nothing.
+    if (!ok && err) *err = "a member row did not write";
+    return ok;
+}
+
+std::vector<std::string> members_of(const std::string& key) {
+    std::vector<std::string> out;
+    const std::string want = trim(key);
+    if (want.empty()) return out;
+
+    // As with is_committed: the read path must NEVER create the table it is
+    // asking. A members table minted by the asking would answer "no members" to
+    // everything, and retirement reads "no members" as KEEP -- so this would
+    // fail safe today and become a silent trap the moment that reading changes.
+    const std::string p = members_path();
+    std::error_code ec;
+    if (p.empty() || !fs::exists(p, ec)) return out;
+
+    xbase::DbArea a;
+    try { a.open(p); } catch (...) { return out; }
+    if (!a.isOpen()) return out;
+
+    // Linear, and owed the same index GRP_KEY is owed on the decision table.
+    const std::uint64_t total = a.recCount64();
+    for (std::uint64_t rn = 1; rn <= total; ++rn) {
+        if (!a.gotoRec64(rn) || !a.readCurrent()) continue;
+        if (trim(a.get(M_GRP_KEY)) == want) out.push_back(trim(a.get(M_MEMBER)));
+    }
+    a.close();
+    return out;
 }
 
 long long decision_count() {
