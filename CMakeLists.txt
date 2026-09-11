@@ -963,6 +963,36 @@ if(DOTTALK_BUILD_SLOT_COST_PROBE AND NOT TARGET g0_slot_cost_probe)
         target_link_libraries(g0_slot_cost_probe PRIVATE xbase)
     endif()
 endif()
+# ---- AIF-160: what a group decision actually costs --------------------------
+# Decision 6.2 chose a DBF catalog for the group log over a flat append-only
+# file and named ONE open question: whether a DBF write can meet the fsync
+# requirement. Section 8.2 settled the CAPABILITY -- durable_sync syncs a DBF by
+# path and already does exactly this on the workspaces catalog. The COST was
+# never established, and 6.2 called it "the FIRST thing to measure".
+#
+# It also prices a claim of the AUTHOR'S OWN. The locking ruling rests on an
+# assertion derived by READING try_lock_record -- that a record lock is a FILE,
+# that n rows is O(n) file creates, and that no phase choice makes that cheap.
+# That argument moved a decision and had never been run. The probe prints the
+# arithmetic so the ruling can be confirmed or refuted rather than believed.
+#
+# DELIBERATELY NOT add_test, for the reason the G0 probe above records: a timing
+# measurement registered as a test is a test that can only pass.
+option(DOTTALK_BUILD_GROUP_COST_PROBE "Build the AIF-160 group commit cost probe" OFF)
+if(DOTTALK_BUILD_GROUP_COST_PROBE AND NOT TARGET group_commit_cost_probe)
+    add_executable(group_commit_cost_probe
+        src/tools/group_commit_cost_probe.cpp
+        src/cli/group_log.cpp
+        src/common/path_state.cpp)
+    target_compile_features(group_commit_cost_probe PRIVATE cxx_std_20)
+    target_include_directories(group_commit_cost_probe PRIVATE
+        "${CMAKE_SOURCE_DIR}/include"
+        "${CMAKE_BINARY_DIR}/generated")
+    if(TARGET xbase)
+        target_link_libraries(group_commit_cost_probe PRIVATE xbase memo)
+    endif()
+endif()
+
 # END DOTARCH METACOLLECT CMAKE BUILDWIRE OPTION B V1
 
 # AIF-120: the windowed GUI installs beside dottalkpp, because that is where the
