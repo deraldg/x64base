@@ -62,7 +62,17 @@
 //   COMMIT is write-ahead journaled: it durably records a redo log plus a COMMIT
 //   marker before applying buffered changes to the DBF, and aborts the commit if
 //   that durable sync fails. Committed journals are replayed on crash recovery at
-//   open. Atomicity and durability are partial (ACID beta-1), not a full transaction.
+//   open. THE BACK HALF IS ALSO SYNCED: the table's contents are forced to stable
+//   media BEFORE the redo log is deleted, because writeCurrent reaches only the OS
+//   page cache and a log removed ahead of the platter would leave a power cut with
+//   neither copy. If that sync fails the log is KEPT and the area is marked stale;
+//   replay is idempotent, so a surviving log costs one repeat and a deleted one
+//   costs the transaction.
+//   BOTH SYNCS ARE GATED ON TABLE BUFFER PERSISTENT. Under the default RamOnly
+//   there is no journal at all, so COMMIT is NOT durable by default and never has
+//   been -- said plainly here because the paragraph above describes a protocol a
+//   reader could otherwise assume is always running.
+//   Atomicity and durability are partial (ACID beta-1), not a full transaction.
 //   A registered BEFORE trigger is asked, at commit entry, whether each buffered
 //   record may be written, and may refuse. A refusal aborts the WHOLE area
 //   transaction -- one COMMIT marker covers the area, so one record cannot be
@@ -76,8 +86,12 @@
 //   writes_memo: when buffered memo changes exist
 //   record_locking: yes at commit time
 //   clears_table_buffer_changes: on successful commit
-//   writes_write_ahead_journal: yes (durable redo log + COMMIT marker before apply)
-//   partial_commit_possible: yes
+//   writes_write_ahead_journal: yes under PERSISTENT (durable redo log + COMMIT
+//     marker before apply, and a durable sync of the table before the log is
+//     deleted); no journal at all under the default RamOnly
+//   partial_commit_possible: yes -- and this is a PER-AREA statement. COMMIT ALL
+//     is a loop of independent per-area commits, so a group of areas has no
+//     atomicity at all (AIF-160)
 //   refusable_by_before_trigger: yes (whole transaction; nothing journaled)
 //   cdx_lmdb_rebuild: no
 //

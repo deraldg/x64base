@@ -49,13 +49,32 @@
 # cmd_commit.cpp:320 -> :321. AIF-159 section 3 added one more include
 # (sqlsel_statement.hpp) for the native-COMMIT guard. Same A.set(f1, v) inside
 # apply_one_recno. Count unchanged: 13 sites in 11 files.
+#
+# 2026-09-11, SIXTH -- THE SAME FILE, THE SAME CAUSE, THE THIRD TIME.
+# cmd_commit.cpp:321 -> :322. The DBF durability fix added ONE include
+# (xbase/durable.hpp) so the redo log is not deleted before the apply reaches
+# stable media. Same A.set(f1, v) inside apply_one_recno, unchanged in every
+# respect. Count unchanged: 13 sites in 11 files.
+#
+# AND THAT IS THREE ANCHOR MOVES IN ONE FILE FROM THREE UNRELATED CHANGES,
+# EACH COSTING A MANUAL EDIT AND EACH PRINTING A NEW/FIXED PAIR A READER HAS TO
+# RECOGNISE AS NOISE. The cause is not carelessness: A BASELINE KEYED BY
+# file:line IS A SECOND DECLARATION OF WHERE THE CODE IS, and it goes stale on
+# any insertion above the site -- an edit that changes nothing this gate
+# measures. The house has the general form of this written down already (a
+# marker count beside a file is a second declaration and it drifted four
+# times). Keying each entry by file plus something CONTENT-derived -- the
+# enclosing function, or the matched text -- would not drift, and the real
+# signal (a NEW site that is genuinely a new writer) would stop sharing a
+# channel with a line shift. NOT PROPOSED AS A CHANGE HERE, and recorded
+# rather than silently re-anchored a third time.
 src/bbs/bbs_store.cpp:334:set
 src/bbs/bbs_store.cpp:350:set
 src/bbs/bbs_store.cpp:49:set
 src/cli/app_simple_browser.cpp:796:set
 src/cli/browse/browse_edit.cpp:40:set
 src/cli/cmd_autodbf.cpp:985:set
-src/cli/cmd_commit.cpp:321:set
+src/cli/cmd_commit.cpp:322:set
 src/cli/cmd_copy.cpp:589:set
 src/cli/cmd_importsql.cpp:723:set
 src/cli/cmd_sort.cpp:923:set
