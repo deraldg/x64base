@@ -12,6 +12,7 @@
 #include <sstream>
 #include <cstddef>
 #include <string>
+#include <vector>   // AIF-160: commit_group takes N members
 
 namespace xbase { class DbArea; }
 
@@ -76,6 +77,45 @@ std::string describe(const Outcome& outcome);
 // exactly what COMMIT prints and honours SET TALK the same way; the only
 // difference is that the verdict comes back instead of being dropped.
 void commit_area(xbase::DbArea& A, bool interactive_rebuild, Outcome& out);
+
+// ---------------------------------------------------------------------------
+// ONE DECISION THAT SPANS N JOURNALS (AIF-160).
+//
+// A NEW ENTRY POINT, per decision 6.4. COMMIT and COMMIT ALL are untouched:
+// COMMIT ALL loops areas and is a SEQUENCE of independent commits, which is
+// exactly the thing this exists to not be. A crash between two of its members
+// leaves every part consistent and the whole wrong.
+//
+// EXPORTED SO IT CAN BE GRADED. It was static in cmd_commit.cpp's anonymous
+// namespace, where MSVC reported C4505 -- "unreferenced function with internal
+// linkage has been REMOVED" -- which is a compiler saying out loud that nothing
+// had run a line of it. No test translation unit could reach it either, because
+// the group protocol needs the whole CLI (message catalogue, trigger hooks,
+// index manager) and every target in src/tests deliberately compiles two to
+// four translation units. This declaration is the same split commit_area got,
+// for the same reason: the body stays in cmd_commit.cpp and the caller that
+// must prove it lives elsewhere.
+struct GroupMember {
+    xbase::DbArea* A     = nullptr;
+    int            area0 = -1;
+};
+
+struct GroupCommitResult {
+    // TRUE MEANS THE DECISION ROW LANDED, and nothing weaker. A member that
+    // then failed to APPLY has not lost its transaction: its journal still
+    // carries the P record and the decision exists, so the next USE replays it.
+    bool        committed   = false;
+    int         members     = 0;   // areas that actually carried changes
+    int         applied_ok  = 0;
+    int         applied_bad = 0;
+    std::string error;
+};
+
+// Commit N areas as ONE decision. Two-pass: every BEFORE trigger fires before
+// any area prepares, so a veto costs zero durable writes.
+GroupCommitResult commit_group(const std::vector<GroupMember>& members,
+                               bool talk,
+                               bool interactive_rebuild);
 
 }} // namespace cli::commit
 

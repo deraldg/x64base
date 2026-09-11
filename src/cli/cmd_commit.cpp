@@ -118,6 +118,9 @@
 #include "xbase_locks.hpp"
 #include "xbase/trigger_hooks.hpp"   // AIF-087 M2b: BEFORE phase at commit entry
 #include "xbase/durable.hpp"        // AIF-161: durable_sync before the log dies
+#include "cli/group_log.hpp"        // AIF-160: one decision that spans N journals
+
+#include <optional>                 // AIF-160: guards that outlive phase 1
 
 #include "cli/command_output.hpp"
 #include "cli/settings.hpp"
@@ -538,11 +541,61 @@ static bool auto_reindex_if_needed(xbase::DbArea& A,
 #endif
 }
 
-static CommitResult commit_one_area(xbase::DbArea& A,
-                                    int area0,
-                                    bool talk,
-                                    bool interactive_rebuild)
+// ---------------------------------------------------------------------------
+// THE COMMIT SEAM (AIF-160)
+//
+// This function used to run DECIDE-WHETHER and DO-IT in one body, which is
+// correct for one area and impossible for a group. A multi-area commit needs
+// the phases interleaved ACROSS areas:
+//
+//     pass 1   BEFORE triggers, every area        -- commit_prepare_area
+//     pass 2   journal_begin_prepare, every area  -- N durable prepares
+//     DECIDE   decide_committed, ONCE             -- the group becomes true
+//     pass 3   apply + sync + note_commit, all    -- commit_apply_area
+//
+// SPLITTING IT IS NOT A MATTER OF CUTTING AT THE WRITE-AHEAD MARKER. The insert
+// table lock and the cursor restore are RAII with FUNCTION SCOPE, and a group
+// must hold every member's lock from ITS OWN prepare until the WHOLE group has
+// applied. Cut the body in two and those guards release at the end of phase 1,
+// between the prepare and the decision -- which is the exact window the group
+// log exists to make safe. That is why this struct exists and why the two
+// halves are not free functions.
+//
+// DESTRUCTION ORDER IS LOad-BEARING. Members destroy in reverse declaration
+// order, so `restore` must be declared AFTER `insert_lock` to reproduce the
+// order the original function's locals had: cursor first, table lock second.
+//
+// THE SINGLE-AREA PATH IS THE SAME CODE IN THE SAME ORDER. commit_one_area is
+// now prepare-then-marker-then-apply, so every existing COMMIT arm exercises
+// both halves. That is deliberate: a refactor whose only proof is a new test
+// proves the new test.
+struct AreaCommitContext {
+    xbase::DbArea* A                   = nullptr;
+    int            area0               = -1;
+    bool           talk                = false;
+    bool           interactive_rebuild = false;
+
+    std::optional<InsertTableLockGuard> insert_lock;   // released LAST
+    std::optional<CursorRestore>        restore;       // released FIRST
+
+    // A later memo/index/journal failure must not make the pending operation
+    // disappear; every finalize failure in phase 3 restores this.
+    std::multimap<std::uint64_t, dottalk::table::ChangeEntry> pending_before;
+
+    // True only when phase 3 must run. False means the caller returns the
+    // status it was given and writes NO write-ahead marker of any kind.
+    bool prepared = false;
+};
+
+// PHASE 1. Locks, snapshot, BEFORE triggers. Stops immediately before the
+// write-ahead marker -- which marker to write is the CALLER's decision, and is
+// the only difference between a solo commit and a group member.
+static CommitResult commit_prepare_area(AreaCommitContext& ctx)
 {
+    xbase::DbArea& A   = *ctx.A;
+    const int      area0 = ctx.area0;
+    const bool     talk  = ctx.talk;
+
     auto& tb = dottalk::table::get_tb(area0);
 
     if (tb.empty()) {
@@ -555,20 +608,24 @@ static CommitResult commit_one_area(xbase::DbArea& A,
         [](const auto& entry) {
             return (entry.second.dirty_flags & dottalk::table::CHANGE_INSERT) != 0;
         });
-    InsertTableLockGuard insert_lock(A, has_insert);
-    if (!insert_lock.ready) {
+    // Constructed IN THE CONTEXT, not as a local: for a group these must stay
+    // held across the decision. emplace builds in place, so neither guard needs
+    // to be movable.
+    ctx.insert_lock.emplace(A, has_insert);
+    if (!ctx.insert_lock->ready) {
         std::cout << "COMMIT: insert table lock refused";
-        if (!insert_lock.error.empty()) std::cout << " (" << insert_lock.error << ")";
+        if (!ctx.insert_lock->error.empty())
+            std::cout << " (" << ctx.insert_lock->error << ")";
         std::cout << ".\n";
         return {CommitStatus::PartialRecordFailure, 0, 1};
     }
 
-    CursorRestore restore(A);
+    ctx.restore.emplace(A);
 
     // A later memo/index/journal failure must not make the pending operation
     // disappear. Inserts, updates, and deletes are idempotent at their reserved
     // record number and are safe to reapply on retry.
-    const auto pending_before = tb.changes;
+    ctx.pending_before = tb.changes;
 
     // AIF-087 M2b: THE BEFORE PHASE FIRES HERE -- after the locks are held and
     // pending_before is snapshotted, and BEFORE the WAL COMMIT marker below.
@@ -636,15 +693,29 @@ static CommitResult commit_one_area(xbase::DbArea& A,
         }
     }
 
-    // Write-ahead: durably fsync the redo log + COMMIT marker BEFORE applying the
-    // buffered changes to the DBF. If the durable sync fails, abort the commit and
-    // keep the buffer intact (RamOnly mode returns true and is unaffected).
-    if (!dottalk::table::journal_begin_commit(area0)) {
-        dottalk::table::set_dirty(area0, true);
-        cli::cmdout::print_prefixed_message(
-            "COMMIT", dottalk::helpdata::MessageId::CommitJournalFinalizeFailedText);
-        return {CommitStatus::FinalizeFailure, 0, 1};
-    }
+    // ===================== THE SEAM ========================================
+    // Everything above decided WHETHER. Everything below DOES IT. Between the
+    // two sits exactly one act -- the write-ahead marker -- and which marker to
+    // write is the only thing that distinguishes a solo commit from one member
+    // of a group. The caller writes it.
+    ctx.prepared = true;
+    return {};
+}
+
+// PHASE 3. The write-ahead marker is already durable when this is entered:
+// `C <count>` for a solo commit, or `P <key> <n>` PLUS a landed group decision
+// row for a member. From here the two are identical, which is the property the
+// whole lane rests on -- a group member applies exactly as a solo commit does,
+// and recovery tells them apart by which marker it finds.
+static CommitResult commit_apply_area(AreaCommitContext& ctx)
+{
+    xbase::DbArea& A     = *ctx.A;
+    const int      area0 = ctx.area0;
+    const bool     talk  = ctx.talk;
+    const bool     interactive_rebuild = ctx.interactive_rebuild;
+
+    auto& tb = dottalk::table::get_tb(area0);
+    const auto& pending_before = ctx.pending_before;
 
     // SET INDEXTXN gate: maintain the index in-COMMIT only when the flag is ON
     // and the live backend can actually maintain itself. Default OFF reproduces
@@ -860,7 +931,170 @@ static CommitResult commit_one_area(xbase::DbArea& A,
     return {CommitStatus::Complete, applied_ok, 0};
 }
 
+// The solo path, unchanged in behaviour and now expressed as the same three
+// steps a group takes with N=1: prepare, write the marker, apply. Every
+// existing COMMIT arm runs through here, which is what makes those arms the
+// regression net for the split rather than a separate test having to be it.
+static CommitResult commit_one_area(xbase::DbArea& A,
+                                    int area0,
+                                    bool talk,
+                                    bool interactive_rebuild)
+{
+    AreaCommitContext ctx;
+    ctx.A                   = &A;
+    ctx.area0               = area0;
+    ctx.talk                = talk;
+    ctx.interactive_rebuild = interactive_rebuild;
+
+    const CommitResult prep = commit_prepare_area(ctx);
+    if (!ctx.prepared) return prep;
+
+    // Write-ahead: durably fsync the redo log + COMMIT marker BEFORE applying the
+    // buffered changes to the DBF. If the durable sync fails, abort the commit and
+    // keep the buffer intact (RamOnly mode returns true and is unaffected).
+    if (!dottalk::table::journal_begin_commit(area0)) {
+        dottalk::table::set_dirty(area0, true);
+        cli::cmdout::print_prefixed_message(
+            "COMMIT", dottalk::helpdata::MessageId::CommitJournalFinalizeFailedText);
+        return {CommitStatus::FinalizeFailure, 0, 1};
+    }
+
+    return commit_apply_area(ctx);
+}
+
 } // namespace
+
+namespace cli { namespace commit {
+
+// ---------------------------------------------------------------------------
+// ONE DECISION THAT SPANS N JOURNALS (AIF-160).
+//
+// DEFINED OUTSIDE THE ANONYMOUS NAMESPACE so something can prove it runs. The
+// contract, and why it is exported at all, is in include/cli/table_buffer.hpp.
+// It still uses the file-local halves above -- AreaCommitContext,
+// commit_prepare_area, commit_apply_area -- which stay internal: the PHASES are
+// this file's business, the DECISION is the lane's.
+//
+// TWO-PASS TRIGGERS, ruled 2026-09-11. Every BEFORE trigger fires in pass 1,
+// before any area prepares, so a veto costs one pass and ZERO durable writes.
+// Firing them at prepare would make a veto throw away prepares already synced
+// to platter. This is cmd_commit.cpp's own all-or-nothing-per-area doctrine
+// raised one level: all-or-nothing per GROUP.
+//
+// THE ONLY INSTANT THAT MATTERS is decide_committed below. Before it, N durable
+// prepares are N nothings and every one of them is discarded by presumed abort.
+// After it, the group is true and every member's apply is replayable from its
+// own journal. There is no third state, which is the entire point.
+//
+// ABORT IS PERFORMED, NOT LEFT. Presumed abort is the RECOVERY rule, for a
+// process killed between prepare and decide. This process holds every member
+// open and knows the group failed, so it discards the prepared spans itself
+// rather than leaving them for some future USE to notice.
+GroupCommitResult commit_group(const std::vector<GroupMember>& members,
+                               bool talk,
+                               bool interactive_rebuild)
+{
+    GroupCommitResult out;
+
+    // ---- PASS 1: locks, snapshots, and EVERY before-trigger ---------------
+    std::vector<AreaCommitContext> ctxs(members.size());
+    for (std::size_t i = 0; i < members.size(); ++i) {
+        ctxs[i].A                   = members[i].A;
+        ctxs[i].area0               = members[i].area0;
+        ctxs[i].talk                = talk;
+        ctxs[i].interactive_rebuild = interactive_rebuild;
+
+        const CommitResult r = commit_prepare_area(ctxs[i]);
+        if (ctxs[i].prepared) continue;
+
+        // An EMPTY buffer is not a refusal. It contributes nothing and is
+        // simply not a member -- dropping it is what keeps `members` equal to
+        // the number of P records that will exist.
+        if (r.status == CommitStatus::NoChanges) continue;
+
+        // Anything else IS a refusal, and nothing has been written yet: no
+        // journal marker, no member rows, no decision. The guards release as
+        // ctxs unwinds.
+        out.error = "group aborted in pass 1 -- a member refused before any"
+                    " durable write";
+        return out;
+    }
+
+    std::vector<std::size_t> live;
+    for (std::size_t i = 0; i < ctxs.size(); ++i)
+        if (ctxs[i].prepared) live.push_back(i);
+
+    out.members = static_cast<int>(live.size());
+    if (live.empty()) { out.committed = true; return out; }   // nothing to do
+
+    // ---- The group's identity, and the members table ----------------------
+    const std::string key = dottalk::group::mint_group_key();
+    std::vector<std::string> member_paths;
+    member_paths.reserve(live.size());
+    for (const std::size_t i : live) member_paths.push_back(ctxs[i].A->filename());
+
+    // Written BEFORE any prepare and deliberately NOT synced -- it is off the
+    // critical path. Losing it is safe by construction: with no member rows,
+    // retirement cannot establish that this group settled, so it keeps the
+    // decision row. The conservative direction without anything choosing it.
+    std::string merr;
+    (void)dottalk::group::record_members(key, member_paths, &merr);
+
+    // ---- PASS 2: N durable prepares, still N nothings ---------------------
+    std::size_t prepared_through = 0;
+    bool all_prepared = true;
+    for (const std::size_t i : live) {
+        if (!dottalk::table::journal_begin_prepare(
+                ctxs[i].area0, key, static_cast<int>(live.size()))) {
+            all_prepared = false;
+            break;
+        }
+        ++prepared_through;
+    }
+
+    if (!all_prepared) {
+        // NO DECISION ROW WAS WRITTEN, so every span above is already dead by
+        // presumed abort. Discard them anyway -- see "abort is performed".
+        for (std::size_t n = 0; n < prepared_through; ++n) {
+            dottalk::table::journal_note_rollback(ctxs[live[n]].area0);
+            dottalk::table::set_dirty(ctxs[live[n]].area0, true);
+        }
+        out.error = "group aborted in pass 2 -- a member could not durably"
+                    " prepare; no decision was written";
+        return out;
+    }
+
+    // ---- THE DECISION. One row, one fsync, one instant. -------------------
+    std::string derr;
+    if (!dottalk::group::decide_committed(key, static_cast<int>(live.size()), &derr)) {
+        for (const std::size_t i : live) {
+            dottalk::table::journal_note_rollback(ctxs[i].area0);
+            dottalk::table::set_dirty(ctxs[i].area0, true);
+        }
+        out.error = "group aborted at the decision -- " + derr;
+        return out;
+    }
+
+    // ---- PASS 3: from here the group IS committed -------------------------
+    // A failure below is a member that has not yet APPLIED a transaction that
+    // has already COMMITTED. That is not a lost commit: the member's journal
+    // still carries its P record and the decision row exists, so the next USE
+    // of that table replays it. This is the one place where reporting a failure
+    // and losing data are genuinely different things.
+    out.committed = true;
+    for (const std::size_t i : live) {
+        const CommitResult r = commit_apply_area(ctxs[i]);
+        out.applied_ok  += r.applied_ok;
+        out.applied_bad += r.applied_fail;
+        if (r.status != CommitStatus::Complete && out.error.empty()) {
+            out.error = "the group COMMITTED and a member did not finish"
+                        " applying; its journal replays at the next USE";
+        }
+    }
+    return out;
+}
+
+}} // namespace cli::commit
 
 // ---------------------------------------------------------------------------
 // AIF-159: hand the verdict out.
