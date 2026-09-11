@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-09-11T01:54:42Z
+    generated_utc : 2026-09-11T02:12:37Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,9 +11,9 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : 70aa4fa60  (2026-09-10)
+    HEAD          : 1c0669ead  (2026-09-10)
     upstream      : bde66b0a9
-    unpushed      : 30 commit(s) ahead of upstream
+    unpushed      : 31 commit(s) ahead of upstream
 
 ## Declared target
 
@@ -23,17 +23,18 @@ cannot drift, because nothing here is written by hand.
 ## Newest closeout
 
     file          : SESSION_CLOSEOUT_WORKSPACE_SCOPING_AND_WORKDESK_2026-09-10.md
-    commits behind HEAD : 8
+    commits behind HEAD : 9
 
 ## Staleness warnings
 
-- The newest closeout is 8 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
-- 30 commit(s) are unpushed and invisible to a clone.
+- The newest closeout is 9 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
+- 31 commit(s) are unpushed and invisible to a clone.
 
 ## Claimed lanes (newest first)
 
 | AIF | lane | steward | intake row |
 | --- | --- | --- | --- |
+| AIF-162 | record-lock-lifetime | member.derald | yes |
 | AIF-161 | negative-claim-decay | member.derald | yes |
 | AIF-160 | multi-area-commit | member.derald | yes |
 | AIF-159 | sqlsel-transactions | member.derald | yes |
@@ -45,8 +46,7 @@ cannot drift, because nothing here is written by hand.
 | AIF-153 | browsetui-student-app | member.ai.claude.cowork | yes |
 | AIF-152 | null-semantics | member.derald | yes |
 | AIF-151 | triggers-pdlc | member.derald | yes |
-| AIF-150 | atomic lock race proof and SQLsel P4.3 LEFT JOIN | member.ai.codex.local | yes |
-| ... | 80 older claims omitted | | |
+| ... | 81 older claims omitted | | |
 
 ## Sessions, lineage, asides
 
@@ -63,6 +63,7 @@ parent + born_utc from the durable lineage ledger, '-' until a run wakes.
 
 | run | member | parent | born_utc | asides |
 | --- | --- | --- | --- | --- |
+| AIFGEN-20260910-190858 | member.derald | - | - | AIF-162 |
 | AIFGEN-20260910-171303 | member.derald | - | - | AIF-161 |
 | AIFGEN-20260910-155043 | member.derald | - | - | AIF-160 |
 | AIFGEN-20260909-174200 | member.derald | - | - | AIF-159 |
@@ -70,8 +71,7 @@ parent + born_utc from the durable lineage ledger, '-' until a run wakes.
 | COWORK-20260906-001 | member.ai.claude.cowork | - | - | AIF-156 -> AIF-157 |
 | COWORK-20260905-002 | member.ai.claude.cowork | - | - | AIF-154 -> AIF-155 |
 | COWORK-20260905-001 | member.ai.claude.cowork | - | - | AIF-153 |
-| AIFGEN-20260904-124821 | member.derald | - | - | AIF-152 |
-| ... | | | | 51 older run(s) omitted |
+| ... | | | | 52 older run(s) omitted |
 
 Perishable detail lives in the artifacts these point at. Do not
 restate anything above; regenerate it.
