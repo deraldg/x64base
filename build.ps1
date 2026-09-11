@@ -10,7 +10,8 @@ Param(
   [switch]$NoGui,
   [switch]$WithGui,
   [switch]$WithWx,
-  [switch]$WithPyDotTalk
+  [switch]$WithPyDotTalk,
+  [switch]$NoTests
 )
 
 $ErrorActionPreference = 'Stop'
@@ -215,30 +216,71 @@ if (Test-Path $CacheFile) {
 
 if ($GuiEnabled -or $WithWx) {
   $Targets += 'dottalk_gui_core'
-  if ($Testing) {
+  if ($Testing -and -not $NoTests) {
+    # dottalk_gui_core_async_smoke is declared by src/gui, not src/tests, so it
+    # is NOT in the derived list below and is still named here.
+    # dottalkpp_gui_match_count_test and dottalkpp_gui_area_membership_test used
+    # to be named here too. They are gone on purpose: src/tests only CREATES
+    # them when gui/core exists, so the derived list already carries exactly the
+    # same guard without restating it.
     $Targets += 'dottalk_gui_core_async_smoke'
-    # Guarded on the same switches as gui/core in src/tests/CMakeLists.txt
-    # -- this one LINKS the library, so it does not exist without it.
-    $Targets += 'dottalkpp_gui_match_count_test'
-    $Targets += 'dottalkpp_gui_area_membership_test'
   }
 }
 if ($WithWx) { $Targets += 'dottalk_wb' }
 
-# NOT GUI-CONDITIONAL: src/tests targets link nothing and exist purely under
-# BUILD_TESTING.
+# THE GAP ABOVE IS CLOSED, 2026-09-11 (steward: "i was using .build to build").
 #
-# GAP, NAMED RATHER THAN PAPERED OVER: this script still does not build the
-# OTHER src/tests targets. On 2026-08-23 `ctest` reported 17/17 green while
-# this script had built at most four targets -- the other thirteen binaries
-# were left over from an earlier full build. That is the SAME stale-artifact
-# shape this script was fixed for, one directory across, and it is a
-# pre-existing gap this lane did not create. Enumerating thirteen targets by
-# hand is how a build script grows a list nobody maintains, and ALL_BUILD is
-# wrong because it would build dottalk_wb_next, which is deliberately excluded.
-# Recorded for a decision rather than guessed at.
-if ($Testing) { $Targets += 'dottalkpp_relation_merge_test' }
-if ($Testing) { $Targets += 'dottalkpp_area_alloc_test' }
+# What stood here was a two-line hand-maintained list and a comment saying a
+# hand-maintained list was the wrong answer. It named
+# dottalkpp_relation_merge_test and dottalkpp_area_alloc_test out of the
+# twenty-nine targets src/tests declares. The other twenty-seven were whatever
+# an earlier full build had left on disk -- and on 2026-09-11 ctest reported
+# dottalkpp_group_log_test PASSED from a binary compiled before eleven of that
+# test's markers were written. A green suite that has not run the test is worse
+# than a red one.
+#
+# The list is now DERIVED. src/tests/CMakeLists.txt writes every EXECUTABLE it
+# created to build/test_targets.txt at configure time -- conditions included,
+# so a target skipped for a missing VFP fixture or a GUI that is off is simply
+# absent rather than named and unbuildable. Adding a test to src/tests adds it
+# to this build with no edit to this file. See the reasoning at the end of
+# src/tests/CMakeLists.txt.
+#
+# A MISSING FILE IS A THROW, NOT A SKIP. If BUILD_TESTING is ON and configure
+# did not write the file, the only thing this script could do quietly is build
+# no tests and let ctest grade yesterday's binaries -- which is the exact
+# failure being removed. Configure runs above, unconditionally, and throws on
+# its own failure, so reaching this with no file means something structural
+# changed and the build should stop and say so.
+if ($Testing -and -not $NoTests) {
+  $TestTargetFile = Join-Path $BuildDir 'test_targets.txt'
+  if (-not (Test-Path $TestTargetFile)) {
+    throw ("BUILD_TESTING is ON but '$TestTargetFile' was not written by " +
+           "configure. src/tests/CMakeLists.txt writes it last; a missing file " +
+           "means this run would build no test binaries and ctest would grade " +
+           "whatever is already on disk.")
+  }
+  $DerivedTests = @(Get-Content -LiteralPath $TestTargetFile |
+                    ForEach-Object { $_.Trim() } |
+                    Where-Object { $_ -ne '' })
+  if ($DerivedTests.Count -eq 0) {
+    throw "'$TestTargetFile' is empty: configure created no test executables."
+  }
+  Write-Host (">>> Test targets derived from configure: " + $DerivedTests.Count)
+  $Targets += $DerivedTests
+}
+if ($Testing -and $NoTests) {
+  # Opt-OUT, in the house idiom of -NoIndex / -NoTV / -NoGui. It does NOT turn
+  # BUILD_TESTING off: the tests still exist and ctest will still run them.
+  # That is precisely why it warns -- this switch is how a stale binary gets
+  # graded green, and using it should be a decision, not a default.
+  Write-Warning ("-NoTests: test binaries will NOT be rebuilt. Any ctest run " +
+                 "after this build grades binaries from an earlier one.")
+}
+
+# Named twice is built twice; the GUI block and the derived list can overlap,
+# and a target may be handed to MSBuild only once.
+$Targets = @($Targets | Select-Object -Unique)
 
 Write-Host (">>> Building target(s): " + ($Targets -join ', '))
 if ($UseNinja) {

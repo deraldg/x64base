@@ -652,3 +652,53 @@ if(TARGET xbase)
       "FoxPro 9 if it was lost. dottalkpp_vfp_set_null_test is not built.")
   endif()
 endif()
+
+# ---- The build script's test-target list: DERIVED, not enumerated ----------
+# Written last, deliberately, so it sees every target this directory created.
+#
+# WHY IT EXISTS. build.ps1 named src/tests targets BY HAND. On 2026-08-23 that
+# list had four entries while ctest ran seventeen, and the other thirteen
+# binaries were whatever an earlier full build had left on disk. On 2026-09-11
+# it happened again and worse: ctest reported dottalkpp_group_log_test Passed
+# from a binary compiled before eleven of that test's markers existed. The
+# suite was green because it had not RUN the test that was written that
+# morning. build.ps1 recorded this gap in a comment on 2026-08-23 and left it
+# for a decision. This is the decision.
+#
+# WHY NOT THE TWO OPTIONS THAT COMMENT REJECTED. It was right to reject both.
+# ALL_BUILD would build dottalk_wb_next, which is deliberately excluded.
+# A hand-maintained list is the thing that failed, twice, and it fails
+# SILENTLY -- the omitted target does not error, it reports the last answer it
+# knew. That is the same shape as a file:line baseline going stale, and the
+# same shape as a comment that cannot go red.
+#
+# THE THIRD OPTION. This directory already knows the answer. It does not need
+# to be told which targets exist here; it CREATED them, conditions and all --
+# the GUI-gated pair, the two that skip when a VFP fixture is missing, the
+# ones behind TARGET xbase. BUILDSYSTEM_TARGETS is that knowledge, and writing
+# it down costs one edit here and none per test. Adding a test now adds it to
+# the build by existing.
+#
+# EXECUTABLE ONLY. BUILDSYSTEM_TARGETS also reports UTILITY and INTERFACE
+# targets, which are not things `cmake --build --target` should be handed.
+# TYPE is read per target rather than assumed from the name.
+#
+# IT LIVES IN THE BUILD DIRECTORY because it is REGENERABLE: it is an output
+# of configure, and build.ps1 always configures before it builds, so a stale
+# copy cannot outlive the run that produced it. That is the same reasoning
+# that puts a regeneration product in the TMP slot rather than SYS.
+get_property(_dottalk_test_targets DIRECTORY PROPERTY BUILDSYSTEM_TARGETS)
+set(_dottalk_test_executables "")
+foreach(_dottalk_t IN LISTS _dottalk_test_targets)
+  get_target_property(_dottalk_t_type ${_dottalk_t} TYPE)
+  if(_dottalk_t_type STREQUAL "EXECUTABLE")
+    list(APPEND _dottalk_test_executables "${_dottalk_t}")
+  endif()
+endforeach()
+list(SORT _dottalk_test_executables)
+list(LENGTH _dottalk_test_executables _dottalk_test_executable_count)
+string(REPLACE ";" "\n" _dottalk_test_target_text "${_dottalk_test_executables}")
+file(WRITE "${CMAKE_BINARY_DIR}/test_targets.txt" "${_dottalk_test_target_text}\n")
+message(STATUS
+  "src/tests: ${_dottalk_test_executable_count} test executable(s) written to "
+  "${CMAKE_BINARY_DIR}/test_targets.txt for build.ps1.")
