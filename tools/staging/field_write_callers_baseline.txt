@@ -110,13 +110,41 @@
 # shrink. They went to EXEMPT_FILES with their reason, per the rule at the top
 # of this file: a new writer is routed or exempted, never added here, because a
 # baseline that grows stops being a measurement.
+#
+# 2026-09-11, NINTH -- cmd_commit.cpp:396 -> :399. Caused by AIF-160's commit
+# seam (dace4fb1a) adding THREE include lines above the site: group_log.hpp and
+# <optional>, with a blank between them. Nothing was added and nothing was
+# routed: same call, same receiver, same field. Count unchanged.
+#
+# 399 IS THE GATE'S READING OF THE COMMITTED FILE, not a hand count. The author
+# had independently arrived at 399 by counting the inserted lines and the two
+# agreed -- which is luck, not method, and is recorded as such because the sixth
+# entry was wrong for exactly the reason that arithmetic is not the instrument.
+#
+# NINE DRIFTS, AND THE FOURTH IN THIS ONE FILE IN A SINGLE DAY. The seventh
+# entry's diagnosis has now been confirmed five more times than it was when it
+# was written: a baseline keyed by file:line is a second declaration of where
+# the code is, and cmd_commit.cpp is the site that proves it, because it is the
+# file every lane touching COMMIT adds an include to. The remedy named there --
+# key by file plus the enclosing function, or by the matched text -- would have
+# cost zero edits on all nine occasions.
+#
+# WHAT IS NEW IN THIS INSTANCE, and it is the reason this entry is longer than
+# the drift deserves: EVERY ONE OF THE NINE HAS BEEN A FALSE POSITIVE. Not one
+# NEW line in this gate's history has been a genuine unrouted writer. A signal
+# whose every firing to date is noise is one a reader learns to skim, and the
+# next instance -- the real one -- arrives in a channel that has trained its
+# audience to dismiss it. That is a worse failure than the manual edits, and it
+# is the cost the seventh entry priced only as "noise a reader has to
+# recognise". STILL NOT PROPOSED AS A CHANGE HERE -- the checker belongs to
+# AIF-156 -- but the evidence has moved again and this is the ninth time it has.
 src/bbs/bbs_store.cpp:334:set
 src/bbs/bbs_store.cpp:350:set
 src/bbs/bbs_store.cpp:49:set
 src/cli/app_simple_browser.cpp:796:set
 src/cli/browse/browse_edit.cpp:40:set
 src/cli/cmd_autodbf.cpp:985:set
-src/cli/cmd_commit.cpp:396:set
+src/cli/cmd_commit.cpp:399:set
 src/cli/cmd_copy.cpp:589:set
 src/cli/cmd_importsql.cpp:723:set
 src/cli/cmd_sort.cpp:923:set
