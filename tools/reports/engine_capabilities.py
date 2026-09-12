@@ -36,6 +36,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -117,17 +118,70 @@ CAPABILITIES = [
     ("ram.vdisk", "Whole tables and their indexes resident in RAM",
      ["MEM", "WORKSPACE_RAM"],
      ["ram disk", "in-memory table", "virtual disk"]),
+    # A FIVE-ELEMENT ENTRY. The fifth member is the explicit-run OPS list and
+    # it is OPTIONAL, so the fourteen entries above did not have to be edited
+    # -- the same reasoning RegressionSpec records for its trailing default in
+    # cmd_regression.cpp: an entry that says nothing says "no ops", which is
+    # the safe answer, and fourteen hand-written empty lists would have been
+    # fourteen chances to write the wrong one.
+    ("sql.txn.cross_table",
+     "Cross-table atomic commit (one decision, N journals)",
+     ["SQLSEL_DML"],
+     # NO BARE "atomic commit" TOKEN, and the omission is load-bearing.
+     # "COMMIT ALL is not an atomic transaction across DBF, memo and index
+     # storage" is TRUE, is stated on several pages, and must stay sayable; a
+     # bare token would flag every page that states it correctly.
+     # "cross-table write atomicity" is excluded for the same reason -- the
+     # products page legitimately denies it OF THE STATEMENT READ FENCE, which
+     # is a different mechanism from the group commit.
+     ["cross-table atomic commit", "cross-table transaction",
+      "multi-table transaction"],
+     ["GRPFAIL", "GRPNATIVE"]),
 ]
+
+
+# AN ARM DOES NOT HAVE TO BE A SCRIPT, and until 2026-09-12 this file assumed
+# it did. GRPFAIL and GRPNATIVE are dispatched by hand in cmd_REGRESSION, ahead
+# of find_regression_spec, because each plants a foreign record-lock sidecar in
+# the window BETWEEN two scripts and a .dts cannot write one. They are real
+# arms, they go red, and they were INVISIBLE here -- a capability could only
+# name kRegressionSpecs rows, so cross-table atomic commit had no entry at all.
+#
+# THE COST WAS MEASURED. It shipped 2026-09-11 and six statements across three
+# site pages denied it, while this sweep reported "0 flag, 0 review, over 14
+# capabilities". The sweep was RIGHT: it was comparing pages against a list
+# that had never heard of the capability. Explicit-run was a decision about
+# SUITE MEMBERSHIP and it silently doubled as a decision about whether the
+# capability could be publicly claimed at all.
+#
+# BOTH GUARDS SURVIVE. Guard 1 is why this reads the SOURCE rather than
+# trusting the list: an op named in CAPABILITIES must actually appear in the
+# dispatch, or this generator fails as loudly as it does for a renamed spec.
+# Guard 2 is untouched -- OPS NEVER PROMOTE. `state` is still derived from the
+# registry default flag alone, so naming an explicit-run op cannot move a
+# capability to default-suite.
+DISPATCH_OP_RE = re.compile(r'if\s*\(\s*op\s*==\s*"([A-Z0-9_]+)"\s*\)')
+
+
+def parse_dispatch_ops(root: Path) -> set[str]:
+    src = (root / "src" / "cli" / "cmd_regression.cpp").read_text(
+        encoding="utf-8", errors="replace")
+    return set(DISPATCH_OP_RE.findall(src))
 
 
 def build(root: Path) -> dict:
     specs = parse_specs(root)
     by_name = {s["name"]: s for s in specs}
+    dispatch_ops = parse_dispatch_ops(root)
 
     unknown: list[str] = []
     out = []
-    for cap_id, title, spec_names, tokens in CAPABILITIES:
+    for entry in CAPABILITIES:
+        cap_id, title, spec_names, tokens = entry[:4]
+        op_names = list(entry[4]) if len(entry) > 4 else []
         missing = [n for n in spec_names if n not in by_name]
+        missing += [f"{n} (explicit-run op)" for n in op_names
+                    if n not in dispatch_ops]
         if missing:
             unknown.append(f"{cap_id}: {', '.join(missing)}")
             continue
@@ -143,21 +197,23 @@ def build(root: Path) -> dict:
             "severity": "flag" if state == "default-suite" else "review",
             "specs": spec_names,
             "default_specs": defaults,
+            "ops": op_names,
             "tokens": tokens,
         })
 
     if unknown:
         raise SystemExit(
-            "engine_capabilities: spec name(s) in CAPABILITIES are not in the "
-            "registry -- the map has drifted from the engine and must be "
-            "corrected before this authority can be trusted:\n  "
+            "engine_capabilities: arm(s) named in CAPABILITIES are not in the "
+            "engine -- a spec name absent from kRegressionSpecs, or an op "
+            "absent from the cmd_REGRESSION dispatch. The map has drifted and "
+            "must be corrected before this authority can be trusted:\n  "
             + "\n  ".join(unknown)
         )
 
     return {
         "schema_version": SCHEMA_VERSION,
         "generated_by": "tools/reports/engine_capabilities.py",
-        "generated_from": "src/cli/cmd_regression.cpp (kRegressionSpecs)",
+        "generated_from": "src/cli/cmd_regression.cpp (kRegressionSpecs + explicit-run dispatch)",
         "spec_totals": {
             "registered": len(specs),
             "default_suite": sum(1 for s in specs if s["default"]),
