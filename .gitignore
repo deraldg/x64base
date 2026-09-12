@@ -1,4 +1,4 @@
-﻿# Build trees
+# Build trees
 /build/
 /build-*/
 /build_*/
@@ -222,6 +222,35 @@ __pycache__/
 # regenerable from the CDX container (SETLMDB) and can be huge. Matches the
 # prepush-gate hard block on .mdb (member.derald ruling 2026-08-05).
 **/*.mdb
+
+# ---------------------------------------------------------------------------
+# Engine state under the SYS slot (2026-09-12)
+#
+# GROUPS.dbf and GROUPMEM.dbf are the multi-area commit group log and its
+# members table (AIF-160; src/cli/group_log.cpp:183 and :281). They are
+# PER-MACHINE ENGINE STATE and not fixtures: every decision row is keyed by the
+# committing process's own owner token (host:pid:nonce, reused from
+# xbase::locks::current_owner), and every member row names an absolute table
+# path on THIS disk. Carried into another tree those rows describe processes
+# that never ran and files that do not exist.
+#
+# NOTHING IS LOST BY EXCLUDING THEM. group_log.cpp's ensure_table() creates
+# either file on first write, and the read paths deliberately never do -- "a
+# lookup must never CREATE the authority it is asking" (:239). A fresh clone
+# mints both the first time someone commits a group.
+#
+# THIS IS THE EXCEPTION THE .mdb NOTE ABOVE DID NOT ANTICIPATE. That note lets
+# every other dottalkpp file type through on the grounds that a .dbf may be a
+# tracked fixture -- true everywhere EXCEPT the one slot that exists to hold
+# state nothing can rebuild and nothing sweeps. Deleting a row here silently
+# loses a committed transaction; every other loss in this tree announces itself.
+#
+# Denied BY EXTENSION rather than by directory, so a doctrine note or README
+# under data/sys stays trackable.
+# ---------------------------------------------------------------------------
+/dottalkpp/data/sys/*.dbf
+/dottalkpp/data/sys/*.dtx
+/dottalkpp/data/sys/*.cdx
 
 # ---------------------------------------------------------------------------
 # Probe and scratch index/table artifacts (2026-07-14)

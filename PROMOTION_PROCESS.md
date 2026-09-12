@@ -108,6 +108,38 @@ Run from `D:\code\ccode` unless noted.
    justify a separate source lane. It is the step that gets forgotten -- it was
    forgotten on the 2026-09-12 promotion itself and caught only by the owner
    afterwards -- which is precisely why it is now gating rather than advisory.
+3a. **Run the suite in staging. GATING.** `./datarun` then `REGRESSION ALL` in
+   `C:\x64base`. A CLEAN BUILD PROVES NOTHING ABOUT THE PUBLISHED DATA, and on
+   2026-09-12 that gap was measured: staging built the 1.1 engine and then four
+   specs reported "script not found", INDEX_X64 ran against a fixture that is
+   deliberately never published and reported no failure at all, and three
+   MWXSHAKE markers went red for an LMDB env that `.gitignore` rules out and
+   nothing regenerates. The build was green through all of it.
+3b. **Closure check. GATING.** Of the .dts files `cmd_regression.cpp`
+   registers, every one must exist in staging:
+
+       git grep -h -o -E '"[A-Za-z0-9_\\/.-]+\.dts"' -- src/cli/cmd_regression.cpp |
+         ForEach-Object { $_.Trim('"') -replace '\\','/' } | Sort-Object -Unique |
+         ForEach-Object {
+           $p = "dottalkpp/data/scripts/$_"
+           if (-not (Test-Path "C:\x64base\$p")) { "MISSING on main: $p" }
+         }
+
+   This must print nothing. It is here because the manifest is an ALLOW-LIST
+   WITH NO REACHABILITY CHECK: it was built by listing what to publish rather
+   than by asking what the published tree needs in order to run. Every gap found
+   on 2026-09-12 -- nine script subdirectories, five workspace postures,
+   tools/notify/smtp_probe.py, data/projects, four CMake build inputs -- is that
+   one defect wearing different filenames, and each was found by tripping over
+   it rather than by reading. The check above is the narrow case, scoped to one
+   consumer. THE GENERAL CASE IS STILL OWED: a sweep that walks the published
+   tree's own references and flags anything unreachable would have caught all of
+   them at once, and wants an AIF number of its own.
+3c. **Regenerate the derived indexes.** LMDB is gitignored (53 GB measured
+   2026-07-14) and `.gitignore` says to regenerate it locally -- a required
+   post-publish step that existed only as a comment until 2026-09-12, when
+   MWXSHAKE's order arms went red on main for its absence. Run
+   `dottalkpp/data/scripts/mcc/mcc_build_x64_lmdb.dts` in staging.
 4. **Drift audit (Section 6).** Confirm the only differences between development
    and `main` are intended promotions.
 5. **Commit + push from `C:\x64base`** to `main`.

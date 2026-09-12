@@ -115,6 +115,10 @@ vcpkg.json
 vcpkg-wsl.json
 cmake/**
 config/*
+# Runtime helper the SMTP verb shells out to. src/cli/cmd_smtp.cpp published on
+# 2026-09-12 and this did not, so main shipped a verb whose helper was absent --
+# a build-clean failure that only a RUN finds.
+tools/notify/*
 tools/packaging/*
 # --- fixtures and sources the build graph names from OUTSIDE their own tree ---
 # Found 2026-09-12 by tmp/scan_build_inputs.ps1 after THREE misses by eye.
@@ -171,6 +175,11 @@ dottalkpp/data/comments/**
 dottalkpp/data/datadict/**
 dottalkpp/data/locale/**
 dottalkpp/data/manuals/**
+# The PROJECTS verb enumerates this tree; on main it answered "root does not
+# exist" (measured 2026-09-12). The four project dirs carry manifest.txt or
+# real sources, so they materialize; nested empty dirs still will not, because
+# git does not track those.
+dottalkpp/data/projects/**
 dottalkpp/data/tests/**
 dottalkpp/data/workspaces/**
 dottalkpp/data/schemas/*.txt
@@ -183,6 +192,22 @@ dottalkpp/data/scripts/*.txt
 dottalkpp/data/scripts/canaries/**
 dottalkpp/data/scripts/main/**
 dottalkpp/data/scripts/mcc/**
+# The nine subdirectories below hold 16 scripts that cmd_regression.cpp
+# REGISTERS and main did not have (measured 2026-09-12: 17 of 98 registered
+# .dts absent, the 17th being pinocchio/wal_commit_rollback_regression.dts,
+# which is a separate ruling -- see NOT PUBLISHED). Published whole rather than
+# file-by-file because a .dts can DO a subscript: ddl, export and limits each
+# carry more files than the registry names, and naming files would rebuild the
+# same reachability hole. 24 files total.
+dottalkpp/data/scripts/bbs/**
+dottalkpp/data/scripts/calc/**
+dottalkpp/data/scripts/ddl/**
+dottalkpp/data/scripts/dotscript/**
+dottalkpp/data/scripts/errorstop/**
+dottalkpp/data/scripts/export/**
+dottalkpp/data/scripts/lexing/**
+dottalkpp/data/scripts/limits/**
+dottalkpp/data/scripts/migrated/**
 # DBF fixture families (sandbox excluded)
 dottalkpp/data/dbf/*.zip
 dottalkpp/data/dbf/*.txt
@@ -275,6 +300,22 @@ DOTTALKPP_COMMAND_REFERENCE*.md
 #   with 0 tracked. The exclusion below does not imply development holds these.
 #   See PROMOTION_PROCESS.md section 7, OI-036, R141):
 #     **/messaging/**   **/metadata/**   **/sandbox/**
+#   Engine state under the SYS slot (self-creating; never published):
+#     dottalkpp/data/sys/*.dbf     GROUPS.dbf, GROUPMEM.dbf (AIF-160)
+#     Per-machine, not a fixture: decision rows are keyed by the committing
+#     process's owner token and member rows name absolute paths on that disk.
+#     group_log.cpp ensure_table() mints both on first write and the read
+#     paths never do, so a clone needs nothing shipped. The manifest never
+#     listed data/sys, so this RECORDS the ruling rather than changing the
+#     projection -- and it is now denied in .gitignore too, which is what
+#     stops one directory-level git add from putting it in a publish.
+#   UNRESOLVED, recorded rather than decided (2026-09-12): cmd_regression.cpp
+#     REGISTERS two pinocchio scripts, and ticketb_phase0_decode_cost.dts is
+#     tracked on main today despite **/pinocchio/** being denied here. Purging
+#     obeys this list and breaks a registered spec; publishing the directory
+#     obeys the registry and contradicts this list. The likely remedy is an
+#     engine change -- the two specs leaving the registry -- not a manifest
+#     line, so nothing here moves until that is ruled.
 #   Never-version junk (also gitignored):
 #     **/__pycache__/**  **/*.pyc  build*/  **/*.exe  **/*.lib  **/*.pdb
 #     **/lmdb/**  **/*.cdx.d/

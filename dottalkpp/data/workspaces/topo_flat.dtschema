@@ -1,0 +1,6 @@
+DTSHEMA 2
+WSID F20260828T004514Z
+AREA 0 | dbf=STUDENTS.dbf | index=STUDENTS.cdx | indextype=CDX | tag=SID | alias=STUDENTS
+AREA 1 | dbf=ENROLL.dbf | index=ENROLL.cdx | indextype=CDX | tag=SID | alias=ENROLL
+AREA 2 | dbf=CLASSES.dbf | index=CLASSES.cdx | indextype=CDX | tag=CLS_ID | alias=CLASSES
+AREA 3 | dbf=DEPT.dbf | index=DEPT.cdx | indextype=CDX | tag=DEPT_ID | alias=DEPT

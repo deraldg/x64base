@@ -1,0 +1,9 @@
+DTSHEMA 2
+WSID F20260828T004514Z
+AREA 0 | dbf=STUDENTS.dbf | index=STUDENTS.cdx | indextype=CDX | tag=SID | alias=STUDENTS
+AREA 1 | dbf=ENROLL.dbf | index=ENROLL.cdx | indextype=CDX | tag=SID | alias=ENROLL
+AREA 2 | dbf=STUD_MAJ.dbf | index=STUD_MAJ.cdx | indextype=CDX | tag=SID | alias=STUD_MAJ
+AREA 3 | dbf=MAJORS.dbf | index=MAJORS.cdx | indextype=CDX | tag=MAJOR | alias=MAJORS
+RELATION STUDENTS ENROLL ON SID
+RELATION STUDENTS STUD_MAJ ON SID
+RELATION STUDENTS MAJORS ON MAJOR
