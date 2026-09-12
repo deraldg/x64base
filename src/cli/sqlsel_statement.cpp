@@ -2497,9 +2497,11 @@ void print_statement_usage() {
         << "  Correlated subqueries report their actual evaluation count. Subqueries\n"
         << "  over a joined outer scope are refused.\n"
         << "  SELECT restores the current area and every source record pointer.\n"
-        << "  DML uses typed TableBuffer + TBJ1 WAL writes. Explicit transactions\n"
-        << "  require SQL mode and accept one target table; cross-table atomic\n"
-        << "  commit, stored NULL, and memo-field DML are refused.\n";
+        << "  DML uses typed TableBuffer + TBJ2 WAL writes. Explicit transactions\n"
+        << "  require SQL mode and may span SEVERAL tables: every one prepares, a\n"
+        << "  single group-log row decides them all, and a crash before that row\n"
+        << "  lands leaves none of them applied. Stored NULL and memo-field DML\n"
+        << "  are refused.\n";
 }
 
 bool execute_select_term(const std::string& tail_in, QueryResult* result_out) {
@@ -3178,9 +3180,15 @@ QueryResult apply_set_operation(QueryResult left,
 // P5: typed SQL DML over the house table-buffer / WAL / lock machinery.
 // ---------------------------------------------------------------------------
 
-struct SqlTransactionState {
-    bool active = false;
-    bool explicit_scope = false;
+// ONE ENLISTED TABLE. What used to be five loose fields on the transaction
+// state, one set of them, which is why a SQL transaction could hold exactly one
+// table (AIF-160, 2026-09-11).
+//
+// Every field here is PER TABLE and none of them is derivable from another.
+// `lock_acquired_here` in particular: the transaction may have BORROWED a table
+// lock this process already held, and releasing a borrowed lock would drop it
+// out from under whatever took it.
+struct SqlEnlistment {
     xbase::DbArea* area = nullptr;
     int area0 = -1;
     bool lock_acquired_here = false;
@@ -3190,9 +3198,46 @@ struct SqlTransactionState {
         dottalk::table::BufferPersistenceMode::RamOnly;
 };
 
+struct SqlTransactionState {
+    bool active = false;
+    bool explicit_scope = false;
+
+    // ENLISTMENT ORDER, and it is the acquisition order of the table locks.
+    //
+    // THE DESIGN ASKS FOR SORTED PATH ORDER AND THIS CANNOT PROVIDE IT.
+    // AIF-160 1.2 rules that a group takes its table locks in sorted path
+    // order, and GROUPCOMMIT can obey that because COMMIT ALL knows its members
+    // before it starts. A SQL transaction does not: tables enlist LAZILY, as
+    // statements arrive, and the second table is unknown while the first is
+    // being locked. There is no order to sort.
+    //
+    // IT DOES NOT MATTER HERE, and that is worth writing down rather than
+    // worrying about twice. Sorted order exists to prevent DEADLOCK, and
+    // deadlock needs a blocking wait. xbase::locks::try_lock_table has no wait:
+    // it stats the sidecar, finds a live foreign owner, and returns false
+    // immediately. Two processes acquiring in opposite orders therefore produce
+    // a REFUSAL, not a hang -- which is precisely the owner's contract for this
+    // lane, "the first failure causes a refusal to continue and reports the
+    // error".
+    //
+    // What is left is fairness: two transactions can refuse each other and both
+    // retry forever. That is livelock, it is the caller's problem, and no
+    // ordering rule available to a lazy enlister would fix it.
+    std::vector<SqlEnlistment> members;
+};
+
 SqlTransactionState& sql_transaction_state() {
     static SqlTransactionState state;
     return state;
+}
+
+// The enlistment for one area, or null. THE AREA IS THE KEY, not the slot:
+// slot_of_area is a search and this runs per staged row.
+SqlEnlistment* enlistment_for(const xbase::DbArea* area) {
+    if (!area) return nullptr;
+    auto& state = sql_transaction_state();
+    for (auto& m : state.members) if (m.area == area) return &m;
+    return nullptr;
 }
 
 std::string statement_without_semicolon(std::string text) {
@@ -3272,6 +3317,21 @@ bool split_value_groups(const std::string& text,
     return true;
 }
 
+// THIS STILL CALLS journal_note_rollback ON EVERY MEMBER, and after AIF-160
+// that is safe for a reason this function does not implement.
+//
+// A grouped transaction has a state a single-table one never had: DECIDED BUT
+// NOT YET APPLIED. Such a member keeps its journal on purpose -- the decision
+// row exists, the P record is there, and the next USE replays it -- so deleting
+// it here would destroy the only copy of a committed transaction's redo.
+//
+// AN EARLIER DRAFT OF THIS CHANGE TOOK A `discard_journals` PARAMETER and the
+// commit path passed false. It was withdrawn: a flag at the call site makes the
+// deletion CONDITIONAL, correct only while every present and future caller
+// passes the right value, with a silently lost commit as the price of one wrong
+// one. journal_note_rollback now REFUSES a decided journal itself, so the
+// deletion is impossible rather than conditional and this function needs to
+// know nothing about groups. See BufferJournalInfo::decided.
 void release_sql_transaction(bool restore_buffer_policy) noexcept {
     auto& state = sql_transaction_state();
 
@@ -3293,32 +3353,46 @@ void release_sql_transaction(bool restore_buffer_policy) noexcept {
     // the call is a no-op there. An uncommitted log carries no C marker and
     // recovery discards it on the next open anyway -- this just does it eagerly,
     // while the handle is still ours to close.
-    if (state.area && state.area0 >= 0) {
-        (void)dottalk::table::journal_note_rollback(state.area0);
-    }
+    // REVERSE ENLISTMENT ORDER. Nothing here requires it -- no member's
+    // teardown touches another's -- but releasing in the mirror of acquisition
+    // is the shape a reader expects of paired operations, and the day one of
+    // these steps does start caring, it will already be right.
+    for (std::size_t n = state.members.size(); n > 0; --n) {
+        SqlEnlistment& m = state.members[n - 1];
+        if (!m.area || m.area0 < 0) continue;
 
-    if (state.area && state.area0 >= 0 && restore_buffer_policy) {
-        dottalk::table::set_history_enabled(state.area0, state.prior_history_enabled);
-        dottalk::table::set_persistence_mode(state.area0, state.prior_persistence);
-        if (!state.prior_buffer_enabled) dottalk::table::set_enabled(state.area0, false);
-    }
-    if (state.area && state.lock_acquired_here) {
-        std::string ignored;
-        (void)xbase::locks::unlock_table(
-            *state.area, xbase::locks::current_owner(), &ignored);
+        // Refused, and correctly, for a member the group decided and whose
+        // apply has not finished. See BufferJournalInfo::decided.
+        (void)dottalk::table::journal_note_rollback(m.area0);
+
+        if (restore_buffer_policy) {
+            dottalk::table::set_history_enabled(m.area0, m.prior_history_enabled);
+            dottalk::table::set_persistence_mode(m.area0, m.prior_persistence);
+            if (!m.prior_buffer_enabled) dottalk::table::set_enabled(m.area0, false);
+        }
+        if (m.lock_acquired_here) {
+            std::string ignored;
+            (void)xbase::locks::unlock_table(
+                *m.area, xbase::locks::current_owner(), &ignored);
+        }
     }
     state = SqlTransactionState{};
 }
 
 void rollback_sql_transaction(const char* reason = nullptr) {
     auto& state = sql_transaction_state();
-    if (state.area && state.area0 >= 0) {
+    // EVERY MEMBER, not the first. A cross-table transaction that rolls back
+    // must discard every buffer it opened; leaving one staged would let the
+    // next statement commit half of a transaction the user abandoned.
+    for (std::size_t n = state.members.size(); n > 0; --n) {
+        SqlEnlistment& m = state.members[n - 1];
+        if (!m.area || m.area0 < 0) continue;
         // AIF-159 s7.6: call the SHARED BODY, not cmd_ROLLBACK. The command now
         // refuses while a SQL transaction is active, and this is the SQL path --
         // it must reach the buffer, not be turned away by its own guard.
-        cli::ScopedAreaSelect focus(state.area);
+        cli::ScopedAreaSelect focus(m.area);
         cli::rollback::Outcome discarded;
-        cli::rollback::rollback_area(*state.area, discarded);
+        cli::rollback::rollback_area(*m.area, discarded);
     }
     release_sql_transaction(true);
     if (reason && *reason) std::cout << "SQLSEL: transaction rolled back -- " << reason << ".\n";
@@ -3330,11 +3404,23 @@ bool enlist_sql_transaction(xbase::DbArea& area, std::string& error) {
         error = "internal transaction state was not started";
         return false;
     }
-    if (state.area == &area) return true;
-    if (state.area) {
-        error = "one SQL transaction may modify one table; cross-table atomic commit is not available";
-        return false;
-    }
+    if (enlistment_for(&area)) return true;
+
+    // WHAT STOOD HERE, until 2026-09-11, was the refusal this whole lane
+    // existed to remove:
+    //
+    //   "one SQL transaction may modify one table; cross-table atomic commit
+    //    is not available"
+    //
+    // It was honest for as long as it was true. A second table meant a second
+    // journal, and two journals meant two COMMIT markers, and a crash between
+    // them left the transaction the user wrote torn in half with no record that
+    // it had ever been one thing. The refusal was the only correct answer
+    // available.
+    //
+    // cli::commit::commit_group is the answer that replaces it: N journals, one
+    // decision row, and presumed abort for everything that does not reach it.
+    // Enlisting a second table is now an APPEND.
     const int area0 = cli::slot_of_area(&area);
     if (area0 < 0) {
         error = "could not determine the target work area";
@@ -3354,17 +3440,28 @@ bool enlist_sql_transaction(xbase::DbArea& area, std::string& error) {
         return false;
     }
 
-    state.area = &area;
-    state.area0 = area0;
-    state.lock_acquired_here = !borrowed;
-    state.prior_buffer_enabled = dottalk::table::is_enabled(area0);
-    state.prior_history_enabled = dottalk::table::is_history_enabled(area0);
-    state.prior_persistence = dottalk::table::persistence_mode(area0);
-    if (!state.prior_buffer_enabled) dottalk::table::set_enabled(area0, true);
+    // THE ENLISTMENT IS RECORDED BEFORE ITS SIDE EFFECTS, so that a failure
+    // below is cleaned up by release_sql_transaction rather than by a second
+    // copy of the teardown written here. The prior_* fields are read BEFORE
+    // anything is changed, which is the only moment they are still true.
+    SqlEnlistment m;
+    m.area = &area;
+    m.area0 = area0;
+    m.lock_acquired_here = !borrowed;
+    m.prior_buffer_enabled = dottalk::table::is_enabled(area0);
+    m.prior_history_enabled = dottalk::table::is_history_enabled(area0);
+    m.prior_persistence = dottalk::table::persistence_mode(area0);
+    state.members.push_back(m);
+
+    if (!m.prior_buffer_enabled) dottalk::table::set_enabled(area0, true);
     dottalk::table::set_history_enabled(area0, false);
     dottalk::table::set_persistence_mode(
         area0, dottalk::table::BufferPersistenceMode::RamJournal);
     if (!dottalk::table::journal_note_buffer_on(area0, area.filename())) {
+        // THE WHOLE TRANSACTION DIES, not just this member, and that is not a
+        // change: a member that cannot open its journal can never be part of a
+        // decision, so there is nothing to keep the others open for. What IS
+        // new is that release now unwinds every member that got this far.
         error = "could not open the table-buffer write-ahead journal";
         release_sql_transaction(true);
         return false;
@@ -3374,15 +3471,33 @@ bool enlist_sql_transaction(xbase::DbArea& area, std::string& error) {
 
 bool commit_sql_transaction(std::string& error) {
     auto& state = sql_transaction_state();
-    if (!state.area) {
+    if (state.members.empty()) {
         release_sql_transaction(false);
         return true;
     }
-    cli::commit::Outcome outcome;
-    {
-        cli::ScopedAreaSelect focus(state.area);
-        cli::commit::commit_area(*state.area, false, outcome);
+
+    // ONE DECISION FOR EVERY ENLISTED TABLE (AIF-160). commit_group runs the
+    // same three phases per member that commit_area ran for one -- prepare,
+    // write-ahead marker, apply -- and replaces the N commit markers with N
+    // prepare markers and a single decision row.
+    //
+    // N == 1 GOES DOWN THIS PATH TOO, deliberately. Every SQLSEL arm in the
+    // regression suite is a one-table transaction, so routing the single case
+    // through the group path is what makes those arms the net for this change
+    // instead of something that has to be written separately. The observable
+    // difference for N == 1 is that the journal carries `P <key> 1` and a
+    // decision row instead of `C <count>`.
+    std::vector<cli::commit::GroupMember> group;
+    group.reserve(state.members.size());
+    for (const auto& m : state.members) {
+        cli::commit::GroupMember gm;
+        gm.A = m.area;
+        gm.area0 = m.area0;
+        group.push_back(gm);
     }
+
+    const cli::commit::GroupCommitResult result =
+        cli::commit::commit_group(group, false, false);
 
     // AIF-159: READ the verdict, do not infer it.
     //
@@ -3392,18 +3507,54 @@ bool commit_sql_transaction(std::string& error) {
     // rather than by contract. It also named retention as the cause of every
     // refusal, so a BEFORE-trigger veto and an unresolvable work area both
     // reported themselves as a house path that "retained buffered changes".
-    if (!outcome.durable()) {
+    //
+    // GroupCommitResult::committed IS that verdict, and it is narrower than
+    // "everything worked": it means the decision row landed, and nothing else.
+    if (!result.committed) {
         // Option (3) of the finding: name the exit. Only the SQL-mode forms
         // route through commit_sql_transaction / rollback_sql_transaction and
         // release the scope. "retry or rollback" alone sent people to a native
         // COMMIT, which applies the buffer and leaves the transaction open --
         // and every later autocommit DML then stages instead of committing.
-        error = cli::commit::describe(outcome) +
+        error = (result.error.empty()
+                     ? std::string("the group did not reach a decision")
+                     : result.error) +
                 "; the transaction is still open -- retry the statement, or end "
                 "it with COMMIT or ROLLBACK in SQL mode (a native COMMIT applies "
                 "the buffer but does not release the transaction)";
         return false;
     }
+
+    // COMMITTED, AND A MEMBER MAY STILL NOT HAVE FINISHED APPLYING. That is not
+    // a failed commit and must not be reported as one: the decision row exists,
+    // the member's journal still carries its P record, and the next USE of that
+    // table replays it. Returning false here would tell the user to retry a
+    // transaction that has already happened.
+    if (!result.error.empty()) {
+        std::cout << "SQLSEL: the transaction COMMITTED; " << result.error
+                  << ".\n";
+    }
+
+    // THE DISCRIMINATOR, and it is a graded instrument rather than a courtesy.
+    //
+    // Before AIF-160 a second table was REFUSED, and SQLSEL P5 pinned that
+    // refusal sentence as a required transcript fragment -- so the gate fired
+    // the day the refusal went away, which is the gate working. But the
+    // obvious repointing is useless: inside a transaction the second table's
+    // statement prints "staged N row(s) in the active transaction", which is
+    // WORD FOR WORD what the first table prints. Nothing in the transcript
+    // says how many tables a transaction holds, so an arm repointed at that
+    // line would read green whether cross-table worked or silently collapsed
+    // back to one table.
+    //
+    // This line is the thing only a group can produce. It is SEPARATE rather
+    // than appended to "transaction committed." because that sentence is
+    // counted elsewhere by exact text.
+    if (result.members > 1) {
+        std::cout << "SQLSEL: " << result.members
+                  << " tables committed as ONE decision (group commit).\n";
+    }
+
     release_sql_transaction(true);
     return true;
 }
@@ -3491,9 +3642,23 @@ struct PendingDmlRow {
 bool stage_dml_rows(xbase::DbArea& area,
                     const std::vector<PendingDmlRow>& rows,
                     std::string& error) {
-    (void)area;
-    auto& state = sql_transaction_state();
-    auto& buffer = dottalk::table::get_tb(state.area0);
+    // THE `area` PARAMETER IS THE ANSWER NOW, and until 2026-09-11 it was
+    // `(void)area;` -- accepted, discarded, and every row staged into
+    // state.area0 instead. That was invisible while a transaction could hold
+    // exactly one table, because the parameter and the state could not disagree.
+    // The moment a second table enlists they can, and the failure mode is rows
+    // landing in whichever table enlisted FIRST, with no error anywhere.
+    //
+    // A caller that has not enlisted is a bug in the caller, not a row to stage
+    // somewhere plausible.
+    const SqlEnlistment* enlisted = enlistment_for(&area);
+    if (!enlisted) {
+        error = "internal: staged rows for a table that is not enlisted in this"
+                " SQL transaction";
+        return false;
+    }
+    const int area0 = enlisted->area0;
+    auto& buffer = dottalk::table::get_tb(area0);
     std::size_t new_records = 0;
     for (const auto& row : rows) {
         if (buffer.changes.find(row.recno) == buffer.changes.end()) ++new_records;
@@ -3511,11 +3676,11 @@ bool stage_dml_rows(xbase::DbArea& area,
             journal.recno = row.recno;
             journal.dirty_flags = row.flags;
             journal.priority = priority;
-            if (!dottalk::table::journal_note_change(state.area0, journal)) {
+            if (!dottalk::table::journal_note_change(area0, journal)) {
                 error = "write-ahead journal refused a change";
                 return false;
             }
-            dottalk::table::set_stale(state.area0, true);
+            dottalk::table::set_stale(area0, true);
             continue;
         }
         for (const auto& [field1, value] : row.fields) {
@@ -3530,14 +3695,14 @@ bool stage_dml_rows(xbase::DbArea& area,
             journal.dirty_flags = row.flags;
             journal.priority = priority;
             journal.new_values[field1] = value;
-            if (!dottalk::table::journal_note_change(state.area0, journal)) {
+            if (!dottalk::table::journal_note_change(area0, journal)) {
                 error = "write-ahead journal refused a change";
                 return false;
             }
-            dottalk::table::mark_stale_field(state.area0, field1);
+            dottalk::table::mark_stale_field(area0, field1);
         }
     }
-    if (!rows.empty()) dottalk::table::set_dirty(state.area0, true);
+    if (!rows.empty()) dottalk::table::set_dirty(area0, true);
     return true;
 }
 
@@ -3546,10 +3711,14 @@ bool materialize_dml_source(const TableRef& table,
                             std::string& error) {
     const auto columns = join_source_columns(table);
     if (!materialize_join_source(table, columns, rows, error)) return false;
-    const auto& state = sql_transaction_state();
-    if (state.area != table.area || state.area0 < 0) return true;
+    // READ-YOUR-OWN-WRITES, PER TABLE. This used to ask whether the ONE
+    // enlisted area was this one. With N enlisted it has to ask which -- and a
+    // table that is not enlisted has no staged changes to fold in, which is the
+    // same answer the single-table form gave.
+    const SqlEnlistment* enlisted = enlistment_for(table.area);
+    if (!enlisted || enlisted->area0 < 0) return true;
 
-    const auto& changes = dottalk::table::get_tb_const(state.area0).changes;
+    const auto& changes = dottalk::table::get_tb_const(enlisted->area0).changes;
     std::vector<dottalk::TupleRow> visible;
     visible.reserve(rows.size() + changes.size());
     for (auto row : rows) {

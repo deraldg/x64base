@@ -192,9 +192,13 @@ inline const std::vector<Item>& catalog() {
          "BEGIN TRANSACTION;",
          "Start transaction", "Transaction", true,
          "SUPPORTED -- in SET MODE SQL, BEGIN [TRANSACTION] opens an explicit SQLsel DML "
-         "scope. It acquires one target table fence on first write and uses TableBuffer + "
-         "TBJ1 WAL. Cross-table atomic commit is refused. Native TABLE BUFFER remains the "
-         "cursor-oriented equivalent."},
+         "scope. It acquires a table fence per target on first write to that target and "
+         "uses TableBuffer + TBJ2 WAL. CROSS-TABLE ATOMIC COMMIT IS SUPPORTED (AIF-160, "
+         "2026-09-11): each table writes a P prepare marker, one row in the group log "
+         "decides all of them at once, and a crash before that row lands leaves none of "
+         "them applied. This entry read 'Cross-table atomic commit is refused' until the "
+         "mechanism existed; the refusal was a boundary, never a ruling. Native TABLE "
+         "BUFFER remains the cursor-oriented equivalent."},
         {"COMMIT",
          "COMMIT;",
          "Save changes", "Transaction", true,

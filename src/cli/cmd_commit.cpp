@@ -1055,7 +1055,34 @@ GroupCommitResult commit_group(const std::vector<GroupMember>& members,
     if (!all_prepared) {
         // NO DECISION ROW WAS WRITTEN, so every span above is already dead by
         // presumed abort. Discard them anyway -- see "abort is performed".
-        for (std::size_t n = 0; n < prepared_through; ++n) {
+        //
+        // INCLUSIVE OF THE ONE THAT FAILED, which is the whole reason for the
+        // +1. prepared_through counts SUCCESSES, so live[prepared_through] is
+        // the member whose prepare returned false -- and that member is the one
+        // most likely to have left something on disk, not the least:
+        // journal_begin_prepare can fail AFTER promoting the header, after the
+        // seek back to end, on a partial fwrite of the marker, or in
+        // wal_durable_sync. Stopping before it left the only residue anyone
+        // would have to clean.
+        //
+        // The malformed-P residue is the expensive one. A torn P line is
+        // "neither marker" and the reader discards it, which is fine; a
+        // COMPLETE but unsynced P for a group that never decided is presumed
+        // abort, also fine. But a P record that parses short -- key and no
+        // member count -- is REFUSED AND PRESERVED, so it warns on every USE of
+        // that table forever. That is the regression the empty-log branch was
+        // added to avoid, in a different shape.
+        //
+        // It also restores the dirty flag for that member. Every other member
+        // gets its buffer marked dirty again so the user can correct and retry;
+        // the asymmetry was the tell that this index had been dropped rather
+        // than excluded.
+        //
+        // journal_note_rollback is safe on an area whose journal never opened:
+        // it removes a path that may not exist and clears state that may
+        // already be clear.
+        const std::size_t through = std::min(prepared_through + 1, live.size());
+        for (std::size_t n = 0; n < through; ++n) {
             dottalk::table::journal_note_rollback(ctxs[live[n]].area0);
             dottalk::table::set_dirty(ctxs[live[n]].area0, true);
         }
@@ -1073,6 +1100,22 @@ GroupCommitResult commit_group(const std::vector<GroupMember>& members,
         }
         out.error = "group aborted at the decision -- " + derr;
         return out;
+    }
+
+    // THE JOURNALS STOP BEING THIS TRANSACTION'S TO DELETE, HERE.
+    //
+    // One line per member, and it is the transfer of ownership described on
+    // BufferJournalInfo::decided. A member whose apply fails below keeps its
+    // journal ON PURPOSE -- the decision row exists, the P record is there, and
+    // the next USE replays it -- and every teardown path in the tree reaches
+    // journal_note_rollback, which would std::remove exactly that file.
+    //
+    // Marking is done in its own pass rather than inside the apply loop below,
+    // because the apply loop can fail and this cannot be conditional on it: the
+    // group is true for every member the instant decide_committed returned, not
+    // member by member as each one finishes.
+    for (const std::size_t i : live) {
+        (void)dottalk::table::journal_note_decided(ctxs[i].area0);
     }
 
     // ---- PASS 3: from here the group IS committed -------------------------
@@ -1253,5 +1296,116 @@ void cmd_COMMIT(xbase::DbArea& A, std::istringstream& in) {
         cli::cmdout::print_prefixed_message(
             "COMMIT ALL", dottalk::helpdata::MessageId::CommitAllCompleteText,
             {{"committed", std::to_string(committed)}, {"failed", std::to_string(failed)}});
+    }
+}
+
+// ---------------------------------------------------------------------------
+// GROUPCOMMIT -- COMMIT ALL's atomic twin (AIF-160)
+//
+// A SEPARATE VERB, per decision 6.4. COMMIT and COMMIT ALL are byte-for-byte
+// unchanged, which AIF-159 spent four commits earning and this lane does not
+// spend.
+//
+// THE CONTRAST IS THE WHOLE POINT, and the two commands sit next to each other
+// so a reader sees it: COMMIT ALL loops areas and commits each independently,
+// not stopping on failure. A crash between its second and third member leaves
+// two tables written and one not, each of them perfectly consistent with its own
+// journal, and the transaction the user meant torn in half. GROUPCOMMIT prepares
+// every member, writes ONE durable decision, and only then applies. There is no
+// instant at which some members are committed and others are not.
+//
+// STRAIGHT PROSE, NOT THE MESSAGE CATALOGUE. This verb is experimental and its
+// output will change while the lane settles; minting catalogue MessageIds now
+// would freeze wording that is not ready, and every one of them would need a
+// locale row. std::cout matches how the durable_sync warnings in this file and
+// in cmd_workspace.cpp already report.
+void cmd_GROUPCOMMIT(xbase::DbArea& A, std::istringstream& in) {
+    (void)A;   // the group is gathered from the engine, not from the current area
+
+    auto* eng = shell_engine();
+    if (!eng) {
+        std::cout << "GROUPCOMMIT: engine unavailable.\n";
+        return;
+    }
+
+    bool interactive_rebuild = false;
+    for (std::string tok; in >> tok; ) {
+        std::string up = tok;
+        for (auto& c : up) c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+
+        if (up == "USAGE" || up == "HELP" || up == "?") {
+            std::cout <<
+                "GROUPCOMMIT -- commit every buffered area as ONE atomic decision.\n"
+                "  GROUPCOMMIT              commit all dirty areas as one group\n"
+                "  GROUPCOMMIT MANUAL       prompt on index rebuild\n"
+                "  GROUPCOMMIT USAGE        this text\n"
+                "\n"
+                "Unlike COMMIT ALL, which commits each area independently, a crash\n"
+                "during GROUPCOMMIT leaves either ALL members applied or NONE.\n"
+                "Requires TABLE BUFFER PERSISTENT for that guarantee to survive a\n"
+                "power cut: under the default RamOnly there is no journal to recover.\n";
+            return;
+        } else if (up == "MANUAL" || up == "INTERACTIVE") {
+            interactive_rebuild = true;
+        } else if (up == "AUTO") {
+            interactive_rebuild = false;
+        } else {
+            std::cout << "GROUPCOMMIT: unrecognized argument '" << tok
+                      << "'. GROUPCOMMIT USAGE for help.\n";
+            return;
+        }
+    }
+
+    // Same refusal as COMMIT, for the same reason (AIF-159 section 3): this
+    // command knows nothing about sql_transaction_state, so it would apply the
+    // buffer and leave the SQL scope open.
+    if (sqlsel::transaction_active()) {
+        std::cout << "GROUPCOMMIT: a SQL transaction is active; end it with COMMIT or "
+                     "ROLLBACK in SQL mode (SET MODE SQL).\n";
+        return;
+    }
+
+    std::vector<cli::commit::GroupMember> members;
+    for (int i = 0; i < xbase::MAX_AREA; ++i) {
+        auto& Ai = eng->area(i);
+        if (!Ai.isOpen()) continue;
+        if (!dottalk::table::is_enabled(i)) continue;
+        if (dottalk::table::get_tb(i).empty()) continue;
+
+        cli::commit::GroupMember m;
+        m.A     = &Ai;
+        m.area0 = i;
+        members.push_back(m);
+    }
+
+    if (members.empty()) {
+        std::cout << "GROUPCOMMIT: no buffered changes in any area.\n";
+        return;
+    }
+
+    const bool talk = Settings::instance().talk_on.load();
+    const cli::commit::GroupCommitResult r =
+        cli::commit::commit_group(members, talk, interactive_rebuild);
+
+    if (!r.committed) {
+        std::cout << "GROUPCOMMIT: REFUSED -- " << r.error << ".\n"
+                  << "  NOTHING was applied and no group decision was written."
+                     " Every buffer is intact.\n";
+        return;
+    }
+
+    std::cout << "GROUPCOMMIT: committed " << r.members << " table(s) as one group, "
+              << r.applied_ok << " record(s) applied";
+    if (r.applied_bad > 0) std::cout << ", " << r.applied_bad << " failed";
+    std::cout << ".\n";
+
+    // The group is COMMITTED. A member that did not finish applying has not lost
+    // its transaction -- its journal still carries the P record and the decision
+    // row exists, so the next USE of that table replays it. Saying so matters:
+    // this is the one place where reporting a failure and losing data are
+    // genuinely different things, and a reader who assumes the usual meaning of
+    // "failed" would reach for a backup they do not need.
+    if (!r.error.empty()) {
+        std::cout << "  NOTE: " << r.error << ".\n";
     }
 }

@@ -87,6 +87,45 @@ struct BufferJournalInfo {
     bool                  open {false};
     std::FILE*            fp {nullptr};       // append-only .tbj handle while open
     std::uint64_t         change_count {0};   // redo records since the log opened
+
+    // ---- WHOSE TRANSACTION IS THIS, AND IS IT STILL OURS TO REVERSE? -------
+    //
+    // AIF-160. Two bits that turn this struct into a state machine, because a
+    // grouped transaction has a state a single-table one never had: DECIDED BUT
+    // NOT YET APPLIED.
+    //
+    //   prepared   a P record has been written. Set by journal_begin_prepare,
+    //              which REFUSES a second call -- two P records in one log name
+    //              two groups for one journal, the reader refuses such a log,
+    //              and it then never replays and never goes away.
+    //
+    //   decided    the group log says this transaction COMMITTED. From this
+    //              instant the journal is NOT THIS TRANSACTION'S TO DELETE.
+    //              journal_note_rollback refuses while it is set.
+    //
+    // WHY THE SECOND ONE EXISTS AT ALL. After decide_committed lands, a member
+    // whose APPLY then fails still holds its journal, on purpose: the decision
+    // row exists and the P record is there, so the next USE replays it. Every
+    // teardown path in the tree calls journal_note_rollback, which std::removes
+    // that file. A committed transaction, a decision row saying so, and its
+    // redo deleted by cleanup.
+    //
+    // THE ALTERNATIVE WAS A PARAMETER ON THE TEARDOWN and it was rejected: a
+    // flag at the call site makes the deletion CONDITIONAL, correct only while
+    // every present and future caller passes the right value, with a silently
+    // lost commit as the price of one wrong one. Here the deletion is
+    // IMPOSSIBLE instead, and the callers nobody has written yet are covered
+    // by the same check.
+    //
+    // IN MEMORY, DELIBERATELY, AND THE CRASH CASE ARGUES FOR IT RATHER THAN
+    // AGAINST. These only need to outlive the teardown, not the process. A
+    // crash with `decided` set leaves the journal on disk with its P record and
+    // the decision row in the group log, which is exactly the state recovery
+    // knows how to finish. Writing the bit durably into each member's journal
+    // would be a SECOND SPELLING of the decision, plus an fsync per member
+    // after the group is already true.
+    bool                  prepared {false};
+    bool                  decided  {false};
 };
 
 struct AreaState {
@@ -175,7 +214,24 @@ bool journal_begin_commit(int area0);
 // carrying both markers names two authorities for one question and recovery
 // refuses it outright.
 bool journal_begin_prepare(int area0, const std::string& group_key, int members);
+
+// THE GROUP SAID YES. Called once per member the instant decide_committed
+// returns true, and nothing else may call it: it is the transfer of ownership
+// described on BufferJournalInfo::decided. After this, journal_note_rollback
+// refuses this area's journal and only journal_note_commit can remove it.
+//
+// Returns false only for an out-of-range area or one with no journal, and the
+// caller has nothing useful to do with that -- the group is already committed
+// by the time this runs.
+bool journal_note_decided(int area0);
+
 bool journal_note_commit(int area0);
+
+// DISCARD AN UNCOMMITTED TRANSACTION. REFUSES, AND CHANGES NOTHING, once the
+// area has been marked decided -- see BufferJournalInfo::decided. Every caller
+// in the tree ignores the return, which is the correct posture for all of them
+// except a caller that genuinely means to destroy a committed transaction, and
+// there is no such caller.
 bool journal_note_rollback(int area0);
 
 // Is this file engine-owned state under the SYS slot? (AIF-160)

@@ -274,6 +274,8 @@ void clear_journal_state(int area0) {
     j.path.clear();
     j.open = false;
     j.change_count = 0;
+    j.prepared = false;
+    j.decided = false;
 
     // Deliberately do not force mode back to RamOnly. Mode is a user/session
     // setting; COMMIT/ROLLBACK should close or clear journal state without
@@ -539,6 +541,13 @@ bool journal_note_buffer_on(int area0, const std::string& table_name) {
         return false;
     }
     j.change_count = 0;
+    // A FRESH LOG IS A FRESH TRANSACTION. Both bits belong to the log this
+    // call just truncated, not to the area, so leaving either set would carry a
+    // previous group's claim onto a journal that no longer contains its P
+    // record -- and `decided` in particular would make the new log permanently
+    // undeletable.
+    j.prepared = false;
+    j.decided  = false;
     j.open = true;
     return true;
 }
@@ -645,6 +654,15 @@ bool journal_begin_prepare(int area0, const std::string& group_key, int members)
     }
     if (members < 1) return false;
 
+    // ONE P RECORD PER LOG, AND A SECOND CALL IS REFUSED RATHER THAN OBEYED.
+    // Two P records name two groups for one journal. The reader refuses such a
+    // log -- correctly, since choosing between group keys is guessing -- and
+    // PRESERVES it, so the result of obeying a second call is a journal that
+    // can never replay and never goes away. A second C marker is harmless; a
+    // second P is terminal, which is why this guard exists here and not on
+    // journal_begin_commit.
+    if (j.prepared) return false;
+
     // Promote the header. "TBJ" is three bytes and the version that follows is
     // a single digit here, so offset 3 is the digit exactly. Asserted against
     // kJournalVersionWritten rather than assumed, because a future two-digit
@@ -660,7 +678,22 @@ bool journal_begin_prepare(int area0, const std::string& group_key, int members)
     const std::string marker =
         "P " + group_key + " " + std::to_string(members) + "\n";
     if (std::fwrite(marker.data(), 1, marker.size(), j.fp) != marker.size()) return false;
-    return wal_durable_sync(j.fp);
+    if (!wal_durable_sync(j.fp)) return false;
+
+    // SET LAST, AFTER THE FSYNC. `prepared` means a P record is on the platter,
+    // not that one was attempted: a failure above leaves the bit clear so the
+    // abort path can still discard this journal.
+    j.prepared = true;
+    return true;
+}
+
+// See the contract on BufferJournalInfo::decided.
+bool journal_note_decided(int area0) {
+    if (!in_range(area0)) return false;
+    auto& j = state_store()[area0].journal;
+    if (!j.prepared) return false;   // nothing was prepared; nothing to own
+    j.decided = true;
+    return true;
 }
 
 // Finalize a successful commit: the redo is now applied to the DBF, so close and
@@ -678,10 +711,24 @@ bool journal_note_commit(int area0) {
 
 // Discard an uncommitted transaction: no COMMIT marker was written, so recovery
 // would discard the log anyway; delete it now.
+//
+// UNLESS THE GROUP ALREADY SAID YES. See BufferJournalInfo::decided. Once a
+// decision row names this journal's group as committed, the transaction is no
+// longer uncommitted and this function's premise -- "recovery would discard the
+// log anyway" -- is false in the most expensive possible way: recovery would
+// REPLAY it, and this would delete the only copy of the redo first.
+//
+// REFUSED HERE RATHER THAN AT THE CALL SITES, and that placement is the whole
+// design. Every teardown path in the tree calls this: release_sql_transaction
+// walks its members, commit_group's abort walks its prepares, cmd_ROLLBACK's
+// body reaches it, and each of them is correct to. A parameter would have made
+// the deletion conditional on all of them agreeing forever. A check here makes
+// it impossible, including for the caller nobody has written yet.
 bool journal_note_rollback(int area0) {
     if (!is_persistent_enabled(area0)) return true;
 
     auto& j = state_store()[area0].journal;
+    if (j.decided) return false;   // committed elsewhere; not ours to reverse
     if (j.fp) {
         std::fputs("R\n", j.fp);   // best-effort marker; file is removed next
         std::fclose(j.fp);

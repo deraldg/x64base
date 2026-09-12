@@ -75,7 +75,6 @@
 #include <ctime>
 #include <filesystem>
 #include <fstream>
-#include <iomanip>
 #include <iostream>
 #include <memory>
 #include <sstream>
@@ -94,11 +93,6 @@
 #include "xbase_error_context.hpp"
 #include "xbase/trigger_hooks.hpp"   // AIF-087 M2c: the veto arm registers a BEFORE callback
 #include "cli/output_router.hpp"     // AIF-087 M2c: catalog messages bypass std::cout
-#include "dottalk/build_stamp.hpp"   // the run's identity: label, SHA, binary, path.
-                                     // NOT dottalk/version.hpp -- that header carries the
-                                     // generated stamp, whose mtime moves every commit, and
-                                     // this TU is 5,500 lines. See AIF-122 and the note on
-                                     // version_identity() in build_stamp.hpp.
 
 using xbase::DbArea;
 
@@ -714,7 +708,7 @@ constexpr std::array<RegressionSpec, 83> kRegressionSpecs{{
     {
         "SQLSEL_DML",
         "sqlsel_dml_transaction_regression.dts",
-        "SQLsel P5 (AIF-074): typed INSERT, UPDATE, and DELETE over the house table buffer, TBJ1 WAL, owner-aware table fence, and workspace-wide cursor guard. Six committed row sets are compared with SQLite. The validator pins autocommit, explicit rollback/commit, read-your-writes across buffered INSERT/arithmetic UPDATE, committed-view SELECT during a transaction, WAL cleanup, caller-owned FLOCK preservation, and fail-closed type/NULL/width/unknown-column/unsafe-delete controls. Transactions intentionally refuse a second target table because x64base has no cross-table atomic commit protocol. Self-erasing SANDBOX fixtures. Explicit-run pending mutation proof, second-compiler proof, independent review, and soak.",
+        "SQLsel P5 (AIF-074): typed INSERT, UPDATE, and DELETE over the house table buffer, TBJ2 WAL, owner-aware table fence, and workspace-wide cursor guard. Six committed row sets are compared with SQLite. The validator pins autocommit, explicit rollback/commit, read-your-writes across buffered INSERT/arithmetic UPDATE, committed-view SELECT during a transaction, WAL cleanup, caller-owned FLOCK preservation, and fail-closed type/NULL/width/unknown-column/unsafe-delete controls. TRANSACTIONS SPAN SEVERAL TABLES ATOMICALLY (AIF-160, 2026-09-11): D5 rolls back a two-table transaction and D5b commits one, and the arm pins the group-commit line because the per-statement line cannot tell one enlisted table from two. THIS ENTRY SAID transactions 'intentionally refuse a second target table because x64base has no cross-table atomic commit protocol' -- the refusal was a BOUNDARY and never a ruling, corrected by the owner 2026-09-10, and this was one of four published surfaces that had turned it into an assertion. Self-erasing SANDBOX fixtures. Explicit-run pending mutation proof, second-compiler proof, independent review, and soak.",
         false,
         false,
         RegressionValidator::SqlselDmlTransactionV1
@@ -1056,7 +1050,6 @@ void print_regression_usage()
         << "  REGRESSION RUN <name>\n"
         << "  REGRESSION <name>\n"
         << "  REGRESSION ALL\n"
-        << "  ... LIST | SHOW <name> | RUN <name> | <name> | ALL  [LOG [KEEP|<path>]]\n"
         << "Notes:\n"
         << "  - REGRESSION launches DOTSCRIPT; selected specs also validate marked\n"
         << "    transcript evidence and set final PASS/FAIL error status.\n"
@@ -1070,24 +1063,6 @@ void print_regression_usage()
         << "    isolation arm, which reads the PRODUCTION workspace catalog before\n"
         << "    and after and proves its own detector first. Count its markers: an\n"
         << "    errored marker PRINTS NOTHING rather than going red.\n"
-        << "  - LOG writes the run to a file so it can be READ rather than watched.\n"
-        << "    A full ALL prints more lines than a console window keeps, and a\n"
-        << "    truncated window and a short marker count look exactly alike -- so\n"
-        << "    COUNT THE MARKERS is not enforceable on screen. Default path is the\n"
-        << "    TMP slot: regression_<target>_<YYYYMMDD_HHMMSS>.log, timestamped so a\n"
-        << "    later run cannot destroy the transcript you want to compare against.\n"
-        << "    LOG KEEP puts it in the LOGS slot instead. TMP is the default because a\n"
-        << "    regression transcript is REGENERABLE -- rerun the suite and another one\n"
-        << "    appears -- and tmp is the place anyone may delete. KEEP is for the run\n"
-        << "    that is NOT regenerable: an intermittent red nobody can summon again is\n"
-        << "    the only copy of the condition. Temporary until PROMOTED, rather than\n"
-        << "    permanent until curated.\n"
-        << "    LOG does NOT take SET ALTERNATE -- that channel belongs to the specs\n"
-        << "    that need it, and taking it would make them report NOT RUN. Their\n"
-        << "    captures are folded into the log after each spec instead. Output from\n"
-        << "    `!` child processes is in NEITHER channel and cannot be logged; the\n"
-        << "    file says so in its own header. If the log cannot be opened, NOTHING\n"
-        << "    RUNS. FIND takes no LOG: its terms run to end of line.\n"
         << "  - HARVEST is the top-layer shakedown for newly promoted surfaces.\n"
         << "  - LANGUAGE proves es/fr/de/it USAGE rendering across the localized command surface.\n";
 }
@@ -1480,318 +1455,6 @@ private:
     std::streambuf* visible_;
     std::streambuf* captured_;
 };
-
-// ---------------------------------------------------------------------------
-// REGRESSION ... LOG -- THE RUN ON DISK, BECAUSE A SCREEN BUFFER IS NOT AN
-// INSTRUMENT.
-//
-// A full REGRESSION ALL prints more lines than a console window keeps. When the
-// top of the run scrolls off, the evidence meant to explain the bottom is gone,
-// and the reading rule this file insists on everywhere -- COUNT THE MARKERS
-// FIRST, because an errored marker prints NOTHING rather than going red -- is
-// unenforceable against a transcript missing an unknown number of lines. A
-// short count and a truncated window look identical. LOG writes the run to a
-// file so the count can actually be taken.
-//
-// IT IS A std::cout TEE, AND IT IS DELIBERATELY NOT `SET ALTERNATE`.
-//
-// The alternate channel is the better capture and that is exactly why it cannot
-// be used here. It is a SUPERSET -- it holds the routed channel and cout
-// together with correct interleaving (see the AIF-087 note further down) -- and
-// it is ALREADY SPOKEN FOR. AlternateCapture refuses rather than clobbers: a
-// spec that needs the routed channel and finds SET ALTERNATE already active
-// prints "NOT RUN" and reports UNMEASURED, because set_alternate_to TRUNCATES
-// and the operator's capture cannot be handed back afterwards. A log that took
-// that channel would therefore convert every routed-channel spec in the suite
-// into an unmeasured one, and it would do it quietly, one "NOT RUN" at a time,
-// inside the very file the operator turned logging on to read. That is a
-// logging convenience that removes claims. THE LOG MUST NOT CHANGE THE
-// VERDICTS IT EXISTS TO RECORD.
-//
-// SO THE ROUTED LINES ARE FOLDED IN AFTERWARDS, INTO THE FILE ONLY.
-// run_regression_script already slurps each routed capture in order to validate
-// it. When a log is open, that same text is appended to the log and NOT to
-// std::cout. The operator has already seen those lines live -- the router
-// writes them straight to the console -- so echoing them through cout would
-// double them on screen while adding nothing to the file. The invariant aimed
-// at is "the log holds what the operator saw", not "the log holds what cout
-// carried".
-//
-// WHAT IT STILL CANNOT SEE, stated in the file's own header rather than only
-// here, because an incomplete capture that does not announce itself is the
-// failure this file has already had twice:
-//
-//   1. CHILD PROCESSES started by `!`. std::system() hands the child the
-//      console handle; it passes through neither cout nor the router. PKDURABLE
-//      is the one spec in the tree with children and its markers are written by
-//      those children into pkdur_run1.alt / pkdur_run2.alt beside the log.
-//
-//   2. THE ROUTED CHANNEL OF SPECS THAT DID NOT TAKE A CAPTURE. Only specs
-//      flagged capture_routed_channel have an .alt file to fold. For every
-//      other spec the catalog messages and cmdout lines were on the screen and
-//      are not in this file. That is a real hole and the header names it.
-//
-// REFUSING TO RUN IS THE RIGHT ANSWER TO AN UNOPENABLE LOG. If the file cannot
-// be created, nothing runs. A suite that completed while its transcript went
-// nowhere reads exactly like a completed measurement whose evidence was
-// misplaced, which is worse than no run at all.
-class RegressionLog;
-RegressionLog* g_regression_log = nullptr;
-
-std::string regression_log_stamp(const char* fmt)
-{
-    const std::time_t tt = std::time(nullptr);
-    std::tm tm_buf{};
-#if defined(_WIN32)
-    if (localtime_s(&tm_buf, &tt) != 0) return "(unavailable)";
-#else
-    if (localtime_r(&tt, &tm_buf) == nullptr) return "(unavailable)";
-#endif
-    std::ostringstream oss;
-    oss << std::put_time(&tm_buf, fmt);
-    return oss.str();
-}
-
-class RegressionLog {
-public:
-    RegressionLog(std::filesystem::path path, std::string target)
-        : path_(std::move(path)), target_(std::move(target))
-    {
-        std::error_code ec;
-        if (path_.has_parent_path()) {
-            std::filesystem::create_directories(path_.parent_path(), ec);
-        }
-        file_.open(path_, std::ios::out | std::ios::trunc);
-        if (!file_) return;
-
-        ok_ = true;
-        write_header();
-
-        // Order matters on the way in and on the way out. The tee wraps
-        // whatever cout currently points at, so a log opened here composes with
-        // the per-spec validator tee opened later rather than fighting it:
-        // the inner tee captures THIS tee as its "visible" side, and lines
-        // reach the console, the validator buffer and the log exactly once.
-        tee_      = std::make_unique<TeeStreamBuf>(std::cout.rdbuf(), file_.rdbuf());
-        previous_ = std::cout.rdbuf(tee_.get());
-        g_regression_log = this;
-    }
-
-    ~RegressionLog() { close(); }
-
-    // Idempotent, and safe to call before destruction so the closing line can
-    // be printed to the console AFTER the file is complete.
-    void close()
-    {
-        if (!ok_) return;
-        ok_ = false;
-        std::cout.flush();
-        if (previous_ != nullptr) std::cout.rdbuf(previous_);
-        previous_ = nullptr;
-        tee_.reset();
-        if (g_regression_log == this) g_regression_log = nullptr;
-        write_footer();
-        file_.close();
-    }
-
-    bool ok() const noexcept { return ok_; }
-    const std::filesystem::path& path() const noexcept { return path_; }
-    std::ofstream& stream() noexcept { return file_; }
-    void note_fold() noexcept { ++folded_; }
-
-    RegressionLog(const RegressionLog&)            = delete;
-    RegressionLog& operator=(const RegressionLog&) = delete;
-
-private:
-    void write_header()
-    {
-        std::error_code ec;
-        const std::filesystem::path cwd = std::filesystem::current_path(ec);
-        file_
-            << "=== REGRESSION LOG =========================================================\n"
-            << "  target       : " << target_ << "\n"
-            << "  started      : " << regression_log_stamp("%Y-%m-%d %H:%M:%S") << "\n"
-            << "  runtime      : dottalk++ " << dottalk::version_identity() << "\n"
-            << "  built        : " << dottalk::build_stamp() << "\n"
-            << "  executable   : " << dottalk::executable_path() << "\n"
-            << "  working dir  : " << (ec ? std::string("(unavailable)") : cwd.string()) << "\n"
-            << "  log file     : " << path_.string() << "\n"
-            << "\n"
-            << "  The four lines above are the run's IDENTITY and they answer DIFFERENT\n"
-            << "    questions. runtime names the COMMIT; built names the BINARY, read from\n"
-            << "    the running executable's own mtime, because a rebuild of an unchanged\n"
-            << "    commit produces a new binary and an identical SHA; executable and\n"
-            << "    working dir name WHICH one ran and FROM WHERE, which is the pair a\n"
-            << "    transcript comparison needs and which no previous run recorded.\n"
-            << "\n"
-            << "  WHAT THIS FILE HOLDS\n"
-            << "    Every line written to std::cout during this run, plus the routed-\n"
-            << "    channel (SET ALTERNATE) capture of each spec that took one, folded in\n"
-            << "    after that spec finishes. Folded lines appear HERE and not a second\n"
-            << "    time on screen: the operator already saw them live.\n"
-            << "\n"
-            << "  WHAT THIS FILE DOES NOT HOLD -- read this before concluding anything\n"
-            << "    from a line's absence.\n"
-            << "    1. Output from CHILD PROCESSES started by `!`. std::system() hands the\n"
-            << "       child the console handle, so it reaches neither std::cout nor the\n"
-            << "       output router. PKDURABLE is the only spec with children; its child\n"
-            << "       markers are in pkdur_run1.alt / pkdur_run2.alt beside this file.\n"
-            << "    2. The routed channel of specs that took NO capture. Only specs flagged\n"
-            << "       capture_routed_channel have an .alt file to fold. Catalog messages\n"
-            << "       and cmdout lines from every other spec were on the screen and are\n"
-            << "       not in this file.\n"
-            << "\n"
-            << "  THIS LOG DOES NOT TAKE SET ALTERNATE. Taking it would truncate any\n"
-            << "    capture the operator had open and would make every routed-channel spec\n"
-            << "    report NOT RUN. No verdict in this file differs because logging was on.\n"
-            << "\n"
-            << "  READING RULE: COUNT THE MARKERS BEFORE READING THE VERDICTS. An errored\n"
-            << "    marker prints NOTHING rather than printing .F., so a short count is a\n"
-            << "    LOST CLAIM wearing a clean face, not a pass.\n"
-            << "============================================================================\n\n";
-        file_.flush();
-    }
-
-    void write_footer()
-    {
-        file_
-            << "\n=== END REGRESSION LOG =====================================================\n"
-            << "  target                 : " << target_ << "\n"
-            << "  finished               : " << regression_log_stamp("%Y-%m-%d %H:%M:%S") << "\n"
-            << "  routed captures folded : " << folded_ << "\n"
-            << "============================================================================\n";
-        file_.flush();
-    }
-
-    std::filesystem::path          path_;
-    std::string                    target_;
-    std::ofstream                  file_;
-    std::unique_ptr<TeeStreamBuf>  tee_;
-    std::streambuf*                previous_ = nullptr;
-    bool                           ok_       = false;
-    unsigned                       folded_   = 0;
-};
-
-// Fold a routed-channel capture into the open log and NOWHERE ELSE. The cout
-// twin of this is fold_routed_into_cout further down, which exists for arms
-// that must put both channels into ONE validated transcript; this one must not
-// touch cout, because these lines were already on the operator's screen.
-void fold_routed_into_log(const std::string& routed, const std::string& spec_name)
-{
-    RegressionLog* const log = g_regression_log;
-    if (log == nullptr || !log->ok() || routed.empty()) return;
-
-    log->note_fold();
-    std::ofstream& f = log->stream();
-    f << "  ---- routed-channel capture for " << spec_name << " (" << routed.size()
-      << " bytes) ----\n"
-         "       std::cout cannot see these lines. They were on the screen live and are\n"
-         "       reproduced here so this file holds what the operator saw.\n";
-    std::istringstream rin(routed);
-    std::string rline;
-    while (std::getline(rin, rline)) {
-        while (!rline.empty() && rline.back() == '\r') rline.pop_back();
-        f << "  | " << rline << "\n";
-    }
-    f << "  ---- end routed capture for " << spec_name << " ----\n";
-    f.flush();
-}
-
-// TMP BY DEFAULT, LOGS ON REQUEST, AND THE RULE THAT PICKS BETWEEN THEM.
-//
-// Slots here are chosen by CONSEQUENCE OF LOSS, not by subject: tmp is what can
-// be regenerated on demand and anyone may delete; logs is what happened once and
-// wants curating. A regression transcript is REGENERABLE -- rerun the suite and
-// another one appears -- so tmp is its home, beside the .alt captures it folds.
-//
-// THE EXCEPTION THAT EARNED THE `KEEP` VERB. On 2026-09-11 a REGRESSION ALL went
-// red on six markers, then green, then red again, with no commit between and the
-// variable still unidentified. THAT transcript was not regenerable: in exactly
-// the case where a run matters most, it is the only copy of a condition nobody
-// can summon on demand. `LOG KEEP` promotes it to the LOGS slot, where the
-// suite already writes its trigger-veto proofs.
-//
-// So the posture is NOT "permanent until curated". It is TEMPORARY UNTIL
-// PROMOTED, and promotion is a deliberate act by whoever noticed the run
-// mattered -- which is the only moment anyone actually knows.
-//
-// TIMESTAMPED IN BOTH SLOTS, never fixed. A fixed name is easier to quote and
-// would have destroyed the green run the moment the red one was taken, which is
-// precisely the comparison that makes an intermittent red readable at all.
-std::filesystem::path default_regression_log_path(const std::string& target, bool keep)
-{
-    const auto slot = keep ? dottalk::paths::Slot::LOGS : dottalk::paths::Slot::TMP;
-    return dottalk::paths::get_slot(slot) /
-           ("regression_" + target + "_" + regression_log_stamp("%Y%m%d_%H%M%S") + ".log");
-}
-
-struct RegressionLogRequest {
-    bool                  requested = false;
-    bool                  keep      = false;  // promote to the LOGS slot
-    std::filesystem::path path;               // empty => default for the slot
-    std::string           bad_token;          // non-empty => trailing junk, refuse
-};
-
-// LOG is a TRAILING modifier, optionally followed by an explicit path that runs
-// to end of line. Anything else trailing is refused rather than ignored: a
-// misspelled option that silently runs the suite unlogged is a two-minute run
-// and a lost transcript.
-RegressionLogRequest take_trailing_log_option(std::istringstream& in)
-{
-    RegressionLogRequest req;
-    std::string tok;
-    while (in >> tok) {
-        if (upper_copy(tok) == "LOG") {
-            req.requested = true;
-            std::string rest;
-            std::getline(in, rest);
-            rest = trim_copy(rest);
-            if (upper_copy(rest) == "KEEP") {
-                req.keep = true;           // LOGS slot, curated, not swept
-            } else if (!rest.empty()) {
-                req.path = std::filesystem::path(rest);   // explicit wins over both
-            }
-            return req;
-        }
-        req.bad_token = tok;
-        return req;
-    }
-    return req;
-}
-
-template <typename Fn>
-void run_under_optional_log(const RegressionLogRequest& req,
-                            const std::string&          target,
-                            Fn&&                        fn)
-{
-    if (!req.requested) {
-        fn();
-        return;
-    }
-
-    const std::filesystem::path path =
-        req.path.empty() ? default_regression_log_path(target, req.keep) : req.path;
-
-    RegressionLog logger(path, target);
-    if (!logger.ok()) {
-        std::cout << "REGRESSION " << target << ": LOG NOT OPENED and NOTHING WAS RUN.\n"
-                     "  Could not create " << path.string() << "\n"
-                     "  A run whose transcript was supposed to be on disk and is not is\n"
-                     "  worth less than no run at all: it reads like a finished\n"
-                     "  measurement whose evidence was merely misplaced.\n";
-        xbase::error::set_last_error(xbase::error::e_invalid_argument());
-        return;
-    }
-
-    std::cout << "REGRESSION: logging this run to\n  " << path.string() << "\n";
-    if (req.keep) {
-        std::cout << "  KEEP: this run is in the LOGS slot, which is not swept.\n";
-    }
-    fn();
-    logger.close();   // the file is complete only after this
-    std::cout << "REGRESSION: log written to\n  " << path.string() << "\n";
-}
-
 
 std::string clean_transcript_line(std::string line)
 {
@@ -2946,7 +2609,21 @@ bool validate_sqlsel_dml_transaction(const std::string& transcript)
         "DML_W2_rollback_wal_closed:.T.",
         "DML_W3_commit_wal_closed:.T.",
         "DML_L1_caller_table_lock_preserved:.T.",
-        "SQLSEL: UPDATE refused -- one SQL transaction may modify one table; cross-table atomic commit is not available.",
+        // AIF-160, 2026-09-11. THIS SLOT HELD THE REFUSAL and the gate did its
+        // job: pinning that sentence is what made the refusal unable to
+        // disappear quietly, and it fired the day cross-table commit shipped.
+        //
+        // THE OBVIOUS REPOINTING WOULD HAVE BEEN USELESS. Inside a transaction
+        // the second table's statement prints "staged N row(s) in the active
+        // transaction" -- word for word what the FIRST table prints -- so an arm
+        // pinned there reads green whether cross-table works or silently
+        // collapses back to a single table. Nothing else in the transcript says
+        // how many tables a transaction holds.
+        //
+        // So the engine grew a line only a GROUP can produce, and this is it.
+        // It goes red if commit_sql_transaction ever stops routing through
+        // commit_group, or routes through it with one member.
+        "SQLSEL: 2 tables committed as ONE decision (group commit).",
         "SQLSEL: UPDATE refused -- ACTIVE: invalid logical for field.",
         "SQLSEL: INSERT refused -- NULL is not a stored x64base value; use an explicit typed blank.",
         "SQLSEL: UPDATE refused -- value for 'NAME' exceeds its declared width 12.",
@@ -2963,9 +2640,20 @@ bool validate_sqlsel_dml_transaction(const std::string& transcript)
     const std::size_t rolled_back = transcript_count(transcript, "SQLSEL: transaction rolled back.");
     const std::size_t autocommitted = transcript_count(
         transcript, "committed through table buffer + WAL.");
-    if (begun != 3 || committed != 1 || rolled_back != 2 || autocommitted != 4) {
+    // AIF-160, 2026-09-11: begin 3 -> 4 and commit 1 -> 2, because D5b added a
+    // second explicit transaction -- the CROSS-TABLE COMMIT half. Rollback stays
+    // 2 (D3 and D5) and autocommit stays 4; D5b commits explicitly and D6's
+    // refusals print "transaction rolled back -- <reason>", which is a different
+    // string and does not match the exact-text count above.
+    //
+    // THIS RATCHET EARNED ITS KEEP ON THE FIRST RUN. Every fragment check and
+    // all six oracle pairs passed, and this line still reported FAIL -- got
+    // 4/2/2/4 -- because a spec that grows a transaction must say so. A spec
+    // whose statement mix can change without a number moving is a spec that can
+    // quietly stop exercising what it claims to.
+    if (begun != 4 || committed != 2 || rolled_back != 2 || autocommitted != 4) {
         std::cout << "SQLSEL DML ORACLE: FAIL -- expected transaction reports "
-                     "begin=3, commit=1, rollback=2, autocommit=4; got "
+                     "begin=4, commit=2, rollback=2, autocommit=4; got "
                   << begun << '/' << committed << '/' << rolled_back << '/'
                   << autocommitted << ".\n";
         return false;
@@ -4289,11 +3977,6 @@ void run_regression_script(DbArea& area, const RegressionSpec& spec)
             xbase::error::set_last_error(xbase::error::e_invalid_argument());
             return;
         }
-        // These lines never passed through std::cout, so a log that only tees
-        // cout would hold this spec's fences and none of its body -- the exact
-        // shape of the COUNT_LIST_VERBOSE false red recorded above. Fold them
-        // into the file (and not onto the screen, where they already appeared).
-        fold_routed_into_log(transcript, std::string(spec.name));
     }
     if (!validate_regression_transcript(spec, transcript)) {
         xbase::error::set_last_error(xbase::error::e_invalid_argument());
@@ -5508,9 +5191,16 @@ void cmd_REGRESSION(DbArea& area, std::istringstream& in)
         return;
     }
 
-    // FIND is the one verb that cannot carry LOG: its terms run to end of line,
-    // so a trailing LOG would be indistinguishable from a search word. It is
-    // handled before the option is parsed at all, so the ambiguity never arises.
+    if (op == "LIST") {
+        print_regression_list();
+        return;
+    }
+
+    if (op == "ALL") {
+        run_regression_default_suite(area);
+        return;
+    }
+
     if (op == "FIND" || op == "SEARCH") {
         std::string rest;
         std::getline(in, rest);
@@ -5518,75 +5208,44 @@ void cmd_REGRESSION(DbArea& area, std::istringstream& in)
         return;
     }
 
-    // The operand, where there is one, comes BEFORE the option: RUN <name> LOG.
-    std::string operand;
-    if (op == "SHOW" || op == "RUN" || op == "TRIGGERVETO") {
-        in >> operand;
-    }
-
-    // Everything below may end with LOG [<path>]. A trailing token that is not
-    // LOG is REFUSED rather than ignored: silently running a two-minute suite
-    // unlogged because the option was misspelled is the exact failure this
-    // facility exists to end, and it would not be noticed until the transcript
-    // was wanted and missing.
-    const RegressionLogRequest log = take_trailing_log_option(in);
-    if (!log.bad_token.empty()) {
-        std::cout << "REGRESSION " << arg1 << ": unexpected trailing word '"
-                  << log.bad_token << "'.\n"
-                     "  NOTHING WAS RUN. The only trailing option is LOG [<path>].\n";
-        xbase::error::set_last_error(xbase::error::e_invalid_argument());
-        return;
-    }
-
-    if (op == "LIST") {
-        run_under_optional_log(log, "LIST", [] { print_regression_list(); });
-        return;
-    }
-
-    if (op == "ALL") {
-        run_under_optional_log(log, "ALL", [&] { run_regression_default_suite(area); });
-        return;
-    }
-
     if (op == "SHOW" || op == "RUN") {
-        if (operand.empty()) {
+        std::string name;
+        if (!(in >> name)) {
             std::cout << "REGRESSION: missing regression name.\n";
             print_regression_usage();
             return;
         }
-        const RegressionSpec* spec = find_regression_spec(operand);
+        const RegressionSpec* spec = find_regression_spec(name);
         if (!spec) {
-            std::cout << "REGRESSION: unknown regression '" << operand << "'.\n";
+            std::cout << "REGRESSION: unknown regression '" << name << "'.\n";
             print_regression_list();
             return;
         }
-        const std::string target = upper_copy(operand);
         if (op == "SHOW") {
-            run_under_optional_log(log, target, [&] { print_regression_show(*spec); });
+            print_regression_show(*spec);
         } else {
-            run_under_optional_log(log, target,
-                                   [&] { run_regression_script_measured(area, *spec); });
+            run_regression_script_measured(area, *spec);
         }
         return;
     }
 
     if (op == "TRIGGERVETO") {
-        std::string up = upper_copy(operand);
+        std::string mode;
+        in >> mode;
+        std::string up = upper_copy(mode);
         if (up.empty()) up = "NORMAL";
         if (up != "NORMAL" && up != "SELFTEST" && up != "MULTIREP" &&
             up != "AFTER" && up != "RECOVERY") {
-            std::cout << "REGRESSION TRIGGERVETO: unknown mode '" << operand
+            std::cout << "REGRESSION TRIGGERVETO: unknown mode '" << mode
                       << "'. Use NORMAL, SELFTEST, MULTIREP, AFTER or RECOVERY.\n";
             return;
         }
-        run_under_optional_log(log, "TRIGGERVETO_" + up,
-                               [&] { run_trigger_veto_arm(area, up); });
+        run_trigger_veto_arm(area, up);
         return;
     }
 
     if (const RegressionSpec* spec = find_regression_spec(op)) {
-        run_under_optional_log(log, op,
-                               [&] { run_regression_script_measured(area, *spec); });
+        run_regression_script_measured(area, *spec);
         return;
     }
 

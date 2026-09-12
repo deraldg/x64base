@@ -10,8 +10,13 @@
 ;      unknown-column, and unsafe DELETE forms refuse before storage.
 ;   D3 BEGIN/ROLLBACK and BEGIN/COMMIT differ; DML reads its own buffered
 ;      INSERT/UPDATE state while SELECT continues to report committed truth.
-;   D4 one transaction modifies one table; a second-table enlistment refuses
-;      because x64base has no cross-table atomic commit protocol.
+;   D4 ONE TRANSACTION MAY SPAN SEVERAL TABLES, and does so atomically: every
+;      table prepares, ONE group-log row decides them all, and a crash before
+;      that row lands leaves none of them applied (AIF-160, 2026-09-11). This
+;      line read "a second-table enlistment refuses because x64base has no
+;      cross-table atomic commit protocol" until the protocol existed. The
+;      refusal was a BOUNDARY, never a ruling -- nobody weighed cross-table
+;      atomicity and rejected it.
 ;   D5 caller-owned FLOCK and every open cursor are preserved.
 ;   ORACLE six marked committed row sets equal SQLite.
 ;
@@ -105,7 +110,15 @@ FORMULA "SQLSEL-DML-S5-BEGIN"
 SELECT ID,NAME,AMT,ACTIVE,STAMP FROM SQLDML ORDER BY ID
 FORMULA "SQLSEL-DML-S5-END"
 
-; D5 -- one-table atomicity is real; cross-table atomicity is not claimed.
+; D5 -- CROSS-TABLE, AND BOTH HALVES, BECAUSE EITHER ALONE PROVES NOTHING.
+;
+; The ROLLBACK half below is what this block used to be, and on its own it is
+; not a measurement: a transaction that never enlisted SQLDML2 at all would
+; leave both tables exactly as untouched. The COMMIT half is the discriminator,
+; and its evidence is a transcript line only a GROUP can produce --
+; "SQLSEL: 2 tables committed as ONE decision (group commit)." The per-statement
+; line is word for word the same whether one table is enlisted or two, which is
+; why that line exists and why the validator requires it.
 BEGIN
 UPDATE SQLDML SET NAME = 'PENDING' WHERE ID = 4
 UPDATE SQLDML2 SET NAME = 'BLOCKED' WHERE ID = 1
@@ -114,6 +127,15 @@ ROLLBACK
 FORMULA "SQLSEL-DML-S6-BEGIN"
 SELECT ID,NAME,AMT,ACTIVE,STAMP FROM SQLDML ORDER BY ID
 FORMULA "SQLSEL-DML-S6-END"
+
+; D5b -- the commit half. Two tables, one decision.
+BEGIN
+UPDATE SQLDML SET NAME = 'JOINED' WHERE ID = 4
+UPDATE SQLDML2 SET NAME = 'JOINED' WHERE ID = 1
+COMMIT
+FORMULA "SQLSEL-DML-X1-BEGIN"
+SELECT ID,NAME FROM SQLDML2 ORDER BY ID
+FORMULA "SQLSEL-DML-X1-END"
 
 ; D6 -- typed/fail-closed controls. None may mutate SQLDML.
 UPDATE SQLDML SET ACTIVE = 'NOTBOOL' WHERE ID = 1
