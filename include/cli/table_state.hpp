@@ -225,6 +225,16 @@ bool journal_begin_prepare(int area0, const std::string& group_key, int members)
 // by the time this runs.
 bool journal_note_decided(int area0);
 
+// True when the log for this area already carries a durable P record -- that
+// is, when this transaction is a member of a group and journal_begin_commit
+// will REFUSE to write a C over it. Read-only, and safe on an area with no
+// journal at all.
+//
+// THE REFUSAL IS THE GUARANTEE; THIS IS THE COURTESY. A caller that skips
+// this still cannot produce a C-and-P log, it just reports the refusal in
+// worse words.
+bool journal_is_prepared(int area0);
+
 bool journal_note_commit(int area0);
 
 // DISCARD AN UNCOMMITTED TRANSACTION. REFUSES, AND CHANGES NOTHING, once the

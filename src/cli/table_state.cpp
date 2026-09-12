@@ -604,6 +604,23 @@ bool journal_begin_commit(int area0) {
     auto& j = state_store()[area0].journal;
     if (!j.fp) return true;   // nothing was logged (e.g. empty transaction)
 
+
+    // C AND P ARE ALTERNATIVES, AND THIS IS THE OTHER HALF OF THAT RULE.
+    // journal_begin_prepare refuses a second P and says why -- "a second C
+    // marker is harmless" -- which is true of a log with no P and false of
+    // this one. The reader does not count markers, it refuses the PAIR: a C
+    // written here over a durable P produces a log that is refused and KEPT,
+    // so the committed transaction never replays and the refusal prints on
+    // every USE of this table forever. That is the same terminal shape the
+    // guard above exists to prevent, reached from the other side.
+    //
+    // REACHABLE FROM THE RETRY, not from any protocol writing both. A member
+    // whose apply failed after its group decided is left dirty with its
+    // journal open, and COMMIT is the obvious next thing to type. Refused
+    // HERE rather than at the call sites, for the reason journal_note_rollback
+    // states about the deletion: a check here is impossible to get wrong,
+    // including for the caller nobody has written yet.
+    if (j.prepared) return false;
     const std::string marker = "C " + std::to_string(j.change_count) + "\n";
     if (std::fwrite(marker.data(), 1, marker.size(), j.fp) != marker.size()) return false;
     return wal_durable_sync(j.fp);
@@ -685,6 +702,20 @@ bool journal_begin_prepare(int area0, const std::string& group_key, int members)
     // abort path can still discard this journal.
     j.prepared = true;
     return true;
+}
+
+// True when the log for this area already carries a durable P record -- that
+// is, when this transaction is a member of a group and journal_begin_commit
+// will REFUSE to write a C over it. Read-only, and safe on an area with no
+// journal at all.
+//
+// THE REFUSAL IS THE GUARANTEE; THIS IS THE COURTESY. A caller that skips
+// this still cannot produce a C-and-P log, it just reports the refusal in
+// worse words. Same division as RecordLockGuard: the explicit call where it
+// reads best, the structural check as the backstop.
+bool journal_is_prepared(int area0) {
+    if (!in_range(area0)) return false;
+    return state_store()[area0].journal.prepared;
 }
 
 // See the contract on BufferJournalInfo::decided.
