@@ -78,16 +78,19 @@ other refused the join before emitting any row *or* any access path. Locks the
 caller already held are preserved, and only the fences SQLsel took are released.
 
 The limit is stated because the mechanism invites overreading: this is a
-**cooperative statement read fence, not MVCC and not cross-table write
-atomicity.** It stops a concurrent writer from producing a fractured joined
-result. It does not version rows, and joined `UPDATE` / `DELETE` remain out of
-scope -- `COMMIT ALL` is still partial across DBF, memo and index storage.
+**cooperative statement read fence, not MVCC.** It stops a concurrent writer
+from producing a fractured joined result. It does not version rows, and joined
+`UPDATE` / `DELETE` remain out of scope.
+
+The fence is also **not** the cross-table write atomicity mechanism, and the two
+are described apart because they are apart. Cross-table atomic commit ships --
+see the transaction bullet below.
 
 ## The join family, and a refusal worth reading
 
 `INNER`, `LEFT`, `RIGHT`, `FULL` and `CROSS` all ship (P4.1-P4.4), alongside
 `DISTINCT`, the set operations, `GROUP BY` / `HAVING` with aggregates,
-subqueries, `SET MODE SQL`, and transactional single-table `INSERT` / `UPDATE` /
+subqueries, `SET MODE SQL`, and transactional `INSERT` / `UPDATE` /
 `DELETE`. Ten result multisets are compared against the SQLite
 oracle, outer joins on both indexed and scan paths, and `CROSS` on both a
 filtered result and a full 30-row Cartesian product.
@@ -172,8 +175,14 @@ reason:
   SQLsel's write path, not the database. Inside a statement, blank remains a
   value (R16) and outer-join absence remains a produced cell -- three distinct
   kinds, not two.
-- **No memo-field transactional DML**, and **no cross-table atomic commit** --
-  `COMMIT ALL` remains partial across DBF, memo and index storage.
+- **No memo-field transactional DML.**
+- **Cross-table atomic commit SHIPPED 2026-09-11**, and this bullet used to deny
+  it. A SQL transaction enlists every table it touches; each member prepares
+  durably; ONE group-log row decides all of them; the apply follows and
+  converges by replay. A multi-table commit says so in the transcript --
+  `SQLSEL: N tables committed as ONE decision (group commit).` `COMMIT ALL` is
+  deliberately unchanged and remains partial across DBF, memo and index
+  storage; `GROUPCOMMIT` is its atomic twin.
 - **No generalized multi-chain `RIGHT` / `FULL` join.** The two-table forms
   ship and are oracle-checked on every run (`SQLSEL_JOIN_FAMILY` covers
   `RIGHT`, `FULL` and `CROSS`); it is the three-table CHAINS that remain

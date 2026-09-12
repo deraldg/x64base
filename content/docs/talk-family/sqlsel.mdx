@@ -103,8 +103,13 @@ routes `SELECT` (and six other verbs) to `SQLSEL`, proven against SQLite by the
 `SQLMODE_SMOKE` regression. See
 [SQLsel and SQL Conformance](/docs/engine/sqlsel-and-sql-conformance).
 
-- **Explicit transactions require SQL mode and accept ONE target table.**
-  Cross-table atomic commit is refused.
+- **Explicit transactions require SQL mode.** Corrected 2026-09-12: this bullet
+  also said they accept ONE target table and that cross-table atomic commit was
+  refused. That stopped being true on 2026-09-11. A transaction now enlists
+  every table it touches, each member prepares durably, and ONE group-log row
+  decides all of them, so a crash leaves ALL members applied or NONE. A
+  multi-table commit reports
+  `SQLSEL: N tables committed as ONE decision (group commit).`
 - **No stored NULL in DML, and no memo-field DML.** Both are refused rather than
   silently coerced.
 - **A subquery over a joined outer scope is refused.** Correlated subqueries over

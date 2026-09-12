@@ -60,7 +60,7 @@ lane moves faster than a table does.
 | `JOIN` **as SQL syntax inside a `SQLSEL` statement** | **Ships.** `INNER`, `LEFT`, `RIGHT`, `FULL` and `CROSS`, with `DISTINCT`, the set operations, `GROUP BY` / `HAVING` and aggregates, subqueries, and workspace-scoped name resolution -- pushed to `development` as `e7d6ef130`. Result sets are compared against an in-process SQLite oracle by executable validators, which also assert the reported access path **separately from the answer** -- **12 `SQLSEL_*` specifications, 6 of them in the default suite** (buffer visibility, `SELECT` v1, inner join, join edges, left join, and the full family) and 6 explicit-run -- corrected 2026-09-09 from "fourteen ... the four", which was wrong in both halves. Counting specs graded against the oracle rather than specs named `SQLSEL_*` gives **13 oracle-graded specs**, because `SQLMODE_SMOKE` is graded the same way and is not a `SQLSEL_` spec. Outer-join `WHERE` is refused, naming the reason: three-valued predicate support does not exist yet. The frontier moves faster than this page; [the SQLsel manual](https://github.com/deraldg/x64base/blob/development/docs/manuals/user/sqlsel.md) is the authority |
 | `GROUP BY` / `HAVING` | **Ships** (P4.6), with `COUNT`, `SUM`, `AVG`, `MIN` and `MAX`. Numeric aggregates skip blank non-values and **report the split** -- a blank numeric field holds spaces, and reading spaces as zero would invent a data point nobody entered (R28) |
 | Expression projection (`UPPER(name)` in the select list) | **Ships**, evaluated by the TupleRow projection stage. The multi-join direct path takes bare columns and hands expressions to that stage, which is an internal fast-path rather than a limit on what you may write |
-| `INSERT` / `UPDATE` / `DELETE` as SQL syntax | **Ships, single-table and transactional** -- `SQLSEL INSERT INTO ... VALUES`, `SQLSEL UPDATE ... SET ... WHERE`, `SQLSEL DELETE FROM ... WHERE`, built on the engine's own `APPEND` / `REPLACE` / `DELETE`, cursor, lock, TableBuffer and WAL facilities. **No memo-field DML and no cross-table atomic commit**: `COMMIT ALL` is still partial across DBF, memo and index storage |
+| `INSERT` / `UPDATE` / `DELETE` as SQL syntax | **Ships, transactional, single- or multi-table** -- `SQLSEL INSERT INTO ... VALUES`, `SQLSEL UPDATE ... SET ... WHERE`, `SQLSEL DELETE FROM ... WHERE`, built on the engine's own `APPEND` / `REPLACE` / `DELETE`, cursor, lock, TableBuffer and WAL facilities. **Cross-table atomic commit ships since 2026-09-11**: each enlisted table prepares durably and ONE group-log row decides all of them. **No memo-field DML.** `COMMIT ALL` is deliberately unchanged and still partial across DBF, memo and index storage; `GROUPCOMMIT` is its atomic twin |
 | Bare `SELECT ...` without the `SQLSEL` prefix | **Ships, behind a mode switch.** `SET MODE [TO] NATIVE\|SQL\|OTHER` is session-only; in `SQL` mode seven verbs -- `SELECT`, `INSERT`, `UPDATE`, `DELETE`, `BEGIN`, `COMMIT`, `ROLLBACK` -- are routed to `SQLSEL` with the whole statement passed through. **This row said "still planned, routing is not wired" until 2026-09-09 and that was false**; see [the hard switch](#the-hard-switch-set-mode-sql) for what the row got wrong and why the evidence it cited could not have shown it |
 
 The table must already be open (`USE <table>`). SQLsel reads open work areas; it
@@ -232,7 +232,7 @@ reference itself, and covers equivalences as well as absences:
   -- the flag lives in x64 metadata, and a reader that does not know it reads
   zero and enforces nothing, in silence
 - `CREATE INDEX` - **equivalent, two steps** (`INDEX ON ... TAG`, then `BUILDLMDB`)
-- `INSERT` - **supported as SQL syntax** (`SQLSEL INSERT INTO ... VALUES`), single-table and transactional; the two-step `APPEND` then `REPLACE` form remains the native path
+- `INSERT` - **supported as SQL syntax** (`SQLSEL INSERT INTO ... VALUES`), transactional and enlistable in a multi-table transaction; the two-step `APPEND` then `REPLACE` form remains the native path
 - `DELETE` - **equivalent with a real difference**: `DELETE` marks, `RECALL`
   un-marks, `PACK` removes. Closer to a soft delete than SQL's
 - `BEGIN TRANSACTION` / `COMMIT` / `ROLLBACK` - **supported**, via `TABLE BUFFER ON`,
@@ -287,7 +287,7 @@ this page to that artifact -- change the spec count, the command list, the alias
 set or the map's coverage in the engine without changing this page, and the
 build fails naming the sentence.
 
-**Derived from engine commit `d876f3358` (2026-09-09).**
+**Derived from engine commit `ab9905e56` (2026-09-10).**
 
 Three of the corrections dated 2026-09-09 on this page were found by writing
 that generator, not by reading the page: the spec counts, the missing `SQLHELP`
