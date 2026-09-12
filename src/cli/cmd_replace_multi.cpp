@@ -7,7 +7,7 @@
 // owner: member.derald
 // status: supported
 
-// src/cli/cmd_replace_multi.cpp — multi-field replace with one record lock + one write
+// src/cli/cmd_replace_multi.cpp -- multi-field replace with one record lock + one write
 //
 // Maintenance note, 2026-05-01:
 //   MULTIREP must evaluate/dequote RHS values before validation/storage,
@@ -22,16 +22,25 @@
 //                          const std::vector<FieldUpdate>& updates,
 //                          std::string* error)
 //
-// Rule (current direct-write phase):
-//   - Writes directly to DBF => does NOT mark DIRTY.
-//   - If a field actually changes, attempt immediate index maintenance through
-//     IndexManager simple-field tag logic.
-//   - Only mark field-level STALE if index maintenance fails for that changed field.
+// Rule (AIF-151, 2026-09-04 -- MULTIREP now honours TABLE ON):
+//   - TABLE ON  => stages into the table buffer, takes NO OS lock, marks DIRTY
+//     and marks each assigned field STALE. Applied by COMMIT, discardable by
+//     ROLLBACK, and journaled under RamJournal.
+//   - TABLE OFF => unchanged: one record lock, one physical write, immediate
+//     index maintenance through IndexManager simple-field tag logic, and
+//     field-level STALE only if that maintenance fails.
+//   - ONE PHYSICAL WRITE SURVIVES BUFFERING. add_change stages one field per
+//     call, and COMMIT's aggregate_for_recno folds every entry for a recno back
+//     into one set() loop and one writeCurrent().
+//   - MEMO: buffering defers the POINTER, NOT THE PAYLOAD. The memo object is
+//     written immediately and only its handle is buffered, so ROLLBACK leaves a
+//     reclaimable orphan that MEMO GC finds and reports. Same as REPLACE.
 //
 // Notes:
-//   - Buffering/COMMIT/ROLLBACK are deferred.
 //   - Compound/computed tags are deferred.
 //   - Simple first-pass policy: field-name == tag-name via IndexManager.
+//   - Still single-area, current-record, multi-field: no alias qualification,
+//     so writing across tables is a separate upgrade (see AIF-151's row).
 
 // @dottalk.usage v1
 // owner: DOT|MULTIREP
@@ -60,19 +69,26 @@
 //   MULTIREP validates all assignments before applying the physical write.
 //   RHS values are evaluated/dequoted before validation and storage.
 //   Memo fields are written through the memo backend before storing the memo token.
-//   MULTIREP writes directly to the DBF and does not mark the table buffer DIRTY.
-//   MULTIREP captures before/after index snapshots and applies direct index maintenance.
-//   If index maintenance fails, changed fields are marked STALE.
-//   Buffering/COMMIT/ROLLBACK integration remains deferred for this direct-write command.
+//   With TABLE ON, MULTIREP stages its assignments in the table buffer, takes no
+//   record lock, marks the buffer DIRTY and marks each assigned field STALE.
+//   COMMIT applies them as one physical write; ROLLBACK discards them.
+//   With TABLE OFF, MULTIREP writes directly to the DBF with one record lock and
+//   one physical write, captures before/after index snapshots and applies direct
+//   index maintenance; if that fails, changed fields are marked STALE.
+//   Buffered memo assignments write the memo payload immediately and buffer only
+//   the stored handle, so a ROLLBACK leaves an orphan memo object that MEMO GC
+//   can find and reclaim.
 //   MULTIREP is a table-data mutation command; do not classify it as read-only.
 //   cmd_REPLACE_MULTI is the internal handler name; REPLACE_MULTI is not a registered command.
 //
 // risk:
 //   writes_dbf_record: yes
 //   writes_memo: when replacing memo fields
-//   one_record_lock: yes
-//   one_physical_write: yes
-//   marks_dirty: no
+//   one_record_lock: TABLE OFF only; no OS lock is taken when buffering
+//   one_physical_write: yes (buffered assignments are folded by COMMIT)
+//   marks_dirty: yes when TABLE ON; no when TABLE OFF
+//   buffered_when_table_on: yes (AIF-151)
+//   rollback_discards: yes when TABLE ON, except a memo payload already written
 //   marks_stale_field: only if index maintenance fails for changed fields
 //   index_maintenance: direct before/after snapshot application
 //   requires_current_record: yes
@@ -109,6 +125,8 @@
 
 #include "cli/command_output.hpp"
 #include "cli/table_state.hpp"
+#include "xbase_cli.hpp"   // AIF-156: the shared constraint gate
+#include "workarea_util.hpp"          // AIF-151: cli::slot_of_area
 #include "cli/cli_currency.hpp"
 #include "cli/expr/rhs_eval.hpp"
 #include "cli/expr/value_eval.hpp"
@@ -638,6 +656,184 @@ static void print_replace_multi_usage()
 
 } // namespace
 
+// AIF-151 -- structures and steps shared by the BUFFERED and DIRECT-WRITE paths.
+//
+// Hoisted out of cmd_REPLACE_MULTI so that adding buffering did not fork the
+// validation or the memo write into a second copy. This file already carries
+// the scar of the other kind: its index maintenance MIRRORS
+// DbArea::replaceFieldStored rather than calling it, and when the trigger fire
+// was later added to the original the mirror did not inherit it.
+struct Resolved {
+    int field1{};
+    std::string value;       // raw user value
+    std::string storeValue;  // normalized value actually written or buffered
+    std::string before;
+    bool isMemo{false};
+};
+
+// Type, width and decimals validation plus canonicalisation. Memo fields are
+// skipped here and handled by multirep_take_memo_handle.
+static bool multirep_validate_and_normalize(xbase::DbArea& A,
+                                            std::vector<Resolved>& resolved,
+                                            std::string& local_error)
+{
+    for (auto& r : resolved) {
+        if (r.isMemo) {
+            r.storeValue = r.value;
+            continue;
+        }
+
+        if (!validate_new_scalar_field_value(A, r.field1, r.value, local_error)) {
+            return false;
+        }
+
+        r.storeValue = r.value;
+
+        const char t = field_type_upper(A, r.field1);
+
+        if (t == 'D') {
+            std::string norm;
+            if (!normalize_date_value(r.value, norm)) {
+                local_error = cli::cmdout::message_text(
+                    dottalk::helpdata::MessageId::ReplaceMultiInvalidDateForFieldText);
+                return false;
+            }
+            r.storeValue = norm;
+        }
+        else if (t == 'L') {
+            std::string norm;
+            if (!normalize_logical_value(r.value, norm)) {
+                local_error = cli::cmdout::message_text(
+                    dottalk::helpdata::MessageId::ReplaceMultiInvalidLogicalForFieldText);
+                return false;
+            }
+            r.storeValue = norm;
+        }
+        else if (t == 'N') {
+            std::string norm;
+            if (!normalize_numeric_value(r.value,
+                                         field_length(A, r.field1),
+                                         field_decimals(A, r.field1),
+                                         norm)) {
+                local_error = cli::cmdout::message_text(
+                    dottalk::helpdata::MessageId::ReplaceMultiInvalidNumericForFieldText);
+                return false;
+            }
+            r.storeValue = norm;
+        }
+        else if (t == 'F') {
+            std::string norm;
+            if (!normalize_numeric_value(r.value,
+                                         field_length(A, r.field1),
+                                         field_decimals(A, r.field1),
+                                         norm)) {
+                local_error = cli::cmdout::message_text(
+                    dottalk::helpdata::MessageId::ReplaceMultiInvalidFloatForFieldText);
+                return false;
+            }
+            r.storeValue = norm;
+        }
+
+        std::string normCur;
+        std::string curErr;
+        if (!cli_currency::validate_and_normalize_currency_pair_field(
+                A, r.field1, r.storeValue, normCur, curErr)) {
+            local_error = cli::cmdout::message_text(
+                dottalk::helpdata::MessageId::ReplaceMultiDetailText,
+                {{"detail", curErr + "."}});
+            return false;
+        }
+        r.storeValue = normCur;
+    }
+
+    // THE CONSTRAINT GATE, ASKED ONCE FOR EVERY FIELD AND BEFORE ANY OF THEM IS
+    // WRITTEN (AIF-156).
+    //
+    // It sits HERE, at the end of the validate-and-normalize pass, for two
+    // reasons. It must see the value that will actually be STORED, so it has to
+    // follow normalization. And this pass is the ONE place both write paths
+    // agree on: the TABLE ON branch calls it, the TABLE OFF branch calls it, and
+    // a gate placed in either branch alone would leave the other one open --
+    // which is the several-doors shape this whole funnel was built to close.
+    //
+    // MULTIREP DELIBERATELY DOES NOT CALL replaceFieldStored() PER FIELD. It
+    // holds ONE record lock, performs ONE writeCurrent() and takes ONE
+    // before/after index snapshot pair, and looping the single-field funnel
+    // would turn that into N of each and stop the edit being atomic. So it takes
+    // the gate and keeps its own write. See gateFieldWrites() in xbase_cli.hpp.
+    {
+        std::vector<std::pair<int, std::string>> writes;
+        writes.reserve(resolved.size());
+        for (const auto& r : resolved) writes.emplace_back(r.field1, r.storeValue);
+
+        // nullptr for refused_field1: the constraint error already NAMES the
+        // field ("SID: is the PRIMARY key and cannot be written"), so capturing
+        // the number to not use it would be decoration.
+        std::string gate_err;
+        if (!xbase::cli::gateFieldWrites(A, writes, &gate_err, nullptr)) {
+            // No new message id: the help tables belong to another session, and
+            // ReplaceMultiDetailText is the existing passthrough the currency
+            // check above already uses for exactly this kind of detail.
+            local_error = cli::cmdout::message_text(
+                dottalk::helpdata::MessageId::ReplaceMultiDetailText,
+                {{"detail", gate_err}});
+            return false;
+        }
+    }
+
+    return true;
+}
+
+// Write a memo field's PAYLOAD and hand back the HANDLE that goes in the record.
+//
+// BUFFERING DEFERS THE POINTER, NOT THE PAYLOAD. The memo object is written and
+// durable the moment this runs; only the reference to it waits for COMMIT. So a
+// ROLLBACK of a buffered memo edit leaves an orphan object -- named, detectable
+// and reclaimable by MEMO GC, which reports reclaimable_bytes before touching
+// anything, not silent loss.
+//
+// This matches REPLACE, which builds its stored memo value at
+// cmd_replace.cpp:928, BEFORE its buffering branch at :946. Matching it is
+// deliberate: two commands with different memo semantics under one TABLE ON
+// would be worse than the orphan.
+//
+// KNOWN EDGE, not solved here and shared with REPLACE: old_ref is read from the
+// CURRENT RECORD, so a second buffered edit to the same memo field before
+// COMMIT updates the committed object rather than the one the first edit made.
+static bool multirep_take_memo_handle(xbase::DbArea& A,
+                                      Resolved& r,
+                                      std::string& local_error)
+{
+    auto* store = cli_memo::memo_store_for(A);
+    if (!store || !store->is_open()) {
+        local_error = cli::cmdout::message_text(
+            dottalk::helpdata::MessageId::ReplaceMultiMemoBackendNotAttachedText);
+        return false;
+    }
+
+    dottalk::memo::MemoRef old_ref{};
+    try {
+        old_ref.token = A.get(r.field1);
+    } catch (...) {
+        old_ref.token.clear();
+    }
+
+    dottalk::memo::MemoPutResult mr =
+        store->is_null_ref(old_ref)
+            ? store->put_text(r.value)
+            : store->update_text(old_ref, r.value);
+
+    if (!mr.ok) {
+        local_error = cli::cmdout::message_text(
+            dottalk::helpdata::MessageId::ReplaceMultiMemoWriteFailedText,
+            {{"detail", mr.error.empty() ? std::string() : " (" + mr.error + ")"}});
+        return false;
+    }
+
+    r.storeValue = mr.ref.token;
+    return true;
+}
+
 bool cmd_REPLACE_MULTI(xbase::DbArea& A,
                        const std::vector<FieldUpdate>& updates,
                        std::string* error)
@@ -658,14 +854,6 @@ bool cmd_REPLACE_MULTI(xbase::DbArea& A,
         }
         return false;
     }
-
-    struct Resolved {
-        int field1{};
-        std::string value;       // raw user value
-        std::string storeValue;  // normalized value actually written
-        std::string before;
-        bool isMemo{false};
-    };
 
     std::vector<Resolved> resolved;
     resolved.reserve(updates.size());
@@ -692,6 +880,77 @@ bool cmd_REPLACE_MULTI(xbase::DbArea& A,
         try { r.before = A.get(fld); } catch (...) { r.before.clear(); }
         resolved.push_back(std::move(r));
     }
+
+    // ---------------------------------------------------------------------
+    // AIF-151 -- BUFFERED PATH. Taken before the record lock ON PURPOSE.
+    //
+    // COMMIT's own contract says "TABLE ON buffers changes; no OS locking should
+    // occur during REPLACE/DELETE" -- the edit stages, it does not reach the DBF.
+    // MULTIREP used to ignore TABLE ON entirely and lock-and-write regardless,
+    // so a MULTIREP inside a buffered session was durable before COMMIT ran and
+    // ROLLBACK did not undo it.
+    //
+    // ONE PHYSICAL WRITE SURVIVES THE UPGRADE. add_change stages ONE FIELD per
+    // call, so N fields become N entries -- and cmd_commit.cpp's
+    // aggregate_for_recno folds every entry for a recno back into ONE set()
+    // loop and ONE writeCurrent(). MULTIREP's defining property is preserved at
+    // commit time rather than at statement time.
+    //
+    // And it is now visible to triggers. Staged edits arrive at commit entry,
+    // where AIF-087's BEFORE phase asks once per record with the whole
+    // changed-field set -- which is exactly why M2a made the fire unit the
+    // physical write rather than the field.
+    const int area0 = cli::slot_of_area(&A);
+    if (area0 >= 0 && dottalk::table::is_enabled(area0)) {
+        std::string buf_error;
+
+        if (!multirep_validate_and_normalize(A, resolved, buf_error)) {
+            if (error) *error = buf_error;
+            return false;
+        }
+
+        // Memo payloads are written NOW and only the handle is buffered; see
+        // multirep_take_memo_handle for why, and for what ROLLBACK leaves behind.
+        for (auto& r : resolved) {
+            if (!r.isMemo) continue;
+            if (!multirep_take_memo_handle(A, r, buf_error)) {
+                if (error) *error = buf_error;
+                return false;
+            }
+        }
+
+        auto& tb = dottalk::table::get_tb(area0);
+        for (const auto& r : resolved) {
+            std::uint64_t field_mask[dottalk::table::kWords]{};
+            const int fldIndex0 = r.field1 - 1;
+            const int word = fldIndex0 / 64;
+            const int bit  = fldIndex0 % 64;
+            if (word >= 0 && word < dottalk::table::kWords) {
+                field_mask[word] |= (std::uint64_t{1} << bit);
+            }
+
+            const int je_priority = tb.add_change(
+                rn, dottalk::table::CHANGE_UPDATE, field_mask, r.field1, r.storeValue);
+
+            // Write-ahead redo, only under RamJournal. Journal the exact buffered
+            // edit with the priority add_change assigned, so history mode keeps
+            // every retained edit per field rather than a last-write-wins snapshot.
+            if (dottalk::table::is_persistent_enabled(area0)) {
+                dottalk::table::ChangeEntry je;
+                je.recno = rn;
+                je.dirty_flags = dottalk::table::CHANGE_UPDATE;
+                je.priority = je_priority;
+                je.new_values[r.field1] = r.storeValue;
+                (void)dottalk::table::journal_note_change(area0, je);
+            }
+
+            dottalk::table::mark_stale_field(area0, r.field1);
+        }
+
+        if (!dottalk::table::is_dirty(area0)) dottalk::table::set_dirty(area0, true);
+        return true;
+    }
+    // ---------------------------------------------------------------------
 
     std::string lock_err;
     if (!xbase::locks::try_lock_record(A, rn, &lock_err)) {
@@ -724,114 +983,16 @@ bool cmd_REPLACE_MULTI(xbase::DbArea& A,
 
     try {
         // Pass 1: validate everything and compute normalized store values.
-        for (auto& r : resolved) {
-            if (r.isMemo) {
-                r.storeValue = r.value;
-                continue;
-            }
-
-            if (!validate_new_scalar_field_value(A, r.field1, r.value, local_error)) {
-                ok = false;
-                break;
-            }
-
-            r.storeValue = r.value;
-
-            const char t = field_type_upper(A, r.field1);
-
-            if (t == 'D') {
-                std::string norm;
-                if (!normalize_date_value(r.value, norm)) {
-                    local_error = cli::cmdout::message_text(
-                        dottalk::helpdata::MessageId::ReplaceMultiInvalidDateForFieldText);
-                    ok = false;
-                    break;
-                }
-                r.storeValue = norm;
-            }
-            else if (t == 'L') {
-                std::string norm;
-                if (!normalize_logical_value(r.value, norm)) {
-                    local_error = cli::cmdout::message_text(
-                        dottalk::helpdata::MessageId::ReplaceMultiInvalidLogicalForFieldText);
-                    ok = false;
-                    break;
-                }
-                r.storeValue = norm;
-            }
-            else if (t == 'N') {
-                std::string norm;
-                if (!normalize_numeric_value(r.value,
-                                             field_length(A, r.field1),
-                                             field_decimals(A, r.field1),
-                                             norm)) {
-                    local_error = cli::cmdout::message_text(
-                        dottalk::helpdata::MessageId::ReplaceMultiInvalidNumericForFieldText);
-                    ok = false;
-                    break;
-                }
-                r.storeValue = norm;
-            }
-            else if (t == 'F') {
-                std::string norm;
-                if (!normalize_numeric_value(r.value,
-                                             field_length(A, r.field1),
-                                             field_decimals(A, r.field1),
-                                             norm)) {
-                    local_error = cli::cmdout::message_text(
-                        dottalk::helpdata::MessageId::ReplaceMultiInvalidFloatForFieldText);
-                    ok = false;
-                    break;
-                }
-                r.storeValue = norm;
-            }
-
-            std::string normCur;
-            std::string curErr;
-            if (!cli_currency::validate_and_normalize_currency_pair_field(
-                    A, r.field1, r.storeValue, normCur, curErr)) {
-                local_error = cli::cmdout::message_text(
-                    dottalk::helpdata::MessageId::ReplaceMultiDetailText,
-                    {{"detail", curErr + "."}});
-                ok = false;
-                break;
-            }
-            r.storeValue = normCur;
-        }
+        if (!multirep_validate_and_normalize(A, resolved, local_error)) ok = false;
 
         if (ok) {
             // Pass 2: apply all changes to the in-memory current record.
             for (auto& r : resolved) {
                 if (r.isMemo) {
-                    auto* store = cli_memo::memo_store_for(A);
-                    if (!store || !store->is_open()) {
-                        local_error = cli::cmdout::message_text(
-                            dottalk::helpdata::MessageId::ReplaceMultiMemoBackendNotAttachedText);
+                    if (!multirep_take_memo_handle(A, r, local_error)) {
                         ok = false;
                         break;
                     }
-
-                    dottalk::memo::MemoRef old_ref{};
-                    try {
-                        old_ref.token = A.get(r.field1);
-                    } catch (...) {
-                        old_ref.token.clear();
-                    }
-
-                    dottalk::memo::MemoPutResult mr =
-                        store->is_null_ref(old_ref)
-                            ? store->put_text(r.value)
-                            : store->update_text(old_ref, r.value);
-
-                    if (!mr.ok) {
-                        local_error = cli::cmdout::message_text(
-                            dottalk::helpdata::MessageId::ReplaceMultiMemoWriteFailedText,
-                            {{"detail", mr.error.empty() ? std::string() : " (" + mr.error + ")"}});
-                        ok = false;
-                        break;
-                    }
-
-                    r.storeValue = mr.ref.token;
 
                     if (!A.set(r.field1, r.storeValue)) {
                         local_error = cli::cmdout::message_text(
@@ -917,8 +1078,15 @@ bool cmd_REPLACE_MULTI(xbase::DbArea& A,
     }
 
     if (!idx_ok) {
-        if (auto* eng = shell_engine()) {
-            const int area0 = eng->currentArea();
+        // AIF-151: marks stale on THE AREA BEING WRITTEN, not on whatever area
+        // happens to be current. This read `eng->currentArea()`, which is the
+        // same slot only when A is the current area -- and the programmatic
+        // overload above takes ANY DbArea&. On a non-current area that marked
+        // the wrong area's field: the index that actually failed maintenance
+        // read clean, and an untouched one read stale. Surfaced by a C4456
+        // shadow warning when the buffered path introduced a second, correct
+        // derivation of the same fact; there is now one.
+        if (area0 >= 0) {
             for (const int field1 : changed_fields) {
                 dottalk::table::mark_stale_field(area0, field1);
             }

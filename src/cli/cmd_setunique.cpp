@@ -56,6 +56,7 @@
 #include "textio.hpp"
 #include "cli/command_output.hpp"
 #include "cli/unique_registry.hpp"
+#include "xbase_field_getters.hpp"
 #include "help/helpdata_messages.hpp"
 
 using namespace textio;
@@ -113,6 +114,34 @@ void cmd_SET_UNIQUE(xbase::DbArea& A, std::istringstream& in) {
     const std::string Uon = upcopy(onoff);
     if (Uon == "PRIMARY") {
         // AIF-074 P1.1: PRIMARY designates the table's primary key (implies ON).
+        //
+        // AIF-156: THE DESIGNATION IS NOW WRITTEN INTO THE FILE, and this
+        // command REFUSES if it cannot be. Falling back to the process-local
+        // map when the header cannot carry the flag would mint exactly the
+        // defect this change removes -- a key that holds until you quit, which
+        // is worse than no key, because it looks like one. A VFP or classic
+        // table has nowhere in its header to record this; that is a consequence
+        // of the ruling that the designation lives in the x64 header, and the
+        // right place to learn it is here, at the moment somebody asks.
+        const int field1 = xfg::resolve_field_index_std(A, fname);
+        if (field1 < 0) {
+            cli::cmdout::print_prefixed_message(
+                "SET UNIQUE", dottalk::helpdata::MessageId::SetUniqueFieldStatusText,
+                {{"state", "no such field"}, {"field", upcopy(fname)}});
+            return;
+        }
+
+        std::string stamp_err;
+        if (!A.setFieldPrimaryDurable(field1 + 1, true, &stamp_err)) {
+            cli::cmdout::print_prefixed_message(
+                "SET UNIQUE", dottalk::helpdata::MessageId::SetUniqueFieldStatusText,
+                {{"state", "REFUSED -- " + stamp_err},
+                 {"field", upcopy(fname)}});
+            return;
+        }
+
+        // The map is a cache behind the file now, kept in step so an in-session
+        // listing agrees with what was just written.
         unique_reg::set_primary_field(A, fname);
         cli::cmdout::print_message(
             dottalk::helpdata::MessageId::SetUniqueFieldStatusText,

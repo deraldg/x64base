@@ -1,11 +1,41 @@
 // @dottalk.file v1
 // subsystem: bindings
 // layer: glue
-// owns:
+// owns: pydottalk python extension module (pydottalk.cp312-win_amd64.pyd)
 // project: project.x64base.runtime
-// lane:
+// lane: AIF-118
 // owner: member.derald
 // status: supported
+//
+// @dottalk.contract PYTHON_BINDING_TRUST_CONTRACT_V1
+// trust: caller-is-boundary (first-party, in-tree)
+// mutates: dbf-records
+// locking: inherited-from-dbarea
+//
+// TRUST POSTURE -- declared 2026-08-17, owner ruling.
+//   This module is TRUSTED. Anyone who can `import pydottalk` can read and write
+//   the tables the process can reach, and that is intended: first-party binding,
+//   first-party engine, maintainer's own tree. An identity check here would guard
+//   nothing, because the caller already holds the interpreter and the filesystem.
+//
+//   It is written down because UNDECLARED trust is indistinguishable from an
+//   oversight. Every other write surface here carries a boundary -- the console
+//   has a write token, the CLI has cmd_security and the AIF-075 gate, the BBS
+//   refuses unauthenticated sessions -- so a reader finding none here would
+//   reasonably assume it was forgotten.
+//
+// LOCKING IS INHERITED. DO NOT ADD ANY.
+//   Writes go through xbase::DbArea, and src/xbase/dbarea.cpp:253 calls
+//   xbase::locks::try_lock_record before writing (released at 275). This module
+//   is a well-behaved third participant alongside dottalkpp and dottalk_bbsd,
+//   which share the same on-disk store with no IPC. Adding a lock here would
+//   double-lock the engine's own acquisition.
+//
+// WHERE TRUSTED STOPS -- each needs a new ruling, not an extension of this one:
+//   shipping the .pyd outside this tree; exposing it over a network; and
+//   command-shell execution (OI-005 -- trusted for data writes does not imply
+//   trusted for arbitrary commands, because the blast radius differs in kind).
+//   Contract: docs/contracts/PYTHON_BINDING_TRUST_CONTRACT_V1.md
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>

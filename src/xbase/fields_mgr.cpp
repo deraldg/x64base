@@ -1,0 +1,985 @@
+// @dottalk.file v1
+// subsystem: xbase
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
+#include "dottalk/scratch_sidecar.hpp"
+#include "xbase/fields.hpp"
+#include "xbase/dbf_create.hpp"
+#include "xbase/field_name_policy.hpp"
+#include "xbase_64.hpp"
+#include <cstdlib>
+#include "xindex/attach.hpp"
+#include "xindex/index_manager.hpp"
+
+#include <algorithm>
+#include <cctype>
+#include <filesystem>
+#include <iomanip>
+#include <iostream>
+#include <limits>
+#include <sstream>
+#include <string>
+#include <system_error>
+#include <vector>
+
+namespace fields {
+namespace {
+
+std::string trim_copy(std::string s)
+{
+    auto not_space = [](unsigned char ch) { return !std::isspace(ch); };
+
+    s.erase(s.begin(), std::find_if(s.begin(), s.end(), not_space));
+    s.erase(std::find_if(s.rbegin(), s.rend(), not_space).base(), s.end());
+    return s;
+}
+
+std::string upper_copy(std::string s)
+{
+    std::transform(s.begin(), s.end(), s.begin(),
+        [](unsigned char ch) { return static_cast<char>(std::toupper(ch)); });
+    return s;
+}
+
+bool is_name_char(unsigned char ch)
+{
+    return std::isalnum(ch) || ch == '_';
+}
+
+Result not_implemented(const std::string& msg)
+{
+    Result r;
+    r.status = Status::NotImplemented;
+    r.message = msg;
+    return r;
+}
+
+bool parse_uint32_strict(const std::string& s, std::uint32_t& out)
+{
+    const std::string t = trim_copy(s);
+    if (t.empty()) return false;
+
+    unsigned long v = 0;
+    try {
+        std::size_t pos = 0;
+        v = std::stoul(t, &pos, 10);
+        if (pos != t.size()) return false;
+    } catch (...) {
+        return false;
+    }
+
+    if (v > static_cast<unsigned long>(std::numeric_limits<std::uint32_t>::max())) return false;
+    out = static_cast<std::uint32_t>(v);
+    return true;
+}
+
+
+bool parse_uint8_strict(const std::string& s, std::uint8_t& out)
+{
+    std::uint32_t tmp = 0;
+    if (!parse_uint32_strict(s, tmp)) return false;
+    if (tmp > 255u) return false;
+    out = static_cast<std::uint8_t>(tmp);
+    return true;
+}
+
+bool default_fixed_length_for_type(char t, std::uint32_t& len, std::uint8_t& dec)
+{
+    switch (static_cast<char>(std::toupper(static_cast<unsigned char>(t)))) {
+    case 'D':
+        len = 8;
+        dec = 0;
+        return true;
+    case 'L':
+        len = 1;
+        dec = 0;
+        return true;
+    case 'M':
+        // Memo token slot width is FLAVOR-dependent (x64 = 8, legacy = 10;
+        // measured in cmd_create.cpp). The parser does not know the flavor,
+        // so 0 is a sentinel that append() resolves against the open table
+        // before validation. (AIF-108 Part B memo enablement, 2026-08-12.)
+        len = 0;
+        dec = 0;
+        return true;
+    default:
+        return false;
+    }
+}
+
+bool is_supported_append_type(char t) noexcept
+{
+    switch (static_cast<char>(std::toupper(static_cast<unsigned char>(t)))) {
+    case 'C':
+    case 'N':
+    case 'D':
+    case 'L':
+    case 'M':
+        return true;
+    default:
+        return false;
+    }
+}
+
+xbase::dbf_create::FieldSpec to_field_spec(const xbase::FieldDef& fd)
+{
+    xbase::dbf_create::FieldSpec s;
+    s.name = fd.name;
+    s.type = fd.type;
+    s.len  = fd.length;
+    s.dec  = fd.decimals;
+    return s;
+}
+
+xbase::dbf_create::Flavor flavor_from_db(const xbase::DbArea& db)
+{
+    switch (db.versionByte()) {
+    case 0x30:
+    case 0x31:
+    case 0x32:
+        return xbase::dbf_create::Flavor::VFP;
+    case 0xF5:
+        return xbase::dbf_create::Flavor::FOX26;
+    case 0x64:
+        return xbase::dbf_create::Flavor::X64;
+    default:
+        return xbase::dbf_create::Flavor::MSDOS;
+    }
+}
+
+std::string default_field_value(const xbase::FieldDef& fd)
+{
+    const char t = static_cast<char>(std::toupper(static_cast<unsigned char>(fd.type)));
+    switch (t) {
+    case 'C':
+    case 'N':
+        return std::string(fd.length, ' ');
+    case 'D':
+        return std::string(8, ' ');
+    case 'L':
+        return "?";
+    case 'M':
+        // A blank token IS the null memo ref (dtx::ref_token_is_blank
+        // accepts all-spaces), so default-filling with spaces needs NO
+        // sidecar write at append time -- the DTX comes free from
+        // memo_auto_on_use autocreate on the next USE.
+        return std::string(fd.length, ' ');
+    default:
+        return std::string(fd.length, ' ');
+    }
+}
+
+std::filesystem::path make_temp_dbf_path(const xbase::DbArea& db)
+{
+    const std::filesystem::path finalPath(db.filename());
+    return finalPath.parent_path() /
+        (finalPath.stem().string() + std::string(dottalk::kFieldMgrTempMarker) + finalPath.extension().string());
+}
+
+std::filesystem::path make_backup_dbf_path(const xbase::DbArea& db)
+{
+    const std::filesystem::path finalPath(db.filename());
+    return finalPath.parent_path() /
+        (finalPath.stem().string() + std::string(dottalk::kFieldMgrBackupMarker) + finalPath.extension().string());
+}
+
+Result append_rewrite_table(xbase::DbArea& db,
+                            const xbase::FieldDef& fd,
+                            const AppendOptions& opts)
+{
+    Result r;
+    (void)opts;
+
+    const std::string finalPathStr = db.filename();
+    const std::filesystem::path tempPath = make_temp_dbf_path(db);
+    const std::filesystem::path backupPath = make_backup_dbf_path(db);
+
+    std::vector<xbase::dbf_create::FieldSpec> outFields;
+    outFields.reserve(static_cast<std::size_t>(db.fieldCount() + 1));
+    for (const auto& f : db.fields()) {
+        outFields.push_back(to_field_spec(f));
+    }
+    outFields.push_back(to_field_spec(fd));
+
+    std::string err;
+    const auto flavor = flavor_from_db(db);
+
+    // Naming methodology (AIF-110, x64 only). Two rules the first version of
+    // this rewrite broke or bypassed:
+    //   1. TABLE identity: the X64M authoritative table name must be the
+    //      FINAL identity, never the temp path stem. Prefer the open area's
+    //      promoted logical name (X64M is its source of truth); fall back to
+    //      the final file's stem.
+    //   2. FIELD tokens: descriptor tokens are the DOS-8.3 tier of the x64
+    //      two-tier scheme and must come from field_name_policy's
+    //      plan_x64_unique_fallback (sanitize, truncate to 10, ~n mangle on
+    //      collision) -- the same plan cmd_create and cmd_copy use -- not
+    //      from ad-hoc truncation.
+    std::string tableName;
+    if (flavor == xbase::dbf_create::Flavor::X64) {
+        tableName = db.logicalName();
+        if (tableName.empty()) {
+            tableName = std::filesystem::path(finalPathStr).stem().string();
+        }
+
+        std::vector<std::string> logicalNames;
+        logicalNames.reserve(outFields.size());
+        for (const auto& s : outFields) logicalNames.push_back(s.name);
+        const auto plans =
+            xbase::field_name_policy::plan_x64_unique_fallback(logicalNames);
+        for (std::size_t i = 0; i < outFields.size() && i < plans.size(); ++i) {
+            outFields[i].descriptor_name = plans[i].descriptor_name;
+        }
+    }
+
+    if (!xbase::dbf_create::create_dbf(tempPath.string(), tableName,
+                                       outFields, flavor, err)) {
+        r.status = Status::Failed;
+        r.message = "FIELDMGR APPEND: create temp table failed: " + err;
+        return r;
+    }
+
+    try {
+        xbase::DbArea out;
+        out.open(tempPath.string());
+
+        for (int rec = 1; rec <= db.recCount(); ++rec) {
+            // gotoRec POSITIONS; readCurrent FILLS THE BUFFER. Without the
+            // second call every db.get() below reads a never-filled buffer
+            // and the rewrite copies BLANK records -- measured 2026-08-12
+            // on the canonical MCC fixtures (200 blank STUDENTS rows,
+            // counts intact, every marker red by value). The proven prior
+            // art, cmd_copy's logical_copy_to_as, has always done both.
+            if (!db.gotoRec(rec) || !db.readCurrent()) {
+                r.status = Status::Failed;
+                r.message = "FIELDMGR APPEND: failed reading source record";
+                out.close();
+                std::error_code ec;
+                std::filesystem::remove(tempPath, ec);
+                return r;
+            }
+
+            if (!out.appendBlank()) {
+                r.status = Status::Failed;
+                r.message = "FIELDMGR APPEND: failed appending destination record";
+                out.close();
+                std::error_code ec;
+                std::filesystem::remove(tempPath, ec);
+                return r;
+            }
+
+            for (int i = 0; i < db.fieldCount(); ++i) {
+                if (!out.set(i + 1, db.get(i + 1))) {
+                    r.status = Status::Failed;
+                    r.message = "FIELDMGR APPEND: failed copying field data";
+                    out.close();
+                    std::error_code ec;
+                    std::filesystem::remove(tempPath, ec);
+                    return r;
+                }
+            }
+
+            if (!out.set(out.fieldCount(), default_field_value(fd))) {
+                r.status = Status::Failed;
+                r.message = "FIELDMGR APPEND: failed default-filling appended field";
+                out.close();
+                std::error_code ec;
+                std::filesystem::remove(tempPath, ec);
+                return r;
+            }
+
+            // THE MISSING WRITE (AIF-110, found 2026-08-12 by full-path
+            // trace). set() only stores into the in-memory _fd vector;
+            // appendBlank() writes a SPACE-PADDED row to disk immediately
+            // and the next appendBlank() discards pending _fd values
+            // (dbf_file.cpp appendBlank -> gotoRec64 -> readCurrent). Only
+            // writeCurrent() encodes _fd into the record and lands it --
+            // without this call every rewritten table was 0x20 wall to
+            // wall while counts, headers, and X64M all read correct.
+            // Must run INSIDE the loop, before deleteCurrent() (which
+            // finishes with its own writeCurrent under the deleted flag).
+            // The proven sibling, cmd_copy's loop, always had this line.
+            if (!out.writeCurrent()) {
+                r.status = Status::Failed;
+                r.message = "FIELDMGR APPEND: failed writing destination record";
+                out.close();
+                std::error_code ec;
+                std::filesystem::remove(tempPath, ec);
+                return r;
+            }
+
+            if (db.isDeleted()) {
+                if (!out.deleteCurrent()) {
+                    r.status = Status::Failed;
+                    r.message = "FIELDMGR APPEND: failed preserving deleted flag";
+                    out.close();
+                    std::error_code ec;
+                    std::filesystem::remove(tempPath, ec);
+                    return r;
+                }
+            }
+        }
+
+        out.close();
+    } catch (const std::exception& ex) {
+        r.status = Status::Failed;
+        r.message = std::string("FIELDMGR APPEND: temp table copy failed: ") + ex.what();
+        std::error_code ec;
+        std::filesystem::remove(tempPath, ec);
+        return r;
+    }
+
+    db.close();
+
+    std::error_code ec;
+    std::filesystem::remove(backupPath, ec);
+    ec.clear();
+
+    std::filesystem::rename(finalPathStr, backupPath, ec);
+    if (ec) {
+        r.status = Status::Failed;
+        r.message = "FIELDMGR APPEND: failed to rename original to backup";
+        std::filesystem::remove(tempPath, ec);
+        return r;
+    }
+
+    ec.clear();
+    std::filesystem::rename(tempPath, finalPathStr, ec);
+    if (ec) {
+        std::error_code rc;
+        std::filesystem::rename(backupPath, finalPathStr, rc);
+        r.status = Status::Failed;
+        r.message = "FIELDMGR APPEND: failed to swap temp table into place";
+        return r;
+    }
+
+    try {
+        db.open(finalPathStr);
+    } catch (const std::exception& ex) {
+        r.status = Status::Failed;
+        r.message = std::string("FIELDMGR APPEND: rewrite completed, but reopen failed: ") + ex.what();
+        return r;
+    }
+
+    r.status = Status::Ok;
+    r.changed = true;
+    r.message = "FIELDMGR APPEND: field appended successfully";
+    return r;
+}
+
+} // anonymous namespace
+
+std::string usage()
+{
+    return
+        "FIELDMGR\n"
+        "FIELDMGR SHOW\n"
+        "FIELDMGR LIST\n"
+        "FIELDMGR APPEND <name> <type>(<len>[,<dec>])\n"
+        "FIELDMGR DELETE <name>\n"
+        "FIELDMGR MODIFY <name> NAME <newname>\n"
+        "FIELDMGR MODIFY <name> TYPE <type>(<len>[,<dec>])\n"
+        "FIELDMGR MODIFY <name> TO <newname> <type>(<len>[,<dec>])\n"
+        "FIELDMGR COPY TO <target>\n"
+        "FIELDMGR COPY TO <target> MAP ...\n"
+        "FIELDMGR VALIDATE\n"
+        "FIELDMGR CHECK\n"
+        "FIELDMGR REBUILD INDEXES\n"
+        "\n"
+        "Notes:\n"
+        "  - FIELDMGR changes table structure.\n"
+        "  - APPEND adds fields only at the end.\n"
+        "  - Rearranging fields is not supported.\n"
+        "  - Structural changes preserve existing records; they do not PACK the table.\n";
+}
+
+std::string opName(Op op)
+{
+    switch (op) {
+    case Op::None:           return "NONE";
+    case Op::Show:           return "SHOW";
+    case Op::Append:         return "APPEND";
+    case Op::DeleteField:    return "DELETE";
+    case Op::ModifyName:     return "MODIFY NAME";
+    case Op::ModifyType:     return "MODIFY TYPE";
+    case Op::ModifyTo:       return "MODIFY TO";
+    case Op::CopyTo:         return "COPY TO";
+    case Op::CopyToMap:      return "COPY TO MAP";
+    case Op::Validate:       return "VALIDATE";
+    case Op::Check:          return "CHECK";
+    case Op::RebuildIndexes: return "REBUILD INDEXES";
+    default:                 return "UNKNOWN";
+    }
+}
+
+bool validateFieldName(const std::string& nameIn, std::string& err)
+{
+    const std::string name = trim_copy(nameIn);
+
+    if (name.empty()) {
+        err = "field name is empty";
+        return false;
+    }
+
+    // Ceiling raised 2026-08-12 (AIF-110, owner: "long names were not
+    // stressed"): the parse layer cannot know the flavor, so it admits up
+    // to the x64 authority ceiling (X64M carries the long name, the
+    // descriptor gets the field_name_policy ~n-mangled 10-byte token).
+    // append() re-tightens to 10 for legacy flavors, whose descriptor IS
+    // the name.
+    if (name.size() > xbase::X64_FIELD_NAME_LENGTH_MAX) {
+        err = "field name exceeds the x64 ceiling of " +
+              std::to_string(xbase::X64_FIELD_NAME_LENGTH_MAX) + " characters";
+        return false;
+    }
+
+    const unsigned char first = static_cast<unsigned char>(name.front());
+    if (!(std::isalpha(first) || first == '_')) {
+        err = "field name must start with a letter or underscore";
+        return false;
+    }
+
+    for (unsigned char ch : name) {
+        if (!is_name_char(ch)) {
+            err = "field name contains invalid characters";
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool validateFieldDef(const xbase::FieldDef& fd, std::string& err)
+{
+    if (!validateFieldName(fd.name, err)) {
+        return false;
+    }
+
+    const char t = static_cast<char>(std::toupper(static_cast<unsigned char>(fd.type)));
+
+    if (!is_supported_append_type(t)) {
+        err = std::string("unsupported field type '") + t + "'";
+        return false;
+    }
+
+    switch (t) {
+    case 'C':
+        if (fd.length == 0) {
+            err = "character field length must be > 0";
+            return false;
+        }
+        if (fd.decimals != 0) {
+            err = "character field decimals must be 0";
+            return false;
+        }
+        return true;
+
+    case 'N':
+        if (fd.length == 0) {
+            err = "numeric field length must be > 0";
+            return false;
+        }
+        if (fd.decimals > fd.length) {
+            err = "numeric field decimals cannot exceed length";
+            return false;
+        }
+        return true;
+
+    case 'D':
+        if (fd.length != 8) {
+            err = "date field length must be 8";
+            return false;
+        }
+        if (fd.decimals != 0) {
+            err = "date field decimals must be 0";
+            return false;
+        }
+        return true;
+
+    case 'L':
+        if (fd.length != 1) {
+            err = "logical field length must be 1";
+            return false;
+        }
+        if (fd.decimals != 0) {
+            err = "logical field decimals must be 0";
+            return false;
+        }
+        return true;
+
+    case 'M':
+        // Token slot widths: 8 (x64 DTX) or 10 (legacy DBT). Length 0 is
+        // the parser's flavor-unknown sentinel and is legal HERE because
+        // parseFieldSpec validates at its own tail, before append() can
+        // resolve it against the open table (measured red 2026-08-12:
+        // the first migration run refused bare 'M' for exactly this
+        // ordering). append() resolves 0 -> 8/10 before create_dbf ever
+        // sees the FieldDef.
+        if (fd.length != 8 && fd.length != 10 && fd.length != 0) {
+            err = "memo field length must be 8 (x64) or 10 (legacy)";
+            return false;
+        }
+        if (fd.decimals != 0) {
+            err = "memo field decimals must be 0";
+            return false;
+        }
+        return true;
+
+    default:
+        err = "unsupported field type";
+        return false;
+    }
+}
+
+bool parseFieldSpec(const std::string& textIn, xbase::FieldDef& out, std::string& err)
+{
+    out = {};
+
+    std::string text = trim_copy(textIn);
+    if (text.empty()) {
+        err = "empty field specification";
+        return false;
+    }
+
+    std::istringstream iss(text);
+    std::string name;
+    std::string spec;
+
+    if (!(iss >> name)) {
+        err = "missing field name";
+        return false;
+    }
+
+    if (!(iss >> spec)) {
+        err = "missing field type specification";
+        return false;
+    }
+
+    std::string extra;
+    if (iss >> extra) {
+        err = "too many tokens in field specification";
+        return false;
+    }
+
+    name = upper_copy(trim_copy(name));
+    if (!validateFieldName(name, err)) {
+        return false;
+    }
+
+    spec = upper_copy(trim_copy(spec));
+    if (spec.empty()) {
+        err = "empty type specification";
+        return false;
+    }
+
+    const char type = spec.front();
+    std::uint32_t len = 0;
+    std::uint8_t dec = 0;
+
+    const std::size_t lpar = spec.find('(');
+    const std::size_t rpar = spec.find(')');
+
+    if (lpar == std::string::npos && rpar == std::string::npos) {
+        if (!default_fixed_length_for_type(type, len, dec)) {
+            err = "type requires explicit length";
+            return false;
+        }
+    } else {
+        if (lpar == std::string::npos || rpar == std::string::npos || rpar <= lpar + 1) {
+            err = "malformed type specification";
+            return false;
+        }
+
+        if (lpar != 1) {
+            err = "type specification must begin with single-letter type";
+            return false;
+        }
+
+        const std::string inside = spec.substr(lpar + 1, rpar - lpar - 1);
+        const std::size_t comma = inside.find(',');
+
+        if (comma == std::string::npos) {
+            if (!parse_uint32_strict(inside, len)) {
+                err = "invalid field length";
+                return false;
+            }
+            dec = 0;
+        } else {
+            const std::string lhs = inside.substr(0, comma);
+            const std::string rhs = inside.substr(comma + 1);
+
+            if (!parse_uint32_strict(lhs, len)) {
+                err = "invalid field length";
+                return false;
+            }
+            if (!parse_uint8_strict(rhs, dec)) {
+                err = "invalid decimal count";
+                return false;
+            }
+        }
+
+        if (rpar != spec.size() - 1) {
+            err = "unexpected trailing characters in type specification";
+            return false;
+        }
+    }
+
+    out.name = name;
+    out.type = type;
+    out.length = len;
+    out.decimals = dec;
+
+    return validateFieldDef(out, err);
+}
+
+int findFieldCI(const xbase::DbArea& db, const std::string& nameIn)
+{
+    const std::string want = upper_copy(trim_copy(nameIn));
+    const auto& f = db.fields();
+
+    for (int i = 0; i < static_cast<int>(f.size()); ++i) {
+        if (upper_copy(trim_copy(f[i].name)) == want) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+bool hasFieldCI(const xbase::DbArea& db, const std::string& name)
+{
+    return findFieldCI(db, name) >= 0;
+}
+
+FieldProtectionInfo getFieldProtectionInfo(const xbase::DbArea& db,
+                                           const std::string& fieldName)
+{
+    (void)db;
+    (void)fieldName;
+
+    FieldProtectionInfo info;
+    return info;
+}
+
+Result show(const xbase::DbArea& db)
+{
+    Result r;
+
+    if (!db.isOpen()) {
+        r.status = Status::InvalidState;
+        r.message = "FIELDMGR: no table open";
+        return r;
+    }
+
+    std::ostringstream oss;
+    oss << "No  "
+        << std::left << std::setw(12) << "Name"
+        << std::setw(6) << "Type"
+        << std::right << std::setw(5) << "Len"
+        << std::setw(5) << "Dec"
+        << "\n";
+
+    oss << "--  "
+        << std::left << std::setw(12) << "------------"
+        << std::setw(6) << "----"
+        << std::right << std::setw(5) << "---"
+        << std::setw(5) << "---"
+        << "\n";
+
+    const auto& f = db.fields();
+    for (int i = 0; i < static_cast<int>(f.size()); ++i) {
+        oss << std::right << std::setw(2) << (i + 1) << "  "
+            << std::left  << std::setw(12) << f[i].name
+            << std::setw(6) << std::string(1, static_cast<char>(std::toupper(static_cast<unsigned char>(f[i].type))))
+            << std::right << std::setw(5) << static_cast<int>(f[i].length)
+            << std::setw(5) << static_cast<int>(f[i].decimals)
+            << "\n";
+    }
+
+    r.status = Status::Ok;
+    r.message = oss.str();
+    return r;
+}
+
+// WHAT THIS ASKS, AND WHAT IT THEREFORE CANNOT SEE.
+//
+// It asks whether an index manager is ATTACHED TO THIS OPEN AREA RIGHT NOW --
+// not whether the table HAS index containers on disk. A table whose .cdx sits
+// in the INDEXES root with no SET ORDER issued in this session answers None,
+// and the append then proceeds with no warning even though that container is
+// invalidated exactly the same way.
+//
+// So the warning this feeds is correct when it fires and INCOMPLETE when it
+// does not. Named here 2026-08-31 rather than fixed: answering the on-disk
+// question means resolving index paths for a table, which is xindex's job and
+// not this layer's, and guessing at it from src/xbase would be a second
+// authority on where a container lives. The attached case is the common one
+// (you set an order, then alter the table) and it is now honest.
+IndexImpact assessAppendIndexImpact(const xbase::DbArea& db,
+                                    const xbase::FieldDef& fd)
+{
+    (void)fd;
+
+#if DOTTALK_HAS_XINDEX
+    const auto* idx = xindex::manager_if_attached(db);
+    if (!idx) {
+        return IndexImpact::None;
+    }
+
+    // REQUIRED, not Recommended, and the probe measured the difference.
+    // A recommendation is something a caller may decline; this cannot be
+    // declined. openCdx carries a fingerprint of the table it was built
+    // against (kind, version, reclen, fields, hash -- AIF-110 lesson 2) and
+    // REFUSES to open on mismatch. Appending a field changes reclen and field
+    // count, so the container does not degrade, it stops opening:
+    //
+    //   FIELDMGR APPEND: ... [attached index is now STALE and will refuse
+    //                         to open until rebuilt]
+    //   SET ORDER: openCdx: metadata mismatch
+    //              [table reclen=21, fields=3] vs [cdx reclen=17, fields=2]
+    //   FMI_T1_keyed_first_still_ALPHA_after_append:.F.
+    //   FMI_T3_row3_data_intact_CK:.T.
+    //
+    // This function's own warning string already said REQUIRED while this
+    // return said Recommended -- one code path holding two answers.
+    //
+    // Not Blocked: T3/T4 show the DATA intact. Only the index refuses, and a
+    // rebuild recovers it fully. Blocked would overstate the damage.
+    //
+    // Behaviour-neutral when changed on 2026-09-01: IndexImpact has no
+    // consumer outside this file and fields.hpp, and inside this file the two
+    // values are only ever OR'd together (see append(), below). What changes
+    // is what the value MEANS to the next reader and to whatever first
+    // branches on it.
+    return IndexImpact::RebuildRequired;
+#else
+    (void)db;
+    return IndexImpact::None;
+#endif
+}
+
+Result append(xbase::DbArea& db,
+              const xbase::FieldDef& fdIn,
+              const AppendOptions& opts)
+{
+    Result r;
+
+    if (!db.isOpen()) {
+        r.status = Status::InvalidState;
+        r.message = "FIELDMGR APPEND: no table open";
+        return r;
+    }
+
+    // X64 GUARD (2026-08-12, measured on the canonical MCC fixtures, twice):
+    // the temp-create-then-rename rewrite BREAKS the X64M vector metadata
+    // identity -- create_dbf stamps the block with the TEMP name
+    // (hex-verified: "STUDENTS.__fldtmp" inside the renamed file's header),
+    // and the x64 vector reader then returns BLANK fields for every record
+    // while counts, schema, and deleted flags all look correct. That is
+    // silent data destruction. APPEND is refused on x64 tables until the
+    // rewrite updates (or re-stamps) the X64M identity after the swap --
+    // the fix belongs to the rewrite flow, not to callers. Legacy flavors
+    // (classic fixed-layout rows, no X64M block) are unaffected.
+    // AIF-110 guard LIFTED 2026-08-12, same session it was raised: both
+    // defects the guard covered are fixed and runtime-proven on throwaway
+    // copies (build 05:04:34): the missing out.writeCurrent() in the
+    // rewrite loop (the blank-writer -- every set() landed in a buffer the
+    // next appendBlank discarded) and the X64M identity stamped from the
+    // temp path stem. Proof: short-name memo append and 19-char long-name
+    // append both read values back post-rewrite; hex shows real record
+    // bytes, correct X64M identity, and the field_name_policy descriptor
+    // token. The DOTTALK_X64_FIELDMGR_UNSAFE hatch existed only for this
+    // lane's own reproduction and is gone with the guard.
+
+    // Guard scope narrowed 2026-08-12 (AIF-108 Part B): this refuses only
+    // tables that ALREADY carry a memo store -- appending a SECOND memo
+    // field (token preservation across the rewrite) stays deferred. Adding
+    // the FIRST memo field to a memo-less table is now supported: the
+    // rewrite's create_dbf sets the memo header bit when an M spec is
+    // present, blank tokens are the null ref, and the sidecar autocreates
+    // on next USE.
+    if (db.memoKind() != xbase::DbArea::MemoKind::NONE) {
+        r.status = Status::Unsupported;
+        r.message = "FIELDMGR APPEND: table already has a memo store; "
+                    "adding another memo field is not supported yet";
+        return r;
+    }
+
+    xbase::FieldDef fd = fdIn;
+    fd.name = upper_copy(trim_copy(fd.name));
+    fd.type = static_cast<char>(std::toupper(static_cast<unsigned char>(fd.type)));
+
+    // Resolve the parser's memo-length sentinel against the open table's
+    // flavor (parseFieldSpec cannot know it): x64 token slot = 8, legacy
+    // DBT slot = 10.
+    if (fd.type == 'M' && fd.length == 0) {
+        fd.length = (db.versionByte() == 0x64) ? 8u : 10u;
+    }
+
+    // Flavor-aware name-length tightening (the parse layer admits the x64
+    // ceiling; see validateFieldName). Legacy flavors have no X64M block --
+    // their 10-byte descriptor IS the name, so long names are refused here.
+    if (db.versionByte() != 0x64 && fd.name.size() > 10) {
+        r.status = Status::InvalidArgument;
+        r.message = "FIELDMGR APPEND: field name exceeds 10 characters "
+                    "(legacy flavor; long names require an x64 table)";
+        return r;
+    }
+
+    if (fd.length > 255u && db.versionByte() != 0x64) {
+        r.status = Status::InvalidArgument;
+        r.message = "FIELDMGR APPEND: field length >255 is only supported for X64 tables";
+        return r;
+    }
+
+    std::string err;
+    if (!validateFieldDef(fd, err)) {
+        r.status = Status::InvalidArgument;
+        r.message = "FIELDMGR APPEND: " + err;
+        return r;
+    }
+
+    if (hasFieldCI(db, fd.name)) {
+        r.status = Status::InvalidArgument;
+        r.message = "FIELDMGR APPEND: duplicate field name '" + fd.name + "'";
+        return r;
+    }
+
+    if (db.fieldCount() >= xbase::MAX_FIELDS) {
+        r.status = Status::InvalidArgument;
+        r.message = "FIELDMGR APPEND: maximum field count reached";
+        return r;
+    }
+
+    // THE IMPACT IS HELD IN LOCALS, NOT IN r, AND THAT IS THE FIX.
+    //
+    // MEASURED 2026-08-31, runtime-proven: this block computed the impact into
+    // `r`, then executed `r = append_rewrite_table(...)`, which ASSIGNS A FRESH
+    // Result over it. append_rewrite_table opens with a default-constructed
+    // `Result r;` and never touches indexImpact or rebuildSuggested -- the only
+    // mentions of either in this file are here. So the flag was computed
+    // correctly, stored, overwritten with the struct default (false), and then
+    // tested one line later. `[index rebuild recommended]` WAS UNREACHABLE AND
+    // HAD NEVER ONCE PRINTED.
+    //
+    // Found by appending a field to a table carrying a live CDX: the append
+    // reported "field appended successfully" and nothing else, and the damage
+    // surfaced later at SET ORDER as an openCdx metadata mismatch (reclen 17
+    // vs 21, fields 2 vs 3). The DATA was intact and the INDEX was detached --
+    // a recoverable state that the operation which caused it did not mention.
+    const IndexImpact impact = assessAppendIndexImpact(db, fd);
+    const bool        rebuildNeeded =
+        (impact == IndexImpact::RebuildRecommended ||
+         impact == IndexImpact::RebuildRequired);
+
+    if (opts.failIfIndexesPresent &&
+        (impact == IndexImpact::RebuildRecommended ||
+         impact == IndexImpact::RebuildRequired ||
+         impact == IndexImpact::Blocked)) {
+        r.status = Status::InvalidState;
+        r.indexImpact = impact;
+        r.rebuildSuggested = rebuildNeeded;
+        r.message = "FIELDMGR APPEND: indexes present; structural rewrite refused by option";
+        return r;
+    }
+
+    r = append_rewrite_table(db, fd, opts);
+
+    // Carried ACROSS the assignment above, deliberately and visibly. Anything
+    // computed before that line and read after it must be restored here or it
+    // is silently lost, which is what happened.
+    r.indexImpact      = impact;
+    r.rebuildSuggested = rebuildNeeded;
+
+    if (r.status == Status::Ok && r.rebuildSuggested) {
+        // Says what happened, not merely what is advisable. The old wording
+        // ("recommended") understated it: the index is not degraded, it will
+        // REFUSE TO OPEN -- openCdx compares a fingerprint of the table it was
+        // built against (kind, version, reclen, fields, hash) and this rewrite
+        // changed reclen and fields. That guard is why a stale index cannot
+        // silently answer, and it is the reason this message only has to be
+        // honest rather than load-bearing.
+        r.message += " [WARNING: attached index is now STALE and will refuse to"
+                     " open until rebuilt -- the table's reclen and field count"
+                     " no longer match the container's fingerprint]";
+    }
+    return r;
+}
+
+Result deleteField(xbase::DbArea& db, const std::string& fieldName)
+{
+    (void)db;
+    (void)fieldName;
+    return not_implemented("FIELDMGR DELETE: not implemented yet");
+}
+
+Result modifyName(xbase::DbArea& db,
+                  const std::string& oldName,
+                  const std::string& newName)
+{
+    (void)db;
+    (void)oldName;
+    (void)newName;
+    return not_implemented("FIELDMGR MODIFY NAME: not implemented yet");
+}
+
+Result modifyType(xbase::DbArea& db,
+                  const std::string& fieldName,
+                  const xbase::FieldDef& newDef)
+{
+    (void)db;
+    (void)fieldName;
+    (void)newDef;
+    return not_implemented("FIELDMGR MODIFY TYPE: not implemented yet");
+}
+
+Result modifyTo(xbase::DbArea& db,
+                const std::string& oldName,
+                const xbase::FieldDef& newDef)
+{
+    (void)db;
+    (void)oldName;
+    (void)newDef;
+    return not_implemented("FIELDMGR MODIFY TO: not implemented yet");
+}
+
+Result copyTo(xbase::DbArea& db, const std::string& targetPath)
+{
+    (void)db;
+    (void)targetPath;
+    return not_implemented("FIELDMGR COPY TO: not implemented yet");
+}
+
+Result copyToMap(xbase::DbArea& db,
+                 const std::string& targetPath,
+                 const CopyPlan& plan)
+{
+    (void)db;
+    (void)targetPath;
+    (void)plan;
+    return not_implemented("FIELDMGR COPY TO MAP: not implemented yet");
+}
+
+Result validate(const xbase::DbArea& db)
+{
+    (void)db;
+    return not_implemented("FIELDMGR VALIDATE: not implemented yet");
+}
+
+Result check(const xbase::DbArea& db)
+{
+    (void)db;
+    return not_implemented("FIELDMGR CHECK: not implemented yet");
+}
+
+Result rebuildIndexes(xbase::DbArea& db)
+{
+    (void)db;
+    return not_implemented("FIELDMGR REBUILD INDEXES: not implemented yet");
+}
+
+} // namespace fields

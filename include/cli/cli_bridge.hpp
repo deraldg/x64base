@@ -31,6 +31,16 @@ std::string db_active_cnx_tag(const xbase::DbArea& A);
 // New: current order direction (ASC if true).
 bool db_order_asc(const xbase::DbArea& A);
 
+// Is the area traversed in NATURAL (physical) order?
+//
+// AIF-148.  db_index_attached() above answers IS A CONTAINER ATTACHED, and
+// callers that needed to know WHICH ORDER THE CURSOR FOLLOWS had no bridge
+// function to ask -- so orderdisplay::summarize() printed the DIRECTION flag
+// as the order and BROWSE reported ASCEND for a table in natural order.  The
+// two questions are different and both bridge functions have to exist, for
+// the same reason orderstate:: carries both hasOrder() and isNaturalOrder().
+bool db_order_is_natural(const xbase::DbArea& A);
+
 } // namespace xindex_cli
 
 // ---- DbArea adapters (already present in your repo) ----

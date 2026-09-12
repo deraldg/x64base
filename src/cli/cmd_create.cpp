@@ -263,11 +263,55 @@ static bool parse_one(const std::string& part,
     fs.name = fname;
     const char T = (char)std::toupper((unsigned char)typeAndParams[0]);
 
+    // ---- the rest of the clause: NULL / NOT NULL, and nothing else -------
+    //
+    // THIS TAIL USED TO BE DROPPED IN SILENCE. The two extractions above take
+    // a name and a type and the stream was then abandoned, so
+    // `CREATE VFP t (id N(4) NULL, ...)` parsed as a NON-nullable column and
+    // said nothing -- a declaration accepted and discarded. That is AIF-121's
+    // finding in a second verb: USE had three non-consuming scans and never
+    // enumerated its tail either, so no token could be unaccounted for.
+    //
+    // Measured before this refusal was added: 202 CREATE statements across the
+    // tracked .dts corpus, ZERO carrying a trailing token. Nothing in the suite
+    // starts failing; what changes is that a typo stops being ignored.
+    {
+        std::string tok;
+        while (ps >> tok) {
+            std::string U;
+            for (char c : tok) U.push_back((char)std::toupper((unsigned char)c));
+
+            if (U == "NULL") {
+                fs.nullable = true;
+            }
+            else if (U == "NOT") {
+                std::string nxt;
+                if (!(ps >> nxt)) {
+                    err = "CREATE: 'NOT' must be followed by NULL, in '" + part + "'.";
+                    return false;
+                }
+                std::string NU;
+                for (char c : nxt) NU.push_back((char)std::toupper((unsigned char)c));
+                if (NU != "NULL") {
+                    err = "CREATE: expected NOT NULL, got 'NOT " + nxt + "', in '" + part + "'.";
+                    return false;
+                }
+                fs.nullable = false;      // the default, said out loud
+            }
+            else {
+                err = "CREATE: unrecognized token '" + tok + "' in field clause '" +
+                      part + "'. Expected NULL or NOT NULL after the type. "
+                      "Nothing was created.";
+                return false;
+            }
+        }
+    }
+
     const dt::ValidationResult vr = dt::validate_type_for_format(T, fmt);
     if (!vr.ok) {
         // Not a static-catalog type.  Accept iff a runtime-registered custom
         // field type exists for this code AND it is eligible for this CREATE
-        // flavor (FIELDTYPE M4b: the registry IS the validated chain — no
+        // flavor (FIELDTYPE M4b: the registry IS the validated chain -- no
         // per-type switch edit needed here or in the catalog / supports_type_now).
         if (!xbase::fieldcodec::field_type_registered(T)) {
             err = "CREATE: field type '" + std::string(1, T) +
@@ -323,6 +367,30 @@ static bool parse_one(const std::string& part,
             }
             if (fs.len == 0) {
                 err = "CREATE: C type length must be greater than zero.";
+                return false;
+            }
+        }
+        else if (T == 'V') {
+            // Varchar. Width behaves like C, with one extra rule that is a
+            // property of the FORMAT and not a house choice: a value filling the
+            // field leaves no room for the trailing length byte, so the widest
+            // value a V(n) can hold is n, and the widest SHORT value is n-1.
+            // A V(1) can therefore hold one character or nothing, which is legal
+            // but useless; it is allowed rather than special-cased, because a
+            // refusal here would be us inventing a rule VFP does not have.
+            if (params.empty()) {
+                err = "CREATE: V type requires a length, e.g. V(10).";
+                return false;
+            }
+            if (!parse_field_len_param(params, "V type length", flavor, T, fs.len, err)) {
+                return false;
+            }
+            if (fs.len == 0) {
+                err = "CREATE: V type length must be greater than zero.";
+                return false;
+            }
+            if (fs.len > 254u) {
+                err = "CREATE: V type length must be 254 or less (VFP Varchar limit).";
                 return false;
             }
         }

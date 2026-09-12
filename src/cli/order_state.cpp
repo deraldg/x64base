@@ -74,6 +74,27 @@ bool hasOrder(const xbase::DbArea& area) {
     return st && !st->container.empty();
 }
 
+bool isNaturalOrder(const xbase::DbArea& area) {
+    std::lock_guard<std::mutex> lk(g_mtx);
+    State* st = find_state_unlocked(area);
+
+    // Nothing attached -- natural.
+    if (!st || st->container.empty()) return true;
+
+    // A TAG CONTAINER IS NOT AN ORDER UNTIL A TAG IS CHOSEN.  This is the
+    // whole of AIF-148: WORKSPACE OPEN attaches the .cdx and selects nothing,
+    // and every traversal verb that asked hasOrder() concluded there was an
+    // order to follow, went looking for a tag, found none, and returned
+    // failure -- TOP, BOTTOM and the four GO forms refused out loud, and SKIP
+    // reported "at end" on record 1.  The table was readable the whole time;
+    // it was in natural order and nothing would say so.
+    if (container_supports_tag(st->container)) return st->tag.empty();
+
+    // .inx / .isx / .csx / .six / .snx carry ONE order and need no tag, so an
+    // attached one is always ordering.
+    return false;
+}
+
 std::string orderName(const xbase::DbArea& area) {
     std::lock_guard<std::mutex> lk(g_mtx);
     State* st = find_state_unlocked(area);

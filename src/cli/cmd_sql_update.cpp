@@ -44,6 +44,13 @@
 //
 #include "xbase.hpp"
 #include "xbase_field_getters.hpp"
+// AIF-156: the shared constraint gate. THIS FILE IS THE *LEGACY* INSERT/UPDATE
+// VERB, NOT SQLSEL. PKPOLICY's arms T5 and T6 measure SQLSEL INSERT and SQLSEL
+// UPDATE, which reach the buffer through evaluate_store_expression and are
+// gated there -- and this pair is a SECOND, INDEPENDENT door registered at
+// shell_commands.cpp:458-459 as the bare verbs INSERT and UPDATE. Three arms
+// green said nothing whatever about this path.
+#include "xbase_cli.hpp"
 #include "textio.hpp"
 #include "expr/sql_normalize.hpp"
 #include <cctype>
@@ -282,6 +289,25 @@ void cmd_SQL_UPDATE(xbase::DbArea& A, std::istringstream& iss){
         }
         return -1;
     };
+
+    // GATE ONCE, BEFORE THE SCAN. The assignments and their resolved field
+    // indices are the same for every matching record, so asking per record
+    // would buy nothing -- and asking INSIDE the loop would mean the first
+    // record was already written before the second one refused. A refusal here
+    // costs nothing because nothing has been touched yet. (AIF-156)
+    {
+        std::vector<std::pair<int,std::string>> writes;
+        writes.reserve(assigns.size());
+        for(const auto& a: assigns){
+            int idx = idx_of(a.field);
+            if(idx<0){ std::cout<<"UPDATE: unknown field "<<a.field<<"\n"; return; }
+            writes.emplace_back(idx, a.value);
+        }
+        std::string gate_err;
+        if(!xbase::cli::gateFieldWrites(A, writes, &gate_err, nullptr)){
+            std::cout<<"UPDATE: "<<gate_err<<"\n"; return;
+        }
+    }
 
     long long touched=0, scanned=0;
     if(A.top() && A.readCurrent()){

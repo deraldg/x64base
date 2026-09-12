@@ -71,7 +71,17 @@ static std::string normalize_expr(std::string expr)
 static bool row_visible(xbase::DbArea& area,
                         DeletedMode dmode)
 {
-    if (!filter::visible(&area, nullptr))
+    // AIF-123. DeletedMode::UseDefault was a socket with nothing behind it: the
+    // enum named a default, the switch fell through to `return true`, and no
+    // default existed anywhere to fall back TO. It does now -- SET DELETED,
+    // applied inside the gate. OnlyDeleted / OnlyAlive are explicit clauses and
+    // beat the session default, so they tell the gate to stay out rather than
+    // being filtered away before they can be read.
+    const auto policy = (dmode == DeletedMode::UseDefault)
+                            ? filter::DeletedPolicy::SessionDefault
+                            : filter::DeletedPolicy::CallerHandles;
+
+    if (!filter::visible(&area, nullptr, policy))
         return false;
 
     if (dmode == DeletedMode::OnlyDeleted)
@@ -198,14 +208,14 @@ SelectionResult collect_selected_recnos(xbase::DbArea& area,
     // scan instead of re-parsing/re-compiling it per row (the dominant scan
     // cost). compile_bool_predicate falls back to per-row eval_bool for anything
     // not safely hoistable, so this selection is identical to the previous
-    // per-row match_current() path — which is retained for LOCATE/CONTINUE.
+    // per-row match_current() path -- which is retained for LOCATE/CONTINUE.
     std::shared_ptr<dottalk::expr::CompiledPredicate> compiled;
     const bool have_expr = spec.use_expr && !spec.expr.empty();
     if (have_expr) {
         const std::string expr_norm = normalize_expr(spec.expr);
         if (!expr_norm.empty()) {
             // M2 selective decode: allow the readCurrentRaw() fast path only
-            // when no persistent SET FILTER is active — a filter evaluates its
+            // when no persistent SET FILTER is active -- a filter evaluates its
             // own predicate against the fully decoded record, which the raw path
             // does not populate.
             const bool allow_raw = !filter::has_active_filter(&area);

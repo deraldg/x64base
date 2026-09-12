@@ -12,6 +12,7 @@
 
 #include "cli/field_constraints.hpp"
 #include "cli/rule_catalog.hpp"
+#include "cli/unique_registry.hpp"   // AIF-156: the PRIMARY designation
 
 #include <algorithm>
 #include <cctype>
@@ -240,6 +241,31 @@ static bool validate_pattern(const FieldConstraint& c,
 
 } // namespace
 
+// AIF-156: is this field the one SET UNIQUE FIELD <f> PRIMARY named?
+//
+// unique_reg stores the designation UPPERCASED, and field_name_upper() returns
+// the field's name the same way, so the comparison is between two strings
+// normalised by the same rule. It is deliberately NOT routed through
+// xfg::resolve_field_index_std here: that resolver answers "which field does
+// this NAME mean", and this asks the inverse -- "is field N the named one" --
+// where the field index is already in hand and no lookup is wanted.
+//
+// EMPTY MEANS NO PRIMARY, not "unknown". Today the designation lives in a
+// process-local map, so it is empty after a restart and this returns false for
+// every field. That is a REAL LIMIT of the current storage, not of this check,
+// and it is why the charter's step 1 is persistence.
+static bool is_primary_field_(const xbase::DbArea& A, int field1)
+{
+    std::string declared;
+    try {
+        declared = unique_reg::primary_field(A);
+    } catch (...) {
+        return false;
+    }
+    if (declared.empty()) return false;
+    return field_name_upper(A, field1) == declared;
+}
+
 std::optional<FieldConstraint> constraint_for_field(const xbase::DbArea& A, int field1)
 {
     if (!A.isOpen()) return std::nullopt;
@@ -247,11 +273,22 @@ std::optional<FieldConstraint> constraint_for_field(const xbase::DbArea& A, int 
 
     // Preferred source: file-backed RULE catalog.
     // Fallback source: bootstrap catalog retained for tests and migration.
-    if (auto from_rules = rules::constraint_for_field(A, field1)) {
-        return from_rules;
+    std::optional<FieldConstraint> c = rules::constraint_for_field(A, field1);
+    if (!c) c = bootstrap_constraint_for_name(field_name_upper(A, field1));
+
+    // AIF-156: the PRIMARY designation is a THIRD source, and it MERGES rather
+    // than replaces. A primary field may also carry a RULE (a range, a
+    // pattern); dropping those because the field is primary would silently
+    // disable constraints the user declared. And a primary field with no other
+    // rule must still produce a constraint, or the refusal below never runs --
+    // which is why this cannot be a lookup that returns early on nullopt.
+    if (is_primary_field_(A, field1)) {
+        if (!c) c = FieldConstraint{};
+        c->primary = true;
+        c->unique  = true;   // PRIMARY implies UNIQUE (unique_reg agrees)
     }
 
-    return bootstrap_constraint_for_name(field_name_upper(A, field1));
+    return c;
 }
 
 bool validate_field_constraint_for_store(const xbase::DbArea& A,
@@ -267,6 +304,35 @@ bool validate_field_constraint_for_store(const xbase::DbArea& A,
     const FieldConstraint& c = *c_opt;
     const std::string field_name = describe_field(A, field1);
     const std::string value = trim_copy(stored_value);
+
+    // AIF-156: A PRIMARY KEY IS NEVER EDITED (owner ruling 2026-09-06), so the
+    // refusal comes FIRST and does not look at the value at all. There is no
+    // "unless it is the same value" arm and no duplicate search: the rule is
+    // about the FIELD, which is why it costs one comparison instead of an
+    // index probe.
+    //
+    // THE GENERATOR IS NOT EXEMPTED BY A FLAG. IT IS EXEMPTED BY ROUTE, and
+    // that distinction is the whole safety argument. append_support's
+    // generate_registered_uniques()/generate_sid_if_needed() write the minted
+    // key with A.set() directly and never call this validator, so the mint
+    // passes because it does not come this way -- the same shape as PACK being
+    // the only thing that may remove a deleted row. An exemption flag would
+    // have to be passed correctly by every future caller; a route cannot be
+    // passed wrongly.
+    //
+    // SO A CALLER THAT VALIDATES A WHOLE RECORD IMAGE MUST SKIP PRIMARY
+    // FIELDS. After the mint the key is populated, and asking this function
+    // about it would refuse a record the engine itself just wrote. See
+    // validate_current_record_constraints() below, which does exactly that,
+    // and read this before wiring APPEND finalization.
+    if (c.primary) {
+        err_out = field_name +
+                  ": is the PRIMARY key and cannot be written. A primary key is "
+                  "minted when the row is created and never edited afterwards, "
+                  "which is what makes it unique without a duplicate search. "
+                  "Nothing was changed.";
+        return false;
+    }
 
     if (c.required && is_blank_store_value(value)) {
         err_out = field_name + ": required value is blank";
@@ -330,7 +396,19 @@ bool validate_current_record_constraints(const xbase::DbArea& A, std::string& er
 
     const int n = static_cast<int>(A.fields().size());
     for (int field1 = 1; field1 <= n; ++field1) {
-        if (!constraint_for_field(A, field1)) continue;
+        const auto c = constraint_for_field(A, field1);
+        if (!c) continue;
+
+        // AIF-156: SKIP THE PRIMARY KEY, and this is not an oversight tidied
+        // away -- it is the difference between a per-field WRITE check and a
+        // whole-image check. validate_field_constraint_for_store() refuses any
+        // store to the primary field, which is correct for a user write and
+        // wrong here: by the time a record image exists the key has ALREADY
+        // been minted, and asking about it would refuse a record the engine
+        // just wrote. This function has no callers today, so nothing breaks
+        // now -- but it is the intended APPEND-finalization site, and without
+        // this line wiring it would break autokey generation on the first run.
+        if (c->primary) continue;
 
         std::string value;
         try {

@@ -55,6 +55,27 @@ private:
                                                 std::vector<StatusMessage>& messages);
     std::size_t mirror_workspace_load_schema(const std::filesystem::path& schema_path,
                                              std::vector<StatusMessage>& messages);
+
+    // AIF-120. The one implementation behind every posture load. The file form
+    // above reads the file and calls this; the memo form calls it with the
+    // payload it fetched.
+    //
+    // dbf_root/index_root override where members are resolved. They are set
+    // when the tables do not live where the path slots point -- which is the
+    // whole of the RAM case, because the GUI's schema parser reads only AREA
+    // and RELATION lines and has never honoured a v3 DBFROOT.
+    std::size_t mirror_workspace_posture(const std::string& posture,
+                                         const std::string& label,
+                                         const std::filesystem::path& dbf_root,
+                                         const std::filesystem::path& index_root,
+                                         std::vector<StatusMessage>& messages);
+
+    // Load a workspace out of the WORKSPACES catalog's memo. A MINIDB payload
+    // is hydrated into the RAM VFS IN THIS PROCESS first (see
+    // dottalk/minidb_hydrate.hpp for why it cannot be done across the CLI
+    // bridge); a posture-only payload opens its tables from disk.
+    std::size_t mirror_memo_workspace(const std::string& name,
+                                      std::vector<StatusMessage>& messages);
     bool save_workspace_schema(const std::filesystem::path& schema_path,
                                std::vector<StatusMessage>& messages,
                                std::filesystem::path* saved_path = nullptr) const;

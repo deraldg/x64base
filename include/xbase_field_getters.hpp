@@ -125,16 +125,61 @@ inline bool is_memo_type(char t) noexcept {
 //      COPY AS X64 VECTOR.
 //   3. Fallback aliases are accepted only when they map uniquely.
 //
+// CORRECTED 2026-09-06: RULE 3 NAMES THE WRONG COMPONENT. Read as written it
+// says THIS FUNCTION decides uniqueness. It does not. xbase::field_name_policy::
+// plan_x64_unique_fallback decides it, at WRITE time, by inserting
+// descriptor_key(token) into a `used` set and re-mangling until the key is free
+// -- which is why CREATE X64 announces "token was mangled to avoid a fallback
+// collision". Tokens are therefore DISTINCT BY CONSTRUCTION before this
+// function ever sees one.
+//
+// SO THE `ambiguous` CHECK BELOW CANNOT FIRE, and that is worth stating rather
+// than leaving for someone to rediscover as a bug. For a GENERATED token
+// field_name_core_ and descriptor_key agree exactly: a token leaves
+// normalize_descriptor_base as [A-Z0-9_] plus a possible '~', so there is never
+// whitespace to trim and never a NUL to truncate. At most one plan can match.
+//
+// IT IS KEPT ANYWAY AND IS NOT DEAD WEIGHT. It is the only thing standing if a
+// future planner stops guaranteeing uniqueness, and it fails CLOSED -- -1, no
+// match -- rather than silently picking the first of two. A guard that cannot
+// fire under today's caller is different from a guard that is wrong; this one
+// is cheap, correct, and one edit away from being load-bearing.
+//
+// PROVEN BY: the TAGFIELD spec (index_field_name_resolution.dts, section 3)
+// covers rules 1 and 2 against a real collision -- STUDENT_LAST_NAME takes the
+// plain token STUDENT_LA, STUDENT_LABEL and STUDENT_LA are mangled to
+// STUDENT_~1 and STUDENT_~2, and `STUDENT_LA` as a tag must resolve to the
+// FIELD OF THAT NAME, not to the field holding it as a token. Rule 3 is the one
+// arm no fixture can reach, for the reason above.
+//
 // This keeps x64 metadata names canonical while making non-destructive
 // 10-byte descriptor tokens useful as aliases.
 // -----------------------------------------------------------------------------
+// AIF-157: truncate a stored field name at the first NUL before comparing.
+//
+// The DBF field descriptor carries an 11-byte NUL-padded name, so a stored name
+// can arrive as "SID\0\0\0\0" depending on the reader. trim_copy only strips
+// isspace, and NUL is not isspace, so an untruncated name never equals its own
+// trimmed spelling.
+//
+// This is not a new opinion -- it is the ONE capability the hand-rolled matchers
+// in cdx_native_backend.cpp and cnx_backend.cpp had that this resolver lacked.
+// Those two were retired onto this function, so absorbing their NUL handling
+// here is what makes the consolidation lossless rather than a quiet downgrade.
+// A name with no NUL is completely unaffected.
+inline std::string field_name_core_(std::string s) {
+    const auto nul = s.find('\0');
+    if (nul != std::string::npos) s.resize(nul);
+    return up_copy(trim_copy(std::move(s)));
+}
+
 inline int resolve_field_index_std(const xbase::DbArea& db, const std::string& nameIn) {
-    const std::string want = up_copy(trim_copy(nameIn));
+    const std::string want = field_name_core_(nameIn);
     const auto& F = db.fields();
 
     // 1. Authoritative/logical field names always win.
     for (int i = 0; i < static_cast<int>(F.size()); ++i) {
-        if (up_copy(trim_copy(F[static_cast<std::size_t>(i)].name)) == want) {
+        if (field_name_core_(F[static_cast<std::size_t>(i)].name) == want) {
             return i;
         }
     }
@@ -156,7 +201,7 @@ inline int resolve_field_index_std(const xbase::DbArea& db, const std::string& n
 
         for (int i = 0; i < static_cast<int>(plans.size()); ++i) {
             const std::string token =
-                up_copy(trim_copy(plans[static_cast<std::size_t>(i)].descriptor_name));
+                field_name_core_(plans[static_cast<std::size_t>(i)].descriptor_name);
 
             if (token == want) {
                 if (found >= 0 && found != i) {

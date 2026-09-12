@@ -87,6 +87,45 @@ struct BufferJournalInfo {
     bool                  open {false};
     std::FILE*            fp {nullptr};       // append-only .tbj handle while open
     std::uint64_t         change_count {0};   // redo records since the log opened
+
+    // ---- WHOSE TRANSACTION IS THIS, AND IS IT STILL OURS TO REVERSE? -------
+    //
+    // AIF-160. Two bits that turn this struct into a state machine, because a
+    // grouped transaction has a state a single-table one never had: DECIDED BUT
+    // NOT YET APPLIED.
+    //
+    //   prepared   a P record has been written. Set by journal_begin_prepare,
+    //              which REFUSES a second call -- two P records in one log name
+    //              two groups for one journal, the reader refuses such a log,
+    //              and it then never replays and never goes away.
+    //
+    //   decided    the group log says this transaction COMMITTED. From this
+    //              instant the journal is NOT THIS TRANSACTION'S TO DELETE.
+    //              journal_note_rollback refuses while it is set.
+    //
+    // WHY THE SECOND ONE EXISTS AT ALL. After decide_committed lands, a member
+    // whose APPLY then fails still holds its journal, on purpose: the decision
+    // row exists and the P record is there, so the next USE replays it. Every
+    // teardown path in the tree calls journal_note_rollback, which std::removes
+    // that file. A committed transaction, a decision row saying so, and its
+    // redo deleted by cleanup.
+    //
+    // THE ALTERNATIVE WAS A PARAMETER ON THE TEARDOWN and it was rejected: a
+    // flag at the call site makes the deletion CONDITIONAL, correct only while
+    // every present and future caller passes the right value, with a silently
+    // lost commit as the price of one wrong one. Here the deletion is
+    // IMPOSSIBLE instead, and the callers nobody has written yet are covered
+    // by the same check.
+    //
+    // IN MEMORY, DELIBERATELY, AND THE CRASH CASE ARGUES FOR IT RATHER THAN
+    // AGAINST. These only need to outlive the teardown, not the process. A
+    // crash with `decided` set leaves the journal on disk with its P record and
+    // the decision row in the group log, which is exactly the state recovery
+    // knows how to finish. Writing the bit durably into each member's journal
+    // would be a SECOND SPELLING of the decision, plus an fsync per member
+    // after the group is already true.
+    bool                  prepared {false};
+    bool                  decided  {false};
 };
 
 struct AreaState {
@@ -136,7 +175,8 @@ void reset_all();
 // redo log (format TBJ1; `U`/`D` records carrying priority + H/S retention mode, values
 // hex-encoded), durably fsynced with a `C <count>` COMMIT marker BEFORE the buffered
 // changes are applied to the DBF, and replayed idempotently on open by
-// recover_table_buffer_journal(). See src/cli/table_state.cpp.
+// recover_table_buffer_journal(), which refuses a format version it does not
+// understand rather than half-replaying it. See src/cli/table_state.cpp.
 //
 // SCOPE (AIF-061): the log covers DBF RECORD writes. It does NOT yet cover the memo
 // store -- an x64 memo REPLACE converts text to a stored object-id and journals only
@@ -160,13 +200,87 @@ bool journal_note_change(int area0, const ChangeEntry& entry);
 // buffered changes are applied to the DBF. Returns false if the durable sync
 // fails (caller must abort the commit). No-op (true) unless RamJournal is active.
 bool journal_begin_commit(int area0);
+// Write-ahead for one member of a MULTI-AREA GROUP (AIF-160). Appends
+// `P <group-key> <members>` in place of the `C <count>` marker, promotes this
+// log's header to TBJ2, and durably fsyncs -- all before the buffered changes
+// reach the DBF, exactly as journal_begin_commit does.
+//
+// A PREPARED SPAN IS DURABLE AND UNDECIDED. It commits only when
+// dottalk::group::decide_committed lands its single row; until then every
+// reader discards it by presumed abort. False means this member did not
+// prepare, and the caller must abort the WHOLE group.
+//
+// Never call this on an area that also gets journal_begin_commit: a log
+// carrying both markers names two authorities for one question and recovery
+// refuses it outright.
+bool journal_begin_prepare(int area0, const std::string& group_key, int members);
+
+// THE GROUP SAID YES. Called once per member the instant decide_committed
+// returns true, and nothing else may call it: it is the transfer of ownership
+// described on BufferJournalInfo::decided. After this, journal_note_rollback
+// refuses this area's journal and only journal_note_commit can remove it.
+//
+// Returns false only for an out-of-range area or one with no journal, and the
+// caller has nothing useful to do with that -- the group is already committed
+// by the time this runs.
+bool journal_note_decided(int area0);
+
+// True when the log for this area already carries a durable P record -- that
+// is, when this transaction is a member of a group and journal_begin_commit
+// will REFUSE to write a C over it. Read-only, and safe on an area with no
+// journal at all.
+//
+// THE REFUSAL IS THE GUARANTEE; THIS IS THE COURTESY. A caller that skips
+// this still cannot produce a C-and-P log, it just reports the refusal in
+// worse words.
+bool journal_is_prepared(int area0);
+
 bool journal_note_commit(int area0);
+
+// DISCARD AN UNCOMMITTED TRANSACTION. REFUSES, AND CHANGES NOTHING, once the
+// area has been marked decided -- see BufferJournalInfo::decided. Every caller
+// in the tree ignores the return, which is the correct posture for all of them
+// except a caller that genuinely means to destroy a committed transaction, and
+// there is no such caller.
 bool journal_note_rollback(int area0);
+
+// Is this file engine-owned state under the SYS slot? (AIF-160)
+//
+// SYS holds tables that cannot be rebuilt from anything -- the multi-area commit
+// group log first among them -- and two rules follow, both ENFORCED rather than
+// documented: a SYS table is refused the table buffer, and it is skipped by
+// journal recovery. The second is why the first exists: recovering a prepared
+// span means asking the group log whether its group committed, so a group log
+// that could carry a journal would have to be recovered by consulting itself.
+//
+// A RULE ABOUT LOCATION, not a registry of exempt paths -- a guard that depends
+// on something registering at startup is off whenever registration is missed.
+bool is_engine_state_file(const std::string& file_path);
 
 // Crash recovery: on table open, if a `<dbf>.tbj` redo log exists, replay it into
 // the DBF when it carries a COMMIT marker (idempotent) or discard it otherwise,
 // then remove the log. Returns true iff a committed log was replayed. Safe to
 // call on every USE (a quick no-op when no log is present).
+//
+// THE VERSION IS CHECKED FIRST (2026-09-11), and it was not before. The header
+// this WAL has always written was never read: the reader scanned for a `C`
+// marker, replayed `I`/`U`/`D`, and skipped anything else with no default
+// branch. A log from a NEWER build was therefore half replayed -- commit marker
+// honoured, unknown records dropped in silence -- which for AIF-061's memo
+// records means recovered rows referencing objects the memo store never wrote.
+//
+// A version this build does not understand is now REFUSED AND PRESERVED: no
+// replay, and the log is deliberately NOT deleted, because it may be a
+// committed transaction a newer build can still replay. The refusal prints and
+// this function returns false; the table is open and usable either way. An
+// EMPTY log is not a version problem -- it is a transaction that died before
+// its header -- and is discarded as it always was.
+//
+// This build still WRITES TBJ1. The gate ships BEFORE the TBJ2 bump on purpose:
+// a rule nothing enforces is not a compatibility rule, and adding the check
+// afterwards leaves binaries in the field that half-replay silently.
+// Graded by src/tests/test_journal_version_gate.cpp, whose G0 control proves
+// the fixture can replay at all before the refusal arms are believed.
 bool recover_table_buffer_journal(xbase::DbArea& area);
 
 // History mode control

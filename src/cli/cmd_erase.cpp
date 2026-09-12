@@ -8,15 +8,17 @@
 // status: supported
 
 // src/cli/cmd_erase.cpp
-// ERASE — physically deletes a table file and its same-stem sidecars.
+// ERASE -- physically deletes a table file and its same-stem sidecars.
 //
 // Supported syntax:
 //   ERASE <table> [CONFIRM]
 //   ERASE TABLE <table> [CONFIRM]
+//   ERASE DIR <path> [CONFIRM]
 //
 // Examples:
 //   ERASE TABLE clients CONFIRM
 //   ERASE students.dbf CONFIRM
+//   ERASE DIR DBF\wbregress CONFIRM
 //
 // Behavior:
 //   - Resolves <table> to a .dbf path (adds .dbf if missing).
@@ -24,11 +26,19 @@
 //   - Deletes the DBF plus known DBF-sidecars in the same directory:
 //       .fpt .dbt .dtx .dti.json .schema.json
 //   - Also deletes matching public index files through the active INDEXES slot:
-//       .inx .cnx .cdx .idx
+//       .inx .cnx .cdx .cdx.meta .idx
 //   - Also deletes the matching LMDB backend directory for the public .cdx
 //     through the active LMDB slot:
 //       <stem>.cdx.d
 //   - Safety gate: without CONFIRM, it prints what it *would* delete and does nothing.
+//   - ERASE DIR (owner-ruled 2026-08-12): explicit directory teardown. A landed
+//     writeback target has no table token -- the .dbf normalization would mangle
+//     it -- and the WORKSPACE WRITEBACK regression needs clean-slate reruns
+//     (a leftover target makes the writeback refuse on collision while the
+//     markers read the PREVIOUS run's files: a stale false green). No .dbf
+//     normalization, no sidecar sweep, no SETPATH resolution: the named
+//     directory (cwd-relative or absolute) and its contents, nothing else.
+//     Same CONFIRM contract: dry-run without it.
 
 // @dottalk.usage v1
 // owner: DOT|ERASE
@@ -46,19 +56,23 @@
 //   ERASE USAGE
 //   ERASE <table> [CONFIRM]
 //   ERASE TABLE <table> [CONFIRM]
+//   ERASE DIR <path> [CONFIRM]
 //
 // examples:
 //   ERASE TABLE clients
 //   ERASE TABLE clients CONFIRM
 //   ERASE students.dbf CONFIRM
+//   ERASE DIR DBF\wbregress CONFIRM
 //
 // notes:
 //   ERASE USAGE prints usage and does not inspect or delete files.
 //   Without CONFIRM, ERASE performs a dry-run and lists files that would be deleted.
-//   CONFIRM physically deletes the DBF, matching index containers/files, and matching LMDB backend directory when present.
+//   CONFIRM physically deletes the DBF, matching index containers/files and CDX metadata, and matching LMDB backend directory when present.
+//   ERASE DIR deletes the named directory and everything under it; cwd-relative or absolute path, no SETPATH resolution, no sidecar sweep. Dry-run without CONFIRM.
 //
 // risk:
 //   deletes_filesystem: ERASE ... CONFIRM
+//   deletes_directory_recursive: ERASE DIR ... CONFIRM
 //   dry_run_without_confirm: yes
 //   mutates_table_data: filesystem-level delete
 //
@@ -78,6 +92,7 @@
 #include "cli/command_output.hpp"
 #include "cli/command_registry.hpp"
 #include "cli/path_resolver.hpp"
+#include "common/path_state.hpp"
 #include "textio.hpp"
 #include "xbase.hpp"
 
@@ -164,7 +179,7 @@ static std::vector<fs::path> build_sidecar_list(const fs::path& dbf_path) {
     const std::string stem = dbf_path.stem().string(); // "clients" from "clients.dbf"
 
     std::vector<fs::path> files;
-    files.reserve(16);
+    files.reserve(17);
 
     // Primary
     files.push_back(dbf_path);
@@ -176,14 +191,37 @@ static std::vector<fs::path> build_sidecar_list(const fs::path& dbf_path) {
     files.push_back(dir / (stem + ".dti.json"));    // indexing stub sidecar
     files.push_back(dir / (stem + ".schema.json")); // schema sidecar
 
+    // THE TABLE-BUFFER REDO LOG, AND ITS NAME IS NOT STEM-BASED.
+    //
+    // Every other entry above is <stem> + extension. This one is the WHOLE DBF
+    // FILENAME plus ".tbj" -- table_state.cpp builds it as `area.filename() +
+    // ".tbj"`, so the file beside students.dbf is students.dbf.tbj and NOT
+    // students.tbj. Adding it to this list the obvious way would have named a
+    // path that never exists, and ERASE reports only what it actually deleted,
+    // so the omission would have looked exactly like success.
+    //
+    // WHY IT BELONGS HERE: the .tbj is a COMMITTED redo log, and cmd_use.cpp
+    // replays one it finds on open ("USE: recovered a committed table-buffer
+    // journal"). Erase the table, recreate it under the same name, and a
+    // surviving journal from the erased table is replayed into the new one --
+    // writes from a table that no longer exists, arriving silently.
+    //
+    // NOT SWEPT, deliberately: the areaN.tbj form table_state.cpp falls back to
+    // when a journal has no table name. That one is keyed to a work-area slot
+    // rather than to this stem, so ERASE <table> has no claim on it.
+    files.push_back(dir / (dbf_path.filename().string() + ".tbj"));
+
     // Public index containers/files (optional, active INDEXES root)
     const fs::path inx = dottalk::paths::resolve_index(stem + ".inx");
     const fs::path cnx = dottalk::paths::resolve_index(stem + ".cnx");
     const fs::path cdx = dottalk::paths::resolve_index(stem + ".cdx");
     const fs::path idx = dottalk::paths::resolve_index(stem + ".idx");
+    fs::path cdx_meta = cdx;
+    cdx_meta += ".meta";
     files.push_back(inx);
     files.push_back(cnx);
     files.push_back(cdx);
+    files.push_back(cdx_meta);
     files.push_back(idx);
 
     // LMDB backend env for the public CDX container (optional, active LMDB root)
@@ -235,6 +273,74 @@ void cmd_ERASE(xbase::DbArea& /*area*/, std::istringstream& iss) {
             print_usage();
             return;
         }
+    }
+
+    // ERASE DIR <path> [CONFIRM] -- explicit directory teardown (owner-ruled
+    // 2026-08-12; charter in the file header). Handled before the table path
+    // so a directory token never reaches the .dbf normalization below.
+    if (textio::up(tok) == "DIR") {
+        std::string dir_arg;
+        if (!(iss >> dir_arg) || dir_arg.empty()) { print_usage(); return; }
+
+        // Cross-OS: scripts spell paths either way; POSIX does not treat
+        // '\' as a separator (house pattern, see shell.cpp).
+        std::replace(dir_arg.begin(), dir_arg.end(), '\\', '/');
+
+        bool dir_confirm = false;
+        std::string t2;
+        while (iss >> t2) {
+            if (textio::up(t2) == "CONFIRM" || t2 == "/Y" || t2 == "-Y") {
+                dir_confirm = true;
+            }
+        }
+
+        std::error_code ec;
+        // Same resolution as every other path token in the engine, and the
+        // same one WORKSPACE WRITEBACK's TO target uses: absolute stays
+        // absolute, separators mean DATA-root-relative, a bare name sits in
+        // the DBF slot. A teardown that resolved differently from the write
+        // it is tearing down would delete the wrong directory or miss the
+        // right one -- which is exactly what happened while this took the
+        // raw token and followed the process CWD (measured 2026-08-12).
+        const fs::path dir = dottalk::paths::resolve_in_slot(
+            dottalk::paths::get_slot(dottalk::paths::Slot::DBF), dir_arg);
+        if (!fs::exists(dir, ec) || ec) {
+            // Absence is the desired end state of a teardown, not an error --
+            // a bootstrap pre-clean on a fresh tree lands here by design.
+            cli::cmdout::print_line("ERASE DIR: '" + dir_arg +
+                                    "' does not exist -- nothing to delete.");
+            return;
+        }
+        ec.clear();
+        if (!fs::is_directory(dir, ec) || ec) {
+            cli::cmdout::print_line("ERASE DIR: '" + dir_arg +
+                                    "' is not a directory -- use ERASE <table|file> for files.");
+            return;
+        }
+
+        if (!dir_confirm) {
+            ec.clear();
+            std::size_t entries = 0;
+            for (auto it = fs::recursive_directory_iterator(dir, ec);
+                 !ec && it != fs::recursive_directory_iterator(); it.increment(ec)) {
+                ++entries;
+            }
+            cli::cmdout::print_line("ERASE DIR (dry-run): would remove '" + dir_arg +
+                                    "' and " + std::to_string(entries) +
+                                    " entrie(s) under it. Re-run with CONFIRM.");
+            return;
+        }
+
+        ec.clear();
+        const std::uintmax_t removed = fs::remove_all(dir, ec);
+        if (ec) {
+            cli::cmdout::print_line("ERASE DIR: failed on '" + dir_arg + "': " +
+                                    ec.message());
+        } else {
+            cli::cmdout::print_line("ERASE DIR: removed '" + dir_arg + "' (" +
+                                    std::to_string(removed) + " entrie(s)).");
+        }
+        return;
     }
 
     std::string table_arg;

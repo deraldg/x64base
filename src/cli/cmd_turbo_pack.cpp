@@ -8,7 +8,7 @@
 // status: supported
 
 // src/cli/cmd_turbo_pack.cpp
-// TURBOPACK — fast, low-level DBF compaction (byte-oriented)
+// TURBOPACK -- fast, low-level DBF compaction (byte-oriented)
 // Removes physically deleted records (* flag) by rewriting only live ones.
 //
 // Scope / contract:

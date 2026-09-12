@@ -11,10 +11,16 @@
 #include "cli/expr/eval.hpp"
 #include "cli/expr/text_compare.hpp"
 #include "predicate_eval.hpp"
+#include "cli/expr/fn_string.hpp"
+#include "cli/expr/fn_date.hpp"
+#include "cli/expr/fn_numeric.hpp"
+#include "cli/expr/fn_custom.hpp"
 
 #include <cctype>
 #include <optional>
 #include <string>
+#include <stdexcept>
+#include <vector>
 
 using namespace dottalk::expr;
 
@@ -27,6 +33,110 @@ bool FieldRef::eval(const RecordView& rv) const {
   return false;
 }
 
+std::string FieldRef::evalString(const RecordView& rv) const {
+  if (!rv.get_field_str) throw std::runtime_error("field accessor unavailable");
+  return rv.get_field_str(name);
+}
+
+namespace {
+
+std::string upper_name(std::string s) {
+  for (char& c : s) c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+  return s;
+}
+
+const BuiltinFnSpec* find_builtin(const std::string& name) {
+  const auto find = [&](const BuiltinFnSpec* specs, std::size_t count) -> const BuiltinFnSpec* {
+    for (std::size_t i = 0; i < count; ++i) if (name == specs[i].name) return &specs[i];
+    return nullptr;
+  };
+  if (const auto* p = find(string_fn_specs(), string_fn_specs_count())) return p;
+  if (const auto* p = find(date_fn_specs(), date_fn_specs_count())) return p;
+  return find(numeric_fn_specs(), numeric_fn_specs_count());
+}
+
+bool logical_text(const std::string& raw, bool& out) {
+  std::string s = upper_name(raw);
+  while (!s.empty() && std::isspace(static_cast<unsigned char>(s.front()))) s.erase(s.begin());
+  while (!s.empty() && std::isspace(static_cast<unsigned char>(s.back()))) s.pop_back();
+  if (s == ".T." || s == "T" || s == "TRUE" || s == "1") { out = true; return true; }
+  if (s == ".F." || s == "F" || s == "FALSE" || s == "0" || s.empty()) { out = false; return true; }
+  return false;
+}
+
+} // namespace
+
+std::string FunctionCall::evalString(const RecordView& rv) const {
+  const std::string fn = upper_name(name);
+  if (fn == "DELETED" || fn == "RECNO" || fn == "RECCOUNT") {
+    if (!args.empty()) throw std::runtime_error(fn + "() takes no arguments");
+    if (!rv.get_field_str) throw std::runtime_error(fn + "() is unavailable");
+    return rv.get_field_str(fn);
+  }
+
+  // ISNULL(<field>) -- THE ARGUMENT IS NOT EVALUATED, AND THAT IS THE POINT.
+  //
+  // Handled here, before the generic argument loop below, for the same reason
+  // DELETED() is: it asks about the ROW rather than about a value. But it is
+  // stricter than DELETED, because evaluating its argument would DESTROY the
+  // information it needs -- a null field and a blank field both evaluate to the
+  // empty string, so by the time a normal function received its argument the
+  // distinction would already be gone.
+  //
+  // The argument must therefore be a bare FIELD REFERENCE. ISNULL("x"),
+  // ISNULL(1+2) and ISNULL(UPPER(f)) are refused rather than silently answered,
+  // because there is no honest answer to give: a literal is not a cell and has
+  // no null bit.
+  if (fn == "ISNULL") {
+    if (args.size() != 1) {
+      throw std::runtime_error("ISNULL() takes exactly one field name");
+    }
+    const auto* fref = dynamic_cast<const FieldRef*>(args[0].get());
+    if (!fref) {
+      throw std::runtime_error(
+          "ISNULL() takes a field name, not an expression -- only a stored cell "
+          "has a null bit");
+    }
+    if (!rv.get_field_is_null) {
+      throw std::runtime_error(
+          "ISNULL() is unavailable for this row source");
+    }
+    const std::optional<bool> answer = rv.get_field_is_null(fref->name);
+    if (!answer) {
+      throw std::runtime_error("ISNULL(): unknown field '" + fref->name + "'");
+    }
+    return *answer ? ".T." : ".F.";
+  }
+
+  std::vector<std::string> argv;
+  argv.reserve(args.size());
+  for (const auto& arg : args) argv.push_back(arg->evalString(rv));
+
+  if (const auto* spec = find_builtin(fn)) {
+    const int argc = static_cast<int>(argv.size());
+    if (argc < spec->minArgs || argc > spec->maxArgs) {
+      throw std::runtime_error(fn + "() received the wrong number of arguments");
+    }
+    return spec->eval(argv);
+  }
+  if (const auto* custom = find_custom_fn(fn)) {
+    const int argc = static_cast<int>(argv.size());
+    if (argc < custom->minArgs || argc > custom->maxArgs) {
+      throw std::runtime_error(fn + "() received the wrong number of arguments");
+    }
+    return custom->eval(argv);
+  }
+  throw std::runtime_error("unknown function '" + name + "'");
+}
+
+bool FunctionCall::eval(const RecordView& rv) const {
+  const std::string result = evalString(rv);
+  bool logical = false;
+  if (logical_text(result, logical)) return logical;
+  if (const auto number = to_number(result)) return *number != 0.0;
+  return !result.empty();
+}
+
 static std::string value_as_string(const RecordView& rv, const Expr* e) {
   if (auto fr = dynamic_cast<const FieldRef*>(e)) {
     if (rv.get_field_str) return rv.get_field_str(fr->name);
@@ -34,11 +144,13 @@ static std::string value_as_string(const RecordView& rv, const Expr* e) {
   }
   if (auto ls = dynamic_cast<const LitString*>(e)) return ls->v;
   if (auto ln = dynamic_cast<const LitNumber*>(e)) return std::to_string(ln->v);
-  return e->eval(rv) ? "1" : "0";
+  if (auto lb = dynamic_cast<const LitBool*>(e)) return lb->v ? ".T." : ".F.";
+  return e->evalString(rv);
 }
 
 static std::optional<double> value_as_number(const RecordView& rv, const Expr* e) {
   if (auto ln = dynamic_cast<const LitNumber*>(e)) return ln->v;
+  if (auto lb = dynamic_cast<const LitBool*>(e)) return lb->v ? 1.0 : 0.0;
   if (auto fr = dynamic_cast<const FieldRef*>(e)) {
     if (rv.get_field_num) return rv.get_field_num(fr->name);
     if (rv.get_field_str) return to_number(rv.get_field_str(fr->name));
@@ -46,10 +158,32 @@ static std::optional<double> value_as_number(const RecordView& rv, const Expr* e
   }
   if (auto ls = dynamic_cast<const LitString*>(e)) return to_number(ls->v);
   if (auto ar = dynamic_cast<const Arith*>(e))  return ar->evalNumber(rv);
+  if (auto fn = dynamic_cast<const FunctionCall*>(e)) return to_number(fn->evalString(rv));
   return std::nullopt;
 }
 
+static std::optional<char> field_type(const RecordView& rv, const Expr* e) {
+  const auto* fr = dynamic_cast<const FieldRef*>(e);
+  if (!fr || !rv.get_field_type) return std::nullopt;
+  return rv.get_field_type(fr->name);
+}
+
 bool Cmp::eval(const RecordView& rv) const {
+  // A numeric/date/logical field compared with a non-coercible string is a
+  // type error, not a confident FALSE. This closes the shared wrong-answer
+  // class recorded by AIF-074 before SQLsel adopts this evaluator.
+  const auto lt = field_type(rv, lhs.get());
+  const auto rt = field_type(rv, rhs.get());
+  const auto incompatible_literal = [](std::optional<char> type, const Expr* other) {
+    const auto* text = dynamic_cast<const LitString*>(other);
+    if (!type || !text) return false;
+    const char t = static_cast<char>(std::toupper(static_cast<unsigned char>(*type)));
+    return t == 'N' && !to_number(text->v).has_value();
+  };
+  if (incompatible_literal(lt, rhs.get()) || incompatible_literal(rt, lhs.get())) {
+    throw std::runtime_error("incompatible field/literal types in comparison");
+  }
+
   auto ln = value_as_number(rv, lhs.get());
   auto rn = value_as_number(rv, rhs.get());
   if (ln && rn) {

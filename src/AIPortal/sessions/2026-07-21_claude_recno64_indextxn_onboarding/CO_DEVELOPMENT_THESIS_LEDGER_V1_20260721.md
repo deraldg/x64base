@@ -70,12 +70,127 @@ unrelated feature exposed it.
   carrier audit + the L1/M4/M5 sweep. One feature's grounding became a correctness lane of
   its own. Strong. (Coupling ✓ yield ✓ co-dev ✓.)
 
+---
+
+## Proof P4 (Strong) -- 2026-08-12 -- A FIXTURE chore surfaced silent data destruction in FIELDMGR APPEND
+
+**Building:** AIF-070 Part B (task #168) -- a *data* task, not an engine task: add `NOTES M`
+to the canonical MCC `STUDENTS`/`TEACHERS` fixtures so MINIDB containers would have real
+memo sidecars to carry. The owner ruled the mechanism must be in-engine ("build the verb,
+not a host-side one-off"), which required engaging `FIELDMGR APPEND` and its rewrite
+(`src/core/fields_mgr.cpp::append_rewrite_table`).
+
+**Surfaced:** the rewrite loop **never called `writeCurrent()`**. `set()` only stores into
+the in-memory `_fd` vector; `appendBlank()` writes a space-padded row to disk immediately
+and the *next* `appendBlank()` discards the pending values (`dbf_file.cpp` appendBlank ->
+gotoRec64 -> readCurrent). Every `set()` returned true into a buffer nobody flushed, so the
+verb silently replaced 200 rows of real data with 0x20 -- **while record count, schema,
+field descriptors, and deleted flags all read correct.**
+
+**Why the whole existing suite missed it:** `FIELDMGR APPEND` had no regression at all, and
+-- the sharper half -- its failure mode defeats *shape-based* checking. A test that opened
+the table and asserted "200 records, 10 fields, NOTES present" would have **passed green on
+a blanked table**. Same family as P1: the defect lives below the frontier of what the
+existing proofs can see, not merely outside their coverage.
+
+**Co-development in action:**
+- **Code:** the missing `writeCurrent()` inside the loop, before `deleteCurrent()`; plus two
+  more defects the same read exposed -- the X64M identity stamped from the TEMP path stem
+  (identity-explicit `create_dbf` overload), and long x64 field names *refused* rather than
+  merely untested (ceiling raised to the X64M authority, legacy re-tightened, descriptors
+  routed through `field_name_policy`'s `~n` mangler).
+- **Test:** proven on throwaway copies (short-name memo append + 19-char long-name append,
+  values read back BY LONG NAME, hex-verified record bytes) then on canonical fixtures
+  (PB_T1..T4). Test-design debt recorded explicitly, not silently: the FIELDMGR_APPEND
+  regression spec (short-name / long-name / **deleted-row** arms) is owed -- the deleted-row
+  arm matters because `deleteCurrent()` ends in its own `writeCurrent()`, so deleted rows
+  would have survived correct; MCC has none, which is why the corruption was 200/200.
+- **Docs:** AIF-110 claimed and its intake row written the same session, then **amended when
+  measurement contradicted the first diagnosis**; usage contract updated; migration script
+  header carries all five runs' lessons; guard raised *and* lifted in-session; neighbor
+  notice posted to `board.notice` #9 with the risk shape in plain words ("check values, not
+  counts").
+
+**Grading note (honest):** P4 is Strong, but by a partly different mechanism than P1-P3.
+Those were invisible because no *fixture* could reach them (recnos above the 32-bit clamp).
+P4 was invisible because the verb was untested **and** because its failure shape passes
+every structural assertion. Both are "below the test frontier"; the second variety is
+arguably more dangerous because it survives naive testing.
+
+---
+
+## Proof P5 (Moderate) -- 2026-08-12 -- Probe-before-number surfaced the ramfs bypass ledger
+
+**Building:** a runtime probe for an unattributed four-day-old BBS defect report ("descending
+path looks off"), under the house probe-before-number rule. Building it required exercising
+index creation inside the RAM VFS.
+
+**Surfaced:** two more members of the ramfs-bypass family -- `INDEX ON` writes its INX via
+`std::ofstream` (bypasses the VFS entirely), and `CNX ADDTAG`/`REBUILD` existence-check the
+**real filesystem** for a container `CNX CREATE` had just placed in the VFS. Member 1 (the
+DTX memo sidecar) was found 2026-08-11 by the same kind of pass.
+
+**Yield:** the probe's own v1 was an invalid run (six false reds from a dead scaffold), which
+produced a durable guard pattern: `DS_G0`, a liveness marker that makes "the scaffold failed"
+self-announcing rather than masquerading as a finding. The original report closed **green**
+with evidence and no AIF claimed -- a negative result, recorded as such and answered on the
+board.
+
+**Grading:** Moderate. The bypasses are measured findings and a documented ledger, not fixed
+defects; a dedicated ramfs-coverage pass would plausibly have found them too.
+
+---
+
+## Proof P6 (Strong) -- 2026-08-12 -- Rebuilding an index surfaced that the documented reset rule was incomplete
+
+**Building:** Part B's index rebuild after the schema change (the MCC README's reset rule:
+"`CDX CREATE` refuses an existing container, so delete it first").
+
+**Surfaced:** deleting only the `.cdx` is **not** a reset. CDX identity lives in a separate
+`<container>.cdx.meta` sidecar (`src/xindex/cdx_meta.cpp`), so a freshly created container is
+still judged by the stale identity and refuses to attach -- with a `metadata mismatch`
+message that names the *table* and looks like a table problem.
+
+**Yield:** doctrine corrected in place; the reset rule gains its corollary (delete BOTH, and
+the `.gitignore` policy that keeps `.cdx.meta` untracked-because-regenerable is exactly why
+it survives a naive cleanup). Cost of not knowing it: two full investigation cycles this
+session chased a "table" defect that was an index-identity artifact.
+
+**Co-development:** migration script header, intake row, and the `board.notice` neighbor
+warning all carry it; it is stated as a rule, not as an anecdote.
+
+---
+
 ## Scoreboard
 
-3 proofs, all Strong (P1 in-memory→readCurrent, P2 INDEXTXN→INDEXSEEK, P3 INDEXTXN→O11).
-Common thread: every yield was a defect **below the test frontier** (>2³¹ recnos, or a
-DBF-masking probe) that routine testing could not have reached. That is the thesis earning
-its keep — not decoration (yet; keep grading honestly).
+**6 proofs: 5 Strong, 1 Moderate** (P1 in-memory -> readCurrent, P2 INDEXTXN -> INDEXSEEK,
+P3 INDEXTXN -> O11, P4 fixture-chore -> FIELDMGR blank-corruption, P5 probe -> ramfs bypass
+ledger, P6 index-rebuild -> `.cdx.meta` reset corollary).
+
+Common thread, now across two eras of the project: every Strong yield was a defect **below
+the test frontier** -- either unreachable by any fixture (recnos above the 32-bit clamp,
+DBF-masking probes) or **invisible to shape-based assertions** (blank records wearing a
+correct header). The 2026-08-12 entries also extend the thesis in a direction P1-P3 did not
+test: the *building* work was a data/fixture chore and a documentation-driven probe, not a
+feature lane -- the mechanism fired anyway.
+
+**Falsification watch (kept honest):** the criteria say the thesis decays if lanes yield
+nothing or yield only Weak entries. Counter-evidence to log fairly -- the 2026-08-11
+workspace sessions (catalog v2, DTSHEMA 3, MINIDB) produced *corrections to my own claims*
+(the DTX "zero disk writes" error, the 13-vs-24 CDX variance) rather than latent engine
+defects; those are honest-record wins, not thesis proofs, and are deliberately **not**
+counted here. One lane in three yielding a Strong engine defect is the current,
+unembellished rate.
+
+**Process note, logged against myself (2026-08-12):** this ledger entry was itself written
+with em-dashes, arrows, and superscripts, and the author asserted "house standards applied"
+before the house-style gate proved otherwise. The gate caught it; the AIF-090 fixer then
+REFUSED the file because the historical P1-P3 text contains codepoints it has no mapping for
+(superscript one, a red-circle emoji) -- so the repair was hand-done on the added lines only,
+leaving the 2026-07-21 record verbatim. Two lessons worth more than the typos: an assertion
+of compliance is not compliance (the golden rule applies to process claims, not just
+technical ones), and a normalizer that refuses unknown input is behaving correctly even when
+that blocks the convenient path.
 
 ---
 

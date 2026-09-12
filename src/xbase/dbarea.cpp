@@ -23,12 +23,14 @@
 // ==============================
 
 #include "xbase.hpp"
+#include "xbase/workspace_membership.hpp"
 #include "xbase/index_hooks.hpp"
 #include "xbase/trigger_hooks.hpp"
 #include "memo/memo_manager.hpp"
 
 #include "xbase_locks.hpp"
 
+#include <functional>
 #include <algorithm>
 #include <cctype>
 #include <filesystem>
@@ -57,6 +59,25 @@ DbArea::DbArea() = default;
 DbArea::~DbArea() { try { close(); } catch(...) {} }
 
 void DbArea::close() {
+    // AIF-113: RELEASE THIS PROCESS'S LOCKS BEFORE ANYTHING ELSE IN close().
+    //
+    // The charter proposed wiring release_held into the CLI's
+    // close_area_if_open. That site cannot see the other routes the charter's
+    // own "Runtime leg supplied" section measured as leaking: CLOSE, CLEAR,
+    // USE/OPEN, DbArea::close() called directly, ~DbArea(), and process exit.
+    // Here covers all of them, because every one arrives through this function.
+    //
+    // ORDER IS LOAD-BEARING, AND IS WHY THIS IS THE FIRST STATEMENT. A lock
+    // sidecar's path is derived from filename(), and _clear_paths_and_names_()
+    // below erases it. Release after that point and the computed paths are
+    // empty, nothing is removed, and the call still looks like it worked --
+    // the failure mode this lane exists to stop.
+    //
+    // NEVER THROWS OUT OF close(). ~DbArea() already swallows, but close() is
+    // also called directly by code that does not expect to catch, and the
+    // release path reaches the throwing fs::exists overload.
+    try { xbase::locks::release_held(*this); } catch (...) {}
+
     _fp.clear();
 
     // An indexed composition may have attached external state.  Detach it
@@ -85,11 +106,43 @@ void DbArea::close() {
 
     // Clear schema/buffers & cursor flags
     _hdr = {};
-    _fields.clear();
-    _rawFields.clear();
+
+    // ONE TEARDOWN LIST, NOT TWO. This used to spell out _fields and _rawFields
+    // here while clearFields() spelled out those two PLUS _extras, _null_flags
+    // and _system_field_not_last -- two hand-maintained lists over the same
+    // members, drifting independently. That is not an aesthetic complaint: it is
+    // exactly HOW _null_layout came to be missed by BOTH of them, which cost a
+    // day on 2026-09-08 and shipped silent on-disk corruption (see clearFields()
+    // and VARCHARRESET). Adding a member to the struct now means updating ONE
+    // teardown, and a reader checking whether a member is cleared has ONE place
+    // to look.
+    //
+    // WHAT THIS CHANGES AT RUNTIME, MEASURED RATHER THAN ASSUMED: NOTHING
+    // OBSERVABLE. The three members close() did not previously clear are
+    // _extras, _null_flags and _system_field_not_last, and they were already
+    // UNREACHABLE while stale. clearFields() resets all three on EVERY open --
+    // every open funnels through vfp_loader::readFields, which calls it before
+    // reading a single descriptor -- so none of them could ever leak into the
+    // next table the way _null_layout did. The only window is between close()
+    // and the next open, and every reader in that window is guarded by state
+    // close() DOES clear: fieldIsNullFromBuffer() checks _fields.size() and
+    // _recbuf.size(), varlengthValueLen_() checks _fields.size(),
+    // storeFieldsToBuffer()'s have_bitmap needs a non-empty _recbuf, and
+    // partitionTrailingSystemField() returns early on _fields.empty().
+    //
+    // SO THIS IS HYGIENE, NOT A BUG FIX, AND IT IS RECORDED AS SUCH. It carries
+    // NO ARM because no marker can observe it -- there is nothing to observe.
+    // The earlier note here claimed collapsing the lists "changes what a closed
+    // area reports about _extras and _null_flags"; that was asserted without
+    // checking the readers, and it is wrong. The value is that the next member
+    // added to DbArea cannot be missed by a second list, because there is not
+    // one.
+    clearFields();      // _fields, _rawFields, _extras, _null_flags,
+                        // _null_layout, _system_field_not_last
     _recbuf.clear();
     _fd.clear();
     _fd_snapshot.clear();
+    _fd_null.clear();   // lockstep with _fd
 
     _crn = 0;
     _crn64 = 0;
@@ -105,11 +158,32 @@ void DbArea::close() {
     _memo_mgr.reset();
     _memo_ctx.clear();
 
-    // Legacy mirrors
-    _db_name.clear();
-    _filename.clear();
+    // AIF-120 I1.0: the area is no longer owned by any workspace. The ENGINE
+    // slot is NOT cleared -- it is stamped once at engine construction and is a
+    // property of the array position, not of whatever table is open in it.
+    //
+    // AIF-078 stage 2: leave the workspace's child list before dropping the
+    // handle, because the handle is what says which list to leave. The
+    // WORKSPACE-LOCAL slot IS cleared, because unlike the engine slot it is a
+    // property of the membership, and the membership is what just ended. The
+    // vacated local slot is reused by the next join rather than shifting the
+    // survivors down -- a local slot is an address, and re-addressing live
+    // members silently would be worse than a gap.
+    // R6: only a WORK AREA ever joined, so only a work area leaves. A scratch
+    // handle (no engine slot) was never a member -- see dbf_file.cpp's open().
+    if (_engine_slot >= 0) workspace::leave(_ws_handle, _engine_slot);
+    _ws_handle = 0;
+    _ws_local_slot = -1;
+    // The area handle is CLEARED, never reassigned: the next open() mints a
+    // fresh one. That is what makes a stale id resolve to "gone" instead of to
+    // whatever opened into this slot next -- the engine slot IS reused, and
+    // this is the field that does not.
+    _area_handle = 0;
 
     // x64/VFP extras
+    // NOTE the sentinel split: 0 here, but the on-disk floor is 1
+    // (dbf_create.cpp). Harmless while the slot is unwired -- nothing reads
+    // it -- and a trap for whoever wires it. See xbase_64.hpp.
     _dbf_version_byte = 0x03;
     _autoq_next64 = 0;
     _table_flags = 0;
@@ -122,10 +196,6 @@ void DbArea::setFilename(std::string path) {
     if (!p.is_absolute()) p = fs::absolute(p, ec);
 
     _compute_paths_and_names_(p.string());
-
-    // Keep legacy mirrors in sync
-    _filename  = _dbf_abs_path;
-    _db_name   = _logical_name;
 }
 
 int DbArea::recordLength() const noexcept {
@@ -199,10 +269,6 @@ void DbArea::_compute_paths_and_names_(const std::string& abs_dbf_path) {
         _memo_abs_path = dbt.string();
         _memo_kind = MemoKind::DBT;
     }
-
-    // 4) Keep legacy mirrors synchronized (derived, not authoritative)
-    _filename  = _dbf_abs_path;
-    _db_name   = _logical_name;
 }
 
 void DbArea::_clear_paths_and_names_() noexcept {
@@ -230,7 +296,19 @@ dottalk::memo::MemoManager& DbArea::memoManager() {
 // - No cursor_hook notifications here.
 // - No shell area lookup here.
 // - Higher layers may wrap this function with buffering/events as needed.
-bool DbArea::replaceFieldStored(int field1, const std::string& stored_value, std::string* err)
+// ONE ENVELOPE, TWO STAGERS.
+//
+// replaceFieldStored() and replaceFieldNull() differ by a single line -- WHAT they
+// stage before the write -- and agree on everything that makes a write safe: the
+// record lock, the index snapshot taken BEFORE the change, the write itself, the
+// unlock, index maintenance, and the trigger fire. Duplicating that for the null
+// path would have produced two 90-line functions obliged to stay in step, which is
+// the defect shape this project keeps finding one layer up. The body below is the
+// original replaceFieldStored() moved verbatim; only the staging call is a
+// parameter now.
+bool DbArea::replaceFieldEnveloped_(int field1,
+                                    const std::function<bool()>& stage,
+                                    std::string* err)
 {
     if (err) err->clear();
 
@@ -266,7 +344,7 @@ bool DbArea::replaceFieldStored(int field1, const std::string& stored_value, std
     try {
         before_snap = index_hooks::capture(*this);
 
-        ok = set(field1, stored_value) && writeCurrent();
+        ok = stage() && writeCurrent();
     }
     catch (...) {
         ok = false;
@@ -317,6 +395,81 @@ bool DbArea::replaceFieldStored(int field1, const std::string& stored_value, std
     }
 
     return true;
+}
+
+// A VALUE ASSIGNMENT ENDS A NULL, AND UNTIL 2026-09-05 IT DID NOT.
+//
+// set() writes `_fd[idx]` and has never touched `_fd_null[idx]` -- correctly, it
+// is a bare stager. storeFieldsToBuffer() then RECOMPUTES every null bit FROM
+// `_fd_null`. So a value written over a null cell put the new value on disk and
+// RE-COMMITTED THE STALE NULL BIT in the same record write. The cell then
+// answered two different things depending on who asked:
+//
+//     LIST     ->  .NULL.
+//     ? VNAME  ->  restored
+//     ? ISNULL(VNAME) -> .T.
+//
+// Measured 2026-09-05 on rec 3 of NULLSPEC, and it survived a close and reopen
+// because it reached the disk. Found by vfp_null_assertions.dts on its first run
+// (NL_T11/T12/T14/T16), which is the only instrument that ever asked -- every
+// earlier proof in this lane ran one direction, set-then-read, including the VFP
+// acceptance scripts. A feature proven in one direction is not proven.
+//
+// AND THERE WAS NO WAY BACK. replaceFieldNull(field, false) has been correct and
+// callable since f641fb38a and its ONLY caller in the tree was a unit test
+// (test_vfp_set_null.cpp arm C). No command path passed false, so once a cell was
+// null the shell could not un-null it. Sixth AIF-079 instance in this lane and
+// the first that was costing something rather than merely sitting there.
+//
+// WHY THE CLEAR IS HERE AND NOT IN set(). set() has callers in cmd_calcwrite,
+// cmd_commit, cmd_replace_multi, cmd_validate_unique, hierarchy_service,
+// edu_text, trigger_hooks and index_manager. Giving it an opinion about nulls
+// would hand that opinion to all of them at once, including paths that stage a
+// value they did not author. This funnel is where a cell is REPLACED, which is
+// the act that ends a null, so this is where the two halves are kept in step.
+//
+// WHY THE fieldIsNullable() GUARD IS LOAD-BEARING. setFieldNull() returns false
+// for a field whose descriptor carries no null flag -- which is EVERY field of
+// every non-VFP table in the product. Staged as `setFieldNull(f,false) &&
+// set(f,v)` it would short-circuit and make every REPLACE everywhere fail. The
+// guard asks the table first and the return is deliberately ignored: past the
+// guard the only remaining failure is an out-of-range index, and the envelope
+// has already rejected those.
+//
+// Every caller of this funnel writes a real value, so clearing is right for all
+// of them -- including cmd_commit, whose buffered path cannot carry a NULL at
+// all (the buffer stores one value string per field and refuses NULL for exactly
+// that reason), so a committed value is always a value.
+bool DbArea::replaceFieldStored(int field1, const std::string& stored_value,
+                                std::string* err)
+{
+    return replaceFieldEnveloped_(
+        field1,
+        [&] {
+            if (fieldIsNullable(field1)) setFieldNull(field1, false);
+            return set(field1, stored_value);
+        },
+        err);
+}
+
+// Set (or clear) this field's NULL state and write the record, through the SAME
+// envelope a value write uses.
+//
+// THE INDEX SNAPSHOT IS WHY THIS GOES THROUGH THE ENVELOPE AT ALL. Nulling an
+// indexed field changes what that record sorts as, exactly as replacing its value
+// does. A null written outside the envelope would leave the index pointing at the
+// old key with nothing marked stale -- the IDXSTALE shape, and the same one
+// VALIDATE UNIQUE ... REPAIR was caught in when it used set()+writeCurrent()
+// directly (VUREPAIR). What the index backends make of a null key is NOT settled
+// here and is not claimed: this guarantees the maintenance hook RUNS, not that
+// every backend orders nulls the way anyone expects.
+//
+// Refuses via setFieldNull() when the field is not nullable or the table has no
+// `_NullFlags` column; the record is not written in that case.
+bool DbArea::replaceFieldNull(int field1, bool make_null, std::string* err)
+{
+    return replaceFieldEnveloped_(
+        field1, [&] { return setFieldNull(field1, make_null); }, err);
 }
 
 } // namespace xbase

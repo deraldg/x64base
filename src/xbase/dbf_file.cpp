@@ -15,6 +15,7 @@
 // Notes: ASCII only.
 
 #include "xbase.hpp"
+#include "xbase/workspace_membership.hpp"
 #include "xbase_vfp.hpp"
 #include "xbase_64.hpp"
 #include "xbase/ramfs.hpp"
@@ -115,7 +116,7 @@ void DbArea::open(const std::string& filename)
     // In-memory tables (AIF-043 V2): a path under a mounted ramfs root is served
     // from RAM. USE/OPEN binds the byte store to the RAM file; no OS file, no lock
     // handle. When no ramfs root is mounted (the default), is_virtual() is always
-    // false and this branch is dead — behavior is byte-identical to before.
+    // false and this branch is dead -- behavior is byte-identical to before.
     if (xbase::ramfs::is_virtual(abs)) {
         if (!xbase::ramfs::exists(abs)) {
             throw std::runtime_error("DbArea: file does not exist: " + abs);
@@ -199,6 +200,7 @@ void DbArea::open(const std::string& filename)
     // 1-based field values
     _fd.assign(_fields.size() + 1, std::string{});
     _fd_snapshot.assign(_fields.size() + 1, std::string{});
+    _fd_null.assign(_fields.size() + 1, char{0});   // lockstep with _fd
 
     // Fresh open must not inherit any externally attached index state.
     index_hooks::detach(*this);
@@ -214,6 +216,45 @@ void DbArea::open(const std::string& filename)
         _crn = 0;
         _crn64 = 0;
         _del = NOT_DELETED;
+    }
+
+    // AIF-120 I1.1. LAST statement of open(), deliberately: every failure path
+    // above throws, and close() (called on entry) has already zeroed this, so
+    // an area is owned only if it actually opened.
+    //
+    // AIF-078 stage 2: the constant 1 becomes a READ of the runtime workspace
+    // registry, and the area joins that workspace's child list here. This and
+    // close() are the ONLY two points in the tree where an area joins or
+    // leaves a workspace, which is why registration lives at this choke point
+    // rather than at the eight src/cli call sites that reach open(). The
+    // registry seeds itself holding DEFAULT = 1 and nothing sets the current
+    // handle yet, so every area still resolves to 1 exactly as before.
+    _ws_handle = workspace::current_handle();
+    // AIF-078 2026-08-23: the AREA's own session handle, minted at the same
+    // choke point and for the same reason the workspace join lives here rather
+    // than at the eight src/cli call sites that reach open(). Monotonic, never
+    // reused, 0 while closed -- so a stale id held by a view resolves to GONE
+    // and never to somebody else.
+    _area_handle = next_area_handle();
+    // R6 (ruling D10 sec 2a, 2026-08-23). A DbArea WITH NO ENGINE SLOT IS NOT A
+    // WORK AREA. It is a scratch handle -- a local object opened inside a
+    // function to read or write one file and dead at the closing brace -- and
+    // there are roughly 47 of them in this tree. setEngineSlot() has exactly one
+    // caller (XBaseEngine's constructor, over its own array), so anything not in
+    // that array carries -1 for life.
+    //
+    // Every one of those used to call join(h, -1), which matched the member
+    // array's own free-entry marker and claimed nothing. The no-op was harmless
+    // and ACCIDENTAL; this makes the precondition explicit, and it is what lets
+    // join() refuse a negative slot outright rather than absorb it.
+    if (_engine_slot >= 0) {
+        const std::int32_t local = workspace::join(_ws_handle, _engine_slot);
+        // Local slots are 0-BASED (owner ruling 2026-08-22), so the guard is
+        // >= 0 and not > 0 -- slot 0 is the first real member, and only the
+        // NEGATIVE return means join() refused. This line read `> 0` for the
+        // first day of its life, when slots were 1-based; under 0-basing that
+        // spelling would silently drop every workspace's first area.
+        if (local >= 0) _ws_local_slot = local;
     }
 }
 
@@ -261,9 +302,17 @@ void DbArea::readFields()
     io().seekg(sizeof(HeaderRec), std::ios::beg);
     vfp_loader::readFields(*this, io(), extras);
 
-    // extras currently remain loader-local by design.
-    // If/when VFP nullable/binary/autoinc metadata becomes first-class runtime
-    // state, store them on DbArea here rather than re-parsing elsewhere.
+    // EXTRAS ARE NO LONGER LOADER-LOCAL, as of AIF-091 M1. They are promoted
+    // onto the area inside vfp_loader::readFields() -- NOT here.
+    //
+    // Here would have been the wrong place, and the reason is three lines up:
+    // the x64 branch RETURNS EARLY, so a promotion written at this comment
+    // would have run for classic and VFP and silently skipped x64 -- exactly
+    // the flavor that carries the flags byte by inheriting the descriptor. The
+    // seam that works for both is the one function both paths funnel through.
+    //
+    // Read them back with area.fieldExtras(), which is parallel to fields() by
+    // index, and area.nullFlagsColumn() for the hidden bitmap's position.
 }
 
 // Authoritative 64-bit record positioning (RECNO64). Offset math is already
@@ -274,7 +323,7 @@ bool DbArea::gotoRec64(std::uint64_t recno) {
 
     _crn64 = recno;
     // Keep the legacy 32-bit mirror honest: exact when it fits, clamped (never
-    // silently wrong past the boundary — x64 callers read _crn64/recno64()).
+    // silently wrong past the boundary -- x64 callers read _crn64/recno64()).
     _crn = (recno > static_cast<std::uint64_t>(std::numeric_limits<int32_t>::max()))
         ? std::numeric_limits<int32_t>::max()
         : static_cast<int32_t>(recno);
@@ -319,6 +368,28 @@ bool DbArea::appendBlank() {
 
     std::vector<char> blank(checked_record_buffer_size_(*this), ' ');
     blank[0] = NOT_DELETED;
+
+    // The `_NullFlags` column is not in _fields (partitionTrailingSystemField()
+    // removed it), so a blank record would ship 0x20 in the bitmap -- a SPACE,
+    // whose bit 5 is a claim no field ever made, and whose low bits happen to read
+    // as "nothing null". Zero it instead: every bit clear is the coherent reading
+    // for a blank row -- nothing is null, and a Varchar of all spaces IS full, so
+    // it carries no length byte.
+    //
+    // NOT MEASURED, AND SAID SO RATHER THAN GUESSED QUIETLY: what Visual FoxPro's
+    // own APPEND BLANK writes into `_NullFlags` for a nullable column has not been
+    // measured. It is answerable with the same technique the rest of this lane
+    // used -- append a row in VFP, read the byte -- and until it is, zero is the
+    // defensible choice because it asserts nothing, where 0x20 asserts a bit that
+    // belongs to no field.
+    if (_null_flags.present && _null_flags.length > 0 &&
+        _null_flags.offset < blank.size() &&
+        _null_flags.length <= blank.size() - _null_flags.offset) {
+        std::fill(blank.begin() + static_cast<std::ptrdiff_t>(_null_flags.offset),
+                  blank.begin() + static_cast<std::ptrdiff_t>(_null_flags.offset +
+                                                              _null_flags.length),
+                  '\0');
+    }
 
     // For an empty DBF created with a trailing 0x1A EOF marker, append should
     // overwrite that marker with the new record and then write a new EOF marker.
@@ -365,6 +436,12 @@ bool DbArea::appendBlank() {
 
     // x64 dialect also keeps the authoritative record count in the extension block
     // immediately after the 32-byte VFP-style header.
+    //
+    // THIS IS WHERE autoq_next's STORE-BACK WOULD GO, and it is deliberately
+    // not here: the slot is reserved and unwired (ruling R119, see
+    // xbase_64.hpp). The patch-one-field-in-place idiom below is exactly the
+    // shape it would take. Writing it before there is a consumer and an
+    // increment is the combination that reissues identities silently.
     if (_dbf_version_byte == DBF_VERSION_64) {
         const std::uint64_t rc64 = _rec_count64;
         io().seekp(static_cast<std::streamoff>(sizeof(VfpHeader)) +
@@ -384,6 +461,7 @@ bool DbArea::appendBlank() {
     _recbuf.assign(checked_record_buffer_size_(*this), ' ');
     _fd.assign(_fields.size() + 1, std::string{});
     _fd_snapshot.assign(_fields.size() + 1, std::string{});
+    _fd_null.assign(_fields.size() + 1, char{0});   // lockstep with _fd
     _del = NOT_DELETED;
 
     const bool ok = gotoRec64(_rec_count64);
@@ -407,7 +485,15 @@ bool DbArea::deleteCurrent() {
 }
 
 XBaseEngine::XBaseEngine() {
-    for (auto& p : _areas) p = std::make_unique<DbArea>();
+    // AIF-120 I1.1. The slot index is a property of the ARRAY POSITION, not of
+    // whatever table is later opened in it, so it is stamped once here and
+    // never cleared -- close() deliberately leaves it alone. This is the whole
+    // reason slot_of_area() can stop scanning: the answer was always knowable
+    // at construction and simply had nowhere to live.
+    for (std::size_t i = 0; i < _areas.size(); ++i) {
+        _areas[i] = std::make_unique<DbArea>();
+        _areas[i]->setEngineSlot(static_cast<int32_t>(i));
+    }
 }
 
 } // namespace xbase

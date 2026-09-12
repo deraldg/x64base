@@ -13,51 +13,70 @@
 // command: SQLSEL
 // category: sql
 // status: supported
-// noargs: scan/report
+// noargs: corrective-error
 // effect: query
 // mutates: cursor-temporary
 // usage-access: SQLSEL USAGE
 // summary:
-//   Set-oriented SELECT statement over an open work area, plus the legacy
-//   predicate-scan form over the current area.
+//   Typed set-oriented SELECT and DML over open x64base work areas.
 //
 // usage:
 //   SQLSEL USAGE
-//   SQLSEL SELECT <col>[,<col>...] FROM <table> [WHERE <predicate>] [ORDER BY <field> [ASC|DESC]] [LIMIT <n>]
-//   SQLSEL SELECT * FROM <table>
-//   SQLSEL SELECT COUNT(*) FROM <table> [WHERE <predicate>]
-//   SQLSEL [COUNT] [ALL|DELETED] [FOR <expr> | <expr>]
+//   SQLSEL [SELECT] [DISTINCT] <list> FROM <source> [WHERE <predicate>]
+//          [GROUP BY <list>] [HAVING <predicate>]
+//          [ORDER BY <item>[,<item>...]] [LIMIT <n>]
+//   SQLSEL <select> UNION [ALL] <select> | <select> INTERSECT <select> | <select> EXCEPT <select>
+//   SQLSEL INSERT INTO <table> (<fields>) VALUES (<values>)[,(<values>)...]
+//   SQLSEL UPDATE <table> [[AS] <alias>] SET <field>=<expr>[,...] WHERE <predicate>
+//   SQLSEL DELETE FROM <table> [[AS] <alias>] WHERE <predicate>
 //
 // examples:
-//   SQLSEL SELECT SID,LNAME,FNAME FROM STUDENTS
-//   SQLSEL SELECT * FROM STUDENTS LIMIT 5
-//   SQLSEL SELECT SID,LNAME FROM STUDENTS WHERE MAJOR = "CSCI"
-//   SQLSEL SELECT SID,LNAME FROM STUDENTS ORDER BY LNAME DESC LIMIT 10
-//   SQLSEL SELECT COUNT(*) FROM STUDENTS WHERE GPA >= 3.0
-//   SQLSEL COUNT
-//   SQLSEL COUNT FOR GPA >= 3.0
-//   SQLSEL LNAME = "SMITH"
+//   SQLSEL SID,LNAME,FNAME FROM STUDENTS
+//   SQLSEL * FROM STUDENTS LIMIT 5
+//   SQLSEL SID,LNAME FROM STUDENTS WHERE MAJOR = "CSCI"
+//   SQLSEL SID,LNAME FROM STUDENTS ORDER BY LNAME DESC LIMIT 10
+//   SQLSEL COUNT(*) FROM STUDENTS WHERE GPA >= 3.0
+//   SQLSEL S.LNAME,E.CLS_ID FROM STUDENTS S JOIN ENROLL E ON S.SID = E.SID
+//   SQLSEL S.LNAME,E.CLS_ID FROM STUDENTS S LEFT JOIN ENROLL E ON S.SID = E.SID
+//   SQLSEL S.LNAME,E.CLS_ID FROM STUDENTS S RIGHT JOIN ENROLL E ON S.SID = E.SID
+//   SQLSEL S.LNAME,E.CLS_ID FROM STUDENTS S FULL JOIN ENROLL E ON S.SID = E.SID
+//   SQLSEL S.LNAME,E.CLS_ID FROM STUDENTS S CROSS JOIN ENROLL E
+//   SQLSEL DEPT,COUNT(*),AVG(SALARY) FROM STAFF GROUP BY DEPT
+//   SQLSEL SID FROM STUDENTS UNION SELECT SID FROM ALUMNI
+//   SQLSEL SID FROM STUDENTS S WHERE EXISTS (SELECT SID FROM ENROLL E WHERE E.SID=S.SID)
+//   SQLSEL INSERT INTO STUDENTS (SID,LNAME) VALUES (9,'SMITH')
+//   SQLSEL UPDATE STUDENTS SET LNAME=UPPER(LNAME) WHERE SID=9
+//   SQLSEL DELETE FROM STUDENTS WHERE SID=9
 //
 // notes:
 //   SQLSEL USAGE prints usage before open-table checks.
-//   A SELECT statement names its own table in FROM; the table must be OPEN.
-//   A SELECT statement does not read or disturb session state -- not the
-//   current area, not the record pointer, not SET FILTER, not SET RELATION.
-//   A SELECT statement reads committed table data; uncommitted TABLE BUFFER
-//   preview overlays remain TUP/TUPLE-facing until SQLSEL DML is promoted.
-//   SELECT projects bare column names; expression projection is not yet
-//   supported and reports rather than emitting empty values.
-//   ORDER BY sorts the full match set before LIMIT applies, and reports its
-//   access path; joins and GROUP BY are not yet implemented.
+//   SQLSEL is the select verb; a leading SELECT keyword remains optional.
+//   A statement names open tables inside the current workspace. SELECT restores
+//   the current area and source cursors and ignores SET FILTER/SET RELATION.
+//   SELECT reads committed data. DML in one explicit transaction reads its own
+//   buffered writes; SELECT during that transaction remains a committed view.
+//   All JOIN forms are statement-scoped ad-hoc set matching. They do not
+//   consult a declared relation; every run reports its fence and access path.
+//   Outer joins render produced-absent cells as <UNMATCHED> and report their
+//   extension counts. WHERE uses SQL three-valued logic for that absence.
+//   CROSS JOIN takes no ON clause. Multi-join chains support INNER/LEFT/CROSS;
+//   RIGHT/FULL remain two-table forms.
+//   Projection uses the typed TupleRow expression engine. Aggregates are
+//   COUNT/SUM/AVG/MIN/MAX; numeric blanks are skipped and reported.
+//   Set operands require equal arity and compatible tuple types.
 //   LIMIT reports how many rows remain rather than truncating silently.
-//   The legacy predicate form reads records and may temporarily move the cursor.
-//   SQLSEL does not mutate table data.
+//   DML reuses APPEND/REPLACE/DELETE semantics through TableBuffer + TBJ1 WAL.
+//   Explicit BEGIN/COMMIT/ROLLBACK requires SET MODE SQL and is atomic for one
+//   target table only. NULL and memo-field DML refuse; DBF blanks remain values.
+//   The legacy predicate form was RETIRED 2026-09-09 (AIF-074, owner ruling).
+//     COUNT carries that job -- COUNT FOR <expr>, COUNT LIST, COUNT VERBOSE --
+//     and honours SET FILTER and SET DELETED as the logical rowset.
 //
 // risk:
-//   requires_open_table: yes except usage
+//   requires_open_table: no; a statement names tables already open in the workspace
 //   scans_records: yes
 //   mutates_cursor: temporary
-//   mutates_table_data: no
+//   mutates_table_data: DML only
 //
 // related:
 //   SQL
@@ -108,314 +127,11 @@ static inline bool ieq(std::string a, std::string b) {
 #include "expr/sql_normalize.hpp"
 #include "sqlsel_statement.hpp"   // AIF-074 P3: SELECT ... FROM statement surface
 
-// External ? provided by DotTalk expr
-dottalk::expr::CompileResult compile_where(const std::string& text);
-
-namespace {
-
-static inline std::string up(std::string s) {
-    std::transform(s.begin(), s.end(), s.begin(),
-                   [](unsigned char c){ return (char)std::toupper(c); });
-    return s;
-}
-
-enum class DelMode { SkipDeleted, OnlyDeleted, IncludeAll };
-
-struct Opts {
-    DelMode     mode    = DelMode::SkipDeleted;
-    bool        haveFor = false;
-    std::string forRaw;    // user WHERE after "FOR" (or the whole tail if no FOR)
-    std::string tailRaw;   // everything after SQL keyword (for debug echo)
-};
-
-// Parse: SQL [COUNT] [ALL|DELETED] [FOR <expr> | <expr>]
-static Opts parse_opts(std::istringstream& iss) {
-    Opts o;
-
-    // Rebuild tail from the stream
-    std::string rest;
-    {
-        const std::string& all = iss.str();
-        auto pos = iss.tellg();
-        if (pos != std::istringstream::pos_type(-1)) {
-            size_t i = static_cast<size_t>(pos);
-            if (i < all.size()) rest = all.substr(i);
-        } else rest = all;
-    }
-    o.tailRaw = dt_trim(rest);
-
-    std::istringstream head(o.tailRaw);
-
-    // Optional COUNT
-    std::streampos afterFirst = head.tellg();
-    std::string t;
-    if (head >> t) {
-        if (up(t) != "COUNT") {
-            head.clear();
-            head.seekg(afterFirst);
-        }
-    }
-
-    // Optional ALL | DELETED
-    std::streampos afterMode = head.tellg();
-    std::string modeTok;
-    if (head >> modeTok) {
-        auto M = up(modeTok);
-        if      (M == "ALL")     o.mode = DelMode::IncludeAll;
-        else if (M == "DELETED") o.mode = DelMode::OnlyDeleted;
-        else { head.clear(); head.seekg(afterMode); }
-    }
-
-    // Remaining string
-    std::string tail; std::getline(head, tail);
-    tail = dt_trim(tail);
-
-    // Accept both "FOR <expr>" and plain "<expr>"
-    if (!tail.empty()) {
-        auto U = up(tail);
-        if (U.rfind("FOR", 0) == 0) {
-            o.haveFor = true;
-            o.forRaw = dt_trim(tail.substr(3));
-        } else {
-            o.haveFor = true;
-            o.forRaw = tail;
-        }
-    }
-
-    return o;
-}
-
-// Extract candidate field names from a normalized DotTalk expr.
-// Skips AND/OR/NOT, parens, operators, numerics.
-static std::vector<std::string> extract_field_names(const std::string& norm) {
-    static const std::unordered_set<std::string> stop_words{ "AND","OR","NOT" };
-
-    std::vector<std::string> fields;
-    std::unordered_set<std::string> seen;
-
-    auto is_word = [](char c)->bool {
-        return (c>='A'&&c<='Z') || (c>='0'&&c<='9') || c=='_';
-    };
-
-    for (size_t i = 0; i < norm.size();) {
-        char c = norm[i];
-
-        // Skip quoted literals
-        if (c == '"' || c == '\'') {
-            char q = c; ++i;
-            while (i < norm.size()) {
-                char d = norm[i++];
-                if (d == q) {
-                    if (i < norm.size() && norm[i] == q) { ++i; continue; }
-                    break;
-                }
-            }
-            continue;
-        }
-
-        if (is_word(c)) {
-            size_t j = i+1;
-            while (j < norm.size() && is_word(norm[j])) ++j;
-            std::string tok = norm.substr(i, j-i);
-
-            bool numeric = !tok.empty() &&
-                           std::all_of(tok.begin(), tok.end(), [](char ch){ return ch>='0' && ch<='9'; });
-
-            if (!numeric) {
-                if (!stop_words.count(tok) && !seen.count(tok)) {
-                    seen.insert(tok);
-                    fields.push_back(tok);
-                }
-            }
-            i = j;
-            continue;
-        }
-
-        ++i;
-    }
-    return fields;
-}
-
-// ---------- Simple evaluator (FIELD <op> VALUE) [+ AND/OR/NOT] ----------
-
-// A tiny token stream for normalized DotTalk-ish input.
-enum class STok {
-    Ident, String, Number,
-    Eq, Ne, Gt, Lt, Ge, Le,
-    And, Or, Not,
-    LParen, RParen,
-    End
-};
-struct SToken { STok k; std::string text; };
-
-static bool is_digit(char c){ return c>='0'&&c<='9'; }
-static bool is_word_char(char c){ return (c>='A'&&c<='Z')||(c>='0'&&c<='9')||c=='_'; }
-
-static std::vector<SToken>stok(const std::string& s){
-    std::vector<SToken> out; size_t i=0,n=s.size();
-    auto push=[&](STok k,std::string v={}){ out.push_back({k,std::move(v)}); };
-    while(i<n){
-        char c=s[i];
-        if(c==' '||c=='\t'||c=='\r'||c=='\n'){++i;continue;}
-        if(c=='"'||c=='\''){
-            char q=c; std::string buf; buf.push_back(q); ++i;
-            while(i<n){
-                char d=s[i++]; buf.push_back(d);
-                if(d==q){ if(i<n && s[i]==q){ buf.push_back(s[i++]); continue; } break; }
-            }
-            push(STok::String,buf); continue;
-        }
-        if(is_digit(c)){
-            size_t j=i+1; bool dot=false;
-            while(j<n){ char d=s[j]; if(is_digit(d)){++j;continue;} if(d=='.'&&!dot){dot=true;++j;continue;} break; }
-            push(STok::Number,s.substr(i,j-i)); i=j; continue;
-        }
-        if(is_word_char(c)){
-            size_t j=i+1; while(j<n && is_word_char(s[j])) ++j;
-            std::string w=s.substr(i,j-i);
-            std::string U=up(w);
-            if(U==".AND."||U=="AND"){ push(STok::And); i=j; continue; }
-            if(U==".OR." ||U=="OR"){  push(STok::Or);  i=j; continue; }
-            if(U==".NOT."||U=="NOT"){ push(STok::Not); i=j; continue; }
-            push(STok::Ident, U); i=j; continue;
-        }
-        if(i+1<n){
-            char d=s[i+1];
-            if(c=='<'&&d=='>'){ push(STok::Ne); i+=2; continue; }
-            if(c=='<'&&d=='='){ push(STok::Le); i+=2; continue; }
-            if(c=='>'&&d=='='){ push(STok::Ge); i+=2; continue; }
-        }
-        if(c=='='){ push(STok::Eq); ++i; continue; }
-        if(c=='<'){ push(STok::Lt); ++i; continue; }
-        if(c=='>'){ push(STok::Gt); ++i; continue; }
-        if(c=='('){ push(STok::LParen); ++i; continue; }
-        if(c==')'){ push(STok::RParen); ++i; continue; }
-        ++i; // skip unknown
-    }
-    push(STok::End);
-    return out;
-}
-
-struct Clause { std::string field; STok op; std::string sval; double nval=0; bool isNum=false; };
-
-static bool parse_simple_chain(const std::vector<SToken>& tks,
-                               std::vector<Clause>& outClauses,
-                               std::vector<STok>& outBools)
-{
-    // Grammar (restricted):
-    //   EXPR := TERM { (AND|OR) TERM }*
-    //   TERM := [NOT] ( (IDENT OP VALUE) | '(' EXPR ')' )
-    size_t i=0;
-    auto peek=[&](size_t k=0)->const SToken&{ return tks[i+k]; };
-    auto eat=[&](){ return tks[i++]; };
-
-    std::function<bool()> parse_expr, parse_term, parse_paren;
-
-    auto parse_value = [&](std::string& sval, double& nval, bool& isNum)->bool{
-        const auto& tk = peek();
-        if(tk.k==STok::String){
-            // strip quotes but keep doubled inner quotes intact
-            std::string v=tk.text;
-            if(!v.empty()&&(v.front()=='"'||v.front()=='\'')) v.erase(v.begin());
-            if(!v.empty()&&(v.back()=='"' ||v.back()=='\'' )) v.pop_back();
-            sval = dt_upcase(dt_trim(v));
-            isNum=false; eat(); return true;
-        }
-        if(tk.k==STok::Number){
-            sval = tk.text; try{ nval = std::stod(sval); isNum=true; } catch(...){ isNum=false; }
-            eat(); return true;
-        }
-        if(tk.k==STok::Ident){
-            // treat bare word as string value (uppercased)
-            sval = tk.text; isNum=false; eat(); return true;
-        }
-        return false;
-    };
-
-    auto parse_clause = [&]()->bool{
-        bool neg=false;
-        if(peek().k==STok::Not){ neg=true; eat(); }
-        if(peek().k==STok::LParen){
-            // We don't build nested Clause trees; declare it's not simple.
-            return false;
-        }
-        if(peek().k!=STok::Ident) return false;
-        Clause c{};
-        c.field = peek().text; eat();
-        STok op = peek().k;
-        if(op!=STok::Eq && op!=STok::Ne && op!=STok::Gt && op!=STok::Lt && op!=STok::Ge && op!=STok::Le) return false;
-        c.op = op; eat();
-        if(!parse_value(c.sval,c.nval,c.isNum)) return false;
-        if(neg){
-            // flip operator for NOT IDENT <op> VALUE
-            if(c.op==STok::Eq) c.op=STok::Ne;
-            else if(c.op==STok::Ne) c.op=STok::Eq;
-            else if(c.op==STok::Gt) c.op=STok::Le;
-            else if(c.op==STok::Ge) c.op=STok::Lt;
-            else if(c.op==STok::Lt) c.op=STok::Ge;
-            else if(c.op==STok::Le) c.op=STok::Gt;
-        }
-        outClauses.push_back(std::move(c));
-        return true;
-    };
-
-    if(!parse_clause()) return false;
-
-    while(peek().k==STok::And || peek().k==STok::Or){
-        outBools.push_back(peek().k); eat();
-        if(!parse_clause()) return false;
-    }
-    return peek().k==STok::End;
-}
-
-static bool eval_clause(const Clause& c, xbase::DbArea& A){
-    // Fetch both string (upper-trim) and numeric
-    std::string fs; double fn=0; bool fnum_ok=false;
-    try { fs = dt_upcase(dt_trim(xfg::getFieldAsString(A, c.field))); } catch(...) { fs=""; }
-    try { fn = xfg::getFieldAsNumber(A, c.field); fnum_ok = std::isfinite(fn); } catch(...) { fnum_ok=false; }
-
-    auto cmp_str = [&](const std::string& L, const std::string& R)->int{
-        if(L==R) return 0;
-        return (L<R)?-1:+1;
-    };
-
-    if(c.isNum && fnum_ok){
-        double L=fn, R=c.nval;
-        switch(c.op){
-            case STok::Eq: return L==R;
-            case STok::Ne: return L!=R;
-            case STok::Gt: return L> R;
-            case STok::Ge: return L>=R;
-            case STok::Lt: return L< R;
-            case STok::Le: return L<=R;
-            default: return false;
-        }
-    }
-
-    // string compare (case-insensitive already)
-    int rel = cmp_str(fs, c.isNum ? std::to_string(c.nval) : c.sval);
-    switch(c.op){
-        case STok::Eq: return rel==0;
-        case STok::Ne: return rel!=0;
-        case STok::Gt: return rel>0;
-        case STok::Ge: return rel>=0;
-        case STok::Lt: return rel<0;
-        case STok::Le: return rel<=0;
-        default: return false;
-    }
-}
-
-static bool eval_chain(const std::vector<Clause>& cs, const std::vector<STok>& ops, xbase::DbArea& A){
-    bool acc = eval_clause(cs[0], A);
-    for(size_t i=0;i<ops.size();++i){
-        bool rhs = eval_clause(cs[i+1], A);
-        if(ops[i]==STok::And) acc = acc && rhs;
-        else                  acc = acc || rhs;
-    }
-    return acc;
-}
-
-} // anon
+// AIF-074, owner ruling 2026-09-09: the legacy predicate machinery that stood
+// here is gone with the form it served -- DelMode, Opts/parse_opts,
+// extract_field_names, the STok tokenizer, parse_simple_chain, eval_clause and
+// eval_chain, plus the compile_where declaration they alone used. Every one was
+// referenced only from the retired path; the census is in the finding.
 
 static void print_sqlsel_usage_contract()
 {
@@ -425,17 +141,12 @@ static void print_sqlsel_usage_contract()
     // regression caught it twice in one day).
     sqlsel::print_statement_usage();
     std::cout
-        << "Legacy predicate form:\n"
-        << "  SQLSEL USAGE\n"
-        << "  SQLSEL [COUNT] [ALL|DELETED] [FOR <expr> | <expr>]\n"
-        << "Examples:\n"
-        << "  SQLSEL COUNT\n"
-        << "  SQLSEL COUNT FOR GPA >= 3.0\n"
-        << "  SQLSEL LNAME = \"SMITH\"\n"
         << "Notes:\n"
         << "  - SQLSEL USAGE does not require an open table.\n"
-        << "  - The legacy form scans the CURRENT area and may temporarily move its cursor.\n"
-        << "  - SQLSEL does not mutate table data.\n";
+        << "  - Statement SELECT restores the current area and source cursors.\n"
+        << "  - INSERT, UPDATE, and DELETE use typed TableBuffer + WAL writes.\n"
+        << "  - The legacy predicate form was retired (AIF-074). COUNT carries that\n"
+        << "    job: COUNT FOR <expr>, COUNT LIST, COUNT VERBOSE.\n";
 }
 
 static bool sqlsel_usage_contract(std::string tok)
@@ -467,10 +178,10 @@ void cmd_SQL_SELECT(xbase::DbArea& A, std::istringstream& iss) {
         }
     }
 
-    // AIF-074 P3: statement path. If the tail begins with SELECT, this is a
-    // set-oriented SQL statement -- it names its own table in FROM and does not
-    // require (or disturb) a current area. Anything else falls through to the
-    // legacy predicate-scan behavior below. Dispatch by keyword, never by guess.
+    // AIF-074 P3: statement path, and since 2026-09-09 the ONLY path. A
+    // statement names its own table in FROM and does not require (or disturb) a
+    // current area. Dispatch by keyword, never by guess -- anything that is not
+    // statement-shaped now gets a corrective error rather than a second engine.
     {
         const std::streampos stmt_pos = iss.tellg();
         std::string stmt_tail;
@@ -481,118 +192,33 @@ void cmd_SQL_SELECT(xbase::DbArea& A, std::istringstream& iss) {
         }
         iss.clear();
         if (stmt_pos != std::streampos(-1)) iss.seekg(stmt_pos);
-        if (sqlsel::try_execute_select(stmt_tail)) return;
+        if (sqlsel::try_execute_statement(stmt_tail)) return;
         iss.clear();
         if (stmt_pos != std::streampos(-1)) iss.seekg(stmt_pos);
     }
 
-    if (!A.isOpen()) { std::cout << "No file open\n"; return; }
-
-    const Opts opt = parse_opts(iss);
-
-    auto include_row = [&](bool deleted)->bool {
-        if (opt.mode == DelMode::SkipDeleted && deleted) return false;
-        if (opt.mode == DelMode::OnlyDeleted && !deleted) return false;
-        return true;
-    };
-
-    std::unique_ptr<dottalk::expr::Expr> prog;
-    std::string normalized;
-    std::vector<std::string> debug_fields;
-
-    // --- DEBUG HEADER ---
-    std::cout << "SQL DEBUG ? raw: \"" << opt.tailRaw << "\"\n";
-
-    // Try to prepare either simple-chain evaluator or DotTalk program
-    bool use_simple=false;
-    std::vector<Clause> simpleClauses;
-    std::vector<STok>   simpleOps;
-
-    if (opt.haveFor) {
-        normalized = sqlnorm::sql_to_dottalk_where(opt.forRaw);
-        std::cout << "SQL DEBUG ? normalized: " << normalized << "\n";
-
-        // Gather fields for per-record debug printing
-        debug_fields = extract_field_names(normalized);
-        if (!debug_fields.empty()) {
-            std::cout << "SQL DEBUG ? fields: ";
-            for (size_t i=0;i<debug_fields.size();++i) {
-                if (i) std::cout << ", ";
-                std::cout << debug_fields[i];
-            }
-            std::cout << "\n";
-        } else {
-            std::cout << "SQL DEBUG ? fields: (none detected)\n";
-        }
-
-        // 1) Try simple-chain path first
-        auto tks = stok(normalized);
-        if (parse_simple_chain(tks, simpleClauses, simpleOps)) {
-            use_simple = true;
-        } else {
-            // 2) Fall back to DotTalk parser
-            auto cr = compile_where(normalized);
-            if (!cr) {
-                std::cout << "Syntax error in FOR: " << cr.error << "\n";
-                return;
-            }
-            prog = std::move(cr.program);
-        }
-    } else {
-        std::cout << "SQL DEBUG ? no clause (plain COUNT)\n";
-    }
-
-    long long cnt = 0;
-    long long scanned = 0;
-
-    if (A.top() && A.readCurrent()) {
-        do {
-            ++scanned;
-
-            if (!include_row(A.isDeleted())) continue;
-
-            bool ok=false;
-            if (!opt.haveFor) {
-                ok = true;
-            } else if (use_simple) {
-                ok = eval_chain(simpleClauses, simpleOps, A);
-            } else {
-                auto rv = dottalk::expr::glue::make_record_view(A);
-                ok = prog->eval(rv);
-            }
-
-            // Per-record debug print
-            if (debug_fields.empty()) {
-                std::cout << "[rec " << A.recno() << "] => " << (ok ? "true" : "false") << "\n";
-            } else {
-                std::ostringstream fv;
-                fv << "[rec " << A.recno() << "] ";
-                for (size_t i=0;i<debug_fields.size();++i) {
-                    const std::string& fld = debug_fields[i];
-
-                    std::string s;
-                    try { s = xfg::getFieldAsString(A, fld); } catch (...) { s = "(ERR)"; }
-                    fv << fld << "=\"" << dt_upcase(dt_trim(s)) << "\"";
-
-                    try {
-                        double n = xfg::getFieldAsNumber(A, fld);
-                        if (std::isfinite(n)) fv << " (num=" << n << ")";
-                    } catch (...) {}
-
-                    if (i+1 < debug_fields.size()) fv << ", ";
-                }
-                fv << " => " << (ok ? "true" : "false");
-                std::cout << fv.str() << "\n";
-            }
-
-            if (ok) ++cnt;
-
-        } while (A.skip(+1) && A.readCurrent());
-    }
-
-    std::cout << "SQL DEBUG ? scanned: " << scanned << "  matched: " << cnt << "\n";
-    std::cout << cnt << "\n";
+    // AIF-074, OWNER RULING 2026-09-09: THE LEGACY PREDICATE FORM IS RETIRED.
+    //
+    // What stood here was a second, weaker, divergent declaration of WHICH ROWS
+    // ARE IN SCOPE: a private DelMode that ignored SET DELETED, and a raw walk
+    // that used none of cli::scan::collect_selected_recnos -- the shared
+    // selector COUNT, DELETE and RECALL all go through, and which treats
+    // SET FILTER and SET DELETED as the logical rowset (AIF-123).
+    //
+    // That is the same ground the bare SQL verb was retired on 2026-09-04
+    // ("fold verbose and listing into count and reserve SQL command name for
+    // other use"). Here it was worse: the two implementations were not two
+    // commands but ONE VERB answering differently depending on whether the text
+    // happened to parse as a statement, with nothing telling the caller which
+    // branch had run. It was also the half of SQLSEL that broke the cursor
+    // neutrality the statement path guarantees -- its own usage block said so --
+    // and no spec in the tree exercised it.
+    (void)A;
+    std::cout
+        << "SQLSEL: that is not a statement, and the legacy predicate form has been retired.\n"
+        << "  SQLSEL is the statement verb: SQLSEL <list> FROM <table> [WHERE ...].\n"
+        << "  For a predicate scan over the current work area use COUNT, which carries\n"
+        << "  the listing and verbose forms: COUNT FOR <expr>, COUNT LIST, COUNT VERBOSE.\n"
+        << "  COUNT honours SET FILTER and SET DELETED as the logical rowset; this form\n"
+        << "  did not, which is why it is gone.\n";
 }
-
-
-

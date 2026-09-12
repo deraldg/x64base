@@ -65,6 +65,16 @@ void init_defaults(const fs::path& data_root)
     set_slot(Slot::DATA,            root);
     set_slot(Slot::DOCS,            appRoot / "docs");
     set_slot(Slot::SYSTEM_DIAGRAMS, appRoot / "docs" / "generated" / "diagrams");
+    // appRoot, like DOCS: TOOLS holds helpers the runtime invokes and lives
+    // beside the product, not under the data root. Re-rooting must move it too,
+    // or a SETPATH leaves TOOLS pointing at the previous product while every
+    // other slot follows -- and a command that shells out would keep working
+    // against the old tree with no diagnostic.
+    set_slot(Slot::TOOLS,           appRoot / "tools");
+    // Same reasoning as TOOLS: GUI holds the windowed executables the runtime
+    // launches, so a re-root must move it too or APPGUI keeps launching the
+    // previous product's window with no diagnostic.
+    set_slot(Slot::GUI,             appRoot / "bin");
     set_slot(Slot::USER_DIAGRAMS,   appRoot / "user" / current_user() / "diagrams");
     set_slot(Slot::DBF,             root / "dbf");
     set_slot(Slot::XDBF,       root / "xdbf");
@@ -100,9 +110,12 @@ std::string dump()
     os << "  SCHEMAS         = " << get_slot(Slot::SCHEMAS).string() << "\n";
     os << "  PROJECTS        = " << get_slot(Slot::PROJECTS).string() << "\n";
     os << "  SCRIPTS         = " << get_slot(Slot::SCRIPTS).string() << "\n";
+    os << "  TOOLS           = " << get_slot(Slot::TOOLS).string() << "\n";
+    os << "  GUI             = " << get_slot(Slot::GUI).string() << "\n";
     os << "  TESTS           = " << get_slot(Slot::TESTS).string() << "\n";
     os << "  HELP            = " << get_slot(Slot::HELP).string() << "\n";
     os << "  LOGS            = " << get_slot(Slot::LOGS).string() << "\n";
+    os << "  SYS             = " << get_slot(Slot::SYS).string() << "\n";
     os << "  TMP             = " << get_slot(Slot::TMP).string() << "\n";
 
     return os.str();

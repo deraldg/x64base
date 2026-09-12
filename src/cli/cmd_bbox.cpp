@@ -15,22 +15,36 @@
 // command: BBOX
 // category: education
 // status: experimental
+// noargs: report
 // effect: report
 // mutates: none
 // usage-access: no-open-table
 // summary: Teach and inspect the Blackbox model: data enters a processing system and information comes out.
-// usage: BBOX
+// usage: BBOX                               (MODEL *and* LANES -- see note)
 // usage: BBOX USAGE
-// usage: BBOX MODEL
+// usage: BBOX MODEL                         (model only, without LANES)
 // usage: BBOX LANES
 // usage: BBOX COMMENTS
-// usage: BBOX HELP
-// usage: BBOX MANUALGEN
-// usage: BBOX DATADICT
-// usage: BBOX MESSAGING
-// usage: BBOX MAINT
-// usage: BBOX CONTRACTS
+// usage: BBOX HELP                          (aliases: HELPDATA, CMDHELP, DOTREF)
+// usage: BBOX MANUALGEN                     (alias: MANUAL)
+// usage: BBOX DATADICT                      (aliases: DDICT, "DATA DICTIONARY")
+// usage: BBOX MESSAGING                     (alias: MSG)
+// usage: BBOX MAINT                         (alias: MAINTENANCE)
+// usage: BBOX CONTRACTS                     (alias: CONTRACT)
 // note: BBOX is read-only and educational.
+// note: BARE BBOX IS NOT THE SAME AS BBOX MODEL, though this contract listed
+//   the two on adjacent lines with nothing to tell them apart until
+//   2026-08-28. Bare BBOX prints the model AND THEN the lanes
+//   (cmd_bbox.cpp:144-151); BBOX MODEL prints the model alone.
+// note: This contract carried NO noargs: field at all, while its siblings
+//   MAINT and MANSTAR both declare one. A reader -- human or tool -- could
+//   not tell "BBOX has no no-argument behaviour" from "nobody filled this
+//   in". It does have one, and it is now declared: noargs: report.
+// note: Nine spellings dispatch that this contract never named -- HELPDATA,
+//   CMDHELP, DOTREF, MANUAL, DDICT, "DATA DICTIONARY", MSG, MAINTENANCE,
+//   CONTRACT. None is new behaviour. The argument is taken with getline and
+//   trimmed, not read as one token, which is why the two-word spelling can
+//   match at all; it needs exactly one space.
 // note: BBOX explains SelfDoc maintenance lanes as data -> process -> information systems.
 // note: BBOX does not mutate DBFs, HELP, META, CMDHELPCHK, source files, runtime scripts, or publication artifacts.
 //

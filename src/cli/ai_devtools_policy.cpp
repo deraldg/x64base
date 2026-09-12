@@ -8,7 +8,7 @@
 // status: supported
 
 // src/cli/ai_devtools_policy.cpp
-// AI-friendly dev-tools permission gate — now identity-aware (AIF-045 2c-4).
+// AI-friendly dev-tools permission gate -- now identity-aware (AIF-045 2c-4).
 //
 // Bridges the dormant dev-tools gate to the real permission resolver: the current
 // acting member must be the owner, or hold a live authorization for the dev-tools

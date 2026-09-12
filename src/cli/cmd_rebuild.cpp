@@ -78,6 +78,7 @@
 #include "cli/order_state.hpp"
 #include "cli/table_state.hpp"
 
+#include "workarea_util.hpp"
 #include <cctype>
 #include <filesystem>
 #include <iostream>
@@ -124,16 +125,6 @@ static inline std::string up_copy(std::string s)
         c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
     }
     return s;
-}
-
-static int resolve_current_index(xbase::DbArea& A)
-{
-    if (auto* eng = shell_engine()) {
-        for (int i = 0; i < xbase::MAX_AREA; ++i) {
-            if (&eng->area(i) == &A) return i;
-        }
-    }
-    return -1;
 }
 
 static bool prompt_yes_no(const std::string& prompt, bool default_no = true)
@@ -227,7 +218,7 @@ void cmd_REBUILD(xbase::DbArea& A, std::istringstream& in)
         }
     }
 
-    const int area0 = resolve_current_index(A);
+    const int area0 = cli::slot_of_area(&A);
     if (!ensure_clean_or_commit(A, area0, "REBUILD")) return;
 
     if (!A.isOpen()) {

@@ -36,6 +36,15 @@ struct FieldSpec {
     // x64 callers use this to preserve long authoritative names while writing
     // unique 10-byte fallback descriptor tokens.
     std::string  descriptor_name;
+
+    // AIF-091 M2. Declared nullable by the CREATE statement (`... NULL`).
+    //
+    // A nullable field costs a BIT in the table's hidden `_NullFlags` column,
+    // not a byte in this field -- so nothing here changes width. The writer
+    // appends that column itself; a caller never builds one, and must not,
+    // because the column's width is derived from the WHOLE field list and a
+    // caller holding one field cannot know it.
+    bool         nullable {false};
 };
 
 std::string flavor_name(Flavor flavor);
@@ -43,6 +52,19 @@ std::string flavor_name(Flavor flavor);
 bool supports_type_now(char code, Flavor flavor) noexcept;
 
 bool create_dbf(const std::string& path,
+                const std::vector<FieldSpec>& fields,
+                Flavor flavor,
+                std::string& err);
+
+// Identity-explicit overload (AIF-110). For X64, `tableName` seeds the X64M
+// authoritative table identity INSTEAD of the path stem. Required whenever the
+// create path and the table's final identity differ -- the founding case is
+// FIELDMGR APPEND's temp-file rewrite, where the stem-derived default stamped
+// "STUDENTS.__fldtmp" into the renamed file's metadata (hex-verified
+// 2026-08-12). Empty tableName falls back to the path stem; non-X64 flavors
+// ignore it (their formats carry no name authority block).
+bool create_dbf(const std::string& path,
+                const std::string& tableName,
                 const std::vector<FieldSpec>& fields,
                 Flavor flavor,
                 std::string& err);

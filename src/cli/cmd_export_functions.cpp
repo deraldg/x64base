@@ -137,6 +137,12 @@ std::vector<dottalk::expr::FunctionCategory> function_category_order()
         FunctionCategory::Logical,
         FunctionCategory::Construction,
         FunctionCategory::Conversion,
+        // NOTE: this list is DUPLICATED verbatim in cmd_export_functions.cpp and
+        // cmd_help_grouped.cpp. Add a category to one and not the other and
+        // EXPORTFUNCTIONS and HELP silently disagree about what exists -- the
+        // omission is invisible because a missing category prints nothing rather
+        // than erroring. Both were updated together for Cursor.
+        FunctionCategory::Cursor,
         FunctionCategory::Misc
     };
 }

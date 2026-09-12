@@ -32,10 +32,9 @@ private:
   char peekch(size_t k=1) const { return (m_i+k<m_src.size())? m_src[m_i+k] : '\0'; }
   Token readIdent();
   Token readNumber();
-  Token readString();
+  Token readString(char quote);
 };
 
 }} // namespace
-
 
 

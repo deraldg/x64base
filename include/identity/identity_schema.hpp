@@ -12,12 +12,12 @@
 // DBF schema for the identity / RBAC catalog (AIF-045 2b-ii, APH-5 self-hosting).
 //
 // PURE DATA. Declares the nine SYS* identity tables that persist the nine
-// InMemoryIdentityStore vectors, one table per vector. No database access here —
+// InMemoryIdentityStore vectors, one table per vector. No database access here --
 // the writer/loader (identity_dbf_store.*) consumes these specs.
 //
 // Storage convention (DOTTALKPP_DBF_PATH_POLICY): identity tables are SYSTEM
 // catalogs, so they live under data/metadata/identity/ alongside the other SYS*
-// runtime catalogs — not in the data/dbf fixture dirs, not in a profile home.
+// runtime catalogs -- not in the data/dbf fixture dirs, not in a profile home.
 //
 // Round-trip invariant (Contract v1 §Invariant 5): the authoritative 64-bit IDs
 // AND the portable string keys are both persisted, so a x64base -> reload ->
@@ -124,12 +124,38 @@ inline Table sysgrant() {
     }};
 }
 
-// All nine tables. Order is load-safe (referenced catalogs before crosswalks).
+// Org units. One row per organizational unit: the house is a row, every outside
+// party is a row. Roots have PARENT = 0. OTYPE is the OrgUnitType ordinal
+// (0 Organization, 1 Division, 2 Department, 3 Team, 4 Committee, 5 Class, 6 Lab,
+// 7 Partner) and is APPEND ONLY once seeded. STATUS is EntityStatus.
+//
+// This table is what makes ORGSCOPE/ORGUNIT mean something. Those columns have been
+// persisted and read back since AIF-045 and consulted by applies() on every permission
+// decision, but with no org rows to reference the scope check degenerated to "global
+// always matches." Doctrine + standing vocabulary: include/identity/org_schema.hpp.
+inline Table sysorg() {
+    return {"SYSORG", {
+        N("ID", w::ID), C("OKEY", w::KEY), N("PARENT", w::ID), N("OTYPE", 2),
+        C("NAME", w::NAME), N("STATUS", 2), N("SORTORD", 6),
+        N("VFROM", w::ID), N("VTHRU", w::ID), N("ROWVER", w::ID),
+    }};
+}
+
+// All ten tables. Order is load-safe (referenced catalogs before crosswalks) --
+// sysorg() precedes the crosswalks because ORGSCOPE/ORGUNIT reference it.
 inline std::vector<Table> all_tables() {
     return {
-        sysuser(), sysmember(), sysrole(), sysperm(),
+        sysuser(), sysmember(), sysrole(), sysperm(), sysorg(),
         sysroleperm(), sysmemrole(), sysoverride(), sysassign(), sysgrant(),
     };
+}
+
+// Tables introduced AFTER the original nine. A store predating one of these is OLD,
+// not CORRUPT, so the loader tolerates their absence instead of refusing the whole
+// catalog (see load_identity_tables). Every future addition to all_tables() belongs
+// here too, until a migration has demonstrably reached every store.
+inline bool is_additive_table(const std::string& name) {
+    return name == "SYSORG";
 }
 
 } // namespace dottalk::identity::schema

@@ -56,12 +56,22 @@
 //   INFO, TAGS, WALK, and TRACE are read-only inspection/diagnostic operations and require an existing file.
 //   WALK/TRACE use root_page_off from the CNX tag directory and follow plausible child offsets with loop/depth protection.
 //   ADDTAG and DROPTAG mutate the CNX container tag directory and require an existing file.
+//   ADDTAG requires an OPEN TABLE and refuses a <name> that does not resolve to one of its
+//     fields, through the same standard resolver REPLACE uses (xfg::resolve_field_index_std).
+//     A CNX tag IS a field name. Catching it here matters MORE than on the CDX side: REBUILD
+//     rebuilds the whole container in one call and then prints OK for every tag in the
+//     directory, reporting ok = tags.size(), so a dead tag is not merely unmentioned -- it is
+//     reported OK and counted (cmd_rebuild.cpp:285-315). REINDEX CNX delegates to REBUILD.
+//   DROPTAG is deliberately NOT field-checked: removing a tag whose field is gone is exactly
+//     when you need it, so requiring the field to exist would fence off the repair.
 //
 // risk:
 //   reads_index_file: INFO TAGS WALK TRACE ADDTAG DROPTAG
 //   creates_index_file: CREATE
 //   overwrites_index_file: no, CREATE refuses existing target
 //   mutates_index_metadata: ADDTAG DROPTAG
+//   requires_open_table: ADDTAG
+//   validates_field_name: ADDTAG (xfg::resolve_field_index_std, as REPLACE does)
 //   mutates_table_data: no
 //   diagnostic_tree_walk: WALK TRACE
 //   default_path_uses_order_state: yes
@@ -81,6 +91,7 @@
 #include "cli/path_resolver.hpp"
 #include "cli/order_state.hpp"
 #include "help/helpdata_messages.hpp"
+#include "xbase_field_getters.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -558,6 +569,47 @@ void cmd_CNX(xbase::DbArea& area, std::istringstream& args)
         if (name.empty()) {
             cli::cmdout::print_prefixed_message(
                 "CNX ADDTAG", dottalk::helpdata::MessageId::CnxAddTagMissingNameText);
+            return;
+        }
+
+        // ------------------------------------------------------------------
+        // SAME CHECK AS CDX ADDTAG, AND CNX NEEDS IT MORE (AIF-078, 2026-08-29).
+        //
+        // A CNX tag is a field name exactly as a CDX tag is. The difference is
+        // what happens to a dead one afterwards, and CNX's build path is the
+        // weaker of the two:
+        //
+        //   BUILDLMDB  builds per tag, counts real successes, and SKIPS a miss
+        //              without a word (cmd_buildlmdb.cpp:465-481).
+        //   REBUILD    calls backend rebuild() ONCE for the whole container,
+        //              then prints RebuildTagOkText for EVERY tag in the
+        //              directory and reports ok = tags.size()
+        //              (cmd_rebuild.cpp:285-315). Its own comment says it:
+        //              "Report once per tag, but rebuild only happened once."
+        //
+        // So a dead CNX tag does not merely pass unmentioned -- it is REPORTED
+        // OK and COUNTED. tags.size() is the size of the tag DIRECTORY wearing
+        // the label of a rebuild count, which is the count discipline: a number
+        // from an authority holding more than one kind, with no discriminator.
+        // Both paths are reachable through REINDEX (REINDEX CNX -> REBUILD,
+        // REINDEX CDX -> BUILDLMDB), so neither can be relied on to surface the
+        // mistake and DEFINITION TIME is the only honest place to catch it.
+        //
+        // Resolved through xfg::resolve_field_index_std, the same standard
+        // resolver REPLACE refuses on (cmd_replace.cpp:822), so CDX, CNX and
+        // REPLACE now agree about what a field name is. cmd_rebuild.cpp's own
+        // normalize_field_name() and BUILDLMDB's textio::ieq remain separate
+        // opinions; they are display/build-side and are not changed here.
+        // ------------------------------------------------------------------
+        if (!area.isOpen()) {
+            cli::cmdout::print_prefixed_message(
+                "CNX ADDTAG", dottalk::helpdata::MessageId::CnxAddTagNoFileOpenText);
+            return;
+        }
+        if (xfg::resolve_field_index_std(area, name) < 0) {
+            cli::cmdout::print_prefixed_message(
+                "CNX ADDTAG", dottalk::helpdata::MessageId::CnxAddTagFieldNotFoundText,
+                {{"name", name}});
             return;
         }
 

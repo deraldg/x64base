@@ -78,6 +78,7 @@
 #include "xbase.hpp"
 #include "xbase_field_getters.hpp"
 #include "cli/command_output.hpp"
+#include "cli/expr/function_catalog.hpp"
 #include "cli/output_router.hpp"
 #include "edref.hpp"
 #include "helpdata_cmdhelp_bridge.hpp"
@@ -189,18 +190,35 @@ static std::string canonical_set_family_query(const std::string& query) {
     return it == kMap.end() ? std::string{} : it->second;
 }
 
+// ASK THE FUNCTION CATALOG. DO NOT KEEP A SECOND COPY OF ITS CONTENTS HERE.
+//
+// This predicate decides whether a name reaching collect_commands() is an
+// expression function rather than a command. A false answer promotes it to a
+// DOT command row carrying the "curated DOTREF help is pending" placeholder --
+// i.e. it invents a command that does not exist and files a documentation debt
+// against it.
+//
+// It used to answer from a hand-maintained literal list of 64 names kept right
+// here, duplicating dottalk::expr's catalog. The two drifted, as two lists that
+// must agree always do. Measured 2026-08-22, the catalog resolved ELEVEN names
+// this list had never heard of:
+//
+//     FILE PADC PADL PADR PROPER STRCAT STUFF UDATE UDATETIME UNOW UTIME
+//
+// Only five of the eleven were VISIBLE as bogus command rows (FILE, UDATE,
+// UDATETIME, UNOW, UTIME). The other six were masked by an unrelated accident:
+// they also appear in foxref, so the FOX row claimed the key before the
+// placeholder branch could reach them. The masking is why this went unnoticed,
+// and it is exactly why the fix is delegation rather than "add the five" --
+// adding the visible five would have left six live drifts in place and looked
+// like a complete fix.
+//
+// get_function_doc() resolves ALIASES as well as primary names, which is what
+// makes delegation strictly safe: all 64 of the old literals still resolve
+// (verified, zero regressions), including TRIM, which is not its own entry but
+// an alias of RTRIM -- a case a name-only comparison would have called a loss.
 static bool is_expression_function_name(const std::string& name) {
-    static const std::unordered_set<std::string> names = {
-        "ABS","ACOS","ALLTRIM","ASC","ASIN","AT","ATAN","ATC","BETWEEN",
-        "CDOW","CEILING","CHR","CHRTRAN","CMONTH","CONCAT","COS","CTOD",
-        "DATE","DATEADD","DATEDIFF","DATETIME","DAY","DOW","DTOC","DTOS",
-        "EMPTY","EXP","FLOOR","GOMONTH","INT","LEFT","LEN","LIKE","LOG",
-        "LOG10","LOWER","LTRIM","MAX","MIN","MOD","MONTH","NOW","RAND",
-        "RAT","REPLICATE","RIGHT","ROUND","RTRIM","SECONDS","SIN","SOUNDEX",
-        "SPACE","SQRT","STR","STRTRAN","SUBSTR","TAN","TIME","TODAY",
-        "TRANSFORM","TRIM","UPPER","VAL","YEAR"
-    };
-    return names.count(up(name)) != 0;
+    return dottalk::expr::get_function_doc(up(name)) != nullptr;
 }
 
 static bool is_developer_surface_name(const std::string& name) {
@@ -1308,15 +1326,29 @@ static void print_current_help_report(const std::string& dir) {
           << cli::cmdout::message_text(dottalk::helpdata::MessageId::CmdHelpPreviewTextHeader) << "\n";
     out() << cli::cmdout::message_text(dottalk::helpdata::MessageId::CmdHelpPreviewDivider) << "\n";
 
+    // The preview is a SAMPLE, and until 2026-08-12 it did not say so. It
+    // printed 24 of N rows, truncated every text at 100 characters, and then
+    // simply stopped -- which reads as "this is the store" rather than "this is
+    // the first 24 rows of it". Owner observation, same day, after a long
+    // build: "it runs a long time and then just prints a few commands -- i
+    // guess they are samples." Guessing is the tell. A report that leaves the
+    // reader to infer its own scope is the cheap end of the same family as a
+    // summary line reading "restored" after restoring nothing.
+    //
+    // The caps are named rather than inline so the footer cannot drift from the
+    // loop that enforces them.
+    constexpr int         kPreviewRowCap  = 24;
+    constexpr std::size_t kPreviewTextCap = 100;
+
     int shown = 0;
     for (const auto& r : tbl.rows) {
-        if (shown >= 24) break;
+        if (shown >= kPreviewRowCap) break;
 
         std::string text = dbf_cell(r, ix_text);
         for (char& ch : text) {
             if (ch == '\n' || ch == '\r' || ch == '\t') ch = ' ';
         }
-        if (text.size() > 100) text.resize(100);
+        if (text.size() > kPreviewTextCap) text.resize(kPreviewTextCap);
 
         out() << std::left
               << std::setw(20) << dbf_cell(r, ix_topic_key).substr(0, 19)
@@ -1327,9 +1359,23 @@ static void print_current_help_report(const std::string& dir) {
               << text << "\n";
         ++shown;
     }
+
+    // Say what was withheld and how to see it. Naming the full-render commands
+    // here is the same fix REGRESSION FIND made for the spec corpus: the data
+    // was always reachable, but only if you already knew the command.
+    const std::size_t total = tbl.rows.size();
+    if (total > static_cast<std::size_t>(shown)) {
+        out() << "  ... " << (total - static_cast<std::size_t>(shown))
+              << " more row(s) not shown. This preview is capped at "
+              << kPreviewRowCap << " rows of " << total
+              << " and truncates text at " << kPreviewTextCap << " characters.\n"
+              << "  Full render, no cap and no truncation: CMDHELP REPORT ALL"
+                 "  (or HELP GIANT ALL)\n"
+              << "  SET PAGING ON first -- the full render is every row.\n";
+    }
 }
 
-// HELP GIANT ALL / CMDHELP REPORT ALL — the exhaustive "recollection": every HELP DATA
+// HELP GIANT ALL / CMDHELP REPORT ALL -- the exhaustive "recollection": every HELP DATA
 // topic rendered in full (no 24-row preview cap, no 100-char truncation), grouped by topic.
 // Same corpus the manual/website are assembled from. Respects SET PAGING.
 static void print_current_help_full(const std::string& dir) {
@@ -1395,7 +1441,7 @@ static void print_current_help_full(const std::string& dir) {
             tbody += "\n";
             ++n;
         }
-        if (n == 0) continue;  // topic was pure provenance — skip its header
+        if (n == 0) continue;  // topic was pure provenance -- skip its header
         ++shown_topics;
         shown_rows += n;
         body += "\n";

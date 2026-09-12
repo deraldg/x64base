@@ -7,7 +7,7 @@
 // owner: member.derald
 // status: supported
 
-// xbase::ramfs — in-process RAM filesystem (AIF-043 in-memory tables, drop V1)
+// xbase::ramfs -- in-process RAM filesystem (AIF-043 in-memory tables, drop V1)
 //
 // Path-keyed byte files served from process memory. See include/xbase/ramfs.hpp
 // for the model. This TU provides:
@@ -20,7 +20,7 @@
 //   * Single shared cursor for get and put. The DBF/CDX I/O path always seeks
 //     before every read/write (verified in the M1 assembly), so one cursor is
 //     safe and matches how a file position behaves.
-//   * Writes past end grow the buffer, zero-filling any gap — identical to
+//   * Writes past end grow the buffer, zero-filling any gap -- identical to
 //     seeking past EOF and writing on a real file.
 //   * On Windows, path keys are lowercased and backslash-normalized so
 //     case/separator variants of the same path resolve to one RamFile.

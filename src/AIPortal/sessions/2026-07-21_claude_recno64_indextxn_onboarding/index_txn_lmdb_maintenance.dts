@@ -145,7 +145,7 @@ ECHO ------------------------------------------------------------
 ECHO
 ECHO --- CLOSE + CLEANUP ---
 * Restore ambient: this test flips the global SET INDEXTXN. Leave it OFF so it never
-* leaves the ambient dirty for the next test (regression doctrine — sets/restores its
+* leaves the ambient dirty for the next test (regression doctrine -- sets/restores its
 * own environment). This is also why INDEX_TXN stays out of the default suite.
 SET INDEXTXN OFF
 CLOSE

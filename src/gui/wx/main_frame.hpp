@@ -66,6 +66,12 @@ public:
                        LocaleContext locale = {});
     ~MainFrame() override;
 
+    // AIF-120. Run a command exactly as the Command box does -- history, log
+    // echo, status text, then session_->submit_command. Public so a child
+    // window (the memo browser) can drive the SAME path rather than growing a
+    // second way to reach the runtime.
+    void SubmitCommandText(const std::string& text);
+
 private:
     void BuildMenu();
     void BuildLayout();
@@ -75,6 +81,7 @@ private:
     void OnWorkspaceOpenDirectory(wxCommandEvent& event);
     void OnWorkspaceLoadRuntime(wxCommandEvent& event);
     void OnWorkspaceClose(wxCommandEvent& event);
+    void OnWorkspaceMemoBrowse(wxCommandEvent& event);
     void OnOpenWorkspace(wxCommandEvent& event);
     void OnSaveWorkspace(wxCommandEvent& event);
     void OnSaveWorkspaceAs(wxCommandEvent& event);
@@ -89,6 +96,7 @@ private:
     void OnBrowseCellSelected(wxGridEvent& event);
     void OnDDictRefresh(wxCommandEvent& event);
     void OnDDictFilterChanged(wxCommandEvent& event);
+    void OnTableRowSelected(wxGridEvent& event);
     void OnDDictObjectSelected(wxGridEvent& event);
     void OnDDictDetailSelected(wxGridEvent& event);
     void OnRecordViewKeyDown(wxKeyEvent& event);
@@ -179,6 +187,10 @@ private:
     std::string command_history_draft_;
     int command_history_index_ {-1};
     bool applying_snapshot_ {false};
+    // The SAME KIND OF LATCH as applying_snapshot_, for the Tables grid, and it
+    // is separate on purpose: one flag covering two repaint paths would make
+    // "am I repainting" mean two things and go wrong the first time they nest.
+    bool applying_tables_ {false};
     std::unique_ptr<AsyncSession> session_;
 };
 

@@ -19,6 +19,8 @@
 
 #include "cli/expr/rhs_eval.hpp"
 
+#include "xbase_field_getters.hpp"   // xfg::resolve_field_index_std (R116)
+
 #include <algorithm>
 #include <cctype>
 #include <cmath>
@@ -197,14 +199,25 @@ static bool is_single_quoted_literal(const std::string& src) {
     return false;
 }
 
+// AIF-120 R116: ONE field-name authority.
+//
+// This compared the name against fields()[i].name and nothing else. On an
+// x64 table that is only half the question: a LONG field name is written to
+// disk under a 10-byte DESCRIPTOR token (plus ~n and ~hash collision
+// aliases, field_name_policy.hpp), and a caller naming that token missed
+// here -- silently, because the miss returns "not a field" and every path
+// downstream reads that as an empty value or a string literal.
+//
+// xfg::resolve_field_index_std (xbase_field_getters.hpp) already answers the
+// whole question: logical names win, x64 descriptor tokens are accepted as
+// aliases ONLY where they map uniquely, ambiguity is refused, and -1 means
+// genuinely not a field. Four resolvers in this engine disagreed about what
+// a field name is; they now all ask the same one.
+//
+// CONVENTION: 0-based/-1 in, 1-based/-1 out (callers here test > 0).
 static int field_index_ci(xbase::DbArea& area, const std::string& name) {
-    const std::string want = up(trim(name));
-    if (want.empty()) return -1;
-    const auto defs = area.fields();
-    for (size_t i = 0; i < defs.size(); ++i) {
-        if (up(defs[i].name) == want) return static_cast<int>(i) + 1;
-    }
-    return -1;
+    const int idx0 = xfg::resolve_field_index_std(area, name);
+    return idx0 < 0 ? -1 : idx0 + 1;
 }
 
 static bool is_x64_memo_field(const xbase::DbArea& A, int field1) {
@@ -268,7 +281,17 @@ static bool is_ident_char(char c) {
     return std::isalnum(static_cast<unsigned char>(c)) || c == '_' || c == '$';
 }
 
-static std::vector<Tok> lex_value_expr(const std::string& src) {
+// AIF-120 R115: the same defect, one file over. See value_eval.cpp's copy of
+// this lexer -- an unrecognized character ended the lex, End was appended, and
+// at_end() then reported true on a PREFIX. The AIF-074 P1.6 note further down
+// records this class biting here once already (a dot not followed by a digit
+// "ended the lex and the whole expression silently failed"); that repair taught
+// the lexer one more token rather than teaching it to say when it stopped.
+// This does the latter, so the next unlexable character reports instead of
+// truncating.
+static std::vector<Tok> lex_value_expr(const std::string& src,
+                                       bool* stopped_early = nullptr) {
+    if (stopped_early) *stopped_early = false;
     std::vector<Tok> out;
     std::size_t i = 0;
     auto skip_ws = [&]() {
@@ -348,6 +371,8 @@ static std::vector<Tok> lex_value_expr(const std::string& src) {
             if (m == 'F' || m == 'f') { out.push_back({Tok::Ident, "F"}); i += 3; continue; }
         }
 
+        // Unknown character: the rest of the input is being dropped. Say so.
+        if (stopped_early) *stopped_early = true;
         break;
     }
     out.push_back({Tok::End, ""});
@@ -452,7 +477,7 @@ static std::string scalar_to_string(const ScalarValue& v) {
         case ScalarValue::K_Bool: return v.tf ? ".T." : ".F.";
         case ScalarValue::K_Array:
             // Compact identity form; ARRAY LIST (M3) renders full contents. Arrays are
-            // not a scalar function-argument type — this is display/placeholder only.
+            // not a scalar function-argument type -- this is display/placeholder only.
             return "{array:" + std::to_string(dottalk::array::length(v.arr)) + "}";
         default: return {};
     }
@@ -687,7 +712,7 @@ private:
     }
 
     // Postfix one-based subscripting: `<array>[ index ]`, chainable (`$m[1][2]`).
-    // Applies to any primary that evaluates to an array — most importantly `$A[n]`
+    // Applies to any primary that evaluates to an array -- most importantly `$A[n]`
     // and `{…}[n]`. Out-of-range / non-integer / non-array subscripts fail the parse
     // (surfaced as an evaluation error); AIF-036 message-catalog routing is M1b-3.
     bool parse_postfix(ScalarValue& out) {
@@ -811,8 +836,8 @@ private:
                 }
             }
 
-            // DotScript memory variables ($name). The `$` sigil is unambiguous — a
-            // field name never begins with `$` — so this resolution is additive and
+            // DotScript memory variables ($name). The `$` sigil is unambiguous -- a
+            // field name never begins with `$` -- so this resolution is additive and
             // cannot shadow a field. Variables are stored under the sigil-stripped,
             // case-insensitive name (see cmd_VAR). Scalars cross as chars/double per
             // the family's char-compat contract; an array binds by shared reference so
@@ -889,7 +914,9 @@ static dottalk::expr::EvalValue scalar_to_eval(const ScalarValue& v) {
 }
 
 static bool eval_scalar_expr(xbase::DbArea* A, const std::string& exprText, dottalk::expr::EvalValue& out) {
-    auto toks = lex_value_expr(exprText);
+    bool stopped_early = false;
+    auto toks = lex_value_expr(exprText, &stopped_early);
+    if (stopped_early) return false;   // a prefix is not the expression (R115)
     ValueParser p(A, toks);
     ScalarValue v;
     if (!p.parse_expr(v)) return false;
@@ -969,7 +996,12 @@ bool eval_rhs_avalue(xbase::DbArea* areaOrNull,
     xbase::DbArea* area = (areaOrNull && areaOrNull->isOpen()) ? areaOrNull : nullptr;
 
     // Parse once with the array-preserving ScalarValue path so an ArrayRef survives.
-    auto toks = lex_value_expr(expr);
+    bool stopped_early = false;
+    auto toks = lex_value_expr(expr, &stopped_early);
+    if (stopped_early) {
+        if (errOut) *errOut = "unrecognized character in expression";
+        return false;
+    }
     ValueParser p(area, toks);
     ScalarValue v;
     if (p.parse_expr(v) && p.at_end()) {

@@ -9,11 +9,11 @@
 
 #pragma once
 //
-// xbase::ramfs — in-process RAM filesystem (AIF-043, in-memory tables, drop V1)
+// xbase::ramfs -- in-process RAM filesystem (AIF-043, in-memory tables, drop V1)
 // ----------------------------------------------------------------------------
 // Path-keyed byte files served from process memory. This is the self-owned
 // substitute for a RAM-disk driver: the 1980s RAMDRIVE.SYS / VDISK.SYS concept,
-// but owned by the engine instead of the OS — no signed kernel driver, no drive
+// but owned by the engine instead of the OS -- no signed kernel driver, no drive
 // letter, no third-party license to vet for redistribution.
 //
 // Model: a process-global registry maps normalized absolute paths to RamFiles
@@ -21,12 +21,12 @@
 // virtual root. The DBF and native-CDX file layers consult this registry: for a
 // virtual path they read/write a RamFile; for a real path they use the OS.
 //
-// LMDB is out of scope here (it must mmap a real OS file) — that stays on the
+// LMDB is out of scope here (it must mmap a real OS file) -- that stays on the
 // optional symlink/RAM-disk add-on. This VFS covers the DBF + native-CDX lane.
 //
 // Lifetime: RamFiles persist in the registry across stream open/close (so USE
 // can reopen a table and its sibling .cdx resolves), and are dropped by erase()
-// or clear() — the ephemeral CLOSE/exit behavior for M1.
+// or clear() -- the ephemeral CLOSE/exit behavior for M1.
 //
 // Threading: M1 is single-process/single-area; calls are not internally locked.
 // A future milestone can add a mutex if concurrent areas share the registry.
@@ -59,11 +59,11 @@ bool           erase(const std::string& abs_path);  // drop one RAM file; true i
 // and the "zero real files" proof). Returns absolute paths.
 std::vector<std::string> list(const std::string& abs_root);
 
-// Drop every RAM file and unmount every root — the ephemeral teardown at
+// Drop every RAM file and unmount every root -- the ephemeral teardown at
 // session close. Sizes/roots reset to empty.
 void clear();
 
-// Aggregate bytes currently held across all RAM files — feeds the Layer-2 soft
+// Aggregate bytes currently held across all RAM files -- feeds the Layer-2 soft
 // budget monitor (warn_pct / on_full) from VDISK_RAM_SIZING_AND_ADMIN_CONFIG.
 std::uint64_t used_bytes();
 

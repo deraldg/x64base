@@ -7,7 +7,7 @@
 // owner: member.derald
 // status: supported
 
-// bbs_schema.hpp — DBF table definitions for the AI-BBS / pseudo-chat board (M1).
+// bbs_schema.hpp -- DBF table definitions for the AI-BBS / pseudo-chat board (M1).
 //
 // Mirrors include/identity/identity_schema.hpp conventions:
 //   - table/field names <= 10 chars, classic-browsable: 10 is the classic DBF physical
@@ -17,7 +17,7 @@
 //     names remain available through X64M; plan_x64_unique_fallback keeps the two in sync.
 //   - 64-bit ids stored as N(20,0) decimal text (DBF 'I' is int32 only); 0 = unset
 //   - enums as small N codes; bools as 'L'
-//   - stored under data/metadata/bbs/ (its OWN dir — not folded into identity all_tables())
+//   - stored under data/metadata/bbs/ (its OWN dir -- not folded into identity all_tables())
 //
 // M1 scope: local board only. No server, no egress, no crypto dependency.
 #pragma once

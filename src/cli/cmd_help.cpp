@@ -579,7 +579,7 @@ inline std::vector<std::string> gather_help_candidates()
     for (const auto& it : foxref::catalog()) if (it.name)  names.emplace_back(it.name);
     for (const auto& it : edref::catalog())  if (it.topic) names.emplace_back(it.topic);
     for (const auto* fd : dottalk::expr::all_function_docs()) if (fd) names.push_back(fd->name);
-    // Reflected (authoritative) command names — covers dev/newer commands not in the catalogs.
+    // Reflected (authoritative) command names -- covers dev/newer commands not in the catalogs.
     { const refsys::ReferenceCollection rc = refsys::build_reference_collection();
       for (const auto& c : rc.commands) names.push_back(c.canonical_name); }
     // HELP's own router keywords (not commands, so absent from the reference catalogs) —

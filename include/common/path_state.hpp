@@ -40,9 +40,56 @@ enum class Slot {
     SCHEMAS,
     PROJECTS,
     SCRIPTS,
+    TOOLS,          // helper programs the runtime invokes; root-relative, ships with the product
+    GUI,            // windowed GUI executables the runtime launches; root-relative, beside the product
     TESTS,
     HELP,
     LOGS,
+
+    // SYS -- ENGINE STATE THAT IS IRREPLACEABLE AND IS NEVER SWEPT (AIF-160).
+    //
+    // Slots in this tree are grouped by CONSEQUENCE OF LOSS AND LIFETIME, not by
+    // subject matter. TMP is what can be regenerated on demand and anyone may
+    // delete. LOGS is what happened once and wants curating. RAM is volatile by
+    // definition. SYS is the one that cannot be rebuilt from anything and must
+    // never be cleaned up by any sweeper, ever.
+    //
+    // Its founding tenant is the multi-area commit group log, where deleting a
+    // row SILENTLY LOSES A COMMITTED TRANSACTION and nothing detects it -- the
+    // highest consequence-of-loss class in the tree, because every other loss
+    // announces itself. A lost index is noticed; a lost log is noticed; a lost
+    // group decision turns a committed transaction into a discarded one at the
+    // next USE, quietly.
+    //
+    // THE RULE ALSO SAYS WHAT MUST NEVER GO IN HERE, and that half is what
+    // protects it: nothing regenerable. The moment SYS holds one rebuildable
+    // thing, somebody reasonably writes a cleaner for it, and the cleaner cannot
+    // tell the two apart.
+    //
+    // Tables under SYS are engine-owned and written DIRECTLY: they are refused
+    // the table buffer and skipped by journal recovery, both enforced rather
+    // than documented (see is_engine_state_file in cli/table_state.hpp).
+    //
+    // EVERY SYS TABLE IS x64 UNLESS A STATED REASON SAYS OTHERWISE (owner,
+    // 2026-09-11). The exception the ruling names is a student demo -- a table
+    // deliberately built in an older flavor to BE an older flavor. Anything
+    // else here is x64, and a departure carries its reason at the create site
+    // rather than in somebody's memory.
+    //
+    // THE RULING EXISTS BECAUSE THE FIRST SYS TABLE PICKED ITS FLAVOR BY
+    // IMITATION. The group log was created x64 because WORKSPACES.dbf is x64,
+    // and when the choice was finally examined most of the obvious
+    // justifications did not survive: the 32-bit record ceiling is four billion
+    // rows and no real constraint, every field name is under ten bytes, and no
+    // VFP feature is used. A default that has to be re-argued at every create
+    // site gets argued badly or not at all; one stated default with a named
+    // exception is the cheaper and more honest shape.
+    //
+    // NOT ENFORCED. Nothing checks this, because SYS has one tenant. When it
+    // gains a second, a gate is owed -- a rule nothing measures is a rule that
+    // drifts, which this tree has a folder about.
+    SYS,
+
     TMP,
     TMP_OUT,
     TMP_SYSTEM,
@@ -100,9 +147,12 @@ struct State {
     fs::path schemas_root;
     fs::path projects_root;
     fs::path scripts_root;
+    fs::path tools_root;
+    fs::path gui_root;
     fs::path tests_root;
     fs::path help_root;
     fs::path logs_root;
+    fs::path sys_root;
     fs::path tmp_root;
     fs::path tmp_out_root;
     fs::path tmp_system_root;

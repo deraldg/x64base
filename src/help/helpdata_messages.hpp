@@ -555,6 +555,7 @@ enum class MessageId {
     CommitMemoFlushFailedText,
     CommitIndexFinalizeFailedText,
     CommitJournalFinalizeFailedText,
+    CommitRefusedByTriggerText,
     CommitCompleteText,
     CommitEngineUnavailableText,
     CommitCannotDetermineAreaText,
@@ -1351,7 +1352,28 @@ enum class MessageId {
     ShowIniFileLineText,
     ShowIniSectionHeaderText,
     ShowIniSectionDividerText,
-    ShowIniKeyValueLineText
+    ShowIniKeyValueLineText,
+
+    // APPENDED RATHER THAN GROUPED WITH THE CDX BLOCK ABOVE. Inserting mid-enum
+    // renumbers every id after it. Nothing found in src/ persists the ordinal
+    // -- the stable identity is the string key ("CDX_ADDTAG_...") -- but the
+    // help store is a live artifact owned elsewhere, and "I looked and did not
+    // find a reader" is not the same as "there is none". Appending costs
+    // nothing and cannot be wrong.
+    CdxAddTagNoFileOpenText,
+    CdxAddTagFieldNotFoundText,
+    CnxAddTagNoFileOpenText,
+    CnxAddTagFieldNotFoundText,
+    // 2026-08-29. Owner instruction: DBAREA and GPS report the workspace.
+    // APPENDED, not grouped with their Dbarea/Gps siblings, so no existing
+    // enumerator renumbers -- the same rule the ADDTAG ids followed.
+    DbareaOwningWorkspaceLineText,
+    DbareaCurrentWorkspaceLineText,
+    GpsWorkspaceLineText,
+    // 2026-08-30, AIF-149. "not open" and "open, but in another workspace" had
+    // ONE sentence between them, which is the AIF-118 shape at the exact place
+    // a reader asks where the boundary is. APPENDED, same rule as above.
+    RelDiagAddFailedOpenElsewhereText
 };
 
 struct MessageDef {

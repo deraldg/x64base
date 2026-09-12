@@ -3,7 +3,7 @@
 // layer: command
 // owns: 
 // project: project.x64base.runtime
-// lane: 
+// lane: AIF-105
 // owner: member.derald
 // status: supported
 
@@ -29,6 +29,7 @@
 //   ERP TABLES                  -> list user tables/views
 //   ERP VIEWS                   -> list analytical views
 //   ERP COLUMNS <table>         -> show table columns
+//   ERP RELATIONS               -> show foreign-key column mappings
 //   ERP LIST <table> [limit]    -> quick table/view preview
 //   ERP SCHEMA [name]           -> show schema rows; optional table/view name
 //   ERP EXEC <sql...>           -> execute non-SELECT SQL
@@ -74,6 +75,7 @@
 //   ERP TABLES
 //   ERP VIEWS
 //   ERP COLUMNS <table>
+//   ERP RELATIONS
 //   ERP LIST <table> [limit]
 //   ERP ITEMS
 //   ERP STOCK
@@ -128,6 +130,33 @@ constexpr size_t MAX_SELECT_ROWS = 200;
 constexpr size_t MAX_META_ROWS   = 500;
 constexpr size_t DEFAULT_LIST_LIMIT = 10;
 constexpr size_t MAX_LIST_LIMIT = 500;
+
+struct ModuleDefinition {
+    const char* name;
+    std::vector<std::string> tables;
+};
+
+static const std::vector<ModuleDefinition>& erp_modules() {
+    static const std::vector<ModuleDefinition> modules = {
+        {"FINANCE", {"GL_Accounts", "GL_Journal", "AP_Invoices", "AP_Payments", "AR_Invoices", "AR_Payments"}},
+        {"INVENTORY & WAREHOUSE", {"Items", "Warehouses", "Stock_Levels", "Inventory_Movements"}},
+        {"MANUFACTURING", {"Work_Centers", "BOM_Headers", "BOM_Details", "Routings", "Work_Orders", "WO_Materials", "WO_Operations"}},
+        {"PROCUREMENT", {"Vendors", "Vendor_Items", "Purchase_Orders", "PO_Lines", "Receiving"}},
+        {"HUMAN RESOURCES", {"Departments", "Employees", "Time_Cards", "Payroll_Runs"}},
+        {"SALES & CRM", {"Customers", "Price_Lists", "Sales_Orders", "SO_Lines", "Shipments", "Shipment_Lines"}},
+        {"QUALITY CONTROL", {"Quality_Tests", "Quality_Results"}}
+    };
+    return modules;
+}
+
+static std::string module_for_table(const std::string& table) {
+    for (const auto& module : erp_modules()) {
+        if (std::find(module.tables.begin(), module.tables.end(), table) != module.tables.end()) {
+            return module.name;
+        }
+    }
+    return std::string();
+}
 
 static inline std::string up_copy(std::string s) {
     for (auto& ch : s) {
@@ -217,7 +246,7 @@ static std::string read_rest_trimmed(std::istringstream& args) {
 static void print_usage_brief() {
     std::cout
         << "ERP: USAGE, HELP, STATUS, CWD, VERSION, OPEN <file|:memory:>, CASCADE, CHECK,\n"
-        << "     MODULES, TABLES, VIEWS, COLUMNS <table>, LIST <table> [limit],\n"
+        << "     MODULES, TABLES, VIEWS, COLUMNS <table>, RELATIONS, LIST <table> [limit],\n"
         << "     ITEMS, STOCK, REORDER, BOM [sku], WORKORDERS, THREEWAY, TRIAL,\n"
         << "     CLOSE, SCHEMA [table], EXEC <sql>, SELECT <sql>\n";
 }
@@ -260,6 +289,8 @@ static void print_usage_long() {
         "  ERP VIEWS\n"
         "  ERP SCHEMA [table-or-view]\n"
         "  ERP COLUMNS <table>\n"
+        "  ERP RELATIONS\n"
+        "      Show every foreign-key column mapping derived from SQLite metadata.\n"
         "  ERP LIST <table> [limit]\n"
         "  ERP EXEC <sql...>\n"
         "  ERP SELECT <sql...>\n\n"
@@ -289,6 +320,7 @@ static void print_usage_long() {
         "  ERP TABLES\n"
         "  ERP VIEWS\n"
         "  ERP COLUMNS Items\n"
+        "  ERP RELATIONS\n"
         "  ERP LIST Items 10\n"
         "  ERP ITEMS\n"
         "  ERP REORDER\n"
@@ -342,7 +374,13 @@ static bool open_sqlite_db(const std::string& path, std::string& err) {
 
 static bool open_erp_seed(std::string& opened_path, std::string& err) {
     const std::vector<std::string> candidates = {
-        // Current permanent data layout. erprun/datarun starts in dottalkpp\\data.
+        // System-bundle layout (owner ruling 2026-08-10): the sealed Cascade
+        // package lives under systems\\cascade_erp\\sqlite. erprun/datarun
+        // starts in dottalkpp\\data, so the bundle path is tried first.
+        "systems\\cascade_erp\\sqlite\\cascade_precision_mfg_erp.sqlite",
+        "data\\systems\\cascade_erp\\sqlite\\cascade_precision_mfg_erp.sqlite",
+
+        // Pre-bundle layout retained as non-advertised fallback.
         "cascade_precision_erp\\cascade_precision_mfg_erp.sqlite",
         "data\\cascade_precision_erp\\cascade_precision_mfg_erp.sqlite",
 
@@ -615,6 +653,43 @@ static void run_columns(std::istringstream& args) {
     run_and_print_query("ERP COLUMNS", os.str(), MAX_META_ROWS);
 }
 
+static bool get_relation_rows(std::vector<std::string>& cols,
+                              std::vector<dottalk::sqlite::Row>& rows,
+                              bool& truncated,
+                              std::string& err) {
+    const std::string sql =
+        "select m.name as child_table, "
+        "fk.\"from\" as child_field, "
+        "fk.\"table\" as parent_table, "
+        "fk.\"to\" as parent_field "
+        "from sqlite_schema as m, pragma_foreign_key_list(m.name) as fk "
+        "where m.type='table' and m.name not like 'sqlite_%' "
+        "order by m.name, fk.id, fk.seq";
+
+    return query_to_rows(sql, MAX_META_ROWS, cols, rows, truncated, err);
+}
+
+static void run_relations() {
+    std::string err;
+    if (!ensure_open_or_seed(err)) {
+        std::cout << "ERP RELATIONS failed: " << err << "\n";
+        return;
+    }
+
+    std::vector<std::string> cols;
+    std::vector<dottalk::sqlite::Row> rows;
+    bool truncated = false;
+    if (!get_relation_rows(cols, rows, truncated, err)) {
+        std::cout << "ERP RELATIONS failed: " << err << "\n";
+        return;
+    }
+
+    print_query_result_or_message(cols, rows, truncated, MAX_META_ROWS);
+    std::cout << "ERP RELATIONS: " << rows.size()
+              << " foreign-key column mappings"
+              << (truncated ? " (display truncated)" : "") << "\n";
+}
+
 static void run_quick_list(std::istringstream& args) {
     std::string table;
     args >> table;
@@ -662,6 +737,8 @@ static void run_check() {
     int table_count = 0;
     int view_count = 0;
     int fk_errors = 0;
+    int fk_mapping_count = 0;
+    int cross_module_fk_count = 0;
 
     bool ok = true;
     ok = ok && scalar_int(
@@ -689,6 +766,20 @@ static void run_check() {
     }
     fk_errors = static_cast<int>(rows.size());
 
+    if (!get_relation_rows(cols, rows, truncated, err)) {
+        std::cout << "ERP CHECK failed: " << err << "\n";
+        return;
+    }
+    fk_mapping_count = static_cast<int>(rows.size());
+    for (const auto& row : rows) {
+        if (row.size() < 4) continue;
+        const std::string child_module = module_for_table(row[0]);
+        const std::string parent_module = module_for_table(row[2]);
+        if (!child_module.empty() && !parent_module.empty() && child_module != parent_module) {
+            ++cross_module_fk_count;
+        }
+    }
+
     int total_records = 0;
     std::vector<std::string> table_names = get_table_names(err);
     for (const auto& t : table_names) {
@@ -708,25 +799,28 @@ static void run_check() {
     print_count_line("user tables", table_count, 34);
     print_count_line("analytical views", view_count, 9);
     std::cout << "  functional modules: 7 / expected 7 OK\n";
-    std::cout << "  cross-module FK relationships: 26 / codex reference\n";
+    std::cout << "  FK column mappings: " << fk_mapping_count << " measured\n";
+    print_count_line("cross-module FK relationships", cross_module_fk_count, 26);
     std::cout << "  loaded sample records: " << total_records << "\n";
     std::cout << "  target sample records: 330 / Phase 2 data load\n";
     std::cout << "  foreign_key_check rows: " << fk_errors << (fk_errors == 0 ? " OK" : " FAILED") << "\n";
     std::cout << "  result: "
-              << ((table_count == 34 && view_count == 9 && fk_errors == 0) ? "OK" : "CHECK WARN")
+              << ((table_count == 34 && view_count == 9 && cross_module_fk_count == 26 && fk_errors == 0)
+                      ? "OK" : "CHECK WARN")
               << "\n";
 }
 
 static void run_modules() {
+    std::cout << "ERP MODULES - Cascade Precision Mfg\n";
+    for (const auto& module : erp_modules()) {
+        std::cout << "  " << module.name << " (" << module.tables.size() << "): ";
+        for (size_t i = 0; i < module.tables.size(); ++i) {
+            if (i) std::cout << ", ";
+            std::cout << module.tables[i];
+        }
+        std::cout << "\n";
+    }
     std::cout <<
-        "ERP MODULES - Cascade Precision Mfg\n"
-        "  FINANCE (6): GL_Accounts, GL_Journal, AP_Invoices, AP_Payments, AR_Invoices, AR_Payments\n"
-        "  INVENTORY & WAREHOUSE (4): Items, Warehouses, Stock_Levels, Inventory_Movements\n"
-        "  MANUFACTURING (7): Work_Centers, BOM_Headers, BOM_Details, Routings, Work_Orders, WO_Materials, WO_Operations\n"
-        "  PROCUREMENT (5): Vendors, Vendor_Items, Purchase_Orders, PO_Lines, Receiving\n"
-        "  HUMAN RESOURCES (4): Departments, Employees, Time_Cards, Payroll_Runs\n"
-        "  SALES & CRM (6): Customers, Price_Lists, Sales_Orders, SO_Lines, Shipments, Shipment_Lines\n"
-        "  QUALITY CONTROL (2): Quality_Tests, Quality_Results\n"
         "  ANALYTICAL VIEWS (9): v_Available_Stock, v_Reorder_Alert, v_Open_Sales_Orders,\n"
         "                        v_Work_Order_Status, v_AP_Aging, v_AR_Aging, v_Trial_Balance,\n"
         "                        v_BOM_Explosion, v_Three_Way_Match\n";
@@ -893,6 +987,11 @@ void edu_ERP(xbase::DbArea& /*A*/, std::istringstream& args) {
 
     if (sub == "COLUMNS" || sub == "COLS") {
         run_columns(args);
+        return;
+    }
+
+    if (sub == "RELATIONS" || sub == "RELS") {
+        run_relations();
         return;
     }
 

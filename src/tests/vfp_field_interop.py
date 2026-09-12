@@ -6,7 +6,7 @@ This is a deliberately from-scratch, spec-based decoder for a Visual FoxPro DBF
 the 32-byte field descriptors, and each record's binary fields straight from the
 documented VFP on-disk layout. If it reads back the values the engine's codecs
 wrote (I/B/Y/T), then those codecs are VFP-binary-compatible by an independent
-reader — the M5 interop gate.
+reader -- the M5 interop gate.
 
 VFP binary field layouts decoded here:
   I  4-byte little-endian signed int32

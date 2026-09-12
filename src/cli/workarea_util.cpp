@@ -14,8 +14,15 @@
 
 #include "workarea_util.hpp"
 
+#include "xbase/area_alloc.hpp"
+
 #include "workareas.hpp"
 #include "textio.hpp"
+#include "command_output.hpp"
+#include "common/path_state.hpp"
+#include "xbase/workspace_membership.hpp"
+
+#include <iostream>
 
 extern "C" xbase::XBaseEngine* shell_engine();
 
@@ -26,38 +33,203 @@ namespace {
     std::string up(std::string s)   { return textio::up(std::move(s)); }
 } // namespace
 
-xbase::DbArea* find_open_area_by_name_ci(const std::string& logical_or_name)
+// The one matching rule. logicalName() and name() are the SAME member
+// (xbase.hpp:238 and :288; R112 sec 1), so this compares once and the old
+// second comparison is not reproduced -- it was dead, and repeating it here
+// would imply two name spaces that do not exist.
+static std::string area_name_up(xbase::DbArea* a)
 {
+    if (!a) return {};
+    bool open = false;
+    try { open = a->isOpen(); } catch (...) { open = false; }
+    if (!open) return {};
+    try {
+        const std::string ln = a->logicalName();
+        if (!ln.empty()) return up(ln);
+        const std::string nm = a->name();
+        if (!nm.empty()) return up(nm);
+    } catch (...) {}
+    return {};
+}
+
+std::vector<xbase::DbArea*> find_open_areas_by_name_ci(const std::string& logical_or_name)
+{
+    std::vector<xbase::DbArea*> out;
     const std::string target = up(trim(logical_or_name));
-    if (target.empty()) return nullptr;
+    if (target.empty()) return out;
 
     const std::size_t n = workareas::count();
     for (std::size_t i = 0; i < n; ++i) {
         xbase::DbArea* a = workareas::db(i);
-        if (!a) continue;
-
-        bool open = false;
-        try { open = a->isOpen(); } catch (...) { open = false; }
-        if (!open) continue;
-
-        try {
-            const std::string ln = a->logicalName();
-            if (!ln.empty() && up(ln) == target) return a;
-            const std::string nm = a->name();
-            if (!nm.empty() && up(nm) == target) return a;
-        } catch (...) {}
+        if (area_name_up(a) == target) out.push_back(a);
     }
-    return nullptr;
+    return out;   // ascending by engine slot, because the array is walked in order
 }
 
-int slot_of_area(xbase::DbArea* area)
+std::unordered_map<std::string, xbase::DbArea*> build_open_area_index_ci()
+{
+    std::unordered_map<std::string, xbase::DbArea*> out;
+    const std::size_t n = workareas::count();
+    out.reserve(n);
+
+    for (std::size_t i = 0; i < n; ++i) {
+        xbase::DbArea* a = workareas::db(i);
+        const std::string key = area_name_up(a);
+        if (key.empty()) continue;
+        // emplace, NOT operator[]. This is the whole fix: the tree builder used
+        // to assign, which silently promoted the LAST match over the first.
+        out.emplace(key, a);
+    }
+    return out;
+}
+
+// ---- R112 migration instrument ------------------------------------------
+
+namespace {
+
+std::vector<AmbiguityHit>& ledger_ref()
+{
+    static std::vector<AmbiguityHit> v;
+    return v;
+}
+
+std::size_t& resolution_count_ref()
+{
+    static std::size_t n = 0;
+    return n;
+}
+
+// Announce ONCE per distinct (name, site) -- the same latch shape as
+// set_relations.cpp's note_scan_truncated(), for the same reason: a resolver
+// called from inside a refresh loop must not be able to spam a transcript.
+void record_ambiguity(const std::string& target,
+                      const std::vector<xbase::DbArea*>& cands,
+                      const char* site)
+{
+    ++resolution_count_ref();
+
+    const std::string tag = (site && *site) ? std::string(site) : std::string("unattributed");
+
+    for (auto& h : ledger_ref()) {
+        if (h.name == target && h.site == tag) { ++h.hits; return; }   // latched
+    }
+
+    AmbiguityHit h;
+    h.name = target;
+    h.site = tag;
+    h.hits = 1;
+    for (xbase::DbArea* a : cands) {
+        if (!a) continue;
+        h.engine_slots.push_back(static_cast<int>(a->engineSlot()));
+        h.ws_handles.push_back(a->wsHandle());
+    }
+    h.chosen_slot = h.engine_slots.empty() ? -1 : h.engine_slots.front();
+    ledger_ref().push_back(h);
+
+    std::string line = "NAME: '" + target + "' is open in " +
+                       std::to_string(h.engine_slots.size()) + " areas (";
+    for (std::size_t i = 0; i < h.engine_slots.size(); ++i) {
+        if (i) line += ", ";
+        line += "ws " + std::to_string(static_cast<unsigned long long>(h.ws_handles[i])) +
+                " area " + std::to_string(h.engine_slots[i]);
+    }
+    line += "); resolved to area " + std::to_string(h.chosen_slot) +
+            " [" + tag + "]. Qualify the name -- first-wins is a migration step (R112).";
+    try { cli::cmdout::print_line(line); } catch (...) {}
+}
+
+} // namespace
+
+std::size_t ambiguity_count() { return resolution_count_ref(); }
+
+const std::vector<AmbiguityHit>& ambiguity_ledger() { return ledger_ref(); }
+
+void ambiguity_reset()
+{
+    ledger_ref().clear();
+    resolution_count_ref() = 0;
+}
+
+xbase::DbArea* find_open_area_by_name_ci(const std::string& logical_or_name,
+                                         const char* site)
+{
+    const std::string target = up(trim(logical_or_name));
+    if (target.empty()) return nullptr;
+
+    const std::vector<xbase::DbArea*> cands = find_open_areas_by_name_ci(target);
+    if (cands.empty()) return nullptr;
+    if (cands.size() > 1) record_ambiguity(target, cands, site);
+    return cands.front();
+}
+
+xbase::DbArea* find_open_area_by_name_ci(const std::string& logical_or_name)
+{
+    return find_open_area_by_name_ci(logical_or_name, nullptr);
+}
+
+// AIF-137. Same primitive, same first-wins rule, one filter: membership.
+xbase::DbArea* find_open_area_in_workspace_ci(const std::string& logical_or_name,
+                                              std::uint64_t ws,
+                                              const char* site)
+{
+    const std::string target = up(trim(logical_or_name));
+    if (target.empty()) return nullptr;
+
+    const std::vector<xbase::DbArea*> all = find_open_areas_by_name_ci(target);
+    if (all.empty()) return nullptr;
+
+    std::vector<xbase::DbArea*> mine;
+    mine.reserve(all.size());
+    for (xbase::DbArea* a : all) {
+        if (a && a->wsHandle() == ws) mine.push_back(a);
+    }
+
+    // Absent HERE is absent, even when the name is open next door.
+    if (mine.empty()) return nullptr;
+
+    // Only an ambiguity WITHIN the workspace is an ambiguity now. The
+    // cross-workspace hits this used to record were not ambiguity, they were
+    // this defect.
+    if (mine.size() > 1) record_ambiguity(target, mine, site);
+    return mine.front();
+}
+
+// AIF-120 I1.1. This was a linear scan over the open areas, comparing pointers
+// to recover a number the area could simply have carried. It has 21 call sites
+// across 15 files; none of them changes, because the SIGNATURE does not -- only
+// the body. That is the whole shape of I1: ownership stops being reconstructed
+// from side tables and starts being a property of the thing that has it.
+//
+// _engine_slot is stamped at engine construction (dbf_file.cpp, XBaseEngine ctor)
+// and is never cleared, so this answers correctly for a closed area too -- the
+// old scan did not, because workareas::db(i) only walks what is currently
+// bound. Behaviour for an OPEN area is identical; for a closed one it is now
+// right instead of -1.
+//
+// AIF-078 D8 sec 7, 2026-08-22: the parameter is CONST. It reads one member
+// and mutates nothing, and set_relations.cpp's ScopedEngineSelect holds a
+// const DbArea*. Widening to const is source-compatible for all existing
+// callers and is what let the duplicate scan there be deleted rather than
+// const_cast around.
+int slot_of_area(const xbase::DbArea* area)
 {
     if (!area) return -1;
-    const std::size_t n = workareas::count();
-    for (std::size_t i = 0; i < n; ++i) {
-        if (workareas::db(i) == area) return static_cast<int>(i);
-    }
-    return -1;
+    // The ENGINE slot -- the array position, which is what every caller here
+    // selects on. Not the workspace-local slot; see DbArea::wsLocalSlot().
+    return area->engineSlot();
+}
+
+// ---- IN FREE, the shell's spelling ------------------------------------------
+// The policy lives in xbase now (include/xbase/area_alloc.hpp); this is the one
+// piece of it that is genuinely shell -- it names the shell engine, the default
+// membership table and the current handle. See that header for why the split.
+
+int find_free_area_for_current_workspace(bool& broke_contiguity)
+{
+    return xbase::find_free_area_for_workspace(shell_engine(),
+                                               xbase::workspace::default_table(),
+                                               xbase::workspace::current_handle(),
+                                               broke_contiguity);
 }
 
 ScopedAreaSelect::ScopedAreaSelect(xbase::DbArea* area) noexcept
@@ -97,6 +269,78 @@ ScopedEngineArea::~ScopedEngineArea() noexcept
 {
     if (!active_ || !eng_) return;
     try { eng_->selectArea(prev_); } catch (...) {}
+}
+
+// ---------------------------------------------------------------------------
+// R131 -- the joint between a workspace's stamped roots and the live slots.
+// See workarea_util.hpp for why this lives here and not in cmd_workspace.cpp.
+// ---------------------------------------------------------------------------
+
+namespace {
+
+// The three slots R131 governs, in one place. Adding a fourth is a ruling, not
+// an edit: every function below iterates THIS array, so a slot added here is
+// stamped, applied and announced by all three at once, and a slot added to one
+// of them by hand would be the R5 shape immediately.
+struct RootSlot {
+    dottalk::paths::Slot slot;
+    const char*          label;
+};
+
+const RootSlot kRootSlots[3] = {
+    { dottalk::paths::Slot::DBF,     "DBF"     },
+    { dottalk::paths::Slot::INDEXES, "INDEXES" },
+    { dottalk::paths::Slot::LMDB,    "LMDB"    },
+};
+
+} // namespace
+
+bool workspace_roots_bind_from_slots(std::uint64_t handle)
+{
+    if (handle == 0 || !xbase::workspace::exists(handle)) return false;
+    return xbase::workspace::set_roots(
+        handle,
+        dottalk::paths::get_slot(kRootSlots[0].slot).string(),
+        dottalk::paths::get_slot(kRootSlots[1].slot).string(),
+        dottalk::paths::get_slot(kRootSlots[2].slot).string());
+}
+
+bool workspace_roots_ensure_stamped(std::uint64_t handle)
+{
+    if (handle == 0 || !xbase::workspace::exists(handle)) return false;
+    if (xbase::workspace::roots_stamped(handle)) return true;
+    return workspace_roots_bind_from_slots(handle);
+}
+
+int workspace_roots_apply_to_slots(std::uint64_t handle)
+{
+    if (handle == 0 || !xbase::workspace::exists(handle)) return 0;
+
+    // An UNSTAMPED workspace asserts nothing. Under Q2 (inherit) this cannot
+    // happen for a workspace the CLI created, and DEFAULT is stamped on the
+    // way past by ensure_stamped -- but a return of 0 here is the honest
+    // answer for "this workspace has no environment to impose" and is not an
+    // error. Silently applying three empty strings would blank the session.
+    if (!xbase::workspace::roots_stamped(handle)) return 0;
+
+    std::string want[3];
+    if (!xbase::workspace::roots_of(handle, want[0], want[1], want[2])) return 0;
+
+    int moved = 0;
+    for (int i = 0; i < 3; ++i) {
+        const std::string have =
+            dottalk::paths::get_slot(kRootSlots[i].slot).string();
+        if (have == want[i]) continue;
+        dottalk::paths::set_slot(kRootSlots[i].slot, std::filesystem::path(want[i]));
+        if (moved == 0) {
+            std::cout << "  This workspace carries its own environment (R131); "
+                         "the following slot(s) moved:\n";
+        }
+        std::cout << "  SETPATH: " << kRootSlots[i].label << " = "
+                  << want[i] << "\n";
+        ++moved;
+    }
+    return moved;
 }
 
 std::vector<std::string> split_tuple_expr_csv(const std::string& s)

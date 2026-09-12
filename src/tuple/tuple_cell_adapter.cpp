@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <cctype>
 #include <sstream>
+#include <limits>
 #include <string>
 
 #include "dt/data/cell_validate.hpp"
@@ -63,7 +64,7 @@ std::string table_name_for_area(const xbase::DbArea* area) {
     return {};
 }
 
-int fragment_recno_for_slot(const dottalk::TupleRow& tuple, int slot) {
+dottalk::RecordNo fragment_recno_for_slot(const dottalk::TupleRow& tuple, int slot) {
     for (const auto& f : tuple.fragments) {
         if (f.area_slot == slot && f.recno > 0) return f.recno;
     }
@@ -71,6 +72,18 @@ int fragment_recno_for_slot(const dottalk::TupleRow& tuple, int slot) {
         if (f.recno > 0) return f.recno;
     }
     return 0;
+}
+
+// dt::data::Cell::recno is `int` and widening it is a different vertical -- the row
+// codecs, cell validation and browse edit all read it. So the narrowing happens
+// HERE, once, explicitly, and it SIGNALS rather than clamping: -1 is free in a
+// field documented as "1-based physical recno, if known" with 0 meaning unknown,
+// and it is the same value xbase.hpp's own 32-bit adapters return for exactly this
+// condition. A consumer sees "out of 32-bit range", not a plausible wrong record.
+int cell_recno_narrow(dottalk::RecordNo rn) {
+    return (rn > static_cast<dottalk::RecordNo>(std::numeric_limits<int>::max()))
+        ? -1
+        : static_cast<int>(rn);
 }
 
 dt::data::CellType cell_type_from_dbf(char t) {
@@ -151,7 +164,7 @@ TupleCellAdapterResult cells_from_tuple_row(
         dt::data::Cell cell;
         cell.origin = dt::data::CellOrigin::Field;
         cell.area_slot = col.area_slot;
-        cell.recno = fragment_recno_for_slot(tuple, col.area_slot);
+        cell.recno = cell_recno_narrow(fragment_recno_for_slot(tuple, col.area_slot));
         if (cell.recno <= 0) cell.recno = recno_for_area(area);
         cell.table_name = table_name_for_area(area);
         cell.field_name = fld.found ? fld.canonical_name : (col.field.empty() ? col.name : col.field);

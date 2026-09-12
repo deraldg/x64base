@@ -82,5 +82,28 @@ inline const Role* find_role_by_key(const InMemoryIdentityStore& s, const std::s
     for (const auto& r : s.roles) if (r.key == key) return &r;
     return nullptr;
 }
+inline const OrgUnit* find_org_by_key(const InMemoryIdentityStore& s, const std::string& key) {
+    for (const auto& o : s.org_units) if (o.key == key) return &o;
+    return nullptr;
+}
+
+// --- Org roster (partner lane) --------------------------------------------------
+// The standard org roster, applied IDEMPOTENTLY BY KEY: existing rows keep their ids
+// and are never rewritten, missing rows are appended. ONE function so build_seed()
+// (fresh install) and USER ORG BACKFILL (existing catalog) cannot drift apart --
+// boot_identity_store only seeds when SYSUSER.dbf is ABSENT, so a store that already
+// exists will never see build_seed() and needs the backfill path instead.
+//
+// Operates on the passed store and allocates ids from it, so it is safe to call
+// during build_seed() before the process singleton exists. Returns rows added.
+//
+// It creates MEMBERSHIP assignments only: org_unit set, work unset, AKIND empty.
+// Per-matter standing rows (amicus/movant/...) need the work axis, and WorkNode is
+// still a dead declaration -- see PARTNER_AMICUS_STANDING_LANE_V1.md.
+//
+// It deliberately does NOT touch MemberRole::org_scope. Setting that would NARROW an
+// existing role binding to one org and could start denying permissions that resolve
+// today, which is not a thing a backfill gets to do.
+int apply_standard_orgs(InMemoryIdentityStore& s);
 
 } // namespace dottalk::identity

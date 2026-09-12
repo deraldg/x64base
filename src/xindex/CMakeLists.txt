@@ -23,14 +23,34 @@ add_library(xindex STATIC ${XINDEX_SOURCES})
 
 # Explicitly add CNX sources that live outside src/xindex.
 target_sources(xindex PRIVATE
-  "${CMAKE_SOURCE_DIR}/src/xindex/cnx_backend.cpp"
-  "${CMAKE_SOURCE_DIR}/src/cnx/cnx_document.cpp"
-  "${CMAKE_SOURCE_DIR}/src/cnx/cnx_file.cpp"
+  "${DOTTALK_ROOT}/src/xindex/cnx_backend.cpp"
+  "${DOTTALK_ROOT}/src/cnx/cnx_document.cpp"
+  "${DOTTALK_ROOT}/src/cnx/cnx_file.cpp"
+)
+
+# ...and CDX, for the same reason, which took three link failures to notice.
+# AIF-120, 2026-08-20.
+#
+# `cdx_native_backend.cpp` IS in this directory and references
+# xindex::CdxDocument:: and cdxfile::, whose bodies live in src/cdx and belong to
+# no library. dottalkpp never noticed: its own glob over src/ compiles src/cdx
+# directly, so its objects satisfy the references and xindex.lib's members are
+# never pulled. Every OTHER closure that links xindex fails at link:
+#
+#   dottalk_bbsd  hand-globbed src/cdx/*.cpp into its own sources (CMakeLists.txt)
+#   dottalk_wb    11 unresolved externals, all CdxDocument:: and cdxfile::
+#
+# Fixed where CNX was fixed rather than hand-copied a third time. Same guarantee
+# as the CNX lines above: dottalkpp keeps compiling its own copies and the linker
+# never pulls these members for it, so nothing about that target changes.
+target_sources(xindex PRIVATE
+  "${DOTTALK_ROOT}/src/cdx/cdx_document.cpp"
+  "${DOTTALK_ROOT}/src/cdx/cdx_file.cpp"
 )
 
 target_include_directories(xindex
   PUBLIC
-    ${CMAKE_SOURCE_DIR}/include
+    ${DOTTALK_ROOT}/include
 )
 
 target_compile_definitions(xindex

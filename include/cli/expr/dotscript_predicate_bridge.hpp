@@ -9,16 +9,16 @@
 
 // include/cli/expr/dotscript_predicate_bridge.hpp
 //
-// One shared bridge that lets a predicate referencing DotScript state — a `$name` memory
-// variable, a `$a[n]` subscript, or a `{...}` array literal — be evaluated by the single
+// One shared bridge that lets a predicate referencing DotScript state -- a `$name` memory
+// variable, a `$a[n]` subscript, or a `{...}` array literal -- be evaluated by the single
 // house expression evaluator (`dottalk::expr::eval_rhs_avalue`, the same session_vars()-backed,
 // field-aware ValueParser the display path uses), against the current record.
 //
 // This is the "centralize on the house expr system" convergence (AIF-041). It is reused by
 // BOTH predicate entry points that need it, so the detector and truthiness live in exactly
 // one place (AIF-037, Rule of Three):
-//   - shell_eval_bool_expr        (IF / WHILE / UNTIL — the boolean adapter)
-//   - predx::eval_expr            (LOCATE / COUNT / SCAN / LIST FOR + SET FILTER — the scan path)
+//   - shell_eval_bool_expr        (IF / WHILE / UNTIL -- the boolean adapter)
+//   - predx::eval_expr            (LOCATE / COUNT / SCAN / LIST FOR + SET FILTER -- the scan path)
 //
 // The compiled WHERE engine and the predx triplet evaluator cannot represent `$name`/`$a[n]`/
 // `{...}` (and predx uses `$` as the substring-containment operator), so those predicates are
@@ -86,7 +86,7 @@ inline bool avalue_truthy(const dottalk::array::Value& v)
 
 // Try to evaluate `expr` as a DotScript-referencing predicate against the current record of
 // `A`, via the house evaluator. Returns true (and sets `out`) if the predicate references
-// DotScript state AND the house evaluator succeeded; false otherwise — in which case the
+// DotScript state AND the house evaluator succeeded; false otherwise -- in which case the
 // caller keeps its normal path (no regression for field-only / containment predicates, and
 // a graceful fall-through if the house evaluator cannot handle a given DotScript predicate).
 inline bool try_eval_dotscript_predicate(xbase::DbArea& A, const std::string& expr, bool& out)

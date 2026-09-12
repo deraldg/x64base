@@ -12,7 +12,7 @@
 // Repository abstraction for the identity / RBAC layer (AIF-045 M2a).
 //
 // The store owns the entities + crosswalks and MATERIALIZES a ResolutionSnapshot for the pure
-// resolver — that materialization (in-scope role permissions, scoped overrides, live
+// resolver -- that materialization (in-scope role permissions, scoped overrides, live
 // authorization) is the real bridge between stored data and the §4 pipeline. An in-memory store
 // is provided for bootstrap/tests; a DBF / x64base-backed store (M2b) implements the same
 // interface, so the resolver and every caller stay storage-agnostic.
@@ -51,6 +51,7 @@ public:
     std::vector<TeamMember>               members;
     std::vector<Role>                     roles;
     std::vector<Permission>               permissions;
+    std::vector<OrgUnit>                  org_units;   // what ORGSCOPE/ORGUNIT reference
     std::vector<RolePermission>           role_permissions;
     std::vector<MemberRole>               member_roles;
     std::vector<MemberPermissionOverride> overrides;

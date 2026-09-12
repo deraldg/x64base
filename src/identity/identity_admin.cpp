@@ -12,6 +12,7 @@
 // Compiled into dottalkpp via the src glob.
 
 #include "identity/identity_admin.hpp"
+#include "xbase_locks.hpp"   // AIF-144 stage 1: push the acting member to the lock layer
 #include "identity/identity_bootstrap.hpp"
 #include "security/token_crypto.hpp"     // M3: Argon2id + CSPRNG (libsodium)
 
@@ -90,6 +91,82 @@ AdminResult admit_member(const std::string& key, MemberKind kind, RoleId default
     std::string err;
     if (!persist_identity_store(err)) return AdminResult::fail("admitted but not persisted: " + err);
     return AdminResult::good("admitted member '" + key + "' (id " + std::to_string(m.id.value()) + ")");
+}
+
+// --- Orgs (partner lane) -------------------------------------------------------
+
+AdminResult add_org(const std::string& org_key, const std::string& name) {
+    if (auto r = require_owner(); !r.ok) return r;
+    if (!identity_store_writable()) return AdminResult::fail("store is read-only (degraded startup)");
+    InMemoryIdentityStore& s = mutable_identity_store();
+    if (find_org_by_key(s, org_key)) return AdminResult::fail("org '" + org_key + "' already exists");
+
+    std::uint64_t mx = 0;
+    for (const auto& o : s.org_units) mx = std::max(mx, o.id.value());
+
+    OrgUnit o;
+    o.id     = OrgUnitId{mx + 1};
+    o.key    = org_key;
+    o.name   = name.empty() ? org_key : name;
+    o.type   = OrgUnitType::Partner;    // ADD admits an outside party; the house is seeded
+    o.status = EntityStatus::Active;
+    o.stamp.valid_from = identity_now();
+    s.org_units.push_back(o);
+
+    std::string err;
+    if (!persist_identity_store(err)) return AdminResult::fail("added but not persisted: " + err);
+    return AdminResult::good("added org '" + org_key + "' (id " + std::to_string(o.id.value()) + ")");
+}
+
+AdminResult bind_member_org(const std::string& member_key, const std::string& org_key) {
+    if (auto r = require_owner(); !r.ok) return r;
+    if (!identity_store_writable()) return AdminResult::fail("store is read-only (degraded startup)");
+    InMemoryIdentityStore& s = mutable_identity_store();
+
+    const TeamMember* m = find_member_by_key(s, member_key);
+    if (!m) return AdminResult::fail("unknown member '" + member_key + "'");
+    const OrgUnit* o = find_org_by_key(s, org_key);
+    if (!o) return AdminResult::fail("unknown org '" + org_key + "'");
+
+    // Re-point the existing membership row (work unset) if there is one, else append.
+    for (auto& a : s.assignments) {
+        if (a.member == m->id && !a.work.has_value()) {
+            a.org_unit = o->id;
+            a.stamp.row_version += 1;
+            std::string e;
+            if (!persist_identity_store(e)) return AdminResult::fail("rebound but not persisted: " + e);
+            return AdminResult::good("rebound '" + member_key + "' to '" + org_key + "'");
+        }
+    }
+
+    std::uint64_t mx = 0;
+    for (const auto& a : s.assignments) mx = std::max(mx, a.id.value());
+
+    TeamAssignment a;
+    a.id       = AssignmentId{mx + 1};
+    a.member   = m->id;
+    a.org_unit = o->id;
+    a.assignment_kind = "";   // membership row carries no standing; standing is per-matter
+    a.status   = EntityStatus::Active;
+    a.stamp.valid_from = identity_now();
+    s.assignments.push_back(a);
+
+    std::string err;
+    if (!persist_identity_store(err)) return AdminResult::fail("bound but not persisted: " + err);
+    return AdminResult::good("bound '" + member_key + "' to '" + org_key + "'");
+}
+
+AdminResult backfill_orgs() {
+    if (auto r = require_owner(); !r.ok) return r;
+    if (!identity_store_writable()) return AdminResult::fail("store is read-only (degraded startup)");
+
+    const int added = apply_standard_orgs(mutable_identity_store());
+    if (added == 0) return AdminResult::good("standard org roster already present; nothing to do");
+
+    std::string err;
+    if (!persist_identity_store(err))
+        return AdminResult::fail("backfilled " + std::to_string(added) + " row(s) but not persisted: " + err);
+    return AdminResult::good("backfilled " + std::to_string(added) + " row(s) (orgs + memberships)");
 }
 
 AdminResult request_permission(const std::string& member_key, const std::string& perm_key,
@@ -329,7 +406,7 @@ std::string make_credential(const std::string& secret) {
 bool verify_credential(const std::string& stored, const std::string& secret) {
     if (dottalk::security::is_argon2_credential(stored))     // new Argon2id format
         return dottalk::security::verify_credential(stored, secret);
-    // legacy FNV fallback (transitional — re-run USER PASSWD / USER TOKEN to upgrade)
+    // legacy FNV fallback (transitional -- re-run USER PASSWD / USER TOKEN to upgrade)
     const auto pos = stored.find('$');
     if (pos == std::string::npos) return false;
     return fnv_hex(stored.substr(0, pos), secret) == stored.substr(pos + 1);
@@ -364,7 +441,24 @@ const std::string& principal_key()   { return g_principal; }
 bool session_authenticated()         { return g_authenticated; }
 
 const std::string& acting_member_key() { return g_acting; }
-void set_acting_member(const std::string& key) { g_acting = key.empty() ? std::string(kAnon) : key; }
+
+// AIF-144 stage 1. ONE WRITER FOR g_acting, and it pushes the value to the
+// lock layer so a held lock records WHO took it.
+//
+// Before this there were SIX direct assignments to g_acting -- here, two in
+// login(), one in logout(), and two in act_as(). Six writers of one variable is
+// the shape this house keeps finding; routing them through one place is the
+// point of the identity lane, not a side effect of it.
+//
+// The push is one-way and the dependency points one way with it: identity knows
+// about xbase, xbase knows nothing about identity. `xbase::locks` stores the
+// string and never resolves it.
+static void assign_acting(const std::string& key) {
+    g_acting = key.empty() ? std::string(kAnon) : key;
+    xbase::locks::set_current_member(g_acting);
+}
+
+void set_acting_member(const std::string& key) { assign_acting(key); }
 
 // Single source of truth for authorship attribution (AIF-075). The socket server and the
 // interactive CLI both resolve the posting author through this, so a post can never be written
@@ -388,21 +482,21 @@ AdminResult login(const std::string& member_key, const std::string& secret) {
 
     if (u->credential_ref.empty()) {
         // Bootstrap (credential-less) login is owner-only (first-run local trust). A
-        // non-owner — including an AI service account — needs an owner-issued credential.
+        // non-owner -- including an AI service account -- needs an owner-issued credential.
         if (!is_owner_member(member_key))
             return AdminResult::fail("'" + member_key + "' has no credential set — the owner must set one "
                                      "(USER PASSWD for humans, USER TOKEN for agents)");
-        g_principal = g_acting = member_key; g_authenticated = true;
+        g_principal = member_key; assign_acting(member_key); g_authenticated = true;
         return AdminResult::good("logged in as " + member_key + " (bootstrap: no password set — run USER PASSWD to secure)");
     }
     if (!verify_credential(u->credential_ref, secret))
         return AdminResult::fail("authentication failed for '" + member_key + "'");
-    g_principal = g_acting = member_key; g_authenticated = true;
+    g_principal = member_key; assign_acting(member_key); g_authenticated = true;
     return AdminResult::good("logged in as " + member_key);
 }
 
 AdminResult logout() {
-    g_principal = g_acting = kAnon; g_authenticated = false;
+    g_principal = kAnon; assign_acting(kAnon); g_authenticated = false;
     return AdminResult::good("logged out (now " + std::string(kAnon) + ")");
 }
 
@@ -427,12 +521,12 @@ AdminResult set_password(const std::string& member_key, const std::string& secre
 }
 
 AdminResult act_as(const std::string& member_key) {
-    if (member_key.empty() || member_key == g_principal) { g_acting = g_principal; return AdminResult::good("acting as " + g_acting); }
+    if (member_key.empty() || member_key == g_principal) { assign_acting(g_principal); return AdminResult::good("acting as " + g_acting); }
     if (!(g_authenticated && is_owner_member(g_principal)))
         return AdminResult::fail("USER AS requires an authenticated owner (login first)");
     if (!find_member_by_key(identity_store(), member_key))
         return AdminResult::fail("unknown member '" + member_key + "'");
-    g_acting = member_key;
+    assign_acting(member_key);
     return AdminResult::good("acting as " + member_key + " (owner sudo; principal " + g_principal + ")");
 }
 

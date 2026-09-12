@@ -1,0 +1,101 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 21,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "lean-base",
+      "hidden": true,
+      "binaryDir": "${sourceDir}/../../build-pydottalk/${presetName}",
+      "description": "Common settings for the standalone pydottalk build. Build trees land in the repo-root build-pydottalk/ tree, which .gitignore already covers via /build-*/, so no preset can drop a build tree into bindings/. Deliberately NOT build-labtalk: that belongs to the root build and sharing it would mean the two configures overwrite each other's cache.",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "BUILD_TESTING": "ON"
+      }
+    },
+    {
+      "name": "lean-legacy",
+      "displayName": "Lean pydottalk, house index, no lmdb (DEFAULT)",
+      "description": "Start here. LEGACY keeps the house index system -- CNX, native CDX, index_manager, all of it -- and omits only lmdb_backend.cpp, so the build needs no lmdb at configure time. This is the default because as of 2026-08-17 the mode does not change the shipped artifact: LMDB, LEGACY and NONE all produced a byte-identical module (665336 bytes, sha256 54cb15eb...) on Linux. module.cpp references zero index symbols, so the static xindex archive contributes nothing to the link and lmdb is never pulled in. LEGACY therefore buys the same artifact for one fewer dependency. See proof.build.index_mode_changes_nothing_shipped.",
+      "inherits": "lean-base",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "DOTTALK_INDEX_MODE": "LEGACY"
+      }
+    },
+    {
+      "name": "lean-lmdb",
+      "displayName": "Lean pydottalk, LMDB index backend",
+      "description": "Compiles lmdb_backend.cpp and requires lmdb to be resolvable at configure time. src/xindex/CMakeLists.txt asks for it as find_package(unofficial-lmdb CONFIG REQUIRED), which is a vcpkg-generated package name -- a system lmdb will NOT satisfy it, so this preset carries the vcpkg toolchain. Verified 2026-08-17 to configure, compile and link on Linux/ELF. It does not yet change the shipped module (see lean-legacy); it becomes meaningful the moment the binding exposes an index API such as SET ORDER or SEEK, which it does not today.",
+      "inherits": "lean-base",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+        "DOTTALK_INDEX_MODE": "LMDB"
+      }
+    },
+    {
+      "name": "lean-none",
+      "displayName": "Lean pydottalk, no index library at all",
+      "description": "NONE never enters src/xindex and never creates the xindex target: 25 objects instead of 47. This is a genuinely smaller BUILD, not a smaller artifact. Use it to prove that nothing in the binding depends on the index; if a future change makes lean-none fail to link while lean-legacy succeeds, that is the signal that the binding has finally grown a real index dependency.",
+      "inherits": "lean-base",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "DOTTALK_INDEX_MODE": "NONE"
+      }
+    },
+    {
+      "name": "lean-legacy-msvc",
+      "displayName": "Lean pydottalk, house index, MSVC + vcpkg",
+      "description": "Windows equivalent of lean-legacy. Named with an explicit -msvc suffix so it cannot be confused with the root CMakePresets.json entries (windows-lean-lmdb and friends), which configure the whole tree and build dottalkpp.exe. pybind11 comes from vcpkg, hence the toolchain even though LEGACY needs no lmdb.",
+      "inherits": "lean-base",
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+        "VCPKG_TARGET_TRIPLET": "x64-windows",
+        "DOTTALK_INDEX_MODE": "LEGACY"
+      }
+    },
+    {
+      "name": "lean-lmdb-msvc",
+      "displayName": "Lean pydottalk, LMDB index backend, MSVC + vcpkg",
+      "description": "Windows equivalent of lean-lmdb. NOT VERIFIED by the session that wrote this file, which had no Windows host. One open question this preset is the right place to settle: vcpkg builds lmdb as a DLL on x64-windows, so if the module ever references an lmdb symbol the .pyd acquires a runtime dependency on lmdb.dll that must ship beside it. Today it does not reference one. Confirm either way with: dumpbin /dependents pydottalk.cp312-win_amd64.pyd",
+      "inherits": "lean-base",
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+        "VCPKG_TARGET_TRIPLET": "x64-windows",
+        "DOTTALK_INDEX_MODE": "LMDB"
+      }
+    }
+  ],
+  "buildPresets": [
+    { "name": "lean-legacy", "configurePreset": "lean-legacy", "targets": ["pydottalk"] },
+    { "name": "lean-lmdb", "configurePreset": "lean-lmdb", "targets": ["pydottalk"] },
+    { "name": "lean-none", "configurePreset": "lean-none", "targets": ["pydottalk"] },
+    { "name": "lean-legacy-msvc", "configurePreset": "lean-legacy-msvc", "configuration": "Release", "targets": ["pydottalk"] },
+    { "name": "lean-lmdb-msvc", "configurePreset": "lean-lmdb-msvc", "configuration": "Release", "targets": ["pydottalk"] }
+  ],
+  "testPresets": [
+    { "name": "lean-legacy", "configurePreset": "lean-legacy", "output": { "outputOnFailure": true } },
+    { "name": "lean-lmdb", "configurePreset": "lean-lmdb", "output": { "outputOnFailure": true } },
+    { "name": "lean-none", "configurePreset": "lean-none", "output": { "outputOnFailure": true } },
+    { "name": "lean-legacy-msvc", "configurePreset": "lean-legacy-msvc", "configuration": "Release", "output": { "outputOnFailure": true } },
+    { "name": "lean-lmdb-msvc", "configurePreset": "lean-lmdb-msvc", "configuration": "Release", "output": { "outputOnFailure": true } }
+  ]
+}

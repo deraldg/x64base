@@ -17,6 +17,7 @@
 
 #include "xindex/dbarea_adapt.hpp"
 #include "xbase.hpp"
+#include "xbase_field_getters.hpp"   // AIF-157: the ONE field resolver
 
 #include <algorithm>
 #include <cctype>
@@ -32,24 +33,19 @@ static inline std::string trim(std::string s) {
     return s;
 }
 
-static inline bool ieq(std::string a, std::string b) {
-    auto up = [](std::string s) {
-        std::transform(s.begin(), s.end(), s.begin(),
-                       [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
-        return s;
-    };
-    return up(std::move(a)) == up(std::move(b));
-}
-
 // Return a 0-based field index for adapter callers, or -1 when unknown.
+//
+// AIF-157 -- ONE RESOLVER. This was the sixth answer in the tree to "which field
+// does this name mean", and like the others it compared the STORED name with no
+// trim, no NUL handling and no x64 descriptor-token alias. Its signature already
+// matched xfg::resolve_field_index_std exactly -- 0-based, -1 for unknown -- so
+// the only thing it ever added was a disagreement.
 static int field_index_ci(const xbase::DbArea& a, const std::string& name) {
-    const auto& fields = a.fields();
-    for (std::size_t i = 0; i < fields.size(); ++i) {
-        if (ieq(fields[i].name, name)) {
-            return static_cast<int>(i);
-        }
+    try {
+        return xfg::resolve_field_index_std(a, name);
+    } catch (...) {
+        return -1;
     }
-    return -1;
 }
 
 struct RecGuard {

@@ -15,12 +15,121 @@
 
 namespace edref {
 
+// What an entry IS. Before 2026-08-15 every entry was implicitly a concept
+// page, so 29 entries sat in one undifferentiated pile and the catalog could
+// not tell a definition from a drill.
+//
+// LAB IS DELIBERATELY ABSENT (owner ruling 2026-08-15): labs stay in LabTalk.
+// EDREF points at them via `lab_ref` and does not hold them. One home per
+// artifact -- the same rule that keeps the theme control in one place.
+enum class Kind {
+    Concept,     // what a thing is. The 29 originals.
+    Example,     // worked, and RUNNABLE -- pair with script_ref.
+    Exercise,    // the student produces something.
+    StudyGuide,  // review / end-of-chapter consolidation.
+    Assessment,  // self-check with a knowable answer.
+    Glossary,    // terminology lookup.
+};
+
+// Who the entry is pitched at. Owner 2026-08-15: college is the target, and
+// high-school AP is a good target too. Both is the default because most
+// concept text serves both, and marking the exceptions is cheaper than
+// marking the rule.
+enum class Level {
+    Both,
+    Ap,       // AP Computer Science scope.
+    College,  // assumes more, e.g. complexity analysis.
+};
+
 struct Item {
     const char* topic;    // canonical upper-case topic name
     const char* syntax;   // short form / heading
     const char* summary;  // full teaching text
     bool supported;       // whether the topic reflects current DotTalk++ behavior
+
+    // One sentence, <= 80 chars. THE COMPILED FALLBACK'S ENTIRE TEXT.
+    //
+    // Positioned here, immediately after `supported`, on purpose: C++20 forbids
+    // mixing designated and positional initialisers in one braced list, so a
+    // field the 29 existing positional entries must supply cannot sit after the
+    // designated-only block below. It is the fifth positional slot.
+    //
+    // Why it exists (measured 2026-08-16). HELP_TOPIC.TITLE is C80 and, for all
+    // 29 ED rows, merely echoes TOPIC -- helpdata_export_dbf.cpp:362 sets
+    // `row.title = command.empty() ? key : command`. Meanwhile SUMMARY is C200
+    // and every one of the 29 rows sits at 195-200 chars: it is the prose HARD
+    // TRUNCATED, not a summary, so it reads as a sentence cut in half. So the
+    // catalog had no one-line summary anywhere, in either the header or the DBF.
+    // SYSTEM rows already use TITLE meaningfully (138 of 138), so filling it for
+    // ED follows existing practice rather than bending the schema.
+    //
+    // 80 is a discipline, not a limit to fill: if it does not fit in a sentence
+    // it is not a summary.
+    const char* title = "";
+
+    // --- added 2026-08-15, BEFORE population, deliberately -------------------
+    // Every field below carries a default, so the 29 existing brace
+    // initialisers still compile unchanged (C++20 permits aggregates with
+    // default member initialisers). New entries should use designated
+    // initialisers: { .topic = "...", .kind = Kind::Exercise, ... }.
+    //
+    // Doing this at 29 entries rather than 200 is the whole point. The shape
+    // of a catalog is cheap to change while it is still mostly empty and
+    // ruinous afterwards.
+
+    Kind kind = Kind::Concept;
+    Level level = Level::Both;
+
+    // Reading order. 0 means unplaced -- a topic that exists but has not been
+    // given a home in the syllabus yet. A vector has array order; a course
+    // needs a stated one, and the difference should be visible.
+    int sequence = 0;
+
+    // Comma-separated topic names that must be understood first. This is the
+    // syllabus DAG: INDEX needs TABLE_RECORD_FIELD, PROJECTION needs RELATION.
+    // Checkable -- a prereq naming a topic that does not exist is a defect a
+    // tool can find, which is more than most curricula can say.
+    const char* prereq = "";
+
+    // Path, repo-relative, to a .dts script that DEMONSTRATES this entry.
+    //
+    // This is the field that makes EDREF unlike a textbook. Point it at a
+    // script under tests/ and the regression harness EXECUTES the teaching
+    // material. An example that stops working breaks a test instead of
+    // quietly misleading a student for a year. Every programming text ever
+    // printed contains code that no longer runs; this one is structurally
+    // incapable of it.
+    //
+    // Empty means "no script yet", which is honest. It does NOT mean "no
+    // script needed" -- tools/fullstack_docs/edrefcheck_v1.py reports the
+    // count of Example entries lacking one, because an unrunnable example is
+    // the thing this field exists to prevent.
+    const char* script_ref = "";
+
+    // LabTalk lab this entry leads into, by id. EDREF does not hold labs.
+    const char* lab_ref = "";
 };
+
+inline const char* kind_name(Kind k) {
+    switch (k) {
+        case Kind::Concept:    return "concept";
+        case Kind::Example:    return "example";
+        case Kind::Exercise:   return "exercise";
+        case Kind::StudyGuide: return "study-guide";
+        case Kind::Assessment: return "assessment";
+        case Kind::Glossary:   return "glossary";
+    }
+    return "concept";
+}
+
+inline const char* level_name(Level l) {
+    switch (l) {
+        case Level::Both:    return "ap+college";
+        case Level::Ap:      return "ap";
+        case Level::College: return "college";
+    }
+    return "ap+college";
+}
 
 inline const std::vector<Item>& catalog() {
     static const std::vector<Item> k = {
@@ -50,7 +159,8 @@ Teaching approach
         "How do I think about it?"
         "What is the simplest example?"
         "How does it relate to the larger engine?" )",
-            true
+            true,
+            "What EDREF is, and what belongs in it."
         },
 
         {
@@ -100,7 +210,8 @@ A practical mental model
     Index       = alternate ordered path through rows
     Relation    = parent-child path between tables
     Tuple       = projected logical row, possibly across multiple tables )",
-            true
+            true,
+            "DotTalk++ understood as four layers working together."
         },
 
         {
@@ -135,7 +246,8 @@ Teaching point
 
 Common mistake
     Forgetting that SELECT changes the active work area before the next command runs.)",
-            true
+            true,
+            "Commands run in order, one after another: the first control construct."
         },
 
         {
@@ -175,7 +287,8 @@ Typical uses
 
 Teaching point
     Decision logic is about controlling execution, not merely testing truth.)",
-            true
+            true,
+            "IF and ELSE choose between alternatives on a condition."
         },
 
         {
@@ -222,7 +335,8 @@ DotTalk++ loop families
 Teaching point
     LOOP / WHILE / UNTIL are general control-flow constructs.
     SCAN is a data-aware loop specialized for table traversal.)",
-            true
+            true,
+            "LOOP, WHILE, UNTIL and SCAN: four ways to repeat work."
         },
 
         {
@@ -252,7 +366,8 @@ What students should learn
 Related idea
     LIST shows records.
     SCAN processes records.)",
-            true
+            true,
+            "The record-oriented loop: a loop that knows about rows."
         },
 
         {
@@ -289,7 +404,8 @@ Here SEEK depends on:
 
 Teaching point
     Learning DotTalk++ means learning stateful programming.)",
-            true
+            true,
+            "What the engine remembers between one command and the next."
         },
 
         {
@@ -323,7 +439,8 @@ Why work areas matter
 Teaching point
     A work area is not merely a filename.
     It is a live operational context.)",
-            true
+            true,
+            "An active slot that can hold one open table."
         },
 
         {
@@ -359,7 +476,8 @@ Typical commands
 Teaching point
     Most command behavior becomes clearer once this hierarchy is firm:
         table > record > field )",
-            true
+            true,
+            "The core hierarchy: tables hold records, records hold fields."
         },
 
         {
@@ -396,7 +514,8 @@ Educational use
 Important distinction
     Data      = "Taylor"
     Metadata  = field FNAME, type C, len 15 )",
-            true
+            true,
+            "Data about data: what the engine knows about your tables."
         },
 
         {
@@ -435,7 +554,8 @@ Example
 Teaching point
     Without schema, bytes are only bytes.
     With schema, bytes become records and fields.)",
-            true
+            true,
+            "The structural definition of a table or dataset."
         },
 
         {
@@ -464,7 +584,8 @@ Why indexes matter
 Teaching point
     An index does not usually change the record data itself.
     It changes how the engine reaches the records.)",
-            true
+            true,
+            "An alternate path through records, without moving them."
         },
 
         {
@@ -496,7 +617,8 @@ So:
     TOP in indexed order.
 
 This is one of the most important database-learning moments in DotTalk++.)",
-            true
+            true,
+            "The navigation sequence currently in force."
         },
 
         {
@@ -521,7 +643,8 @@ Teaching point
     Filtering is not the same as ordering.
     Ordering rearranges rows.
     Filtering removes non-matching rows from consideration.)",
-            true
+            true,
+            "Limiting which rows are visible, by a condition."
         },
 
         {
@@ -550,7 +673,8 @@ Boolean logic words
 Teaching point
     Predicates are the language of selection.
     They control decisions, filters, and searches.)",
-            true
+            true,
+            "A true/false expression that decides what qualifies."
         },
 
         {
@@ -582,7 +706,8 @@ Commands using expressions
 Teaching point
     Expressions produce values.
     Predicates are expressions whose value is true or false.)",
-            true
+            true,
+            "Something the engine evaluates to produce a value."
         },
 
         {
@@ -608,7 +733,8 @@ Educational meaning
     It is the row as selected for output or processing.
 
 This is a major bridge toward relational thinking.)",
-            true
+            true,
+            "A projected logical row, assembled across related areas."
         },
 
         {
@@ -634,7 +760,8 @@ Public surfaces
 Teaching point
     Relations are the backbone of multi-table thinking.
     They let a current parent row lead you into matching child rows.)",
-            true
+            true,
+            "A declared link from a parent table to a child table."
         },
 
         {
@@ -658,7 +785,8 @@ Educational value
     REL ENUM is the clearest current demonstration that DotTalk++
     is more than a single-table shell.
     It is a relation-aware projection engine.)",
-            true
+            true,
+            "The relation-walk projection engine."
         },
 
         {
@@ -677,7 +805,8 @@ Why the concept matters
 
 Teaching point
     Enumeration is how a system turns stored data into a visible stream of results.)",
-            true
+            true,
+            "Generating a sequence of results one at a time."
         },
 
         {
@@ -702,7 +831,8 @@ Educational point
         persisted state
 
 This is a classic database concept and an important teaching tool.)",
-            true
+            true,
+            "Staging changes before they become permanent."
         },
 
         {
@@ -723,7 +853,8 @@ Why COMMIT matters educationally
 Contrast
     REPLACE without buffering may write directly.
     REPLACE with TABLE ON stages first, then COMMIT finalizes.)",
-            true
+            true,
+            "Making staged changes permanent."
         },
 
         {
@@ -741,7 +872,8 @@ Educational point
         selection   = which rows
         ordering    = in what sequence
         projection  = which columns )",
-            true
+            true,
+            "Choosing which fields to show."
         },
 
         {
@@ -764,7 +896,8 @@ Important idea
 
 Teaching point
     Navigation is to a database session what cursor movement is to an editor.)",
-            true
+            true,
+            "Moving the current record pointer."
         },
 
         {
@@ -789,7 +922,8 @@ Educational point
     Some are key-based.
     Some are predicate-based.
     Some are display-based.)",
-            true
+            true,
+            "SEEK, FIND and LOCATE: several search styles, different costs."
         },
 
         {
@@ -812,7 +946,8 @@ DotScript demonstrates
     loops
     command composition
     testing discipline )",
-            true
+            true,
+            "DotScript: the repeatable, scriptable surface of the shell."
         },
 
         {
@@ -832,7 +967,8 @@ Educational value
         document what fails
         preserve reproducible runs
         separate stable behavior from experiments )",
-            true
+            true,
+            "Why testing sits at the centre of DotTalk++ development."
         },
 
         {
@@ -886,7 +1022,8 @@ R"(A practical study order
 Teaching principle
     Move from single table -> ordered navigation -> predicate logic ->
     projection -> relations -> scripting.)",
-            true
+            true,
+            "A practical study order through these topics."
         },
 
         {
@@ -953,7 +1090,8 @@ Tuple
 
 Work area
     Active open-table slot.)",
-            true
+            true,
+            "Quick definitions for the vocabulary used throughout."
         }
     };
 

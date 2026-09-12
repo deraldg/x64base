@@ -179,7 +179,7 @@ static bool parse_cond(Lexer& lex, Cond& out) {
 }
 
 // Evaluate a single condition
-static bool eval_cond_once(const xbase::DbArea& A, const Cond& c) {
+static bool eval_cond_once(const xbase::DbArea& A, const Cond& c, bool& result) {
     if (!is_relop(c.opU)) return false;
     const int fidx = field_index_ci(A, c.field);
     if (fidx <= 0) return false;
@@ -194,7 +194,8 @@ static bool eval_cond_once(const xbase::DbArea& A, const Cond& c) {
     auto rightCanon = normalize_for_compare(ftype, flen, fdec, c.valueRaw);
     if (!leftCanon || !rightCanon) return false;
 
-    return compare_canonical(ftype, *leftCanon, c.opU, *rightCanon);
+    result = compare_canonical(ftype, *leftCanon, c.opU, *rightCanon);
+    return true;
 }
 
 } // namespace
@@ -212,7 +213,8 @@ bool try_eval_predicate_chain(const xbase::DbArea& area,
     if (!parse_cond(lex, first)) {
         return false; // not a chain
     }
-    bool acc = eval_cond_once(area, first);
+    bool acc = false;
+    if (!eval_cond_once(area, first, acc)) return false;
 
     // Parse zero or more (AND|OR cond)
     while (true) {
@@ -220,13 +222,15 @@ bool try_eval_predicate_chain(const xbase::DbArea& area,
         if (t.k == Tok::AND) {
             Cond c{};
             if (!parse_cond(lex, c)) return false; // malformed after AND
-            bool v = eval_cond_once(area, c);
+            bool v = false;
+            if (!eval_cond_once(area, c, v)) return false;
             acc = acc && v;
             continue;
         } else if (t.k == Tok::OR) {
             Cond c{};
             if (!parse_cond(lex, c)) return false; // malformed after OR
-            bool v = eval_cond_once(area, c);
+            bool v = false;
+            if (!eval_cond_once(area, c, v)) return false;
             acc = acc || v;
             continue;
         } else if (t.k == Tok::END) {
@@ -240,6 +244,5 @@ bool try_eval_predicate_chain(const xbase::DbArea& area,
     out_result = acc;
     return true; // handled
 }
-
 
 

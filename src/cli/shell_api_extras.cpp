@@ -85,7 +85,28 @@ std::string preprocess_for_dispatch(const std::string& line)
         return "REL " + line.substr(after_prefix);
     }
 
-    // 3) pass-through
+    // 3) APPEND BLANK <args...> -> APPEND_BLANK <args...>
+    //
+    // MEASURED 2026-09-05: the registry holds only "APPEND_BLANK", with an
+    // underscore, and nothing routed the two-word spelling. "APPEND BLANK"
+    // therefore reached cmd_APPEND, whose first token was BLANK -- not a count,
+    // not RAW, not MANY -- so it fell through to print_append_usage() and
+    // APPENDED NOTHING. Every REPLACE after it then answered "no current
+    // record" and the table was silently left empty: a no-op that prints
+    // something helpful-looking, which is the worst available combination.
+    //
+    // This is the seam that already exists for exactly this job, which is why
+    // the fix belongs here and not in cmd_APPEND. Rewriting the LINE keeps one
+    // implementation of the verb (cmd_APPEND_BLANK -> dottalk_append_blank_core)
+    // instead of teaching a second command to answer to the first one's name.
+    //
+    // APPEND BLANK USAGE survives the rewrite: it becomes APPEND_BLANK USAGE,
+    // and cmd_APPEND_BLANK's usage check strips the "APPEND_BLANK " prefix.
+    if (starts_with_tokens_ci(line, "APPEND", "BLANK", &after_prefix)) {
+        return "APPEND_BLANK " + line.substr(after_prefix);
+    }
+
+    // 4) pass-through
     return line;
 }
 

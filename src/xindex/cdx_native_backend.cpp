@@ -10,6 +10,7 @@
 #include "xindex/cdx_native_backend.hpp"
 
 #include "xbase.hpp"
+#include "xbase_field_getters.hpp"   // AIF-157: the ONE field resolver
 #include "cdx/cdx.hpp"
 
 #include <algorithm>
@@ -69,23 +70,22 @@ static std::string upper_copy_ascii_local_(std::string s)
     return s;
 }
 
+// AIF-157 -- ONE RESOLVER. This used to hand-roll its own match: NUL-truncate the
+// stored field name, trim, uppercase, compare. That was the MOST correct of the
+// four implementations the tree carried and it was still wrong in one way that
+// matters -- it had NO x64 descriptor-token alias, so it disagreed with ADDTAG
+// (cmd_cdx.cpp, AIF-078) and with REPLACE (cmd_replace.cpp), both of which
+// resolve through xfg::resolve_field_index_std.
+//
+// Merging this with index_manager.cpp's version would have produced a FIFTH
+// opinion. Routing both to the resolver the rest of the engine already uses is
+// what actually removes the divergence. See the note at
+// IndexManager::activeTagFieldIndex1 for what the disagreement cost.
 static int field_index_for_tag_(const xbase::DbArea& A, const std::string& tag_upper)
 {
     try {
-        const auto defs = A.fields();
-        const std::string want = upper_copy_ascii_local_(tag_upper);
-
-        for (std::size_t i = 0; i < defs.size(); ++i) {
-            std::string have = defs[i].name;
-            const auto nul = have.find('\0');
-            if (nul != std::string::npos) have.resize(nul);
-            have = trim_copy_(have);
-            have = upper_copy_ascii_local_(have);
-
-            if (have == want) {
-                return static_cast<int>(i) + 1; // 1-based
-            }
-        }
+        const int idx0 = xfg::resolve_field_index_std(A, tag_upper);
+        if (idx0 >= 0) return idx0 + 1; // 1-based
     } catch (...) {
     }
     return 0;

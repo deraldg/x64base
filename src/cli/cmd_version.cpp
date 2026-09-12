@@ -39,25 +39,19 @@
 
 #include "cmd_version.hpp"
 #include "cli/command_output.hpp"
+#include "dottalk/build_stamp.hpp"
 #include "dottalk/version.hpp"
 #include "help/helpdata_messages.hpp"
 #include <algorithm>
-#include <chrono>
 #include <cctype>
-#include <filesystem>
-#include <iomanip>
-#include <iostream>
 #include <sstream>
 #include <string>
-#include <vector>
 
-#if defined(_WIN32)
-#  include <windows.h>
-#elif defined(__APPLE__)
-#  include <mach-o/dyld.h>
-#elif defined(__linux__)
-#  include <unistd.h>
-#endif
+// <chrono>, <filesystem>, <iomanip>, <vector> and the per-platform executable
+// headers left with version_build_stamp() on 2026-09-11. <windows.h> in
+// particular is why that implementation moved to a .cpp of its own: it defines
+// min, max and several hundred other names into every TU that pulls it in, and
+// this file no longer needs any of it.
 
 namespace {
 static std::string version_trim(std::string s)
@@ -88,63 +82,12 @@ static void print_version_usage()
     cli::cmdout::print_message(dottalk::helpdata::MessageId::VersionUsageText);
 }
 
-static std::filesystem::path version_executable_path()
-{
-#if defined(_WIN32)
-    std::wstring buf(MAX_PATH, L'\0');
-    DWORD len = ::GetModuleFileNameW(nullptr, buf.data(), static_cast<DWORD>(buf.size()));
-    while (len == buf.size()) {
-        buf.resize(buf.size() * 2);
-        len = ::GetModuleFileNameW(nullptr, buf.data(), static_cast<DWORD>(buf.size()));
-    }
-    if (len > 0) {
-        buf.resize(len);
-        return std::filesystem::path(buf);
-    }
-#elif defined(__APPLE__)
-    uint32_t size = 0;
-    _NSGetExecutablePath(nullptr, &size);
-    std::vector<char> buf(size + 1, '\0');
-    if (_NSGetExecutablePath(buf.data(), &size) == 0) {
-        return std::filesystem::weakly_canonical(std::filesystem::path(buf.data()));
-    }
-#elif defined(__linux__)
-    std::vector<char> buf(4096, '\0');
-    const ssize_t len = ::readlink("/proc/self/exe", buf.data(), buf.size() - 1);
-    if (len > 0) {
-        buf[static_cast<std::size_t>(len)] = '\0';
-        return std::filesystem::weakly_canonical(std::filesystem::path(buf.data()));
-    }
-#endif
-    return {};
-}
-
-static std::string version_build_stamp()
-{
-    namespace fs = std::filesystem;
-    std::error_code ec;
-    const fs::path exe = version_executable_path();
-    if (!exe.empty()) {
-        const auto ftime = fs::last_write_time(exe, ec);
-        if (!ec) {
-            const auto sctp = std::chrono::system_clock::now() +
-                              (ftime - fs::file_time_type::clock::now());
-            const std::time_t tt = std::chrono::system_clock::to_time_t(sctp);
-            std::tm tm_buf{};
-#if defined(_WIN32)
-            if (localtime_s(&tm_buf, &tt) == 0) {
-#else
-            if (localtime_r(&tt, &tm_buf) != nullptr) {
-#endif
-                std::ostringstream oss;
-                oss << std::put_time(&tm_buf, "%b %d %Y %H:%M:%S");
-                return oss.str();
-            }
-        }
-    }
-
-    return std::string(__DATE__) + " " + __TIME__;
-}
+// version_executable_path() and version_build_stamp() MOVED OUT, 2026-09-11.
+// They now live in src/cli/build_stamp.cpp behind dottalk/build_stamp.hpp,
+// because a regression log needs the same answer and two build stamps wearing
+// one name is this tree's most repeated defect. The behaviour is unchanged:
+// the running executable's mtime, formatted the same way, with the same
+// __DATE__/__TIME__ fallback.
 } // namespace
 
 void cmd_VERSION(xbase::DbArea& area, std::istringstream& args) {
@@ -154,7 +97,7 @@ void cmd_VERSION(xbase::DbArea& area, std::istringstream& args) {
         return;
     }
 
-    const std::string stamp = version_build_stamp();
+    const std::string stamp = dottalk::build_stamp();
     cli::cmdout::print_message(
         dottalk::helpdata::MessageId::VersionBannerLineText,
         {{"version", dottalk::version::display_version()}, {"stamp", stamp}});

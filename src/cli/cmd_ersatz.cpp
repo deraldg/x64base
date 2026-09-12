@@ -47,11 +47,14 @@
 //   ERSATZ LOAD <name>
 //   ERSATZ SAVE <name>
 //   ERSATZ WLOAD <name>
-//   ERSATZ DELTA MARK <name>
-//   ERSATZ DELTA SHOW <name>
+//   ERSATZ SAMPLE
+//   ERSATZ TESTSCRIPT
+//   ERSATZ DELTA MARK <name>        (aliases: BASELINE, SNAP, SNAPSHOT)
+//   ERSATZ DELTA SHOW <name>        (aliases: DIFF, COMPARE)
 //   ERSATZ DELTA CLEAR <name>
 //   ERSATZ DELTA CLEAR ALL
 //   ERSATZ DELTA STATUS
+//   ERSATZ TUPLEDELTA ...
 //   ERSATZ RESET
 //
 // notes:
@@ -61,7 +64,22 @@
 //   ROOT, LIMIT, PATH, CLEARPATH, and BACK mutate browser session settings.
 //   OPEN hands off to WORKSPACE.
 //   LOAD, SAVE, and WLOAD read or write workspace files.
-//   DELTA commands manage in-memory tuple-stream baselines.
+//   SAMPLE prints a sample ERSATZ script; TESTSCRIPT is the same command under
+//   a second spelling (cmd_ersatz.cpp: sub == "SAMPLE" || sub == "TESTSCRIPT").
+//   DELTA commands manage in-memory tuple-stream baselines. TUPLEDELTA is a
+//   second spelling of DELTA and takes the same subcommands.
+//   MARK accepts BASELINE, SNAP and SNAPSHOT; SHOW accepts DIFF and COMPARE
+//   (cmd_ersatz.cpp:1851 and :1857). So DELTA answered to SEVEN spellings and
+//   this contract named four.
+//   SAMPLE, TESTSCRIPT, TUPLEDELTA and those four aliases all dispatch and none
+//   appeared in this contract until 2026-08-28; found by sweeping every
+//   cmd_*.cpp for subcommands the code handles that its usage block does not
+//   name. The sweep was widened once and immediately found four more here,
+//   which is the argument for a detector over a reading: the first pass matched
+//   `sub ==` and missed every `action ==` one function deeper.
+//   ERSATZ LIMIT caps what is DISPLAYED. It is unrelated to REL SCANLIMIT,
+//   which caps what a relation traversal FINDS -- adjacent names, different
+//   jobs, and only one of them changes answers.
 //   RESET clears ERSATZ browser session state.
 //   ERSATZ is not table-data mutation by itself, but it can mutate cursor/session/workspace state.
 //
@@ -102,6 +120,7 @@
 #include "cli/command_output.hpp"
 #include "colors.hpp"
 #include "common/path_state.hpp"
+#include "common/path_resolver.hpp"
 #include "db_tuple_stream.hpp"
 #include "help/helpdata_messages.hpp"
 #include "cli/order_state.hpp"
@@ -206,7 +225,7 @@ namespace
         std::cout << "; ERSATZ ACTIVE ORDER: " << order_info_line(area) << "\n";
     }
 
-    static long ersatz_recno_safe(xbase::DbArea& area);
+    static dottalk::RecordNo ersatz_recno_safe(xbase::DbArea& area);
 
     static bool ersatz_read_current_safe(xbase::DbArea& area)
     {
@@ -256,7 +275,7 @@ namespace
         }
     }
 
-    static bool ersatz_skip(xbase::DbArea& area, long n)
+    static bool ersatz_skip(xbase::DbArea& area, dottalk::RecordDelta n)
     {
         try {
             if (n == 0)
@@ -268,7 +287,7 @@ namespace
                 // vector, then move by n logical positions. This preserves
                 // full relational expansion while making the root cursor obey
                 // SET ORDER / ASCEND / DESCEND.
-                const long saved = ersatz_recno_safe(area);
+                const dottalk::RecordNo saved = ersatz_recno_safe(area);
                 dottalk::DbTupleStream nav("*");
                 if (saved > 0)
                     (void)nav.goto_recno(saved);
@@ -276,17 +295,28 @@ namespace
                 return ersatz_read_current_safe(area);
             }
 
-            area.skip(n);
+            // DbArea::skip takes an `int` on purpose: it is a DELTA, and RECNO64
+            // separates RecordDelta (identity arithmetic) from a single hop. Clamp
+            // explicitly rather than letting the narrowing happen silently -- a
+            // skip larger than 2 billion in one call cannot be satisfied anyway,
+            // and the engine will refuse it at the bound check.
+            constexpr dottalk::RecordDelta kHopMax = 2147483647;
+            const int hop = (n > kHopMax) ? static_cast<int>(kHopMax)
+                          : (n < -kHopMax) ? static_cast<int>(-kHopMax)
+                          : static_cast<int>(n);
+            area.skip(hop);
             return ersatz_read_current_safe(area);
         } catch (...) {
             return false;
         }
     }
 
-    static long ersatz_recno_safe(xbase::DbArea& area)
+    static dottalk::RecordNo ersatz_recno_safe(xbase::DbArea& area)
     {
         try {
-            return static_cast<long>(area.recno());
+            // recno64(), not recno(): the 32-bit adapter signals -1 past
+            // INT32_MAX, and every caller here tests `> 0`.
+            return area.recno64();
         } catch (...) {
             return 0;
         }
@@ -328,12 +358,7 @@ namespace
         }
     }
 
-    static bool has_any_sep(const std::string& s)
-    {
-        return s.find('/') != std::string::npos || s.find('\\') != std::string::npos;
-    }
-
-    static std::vector<std::string> split_path_tokens(const std::string& raw)
+        static std::vector<std::string> split_path_tokens(const std::string& raw)
     {
         std::vector<std::string> out;
 
@@ -358,186 +383,19 @@ namespace
         return out;
     }
 
-    static fs::path app_root()
-    {
-        return dottalk::paths::state().data_root.parent_path();
-    }
-
-    static fs::path data_workspaces_root()
-    {
-        return dottalk::paths::get_slot(dottalk::paths::Slot::WORKSPACES);
-    }
-
-    static fs::path data_scripts_root()
-    {
-        return dottalk::paths::get_slot(dottalk::paths::Slot::SCRIPTS);
-    }
-
-    static fs::path user_root_base()
-    {
-        return app_root() / "user";
-    }
-
-    static std::string current_profile_name()
-    {
-        // Replace later with real authenticated user selection.
-        return "default";
-    }
-
-    static fs::path profile_root(const std::string& profile_name)
-    {
-        const std::string name = trim(profile_name).empty() ? "default" : trim(profile_name);
-        return user_root_base() / name;
-    }
-
-    static fs::path current_user_root()
-    {
-        return profile_root(current_profile_name());
-    }
-
-    static fs::path public_root()
-    {
-        return profile_root("public");
-    }
-
-    static fs::path default_root()
-    {
-        return profile_root("default");
-    }
-
-    static fs::path current_user_workspaces_root()
-    {
-        return current_user_root() / "workspaces";
-    }
-
-    static fs::path public_workspaces_root()
-    {
-        return public_root() / "workspaces";
-    }
-
-    static fs::path default_workspaces_root()
-    {
-        return default_root() / "workspaces";
-    }
-
-    static fs::path current_user_scripts_root()
-    {
-        return current_user_root() / "scripts";
-    }
-
-    static std::string& ersatz_saved_setup_command()
+                                                        static std::string& ersatz_saved_setup_command()
     {
         static std::string command;
         return command;
     }
 
-    static fs::path public_scripts_root()
-    {
-        return public_root() / "scripts";
-    }
-
-    static fs::path default_scripts_root()
-    {
-        return default_root() / "scripts";
-    }
-
-    static std::vector<fs::path> workspace_search_roots()
-    {
-        return {
-            current_user_workspaces_root(),
-            public_workspaces_root(),
-            default_workspaces_root(),
-            data_workspaces_root()
-        };
-    }
-
-    static std::vector<fs::path> script_search_roots()
-    {
-        return {
-            current_user_scripts_root(),
-            public_scripts_root(),
-            default_scripts_root(),
-            data_scripts_root()
-        };
-    }
-
-    static bool file_exists(const fs::path& p)
+                    static bool file_exists(const fs::path& p)
     {
         std::error_code ec;
         return fs::exists(p, ec) && !ec && fs::is_regular_file(p, ec) && !ec;
     }
 
-    static fs::path absolute_if_exists(const fs::path& p)
-    {
-        std::error_code ec;
-        if (file_exists(p))
-            return fs::absolute(p, ec);
-        return {};
-    }
-
-    static fs::path resolve_in_roots(const std::string& target_in,
-                                     const std::vector<fs::path>& roots,
-                                     const std::string& default_ext)
-    {
-        std::string target = trim(target_in);
-        fs::path p(target);
-
-        if (!default_ext.empty() && !p.has_extension())
-            p.replace_extension(default_ext);
-
-        if (p.is_absolute())
-        {
-            fs::path abs = absolute_if_exists(p);
-            if (!abs.empty())
-                return abs;
-            return {};
-        }
-
-        {
-            fs::path abs = absolute_if_exists(p);
-            if (!abs.empty())
-                return abs;
-        }
-
-        if (has_any_sep(target))
-        {
-            fs::path data_relative = dottalk::paths::state().data_root / p;
-            fs::path abs = absolute_if_exists(data_relative);
-            if (!abs.empty())
-                return abs;
-
-            abs = absolute_if_exists(p);
-            if (!abs.empty())
-                return abs;
-        }
-
-        for (const auto& root : roots)
-        {
-            fs::path candidate = root / p;
-            fs::path abs = absolute_if_exists(candidate);
-            if (!abs.empty())
-                return abs;
-        }
-
-        return {};
-    }
-
-    static fs::path fallback_in_current_user_root(const std::string& target_in,
-                                                  const fs::path& root,
-                                                  const std::string& default_ext)
-    {
-        std::string target = trim(target_in);
-        if (target.empty())
-            target = "default";
-
-        fs::path p(target);
-        if (!default_ext.empty() && !p.has_extension())
-            p.replace_extension(default_ext);
-
-        return root / p;
-    }
-
-    static std::string normalize_workspace_reference_for_save(const std::string& path_in)
+                static std::string normalize_workspace_reference_for_save(const std::string& path_in)
     {
         const std::string trimmed = trim(path_in);
         if (trimmed.empty())
@@ -549,7 +407,10 @@ namespace
         if (ec)
             abs_source = source;
 
-        for (const auto& root : workspace_search_roots())
+        // AIF-145 R-a step 3c: ladder 2's roots, not ladder 3's. SAVE must
+        // normalise against the SAME list resolution searches, or a saved
+        // reference and the lookup that later resolves it disagree.
+        for (const auto& root : dottalk::paths::workspace_search_roots())
         {
             ec.clear();
             fs::path abs_root = fs::absolute(root, ec);
@@ -564,48 +425,70 @@ namespace
         return source.generic_string();
     }
 
+    // AIF-145 R-a step 3b. Was ladder 3's .erz copy; see the note on
+    // resolve_workspace_target below for why ladder 2 is the resolver.
+    //
+    // ONE input resolves differently now, and only one: a token that contains
+    // a separator and names a file that DOES NOT EXIST. This returned
+    // <current-user workspaces root>/<token>; ladder 2 returns
+    // <data root>/<token>. Every token that finds a real file, and every bare
+    // name, resolves to the same file as before. The changed case is an
+    // INVENTED path either way -- neither ladder found anything -- and the
+    // invented path is printed to the user as the resolved path, so the change
+    // is visible at the point it happens.
     static fs::path resolve_ersatz_file_path(const std::string& target_in)
     {
-        const std::string target = trim(target_in).empty() ? "default" : trim(target_in);
-        fs::path found = resolve_in_roots(target, workspace_search_roots(), ".erz");
-        if (!found.empty())
-            return found;
-
-        return fallback_in_current_user_root(target, current_user_workspaces_root(), ".erz");
+        return dottalk::paths::resolve_ersatz_profile(target_in);
     }
 
+    // AIF-145 R-a, owner ruling 2026-08-28: ladder 2 is the resolver. This was
+    // ladder 3 -- a private copy of the same search, reachable only from ERSATZ.
+    //
+    // The two are equivalent TODAY and not equivalent FOREVER, which is the
+    // whole reason for the switch:
+    //
+    //   roots     both walk current-user, public, default, then the WORKSPACES
+    //             slot. Ladder 2 reads paths::State (s.cur_workspaces_root);
+    //             this copy recomputed app_root()/user/<profile>/workspaces.
+    //             Same directories.
+    //   profile   ladder 2 uses s.current_user, which paths::set_current_user()
+    //             can change. THIS copy called current_profile_name(), which
+    //             returns the literal "default" and cannot be changed at all.
+    //   today     s.current_user is "default" -- its default value, and
+    //             set_current_user() has NO CALLERS anywhere in the tree -- so
+    //             both spellings resolve to the same files right now and this
+    //             switch is INERT.
+    //   later     when identity is wired (AIF-144), ladder 2 follows the acting
+    //             user automatically. The deleted copy never would have, and
+    //             would have had to be found and patched separately. That is
+    //             what consolidating buys.
+    //
+    // Fallback is preserved exactly: this returned
+    // fallback_in_current_user_root(..., current_user_workspaces_root()) -- a
+    // function DELETED in step 3b, so the name survives only in this history -- and
+    // ladder 2 falls back to roots.front(), which IS the current-user root
+    // because workspace_search_roots() is {cur, pub, def, slot}.
+    //
+    // The empty-name default and the extension-outer-loop that this function
+    // owned were moved into paths::resolve_workspace() first, in the preceding
+    // commit, precisely so this one could be a redirect and nothing else.
     static fs::path resolve_workspace_target(const std::string& target_in)
     {
-        const std::string target = trim(target_in).empty() ? "default" : trim(target_in);
-        fs::path direct(target);
-
-        if (direct.has_extension())
-        {
-            fs::path found = resolve_in_roots(target, workspace_search_roots(), "");
-            if (!found.empty())
-                return found;
-
-            return fallback_in_current_user_root(target, current_user_workspaces_root(), "");
-        }
-
-        for (const std::string ext : {std::string(".dtschema"), std::string(".dtschemas")})
-        {
-            fs::path found = resolve_in_roots(target, workspace_search_roots(), ext);
-            if (!found.empty())
-                return found;
-        }
-
-        return fallback_in_current_user_root(target, current_user_workspaces_root(), ".dtschema");
+        return dottalk::paths::resolve_workspace(target_in);
     }
 
+    // AIF-145 R-a step 3b. Was ladder 3's .dot copy. Same one changed case as
+    // resolve_ersatz_file_path above: a separator-bearing token that does not
+    // exist now names <data root>/<token> instead of the current-user scripts
+    // root.
+    //
+    // This is ERSATZ's .dot resolver and it is NOT the resolver DO and
+    // DOTSCRIPT use -- that is shell_resolve_script_path (shell_api.cpp:228),
+    // which defaults to .dts and searches the script stack first. R-a rules on
+    // workspaces; the script side still has three resolvers and is open.
     static fs::path resolve_script_target(const std::string& target_in)
     {
-        const std::string target = trim(target_in).empty() ? "default" : trim(target_in);
-        fs::path found = resolve_in_roots(target, script_search_roots(), ".dot");
-        if (!found.empty())
-            return found;
-
-        return fallback_in_current_user_root(target, current_user_scripts_root(), ".dot");
+        return dottalk::paths::resolve_ersatz_script(target_in);
     }
 
     static bool looks_like_workspace_or_script_file(const fs::path& p)
@@ -972,22 +855,39 @@ echo ============================================================
     {
         browser::ensure_session_root(current_area_name(area));
 
+        // AIF-145 R-a step 3c. This report used to be built from ladder 3's
+        // private root builders while resolution had already moved to ladder 2
+        // (steps 2 and 3b). It printed the roots ERSATZ NO LONGER SEARCHES.
+        //
+        // They are the same directories today, and only today: ladder 3
+        // recomputed app_root()/user/<current_profile_name()>/... where
+        // current_profile_name() returns the literal "default", and
+        // s.current_user also defaults to "default". The moment identity is
+        // wired (AIF-144) resolution would follow the acting user while this
+        // report kept printing "default" -- a report describing a search that
+        // no longer happens. Two declarations of one thing, AIF-143's shape.
+        //
+        // Both lists are {current-user, public, default, slot} in that order,
+        // so the printed values do not move; the SOURCE of them does.
+        const std::vector<fs::path> ws = dottalk::paths::workspace_search_roots();
+        const std::vector<fs::path> sc = dottalk::paths::script_search_roots();
+
         cli::cmdout::print_message(dottalk::helpdata::MessageId::ErsatzStatusHeaderText);
-        std::cout << "  PROFILE       : " << current_profile_name() << "\n";
+        std::cout << "  PROFILE       : " << dottalk::paths::current_user() << "\n";
         std::cout << "  ROOT          : "
                   << (browser::root_alias().empty() ? "(none)" : browser::root_alias())
                   << "\n";
         std::cout << "  LIMIT         : " << browser::limit() << "\n";
         std::cout << "  PATH          : " << browser::path_string() << "\n";
         std::cout << "  ACTIVE ORDER  : " << order_info_line(area) << "\n";
-        std::cout << "  USER WORK     : " << current_user_workspaces_root().string() << "\n";
-        std::cout << "  PUBLIC WORK   : " << public_workspaces_root().string() << "\n";
-        std::cout << "  DEFAULT WORK  : " << default_workspaces_root().string() << "\n";
-        std::cout << "  DATA WORK     : " << data_workspaces_root().string() << "\n";
-        std::cout << "  USER SCRIPT   : " << current_user_scripts_root().string() << "\n";
-        std::cout << "  PUBLIC SCRIPT : " << public_scripts_root().string() << "\n";
-        std::cout << "  DEFAULT SCRIPT: " << default_scripts_root().string() << "\n";
-        std::cout << "  DATA SCRIPT   : " << data_scripts_root().string() << "\n";
+        std::cout << "  USER WORK     : " << ws[0].string() << "\n";
+        std::cout << "  PUBLIC WORK   : " << ws[1].string() << "\n";
+        std::cout << "  DEFAULT WORK  : " << ws[2].string() << "\n";
+        std::cout << "  DATA WORK     : " << ws[3].string() << "\n";
+        std::cout << "  USER SCRIPT   : " << sc[0].string() << "\n";
+        std::cout << "  PUBLIC SCRIPT : " << sc[1].string() << "\n";
+        std::cout << "  DEFAULT SCRIPT: " << sc[2].string() << "\n";
+        std::cout << "  DATA SCRIPT   : " << sc[3].string() << "\n";
     }
 
     static std::string stem_upper_from_pathish(const std::string& pathish)
@@ -1508,7 +1408,7 @@ echo ============================================================
         std::string table;
         std::string spec;
         int area_slot = -1;
-        int saved_recno = 0;
+        dottalk::RecordNo saved_recno = 0;
         std::size_t rows = 0;
         ErsatzDeltaMap map;
     };
@@ -1527,12 +1427,17 @@ echo ============================================================
         return upper_copy(n);
     }
 
-    static int safe_area_recno(xbase::DbArea& area)
+    // recno(), the 32-bit adapter, returns -1 past INT32_MAX by design -- so the
+    // `> 0` guard at the restore site below silently skipped restoring the cursor
+    // on exactly the tables the engine was widened for. Same defect as R69.1/R69.3,
+    // third instance. recno64() is the authoritative value and 0 is the engine's
+    // own "no current record" (bof() is _crn64 == 0).
+    static dottalk::RecordNo safe_area_recno(xbase::DbArea& area)
     {
-        try { return static_cast<int>(area.recno()); } catch (...) { return 0; }
+        try { return area.recno64(); } catch (...) { return 0; }
     }
 
-    static int tuple_row_recno(const dottalk::TupleRow& row)
+    static dottalk::RecordNo tuple_row_recno(const dottalk::TupleRow& row)
     {
         for (const auto& f : row.fragments)
         {
@@ -1573,7 +1478,7 @@ echo ============================================================
         if (!row.values.empty() && !trim(row.values.front()).empty())
             return trim(row.values.front());
 
-        const int rn = tuple_row_recno(row);
+        const dottalk::RecordNo rn = tuple_row_recno(row);
         if (rn > 0)
             return "RECNO:" + std::to_string(rn);
 
@@ -1589,7 +1494,7 @@ echo ============================================================
     static std::string tuple_summary(const dottalk::TupleRow& row)
     {
         std::ostringstream oss;
-        const int rn = tuple_row_recno(row);
+        const dottalk::RecordNo rn = tuple_row_recno(row);
         if (rn > 0)
             oss << "RECNO=" << rn;
         else
@@ -1681,7 +1586,7 @@ echo ============================================================
     {
         ErsatzDeltaMap out;
 
-        const int old_recno = safe_area_recno(area);
+        const dottalk::RecordNo old_recno = safe_area_recno(area);
 
         dottalk::DbTupleStream stream(spec.empty() ? "*" : spec, "ERSATZ DELTA");
         stream.top();
@@ -1719,7 +1624,7 @@ echo ============================================================
         if (old_recno > 0)
         {
             try {
-                area.gotoRec(static_cast<std::size_t>(old_recno));
+                area.gotoRec64(old_recno);
                 (void)area.readCurrent();
             } catch (...) {}
         }

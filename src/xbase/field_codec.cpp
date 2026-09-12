@@ -313,7 +313,7 @@ bool dt_encode(const std::string& text, const FieldDef& /*f*/, char* out,
 }
 
 // ============================================================================
-//  DEMO CUSTOM TYPE  'X'  — pronoun / preferred form of address.
+//  DEMO CUSTOM TYPE  'X'  -- pronoun / preferred form of address.
 //
 //  FIELDTYPE M4 worked example.  Its whole point: a field type the base engine
 //  has never heard of plugs into the SAME Codec model as the built-ins, with
@@ -325,7 +325,7 @@ bool dt_encode(const std::string& text, const FieldDef& /*f*/, char* out,
 //  byte 0 = primary / top of stack.  Canonical text is the ordered sets joined
 //  by "; ", each shown as "subject/object" (e.g. "she/her; they/them").
 //
-//  A pronoun set is 3-dimensional grammatically — subject / object / possessive
+//  A pronoun set is 3-dimensional grammatically -- subject / object / possessive
 //  (she / her / hers).  The codec stores one code per set; the three forms are
 //  derivable from it (a future PSUBJ/POBJ/PPOSS function layer).  The codec's job
 //  stops at faithful bytes<->text: context-aware resolution ("which set here")
@@ -449,8 +449,8 @@ std::array<Codec, 256>& table() {
 
 // Field-type metadata used by the CREATE / validation chain (M4b).  Everything a
 // registered type needs lives here, in ONE place, so the chain never needs a
-// per-type switch edit.  The demo type 'X' is registered here — codec above,
-// metadata below — and nowhere else (no datatype-catalog / supports_type_now /
+// per-type switch edit.  The demo type 'X' is registered here -- codec above,
+// metadata below -- and nowhere else (no datatype-catalog / supports_type_now /
 // create-width edits).
 std::array<FieldTypeMeta, 256>& meta_table() {
     static std::array<FieldTypeMeta, 256> m = [] {

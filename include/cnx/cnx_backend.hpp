@@ -68,7 +68,7 @@ public:
     // no rename primitive, and ramfs has none (it has no truncate either).
     bool save(std::string* err = nullptr) override;
 
-    // Classic CNX stores record numbers in 4 bytes — 32-bit ceiling (RECNO64).
+    // Classic CNX stores record numbers in 4 bytes -- 32-bit ceiling (RECNO64).
     std::uint64_t maxRecordNumber() const override { return UINT32_MAX; }
 
     std::unique_ptr<Cursor> seek(const Key& key) const override;

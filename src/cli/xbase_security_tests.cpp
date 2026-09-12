@@ -8,7 +8,7 @@
 // status: supported
 
 // xbase_security_tests.cpp
-// Canonical module version — no main().
+// Canonical module version -- no main().
 // Provides run_xbase_security_tests() for CLI or external runners.
 
 #include <cctype>

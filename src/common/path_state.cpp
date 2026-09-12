@@ -102,6 +102,19 @@ void build_all_paths(State& s)
     s.docs_root = s.root / "docs";
     s.system_diagrams_root = s.docs_root / "generated" / "diagrams";
 
+    // ROOT-relative, not data-relative, and deliberately so. TOOLS holds helper
+    // programs the RUNTIME invokes (not scripts a user runs -- that is SCRIPTS,
+    // under data). A command that shells out to a helper is broken the moment
+    // the helper is not beside the product, so this must sit where the product
+    // is staged rather than in the development tree.
+    s.tools_root = s.root / "tools";
+
+    // Same class as TOOLS and root-relative for the same reason: GUI holds the
+    // windowed executables the runtime LAUNCHES. A launcher is broken the moment
+    // the executable is not beside the product, so this follows the product, not
+    // the data root.
+    s.gui_root = s.root / "bin";
+
     s.dbf_root = s.data_root / "dbf";
     s.xdbf_root = s.data_root / "xdbf";
     s.dbf_x32_root = s.dbf_root / "x32";
@@ -120,6 +133,7 @@ void build_all_paths(State& s)
     s.tests_root = s.data_root / "tests";
     s.help_root = s.data_root / "help";
     s.logs_root = s.data_root / "logs";
+    s.sys_root = s.data_root / "sys";
     s.tmp_root = s.data_root / "tmp";
     s.tmp_out_root = s.tmp_root / "out";
     s.tmp_system_root = s.tmp_root / "system";
@@ -189,9 +203,12 @@ fs::path get_slot(Slot slot)
     case Slot::SCHEMAS: return s.schemas_root;
     case Slot::PROJECTS: return s.projects_root;
     case Slot::SCRIPTS: return s.scripts_root;
+    case Slot::TOOLS: return s.tools_root;
+    case Slot::GUI: return s.gui_root;
     case Slot::TESTS: return s.tests_root;
     case Slot::HELP: return s.help_root;
     case Slot::LOGS: return s.logs_root;
+    case Slot::SYS: return s.sys_root;
     case Slot::TMP: return s.tmp_root;
     case Slot::TMP_OUT: return s.tmp_out_root;
     case Slot::TMP_SYSTEM: return s.tmp_system_root;
@@ -253,9 +270,12 @@ void set_slot(Slot slot, const fs::path& value)
     case Slot::SCHEMAS: s.schemas_root = abs; break;
     case Slot::PROJECTS: s.projects_root = abs; break;
     case Slot::SCRIPTS: s.scripts_root = abs; break;
+    case Slot::TOOLS: s.tools_root = abs; break;
+    case Slot::GUI: s.gui_root = abs; break;
     case Slot::TESTS: s.tests_root = abs; break;
     case Slot::HELP: s.help_root = abs; break;
     case Slot::LOGS: s.logs_root = abs; break;
+    case Slot::SYS: s.sys_root = abs; break;
     case Slot::TMP: s.tmp_root = abs; break;
     case Slot::TMP_OUT: s.tmp_out_root = abs; break;
     case Slot::TMP_SYSTEM: s.tmp_system_root = abs; break;
@@ -335,9 +355,12 @@ std::optional<Slot> slot_from_string(const std::string& name)
     if (key == "SCHEMAS") return Slot::SCHEMAS;
     if (key == "PROJECTS") return Slot::PROJECTS;
     if (key == "SCRIPTS") return Slot::SCRIPTS;
+    if (key == "TOOL" || key == "TOOLS") return Slot::TOOLS;
+    if (key == "GUI") return Slot::GUI;
     if (key == "TESTS") return Slot::TESTS;
     if (key == "HELP") return Slot::HELP;
     if (key == "LOGS") return Slot::LOGS;
+    if (key == "SYS") return Slot::SYS;
     if (key == "TMP") return Slot::TMP;
     if (key == "TMP_OUT" || key == "TMPOUT") return Slot::TMP_OUT;
     if (key == "TMP_SYSTEM" || key == "TMPSYSTEM") return Slot::TMP_SYSTEM;
@@ -404,9 +427,12 @@ std::string slot_name(Slot slot)
     case Slot::SCHEMAS: return "SCHEMAS";
     case Slot::PROJECTS: return "PROJECTS";
     case Slot::SCRIPTS: return "SCRIPTS";
+    case Slot::TOOLS: return "TOOLS";
+    case Slot::GUI: return "GUI";
     case Slot::TESTS: return "TESTS";
     case Slot::HELP: return "HELP";
     case Slot::LOGS: return "LOGS";
+    case Slot::SYS: return "SYS";
     case Slot::TMP: return "TMP";
     case Slot::TMP_OUT: return "TMP_OUT";
     case Slot::TMP_SYSTEM: return "TMP_SYSTEM";
@@ -491,6 +517,7 @@ void ensure_directories()
         s.tests_root,
         s.help_root,
         s.logs_root,
+        s.sys_root,
         s.tmp_root,
         s.tmp_out_root,
         s.tmp_system_root,
@@ -557,6 +584,8 @@ std::string describe()
         << "SCHEMAS    = " << s.schemas_root.string() << "\n"
         << "PROJECTS   = " << s.projects_root.string() << "\n"
         << "SCRIPTS    = " << s.scripts_root.string() << "\n"
+        << "TOOLS      = " << s.tools_root.string() << "\n"
+        << "GUI        = " << s.gui_root.string() << "\n"
         << "TESTS      = " << s.tests_root.string() << "\n"
         << "HELP       = " << s.help_root.string() << "\n"
         << "LOGS       = " << s.logs_root.string() << "\n"

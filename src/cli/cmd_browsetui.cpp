@@ -78,6 +78,7 @@ extern void cmd_BOTTOM  (xbase::DbArea&, std::istringstream&);
 extern void cmd_CREATE  (xbase::DbArea&, std::istringstream&);
 extern void cmd_APPEND  (xbase::DbArea&, std::istringstream&);
 extern void cmd_DELETE  (xbase::DbArea&, std::istringstream&);
+extern void cmd_APPEND_BLANK(xbase::DbArea&, std::istringstream&);
 
 extern std::vector<std::string>
 build_browse_lines(int inner_w, int inner_h, int recno, const std::vector<FieldView>& fields);
@@ -743,8 +744,26 @@ void cmd_BROWSETUI(xbase::DbArea& area, std::istringstream& iss) {
             case Key::F5:
                 if (!maybe_save_staged(true)) { render(status); continue; }
                 if (area.isOpen()) {
-                    std::istringstream s("APPEND BLANK");
-                    cmd_APPEND(area, s);
+                    // THE STREAM MUST BE POSITIONED PAST THE VERB, because that
+                    // is the contract the dispatcher establishes: shell_dispatch
+                    // does `tok >> cmd` and hands the command what is LEFT. A
+                    // command called directly gets whatever position we leave.
+                    //
+                    // This call site read `istringstream s("APPEND BLANK")` and
+                    // passed it to cmd_APPEND at position ZERO, so cmd_APPEND's
+                    // first token was "APPEND" -- not a count, not RAW, not MANY
+                    // -- and it printed its usage block into the TUI and APPENDED
+                    // NOTHING. F5 has never worked. Two independent reasons for
+                    // one silent no-op: the missing dispatcher route (fixed in
+                    // shell_api_extras.cpp) and this position, which the route
+                    // does NOT fix, because this call bypasses the dispatcher.
+                    //
+                    // An empty stream is the honest spelling of "no arguments".
+                    // NOTE FOR THE NEIGHBOURS: F4 above uses the same idiom with
+                    // cmd_DELETE and survives only because cmd_DELETE ignores
+                    // positional arguments. The idiom is unsafe, not correct.
+                    std::istringstream s;
+                    cmd_APPEND_BLANK(area, s);
                 }
                 break;
 

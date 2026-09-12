@@ -21,10 +21,21 @@
 //   x64base DBF tables under data/metadata/bbs/, with RBAC + attributed authorship (AIF-075).
 //   The read-only board.governance projects the identity SYSGRANT request/approve loop as posts.
 //
-//   NOTE (AIF-076): this file is the BBS persistence substrate only. "Pseudo-chat" (live
-//   agent<->agent/owner conversation, the future PSEUDO command) and the Ollama CHAT bridge are
-//   SEPARATE lanes that persist THROUGH this substrate via the attributed post path; they are not
-//   implemented here. See D:\code\Frontal_Mem\DESIGN_bbs_pseudochat_two_lanes.md.
+//   NOTE (AIF-076): this file is the BBS persistence substrate only. Live agent<->agent/owner
+//   conversation and the Ollama CHAT bridge are SEPARATE lanes that persist THROUGH this
+//   substrate via the attributed post path; they are not implemented here.
+//
+//   "PSEUDO-CHAT" IS THE OWNER'S PET NAME FOR THIS BBS PLUS ITS AI PORTAL INTEGRATION -- it is
+//   one system with an informal label, not a separate subsystem. Until 2026-09-02 this note read
+//   "the future PSEUDO command", which turned a nickname into a roadmap item: there is no PSEUDO
+//   command, no cmd_pseudo source, and per owner ruling 2026-09-02 none is planned. A comment that
+//   promises a command reads as a commitment to the next agent who arrives, and this one did --
+//   it was read as evidence of an unbuilt engine lane during onboarding the same day.
+//   AIF-076's split is still worth keeping for the distinction it was actually needed for:
+//   SUBSTRATE vs CHAT.
+//
+//   DESIGN_bbs_pseudochat_two_lanes.md is EXTERNAL to this repository -- it lives in the
+//   Frontal_Mem project. The in-repo pointer is labtalk/ai_portal/FRONTAL_MEM_POINTER_V1.md.
 //
 // usage:
 //   BBS USAGE

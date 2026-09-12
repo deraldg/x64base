@@ -8,7 +8,7 @@
 // status: supported
 
 // src/cli/cmd_dump.cpp
-// DotTalk++ — DUMP
+// DotTalk++ -- DUMP
 // Legacy, path-blind record dumper.
 // Operates ONLY on the current work area.
 // No path resolution, no file opens, no side effects.

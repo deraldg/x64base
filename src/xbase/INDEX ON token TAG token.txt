@@ -1,3 +1,0 @@
-INDEX ON token TAG token
-INDEX ON cmd_id + STR(priority,4) TAG cmdprio
-INDEX ON avatar_kind TAG kind

@@ -64,7 +64,24 @@ struct FieldProtectionInfo {
 };
 
 struct AppendOptions {
+    // NOT IMPLEMENTED. Declared here and READ NOWHERE -- measured 2026-08-31
+    // across src/ and include/: the only occurrences are this line and the
+    // caller in cmd_fieldmgr.cpp that sets it to false. Setting it true today
+    // changes nothing, which is worse than the option not existing, because a
+    // caller reasonably reads it as a working switch.
+    //
+    // AND IT CANNOT SIMPLY BE TURNED ON HERE. fields::append lives in
+    // src/xbase; rebuilding a CDX is xindex + the CLI's BUILDLMDB path, which
+    // is a HIGHER layer. xbase must keep standing alone -- the standalone
+    // pydottalk build compiles it with DOTTALK_INDEX_MODE=NONE and no xindex
+    // target at all. So a rebuild belongs to the caller, and this option
+    // should either grow a callback the caller supplies or be retired.
+    // Left in place rather than deleted because retiring a public struct
+    // member is a decision, not a tidy-up.
     bool rebuildIndexesIfPossible{false};
+
+    // IMPLEMENTED (fields_mgr.cpp, appendField). Refuses the append outright
+    // when an index is attached. Off by default.
     bool failIfIndexesPresent{false};
 };
 

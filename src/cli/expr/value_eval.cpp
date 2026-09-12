@@ -86,8 +86,22 @@ static bool predicate_chain_fast_allowed(const std::string& src) {
     return true;
 }
 
-// -------------------- “value-expr to string” subset --------------------
+// -------------------- "value-expr to string" subset --------------------
 // Field refs + literals + string/date/numeric builtins. No arithmetic operators.
+//
+// AIF-120 R115. Because this subset has NO operators, its lexer stops at the
+// first character it does not know -- and `+` is one of them. It used to stop
+// SILENTLY and append End, so a truncated token stream was indistinguishable
+// from a complete one and at_end() reported true on a PREFIX. eval_any() then
+// returned that prefix as the value of the WHOLE expression, which is why
+// `? "TAG:[" + RECNO() + "]"` printed `TAG:[` -- no closing bracket, no error
+// and no failure. Measured 2026-08-22 (probe 2 Q2/Q3/Q5/Q6/Q11/Q12/Q13).
+//
+// This is AIF-074 ED-01b one evaluator over. api.cpp:16-27 describes the same
+// shape it closed there: a predicate whose valid PREFIX parsed was accepted
+// and its remainder discarded without a word. The lexer now REPORTS that it
+// stopped early and every caller refuses the parse, so the class is closed on
+// this path too.
 
 struct Tok {
     enum Kind { Ident, Number, String, LParen, RParen, Comma, End } kind{};
@@ -101,7 +115,9 @@ static bool is_ident_char(char c) {
     return std::isalnum(static_cast<unsigned char>(c)) || c == '_';
 }
 
-static std::vector<Tok> lex_value_expr(const std::string& src) {
+static std::vector<Tok> lex_value_expr(const std::string& src,
+                                       bool* stopped_early = nullptr) {
+    if (stopped_early) *stopped_early = false;
     std::vector<Tok> out;
     out.reserve(src.size() / 2 + 8);
 
@@ -158,7 +174,10 @@ static std::vector<Tok> lex_value_expr(const std::string& src) {
             continue;
         }
 
-        break; // unknown char => stop
+        // Unknown character. Report it: what follows is a PREFIX of the input,
+        // and the End pushed below is about to make it look complete.
+        if (stopped_early) *stopped_early = true;
+        break;
     }
 
     out.push_back({Tok::End, ""});
@@ -262,7 +281,7 @@ private:
                     }
                 }
 
-                // custom fns (runtime-registered — RUNTIME_DEF_FAMILY lane)
+                // custom fns (runtime-registered -- RUNTIME_DEF_FAMILY lane)
                 if (const auto* c = dottalk::expr::find_custom_fn(fn)) {
                     const int argc = static_cast<int>(args.size());
                     if (argc < c->minArgs || argc > c->maxArgs) return false;
@@ -505,7 +524,11 @@ static std::string expand_value_builtins_in_text(xbase::DbArea& A, const std::st
             std::string out;
             if (!dottalk::expr::eval_string_value_expr(A, callText, out)) continue;
 
-            const std::string literal = is_numeric_literal(out) ? out : quote_for_expr(out);
+            const std::string out_upper = up(trim(out));
+            const bool logical_literal = out_upper == ".T." || out_upper == ".F." ||
+                                         out_upper == "TRUE" || out_upper == "FALSE";
+            const std::string literal = (is_numeric_literal(out) || logical_literal)
+                                      ? out : quote_for_expr(out);
             s.replace(c.start, len, literal);
             changed = true;
         }
@@ -641,7 +664,12 @@ bool compile_where_program(const std::string& exprText,
 }
 
 bool eval_string_value_expr(xbase::DbArea& A, const std::string& exprText, std::string& out) {
-    const auto toks = lex_value_expr(exprText);
+    // A partially-lexed input is not an expression this subset can evaluate.
+    // Refusing here is what makes the at_end() check below mean "the whole
+    // input was consumed" rather than "the token stream ran out" (R115).
+    bool stopped_early = false;
+    const auto toks = lex_value_expr(exprText, &stopped_early);
+    if (stopped_early) return false;
     ValueParser p(A, toks);
     std::string v;
     if (!p.parse_expr(v)) return false;
@@ -691,8 +719,13 @@ EvalValue eval_compiled_program(const Expr* prog, const RecordView& rv) {
         ev.kind = EvalValue::K_Bool;
         ev.tf = prog->eval(rv);
         return ev;
+    } catch (const std::exception& ex) {
+        ev.kind = EvalValue::K_None;
+        ev.text = ex.what();
+        return ev;
     } catch (...) {
         ev.kind = EvalValue::K_None;
+        ev.text = "unknown evaluation exception";
         return ev;
     }
 
@@ -776,7 +809,8 @@ bool eval_bool(xbase::DbArea& A, const std::string& exprText, bool& out, std::st
     if (ev.kind == EvalValue::K_Bool) { out = ev.tf; return true; }
     if (ev.kind == EvalValue::K_Number) { out = (ev.number != 0.0); return true; }
 
-    if (errOut) *errOut = "FOR/WHILE must evaluate to logical/boolean (or numeric truthy)";
+    if (errOut) *errOut = ev.text.empty()
+        ? "FOR/WHILE must evaluate to logical/boolean (or numeric truthy)" : ev.text;
     return false;
 }
 
@@ -803,7 +837,7 @@ compile_bool_predicate(xbase::DbArea& A, const std::string& exprText, bool allow
     cp->original = exprText;
 
     // Reproduce eval_bool's text preprocessing ONCE. Only hoist when it is a
-    // no-op (which guarantees record-independence — nothing was expanded or
+    // no-op (which guarantees record-independence -- nothing was expanded or
     // folded away that could depend on the current record) and the predicate is
     // not a DotScript/bridge predicate ($name / {..}). Anything else keeps the
     // per-row eval_bool path so behavior is byte-for-byte identical.
@@ -847,7 +881,8 @@ bool eval_bool_compiled(CompiledPredicate& cp, xbase::DbArea& A, bool& out, std:
     if (ev.kind == EvalValue::K_Bool)   { out = ev.tf; return true; }
     if (ev.kind == EvalValue::K_Number) { out = (ev.number != 0.0); return true; }
 
-    if (errOut) *errOut = "FOR/WHILE must evaluate to logical/boolean (or numeric truthy)";
+    if (errOut) *errOut = ev.text.empty()
+        ? "FOR/WHILE must evaluate to logical/boolean (or numeric truthy)" : ev.text;
     return false;
 }
 

@@ -44,12 +44,59 @@ constexpr uint8_t DBF_VERSION_64 = 0x64;
 // -----------------------------------------------------------------------------
 // X64 LARGE HEADER EXTENSION (64 bytes)
 // -----------------------------------------------------------------------------
+//
+// autoq_next IS RESERVED AND DELIBERATELY UNWIRED.
+// Steward ruling R119, 2026-08-24 (AIF-078 lane). This is a decision, not an
+// oversight, and it is written here so the next reader does not have to
+// rediscover it.
+//
+// MEASURED POPULATION -- the whole of it, `grep -rn autoq src include`:
+//   dbf_create.cpp   writes the constant 1, once, at create
+//   this file        hydrates it at open -> DbArea::setAutoQNext64
+//   xbase.hpp        setter and getter, plus the _autoq_next64 member
+//   dbarea.cpp       resets the member to 0
+//   cmd_workspace.cpp  three comments, and nothing else
+// autoQNext64() has ZERO callers. The value travels from disk into memory
+// and dies there.
+//
+// WHY IT STAYS THAT WAY. The question this slot would answer -- "what is the
+// next id" -- is already answered. WORKSPACE NEW allocates max(WS_ID)+1 under
+// a FLOCK (cmd_workspace.cpp), which self-heals after a hand-edited row. Make
+// the header authoritative too and one question has two ladders, which is the
+// defect, not the feature. Nothing in the tree needs a sequence today: VFP
+// autoincrement fields (version byte 0x31) are recognized by name only --
+// see the note at dbf_file.cpp about VFP autoinc metadata not being
+// first-class at runtime.
+//
+// TO MAKE IT LIVE, IF THAT DAY COMES. All three, in one lane, under a claimed
+// AIF number -- piecemeal is the only combination that silently reissues
+// identities:
+//   1. A CONSUMER. Something must read autoQNext64() and use the value. There
+//      is no such caller today, so the store-back alone would write a number
+//      nobody asks for.
+//   2. AN INCREMENT under the same lock the consumer allocates under, so two
+//      writers cannot draw the same value.
+//   3. A STORE-BACK. The idiom already exists: the append path in
+//      dbf_file.cpp patches record_count in place at
+//      sizeof(VfpHeader) + offsetof(LargeHeaderExtension, record_count)
+//      rather than rewriting the 32-byte header, precisely so dialect tail
+//      bytes are not clobbered. autoq_next takes the same shape at its own
+//      offsetof. This is the EASY third; do not let it be the first.
+// HAZARD FOR WHOEVER WIRES IT: the on-disk floor is 1 (create) but the
+// in-memory reset is 0 (dbarea.cpp). A store-back that ships the reset value
+// writes a 0 the format never means. Reconcile the two sentinels BEFORE
+// anything writes.
+//
+// UNTIL THEN: this slot must not gate a PACK. See the WsPurgeResult block in
+// cmd_workspace.cpp -- a pack that renumbers without a live sequence reissues
+// WS_IDs, and it does so without printing anything.
+//
 #pragma pack(push, 1)
 struct LargeHeaderExtension {
     uint64_t record_count;     // total records (64-bit)
     uint64_t data_start_64;    // data section offset
     uint64_t record_size_64;   // bytes per record
-    uint64_t autoq_next;       // next autoincrement / sequence value
+    uint64_t autoq_next;       // sequence slot -- RESERVED, NOT WIRED (see above)
     uint32_t table_flags;      // x64 table capability flags
     uint32_t reserved32;       // reserved
     uint64_t reserved[3];      // reserved, future use
@@ -142,6 +189,31 @@ constexpr uint32_t DBF64_FLAG_HAS_RECID_PK          = 0x00000002;
 constexpr uint32_t DBF64_FLAG_STRICT_FALLBACK_NAMES = 0x00000004;
 constexpr uint32_t DBF64_FLAG_HAS_META_BLOCK        = 0x00000008;
 
+// -----------------------------------------------------------------------------
+// X64 PER-FIELD META FLAGS -- X64FieldMetaEntry.flags
+// -----------------------------------------------------------------------------
+//
+// The 16-bit `flags` word has been in X64FieldMetaEntry since the format was
+// defined, written as a hardcoded zero and read by nobody. AIF-156 gives it its
+// first meaning, because the x64 header is SELF-DESCRIBING: it already carries
+// the table's logical name, its field names and the authoritative field
+// lengths, so the key designation belongs there too rather than in a
+// process-local map that forgets it at exit.
+//
+// AN OLDER BINARY READS THIS AS ZERO AND ENFORCES NOTHING, SILENTLY. That is
+// inherent in giving a previously-ignored field a meaning, and it is the reason
+// DBF64_FLAG_HAS_RECID_PK exists on the TABLE flags as the coarse summary: an
+// old reader comparing against DBF64_KNOWN_TABLE_FLAGS can at least see that a
+// table claims a key it does not understand, which is a question a per-field
+// bit can never raise.
+constexpr uint16_t X64_FIELD_FLAG_PRIMARY = 0x0001;
+
+constexpr uint16_t X64_KNOWN_FIELD_FLAGS = X64_FIELD_FLAG_PRIMARY;
+
+inline bool x64_field_is_primary(uint16_t field_flags) noexcept {
+    return (field_flags & X64_FIELD_FLAG_PRIMARY) != 0;
+}
+
 constexpr uint32_t DBF64_KNOWN_TABLE_FLAGS =
     DBF64_FLAG_HAS_MEMO |
     DBF64_FLAG_HAS_RECID_PK |
@@ -156,7 +228,7 @@ constexpr uint16_t X64_TABLE_NAME_LENGTH      = dottalk::build::x64::table_name_
 constexpr uint16_t X64_FIELD_NAME_LENGTH      = dottalk::build::x64::field_name_default; // was 128
 constexpr uint16_t X64_TABLE_NAME_LENGTH_MAX  = dottalk::build::x64::table_name_max;     // was 256
 constexpr uint16_t X64_FIELD_NAME_LENGTH_MAX  = dottalk::build::x64::field_name_max;     // was 256
-// Format-fixed (DBF/VFP descriptor compatibility) — NOT a build vector; stays source-owned.
+// Format-fixed (DBF/VFP descriptor compatibility) -- NOT a build vector; stays source-owned.
 constexpr uint16_t X64_FALLBACK_FIELD_TOKEN_BYTES = 10; // DBF/VFP fallback token
 
 // -----------------------------------------------------------------------------
@@ -395,6 +467,7 @@ inline void x64_apply_name_metadata(DbArea& area,
         uint32_t name_offset = 0;
         uint16_t name_length = 0;
         uint32_t field_length = 0;
+        uint16_t meta_flags = 0;
 
         const std::size_t pos = static_cast<std::size_t>(mh.field_entry_offset) +
                                 static_cast<std::size_t>(i) * entry_size;
@@ -412,6 +485,13 @@ inline void x64_apply_name_metadata(DbArea& area,
             name_offset = e.name_offset;
             name_length = e.name_length;
             field_length = e.field_length;
+            // Carried through from 2026-09-07. Until then this word was read
+            // into a local and dropped on the floor, which is why the PRIMARY
+            // designation had nowhere durable to live. Version 1 entries
+            // (X64FieldNameEntry) have a flags word too, but it has never been
+            // written as anything but zero, so it is left alone rather than
+            // given a meaning retroactively.
+            meta_flags = e.flags;
         }
 
         if (field_index == 0 || field_index > static_cast<uint32_t>(area.fieldCount())) {
@@ -426,6 +506,11 @@ inline void x64_apply_name_metadata(DbArea& area,
         if (field_length != 0) {
             area.setFieldLength(static_cast<int>(field_index), field_length);
         }
+
+        // Unconditional: zero is a real answer here ("no designation"), so a
+        // guard on non-zero would leave a stale flag standing after one is
+        // cleared.
+        area.setFieldX64Flags(static_cast<int>(field_index), meta_flags);
     }
 
     if (why) why->clear();
@@ -547,6 +632,8 @@ inline void readFields(DbArea& area,
     // exactly like classic/VFP descriptors until the 0x0D terminator.
     vfp_loader::readFields(area, fp, extras);
 
+    area.setX64TableFlags(ext.table_flags);
+
     if (!x64_has_name_vector_metadata(ext.table_flags)) {
         return;
     }
@@ -571,6 +658,11 @@ inline void readFields(DbArea& area,
     if (!fp) {
         throw std::runtime_error("Failed to read x64 metadata block");
     }
+
+    // Remember where this table's own metadata lives, so a later writer can
+    // patch one fixed-size entry in place rather than walk the descriptors
+    // again to re-derive the offset.
+    area.setX64MetaExtent(meta_start, static_cast<std::uint32_t>(meta_len64));
 
     x64_apply_name_metadata(area, block);
 }

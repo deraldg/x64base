@@ -8,7 +8,7 @@
 // status: supported
 
 // src/cli/cmd_pack.cpp
-// PACK — physically removes deleted records by rewriting the DBF to a temp file
+// PACK -- physically removes deleted records by rewriting the DBF to a temp file
 //         containing only non-deleted records, then atomically replaces the original.
 //
 // Memo-aware extension:

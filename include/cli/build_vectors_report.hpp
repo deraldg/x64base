@@ -37,6 +37,8 @@ struct BuildVectors {
     std::uint16_t x64_field_name_default;
     std::uint16_t x64_field_name_max;
     std::uint32_t table_buffer_max_changes;
+    std::uint32_t max_relation_depth;
+    std::uint32_t max_workspace_depth;
     char          prompt_char;
 };
 
@@ -53,6 +55,8 @@ inline const BuildVectors& build_vectors() noexcept {
         x64::field_name_default,
         x64::field_name_max,
         static_cast<std::uint32_t>(table_buffer::max_changes),
+        static_cast<std::uint32_t>(max_relation_depth),
+        static_cast<std::uint32_t>(max_workspace_depth),
         ui::prompt_char_default
     };
     return v;
@@ -65,6 +69,27 @@ inline std::string build_vector_fingerprint() {
     const BuildVectors& v = build_vectors();
     mix(v.max_areas); mix(v.max_fields); mix(v.max_rows);
     mix(v.x64_max_record_bytes); mix(v.x64_field_name_max); mix(v.table_buffer_max_changes);
+    // ADDED 2026-08-30 with the depth vectors. They are capacity vectors, so they
+    // belong in the capacity fingerprint -- and adding them CHANGES IT, which is
+    // the point: a build whose traversal caps differ is a different build.
+    //
+    // AT THE DEFAULTS (24 / 32): 3b276bee -> 9e8c58e6. The second value is
+    // OBSERVED, from BUILDVECTORS on the built binary. The first is derived from
+    // the same model that reproduces the second exactly, which is what makes it
+    // trustworthy rather than merely arithmetic.
+    //
+    // THE PREDICTION FOR THIS LINE WAS WRONG ONCE AND THE ERROR IS RECORDED
+    // RATHER THAN QUIETLY REPLACED: it said 45f7a2c6, computed by appending the
+    // two new mixes AFTER the prompt_char mix. THE CODE APPENDS THEM BEFORE IT.
+    // FNV-1a is order-dependent, so a model of a hash that gets the ORDER wrong
+    // agrees with the code on every value and on nothing else -- and the only
+    // thing that could catch it was running the binary. Whoever changes this
+    // function next: the mix ORDER is part of the contract, and a fingerprint
+    // predicted from source is a prediction until BUILDVECTORS says otherwise.
+    //
+    // These two are mixed here, immediately after table_buffer_max_changes and
+    // BEFORE prompt_char, so the existing mixes keep their relative order.
+    mix(v.max_relation_depth); mix(v.max_workspace_depth);
     mix(static_cast<std::uint64_t>(static_cast<unsigned char>(v.prompt_char)));
     char buf[9];
     std::snprintf(buf, sizeof(buf), "%08llx",
@@ -86,6 +111,8 @@ inline void print_build_vectors(std::ostream& os) {
        << "  X64 field names         default " << v.x64_field_name_default
        << ", maximum " << v.x64_field_name_max << "\n"
        << "  Table-buffer changes    " << v.table_buffer_max_changes << "\n"
+       << "  Relation depth cap      " << v.max_relation_depth << "\n"
+       << "  Workspace depth cap     " << v.max_workspace_depth << "\n"
        << "  Prompt character        " << v.prompt_char << "\n"
        << "  Fingerprint             " << build_vector_fingerprint() << "\n";
 }

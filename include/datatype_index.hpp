@@ -335,7 +335,19 @@ constexpr inline std::array<TypeInfo, 27> kTypeIndex{{
         TF_HAS_WIDTH | TF_IS_TEXTUAL | TF_IS_VARIABLE | TF_SQL_FRIENDLY | TF_TUPLE_FRIENDLY | TF_VFP_ONLY,
         SupportLevel::None,
         SupportLevel::None,
-        SupportLevel::Planned,
+        // vfp: Planned -> ReadWrite (AIF-091 M2). CREATE writes it, the loader
+        // decodes it, and storeFieldsToBuffer maintains its length byte and its
+        // varlength bit. x64 stays Planned DELIBERATELY: whether x64 wants VFP's
+        // hidden-bitmap mechanism is an open design question and not something to
+        // settle by editing a row here.
+        //
+        // THE PROMOTION CHANGES NO BEHAVIOUR, and that is worth knowing rather
+        // than assuming: is_supported() tests `!= None`, is_readwrite() has ZERO
+        // callers, and support_for() is used nowhere outside this header. All
+        // four levels collapse to "None or not" at every site that reads them, so
+        // this row is documentation. It is corrected because a catalog that says
+        // Planned for something the engine now creates is simply false.
+        SupportLevel::ReadWrite,
         SupportLevel::Planned,
         SupportLevel::ReadWrite,
         SupportLevel::Planned,

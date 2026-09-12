@@ -16,11 +16,14 @@
 // - TRANSFORM() is currently a pass-through placeholder.
 
 #include "cli/expr/fn_string.hpp"
+#include "cli/path_resolver.hpp"
 #include "cli/text_match.hpp"
+#include "common/path_state.hpp"
 
 #include <algorithm>
 #include <cctype>
 #include <cmath>
+#include <filesystem>
 #include <iomanip>
 #include <locale>
 #include <sstream>
@@ -112,7 +115,7 @@ static std::string dt_concat(const std::vector<std::string>& args) {
 }
 
 // --------------------------------------------------
-// EMPTY() — corrected implementation
+// EMPTY() -- corrected implementation
 // --------------------------------------------------
 
 static std::string dt_empty(const std::vector<std::string>& args) {
@@ -146,7 +149,62 @@ static std::string dt_empty(const std::vector<std::string>& args) {
 }
 
 // --------------------------------------------------
-// SOUNDEX() — classic 4-character phonetic code
+// FILE() -- filesystem existence probe (FoxPro-compatible name)
+// --------------------------------------------------
+// Added 2026-08-12 for the WORKSPACE WRITEBACK refusal arms (WB_T5/WB_T6):
+// "the aborted target does not exist afterward" needs a by-value read of the
+// filesystem, and the catalog had no such probe. Deliberately broader than
+// VFP (which is files-only): returns .T. for ANY filesystem entry, directory
+// included, because an absence proof wants the widest possible detector --
+// "nothing means nothing" fails on a leftover empty directory too.
+// Relative paths resolve through paths::resolve_in_slot, the same rule every
+// other path token in the engine uses: absolute stays absolute, a token with
+// separators is DATA-root-relative, a bare name sits in the DBF slot.
+//
+// Corrected 2026-08-12, same day it was added. The first cut resolved against
+// the process CWD and this comment claimed that "matched" WORKSPACE WRITEBACK
+// and ERASE. It did -- all three were wrong together, and being wrong in
+// unison is not a specification. SET PATH resolved the same spelling against
+// DATA, so a marker of the form FILE("DBF/wbabort/STUDENTS.dbf") probed a
+// different directory than the writeback it was auditing. It agreed only
+// because datarun.ps1 runs with cwd = DATA. An absence proof that reads the
+// wrong directory always reports absence.
+//
+// Registered here AND in function_catalog.cpp in the same commit, per the
+// kDateFns rule (execution table and documentation table must not drift).
+
+static std::string dt_file(const std::vector<std::string>& args) {
+    if (args.empty()) return ".F.";
+
+    std::string s = args[0];
+
+    // Strip quotes if present (same convention as dt_empty)
+    if (s.size() >= 2) {
+        if ((s.front() == '"' && s.back() == '"') ||
+            (s.front() == '\'' && s.back() == '\'')) {
+            s = s.substr(1, s.size() - 2);
+        }
+    }
+
+    // Trim surrounding whitespace; a blank path is not a path
+    const auto b = s.find_first_not_of(" \t\r\n");
+    if (b == std::string::npos) return ".F.";
+    const auto e = s.find_last_not_of(" \t\r\n");
+    s = s.substr(b, e - b + 1);
+
+    // Cross-OS: scripts spell paths either way; POSIX does not treat '\' as
+    // a separator (house pattern, see shell.cpp / cmd_setorder.cpp).
+    std::replace(s.begin(), s.end(), '\\', '/');
+
+    std::error_code ec;
+    const std::filesystem::path probe = dottalk::paths::resolve_in_slot(
+        dottalk::paths::get_slot(dottalk::paths::Slot::DBF), s);
+    const bool present = std::filesystem::exists(probe, ec) && !ec;
+    return present ? ".T." : ".F.";
+}
+
+// --------------------------------------------------
+// SOUNDEX() -- classic 4-character phonetic code
 // --------------------------------------------------
 
 static std::string dt_soundex(const std::vector<std::string>& args) {
@@ -375,6 +433,7 @@ static const BuiltinFnSpec kStringFns[] = {
     { "CONCAT",1,32,&dt_concat },
     { "STRCAT",1,32,&dt_concat },
     { "EMPTY",1,1,&dt_empty },
+    { "FILE",1,1,&dt_file },
     { "SOUNDEX",1,1,&dt_soundex },
     { "AT",2,2,&dt_at },
     { "RAT",2,2,&dt_rat },

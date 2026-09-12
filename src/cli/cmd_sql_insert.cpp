@@ -44,6 +44,13 @@
 //   SQLERASE
 //
 #include "xbase.hpp"
+// AIF-156: the shared constraint gate. THIS FILE IS THE *LEGACY* INSERT/UPDATE
+// VERB, NOT SQLSEL. PKPOLICY's arms T5 and T6 measure SQLSEL INSERT and SQLSEL
+// UPDATE, which reach the buffer through evaluate_store_expression and are
+// gated there -- and this pair is a SECOND, INDEPENDENT door registered at
+// shell_commands.cpp:458-459 as the bare verbs INSERT and UPDATE. Three arms
+// green said nothing whatever about this path.
+#include "xbase_cli.hpp"
 #include "textio.hpp"
 #include <algorithm>
 #include <cctype>
@@ -190,12 +197,25 @@ void cmd_SQL_INSERT(xbase::DbArea& A, std::istringstream& iss){
             std::vector<std::string> vals;
             if(!parse_values_tuple(rest, i, vals)){ std::cout<<"INSERT: bad VALUES tuple\n"; return; }
             if(vals.size()!=fields.size()){ std::cout<<"INSERT: field/value count mismatch\n"; return; }
-            if(!A.appendBlank() || !A.readCurrent()){ std::cout<<"INSERT: APPEND failed\n"; return; }
+            // RESOLVE AND GATE BEFORE APPEND, NOT AFTER. Appending first and
+            // discovering the refusal second leaves a blank row behind for a
+            // write that was never allowed -- and on a table with a generated
+            // PRIMARY key that blank row has already consumed a key.
+            std::vector<std::pair<int,std::string>> writes;
+            writes.reserve(fields.size());
             for(size_t k=0;k<fields.size();++k){
                 int idx = idx_of(fields[k]);
                 if(idx<0){ std::cout<<"INSERT: unknown field "<<fields[k]<<"\n"; return; }
-                A.set(idx, vals[k]);
+                writes.emplace_back(idx, vals[k]);
             }
+            {
+                std::string gate_err;
+                if(!xbase::cli::gateFieldWrites(A, writes, &gate_err, nullptr)){
+                    std::cout<<"INSERT: "<<gate_err<<"\n"; return;
+                }
+            }
+            if(!A.appendBlank() || !A.readCurrent()){ std::cout<<"INSERT: APPEND failed\n"; return; }
+            for(const auto& w: writes) A.set(w.first, w.second);
             if(!A.writeCurrent()){ std::cout<<"INSERT: write failed\n"; return; }
             ++inserted;
             while(i<rest.size() && std::isspace((unsigned char)rest[i])) ++i;
@@ -222,6 +242,13 @@ void cmd_SQL_INSERT(xbase::DbArea& A, std::istringstream& iss){
             int idx = idx_of(name);
             if(idx<0){ std::cout<<"INSERT: unknown field "<<name<<"\n"; return; }
             assigns.push_back({idx, val});
+        }
+        // Gate before APPEND here too -- same reason as the tuple form above.
+        {
+            std::string gate_err;
+            if(!xbase::cli::gateFieldWrites(A, assigns, &gate_err, nullptr)){
+                std::cout<<"INSERT: "<<gate_err<<"\n"; return;
+            }
         }
         if(!A.appendBlank() || !A.readCurrent()){ std::cout<<"INSERT: APPEND failed\n"; return; }
         for(auto& p: assigns) A.set(p.first, p.second);

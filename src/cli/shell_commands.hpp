@@ -40,6 +40,9 @@ void cmd_FOX_PALETTE(DbArea&, std::istringstream&);
 void edu_CHRISTMAS(DbArea&, std::istringstream&);
 void edu_HANUKKAH(DbArea&, std::istringstream&);
 
+void app_GUI(DbArea&, std::istringstream&);
+
+
 // TABLES
 void cmd_VDISK(DbArea&, std::istringstream&);   // AIF-043 in-memory RAM disk
 void cmd_USE(DbArea&, std::istringstream&);
@@ -69,6 +72,7 @@ void cmd_STRUCT(DbArea&, std::istringstream&);
 void cmd_SCHEMAS(DbArea&, std::istringstream&);
 void cmd_WORKSPACE(DbArea&, std::istringstream&);
 void cmd_WSREPORT(DbArea&, std::istringstream&);
+void cmd_WORKDESK(DbArea&, std::istringstream&);
 void cmd_CATALOGCANARY(xbase::DbArea& area, std::istringstream&);
 
 //   METADATA RECORDS
@@ -230,9 +234,23 @@ void cmd_SQL_UPDATE(DbArea&, std::istringstream&);
 void cmd_SQL_ERASE(DbArea&, std::istringstream&);
 
 //  TABLE BUFFERING
+//
+// SECOND DECLARATION, KNOWINGLY. These four are also declared in
+// include/cli/table_buffer.hpp, which is where their contract comments live.
+// Two headers declaring one function is the shape this tree keeps paying for --
+// the field-write baseline drifted nine times on it, datarun held two spellings
+// of "where the exe lives" -- and it cost a build here: GROUPCOMMIT was added to
+// table_buffer.hpp alone and shell_commands.cpp, which includes only this
+// header, failed with C3861.
+//
+// NOT UNIFIED HERE. Deciding which header owns the command declarations is a
+// real change touching every caller of both, and it is not a line to slip into
+// a lane about atomic commit. Recorded so the next person who adds a fifth does
+// not rediscover it from a compiler error.
 void cmd_TABLE_BUFFER(DbArea&, std::istringstream&);
 void cmd_COMMIT(DbArea&, std::istringstream&);
 void cmd_ROLLBACK(DbArea&, std::istringstream&);
+void cmd_GROUPCOMMIT(DbArea&, std::istringstream&);   // AIF-160
 
 // SYSTEM
 void cmd_VERSION(DbArea&, std::istringstream&);
@@ -266,6 +284,7 @@ void cmd_EXPORT(DbArea&, std::istringstream&);
 void cmd_IMPORT(DbArea&, std::istringstream&);
 
 void cmd_SFTP(DbArea&, std::istringstream&);
+void cmd_SMTP(DbArea&, std::istringstream&);
 
 // DEVELOPMENT
 void cmd_SHOWINI(DbArea&, std::istringstream&);

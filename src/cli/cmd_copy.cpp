@@ -24,8 +24,8 @@
 // usage:
 //   COPY USAGE
 //   COPY TO <DBFNAME> [WITH SIDECARS] [OVERWRITE]
-//   COPY TO <DBFNAME> AS <MSDOS|DBASE|FOX26|FOXPRO|VFP|X64> [OVERWRITE]
-//   COPY TO <DBFNAME> AS X64 VECTOR [OVERWRITE]
+//   COPY TO <DBFNAME> AS <MSDOS|DBASE|FOX26|FOXPRO|VFP|X64> [KEY DROP] [OVERWRITE]
+//   COPY TO <DBFNAME> AS X64 VECTOR [KEY DROP] [OVERWRITE]
 //   COPY FILE <SRC> TO <DST> [OVERWRITE]
 //
 // examples:
@@ -41,6 +41,10 @@
 //   COPY FILE does not require an open table.
 //   WITH SIDECARS applies only to binary COPY TO.
 //   OVERWRITE is required when the destination already exists.
+//   KEY DROP accepts a destination that cannot carry the source's primary
+//     key. Without it, COPY TO ... AS REFUSES rather than discarding the
+//     designation in silence -- which is what a downgrade to VFP, FOX26 or
+//     MSDOS does, since those headers have nowhere to record one.
 //
 // risk:
 //   writes_filesystem: yes
@@ -65,6 +69,7 @@
 #include "xbase.hpp"
 #include "xbase_64.hpp"
 #include "xbase/dbf_create.hpp"
+#include "xbase_cli.hpp"
 #include "xbase/field_name_policy.hpp"
 #include "cli/command_output.hpp"
 #include "textio.hpp"
@@ -87,7 +92,7 @@ static inline std::string lower_copy(std::string s) {
 }
 
 static void usage_copy() {
-    cli::cmdout::print_message(dottalk::helpdata::MessageId::CopyUsageText);
+    ::cli::cmdout::print_message(dottalk::helpdata::MessageId::CopyUsageText);
 }
 
 static bool copy_file_binary(const std::filesystem::path& src,
@@ -200,15 +205,15 @@ static void copy_sidecars(const std::filesystem::path& src_dbf,
             ++copied;
         } else {
             ++failed;
-            cli::cmdout::print_message(
+            ::cli::cmdout::print_message(
                 dottalk::helpdata::MessageId::CopySidecarFailedText, {{"detail", err}});
         }
     }
 
     if (found == 0) {
-        cli::cmdout::print_message(dottalk::helpdata::MessageId::CopySidecarsNoneText);
+        ::cli::cmdout::print_message(dottalk::helpdata::MessageId::CopySidecarsNoneText);
     } else {
-        cli::cmdout::print_message(
+        ::cli::cmdout::print_message(
             dottalk::helpdata::MessageId::CopySidecarsFoundText,
             {{"found", std::to_string(found)},
              {"copied", std::to_string(copied)},
@@ -501,6 +506,7 @@ static bool logical_copy_to_as(const DbArea& src,
                                const std::filesystem::path& dstp,
                                Flavor flavor,
                                bool overwrite,
+                               bool key_drop,
                                const CopyVectorOptions& vector_opts,
                                std::string& err) {
     if (!src.isOpen()) {
@@ -531,7 +537,7 @@ static bool logical_copy_to_as(const DbArea& src,
     }
 
     for (const auto& w : name_warnings) {
-        cli::cmdout::print_message(
+        ::cli::cmdout::print_message(
             dottalk::helpdata::MessageId::CopyWarningDetailText, {{"detail", w}});
     }
 
@@ -602,6 +608,31 @@ static bool logical_copy_to_as(const DbArea& src,
         }
     }
 
+    // R142. THE DESIGNATION TRAVELS LAST, after every row is in place;
+    // xbase_cli.hpp carries the argument for why that order is load-bearing.
+    //
+    // COPY never drops or reorders a column and copies values verbatim, so the
+    // scan clears on any destination that can hold a flag at all. What this
+    // catches is AS: a downgrade to VFP, FOX26 or MSDOS produces a header with
+    // nowhere to record the key, and until now that discarded it in silence.
+    const auto kt = xbase::cli::carryPrimaryKey(
+        src, dst,
+        key_drop ? xbase::cli::KeyTravel::Drop
+                 : xbase::cli::KeyTravel::RefuseIfBlocked);
+
+    if (!kt.proceed) {
+        err = kt.detail + ". The destination " + dstp.string() +
+              " was written and carries no key -- re-run with KEY DROP to "
+              "accept that, or choose a target flavor that can hold one.";
+        return false;
+    }
+
+    // Quiet on success: one line, and only when there was something to say.
+    if (!kt.detail.empty()) {
+        ::cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::CopyDetailText, {{"detail", kt.detail}});
+    }
+
     return true;
 }
 
@@ -622,6 +653,7 @@ void cmd_COPY(DbArea& a, std::istringstream& iss) {
 
     bool overwrite = false;
     bool with_sidecars = false;
+    bool key_drop = false;
 
     // Strip OVERWRITE, WITH, SIDECARS tokens (flexibly)
     {
@@ -632,6 +664,15 @@ void cmd_COPY(DbArea& a, std::istringstream& iss) {
             const std::string u = up(tok[i]);
 
             if (u == "OVERWRITE") { overwrite = true; continue; }
+
+            // KEY DROP -- the operator accepting that the primary key does not
+            // travel. Bare KEY is left in place so it reaches the usage error
+            // rather than being silently swallowed as if it meant something.
+            if (u == "KEY" && i + 1 < tok.size() && up(tok[i + 1]) == "DROP") {
+                key_drop = true;
+                ++i;
+                continue;
+            }
 
             if (u == "WITH") {
                 if (i + 1 < tok.size() && up(tok[i + 1]) == "SIDECARS") {
@@ -661,10 +702,10 @@ void cmd_COPY(DbArea& a, std::istringstream& iss) {
 
         std::string err;
         if (copy_file_binary(src, dst, overwrite, &err)) {
-            cli::cmdout::print_message(
+            ::cli::cmdout::print_message(
                 dottalk::helpdata::MessageId::CopiedFileText, {{"dst", dst.string()}});
         } else {
-            cli::cmdout::print_message(
+            ::cli::cmdout::print_message(
                 dottalk::helpdata::MessageId::CopyFileFailedText, {{"detail", err}});
         }
         return;
@@ -673,7 +714,7 @@ void cmd_COPY(DbArea& a, std::istringstream& iss) {
     // COPY TO <dbf> [AS <flavor>]
     if (token_is(tok[0], "TO")) {
         if (!a.isOpen()) {
-            cli::cmdout::print_message(dottalk::helpdata::MessageId::CopyToNoFileOpenText);
+            ::cli::cmdout::print_message(dottalk::helpdata::MessageId::CopyToNoFileOpenText);
             return;
         }
         if (tok.size() < 2) {
@@ -694,9 +735,9 @@ void cmd_COPY(DbArea& a, std::istringstream& iss) {
 
         if (as_pos != tok.size()) {
             if (as_pos != 2) {
-                cli::cmdout::print_message(
+                ::cli::cmdout::print_message(
                     dottalk::helpdata::MessageId::CopyAsUnexpectedTokenText, {{"token", tok[2]}});
-                cli::cmdout::print_message(dottalk::helpdata::MessageId::CopyAsUseHintText);
+                ::cli::cmdout::print_message(dottalk::helpdata::MessageId::CopyAsUseHintText);
                 return;
             }
             if (as_pos + 1 >= tok.size()) {
@@ -706,7 +747,7 @@ void cmd_COPY(DbArea& a, std::istringstream& iss) {
 
             Flavor flavor = Flavor::MSDOS;
             if (!parse_flavor_token(tok[as_pos + 1], flavor)) {
-                cli::cmdout::print_message(
+                ::cli::cmdout::print_message(
                     dottalk::helpdata::MessageId::CopyAsUnknownFlavorText, {{"flavor", tok[as_pos + 1]}});
                 return;
             }
@@ -714,7 +755,7 @@ void cmd_COPY(DbArea& a, std::istringstream& iss) {
             CopyVectorOptions vector_opts;
             std::string option_err;
             if (!parse_copy_vector_options(tok, as_pos + 2, flavor, vector_opts, option_err)) {
-                cli::cmdout::print_message(
+                ::cli::cmdout::print_message(
                     dottalk::helpdata::MessageId::CopyDetailText, {{"detail", option_err}});
                 return;
             }
@@ -722,21 +763,21 @@ void cmd_COPY(DbArea& a, std::istringstream& iss) {
             const std::filesystem::path dstp = resolve_dst_for_logical_copy_to(a, tok[1]);
 
             if (with_sidecars) {
-                cli::cmdout::print_message(dottalk::helpdata::MessageId::CopyAsSidecarsIgnoredText);
+                ::cli::cmdout::print_message(dottalk::helpdata::MessageId::CopyAsSidecarsIgnoredText);
             }
 
             if (vector_opts.vector_requested) {
-                cli::cmdout::print_message(dottalk::helpdata::MessageId::CopyAsVectorPolicyText);
+                ::cli::cmdout::print_message(dottalk::helpdata::MessageId::CopyAsVectorPolicyText);
             }
 
             std::string err;
-            if (!logical_copy_to_as(a, dstp, flavor, overwrite, vector_opts, err)) {
-                cli::cmdout::print_message(
+            if (!logical_copy_to_as(a, dstp, flavor, overwrite, key_drop, vector_opts, err)) {
+                ::cli::cmdout::print_message(
                     dottalk::helpdata::MessageId::CopyAsFailedText, {{"detail", err}});
                 return;
             }
 
-            cli::cmdout::print_message(
+            ::cli::cmdout::print_message(
                 dottalk::helpdata::MessageId::CopiedTableText,
                 {{"dst", dstp.string()},
                  {"flavor", flavor_name_local(flavor)},
@@ -749,12 +790,12 @@ void cmd_COPY(DbArea& a, std::istringstream& iss) {
 
         std::string err;
         if (!copy_file_binary(srcp, dstp, overwrite, &err)) {
-            cli::cmdout::print_message(
+            ::cli::cmdout::print_message(
                 dottalk::helpdata::MessageId::CopyToFailedText, {{"detail", err}});
             return;
         }
 
-        cli::cmdout::print_message(
+        ::cli::cmdout::print_message(
             dottalk::helpdata::MessageId::CopiedDbfText, {{"dst", dstp.string()}});
 
         if (with_sidecars) {

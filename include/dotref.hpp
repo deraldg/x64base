@@ -47,6 +47,25 @@ inline const std::vector<Item>& catalog() {
         {"BUILDVECTORS", "BUILDVECTORS | BUILD VECTORS | BUILD INFO",
                  "Report the compile-time engine capacity limits and configuration fingerprint; read-only.", true},
 
+        // The two spaced spellings need their OWN rows, even though the syntax
+        // field above already names them. CMDHELP indexes this catalog by the
+        // NAME field only, so alternates written into syntax prose are invisible
+        // to it: shell_commands.cpp registers "BUILD VECTORS" and "BUILD INFO"
+        // as real commands, they matched nothing here, and both fell through to
+        // the "curated DOTREF help is pending" placeholder. Documented and
+        // undocumented looked identical from the generator's side.
+        // The PARENT. BUILD is a router (shell_commands.cpp), so it is the
+        // registered, dispatchable name; VECTORS and INFO are its subcommands
+        // and are typeable only through it -- the same shape as REL ENUM.
+        {"BUILD", "BUILD [VECTORS|INFO]",
+                 "Router for the spaced spellings of BUILDVECTORS; reports the compile-time engine capacity limits and configuration fingerprint; read-only.", true},
+
+        {"BUILD VECTORS", "BUILD VECTORS",
+                 "Spaced spelling of BUILDVECTORS: report the compile-time engine capacity limits and configuration fingerprint; read-only.", true},
+
+        {"BUILD INFO", "BUILD INFO",
+                 "Spaced spelling of BUILDVECTORS: report the compile-time engine capacity limits and configuration fingerprint; read-only.", true},
+
         {"DEFCMD", "DEFCMD [USAGE|LIST|<NAME> [=] <body-text>]",
                  "Define or list an experimental session-only scratch command; cannot shadow protected built-ins and never writes table data or disk state.", true},
 
@@ -218,7 +237,7 @@ inline const std::vector<Item>& catalog() {
         Notes:
             Used so HELP/TESTS/etc. can be moved without requiring full paths.)", true},
 
-        {"WORKSPACE", "WORKSPACE [OPEN <DBF|dir>|CLOSE|SAVE <name>|LOAD <name>]",
+        {"WORKSPACE", "WORKSPACE [OPEN <DBF|dir>|CLOSE|SAVE <name> [MEMO [V3|MINIDB]]|LOAD <name> [MEMO [RAM]] [PARTIAL]|WRITEBACK <name> [TO <root>] [WITH INDEXES] [CONFIRM]]",
         R"(Canonical live work-area/session command.
 
         Usage:
@@ -234,16 +253,76 @@ inline const std::vector<Item>& catalog() {
             WORKSPACE OPEN <dir>
                 Scan a specific directory and open DBFs into areas 0..N.
 
-            WORKSPACE SAVE <name>
-                Save a workspace layout where supported.
+            WORKSPACE SAVE <file>
+                Save the posture to a file.
 
-            WORKSPACE LOAD <name>
-                Restore a saved workspace layout where supported.
+            WORKSPACE SAVE <name> MEMO [V2|V3]
+                Save the POSTURE into the WORKSPACES memo catalog. Tables stay
+                where they are; the posture records where that is.
+
+            WORKSPACE SAVE <name> MEMO MINIDB
+                Save a CONTAINER whose payload IS the database: the posture PLUS
+                every open area's table bytes, and its index bytes when an order
+                is attached. MINIDB implies V3, because the embedded posture must
+                be self-locating to survive being re-pointed at RAM. Reads are
+                residence-aware, so a RAM-resident working set can be saved whole.
+
+            WORKSPACE LOAD <file>
+                Restore a posture from a file.
+
+            WORKSPACE LOAD <name> MEMO
+                Restore a POSTURE from the catalog. REFUSES a MINIDB payload and
+                names the hydration form instead: a container's tables have no
+                disk home, and standing up empty areas over missing files is the
+                silent failure this subsystem exists to prevent.
+
+            WORKSPACE LOAD <name> MEMO RAM
+                Hydrate a MINIDB container into the mounted VDISK with zero disk
+                reads. Requires VDISK MOUNT (or DO mem).
+
+            WORKSPACE LOAD ... PARTIAL
+                Restore only what exists. WITHOUT this, a shortfall ABORTS before
+                anything is closed, so a load that cannot complete leaves the
+                current workspace standing.
+
+            WORKSPACE WRITEBACK <name> [TO <root>] [WITH INDEXES] [CONFIRM]
+                The return leg: write the workspace out of wherever it currently
+                lives (RAM included) onto a real disk root. TO defaults to the
+                catalog row's DBF_ROOT. CONFIRM is required to replace existing
+                files and every replaced file is kept as <name>.__wbak.
+
+            WORKSPACE CATALOG
+                Read-only report over the memo catalog: name, FMT, size, areas,
+                timestamp, author, and which rows are superseded. FMT is the
+                PAYLOAD -- DTSHEMA 2/3 carry a posture and leave the tables
+                where they are; MINIDB 1 carries the table bytes themselves.
+                Every catalogued row is the MEMO carrier by construction; the
+                FILE carrier is the .dtschema files in the same directory,
+                which this table does not track and the footer counts.
 
         Notes:
             WORKSPACE owns live areas, aliases, index/tag bindings, and relation/session layout.
             DDL owns schema/definition work.
-            WSREPORT owns verbose diagnostics.)", true},
+            WSREPORT owns verbose diagnostics.
+
+            ENUMERATION AUTHORITY: both LOAD and WRITEBACK enumerate from the
+            POSTURE -- the record of what the workspace IS -- never from the
+            session's current attach order, and both REFUSE a shortfall rather
+            than complete a partial one. WRITEBACK refuses before writing;
+            LOAD refuses before closing.
+
+            WITH INDEXES copies index container BYTES only. LMDB environments are
+            not carried (they must mmap a real OS file), so the destination needs
+            BUILDLMDB before SET ORDER TO TAG will work. The per-table index
+            CHOICE travels in the posture, which is what lets one workspace mix
+            CNX, CDX and INX.
+
+            .__wbak is ONE generation deep and kept indefinitely: a second
+            confirmed writeback discards the first backup without saying so.
+
+            Relative paths resolve like every other path token -- absolute stays
+            absolute, separators are DATA-root-relative, a bare name sits in its
+            slot.)", true},
 
         {"SCHEMAS", "SCHEMAS [OPEN <DBF|dir>|CLOSE]",
         R"(Deprecated compatibility shim for WORKSPACE.
@@ -494,6 +573,15 @@ Notes:
             Used by ArcticTalk/Foxtalk Turbo Vision palette wiring.)", true},
 
         {"TVISION",   "TVISION", "Turbo Vision diagnostics / demos.", true},
+
+        // APPGUI and its alias GUI. Registered 2026-08-22: src/cli/app_gui.cpp
+        // has carried a full @dottalk.usage block for some time, so the command
+        // LOOKED documented while CMDHELP had no entry to generate a page from.
+        // The alias gets its own row because a reader who types GUI is not
+        // helped by a catalog that only answers to APPGUI.
+        {"APPGUI",    "APPGUI", "Launch the windowed Workbench GUI (dottalk_wb) as a separate process, or report by name why it cannot be launched.", true},
+
+        {"GUI",       "APPGUI", "Alias for APPGUI: launch the windowed Workbench GUI, or report why it cannot start.", true},
 
         {"TURBOPACK", "TURBOPACK", "Turbo Vision / pack-related utility.", true},
 
@@ -792,7 +880,34 @@ Notes:
         {"DISPLAY", "DISPLAY [ALL] [FIELDS <list>] [FOR <expr>]", "Display records from the current table without changing the default DOT help namespace.", true},
         {"DIR", "DIR [<mask>|<path>]", "List directory or file entries through the DotTalk++ shell surface.", true},
         {"ECHO", "ECHO <text...>", "Echo text to the current DotTalk++ output route.", true},
-        {"ERASE", "ERASE <target>", "Erase a file or supported target through the DotTalk++ shell surface.", true},
+        {"ERASE", "ERASE [<table>|TABLE <table>|DIR <path>] [CONFIRM]",
+        R"(Physically delete a table and its sidecars, or a whole directory.
+
+        Usage:
+            ERASE <table> [CONFIRM]
+            ERASE TABLE <table> [CONFIRM]
+                Delete the DBF plus its same-stem sidecars.
+
+            ERASE DIR <path> [CONFIRM]
+                Delete a directory and everything under it. No .dbf
+                normalization and no sidecar sweep -- a landed writeback target
+                has no table token, and forcing one would mangle the path.
+
+        Notes:
+            Without CONFIRM, ERASE reports what it WOULD delete and does nothing.
+
+            BLAST RADIUS, worth reading before pointing it anywhere: the table
+            form sweeps THREE INDEPENDENT SLOTS -- DBF sidecars in place, index
+            containers through the active INDEXES slot, and the LMDB environment
+            through the active LMDB slot. If those slots point at different
+            datasets, ERASE reaches into all of them, and the deletions it makes
+            in a slot you forgot to repoint are reported in the same
+            undifferentiated file count as the ones you intended. Measured
+            2026-08-12, by destroying a shared fixture's LMDB environment from a
+            scratch root that had repointed only two slots of three.
+
+            A scratch root must own ALL THREE SLOTS before anything destructive
+            runs in it.)", true},
 
         {"EDIT", "EDIT [USAGE] <file>", "Launch the configured external editor for a file path; OS-sensitive (spawns the editor as a child process, editor.mode Off disables it). See the @dottalk.external contract in src/edu/edu_edit.cpp.", true},
         {"FIND", "FIND <text> [IN <field>]", "Find text or values using the active order when possible, with scan fallback when needed.", true},
@@ -864,8 +979,27 @@ Notes:
         {"RBROWSE", "RBROWSE",
                  "Launch the relation-aware browser view for the current workspace context.", true},
 
-        {"REGRESSION", "REGRESSION [USAGE|LIST|SHOW <name>|RUN <name>|<name>|ALL]",
-                 "Launch curated DotTalk++ regression and shakedown DotScript entrypoints that bootstrap their own environments.", true},
+        {"REGRESSION", "REGRESSION [USAGE|LIST|FIND <words...>|SHOW <name>|RUN <name>|<name>|ALL]",
+        R"(Launch curated DotTalk++ regression and shakedown DotScript entrypoints that bootstrap their own environments.
+
+        Usage:
+            REGRESSION LIST                 Browse the curated entrypoints.
+            REGRESSION FIND <words...>      Search names, script filenames and
+                                            summaries. Every term must match.
+            REGRESSION SHOW <name>          Summary plus the resolved script path.
+            REGRESSION RUN <name>           Run it.
+            REGRESSION ALL                  Run the curated default suite.
+
+        Notes:
+            THE SPEC IS THE HOW-TO. A regression script is the only documentation
+            in this tree that cannot drift silently, because a stale one goes red.
+            Read the script for worked usage, or RUN it to watch it work.
+
+            FIND exists because LIST and SHOW both assume you already know the
+            NAME. Nobody arrives knowing to type WORKSPACE_MINIDB when the
+            question in their head is "how do I put a database inside a memo".
+            It adds no new prose: it searches the summaries that already live
+            beside the specs.)", true},
 
         {"SECURITY", "SECURITY [USAGE|SHOW|SELFTEST|RUNTIME|LOGIN <role> [AS <worker>]|WHOAMI|ASSIGNMENTS|LOGOUT]",
                  "Inspect DotTalk++ security policy/runtime rules and manage the current shell-session role identity and assignment view.", true},
@@ -1020,6 +1154,9 @@ Notes:
 
         {"SFTP", "SFTP [USAGE|<args...>]",
                  "File-transfer helper surface for SFTP-oriented workflows where enabled by local policy.", true},
+
+        {"SMTP", "SMTP [USAGE|STATUS|PROBE|SEND FROM <file> [TO <addr>] SUBJECT <text>]",
+                 "Mail helper surface: probe the configured server or send a message body, where enabled by local policy. Credentials come from the environment and are never read or printed by the command.", true},
 
         {"SHOWINI", "SHOWINI [USAGE|SYSTEM|USER|ALL]",
                  "Display DotTalk++ initialization/configuration files and resolved startup settings.", true},

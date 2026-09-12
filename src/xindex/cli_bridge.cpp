@@ -31,6 +31,13 @@ bool db_order_asc(const xbase::DbArea& A) {
     return orderstate::isAscending(A);
 }
 
+// AIF-148.  Deliberately NOT !db_index_attached(): an attached tag container
+// with no tag selected is natural order, and that is precisely the case the
+// attachment predicate cannot see.
+bool db_order_is_natural(const xbase::DbArea& A) {
+    return orderstate::isNaturalOrder(A);
+}
+
 } // namespace xindex_cli
 
 namespace xindex_cli_internal {

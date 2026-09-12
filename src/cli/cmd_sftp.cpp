@@ -48,9 +48,9 @@
 //
 // usage:
 //   SFTP USAGE
-//   SFTP LS <user@host:/remote/path>
-//   SFTP GET <user@host:/remote/file> TO <local-file>
-//   SFTP PUT <local-file> TO <user@host:/remote/file>
+//   SFTP LS <user@host:/remote/path>                      (alias: DIR)
+//   SFTP GET <user@host:/remote/file> TO <local-file>     (alias: FETCH)
+//   SFTP PUT <local-file> TO <user@host:/remote/file>     (alias: SEND)
 //
 // examples:
 //   SFTP LS derald@example.com:/home/derald/data
@@ -59,6 +59,9 @@
 //
 // notes:
 //   SFTP USAGE prints usage and does not start the sftp client.
+//   DIR, FETCH and SEND are second spellings of LS, GET and PUT
+//   (cmd_sftp.cpp:529, :534, :539). All three dispatch and none appeared in
+//   this contract until 2026-08-28.
 //   This command stages a temporary sftp batch file and invokes the system sftp client.
 //   Password embedding in URLs is deliberately not supported.
 //   Set DOTTALK_ALLOW_HOST_COMMANDS=1 and DOTTALK_ALLOW_NETWORK=1 to enable transfer.

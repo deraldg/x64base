@@ -263,28 +263,83 @@ struct VfpHeaderDisk
     std::uint16_t reserved3;
 };
 
-struct VFPFieldRec
-{
-    char          name[11];
-    char          type;
-    std::uint32_t offset;
-    std::uint8_t  length;
-    std::uint8_t  decimals;
-    std::uint16_t reserved1;
-    std::uint8_t  workarea;
-    std::uint16_t reserved2;
-    std::uint8_t  flags;
-    std::uint8_t  reserved3[8];
-};
+// VFPFieldRec DELETED 2026-09-04, AIF-091 M1. It was a SECOND DECLARATION of the
+// VFP field descriptor -- byte for byte the same shape as xbase::VfpField, including
+// the same wrong one: `flags` at BYTE 23 (the autoincrement STEP value) instead of
+// byte 18, with the dBASE III `workarea` member that VFP does not have.
+//
+// One claim, two homes, and both of them wrong the same way. The write path used
+// this copy and the read path used the header's, so correcting one would have left
+// the engine writing descriptors it could no longer read correctly -- which is worse
+// than the defect. Both create sites now use `xbase::VfpField` (xbase_vfp.hpp is
+// already included above), so the descriptor layout is declared ONCE and the
+// compile-time offset asserts that guard it guard every user of it.
 #pragma pack(pop)
 
 static_assert(sizeof(VfpHeaderDisk) == 32, "VfpHeaderDisk must be 32 bytes");
-static_assert(sizeof(VFPFieldRec) == 32, "VFPFieldRec must be 32 bytes");
+
+// AIF-091 M2. Does this field type carry its length in the `_NullFlags` bitmap?
+static bool is_varlength_type(char t) noexcept
+{
+    const char T = (char)std::toupper((unsigned char)t);
+    return T == 'V' || T == 'Q';
+}
+
+// The hidden `_NullFlags` column, or nothing.
+//
+// WHY THIS RETURNS A PLAIN FieldSpec AND THE CALLER APPENDS IT TO THE FIELD
+// LIST, rather than the writer special-casing it downstream: record length,
+// header length and every descriptor `displacement` are computed by ONE loop
+// over that list. Append the column and all four numbers follow. Special-case
+// it instead and there are two places that know how wide a record is -- which
+// is the exact shape of the defect this lane spent two commits on
+// (fieldByteOffset_ accumulating lengths while the descriptor carried its own
+// displacement). One list, one loop, one answer.
+//
+// Bit budget, in physical field order: a V/Q field contributes a varlength bit,
+// a nullable field contributes a null bit, a field that is both contributes
+// TWO. That is assign_null_bits() in include/xbase/vfp_null_bits.hpp, and the
+// width here MUST agree with what it computes or the reader and the writer
+// disagree about how many bytes the row has.
+static bool build_null_flags_column(const std::vector<FieldSpec>& fields,
+                                    FieldSpec& out)
+{
+    std::size_t bits = 0;
+    for (const auto& f : fields) {
+        if (is_varlength_type(f.type)) ++bits;
+        if (f.nullable)                ++bits;
+    }
+    if (bits == 0) return false;
+
+    out = FieldSpec{};
+    out.name = "_NullFlags";
+    out.type = '0';                                  // the digit zero, not NUL
+    out.len  = static_cast<std::uint32_t>((bits + 7) / 8);
+    out.dec  = 0;
+    return true;
+}
 
 static bool write_vfp_dbf(const std::string& path,
-                          const std::vector<FieldSpec>& fields,
+                          const std::vector<FieldSpec>& fields_in,
                           std::string& err)
 {
+    // ---- the field list the FILE will carry ------------------------------
+    // Everything below iterates `fields`, never `fields_in`.
+    std::vector<FieldSpec> fields = fields_in;
+
+    bool hasVarlength = false;
+    for (const auto& f : fields_in) {
+        if (is_varlength_type(f.type)) hasVarlength = true;
+    }
+
+    FieldSpec nullflags{};
+    const bool hasNullFlags = build_null_flags_column(fields_in, nullflags);
+    std::size_t nullflags_index = 0;
+    if (hasNullFlags) {
+        nullflags_index = fields.size();             // it is ALWAYS last
+        fields.push_back(nullflags);
+    }
+
     bool hasMemo = false;
     std::uint16_t recLen = 1; // delete flag
 
@@ -295,7 +350,7 @@ static bool write_vfp_dbf(const std::string& path,
     }
 
     const std::uint16_t hdrLen =
-        static_cast<std::uint16_t>(32 + fields.size() * sizeof(VFPFieldRec) + 1 + 263);
+        static_cast<std::uint16_t>(32 + fields.size() * sizeof(xbase::VfpField) + 1 + 263);
 
     std::error_code ec;
     std::filesystem::create_directories(std::filesystem::path(path).parent_path(), ec);
@@ -312,7 +367,8 @@ static bool write_vfp_dbf(const std::string& path,
         TableFlavor::VFP,
         hasMemo,
         false,
-        foxpro_header::CP_WINDOWS_ANSI
+        foxpro_header::CP_WINDOWS_ANSI,
+        hasVarlength                     // -> version byte 0x32 (AIF-091 M2)
     );
 
     std::time_t t = std::time(nullptr);
@@ -345,21 +401,37 @@ static bool write_vfp_dbf(const std::string& path,
 
     std::uint32_t offset = 1; // delete flag byte
 
-    for (const auto& f : fields)
+    for (std::size_t i = 0; i < fields.size(); ++i)
     {
-        VFPFieldRec vf{};
+        const FieldSpec& f = fields[i];
+
+        xbase::VfpField vf{};
         std::string fn = descriptor_name_for(f);
         std::memcpy(vf.name, fn.c_str(), fn.size());
 
-        vf.type      = f.type;
-        vf.offset    = offset;
-        vf.length    = descriptor_length_for(f, false);
-        vf.decimals  = f.dec;
-        vf.reserved1 = 0;
-        vf.workarea  = 0;
-        vf.reserved2 = 0;
-        vf.flags     = 0;
-        std::memset(vf.reserved3, 0, sizeof(vf.reserved3));
+        vf.type         = f.type;
+        vf.displacement = offset;
+        vf.length       = descriptor_length_for(f, false);
+        vf.decimals     = f.dec;
+
+        // Field flags at BYTE 18, where the format puts them. This used to read
+        // "Zero until CREATE learns to declare a nullable column (AIF-091 M1,
+        // still owed)". It learned.
+        //
+        // 0x05 ON THE HIDDEN COLUMN, NOT 0x01, and that is a MEASUREMENT rather
+        // than a reading of the spec: the M1 design doc said to write 0x01, and
+        // tools/vfp/fixtures/nullfix.DBF -- written by Visual FoxPro 9 itself --
+        // carries 0x05. VFP marks its own system column system AND BINARY, so
+        // no codepage translation is ever applied to a bitmap. Writing 0x01
+        // would produce a column VFP does not mark the way VFP marks its own.
+        if (hasNullFlags && i == nullflags_index) {
+            vf.flags = 0x05;                    // system (0x01) | binary (0x04)
+        } else {
+            vf.flags = f.nullable ? 0x02 : 0x00;
+        }
+        vf.autoinc_next = 0;
+        vf.autoinc_step = 0;
+        std::memset(vf.reserved, 0, sizeof(vf.reserved));
 
         out.write(reinterpret_cast<const char*>(&vf), sizeof(vf));
         if (!out) {
@@ -389,11 +461,11 @@ static bool write_vfp_dbf(const std::string& path,
     return true;
 }
 
-} // namespace (anonymous) — internal file/VFP/classic writers + helpers
+} // namespace (anonymous) -- internal file/VFP/classic writers + helpers
 
 // Byte-store-agnostic X64 (v64) DBF serializer.  Writes a complete, freshly
-// created (0-record) X64 DBF image — VfpHeader + LargeHeaderExtension +
-// VfpField[] + 0x0D + x64 name-metadata block + 0x1A EOF — into ANY ostream.
+// created (0-record) X64 DBF image -- VfpHeader + LargeHeaderExtension +
+// VfpField[] + 0x0D + x64 name-metadata block + 0x1A EOF -- into ANY ostream.
 //
 // The path-based create_dbf writer wraps this (into an ofstream); the in-memory
 // table path (CREATE MEMORY) wraps it into DbArea's RAM byte store, so the
@@ -478,6 +550,12 @@ bool serialize_x64_dbf(std::ostream& out,
     ext.record_count   = 0;
     ext.data_start_64  = hdrLenWide;
     ext.record_size_64 = recLenWide;
+    // The only write of this field anywhere. It is 1 on every x64 table ever
+    // created and stays 1, because the slot is reserved and unwired
+    // (ruling R119; see LargeHeaderExtension in xbase_64.hpp). Note the
+    // consequence: "issued nothing" and "never wired" are the same byte
+    // pattern on disk, so no reader can tell them apart. That is accepted for
+    // as long as there are no readers.
     ext.autoq_next     = 1;
     ext.table_flags    = hasMemo ? xbase::DBF64_FLAG_HAS_MEMO : 0;
     if (!metaBlock.empty()) {
@@ -511,11 +589,13 @@ bool serialize_x64_dbf(std::ostream& out,
         vf.displacement = static_cast<std::uint32_t>(offset);
         vf.length       = descriptor_length_for(f, true);
         vf.decimals     = f.dec;
-        vf.reserved1    = 0;
-        vf.workarea     = 0;
-        vf.reserved2    = 0;
+        // Same descriptor, same byte. X64 writes VfpField descriptors -- which is
+        // the write-side proof of what the read side now assumes: the x64 flavor
+        // carries the VFP field descriptor BY INHERITANCE, flags byte included.
         vf.flags        = 0;
-        std::memset(vf.reserved3, 0, sizeof(vf.reserved3));
+        vf.autoinc_next = 0;
+        vf.autoinc_step = 0;
+        std::memset(vf.reserved, 0, sizeof(vf.reserved));
 
         out.write(reinterpret_cast<const char*>(&vf), sizeof(vf));
         if (!out) {
@@ -552,15 +632,22 @@ bool serialize_x64_dbf(std::ostream& out,
 // lifetime) and delegates the byte layout to serialize_x64_dbf.
 //
 // In-memory tables (AIF-043 V3): a path under a mounted ramfs root is created
-// straight into RAM — no OS directory, no file. The identical serializer feeds
+// straight into RAM -- no OS directory, no file. The identical serializer feeds
 // the ramfs stream, so the RAM image is byte-identical to a disk .dbf, and the
 // subsequent DbArea::open (V2) reads it back from ramfs. When no root is mounted
 // (the default) is_virtual() is false and this branch is dead.
 static bool write_x64_dbf(const std::string& path,
                           const std::vector<FieldSpec>& fields,
-                          std::string& err)
+                          std::string& err,
+                          const std::string& tableNameOverride = std::string())
 {
-    const std::string tableName = std::filesystem::path(path).stem().string();
+    // Identity rule (AIF-110): the X64M authoritative table name defaults to
+    // the path stem, but callers whose CREATE path differs from the table's
+    // final identity (temp-file rewrites) MUST override it. The stem default
+    // is what stamped "STUDENTS.__fldtmp" into a renamed canonical fixture.
+    const std::string tableName = tableNameOverride.empty()
+        ? std::filesystem::path(path).stem().string()
+        : tableNameOverride;
 
     if (xbase::ramfs::is_virtual(path)) {
         auto rs = xbase::ramfs::open(path, /*create=*/true);
@@ -634,7 +721,31 @@ bool supports_type_now(char code, Flavor flavor) noexcept
             return false;
         }
 
+    // VFP AND X64 ARE SPLIT HERE, AND THE SPLIT IS THE POINT. They shared one
+    // case block until AIF-091 M2, so adding a type to one silently added it to
+    // the other. `V` is a VFP format feature whose length lives in the hidden
+    // `_NullFlags` column; whether x64 wants that mechanism, a different one, or
+    // none is an OPEN DESIGN QUESTION and not something to answer by accident
+    // through a shared switch. x64's list is byte-for-byte what it was.
     case Flavor::VFP:
+        switch (T)
+        {
+        case 'C':
+        case 'N':
+        case 'F':
+        case 'D':
+        case 'L':
+        case 'M':
+        case 'I':
+        case 'B':
+        case 'Y':
+        case 'T':
+        case 'V':          // AIF-091 M2: Varchar. Q (Varbinary) is NOT yet here.
+            return true;
+        default:
+            return false;
+        }
+
     case Flavor::X64:
         switch (T)
         {
@@ -671,7 +782,7 @@ bool create_dbf(const std::string& path,
         return false;
     }
 
-    // In-memory tables (AIF-043 M1) are X64/v64 only — the RAM byte store and
+    // In-memory tables (AIF-043 M1) are X64/v64 only -- the RAM byte store and
     // ramfs open path are wired for the v64 layout. Reject other flavors on a
     // virtual path with a clear message instead of a confusing ofstream failure.
     if (xbase::ramfs::is_virtual(path) && flavor != Flavor::X64) {
@@ -691,6 +802,28 @@ bool create_dbf(const std::string& path,
     default:
         return write_classic_dbf(path, fields, TableFlavor::MSDOS_DBASE, err);
     }
+}
+
+// Identity-explicit overload (AIF-110): see header. Delegates everything to
+// the path-based create; only the X64M table identity differs.
+bool create_dbf(const std::string& path,
+                const std::string& tableName,
+                const std::vector<FieldSpec>& fields,
+                Flavor flavor,
+                std::string& err)
+{
+    if (tableName.empty() || flavor != Flavor::X64) {
+        return create_dbf(path, fields, flavor, err);
+    }
+
+    if (fields.empty()) {
+        err = "no fields specified";
+        return false;
+    }
+    if (!validate_lengths_for_flavor(fields, flavor, err)) {
+        return false;
+    }
+    return write_x64_dbf(path, fields, err, tableName);
 }
 
 } // namespace xbase::dbf_create

@@ -18,7 +18,94 @@
 namespace dottalk::gui {
 
 using TaskId = std::uint64_t;
+
+// AIF-078, 2026-08-23. The area's SESSION rung: DbArea::areaHandle(), minted at
+// open() and never reused. It is an IDENTITY -- do no arithmetic on it, do not
+// persist it, and do not show it to anyone. It answers "is this the same area",
+// and nothing else.
+//
+// It used to answer three questions at once. session.cpp minted it from a
+// private counter in two places, derived it from a slot in four more, and three
+// files reconstructed a display number from it as `id - 1`. That worked only
+// because the counter started at 1, so `id - 1` equalled the open ordinal --
+// which equals the list position only while nothing is ever closed.
 using AreaId = std::uint64_t;
+
+// The area's POSITIONAL rung: THE AREA'S ENGINE SLOT. This is the number the
+// user types, the number the tables column shows, and the number a posture
+// records as AREA <n> -- and it is now the SAME number the CLI would print for
+// that area, which is the entire point.
+//
+// RULING R120, 2026-08-24 (AIF-078 step 3). This rung used to be the index into
+// the session's area list: 0-based, DENSE, and RENUMBERED on every close. That
+// was documented here as "properties, not defects", and as a description of a
+// list index it was correct. It was the wrong THING to be describing.
+//
+// WHY IT CHANGED. An area had two positional addresses -- its GUI list index
+// and its engine slot -- and which one you got depended on which surface you
+// asked. Two answers to one question IS the defect (R5), and it had already
+// reached disk: the posture line `AREA <n>|dbf=...` is written by the CLI as an
+// engine slot and was written by the GUI as a list index, into a field the
+// reader calls `slot`. One field, two meanings, no way to tell them apart.
+//
+// WHAT THAT COSTS, MEASURED RATHER THAN ASSUMED. The number is now SPARSE --
+// a session holding two areas really can show 1 and 2 with 0 standing empty --
+// and it is STABLE across a close: the survivors keep their numbers, where the
+// old rung renumbered everyone below the gap.
+//
+// AND THE VACATED SLOT IS NOT EAGERLY REUSED. find_free_area_for_workspace
+// grows the workspace's block CONTIGUOUSLY -- highest_member + 1 -- and only
+// scans for the lowest free slot when that block is boxed in, reporting
+// broke_contiguity when it does. So closing an area out of the middle leaves a
+// hole that stays a hole. The first draft of this comment claimed the next
+// open would fall into it; the async smoke's ladder block went red and said
+// otherwise, which is why that block asserts 2 and not 0.
+//
+// Neither behaviour is more correct in the abstract. This one is the one the
+// engine already has, and having ONE of them is worth more than choosing
+// between two.
+//
+// Derivation still runs DOWNWARD only (ruling D10 R1): id -> ordinal is a
+// lookup, ordinal -> id is a lookup, and neither is ever spelled with + 1 or
+// - 1. What changed is what the lookup consults -- the area's own slot rather
+// than its position in a vector.
+using AreaOrdinal = std::uint64_t;
+
+// NO AREA is a TYPE, not a value -- ruling D10 R6.3, and it binds retroactively
+// by steward direction 2026-08-23 ("clean start").
+//
+// This was `kNoAreaOrdinal = ~0`: reserved, named, and compliant under R6.1,
+// because no correct producer can emit ~0 as an index into a list that will
+// never hold 2^64-1 areas. It was still the WEAKER form. R6.3 orders the
+// choices -- make absence unrepresentable BY TYPE where a type is free, and
+// reserve a named value only where it is not -- and a type was free here.
+//
+// What the type buys over the sentinel, concretely: the DEFAULT is absence, so
+// a field that nobody set cannot read as "area 0"; there is no constant to
+// compare against and therefore none to forget; and arithmetic on an unset
+// ordinal does not compile instead of quietly computing on ~0. The rule that
+// excuses the code its author wrote is the rule to distrust, and this is the
+// author's own sentinel being held to it.
+using MaybeAreaOrdinal = std::optional<AreaOrdinal>;
+
+// The ONE display conversion, replacing three identical copies that lived in
+// session.cpp, main_frame.cpp and gui_workspace_format.cpp.
+inline std::string format_area_ordinal(const MaybeAreaOrdinal& ordinal) {
+    return ordinal ? std::to_string(*ordinal) : std::string("none");
+}
+
+// AIF-120, multi-workspace GUI slice. Design invariant I1
+// (WORKSPACE_MANAGER_AND_GROUPS_DESIGN_V1.md): an area belongs to exactly ONE
+// workspace and there is NO NULL -- a bare USE outside any workspace opens into
+// an implicit, always-present workspace named DEFAULT, which behaves like every
+// other workspace. So a workspace field is never blank, and the GUI never has a
+// cell it has to explain.
+//
+// The name is a constant rather than a literal at each site because the runtime
+// registry does not exist yet: when it lands, the workspace of an area stops
+// being "DEFAULT, always" and becomes a lookup, and this is the one place that
+// has to know.
+inline constexpr const char* kDefaultWorkspace = "DEFAULT";
 
 enum class TaskState {
     queued,
@@ -57,6 +144,12 @@ struct OpenTableRequest {
 struct OpenTableResult {
     bool ok {false};
     AreaId area_id {0};
+    // Where it landed in the list -- the number to show, never area_id - 1.
+    MaybeAreaOrdinal ordinal;
+    // Which workspace took it. Carried for the same reason the ordinal is:
+    // the session had the DbArea in hand and knew the exact answer, and a view
+    // that has only an id cannot work it out afterwards. Never blank (I1).
+    std::string workspace {kDefaultWorkspace};
     std::filesystem::path path;
     std::string display_name;
     std::uint64_t record_count {0};
@@ -116,6 +209,11 @@ struct CloseAreaResult {
 
 struct AreaInfo {
     AreaId area_id {0};
+    // The positional rung, carried rather than reconstructed. A view that
+    // renders this never has to know what an AreaId is made of.
+    MaybeAreaOrdinal ordinal;
+    // Never blank -- DEFAULT is a workspace (invariant I1).
+    std::string workspace {kDefaultWorkspace};
     bool active {false};
     std::filesystem::path path;
     std::string display_name;
@@ -125,12 +223,15 @@ struct AreaInfo {
 
 struct ListAreasResult {
     AreaId active_area_id {0};
+    MaybeAreaOrdinal active_ordinal;
     std::vector<AreaInfo> areas;
     std::vector<StatusMessage> messages;
 };
 
 struct WorkspaceIndexInfo {
     AreaId area_id {0};
+    MaybeAreaOrdinal ordinal;
+    std::string workspace {kDefaultWorkspace};
     std::string area_name;
     std::string kind;
     std::filesystem::path container;
@@ -141,17 +242,52 @@ struct WorkspaceIndexInfo {
     std::string backend;
 };
 
+// A relation's match count, and the ABSENCE of one.
+//
+// D10 R6: an absent value must not be representable in the space of present
+// ones. This field was `std::uint64_t match_count {0}` and 0 meant BOTH "no
+// rows matched" and "never computed" -- and the two are not the same answer.
+// The producer already distinguishes them: set_relations.cpp:1010 prints
+// "(matches: n/a)" when it could not compute one, and the parser threw that
+// away with value_or(0). main_frame.cpp then showed the user "0".
+//
+// R6.3 says prefer the TYPE where it is free. It is free here, exactly as it
+// was for MaybeAreaOrdinal, and R6.3 binds retroactively -- "clean start".
+// The default is now ABSENCE, so a field nobody set cannot read as a measured
+// zero, and arithmetic on an uncomputed count does not compile.
+using MatchCount = std::uint64_t;
+using MaybeMatchCount = std::optional<MatchCount>;
+
+// Rendered form. Absent is not "0" and is not a lie -- it is nothing.
+inline std::string format_match_count(const MaybeMatchCount& count) {
+    return count ? std::to_string(*count) : std::string();
+}
+
 struct WorkspaceRelationInfo {
+    // The relation's OWNING workspace.
+    //
+    // WAS: "Relations are engine-global today, so a refresh has no group scope
+    // -- recorded here so the column can show what the runtime cannot yet
+    // separate." That stopped being true at AIF-078 I1.2, which partitioned the
+    // relation store by workspace: the runtime CAN separate them now, and this
+    // field is written from the session's current workspace at parse time
+    // (session.cpp, owning_workspace_now). Until then it had ZERO writers while
+    // gui_workspace_format.cpp filtered on it -- a filter on a constant.
+    std::string workspace {kDefaultWorkspace};
     std::string parent;
     std::string child;
     std::string parent_key;
     std::string child_key;
-    std::uint64_t match_count {0};
+    MaybeMatchCount match_count;
     std::string source;
 };
 
 struct WorkspaceModel {
     AreaId active_area_id {0};
+    MaybeAreaOrdinal active_ordinal;
+    // Scope of the selector, and the grouping key of every page above.
+    std::string current_workspace {kDefaultWorkspace};
+    std::vector<std::string> workspaces {std::string(kDefaultWorkspace)};
     std::vector<AreaInfo> tables;
     std::vector<WorkspaceIndexInfo> indexes;
     std::vector<WorkspaceRelationInfo> relations;

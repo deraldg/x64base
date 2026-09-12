@@ -184,9 +184,16 @@ IndexSummary dottalk::summarize_index(xbase::DbArea& A) {
         S.container_type.clear();
     }
 
-    S.kind = orderstate::isAscending(A)
-        ? IndexSummary::OrderKind::Ascending
-        : IndexSummary::OrderKind::Descending;
+    // AIF-148 RESIDUE, 2026-08-29. The container is described either way --
+    // index_path, container_type and the tag list are filled above and below
+    // regardless. What moves here is the KIND, which is a claim about the order
+    // THE CURSOR FOLLOWS: an attached container with no tag selected is
+    // Physical, and reporting Ascending made this summary disagree with the
+    // navigation verbs on the same table.
+    S.kind = orderstate::isNaturalOrder(A)
+        ? IndexSummary::OrderKind::Physical
+        : (orderstate::isAscending(A) ? IndexSummary::OrderKind::Ascending
+                                      : IndexSummary::OrderKind::Descending);
 
     S.active_tag = orderstate::activeTag(A);
 

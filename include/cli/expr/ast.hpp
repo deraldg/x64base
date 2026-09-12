@@ -13,12 +13,30 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace dottalk { namespace expr {
 
 struct RecordView {
     std::function<std::string(std::string_view)> get_field_str;
     std::function<std::optional<double>(std::string_view)> get_field_num;
+    std::function<std::optional<char>(std::string_view)> get_field_type;
+
+    // ISNULL()'s accessor, and it is deliberately NOT a value accessor.
+    //
+    // A null field's value is the empty string. So is a blank field's. Every
+    // accessor above therefore returns the SAME thing for both, which is why
+    // ISNULL cannot be an ordinary function over an evaluated argument: it
+    // would be handed "" and asked to distinguish null from blank, the one
+    // question it exists to answer.
+    //
+    // nullopt means "no such field" and becomes an error at the call site,
+    // matching how an unknown field behaves everywhere else. A field that
+    // EXISTS but cannot be null answers false -- that is the true answer, not
+    // an error. A row source that has no null concept at all leaves this unset,
+    // and ISNULL() then refuses rather than answering "not null", because a
+    // confident false here is a wrong answer that looks like a right one.
+    std::function<std::optional<bool>(std::string_view)> get_field_is_null;
 };
 
 struct Expr {
@@ -48,11 +66,27 @@ struct LitNumber : Expr {
     }
 };
 
+struct LitBool : Expr {
+    bool v;
+    explicit LitBool(bool value) : v(value) {}
+    bool eval(const RecordView&) const override { return v; }
+    std::string evalString(const RecordView&) const override { return v ? ".T." : ".F."; }
+};
+
 struct FieldRef : Expr {
     std::string name;
     explicit FieldRef(std::string n) : name(std::move(n)) {}
     bool eval(const RecordView& rv) const override;
-    // Optional future: could add evalString if field is string
+    std::string evalString(const RecordView& rv) const override;
+};
+
+struct FunctionCall : Expr {
+    std::string name;
+    std::vector<std::unique_ptr<Expr>> args;
+    FunctionCall(std::string n, std::vector<std::unique_ptr<Expr>> a)
+        : name(std::move(n)), args(std::move(a)) {}
+    bool eval(const RecordView& rv) const override;
+    std::string evalString(const RecordView& rv) const override;
 };
 
 enum class CmpOp { EQ, NE, LT, LE, GT, GE };

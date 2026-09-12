@@ -98,6 +98,22 @@ bool sqlhelp_usage_request(const std::string& raw)
     return u == "USAGE" || u == "HELP" || u == "?";
 }
 
+// Greedy word wrap. Local because nothing in scope wraps a std::string --
+// OutputRouter::set_wrap is the router's own behaviour, not a text utility.
+void print_wrapped(const char* text, const char* indent, std::size_t width) {
+    std::istringstream in(text);
+    std::string word, line;
+    while (in >> word) {
+        if (!line.empty() && line.size() + 1 + word.size() > width) {
+            std::cout << indent << line << "\n";
+            line.clear();
+        }
+        if (!line.empty()) line += ' ';
+        line += word;
+    }
+    if (!line.empty()) std::cout << indent << line << "\n";
+}
+
 void print_item(const sqlref::Item& it, bool verbose = true) {
     std::cout << it.name << "\n";
     std::cout << "  " << it.syntax << "\n";
@@ -105,6 +121,27 @@ void print_item(const sqlref::Item& it, bool verbose = true) {
     if (!it.portable) {
         std::cout << "  (SQLite/MSSQL differences apply)\n";
     }
+
+    // THE x64 MAPPING NOTE HAD NO READER UNTIL 2026-09-09, and this is the line
+    // that gives it one. Item::x64 answers the question the catalog exists for
+    // -- its own declaration comment says so: "I know this SQL construct -- does
+    // x64base do it, and by what command?" -- and this function emitted name,
+    // syntax, summary and the portability line and STOPPED. Seventeen entries
+    // carried a mapping note that only sql_conformance_gate.py and the website
+    // (which quotes the header verbatim) could see. A reference that ships the
+    // answer and cannot print it is not a reference. Found 2026-09-09 while
+    // verifying a correction to the CREATE-TABLE entry: the corrected text was
+    // provably in the binary and provably unreachable from the prompt.
+    //
+    // DETAIL VIEW ONLY, deliberately. These notes run past a thousand
+    // characters, so the partial-search path (verbose=false) still prints one
+    // block per hit -- flooding a result list would trade one unusable output
+    // for another.
+    if (verbose && it.x64 && *it.x64) {
+        std::cout << "\n  x64base mapping:\n";
+        print_wrapped(it.x64, "    ", 76);
+    }
+
     if (verbose) std::cout << "\n";
 }
 } // namespace

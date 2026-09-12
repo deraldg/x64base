@@ -163,7 +163,13 @@ inline void print_area_one_line(std::ostream& os, xbase::DbArea& a) {
     const std::string tag = activeTag(a);
     const std::string keyline = compute_key_by(cont, tag);
 
-    os << "  Order: " << (asc ? "ASCEND" : "DESCEND") << "\n";
+    // AIF-148: the ORDER line reports WHICH ORDER THE CURSOR FOLLOWS, so a
+    // container attached with no tag selected reads NATURAL -- which is what
+    // TOP, BOTTOM and SKIP now do.  The container is still named on the line
+    // below, because it IS attached: the gate above stays hasOrder() so the
+    // report keeps saying which file is open and that no tag is chosen.
+    os << "  Order: " << (isNaturalOrder(a) ? "NATURAL"
+                                            : (asc ? "ASCEND" : "DESCEND")) << "\n";
     os << "  Index file  : " << cont;
     if (show_key_parenthetical(keyline)) os << " (" << keyline << ")";
     os << "\n";
@@ -176,7 +182,14 @@ inline void print_status_block(std::ostream& os, xbase::DbArea& a) {
 
     // Important: direction is not the same thing as active order.
     // isAscending(a) deliberately defaults true when no order state exists;
-    // therefore STATUS must test hasOrder(a) before printing ASCEND/DESCEND.
+    // therefore STATUS must test the order before printing ASCEND/DESCEND.
+    //
+    // AIF-148: this comment was right and the predicate under it was wrong.
+    // hasOrder(a) cannot test what the comment describes -- it tests whether
+    // a CONTAINER is attached -- so STATUS printed ASCEND for a table that
+    // was in natural order.  hasOrder() still gates the BLOCK (an attached
+    // container has a filename worth printing); isNaturalOrder() decides the
+    // ORDER line.
     if (!hasOrder(a)) {
         os << "Order       : NATURAL\n";
         os << "Index file  : (none)\n";
@@ -190,7 +203,8 @@ inline void print_status_block(std::ostream& os, xbase::DbArea& a) {
     const std::string tag  = activeTag(a);
     const std::string key  = compute_key_by(cont, tag);
 
-    os << "Order       : " << (asc ? "ASCEND" : "DESCEND") << "\n";
+    os << "Order       : " << (isNaturalOrder(a) ? "NATURAL"
+                                                 : (asc ? "ASCEND" : "DESCEND")) << "\n";
     os << "Index file  : " << cont;
     if (show_key_parenthetical(key)) os << " (" << key << ")";
     os << "\n";

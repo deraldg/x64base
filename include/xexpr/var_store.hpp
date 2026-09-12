@@ -12,13 +12,13 @@
 // DotScript scoped memory-variable store (DOTSCRIPT-ARRAYS lane, AIF-038, M1b-2).
 //
 // This is the value store the arrays lane's Phase-0 §1 mandates: the `$name`
-// memory variables that hold typed values — including array references. It is the
+// memory variables that hold typed values -- including array references. It is the
 // counterpart to macro substitution (`&name`), which is a *separate* operator lane
 // and is NOT this store (you never macro-substitute a composite value).
 //
 // Ownership model (kept teaching-grade and single-source, AIF-037):
 //   * The stored value type is the array lane's `dottalk::array::Value` variant
-//     (NIL / bool / int64 / double / string / ArrayRef) — reused, not reinvented,
+//     (NIL / bool / int64 / double / string / ArrayRef) -- reused, not reinvented,
 //     so a variable can hold a scalar OR an array with shared-reference identity.
 //   * Names are case-insensitive (xBase family): keys are normalized to upper-ASCII.
 //   * Scope is a stack of frames. Frame 0 is the PUBLIC/global frame and always

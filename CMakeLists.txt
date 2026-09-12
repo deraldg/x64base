@@ -18,7 +18,26 @@ endif()
 # Project
 # ============================================================
 
-project(DotTalkpp VERSION 0.6 LANGUAGES CXX)
+project(DotTalkpp VERSION 1.1 LANGUAGES CXX)
+
+# DOTTALK_ROOT -- the repository root, as the SHARED libraries should refer to it.
+#
+# Added 2026-08-17. src/xbase, src/memo and src/xindex used ${CMAKE_SOURCE_DIR}
+# for include/ and for three explicit cnx sources. That is correct only while
+# THIS file is the top of the configure, which silently made those three
+# libraries unusable from any other top-level project: a standalone build
+# rooted elsewhere resolves CMAKE_SOURCE_DIR to its own directory and the
+# includes vanish.
+#
+# Setting it here (identical value, zero behaviour change for this build) and
+# having the libraries read DOTTALK_ROOT lets bindings/pydottalk configure them
+# directly, WITHOUT re-listing their sources. That matters more than the
+# convenience: the source lists are globbed, and a second hand-copied list is
+# the shape this project keeps finding -- two restatements that drift, silently,
+# the first time somebody adds a file to src/xbase.
+if(NOT DEFINED DOTTALK_ROOT)
+  set(DOTTALK_ROOT "${CMAKE_SOURCE_DIR}" CACHE INTERNAL "DotTalk++ repository root")
+endif()
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -35,6 +54,38 @@ endif()
 
 set(DOTTALKPP_VERSION_LABEL "${PROJECT_VERSION}")
 
+# THE MATURITY WORD, AND WHY THE NUMBER ABOVE MOVED FROM 0.6 TO 1.1 (2026-09-11).
+#
+# The product read v0.6 for months. Not because nothing changed -- because the
+# numeral was the only thing anyone saw, and a numeral nobody can interpret is a
+# numeral nobody bumps. The label a reader wants is "which beta is this", and
+# that is not a second fact to keep in step: it is these same two numbers,
+# rendered by dottalk::version::release_label().
+#
+#     major -> the cycle      1
+#     minor -> a letter       0 -> a, 1 -> b, 2 -> c ...
+#
+# so VERSION 1.1 with maturity `beta` displays as "beta 1.b", and the next bump
+# is this one line. Nothing else in the tree restates it.
+#
+# THE BARE NUMERAL IS NOT DISPLAYED WHILE MATURITY IS PRE-RELEASE, which is what
+# makes a 1.x numbering honest at this stage: "1.1" reaches nobody until the
+# word below says `release`, so the number cannot be mistaken for a shipped one.
+# At release the word changes and the SAME numbers render "1.1" -- the version
+# line never has to jump to tell the truth.
+#
+# HAND-KEEPING THE LABEL WAS THE ALTERNATIVE AND IT WAS THE WORSE ONE. AIF-120
+# collapsed five hand-typed copies of the version and check_version_coherence.py
+# blocks a sixth -- but it finds copies by looking for MAJOR.MINOR, and a
+# hand-kept "beta 1.b" holds none. It would have been the one copy the gate
+# could not see, drifting silently and permanently. Derived, it cannot drift.
+#
+# Alpha features and the campus's other programs sit at their own maturities;
+# this variable is per-project by construction, so each one answers for itself.
+set(DOTTALKPP_MATURITY "beta" CACHE STRING
+    "Product maturity word: alpha, beta, rc or release")
+set_property(CACHE DOTTALKPP_MATURITY PROPERTY STRINGS alpha beta rc release)
+
 execute_process(
     COMMAND git -C "${CMAKE_SOURCE_DIR}" rev-parse --short=8 HEAD
     OUTPUT_VARIABLE DOTTALKPP_GIT_SHA
@@ -47,8 +98,20 @@ execute_process(
     OUTPUT_STRIP_TRAILING_WHITESPACE
     ERROR_QUIET
 )
+# --untracked-files=no is LOAD-BEARING, not tidiness (AIF-120 R118, 2026-08-22).
+# Without it `status --porcelain` emits a `??` line per untracked file, and this
+# tree carries thousands of them by design -- 4251 under docs/ (manualgen
+# published output, review packets, runlogs, datadict contracts) and 260 under
+# scripts/. _dottalk_git_status was therefore NEVER empty, so DOTTALKPP_GIT_DIRTY
+# was structurally pinned at 1 and every build ever stamped said "dirty",
+# including a spotless tree. The flag could not report clean. It now means what
+# a reader assumes: TRACKED files differ from HEAD.
+#
+# --no-optional-locks so configure does not take .git/index.lock. This house has
+# been wedged by an orphaned index.lock twice (2026-07-31, 2026-08-22); a build
+# configure is not worth a third.
 execute_process(
-    COMMAND git -C "${CMAKE_SOURCE_DIR}" status --porcelain
+    COMMAND git -C "${CMAKE_SOURCE_DIR}" --no-optional-locks status --porcelain --untracked-files=no
     OUTPUT_VARIABLE _dottalk_git_status
     OUTPUT_STRIP_TRAILING_WHITESPACE
     ERROR_QUIET
@@ -66,6 +129,48 @@ if (_dottalk_git_status)
     set(DOTTALKPP_GIT_DIRTY 1)
 else()
     set(DOTTALKPP_GIT_DIRTY 0)
+endif()
+
+# AIF-122 follow-up (2026-08-29). THE STAMP WAS FROZEN AT THE LAST CONFIGURE.
+# Everything above is captured by execute_process at CONFIGURE time, and
+# `cmake --build` does not re-configure, so the SHA the banner printed was the
+# commit the tree was CONFIGURED at -- never the one it was BUILT from.
+# MEASURED 2026-08-29: `dottalk++ v0.6 (2026-08-29, ec3402e8 dirty)` printed by
+# a binary built three commits later, and that stale line was then used to
+# identify which commit a run had come from. A second declaration of build
+# identity, drifted from the thing it describes -- the shape this file's own
+# comments keep catching one layer down.
+#
+# Depending on HEAD and the branch ref it names makes a COMMIT re-trigger the
+# configure. That is the RIGHT FREQUENCY and specifically not the churn AIF-122
+# removed below: those 254 entries were runtime data that the regression suite
+# rewrote, so verifying the build dirtied the build. A ref moves once per
+# commit. It is also nearly free by construction -- configure_file is
+# copy-if-different and only two TUs include the stamp, so re-reading an
+# unchanged SHA costs nothing at all.
+#
+# DIRTY IS STILL AS-OF-CONFIGURE AND CANNOT BE OTHERWISE. It reports the
+# working tree at the moment CMake ran; no dependency can express "a tracked
+# file has changed since". Read dirty=1 as "the tree was dirty when this was
+# configured", never as "these bytes differ from HEAD". Stated rather than
+# implied, because the half that CAN be fixed being fixed is exactly what makes
+# a reader trust the half that cannot.
+if (IS_DIRECTORY "${CMAKE_SOURCE_DIR}/.git")
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+        "${CMAKE_SOURCE_DIR}/.git/HEAD")
+    # HEAD is usually a symref; depend on the ref it names so an ordinary
+    # commit (which moves the ref, not HEAD) is seen. A packed ref has no
+    # loose file and simply is not added -- a detached HEAD moves HEAD itself,
+    # which is already covered above.
+    file(READ "${CMAKE_SOURCE_DIR}/.git/HEAD" _dottalk_head_contents)
+    string(STRIP "${_dottalk_head_contents}" _dottalk_head_contents)
+    if (_dottalk_head_contents MATCHES "^ref: (.+)$")
+        set(_dottalk_head_ref "${CMAKE_SOURCE_DIR}/.git/${CMAKE_MATCH_1}")
+        if (EXISTS "${_dottalk_head_ref}")
+            set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+                "${_dottalk_head_ref}")
+        endif()
+    endif()
 endif()
 
 # ============================================================
@@ -261,6 +366,21 @@ endif()
 # Main Source Tree
 # ============================================================
 
+# AIF-120. CTest.cmake:175 does find_program(MEMORYCHECK_COMMAND NAMES purify
+# valgrind boundscheck drmemory cuda-memcheck compute-sanitizer). None of those
+# are installed here, so the cache holds MEMORYCHECK_COMMAND-NOTFOUND -- and
+# CMake re-runs a find_program whose cached result is NOTFOUND on EVERY
+# configure. Measured 14.7 seconds per configure searching for memory checkers
+# that are not there, over a 9p mount.
+#
+# Seeding the cache with an empty (but not NOTFOUND) value makes find_program
+# return immediately. Nothing is lost: ctest -T memcheck has no checker today
+# either. Set MEMORYCHECK_COMMAND explicitly to use a real one.
+if (NOT DEFINED MEMORYCHECK_COMMAND)
+    set(MEMORYCHECK_COMMAND "" CACHE FILEPATH
+        "Memory checker for ctest -T memcheck; empty skips the probe")
+endif()
+
 include(CTest)
 
 # ============================================================
@@ -277,6 +397,15 @@ configure_file(
 configure_file(
     "${CMAKE_SOURCE_DIR}/config/build_vectors.json.in"
     "${CMAKE_BINARY_DIR}/generated/dottalk/build_vectors.json"
+    @ONLY)
+
+# AIF-122. The version stamp, as a GENERATED HEADER rather than as -D on every
+# command line. configure_file is copy-if-different, so this file's mtime moves
+# only when one of the four values changes -- and only the two TUs that include
+# dottalk/version.hpp recompile when it does. See config/version_stamp.hpp.in.
+configure_file(
+    "${CMAKE_SOURCE_DIR}/config/version_stamp.hpp.in"
+    "${CMAKE_BINARY_DIR}/generated/dottalk/version_stamp.hpp"
     @ONLY)
 include_directories("${CMAKE_BINARY_DIR}/generated")
 
@@ -345,25 +474,23 @@ find_package(unofficial-sodium CONFIG REQUIRED)
 # Target Helper
 # ============================================================
 
-function(dottalk_apply_version_metadata target_name)
-    if (NOT TARGET ${target_name})
-        return()
-    endif()
-
-    target_compile_definitions(${target_name} PRIVATE
-        DOTTALKPP_VERSION=\"${DOTTALKPP_VERSION_LABEL}\"
-        DOTTALKPP_VERSION_DATE=\"${DOTTALKPP_VERSION_DATE}\"
-        DOTTALKPP_GIT_SHA=\"${DOTTALKPP_GIT_SHA}\"
-        DOTTALKPP_GIT_DIRTY=${DOTTALKPP_GIT_DIRTY}
-    )
-endfunction()
+# AIF-122. dottalk_apply_version_metadata() DELETED, not emptied.
+#
+# It put the four version defines on the compiler command line of every TU in
+# every target it touched. Changing the SHA changed every command line, so a
+# one-line doc commit recompiled ~400 files -- measured 2026-08-22 at
+# 83f5032e -> 3908abed, twice, for change sets of 8 and 4 files. The stamp now
+# arrives as generated/dottalk/version_stamp.hpp (copy-if-different) and is
+# read only through include/dottalk/version.hpp, whose two includers are
+# cmd_version.cpp and gui/wx/main_frame.cpp.
+#
+# Emptied rather than deleted would have left a function with no effect and two
+# live call sites -- the AIF-079 shape this lane has now catalogued five times.
 
 function(dottalk_apply_common_settings target_name)
     if (NOT TARGET ${target_name})
         return()
     endif()
-
-    dottalk_apply_version_metadata(${target_name})
 
     target_compile_definitions(${target_name} PRIVATE
         DOTTALK_PROFILE_${DOTTALK_PROFILE}=1
@@ -486,7 +613,28 @@ if (DOTTALK_BUILD_BBSD AND NOT TARGET dottalk_bbsd)
         ${_bbsd_identity} ${_bbsd_bbs} ${_bbsd_sec} ${_bbsd_self} ${_bbsd_cdx}
         "${CMAKE_SOURCE_DIR}/src/common/path_state.cpp"
         "${CMAKE_SOURCE_DIR}/src/common/path_resolver.cpp"
-        "${CMAKE_SOURCE_DIR}/src/core/fields_mgr.cpp"   # fields::findFieldCI (free fn)
+        # fields::findFieldCI came from src/core/fields_mgr.cpp until 2026-08-30, when the
+        # file moved to src/xbase/ to sit beside the header that already declared it
+        # (include/xbase/fields.hpp). It is now an xbase.lib member and dottalk_bbsd
+        # links xbase below, so listing the source here would compile a SECOND copy into
+        # this executable -- and an exe's own object silently wins over the static-library
+        # member. That is the AIF-043 shape exactly. NOTE: src/CMakeLists.txt's
+        # duplicate-basename shadow guard checks DOTTALKPP_SOURCES only and would NOT
+        # have caught it here.
+        #
+        # VERIFIED 2026-08-30, and it had to be done BY NAME:
+        #   cmake --build build --config Release --target dottalk_bbsd
+        # links clean, so fields::findFieldCI resolves out of xbase.lib. A first attempt
+        # failed LNK1104 -- cannot open the OUTPUT file -- because THE DAEMON WAS RUNNING
+        # and holding its own exe; the owner stopped it and the retry linked without
+        # recompiling. An unresolved symbol would have been LNK2019, so the error CODE is
+        # what said the change was not the cause. Worth knowing before the next rebuild:
+        # this target is a long-running daemon, so a locked exe is a RECURRING condition
+        # here and not a flake -- stop it first.
+        #
+        # WHY BY NAME: build.ps1 builds SEVEN targets and dottalk_bbsd is not one of them,
+        # though DOTTALK_BUILD_BBSD defaults ON. A change that breaks this executable
+        # therefore passes the house build in silence. Raised as OI-022.
     )
     target_include_directories(dottalk_bbsd PRIVATE "${CMAKE_SOURCE_DIR}/include")
     target_compile_features(dottalk_bbsd PRIVATE cxx_std_20)
@@ -500,11 +648,6 @@ if (DOTTALK_BUILD_BBSD AND NOT TARGET dottalk_bbsd)
     endif()
     message(STATUS "dottalk_bbsd (standalone BBS daemon) ENABLED.")
 endif()
-
-foreach(_dottalk_gui_target IN ITEMS dottalk_wx dottalk_wx_next)
-    dottalk_apply_version_metadata(${_dottalk_gui_target})
-endforeach()
-unset(_dottalk_gui_target)
 
 if (BUILD_PYDOTTALK)
     if (TARGET pydottalk)
@@ -538,6 +681,21 @@ endif()
 # Product Package Allow-list
 # ============================================================
 
+# AIF-120. The inventory step below reads and SHA-256s every file the product
+# manifest names -- measured 254 files / 65,663,475 bytes for DEVELOPMENT -- on
+# every configure, and then registers all of them as CMAKE_CONFIGURE_DEPENDS so
+# touching any one re-triggers it. Across a WSL 9p mount to a Windows drive that
+# was the whole of a 530-second configure, for a step that contributes nothing to
+# compiling or linking: its only consumers are install() rules.
+#
+# OFF by default, so release and Windows builds hash exactly what they always
+# hashed. The in-loop Linux presets set it ON -- their own descriptions say they
+# exist to be fast. A build with this ON cannot produce a package, and says so.
+if (NOT DEFINED DOTTALK_SKIP_PACKAGE_INVENTORY)
+    option(DOTTALK_SKIP_PACKAGE_INVENTORY
+        "Skip the product package inventory and its install rules (in-loop builds)" OFF)
+endif()
+
 # Product packaging is a third filter, separate from .gitignore (never
 # version) and PROMOTE.manifest (publish now). It selects only git-tracked
 # runtime inputs for this named product and never recursively copies the
@@ -555,6 +713,14 @@ set(DOTTALK_PRODUCT_INVENTORY
     "${_dottalk_package_dir}/${_dottalk_product_lower}-product-inventory.json")
 set(_dottalk_package_file_list
     "${_dottalk_package_dir}/${_dottalk_product_lower}-package-files.txt")
+# The guarded body keeps its original indentation on purpose: re-indenting
+# forty lines would bury a six-line change in a whole-block diff.
+if (DOTTALK_SKIP_PACKAGE_INVENTORY)
+message(STATUS
+    "Product package: SKIPPED (DOTTALK_SKIP_PACKAGE_INVENTORY=ON) "
+    "-- this build cannot produce an installable package")
+else()
+
 execute_process(
     COMMAND "${Python3_EXECUTABLE}"
             "${CMAKE_SOURCE_DIR}/tools/packaging/build_product_inventory.py"
@@ -575,10 +741,26 @@ string(STRIP "${_dottalk_inventory_output}" _dottalk_inventory_output)
 message(STATUS "Product package: ${_dottalk_inventory_output}")
 
 file(STRINGS "${_dottalk_package_file_list}" DOTTALK_PACKAGE_FILES)
+
+# AIF-122. ${DOTTALK_PACKAGE_FILES} REMOVED from CMAKE_CONFIGURE_DEPENDS.
+#
+# 254 of its 257 entries are RUNTIME DATA under dottalkpp/data/ -- including
+# dottalkpp/data/dbf/x64/STUDENTS.dtx, a memo sidecar the regression suite
+# writes. So running the tests re-triggered a configure, every time, and CMake
+# said so by name:
+#
+#   the file 'dottalkpp/data/dbf/x64/STUDENTS.dtx' is newer than
+#   'build/CMakeFiles/generate.stamp.depend'
+#
+# Measured 2026-08-22: STUDENTS.dtx 12:22:02 -> 12:36:10 across one
+# REGRESSION RUN, and the next build reconfigured for 13s. Verifying the build
+# should not dirty the build. The inventory's only consumers are the install()
+# rules below, so the file list is an INPUT to packaging, not a reason to
+# re-run CMake. The manifest and the script that reads it stay: those are the
+# things whose change genuinely alters the configure.
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
     "${DOTTALK_PACKAGE_MANIFEST}"
     "${CMAKE_SOURCE_DIR}/tools/packaging/build_product_inventory.py"
-    ${DOTTALK_PACKAGE_FILES}
 )
 
 foreach(_dottalk_package_rel IN LISTS DOTTALK_PACKAGE_FILES)
@@ -604,11 +786,15 @@ foreach(_dottalk_package_rel IN LISTS DOTTALK_PACKAGE_FILES)
             DESTINATION "${_dottalk_package_dest}")
 endforeach()
 
+endif()
+
 install(FILES "${CMAKE_SOURCE_DIR}/LICENSE" DESTINATION ".")
 install(FILES "${DOTTALK_PACKAGE_MANIFEST}"
         DESTINATION "." RENAME "product.manifest")
-install(FILES "${DOTTALK_PRODUCT_INVENTORY}"
-        DESTINATION "." RENAME "product-inventory.json")
+if (NOT DOTTALK_SKIP_PACKAGE_INVENTORY)
+    install(FILES "${DOTTALK_PRODUCT_INVENTORY}"
+            DESTINATION "." RENAME "product-inventory.json")
+endif()
 
 if (BUILD_TESTING)
     foreach(_dottalk_package_product IN ITEMS
@@ -624,6 +810,13 @@ if (BUILD_TESTING)
                     --output
                     "${_dottalk_package_dir}/${_dottalk_package_product}-test-inventory.json"
         )
+        # AIF-120. These four run the same read-and-SHA-256 pass as the
+        # configure step, once per product: measured 230 of a 235-second ctest
+        # run on Linux, against 4.2 seconds for all twelve code tests combined.
+        # The label lets an in-loop run skip them -- ctest -LE packaging -- the
+        # way src/tests/CMakeLists.txt already labels its own.
+        set_tests_properties("package_manifest_${_dottalk_package_product}"
+            PROPERTIES LABELS "packaging")
     endforeach()
 endif()
 
@@ -656,7 +849,11 @@ message(STATUS "  DOTTALK_WITH_WX       : ${DOTTALK_WITH_WX}")
 message(STATUS "  DOTTALK_TV_TESTS      : ${DOTTALK_TV_TESTS}")
 message(STATUS "  BUILD_PYDOTTALK       : ${BUILD_PYDOTTALK}")
 message(STATUS "  BUILD_TESTING         : ${BUILD_TESTING}")
-message(STATUS "  version metadata      : v${DOTTALKPP_VERSION_LABEL} ${DOTTALKPP_VERSION_DATE} ${DOTTALKPP_GIT_SHA} dirty=${DOTTALKPP_GIT_DIRTY}")
+# dirty= stays HERE and is gone from the product banner. This line is a
+# configure-time diagnostic read by whoever is building; the banner is read by
+# whoever is running, and in a shared worktree dirty is true on every build ever
+# made, which makes it furniture there and information here.
+message(STATUS "  version metadata      : ${DOTTALKPP_MATURITY} ${DOTTALKPP_VERSION_LABEL} ${DOTTALKPP_VERSION_DATE} ${DOTTALKPP_GIT_SHA} dirty=${DOTTALKPP_GIT_DIRTY}")
 message(STATUS "  TVISION_ROOT          : ${TVISION_ROOT}")
 message(STATUS "  VCPKG_ROOT            : ${VCPKG_ROOT}")
 message(STATUS "  sqlite found          : ${_sqlite_found}")
@@ -681,6 +878,44 @@ if(DOTTALK_BUILD_METACOLLECT AND NOT TARGET dt_meta)
         src/datadict/ddict_read_helpers.cpp
         src/datadict/ddict_dbf_reader.cpp
         src/meta/metacollect.cpp
+        # resolve_in_slot(), added 2026-08-13 to unbreak the metacollect link.
+        #
+        # AIF task: FILE() / WRITEBACK TO / ERASE DIR were routed through
+        # resolve_in_slot so a bare token resolves inside the active workspace
+        # slot instead of the process CWD. The CALLERS -- fn_string.cpp and
+        # function_catalog.cpp, both listed above -- are compiled into TWO link
+        # closures: the dottalkpp engine, and this dt_meta library.
+        #
+        # The engine already links src/common/path_resolver.cpp, so it built
+        # clean and the breakage stayed invisible there. dt_meta did not, so
+        # metacollect failed at link with an undefined resolve_in_slot while
+        # every other target was green -- one source file, two closures, one of
+        # them short a definition.
+        #
+        # Adding the definition here rather than stubbing it keeps both closures
+        # resolving the SAME function; a local stub would compile and then
+        # silently resolve paths differently from the engine, which is worse
+        # than a link error because a link error stops.
+        #
+        # NOTE: declared in BOTH include/cli/path_resolver.hpp and
+        # include/common/path_resolver.hpp -- one function, two headers. That
+        # duplication is not fixed here; it is its own change.
+        src/common/path_resolver.cpp
+        #
+        # The slot state resolve_in_slot() sits on. Adding path_resolver.cpp
+        # alone did NOT link: it exposed the next layer, four more undefined
+        # symbols, all dottalk::paths and all defined here --
+        #   state()                   path_state.cpp:132
+        #   get_slot(Slot)            path_state.cpp:169   (also called directly
+        #                                                   by fn_string.cpp)
+        #   workspace_search_roots()  path_state.cpp:447
+        #   script_search_roots()     path_state.cpp:458
+        #
+        # Expected to be the last layer: path_state.cpp includes only its own
+        # header and standard library, so it terminates the chain rather than
+        # reaching further into the engine. Verify by building, not by trusting
+        # this comment -- the same reasoning said one file would be enough.
+        src/common/path_state.cpp
     )
 
     target_include_directories(dt_meta PUBLIC
@@ -728,7 +963,58 @@ if(DOTTALK_BUILD_SLOT_COST_PROBE AND NOT TARGET g0_slot_cost_probe)
         target_link_libraries(g0_slot_cost_probe PRIVATE xbase)
     endif()
 endif()
+# ---- AIF-160: what a group decision actually costs --------------------------
+# Decision 6.2 chose a DBF catalog for the group log over a flat append-only
+# file and named ONE open question: whether a DBF write can meet the fsync
+# requirement. Section 8.2 settled the CAPABILITY -- durable_sync syncs a DBF by
+# path and already does exactly this on the workspaces catalog. The COST was
+# never established, and 6.2 called it "the FIRST thing to measure".
+#
+# It also prices a claim of the AUTHOR'S OWN. The locking ruling rests on an
+# assertion derived by READING try_lock_record -- that a record lock is a FILE,
+# that n rows is O(n) file creates, and that no phase choice makes that cheap.
+# That argument moved a decision and had never been run. The probe prints the
+# arithmetic so the ruling can be confirmed or refuted rather than believed.
+#
+# DELIBERATELY NOT add_test, for the reason the G0 probe above records: a timing
+# measurement registered as a test is a test that can only pass.
+option(DOTTALK_BUILD_GROUP_COST_PROBE "Build the AIF-160 group commit cost probe" OFF)
+if(DOTTALK_BUILD_GROUP_COST_PROBE AND NOT TARGET group_commit_cost_probe)
+    add_executable(group_commit_cost_probe
+        src/tools/group_commit_cost_probe.cpp
+        src/cli/group_log.cpp
+        src/common/path_state.cpp)
+    target_compile_features(group_commit_cost_probe PRIVATE cxx_std_20)
+    target_include_directories(group_commit_cost_probe PRIVATE
+        "${CMAKE_SOURCE_DIR}/include"
+        "${CMAKE_BINARY_DIR}/generated")
+    if(TARGET xbase)
+        target_link_libraries(group_commit_cost_probe PRIVATE xbase memo)
+    endif()
+endif()
+
 # END DOTARCH METACOLLECT CMAKE BUILDWIRE OPTION B V1
+
+# AIF-120: the windowed GUI installs beside dottalkpp, because that is where the
+# runtime looks for it. The GUI path slot is root-relative (<root>/bin), so a
+# packaged product whose GUI landed anywhere else would have APPGUI report "not
+# present in this build" on a build that contains it.
+#
+# The dev tree is handled separately, by a POST_BUILD stage in
+# src/gui/wx/CMakeLists.txt; this is the INSTALL half. The package manifest lists
+# only the three .ini files under dottalkpp/bin -- executables are gitignored
+# (.gitignore:247, **/*.exe) and reach the package through install(TARGETS),
+# which is exactly how dottalkpp itself gets there.
+foreach(_dottalk_gui_install IN ITEMS dottalk_wb dottalk_wb_next)
+    if (TARGET ${_dottalk_gui_install})
+        install(TARGETS ${_dottalk_gui_install} RUNTIME DESTINATION bin)
+        if (WIN32)
+            install(FILES $<TARGET_RUNTIME_DLLS:${_dottalk_gui_install}>
+                    DESTINATION bin OPTIONAL)
+        endif()
+    endif()
+endforeach()
+unset(_dottalk_gui_install)
 
 if(TARGET dottalkpp)
     if (WIN32)

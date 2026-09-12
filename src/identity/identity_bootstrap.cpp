@@ -22,6 +22,86 @@
 
 namespace dottalk::identity {
 
+// The standard org roster. Idempotent by key; see the header for the contract.
+//
+// Granularity is ONE ORG PER VENDOR, which is what makes the independence check
+// useful: member.ai.claude.cowork and member.ai.codex.local land in different orgs
+// and therefore read as independent of each other. Folding every outside agent into
+// a single org.external would collapse independence to house-vs-everyone and no AI
+// partner could ever review another's work.
+//
+// member.guest is deliberately UNBOUND. A guest answers to nobody we can name, so its
+// ORGUNIT stays 0 -- and the independence predicate fails closed on 0, so a guest can
+// never be counted independent of anyone. That is the intended reading, not an omission.
+int apply_standard_orgs(InMemoryIdentityStore& s) {
+    struct OrgSeed  { const char* key; const char* name; OrgUnitType type; };
+    struct BindSeed { const char* member; const char* org; };
+
+    static const OrgSeed kOrgs[] = {
+        {"org.house",     "The House",              OrgUnitType::Organization},
+        {"org.anthropic", "Anthropic",              OrgUnitType::Partner},
+        {"org.openai",    "OpenAI",                 OrgUnitType::Partner},
+        {"org.xai",       "xAI",                    OrgUnitType::Partner},
+    };
+    static const BindSeed kBinds[] = {
+        {"member.derald",           "org.house"},
+        {"member.public",           "org.house"},
+        {"member.ai.claude.cowork", "org.anthropic"},
+        {"member.ai.codex.local",   "org.openai"},
+        {"member.ai.grok.xai",      "org.xai"},
+    };
+
+    int added = 0;
+    const std::uint64_t now = identity_now();
+
+    std::uint64_t max_org = 0;
+    for (const auto& o : s.org_units) max_org = std::max(max_org, o.id.value());
+
+    int sort = 0;
+    for (const auto& seed : kOrgs) {
+        ++sort;
+        if (find_org_by_key(s, seed.key)) continue;    // keep the existing row and its id
+        OrgUnit o;
+        o.id         = OrgUnitId{++max_org};
+        o.key        = seed.key;
+        o.type       = seed.type;
+        o.name       = seed.name;
+        o.status     = EntityStatus::Active;
+        o.sort_order = sort;
+        o.stamp.valid_from = now;
+        s.org_units.push_back(std::move(o));
+        ++added;
+    }
+
+    std::uint64_t max_assign = 0;
+    for (const auto& a : s.assignments) max_assign = std::max(max_assign, a.id.value());
+
+    for (const auto& b : kBinds) {
+        const TeamMember* m = find_member_by_key(s, b.member);
+        const OrgUnit*    o = find_org_by_key(s, b.org);
+        if (!m || !o) continue;                        // absent member is not an error here
+
+        // Already bound to some org on a membership row? Leave it alone -- a backfill
+        // does not get to re-home a member the owner placed by hand.
+        bool bound = false;
+        for (const auto& a : s.assignments)
+            if (a.member == m->id && !a.work.has_value() && a.org_unit.has_value()) { bound = true; break; }
+        if (bound) continue;
+
+        TeamAssignment a;
+        a.id       = AssignmentId{++max_assign};
+        a.member   = m->id;
+        a.org_unit = o->id;
+        a.assignment_kind = "";      // membership row: no standing. Standing is per-matter.
+        a.status   = EntityStatus::Active;
+        a.stamp.valid_from = now;
+        s.assignments.push_back(std::move(a));
+        ++added;
+    }
+
+    return added;
+}
+
 namespace {
 
 InMemoryIdentityStore build_seed() {
@@ -69,18 +149,31 @@ InMemoryIdentityStore build_seed() {
     // Guestbook-only "leave a message" capability (board.guestbook POSTPERM). Distinct from
     // bbs.post so a guest cannot post to any other board. Guests get ONLY this.
     const PermissionId bbs_guest   = P(19, "bbs.guest",           "bbs",      "guest",   RiskClass::Low,      false);
+    // --- AIF-120: launching the product's own windowed GUI -------------------
+    // Resource class "app", NOT "host". That is the whole point and it is load
+    // bearing: agent_permitted() consults DOTTALK_ALLOW_HOST_COMMANDS only when
+    // resource_class == "host" (identity_admin.cpp:463). Opening a first-party
+    // window that ships in the same bin directory is not host shell execution,
+    // and requiring the shell door for it would make a user enable arbitrary
+    // command execution to see their own GUI -- a far wider grant than the act.
+    //
+    // Medium, no approval: it starts a process, so it is not Low; it mutates no
+    // data, opens no socket and runs no user-supplied string, so it is not
+    // Critical the way host.shell is.
+    const PermissionId app_gui     = P(20, "app.gui",             "app",      "launch",  RiskClass::Medium,   false);
 
     auto grant_role = [&](RoleId r, std::initializer_list<PermissionId> perms) {
         for (PermissionId p : perms) s.role_permissions.push_back({r, p});
     };
     grant_role(MAINTAINER, {src_read, src_prop, src_mut, db_read, db_mut, promote, git_commit,
                             git_push, publish, branch, user_mgr, role_asn, auth_grant, host_shell,
-                            host_egress, bbs_read, bbs_post, chat_invoke});
-    grant_role(DEVELOPER, {src_read, src_prop, src_mut, db_read, db_mut, git_commit, bbs_read});
-    grant_role(REVIEWER,  {src_read, db_read, bbs_read});
-    grant_role(TEACHER,   {src_read, db_read, db_mut, bbs_read});
-    grant_role(STUDENT,   {src_read, db_read, bbs_read});
-    // AI partners: propose + board + chat; NOT source.mutate, NOT host.network.egress.
+                            host_egress, bbs_read, bbs_post, chat_invoke, app_gui});
+    grant_role(DEVELOPER, {src_read, src_prop, src_mut, db_read, db_mut, git_commit, bbs_read, app_gui});
+    grant_role(REVIEWER,  {src_read, db_read, bbs_read, app_gui});
+    grant_role(TEACHER,   {src_read, db_read, db_mut, bbs_read, app_gui});
+    grant_role(STUDENT,   {src_read, db_read, bbs_read, app_gui});
+    // AI partners: propose + board + chat; NOT source.mutate, NOT host.network.egress,
+    // and NOT app.gui -- an agent should not be opening windows on someone's desktop.
     grant_role(AI_PARTNER,{src_read, src_prop, db_read, bbs_read, bbs_post, chat_invoke});
     grant_role(PUB_OP,    {promote, git_commit, git_push, publish, bbs_read});
     // AIF-075: BBS READ is public. Every seeded role (incl. the guest "leave a message" role and
@@ -104,7 +197,7 @@ InMemoryIdentityStore build_seed() {
     const UserId U_AI_GROK   = U(7, "user.ai.grok.xai",      "grok",   "Grok (xAI)",      "", AuthKind::Token);
     const UserId U_GUEST     = U(8, "user.guest",            "guest",  "Guest",           "", AuthKind::Token);
 
-    // --- Members (Contract §3.2) — humans bind a USERS row; AI members do not ---
+    // --- Members (Contract §3.2) -- humans bind a USERS row; AI members do not ---
     auto M = [&](std::uint64_t id, const char* key, MemberKind kind, UserId uid, RoleId def_role) {
         TeamMember m; m.id = TeamMemberId{id}; m.key = key; m.kind = kind; m.default_role = def_role;
         if (uid.valid()) m.user_id = uid;
@@ -129,6 +222,9 @@ InMemoryIdentityStore build_seed() {
     owner.action_scope = "*";                 // covers every requires-approval permission
     owner.reason = "owner standing authorization (sole ask-for-permission exemption)";
     s.grants = {owner};
+
+    // Orgs + membership assignments, from the same roster USER ORG BACKFILL applies.
+    apply_standard_orgs(s);
 
     return s;
 }

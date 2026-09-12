@@ -211,7 +211,7 @@ bool predx::eval_expr(xbase::DbArea& A, std::string expr) {
 
     // DotScript memvar / array predicate ($name / $a[n] / {...}): resolve via the one
     // shared house evaluator (session_vars-backed, field-aware) against the current record
-    // — the same bridge IF/WHILE use. predx cannot represent these (and uses `$` as the
+    // -- the same bridge IF/WHILE use. predx cannot represent these (and uses `$` as the
     // substring-containment operator), so they route here; field-only / containment
     // predicates never match the bridge and stay on predx's triplet path. (AIF-041.)
     {

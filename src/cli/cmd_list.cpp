@@ -35,6 +35,21 @@
 //   LIST BOTTOM <limit>
 //
 // notes:
+//   A NULL cell prints as `.NULL.` -- the token Visual FoxPro prints -- and a
+//     nullable column is widened to at least six characters so the marker is
+//     never truncated into something that reads as data. Only VFP-flavour tables
+//     carrying a `_NullFlags` column can hold a null, so no other table's column
+//     widths change.
+//   Under TABLE buffering a PENDING value outranks the physical null: a cell that
+//     is null on disk but carries a buffered edit shows the EDIT, because this
+//     view is what COMMIT would produce.
+//   ISNULL(<field>) tests for a null in a FOR predicate: LIST FOR ISNULL(VNAME).
+//     Its argument must be a bare field name -- ISNULL("x") and ISNULL(1+2) are
+//     refused, because only a stored cell has a null bit and evaluating the
+//     argument would erase the very distinction being asked about (a null field
+//     and a blank field both evaluate to the empty string).
+//   ISNULL on a field that CANNOT be null answers .F. rather than erroring: that
+//     is the true answer. An unknown field name is an error, as it is anywhere.
 //   LIST requires an open table except for LIST USAGE.
 //   LIST with no arguments displays from the current cursor position.
 //   LIST ALL starts at the top and removes the default output limit.
@@ -58,6 +73,7 @@
 //   COUNT
 //   LOCATE
 //
+#include "workarea_util.hpp"
 #include "xbase.hpp"
 #include "textio.hpp"
 #include "filters/filter_registry.hpp"
@@ -154,17 +170,12 @@ static inline std::string upper_copy(std::string s) {
 }
 
 static int resolve_area_index(xbase::DbArea& a) {
-    xbase::XBaseEngine* eng = shell_engine();
-    if (!eng) return -1;
-
-    for (int i = 0; i < xbase::MAX_AREA; ++i) {
-        try {
-            if (&eng->area(i) == &a) return i;
-        } catch (...) {
-        }
-    }
-
-    return -1;
+    // AIF-120 I1.1 sweep completed 2026-08-22 (AIF-078 GUI design sec 8, O5).
+    // This was a MAX_AREA pointer-identity scan. The engine stamps the same
+    // number into DbArea::_engine_slot once at construction, so the scan
+    // recovered a value the area already carried. Body only -- the signature
+    // and every call site are unchanged, which is how I1.1 did it.
+    return cli::slot_of_area(&a);
 }
 
 static void print_list_row(xbase::DbArea& area,
@@ -176,7 +187,13 @@ static void print_list_row(xbase::DbArea& area,
         try {
             const bool physical_deleted = area.isDeleted();
             dottalk::table::Row row = table_view->snapshot_view(static_cast<int>(rn));
-            cli::smartlist::print_row(area, row, recw, physical_deleted);
+            // The overlay is passed through so the row printer can tell a
+            // PENDING buffered value from a physical NULL. Without it the
+            // printer would paint `.NULL.` over an edit that is about to
+            // replace it -- reporting the opposite of what COMMIT will do.
+            const dottalk::table::Overlay ov =
+                table_view->overlay_for(static_cast<int>(rn));
+            cli::smartlist::print_row(area, row, recw, physical_deleted, &ov);
             return;
         } catch (...) {
             // LIST is a developer tool; if the overlay path is unavailable,
@@ -525,8 +542,22 @@ void cmd_LIST(xbase::DbArea& a, std::istringstream& iss) {
         if (cr) {
             _prog = std::shared_ptr<dottalk::expr::Expr>(std::move(cr.program));
         } else {
-            std::cout << "; LIST FOR error: " << cr.error << " - ignoring FOR.\n";
-            opt.haveCompiledFor = false;
+            // R3: failure travels in the return value -- and until 2026-08-27
+            // this branch RECEIVED the refusal, printed it, and then listed
+            // EVERY ROW. It announced that it could not answer the question
+            // asked, and then answered a different one, which is worse than
+            // silence because the output looks like a result set.
+            //
+            // compile_where is the ONE funnel AIF-074 ED-01b built precisely so
+            // a partly-parsed predicate could not be evaluated as though it were
+            // whole. Discarding its verdict here reopened that class one level
+            // up, at the consumer.
+            //
+            // Now LIST REFUSES. An unparseable FOR produces no rows, because
+            // "every row" is not a conservative answer to a filter nobody could
+            // compile -- it is the least conservative answer available.
+            std::cout << "; LIST FOR error: " << cr.error << " - refusing.\n";
+            return;
         }
     }
 

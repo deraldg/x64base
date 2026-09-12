@@ -10,6 +10,7 @@
 #include "cnx/cnx_backend.hpp"
 
 #include "xbase.hpp"
+#include "xbase_field_getters.hpp"   // AIF-157: the ONE field resolver
 #include "cnx/cnx.hpp"
 
 #include <algorithm>
@@ -63,23 +64,24 @@ static std::string upper_copy_ascii_local_(std::string s)
     return s;
 }
 
+// AIF-157 -- ONE RESOLVER. This was a byte-for-byte copy of the same hand-rolled
+// matcher in cdx_native_backend.cpp, which is how the tree came to hold FIVE
+// answers to "which field does this tag name": the standard resolver
+// (xfg::resolve_field_index_std, used by REPLACE, LOCATE, ADDTAG, TUPLE and the
+// expression evaluator), BUILDLMDB's textio::ieq loop, IndexManager's untrimmed
+// compare, and this function twice.
+//
+// It matters most HERE. CNX is the backend that gained realtime maintenance
+// (XIDX-TXN-02 M1), so this resolver is consulted on the upsert path of every
+// indexed edit -- see tag_field_and_kind_ below, whose caller sets stale_ and
+// returns when this reports 0. A tag named by its x64 descriptor-token alias,
+// which ADDTAG accepts and REPLACE resolves, reported 0 here and took the
+// "cannot maintain" branch on a backend that can.
 static int field_index_for_tag_(const xbase::DbArea& A, const std::string& tag_upper)
 {
     try {
-        const auto defs = A.fields();
-        const std::string want = upper_copy_ascii_local_(tag_upper);
-
-        for (std::size_t i = 0; i < defs.size(); ++i) {
-            std::string have = defs[i].name;
-            const auto nul = have.find('\0');
-            if (nul != std::string::npos) have.resize(nul);
-            have = trim_copy_(have);
-            have = upper_copy_ascii_local_(have);
-
-            if (have == want) {
-                return static_cast<int>(i) + 1; // 1-based
-            }
-        }
+        const int idx0 = xfg::resolve_field_index_std(A, tag_upper);
+        if (idx0 >= 0) return idx0 + 1; // 1-based
     } catch (...) {
     }
     return 0;

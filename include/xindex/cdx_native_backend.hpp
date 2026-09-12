@@ -9,12 +9,12 @@
 
 #pragma once
 //
-// CdxNativeBackend — native CDX (V64) key backend, LMDB-free.
+// CdxNativeBackend -- native CDX (V64) key backend, LMDB-free.
 //
 // Twin of CnxBackend, but serves a uint64 index: it collects recnos via
 // DbArea::recno64(), encodes 8-byte-recno "RUN8" blocks into a .cdx container
 // (through the ramfs-routable cdxfile:: layer), and reads them back via
-// CdxDocument. This is the "build for big" native index — maxRecordNumber() is
+// CdxDocument. This is the "build for big" native index -- maxRecordNumber() is
 // the full 64-bit range (CNX/uint32 remains the small fallback).
 //
 // Distinct from xindex::CdxBackend (the CDX-over-LMDB backend); this one is the

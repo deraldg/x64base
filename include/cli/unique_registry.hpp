@@ -22,7 +22,10 @@ namespace unique_reg {
 
 // Return a stable bucket name for the current area (Phase 1 uses "AREA").
 // You can later change this to alias/area number without breaking callers.
-std::string current_alias_or_area_name(xbase::DbArea& A);
+// AIF-156: const because it only reads A.name(), and the constraint layer
+// asks this question from a `const DbArea&`. Widening a read-only parameter
+// breaks no caller -- a non-const argument still binds.
+std::string current_alias_or_area_name(const xbase::DbArea& A);
 
 // Register/unregister a field as unique for the current area.
 void set_unique_field(xbase::DbArea& A, const std::string& field_name, bool on);
@@ -33,7 +36,7 @@ bool is_unique_field(xbase::DbArea& A, const std::string& field_name);
 // table (implies unique; one primary per table, last set wins).
 void set_primary_field(xbase::DbArea& A, const std::string& field_name);
 // The current table's primary field, or empty when none is designated.
-std::string primary_field(xbase::DbArea& A);
+std::string primary_field(const xbase::DbArea& A);
 
 // List all unique fields for the current area.
 std::vector<std::string> list_unique_fields(xbase::DbArea& A);

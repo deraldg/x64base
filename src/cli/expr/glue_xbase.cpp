@@ -16,6 +16,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <stdexcept>
 #include <unordered_map>
 #include <cstdint>
 
@@ -34,15 +35,28 @@ inline std::string upper(std::string s) {
     return s;
 }
 
+// AIF-120 R116: ONE field-name authority.
+//
+// This compared the name against fields()[i].name and nothing else. On an
+// x64 table that is only half the question: a LONG field name is written to
+// disk under a 10-byte DESCRIPTOR token (plus ~n and ~hash collision
+// aliases, field_name_policy.hpp), and a caller naming that token missed
+// here -- silently, because the miss returns "not a field" and every path
+// downstream reads that as an empty value or a string literal.
+//
+// xfg::resolve_field_index_std (xbase_field_getters.hpp) already answers the
+// whole question: logical names win, x64 descriptor tokens are accepted as
+// aliases ONLY where they map uniquely, ambiguity is refused, and -1 means
+// genuinely not a field. Four resolvers in this engine disagreed about what
+// a field name is; they now all ask the same one.
+//
+// CONVENTION: the resolver returns 0-based with -1 for unknown; this function
+// owes its callers 1-based with 0 for unknown. The conversion is the whole
+// body -- get it wrong and every field read shifts by one while every row
+// still looks like it worked.
 inline int field_index_ci(const xbase::DbArea& a, std::string_view name) {
-    std::string N{name};
-    const auto& Fs = a.fields();
-    std::string U = upper(N);
-    for (int i = 0; i < (int)Fs.size(); ++i) {
-        std::string H = Fs[(size_t)i].name;
-        if (upper(H) == U) return i + 1; // 1-based
-    }
-    return 0;
+    const int idx0 = xfg::resolve_field_index_std(a, std::string{name});
+    return idx0 < 0 ? 0 : idx0 + 1;
 }
 
 // Scan-evaluator lane M1: field-name -> 1-based index with a per-view cache, so
@@ -162,10 +176,23 @@ RecordView make_record_view(xbase::DbArea& area) {
             if (up == "DELETED") {
                 return area.isDeleted() ? "T" : "F";
             }
+            if (up == "RECNO") {
+                return std::to_string(area.recno64());
+            }
+            // Special symbol: RECCOUNT -- the DBF header's stored record count
+            // (bytes 4-7, HeaderRec::num_of_recs), reached via recCount64().
+            // Owner correction 2026-08-12: a DBF record count is a FACT IN THE
+            // HEADER, not something a loop derives, so a spec asserting "all N
+            // made the trip" by probing record N's value was working around a
+            // missing accessor rather than around an absent fact. 64-bit
+            // accessor deliberately: recCount() returns -1 past INT32_MAX.
+            if (up == "RECCOUNT") {
+                return std::to_string(area.recCount64());
+            }
         }
 
         int idx = field_index_ci_cached(area, name, *idx_cache);
-        if (idx <= 0) return std::string();
+        if (idx <= 0) throw std::runtime_error("unknown field '" + std::string(name) + "'");
         return get_logical_field_text(area, idx);
     };
 
@@ -178,6 +205,12 @@ RecordView make_record_view(xbase::DbArea& area) {
             for (char c: name) up.push_back((char)std::toupper((unsigned char)c));
             if (up == "DELETED") {
                 return area.isDeleted() ? 1.0 : 0.0;
+            }
+            if (up == "RECNO") {
+                return static_cast<double>(area.recno64());
+            }
+            if (up == "RECCOUNT") {
+                return static_cast<double>(area.recCount64());
             }
         }
 
@@ -213,6 +246,27 @@ RecordView make_record_view(xbase::DbArea& area) {
         return std::nullopt;
     };
 
+    rv.get_field_type = [&area, idx_cache](std::string_view name)->std::optional<char> {
+        std::string key;
+        for (char c : name) key.push_back(static_cast<char>(std::toupper(static_cast<unsigned char>(c))));
+        if (key == "DELETED") return 'L';
+        if (key == "RECNO" || key == "RECCOUNT") return 'N';
+        const int idx = field_index_ci_cached(area, name, *idx_cache);
+        if (idx <= 0) return std::nullopt;
+        return area.fields()[static_cast<std::size_t>(idx - 1)].type;
+    };
+
+    // ISNULL(). nullopt ONLY for a field that does not exist -- the call site
+    // turns that into an error, matching an unknown field anywhere else.
+    // fieldIsNullFromBuffer() already fails closed for a table with no bitmap
+    // and for a field with no null bit, both of which answer false because that
+    // is TRUE: a field that cannot be null is not null.
+    rv.get_field_is_null = [&area, idx_cache](std::string_view name)->std::optional<bool> {
+        const int idx = field_index_ci_cached(area, name, *idx_cache);
+        if (idx <= 0) return std::nullopt;
+        return area.fieldIsNullFromBuffer(idx);
+    };
+
     return rv;
 }
 
@@ -235,10 +289,23 @@ RecordView make_record_view_raw(xbase::DbArea& area) {
             if (up == "DELETED") {
                 return area.isDeleted() ? "T" : "F";
             }
+            if (up == "RECNO") {
+                return std::to_string(area.recno64());
+            }
+            // Special symbol: RECCOUNT -- the DBF header's stored record count
+            // (bytes 4-7, HeaderRec::num_of_recs), reached via recCount64().
+            // Owner correction 2026-08-12: a DBF record count is a FACT IN THE
+            // HEADER, not something a loop derives, so a spec asserting "all N
+            // made the trip" by probing record N's value was working around a
+            // missing accessor rather than around an absent fact. 64-bit
+            // accessor deliberately: recCount() returns -1 past INT32_MAX.
+            if (up == "RECCOUNT") {
+                return std::to_string(area.recCount64());
+            }
         }
 
         int idx = field_index_ci_cached(area, name, *idx_cache);
-        if (idx <= 0) return std::string();
+        if (idx <= 0) throw std::runtime_error("unknown field '" + std::string(name) + "'");
         return get_logical_field_text_raw(area, idx);
     };
 
@@ -249,6 +316,12 @@ RecordView make_record_view_raw(xbase::DbArea& area) {
             for (char c: name) up.push_back((char)std::toupper((unsigned char)c));
             if (up == "DELETED") {
                 return area.isDeleted() ? 1.0 : 0.0;
+            }
+            if (up == "RECNO") {
+                return static_cast<double>(area.recno64());
+            }
+            if (up == "RECCOUNT") {
+                return static_cast<double>(area.recCount64());
             }
         }
 
@@ -287,6 +360,27 @@ RecordView make_record_view_raw(xbase::DbArea& area) {
             try { return std::stod(*canon); } catch (...) { /* fall through */ }
         }
         return std::nullopt;
+    };
+
+    rv.get_field_type = [&area, idx_cache](std::string_view name)->std::optional<char> {
+        std::string key;
+        for (char c : name) key.push_back(static_cast<char>(std::toupper(static_cast<unsigned char>(c))));
+        if (key == "DELETED") return 'L';
+        if (key == "RECNO" || key == "RECCOUNT") return 'N';
+        const int idx = field_index_ci_cached(area, name, *idx_cache);
+        if (idx <= 0) return std::nullopt;
+        return area.fields()[static_cast<std::size_t>(idx - 1)].type;
+    };
+
+    // ISNULL(). nullopt ONLY for a field that does not exist -- the call site
+    // turns that into an error, matching an unknown field anywhere else.
+    // fieldIsNullFromBuffer() already fails closed for a table with no bitmap
+    // and for a field with no null bit, both of which answer false because that
+    // is TRUE: a field that cannot be null is not null.
+    rv.get_field_is_null = [&area, idx_cache](std::string_view name)->std::optional<bool> {
+        const int idx = field_index_ci_cached(area, name, *idx_cache);
+        if (idx <= 0) return std::nullopt;
+        return area.fieldIsNullFromBuffer(idx);
     };
 
     return rv;

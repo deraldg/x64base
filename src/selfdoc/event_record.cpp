@@ -7,7 +7,7 @@
 // owner: member.derald
 // status: supported
 
-// event_record.cpp — runtime -> documentation intake seam (M5).
+// event_record.cpp -- runtime -> documentation intake seam (M5).
 #include "selfdoc/event_record.hpp"
 #include "common/path_state.hpp"      // dottalk::paths::get_slot
 

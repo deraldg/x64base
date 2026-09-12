@@ -8,7 +8,7 @@
 // status: supported
 
 // src/cli/colors.cpp
-// Full 16-color ANSI palette — 100% compatible with FoxPro 2.6 / dBASE IV color syntax
+// Full 16-color ANSI palette -- 100% compatible with FoxPro 2.6 / dBASE IV color syntax
 #include "colors.hpp"
 
 #include <algorithm>
@@ -60,7 +60,7 @@ static void emitThemeImpl(Theme t) {
     std::cout.flush();
 }
 
-// Full xBase color code parser — accepts:
+// Full xBase color code parser -- accepts:
 //   W+, G*, RB/N, GR+/N, YELLOW, AMBER, MATRIX, etc.
 Theme parseTheme(const std::string& input) {
     std::string s = upper(input);
@@ -124,7 +124,7 @@ std::string themeName(Theme t) {
     return "UNKNOWN";
 }
 
-// Exact VGA 16-color palette — works everywhere
+// Exact VGA 16-color palette -- works everywhere
 void applyTheme(Theme t) {
     emitThemeImpl(t);
     g_current = t;

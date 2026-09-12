@@ -105,7 +105,7 @@ void cmd_BOTTOM(xbase::DbArea& A, std::istringstream& in)
 
     const std::int64_t rn = cli::navsel::pick_recno(
         A,
-        cli::navsel::Mode::AutoByFilter,
+        cli::navsel::Mode::AutoByVisibility,
         cli::navsel::Step::Last);
 
     if (rn <= 0 || !A.gotoRec64(static_cast<std::uint64_t>(rn)) || !A.readCurrent()) {

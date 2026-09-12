@@ -62,10 +62,10 @@ bool eval_bool(xbase::DbArea& A,
 // --- Compile-once predicate (scan-evaluator optimization lane, M1) -----------
 // A boolean predicate compiled ONCE for repeated per-row evaluation across a
 // scan, so the parse/compile pipeline (text expansion, date folding, AST build)
-// is not re-run for every record — that per-row recompile was the dominant scan
-// cost. For any predicate that cannot be safely hoisted — a DotScript/memvar
+// is not re-run for every record -- that per-row recompile was the dominant scan
+// cost. For any predicate that cannot be safely hoisted -- a DotScript/memvar
 // predicate ($name / {..}), or any expression whose text preprocessing is not a
-// record-independent no-op — it transparently falls back to per-row eval_bool,
+// record-independent no-op -- it transparently falls back to per-row eval_bool,
 // so results are identical to eval_bool for every input. Build once with
 // compile_bool_predicate; evaluate per row with eval_bool_compiled against the
 // area's CURRENT record (move the cursor between calls). CompiledPredicate is
@@ -73,7 +73,7 @@ bool eval_bool(xbase::DbArea& A,
 struct CompiledPredicate;
 
 // allow_raw: when true and the predicate is safely hoistable, the compiled
-// predicate is bound to a selective-decode (readCurrentRaw) record view — the
+// predicate is bound to a selective-decode (readCurrentRaw) record view -- the
 // caller MUST then advance rows with DbArea::readCurrentRaw() instead of
 // readCurrent(). Query compiled_predicate_uses_raw() to find out which view was
 // bound (a fallback predicate always uses the normal full-decode path). Only

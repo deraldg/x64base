@@ -116,6 +116,83 @@ std::size_t DbArea::fieldByteOffset_(int idx1) const
     return off;
 }
 
+// AIF-091 M1 -- IS THIS FIELD NULL IN THE RECORD CURRENTLY IN THE BUFFER?
+//
+// The bitmap lives in the `_NullFlags` column, which partitionTrailingSystemField()
+// removed from fields() but whose record offset it kept. So the bytes are still in
+// `_recbuf` at `_null_flags.offset`; what was removed is the pretence that it is a
+// user column.
+//
+// EVERY FAILURE PATH RETURNS FALSE, and that direction is chosen, not incidental.
+// "Not null" makes the caller read the field's bytes -- which are really there, and
+// which are what every caller saw before this function existed. "Null" would make a
+// caller DISCARD a value on the strength of a bitmap we could not read. Given a
+// short buffer or a missing layout, showing the stored bytes is the error that can
+// be noticed; hiding them is the error that cannot.
+//
+// Nullability is a property of the TABLE (fieldIsNullable); nullness is a property
+// of the ROW. A field with no null bit is not "not null" -- it is a field where the
+// question does not apply, and both answer false here on purpose: a caller that
+// needs to tell those apart asks fieldIsNullable() first.
+bool DbArea::fieldIsNullFromBuffer(int idx1) const noexcept
+{
+    if (!_null_flags.present) return false;
+    if (idx1 < 1 || idx1 > static_cast<int>(_fields.size())) return false;
+    if (idx1 > static_cast<int>(_null_layout.fields.size())) return false;
+
+    const int bit = _null_layout.fields[static_cast<std::size_t>(idx1 - 1)].null_bit;
+    if (bit < 0) return false;                       // field is not nullable
+
+    const std::size_t off = _null_flags.offset;
+    const std::size_t len = _null_flags.length;
+    if (len == 0) return false;
+    if (off > _recbuf.size() || len > _recbuf.size() - off) return false;
+
+    return vfp::bit_is_set(
+        reinterpret_cast<const std::uint8_t*>(_recbuf.data()) + off, len, bit);
+}
+
+// A field is variable-length exactly when the bit layout gave it a "full" bit.
+// That is derived from the descriptor (type V/Q) in ONE place -- see
+// partitionTrailingSystemField() -- so this never re-decides it from f.type.
+bool DbArea::isVarlengthField_(int idx1) const noexcept
+{
+    if (idx1 < 1 || idx1 > static_cast<int>(_null_layout.fields.size())) return false;
+    return _null_layout.fields[static_cast<std::size_t>(idx1 - 1)].full_bit >= 0;
+}
+
+// How many of this V/Q field's bytes are the value, for the record in the buffer.
+//
+// The varlength bit SET means the trailing byte holds the length; CLEAR means the
+// value fills the field. FAILS TOWARD THE DATA, like fieldIsNullFromBuffer(): with
+// no readable bitmap the answer is "full", which shows every stored byte. Claiming
+// a short length we could not verify would HIDE bytes that are really there.
+std::size_t DbArea::varlengthValueLen_(int idx1, std::size_t off) const noexcept
+{
+    if (idx1 < 1 || idx1 > static_cast<int>(_fields.size()))
+        return 0;
+    const std::size_t width = _fields[static_cast<std::size_t>(idx1 - 1)].length;
+    if (off + width > _recbuf.size()) return 0;
+
+    const int bit = isVarlengthField_(idx1)
+        ? _null_layout.fields[static_cast<std::size_t>(idx1 - 1)].full_bit
+        : -1;
+    if (bit < 0) return width;
+
+    bool length_byte_in_use = false;
+    if (_null_flags.present && _null_flags.length > 0 &&
+        _null_flags.offset < _recbuf.size() &&
+        _null_flags.length <= _recbuf.size() - _null_flags.offset) {
+        length_byte_in_use = vfp::bit_is_set(
+            reinterpret_cast<const std::uint8_t*>(_recbuf.data()) + _null_flags.offset,
+            _null_flags.length, bit);
+    }
+
+    return vfp::varlength_value_length(
+        reinterpret_cast<const std::uint8_t*>(_recbuf.data()) + off,
+        width, length_byte_in_use);
+}
+
 std::string DbArea::decodeFieldFromBuffer(int idx1) const
 {
     if (idx1 < 1 || idx1 > static_cast<int>(_fields.size())) return {};
@@ -132,6 +209,15 @@ std::string DbArea::decodeFieldFromBuffer(int idx1) const
         const std::uint64_t object_id = read_u64_le(_recbuf.data() + off);
         if (object_id == 0) return {};
         return std::to_string(object_id);
+    }
+
+    // VARCHAR/VARBINARY: return exactly the stored value, and DO NOT rtrim it.
+    // Trailing blanks inside the stored length are significant -- that is the
+    // whole difference between `V` and `C`, and rtrimming would erase it. The
+    // codec registry is bypassed here for the reason given in xbase.hpp.
+    if (isVarlengthField_(idx1)) {
+        const std::size_t n = varlengthValueLen_(idx1, off);
+        return std::string(_recbuf.data() + off, n);
     }
 
     return fieldcodec::codec_for(f.type)
@@ -151,7 +237,7 @@ bool DbArea::fieldNumFromBuffer(int idx1, double& out) const
     if (off + f.length > _recbuf.size()) return false;
 
     // N/F fields are right-justified, space-padded ASCII decimal. Copy the (short,
-    // fixed-width) span to a stack buffer, NUL-terminate, and strtod — no heap.
+    // fixed-width) span to a stack buffer, NUL-terminate, and strtod -- no heap.
     const char* p = _recbuf.data() + off;
     const std::size_t len = f.length;
 
@@ -219,6 +305,9 @@ bool DbArea::set(int idx, const std::string& val)
 bool DbArea::loadFieldsFromBuffer()
 {
     _fd.assign(_fields.size() + 1, std::string{});
+    // LOCKSTEP WITH _fd. Populated below from the bitmap the buffer carries, so
+    // that the staged view starts out agreeing with the row on disk.
+    _fd_null.assign(_fields.size() + 1, char{0});
 
     const bool is_x64 = (versionByte() == DBF_VERSION_64);
 
@@ -238,6 +327,11 @@ bool DbArea::loadFieldsFromBuffer()
             else
                 _fd[i + 1] = std::to_string(object_id);
 
+        } else if (isVarlengthField_(static_cast<int>(i) + 1)) {
+            // Varchar: the value, without its trailing length byte, un-rtrimmed.
+            const std::size_t n = varlengthValueLen_(static_cast<int>(i) + 1, off);
+            _fd[i + 1].assign(_recbuf.data() + off, n);
+
         } else {
             // Field-type codec: text (default) for C/N/F/D/L/M, binary for I (and
             // later B/Y/T / custom types). The text codec reproduces the legacy
@@ -249,7 +343,46 @@ bool DbArea::loadFieldsFromBuffer()
         off += f.length;
     }
 
+    // The staged null view is READ BACK OUT OF THE BITMAP rather than derived
+    // from the values: an empty string and a NULL are different things and only
+    // the bitmap can tell them apart. fieldIsNullFromBuffer() already fails
+    // closed on a missing bitmap, a field with no null bit, or a short buffer.
+    for (std::size_t i = 0; i < _fields.size(); ++i)
+        _fd_null[i + 1] =
+            fieldIsNullFromBuffer(static_cast<int>(i) + 1) ? char{1} : char{0};
+
     _fd_snapshot = _fd;
+
+    return true;
+}
+
+bool DbArea::fieldIsNull(int idx1) const noexcept
+{
+    if (idx1 < 1 || idx1 >= static_cast<int>(_fd_null.size())) return false;
+    return _fd_null[static_cast<std::size_t>(idx1)] != 0;
+}
+
+bool DbArea::setFieldNull(int idx1, bool make_null)
+{
+    if (idx1 < 1 || idx1 > static_cast<int>(_fields.size())) return false;
+    if (idx1 >= static_cast<int>(_fd_null.size()))           return false;
+
+    // THE TABLE DECIDES. A field whose descriptor never carried 0x02 has no null
+    // bit, so there is nowhere to record the answer; setting one anyway would
+    // write a bit that belongs to some other field or to nothing at all. Refuse
+    // rather than succeed silently -- this is the AIF-118 shape, and a cheerful
+    // return here would be indistinguishable from having worked.
+    if (!fieldIsNullable(idx1)) return false;
+
+    _fd_null[static_cast<std::size_t>(idx1)] = make_null ? char{1} : char{0};
+
+    // A null cell has no value. Clearing it keeps get() honest about what the
+    // next write will put on disk (spaces), and -- for a Varchar -- it is also
+    // what makes the byte encoding come out right without a special case: an
+    // empty value is not full, so storeFieldsToBuffer() writes a trailing length
+    // byte of 0x00 and SETS the varlength bit, which is exactly what Visual
+    // FoxPro wrote for a null Varchar in nullfix.DBF rows 2 and 5.
+    if (make_null) _fd[static_cast<std::size_t>(idx1)].clear();
 
     return true;
 }
@@ -257,6 +390,74 @@ bool DbArea::loadFieldsFromBuffer()
 void DbArea::storeFieldsToBuffer()
 {
     const bool is_x64 = (versionByte() == DBF_VERSION_64);
+
+    // ---- PRESERVE THE PARTITIONED `_NullFlags` COLUMN ---------------------
+    //
+    // The space-fill below clears the WHOLE record, and the loop after it writes
+    // one field per entry in `_fields`. Since fbd7e5ee5 the `_NullFlags` column is
+    // NOT in `_fields` -- the partition removed it so it would stop surfacing as a
+    // junk one-byte binary column -- so its bytes were cleared and never written
+    // back. A write left the bitmap at 0x20: EVERY NULL BECAME NOT-NULL and every
+    // short Varchar claimed to be full.
+    //
+    // The record kept its length, its field values and its deleted flag. Only the
+    // nulls were gone, which is why nothing caught it: that is the AIF-110 shape,
+    // and its spec says the lesson in one line -- a test that asserts SHAPE passes
+    // green on a blanked table. Proved at runtime 2026-09-05 by
+    // dottalkpp_vfp_null_write_guard_test, which does the most harmless write
+    // available (re-setting a field to the value it already holds) and watched
+    // 0x03 become 0x20.
+    //
+    // Honest about the history: before the partition this column was a visible
+    // field, so `_fd` held its byte as text and the fixed-width text codec
+    // re-encoded it -- rtrimming, so 0x20 decoded to empty and wrote back as a
+    // space while other values survived by luck. It was an unreliable round trip
+    // and the partition made it deterministic destruction. Both halves are true.
+    //
+    // THE BITMAP IS NOW FULLY RECOMPUTED. Every bit any field owns is written from
+    // the staged row; the save/restore below survives only for bits NO FIELD OWNS
+    // -- padding in a multi-byte bitmap -- which nothing here is entitled to
+    // invent or destroy.
+    //
+    //   NULL bits       RECOMPUTED, from `_fd_null`, which setFieldNull() stages
+    //                   and loadFieldsFromBuffer() seeds from the bitmap already
+    //                   on disk. So a row that is merely re-written keeps its
+    //                   nulls (the staged view was loaded from those same bits),
+    //                   and a row whose null state was changed writes the change.
+    //   VARLENGTH bits  RECOMPUTED, from the value actually being written. They
+    //                   HAVE to be: a Varchar write changes whether the field is
+    //                   full, and a carried-forward varlength bit would describe
+    //                   the value that used to be there. Measured before it was
+    //                   changed (dottalkpp_vfp_varchar_roundtrip_test): setting a
+    //                   10-byte Varchar to a full-width value left the bit SET,
+    //                   claiming a length byte that was now data.
+    //
+    // THIS COMMENT HAS NOW BEEN WRONG TWICE AND SAID SO BOTH TIMES, which is the
+    // only reason it was cheap to correct. Version one said the carry-forward was
+    // correct "because none of them can change a null bit ... when Varchar writes
+    // land in M2 this must become a RECOMPUTE". Version two said the split was
+    // half and half and that "when set-to-null lands, these must be recomputed
+    // too, and this comment is the place that will be wrong until they are".
+    // Set-to-null landed. This is that recompute.
+    //
+    // A NULL VARCHAR NEEDS NO SPECIAL CASE HERE, and that is a measurement rather
+    // than a convenience: setFieldNull() clears the staged value, an empty value
+    // is not full, so the branch below writes a trailing length byte of 0x00 and
+    // SETS the varlength bit -- which is byte-for-byte what Visual FoxPro wrote
+    // for a null Varchar in nullfix.DBF rows 2 and 5. If that rule is ever found
+    // to be wrong, the fix belongs in the V branch and not here.
+    std::vector<char> saved_null_flags;
+    const bool have_bitmap =
+        _null_flags.present &&
+        _null_flags.length > 0 &&
+        _null_flags.offset < _recbuf.size() &&
+        _null_flags.length <= _recbuf.size() - _null_flags.offset;
+    if (have_bitmap) {
+        const auto first = _recbuf.begin() +
+            static_cast<std::ptrdiff_t>(_null_flags.offset);
+        saved_null_flags.assign(first,
+            first + static_cast<std::ptrdiff_t>(_null_flags.length));
+    }
 
     std::fill(_recbuf.begin(), _recbuf.end(), ' ');
     _recbuf[0] = _del;
@@ -281,6 +482,32 @@ void DbArea::storeFieldsToBuffer()
 
             write_u64_le(_recbuf.data() + off, object_id);
 
+        } else if (isVarlengthField_(static_cast<int>(i) + 1)) {
+            // VARCHAR/VARBINARY. Three things must agree or the row is malformed:
+            // the value bytes, the trailing length byte, and the varlength bit.
+            // Only this function can see all three, which is why V is not a codec.
+            const std::size_t width = f.length;
+            std::size_t n = src.size();
+            if (n > width) n = width;           // over-long truncates, and is then full
+
+            std::copy(src.begin(), src.begin() + static_cast<std::ptrdiff_t>(n),
+                      _recbuf.begin() + static_cast<std::ptrdiff_t>(off));
+
+            // A value that fills the field leaves NO ROOM for a length byte, so the
+            // bit must be CLEAR. Anything shorter stores its length in the last byte
+            // and sets the bit. The longest "short" value is width-1.
+            const bool full = (n >= width);
+            if (!full) {
+                _recbuf[off + width - 1] =
+                    static_cast<char>(static_cast<unsigned char>(n));
+            }
+
+            const int bit = _null_layout.fields[i].full_bit;
+            if (have_bitmap && bit >= 0) {
+                vfp::set_bit(reinterpret_cast<std::uint8_t*>(saved_null_flags.data()),
+                             saved_null_flags.size(), bit, !full);
+            }
+
         } else {
             // Field-type codec encodes into the field's byte region (pre-filled with
             // spaces above). The write path validated the value already, so an encode
@@ -290,7 +517,31 @@ void DbArea::storeFieldsToBuffer()
                       .encode(src, f, _recbuf.data() + off, &cerr);
         }
 
+        // ---- THE NULL BIT, WRITTEN FOR EVERY FIELD THAT OWNS ONE ---------
+        // Outside the type branches on purpose: nullness is orthogonal to how a
+        // value is encoded, and a null memo, a null Varchar and a null numeric
+        // all record it in the same place. The value area is left as whatever the
+        // branch above wrote -- for a null field that is the space fill, which is
+        // what VFP writes too.
+        if (have_bitmap && i < _null_layout.fields.size()) {
+            const int nbit = _null_layout.fields[i].null_bit;
+            if (nbit >= 0) {
+                const bool is_null =
+                    (i + 1) < _fd_null.size() && _fd_null[i + 1] != 0;
+                vfp::set_bit(reinterpret_cast<std::uint8_t*>(saved_null_flags.data()),
+                             saved_null_flags.size(), nbit, is_null);
+            }
+        }
+
         off += f.length;
+    }
+
+    // ---- and put it back --------------------------------------------------
+    // After the field loop, so a mis-sized field that overran into the bitmap's
+    // bytes cannot silently win over the row's real null state.
+    if (have_bitmap) {
+        std::copy(saved_null_flags.begin(), saved_null_flags.end(),
+                  _recbuf.begin() + static_cast<std::ptrdiff_t>(_null_flags.offset));
     }
 }
 

@@ -434,6 +434,26 @@ FunctionDoc{
 },
 
 FunctionDoc{
+    "FILE",
+    {},
+    FunctionCategory::Logical,
+    1, 1,
+    "Return whether a file or directory exists at the given path.",
+    { "FILE(<path>)" },
+    { "FILE(\"DBF/wbabort/STUDENTS.dbf\")", "FILE(\"tmp/probe.txt\")" },
+    {
+        "Added 2026-08-12 with the WORKSPACE WRITEBACK refusal arms (WB_T5/WB_T6): an absence proof needs a by-value read of the filesystem.",
+        "Deliberately broader than VFP's files-only FILE(): returns .T. for any filesystem entry, directories included -- 'nothing means nothing' fails on a leftover empty directory too.",
+        "Relative paths resolve through paths::resolve_in_slot, the engine's standard rule: absolute stays absolute, a token containing separators is DATA-root-relative, a bare name sits in the DBF slot.",
+        "Corrected 2026-08-12, the same day it was added. The first cut resolved against the process working directory and this note claimed that 'matched' WORKSPACE WRITEBACK and ERASE -- all three were wrong together, and agreeing is not the same as being right. SET PATH resolved the same spelling against DATA, so an absence proof probed a different directory than the writeback it audited.",
+        "Registered in kStringFns (fn_string.cpp) and here in the same commit, per the kDateFns rule."
+    },
+    {
+        "Not a raw filesystem probe: FILE() reads where the engine's path slots point, not where the process happens to stand. To probe an arbitrary location outside the DATA tree, pass an absolute path."
+    }
+},
+
+FunctionDoc{
     "RAT",
     {},
     FunctionCategory::Search,
@@ -1263,6 +1283,194 @@ FunctionDoc{
 },
 
 // -----------------------------------------------------------------------------
+// CURSOR STATE
+//
+// THESE FOUR ARE DOCUMENTED HERE BUT ARE NOT FUNCTION SPECS, and the difference
+// is deliberate. tools/fullstack_docs/normcheck_v1.py scrapes implemented
+// functions with FN_SPEC_RE -- `{"NAME", min, max, &fn}` -- so a spec is an entry
+// with an EVALUATOR POINTER. None of these have one: they are handled in
+// FunctionCall::evalString() before the builtin lookup, because none can be
+// expressed as a function over evaluated arguments.
+//
+// So documenting them moves NEITHER normcheck lane. FN_IDENTITY(fail) is
+// SYSFUNC-rows-minus-implementations and these add no SYSFUNC rows;
+// FN_COVERAGE(warn) is implementations-minus-SYSFUNC and these add no
+// implementations. Measured against the checker's own regex, not assumed.
+//
+// ===========================================================================
+// THE PARAGRAPH ABOVE IS WRONG AND IS LEFT STANDING BECAUSE IT IS INSTRUCTIVE.
+// Corrected 2026-09-05, on the run of the commit that introduced it.
+//
+// MEASURED: IMPLEMENTED went 75 -> 79 and FN_COVERAGE(warn) went 0 -> 4, naming
+// exactly DELETED, ISNULL, RECCOUNT and RECNO. FN_IDENTITY(fail) did stay 0, so
+// the gate passed and the reading was half right -- which is how it survived
+// being written down.
+//
+// WHY: normcheck_v1.py::implemented_functions() uses BOTH regexes, not one.
+//
+//     out |= FN_SPEC_RE.finditer(text)                    # every *.cpp
+//     if p.name == "function_catalog.cpp":
+//         out |= FUNCDOC_RE.finditer(text)                # THIS FILE, extra
+//
+// A FunctionDoc in THIS FILE counts as implemented. Its docstring says so in
+// English -- "runtime BuiltinFnSpec arrays PLUS the FunctionDoc entries defined
+// directly in function_catalog.cpp (e.g. ATC, LIKE)" -- three lines above the
+// code.
+//
+// HOW THE ERROR WAS MADE, because it is the transferable part: I READ THE REGEX
+// AND NOT THE FUNCTION THAT CALLS IT. FN_SPEC_RE and FUNCDOC_RE are defined in
+// two different files, so they looked like two separate scrapers with two
+// separate purposes. One of them uses both. A definition tells you what a thing
+// IS; only the call site tells you what it DOES.
+//
+// The claim also asserted it had been "measured", which made it read stronger
+// than the reading behind it. That is the same defect this lane has recorded in
+// cmd_append_blank.cpp ("when routed by the dispatcher", and nothing routed it)
+// and in the WSLADDER spec entry -- a document describing a belief in the
+// grammatical mood of a fact.
+//
+// WHAT IS ACTUALLY TRUE: these four ARE implemented and ARE absent from SYSFUNC,
+// so FN_COVERAGE naming them is CORRECT REPORTING rather than a defect. The lane
+// is warn-severity precisely because that state is tolerable. SYSFUNC.dbf lives
+// under dottalkpp/data/metadata/, which is untracked and absent in every fresh
+// clone, so the four cannot usefully be added there today -- see the note below.
+//
+// ===========================================================================
+// THIRD CORRECTION, 2026-09-05, owner-directed ("fix it all"). THE CLAUSE ABOVE
+// IS STALE AND IS LEFT STANDING BECAUSE IT WAS TRUE WHEN IT WAS WRITTEN. Both
+// of its halves have to go, and they fail for different reasons.
+//
+// (a) THE TRACKING CLAIM IS OUT OF DATE. `git ls-files dottalkpp/data/metadata/`
+//     returns SIXTEEN TRACKED FILES and SYSFUNC.dbf is one of them (20 on disk,
+//     16 in git). It is inherited from normcheck_v1.py::sysfunc_state()'s
+//     docstring, which said the same thing and has been corrected in place.
+//     A stale MOTIVATION outlived its conclusion, which is the harder half of
+//     this shape to catch: the sentence still parses, still sounds measured,
+//     and the number in it was even right once.
+//
+// (b) THE CONCLUSION WAS NEVER LOAD-BEARING, because SYSFUNC IS GENERATED AND
+//     THESE FOUR ARE ALREADY IN THE GENERATOR'S INPUT. metacollect's
+//     build_sysfunc_seed_rows() (src/meta/metacollect.cpp:178) opens by walking
+//     dottalk::expr::all_function_docs() -- EVERY FunctionDoc, these four
+//     included -- and emits a complete row per doc, taking FUNC_CAT straight
+//     from to_string(doc->category), which already yields "Cursor". The three
+//     BuiltinFnSpec tables are applied AFTERWARDS as an OVERLAY that refines
+//     min/max args and src_file. A FunctionDoc alone therefore produces a full
+//     catalogue row and needs no spec table and no source file of its own.
+//
+//     SO THE FOUR ARE NOT UNADDABLE. THE CATALOGUE IS SIMPLY STALE: SYSFUNC.dbf
+//     was seeded before these FunctionDocs existed, and re-running metacollect
+//     with --sysfunc-import-out emits them. FN_COVERAGE is reporting a stale
+//     artifact, not an unreachable state.
+//
+// AND THE REGENERATION WOULD HAVE WRITTEN SOMETHING FALSE, which is why the
+// generator was fixed in the same change rather than after. build_sysfunc_seed_rows
+// set row.calc_call = true for EVERY FunctionDoc unconditionally, so a regenerated
+// SYSFUNC would have asserted that these four are reachable from the CALC / `?`
+// path -- the one claim this lane has disproved four separate ways, including by
+// running NL_P2 and watching `? "NAME:" + ISNULL(f)` print a bare `0` with the
+// label swallowed. calc_call is now derived from the category.
+//
+// COULD THEY BE THEIR OWN SOURCE FILE, e.g. an fn_cursor.cpp beside fn_string /
+// fn_date / fn_numeric? NOT UNDER THE CURRENT CONTRACT, and it is one line:
+//
+//     using BuiltinFnEval = std::string (*)(const std::vector<std::string>& argv);
+//
+// A raw function pointer over ALREADY-EVALUATED arguments: no area, no cursor,
+// no row. THE FOUR SPLIT INTO TWO CLASSES AGAINST IT. DELETED, RECNO and
+// RECCOUNT take no arguments and are answered straight off the row
+// (`return rv.get_field_str(fn);` in FunctionCall::evalString) -- they need only
+// CONTEXT, so a spec contract carrying an area could hold them in a table.
+// ISNULL needs context AND AN UNEVALUATED ARGUMENT: it takes a bare field
+// reference and refuses ISNULL("x"), ISNULL(1+2) and ISNULL(UPPER(f)) because
+// only a stored cell has a null bit, and any argv-shaped spec has evaluated that
+// away before the callee sees it. A context parameter alone would reach three of
+// the four.
+//
+// THE SHAPE THAT COULD CARRY CONTEXT ALREADY EXISTS IN THIS TREE, and it is not
+// in this file: include/cli/expr/fn_custom.hpp uses
+// std::function<std::string(const std::vector<std::string>&)> rather than a raw
+// pointer, EXPLICITLY so a body can CAPTURE -- and a capture can hold the area.
+// That is the RUNTIME_DEF_FAMILY seam (AIF-155). So "should the cursor functions
+// be their own source file" is really "should the function-spec contract carry
+// context", and the lane that already built a context-carrying contract is the
+// one chartered the same day. Recorded here because nothing else connects them.
+// ===========================================================================
+// -----------------------------------------------------------------------------
+
+FunctionDoc{
+    "DELETED",
+    {},
+    FunctionCategory::Cursor,
+    0, 0,
+    "Is the current record flagged deleted?",
+    { "DELETED()" },
+    { "LIST FOR DELETED()", "COUNT FOR .NOT. DELETED()" },
+    {
+        "Reads the record the area is parked on; takes no argument.",
+        "Requires an open table."
+    },
+    {}
+},
+
+FunctionDoc{
+    "RECNO",
+    {},
+    FunctionCategory::Cursor,
+    0, 0,
+    "Record number of the current record.",
+    { "RECNO()" },
+    { "LIST FOR RECNO() > 100" },
+    {
+        "Reads the cursor; takes no argument.",
+        "RECNO() renders EMPTY in a '?' marker inside a .dts script -- measured "
+        "over four specs (cnx_persist_proof, cnx_realtime_buffer_proof, "
+        "cnx_realtime_index_proof, index_maintenance_failure_proof) -- and STR() "
+        "does not rescue it. Spec markers compare FIELD VALUES for this reason."
+    },
+    {}
+},
+
+FunctionDoc{
+    "RECCOUNT",
+    {},
+    FunctionCategory::Cursor,
+    0, 0,
+    "Number of records in the current table.",
+    { "RECCOUNT()" },
+    { "? RECCOUNT()" },
+    {
+        "About the TABLE rather than the row, but still needs an open area and "
+        "still takes no argument, which is why it sits in this category.",
+        "RECCOUNT() serves the predicate path rather than the marker path; like "
+        "RECNO() it renders empty in a '?' marker."
+    },
+    {}
+},
+
+FunctionDoc{
+    "ISNULL",
+    {},
+    FunctionCategory::Cursor,
+    1, 1,
+    "Is this field NULL in the current record?",
+    { "ISNULL(<field>)" },
+    { "LIST FOR ISNULL(VNAME)", "COUNT FOR ISNULL(ID)", "? ISNULL(VNAME)" },
+    {
+        "THE ARGUMENT IS A FIELD NAME AND IS NOT EVALUATED. A null cell and a "
+        "blank cell both evaluate to the empty string, so a function handed an "
+        "evaluated argument could not tell them apart -- the one question this "
+        "answers. min_args/max_args count a TOKEN here, not a value.",
+        "ISNULL(\"x\") and ISNULL(1+2) are refused: only a stored cell has a "
+        "null bit.",
+        "A field that CANNOT be null answers .F. rather than erroring -- that is "
+        "the true answer. An unknown field name is an error, as it is anywhere.",
+        "Only VFP-flavour tables carrying a _NullFlags column can hold a null."
+    },
+    {}
+},
+
+// -----------------------------------------------------------------------------
 // ALL DOCS
 // -----------------------------------------------------------------------------
 
@@ -1317,6 +1525,7 @@ const char* to_string(FunctionCategory cat)
         case FunctionCategory::Logical:      return "Logical";
         case FunctionCategory::Numeric:      return "Numeric";
         case FunctionCategory::Date:         return "Date";
+        case FunctionCategory::Cursor:       return "Cursor";
         case FunctionCategory::Misc:
         default:                             return "Misc";
     }

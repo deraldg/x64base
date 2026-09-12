@@ -7,7 +7,7 @@
 // owner: member.derald
 // status: supported
 
-// bbsd_main.cpp — standalone DotTalk++ BBS agent-server daemon (M6).
+// bbsd_main.cpp -- standalone DotTalk++ BBS agent-server daemon (M6).
 //
 // Runs dottalk::bbs::serve() as a long-lived process, independent of the interactive CLI, so the
 // server can be left up for stretches without tying up a dottalkpp shell. It shares the SAME data
@@ -58,7 +58,7 @@ int main(int argc, char** argv) {
                      "catalog + board tables match the CLI.\n";
     }
 
-    // 1) DATA slot MUST be set before any identity/bbs access — identity_store() caches its
+    // 1) DATA slot MUST be set before any identity/bbs access -- identity_store() caches its
     //    directory on first touch. identity_dir/bbs_dir both derive from Slot::DATA.
     dottalk::paths::set_slot(dottalk::paths::Slot::DATA, data_root);
     std::cerr << "dottalk_bbsd: data root = "
@@ -67,7 +67,7 @@ int main(int argc, char** argv) {
     // 2) operator identity (owner) so serve() can save/restore it and honor SHUTDOWN.
     dottalk::identity::set_acting_member(op);
 
-    // 3) serve — blocks on the accept loop until an owner SHUTDOWN or a fatal socket error.
+    // 3) serve -- blocks on the accept loop until an owner SHUTDOWN or a fatal socket error.
     //    (libsodium self-inits lazily inside token_crypto on first verify.)
     std::string err;
     std::cerr << "dottalk_bbsd: starting on 127.0.0.1:" << port << "  model=" << model

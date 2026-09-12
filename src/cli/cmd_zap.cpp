@@ -8,7 +8,7 @@
 // status: supported
 
 // src/cli/cmd_zap.cpp
-// ZAP — removes ALL records from the current DBF, preserving structure (header + field descriptors).
+// ZAP -- removes ALL records from the current DBF, preserving structure (header + field descriptors).
 //       Rewrites the file with record count = 0, updated timestamp, and EOF marker.
 //
 // POLICY (2026):

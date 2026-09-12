@@ -25,6 +25,14 @@
 //   DISPLAY <recno>
 //
 // notes:
+//   A NULL cell prints as `.NULL.` -- the token Visual FoxPro prints -- and a
+//     nullable column is widened to at least six characters so the marker is
+//     never truncated into something that reads as data. Only VFP-flavour tables
+//     carrying a `_NullFlags` column can hold a null, so no other table's column
+//     widths change.
+//   Under TABLE buffering a PENDING value outranks the physical null: a cell that
+//     is null on disk but carries a buffered edit shows the EDIT, because this
+//     view is what COMMIT would produce.
 //   DISPLAY with no arguments displays the current record.
 //   DISPLAY <recno> navigates to that record number, then displays it.
 //   Memo payload display values are resolved through the memo display layer.
@@ -42,6 +50,7 @@
 //   RECNO
 //
 
+#include "cli/null_display.hpp"
 #include "xbase.hpp"
 #include "cli/memo_display.hpp"
 #include "cli/output_router.hpp"
@@ -161,8 +170,17 @@ void cmd_DISPLAY(DbArea& a, std::istringstream& iss)
                 raw.clear();
             }
 
-            const std::string shown =
-                cli_memo::resolve_display_value(a, (int)i + 1, raw);
+            // NULL is decided BEFORE memo resolution: a null memo field has no
+            // object id to resolve, and asking the memo layer to render one
+            // would either print an empty string (the blank/null ambiguity this
+            // whole change exists to remove) or chase a pointer that is not
+            // there.
+            std::string shown;
+            if (cli::nulldisp::is_null_cell(a, (int)i + 1)) {
+                shown = cli::nulldisp::kMarker;
+            } else {
+                shown = cli_memo::resolve_display_value(a, (int)i + 1, raw);
+            }
 
             cli::cmdout::print_message(
                 dottalk::helpdata::MessageId::DisplayFieldLineText,

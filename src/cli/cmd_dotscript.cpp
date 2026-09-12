@@ -83,6 +83,8 @@
 #include "script_reader.hpp"   // read_script_command: shared ';'-continuation reader
 #include "xbase_error_context.hpp"  // stop_on_error[severity] threshold + trip check
 #include "cli/dotscript_lexing.hpp" // canonical comment/line lexing (AIF-037)
+#include "shell_buffer_utils.hpp"   // dottalk::handle_buffers_if_active -- the body-buffer gate
+#include "shell_lexicon.hpp"        // dottalk::lexicon::normalize_token
 
 using xbase::DbArea;
 
@@ -563,6 +565,51 @@ void cmd_DOTSCRIPT(DbArea& area, std::istringstream& args)
             std::cout << resolved->string() << ":" << cmd_start << "> " << trimmed << "\n";
         }
 
+        // ------------------------------------------------------------------
+        // BODY BUFFERING. SCAN / LOOP / WHILE / UNTIL are LINE-CAPTURING: the
+        // opening verb sets a flag and the READER diverts every following line
+        // into a buffer until the closing verb executes it. The capture is the
+        // reader's job, not the command's, and until 2026-09-01 this reader did
+        // not do it -- so a SCAN body executed ONCE, immediately, as ordinary
+        // commands, and ENDSCAN then iterated an empty buffer.
+        //
+        // MEASURED before the fix, same binary, same session
+        // (dotscript_control_flow_probe.dts):
+        //
+        //   under DOTSCRIPT : ENDSCAN: 4 match(es), 4 iteration(s) over 0 line(s)
+        //   interactive     : ENDSCAN: 4 match(es), 4 iteration(s) over 1 line(s)
+        //
+        // `over 0 line(s)` is the defect in one number.
+        //
+        // IF IS NOT AFFECTED AND NEVER WAS, which is what named the boundary:
+        // IF's capture lives INSIDE shell_execute_line, so it already reached
+        // this reader. The broken set is exactly the constructs whose capture
+        // sits in the reader ABOVE that call -- shell.cpp:695 for the shell,
+        // this block for DOTSCRIPT.
+        //
+        // THIS CALLS THE NAMESPACED GATE AND THE INTERACTIVE SHELL DOES NOT,
+        // and that asymmetry is deliberate rather than an oversight. shell.cpp
+        // includes this same header at line 89 and then defines its OWN static
+        // handle_buffers_if_active at 398, which shadows it. The two differ:
+        // the static has no WHILE branch, because the interactive shell routes
+        // WHILE through loop_capture_state() at 729/659 instead. Removing the
+        // shadow would hand the shell TWO WHILE handlers to fix a DOTSCRIPT
+        // gap, so the shadow is left standing and named here. Reconciling the
+        // two readers onto one gate is a separate change with its own proof.
+        std::string cmdToken;
+        { std::istringstream tok(trimmed); tok >> cmdToken; }
+        const std::string U = dottalk::lexicon::normalize_token(cmdToken);
+
+        if (xbase::XBaseEngine* eng = shell_engine()) {
+            if (dottalk::handle_buffers_if_active(*eng, U, trimmed, trimmed)) {
+                // Buffered, not executed. STOP_ON_ERROR is deliberately NOT
+                // consulted here: nothing ran, so there is nothing to have
+                // failed. The body's errors surface when the closing verb
+                // executes the buffer -- see the note on granularity below.
+                continue;
+            }
+        }
+
         DbArea& cur = current_shell_area_or(area);
         const auto err_gen0 = xbase::error::error_generation();
         if (!shell_execute_line(cur, trimmed)) {
@@ -572,6 +619,16 @@ void cmd_DOTSCRIPT(DbArea& area, std::istringstream& args)
 
         // stop_on_error[severity]: abort the run if this line recorded a new
         // error at or above the configured threshold.
+        //
+        // GRANULARITY, STATED RATHER THAN LEFT TO BE DISCOVERED: this check is
+        // PER LOGICAL LINE OF THE SCRIPT. A buffered body is not a line of the
+        // script -- it is executed inside the closing verb's single dispatch --
+        // so a SCAN whose body errors on iteration 2 of 4 does not stop here
+        // until ENDSCAN has returned, by which point the remaining iterations
+        // have run. Whether that is a defect or the correct semantics for a
+        // set-oriented verb is an open question and NOT settled by this commit.
+        // What is settled is that it should be findable in the source rather
+        // than by surprise.
         if (xbase::error::errorstop_tripped(err_gen0)) {
             std::cout << "DOTSCRIPT: " << resolved->string() << ":" << cmd_start
                       << ": stopped (STOP_ON_ERROR "

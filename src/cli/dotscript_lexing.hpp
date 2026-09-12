@@ -11,7 +11,7 @@
 //
 // Canonical DotTalk++ / DotScript comment + line lexing.
 //
-// One place — and only one — defines the comment vocabulary (AIF-037,
+// One place -- and only one -- defines the comment vocabulary (AIF-037,
 // "Representative by Design", the Rule of Three). Before this module the same
 // logic lived in five drifting copies (three `begins_with_comment`, one
 // `looks_like_comment_or_blank`, two `strip_hash_comment`); those are now thin

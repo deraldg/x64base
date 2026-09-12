@@ -1,7 +1,7 @@
 // @dottalk.file v1
 // subsystem: cli
-// layer: command
-// owns: 
+// layer: helper
+// owns:
 // project: project.x64base.runtime
 // lane: 
 // owner: member.derald

@@ -9,12 +9,17 @@
 
 #include "main_frame.hpp"
 
+#include "memo_browser_frame.hpp"
+
+#include "res/app_icon.hpp"
+
 #include "datadict/ddict_catalog_paths.hpp"
 #include "datadict/ddict_object_resolver.hpp"
 #include "datadict/ddict_read_helpers.hpp"
 #include "dottalk/version.hpp"
 #include "gui/core/gui_command_catalog.hpp"
 #include "gui/core/gui_workspace_format.hpp"
+#include "gui/core/gui_runtime_adapter.hpp"
 
 #include <wx/checkbox.h>
 #include <wx/choice.h>
@@ -61,6 +66,7 @@ enum : int {
     IdWorkspaceOpenDirectory,
     IdWorkspaceLoadRuntime,
     IdWorkspaceClose,
+    IdWorkspaceMemoBrowse,
     IdOpenWorkspace,
     IdSaveWorkspace,
     IdSaveWorkspaceAs,
@@ -94,9 +100,10 @@ constexpr LanguageMenuItem kLanguageMenuItems[] = {
     {IdLanguageIt, "it", GuiTextId::LocaleIt},
 };
 
-std::string visible_area_id(AreaId id) {
-    return id == 0 ? std::string("none") : std::to_string(id - 1);
-}
+// AIF-078: this was the third of three identical copies of the same rung
+// conversion, and the one furthest from anything that could check it -- a view
+// doing arithmetic on an identity to guess a position. The position now arrives
+// in the model beside the identity; see model.hpp's format_area_ordinal.
 
 std::string join_labels(const std::vector<std::string>& labels) {
     std::ostringstream out;
@@ -231,8 +238,47 @@ std::string gui_version_label() {
     return dottalk::version::display_version();
 }
 
+// AIF-078 stage 5, 2026-08-22. THE BUILD VARIANT, in one place.
+//
+// DOTTALK_WB_NEXT is defined for the dottalk_wb_next target only
+// (src/gui/wx/CMakeLists.txt). Until today the two GUI targets compiled the
+// same sources with no define between them, so the second executable provided
+// none of the isolation it was created for. The tag is the guard's EXERCISE,
+// not decoration: both binaries stage into dottalkpp/bin, so a window has to
+// say which one it is, and a v1 window that ever reads NEXT means the guard
+// has leaked. A define with no observable effect would be a mechanism with
+// zero call sites, which is the shape this house keeps finding.
+//
+// CORRECTED SAME DAY. The first cut put the tag inside workbench_title() and
+// its comment called that "the ONE funnel every title goes through". It is
+// not. workbench_title() serves the main frame -- ctor plus THREE SetTitle
+// sites -- while the Record View frame built its own caption inline at three
+// further sites, so under _next the main window would have read NEXT and the
+// Record View window would not. One binary, two answers to "which build am I".
+// That is the same two-spellings-of-one-question defect this house keeps
+// finding, authored here while documenting it. Both captions now consult this
+// tag, and record_view_title() exists so the Record View caption has a funnel
+// of its own instead of three inline copies.
+constexpr const char* wb_variant_tag() {
+#if defined(DOTTALK_WB_NEXT) && DOTTALK_WB_NEXT
+    return " NEXT";
+#else
+    return "";
+#endif
+}
+
 std::string workbench_title(const std::string& display_name = {}) {
-    std::string title = "DotTalk++ Workbench " + gui_version_label();
+    std::string title = std::string("DotTalk++ Workbench") + wb_variant_tag() +
+                        " " + gui_version_label();
+    if (!display_name.empty()) {
+        title += " - " + display_name;
+    }
+    return title;
+}
+
+std::string record_view_title(const std::string& display_name = {}) {
+    std::string title = std::string("Record View") + wb_variant_tag() +
+                        " " + gui_version_label();
     if (!display_name.empty()) {
         title += " - " + display_name;
     }
@@ -415,6 +461,7 @@ const GuiEvent& DotTalkCoreEvent::payload() const noexcept {
 MainFrame::MainFrame(std::filesystem::path initial_table, LocaleContext locale)
     : wxFrame(nullptr, wxID_ANY, workbench_title(), wxDefaultPosition, wxSize(1100, 720)),
       locale_(std::move(locale)) {
+    SetIcons(app_icon_bundle());
     BuildMenu();
     BuildLayout();
     CreateStatusBar(4);
@@ -433,6 +480,7 @@ MainFrame::MainFrame(std::filesystem::path initial_table, LocaleContext locale)
     Bind(wxEVT_MENU, &MainFrame::OnWorkspaceOpenDirectory, this, IdWorkspaceOpenDirectory);
     Bind(wxEVT_MENU, &MainFrame::OnWorkspaceLoadRuntime, this, IdWorkspaceLoadRuntime);
     Bind(wxEVT_MENU, &MainFrame::OnWorkspaceClose, this, IdWorkspaceClose);
+    Bind(wxEVT_MENU, &MainFrame::OnWorkspaceMemoBrowse, this, IdWorkspaceMemoBrowse);
     Bind(wxEVT_MENU, &MainFrame::OnOpenWorkspace, this, IdOpenWorkspace);
     Bind(wxEVT_MENU, &MainFrame::OnSaveWorkspace, this, IdSaveWorkspace);
     Bind(wxEVT_MENU, &MainFrame::OnSaveWorkspaceAs, this, IdSaveWorkspaceAs);
@@ -457,6 +505,14 @@ MainFrame::MainFrame(std::filesystem::path initial_table, LocaleContext locale)
     if (grid_) {
         grid_->Bind(wxEVT_GRID_SELECT_CELL, &MainFrame::OnBrowseCellSelected, this);
         grid_->Bind(wxEVT_CHAR_HOOK, &MainFrame::OnRecordViewKeyDown, this);
+    }
+    if (tables_grid_) {
+        // The Tables grid HIGHLIGHTED a row and drove nothing -- every other
+        // grid here binds this event and it alone did not. A highlight that
+        // looks identical whether the selection is consumed or ignored is the
+        // AIF-118 shape wearing a UI: the same answer for "selected" and "this
+        // does nothing."
+        tables_grid_->Bind(wxEVT_GRID_SELECT_CELL, &MainFrame::OnTableRowSelected, this);
     }
     if (ddict_objects_grid_) {
         ddict_objects_grid_->Bind(wxEVT_GRID_SELECT_CELL, &MainFrame::OnDDictObjectSelected, this);
@@ -496,6 +552,8 @@ void MainFrame::BuildMenu() {
     workspace->Append(IdWorkspaceOpenDirectory, "WORKSPACE OPEN Directory...");
     workspace->Append(IdWorkspaceLoadRuntime, "WORKSPACE LOAD Schema...");
     workspace->Append(IdWorkspaceClose, "WORKSPACE CLOSE");
+    workspace->AppendSeparator();
+    workspace->Append(IdWorkspaceMemoBrowse, "Browse Memo Workspaces...");
     workspace->AppendSeparator();
     workspace->Append(IdOpenWorkspace, "Load Workspace Schema...");
     workspace->Append(IdSaveWorkspace, gui_text(GuiTextId::SaveWorkspace, locale_));
@@ -957,15 +1015,23 @@ void MainFrame::OnRunCommand(wxCommandEvent&) {
     if (text.empty()) {
         return;
     }
-    AddCommandHistory(text);
     if (is_record_view_command(text)) {
+        AddCommandHistory(text);
         command_->Clear();
         ShowRecordView();
         return;
     }
+    command_->Clear();
+    SubmitCommandText(text);
+}
+
+void MainFrame::SubmitCommandText(const std::string& text) {
+    if (text.empty()) {
+        return;
+    }
+    AddCommandHistory(text);
     AppendLog("> " + text);
     SetStatusText(gui_text(GuiTextId::RunningCommand, locale_), 0);
-    command_->Clear();
     session_->submit_command(CommandRequest{text});
 }
 
@@ -1031,6 +1097,52 @@ void MainFrame::OnDDictFilterChanged(wxCommandEvent&) {
     if (!ddict_selected_objid_.empty()) {
         SelectDDictObject(ddict_selected_objid_);
     }
+}
+
+void MainFrame::OnTableRowSelected(wxGridEvent& event) {
+    // A REPAINT IS NOT A CLICK. ApplyTables rebuilds this grid with
+    // DeleteRows/AppendRows, and wxGrid moves its cursor when the rows under it
+    // go -- which fires this very event. Unguarded, that closed a loop through
+    // the async queue: repaint -> selection event -> submit_select_area ->
+    // result -> ApplyTables -> repaint, two hops, forever. The Workbench went
+    // Not Responding with the log filling with identical
+    // "[gui.area.selected] GUI work area selected." lines, which is what a
+    // feedback loop looks like from the outside.
+    //
+    // OnBrowseCellSelected has carried this guard all along (applying_snapshot_)
+    // and this handler simply did not copy it. Same defect, same shape, one
+    // grid over.
+    if (applying_tables_ || !session_) {
+        event.Skip();
+        return;
+    }
+
+    // BY IDENTITY, NOT BY POSITION. The row index is used ONCE, to find the
+    // AreaInfo the grid painted, and what travels onward is its AreaId --
+    // never the row number. That is what let this frame survive R120 changing
+    // the meaning of the ordinal underneath it without a single edit: the
+    // list maps position -> AreaId immediately and everything downstream is
+    // identity.
+    //
+    // It also survives what has not happened yet. If this grid ever sorts or
+    // filters, row N stops being the Nth area, and any code that indexed a
+    // parallel vector by row would then reach the WRONG area while looking
+    // exactly as correct as it does today.
+    const int row = event.GetRow();
+    if (row >= 0 && static_cast<std::size_t>(row) < area_infos_.size()) {
+        const AreaId id = area_infos_[static_cast<std::size_t>(row)].area_id;
+        // SELECTING WHAT IS ALREADY SELECTED IS NOT A STATE CHANGE. The latch
+        // above assumes wxGrid sends this event synchronously from inside
+        // ApplyTables; this line does not assume anything about WHEN it
+        // arrives. Together with ApplyTables parking the cursor on the active
+        // row, a late or queued repaint event names the area that is already
+        // current and dies here instead of starting another lap.
+        if (id != 0 && id != current_area_id_) {
+            current_area_id_ = id;
+            session_->submit_select_area(SelectAreaRequest{id});
+        }
+    }
+    event.Skip();
 }
 
 void MainFrame::OnDDictObjectSelected(wxGridEvent& event) {
@@ -1119,11 +1231,33 @@ void MainFrame::AddArea(const OpenTableResult& result) {
     }
 
     area_ids_.push_back(result.area_id);
-    area_infos_.push_back(AreaInfo{result.area_id, true, result.path, result.display_name, result.record_count});
+    // AIF-120. Named rather than positional: adding `workspace` as AreaInfo's
+    // second member silently slid `true` onto it under aggregate init, and the
+    // compiler caught it only because bool does not convert to std::string. The
+    // next member added would not be so lucky. This form also fixes what the
+    // positional one quietly skipped -- the workspace was never being set on
+    // this path, which bypasses gui_area_info_from_dbarea entirely.
+    AreaInfo info;
+    info.area_id = result.area_id;
+    // AIF-078: was gui_workspace_of_area(result.area_id), a call that could
+    // only ever return the constant DEFAULT. The session answered it exactly
+    // at open() and put the answer in the result.
+    info.workspace = result.workspace;
+    // AIF-078: and the POSITION, for the same reason -- this path bypasses
+    // gui_area_info_from_dbarea, so anything the model needs has to be copied
+    // across explicitly. Without this the tables column reads "none" on every
+    // area opened through here, while the areas list beside it reads correctly.
+    info.ordinal = result.ordinal;
+    info.active = true;
+    info.path = result.path;
+    info.display_name = result.display_name;
+    info.record_count = result.record_count;
+    area_infos_.push_back(std::move(info));
     workspace_model_.active_area_id = result.area_id;
+    workspace_model_.active_ordinal = result.ordinal;
     workspace_model_.tables = area_infos_;
     std::ostringstream label;
-    label << visible_area_id(result.area_id) << "  " << result.display_name << "  (" << result.record_count << ")";
+    label << format_area_ordinal(result.ordinal) << "  " << result.display_name << "  (" << result.record_count << ")";
     areas_->Append(label.str());
     areas_->SetSelection(static_cast<int>(area_ids_.size() - 1));
     current_area_id_ = result.area_id;
@@ -1136,6 +1270,7 @@ void MainFrame::RebuildAreas(const ListAreasResult& result) {
     area_infos_.clear();
     current_area_id_ = result.active_area_id;
     workspace_model_.active_area_id = result.active_area_id;
+    workspace_model_.active_ordinal = result.active_ordinal;
     workspace_model_.tables = result.areas;
 
     if (!areas_) {
@@ -1155,7 +1290,7 @@ void MainFrame::RebuildAreas(const ListAreasResult& result) {
         area_ids_.push_back(area.area_id);
         area_infos_.push_back(area);
         std::ostringstream label;
-        label << visible_area_id(area.area_id) << "  " << area.display_name << "  (" << area.record_count << ")";
+        label << format_area_ordinal(area.ordinal) << "  " << area.display_name << "  (" << area.record_count << ")";
         areas_->Append(label.str());
         if (area.active) {
             active_selection = static_cast<int>(area_ids_.size() - 1);
@@ -1184,26 +1319,86 @@ void MainFrame::ApplyTables(const WorkspaceModel& model) {
         return;
     }
 
-    reset_grid(tables_grid_, static_cast<int>(model.tables.size()), 6);
-    tables_grid_->SetColLabelValue(0, "Area");
-    tables_grid_->SetColLabelValue(1, "Table");
-    tables_grid_->SetColLabelValue(2, "Records");
-    tables_grid_->SetColLabelValue(3, "Fields");
-    tables_grid_->SetColLabelValue(4, "Active");
-    tables_grid_->SetColLabelValue(5, "Path");
+    // AIF-120. WS is leftmost and is never blank: an area belongs to exactly one
+    // workspace and DEFAULT is a workspace (invariant I1). The column is not
+    // decoration -- name resolution is first-match with no ambiguity signal, so
+    // when two workspaces both hold STUDENTS this column is the difference
+    // between seeing two rows and seeing one row that is quietly the wrong one.
+    //
+    // Row count is model.tables.size() -- OPEN AREAS, never the slot space. The
+    // CLI's WORKSPACE listing prints one line per slot and MAX_AREA is a build
+    // vector with no upper bound, so a per-slot grid would be unbounded by
+    // construction.
+    // REPAINT LATCH. Everything from here to the end of this function is the
+    // frame painting itself, not the user choosing anything, and
+    // OnTableRowSelected has to be able to tell those apart -- see the note
+    // there for what happened when it could not.
+    applying_tables_ = true;
+    struct TablesRepaintGuard {
+        bool* flag;
+        ~TablesRepaintGuard() { if (flag) *flag = false; }
+    } tables_repaint_guard{&applying_tables_};
+
+    reset_grid(tables_grid_, static_cast<int>(model.tables.size()), 7);
+    tables_grid_->SetColLabelValue(0, "WS");
+    tables_grid_->SetColLabelValue(1, "Area");
+    tables_grid_->SetColLabelValue(2, "Table");
+    tables_grid_->SetColLabelValue(3, "Records");
+    tables_grid_->SetColLabelValue(4, "Fields");
+    tables_grid_->SetColLabelValue(5, "Active");
+    tables_grid_->SetColLabelValue(6, "Path");
 
     for (std::size_t row = 0; row < model.tables.size(); ++row) {
         const auto& area = model.tables[row];
         const int grid_row = static_cast<int>(row);
-        tables_grid_->SetRowLabelValue(grid_row, std::to_string(row + 1));
-        tables_grid_->SetCellValue(grid_row, 0, visible_area_id(area.area_id));
-        tables_grid_->SetCellValue(grid_row, 1, area.display_name);
-        tables_grid_->SetCellValue(grid_row, 2, std::to_string(area.record_count));
-        tables_grid_->SetCellValue(grid_row, 3, std::to_string(area.field_count));
-        tables_grid_->SetCellValue(grid_row, 4, area.active ? "yes" : "");
-        tables_grid_->SetCellValue(grid_row, 5, area.path.string());
+        // AREAS ARE NEVER RENUMBERED -- not in the CLI, not here. This gutter
+        // used to paint 1..N beside an Area column reading 0..N-1: two number
+        // columns an inch apart, one of them a wxGrid row counter with no
+        // meaning in this system. Close an area and the counter recounts,
+        // because that is what a grid does -- and it reads exactly like the
+        // areas having been renumbered. That misread happened, to the owner,
+        // on this grid.
+        //
+        // One number, in the column labelled Area. The gutter stays as a click
+        // target and says nothing.
+        tables_grid_->SetRowLabelValue(grid_row, wxString{});
+        tables_grid_->SetCellValue(grid_row, 0, area.workspace);
+        tables_grid_->SetCellValue(grid_row, 1, format_area_ordinal(area.ordinal));
+        tables_grid_->SetCellValue(grid_row, 2, area.display_name);
+        tables_grid_->SetCellValue(grid_row, 3, std::to_string(area.record_count));
+        tables_grid_->SetCellValue(grid_row, 4, std::to_string(area.field_count));
+        tables_grid_->SetCellValue(grid_row, 5, area.active ? "yes" : "");
+        tables_grid_->SetCellValue(grid_row, 6, area.path.string());
     }
     tables_grid_->AutoSizeColumns(false);
+
+    // PARK THE CURSOR ON THE ACTIVE AREA. Two reasons, and the second is the
+    // one that was actually reported.
+    //
+    // 1. After reset_grid the cursor sits at row 0 regardless of which area is
+    //    active. Left there, a repaint does not merely fire a spurious
+    //    selection event -- it fires one naming THE WRONG AREA, so a repaint
+    //    while area 5 was active would quietly move the user to area 0. The
+    //    hang made that visible; without the hang it would have been a silent
+    //    wrong answer.
+    //
+    // 2. The steward asked on 2026-08-24 why the Areas grid highlight did not
+    //    mean anything and suggested it should read differently from an
+    //    ordinary selection. This is that, from the other end: the highlight
+    //    now IS the active area rather than wherever the grid last happened to
+    //    leave its cursor.
+    if (tables_grid_->GetNumberRows() > 0 && tables_grid_->GetNumberCols() > 0) {
+        for (std::size_t row = 0; row < model.tables.size(); ++row) {
+            if (model.tables[row].area_id != model.active_area_id ||
+                model.active_area_id == 0) {
+                continue;
+            }
+            const int grid_row = static_cast<int>(row);
+            tables_grid_->SetGridCursor(grid_row, 0);
+            tables_grid_->SelectRow(grid_row);
+            break;
+        }
+    }
 }
 
 void MainFrame::ApplyIndexes(const WorkspaceModel& model) {
@@ -1211,30 +1406,34 @@ void MainFrame::ApplyIndexes(const WorkspaceModel& model) {
         return;
     }
 
-    reset_grid(indexes_grid_, static_cast<int>(model.indexes.size()), 9);
-    indexes_grid_->SetColLabelValue(0, "Area");
-    indexes_grid_->SetColLabelValue(1, "Table");
-    indexes_grid_->SetColLabelValue(2, "Kind");
-    indexes_grid_->SetColLabelValue(3, "Active");
-    indexes_grid_->SetColLabelValue(4, "Direction");
-    indexes_grid_->SetColLabelValue(5, "Active Tag");
-    indexes_grid_->SetColLabelValue(6, "Tags");
-    indexes_grid_->SetColLabelValue(7, "Backend");
-    indexes_grid_->SetColLabelValue(8, "Container");
+    // AIF-120. An order belongs to its area's workspace; same rule as Tables.
+    reset_grid(indexes_grid_, static_cast<int>(model.indexes.size()), 10);
+    indexes_grid_->SetColLabelValue(0, "WS");
+    indexes_grid_->SetColLabelValue(1, "Area");
+    indexes_grid_->SetColLabelValue(2, "Table");
+    indexes_grid_->SetColLabelValue(3, "Kind");
+    indexes_grid_->SetColLabelValue(4, "Active");
+    indexes_grid_->SetColLabelValue(5, "Direction");
+    indexes_grid_->SetColLabelValue(6, "Active Tag");
+    indexes_grid_->SetColLabelValue(7, "Tags");
+    indexes_grid_->SetColLabelValue(8, "Backend");
+    indexes_grid_->SetColLabelValue(9, "Container");
 
     for (std::size_t row = 0; row < model.indexes.size(); ++row) {
         const auto& index = model.indexes[row];
         const int grid_row = static_cast<int>(row);
-        indexes_grid_->SetRowLabelValue(grid_row, std::to_string(row + 1));
-        indexes_grid_->SetCellValue(grid_row, 0, visible_area_id(index.area_id));
-        indexes_grid_->SetCellValue(grid_row, 1, index.area_name);
-        indexes_grid_->SetCellValue(grid_row, 2, index.kind);
-        indexes_grid_->SetCellValue(grid_row, 3, index.active ? "yes" : "");
-        indexes_grid_->SetCellValue(grid_row, 4, index.ascending ? "ASC" : "DESC");
-        indexes_grid_->SetCellValue(grid_row, 5, index.tag);
-        indexes_grid_->SetCellValue(grid_row, 6, join_labels(index.tags));
-        indexes_grid_->SetCellValue(grid_row, 7, index.backend);
-        indexes_grid_->SetCellValue(grid_row, 8, index.container.string());
+        // Same reason as the tables grid: no fake number beside the real one.
+        indexes_grid_->SetRowLabelValue(grid_row, wxString{});
+        indexes_grid_->SetCellValue(grid_row, 0, index.workspace);
+        indexes_grid_->SetCellValue(grid_row, 1, format_area_ordinal(index.ordinal));
+        indexes_grid_->SetCellValue(grid_row, 2, index.area_name);
+        indexes_grid_->SetCellValue(grid_row, 3, index.kind);
+        indexes_grid_->SetCellValue(grid_row, 4, index.active ? "yes" : "");
+        indexes_grid_->SetCellValue(grid_row, 5, index.ascending ? "ASC" : "DESC");
+        indexes_grid_->SetCellValue(grid_row, 6, index.tag);
+        indexes_grid_->SetCellValue(grid_row, 7, join_labels(index.tags));
+        indexes_grid_->SetCellValue(grid_row, 8, index.backend);
+        indexes_grid_->SetCellValue(grid_row, 9, index.container.string());
     }
     indexes_grid_->AutoSizeColumns(false);
 }
@@ -1244,24 +1443,29 @@ void MainFrame::ApplyRelations(const WorkspaceModel& model) {
         return;
     }
 
-    reset_grid(relations_grid_, static_cast<int>(model.relations.size()), 6);
-    relations_grid_->SetColLabelValue(0, "Parent");
-    relations_grid_->SetColLabelValue(1, "Child");
-    relations_grid_->SetColLabelValue(2, "Parent Key");
-    relations_grid_->SetColLabelValue(3, "Child Key");
-    relations_grid_->SetColLabelValue(4, "Matches");
-    relations_grid_->SetColLabelValue(5, "Source");
+    // AIF-120. Relations are engine-global today -- one map keyed by bare
+    // uppercased parent alias with no owner field -- so this column shows what
+    // the runtime cannot yet separate, and will stop being a constant when it can.
+    reset_grid(relations_grid_, static_cast<int>(model.relations.size()), 7);
+    relations_grid_->SetColLabelValue(0, "WS");
+    relations_grid_->SetColLabelValue(1, "Parent");
+    relations_grid_->SetColLabelValue(2, "Child");
+    relations_grid_->SetColLabelValue(3, "Parent Key");
+    relations_grid_->SetColLabelValue(4, "Child Key");
+    relations_grid_->SetColLabelValue(5, "Matches");
+    relations_grid_->SetColLabelValue(6, "Source");
 
     for (std::size_t row = 0; row < model.relations.size(); ++row) {
         const auto& relation = model.relations[row];
         const int grid_row = static_cast<int>(row);
         relations_grid_->SetRowLabelValue(grid_row, std::to_string(row + 1));
-        relations_grid_->SetCellValue(grid_row, 0, relation.parent);
-        relations_grid_->SetCellValue(grid_row, 1, relation.child);
-        relations_grid_->SetCellValue(grid_row, 2, relation.parent_key);
-        relations_grid_->SetCellValue(grid_row, 3, relation.child_key);
-        relations_grid_->SetCellValue(grid_row, 4, std::to_string(relation.match_count));
-        relations_grid_->SetCellValue(grid_row, 5, relation.source);
+        relations_grid_->SetCellValue(grid_row, 0, relation.workspace);
+        relations_grid_->SetCellValue(grid_row, 1, relation.parent);
+        relations_grid_->SetCellValue(grid_row, 2, relation.child);
+        relations_grid_->SetCellValue(grid_row, 3, relation.parent_key);
+        relations_grid_->SetCellValue(grid_row, 4, relation.child_key);
+        relations_grid_->SetCellValue(grid_row, 5, dottalk::gui::format_match_count(relation.match_count));
+        relations_grid_->SetCellValue(grid_row, 6, relation.source);
     }
     relations_grid_->AutoSizeColumns(false);
 }
@@ -1719,7 +1923,7 @@ void MainFrame::ShowRecordView() {
     if (!record_view_frame_) {
         record_view_frame_ = new wxFrame(this,
                                          wxID_ANY,
-                                         "Record View " + gui_version_label(),
+                                         record_view_title(),
                                          wxDefaultPosition,
                                          record_view_size(current_snapshot_.columns));
         record_view_panel_ = new wxPanel(record_view_frame_, wxID_ANY);
@@ -1749,7 +1953,7 @@ void MainFrame::RefreshRecordView() {
 
     if (current_area_id_ == 0 || current_snapshot_.area_id != current_area_id_ ||
         current_snapshot_.columns.empty()) {
-        record_view_frame_->SetTitle("Record View " + gui_version_label());
+        record_view_frame_->SetTitle(record_view_title());
         if (record_view_panel_->GetSizer()) {
             record_view_panel_->SetSizer(nullptr, true);
         }
@@ -1784,8 +1988,8 @@ void MainFrame::RefreshRecordView() {
         return;
     }
 
-    record_view_frame_->SetTitle("Record View " + gui_version_label() + " - " +
-                                 current_snapshot_.display_name + " #" + std::to_string(recno));
+    record_view_frame_->SetTitle(record_view_title(
+        current_snapshot_.display_name + " #" + std::to_string(recno)));
     record_view_frame_->SetMinSize(record_view_size(current_snapshot_.columns));
     if (record_view_panel_->GetSizer()) {
         record_view_panel_->SetSizer(nullptr, true);
@@ -2135,6 +2339,23 @@ bool MainFrame::RecallCommandHistory(int direction) {
     command_->SetValue(command_history_[static_cast<std::size_t>(command_history_index_)]);
     command_->SetInsertionPointEnd();
     return true;
+}
+
+// AIF-120. Opens the memo browser as its own window owned by this frame -- not
+// a second application and not a modal dialog. It is read-only: it lists the
+// WORKSPACES catalog and renders what each memo field contains, hydrating
+// nothing. Repeated invocations raise the existing window rather than stacking
+// copies.
+void MainFrame::OnWorkspaceMemoBrowse(wxCommandEvent&) {
+    for (wxWindow* child : GetChildren()) {
+        if (auto* existing = dynamic_cast<MemoBrowserFrame*>(child)) {
+            existing->Raise();
+            existing->SetFocus();
+            return;
+        }
+    }
+    auto* browser = new MemoBrowserFrame(this);
+    browser->Show();
 }
 
 } // namespace dottalk::gui::wxui

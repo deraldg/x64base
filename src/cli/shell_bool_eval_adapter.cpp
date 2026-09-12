@@ -25,7 +25,7 @@
 #include "expr/sql_normalize.hpp"
 
 // Centralize DotScript memory-variable / array predicates on the house expression
-// evaluator via the one shared bridge (AIF-041 / AIF-037 Rule of Three) — the same bridge
+// evaluator via the one shared bridge (AIF-041 / AIF-037 Rule of Three) -- the same bridge
 // the scan/filter path (predx::eval_expr) uses.
 #include "cli/expr/dotscript_predicate_bridge.hpp"
 
@@ -156,7 +156,7 @@ bool shell_eval_bool_expr(xbase::DbArea& area,
     // same bridge the display path and the scan/filter path use), ahead of both the
     // injected AST evaluator and the WHERE engine. Field-only / `$`-containment predicates
     // never match the bridge, so their behavior is unchanged; a DotScript predicate the
-    // house evaluator cannot handle falls through to the normal path — no regression.
+    // house evaluator cannot handle falls through to the normal path -- no regression.
     if (dottalk::dotscript::try_eval_dotscript_predicate(area, expr, *result)) {
         if (err) err->clear();
         return true;

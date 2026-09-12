@@ -41,10 +41,14 @@
 //
 // usage:
 //   AGGS USAGE
+//   AGGS ALL <value_expr> [FOR <pred>] [WHERE <pred>]     (alias: STATS)
+//   AGGS SUM|AVG|MIN|MAX <value_expr> [FOR <pred>] [WHERE <pred>]
+//     (AGGS AVG alias: AGGS AVERAGE)
 //   SUM USAGE
 //   SUM <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]
 //   AVG USAGE
 //   AVG <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]
+//     (AVG alias: AVERAGE)
 //   MIN USAGE
 //   MIN <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]
 //   MAX USAGE
@@ -53,6 +57,11 @@
 // notes:
 //   AGGS with no arguments prints aggregate-family usage.
 //   SUM, AVG, MIN, and MAX are the direct aggregate verbs; AGGS owns the aggregate family.
+//   AGGS also dispatches those four as subcommands (cmd_aggs.cpp:985-1003), so
+//   AGGS SUM <expr> and SUM <expr> reach the same run_agg call. Neither the
+//   family form nor AGGS ALL / STATS appeared in this contract until 2026-08-28.
+//   AGGS ALL is a SINGLE-PASS multi-aggregate -- COUNT, SUM, AVG, MIN and MAX
+//   from one scan -- not a repetition of the four verbs.
 //   Persistent SET FILTER and optional FOR/WHERE predicates both participate in visibility.
 //   Cursor position is restored best-effort after the aggregate scan.
 //   Aggregate commands report values; they do not mutate table data.
@@ -432,6 +441,15 @@ static void normalize_agg_predicate(xbase::DbArea& area, AggSpec& spec) {
     spec.pred_expr = normalize_unquoted_rhs_literals(area, spec.pred_expr);
 }
 
+// AIF-123. ALLRECS is not "show everything" -- it is "this command carried no
+// deleted clause", which is exactly when the session default should decide.
+// Reading it as "show everything" is how a bare COUNT/SUM came to include
+// deleted rows while SET DELETED said hide.
+static filter::DeletedPolicy deleted_policy_for(DelMode m) {
+    return (m == DelMode::ALLRECS) ? filter::DeletedPolicy::SessionDefault
+                                   : filter::DeletedPolicy::CallerHandles;
+}
+
 static bool passes_deleted_mode(xbase::DbArea& area, DelMode m) {
     if (m == DelMode::ALLRECS) return true;
 
@@ -696,7 +714,10 @@ static void run_agg(AggOp op, const char* opname, xbase::DbArea& area, std::istr
         if (!passes_deleted_mode(area, spec.del_mode)) continue;
 
         // Persistent SET FILTER + optional command FOR/WHERE together define visibility.
-        if (!filter::visible(&area, pred_ast)) continue;
+        // AIF-123: ALLRECS means the command carried no deleted clause, so the
+        // gate applies SET DELETED. An explicit clause has already spoken on the
+        // line above and must not be undone here.
+        if (!filter::visible(&area, pred_ast, deleted_policy_for(spec.del_mode))) continue;
 
         double v = 0.0;
         if (!eval_value_plan(vp, area, rv, v, use_raw)) continue;
@@ -821,7 +842,7 @@ static void run_agg_all(xbase::DbArea& area, std::istringstream& args) {
             if (!area.readCurrent()) continue;
         }
         if (!passes_deleted_mode(area, spec.del_mode)) continue;
-        if (!filter::visible(&area, pred_ast)) continue;
+        if (!filter::visible(&area, pred_ast, deleted_policy_for(spec.del_mode))) continue;
 
         double v = 0.0;
         if (!eval_value_plan(vp, area, rv, v, use_raw)) continue;

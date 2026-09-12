@@ -72,6 +72,12 @@ inline std::vector<dottalk::expr::FunctionCategory> function_category_order()
         FunctionCategory::Logical,
         FunctionCategory::Construction,
         FunctionCategory::Conversion,
+        // NOTE: this list is DUPLICATED verbatim in cmd_export_functions.cpp and
+        // cmd_help_grouped.cpp. Add a category to one and not the other and
+        // EXPORTFUNCTIONS and HELP silently disagree about what exists -- the
+        // omission is invisible because a missing category prints nothing rather
+        // than erroring. Both were updated together for Cursor.
+        FunctionCategory::Cursor,
         FunctionCategory::Misc
     };
 }
@@ -125,6 +131,9 @@ inline bool parse_function_category_token_local(const std::string& token,
         {"CONSTRUCTIONS", FunctionCategory::Construction},
         {"CONVERSION",    FunctionCategory::Conversion},
         {"CONVERSIONS",   FunctionCategory::Conversion},
+        {"CURSOR",        FunctionCategory::Cursor},
+        {"CURSORS",       FunctionCategory::Cursor},
+        {"ROW",           FunctionCategory::Cursor},
         {"MISC",          FunctionCategory::Misc}
     };
 
@@ -196,7 +205,28 @@ void show_function_index_grouped()
     out() << "Usage:\n";
     out() << "  HELP FUNCTIONS\n";
     out() << "  HELP FUNCTION <name>\n";
-    out() << "  HELP <category>      (NUMERIC, DATE, STRING, SEARCH, LOGICAL, CONSTRUCTION, CONVERSION, MISC)\n";
+    // DERIVED, NOT TYPED. This line used to be a hand-written list of the eight
+    // categories, and adding a ninth (Cursor, 2026-09-05) left it naming eight --
+    // help text advertising a set that no longer matched the set. It was caught by
+    // reading HELP's own output rather than by any gate, which is exactly how long
+    // it would have survived otherwise.
+    //
+    // Building it from function_category_order() means the next category cannot
+    // introduce the same drift: the sentence and the enum have one source.
+    out() << "  HELP <category>      (";
+    {
+        bool first = true;
+        for (const auto cat : function_category_order()) {
+            if (!first) out() << ", ";
+            first = false;
+            std::string label = dottalk::expr::to_string(cat);
+            for (char& ch : label) {
+                ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
+            }
+            out() << label;
+        }
+    }
+    out() << ")\n";
     out() << "  HELP <name>          (falls through to function help if no command owns the name)\n";
 }
 

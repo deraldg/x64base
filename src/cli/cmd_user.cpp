@@ -11,7 +11,7 @@
 // owner: DOT|USER
 // command: USER
 // category: diagnostics
-// status: experimental
+// status: supported
 // noargs: usage
 // effect: mixed
 // mutates: identity-catalog session-auth authorization-store
@@ -29,6 +29,10 @@
 //   USER WHOAMI
 //   USER CAN <permission.key> [FOR <member.key>]
 //   USER STORE           report boot origin (SEED/DBF/DEGRADED), writability, active counts
+//   USER ORGS            list orgs and each member's org (who it answers to)
+//   USER ORG ADD <org.key> [display name]                  admit an outside party (PARTNER)
+//   USER ORG BIND <member.key> TO <org.key>                bind/rebind a member's org
+//   USER ORG BACKFILL                                      apply the standard roster (idempotent)
 //   USER ADD <key> [HUMAN|AI|SERVICE] [role.key]           admit a member (persisted)
 //   USER REQUEST <permission.key> FOR <member.key> [reason]  agent asks for limited permission
 //   USER REQUESTS | GRANTS                                 list pending / all authorizations
@@ -98,6 +102,8 @@ void user_usage() {
               << "  USER LIST | ROLES | PERMS | WHOAMI\n"
               << "  USER CAN <permission.key> [FOR <member.key>]\n"
               << "  USER STORE          show boot origin (SEED/DBF/DEGRADED), writability, counts\n"
+              << "  USER ORGS           list orgs and which member answers to which\n"
+              << "  USER ORG ADD <org.key> [name] | BIND <member.key> TO <org.key> | BACKFILL\n"
               << "  USER ADD <key> [HUMAN|AI|SERVICE] [role.key]   admit a member (persisted)\n"
               << "  USER REQUEST <permission.key> FOR <member.key> [reason]   ask for limited permission\n"
               << "  USER REQUESTS | GRANTS                         list pending / all authorizations\n"
@@ -190,6 +196,84 @@ void user_add(std::istringstream& iss) {
     const Role* r = find_role_by_key(identity_store(), role_key);
     if (!r) { std::cout << "USER ADD: unknown role '" << role_key << "'\n"; return; }
     std::cout << "USER ADD: " << admit_member(key, kind, r->id).message << "\n";
+}
+
+// --- Orgs (partner lane) -------------------------------------------------------
+
+const char* org_type_name(OrgUnitType t) {
+    switch (t) {
+        case OrgUnitType::Organization: return "ORGANIZATION";
+        case OrgUnitType::Division:     return "DIVISION";
+        case OrgUnitType::Department:   return "DEPARTMENT";
+        case OrgUnitType::Team:         return "TEAM";
+        case OrgUnitType::Committee:    return "COMMITTEE";
+        case OrgUnitType::Class:        return "CLASS";
+        case OrgUnitType::Lab:          return "LAB";
+        case OrgUnitType::Partner:      return "PARTNER";
+    }
+    return "?";
+}
+
+void user_orgs() {
+    const InMemoryIdentityStore& s = identity_store();
+    if (s.org_units.empty()) {
+        std::cout << "No orgs. This catalog predates the org roster -- run USER ORG BACKFILL\n"
+                  << "(owner-gated) to apply the standard roster without disturbing existing rows.\n";
+        return;
+    }
+    std::cout << "Orgs:\n";
+    for (const auto& o : s.org_units)
+        std::cout << "  " << o.key << "  (" << o.name << ")  type=" << org_type_name(o.type)
+                  << "  id=" << o.id.value() << "\n";
+
+    std::cout << "Memberships (org_unit on the work-unset assignment):\n";
+    bool any = false;
+    for (const auto& m : s.members) {
+        const OrgUnit* home = nullptr;
+        for (const auto& a : s.assignments) {
+            if (a.member != m.id || a.work.has_value() || !a.org_unit.has_value()) continue;
+            for (const auto& o : s.org_units) if (o.id == *a.org_unit) home = &o;
+        }
+        std::cout << "  " << m.key << " -> " << (home ? home->key : "(unbound)") << "\n";
+        if (home) any = true;
+    }
+    if (!any)
+        std::cout << "  none bound; independence checks fail closed until members are bound.\n";
+}
+
+void user_org(std::istringstream& iss) {
+    std::string sub;
+    if (!(iss >> sub)) {
+        std::cout << "  USER ORG ADD <org.key> [display name]\n"
+                  << "  USER ORG BIND <member.key> TO <org.key>\n"
+                  << "  USER ORG BACKFILL\n";
+        return;
+    }
+    const std::string u = upcase(sub);
+
+    if (u == "ADD") {
+        std::string key; iss >> key;
+        if (key.empty()) { std::cout << "USER ORG ADD <org.key> [display name]\n"; return; }
+        std::string name, w;
+        while (iss >> w) { if (!name.empty()) name += " "; name += w; }
+        std::cout << "USER ORG ADD: " << add_org(key, name).message << "\n";
+        return;
+    }
+    if (u == "BIND") {
+        std::string member, kw, org;
+        iss >> member;
+        if (iss >> kw) { if (upcase(kw) == "TO") iss >> org; else org = kw; }
+        if (member.empty() || org.empty()) {
+            std::cout << "USER ORG BIND <member.key> TO <org.key>\n"; return;
+        }
+        std::cout << "USER ORG BIND: " << bind_member_org(member, org).message << "\n";
+        return;
+    }
+    if (u == "BACKFILL") {
+        std::cout << "USER ORG BACKFILL: " << backfill_orgs().message << "\n";
+        return;
+    }
+    std::cout << "USER ORG: unknown subcommand '" << sub << "'\n";
 }
 
 void user_request(std::istringstream& iss) {
@@ -468,6 +552,8 @@ void cmd_USER(xbase::DbArea&, std::istringstream& iss)
         return;
     }
     if (u == "STORE")    { user_store(); return; }
+    if (u == "ORGS")     { user_orgs(); return; }
+    if (u == "ORG")      { user_org(iss); return; }
     if (u == "ADD")      { user_add(iss); return; }
     if (u == "REQUEST")  { user_request(iss); return; }
     if (u == "REQUESTS") { user_grants(s, true);  return; }

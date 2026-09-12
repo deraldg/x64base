@@ -7,7 +7,7 @@
 // owner: member.derald
 // status: supported
 
-// foxtalk_palette.cpp — minimal, TV-agnostic shim for theme selection
+// foxtalk_palette.cpp -- minimal, TV-agnostic shim for theme selection
 // This compiles cleanly with magiblot/tvision v4 and provides the API
 // used by cmd_foxtalk.cpp. We’ll add real TV palette wiring later.
 

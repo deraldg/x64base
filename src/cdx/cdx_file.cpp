@@ -29,7 +29,7 @@ namespace cdxfile {
 // from RAM. The handle carries either the disk std::fstream or a ramfs
 // std::iostream; io() is the single byte-store seam every primitive reads/writes
 // through (identical to DbArea's io()). When no ramfs root is mounted (default),
-// is_virtual() is false and the RAM branch is dead — byte-identical to before.
+// is_virtual() is false and the RAM branch is dead -- byte-identical to before.
 struct CDXHandle {
     std::string path;
     std::fstream f;

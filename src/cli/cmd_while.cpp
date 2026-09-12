@@ -71,6 +71,7 @@
 
 #include "xbase.hpp"
 #include "cmd_loop.hpp"  // for loop_get_executor() signature only
+#include "xbase_error_context.hpp"   // STOP_ON_ERROR: generation + trip check
 
 using bool_eval_t = bool(*)(xbase::DbArea&, const std::string&);
 static bool_eval_t g_eval = nullptr;
@@ -241,6 +242,12 @@ void cmd_ENDWHILE(xbase::DbArea& A, std::istringstream& S)
     const auto body = st.body;
     std::size_t iters = 0;
 
+    // Captured ONCE for the whole loop; once the generation moves past it the
+    // trip stays tripped, which is what is wanted -- the first failure ends the
+    // run and no later check can un-see it.
+    const std::uint64_t gen0 = xbase::error::error_generation();
+    bool stopped_on_error = false;
+
     while (g_eval(A, st.cond)) {
         ++iters;
 
@@ -249,11 +256,29 @@ void cmd_ENDWHILE(xbase::DbArea& A, std::istringstream& S)
             if (exec) {
                 for (const auto& line : body) {
                     (*exec)(A, line);
+
+            // STOP_ON_ERROR MEANS BAIL OUT -- steward ruling 2026-09-01, the
+            // same rule SCAN and LOOP follow. At the LINE: a body that fails on
+            // its first command should not run the rest of itself, and should
+            // certainly not advance to the next record and do it again.
+                    if (xbase::error::errorstop_tripped(gen0)) {
+                        stopped_on_error = true;
+                        break;
+                    }
                 }
             }
         }
 
+        if (stopped_on_error) break;
         if (!advance_one_record(A)) break;
+    }
+
+    if (stopped_on_error) {
+        std::cout << "ENDWHILE: STOPPED after " << iters
+                  << " iteration(s) (STOP_ON_ERROR "
+                  << xbase::error::errorstop_level_name(xbase::error::get_errorstop())
+                  << ").\n";
+        return;
     }
 
     if (!st.quiet) {

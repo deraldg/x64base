@@ -30,9 +30,19 @@ std::string format_active_order(const xbase::DbArea& A) {
         return os.str();
     }
 
+    // AIF-148 RESIDUE, 2026-08-29. hasOrder() above answers IS A CONTAINER
+    // ATTACHED, which is the right question for "is there a container to
+    // describe" and the WRONG one for "which order does the cursor follow". A
+    // .cdx attached with NO TAG selected is a table sitting in NATURAL order,
+    // and this line called it ASCEND -- a report that disagreed with the
+    // navigation verbs operating on the same area. The gate stays on hasOrder
+    // so the container filename and tag are still printed; only the ORDER WORD
+    // moves to the predicate that answers the question being asked.
     const std::string idxName = orderstate::orderName(A);
     const bool asc = orderstate::isAscending(A);
-    os << "Order       : " << (asc ? "ASCEND" : "DESCEND");
+    os << "Order       : " << (orderstate::isNaturalOrder(A)
+                                   ? "PHYSICAL"
+                                   : (asc ? "ASCEND" : "DESCEND"));
 
     if (!idxName.empty()) {
         os << "\n  Index file  : " << idxName;

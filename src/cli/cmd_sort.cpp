@@ -33,6 +33,7 @@
 //   SORT TO <outdbf> ON <expr> WHILE <expr>
 //   SORT TO <outdbf> ON <expr> FIELDS <fieldlist>
 //   SORT TO <outdbf> ON <expr> UNIQUE
+//   SORT TO <outdbf> ON <expr> KEY DROP
 //
 // notes:
 //   SORT requires an open table except for SORT USAGE.
@@ -43,6 +44,11 @@
 //   FOR and WHILE filter selected records.
 //   FIELDS projects selected fields into the output table.
 //   UNIQUE suppresses duplicate adjacent key sets after sorting.
+//   KEY DROP accepts an output that cannot carry the source's primary key.
+//     Without it SORT REFUSES rather than discarding the designation in
+//     silence. FIELDS can project the key column away, and UNIQUE suppresses
+//     duplicates on the SORT KEYS -- not on the key column -- so a sort keyed
+//     elsewhere can leave duplicates beneath a key that claims there are none.
 //   SORT scans the source table and writes a new DBF; it does not mutate source table records.
 //
 // risk:
@@ -78,6 +84,7 @@
 
 #include "xbase.hpp"
 #include "cli/command_output.hpp"
+#include "xbase_cli.hpp"
 #include "cli/expr/value_eval.hpp"
 #include "cli/expr/glue_xbase.hpp"
 #include "cli/expr/ast.hpp"
@@ -187,6 +194,7 @@ struct ClauseSpans {
     std::string for_expr;
     std::string while_expr;
     std::string fields_list;
+    std::string key_clause;   // raw text after KEY; must be DROP
     bool unique{false};
 };
 
@@ -231,6 +239,7 @@ static ClauseSpans split_on_and_clauses(const std::string& tail_after_on) {
     size_t pos_while  = find_keyword_outside_quotes_ci(s, 0, "WHILE");
     size_t pos_fields = find_keyword_outside_quotes_ci(s, 0, "FIELDS");
     size_t pos_unique = find_keyword_outside_quotes_ci(s, 0, "UNIQUE");
+    size_t pos_key    = find_keyword_outside_quotes_ci(s, 0, "KEY");
 
     auto minpos = [](size_t a, size_t b) {
         if (a == std::string::npos) return b;
@@ -243,6 +252,7 @@ static ClauseSpans split_on_and_clauses(const std::string& tail_after_on) {
     first = minpos(first, pos_while);
     first = minpos(first, pos_fields);
     first = minpos(first, pos_unique);
+    first = minpos(first, pos_key);
 
     if (first == std::string::npos) {
         cs.on_list = trim(s);
@@ -268,15 +278,27 @@ static ClauseSpans split_on_and_clauses(const std::string& tail_after_on) {
             size_t nw = find_keyword_outside_quotes_ci(s, from, "WHILE");
             size_t nfi = find_keyword_outside_quotes_ci(s, from, "FIELDS");
             size_t nu = find_keyword_outside_quotes_ci(s, from, "UNIQUE");
+            size_t nk = find_keyword_outside_quotes_ci(s, from, "KEY");
             size_t n = std::string::npos;
             n = minpos(n, nf);
             n = minpos(n, nw);
             n = minpos(n, nfi);
             n = minpos(n, nu);
+            n = minpos(n, nk);
             return n;
         };
 
-        if (starts_kw("UNIQUE")) {
+        if (starts_kw("KEY")) {
+            // Span-taking, not boolean: the word after KEY is the disposition,
+            // and it is captured raw so the CALLER can reject an unknown one
+            // with a usage message. Swallowing it here would make a typo look
+            // like a key that travelled.
+            cur += 3;
+            size_t next = next_any(cur);
+            cs.key_clause = trim((next == std::string::npos) ? s.substr(cur) : s.substr(cur, next - cur));
+            cur = next;
+            continue;
+        } else if (starts_kw("UNIQUE")) {
             cs.unique = true;
             cur += 6;
             cur = next_any(cur);
@@ -583,7 +605,7 @@ static bool is_sort_usage_request(const std::string& raw)
 }
 
 static void usage_sort() {
-    cli::cmdout::print_message(dottalk::helpdata::MessageId::SortUsageText);
+    ::cli::cmdout::print_message(dottalk::helpdata::MessageId::SortUsageText);
 }
 
 } // namespace
@@ -599,7 +621,7 @@ void cmd_SORT(xbase::DbArea& A, std::istringstream& in) {
     }
 
     if (!A.isOpen()) {
-        cli::cmdout::print_prefixed_message("SORT", dottalk::helpdata::MessageId::SortNoTableOpenText);
+        ::cli::cmdout::print_prefixed_message("SORT", dottalk::helpdata::MessageId::SortNoTableOpenText);
         return;
     }
 
@@ -651,13 +673,28 @@ void cmd_SORT(xbase::DbArea& A, std::istringstream& in) {
 
     out_name = trim(out_name);
     if (out_name.empty()) {
-        cli::cmdout::print_prefixed_message("SORT", dottalk::helpdata::MessageId::SortMissingOutputText);
+        ::cli::cmdout::print_prefixed_message("SORT", dottalk::helpdata::MessageId::SortMissingOutputText);
         return;
     }
 
     ClauseSpans clauses = split_on_and_clauses(on_and_tail);
+
+    // KEY takes exactly one disposition and DROP is the only one spelled today.
+    // An unknown word is a usage error rather than a silent no-op: "KEY DORP"
+    // must not read as a key that travelled.
+    bool key_drop = false;
+    if (!clauses.key_clause.empty()) {
+        std::string kd = up(trim(clauses.key_clause));
+        if (kd != "DROP") {
+            ::cli::cmdout::print_prefixed_message(
+                "SORT", dottalk::helpdata::MessageId::SortErrorDetailText,
+                {{"detail", "KEY expects DROP, got '" + clauses.key_clause + "'"}});
+            return;
+        }
+        key_drop = true;
+    }
     if (trim(clauses.on_list).empty()) {
-        cli::cmdout::print_prefixed_message("SORT", dottalk::helpdata::MessageId::SortMissingOnKeysText);
+        ::cli::cmdout::print_prefixed_message("SORT", dottalk::helpdata::MessageId::SortMissingOnKeysText);
         return;
     }
 
@@ -667,7 +704,7 @@ void cmd_SORT(xbase::DbArea& A, std::istringstream& in) {
     std::vector<int> proj_in_idx0;
     if (!clauses.fields_list.empty()) {
         try { proj_in_idx0 = parse_fields_list(F, clauses.fields_list); }
-        catch (const std::exception& e) { cli::cmdout::print_message(dottalk::helpdata::MessageId::SortErrorDetailText, {{"detail", e.what()}}); return; }
+        catch (const std::exception& e) { ::cli::cmdout::print_message(dottalk::helpdata::MessageId::SortErrorDetailText, {{"detail", e.what()}}); return; }
     }
 
     // Parse key specs
@@ -707,7 +744,7 @@ void cmd_SORT(xbase::DbArea& A, std::istringstream& in) {
     }
 
     if (keys.empty()) {
-        cli::cmdout::print_prefixed_message("SORT", dottalk::helpdata::MessageId::SortNoUsableKeysText);
+        ::cli::cmdout::print_prefixed_message("SORT", dottalk::helpdata::MessageId::SortNoUsableKeysText);
         return;
     }
 
@@ -777,13 +814,13 @@ void cmd_SORT(xbase::DbArea& A, std::istringstream& in) {
     std::filesystem::path out_path = xbase::dbNameWithExt(out_name);
     if (std::filesystem::exists(out_path)) {
         if (!overwrite) {
-            cli::cmdout::print_prefixed_message("SORT", dottalk::helpdata::MessageId::SortOutputExistsText, {{"path", out_path.string()}});
+            ::cli::cmdout::print_prefixed_message("SORT", dottalk::helpdata::MessageId::SortOutputExistsText, {{"path", out_path.string()}});
             return;
         }
         std::error_code ec;
         std::filesystem::remove(out_path, ec);
         if (ec) {
-            cli::cmdout::print_prefixed_message("SORT", dottalk::helpdata::MessageId::SortCannotOverwriteText, {{"path", out_path.string()}});
+            ::cli::cmdout::print_prefixed_message("SORT", dottalk::helpdata::MessageId::SortCannotOverwriteText, {{"path", out_path.string()}});
             return;
         }
     }
@@ -791,7 +828,7 @@ void cmd_SORT(xbase::DbArea& A, std::istringstream& in) {
     try {
         create_empty_dbf_like(out_path, out_fields);
     } catch (const std::exception& e) {
-        cli::cmdout::print_message(dottalk::helpdata::MessageId::SortErrorDetailText, {{"detail", e.what()}});
+        ::cli::cmdout::print_message(dottalk::helpdata::MessageId::SortErrorDetailText, {{"detail", e.what()}});
         return;
     }
 
@@ -817,14 +854,14 @@ void cmd_SORT(xbase::DbArea& A, std::istringstream& in) {
         // WHILE: stop scanning at first false
         if (have_while) {
             const bool wb = eval_filter(clauses.while_expr, prog_while, ok);
-            if (!ok) { cli::cmdout::print_prefixed_message("SORT", dottalk::helpdata::MessageId::SortWhileEvalFailedText); return; }
+            if (!ok) { ::cli::cmdout::print_prefixed_message("SORT", dottalk::helpdata::MessageId::SortWhileEvalFailedText); return; }
             if (!wb) break;
         }
 
         // FOR: include only when true
         if (have_for) {
             const bool fb = eval_filter(clauses.for_expr, prog_for, ok);
-            if (!ok) { cli::cmdout::print_prefixed_message("SORT", dottalk::helpdata::MessageId::SortForEvalFailedText); return; }
+            if (!ok) { ::cli::cmdout::print_prefixed_message("SORT", dottalk::helpdata::MessageId::SortForEvalFailedText); return; }
             if (!fb) continue;
         }
 
@@ -891,17 +928,43 @@ void cmd_SORT(xbase::DbArea& A, std::istringstream& in) {
             ++written;
         }
 
+        // R142. THE DESIGNATION TRAVELS LAST -- xbase_cli.hpp carries the
+        // argument for why that order is load-bearing. SORT is the verb that
+        // makes the scan earn its keep: FIELDS can project the key column away
+        // entirely, and UNIQUE suppresses duplicates on the SORT KEYS rather
+        // than on the key column, so a sort keyed on anything else can emit
+        // duplicates beneath a stamp claiming there are none.
+        const auto kt = xbase::cli::carryPrimaryKey(
+            A, out,
+            key_drop ? xbase::cli::KeyTravel::Drop
+                     : xbase::cli::KeyTravel::RefuseIfBlocked);
+
+        if (!kt.proceed) {
+            ::cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::SortErrorDetailText,
+                {{"detail", kt.detail + ". The output " + out_path.string() +
+                            " was written and carries no key -- re-run with KEY DROP"
+                            " to accept that, or sort without FIELDS or UNIQUE so the"
+                            " key column travels intact."}});
+            return;
+        }
+
+        // Silent on success. SORT has no neutral detail message to say "key
+        // carried" through, and SortErrorDetailText must not be used to
+        // announce good news -- a message channel that lies about its own
+        // severity is how a warning becomes invisible. Noted as catalog debt.
+
         const std::string uniq = unique
             ? (" (UNIQUE skipped " + std::to_string(skipped_dupes) + ")")
             : std::string();
-        cli::cmdout::print_prefixed_message("SORT", dottalk::helpdata::MessageId::SortSummaryText,
+        ::cli::cmdout::print_prefixed_message("SORT", dottalk::helpdata::MessageId::SortSummaryText,
             {{"scanned", std::to_string(scanned)},
              {"kept", std::to_string(kept)},
              {"written", std::to_string(written)},
              {"unique", uniq},
              {"path", out_path.string()}});
     } catch (const std::exception& e) {
-        cli::cmdout::print_message(dottalk::helpdata::MessageId::SortErrorDetailText, {{"detail", e.what()}});
+        ::cli::cmdout::print_message(dottalk::helpdata::MessageId::SortErrorDetailText, {{"detail", e.what()}});
         return;
     }
 }

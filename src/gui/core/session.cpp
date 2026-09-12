@@ -7,18 +7,27 @@
 // owner: member.derald
 // status: supported
 
+#include "dottalk/scratch_sidecar.hpp"
 #include "gui/core/session.hpp"
+#include "xbase/workspace_membership.hpp"
+#include "xbase/workspace_naming.hpp"   // I1.2: relations carry their owning workspace
 
 #include "common/path_resolver.hpp"
 #include "common/path_state.hpp"
+#include "dottalk/dtschema.hpp"
+#include "dottalk/minidb.hpp"
+#include "dottalk/minidb_hydrate.hpp"
+#include "xbase/ramfs.hpp"
 #include "cli/order_iterator.hpp"
 #include "cli/order_state.hpp"
 #include "gui/core/gui_command_catalog.hpp"
 #include "gui/core/gui_runtime_adapter.hpp"
 #include "gui_shell_runtime.hpp"
 #include "gui_cli_bridge.hpp"
+#include "relation_parse.hpp"
 #include "cli/shell_shortcuts.hpp"
 #include "xbase.hpp"
+#include "xbase/area_alloc.hpp"   // AIF-078 step 2b: the ONE free-slot policy
 #include "xindex/index_manager.hpp"
 #include "xindex/attach.hpp"
 
@@ -184,7 +193,10 @@ std::optional<std::filesystem::path> workspace_open_dir_from_cli_output(const st
 }
 
 struct WorkspaceOpenIndexAttachment {
-    AreaId area_id {0};
+    // AIF-078. This is parsed out of the CLI's "Area <n>" line, and that n is a
+    // POSITION. It used to be stored as an AreaId with a + 1 welded on, which is
+    // what made a positional token and an identity the same C++ type.
+    MaybeAreaOrdinal area_ordinal;
     std::filesystem::path container;
 };
 
@@ -387,12 +399,25 @@ std::vector<WorkspaceOpenIndexAttachment> workspace_open_indexes_from_cli_output
 
         if (auto container = resolve_workspace_open_index_container(dbf_dir, std::filesystem::path(rest))) {
             WorkspaceOpenIndexAttachment attachment;
-            attachment.area_id = static_cast<AreaId>(area0 + 1);
+            attachment.area_ordinal = static_cast<AreaOrdinal>(area0);
             attachment.container = std::move(*container);
             attachments.push_back(std::move(attachment));
         }
     }
     return attachments;
+}
+
+std::vector<WorkspaceSchemaArea> load_dtschema2_areas_from_stream(
+        std::istream& file,
+        std::vector<WorkspaceRelationInfo>& relations);
+
+std::vector<WorkspaceSchemaArea> load_dtschema2_areas(const std::filesystem::path& schema_path,
+                                                      std::vector<WorkspaceRelationInfo>& relations) {
+    std::ifstream file(schema_path);
+    if (!file) {
+        return {};
+    }
+    return load_dtschema2_areas_from_stream(file, relations);
 }
 
 std::optional<std::filesystem::path> resolve_schema_dbf_path(const std::filesystem::path& token,
@@ -465,15 +490,36 @@ std::optional<std::filesystem::path> resolve_schema_index_path(const std::filesy
     return std::nullopt;
 }
 
-void merge_relation(std::vector<WorkspaceRelationInfo>& relations, WorkspaceRelationInfo relation);
+// AIF-078 I1.2 follow-up. WorkspaceRelationInfo::workspace had ZERO WRITERS:
+// all three construction sites in this file left it at its kDefaultWorkspace
+// default, while gui_workspace_format.cpp filtered on it and main_frame.cpp
+// displayed it in a column. A filter on a constant, and a column that could
+// only ever read DEFAULT.
+//
+// That was defensible while the runtime had nothing to report -- model.hpp said
+// so: "Relations are engine-global today, so a refresh has no group scope."
+// It stopped being true when the relation store was partitioned, so the field
+// gets its writer here.
+//
+// The OWNING workspace of a parsed edge is the session's CURRENT workspace,
+// for both sources and for the same reason: REL LIST reports the current
+// workspace's map (that is what the partition means), and a posture is loaded
+// INTO a workspace named by the command, never one it records itself
+// (invariant I3). Neither source carries a workspace of its own, so neither is
+// being second-guessed.
+std::string owning_workspace_now() {
+    const std::string name =
+        xbase::workspace::name_of(xbase::workspace::current_handle());
+    return name.empty() ? std::string(kDefaultWorkspace) : name;
+}
 
-std::vector<WorkspaceSchemaArea> load_dtschema2_areas(const std::filesystem::path& schema_path,
-                                                      std::vector<WorkspaceRelationInfo>& relations) {
-    std::ifstream file(schema_path);
+// AIF-120. A posture is a posture whether it came from a file or out of a memo
+// field, so the parser reads a stream and the path form is a wrapper. The memo
+// path has no file to hand it.
+std::vector<WorkspaceSchemaArea> load_dtschema2_areas_from_stream(
+        std::istream& file,
+        std::vector<WorkspaceRelationInfo>& relations) {
     std::vector<WorkspaceSchemaArea> areas;
-    if (!file) {
-        return areas;
-    }
 
     std::string line;
     while (std::getline(file, line)) {
@@ -525,21 +571,12 @@ std::vector<WorkspaceSchemaArea> load_dtschema2_areas(const std::filesystem::pat
             continue;
         }
 
-        if (line.rfind("RELATION ", 0) == 0) {
-            std::string rest = trim_ascii(line.substr(9));
-            const auto on = rest.find(" ON ");
-            if (on == std::string::npos) {
-                continue;
-            }
-            std::istringstream head(rest.substr(0, on));
-            WorkspaceRelationInfo relation;
-            head >> relation.parent >> relation.child;
-            relation.parent_key = trim_ascii(rest.substr(on + 4));
-            relation.child_key = relation.parent_key;
-            relation.source = "DTSchema";
-            if (!relation.parent.empty() && !relation.child.empty()) {
-                merge_relation(relations, std::move(relation));
-            }
+        WorkspaceRelationInfo relation;
+        // R125: THE HANDLE, not owning_workspace_now()'s rendered name. The
+        // conversion back to a name for display happens inside the parser, in
+        // one place, which is what GUI_LAYER_DECISION_OUTLINE step 2 asked for.
+        if (parse_relation_posture_line(line, xbase::workspace::current_handle(), relation)) {
+            merge_relation(relations, std::move(relation));
         }
     }
 
@@ -1072,153 +1109,6 @@ bool output_clears_relations(const std::string& output) {
     return false;
 }
 
-std::size_t leading_space_count(const std::string& text) {
-    std::size_t count = 0;
-    while (count < text.size() && text[count] == ' ') {
-        ++count;
-    }
-    return count;
-}
-
-std::optional<std::uint64_t> match_count_from_relation_line(const std::string& line) {
-    const auto marker = line.find("(matches:");
-    if (marker == std::string::npos) {
-        return std::nullopt;
-    }
-    const std::string tail = trim_ascii(line.substr(marker + 9));
-    long long value = 0;
-    if (!parse_i64_prefix(tail, value) || value < 0) {
-        return std::nullopt;
-    }
-    return static_cast<std::uint64_t>(value);
-}
-
-void merge_relation(std::vector<WorkspaceRelationInfo>& relations, WorkspaceRelationInfo relation) {
-    const auto same_relation = [&](const WorkspaceRelationInfo& existing) {
-        const bool same_tables = lower_ascii(existing.parent) == lower_ascii(relation.parent) &&
-                                 lower_ascii(existing.child) == lower_ascii(relation.child);
-        const bool compatible_key = existing.parent_key.empty() || relation.parent_key.empty() ||
-                                    lower_ascii(existing.parent_key) == lower_ascii(relation.parent_key);
-        return same_tables && compatible_key;
-    };
-
-    const auto found = std::find_if(relations.begin(), relations.end(), same_relation);
-    if (found == relations.end()) {
-        relations.push_back(std::move(relation));
-        return;
-    }
-
-    if (found->parent_key.empty()) {
-        found->parent_key = relation.parent_key;
-    }
-    if (found->child_key.empty()) {
-        found->child_key = relation.child_key;
-    }
-    if (found->match_count == 0) {
-        found->match_count = relation.match_count;
-    }
-    if (!relation.source.empty()) {
-        found->source = relation.source;
-    }
-}
-
-std::vector<WorkspaceRelationInfo> parse_relation_edges_from_output(const std::string& output) {
-    std::vector<WorkspaceRelationInfo> relations;
-    std::istringstream stream(output);
-    std::string line;
-    std::vector<std::pair<std::size_t, std::string>> tree_stack;
-    while (std::getline(stream, line)) {
-        const std::string original_line = line;
-        line = trim_ascii(line);
-        if (line.empty()) {
-            continue;
-        }
-
-        constexpr const char* rooted_marker = "Relations (tree) rooted at:";
-        if (line.rfind(rooted_marker, 0) == 0) {
-            const std::string root = trim_ascii(line.substr(std::char_traits<char>::length(rooted_marker)));
-            if (!root.empty()) {
-                tree_stack.clear();
-                tree_stack.push_back({0, root});
-            }
-            continue;
-        }
-
-        constexpr const char* parent_marker = "Relations for parent:";
-        if (line.rfind(parent_marker, 0) == 0) {
-            const std::string root = trim_ascii(line.substr(std::char_traits<char>::length(parent_marker)));
-            if (!root.empty()) {
-                tree_stack.clear();
-                tree_stack.push_back({0, root});
-            }
-            continue;
-        }
-
-        constexpr const char* prefix = "REL:";
-        if (line.rfind(prefix, 0) == 0) {
-            std::string rest = trim_ascii(line.substr(std::char_traits<char>::length(prefix)));
-            const auto arrow = rest.find("->");
-            const auto on = rest.find(" ON ");
-            if (arrow == std::string::npos || on == std::string::npos || on <= arrow) {
-                continue;
-            }
-
-            WorkspaceRelationInfo relation;
-            relation.parent = trim_ascii(rest.substr(0, arrow));
-            relation.child = trim_ascii(rest.substr(arrow + 2, on - (arrow + 2)));
-            relation.parent_key = trim_ascii(rest.substr(on + 4));
-            relation.child_key = relation.parent_key;
-            relation.source = "DotTalk++ shell";
-            if (!relation.parent.empty() && !relation.child.empty()) {
-                merge_relation(relations, std::move(relation));
-            }
-            continue;
-        }
-
-        if (line.find(" ") == std::string::npos && line.find("->") == std::string::npos) {
-            tree_stack.clear();
-            tree_stack.push_back({0, line});
-            continue;
-        }
-
-        if (line.rfind("->", 0) != 0 || tree_stack.empty()) {
-            continue;
-        }
-
-        const std::size_t indent = leading_space_count(original_line);
-        while (tree_stack.size() > 1 && tree_stack.back().first >= indent) {
-            tree_stack.pop_back();
-        }
-
-        std::string rest = trim_ascii(line.substr(2));
-        const auto arrow = rest.find("->");
-        if (arrow != std::string::npos) {
-            continue;
-        }
-
-        const auto matches = match_count_from_relation_line(rest);
-        const auto match_marker = rest.find("(matches:");
-        if (match_marker != std::string::npos) {
-            rest = trim_ascii(rest.substr(0, match_marker));
-        }
-        const auto on = rest.find(" ON ");
-
-        WorkspaceRelationInfo relation;
-        relation.parent = tree_stack.back().second;
-        relation.child = on == std::string::npos ? trim_ascii(rest) : trim_ascii(rest.substr(0, on));
-        relation.parent_key = on == std::string::npos ? std::string{} : trim_ascii(rest.substr(on + 4));
-        relation.child_key = relation.parent_key;
-        relation.match_count = matches.value_or(0);
-        relation.source = "DotTalk++ shell";
-        if (!relation.parent.empty() && !relation.child.empty()) {
-            const std::string child = relation.child;
-            merge_relation(relations, std::move(relation));
-            tree_stack.push_back({indent + 2, child});
-        }
-    }
-    return relations;
-}
-
 std::string first_token_from_command_text(const std::string& text) {
     std::istringstream stream(text);
     std::string token;
@@ -1308,9 +1198,12 @@ std::string command_suggestion(const std::string& verb) {
     return best_distance <= 2 ? best : std::string{};
 }
 
-std::string visible_area_id(AreaId id) {
-    return id == 0 ? std::string("none") : std::to_string(id - 1);
-}
+// AIF-078: the conversion visible_area_id -- id minus 1 -- lived here, in
+// main_frame.cpp and in
+// gui_workspace_format.cpp -- three identical copies of a rung conversion, which
+// is three more than D10 R3 allows. The one survivor is
+// model.hpp's format_area_ordinal(), and the ordinal it formats is now looked up
+// in the area list rather than reconstructed by arithmetic from an identity.
 
 std::string dbf_flavor_label(const xbase::DbArea& area) {
     std::ostringstream out;
@@ -1363,7 +1256,11 @@ bool is_dbf_file(const std::filesystem::directory_entry& entry) {
     if (!entry.is_regular_file()) {
         return false;
     }
-    return lower_ascii(entry.path().extension().string()) == ".dbf";
+    if (lower_ascii(entry.path().extension().string()) != ".dbf") {
+        return false;
+    }
+    // Engine scratch is not a user table. See dottalk/scratch_sidecar.hpp.
+    return !dottalk::is_engine_scratch_table(entry.path());
 }
 
 bool workspace_dbf_path_less_like_cli(const std::filesystem::path& left,
@@ -1481,8 +1378,7 @@ void initialize_gui_paths() {
 void run_lifecycle_scripts(GuiShellRuntime& runtime, const std::vector<std::string>& names) {
     for (const auto& script : existing_lifecycle_scripts(names)) {
         RuntimeCliResult ignored = runtime.run(RuntimeCliRequest{
-            "DOTSCRIPT " + script.string(),
-            {}
+            .command = "DOTSCRIPT " + script.string(),
         });
         (void)ignored;
     }
@@ -1491,11 +1387,82 @@ void run_lifecycle_scripts(GuiShellRuntime& runtime, const std::vector<std::stri
 } // namespace
 
 struct Session::Impl {
+    // AIF-078 slot lane, step 2b. THE AREA IS BORROWED, NOT OWNED.
+    //
+    // It used to hold `xbase::DbArea area;` BY VALUE, and that one fact is what
+    // made a session-owned area second class: setEngineSlot() has exactly one
+    // caller in the tree -- XBaseEngine's constructor in dbf_file.cpp, over the
+    // engine's own array, named rather than numbered because the line number
+    // this comment used to carry was already wrong. An area outside that array
+    // could never have an engine slot and carried -1 for life. -1 is ALSO the
+    // member array's free-slot sentinel, so join(h, -1)
+    // matched the first FREE slot and claimed nothing, and leave(h, -1) cleared
+    // nothing. Membership could not see these areas at all.
+    //
+    // Now it holds a reference into the engine's array, at a slot claimed from
+    // the same allocator the CLI's USE ... IN FREE uses. join() and leave() are
+    // already called from DbArea::open()/close(); they simply start receiving a
+    // REAL slot. Nothing else had to change for membership to become true.
     struct Area {
+        // R6: an absent value must not be representable among present ones.
+        // There is NO default constructor, so an unbound Area cannot exist and
+        // the accessor below has no absent case to defend against, across its
+        // 111 call sites in this file: 110 through a pointer, 1 through a
+        // reference. Counted 2026-08-27.
+        //
+        // THE COUNT DISCIPLINE, applied to this comment, which used to say 132.
+        // 132 was the raw occurrence count of the accessor's spelling as a
+        // SUBSTRING -- an authority holding more than one KIND with no
+        // discriminator applied. It swept in the 111 real call sites, the 18
+        // tails of the neighbouring active-area lookup (whose name ENDS in the
+        // accessor's name), this accessor's own 2 declarations, and the comment
+        // line asserting the number, which spelled it and so counted itself.
+        // Same shape as a suppression marker that suppresses the line
+        // explaining it.
+        //
+        // This replacement deliberately does NOT spell the call-site search
+        // patterns, because a comment that spells them is a comment that
+        // pollutes the count it is telling you to trust. That mistake was made
+        // and reverted while writing this one. To re-verify, grep for the
+        // pointer-form and reference-form calls yourself; the numbers above are
+        // of CODE and exclude every comment in this file.
+        Area(xbase::XBaseEngine& eng, int slot) noexcept : eng_(&eng), slot_(slot) {}
+
+        // RAII PRESERVED ACROSS THE OWNERSHIP CHANGE, and this destructor is
+        // load-bearing. Before 2b, `areas.clear()` closed files implicitly --
+        // destroying an Area destroyed its by-value DbArea and ~DbArea() calls
+        // close(). The DbArea is no longer ours to destroy, so without this the
+        // three clears and one erase would stop closing anything: files left
+        // open, slots left claimed, NO compile error and no failing test. A
+        // silent leak. Keeping the release here means those four call sites need
+        // no edits at all, and close() does workspace::leave() itself.
+        ~Area() {
+            try {
+                if (eng_ && slot_ >= 0) eng_->area(slot_).close();
+            } catch (...) {
+                // A destructor may not throw. Losing the close is bad; losing
+                // the process is worse.
+            }
+        }
+
+        Area(const Area&)            = delete;
+        Area& operator=(const Area&) = delete;
+
         AreaId id {0};
-        xbase::DbArea area;
         std::filesystem::path path;
         std::string display_name;
+
+        // The ENGINE slot -- the number that means AREA <n> in the CLI, in a
+        // posture, and in SELECT n. Step 3 re-points the GUI's positional rung
+        // at this instead of at the list index.
+        int slot() const noexcept { return slot_; }
+
+        xbase::DbArea&       area()       { return eng_->area(slot_); }
+        const xbase::DbArea& area() const { return eng_->area(slot_); }
+
+    private:
+        xbase::XBaseEngine* eng_;
+        int                 slot_;
     };
 
     Area* active_area() {
@@ -1524,6 +1491,58 @@ struct Session::Impl {
         return nullptr;
     }
 
+    // The identity rung -> the positional rung. A LOOKUP, not arithmetic, and
+    // it fails in the return value (D10 R3): an id that is not in the list has
+    // no position, and under R6.3 that is an EMPTY OPTIONAL rather than a
+    // reserved number -- so a caller cannot forget to check it and then do
+    // arithmetic on the answer.
+    MaybeAreaOrdinal ordinal_of(AreaId id) const {
+        for (const auto& area : areas) {
+            if (area->id == id) {
+                // AIF-078 step 3 (ruling R120, 2026-08-24). THE ENGINE SLOT,
+                // not the list index. Still a lookup and still downward-only;
+                // what changed is WHICH positional rung this session reports,
+                // so that "area 5" means the same area whether it is typed at
+                // the GUI or at the CLI.
+                return static_cast<AreaOrdinal>(area->slot());
+            }
+        }
+        return std::nullopt;
+    }
+
+    // The positional rung -> the identity rung. Also a lookup. Takes the
+    // optional so "no ordinal" and "no area at that position" both land on the
+    // same honest nullptr, and neither needs a magic number to say so.
+    //
+    // AIF-078 step 3. This SEARCHES rather than indexes, and that is the shape
+    // change, not a cost. The old bounds test `*ordinal >= areas.size()` was
+    // only correct while the position WAS the index; a slot is an address in
+    // the engine's array of MAX_AREA, so a session holding two areas can hold
+    // slots 0 and 7, and "is 7 past the end of a list of 2" is the wrong
+    // question. Asking which area SITS at 7 is the right one, and it answers
+    // absent for a slot this session does not hold.
+    Area* find_area_by_ordinal(const MaybeAreaOrdinal& ordinal) {
+        if (!ordinal) return nullptr;
+        for (const auto& area : areas) {
+            if (static_cast<AreaOrdinal>(area->slot()) == *ordinal) return area.get();
+        }
+        return nullptr;
+    }
+
+    const Area* find_area_by_ordinal(const MaybeAreaOrdinal& ordinal) const {
+        if (!ordinal) return nullptr;
+        for (const auto& area : areas) {
+            if (static_cast<AreaOrdinal>(area->slot()) == *ordinal) return area.get();
+        }
+        return nullptr;
+    }
+
+    // What to SHOW. Every caller that used to write visible_area_id writes
+    // this instead, so the list is consulted exactly once per printed number.
+    std::string visible_ordinal(AreaId id) const {
+        return format_area_ordinal(ordinal_of(id));
+    }
+
     Area* find_area_by_path(const std::filesystem::path& path) {
         const std::string wanted = comparable_path(path);
         for (const auto& area : areas) {
@@ -1541,7 +1560,10 @@ struct Session::Impl {
 
         long long visible = 0;
         if (parse_i64(token, visible) && visible >= 0) {
-            return find_area(static_cast<AreaId>(visible + 1));
+            // What the user typed is a POSITION. It was previously turned into
+            // an identity by adding 1, which agreed with the mint counter only
+            // until the first close.
+            return find_area_by_ordinal(static_cast<AreaOrdinal>(visible));
         }
 
         const std::string wanted = lower_ascii(token);
@@ -1550,7 +1572,7 @@ struct Session::Impl {
                 area->display_name,
                 area->path.filename().string(),
                 area->path.stem().string(),
-                area->area.logicalName()
+                area->area().logicalName()
             };
             for (auto name : names) {
                 name = lower_ascii(std::move(name));
@@ -1562,10 +1584,142 @@ struct Session::Impl {
         return nullptr;
     }
 
+    // ---- AIF-078: relation ENDPOINT matching, ONE spelling ---------------
+    //
+    // A relation edge names its endpoints as TEXT -- whatever the CLI printed
+    // or a DTSCHEMA2 posture carried -- and an area answers to four different
+    // spellings of itself. Deciding whether a given area IS a given endpoint is
+    // a real question with a real answer, and it used to be asked in exactly
+    // one place: a lambda inside workspace_model(), reachable only by building
+    // a whole model.
+    //
+    // It was lifted here on 2026-08-24 because close_area and the display side
+    // both asked it and a second spelling is the R5 defect. R123 then deleted
+    // the display-side caller, so TODAY THERE IS ONE CALLER --
+    // drop_relations_naming. That is recorded rather than quietly tidied: the
+    // predicate stays factored because the question is a real one with a real
+    // answer, not because two places happen to ask it this week. Behaviour is
+    // unchanged from the lift: same four names, same lowering, same .dbf
+    // strip.
+    static std::vector<std::string> relation_names_of(const Area& area) {
+        std::vector<std::string> names {
+            area.area().logicalName(),
+            area.display_name,
+            area.path.filename().string(),
+            area.path.stem().string()
+        };
+        for (auto& name : names) {
+            name = lower_ascii(trim_ascii(std::move(name)));
+            if (ends_with_ci(name, ".dbf")) {
+                name.resize(name.size() - 4);
+            }
+        }
+        return names;
+    }
+
+    // Does `area` answer to the endpoint name `relation_table`? An EMPTY name
+    // never matches -- neither an endpoint with no text nor an area with no
+    // logical name -- because "both are blank" is not a match, it is two
+    // absences, and treating it as one would drop every relation on the first
+    // close of an unnamed area.
+    static bool area_answers_to(const Area& area, const std::string& relation_table) {
+        const std::string wanted = lower_ascii(trim_ascii(relation_table));
+        if (wanted.empty()) {
+            return false;
+        }
+        for (const auto& name : relation_names_of(area)) {
+            if (!name.empty() && name == wanted) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // THE DISPLAY-SIDE LOOKUP WAS DELETED BY R123, and it is worth saying why
+    // rather than leaving a gap. area_for_relation_endpoint resolved a relation
+    // ENDPOINT NAME to an open area, and its only caller was the match counter.
+    // With the counter gone it had zero call sites -- the AIF-079 shape this
+    // project already pays to name -- so it went with it. Nothing else in the
+    // GUI has ever needed to turn a relation endpoint into an area; the counter
+    // was the only reason that question was ever asked here.
+
+    // Drop every relation edge naming `area` on either side; return how many
+    // went. THE CLOSE SIDE.
+    //
+    // MUST BE CALLED BEFORE DbArea::close(). relation_names_of reads
+    // logicalName() off the LIVE area, and close() clears area identity
+    // (dbarea.cpp) -- so an area closed first answers to one fewer name than it
+    // did a line earlier, and an edge written against its logical name would
+    // survive the close of its own table. There is no compile error for getting
+    // that order wrong and the result has the same SHAPE either way, which is
+    // why the order is stated here instead of left to be noticed.
+    std::size_t drop_relations_naming(const Area& area) {
+        const auto before = relations.size();
+        relations.erase(
+            std::remove_if(relations.begin(), relations.end(),
+                [&](const WorkspaceRelationInfo& relation) {
+                    return area_answers_to(area, relation.parent) ||
+                           area_answers_to(area, relation.child);
+                }),
+            relations.end());
+        return before - relations.size();
+    }
+
+    // DECLARED BEFORE `areas` ON PURPOSE. Members are destroyed in REVERSE
+    // declaration order, so this engine is torn down AFTER the areas that hold
+    // references into its array. Swap these two lines and every ~Area() runs
+    // against a destroyed engine -- which would compile, and would not
+    // necessarily fail a test.
+    xbase::XBaseEngine engine;
+
+    // Claim a slot for a new area, or -1. ONE allocator, shared with the CLI:
+    // xbase::find_free_area_for_workspace grows this workspace's own block
+    // first and falls back to the lowest free slot anywhere, reporting when it
+    // breaks contiguity (owner rulings 2026-08-22, "scoped" and "keep the areas
+    // contiguous"). A second free-slot policy for the same array is R5's defect.
+    int claim_area_slot(bool& broke_contiguity) {
+        return xbase::find_free_area_for_workspace(
+            &engine,
+            xbase::workspace::default_table(),
+            xbase::workspace::current_handle(),
+            broke_contiguity);
+    }
+
     std::vector<std::unique_ptr<Area>> areas;
+
+    // R128. WHICH AREA, IF ANY, ALREADY HOLDS THIS FILE. The re-entry rule
+    // needs it: a second OPEN of the same directory adds what is new and
+    // touches nothing else. Compared by CANONICAL path, because the caller
+    // holds a directory_entry path and the Area holds whatever it was opened
+    // with -- comparing raw strings would answer NO for a file plainly open,
+    // and a wrong NO here reopens an area someone is working in.
+    Area* holding(const std::filesystem::path& want_in) {
+        std::error_code ec;
+        std::filesystem::path want = std::filesystem::weakly_canonical(want_in, ec);
+        if (ec) want = want_in;
+        for (const auto& a : areas) {
+            std::error_code ec2;
+            std::filesystem::path have = std::filesystem::weakly_canonical(a->path, ec2);
+            if (ec2) have = a->path;
+#if defined(_WIN32)
+            // Windows paths are case-insensitive; comparing case-sensitively
+            // would miss a file that is plainly open under another spelling.
+            std::string hs = have.string();
+            std::string ws = want.string();
+            std::transform(hs.begin(), hs.end(), hs.begin(),
+                           [](unsigned char c){ return static_cast<char>(std::tolower(c)); });
+            std::transform(ws.begin(), ws.end(), ws.begin(),
+                           [](unsigned char c){ return static_cast<char>(std::tolower(c)); });
+            if (hs == ws) return a.get();
+#else
+            if (have == want) return a.get();
+#endif
+        }
+        return nullptr;
+    }
+
     std::vector<WorkspaceRelationInfo> relations;
     AreaId active_area_id {0};
-    AreaId next_area_id {1};
     std::unique_ptr<GuiShellRuntime> shell_runtime {make_script_shell_runtime()};
 };
 
@@ -1575,8 +1729,7 @@ Session::Session()
     std::vector<StatusMessage> ignored_messages;
     for (const auto& script : existing_lifecycle_scripts({"init.ini", "dottalkpp.ini", "dotscript.ini"})) {
         RuntimeCliResult cli = impl_->shell_runtime->run(RuntimeCliRequest{
-            "DOTSCRIPT " + script.string(),
-            {}
+            .command = "DOTSCRIPT " + script.string(),
         });
         mirror_setpath_output_to_gui(cli.output, ignored_messages);
         if (output_clears_relations(cli.output)) {
@@ -1591,7 +1744,7 @@ Session::Session()
         if (const auto schema = workspace_load_schema_from_cli_output(cli.output, script.string())) {
             (void)mirror_workspace_load_schema(*schema, ignored_messages);
         }
-        for (auto relation : parse_relation_edges_from_output(cli.output)) {
+        for (auto relation : parse_relation_edges_from_output(cli.output, owning_workspace_now())) {
             merge_relation(impl_->relations, std::move(relation));
         }
     }
@@ -1616,25 +1769,54 @@ OpenTableResult Session::open_table(const OpenTableRequest& request) {
             impl_->active_area_id = existing->id;
             result.ok = true;
             result.area_id = existing->id;
+            result.ordinal = impl_->ordinal_of(existing->id);
+            result.workspace = gui_workspace_of_area(existing->area());
             result.path = existing->path;
             result.display_name = existing->display_name;
-            result.record_count = existing->area.isOpen() ? existing->area.recCount64() : 0;
+            result.record_count = existing->area().isOpen() ? existing->area().recCount64() : 0;
             result.messages.push_back(info("gui.open_table.already_open",
                                            "Table already open; selected existing GUI work area."));
             return result;
         }
 
-        auto area = std::make_unique<Impl::Area>();
-        area->id = impl_->next_area_id++;
+        bool broke_contiguity = false;
+        const int slot = impl_->claim_area_slot(broke_contiguity);
+        if (slot < 0) {
+            // The CLI already ruled this, and the GUI adopts its answer rather
+            // than inventing a second spelling for the same refusal (R5).
+            // cmd_use.cpp:766 -- "Deliberately NOT falling back to the current
+            // area. Falling back is the silent-replacement behaviour this lane
+            // exists to kill."
+            throw std::runtime_error(
+                "no unoccupied work area (all " + std::to_string(xbase::MAX_AREA) +
+                " are in use). Nothing was opened.");
+        }
+        auto area = std::make_unique<Impl::Area>(impl_->engine, slot);
         area->path = request.path;
         area->display_name = result.display_name;
-        area->area.open(request.path.string());
+        area->area().open(request.path.string());
+        // AIF-078. The identity is the ENGINE'S, and it does not exist until the
+        // area is open -- which is why this assignment now sits BELOW open()
+        // rather than above it. The old counter was spent before open() could
+        // throw, so every failed open burned an id that nothing ever held.
+        area->id = area->area().areaHandle();
 
         result.ok = true;
         result.area_id = area->id;
-        result.record_count = area->area.recCount64();
+        // AIF-078 step 3. THE SLOT IT CLAIMED, read off the area itself.
+        //
+        // This used to be `impl_->areas.size()` read before the push -- the
+        // index it was about to occupy. That number was correct and meant the
+        // wrong thing: it answered "where in this list" when the CLI answering
+        // the same question says "which engine slot". Reading it off the area
+        // removes the read-order dependency as well; there is no longer a
+        // before-the-push and an after-the-push answer.
+        result.ordinal = static_cast<AreaOrdinal>(area->slot());
+        result.record_count = area->area().recCount64();
+        // Asked of the AREA, which is the only rung that can answer it.
+        result.workspace = gui_workspace_of_area(area->area());
         if (result.display_name.empty()) {
-            result.display_name = area->area.logicalName();
+            result.display_name = area->area().logicalName();
             area->display_name = result.display_name;
         }
         impl_->active_area_id = area->id;
@@ -1649,6 +1831,105 @@ OpenTableResult Session::open_table(const OpenTableRequest& request) {
     return result;
 }
 
+
+// ---------------------------------------------------------------------------
+// R128 ON THE GUI SURFACE (owner, 2026-08-26).
+//
+// Two things were true here and neither was a display bug. The mirrors CLOSED
+// EVERY AREA before opening, so the Workbench could not hold two workspaces at
+// once; and `src/gui` called workspace::create() and set_current_handle() in
+// ZERO places, so an area opened here could only ever join DEFAULT. The second
+// is why `WS: DEFAULT` on every row after a load was a TRUE report -- the GUI
+// had no way to be anywhere else.
+//
+// WHAT THIS GIVES THE GUI AND WHAT IT DOES NOT. It gets a RUNTIME workspace:
+// a handle, a name, membership, and therefore an honest WS column and a
+// scopeable close. It does NOT get a WS_ID. The durable birth row is written
+// by ws_memo::ensure_durable_workspace in cmd_workspace.cpp, and R122 ruled
+// that src/gui does not link src/cli -- the GUI reaches the engine by SPAWNING
+// a dottalkpp. In the mirror case that is not a hole: the CLI subprocess this
+// call is mirroring ALREADY wrote the durable row for this name. It is a hole
+// for any workspace the GUI ever creates on its own, and this comment is here
+// so that is found by reading rather than by surprise.
+// ---------------------------------------------------------------------------
+namespace {
+
+// Enter the workspace `nm` in the GUI's OWN handle space, creating it if
+// needed. Returns 0 on refusal.
+std::uint64_t gui_enter_workspace(const std::string& nm,
+                                  std::vector<StatusMessage>& messages) {
+    if (nm.empty()) return 0;
+    std::uint64_t h = xbase::workspace::find_by_name_ci(nm);
+    if (h == 0) h = xbase::workspace::create(nm, 0);
+    if (h == 0) {
+        messages.push_back(warning("gui.workspace.create_failed",
+                                   "The GUI could not create a workspace for this open.",
+                                   nm));
+        return 0;
+    }
+    if (!xbase::workspace::set_current_handle(h)) {
+        messages.push_back(warning("gui.workspace.enter_failed",
+                                   "The GUI created a workspace but could not enter it.",
+                                   nm));
+        return 0;
+    }
+    return h;
+}
+
+
+// THE LABEL IS PROVENANCE, NOT A NAME, and the first cut of this change missed
+// that. mirror_workspace_posture takes `label` from three call sites and none
+// of them is a workspace name: the FILE carrier passes a whole
+// schema_path.string(), the memo carrier passes "memo:" + name, and the MINIDB
+// carrier passes "minidb:" + name. Handing that straight to a workspace would
+// have produced a handle named after an absolute path -- past WS_NAME's 32
+// characters more often than not.
+//
+// FOUND BY RUNNING THE FIXTURE, 2026-08-26: dottalkpp_gui_area_membership_test
+// went red, its own G1 guard still green (both tables opened), which is the
+// signature of a placement fault rather than an open fault.
+//
+// A LABEL THAT YIELDS NO USABLE NAME IS NOT AN ERROR HERE. The caller stays in
+// whatever workspace it was in, which is exactly the pre-R128 behaviour, and
+// says so. Refusing the whole load because its provenance string is long would
+// trade a naming inconvenience for a failure to open anything.
+std::string gui_workspace_name_from_label(const std::string& label) {
+    std::string body = label;
+    for (const std::string_view prefix : {std::string_view("memo:"), std::string_view("minidb:")}) {
+        if (body.rfind(prefix, 0) == 0) { body = body.substr(prefix.size()); break; }
+    }
+    if (body.empty()) return {};
+
+    // Anything still carrying a separator is a path; take its stem.
+    if (body.find('/') != std::string::npos || body.find('\\') != std::string::npos) {
+        body = std::filesystem::path(body).stem().string();
+    } else {
+        const std::filesystem::path as_path(body);
+        if (as_path.has_extension()) body = as_path.stem().string();
+    }
+    if (body.empty()) return {};
+    if (body.size() > xbase::workspace::kMaxWorkspaceNameChars) return {};
+    return body;
+}
+
+// The handles a scoped act covers: the current workspace and, when SET
+// RECURSION is ON, its descendants. Mirrors close_workspace_tree in
+// cmd_workspace.cpp -- same children(), same switch, same depth cap, same
+// cycle guard -- because a GUI that meant something different by "this
+// workspace" would give one question two answers across two surfaces.
+void gui_collect_scope(std::uint64_t h, bool recursive, int depth,
+                       std::set<std::uint64_t>& seen) {
+    if (!xbase::workspace::exists(h)) return;
+    if (!seen.insert(h).second) return;
+    if (depth > xbase::workspace::kMaxWorkspaceDepth) return;
+    if (!recursive) return;
+    for (const auto c : xbase::workspace::children(h)) {
+        gui_collect_scope(c, recursive, depth + 1, seen);
+    }
+}
+
+}  // namespace
+
 std::size_t Session::mirror_workspace_open_directory(const std::filesystem::path& dir,
                                                      const std::string& shell_output,
                                                      const std::string& index_mode,
@@ -1661,13 +1942,19 @@ std::size_t Session::mirror_workspace_open_directory(const std::filesystem::path
         return 0;
     }
 
-    for (auto& area : impl_->areas) {
-        area->area.close();
+    // R128. The close-all that stood here is gone: OPEN is additive, so a
+    // second directory joins the session rather than replacing it. Relations
+    // and the active area are left alone for the same reason -- clearing them
+    // would discard state belonging to workspaces this open never touched.
+    std::string name_err;
+    const std::string ws_name = xbase::workspace::name_for_directory(dir, name_err);
+    if (ws_name.empty()) {
+        messages.push_back(warning("gui.workspace.open_dir_unnameable",
+                                   "WORKSPACE OPEN did not mirror because the directory implies no usable workspace name.",
+                                   dir.string() + ": " + name_err));
+        return 0;
     }
-    impl_->areas.clear();
-    impl_->relations.clear();
-    impl_->active_area_id = 0;
-    impl_->next_area_id = 1;
+    if (gui_enter_workspace(ws_name, messages) == 0) return 0;
 
     std::vector<std::filesystem::path> dbfs;
     for (const auto& entry : std::filesystem::directory_iterator(dir, ec)) {
@@ -1678,13 +1965,30 @@ std::size_t Session::mirror_workspace_open_directory(const std::filesystem::path
     std::sort(dbfs.begin(), dbfs.end(), workspace_dbf_path_less_like_cli);
 
     std::size_t opened = 0;
+    std::size_t already = 0;
     for (const auto& dbf : dbfs) {
+        // R128 re-entry: a second OPEN of a directory already open adds only
+        // what is new. Reopening would close and reopen an area the user may
+        // be sitting in, which is the destructive act this ruling stops.
+        if (impl_->holding(dbf) != nullptr) { ++already; continue; }
         try {
-            auto area = std::make_unique<Impl::Area>();
-            area->id = impl_->next_area_id++;
+            bool broke_contiguity = false;
+            const int slot = impl_->claim_area_slot(broke_contiguity);
+            if (slot < 0) {
+                // The CLI already ruled this, and the GUI adopts its answer rather
+                // than inventing a second spelling for the same refusal (R5).
+                // cmd_use.cpp:766 -- "Deliberately NOT falling back to the current
+                // area. Falling back is the silent-replacement behaviour this lane
+                // exists to kill."
+                throw std::runtime_error(
+                    "no unoccupied work area (all " + std::to_string(xbase::MAX_AREA) +
+                    " are in use). Nothing was opened.");
+            }
+            auto area = std::make_unique<Impl::Area>(impl_->engine, slot);
             area->path = dbf;
             area->display_name = dbf.filename().string();
-            area->area.open(dbf.string());
+            area->area().open(dbf.string());
+            area->id = area->area().areaHandle();
             impl_->active_area_id = area->id;
             impl_->areas.push_back(std::move(area));
             ++opened;
@@ -1699,20 +2003,41 @@ std::size_t Session::mirror_workspace_open_directory(const std::filesystem::path
         }
     }
 
-    if (!impl_->areas.empty()) {
+    if (!impl_->areas.empty() && impl_->active_area_id == 0) {
         impl_->active_area_id = impl_->areas.front()->id;
+    }
+    if (already > 0) {
+        messages.push_back(info("gui.workspace.open_reentry",
+                                "WORKSPACE OPEN re-entered a workspace and left its open tables alone.",
+                                std::to_string(already) + " table(s) already open in " + ws_name));
     }
 
     std::size_t indexes_attached = 0;
     std::set<AreaId> index_attached_area_ids;
     for (const auto& attachment : workspace_open_indexes_from_cli_output(shell_output, dir)) {
-        auto* area = impl_->find_area(attachment.area_id);
-        if (!area || !area->area.isOpen()) {
+        // MEASURED WHILE DOING R120, AND NOT FIXED HERE. attachment.area_ordinal
+        // was parsed out of the CLI's OWN output ("Area 3 [index: ...]"), so it
+        // is an address in the CLI's engine. This lookup resolves it in the
+        // GUI's engine, which is a different array. The two agree only because
+        // the GUI mirrors the CLI's tables in the order reported, into a fresh
+        // engine, so both count up from 0 together.
+        //
+        // That coincidence is OLDER than step 3 -- before it, this indexed the
+        // GUI's list and relied on the same ordering. The change neither fixes
+        // nor worsens it; it makes it VISIBLE, because both numbers now claim
+        // to be slots and a reader can finally ask "slots in which engine".
+        // A gap in the CLI's report loses the attachment either way.
+        //
+        // The honest fix is to match on PATH, which both sides already have
+        // and which is engine-independent. Deliberately a separate change: it
+        // is a behaviour fix, and this commit is a rung repoint.
+        auto* area = impl_->find_area_by_ordinal(attachment.area_ordinal);
+        if (!area || !area->area().isOpen()) {
             continue;
         }
 
         std::string err;
-        if (attach_gui_order_container(area->area, attachment.container, err)) {
+        if (attach_gui_order_container(area->area(), attachment.container, err)) {
             ++indexes_attached;
             index_attached_area_ids.insert(area->id);
         } else {
@@ -1725,18 +2050,18 @@ std::size_t Session::mirror_workspace_open_directory(const std::filesystem::path
     const std::string mode = upper_ascii(trim_ascii(index_mode));
     if (!mode.empty() && mode != "NOINDEX" && mode != "NOINDEXES" && mode != "NONE" && mode != "PHYSICAL") {
         for (const auto& area : impl_->areas) {
-            if (!area->area.isOpen() || index_attached_area_ids.count(area->id) != 0) {
+            if (!area->area().isOpen() || index_attached_area_ids.count(area->id) != 0) {
                 continue;
             }
 
-            const auto candidates = default_index_candidates_for_area(area->area, area->path, mode);
+            const auto candidates = default_index_candidates_for_area(area->area(), area->path, mode);
             const auto container = first_existing_regular_file(candidates);
             if (!container) {
                 continue;
             }
 
             std::string err;
-            if (attach_gui_order_container(area->area, *container, err)) {
+            if (attach_gui_order_container(area->area(), *container, err)) {
                 ++indexes_attached;
                 index_attached_area_ids.insert(area->id);
             } else {
@@ -1767,30 +2092,187 @@ std::size_t Session::mirror_workspace_load_schema(const std::filesystem::path& s
                                    schema_path.string()));
         return 0;
     }
+    std::ifstream file(schema_path, std::ios::binary);
+    std::ostringstream text;
+    text << file.rdbuf();
+    // Empty roots: resolve members through the path slots, as this form always has.
+    return mirror_workspace_posture(text.str(), schema_path.string(), {}, {}, messages);
+}
 
-    std::vector<WorkspaceRelationInfo> schema_relations;
-    const auto schema_areas = load_dtschema2_areas(schema_path, schema_relations);
-    if (schema_areas.empty()) {
-        messages.push_back(warning("gui.workspace.schema_empty",
-                                   "WORKSPACE LOAD did not mirror into GUI areas because no schema areas were found.",
-                                   schema_path.string()));
+std::size_t Session::mirror_memo_workspace(const std::string& name,
+                                           std::vector<StatusMessage>& messages) {
+    std::string error;
+    const auto rows = gui_list_memo_workspaces(error);
+    if (!error.empty()) {
+        messages.push_back(warning("gui.workspace.catalog_unavailable",
+                                   "WORKSPACE LOAD could not read the workspace catalog.", error));
         return 0;
     }
 
-    for (auto& area : impl_->areas) {
-        area->area.close();
+    // Live rows only, matching how the CLI resolves a workspace by name. A
+    // superseded row of the same name is a different snapshot and is not what
+    // "load by name" means.
+    const MemoWorkspaceRow* row = nullptr;
+    for (const auto& r : rows) {
+        if (!r.superseded && r.name == name) row = &r;
     }
-    impl_->areas.clear();
-    impl_->relations = std::move(schema_relations);
-    impl_->active_area_id = 0;
-    impl_->next_area_id = 1;
+    if (!row) {
+        messages.push_back(warning("gui.workspace.memo_name_missing",
+                                   "WORKSPACE LOAD found no live memo workspace of that name.", name));
+        return 0;
+    }
+
+    const std::string payload = gui_read_memo_payload(row->snapshot, error);
+    if (!error.empty()) {
+        messages.push_back(warning("gui.workspace.memo_read_failed",
+                                   "WORKSPACE LOAD could not read the memo payload.", error));
+        return 0;
+    }
+
+    // A posture-only payload names tables that already live on disk, so the
+    // path slots resolve them exactly as a file-carried posture would.
+    if (!dottalk::minidb::is_container(payload)) {
+        return mirror_workspace_posture(payload, "memo:" + name, {}, {}, messages);
+    }
+
+    // A MINIDB payload carries the tables themselves. They must be hydrated
+    // into the RAM VFS OF THIS PROCESS: xbase::ramfs is an in-process registry,
+    // so a hydration performed by the CLI bridge's child process would be
+    // invisible here. See include/dottalk/minidb_hydrate.hpp.
+    const auto ram_root = dottalk::paths::get_slot(dottalk::paths::Slot::RAM);
+    if (ram_root.empty()) {
+        messages.push_back(warning("gui.workspace.ram_slot_missing",
+                                   "WORKSPACE LOAD cannot hydrate a MINIDB payload: no RAM path slot "
+                                   "is configured."));
+        return 0;
+    }
+
+    // AIF-120. Mount the RAM disk HERE if it is not already, and say so.
+    //
+    // The obvious alternative -- refusing and telling the operator to run
+    // VDISK MOUNT -- would be advice that cannot work. The GUI has no handler
+    // for VDISK, so the command crosses the CLI bridge into a CHILD PROCESS,
+    // and xbase::ramfs is by its own header an in-process registry. The mount
+    // would land in the child and this process would stay exactly as unmounted
+    // as before. A RAM disk is per-process by design; the Workbench needs its
+    // own, and asking for the container is asking for somewhere to put it.
+    if (!xbase::ramfs::mounted(ram_root.string())) {
+        std::error_code ec;
+        std::filesystem::create_directories(ram_root, ec);   // sidecars land on real disk
+        xbase::ramfs::mount(ram_root.string());
+        if (!xbase::ramfs::mounted(ram_root.string())) {
+            messages.push_back(warning("gui.workspace.vdisk_mount_failed",
+                                       "WORKSPACE LOAD could not mount a RAM disk for the hydrated "
+                                       "workspace.", ram_root.string()));
+            return 0;
+        }
+        messages.push_back(info("gui.workspace.vdisk_mounted",
+                                "WORKSPACE LOAD mounted this process's RAM disk. A RAM disk is "
+                                "per-process, so the Workbench keeps its own.",
+                                ram_root.string()));
+    }
+    const std::filesystem::path ram_index_root = ram_root / "indexes";
+
+    const auto scanned = dottalk::minidb::scan(payload);
+    if (!scanned.ok) {
+        messages.push_back(warning("gui.workspace.minidb_unreadable",
+                                   "WORKSPACE LOAD could not read the MINIDB container.", scanned.error));
+        return 0;
+    }
+
+    const auto placed = dottalk::minidb::materialize(payload, scanned, ram_root, ram_index_root);
+    if (!placed.ok) {
+        messages.push_back(warning("gui.workspace.minidb_hydrate_failed",
+                                   "WORKSPACE LOAD could not hydrate the MINIDB container.", placed.error));
+        return 0;
+    }
+    messages.push_back(info("gui.workspace.minidb_hydrated",
+                            "WORKSPACE LOAD hydrated a MINIDB container into the RAM disk.",
+                            std::to_string(placed.files) + " file(s), " +
+                            std::to_string(placed.bytes) + " B from the memo"));
+
+    // The roots are passed explicitly rather than repointed into the posture
+    // text, because this parser reads only AREA and RELATION lines and has
+    // never honoured a v3 DBFROOT.
+    return mirror_workspace_posture(scanned.posture, "minidb:" + name,
+                                    ram_root, ram_index_root, messages);
+}
+
+std::size_t Session::mirror_workspace_posture(const std::string& posture,
+                                              const std::string& label,
+                                              const std::filesystem::path& dbf_root,
+                                              const std::filesystem::path& index_root,
+                                              std::vector<StatusMessage>& messages) {
+    // R128. ENTERED BEFORE THE POSTURE IS PARSED, and the order is the whole
+    // point: parse_relation_posture_line tags each relation with the CURRENT
+    // workspace handle, so parsing first would stamp every edge with whichever
+    // workspace the user happened to be in. The model is SWITCH-then-open, and
+    // that applies to the relation lines as much as to the areas.
+    //
+    // The label is the catalog row's name, so it came OUT of WS_NAME and fits
+    // in it by construction; it is not re-validated here.
+    const std::string wanted = gui_workspace_name_from_label(label);
+    std::uint64_t ws_handle = 0;
+    if (wanted.empty()) {
+        messages.push_back(info("gui.workspace.load_unnamed",
+                                "WORKSPACE LOAD could not derive a workspace name from this "
+                                "source, so its areas joined the current workspace.",
+                                label));
+        ws_handle = xbase::workspace::current_handle();
+    } else {
+        ws_handle = gui_enter_workspace(wanted, messages);
+        if (ws_handle == 0) return 0;
+    }
+    const std::string ws_name = xbase::workspace::name_of(ws_handle);
+
+    std::vector<WorkspaceRelationInfo> schema_relations;
+    std::istringstream posture_stream(posture);
+    const auto schema_areas = load_dtschema2_areas_from_stream(posture_stream, schema_relations);
+    if (schema_areas.empty()) {
+        messages.push_back(warning("gui.workspace.schema_empty",
+                                   "WORKSPACE LOAD did not mirror into GUI areas because no schema areas were found.",
+                                   label));
+        return 0;
+    }
+
+    // R128. LOAD IS ADDITIVE. The close-all is gone; a posture loaded into one
+    // workspace leaves every other workspace standing.
+    //
+    // RELATIONS ARE REPLACED PER WORKSPACE, NOT WHOLESALE. This line used to
+    // read `impl_->relations = std::move(schema_relations)`, which was correct
+    // only while one workspace could exist: made additive without this change
+    // it would silently delete the edges of workspaces this load never touched
+    // -- the same destruction the ruling exists to stop, one layer down. The
+    // discriminator already exists and already has a writer:
+    // WorkspaceRelationInfo::workspace, written from owning_workspace_now at
+    // parse time. So THIS workspace's edges are dropped (a reload replaces
+    // them rather than duplicating them) and everyone else's are kept.
+    //
+    // NOT FIXED, and R128 sec 5 names it: a SCOPED CLOSE still clears
+    // relations globally in the CLI. This is the GUI's half only.
+    for (auto it = impl_->areas.begin(); it != impl_->areas.end(); ) {
+        if ((*it)->area().wsHandle() == ws_handle) it = impl_->areas.erase(it);
+        else ++it;
+    }
+    impl_->relations.erase(
+        std::remove_if(impl_->relations.begin(), impl_->relations.end(),
+                       [&](const WorkspaceRelationInfo& r) { return r.workspace == ws_name; }),
+        impl_->relations.end());
+    for (auto& r : schema_relations) impl_->relations.push_back(std::move(r));
+    if (impl_->areas.empty()) impl_->active_area_id = 0;
 
     std::size_t opened = 0;
     std::size_t indexes_attached = 0;
-    AreaId max_area_id = 0;
 
     for (const auto& schema_area : schema_areas) {
-        const auto dbf = resolve_schema_dbf_path(schema_area.dbf, schema_area.index_type);
+        // AIF-120. With a root override the member is placed, not searched.
+        // A hydrated workspace lives in the RAM VFS, where std::filesystem
+        // cannot see it -- xbase::ramfs keeps its own registry and DbArea
+        // consults it for virtual paths -- so any existence probe here would
+        // reject a table that is perfectly openable.
+        const auto dbf = dbf_root.empty()
+            ? resolve_schema_dbf_path(schema_area.dbf, schema_area.index_type)
+            : std::optional<std::filesystem::path>(dbf_root / schema_area.dbf.filename());
         if (!dbf) {
             messages.push_back(warning("gui.workspace.schema_table_missing",
                                        "A WORKSPACE LOAD schema table could not be mirrored into a GUI area.",
@@ -1799,21 +2281,66 @@ std::size_t Session::mirror_workspace_load_schema(const std::filesystem::path& s
         }
 
         try {
-            auto area = std::make_unique<Impl::Area>();
-            area->id = static_cast<AreaId>(schema_area.slot + 1);
-            max_area_id = std::max(max_area_id, area->id);
+            bool broke_contiguity = false;
+            const int slot = impl_->claim_area_slot(broke_contiguity);
+            if (slot < 0) {
+                // The CLI already ruled this, and the GUI adopts its answer rather
+                // than inventing a second spelling for the same refusal (R5).
+                // cmd_use.cpp:766 -- "Deliberately NOT falling back to the current
+                // area. Falling back is the silent-replacement behaviour this lane
+                // exists to kill."
+                throw std::runtime_error(
+                    "no unoccupied work area (all " + std::to_string(xbase::MAX_AREA) +
+                    " are in use). Nothing was opened.");
+            }
+            auto area = std::make_unique<Impl::Area>(impl_->engine, slot);
             area->path = *dbf;
             area->display_name = !schema_area.alias.empty()
                 ? schema_area.alias + ".DBF"
                 : dbf->filename().string();
-            area->area.open(dbf->string());
+            area->area().open(dbf->string());
+            // AIF-078. schema_area.slot is the SAVED POSITION, and it is
+            // deliberately no longer reused as this area's identity. A posture
+            // records where an area SAT; where it sits now is wherever this
+            // restore puts it.
+            //
+            // The saved ORDER is still honoured, and by the mechanism that was
+            // already here: load_dtschema2_areas_from_stream sorts its result by
+            // slot before returning it, so this loop runs in ascending saved-slot
+            // order and the field keeps a real reader. What a posture cannot
+            // promise is the same NUMBERS -- a slot is an address and this
+            // session's addresses are its own.
+            //
+            // THE NARROWING RECORDED HERE IS HALF CLOSED (R120, step 3), and
+            // the half that remains is a different one, so it is restated
+            // rather than deleted.
+            //
+            // CLOSED: the GUI's positional rung is no longer an index into a
+            // dense list, so it CAN now express a gap. Restoring a posture that
+            // names slots 0 and 3 no longer forces the report to say 0 and 1.
+            //
+            // STILL OPEN: this loop claims a FRESH slot per area rather than
+            // the saved one, so the gap it can now express is not necessarily
+            // the SAVED gap. Honouring the saved slot needs a documented
+            // collision fallback -- a saved slot can already be occupied in
+            // this process, by the CLI or by an earlier area in this same loop
+            // -- and that is a separate decision, deliberately not taken here.
+            // Named so the remaining half cannot be mistaken for the closed one.
+            area->id = area->area().areaHandle();
 
-            if (!schema_area.index.empty()) {
-                if (const auto index = resolve_schema_index_path(schema_area.index, schema_area.index_type)) {
+            // AIF-120. DTSHEMA writes the literal word "none" for an absent
+            // index or tag (cmd_workspace.cpp:1569-1575). Testing emptiness
+            // alone accepted that sentinel as data and asked the CDX backend
+            // for a tag named NONE. See include/dottalk/dtschema.hpp.
+            if (!dottalk::dtschema::is_absent(schema_area.index.string())) {
+                const auto index = index_root.empty()
+                    ? resolve_schema_index_path(schema_area.index, schema_area.index_type)
+                    : std::optional<std::filesystem::path>(index_root / schema_area.index.filename());
+                if (index) {
                     std::string err;
-                    const bool attached = !trim_ascii(schema_area.tag).empty()
-                        ? activate_gui_order(area->area, *index, schema_area.tag, true, err)
-                        : attach_gui_order_container(area->area, *index, err);
+                    const bool attached = !dottalk::dtschema::is_absent(schema_area.tag)
+                        ? activate_gui_order(area->area(), *index, schema_area.tag, true, err)
+                        : attach_gui_order_container(area->area(), *index, err);
                     if (attached) {
                         ++indexes_attached;
                     } else {
@@ -1844,20 +2371,31 @@ std::size_t Session::mirror_workspace_load_schema(const std::filesystem::path& s
         }
     }
 
-    impl_->next_area_id = std::max<AreaId>(max_area_id + 1, 1);
-
     messages.push_back(info("gui.workspace.load_mirrored",
                             "WORKSPACE LOAD mirrored schema areas into GUI areas.",
-                            std::to_string(opened) + " table(s) from " + schema_path.string()));
+                            std::to_string(opened) + " table(s) from " + label));
     if (indexes_attached > 0) {
         messages.push_back(info("gui.workspace.indexes_mirrored",
                                 "WORKSPACE LOAD mirrored attached index containers into GUI areas.",
                                 std::to_string(indexes_attached) + " index container(s)"));
     }
     if (!impl_->relations.empty()) {
-        messages.push_back(info("gui.workspace.relations_mirrored",
-                                "WORKSPACE LOAD mirrored schema relations into the GUI workspace model.",
-                                std::to_string(impl_->relations.size()) + " relation(s)"));
+        // AIF-120. Mirroring relations into a workspace where NO table opened is
+        // not neutral news, and reporting it at info severity directly beneath a
+        // run of schema_table_missing warnings reads as success. Measured live:
+        // m1_check.dtschema logged 43 table-missing warnings, then "mirrored
+        // 58 relation(s)" as info, and the graph drew them as though live.
+        if (opened == 0) {
+            messages.push_back(warning("gui.workspace.relations_unbacked",
+                "WORKSPACE LOAD mirrored schema relations, but no table opened -- "
+                "every endpoint is missing.",
+                std::to_string(impl_->relations.size()) +
+                " relation(s) against 0 open area(s)"));
+        } else {
+            messages.push_back(info("gui.workspace.relations_mirrored",
+                                    "WORKSPACE LOAD mirrored schema relations into the GUI workspace model.",
+                                    std::to_string(impl_->relations.size()) + " relation(s)"));
+        }
     }
     return opened;
 }
@@ -1893,11 +2431,11 @@ bool Session::save_workspace_schema(const std::filesystem::path& schema_path,
     }
 
     for (const auto& area : impl_->areas) {
-        if (!area->area.isOpen()) {
+        if (!area->area().isOpen()) {
             continue;
         }
 
-        const auto index_type = schema_index_type(area->area);
+        const auto index_type = schema_index_type(area->area());
         const auto dbf_root = index_type == "CDX"
             ? dottalk::paths::get_slot(dottalk::paths::Slot::DBF_X64)
             : dottalk::paths::get_slot(dottalk::paths::Slot::DBF_X32);
@@ -1912,21 +2450,30 @@ bool Session::save_workspace_schema(const std::filesystem::path& schema_path,
         const auto path_stem = area->path.stem().string();
         const bool keep_alias = !alias_stem.empty() &&
                                 lower_ascii(alias_stem) != lower_ascii(path_stem) &&
-                                lower_ascii(alias_stem) != lower_ascii(area->area.logicalName());
+                                lower_ascii(alias_stem) != lower_ascii(area->area().logicalName());
 
-        file << "AREA " << visible_area_id(area->id)
+        // R120. This writes the ENGINE SLOT, which is what the reader has
+        // always called this field (WorkspaceSchemaArea::slot) and what the
+        // CLI's own writer has always put there (cmd_workspace.cpp, `area0`).
+        // Before step 3 the GUI wrote a list index into the same field, so one
+        // line on disk meant two different things depending on which surface
+        // wrote it. Postures written by the GUI BEFORE this change carry list
+        // indices and will now be read as slots; the two coincide only where
+        // the areas were contiguous from 0, which is the common case and not a
+        // guarantee.
+        file << "AREA " << impl_->visible_ordinal(area->id)
              << "|dbf=\"" << dbf_token << "\"";
         if (!index_type.empty()) {
             file << "|indextype=" << index_type;
         }
-        if (orderstate::hasOrder(area->area)) {
-            const auto container = relativize_schema_path(std::filesystem::path(orderstate::orderName(area->area)),
+        if (orderstate::hasOrder(area->area())) {
+            const auto container = relativize_schema_path(std::filesystem::path(orderstate::orderName(area->area())),
                                                           index_root)
                                        .generic_string();
             if (!container.empty()) {
                 file << "|index=\"" << container << "\"";
             }
-            const std::string tag = trim_ascii(orderstate::activeTag(area->area));
+            const std::string tag = trim_ascii(orderstate::activeTag(area->area()));
             if (!tag.empty()) {
                 file << "|tag=\"" << tag << "\"";
             }
@@ -1937,13 +2484,16 @@ bool Session::save_workspace_schema(const std::filesystem::path& schema_path,
         file << "\n";
     }
 
+    // 4a, the other half. This was a `file <<` chain that wrote
+    // `ON <parent_key>` and nothing else, so a relation binding
+    // differently-named endpoints came back from its own posture with the
+    // child side silently replaced by the parent's. It now shares one unit
+    // with the reader, and the round trip is held by a fixture.
+    std::string posture_line;
     for (const auto& relation : impl_->relations) {
-        if (relation.parent.empty() || relation.child.empty() || relation.parent_key.empty()) {
-            continue;
+        if (format_relation_posture_line(relation, posture_line)) {
+            file << posture_line << "\n";
         }
-        file << "RELATION " << relation.parent
-             << " " << relation.child
-             << " ON " << relation.parent_key << "\n";
     }
 
     file.flush();
@@ -1989,7 +2539,7 @@ SelectAreaResult Session::select_area(const SelectAreaRequest& request) {
     result.area_id = request.area_id;
 
     auto* area = impl_->find_area(request.area_id);
-    if (!area || !area->area.isOpen()) {
+    if (!area || !area->area().isOpen()) {
         result.messages.push_back(warning("gui.area.not_open", "Requested GUI work area is not open."));
         return result;
     }
@@ -2007,25 +2557,25 @@ MoveCursorResult Session::move_cursor(const MoveCursorRequest& request) {
     result.record_number = request.record_number;
 
     auto* area = impl_->find_area(request.area_id);
-    if (!area || !area->area.isOpen()) {
+    if (!area || !area->area().isOpen()) {
         result.messages.push_back(warning("gui.area.not_open", "Requested GUI work area is not open."));
         return result;
     }
 
-    if (request.record_number < 1 || request.record_number > area->area.recCount64() ||
+    if (request.record_number < 1 || request.record_number > area->area().recCount64() ||
         request.record_number > static_cast<std::uint64_t>(std::numeric_limits<int32_t>::max())) {
         result.messages.push_back(warning("gui.command.bad_recno", "Record number is outside the area range."));
         return result;
     }
 
     impl_->active_area_id = area->id;
-    if (!area->area.gotoRec(static_cast<int32_t>(request.record_number)) || !area->area.readCurrent()) {
+    if (!area->area().gotoRec(static_cast<int32_t>(request.record_number)) || !area->area().readCurrent()) {
         result.messages.push_back(warning("gui.command.nav_failed", "Could not move the active record pointer."));
         return result;
     }
 
     result.ok = true;
-    result.record_number = area->area.recno64();
+    result.record_number = area->area().recno64();
     return result;
 }
 
@@ -2041,7 +2591,31 @@ CloseAreaResult Session::close_area(const CloseAreaRequest& request) {
         return result;
     }
 
-    (*it)->area.close();
+    // AIF-078: THE MISSING ARM OF AN EXISTING PAIR.
+    //
+    // Every WHOLESALE close in this file already clears relations -- the
+    // WORKSPACE OPEN mirror, WORKSPACE LOAD, and WORKSPACE CLOSE all do
+    // `areas.clear()` next to `relations.clear()`. The SINGLE-area close did
+    // not, so closing one table in the Workbench left edges pointing at a table
+    // that is gone: the model went on counting matches for them and the posture
+    // writer went on saving them.
+    //
+    // The CLI has the same split and says so out loud (cmd_close.cpp: "Relation
+    // clearing is handled by the caller because single-area CLOSE and CLOSE ALL
+    // differ there"). This is that caller, finally written.
+    //
+    // AND IT IS NOT A LINK TO THE RELATION ENGINE. relations_api is not in this
+    // process's picture at all: the GUI's relation store IS impl_->relations,
+    // filled by parsing CLI output text from an OUT-OF-PROCESS dottalkpp
+    // (gui_cli_bridge _popens `dottalkpp --script`) and by DTSCHEMA2 posture.
+    // Linking the engine here would add a SECOND, empty, engine-backed store
+    // and close nothing -- a third answer to one question. See
+    // claude/AIF078_FINDING_RELATION_CLEANUP_IS_NOT_AN_ENGINE_LINK.md.
+    //
+    // BEFORE the close, deliberately -- see drop_relations_naming.
+    const std::size_t dropped_relations = impl_->drop_relations_naming(**it);
+
+    (*it)->area().close();
     impl_->areas.erase(it);
 
     if (impl_->active_area_id == request.area_id) {
@@ -2051,22 +2625,46 @@ CloseAreaResult Session::close_area(const CloseAreaRequest& request) {
     result.ok = true;
     result.active_area_id = impl_->active_area_id;
     result.messages.push_back(info("gui.area.closed", "GUI work area closed."));
+    // SAID OUT LOUD, not done quietly. The steward's observation on 2026-08-24
+    // was that "closing an area will break any joins and relations open" -- and
+    // a cleanup that removes them silently is indistinguishable, from the
+    // Workbench, from relations that were never there. The count is a VALUE a
+    // spec can assert on; a cleanup that reported nothing could only be checked
+    // by inspecting the model afterwards.
+    if (dropped_relations > 0) {
+        result.messages.push_back(info("gui.area.relations_dropped",
+                                       "Relations naming the closed table were dropped.",
+                                       std::to_string(dropped_relations) + " relation(s)"));
+    }
     return result;
 }
 
 ListAreasResult Session::list_areas() const {
     ListAreasResult result;
     result.active_area_id = impl_->active_area_id;
+    result.active_ordinal = impl_->ordinal_of(impl_->active_area_id);
 
     result.areas.reserve(impl_->areas.size());
+    // AIF-078 step 3. The ordinal is the area's ENGINE SLOT -- the same number
+    // find_area_by_ordinal searches for -- so what is shown and what can be
+    // typed are the same number by construction rather than by coincidence,
+    // and it is ALSO the number the CLI would print for that area.
+    //
+    // It is taken from the area rather than from the loop counter, and that is
+    // the point of the change: a loop counter is a fact about this list, and a
+    // list that skips closed areas (the isOpen guard just below) would have
+    // made the counter disagree with find_area_by_ordinal the moment anything
+    // was closed. There is nothing left for the two to disagree about.
     for (const auto& area : impl_->areas) {
-        if (!area->area.isOpen()) {
+        if (!area->area().isOpen()) {
             continue;
         }
-        result.areas.push_back(gui_area_info_from_dbarea(area->id,
-                                                         area->id == impl_->active_area_id,
-                                                         area->area,
-                                                         area->display_name));
+        AreaInfo info = gui_area_info_from_dbarea(area->id,
+                                                  area->id == impl_->active_area_id,
+                                                  area->area(),
+                                                  area->display_name);
+        info.ordinal = static_cast<AreaOrdinal>(area->slot());
+        result.areas.push_back(std::move(info));
     }
 
     return result;
@@ -2076,139 +2674,64 @@ WorkspaceModel Session::workspace_model() const {
     WorkspaceModel model;
     const auto areas = list_areas();
     model.active_area_id = areas.active_area_id;
+    model.active_ordinal = areas.active_ordinal;
     model.tables = areas.areas;
     model.messages = areas.messages;
     model.relations = impl_->relations;
 
-    auto relation_name = [](const Impl::Area& area) {
-        std::vector<std::string> names {
-            area.area.logicalName(),
-            area.display_name,
-            area.path.filename().string(),
-            area.path.stem().string()
-        };
-        for (auto& name : names) {
-            name = lower_ascii(trim_ascii(std::move(name)));
-            if (ends_with_ci(name, ".dbf")) {
-                name.resize(name.size() - 4);
-            }
-        }
-        return names;
-    };
+    // THE GUI DOES NOT COUNT MATCHES. Ruling R123, 2026-08-24.
+    //
+    // A ~145-line count_relation_matches lambda stood here and answered, for
+    // every relation edge, "how many child rows match the parent". So did
+    // relations_api::match_count_for_child, and they answered DIFFERENTLY --
+    // four ways. This one counted DELETED rows where the engine skipped them,
+    // scanned with a bound of its own that REL SCANLIMIT could not reach,
+    // compared ONE join field where the engine matched all of them, and walked
+    // PHYSICAL record order where the engine walked the active index inside a
+    // ScopedEngineSelect.
+    //
+    // One relation, two numbers, and nothing on screen saying which one a grid
+    // cell held. That is R5 -- two answers to one question IS the defect.
+    //
+    // IT COULD NOT BE FIXED IN PLACE, and that is what R122 settled. A match
+    // count is a computation over THIS PROCESS's open areas at THIS PROCESS's
+    // cursor positions. The engine's counter lives behind a process boundary
+    // (gui_shell_runtime CreateProcessW / gui_cli_bridge _popen), and a
+    // subprocess cannot answer a question about state it does not have without
+    // replicating that state. So the choice was link the engine or stop
+    // answering, and R122 ruled the link out on dependency direction.
+    //
+    // A NUMBER THAT DISAGREES WITH THE ENGINE IS WORSE THAN NO NUMBER, so the
+    // count is now ABSENT. This needed no new type: match_count is already a
+    // MaybeMatchCount and the renderers already carry an n/a state -- R6 was
+    // satisfied the whole time and this code was declining to use it. The old
+    // lambda already knew, too: it refused to report a TRUNCATED scan for
+    // exactly this reason ("ABSENT says I could not compute this, which is
+    // true"). R123 extends that honesty from the truncated case to every case.
+    //
+    // WHEN A COUNT COMES BACK it arrives from the producer under R122's
+    // structured emission, computed once, by the engine, from the engine's own
+    // state -- not recomputed here from a second copy of the rules.
 
-    auto find_relation_area = [&](const std::string& relation_table) -> Impl::Area* {
-        const std::string wanted = lower_ascii(trim_ascii(relation_table));
-        for (const auto& candidate : impl_->areas) {
-            if (!candidate->area.isOpen()) {
-                continue;
-            }
-            for (const auto& name : relation_name(*candidate)) {
-                if (name == wanted) {
-                    return candidate.get();
-                }
-            }
-        }
-        return nullptr;
-    };
-
-    auto field_index = [](const xbase::DbArea& area, const std::string& field_name) {
-        const std::string wanted = lower_ascii(trim_ascii(field_name));
-        const auto& fields = area.fields();
-        for (std::size_t i = 0; i < fields.size(); ++i) {
-            if (lower_ascii(trim_ascii(fields[i].name)) == wanted) {
-                return static_cast<int>(i + 1);
-            }
-        }
-        return 0;
-    };
-
-    auto count_relation_matches = [&](WorkspaceRelationInfo& relation) {
-        if (relation.match_count != 0 || relation.parent.empty() || relation.child.empty()) {
-            return;
-        }
-
-        auto* parent = find_relation_area(relation.parent);
-        auto* child = find_relation_area(relation.child);
-        if (!parent || !child) {
-            return;
-        }
-
-        const int parent_field = field_index(parent->area, relation.parent_key);
-        const int child_field = field_index(child->area, relation.child_key.empty()
-            ? relation.parent_key
-            : relation.child_key);
-        if (parent_field <= 0 || child_field <= 0) {
-            return;
-        }
-
-        const auto parent_recno = parent->area.recno64();
-        const auto child_recno = child->area.recno64();
-        std::string parent_value;
-        try {
-            if (parent_recno < 1 || parent_recno > parent->area.recCount64()) {
-                if (!parent->area.gotoRec(1) || !parent->area.readCurrent()) {
-                    return;
-                }
-            }
-            if (!parent->area.readCurrent()) {
-                return;
-            }
-            parent_value = trim_ascii(parent->area.get(parent_field));
-        } catch (...) {
-            return;
-        }
-
-        std::uint64_t count = 0;
-        const auto child_count = child->area.recCount64();
-        const auto limit = std::min<std::uint64_t>(
-            child_count,
-            static_cast<std::uint64_t>(std::numeric_limits<int32_t>::max()));
-        for (std::uint64_t recno = 1; recno <= limit; ++recno) {
-            try {
-                if (!child->area.gotoRec(static_cast<int32_t>(recno)) || !child->area.readCurrent()) {
-                    continue;
-                }
-                if (trim_ascii(child->area.get(child_field)) == parent_value) {
-                    ++count;
-                }
-            } catch (...) {
-            }
-        }
-
-        if (child_recno >= 1 && child_recno <= child_count &&
-            child_recno <= static_cast<std::uint64_t>(std::numeric_limits<int32_t>::max())) {
-            (void)child->area.gotoRec(static_cast<int32_t>(child_recno));
-            (void)child->area.readCurrent();
-        }
-        if (parent_recno >= 1 && parent_recno <= parent->area.recCount64() &&
-            parent_recno <= static_cast<std::uint64_t>(std::numeric_limits<int32_t>::max())) {
-            (void)parent->area.gotoRec(static_cast<int32_t>(parent_recno));
-            (void)parent->area.readCurrent();
-        }
-        relation.match_count = count;
-    };
-
-    for (auto& relation : model.relations) {
-        count_relation_matches(relation);
-    }
 
     model.indexes.reserve(impl_->areas.size());
     for (const auto& area : impl_->areas) {
-        if (!area->area.isOpen()) {
+        if (!area->area().isOpen()) {
             continue;
         }
 
         WorkspaceIndexInfo index;
         index.area_id = area->id;
+        index.ordinal = impl_->ordinal_of(area->id);
         index.area_name = area->display_name;
-        index.kind = order_kind(area->area);
-        index.active = orderstate::hasOrder(area->area);
-        index.ascending = orderstate::isAscending(area->area);
-        index.backend = order_backend(area->area);
+        index.kind = order_kind(area->area());
+        index.active = orderstate::hasOrder(area->area());
+        index.ascending = orderstate::isAscending(area->area());
+        index.backend = order_backend(area->area());
         if (index.active) {
-            index.container = orderstate::orderName(area->area);
-            index.tag = orderstate::activeTag(area->area);
-            if (const auto* manager = xindex::manager_if_attached(area->area)) {
+            index.container = orderstate::orderName(area->area());
+            index.tag = orderstate::activeTag(area->area());
+            if (const auto* manager = xindex::manager_if_attached(area->area())) {
                 index.tags = manager->listTags();
             }
         }
@@ -2256,14 +2779,14 @@ CommandResult Session::run_command(const CommandRequest& request) {
             workspace_open_mirrored = opened > 0;
         }
 
-        for (auto relation : parse_relation_edges_from_output(cli.output)) {
+        for (auto relation : parse_relation_edges_from_output(cli.output, owning_workspace_now())) {
             merge_relation(impl_->relations, std::move(relation));
         }
 
         if (const auto cli_area = last_cli_area_from_output(cli.output)) {
             if (*cli_area >= 0) {
-                const AreaId area_id = static_cast<AreaId>(*cli_area + 1);
-                if (auto* selected = impl_->find_area(area_id)) {
+                // The shell reports a POSITION, and it is resolved as one.
+                if (auto* selected = impl_->find_area_by_ordinal(static_cast<AreaOrdinal>(*cli_area))) {
                     impl_->active_area_id = selected->id;
                     result.messages.push_back(info("gui.area.shell_selected",
                                                    "GUI selected the work area reported by the DotTalk++ shell.",
@@ -2274,10 +2797,10 @@ CommandResult Session::run_command(const CommandRequest& request) {
 
         if (const auto recno = last_cli_recno_from_output(cli.output)) {
             auto* active = impl_->active_area();
-            if (active && active->area.isOpen() && *recno >= 1 &&
-                *recno <= static_cast<long long>(active->area.recCount64()) &&
+            if (active && active->area().isOpen() && *recno >= 1 &&
+                *recno <= static_cast<long long>(active->area().recCount64()) &&
                 *recno <= static_cast<long long>(std::numeric_limits<int32_t>::max())) {
-                if (active->area.gotoRec(static_cast<int32_t>(*recno)) && active->area.readCurrent()) {
+                if (active->area().gotoRec(static_cast<int32_t>(*recno)) && active->area().readCurrent()) {
                     result.messages.push_back(info("gui.cursor.shell_synced",
                                                    "GUI cursor mirrored the record reported by the DotTalk++ shell.",
                                                    std::to_string(*recno)));
@@ -2286,16 +2809,16 @@ CommandResult Session::run_command(const CommandRequest& request) {
         }
 
         auto* mirror_area = impl_->active_area();
-        if (mirror_area && mirror_area->area.isOpen()) {
+        if (mirror_area && mirror_area->area().isOpen()) {
             const auto words = split_words(command_text);
             if (!words.empty()) {
                 const std::string mirror_verb = lower_ascii(words[0]);
-                if (!mirror_set_index_to_gui(mirror_area->area, words, result.messages) &&
-                    !mirror_set_order_to_gui(mirror_area->area, words, result.messages)) {
+                if (!mirror_set_index_to_gui(mirror_area->area(), words, result.messages) &&
+                    !mirror_set_order_to_gui(mirror_area->area(), words, result.messages)) {
                     if (mirror_verb == "ascend") {
-                        (void)mirror_order_direction_to_gui(mirror_area->area, true, result.messages);
+                        (void)mirror_order_direction_to_gui(mirror_area->area(), true, result.messages);
                     } else if (mirror_verb == "descend") {
-                        (void)mirror_order_direction_to_gui(mirror_area->area, false, result.messages);
+                        (void)mirror_order_direction_to_gui(mirror_area->area(), false, result.messages);
                     }
                 }
             }
@@ -2306,13 +2829,13 @@ CommandResult Session::run_command(const CommandRequest& request) {
     auto build_cli_request = [&](const std::string& cli_text) {
         RuntimeCliRequest cli_request;
         cli_request.command = cli_text;
-        if (const auto* area = impl_->active_area(); area && area->area.isOpen()) {
+        if (const auto* area = impl_->active_area(); area && area->area().isOpen()) {
             cli_request.active_table_path = area->path;
-            cli_request.active_record_number = area->area.recno64();
-            if (orderstate::hasOrder(area->area)) {
-                cli_request.active_index_container = std::filesystem::path(orderstate::orderName(area->area));
-                cli_request.active_index_tag = orderstate::activeTag(area->area);
-                cli_request.active_index_ascending = orderstate::isAscending(area->area);
+            cli_request.active_record_number = area->area().recno64();
+            if (orderstate::hasOrder(area->area())) {
+                cli_request.active_index_container = std::filesystem::path(orderstate::orderName(area->area()));
+                cli_request.active_index_tag = orderstate::activeTag(area->area());
+                cli_request.active_index_ascending = orderstate::isAscending(area->area());
             }
         }
         return cli_request;
@@ -2367,16 +2890,16 @@ CommandResult Session::run_command(const CommandRequest& request) {
             << "Skeleton actions must stay explicit; widget code must not fork database semantics.";
     } else if (verb == "area") {
         const auto* area = impl_->active_area();
-        if (!area || !area->area.isOpen()) {
+        if (!area || !area->area().isOpen()) {
             result.messages.push_back(warning("gui.snapshot.no_current_table", "No current table is selected."));
             out << "No current GUI work area is selected.";
         } else {
             out << "ACTIVE GUI AREA\n"
-                << "Area: " << visible_area_id(area->id) << "\n"
+                << "Area: " << impl_->visible_ordinal(area->id) << "\n"
                 << "Table: " << area->display_name << "\n"
-                << "Records: " << area->area.recCount64() << "\n"
-                << "Fields: " << area->area.fields().size() << "\n"
-                << "File type: " << dbf_flavor_label(area->area) << "\n"
+                << "Records: " << area->area().recCount64() << "\n"
+                << "Fields: " << area->area().fields().size() << "\n"
+                << "File type: " << dbf_flavor_label(area->area()) << "\n"
                 << "Path: " << area->path.string();
         }
     } else if (verb == "areas" || dispatch_command == "workspace" || dispatch_command == "workspace list") {
@@ -2387,9 +2910,9 @@ CommandResult Session::run_command(const CommandRequest& request) {
             for (const auto& area : impl_->areas) {
                 const bool active = area->id == impl_->active_area_id;
                 out << (active ? "* " : "  ")
-                    << visible_area_id(area->id) << "  "
+                    << impl_->visible_ordinal(area->id) << "  "
                     << area->display_name << "  records="
-                    << (area->area.isOpen() ? area->area.recCount64() : 0)
+                    << (area->area().isOpen() ? area->area().recCount64() : 0)
                     << "  path=" << area->path.string() << "\n";
             }
         }
@@ -2421,7 +2944,7 @@ CommandResult Session::run_command(const CommandRequest& request) {
                 }
                 if (impl_->active_area_id != 0) {
                     if (const auto* area = impl_->active_area()) {
-                        out << "Active area: " << visible_area_id(area->id)
+                        out << "Active area: " << impl_->visible_ordinal(area->id)
                             << "  " << area->display_name << "\n";
                     }
                 }
@@ -2439,17 +2962,60 @@ CommandResult Session::run_command(const CommandRequest& request) {
                     << (opened ? "GUI area selected/opened." : "No GUI area opened.");
             }
         } else if (action == "close") {
-            const std::size_t closed = impl_->areas.size();
-            for (auto& area : impl_->areas) {
-                area->area.close();
+            // R128. BARE CLOSE IS SCOPED, CLOSE ALL IS EVERYWHERE -- the same
+            // grammar the CLI has had since AIF-078 stage 3. This branch used
+            // to close every GUI area unconditionally and report "All GUI work
+            // areas were closed", while the CLI verb it shadows had been scoped
+            // for days: two surfaces, one verb name, two meanings.
+            const bool close_all = (words.size() > 2 && lower_ascii(words[2]) == "all");
+            const std::uint64_t current = xbase::workspace::current_handle();
+            std::set<std::uint64_t> scope;
+            if (!close_all) {
+                gui_collect_scope(current, xbase::workspace::recursion_enabled(), 0, scope);
             }
-            impl_->areas.clear();
-            impl_->relations.clear();
-            impl_->active_area_id = 0;
-            impl_->next_area_id = 1;
-            result.messages.push_back(info("gui.workspace.closed", "All GUI work areas were closed."));
-            out << "WORKSPACE CLOSE\n"
+
+            const std::size_t before = impl_->areas.size();
+            for (auto it = impl_->areas.begin(); it != impl_->areas.end(); ) {
+                const bool in_scope = close_all || scope.count((*it)->area().wsHandle()) != 0;
+                if (in_scope) it = impl_->areas.erase(it);   // ~Area() closes it
+                else ++it;
+            }
+            const std::size_t closed = before - impl_->areas.size();
+
+            // Relations: only this workspace's edges, for the reason the
+            // posture mirror gives -- clearing them all would delete edges
+            // belonging to workspaces this close never touched.
+            if (close_all) {
+                impl_->relations.clear();
+            } else {
+                const std::string nm = xbase::workspace::name_of(current);
+                impl_->relations.erase(
+                    std::remove_if(impl_->relations.begin(), impl_->relations.end(),
+                                   [&](const WorkspaceRelationInfo& r) { return r.workspace == nm; }),
+                    impl_->relations.end());
+            }
+
+            // The active area may have been one of the closed ones. Answered by
+            // LOOKING rather than by assuming: a stale id here addresses an area
+            // that no longer exists, which is the dangling-handle shape.
+            bool active_survives = false;
+            for (const auto& a : impl_->areas) {
+                if (a->id == impl_->active_area_id) { active_survives = true; break; }
+            }
+            if (!active_survives) {
+                impl_->active_area_id = impl_->areas.empty() ? 0 : impl_->areas.front()->id;
+            }
+
+            result.messages.push_back(info("gui.workspace.closed",
+                                           close_all
+                                             ? "Every GUI work area was closed."
+                                             : "The current workspace's GUI work areas were closed.",
+                                           std::to_string(closed) + " area(s)"));
+            out << "WORKSPACE CLOSE" << (close_all ? " ALL" : "") << "\n"
                 << "Closed GUI areas: " << closed;
+            if (!close_all && impl_->areas.size() > 0) {
+                out << "\nLeft open in other workspaces: " << impl_->areas.size();
+            }
         } else if (action == "graph") {
             out << "WORKSPACE GRAPH\n"
                 << "Areas: " << impl_->areas.size() << "\n"
@@ -2457,7 +3023,7 @@ CommandResult Session::run_command(const CommandRequest& request) {
             if (impl_->active_area_id == 0) {
                 out << "none\n";
             } else {
-                out << visible_area_id(impl_->active_area_id) << "\n";
+                out << impl_->visible_ordinal(impl_->active_area_id) << "\n";
             }
             out << "Relations: workspace graph service pending\n"
                 << "Indexes: workspace graph service pending\n"
@@ -2473,8 +3039,37 @@ CommandResult Session::run_command(const CommandRequest& request) {
                     << "  workspace load <name.dtschema>\n"
                     << "  workspace save <name.dtschema>";
             } else if (action == "load") {
-                const auto schema = resolve_workspace_schema_token(std::filesystem::path(strip_matching_quotes(name)));
-                if (!schema) {
+                // AIF-120. The memo forms are not filenames. This branch used to
+                // take everything after two tokens as a path, so
+                // "WORKSPACE LOAD minidb_regress MEMO RAM" was reported as a
+                // missing schema FILE -- a message that sends the reader hunting
+                // for something that was never meant to exist.
+                std::string memo_name;
+                bool via_memo = false;
+                for (const auto& word : split_words(name)) {
+                    const std::string flag = upper_ascii(word);
+                    if (flag == "MEMO") {
+                        via_memo = true;
+                    } else if (flag == "RAM" || flag == "PARTIAL") {
+                        // residence/tolerance modifiers, not part of the name
+                    } else if (memo_name.empty()) {
+                        memo_name = strip_matching_quotes(word);
+                    }
+                }
+                if (via_memo) {
+                    const auto opened = mirror_memo_workspace(memo_name, result.messages);
+                    out << "WORKSPACE LOAD (memo)\n"
+                        << "Workspace: " << memo_name << "\n"
+                        << "Opened GUI areas: " << opened << "\n";
+                    if (impl_->active_area_id != 0) {
+                        if (const auto* area = impl_->active_area()) {
+                            out << "Active area: " << impl_->visible_ordinal(area->id)
+                                << "  " << area->display_name << "\n";
+                        }
+                    }
+                } else if (const auto schema = resolve_workspace_schema_token(
+                               std::filesystem::path(strip_matching_quotes(name)));
+                           !schema) {
                     result.messages.push_back(warning("gui.workspace.schema_missing",
                                                       "WORKSPACE LOAD could not find the schema file.",
                                                       name));
@@ -2487,7 +3082,7 @@ CommandResult Session::run_command(const CommandRequest& request) {
                         << "Opened GUI areas: " << opened << "\n";
                     if (impl_->active_area_id != 0) {
                         if (const auto* area = impl_->active_area()) {
-                            out << "Active area: " << visible_area_id(area->id)
+                            out << "Active area: " << impl_->visible_ordinal(area->id)
                                 << "  " << area->display_name << "\n";
                         }
                     }
@@ -2522,7 +3117,7 @@ CommandResult Session::run_command(const CommandRequest& request) {
         if (impl_->active_area_id == 0) {
             out << "none\n";
         } else {
-            out << visible_area_id(impl_->active_area_id) << "\n";
+            out << impl_->visible_ordinal(impl_->active_area_id) << "\n";
         }
         out << "Relations: workspace graph service pending\n"
             << "Indexes: workspace graph service pending\n"
@@ -2533,10 +3128,10 @@ CommandResult Session::run_command(const CommandRequest& request) {
         const auto* area = impl_->active_area();
         out << "GUI SESSION STATUS\n"
             << "Open areas: " << impl_->areas.size() << "\n"
-            << "Active area: " << (area ? visible_area_id(area->id) : std::string("none")) << "\n";
-        if (area && area->area.isOpen()) {
+            << "Active area: " << (area ? impl_->visible_ordinal(area->id) : std::string("none")) << "\n";
+        if (area && area->area().isOpen()) {
             out << "Active table: " << area->display_name << "\n"
-                << "Records: " << area->area.recCount64() << "\n"
+                << "Records: " << area->area().recCount64() << "\n"
                 << "Path: " << area->path.string() << "\n";
         }
         out << "Runtime lane: " << impl_->shell_runtime->description()
@@ -2556,54 +3151,54 @@ CommandResult Session::run_command(const CommandRequest& request) {
     } else if (verb == "select") {
         const std::string target = remove_first_token(dispatch_command);
         auto* area = impl_->find_area_by_user_token(target);
-        if (!area || !area->area.isOpen()) {
+        if (!area || !area->area().isOpen()) {
             result.messages.push_back(warning("gui.area.not_open", "Requested GUI work area is not open.", target));
             out << "No matching GUI work area is open: " << target;
         } else {
             impl_->active_area_id = area->id;
-            out << "Selected GUI area " << visible_area_id(area->id) << ".\n"
+            out << "Selected GUI area " << impl_->visible_ordinal(area->id) << ".\n"
                 << "Table: " << area->display_name << "\n"
-                << "Recno: " << area->area.recno64();
+                << "Recno: " << area->area().recno64();
         }
     } else if (verb == "dbarea") {
         const auto* area = impl_->active_area();
-        if (!area || !area->area.isOpen()) {
+        if (!area || !area->area().isOpen()) {
             result.messages.push_back(warning("gui.snapshot.no_current_table", "No current table is selected."));
             out << "No current GUI work area is selected.";
         } else {
             out << "DBAREA\n"
-                << "Area: " << visible_area_id(area->id) << "\n"
-                << "Logical name: " << area->area.logicalName() << "\n"
+                << "Area: " << impl_->visible_ordinal(area->id) << "\n"
+                << "Logical name: " << area->area().logicalName() << "\n"
                 << "Table: " << area->display_name << "\n"
-                << "File type: " << dbf_flavor_label(area->area) << "\n"
+                << "File type: " << dbf_flavor_label(area->area()) << "\n"
                 << "Path: " << area->path.string() << "\n"
                 << "Open: yes\n"
-                << "Records: " << area->area.recCount64() << "\n"
-                << "Fields: " << area->area.fields().size() << "\n"
-                << "Recno: " << area->area.recno64() << "\n"
-                << "BOF: " << (area->area.bof() ? "yes" : "no") << "\n"
-                << "EOF: " << (area->area.eof() ? "yes" : "no");
+                << "Records: " << area->area().recCount64() << "\n"
+                << "Fields: " << area->area().fields().size() << "\n"
+                << "Recno: " << area->area().recno64() << "\n"
+                << "BOF: " << (area->area().bof() ? "yes" : "no") << "\n"
+                << "EOF: " << (area->area().eof() ? "yes" : "no");
         }
     } else if (verb == "recno") {
         auto* area = impl_->active_area();
-        if (!area || !area->area.isOpen()) {
+        if (!area || !area->area().isOpen()) {
             result.messages.push_back(warning("gui.snapshot.no_current_table", "No current table is selected."));
             out << "No current table is selected.";
         } else {
             const auto words = split_words(dispatch_command);
             if (words.size() == 1) {
-                out << area->area.recno64();
+                out << area->area().recno64();
             } else {
                 long long wanted = 0;
                 if (!parse_i64(words[1], wanted) || wanted < 1 ||
-                    wanted > static_cast<long long>(area->area.recCount())) {
+                    wanted > static_cast<long long>(area->area().recCount())) {
                     result.messages.push_back(warning("gui.command.bad_recno", "RECNO needs a record number in range."));
                     out << "Usage: recno <record-number>";
-                } else if (!area->area.gotoRec(static_cast<int32_t>(wanted)) || !area->area.readCurrent()) {
+                } else if (!area->area().gotoRec(static_cast<int32_t>(wanted)) || !area->area().readCurrent()) {
                     result.messages.push_back(warning("gui.command.nav_failed", "Could not move the active record pointer."));
                     out << "RECNO failed.";
                 } else {
-                    out << area->area.recno64();
+                    out << area->area().recno64();
                 }
             }
         }
@@ -2611,7 +3206,7 @@ CommandResult Session::run_command(const CommandRequest& request) {
         auto* area = impl_->active_area();
         long long wanted = 0;
         const auto words = split_words(dispatch_command);
-        if (!area || !area->area.isOpen()) {
+        if (!area || !area->area().isOpen()) {
             result.messages.push_back(warning("gui.snapshot.no_current_table", "No current table is selected."));
             out << "No current table is selected.";
         } else if (words.size() < 2 || !parse_i64(words[1], wanted) || wanted < 1) {
@@ -2619,18 +3214,18 @@ CommandResult Session::run_command(const CommandRequest& request) {
             out << "Usage: goto <record-number>";
         } else {
             if (wanted > static_cast<long long>(std::numeric_limits<int32_t>::max()) ||
-                !area->area.gotoRec(static_cast<int32_t>(wanted)) || !area->area.readCurrent()) {
+                !area->area().gotoRec(static_cast<int32_t>(wanted)) || !area->area().readCurrent()) {
                 result.messages.push_back(warning("gui.command.nav_failed", "Could not move the active record pointer."));
                 out << "GOTO failed.";
             } else {
-                out << "Recno: " << area->area.recno64();
+                out << "Recno: " << area->area().recno64();
             }
         }
     } else if (verb == "skip") {
         auto* area = impl_->active_area();
         long long delta = 1;
         const auto words = split_words(dispatch_command);
-        if (!area || !area->area.isOpen()) {
+        if (!area || !area->area().isOpen()) {
             result.messages.push_back(warning("gui.snapshot.no_current_table", "No current table is selected."));
             out << "No current table is selected.";
         } else if (words.size() >= 2 && !parse_i64(words[1], delta)) {
@@ -2645,10 +3240,10 @@ CommandResult Session::run_command(const CommandRequest& request) {
 
             const int n = static_cast<int>(delta);
             std::string order_err;
-            const bool moved = orderstate::hasOrder(area->area)
-                ? skip_gui_area_ordered(area->area, n, order_err)
-                : (n == 0 ? area->area.readCurrent()
-                          : (area->area.skip(n) && area->area.readCurrent()));
+            const bool moved = orderstate::hasOrder(area->area())
+                ? skip_gui_area_ordered(area->area(), n, order_err)
+                : (n == 0 ? area->area().readCurrent()
+                          : (area->area().skip(n) && area->area().readCurrent()));
 
             if (!moved) {
                 result.messages.push_back(warning("gui.command.nav_failed", "Could not move the active record pointer."));
@@ -2657,52 +3252,52 @@ CommandResult Session::run_command(const CommandRequest& request) {
                     out << " " << order_err;
                 }
             } else {
-                out << "Recno: " << area->area.recno64();
+                out << "Recno: " << area->area().recno64();
             }
         }
     } else if (verb == "top" || verb == "bottom") {
         auto* area = impl_->active_area();
-        if (!area || !area->area.isOpen()) {
+        if (!area || !area->area().isOpen()) {
             result.messages.push_back(warning("gui.snapshot.no_current_table", "No current table is selected."));
             out << "No current table is selected.";
         } else {
             std::string order_err;
-            const bool moved = orderstate::hasOrder(area->area)
-                ? (verb == "top" ? position_gui_area_to_first_ordered(area->area, order_err)
-                                  : position_gui_area_to_last_ordered(area->area, order_err))
-                : (verb == "top" ? area->area.top() : area->area.bottom());
-            if (!moved || !area->area.readCurrent()) {
+            const bool moved = orderstate::hasOrder(area->area())
+                ? (verb == "top" ? position_gui_area_to_first_ordered(area->area(), order_err)
+                                  : position_gui_area_to_last_ordered(area->area(), order_err))
+                : (verb == "top" ? area->area().top() : area->area().bottom());
+            if (!moved || !area->area().readCurrent()) {
                 result.messages.push_back(warning("gui.command.nav_failed", "Could not move the active record pointer."));
                 out << (verb == "top" ? "TOP" : "BOTTOM") << " failed.";
                 if (!order_err.empty()) {
                     out << " " << order_err;
                 }
             } else {
-                out << "Recno: " << area->area.recno64();
+                out << "Recno: " << area->area().recno64();
             }
         }
     } else if (verb == "list" || verb == "browse") {
         const auto* area = impl_->active_area();
-        if (!area || !area->area.isOpen()) {
+        if (!area || !area->area().isOpen()) {
             result.messages.push_back(warning("gui.snapshot.no_current_table", "No current table is selected."));
             out << "No current table is selected.";
         } else {
             out << "BROWSE SUMMARY\n"
-                << "Area: " << visible_area_id(area->id) << "\n"
+                << "Area: " << impl_->visible_ordinal(area->id) << "\n"
                 << "Table: " << area->display_name << "\n"
-                << "Records: " << area->area.recCount64() << "\n"
-                << "Fields: " << area->area.fields().size() << "\n"
+                << "Records: " << area->area().recCount64() << "\n"
+                << "Fields: " << area->area().fields().size() << "\n"
                 << "Use the Browse tab for row data.";
         }
     } else if (verb == "structure") {
         const auto* area = impl_->active_area();
-        if (!area || !area->area.isOpen()) {
+        if (!area || !area->area().isOpen()) {
             result.messages.push_back(warning("gui.snapshot.no_current_table", "No current table is selected."));
             out << "No current table is selected.";
         } else {
             out << "STRUCTURE " << area->display_name << "\n";
             std::size_t index = 1;
-            for (const auto& field : area->area.fields()) {
+            for (const auto& field : area->area().fields()) {
                 out << index++ << "  " << field.name << "  "
                     << field.type << "(" << static_cast<int>(field.length)
                     << "," << static_cast<int>(field.decimals) << ")\n";
@@ -2791,7 +3386,7 @@ CommandResult Session::run_command(const CommandRequest& request) {
 
 TableSnapshot Session::snapshot_current_table(const TableSnapshotRequest& request) const {
     auto* selected = request.area_id == 0 ? impl_->active_area() : impl_->find_area(request.area_id);
-    if (!selected || !selected->area.isOpen()) {
+    if (!selected || !selected->area().isOpen()) {
         TableSnapshot snapshot;
         snapshot.area_id = request.area_id;
         snapshot.messages.push_back(warning("gui.snapshot.no_current_table", "No current table is selected."));
@@ -2799,7 +3394,7 @@ TableSnapshot Session::snapshot_current_table(const TableSnapshotRequest& reques
     }
 
     return gui_snapshot_from_dbarea(selected->id,
-                                    selected->area,
+                                    selected->area(),
                                     selected->display_name,
                                     request.first_record,
                                     request.max_records);

@@ -40,7 +40,7 @@ void print_note(const char* cmd, const std::string& text);
 // Emit a localized diagnostic AND record the canonical error/warning code so
 // ERROR_STATUS and (future) SET ERRORSTOP observe the failure. One visible
 // localized line (the message catalog text); the English to_string(code) is
-// never shown to the user — it only appears inside ERROR_STATUS's own Message
+// never shown to the user -- it only appears inside ERROR_STATUS's own Message
 // field. Use these instead of print_message at fail/warn sites that must set
 // error state.
 void emit_error(

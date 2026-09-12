@@ -17,7 +17,7 @@ static bool is_ident_start(char c) {
   return std::isalpha(static_cast<unsigned char>(c)) || c=='_';
 }
 static bool is_ident_part(char c) {
-  return std::isalnum(static_cast<unsigned char>(c)) || c=='_';
+  return std::isalnum(static_cast<unsigned char>(c)) || c=='_' || c=='.';
 }
 
 Lexer::Lexer(std::string src): m_src(std::move(src)) {}
@@ -61,14 +61,18 @@ Token Lexer::readNumber() {
   return t;
 }
 
-Token Lexer::readString() {
+Token Lexer::readString(char quote) {
   std::string out;
   while (!eof()) {
     char c = cur(); ++m_i;
-    if (c=='"') break;
+    if (c==quote) {
+      // SQL/xBase doubled-quote escaping: 'DON''T' and "A""B".
+      if (!eof() && cur()==quote) { out.push_back(quote); ++m_i; continue; }
+      break;
+    }
     if (c=='\\' && !eof()) {
       char n = cur(); ++m_i;
-      if (n=='"' || n=='\\') out.push_back(n);
+      if (n==quote || n=='\\') out.push_back(n);
       else { out.push_back('\\'); out.push_back(n); }
     } else {
       out.push_back(c);
@@ -107,15 +111,35 @@ Token Lexer::next() {
 
   if (is_ident_start(c)) return readIdent();
   if (std::isdigit(static_cast<unsigned char>(c))) return readNumber();
-  if (c=='"') { ++m_i; return readString(); }
+  if (c=='"' || c=='\'') { ++m_i; return readString(c); }
 
   if (c=='(') { ++m_i; return Token{TokKind::LParen, "("}; }
   if (c==')') { ++m_i; return Token{TokKind::RParen, ")"}; }
+  if (c==',') { ++m_i; return Token{TokKind::Comma, ","}; }
   if (c=='=') {
     if (peekch()=='=') { m_i+=2; return Token{TokKind::EqEq, "=="}; }
     ++m_i; return Token{TokKind::Eq, "="};
   }
   if (c=='!' && peekch()=='=') { m_i+=2; return Token{TokKind::Ne, "!="}; }
+
+  // xBase NOT-EQUAL, added 2026-08-27. `<>` is the canonical spelling in dBase,
+  // FoxPro and Clipper, and `#` is its short form; `cmd_locate.cpp:260`,
+  // `predicate_chain.cpp`, `normalize_where.cpp` and `rhs_eval.cpp:317` all
+  // already accept them. This lexer accepted only the C spelling `!=`, so the
+  // engine understood the programmer's dialect and not its own.
+  //
+  // NOTHING ELSE NEEDED CHANGING, and that is why the omission survived so
+  // long: TokKind::Ne already existed and parser.cpp:84 already mapped it to
+  // CmpOp::NE. The operator was fully implemented and simply unspellable.
+  //
+  // `<>` previously lexed as Lt then Gt, so `A <> "1"` parsed as `A < ` and
+  // stopped, and compile_where correctly reported "unexpected input after the
+  // end of the expression: '>'". It was the CALLERS that then threw that
+  // report away -- see cmd_list.cpp and cmd_count.cpp, fixed in the same
+  // change.
+  if (c=='<' && peekch()=='>') { m_i+=2; return Token{TokKind::Ne, "<>"}; }
+  if (c=='#')                  { ++m_i;  return Token{TokKind::Ne, "#"};  }
+
   if (c=='<' && peekch()=='=') { m_i+=2; return Token{TokKind::Le, "<="}; }
   if (c=='>' && peekch()=='=') { m_i+=2; return Token{TokKind::Ge, ">="}; }
   if (c=='<') { ++m_i; return Token{TokKind::Lt, "<"}; }
@@ -129,7 +153,5 @@ Token Lexer::next() {
   ++m_i;
   return Token{TokKind::End, ""};
 }
-
-
 
 

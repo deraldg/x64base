@@ -201,6 +201,22 @@ bool save_identity_tables(const InMemoryIdentityStore& store,
         return true;
     });
 
+    ok = ok && append("SYSORG", [&](xbase::DbArea& a) {
+        for (const auto& o : store.org_units) {
+            a.appendBlank(); RowW w{a, err};
+            w.set("ID", s_id(o.id));        w.set("OKEY", o.key);
+            w.set("PARENT", s_optid(o.parent));
+            w.set("OTYPE", s_enum(static_cast<std::uint8_t>(o.type)));
+            w.set("NAME", o.name);
+            w.set("STATUS", s_enum(static_cast<std::uint8_t>(o.status)));
+            w.set("SORTORD", s_u64(static_cast<std::uint64_t>(o.sort_order)));
+            w.set("VFROM", s_u64(o.stamp.valid_from)); w.set("VTHRU", s_u64(o.stamp.valid_through));
+            w.set("ROWVER", s_u64(o.stamp.row_version));
+            if (!w.ok) return false; a.writeCurrent();
+        }
+        return true;
+    });
+
     ok = ok && append("SYSROLEPERM", [&](xbase::DbArea& a) {
         for (const auto& rp : store.role_permissions) {
             a.appendBlank(); RowW w{a, err};
@@ -268,15 +284,26 @@ bool load_identity_tables(const std::string& dir,
                           InMemoryIdentityStore& out, std::string& err) {
     out = InMemoryIdentityStore{};  // clear
 
-    // Every table must be present for a clean load.
+    // Every ORIGINAL table must be present for a clean load. Tables added later are
+    // tolerated when absent: a store written before the addition is OLD, not CORRUPT,
+    // and refusing the whole catalog over one missing file would take identity down at
+    // startup on every store in existence. Measured 2026-09-04: the live store at
+    // data/metadata/identity/ holds exactly the original nine and no SYSORG, so an
+    // unguarded fold into all_tables() would have done exactly that.
+    //
+    // Absence is tolerated on the READ path only, and nothing is created here -- load
+    // stays side-effect free. The table appears on the next save_identity_tables(),
+    // which creates every table in all_tables() fresh (USER SAVE).
     for (const auto& t : schema::all_tables()) {
-        if (!fs::exists(join(dir, t.name))) {
-            err = std::string("identity load: missing table ") + t.name;
-            return false;
-        }
+        if (fs::exists(join(dir, t.name))) continue;
+        if (schema::is_additive_table(t.name)) continue;
+        err = std::string("identity load: missing table ") + t.name;
+        return false;
     }
 
     auto scan = [&](const char* name, auto&& per_row) -> bool {
+        // An additive table that is not on disk loads as empty, not as a failure.
+        if (schema::is_additive_table(name) && !fs::exists(join(dir, name))) return true;
         xbase::DbArea a;
         if (!open_table(dir, name, a, err)) return false;
         const std::uint64_t n = a.recCount64();
@@ -332,6 +359,19 @@ bool load_identity_tables(const std::string& dir,
         p.requires_approval = r.boolean("REQAPPR");
         p.status = static_cast<EntityStatus>(r.u64("STATUS"));
         out.permissions.push_back(std::move(p));
+    });
+
+    ok = ok && scan("SYSORG", [&](const RowR& r) {
+        OrgUnit o;
+        o.id = r.id<OrgUnitId>("ID"); o.key = r.str("OKEY");
+        o.parent = r.optid<OrgUnitId>("PARENT");
+        o.type = static_cast<OrgUnitType>(r.u64("OTYPE"));
+        o.name = r.str("NAME");
+        o.status = static_cast<EntityStatus>(r.u64("STATUS"));
+        o.sort_order = static_cast<int>(r.u64("SORTORD"));
+        o.stamp.valid_from = r.u64("VFROM"); o.stamp.valid_through = r.u64("VTHRU");
+        o.stamp.row_version = r.u64("ROWVER");
+        out.org_units.push_back(std::move(o));
     });
 
     ok = ok && scan("SYSROLEPERM", [&](const RowR& r) {

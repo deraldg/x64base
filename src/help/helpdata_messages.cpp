@@ -919,7 +919,7 @@ const std::vector<MessageDef>& all_messages()
             "COMMAND:SET PATH",
             "USAGE",
             "INFO",
-            "Usage:\n  SETPATH\n  SETPATH USAGE\n  SETPATH RESET\n  SETPATH <slot> [TO|=] <path>\n  SET PATH <slot> [TO|=] <path>\nSlots:\n  DATA DBF XDBF INDEXES LMDB WORKSPACES SCHEMAS PROJECTS SCRIPTS TESTS HELP LOGS TMP"
+            "Usage:\n  SETPATH\n  SETPATH USAGE\n  SETPATH RESET\n  SETPATH <slot> [TO|=] <path>\n  SET PATH <slot> [TO|=] <path>\n  SET PATH <slot> [TO|=] <path> IN <ws-or-handle>\nSlots:\n  DATA DBF XDBF INDEXES LMDB WORKSPACES SCHEMAS PROJECTS SCRIPTS TESTS HELP LOGS TMP\nNotes:\n  DBF, INDEXES and LMDB bind to the CURRENT workspace (R131); WORKSPACE SWITCH restores them.\n  IN <ws-or-handle> binds those three to a NAMED workspace and leaves the session slots alone."
         },
         {
             MessageId::SetPathResetText,
@@ -1810,6 +1810,14 @@ const std::vector<MessageDef>& all_messages()
             "add failed (parent/child not open)"
         },
         {
+            MessageId::RelDiagAddFailedOpenElsewhereText,
+            "REL_DIAG_ADD_FAILED_OPEN_ELSEWHERE_TEXT",
+            "SUBSYSTEM:REL",
+            "STATUS",
+            "INFO",
+            "add failed ({area} is open in workspace {workspace}, not the current one)"
+        },
+        {
             MessageId::RelDiagParentFieldNotFoundText,
             "REL_DIAG_PARENT_FIELD_NOT_FOUND_TEXT",
             "SUBSYSTEM:REL",
@@ -2367,7 +2375,7 @@ const std::vector<MessageDef>& all_messages()
             "COMMAND:USE",
             "USAGE",
             "INFO",
-            "Usage:\n  USE USAGE              (Show this usage)\n  USE <table>            (Open <DBF slot>/<table>.dbf in current area)\n  USE <table.dbf>        (Open named DBF; logical names resolve through DBF slot)\n  USE <path\\\\table.dbf>   (Open explicit path)\n  USE <table> NOINDEX    (Open in physical order; skip index auto-attach)\n  USE <table> NOIDX      (Alias of NOINDEX)\nNotes:\n  - USE closes/resets the current area before opening the target table.\n  - USE prevents duplicate opens of the same DBF path across work areas.\n  - USE auto-attaches memo storage when memo fields are present.\n  - USE auto-attaches flavor-appropriate indexes when present, unless NOINDEX/NOIDX is used.\n  - USE prefers the configured INDEXES slot and falls back to the DBF directory.\n  - x64/v128 tables prefer CDX.\n  - x32 tables prefer CNX, then INX."
+            "Usage:\n  USE USAGE              (Show this usage)\n  USE <table>            (Open <DBF slot>/<table>.dbf in current area)\n  USE <table.dbf>        (Open named DBF; logical names resolve through DBF slot)\n  USE <path\\\\table.dbf>   (Open explicit path)\n  USE <table> NOINDEX    (Open in physical order; skip index auto-attach)\n  USE <table> NOIDX      (Alias of NOINDEX)\n  USE <table> AGAIN      (Open a SECOND work area on an already-open DBF)\n  USE <table> ALIAS <n>  (Name this instance <n>)\n  USE <table> AGAIN ALIAS <n>   (Both; the usual form for a self-join)\nNotes:\n  - USE closes/resets the current area before opening the target table.\n  - USE prevents duplicate opens of the same DBF path across work areas, unless AGAIN is given.\n  - AGAIN opens a second, independent cursor on one file: two record pointers, not one moved by SELECT.\n  - AGAIN opens in physical order (no index auto-attach), and REFUSES a memo-carrying table.\n  - ALIAS names the instance. That name is what SELECT <name> and SET RELATION resolve.\n  - Without ALIAS an instance takes the file stem; a second one is auto-named <table>2 and says so.\n  - An explicit ALIAS that is already held is REFUSED, never silently renamed.\n  - An alias may not be all digits: SELECT would read it as an area number.\n  - USE auto-attaches memo storage when memo fields are present.\n  - USE auto-attaches flavor-appropriate indexes when present, unless NOINDEX/NOIDX is used.\n  - USE prefers the configured INDEXES slot and falls back to the DBF directory.\n  - x64/v128 tables prefer CDX.\n  - x32 tables prefer CNX, then INX."
         },
         {
             MessageId::LocateUsageText,
@@ -2855,7 +2863,7 @@ const std::vector<MessageDef>& all_messages()
             "COMMAND:USE",
             "STATUS",
             "INFO",
-            "'{file}' is already open in area {area}. Close it first (e.g., SCHEMAS CLOSE {area})."
+            "'{file}' is already open in area {area}. Close it first (WORKSPACE CLOSE {area}), or add AGAIN for a second work area on it."
         },
         {
             MessageId::UseOpenFailedWithReasonText,
@@ -3048,6 +3056,14 @@ const std::vector<MessageDef>& all_messages()
             "STATUS",
             "INFO",
             "Cursor: Area {area} of {occupied} ... Table {table} ... Physical Recno {recno}, Logical Row {logical_row}"
+        },
+        {
+            MessageId::GpsWorkspaceLineText,
+            "GPS_WORKSPACE_LINE_TEXT",
+            "COMMAND:GPS",
+            "STATUS",
+            "INFO",
+            "  Workspace: owning {owner} (handle {owner_handle}) ... current {current} (handle {current_handle})"
         },
         {
             MessageId::GpsUnnamedTableText,
@@ -3746,6 +3762,7 @@ const std::vector<MessageDef>& all_messages()
         { MessageId::CommitMemoFlushFailedText, "COMMIT_MEMO_FLUSH_FAILED_TEXT", "COMMAND:COMMIT", "ERROR", "ERROR", "failed during memo flush{detail}; buffer retained for retry. DBF writes may already have occurred." },
         { MessageId::CommitIndexFinalizeFailedText, "COMMIT_INDEX_FINALIZE_FAILED_TEXT", "COMMAND:COMMIT", "ERROR", "ERROR", "failed during index finalization; buffer retained for retry. DBF and memo writes may already have occurred." },
         { MessageId::CommitJournalFinalizeFailedText, "COMMIT_JOURNAL_FINALIZE_FAILED_TEXT", "COMMAND:COMMIT", "ERROR", "ERROR", "failed during journal finalization; buffer retained for retry." },
+        { MessageId::CommitRefusedByTriggerText, "COMMIT_REFUSED_BY_TRIGGER_TEXT", "COMMAND:COMMIT", "ERROR", "ERROR", "refused by a BEFORE trigger at record {rn}{detail}; nothing was journaled and the buffer is retained." },
         { MessageId::CommitCompleteText, "COMMIT_COMPLETE_TEXT", "COMMAND:COMMIT", "STATUS", "INFO", "complete. ({ok} recs)" },
         { MessageId::CommitEngineUnavailableText, "COMMIT_ENGINE_UNAVAILABLE_TEXT", "COMMAND:COMMIT", "ERROR", "ERROR", "engine not available." },
         { MessageId::CommitCannotDetermineAreaText, "COMMIT_CANNOT_DETERMINE_AREA_TEXT", "COMMAND:COMMIT", "ERROR", "ERROR", "cannot determine current area." },
@@ -4700,6 +4717,22 @@ const std::vector<MessageDef>& all_messages()
             "STATUS",
             "INFO",
             "Area (slot)"
+        },
+        {
+            MessageId::DbareaOwningWorkspaceLineText,
+            "DBAREA_OWNING_WORKSPACE_LINE_TEXT",
+            "COMMAND:DBAREA",
+            "STATUS",
+            "INFO",
+            "Owning workspace"
+        },
+        {
+            MessageId::DbareaCurrentWorkspaceLineText,
+            "DBAREA_CURRENT_WORKSPACE_LINE_TEXT",
+            "COMMAND:DBAREA",
+            "STATUS",
+            "INFO",
+            "Current workspace"
         },
         {
             MessageId::DbareaDbfAbsoluteLineText,
@@ -8590,7 +8623,7 @@ const std::vector<MessageDef>& all_messages()
             "COMMAND:CDX",
             "USAGE",
             "INFO",
-            "Usage:\n  CDX USAGE\n  CDX INFO [<path.cdx>]\n  CDX TAGS [<path.cdx>]\n  CDX CREATE [<path.cdx>]\n  CDX ADDTAG <name> [<path.cdx>]\n  CDX DROPTAG <name> [<path.cdx>]\nNotes:\n  - CDX with no arguments shows usage.\n  - CREATE refuses to overwrite an existing CDX file.\n  - INFO/TAGS inspect metadata; ADDTAG/DROPTAG mutate tag metadata."
+            "Usage:\n  CDX USAGE\n  CDX INFO [<path.cdx>]\n  CDX TAGS [<path.cdx>]\n  CDX CREATE [<path.cdx>]\n  CDX ADDTAG <name> [<path.cdx>]\n  CDX DROPTAG <name> [<path.cdx>]\nNotes:\n  - CDX with no arguments shows usage.\n  - CREATE refuses to overwrite an existing CDX file.\n  - INFO/TAGS inspect metadata; ADDTAG/DROPTAG mutate tag metadata.\n  - ADDTAG requires an OPEN TABLE and refuses a <name> that is not one of its fields: a tag IS a field name, and BUILDLMDB builds each tag from the field of that name."
         },
         {
             MessageId::CdxCreateUnableResolvePathText,
@@ -8737,6 +8770,41 @@ const std::vector<MessageDef>& all_messages()
             "added '{tag}'."
         },
         {
+            MessageId::CdxAddTagNoFileOpenText,
+            "CDX_ADDTAG_NO_FILE_OPEN_TEXT",
+            "COMMAND:CDX",
+            "ERROR",
+            "ERROR",
+            "no file open. A tag names a FIELD, so the table must be open to "
+            "check it exists. BUILDLMDB requires one too."
+        },
+        {
+            MessageId::CnxAddTagNoFileOpenText,
+            "CNX_ADDTAG_NO_FILE_OPEN_TEXT",
+            "COMMAND:CNX",
+            "ERROR",
+            "ERROR",
+            "no file open. A tag names a FIELD, so the table must be open to check it exists. REBUILD requires one too."
+        },
+        {
+            MessageId::CnxAddTagFieldNotFoundText,
+            "CNX_ADDTAG_FIELD_NOT_FOUND_TEXT",
+            "COMMAND:CNX",
+            "ERROR",
+            "ERROR",
+            "field not found: '{name}'. A CNX tag IS a field name, and neither build path will tell you otherwise later -- REBUILD reports OK for every tag in the directory whatever happened. Nothing was added."
+        },
+        {
+            MessageId::CdxAddTagFieldNotFoundText,
+            "CDX_ADDTAG_FIELD_NOT_FOUND_TEXT",
+            "COMMAND:CDX",
+            "ERROR",
+            "ERROR",
+            "field not found: '{name}'. A CDX tag IS a field name -- BUILDLMDB "
+            "builds each tag FROM the field of that name -- so a tag naming no "
+            "field could never be built. Nothing was added."
+        },
+        {
             MessageId::CdxDropTagMissingNameText,
             "CDX_DROPTAG_MISSING_NAME_TEXT",
             "COMMAND:CDX",
@@ -8790,7 +8858,7 @@ const std::vector<MessageDef>& all_messages()
             "COMMAND:CNX",
             "USAGE",
             "INFO",
-            "Usage:\n  CNX USAGE\n  CNX INFO [<path.cnx>]\n  CNX TAGS [<path.cnx>]\n  CNX CREATE [<path.cnx>]\n  CNX ADDTAG <name> [<path.cnx>]\n  CNX DROPTAG <name> [<path.cnx>]\n  CNX WALK <tag> [<path.cnx>]\n  CNX TRACE <tag> [<path.cnx>]\nNotes:\n  - CNX with no arguments shows usage.\n  - CREATE refuses to overwrite an existing CNX file.\n  - INFO/TAGS/WALK/TRACE inspect metadata; ADDTAG/DROPTAG mutate tag metadata."
+            "Usage:\n  CNX USAGE\n  CNX INFO [<path.cnx>]\n  CNX TAGS [<path.cnx>]\n  CNX CREATE [<path.cnx>]\n  CNX ADDTAG <name> [<path.cnx>]\n  CNX DROPTAG <name> [<path.cnx>]\n  CNX WALK <tag> [<path.cnx>]\n  CNX TRACE <tag> [<path.cnx>]\nNotes:\n  - CNX with no arguments shows usage.\n  - CREATE refuses to overwrite an existing CNX file.\n  - INFO/TAGS/WALK/TRACE inspect metadata; ADDTAG/DROPTAG mutate tag metadata.\n  - ADDTAG requires an OPEN TABLE and refuses a <name> that is not one of its fields: a tag IS a field name, and neither build path will say otherwise later -- REBUILD reports OK for every tag in the directory."
         },
         {
             MessageId::CnxCreateUnableResolvePathText,
@@ -9861,7 +9929,7 @@ const std::vector<MessageTextDef>& all_message_texts()
         { MessageId::DisplayRecordHeaderText, "en-US", "Record {recno}{deleted_suffix}" },
         { MessageId::DisplayRecordDeletedSuffixText, "en-US", " [DELETED]" },
         { MessageId::DisplayFieldLineText,  "en-US", "  {field} = {value}" },
-        { MessageId::SetPathUsageText,      "en-US", "Usage:\n  SETPATH\n  SETPATH USAGE\n  SETPATH RESET\n  SETPATH <slot> [TO|=] <path>\n  SET PATH <slot> [TO|=] <path>\nSlots:\n  DATA DBF XDBF INDEXES LMDB WORKSPACES SCHEMAS PROJECTS SCRIPTS TESTS HELP LOGS TMP" },
+        { MessageId::SetPathUsageText,      "en-US", "Usage:\n  SETPATH\n  SETPATH USAGE\n  SETPATH RESET\n  SETPATH <slot> [TO|=] <path>\n  SET PATH <slot> [TO|=] <path>\n  SET PATH <slot> [TO|=] <path> IN <ws-or-handle>\nSlots:\n  DATA DBF XDBF INDEXES LMDB WORKSPACES SCHEMAS PROJECTS SCRIPTS TESTS HELP LOGS TMP\nNotes:\n  DBF, INDEXES and LMDB bind to the CURRENT workspace (R131); WORKSPACE SWITCH restores them.\n  IN <ws-or-handle> binds those three to a NAMED workspace and leaves the session slots alone." },
         { MessageId::SetPathResetText,      "en-US", "reset to defaults." },
         { MessageId::SetPathUnknownSlotText, "en-US", "unknown slot: {slot}" },
         { MessageId::SetPathAssignedText,   "en-US", "{slot} = {path}" },
@@ -9973,6 +10041,7 @@ const std::vector<MessageTextDef>& all_message_texts()
         { MessageId::RelDiagAddFailedNoFieldsText, "en-US", "add failed (no fields provided)" },
         { MessageId::RelDiagAddFailedFieldCountMismatchText, "en-US", "add failed (parent/child field counts differ)" },
         { MessageId::RelDiagAddFailedNotOpenText, "en-US", "add failed (parent/child not open)" },
+        { MessageId::RelDiagAddFailedOpenElsewhereText, "en-US", "add failed ({area} is open in workspace {workspace}, not the current one)" },
         { MessageId::RelDiagParentFieldNotFoundText, "en-US", "parent field not found: {field}" },
         { MessageId::RelDiagChildFieldNotFoundText, "en-US", "child field not found: {field}" },
         { MessageId::RelDiagAddedText, "en-US", "{parent} -> {child} ON {fields}" },
@@ -10042,7 +10111,7 @@ const std::vector<MessageTextDef>& all_message_texts()
         { MessageId::ErsatzDeltaNoBaselineNamedText, "en-US", "no baseline named {name}. Use ERSATZ DELTA MARK {name} first." },
         { MessageId::ErsatzDeltaSummaryText, "en-US", "{name} table={table} baseline_rows={baseline_rows} current_rows={current_rows} changes={changes}" },
         { MessageId::ErsatzDeltaNoTupleChangesText, "en-US", "No tuple changes." },
-        { MessageId::UseUsageText,          "en-US", "Usage:\n  USE USAGE              (Show this usage)\n  USE <table>            (Open <DBF slot>/<table>.dbf in current area)\n  USE <table.dbf>        (Open named DBF; logical names resolve through DBF slot)\n  USE <path\\\\table.dbf>   (Open explicit path)\n  USE <table> NOINDEX    (Open in physical order; skip index auto-attach)\n  USE <table> NOIDX      (Alias of NOINDEX)\nNotes:\n  - USE closes/resets the current area before opening the target table.\n  - USE prevents duplicate opens of the same DBF path across work areas.\n  - USE auto-attaches memo storage when memo fields are present.\n  - USE auto-attaches flavor-appropriate indexes when present, unless NOINDEX/NOIDX is used.\n  - USE prefers the configured INDEXES slot and falls back to the DBF directory.\n  - x64/v128 tables prefer CDX.\n  - x32 tables prefer CNX, then INX." },
+        { MessageId::UseUsageText,          "en-US", "Usage:\n  USE USAGE              (Show this usage)\n  USE <table>            (Open <DBF slot>/<table>.dbf in current area)\n  USE <table.dbf>        (Open named DBF; logical names resolve through DBF slot)\n  USE <path\\\\table.dbf>   (Open explicit path)\n  USE <table> NOINDEX    (Open in physical order; skip index auto-attach)\n  USE <table> NOIDX      (Alias of NOINDEX)\n  USE <table> AGAIN      (Open a SECOND work area on an already-open DBF)\n  USE <table> ALIAS <n>  (Name this instance <n>)\n  USE <table> AGAIN ALIAS <n>   (Both; the usual form for a self-join)\nNotes:\n  - USE closes/resets the current area before opening the target table.\n  - USE prevents duplicate opens of the same DBF path across work areas, unless AGAIN is given.\n  - AGAIN opens a second, independent cursor on one file: two record pointers, not one moved by SELECT.\n  - AGAIN opens in physical order (no index auto-attach), and REFUSES a memo-carrying table.\n  - ALIAS names the instance. That name is what SELECT <name> and SET RELATION resolve.\n  - Without ALIAS an instance takes the file stem; a second one is auto-named <table>2 and says so.\n  - An explicit ALIAS that is already held is REFUSED, never silently renamed.\n  - An alias may not be all digits: SELECT would read it as an area number.\n  - USE auto-attaches memo storage when memo fields are present.\n  - USE auto-attaches flavor-appropriate indexes when present, unless NOINDEX/NOIDX is used.\n  - USE prefers the configured INDEXES slot and falls back to the DBF directory.\n  - x64/v128 tables prefer CDX.\n  - x32 tables prefer CNX, then INX." },
         { MessageId::LocateUsageText,       "en-US", "Usage:\n  LOCATE USAGE\n  LOCATE FOR <expr>\n  LOCATE <field> <op> <value>\nExamples:\n  LOCATE FOR LNAME = Smith\n  LOCATE LNAME = Smith\n  LOCATE FOR BALANCE > 100\nNotes:\n  - LOCATE requires an open table except for LOCATE USAGE.\n  - LOCATE positions on the first matching record and updates CONTINUE state." },
         { MessageId::LocateFoundText,       "en-US", "Located." },
         { MessageId::LocateNotFoundText,    "en-US", "Not Located." },
@@ -10103,7 +10172,7 @@ const std::vector<MessageTextDef>& all_message_texts()
         { MessageId::PriorUsageText,        "en-US", "Usage:\n  PRIOR\n  PRIOR USAGE" },
         { MessageId::UseMissingTableNameText, "en-US", "missing table name." },
         { MessageId::UseAlreadyOpenCurrentAreaText, "en-US", "'{file}' is already open in current area {area}." },
-        { MessageId::UseAlreadyOpenOtherAreaText, "en-US", "'{file}' is already open in area {area}. Close it first (e.g., SCHEMAS CLOSE {area})." },
+        { MessageId::UseAlreadyOpenOtherAreaText, "en-US", "'{file}' is already open in area {area}. Close it first (WORKSPACE CLOSE {area}), or add AGAIN for a second work area on it." },
         { MessageId::UseOpenFailedWithReasonText, "en-US", "Open failed: {reason}" },
         { MessageId::UseOpenFailedText,     "en-US", "Open failed." },
         { MessageId::UseMemoAttachFailedText, "en-US", "memo attach failed: {reason}" },
@@ -10879,6 +10948,7 @@ const std::vector<MessageTextDef>& all_message_texts()
         { MessageId::CommitIndexFinalizeFailedText, "de", "Fehler bei der Indexfinalisierung; Puffer für erneuten Versuch beibehalten. DBF- und Memo-Schreibvorgänge könnten bereits erfolgt sein." },
         { MessageId::CommitIndexFinalizeFailedText, "it", "errore durante la finalizzazione dell'indice; buffer conservato per riprovare. Le scritture DBF e memo potrebbero essere già avvenute." },
         { MessageId::CommitJournalFinalizeFailedText, "en-US", "failed during journal finalization; buffer retained for retry." },
+        { MessageId::CommitRefusedByTriggerText, "en-US", "refused by a BEFORE trigger at record {rn}{detail}; nothing was journaled and the buffer is retained." },
         { MessageId::CommitJournalFinalizeFailedText, "es", "falló durante la finalización del diario; búfer conservado para reintento." },
         { MessageId::CommitJournalFinalizeFailedText, "fr", "échec lors de la finalisation du journal ; mémoire tampon conservée pour nouvelle tentative." },
         { MessageId::CommitJournalFinalizeFailedText, "de", "Fehler bei der Journalfinalisierung; Puffer für erneuten Versuch beibehalten." },
@@ -12306,6 +12376,11 @@ const std::vector<MessageTextDef>& all_message_texts()
         { MessageId::HelpTopLevelHint,         "it", "Digitare HELP GIANT, HELP BETA, HELP PS, HELP SQL, HELP FUNCTION <name> oppure HELP <command>" },
         { MessageId::CmdHelpCurrentLoadFailed, "it", "impossibile caricare le righe HELP DATA correnti da \"{dir}\"." },
         { MessageId::CmdHelpBuildTip,          "it", "Suggerimento: eseguire CMDHELP BUILD . <source-root>" },
+        { MessageId::SetPathUsageText, "it", "Uso:\n  SETPATH\n  SETPATH USAGE\n  SETPATH RESET\n  SETPATH <slot> [TO|=] <path>\n  SET PATH <slot> [TO|=] <path>\n  SET PATH <slot> [TO|=] <path> IN <ws-or-handle>\nSlot:\n  DATA DBF XDBF INDEXES LMDB WORKSPACES SCHEMAS PROJECTS SCRIPTS TESTS HELP LOGS TMP\nNote:\n  DBF, INDEXES e LMDB si legano allo spazio di lavoro CORRENTE (R131); WORKSPACE SWITCH li ripristina.\n  IN <ws-or-handle> lega quei tre a uno spazio di lavoro DENOMINATO e lascia invariati gli slot della sessione." },
+        { MessageId::SetPathResetText, "it", "ripristinato ai valori predefiniti." },
+        { MessageId::SetPathUnknownSlotText, "it", "slot sconosciuto: {slot}" },
+        { MessageId::SetPathWarnMissingText, "it", "avviso: il percorso non esiste" },
+        { MessageId::SetPathWarnExpectedDirectoryText, "it", "avviso: atteso una directory, trovato un file" },
         { MessageId::CmdHelpNoTopicMatched,    "it", "nessun argomento HELP DATA corrente corrisponde a \"{topic}\"." },
         { MessageId::CmdHelpSummaryTip,        "it", "Suggerimento: eseguire CMDHELP senza argomenti per un riepilogo HELP DATA." },
         { MessageId::CmdHelpCurrentBuildWritten, "it", "CMDHELP ha scritto HELP DATA corrente -> {dir}" },
@@ -12374,6 +12449,11 @@ const std::vector<MessageTextDef>& all_message_texts()
         { MessageId::HelpTopLevelHint,         "es", "Escriba HELP GIANT, HELP BETA, HELP PS, HELP SQL, HELP FUNCTION <name> o HELP <command>" },
         { MessageId::CmdHelpCurrentLoadFailed, "es", "no se pudieron cargar las lineas actuales de HELP DATA desde \"{dir}\"." },
         { MessageId::CmdHelpBuildTip,          "es", "Sugerencia: ejecute CMDHELP BUILD . <source-root>" },
+        { MessageId::SetPathUsageText, "es", "Uso:\n  SETPATH\n  SETPATH USAGE\n  SETPATH RESET\n  SETPATH <slot> [TO|=] <path>\n  SET PATH <slot> [TO|=] <path>\n  SET PATH <slot> [TO|=] <path> IN <ws-or-handle>\nSlots:\n  DATA DBF XDBF INDEXES LMDB WORKSPACES SCHEMAS PROJECTS SCRIPTS TESTS HELP LOGS TMP\nNotas:\n  DBF, INDEXES y LMDB se vinculan al espacio de trabajo ACTUAL (R131); WORKSPACE SWITCH los restaura.\n  IN <ws-or-handle> vincula esos tres a un espacio de trabajo NOMBRADO y deja intactos los slots de la sesion." },
+        { MessageId::SetPathResetText, "es", "restablecido a los valores predeterminados." },
+        { MessageId::SetPathUnknownSlotText, "es", "slot desconocido: {slot}" },
+        { MessageId::SetPathWarnMissingText, "es", "advertencia: la ruta no existe" },
+        { MessageId::SetPathWarnExpectedDirectoryText, "es", "advertencia: se esperaba un directorio, se encontro un archivo" },
         { MessageId::CmdHelpNoTopicMatched,    "es", "ningun tema actual de HELP DATA coincide con \"{topic}\"." },
         { MessageId::CmdHelpSummaryTip,        "es", "Sugerencia: ejecute CMDHELP sin argumentos para un resumen de HELP DATA." },
         { MessageId::CmdHelpCurrentBuildWritten, "es", "CMDHELP escribio HELP DATA actual -> {dir}" },
@@ -12442,6 +12522,11 @@ const std::vector<MessageTextDef>& all_message_texts()
         { MessageId::HelpTopLevelHint,         "fr", "Tapez HELP GIANT, HELP BETA, HELP PS, HELP SQL, HELP FUNCTION <name> ou HELP <command>" },
         { MessageId::CmdHelpCurrentLoadFailed, "fr", "impossible de charger les lignes HELP DATA actuelles depuis \"{dir}\"." },
         { MessageId::CmdHelpBuildTip,          "fr", "Conseil : executez CMDHELP BUILD . <source-root>" },
+        { MessageId::SetPathUsageText, "fr", "Utilisation:\n  SETPATH\n  SETPATH USAGE\n  SETPATH RESET\n  SETPATH <slot> [TO|=] <path>\n  SET PATH <slot> [TO|=] <path>\n  SET PATH <slot> [TO|=] <path> IN <ws-or-handle>\nEmplacements:\n  DATA DBF XDBF INDEXES LMDB WORKSPACES SCHEMAS PROJECTS SCRIPTS TESTS HELP LOGS TMP\nRemarques:\n  DBF, INDEXES et LMDB sont lies a l'espace de travail COURANT (R131) ; WORKSPACE SWITCH les restaure.\n  IN <ws-or-handle> lie ces trois a un espace de travail NOMME et laisse les emplacements de la session inchanges." },
+        { MessageId::SetPathResetText, "fr", "reinitialise aux valeurs par defaut." },
+        { MessageId::SetPathUnknownSlotText, "fr", "emplacement inconnu : {slot}" },
+        { MessageId::SetPathWarnMissingText, "fr", "avertissement : le chemin n'existe pas" },
+        { MessageId::SetPathWarnExpectedDirectoryText, "fr", "avertissement : repertoire attendu, fichier trouve" },
         { MessageId::CmdHelpNoTopicMatched,    "fr", "aucun sujet HELP DATA actuel ne correspond a \"{topic}\"." },
         { MessageId::CmdHelpSummaryTip,        "fr", "Conseil : executez CMDHELP sans arguments pour un resume HELP DATA." },
         { MessageId::CmdHelpCurrentBuildWritten, "fr", "CMDHELP a ecrit HELP DATA courant -> {dir}" },
@@ -12510,6 +12595,11 @@ const std::vector<MessageTextDef>& all_message_texts()
         ,{ MessageId::HelpTopLevelHint,         "de", "Geben Sie HELP GIANT, HELP BETA, HELP PS, HELP SQL, HELP FUNCTION <name> oder HELP <command> ein" }
         ,{ MessageId::CmdHelpCurrentLoadFailed, "de", "Aktuelle HELP-DATA-Zeilen aus \"{dir}\" konnten nicht geladen werden." }
         ,{ MessageId::CmdHelpBuildTip,          "de", "Hinweis: Fuehren Sie CMDHELP BUILD . <source-root> aus" }
+        ,{ MessageId::SetPathUsageText, "de", "Verwendung:\n  SETPATH\n  SETPATH USAGE\n  SETPATH RESET\n  SETPATH <slot> [TO|=] <path>\n  SET PATH <slot> [TO|=] <path>\n  SET PATH <slot> [TO|=] <path> IN <ws-or-handle>\nSlots:\n  DATA DBF XDBF INDEXES LMDB WORKSPACES SCHEMAS PROJECTS SCRIPTS TESTS HELP LOGS TMP\nHinweise:\n  DBF, INDEXES und LMDB sind an den AKTUELLEN Arbeitsbereich gebunden (R131); WORKSPACE SWITCH stellt sie wieder her.\n  IN <ws-or-handle> bindet diese drei an einen BENANNTEN Arbeitsbereich und laesst die Sitzungs-Slots unveraendert." }
+        ,{ MessageId::SetPathResetText, "de", "auf Standardwerte zurueckgesetzt." }
+        ,{ MessageId::SetPathUnknownSlotText, "de", "unbekannter Slot: {slot}" }
+        ,{ MessageId::SetPathWarnMissingText, "de", "Warnung: Pfad existiert nicht" }
+        ,{ MessageId::SetPathWarnExpectedDirectoryText, "de", "Warnung: Verzeichnis erwartet, Datei gefunden" }
         ,{ MessageId::CmdHelpNoTopicMatched,    "de", "Kein aktuelles HELP-DATA-Thema stimmt mit \"{topic}\" ueberein." }
         ,{ MessageId::CmdHelpSummaryTip,        "de", "Hinweis: Fuehren Sie CMDHELP ohne Argumente fuer eine HELP-DATA-Zusammenfassung aus." }
         ,{ MessageId::CmdHelpCurrentBuildWritten, "de", "CMDHELP hat aktuelle HELP DATA geschrieben -> {dir}" }
@@ -12566,7 +12656,7 @@ const std::vector<MessageTextDef>& all_message_texts()
         ,{ MessageId::CloseUsageText, "en-US", "Usage:\n  CLOSE USAGE\n  CLOSE\n  CLOSE ALL\nNotes:\n  - CLOSE closes the current work area.\n  - CLOSE ALL clears all relations before closing the current work area.\n  - Dirty table-buffer state may prompt or cancel close." }
         ,{ MessageId::CloseCanceledText, "en-US", "CLOSE canceled." }
         ,{ MessageId::CloseCompletedText, "en-US", "Closed." }
-        ,{ MessageId::CdxUsageText, "en-US", "Usage:\n  CDX USAGE\n  CDX INFO [<path.cdx>]\n  CDX TAGS [<path.cdx>]\n  CDX CREATE [<path.cdx>]\n  CDX ADDTAG <name> [<path.cdx>]\n  CDX DROPTAG <name> [<path.cdx>]\nNotes:\n  - CDX with no arguments shows usage.\n  - CREATE refuses to overwrite an existing CDX file.\n  - INFO/TAGS inspect metadata; ADDTAG/DROPTAG mutate tag metadata." }
+        ,{ MessageId::CdxUsageText, "en-US", "Usage:\n  CDX USAGE\n  CDX INFO [<path.cdx>]\n  CDX TAGS [<path.cdx>]\n  CDX CREATE [<path.cdx>]\n  CDX ADDTAG <name> [<path.cdx>]\n  CDX DROPTAG <name> [<path.cdx>]\nNotes:\n  - CDX with no arguments shows usage.\n  - CREATE refuses to overwrite an existing CDX file.\n  - INFO/TAGS inspect metadata; ADDTAG/DROPTAG mutate tag metadata.\n  - ADDTAG requires an OPEN TABLE and refuses a <name> that is not one of its fields: a tag IS a field name, and BUILDLMDB builds each tag from the field of that name." }
         ,{ MessageId::CdxCreateUnableResolvePathText, "en-US", "unable to resolve path." }
         ,{ MessageId::CdxCreateFileExistsText, "en-US", "file already exists: \"{path}\"" }
         ,{ MessageId::CdxCreateOpenFailedText, "en-US", "open/create failed." }
@@ -12585,13 +12675,32 @@ const std::vector<MessageTextDef>& all_message_texts()
         ,{ MessageId::CdxAddTagOpenFailedText, "en-US", "open failed." }
         ,{ MessageId::CdxAddTagAlreadyExistsText, "en-US", "tag already exists." }
         ,{ MessageId::CdxAddTagAddedText, "en-US", "added '{tag}'." }
+        ,{ MessageId::CdxAddTagNoFileOpenText, "en-US", "no file open. A tag names a FIELD, so the table must be open to check it exists. BUILDLMDB requires one too." }
+        ,{ MessageId::CnxAddTagNoFileOpenText, "en-US", "no file open. A tag names a FIELD, so the table must be open to check it exists. REBUILD requires one too." }
+        ,{ MessageId::CnxAddTagFieldNotFoundText, "en-US", "field not found: '{name}'. A CNX tag IS a field name, and neither build path will tell you otherwise later -- REBUILD reports OK for every tag in the directory whatever happened. Nothing was added." }
+        ,{ MessageId::DbareaOwningWorkspaceLineText, "en-US", "Owning workspace" }
+        ,{ MessageId::DbareaCurrentWorkspaceLineText, "en-US", "Current workspace" }
+        ,{ MessageId::GpsWorkspaceLineText, "en-US", "  Workspace: owning {owner} (handle {owner_handle}) ... current {current} (handle {current_handle})" }
+        ,{ MessageId::DbareaOwningWorkspaceLineText, "es", "Espacio de trabajo propietario" }
+        ,{ MessageId::DbareaOwningWorkspaceLineText, "fr", "Espace de travail propriétaire" }
+        ,{ MessageId::DbareaOwningWorkspaceLineText, "de", "Besitzender Arbeitsbereich" }
+        ,{ MessageId::DbareaOwningWorkspaceLineText, "it", "Spazio di lavoro proprietario" }
+        ,{ MessageId::DbareaCurrentWorkspaceLineText, "es", "Espacio de trabajo actual" }
+        ,{ MessageId::DbareaCurrentWorkspaceLineText, "fr", "Espace de travail actuel" }
+        ,{ MessageId::DbareaCurrentWorkspaceLineText, "de", "Aktueller Arbeitsbereich" }
+        ,{ MessageId::DbareaCurrentWorkspaceLineText, "it", "Spazio di lavoro corrente" }
+        ,{ MessageId::GpsWorkspaceLineText, "es", "  Espacio de trabajo: propietario {owner} (handle {owner_handle}) ... actual {current} (handle {current_handle})" }
+        ,{ MessageId::GpsWorkspaceLineText, "fr", "  Espace de travail : propriétaire {owner} (handle {owner_handle}) ... actuel {current} (handle {current_handle})" }
+        ,{ MessageId::GpsWorkspaceLineText, "de", "  Arbeitsbereich: Besitzer {owner} (handle {owner_handle}) ... aktuell {current} (handle {current_handle})" }
+        ,{ MessageId::GpsWorkspaceLineText, "it", "  Spazio di lavoro: proprietario {owner} (handle {owner_handle}) ... corrente {current} (handle {current_handle})" }
+        ,{ MessageId::CdxAddTagFieldNotFoundText, "en-US", "field not found: '{name}'. A CDX tag IS a field name -- BUILDLMDB builds each tag FROM the field of that name -- so a tag naming no field could never be built. Nothing was added." }
         ,{ MessageId::CdxDropTagMissingNameText, "en-US", "missing <name>." }
         ,{ MessageId::CdxDropTagUnableResolvePathText, "en-US", "unable to resolve path." }
         ,{ MessageId::CdxDropTagOpenFailedText, "en-US", "open failed." }
         ,{ MessageId::CdxDropTagNotFoundText, "en-US", "not found." }
         ,{ MessageId::CdxDropTagRemovedText, "en-US", "removed '{tag}'." }
         ,{ MessageId::CdxUnknownSubcommandText, "en-US", "unknown subcommand: {subcommand}" }
-        ,{ MessageId::CnxUsageText, "en-US", "Usage:\n  CNX USAGE\n  CNX INFO [<path.cnx>]\n  CNX TAGS [<path.cnx>]\n  CNX CREATE [<path.cnx>]\n  CNX ADDTAG <name> [<path.cnx>]\n  CNX DROPTAG <name> [<path.cnx>]\n  CNX WALK <tag> [<path.cnx>]\n  CNX TRACE <tag> [<path.cnx>]\nNotes:\n  - CNX with no arguments shows usage.\n  - CREATE refuses to overwrite an existing CNX file.\n  - INFO/TAGS/WALK/TRACE inspect metadata; ADDTAG/DROPTAG mutate tag metadata." }
+        ,{ MessageId::CnxUsageText, "en-US", "Usage:\n  CNX USAGE\n  CNX INFO [<path.cnx>]\n  CNX TAGS [<path.cnx>]\n  CNX CREATE [<path.cnx>]\n  CNX ADDTAG <name> [<path.cnx>]\n  CNX DROPTAG <name> [<path.cnx>]\n  CNX WALK <tag> [<path.cnx>]\n  CNX TRACE <tag> [<path.cnx>]\nNotes:\n  - CNX with no arguments shows usage.\n  - CREATE refuses to overwrite an existing CNX file.\n  - INFO/TAGS/WALK/TRACE inspect metadata; ADDTAG/DROPTAG mutate tag metadata.\n  - ADDTAG requires an OPEN TABLE and refuses a <name> that is not one of its fields: a tag IS a field name, and neither build path will say otherwise later -- REBUILD reports OK for every tag in the directory." }
         ,{ MessageId::CnxCreateUnableResolvePathText, "en-US", "unable to resolve path." }
         ,{ MessageId::CnxCreateFileExistsText, "en-US", "file already exists: \"{path}\"" }
         ,{ MessageId::CnxCreateOpenFailedText, "en-US", "open/create failed." }

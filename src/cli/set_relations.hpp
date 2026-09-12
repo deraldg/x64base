@@ -10,6 +10,8 @@
 // src/cli/set_relations.hpp
 #pragma once
 
+#include <cstdint>
+
 #include <cstddef>
 #include <functional>
 #include <string>
@@ -56,6 +58,12 @@ bool remove_relation(const std::string& parent_area,
 
 void clear_relations(const std::string& parent_area);
 void clear_all_relations();
+
+// AIF-078 I1.2. The relation store is partitioned by workspace handle, so a
+// caller now has to say WHICH relations it means. clear_all_relations() is the
+// CURRENT workspace's; these two are the other two honest answers.
+void clear_all_relations_for(std::uint64_t ws);   // exactly one workspace
+void clear_all_relations_everywhere();            // every workspace, deliberately
 
 // Parent "anchor" (the starting parent for traversal when refreshing)
 void set_current_parent_name(const std::string& logical_name) noexcept;

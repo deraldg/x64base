@@ -72,21 +72,24 @@ static fs::path relative_under_root(const fs::path& path, const fs::path& root)
     return rel;
 }
 
-static fs::path resolve_in_search_roots(const std::string& token,
-                                        const std::vector<fs::path>& roots,
-                                        const std::string& default_ext = "")
+// Returns an EXISTING path or EMPTY. No fallback, no invention.
+//
+// AIF-145 R-a: split out of resolve_in_search_roots so a caller can ask "is it
+// here?" and act on no. The old function could not be reused for a multi-
+// extension search because it never returns empty -- it always falls back to
+// roots.front(), so a caller had no way to learn that this extension missed and
+// the next should be tried.
+static fs::path find_in_search_roots(const std::string& token,
+                                     const std::vector<fs::path>& roots,
+                                     const std::string& default_ext = "")
 {
     fs::path p(token);
 
     if (!default_ext.empty() && !p.has_extension())
         p.replace_extension(default_ext);
 
-    if (p.is_absolute()) {
-        fs::path found = abs_if_exists(p);
-        if (!found.empty())
-            return found;
-        return fs::absolute(p);
-    }
+    if (p.is_absolute())
+        return abs_if_exists(p);
 
     {
         fs::path found = abs_if_exists(p);
@@ -94,21 +97,38 @@ static fs::path resolve_in_search_roots(const std::string& token,
             return found;
     }
 
-    if (has_any_sep(token)) {
-        fs::path data_relative = state().data_root / p;
-        fs::path found = abs_if_exists(data_relative);
-        if (!found.empty())
-            return found;
-
-        return fs::absolute(data_relative);
-    }
+    if (has_any_sep(token))
+        return abs_if_exists(state().data_root / p);
 
     for (const auto& root : roots) {
-        fs::path candidate = root / p;
-        fs::path found = abs_if_exists(candidate);
+        fs::path found = abs_if_exists(root / p);
         if (!found.empty())
             return found;
     }
+
+    return {};
+}
+
+// Unchanged in behaviour: find, else invent the conventional location. Every
+// fallback below is exactly what this function returned before the split, in
+// the same order and for the same inputs.
+static fs::path resolve_in_search_roots(const std::string& token,
+                                        const std::vector<fs::path>& roots,
+                                        const std::string& default_ext = "")
+{
+    fs::path found = find_in_search_roots(token, roots, default_ext);
+    if (!found.empty())
+        return found;
+
+    fs::path p(token);
+    if (!default_ext.empty() && !p.has_extension())
+        p.replace_extension(default_ext);
+
+    if (p.is_absolute())
+        return fs::absolute(p);
+
+    if (has_any_sep(token))
+        return fs::absolute(state().data_root / p);
 
     if (!roots.empty())
         return fs::absolute(roots.front() / p);
@@ -186,9 +206,53 @@ fs::path resolve_lmdb_env_for_cdx(const fs::path& public_cdx_path)
     return fs::absolute(root / fs::path(name.string() + ".d"));
 }
 
+// AIF-145 R-a. Before this, ladder 2 could not do ERSATZ's job and therefore
+// could not replace it. Two capabilities were missing, both transcribed from
+// cmd_ersatz.cpp:588-612, which was the only implementation that had them:
+//
+// (1) AN EMPTY NAME MEANS "default". ERSATZ has always done this.
+//
+// (2) THE EXTENSION IS THE OUTER LOOP, and the order is load-bearing. A posture
+//     may be `.dtschema` or `.dtschemas`. `.dtschema` is tried across EVERY
+//     root before `.dtschemas` is tried anywhere, so a `.dtschemas` sitting on
+//     a user rung does NOT beat a `.dtschema` in data. Inverting those loops
+//     would silently change which file a name resolves to, which is the whole
+//     defect this consolidation exists to end -- so the loop order is stated
+//     here rather than left to be inferred from the nesting.
+//
+// A token that already carries an extension is taken as given, exactly as
+// before, and no extension is appended.
+//
+// Callers: ERSATZ's resolve_workspace_target redirects here (b01ca5127). The
+// comment that stood here said this function had NO CALLERS -- true when it
+// was written one commit earlier, false the moment step 2 landed. Building the
+// capability and switching the callers are still separate commits on purpose:
+// the first cannot change behaviour, the second changes it observably.
 fs::path resolve_workspace(const std::string& token)
 {
-    return resolve_in_search_roots(token, workspace_search_roots());
+    std::string target = token;
+    {
+        const auto b = target.find_first_not_of(" \t\r\n");
+        const auto e = target.find_last_not_of(" \t\r\n");
+        target = (b == std::string::npos) ? std::string() : target.substr(b, e - b + 1);
+    }
+    if (target.empty())
+        target = "default";
+
+    if (fs::path(target).has_extension())
+        return resolve_in_search_roots(target, workspace_search_roots());
+
+    for (const char* ext : {".dtschema", ".dtschemas"}) {
+        fs::path found = find_in_search_roots(target, workspace_search_roots(), ext);
+        if (!found.empty())
+            return found;
+    }
+
+    // Nothing exists under either extension. Name the conventional location,
+    // which is the first search root under the primary extension -- the same
+    // shape of answer resolve_in_search_roots gives, and the same one ERSATZ's
+    // fallback_in_current_user_root gave.
+    return resolve_in_search_roots(target, workspace_search_roots(), ".dtschema");
 }
 
 fs::path resolve_test(const std::string& token)
@@ -208,6 +272,70 @@ fs::path resolve_script(const std::string& token)
 {
     return resolve_in_search_roots(token, script_search_roots());
 }
+
+// ---------------------------------------------------------------------------
+// AIF-145 R-a step 3: the last two resolvers ERSATZ kept to itself.
+//
+// Both are ladder-3 copies being brought home. Each is the ladder-2 search
+// applied to the roots that kind of file lives in, with the extension that
+// kind of file uses -- nothing more. They are separate functions rather than
+// an extension parameter because the extension is a property of the FILE KIND,
+// and a caller that has to name ".erz" at the call site is a caller that can
+// name the wrong one.
+//
+// ONE behavioural difference is carried over deliberately, and it is not a
+// silent one. For a token that CONTAINS A SEPARATOR AND DOES NOT EXIST:
+//
+//   ERSATZ's fallback invented   <current-user root>/<token>
+//   ladder 2 invents             <data root>/<token>
+//
+// For every token that resolves to a file that exists, and for every bare
+// name, the two agree exactly. The difference is only in the path that gets
+// NAMED when nothing was found -- an invented answer either way. Ladder 2's is
+// the one that wins, because the ruling was ladder 2, and because inventing
+// under the data root is what every other resolve_* in this file does. A
+// caller that treats "not found" as "here is where it would go" and then
+// writes there will write to a different directory than before. Both are
+// reported to the user as the resolved path, so this is visible, not silent.
+//
+// These functions have NO CALLERS as of this commit, by design.
+// ---------------------------------------------------------------------------
+
+namespace {
+
+// The empty-name default is ERSATZ's, preserved: an omitted target means
+// "default", not "the current directory".
+static std::string trimmed_or_default(const std::string& token)
+{
+    const auto b = token.find_first_not_of(" \t\r\n");
+    const auto e = token.find_last_not_of(" \t\r\n");
+    const std::string t =
+        (b == std::string::npos) ? std::string() : token.substr(b, e - b + 1);
+    return t.empty() ? std::string("default") : t;
+}
+
+} // namespace
+
+fs::path resolve_ersatz_profile(const std::string& token)
+{
+    return resolve_in_search_roots(trimmed_or_default(token),
+                                   workspace_search_roots(), ".erz");
+}
+
+fs::path resolve_ersatz_script(const std::string& token)
+{
+    return resolve_in_search_roots(trimmed_or_default(token),
+                                   script_search_roots(), ".dot");
+}
+
+// NOTE, not a change: resolve_script() above passes NO default extension,
+// while resolve_ersatz_script passes ".dot" and shell_resolve_script_path()
+// (src/cli/shell_api.cpp:228) defaults to ".dts" and searches the SCRIPT STACK
+// first. That is three different answers to "what is a script path", and the
+// live one for DO/DOTSCRIPT is shell_resolve_script_path -- resolve_script()
+// has zero callers. The workspace side of this divergence is what R-a rules
+// on; the script side is wider and is NOT settled here. Do not fold these
+// together on the assumption that R-a already did it.
 
 fs::path resolve_project(const std::string& token)
 {

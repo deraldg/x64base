@@ -46,6 +46,7 @@
 #include "help/helpdata_messages.hpp"
 #include "xbase.hpp"
 
+#include "workarea_util.hpp"
 extern "C" xbase::XBaseEngine* shell_engine();
 
 using namespace dottalk::table;
@@ -192,24 +193,14 @@ static std::string stale_fields_string_for_area(xbase::DbArea& A, int area0) {
     return std::string(" [") + out + "]";
 }
 
-static int resolve_current_index(xbase::DbArea& A) {
-    xbase::XBaseEngine* eng = shell_engine();
-    if (!eng) return -1;
-
-    for (int i = 0; i < xbase::MAX_AREA; ++i) {
-        if (&eng->area(i) == &A) return i;
-    }
-    return -1;
-}
-
 static std::vector<int> default_current_target(xbase::DbArea& current) {
-    auto* eng = shell_engine();
-    if (!eng) return {};
-
-    for (int i = 0; i < xbase::MAX_AREA; ++i) {
-        if (&eng->area(i) == &current) return {i};
-    }
-    return {};
+    // AIF-120 I1.1 sweep, 2026-08-22. Was a MAX_AREA pointer-identity scan for a
+    // number DbArea::_engine_slot already carries. The empty-vector-on-miss
+    // contract is preserved exactly: slot_of_area answers -1 for an area the
+    // engine never stamped, which is the same set the scan failed to find.
+    const int slot = cli::slot_of_area(&current);
+    if (slot < 0) return {};
+    return {slot};
 }
 
 // ---- Display Functions -----------------------------------------------------
@@ -278,12 +269,51 @@ static void table_show(bool show_all_slots) {
 
 // ---- State Mutation Helpers ------------------------------------------------
 
+// The redo log is a sidecar of the DBF (`<dbf>.tbj`), so recovery-on-open can
+// find it from the table's filename. Look it up from the engine's area slot.
+//
+// DECLARED HERE, ABOVE apply_one, because the SYS guard below needs it too: a
+// refusal that turns on a table's LOCATION cannot be written without the path.
+static std::string area_dbf_filename(int area0) {
+    auto* eng = shell_engine();
+    if (!eng || !in_range(area0)) return {};
+    try { return eng->area(area0).filename(); } catch (...) { return {}; }
+}
+
+// AIF-160: A TABLE UNDER SYS IS NEVER BUFFERED, AND THE REFUSAL IS THE GUARD.
+//
+// SYS holds engine state that cannot be rebuilt -- the multi-area commit group
+// log first among them. Buffering one routes its writes through the WAL, which
+// would let it acquire a `.tbj`; and recovering a prepared span means asking the
+// group log whether its group committed, so a group log carrying its own journal
+// would have to be recovered by consulting itself.
+//
+// TODAY THAT CANNOT HAPPEN BECAUSE writeCurrent() IS THE DIRECT PATH. That is a
+// property of the current code and not a guarantee, so the rule is enforced at
+// the command surface rather than left as a comment somebody later refactors
+// past. Its twin lives in recover_table_buffer_journal(), which skips SYS
+// outright -- belt where this is braces.
+static bool refuse_if_engine_state(int area0, const char* what) {
+    const std::string file = area_dbf_filename(area0);
+    if (file.empty() || !dottalk::table::is_engine_state_file(file)) return false;
+    std::cout << "TABLE BUFFER: refused for area " << area0 << " -- " << what << "\n"
+                 "  " << file << "\n"
+                 "  This table is ENGINE STATE under the SYS slot. It is written\n"
+                 "  directly and is never buffered, because a buffered write goes\n"
+                 "  through the WAL and journal recovery must be able to consult\n"
+                 "  engine state WITHOUT first recovering it. Nothing was changed.\n";
+    return true;
+}
+
 static int apply_one(int area0, const std::string& verb, bool value) {
     if (!in_range(area0)) return 0;
 
     int changed = 0;
 
     if (verb == "enabled") {
+        // Only turning it ON is refused. Turning it OFF on a SYS table must
+        // stay possible: a refusal that blocked the way out would be a trap.
+        if (value && refuse_if_engine_state(area0, "TABLE BUFFER ON")) return 0;
         const bool old = is_enabled(area0);
         if (old != value) {
             set_enabled(area0, value);
@@ -324,19 +354,17 @@ static void apply_to_targets(const std::vector<int>& targets,
         {{"count", std::to_string(changed)}});
 }
 
-// The redo log is a sidecar of the DBF (`<dbf>.tbj`), so recovery-on-open can
-// find it from the table's filename. Look it up from the engine's area slot.
-static std::string area_dbf_filename(int area0) {
-    auto* eng = shell_engine();
-    if (!eng || !in_range(area0)) return {};
-    try { return eng->area(area0).filename(); } catch (...) { return {}; }
-}
-
 static void apply_persistence_to_targets(const std::vector<int>& targets,
                                          BufferPersistenceMode mode) {
     int changed = 0;
     for (int a : targets) {
         if (!in_range(a)) continue;
+        // RamOnly is the default and takes no journal, so it is not refused --
+        // same reasoning as turning the buffer OFF above.
+        if (mode != BufferPersistenceMode::RamOnly &&
+            refuse_if_engine_state(a, "TABLE BUFFER PERSISTENT")) {
+            continue;
+        }
         if (persistence_mode(a) != mode) {
             set_persistence_mode(a, mode);
             ++changed;
@@ -496,7 +524,7 @@ static void table_buffer_testadd(const std::string& arg, xbase::DbArea& current_
               << ", field1=" << field1
               << ", value='" << value << "'\n";
 
-    const int curr = resolve_current_index(current_area);
+    const int curr = cli::slot_of_area(&current_area);
     if (curr < 0 || !is_enabled(curr)) {
         cli::cmdout::print_prefixed_message(
             "TABLE BUFFER",
@@ -527,7 +555,7 @@ static void table_buffer_dispatch(const std::string& rest, xbase::DbArea& curren
                 table_buffer_status(i);
             }
         } else if (arg.empty()) {
-            const int curr = resolve_current_index(current_area);
+            const int curr = cli::slot_of_area(&current_area);
             if (curr >= 0 && is_enabled(curr)) {
                 table_buffer_status(curr);
             } else {
@@ -554,7 +582,7 @@ static void table_buffer_dispatch(const std::string& rest, xbase::DbArea& curren
                 table_buffer_dump(i);
             }
         } else if (arg.empty()) {
-            const int curr = resolve_current_index(current_area);
+            const int curr = cli::slot_of_area(&current_area);
             if (curr >= 0 && is_enabled(curr)) {
                 table_buffer_dump(curr);
             } else {

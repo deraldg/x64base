@@ -10,7 +10,7 @@
 // include/cli/vdisk_config.hpp
 #pragma once
 //
-// [vdisk] admin config (AIF-043). A small, optional true-INI file — bin/vdisk.ini —
+// [vdisk] admin config (AIF-043). A small, optional true-INI file -- bin/vdisk.ini --
 // parsed into a VDiskConfig. It governs the RAM virtual disk: an optional root
 // override, the Layer-1 sizing recommendation (advisory), and the Layer-2 soft
 // budget (warn high-water + on_full policy) applied against xbase::ramfs used bytes.
@@ -45,6 +45,12 @@ struct VDiskConfig {
 const char* mode_name(Mode m) noexcept;
 const char* on_full_name(OnFull f) noexcept;
 
+// AIF-120. Where the admin config lives: BIN/vdisk.ini, beside dottalkpp.ini
+// and init.ini. This was a static helper inside cmd_vdisk.cpp; hydration
+// admission needs the same file, and a path convention with two copies is the
+// shape this lane keeps finding at the bottom of its bugs.
+std::string default_ini_path();
+
 // Parse an INI file for the [vdisk] block. Missing file/block => present=false.
 // Comments: lines beginning with ; # or *; inline ;/# after a value are trimmed.
 // Unknown keys ignored; missing keys keep the defaults above.
@@ -52,7 +58,7 @@ VDiskConfig load_vdisk_config(const std::string& ini_path);
 
 // Layer-1 sizing recommendation (bytes): honors mode, then clamps to
 // [floor_mb, ceil_mb], then caps at half of physical RAM (never starve the host).
-// Advisory only — the OS mount is the hard limit.
+// Advisory only -- the OS mount is the hard limit.
 std::uint64_t recommended_budget_bytes(const VDiskConfig& cfg);
 
 // Platform physical / available RAM (bytes); 0 if unavailable.

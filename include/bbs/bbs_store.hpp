@@ -7,7 +7,7 @@
 // owner: member.derald
 // status: supported
 
-// bbs_store.hpp — DBF-backed store for the AI-BBS board (M1). Public API.
+// bbs_store.hpp -- DBF-backed store for the AI-BBS board (M1). Public API.
 //
 // Mirrors include/identity/identity_dbf_store.hpp. All values cross the DbArea
 // boundary as strings; ids are 64-bit stored as decimal text.

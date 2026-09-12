@@ -18,7 +18,7 @@
 // mutates: none
 // usage-access: BUILDVECTORS
 // summary:
-//   Report the compiled engine capacity "build vectors" (AIF-044) — the selected
+//   Report the compiled engine capacity "build vectors" (AIF-044) -- the selected
 //   maximums this binary was configured with, plus a fingerprint.
 //
 // usage:

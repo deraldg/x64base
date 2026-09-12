@@ -46,10 +46,44 @@ if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/memo/CMakeLists.txt")
   add_subdirectory(memo)
 endif()
 
+# AIF-120. xbase's dbarea.cpp constructs and closes a dottalk::memo::MemoManager,
+# so xbase depends on memo exactly as much as memo depends on xbase
+# (src/memo/CMakeLists.txt:32). Only the second edge was ever declared. CMake
+# therefore had no reason to emit memo after xbase or to repeat either archive,
+# and GNU ld -- which scans left to right and resolves only undefineds it
+# already knows about -- could not satisfy dbarea.o's two references when
+# libxbase.a was scanned last. Declaring the real cycle is what lets CMake
+# repeat the archives; that is what static-library cycles are for.
+#
+# This cannot live in src/xbase/CMakeLists.txt: xbase is added above, before the
+# memo target exists.
+#
+# Nothing recompiles. memo's one PUBLIC compile definition (DOTTALK_WITH_INDEX)
+# is already on xbase's command line from the common settings, and no xbase
+# source reads it; memo's PUBLIC include directory is the same include root
+# xbase already carries.
+#
+# MSVC never showed this -- link.exe resolves across all inputs regardless of
+# order -- so every Windows build has always been clean. On Linux, survival was
+# decided by declaration shape: src/tests/CMakeLists.txt:53 names
+# "PRIVATE xbase memo" in one call and gets a second xbase entry by accident,
+# while src/gui/core names them in two PUBLIC calls and gets one, placed after
+# memo. Same true dependency, opposite outcome.
+if (TARGET xbase AND TARGET memo)
+  target_link_libraries(xbase PUBLIC memo)
+endif()
+
 # Phase 1: xexpr is a facade over the existing CLI expression layer.
 # It must be added before dottalkpp so the target exists for top-level common settings.
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/xexpr/CMakeLists.txt")
   add_subdirectory(xexpr)
+endif()
+
+# SQLsel is a statement engine consumer over xbase/xexpr/tuple seams. Keep its
+# object code out of the CLI executable so other frontends can link it without
+# inheriting the command registry.
+if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/sqlsel/CMakeLists.txt")
+  add_subdirectory(sqlsel)
 endif()
 
 # ---- DotTalk Value (DTV) domain foundation -----------------------------------
@@ -101,6 +135,7 @@ set(_EXCLUDE_DIRS
   "${CMAKE_CURRENT_SOURCE_DIR}/xbase"
   "${CMAKE_CURRENT_SOURCE_DIR}/xindex"
   "${CMAKE_CURRENT_SOURCE_DIR}/xexpr"
+  "${CMAKE_CURRENT_SOURCE_DIR}/sqlsel"
   "${CMAKE_CURRENT_SOURCE_DIR}/value"      # dottalk_value (DTV) built as a separate lib
   "${CMAKE_CURRENT_SOURCE_DIR}/reference"  # dottalk_value (DTV) built as a separate lib
   "${CMAKE_CURRENT_SOURCE_DIR}/memo"
@@ -151,6 +186,7 @@ set(DOTTALKPP_SOURCES "${DOTTALKPP_SOURCES_FILTERED}")
 # implementation is owned exclusively by xbase.lib.
 list(REMOVE_ITEM DOTTALKPP_SOURCES
   "${CMAKE_SOURCE_DIR}/src/cli/record_view.cpp"
+  "${CMAKE_SOURCE_DIR}/src/cli/sqlsel_statement.cpp"
   "${CMAKE_SOURCE_DIR}/src/cli/index_summary_none.cpp"
   # Stale duplicate of xbase::dbf_create::create_dbf. When globbed into the CLI
   # it links into the exe and shadows xbase.lib's ramfs-aware create_dbf (the
@@ -188,7 +224,6 @@ if (NOT DOTTALK_HAS_XINDEX)
     "${CMAKE_SOURCE_DIR}/src/cli/cmd_setorder.cpp"
     "${CMAKE_SOURCE_DIR}/src/cli/index_legacy.cpp"
     "${CMAKE_SOURCE_DIR}/src/cli/index_legacy_loader.cpp"
-    "${CMAKE_SOURCE_DIR}/src/cli/index_resolver.cpp"
     "${CMAKE_SOURCE_DIR}/src/cli/index_summary.cpp"
     "${CMAKE_SOURCE_DIR}/src/cli/index_utils.cpp"
     "${CMAKE_SOURCE_DIR}/src/cli/inx_meta.cpp"
@@ -379,6 +414,7 @@ file(GLOB_RECURSE _dottalk_lib_srcs CONFIGURE_DEPENDS
   "${CMAKE_CURRENT_SOURCE_DIR}/xbase/*.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/xindex/*.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/xexpr/*.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/sqlsel/*.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/value/*.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/memo/*.cpp"
 )
@@ -454,19 +490,14 @@ if (DOTTALK_WITH_WX)
   add_subdirectory(gui/wx)
 endif()
 
-# 3.2) PALETTE command: by default, provide a stub so scripts don't explode
-set(_gen_dir "${CMAKE_CURRENT_BINARY_DIR}/generated")
-file(MAKE_DIRECTORY "${_gen_dir}")
-set(_shim "${_gen_dir}/cmd_palette_stub.cpp")
-file(WRITE "${_shim}" [=[
-  #include <sstream>
-  #include <iostream>
-  namespace xbase { class DbArea; }
-  extern "C" void cmd_PALETTE(xbase::DbArea&, std::istringstream&) {
-      std::cerr << "PALETTE not available in this build.\n";
-  }
-]=])
-target_sources(dottalkpp PRIVATE "${_shim}")
+# 3.2) PALETTE command: a stub so scripts don't explode.
+#
+# AIF-122. This block used to GENERATE the stub with file(WRITE) on every
+# configure. file(WRITE) is not copy-if-different, so it rewrote identical
+# bytes with a fresh mtime and cost one recompile per configure; and its body
+# was a bracket argument with nothing to substitute -- a constant, generated.
+# The stub is now src/cli/cmd_palette_stub.cpp, picked up by the GLOB_RECURSE
+# above like every other command, so there is nothing to list here.
 
 # 3.3) Optional standalone fox_palette.exe (opt-in)
 if (DOTTALK_WITH_TV AND DOTTALK_BUILD_PALETTE_EXE)
@@ -532,6 +563,10 @@ endif()
 
 if (TARGET dottalk_value)
   target_link_libraries(dottalkpp PRIVATE dottalk_value)
+endif()
+
+if (TARGET sqlsel)
+  target_link_libraries(dottalkpp PRIVATE sqlsel)
 endif()
 
 # AI-BBS lane libs (libsodium/ws2_32) are linked at the top level, where
