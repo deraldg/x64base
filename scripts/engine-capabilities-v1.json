@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "generated_by": "tools/reports/engine_capabilities.py",
-  "generated_from": "src/cli/cmd_regression.cpp (kRegressionSpecs)",
+  "generated_from": "src/cli/cmd_regression.cpp (kRegressionSpecs + explicit-run dispatch)",
   "spec_totals": {
-    "registered": 77,
-    "default_suite": 28
+    "registered": 83,
+    "default_suite": 29
   },
   "capabilities": [
     {
@@ -20,6 +20,7 @@
         "SQLSEL_INNER_JOIN",
         "SQLSEL_JOIN_EDGES"
       ],
+      "ops": [],
       "tokens": [
         "join",
         "inner join",
@@ -40,6 +41,7 @@
         "SQLSEL_LEFT_JOIN",
         "SQLSEL_JOIN_FAMILY"
       ],
+      "ops": [],
       "tokens": [
         "left join",
         "right join",
@@ -58,6 +60,7 @@
       "default_specs": [
         "SQLSEL_JOIN_FAMILY"
       ],
+      "ops": [],
       "tokens": [
         "cross join",
         "cartesian product"
@@ -72,6 +75,7 @@
         "SQLSEL_ADVANCED_JOIN"
       ],
       "default_specs": [],
+      "ops": [],
       "tokens": [
         "self-join",
         "self join",
@@ -88,6 +92,7 @@
         "SQLSEL_AGGREGATES"
       ],
       "default_specs": [],
+      "ops": [],
       "tokens": [
         "group by",
         "having clause",
@@ -103,6 +108,7 @@
         "SQLSEL_SUBQUERIES"
       ],
       "default_specs": [],
+      "ops": [],
       "tokens": [
         "subquery",
         "subqueries",
@@ -118,6 +124,7 @@
         "SQLSEL_SET_OPS"
       ],
       "default_specs": [],
+      "ops": [],
       "tokens": [
         "union all",
         "intersect",
@@ -134,6 +141,7 @@
         "SQLSEL_DML"
       ],
       "default_specs": [],
+      "ops": [],
       "tokens": [
         "sql dml",
         "sql insert",
@@ -156,6 +164,7 @@
         "SQLSEL_BUFFER_VIS",
         "EVALDIFF"
       ],
+      "ops": [],
       "tokens": [
         "sql select",
         "set-oriented select",
@@ -173,6 +182,7 @@
       "default_specs": [
         "NULLASSERT"
       ],
+      "ops": [],
       "tokens": [
         "null",
         "stored null",
@@ -198,6 +208,7 @@
         "RELSCOPE2",
         "WORKSPACE_SCOPE"
       ],
+      "ops": [],
       "tokens": [
         "multiple workspaces",
         "simultaneous workspaces",
@@ -215,6 +226,7 @@
         "WORKSPACE_WRITEBACK"
       ],
       "default_specs": [],
+      "ops": [],
       "tokens": [
         "memo-resident",
         "workspace in a memo",
@@ -230,6 +242,7 @@
         "INDEX_X64_CNX"
       ],
       "default_specs": [],
+      "ops": [],
       "tokens": [
         "cross-generation index",
         "cnx on x64"
@@ -245,10 +258,30 @@
         "WORKSPACE_RAM"
       ],
       "default_specs": [],
+      "ops": [],
       "tokens": [
         "ram disk",
         "in-memory table",
         "virtual disk"
+      ]
+    },
+    {
+      "id": "sql.txn.cross_table",
+      "title": "Cross-table atomic commit (one decision, N journals)",
+      "state": "explicit-run",
+      "severity": "review",
+      "specs": [
+        "SQLSEL_DML"
+      ],
+      "default_specs": [],
+      "ops": [
+        "GRPFAIL",
+        "GRPNATIVE"
+      ],
+      "tokens": [
+        "cross-table atomic commit",
+        "cross-table transaction",
+        "multi-table transaction"
       ]
     }
   ]
