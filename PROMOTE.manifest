@@ -15,16 +15,29 @@
 # runtime scaffold, launchers. ALLOW-LIST: of the clean dev files, only these
 # publish through the rebuild overlay.
 #
-# WHAT IT DOES NOT GOVERN (per labtalk/ai_portal/PROMOTION_MODEL_SEED_V1.md):
-# engine SOURCE and BUILD CONFIG -- src/, include/, bindings/, CMakeLists.txt,
-# CMakePresets.json, vcpkg*.json, cmake/ -- are NOT carried here. They reach
-# main through a reviewed branch created FROM main in sterilized C:\x64base
-# staging. Only the reviewed source slice is applied, cold-clone certified, and
-# merged into staging main. NEVER merge or push the development branch to main.
-# Overlaying dev's mixed working-tree source would push half-finished engine
-# code to main; the main-based source lane keeps it build-coherent. Source and
-# this projection can fall out of step -- ground published docs against main,
-# proven by a cold clone.
+# WHAT IT ALSO GOVERNS, as of 2026-09-12: engine SOURCE and BUILD CONFIG.
+# src/, include/, bindings/, cmake/, config/build_vectors.*, CMakeLists.txt,
+# CMakePresets.json and vcpkg*.json are carried HERE, through the one chain
+# above. There is no second route and no intermediate curated tree -- which is
+# what PROMOTION_PROCESS.md section 2 always said, before it carved out source.
+# NEVER merge or push the development branch to main; the overlay copies files,
+# not history, which is how it satisfies that rule by construction.
+#
+# THIS REVERSES THE EARLIER RULE, and it reverses on measurement, not taste.
+# The old text said overlaying dev's source "would push half-finished engine
+# code to main". That was TRUE while the overlay copied the WORKING TREE. Since
+# 651ce911a it copies only what git TRACKS, so uncommitted work cannot travel
+# and the hazard is gone. The second reason -- source must be build-coherent,
+# presets and CMakeLists and the src/ they configure travelling TOGETHER -- is
+# answered by carrying the COMPLETE tracked set (never a subset) and by
+# PROMOTION_PROCESS.md section 5 step 3, the staging build, now GATING rather
+# than optional. That build is the cold-clone certification.
+#
+# What the old route bought was curation: publish some committed source, hold
+# the rest. Measured 2026-09-12 -- it had not run since 2026-08-09, leaving main
+# 71 source files behind with NO src/sqlsel/ AT ALL, while this projection
+# published 1.1 manuals describing it. A curation gate nobody runs is worse than
+# a sync that always runs.
 #
 # SCOPE NOTE: this projection is scoped lean for a product-facing main --
 # metalevel docs, portal seeds, and doc-engine tools that the promotion model
@@ -54,7 +67,6 @@ LICENSE
 LICENSING.md
 README.md
 MANIFEST.txt
-PROMOTE.manifest
 BUILDING.md
 CHANGELOG.md
 RELEASE_NOTES.md
@@ -76,8 +88,46 @@ dottalkpp/bin/*.ico
 # NOTE: main currently carries BUILDING.md at docs/getting-started/BUILDING.md.
 # Reconcile to ONE canonical location before the next promotion.
 
-# (engine source + build config REMOVED -- git-managed, see header + the
-#  "NOT IN THIS MANIFEST BUT ON main" section below.)
+# --- build configuration (travels WITH src/; miss one and the clone fails) --
+# Verified against the build graph 2026-09-12: config/build_vectors.cmake is a
+# NON-OPTIONAL include at CMakeLists.txt:392 and configure_file consumes the two
+# .in templates. GLOBBED, NOT ENUMERATED, and that is the lesson. The first
+# attempt listed build_vectors.{cmake,hpp.in,json.in} after grepping for
+# configure_file and COUNTING three calls without reading their arguments; the
+# third names config/version_stamp.hpp.in (CMakeLists.txt:407) and the staging
+# configure died on it. The retry then added a coverage check, which immediately
+# found a SECOND miss: tools/packaging/build_product_inventory.py, run by
+# execute_process at CONFIGURE time with FATAL_ERROR on nonzero (:723), so a
+# clone cannot configure without it either. TWO misses, both by eye, both caught
+# mechanically -- which is why the check below is the part that matters, not
+# these globs. config/* takes all four templates and any future one;
+# config/package/ is untouched (non-recursive) and its three product manifests
+# stay listed individually with development.manifest deliberately excluded.
+# tools/packaging is not in the NOT PUBLISHED list -- that names manualgen,
+# fullstack_docs, gui_preview, ci, hygiene and staging -- it was simply never
+# allow-listed because source never travelled. cmake/ is an OPTIONAL
+# include (pydottalk). Every CMakeLists.txt in the build graph is reached by
+# src/** or bindings/** or the root entry here; tests/ and gui/uidef/ carry
+# CMakeLists.txt files the root never adds -- they are NOT build inputs.
+CMakeLists.txt
+CMakePresets.json
+vcpkg.json
+vcpkg-wsl.json
+cmake/**
+config/*
+tools/packaging/*
+# --- fixtures and sources the build graph names from OUTSIDE their own tree ---
+# Found 2026-09-12 by tmp/scan_build_inputs.ps1 after THREE misses by eye.
+#   tools/vfp/fixtures/*            src/tests/CMakeLists.txt:410 requires
+#       nullfix.DBF and nullwrote.DBF and FAILS the configure without them --
+#       "a lane whose only real-file proof can silently vanish has no real-file
+#       proof". Globbed: the directory is 26 tracked VFP fixtures and naming two
+#       is how the previous three misses happened.
+#   tests/test_where_cache_only.cpp  named by src/CMakeLists.txt, needed at link.
+#       NOT tests/* -- that sweeps in 65 scratch .txt files this manifest's own
+#       NOT PUBLISHED section rules out.
+tools/vfp/fixtures/*
+tests/test_where_cache_only.cpp
 
 # --- product edition manifests (development edition stays in dev) -----------
 config/package/lean.manifest
@@ -97,7 +147,12 @@ launch-common.ps1
 tk.run.ps1
 tk.run.sh
 
-# (C++ engine source + headers REMOVED -- git-managed, not overlaid.)
+# --- engine source + headers (the WHOLE tracked set, never a subset) --------
+# Subsetting is the one thing that breaks a build system. If a lane is not ready
+# to publish, do not publish a slice of it -- do not commit it to development.
+src/**
+include/**
+bindings/**
 
 # --- runtime scaffold (structure + ini; the exe is NOT published) ----------
 dottalkpp/bin/*.ini
@@ -176,15 +231,13 @@ DOTTALKPP_COMMAND_REFERENCE*.md
 # ###########################################################################
 # NOT IN THIS MANIFEST BUT LEGITIMATELY ON main -- reaches main via git
 # ###########################################################################
-# Engine source + build config are git-managed (a reviewed branch created from
-# main in C:\x64base staging -> cold-clone build -> merge to staging main), NOT
-# overlaid from dev's working tree and NEVER merged from development. They are
-# correctly present on main and MUST NOT be purged by a projection audit:
-#     src/**   include/**   bindings/**   (bindings = pydottalk C++ server source)
-#     CMakeLists.txt   CMakePresets.json   src/**/CMakeLists.txt   cmake/**
-#     vcpkg.json   vcpkg-wsl.json
-# The pydottalk Python server ships as part of the git-managed source tree, not
-# as a manifest projection lane.
+# EMPTY as of 2026-09-12. Engine source and build config used to live here; the
+# allow-list above now carries them, through the one chain. Nothing reaches main
+# by a route this manifest does not describe.
+#
+# A projection audit may therefore treat EVERY tracked file on main as in scope.
+# tools/staging/audit-drift.ps1 no longer skips a git-managed class; its blind
+# spot is closed in the same change that made this section empty.
 
 
 # ###########################################################################

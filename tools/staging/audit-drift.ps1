@@ -9,11 +9,11 @@
   SET). This inspects the git-tracked tree of main. Run after a staging rebuild
   and before push.
 
-  Per PROMOTION_MODEL_SEED_V1.md, PROMOTE.manifest governs only the DATA + DOC
-  projection. Engine SOURCE + BUILD CONFIG (src/, include/, bindings/, cmake/,
-  CMakeLists.txt, CMakePresets.json, vcpkg*.json) reach main through git
-  (branch -> cold-clone build -> merge) and are this gate's blind spot BY
-  DESIGN -- certified by a cold-clone build, not here.
+  As of 2026-09-12 PROMOTE.manifest governs the WHOLE projection, engine SOURCE
+  and BUILD CONFIG included. This gate no longer has a git-managed blind spot:
+  every tracked file on main is in scope. The build certification that used to
+  justify the exemption is now PROMOTION_PROCESS.md section 5 step 3, a GATING
+  staging build, and it runs on the tree this gate audits.
 
   PASS (exit 0) requires all of:
     * projection DRIFT = 0   (every manifest-matched file on main equals dev)
@@ -24,7 +24,7 @@
   Classifications:
     projection drift  manifest-matched file differs between main and dev
     off-projection    tracked on main, not source, not on the manifest -> purge
-    git-managed       engine source/build -> skipped (git's domain)
+    (no exempt class)  every tracked file on main is audited; see 2026-09-12
     GONE              projection file on main, absent in dev (e.g. staging-
                       authored CHANGELOG.md) -- non-fatal unless -StrictGone
 
@@ -94,11 +94,14 @@ Write-Host ""
 $projDrift=@(); $offProjection=@(); $gone=@(); $junk=@(); $nonpub=@(); $gitManaged=0; $ok=0
 $nonpubRegex = '(^|/)(messaging|metadata|sandbox)/'
 $junkRegex   = '(^|/)__pycache__/|\.pyc$'
-# Engine SOURCE + BUILD CONFIG reach main via git (branch -> cold-clone -> merge),
-# NOT via PROMOTE.manifest (see PROMOTION_MODEL_SEED_V1.md). They are legitimately
-# tracked on main and are this gate's blind spot BY DESIGN -- a cold-clone build,
-# not a projection audit, certifies them. Never flag them as drift or purge.
-$gitManagedRegex = '^(src|include|bindings|cmake)/|(^|/)CMakeLists\.txt$|^CMakePresets\.json$|^vcpkg(-wsl)?\.json$'
+# THE EXEMPT CLASS IS GONE (2026-09-12). Engine source and build config used to
+# be skipped here because they reached main by a separate git route; they now
+# travel in PROMOTE.manifest like everything else, so they are audited like
+# everything else. The regex that used to skip them read:
+#     '^(src|include|bindings|cmake)/|(^|/)CMakeLists\.txt$|^CMakePresets\.json$|^vcpkg(-wsl)?\.json$'
+# It is kept here as a comment ONLY as a record of what was exempt and when.
+# A gate with a blind spot cannot report what it cannot see: this one reported
+# PASS on its source lane for five weeks while main sat 71 source files behind.
 
 # Enumerate what a `git clone` of main actually gets = git-tracked files.
 $rels = & git -C $Stage ls-files
@@ -108,7 +111,7 @@ foreach ($rel in $rels) {
 
   if ($rel -match $junkRegex)       { $junk   += $rel; continue }
   if ($rel -match $nonpubRegex)     { $nonpub += $rel; continue }
-  if ($rel -match $gitManagedRegex) { $gitManaged++;   continue }   # git's domain, not the projection
+  # (no git-managed skip: source is projection now)
 
   if (-not (Test-OnAllowList $rel)) { $offProjection += $rel; continue }  # off-projection -> should be purged
 
@@ -134,7 +137,7 @@ Write-Host "==== SUMMARY (projection audit) ====" -ForegroundColor Cyan
 Write-Host "  projection files matching dev      : $ok"
 Write-Host "  projection DRIFT (stale on main)   : $($projDrift.Count)   [GATE]"
 Write-Host "  OFF-projection tracked on main     : $($offProjection.Count)   [GATE -> purge]"
-Write-Host "  git-managed engine/build (skipped) : $gitManaged   (certified by cold-clone build, not here)"
+Write-Host "  git-managed engine/build (skipped) : $gitManaged   (exempt class removed 2026-09-12; expect 0)"
 Write-Host "  GONE (projection file absent in dev): $($gone.Count)"
 Write-Host "  __pycache__/*.pyc                  : $($junk.Count)   [GATE]"
 Write-Host "  non-publish MDO lanes on main      : $($nonpub.Count)   [GATE -> purge]"

@@ -15,10 +15,13 @@ script's own help first — do not assume flags.
       `development`.
 - [ ] Confirm that this is a reviewed promotion, not a plan to push
       `development:main` or merge the `development` branch into `main`.
-- [ ] **Confirm the two promotion lanes.** `PROMOTE.manifest` must exclude
-      `src/**`, `include/**`, bindings, and build configuration. Those files
-      use the reviewed source lane on a temporary branch created from `main` in
-      sterilized staging. They never arrive through a merge of `development`.
+- [ ] **ONE LANE as of 2026-09-12.** `PROMOTE.manifest` now CARRIES `src/**`,
+      `include/**`, `bindings/**`, `cmake/**`, `config/build_vectors.*`,
+      `CMakeLists.txt`, `CMakePresets.json` and `vcpkg*.json`. The separate
+      reviewed-source-branch lane is retired: it had not run since 2026-08-09
+      and left `main` 71 source files behind with no `src/sqlsel/`. They still
+      never arrive through a merge of `development` -- the overlay copies files,
+      not history.
 - [ ] **Reconcile `BUILDING.md`.** Manifest promotes it at repo root; `main`
       carries it at `docs/getting-started/BUILDING.md`. Pick one location.
 - [ ] **Commit the manifest + process docs on `development`** (done:
@@ -47,9 +50,12 @@ script's own help first — do not assume flags.
 ## 4. Rebuild staging (report, then execute)
 
 - [ ] `pwsh tools/staging/rebuild-staging.ps1`            # report-only
-- [ ] Review the expanded file set. `src/**`, `include/**`, bindings, and build
-      configuration in an overlay plan are a hard role/lane error. This is the
-      moment a bad glob is caught cheaply.
+- [ ] Review the expanded file set. Since 2026-09-12 `src/**`, `include/**`,
+      bindings and build configuration in an overlay plan are EXPECTED, not an
+      error. What to check instead: the source set is COMPLETE (a subset breaks
+      the build -- `config/build_vectors.cmake` is a non-optional CMake include)
+      and the untracked report is empty or understood. This is still the moment
+      a bad glob is caught cheaply.
 - [ ] `pwsh tools/staging/rebuild-staging.ps1 -Execute`   # apply
       (or the bound executor: `python tools/staging/execute_gate5_staging_rebuild.py --execute`)
 

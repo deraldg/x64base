@@ -37,10 +37,12 @@ D:\code\ccode  (development)  --allow-list overlay-->  C:\x64base  (main)  --pus
 There is no intermediate curated tree. `development` is the only authoring
 surface; `main` is the only public surface.
 
-For engine source, any explicitly authorized promotion branch is created from
-`main` inside the sterilized staging workflow. Only the reviewed source slice is
-applied to it. It must not inherit the `development` branch or unrelated
-development history.
+**Amended 2026-09-12: engine source uses the chain above, like everything else.**
+The carve-out that used to sit here -- a promotion branch created from `main`,
+carrying only a reviewed source slice -- contradicted the sentence directly above
+it, and had not run since 2026-08-09. The overlay copies FILES, not history, so
+it satisfies "must not inherit the development branch" by construction.
+See `PROMOTE.manifest` header and `PROMOTION_MODEL_SEED_V1.md`.
 
 ## 3. What publishes: the two lanes
 
@@ -73,9 +75,15 @@ Rules:
 1. **Allow-list only.** A file publishes only if a manifest glob matches it.
    Broad blanket copies are prohibited.
 2. **Lane-tagged.** Every entry lives under its PRODUCT or MODEL/DEV publish-lane section.
-3. **`.gitignore` is a hard guard.** The rebuild re-applies the deny-list after
-   matching, so an over-broad glob still cannot leak LMDB, `*.cdx.d`, `*.exe`,
-   `og/`, `__pycache__`, or scratch.
+3. **`git ls-files` is the guard.** A manifest glob may only publish a file git
+   TRACKS. **This rule previously read "`.gitignore` is a hard guard -- the
+   rebuild re-applies the deny-list after matching". That was never true.** The
+   rebuild never opened `.gitignore`; it applied a hand-transcribed 13-alternative
+   regex against that file's 185 rules, and measured 2026-09-12 it was letting
+   545 untracked files reach `main`, including three zero-byte launcher stubs.
+   `651ce911a` replaced it with the tracked-set intersection: git already answers
+   exactly the question both lists were approximating. Every dropped path is
+   printed with the entry that claimed it.
 4. **Non-publish lanes stay out.** `messaging`, `metadata` and `sandbox` are
    deliberately not published. They must never appear in the allow-list, and
    must not linger in `main`. **Versioning them in development is a SEPARATE
@@ -93,8 +101,13 @@ Run from `D:\code\ccode` unless noted.
    into `C:\x64base` (baseline), preserves the committed baseline + dirty layer
    in verified escrow, then overlays every `PROMOTE.manifest` match from
    development, applying `.gitignore` as a guard.
-3. **Build + smoke in staging.** Build `C:\x64base` and run the release-style
-   smoke/proof if path-sensitive runtime behavior matters.
+3. **Build + smoke in staging. GATING -- do not push on a tree that did not
+   build.** Build `C:\x64base` and run the release-style smoke/proof if
+   path-sensitive runtime behavior matters. Since 2026-09-12 the overlay carries
+   engine source, so this build IS the cold-clone certification that used to
+   justify a separate source lane. It is the step that gets forgotten -- it was
+   forgotten on the 2026-09-12 promotion itself and caught only by the owner
+   afterwards -- which is precisely why it is now gating rather than advisory.
 4. **Drift audit (Section 6).** Confirm the only differences between development
    and `main` are intended promotions.
 5. **Commit + push from `C:\x64base`** to `main`.
@@ -102,8 +115,12 @@ Run from `D:\code\ccode` unless noted.
 
 ## 6. Drift audit (verification)
 
-Before each push, verify staging matches intent. Compare by **content hash, not
-date** (copies/clones rewrite timestamps):
+Before each push, verify staging matches intent. **Run
+`pwsh tools/staging/audit-drift.ps1`** -- it is the pass/fail gate for this
+section and it exists. Measured 2026-09-12: it had not been in the promotion
+anyone actually ran, and its first run in a while returned FAIL with 915
+off-projection files. Compare by **content hash, not date** (copies/clones
+rewrite timestamps):
 
 - Compare files present in both trees; classify each as identical, DIFF
   (content differs), or GONE (in staging, no dev counterpart).
@@ -159,7 +176,15 @@ Target state: after a promotion run, off-allow-list DIFF = 0 and no
    `docs/maintenance/PUBLICATION_SURFACE_RECOVERY_PDLC_LANE_V1.md` section 6c.
 2. **Path mismatch:** `PROMOTE.manifest` promotes `BUILDING.md` at repo root,
    but `main` carries it at `docs/getting-started/BUILDING.md`. Pick one.
-3. **Expand the allow-list** using `PROMOTE.additions.manifest` so engine source
-   and active docs are owned by promotion rather than frozen in the baseline.
+3. ~~**Expand the allow-list** using `PROMOTE.additions.manifest` so engine source
+   and active docs are owned by promotion rather than frozen in the baseline.~~
+   **DONE 2026-09-12 for the engine-source half**, and not via a second manifest
+   file: the globs went into `PROMOTE.manifest` directly, because a second
+   allow-list is a second thing wearing one name. "Frozen in the baseline" was
+   measured exactly right -- frozen at 2026-08-09, 71 files behind.
+   **The active-docs half is NOT done and mostly should not be**: the manifest's
+   own NOT PUBLISHED section already rules those paths out deliberately, so the
+   915 off-projection files are an unexecuted purge, not a pending addition.
+   See `claude/TRIAGE_THE_915_OFF_PROJECTION_FILES_ON_MAIN.md`.
 4. **Purge** the `__pycache__` (58) and `messaging`/`metadata` (41) files now in
    `main`.

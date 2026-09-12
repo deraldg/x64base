@@ -64,35 +64,55 @@ Why the manifest is an allow-list and not a "stageignore" deny-list: staging
 holds far less than development. A deny-list would be "everything except..." —
 enormous and fragile. An allow-list of what publishes is short and honest.
 
-## The manifest does NOT carry engine source
+## The manifest DOES carry engine source (amended 2026-09-12)
 
 `PROMOTE.manifest` publishes the **curated, stable data and documentation
 projection**: fixtures, the databuild lane, docs, portal seeds, tools. It does
 **not** carry `src/`, `include/`, `CMakeLists.txt`, `CMakePresets.json`, or
 `vcpkg.json`.
 
-This is deliberate, and it is a safety boundary, not an oversight:
+That rule held from 2026-07-14 to 2026-09-12 on two stated reasons. **One died;
+the other was answered.**
 
-- `rebuild-staging.ps1` overlays development's **current file state** onto a
-  clone of `main`. Development's working tree is the messy authority — it can
-  hold hundreds of uncommitted, experimental changes at any moment. Overlaying
-  `src/` from there would push half-finished engine source to `main`.
-- Source must be **coherent and build-tested** to publish. A build system is
-  all-or-nothing: presets, `CMakeLists.txt`, and the `src/` guards they depend
-  on must travel **together** or the clone will not build. An overlay of "dev's
-  current source" cannot guarantee that.
+- *"`rebuild-staging.ps1` overlays development's current file state... Overlaying
+  `src/` from there would push half-finished engine source to `main`."*
+  **DEAD as of `651ce911a`.** The overlay now publishes only files git TRACKS.
+  Uncommitted experimental work cannot travel, which is exactly the hazard this
+  reason named.
+- *"Source must be coherent and build-tested... presets, `CMakeLists.txt`, and
+  the `src/` guards they depend on must travel together or the clone will not
+  build."* **Still true, and now satisfied rather than avoided.** The manifest
+  carries the COMPLETE tracked source set, never a subset, so they travel
+  together by construction; and `PROMOTION_PROCESS.md` section 5 step 3 -- the
+  staging build -- is now GATING, which is the cold-clone certification this
+  reason asked for.
 
-Therefore engine source and build configuration reach `main` the normal way:
-**a git branch off `main`, the coherent changeset applied, a cold-clone build
-to certify, then merge.** The manifest is for the projection; git is for the
-engine.
+What the old route bought was **curation**: publish some committed source, hold
+back the rest. Measured 2026-09-12, that is not what it delivered. It had not
+run since **2026-08-09**. `main` sat **71 source files** behind development with
+**no `src/sqlsel/` at all**, while this projection published 1.1 manuals
+describing SQLSEL. A curation gate nobody runs is worse than a sync that always
+runs -- and this seed already says why the second route should not exist:
+*"There is no intermediate curated tree."*
 
-Consequence for documentation: a doc that *describes* source (like
-`BUILDING.md`) travels through the manifest, but the source it describes travels
-through git. They can therefore fall out of step — the doc can reach `main`
-before the source it documents. Always ground a published doc against what is
-actually on the publication target (`main`), proven by a cold clone, not against
-development. See `LOCAL_ACCESS_AGENT_CHECKLIST_V1.md` -> "Publishing
+Therefore engine source and build configuration reach `main` **the same way
+everything else does**: `PROMOTE.manifest`, one chain, one clock. The subsetting
+hazard is met by a rule, not a route: **never publish a slice of a lane. If it
+is not ready, do not commit it to development.**
+
+Consequence for documentation, RESOLVED 2026-09-12: a doc and the source it
+describes now travel in one manifest on one clock, so they can no longer fall
+out of step by construction.
+
+**This paragraph previously predicted exactly that drift and prescribed a
+mitigation, and the mitigation was never performed.** It read: *"the doc can
+reach `main` before the source it documents. Always ground a published doc
+against what is actually on the publication target (`main`), proven by a cold
+clone, not against development."* Measured 2026-09-12: `main` carried 1.1
+manuals describing a 0.6 engine with no `src/sqlsel/`, five weeks after the
+source lane last ran. The prediction was right and nothing enforced it, which is
+the strongest argument for removing the second clock rather than documenting
+around it. See `LOCAL_ACCESS_AGENT_CHECKLIST_V1.md` -> "Publishing
 documentation".
 
 ## Does development need a git state?
