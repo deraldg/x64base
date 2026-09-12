@@ -53,6 +53,7 @@ param(
     [string] $Branch   = "main",
     [string] $RecoveryManifest,
     [switch] $Fresh,
+    [switch] $StrictTracked,
     [switch] $Execute
 )
 
@@ -263,6 +264,23 @@ $deny = '(\.cdx\.d[\\/])|([\\/]lmdb[\\/])|([\\/]og[\\/])|(\.exe$)|([\\/]backups?
 
 $plan   = New-Object System.Collections.ArrayList
 $misses = New-Object System.Collections.ArrayList
+$denied = New-Object System.Collections.ArrayList
+
+# OI-018. The $deny regex above calls itself "the .gitignore deny-list". It is not:
+# .gitignore carries 185 rules, $deny carries 13, nothing keeps the two in step, and
+# this script never opens .gitignore. Both are approximations of a question git answers
+# exactly -- `git ls-files` is the settled, reviewed answer to "is this in the repo?",
+# so this intersection REPLACES the regex rather than joining it.
+# Measured 2026-09-12: $deny blocks ZERO tracked files; 545 untracked files reached
+# main under the old behaviour, including three zero-byte launcher stubs.
+$tracked = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
+& git -C $dev -c core.quotepath=false ls-files | ForEach-Object {
+    [void]$tracked.Add(($_ -replace '/', '\'))
+}
+if ($tracked.Count -eq 0) {
+    throw "git ls-files returned nothing for $dev. Refusing to overlay: an empty tracked set would silently drop the entire payload."
+}
+Write-Host "Tracked files in development: $($tracked.Count)" -ForegroundColor DarkGray
 
 foreach ($entry in $manifest) {
     $full = Join-Path $dev $entry
@@ -294,20 +312,54 @@ foreach ($entry in $manifest) {
     if (-not $hits) { [void]$misses.Add($entry); continue }
     foreach ($h in $hits) {
         $rel = $h.FullName.Substring($dev.Length + 1)
-        if ($rel -match $deny) { continue }   # guard: never publish
-        [void]$plan.Add([pscustomobject]@{ Rel = $rel; Bytes = $h.Length })
+        if ($rel -match $deny) { [void]$denied.Add($rel); continue }   # guard: never publish
+        [void]$plan.Add([pscustomobject]@{ Rel = $rel; Entry = $entry; Bytes = $h.Length })
     }
 }
 
 $plan = @($plan | Sort-Object Rel -Unique)
 
 # ---------------------------------------------------------------------------
-# Hard guard: nothing deny-listed may survive.
+# OI-018: a manifest glob may only publish a file git is tracking.
+# Narrow, and SAY WHAT WAS DROPPED. This file already learned once -- see the `**`
+# note above -- that absence and failure must not return one answer. Dropping
+# hundreds of files in silence is that same mistake with the polarity flipped.
 # ---------------------------------------------------------------------------
-$leak = @($plan | Where-Object { $_.Rel -match $deny })
+$dropped = @($plan | Where-Object { -not $tracked.Contains($_.Rel) })
+$plan    = @($plan | Where-Object {      $tracked.Contains($_.Rel) })
+
+if ($dropped.Count) {
+    Write-Host ""
+    Write-Host "UNTRACKED, NOT PUBLISHED ($($dropped.Count) files) -- OI-018" -ForegroundColor Yellow
+    Write-Host "  A manifest glob matched these; git is not tracking them." -ForegroundColor DarkGray
+    Write-Host "  Each one is source to add, derived to ignore, or scratch to remove." -ForegroundColor DarkGray
+    $dropped | Group-Object Entry | Sort-Object Count -Descending |
+        ForEach-Object { Write-Host ("  {0,5}  {1}" -f $_.Count, $_.Name) }
+    $droppedLog = Join-Path $dev "tmp\overlay_untracked.txt"
+    $null = New-Item -ItemType Directory -Force -Path (Split-Path -Parent $droppedLog)
+    $dropped | ForEach-Object { "{0}`t{1}" -f $_.Entry, $_.Rel } |
+        Set-Content -Encoding UTF8 -LiteralPath $droppedLog
+    Write-Host "  full list: $droppedLog" -ForegroundColor DarkGray
+    Write-Host ""
+    if ($StrictTracked) {
+        throw "Refusing to overlay: -StrictTracked, and $($dropped.Count) manifest match(es) are untracked."
+    }
+}
+
+# ---------------------------------------------------------------------------
+# Hard guard -- now reachable.
+# The old form tested $plan for $deny matches. That was UNREACHABLE: the loop above
+# already `continue`d on the same regex, so this could only ever report success.
+# The live invariant is a different claim and worth a throw: NO TRACKED FILE SHOULD
+# EVER MATCH $deny. Measured 2026-09-12 across the whole repo -- exactly one tracked
+# file matches (tests/CMakeLists.txt.save.txt) and no manifest glob reaches it.
+# If this fires, $deny has started doing work `git ls-files` would not, and the claim
+# in the comment beside $tracked above is no longer true. Read it before silencing.
+# ---------------------------------------------------------------------------
+$leak = @($denied | Sort-Object -Unique | Where-Object { $tracked.Contains($_) })
 if ($leak.Count) {
-    $leak | ForEach-Object { Write-Error "DENY-LIST LEAK: $($_.Rel)" }
-    throw "Refusing to overlay: deny-list guard caught $($leak.Count) file(s)."
+    $leak | ForEach-Object { Write-Error "DENY-LIST BLOCKS A TRACKED FILE: $_" }
+    throw "Refusing to overlay: deny-list guard caught $($leak.Count) TRACKED file(s). See OI-018."
 }
 
 # ---------------------------------------------------------------------------
