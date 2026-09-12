@@ -728,7 +728,31 @@ bool journal_note_rollback(int area0) {
     if (!is_persistent_enabled(area0)) return true;
 
     auto& j = state_store()[area0].journal;
-    if (j.decided) return false;   // committed elsewhere; not ours to reverse
+    if (j.decided) {
+        // REFUSING TO DELETE IS NOT REFUSING TO CLOSE, and the first cut of
+        // this guard conflated them. The LOG has to survive -- it is the only
+        // copy of a committed transaction's redo. The HANDLE must not: this
+        // process still holds the FILE* that journal_note_buffer_on opened, and
+        // on Windows that makes the file undeletable by anyone, INCLUDING the
+        // recovery that is about to replay it. Measured 2026-09-12 by
+        // REGRESSION GRPFAIL: the replay succeeded, the row was completed, and
+        // then std::remove failed, leaving a replayed journal on disk to be
+        // replayed again at the next USE -- and an ERASE that reported
+        // "being used by another process".
+        //
+        // THIS IS THE SAME LEAK THE TREE ALREADY FIXED ONCE. AIF-156:
+        // enlist_sql_transaction opened the journal and nothing paired with it,
+        // so an empty transaction leaked the FILE* for the life of the process
+        // and orphaned a header-only .tbj. Same shape, opposite cause -- there
+        // no one closed it, here the close was skipped on purpose.
+        //
+        // `path` and `decided` are DELIBERATELY LEFT SET. The journal now
+        // belongs to recovery, and the state that says so is the honest record
+        // of that until the area is reused.
+        if (j.fp) { std::fclose(j.fp); j.fp = nullptr; }
+        j.open = false;
+        return false;   // committed elsewhere; not ours to reverse
+    }
     if (j.fp) {
         std::fputs("R\n", j.fp);   // best-effort marker; file is removed next
         std::fclose(j.fp);

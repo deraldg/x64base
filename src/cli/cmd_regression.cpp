@@ -75,6 +75,7 @@
 #include <ctime>
 #include <filesystem>
 #include <fstream>
+#include "xbase_locks.hpp"   // AIF-160: the GRPFAIL arm forges a live foreign owner
 #include <iostream>
 #include <memory>
 #include <sstream>
@@ -1050,6 +1051,7 @@ void print_regression_usage()
         << "  REGRESSION RUN <name>\n"
         << "  REGRESSION <name>\n"
         << "  REGRESSION ALL\n"
+        << "  REGRESSION GRPFAIL               (AIF-160 two-pass group apply failure)\n"
         << "Notes:\n"
         << "  - REGRESSION launches DOTSCRIPT; selected specs also validate marked\n"
         << "    transcript evidence and set final PASS/FAIL error status.\n"
@@ -5152,6 +5154,255 @@ void run_regression_default_suite(DbArea& area)
     }
 }
 
+
+// ===========================================================================
+// AIF-160 -- THE APPLY THAT FAILS AFTER THE GROUP SAID YES
+//
+// BufferJournalInfo::decided protects the one silent loss this lane can
+// produce: a member whose APPLY fails after decide_committed keeps its journal
+// on purpose -- the decision row exists, the P record is on the platter, the
+// next USE replays it -- and every teardown path in the tree reaches
+// journal_note_rollback, which std::removes exactly that file.
+//
+// JVG_D0..D3 grade that guard at the layer that owns it. NOTHING reached it
+// through its two real callers, so an edit deleting commit_group's marking
+// loop, or the j.decided check, or moving journal_note_commit above
+// commit_apply_area's PartialRecordFailure early return, left all 64 markers
+// green. This arm is the detector for all three.
+//
+// HOW THE FAILURE IS MANUFACTURED. AIF-159 measured and closed three routes: a
+// read-only DBF cannot be opened at all (USE opens read-write or not at all),
+// FinalizeFailure is gated behind SET INDEXTXN which is default OFF, and
+// AreaUnknown is unreachable from the command surface. What is left is a
+// concurrently held RECORD LOCK, which apply_one_recno takes per record.
+//
+// AND THE LOCK DOES NOT NEED A LIVE PROCESS BEHIND IT, which is what collapses
+// this from PKDURABLE's two-process shape into a file. It needs a LIVE PID and
+// a FOREIGN OWNER STRING, and those are different things: liveness is
+// `meta.pid_valid && !is_pid_alive(meta.pid)`, and the host field is not
+// consulted. So the pid is taken from current_owner().id -- ours, certainly
+// alive -- while the owner string reads "foreign:<pid>:1", which is not our
+// owner id and is therefore refused to us.
+//
+// TAKING THE PID BY PARSING current_owner() rather than calling getpid() is
+// deliberate: no platform header, and the value is self-evidently the live one.
+// ===========================================================================
+
+static const char* const kGroupFailSetupScript    = "group_apply_failure_setup.dts";
+// THE WORK IS TWO SCRIPTS BECAUSE THE FENCE GOES BETWEEN THEM, and that was
+// measured. Planting the lock before a single work script produced
+// "SQLSEL: UPDATE refused -- record locked": SQLSEL takes the record lock when
+// it STAGES a change, so a lock already present is caught by fail-fast, the
+// table never enlists, and no group is decided at all. Correct behaviour, wrong
+// moment. The window this arm needs is AFTER staging and BEFORE apply.
+//
+// The SQL transaction survives the script boundary -- DOTSCRIPT runs in this
+// process, so areas, mode and transaction state all persist.
+static const char* const kGroupFailStageScript   = "group_apply_failure_stage.dts";
+static const char* const kGroupFailCommitScript  = "group_apply_failure_commit.dts";
+static const char* const kGroupFailTeardownScript = "group_apply_failure_teardown.dts";
+
+// "<host>:<pid>:<ms>" -> "<pid>", or empty when the shape is not what we expect.
+static std::string owner_pid_field(const std::string& owner_id)
+{
+    const std::size_t a = owner_id.find(':');
+    if (a == std::string::npos) return std::string{};
+    const std::size_t b = owner_id.find(':', a + 1);
+    if (b == std::string::npos) return std::string{};
+    return owner_id.substr(a + 1, b - a - 1);
+}
+
+// THE SLOT HAS ALREADY MOVED BY THE TIME THIS IS ASKED, and the first cut of
+// this function did not know that. The setup script runs BEFORE the fence and
+// does `SET PATH DBF DBF/SANDBOX`, so get_slot(DBF) already points at the
+// sandbox -- and appending "SANDBOX" again produced
+// ...\DBF\SANDBOX\SANDBOX\GRPFAIL1.dbf.lock.1. create_directories made the
+// extra folder, the write succeeded, `armed` read true, and the armed pass came
+// out byte-identical to the control. A wrong path that reports success is the
+// same shape as every other defect this lane has removed.
+//
+// So it is the slot AS IT STANDS, and section 3 below stops trusting that.
+static std::filesystem::path group_fail_lock_path()
+{
+    return dottalk::paths::get_slot(dottalk::paths::Slot::DBF) /
+           "GRPFAIL1.dbf.lock.1";
+}
+
+// RAII, AND THE DESTRUCTOR IS THE POINT. This leaves a live fence on a fixture
+// path. If the work script throws, or a marker check returns early, or someone
+// adds a branch above the cleanup, the file has to go anyway -- otherwise the
+// next run of anything touching GRPFAIL1 meets a stale lock and reports a
+// durability failure that is really yesterday's litter. PKDURABLE learned this
+// as "a guard against evidence surviving a run has to sit where the run cannot
+// skip it".
+struct ForeignRecordFence {
+    std::filesystem::path path;
+    bool armed = false;
+
+    explicit ForeignRecordFence(std::filesystem::path p) : path(std::move(p)) {
+        // IT MUST LAND BESIDE A REAL TABLE, and this is the check that would
+        // have caught the doubled-SANDBOX path immediately instead of one run
+        // later. A sidecar with no .dbf next to it fences nothing; refusing to
+        // arm says so, where create_directories said the opposite.
+        // TWO STRIPS AND NO APPEND. "GRPFAIL1.dbf.lock.1" -> drop ".1" ->
+        // "GRPFAIL1.dbf.lock" -> drop ".lock" -> "GRPFAIL1.dbf", which IS the
+        // table. The first cut appended ".dbf" to that and looked for
+        // "GRPFAIL1.dbf.dbf". The check was right and its arithmetic was not --
+        // which is the check earning its place twice in two runs.
+        std::filesystem::path dbf = path;
+        dbf.replace_extension();            // drop ".1"
+        dbf.replace_extension();            // drop ".lock"  -> "<table>.dbf"
+        std::error_code ec;
+        if (!std::filesystem::exists(dbf, ec)) {
+            std::cout << "  FENCE: no table at " << dbf.string() << "\n"
+                         "  Refusing to arm -- a sidecar with no table beside it\n"
+                         "  fences nothing and would make this pass a duplicate\n"
+                         "  of the control.\n";
+            return;
+        }
+
+        const std::string pid = owner_pid_field(xbase::locks::current_owner().id);
+        if (pid.empty()) return;
+
+        // THE FORMAT IS write_lock_file's, five lines, and the first cut wrote
+        // two. `pid` is ITS OWN LINE and is not parsed out of the owner string,
+        // so a sidecar without one leaves LockMeta::pid_valid false. OUR pid, so
+        // is_pid_alive says live; a FOREIGN owner id, so lock_is_mine says not
+        // ours. Those are different fields and the fence needs both answers.
+        std::ofstream out(path, std::ios::binary | std::ios::trunc);
+        if (!out) return;
+        out << "DotTalk++ lock\n"
+            << "owner=foreign:" << pid << ":1\n"
+            << "member=member.test.foreign\n"
+            << "pid=" << pid << "\n"
+            << "ms=1\n";
+        out.flush();
+        armed = out.good() && std::filesystem::exists(path, ec);
+        if (armed) std::cout << "  FENCE: " << path.string() << "\n";
+    }
+
+    ~ForeignRecordFence() {
+        std::error_code ec;
+        std::filesystem::remove(path, ec);
+    }
+
+    ForeignRecordFence(const ForeignRecordFence&)            = delete;
+    ForeignRecordFence& operator=(const ForeignRecordFence&) = delete;
+};
+
+// One pass. `armed` selects the EXPECTED VALUES, not the script -- the script
+// is byte for byte the same on both, which is the whole reason the control is
+// evidence rather than decoration.
+static bool run_group_fail_pass(DbArea& area, bool armed)
+{
+    std::cout << "\nREGRESSION: AIF-160 GROUP APPLY FAILURE -- PASS "
+              << (armed ? "2, ARMED" : "1, CONTROL") << "\n"
+              << (armed
+                    ? "  A live foreign record lock on GRPFAIL1 row 1. The group\n"
+                      "  decides, GRPFAIL2 applies, GRPFAIL1 does not, and its\n"
+                      "  journal must SURVIVE the teardown and replay on reopen.\n"
+                    : "  No lock. Both members apply and BOTH journals are deleted.\n"
+                      "  Without this pass, 'the file is still there' is equally\n"
+                      "  consistent with a transaction that never happened.\n");
+
+    std::string setup_out;
+    if (!trigger_veto_run_script(area, kGroupFailSetupScript, setup_out)) return false;
+    static constexpr std::array<const char*, 2> setup_required{{
+        "GRPFAIL-SETUP-BEGIN", "GRPFAIL-SETUP-END"
+    }};
+    if (!require_transcript_fragments(setup_out, "GROUP APPLY FAILURE SETUP",
+                                      setup_required)) {
+        return false;
+    }
+
+    // STAGE. Both members enlist and stage; the transaction stays OPEN.
+    std::string stage_out;
+    if (!trigger_veto_run_script(area, kGroupFailStageScript, stage_out)) return false;
+    static constexpr std::array<const char*, 2> stage_required{{
+        "GRPFAIL-STAGE-BEGIN", "GRPFAIL-STAGE-END"
+    }};
+    if (!require_transcript_fragments(stage_out, "GROUP APPLY FAILURE STAGE",
+                                      stage_required)) {
+        return false;
+    }
+
+    std::string work_out;
+    bool ran = false;
+    {
+        // THE FENCE GOES HERE, in the window between staged and applied. Both
+        // tables are already enlisted, so the group will decide and only the
+        // APPLY can fail.
+        std::optional<ForeignRecordFence> fence;
+        if (armed) {
+            fence.emplace(group_fail_lock_path());
+            if (!fence->armed) {
+                std::cout << "GROUP APPLY FAILURE: FAIL -- could not write the foreign\n"
+                             "  record lock at " << group_fail_lock_path().string() << "\n"
+                             "  The armed pass CANNOT be distinguished from the control\n"
+                             "  without it, so this is an unrun measurement, not a pass.\n";
+                return false;
+            }
+        }
+        ran = trigger_veto_run_script(area, kGroupFailCommitScript, work_out);
+    }
+    if (!ran) return false;
+
+    const char* const t1 = armed ? "GF_T1_member_one_applied:.F."
+                                 : "GF_T1_member_one_applied:.T.";
+    const char* const t2 = armed ? "GF_T2_member_one_journal_survives:.T."
+                                 : "GF_T2_member_one_journal_survives:.F.";
+    const std::array<const char*, 7> required{{
+        "GRPFAIL-WORK-BEGIN",
+        "GF_G1_member_two_applied:.T.",
+        t1,
+        t2,
+        "GF_T3_reopen_shows_the_member_applied:.T.",
+        "GF_T4_and_the_journal_is_gone:.T.",
+        "GRPFAIL-WORK-END"
+    }};
+    const char* const label = armed ? "GROUP APPLY FAILURE ARMED"
+                                    : "GROUP APPLY FAILURE CONTROL";
+    if (!require_transcript_fragments(work_out, label, required)) return false;
+
+    std::cout << label << ": PASS\n";
+    return true;
+}
+
+static bool run_group_apply_failure_arm(DbArea& area)
+{
+    std::cout << "\nREGRESSION: AIF-160 GROUP APPLY FAILURE ARM\n"
+                 "  READ RULE: TWO PASSES, and the CONTROL is the detector.\n"
+                 "  GF_T2 is asserted .F. on the control and .T. on the armed\n"
+                 "  pass. A run in which both read alike has measured nothing,\n"
+                 "  whichever value they share.\n";
+
+    const bool control = run_group_fail_pass(area, false);
+    const bool armed   = control && run_group_fail_pass(area, true);
+
+    std::string teardown_out;
+    (void)trigger_veto_run_script(area, kGroupFailTeardownScript, teardown_out);
+
+    // The fence is removed by ~ForeignRecordFence, but a leftover from a run
+    // that died before the destructor ran would arm the NEXT control pass and
+    // turn it red for the wrong reason. Asking the filesystem costs nothing and
+    // the answer is reported either way.
+    std::error_code ec;
+    if (std::filesystem::exists(group_fail_lock_path(), ec)) {
+        std::filesystem::remove(group_fail_lock_path(), ec);
+        std::cout << "GROUP APPLY FAILURE: warning -- a foreign lock survived the\n"
+                     "  arm and was removed here. Some path skipped the guard.\n";
+    }
+
+    if (!control || !armed) {
+        std::cout << "GROUP APPLY FAILURE: FAIL\n";
+        return false;
+    }
+    std::cout << "GROUP APPLY FAILURE: PASS -- control and armed differ exactly at\n"
+                 "  GF_T1 and GF_T2. commit_group marked the member, the teardown\n"
+                 "  was refused, and the preserved journal finished the transaction.\n";
+    return true;
+}
+
 bool run_trigger_veto_arm(DbArea& area, const std::string& mode)
 {
     std::ostringstream captured;
@@ -5241,6 +5492,11 @@ void cmd_REGRESSION(DbArea& area, std::istringstream& in)
             return;
         }
         run_trigger_veto_arm(area, up);
+        return;
+    }
+
+    if (op == "GRPFAIL") {
+        run_group_apply_failure_arm(area);
         return;
     }
 

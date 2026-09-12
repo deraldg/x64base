@@ -1,0 +1,51 @@
+; ============================================================================
+; GROUP APPLY FAILURE -- COMMIT AND READ (AIF-160)
+;
+; Continues the transaction the stage script left open. On the armed pass a
+; live foreign record lock now sits on GRPFAIL1 row 1, planted between the two
+; scripts -- both members are already enlisted and staged, so the group DECIDES
+; and then GRPFAIL1's apply is the thing that fails.
+;
+;   CONTROL   both members apply, both journals deleted.
+;   ARMED     GRPFAIL2 applies, GRPFAIL1 does not, and GRPFAIL1's journal
+;             SURVIVES the teardown because the group decided it -- then
+;             replays on reopen.
+;
+; THE REOPEN NEEDS NO DISARM: recover_table_buffer_journal takes NO record
+; locks. It is the crash path, and a crash path blockable by a stale fence
+; would be worse than useless.
+; ============================================================================
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+FORMULA "GRPFAIL-WORK-BEGIN"
+
+COMMIT
+SET MODE NATIVE
+
+; The healthy member. Green on BOTH passes: a group that failed to decide, or
+; never enlisted two tables, fails here and says so before T1 is read.
+SELECT 2
+? "GF_G1_member_two_applied:" + (ALLTRIM(MARK) = "AFTER")
+
+; The failing member. .T. on control, .F. on armed.
+SELECT 1
+? "GF_T1_member_one_applied:" + (ALLTRIM(MARK) = "AFTER")
+
+; THE ARM. .F. on control -- nothing marked that journal decided, so the
+; teardown deleted it. .T. on armed -- journal_note_rollback refused.
+? "GF_T2_member_one_journal_survives:" + FILE("DBF/SANDBOX/GRPFAIL1.dbf.tbj")
+
+SELECT 2
+CLOSE
+SELECT 1
+CLOSE
+
+SELECT 1
+USE GRPFAIL1
+? "GF_T3_reopen_shows_the_member_applied:" + (ALLTRIM(MARK) = "AFTER")
+? "GF_T4_and_the_journal_is_gone:" + NOT FILE("DBF/SANDBOX/GRPFAIL1.dbf.tbj")
+CLOSE
+
+FORMULA "GRPFAIL-WORK-END"
