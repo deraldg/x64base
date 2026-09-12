@@ -1337,13 +1337,27 @@ void cmd_GROUPCOMMIT(xbase::DbArea& A, std::istringstream& in) {
             std::cout <<
                 "GROUPCOMMIT -- commit every buffered area as ONE atomic decision.\n"
                 "  GROUPCOMMIT              commit all dirty areas as one group\n"
+                "  GROUPCOMMIT AUTO         rebuild indexes without prompting (default)\n"
                 "  GROUPCOMMIT MANUAL       prompt on index rebuild\n"
                 "  GROUPCOMMIT USAGE        this text\n"
                 "\n"
+                "Arguments may appear in any order; the LAST of AUTO/MANUAL wins. An\n"
+                "unrecognized argument is REFUSED and nothing is committed.\n"
+                "\n"
                 "Unlike COMMIT ALL, which commits each area independently, a crash\n"
                 "during GROUPCOMMIT leaves either ALL members applied or NONE.\n"
-                "Requires TABLE BUFFER PERSISTENT for that guarantee to survive a\n"
-                "power cut: under the default RamOnly there is no journal to recover.\n";
+                "\n"
+                "REQUIRES 'TABLE BUFFER ON PERSISTENT' for that guarantee to survive a\n"
+                "power cut, and the ON is load-bearing: 'TABLE BUFFER PERSISTENT' alone\n"
+                "sets the mode WITHOUT enabling the buffer, so no journal is opened and\n"
+                "there is nothing to recover. Under the default RamOnly there is no log.\n"
+                "\n"
+                "IF A MEMBER DOES NOT FINISH APPLYING, the group has still COMMITTED and\n"
+                "that member's journal replays at the next USE of its table. Its buffer\n"
+                "is left holding a copy of a transaction that ALREADY committed, so\n"
+                "COMMIT is refused and CLOSE, USE and QUIT each prompt and cancel.\n"
+                "ROLLBACK is the exit: it discards the stale buffer and KEEPS the\n"
+                "journal, which is what lets the next USE finish the transaction.\n";
             return;
         } else if (up == "MANUAL" || up == "INTERACTIVE") {
             interactive_rebuild = true;
