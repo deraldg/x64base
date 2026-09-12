@@ -1,0 +1,101 @@
+* pk_durable_write.dts -- AIF-156 two-run harness, RUN 1 of 2.
+*
+* THE QUESTION THIS PAIR EXISTS TO ASK, AND THE ONLY INSTRUMENT THAT CAN ASK IT.
+* PKPOLICY proves the PRIMARY key is REFUSED on three write paths. It cannot
+* prove the DECLARATION SURVIVES A RESTART, because a .dts runs in ONE process
+* and the spec's own header says so under NOT CLAIMED. Until 2026-09-07 the
+* designation lived in a process-local std::unordered_map -- unique_registry.cpp
+* calls it "not persistent schema metadata" in its own boundary comment -- so it
+* was forgotten at exit and a REPLACE in a fresh session overwrote the key IN
+* SILENCE, on a build where all three arms read green.
+*
+* RUN 1 DECLARES AND WRITES. RUN 2 IS A SEPARATE PROCESS THAT NEVER REDECLARES.
+* Nothing in this file asserts anything about durability: the whole claim is in
+* run 2, and this run exists to leave a table behind with the designation
+* stamped into its x64 header. Its guards are here so that a run 2 failure
+* cannot be blamed on a fixture that was never built.
+*
+* THE KEY FIELD IS EMPNO AND THE SECOND FIELD IS SID, AND THAT IS THE WHOLE
+* POINT OF THE SCHEMA. MEASURED 2026-09-08, on the earlier fixture whose key
+* WAS named SID: run 2 appended a row and the key came out 3 in a process that
+* had declared nothing, and it was read as proof that generation consults the
+* stamped header. It was not. append_support.cpp::finalize_appended_record
+* calls TWO generators in sequence -- generate_registered_uniques(), which asks
+* unique_reg::list_unique_fields() and therefore the PROCESS MAP ONLY, and
+* generate_sid_if_needed(), which asks nothing at all and fires whenever a
+* field is literally NAMED "SID". The map was empty in run 2. The magic name
+* minted the key. THE FIXTURE ANSWERED ITS OWN QUESTION.
+*
+* So SID stays in the table ON PURPOSE, as a LIVE CONTROL rather than as the
+* subject. EMPNO is declared and stamped; SID is declared nowhere and is minted
+* by name. One APPEND in run 2 writes both, in the same row, in the same call,
+* and the difference between them isolates the one thing under test: whether
+* key GENERATION reads the same authority key ENFORCEMENT reads. A control that
+* rides in the same row as the arm cannot diverge from it for any other reason.
+*
+* PKDURABLE's own registry summary had already warned that this fixture's field
+* name does hidden work -- the long-name hazard note, "SID is three characters,
+* so this fixture CANNOT expose...". Same hazard, opposite consequence: that
+* time the name would have hidden a mismatch, this time it manufactured a pass.
+*
+* DELIBERATELY NOT ERASED AT THE END. Every other fixture in this tree cleans up
+* after itself; this one MUST outlive its process or there is nothing to reopen.
+* Run 2 erases it.
+
+SET TALK OFF
+STOP_ON_ERROR OFF
+
+SETPATH DBF &_DATA\DBF\SANDBOX
+SETPATH INDEXES &_DATA\INDEXES\SANDBOX
+SETPATH LMDB &_DATA\LMDB\SANDBOX
+
+SET ALTERNATE TO &_TMP\pkdur_run1.alt
+SET ALTERNATE ON
+
+FORMULA "PKDUR-RUN1-BEGIN"
+
+ERASE TABLE PKDUR CONFIRM
+
+CREATE X64 PKDUR (EMPNO N(6,0), SID N(6,0), LNAME C(12))
+CLOSE
+
+SELECT 1
+USE PKDUR
+
+* The declaration under test. On a build that stamps the x64 header this writes
+* X64_FIELD_FLAG_PRIMARY into EMPNO's X64FieldMetaEntry and
+* DBF64_FLAG_HAS_RECID_PK into the table flags. On a build that does not, it
+* only touches a map that dies with this process. NOTHING IS DECLARED ABOUT
+* SID, here or anywhere -- that is what makes it a control.
+SET UNIQUE FIELD EMPNO PRIMARY
+
+APPEND
+REPLACE LNAME WITH "ALPHA"
+? "PKD_W1_first_key_is_1:" + (EMPNO = 1)
+
+* PKD_W5 -- THE CONTROL IS ALIVE IN THE DECLARING PROCESS. The magic-name
+* generator fires here too, so run 2's reading of SID is comparable to this one
+* rather than to nothing. If this reads .F. the control is dead and run 2's
+* discrimination is worthless -- which is a fixture failure, not a finding.
+? "PKD_W5_undeclared_SID_minted_by_name:" + (SID = 1)
+
+APPEND
+REPLACE LNAME WITH "BETA"
+? "PKD_W2_second_key_is_2:" + (EMPNO = 2)
+
+* PKD_W3 -- the refusal works IN THIS PROCESS. Without this, a red in run 2
+* cannot separate "the declaration did not survive" from "enforcement is broken
+* on this build entirely", which are different findings with different fixes.
+GO 1
+REPLACE EMPNO WITH "2"
+? "PKD_W3_refused_in_declaring_process:" + (EMPNO = 1)
+
+* PKD_W4 -- the row run 2 will read is on disk and says what run 2 expects.
+? "PKD_W4_row1_is_ALPHA:" + (ALLTRIM(LNAME) = "ALPHA")
+
+CLOSE
+
+FORMULA "PKDUR-RUN1-END"
+
+SET ALTERNATE OFF
+QUIT

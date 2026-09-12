@@ -3,7 +3,7 @@
   Search a repo for an exact text string (UTF-8/ANSI safe).
 
 .EXAMPLE
-  ./Find-RepoString.ps1 -Root "D:\code\ccode" `
+  ./Find-RepoString.ps1 -Root . `
     -Pattern ' Output fields are separated by ASCII Unit Separator (0x1F).'
 
 .EXAMPLE

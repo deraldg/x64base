@@ -1,116 +1,160 @@
 # PROMOTE.manifest -- what publishes from development to the public repo
 # ===========================================================================
-# Authority chain:
-#     D:\code\ccode  (this tree = source of truth, full history, git)
+# Authority chain (single, canonical):
+#     D:\code\ccode  (branch: development = source of truth, full history)
 #         |  files matched below, minus .gitignore deny-list
 #         v
-#     C:\x64base     (publication staging -- rebuildable only from verified
-#                      baseline, dirty/ignored preservation, and overlay layers)
+#     C:\x64base     (branch: main = publication staging)
 #         |  git commit + push
 #         v
-#     github.com/deraldg/x64base   (public snapshot)
+#     github.com/deraldg/x64base  (main = public snapshot; canonical for
+#                                   downloads and pull requests)
 #
-# This file is an ALLOW-LIST, not an ignore-list. Staging holds far less than
-# development, so the publishable set is small and explicit. A deny-list
-# ("everything except...") would be enormous and fragile; an allow-list is not.
+# WHAT THIS MANIFEST GOVERNS: the curated DATA + DOCUMENTATION projection that
+# publishes to main -- fixtures, the databuild lane, HELP, end-user docs,
+# runtime scaffold, launchers. ALLOW-LIST: of the clean dev files, only these
+# publish through the rebuild overlay.
 #
-# It is the counterpart to .gitignore, which they do NOT overlap:
-#     .gitignore       = "never version this, anywhere"  (deny; universal)
-#     PROMOTE.manifest = "of the clean files, these publish"  (allow; selective)
-# A file can be git-tracked in development yet absent here -- that is a lane
-# that is versioned but not yet published (sandbox, messaging, metadata, ...).
+# WHAT IT DOES NOT GOVERN (per labtalk/ai_portal/PROMOTION_MODEL_SEED_V1.md):
+# engine SOURCE and BUILD CONFIG -- src/, include/, bindings/, CMakeLists.txt,
+# CMakePresets.json, vcpkg*.json, cmake/ -- are NOT carried here. They reach
+# main through a reviewed branch created FROM main in sterilized C:\x64base
+# staging. Only the reviewed source slice is applied, cold-clone certified, and
+# merged into staging main. NEVER merge or push the development branch to main.
+# Overlaying dev's mixed working-tree source would push half-finished engine
+# code to main; the main-based source lane keeps it build-coherent. Source and
+# this projection can fall out of step -- ground published docs against main,
+# proven by a cold clone.
 #
-# HOW IT IS USED
-#   tools/staging/rebuild-staging.ps1 clones github/main into C:\x64base (the
-#   full baseline), then overlays every file matched below from development,
-#   applying the .gitignore deny-list as a hard guard. Result: staging == the
-#   published baseline plus development's current version of the promoted set.
-#   A destructive rebuild is allowed only after the committed public baseline
-#   and dirty staging layer are preserved in a verified offline escrow. The
-#   rebuild restores those layers before applying this allow-list; GitHub is
-#   not the sole recovery source.
+# SCOPE NOTE: this projection is scoped lean for a product-facing main --
+# metalevel docs, portal seeds, and doc-engine tools that the promotion model
+# would ALLOW here are deliberately trimmed (see NOT PUBLISHED). That is a
+# maintainer scope choice on the projection, not a change to the source/git
+# boundary above.
 #
 # FORMAT
 #   - '#' begins a comment; blank lines ignored.
 #   - Every other line is a path or glob, relative to the development root.
-#   - '**' recurses. Matching uses the shell's own globbing.
-#   - The rebuild script re-applies the .gitignore deny-list after matching, so
-#     an accidental broad glob still cannot leak LMDB, *.cdx.d, *.exe, og/, or
-#     scratch. Defense in depth.
-#
-# WHAT IS DELIBERATELY NOT HERE (covered by .gitignore, regenerated on clone)
-#   dottalkpp/data/lmdb/**        53 GB, derived from CDX by BUILDLMDB
-#   **/*.cdx.d/                   LMDB environments
-#   dottalkpp/data/dbf/og/**      extracted from the zip by extract_mcc_og.ps1
-#   **/*.exe                      no compiled runtime -- dev stage
-#   zz_* **/table.cnx **/table.cdx  probe/scratch
+#   - '**' recurses; '**/' matches zero-or-more directory segments;
+#     '*' stays within a path segment. Shell globbing.
+#   - The rebuild re-applies .gitignore after matching (defense in depth).
 # ===========================================================================
 
-# --- entry + hygiene -------------------------------------------------------
+
+# ###########################################################################
+# PUBLISHED -- the product (engine + help + samples)
+# ###########################################################################
+
+# --- entry + hygiene + license + public-repo health files ------------------
 .gitignore
-# AI_PORTAL.md -- deliberately NOT overlaid from development. main carries a
-# non-perishable pointer to the development portal (no-widows-and-orphans rule,
-# 2026-08-10); overlaying dev's full portal here would republish perishable
-# state on a frozen branch. Source of truth for the pointer text:
-# dev docs/maintenance/AI_PORTAL_MAIN_POINTER_DRAFT_V1.md. NOTE: this staging
-# manifest copy is historical; rebuild-staging.ps1 reads development's
-# PROMOTE.manifest, which already excludes AI_PORTAL.md.
-AI_README.md
+.gitattributes
+.editorconfig
+.github/workflows/*.yml
+LICENSE
+LICENSING.md
+README.md
+MANIFEST.txt
+PROMOTE.manifest
 BUILDING.md
+CHANGELOG.md
+RELEASE_NOTES.md
+CONTRIBUTING.md
+CODE_OF_CONDUCT.md
+SECURITY.md
 
-# --- build editions: proof + rationale (authority for BUILDING.md) ---------
-docs/maintenance/XBASE_XINDEX_BUILD_PROOF_MATRIX_V1.md
-docs/maintenance/XBASE_OPTIONAL_INDEX_ARCHITECTURE_DECISION_V1.md
-docs/maintenance/X64BASE_ENGINE_EDITION_SEPARATION_PLAN_V1.md
-docs/maintenance/EDITION_PUBLICATION_PLAN_A_V1.md
+# --- curated transportable text (AIF-093) ----------------------------------
+# `.text` is the opt-in "chosen to travel" marker: any `.text` file, anywhere,
+# publishes. Additive -- `.txt` is UNCHANGED and stays governed by its own
+# per-path patterns. `**/*.text` globs files (pathlib), not the `dir/**` case.
+**/*.text
 
-# --- AI-facing docs --------------------------------------------------------
-docs/agents/CURRENT_TARGET.md
-docs/ai-friendly/*.md
-docs/contracts/*.md
-docs/contracts/reports/*.md
-docs/maintenance/SESSION_CLOSEOUT_TEMPLATE.md
-docs/maintenance/SESSION_CLOSEOUT_*.md
-docs/maintenance/SIDECAR_PURGE_*.txt
+# --- product launchers -----------------------------------------------------
+dottalkpp/bin/*.bat
+dottalkpp/bin/*.ps1
+dottalkpp/bin/*.sh
+dottalkpp/bin/*.ico
+# NOTE: main currently carries BUILDING.md at docs/getting-started/BUILDING.md.
+# Reconcile to ONE canonical location before the next promotion.
 
-# --- AI portal seeds -------------------------------------------------------
-labtalk/ai_portal/*.md
+# (engine source + build config REMOVED -- git-managed, see header + the
+#  "NOT IN THIS MANIFEST BUT ON main" section below.)
+
+# --- product edition manifests (development edition stays in dev) -----------
+config/package/lean.manifest
+config/package/professional.manifest
+config/package/educational.manifest
+
+# --- launchers (product front-ends: pydottalk, CLI, Workbench GUI) ----------------
+#     NOT listed: holdout products (bible, erp/cascade, artic) and ALPHA
+#     subsystems (pycrud, dottalk-webui).
+run-pydottalk.ps1
+run-cli.ps1
+run-wb.ps1
+run-wb-next.ps1
+wb.run.ps1
+wb.next.run.ps1
+launch-common.ps1
+tk.run.ps1
+tk.run.sh
+
+# (C++ engine source + headers REMOVED -- git-managed, not overlaid.)
 
 # --- runtime scaffold (structure + ini; the exe is NOT published) ----------
 dottalkpp/bin/*.ini
 
-# --- databuild lane --------------------------------------------------------
+# --- databuild / sample-build scripts --------------------------------------
 dottalkpp/scripts/mcc/*.ps1
 dottalkpp/data/scripts/mcc/*
 
-# --- Pinocchio stress-test lane (scripts + plan only) ----------------------
-# The generated CSV and the built dbf/indexes/lmdb under .../pinocchio are
-# DERIVED and disposable -- not listed here, and gitignored in development.
-dottalkpp/scripts/pinocchio/*
-dottalkpp/data/scripts/pinocchio/*
-docs/maintenance/PINOCCHIO_STRESS_TEST_PLAN_V1.md
+# --- product sample data + schemas (canonical fixture families) ------------
+#     Non-publish lanes are deliberately NOT listed and get purged:
+#       data/messaging  data/metadata  data/meta  data/dbf/sandbox
+#       data/indexes/{messaging,metadata}  data/schemas/{messaging,metadata}
+#       data/scripts/{messaging,pinocchio}
+dottalkpp/data/*.dts
+dottalkpp/data/comments/**
+dottalkpp/data/datadict/**
+dottalkpp/data/locale/**
+dottalkpp/data/manuals/**
+dottalkpp/data/tests/**
+dottalkpp/data/workspaces/**
+dottalkpp/data/schemas/*.txt
+dottalkpp/data/schemas/help/**
+dottalkpp/data/schemas/locale/**
+dottalkpp/data/schemas/tables/**
+dottalkpp/data/scripts/*.dts
+dottalkpp/data/scripts/*.DTS
+dottalkpp/data/scripts/*.txt
+dottalkpp/data/scripts/canaries/**
+dottalkpp/data/scripts/main/**
+dottalkpp/data/scripts/mcc/**
+# DBF fixture families (sandbox excluded)
+dottalkpp/data/dbf/*.zip
+dottalkpp/data/dbf/*.txt
+dottalkpp/data/dbf/dev/**
+dottalkpp/data/dbf/help/**
+dottalkpp/data/dbf/memo/**
+dottalkpp/data/dbf/vfp/**
+dottalkpp/data/dbf/x32/**
+dottalkpp/data/dbf/x64/**
+# portable index containers (cdx/cnx/idx/inx) -- distribution assets
+dottalkpp/data/indexes/datadict/**
+dottalkpp/data/indexes/help/**
+dottalkpp/data/indexes/locale/**
+dottalkpp/data/indexes/manuals/**
+dottalkpp/data/indexes/vfp/**
+dottalkpp/data/indexes/x32/**
+dottalkpp/data/indexes/x64/**
 
-# --- MCC sample data: the canonical origin + three built flavors -----------
-dottalkpp/data/dbf/MyCommunityCollege.zip
-dottalkpp/data/dbf/mcc_schema.txt
-dottalkpp/data/dbf/community_college_schema.txt
-dottalkpp/data/dbf/community_college_x64_schema.txt
-dottalkpp/data/dbf/x32/*.DBF
-dottalkpp/data/dbf/vfp/*.dbf
-dottalkpp/data/dbf/x64/*.DBF
-dottalkpp/data/dbf/x64/community_college_x64_schema.txt
-dottalkpp/data/indexes/x32/*.cnx
-dottalkpp/data/indexes/vfp/*.cnx
-dottalkpp/data/indexes/x64/*.cdx
-dottalkpp/data/workspaces/mcc_x32.dtschema
-dottalkpp/data/workspaces/mcc_vfp.dtschema
-dottalkpp/data/workspaces/mcc_x64.dtschema
-
-# --- HELP lane (our system data -- kept) -----------------------------------
+# --- HELP lane (end-user help catalogs -- the point of the download) --------
 dottalkpp/data/dbf/help/**
 dottalkpp/data/help/**
+dottalkpp/help/**
 
-# --- schema-note drift fixes that live outside dbf/ ------------------------
+# --- runtime system-message data -------------------------------------------
+docs/system_messages.dts
+
+# --- schema-note READMEs (help for reading the sample data) ----------------
 dottalkpp/data/dbf/x32/README.txt
 dottalkpp/data/help/DATA_INDEX_README.txt
 dottalkpp/data/help/V32_help/DATA_INDEX_README.txt
@@ -120,30 +164,65 @@ mcc/README.txt
 dottalkpp/docs/My_Comminty_College_README.txt
 dottalkpp/docs/My_Comminty_College_Data_Schema_README.txt
 
-# --- tools -----------------------------------------------------------------
-tools/hygiene/*.ps1
-tools/staging/*.ps1
-PROMOTE.manifest
+# --- end-user documentation: getting-started, GUI help, reader manuals ------
+docs/getting-started/**
+docs/gui/*.md
+# NOTE: review docs/gui -- keep end-user GUI help; a few files there are dev
+# plans (e.g. GUI_RUNTIME_FACADE_PLAN) that belong in the NOT-PUBLISHED set.
+DOTTALKPP_READER_MANUAL*.md
+DOTTALKPP_COMMAND_REFERENCE*.md
 
-# --- reviewed Developer Manual publication lane --------------------------
-# Generated candidates, backups, environments, and runtime data remain excluded.
-docs/manuals/developer/manualgen/accepted_artifacts/ACTIVE_PRIMARY_READER_ARTIFACT.txt
-docs/manuals/developer/manualgen/accepted_artifacts/primary_reader_artifact_v1.json
-docs/manuals/developer/manualgen/accepted_artifacts/command_reference_artifact_v1.json
-docs/manuals/developer/manualgen/accepted_manifests/ACTIVE_MANUALGEN_MANIFEST.txt
-docs/manuals/developer/manualgen/accepted_manifests/developer_manual_canonical_manifest_v1.json
-docs/manuals/developer/manualgen/accepted_manifests/DOCFLUSH-20260716-001_APPENDIX_ACCEPTANCE_RECORD.md
-docs/manuals/developer/manualgen/published/developer_manual_publication_v1/*.md
-docs/manuals/developer/manualgen/published/developer_manual_publication_v1/appendices/*.md
-docs/manuals/developer/manualgen/published/developer_manual_publication_v1/sections/sections/*.md
-docs/manuals/developer/manualgen/published/developer_manual_publication_v1/command_reference_v1/*.md
-docs/manuals/developer/manualgen/published/developer_manual_publication_v1/command_reference_v1/commands/*.md
-tools/manualgen/*.py
-tools/manualgen/*.md
-tools/manualgen/manualgen_lib/*.py
-tools/manualgen/tests/*.py
-tools/fullstack_docs/*.py
-tools/fullstack_docs/tests/*.py
-docs/maintenance/lanes/full_stack_documentation/*.md
-docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260716-001/DOCUMENTATION_FLUSH_PROGRESS_LOG_V1.md
-docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260716-001/documentation_flush_progress_ledger_v1.csv
+
+# ###########################################################################
+# NOT IN THIS MANIFEST BUT LEGITIMATELY ON main -- reaches main via git
+# ###########################################################################
+# Engine source + build config are git-managed (a reviewed branch created from
+# main in C:\x64base staging -> cold-clone build -> merge to staging main), NOT
+# overlaid from dev's working tree and NEVER merged from development. They are
+# correctly present on main and MUST NOT be purged by a projection audit:
+#     src/**   include/**   bindings/**   (bindings = pydottalk C++ server source)
+#     CMakeLists.txt   CMakePresets.json   src/**/CMakeLists.txt   cmake/**
+#     vcpkg.json   vcpkg-wsl.json
+# The pydottalk Python server ships as part of the git-managed source tree, not
+# as a manifest projection lane.
+
+
+# ###########################################################################
+# NOT PUBLISHED -- stays in development (metalevel / dev environment)
+# ###########################################################################
+# Listed for clarity. These are simply ABSENT from the allow-list above; the
+# lines below are commentary, not globs. If any are currently tracked in main,
+# purge them (git rm --cached) -- they came from history, not from this list.
+#
+#   Metalevel docs:
+#     AI_PORTAL.md  AI_README.md
+#     docs/agents/**  docs/ai-friendly/**  docs/contracts/**
+#     docs/maintenance/**  (rationale, lanes, session closeouts, build proofs)
+#     docs/database/**  docs/planning/**  docs/ui/**  docs/diagrams/**
+#   Manual AUTHORING aids + build assets (keep the rendered manual, not these):
+#     DOTTALKPP_MANUAL_*.md  DOTTALKPP_PROFESSIONAL_*.md
+#     docs/manuals/anchors/**  docs/manuals/assets/**
+#     docs/manuals/command_reference/**  docs/manuals/dist/**
+#     docs/manuals/developer/**   (developer manual + manualgen internals)
+#   Documentation ENGINES + dev tooling:
+#     tools/manualgen/**  tools/fullstack_docs/**  tools/gui_preview/**
+#     tools/ci/**  tools/hygiene/**  tools/staging/**  dottalkpp/tools/help/**
+#     PROMOTE.manifest  PROMOTION_*.md  (the promotion machinery itself)
+#   Educational / portal:
+#     labtalk/**   dottalkpp/docs/authority/**
+#   ALPHA / separately-maintained subsystems:
+#     pycrud/**              (ALPHA -- not ready to ship)
+#     dottalk-webui/**       (the x64base-site -- maintained in its own pipeline)
+#   Holdout products (outside the GitHub promotion path):
+#     run-bible.ps1 biblerun.ps1 run-erp.ps1 erprun.ps1 artic*.datarun.*
+#   Dev stress-test:
+#     **/pinocchio/**   docs/maintenance/PINOCCHIO_*
+#   Non-publish MDO content lanes (never public; SUPPOSED to be versioned in
+#   dev and largely are NOT -- measured 2026-09-09, docs/messaging is 419 files
+#   with 0 tracked. The exclusion below does not imply development holds these.
+#   See PROMOTION_PROCESS.md section 7, OI-036, R141):
+#     **/messaging/**   **/metadata/**   **/sandbox/**
+#   Never-version junk (also gitignored):
+#     **/__pycache__/**  **/*.pyc  build*/  **/*.exe  **/*.lib  **/*.pdb
+#     **/lmdb/**  **/*.cdx.d/
+# ===========================================================================

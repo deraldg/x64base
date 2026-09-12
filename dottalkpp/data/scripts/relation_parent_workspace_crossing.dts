@@ -1,0 +1,204 @@
+; ============================================================================
+; THE RELATION PARENT IS RESOLVED ACROSS WORKSPACES -- AIF-137
+; ============================================================================
+;
+; WHAT THIS SEPARATES.
+;
+; AIF-078 I1.2 partitioned the relation STORE by workspace, and
+; relation_workspace_scope.dts proves that half. It does NOT reach this one,
+; and it says so in its own text: "current_parent_override() in
+; set_relations.cpp is still ONE global, not per workspace ... the next
+; workspace-blind piece of relation state". That spec uses DISTINCT table
+; names per workspace (RSAP/RSAC vs RSBP/RSBC) so a name can never collide,
+; which is exactly the case this file supplies.
+;
+; The store is scoped. The NAMES INSIDE IT ARE NOT. refresh_from_parent_name()
+; takes a string and calls find_open_area_by_name_ci(), which sweeps every open
+; area and returns the LOWEST engine slot with no workspace filter. So a
+; refresh issued while standing in one workspace resolves its parent -- and its
+; child -- to ANOTHER workspace's areas, whenever both hold the same name.
+;
+; RUNTIME-OBSERVED 2026-08-27 before this spec existed: opening two fixture
+; directories that share table names drove the R112 ambiguity ledger to
+; "resolved to area 0 [REL refresh parent]" while the current handle was 3.
+; This file is that observation turned into an arm that can go red.
+;
+; HOW IT ASSERTS, and it is by FIELD VALUE, never by console text.
+;
+; RPC_T1 is the NEGATIVE half and the main discriminator: workspace A's child
+; is parked on a sentinel row and must STILL BE THERE after a refresh issued
+; inside workspace B. Under the defect the refresh drives A's child, so the
+; sentinel is gone and the arm reads .F.
+;
+; RPC_T2 is the POSITIVE half: workspace B's own child must have FOLLOWED B's
+; parent. Under the defect B's child is never touched at all and sits where it
+; was parked, so this arm also reads .F. Two arms, opposite directions, both
+; red today -- because "the wrong one moved" and "the right one did not" are
+; different failures and a fix must produce both.
+;
+; NOTHING HERE ASSERTS AN ABSENCE. No marker in this language can (USE_AGAIN,
+; three cuts), and an errored marker PRINTS NOTHING rather than going red. Both
+; arms are positive reads of a field that must hold a specific value.
+;
+; ADDRESSING IS BY ENGINE SLOT, NOT BY NAME, AND THAT IS LOAD-BEARING.
+; `SELECT rpcp` is itself unscoped -- it is the same defect wearing a different
+; verb -- so a name-addressed arm could not tell you which table it read. It
+; would also change meaning the day R129 sec 6.2 lands, which would silently
+; re-point this spec at a different area. Slots are unambiguous and stay so.
+;
+; GUARDS. RPC_G0 proves each fixture on its own before any workspace exists.
+; RPC_G1 proves the two directories landed in the slots the arms address --
+; without it, an arm reading the wrong slot cannot be told from a verb that
+; misbehaved. RPC_G2 proves the parent is parked on the key the child is
+; expected to follow; if the parent is elsewhere the child's destination is
+; undefined and both arms are meaningless. IF ANY GUARD READS .F., TREAT BOTH
+; ARMS AS UNPROVEN RATHER THAN AS FAILING.
+;
+; THE SLOT LAYOUT IS ALPHABETICAL AND IS ASSERTED, NOT ASSUMED. A directory
+; open sorts its tables, so RPCC precedes RPCP: workspace A takes slots 0 and 1,
+; workspace B takes 2 and 3. RPC_G1 reads a field in slot 0 and slot 2 to prove
+; it rather than trusting the sort.
+;
+; SET PATH ORDERING IS A KNOWN TRAP IN THIS FILE'S SHAPE. workspace_additive_
+; open.dts was once edited so a SET PATH landed BEFORE the previous table's
+; CREATE, and a fixture was built in the wrong directory; its guard caught it
+; red on both binaries. Every CREATE and every ERASE below is immediately
+; preceded by the SET PATH that owns it.
+;
+; Self-bootstrapping in DBF/SANDBOX/RPCA and DBF/SANDBOX/RPCB, erased at the
+; end; both workspaces destroyed in teardown (D10.3), so the NAMES are freed
+; and a later run mints fresh rather than adopting. The catalog ROWS remain --
+; that is history by design, and the cost is two superseded rows per run.
+; ============================================================================
+
+WORKSPACE CLOSE ALL
+WORKSPACE DESTROY RPCWSA
+WORKSPACE DESTROY RPCWSB
+
+SET PATH DBF DBF/SANDBOX/RPCA
+ERASE rpcp CONFIRM
+ERASE rpcc CONFIRM
+SET PATH DBF DBF/SANDBOX/RPCB
+ERASE rpcp CONFIRM
+ERASE rpcc CONFIRM
+
+; --- fixtures: the SAME two names in TWO directories ------------------------
+; Different labels per directory, so a field read says WHICH workspace's table
+; it came from. That is the whole discriminator.
+
+SET PATH DBF DBF/SANDBOX/RPCA
+SELECT 0
+CREATE X64 RPCP (PK C(4))
+APPEND
+REPLACE PK WITH "A"
+
+SELECT 1
+CREATE X64 RPCC (CK C(4), CLBL C(10))
+APPEND
+REPLACE CK WITH "Z"
+REPLACE CLBL WITH "A_ZED"
+APPEND
+REPLACE CK WITH "A"
+REPLACE CLBL WITH "A_ALPHA"
+APPEND
+REPLACE CK WITH "B"
+REPLACE CLBL WITH "A_BETA"
+
+SET PATH DBF DBF/SANDBOX/RPCB
+SELECT 2
+CREATE X64 RPCP (PK C(4))
+APPEND
+REPLACE PK WITH "A"
+APPEND
+REPLACE PK WITH "B"
+
+SELECT 3
+CREATE X64 RPCC (CK C(4), CLBL C(10))
+APPEND
+REPLACE CK WITH "Z"
+REPLACE CLBL WITH "B_ZED"
+APPEND
+REPLACE CK WITH "A"
+REPLACE CLBL WITH "B_ALPHA"
+APPEND
+REPLACE CK WITH "B"
+REPLACE CLBL WITH "B_BETA"
+
+SELECT 1
+GO 3
+? "RPC_G0a_A_child_fixture_written:" + (ALLTRIM(CLBL) = "A_BETA")
+SELECT 3
+GO 3
+? "RPC_G0b_B_child_fixture_written:" + (ALLTRIM(CLBL) = "B_BETA")
+
+WORKSPACE CLOSE ALL
+
+; --- two workspaces, two directories, one pair of names ---------------------
+; This is the R128 additive OPEN. Under a replacing OPEN the second would close
+; the first and RPC_G1 would go red, which is the correct reading: the
+; arrangement this spec needs would not exist.
+
+WORKSPACE OPEN DBF/SANDBOX/RPCA AS RPCWSA
+WORKSPACE OPEN DBF/SANDBOX/RPCB AS RPCWSB
+
+; Alphabetical within each directory: RPCC then RPCP.
+;   slot 0 = RPCWSA's RPCC      slot 1 = RPCWSA's RPCP
+;   slot 2 = RPCWSB's RPCC      slot 3 = RPCWSB's RPCP
+SELECT 0
+GO 1
+? "RPC_G1a_slot0_is_workspace_A_child:" + (ALLTRIM(CLBL) = "A_ZED")
+SELECT 2
+GO 1
+? "RPC_G1b_slot2_is_workspace_B_child:" + (ALLTRIM(CLBL) = "B_ZED")
+
+; --- the relation belongs to RPCWSB, and only to RPCWSB ---------------------
+; Current handle is RPCWSB after the second OPEN, so this edge lands in B's
+; partitioned store. The store is scoped; the names it holds are not.
+
+SELECT 3
+REL ADD RPCP RPCC ON PK TO CK
+
+; Park A's child on the sentinel row it must never leave.
+SELECT 0
+GO 3
+? "RPC_G1c_A_child_parked_on_sentinel:" + (ALLTRIM(CLBL) = "A_BETA")
+
+; Park B's child somewhere it must MOVE from, so T2 cannot pass by standing still.
+SELECT 2
+GO 1
+
+; Park B's parent on key A. The child is expected to follow to B_ALPHA.
+SELECT 3
+GO 1
+? "RPC_G2_B_parent_parked_on_key_A:" + (ALLTRIM(PK) = "A")
+
+REL REFRESH
+
+; --- RPC_T1: the OTHER workspace's child was not driven ---------------------
+; Under the defect the refresh resolved RPCP and RPCC to slots 1 and 0 --
+; workspace A's -- and drove A's child to key "A", landing on A_ALPHA.
+
+SELECT 0
+? "RPC_T1_other_workspace_child_undisturbed:" + (ALLTRIM(CLBL) = "A_BETA")
+
+; --- RPC_T2: THIS workspace's child WAS driven ------------------------------
+; Under the defect slot 2 was never touched and still reads B_ZED.
+
+SELECT 2
+? "RPC_T2_own_workspace_child_followed_parent:" + (ALLTRIM(CLBL) = "B_ALPHA")
+
+; --- teardown ---------------------------------------------------------------
+
+WORKSPACE CLOSE ALL
+WORKSPACE SWITCH DEFAULT
+WORKSPACE DESTROY RPCWSA
+WORKSPACE DESTROY RPCWSB
+
+SET PATH DBF DBF/SANDBOX/RPCA
+ERASE rpcp CONFIRM
+ERASE rpcc CONFIRM
+SET PATH DBF DBF/SANDBOX/RPCB
+ERASE rpcp CONFIRM
+ERASE rpcc CONFIRM
+
+SET PATH DBF DBF

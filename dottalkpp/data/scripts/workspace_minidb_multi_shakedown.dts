@@ -1,0 +1,1203 @@
+* ============================================================================
+* workspace_minidb_multi_shakedown.dts
+*
+* A LONG, SELF-CONTAINED SHAKEDOWN OF TWO LANES AT ONCE: the multi-workspace
+* tree (AIF-078) and the memo-resident MINIDB container (AIF-070). Written
+* 2026-08-28 against build 48273f28.
+*
+* WHY BOTH IN ONE FILE. They are not independent. A MINIDB container carries a
+* POSTURE, a posture is a picture of a WORKSPACE, and the interesting failures
+* live where the two meet -- a container hydrated into RAM lands its tables in
+* whatever workspace is current, at slots the posture does not control. A
+* script that exercised either alone would miss that seam.
+*
+* ---------------------------------------------------------------------------
+* HOW TO READ THIS SCRIPT -- four rules, each of them paid for
+* ---------------------------------------------------------------------------
+*
+* 1. COUNT THE MARKERS. 48 must PRINT -- 17 guards and 31 arms. An errored
+*    marker PRINTS NOTHING rather than going red, so a full screen of .T.
+*    with 47 lines is a FAILURE, not a pass. The count is the check.
+*
+*    STALE A FOURTH TIME, FOUND 2026-09-10. It read 40 / 14 / 26 while the
+*    artifact held 48 / 17 / 31, and it had been wrong through every run
+*    since Section 5C was added. Nothing in this file's edits that day moved
+*    it -- it was already eight short. The paragraph below predicted this in
+*    writing and the prediction did not save it, which is the argument for
+*    deriving the number rather than declaring it, one level stronger than
+*    it was three corrections ago.
+*
+*    THIS NUMBER HAS NOW BEEN WRONG ONCE AND STALE TWICE, each recorded
+*    rather than quietly fixed: 34 by miscounting; 35 after the first run's
+*    fix added two guards; 37 until section 5B added three more. A
+*    hand-maintained count beside the thing it counts is a SECOND
+*    DECLARATION and it drifts exactly the way the WORKSPACE usage header
+*    drifted three times -- which is the argument for deriving it every
+*    time rather than reading it here:  grep -c '^? "MWX_'
+*
+*    THIS NUMBER WAS WRONG IN THE FIRST DRAFT OF THIS FILE and is corrected
+*    here rather than quietly fixed. It read 34, from arithmetic that counted
+*    MWX_G0a-d as one guard and then added one back. The author of a read
+*    rule about counting miscounted the thing the rule counts. It is left on
+*    the record because the correction is the same lesson the rule teaches:
+*    do not trust a number you did not derive from the artifact. The
+*    derivation is `grep -c '^? "MWX_'`.
+*
+* 2. GUARDS FIRST, ARMS SECOND. Every MWX_G* proves an INPUT. If any guard
+*    reads .F., treat every MWX_T* below it as UNPROVEN rather than as
+*    failing -- a fixture failure wearing a verb failure's clothes is the
+*    exact trap WSL_G4/G5 were added to close.
+*
+* 3. NOTHING HERE ASSERTS THAT AN AREA IS EMPTY. No marker in this language
+*    can (USE_AGAIN, three cuts): the marker evaluator binds a null area
+*    whether or not it is open, so a comparison over a CLOSED area does not
+*    error -- it PRINTS A VERDICT, and the verdict depends on the OPERATOR.
+*    Measured 2026-08-28: (SID >= 1) reads .T. over a closed area while
+*    (SO_ID = 6) reads .F. Absence is therefore proven by CONTRAST and by
+*    reading the transcript, never by an arm.
+*
+* 4. ASSERTIONS ADDRESS BY NAME, NEVER BY SLOT, after any posture LOAD.
+*    R130: a posture's AREA numbers are KEYS, not addresses, and the load
+*    prints so. Tables land at 0..N-1 regardless of what the posture said.
+*    Four specs carried slot-addressed arms into 2026-08-28 and produced
+*    FALSE GREENS the moment their fixtures shrank.
+*
+*    AND -- ACROSS WORKSPACES -- QUALIFIED. Added 2026-09-10. Rule 4 was
+*    written when a bare name was resolved by sweeping every area in the
+*    session and taking the lowest that answered, so BY NAME was a complete
+*    address. It is not one any more. Q8 (closed 2026-08-27) rules that an
+*    unqualified name resolves inside the CURRENT workspace and R134 gives
+*    the qualified form WS:TABLE, so a bare name is now an address RELATIVE
+*    to wherever the script happens to be standing. Every arm in this file
+*    that reaches into a workspace it is not currently in says so out loud.
+*
+*    THE COST OF THE OLD HALF-RULE, MEASURED: three arms in Section 2 and 3
+*    were reading tables belonging to OTHER workspaces and calling the
+*    reading proof of THEIR OWN. See MWX_T1, MWX_T2 and MWX_T5 for what each
+*    one actually proved, which in two cases was nothing at all. First-wins
+*    did not just tolerate the mistake; it CONCEALED it, because a wrong
+*    address that still finds a table with the right field in it produces a
+*    green indistinguishable from a right one.
+*
+* ---------------------------------------------------------------------------
+* WHAT IT COSTS, STATED RATHER THAN DISCOVERED
+* ---------------------------------------------------------------------------
+*
+* This script MINTS DURABLE CATALOG ROWS. WORKSPACE NEW writes a birth row
+* (D10.1), WORKSPACE OPEN <dir> AS <name> mints one too, and every SAVE
+* appends to a name's chain. Teardown DESTROYs everything it declares, so no
+* NAME keeps a live row and a second run mints fresh rather than ADOPTING --
+* but the ROWS remain, because D10.3 retirement is SUPERSESSION, not deletion.
+* That is the history the design keeps.
+*
+* RUN IT BRACKETED IF YOU CARE ABOUT THAT: registered under a spec flagged
+* mints_catalog, REGRESSION points the WORKSPACES slot at a per-run scratch
+* root and production is untouched. Run bare and the rows land in production.
+*
+* Fixtures live in DBF/SANDBOX and are erased at both ends. Nothing outside
+* SANDBOX and the workspace catalog is written.
+*
+* Run: DO workspace_minidb_multi_shakedown
+* ============================================================================
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+FORMULA "MWX-SHAKEDOWN-BEGIN"
+
+* ===========================================================================
+* SECTION 0 -- PRE-CLEAN.
+*
+* ORDER IS THE ARGUMENT: DESTROY comes BEFORE ERASE because retiring a name
+* needs the row it is retiring. On a clean start every line here prints
+* "no such workspace" and changes nothing; on a dirty one it is the
+* difference between minting and ADOPTING a previous run's identity.
+* ===========================================================================
+
+WORKSPACE CLOSE ALL
+WORKSPACE SWITCH DEFAULT
+WORKSPACE DESTROY MWXKID
+WORKSPACE DESTROY MWXONE
+WORKSPACE DESTROY MWXTWO
+WORKSPACE DESTROY MWXAS
+WORKSPACE DESTROY MWXDB
+WORKSPACE DESTROY MWXORD
+WORKSPACE DESTROY MWXCDXW
+
+SET PATH DBF DBF/SANDBOX/MWXA
+ERASE MWXP CONFIRM
+ERASE MWXSHARE CONFIRM
+ERASE MWXK CONFIRM
+SET PATH DBF DBF/SANDBOX/MWXB
+ERASE MWXQ CONFIRM
+ERASE MWXSHARE CONFIRM
+SET PATH DBF DBF/SANDBOX
+ERASE MWXNOTE CONFIRM
+
+* ===========================================================================
+* SECTION 1 -- FIXTURES.
+*
+* Two directories, each with a table of its own, PLUS a table of the SAME
+* NAME in both. The shared name is not decoration: one file open in several
+* workspaces is the case that separates a per-workspace registry from a
+* global one, and it is what MWX_T5 turns on.
+* ===========================================================================
+
+SET PATH DBF DBF/SANDBOX/MWXA
+SELECT 0
+CREATE X64 MWXP (PK C(4), PLBL C(12))
+APPEND
+REPLACE PK WITH "A1"
+REPLACE PLBL WITH "ALPHA_ONE"
+APPEND
+REPLACE PK WITH "A2"
+REPLACE PLBL WITH "ALPHA_TWO"
+
+SELECT 1
+CREATE X64 MWXSHARE (SK C(4), SLBL C(12))
+APPEND
+REPLACE SK WITH "S1"
+REPLACE SLBL WITH "SHARED_IN_A"
+
+&& MWXK EXISTS SO THE CHILD WORKSPACE CAN HOLD A TABLE WHOSE NAME IS UNIQUE.
+&& The first cut had the child open MWXSHARE, which exists in BOTH fixture
+&& directories -- so the arm reading it resolved to whichever copy won
+&& first-wins (R112) and asserted against the wrong table. The ambiguity
+&& ledger is exercised deliberately by T5; it must not leak into an arm that
+&& is about something else.
+SELECT 4
+CREATE X64 MWXK (KK C(4), KLBL C(12))
+APPEND
+REPLACE KK WITH "K1"
+REPLACE KLBL WITH "CHILD_TABLE"
+
+SET PATH DBF DBF/SANDBOX/MWXB
+SELECT 2
+CREATE X64 MWXQ (QK C(4), QLBL C(12))
+APPEND
+REPLACE QK WITH "B1"
+REPLACE QLBL WITH "BETA_ONE"
+
+&& TWO ROWS IN B'S COPY, ONE IN A'S, AND THE ASYMMETRY IS DELIBERATE.
+&& Added 2026-09-10 because MWX_T2 could not do its job with one row: it
+&& claimed to park the cursor on a NON-DEFAULT row and then prove the park
+&& survived a re-entry, but the only row it could park on was row 1, which
+&& is where a RE-OPEN would have left it too. The arm could not tell the two
+&& outcomes apart and had been green since 2026-08-28 on that basis. A park
+&& needs somewhere to park.
+SELECT 3
+CREATE X64 MWXSHARE (SK C(4), SLBL C(12))
+APPEND
+REPLACE SK WITH "S1"
+REPLACE SLBL WITH "SHARED_IN_B"
+APPEND
+REPLACE SK WITH "S2"
+REPLACE SLBL WITH "SHARED_B_TWO"
+
+SELECT 0
+GO 2
+? "MWX_G0a_fixture_A_parent_written:" + (ALLTRIM(PLBL) = "ALPHA_TWO")
+SELECT 1
+GO 1
+? "MWX_G0b_fixture_A_shared_written:" + (ALLTRIM(SLBL) = "SHARED_IN_A")
+SELECT 2
+GO 1
+? "MWX_G0c_fixture_B_parent_written:" + (ALLTRIM(QLBL) = "BETA_ONE")
+SELECT 3
+GO 1
+? "MWX_G0d_fixture_B_shared_written:" + (ALLTRIM(SLBL) = "SHARED_IN_B")
+SELECT 4
+GO 1
+? "MWX_G0e_child_table_written:" + (ALLTRIM(KLBL) = "CHILD_TABLE")
+
+WORKSPACE CLOSE ALL
+WORKSPACE SWITCH DEFAULT
+
+* ===========================================================================
+* SECTION 2 -- THE TREE: NEW, SWITCH, UNDER, AND MEMBERSHIP.
+*
+* An area joins whichever workspace is CURRENT when the area is OPENED, so
+* the model is SWITCH-then-open and never open-then-assign. These arms read
+* that by opening into different workspaces and then asking each one what it
+* still holds.
+* ===========================================================================
+
+WORKSPACE NEW MWXONE
+WORKSPACE SWITCH MWXONE
+SET PATH DBF DBF/SANDBOX/MWXA
+WORKSPACE ADD MWXP.dbf
+
+WORKSPACE NEW MWXTWO
+WORKSPACE SWITCH MWXTWO
+SET PATH DBF DBF/SANDBOX/MWXB
+WORKSPACE ADD MWXQ.dbf
+
+WORKSPACE NEW MWXKID UNDER MWXONE
+WORKSPACE SWITCH MWXKID
+SET PATH DBF DBF/SANDBOX/MWXA
+WORKSPACE ADD MWXK.dbf
+
+WORKSPACE REGISTRY
+
+SELECT MWXONE:MWXP
+GO 1
+? "MWX_G1a_one_holds_its_area:" + (ALLTRIM(PLBL) = "ALPHA_ONE")
+SELECT MWXTWO:MWXQ
+GO 1
+? "MWX_G1b_two_holds_its_area:" + (ALLTRIM(QLBL) = "BETA_ONE")
+SELECT MWXK
+GO 1
+? "MWX_G1c_child_holds_its_area:" + (ALLTRIM(KLBL) = "CHILD_TABLE")
+
+* ---------------------------------------------------------------------------
+* MWX_T1 -- OPEN ... AS <name> OVERRIDES THE DIRECTORY LEAF (R128).
+*
+* A directory open names the workspace after the leaf. Two directories with
+* the same leaf would ask for one handle; AS is the way out. It is also a
+* MINTING form -- it births a catalog row like NEW does -- which is why this
+* script retires MWXAS in teardown even though no NEW created it.
+*
+* THIS ARM READ THE WRONG TABLE FROM 2026-08-28 UNTIL 2026-09-10 and was green
+* the whole time. It read MWXQ, and MWXQ CANNOT BE A MEMBER OF MWXAS. The
+* re-entry guard inside the directory open --
+*
+*     if (area_holding_dbf(de.path()) >= 0) { already_open.push_back(...); continue; }
+*         -- src/cli/cmd_workspace.cpp:1509
+*
+* -- asks whether the FILE is open ANYWHERE, not whether it is open HERE.
+* MWXTWO opened DBF/SANDBOX/MWXB/MWXQ.dbf twenty lines above, so the AS open
+* SKIPS it and MWXAS is born holding only MWXSHARE. The old arm then resolved
+* the bare name MWXQ across every workspace, first-wins, landed on MWXTWO's
+* area, and reported .T. for a workspace it had never touched. Scoping SELECT
+* to the current workspace (Q8, 2026-09-10) is what surfaced it: the arm went
+* red, and the red was correct.
+*
+* IT NOW READS THE MEMBER MWXAS ACTUALLY HAS, qualified, so the assertion says
+* what the arm's own name claims: a workspace called MWXAS exists and holds a
+* table out of the directory that was opened.
+* ---------------------------------------------------------------------------
+
+WORKSPACE SWITCH DEFAULT
+WORKSPACE OPEN DBF/SANDBOX/MWXB AS MWXAS
+SELECT MWXAS:MWXSHARE
+GO 1
+? "MWX_T1_open_as_named_the_workspace:" + (ALLTRIM(SLBL) = "SHARED_IN_B")
+
+* ---------------------------------------------------------------------------
+* MWX_T2 -- ADDITIVE RE-ENTRY LEAVES OPEN TABLES ALONE (R128).
+*
+* Re-entering a workspace adds only what is not already open. The arm parks
+* the cursor on a NON-DEFAULT row first: if re-entry had re-opened the table
+* the cursor would be back at row 1, so the assertion is that the PARK
+* SURVIVED, which a re-open cannot fake.
+*
+* THE PARAGRAPH ABOVE DESCRIBED AN ARM THAT DID NOT EXIST. The arm parked with
+* `GO 1` -- row 1, the row a re-open lands on -- over a fixture that had ONE
+* ROW, so there was no other row to park on. It could not distinguish the
+* outcome it was named for from its opposite, and it passed either way. Two
+* separate defects, one green: the wrong table (see T1) and a park that was
+* not a park.
+*
+* Both are paid off here. B's MWXSHARE gained a second row in Section 1, the
+* park is `GO 2`, and the read is qualified to the workspace under test. A
+* re-open now moves the cursor back to S1 and the arm goes red, which is what
+* it was always supposed to do.
+* ---------------------------------------------------------------------------
+
+SELECT MWXAS:MWXSHARE
+GO 2
+WORKSPACE OPEN DBF/SANDBOX/MWXB AS MWXAS
+SELECT MWXAS:MWXSHARE
+? "MWX_T2_reentry_left_the_open_table_alone:" + (ALLTRIM(SLBL) = "SHARED_B_TWO")
+
+* ---------------------------------------------------------------------------
+* MWX_T3 / T4 -- SCOPED CLOSE, AND THE FLAG THAT DECIDES WHETHER IT DESCENDS.
+*
+* A bare CLOSE is scoped to the CURRENT workspace. With one workspace open
+* this is byte-identical to the old sweep; with two it is the difference
+* between closing yours and closing someone else's. T3 is that discriminator:
+* MWXTWO is a SIBLING and its area must still read after MWXONE closes.
+*
+* T4 IS ABOUT SET RECURSION, AND IT WAS WRONG IN THE FIRST CUT. It asserted
+* that a NESTED workspace's area survives a parent's close -- under the
+* DEFAULT, which is RECURSION ON, and ON means the close DESCENDS. The engine
+* did exactly what cmd_workspace.cpp documents ("2 workspace(s) closed") and
+* the arm called it a failure. A spec that contradicts the contract is a spec
+* defect, not a finding.
+*
+* Rewritten to test the FLAG rather than the default: under OFF the workspaces
+* are PARALLEL, so the child's area must survive. The ON case is proven by
+* CONTRAST and read from the transcript -- "N workspace(s) closed" -- because
+* asserting that the child WAS closed would be asserting absence, and no
+* marker in this language can do that.
+*
+* RECURSION IS RESTORED TO ON immediately afterwards. A spec that leaves a
+* session setting flipped poisons everything downstream of it; ERRORSTOP is
+* the cautionary precedent.
+* ---------------------------------------------------------------------------
+
+SET RECURSION OFF
+WORKSPACE SWITCH MWXONE
+WORKSPACE CLOSE
+
+SELECT MWXTWO:MWXQ
+GO 1
+? "MWX_T3_sibling_workspace_survived_a_scoped_close:" + (ALLTRIM(QLBL) = "BETA_ONE")
+SELECT MWXKID:MWXK
+GO 1
+? "MWX_T4_recursion_off_left_the_nested_workspace_open:" + (ALLTRIM(KLBL) = "CHILD_TABLE")
+SET RECURSION ON
+
+* ---------------------------------------------------------------------------
+* MWX_T5 -- ONE FILE, TWO WORKSPACES, TWO HANDLES.
+*
+* MWXSHARE exists in BOTH directories under the SAME NAME. This is the case
+* a global registry cannot represent. Opening B's copy while A's is already
+* open must yield a SECOND handle rather than replacing the first, and the
+* labels differ so the arm can tell which one it is reading.
+*
+* NOTE THE AMBIGUITY LINE IN THE TRANSCRIPT: with two same-named tables open,
+* name resolution reports "open in 2 areas ... resolved to area N, first-wins
+* is a migration step (R112)". That is the ledger doing its job, not an
+* error, and it is why T5 reads through the CURRENT area after an explicit
+* SELECT rather than trusting the bare name.
+*
+* ---------------------------------------------------------------------------
+* THE FIVE PARAGRAPHS ABOVE DESCRIBE A SITUATION THIS SCRIPT NEVER CREATES,
+* AND THE ARM HAS BEEN GREEN ON THAT BASIS SINCE 2026-08-28. LEFT STANDING
+* AND UNCHANGED 2026-09-10, deliberately, because what it needs is a RULING
+* and not an edit. Three facts, each read off the tree rather than inferred:
+*
+*   1. A'S COPY IS NEVER OPENED. Section 2 opens MWXP and MWXK out of MWXA
+*      and MWXQ out of MWXB. Nothing in this file ever opens
+*      DBF/SANDBOX/MWXA/MWXSHARE.dbf. The premise "while A's is already
+*      open" is false, so there is no second handle to test for and the
+*      ambiguity ledger this arm claims to exercise never fires.
+*
+*   2. B'S COPY IS ALREADY OPEN BY THE TIME T5 ASKS FOR IT -- MWX_T1's
+*      `WORKSPACE OPEN DBF/SANDBOX/MWXB AS MWXAS` opened it into MWXAS.
+*
+*   3. WORKSPACE ADD REFUSES THE SECOND OPEN OUTRIGHT:
+*
+*          const int dup_area = find_open_area_for_path(spec);
+*          if (dup_area >= 0) { ...already open in area...; select; return; }
+*              -- src/cli/cmd_workspace.cpp:5946
+*
+*      It searches EVERY area, not the current workspace's areas, then
+*      SELECTS the one it found and returns. So T5 does not open a second
+*      handle in MWXTWO; it silently borrows MWXAS's, reads SHARED_IN_B off
+*      it, and reports .T. for the exact behaviour it was written to rule
+*      OUT.
+*
+* THE OPEN QUESTION, STATED AND NOT ANSWERED HERE: is the duplicate-open
+* guard GLOBAL or PER-WORKSPACE? It is global in all three verbs that have
+* one -- WORKSPACE OPEN (:1509), WORKSPACE ADD (:5946), and USE -- and all
+* three were written when there was one workspace, which is the same reason
+* the metadata reports scanned on 2026-09-10 contain no notion of one. This
+* arm's whole design says the answer should be PER-WORKSPACE. That is a
+* ruling, it belongs with the USE duplicate-open item already open, and it
+* is not taken by the author of a spec that wants it to be true.
+*
+* UNTIL IT IS RULED, READ THIS ARM AS UNPROVEN RATHER THAN AS PASSING.
+* ---------------------------------------------------------------------------
+
+WORKSPACE SWITCH MWXTWO
+SET PATH DBF DBF/SANDBOX/MWXB
+WORKSPACE ADD MWXSHARE.dbf
+GO 1
+? "MWX_T5_second_copy_opened_beside_the_first:" + (ALLTRIM(SLBL) = "SHARED_IN_B")
+
+* ===========================================================================
+* SECTION 3 -- THE IDENTITY LADDER: DESTROY, DELETE, AND THE HIGH-WATER MARK.
+*
+* Retirement and removal are two different verbs and the difference is the
+* whole design. This section reads the CATALOG TABLE, not the console:
+* WORKSPACES.dbf is an ordinary x64 table -- the map drawn in the same ink as
+* the territory -- so the arms compare FIELDS, per the FIELDMGR_APPEND
+* doctrine that a spec asserting SHAPE passes green on a blanked table.
+* ===========================================================================
+
+WORKSPACE CLOSE ALL
+WORKSPACE SWITCH DEFAULT
+
+* ---------------------------------------------------------------------------
+* MWX_T6 -- DESTROY REFUSES A WORKSPACE THAT STILL HOLDS AREAS, and the area
+* survives. It does not cascade, so it can never be the thing that silently
+* orphaned an open area. The arm asks the answerable question: did the KNOWN
+* OCCUPANT survive the refusal.
+* ---------------------------------------------------------------------------
+
+WORKSPACE SWITCH MWXTWO
+SET PATH DBF DBF/SANDBOX/MWXB
+WORKSPACE ADD MWXQ.dbf
+WORKSPACE DESTROY MWXTWO
+SELECT MWXQ
+GO 1
+? "MWX_T6_destroy_refused_and_the_area_survived:" + (ALLTRIM(QLBL) = "BETA_ONE")
+
+* ---------------------------------------------------------------------------
+* MWX_T7 -- DESTROY REFUSES DEFAULT. Invariant I1 needs DEFAULT to outlive
+* every other workspace. Again read by survival, not by absence.
+* ---------------------------------------------------------------------------
+
+WORKSPACE SWITCH DEFAULT
+WORKSPACE DESTROY DEFAULT
+SELECT MWXTWO:MWXQ
+GO 1
+? "MWX_T7_default_refused_destruction_and_still_works:" + (ALLTRIM(QLBL) = "BETA_ONE")
+
+* ---------------------------------------------------------------------------
+* MWX_T8 -- DESTROY REFUSES A PARENT THAT STILL HAS A CHILD. Destroy the
+* child first; the verb refuses rather than cascading.
+* ---------------------------------------------------------------------------
+
+WORKSPACE CLOSE ALL
+WORKSPACE SWITCH DEFAULT
+WORKSPACE DESTROY MWXONE
+SET PATH DBF DBF/SANDBOX/MWXA
+SELECT 0
+USE MWXP
+GO 1
+? "MWX_T8_parent_with_a_child_refused_and_disk_intact:" + (ALLTRIM(PLBL) = "ALPHA_ONE")
+CLOSE
+
+* ---------------------------------------------------------------------------
+* MWX_T9 -- THE LADDER DISCRIMINATOR, and it is one line of meaning:
+* destroy a name, create it again, and the SECOND WS_ID MUST BE GREATER.
+*
+* That can only pass if retirement actually REACHED THE CATALOG. If DESTROY
+* silently no-ops, supersedes the wrong row, or writes a flag that does not
+* stick, the name still has a live chain, the second NEW ADOPTS it, and the
+* two ids are EQUAL. It separates a real retirement from a cheerful message.
+* ---------------------------------------------------------------------------
+
+WORKSPACE DESTROY MWXKID
+WORKSPACE DESTROY MWXONE
+
+WORKSPACE NEW MWXONE
+USE &_WORKSPACES\WORKSPACES.dbf
+GO BOTTOM
+VAR mwx_id1 = WS_ID
+? "MWX_G2_first_mint_wrote_a_birth_row:" + ($mwx_id1 > 0)
+CLOSE
+
+WORKSPACE DESTROY MWXONE
+WORKSPACE NEW MWXONE
+USE &_WORKSPACES\WORKSPACES.dbf
+GO BOTTOM
+VAR mwx_id2 = WS_ID
+? "MWX_T9_remint_after_destroy_is_a_fresh_identity:" + ($mwx_id2 > $mwx_id1)
+CLOSE
+
+* ---------------------------------------------------------------------------
+* MWX_T10 / T11 -- DELETE FLAGS, IT DOES NOT REMOVE, AND THE HIGH-WATER MARK
+* SURVIVES.
+*
+* THERE IS DELIBERATELY NO WORKSPACE PACK: allocation is max(WS_ID)+1 derived
+* from the SURVIVING rows, so the deleted rows must keep being COUNTED or the
+* next NEW would inherit a deleted workspace's durable identity. T10 reads
+* the flagged row still on disk under SET DELETED OFF; T11 proves the next
+* mint went UP rather than reusing the hole.
+* ---------------------------------------------------------------------------
+
+WORKSPACE DESTROY MWXONE
+WORKSPACE DELETE MWXONE
+
+SET DELETED OFF
+USE &_WORKSPACES\WORKSPACES.dbf
+GO BOTTOM
+VAR mwx_hw_after_delete = WS_ID
+? "MWX_T10_deleted_rows_are_still_on_disk:" + ($mwx_hw_after_delete >= $mwx_id2)
+CLOSE
+SET DELETED ON
+
+WORKSPACE NEW MWXONE
+USE &_WORKSPACES\WORKSPACES.dbf
+GO BOTTOM
+VAR mwx_id3 = WS_ID
+? "MWX_T11_delete_did_not_lower_the_high_water_mark:" + ($mwx_id3 > $mwx_id2)
+CLOSE
+
+* ---------------------------------------------------------------------------
+* MWX_T12 -- PURGE IS A RETAINED ALIAS AND STILL REACHES THE VERB.
+*
+* The verb was called PURGE until the owner read its output: "delete is a
+* flag and that means the row still exists just ignored." In xBase the pair
+* is exact -- DELETE flags, PACK removes -- so "purge" belongs on the PACK
+* side and this verb is on the flag side. The alias survives so existing
+* scripts keep working; this arm asserts that rather than assuming it.
+* ---------------------------------------------------------------------------
+
+WORKSPACE DESTROY MWXONE
+WORKSPACE PURGE MWXONE
+WORKSPACE NEW MWXONE
+USE &_WORKSPACES\WORKSPACES.dbf
+GO BOTTOM
+VAR mwx_id4 = WS_ID
+? "MWX_T12_purge_alias_still_reaches_the_verb:" + ($mwx_id4 > $mwx_id3)
+CLOSE
+
+* ---------------------------------------------------------------------------
+* MWX_T13 -- DELETE REFUSES A WORKSPACE DECLARED IN THIS SESSION.
+*
+* Deleting a declared workspace's rows would leave it running with no durable
+* identity. Retire it with DESTROY first. MWXONE is live right now, so the
+* refusal is the expected path and the arm reads that its row SURVIVED.
+* ---------------------------------------------------------------------------
+
+WORKSPACE DELETE MWXONE
+USE &_WORKSPACES\WORKSPACES.dbf
+GO BOTTOM
+? "MWX_T13_declared_workspace_kept_its_live_row:" + (WS_ID = $mwx_id4)
+CLOSE
+
+* ===========================================================================
+* SECTION 4 -- THE MINIDB CONTAINER.
+*
+* SAVE <name> MEMO stores a POSTURE: the tables stay on disk and the memo
+* holds a description. SAVE <name> MEMO MINIDB stores a CONTAINER whose
+* PAYLOAD IS THE DATABASE -- the table bytes ride along inside the memo.
+*
+* MINIDB IMPLIES V3, and the reason is mechanical rather than stylistic: the
+* embedded posture must be SELF-LOCATING to survive being re-pointed at RAM,
+* so it has to carry its own DBFROOT/IDXROOT rather than trusting whatever
+* the environment says at load time.
+* ===========================================================================
+
+WORKSPACE CLOSE ALL
+WORKSPACE SWITCH DEFAULT
+WORKSPACE DESTROY MWXONE
+WORKSPACE DESTROY MWXTWO
+WORKSPACE DESTROY MWXAS
+
+* --- build a small database with a MEMO field, so the container is proven to
+* --- carry more than fixed-width bytes -------------------------------------
+
+SET PATH DBF DBF/SANDBOX
+WORKSPACE NEW MWXDB
+WORKSPACE SWITCH MWXDB
+
+SELECT 0
+CREATE X64 MWXNOTE (ID N(4,0), TAG C(10), NOTES M)
+APPEND
+REPLACE ID WITH 1
+REPLACE TAG WITH "FIRST"
+REPLACE NOTES WITH "carried through the container"
+APPEND
+REPLACE ID WITH 2
+REPLACE TAG WITH "SECOND"
+REPLACE NOTES WITH "second row rides along too"
+
+GO 1
+? "MWX_G3_container_source_has_its_memo:" + (NOTES = "carried through the container")
+
+WORKSPACE SAVE mwx_container MEMO MINIDB
+
+* ---------------------------------------------------------------------------
+* MWX_T14 -- PLAIN LOAD ... MEMO REFUSES A MINIDB PAYLOAD, BY DESIGN.
+*
+* A MINIDB's tables have no disk home. Standing up empty areas over missing
+* files is the silent-success failure this codebase hunts, so the refusal is
+* the feature. The arm reads that the CURRENT session survived the refusal --
+* the answerable question -- rather than claiming anything about what was
+* not loaded.
+* ---------------------------------------------------------------------------
+
+WORKSPACE LOAD mwx_container MEMO
+SELECT MWXNOTE
+GO 2
+? "MWX_T14_session_survived_the_minidb_refusal:" + (ALLTRIM(TAG) = "SECOND")
+
+WORKSPACE CLOSE
+
+* ---------------------------------------------------------------------------
+* MWX_T15 / T16 -- HYDRATION INTO RAM WITH ZERO DISK READS.
+*
+* LOAD <name> MEMO RAM mounts the container into the VDISK. The transcript
+* reports "hydrated ... FROM THE MEMO: N file(s), N B ... (zero disk reads)"
+* and an oracle byte-compare per file; those are EXTERNAL measurements and
+* are not claimed by an arm (the IDXDIFF precedent). What the arms claim is
+* that the ROWS ARE THERE and the MEMO SURVIVED THE ROUND TRIP.
+*
+* ADDRESSED BY NAME. After hydration the tables land at slots the posture
+* does not control (R130), so SELECT MWXNOTE is the only spelling that can
+* be trusted here.
+* ---------------------------------------------------------------------------
+
+DO mem
+WORKSPACE LOAD mwx_container MEMO RAM
+VDISK STATUS
+
+SELECT MWXNOTE
+GO 1
+? "MWX_T15_row_one_hydrated_from_the_memo:" + (ALLTRIM(TAG) = "FIRST")
+? "MWX_T16_memo_value_survived_the_container:" + (NOTES = "carried through the container")
+
+* ---------------------------------------------------------------------------
+* MWX_T17 -- A HYDRATED TABLE IS WRITABLE.
+*
+* Hydration is not a read-only projection. The write lands in RAM and dies
+* with the unmount, which is what makes a container a working set rather
+* than an archive.
+* ---------------------------------------------------------------------------
+
+REPLACE NOTES WITH "written after hydration"
+? "MWX_T17_hydrated_table_is_writable:" + (NOTES = "written after hydration")
+
+* ---------------------------------------------------------------------------
+* MWX_T18 -- WRITEBACK IS THE RETURN LEG (RAM/memo -> real disk).
+*
+* Enumeration comes from the POSTURE's AREA lines, never the session's attach
+* order, and a shortfall ABORTS having written nothing. WITH INDEXES copies
+* index container BYTES only -- LMDB is not carried (owner rule: lmdb only
+* for disks) -- so a destination needing SET ORDER TO TAG would want
+* BUILDLMDB first. This arm reads the row back from the REAL DISK copy after
+* the RAM disk is gone, which is the only reading that proves the return leg
+* rather than the mount.
+* ---------------------------------------------------------------------------
+
+WORKSPACE WRITEBACK mwx_container TO DBF/mwxback WITH INDEXES
+WORKSPACE CLOSE
+VDISK UNMOUNT
+DO x64
+
+SET PATH DBF DBF/mwxback
+SELECT 0
+USE MWXNOTE
+GO 1
+? "MWX_T18_writeback_reached_the_real_disk:" + (ALLTRIM(TAG) = "FIRST")
+? "MWX_T19_writeback_carried_the_post_hydration_write:" + (NOTES = "written after hydration")
+CLOSE
+
+* ===========================================================================
+* SECTION 5 -- THE SHORTFALL CONTRACT.
+*
+* LOAD RESOLVES AND PROBES THE DECLARED MEMBERS BEFORE ANYTHING IS CLOSED, so
+* a load that cannot be completed leaves the CURRENT session STANDING rather
+* than destroying it and then reporting the wreckage. Until that landed, LOAD
+* closed every area, failed every open, and still said "restored 0 area(s)".
+*
+* Indexes are NOT part of the check -- derived and rebuildable, and the choice
+* travels in the posture -- which is why T22 exists separately.
+* ===========================================================================
+
+* THE POSTURE MUST DECLARE TWO MEMBERS, AND THE FIRST CUT DECLARED ONE.
+* With a single member, removing it left PARTIAL nothing to restore -- so
+* MWX_T21 read an UNRELATED table that happened to be open from earlier and
+* reported .T. for a claim it never tested, and MWX_T22 addressed a table the
+* posture had never contained. A SECOND, SURVIVING member is what makes both
+* arms answerable: the load has something to fail on AND something to bring
+* back.
+*
+* THIS IS A FALSE-GREEN SHAPE THE MORNING'S CHECK CANNOT CATCH. That check
+* asks whether a green sits under a "no file open"; this one sat under a
+* perfectly real read of a perfectly open table -- just not the table the
+* operation under test had touched. A marker can lie by reading the WRONG
+* LIVE THING, not only by reading nothing.
+
+SET PATH DBF DBF/mwxback
+WORKSPACE OPEN DBF AS MWXBACK
+
+SELECT 1
+CREATE X64 MWXKEEP (KPK C(4), KPLBL C(12))
+APPEND
+REPLACE KPK WITH "P1"
+REPLACE KPLBL WITH "SURVIVOR"
+
+WORKSPACE SAVE mwx_shortfall MEMO V3
+WORKSPACE CLOSE
+
+* --- remove ONE declared member, leave the other, then ask for it back -----
+
+SET PATH DBF DBF/mwxback
+ERASE MWXNOTE CONFIRM
+? "MWX_G4a_member_really_removed:" + (FILE("DBF/mwxback/MWXNOTE.dbf") = .F.)
+? "MWX_G4b_survivor_still_on_disk:" + (FILE("DBF/mwxback/MWXKEEP.dbf") = .T.)
+
+* --- stand up a KNOWN, HEALTHY session that the refusal must not disturb ---
+
+DO x64
+SET PATH DBF DBF/SANDBOX/MWXA
+SELECT 0
+USE MWXP
+GO 1
+? "MWX_G5_healthy_session_standing:" + (ALLTRIM(PLBL) = "ALPHA_ONE")
+
+* ---------------------------------------------------------------------------
+* MWX_T20 -- THE REFUSAL LEAVES THE SESSION STANDING.
+*
+* This is the arm the whole shortfall contract exists for. The posture
+* declares a table that is gone; LOAD must abort having closed NOTHING, and
+* the reading that proves it is that the UNRELATED open table is still
+* exactly where it was.
+* ---------------------------------------------------------------------------
+
+WORKSPACE LOAD mwx_shortfall MEMO
+SELECT MWXP
+GO 1
+? "MWX_T20_session_survived_the_shortfall_refusal:" + (ALLTRIM(PLBL) = "ALPHA_ONE")
+
+* ---------------------------------------------------------------------------
+* MWX_T21 -- PARTIAL OPTS BACK INTO THE PERMISSIVE BEHAVIOUR EXPLICITLY.
+*
+* Same posture, same missing member, one keyword: the survivors come back and
+* the absent one is REPORTED rather than silently skipped. The arm reads a
+* SURVIVOR, because "the missing one is missing" is exactly the claim no
+* marker in this language can make.
+* ---------------------------------------------------------------------------
+
+WORKSPACE LOAD mwx_shortfall MEMO PARTIAL
+SELECT MWXKEEP
+GO 1
+? "MWX_T21_partial_restored_the_survivor:" + (ALLTRIM(KPLBL) = "SURVIVOR")
+
+* ---------------------------------------------------------------------------
+* MWX_T22 -- A MISSING INDEX DOES NOT REFUSE.
+*
+* Indexes are derived and rebuildable, so they are deliberately OUTSIDE the
+* shortfall probe. Deleting the index directory and loading again must
+* SUCCEED -- a load that refused here would make the posture brittle against
+* a file the engine can regenerate.
+* ---------------------------------------------------------------------------
+
+WORKSPACE CLOSE
+SET PATH DBF DBF/mwxback
+ERASE DIR DBF/mwxback/indexes CONFIRM
+WORKSPACE LOAD mwx_shortfall MEMO PARTIAL
+SELECT MWXKEEP
+GO 1
+? "MWX_T22_missing_index_did_not_refuse_the_load:" + (ALLTRIM(KPLBL) = "SURVIVOR")
+
+* ===========================================================================
+* SECTION 5B -- DOES SET ORDER SURVIVE A SAVE/LOAD ROUND TRIP?
+*
+* ADDED 2026-08-28 TO PAY BACK A GAP THIS SESSION OPENED. Two specs carried
+* `SET ORDER TAG SO_ID` lines that printed "file not found" and did nothing --
+* their fixtures built indexes with INDEX ON, which writes .inx, while SET
+* ORDER TAG wants a CDX. The dead lines were removed rather than left looking
+* like coverage, and that left the corpus with NO spec proving the property.
+* This section restores it, and it is the LAST place in this file where a
+* rebuilt fixture would have been the wrong answer: the property needs a REAL
+* CDX, so it borrows a shipped one instead of pretending.
+*
+* THE TAG IS THE SUBJECT AND IT TRAVELS IN THE POSTURE. A DTSHEMA AREA line
+* carries `tag=`, so the order is part of the saved artifact rather than
+* session trivia -- which is exactly why losing it would be silent.
+*
+* SID WOULD NOT HAVE WORKED, AND CHECKING THAT IS THE WHOLE DESIGN. STUDENTS
+* is stored in SID order, so `SET ORDER TAG SID` then TOP lands on physical
+* record 1 -- the same row an engine that IGNORED SET ORDER would land on. An
+* arm built on SID passes green on a build with no ordering at all, which is
+* the SDVIS defect exactly. Measured before choosing: SID order == physical
+* order for all 200 rows.
+*
+* LNAME DIVERGES AND IS THEREFORE THE DISCRIMINATOR:
+*     physical record 1    Taylor      LNAME-order first   Anderson (rec 21)
+*     physical record 200  Davis       LNAME-order last    Wilson   (rec 157)
+* Both ends differ, so both arms can tell an ordered walk from a physical one.
+*
+* IT BORROWS A SHIPPED CDX, AND THE FIRST DRAFT GAVE THE WRONG REASON FOR
+* THAT. It said a fixture CANNOT build a CDX because INDEX ON writes .inx.
+* The first half is true and the conclusion was false: CDX is an index
+* MANAGER, not just a container, and a fixture can build one --
+*     CDX CREATE [<path.cdx>]        create the container
+*     CDX ADDTAG <name> [<path>]     define a tag
+*     BUILDLMDB YES                  build it (BUILDLMDB CLEAN YES to rebuild)
+* CNX is the same surface (plus WALK/TRACE) over a SORTED index rather than
+* LMDB. So the SET ORDER lines removed from the session and memo specs on
+* 2026-08-28 were FIXABLE, not merely removable -- a broken line was deleted
+* where an index could have been built. Recorded rather than quietly
+* corrected, because the wrong conclusion is what made the deletion look
+* like the only option.
+*
+* THIS SECTION STILL BORROWS, deliberately and for a smaller reason: the arm
+* under test is the SAVE/LOAD ROUND TRIP, and a self-built index would add
+* an untested build step INSIDE the proof it is supposed to isolate. A
+* built-CDX arm belongs beside this one, not inside it.
+*
+* ON THE VERB: `TO` IS AN OPTIONAL NOISE WORD, so there was never a question.
+*     cmd_setorder.cpp:647,684,720   if (ieq(toks[i], "TO")) ++i;
+* `SET ORDER TO LNAME` and `SET ORDER LNAME` are the SAME PARSE; `SET ORDER
+* TAG <tag>` is the explicit form. All three work. The command reference omits
+* TO because it is not a keyword; the SET subusage writes it because that is
+* the classic FoxPro spelling; the corpus uses it 303 times to 24 out of
+* habit. NOTHING DISAGREES.
+*
+* IT TOOK FOUR PASSES TO WRITE THAT SENTENCE, and the useful part is why. I
+* argued TAG-vs-TO from memory, then from a partial grep, then from a count,
+* and was drafting a "three declarations disagree" finding -- all without
+* opening docs/manuals/command_reference/command_reference_guide_v1.csv, which
+* is GENERATED FROM THE HANDLERS, carries 3402 rows with usage/notes/related,
+* and answers this in one row. LOOK IT UP BEFORE REASONING ABOUT A VERB.
+*
+* READ-ONLY ON A SHIPPED FIXTURE. STUDENTS is opened and navigated, never
+* written, and never erased by this file's teardown.
+* ===========================================================================
+
+WORKSPACE CLOSE ALL
+WORKSPACE SWITCH DEFAULT
+WORKSPACE DESTROY MWXORD
+
+SETPATH DBF DBF/X64
+SETPATH INDEXES INDEXES/X64
+
+&& THE THIRD SLOT IS NOT OPTIONAL HERE (R131). The WORKSPACE SWITCH DEFAULT
+&& three lines up restores DEFAULT'S OWN environment -- all three path slots,
+&& not membership alone -- so the LMDB slot that `DO x64` set back in section
+&& 4 is gone by the time this line is read. STUDENTS is a SHIPPED CDX and its
+&& LMDB env lives in LMDB/x64 and NOWHERE ELSE, so without this SET ORDER TO
+&& LNAME below opens nothing, and G6/T25/T26 read the PHYSICAL order and go
+&& red. Two of the three slots were already re-set here because the author
+&& knew a switch clobbers them; the third was missed, and it could be missed
+&& because this file was last edited at 04:54 on 2026-08-29 and R131's live
+&& half landed at 15:49 the same day.
+SETPATH LMDB LMDB/X64
+WORKSPACE NEW MWXORD
+WORKSPACE SWITCH MWXORD
+
+SELECT 0
+USE STUDENTS
+SET ORDER TO LNAME
+TOP
+? "MWX_G6_order_is_live_before_the_save:" + (ALLTRIM(LNAME) = "Anderson")
+
+WORKSPACE SAVE mwx_order MEMO V3
+WORKSPACE CLOSE
+
+* ---------------------------------------------------------------------------
+* MWX_T25 / T26 -- THE ROUND TRIP.
+*
+* If the posture recorded and restored the TAG, TOP is Anderson and BOTTOM is
+* Wilson. If the tag was dropped anywhere between SAVE and LOAD, the walk is
+* physical and the same two reads return Taylor and Davis. Nothing else in
+* the file distinguishes those two worlds.
+*
+* Addressed BY NAME, because a posture's AREA numbers are KEYS (R130).
+* ---------------------------------------------------------------------------
+
+WORKSPACE LOAD mwx_order MEMO
+SELECT STUDENTS
+TOP
+? "MWX_T25_set_order_survived_the_round_trip:" + (ALLTRIM(LNAME) = "Anderson")
+BOTTOM
+? "MWX_T26_and_the_far_end_of_the_order_too:" + (ALLTRIM(LNAME) = "Wilson")
+
+WORKSPACE CLOSE
+WORKSPACE SWITCH DEFAULT
+WORKSPACE DESTROY MWXORD
+
+* ===========================================================================
+* SECTION 5C -- A FIXTURE THAT BUILDS ITS OWN CDX.
+*
+* 5B BORROWED A SHIPPED CDX AND SAID SO. That was the right call for the arm
+* it was isolating -- the ROUND TRIP -- because a self-built index inside
+* that proof would have put an untested build step in the middle of it. It
+* left a hole the entry admitted: nothing in the corpus builds an index and
+* then orders by it. This section is that arm, and it is deliberately AFTER
+* 5B so a failure here cannot be mistaken for a round-trip failure.
+*
+* THE VERB CHAIN, LOOKED UP BEFORE IT WAS WRITTEN (command_reference_guide
+* _v1.csv, then verified in the handlers because two of the four are newer
+* than the guide):
+*
+*   CDX CREATE [<path.cdx>]     container. REFUSES TO OVERWRITE an existing
+*                               file -- which is why pre-clean matters here
+*                               more than anywhere else in this file.
+*   CDX ADDTAG <name> [<path>]  tag directory entry. NAME ONLY, no key
+*                               expression: cmd_cdx.cpp:312-352 reads one
+*                               token and uppercases it.
+*   BUILDLMDB YES               builds the tag databases FROM CURRENT TABLE
+*                               DATA. Requires an OPEN TABLE.
+*   SET ORDER TAG <tag>         v64 tables default to CDX; attachment also
+*                               requires the LMDB environment to EXIST, which
+*                               is why the table is re-opened after the build.
+*
+* SO THE TAG NAME IS THE KEY. cmd_buildlmdb.cpp:465-481 is headed "Build one
+* tag from a field name" and walks area.fields() looking for a name match --
+* `if (fld < 1) return false;` and NOT ONE WORD PRINTED. A tag naming no
+* field is skipped in silence; only the total is reported. That is the count
+* discipline again (a number from an authority holding more than one kind,
+* with no discriminator) and it is NOT probed here -- stated so the next
+* person does not discover it as a surprise, and left for an arm of its own.
+*
+* THE FIXTURE IS BUILT SO THAT THE TWO ORDERS DISAGREE AT BOTH ENDS, which
+* is the same discipline 5B applied to STUDENTS and the reason SID was
+* rejected there:
+*
+*     physical    1 ZULU   2 MIKE   3 ALPHA   4 TANGO
+*     by CLBL       ALPHA    MIKE     TANGO     ZULU
+*
+* G7a and G7b READ THE PHYSICAL ENDS BEFORE ANY INDEX EXISTS. Without them
+* T27 reading ALPHA at TOP proves nothing -- it could be where an engine
+* that ignored the order would have landed anyway, and an arm that cannot
+* separate two implementations is the defect this file keeps hunting.
+*
+* IT CLEANS UP AFTER ITSELF IN ONE LINE, because ERASE <table> CONFIRM
+* sweeps same-stem sidecars across the DBF, INDEXES *and* LMDB roots --
+* cmd_erase.cpp:176-205 pushes <stem>.cdx through resolve_index() and the
+* backend <stem>.cdx.d through resolve_lmdb_env_for_cdx(). So the table, the
+* container and the LMDB environment go together, and CDX CREATE finds clean
+* ground on the next run. (The command reference lists only ERASE <table>
+* and ERASE TABLE <table>; ERASE DIR was owner-ruled 2026-08-12, after the
+* guide was generated. Handler newer than the guide -- verify in source --
+* and that is what the check found.)
+*
+* SCRATCH ROOTS ONLY: the container lands in INDEXES/SANDBOX beside the
+* other sandbox containers, never in INDEXES/X64. The slot is restored to
+* what 5B left before section 6 reads the catalog.
+* ===========================================================================
+
+WORKSPACE CLOSE ALL
+WORKSPACE SWITCH DEFAULT
+WORKSPACE DESTROY MWXCDXW
+
+SETPATH DBF DBF/SANDBOX
+SETPATH INDEXES INDEXES/SANDBOX
+
+&& THE LMDB SLOT IS NOT SET HERE, AND THIS SECTION SURVIVES THAT BECAUSE IT
+&& BUILDS WHAT IT READS. The switch above put LMDB back to DEFAULT'S value,
+&& so MWXCDX's env is created under THAT slot and read back under the same
+&& one -- build and read agree, and the arm is green on agreement rather
+&& than on placement. 5B could not survive it: 5B borrows a SHIPPED index
+&& and cannot move the env to meet the slot. Setting LMDB explicitly here
+&& would move where the env lands and the teardown sweep must move with it,
+&& so it is a separate change and not this one.
+
+&& THE TABLE, THE CONTAINER AND THE LMDB ENV IN ONE SWEEP. CDX CREATE refuses
+&& to overwrite, so a leftover .cdx from a previous run would fail the build
+&& and every arm below it.
+ERASE MWXCDX CONFIRM
+
+SELECT 0
+CREATE X64 MWXCDX (CK C(4), CLBL C(12))
+APPEND
+REPLACE CK WITH "C1"
+REPLACE CLBL WITH "ZULU"
+APPEND
+REPLACE CK WITH "C2"
+REPLACE CLBL WITH "MIKE"
+APPEND
+REPLACE CK WITH "C3"
+REPLACE CLBL WITH "ALPHA"
+APPEND
+REPLACE CK WITH "C4"
+REPLACE CLBL WITH "TANGO"
+
+USE MWXCDX
+TOP
+? "MWX_G7a_physical_first_is_ZULU_before_any_index:" + (ALLTRIM(CLBL) = "ZULU")
+BOTTOM
+? "MWX_G7b_physical_last_is_TANGO_before_any_index:" + (ALLTRIM(CLBL) = "TANGO")
+
+CDX CREATE
+CDX ADDTAG CLBL
+CDX TAGS
+BUILDLMDB YES
+
+&& RE-OPEN BEFORE ORDERING. The container and its LMDB environment did not
+&& exist when this area was first opened, and SET INDEX's contract is explicit
+&& that CDX attachment requires the environment to exist. Re-opening is the
+&& honest way to get the attachment the first USE could not have made.
+USE MWXCDX
+SET ORDER TAG CLBL
+
+* ---------------------------------------------------------------------------
+* MWX_T27 / T28 -- THE INDEX THIS FILE BUILT ACTUALLY ORDERS THE WALK.
+*
+* Both ends move: TOP goes ZULU -> ALPHA and BOTTOM goes TANGO -> ZULU. An
+* engine that accepted SET ORDER and walked physically anyway would leave
+* both where G7a/G7b found them.
+* ---------------------------------------------------------------------------
+
+TOP
+? "MWX_T27_self_built_cdx_orders_the_walk:" + (ALLTRIM(CLBL) = "ALPHA")
+BOTTOM
+? "MWX_T28_and_the_far_end_of_the_built_order:" + (ALLTRIM(CLBL) = "ZULU")
+
+* ---------------------------------------------------------------------------
+* MWX_T31 -- A TAG NAMING NO FIELD IS REFUSED AT DEFINITION TIME.
+*
+* A CDX TAG IS A FIELD NAME. cmd_buildlmdb.cpp:465-481 is headed "Build one tag
+* from a field name" and resolves each tag by walking area.fields(), so a tag
+* naming no field can never be built. Until 2026-08-29 ADDTAG accepted ANY
+* string and the miss was swallowed at BUILD time --
+*
+*     if (fld < 1) return false;        && not one word printed
+*
+* -- so a container could carry a dead tag while BUILDLMDB still announced
+* "done OK=1 tags rebuilt" on the strength of a DIFFERENT tag. ADDTAG now
+* resolves the name through xfg::resolve_field_index_std, the same standard
+* resolver REPLACE refuses on (cmd_replace.cpp:822), and requires an open table
+* to do it.
+*
+* THE REFUSAL ITSELF IS CONSOLE TEXT AND NO MARKER CAN READ IT -- the IDXDIFF
+* precedent, the same reason MWX_T14 and MWX_T20 assert survival rather than
+* the refusal. Read the transcript for:
+*
+*     CDX ADDTAG: field not found: 'MWXNOSUCH'.
+*
+* WHAT THE ARM CAN ASSERT is that the refusal changed NOTHING: the built order
+* is still live afterwards. If ADDTAG had instead accepted the name and gone on
+* to touch the container, the tag directory it shares with CLBL is exactly what
+* would be disturbed.
+* ---------------------------------------------------------------------------
+
+CDX ADDTAG MWXNOSUCH
+TOP
+? "MWX_T31_addtag_refused_a_dead_tag_and_changed_nothing:" + (ALLTRIM(CLBL) = "ALPHA")
+
+* ---------------------------------------------------------------------------
+* MWX_T29 / T30 -- AND IT SURVIVES THE ROUND TRIP.
+*
+* 5B proved a SHIPPED container's tag travels in the posture. This proves it
+* for a container created THIS RUN under a different INDEXES slot, which is a
+* different path resolution and therefore a different thing to get wrong.
+* Addressed BY NAME (R130).
+*
+* THE CLOSE BELOW IS THE WHOLE ARM, AND ITS ABSENCE PRODUCED A FALSE GREEN ON
+* THIS SECTION'S FIRST RUN (2026-08-29). MWXCDX was opened above to build the
+* index, so it belongs to DEFAULT -- AN AREA JOINS WHICHEVER WORKSPACE IS
+* CURRENT WHEN IT IS OPENED, and `USE` on a table already open in the current
+* area is a NO-OP for membership: it prints "already open in current area 0"
+* and the area keeps the workspace it already had. So MWXCDXW was created
+* AROUND a table it did not own, held ZERO members, and the scoped SAVE wrote
+* an EMPTY posture:
+*
+*     WORKSPACE SAVE: workspace 15 (MWXCDXW) ... -- 0 area(s).
+*       NOT saved: 1 open area(s) in other workspaces.
+*       WARNING: nothing is in scope. This posture will be EMPTY.
+*     WORKSPACE LOAD: restored 0 area(s) and 0 relation(s).
+*
+* T29/T30 then read the copy STILL OPEN IN DEFAULT, order and all, and
+* reported .T. for a round trip that never happened. The engine warned twice
+* in console text, which no marker can read -- the same shape as MWX_T21 and
+* the reason the read rule at the foot of this file says to ask not only
+* whether something was open but whether it is what the verb was meant to
+* change.
+*
+* CLOSING FIRST ALSO MAKES THE SECTION SELF-CHECKING, which is why 5B never
+* had this problem: with no live copy anywhere, an empty posture leaves
+* SELECT MWXCDX with nothing to select, the marker ERRORS AND PRINTS NOTHING,
+* and the count comes up short. A short count is the failure signal.
+* ---------------------------------------------------------------------------
+
+WORKSPACE CLOSE ALL
+WORKSPACE SWITCH DEFAULT
+WORKSPACE NEW MWXCDXW
+WORKSPACE SWITCH MWXCDXW
+
+&& OPENED HERE, SO IT IS OWNED HERE. This USE really opens -- the close above
+&& dropped the copy DEFAULT held -- and the area therefore joins MWXCDXW.
+SELECT 0
+USE MWXCDX
+SET ORDER TAG CLBL
+TOP
+? "MWX_G7c_built_order_is_live_before_the_save:" + (ALLTRIM(CLBL) = "ALPHA")
+
+WORKSPACE SAVE mwx_cdxord MEMO V3
+WORKSPACE CLOSE
+WORKSPACE LOAD mwx_cdxord MEMO
+
+SELECT MWXCDX
+TOP
+? "MWX_T29_built_tag_survived_the_round_trip:" + (ALLTRIM(CLBL) = "ALPHA")
+BOTTOM
+? "MWX_T30_far_end_after_the_built_round_trip:" + (ALLTRIM(CLBL) = "ZULU")
+
+WORKSPACE CLOSE
+WORKSPACE SWITCH DEFAULT
+WORKSPACE DESTROY MWXCDXW
+
+SETPATH INDEXES INDEXES/X64
+
+* ===========================================================================
+* SECTION 6 -- THE CATALOG IS A TABLE, AND IT SAYS WHAT IT IS.
+*
+* WORKSPACE CATALOG reports the memo catalog read-only. FMT is the PAYLOAD:
+* DTSHEMA 2 and 3 carry a POSTURE, MINIDB 1 carries the TABLE BYTES. The two
+* rows this script wrote should differ on exactly that field, which is the
+* cheapest possible proof that the container and the posture are not the same
+* artifact wearing two names.
+* ===========================================================================
+
+WORKSPACE CLOSE ALL
+WORKSPACE SWITCH DEFAULT
+WORKSPACE CATALOG
+
+USE &_WORKSPACES\WORKSPACES.dbf
+LOCATE FOR ALLTRIM(WS_NAME) = "mwx_container"
+? "MWX_T23_container_row_is_flagged_minidb:" + (AT("MINIDB", FMT) > 0)
+LOCATE FOR ALLTRIM(WS_NAME) = "mwx_shortfall"
+? "MWX_T24_posture_row_is_flagged_dtshema:" + (AT("MINIDB", FMT) = 0)
+CLOSE
+
+* ===========================================================================
+* SECTION 7 -- TEARDOWN.
+*
+* MUST STAY ABOVE NOTHING: this is the end. Every workspace this script
+* DECLARED is retired so the NAME has no live row and the next run MINTS
+* rather than ADOPTS. The ROWS remain by design (D10.3) -- retirement is
+* supersession, not deletion, and a destroyed workspace leaves a record.
+*
+* Fixtures are erased. The writeback directory goes too: it is scratch, and
+* leaving it would make MWX_G4's "really removed" reading depend on whatever
+* the previous run left behind.
+* ===========================================================================
+
+WORKSPACE CLOSE ALL
+WORKSPACE SWITCH DEFAULT
+WORKSPACE DESTROY MWXCDXW
+WORKSPACE DESTROY MWXORD
+WORKSPACE DESTROY MWXBACK
+WORKSPACE DESTROY MWXDB
+WORKSPACE DESTROY MWXKID
+WORKSPACE DESTROY MWXAS
+WORKSPACE DESTROY MWXTWO
+WORKSPACE DESTROY MWXONE
+
+SET PATH DBF DBF/SANDBOX/MWXA
+ERASE MWXP CONFIRM
+ERASE MWXSHARE CONFIRM
+ERASE MWXK CONFIRM
+SET PATH DBF DBF/SANDBOX/MWXB
+ERASE MWXQ CONFIRM
+ERASE MWXSHARE CONFIRM
+SET PATH DBF DBF/SANDBOX
+SETPATH INDEXES INDEXES/SANDBOX
+ERASE MWXNOTE CONFIRM
+&& The env is swept from whatever the LMDB slot holds RIGHT HERE, which is
+&& the same slot 5C built under -- see the note there before changing either.
+&& Sweeps MWXCDX.dbf, INDEXES/SANDBOX/MWXCDX.cdx and the LMDB env together.
+ERASE MWXCDX CONFIRM
+ERASE DIR DBF/mwxback CONFIRM
+
+DO x64
+
+FORMULA "MWX-SHAKEDOWN-END"
+
+* ===========================================================================
+* READ RULE, REPEATED AT THE BOTTOM BECAUSE THIS IS WHERE A READER STOPS.
+*
+*   THE COUNT IS DERIVED, AND THE DERIVATION IS THE AUTHORITY:
+*       grep -c '^? "MWX_'  <-- run this, read the run against THAT
+*   The enumeration below is a CHECKLIST, not a second source of truth. It
+*   has already gone stale once (34 -> 35 -> 37 -> 40) and it will again.
+*
+*     17 guards : MWX_G0a G0b G0c G0d G0e G1a G1b G1c G2 G3 G4a G4b G5 G6
+*                 G7a G7b G7c
+*     31 arms   : MWX_T1 .. MWX_T31
+*     48 total at the time this line was last touched (5C addtag refusal)
+*
+* AND ONE WARNING THE COUNT CANNOT GIVE YOU. A marker can be backed by a
+* real read of a real open table and still be worthless, if that table is
+* not the one the operation under test touched. MWX_T21 did exactly that on
+* the first run: PARTIAL restored NOTHING, and the arm read a table that had
+* been open since an earlier section, reporting .T. for a claim it never
+* tested. Checking that no green sits under a "no file open" does not catch
+* it. When you read this file, ask of each arm not only "was something
+* open" but "is that thing what the verb above was supposed to change".
+*
+* If the count is short, a marker ERRORED and printed nothing -- that is a
+* FAILURE, not an omission, and the missing one is the interesting one.
+* If any MWX_G* reads .F., every MWX_T* below it is UNPROVEN, not failing.
+* ===========================================================================

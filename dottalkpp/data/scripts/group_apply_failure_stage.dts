@@ -1,0 +1,43 @@
+; ============================================================================
+; GROUP APPLY FAILURE -- STAGE (AIF-160)
+;
+; Opens both members, begins the transaction, and STAGES both UPDATEs. It
+; stops there, deliberately, leaving the SQL transaction OPEN across the script
+; boundary -- DOTSCRIPT runs in this process, so the areas, the mode and the
+; transaction all survive into the commit script.
+;
+; WHY THE SPLIT EXISTS, and it was measured rather than assumed. The first cut
+; of this arm planted the foreign record lock BEFORE the work script and got:
+;
+;   SQLSEL: UPDATE refused -- record locked.
+;
+; SQLSEL takes the record lock when it STAGES a change, not when the commit
+; applies it. A lock present before the statement runs is therefore caught by
+; fail-fast, the transaction never enlists that table, and no group is ever
+; decided -- which is the owner's refuse-on-contention contract working exactly
+; as ruled, and the wrong moment for this measurement.
+;
+; The window this arm needs is AFTER staging and BEFORE apply, so the fence is
+; planted between these two scripts.
+; ============================================================================
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+SET PATH DBF DBF/SANDBOX
+SET PATH INDEXES INDEXES/SANDBOX
+SET PATH LMDB LMDB/SANDBOX
+
+FORMULA "GRPFAIL-STAGE-BEGIN"
+
+SELECT 1
+USE GRPFAIL1
+SELECT 2
+USE GRPFAIL2
+SELECT 1
+
+SET MODE SQL
+BEGIN
+UPDATE GRPFAIL1 SET MARK = 'AFTER' WHERE ID = 1
+UPDATE GRPFAIL2 SET MARK = 'AFTER' WHERE ID = 1
+
+FORMULA "GRPFAIL-STAGE-END"

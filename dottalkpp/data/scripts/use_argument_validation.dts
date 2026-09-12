@@ -1,0 +1,155 @@
+* ============================================================================
+* use_argument_validation.dts
+*
+* AIF-121. USE REFUSES WHAT IT DOES NOT UNDERSTAND, AND `IN <n>` PLACES.
+*
+* WHAT WAS WRONG, AND WHY IT WAS NOT A MISSING CHECK
+*   cmd_use.cpp parsed its tail with THREE independent non-consuming scans --
+*   contains_noindex, contains_again, parse_alias_clause. Each saved the stream
+*   position, swept for its own keyword, and rewound. Nothing ever enumerated
+*   the tail, so NO TOKEN WAS EVER UNACCOUNTED FOR. Unknown arguments were not
+*   ignored by oversight; nothing was in a position to notice them.
+*
+*   Consequence, measured 2026-08-22 at build baada444:
+*       USE dbf\x64\students        -> Opened
+*       USE dbf\x32\students IN 1   -> Opened
+*       WORKSPACE REGISTRY          -> members 1
+*       AREA                        -> slot 0 holds the x32 table
+*   Two opens, one area. The second replaced the first and printed NOTHING.
+*   `IN 1` is FoxPro-standard and documented in this tree twice; it was
+*   swallowed, and the table landed in the current area on top of its occupant.
+*
+* U_T1 IS THE DISCRIMINATOR and it asserts TWO things in one read.
+*   After `USE utgt IN 3`, this script reads MARK WITHOUT selecting anything.
+*   A green means the current area is STILL area 0 (IN does not move you --
+*   the FoxPro contract, and the reason the clause is useful) AND area 0 still
+*   holds its occupant. Under the old parser `IN 3` was dropped and utgt opened
+*   into area 0, so this line reds on both counts at once.
+*
+* U_T5 IS THE GATE ARM. `USE ubad BOGUS` must open nothing. Old behaviour:
+*   BOGUS ignored, ubad opens into the current area, udef destroyed silently.
+*   The marker asks the answerable question -- did the KNOWN OCCUPANT SURVIVE
+*   -- rather than trying to assert a refusal, because USE_AGAIN established
+*   that no marker in this language can assert an area is empty and an errored
+*   marker prints nothing rather than going red.
+*
+* WHAT THIS DOES NOT ASSERT, stated rather than implied: the text of any
+*   refusal message. Markers here are field-value comparisons only
+*   (FIELDMGR_APPEND doctrine: a spec asserting SHAPE passes green on a blanked
+*   table). The refusal WORDING is transcript evidence, read by a human.
+*
+* NOT COVERED, and named so nobody assumes otherwise: AGAIN + IN together.
+*   AGAIN carries no placement opinion (it lands in the current area, cmd_use
+*   .cpp:743), so `IN` supplies the address it never had -- but proving that
+*   needs a memo-free duplicate-open fixture and it is a separate arm.
+*
+* Self-bootstrapping UDEF/UTGT/UFRE/UBAD in SANDBOX, self-erasing.
+*   Standalone:  DO use_argument_validation
+*   Regression:  REGRESSION RUN USE_ARGS
+* ============================================================================
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+SET PATH DBF DBF/SANDBOX
+
+FORMULA "USE-ARGUMENT-VALIDATION-BEGIN"
+
+WORKSPACE CLOSE ALL
+ERASE udef CONFIRM
+ERASE utgt CONFIRM
+ERASE ufre CONFIRM
+ERASE ubad CONFIRM
+
+* --- build four throwaway tables, each in its own area ----------------------
+* CREATE opens into the CURRENT area, so each is given a distinct one; that is
+* the same hazard this lane is about, avoided here by being explicit.
+SELECT 0
+CREATE X64 UDEF (ID N(4), MARK C(10))
+APPEND
+REPLACE ID WITH 1
+REPLACE MARK WITH "DEF"
+
+SELECT 1
+CREATE X64 UTGT (ID N(4), MARK C(10))
+APPEND
+REPLACE ID WITH 2
+REPLACE MARK WITH "TGT"
+
+SELECT 2
+CREATE X64 UFRE (ID N(4), MARK C(10))
+APPEND
+REPLACE ID WITH 3
+REPLACE MARK WITH "FRE"
+
+SELECT 3
+CREATE X64 UBAD (ID N(4), MARK C(10))
+APPEND
+REPLACE ID WITH 4
+REPLACE MARK WITH "BAD"
+
+* --- clean slate: files exist on disk, nothing open ------------------------
+WORKSPACE CLOSE ALL
+
+SELECT 0
+USE udef
+GO TOP
+? "U_G0_sentinel_in_area_0:" + (ALLTRIM(MARK) = "DEF")
+
+* --- U_T1: THE DISCRIMINATOR ----------------------------------------------
+* Open into area 3. Do NOT select anything afterwards. A green proves the
+* current area is still 0 AND still holds DEF.
+USE utgt IN 3
+GO TOP
+? "U_T1_in_n_placed_elsewhere_and_did_not_move_me:" + (ALLTRIM(MARK) = "DEF")
+
+* --- U_T2: it actually landed where it was told ---------------------------
+SELECT 3
+GO TOP
+? "U_T2_table_is_in_the_named_area:" + (ALLTRIM(MARK) = "TGT")
+
+* --- U_T3/U_T4: IN FREE GROWS THIS WORKSPACE'S RUN ------------------------
+* DEFAULT holds areas 0 and 3 at this point. A global lowest-free sweep would
+* answer 1. The workspace-scoped allocator answers 4 -- the slot after this
+* workspace's highest member -- because the owner's rule for this lane is that
+* a workspace's areas stay contiguous, and an allocator that drops an area
+* into a gap can drop it inside a NEIGHBOUR'S run once two workspaces exist.
+*
+* U_T4 IS THEREFORE THE CONTIGUITY ARM, and it is the marker that changed when
+* the allocator was scoped: it read area 1 while the sweep was global and
+* reads 4 now. If it ever reads 1 again, IN FREE has gone back to being
+* workspace-blind.
+SELECT 0
+USE ufre IN FREE
+GO TOP
+? "U_T3_in_free_did_not_move_me:" + (ALLTRIM(MARK) = "DEF")
+SELECT 4
+GO TOP
+? "U_T4_in_free_grew_this_workspace_run:" + (ALLTRIM(MARK) = "FRE")
+
+* --- U_T5: THE GATE ARM ---------------------------------------------------
+* An unrecognized token must open NOTHING. Expect a refusal naming 'BOGUS'.
+SELECT 0
+USE ubad BOGUS
+GO TOP
+? "U_T5_unknown_token_opened_nothing:" + (ALLTRIM(MARK) = "DEF")
+
+* --- U_T6: out-of-range IN refuses, non-destructively ---------------------
+USE ubad IN 999999
+GO TOP
+? "U_T6_out_of_range_in_opened_nothing:" + (ALLTRIM(MARK) = "DEF")
+
+* --- U_T7: IN with a non-numeric argument refuses -------------------------
+* Digits-only on purpose: std::stoll would read "3junk" as 3, the same
+* longest-valid-prefix trap that let AIF-116 read pid=16,984 as 16.
+USE ubad IN 3junk
+GO TOP
+? "U_T7_malformed_in_opened_nothing:" + (ALLTRIM(MARK) = "DEF")
+
+* --- teardown -------------------------------------------------------------
+WORKSPACE CLOSE ALL
+ERASE udef CONFIRM
+ERASE utgt CONFIRM
+ERASE ufre CONFIRM
+ERASE ubad CONFIRM
+
+FORMULA "USE-ARGUMENT-VALIDATION-END"

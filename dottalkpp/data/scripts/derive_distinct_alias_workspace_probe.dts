@@ -1,0 +1,142 @@
+; ============================================================================
+; DOES derive_distinct_alias() UNIQUIFY A NAME THAT IS ONLY TAKEN ELSEWHERE?
+; ============================================================================
+;
+; A PROBE, NOT A REGISTERED SPEC. It is not in kRegressionSpecs and registering
+; it would be an engine edit; it runs by DOTSCRIPT with SET ALTERNATE capture.
+; If it confirms, it becomes a candidate arm and that promotion is its own act.
+;
+; WHAT IT MEASURES. R129 sec 8 bullet 1, which is explicitly REASONED AND NOT
+; RUN -- the ruling says so in its own opening line: "Line-cited claims are
+; MEASURED; the consequences are reasoned, not run." The claim:
+;
+;   derive_distinct_alias() (src/cli/cmd_use.cpp:491, called at :917) renames
+;   STUDENTS to STUDENTS2 when the name is taken, and asks
+;   find_open_area_by_alias() -- the workspace-blind one -- whether it is
+;   taken. Under a scoped cursor the name is NOT taken (it is taken in another
+;   workspace), so this uniquifies where it should not.
+;
+; MEASURED IN SOURCE 2026-08-31, four days after the ruling: unchanged.
+; derive_distinct_alias() still loops n = 2..999 asking
+; find_open_area_by_alias(cand, except_slot), and that resolver carries no
+; workspace filter. So the precondition holds; what is NOT known is the
+; BEHAVIOUR, and that is the whole point of running it.
+;
+; WHY IT IS WORTH RUNNING RATHER THAN REASONING FURTHER. AIF-137 was predicted
+; in writing on 2026-08-23 and not measured until 2026-08-27, and when it was
+; run it fired on the first attempt with no tuning. A reasoned consequence and
+; a measured one are different evidence tiers in this house. This file moves
+; one bullet from the lower tier to the higher one, in whichever direction the
+; engine actually goes.
+;
+; PREDICTIONS, WRITTEN BEFORE THE RUN so the result cannot be read backwards:
+;
+;   P1 expected .T.  -- the second USE lands as DDAT2, because the resolver it
+;                       consults is workspace-blind and A's copy is open.
+;   P2 expected to PRINT NOTHING -- if the alias was taken, SELECT DDAT inside
+;                       workspace B resolves to A's copy, whose label is
+;                       A_ONE, so the equality reads .F. rather than erroring.
+;
+;   If P1 prints .F. or does not print at all AND P2 reads .T., the ruling's
+;   bullet is FALSIFIED and R129 sec 8 wants a correction, which is an equally
+;   good outcome and is why both directions are armed.
+;
+; HOW IT ASSERTS. By FIELD VALUE, never by console text. The two directories
+; hold the SAME table name with DIFFERENT labels, so a label read says which
+; copy answered. Ground truth is taken BY SLOT before any name is tested,
+; because RELWSNAME's header states the rule this file obeys: "ADDRESSING IS BY
+; ENGINE SLOT, NOT BY NAME, AND THAT IS LOAD-BEARING" -- a name-addressed guard
+; could not tell you which table it read, in a file about name resolution.
+;
+; COUNT DISCIPLINE. Markers are DDA_G0a, DDA_G0b, DDA_G1a, DDA_G1b, then DDA_P1
+; and DDA_P2. That is SIX lines expected. An errored marker PRINTS NOTHING
+; rather than going red, so a SHORT COUNT IS A RESULT, not a clean run -- and
+; for P1/P2 specifically, one of them printing nothing IS the finding. Count
+; the DDA_ lines first and read the verdicts second.
+;
+; GUARDS. G0a/G0b prove each fixture on its own before any workspace exists.
+; G1a/G1b prove the two copies landed at the slots the probe reasons about.
+; IF ANY GUARD READS .F., TREAT P1 AND P2 AS UNPROVEN RATHER THAN AS ANSWERS.
+;
+; SET PATH ORDERING: every CREATE and every ERASE below is immediately preceded
+; by the SET PATH that owns it. workspace_additive_open.dts was once edited so
+; a SET PATH landed BEFORE the previous table's CREATE and a fixture was built
+; in the wrong directory.
+;
+; Self-bootstrapping in DBF/SANDBOX/DDAA and DBF/SANDBOX/DDAB, erased at the
+; end; both workspaces destroyed in teardown (D10.3) so the NAMES are freed and
+; a later run mints fresh rather than adopting. Catalog rows remain as history.
+;
+; ============================================================================
+
+WORKSPACE CLOSE ALL
+
+; --- fixtures: ONE name, TWO directories, different labels ------------------
+
+SET PATH DBF DBF/SANDBOX/DDAA
+SELECT 0
+CREATE X64 DDAT (DK C(4), DLBL C(10))
+APPEND
+REPLACE DK WITH "1"
+REPLACE DLBL WITH "A_ONE"
+
+SET PATH DBF DBF/SANDBOX/DDAB
+SELECT 1
+CREATE X64 DDAT (DK C(4), DLBL C(10))
+APPEND
+REPLACE DK WITH "1"
+REPLACE DLBL WITH "B_ONE"
+
+SELECT 0
+GO 1
+? "DDA_G0a_A_fixture_written:" + (ALLTRIM(DLBL) = "A_ONE")
+SELECT 1
+GO 1
+? "DDA_G0b_B_fixture_written:" + (ALLTRIM(DLBL) = "B_ONE")
+
+WORKSPACE CLOSE ALL
+
+; --- two workspaces, the SAME table name opened by USE in each --------------
+; USE is the path derive_distinct_alias() sits on. WORKSPACE OPEN <dir> takes a
+; different route, which is why this probe cannot borrow RELWSNAME's fixture.
+
+WORKSPACE NEW DDAWSA
+SET PATH DBF DBF/SANDBOX/DDAA
+SELECT 0
+USE DDAT
+
+WORKSPACE NEW DDAWSB
+SET PATH DBF DBF/SANDBOX/DDAB
+SELECT 1
+USE DDAT
+
+; Ground truth BY SLOT, before any name is tested.
+SELECT 0
+GO 1
+? "DDA_G1a_slot0_is_workspace_A_copy:" + (ALLTRIM(DLBL) = "A_ONE")
+SELECT 1
+GO 1
+? "DDA_G1b_slot1_is_workspace_B_copy:" + (ALLTRIM(DLBL) = "B_ONE")
+
+; --- the probe --------------------------------------------------------------
+; P1: if the alias was uniquified, DDAT2 exists and it is B's copy.
+; P2: if it was NOT uniquified, the plain name inside B is B's copy.
+; Exactly one of these should carry the answer; the other prints nothing or
+; reads .F. Both are positive reads of a field.
+
+SELECT DDAT2
+? "DDA_P1_second_use_was_uniquified:" + (ALLTRIM(DLBL) = "B_ONE")
+
+SELECT DDAT
+? "DDA_P2_plain_name_inside_B_is_B:" + (ALLTRIM(DLBL) = "B_ONE")
+
+; --- teardown ---------------------------------------------------------------
+
+WORKSPACE CLOSE ALL
+WORKSPACE DESTROY DDAWSA
+WORKSPACE DESTROY DDAWSB
+
+SET PATH DBF DBF/SANDBOX/DDAA
+ERASE DDAT CONFIRM
+SET PATH DBF DBF/SANDBOX/DDAB
+ERASE DDAT CONFIRM

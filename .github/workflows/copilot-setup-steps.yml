@@ -8,6 +8,12 @@ name: Copilot Setup Steps
 on:
   workflow_dispatch:
 
+# STATED, not inherited. With no block here the job takes the repository's
+# default token scope -- a SETTING, which a reader of this repository cannot
+# see. Checkout plus apt-get needs nothing more than read. See OI-016.
+permissions:
+  contents: read
+
 jobs:
   copilot-setup-steps:
     runs-on: ubuntu-latest

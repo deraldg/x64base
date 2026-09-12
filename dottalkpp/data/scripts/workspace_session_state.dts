@@ -24,15 +24,85 @@ STOP_ON_ERROR OFF
 FORMULA "WS-SESSION-PROOF-BEGIN"
 
 * --- environment-first: the cascade bundle roots ----------------------------
-SETPATH DBF SYSTEMS/CASCADE_ERP/DBF
-SETPATH INDEXES SYSTEMS/CASCADE_ERP/INDEXES
-SETPATH LMDB SYSTEMS/CASCADE_ERP/LMDB
+* AMENDED 2026-08-28. THIS LEG USED TO LOAD cascade_all, AND THAT IS WHY THIS
+* SPEC COULD NOT BE BRACKETED: cascade_all.dtschema is a posture FILE in the
+* PRODUCTION workspaces directory, absent once AIF-078 L2 redirects the
+* WORKSPACES slot at a scratch root. It also made the spec depend on a mutable
+* artifact nobody owns -- re-save cascade_all and this spec's meaning changes
+* with nothing going red.
+*
+* THE FIXTURE HAD TO CARRY REAL STRUCTURE HERE, unlike the v3 and RAM specs.
+* SS_T1/SS_T2 assert that a saved SESSION restores a cursor AND its relation
+* slaving, so a two-table posture is not enough -- it needs a parent, a child,
+* an ORDER TAG, and a live relation. cascade_all supplied those at AREA 21
+* (CASCADE_Sales_Orders, tag SO_ID) and AREA 24 (CASCADE_SO_Lines, tag SO_ID),
+* related on SO_ID. That pair is reproduced below in SANDBOX, at THE SAME AREA
+* NUMBERS and on THE SAME KEY, so both markers keep their slots and their
+* values and the PROOF is untouched.
+*
+* SIX PARENT ROWS SO 'BOTTOM' LANDS ON SO_ID 6, which is what the arms read.
+* The tag is BUILT rather than dropped: SET ORDER is part of the session state
+* under test, so a fixture without one would quietly stop exercising half the
+* claim.
+*
+* GUARDS ADDED (SS_G1/SS_G2), which the spec did not have. WSL_G4/G5 exist
+* because a FIXTURE failure once wore a VERB failure's clothes, and RS_G1
+* because an arm reading an unchanged value cannot tell 'survived' from 'never
+* worked'. If either guard reds, treat BOTH arms as UNPROVEN.
+SET PATH DBF DBF/SANDBOX
 WORKSPACE CLOSE
-WORKSPACE LOAD cascade_all
+ERASE SSPAR CONFIRM
+ERASE SSCHI CONFIRM
+
+SELECT 21
+CREATE X64 SSPAR (SO_ID N(4,0), SLBL C(10))
+APPEND
+REPLACE SO_ID WITH 1
+REPLACE SLBL WITH "SO_ONE"
+APPEND
+REPLACE SO_ID WITH 2
+REPLACE SLBL WITH "SO_TWO"
+APPEND
+REPLACE SO_ID WITH 6
+REPLACE SLBL WITH "SO_SIX"
+INDEX ON SO_ID TAG SO_ID
+
+SELECT 24
+CREATE X64 SSCHI (SO_ID N(4,0), CLBL C(10))
+APPEND
+REPLACE SO_ID WITH 1
+REPLACE CLBL WITH "LINE_ONE"
+APPEND
+REPLACE SO_ID WITH 2
+REPLACE CLBL WITH "LINE_TWO"
+APPEND
+REPLACE SO_ID WITH 6
+REPLACE CLBL WITH "LINE_SIX"
+INDEX ON SO_ID TAG SO_ID
+
+REL ADD SSPAR SSCHI ON SO_ID TO SO_ID
+
+* THE 'SET ORDER TAG SO_ID' LINE THAT USED TO STAND HERE IS REMOVED, AND THAT
+* IS A STATED COVERAGE LOSS RATHER THAN A TIDY-UP. Measured 2026-08-28: the
+* fixture's INDEX ON writes SO_ID.inx (2INX) while SET ORDER TAG looks for a
+* CDX under the INDEXES root, so the line printed
+*     SET ORDER: file not found: ...\INDEXES\x64\SSPAR.cdx
+* and did NOTHING. SS_G1 passed anyway because the rows are written so that
+* PHYSICAL bottom is already SO_ID 6 -- which means the line was decorative and
+* the spec had quietly stopped exercising SET ORDER restoration while still
+* appearing to test it. A no-op line that looks like coverage is worse than an
+* absent one, so it is gone and the gap is named: THIS SPEC NO LONGER PROVES
+* THAT A SAVED SESSION RESTORES SET ORDER. Restoring that arm needs a real CDX
+* in the fixture, which INDEX ON does not produce; it is its own piece of work.
+SELECT SSPAR
+BOTTOM
+? "SS_G1_parent_fixture_at_bottom:" + (SO_ID = 6)
+REL REFRESH
+SELECT SSCHI
+? "SS_G2_relation_live_before_the_save:" + (SO_ID = 6)
 
 * --- take the session somewhere specific ------------------------------------
 SELECT 21
-SET ORDER TAG SO_ID
 BOTTOM
 REL REFRESH
 
@@ -44,7 +114,18 @@ WORKSPACE CLOSE
 WORKSPACE LOAD sess_regress MEMO
 GPS
 ? "SS_T1_parent_restored_at_bottom:" + (SO_ID = 6)
-SELECT 24
+* CORRECTED 2026-08-28, SAME DAY, AFTER A FALSE GREEN. This addressed the table
+* by SLOT, and the amendment above kept the old slot on the reasoning that the
+* previous fixture held it there. THAT REASONING WAS VOID: R130 says a
+* posture's AREA numbers are KEYS, NOT ADDRESSES, and the load prints so --
+* tables land at slots 0..N-1. The old fixture only worked because mcc_x64
+* restored THIRTEEN areas, so the high slot was coincidentally occupied. With a
+* small posture the slot reaches NOTHING -- and the marker still printed .T.,
+* because a marker over a closed area does not error, it PICKS A SIDE (see
+* claude/FINDING_MARKER_OVER_A_CLOSED_AREA_PICKS_A_SIDE.md). ADDRESSING BY NAME
+* SURVIVES RELOCATION, which is why workspace_memo and workspace_load_shortfall
+* stayed sound through the same change.
+SELECT SSCHI
 ? "SS_T2_child_slaved_after_restore:" + (SO_ID = 6)
 
 FORMULA "WS-SESSION-PROOF-END"

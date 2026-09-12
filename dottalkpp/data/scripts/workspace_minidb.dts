@@ -41,9 +41,25 @@ STOP_ON_ERROR OFF
 FORMULA "WS-MINIDB-PROOF-BEGIN"
 
 * --- author the container from the disk-resident MCC ------------------------
+* AMENDED 2026-08-28. 'WORKSPACE LOAD mcc_x64' read a posture FILE from the
+* PRODUCTION workspaces directory, which the AIF-078 L2 bracket redirects away
+* from. The posture is now built here.
+*
+* THE THREE AREAS THE ARMS READ ARE KEPT AT THEIR mcc_x64 SLOTS: DB_T1 reads
+* SELECT 8 (STUDENTS, LNAME) and DB_T2 reads SELECT 4 (ENROLL, SET ORDER TAG
+* SID). mcc_x64 held ENROLL at AREA 4 and STUDENTS at AREA 8, so opening them
+* into the same slots keeps both markers and their meanings untouched. DEPT is
+* opened at AREA 3, also its mcc_x64 slot, so the container is not degenerate.
+* Three areas rather than thirteen; the count was never the claim -- carriage
+* THROUGH the minidb container is.
 DO x64
 WORKSPACE CLOSE
-WORKSPACE LOAD mcc_x64
+SELECT 3
+USE DEPT
+SELECT 4
+USE ENROLL
+SELECT 8
+USE STUDENTS
 WORKSPACE SAVE minidb_regress MEMO MINIDB
 WORKSPACE CLOSE
 
@@ -53,10 +69,21 @@ WORKSPACE LOAD minidb_regress MEMO RAM
 
 * --- the database came out of the memo --------------------------------------
 VDISK STATUS
-SELECT 8
+* CORRECTED 2026-08-28, SAME DAY, AFTER A FALSE GREEN. This addressed the table
+* by SLOT, and the amendment above kept the old slot on the reasoning that the
+* previous fixture held it there. THAT REASONING WAS VOID: R130 says a
+* posture's AREA numbers are KEYS, NOT ADDRESSES, and the load prints so --
+* tables land at slots 0..N-1. The old fixture only worked because mcc_x64
+* restored THIRTEEN areas, so the high slot was coincidentally occupied. With a
+* small posture the slot reaches NOTHING -- and the marker still printed .T.,
+* because a marker over a closed area does not error, it PICKS A SIDE (see
+* claude/FINDING_MARKER_OVER_A_CLOSED_AREA_PICKS_A_SIDE.md). ADDRESSING BY NAME
+* SURVIVES RELOCATION, which is why workspace_memo and workspace_load_shortfall
+* stayed sound through the same change.
+SELECT STUDENTS
 TOP
 ? "DB_T1_students_from_memo:" + (LNAME > "")
-SELECT 4
+SELECT ENROLL
 SET ORDER TAG SID
 ? "DB_T2_index_from_memo:" + (SID >= 1)
 
@@ -76,7 +103,17 @@ CLOSE
 VDISK UNMOUNT
 DO mem
 WORKSPACE LOAD minidb_sidecar MEMO RAM
-SELECT 1
+* ADDRESSED BY NAME, NOT BY SLOT -- and this is the second time this file has
+* had to learn it. The container was authored with the table in area 1, so the
+* posture records AREA 1 and nothing at 0: a SPARSE posture. Under R130 a
+* posture's AREA number is a KEY, not an engine address, so the load allocates
+* the lowest free slot in the current workspace -- slot 0 -- and announces the
+* remap. `SELECT 1` then reached an EMPTY area and DB_T3/DB_T4 both read .F.
+* while the container bytes were perfectly fine (measured 2026-08-27: the arm
+* was followed by "REPLACE: no file open", which is what an empty area says).
+* MDMEMO is unique in this session, so the name is unambiguous here -- see
+* AIF-140 for when it is not.
+SELECT MDMEMO
 ? "DB_T3_memo_value_from_container:" + (NOTES = "carried through the container")
 REPLACE NOTES WITH "post-hydration write"
 ? "DB_T4_sidecar_writable_after_hydration:" + (NOTES = "post-hydration write")

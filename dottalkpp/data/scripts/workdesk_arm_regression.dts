@@ -1,0 +1,203 @@
+; ============================================================================
+; WORKDESK -- the desk reports two workspaces and ONE NAME IN TWO AREAS
+;
+; Status: CANDIDATE / explicit-run.
+; Safety: MUTATING (SANDBOX only; both fixtures are erased at both ends).
+;         MINTS CATALOG ROWS -- WORKSPACE OPEN ... AS births one per
+;         workspace, so the spec entry carries mints_catalog.
+;
+; WHY THIS SPEC EXISTS, and it is the first of its kind here: until 2026-09-10
+; NOTHING asserted a byte of WSREPORT's output. It appears ZERO times in
+; cmd_regression.cpp, the host carrying 81 specs, and it is `status: supported`.
+; Its "Workspace" block could not have been asserted anyway -- it showed AREA
+; slots under a workspace heading and never called the workspace table, so its
+; content changed with whatever happened to be open and named no workspace at
+; all. WORKDESK is assertable BECAUSE the desk is ordered on purpose: handles
+; sorted ascending, DEFAULT always handle 1 and therefore always first.
+;
+; ---------------------------------------------------------------------------
+; THE FIXTURE IS TWO DIRECTORIES, AND THE FIRST TWO CUTS OF THIS SPEC WERE
+; WRONG ABOUT WHY.
+;
+; Both earlier cuts opened ONE file twice with `USE WDARM AGAIN` and expected
+; WORKDESK's fanout section to appear. It never did, and the code was right.
+; `USE ... AGAIN` is the ONE route that CANNOT produce a doubled name:
+; cmd_use.cpp resolves the alias before it touches the area
+; (find_open_area_by_alias -> derive_distinct_alias, cmd_use.cpp:472/492),
+; renames the second instance to WDARM2 and SAYS SO on the console. Two
+; handles, two names. The fanout pass keys on DbArea::name(), which IS the
+; alias -- so by construction it can never fire on that path.
+;
+; Every OTHER opener skips that arm. WORKSPACE OPEN <dir> dedupes on PATH and
+; not on name (cmd_workspace.cpp:1511); WORKSPACE ADD, WORKSPACE LOAD and both
+; schema-restore paths apply a saved alias verbatim; CREATE and AUTODBF take
+; the file stem. So the condition WORKDESK reports is the one that actually
+; occurs: TWO DIFFERENT FILES SHARING A BASENAME, opened from two directories
+; into two workspaces. That is how it was first seen -- x64\BUILDING.dbf and
+; x32\BUILDING.dbf, in a live session, both answering to BUILDING.
+;
+; This spec reproduces that TOPOLOGY, not merely that condition. Bending the
+; arm until the assertion went green -- forcing the collision with an explicit
+; ALIAS clause -- was available and was refused: a spec adjusted to match what
+; the code did stops meaning anything.
+;
+; AND IT MATTERS. The name-based resolvers are FIRST-WINS:
+; cli::find_open_area_in_workspace_ci() returns the LOWEST matching slot
+; (workarea_util.cpp:171) and SQL resolves table names through it. The second
+; area is open and unreachable by name. WORKDESK does not refuse it and does
+; not repair it; it says the name is doubled so a caller can qualify on
+; purpose instead of taking first-wins by accident.
+; ---------------------------------------------------------------------------
+;
+; FIXTURE DIRECTORIES. DBF/SANDBOX/R131A and .../R131B are the house's shared
+; two-directory scratch pair. This spec BORROWS them rather than adding a
+; sixth pair, and it can do so safely because fixtures are name-scoped: the
+; pair's own spec (workspace_owns_its_environment.dts) builds and erases RSPT,
+; this one builds and erases WDARM, and neither can see the other's files.
+; Say the word and it gets a dedicated WDKA/WDKB pair instead -- that is a
+; data-lane act, so it is not taken here.
+;
+; THEY MUST EXIST, and they are EMPTY DIRECTORIES AND GIT DOES NOT TRACK
+; THOSE -- the same standing gap WAOA/WAOB, OJCA/OJCB, PKA/PKB and RPCA/RPCB
+; already carry.
+;
+; RE-RUNNABLE WITHIN ONE SESSION, unlike the first two cuts. A workspace name
+; cannot be reclaimed while it is live, so the earlier `WORKSPACE NEW WDESK2`
+; made this a once-per-runtime spec and any second run went red at line one
+; for a reason that was not about WORKDESK. The preamble now DESTROYS both
+; names before it opens them, which is the idiom
+; sqlsel_workspace_scope_regression.dts already uses.
+;
+; WHAT IS ASSERTED, and none of it is decoration:
+;
+;   WD_G0/WD_G1  the two fixtures are DIFFERENT FILES that happen to share a
+;                basename -- read on their own, before any workspace exists.
+;                Without these, "the desk reported a doubled name" cannot be
+;                told from "the desk reported the same file twice".
+;   WD_W0        area 0 belongs to WDKA and reads AAA.
+;   WD_W1        THE DISCRIMINATOR. Area 1 belongs to WDKB and reads BBB. Two
+;                areas carrying ONE NAME are two independent tables; if the
+;                desk were reporting one file seen twice, both would read AAA.
+;
+; The rest is asserted against WORKDESK's own routed output by the validator:
+; DEFAULT sorts first and is named in phase 1, the current-workspace marker
+; follows SWITCH, the current AREA is reported as belonging to a workspace
+; that is NOT the current one, the fanout section appears EXACTLY ONCE (phase
+; 2 and not phase 1), and no I1 violation is reported.
+;
+; HANDLES AND WS_IDS ARE NEVER ASSERTED BY VALUE except DEFAULT's handle 1,
+; which is an invariant. WDKA's and WDKB's handles depend on how many
+; workspaces this session already made, and their WS_IDs are adopted from the
+; catalog when the name has a live chain. Asserting either would make this
+; spec fail for a reason that has nothing to do with WORKDESK.
+; ============================================================================
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+FORMULA "WORKDESK-ARM-BEGIN"
+
+; ---------------------------------------------------------------------------
+; PREAMBLE. Destroy first, so a second run in the same runtime is a re-run and
+; not a red line about a name that could not be reclaimed.
+; ---------------------------------------------------------------------------
+WORKSPACE CLOSE ALL
+WORKSPACE DESTROY WDKA
+WORKSPACE DESTROY WDKB
+WORKSPACE SWITCH DEFAULT
+
+; ---------------------------------------------------------------------------
+; TWO FILES, ONE BASENAME, TWO DIRECTORIES. The marks differ on purpose: they
+; are the only thing that can prove the desk is reporting two tables rather
+; than one table counted twice.
+; ---------------------------------------------------------------------------
+SET PATH DBF DBF/SANDBOX/R131A
+ERASE TABLE WDARM CONFIRM
+CREATE X64 WDARM (ID N(6,0), MARK C(8))
+APPEND
+REPLACE ID WITH 1
+REPLACE MARK WITH "AAA"
+CLOSE
+
+SET PATH DBF DBF/SANDBOX/R131B
+ERASE TABLE WDARM CONFIRM
+CREATE X64 WDARM (ID N(6,0), MARK C(8))
+APPEND
+REPLACE ID WITH 1
+REPLACE MARK WITH "BBB"
+CLOSE
+
+WORKSPACE CLOSE ALL
+
+; ---------------------------------------------------------------------------
+; GUARDS. Each fixture read alone, before a workspace exists. These are what
+; make the two-area report meaningful later.
+; ---------------------------------------------------------------------------
+SET PATH DBF DBF/SANDBOX/R131A
+USE WDARM
+? "WD_G0_fixture_a_reads_AAA:" + (ALLTRIM(MARK) = "AAA")
+CLOSE
+
+SET PATH DBF DBF/SANDBOX/R131B
+USE WDARM
+? "WD_G1_fixture_b_reads_BBB:" + (ALLTRIM(MARK) = "BBB")
+CLOSE
+
+WORKSPACE CLOSE ALL
+SET PATH DBF DBF
+WORKSPACE SWITCH DEFAULT
+
+; ---------------------------------------------------------------------------
+; PHASE 1 -- the desk with nothing of ours open.
+; Establishes that the header names DEFAULT (handle 1 by invariant) and that
+; the fanout section is ABSENT. Phase 2 is the SAME command after two
+; workspaces hold two same-named tables.
+; ---------------------------------------------------------------------------
+WORKDESK
+
+; ---------------------------------------------------------------------------
+; TWO WORKSPACES, EACH ON ITS OWN DIRECTORY. `AS` is required as of R131 --
+; deriving the workspace name from the directory leaf was withdrawn.
+;
+; This is the opener that does NOT uniquify the alias, which is the point:
+; both areas come out named WDARM.
+; ---------------------------------------------------------------------------
+WORKSPACE OPEN DBF/SANDBOX/R131A AS WDKA
+WORKSPACE OPEN DBF/SANDBOX/R131B AS WDKB
+
+SELECT 0
+? "WD_W0_area0_is_workspace_a_and_reads_AAA:" + (ALLTRIM(MARK) = "AAA")
+
+SELECT 1
+? "WD_W1_area1_is_workspace_b_and_reads_BBB:" + (ALLTRIM(MARK) = "BBB")
+
+; ---------------------------------------------------------------------------
+; STAND IN WDKB WITH THE CURSOR IN WDKA'S AREA. The divergence is legal --
+; SWITCH moves the workspace, never the cursor -- and the desk is required to
+; say so, so the NOTE line is asserted. The owning handle is deliberately not
+; asserted by value; the sentence around it is.
+; ---------------------------------------------------------------------------
+WORKSPACE SWITCH WDKB
+SELECT 0
+
+; ---------------------------------------------------------------------------
+; PHASE 2 -- the same command, now with two workspaces and a doubled name.
+; ---------------------------------------------------------------------------
+WORKDESK
+
+; ---------------------------------------------------------------------------
+; TEARDOWN. Symmetric with the preamble, so the next run starts clean whether
+; or not this one reached the end.
+; ---------------------------------------------------------------------------
+WORKSPACE CLOSE ALL
+WORKSPACE DESTROY WDKA
+WORKSPACE DESTROY WDKB
+WORKSPACE SWITCH DEFAULT
+
+SET PATH DBF DBF/SANDBOX/R131A
+ERASE TABLE WDARM CONFIRM
+SET PATH DBF DBF/SANDBOX/R131B
+ERASE TABLE WDARM CONFIRM
+SET PATH DBF DBF
+
+FORMULA "WORKDESK-ARM-END"

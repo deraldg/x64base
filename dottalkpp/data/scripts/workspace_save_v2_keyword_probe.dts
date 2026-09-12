@@ -1,0 +1,131 @@
+* ===========================================================================
+* IS V2 SPELLABLE, AND IS IT THE SAME THING AS SAYING NOTHING?
+* ===========================================================================
+*
+* A PROBE, NOT A REGISTERED SPEC. Not in kRegressionSpecs; runs by DOTSCRIPT.
+*
+* WHY. Until 2026-09-01 `ver` started at 2 and only V3 and MINIDB had keywords,
+* so "I want the simple deskspace" was expressed as an ABSENCE -- a bare SAVE
+* could not be told apart from a script whose author never considered the
+* version. Owner, 2026-09-01: "each version should be an option".
+*
+* THE CLAIM UNDER TEST IS A SYNONYM CLAIM, and a synonym has to be PROVEN
+* rather than assumed: adding a keyword that quietly wrote something ELSE would
+* be worse than not having it. So the arm does not ask "was V2 accepted" -- an
+* unknown trailing token would be swallowed into the FILENAME and the save
+* would still succeed. It asks whether the ARTIFACT IS THE SAME.
+*
+* HOW IT ASSERTS. By FIELD VALUE, read out of WORKSPACES.dbf as an ORDINARY
+* TABLE. The catalog's FMT column records what each row carries, so a bare save
+* and a V2 save are compared on the thing that would differ if the keyword did
+* anything -- not on console text, and not on the save succeeding.
+*
+* THE REFUSAL ARMS ARE ASSERTED BY TRANSCRIPT, and that is a departure stated
+* rather than hidden. A refusal WRITES NO FIELD, so there is nothing for a
+* marker to read; this is the AIF-149 precedent, where a refusal-under-test is
+* read as a marked block that must contain a line. Read them in the transcript:
+*
+*   WORKSPACE SAVE: refused -- MINIDB cannot be saved as V2.
+*   WORKSPACE SAVE: refused -- the format version is named more than once.
+*
+* AND A SECOND TRANSCRIPT READING COVERS WHAT THE MESSAGE CANNOT: a refusal
+* that printed correctly and SAVED ANYWAY would look identical in its own
+* output. The two LOCATEs at the end answer that -- "Located." for the names
+* that were written, "Not Located." for the names that were refused.
+*
+* COUNT: 2 guards + 2 arms = 4 WSV_ lines. An errored marker prints NOTHING, so
+* A SHORT COUNT IS ITSELF THE RESULT -- which is how the first cut's two broken
+* arms announced themselves, by being absent rather than by going red.
+*
+* RESIDUE, MEASURED AND NAMED: this probe MINTS 2 CATALOG ROWS in the
+* PRODUCTION catalog (DSV2A, DSV2B) and flags them with WORKSPACE DELETE at the
+* end. Flagged rows STAY -- there is deliberately no WORKSPACE PACK, because
+* WS_ID allocation is max(WS_ID)+1 derived from surviving rows. DOTSCRIPT is
+* NOT bracketed; CatalogBracket is a suite facility. Two rows per run is the
+* honest cost of proving this against the real writer.
+* ===========================================================================
+
+SETPATH DBF DBF/SANDBOX
+
+ERASE WSV2FIX CONFIRM
+
+SELECT 0
+CREATE X64 WSV2FIX (CK C(4))
+APPEND
+REPLACE CK WITH "C1"
+
+* ---------------------------------------------------------------------------
+* THE TWO SAVES -- identical but for the keyword under test
+* ---------------------------------------------------------------------------
+
+WORKSPACE SAVE DSV2A MEMO
+WORKSPACE SAVE DSV2B MEMO V2
+
+* ---------------------------------------------------------------------------
+* THE TWO CONTRADICTIONS -- both must refuse and both must write nothing
+* ---------------------------------------------------------------------------
+
+WORKSPACE SAVE DSV2X MEMO V2 MINIDB
+WORKSPACE SAVE DSV2Y MEMO V2 V3
+
+* ---------------------------------------------------------------------------
+* READ THE CATALOG AS AN ORDINARY TABLE
+* ---------------------------------------------------------------------------
+
+SETPATH DBF WORKSPACES
+SELECT 0
+USE WORKSPACES
+SELECT WORKSPACES
+
+GO TOP
+LOCATE FOR ALLTRIM(WS_NAME) = "DSV2A"
+? "WSV_G1_bare_save_row_exists:" + (ALLTRIM(WS_NAME) = "DSV2A")
+? "WSV_G2_bare_save_is_DTSHEMA_2:" + (ALLTRIM(FMT) = "DTSHEMA 2")
+
+GO TOP
+LOCATE FOR ALLTRIM(WS_NAME) = "DSV2B"
+? "WSV_T1_V2_save_row_exists:" + (ALLTRIM(WS_NAME) = "DSV2B")
+? "WSV_T2_V2_is_THE_SAME_FMT_DISCRIMINATOR:" + (ALLTRIM(FMT) = "DTSHEMA 2")
+
+* ---------------------------------------------------------------------------
+* THE "WROTE NOTHING" HALF IS A TRANSCRIPT READING, AND THE FIRST CUT OF THIS
+* PROBE GOT IT WRONG TWICE IN ONE LINE. Recorded rather than quietly deleted.
+*
+* It tried two field-value arms: LOCATE the refused name, then assert
+* ALLTRIM(WS_NAME) # "DSV2X". Both halves were defective.
+*
+*   (1) `#` is not an operator this expression engine accepts. The parse
+*       truncated at it and the marker printed a FORMULA error -- so the arm
+*       vanished rather than going red, which is the short-count signal this
+*       file's header describes, working as advertised.
+*
+*   (2) EVEN REPAIRED IT WOULD HAVE PROVEN NOTHING. After "Not Located." the
+*       cursor sits wherever it already sat, so ALLTRIM(WS_NAME) reads a STALE
+*       ROW -- some unrelated catalog entry whose name is, of course, not
+*       "DSV2X". The arm would have read .T. for a reason having nothing to do
+*       with the refusal. That is the marker-over-a-failed-search trap, and it
+*       was written INTO an arm whose entire purpose was rigour.
+*
+* NO MARKER IN THIS LANGUAGE CAN ASSERT ABSENCE. The house established that
+* over three cuts of USE_AGAIN and it holds here. Absence is proven by
+* CONTRAST: LOCATE prints "Located." for the two names that WERE written
+* (immediately above) and "Not Located." for the two that were refused. Those
+* four lines sit in the transcript in that order and are the reading.
+*
+* SO THE REFUSALS ARE ASSERTED IN THE TRANSCRIPT ON TWO AXES, and both are
+* needed: the refusal MESSAGE proves the verb objected, and "Not Located."
+* proves it did not object and then save anyway.
+* ---------------------------------------------------------------------------
+
+GO TOP
+LOCATE FOR ALLTRIM(WS_NAME) = "DSV2X"
+
+GO TOP
+LOCATE FOR ALLTRIM(WS_NAME) = "DSV2Y"
+
+* ---------------------------------------------------------------------------
+* Hygiene: flag the two rows this probe minted. They stay on disk by design.
+* ---------------------------------------------------------------------------
+
+WORKSPACE DELETE DSV2A
+WORKSPACE DELETE DSV2B

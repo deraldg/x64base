@@ -1,0 +1,132 @@
+* ===========================================================================
+* DOES FIELDMGR APPEND SURVIVE A LIVE CDX?  -- the index gap
+* ===========================================================================
+*
+* A PROBE, NOT A REGISTERED SPEC. Not in kRegressionSpecs; runs by DOTSCRIPT.
+*
+* WHY. The 2026-08-31 catalog conversion proved FIELDMGR APPEND preserves memo
+* tokens and never opens the memo sidecar -- measured on WORKSPACES, 273 rows,
+* a 3.1 MB .dtx, all 20 original column hashes identical and the sidecar md5
+* byte-identical. THAT TABLE HAD NO INDEX. dottalkpp\data\workspaces held only
+* the .dbf and the .dtx: no .cdx, no .cnx.
+*
+* And cmd_fieldmgr.cpp sets both knobs OFF before calling fields::append --
+*
+*     opts.rebuildIndexesIfPossible = false;
+*     opts.failIfIndexesPresent     = false;
+*
+* -- so on an indexed table the append NEITHER REBUILDS NOR REFUSES. The
+* append changes the record length (703 -> 715 on the catalog) and grows the
+* header (1266 -> 1381). Whether a CDX survives that is UNMEASURED, and those
+* two flags are the written evidence that nobody has checked.
+*
+* THE CLAIM THIS GUARDS AGAINST. "FIELDMGR APPEND is safe" was about to be
+* recorded as a general result about restructuring any x64 table. Almost every
+* table in this tree carries an index; the one it was measured on does not.
+* A result measured on the unindexed case and stated for all cases is the
+* shape this house keeps finding.
+*
+* THREE POSSIBLE OUTCOMES, and they are NOT equally bad:
+*
+*   (a) the order still walks correctly    -- CDX keys on RECORD NUMBERS, not
+*       byte offsets, so a reclen change need not disturb it. Best case.
+*   (b) SET ORDER fails / refuses          -- loud. Recoverable. A user knows.
+*   (c) SET ORDER is ACCEPTED and the walk goes PHYSICAL -- SILENT staleness,
+*       and the worst of the three: a stale index that answers is worse than
+*       one that refuses, because nothing says the answer changed.
+*
+* NO PREDICTION IS OFFERED because I do not have one. Stating a guess here
+* would invite reading the result to match it.
+*
+* HOW IT ASSERTS. By FIELD VALUE, never console text, and the discriminator
+* DIVERGES AT BOTH ENDS -- physical ZULU..TANGO against keyed ALPHA..ZULU.
+* That is MWX section 5C's fixture and its reason: an engine that accepted
+* SET ORDER and walked physically anyway would leave both ends where the
+* pre-index guards found them, so a same-order key could not tell the two
+* implementations apart.
+*
+* GUARDS. G1/G2 read PHYSICAL order before any index exists. G3/G4 read the
+* KEYED order BEFORE the append, which is what makes T1/T2 mean anything:
+* without them, a broken order after the append could not be told from an
+* order that never worked. IF ANY GUARD READS .F., TREAT THE ARMS AS UNPROVEN.
+*
+* COUNT: 4 guards + 4 arms = 8 FMI_ lines. An errored marker prints NOTHING
+* rather than going red, so a SHORT COUNT IS THE RESULT -- and for T1/T2 a
+* missing line is outcome (b), which is itself the finding.
+*
+* Self-bootstrapping and self-erasing in DBF/SANDBOX. ERASE sweeps the table,
+* the container and the LMDB environment together, so CDX CREATE -- which
+* refuses to overwrite -- finds clean ground on a re-run.
+* ===========================================================================
+
+SETPATH DBF DBF/SANDBOX
+SETPATH INDEXES INDEXES/SANDBOX
+
+ERASE FMIDX CONFIRM
+
+SELECT 0
+CREATE X64 FMIDX (CK C(4), CLBL C(12))
+APPEND
+REPLACE CK WITH "C1"
+REPLACE CLBL WITH "ZULU"
+APPEND
+REPLACE CK WITH "C2"
+REPLACE CLBL WITH "MIKE"
+APPEND
+REPLACE CK WITH "C3"
+REPLACE CLBL WITH "ALPHA"
+APPEND
+REPLACE CK WITH "C4"
+REPLACE CLBL WITH "TANGO"
+
+USE FMIDX
+SELECT FMIDX
+TOP
+? "FMI_G1_physical_first_is_ZULU:" + (ALLTRIM(CLBL) = "ZULU")
+BOTTOM
+? "FMI_G2_physical_last_is_TANGO:" + (ALLTRIM(CLBL) = "TANGO")
+
+CDX CREATE
+CDX ADDTAG CLBL
+CDX TAGS
+BUILDLMDB YES
+
+&& Re-open before ordering: the container and its LMDB environment did not
+&& exist when this area was first opened (MWX 5C's own note).
+USE FMIDX
+SELECT FMIDX
+SET ORDER TAG CLBL
+TOP
+? "FMI_G3_keyed_first_is_ALPHA_before_append:" + (ALLTRIM(CLBL) = "ALPHA")
+BOTTOM
+? "FMI_G4_keyed_last_is_ZULU_before_append:" + (ALLTRIM(CLBL) = "ZULU")
+
+* ---------------------------------------------------------------------------
+* THE APPEND -- the whole point of the file
+* ---------------------------------------------------------------------------
+
+FIELDMGR APPEND FMNEW N(4)
+FIELDMGR LIST
+
+USE FMIDX
+SELECT FMIDX
+SET ORDER TAG CLBL
+TOP
+? "FMI_T1_keyed_first_still_ALPHA_after_append:" + (ALLTRIM(CLBL) = "ALPHA")
+BOTTOM
+? "FMI_T2_keyed_last_still_ZULU_after_append:" + (ALLTRIM(CLBL) = "ZULU")
+
+&& T3 IS THE DATA ARM AND ITS FIRST VERSION WAS WORTHLESS -- recorded because
+&& the comment above it already said the right thing and the code did not.
+&& It read TOP, which DEPENDS ON THE ORDER APPLYING, so when SET ORDER was
+&& refused it reported .F. for the same reason T1 and T2 did: it measured the
+&& order, not the data. One marker CANNOT say which failed, and that was the
+&& stated reason for having a separate arm at all.
+&&
+&& GO 3 is a PHYSICAL address and is immune to the thing under test. Under a
+&& working order record 3 is ALPHA; under a refused order record 3 is still
+&& ALPHA, because physical record 3 is ALPHA either way. That is the property
+&& a data arm needs.
+GO 3
+? "FMI_T3_row3_data_intact_CK:" + (ALLTRIM(CK) = "C3")
+? "FMI_T4_row3_data_intact_CLBL:" + (ALLTRIM(CLBL) = "ALPHA")

@@ -1,0 +1,101 @@
+; ============================================================================
+; COUNT LIST / COUNT VERBOSE -- the folded SQL behaviours, on ONE rowset
+;
+; Status: CANDIDATE / explicit-run. Owner ruling 2026-09-04.
+; Safety: MUTATING (SANDBOX only; self-bootstrapping and self-erasing)
+;
+; WHY THIS SPEC EXISTS. `SQL` was retired as a scanner because it kept its own
+; idea of which rows were in scope: a private DelMode and a raw skip-walk that
+; never consulted SET FILTER, so `SQL COUNT FOR <x>` and `COUNT FOR <x>` could
+; return different numbers over the same table with neither reporting it. Its
+; two useful behaviours -- listing the matches, and a verbose per-row trace --
+; moved into COUNT, onto cli::scan::collect_selected_recnos.
+;
+; THE ARM THAT MATTERS IS CLV_T3, AND IT IS THE ONLY REASON TO PREFER THIS OVER
+; A UNIT TEST. It sets a persistent SET FILTER and then reads the VERBOSE
+; summary. The retired scanner would have reported the UNFILTERED population
+; here; COUNT must report the filtered one. A spec that only checked the
+; unfiltered case would pass identically against the defect it was written for.
+;
+; Assertions are TRANSCRIPT FRAGMENTS required by the C++ validator, not `?`
+; markers, because what is under test is the SHAPE OF THE OUTPUT -- the row
+; lines and the scanned/matched summary -- and a boolean marker cannot see it.
+; ============================================================================
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+SET PATH DBF DBF/SANDBOX
+SET PATH INDEXES INDEXES/SANDBOX
+SET PATH LMDB LMDB/SANDBOX
+
+FORMULA "CLV-BEGIN"
+
+; Erase on the way IN. A leftover from an aborted run must not be mistaken for
+; a fixture this pass built.
+ERASE TABLE CLVFIX CONFIRM
+
+CREATE X64 CLVFIX (SID N(6,0), MAJOR C(4), GPA N(5,2))
+APPEND
+REPLACE SID WITH "1"
+REPLACE MAJOR WITH "CSCI"
+REPLACE GPA WITH "3.50"
+APPEND
+REPLACE SID WITH "2"
+REPLACE MAJOR WITH "CSCI"
+REPLACE GPA WITH "2.10"
+APPEND
+REPLACE SID WITH "3"
+REPLACE MAJOR WITH "MATH"
+REPLACE GPA WITH "3.90"
+APPEND
+REPLACE SID WITH "4"
+REPLACE MAJOR WITH "MATH"
+REPLACE GPA WITH "1.80"
+APPEND
+REPLACE SID WITH "5"
+REPLACE MAJOR WITH "CSCI"
+REPLACE GPA WITH "3.10"
+CLOSE ALL
+
+USE CLVFIX
+
+; --- CLV_T0: the DEFAULT output did not change -------------------------------
+; A bare COUNT must still print exactly one line carrying the number. If the
+; fold leaked into the default path this fence holds more than one line.
+FORMULA "CLV-T0-BEGIN"
+COUNT
+FORMULA "CLV-T0-END"
+
+; --- CLV_T1: LIST prints the matching rows, then the count -------------------
+; Three rows carry GPA >= 3.0 (SID 1, 3, 5). LIST names the predicate's field,
+; so each line carries GPA and no verdict.
+FORMULA "CLV-T1-BEGIN"
+COUNT LIST FOR GPA >= 3.0
+FORMULA "CLV-T1-END"
+
+; --- CLV_T2: VERBOSE prints every in-scope row with its verdict --------------
+; Five rows in scope, three matching. The summary line is the assertion.
+FORMULA "CLV-T2-BEGIN"
+COUNT VERBOSE FOR GPA >= 3.0
+FORMULA "CLV-T2-END"
+
+; --- CLV_T3: THE DISCRIMINATOR -- SET FILTER narrows the logical rowset ------
+; With the filter active only the three CSCI rows are in scope, and two of them
+; carry GPA >= 3.0. The retired SQL scanner would have reported scanned 5.
+FORMULA "CLV-T3-BEGIN"
+SET FILTER TO MAJOR = "CSCI"
+COUNT VERBOSE FOR GPA >= 3.0
+SET FILTER TO
+FORMULA "CLV-T3-END"
+
+; --- CLV_T4: the reserved SQL verb answers and does not count ----------------
+; It must direct the reader to COUNT rather than scan, and it must do so with
+; no open-table requirement and no cursor movement.
+FORMULA "CLV-T4-BEGIN"
+SQL
+SQL COUNT FOR GPA >= 3.0
+FORMULA "CLV-T4-END"
+
+CLOSE ALL
+ERASE TABLE CLVFIX CONFIRM
+FORMULA "CLV-END"

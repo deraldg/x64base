@@ -1,0 +1,52 @@
+* pk_durability_regression.dts -- AIF-156.
+*
+* THE ONLY SPEC IN THIS TREE THAT MEASURES SOMETHING ACROSS A PROCESS BOUNDARY,
+* and it is a THIN WRAPPER on purpose. It asserts almost nothing itself.
+*
+* A .dts RUNS IN ONE PROCESS. That is not a gap in PKPOLICY, it is a limit of
+* the instrument, and PKPOLICY's own header says so under NOT CLAIMED: no
+* marker in it can tell whether the PRIMARY designation was READ BACK from the
+* x64 header or merely remembered in a map that had not died yet. Until
+* 2026-09-07 the answer was the second, and a fresh session let REPLACE
+* overwrite a primary key IN SILENCE on a build where all three PKPOLICY arms
+* read green.
+*
+* SO THE WORK HAPPENS IN TWO CHILD PROCESSES AND THE GRADING HAPPENS IN C++.
+* `!` runs std::system(), so a child's stdout never passes through the stream
+* the routed capture swaps -- a transcript-reading validator would see NONE of
+* the child markers. The children write theirs through SET ALTERNATE and
+* validate_pk_durability() READS THOSE FILES OFF DISK. A validator can open a
+* file; a marker cannot. That asymmetry is the whole design.
+*
+* WHAT THIS FILE CONTRIBUTES is the one thing the validator cannot get from the
+* captures: evidence that the shell-out was REACHED AT ALL. If the `!` line
+* fails -- no PowerShell, no built exe, an execution policy -- the captures are
+* simply absent, and absent is indistinguishable from "the children ran and
+* wrote nothing". PKDUR_G0 prints before the launch and PKDUR_G1 after it, so a
+* transcript with G0 and no G1 says the shell-out died, which is a different
+* finding from a durability failure and must not be reported as one.
+*
+* NOTHING HERE ERASES ANYTHING. pk_durable_write.dts leaves its table behind on
+* purpose -- it must outlive its process or there is nothing to reopen -- and
+* pk_durable_read.dts erases it. This file owns neither.
+
+SET TALK OFF
+STOP_ON_ERROR OFF
+
+FORMULA "PKDURABLE-BEGIN"
+
+* PKDUR_G0 -- reached the launch. A literal .T. rather than a field read,
+* because there is no table open here and this spec deliberately opens none;
+* the claim is only "control arrived at this line".
+? "PKDUR_G0_reached_the_shellout:" + (1 = 1)
+
+* The launcher self-locates from its own directory, so this path is relative to
+* the runtime data root the shell was started in and nothing here hardcodes a
+* drive letter. It copies no binary and sets no environment -- see its header
+* for why going through datarun.ps1 would try to overwrite the running exe.
+! powershell -NoProfile -ExecutionPolicy Bypass -File ..\..\tools\staging\pk_durability_child.ps1
+
+* PKDUR_G1 -- the shell-out returned. Says nothing about what it found.
+? "PKDUR_G1_shellout_returned:" + (1 = 1)
+
+FORMULA "PKDURABLE-END"

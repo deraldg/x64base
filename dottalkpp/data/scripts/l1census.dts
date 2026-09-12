@@ -1,0 +1,39 @@
+&& L1 CENSUS -- how many LIVE HEADS does the production catalog hold TODAY?
+&& AIF-078 lifecycle lane, step L1's prerequisite.
+&&
+&& READ-ONLY. Opens the production catalog and counts. Writes nothing.
+&& It does NOT retire anything: L1 is report-only until the owner authorizes it.
+&&
+&& The thirteen live heads named in the plan were measured 2026-08-24 and
+&& several REGRESSION ALL runs have happened since, so that list is stale by
+&& construction. This asks the engine rather than trusting the old number.
+&&
+&& SET DELETED is ON by default, so delete-flagged rows are already hidden and
+&& these counts are over the rows a user can see.
+
+ECHO === total visible rows ===
+&& AMENDED 2026-08-28: the hardcoded D:\code\ccode path is gone. It was
+&& OI-017's shape living in this lane's own tooling -- a TRACKED script that
+&& cannot run for anyone who clones. `&_WORKSPACES` is the engine-owned
+&& variable (fd0d6ef40): it resolves the WORKSPACES slot AT EXPANSION TIME, so
+&& this reads whatever catalog is actually in force. Run bare it reads
+&& production; run under an AIF-078 L2 bracket it reads the scratch root, which
+&& is the correct answer to "census the catalog I am using" in both cases.
+USE &_WORKSPACES\WORKSPACES.dbf
+COUNT
+
+ECHO === superseded (retired history) ===
+COUNT FOR SUPERSEDED = "1"
+
+ECHO === LIVE HEADS -- the number that matters for L1 ===
+COUNT FOR SUPERSEDED <> "1"
+
+ECHO === the live heads by name ===
+LIST ALL FOR SUPERSEDED <> "1"
+
+ECHO === same set, unlimited, so the 21st is not hidden by the row cap ===
+LIST ALL FOR SUPERSEDED = "0"
+
+ECHO === highest WS_ID in the catalog (allocation high-water) ===
+GO BOTTOM
+? WS_ID

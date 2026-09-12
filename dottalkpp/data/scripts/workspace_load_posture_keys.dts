@@ -1,0 +1,267 @@
+; ============================================================================
+; A POSTURE RECORDS A KEY, NOT AN ADDRESS -- R130
+; ============================================================================
+;
+; WHAT THIS PROVES, AND IN WHICH ORDER IT WAS WRITTEN.
+;
+; This file was written BEFORE the fix and run BEFORE the fix, which is the
+; order R128 and AIF-137 both used and the order that caught a false green in
+; each. Read the arm table below as the prediction it was; the closeout says
+; what actually happened.
+;
+; THE SUBJECT. workspace_load_from_stream() replays the AREA numbers a posture
+; recorded as ENGINE ADDRESSES -- `AREA 0` becomes open_into_area(0, ...),
+; which calls get_area_0based(0) and A.close() on that exact slot. That can
+; only be safe if slot 0 is free, which workspace_close_all() at
+; cmd_workspace.cpp:2405 guaranteed by emptying every workspace in the
+; session. R130 rules the recorded number a KEY: on load, slots come from
+; cli::find_free_area_for_current_workspace(), and a map from recorded key to
+; allocated slot is consulted by the CURSOR and CURRENT handlers.
+;
+; THE MAP IS THE HALF THE ARMS ARE AIMED AT. Scoping the close without the map
+; is WORSE than the defect being fixed: the loader would allocate past the
+; occupied range, and then a bare `CURSOR 0 4` would still reach engine slot 0
+; -- now another workspace's table -- and MOVE ITS CURSOR. That is AIF-137's
+; shape as a WRITE rather than a read, driven by a saved file. Every arm below
+; goes RED under that implementation, which is why there are five of them.
+;
+; THE THREE WORLDS EACH ARM IS READ IN:
+;
+;   TODAY        close_all empties everything, then PKBT lands at slot 0 and
+;                PKBU at slot 1. Workspace A is gone.
+;   NO MAP       A survives at slots 0 and 1, PKBT/PKBU allocate to 2 and 3,
+;                but CURSOR 0 / CURSOR 1 / CURRENT 0 still address 0 and 1 --
+;                so A's cursors are DRIVEN and the loaded tables are left at
+;                row 1.
+;   R130         A survives untouched at 0 and 1; PKBT/PKBU at 2 and 3 with
+;                their recorded cursors restored through the map.
+;
+;   arm   reads                          TODAY      NO MAP     R130
+;   ----  -----------------------------  ---------  ---------  ------
+;   T5    engine current, no SELECT      .T. WRONG  .F.        .T.
+;   T1    slot 0                         .F.        .F.        .T.
+;   T2    slot 1                         .F.        .F.        .T.
+;   T3    PKBT by name                   .T. WRONG  .F.        .T.
+;   T4    PKBU by name                   .T. WRONG  .F.        .T.
+;
+; T3, T4 and T5 ARE GREEN TODAY FOR THE WRONG REASON AND ARE MARKED AS SUCH.
+; With the slot space emptied first, the recorded number and the allocated slot
+; coincide by accident. They do not discriminate against today's build; they
+; discriminate against a NEW implementation whose map is wrong, which is the
+; failure this ruling exists to prevent. A green T3 on today's binary is not
+; evidence of anything and must not be reported as one.
+;
+; T1 AND T2 ARE THE ARMS THAT CAN GO RED TODAY, and they were built so they
+; cannot go BLANK instead. Both fixture families use the SAME FIELD NAME `LBL`
+; with DIFFERENT VALUES, so slot 0 and slot 1 are readable in all three worlds
+; and the marker never errors. An errored marker in this language PRINTS
+; NOTHING rather than going red, so an arm that would read a CLOSED area is an
+; arm that silently disappears; sharing the field name is what stops that.
+;
+; NOTHING HERE ASSERTS AN ABSENCE. No marker in this language can, and none of
+; these tries to. Every arm is a positive read of LBL against a specific value.
+;
+; ADDRESSING: SLOTS FOR THE SURVIVORS, NAMES FOR THE TRAVELLERS -- AND THE
+; DIFFERENCE FROM relation_parent_workspace_crossing.dts IS DELIBERATE.
+; That spec forbade name addressing because its two fixtures shared names by
+; design, so a name could not say which table it read. HERE THE FOUR TABLE
+; NAMES ARE UNIQUE, so `SELECT PKBT` is unambiguous -- and it is the only way
+; to ask the question T3 asks, which is "wherever the loaded table went, is its
+; cursor where the posture said". A slot-addressed T3 would have to name a slot,
+; and the whole point is that the slot changes.
+;
+; GUARDS. PK_G0a..G0d prove each fixture on its own before any workspace
+; exists. PK_G1a/G1b prove workspace B landed in slots 0 and 1 BEFORE the save,
+; because that is what makes the posture record keys 0 and 1 -- if B landed
+; elsewhere the posture says something else and every arm below is meaningless.
+; PK_G2a/G2b prove workspace A occupies slots 0 and 1 and is parked on the rows
+; the arms expect. IF ANY GUARD READS .F., TREAT EVERY ARM AS UNPROVEN RATHER
+; THAN AS FAILING.
+;
+; THE ALPHABETICAL SLOT ORDER IS ASSERTED, NOT ASSUMED. A directory open sorts
+; its tables, so PKAT precedes PKAU and PKBT precedes PKBU. G1 and G2 read a
+; field in each slot to prove it rather than trusting the sort.
+;
+; SET PATH ORDERING IS A KNOWN TRAP IN THIS FILE'S SHAPE. workspace_additive_
+; open.dts was once edited so a SET PATH landed BEFORE the previous table's
+; CREATE, and a fixture was built in the wrong directory. Every CREATE and
+; every ERASE below is immediately preceded by the SET PATH that owns it.
+;
+; THE POSTURE FILE pk_posture.dtschema IS WRITTEN INTO THE WORKSPACES ROOT and
+; is left there, overwritten on each run. Prior art: keyregr_sandbox.dtschema
+; from key_metadata_regression.dts sits in the same directory for the same
+; reason. Fixtures in DBF/SANDBOX/PKA and DBF/SANDBOX/PKB are erased at the
+; end; all three workspaces are destroyed in teardown (D10.3) so the NAMES are
+; freed and a later run mints fresh rather than adopting. The catalog ROWS
+; remain -- that is history by design.
+; ============================================================================
+
+WORKSPACE CLOSE ALL
+WORKSPACE SWITCH DEFAULT
+WORKSPACE DESTROY PKWSA
+WORKSPACE DESTROY PKWSB
+WORKSPACE DESTROY PKWSC
+
+SET PATH DBF DBF/SANDBOX/PKA
+ERASE pkat CONFIRM
+ERASE pkau CONFIRM
+SET PATH DBF DBF/SANDBOX/PKB
+ERASE pkbt CONFIRM
+ERASE pkbu CONFIRM
+
+; --- fixtures: four tables, unique names, one shared field name -------------
+; LBL is shared so every slot is readable in every world (see header).
+; The VALUES are what say which table a read came from.
+
+SET PATH DBF DBF/SANDBOX/PKA
+SELECT 0
+CREATE X64 PKAT (LBL C(10))
+APPEND
+REPLACE LBL WITH "A_1"
+APPEND
+REPLACE LBL WITH "A_2"
+APPEND
+REPLACE LBL WITH "A_3"
+APPEND
+REPLACE LBL WITH "A_4"
+
+SELECT 1
+CREATE X64 PKAU (LBL C(10))
+APPEND
+REPLACE LBL WITH "AU_1"
+APPEND
+REPLACE LBL WITH "AU_2"
+APPEND
+REPLACE LBL WITH "AU_3"
+APPEND
+REPLACE LBL WITH "AU_4"
+
+SET PATH DBF DBF/SANDBOX/PKB
+SELECT 2
+CREATE X64 PKBT (LBL C(10))
+APPEND
+REPLACE LBL WITH "B_1"
+APPEND
+REPLACE LBL WITH "B_2"
+APPEND
+REPLACE LBL WITH "B_3"
+APPEND
+REPLACE LBL WITH "B_4"
+
+SELECT 3
+CREATE X64 PKBU (LBL C(10))
+APPEND
+REPLACE LBL WITH "BU_1"
+APPEND
+REPLACE LBL WITH "BU_2"
+APPEND
+REPLACE LBL WITH "BU_3"
+APPEND
+REPLACE LBL WITH "BU_4"
+
+SELECT 0
+GO 2
+? "PK_G0a_PKAT_fixture_written:" + (ALLTRIM(LBL) = "A_2")
+SELECT 1
+GO 3
+? "PK_G0b_PKAU_fixture_written:" + (ALLTRIM(LBL) = "AU_3")
+SELECT 2
+GO 4
+? "PK_G0c_PKBT_fixture_written:" + (ALLTRIM(LBL) = "B_4")
+SELECT 3
+GO 2
+? "PK_G0d_PKBU_fixture_written:" + (ALLTRIM(LBL) = "BU_2")
+
+WORKSPACE CLOSE ALL
+
+; --- phase 1: build the posture from workspace B, and from B ALONE ----------
+; Bare SAVE is scoped to the current workspace (R128), so this posture holds
+; PKBT and PKBU and nothing else. The cursors parked here are what CURSOR
+; lines record; the SELECT before the save is what CURRENT records.
+
+WORKSPACE OPEN DBF/SANDBOX/PKB AS PKWSB
+
+SELECT 0
+GO 4
+? "PK_G1a_posture_source_slot0_is_PKBT:" + (ALLTRIM(LBL) = "B_4")
+SELECT 1
+GO 2
+? "PK_G1b_posture_source_slot1_is_PKBU:" + (ALLTRIM(LBL) = "BU_2")
+
+SELECT 0
+WORKSPACE SAVE pk_posture V3
+
+WORKSPACE CLOSE ALL
+WORKSPACE SWITCH DEFAULT
+WORKSPACE DESTROY PKWSB
+
+; --- phase 2: workspace A takes the low slots the posture names -------------
+; This is the arrangement the whole file exists to create: the numbers the
+; posture recorded now belong to somebody else.
+
+WORKSPACE OPEN DBF/SANDBOX/PKA AS PKWSA
+
+SELECT 0
+GO 2
+? "PK_G2a_A_occupies_slot0_parked_on_A_2:" + (ALLTRIM(LBL) = "A_2")
+SELECT 1
+GO 3
+? "PK_G2b_A_occupies_slot1_parked_on_AU_3:" + (ALLTRIM(LBL) = "AU_3")
+
+; --- phase 3: load the posture into a THIRD workspace -----------------------
+; NEW declares; SWITCH is what makes the next opened area join it. NEW does
+; not switch on its own and its own output says so.
+
+WORKSPACE NEW PKWSC
+WORKSPACE SWITCH PKWSC
+WORKSPACE LOAD pk_posture
+
+; --- PK_T5: CURRENT landed on the LOADED table ------------------------------
+; No SELECT since the load, deliberately: this arm reads whatever the loader
+; left selected. GREEN TODAY FOR THE WRONG REASON (slot 0 happens to hold the
+; loaded table). Under a missing map it reads A_4, because CURRENT 0 would
+; select workspace A's slot 0 -- which the missing map has also just driven.
+
+? "PK_T5_current_selected_the_loaded_table:" + (ALLTRIM(LBL) = "B_4")
+
+; --- PK_T1 / PK_T2: the other workspace survived, and was NOT driven --------
+; One arm, two claims, and that is intentional: "still open" and "still where
+; I parked it" fail together under today's close and fail together under a
+; missing map, so separating them would buy nothing and cost two more markers.
+; TODAY these read B_4 and BU_2 -- the loaded tables sitting in A's slots.
+; UNDER A MISSING MAP they read A_4 and AU_2 -- A's own tables, driven by the
+; posture's CURSOR lines. Both are .F., and the VALUE PRINTED IS NOT VISIBLE
+; from the marker, so the closeout must say which world was observed.
+
+SELECT 0
+? "PK_T1_other_workspace_slot0_undisturbed:" + (ALLTRIM(LBL) = "A_2")
+SELECT 1
+? "PK_T2_other_workspace_slot1_undisturbed:" + (ALLTRIM(LBL) = "AU_3")
+
+; --- PK_T3 / PK_T4: the loaded cursors were restored, wherever they landed --
+; By NAME, because the slot is exactly what this ruling makes unpredictable.
+; The four names are unique, so the name is unambiguous here in a way it was
+; not in relation_parent_workspace_crossing.dts. GREEN TODAY FOR THE WRONG
+; REASON; .F. under a missing map, where both tables sit at row 1.
+
+SELECT PKBT
+? "PK_T3_loaded_first_table_cursor_restored:" + (ALLTRIM(LBL) = "B_4")
+SELECT PKBU
+? "PK_T4_loaded_second_table_cursor_restored:" + (ALLTRIM(LBL) = "BU_2")
+
+; --- teardown ---------------------------------------------------------------
+
+WORKSPACE CLOSE ALL
+WORKSPACE SWITCH DEFAULT
+WORKSPACE DESTROY PKWSA
+WORKSPACE DESTROY PKWSB
+WORKSPACE DESTROY PKWSC
+
+SET PATH DBF DBF/SANDBOX/PKA
+ERASE pkat CONFIRM
+ERASE pkau CONFIRM
+SET PATH DBF DBF/SANDBOX/PKB
+ERASE pkbt CONFIRM
+ERASE pkbu CONFIRM
+
+SET PATH DBF DBF

@@ -1,0 +1,130 @@
+* ===========================================================================
+* DOES CONTROL FLOW BUFFER UNDER DOTSCRIPT?  -- the reader-loop gap
+* ===========================================================================
+*
+* A PROBE, NOT A REGISTERED SPEC. Not in kRegressionSpecs; runs by DOTSCRIPT.
+*
+* WHY. SCAN, LOOP, WHILE and UNTIL are LINE-CAPTURING constructs. The opening
+* verb sets a flag; the READER LOOP then diverts every following line into a
+* buffer until the closing verb executes it. That diversion is
+* handle_buffers_if_active(), and it lives in the INTERACTIVE read loop --
+* shell.cpp:695, immediately before shell_execute_line.
+*
+* cmd_dotscript.cpp:568 calls shell_execute_line DIRECTLY. There is no gate.
+* So the prediction is: under DOTSCRIPT the opening verb flips the flag, the
+* body lines execute IMMEDIATELY as ordinary commands, and the closing verb
+* then iterates an EMPTY buffer.
+*
+* shell.cpp:398's own comment states the failure mode in advance:
+*   "Otherwise loop/scan body lines leak through and execute once immediately
+*    instead of being buffered."
+*
+* This probe asks whether that comment describes DOTSCRIPT today.
+*
+* WHAT IS DELIBERATELY NOT PROBED, AND WHY -- LOOP, WHILE, UNTIL.
+* If their bodies leak, the closing verb iterates an empty buffer, so nothing
+* in the body can ever change the escape condition. An inert loop may not
+* TERMINATE. Hanging the session is an unacceptable way to measure this, so
+* those three are left to a second probe with an externally bounded form.
+* Their gate is the SAME ONE, so a SCAN result is evidence about them -- it is
+* not proof, and this file does not claim it is.
+*
+* HOW IT ASSERTS. By FIELD VALUE, never console text. Both discriminators are
+* built so that the LEAK PRODUCES A DIFFERENT VALUE rather than an absence,
+* because an errored marker prints NOTHING rather than going red and an arm
+* that can only vanish is not an arm.
+*
+* THE SCAN DISCRIMINATOR. The cursor is parked on record 1 before SCAN. If the
+* body is buffered, every row is touched. If it leaks, the REPLACE runs ONCE
+* against record 1 and no other row is touched. So:
+*   T1 (record 1 touched)  -- passes EITHER WAY. It is a guard, not a verdict:
+*                             it proves the REPLACE itself works.
+*   T2 (record 4 touched)  -- THE DISCRIMINATOR. Buffered .T., leaked .F.
+*
+* THE IF DISCRIMINATOR. IF may not use this gate at all -- shell.cpp:405 refers
+* to a separate "shell-level block capture" that runs AFTER it -- so IF is
+* measured rather than assumed. If IF works, the THEN arm runs and M2 reads
+* THEN. If IF leaks, BOTH branch bodies execute as ordinary lines and the
+* second one wins, so M2 reads ELSE.
+*   T3 -- THE DISCRIMINATOR. Working .T. (THEN), leaked reads ELSE.
+*
+* NOT A DISCRIMINATOR, stated so nobody adds it later thinking it is: an
+* IF .F. case reads ELSE under BOTH implementations -- working IF takes the
+* else branch, and a leak runs both and the else lands last. Identical output,
+* zero information.
+*
+* COUNT: 2 guards + 3 arms = 5 DSC_ lines. An errored marker prints NOTHING,
+* so A SHORT COUNT IS ITSELF THE RESULT. Read the count before the values.
+*
+* Self-bootstrapping and self-erasing in DBF/SANDBOX. Read-only with respect
+* to everything else; mints no catalog rows and opens no workspace.
+* ===========================================================================
+
+SETPATH DBF DBF/SANDBOX
+
+ERASE DSCTL CONFIRM
+
+SELECT 0
+CREATE X64 DSCTL (CK C(4), M1 C(8), M2 C(8))
+APPEND
+REPLACE CK WITH "C1"
+REPLACE M1 WITH "ZERO"
+REPLACE M2 WITH "ZERO"
+APPEND
+REPLACE CK WITH "C2"
+REPLACE M1 WITH "ZERO"
+REPLACE M2 WITH "ZERO"
+APPEND
+REPLACE CK WITH "C3"
+REPLACE M1 WITH "ZERO"
+REPLACE M2 WITH "ZERO"
+APPEND
+REPLACE CK WITH "C4"
+REPLACE M1 WITH "ZERO"
+REPLACE M2 WITH "ZERO"
+
+USE DSCTL
+SELECT DSCTL
+
+* ---------------------------------------------------------------------------
+* GUARDS -- the fixture, and that a bare REPLACE works at all
+* ---------------------------------------------------------------------------
+
+GO 4
+? "DSC_G1_fixture_row4_is_C4:" + (ALLTRIM(CK) = "C4")
+
+GO 2
+REPLACE M1 WITH "BARE"
+GO 2
+? "DSC_G2_bare_replace_outside_a_block_works:" + (ALLTRIM(M1) = "BARE")
+
+GO 2
+REPLACE M1 WITH "ZERO"
+
+* ---------------------------------------------------------------------------
+* THE SCAN ARM -- park on record 1 first, so a leak is confined to record 1
+* ---------------------------------------------------------------------------
+
+GO 1
+SCAN
+REPLACE M1 WITH "HIT"
+ENDSCAN
+
+GO 1
+? "DSC_T1_scan_record1_touched_GUARD_NOT_VERDICT:" + (ALLTRIM(M1) = "HIT")
+GO 4
+? "DSC_T2_scan_record4_touched_DISCRIMINATOR:" + (ALLTRIM(M1) = "HIT")
+
+* ---------------------------------------------------------------------------
+* THE IF ARM -- a leak runs BOTH bodies and the ELSE lands last
+* ---------------------------------------------------------------------------
+
+GO 1
+IF .T.
+REPLACE M2 WITH "THEN"
+ELSE
+REPLACE M2 WITH "ELSE"
+ENDIF
+
+GO 1
+? "DSC_T3_if_then_branch_taken_DISCRIMINATOR:" + (ALLTRIM(M2) = "THEN")

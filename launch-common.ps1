@@ -88,8 +88,51 @@ function Resolve-DotTalkBuiltExe {
         Get-ChildItem -LiteralPath $root -Recurse -Filter "dottalkpp.exe" -File -ErrorAction SilentlyContinue
     }
 
-    $newest = @($candidates) | Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1
+    $all    = @($candidates)
+    $newest = $all | Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1
     if ($newest) {
+        # REPORT THE CHOICE, BECAUSE IT IS A CHOICE.
+        #
+        # This function picks by TIMESTAMP across several build roots and then
+        # says nothing. Update-DotTalkRuntimeExe already quantifies staleness
+        # when the copy FAILS -- that warning is loud, and it is the one the
+        # working notes credit. A SUCCESSFUL copy of the wrong tree's exe
+        # printed nothing at all, which is the case that actually costs a
+        # session: the run works, the output looks right, and the binary is
+        # from a preset built weeks ago.
+        #
+        # The shape is this tree's recurring one. An instrument reports on the
+        # artifact it happened to find rather than on the source just written:
+        # ctest did it on 2026-09-11 with test binaries built before fifteen of
+        # their markers existed, and the build.ps1 target list exists because it
+        # did it before that. Naming which tree won is the whole fix.
+        #
+        # Write-Host and Write-Warning ONLY. This function's return value is the
+        # exe path -- a bare string here would join the output stream and the
+        # caller would receive an array instead of a path.
+        $ageMin = [math]::Round(((Get-Date).ToUniversalTime() - $newest.LastWriteTimeUtc).TotalMinutes, 1)
+        Write-Host "datarun: staging $($newest.FullName)"
+        Write-Host "         chosen by timestamp from $($all.Count) candidate(s); built $ageMin min ago."
+
+        if ($newest.FullName -ne $Layout.BuildExe) {
+            # NOT AN ERROR. Building a non-default preset and running it is a
+            # legitimate thing to do, and refusing would break it. But the
+            # DEFAULT preset is what nearly every session builds, so a winner
+            # from anywhere else is worth a sentence rather than silence.
+            Write-Warning "datarun: the staged exe is NOT the default pro-md build."
+            Write-Warning "  staged : $($newest.FullName)"
+            Write-Warning "  default: $($Layout.BuildExe)"
+            Write-Warning "  This is correct IF you meant to run another preset. If you just built"
+            Write-Warning "  the default, another tree holds a NEWER exe and you are about to run IT."
+        }
+
+        if ($all.Count -gt 1) {
+            Write-Host "         other candidate(s), newest first:"
+            $all | Sort-Object LastWriteTimeUtc -Descending | Select-Object -Skip 1 | ForEach-Object {
+                Write-Host ("           {0}  ({1})" -f $_.FullName, $_.LastWriteTime)
+            }
+        }
+
         return $newest.FullName
     }
 

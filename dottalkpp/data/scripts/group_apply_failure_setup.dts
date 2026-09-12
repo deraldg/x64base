@@ -1,0 +1,33 @@
+; ============================================================================
+; GROUP APPLY FAILURE -- SETUP (AIF-160)
+;
+; Builds two single-row tables and LEAVES THEM ON DISK, closed. The arm runs
+; this, then arms the fixture between here and the work script, which is why
+; creation cannot live in the work script: a foreign lock sidecar written
+; before an ERASE TABLE would be swept by it.
+; ============================================================================
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+SET PATH DBF DBF/SANDBOX
+SET PATH INDEXES INDEXES/SANDBOX
+SET PATH LMDB LMDB/SANDBOX
+
+FORMULA "GRPFAIL-SETUP-BEGIN"
+
+ERASE TABLE GRPFAIL1 CONFIRM
+ERASE TABLE GRPFAIL2 CONFIRM
+
+CREATE X64 GRPFAIL1 (ID N(6,0), MARK C(8))
+APPEND
+REPLACE ID WITH "1"
+REPLACE MARK WITH "BEFORE"
+CLOSE
+
+CREATE X64 GRPFAIL2 (ID N(6,0), MARK C(8))
+APPEND
+REPLACE ID WITH "1"
+REPLACE MARK WITH "BEFORE"
+CLOSE
+
+FORMULA "GRPFAIL-SETUP-END"

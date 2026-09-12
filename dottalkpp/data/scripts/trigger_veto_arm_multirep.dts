@@ -1,0 +1,67 @@
+; ============================================================================
+; AIF-151 x AIF-087 -- a buffered MULTIREP is VISIBLE TO TRIGGERS
+;
+; Status: CANDIDATE / explicit-run, driven from C++ by the TRIGGERVETO arm.
+; Safety: MUTATING (SANDBOX only; the arm owns the fixture)
+;
+; This is the claim the whole AIF-151/AIF-087 connection rests on, and it was
+; INFERRED until this script existed. Before AIF-151, MULTIREP wrote through
+; regardless of TABLE ON, never reached a commit, and was therefore invisible to
+; BOTH trigger phases. Now it stages, arrives at commit entry, and the BEFORE
+; phase is asked ONCE for the record with the WHOLE changed-field set -- which
+; is exactly why AIF-087 M2a made the fire unit the physical write and not the
+; field.
+;
+; The C++ side registers a callback that is CONSULTED and ALLOWS, then asserts
+; calls == 1 and changed-field count == 2. A per-field hook would report 2 calls
+; of 1 field; a hook that never fired would report 0.
+; ============================================================================
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+SET PATH DBF DBF/SANDBOX
+SET PATH INDEXES INDEXES/SANDBOX
+SET PATH LMDB LMDB/SANDBOX
+
+FORMULA "TRGMULTI-WORK-BEGIN"
+
+SELECT 1
+USE TRGVETO
+GO 1
+? "TRG_MR0_fixture_row1_is_alpha:" + (ALLTRIM(NAME) = "ALPHA")
+
+TABLE ON
+MULTIREP ID WITH 9, NAME WITH "MULTI"
+
+; Staged, not written. Independently re-confirms that a read reports committed
+; truth rather than the buffer overlay.
+GO 1
+? "TRG_MR1_staged_not_written:" + (ALLTRIM(NAME) = "ALPHA")
+
+; ROLLBACK discards it. This behaviour DID NOT EXIST before AIF-151: there was
+; nothing buffered to roll back, because MULTIREP had already written through.
+ROLLBACK
+GO 1
+? "TRG_MR2_rollback_discarded:" + (ALLTRIM(NAME) = "ALPHA")
+
+; Stage again and commit for real. BOTH fields must land, from ONE physical
+; write folded by aggregate_for_recno.
+MULTIREP ID WITH 9, NAME WITH "MULTI"
+COMMIT
+GO 1
+? "TRG_MR3_both_fields_landed:" + (ID = 9 AND ALLTRIM(NAME) = "MULTI")
+
+; TABLE OFF is unchanged: one lock, one immediate direct write. Guards the other
+; direction -- it would be easy to "fix" MULTIREP into always buffering and
+; break the unbuffered contract without noticing.
+TABLE OFF
+MULTIREP ID WITH 7, NAME WITH "DIRECT"
+GO 1
+? "TRG_MR4_direct_write_immediate:" + (ID = 7 AND ALLTRIM(NAME) = "DIRECT")
+
+CLOSE ALL
+
+; Self-erasing: unlike the veto pass there is no journal to preserve here, so
+; nothing needs reading by hand afterwards.
+ERASE TABLE TRGVETO CONFIRM
+FORMULA "TRGMULTI-WORK-END"

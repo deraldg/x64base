@@ -1,0 +1,15 @@
+; ============================================================================
+; GROUP APPLY FAILURE -- TEARDOWN (AIF-160)
+; Disposable SANDBOX fixtures, erased at both ends. Mints no catalog rows.
+; ============================================================================
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+SET PATH DBF DBF/SANDBOX
+SET PATH INDEXES INDEXES/SANDBOX
+SET PATH LMDB LMDB/SANDBOX
+
+FORMULA "GRPFAIL-TEARDOWN-BEGIN"
+ERASE TABLE GRPFAIL1 CONFIRM
+ERASE TABLE GRPFAIL2 CONFIRM
+FORMULA "GRPFAIL-TEARDOWN-END"

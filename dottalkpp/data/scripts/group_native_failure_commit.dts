@@ -1,0 +1,100 @@
+; ============================================================================
+; GROUP NATIVE FAILURE -- GROUPCOMMIT, THE RETRY, AND THE REOPEN (AIF-160)
+;
+; Commits the two dirty native buffers the stage script left open, as ONE
+; group. On the armed pass a live foreign record lock sits on GRPFAIL1 row 1,
+; planted between the scripts, so the group DECIDES and GRPFAIL1's apply is
+; what fails.
+;
+;   CONTROL   both members apply, both journals deleted, the retry is a no-op.
+;   ARMED     GRPFAIL2 applies, GRPFAIL1 does not, GRPFAIL1's journal survives
+;             with its P record and AN OPEN HANDLE -- and the retry is the
+;             thing being measured.
+;
+; WHAT GN_T3 AND GN_T4 MEASURE HERE that they do not measure in GRPFAIL: with
+; the C-over-P guard, the retry writes nothing and the log still carries only
+; its P, so the reopen replays it and deletes it. WITHOUT the guard the retry
+; appends a C beside the P -- the one pair recover_table_buffer_journal refuses
+; and KEEPS -- so USE prints "RECOVER: REFUSED", the row stays BEFORE, and both
+; go red. The guard is the only difference between those two outcomes.
+;
+; NO MARKER CAN SEE THE RETRY DIRECTLY. Both outcomes leave a journal on disk
+; and FILE() cannot read what is inside it. Only the reopen tells them apart,
+; which is why the assertions that grade this arm sit after the CLOSE.
+; ============================================================================
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+FORMULA "GRPNATIVE-WORK-BEGIN"
+
+GROUPCOMMIT
+
+; The healthy member. Green on BOTH passes: a group that failed to decide, or
+; never gathered two members, fails here and says so before T1 is read.
+SELECT 2
+? "GN_G1_member_two_applied:" + (ALLTRIM(MARK) = "AFTER")
+
+; The failing member. .T. on control, .F. on armed.
+SELECT 1
+? "GN_T1_member_one_applied:" + (ALLTRIM(MARK) = "AFTER")
+
+; .F. on control -- nothing marked that journal decided, so it was deleted on
+; the way out. .T. on armed -- the group decided and GROUPCOMMIT left it.
+? "GN_T2_member_one_journal_survives:" + FILE("DBF/SANDBOX/GRPFAIL1.dbf.tbj")
+
+; ---------------------------------------------------------------------------
+; THE RETRY. This is the arm.
+;
+; On the armed pass SELECT 1 is dirty, its apply having failed, and NOTHING has
+; walked this area since -- GROUPCOMMIT has no teardown, so the journal handle
+; is still open over a durable P. COMMIT is the obvious next thing a user
+; types, and it reaches journal_begin_commit with a live FILE*. That is the one
+; state in which a C can be written beside a P.
+;
+; MEASURED: this prints "COMMIT: failed during journal finalization; buffer
+; retained for retry." That message is the guard firing. Before 9de198e8f it
+; printed "COMMIT: partial" instead, because the C went in and the apply was
+; attempted over it.
+;
+; On the control pass this is a no-op: that buffer committed and cleared.
+; ---------------------------------------------------------------------------
+COMMIT
+
+SELECT 2
+CLOSE
+
+; ---------------------------------------------------------------------------
+; ROLLBACK IS THE EXIT, AND WITHOUT IT THE AREA IS WEDGED.
+;
+; MEASURED, and it is why this line exists. After the retry is refused, area 1
+; holds a dirty buffer whose transaction ALREADY COMMITTED. COMMIT refuses --
+; the guard. CLOSE prompts and, answered N, reports "CLOSE canceled". USE does
+; the same. So does QUIT. THREE EXITS ASK AND ALL THREE CANCEL, and the process
+; goes on holding the .dbf and its .tbj -- which is exactly how the first run of
+; this arm left two files the teardown could not erase.
+;
+; ROLLBACK is the only command that resolves it, and it is CORRECT rather than
+; merely effective: rollback_area_impl calls journal_note_rollback and IGNORES
+; ITS RETURN, then clears the buffer unconditionally. So the journal survives --
+; the decided guard refuses the file -- while the stale buffer is discarded,
+; which is right, because that buffer was never an uncommitted transaction. It
+; is a duplicate copy of a committed one, and the journal is the authority.
+;
+; This is also a THIRD CALLER through the decided guard in one pass:
+; release_sql_transaction does not run here, commit_group's abort does not run
+; here, and cmd_ROLLBACK does.
+;
+; On the control pass area 1 is clean and this discards nothing.
+; ---------------------------------------------------------------------------
+SELECT 1
+ROLLBACK
+CLOSE
+
+SELECT 1
+USE GRPFAIL1
+? "GN_T3_reopen_shows_the_member_applied:" + (ALLTRIM(MARK) = "AFTER")
+? "GN_T4_and_the_journal_is_gone:" + NOT FILE("DBF/SANDBOX/GRPFAIL1.dbf.tbj")
+CLOSE
+
+FORMULA "GRPNATIVE-WORK-END"

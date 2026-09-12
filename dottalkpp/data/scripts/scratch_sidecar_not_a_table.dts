@@ -1,0 +1,95 @@
+; ============================================================================
+; SCRATCH IS NOT A TABLE -- AIF-133
+; ============================================================================
+;
+; WHAT MAKES THIS A DISCRIMINATOR AND NOT A DEMONSTRATION.
+;
+; SSC_T1 is the arm. It asks ONE question -- is the table in AREA 0 the REAL
+; one -- and that question has different answers on the two builds:
+;
+;     before AIF-133   Area 0: SSTAB.__fldbak.dbf     T1 reads .F.
+;     after  AIF-133   Area 0: SSTAB.dbf              T1 reads .T.
+;
+; A FIELDMGR restructure leaves <stem>.__fldbak.dbf beside the real table and
+; the directory scan tested the EXTENSION only, so the backup was opened as a
+; work area. The scan also SORTS BY FILENAME, and ".__fldbak" sorts before
+; ".dbf" -- so the backup did not tag along at the end, it TOOK AREA 0 and
+; shifted every area after it. A posture saved from that state records a backup
+; as the active table; a MINIDB save carries its bytes; WRITEBACK returns them
+; to disk. Measured 2026-08-26: STUDENTS.__fldbak.dbf was a 22,425-byte member
+; of a live container.
+;
+; WHY THE ARM IS PHRASED POSITIVELY.
+;
+; The defect is "an extra table was opened", so the tempting arm is "the scratch
+; table is ABSENT". NO MARKER IN THIS LANGUAGE CAN ASSERT ABSENCE -- USE_AGAIN
+; established that over three cuts, and an ERRORED marker PRINTS NOTHING rather
+; than going red, so a suite can lose the claim and still report a full green.
+; This spec asks the answerable question instead: DID THE REAL TABLE LAND IN
+; AREA 0. That is true only when the scratch was skipped, and it is a field
+; comparison rather than a console read -- per the doctrine FIELDMGR_APPEND paid
+; for, a spec that asserts SHAPE passes green on a blanked table.
+;
+; The two fixtures carry DIFFERENT marks for exactly this reason. If both said
+; "REAL" the arm would pass on either build and prove nothing.
+;
+; GUARDS. If either SSC_G* reds, treat SSC_T1 as UNPROVEN rather than as
+; passing. G0 proves the real table carries REAL; G1 proves the backup EXISTS
+; and carries BACK. Without G1 an arm reading "REAL" cannot tell "the scratch
+; was correctly skipped" from "the scratch was never created" -- and the second
+; is a fixture failure wearing a fix's clothes, which is the WSL_G4/G5 lesson:
+; guard every input an arm reads, not just the interesting ones.
+;
+; ISOLATED BY CONSTRUCTION. This spec opens a DIRECTORY, so a stray table left
+; by another spec would join the scan and could take area 0 on its own. It
+; therefore creates its own directory under SANDBOX and scans only that --
+; CREATE makes the path when it does not exist. Nothing here depends on what
+; the shared sandbox happens to contain.
+;
+; TEARDOWN SPELLS OUT ".dbf", AND THAT IS THE SAME DEFECT ONE DOOR ALONG.
+; `ERASE SSTAB.__fldbak CONFIRM` answers "Table not found" while the file is
+; sitting there: the table-token form appends .dbf only when it does not already
+; see an extension, and ".__fldbak" looks like one. So ERASE cannot address a
+; name whose second segment resembles an extension -- the same root cause as the
+; scan defect this spec covers, in a different verb. Naming the file in full is
+; the way through, and it is written out here rather than quietly worked around.
+;
+; Self-bootstrapping SSTAB / SSTAB.__fldbak in SANDBOX/SSC, erased at both ends
+; so a re-run cannot read the previous run's fixture. Leaves an empty directory.
+; ============================================================================
+
+SET PATH DBF DBF/SANDBOX/SSC
+
+; Prior-run residue. A refusal here is noise, not a failure.
+ERASE SSTAB CONFIRM
+ERASE SSTAB.__fldbak.dbf CONFIRM
+
+; The backup is made from the table BEFORE the table is edited, which is what a
+; restructure backup actually is: an older copy of the same file.
+CREATE X64 SSTAB (ID N(4), MARK C(10))
+APPEND
+REPLACE ID WITH 1
+REPLACE MARK WITH "BACK"
+COPY TO SSTAB.__fldbak OVERWRITE
+CLOSE
+
+USE SSTAB
+REPLACE MARK WITH "REAL"
+? "SSC_G0_real_table_carries_REAL:" + (ALLTRIM(MARK) = "REAL")
+CLOSE
+
+USE SSTAB.__fldbak
+? "SSC_G1_backup_exists_and_carries_BACK:" + (ALLTRIM(MARK) = "BACK")
+CLOSE
+
+; --- THE ARM ----------------------------------------------------------------
+; Scan the directory. Area 0 must be the real table.
+
+WORKSPACE OPEN DBF
+SELECT 0
+? "SSC_T1_area0_is_the_real_table:" + (ALLTRIM(MARK) = "REAL")
+
+WORKSPACE CLOSE ALL
+
+ERASE SSTAB CONFIRM
+ERASE SSTAB.__fldbak.dbf CONFIRM

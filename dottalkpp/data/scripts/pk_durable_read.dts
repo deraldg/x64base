@@ -1,0 +1,148 @@
+* pk_durable_read.dts -- AIF-156 two-run harness, RUN 2 of 2.
+*
+* A SEPARATE PROCESS. IT NEVER DECLARES THE KEY. That omission is the entire
+* experiment: if the designation lives only in unique_registry.cpp's static map
+* it died with run 1, and the REPLACE below succeeds in silence. If it lives in
+* the x64 header where the owner ruled it should, the reader picks it up at USE
+* and the write is refused.
+*
+* PKD_T1 IS THE DISCRIMINATOR AND IT READS A FIELD, never console text. If EMPNO
+* still reads 1 the write was refused; if it reads 2 it was not. There is no
+* third answer and no message to misparse.
+*
+* THE GUARDS ARE NOT DECORATION. A marker over a CLOSED area does not error --
+* it prints a VERDICT, and the polarity depends on the OPERATOR: measured
+* 2026-08-28, (SID >= 1) and (LNAME > "") both read .T. over an area with
+* nothing open, while (SO_ID = 6) reads .F. So the house rule COUNT THE MARKERS
+* does not catch this one: these markers do not vanish, they print and they lie.
+* Here (EMPNO = 1) over a table that never opened would read .F. and be reported
+* as a durability failure when the real failure was the fixture. PKD_G1 reads
+* LNAME, which run 1's PKD_W4 already proved, so a red guard means the table is
+* not there and PKD_T1 is UNPROVEN rather than failing.
+*
+* The finding is written up under the Claude project namespace rather than in
+* this repository, so it is DESCRIBED here rather than cited: a path a reader
+* of this tree cannot open is worse than no path at all.
+*
+* ERASES THE FIXTURE. Run 1 deliberately leaves it behind; cleanup is here so a
+* second execution of the pair starts from nothing rather than adopting.
+
+SET TALK OFF
+STOP_ON_ERROR OFF
+
+SETPATH DBF &_DATA\DBF\SANDBOX
+SETPATH INDEXES &_DATA\INDEXES\SANDBOX
+SETPATH LMDB &_DATA\LMDB\SANDBOX
+
+SET ALTERNATE TO &_TMP\pkdur_run2.alt
+SET ALTERNATE ON
+
+FORMULA "PKDUR-RUN2-BEGIN"
+
+SELECT 1
+USE PKDUR
+GO 1
+
+* PKD_G1 -- the fixture survived run 1 and this is the row we think it is.
+? "PKD_G1_fixture_reopened:" + (ALLTRIM(LNAME) = "ALPHA")
+
+* PKD_G2 -- and it carries the key run 1 minted, before anything tries to
+* change it. Without this, PKD_T1 reading 1 cannot distinguish "the write was
+* refused" from "the write succeeded and happened to land on 1".
+? "PKD_G2_key_survived_as_1:" + (EMPNO = 1)
+
+* NO SET UNIQUE HERE. THIS IS THE POINT.
+
+* PKD_T1 -- the arm. Record 2 already holds EMPNO 2, so this is an attempt to
+* duplicate a primary key from a process that never declared one.
+REPLACE EMPNO WITH "2"
+? "PKD_T1_primary_survived_restart:" + (EMPNO = 1)
+
+* PKD_T2 -- and it survived the write to DISK rather than only in the buffer.
+* A refusal that let the value through and merely failed to flush would read
+* green above and red here.
+CLOSE
+USE PKDUR
+GO 1
+? "PKD_T2_still_1_after_reopen:" + (EMPNO = 1)
+
+* ---------------------------------------------------------------------------
+* AIF-158 -- DOES KEY GENERATION READ THE SAME AUTHORITY KEY ENFORCEMENT READS?
+*
+* THE ARMS ABOVE MEASURE ENFORCEMENT ONLY. A green PKD_T1 says that THIS
+* process -- which declared nothing -- refuses a write to EMPNO, so
+* field_constraints.cpp reached unique_reg::primary_field(), which asks
+* A.primaryFieldIndex() and therefore THE FILE. Generation is a different call
+* chain and it was never measured: append_support.cpp::finalize_appended_record
+* reaches unique_reg::list_unique_fields(), which reads the process map and
+* NEVER OPENS THE HEADER. If that reading is right, a fresh process ENFORCES a
+* key it will not MINT, and an appended row takes a blank primary key that the
+* engine then refuses to let anyone fill.
+*
+* THIS BLOCK IS THE SECOND ATTEMPT AND THE FIRST ONE WAS FOOLED BY ITS OWN
+* FIXTURE. Measured 2026-09-08 with the key field named SID: the APPEND minted
+* 3 and the arm read green. finalize_appended_record calls a SECOND generator,
+* generate_sid_if_needed(), which asks no registry and no header and fires on
+* any field literally NAMED "SID". The map was empty and the magic name minted
+* the key. The arm was green and proved nothing.
+*
+* SO THE CONTROL NOW RIDES IN THE SAME ROW AS THE ARM. One APPEND writes both
+* fields in one call: SID by name, EMPNO only if generation consults the stamp.
+* Reading the pair:
+*   G5 green, T3 red   -- THE ASYMMETRY IS REAL AND VISIBLE. Same row, same
+*                         call: the undeclared field got a key and the declared,
+*                         stamped one did not.
+*   G5 green, T3 green -- generation reads the header too; the asymmetry is a
+*                         code reading that does not manifest, and the #163 fix
+*                         changes nothing observable.
+*   G5 red             -- the control is dead. T3 is unattributable AGAIN and
+*                         this is a fixture failure, not a finding.
+*
+* T3 AND T3B ARE COMPLEMENTARY READINGS OF ONE FIELD AND ONE OF THEM IS MEANT
+* TO BE RED. Writing only the outcome I predict would make the prediction
+* unfalsifiable. If BOTH read .F. the key holds some third value, and that is a
+* finding rather than a broken arm.
+
+APPEND
+
+* PKD_G3 -- the APPEND landed on a NEW row. RECNO() and RECCOUNT() render EMPTY
+* in a marker in this language, so the proof is a field read: records 1 and 2
+* hold ALPHA and BETA and a fresh row holds neither. If the APPEND had been
+* refused outright we would still be parked on record 1 and this reads .F.,
+* which separates "APPEND refused" from "APPEND minted nothing" -- two findings
+* the T3 pair alone cannot tell apart.
+? "PKD_G3_undeclared_append_parked_on_a_blank_row:" + (ALLTRIM(LNAME) = "")
+
+* PKD_G5 -- THE CONTROL. Nothing declares SID, here or in run 1, and the
+* generator that fills it consults nothing. If this is red, generation did not
+* run at all in this process and the arm below is measuring the wrong thing.
+? "PKD_G5_undeclared_SID_minted_by_name:" + (SID = 3)
+
+* PKD_T3 / PKD_T3B -- THE ARM. Same row, same APPEND, the field that IS declared
+* and IS stamped in the header.
+? "PKD_T3_stamped_key_minted_without_a_declaration:" + (EMPNO = 3)
+? "PKD_T3B_stamped_key_left_at_zero:" + (EMPNO = 0)
+
+* PKD_T4 -- and can a blank key be repaired by hand? 9 duplicates nothing
+* whichever way T3 fell, so a refusal here refuses THE WRITE ITSELF and not a
+* duplicate. Red here on top of a red T3 is the damaging combination: a row the
+* engine will neither fill nor permit to be filled. Red here on top of a GREEN
+* T3 is correct policy and not a defect -- a minted key is never edited, and
+* the engine says so in as many words.
+REPLACE EMPNO WITH "9"
+? "PKD_T4_the_key_could_be_filled_by_hand:" + (EMPNO = 9)
+
+* PKD_G4 -- the row is not inert. A refused key write and a row that accepts no
+* write at all read identically at T4; this non-key write tells them apart.
+* It runs AFTER T4 for the same reason PKP_G7 runs after PKP_T8 -- it can only
+* prove its point by writing a field the other markers read.
+REPLACE LNAME WITH "DELTA"
+? "PKD_G4_the_new_row_accepts_a_non_key_write:" + (ALLTRIM(LNAME) = "DELTA")
+
+CLOSE
+ERASE TABLE PKDUR CONFIRM
+
+FORMULA "PKDUR-RUN2-END"
+
+SET ALTERNATE OFF
+QUIT

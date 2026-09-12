@@ -1,0 +1,138 @@
+* ===========================================================================
+* DOES STOP_ON_ERROR BAIL OUT OF A SCAN?  -- and can it SEE the error at all?
+* ===========================================================================
+*
+* A PROBE, NOT A REGISTERED SPEC. Not in kRegressionSpecs; runs by DOTSCRIPT.
+*
+* RULING (steward, 2026-09-01): "stop on error has to mean bail out." Before
+* that the errorstop check lived ONLY at the script's line loop, so a SCAN body
+* failing on record 2 of 4 still ran records 3 and 4 -- the check could not fire
+* until ENDSCAN had returned. The check now also sits INSIDE the scan, at the
+* LINE.
+*
+* THE FIRST VERSION OF THIS PROBE FAILED TO PROVE ANYTHING, AND THAT WAS THE
+* MOST USEFUL RUN OF THE DAY. It used REPLACE on an unknown field as the
+* failure. Nothing stopped. Not the scan, not the script. The reason is not the
+* bail-out: it is that REPLACE'S FAILURE IS NOT AN ERROR AS FAR AS THE SYSTEM
+* IS CONCERNED.
+*
+*   cli::cmdout::print_prefixed_message(id)  -- formats a catalogued message
+*   cli::cmdout::emit_error(id, code)        -- SAME print, PLUS set_last_error
+*
+* Only the second moves the error generation, and only a moved generation trips
+* the threshold. Measured across src/: print_prefixed_message 518 call sites,
+* print_message 800, emit_error 2. STOP_ON_ERROR is a threshold over a channel
+* almost nothing writes to.
+*
+* SO THIS PROBE HAS TWO SECTIONS AND THEY PROVE OPPOSITE THINGS.
+*
+*   SECTION 1 is a TRIPWIRE over the silent-failure gap. No bail is expected.
+*             SCE_T1 reading .T. means all four records ran THROUGH a printed
+*             failure. When REPLACE is converted to emit_error, SCE_T1 FLIPS TO
+*             .F. and this section should be re-pointed deliberately rather
+*             than allowed to retune itself (the IDXSTALE precedent).
+*
+*   SECTION 2 proves the BAIL-OUT, using a failure that really is recorded.
+*             SET ERRORSTOP TO <garbage> is one of the only two paths in the
+*             tree that calls set_last_error on failure (cmd_set.cpp:1609,
+*             e_invalid_argument), and it returns BEFORE changing the
+*             threshold, so it records an error and disturbs nothing else.
+*
+* THE SCRIPT IS EXPECTED TO STOP AT SECTION 2'S ENDSCAN. That is the pass, not
+* a failure. The script-level stop is the second half of the ruling, and
+* suppressing it to get a tidy transcript would be testing a different build.
+*
+* WHAT PASS LOOKS LIKE:
+*
+*   SCE_G1 .T.   SCE_G2 .T.
+*   REPLACE: field not found.     (x4 -- section 1, printed and unrecorded)
+*   ENDSCAN: 4 match(es), 4 iteration(s) over 2 line(s).
+*   SCE_T1_replace_failure_is_INVISIBLE_all_rows_ran:.T.
+*   ENDSCAN: STOPPED at record 1 (STOP_ON_ERROR WARNING).
+*     0 record(s) completed; record 1 was partially processed.
+*     Nothing is rolled back -- SCAN is not a transaction.
+*   DOTSCRIPT: ...:NN: stopped (STOP_ON_ERROR WARNING)
+*
+* SCE_X1 MUST NOT PRINT.
+*
+* THEN READ THE TABLE AT THE PROMPT -- the half no marker can carry, because
+* the script has already stopped:
+*
+*     SELECT SCERR
+*     GO 1
+*     TUPLE          && expect  C1 | HIT | HIT    reached, part-written
+*     GO 4
+*     TUPLE          && expect  C4 | HIT | ZERO   M1 ran (section 1, silent)
+*                    &&                           M2 did NOT (section 2 bailed)
+*
+* M2 ON RECORD 4 IS THE DISCRIMINATOR. Without the bail-out it reads HIT.
+* Its neighbour M1 reading HIT on the same row is the control: it proves the
+* scan machinery reaches record 4 perfectly well when nothing stops it.
+*
+* Self-bootstrapping and self-erasing in DBF/SANDBOX. Leaves STOP_ON_ERROR set
+* to WARNING because the script cannot reach its own reset line -- a
+* consequence of the ruling working. Reset with STOP_ON_ERROR OFF.
+* ===========================================================================
+
+SETPATH DBF DBF/SANDBOX
+
+ERASE SCERR CONFIRM
+
+SELECT 0
+CREATE X64 SCERR (CK C(4), M1 C(8), M2 C(8))
+APPEND
+REPLACE CK WITH "C1"
+REPLACE M1 WITH "ZERO"
+REPLACE M2 WITH "ZERO"
+APPEND
+REPLACE CK WITH "C2"
+REPLACE M1 WITH "ZERO"
+REPLACE M2 WITH "ZERO"
+APPEND
+REPLACE CK WITH "C3"
+REPLACE M1 WITH "ZERO"
+REPLACE M2 WITH "ZERO"
+APPEND
+REPLACE CK WITH "C4"
+REPLACE M1 WITH "ZERO"
+REPLACE M2 WITH "ZERO"
+
+SELECT SCERR
+GO 4
+? "SCE_G1_fixture_row4_is_C4:" + (ALLTRIM(CK) = "C4")
+GO 4
+? "SCE_G2_fixture_row4_starts_ZERO:" + (ALLTRIM(M2) = "ZERO")
+
+STOP_ON_ERROR WARNING
+
+* ---------------------------------------------------------------------------
+* SECTION 1 -- THE SILENT FAILURE. No bail expected. TRIPWIRE.
+* ---------------------------------------------------------------------------
+
+GO 1
+SCAN
+REPLACE M1 WITH "HIT"
+REPLACE NOFIELD WITH "X"
+ENDSCAN
+
+GO 4
+? "SCE_T1_replace_failure_is_INVISIBLE_all_rows_ran:" + (ALLTRIM(M1) = "HIT")
+
+* ---------------------------------------------------------------------------
+* SECTION 2 -- A RECORDED ERROR. The bail IS expected, and takes the script.
+* ---------------------------------------------------------------------------
+
+GO 1
+SCAN
+REPLACE M2 WITH "HIT"
+SET ERRORSTOP TO BOGUS
+ENDSCAN
+
+* ---------------------------------------------------------------------------
+* NOT REACHED ON A PASSING RUN. An arm that proves its own absence is worth
+* more than a comment saying it should be absent.
+* ---------------------------------------------------------------------------
+
+? "SCE_X1_script_did_NOT_stop_THIS_SHOULD_NOT_PRINT:" + ("A" = "A")
+
+STOP_ON_ERROR OFF

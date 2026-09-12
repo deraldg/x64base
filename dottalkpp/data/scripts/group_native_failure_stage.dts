@@ -1,0 +1,59 @@
+; ============================================================================
+; GROUP NATIVE FAILURE -- STAGE (AIF-160)
+;
+; The same two members as GRPFAIL, dirtied through NATIVE table buffers rather
+; than SQLSEL, and left dirty across the script boundary. DOTSCRIPT runs in
+; this process, so the areas, the buffers and the open journals all survive
+; into the commit script.
+;
+; WHY A SECOND FIXTURE EXISTS AT ALL, and it is not duplication. GRPFAIL drives
+; SQLSEL, whose release_sql_transaction walks every member into
+; journal_note_rollback -- which refuses to delete a decided journal AND CLOSES
+; ITS HANDLE. After that COMMIT cannot write anything, because
+; journal_begin_commit returns early on a null FILE*. GROUPCOMMIT has NO
+; teardown: it gathers members, commits, prints, and walks away from an OPEN
+; handle over a durable P. That open handle is the entire subject of this arm.
+;
+; TABLE BUFFER ON PERSISTENT is the only spelling that reaches persistence from
+; the command surface -- the `on` handler takes persistent/journal/ram tokens,
+; applies the mode, enables the buffer, and calls journal_note_buffer_on. There
+; is no SET TABLE BUFFER PERSISTENT; cmd_set.cpp knows only ON|OFF [ALL].
+;
+; NO SQL MODE HERE. GROUPCOMMIT refuses outright while a SQL transaction is
+; active, and says so.
+; ============================================================================
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+SET PATH DBF DBF/SANDBOX
+SET PATH INDEXES INDEXES/SANDBOX
+SET PATH LMDB LMDB/SANDBOX
+
+FORMULA "GRPNATIVE-STAGE-BEGIN"
+
+SELECT 1
+USE GRPFAIL1
+TABLE BUFFER ON PERSISTENT
+
+SELECT 2
+USE GRPFAIL2
+TABLE BUFFER ON PERSISTENT
+
+; THE PERSISTENCE GUARDS, and they are here because the alternative is an arm
+; that passes for a fourth wrong reason. Under RamOnly there is no journal, no
+; P record and no handle, so every assertion downstream would be satisfied by
+; a transaction that never wrote a log at all. journal_note_buffer_on opens the
+; .tbj at buffer-on, so the files must exist RIGHT NOW, before anything is
+; staged. If either reads .F. the rest of this arm is measuring nothing.
+? "GN_P1_member_one_journal_armed:" + FILE("DBF/SANDBOX/GRPFAIL1.dbf.tbj")
+? "GN_P2_member_two_journal_armed:" + FILE("DBF/SANDBOX/GRPFAIL2.dbf.tbj")
+
+; Both buffers dirty, neither committed. USE lands on record 1 of a one-record
+; table, so no navigation is needed and none is spelled.
+SELECT 1
+REPLACE MARK WITH "AFTER"
+SELECT 2
+REPLACE MARK WITH "AFTER"
+SELECT 1
+
+FORMULA "GRPNATIVE-STAGE-END"
