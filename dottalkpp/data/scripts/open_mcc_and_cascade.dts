@@ -2,7 +2,7 @@
 * open_mcc_and_cascade.dts -- MCC (x64) and Cascade ERP (DBF side) OPEN AT
 * THE SAME TIME, in two workspaces, both live when the script ends.
 *
-* Run:  DOTSCRIPT D:\code\ccode\dottalkpp\data\scripts\open_mcc_and_cascade.dts
+* Run:  DOTSCRIPT &_DATA\scripts\open_mcc_and_cascade.dts
 * (DOTSCRIPT wants an ABSOLUTE path from the prompt.)
 *
 * THIS IS A SESSION OPENER, NOT A REGRESSION. It deliberately does NOT tear

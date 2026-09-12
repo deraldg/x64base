@@ -100,7 +100,7 @@
 * SELF-ISOLATING. The WORKSPACES slot is re-pointed at a scratch root before
 * anything is written, the r131_durable_root_probe precedent, so the production
 * catalog is never opened. Run it with an ABSOLUTE path:
-*   DOTSCRIPT D:\code\ccode\dottalkpp\data\scripts\two_level_memo_probe.dts
+*   DOTSCRIPT &_DATA\scripts\two_level_memo_probe.dts
 SET ECHO OFF
 STOP_ON_ERROR OFF
 SET PATH WORKSPACES tmp/ws2lvl

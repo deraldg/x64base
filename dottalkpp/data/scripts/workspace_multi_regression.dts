@@ -87,7 +87,7 @@
 *   root. The repo-relative form doubles the prefix and reports "script not
 *   found" against ...\dottalkpp\data\dottalkpp\data\scripts\..., which reads
 *   as a missing file rather than as a mis-rooted path. The absolute form
-*   works too: DO d:\code\ccode\dottalkpp\data\scripts\workspace_multi_regression.dts
+*   works too: DO &_DATA\scripts\workspace_multi_regression.dts
 * ============================================================================
 
 SET ECHO OFF
