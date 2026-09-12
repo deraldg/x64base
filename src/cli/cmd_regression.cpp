@@ -1052,6 +1052,7 @@ void print_regression_usage()
         << "  REGRESSION <name>\n"
         << "  REGRESSION ALL\n"
         << "  REGRESSION GRPFAIL               (AIF-160 two-pass group apply failure)\n"
+        << "  REGRESSION GRPNATIVE             (AIF-160 the retry after a group commit)\n"
         << "Notes:\n"
         << "  - REGRESSION launches DOTSCRIPT; selected specs also validate marked\n"
         << "    transcript evidence and set final PASS/FAIL error status.\n"
@@ -5293,6 +5294,157 @@ struct ForeignRecordFence {
 // One pass. `armed` selects the EXPECTED VALUES, not the script -- the script
 // is byte for byte the same on both, which is the whole reason the control is
 // evidence rather than decoration.
+// ---------------------------------------------------------------------------
+// GRPNATIVE -- the same apply failure, reached through GROUPCOMMIT, asking a
+// DIFFERENT question.
+//
+// GRPFAIL asks whether a decided journal SURVIVES a teardown. This asks
+// whether a RETRY can destroy one, and the two cannot share a fixture because
+// the verbs differ in exactly the way that matters:
+//
+//   SQLSEL     release_sql_transaction walks every member into
+//              journal_note_rollback, which refuses to delete a decided
+//              journal AND CLOSES ITS HANDLE. After that COMMIT writes
+//              nothing -- journal_begin_commit returns early on a null FILE*.
+//   GROUPCOMMIT  has NO teardown at all. It gathers members, commits, prints,
+//              and walks away from an OPEN handle over a durable P.
+//
+// THAT OPEN HANDLE IS THE SUBJECT. It is the only state in which COMMIT can
+// append a C beside a P -- the one pair recover_table_buffer_journal refuses
+// and KEEPS, turning a committed transaction into a log that never replays and
+// never goes away.
+//
+// MEASURED BEFORE THE GUARD WAS TRUSTED: a retry added to GRPFAIL's own script
+// passed while measuring NOTHING, because the handle was already closed. The
+// arm was green and the guard was never reached. That is why this exists as a
+// separate fixture rather than one more line in the other one.
+static const char* const kGroupNativeStageScript  = "group_native_failure_stage.dts";
+static const char* const kGroupNativeCommitScript = "group_native_failure_commit.dts";
+
+static bool run_group_native_pass(DbArea& area, bool armed)
+{
+    std::cout << "\nREGRESSION: AIF-160 GROUP NATIVE FAILURE -- PASS "
+              << (armed ? "2, ARMED" : "1, CONTROL") << "\n"
+              << (armed
+                    ? "  A live foreign record lock on GRPFAIL1 row 1. GROUPCOMMIT\n"
+                      "  decides, GRPFAIL2 applies, GRPFAIL1 does not -- and NOTHING\n"
+                      "  walks the areas afterward, so the journal handle stays OPEN\n"
+                      "  and the retry COMMIT reaches journal_begin_commit alive.\n"
+                    : "  No lock. Both members apply, both journals are deleted, and\n"
+                      "  the retry is the no-op it should be over a clean buffer.\n");
+
+    std::string setup_out;
+    if (!trigger_veto_run_script(area, kGroupFailSetupScript, setup_out)) return false;
+    static constexpr std::array<const char*, 2> setup_required{{
+        "GRPFAIL-SETUP-BEGIN", "GRPFAIL-SETUP-END"
+    }};
+    if (!require_transcript_fragments(setup_out, "GROUP NATIVE FAILURE SETUP",
+                                      setup_required)) {
+        return false;
+    }
+
+    // STAGE. Two NATIVE buffers go dirty and stay dirty -- no SQL mode, since
+    // GROUPCOMMIT refuses outright while a SQL transaction is active.
+    //
+    // THE PERSISTENCE PROBES ARE GRADED HERE, before anything interesting can
+    // happen. Under RamOnly there is no journal, no P and no handle, so every
+    // assertion downstream would be satisfied by a transaction that never
+    // wrote a log at all -- a fourth distinct way for this arm to pass while
+    // measuring nothing, and the cheapest one to close.
+    std::string stage_out;
+    if (!trigger_veto_run_script(area, kGroupNativeStageScript, stage_out)) return false;
+    static constexpr std::array<const char*, 4> stage_required{{
+        "GRPNATIVE-STAGE-BEGIN",
+        "GN_P1_member_one_journal_armed:.T.",
+        "GN_P2_member_two_journal_armed:.T.",
+        "GRPNATIVE-STAGE-END"
+    }};
+    if (!require_transcript_fragments(stage_out, "GROUP NATIVE FAILURE STAGE",
+                                      stage_required)) {
+        return false;
+    }
+
+    std::string work_out;
+    bool ran = false;
+    {
+        // Same window as GRPFAIL: after the buffers are dirty, before the
+        // group applies. Both members are already gathered, so the group will
+        // decide and only the APPLY can fail.
+        std::optional<ForeignRecordFence> fence;
+        if (armed) {
+            fence.emplace(group_fail_lock_path());
+            if (!fence->armed) {
+                std::cout << "GROUP NATIVE FAILURE: FAIL -- could not write the foreign\n"
+                             "  record lock at " << group_fail_lock_path().string() << "\n"
+                             "  The armed pass CANNOT be distinguished from the control\n"
+                             "  without it, so this is an unrun measurement, not a pass.\n";
+                return false;
+            }
+        }
+        ran = trigger_veto_run_script(area, kGroupNativeCommitScript, work_out);
+    }
+    if (!ran) return false;
+
+    const char* const t1 = armed ? "GN_T1_member_one_applied:.F."
+                                 : "GN_T1_member_one_applied:.T.";
+    const char* const t2 = armed ? "GN_T2_member_one_journal_survives:.T."
+                                 : "GN_T2_member_one_journal_survives:.F.";
+    const std::array<const char*, 7> required{{
+        "GRPNATIVE-WORK-BEGIN",
+        "GN_G1_member_two_applied:.T.",
+        t1,
+        t2,
+        "GN_T3_reopen_shows_the_member_applied:.T.",
+        "GN_T4_and_the_journal_is_gone:.T.",
+        "GRPNATIVE-WORK-END"
+    }};
+    const char* const label = armed ? "GROUP NATIVE FAILURE ARMED"
+                                    : "GROUP NATIVE FAILURE CONTROL";
+    if (!require_transcript_fragments(work_out, label, required)) return false;
+
+    std::cout << label << ": PASS\n";
+    return true;
+}
+
+static bool run_group_native_arm(DbArea& area)
+{
+    std::cout << "\nREGRESSION: AIF-160 GROUP NATIVE FAILURE ARM\n"
+                 "  READ RULE, AND IT IS NOT GRPFAIL'S. The control/armed split\n"
+                 "  grades GN_T1 and GN_T2, exactly as GRPFAIL grades its pair.\n"
+                 "  THE GUARD IS GRADED BY GN_T3 AND GN_T4 ON THE ARMED PASS.\n"
+                 "  Those two read .T. on BOTH passes and therefore look like\n"
+                 "  decoration. They are not: without the C-over-P refusal in\n"
+                 "  journal_begin_commit, the retry appends a C beside the P, USE\n"
+                 "  REFUSES the log instead of replaying it, and both go red.\n"
+                 "  No marker can watch the retry directly -- both outcomes leave\n"
+                 "  a journal on disk and FILE() cannot read inside one -- so the\n"
+                 "  reopen is the only place the difference is visible.\n";
+
+    const bool control = run_group_native_pass(area, false);
+    const bool armed   = control && run_group_native_pass(area, true);
+
+    std::string teardown_out;
+    (void)trigger_veto_run_script(area, kGroupFailTeardownScript, teardown_out);
+
+    std::error_code ec;
+    if (std::filesystem::exists(group_fail_lock_path(), ec)) {
+        std::filesystem::remove(group_fail_lock_path(), ec);
+        std::cout << "GROUP NATIVE FAILURE: warning -- a foreign lock survived the\n"
+                     "  arm and was removed here. Some path skipped the guard.\n";
+    }
+
+    if (!control || !armed) {
+        std::cout << "GROUP NATIVE FAILURE: FAIL\n";
+        return false;
+    }
+
+    std::cout << "GROUP NATIVE FAILURE: PASS -- control and armed differ at GN_T1\n"
+                 "  and GN_T2, and the armed pass reached GN_T3 and GN_T4 through a\n"
+                 "  retry COMMIT that journal_begin_commit refused over a live\n"
+                 "  handle. GRPFAIL cannot make this measurement.\n";
+    return true;
+}
+
 static bool run_group_fail_pass(DbArea& area, bool armed)
 {
     std::cout << "\nREGRESSION: AIF-160 GROUP APPLY FAILURE -- PASS "
@@ -5492,6 +5644,11 @@ void cmd_REGRESSION(DbArea& area, std::istringstream& in)
             return;
         }
         run_trigger_veto_arm(area, up);
+        return;
+    }
+
+    if (op == "GRPNATIVE") {
+        run_group_native_arm(area);
         return;
     }
 
