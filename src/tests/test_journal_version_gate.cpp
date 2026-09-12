@@ -37,6 +37,15 @@
 //     to stand for a record from the future, and 'M' is unknown at every
 //     version this build reads; what the real record contains is not decided
 //     here.
+//   - THE D LANE TESTS THE GUARD, NOT ITS CALLERS. It drives
+//     journal_note_decided and journal_note_rollback directly, at the layer
+//     that owns them. commit_group marks each member after decide_committed
+//     and release_sql_transaction walks its enlistments into rollback, and
+//     NEITHER OF THOSE PATHS IS EXERCISED HERE -- an edit that stopped
+//     commit_group from marking would leave every arm in this file green. That
+//     is a real gap and it is named rather than papered over; closing it needs
+//     a fixture that can make an APPLY fail after a decision, which is a
+//     different instrument.
 //   - Nothing about a record this build knows but writes WRONGLY. The U lane
 //     asks only whether an unrecognised tag is refused.
 //   - Nothing about a real crash. The logs here are forged by hand, which is
@@ -85,7 +94,7 @@ int g_checks   = 0;
 //
 // Adding a marker means editing this number. That cost is paid in the file
 // being edited, and forgetting it fails loudly rather than quietly.
-constexpr int kDeclaredMarkers = 56;   // 44 reader arms + 12 writer arms (W0-W3)
+constexpr int kDeclaredMarkers = 64;   // 44 reader + 12 writer (W0-W3) + 8 teardown (D0-D3)
 
 void check(bool condition, const std::string& marker, const std::string& detail) {
     ++g_checks;
@@ -802,6 +811,178 @@ int main() {
 
     dottalk::table::set_persistence_mode(
         0, dottalk::table::BufferPersistenceMode::RamOnly);
+
+    // ======================================================================
+    // THE D LANE -- THE JOURNAL THAT MUST SURVIVE ITS OWN TEARDOWN
+    //
+    // AIF-160, 2026-09-11. Every other arm in this file asks what RECOVERY
+    // does. These ask what happens BEFORE recovery ever runs, in the window
+    // this lane created and nothing else in the tree had: a group has been
+    // DECIDED and a member has not finished APPLYING.
+    //
+    // That member keeps its journal on purpose. The decision row exists, the P
+    // record is on the platter, and the next USE replays it. But every teardown
+    // path in the tree -- release_sql_transaction walking its enlistments,
+    // commit_group's own abort, cmd_ROLLBACK's shared body -- reaches
+    // journal_note_rollback, and journal_note_rollback std::removes that file.
+    // A committed transaction, a decision row saying so, and its only copy of
+    // the redo deleted by cleanup.
+    //
+    // BufferJournalInfo::decided is the guard, and until these arms existed
+    // NOTHING WOULD HAVE GONE RED IF IT WERE DELETED. Every SQLSEL arm, every
+    // ctest target and the whole P and W lane stayed green with the protection
+    // in place and would have stayed green with it removed, because no fixture
+    // ever asked a decided journal to roll back.
+    //
+    // D0 IS THE DETECTOR AND IT IS NOT A FORMALITY. D1 and D2 assert that a
+    // file SURVIVES. A journal_note_rollback that had quietly stopped deleting
+    // anything at all would satisfy both while measuring nothing. D0 is the
+    // same sequence with the single difference that the group was never
+    // decided, and it REQUIRES the deletion.
+    // ======================================================================
+
+    // ---- D0: the detector. Not decided -> rollback deletes, as it always has
+    {
+        const int area0 = 0;
+        const fs::path dbf = root / "D0.dbf";
+        std::string err;
+        if (!make_table(dbf, err) || !seed_row(dbf)) {
+            std::cerr << "FAIL: D0 fixture could not be built (" << err << ")\n";
+            return 1;
+        }
+
+        dottalk::table::set_persistence_mode(
+            area0, dottalk::table::BufferPersistenceMode::RamJournal);
+        if (!dottalk::table::journal_note_buffer_on(area0, dbf.string())) {
+            std::cerr << "FAIL: D0 could not open a journal\n";
+            return 1;
+        }
+        dottalk::table::ChangeEntry entry;
+        entry.recno       = 1;
+        entry.dirty_flags = dottalk::table::CHANGE_UPDATE;
+        entry.priority    = 1;
+        entry.new_values[2] = "AFTER   ";
+        dottalk::table::journal_note_change(area0, entry);
+        dottalk::table::journal_begin_prepare(area0, "testhost:1234:5678#D0", 1);
+
+        // PREPARED BUT NOT DECIDED. Nothing has told this journal that a group
+        // row names it, so it is still this transaction's to discard.
+        const bool rolled = dottalk::table::journal_note_rollback(area0);
+        const bool gone   = !fs::exists(dbf.string() + ".tbj");
+
+        check(rolled, "JVG_D0_an_undecided_journal_rolls_back",
+              "journal_note_rollback refused a journal no group had decided --"
+              " the guard is firing on everything and D1/D2 measure nothing");
+        check(gone,   "JVG_D0_and_the_log_is_deleted",
+              "the log survived a rollback that reported success");
+    }
+
+    // ---- D1: decided -> rollback REFUSES, and changes nothing --------------
+    {
+        const int area0 = 0;
+        const fs::path dbf = root / "D1.dbf";
+        std::string err;
+        if (!make_table(dbf, err) || !seed_row(dbf)) {
+            std::cerr << "FAIL: D1 fixture could not be built (" << err << ")\n";
+            return 1;
+        }
+
+        const std::string key = "testhost:1234:5678#D1";
+        std::string derr;
+        if (!dottalk::group::decide_committed(key, 1, &derr)) {
+            std::cerr << "FAIL: D1 fixture could not decide the group (" << derr << ")\n";
+            return 1;
+        }
+
+        dottalk::table::set_persistence_mode(
+            area0, dottalk::table::BufferPersistenceMode::RamJournal);
+        if (!dottalk::table::journal_note_buffer_on(area0, dbf.string())) {
+            std::cerr << "FAIL: D1 could not open a journal\n";
+            return 1;
+        }
+        dottalk::table::ChangeEntry entry;
+        entry.recno       = 1;
+        entry.dirty_flags = dottalk::table::CHANGE_UPDATE;
+        entry.priority    = 1;
+        entry.new_values[2] = "AFTER   ";
+        dottalk::table::journal_note_change(area0, entry);
+        dottalk::table::journal_begin_prepare(area0, key, 1);
+
+        // THE DECISION LANDED. From here the journal is not this transaction's
+        // to delete -- it belongs to the group row.
+        const bool marked = dottalk::table::journal_note_decided(area0);
+        const bool rolled = dottalk::table::journal_note_rollback(area0);
+        const bool still  = fs::exists(dbf.string() + ".tbj");
+
+        check(marked && !rolled, "JVG_D1_a_decided_journal_refuses_rollback",
+              "journal_note_rollback accepted a journal the group had already"
+              " decided");
+        check(still,             "JVG_D1_the_decided_log_was_preserved",
+              "THE LOG WAS DELETED -- a committed transaction's only copy of its"
+              " redo was removed by the teardown path");
+
+        // Close the handle without touching the file, the way a process exit
+        // would, so D2 can read what a crash would have left.
+        dottalk::table::clear_journal_state(area0);
+    }
+
+    // ---- D2: and the surviving log REPLAYS -- the point of keeping it ------
+    // Preserving a file is worth nothing if recovery cannot finish the
+    // transaction from it. D1 proves the teardown did not delete it; this
+    // proves what was kept is the thing that makes the member whole.
+    {
+        const fs::path dbf = root / "D1.dbf";
+        bool present = true;
+        const bool replayed = recover(dbf, present);
+
+        check(replayed,                  "JVG_D2_the_preserved_log_replays",
+              "the journal the guard saved did not replay -- keeping it bought"
+              " nothing");
+        check(read_mark(dbf) == "AFTER", "JVG_D2_the_replay_completed_the_member",
+              "MARK is '" + read_mark(dbf) + "', expected 'AFTER'");
+    }
+
+    // ---- D3: one P record per log, refused rather than obeyed --------------
+    // A second prepare would write a second P. The reader refuses a log naming
+    // two groups -- correctly, since choosing between group keys is guessing --
+    // and PRESERVES it, so obeying a second call produces a journal that can
+    // never replay and never goes away. A second C marker is harmless; a second
+    // P is terminal, which is why the guard is on prepare and not on commit.
+    {
+        const int area0 = 0;
+        const fs::path dbf = root / "D3.dbf";
+        std::string err;
+        if (!make_table(dbf, err) || !seed_row(dbf)) {
+            std::cerr << "FAIL: D3 fixture could not be built (" << err << ")\n";
+            return 1;
+        }
+
+        dottalk::table::set_persistence_mode(
+            area0, dottalk::table::BufferPersistenceMode::RamJournal);
+        dottalk::table::journal_note_buffer_on(area0, dbf.string());
+        const bool first  =
+            dottalk::table::journal_begin_prepare(area0, "testhost:1234:5678#D3a", 1);
+        const bool second =
+            dottalk::table::journal_begin_prepare(area0, "testhost:1234:5678#D3b", 1);
+        dottalk::table::clear_journal_state(area0);
+
+        std::ifstream in(dbf.string() + ".tbj", std::ios::binary);
+        std::string body, line;
+        std::size_t p_records = 0;
+        while (std::getline(in, line)) {
+            if (line.rfind("P ", 0) == 0) ++p_records;
+            body += line + "\n";
+        }
+        in.close();
+
+        check(first && !second, "JVG_D3_a_second_prepare_is_refused",
+              "journal_begin_prepare accepted a second group for one journal");
+        check(p_records == 1,   "JVG_D3_the_log_carries_exactly_one_P",
+              "the log holds " + std::to_string(p_records) + " P record(s);"
+              " body was:\n" + body);
+
+        fs::remove(dbf.string() + ".tbj", ec);
+    }
 
     fs::remove_all(root, ec);
 
