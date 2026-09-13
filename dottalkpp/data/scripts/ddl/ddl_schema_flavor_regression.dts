@@ -1,0 +1,36 @@
+* DDL schema flavor regression
+* AIF-063: explicit-run only; creates throwaway DBF files in TMP.
+
+ECHO ============================================================
+ECHO DDL SCHEMA FLAVOR REGRESSION
+ECHO ============================================================
+
+WORKSPACE CLOSE
+SET PATH DBF tmp
+
+DDL VALIDATE ddl_regression_classic.schema.json USING schema_json_v1.schema.json
+DDL CREATE DBF DDL_REGR_CLASSIC.dbf FROM ddl_regression_classic.schema.json OVERWRITE SEED BLANK 1 EMIT SIDECARS
+USE DDL_REGR_CLASSIC NOINDEX
+BOTTOM
+REPLACE ID WITH 42
+REPLACE LABEL WITH "CLASSIC OK"
+? "DDL_T1_CLASSIC_ID:" + (ID = 42)
+? "DDL_T2_CLASSIC_LABEL:" + (ALLTRIM(LABEL) = "CLASSIC OK")
+CLOSE
+
+DDL VALIDATE ddl_regression_x64.schema.json USING schema_json_v1.schema.json
+DDL CREATE DBF X64 DDL_REGR_X64.dbf FROM ddl_regression_x64.schema.json OVERWRITE SEED BLANK 2 EMIT SIDECARS
+USE DDL_REGR_X64 NOINDEX
+BOTTOM
+REPLACE student_identifier WITH 64
+REPLACE full_name WITH "X64 OK"
+? "DDL_T3_X64_LONG_NAME:" + (student_identifier = 64)
+? "DDL_T4_X64_LABEL:" + (ALLTRIM(full_name) = "X64 OK")
+CLOSE
+
+ECHO DDL_T5_SIDECARS_EXPECTED: ddl_regr_classic.ddl.json ddl_regr_x64.ddl.json
+WORKSPACE CLOSE
+
+ECHO ============================================================
+ECHO DDL SCHEMA FLAVOR REGRESSION DONE
+ECHO ============================================================

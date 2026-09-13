@@ -1,0 +1,62 @@
+* ============================================================
+*  LIMITS SHAKEDOWN -- X64 TABLE / FIELD NAME CEILINGS
+*
+*  Status:  CANDIDATE / REVIEW_BEFORE_EXECUTION.
+*  Safety:  MUTATING on throwaway tables only, ERASEd at the end (single work
+*           area, sequential -- cleans up reliably).
+*  Proves:  X64 name ceilings raised 128 -> 256 (include/xbase_64.hpp;
+*           x64_*_name_fits now validate against *_LENGTH_MAX). The maintained
+*           default stays 128; the authoritative-storage gate is now 256.
+*
+*  NAME BLOCKS (each "NAMEFIELD_" token is exactly 10 chars)
+*  --------------------------------------------------------
+*    N130 = 13 blocks = 130 chars  (over OLD 128 ceiling, under NEW 256)
+*    N260 = 26 blocks = 260 chars  (over NEW 256 ceiling)
+*
+*  OBSERVED BEHAVIOR (2026-07-19 green build -- retained as baseline)
+*  -----------------------------------------------------------------
+*    N1. 130-char field name -> table CREATED; fallback-descriptor-token
+*        warning; authoritative x64 metadata name PRESERVED (130 <= 256).
+*        This is the ceiling raise: at the old 128 gate a 130-char name would
+*        NOT have been preserved.
+*    N2. 260-char field name -> table CREATED; "name too long" warning;
+*        authoritative name NOT stored, falls back to the 10-byte token
+*        (260 > 256).
+*        (Fixed + confirmed 2026-07-19: the warning now prints 256, the real
+*        authoritative gate, via X64_FIELD_NAME_LENGTH_MAX. It previously showed
+*        the effective default, 128.)
+*    N3. 130-char TABLE name -> table CREATED.
+*
+*  RUN
+*  ---
+*  DOTSCRIPT TRACE scripts\limits\limits_name_length_shakedown.dts OUT tmp\limits\name_length.log
+* ============================================================
+SET ECHO OFF
+SET TALK ON
+
+ECHO ############################################################
+ECHO # NAME-LENGTH SHAKEDOWN -- X64 ceilings raised 128 -> 256
+ECHO ############################################################
+
+ECHO === N1. field name 130 chars (over old 128, under new 256) -> authoritative name PRESERVED ===
+SELECT 0
+CREATE X64 NAMETMP1 ( NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_ C(8), OK C(4) )
+ERROR_STATUS
+DBAREAS
+
+ECHO === N2. field name 260 chars (over new 256 ceiling) -> created, authoritative name FALLS BACK to token ===
+SELECT 0
+CREATE X64 NAMETMP2 ( NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_ C(8), OK C(4) )
+ERROR_STATUS
+
+ECHO === N3. TABLE name 130 chars -> created ===
+SELECT 0
+CREATE X64 TBL_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_ ( ID N(4) )
+ERROR_STATUS
+
+ECHO === N4. cleanup ===
+CLOSE ALL
+ERASE NAMETMP1 CONFIRM
+ERASE NAMETMP2 CONFIRM
+ERASE TBL_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_NAMEFIELD_ CONFIRM
+ECHO NAME-LENGTH SHAKEDOWN COMPLETE.

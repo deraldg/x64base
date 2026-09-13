@@ -1,0 +1,49 @@
+* ============================================================
+*  LIMITS SHAKEDOWN -- CLOSE ALL over multiple work areas
+*
+*  Status:  CANDIDATE / REVIEW_BEFORE_EXECUTION.
+*  Safety:  MUTATING on throwaway tables only (CATMP5/CATMP260/CATMP400),
+*           ERASEd at the end. Touches no fixtures.
+*  Proves:  The 2026-07-19 CLOSE ALL correction (src/cli/cmd_close.cpp) closes
+*           EVERY open work area, not just the current one. Also exercises
+*           MAX_AREA>256 by opening real tables in areas 260 and 400.
+*
+*  DISCRIMINATING OUTCOME
+*  ----------------------
+*    AFTER the fix : all three ERASE report "Deleted: 1, Failed: 0"
+*                    (CLOSE ALL released every area's file handle).
+*    BEFORE the fix: CATMP5 and CATMP260 (non-current areas) ERASE
+*                    "FAILED ... being used by another process" and are stranded.
+*
+*  RUN
+*  ---
+*  DOTSCRIPT TRACE scripts\limits\limits_close_all_shakedown.dts OUT tmp\limits\close_all.log
+* ============================================================
+SET ECHO OFF
+SET TALK ON
+
+ECHO ############################################################
+ECHO # CLOSE ALL SHAKEDOWN -- close every open work area
+ECHO ############################################################
+
+ECHO === C1. open a throwaway table in area 5 ===
+SELECT 5
+CREATE X64 CATMP5 (ID N(4))
+
+ECHO === C2. open a throwaway table in area 260 (beyond old MAX_AREA=256) ===
+SELECT 260
+CREATE X64 CATMP260 (ID N(4))
+
+ECHO === C3. open a throwaway table in area 400 ===
+SELECT 400
+CREATE X64 CATMP400 (ID N(4))
+
+ECHO === C4. CLOSE ALL -> must close areas 5, 260, and 400 (not just current 400) ===
+CLOSE ALL
+
+ECHO === C5. ERASE each -> all must report Deleted: 1, Failed: 0 ===
+ERASE CATMP5 CONFIRM
+ERASE CATMP260 CONFIRM
+ERASE CATMP400 CONFIRM
+
+ECHO CLOSE-ALL SHAKEDOWN COMPLETE.

@@ -1,0 +1,45 @@
+* SYSCHATLNK X64 schema regression
+* Explicit-run only. Creates a disposable DBF and sidecars under TMP.
+
+ECHO ============================================================
+ECHO SYSCHATLNK X64 REGRESSION
+ECHO ============================================================
+
+WORKSPACE CLOSE
+SET PATH DBF tmp
+
+DDL VALIDATE syschatlnk_v1.schema.json USING schema_json_v1.schema.json
+DDL CREATE DBF X64 SYSCHATLNK.dbf FROM syschatlnk_v1.schema.json OVERWRITE SEED BLANK 1 EMIT SIDECARS
+USE SYSCHATLNK NOINDEX
+BOTTOM
+REPLACE ID WITH 1
+REPLACE LINKKEY WITH "alink:v1:proof-agent-assignment"
+REPLACE CONVKEY WITH "conv:v1:proof-conversation"
+REPLACE MEMBERID WITH 101
+REPLACE MKEY WITH "member.codex.proof"
+REPLACE ASSIGNID WITH 201
+REPLACE PROVIDER WITH "openai"
+REPLACE PRODUCT WITH "codex"
+REPLACE LOCALE WITH "en-US"
+REPLACE PROJKEY WITH "project.ai_systems.integration"
+REPLACE CREATEDAT WITH 1786900000
+REPLACE MODAT WITH 1786900001
+REPLACE OBSAT WITH 1786900002
+REPLACE SENSCLASS WITH "internal"
+REPLACE STATUS WITH 0
+REPLACE VFROM WITH 1786900000
+REPLACE VTHRU WITH 0
+REPLACE ROWVER WITH 1
+? "SYSCHATLNK_T1_LINKKEY:" + (ALLTRIM(LINKKEY) = "alink:v1:proof-agent-assignment")
+? "SYSCHATLNK_T2_CONVKEY:" + (ALLTRIM(CONVKEY) = "conv:v1:proof-conversation")
+? "SYSCHATLNK_T3_ASSIGN:" + (ASSIGNID = 201)
+? "SYSCHATLNK_T4_LOCALE:" + (ALLTRIM(LOCALE) = "en-US")
+? "SYSCHATLNK_T5_TIMES:" + ((MODAT >= CREATEDAT) AND (OBSAT >= MODAT))
+CLOSE
+
+ECHO SYSCHATLNK_T6_SIDECARS_EXPECTED: SYSCHATLNK.ddl.json SYSCHATLNK.indexes.json
+WORKSPACE CLOSE
+
+ECHO ============================================================
+ECHO SYSCHATLNK X64 REGRESSION DONE
+ECHO ============================================================

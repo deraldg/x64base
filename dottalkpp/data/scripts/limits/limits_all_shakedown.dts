@@ -1,0 +1,26 @@
+* ============================================================
+*  LIMITS SUITE DRIVER -- runs the four limits shakedowns in sequence.
+*
+*  Registered as REGRESSION suite "LIMITS" (src/cli/cmd_regression.cpp), so
+*  `REGRESSION RUN LIMITS` drives all four canaries. Each sub-script is
+*  self-contained (throwaway tables, ERASEd) and safe to run back-to-back.
+*
+*  Uses nested DOTSCRIPT so the individual scripts remain the single source of
+*  truth (no duplicated bodies). If a build does not support nested DOTSCRIPT,
+*  run the four scripts individually instead.
+* ============================================================
+SET ECHO OFF
+SET TALK ON
+
+ECHO ############################################################
+ECHO # LIMITS SUITE -- MAX_AREA, name ceilings, record advisory, CLOSE ALL
+ECHO ############################################################
+
+DOTSCRIPT scripts\limits\limits_max_area_shakedown.dts
+DOTSCRIPT scripts\limits\limits_name_length_shakedown.dts
+DOTSCRIPT scripts\limits\limits_record_advisory_shakedown.dts
+DOTSCRIPT scripts\limits\limits_close_all_shakedown.dts
+
+ECHO ############################################################
+ECHO # LIMITS SUITE COMPLETE
+ECHO ############################################################

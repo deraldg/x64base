@@ -1,0 +1,24 @@
+* comment_handling_regression.dts
+* Proves the canonical DotTalk++ comment vocabulary is honored on the script path
+* after the AIF-037 lexer consolidation (one shared dotscript_lexing module).
+*
+* Canonical full-line comments: *  REM   (+ tolerated #  //)
+* Inline comments: && and # (cut to end of line); single & (macro) survives.
+*
+* Expected output is exactly three lines, in order:
+*   COMMENT-REGRESSION-BEGIN
+*   AFTER-COMMENT-LINES
+*   COMMENT-REGRESSION-END
+* Every comment line below must produce NO output.
+
+FORMULA "COMMENT-REGRESSION-BEGIN"
+
+REM this whole line is a comment
+* and this one
+// and this one
+&& and this one
+# and this one
+
+FORMULA "AFTER-COMMENT-LINES"          && this trailing && comment is ignored
+
+FORMULA "COMMENT-REGRESSION-END"       # this trailing # comment is ignored

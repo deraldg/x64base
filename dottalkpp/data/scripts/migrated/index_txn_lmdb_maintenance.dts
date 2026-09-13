@@ -1,0 +1,129 @@
+* ============================================================
+* INDEX TXN LMDB MAINTENANCE  (lane XIDX-TXN-01 / AIF-027,023 ; feeds AIF-041 M1)
+* ============================================================
+* Proves LMDB (CDX-over-LMDB) index-key maintenance happens INSIDE COMMIT on the
+* buffered (TABLE ON) path, with NO BUILDLMDB / REBUILD between the mutation and
+* the SEEK. Freshness is proven by SEEK (index-driven), never by COUNT FOR (a DBF
+* scan would pass on a stale index).
+*
+* SELF-ASSERTING: each gate emits "Tn_...:.T." / ".F." via the expression path, so
+* REGRESSION RUN can actually go red. FIXTURE-FREE: builds its own throwaway x64
+* table (IDXTXN) from scratch and ERASEs it -- never touches the students fixture,
+* never closes the ambient workspace.
+*
+* Falsifiable flip (scored on ORDERED position = index-truth; SEEK lines are only
+* observational because a not-found SEEK leaves the cursor parked and COMMIT writes
+* the DBF even when the index is not maintained):
+*   Score T1 (commit maintains order) and T2 (dup survivor in order).
+*   Mode is selected by env: DOTTALK_INDEX_TXN=1 (ON) / =0 (OFF). The script does
+*   not force the flag, so the same file harvests both halves of the flip.
+*   INDEXTXN OFF : COMMIT does NOT maintain the index -> T1,T2 = .F. (RED).
+*   INDEXTXN ON  : COMMIT maintains the index         -> all markers .T. (GREEN).
+*   T3 is a rollback invariant (.T. both modes); T4 is a positive erase-on-delete
+*   check under ON (deleted rows are hidden, so it does not itself flip).
+* ============================================================
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+* --- Own environment: scratch flavor = SANDBOX (writable). No WORKSPACE CLOSE:
+* --- CREATE opens its own area; we ERASE the table at the end. ---
+SET PATH DBF DBF/SANDBOX
+SET PATH INDEXES INDEXES/SANDBOX
+SET PATH LMDB LMDB/SANDBOX
+
+FORMULA "INDEX-TXN-MAINTENANCE-REGRESSION-BEGIN"
+
+* --- P0: build a throwaway x64 table with a duplicate-key set on NAME ---
+* --- (leading ERASE is idempotent while STOP_ON_ERROR is OFF) ---
+ERASE TABLE IDXTXN CONFIRM
+CREATE X64 IDXTXN (ID N(4), NAME C(20))
+APPEND
+REPLACE ID WITH "1"
+REPLACE NAME WITH "White"
+APPEND
+REPLACE ID WITH "2"
+REPLACE NAME WITH "White"
+APPEND
+REPLACE ID WITH "3"
+REPLACE NAME WITH "Martin"
+APPEND
+REPLACE ID WITH "4"
+REPLACE NAME WITH "Baker"
+GO 1
+? "T0_fixture_row1_white:" + (ALLTRIM(NAME) = "White")
+
+* --- Build CDX + LMDB for the throwaway table, order by NAME ---
+CDX CREATE
+CDX ADDTAG NAME
+BUILDLMDB CLEAN YES
+SET INDEX TO IDXTXN
+SET ORDER TO TAG NAME
+
+* --- Mode is ENV-DRIVEN. SET INDEXTXN defaults from DOTTALK_INDEX_TXN at startup,
+* --- so this script does NOT force the flag (and never dirties the ambient setting):
+* ---   DOTTALK_INDEX_TXN=1  -> gates run ON  : expect T1,T2 = .T.  (GREEN)
+* ---   DOTTALK_INDEX_TXN=0  -> gates run OFF : expect T1,T2 = .F.  (RED baseline)
+* --- Runtime `SET INDEXTXN ON|OFF` before the run overrides the env if you prefer.
+
+* ============================================================
+* GATE T1 (FLIP) : buffered REPLACE of the indexed field + COMMIT, then prove the
+* index reflects it with NO rebuild. Scored on ORDERED position (index-truth), not
+* the landed field: under OFF the DBF is written but the index stays stale, and a
+* parked cursor would false-pass. rec 1 leaves the White dup-set to become the
+* unique sentinel ZZ_TXN, which sorts LAST -- so ordered BOTTOM lands on it only
+* when COMMIT actually maintained the index.
+GO 1
+TABLE ON
+REPLACE NAME WITH "ZZ_TXN"
+COMMIT
+SEEK ZZ_TXN
+* ^ observational: prints "Found at 1" when maintained (SEEK is not the scored signal)
+SET ORDER TO TAG NAME
+BOTTOM
+? "T1_commit_maintains_index:" + (ALLTRIM(NAME) = "ZZ_TXN")
+
+* GATE T2 (FLIP) : dup precision -- only rec 1 left the White set, so the survivor
+* (rec 2, still White) is the sentinel's predecessor in index order. Under OFF the
+* sentinel is absent and BOTTOM/predecessor resolve within the stale White pair,
+* landing on rec 1 (whose committed field now reads ZZ_TXN) -> .F.
+BOTTOM
+SKIP -1
+? "T2_dup_survivor_ordered:" + (ALLTRIM(NAME) = "White")
+
+* ============================================================
+* GATE T3 (INVARIANT) : ROLLBACK discards the buffered edit; index unchanged.
+* Scored positively: old key still present, and ordered BOTTOM still the sentinel.
+GO 3
+TABLE ON
+REPLACE NAME WITH "ZZ_RB"
+ROLLBACK
+SEEK Martin
+* ^ observational
+? "T3_rollback_old_key_present:" + (ALLTRIM(NAME) = "Martin")
+SET ORDER TO TAG NAME
+BOTTOM
+? "T3_rollback_index_unchanged:" + (ALLTRIM(NAME) = "ZZ_TXN")
+
+* ============================================================
+* GATE T4 : buffered DELETE + COMMIT removes the key from the index.
+* rec 1 is the unique sentinel; delete it by recno so the proof is unambiguous.
+GO 1
+TABLE ON
+DELETE
+COMMIT
+* Prove erase via index-truth, not the landed field: with the sentinel gone,
+* ordered BOTTOM must fall back to the real last key (Baker, Martin, White -> White).
+* A stale index would still show ZZ_TXN at BOTTOM -> .F. (true flip).
+SET ORDER TO TAG NAME
+BOTTOM
+? "T4_delete_erases_key:" + (ALLTRIM(NAME) = "White")
+
+* ============================================================
+* --- Cleanup: drop order, close, erase the throwaway table. The script never
+* --- forced SET INDEXTXN, so there is no ambient global to restore. ---
+SET ORDER TO 0
+CLOSE
+ERASE TABLE IDXTXN CONFIRM
+
+FORMULA "INDEX-TXN-MAINTENANCE-REGRESSION-END"

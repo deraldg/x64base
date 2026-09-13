@@ -1,0 +1,49 @@
+* ============================================================
+*  LIMITS SHAKEDOWN -- MAX_AREA (work-area slots)
+*
+*  Status:  CANDIDATE / REVIEW_BEFORE_EXECUTION.
+*  Safety:  NON-DESTRUCTIVE. Selects work-area slots only -- creates no tables,
+*           writes no files, touches no fixtures. (Selecting an empty area is a
+*           no-op on data.)
+*  Proves:  MAX_AREA was raised 256 -> 512 (include/xbase.hpp). Slots above the
+*           old 256 ceiling are selectable, and 512 is still bounded (clean
+*           error, no crash).
+*
+*  EXPECTED OBSERVATIONS
+*  ---------------------
+*    S0. SELECT (no args) usage shows the valid range -> "SELECT <0..511>".
+*    S1. SELECT 256 -> "Selected area 256." (old ceiling, now well within).
+*    S2. SELECT 300 -> "Selected area 300." (beyond old 256).
+*    S3. SELECT 511 -> "Selected area 511." (top valid slot).
+*    S4. SELECT 512 -> "SELECT: out of range (valid 0..511)."; no crash.
+*
+*  RUN
+*  ---
+*  DOTSCRIPT TRACE scripts\limits\limits_max_area_shakedown.dts OUT tmp\limits\max_area.log
+* ============================================================
+SET ECHO OFF
+SET TALK ON
+
+ECHO ############################################################
+ECHO # MAX_AREA SHAKEDOWN -- expect slot range 0..511 (MAX_AREA=512)
+ECHO ############################################################
+
+ECHO === S0. SELECT usage should report the valid slot range (0..511) ===
+SELECT
+
+ECHO === S1. SELECT 256 (old ceiling, now within range) -> Selected area 256 ===
+SELECT 256
+
+ECHO === S2. SELECT 300 (beyond OLD MAX_AREA=256) -> Selected area 300 ===
+SELECT 300
+
+ECHO === S3. SELECT 511 (top valid slot) -> Selected area 511 ===
+SELECT 511
+
+ECHO === S4. SELECT 512 (one past the top) -> out-of-range error, no crash ===
+SELECT 512
+ERROR_STATUS
+
+ECHO === S5. return to a safe slot ===
+SELECT 0
+ECHO MAX_AREA SHAKEDOWN COMPLETE.

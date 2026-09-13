@@ -1,0 +1,35 @@
+* help_didyoumean_regression.dts
+* HELP unknown-topic feedback + did-you-mean suggestions (AIF-047 M1-M3).
+*
+* Proves the HELP command owns its miss: an unknown topic yields an explicit
+* "No help found for: X" line plus soundex/edit-distance suggestions (no more the
+* self-referential "Type HELP X for more information" loop), and HELP GIANT <unknown>
+* shares the same terminal. Also confirms SOUNDEX() still works after sharing its
+* implementation with the suggester.
+*
+* Expected (grep between BEGIN/END):
+*   No help found for: GAINT
+*     Did you mean: GIANT, ...
+*   No help found for: SELCT
+*     Did you mean: SELECT, ...
+*   No help found for: GAINT           (via HELP GIANT GAINT)
+*   G530                               (SOUNDEX("GIANT"))
+*
+* Read-only; opens/mutates nothing.
+*
+* Run:  REGRESSION RUN HELP_DIDYOUMEAN
+*   or: DOTSCRIPT dottalkpp/data/scripts/dotscript/help_didyoumean_regression.dts
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+FORMULA "HELP-DIDYOUMEAN-REGRESSION-BEGIN"
+FORMULA "unknown topic -> not-found + did-you-mean (expect GIANT):"
+HELP GAINT
+FORMULA "another typo (expect SELECT):"
+HELP SELCT
+FORMULA "HELP GIANT <unknown> shares the not-found terminal:"
+HELP GIANT GAINT
+FORMULA "SOUNDEX() still works after sharing its implementation (expect G530):"
+? SOUNDEX("GIANT")
+FORMULA "HELP-DIDYOUMEAN-REGRESSION-END"

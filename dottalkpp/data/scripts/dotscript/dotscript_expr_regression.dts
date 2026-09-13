@@ -1,0 +1,66 @@
+* dotscript_expr_regression.dts
+* Proves DotScript memory variables (VAR / $name) and arrays ({} literals, one-based
+* $a[n] subscripts, nested/chained) through the house expression path, plus an IF
+* literal baseline that the expression-path convergence (AIF-041) must keep green.
+*
+* Self-asserting: each R# check prints "<TAG>:.T." on success (a value comparison
+* evaluated in the expression path) or "<TAG>:.F." on failure. Each B# baseline prints
+* ":PASS". A passing run shows every tag ":.T." / ":PASS" and both BEGIN/END markers.
+* Note: the comparison is wrapped in parentheses on purpose (so '=' is a comparison,
+* not an assignment, and binds before the '+').
+*
+* Fixture-free: pure expression + literal predicates; no table required.
+*
+* Run:  REGRESSION RUN DOTSCRIPT_EXPR
+*   or: DOTSCRIPT dottalkpp/data/scripts/dotscript/dotscript_expr_regression.dts
+*
+* Self-bootstrap the environment (regression doctrine: every test sets its own
+* environment; the ambient default is STOP_ON_ERROR OFF). R8 deliberately triggers
+* an out-of-range error, so this test REQUIRES STOP_ON_ERROR OFF to reach B1/B2 --
+* set it explicitly so the test is correct even when run right after ERRORSTOP
+* (whose Phase-2 abort leaves the policy ON). ECHO OFF keeps the judged region clean
+* regardless of a prior CALC run leaving ECHO ON.
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+FORMULA "DOTSCRIPT-EXPR-REGRESSION-BEGIN"
+
+* --- VAR memory variables: store then read back as $name ---
+VAR n = 40 + 2
+? "R1_var_scalar:" + ($n = 42)
+
+VAR label = UPPER("hi")
+? "R2_var_string_fn:" + ($label = "HI")
+
+* --- arrays: {} literal + one-based $a[n] subscript ---
+VAR a = {10, 20, 30}
+? "R3_array_subscript:" + ($a[2] = 20)
+? "R4_array_subscript_arith:" + (($a[2] + 5) = 25)
+? "R5_var_case_insensitive:" + ($A[3] = 30)
+
+* --- nested array + chained subscript ---
+VAR m = {1, {2, 3}}
+? "R6_array_nested_chained:" + ($m[2][1] = 2)
+
+* --- whole-array display (documented expected: {array:3}) ---
+? "R7_array_display_expect_{array:3}:"
+? $a
+
+* --- out-of-range subscript (documented expected: a FORMULA error line) ---
+? "R8_out_of_range_expect_error:"
+? $a[9]
+
+* --- IF literal baseline: predicate path must stay correct through the convergence ---
+IF (1 = 1)
+  FORMULA "B1_if_true_literal:PASS"
+ELSE
+  FORMULA "B1_if_true_literal:FAIL"
+ENDIF
+
+IF (2 > 3)
+  FORMULA "B2_if_false_literal:FAIL"
+ELSE
+  FORMULA "B2_if_false_literal:PASS"
+ENDIF
+
+FORMULA "DOTSCRIPT-EXPR-REGRESSION-END"

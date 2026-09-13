@@ -15,7 +15,7 @@
 // status: supported
 // noargs: usage
 // effect: execute
-// mutates: delegates regression scripts session data filesystem
+// mutates: delegates regression scripts session data filesystem log transcript
 // usage-access: REGRESSION USAGE
 // summary:
 //   Launch curated DotTalk++ regression and smoke DotScript files through the
@@ -26,10 +26,14 @@
 //   REGRESSION USAGE
 //   REGRESSION LIST
 //   REGRESSION FIND <words...>
+//   REGRESSION SEARCH <words...>
 //   REGRESSION SHOW <name>
-//   REGRESSION RUN <name>
-//   REGRESSION <name>
-//   REGRESSION ALL
+//   REGRESSION RUN <name> [LOG [<path>]]
+//   REGRESSION <name> [LOG [<path>]]
+//   REGRESSION ALL [LOG [<path>]]
+//   REGRESSION TRIGGERVETO [NORMAL|SELFTEST|MULTIREP|AFTER|RECOVERY]
+//   REGRESSION GRPNATIVE
+//   REGRESSION GRPFAIL
 //
 // examples:
 //   REGRESSION LIST
@@ -39,6 +43,9 @@
 //   REGRESSION RUN HARVEST
 //   REGRESSION CURSOR
 //   REGRESSION ALL
+//   REGRESSION ALL LOG
+//   REGRESSION ALL LOG tmp\suite_20260913.log
+//   REGRESSION RUN NULLASSERT LOG
 //
 // notes:
 //   REGRESSION delegates script execution to DOTSCRIPT. Selected specs also
@@ -46,7 +53,20 @@
 //   final PASS/FAIL and canonical error status.
 //   Regression scripts are expected to bootstrap their own environment.
 //   LIST shows only curated stable entrypoints, not every historical script on disk.
-//   ALL runs the curated default suite in declared order.
+//   ALL runs the curated default suite in declared order and ends on a SUMMARY:
+//   counts, the names of anything that FAILED or went UNMEASURED, and the names
+//   of every spec that is NOT GRADED -- one that ran, printed a transcript, and
+//   was checked by nothing. The command's exit status is set from that tally.
+//   Before 2026-09-13 it was set from the isolation arms alone, and a passing
+//   spec CLEARED the recorded failure of the spec before it.
+//   NOT GRADED is reported separately and is not a pass.
+//   LOG tees the run to a file. Bare LOG writes under the TMP slot; a path
+//   overrides it, quoted if it contains spaces. Lines emitted on the ROUTED
+//   channel are NOT in the log -- they do not pass through a std::cout tee --
+//   and the log says so in its own header; per-spec routed evidence is in the
+//   .alt captures the transcript names. A log that cannot be opened REFUSES
+//   the run rather than running it unlogged, and an unrecognized tail is
+//   refused rather than ignored.
 //   Dev-only warning/repro canaries should remain outside this surface unless
 //   they are intentionally promoted.
 //
@@ -55,7 +75,7 @@
 //   executes_commands: yes
 //   mutates_data: depends on selected script contents
 //   mutates_session: yes
-//   writes_files: depends on selected script contents
+//   writes_files: yes -- LOG writes its own transcript; so may the script
 //   no_transaction_or_rollback: yes
 //
 // related:
@@ -1047,12 +1067,15 @@ void print_regression_usage()
         << "  REGRESSION USAGE\n"
         << "  REGRESSION LIST\n"
         << "  REGRESSION FIND <words...>       (search names/scripts/summaries)\n"
+        << "  REGRESSION SEARCH <words...>     (alias of FIND)\n"
         << "  REGRESSION SHOW <name>\n"
         << "  REGRESSION RUN <name>\n"
-        << "  REGRESSION <name>\n"
-        << "  REGRESSION ALL\n"
+        << "  REGRESSION <name>                [LOG [<path>]]\n"
+        << "  REGRESSION RUN <name>            [LOG [<path>]]\n"
+        << "  REGRESSION ALL                   [LOG [<path>]]\n"
         << "  REGRESSION GRPFAIL               (AIF-160 two-pass group apply failure)\n"
         << "  REGRESSION GRPNATIVE             (AIF-160 the retry after a group commit)\n"
+        << "  REGRESSION TRIGGERVETO [NORMAL|SELFTEST|MULTIREP|AFTER|RECOVERY]\n"
         << "Notes:\n"
         << "  - REGRESSION launches DOTSCRIPT; selected specs also validate marked\n"
         << "    transcript evidence and set final PASS/FAIL error status.\n"
@@ -1061,7 +1084,14 @@ void print_regression_usage()
         << "  - FIND is the question-to-spec bridge: LIST and SHOW both assume you\n"
         << "    already know the NAME. All terms must match. THE SPEC IS THE HOW-TO --\n"
         << "    read the script for worked usage, or RUN it to watch it work.\n"
-        << "  - ALL runs the curated default suite in declared order.\n"
+        << "  - ALL runs the curated default suite in declared order, and ends on a\n"
+        << "    SUMMARY: counts, the names of anything that FAILED, and the names of\n"
+        << "    every spec that is NOT GRADED -- ran, printed, and was checked by\n"
+        << "    nothing. The command's exit status comes from that tally.\n"
+        << "  - LOG tees the run to a file; bare LOG writes it under the TMP slot.\n"
+        << "    Lines on the ROUTED channel are NOT in it (see the .alt captures).\n"
+        << "    A log that cannot be opened REFUSES the run rather than running it\n"
+        << "    unlogged.\n"
         << "  - EVERY run -- ALL or a single spec -- is bracketed by the L3 catalog\n"
         << "    isolation arm, which reads the PRODUCTION workspace catalog before\n"
         << "    and after and proves its own detector first. Count its markers: an\n"
@@ -3874,7 +3904,37 @@ bool clear_pk_durability_child_captures()
     return true;
 }
 
-void run_regression_script(DbArea& area, const RegressionSpec& spec)
+// ---------------------------------------------------------------------------
+// WHAT A SPEC ACTUALLY REPORTED, 2026-09-13.
+//
+// REGRESSION ALL could not say. It ran every spec and then set its exit status
+// from the two isolation arms ALONE; each spec's verdict reached the operator
+// as text on a screen and reached the command's status as nothing at all.
+//
+// Worse, a verdict was actively ERASED. A passing validator ends this function
+// with clear_last_error(), and validate_regression_transcript returns TRUE for
+// RegressionValidator::None -- so a spec that asserts NOTHING cleared the
+// recorded failure of the spec before it. Measured on the 2026-09-12 staging
+// run: 29 specs ran, 9 printed a verdict, and VARCHARRESET -- last in
+// declaration order, passing -- was the whole basis of the final status.
+//
+// NotGraded is a first-class outcome and it is NOT a pass. It is the honest
+// name for RegressionValidator::None: the spec ran and nothing checked it.
+// Reporting it separately is the point. Twenty of the twenty-nine are in that
+// state and the suite has never said so out loud.
+enum class RegressionOutcome {
+    Passed,      // a validator ran and returned true
+    Failed,      // a validator ran and returned false
+    NotGraded,   // RegressionValidator::None -- nothing checked this run
+    Unmeasured   // the instrument failed: NOT a pass and NOT a failure
+};
+
+struct RegressionResult {
+    const char*       name;
+    RegressionOutcome outcome;
+};
+
+RegressionOutcome run_regression_script(DbArea& area, const RegressionSpec& spec)
 {
     const std::filesystem::path resolved = resolve_regression_script_path(spec);
 
@@ -3924,7 +3984,7 @@ void run_regression_script(DbArea& area, const RegressionSpec& spec)
 
     if (spec.validator == RegressionValidator::None) {
         run_script();
-        return;
+        return RegressionOutcome::NotGraded;
     }
 
     // Oracle validators consume exactly what the operator sees. Tee stdout to
@@ -3954,7 +4014,7 @@ void run_regression_script(DbArea& area, const RegressionSpec& spec)
                          "  the routed channel and the ALTERNATE capture was not taken.\n"
                          "  Nothing was validated. THIS IS NOT A PASS AND NOT A FAILURE.\n";
             xbase::error::set_last_error(xbase::error::e_invalid_argument());
-            return;
+            return RegressionOutcome::Unmeasured;
         }
     }
 
@@ -3978,17 +4038,25 @@ void run_regression_script(DbArea& area, const RegressionSpec& spec)
                          "  capture is EMPTY. The channel was taken and nothing arrived,\n"
                          "  which is an instrument failure, not a verdict.\n";
             xbase::error::set_last_error(xbase::error::e_invalid_argument());
-            return;
+            return RegressionOutcome::Unmeasured;
         }
     }
     if (!validate_regression_transcript(spec, transcript)) {
         xbase::error::set_last_error(xbase::error::e_invalid_argument());
-    } else {
-        // Expected corrective-error arms inside a spec may have recorded an
-        // error while proving the refusal. The regression command's final
-        // status is the validator verdict, so a validated PASS ends clear.
-        xbase::error::clear_last_error();
+        return RegressionOutcome::Failed;
     }
+
+    // Expected corrective-error arms inside a spec may have recorded an
+    // error while proving the refusal. The regression command's final
+    // status is the validator verdict, so a validated PASS ends clear.
+    //
+    // THE CLEAR STAYS PER-SPEC AND THE SUITE NO LONGER DEPENDS ON IT. It is
+    // correct for a single REGRESSION RUN, and it is what stops a refusal arm
+    // leaving a stale error behind it. What was wrong was the SUITE reading
+    // this global afterwards and calling it a result: it now tallies the
+    // RETURNED outcomes and sets its status once, at the end, from those.
+    xbase::error::clear_last_error();
+    return RegressionOutcome::Passed;
 }
 
 // ---------------------------------------------------------------------------
@@ -5115,6 +5183,167 @@ bool run_trigger_veto_arm_inner(DbArea& area, const std::string& mode)
 // was the one path with no measurement. A spec that wrote production during a
 // soak looked exactly like one that did not.
 //
+const char* outcome_label(RegressionOutcome o)
+{
+    switch (o) {
+        case RegressionOutcome::Passed:     return "PASS";
+        case RegressionOutcome::Failed:     return "FAIL";
+        case RegressionOutcome::NotGraded:  return "not graded";
+        case RegressionOutcome::Unmeasured: return "UNMEASURED";
+    }
+    return "?";
+}
+
+// ---------------------------------------------------------------------------
+// A LOG IS A TEE ON std::cout, AND IT HAS A BLIND SPOT IT DECLARES IN ITS OWN
+// HEADER. Lines written through cli::cmdout::print_line do NOT pass through a
+// std::cout rdbuf swap -- that is the documented reason capture_routed_channel
+// and AlternateCapture exist at all -- so they reach the screen and not this
+// file.
+//
+// Taking SET ALTERNATE here instead would make the log complete and turn every
+// routed-channel spec into "NOT RUN", because AlternateCapture REFUSES rather
+// than clobbers when the channel is already held. The tee is the choice that
+// leaves those specs measurable. The gap is printed INTO the log rather than
+// left for a reader to discover from a line that is not there -- an instrument
+// that hides what it cannot see is the failure this file spends five thousand
+// lines warning about.
+//
+// Nesting is fine and is exercised on every graded spec: run_regression_script
+// installs its own validator tee over whatever rdbuf it finds, which is this
+// one, and restores it afterwards.
+class SuiteLog {
+public:
+    SuiteLog() = default;
+    ~SuiteLog() { release(); }
+
+    SuiteLog(const SuiteLog&) = delete;
+    SuiteLog& operator=(const SuiteLog&) = delete;
+
+    // Returns false ONLY when a log was asked for and could not be opened.
+    // An empty path is "no log wanted" and succeeds.
+    bool open(const std::string& path, const char* what)
+    {
+        if (path.empty()) return true;
+
+        const std::filesystem::path p(path);
+        std::error_code ec;
+        if (p.has_parent_path()) {
+            std::filesystem::create_directories(p.parent_path(), ec);
+        }
+        file_.open(p, std::ios::out | std::ios::trunc | std::ios::binary);
+        if (!file_.is_open()) return false;
+
+        path_ = p.string();
+        file_ << what << " log\n"
+              << "  file       : " << path_ << "\n"
+                 "  BLIND SPOT : lines emitted on the ROUTED CHANNEL\n"
+                 "               (cli::cmdout::print_line) do NOT pass through a\n"
+                 "               std::cout tee and are NOT in this file. They were\n"
+                 "               on the operator's screen. Per-spec routed evidence\n"
+                 "               is in the .alt captures the transcript names.\n"
+                 "============================================================\n";
+        file_.flush();
+
+        original_ = std::cout.rdbuf();
+        tee_ = std::make_unique<TeeStreamBuf>(original_, file_.rdbuf());
+        std::cout.rdbuf(tee_.get());
+        return true;
+    }
+
+    void release()
+    {
+        if (!original_) return;
+        std::cout.flush();
+        std::cout.rdbuf(original_);   // restore BEFORE the tee is destroyed
+        original_ = nullptr;
+        tee_.reset();
+        file_.close();
+        std::cout << "REGRESSION: log written to " << path_ << "\n";
+    }
+
+private:
+    std::ofstream                  file_;
+    std::unique_ptr<TeeStreamBuf>  tee_;
+    std::streambuf*                original_ = nullptr;
+    std::string                    path_;
+};
+
+// ---------------------------------------------------------------------------
+// THE FOOTER IS THE POINT OF THIS CHANGE. A suite that runs twenty-nine specs
+// and ends on the last one's transcript has told the operator to scroll. A
+// suite that says what it measured has told them what it measured.
+//
+// NOT GRADED IS PRINTED IN FULL, deliberately. It is the number nobody could
+// see, and a reader who learns that most of the suite asserts nothing has
+// learned more from this block than from any green line above it.
+void print_regression_suite_summary(const std::vector<RegressionResult>& results,
+                                    bool before_ok,
+                                    bool after_ok)
+{
+    std::size_t passed = 0, failed = 0, not_graded = 0, unmeasured = 0;
+    for (const auto& r : results) {
+        switch (r.outcome) {
+            case RegressionOutcome::Passed:     ++passed;     break;
+            case RegressionOutcome::Failed:     ++failed;     break;
+            case RegressionOutcome::NotGraded:  ++not_graded; break;
+            case RegressionOutcome::Unmeasured: ++unmeasured; break;
+        }
+    }
+
+    std::cout << "\n============================================================\n"
+                 "REGRESSION ALL SUMMARY\n"
+                 "============================================================\n"
+              << "  specs run      : " << results.size() << "\n"
+              << "  passed         : " << passed << "\n"
+              << "  FAILED         : " << failed << "\n"
+              << "  UNMEASURED     : " << unmeasured << "\n"
+              << "  not graded     : " << not_graded << "\n"
+              << "  isolation arm  : BEFORE " << (before_ok ? "ok" : "FAILED")
+              << ", AFTER " << (after_ok ? "ok" : "FAILED") << "\n";
+
+    if (failed) {
+        std::cout << "\n  FAILED:\n";
+        for (const auto& r : results) {
+            if (r.outcome == RegressionOutcome::Failed) {
+                std::cout << "    " << r.name << "\n";
+            }
+        }
+    }
+
+    if (unmeasured) {
+        std::cout << "\n  UNMEASURED -- the instrument failed. NOT a pass and NOT a\n"
+                     "  failure. These specs measured nothing this run:\n";
+        for (const auto& r : results) {
+            if (r.outcome == RegressionOutcome::Unmeasured) {
+                std::cout << "    " << r.name << "\n";
+            }
+        }
+    }
+
+    if (not_graded) {
+        std::cout << "\n  NOT GRADED -- ran, printed a transcript, and NOTHING checked\n"
+                     "  it. These specs cannot go red, so a green suite says nothing\n"
+                     "  whatever about them:\n";
+        std::string line = "   ";
+        for (const auto& r : results) {
+            if (r.outcome != RegressionOutcome::NotGraded) continue;
+            const std::string n(r.name);
+            if (line.size() + n.size() + 1 > 70) {
+                std::cout << line << "\n";
+                line = "   ";
+            }
+            line += " ";
+            line += n;
+        }
+        if (line.size() > 3) std::cout << line << "\n";
+    }
+
+    const bool ok = !failed && !unmeasured && before_ok && after_ok;
+    std::cout << "\n  VERDICT: " << (ok ? "PASS" : "FAIL") << "\n"
+                 "============================================================\n";
+}
+
 // THE ARM IS DELIBERATELY *NOT* GATED ON spec.mints_catalog, and this is the
 // whole point rather than a detail. 19b1928c4 fixed ten specs that mint and
 // were flagged false; the flag is set BY HAND from a reading of three verbs,
@@ -5127,18 +5356,58 @@ bool run_trigger_veto_arm_inner(DbArea& area, const std::string& mode)
 // So the arm runs around EVERY explicit run, including specs believed inert.
 // The cost is one directory erase, two scratch mints and two production reads;
 // REGRESSION RUN is an interactive act, not a hot loop.
-void run_regression_script_measured(DbArea& area, const RegressionSpec& spec)
+void run_regression_script_measured(DbArea& area,
+                                    const RegressionSpec& spec,
+                                    const std::string& log_path)
 {
+    SuiteLog log;
+    if (!log.open(log_path, "REGRESSION RUN")) {
+        std::cout << "REGRESSION " << spec.name << ": NOT RUN -- could not open the\n"
+                     "  log at " << log_path << "\n"
+                     "  A run whose evidence went nowhere must not be mistaken for a\n"
+                     "  logged one, so nothing was run. Fix the path and re-run.\n";
+        xbase::error::set_last_error(xbase::error::e_invalid_argument());
+        return;
+    }
+
     const bool before_ok = run_isolation_arm(area, "BEFORE");
-    run_regression_script(area, spec);
+    const RegressionOutcome outcome = run_regression_script(area, spec);
     const bool after_ok = run_isolation_arm(area, "AFTER");
-    if (!before_ok || !after_ok) {
+
+    std::cout << "\n  " << spec.name << ": " << outcome_label(outcome)
+              << (outcome == RegressionOutcome::NotGraded
+                      ? "  (it ran, and NOTHING checked it)"
+                      : "")
+              << "\n";
+
+    // The isolation arms are a SECOND condition, not the only one. The spec's
+    // own outcome is now carried OUT of the runner rather than inferred from a
+    // global that another spec was free to clear.
+    if (!before_ok || !after_ok ||
+        outcome == RegressionOutcome::Failed ||
+        outcome == RegressionOutcome::Unmeasured) {
         xbase::error::set_last_error(xbase::error::e_invalid_argument());
     }
 }
 
-void run_regression_default_suite(DbArea& area)
+void run_regression_default_suite(DbArea& area, const std::string& log_path)
 {
+    // REFUSE RATHER THAN RUN UNLOGGED. An operator who asked for a log and got
+    // a run instead has no way to know the evidence went nowhere, which is the
+    // PKDURABLE lesson (a validator reported PASS on a run that never
+    // happened) applied one level up.
+    SuiteLog log;
+    if (!log.open(log_path, "REGRESSION ALL")) {
+        std::cout << "REGRESSION ALL: NOT RUN -- could not open the log at\n"
+                  << "  " << log_path << "\n"
+                     "  A run whose evidence went nowhere must not be mistaken for a\n"
+                     "  logged one, so nothing was run. Fix the path and re-run.\n";
+        xbase::error::set_last_error(xbase::error::e_invalid_argument());
+        return;
+    }
+
+    std::vector<RegressionResult> results;
+
     // Plan condition 2: "REGRESSION ALL leaves PRODUCTION unchanged." The arm
     // reads production's high-water before and after everything below, and the
     // BEFORE pass is also what proves the detector is alive on this build.
@@ -5146,12 +5415,27 @@ void run_regression_default_suite(DbArea& area)
 
     for (const auto& spec : kRegressionSpecs) {
         if (!spec.in_default_suite) continue;
-        run_regression_script(area, spec);
+        results.push_back({ spec.name, run_regression_script(area, spec) });
     }
 
     const bool after_ok = run_isolation_arm(area, "AFTER");
-    if (!before_ok || !after_ok) {
+
+    print_regression_suite_summary(results, before_ok, after_ok);
+
+    // THE STATUS IS SET ONCE, HERE, FROM THE TALLY. It used to be whatever the
+    // last spec happened to leave in a global -- and since a passing spec
+    // CLEARS that global and an ungraded spec counts as passing, a failure in
+    // the middle of the suite could not survive to the end of it.
+    std::size_t failed = 0, unmeasured = 0;
+    for (const auto& r : results) {
+        if (r.outcome == RegressionOutcome::Failed)     ++failed;
+        if (r.outcome == RegressionOutcome::Unmeasured) ++unmeasured;
+    }
+
+    if (!before_ok || !after_ok || failed || unmeasured) {
         xbase::error::set_last_error(xbase::error::e_invalid_argument());
+    } else {
+        xbase::error::clear_last_error();
     }
 }
 
@@ -5577,6 +5861,54 @@ bool run_trigger_veto_arm(DbArea& area, const std::string& mode)
     return verdict;
 }
 
+// ---------------------------------------------------------------------------
+// AIF-121's lesson applied here rather than re-learned: A TAIL THIS DOES NOT
+// UNDERSTAND IS REFUSED, NOT IGNORED. USE swallowed unknown arguments for
+// years and opened into the wrong area in silence. An operator who typed LOGG
+// and got an unlogged run would have exactly the same problem: a command that
+// did something other than what was asked and said nothing.
+struct LogOption {
+    bool        ok = true;   // false: the tail was not understood; refuse.
+    std::string path;        // empty: no log was requested.
+};
+
+LogOption parse_log_option(std::istringstream& in, const std::string& default_name)
+{
+    LogOption result;
+
+    std::string tok;
+    if (!(in >> tok)) return result;             // nothing after the verb
+
+    if (upper_copy(tok) != "LOG") {
+        std::cout << "REGRESSION: unrecognized argument '" << tok << "'.\n"
+                     "  Expected LOG [<path>], or nothing at all. Nothing was run.\n";
+        result.ok = false;
+        return result;
+    }
+
+    std::string path;
+    if (in >> path) {
+        // A quoted path may carry spaces; take the rest of the line and strip.
+        if (!path.empty() && path.front() == '"') {
+            std::string rest;
+            std::getline(in, rest);
+            path += rest;
+            const std::size_t close = path.find('"', 1);
+            path = (close == std::string::npos) ? path.substr(1)
+                                                : path.substr(1, close - 1);
+        }
+        result.path = path;
+        return result;
+    }
+
+    // Bare LOG: the TMP slot, under a stable name. Stable rather than stamped
+    // on purpose -- the .alt captures beside it behave the same way, and an
+    // operator who wants history gives a path.
+    result.path = (dottalk::paths::get_slot(dottalk::paths::Slot::TMP) /
+                   default_name).string();
+    return result;
+}
+
 } // namespace
 
 void cmd_REGRESSION(DbArea& area, std::istringstream& in)
@@ -5600,7 +5932,9 @@ void cmd_REGRESSION(DbArea& area, std::istringstream& in)
     }
 
     if (op == "ALL") {
-        run_regression_default_suite(area);
+        const LogOption lg = parse_log_option(in, "regression_all.log");
+        if (!lg.ok) return;
+        run_regression_default_suite(area, lg.path);
         return;
     }
 
@@ -5626,9 +5960,12 @@ void cmd_REGRESSION(DbArea& area, std::istringstream& in)
         }
         if (op == "SHOW") {
             print_regression_show(*spec);
-        } else {
-            run_regression_script_measured(area, *spec);
+            return;
         }
+        const LogOption lg =
+            parse_log_option(in, std::string("regression_") + spec->name + ".log");
+        if (!lg.ok) return;
+        run_regression_script_measured(area, *spec, lg.path);
         return;
     }
 
@@ -5658,7 +5995,10 @@ void cmd_REGRESSION(DbArea& area, std::istringstream& in)
     }
 
     if (const RegressionSpec* spec = find_regression_spec(op)) {
-        run_regression_script_measured(area, *spec);
+        const LogOption lg =
+            parse_log_option(in, std::string("regression_") + spec->name + ".log");
+        if (!lg.ok) return;
+        run_regression_script_measured(area, *spec, lg.path);
         return;
     }
 

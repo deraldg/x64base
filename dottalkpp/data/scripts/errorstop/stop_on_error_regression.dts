@@ -1,0 +1,31 @@
+* stop_on_error_regression.dts
+* Proves the stop_on_error[severity] threshold.
+*
+* Deterministic trigger: STOP_ON_ERROR with an invalid severity records an
+* error-severity canonical code through the messaging/emit path
+* (e_invalid_argument), so no table fixtures are needed.
+*
+* Expected behavior:
+*   - Phase 1 (threshold OFF): the recorded error does NOT abort; the run
+*     continues and PASS-1 prints.
+*   - Phase 2 (threshold ERROR): the recorded error DOES abort the run at the
+*     failing line; a "stopped (STOP_ON_ERROR ERROR)" line prints and NEITHER
+*     FAIL-2 NOR FAIL-3 print.
+*
+* Run:  DOTSCRIPT dottalkpp/data/scripts/errorstop/stop_on_error_regression.dts
+*   or: dottalkpp.exe --script dottalkpp/data/scripts/errorstop/stop_on_error_regression.dts
+
+FORMULA "STOP_ON_ERROR-REGRESSION-BEGIN"
+
+* --- Phase 1: threshold OFF -> a recorded error must NOT abort ---
+STOP_ON_ERROR OFF
+STOP_ON_ERROR __BOGUS_SEVERITY__
+FORMULA "PASS-1-OFF-CONTINUED-PAST-ERROR"
+
+* --- Phase 2: threshold ERROR -> a recorded error MUST abort here ---
+STOP_ON_ERROR ERROR
+STOP_ON_ERROR __BOGUS_SEVERITY__
+FORMULA "FAIL-2-SHOULD-NOT-PRINT-AFTER-ABORT"
+
+* If the abort works, execution never reaches this end marker.
+FORMULA "FAIL-3-END-SHOULD-NOT-PRINT"

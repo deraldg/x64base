@@ -7,7 +7,21 @@
 // owner: member.derald
 // status: supported
 
-// src/cli/cmd_cobol.cpp
+// src/edu/edu_cobol.cpp
+//
+// CORRECTED 2026-09-13. This line read `src/cli/cmd_cobol.cpp` -- a path that
+// does not exist. The file moved to src/edu/ and the banner outlived the move,
+// so a reader who went looking for the name the REGISTRATION implies
+// (shell_commands.cpp:607 registers cmd_COBOL) found nothing. Measured: one
+// command, three names -- registered cmd_COBOL, defined here at :490, and
+// announced by this banner as a third file.
+//
+// edu_COBOL IS THE FOURTH NAME AND IT IS A LIE. edu_missing_shims.cpp:88
+// defines edu_COBOL, whose body prints "Restore the real COBOL implementation
+// before relying on this educational command." It has NO CALL SITES anywhere
+// in src/, and the implementation it calls missing is in this file, in the same
+// directory. Left in place rather than removed here: deleting a symbol changes
+// the build, and this commit touches no source that participates in it.
 
 // @dottalk.usage v1
 // owner: EDU|COBOL

@@ -1,0 +1,28 @@
+* ============================================================
+*  CALC output-routing regression
+*  Proves the std::cout -> cli::cmdout::print_line change preserves
+*  every ValueKind path (Bool / Number / String / Date / empty / Error).
+*  Read-only: CALC expression mode needs no open table.
+*  Run: DOTSCRIPT scripts\calc\calc_output_regression.dts
+*       (or paste the CALC lines at the . prompt)
+* ============================================================
+SET ECHO ON
+ECHO === 1. empty expr  -> expect: .F. ===
+CALC
+ECHO === 2. number, int collapse  -> expect: 3 ===
+CALC 1 + 2
+ECHO === 3. number, decimal + trailing-zero trim  -> expect: 0.25 ===
+CALC 1 / 4
+ECHO === 4. number, half  -> expect: 0.5 ===
+CALC 1 / 2
+ECHO === 5. bool true  -> expect: .T. ===
+CALC 1 < 2
+ECHO === 6. bool false -> expect: .F. ===
+CALC 2 < 1
+ECHO === 7. string  -> expect: ABC ===
+CALC UPPER("abc")
+ECHO === 8. date  -> expect: today as 8 digits YYYYMMDD ===
+CALC DATE()
+ECHO === 9. malformed -> expect: .F. (quiet-fail preserved) ===
+CALC NOSUCHFUNC(1)
+ECHO === CALC regression complete ===
