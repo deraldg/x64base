@@ -191,6 +191,10 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     registry().add("TABLE_BUFFER", [](DbArea& A, std::istringstream& S){ cmd_TABLE_BUFFER(A,S); });
     registry().add("COMMIT",       [](DbArea& A, std::istringstream& S){ cmd_COMMIT(A,S);       relations_api::refresh_if_enabled(); });
     registry().add("ROLLBACK",     [](DbArea& A, std::istringstream& S){ cmd_ROLLBACK(A,S);    relations_api::refresh_if_enabled(); });
+    // AIF-160: COMMIT ALL's atomic twin. A SEPARATE verb by decision 6.4 -- it
+    // refreshes for the same reason COMMIT does, since it applies the same
+    // buffered writes across several areas at once.
+    registry().add("GROUPCOMMIT",  [](DbArea& A, std::istringstream& S){ cmd_GROUPCOMMIT(A,S); relations_api::refresh_if_enabled(); });
 
     // Filters change visibility without requiring a cursor move. Relation
     // projections may change even when recno is unchanged.

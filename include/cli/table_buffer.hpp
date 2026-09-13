@@ -22,6 +22,13 @@ void cmd_TABLE_BUFFER(xbase::DbArea& A, std::istringstream& in);
 void cmd_COMMIT(xbase::DbArea& A, std::istringstream& in);
 void cmd_ROLLBACK(xbase::DbArea& A, std::istringstream& in);
 
+// AIF-160. COMMIT ALL's atomic twin, and a SEPARATE VERB by decision 6.4:
+// COMMIT and COMMIT ALL keep their exact behaviour. The contrast is the point --
+// COMMIT ALL is a SEQUENCE of independent commits and a crash between two of its
+// members leaves every part consistent and the whole wrong; GROUPCOMMIT is one
+// decision across N journals.
+void cmd_GROUPCOMMIT(xbase::DbArea& A, std::istringstream& in);
+
 // ---------------------------------------------------------------------------
 // AIF-159: a COMMIT verdict a caller can read.
 //

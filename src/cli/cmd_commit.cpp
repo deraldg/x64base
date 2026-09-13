@@ -1319,6 +1319,38 @@ void cmd_COMMIT(xbase::DbArea& A, std::istringstream& in) {
 // would freeze wording that is not ready, and every one of them would need a
 // locale row. std::cout matches how the durable_sync warnings in this file and
 // in cmd_workspace.cpp already report.
+// @dottalk.usage v1
+// owner: DOT|GROUPCOMMIT
+// command: GROUPCOMMIT
+// category: data
+// status: supported
+// noargs: mutate
+// effect: commit
+// mutates: table-data table-buffer memo stale-state index journal group-log
+// usage-access: GROUPCOMMIT USAGE
+// summary:
+//   Commit every buffered area as ONE atomic decision, so a crash leaves
+//   either ALL members applied or NONE. COMMIT ALL's atomic twin.
+// usage:
+//   GROUPCOMMIT USAGE
+//   GROUPCOMMIT
+//   GROUPCOMMIT AUTO
+//   GROUPCOMMIT MANUAL
+// notes:
+//   AUTO is the default. Arguments may appear in any order and the LAST of
+//   AUTO/MANUAL wins; an unrecognized argument is REFUSED and nothing commits.
+//   Refused outright while a SQL transaction is active.
+//   Requires TABLE BUFFER ON PERSISTENT for the guarantee to survive a power
+//   cut. TABLE BUFFER PERSISTENT alone sets the mode WITHOUT enabling the
+//   buffer, so no journal is opened and there is nothing to recover.
+//   If a member does not finish applying, the group has still COMMITTED and
+//   that member's journal replays at the next USE. Its buffer is left holding
+//   a copy of an ALREADY-COMMITTED transaction, so COMMIT is refused and
+//   CLOSE, USE and QUIT each prompt and cancel. ROLLBACK is the exit: it
+//   discards the stale buffer and KEEPS the journal.
+// related:
+//   COMMIT, ROLLBACK, TABLE BUFFER, USE
+//
 void cmd_GROUPCOMMIT(xbase::DbArea& A, std::istringstream& in) {
     (void)A;   // the group is gathered from the engine, not from the current area
 

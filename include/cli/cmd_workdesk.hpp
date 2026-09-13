@@ -30,8 +30,14 @@
 // workspace level: not a silent engine, an unpublished composition.
 //
 // `workareas::WorkAreaSet` is NOT this. It is a flat vector of MAX_AREA slots
-// bound to one engine, with no workspace dimension at all -- its print() emits
-// `Slot Cur Name`. WORKDESK sits ABOVE it and changes nothing about it.
+// bound to one engine, with no workspace dimension at all. WORKDESK sits ABOVE
+// it and changes nothing about it.
+//
+// An earlier version of this paragraph added "-- its print() emits `Slot Cur
+// Name`", which was true of the code and false about the world: that formatter
+// had ZERO callers and was removed 2026-09-11. THIS COMMENT WAS ITS ONLY
+// AUDIENCE. Citing a dead surface as canonical is how the next reader comes to
+// build against a shape nothing emits.
 //
 // IT IS NOT A DESKTOP. No windows, no focus, no z-order, no visual anything.
 // "Desk" is the collective noun for the workspaces a session has open, the way
@@ -91,32 +97,9 @@ struct WorkspaceView {
     std::size_t           open_areas{0};
 };
 
-// One table NAME resolving to more than one open area.
-//
-// THIS IS A NAME COLLISION, NOT A SECOND HANDLE ON ONE FILE, and the first
-// two cuts of this file's own spec went red learning the difference.
-//
-// `USE <t> AGAIN` is the ONE route that CANNOT produce it. cmd_use.cpp
-// resolves the alias before it touches the area -- find_open_area_by_alias()
-// then derive_distinct_alias() (cmd_use.cpp:472/492) -- renames the second
-// instance STUDENTS -> STUDENTS2 and announces the rename. Two handles, two
-// NAMES. The fanout pass below keys on DbArea::name(), which IS the logical
-// name, so on that path it can never fire, by construction.
-//
-// Every OTHER opener skips that arm. WORKSPACE OPEN <dir> dedupes on PATH and
-// not on name (cmd_workspace.cpp:1511); WORKSPACE ADD, WORKSPACE LOAD and both
-// schema-restore paths apply a saved alias verbatim; CREATE and AUTODBF take
-// the file stem straight from DbArea::open(). So the condition reported here
-// is the one that occurs in production: TWO DIFFERENT FILES SHARING A
-// BASENAME, opened from two directories -- x64\BUILDING.dbf and
-// x32\BUILDING.dbf in two workspaces, which is where this was first seen.
-//
-// IT IS NOT AN ERROR AND IT IS NOT REPAIRED HERE. It is reported because the
-// name-based resolvers are FIRST-WINS: find_open_area_in_workspace_ci()
-// returns the lowest matching slot (workarea_util.cpp:171) and SQL resolves
-// table names through it, so the second area is open and unreachable by name.
-// A caller that reads this section can qualify on purpose instead of taking
-// first-wins by accident.
+// One table name resolving to more than one open area. The manual calls this
+// "the case a global registry cannot represent", and it is SUPPORTED -- `USE
+// <t> AGAIN` asks for it on purpose. Recorded as a fact, never as an error.
 struct NameFanout {
     std::string                name;    // upper-cased
     std::vector<int>           slots;   // ascending
