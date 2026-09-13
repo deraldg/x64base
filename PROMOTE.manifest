@@ -159,7 +159,30 @@ include/**
 bindings/**
 
 # --- runtime scaffold (structure + ini; the exe is NOT published) ----------
-dottalkpp/bin/*.ini
+#
+# NOT A GLOB, AND init.ini IS THE REASON. `dottalkpp/bin/*.ini` swept up the
+# USER ini alongside the product ones. datarun processes two on startup:
+# dottalkpp.ini is the SYSTEM ini, and init.ini is the USER ini -- one
+# developer's personal startup, published to every reader of main.
+#
+# MEASURED 2026-09-13: dev's init.ini has been unchanged since May and runs
+# CHRISTMAS and BIBLETALK QUOTE. biblebase is gitignored and never ships, so
+# every published build printed `EDU_BIBLETALK QUOTE failed: BibleTalk SQLite
+# seed not found` on first start -- the first thing a new reader of main saw.
+# The owner commented both lines in STAGING's copy; this glob would have
+# reverted that on the next overlay run and said NOTHING, because the overlay
+# reports a file count and not a diff.
+#
+# Owner ruling 2026-09-13: a user ini is not product. The three below are.
+#
+# DROPPING IT HERE DOES NOT REMOVE IT FROM STAGING. The overlay is additive and
+# has no purge path at all (rebuild-staging.ps1: no Remove-Item, no delete --
+# see FINDING_THE_OVERLAY_IS_ADDITIVE_ONLY_AND_MAIN_ACCUMULATES). Staging keeps
+# the copy it already has, which is the commented one, and that is what
+# publishes from here on.
+dottalkpp/bin/dottalkpp.ini
+dottalkpp/bin/shutdown.ini
+dottalkpp/bin/vdisk.ini
 
 # --- databuild / sample-build scripts --------------------------------------
 dottalkpp/scripts/mcc/*.ps1
