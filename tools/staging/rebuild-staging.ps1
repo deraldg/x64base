@@ -18,6 +18,19 @@
            applying the .gitignore deny-list as a hard guard.
         4. You review the git diff, commit, and push.
 
+    WHAT IT REPORTS, and both halves matter because each is a way the plan can
+    lie about itself:
+        UNTRACKED, NOT PUBLISHED  -- a manifest glob matched a file git is not
+                                     tracking, so it is dropped (OI-018).
+        DIRTY, PUBLISHED ANYWAY   -- a tracked file whose worktree bytes differ
+                                     from HEAD. It publishes, and what reaches
+                                     main is the UNCOMMITTED version.
+
+    `git ls-files` decides WHICH files travel. Nothing decides WHICH VERSION:
+    Copy-Item takes the worktree bytes. So main can hold source that no commit
+    in development explains. That is reported here, not refused -- see the
+    block at the dirty check for why.
+
     This script does the file work. It does NOT commit or push -- that stays a
     deliberate, reviewed human step. It also never touches development; the
     authority tree is read-only here.
@@ -343,6 +356,74 @@ if ($dropped.Count) {
     Write-Host ""
     if ($StrictTracked) {
         throw "Refusing to overlay: -StrictTracked, and $($dropped.Count) manifest match(es) are untracked."
+    }
+}
+
+# ---------------------------------------------------------------------------
+# DIRTY, PUBLISHED ANYWAY.
+# See claude/FINDING_THE_OVERLAY_GATES_ON_MEMBERSHIP_NOT_ON_CONTENT.md
+#
+# `git ls-files` above answers WHICH files publish. NOTHING ANSWERED WHICH
+# VERSION. Copy-Item takes the worktree bytes, so a tracked file carrying
+# uncommitted edits publishes those edits, and main ends up holding source that
+# no commit in development explains.
+#
+# MEASURED 2026-09-13: the AIF-161 durable_sync fix and GROUPCOMMIT's
+# registration were live on origin/main a full day BEFORE b3177b3b3 committed
+# them to development. They had sat dirty in the worktree across a publish.
+# Nothing was wrong with the code. What was wrong is that review happens at
+# commit, and those bytes reached the public repository without passing it.
+#
+# REPORTING, NOT REFUSING, and that is a ruling rather than a half-measure.
+# Development's worktree is dirty nearly always -- 28 files the day this was
+# written, from a lane six days old -- so a hard refusal would block almost
+# every publish on an unrelated lane's tidiness. -StrictTracked already exists
+# for an operator who wants the stricter contract. This block exists so the
+# condition is never SILENT, which is the half this project treats as the
+# defect.
+#
+# A FAILED CHECK MUST NOT READ AS A CLEAN ONE. If git cannot answer, this says
+# UNMEASURED rather than printing the reassuring line -- the same rule the
+# untracked block above was written under.
+# ---------------------------------------------------------------------------
+$dirtyRaw = @(& git -C $dev -c core.quotepath=false diff HEAD --name-only)
+if ($LASTEXITCODE -ne 0) {
+    Write-Host ""
+    Write-Host "DIRTY CHECK: UNMEASURED -- 'git diff HEAD' failed in $dev." -ForegroundColor Red
+    Write-Host "  This is not a clean result. Nothing is known about whether the" -ForegroundColor Red
+    Write-Host "  overlay is about to publish uncommitted work." -ForegroundColor Red
+    Write-Host ""
+}
+else {
+    $dirtyRel = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
+    foreach ($d in $dirtyRaw) { if ($d) { [void]$dirtyRel.Add(($d -replace '/', '\')) } }
+
+    $dirtyPublished = @($plan | Where-Object { $dirtyRel.Contains($_.Rel) } | Sort-Object Rel)
+
+    if ($dirtyPublished.Count) {
+        Write-Host ""
+        Write-Host "DIRTY, PUBLISHED ANYWAY ($($dirtyPublished.Count) files)" -ForegroundColor Yellow
+        Write-Host "  Tracked, so they travel -- but their worktree bytes differ from HEAD." -ForegroundColor DarkGray
+        Write-Host "  What reaches main is the UNCOMMITTED version, and no commit in" -ForegroundColor DarkGray
+        Write-Host "  development explains it. Commit them first, or publish knowing main" -ForegroundColor DarkGray
+        Write-Host "  will be ahead of its own history." -ForegroundColor DarkGray
+
+        $show = [Math]::Min($dirtyPublished.Count, 40)
+        $dirtyPublished | Select-Object -First $show |
+            ForEach-Object { Write-Host ("         {0}" -f $_.Rel) }
+        if ($dirtyPublished.Count -gt $show) {
+            Write-Host ("         ... and {0} more" -f ($dirtyPublished.Count - $show)) -ForegroundColor DarkGray
+        }
+
+        $dirtyLog = Join-Path $dev "tmp\overlay_dirty.txt"
+        $null = New-Item -ItemType Directory -Force -Path (Split-Path -Parent $dirtyLog)
+        $dirtyPublished | ForEach-Object { $_.Rel } |
+            Set-Content -Encoding UTF8 -LiteralPath $dirtyLog
+        Write-Host "  full list: $dirtyLog" -ForegroundColor DarkGray
+        Write-Host ""
+    }
+    else {
+        Write-Host "Dirty files in the overlay plan: none -- every byte published has a commit behind it." -ForegroundColor DarkGray
     }
 }
 
