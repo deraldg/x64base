@@ -181,6 +181,14 @@ dottalkpp/data/manuals/**
 # git does not track those.
 dottalkpp/data/projects/**
 dottalkpp/data/tests/**
+# The owner's preset minidb schemas ("we use workspaces for preset minidb for
+# demos, a versatile and important schema", ruling 2026-09-12) plus
+# WORKSPACES.dbf/.dtx, the catalog itself. NOT everything under this directory
+# is an input: seven .dtschema files are WORKSPACE SAVE OUTPUTS, denied in
+# .gitignore, so this glob never sees them. See the "Engine-written posture
+# artifacts" block there for the list, and for why pk_posture -- the one v3
+# posture, carrying machine-absolute DBFROOT/IDXROOT/LMDBROOT -- could not be
+# sterilised the way the seven local-path .dts files were.
 dottalkpp/data/workspaces/**
 dottalkpp/data/schemas/*.txt
 dottalkpp/data/schemas/help/**

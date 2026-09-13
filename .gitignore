@@ -253,6 +253,132 @@ __pycache__/
 /dottalkpp/data/sys/*.cdx
 
 # ---------------------------------------------------------------------------
+# Engine-written posture artifacts under data/workspaces (2026-09-12)
+#
+# WORKSPACE SAVE <name> writes <name>.dtschema into the workspaces root. Six
+# such OUTPUTS were tracked in 35612d078 on the strength of cmd_regression.cpp
+# NAMING them -- and a grep for a name cannot tell a read from a write. That is
+# the same defect the closure check was built to kill, run backwards. Each file
+# below is produced by the spec that mentions it:
+#
+#   pk_posture.dtschema       workspace_load_posture_keys.dts:192  SAVE .. V3
+#   topo_chain.dtschema       mcc_topology_workspaces.dts:107      SAVE
+#   topo_deep.dtschema        mcc_topology_workspaces.dts:170      SAVE
+#   topo_fan.dtschema         mcc_topology_workspaces.dts:227      SAVE
+#   topo_diamond.dtschema     mcc_topology_workspaces.dts:277      SAVE
+#   topo_flat.dtschema        mcc_topology_workspaces.dts:324      SAVE
+#   keyregr_sandbox.dtschema  key_metadata_regression.dts:46       SAVE
+#
+# keyregr_sandbox was never tracked. It is named here so the CLASS is closed
+# rather than the six instances that happened to get committed -- in a repo
+# with status.showUntrackedFiles=no, an untracked artifact is one `git add -A`
+# away from becoming a tracked one, and nobody would see it happen.
+#
+# TRACKING ONE OF THESE IS NOT MERELY NOISE. pk_posture is the only DTSHEMA 3
+# posture in the tree, and a v3 posture carries its own DBFROOT/IDXROOT/LMDBROOT
+# lines -- so the committed copy shipped three D:\code\ccode paths into a
+# repository other people clone (LOCAL-PATH GUARD, OI-017 class).
+#
+# IT COULD NOT BE REPAIRED IN PLACE. .dtschema is read by cmd_workspace.cpp's
+# own parser (workspace_load_from_stream, :2613), which performs NO macro
+# substitution: DBFROOT is taken as a literal path and resolve_member_dbf()
+# either uses it absolute or joins it to the SETPATH slot. The &_DBF /
+# &_INDEXES / &_LMDB treatment that sterilised the seven .dts files has no
+# meaning in this format. The roots are machine-absolute BECAUSE THE ENGINE
+# WROTE THEM ON THIS MACHINE. The file is the wrong thing to fix; tracking it
+# was the defect.
+#
+# All seven are rewritten by their spec on the next run, and the fixtures
+# pk_posture points at (DBF/SANDBOX/PKA, DBF/SANDBOX/PKB) are ERASED at the end
+# of that run (workspace_load_posture_keys.dts:260-265), so a committed copy is
+# stale the moment it lands.
+#
+# HAND-AUTHORED POSTURES ARE NOT AFFECTED and stay tracked. cascade_all,
+# mcc_x64, metadata, my_custom_workspace and the rest are INPUTS -- the owner's
+# preset minidb schemas, "a versatile and important schema" (ruling
+# 2026-09-12) -- and cascade_env_regression.dts:30 says so in as many words:
+# "Requires workspaces/cascade_all.dtschema".
+#
+# Denied BY NAME rather than by pattern. A glob over *.dtschema here would deny
+# the presets too, and *_sandbox / topo_* would be a guess about future names.
+# A spec that starts writing a new posture must add its name here; that is a
+# deliberate cost, paid once, by the person who knows it is an output.
+# ---------------------------------------------------------------------------
+/dottalkpp/data/workspaces/pk_posture.dtschema
+/dottalkpp/data/workspaces/topo_chain.dtschema
+/dottalkpp/data/workspaces/topo_deep.dtschema
+/dottalkpp/data/workspaces/topo_diamond.dtschema
+/dottalkpp/data/workspaces/topo_fan.dtschema
+/dottalkpp/data/workspaces/topo_flat.dtschema
+/dottalkpp/data/workspaces/keyregr_sandbox.dtschema
+
+# ---------------------------------------------------------------------------
+# FIELDMGR engine scratch tables, tree-wide (AIF-133; ignored here 2026-09-12)
+#
+# A FIELDMGR restructure writes two extra tables beside the real one and both
+# keep the .dbf extension:
+#
+#     STUDENTS.dbf  ->  STUDENTS.__fldtmp.dbf   the rewrite in progress
+#                       STUDENTS.__fldbak.dbf   the pre-change backup, KEPT
+#
+# THE ENGINE ALREADY KNOWS THESE ARE NOT TABLES AND GIT DID NOT. AIF-133 taught
+# every directory scan to skip them -- dottalk::is_engine_scratch_table() in
+# include/dottalk/scratch_sidecar.hpp, matching the marker as a trailing
+# segment of the STEM (the extension really is .dbf) and case-insensitively.
+# Nothing taught the deny-list, so a class the engine deliberately hides stayed
+# one `git add -A` from being published, and with status.showUntrackedFiles=no
+# in this repo it would have happened in silence.
+#
+# WHAT AIF-133 MEASURED IS WHY THESE MUST NOT SHIP. `.__fldbak` sorts BEFORE
+# `.dbf`, so before the fix the backup did not merely tag along -- it took
+# AREA 0 and shifted every area number after it:
+#
+#     Area 0: opened 'REALTAB.__fldbak.dbf'    <- the BACKUP is the ACTIVE area
+#     Area 1: opened 'REALTAB.__FLDTMP.dbf'
+#     Area 2: opened 'REALTAB.dbf'
+#
+# A posture saved from that state records a backup as the active table, and a
+# MINIDB save carries its bytes into the container (22,425 B, 17% of one
+# observed payload) where WRITEBACK puts them back on disk.
+#
+# A BACKUP THAT CANNOT RESTORE IS NOT WORTH PUBLISHING EITHER, measured on
+# dottalkpp/data/workspaces/WORKSPACES.__fldbak.dbf 2026-09-12: 21 fields and
+# 273 rows against the live table's 22 and 282, with all 20 pre-existing
+# columns byte-identical and PARENT_ID normalized blank -> 0 by the same append
+# that added TREE_DEPTH. It has NO .__fldbak.dtx of its own, so its SNAPSHOT
+# memo pointers -- byte-identical to the live table's -- read through to the
+# LIVE sidecar, which now holds 282 rows against this header's 273. It is a
+# structure snapshot, not a recovery copy, and 196 KB of binary that cannot
+# restore is pure weight in a repository other people clone.
+#
+# Sidecars are matched too (`.*` rather than `.dbf`): a scratch table's own
+# .dtx/.cdx would be the same class, and denying the table while publishing its
+# index is the half-fix that reads as a corrupt pair.
+#
+# THE BRACKET CLASSES ARE NOT DECORATION -- THEY ARE THE ONE HOLE AIF-133
+# NAMED IN ADVANCE, AND A PLAIN LOWER-CASE PATTERN WALKS STRAIGHT INTO IT.
+# scratch_sidecar.hpp says so in as many words: "a guard that missed
+# `.__FLDBAK.DBF` would have a hole in exactly the case nobody tests. The
+# verification run used one upper-case form for that reason." The C++ predicate
+# lowercases the stem before comparing; GITIGNORE HAS NO SUCH STEP and no (?i)
+# flag, so `**/*.__fldbak.*` matches the lower-case spelling ONLY. Measured
+# 2026-09-12 against real git in a scratch repo: `REALTAB.__FLDBAK.DBF` came
+# back TRACKED under the plain pattern and IGNORED under the class form. The
+# marker's own header predicted this file's bug before it was written.
+#
+# core.ignorecase=true on a Windows checkout would paper over it locally, which
+# is the worst possible outcome: green here, a published backup on the first
+# clone taken on Linux or macOS. The classes cover the marker's letters; `__`
+# is literal and the extension is covered by the trailing `.*`.
+#
+# ADD A NEW SCRATCH FORM IN scratch_sidecar.hpp FIRST -- that header owns the
+# naming convention and is the one place the writer and every reader share a
+# spelling -- then mirror it here, in the class form. Two markers in two files
+# is the cost of git not being able to call a C++ predicate.
+# ---------------------------------------------------------------------------
+**/*.__[fF][lL][dD][bB][aA][kK].*
+**/*.__[fF][lL][dD][tT][mM][pP].*
+# ---------------------------------------------------------------------------
 # Probe and scratch index/table artifacts (2026-07-14)
 #
 # Generated by ad-hoc probe scripts. Never part of the runtime scaffold or the
