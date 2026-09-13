@@ -10,9 +10,18 @@
       *> Nothing had ever written to the old location, so OPEN INPUT failed
       *> with libcob status 35 immediately after a successful export.
       *> Found by tests/conversion/12_cobol_fixed_record_v1.dts.
+      *> REPAIRED AGAIN 2026-09-13: directory right, path ABSOLUTE, so
+      *> a D:\code\ccode literal shipped to every clone (LOCAL-PATH
+      *> GUARD, OI-017 class). COBOL RUN chdir's to the program's OWN
+      *> directory before exec (edu_cobol.cpp:442-447, run_dir =
+      *> program_path.parent_path()) and COBOL BUILD writes it into
+      *> cobol_bin_root(). CWD during a run is <PROJECTS>/cobol/bin, so
+      *> ../data/ is the fixture dir on ANY machine: cobol_root() comes
+      *> from Slot::PROJECTS, not a literal.
+      *> NOT RE-VERIFIED YET -- the RECORDS READ: 0000200 run that found
+      *> this was taken against the ABSOLUTE form. Re-run COBOL TEST.
            SELECT STUDENT-FILE
-               ASSIGN TO
-           "D:\code\ccode\dottalkpp\data\projects\cobol\data\students_ro.dat"
+               ASSIGN TO "../data/students_ro.dat"
                ORGANIZATION IS LINE SEQUENTIAL.
 
        DATA DIVISION.
