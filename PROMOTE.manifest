@@ -176,9 +176,31 @@ dottalkpp/data/datadict/**
 dottalkpp/data/locale/**
 dottalkpp/data/manuals/**
 # The PROJECTS verb enumerates this tree; on main it answered "root does not
-# exist" (measured 2026-09-12). The four project dirs carry manifest.txt or
-# real sources, so they materialize; nested empty dirs still will not, because
-# git does not track those.
+# exist" (measured 2026-09-12).
+#
+# CORRECTED 2026-09-13, AND THE CORRECTION IS THE POINT. This note used to say
+# "the four project dirs carry manifest.txt or real sources, so they
+# materialize." That was written from a DIRECTORY LISTING and never checked
+# against `git ls-files`. Measured: of the six files under this glob, exactly
+# ONE is tracked --
+#
+#     tracked    cobol/src/first_cobol_test.cob
+#     UNTRACKED  cobol/bin/first_cobol_test.exe      (denied, *.exe)
+#     UNTRACKED  cobol/data/students_ro.dat
+#     UNTRACKED  mcc/manifest.txt
+#     UNTRACKED  sqlite/manifest.txt
+#     UNTRACKED  tuptalk/manifest.txt
+#
+# So mcc, sqlite and tuptalk DO NOT MATERIALIZE ON MAIN AT ALL, and PROJECTS
+# finds a root holding one COBOL source. Adding this glob moved the failure
+# from "root does not exist" to "a root with one project in it" -- an
+# improvement that a note claiming four projects would have hidden.
+#
+# A GLOB CANNOT FIX THIS AND SHOULD NOT PRETEND TO. The three manifest.txt look
+# like INPUTS -- a manifest is what makes a directory a project rather than a
+# folder -- and so does students_ro.dat, which the COBOL fixture reads. Whether
+# they are tracked is an open decision, in the same class as metadata_rel
+# (ad48bc976). Recorded here so the next reader measures rather than trusts.
 dottalkpp/data/projects/**
 dottalkpp/data/tests/**
 # The owner's preset minidb schemas ("we use workspaces for preset minidb for
