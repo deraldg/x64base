@@ -16,7 +16,7 @@ Diagram attachment: `DIAG-CMDAUTH-004`
 Canonical source:
 `docs/manuals/assets/diagrams/command_reference_harvest_v1.svg`
 
-Source extraction snapshot: `239` registered command keys and `239` parsed usage contract blocks.
+Source extraction snapshot: `241` registered command keys and `241` parsed usage contract blocks.
 
 ## Source-Derived Commands
 
@@ -30,7 +30,7 @@ Source extraction snapshot: `239` registered command keys and `239` parsed usage
 | `APPGUI` | gui | supported | Launch the windowed Workbench GUI -- `dottalk_wb`, built with wxWidgets -- as a separate process, or report by name why it cannot be launched. | `src\cli\app_gui.cpp` |
 | `ARCTICTALK` | turbo-vision-ui | supported-conditional | Launch the ArcticTalk Turbo Vision shell when TV support is available. | `src\tv\cmd_foxtalk.cpp` |
 | `AREA` | workspace | supported | Report the current work-area slot and current area file/session state. | `src\cli\cmd_area.cpp` |
-| `AREA51` | diagnostics | supported | Report the current work-area slot and its cursor/order state WITHOUT invoking the full AREA command and WITHOUT triggering relation refresh. | `src\cli\cmd_area51.cpp` |
+| `AREA51` | diagnostics | developer | Report the current work-area slot and its cursor/order state WITHOUT invoking the full AREA command and WITHOUT triggering relation refresh. | `src\cli\cmd_area51.cpp` |
 | `ASCEND` | index | supported | Set the active order/tag direction to ascending for the current work area. | `src\cli\cmd_ascend.cpp` |
 | `ASCII` | education-reference | supported | Print ASCII/extended ASCII reference tables and selected ranges. | `src\edu\edu_ascii_table.cpp` |
 | `AUTODBF` | io schema | experimental | Create an X64 DBF from a CSV file and import the CSV rows into the newly created table.  CSV headers may become field names; when there is no header, deterministic FIELDnnn names are generated. | `src\cli\cmd_autodbf.cpp` |
@@ -74,7 +74,7 @@ Source extraction snapshot: `239` registered command keys and `239` parsed usage
 | `COPY` | file-table | supported | Copy the current DBF, convert the current table to a target DBF flavor, or copy a filesystem file. | `src\cli\cmd_copy.cpp` |
 | `COUNT` | query | supported | Count records in the current logical rowset using selector-backed and predicate-backed scan paths, preserving cursor cohesion. | `src\cli\cmd_count.cpp` |
 | `CREATE` | schema | supported | Create a DBF table in the configured DBF path slot using the requested xBase/DBF flavor and field specification. | `src\cli\cmd_create.cpp` |
-| `DBAREA` | workspace | supported | Report the current DbArea/work-area state, including file identity, logical name, record counts, current record, active order/index status, and field structure. | `src\cli\cmd_dbarea.cpp` |
+| `DBAREA` | workspace | supported | Report the current DbArea/work-area state, including file identity, the workspace that OWNS the area and the session's CURRENT workspace, logical name, record counts, current record, active order/index status, and field structure. | `src\cli\cmd_dbarea.cpp` |
 | `DBAREAS` | workspace | supported | Report current, selected, or all open DbArea/work-area state. | `src\cli\cmd_dbareas.cpp` |
 | `DDICT` | data-dictionary | supported | Read-only Data Dictionary inspection command for active catalog metadata. | `src\cli\cmd_ddict.cpp` |
 | `DDL` | schema | supported | Fetch schema files, validate schema files, and create DBF tables from JSON schema definitions with optional seed rows and sidecar metadata. | `src\cli\cmd_ddl.cpp` |
@@ -126,7 +126,8 @@ Source extraction snapshot: `239` registered command keys and `239` parsed usage
 | `GENERIC` | turbo-vision-developer-ui | developer | Launch the generic Turbo Vision developer workbench. | `src\tv\cmd_generic.cpp` |
 | `GO` | navigation | supported | Refresh the current record, move to table/order endpoints, move to an absolute record number, or skip relative to the current record. | `src\cli\cmd_go.cpp` |
 | `GOTO` | navigation | supported | Move the current work-area cursor to an absolute record number, first record, or last record through the shared navigation layer. | `src\cli\cmd_goto.cpp` |
-| `GPS` | report | supported | Report current work-area position, including area slot, table label, physical record number, and computed logical row. | `src\cli\cmd_gps.cpp` |
+| `GPS` | report | supported | Report current work-area position, including area slot, table label, physical record number, computed logical row, and the workspace that OWNS the area beside the session's CURRENT workspace. | `src\cli\cmd_gps.cpp` |
+| `GROUPCOMMIT` | data | supported | Commit every buffered area as ONE atomic decision, so a crash leaves either ALL members applied or NONE. COMMIT ALL's atomic twin. | `src\cli\cmd_commit.cpp` |
 | `GUI` | gui | supported | Launch the windowed Workbench GUI -- `dottalk_wb`, built with wxWidgets -- as a separate process, or report by name why it cannot be launched. | `src\cli\app_gui.cpp` |
 | `HANUKKAH` | education-demo | supported | Print the retro colored ASCII Hanukkah menorah demo. | `src\edu\edu_hanukkah.cpp` |
 | `HELP` | help | supported | Route user help requests across DotTalk command, function, FoxPro, PowerShell, SQL, beta, predicate, and educational help surfaces. | `src\cli\cmd_help.cpp` |
@@ -257,7 +258,8 @@ Source extraction snapshot: `239` registered command keys and `239` parsed usage
 | `WHERECACHE` | diagnostics | experimental | Inspect or tune the shared WHERE expression evaluation cache. | `src\cli\cmd_wherecache.cpp` |
 | `WHILE` | script | supported | Buffer and execute a WHILE...ENDWHILE loop from the current record while a boolean expression remains true. | `src\cli\cmd_while.cpp` |
 | `WHILE_BUFFER` | control-buffer-internal | developer | Internal shell target that captures one WHILE body line. | `src\cli\cmd_while.cpp` |
-| `WORKSPACE` | workspace | supported | Report and manage live work-area/session layout. | `src\cli\cmd_workspace.cpp` |
-| `WSREPORT` | diagnostics | supported | Print a workspace/status report covering open areas, LMDB/order summary, and table-buffer state. | `src\cli\cmd_wsreport.cpp` |
+| `WORKDESK` | diagnostics | experimental | Report the desk -- every open workspace in this session with its areas, identity, lineage and roots. | `src\cli\cmd_workdesk.cpp` |
+| `WORKSPACE` | workspace | supported | Report and manage live work-area/session layout, and the path environment each workspace carries (R131). | `src\cli\cmd_workspace.cpp` |
+| `WSREPORT` | diagnostics | supported | Print a session status report: open workspaces and their areas, the order/LMDB summary, table-buffer state, and per-area index detail. | `src\cli\cmd_wsreport.cpp` |
 | `ZAP` | destructive-table | supported | Remove all records from the current non-memo DBF while preserving structure. | `src\cli\cmd_zap.cpp` |
 | `ZIP` | archive | supported | List, create, or extract ZIP archives through the configured ZIP backend. | `src\cli\cmd_zip.cpp` |
