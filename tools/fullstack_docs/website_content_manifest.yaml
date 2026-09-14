@@ -5,7 +5,7 @@ schema: dottalk.website.content_manifest.v2
 generated_at: "2026-08-26"
 spine: simplex_duplex_direction_gates   # S-impl | S-rep | D-man | WO
 site_root: x64base-site/content
-totals: {generated: 8, derived: 30, maintained: 78, maintained_current: 9, reported: 5, static: 19, total: 149}
+totals: {generated: 8, derived: 32, maintained: 78, maintained_current: 9, reported: 5, static: 19, total: 151}
 publication_check:
   runner: tools/fullstack_docs/website_matrix_check.py
   required_gates:
@@ -46,6 +46,17 @@ classes:
       - path: docs/engine/sqlsel-and-sql-conformance
         contract:
           - src/cli/cmd_sql.cpp
+      - path: docs/engine/primary-keys
+        contract:
+          - include/xbase_64.hpp
+          - src/cli/cmd_regression.cpp
+          - dottalkpp/data/scripts/pk_policy_regression.dts
+          - tools/staging/field_write_callers_baseline.txt
+      - path: docs/engine/rdbms
+        contract:
+          - src/cli/cmd_sql.cpp
+          - src/cli/cmd_regression.cpp
+          - tools/staging/field_write_callers_baseline.txt
       - docs/dottalk/data-mutators
       - docs/dottalk/dotscript-language-guide
       - docs/dottalk/set-family
