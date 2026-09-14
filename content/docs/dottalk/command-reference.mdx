@@ -19,12 +19,14 @@ the website repository.
 | Canonical harvest rows | 43,858 |
 | Manual candidate | `MANRUN-20260914T035009Z-36CEEEFD` |
 
-Publication state: `v9-published-github-pages-release-145`.
+Publication state: `v9-published-github-pages`.
 First open publication gate: `none`.
 
-This snapshot is deployed. Release 145 went to x64base.com on 2026-09-14 from
-source commit `6784d3d88`, and the published pages were read back afterwards
-rather than assumed.
+This snapshot is deployed, and the published pages were read back from the live
+origin afterwards rather than assumed. The release number and source commit it
+shipped in are not named here: the publisher writes them into
+`/artifacts/site-release.json` and then verifies that against the live site, so
+a number typed into this sentence could only be one publish from being wrong.
 
 **HELP lines fell 29,700 to 18,566, and that is a duplicate leaving the store,
 not content leaving it.** The harvest had been carrying the usage-contract family

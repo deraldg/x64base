@@ -1,0 +1,111 @@
+---
+title: "The sweep was never told"
+date: "2026-09-14"
+description: "The site published, and its own cover page said the documentation had been reconciled twelve days earlier. Every automated gate was green -- and the one that could have caught the worst of it does not run on a day when anything else is failing."
+---
+
+The full-stack documentation push closed this morning. The command catalog went
+to 241 keys with zero fallback rows, the HELP store shed a duplicated
+usage-contract family, and the site published to x64base.com.
+
+Then someone opened the published site and read the banner sitting at the top of
+all 151 pages:
+
+> Full-stack docs reconciled 2026-09-02.
+
+Twelve days stale, on a site published today. Six freshness contracts had passed
+throughout. **None of them was broken**, and working out why took most of the
+day.
+
+## The authority was typed by hand
+
+Every contract in that cluster resolves against
+`documentation-progress-v1.json`. The contracts do their job well: earlier the
+same morning one caught a provenance line missed in a two-page edit and named
+the exact sentence it was missing.
+
+But a contract compares a page to an authority file, and this authority had **no
+generator**. Its two neighbours -- the primary-key and SQLsel authorities -- each
+have a script that measures them from the engine tree. This one was maintained
+by hand. So the pages agreed with the authority, the authority agreed with
+itself, and nothing compared either to the engine.
+
+It has a generator now. Nineteen fields are measured every run: HELP counts and
+harvest rows from the export manifest's own row counts, catalog and function
+figures from the sync tool's verdict lines, the run id and manual candidate from
+the run directory, page counts from the build. Thirteen further fields are
+carried forward, and **the artifact lists which are which**, so a remembered
+number is distinguishable from a measured one without knowing the history.
+
+Two of the contracts turned out to be carrying defects of their own, both found
+by running them:
+
+- One asserted the page must contain `publication gate {first_open_entry} open.`
+  It could only ever produce a true sentence while a gate was open. With
+  publication entered it demanded the page read *"publication gate none open."*
+- Another asserted the literal string `239 command keys matched to 239 parsed contracts`
+  -- a hand-typed number sitting inside a freshness gate. It is now interpolated
+  from the authority.
+
+## The second instrument, and why it was quiet
+
+A separate sweep reads the pages looking for a shipped capability described as
+missing. That is exactly the polarity needed for what was wrong here, because
+two published pages were denying one.
+
+Cross-table atomic commit shipped on 2026-09-11. A sweep the next day found six
+statements across three SQLsel pages still denying it and corrected them. Two
+were missed -- the FAQ's SQL answer, and the boundary list on the DBMS and RDBMS
+page. So for three days the site carried a command catalog publishing
+`GROUPCOMMIT` as `supported` beside two pages stating the capability was absent.
+Three published pages, two contradicting the third.
+
+The capability sweep was quiet through all of it, for two reasons that are worth
+separating.
+
+**It could not see the capability when those sentences were written.** Its
+authority is generated from the registered regression specs, and a capability
+reaches that list only if a spec exists for it. On the 12th the authority held
+fourteen capabilities and this was not among them. It holds fifteen today,
+because specs were registered for the group-commit work -- so the instrument
+learned the capability after the sentences were already published, and nothing
+went back to re-ask.
+
+**And it does not run on a bad day.** The sweep is the second tier of the
+freshness check, and the first tier exits the process on any failure before the
+second tier is reached. So a site with one stale number gets **no prose sweep at
+all**. Every build this morning failed on a date mismatch, which means the
+advisory instrument was suppressed for the entire window in which the site was
+most likely to be wrong. It ran again this afternoon, once the numbers were
+right -- and reported nothing, correctly, because by then the sentences were
+fixed.
+
+An advisory check that is disabled by an unrelated failure is not advisory. It
+is conditional on not needing it.
+
+## What found it instead
+
+The FAQ carries an obligation in its own text: every full-stack reconciliation
+must check this page against changed product, command and interface claims, and
+record the disposition. A contract binds that review date to the authority, so
+advancing the authority forced the review, and the review is what read the
+sentence.
+
+That is not an instrument catching a defect. It is a rule making a person look.
+
+## What has not changed
+
+**Nothing forces the generator to run.** It exists, it measures, and its check
+mode re-derives and diffs -- but until that check is a step in the pre-push gate,
+skipping it produces no finding, and by the house rule a step whose omission
+produces no finding is not in the push.
+
+**One gap is an absence, not a staleness.** A sweep of all 151 pages for path
+environment variables returns zero files. No page here describes where sys
+tables live. No freshness contract will ever report that, because a contract can
+prove a page is wrong and cannot prove a page was never written. It is recorded
+in the documentation matrix as a row with no enforced relationship, which is the
+only honest way to hold it until a page exists.
+
+The cover page now says 2026-09-14 because a program measured it, rather than
+because someone remembered to.

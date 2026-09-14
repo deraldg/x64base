@@ -20,6 +20,16 @@
       "file": "content/products/sqlsel.mdx",
       "capability": "sql.join.inner",
       "reason": "TRUE negative, and the sweep was right to make someone check it. Two-table RIGHT/FULL/CROSS ship and are oracle-checked on every run (SQLSEL_JOIN_FAMILY, default-suite), but three-table CHAINS are INNER/LEFT only (SQLSEL_ADVANCED_JOIN's summary names 'three-table INNER/LEFT chains' and nothing wider). The bullet says multi-chain and means it. Revisit this exemption the day a spec proves a RIGHT or FULL chain."
+    },
+    {
+      "file": "content/docs/getting-started/faq.mdx",
+      "capability": "sql.txn.cross_table",
+      "reason": "The page narrates its own past error. Cross-table atomic commit shipped 2026-09-11 and this FAQ went on denying it for three days; the 2026-09-14 review disposition records that, and recording it requires quoting the wrong claim. The SQL answer in the body now states plainly that the capability SHIPS. Revisit when the disposition block rotates at the next review -- the quotation goes with it, and so should this exemption."
+    },
+    {
+      "file": "content/docs/dev/website-documentation-matrix.mdx",
+      "capability": "sql.txn.cross_table",
+      "reason": "Same quotation, in the 2026-09-14 sweep row that records the finding. Unlike the FAQ this one is durable: sweep sections are RETAINED rather than replaced, so the sentence stays on the page permanently and this exemption is expected to be permanent with it. That is the cost of a page whose job is to remember what was wrong."
     }
   ]
 }
