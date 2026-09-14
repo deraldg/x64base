@@ -16,11 +16,6 @@ Render static historical FoxPro-standard reference topics.
 
 ## Syntax
 
-- FOXSTANDARD USAGE
-- FOXSTANDARD &lt;command&gt;
-- FOXSTANDARD ALL
-- FOXSTANDARD TOPICS
-- FOXSTANDARD LIST
 - FOXSTANDARD [USAGE|HELP|&lt;topic&gt;]
 
 ## Usage
@@ -47,7 +42,7 @@ Render static historical FoxPro-standard reference topics.
 ## Provenance
 
 - Topic key: `DOT|FOXSTANDARD`
-- Included HELP rows: `21`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- Included HELP rows: `16`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

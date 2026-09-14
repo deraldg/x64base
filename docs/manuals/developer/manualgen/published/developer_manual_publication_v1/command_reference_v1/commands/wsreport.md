@@ -8,7 +8,7 @@
 
 ## Summary
 
-Print a workspace/status report covering open areas, LMDB/order summary, and table-buffer state.
+Print a session status report: open workspaces and their areas, the order/LMDB summary, table-buffer state, and per-area index detail.
 
 ## Status
 
@@ -26,23 +26,39 @@ Print a workspace/status report covering open areas, LMDB/order summary, and tab
 - WSREPORT USAGE
 - WSREPORT ALL
 
+## Argument
+
+- NOTHING
+- Mined command argument/switch candidate. Promote only after validation against parser behavior or curated command docs.
+
 ## Note
 
-- WSREPORT with no arguments reports the current workspace and current area.
-- WSREPORT ALL includes all open work areas in the area/index summary.
-- WSREPORT USAGE prints usage and does not inspect areas.
-- WSREPORT is read-only.
+- WSREPORT with no arguments reports the whole desk and the current area.
+- WSREPORT ALL includes every open work area in the area/index summary.
+- WSREPORT USAGE prints usage and inspects nothing.
+- WSREPORT is read-only. It reports an invariant violation; it repairs none.
+- The WORKSPACES section names workspaces. Until 2026-09-11 a section headed
+- `Workspace` showed only work-area slots and never called the workspace table, so it read identically whether every area sat in DEFAULT or was spread across five named workspaces. That block is now `Work Areas`, which is what it always was.
 
 ## Related
 
 - AREA
 - STATUS
 - WORKSPACE
+- THE WORKSPACE LEVEL IS NOT COMPUTED HERE, and that is the change.
+- `cli::workdesk::observe()` walks the workspace table and the engine's areas
+- and returns the join; `cli::workdesk::render()` prints it. This file routes
+- output and owns the three blocks that are genuinely its own. Before that
+- split, three places each built the same workspace/area pairing privately --
+- cmd_workspace.cpp inline, this file (badly, by omitting it), and
+- cli::AmbiguityHit, whose ws_handles/engine_slots pair IS this join under
+- another name. A fourth private walk is the thing to avoid, not a fourth
+- report.
 
 ## Provenance
 
 - Topic key: `DOT|WSREPORT`
-- Included HELP rows: `18`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- Included HELP rows: `34`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

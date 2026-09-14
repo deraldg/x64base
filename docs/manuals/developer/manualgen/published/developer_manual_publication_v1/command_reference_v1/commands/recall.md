@@ -16,13 +16,7 @@ Clear deleted flags on the current record or selected deleted records.
 
 ## Syntax
 
-- RECALL USAGE
 - RECALL
-- RECALL ALL
-- RECALL REST
-- RECALL NEXT &lt;n&gt;
-- RECALL FOR &lt;expr&gt;
-- UNDELETE
 
 ## Usage
 
@@ -68,7 +62,7 @@ Clear deleted flags on the current record or selected deleted records.
 ## Provenance
 
 - Topic key: `DOT|RECALL`
-- Included HELP rows: `33`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- Included HELP rows: `27`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

@@ -16,12 +16,12 @@ Buffer and execute a SCAN...ENDSCAN record loop over the current logical rowset.
 
 ## Syntax
 
+- SCAN [ALL|DELETED] [FOR &lt;pred&gt;] [WHILE &lt;pred&gt;] [NEXT &lt;n&gt;|REST]
 - SCAN
 - SCAN USAGE
 - SCAN FOR &lt;expr&gt;
 - ENDSCAN
 - ENDSCAN USAGE
-- SCAN [ALL|DELETED] [FOR &lt;pred&gt;] [WHILE &lt;pred&gt;] [NEXT &lt;n&gt;|REST]
 
 ## Usage
 
@@ -51,6 +51,6 @@ Buffer and execute a SCAN...ENDSCAN record loop over the current logical rowset.
 
 - Topic key: `DOT|SCAN`
 - Included HELP rows: `24`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

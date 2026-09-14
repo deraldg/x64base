@@ -57,6 +57,6 @@ A practical study order
 
 - Topic key: `ED|EDUCATIONAL_USE`
 - Included HELP rows: `38`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

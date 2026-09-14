@@ -16,9 +16,6 @@ Rebuild a CNX container for the current table, using the active CNX or a supplie
 
 ## Syntax
 
-- REBUILD USAGE
-- REBUILD
-- REBUILD &lt;name-or-path.cnx&gt;
 - REBUILD [USAGE|ALL|&lt;target&gt;]
 
 ## Usage
@@ -47,7 +44,7 @@ Rebuild a CNX container for the current table, using the active CNX or a supplie
 ## Provenance
 
 - Topic key: `DOT|REBUILD`
-- Included HELP rows: `21`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- Included HELP rows: `18`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

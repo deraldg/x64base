@@ -8,7 +8,7 @@
 
 ## Summary
 
-Inspect or manage CDX container metadata and tag directories. ramfs/VDISK-aware: under a mounted VDISK the container resolves from RAM (a native CDX-V64), so CREATE/ADDTAG/DROPTAG operate on the in-RAM container with no file on disk (AIF-043).
+Manage CDX index container metadata: create containers, inspect header/tag directories, add tags, and drop tags.
 
 ## Status
 
@@ -16,12 +16,6 @@ Inspect or manage CDX container metadata and tag directories. ramfs/VDISK-aware:
 
 ## Syntax
 
-- CDX USAGE
-- CDX INFO [&lt;path.cdx&gt;]
-- CDX TAGS [&lt;path.cdx&gt;]
-- CDX CREATE [&lt;path.cdx&gt;]
-- CDX ADDTAG &lt;name&gt; [&lt;path.cdx&gt;]
-- CDX DROPTAG &lt;name&gt; [&lt;path.cdx&gt;]
 - CDX [INFO|TAGS|CREATE|ADDTAG|DROPTAG] [&lt;path.cdx&gt;]
 
 ## Usage
@@ -58,7 +52,7 @@ Inspect or manage CDX container metadata and tag directories. ramfs/VDISK-aware:
 ## Provenance
 
 - Topic key: `DOT|CDX`
-- Included HELP rows: `35`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- Included HELP rows: `30`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

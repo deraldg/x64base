@@ -16,14 +16,12 @@ List a directory or show a single file entry through DotTalk++ path resolution.
 
 ## Syntax
 
+- DIR [&lt;mask&gt;|&lt;path&gt;]
 - DIR
 - DIR USAGE
 - DIR &lt;path&gt;
 - DIR &lt;slot&gt;
 - DIR &lt;slot&gt;:&lt;path&gt;
-- DIR &lt;pattern&gt;
-- DIR &lt;dir&gt;/&lt;pattern&gt;
-- DIR [&lt;mask&gt;|&lt;path&gt;]
 - DIR &lt;pattern&gt;          e.g. DIR *.dbf   (wildcards * and ?)
 - DIR &lt;dir&gt;/&lt;pattern&gt;    e.g. DIR DBF/STUD*.*
 
@@ -53,7 +51,7 @@ List a directory or show a single file entry through DotTalk++ path resolution.
 ## Provenance
 
 - Topic key: `DOT|DIR`
-- Included HELP rows: `28`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- Included HELP rows: `26`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

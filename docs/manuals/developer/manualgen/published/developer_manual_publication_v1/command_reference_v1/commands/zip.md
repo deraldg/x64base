@@ -16,11 +16,11 @@ List, create, or extract ZIP archives through the configured ZIP backend.
 
 ## Syntax
 
+- ZIP [USAGE|&lt;args...&gt;]
 - ZIP USAGE
 - ZIP LIST &lt;archive.zip&gt;
 - ZIP CREATE &lt;archive.zip&gt; &lt;path&gt;
 - ZIP EXTRACT &lt;archive.zip&gt; [target_dir]
-- ZIP [USAGE|&lt;args...&gt;]
 - ZIP LIST backups.zip
 - ZIP CREATE source_bundle.zip src
 - ZIP EXTRACT source_bundle.zip tmp\source_bundle
@@ -54,6 +54,6 @@ List, create, or extract ZIP archives through the configured ZIP backend.
 
 - Topic key: `DOT|ZIP`
 - Included HELP rows: `24`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

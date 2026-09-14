@@ -16,7 +16,6 @@ Empty translation-unit shim for ELSE command ownership.
 
 ## Syntax
 
-- ELSE usage is owned by the IF/ELSE/ENDIF command implementation.
 - ELSE
 
 ## Usage
@@ -31,7 +30,7 @@ Empty translation-unit shim for ELSE command ownership.
 ## Provenance
 
 - Topic key: `DOT|ELSE`
-- Included HELP rows: `9`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- Included HELP rows: `8`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

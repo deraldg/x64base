@@ -26,21 +26,22 @@ Dispatch relation list, refresh, join, enumeration, persistence, add, and clear 
 - REL ENUM [LIMIT &lt;n&gt;] &lt;path...&gt; TUPLE &lt;projection&gt;
 - REL SAVE [path]
 - REL LOAD [path]
-- REL
-- REL USAGE
+- REL &lt;subcommand&gt; ...
 - REL LIST [ALL]
-- REL JOIN [LIMIT &lt;n&gt;] [&lt;child1&gt; &lt;child2&gt; ...] TUPLE &lt;expr&gt;
-- REL ENUM [LIMIT &lt;n&gt;] [&lt;child1&gt; &lt;child2&gt; ...] TUPLE &lt;expr&gt;
+- REL JOIN [ONE] [DISTINCT|ALL] [LIMIT &lt;n&gt;] [&lt;child&gt; ...] TUPLE &lt;alias&gt;.&lt;field&gt;[, ...]
+- REL ENUM [DISTINCT|ALL] [LIMIT &lt;n&gt;] [&lt;child&gt; ...] TUPLE &lt;alias&gt;.&lt;field&gt;[, ...]
+- ONE       emit exactly one row using the current relation context (REL JOIN only;
+- DISTINCT  de-duplicate tuples (field lists only)
+- ALL       allow duplicates (default; overrides DISTINCT)
 - REL SAVE [path] | REL SAVE AS &lt;dataset&gt;
 - REL LOAD [path] | REL LOAD AS &lt;dataset&gt;
 - REL ADD &lt;parent&gt; &lt;child&gt; ON &lt;field&gt;[,&lt;field&gt;...]
-- REL ADD &lt;parent&gt; &lt;child&gt; ON &lt;parent_field&gt; TO &lt;child_field&gt;
-- REL CLEAR &lt;parent&gt;|ALL
-- REL SCANLIMIT [&lt;n&gt;]
-- REL &lt;subcommand&gt; ...
 - same-field relation
+- REL ADD &lt;parent&gt; &lt;child&gt; ON &lt;parent_field&gt; TO &lt;child_field&gt;
 - asymmetric relation
+- REL CLEAR &lt;parent&gt;|ALL
 - alias of SET RELATIONS CLEAR
+- REL SCANLIMIT [&lt;n&gt;]
 - records scanned PER HOP -- caps what is FOUND
 
 ## Usage
@@ -49,8 +50,8 @@ Dispatch relation list, refresh, join, enumeration, persistence, add, and clear 
 - REL USAGE
 - REL LIST [ALL]
 - REL REFRESH
-- REL JOIN [LIMIT &lt;n&gt;] [&lt;child1&gt; &lt;child2&gt; ...] TUPLE &lt;expr&gt;
-- REL ENUM [LIMIT &lt;n&gt;] [&lt;child1&gt; &lt;child2&gt; ...] TUPLE &lt;expr&gt;
+- REL JOIN [ONE] [DISTINCT|ALL] [LIMIT &lt;n&gt;] [&lt;child1&gt; &lt;child2&gt; ...] TUPLE &lt;alias&gt;.&lt;field&gt;[, ...]
+- REL ENUM [DISTINCT|ALL] [LIMIT &lt;n&gt;] [&lt;child1&gt; &lt;child2&gt; ...] TUPLE &lt;alias&gt;.&lt;field&gt;[, ...]
 - REL SAVE [path] | REL SAVE AS &lt;dataset&gt;
 - REL LOAD [path] | REL LOAD AS &lt;dataset&gt;
 - REL ADD &lt;parent&gt; &lt;child&gt; ON &lt;field&gt;[,&lt;field&gt;...]
@@ -81,6 +82,20 @@ Dispatch relation list, refresh, join, enumeration, persistence, add, and clear 
 - REL SCANLIMIT reports or sets the relation engine's PER-HOP record budget.
 - It caps what a traversal FINDS, not what is displayed: lowering it changes match counts and drops join rows. ERSATZ LIMIT is the display cap.
 - Shipped since AIF-074 P1.3 and absent from this contract until 2026-08-28.
+- ONE is REL JOIN ONLY and REL ENUM DOES NOT ACCEPT IT -- the two lines are deliberately not identical. ONE emits a single row from the CURRENT relation pointers; given a child chain it REFUSES rather than discarding it (AIF-147), because reporting success for a traversal that never happened is the shape this codebase hunts.
+- DISTINCT de-duplicates tuples (FIELD LISTS ONLY); ALL allows duplicates and is the default, overriding DISTINCT. Both are real on both verbs -- DISTINCT is backed by a seen-set, not parsed and ignored. Wording here is taken from
+- MessageId::RelJoinUsageText rather than restated, because that catalog entry is the authority and had all three flags documented correctly the whole time.
+- TUPLE takes a COMMA-SEPARATED &lt;alias&gt;.&lt;field&gt; list, not an expression. The proven spelling is in data/scripts/main/rel_join_enum_regression.dts.
+- CONTRACT SWEEP, 2026-09-03. REL JOIN's usage had THREE HOMES and only the newest was right:
+- 1. this comment block            -- LIMIT and TUPLE only        (was stale)
+- 2. rel_usage() below, printed by REL USAGE  -- same omission     (was stale)
+- 3. MessageId::RelJoinUsageText, printed by a bare REL JOIN
+- -- ONE, DISTINCT and ALL, each with a description            (CORRECT)
+- So the answer a user got depended on HOW THEY ASKED: `REL USAGE` returned an incomplete list and `REL JOIN` with no arguments returned the complete one.
+- Same question, two answers, decided by route. Homes 1 and 2 now quote home 3.
+- The SCANLIMIT note above records this same defect closed for ONE keyword on 2026-08-28; that fix corrected its line and did not sweep the block it was standing in, which is how the rest survived.
+- WHEN A KEYWORD IS ADDED TO A PARSER HERE: update the catalog entry, then make
+- BOTH copies in this file quote it. Do not restate it in a third voice.
 
 ## Related
 
@@ -89,7 +104,7 @@ Dispatch relation list, refresh, join, enumeration, persistence, add, and clear 
 ## Provenance
 
 - Topic key: `DOT|REL`
-- Included HELP rows: `91`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- Included HELP rows: `118`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

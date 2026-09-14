@@ -16,8 +16,6 @@ Minimal example/test command used to verify token parsing and command routing.
 
 ## Syntax
 
-- EXAMPLE USAGE
-- EXAMPLE TEST
 - EXAMPLE [USAGE|&lt;name&gt;|LIST]
 
 ## Usage
@@ -39,7 +37,7 @@ Minimal example/test command used to verify token parsing and command routing.
 ## Provenance
 
 - Topic key: `DOT|EXAMPLE`
-- Included HELP rows: `13`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- Included HELP rows: `11`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

@@ -16,6 +16,7 @@ Display x64Base security policy/runtime diagnostics or run built-in security sel
 
 ## Syntax
 
+- SECURITY [USAGE|SHOW|SELFTEST|RUNTIME|LOGIN &lt;role&gt; [AS &lt;worker&gt;]|WHOAMI|ASSIGNMENTS|LOGOUT]
 - SECURITY USAGE
 - SECURITY SHOW
 - SECURITY SELFTEST
@@ -24,7 +25,6 @@ Display x64Base security policy/runtime diagnostics or run built-in security sel
 - SECURITY WHOAMI
 - SECURITY ASSIGNMENTS
 - SECURITY LOGOUT
-- SECURITY [USAGE|SHOW|SELFTEST|RUNTIME|LOGIN &lt;role&gt; [AS &lt;worker&gt;]|WHOAMI|ASSIGNMENTS|LOGOUT]
 
 ## Usage
 
@@ -61,6 +61,6 @@ Display x64Base security policy/runtime diagnostics or run built-in security sel
 
 - Topic key: `DOT|SECURITY`
 - Included HELP rows: `35`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

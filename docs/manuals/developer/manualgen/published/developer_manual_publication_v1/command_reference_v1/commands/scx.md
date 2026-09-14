@@ -16,13 +16,6 @@ Student/local SCX index-file lab command for creating, tagging, building, listin
 
 ## Syntax
 
-- SCX USAGE
-- SCX CREATE &lt;file&gt;
-- SCX ADDTAG &lt;file&gt; &lt;name&gt; FIELD &lt;n&gt;
-- SCX ADDTAG &lt;file&gt; &lt;name&gt; FIELD &lt;n&gt; DESC
-- SCX BUILD &lt;file&gt;
-- SCX TAGS &lt;file&gt;
-- SCX INFO &lt;file&gt;
 - SCX [USAGE|CREATE &lt;file&gt;|ADDTAG &lt;file&gt; &lt;name&gt; FIELD &lt;n&gt; [DESC]|BUILD &lt;file&gt;|TAGS &lt;file&gt;|INFO &lt;file&gt;]
 
 ## Usage
@@ -53,7 +46,7 @@ Student/local SCX index-file lab command for creating, tagging, building, listin
 ## Provenance
 
 - Topic key: `DOT|SCX`
-- Included HELP rows: `26`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- Included HELP rows: `19`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

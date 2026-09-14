@@ -16,9 +16,6 @@ Preview SQL export output and expose the file-export command surface.
 
 ## Syntax
 
-- EXPORTSQL USAGE
-- EXPORTSQL PREVIEW &lt;table&gt;
-- EXPORTSQL FILE &lt;table&gt; TO &lt;file&gt;
 - EXPORTSQL [USAGE|&lt;args...&gt;]
 
 ## Usage
@@ -46,7 +43,7 @@ Preview SQL export output and expose the file-export command surface.
 ## Provenance
 
 - Topic key: `DOT|EXPORTSQL`
-- Included HELP rows: `17`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- Included HELP rows: `14`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

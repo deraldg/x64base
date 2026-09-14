@@ -16,20 +16,16 @@ Launch diagrams.net, or list/open draw.io files from configured diagram paths.
 
 ## Syntax
 
+- DRAWIO [USAGE|&lt;args...&gt;]
 - DRAWIO USAGE
 - DRAWIO
 - DRAWIO PATHS
-- DRAWIO LIST
-- DRAWIO LIST SYSTEM
-- DRAWIO LIST USER
-- DRAWIO LIST ALL
+- DRAWIO LIST [SYSTEM|USER|ALL]
 - DRAWIO OPEN
 - DRAWIO OPEN &lt;url-or-path&gt;
 - DRAWIO OPEN SYSTEM &lt;n|filename&gt;
 - DRAWIO OPEN USER &lt;n|filename&gt;
 - DRAWIO OPEN ALL &lt;n|filename&gt;
-- DRAWIO [USAGE|&lt;args...&gt;]
-- DRAWIO LIST [SYSTEM|USER|ALL]
 - SYSTEM = SETPATH SYSTEM_DIAGRAMS / DIAGRAMS
 - USER   = SETPATH USER_DIAGRAMS
 
@@ -67,7 +63,7 @@ Launch diagrams.net, or list/open draw.io files from configured diagram paths.
 ## Provenance
 
 - Topic key: `DOT|DRAWIO`
-- Included HELP rows: `41`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- Included HELP rows: `37`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

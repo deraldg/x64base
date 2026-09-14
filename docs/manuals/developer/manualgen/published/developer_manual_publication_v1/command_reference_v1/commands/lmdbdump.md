@@ -16,16 +16,6 @@ Open an LMDB environment read-only and dump keys and values for diagnostics, wit
 
 ## Syntax
 
-- LMDBDUMP USAGE
-- LMDBDUMP &lt;env_path&gt;
-- LMDBDUMP &lt;env_path&gt; --db &lt;name&gt;
-- LMDBDUMP &lt;env_path&gt; -db &lt;name&gt;
-- LMDBDUMP &lt;env_path&gt; --grep &lt;ascii&gt;
-- LMDBDUMP &lt;env_path&gt; -grep &lt;ascii&gt;
-- LMDBDUMP &lt;env_path&gt; --trydb
-- LMDBDUMP &lt;env_path&gt; --limit &lt;n&gt;
-- LMDBDUMP &lt;env_path&gt; --start &lt;key&gt;
-- LMDBDUMP &lt;env_path&gt; --starthex &lt;hex&gt;
 - LMDBDUMP [USAGE|&lt;args...&gt;]
 
 ## Usage
@@ -66,7 +56,7 @@ Open an LMDB environment read-only and dump keys and values for diagnostics, wit
 ## Provenance
 
 - Topic key: `DOT|LMDBDUMP`
-- Included HELP rows: `37`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- Included HELP rows: `27`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

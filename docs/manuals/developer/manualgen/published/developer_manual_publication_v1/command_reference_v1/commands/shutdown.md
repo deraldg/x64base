@@ -17,7 +17,6 @@ Run the optional shutdown.ini script from the executable directory.
 ## Syntax
 
 - SHUTDOWN
-- SHUTDOWN USAGE
 
 ## Usage
 
@@ -41,7 +40,7 @@ Run the optional shutdown.ini script from the executable directory.
 ## Provenance
 
 - Topic key: `DOT|SHUTDOWN`
-- Included HELP rows: `15`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- Included HELP rows: `14`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

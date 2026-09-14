@@ -16,6 +16,7 @@ Validate tuple graph rows for the current table using the tuple graph cursor and
 
 ## Syntax
 
+- TUPVALIDATE [USAGE|&lt;args...&gt;]
 - TUPVALIDATE
 - TUPVALIDATE USAGE
 - TUPVALIDATE *
@@ -23,7 +24,6 @@ Validate tuple graph rows for the current table using the tuple graph cursor and
 - TUPVALIDATE * FOR &lt;expr&gt;
 - TUPVALIDATE * FOR &lt;expr&gt; MAX &lt;n&gt;
 - TUPVALIDATE * FOR &lt;expr&gt; TRACE
-- TUPVALIDATE [USAGE|&lt;args...&gt;]
 - TUPVALIDATE LNAME,FNAME
 - TUPVALIDATE STUDENTS.*,MAJORS.* FOR MAJORS.NAME = "CS"
 
@@ -62,6 +62,6 @@ Validate tuple graph rows for the current table using the tuple graph cursor and
 
 - Topic key: `DOT|TUPVALIDATE`
 - Included HELP rows: `32`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

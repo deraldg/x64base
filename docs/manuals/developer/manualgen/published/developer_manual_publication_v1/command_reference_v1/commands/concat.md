@@ -19,8 +19,8 @@ Concatenate one or more expressions into a single string and print the result.
 - CONCAT &lt;expr1&gt;[, &lt;expr2&gt; ...]
 - STRCAT &lt;expr1&gt;[, &lt;expr2&gt; ...]
 - CONCAT(&lt;expr1&gt;, &lt;expr2&gt;, ...)
-- CONCAT USAGE
 - CONCAT(&lt;c1&gt;[, &lt;c2&gt; ...]) | CONCAT &lt;args...&gt;
+- CONCAT USAGE
 - CONCAT "hello", " ", "world"
 - CONCAT FNAME, " ", LNAME
 - STRCAT("A", "B", "C")
@@ -61,6 +61,6 @@ Concatenate one or more expressions into a single string and print the result.
 
 - Topic key: `DOT|CONCAT`
 - Included HELP rows: `29`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

@@ -16,26 +16,6 @@ Canonical rebuild dispatcher for INX, CNX, CDX/LMDB, and student index families,
 
 ## Syntax
 
-- REINDEX USAGE
-- REINDEX
-- REINDEX INX
-- REINDEX INX &lt;tagfile&gt;
-- REINDEX CNX
-- REINDEX CNX &lt;name-or-path.cnx&gt;
-- REINDEX CDX
-- REINDEX CDX YES
-- REINDEX CDX AUTO
-- REINDEX CDX NOPROMPT
-- REINDEX CDX CLEAN
-- REINDEX CDX FORCE
-- REINDEX CDX QUIET
-- REINDEX SIX
-- REINDEX SIX &lt;tagfile&gt;
-- REINDEX SCX
-- REINDEX SCX &lt;tagfile&gt;
-- REINDEX ALL
-- REINDEX CUSTOM
-- REINDEX &lt;tagfile&gt;
 - REINDEX [ALL]
 
 ## Usage
@@ -92,7 +72,7 @@ Canonical rebuild dispatcher for INX, CNX, CDX/LMDB, and student index families,
 ## Provenance
 
 - Topic key: `DOT|REINDEX`
-- Included HELP rows: `63`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- Included HELP rows: `43`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

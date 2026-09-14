@@ -16,14 +16,6 @@ Build an INX index file from the current table using a field key, tag/file name,
 
 ## Syntax
 
-- INDEX USAGE
-- INDEX ON &lt;field&gt; TAG &lt;name&gt;
-- INDEX ON &lt;field&gt; TAG &lt;name&gt; ASC
-- INDEX ON &lt;field&gt; TAG &lt;name&gt; DESC
-- INDEX ON &lt;field&gt; TAG &lt;name&gt; 1INX
-- INDEX ON &lt;field&gt; TAG &lt;name&gt; 2INX
-- INDEX ON &lt;field&gt; TAG &lt;name&gt; ASC 1INX
-- INDEX ON &lt;field&gt; TAG &lt;name&gt; DESC 2INX
 - INDEX [ON &lt;field&gt; TAG &lt;name&gt; | STATUS | LIST]
 
 ## Usage
@@ -67,7 +59,7 @@ Build an INX index file from the current table using a field key, tag/file name,
 ## Provenance
 
 - Topic key: `DOT|INDEX`
-- Included HELP rows: `38`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- Included HELP rows: `30`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

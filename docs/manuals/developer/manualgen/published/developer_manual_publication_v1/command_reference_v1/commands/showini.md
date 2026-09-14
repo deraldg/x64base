@@ -16,10 +16,6 @@ Display a table-specific .ini file, either derived from the current table or fro
 
 ## Syntax
 
-- SHOWINI
-- SHOWINI USAGE
-- SHOWINI &lt;table-or-ini&gt;
-- SHOWINI PATH &lt;ini-file&gt;
 - SHOWINI [USAGE|SYSTEM|USER|ALL]
 
 ## Usage
@@ -50,7 +46,7 @@ Display a table-specific .ini file, either derived from the current table or fro
 ## Provenance
 
 - Topic key: `DOT|SHOWINI`
-- Included HELP rows: `21`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- Included HELP rows: `17`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

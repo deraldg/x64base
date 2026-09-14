@@ -16,6 +16,7 @@ Open, fetch, or inspect web URLs using the default handler or WinHTTP.
 
 ## Syntax
 
+- WEB [USAGE|&lt;args...&gt;]
 - WEB USAGE
 - WEB DEFAULT
 - WEB RETRO
@@ -24,7 +25,6 @@ Open, fetch, or inspect web URLs using the default handler or WinHTTP.
 - WEB GET &lt;url|DEFAULT|RETRO&gt;
 - WEB HEAD &lt;url|DEFAULT|RETRO&gt;
 - WEB FETCH &lt;url|DEFAULT|RETRO&gt; TO &lt;file&gt;
-- WEB [USAGE|&lt;args...&gt;]
 - WEB OPEN https://example.com
 - WEB OPEN DEFAULT
 - WEB HEAD https://example.com
@@ -71,6 +71,6 @@ Open, fetch, or inspect web URLs using the default handler or WinHTTP.
 
 - Topic key: `DOT|WEB`
 - Included HELP rows: `41`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

@@ -16,13 +16,13 @@ Start an IF/ELSE/ENDIF conditional block using the shell's shared boolean expres
 
 ## Syntax
 
+- IF &lt;logical_expr&gt;
 - IF USAGE
 - IF &lt;bool-expr&gt;
 - ELSE
 - ELSE USAGE
 - ENDIF
 - ENDIF USAGE
-- IF &lt;logical_expr&gt;
 - IF GPA &gt;= 3.0
 - ECHO HONORS
 - ECHO REGULAR
@@ -62,6 +62,6 @@ Start an IF/ELSE/ENDIF conditional block using the shell's shared boolean expres
 
 - Topic key: `DOT|IF`
 - Included HELP rows: `32`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

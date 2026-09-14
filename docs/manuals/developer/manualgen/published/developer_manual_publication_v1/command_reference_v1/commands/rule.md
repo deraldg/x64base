@@ -16,13 +16,13 @@ Inspect rule catalog paths, bindings, and field constraints for the current work
 
 ## Syntax
 
+- RULE [USAGE|&lt;args...&gt;]
 - RULE
 - RULE USAGE
 - RULE STATUS
 - RULE SHOW &lt;field|ALL&gt;
 - RULE LIST
 - RULE PATHS
-- RULE [USAGE|&lt;args...&gt;]
 - RULE SHOW GPA
 - RULE SHOW ALL
 
@@ -59,6 +59,6 @@ Inspect rule catalog paths, bindings, and field constraints for the current work
 
 - Topic key: `DOT|RULE`
 - Included HELP rows: `29`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

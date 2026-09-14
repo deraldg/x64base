@@ -16,24 +16,14 @@ Run a DotTalk++ script file, resolving bare names through script/test search loc
 
 ## Syntax
 
+- DOTSCRIPT &lt;file.dts&gt;
 - DOTSCRIPT USAGE
 - DOTSCRIPT &lt;file&gt;
 - DOTSCRIPT @&lt;file&gt;
 - DOTSCRIPT TRACE
-- DOTSCRIPT TRACE ON
-- DOTSCRIPT TRACE OFF
+- DOTSCRIPT TRACE ON|OFF
 - DOTSCRIPT TRACE &lt;file&gt;
 - DOTSCRIPT TRACE @&lt;file&gt;
-- DOTSCRIPT TRACE ON &lt;file&gt;
-- DOTSCRIPT TRACE OFF &lt;file&gt;
-- DOTSCRIPT TRACE ON @&lt;file&gt;
-- DOTSCRIPT TRACE OFF @&lt;file&gt;
-- DOTSCRIPT &lt;file&gt; OUT &lt;transcript-file&gt;
-- DOTSCRIPT &lt;file&gt; OUTPUT &lt;transcript-file&gt;
-- DOTSCRIPT TRACE &lt;file&gt; OUT &lt;transcript-file&gt;
-- DOTSCRIPT &lt;file&gt; OUT &lt;transcript-file&gt; APPEND
-- DOTSCRIPT &lt;file.dts&gt;
-- DOTSCRIPT TRACE ON|OFF
 - DOTSCRIPT TRACE ON|OFF &lt;file&gt;
 - DOTSCRIPT TRACE ON|OFF @&lt;file&gt;
 
@@ -86,7 +76,7 @@ Run a DotTalk++ script file, resolving bare names through script/test search loc
 ## Provenance
 
 - Topic key: `DOT|DOTSCRIPT`
-- Included HELP rows: `65`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- Included HELP rows: `55`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

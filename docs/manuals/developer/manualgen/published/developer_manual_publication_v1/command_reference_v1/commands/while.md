@@ -16,11 +16,11 @@ Buffer and execute a WHILE...ENDWHILE loop from the current record while a boole
 
 ## Syntax
 
+- WHILE &lt;expr&gt;
 - WHILE USAGE
 - WHILE &lt;bool-expr&gt; [QUIET]
 - ENDWHILE
 - ENDWHILE USAGE
-- WHILE &lt;expr&gt;
 - WHILE GPA &gt;= 3.0
 - TUPLE LNAME,FNAME,GPA
 
@@ -55,6 +55,6 @@ Buffer and execute a WHILE...ENDWHILE loop from the current record while a boole
 
 - Topic key: `DOT|WHILE`
 - Included HELP rows: `25`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

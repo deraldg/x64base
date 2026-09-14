@@ -16,14 +16,6 @@ Create a DBF table in the configured DBF path slot using the requested xBase/DBF
 
 ## Syntax
 
-- CREATE USAGE
-- CREATE &lt;name&gt; (&lt;field&gt; &lt;type&gt;[, ...])
-- CREATE MSDOS &lt;name&gt; (&lt;field&gt; &lt;type&gt;[, ...])
-- CREATE DBASE &lt;name&gt; (&lt;field&gt; &lt;type&gt;[, ...])
-- CREATE FOX26 &lt;name&gt; (&lt;field&gt; &lt;type&gt;[, ...])
-- CREATE FOXPRO &lt;name&gt; (&lt;field&gt; &lt;type&gt;[, ...])
-- CREATE VFP &lt;name&gt; (&lt;field&gt; &lt;type&gt;[, ...])
-- CREATE X64 &lt;name&gt; (&lt;field&gt; &lt;type&gt;[, ...])
 - CREATE [USAGE|&lt;args...&gt;]
 
 ## Usage
@@ -66,7 +58,7 @@ Create a DBF table in the configured DBF path slot using the requested xBase/DBF
 ## Provenance
 
 - Topic key: `DOT|CREATE`
-- Included HELP rows: `37`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- Included HELP rows: `29`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

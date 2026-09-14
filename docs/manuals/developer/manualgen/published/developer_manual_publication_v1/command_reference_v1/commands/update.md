@@ -16,8 +16,6 @@ Update records in the current DBF work area using SQL-like SET/WHERE syntax.
 
 ## Syntax
 
-- UPDATE USAGE
-- UPDATE SET &lt;field&gt;=&lt;value&gt;[, ...] [WHERE &lt;expr&gt;]
 - UPDATE &lt;statement&gt;
 
 ## Usage
@@ -45,7 +43,7 @@ Update records in the current DBF work area using SQL-like SET/WHERE syntax.
 ## Provenance
 
 - Topic key: `DOT|UPDATE`
-- Included HELP rows: `16`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- Included HELP rows: `14`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

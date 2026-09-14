@@ -16,6 +16,7 @@ Preview, validate, infer schema, create/import table data from delimited files.
 
 ## Syntax
 
+- IMPORTSQL [USAGE|&lt;args...&gt;]
 - IMPORTSQL USAGE
 - IMPORTSQL PREVIEW &lt;file&gt; [DELIM PIPE|TAB|COMMA]
 - IMPORTSQL VALIDATE &lt;file&gt; [DELIM PIPE|TAB|COMMA]
@@ -23,7 +24,6 @@ Preview, validate, infer schema, create/import table data from delimited files.
 - IMPORTSQL CREATE &lt;file&gt; TO &lt;table&gt; [DELIM PIPE|TAB|COMMA]
 - IMPORTSQL FILE &lt;file&gt; TO &lt;table&gt; [DELIM PIPE|TAB|COMMA]
 - IMPORTSQL MAP &lt;subcommand&gt; &lt;mapfile&gt;
-- IMPORTSQL [USAGE|&lt;args...&gt;]
 - IMPORTSQL PREVIEW data\students.psv
 - IMPORTSQL VALIDATE data\students.csv DELIM COMMA
 - IMPORTSQL CREATE data\students.psv TO students
@@ -67,6 +67,6 @@ Preview, validate, infer schema, create/import table data from delimited files.
 
 - Topic key: `DOT|IMPORTSQL`
 - Included HELP rows: `37`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

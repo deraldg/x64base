@@ -18,18 +18,13 @@ PowerShell reference catalog presentation helper used by the PSHELL command.
 
 ## Syntax
 
-- PSHELL
-- PSHELL USAGE
-- PSHELL LIST-CATEGORIES
-- PSHELL &lt;category&gt;
-- PSHELL &lt;term&gt;
 - PSHELL [USAGE|&lt;command...&gt;]
-- PSHELL                     → this grouped list
-- PSHELL PYTHON              → only Python commands
-- PSHELL PY-VENV-CREATE      → show details
-- PSHELL CLEAN*              → search cleaning commands
-- HELP PS LIST-CATEGORIES    → show category names
-- HELP PS &lt;term&gt;             → same as PSHELL &lt;term&gt;
+- PSHELL                     -&gt; this grouped list
+- PSHELL PYTHON              -&gt; only Python commands
+- PSHELL PY-VENV-CREATE      -&gt; show details
+- PSHELL CLEAN*              -&gt; search cleaning commands
+- HELP PS LIST-CATEGORIES    -&gt; show category names
+- HELP PS &lt;term&gt;             -&gt; same as PSHELL &lt;term&gt;
 
 ## Usage
 
@@ -65,7 +60,7 @@ PowerShell reference catalog presentation helper used by the PSHELL command.
 ## Provenance
 
 - Topic key: `DOT|PSHELL`
-- Included HELP rows: `37`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- Included HELP rows: `32`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

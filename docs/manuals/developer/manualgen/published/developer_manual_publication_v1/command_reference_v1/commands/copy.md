@@ -16,19 +16,14 @@ Copy the current DBF, convert the current table to a target DBF flavor, or copy 
 
 ## Syntax
 
-- COPY USAGE
-- COPY TO &lt;DBFNAME&gt; [WITH SIDECARS] [OVERWRITE]
-- COPY TO &lt;DBFNAME&gt; AS &lt;MSDOS|DBASE|FOX26|FOXPRO|VFP|X64&gt; [OVERWRITE]
-- COPY TO &lt;DBFNAME&gt; AS X64 VECTOR [OVERWRITE]
-- COPY FILE &lt;SRC&gt; TO &lt;DST&gt; [OVERWRITE]
 - COPY &lt;source&gt; TO &lt;target&gt;
 
 ## Usage
 
 - COPY USAGE
 - COPY TO &lt;DBFNAME&gt; [WITH SIDECARS] [OVERWRITE]
-- COPY TO &lt;DBFNAME&gt; AS &lt;MSDOS|DBASE|FOX26|FOXPRO|VFP|X64&gt; [OVERWRITE]
-- COPY TO &lt;DBFNAME&gt; AS X64 VECTOR [OVERWRITE]
+- COPY TO &lt;DBFNAME&gt; AS &lt;MSDOS|DBASE|FOX26|FOXPRO|VFP|X64&gt; [KEY DROP] [OVERWRITE]
+- COPY TO &lt;DBFNAME&gt; AS X64 VECTOR [KEY DROP] [OVERWRITE]
 - COPY FILE &lt;SRC&gt; TO &lt;DST&gt; [OVERWRITE]
 
 ## Example
@@ -46,6 +41,8 @@ Copy the current DBF, convert the current table to a target DBF flavor, or copy 
 - COPY FILE does not require an open table.
 - WITH SIDECARS applies only to binary COPY TO.
 - OVERWRITE is required when the destination already exists.
+- KEY DROP accepts a destination that cannot carry the source's primary key. Without it, COPY TO ... AS REFUSES rather than discarding the designation in silence -- which is what a downgrade to VFP, FOX26 or
+- MSDOS does, since those headers have nowhere to record one.
 
 ## Related
 
@@ -56,7 +53,7 @@ Copy the current DBF, convert the current table to a target DBF flavor, or copy 
 ## Provenance
 
 - Topic key: `DOT|COPY`
-- Included HELP rows: `27`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- Included HELP rows: `26`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

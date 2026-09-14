@@ -17,22 +17,6 @@ Tuple-based normalization test harness and live DBF capture tool for building, n
 ## Syntax
 
 - TUPTALK
-- TUPTALK USAGE
-- TUPTALK RESET
-- TUPTALK ADD &lt;type&gt; &lt;len&gt; &lt;raw&gt;
-- TUPTALK ADD &lt;type&gt; &lt;len&gt; &lt;dec&gt; &lt;raw&gt;
-- TUPTALK LIST
-- TUPTALK NORMALIZE
-- TUPTALK DUMP
-- TUPTALK EXPORT CSV
-- TUPTALK EXPORT TSV
-- TUPTALK EXPORT CSV &lt;path&gt;
-- TUPTALK EXPORT TSV &lt;path&gt;
-- TUPTALK PUSH &lt;field&gt;
-- TUPTALK PUSH ALL
-- TUPTALK PUSH ALL FILTER &lt;mask&gt;
-- TUPTALK PUSH FILTER &lt;mask&gt;
-- TUPTALK PUSH ROW
 
 ## Usage
 
@@ -86,7 +70,7 @@ Tuple-based normalization test harness and live DBF capture tool for building, n
 ## Provenance
 
 - Topic key: `DOT|TUPTALK`
-- Included HELP rows: `54`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- Included HELP rows: `38`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

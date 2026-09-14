@@ -16,11 +16,6 @@ Display or search the SQL helper/reference catalog.
 
 ## Syntax
 
-- SQLHELP
-- SQLHELP USAGE
-- SQLHELP LIST-CATEGORIES
-- SQLHELP &lt;category&gt;
-- SQLHELP &lt;term&gt;
 - SQLHELP [USAGE|&lt;topic&gt;]
 
 ## Usage
@@ -53,7 +48,7 @@ Display or search the SQL helper/reference catalog.
 ## Provenance
 
 - Topic key: `DOT|SQLHELP`
-- Included HELP rows: `24`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- Included HELP rows: `19`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

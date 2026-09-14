@@ -16,21 +16,6 @@ Display retro computer/system splash screens with system-specific terminal profi
 
 ## Syntax
 
-- RETRO USAGE
-- RETRO LIST
-- RETRO LIST LONG
-- RETRO STYLES
-- RETRO MODES
-- RETRO SHOW &lt;system&gt;
-- RETRO SHOW &lt;system&gt; NATIVE
-- RETRO SHOW &lt;system&gt; ASCII
-- RETRO SHOW &lt;system&gt; LEGACY
-- RETRO SHOW &lt;system&gt; STYLE &lt;style&gt;
-- RETRO SHOW &lt;system&gt; NOCLEAR
-- RETRO SHOW &lt;system&gt; NOCAPTION
-- RETRO &lt;system&gt;
-- RETRO &lt;system&gt; INFO
-- RETRO HELP
 - RETRO [USAGE|LIST|SHOW &lt;system&gt;|&lt;system&gt;|HELP]
 
 ## Usage
@@ -89,7 +74,7 @@ Display retro computer/system splash screens with system-specific terminal profi
 ## Provenance
 
 - Topic key: `DOT|RETRO`
-- Included HELP rows: `57`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- Included HELP rows: `42`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

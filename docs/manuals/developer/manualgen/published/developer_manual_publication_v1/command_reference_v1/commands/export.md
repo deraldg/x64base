@@ -16,9 +16,7 @@ Export the current DBF rowset, or an already-open named work area, to a delimite
 
 ## Syntax
 
-- EXPORT USAGE
 - EXPORT [TO] &lt;file&gt; [CSV|PIPE|SDF]
-- EXPORT &lt;open-area-token&gt; TO &lt;file&gt; [CSV|PIPE|SDF]
 
 ## Usage
 
@@ -38,8 +36,6 @@ Export the current DBF rowset, or an already-open named work area, to a delimite
 - EXPORT honors the active SET FILTER for the exported area.
 - EXPORT reads records in physical table order.
 - EXPORT may report file/write errors and still emit a summary when appropriate.
-- Named tokens may be an area number,
-- area, alias/name, logical name, DBF basename/stem,
 
 ## Related
 
@@ -53,7 +49,7 @@ Export the current DBF rowset, or an already-open named work area, to a delimite
 ## Provenance
 
 - Topic key: `DOT|EXPORT`
-- Included HELP rows: `29`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- Included HELP rows: `25`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

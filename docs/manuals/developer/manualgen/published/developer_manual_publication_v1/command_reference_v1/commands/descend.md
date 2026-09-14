@@ -17,7 +17,6 @@ Set the active order/tag direction to descending for the current work area.
 ## Syntax
 
 - DESCEND
-- DESCEND USAGE
 
 ## Usage
 
@@ -39,7 +38,7 @@ Set the active order/tag direction to descending for the current work area.
 ## Provenance
 
 - Topic key: `DOT|DESCEND`
-- Included HELP rows: `13`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- Included HELP rows: `12`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

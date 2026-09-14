@@ -16,12 +16,12 @@ Export tuple graph rows to a CSV file using a tuple spec, optional field list, a
 
 ## Syntax
 
+- TUPEXPORT [USAGE|&lt;args...&gt;]
 - TUPEXPORT USAGE
 - TUPEXPORT CSV &lt;path&gt;
 - TUPEXPORT CSV &lt;path&gt; &lt;tuple-spec&gt;
 - TUPEXPORT CSV &lt;path&gt; FIELDS &lt;field-list&gt;
 - TUPEXPORT CSV &lt;path&gt; * FOR &lt;expr&gt;
-- TUPEXPORT [USAGE|&lt;args...&gt;]
 - TUPEXPORT CSV tmp\students.csv
 - TUPEXPORT CSV tmp\students_names.csv FIELDS LNAME,FNAME
 - TUPEXPORT CSV tmp\students_major.csv STUDENTS.*,MAJORS.* FOR MAJORS.NAME = "CS"
@@ -55,6 +55,6 @@ Export tuple graph rows to a CSV file using a tuple spec, optional field list, a
 
 - Topic key: `DOT|TUPEXPORT`
 - Included HELP rows: `25`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

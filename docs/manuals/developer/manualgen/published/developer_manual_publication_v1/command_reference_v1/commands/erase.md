@@ -16,10 +16,6 @@ Physically delete a DBF table file plus known same-stem sidecars across DBF, IND
 
 ## Syntax
 
-- ERASE USAGE
-- ERASE &lt;table&gt; [CONFIRM]
-- ERASE TABLE &lt;table&gt; [CONFIRM]
-- ERASE DIR &lt;path&gt; [CONFIRM]
 - ERASE [&lt;table&gt;|TABLE &lt;table&gt;|DIR &lt;path&gt;] [CONFIRM]
 
 ## Usage
@@ -40,7 +36,7 @@ Physically delete a DBF table file plus known same-stem sidecars across DBF, IND
 
 - ERASE USAGE prints usage and does not inspect or delete files.
 - Without CONFIRM, ERASE performs a dry-run and lists files that would be deleted.
-- CONFIRM physically deletes the DBF, matching index containers/files, and matching LMDB backend directory when present.
+- CONFIRM physically deletes the DBF, matching index containers/files and CDX metadata, and matching LMDB backend directory when present.
 - ERASE DIR deletes the named directory and everything under it; cwd-relative or absolute path, no SETPATH resolution, no sidecar sweep. Dry-run without CONFIRM.
 
 ## Related
@@ -52,7 +48,7 @@ Physically delete a DBF table file plus known same-stem sidecars across DBF, IND
 ## Provenance
 
 - Topic key: `DOT|ERASE`
-- Included HELP rows: `44`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- Included HELP rows: `40`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

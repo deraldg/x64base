@@ -16,13 +16,6 @@ Memory-only educational index lab for teaching sorting and index concepts withou
 
 ## Syntax
 
-- IDX
-- IDX USAGE
-- IDX ON &lt;field|
-- n&gt; TAG &lt;name&gt;
-- IDX LIST
-- IDX DROP &lt;tag&gt;
-- IDX DROP ALL
 - IDX [USAGE|LIST|DROP &lt;tag&gt;|DROP ALL|ON &lt;field|#n&gt; TAG &lt;name&gt; [SORT &lt;algo&gt;|&lt;algo&gt;] [ASC|DESC]]
 
 ## Usage
@@ -37,8 +30,6 @@ Memory-only educational index lab for teaching sorting and index concepts withou
 - IDX LIST
 - IDX DROP &lt;tag&gt;
 - IDX DROP ALL
-- IDX ON &lt;field|
-- n&gt; TAG &lt;name&gt;
 
 ## Example
 
@@ -63,7 +54,7 @@ Memory-only educational index lab for teaching sorting and index concepts withou
 ## Provenance
 
 - Topic key: `DOT|IDX`
-- Included HELP rows: `34`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- Included HELP rows: `25`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

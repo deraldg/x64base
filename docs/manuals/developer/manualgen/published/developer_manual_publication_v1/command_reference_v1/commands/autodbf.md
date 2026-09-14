@@ -16,15 +16,6 @@ Create an X64 DBF from a CSV file and import the CSV rows into the newly created
 
 ## Syntax
 
-- AUTODBF USAGE
-- AUTODBF &lt;table&gt; FROM &lt;csvfile&gt;
-- AUTODBF X64 &lt;table&gt; FROM &lt;csvfile&gt;
-- AUTODBF &lt;table&gt; FROM &lt;csvfile&gt; HEADER
-- AUTODBF &lt;table&gt; FROM &lt;csvfile&gt; NOHEADER
-- AUTODBF &lt;table&gt; FROM &lt;csvfile&gt; AUTO
-- AUTODBF &lt;table&gt; FROM &lt;csvfile&gt; TEXTONLY
-- AUTODBF &lt;table&gt; FROM &lt;csvfile&gt; INFER
-- AUTODBF &lt;table&gt; FROM &lt;csvfile&gt; OVERWRITE
 - AUTODBF [USAGE|&lt;source&gt; [TO &lt;dbf&gt;]]
 
 ## Usage
@@ -64,7 +55,7 @@ Create an X64 DBF from a CSV file and import the CSV rows into the newly created
 ## Provenance
 
 - Topic key: `DOT|AUTODBF`
-- Included HELP rows: `41`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- Included HELP rows: `32`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

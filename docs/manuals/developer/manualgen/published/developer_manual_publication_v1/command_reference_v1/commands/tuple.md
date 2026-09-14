@@ -16,9 +16,9 @@ Build and print a tuple row from the canonical tuple builder using a tuple field
 
 ## Syntax
 
+- TUPLE &lt;spec&gt;
 - TUPLE
 - TUPLE USAGE
-- TUPLE &lt;spec&gt;
 - TUPLE &lt;spec&gt; --HEADER
 - TUPLE &lt;spec&gt; --AREA-PREFIX
 - TUPLE &lt;spec&gt; --NO-ECHO
@@ -79,6 +79,6 @@ Build and print a tuple row from the canonical tuple builder using a tuple field
 
 - Topic key: `DOT|TUPLE`
 - Included HELP rows: `57`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

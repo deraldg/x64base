@@ -16,13 +16,6 @@ Acquire record or table locks for the current table and inspect lock status or l
 
 ## Syntax
 
-- LOCK USAGE
-- LOCK
-- LOCK &lt;n&gt;
-- LOCK ALL
-- LOCK TABLE
-- LOCK STATUS
-- LOCK WHO &lt;n&gt;
 - LOCK [RECORD|TABLE|&lt;recno&gt;...]
 
 ## Usage
@@ -54,7 +47,7 @@ Acquire record or table locks for the current table and inspect lock status or l
 ## Provenance
 
 - Topic key: `DOT|LOCK`
-- Included HELP rows: `28`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- Included HELP rows: `21`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

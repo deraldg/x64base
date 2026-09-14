@@ -19,13 +19,6 @@ Report DBF field structure and index/container information for the current area 
 ## Syntax
 
 - STRUCT
-- STRUCT USAGE
-- STRUCT INDEX
-- STRUCT FIELDS
-- STRUCT ALL
-- STRUCT ALL INDEX
-- STRUCT ALL VERBOSE
-- STRUCT command behavior and usage are owned by the actual STRUCT command implementation.
 
 ## Usage
 
@@ -72,7 +65,7 @@ Report DBF field structure and index/container information for the current area 
 ## Provenance
 
 - Topic key: `DOT|STRUCT`
-- Included HELP rows: `40`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- Included HELP rows: `33`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

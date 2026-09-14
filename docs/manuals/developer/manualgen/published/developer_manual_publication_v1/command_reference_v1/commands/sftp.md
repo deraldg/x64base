@@ -16,11 +16,8 @@ Wrap the system OpenSSH sftp client for LS, GET, and PUT file transfer.
 
 ## Syntax
 
-- SFTP USAGE
-- SFTP LS &lt;user@host:/remote/path&gt;                      (alias: DIR)
-- SFTP GET &lt;user@host:/remote/file&gt; TO &lt;local-file&gt;     (alias: FETCH)
-- SFTP PUT &lt;local-file&gt; TO &lt;user@host:/remote/file&gt;     (alias: SEND)
 - SFTP [USAGE|&lt;args...&gt;]
+- SFTP USAGE
 - SFTP LS &lt;user@host:/remote/path&gt;
 - SFTP GET &lt;user@host:/remote/file&gt; TO &lt;local-file&gt;
 - SFTP PUT &lt;local-file&gt; TO &lt;user@host:/remote/file&gt;
@@ -49,7 +46,7 @@ Wrap the system OpenSSH sftp client for LS, GET, and PUT file transfer.
 ## Provenance
 
 - Topic key: `DOT|SFTP`
-- Included HELP rows: `24`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- Included HELP rows: `21`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

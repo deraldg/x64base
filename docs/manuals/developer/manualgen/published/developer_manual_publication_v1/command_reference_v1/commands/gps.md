@@ -17,7 +17,6 @@ Report current work-area position, including area slot, table label, physical re
 ## Syntax
 
 - GPS
-- GPS USAGE
 
 ## Usage
 
@@ -45,7 +44,7 @@ Report current work-area position, including area slot, table label, physical re
 ## Provenance
 
 - Topic key: `DOT|GPS`
-- Included HELP rows: `25`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- Included HELP rows: `24`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

@@ -16,31 +16,6 @@ Thin SQLite command wrapper for status, connection management, Bible seed helper
 
 ## Syntax
 
-- SQLITE
-- SQLITE USAGE
-- SQLITE STATUS
-- SQLITE CWD
-- SQLITE PWD
-- SQLITE VERSION
-- SQLITE OPEN &lt;file&gt;
-- SQLITE OPEN :memory:
-- SQLITE DB &lt;file&gt;
-- SQLITE DB :memory:
-- SQLITE BIBLE
-- SQLITE BIBLECHECK
-- SQLITE BIBLECHK
-- SQLITE BOOKS
-- SQLITE VERSE &lt;ref&gt;
-- SQLITE SEARCH &lt;phrase&gt;
-- SQLITE LIST &lt;table&gt;
-- SQLITE LIST &lt;table&gt; &lt;limit&gt;
-- SQLITE COLUMNS &lt;table&gt;
-- SQLITE CLOSE
-- SQLITE TABLES
-- SQLITE SCHEMA
-- SQLITE SCHEMA &lt;table-or-view&gt;
-- SQLITE EXEC &lt;sql&gt;
-- SQLITE SELECT &lt;sql&gt;
 - SQLITE &lt;subcommand&gt; ...
 
 ## Usage
@@ -90,7 +65,7 @@ Thin SQLite command wrapper for status, connection management, Bible seed helper
 ## Provenance
 
 - Topic key: `DOT|SQLITE`
-- Included HELP rows: `71`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- Included HELP rows: `46`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

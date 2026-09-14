@@ -11,7 +11,6 @@
 Inspect and control the per-area LMDB backed CDX index backend through the current DbArea IndexManager.
 
 - Per-area LMDB/CDX backend inspection and control command.
-- Command-owned @dottalk.usage v1 summary.
 
 ## Status
 
@@ -19,19 +18,6 @@ Inspect and control the per-area LMDB backed CDX index backend through the curre
 
 ## Syntax
 
-- LMDB USAGE
-- LMDB INFO
-- LMDB OPEN &lt;container.cdx&gt;
-- LMDB OPEN &lt;envdir.cdx.d&gt;
-- LMDB OPEN &lt;stem&gt;
-- LMDB USE &lt;tag&gt;
-- LMDB SEEK &lt;key&gt;
-- LMDB DUMP
-- LMDB DUMP &lt;max&gt;
-- LMDB SCAN &lt;low&gt; &lt;high&gt;
-- LMDB CLOSE
-- LMDB command (per-area):
-- LMDB DUMP [&lt;max&gt;]
 - LMDB [USAGE|INFO|OPEN|USE|SEEK|DUMP|SCAN|CLOSE] ...
 
 ## Usage
@@ -47,7 +33,6 @@ Inspect and control the per-area LMDB backed CDX index backend through the curre
 - LMDB DUMP &lt;max&gt;
 - LMDB SCAN &lt;low&gt; &lt;high&gt;
 - LMDB CLOSE
-- Per-area LMDB/CDX backend inspection and control command.
 - LMDB command (per-area):
 - LMDB DUMP [&lt;max&gt;]
 
@@ -77,7 +62,7 @@ Inspect and control the per-area LMDB backed CDX index backend through the curre
 ## Provenance
 
 - Topic key: `DOT|LMDB`
-- Included HELP rows: `50`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- Included HELP rows: `35`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

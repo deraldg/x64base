@@ -8,7 +8,7 @@
 
 ## Summary
 
-Evaluate SQL-like COUNT/FOR predicates over the current DBF work area.
+Reserved verb. Reports where the scanning and statement surfaces now live.
 
 ## Status
 
@@ -16,56 +16,40 @@ Evaluate SQL-like COUNT/FOR predicates over the current DBF work area.
 
 ## Syntax
 
-- SQL USAGE
 - SQL [COUNT] [ALL|DELETED] [FOR &lt;expr&gt; | &lt;expr&gt;] [VERBOSE]
-- SQL COUNT
-- SQL COUNT ALL
-- SQL COUNT DELETED
-- SQL COUNT FOR GPA &gt;= 3.0
-- SQL LNAME = "SMITH"
-- SQL VERBOSE COUNT FOR GPA &gt;= 3.0
-- SQLSEL  -- SELECT statements: SQLSEL SELECT &lt;cols&gt; FROM &lt;table&gt; ...
-- SQLITE  -- the SQLite bridge, for an actual SQLite database
 
 ## Usage
 
+- SQL
 - SQL USAGE
-- SQL [COUNT] [ALL|DELETED] [FOR &lt;expr&gt; | &lt;expr&gt;] [VERBOSE]
 
 ## Example
 
-- SQL COUNT
-- SQL COUNT ALL
-- SQL COUNT DELETED
-- SQL COUNT FOR GPA &gt;= 3.0
-- SQL LNAME = "SMITH"
-- SQL VERBOSE COUNT FOR GPA &gt;= 3.0
+- SQL
+- SQL USAGE
 
 ## Note
 
-- SQL USAGE prints usage before open-table checks.
-- SQL reads records and may temporarily move the cursor.
-- SQL does not mutate table data.
-- COUNT reports the number only. A bare predicate scan lists its matches.
-- VERBOSE prints every record with its true/false verdict, plus scan diagnostics.
-- SQL DOES NOT EXECUTE SQL STATEMENTS. The name is historical: this command scans the CURRENT area with a predicate and reports matches or a count.
-- Family boundary, stated here because the three names invite confusion:
-- SQL     -- predicate scan/count over the current area (this command)
-- SQLSEL  -- SQLsel, the SELECT statement surface over a named open table
-- SQLITE  -- the SQLite bridge, for talking to an actual SQLite database
-- SQLSEL also accepts this same predicate-scan form for compatibility, so
-- `SQL COUNT FOR &lt;expr&gt;` and `SQLSEL COUNT FOR &lt;expr&gt;` are equivalent.
+- SQL no longer scans records and never requires an open table.
+- Retired as a scanner 2026-09-04; its LIST and VERBOSE behaviour moved to
+- COUNT, onto the shared selection path that honours SET FILTER and
+- SET DELETED. The retired form could disagree with COUNT and did not say so.
+- Family boundary, stated because the three names invite confusion:
+- SQL     -- reserved (this command)
+- SQLSEL  -- SQLsel, the SELECT statement surface
+- SQLITE  -- the SQLite bridge, for an actual SQLite database
+- Any argument is accepted and answered with the same guidance, so a script carrying an old `SQL COUNT FOR ...` line gets a correction, not silence.
 
 ## Related
 
+- COUNT
 - SQLSEL
-- WHERE
-- WHERECACHE
+- SQLITE
 
 ## Provenance
 
 - Topic key: `DOT|SQL`
-- Included HELP rows: `38`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- Included HELP rows: `22`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

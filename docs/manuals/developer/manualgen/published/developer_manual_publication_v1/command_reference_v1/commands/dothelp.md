@@ -16,10 +16,6 @@ Show project-native DotTalk++ reference entries from the dotref catalog.
 
 ## Syntax
 
-- DOTHELP
-- DOTHELP USAGE
-- DOTHELP &lt;term&gt;
-- HELP /DOT &lt;term&gt;
 - DOTHELP [&lt;term&gt;]
 
 ## Usage
@@ -46,7 +42,7 @@ Show project-native DotTalk++ reference entries from the dotref catalog.
 ## Provenance
 
 - Topic key: `DOT|DOTHELP`
-- Included HELP rows: `19`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- Included HELP rows: `15`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

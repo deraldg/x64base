@@ -16,11 +16,6 @@ Inspect image file metadata or open a supported image file in the operating syst
 
 ## Syntax
 
-- IMAGE USAGE
-- IMAGE DEFAULT
-- IMAGE &lt;file&gt;
-- IMAGE INFO DEFAULT
-- IMAGE INFO &lt;file&gt;
 - IMAGE [USAGE|INFO &lt;file&gt;|&lt;file&gt;]
 
 ## Usage
@@ -50,7 +45,7 @@ Inspect image file metadata or open a supported image file in the operating syst
 ## Provenance
 
 - Topic key: `DOT|IMAGE`
-- Included HELP rows: `24`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- Included HELP rows: `19`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

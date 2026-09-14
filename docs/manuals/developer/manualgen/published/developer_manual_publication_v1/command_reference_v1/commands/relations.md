@@ -26,13 +26,6 @@ Inspect and manage active relation definitions, relation files, and relation enu
 - REL ENUM [LIMIT &lt;n&gt;] &lt;path...&gt; TUPLE &lt;projection&gt;
 - REL SAVE [path]
 - REL LOAD [path]
-- RELATIONS
-- RELATIONS USAGE
-- RELATIONS ALL
-- SET RELATIONS
-- SET RELATIONS USAGE
-- SET RELATIONS ADD &lt;parent&gt; &lt;child&gt; ON f1[,f2...] [TO child_f1[,child_f2...]]
-- SET RELATIONS CLEAR &lt;parent|ALL&gt;
 - RELATIONS [USAGE|ALL]
 
 ## Usage
@@ -80,7 +73,7 @@ Inspect and manage active relation definitions, relation files, and relation enu
 ## Provenance
 
 - Topic key: `DOT|RELATIONS`
-- Included HELP rows: `55`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- Included HELP rows: `48`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

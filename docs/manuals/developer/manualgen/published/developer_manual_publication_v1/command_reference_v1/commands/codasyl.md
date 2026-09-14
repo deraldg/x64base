@@ -16,6 +16,7 @@ Provide a thin CODASYL teaching veneer over already-open DotTalk++ work areas, s
 
 ## Syntax
 
+- CODASYL [USAGE|HELP]
 - CODASYL USAGE
 - CODASYL HELP
 - CODASYL MODE ON
@@ -25,20 +26,10 @@ Provide a thin CODASYL teaching veneer over already-open DotTalk++ work areas, s
 - CODASYL SHOW SET &lt;name&gt;
 - CODASYL FIND OWNER &lt;set&gt; &lt;value&gt;
 - CODASYL FIND OWNER &lt;owner_alias&gt; &lt;value&gt;
-- CODASYL GET FIRST
-- CODASYL GET FIRST &lt;set&gt;
-- CODASYL GET FIRST &lt;member_alias&gt;
-- CODASYL GET NEXT
-- CODASYL GET NEXT &lt;set&gt;
-- CODASYL GET NEXT &lt;member_alias&gt;
-- CODASYL WALK
-- CODASYL WALK &lt;set&gt;
-- CODASYL WALK &lt;member_alias&gt;
-- CODASYL STATUS
-- CODASYL [USAGE|HELP]
 - CODASYL GET FIRST [&lt;set or member_alias&gt;]
 - CODASYL GET NEXT  [&lt;set or member_alias&gt;]
 - CODASYL WALK      [&lt;set or member_alias&gt;]
+- CODASYL STATUS
 
 ## Usage
 
@@ -88,7 +79,7 @@ Provide a thin CODASYL teaching veneer over already-open DotTalk++ work areas, s
 ## Provenance
 
 - Topic key: `DOT|CODASYL`
-- Included HELP rows: `59`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- Included HELP rows: `50`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

@@ -16,13 +16,13 @@ Start buffering commands for later replay by ENDLOOP, with optional quiet mode a
 
 ## Syntax
 
+- LOOP FOR &lt;n&gt; TIMES
 - LOOP
 - LOOP USAGE
 - LOOP QUIET
 - LOOP &lt;n&gt;
 - LOOP &lt;n&gt; TIMES
 - LOOP FOR &lt;n&gt;
-- LOOP FOR &lt;n&gt; TIMES
 - LOOP FOR &lt;label&gt;
 - LOOP OVERRIDE &lt;label&gt;
 - ENDLOOP
@@ -63,6 +63,6 @@ Start buffering commands for later replay by ENDLOOP, with optional quiet mode a
 
 - Topic key: `DOT|LOOP`
 - Included HELP rows: `38`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

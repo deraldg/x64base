@@ -8,7 +8,7 @@
 
 ## Summary
 
-Index container command (CNX multi-tag support).
+Manage CNX index container metadata: create containers, inspect header/tag directories, add/drop tags, and walk/trace RUN1 tag structures.
 
 ## Status
 
@@ -16,14 +16,6 @@ Index container command (CNX multi-tag support).
 
 ## Syntax
 
-- CNX USAGE
-- CNX INFO [&lt;path.cnx&gt;]
-- CNX TAGS [&lt;path.cnx&gt;]
-- CNX CREATE [&lt;path.cnx&gt;]
-- CNX ADDTAG &lt;name&gt; [&lt;path.cnx&gt;]
-- CNX DROPTAG &lt;name&gt; [&lt;path.cnx&gt;]
-- CNX WALK &lt;tag&gt; [&lt;path.cnx&gt;]
-- CNX TRACE &lt;tag&gt; [&lt;path.cnx&gt;]
 - CNX &lt;name&gt;
 
 ## Usage
@@ -66,7 +58,7 @@ Index container command (CNX multi-tag support).
 ## Provenance
 
 - Topic key: `DOT|CNX`
-- Included HELP rows: `41`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- Included HELP rows: `34`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

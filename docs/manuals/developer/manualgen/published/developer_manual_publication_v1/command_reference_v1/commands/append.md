@@ -16,12 +16,7 @@ Append one or more blank records to the current table, using smart append paths 
 
 ## Syntax
 
-- APPEND USAGE
 - APPEND
-- APPEND &lt;count&gt;
-- APPEND MANY &lt;count&gt;
-- APPEND RAW
-- APPEND RAW MANY &lt;count&gt;
 
 ## Usage
 
@@ -53,7 +48,7 @@ Append one or more blank records to the current table, using smart append paths 
 ## Provenance
 
 - Topic key: `DOT|APPEND`
-- Included HELP rows: `27`
-- HELP reference run: `MANRUN-20260902T151703Z-1CA7DB89`
-- Disposition run: `MANRUN-20260902T151704Z-6F39AFBC`
+- Included HELP rows: `22`
+- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
+- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
