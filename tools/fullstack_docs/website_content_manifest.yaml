@@ -5,7 +5,7 @@ schema: dottalk.website.content_manifest.v2
 generated_at: "2026-08-26"
 spine: simplex_duplex_direction_gates   # S-impl | S-rep | D-man | WO
 site_root: x64base-site/content
-totals: {generated: 8, derived: 32, maintained: 78, maintained_current: 9, reported: 5, static: 19, total: 151}
+totals: {generated: 8, derived: 32, maintained: 79, maintained_current: 9, reported: 5, static: 19, total: 152}
 publication_check:
   runner: tools/fullstack_docs/website_matrix_check.py
   required_gates:
@@ -162,6 +162,7 @@ classes:
       - news/announcements/the-return-leg
       - news/announcements/tracking-console-write-path
       - news/announcements/two-walkers-one-graph-cascade-milestone
+      - news/announcements/the-sweep-was-never-told
       - news/announcements/website-local-preview-navigation-fixed
       - news/announcements/workspaces-in-memos-and-the-zoo
       - portal/overview
