@@ -81,12 +81,12 @@ void show_pshell_help(const std::string& arg) {
         }
 
         std::cout << "Usage:\n"
-                  << "  PSHELL                     → this grouped list\n"
-                  << "  PSHELL PYTHON              → only Python commands\n"
-                  << "  PSHELL PY-VENV-CREATE      → show details\n"
-                  << "  PSHELL CLEAN*              → search cleaning commands\n"
-                  << "  HELP PS LIST-CATEGORIES    → show category names\n"
-                  << "  HELP PS <term>             → same as PSHELL <term>\n\n";
+                  << "  PSHELL                     -> this grouped list\n"
+                  << "  PSHELL PYTHON              -> only Python commands\n"
+                  << "  PSHELL PY-VENV-CREATE      -> show details\n"
+                  << "  PSHELL CLEAN*              -> search cleaning commands\n"
+                  << "  HELP PS LIST-CATEGORIES    -> show category names\n"
+                  << "  HELP PS <term>             -> same as PSHELL <term>\n\n";
         return;
     }
 

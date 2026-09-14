@@ -168,11 +168,11 @@ void show_sql_help(const std::string& arg) {
         }
 
         std::cout << "Usage:\n"
-                  << "  SQL                        → this grouped list\n"
-                  << "  SQL INDEXING               → only indexing commands\n"
-                  << "  SQL CREATE-INDEX           → show details\n"
-                  << "  SQL LIST-CATEGORIES        → show category names\n"
-                  << "  HELP SQL <term>            → same as SQL <term>\n\n"
+                  << "  SQL                        -> this grouped list\n"
+                  << "  SQL INDEXING               -> only indexing commands\n"
+                  << "  SQL CREATE-INDEX           -> show details\n"
+                  << "  SQL LIST-CATEGORIES        -> show category names\n"
+                  << "  HELP SQL <term>            -> same as SQL <term>\n\n"
                   << "Tip: Use EXPLAIN QUERY PLAN (SQLite) or SET SHOWPLAN_ALL ON (MSSQL) to verify indexes.\n";
         return;
     }
