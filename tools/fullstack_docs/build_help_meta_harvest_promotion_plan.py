@@ -16,8 +16,38 @@ from check_help_meta_harvest_freshness import audit_workspace  # noqa: E402
 from compare_help_meta_harvest import REQUIRED_FILES  # noqa: E402
 
 
-MANIFEST_NAME = "HELP_META_EXPORT_MANIFEST_v0.csv"
-PACKAGE_FILES = tuple(REQUIRED_FILES) + (MANIFEST_NAME,)
+# v1 IS THE SANCTIONED ENGINE PRODUCER'S MANIFEST; v0 IS THE PYTHON
+# SCAFFOLD'S. Prefer v1 when present, per workspace.
+#
+# THIS FILE HARDCODED v0 AND THAT IS WHY IT REFUSED A CORRECT CANDIDATE.
+# Measured 2026-09-14: HELPMETA-20260914T012823Z passed E5 freshness 14/14
+# against the live store, and this planner still reported
+# CANDIDATE_MISSING:HELP_META_EXPORT_MANIFEST_v0.csv + PACKAGE_INCOMPLETE:14/15,
+# because the engine exporter writes v1 and v0 was renamed to
+# HELP_META_EXPORT_MANIFEST_v0.superseded-20260902.csv twelve days earlier.
+#
+# check_help_meta_harvest_freshness.py:270 ALREADY CARRIES THIS FIX, and its
+# comment already records the lesson -- "Hardcoding v0 is what made a correct
+# engine export look like fourteen missing manifest rows." The repair landed in
+# one reader and not in the planner beside it. A fix applied to one of two
+# call sites is a fix that will be rediscovered.
+MANIFEST_NAMES = (
+    "HELP_META_EXPORT_MANIFEST_v1.csv",
+    "HELP_META_EXPORT_MANIFEST_v0.csv",
+)
+
+
+def resolve_manifest_name(*workspaces: Path) -> str:
+    """First manifest spelling present in EVERY given workspace.
+
+    Both sides must agree: promoting a v1 candidate over a canonical that
+    only has v0 is a rename, not a replacement, and this planner's whole
+    contract is byte-for-byte replacement of named targets.
+    """
+    for name in MANIFEST_NAMES:
+        if all((ws / name).is_file() for ws in workspaces):
+            return name
+    return MANIFEST_NAMES[-1]
 
 
 def sha256(path: Path) -> str:
@@ -64,9 +94,13 @@ def build_plan(
     if candidate_audit["status"] != "PASS":
         findings.append("CANDIDATE_NOT_CURRENT")
 
+    package_files = tuple(REQUIRED_FILES) + (
+        resolve_manifest_name(candidate, canonical),
+    )
+
     inventory: list[dict[str, object]] = []
     mutation_rows: list[dict[str, object]] = []
-    for name in PACKAGE_FILES:
+    for name in package_files:
         source = candidate / name
         target = canonical / name
         if not source.is_file():
@@ -100,9 +134,9 @@ def build_plan(
                 "rollback_guard_sha256": after_hash,
             })
 
-    if len(inventory) != len(PACKAGE_FILES):
+    if len(inventory) != len(package_files):
         findings.append(
-            f"PACKAGE_INCOMPLETE:{len(inventory)}/{len(PACKAGE_FILES)}"
+            f"PACKAGE_INCOMPLETE:{len(inventory)}/{len(package_files)}"
         )
 
     status = "PASS_PLAN_ONLY" if not findings else "FAIL_PLAN_ONLY"
@@ -131,7 +165,7 @@ def build_plan(
         "proposed_backup_root": backup_root,
         "candidate_freshness_status": candidate_audit["status"],
         "canonical_freshness_status": canonical_audit["status"],
-        "package_file_count": len(PACKAGE_FILES),
+        "package_file_count": len(package_files),
         "planned_mutation_rows": len(mutation_rows),
         "verified_noop_rows": len(inventory) - len(mutation_rows),
         "mutation_ledger": f"{output_rel}/{ledger_path.name}",
@@ -168,7 +202,7 @@ def build_plan(
         f"- Run: `{run_id}`",
         f"- Candidate freshness: `{candidate_audit['status']}`",
         f"- Canonical freshness: `{canonical_audit['status']}`",
-        f"- Package files: {len(inventory)}/{len(PACKAGE_FILES)}",
+        f"- Package files: {len(inventory)}/{len(package_files)}",
         f"- Planned replacements: {len(mutation_rows)}",
         f"- Verified no-ops: {len(inventory) - len(mutation_rows)}",
         f"- Plan manifest SHA-256: `{plan_hash}`",

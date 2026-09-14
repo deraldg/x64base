@@ -1,0 +1,157 @@
+{
+  "schema": "dottalk.fullstack.help_meta_harvest_promotion_plan.v1",
+  "observed_at_utc": "2026-09-14T01:30:00Z",
+  "run_id": "HELPMETA-20260914T012823Z",
+  "status": "FAIL_PLAN_ONLY",
+  "plan_only": 1,
+  "apply_available": 0,
+  "mutation_authorized": 0,
+  "canonical_files_mutated": 0,
+  "publication_authority_claimed": 0,
+  "candidate_workspace": "docs/manuals/developer/manualgen/harvested/export_runs/HELPMETA-20260914T012823Z",
+  "canonical_workspace": "docs/manuals/developer/manualgen/harvested",
+  "output_workspace": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260914-001/harvest_promotion_plan_v1",
+  "proposed_backup_root": "docs/manuals/developer/manualgen/backups/help_meta_harvest_HELPMETA-20260914T012823Z/before",
+  "candidate_freshness_status": "PASS",
+  "canonical_freshness_status": "FAIL",
+  "package_file_count": 15,
+  "planned_mutation_rows": 7,
+  "verified_noop_rows": 7,
+  "mutation_ledger": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260914-001/harvest_promotion_plan_v1/help_meta_harvest_mutation_ledger.json",
+  "mutation_ledger_sha256": "3B4D388D727C8A5E7B459101F3E48145F82922CE421810E5450F82A73355A692",
+  "review": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260914-001/harvest_promotion_plan_v1/HELP_META_HARVEST_PROMOTION_REVIEW.md",
+  "authorization_required": 1,
+  "findings": [
+    "CANDIDATE_MISSING:HELP_META_EXPORT_MANIFEST_v0.csv",
+    "PACKAGE_INCOMPLETE:14/15"
+  ],
+  "inventory": [
+    {
+      "file_name": "HELP_CMD_ARGS.csv",
+      "candidate_sha256": "DABA0FB1B594A8A828090627EE82706DFD7C4F13ADAF7ECDFEB66C295F24F9B9",
+      "canonical_sha256": "8B7CBC65F222F3ABCD171E82E98358995A4DC7E91A307ADB8CF89CBF0357DE58",
+      "candidate_bytes": 115414,
+      "canonical_bytes": 114860,
+      "action": "replace"
+    },
+    {
+      "file_name": "HELP_COMMANDS.csv",
+      "candidate_sha256": "0D8CA2217357FA4172310F281E48D6C983AFC2A1D3B9C26C90B14A474317C649",
+      "canonical_sha256": "F1A64BE68AB2CB0BA2E9FFE1854047EF998964F3FEC39D75D0737216F896395F",
+      "candidate_bytes": 21114,
+      "canonical_bytes": 21010,
+      "action": "replace"
+    },
+    {
+      "file_name": "HELP_HELP_ARTIFACTS.csv",
+      "candidate_sha256": "74B1C1B8125EDC3D7E69094693BECE0D0DB1743A5060F434B1B0D817CFAB6A5B",
+      "canonical_sha256": "E458473E3AC63362F95366B74F168A3AB496D1FB79AFD9ABBE44F9F816F4645E",
+      "candidate_bytes": 1237233,
+      "canonical_bytes": 1778658,
+      "action": "replace"
+    },
+    {
+      "file_name": "HELP_HELP_LINE.csv",
+      "candidate_sha256": "7D59CBD05D9AE5E779549AD7B4C2E24E83C94F2C98149A942C4CE78DED9C6FCD",
+      "canonical_sha256": "8306434406D81C9CCFD6D7D9A9A73887D0E7A24E557A27E10F1D02CD5550C260",
+      "candidate_bytes": 2959791,
+      "canonical_bytes": 4825360,
+      "action": "replace"
+    },
+    {
+      "file_name": "HELP_HELP_SECTION.csv",
+      "candidate_sha256": "8774AE593BAB17C03831C5F4D012A261378367E0A9E41434CAC7E38EB203C381",
+      "canonical_sha256": "C7EFDA9C2359E4A292567459D9E8FA2C07153D0864352360F400AAFC14816C84",
+      "candidate_bytes": 1171762,
+      "canonical_bytes": 1664234,
+      "action": "replace"
+    },
+    {
+      "file_name": "HELP_HELP_TOPIC.csv",
+      "candidate_sha256": "53063B28EFD66099EEFAEEB7DDECF9362DC9E6947EB53B2454BF9E51991C2CCE",
+      "canonical_sha256": "60D1438827D3992281D8CE4378BE503D9CEE00F83554AD309AD446B2CD0859CE",
+      "candidate_bytes": 114985,
+      "canonical_bytes": 113081,
+      "action": "replace"
+    },
+    {
+      "file_name": "META_SYSARGS.csv",
+      "candidate_sha256": "7CCCC6D40A84A57451B043B083531F4C2AFE3EA6B7CFEE2A26DD939CD074A476",
+      "canonical_sha256": "7CCCC6D40A84A57451B043B083531F4C2AFE3EA6B7CFEE2A26DD939CD074A476",
+      "candidate_bytes": 31039,
+      "canonical_bytes": 31039,
+      "action": "verify_noop"
+    },
+    {
+      "file_name": "META_SYSCMD.csv",
+      "candidate_sha256": "3A56DA5C67F0288FC09A9CD95160FBD23430654536A8243F76B4997DEFFC251C",
+      "canonical_sha256": "3A56DA5C67F0288FC09A9CD95160FBD23430654536A8243F76B4997DEFFC251C",
+      "candidate_bytes": 10037,
+      "canonical_bytes": 10037,
+      "action": "verify_noop"
+    },
+    {
+      "file_name": "META_SYSENTVAR.csv",
+      "candidate_sha256": "5D6EDC9DB4EDF4ECA80524048CF933FB777E2AE1A220C0D124FFCA3207068E79",
+      "canonical_sha256": "5D6EDC9DB4EDF4ECA80524048CF933FB777E2AE1A220C0D124FFCA3207068E79",
+      "candidate_bytes": 1016,
+      "canonical_bytes": 1016,
+      "action": "verify_noop"
+    },
+    {
+      "file_name": "META_SYSFLDDIC.csv",
+      "candidate_sha256": "166DD54C10A05A40D4F9DFEB2CEF8DC47136E84C393419CAAAD1AC91D0EC52E1",
+      "canonical_sha256": "166DD54C10A05A40D4F9DFEB2CEF8DC47136E84C393419CAAAD1AC91D0EC52E1",
+      "candidate_bytes": 669,
+      "canonical_bytes": 669,
+      "action": "verify_noop"
+    },
+    {
+      "file_name": "META_SYSFUNC.csv",
+      "candidate_sha256": "3B3E17884DD03E64911D61CF711B8FAD32F69CE9F3C62520ACF2D7803D4578FD",
+      "canonical_sha256": "E4E7AD1ABBBEB09E999F44F93F0AD1237482B82DC12A7109387B253971868813",
+      "candidate_bytes": 11226,
+      "canonical_bytes": 10620,
+      "action": "replace"
+    },
+    {
+      "file_name": "META_SYSHELP.csv",
+      "candidate_sha256": "81BC01319DC4A24083E4FD72ED36225943EC1DABB06EA7ACA53B6FA6F21E9917",
+      "canonical_sha256": "81BC01319DC4A24083E4FD72ED36225943EC1DABB06EA7ACA53B6FA6F21E9917",
+      "candidate_bytes": 774,
+      "canonical_bytes": 774,
+      "action": "verify_noop"
+    },
+    {
+      "file_name": "META_SYSMSG.csv",
+      "candidate_sha256": "3E8D93F7E1719CC0767293E82F11ED9BA47626D1308EED8ABCD51B1645AEFCA3",
+      "canonical_sha256": "3E8D93F7E1719CC0767293E82F11ED9BA47626D1308EED8ABCD51B1645AEFCA3",
+      "candidate_bytes": 141,
+      "canonical_bytes": 141,
+      "action": "verify_noop"
+    },
+    {
+      "file_name": "META_SYSSUBCMD.csv",
+      "candidate_sha256": "8F91E5C98169667B0D7ACB314695DECE76E7A7CB5A02DC01CA9A2A32809A62A9",
+      "canonical_sha256": "8F91E5C98169667B0D7ACB314695DECE76E7A7CB5A02DC01CA9A2A32809A62A9",
+      "candidate_bytes": 4272,
+      "canonical_bytes": 4272,
+      "action": "verify_noop"
+    }
+  ],
+  "required_apply_controls": [
+    "new owner authorization bound to plan and ledger hashes",
+    "recheck every before and candidate hash before writing",
+    "copy every target byte-for-byte to the proposed backup root",
+    "stage and hash every after byte before the first replacement",
+    "use atomic same-directory replacements",
+    "rollback every changed target if any apply or readback check fails",
+    "rerun E5 freshness against the canonical workspace after apply"
+  ],
+  "rollback_contract": {
+    "scope": "all planned mutation rows",
+    "precondition": "each target still matches rollback_guard_sha256",
+    "source": "docs/manuals/developer/manualgen/backups/help_meta_harvest_HELPMETA-20260914T012823Z/before",
+    "success_readback": "every restored target matches before_sha256"
+  }
+}

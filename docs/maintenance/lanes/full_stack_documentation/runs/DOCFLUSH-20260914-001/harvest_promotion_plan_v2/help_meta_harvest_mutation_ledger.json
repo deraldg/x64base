@@ -1,0 +1,98 @@
+[
+  {
+    "ordinal": 1,
+    "action": "replace",
+    "target": "docs/manuals/developer/manualgen/harvested/HELP_CMD_ARGS.csv",
+    "candidate": "docs/manuals/developer/manualgen/harvested/export_runs/HELPMETA-20260914T012823Z/HELP_CMD_ARGS.csv",
+    "before_sha256": "8B7CBC65F222F3ABCD171E82E98358995A4DC7E91A307ADB8CF89CBF0357DE58",
+    "after_sha256": "DABA0FB1B594A8A828090627EE82706DFD7C4F13ADAF7ECDFEB66C295F24F9B9",
+    "before_bytes": 114860,
+    "after_bytes": 115414,
+    "backup_required": 1,
+    "rollback_guard_sha256": "DABA0FB1B594A8A828090627EE82706DFD7C4F13ADAF7ECDFEB66C295F24F9B9"
+  },
+  {
+    "ordinal": 2,
+    "action": "replace",
+    "target": "docs/manuals/developer/manualgen/harvested/HELP_COMMANDS.csv",
+    "candidate": "docs/manuals/developer/manualgen/harvested/export_runs/HELPMETA-20260914T012823Z/HELP_COMMANDS.csv",
+    "before_sha256": "F1A64BE68AB2CB0BA2E9FFE1854047EF998964F3FEC39D75D0737216F896395F",
+    "after_sha256": "0D8CA2217357FA4172310F281E48D6C983AFC2A1D3B9C26C90B14A474317C649",
+    "before_bytes": 21010,
+    "after_bytes": 21114,
+    "backup_required": 1,
+    "rollback_guard_sha256": "0D8CA2217357FA4172310F281E48D6C983AFC2A1D3B9C26C90B14A474317C649"
+  },
+  {
+    "ordinal": 3,
+    "action": "replace",
+    "target": "docs/manuals/developer/manualgen/harvested/HELP_HELP_ARTIFACTS.csv",
+    "candidate": "docs/manuals/developer/manualgen/harvested/export_runs/HELPMETA-20260914T012823Z/HELP_HELP_ARTIFACTS.csv",
+    "before_sha256": "E458473E3AC63362F95366B74F168A3AB496D1FB79AFD9ABBE44F9F816F4645E",
+    "after_sha256": "74B1C1B8125EDC3D7E69094693BECE0D0DB1743A5060F434B1B0D817CFAB6A5B",
+    "before_bytes": 1778658,
+    "after_bytes": 1237233,
+    "backup_required": 1,
+    "rollback_guard_sha256": "74B1C1B8125EDC3D7E69094693BECE0D0DB1743A5060F434B1B0D817CFAB6A5B"
+  },
+  {
+    "ordinal": 4,
+    "action": "replace",
+    "target": "docs/manuals/developer/manualgen/harvested/HELP_HELP_LINE.csv",
+    "candidate": "docs/manuals/developer/manualgen/harvested/export_runs/HELPMETA-20260914T012823Z/HELP_HELP_LINE.csv",
+    "before_sha256": "8306434406D81C9CCFD6D7D9A9A73887D0E7A24E557A27E10F1D02CD5550C260",
+    "after_sha256": "7D59CBD05D9AE5E779549AD7B4C2E24E83C94F2C98149A942C4CE78DED9C6FCD",
+    "before_bytes": 4825360,
+    "after_bytes": 2959791,
+    "backup_required": 1,
+    "rollback_guard_sha256": "7D59CBD05D9AE5E779549AD7B4C2E24E83C94F2C98149A942C4CE78DED9C6FCD"
+  },
+  {
+    "ordinal": 5,
+    "action": "replace",
+    "target": "docs/manuals/developer/manualgen/harvested/HELP_HELP_SECTION.csv",
+    "candidate": "docs/manuals/developer/manualgen/harvested/export_runs/HELPMETA-20260914T012823Z/HELP_HELP_SECTION.csv",
+    "before_sha256": "C7EFDA9C2359E4A292567459D9E8FA2C07153D0864352360F400AAFC14816C84",
+    "after_sha256": "8774AE593BAB17C03831C5F4D012A261378367E0A9E41434CAC7E38EB203C381",
+    "before_bytes": 1664234,
+    "after_bytes": 1171762,
+    "backup_required": 1,
+    "rollback_guard_sha256": "8774AE593BAB17C03831C5F4D012A261378367E0A9E41434CAC7E38EB203C381"
+  },
+  {
+    "ordinal": 6,
+    "action": "replace",
+    "target": "docs/manuals/developer/manualgen/harvested/HELP_HELP_TOPIC.csv",
+    "candidate": "docs/manuals/developer/manualgen/harvested/export_runs/HELPMETA-20260914T012823Z/HELP_HELP_TOPIC.csv",
+    "before_sha256": "60D1438827D3992281D8CE4378BE503D9CEE00F83554AD309AD446B2CD0859CE",
+    "after_sha256": "53063B28EFD66099EEFAEEB7DDECF9362DC9E6947EB53B2454BF9E51991C2CCE",
+    "before_bytes": 113081,
+    "after_bytes": 114985,
+    "backup_required": 1,
+    "rollback_guard_sha256": "53063B28EFD66099EEFAEEB7DDECF9362DC9E6947EB53B2454BF9E51991C2CCE"
+  },
+  {
+    "ordinal": 7,
+    "action": "replace",
+    "target": "docs/manuals/developer/manualgen/harvested/META_SYSFUNC.csv",
+    "candidate": "docs/manuals/developer/manualgen/harvested/export_runs/HELPMETA-20260914T012823Z/META_SYSFUNC.csv",
+    "before_sha256": "E4E7AD1ABBBEB09E999F44F93F0AD1237482B82DC12A7109387B253971868813",
+    "after_sha256": "3B3E17884DD03E64911D61CF711B8FAD32F69CE9F3C62520ACF2D7803D4578FD",
+    "before_bytes": 10620,
+    "after_bytes": 11226,
+    "backup_required": 1,
+    "rollback_guard_sha256": "3B3E17884DD03E64911D61CF711B8FAD32F69CE9F3C62520ACF2D7803D4578FD"
+  },
+  {
+    "ordinal": 8,
+    "action": "replace",
+    "target": "docs/manuals/developer/manualgen/harvested/HELP_META_EXPORT_MANIFEST_v1.csv",
+    "candidate": "docs/manuals/developer/manualgen/harvested/export_runs/HELPMETA-20260914T012823Z/HELP_META_EXPORT_MANIFEST_v1.csv",
+    "before_sha256": "E2512BF47537266626676EA9D5119485C222249B81300EFA9D0225E87592A9FC",
+    "after_sha256": "7D31849875A426713EE68FD68D6E9C936ECC9000ABA7B8AB945042B646F724BC",
+    "before_bytes": 2285,
+    "after_bytes": 2285,
+    "backup_required": 1,
+    "rollback_guard_sha256": "7D31849875A426713EE68FD68D6E9C936ECC9000ABA7B8AB945042B646F724BC"
+  }
+]
