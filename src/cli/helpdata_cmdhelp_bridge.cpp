@@ -275,6 +275,19 @@ struct UsageContractDoc {
     std::string owner;
     std::string command;
     std::vector<std::string> summary;
+    // `syntax:` IS A SECTION AND THIS READER USED TO BE THE ONLY ONE THAT DID
+    // NOT KNOW IT. helpdata_source_miner.cpp lists SYNTAX among its section
+    // names (miner:1134); this file's list stopped at `related`, so when the
+    // miner's contract family was retired on 2026-09-13 the one `syntax:` line
+    // in the tree stopped reaching the store. Measured the same day: 1 syntax:
+    // line, in 1 file -- cmd_maint.cpp:25.
+    //
+    // TEACHING THE READER RATHER THAN REWRITING THE FILE IS DELIBERATE. In
+    // cmd_maint.cpp the `syntax:` line is the verb GRAMMAR and the `usage:`
+    // lines beneath it enumerate the individual forms; folding one into the
+    // other would put a 187-character compound line among the single forms and
+    // lose a distinction the author drew on purpose.
+    std::vector<std::string> syntax;
     std::vector<std::string> usage;
     std::vector<std::string> examples;
     std::vector<std::string> notes;
@@ -293,6 +306,8 @@ static void add_contract_line(UsageContractDoc& doc,
 
     if (section == "summary") {
         doc.summary.push_back(clean);
+    } else if (section == "syntax") {
+        doc.syntax.push_back(clean);
     } else if (section == "usage") {
         doc.usage.push_back(clean);
     } else if (section == "examples" || section == "example") {
@@ -312,11 +327,44 @@ static UsageContractDoc parse_usage_contract_block(const std::vector<std::string
     UsageContractDoc doc;
     std::string section;
 
+    // A CONTRACT DOES NOT HAVE TO LIVE IN A COMMENT, AND THIS READER ASSUMED
+    // IT DID. The loop below broke at the first line not starting with "//",
+    // so a contract written inside a RAW STRING yielded nothing but its own
+    // marker line.
+    //
+    // There is exactly ONE such contract in the tree, counted 2026-09-13, and
+    // it is a good design rather than an oddity: cmd_lmdb.cpp:96 opens
+    // R"DTUSAGE( ... )DTUSAGE" and puts the contract INSIDE THE TEXT THE
+    // COMMAND ACTUALLY PRINTS, so the contract and the runtime usage are the
+    // same bytes and cannot drift from each other. Moving it into comments to
+    // suit this reader would force that text to be duplicated -- a new drift
+    // surface, to remove one.
+    //
+    // helpdata_source_miner.cpp has always handled this (its raw-string branch
+    // at miner:1102). Retiring the miner's contract family therefore dropped
+    // this one command's usage and notes from the store, which is how it was
+    // found: `contract_inventory.py drift` reported DOT|LMDB source-only.
+    //
+    // THE TWO FORMS END DIFFERENTLY, which is the whole of the change: the
+    // comment form ends at the first non-comment line; the raw-string form ends
+    // at its closing delimiter, a line that begins with ')' and carries the
+    // quote -- )DTUSAGE" here. Both still end at @dottalk.end and at a second
+    // marker, below.
+    const bool comment_form =
+        starts_with_local(trim_copy_local(lines[marker_index]), "//");
+
     for (std::size_t i = marker_index; i < lines.size(); ++i) {
         std::string raw = trim_copy_local(lines[i]);
 
-        if (i != marker_index && !starts_with_local(raw, "//")) {
-            break;
+        if (i != marker_index) {
+            if (comment_form) {
+                if (!starts_with_local(raw, "//")) {
+                    break;
+                }
+            } else if (!raw.empty() && raw.front() == ')' &&
+                       raw.find('"') != std::string::npos) {
+                break;
+            }
         }
 
         std::string line = strip_contract_comment_prefix(std::move(raw));
@@ -326,14 +374,108 @@ static UsageContractDoc parse_usage_contract_block(const std::vector<std::string
 
         const std::string lineU = hd::upper(line);
         if (lineU == "@DOTTALK.USAGE V1") {
+            // A SECOND MARKER ENDS THIS BLOCK. IT USED TO BE SKIPPED, AND THAT
+            // MADE ONE FILE'S CONTRACTS EAT EACH OTHER.
+            //
+            // `continue` here meant a block ran to @dottalk.end or to the first
+            // non-// line -- and 196 of the 210 contract-bearing files in this
+            // tree carry NO @dottalk.end (counted 2026-09-13), so in an unbroken
+            // comment run every contract absorbed the ones after it and took the
+            // LAST `command:` it saw as its key.
+            //
+            // Measured on the store REBUILT 2026-09-13 after the other fixes
+            // landed: src/tv/cmd_recordview.cpp holds RECORDVIEW, RECORD and
+            // BROWSETV in one run with no terminator, and the store held THREE
+            // nested cumulative copies under UI|BROWSETV -- 8 USAGE rows where
+            // the command declares one -- while UI|RECORD and UI|RECORDVIEW had
+            // ZERO rows each. Published documentation said BROWSETV accepts
+            // `RECORD <field> WITH <value>`. It does not.
+            //
+            // THIS FIX WAS WRITTEN ONCE BEFORE AND LOST. The patch that added it
+            // was rebased away by a later patch built from a stale copy of this
+            // file, and only the rebuilt store caught it -- the SUMMARY count
+            // per command is the cheap detector: one contract, one summary, so
+            // any command with two is either this defect or two files declaring
+            // the same name. Check that count after any change here.
+            //
+            // helpdata_source_miner.cpp's extractor has always broken here. This
+            // is the bridge agreeing with it. Terminating the 196 contracts is
+            // the other half and is a source change, not this one.
+            if (i != marker_index) {
+                break;
+            }
             continue;
         }
         if (lineU == "@DOTTALK.END" || lineU == "@DOTTALK.CONTRACT.END") {
             break;
         }
+        // ANY @dottalk. TOKEN ENDS THE CONTRACT, not just the two end markers.
+        // A contract whose last section is `related:` and which is followed by
+        // an @dottalk.location v1 block used to ABSORB that block: ABOUT
+        // published 8 RELATED entries where its source declares 2, the extra
+        // six being `@dottalk.location v1`, `id:`, `home:`, `canonical-path:`,
+        // `project:`, `role:` -- documentation asserting that a command is
+        // related to its own file path. Measured 2026-09-13: 3 contracts,
+        // 18 lines (DOT|ABOUT and DOT|HELP in RELATED, DOT|BBOX in NOTE).
+        //
+        // Stopping HERE rather than filtering those keys downstream is what
+        // lets the unrecognized-key rule below be permissive, which is where
+        // 534 wrongly-dropped prose lines come back.
+        if (lineU.rfind("@DOTTALK.", 0) == 0) {
+            break;
+        }
 
+        // A COLON IS NOT A KEY, AND TREATING IT AS ONE SILENTLY ATE 906 LINES.
+        //
+        // This tested `line.find(':')` -- ANY colon, anywhere -- so a prose line
+        // inside a section became a key: value pair, matched no known key, and
+        // fell through to the section.clear() below. Everything after it in that
+        // section was then dropped until the next section header.
+        //
+        // Measured 2026-09-13 over the whole tree: 60 sections killed early,
+        // 906 contract prose lines dropped, 49 of 223 commands affected -- 21%
+        // of the contract prose in the tree. The single line that did the most
+        // damage is cmd_workspace.cpp:133, the FIRST note of the biggest command
+        // in the tree:
+        //
+        //     WORKSPACE with no arguments is a report: it lists current open
+        //     work areas.
+        //
+        // One colon in ordinary English, and DOT|WORKSPACE published ZERO notes
+        // while the store showed 157 -- all of them from the other writer. Its
+        // usage section died the same way at :109 ("...which it is on line
+        // one:"), which is why it stored 34 of 55 usage lines.
+        //
+        // THE TEST IS NOW STRUCTURAL: a key is a single unspaced token. That is
+        // exactly what separates `notes:` from a sentence that happens to
+        // contain a colon, and it is the rule a reader already applies by eye.
+        // Lines that DO look like keys and are not section names still clear the
+        // section -- `id:`, `home:`, `canonical-path:` from an adjacent
+        // @dottalk.location block are meant to be dropped, and still are.
+        //
+        // helpdata_source_miner.cpp never had this defect: on an unrecognized
+        // key it falls through and APPENDS rather than clearing. That is the
+        // one axis on which the miner was the better reader.
         const auto colon = line.find(':');
-        if (colon != std::string::npos) {
+        const bool colon_is_a_key = [&] {
+            if (colon == std::string::npos || colon == 0 || colon > 24) return false;
+            const std::string head = trim_copy_local(line.substr(0, colon));
+            if (head.empty() || head.size() != colon) return false;   // no leading space
+            // A KEY'S COLON IS FOLLOWED BY NOTHING OR WHITESPACE. Verified over
+            // the whole tree 2026-09-13: every contract key is written with a
+            // space or an end-of-line after its colon, none `status:supported`.
+            // This is what keeps a line that merely BEGINS with a URL --
+            // `http://...` -- from reading as the key `http`.
+            if (colon + 1 < line.size() &&
+                !std::isspace(static_cast<unsigned char>(line[colon + 1]))) return false;
+            if (!std::isalpha(static_cast<unsigned char>(head.front()))) return false;
+            for (const char ch : head) {
+                const unsigned char u = static_cast<unsigned char>(ch);
+                if (!std::isalnum(u) && ch != '_' && ch != '-') return false;
+            }
+            return true;
+        }();
+        if (colon_is_a_key) {
             const std::string key = lower_copy_local(trim_copy_local(line.substr(0, colon)));
             const std::string value = trim_copy_local(line.substr(colon + 1));
 
@@ -348,7 +490,7 @@ static UsageContractDoc parse_usage_contract_block(const std::vector<std::string
                 continue;
             }
 
-            if (key == "summary" || key == "usage" ||
+            if (key == "summary" || key == "syntax" || key == "usage" ||
                 key == "examples" || key == "example" ||
                 key == "notes" || key == "note" ||
                 key == "aliases" || key == "alias" ||
@@ -358,10 +500,35 @@ static UsageContractDoc parse_usage_contract_block(const std::vector<std::string
                 continue;
             }
 
-            // Other metadata/risk keys are intentionally not emitted as
-            // renderable help rows.
-            section.clear();
-            continue;
+            // ENVELOPE KEYS CLOSE THE SECTION; ANYTHING ELSE IS PROSE.
+            //
+            // This used to clear the section for EVERY unrecognized key, which
+            // is fine for `risk:` and fatal for a note that happens to open
+            // with a word and a colon. English does that constantly --
+            // "DESKTOP: no windows, no focus, no z-order", "noise: this is the
+            // one part of R131 that can change...", "provenance: MDO-377G" --
+            // and each one silently killed the rest of its section.
+            //
+            // Measured 2026-09-13 with the structural key test above already in
+            // place: 372 prose lines still dropped across 8 commands, 314 of
+            // them DOT|WORKSPACE alone. Naming the envelope explicitly and
+            // treating everything else as prose recovers them, and it is what
+            // helpdata_source_miner.cpp has always done -- on an unrecognized
+            // key it falls through and appends.
+            //
+            // The location-block bleed this used to prevent is now prevented
+            // upstream, at the @dottalk. break, which is the correct place: the
+            // block is not part of the contract at all.
+            static const std::set<std::string> envelope = {
+                "catalog", "category", "status", "noargs", "effect", "mutates",
+                "usage-access", "usage_access", "risk", "lane", "project",
+                "subsystem", "layer", "owns"
+            };
+            if (envelope.count(key) > 0) {
+                section.clear();
+                continue;
+            }
+            // Not a key we know: fall through and keep it as section prose.
         }
 
         add_contract_line(doc, section, line);
@@ -454,6 +621,11 @@ static void append_usage_contract_artifacts_for_doc(const UsageContractDoc& doc,
     }
 
     int ordinal = 1;
+    for (const auto& s : doc.syntax) {
+        add(hd::ArtifactKind::Syntax, "USAGE_CONTRACT_SYNTAX", s, ordinal++);
+    }
+
+    ordinal = 1;
     for (const auto& s : doc.usage) {
         add(hd::ArtifactKind::Usage, "USAGE_CONTRACT", s, ordinal++);
     }

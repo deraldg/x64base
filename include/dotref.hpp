@@ -1256,6 +1256,46 @@ Notes:
 
         {"WHILE_BUFFER", "WHILE_BUFFER [USAGE|<args...>]",
                  "Developer/diagnostic helper surface for inspecting or testing buffered WHILE control-flow behavior.", true},
+
+        // Batch 16, 2026-09-13: the two commands that were REGISTERED AND UNDER
+        // CONTRACT while this catalog had never heard of them.
+        //
+        // Measured against the registry and the @dottalk.usage v1 blocks the same
+        // day: of 241 registered commands exactly TWO -- GROUPCOMMIT
+        // (shell_commands.cpp:197) and WORKDESK (:411) -- appeared in neither
+        // dotref nor foxref. That is the whole gap. This catalog is a MANUAL SEED
+        // LIST (owner's ruling, carried in DOCFLUSH v5: "automation is future
+        // work, AIF-067 M2/M3"), so two entries is two edits.
+        //
+        // A THIRD WAS CONSIDERED AND REJECTED, AND THE REJECTION IS THE USEFUL
+        // PART. TRANSACTION carries a full @dottalk.usage v1 block and so reads
+        // as "under contract" to every tool that counts contracts -- but
+        // cmd_transaction.cpp is a DECLARED STUB: no cmd_TRANSACTION function
+        // exists, nothing registers it, and its own header says the block "states
+        // the PLANNED surface ... never let it claim more than is implemented".
+        // Seeding it here would have done two wrong things at once: minted the
+        // exact single-token phantom refcheck_v1.py (AIF-067 M2) exists to fail
+        // on, and published a planned surface as a supported command. It goes in
+        // when the dispatcher does.
+        //
+        // NEITHER OF THE TWO BELONGS IN foxref.hpp, and that is the point of the
+        // split rather than an oversight: group commit and the workspace desk are
+        // x64base evolutions with no FoxPro classic ancestor to be held hostage by.
+        //
+        // The summaries are LIFTED FROM EACH COMMAND'S OWN CONTRACT, not written
+        // here -- so a contract reworded upstream leaves this row detectably stale
+        // rather than quietly disagreeing.
+        //
+        // ON THE `supported` FLAG: WORKDESK declares `status: experimental` in its
+        // contract and is written true here on the owner's standing ruling --
+        // "once it's tested, green and in the build it IS supported as dev or rc".
+        // It is in the build and carries a green regression arm. If that ruling is
+        // ever narrowed, this flag is where it lands first.
+        {"GROUPCOMMIT", "GROUPCOMMIT [AUTO|MANUAL]",
+                 "Commit every buffered area as ONE atomic decision, so a crash leaves either ALL members applied or NONE. COMMIT ALL's atomic twin.", true},
+
+        {"WORKDESK", "WORKDESK [USAGE]",
+                 "Report the desk -- every open workspace in this session with its areas, identity, lineage and roots.", true},
 };
     return k;
 }
