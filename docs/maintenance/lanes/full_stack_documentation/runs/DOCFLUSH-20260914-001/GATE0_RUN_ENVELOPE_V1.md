@@ -329,3 +329,151 @@ own exit 3, distinct from "found a problem" at 2. THAT NUMBER IS ALREADY TAKEN,
 inside the same gate family, for "needs acknowledgement".** Implementing G1 as
 written would reintroduce exactly the ambiguity G1 exists to remove. Whoever
 takes G1 needs a fourth code.
+
+## Status 2026-09-14T02:30Z -- BLOCKER 2 CLOSED, AND THREE CORRECTIONS
+
+### E5 is now actually cleared, and the earlier row overstated it
+
+The row above records E5 CLEARED on the strength of the EXPORT. Exporting
+writes a candidate under `harvested/export_runs/<id>/`. Promoting it into
+`manualgen/harvested/` is a separately authorized gate, and it had not been
+run. Freshness measured against the two workspaces disagreed by design:
+
+    canonical harvest    E5 FAIL   7 of 14 tables, 7 manifest findings
+    candidate export     E5 PASS  14 of 14
+
+The reassuring number was the one that did not matter. The promotion applied
+at 02:01:27Z under authorization `B9122EA8...`:
+
+    status APPLIED   findings NONE   canonical_files_mutated 8   rollback 0
+    E5 PASS: 14/14 tables match current HELP/META; manifest_findings=0
+
+Verified by counting the files rather than reading an exit code:
+464 / 2378 / 669 / 10587 / 10587 / 18566 / 79, all seven as predicted, and
+ARTIFACTS == SECTION 1:1 holds on both sides.
+
+### E7 IS WRONG IN THE ROW ABOVE. There is no rollback point for the harvest.
+
+E7 reads SATISFIED "by version control". That is true of the HELP STORE
+(`dottalkpp/data/help`, committed as `02ad70354`, rollback point `8dc6e9983`).
+It is FALSE of the harvest.
+
+    git ls-files docs/manuals/developer/manualgen/harvested/     (empty)
+    .gitignore:525   docs/manuals/developer/manualgen/**/*.csv
+
+The canonical harvest is deliberately outside version control, along with the
+export manifest that binds it to a run id. The boundary is legible once the
+directory names are read: `accepted_artifacts/`, `accepted_catalogs/`,
+`accepted_manifests/` and `published/` are tracked; `harvested/`, `generated/`
+and `backups/` are not.
+
+**The only copy of the pre-apply harvest is**
+
+    runs/DOCFLUSH-20260914-001/harvest_promotion_apply_v2/before/
+
+and it sits in ignored space, where `git clean -xdf` removes it without a
+prompt. Hashes in the execution manifest prove what a file WAS; they do not
+restore it. Retain that directory until a later promotion supersedes it.
+
+This also explains the promotion gate. Plan, mutation ledger, written
+authorization, before/staged_after snapshots, a `rollback` subcommand -- that
+is a hand-rolled version-control system, and it exists BECAUSE git was pointed
+away from this directory, not in duplication of it.
+
+### The "92-DAY-OLD INPUT" in the E5 row is wrong
+
+The canonical harvest being replaced was dated 2026-09-02, promoted by v8. The
+92-day figure came from PHASE6_REHARVEST_DEBT.md, which measured the harvest
+BEFORE v8 refreshed it. The real age was 12 days. A stale number was carried
+out of a document without checking whether the thing it described had moved.
+
+### The four PASSes that were reading 2026-09-02
+
+`build-reference-candidate` was run four times before the promotion. Every run
+reported PASS at `topics=666 lines=29700 commands=462 args=2368`. After the
+promotion, same tree, same flags:
+
+    topics=669 lines=18566/18566 commands=464 args=2378 syscmd=212  status=PASS
+
+manualgen was not at fault. `--harvest-workspace` says outright: *attached by
+hash; NEVER PROMOTED.* It reads what it is given. Nothing else asked whether
+what it was given matched the live store. `docpush_preflight.py` step 7 now
+asks, against the CANONICAL workspace, and fails HARD.
+
+### NEW FINDING -- 726 duplicate artifacts, 11.3% of the store
+
+Two scans in `src/help/helpdata_source_miner.cpp` cover the same text:
+`mine_usage_help_functions` (bodies of `*_usage` / `*_help` functions) and
+`mine_usage_output_blocks` (any `cout << "...Usage|Syntax..."` to the next
+`return`). When help text lives in a `*_help` function that prints "Usage",
+both scans mine the same lines and both emit.
+
+`add_unique` keys on `catalog|command|kind|name|text|EVIDENCE`. The two
+evidence strings differ, so the key differs, so the dedup never fires.
+
+    artifacts             10587
+    distinct on content    9861
+    duplicates              726   across 563 groups
+    duplicate line rows    2096   of 18566   (11.3%)
+    commands touched        114
+
+Verified on `src/cli/cmd_pshell.cpp`: line 61 `void show_pshell_help(...)`
+matches the function regex, line 83 `std::cout << "Usage:\n"` matches the block
+regex, and lines 84-89 fall inside both. The harvest shows it as two contiguous
+runs of artifact ids, 4917-4922 and 4924-4929, with a header at 4923.
+
+This does NOT overturn the contract-drift work. That collapsed two FAMILIES
+and reached `content in BOTH: 0`, correctly. It never claimed to collapse
+duplicates WITHIN a family, and did not. This defect was underneath it.
+
+Dropping `evidence` from the key collapses all 726, but first-writer-wins would
+keep whichever scan runs first -- better provenance here, by accident of call
+order rather than by decision. Recording both evidence strings, or having each
+scan skip regions the other claimed, is the more honest shape. NOT PATCHED;
+this needs a decision, and any fix is a source change carrying its contract.
+
+### The 28 non-ASCII rows, re-measured against the promoted harvest
+
+    harvest-ascii: 28 of 18566 harvest rows carry non-ASCII
+      topics affected : 3
+      22 right arrow   SOURCE_MINER   PSHELL, SQL HELP
+       6 em-dash       SHARED_MSG
+
+Same 28. The dedup removed 11,134 line rows and NOT ONE carried a non-ASCII
+character, so all 28 live in the surviving family and are genuine defects.
+
+The 22 arrows are **11 unique source lines seen twice** by the duplication
+above -- 6 in `cmd_pshell.cpp`, 5 in `cmd_sql_help.cpp`. Fixing the miner
+halves the reported count without touching source. Fixing the source removes
+them. Both are needed.
+
+They live in `std::cout <<` runtime output, not in `@usage` blocks: they are
+what the engine PRINTS. Changing them changes displayed behaviour, so the house
+rule applies -- the usage change carries its contract.
+
+The 6 em-dashes are SHARED_MSG runtime warnings carrying `{orig}` / `{actual}`
+/ `{safe}` placeholders. Different lane from the usage contracts.
+
+The tool is `tools/manualgen/check_harvest_ascii.py`. An earlier note in this
+run reported it ABSENT from the tree; that was a search of
+`tools/fullstack_docs/` only, reported as a conclusion. It is tracked and
+present.
+
+### Where the run stands
+
+    E1 PROVEN   E2 CLEARED   E3 CLEARED   E4 CLEARED   E5 CLEARED
+    E7 SATISFIED FOR THE STORE ONLY -- see the correction above
+    E6 open     E8 open
+
+Next: E6, `command-catalog.mdx` regenerated with fallback 0.
+
+### One input still chosen by fallback
+
+`manualgen validate` reports `selection_mode=explicit` for the harvest and
+`selection_mode=legacy_default` for the assembly workspace. The input that cost
+this run is now pinned by flag; its neighbour is still chosen by fallback. Same
+shape, different input. Pin it before anything projects toward a published
+surface.
+
+`validation_review_rows=1` is unexamined. "Review" is the category that quietly
+became "accepted" in v9.
