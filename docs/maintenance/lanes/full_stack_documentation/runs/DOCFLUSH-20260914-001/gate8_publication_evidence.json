@@ -1,0 +1,77 @@
+{
+  "schema": "dottalk.fullstack.gate8_publication_evidence.v1",
+  "run": "DOCFLUSH-20260914-001",
+  "gate": "E8 -- website publication",
+  "status": "EVIDENCE_ONLY. This file records measurements. It carries no decision. The authorization is a separate file written by the owner: gate8_publication_authorization.json, binding to this file's sha256.",
+  "publication": {
+    "site": "x64base.com",
+    "release_number": 145,
+    "published_at_utc": "2026-09-14T06:44:06.483Z",
+    "publish_mode": "github-pages",
+    "deploy_repo": "deraldg/x64base",
+    "deploy_branch": "gh-pages",
+    "source_branch": "codex/lean-sites-publish",
+    "source_commit": "6784d3d8865b57cec8fa59b5b1f8fd4e34b8c3db"
+  },
+  "engine_at_publication": {
+    "commit": "12e28f38e900d96cd66fb5a00ac872c3410a98ee",
+    "commit_short": "12e28f38e",
+    "branch": "development",
+    "note": "The stamp carried by both site authority artifacts. Engine HEAD advanced to 4928322b7 after publication; that commit changed a YAML manifest and TIER0_STATE.md only, no engine facts."
+  },
+  "website_matrix_gates": {
+    "content_inventory": "PASS -- 151 pages classified exactly once",
+    "fullstack_publication_entry": "PASS -- docpush_preflight nine steps",
+    "function_catalog": "PASS -- core=77 self_registered=2 website_rows=79",
+    "error_codes": "PASS -- source_codes=20 page_rows=20",
+    "locales": "PASS -- 5 locales match source",
+    "verdict": "website-matrix-check: PASS -- all hard publication relationships are current"
+  },
+  "preflight": {
+    "file_contract_coverage_percent": 100.0,
+    "command_catalog": "PASS registry_keys=241 catalog_rows=241 parsed=241 fallback=0",
+    "harvest_freshness_e5": "PASS 14/14 tables match current HELP/META; manifest_findings=0; mutation_performed=0",
+    "contract_drift": "CLEAN",
+    "store_join": "clean",
+    "store_integrity": "669 topics reachable, every line row names one",
+    "advisories_not_blocking": [
+      "1b command contracts: usage_missing=1 unregistered=1 helpers=10",
+      "status coherence: 138 rows are STATUS=pending and CONFID=AUTHORITATIVE at once",
+      "binding: 23 tracked files modified at 12e28f38e"
+    ]
+  },
+  "build": {
+    "static_pages_built": 177,
+    "pagefind_pages_indexed": 170,
+    "pagefind_words_indexed": 12050,
+    "gates_before_next_build": [
+      "check-diagrams PASS diagrams=18",
+      "check-public-content PASS",
+      "check-site-freshness PASS",
+      "check-opacity-scale PASS"
+    ]
+  },
+  "live_readback": {
+    "method": "HTTPS fetch of the published origin with a cache-busting query",
+    "site_release_source_commit": "6784d3d8865b57cec8fa59b5b1f8fd4e34b8c3db",
+    "primary_key_policy_artifact": "engine 12e28f38e (2026-09-13); 13 sites across 11 files; total_specs 83",
+    "sqlsel_conformance_artifact": "engine 12e28f38e (2026-09-13); conformance map 33 = 16 mapped + 17 not yet mapped",
+    "primary_keys_page_stamp": "Derived from engine commit 12e28f38e (2026-09-13)",
+    "sqlsel_page_stamp": "Derived from engine commit 12e28f38e (2026-09-13)",
+    "command_catalog_page": "Source extraction snapshot: 241 registered command keys and 241 parsed usage contract blocks",
+    "catalog_spot_checks": "AREA51 developer; GROUPCOMMIT supported; WORKDESK experimental",
+    "caveat": "The FIRST uncached read of /artifacts/primary-key-policy-v1.json returned a deploy two generations old (0bd135e93, 2026-09-08). The same URL with a cache-busting query returned the current file. Any live verification that does not bust the edge cache can read stale bytes and conclude a publish failed. The publisher's own post-push check uses cache:no-store on site-release.json -- the one file that would have looked correct anyway."
+  },
+  "sources_pushed": {
+    "site": "07db783aa..6784d3d88 codex/lean-sites-publish",
+    "engine": "9f810894c..4928322b7 development",
+    "note": "Pushed after publication. Before these, the public site existed while its sources were local-only."
+  },
+  "known_open_items_this_evidence_does_not_cover": [
+    "Nine content pages carried a superseded current state at publication time -- see MEASUREMENT_THE_SITE_WALK_NINE_PAGES_CARRY_A_SUPERSEDED_CURRENT_STATE. The chrome banner read 'Full-stack docs reconciled 2026-09-02' on all 151 pages.",
+    "documentation-progress-v1.json was hand-maintained with no generator at publication time. A generator was written after the fact; the artifact was not current when release 145 shipped.",
+    "The site documents no path layout. A sweep of all 151 pages for path environment variables returns zero files.",
+    "validation_review_rows=1, unexamined.",
+    "The 164/164 versus 464 registered commands coverage sentence remains an owner decision."
+  ]
+}

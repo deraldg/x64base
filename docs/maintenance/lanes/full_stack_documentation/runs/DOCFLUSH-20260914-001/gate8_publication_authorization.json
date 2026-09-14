@@ -1,0 +1,10 @@
+{
+  "decision": "PUBLICATION_ENTERED",
+  "schema": "dottalk.fullstack.gate8_publication_authorization.v1",
+  "release_number": 145,
+  "source_commit": "6784d3d8865b57cec8fa59b5b1f8fd4e34b8c3db",
+  "authorized_by": "member.derald",
+  "evidence_sha256": "AA3D42DE23673CFF510F1C6915A62065CC6B1341DE0043C28C4E97D21ABBCC2B",
+  "run": "DOCFLUSH-20260914-001",
+  "publication_state": "v9-published-github-pages-release-145"
+}
