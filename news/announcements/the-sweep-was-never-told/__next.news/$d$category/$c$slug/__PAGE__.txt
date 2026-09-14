@@ -1,0 +1,91 @@
+1:"$Sreact.fragment"
+4:I[97367,["/_next/static/chunks/1j5kz5h-hjw-c.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
+5:"$Sreact.suspense"
+2:T17e1,<p>The full-stack documentation push closed this morning. The command catalog went
+to 241 keys with zero fallback rows, the HELP store shed a duplicated
+usage-contract family, and the site published to x64base.com.</p>
+<p>Then someone opened the published site and read the banner sitting at the top of
+all 151 pages:</p>
+<blockquote>
+<p>Full-stack docs reconciled 2026-09-02.</p>
+</blockquote>
+<p>Twelve days stale, on a site published today. Six freshness contracts had passed
+throughout. <strong>None of them was broken</strong>, and working out why took most of the
+day.</p>
+<h2 id="the-authority-was-typed-by-hand"><a class="no-underline" href="#the-authority-was-typed-by-hand">The authority was typed by hand</a></h2>
+<p>Every contract in that cluster resolves against
+<code>documentation-progress-v1.json</code>. The contracts do their job well: earlier the
+same morning one caught a provenance line missed in a two-page edit and named
+the exact sentence it was missing.</p>
+<p>But a contract compares a page to an authority file, and this authority had <strong>no
+generator</strong>. Its two neighbours -- the primary-key and SQLsel authorities -- each
+have a script that measures them from the engine tree. This one was maintained
+by hand. So the pages agreed with the authority, the authority agreed with
+itself, and nothing compared either to the engine.</p>
+<p>It has a generator now. Nineteen fields are measured every run: HELP counts and
+harvest rows from the export manifest's own row counts, catalog and function
+figures from the sync tool's verdict lines, the run id and manual candidate from
+the run directory, page counts from the build. Thirteen further fields are
+carried forward, and <strong>the artifact lists which are which</strong>, so a remembered
+number is distinguishable from a measured one without knowing the history.</p>
+<p>Two of the contracts turned out to be carrying defects of their own, both found
+by running them:</p>
+<ul>
+<li>One asserted the page must contain <code>publication gate {first_open_entry} open.</code>
+It could only ever produce a true sentence while a gate was open. With
+publication entered it demanded the page read <em>"publication gate none open."</em></li>
+<li>Another asserted the literal string <code>239 command keys matched to 239 parsed contracts</code>
+-- a hand-typed number sitting inside a freshness gate. It is now interpolated
+from the authority.</li>
+</ul>
+<h2 id="the-second-instrument-and-why-it-was-quiet"><a class="no-underline" href="#the-second-instrument-and-why-it-was-quiet">The second instrument, and why it was quiet</a></h2>
+<p>A separate sweep reads the pages looking for a shipped capability described as
+missing. That is exactly the polarity needed for what was wrong here, because
+two published pages were denying one.</p>
+<p>Cross-table atomic commit shipped on 2026-09-11. A sweep the next day found six
+statements across three SQLsel pages still denying it and corrected them. Two
+were missed -- the FAQ's SQL answer, and the boundary list on the DBMS and RDBMS
+page. So for three days the site carried a command catalog publishing
+<code>GROUPCOMMIT</code> as <code>supported</code> beside two pages stating the capability was absent.
+Three published pages, two contradicting the third.</p>
+<p>The capability sweep was quiet through all of it, for two reasons that are worth
+separating.</p>
+<p><strong>It could not see the capability when those sentences were written.</strong> Its
+authority is generated from the registered regression specs, and a capability
+reaches that list only if a spec exists for it. On the 12th the authority held
+fourteen capabilities and this was not among them. It holds fifteen today,
+because specs were registered for the group-commit work -- so the instrument
+learned the capability after the sentences were already published, and nothing
+went back to re-ask.</p>
+<p><strong>And it does not run on a bad day.</strong> The sweep is the second tier of the
+freshness check, and the first tier exits the process on any failure before the
+second tier is reached. So a site with one stale number gets <strong>no prose sweep at
+all</strong>. Every build this morning failed on a date mismatch, which means the
+advisory instrument was suppressed for the entire window in which the site was
+most likely to be wrong. It ran again this afternoon, once the numbers were
+right -- and reported nothing, correctly, because by then the sentences were
+fixed.</p>
+<p>An advisory check that is disabled by an unrelated failure is not advisory. It
+is conditional on not needing it.</p>
+<h2 id="what-found-it-instead"><a class="no-underline" href="#what-found-it-instead">What found it instead</a></h2>
+<p>The FAQ carries an obligation in its own text: every full-stack reconciliation
+must check this page against changed product, command and interface claims, and
+record the disposition. A contract binds that review date to the authority, so
+advancing the authority forced the review, and the review is what read the
+sentence.</p>
+<p>That is not an instrument catching a defect. It is a rule making a person look.</p>
+<h2 id="what-has-not-changed"><a class="no-underline" href="#what-has-not-changed">What has not changed</a></h2>
+<p><strong>Nothing forces the generator to run.</strong> It exists, it measures, and its check
+mode re-derives and diffs -- but until that check is a step in the pre-push gate,
+skipping it produces no finding, and by the house rule a step whose omission
+produces no finding is not in the push.</p>
+<p><strong>One gap is an absence, not a staleness.</strong> A sweep of all 151 pages for path
+environment variables returns zero files. No page here describes where sys
+tables live. No freshness contract will ever report that, because a contract can
+prove a page is wrong and cannot prove a page was never written. It is recorded
+in the documentation matrix as a row with no enforced relationship, which is the
+only honest way to hold it until a page exists.</p>
+<p>The cover page now says 2026-09-14 because a program measured it, rather than
+because someone remembered to.</p>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=fb80d1f9a98c","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/news",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/news/?v=fb80d1f9a98c","children":"News"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/news/announcements",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/news/announcements/?v=fb80d1f9a98c","children":"announcements"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/news/announcements/the-sweep-was-never-told",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/news/announcements/the-sweep-was-never-told/?v=fb80d1f9a98c","children":"The sweep was never told"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"The sweep was never told"}],["$","div",null,{"className":"mt-2 flex flex-wrap gap-3 text-sm text-muted","children":[["$","span",null,{"className":"font-mono","children":"2026-09-14"}],["$","span",null,{"children":["Category: ","announcements"]}]]}],["$","p",null,{"className":"mt-3 text-muted","children":"The site published, and its own cover page said the documentation had been reconciled twelve days earlier. Every automated gate was green -- and the one that could have caught the worst of it does not run on a day when anything else is failing."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose dark:prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:break-words prose-code:whitespace-normal prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30 prose-pre:text-fg [&_pre_code]:text-fg [&_pre_code_span]:text-inherit","dangerouslySetInnerHTML":{"__html":"$2"},"children":null}]}]]}],null,"$L3"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"1gC7Xb-BHw67WBBTt3KpQ"}
+3:["$","$L4",null,{"children":["$","$5",null,{"name":"Next.MetadataOutlet","children":"$@6"}]}]
+6:null
