@@ -1,0 +1,23 @@
+{
+  "schema": "dottalk.fullstack.help_meta_harvest_apply.v1",
+  "observed_at_utc": "2026-09-14T03:43:21Z",
+  "run_id": "HELPMETA-20260914T033210Z",
+  "plan_manifest": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260914-001/harvest_promotion_plan_v3/help_meta_harvest_promotion_plan.json",
+  "plan_manifest_sha256": "F1B051A375E2D5FD1C0D97241F73835F764E863C446B4CB258671CCF2134BAD7",
+  "mutation_ledger": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260914-001/harvest_promotion_plan_v3/help_meta_harvest_mutation_ledger.json",
+  "mutation_ledger_sha256": "7EDB8F84F49CB9DCDA5C94B745B664C681E70F45CEB72C81E46758DED5460449",
+  "authorization_record": "tmp/HARVEST_PROMOTION_REVIEW_HELPMETA-20260914T033210Z.md",
+  "authorization_sha256": "4E09229B7E8F775D6A4424CAD21A92D8B5158E0C8A19D0337AB1589969E5F406",
+  "status": "FAIL_PREFLIGHT",
+  "findings": [
+    "AUTHORIZATION_MISSING:Decision: authorized for canonical harvest apply.",
+    "AUTHORIZATION_MISSING:Plan run: `HELPMETA-20260914T033210Z`.",
+    "AUTHORIZATION_MISSING:Plan manifest SHA-256: `F1B051A375E2D5FD1C0D97241F73835F764E863C446B4CB258671CCF2134BAD7`.",
+    "AUTHORIZATION_MISSING:Mutation ledger SHA-256: `7EDB8F84F49CB9DCDA5C94B745B664C681E70F45CEB72C81E46758DED5460449`.",
+    "AUTHORIZATION_MISSING:Mutation rows authorized: 2."
+  ],
+  "canonical_files_mutated": 0,
+  "rollback_performed": 0,
+  "backup_retention": "local_ignored",
+  "rows": []
+}
