@@ -59,7 +59,9 @@ expected to have:
   most often missing from things that call themselves relational
 - expression projection, so `TRIM(LNAME)` is a column, over an AST shared
   between projection and predicate
-- `INSERT`, `UPDATE`, `DELETE` with single-table transactions
+- `INSERT`, `UPDATE`, `DELETE` with transactions that span every table they
+  touch: each member prepares durably, one group-log row decides all of them,
+  and a crash therefore leaves every member applied or none
 - **workspace-scoped name resolution**: two open workspaces may hold the same
   table name with different rows, and a statement resolves within the current
   workspace rather than to the engine's lowest matching slot
@@ -159,7 +161,6 @@ Also absent, and each refused rather than silently approximated:
   runtime marker can enumerate a call site. See
   [Primary Keys](/docs/engine/primary-keys).
 
-- **Cross-table atomic commit.** An explicit transaction accepts one target table.
 - **Stored `NULL` through DML.** `SQLSEL INSERT`/`UPDATE` refuse a null rather
   than coercing a blank. Stored nulls themselves *do* exist — VFP-flavour tables
   carry a real `_NullFlags` bit, byte-verified against files Visual FoxPro wrote

@@ -6,13 +6,15 @@
       "authority": "public/artifacts/documentation-progress-v1.json",
       "target": "content/docs/dottalk/command-reference.mdx",
       "mustContain": [
-        "## Current full-stack snapshot -- local, not deployed ({as_of_date})",
+        "## Current full-stack snapshot ({as_of_date})",
         "| Website command keys / parsed contracts | {current_vertical.website_command_keys} / {current_vertical.website_command_rows_parsed} |",
         "| Fallback command rows | {current_vertical.website_command_fallback_rows} |",
         "| HELP commands / reachable topics | {current_vertical.help_commands} / {current_vertical.help_reachable_topics} |",
         "| HELP lines | {current_vertical.help_lines:comma} |",
+        "| Canonical harvest rows | {current_vertical.canonical_harvest_rows:comma} |",
         "| Manual candidate | `{current_vertical.manual_candidate_run}` |",
-        "publication gate {current_vertical.first_open_entry} open."
+        "Publication state: `{publication_state}`.",
+        "First open publication gate: `{current_vertical.first_open_entry}`."
       ]
     },
     {
@@ -21,8 +23,8 @@
       "target": "content/news/milestones.json",
       "mustContain": [
         "\"date\": \"{as_of_date}\"",
-        "\"title\": \"The documentation stack reaches its owner gate\"",
-        "239 command keys matched to 239 parsed contracts"
+        "\"title\": \"The site published before its own cover page caught up\"",
+        "{current_vertical.website_command_keys} command keys matched to {current_vertical.website_command_rows_parsed} parsed contracts"
       ]
     },
     {

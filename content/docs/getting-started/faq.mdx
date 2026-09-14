@@ -5,25 +5,31 @@ description: "Common questions about x64base products, tools, lanes, formats, pr
 
 This FAQ is organized by how the project is actually described on the site: products, tools, lanes, formats, and proof status.
 
-> **FAQ reviewed 2026-09-02.** Each full-stack documentation reconciliation must
+> **FAQ reviewed 2026-09-14.** Each full-stack documentation reconciliation must
 > check this page against changed product, command, interface, workspace, and
 > contributor-operation claims. The matrix records `UPDATED` or `NO_CHANGE`, and
 > the site freshness gate binds this review date to the documentation-progress
 > authority.
 >
-> **Disposition: `UPDATED`.** No engine source changed between 2026-08-26 and this
-> review, so the product, format, workspace and interface answers were re-read and
-> left standing. Three things did change, and two were defects rather than
-> staleness. **A contradiction was corrected:** the status answer cited the
-> application UI DSL as the example of a planned lane, while the UIDEF (UI DEFINITION -- a screen layout stored as a DBF design table) answer 150
-> lines above already described it as an Alpha implementation lane -- two answers
-> in one FAQ disagreeing. **A gap was filled:** the FAQ mentioned SQL zero times
-> across 44 questions, while the product ships `SQLSEL`, `SQL`, `SQLHELP`,
-> `SQLITE`, `SQLVER` and `SQLERASE` and the site carries three SQL pages; a reader
-> asking whether this does SQL got no answer, and the several commands sharing the
-> name are easy to confuse. **A caveat was added:** what `supported` means on a
-> command page, because 33 commands publish it while their own contract says
-> something narrower.
+> **Disposition: `UPDATED`.** Unlike the 2026-09-02 review, engine source changed
+> materially in this window, and one answer was not merely dated -- it was wrong.
+> **A shipped capability was described as absent:** cross-table atomic commit
+> landed 2026-09-11, and a sweep the following day corrected six statements across
+> three SQLsel pages. This answer was a seventh and was missed, so the FAQ went on
+> denying a capability the engine had, while the command catalog on this same site
+> published `GROUPCOMMIT` as `supported` -- two published pages contradicting a
+> third. The same sentence also called transactional DML single-table; it is not.
+> The matching absence claim on [DBMS and RDBMS](/docs/engine/rdbms) was corrected
+> in the same pass.
+>
+> **What else changed, and did not require an answer to move:** the command
+> catalog admitted `GROUPCOMMIT` and `WORKDESK` and rose 239 to 241; the HELP
+> store shed a duplicated usage-contract family, taking line rows 29,700 to
+> 18,566 without losing content; and the site moved from local candidate to
+> published at release 145. The product, format, workspace, interface and
+> contributor-operation answers were re-read against those and left standing.
+> **One gap is recorded rather than filled:** no answer here describes where sys
+> tables live or the path layout, because no page on this site does.
 
 
 
@@ -156,11 +162,15 @@ workspace system and is kept as a reference surface, not as the query engine.
 Maturity, stated plainly: this family is **in progress**. It runs and is actively
 developed, and that is not the same as a claim of completeness. The SELECT slice
 now carries the full join family, grouping and aggregates, set operations,
-subqueries and single-table transactional DML -- each verified against an
+subqueries and transactional DML -- each verified against an
 in-process SQLite oracle. The bare `SELECT` alias without the `SQLSEL` prefix
 ships behind the session switch `SET MODE SQL` -- corrected 2026-09-09, this
-answer called it absent -- while cross-table atomic commit, stored NULL in DML
-and subqueries over a joined outer scope remain absent. A command's page may also show a catalog status
+answer called it absent. **Cross-table atomic commit also ships**, since
+2026-09-11: a SQL transaction enlists every table it touches, each member
+prepares durably, and one group-log row decides all of them, so a multi-table
+commit reports `2 tables committed as ONE decision` -- corrected 2026-09-14,
+this answer called it absent for three days after it shipped. Stored NULL in
+DML and subqueries over a joined outer scope remain absent. A command's page may also show a catalog status
 broader than its own contract claims (see below).
 
 See: [SQLsel](/docs/talk-family/sqlsel),

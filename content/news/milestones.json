@@ -11,6 +11,13 @@
   ],
   "items": [
     {
+      "date": "2026-09-14",
+      "title": "The site published before its own cover page caught up",
+      "summary": "Release 145 went live with the catalog at 241 command keys matched to 241 parsed contracts, zero fallback rows, and a HELP store that had just shed a duplicated usage-contract family: 29,700 line rows down to 18,566, artifacts and sections falling 14,844 to 10,587 apiece, contract drift reaching zero. Then the banner on all 151 published pages was found still reading 'Full-stack docs reconciled 2026-09-02'. Six freshness contracts had passed throughout, because every one of them compares a page against an authority file, and that authority was typed by hand and had not been regenerated. The pages agreed with the authority and the authority agreed with itself. The fix was to give it a generator, which is the one thing the two artifacts sitting beside it already had.",
+      "href": "/docs/dev/full-stack-documentation-push",
+      "tag": "documentation"
+    },
+    {
       "date": "2026-09-02",
       "title": "Four acceptance plans, three discarded, every one of them green",
       "summary": "A manual acceptance ran four times before it was allowed to land. Three plans were built and thrown away, and all four reported PASS_PLAN_ONLY with zero findings. The discarded ones would have joined text across a field boundary mid-word, turning 'not the command name' into 'not the comm and name', and welded list items into sentences on eight pages. The measurement in use, a fragment count, fell for a wrong join exactly as it fell for a right one. What caught them was diffing every staged page against its accepted counterpart and refusing to leave any difference unexplained.",

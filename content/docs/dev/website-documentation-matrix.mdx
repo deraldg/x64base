@@ -219,7 +219,44 @@ page or artifact is set by its class and by these gates:
 Retention is enforced at closeout: the matrix re-audit confirms that nothing which
 should have been preserved was overwritten during the pass.
 
-## 2026-09-02 Site-Wide Freshness Sweep
+## 2026-09-14 Site-Wide Freshness Sweep
+
+`DOCFLUSH-20260914-001`, the reconciliation for the run that published. **This
+is the first sweep on this page taken after a deployment rather than before
+one**, and the first whose page counts were measured from a real build instead
+of carried. All 151 content pages were swept mechanically against the values
+this run measured, rather than sampled.
+
+| Route or surface | Class | Freshness disposition | Enforced relationship |
+| --- | --- | --- | --- |
+| `documentation-progress-v1.json` (the authority behind six contracts) | `maintained_current` | `GENERATED FOR THE FIRST TIME` -- this authority had **no generator** and was typed by hand, which is why every contract keyed to it passed while the cluster sat twelve days stale. `tools/fullstack_docs/derive_documentation_progress.py` now measures it: 19 fields measured every run, 13 carried and LISTED AS CARRIED in the artifact itself, so a remembered number is distinguishable from a measured one without knowing which is which. | `--check` re-derives into memory and diffs. It belongs in `docpush_preflight.py` as a step, which is not yet done. |
+| The shared chrome banner, all 151 pages | `maintained_current` | `CORRECTED` -- read "Full-stack docs reconciled 2026-09-02" on the live site after release 145 shipped. It reads the authority above, so it was never wrong about the file; the file was wrong about the engine. | Advances with `as_of_date`. No gate can catch this while the authority is hand-written, which is the point of the row above. |
+| `/docs/dottalk/command-reference` | `maintained_current` | `REFRESHED` -- present-state region advanced to 2026-09-14 and the 09-02 snapshot RETAINED below it. The narrative was rewritten rather than renumbered: the old text explained topics falling as a measurement becoming honest, and this run's story is a duplicated usage-contract family leaving the store while commands, topics and arguments all rose. | `command-reference-current-snapshot`. **The contract itself was defective** and was rebuilt: `publication gate {first_open_entry} open.` could only produce a true sentence while a gate was open, and demanded the page read "publication gate none open." once E8 closed. |
+| `/docs/dottalk/command-catalog`, `function-catalog`, `/docs/engine/error-codes`, `messaging-and-localization` | `generated` | `REGENERATED` -- the catalog rose 239 to 241, admitting `GROUPCOMMIT` and `WORKDESK`, both of which carried usage contracts in source and neither of which had a row. Functions re-checked at 77 core plus 2 self-registered, 20 error codes, 5 locales. | `website_matrix_check.py`, five hard gates. PASS. |
+| `/docs/getting-started/faq` | `maintained` | `UPDATED` -- and the review found a defect rather than staleness. **A shipped capability was described as absent:** cross-table atomic commit landed 2026-09-11; a sweep the next day corrected six statements across three SQLsel pages; this answer was a seventh and was missed. It denied the capability for three days while the command catalog on this same site published `GROUPCOMMIT` as `supported`. | `faq-reconciliation-check` binds the review date to the authority. The binding is why this review happened at all. |
+| `/docs/engine/rdbms` | `derived` | `CORRECTED` -- carried the matching straggler, "Cross-table atomic commit. An explicit transaction accepts one target table," and described DML as single-table transactional. Both removed. Newly classified in the content manifest this run, together with `/docs/engine/primary-keys`. | `content_inventory`: was FAIL on two unclassified pages, now PASS at 151 classified exactly once. |
+| `/news` | `maintained` / generated feed | `REFRESHED` -- one entry dated 2026-09-14, written from this run's transcripts. **The contract that guards it was defective too:** it asserted the literal string `239 command keys matched to 239 parsed contracts`, a hand-typed number inside a freshness gate. It is now interpolated from the authority and cannot rot by hand. | `news-current-status`, `news-current-status-first`. PASS. |
+| `/docs/labtalk/agent-sync` | `maintained_current` | `POINTER ADVANCED` -- one line. The page restates the authority's reconciliation date and does not claim it was itself reviewed; its own `2026-08-15a` snapshot label is untouched and correct. | `agent-sync-snapshot-disclosure`. PASS. |
+| `/docs/labtalk/current-work` | `maintained_current` envelope / generated body | `DEFERRED_REGENERATION_PENDING` -- unchanged and still accurate. The reconciliation pointer advanced; the `2026-08-05` registry snapshot and its disposition did not, because neither the body nor its cause has moved. | `current-work-freshness-disclosure` interpolates the disposition FROM THE AUTHORITY. PASS. |
+| `/downloads`, `/docs/dev/developer-manual`, `/docs/dev/manual-assembly` | `maintained` envelope / reported artifacts | `NO_CHANGE` -- the staged manual manifest remains dated 2026-07-23 with its visible date and counts bound to it. Gate 4 accepted 164 pages into the dev tree this run, which is a different assembly and is not a reason to advance these. | Two manual-snapshot contracts bind visible date and counts to `DEVELOPER_MANUAL_LATEST.json`. |
+| E8, website publication | gate | `ENTERED, AND RECORDED AFTER THE FACT` -- release 145 published 2026-09-14T06:44:06Z from `6784d3d88`, authorized in conversation and **recorded nowhere**. Both harvest promotions this run got full records; this gate got none, so the authority went on reporting `publication_authorized: false` and was right to. An evidence file and an owner authorization binding to its hash now exist. | `gate8_publication_evidence.json` + `gate8_publication_authorization.json`, read by the progress generator. |
+| Path layout and sys-table locations | -- | `ABSENT, NOT STALE` -- a sweep of all 151 pages for path environment variables returns **zero files**, and every `SYS*` reference on the site is portal/BBS schema or a SelfDoc catalog. No page describes where sys DBFs live. | **None, and none is possible.** A contract can prove a page is wrong; it cannot prove a page was never written. This row is the inventory entry that has to exist before a gate can. |
+| Historical announcements, press material, benchmark checkpoints, accepted manual snapshots, historical source pages | `reported` / `static` | `HISTORICAL_BY_DESIGN` -- dates retained as provenance. The mechanical sweep flagged four of these and all four were correct: `primary-keys` and `rdbms` both say the unrouted-write count **was** 22 across 15 files on 2026-09-08, which is true past tense, and two more were digits inside other numbers. | Retention policy. A sweep that cannot tell a citation from a claim produces work, not findings. |
+
+**Measured this time, unlike 2026-09-02:** `website_static_pages_built` (177)
+and `website_pagefind_pages_indexed` (170) came from this run's own build. The
+prior sweep named them as the two fields it could not re-measure; the generator
+now requires them as arguments rather than carrying them forward, because a
+field silently carried is a field that rots.
+
+**A verification caveat worth keeping.** The first uncached read of the live
+`primary-key-policy-v1.json` returned a deploy two generations old; the same URL
+with a cache-busting query returned the current file. The publisher verifies
+`site-release.json` with `cache: "no-store"` -- the one file that would have
+looked correct either way. A live readback that does not bust the edge cache can
+read stale bytes and conclude a good publish failed.
+
+## 2026-09-02 Site-Wide Freshness Sweep (retained)
 
 v9 (`DOCFLUSH-20260902-001`), website reconciliation for the v8 flush. Every row
 below was measured or performed, not assumed. **Nothing is published.**

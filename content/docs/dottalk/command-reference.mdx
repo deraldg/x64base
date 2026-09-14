@@ -8,9 +8,54 @@ It leads with the newest local snapshot, then preserves earlier candidates and
 the sealed public checkpoint without duplicating generated command pages into
 the website repository.
 
-## Current full-stack snapshot -- local, not deployed (2026-09-02)
+## Current full-stack snapshot (2026-09-14)
 
 | Measure | Current value |
+| --- | ---: |
+| Website command keys / parsed contracts | 241 / 241 |
+| Fallback command rows | 0 |
+| HELP commands / reachable topics | 464 / 669 |
+| HELP lines | 18,566 |
+| Canonical harvest rows | 43,858 |
+| Manual candidate | `MANRUN-20260914T035009Z-36CEEEFD` |
+
+Publication state: `v9-published-github-pages-release-145`.
+First open publication gate: `none`.
+
+This snapshot is deployed. Release 145 went to x64base.com on 2026-09-14 from
+source commit `6784d3d88`, and the published pages were read back afterwards
+rather than assumed.
+
+**HELP lines fell 29,700 to 18,566, and that is a duplicate leaving the store,
+not content leaving it.** The harvest had been carrying the usage-contract family
+twice: two separate scans covered the same block of source text and wrote rows
+whose only difference was the evidence string recording which scan found them, so
+the de-duplication key never matched and both copies survived every export.
+Removing one copy took artifacts and sections from 14,844 to 10,587 apiece -- the
+two stay one-to-one at both ends, which is how the removal is known to be clean
+-- and took contract drift from sixteen instances to zero.
+
+The other three figures moved the other way, and for the ordinary reason:
+**commands rose 462 to 464, reachable topics 666 to 669, and argument rows 2,368
+to 2,378.** The engine gained content while the harvest shed a duplicate of it.
+The website catalog rose 239 to 241 in the same pass, admitting `GROUPCOMMIT` and
+`WORKDESK`, both of which carry usage contracts in source and neither of which
+had a catalog row.
+
+Of the fourteen tables in the canonical harvest, **ten are exported from the
+current store and four are carried forward from stale May seeds** --
+`META_SYSENTVAR`, `META_SYSFLDDIC`, `META_SYSHELP` and `META_SYSMSG`, whose
+sources are not yet current. Earlier snapshots on this page reported 14 of 14,
+which read "matches the store" as though it meant "exported from the store".
+Those are different claims and this page now separates them.
+
+The command catalog, function catalog, error codes and locale tables were all
+re-checked against source on 2026-09-14: 241/241 with zero fallback, 77 core
+functions plus 2 self-registered, 20 error codes, 5 locales.
+
+### Prior snapshot -- 2026-09-02 (retained)
+
+| Measure | Value as of 2026-09-02 |
 | --- | ---: |
 | Website command keys / parsed contracts | 239 / 239 |
 | Fallback command rows | 0 |
@@ -18,20 +63,9 @@ the website repository.
 | HELP lines | 29,700 |
 | Manual candidate | `MANRUN-20260902T113417Z-BE63D201` |
 
-This is the newest source-to-website reference snapshot. It reflects the closed
-development run and regenerated [command catalog](/docs/dottalk/command-catalog),
-but remains review-needed with publication gate E8 open.
-
-Two figures moved in directions worth reading rather than skimming. **Reachable
-topics fell 670 to 666 and HELP lines rose 29,480 to 29,700**, and both come from
-the same correction: the harvest is now exported by the engine rather than by a
-Python scaffold, so memo text that was arriving blank now arrives resolved. Fewer
-topics, more lines, and the argument rows behind them fell 2,614 to 2,368. **This
-is a measurement becoming honest, not content being lost.**
-
-The command catalog, function catalog, error codes and locale tables were all
-re-checked against source on 2026-09-02 and are unchanged: 239/239 with zero
-fallback, 73 core functions plus 2 self-registered, 20 error codes, 5 locales.
+Recorded at the time as "local, not deployed", with publication gate E8 open.
+Both were true when written. The snapshot above is the first on this page to
+describe a deployment rather than a candidate.
 
 ### Prior snapshot -- 2026-08-26 (retained)
 
