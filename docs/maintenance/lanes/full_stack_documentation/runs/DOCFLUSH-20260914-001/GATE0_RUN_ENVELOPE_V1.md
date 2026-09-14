@@ -477,3 +477,81 @@ surface.
 
 `validation_review_rows=1` is unexamined. "Review" is the category that quietly
 became "accepted" in v9.
+
+## Status 2026-09-14T04:40Z -- THE CENSUS GAP IS SETTLED
+
+The section above headed "AN UNRECONCILED COUNT, named before anyone quotes
+it" is now reconciled. It decomposes completely, with no remainder.
+
+Applying each tool's OWN inclusion rule and listing every file one counts and
+the other does not:
+
+    census only     22
+    inventory only   0
+
+    16   @dottalk.usage.voluntary
+     6   the marker appears, but as PROSE
+
+`INVENTORY ONLY = 0` is the half to read first. Every mined contract is inside
+census scope. The tools differ in extensions (9 vs 5) and in method (a
+filesystem walk under src/include/bindings vs `git ls-files`), and neither
+difference produces a single file in practice. The whole gap is the marker.
+
+### The sixteen are correct and documented
+
+`contract_inventory` excludes `@dottalk.usage.voluntary` deliberately, and says
+why in its own source: the literal `"@dottalk.usage.voluntary v1"` does not
+CONTAIN `"@dottalk.usage v1"`, so `helpdata_source_miner.cpp` never sees them
+either. They reach no store, no topic, no page. Fourteen of the sixteen are the
+SET family.
+
+### The six are sentences, not contracts
+
+    src/cli/cmd_rpg.cpp:24        //   handler and a @dottalk.usage contract IN THE SAME COMMIT as the handler.
+    src/cli/cmd_trigger.cpp:24    //   (identical boilerplate)
+    src/cli/cmd_ttestapp.cpp:24   //   (identical)
+    src/cli/cmd_vmware.cpp:24     //   (identical)
+    src/cli/cmd_vt200.cpp:24      //   (identical)
+    src/cli/shell_commands.cpp:133  // inline it had no source file, so no @dottalk.usage contract, so no SYSCMD
+
+Five are one boilerplate sentence repeated in five file headers -- a rule ABOUT
+contracts, quoted in the files it governs. The sixth is a comment explaining
+that a command HAS NO contract, counted as having one.
+
+`source_census` matches `@dottalk\.usage\b` anywhere in the file, including the
+middle of an English sentence. IT CANNOT TELL AN INSTANCE OF THE MARKER FROM A
+CITATION OF ONE -- the defect class already recorded as
+FINDING_A_CHECKER_CANNOT_TELL_AN_INSTANCE_FROM_A_CITATION_OF_ONE, recurring in
+a tool nobody had pointed at this question.
+
+### What this retires
+
+The candidate explanation recorded above -- "16 voluntary + 9 plain-form = 25,
+so the arithmetic does NOT close" -- had the second term wrong. It is 6, not 9,
+and the gap is 22, not 24. Those figures were taken over trees carrying another
+session's uncommitted work, which is why they drifted between readings. The
+decomposition is stable regardless.
+
+`contract BLOCKS 241`, cited three times in this envelope, stays retired as a
+quotable figure.
+
+### What each number means, for E8
+
+    source_census        how many source files MENTION a usage marker
+    contract_inventory   how many tracked files carry a contract the engine
+                         will actually MINE
+
+`source_census`'s command-file count is OVERSTATED BY SIX. Both tools are
+internally correct; they answer different questions. E8 must not put the census
+number on a page as a contract count.
+
+### Fix direction, recorded not taken
+
+A contract marker is the first token of a comment line. A citation sits
+mid-sentence. Anchoring `USAGE_RE` to that position separates them without a
+keyword list. That is a change to a measuring instrument and wants a decision
+and a test, not a patch at the end of a long run.
+
+The decomposition is reproducible: `tools/fullstack_docs/census_gap_decompose.py`,
+read-only, reimplements both inclusion rules from their own sources and names
+every file in the difference with the reason it is there.
