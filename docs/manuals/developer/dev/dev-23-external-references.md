@@ -1,7 +1,7 @@
-# DEV-19 External References
+# DEV-23 External References
 
 ```yaml
-page_id: DEV-19
+page_id: DEV-23
 title: External References
 status: DRAFT
 last_verified: 2026-08-20
