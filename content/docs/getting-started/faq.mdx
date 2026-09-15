@@ -22,6 +22,26 @@ This FAQ is organized by how the project is actually described on the site: prod
 > The matching absence claim on [DBMS and RDBMS](/docs/engine/rdbms) was corrected
 > in the same pass.
 >
+> **Correction 2026-09-15, found after the review above closed.** The `SQL` row
+> in the SQL-family table described the retired predicate scanner -- a COUNT
+> command with `FOR`, `ALL` and `DELETED` -- eleven days after the 2026-09-04
+> owner ruling retired it. `src/cli/cmd_sql.cpp` dispatches to a single
+> reserved-verb message, and its own contract records `status: reserved` and
+> `scans_records: no`.
+>
+> **This page was not inventing it.** `include/dotref.hpp` still publishes the
+> retired grammar and the retired summary for `SQL`, so the engine's own command
+> catalog -- and every HELP surface built from it -- says the same thing this row
+> said. The page was faithfully mirroring a catalog entry that had gone stale,
+> which is why no freshness check caught it: the contract-drift gate compares
+> source usage contracts against the HELP store and reports CLEAN, because the
+> stale text enters that store from a different source in the same build.
+> [SQL conformance](/docs/engine/sqlsel-and-sql-conformance) has carried the
+> retirement correctly since 2026-09-14, so two pages here described one verb two
+> ways. The review date above is deliberately NOT moved: a site freshness
+> contract binds it to the documentation-progress authority, and a correction is
+> not a review.
+>
 > **What else changed, and did not require an answer to move:** the command
 > catalog admitted `GROUPCOMMIT` and `WORKDESK` and rose 239 to 241; the HELP
 > store shed a duplicated usage-contract family, taking line rows 29,700 to
@@ -151,10 +171,10 @@ Yes, and the honest answer needs the distinction, because several commands carry
 | Command | What it actually is |
 | --- | --- |
 | `SQLSEL` | **The working SELECT.** `SELECT <columns> FROM <table> [WHERE <predicate>] [LIMIT <n>]`, with bare column names in the current grammar slice. |
-| `SQL` | A **COUNT** command with `FOR <expr>` and optional `ALL` / `DELETED`. It does not execute SELECT statements; the name is historical. |
+| `SQL` | **A reserved name, not a working command.** Retired as a scanner on 2026-09-04: it kept its own idea of which rows were in scope and could disagree with `COUNT` without saying so. Every invocation now answers with the same direction -- predicate scans are `COUNT`, statements are `SQLSEL`, an actual SQLite database is `SQLITE`. The name is held for a real SQL surface later. |
 | `REL` | The relational surface: relations, joins, and tuple views. |
 | `SQLITE` | The embedded SQLite bridge, used in the house as a **verification oracle** rather than as the storage engine. |
-| `SQLHELP` | A **reference catalogue only**, written before workspaces existed. It describes and searches SQL topics; it does not run queries. |
+| `SQLHELP` | A **reference catalogue**, written before workspaces existed. It describes and searches SQL topics and does not run queries. Since 2026-09-15 `SQLHELP SQLSEL` prints the statement grammar from the verb itself rather than keeping a second copy of it. |
 
 **`SQLSEL` and `REL` are where real query work happens.** `SQLHELP` predates the
 workspace system and is kept as a reference surface, not as the query engine.
