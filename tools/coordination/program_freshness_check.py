@@ -179,7 +179,38 @@ def main(argv=None):
 
     # ---- compiled -------------------------------------------------------
     for name, spec in sorted(COMPILED.items()):
-        exe = next((root / e for e in spec["exe"] if (root / e).is_file()), None)
+        # PICK THE NEWEST, AND NAME IT.
+        #
+        # Until 2026-09-15 this was `next(... if is_file())` -- FIRST THAT
+        # EXISTS -- over a list of three declared paths, and the verdict line
+        # printed a date with no path. metacollect has TWO binaries on disk
+        # (build/Release 2026-09-11 and build/metacollect-docflush/Release
+        # 2026-07-26, 47 days and 36 KB apart), so the PASS was correct only
+        # because build/Release happens to sit first in the list. Reorder the
+        # list, or do not build that preset, and the same line would report the
+        # July binary while the runbook's hardcoded path runs the September one.
+        #
+        # That is the exact failure this tool exists to prevent: a program older
+        # than its sources reports the tree as it was BEFORE the change under
+        # test. Reaching it through the tool's own selection rule is worse than
+        # not checking, because it reports PASS while doing it.
+        #
+        # launch-common.ps1's Resolve-DotTalkBuiltExe already did this right and
+        # says why: "REPORT THE CHOICE, BECAUSE IT IS A CHOICE ... naming which
+        # tree won is the whole fix." This is that sentence, applied here.
+        present = [root / e for e in spec["exe"] if (root / e).is_file()]
+        exe = max(present, key=lambda p: p.stat().st_mtime) if present else None
+        if len(present) > 1:
+            first = present[0]
+            if first != exe:
+                print("  note  %-16s list order would have measured %s (%s);"
+                      % (name, first.relative_to(root).as_posix(),
+                         stamp(first.stat().st_mtime)))
+                print("        %-16s measuring the NEWEST instead." % "")
+            for other in sorted(present, key=lambda p: -p.stat().st_mtime)[1:]:
+                print("  note  %-16s also present: %s (%s)"
+                      % (name, other.relative_to(root).as_posix(),
+                         stamp(other.stat().st_mtime)))
         src = newest(root, spec["sources"])
         if src is None:
             print("  ERROR %-16s no declared source is on disk -- the manifest is wrong"
@@ -192,11 +223,13 @@ def main(argv=None):
             continue
         et, st = exe.stat().st_mtime, src[0]
         rel = src[1].relative_to(root).as_posix()
+        exe_rel = exe.relative_to(root).as_posix()
         if et >= st:
-            print("  PASS  %-16s exe %s > newest source %s" % (name, stamp(et), stamp(st)))
+            print("  PASS  %-16s exe %s > newest source %s  (%s)"
+                  % (name, stamp(et), stamp(st), exe_rel))
         else:
-            print("  FAIL  %-16s exe %s is OLDER than %s (%s)"
-                  % (name, stamp(et), stamp(st), rel))
+            print("  FAIL  %-16s exe %s is OLDER than %s (%s)  [%s]"
+                  % (name, stamp(et), stamp(st), rel, exe_rel))
             print("        %s" % spec["role"])
             print("        A stale program reports the tree as it was BEFORE the "
                   "change under test.")

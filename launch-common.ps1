@@ -327,6 +327,57 @@ function Invoke-DotTalkCliRuntime {
     }
 }
 
+function Select-DotTalkNewestExisting {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Label,
+
+        [Parameter(Mandatory = $true)]
+        [string[]]$Candidates
+    )
+
+    # NAMING WHICH TREE WON IS THE WHOLE FIX -- the same sentence
+    # Resolve-DotTalkBuiltExe carries, applied to the other two selections in
+    # this file. Until 2026-09-15 both of them were
+    # `Where-Object { Test-Path } | Select-Object -First 1`: FIRST THAT EXISTS,
+    # not newest, and silent about it. So the workbench path could run a stale
+    # binary purely because a staler tree sat earlier in a hardcoded list, and
+    # the run would look identical to a correct one.
+    #
+    # Resolve-DotTalkBuiltExe already picked by timestamp and reported both the
+    # winner and every loser. This tree contained the right answer and the wrong
+    # answer in one file.
+    #
+    # Write-Host and Write-Warning ONLY -- this function returns a PATH, and a
+    # bare string would join the output stream and hand the caller an array.
+    $found = @(
+        $Candidates |
+        Where-Object { $_ -and (Test-Path -LiteralPath $_) } |
+        ForEach-Object { Get-Item -LiteralPath $_ }
+    )
+    if ($found.Count -eq 0) { return $null }
+
+    $newest = $found | Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1
+    Write-Host ("{0}: using {1}" -f $Label, $newest.FullName)
+    Write-Host ("         chosen by timestamp from {0} candidate(s) present; built {1}." -f
+                $found.Count, $newest.LastWriteTime)
+
+    if ($found.Count -gt 1) {
+        $first = $Candidates | Where-Object { $_ -and (Test-Path -LiteralPath $_) } | Select-Object -First 1
+        if ($first -ne $newest.FullName) {
+            # The old rule would have run this one. Say so, because a silent
+            # change of winner is how a fix becomes a new surprise.
+            Write-Warning ("{0}: list order would have chosen {1}, which is NOT the newest." -f $Label, $first)
+        }
+        Write-Host "         other candidate(s) present, newest first:"
+        $found | Sort-Object LastWriteTimeUtc -Descending | Select-Object -Skip 1 | ForEach-Object {
+            Write-Host ("           {0}  ({1})" -f $_.FullName, $_.LastWriteTime)
+        }
+    }
+
+    return $newest.FullName
+}
+
 function Invoke-DotTalkWbRuntime {
     param(
         [Parameter(Mandatory = $true)]
@@ -357,7 +408,7 @@ function Invoke-DotTalkWbRuntime {
     Assert-DotTalkPath -LiteralPath $layout.AppRoot -Label "Application root"
     Assert-DotTalkPath -LiteralPath $layout.RuntimeData -Label "Runtime data path"
 
-    $wbExe = $wbCandidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
+    $wbExe = Select-DotTalkNewestExisting -Label "wb" -Candidates $wbCandidates
     if (-not $wbExe) {
         throw "Workbench executable not found. Checked: $($wbCandidates -join ', ')"
     }
@@ -366,7 +417,7 @@ function Invoke-DotTalkWbRuntime {
         Write-Warning "Using deprecated wx build root at $wbExe. Canonical GUI build root is $($layout.BuildRoot)."
     }
 
-    $cliExe = $cliCandidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
+    $cliExe = Select-DotTalkNewestExisting -Label "wb-cli" -Candidates $cliCandidates
     if (-not $cliExe) {
         throw "DotTalk++ CLI executable not found. Checked: $($cliCandidates -join ', ')"
     }
