@@ -300,14 +300,28 @@ def render(root: Path, site_root: Path, static_pages: int, indexed_pages: int) -
         raise DeriveError(f"existing artifact not found: {artifact_path}")
     prior = json.loads(artifact_path.read_text(encoding="utf-8"))
 
+    prior_vertical = prior.get("current_vertical") or {}
+
     measured = {}
     measured.update(read_harvest(root))
     measured.update(read_catalogs(root, site_root))
     run_info = read_run(root)
     run_dir = run_info.pop("_run_dir")
     measured.update(run_info)
-    measured["website_static_pages_built"] = static_pages
-    measured["website_pagefind_pages_indexed"] = indexed_pages
+    # A --check run has no build to read, so the two build-derived counts may
+    # arrive as None. They stay in `measured` either way: if --check reclassified
+    # them as carried, measured_fields/carried_fields would differ from a real
+    # run and every check would fail on its own bookkeeping. The values fall back
+    # to the prior artifact, and --check SAYS SO rather than implying it compared
+    # them.
+    measured["website_static_pages_built"] = (
+        prior_vertical.get("website_static_pages_built")
+        if static_pages is None else static_pages
+    )
+    measured["website_pagefind_pages_indexed"] = (
+        prior_vertical.get("website_pagefind_pages_indexed")
+        if indexed_pages is None else indexed_pages
+    )
 
     gate8 = read_gate8(run_dir)
     publication_state = prior.get("publication_state")
@@ -315,7 +329,6 @@ def render(root: Path, site_root: Path, static_pages: int, indexed_pages: int) -
         publication_state = gate8["publication_state"]
         measured.update(gate8["vertical"])
 
-    prior_vertical = prior.get("current_vertical") or {}
     vertical = dict(prior_vertical)
     vertical.update(measured)
     # BOOKKEEPING is not data. Both of these keys live inside current_vertical,
@@ -363,17 +376,25 @@ def main() -> int:
     parser.add_argument(
         "--static-pages",
         type=int,
-        required=True,
-        help="static pages built, from the `next build` output of this run",
+        default=None,
+        help="static pages built, from the `next build` output of this run. "
+             "REQUIRED to write; optional with --check, which has no build.",
     )
     parser.add_argument(
         "--indexed-pages",
         type=int,
-        required=True,
-        help="pages indexed, from the pagefind output of this run",
+        default=None,
+        help="pages indexed, from the pagefind output of this run. "
+             "REQUIRED to write; optional with --check, which has no build.",
     )
     parser.add_argument("--check", action="store_true", help="diff only; write nothing")
     args = parser.parse_args()
+
+    if not args.check and (args.static_pages is None or args.indexed_pages is None):
+        print("documentation-progress: FAIL -- --static-pages and --indexed-pages "
+              "are required to write the artifact. They come from this run's own "
+              "build; a field carried forward silently is a field that rots.")
+        return 2
 
     root = args.root.resolve()
     site_root = args.site_root.resolve()
@@ -389,6 +410,10 @@ def main() -> int:
     same = strip_volatile(on_disk) == strip_volatile(rendered)
 
     if args.check:
+        if args.static_pages is None or args.indexed_pages is None:
+            print("documentation-progress check: website_static_pages_built and "
+                  "website_pagefind_pages_indexed NOT compared -- no build in "
+                  "scope. Every other measured field was.")
         if same:
             print("documentation-progress check=PASS -- artifact matches a fresh derivation")
             return 0

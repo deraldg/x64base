@@ -15,6 +15,7 @@ This runs them in one command:
   6b. metacollect is BUILT       -- Phase 5's exe must exist, not merely be fresh   [HARD]
   7. harvest freshness (E5)      -- the CANONICAL harvest matches the live HELP/META store [HARD]
   8. contract drift              -- every source usage contract is in the store, unchanged  [HARD]
+  9. site present-state          -- the website progress authority matches a fresh derivation [HARD]
 
 Steps 4 and 5 were added 2026-08-25. They exist because flush v5 lost cycles to
 four failures a transcript CANNOT show, all of them ordering facts: a store
@@ -57,6 +58,25 @@ run six green steps and silently omit a phase. Owner, 2026-09-14: "those should
 be obvious recorded steps in the fullstack document push, we should not be able
 to skip steps." A step that can vanish without a finding is a step that is not
 in the push.
+
+Step 9 was added 2026-09-15, and the reason is one day old. On 2026-09-14 the
+site published with a banner on all 151 pages reading "Full-stack docs
+reconciled 2026-09-02". Six freshness contracts passed throughout, because each
+compares a page against public/artifacts/documentation-progress-v1.json and that
+authority was TYPED BY HAND. Its two neighbours -- the primary-key and SQLsel
+authorities -- each had a generator; this one had none, so the pages agreed with
+the authority, the authority agreed with itself, and nothing compared either to
+the engine.
+
+A generator was written the same day. It did not close the hole. Its own header
+said so: "nothing forces anyone to run this." A tool that exists and is not
+invoked is exactly the state the owner ruled against on 2026-09-14 -- a step
+whose omission produces no finding is not in the push. This step is the
+invocation.
+
+It needs --site-root. When that is absent the step is recorded UNRUN AND FAILS,
+rather than skipping quietly, for the same reason step 6b exists: a step that can
+vanish without a finding is not in the push.
 
 Step 8 is the owner's standing ask from 2026-09-13 -- "the command contract
 inventory ... a curated part of the fullstack doc push in the harvest phase,
@@ -122,6 +142,8 @@ def main(argv=None):
     ap.add_argument("--root", default=".", help="repo root (default: cwd)")
     ap.add_argument("--catalog", default=None,
                     help="site command-catalog.mdx (omit to skip the catalog check)")
+    ap.add_argument("--site-root", default=None,
+                    help="website source root; step 9 FAILS without it")
     ap.add_argument("--no-git", action="store_true",
                     help="pass through to step 4: skip the worktree-binding check")
     a = ap.parse_args(argv)
@@ -314,6 +336,75 @@ def main(argv=None):
         elif line is not None and rc not in (0, 2):
             print("     UNRUN -- unexpected exit (rc=%d). Not a pass." % rc)
             fails.append("contract drift: unexpected exit (rc=%d)" % rc)
+
+    # 9. site present-state: the progress authority vs a fresh derivation (HARD)
+    if a.site_root is None:
+        print("  9. site present-state: UNRUN -- no --site-root given")
+        fails.append(
+            "site present-state: UNRUN. Pass --site-root <website tree>. The "
+            "progress authority is hand-editable and six freshness contracts "
+            "resolve against it; not checking it is how a published site "
+            "described itself with numbers nobody had measured for twelve days.")
+    else:
+        site_root = Path(a.site_root).resolve()
+        rc, out = _run([py, str(root / "tools/fullstack_docs/"
+                                       "derive_documentation_progress.py"),
+                        "--root", str(root), "--site-root", str(site_root),
+                        "--check"])
+        # Same discipline as steps 7 and 8: the tool exits 2 for drift and the
+        # interpreter exits 2 for a missing script. Trust rc only after a verdict.
+        line = next((l for l in out.splitlines()
+                     if l.startswith("documentation-progress check=")), None)
+        note = next((l for l in out.splitlines()
+                     if l.startswith("documentation-progress check:")), None)
+        if line is None:
+            print("  9. site present-state: UNRUN -- no verdict (rc=%d)" % rc)
+            print("     %s" % (out.strip().splitlines()[-1] if out.strip()
+                               else "(no output)"))
+            fails.append("site present-state: UNRUN (rc=%d) -- the check did "
+                         "not report. Unrun is not pass." % rc)
+        else:
+            print("  9. site present-state: %s" % line)
+            if note:
+                print("     %s" % note.split("check: ", 1)[-1])
+        if line is not None and rc == 2:
+            fails.append(
+                "site present-state: documentation-progress-v1.json no longer "
+                "matches a fresh derivation. Re-derive it with this build's "
+                "page counts (drop --check and pass --static-pages / "
+                "--indexed-pages), then re-run.")
+        elif line is not None and rc not in (0, 2):
+            print("     UNRUN -- unexpected exit (rc=%d). Not a pass." % rc)
+            fails.append("site present-state: unexpected exit (rc=%d)" % rc)
+
+    # 10. anchor map: the MD tables vs the CSV that is now their source (HARD)
+    #     Two hand-maintained copies drifted on 13 of 23 rows for 79 days before
+    #     anyone diffed them. A generated table only stays generated if something
+    #     refuses the push when it is not.
+    rc, out = _run([py, str(root / "tools/fullstack_docs/derive_anchor_map.py"),
+                    "--engine", str(root), "--check"])
+    line = next((l for l in out.splitlines() if l.startswith("anchor map:")), None)
+    if line is None:
+        print(" 10. anchor map: UNRUN -- no verdict (rc=%d)" % rc)
+        print("     %s" % (out.strip().splitlines()[-1] if out.strip()
+                           else "(no output)"))
+        fails.append("anchor map: UNRUN (rc=%d) -- the check did not report. "
+                     "Unrun is not pass." % rc)
+    else:
+        print(" 10. %s" % line.split("anchor map: ", 1)[-1])
+        if rc == 1:
+            fails.append(
+                "anchor map: DOTTALKPP_MANUAL_ANCHOR_MAP_V1.md no longer matches "
+                "docs/manuals/anchors/manual_generation_anchor_map_v1.csv. The CSV "
+                "is the source -- edit it and re-run derive_anchor_map.py without "
+                "--check, never the MD table.")
+        elif rc == 2:
+            fails.append(
+                "anchor map: the CSV is malformed -- an unknown state, a duplicate "
+                "anchor id, an empty column, or a pipe that would break the table. "
+                "The tool named the row; fix that row.")
+        elif rc != 0:
+            fails.append("anchor map: unexpected exit (rc=%d)" % rc)
 
     print()
     if fails:
