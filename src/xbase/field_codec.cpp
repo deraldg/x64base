@@ -3,11 +3,20 @@
 // layer: helper
 // owns: 
 // project: project.x64base.runtime
-// lane: 
+// lane: x64-field-type-parity
 // owner: member.derald
 // status: supported
 
 // Field-type codec registry (FIELDTYPE lane, M1).
+//
+// LANE: AIF-164 `x64-field-type-parity`, claimed 2026-09-15. The FIELDTYPE
+// milestones M1..M4 shipped before any number was taken, and this file's
+// `lane:` header sat EMPTY through all four -- so four shipped milestones
+// belonged to no findable lane and could be reached only by someone who
+// already knew they existed. The sibling work on VFP type support is AIF-091
+// `dbf-vfp-type-support` (14 files carry that header); this file is the codec
+// registry rather than the format writer, so it takes the newer lane, which
+// also owns the custom-type extension point M4 demonstrates.
 //
 // M1 ships the fixed-width text codec (byte-for-byte the legacy behavior for
 // C/N/F/D/L/M) and the `I` int32 codec (4-byte little-endian), which retires the
