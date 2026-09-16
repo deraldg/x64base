@@ -1,0 +1,5 @@
+aif: AIF-134
+run_id: COWORK-20260826-002
+member: member.ai.claude.cowork
+lane: ERROR CLEAR/STATUS/TEST are registered as multi-word keys with no bare ERROR router, so shell_dispatch cannot reach them -- the AIF-131 defect unfixed in a sibling family, while dotref publishes all three as supported
+claimed_utc: 2026-08-26T22:04:50Z

@@ -186,7 +186,7 @@ Compiled clean, MSVC Release, `dottalkpp` + the GUI/test targets.
 | `identity_dbf_store.cpp` | SYSORG save + load arms; the additive-table guard |
 | `identity_bootstrap.hpp/.cpp` | `find_org_by_key`, `apply_standard_orgs` (idempotent by key), called from `build_seed` |
 | `identity_admin.hpp/.cpp` | `add_org`, `bind_member_org`, `backfill_orgs` -- owner-gated, persisted |
-| `cmd_user.cpp` | `USER ORGS`, `USER ORG ADD|BIND|BACKFILL` |
+| `cmd_user.cpp` | `USER ORGS`, `USER ORG ADD\|BIND\|BACKFILL` |
 | `schema_registry.py` | SYSORG TableSpec, bitemporal close policy |
 | `org_schema.hpp` | doctrine + `standing::` helpers; table definition removed |
 

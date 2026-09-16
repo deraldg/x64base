@@ -1,0 +1,5 @@
+aif: AIF-135
+run_id: CODEX-20260826-014
+member: member.ai.codex
+lane: Align claim-aif and next_aif on monotonic high-water allocation over the canonical intake-and-claims identity universe; prove gaps are never reused and preserve atomic collision handling
+claimed_utc: 2026-08-26T22:04:51Z
