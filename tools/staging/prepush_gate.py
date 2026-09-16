@@ -407,10 +407,23 @@ def install_hook() -> int:
     ).returncode
 
 
-def _run_portal_check(rel: str, extra: list[str]) -> int:
+class PortalCheckExecutionError(RuntimeError):
+    """A configured portal checker existed but did not complete its contract."""
+
+    def __init__(self, rel: str, detail: str):
+        self.rel = rel
+        self.detail = detail
+        super().__init__(f"{rel}: {detail}")
+
+
+def _run_portal_check(
+    rel: str,
+    extra: list[str],
+    expected: tuple[int, ...] = (0,),
+) -> int:
     """Run an AIF-082 portal check. A MISSING check is never fatal.
 
-    Deliberate: these four are newer than the gate and a clone or an older
+    Deliberate: these checks are newer than the gate and a clone or an older
     worktree may not carry them yet. A gate that hard-fails because an optional
     sub-check is absent would wedge exactly the people it exists to protect --
     which is the failure `check_mandatory_tracked.py` was written to detect, and
@@ -422,10 +435,15 @@ def _run_portal_check(rel: str, extra: list[str]) -> int:
         print(f"  (skipped: {rel} not present)")
         return 0
     try:
-        return subprocess.run([sys.executable, script] + extra, cwd=root).returncode
+        rc = subprocess.run([sys.executable, script] + extra, cwd=root).returncode
     except (OSError, subprocess.SubprocessError) as exc:
-        print(f"  (skipped: {rel} could not run: {exc})")
-        return 0
+        raise PortalCheckExecutionError(rel, f"could not run: {exc}") from exc
+    if rc not in expected:
+        raise PortalCheckExecutionError(
+            rel,
+            f"unexpected exit {rc}; expected one of {expected}",
+        )
+    return rc
 
 
 def main() -> int:
@@ -616,9 +634,11 @@ def main() -> int:
         p.replace("\\", "/").startswith(PORTAL_FEED_SURFACE_PREFIXES) for p in paths)
     if touches_portal_feed_surface:
         print("\n=== Portal feed contract (AIF-132, advisory) ===")
-        feed_rc = _run_portal_check(PORTAL_FEED_GATE, [])
-        assertion_rc = _run_portal_check(PORTAL_ASSERTION_GATE, [])
-        status_rc = _run_portal_check(PORTAL_FEED_STATUS_GATE, ["--check"])
+        feed_rc = _run_portal_check(PORTAL_FEED_GATE, [], (0, 1, 2, 3))
+        assertion_rc = _run_portal_check(
+            PORTAL_ASSERTION_GATE, [], (0, 1, 2, 3))
+        status_rc = _run_portal_check(
+            PORTAL_FEED_STATUS_GATE, ["--check"], (0, 1, 2, 3))
         if any(rc != 0 for rc in (feed_rc, assertion_rc, status_rc)):
             print("\n  ADVISORY -- Portal feed validation reported drift or could not "
                   "evaluate the registries/status projection. NOT blocking during the AIF-132 "
@@ -679,7 +699,8 @@ def main() -> int:
         # 2. HOUSE STYLE -- hard, ADDED LINES ONLY. The 6,951-character backlog
         # never blocks anyone; new violations become impossible. Falsification
         # tested both directions 2026-07-31 before being wired in here.
-        rc = _run_portal_check("tools/staging/check_house_style.py", [])
+        rc = _run_portal_check(
+            "tools/staging/check_house_style.py", [], (0, 2))
         if rc == 2:
             print("\n  BLOCKED -- non-ASCII in added documentation lines. "
                   "CLAUDE.md requires ASCII: use `--` and `->`. Only lines this "
@@ -696,7 +717,8 @@ def main() -> int:
         # Falsification tested 2026-08-21: a reintroduced literal and a
         # plausible C++ fallback each go red; the missing-authority arm is
         # written but was NOT observed firing.
-        rc = _run_portal_check("tools/staging/check_version_coherence.py", [])
+        rc = _run_portal_check(
+            "tools/staging/check_version_coherence.py", [], (0, 2))
         if rc == 2:
             print("\n  BLOCKED -- the version is declared in more than one "
                   "place. Bump project(DotTalkpp VERSION x) in CMakeLists.txt "
@@ -706,7 +728,8 @@ def main() -> int:
         # 3. MANDATORY SET TRACKED -- hard. Found 16 portal-declared files
         # untracked, including the repository-role contract every document
         # defers to and the role guard this very gate invokes.
-        rc = _run_portal_check("labtalk/ai_portal/check_mandatory_tracked.py", [])
+        rc = _run_portal_check(
+            "labtalk/ai_portal/check_mandatory_tracked.py", [], (0, 2))
         if rc == 2:
             print("\n  BLOCKED -- a file the portal declares mandatory is not "
                   "tracked, so a clone cannot read it. Commit it, or stop "
@@ -716,7 +739,8 @@ def main() -> int:
         # 4. SESSION LOG ROW -- WARN, never block. A commit that adds a closeout
         # is usually the right commit; refusing it would punish the sessions
         # doing the most work. Visibility at the moment of omission is the goal.
-        rc = _run_portal_check("tools/coordination/check_session_log_row.py", [])
+        rc = _run_portal_check(
+            "tools/coordination/check_session_log_row.py", [], (0, 3))
         if rc == 3:
             print("\n  ADVISORY -- a closeout is landing with no Session Log row "
                   "in the dashboard (AIF-006). NOT blocking. Add the row, or say "
@@ -753,7 +777,8 @@ def main() -> int:
         # is the wrong trade. Scoped to changed documents for the reason 5b
         # gives -- a check that reports the whole tree's backlog every commit
         # stops being read by the third day.
-        rc = _run_portal_check("tools/staging/check_cited_paths.py", [])
+        rc = _run_portal_check(
+            "tools/staging/check_cited_paths.py", [], (0, 3))
         if rc == 3:
             print("\n  ADVISORY -- a document in this change set cites a repo path "
                   "that is not tracked (see above). NOT blocking. Stage the file, "
@@ -803,7 +828,8 @@ def main() -> int:
         # the transitive half -- a header reached ONLY through another header
         # counts as reachable. A first cut without that counted 78 and would
         # have named seventeen working files.
-        rc = _run_portal_check("tools/staging/check_header_reachability.py", [])
+        rc = _run_portal_check(
+            "tools/staging/check_header_reachability.py", [], (0, 1))
         if rc == 1:
             print("\n  ADVISORY -- the unreachable-header set moved (see above). "
                   "NOT blocking. Update the baseline when the move is intended, "
@@ -826,7 +852,8 @@ def main() -> int:
         # test missed `a.set(i + 1, v)`, and stripping strings destroyed the one
         # piece of evidence that tells a field write from a wrapper. Its header
         # records each, because a gate that under-reports is worse than none.
-        rc = _run_portal_check("tools/staging/check_field_write_callers.py", [])
+        rc = _run_portal_check(
+            "tools/staging/check_field_write_callers.py", [], (0, 1))
         if rc == 1:
             print("\n  ADVISORY -- the direct field-write set moved (see above). "
                   "NOT blocking. Route the new call through the funnel, or exempt "
@@ -844,7 +871,8 @@ def main() -> int:
         # believes about the change between them. IT CANNOT PROVE A RUN
         # HAPPENED -- captures live in gitignored tmp/ -- and the check says so
         # itself rather than letting a green be read as more than it is.
-        rc = _run_portal_check("tools/staging/check_soak_evidence.py", [])
+        rc = _run_portal_check(
+            "tools/staging/check_soak_evidence.py", [], (0, 2))
         if rc == 2:
             print("\n  BLOCKED -- a spec entered the default suite without "
                   "naming two PASS runs on ONE build in "
@@ -875,7 +903,8 @@ def main() -> int:
         # real pass look identical. CONFIGURED AND BROKEN does block: missing is
         # counted separately from wrong, the same discipline PKDURABLE's
         # validator applies to its markers.
-        rc = _run_portal_check("tools/staging/check_site_artifacts.py", [])
+        rc = _run_portal_check(
+            "tools/staging/check_site_artifacts.py", [], (0, 1, 2))
         if rc == 2:
             print("\n  BLOCKED -- a published site artifact disagrees with this "
                   "tree, or the site tree it was told to check is unusable. The "
@@ -907,7 +936,8 @@ def main() -> int:
         # repository or it is not. Both arms falsification-tested against a
         # fixture before being wired in here (missing, untracked-but-linked, and
         # stray each report distinctly).
-        rc = _run_portal_check("tools/staging/check_manual_link_integrity.py", [])
+        rc = _run_portal_check(
+            "tools/staging/check_manual_link_integrity.py", [], (0, 2))
         if rc == 2:
             print("\n  BLOCKED -- the accepted manual links to a page that is "
                   "missing or untracked. A link to an untracked page resolves on "
@@ -915,7 +945,8 @@ def main() -> int:
                   "deliverable and belongs in the repository.", file=sys.stderr)
             exit_code = 2
 
-        rc = _run_portal_check("tools/staging/check_seed_budget.py", [])
+        rc = _run_portal_check(
+            "tools/staging/check_seed_budget.py", [], (0, 2))
         if rc == 2:
             print("\n  BLOCKED -- a document is over the byte budget it declares "
                   "about itself. Adding requires REMOVING or DEMOTING, and "
@@ -933,7 +964,8 @@ def main() -> int:
         # that prints every commit stops being read by the third day; a date
         # makes the reminder periodic, and the row is silent until the day you
         # yourself asked to hear about it.
-        rc = _run_portal_check("tools/coordination/check_open_items.py", [])
+        rc = _run_portal_check(
+            "tools/coordination/check_open_items.py", [], (0, 3))
         if rc == 3:
             print("\n  ADVISORY -- open item(s) past their NEXT LOOK date "
                   "(coordination/OPEN_ITEMS.md). NOT blocking. Do it, or move "
@@ -972,7 +1004,8 @@ def main() -> int:
         # numbers are cited with no register row and predate the register by
         # years. Blocking on those would be red every commit, and a permanently
         # red gate is a switched-off gate.
-        rc = _run_portal_check("tools/coordination/r_collision_gate.py", [])
+        rc = _run_portal_check(
+            "tools/coordination/r_collision_gate.py", [], (0, 2, 3))
         if rc == 2:
             print("\n  BLOCKED -- R-number collision: either a duplicate row in "
                   "the register, or a newly declared number the tree already "
@@ -984,7 +1017,8 @@ def main() -> int:
                   "blocking. Back-fill what they meant when you next touch one; "
                   "they are reserved either way.")
 
-        rc = _run_portal_check("tools/coordination/check_aif_claimed.py", [])
+        rc = _run_portal_check(
+            "tools/coordination/check_aif_claimed.py", [], (0, 2))
         if rc == 2:
             print("\n  BLOCKED -- a new intake row names an AIF number with no "
                   "claim file. Claim it atomically; grep is not an allocator. "
@@ -1007,8 +1041,11 @@ def main() -> int:
         # committing the receipt, is it freshly derived rather than stale or
         # hand-edited? Regenerating at promotion time is a separate step (O-4).
         if any(p.replace("\\", "/") == "MANIFEST.txt" for p in paths):
-            rc = _run_portal_check("tools/staging/generate_public_manifest.py",
-                                   ["--check"])
+            rc = _run_portal_check(
+                "tools/staging/generate_public_manifest.py",
+                ["--check"],
+                (0, 2),
+            )
             if rc == 2:
                 print("\n  BLOCKED -- MANIFEST.txt is staged but does not match "
                       "the tree it describes. It is GENERATED: run "
@@ -1024,5 +1061,19 @@ def main() -> int:
     return exit_code
 
 
+def cli() -> int:
+    """CLI boundary: a checker crash is a gate failure, never a traceback PASS."""
+    try:
+        return main()
+    except PortalCheckExecutionError as exc:
+        print(
+            "\n  BLOCKED -- a configured portal check did not complete: "
+            f"{exc.rel}\n  {exc.detail}",
+            file=sys.stderr,
+        )
+        print("\nprepush-gate: FAIL (exit 2).", file=sys.stderr)
+        return 2
+
+
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(cli())

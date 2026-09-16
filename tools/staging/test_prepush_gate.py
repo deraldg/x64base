@@ -14,7 +14,11 @@ is kept pure in prepush_gate for exactly this reason -- the same shape as
 repository_role_guard.validate_worktree, and for the same reason.
 """
 
+import contextlib
+import io
+from types import SimpleNamespace
 import unittest
+from unittest import mock
 
 import prepush_gate as gate
 
@@ -79,6 +83,64 @@ class Tier0OnlyMessageTests(unittest.TestCase):
     def test_it_names_the_way_out(self):
         self.assertIn("--allow-tier0-only", self.text)
         self.assertIn("X64BASE_ALLOW_TIER0_ONLY", self.text)
+
+
+class PortalCheckExecutionTests(unittest.TestCase):
+    """A child crash is not one of a check's documented outcomes."""
+
+    @mock.patch.object(gate.os.path, "exists", return_value=True)
+    @mock.patch.object(gate, "run_git", return_value="D:/code/ccode\n")
+    @mock.patch.object(gate.subprocess, "run")
+    def test_unexpected_child_exit_is_a_gate_execution_error(
+        self, run, _run_git, _exists
+    ):
+        run.return_value = SimpleNamespace(returncode=1)
+
+        with self.assertRaises(gate.PortalCheckExecutionError):
+            gate._run_portal_check(
+                "tools/staging/check_cited_paths.py", [], (0, 3))
+
+    @mock.patch.object(gate.os.path, "exists", return_value=True)
+    @mock.patch.object(gate, "run_git", return_value="D:/code/ccode\n")
+    @mock.patch.object(gate.subprocess, "run")
+    def test_documented_advisory_exit_is_preserved(
+        self, run, _run_git, _exists
+    ):
+        run.return_value = SimpleNamespace(returncode=3)
+
+        self.assertEqual(
+            gate._run_portal_check(
+                "tools/staging/check_cited_paths.py", [], (0, 3)),
+            3,
+        )
+
+    @mock.patch.object(gate.os.path, "exists", return_value=True)
+    @mock.patch.object(gate, "run_git", return_value="D:/code/ccode\n")
+    @mock.patch.object(gate.subprocess, "run", side_effect=OSError("synthetic"))
+    def test_launch_failure_is_not_rewritten_as_skipped(
+        self, _run, _run_git, _exists
+    ):
+        with self.assertRaises(gate.PortalCheckExecutionError):
+            gate._run_portal_check(
+                "tools/staging/check_cited_paths.py", [], (0, 3))
+
+    @mock.patch.object(gate, "main")
+    def test_cli_blocks_and_never_prints_pass_after_child_crash(self, main):
+        main.side_effect = gate.PortalCheckExecutionError(
+            "tools/staging/check_cited_paths.py",
+            "unexpected exit 1; expected one of (0, 3)",
+        )
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+
+        with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+            rc = gate.cli()
+
+        combined = stdout.getvalue() + stderr.getvalue()
+        self.assertEqual(rc, 2)
+        self.assertIn("BLOCKED", combined)
+        self.assertIn("FAIL (exit 2)", combined)
+        self.assertNotIn("prepush-gate: PASS", combined)
 
 
 if __name__ == "__main__":

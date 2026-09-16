@@ -104,10 +104,79 @@ SIBLING_RE = re.compile(
     % '|'.join(re.escape(k) for k in sorted(SIBLINGS, key=len, reverse=True)))
 
 
-def git(args):
-    out = subprocess.run(['git', '--no-optional-locks'] + args,
-                         capture_output=True, text=True)
-    return out.stdout if out.returncode == 0 else ''
+class GitCommandError(RuntimeError):
+    """A git query the checker depends on did not produce an answer."""
+
+
+def git(args, *, input_text=None, ok=(0,)):
+    """Run git with deterministic decoding and explicit return-code policy.
+
+    Git emits repository bytes, not text in the active Windows locale. Using
+    ``text=True`` without an encoding made a committed 0x81 byte crash range
+    checks under cp1252. Returning an empty string on failure was worse: it
+    converted "the query failed" into "nothing is tracked". Both conditions
+    now stay observable.
+    """
+    cmd = ['git', '--no-optional-locks'] + args
+    try:
+        out = subprocess.run(
+            cmd,
+            input=input_text,
+            capture_output=True,
+            text=True,
+            encoding='utf-8',
+            errors='replace',
+        )
+    except OSError as exc:
+        raise GitCommandError("could not start %r: %s" % (cmd, exc)) from exc
+    if out.returncode not in ok:
+        detail = out.stderr.strip() or out.stdout.strip() or 'no diagnostic'
+        raise GitCommandError(
+            "%r exited %d: %s" % (cmd, out.returncode, detail))
+    return out.stdout
+
+
+def tracked_repo_paths(paths):
+    """Return cited paths present in the current index, without path argv.
+
+    Passing every citation to one ``git ls-files -- <644 paths>`` exceeded the
+    Windows CreateProcess command-line limit. The index is small enough to read
+    once; set intersection is both simpler and independent of citation count.
+    """
+    wanted = set(paths)
+    tracked = set(git(['ls-files']).splitlines())
+    return wanted.intersection(tracked)
+
+
+WINDOWS_ARG_BUDGET = 24000
+
+
+def git_path_batches(prefix, paths, *, ok=(0,)):
+    """Run a path-taking Git query in Windows-safe argv batches."""
+    wanted = sorted(set(paths))
+    if not wanted:
+        return ''
+    base_cost = sum(len(a) + 3 for a in ['git', '--no-optional-locks'] + prefix)
+    chunks = []
+    chunk = []
+    cost = base_cost + len(' --')
+    for path in wanted:
+        path_cost = len(path) + 3
+        if chunk and cost + path_cost > WINDOWS_ARG_BUDGET:
+            chunks.append(chunk)
+            chunk = []
+            cost = base_cost + len(' --')
+        chunk.append(path)
+        cost += path_cost
+    if chunk:
+        chunks.append(chunk)
+    return ''.join(git(prefix + ['--'] + part, ok=ok) for part in chunks)
+
+
+def ignored_repo_paths(paths):
+    """Return ignored paths without exceeding the Windows argv ceiling."""
+    text = git_path_batches(['check-ignore'], paths, ok=(0, 1))
+    return {p for p in text.splitlines() if p}
 
 
 def doc_text(doc, rev=None):
@@ -262,11 +331,10 @@ def sibling_ignored(root, rels):
     source is the difference between "this repo does not ship that" and "YOUR
     repo does not ship that."
     """
-    out = subprocess.run(
-        ['git', '--no-optional-locks', '-C', root, 'check-ignore', '-v', '--']
-        + sorted(rels), capture_output=True, text=True)
+    text = git_path_batches(
+        ['-C', root, 'check-ignore', '-v'], rels, ok=(0, 1))
     found = {}
-    for line in out.stdout.splitlines():
+    for line in text.splitlines():
         if '\t' not in line:
             continue
         where, path = line.rsplit('\t', 1)
@@ -281,12 +349,11 @@ def sibling_tracked(root, rels):
     site a given commit of this repo was written against, and the index is the
     only answer that is true right now for the person running the gate.
     """
-    out = subprocess.run(
-        ['git', '--no-optional-locks', '-C', root, 'ls-files', '--'] + sorted(rels),
-        capture_output=True, text=True)
-    if out.returncode != 0:
+    try:
+        tracked = set(git(['-C', root, 'ls-files']).splitlines())
+    except GitCommandError:
         return None
-    return {p for p in out.stdout.splitlines() if p}
+    return set(rels).intersection(tracked)
 
 
 def check_siblings(docs, rev, root):
@@ -389,11 +456,9 @@ def main(argv):
         tracked = {p for p in git(['ls-tree', '-r', '--name-only', rev]).splitlines()
                    if p in set(paths)}
     else:
-        tracked = {p for p in git(['ls-files', '--'] + paths).splitlines() if p}
+        tracked = tracked_repo_paths(paths)
     rest = [p for p in paths if p not in tracked]
-    ignored = set()
-    if rest:
-        ignored = {p for p in git(['check-ignore', '--'] + rest).splitlines() if p}
+    ignored = ignored_repo_paths(rest)
 
     # In range mode "on disk" means the working tree today, which says nothing
     # about that commit. Report both kinds as WIDOW there rather than guessing.
