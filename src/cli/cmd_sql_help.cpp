@@ -12,7 +12,7 @@
 // owner: DOT|SQLHELP
 // command: SQLHELP
 // category: reference
-// status: experimental
+// status: supported
 // noargs: report
 // effect: report
 // mutates: none
@@ -23,12 +23,14 @@
 // usage:
 //   SQLHELP
 //   SQLHELP USAGE
+//   SQLHELP SQLSEL
 //   SQLHELP LIST-CATEGORIES
 //   SQLHELP <category>
 //   SQLHELP <term>
 //
 // examples:
 //   SQLHELP
+//   SQLHELP SQLSEL
 //   SQLHELP INDEXING
 //   SQLHELP CREATE-INDEX
 //   SQLHELP LIST-CATEGORIES
@@ -37,6 +39,12 @@
 //   SQLHELP with no arguments displays the grouped SQL reference.
 //   SQLHELP USAGE prints command usage without searching the catalog.
 //   SQLHELP is read-only and does not execute SQL.
+//   THE CATALOG IS A PORTABLE SQLite/MSSQL REFERENCE AND RUNS NOTHING HERE.
+//     This engine's own SELECT is SQLSEL. SQLHELP SQLSEL DELEGATES to
+//     sqlsel::print_statement_usage() -- the ONE runtime description of the
+//     statement grammar -- rather than keeping a second copy. Three
+//     authorities for one command's help is how the text drifts from the
+//     code, which AIF-074 caught twice in one day.
 //
 // risk:
 //   mutates_table_data: no
@@ -44,6 +52,8 @@
 //
 // related:
 //   SQL
+//   SQLSEL
+//   SQLITE
 //   SHOW
 //   PSHELL
 //
@@ -59,6 +69,7 @@
 #include <string>
 
 #include "sql_ref.hpp"
+#include "sqlsel_statement.hpp"   // the ONE statement-grammar description; delegated to, never copied
 
 #if __has_include("dli/registry.hpp")
   #include "dli/registry.hpp"
@@ -151,6 +162,15 @@ void show_sql_help(const std::string& arg) {
 
     if (term.empty()) {
         std::cout << "SQL REFERENCE (SQLite + MSSQL)\n\n"
+                  // A reader who types HELP SQL in THIS engine wants this
+                  // engine's SELECT first. The catalog below is portable
+                  // reference material and executes nothing here.
+                  << "This engine's own SELECT is SQLSEL -- typed, set-oriented,\n"
+                  << "over open x64base work areas:\n\n"
+                  << "  SQLSEL * FROM STUDENTS WHERE GPA > 3\n"
+                  << "  SQL SQLSEL                 -> the full SQLSEL grammar\n\n"
+                  << "The catalog below is a portable SQLite/MSSQL reference. It\n"
+                  << "documents those dialects; it does not run here.\n\n"
                   << "Common commands for database work (grouped)\n\n";
 
         std::map<std::string, std::vector<const sqlref::Item*>> grouped;
@@ -172,8 +192,22 @@ void show_sql_help(const std::string& arg) {
                   << "  SQL INDEXING               -> only indexing commands\n"
                   << "  SQL CREATE-INDEX           -> show details\n"
                   << "  SQL LIST-CATEGORIES        -> show category names\n"
+                  << "  SQL SQLSEL                 -> this engine's own SELECT grammar\n"
                   << "  HELP SQL <term>            -> same as SQL <term>\n\n"
                   << "Tip: Use EXPLAIN QUERY PLAN (SQLite) or SET SHOWPLAN_ALL ON (MSSQL) to verify indexes.\n";
+        return;
+    }
+
+    // SQLSEL is not in the portable catalog and must not be added to it: the
+    // catalog describes SQLite and MSSQL, and SQLSEL is neither. Delegate to the
+    // statement surface's own printer so this help can never drift from the
+    // grammar it describes.
+    if (term == "SQLSEL") {
+        std::cout << "SQLSEL -- this engine's SELECT statement surface.\n\n";
+        sqlsel::print_statement_usage();
+        std::cout << "\nSee also: SQLSEL USAGE (same text, from the verb itself),\n"
+                  << "          SQL (the reserved verb and the family boundary),\n"
+                  << "          SQLITE (the bridge to an actual SQLite database).\n";
         return;
     }
 
