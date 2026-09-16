@@ -5,7 +5,13 @@
 // project: project.x64base.runtime
 // lane: 
 // owner: member.derald
-// status: supported
+// status: experimental
+//
+// NOT BUILT. Excluded by regex at src/memo/CMakeLists.txt:14, whose own
+// comment (:11-13) supplies this status: "The live x64 memo backend is the
+// existing DTX MemoStore (memostore.cpp). x64_memo_store.cpp was the
+// experimental second OO backend and must not be built while
+// paging/inspection are being layered over the working DTX path."
 
 #include "memo/memo_store.hpp"
 
