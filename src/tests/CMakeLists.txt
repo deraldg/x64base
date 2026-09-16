@@ -126,6 +126,32 @@ add_executable(dottalkpp_security_policy_test
 target_include_directories(dottalkpp_security_policy_test PRIVATE ${CMAKE_SOURCE_DIR}/include)
 add_test(NAME dottalkpp_security_policy_test COMMAND dottalkpp_security_policy_test)
 
+# ---- AIF-120 R146: a derived panel is bound to the AREA ---------------------
+#
+# Grades the BINDING RULE: re-derive when the area changes, and NOT on a repaint
+# of the same area. The second half is the one a naive fix gets wrong -- it would
+# resolve a schema per page turn.
+#
+# IT IS A ctest AND NOT A .dts FOR A MEASURED REASON. SMARTBROWSER is an
+# interactive pager and under a script it paints the first page and exits on the
+# failed getline, recorded in the probe's own header
+# (dottalkpp/data/scripts/buffer_visibility_probe_v3_smartbrowser.dts). So no
+# script in this tree can reach OPEN CHILD, and the defect R146 names can be
+# neither provoked nor proven fixed from the .dts suite. A spec that cannot fail
+# is the INDEX_X64 v2 shape the suite reported as PASS on 2026-09-13.
+#
+# Header-only and resolver-injected, so it links nothing, opens no table and
+# gates on no option: it runs on every build, including a plain one.
+add_executable(dottalkpp_area_bound_view_test
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_area_bound_view.cpp
+)
+target_compile_features(dottalkpp_area_bound_view_test PRIVATE cxx_std_20)
+target_include_directories(dottalkpp_area_bound_view_test PRIVATE
+  ${CMAKE_SOURCE_DIR}/include
+  ${CMAKE_SOURCE_DIR}/src/cli
+)
+add_test(NAME dottalkpp_area_bound_view_test COMMAND dottalkpp_area_bound_view_test)
+
 # ---- X64 record-size hard-guard test (16 MiB ceiling via create_dbf) --------
 # If the linker reports unresolved memo/xindex symbols pulled in by create_dbf,
 # add those libs here (e.g. PRIVATE xbase memo). The over-ceiling path returns
