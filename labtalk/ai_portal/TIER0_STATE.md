@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-09-16T15:54:45Z
+    generated_utc : 2026-09-16T16:06:04Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,9 +11,9 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : 45634a3b9  (2026-09-16)
+    HEAD          : 3da5b672f  (2026-09-16)
     upstream      : c39e4e930
-    unpushed      : 10 commit(s) ahead of upstream
+    unpushed      : 11 commit(s) ahead of upstream
 
 ## Declared target
 
@@ -23,17 +23,18 @@ cannot drift, because nothing here is written by hand.
 ## Newest closeout
 
     file          : SESSION_CLOSEOUT_PORTAL_GATE_FAIL_CLOSED_2026-09-16.md
-    commits behind HEAD : 10
+    commits behind HEAD : 11
 
 ## Staleness warnings
 
-- The newest closeout is 10 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
-- 10 commit(s) are unpushed and invisible to a clone.
+- The newest closeout is 11 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
+- 11 commit(s) are unpushed and invisible to a clone.
 
 ## Claimed lanes (newest first)
 
 | AIF | lane | steward | intake row |
 | --- | --- | --- | --- |
+| AIF-166 | partner-amicus-standing | member.derald | yes |
 | AIF-165 | Regression summary must distinguish graded PASS from transcript-only execution; add validators for the workspace family exposed as not graded by REGRESSION ALL | member.ai.codex | yes |
 | AIF-164 | x64-field-type-parity | member.derald | yes |
 | AIF-163 | memo-sidecar-reclamation | member.derald | yes |
@@ -45,8 +46,7 @@ cannot drift, because nothing here is written by hand.
 | AIF-157 | index-sidecar-durability | member.ai.claude.cowork | yes |
 | AIF-156 | primary-key-policy | member.ai.claude.cowork | yes |
 | AIF-155 | runtime-def-family | member.ai.claude.cowork | yes |
-| AIF-154 | metadata-catalogue-pipeline | member.ai.claude.cowork | yes |
-| ... | 84 older claims omitted | | |
+| ... | 85 older claims omitted | | |
 
 ## Sessions, lineage, asides
 
@@ -63,6 +63,7 @@ parent + born_utc from the durable lineage ledger, '-' until a run wakes.
 
 | run | member | parent | born_utc | asides |
 | --- | --- | --- | --- | --- |
+| AIFGEN-20260916-090054 | member.derald | - | - | AIF-166 |
 | CODEX-20260915-AIF165-REGGRADE-001 | member.ai.codex | - | - | AIF-165 |
 | AIFGEN-20260914-194836 | member.derald | - | - | AIF-164 |
 | AIFGEN-20260914-105334 | member.derald | - | - | AIF-163 |
@@ -70,8 +71,7 @@ parent + born_utc from the durable lineage ledger, '-' until a run wakes.
 | AIFGEN-20260910-171303 | member.derald | - | - | AIF-161 |
 | AIFGEN-20260910-155043 | member.derald | - | - | AIF-160 |
 | AIFGEN-20260909-174200 | member.derald | - | - | AIF-159 |
-| AIFGEN-20260907-182435 | member.derald | - | - | AIF-158 |
-| ... | | | | 55 older run(s) omitted |
+| ... | | | | 56 older run(s) omitted |
 
 Perishable detail lives in the artifacts these point at. Do not
 restate anything above; regenerate it.
