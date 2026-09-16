@@ -37,7 +37,34 @@ CSV_REL = Path("docs/manuals/anchors/manual_generation_anchor_map_v1.csv")
 MD_REL = Path("DOTTALKPP_MANUAL_ANCHOR_MAP_V1.md")
 
 FIELDS = ["anchor_id", "section", "layer", "layer_label",
-          "evidence_paths", "manual_targets", "state", "next_closure_action"]
+          "evidence_paths", "manual_targets",
+          "target_manual", "target_level",
+          "state", "next_closure_action"]
+
+# WHY target_manual AND target_level EXIST (added 2026-09-16)
+#
+# `manual_targets` alone cannot answer "what does the manual still need". It
+# conflated three different things with nothing to tell them apart, measured
+# 2026-09-16 over 79 distinct targets:
+#
+#   chapter-scale topics with no chapter        (SQLsel, TupTalk, Primary Keys)
+#   section-scale targets inside a chapter      (Trinity Headers, x64 Workflow)
+#   targets in a DIFFERENT manual entirely      (History, Design Philosophy --
+#                                                those are reader-manual topics,
+#                                                and the reader manual exists)
+#
+# Nine of the 79 matched a dev-NN chapter title. The other seventy could only be
+# sorted by a person reading each one, which is a census that goes stale the
+# moment somebody adds a row.
+#
+# Both columns are SEMICOLON LISTS ALIGNED 1:1 WITH manual_targets. An anchor
+# can legitimately span levels and even manuals -- ANCHOR-REGRESSION-SUITE
+# targets a developer chapter AND a site page -- so one value per anchor would
+# have been a lie for exactly the rows that matter most. The alignment is
+# enforced below and a mismatch is fatal, because a silently misaligned list is
+# worse than no column at all: it reads as precision.
+TARGET_MANUALS = {"developer", "reader", "command_reference", "site", "none"}
+TARGET_LEVELS = {"chapter", "section"}
 
 # The map documents its own vocabulary. A state outside it is an error, not a
 # style choice -- that is how `proven/candidate` survived for 79 days.
@@ -90,12 +117,31 @@ def load_rows(csv_path: Path) -> list[dict]:
         if r["state"] not in STATES:
             die(f"{aid}: state {r['state']!r} is not in the documented vocabulary "
                 f"{sorted(STATES)}. Fix the CSV or amend the vocabulary deliberately.")
-        for col in ("evidence_paths", "manual_targets", "next_closure_action", "layer", "layer_label"):
+        for col in ("evidence_paths", "manual_targets", "next_closure_action", "layer", "layer_label",
+                    "target_manual", "target_level"):
             if not r[col].strip():
                 die(f"{aid}: {col} is empty")
             if "|" in r[col]:
                 die(f"{aid}: {col} contains a pipe, which would break the MD table")
+
+        tg = split_targets(r["manual_targets"])
+        tm = split_targets(r["target_manual"])
+        tl = split_targets(r["target_level"])
+        if not (len(tg) == len(tm) == len(tl)):
+            die(f"{aid}: {len(tg)} manual_target(s) but {len(tm)} target_manual and "
+                f"{len(tl)} target_level. These three columns are parallel lists and "
+                f"must have the same number of semicolon-separated items.")
+        for v in tm:
+            if v not in TARGET_MANUALS:
+                die(f"{aid}: target_manual {v!r} is not in {sorted(TARGET_MANUALS)}")
+        for v in tl:
+            if v not in TARGET_LEVELS:
+                die(f"{aid}: target_level {v!r} is not in {sorted(TARGET_LEVELS)}")
     return rows
+
+
+def split_targets(cell: str) -> list[str]:
+    return [i.strip() for i in cell.split(";") if i.strip()]
 
 
 def looks_like_path(item: str) -> bool:
@@ -111,8 +157,15 @@ def looks_like_path(item: str) -> bool:
 def render_row(r: dict) -> str:
     ev = "; ".join((f"`{i}`" if looks_like_path(i) else i)
                    for i in (p.strip() for p in r["evidence_paths"].split(";")) if i)
+    # Each target carries its own classification rather than the table growing two
+    # more columns. Six columns already crowd the page, and the classification is
+    # only meaningful next to the target it classifies.
+    tg = "; ".join(f"{t} [{m}/{l}]" for t, m, l in
+                   zip(split_targets(r["manual_targets"]),
+                       split_targets(r["target_manual"]),
+                       split_targets(r["target_level"])))
     return (f"| `{r['anchor_id']}` | {r['layer_label']} | {ev} | "
-            f"{r['manual_targets']} | {r['state']} | {r['next_closure_action']} |")
+            f"{tg} | {r['state']} | {r['next_closure_action']} |")
 
 
 def render_block(key: str, rows: list[dict]) -> str:
@@ -160,6 +213,17 @@ def main() -> int:
 
     counts = {k: sum(1 for r in rows if r["section"] == k) for k, _, _ in SECTIONS}
     summary = ", ".join(f"{k}={v}" for k, v in counts.items())
+
+    # The coverage number the map exists to produce. Printed every run so it can
+    # never again require a person to hand-sort 79 strings to find out.
+    slots = [(m, l) for r in rows
+             for m, l in zip(split_targets(r["target_manual"]),
+                             split_targets(r["target_level"]))]
+    tally = {}
+    for k in slots:
+        tally[k] = tally.get(k, 0) + 1
+    cov = ", ".join(f"{m}/{l}={n}" for (m, l), n in sorted(tally.items()))
+    print(f"anchor map: {len(slots)} target slot(s) -- {cov}")
 
     if rendered == current:
         print(f"anchor map: IN SYNC -- {len(rows)} anchors ({summary})")
