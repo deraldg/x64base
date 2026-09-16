@@ -246,6 +246,34 @@ def sibling_root(prefix, root):
     return None, tried
 
 
+def sibling_ignored(root, rels):
+    """{relative path: "source:line:pattern"} for the ones that repo excludes.
+
+    WITHOUT THIS, an excluded file is reported as a widow and the advice
+    attached to a widow -- stage it -- IS USELESS, because `git add` on an
+    excluded path is a silent no-op. That is R42.1, and this check already
+    distinguishes the two cases for THIS repo; it did not for the sibling, so
+    the first real finding it produced came with the wrong remedy.
+
+    `-v` is what makes the answer actionable. `.gitignore` is versioned and
+    every clone shares it; `.git/info/exclude` is LOCAL TO ONE CLONE, is not in
+    version control, and does not survive a fresh clone -- so the same file can
+    be invisible on one machine and untracked-and-loose on another. Naming the
+    source is the difference between "this repo does not ship that" and "YOUR
+    repo does not ship that."
+    """
+    out = subprocess.run(
+        ['git', '--no-optional-locks', '-C', root, 'check-ignore', '-v', '--']
+        + sorted(rels), capture_output=True, text=True)
+    found = {}
+    for line in out.stdout.splitlines():
+        if '\t' not in line:
+            continue
+        where, path = line.rsplit('\t', 1)
+        found[path.replace('\\', '/')] = where
+    return found
+
+
 def sibling_tracked(root, rels):
     """The subset of `rels` that the sibling repo tracks.
 
@@ -296,12 +324,24 @@ def check_siblings(docs, rev, root):
             continue
 
         bad = sorted(set(cites) - tracked)
+        excluded = sibling_ignored(root_path, bad) if bad else {}
         lines.append("  %s: %d citation(s), %d tracked in %s"
                      % (label, len(cites), len(tracked), root_path))
         for rel in bad:
-            on_disk = os.path.exists(os.path.join(root_path, rel))
-            kind = "on disk, NOT tracked" if on_disk else "not on disk"
-            lines.append("  CROSS-REPO WIDOW  %s%s -- %s" % (prefix, rel, kind))
+            where = excluded.get(rel)
+            if where:
+                lines.append("  CROSS-REPO IGNORED  %s%s -- excluded there; "
+                             "`git add` on it is a no-op (R42.1)" % (prefix, rel))
+                lines.append("          by %s" % where)
+                if '.git/info/exclude' in where.replace('\\', '/'):
+                    lines.append("          NOTE: .git/info/exclude is LOCAL TO "
+                                 "THAT CLONE and is not in version control, so "
+                                 "this exclusion does not exist for anyone else "
+                                 "or in a fresh clone.")
+            else:
+                on_disk = os.path.exists(os.path.join(root_path, rel))
+                kind = "on disk, NOT tracked" if on_disk else "not on disk"
+                lines.append("  CROSS-REPO WIDOW  %s%s -- %s" % (prefix, rel, kind))
             for d in cites[rel]:
                 lines.append("          cited by %s" % d)
             problem = True
@@ -531,6 +571,31 @@ def selftest():
         lines, problem = report(
             "cites `x64base-site/%s` <!-- cite-check:ignore -->\n" % absent_rel)
         check("suppressed line is not checked", (lines, problem), ([], False))
+
+        # -- excluded, the two sources, which need different remedies -------
+        gi_rel = "content/docs/engine/gitignored-page.mdx"
+        ex_rel = "content/portal/schemas.mdx"
+        os.makedirs(os.path.join(site, "content", "portal"), exist_ok=True)
+        open(os.path.join(site, gi_rel), "w").write("x\n")
+        open(os.path.join(site, ex_rel), "w").write("x\n")
+        open(os.path.join(site, ".gitignore"), "w").write("gitignored-page.mdx\n")
+        os.makedirs(os.path.join(site, ".git", "info"), exist_ok=True)
+        open(os.path.join(site, ".git", "info", "exclude"), "a").write(
+            "content/portal/\n")
+
+        lines, problem = report("cites `x64base-site/%s`\n" % gi_rel)
+        check("gitignored sibling file reads as IGNORED not WIDOW",
+              (any("CROSS-REPO IGNORED" in l for l in lines),
+               any("CROSS-REPO WIDOW" in l for l in lines)), (True, False))
+        check("gitignored sibling file still sets the exit code", problem, True)
+        check("a versioned .gitignore carries no local-clone note",
+              any("LOCAL TO" in l for l in lines), False)
+
+        lines, problem = report("cites `x64base-site/%s`\n" % ex_rel)
+        check("info/exclude sibling file reads as IGNORED",
+              any("CROSS-REPO IGNORED" in l for l in lines), True)
+        check("info/exclude is called out as local to that clone",
+              any("LOCAL TO THAT CLONE" in l for l in lines), True)
 
         # -- the case that must NOT block: no sibling checkout at all --------
         # Built as a SEPARATE empty root rather than by deleting the one above.
