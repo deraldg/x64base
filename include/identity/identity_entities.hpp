@@ -95,7 +95,14 @@ struct MemberPermissionOverride {
 };
 
 // §3.6 two SEPARATE hierarchies -- org containment vs work decomposition.
-enum class OrgUnitType  : std::uint8_t { Organization, Division, Department, Team, Committee, Class, Lab };
+//
+// OrgUnitType is APPEND ONLY. Once SYSORG holds rows the ordinal is frozen, exactly
+// as SYSPOST.AUTHKIND froze MemberKind: inserting or reordering silently rewrites the
+// meaning of stored rows. Partner = 7 because 7 was the next free slot, not because it
+// belongs beside Lab. Partner marks an OUTSIDE PARTY -- not the house, not a unit of it.
+// Externality is intrinsic and belongs here; STANDING in a given matter is per-matter
+// and does NOT (see SYSASSIGN.AKIND and include/identity/org_schema.hpp).
+enum class OrgUnitType  : std::uint8_t { Organization, Division, Department, Team, Committee, Class, Lab, Partner };
 enum class WorkNodeType : std::uint8_t { Project, Lane, Gate, Milestone, Epic, Task, Proof, Publication };
 
 struct OrgUnit {

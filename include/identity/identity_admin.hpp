@@ -59,6 +59,18 @@ AdminResult ungrant_permission_from(const std::string& member_key, const std::st
 // delete an owner-class member.
 AdminResult remove_member(const std::string& member_key);
 
+// --- Orgs (partner lane) -------------------------------------------------------
+// A member's org is WHO IT ANSWERS TO, and it is the only axis on which two reviewers
+// can be shown to be independent. Owner-gated and persisted, like every mutation here.
+//
+// add_org admits one outside party (OrgUnitType::Partner). bind_member_org creates or
+// re-points the member's MEMBERSHIP assignment (org_unit set, work unset). backfill_orgs
+// applies the standard roster idempotently -- the path an ALREADY-EXISTING catalog needs,
+// since boot_identity_store only seeds when the tables are absent.
+AdminResult add_org(const std::string& org_key, const std::string& name);
+AdminResult bind_member_org(const std::string& member_key, const std::string& org_key);
+AdminResult backfill_orgs();
+
 // Owner mints/rotates an opaque login token for an AI/service member (its service-User
 // credential home is created if absent). The plaintext token is returned in out_token and
 // shown only once; a re-issue invalidates the old one. This is how agents authenticate --

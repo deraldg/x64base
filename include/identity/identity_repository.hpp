@@ -51,6 +51,7 @@ public:
     std::vector<TeamMember>               members;
     std::vector<Role>                     roles;
     std::vector<Permission>               permissions;
+    std::vector<OrgUnit>                  org_units;   // what ORGSCOPE/ORGUNIT reference
     std::vector<RolePermission>           role_permissions;
     std::vector<MemberRole>               member_roles;
     std::vector<MemberPermissionOverride> overrides;
