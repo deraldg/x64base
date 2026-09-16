@@ -30,7 +30,6 @@ ai_report_audit:
   report:
     path: docs/maintenance/AIF120_FIXED_SET_PROPERTY_V1.md
     kind: ruling
-    supersedes_draft: docs/maintenance/AIF120_CHOICE_KIND_V1.md (never committed)
 ---
 
 # AIF-120 -- R145: a fixed set is not an editable one, and the distinction is a PROPERTY the corpus already carries
@@ -276,6 +275,6 @@ distinction a twenty-first KIND named `choice`, and stated in its section 2(c)
 that *"nothing in this lane has measured whether the corpus carries that
 distinction."* Section 1(b) above is that measurement. It was prompted by the
 owner asserting this ruling's own first disproof condition, and it falsified the
-draft's premise. The draft's file, `docs/maintenance/AIF120_CHOICE_KIND_V1.md`,
+draft's premise. The draft's file, `AIF120_CHOICE_KIND_V1.md`,
 is deleted rather than superseded, because it never entered history and this
 house has enough stale authorities already.
