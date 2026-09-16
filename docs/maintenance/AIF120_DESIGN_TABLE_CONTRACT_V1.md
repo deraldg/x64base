@@ -107,15 +107,31 @@ a reader locates fields by name.
 
 ## 4. `KIND` -- the portable class vocabulary
 
-v1 names **nineteen** kinds. The first fourteen were selected as the intersection of
+v1 names **twenty** kinds. The first fourteen were selected as the intersection of
 what every platform in the charter's target list provides, cross-checked against
 3,010 measured object records. **R66 added five more, measured from the browse this
-house already ships** rather than from the VFP corpus -- see section 4b.
+house already ships** rather than from the VFP corpus -- see section 4b. **R85
+added `splitter`**, measured from a frame this house wrote -- see
+`AIF120_SPLITTER_KIND_V1.md`.
 
-**Containers:** `form`, `panel`, `group`, `pageset`, `page`
+**Containers:** `form`, `panel`, `group`, `pageset`, `page`, `splitter`
 **Controls:** `label`, `text`, `button`, `check`, `radio`, `list`, `combo`, `image`
 **Menus:** `menu`
 **Data frame (R66):** `grid`, `tree`, `detail`, `summary`, `statusbar`
+
+> **This list was nineteen for 27 days after it was twenty.** R85 ruled
+> `splitter` in on 2026-08-20 and named the corrected set itself -- its section 2
+> is titled *"What the twenty KINDs now are"* -- but this document, which the lane
+> charter routes every reader to for *"what does a KIND mean"*, was never updated.
+> A 2026-09-16 re-measurement found a reader following the charter still being
+> told there was no word for a sash, four weeks after there was one.
+> **Transcribed here from R85 section 2. Nothing is decided by this paragraph.**
+>
+> **Still owed:** R85 states *"Only `MinPane` is new vocabulary"*, and `MinPane`
+> appears nowhere in this contract while the fixtures in
+> `gui/uidef/author_cases.py` already emit it in `PROPS`. Section 7's rule is
+> that properties are ADOPTED, not invented, so that half needs someone who has
+> read its adoption requirements -- it is not a transcription.
 
 A conformant reader that meets an unknown `KIND` **must refuse the document and
 name the kind**. It must not render a placeholder. (R7's rule, generalised: an
