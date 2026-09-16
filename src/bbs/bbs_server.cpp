@@ -27,9 +27,17 @@
 //
 // LANE NOTE (AIF-076): this server carries THREE distinct concerns that must not be conflated.
 // (1) BBS = the persistence substrate (durable, attributed posts; Lane 1). (2) CHAT = the Ollama
-// agent<->model bridge (Lane 3). (3) pseudo-chat = live agent<->agent/owner conversation (Lane 2,
-// the future PSEUDO command) which is NOT the same as CHAT. Lanes 2 and 3 persist THROUGH the BBS
-// substrate via the attributed post path. See DESIGN_bbs_pseudochat_two_lanes.md.
+// agent<->model bridge (Lane 3). (3) live agent<->agent/owner conversation (Lane 2), which is NOT
+// the same as CHAT. Lanes 2 and 3 persist THROUGH the BBS substrate via the attributed post path.
+//
+// "PSEUDO-CHAT" IS THE OWNER'S PET NAME FOR THIS BBS PLUS ITS AI PORTAL INTEGRATION, not a fourth
+// concern and not Lane 2's proper name. Until 2026-09-02 this note called Lane 2 "the future PSEUDO
+// command"; there is no such command and per owner ruling 2026-09-02 none is planned. The three-way
+// split above is still right -- only the promised command was invented.
+//
+// DESIGN_bbs_pseudochat_two_lanes.md is EXTERNAL to this repository (Frontal_Mem project); spelled
+// bare here until 2026-09-02, which read as a repo-relative path that resolves to nothing. The
+// in-repo pointer is labtalk/ai_portal/FRONTAL_MEM_POINTER_V1.md.
 
 #include "bbs/bbs_server.hpp"
 #include "bbs/bbs_store.hpp"
