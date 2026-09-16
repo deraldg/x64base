@@ -11,7 +11,7 @@
 // owner: DOT|INSERT
 // command: INSERT
 // category: sql
-// status: experimental
+// status: supported
 // noargs: usage
 // effect: insert-record
 // mutates: table-data
