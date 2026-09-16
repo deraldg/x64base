@@ -110,6 +110,36 @@ is that it will happily confirm the object you expected.
 
 ## 3. The real finding is a CONCEPT, not a control
 
+> **STATUS, added 2026-09-16. THIS SECTION WAS MARKED CLOSED AND IT IS NOT.**
+>
+> `SESSION_CLOSEOUT_APPLICATION_UI_DSL_LANE_2026-08-20.md` records:
+> *"~~R77's NEGOTIABLE geometry~~ -- **CLOSED as R85**: the design table now has
+> a word for the sash, and it is a KIND rather than a property so a target that
+> cannot draw one has to say so."*
+>
+> **Half of that is right.** R85 gave the sash a KIND and mapped its INITIAL
+> position onto `ORIGIN` -- *"initial sash position | ORIGIN (R12) |
+> `origin_width` / `origin_height`"*. That is the boundary the author
+> **proposes**, and it is the half this section already said `ORIGIN` could
+> carry.
+>
+> The half this section is actually about is the other one: **a sash position is
+> live state that outlives the session.** Grepped 2026-09-16 across
+> `AIF120_SPLITTER_KIND_V1.md` and `AIF120_SPLITTER_LIFETIME_V1.md` for
+> `persist`, `outlives`, `live state` and `SashPosition`: the only hits are R88's
+> crash stack trace. **Nothing gives a user-moved sash anywhere to live.**
+>
+> So the CONTROL was settled and the CONCEPT was struck through with it. The
+> question this section asks -- *does UIDEF describe negotiable geometry at all,
+> or declare it out of scope the way it declared absolute coordinates out of
+> scope?* -- **is still open and still unanswered.** It now has a reason to be
+> answered: a Workbench generated from its own design table (owner ruling,
+> 2026-09-16) carries three nested splitters, so "the user's layout resets every
+> launch" is a product decision rather than a footnote.
+>
+> No R-number is claimed by this note. It corrects a status, it does not rule.
+
+
 Three controls have no word. Two of them -- `wxScrolledWindow`, `wxDialog` -- are
 missing vocabulary, and missing vocabulary is cheap: a kind, a property, a
 refusal. The third is not.

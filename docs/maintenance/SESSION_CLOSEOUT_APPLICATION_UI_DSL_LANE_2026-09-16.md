@@ -147,6 +147,33 @@ launching `dottalk_wb` as a separate process or reporting by name why it cannot.
 
 ---
 
+## 3b. R77's concept question was struck through with its control
+
+Added 2026-09-16, after all four of R77's candidates were ruled
+(`splitter` R85, `Scroll` R143, `Modal` R144, `choice` R145).
+
+R77's section 3 is titled *"The real finding is a CONCEPT, not a control"*, and
+the 2026-08-20 closeout marked it **CLOSED as R85**. R85 closed the control.
+
+The concept is: **a sash is a boundary the author PROPOSES and the USER moves**,
+and *"a sash position is live state that outlives the session."* R85 maps the
+INITIAL position to `ORIGIN`; nothing anywhere carries the moved one. Grepped
+across both splitter rulings for `persist`, `outlives`, `live state` and
+`SashPosition` -- the only hits are R88's crash stack.
+
+**That makes three stale authorities found in this lane in two days:** the
+2026-08-20 closeout ranking a dead blocker first, the design-table contract
+missing R85's KIND entirely, and now a struck-through question that was never
+answered. All three were documents a reader is explicitly told to trust.
+
+R77's section 3 now carries a status block saying so. The question itself stays
+open and wants its own ruling, with the owner's call on scope -- describe
+negotiable geometry, or declare it out of scope the way R12 quarantined absolute
+coordinates. Both are still defensible; a generated Workbench with three nested
+splitters is the new reason to pick one.
+
+---
+
 ## 4. What is actually next
 
 1. **R82.4**, before anything bakes it in. Thirteen areas declared `tag=none` in
