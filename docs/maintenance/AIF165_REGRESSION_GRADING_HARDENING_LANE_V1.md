@@ -10,6 +10,8 @@ Claim: `coordination/aif/AIF-165.claim`
 
 Run: `CODEX-20260915-AIF165-REGGRADE-001`
 
+Follow-up run: `CODEX-20260915-AIF165-REGGRADE-002`
+
 Opened: 2026-09-15
 
 Baseline: `4c219c0be`
@@ -167,3 +169,70 @@ work in the same file.
 | Date | Ruling | Authority |
 | --- | --- | --- |
 | 2026-09-15 | Implement the full bounded recommendation: M5-A closeout, no M5-B reclaim, and the separate regression-grading hardening lane described above. | Owner in session: `do all` |
+| 2026-09-15 | Continue from the 19/31 checkpoint and grade every remaining default-suite spec. | Owner in session: `do so` |
+
+## 9. Second grading tranche
+
+The follow-up run graded all twelve remaining default-suite specs. It reused the
+strict true-marker contract where the script already carried discriminating
+markers, and added the smallest missing evidence surface where it did not.
+
+| Spec | Executable contract |
+| --- | --- |
+| `NONDESTRUCTIVE` | 17 routed section checkpoints, completion fence, and no exercised `Unknown command:` line |
+| `INDEX_X32` | 14 exact, ordered, true markers |
+| `X64_METRICS` | 8 exact, ordered, true markers |
+| `LANGUAGE` | 18 exact localized `USAGE` labels in each of five locale fences, green catalog, restored locale, stable result payload |
+| `RELJOIN` | 9 exact result blocks covering ONE, JOIN/ENUM parity, DISTINCT, LIMIT, projection, and relation-tree shape |
+| `DOTSCRIPT_EXPR` | 16 ordered lines; the deliberate out-of-range arm accepts only the two evaluator error renderings measured in isolated and inherited-suite state |
+| `DOTSCRIPT_PARITY` | 5 exact ordered lines |
+| `LEXING` | 1 exact fenced survivor line |
+| `USE_ARGS` | 8 exact, ordered, true markers |
+| `NAME_AMBIG` | 3 exact markers plus the rename announcement and zero-resolution ledger |
+| `NAV_NATURAL` | 12 exact, ordered, true markers |
+| `NULLASSERT` | 21 exact, ordered, true markers; its three `NL_P*` probes remain deliberately outside the graded prefix contract |
+
+The script changes are evidence-only. Five scripts gained marker or result
+fences; seven already carried sufficient assertions. No command syntax, HELP,
+metadata, storage format, publication surface, or M5-B reclaim behavior changed.
+
+## 10. Complete proof
+
+The first complete-suite run with the second tranche went red, rather than
+hiding a mismatch:
+
+- specs run: 31;
+- passed: 30;
+- failed: 1 (`DOTSCRIPT_EXPR`);
+- unmeasured: 0;
+- not graded: 0;
+- isolation: BEFORE ok, AFTER ok;
+- verdict: `FAIL`.
+
+The isolated expression run emitted `scalar evaluation failed`; the inherited
+full-suite run emitted `unable to evaluate expression`. Both named the same
+deliberate `$a[9]` out-of-range arm, while all other 15 fenced lines were exact.
+The validator now accepts only those two measured renderings at that one line.
+This is a bounded semantic oracle, not a broad substring exemption.
+
+After that correction, the rebuilt full run reported:
+
+- specs run: 31;
+- passed: 31;
+- failed: 0;
+- unmeasured: 0;
+- not graded: 0;
+- isolation: BEFORE ok, AFTER ok;
+- verdict: `PASS`.
+
+All twelve second-tranche specs were also run separately on the same final
+build. Reconstructible local captures use the pattern
+`tmp/aif165_final_<spec>.txt`. The durable full-suite evidence is:
+
+| Capture | Bytes | SHA-256 | Reading |
+| --- | ---: | --- | --- |
+| `aif165_regression_all_graded.txt` | 724691 | `c39e1e6195fda8523f52359ff1114dd337ece5484de7429dab7ca409eeae3490` | 30/31, zero ungraded, deliberate validator red |
+| `aif165_regression_all_graded_v3.txt` | 724758 | `a09fbc077308c0a71f38072b571b7e9a86b83a9cbcd6e66996643c3e38e4eeac` | final build: 31/31, zero ungraded, isolation green, `PASS` |
+
+The captures remain scratch-tier evidence. The counts, readings, and hashes in
+this charter are the durable record.

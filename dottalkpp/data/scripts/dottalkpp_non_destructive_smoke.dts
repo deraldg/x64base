@@ -20,6 +20,11 @@
 *   - LIST is developer-only in your current roadmap; use SMARTLIST for order checks.
 * ============================================================
 
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+FORMULA "NONDESTRUCTIVE-SMOKE-BEGIN"
+
 ECHO ============================================================
 ECHO DOTTalkpp NON-DESTRUCTIVE COMMAND SMOKE TEST
 ECHO ============================================================
@@ -31,6 +36,7 @@ SET PATH LMDB LMDB/x64
 
 ECHO
 ECHO --- 00. Session / version / environment observers ---
+FORMULA "NONDESTRUCTIVE-S00"
 VERSION
 ABOUT
 STATUS
@@ -47,6 +53,7 @@ GPS
 
 ECHO
 ECHO --- 01. Help / reference / metadata command surface ---
+FORMULA "NONDESTRUCTIVE-S01"
 HELP
 HELP USE
 HELP SELECT
@@ -77,6 +84,7 @@ TABLEMETA
 
 ECHO
 ECHO --- 02. Expression engine without DBF dependency ---
+FORMULA "NONDESTRUCTIVE-S02"
 CALC 1+1
 CALC ABS(-42)
 CALC INT(12.99)
@@ -117,6 +125,7 @@ CALC SECONDS()
 
 ECHO
 ECHO --- 03. Education / formula commands ---
+FORMULA "NONDESTRUCTIVE-S03"
 BOOLEAN HELP
 FORMULA HELP
 EVALUATE HELP
@@ -133,6 +142,7 @@ DRAWIO USAGE
 
 ECHO
 ECHO --- 04. SQL / SQLite observer surface ---
+FORMULA "NONDESTRUCTIVE-S04"
 SQLVER
 SQLITE
 SQL HELP
@@ -145,6 +155,7 @@ WA
 
 ECHO
 ECHO --- 05. Schema/workspace/project observers ---
+FORMULA "NONDESTRUCTIVE-S05"
 SCHEMAS
 SCHEMAS ALL
 WORKSPACE
@@ -163,6 +174,7 @@ VALIDATE
 
 ECHO
 ECHO --- 06. Try standard schema open safely ---
+FORMULA "NONDESTRUCTIVE-S06"
 WORKSPACE LOAD x64.dtschemas
 WORKSPACE
 AREA
@@ -171,6 +183,7 @@ DBAREAS
 
 ECHO
 ECHO --- 07. Safe work-area selection attempts ---
+FORMULA "NONDESTRUCTIVE-S07"
 SELECT 0
 AREA
 AREA51
@@ -183,6 +196,7 @@ AREA
 
 ECHO
 ECHO --- 08. Safe table observers after schema open ---
+FORMULA "NONDESTRUCTIVE-S08"
 SELECT STUDENTS
 AREA
 SET INDEX TO students
@@ -208,6 +222,7 @@ STATUS
 
 ECHO
 ECHO --- 09. Cursor movement smoke test ---
+FORMULA "NONDESTRUCTIVE-S09"
 TOP
 RECNO
 DISPLAY
@@ -238,6 +253,7 @@ RECNO
 
 ECHO
 ECHO --- 10. Locate / continue / seek/find smoke test ---
+FORMULA "NONDESTRUCTIVE-S10"
 LOCATE
 CONTINUE
 FIND A
@@ -246,6 +262,7 @@ INDEXSEEK A
 
 ECHO
 ECHO --- 11. Aggregate observers ---
+FORMULA "NONDESTRUCTIVE-S11"
 AGGS
 SUM
 AVG
@@ -255,6 +272,7 @@ MAX
 
 ECHO
 ECHO --- 12. Filter / relation observer surface ---
+FORMULA "NONDESTRUCTIVE-S12"
 SETFILTER
 REFRESH
 RELATIONS
@@ -267,6 +285,7 @@ TUPLEDELTA
 
 ECHO
 ECHO --- 13. Index/order observer and light navigation surface ---
+FORMULA "NONDESTRUCTIVE-S13"
 SETINDEX
 SETCNX
 SETCDX
@@ -287,6 +306,7 @@ INDEX
 
 ECHO
 ECHO --- 14. Memo / lock / output helpers ---
+FORMULA "NONDESTRUCTIVE-S14"
 MEMO
 LOCK
 UNLOCK
@@ -296,6 +316,7 @@ PRN
 
 ECHO
 ECHO --- 15. Variables and script utilities ---
+FORMULA "NONDESTRUCTIVE-S15"
 VAR
 DOTSCRIPT
 ZIP
@@ -303,10 +324,13 @@ ECHO Script echo check
 
 ECHO
 ECHO --- 16. Close lifecycle smoke test ---
+FORMULA "NONDESTRUCTIVE-S16"
 WORKSPACE CLOSE
 WORKSPACE
 AREA
 STATUS
+
+FORMULA "NONDESTRUCTIVE-SMOKE-END"
 
 ECHO ============================================================
 ECHO NON-DESTRUCTIVE COMMAND SMOKE TEST COMPLETE
