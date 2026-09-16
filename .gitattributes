@@ -49,6 +49,11 @@ docs/maintenance/external_ai_intake/**/payload/**           -text
 *.yml   text eol=lf
 *.yaml  text eol=lf
 *.sh    text eol=lf
+# .bash was matched only by `* text=auto` above, so a Windows checkout
+# materialized it CRLF -- and a CRLF shebang line is not a shebang on Linux
+# (`bad interpreter: /usr/bin/env bash^M`). Pinned 2026-09-16 after
+# usrbinenv.bash was found unrunnable for exactly that reason.
+*.bash  text eol=lf
 *.cmake text eol=lf
 CMakeLists.txt text eol=lf
 # MANIFEST.txt is GENERATED (tools/staging/generate_public_manifest.py, AIF-092)

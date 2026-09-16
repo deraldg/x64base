@@ -38,7 +38,9 @@ Pick the preset that matches what you want. All are defined in
 | `pro-md-labtalk` | MSVC + vcpkg (/MD) | **LMDB** | Turbo Vision + Python | Development build with the pydottalk bindings. |
 | `ansi-mt` | MSVC (/MT static) | LMDB | none | ANSI, static runtime, no TV. |
 | `core` / `core-vcpkg` | Ninja | none | none | Portable core (system deps / vcpkg). |
-| `wsl` | Ninja (Linux) | LMDB | none | Building under WSL. |
+| `wsl` | Ninja (Linux) | LMDB | none | Linux/WSL, full manifest. |
+| `wsl-lean` | Ninja (Linux) | **LMDB** | none | **The maintained Linux lane.** Installs four vcpkg packages, no Turbo Vision or wxWidgets. |
+| `wsl-gui-core` | Ninja (Linux) | LMDB | none | GUI-neutral Linux core. |
 
 **If you just want a working database runtime on Windows, use `pro-md`** -- it is
 the fullest build (indexing + the Turbo Vision UI) and is the one named for
@@ -55,6 +57,37 @@ cmake --build --preset pro-md-Release --target dottalkpp
 cmake --preset windows-core
 cmake --build --preset windows-core --target dottalkpp
 ```
+
+## Build it on Linux or WSL
+
+Use the wrapper. It is the maintained Linux lane and it does three things a
+bare `cmake --preset` does not: it configures `wsl-lean` only on the first run,
+it stages the built binary into `dottalkpp/bin-wsl-lean/`, and it warns you when
+a source file is newer than the binary it just staged.
+
+```bash
+./wslbuild.sh                      # configure if needed, build dottalkpp, stage it
+./wslbuild.sh xbase                # build one target
+./wslbuild.sh dottalkpp -r         # build, then run over dottalkpp/data
+./wslbuild.sh dottalkpp -t IDXDIFF # build, then REGRESSION RUN IDXDIFF
+./wslbuild.sh dottalkpp -a         # build, then REGRESSION ALL
+```
+
+`VCPKG_ROOT` defaults to `$HOME/vcpkg`; export it if vcpkg lives elsewhere.
+The first configure installs four base packages -- libsodium, lmdb,
+nlohmann-json and sqlite3. Turbo Vision and wxWidgets are NOT installed on this
+lane: `vcpkg.json` declares them behind the `tv` and `wx` features, and
+`wsl-lean` requests only `index`.
+
+To run a binary you already built, without rebuilding:
+
+```bash
+./wslrun.sh            # newest staged Linux binary, over dottalkpp/data
+./datarun.sh           # same, but re-stages into dottalkpp/bin first
+```
+
+Both name the binary they chose before running it. If that path is not the tree
+you just built, stop -- you are about to read a stale result.
 
 Note: configure-preset names and build-preset names differ -- the build presets
 carry a `-Release` suffix (e.g. `pro-md` configures, `pro-md-Release` builds).
