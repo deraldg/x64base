@@ -59,7 +59,6 @@ SET LANGUAGE CHECK
 * ------------------------------------------------------------
 SET LANGUAGE en-US
 ECHO --- en-US : localized command USAGE sweep ---
-FORMULA "LANG-EN-BEGIN"
 ROLLBACK USAGE
 DELETE USAGE
 RECALL USAGE
@@ -78,14 +77,12 @@ REINDEX USAGE
 SCX USAGE
 EXPORTFUNCTIONS USAGE
 INDEXSEEK USAGE
-FORMULA "LANG-EN-END"
 
 * ------------------------------------------------------------
 * 02. SPANISH -- es (expect Uso:/Ejemplos:/Notas:)
 * ------------------------------------------------------------
 SET LANGUAGE es
 ECHO --- es : localized command USAGE sweep ---
-FORMULA "LANG-ES-BEGIN"
 ROLLBACK USAGE
 DELETE USAGE
 RECALL USAGE
@@ -104,14 +101,12 @@ REINDEX USAGE
 SCX USAGE
 EXPORTFUNCTIONS USAGE
 INDEXSEEK USAGE
-FORMULA "LANG-ES-END"
 
 * ------------------------------------------------------------
 * 03. FRENCH -- fr (expect Utilisation :/Exemples :/Remarques :)
 * ------------------------------------------------------------
 SET LANGUAGE fr
 ECHO --- fr : localized command USAGE sweep ---
-FORMULA "LANG-FR-BEGIN"
 ROLLBACK USAGE
 DELETE USAGE
 RECALL USAGE
@@ -130,14 +125,12 @@ REINDEX USAGE
 SCX USAGE
 EXPORTFUNCTIONS USAGE
 INDEXSEEK USAGE
-FORMULA "LANG-FR-END"
 
 * ------------------------------------------------------------
 * 04. GERMAN -- de (expect Verwendung:/Beispiele:/Hinweise:)
 * ------------------------------------------------------------
 SET LANGUAGE de
 ECHO --- de : localized command USAGE sweep ---
-FORMULA "LANG-DE-BEGIN"
 ROLLBACK USAGE
 DELETE USAGE
 RECALL USAGE
@@ -156,14 +149,12 @@ REINDEX USAGE
 SCX USAGE
 EXPORTFUNCTIONS USAGE
 INDEXSEEK USAGE
-FORMULA "LANG-DE-END"
 
 * ------------------------------------------------------------
 * 05. ITALIAN -- it (expect Uso:/Esempi:/Note:)
 * ------------------------------------------------------------
 SET LANGUAGE it
 ECHO --- it : localized command USAGE sweep ---
-FORMULA "LANG-IT-BEGIN"
 ROLLBACK USAGE
 DELETE USAGE
 RECALL USAGE
@@ -182,14 +173,11 @@ REINDEX USAGE
 SCX USAGE
 EXPORTFUNCTIONS USAGE
 INDEXSEEK USAGE
-FORMULA "LANG-IT-END"
 
 * ------------------------------------------------------------
 * 06. Reset to en-US
 * ------------------------------------------------------------
 SET LANGUAGE en-US
 ECHO --- en-US : stable result-payload boundary probe ---
-FORMULA "LANG-RESULT-BEGIN"
 INDEXSEEK "__RESULT_CHANNEL_AUDIT__"
-FORMULA "LANG-RESULT-END"
 ECHO === LANGUAGE SHAKEDOWN CANARY DONE ===

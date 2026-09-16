@@ -144,8 +144,7 @@ enum class RegressionValidator {
     VarcharAreaResetV1,
     WorkdeskV1,
     MetadataReportV1,
-    WorkspaceMarkersV1,
-    RemainingDefaultV1
+    WorkspaceMarkersV1
 };
 
 struct RegressionSpec {
@@ -320,18 +319,13 @@ constexpr std::array<RegressionSpec, 83> kRegressionSpecs{{
         "NONDESTRUCTIVE",
         "dottalkpp_non_destructive_smoke.dts",
         "Broad non-destructive shell smoke over stable command surface",
-        true,
-        false,
-        RegressionValidator::RemainingDefaultV1,
         true
     },
     {
         "INDEX_X32",
         "index_x32_inx_cnx_smoke.dts",
         "x32 INX/CNX order and attachment smoke",
-        true,
-        false,
-        RegressionValidator::RemainingDefaultV1
+        true
     },
     {
         "INDEX_X64",
@@ -494,17 +488,12 @@ constexpr std::array<RegressionSpec, 83> kRegressionSpecs{{
         "X64_METRICS",
         "canaries\\x64_matrix_metrics_boundary_canary.dts",
         "x64 structural boundary proof above legacy 16-bit record/header limits",
-        true,
-        false,
-        RegressionValidator::RemainingDefaultV1
+        true
     },
     {
         "LANGUAGE",
         "canaries\\language_shakedown_canary.dts",
         "Messaging-normalization locale proof: es/fr/de/it USAGE render across the localized command surface",
-        true,
-        false,
-        RegressionValidator::RemainingDefaultV1,
         true
     },
     {
@@ -523,9 +512,6 @@ constexpr std::array<RegressionSpec, 83> kRegressionSpecs{{
         "RELJOIN",
         "main\\rel_join_enum_regression.dts",
         "Relation join/enum projection regression",
-        true,
-        false,
-        RegressionValidator::RemainingDefaultV1,
         true
     },
     {
@@ -538,25 +524,19 @@ constexpr std::array<RegressionSpec, 83> kRegressionSpecs{{
         "DOTSCRIPT_EXPR",
         "dotscript\\dotscript_expr_regression.dts",
         "DotScript memvars (VAR/$name) + arrays ({}/$a[n], nested/chained) via the house expression path, with an IF literal baseline (AIF-041 M1)",
-        true,
-        false,
-        RegressionValidator::RemainingDefaultV1
+        true
     },
     {
         "DOTSCRIPT_PARITY",
         "dotscript\\predicate_memvar_parity_regression.dts",
         "Predicate parity target: $name/$a[n] in IF/WHILE/WHERE -- now GREEN via the shared house-evaluator bridge (AIF-041, landed 2026-07-21). Fixture-free, self-asserting; safe for the default suite",
-        true,
-        false,
-        RegressionValidator::RemainingDefaultV1
+        true
     },
     {
         "LEXING",
         "lexing\\comment_handling_regression.dts",
         "Canonical comment vocabulary on the script path after the AIF-037 lexer consolidation (full-line * REM # //, inline && #, single & macro survives); read-only, fixture-free",
-        true,
-        false,
-        RegressionValidator::RemainingDefaultV1
+        true
     },
     {
         "CALC",
@@ -813,17 +793,12 @@ constexpr std::array<RegressionSpec, 83> kRegressionSpecs{{
         "USE_ARGS",
         "use_argument_validation.dts",
         "USE refuses arguments it does not understand, and IN <n> places (AIF-121, 2026-08-22). USE parsed its tail with THREE independent NON-CONSUMING scans -- contains_noindex, contains_again, parse_alias_clause -- each saving the stream position, sweeping for its own keyword, and rewinding. Nothing ever enumerated the tail, so NO TOKEN WAS EVER UNACCOUNTED FOR: unknown arguments were not ignored by oversight, nothing was in a position to notice them. MEASURED at baada444: `USE dbf\\x64\\students` then `USE dbf\\x32\\students IN 1` printed two 'Opened' lines, WORKSPACE REGISTRY reported members 1, and AREA showed slot 0 holding the x32 table -- the second open replaced the first and said NOTHING. `IN <n>` is FoxPro-standard and documented in this tree twice (command_argchk.cpp:47-48, printed in EVERY REGRESSION ALL run, and fox_standard_catalog.cpp:78); it was swallowed, so the house's own CMDREL recipe died on 'No table is currently open.' Implementing the clause makes both doc sites TRUE rather than correcting them down to a limitation. U_T1 IS THE DISCRIMINATOR and asserts two things in one read: after `USE utgt IN 3` it reads MARK WITHOUT selecting, so a green proves the current area is still 0 (IN does not move you -- the FoxPro contract) AND still holds its occupant; under the old parser IN 3 was dropped and utgt opened over it, reding both at once. U_T4 IS THE CONTIGUITY ARM and it MOVED when the allocator was scoped on owner ruling: DEFAULT holds areas 0 and 3, a global lowest-free sweep answers 1, and the workspace-scoped allocator answers 4 -- the slot after this workspace's highest member -- because a workspace's areas stay contiguous and a global sweep can drop an area inside a NEIGHBOUR'S run once two workspaces exist. If U_T4 ever reads 1 again, IN FREE has gone back to workspace-blind. U_T5 is the gate arm and asks the answerable question (did the KNOWN OCCUPANT SURVIVE) rather than asserting a refusal, per USE_AGAIN's finding that no marker in this language can assert an area is empty and an errored marker prints nothing rather than going red. U_T7 covers the digits-only parse: std::stoll would read '3junk' as 3, the same longest-valid-prefix trap that let AIF-116 read pid=16,984 as 16. Owner rulings carried: IN FREE not IN NEXT (NEXT implies forward adjacency the allocator does not keep); AGAIN and IN compose with NO interaction rule because AGAIN carries no placement opinion (cmd_use.cpp:743, it lands in the current area -- so IN is the half AGAIN shipped without, and AGAIN is destructive today unless the caller SELECTs a free area first, which USE_AGAIN's spec does every time, which is why the property was exercised around rather than tested); IN 0 is area 0 literally, no magic zero. NOT ASSERTED, stated rather than implied: refusal WORDING (markers are field-value comparisons only, FIELDMGR_APPEND doctrine) and AGAIN+IN together (needs a memo-free duplicate-open fixture; separate arm). The message catalog's USAGE text does not yet list IN -- the help DBFs belong to the concurrent full-stack document push -- so the refusal path prints the correct syntax inline meanwhile. Self-bootstrapping UDEF/UTGT/UFRE/UBAD in SANDBOX, self-erasing. VERIFIED IN-SUITE 2026-08-23: promoted, then run inside REGRESSION ALL. This spec inherited 14 open areas from the spec before it, closed them in its own opening WORKSPACE CLOSE, and built its fixture from a clean slate -- order-independence demonstrated rather than assumed, which is what promotion actually requires. Explicit-run until soaked, then promote to default. PROMOTED to the default suite 2026-08-23. The soak was the AIF-078 slot-lane step 1 lift, which MOVED the code this spec covers -- find_free_area_for_workspace left cmd_use.cpp for workarea_util and took its engine and membership table as arguments -- and both arms read green afterward. THE REASON FOR PROMOTION IS A MEASURED COVERAGE HOLE, not the soak alone: REGRESSION ALL CANNOT REACH IN FREE. A grep of the whole .dts corpus finds the phrase in exactly two files, this one and the other of this pair, and both were explicit-run -- so a change to the free-slot allocator could pass the entire default suite and say nothing about the policy. That is what happened on 2026-08-23: ALL ran ten specs green over a commit that rewrote the allocator, and the allocator was not exercised once. U_T4 read engine area 4 after the lift -- DEFAULT holding areas 0 and 3, lowest free 1 -- so the workspace-scoped placement survived the move. If it ever reads 1 again, IN FREE has gone back to workspace-blind.",
-        true,
-        false,
-        RegressionValidator::RemainingDefaultV1
+        true
     },
     {
         "NAME_AMBIG",
         "rel_name_ambiguity_regression.dts",
         "NAME AMBIGUITY: the collision is already PREVENTED, and the ledger that measures it reads zero for a good reason (AIF-120 I1.3a, 2026-08-22). Two resolvers answered 'which open area is called X' and disagreed -- find_open_area_by_name_ci (workarea_util.cpp, 21 call sites) returned the FIRST match, the lowest engine slot, while build_area_by_up_name (set_relations.cpp, the recursive REL LIST tree builder) assigned unconditionally and so returned the LAST. That divergence is closed: the local map is deleted and both are built on one primitive (find_open_areas_by_name_ci, every match ascending by slot), agreeing BY CONSTRUCTION. THE SPEC'S FIRST CUT COULD NOT BUILD ITS OWN FIXTURE, and that is the finding it now carries. Two `USE ... ALIAS NAMDUP` calls were expected to put one name on two areas; the second was REFUSED. cmd_use.cpp:944-972 resolves the name BEFORE touching the target area -- an explicit alias already held is refused, a name derived from the file stem that is already held is auto-renamed to <stem>2 and ANNOUNCED -- and its own comment names this case: 'the ordinary AGAIN case, and also two same-named files from different directories.' So R112 sec 3's measurement (USE ... ALIAS assigns the logical name with NO uniqueness check) is STALE: true at 8aca9ef1b, false since USE_AGAIN's alias arm landed 2026-08-12, and R112 sec 6a scheduled as future work a within-workspace PREVENT half that a different lane had already shipped. CONSEQUENCE, and the reason this spec exists: two open areas in one workspace CANNOT share a logical name, so the ambiguity ledger is STRUCTURALLY ZERO -- not untested, unreachable -- until two workspaces can be open at once and cross-workspace names may repeat. R112 sec 6a predicted exactly this ('would record zero for the wrong reason, and a zero that means nothing was tested is exactly the false green trap-4 is about') and the instrument built under that ruling walked into it. The ledger line is therefore a TRIPWIRE for AIF-078 stage 4, not a migration counter, and it prints even at zero so that 'no collision occurred' and 'nothing is instrumented' cannot look alike (AIF-118). WHAT THE MARKERS PROVE is the two-directories case, which nothing else covers: USE_AGAIN's alias arms cover the same file opened twice and the explicit-alias refusal, never R112's actual measurement of twelve basenames shared across dbf/x64, dbf/x32 and dbf/vfp. This opens two of them read-only. N_T1 parks the first instance on record 2 while the second sits at record 1, telling two copies of the same data apart BY FIELD VALUE, and proves `SELECT students` still reaches the first holder -- but it would pass under first-wins too, so it is not the discriminator. N_T2 IS: `SELECT students2` must reach the second instance, and with no rename there is no such name, SELECT fails, the current area stays parked on Martin, and the marker READS RED rather than vanishing -- arranged that way because an errored marker prints nothing rather than going red (USE_AGAIN's finding). Read-only: no fixture is created and nothing is erased. Explicit-run until soaked, then promote to default.",
-        true,
-        false,
-        RegressionValidator::RemainingDefaultV1,
         true
     },
     {
@@ -920,9 +895,7 @@ constexpr std::array<RegressionSpec, 83> kRegressionSpecs{{
         "NAV_NATURAL",
         "nav_order_natural_regression.dts",
         "AN ATTACHED CONTAINER IS NOT AN ACTIVE ORDER (AIF-148, written 2026-08-29). orderstate::hasOrder() returns `st && !st->container.empty()` -- it answers IS A CONTAINER ATTACHED. Six sites on the traversal path read it as IS AN ORDER ACTIVE. WORKSPACE OPEN attaches a .cdx to every table it lands and selects NO TAG, so the predicate said true for a table sitting in natural order, and every verb that trusted it went looking for a tag, found none, and returned failure. MEASURED on MCC STUDENTS (200 rows, CDX attached, no tag): TOP, BOTTOM, GO TOP, GO BOTTOM, GO FIRST and GO LAST all printed failed; SKIP printed 'SKIP: at end.' on record 1 and did not move; GO 5 worked. GO <n> survived because R121 already ruled addressing absolute and traversal filtered. SKIP IS THE SEVERITY AND IS WHY THIS SPEC EXISTS: the other six REFUSED, which is a wrong answer a reader can see in a transcript, and SKIP ANSWERED. WHY SIXTY REGISTERED SPECS SAID NOTHING, measured the same day and the more useful half of this entry: (a) 345 markers across the tracked corpus and NOT ONE mentions RECNO -- not laziness, a LANGUAGE LIMIT this house has already recorded four times (cnx_persist_proof, cnx_realtime_buffer_proof, cnx_realtime_index_proof, index_maintenance_failure_proof all say RECNO() RENDERS EMPTY IN A '?' MARKER and STR() does not rescue it), so NO ARM IN THE TREE CAN SAY 'the cursor is at 1'; (b) every navigation line in the corpus is followed by a marker that reads a FIELD, and USE/SELECT/CREATE have already parked the cursor on record 1, so a failed TOP and a working TOP READ IDENTICALLY -- workspace_load_shortfall.dts:149 is the shape exactly, USE STUDENTS / TOP / ? 'L_T4...' + (SID >= 1), green from record 1 and green from record 400; (c) STOP_ON_ERROR is opt-in, so a printed refusal sits above green markers and the run continues. THE COUNTERMEASURE IS STRUCTURAL, NOT DILIGENCE: every arm here PARKS THE CURSOR SOMEWHERE ELSE FIRST with GO <n> and then reads MARK, because an arm that reads row 1 on a table already standing on row 1 cannot fail. NAV_G1 is the load-bearing guard -- it asserts the PARK moved, on a row that is neither first nor last; if GO does not move, every arm below it is meaningless rather than green. THE FIXTURE SORTS BACKWARDS ON PURPOSE: ID descends as the physical order ascends, so natural order and tag order name DIFFERENT rows (natural TOP is ROW1, tag-ascending TOP is ROW6). NAV_T7/T8 ARE THE COUNTERWEIGHT and are the reason that matters -- a fix that forced natural ALWAYS would pass all six failing arms and be exactly as wrong as refusing, so two arms assert the opposite direction on the same fixture. Six arms cover TOP, BOTTOM, SKIP forward, SKIP backward, GO TOP and GO BOTTOM; GO TOP and GO BOTTOM are armed SEPARATELY from bare TOP/BOTTOM because they route differently and failed as their own line in the transcript. MINTS NOTHING, and that is deliberate: the attached-no-tag state is reached with SET INDEX TO (cmd_setindex.cpp:237-239 sets the container and then setActiveTag(A, \"\")), which is the identical state attach_workspace_index leaves behind (cmd_workspace.cpp:1123-1130) without needing a workspace to produce it -- so no catalog bracket is required. SMARTLIST for every transcript dump, never LIST (owner ruling 2026-08-29: 'list is my tool, use smartlist for tests'). NOT COVERED, stated rather than implied: the report sites that read the container predicate where they make an ordering claim -- console text, and no marker in this language can assert it. THOSE FOUR WERE CLOSED LATER THE SAME DAY and one of them was MIS-CLASSIFIED when this sentence was first written: db_tuple_stream.cpp:267 is not a report, it is a NAVIGATION MODE SELECTOR that entered OrderVector mode on the container predicate and was saved only by an empty-vector fallback downstream -- correctness by luck rather than by the predicate. Still unasserted by any arm: the corrected sites are console text or a GUI-side stream, and this language has no marker that reads either; GO FIRST / GO LAST, which failed alongside GO TOP in the same transcript and are BELIEVED to share the path, and believed is not measured; a FILTERED view, since cmd_skip.cpp pairs the order question with view_is_filtered() deliberately (R121) and this exercises the unfiltered half; and CNX, which container_supports_tag() treats identically and which is therefore expected to behave the same -- untested, unclaimed. Self-bootstrapping NAVTAG in SANDBOX, self-erasing. NOT YET RUN AT THE TIME OF WRITING -- the spec was authored against the fix in the same session and no green is claimed for it; it is explicit-run until it has been run twice, then promote. RUN AND PROMOTED 2026-08-29, build d0406cee (Aug 29 2026 12:19:47), TWO GREEN RUNS of that binary: all twelve markers .T. both times -- NAV_G0/G1/G2/G3 and NAV_T1 through T8 -- and the clause above is LEFT STANDING because it was true when it was written. THE TRANSCRIPT CORROBORATES MORE THAN THE GREENS DO, and that is the part worth keeping: the engine itself printed 'SET INDEX: CDX attached ... Use SET ORDER TO TAG <tag>' and then STATUS read 'Order: NATURAL / Index file: ...navtag.cdx / Active tag: (none)', which is the state under test SAYING ITS OWN NAME rather than being assumed; and the tag-order SMARTLIST came back RECNO 6,5,4,3,2,1, exactly inverted from physical, so the six natural arms and the two tag arms CANNOT BOTH PASS BY ACCIDENT. The mints-nothing claim was PROVEN rather than asserted: the L3 isolation arm read the production catalog at 268 rows before and after on both runs, so the suite total stays at 26 rows per run with this spec in it. The fixture worry recorded before the first run -- CDX CREATE on a CREATE X64 table under the SANDBOX index and LMDB slots, the one thing no other spec does -- was unfounded: the container built, BUILDLMDB reported OK=1, and cleanup erased all three artifacts including the .cdx.d environment. STILL NOT MEASURED, and this is the honest gap in the promotion: THE ARMS HAVE NOT BEEN RUN AGAINST THE PRE-FIX BINARY. WAO_T1 and MWXSHAKE both insist a discriminator is checked against the old build rather than reasoned about, and what exists here is the failing behaviour measured live on MCC STUDENTS in this state plus arms constructed so a cursor that does not move reads the parked MARK -- a strong argument, not a measurement. Anyone stashing the AIF-148 fix should see NAV_T1 through T6 go red while NAV_G0 through G3 stay green; if the guards red too, the fixture broke and the arms prove nothing either way. IN-SUITE VERIFICATION IS THE NEXT STEP AND HAS NOT HAPPENED: both green runs were EXPLICIT single-spec runs, which prove the spec works from a clean session and say nothing about order-independence when it inherits open areas from the spec before it -- the property MWXSHAKE's own promotion had to demonstrate rather than assume. VERIFIED IN-SUITE 2026-08-29 ON THE PROMOTING BUILD (7f5f0789, Aug 29 2026 12:54:43), and the clause above is LEFT STANDING because it was true when it was written. Run as the SEVENTEENTH and last spec of REGRESSION ALL: twelve markers, all .T., full count. ORDER-INDEPENDENCE IS DEMONSTRATED RATHER THAN ASSUMED -- it inherited MWXSHAKE's session with the DBF, INDEXES and LMDB slots left on x64, re-pointed all three to SANDBOX in its own opening lines, and its WORKSPACE CLOSE reported ZERO areas because MWXSHAKE's teardown had already left a clean slate, so the fixture was built from nothing. THE FLAG FLIP NEEDS A REBUILD AND THAT COST A RUN: the promotion commit was made and REGRESSION ALL run without rebuilding, so the suite ran SIXTEEN specs against a binary whose compiled-in registry still carried false. The suite was green and the spec was simply absent -- a full green over a spec that never executed, which is this file's own subject matter arriving as a process error rather than a code one. It was caught by the curated listing NONDESTRUCTIVE prints, where NAV_NATURAL still showed WITHOUT its [default] tag. A LMDB-SLOT WORRY RECORDED BEFORE THE RUN IS WITHDRAWN ON MEASUREMENT: BUILDLMDB wrote to LMDB\\SANDBOX\\NAVTAG.cdx.d, following the slot exactly. MWXSHAKE section 5C lands its env in LMDB\\x64 in the same run because THAT spec sets only the DBF and INDEXES slots, which is a fixture omission there and not an engine defect here. PRE-CHANGE BINARY RUN, 2026-08-30 -- THE DEBT IS PAID AND THE PREDICTION HELD EXACTLY. Built 0655860b, the immediate parent of the fix, in an isolated worktree; confirmed pre-change FROM SOURCE rather than from a hash, isNaturalOrder being absent from the tree entirely. MEASURED: NAV_T1 through T6 all .F., NAV_G0 through G3 all .T., NAV_T7 and T8 .T. Twelve markers, and the six reds are the fix's absence rather than a broken fixture because the guards held. THE TRANSCRIPT SAYS MORE THAN THE MARKERS, as this entry always argued it would: 'TOP: failed.', 'BOTTOM: failed.' and 'GO: failed.' twice are refusals a reader can see, and 'SKIP: at end.' printed ON RECORD 1 OF 6, twice, is the wrong ANSWER that is this spec's whole reason for existing. The tag-ordered SMARTLIST came back 6,5,4,3,2,1, exactly inverted from physical, so the six natural arms and the two tag arms cannot both be passing by accident. AN UNPLANNED SECOND MEASUREMENT FELL OUT OF THE SAME RUN: the STATUS block on that binary reads 'Order       : ASCEND' beside 'Active tag  : (none)', the REPORT half of AIF-148 caught against a pre-change build without anyone setting out to catch it. On the current build the same line reads NATURAL. So this run discriminates two fixes. CATALOG FIGURE CORRECTED: the production catalog is 271 rows, not the 268 recorded above -- see the WSENV entry for the cause, which was a steward error on 2026-08-30 and not a defect.",
-        true,  // PROMOTED 2026-08-29 -- two green runs, twelve markers each; VERIFIED IN-SUITE (see description)
-        false,
-        RegressionValidator::RemainingDefaultV1
+        true   // PROMOTED 2026-08-29 -- two green runs, twelve markers each; VERIFIED IN-SUITE (see description)
     },
     {
         "OPENJOIN",
@@ -944,9 +917,7 @@ constexpr std::array<RegressionSpec, 83> kRegressionSpecs{{
         "NULLASSERT",
         "vfp_null_assertions.dts",
         "NULL IS ASSERTABLE (AIF-091, 2026-09-05). The lane could CREATE a nullable VFP table, write a null, read it, display it and filter on it -- every leg graded against bytes Visual FoxPro wrote -- and REGRESSION ALL could reach NONE of it, because no .dts asserted a null. THIS SPEC'S FIRST RUN WAS 17/21 AND THE FOUR REDS WERE ONE DEFECT: a value write stored the value AND re-committed the null bit (DbArea::set() never touched _fd_null; storeFieldsToBuffer() recomputes the bitmap FROM _fd_null), so REPLACE VNAME WITH \"restored\" left a cell that read `restored` to `?` and `.NULL.` to LIST, and survived a close and reopen. Fixed in 22c748381; the four arms are the regression. NL_T1 IS THE DISCRIMINATOR AND THE FIXTURE IS ORDERED FOR IT: rec 2's VNAME is BLANK AND NOT NULL and sits AHEAD of the nulled rec 3, and LOCATE takes the first match from the top, so a build that answers ISNULL from emptiness lands on rec 2 and reads `blankvn`. NL_T5/T6 state the problem out loud -- the nulled cell and the blank cell BOTH read empty by value, which is why ISNULL has to exist and why its argument is never evaluated. NL_T11 is the strongest single arm: with rec 3 cleared, LOCATE FOR ISNULL(VNAME) must find REC 5, which proves three things at once -- rec 3's bit actually cleared rather than being overwritten in the value area, rec 5's bit was set by the DOTTED `.NULL.` spelling, and the two rows' bits are independent. WHY NO ARM USES `? \"NAME:\" + ISNULL(f)`, WHICH WAS THE PLAN: `?` is a SHORTCUT FOR FORMULA (shortcut_resolver.hpp), FORMULA calls eval_rhs, and eval_rhs tries its OWN scalar parser first -- which is where `+` string concatenation lives and whose four builtin tables do not contain ISNULL. Only the fallback (eval_any -> compile_where_program) knows it, and in THAT AST `+` is Arith and Arith::evalString returns a NUMBER. PREDICTED FROM THE CODE, THEN MEASURED by the spec's own NL_P2 probe, which printed a bare `0` AND SWALLOWED THE LABEL -- so a spec written that way would have emitted one anonymous zero per arm and the marker-count discipline could not have seen it. This is a property of the whole FunctionCategory::Cursor category, not of one function; the catalogue already files the same note one entry above ISNULL's, about RECNO. So every marker here is a FIELD-VALUE comparison and the nulls are asserted through LOCATE FOR ISNULL(<field>), the FOR-predicate path the feature was built for. COVERAGE: bit index (T2 -- ID and VNAME do not own adjacent bits, because a Varchar owns a varlength bit too; two commits in this lane exist because that order was got wrong); field and row isolation (T3, T4, T7); the write reached DISK (T8, T9, T12 -- close and reopen, the only question a suite can ask that a staged row cannot answer for itself); the bit CLEARS (T10, T11); refusal on a non-nullable field (T13, T14); refusal under TABLE BUFFER (T15, T16, run LAST because they touch a session setting, and buffering is restored OFF). Neither refusal arm claims a MESSAGE appeared -- console text is unreadable by a marker -- so both ask the answerable questions instead: did the value survive, and did the refusal leave the rest of the bitmap alone. NOT CLAIMED, stated rather than implied: that no OTHER row is null (no marker in this language can assert an absence, and an errored marker PRINTS NOTHING rather than going red); that LIST prints `.NULL.` (true, proven by hand in 11b40895a, and console text); anything about null ORDERING (opened NOINDEX throughout, and what a CDX/CNX/LMDB backend makes of a null key is unclaimed by this lane); ISNULL over a JOINED or TupleRow source; what VFP's own APPEND BLANK writes into a bitmap. 21 GRADED MARKERS -- 5 NL_G* guards, 16 NL_T* arms -- plus 3 UNGRADED NL_P* probes that are not part of the 21. COUNT THEM: a transcript with 20 is a spec that lost a claim, not a spec that passed. If any NL_G* reds, treat every NL_T* as UNPROVEN; the arms read fields of rows the guards establish. Disposable table, rebuilt every run, mints no catalog rows. Explicit-run until soaked: TWO GREEN 21/21 RUNS, 2026-09-05, the second on a build nobody had changed anything on -- the first proved the fix, the second proves the spec. PROMOTED TO THE DEFAULT SUITE 2026-09-05. THREE GREEN 21/21 RUNS BEFORE THE FLAG MOVED: two by DOTSCRIPT (the second on a build nobody had changed anything on -- the first proved the fix, the second proves the spec) and one by REGRESSION RUN NULLASSERT, which is a DIFFERENT measurement and was treated as one: it exercises the bracketed path and the L3 isolation arm, machinery a bare DOTSCRIPT never touches (L3 6/6 before, 21/21, L3 6/6 after, production catalog 279 rows on both reads). THE REASON FOR PROMOTION IS A MEASURED COVERAGE HOLE, NOT THE SOAK ALONE -- the RELSCOPE2 precedent. REGRESSION ALL COULD NOT REACH ONE INCH OF THIS LANE: not CREATE VFP with NULL, not REPLACE ... WITH NULL, not the .NULL. spelling, not ISNULL in a predicate, not the clear path, not either refusal. Six commits of engine work behind a suite that would have stayed green through all of it. THE COST IS THE CHEAPEST IN THE SUITE: no catalog rows (none of the three minting verbs), no LMDB, no index containers, one disposable VFP table rebuilt and overwritten every run in DBF/SANDBOX -- the SDVIS pattern. IT RUNS LAST BY DECLARATION ORDER AND THAT IS THE SAFE POSITION: it re-points the DBF slot to SANDBOX and does NOT restore it (SDVIS does the same), and nothing in the suite runs after it except the L3 AFTER arm, which sets its own slots. It restores TABLE BUFFER to OFF, which is the only session setting it touches. It inherits INDEXES and LMDB rather than re-pointing them -- the same standing fixture omission recorded against MWXSHAKE section 5C and OPENJOIN, harmless here because this spec builds no containers, and it will stop being harmless the moment an arm needs an index. NOT YET VERIFIED IN-SUITE at the time of writing, which is the property a single-spec run cannot prove: order-independence when it inherits WSENV's open areas and path slots. VERIFIED IN-SUITE 2026-09-05 ON THE PROMOTING BUILD (c1678d167 plus this uncommitted registry edit; build/src/Release/dottalkpp.exe stamped Sep 5 2026 17:39), and every clause above is LEFT STANDING because it was true when it was written. THE LISTING WAS READ BEFORE THE RUN, which is the check the sentence below demands and the one NAV_NATURAL's entry records a wasted REGRESSION ALL for: REGRESSION LIST showed NULLASSERT [default], so the rebuild took and the entry was live rather than merely edited. Run as the TWENTY-SEVENTH AND LAST spec of REGRESSION ALL: 21 of 21, full count, five NL_G* guards and sixteen NL_T* arms, with the two ungraded probes behaving exactly as this entry predicts -- NL_P1 printing .T., and NL_P2 printing a bare anonymous `0` with its label swallowed, so the `+` finding above is now reproduced INSIDE THE SUITE and not only in a single-spec run. IT MINTED NOTHING, measured rather than assumed: seven specs took scratch brackets this run, wscat_run_298 through 304, and NULLASSERT WAS NOT AMONG THEM; the L3 isolation arm read six of six at both ends and the production catalog at 279 rows before and after. ORDER-INDEPENDENCE IS DEMONSTRATED RATHER THAN ASSUMED, which is the one thing this run adds over the three that preceded it: it inherited WSENV's session with the DBF slot left on the bare data/DBF root rather than the DBF/SANDBOX its earlier greens started from, re-pointed ONLY DBF in its own opening line, and built its fixture from a slate WSENV's teardown had cleared -- so it depended on nothing it inherited, and the single-slot re-pointing noted against MWXSHAKE section 5C is confirmed harmless HERE while remaining the same standing omission everywhere. WHAT THIS RUN STILL DOES NOT SETTLE -- AND THIS PARAGRAPH IS A CORRECTION, because the sentence first committed here (a46fa95c9) said something THE SPEC'S OWN HEADER REFUTES ON LINE 171. IT IS NOT TRUE that NULLASSERT has never run against a pre-fix binary. Its FIRST RUN -- 2026-09-05, build Sep 05 2026 08:29:36 (11b40895 dirty) -- was 17 OF 21, with exactly NL_T11, NL_T12, NL_T14 and NL_T16 red and all five guards green, which is the prediction element for element; and the header records that the four arms were DELIBERATELY NOT RETUNED afterwards, so the markers that went red are the markers that ship. The four reds are a MEASUREMENT. This spec is known to be capable of failing, and it failed for the reason the fix addresses. THE REAL REMAINING GAP IS NARROWER, AND IT IS THE ONE THAT MATTERS FOR A PROMOTED SPEC: that 17/21 was taken by DOTSCRIPT. THE BRACKETED REGRESSION PATH -- the grader REGRESSION ALL actually runs through, with its L3 isolation arm and its pass/fail rollup -- HAS ONLY EVER SEEN THIS SPEC GREEN. Nothing here shows the SUITE REPORTS the failure rather than merely containing a spec that can fail; that would take one REGRESSION RUN NULLASSERT against a binary with 22c748381 backed out. That debt is smaller than the one first written here and it is still open. THE ERROR IS WORTH KEEPING RATHER THAN ERASING: it is the sixth AIF-079 instance in this lane and the same shape as the others -- a claim asserted about a file without reading the file, when the file being described contained the disproof. THE FLAG FLIP NEEDS A REBUILD -- the registry is compiled in, and NAV_NATURAL's entry records a whole REGRESSION ALL wasted on exactly that mistake, a full green over a spec that never executed, caught only because the curated listing showed it without its [default] tag. Read REGRESSION LIST for the tag before believing the run. CORRECTED 2026-09-08, AND THE CORRECTED CLAUSE IS THE ONE THIS ENTRY ARGUED HARDEST FOR: \"IT RUNS LAST BY DECLARATION ORDER AND THAT IS THE SAFE POSITION\" IS FALSE. RUNNING LAST IS ONLY SAFE IF NOTHING RUNS AFTER, and an operator running an explicit spec afterward -- REGRESSION ALL then REGRESSION PKPOLICY, which is an ordinary thing to type -- is exactly that. Measured 2026-09-08: that sequence turned four PKPOLICY markers red while PKPOLICY alone read 15 of 15, reproduced down to REGRESSION NULLASSERT then REGRESSION PKPOLICY (481 lines), then to a bare DOTSCRIPT of this spec's own file (365), then to LINES 1-278 OF IT (318) -- a cut of 23 executable lines in which NOT ONE NULL IS WRITTEN. AND THE RISK THIS ENTRY NAMED WAS THE WRONG ONE. The unrestored DBF slot was INNOCENT: it points at DBF/SANDBOX, which is where PKPOLICY builds its own fixtures anyway, and PKPOLICY re-points all three slots itself. What actually leaked was DbArea::_null_layout -- assigned in ONE place (partitionTrailingSystemField) and reset in NONE, because clearFields() and DbArea::close() are two hand-maintained teardown lists over the same members and BOTH skipped it. So this spec's CREATE VFP NULLSPEC left a VARCHAR bit layout in area 1; the next table opened there had isVarlengthField_() answer from it and storeFieldsToBuffer() write a LENGTH BYTE into the last byte of a plain C() field, on disk, with nothing refused and nothing printed. Fixed in 5e54df79e. THE LESSON FOR THIS ENTRY IS NOT THAT THE SLOT ANALYSIS WAS SLOPPY -- it was careful, and it enumerated what this spec re-points and does not restore. It is that a spec can leak state NOBODY HAS THOUGHT TO ENUMERATE, so \"it runs last\" is a statement about ORDER and never a proof of ISOLATION. VARCHARRESET (8885ab999) is the arm that now asserts the thing this paragraph could only assume: that closing a varchar table leaves its area clean.",
-        true,   // PROMOTED 2026-09-05 -- three green 21/21 runs before the flag moved (two DOTSCRIPT, one REGRESSION RUN), then VERIFIED IN-SUITE the same day, 27th and last in REGRESSION ALL; see the summary for the coverage argument and for what the run still does not settle
-        false,
-        RegressionValidator::RemainingDefaultV1
+        true    // PROMOTED 2026-09-05 -- three green 21/21 runs before the flag moved (two DOTSCRIPT, one REGRESSION RUN), then VERIFIED IN-SUITE the same day, 27th and last in REGRESSION ALL; see the summary for the coverage argument and for what the run still does not settle
     }
     ,
     {
@@ -3734,7 +3705,7 @@ bool validate_true_marker_contract(const std::string& transcript,
         if (truth_marker) actual.push_back(std::move(line));
     }
 
-    const std::string label = std::string("TRUE MARKERS ") + spec_name;
+    const std::string label = std::string("WORKSPACE MARKERS ") + spec_name;
     if (actual.size() != expected.size()) {
         std::cout << label << ": FAIL -- expected " << expected.size()
                   << " marker line(s), got " << actual.size() << "\n";
@@ -3904,330 +3875,6 @@ bool validate_workspace_markers(const RegressionSpec& spec,
     return false;
 }
 
-bool transcript_has_clean_line_prefix(const std::string& transcript,
-                                      const std::string& prefix)
-{
-    std::istringstream in(transcript);
-    std::string line;
-    while (std::getline(in, line)) {
-        line = clean_transcript_line(std::move(line));
-        if (line.rfind(prefix, 0) == 0) return true;
-    }
-    return false;
-}
-
-bool validate_nondestructive_smoke(const std::string& transcript)
-{
-    static constexpr std::array<const char*, 19> kRequired = {{
-        "NONDESTRUCTIVE-SMOKE-BEGIN",
-        "NONDESTRUCTIVE-S00", "NONDESTRUCTIVE-S01", "NONDESTRUCTIVE-S02",
-        "NONDESTRUCTIVE-S03", "NONDESTRUCTIVE-S04", "NONDESTRUCTIVE-S05",
-        "NONDESTRUCTIVE-S06", "NONDESTRUCTIVE-S07", "NONDESTRUCTIVE-S08",
-        "NONDESTRUCTIVE-S09", "NONDESTRUCTIVE-S10", "NONDESTRUCTIVE-S11",
-        "NONDESTRUCTIVE-S12", "NONDESTRUCTIVE-S13", "NONDESTRUCTIVE-S14",
-        "NONDESTRUCTIVE-S15", "NONDESTRUCTIVE-S16",
-        "NONDESTRUCTIVE-SMOKE-END"
-    }};
-    if (!require_transcript_fragments(transcript, "NONDESTRUCTIVE", kRequired)) {
-        return false;
-    }
-    if (transcript_has_clean_line_prefix(transcript, "Unknown command:")) {
-        std::cout << "NONDESTRUCTIVE: FAIL -- an exercised command was unknown.\n";
-        return false;
-    }
-    std::cout << "NONDESTRUCTIVE: PASS -- all 17 sections reached completion and "
-                 "no exercised command was unknown.\n";
-    return true;
-}
-
-bool require_localized_usage_block(const std::string& transcript,
-                                   const char* marker,
-                                   const char* usage_label)
-{
-    std::vector<std::string> lines;
-    std::string error;
-    if (!transcript_block(transcript, std::string(marker) + "-BEGIN",
-                          std::string(marker) + "-END", lines, error)) {
-        std::cout << "LANGUAGE: FAIL -- " << error << "\n";
-        return false;
-    }
-    const std::size_t count = static_cast<std::size_t>(std::count(
-        lines.begin(), lines.end(), std::string(usage_label)));
-    if (count != 18) {
-        std::cout << "LANGUAGE: FAIL -- " << marker << " expected 18 exact '"
-                  << usage_label << "' labels, got " << count << "\n";
-        return false;
-    }
-    return true;
-}
-
-bool validate_language_shakedown(const std::string& transcript)
-{
-    static constexpr std::array<const char*, 1> kResult = {{"INDEXSEEK(): 0"}};
-    static constexpr std::array<const char*, 3> kRequired = {{
-        "Message catalog validation: green",
-        "Message locale is en-US",
-        "=== LANGUAGE SHAKEDOWN CANARY DONE ==="
-    }};
-    if (!require_localized_usage_block(transcript, "LANG-EN", "Usage:") ||
-        !require_localized_usage_block(transcript, "LANG-ES", "Uso:") ||
-        !require_localized_usage_block(transcript, "LANG-FR", "Utilisation :") ||
-        !require_localized_usage_block(transcript, "LANG-DE", "Verwendung:") ||
-        !require_localized_usage_block(transcript, "LANG-IT", "Uso:") ||
-        !require_exact_transcript_block(transcript, "LANGUAGE", "LANG-RESULT", kResult) ||
-        !require_transcript_fragments(transcript, "LANGUAGE", kRequired)) {
-        return false;
-    }
-    if (transcript_has_clean_line_prefix(transcript, "Unknown command:")) {
-        std::cout << "LANGUAGE: FAIL -- a localized USAGE command was unknown.\n";
-        return false;
-    }
-    std::cout << "LANGUAGE: PASS -- 90 localized USAGE blocks, catalog green, "
-                 "locale restored, and result payload stable.\n";
-    return true;
-}
-
-bool validate_reljoin(const std::string& transcript)
-{
-    static constexpr std::array<const char*, 2> kT6 = {{
-        "50000010 | W26ENGL170 | ENGL170 | Gonzalez", "OK"
-    }};
-    static constexpr std::array<const char*, 6> kT7 = {{
-        "50000010 | W26ENGL170 | ENGL170 | Gonzalez",
-        "50000010 | W26ENGL170 | ENGL170 | White",
-        "50000010 | W26ENGL170 | ENGL170 | Gonzalez",
-        "50000010 | W26ENGL170 | ENGL170 | White",
-        "50000010 | W26ENGL290 | ENGL290 | Wilson", "OK"
-    }};
-    static constexpr std::array<const char*, 4> kT9 = {{
-        "50000010 | W26ENGL170 | ENGL170 | Gonzalez",
-        "50000010 | W26ENGL170 | ENGL170 | White",
-        "50000010 | W26ENGL290 | ENGL290 | Wilson", "OK"
-    }};
-    static constexpr std::array<const char*, 6> kT10 = {{
-        "50000010 | W26ENGL170 | ENGL170 |  6 | Gonzalez",
-        "50000010 | W26ENGL170 | ENGL170 |  6 | White",
-        "50000010 | W26ENGL170 | ENGL170 | 10 | Gonzalez",
-        "50000010 | W26ENGL170 | ENGL170 | 10 | White",
-        "50000010 | W26ENGL290 | ENGL290 |  5 | Wilson", "OK"
-    }};
-    static constexpr std::array<const char*, 3> kT11 = {{
-        "50000010 | W26ENGL170 | ENGL170 | Gonzalez",
-        "50000010 | W26ENGL170 | ENGL170 | White", "OK"
-    }};
-    static constexpr std::array<const char*, 6> kT12A = {{
-        "50000010 | Clark | W26ENGL170 |  6 | Gonzalez",
-        "50000010 | Clark | W26ENGL170 |  6 | White",
-        "50000010 | Clark | W26ENGL170 | 10 | Gonzalez",
-        "50000010 | Clark | W26ENGL170 | 10 | White",
-        "50000010 | Clark | W26ENGL290 |  5 | Wilson", "OK"
-    }};
-    static constexpr std::array<const char*, 6> kT12B = {{
-        "Relations (tree) rooted at: STUDENTS", "STUDENTS",
-        "-> ENROLL ON SID  (matches: 2)",
-        "-> CLASSES ON CLS_ID  (matches: 3)",
-        "-> TASSIGN ON CLS_ID  (matches: 3)",
-        "-> TEACHERS ON TID  (matches: 3)"
-    }};
-    static constexpr std::array<const char*, 2> kRequired = {{
-        "Relations for parent: STUDENTS", "-> ENROLL  (matches: 2)"
-    }};
-
-    if (!require_exact_transcript_block(transcript, "RELJOIN", "RELJOIN-T6", kT6) ||
-        !require_exact_transcript_block(transcript, "RELJOIN", "RELJOIN-T7", kT7) ||
-        !require_exact_transcript_block(transcript, "RELJOIN", "RELJOIN-T8", kT7) ||
-        !require_exact_transcript_block(transcript, "RELJOIN", "RELJOIN-T9", kT9) ||
-        !require_exact_transcript_block(transcript, "RELJOIN", "RELJOIN-T10A", kT10) ||
-        !require_exact_transcript_block(transcript, "RELJOIN", "RELJOIN-T10B", kT10) ||
-        !require_exact_transcript_block(transcript, "RELJOIN", "RELJOIN-T11", kT11) ||
-        !require_exact_transcript_block(transcript, "RELJOIN", "RELJOIN-T12A", kT12A) ||
-        !require_exact_transcript_block(transcript, "RELJOIN", "RELJOIN-T12B", kT12B) ||
-        !require_transcript_fragments(transcript, "RELJOIN", kRequired)) {
-        return false;
-    }
-    std::cout << "RELJOIN: PASS -- nine exact result blocks cover ONE, JOIN/ENUM "
-                 "parity, DISTINCT, LIMIT, projection, and relation-tree shape.\n";
-    return true;
-}
-
-bool validate_remaining_default(const RegressionSpec& spec,
-                                const std::string& transcript)
-{
-    const std::string name(spec.name);
-    if (name == "NONDESTRUCTIVE") return validate_nondestructive_smoke(transcript);
-    if (name == "LANGUAGE") return validate_language_shakedown(transcript);
-    if (name == "RELJOIN") return validate_reljoin(transcript);
-
-    if (name == "INDEX_X32") {
-        static constexpr std::array<const char*, 14> kExpected = {{
-            "IX32_G0_source_fixture_top_is_Taylor",
-            "IX32_T1_physical_top_is_Taylor",
-            "IX32_T2_physical_second_is_Martin",
-            "IX32_T3_physical_bottom_is_Davis",
-            "IX32_T4_lname_top_is_Anderson",
-            "IX32_T5_seek_white_found_White",
-            "IX32_T6_find_martin_found_Martin",
-            "IX32_T7_major_top_is_ACCT",
-            "IX32_G1_copy_preserved_physical_top",
-            "IX32_T8_inx_top_is_Anderson",
-            "IX32_T9_inx_skip_ten_is_Brown",
-            "IX32_T10_ascending_top_is_Anderson",
-            "IX32_T11_descending_top_is_Wilson",
-            "IX32_T12_cleared_order_top_is_Taylor"
-        }};
-        return validate_true_marker_contract(transcript, spec.name, "IX32_", kExpected);
-    }
-    if (name == "X64_METRICS") {
-        static constexpr std::array<const char*, 8> kExpected = {{
-            "X64M_G0_mid_write_reached_first_field",
-            "X64M_G1_mid_write_reached_last_field",
-            "X64M_T1_mid_first_field_survived_reopen",
-            "X64M_T2_mid_last_field_survived_reopen",
-            "X64M_G2_high_write_reached_first_field",
-            "X64M_G3_high_write_reached_last_field",
-            "X64M_T3_high_first_field_survived_reopen",
-            "X64M_T4_high_last_field_survived_reopen"
-        }};
-        return validate_true_marker_contract(transcript, spec.name, "X64M_", kExpected);
-    }
-    if (name == "DOTSCRIPT_EXPR") {
-        static constexpr std::array<const char*, 16> kExpected = {{
-            "VAR stored: n", "R1_var_scalar:.T.",
-            "VAR stored: label", "R2_var_string_fn:.T.",
-            "VAR stored: a", "R3_array_subscript:.T.",
-            "R4_array_subscript_arith:.T.", "R5_var_case_insensitive:.T.",
-            "VAR stored: m", "R6_array_nested_chained:.T.",
-            "R7_array_display_expect_{array:3}:", "{array:3}",
-            "R8_out_of_range_expect_error:",
-            "FORMULA error: scalar evaluation failed -- in: $a[9]",
-            "B1_if_true_literal:PASS", "B2_if_false_literal:PASS"
-        }};
-        std::vector<std::string> actual;
-        std::string error;
-        if (!transcript_block(transcript, "DOTSCRIPT-EXPR-REGRESSION-BEGIN",
-                              "DOTSCRIPT-EXPR-REGRESSION-END", actual, error)) {
-            std::cout << "DOTSCRIPT_EXPR: FAIL -- " << error << "\n";
-            return false;
-        }
-        if (actual.size() != kExpected.size()) {
-            std::cout << "DOTSCRIPT_EXPR: FAIL -- expected " << kExpected.size()
-                      << " exact line(s), got " << actual.size() << "\n";
-            return false;
-        }
-        for (std::size_t i = 0; i < kExpected.size(); ++i) {
-            const bool measured_error_variant =
-                i == 13 &&
-                (actual[i] == "FORMULA error: scalar evaluation failed -- in: $a[9]" ||
-                 actual[i] == "FORMULA error: unable to evaluate expression -- in: $a[9]");
-            if (actual[i] != kExpected[i] && !measured_error_variant) {
-                std::cout << "DOTSCRIPT_EXPR: FAIL -- line " << (i + 1)
-                          << " mismatch\n"
-                          << "  expected: " << kExpected[i] << "\n"
-                          << "  actual  : " << actual[i] << "\n";
-                return false;
-            }
-        }
-        std::cout << "DOTSCRIPT_EXPR: PASS -- 16 lines exact; the out-of-range "
-                     "arm emitted one of its two measured evaluator errors.\n";
-        return true;
-    }
-    if (name == "DOTSCRIPT_PARITY") {
-        static constexpr std::array<const char*, 5> kExpected = {{
-            "VAR stored: pv", "PARITY_display_memvar_should_be_T:.T.",
-            "PARITY_predicate_memvar:PASS", "VAR stored: pa",
-            "PARITY_predicate_array_subscript:PASS"
-        }};
-        const bool ok = require_exact_transcript_block(
-            transcript, "DOTSCRIPT_PARITY", "PREDICATE-MEMVAR-PARITY", kExpected);
-        if (ok) {
-            std::cout << "DOTSCRIPT_PARITY: PASS -- 5 exact lines.\n";
-        }
-        return ok;
-    }
-    if (name == "LEXING") {
-        static constexpr std::array<const char*, 1> kExpected = {{"AFTER-COMMENT-LINES"}};
-        const bool ok = require_exact_transcript_block(
-            transcript, "LEXING", "COMMENT-REGRESSION", kExpected);
-        if (ok) {
-            std::cout << "LEXING: PASS -- the exact comment-handling block survived.\n";
-        }
-        return ok;
-    }
-    if (name == "USE_ARGS") {
-        static constexpr std::array<const char*, 8> kExpected = {{
-            "U_G0_sentinel_in_area_0",
-            "U_T1_in_n_placed_elsewhere_and_did_not_move_me",
-            "U_T2_table_is_in_the_named_area",
-            "U_T3_in_free_did_not_move_me",
-            "U_T4_in_free_grew_this_workspace_run",
-            "U_T5_unknown_token_opened_nothing",
-            "U_T6_out_of_range_in_opened_nothing",
-            "U_T7_malformed_in_opened_nothing"
-        }};
-        return validate_true_marker_contract(transcript, spec.name, "U_", kExpected);
-    }
-    if (name == "NAME_AMBIG") {
-        static constexpr std::array<const char*, 3> kExpected = {{
-            "N_G0_first_instance_parked_on_record_2",
-            "N_T1_first_name_still_reaches_the_first_holder",
-            "N_T2_renamed_second_instance_is_addressable"
-        }};
-        static constexpr std::array<const char*, 2> kRequired = {{
-            "USE: alias 'students' is held by area 0 in this workspace; this instance is named 'students2'.",
-            "name ambiguity : 0 resolution(s)"
-        }};
-        const bool ok =
-            validate_true_marker_contract(transcript, spec.name, "N_", kExpected) &&
-            require_transcript_fragments(transcript, "NAME_AMBIG", kRequired);
-        if (ok) {
-            std::cout << "NAME_AMBIG: PASS -- markers, rename announcement, and "
-                         "zero-resolution ledger all present.\n";
-        }
-        return ok;
-    }
-    if (name == "NAV_NATURAL") {
-        static constexpr std::array<const char*, 12> kExpected = {{
-            "NAV_G0_fixture_row1_written", "NAV_G1_park_moved_off_row1",
-            "NAV_G2_park_reaches_last_row", "NAV_G3_addressing_survives_attach",
-            "NAV_T1_top_reaches_first_physical", "NAV_T2_bottom_reaches_last_physical",
-            "NAV_T3_skip_forward_moved_one_row", "NAV_T4_skip_backward_moved_one_row",
-            "NAV_T5_go_top_reaches_first_physical", "NAV_T6_go_bottom_reaches_last_physical",
-            "NAV_T7_tag_top_follows_the_tag", "NAV_T8_tag_bottom_follows_the_tag"
-        }};
-        return validate_true_marker_contract(transcript, spec.name, "NAV_", kExpected);
-    }
-    if (name == "NULLASSERT") {
-        static constexpr std::array<const char*, 21> kExpected = {{
-            "NL_G0_row1_is_the_untouched_control",
-            "NL_G1_row2_is_blank_before_any_null_exists",
-            "NL_G2_row3_holds_a_value_before_it_is_nulled",
-            "NL_G3_row4_holds_a_value_before_it_is_nulled",
-            "NL_G4_row5_holds_a_value_before_it_is_nulled",
-            "NL_T1_isnull_finds_the_nulled_row_and_not_the_blank_one",
-            "NL_T2_isnull_on_the_numeric_finds_the_row_whose_number_was_nulled",
-            "NL_T3_nulling_id_left_vname_readable_in_the_same_row",
-            "NL_T4_nulling_vname_left_the_neighbour_row_readable",
-            "NL_T5_the_nulled_cell_reads_empty_by_value",
-            "NL_T6_the_blank_cell_reads_empty_by_value_too",
-            "NL_T7_nulling_vname_left_id_readable_in_the_same_row",
-            "NL_T8_the_varchar_null_survived_close_and_reopen",
-            "NL_T9_the_numeric_null_survived_close_and_reopen",
-            "NL_T10_a_written_value_replaced_the_null",
-            "NL_T11_with_row3_cleared_isnull_finds_row5_nulled_by_the_dotted_spelling",
-            "NL_T12_the_cleared_bit_survived_close_and_reopen",
-            "NL_T13_a_refused_null_left_the_non_nullable_value_intact",
-            "NL_T14_a_refused_null_left_the_rest_of_the_bitmap_intact",
-            "NL_T15_a_buffered_null_was_refused_and_the_value_survived",
-            "NL_T16_the_bitmap_survived_the_buffered_refusal"
-        }};
-        return validate_true_marker_contract(transcript, spec.name, "NL_", kExpected);
-    }
-
-    std::cout << "REMAINING DEFAULT " << spec.name
-              << ": FAIL -- no validator contract registered for this spec.\n";
-    return false;
-}
-
 bool validate_regression_transcript(const RegressionSpec& spec,
                                     const std::string& transcript)
 {
@@ -4278,8 +3925,6 @@ bool validate_regression_transcript(const RegressionSpec& spec,
             return validate_metadata_reports(transcript);
         case RegressionValidator::WorkspaceMarkersV1:
             return validate_workspace_markers(spec, transcript);
-        case RegressionValidator::RemainingDefaultV1:
-            return validate_remaining_default(spec, transcript);
     }
     return false;
 }

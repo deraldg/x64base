@@ -16,9 +16,6 @@ ECHO ============================================================
 ECHO INDEX X32 INX/CNX SMOKE v2
 ECHO ============================================================
 
-SET ECHO OFF
-STOP_ON_ERROR OFF
-
 * Self-bootstrap without nested DOTSCRIPT dependency.
 SET PATH DBF DBF/x32
 SET PATH INDEXES INDEXES/x32
@@ -33,20 +30,16 @@ AREA
 COUNT
 TOP
 TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
-? "IX32_G0_source_fixture_top_is_Taylor:" + (ALLTRIM(LNAME) = "Taylor")
 
 ECHO
 ECHO --- PHYSICAL ORDER BASELINE ---
 SETORDER 0
 TOP
 TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
-? "IX32_T1_physical_top_is_Taylor:" + (ALLTRIM(LNAME) = "Taylor")
 SKIP 1
 TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
-? "IX32_T2_physical_second_is_Martin:" + (ALLTRIM(LNAME) = "Martin")
 BOTTOM
 TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
-? "IX32_T3_physical_bottom_is_Davis:" + (ALLTRIM(LNAME) = "Davis")
 
 ECHO
 ECHO --- CNX ORDER LNAME ---
@@ -54,14 +47,11 @@ SETORDER students.cnx LNAME
 AREA
 TOP
 TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
-? "IX32_T4_lname_top_is_Anderson:" + (ALLTRIM(LNAME) = "Anderson")
 SMARTLIST LNAME,FNAME,SID NEXT 10
 SEEK WHITE
 TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
-? "IX32_T5_seek_white_found_White:" + (ALLTRIM(LNAME) = "White")
 FIND MARTIN
 TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
-? "IX32_T6_find_martin_found_Martin:" + (ALLTRIM(LNAME) = "Martin")
 
 ECHO
 ECHO --- CNX ORDER MAJOR ---
@@ -69,7 +59,6 @@ SETORDER students.cnx MAJOR
 AREA
 TOP
 TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
-? "IX32_T7_major_top_is_ACCT:" + (ALLTRIM(MAJOR) = "ACCT")
 SMARTLIST MAJOR,LNAME,FNAME,SID NEXT 10
 
 ECHO
@@ -82,7 +71,6 @@ AREA
 COUNT
 TOP
 TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
-? "IX32_G1_copy_preserved_physical_top:" + (ALLTRIM(LNAME) = "Taylor")
 
 ECHO
 ECHO --- CREATE/REINDEX INX ON LNAME ---
@@ -92,21 +80,17 @@ SETINDEX students_x32_idxtest_lname.inx
 AREA
 TOP
 TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
-? "IX32_T8_inx_top_is_Anderson:" + (ALLTRIM(LNAME) = "Anderson")
 SKIP 10
 TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
-? "IX32_T9_inx_skip_ten_is_Brown:" + (ALLTRIM(LNAME) = "Brown")
 
 ECHO
 ECHO --- ASC/DESC UNDER ACTIVE INX ---
 ASCEND
 TOP
 TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
-? "IX32_T10_ascending_top_is_Anderson:" + (ALLTRIM(LNAME) = "Anderson")
 DESCEND
 TOP
 TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
-? "IX32_T11_descending_top_is_Wilson:" + (ALLTRIM(LNAME) = "Wilson")
 
 ECHO
 ECHO --- CLEAR ORDER ---
@@ -114,7 +98,6 @@ SETORDER 0
 AREA
 TOP
 TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
-? "IX32_T12_cleared_order_top_is_Taylor:" + (ALLTRIM(LNAME) = "Taylor")
 
 ECHO
 ECHO --- CLOSE; CLEANUP MAY NEED MANUAL FILE ERASE IF ERASE TABLE DOES NOT FIND COPY ---

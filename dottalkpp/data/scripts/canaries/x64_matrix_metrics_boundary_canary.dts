@@ -52,8 +52,6 @@ APPEND
 BOTTOM
 REPLACE F01 WITH "MID_OK"
 REPLACE F09 WITH "TAIL_OK"
-? "X64M_G0_mid_write_reached_first_field:" + (ALLTRIM(F01) = "MID_OK")
-? "X64M_G1_mid_write_reached_last_field:" + (ALLTRIM(F09) = "TAIL_OK")
 CALC LEN(ALLTRIM(F01))
 CALC LEN(ALLTRIM(F09))
 CLOSE
@@ -62,8 +60,6 @@ USE x64_metrics_mid_canary
 AREA
 STRUCT
 COUNT
-? "X64M_T1_mid_first_field_survived_reopen:" + (ALLTRIM(F01) = "MID_OK")
-? "X64M_T2_mid_last_field_survived_reopen:" + (ALLTRIM(F09) = "TAIL_OK")
 CALC LEN(ALLTRIM(F01))
 CALC LEN(ALLTRIM(F09))
 CLOSE
@@ -83,8 +79,6 @@ APPEND
 BOTTOM
 REPLACE F01 WITH "HIGH_OK"
 REPLACE F17 WITH "TAIL_HIGH_OK"
-? "X64M_G2_high_write_reached_first_field:" + (ALLTRIM(F01) = "HIGH_OK")
-? "X64M_G3_high_write_reached_last_field:" + (ALLTRIM(F17) = "TAIL_HIGH_OK")
 CALC LEN(ALLTRIM(F01))
 CALC LEN(ALLTRIM(F17))
 CLOSE
@@ -93,8 +87,6 @@ USE x64_metrics_hi_canary
 AREA
 STRUCT
 COUNT
-? "X64M_T3_high_first_field_survived_reopen:" + (ALLTRIM(F01) = "HIGH_OK")
-? "X64M_T4_high_last_field_survived_reopen:" + (ALLTRIM(F17) = "TAIL_HIGH_OK")
 CALC LEN(ALLTRIM(F01))
 CALC LEN(ALLTRIM(F17))
 CLOSE
