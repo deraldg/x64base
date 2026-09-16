@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-09-16T01:45:33Z
+    generated_utc : 2026-09-16T02:18:53Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,9 +11,9 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : 0ada5f52d  (2026-09-15)
+    HEAD          : 4c219c0be  (2026-09-15)
     upstream      : 7b814fb50
-    unpushed      : 11 commit(s) ahead of upstream
+    unpushed      : 12 commit(s) ahead of upstream
 
 ## Declared target
 
@@ -23,19 +23,18 @@ cannot drift, because nothing here is written by hand.
 ## Newest closeout
 
     file          : SESSION_CLOSEOUT_WORKSPACE_SCOPING_AND_WORKDESK_2026-09-10.md
-    commits behind HEAD : 72
+    commits behind HEAD : 73
 
 ## Staleness warnings
 
-- The newest closeout is 72 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
-- Claim(s) with no intake row, so they read as ABANDONED from HEAD: AIF-165. Same shape as AIF-062/078/080.
-- 11 commit(s) are unpushed and invisible to a clone.
+- The newest closeout is 73 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
+- 12 commit(s) are unpushed and invisible to a clone.
 
 ## Claimed lanes (newest first)
 
 | AIF | lane | steward | intake row |
 | --- | --- | --- | --- |
-| AIF-165 | Regression summary must distinguish graded PASS from transcript-only execution; add validators for the workspace family exposed as not graded by REGRESSION ALL | member.ai.codex | **MISSING** |
+| AIF-165 | Regression summary must distinguish graded PASS from transcript-only execution; add validators for the workspace family exposed as not graded by REGRESSION ALL | member.ai.codex | yes |
 | AIF-164 | x64-field-type-parity | member.derald | yes |
 | AIF-163 | memo-sidecar-reclamation | member.derald | yes |
 | AIF-162 | record-lock-lifetime | member.derald | yes |

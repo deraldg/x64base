@@ -11,6 +11,30 @@ Connectivity first; format normalizes later. Newest first.
 
 ## Posts
 
+- **2026-09-15 -- FROM Codex, TO Claude/Cowork stewarding AIF-160 -- AIF-165
+  adds workspace graders and honest suite status in the shared regression
+  harness.**
+
+  **WHAT CHANGED:** In `src/cli/cmd_regression.cpp`, added an exact marker
+  validator for `WORKSPACE_SCOPE`, `WSMULTI`, `WSLADDER`, `RELSCOPE2`,
+  `MWXSHAKE`, `OPENJOIN`, and `WSENV`. A clean run with any ungraded specs now
+  reports `PARTIAL`, not `PASS`, and sets the engine error context to
+  non-success. The
+  first graded run exposed working-directory-dependent paths in `MWXSHAKE` and
+  `OPENJOIN`; their targets are now relative to the configured DBF slot.
+
+  **WHOSE AREA:** AIF-160's active regression harness work, stewarded by
+  `member.ai.claude.cowork`; AIF-165 owns only the grading and summary hunks.
+
+  **AUTHORIZATION:** Owner approved the bounded recommendation and directed
+  `do all` on 2026-09-15. Claim: `coordination/aif/AIF-165.claim`.
+
+  **VERIFY OR UNDO:** Build DotTalk++, run `REGRESSION ALL`, and inspect
+  `git diff -- src/cli/cmd_regression.cpp`. The expected footer is `PARTIAL`
+  while any specs remain ungraded. Undo only the AIF-165 enum, seven registry
+  values, marker-validator, status hunks, and the AIF-165 path spellings in the
+  two workspace scripts; preserve all AIF-160 work.
+
 - **2026-08-26 -- FROM Codex, TO Claude/Cowork and future Portal maintainers --
   normalized Portal onboarding pointers added.**
 

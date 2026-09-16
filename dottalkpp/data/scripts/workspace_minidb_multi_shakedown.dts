@@ -278,7 +278,10 @@ GO 1
 * ---------------------------------------------------------------------------
 
 WORKSPACE SWITCH DEFAULT
-WORKSPACE OPEN DBF/SANDBOX/MWXB AS MWXAS
+* DBF means the configured DBF slot. This stays correct whether the process
+* starts in dottalkpp or dottalkpp/data; spelling DBF/SANDBOX/MWXB here made
+* the proof depend on the process working directory (AIF-165).
+WORKSPACE OPEN DBF AS MWXAS
 SELECT MWXAS:MWXSHARE
 GO 1
 ? "MWX_T1_open_as_named_the_workspace:" + (ALLTRIM(SLBL) = "SHARED_IN_B")
@@ -306,7 +309,7 @@ GO 1
 
 SELECT MWXAS:MWXSHARE
 GO 2
-WORKSPACE OPEN DBF/SANDBOX/MWXB AS MWXAS
+WORKSPACE OPEN DBF AS MWXAS
 SELECT MWXAS:MWXSHARE
 ? "MWX_T2_reentry_left_the_open_table_alone:" + (ALLTRIM(SLBL) = "SHARED_B_TWO")
 
@@ -375,7 +378,7 @@ SET RECURSION ON
 *      ambiguity ledger this arm claims to exercise never fires.
 *
 *   2. B'S COPY IS ALREADY OPEN BY THE TIME T5 ASKS FOR IT -- MWX_T1's
-*      `WORKSPACE OPEN DBF/SANDBOX/MWXB AS MWXAS` opened it into MWXAS.
+*      `WORKSPACE OPEN DBF AS MWXAS` opened it into MWXAS.
 *
 *   3. WORKSPACE ADD REFUSES THE SECOND OPEN OUTRIGHT:
 *

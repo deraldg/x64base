@@ -1,0 +1,5 @@
+aif: AIF-165
+run_id: CODEX-20260915-AIF165-REGGRADE-001
+member: member.ai.codex
+lane: Regression summary must distinguish graded PASS from transcript-only execution; add validators for the workspace family exposed as not graded by REGRESSION ALL
+claimed_utc: 2026-09-16T01:44:16Z
