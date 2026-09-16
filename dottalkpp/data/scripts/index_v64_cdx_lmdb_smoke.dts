@@ -1,124 +1,167 @@
-* ============================================================
-* INDEX V64 CDX/LMDB SMOKE v2
-* ============================================================
-* Purpose:
-*   Test current v64 index rule:
-*     v64 tables use CDX/LMDB for active order.
-*
-* Scope:
-*   Non-destructive except disposable copy.
-*   Uses SANDBOX.
-*   Does not test INX/CNX active-order on v64.
-*
-* Key correction:
-*   COPY TO requires the source table to remain open.
-* ============================================================
+; ============================================================
+; INDEX V64 CDX/LMDB SMOKE v3 -- SELF-BOOTSTRAPPING AND GRADED
+;
+; WHY v3 EXISTS. v2 opened DBF/SANDBOX/students.dbf, and on the PUBLISHED tree
+; that file does not exist: dbf/sandbox is a declared non-publish lane, and
+; staging's SANDBOX holds nine entries against dev's ~120. Measured 2026-09-13,
+; the whole spec read:
+;
+;   Open failed: file does not exist: ...\DBF\SANDBOX\students.dbf
+;   USE: nothing was opened, and area 0 is untouched.
+;
+; and every line after it was a refusal. It was ungraded, so the suite counted
+; it as "not graded" and reported PASS. A spec that runs nothing and a spec
+; that asserts nothing printed the same word.
+;
+; v3 BUILDS ITS OWN FIXTURE, as NAV_NATURAL, VARCHARRESET and SDVIS do, so it
+; runs identically on a fresh clone of github/main and on the development tree.
+;
+; THE FIXTURE'S TAG ORDER IS THE EXACT REVERSE OF ITS PHYSICAL ORDER, which is
+; NAV_NATURAL's trick and the only thing that makes the arms discriminating: a
+; build that ignored the tag entirely would walk physical and read ROW1 where
+; ROW6 is demanded. Six rows, LNAME descending as the file is written.
+;
+; READ RULE: TEN markers must PRINT and all ten read .T. Count them --
+; an errored marker in this language PRINTS NOTHING rather than going red, so
+; a transcript with nine is a spec that lost a claim, not a spec that passed.
+;   IX_G0/G1  the fixture is on disk in the order this spec assumes
+;   IX_G2     THE CONTROL. Container attached, NO tag: the walk is still
+;             PHYSICAL. If this is red the attach broke addressing and every
+;             arm below it is measuring the wrong thing.
+;   IX_T1/T2  THE DISCRIMINATORS. Under the tag, TOP and BOTTOM are the
+;             physical LAST and FIRST rows.
+;   IX_T3     SEEK under the tag lands on the row the key names.
+;   IX_T4     a REPLACE of an indexed field landed in the record. This cannot
+;             fail for index reasons and exists to separate the write from the
+;             index (see IX_T5).
+;   IX_T5     AND THE INDEX KNOWS: SEEK finds the row by its NEW key. THIS IS
+;             THE ONE ARM THAT MAY LEGITIMATELY GO RED ON A GREEN BUILD --
+;             DELETE's own contract says direct-write mode updates active index
+;             backends "best-effort". A red here with IX_T4 GREEN is a
+;             MEASUREMENT of live CDX maintenance, not a broken fixture, and
+;             must be reported as a finding rather than tuned away.
+;   IX_T6/T7  SET ORDER TO 0 puts the walk back on physical.
+;
+; NOT CLAIMED, stated rather than implied: v2's COPY TO / WITH SIDECARS arm is
+; GONE and is not replaced here -- copying a table is COPY's subject, not the
+; index rule's, and it was the half that needed a shipped fixture. FIND and
+; LOCATE under an active order are likewise dropped; NAV_NATURAL owns cursor
+; movement and this spec owns the container. Nothing here asserts the LMDB
+; environment's CONTENTS: BUILDLMDB reporting OK is the only reading taken, and
+; no marker in this language can open an env.
+;
+; Disposable SANDBOX fixture, erased at both ends; mints no catalog rows.
+; ============================================================
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
 
 ECHO ============================================================
-ECHO INDEX V64 CDX/LMDB SMOKE v2
+ECHO INDEX V64 CDX/LMDB SMOKE v3
 ECHO ============================================================
 
-* Self-bootstrap without nested DOTSCRIPT dependency.
 SET PATH DBF DBF/SANDBOX
 SET PATH INDEXES INDEXES/SANDBOX
 SET PATH LMDB LMDB/SANDBOX
 WORKSPACE CLOSE
-ERASE students_cdx_smoke CONFIRM
+ERASE idxsmoke CONFIRM
+
+FORMULA "INDEX-X64-SMOKE-BEGIN"
+
+SELECT 0
+CREATE X64 IDXSMOKE (SID N(6,0), LNAME C(12), MARK C(8))
+APPEND
+REPLACE SID WITH 106
+REPLACE LNAME WITH "WHITMORE"
+REPLACE MARK WITH "ROW1"
+APPEND
+REPLACE SID WITH 105
+REPLACE LNAME WITH "TANNER"
+REPLACE MARK WITH "ROW2"
+APPEND
+REPLACE SID WITH 104
+REPLACE LNAME WITH "PRIOR"
+REPLACE MARK WITH "ROW3"
+APPEND
+REPLACE SID WITH 103
+REPLACE LNAME WITH "HOLLIS"
+REPLACE MARK WITH "ROW4"
+APPEND
+REPLACE SID WITH 102
+REPLACE LNAME WITH "DRAYTON"
+REPLACE MARK WITH "ROW5"
+APPEND
+REPLACE SID WITH 101
+REPLACE LNAME WITH "ASHBY"
+REPLACE MARK WITH "ROW6"
 
 ECHO
-ECHO --- OPEN ORIGINAL STUDENTS AND CONFIRM V64/CDX ---
-USE students
-AREA
-FIELDS
-COUNT
-TOP
-TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
+ECHO --- the fixture, physical order: LNAME runs DESCENDING down the file ---
+SMARTLIST SID,LNAME,MARK
+
+GO 1
+? "IX_G0_physical_first_row_is_ROW1:" + (ALLTRIM(MARK) = "ROW1")
+GO 6
+? "IX_G1_physical_last_row_is_ROW6:" + (ALLTRIM(MARK) = "ROW6")
 
 ECHO
-ECHO --- ATTACH CDX AND ORDER BY LNAME ---
-SET INDEX TO students
-SET ORDER TO TAG LNAME
-AREA
-TOP
-TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
-SMARTLIST LNAME,FNAME,SID NEXT 10
-
-ECHO
-ECHO --- SEEK / FIND / LOCATE UNDER CDX ORDER ---
-SEEK WHITE
-TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
-FIND MARTIN
-TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
-LOCATE FOR LNAME = CLARK
-TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
-
-ECHO
-ECHO --- SWITCH ORDER TO SID ---
-SET ORDER TO TAG SID
-AREA
-TOP
-TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
-SEEK 50000016
-TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
-
-ECHO
-ECHO --- MAKE DISPOSABLE COPY ---
-USE students
-COPY TO students_cdx_smoke WITH SIDECARS OVERWRITE
-CLOSE
-USE students_cdx_smoke
-AREA
-COUNT
-TOP
-TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
-
-ECHO
-ECHO --- BUILD/ATTACH CDX FOR DISPOSABLE COPY ---
+ECHO --- build the container this spec exists to test ---
 CDX CREATE
-CDX ADDTAG SID
 CDX ADDTAG LNAME
-BUILDLMDB CLEAN YES
-SET INDEX TO students_cdx_smoke
-SET ORDER TO TAG LNAME
-AREA
-SMARTLIST LNAME,FNAME,SID NEXT 10
+BUILDLMDB
+SET INDEX TO idxsmoke
 
 ECHO
-ECHO --- MUTATE INDEXED FIELD AND VERIFY SEEK ---
+ECHO --- THE CONTROL: attached, no tag, the walk must still be PHYSICAL ---
+STATUS
+GO 4
 TOP
-TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
-REPLACE LNAME WITH "ZZZ_CDX_SMOKE"
-TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
+? "IX_G2_attached_with_no_tag_walks_physical:" + (ALLTRIM(MARK) = "ROW1")
 
-ECHO
-ECHO --- SEEK MUTATED VALUE ---
 SET ORDER TO TAG LNAME
-SEEK ZZZ_CDX_SMOKE
-TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
 
 ECHO
-ECHO --- RESTORE MUTATED FIELD ---
-REPLACE LNAME WITH "GRIMWOOD"
-TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
-SEEK GRIMWOOD
-TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
+ECHO --- tag order, which is the exact reverse of physical ---
+SMARTLIST SID,LNAME,MARK
 
-ECHO
-ECHO --- CLEAR ORDER / PHYSICAL CHECK ---
-SET ORDER TO 0
-AREA
+GO 1
 TOP
-TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
+? "IX_T1_tag_top_is_the_physically_last_row:" + (ALLTRIM(MARK) = "ROW6")
+GO 6
 BOTTOM
-TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
+? "IX_T2_tag_bottom_is_the_physically_first_row:" + (ALLTRIM(MARK) = "ROW1")
 
 ECHO
-ECHO --- CLOSE; CLEANUP MAY NEED MANUAL FILE ERASE IF ERASE TABLE DOES NOT FIND COPY ---
-CLOSE
-ERASE students_cdx_smoke CONFIRM
-ECHO Suggested manual cleanup if needed:
-ECHO ERASE students_cdx_smoke.dbf and students_cdx_smoke.cdx / LMDB sidecars from SANDBOX paths.
+ECHO --- SEEK under the tag ---
+GO 1
+SEEK HOLLIS
+? "IX_T3_seek_lands_on_the_row_the_key_names:" + (ALLTRIM(MARK) = "ROW4")
+
+ECHO
+ECHO --- mutate an indexed field: the write, then the index, as TWO claims ---
+REPLACE LNAME WITH "ZYGON"
+? "IX_T4_the_replace_landed_in_the_record:" + (ALLTRIM(LNAME) = "ZYGON")
+GO 1
+SEEK ZYGON
+? "IX_T5_and_the_index_found_it_by_the_new_key:" + (ALLTRIM(MARK) = "ROW4")
+
+ECHO
+ECHO --- restore, then clear the order and check physical is back ---
+GO 4
+REPLACE LNAME WITH "HOLLIS"
+SET ORDER TO 0
+GO 4
+TOP
+? "IX_T6_cleared_order_walks_physical_from_the_top:" + (ALLTRIM(MARK) = "ROW1")
+GO 1
+BOTTOM
+? "IX_T7_cleared_order_walks_physical_to_the_end:" + (ALLTRIM(MARK) = "ROW6")
+
+FORMULA "INDEX-X64-SMOKE-END"
+
+WORKSPACE CLOSE
+ERASE idxsmoke CONFIRM
 
 ECHO ============================================================
-ECHO INDEX V64 CDX/LMDB SMOKE v2 DONE
+ECHO INDEX V64 CDX/LMDB SMOKE v3 DONE
 ECHO ============================================================
