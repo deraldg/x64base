@@ -1,0 +1,217 @@
+ALTERNATE TO: D:\code\ccode\labtalk\proofs\runs\20260915_aif136_m5a_reconstruction_stage1.txt
+Alternate is ON
+ABOUT - Page 1 of 2
+===================
+
+DotTalk++
+
+Author
+ Derald Grimwood
+
+Dedicated to
+ Kathy Grimwood
+
+Project
+ DotTalk++ is a modern C++ xBase-inspired database runtime and command shell.
+
+Heritage
+ The DotTalk++ command model draws inspiration from the classic xBase
+ lineage of database languages:
+
+ dBase - early interactive database shell
+ Clipper - compiled xBase systems
+ FoxPro - relational navigation and index-driven querying
+
+ DotTalk++ preserves many of the familiar commands and workflows from
+ these systems while extending them with:
+
+ modern help catalogs
+ relational traversal (REL ENUM)
+ tuple projection
+ scripting and automation
+
+ DotTalk++ also combines aspects of both the interactive xBase model
+ and the compiled application model. Like dBase and FoxPro, it provides
+ a live command shell for exploring data. Like Clipper, it can be extended
+ through source code and compiled. It is also structured as modular
+ runtime libraries, including xbase and xindex, beneath the shell.
+
+History
+ The project traces back to 1993, when Derald Grimwood wrote a small
+ ANSI C database program as a practical and experimental system,
+ including fixed-length record storage and a simple in-memory B-tree.
+
+ In 2025, that earlier work was revived and used as the conceptual basis
+ for a modern 64-bit rebuild in C++. The result became DotTalk++:
+ not a direct port, but a broader reimplementation and expansion.
+
+Current Direction
+ DotTalk++ aims to retain the clarity of the xBase interaction model
+ while making the engine suitable for modern experimentation and
+ education.
+
+ It is intended to serve as:
+ - a working DBF database runtime
+ - a relational exploration environment
+ - a scripting and automation shell
+ - a teaching system for database concepts
+
+ Internally, DotTalk++ is also organized as a modular system:
+ - xbase : core DBF/table/runtime library
+ - xindex : indexing library
+ - dottalk : command shell and interactive environment
+
+ In this sense, DotTalk++ sits between FoxPro and Clipper:
+ - interactive and stateful like FoxPro
+ - extensible and compilable like Clipper
+
+Design Philosophy
+ DotTalk++ is intentionally stateful and interactive.
+
+ It exposes important runtime concepts directly, including:
+ - current work area
+ - current record pointer
+ - active order/index
+ - active filter
+ - relation graph
+ - buffering state
+
+ The goal is to make database behavior visible and understandable during
+ live operation, rather than hiding it behind abstraction.
+
+Working Model
+ DotTalk++ can be understood as four cooperating layers:
+
+ 1. Command Layer - interactive commands and scripting
+ 2. Data Layer - tables, records, fields, indexes
+ 3. Logic Layer - expressions, predicates, control flow
+ 4. Projection Layer - LIST, SMARTLIST, TUPLE, REL ENUM, browsers
+
+Runtime Environment
+ OS family   : Windows
+ Architecture: x64
+ C++ standard: C++2020
+ Compiler    : MSVC 1944
+
+Years
+ Origin: 1993 ANSI C
+ Revival / C++ X64 modern rebuild: 2025-
+
+Summary
+ DotTalk++ honors the xBase tradition while extending it into a modern,
+ teachable, experiment-friendly database runtime.
+
+ User interfaces change, languages change, but the underlying database principles remain constant. -- Derald Grimwood
+
+ABOUT - Page 2 of 2
+===================
+
+Application
+-----------
+Name            : DotTalk++
+Build Mode      : Release
+Build Date      : Sep 11 2026 15:33:17
+Architecture    : x64
+Compiler        : MSVC 1944
+C++ Std         : 202002
+
+Operating System
+----------------
+OS              : Windows 10.0.26200
+
+Hardware
+--------
+CPU Threads     : 22
+Installed RAM   : 63.5 GB
+
+Storage
+-------
+Disk Root       : D:\
+Disk Free       : 142.5 GB
+Disk Total      : 838.4 GB
+
+Console
+-------
+Size            : 0 x 0
+ANSI / VT       : disabled
+
+Network
+-------
+Computer Name   : GRIMWOOD
+Local IPv4      : 10.0.0.181
+
+Current Session
+---------------
+File Open       : No
+Dbfile          : (none)
+Records         : 0
+Fields          : 0
+
+SETPATH: DBF = D:\code\ccode\tmp\aif136_m5a\CODEX-20260915-AIF136-M5A-001\dbf
+SETPATH: INDEXES = D:\code\ccode\tmp\aif136_m5a\CODEX-20260915-AIF136-M5A-001\indexes
+SETPATH: LMDB = D:\code\ccode\tmp\aif136_m5a\CODEX-20260915-AIF136-M5A-001\lmdb
+REL: cleared all
+Closed.
+Opened DATA_DICTIONARY_OBJECTS (v64) : Record count 10
+Valid Index/Indices   : CDX, CNX
+Current area: 0 of {0}
+  File: DATA_DICTIONARY_OBJECTS  Recs: 10  Recno: 1
+  DBF (abs)           : D:\code\ccode\tmp\aif136_m5a\CODEX-20260915-AIF136-M5A-001\dbf\DATA_DICTIONARY_OBJECTS.dbf
+  DBF Flavor          : v64
+  Runtime kind        : v64
+  Logical name        : DATA_DICTIONARY_OBJECTS
+  Legacy name()       : DATA_DICTIONARY_OBJECTS
+  Path: D:\code\ccode\tmp\aif136_m5a\CODEX-20260915-AIF136-M5A-001\dbf\DATA_DICTIONARY_OBJECTS.dbf
+  Order: NATURAL
+Fields (7)
+  #  Name          Type   Len   Dec
+   1  CATALOG_OBJECT_ID  C       32     0
+   2  CATALOG_OBJECT_TYPE  C       64     0
+   3  CATALOG_OBJECT_NAME  C      128     0
+   4  CATALOG_OWNER_NAME  C      128     0
+   5  CATALOG_STATUS_CODE  C       64     0
+   6  CATALOG_PROFILE_CODE  C       32     0
+   7  SOURCE_ARTIFACT_ID  C       64     0
+Dbfile      : D:\code\ccode\tmp\aif136_m5a\CODEX-20260915-AIF136-M5A-001\dbf\DATA_DICTIONARY_OBJECTS.dbf  (DATA_DICTIONARY_OBJECTS.dbf)
+Index file  : (none)
+Tags        : (none)
+Active tag  : (none)
+10
+SET INDEX: CDX attached
+  Container: DATA_DICTIONARY_OBJECTS.cdx
+  LMDB env : D:\code\ccode\tmp\aif136_m5a\CODEX-20260915-AIF136-M5A-001\lmdb\DATA_DICTIONARY_OBJECTS.cdx.d
+Use SET ORDER TO TAG <tag>
+CDX file : D:\code\ccode\tmp\aif136_m5a\CODEX-20260915-AIF136-M5A-001\indexes\DATA_DICTIONARY_OBJECTS.cdx
+Tags     : 3
+  [1] CATALOG_OBJECT_ID  root_off=0  recs=0
+  [2] CATALOG_OBJECT_TYPE  root_off=0  recs=0
+  [3] CATALOG_OBJECT_NAME  root_off=0  recs=0
+BUILDLMDB: target container D:\code\ccode\tmp\aif136_m5a\CODEX-20260915-AIF136-M5A-001\indexes\DATA_DICTIONARY_OBJECTS.cdx
+BUILDLMDB: LMDB env        D:\code\ccode\tmp\aif136_m5a\CODEX-20260915-AIF136-M5A-001\lmdb\DATA_DICTIONARY_OBJECTS.cdx.d
+BUILDLMDB: mapsize         134217728 bytes (128 MiB)
+BUILDLMDB: releasing active index/order before rebuild.
+BUILDLMDB CLEAN: discarded superseded environment (regenerable from the .cdx container; use ARCHIVE to retain it)
+ [1] CATALOG_OBJECT_ID : OK
+ [2] CATALOG_OBJECT_TYPE : OK
+ [3] CATALOG_OBJECT_NAME : OK
+BUILDLMDB: done OK=3 tags rebuilt.
+CDX container   : D:\code\ccode\tmp\aif136_m5a\CODEX-20260915-AIF136-M5A-001\indexes\DATA_DICTIONARY_OBJECTS.cdx
+LMDB environment: D:\code\ccode\tmp\aif136_m5a\CODEX-20260915-AIF136-M5A-001\lmdb\DATA_DICTIONARY_OBJECTS.cdx.d
+Mapsize         : 134217728 bytes (128 MiB)
+SET ORDER: CDX TAG 'CATALOG_OBJECT_ID' (ASC)
+      CATALOG_OBJECT_ID                CATALOG_OBJECT_TYPE                                              CATALOG_OBJECT_NAME                                                                                                              CATALOG_OWNER_NAME                                                                                                               CATALOG_STATUS_CODE                                              CATALOG_PROFILE_CODE             SOURCE_ARTIFACT_ID
+; ORDER: file 'D:\code\ccode\tmp\aif136_m5a\CODEX-20260915-AIF136-M5A-001\indexes\DATA_DICTIONARY_OBJECTS.cdx'  TAG 'CATALOG_OBJECT_ID'  MODE LMDB  ASC
+     4 OBJ_038D3910E2A03EC3C8E3         COMMAND_SURFACE                                                  DDICT TABLES                                                                                                                     DDICT                                                                                                                            REVIEW_READY_CANDIDATE                                           ENGINE                           SRC_DD092C_CMDHELPCHK_CANDIDATES
+    10 OBJ_10B13FF8898D310C2984         COMMAND                                                          DDICT                                                                                                                            DATADICT_RUNTIME                                                                                                                 REVIEW_READY_CANDIDATE                                           ENGINE                           SRC_DD092C_CMDHELPCHK_CANDIDATES
+     8 OBJ_1ED364A2329D48A2AC2A         COMMAND_SURFACE                                                  DDICT REL <object> [IN|OUT|BOTH]                                                                                                 DDICT                                                                                                                            REVIEW_READY_CANDIDATE                                           ENGINE                           SRC_DD092C_CMDHELPCHK_CANDIDATES
+     5 OBJ_3A2AD7136EA14A09404D         COMMAND_SURFACE                                                  DDICT OBJECTS                                                                                                                    DDICT                                                                                                                            REVIEW_READY_CANDIDATE                                           ENGINE                           SRC_DD092C_CMDHELPCHK_CANDIDATES
+     7 OBJ_4532A5B1FB126FC1C1FA         COMMAND_SURFACE                                                  DDICT TAGS <table>                                                                                                               DDICT                                                                                                                            REVIEW_READY_CANDIDATE                                           ENGINE                           SRC_DD092C_CMDHELPCHK_CANDIDATES
+     3 OBJ_626DAEBB8D1F7BDCB2EE         COMMAND_SURFACE                                                  DDICT STATUS                                                                                                                     DDICT                                                                                                                            REVIEW_READY_CANDIDATE                                           ENGINE                           SRC_DD092C_CMDHELPCHK_CANDIDATES
+     2 OBJ_67BE39160E7A7E46FF37         COMMAND_SURFACE                                                  DDICT HELP                                                                                                                       DDICT                                                                                                                            REVIEW_READY_CANDIDATE                                           ENGINE                           SRC_DD092C_CMDHELPCHK_CANDIDATES
+     6 OBJ_67EB8A48769CE3CF37F6         COMMAND_SURFACE                                                  DDICT FIELDS <table>                                                                                                             DDICT                                                                                                                            REVIEW_READY_CANDIDATE                                           ENGINE                           SRC_DD092C_CMDHELPCHK_CANDIDATES
+     9 OBJ_6892E6E0D01ECD3FEE3B         COMMAND_SURFACE                                                  DDICT EVIDENCE <object>                                                                                                          DDICT                                                                                                                            REVIEW_READY_CANDIDATE                                           ENGINE                           SRC_DD092C_CMDHELPCHK_CANDIDATES
+     1 OBJ_DD096X_COMMAND_SURFACE_01    COMMAND_SURFACE                                                  DDICT EVIDENCE <object>                                                                                                          DATA_DICTIONARY_RUNTIME_SURFACES                                                                                                 RUNTIME_PROVEN_SCHEMA_PROOF                                      ENGINE                           DD096VR_DD096W_PROOF_CLOSEOUT
+10 cdx(lmdb) indexed record(s) (tag=CATALOG_OBJECT_ID) listed.
+Cursor: Area 0 of 0 ... 511  Physical Recno 1, Logical Row 1
+REL: cleared all
+Closed.

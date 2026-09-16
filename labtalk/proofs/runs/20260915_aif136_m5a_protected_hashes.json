@@ -1,0 +1,226 @@
+{
+  "created_at_utc": "2026-09-16T01:28:03+00:00",
+  "environment_directory_initially_present_empty": true,
+  "environment_directory_present_after_rebuild": true,
+  "environment_directory_survived_clear": true,
+  "executable": {
+    "path": "D:/code/ccode/build/src/Release/dottalkpp.exe",
+    "sha256": "66f52cc75a4a57f095c79e1a4eb3a8b26c52c12677947f1235a8b211f9b10d8f",
+    "size_bytes": 9050624
+  },
+  "existing_directories_removed": 0,
+  "existing_files_removed": 0,
+  "m5b_action_authorized": false,
+  "manifest_id": "AIF136-M5A-001",
+  "preserved_cdx": {
+    "path": "D:/code/ccode/tmp/aif136_m5a/CODEX-20260915-AIF136-M5A-001/indexes/DATA_DICTIONARY_OBJECTS.cdx",
+    "sha256": "76b94efde9268493a31d0fd3d61f3e89c8db23a18feb79cc641f101ba2f30503",
+    "size_bytes": 1064
+  },
+  "protected_after": {
+    "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/dbf/DATA_DICTIONARY_OBJECTS.dbf": {
+      "path": "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/dbf/DATA_DICTIONARY_OBJECTS.dbf",
+      "sha256": "63412569a6ca8d5e8d1e498bee1060f95214d14c5cf3b38b2e7d5c1681ad6adf",
+      "size_bytes": 5761
+    },
+    "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/indexes/DATA_DICTIONARY_OBJECTS.cdx": {
+      "path": "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/indexes/DATA_DICTIONARY_OBJECTS.cdx",
+      "sha256": "76b94efde9268493a31d0fd3d61f3e89c8db23a18feb79cc641f101ba2f30503",
+      "size_bytes": 1064
+    },
+    "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/DATA_DICTIONARY_OBJECTS.cdx.d/data.mdb": {
+      "path": "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/DATA_DICTIONARY_OBJECTS.cdx.d/data.mdb",
+      "sha256": "1ad3b683db103aedd721210fe640057288734225ec4e42921bd952e70477f380",
+      "size_bytes": 1073741824
+    },
+    "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/DATA_DICTIONARY_OBJECTS.cdx.d/lock.mdb": {
+      "path": "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/DATA_DICTIONARY_OBJECTS.cdx.d/lock.mdb",
+      "sha256": "e13608ccfb86d55da34a2095342250a915344e8384bde3d1445530cb8b26aed4",
+      "size_bytes": 8192
+    },
+    "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_EVIDENCE_RECORDS.cdx.d_20260529_111606/data.mdb": {
+      "path": "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_EVIDENCE_RECORDS.cdx.d_20260529_111606/data.mdb",
+      "sha256": "b74af879d304cf0bb5be2b8deebb75ab63183062a39db9836af59cca908cbe6c",
+      "size_bytes": 8192
+    },
+    "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_EVIDENCE_RECORDS.cdx.d_20260529_111606/lock.mdb": {
+      "path": "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_EVIDENCE_RECORDS.cdx.d_20260529_111606/lock.mdb",
+      "sha256": "40c7a42573a0346e8df1c0e778735f138a016be42c4e89b7ca368e04d696dc4e",
+      "size_bytes": 8192
+    },
+    "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_GATE_RECORDS.cdx.d_20260529_111607/data.mdb": {
+      "path": "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_GATE_RECORDS.cdx.d_20260529_111607/data.mdb",
+      "sha256": "b74af879d304cf0bb5be2b8deebb75ab63183062a39db9836af59cca908cbe6c",
+      "size_bytes": 8192
+    },
+    "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_GATE_RECORDS.cdx.d_20260529_111607/lock.mdb": {
+      "path": "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_GATE_RECORDS.cdx.d_20260529_111607/lock.mdb",
+      "sha256": "9c5d8900ebfc56fb51014acc6c76158a4e31781db0e853169eb352d7e21c06e0",
+      "size_bytes": 8192
+    },
+    "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_OBJECTS.cdx.d_20260529_111604/data.mdb": {
+      "path": "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_OBJECTS.cdx.d_20260529_111604/data.mdb",
+      "sha256": "b74af879d304cf0bb5be2b8deebb75ab63183062a39db9836af59cca908cbe6c",
+      "size_bytes": 8192
+    },
+    "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_OBJECTS.cdx.d_20260529_111604/lock.mdb": {
+      "path": "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_OBJECTS.cdx.d_20260529_111604/lock.mdb",
+      "sha256": "bc30335232fdf9613ca3c1de50c36fd109f63dd25bd25f5b961b8efa3b80c312",
+      "size_bytes": 8192
+    },
+    "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_OBJECT_ATTRIBUTES.cdx.d_20260529_111605/data.mdb": {
+      "path": "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_OBJECT_ATTRIBUTES.cdx.d_20260529_111605/data.mdb",
+      "sha256": "b74af879d304cf0bb5be2b8deebb75ab63183062a39db9836af59cca908cbe6c",
+      "size_bytes": 8192
+    },
+    "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_OBJECT_ATTRIBUTES.cdx.d_20260529_111605/lock.mdb": {
+      "path": "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_OBJECT_ATTRIBUTES.cdx.d_20260529_111605/lock.mdb",
+      "sha256": "4c3e1701f4d7df518c43fda9a4fa68a352395e9ae5d44083bcfa9093ba7406df",
+      "size_bytes": 8192
+    },
+    "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_RELATION_EDGES.cdx.d_20260529_111606/data.mdb": {
+      "path": "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_RELATION_EDGES.cdx.d_20260529_111606/data.mdb",
+      "sha256": "b74af879d304cf0bb5be2b8deebb75ab63183062a39db9836af59cca908cbe6c",
+      "size_bytes": 8192
+    },
+    "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_RELATION_EDGES.cdx.d_20260529_111606/lock.mdb": {
+      "path": "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_RELATION_EDGES.cdx.d_20260529_111606/lock.mdb",
+      "sha256": "835e922289f1743c46bc17fe625de4fe8e51ea8c841fc747edbf3f484640945b",
+      "size_bytes": 8192
+    },
+    "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_RUNS.cdx.d_20260529_110437/data.mdb": {
+      "path": "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_RUNS.cdx.d_20260529_110437/data.mdb",
+      "sha256": "b74af879d304cf0bb5be2b8deebb75ab63183062a39db9836af59cca908cbe6c",
+      "size_bytes": 8192
+    },
+    "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_RUNS.cdx.d_20260529_110437/lock.mdb": {
+      "path": "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_RUNS.cdx.d_20260529_110437/lock.mdb",
+      "sha256": "a03c6fbc09338ebc9f81a2d68f0bfb1d268d91fb8138bedf8c2736e15182e93a",
+      "size_bytes": 8192
+    }
+  },
+  "protected_before": {
+    "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/dbf/DATA_DICTIONARY_OBJECTS.dbf": {
+      "path": "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/dbf/DATA_DICTIONARY_OBJECTS.dbf",
+      "sha256": "63412569a6ca8d5e8d1e498bee1060f95214d14c5cf3b38b2e7d5c1681ad6adf",
+      "size_bytes": 5761
+    },
+    "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/indexes/DATA_DICTIONARY_OBJECTS.cdx": {
+      "path": "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/indexes/DATA_DICTIONARY_OBJECTS.cdx",
+      "sha256": "76b94efde9268493a31d0fd3d61f3e89c8db23a18feb79cc641f101ba2f30503",
+      "size_bytes": 1064
+    },
+    "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/DATA_DICTIONARY_OBJECTS.cdx.d/data.mdb": {
+      "path": "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/DATA_DICTIONARY_OBJECTS.cdx.d/data.mdb",
+      "sha256": "1ad3b683db103aedd721210fe640057288734225ec4e42921bd952e70477f380",
+      "size_bytes": 1073741824
+    },
+    "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/DATA_DICTIONARY_OBJECTS.cdx.d/lock.mdb": {
+      "path": "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/DATA_DICTIONARY_OBJECTS.cdx.d/lock.mdb",
+      "sha256": "e13608ccfb86d55da34a2095342250a915344e8384bde3d1445530cb8b26aed4",
+      "size_bytes": 8192
+    },
+    "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_EVIDENCE_RECORDS.cdx.d_20260529_111606/data.mdb": {
+      "path": "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_EVIDENCE_RECORDS.cdx.d_20260529_111606/data.mdb",
+      "sha256": "b74af879d304cf0bb5be2b8deebb75ab63183062a39db9836af59cca908cbe6c",
+      "size_bytes": 8192
+    },
+    "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_EVIDENCE_RECORDS.cdx.d_20260529_111606/lock.mdb": {
+      "path": "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_EVIDENCE_RECORDS.cdx.d_20260529_111606/lock.mdb",
+      "sha256": "40c7a42573a0346e8df1c0e778735f138a016be42c4e89b7ca368e04d696dc4e",
+      "size_bytes": 8192
+    },
+    "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_GATE_RECORDS.cdx.d_20260529_111607/data.mdb": {
+      "path": "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_GATE_RECORDS.cdx.d_20260529_111607/data.mdb",
+      "sha256": "b74af879d304cf0bb5be2b8deebb75ab63183062a39db9836af59cca908cbe6c",
+      "size_bytes": 8192
+    },
+    "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_GATE_RECORDS.cdx.d_20260529_111607/lock.mdb": {
+      "path": "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_GATE_RECORDS.cdx.d_20260529_111607/lock.mdb",
+      "sha256": "9c5d8900ebfc56fb51014acc6c76158a4e31781db0e853169eb352d7e21c06e0",
+      "size_bytes": 8192
+    },
+    "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_OBJECTS.cdx.d_20260529_111604/data.mdb": {
+      "path": "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_OBJECTS.cdx.d_20260529_111604/data.mdb",
+      "sha256": "b74af879d304cf0bb5be2b8deebb75ab63183062a39db9836af59cca908cbe6c",
+      "size_bytes": 8192
+    },
+    "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_OBJECTS.cdx.d_20260529_111604/lock.mdb": {
+      "path": "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_OBJECTS.cdx.d_20260529_111604/lock.mdb",
+      "sha256": "bc30335232fdf9613ca3c1de50c36fd109f63dd25bd25f5b961b8efa3b80c312",
+      "size_bytes": 8192
+    },
+    "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_OBJECT_ATTRIBUTES.cdx.d_20260529_111605/data.mdb": {
+      "path": "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_OBJECT_ATTRIBUTES.cdx.d_20260529_111605/data.mdb",
+      "sha256": "b74af879d304cf0bb5be2b8deebb75ab63183062a39db9836af59cca908cbe6c",
+      "size_bytes": 8192
+    },
+    "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_OBJECT_ATTRIBUTES.cdx.d_20260529_111605/lock.mdb": {
+      "path": "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_OBJECT_ATTRIBUTES.cdx.d_20260529_111605/lock.mdb",
+      "sha256": "4c3e1701f4d7df518c43fda9a4fa68a352395e9ae5d44083bcfa9093ba7406df",
+      "size_bytes": 8192
+    },
+    "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_RELATION_EDGES.cdx.d_20260529_111606/data.mdb": {
+      "path": "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_RELATION_EDGES.cdx.d_20260529_111606/data.mdb",
+      "sha256": "b74af879d304cf0bb5be2b8deebb75ab63183062a39db9836af59cca908cbe6c",
+      "size_bytes": 8192
+    },
+    "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_RELATION_EDGES.cdx.d_20260529_111606/lock.mdb": {
+      "path": "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_RELATION_EDGES.cdx.d_20260529_111606/lock.mdb",
+      "sha256": "835e922289f1743c46bc17fe625de4fe8e51ea8c841fc747edbf3f484640945b",
+      "size_bytes": 8192
+    },
+    "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_RUNS.cdx.d_20260529_110437/data.mdb": {
+      "path": "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_RUNS.cdx.d_20260529_110437/data.mdb",
+      "sha256": "b74af879d304cf0bb5be2b8deebb75ab63183062a39db9836af59cca908cbe6c",
+      "size_bytes": 8192
+    },
+    "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_RUNS.cdx.d_20260529_110437/lock.mdb": {
+      "path": "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_RUNS.cdx.d_20260529_110437/lock.mdb",
+      "sha256": "a03c6fbc09338ebc9f81a2d68f0bfb1d268d91fb8138bedf8c2736e15182e93a",
+      "size_bytes": 8192
+    }
+  },
+  "protected_unchanged": true,
+  "resumed_after_validated_stage1": true,
+  "run_id": "CODEX-20260915-AIF136-M5A-001",
+  "schema": "dottalk.portal.m5a-reconstruction-proof.v1",
+  "source_container_copy_sha256": "76b94efde9268493a31d0fd3d61f3e89c8db23a18feb79cc641f101ba2f30503",
+  "source_dbf_copy_sha256": "63412569a6ca8d5e8d1e498bee1060f95214d14c5cf3b38b2e7d5c1681ad6adf",
+  "stage1_capture": {
+    "path": "D:/code/ccode/labtalk/proofs/runs/20260915_aif136_m5a_reconstruction_stage1.txt",
+    "sha256": "7ef4fb347dd1e2e7f26568b5b152dd9121791ace6da7bac65e7ec809c7199e1b",
+    "size_bytes": 12503
+  },
+  "stage1_environment_files": {
+    "data.mdb": {
+      "path": "D:/code/ccode/tmp/aif136_m5a/CODEX-20260915-AIF136-M5A-001/lmdb/DATA_DICTIONARY_OBJECTS.cdx.d/data.mdb",
+      "sha256": "12d16e75e20e8bdbfecea99ab1097e87cab4e9fea974703bc008aa244473cf47",
+      "size_bytes": 134217728
+    },
+    "lock.mdb": {
+      "path": "D:/code/ccode/tmp/aif136_m5a/CODEX-20260915-AIF136-M5A-001/lmdb/DATA_DICTIONARY_OBJECTS.cdx.d/lock.mdb",
+      "sha256": "1f845fa74b11adf77fda2c7639e0b577950acbc2458e9a69389972f47e027015",
+      "size_bytes": 8192
+    }
+  },
+  "stage2_capture": {
+    "path": "D:/code/ccode/labtalk/proofs/runs/20260915_aif136_m5a_reconstruction_stage2.txt",
+    "sha256": "4a881b7e828a38c5f00249a692627d062e1f2642bc85ff42e1bb6ab1146f28f0",
+    "size_bytes": 12503
+  },
+  "stage2_environment_files": {
+    "data.mdb": {
+      "path": "D:/code/ccode/tmp/aif136_m5a/CODEX-20260915-AIF136-M5A-001/lmdb/DATA_DICTIONARY_OBJECTS.cdx.d/data.mdb",
+      "sha256": "12d16e75e20e8bdbfecea99ab1097e87cab4e9fea974703bc008aa244473cf47",
+      "size_bytes": 134217728
+    },
+    "lock.mdb": {
+      "path": "D:/code/ccode/tmp/aif136_m5a/CODEX-20260915-AIF136-M5A-001/lmdb/DATA_DICTIONARY_OBJECTS.cdx.d/lock.mdb",
+      "sha256": "417ae855b7320f0251012f6d7775c904626177474d025c018281d6c2a880a304",
+      "size_bytes": 8192
+    }
+  },
+  "status": "PASS",
+  "workspace": "D:/code/ccode/tmp/aif136_m5a/CODEX-20260915-AIF136-M5A-001"
+}
