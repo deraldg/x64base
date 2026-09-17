@@ -36,6 +36,37 @@ Lane: AIF-120 (application-ui-dsl). Owner: `member.derald`.
 Author: `member.ai.claude.cowork`. Status: **review-needed**.
 Implements R147 section 5 item 1. **Proposes; decides nothing.**
 
+> ## PARTLY SUPERSEDED THE SAME DAY -- READ THIS FIRST
+>
+> **`AIF120_COMMIT_PRECONDITION_WORKED_EXAMPLE_V1.md` (2026-09-16) corrects
+> section 1 of this document. Section 4's driver table and section 5's ERASE
+> observation still stand; the PLACEMENT does not.**
+>
+> This document puts `ask()` in the ENGINE as a hook the drivers install into.
+> **That is backwards.** The owner then ruled the shape as CONTROL FLOW, and the
+> measurement that followed -- every one of the nine prompt sites is a GUARD, so
+> nothing is ever mid-work when it asks -- moves the asking to the SHELL:
+>
+> - the command **DECLARES** what it requires;
+> - the **DISPATCHER** checks before dispatch and owns the asking;
+> - `ASK` / `REPLY` operate where the command stream is already owned, so nothing
+>   reads stdin mid-command and the defect class is ABSENT rather than framed.
+>
+> The engine therefore never learns what a console is, which this document
+> assumed it would have to.
+>
+> **Also revised there:** `REPLY` carries a TOKEN rather than a bool -- for the
+> COMMIT precondition a VERB, because `COMMIT` and `ROLLBACK` are both registered
+> and today's y/N prompt cannot reach the second; and R145's fixed-versus-editable
+> property already covers an ENTRY prompt, which section 7 item 1 here left open.
+>
+> **WHY THIS BLOCK EXISTS RATHER THAN AN EDIT.** The 2026-09-16 closeout's whole
+> complaint was that this lane routes a reader to a stale answer with no
+> instrument in between, and it counted three stale authorities in two days. A
+> superseded design left unmarked is the fourth, authored the same afternoon by
+> the session that wrote the complaint down. R77 section 3 carries a status block
+> for the same reason.
+
 ---
 
 ## 1. The shape is ADOPTED, not invented, and the tree already has it twice
