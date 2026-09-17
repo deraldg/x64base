@@ -400,11 +400,11 @@ def generate(path, title=None, dispatch=False, stream=False):
                 for i, h in enumerate(_heads()):
                     body.append('%s%s->InsertColumn(%d, %s, wxLIST_FORMAT_LEFT, 90);'
                                 % (ind, v, i, cstr(h)))
-                # BETA-7.1 / contract 4b(b): the browse is read-only, and wxLC_REPORT
+                # Contract 4b(b): the browse is read-only, and wxLC_REPORT
                 # without wxLC_EDIT_LABELS is read-only by construction rather than
                 # by convention. Stated so a later edit does not quietly add it.
                 body.append('%s// read-only by construction: no wxLC_EDIT_LABELS '
-                            '(BETA-7.1, contract 4b(b))' % ind)
+                            '(contract 4b(b))' % ind)
                 if stream and oid in stream_refused:
                     body.append('%s// R70 REFUSED stream binding: %s'
                                 % (ind, stream_refused[oid]))

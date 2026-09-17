@@ -153,8 +153,8 @@ SPLITTER_KIND = 'splitter'
 SPLITTER_PANES = 2
 UNBOUND_KIND = 'statusbar'               # BINDING must be empty
 FRAME_KINDS  = SPEC_KINDS | ROOT_KINDS | {UNBOUND_KIND}
-# BETA-7.1: the shipped browse is read-only, editing explicitly disabled. Contract
-# 4b(b) refuses a document that says otherwise rather than ignoring it.
+# Contract 4b(b): the shipped browse is read-only, editing explicitly disabled,
+# and a document that says otherwise is refused rather than ignored.
 READONLY_KINDS = SPEC_KINDS
 FALSEY = {'false', '.f.', 'f', '0', 'no', 'off'}
 # Contract 4b(c): a statusbar renders TupleStream::status_line(); Shows filters what
@@ -243,7 +243,7 @@ def stream_refusals(m, doms=None):
             continue
         if str(pr.get('readonly', '')).strip().lower() in FALSEY:
             refuse(oid, 'ReadOnly is false -- contract 4b(b) refuses an editable '
-                        'row path (BETA-7.1)')
+                        'row path (R57.2)')
             continue
         o = str(pr.get('order', '')).strip().lower()
         if o and o not in STREAM_ORDERS and o not in DEPRECATED_ORDERS:
@@ -735,8 +735,8 @@ def check(m, p):
             ro = str(pr.get('readonly', '')).strip().lower()
             if ro in FALSEY:
                 out.append(('REFUSE', '%s %s ReadOnly=%s' % (kind, oid, ro),
-                            'BETA-7.1 locks the shipped browse to read-only and '
-                            'contract 4b(b) carries that into the kind; an editable '
+                            'contract 4b(b) locks the shipped browse to read-only '
+                            'and carries that into the kind; an editable '
                             'row path across a lock domain is not proven (R57.2)'))
         if kind == 'grid':
             # Contract 4c: these are DbTupleStream's arguments, not decoration.

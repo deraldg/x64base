@@ -115,7 +115,7 @@ def grid_spec(p):
     ro = str(p.get('readonly', '')).strip().lower()
     if ro in ('.f.', 'f', 'false', '0'):
         return None, ('the grid declares ReadOnly = .F., and contract 4b(b) carries '
-                      'BETA-7.1 into the kind -- an editable row path across a lock '
+                      'read-only into the kind -- an editable row path across a lock '
                       'domain is not proven (R57.2)')
     cc = str(p.get('columncount', '')).strip()
     if cc in ('-1', '-1.0'):
