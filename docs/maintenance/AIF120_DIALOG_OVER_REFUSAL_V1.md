@@ -157,15 +157,103 @@ falls out of doing this properly.
    documented default. Two drivers, two answers, one prompt event.
 5. **The interim refusal** for section 3, labelled interim.
 
+## 5a. AMENDED THE SAME DAY -- the prompt surface is EIGHT commands, not two, and `src/tv` is a THIRD driver
+
+Two of section 6's three unmeasured items were measured within the hour. Recorded
+here rather than quietly folded into the text above, because the first one
+corrects OI-041's own numbers.
+
+### 5a.1 OI-041 counted the files that READ stdin. That is not the prompt surface.
+
+OI-041 measured six files calling `std::cin` and named REBUILD and REINDEX as
+the prompting commands. **That is the set of DIRECT readers.** The dirty-buffer
+confirm is a SHARED HELPER, and `dottalk::dirty::maybe_prompt_*` has **nine call
+sites in five files**:
+
+| site | command |
+|---|---|
+| `shell_commands.cpp:108` | **`USE`** |
+| `shell_commands.cpp:117` | `CLOSE` |
+| `cmd_close.cpp:243,249,259` | `CLOSE` (all-areas and single) |
+| `cmd_workspace.cpp:6055` | `WORKSPACE OPEN` |
+| `cmd_workspace.cpp:6191` | `WORKSPACE CLOSE` |
+| `cmd_workspace.cpp:6407` | `WORKSPACE LOAD` |
+| `shell.cpp:716` | **`QUIT`** |
+
+plus REBUILD (`cmd_rebuild.cpp:186`) and REINDEX, which prompt directly.
+
+**EVERY ONE OF THEM CANCELS ON A NO.** Read at each site, not inferred:
+`USE canceled.`, `CLOSE canceled.`, `WORKSPACE OPEN canceled.`,
+`WORKSPACE CLOSE canceled.`, `WORKSPACE LOAD canceled.`,
+`MessageId::CloseCanceledText`, `MessageId::ShellQuitCanceled`.
+
+**SO IN THE WORKBENCH, WITH ANY DIRTY BUFFER, THE NAVIGATION SURFACE OF THE
+LANGUAGE WAITS SIXTY SECONDS AND THEN REFUSES.** The sentinel is consumed as the
+answer, it begins with `E`, both parsers default to No -- so `USE <table>` on a
+dirty table prints `USE canceled.` after a minute. `USE` is the most-typed
+command in the language.
+
+**And `QUIT` is on that list**, which means the persistent shell cannot be shut
+down cleanly while a buffer is dirty.
+
+OI-041's *"cost is sixty seconds and a silent refusal, NOT a spurious
+mutation"* remains true and is still the right reassurance. What it understated
+is WHICH COMMANDS, and the refusal of `USE` is not a minor cost.
+
+### 5a.2 The regression suite already knew, and the knowledge never crossed
+
+`src/cli/cmd_regression.cpp:5755`, in the TRIGGER VETO teardown:
+
+> *"This also clears the buffer, which is what stops CLOSE ALL raising the
+> interactive `COMMIT changes? (y/N)` prompt that would hang the arm."*
+
+**One lane engineered around this hazard inside a test while the driver that
+meets it live reported a timeout.** That is OI-024's method failure in a second
+instance: the tree could not tell a session what the tree already knew.
+
+### 5a.3 `src/tv` is a third driver, and it fails for a third reason
+
+Measured at `df5dcf062`. **TV does not use a pipe at all.**
+`src/tv/foxtalk_shell_bridge.cpp` calls `shell_execute_line(area, rawLine)`
+IN-PROCESS -- `dottalk_tvui.lib` links into `dottalkpp.exe`. No subprocess, no
+sentinel, no sixty-second wait.
+
+And `src/tv/foxtalk_redirect.cpp:90-97` redirects **`std::cout` and `std::cerr`
+only. `std::cin` is untouched.**
+
+| driver | runs the command | stdout | stdin |
+|---|---|---|---|
+| console CLI | in-process | real console | real console -- **works** |
+| GUI bridge | subprocess + pipe | captured via pipe | open pipe; the pager eats the sentinel |
+| TV (TUI) | **in-process** | **redirected to the output window** | **not redirected** -- real console, owned by TVision |
+
+So inside the TUI a prompting command **shows the question and gives no way to
+answer it**: the text reaches the output window through the redirect, and the
+`getline` then reads a console stdin that TVision's event loop has commandeered.
+Whether that blocks or returns immediately is NOT MEASURED and is not guessed
+here.
+
+**THIS STRENGTHENS SECTION 4 RATHER THAN COMPLICATING IT.** Under the stdout
+scraping this ruling rejects, TV would need a SEPARATE implementation, because
+its stdout goes through a custom `streambuf` and not a pipe. A structured prompt
+EVENT works in all three: in-process it is a callback the driver installs, across
+a pipe the GUI serialises it. **One abstraction, three consumers. Scraping would
+have needed three.**
+
 ## 6. Not measured
 
-- **`src/tv`.** Never opened. If it drives the engine through the same shape
-  there are THREE drivers with one absence between them, which changes what
-  this costs.
+Two items that stood here have been answered in section 5a and are struck.
+
 - **Whether a modal can be raised from the bridge's worker thread** as it is
   currently structured, or whether the answer has to cross to the UI thread.
-- **Whether any prompt in the tree asks something that is not y/N.** Only the
-  two parsers in OI-041 were read.
+- **What TVision's event loop does to a blocking `getline`** on a stdin it has
+  commandeered -- section 5a.3 names the state and deliberately does not guess
+  at the symptom.
+- ~~`src/tv`, never opened~~ -- MEASURED, section 5a.3. It is a third driver and
+  it fails for a third reason.
+- ~~whether any prompt asks something that is not y/N~~ -- every prompt found is
+  y/N: two direct parsers plus one shared helper reached from nine sites. The
+  helper is the reason the surface is wider than the reader count (5a.1).
 
 ## 7. How to verify
 
