@@ -454,6 +454,147 @@ function Invoke-DotTalkWbRuntime {
     }
 }
 
+function Resolve-DotTalkPython {
+    # ONE interpreter resolver for the launchers. Until 2026-09-18 there were
+    # four, and three of them were a single hardcoded path that had stopped
+    # resolving -- or had never resolved:
+    #
+    #   run-bible.ps1      build\vcpkg_installed\x64-windows\tools\python3\python.exe
+    #   pydottalk.ps1      build-labtalk\vcpkg_installed\...\tools\python3\python.exe
+    #   run-pydottalk.ps1  the same build-labtalk path
+    #
+    # Measured 2026-09-18: build\vcpkg_installed\x64-windows\tools\python3\
+    # holds only Lib, no python.exe. build-labtalk was reclaimed 2026-09-17,
+    # and build_pydottalk.ps1 had already measured on 2026-08-17 that its
+    # tools\ directory held only pkgconf. So all three named a path that could
+    # not answer, and each one threw at its own Test-Path a line later instead
+    # of trying anything else.
+    #
+    # ORDER MATTERS, and it depends on WHAT THE INTERPRETER IS FOR:
+    #
+    #   HostTools (default) -- running this repo's .py, and importing a built
+    #       pydottalk module. CLAUDE.md pins these to the repo venv .venv312
+    #       and NOT to the vcpkg python, which is minimal and carries no PyYAML
+    #       (-> ModuleNotFoundError: yaml).
+    #
+    #   BuildExtension -- configuring CMake for the module itself. There the
+    #       vcpkg install wins, because FindPython3 needs Development (headers
+    #       plus lib), which a venv only resolves through its base prefix.
+    #       .venv312\pyvenv.cfg names that base outright:
+    #           home    = C:\Users\deral\vcpkg\installed\x64-windows\tools\python3
+    #           version = 3.12.9
+    #       build_pydottalk.ps1 keeps its own copy of that ordering and is
+    #       deliberately NOT changed here: it is the one resolver that was
+    #       already correct, and it runs without loading this file.
+    #
+    # The @( ) around the whole pipeline is load-bearing, not style. When
+    # exactly one candidate survives, Where-Object returns a bare STRING, and
+    # [0] on a string yields a CHARACTER: build_pydottalk.ps1 once resolved its
+    # interpreter to "D" that way, and CMake then reported a missing Python3
+    # rather than a bad path.
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$RepoRoot,
+
+        # An explicit answer from the caller wins over every candidate below.
+        # Empty means "resolve it for me".
+        [string]$PythonExe = '',
+
+        [ValidateSet('HostTools', 'BuildExtension')]
+        [string]$Purpose = 'HostTools',
+
+        [string]$VcpkgRoot = $env:VCPKG_ROOT,
+
+        [string]$VcpkgTriplet = 'x64-windows',
+
+        [string]$Label = 'Python'
+    )
+
+    if (-not $PythonExe) {
+        $vcpkgRootPython = $null
+        if ($VcpkgRoot) {
+            $vcpkgRootPython = Join-Path $VcpkgRoot "installed\$VcpkgTriplet\tools\python3\python.exe"
+        }
+
+        $venv312     = Join-Path $RepoRoot ".venv312\Scripts\python.exe"
+        $buildTree   = Join-Path $RepoRoot "build\vcpkg_installed\$VcpkgTriplet\tools\python3\python.exe"
+        $labtalkTree = Join-Path $RepoRoot "build-labtalk\vcpkg_installed\$VcpkgTriplet\tools\python3\python.exe"
+        $pydTree     = Join-Path $RepoRoot "build-pydottalk\vcpkg_installed\$VcpkgTriplet\tools\python3\python.exe"
+        $pycrudVenv  = Join-Path $RepoRoot "pycrud\.venv\Scripts\python.exe"
+
+        if ($Purpose -eq 'BuildExtension') {
+            $ordered = @($vcpkgRootPython, $pydTree, $labtalkTree, $buildTree,
+                         $env:PYDOTTALK_PYTHON, $env:PY12, $venv312, $pycrudVenv)
+        } else {
+            $ordered = @($env:PYDOTTALK_PYTHON, $env:PY12, $venv312, $vcpkgRootPython,
+                         $pydTree, $labtalkTree, $buildTree, $pycrudVenv)
+        }
+
+        $candidates = @($ordered | Where-Object { $_ -and (Test-Path -LiteralPath $_ -PathType Leaf) })
+
+        # Whatever is on PATH is deliberately NOT in that list. It is the 3.13
+        # trap, and a launcher that silently runs the wrong interpreter is the
+        # failure this function exists to stop. Name the venv instead.
+        if ($candidates.Count -eq 0) {
+            throw ("${Label}: no Python interpreter resolved under $RepoRoot. " +
+                   "Expected the repo venv .venv312\Scripts\python.exe -- build it, " +
+                   "set PY12 or PYDOTTALK_PYTHON, or pass -PythonExe.")
+        }
+
+        # Write-Host only: this function returns a PATH, and a bare string
+        # would join the output stream and hand the caller an array.
+        $PythonExe = $candidates[0]
+        Write-Host ("{0}: using {1}" -f $Label, $PythonExe)
+        if ($candidates.Count -gt 1) {
+            Write-Host ("         chosen by order from {0} candidate(s) present; the rest, in order:" -f $candidates.Count)
+            $candidates | Select-Object -Skip 1 | ForEach-Object { Write-Host ("           {0}" -f $_) }
+        }
+    }
+
+    # Assert the SHAPE of what we resolved, not merely that it is truthy. "D"
+    # is truthy.
+    if (-not (Test-Path -LiteralPath $PythonExe -PathType Leaf)) {
+        throw "${Label}: resolved interpreter is not a file: '$PythonExe'."
+    }
+    if ([IO.Path]::GetFileName($PythonExe) -notlike 'python*.exe') {
+        throw "${Label}: resolved interpreter does not look like a Python interpreter: '$PythonExe'."
+    }
+
+    return $PythonExe
+}
+
+function Resolve-DotTalkPyModuleDir {
+    # Where the BUILT pydottalk module lives. pydottalk.ps1 and
+    # run-pydottalk.ps1 both hardcoded build-labtalk\python, a tree reclaimed
+    # 2026-09-17 -- and build_pydottalk.ps1's default build directory has been
+    # build-pydottalk since 2026-08-17 in any case, so the hardcoded answer was
+    # already the wrong tree before it was deleted.
+    #
+    # Measured 2026-09-18: no build*\python directory exists in this tree at
+    # all. The module is simply not built right now, so the honest return is
+    # $null, and the CALLER names the builder. Throwing a path that was never
+    # going to be there is how these launchers looked broken instead of unbuilt.
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$RepoRoot,
+
+        [string]$ModuleDir = ''
+    )
+
+    if ($ModuleDir) { return $ModuleDir }
+    if ($env:PYDOTTALK_BIN -and (Test-Path -LiteralPath $env:PYDOTTALK_BIN)) {
+        return $env:PYDOTTALK_BIN
+    }
+
+    # Newest, not first: two stale trees can each hold a .pyd, and picking by
+    # list order is the bug Select-DotTalkNewestExisting was written for.
+    return Select-DotTalkNewestExisting -Label "pydottalk module" -Candidates @(
+        (Join-Path $RepoRoot "build-pydottalk\python"),
+        (Join-Path $RepoRoot "build-labtalk\python"),
+        (Join-Path $RepoRoot "build\python")
+    )
+}
+
 function Invoke-PydotTalkStarterSmokes {
     param(
         [Parameter(Mandatory = $true)]

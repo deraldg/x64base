@@ -46,7 +46,13 @@ if ($exitCode -ne 0) {
     exit $exitCode
 }
 
-$py12 = Join-Path $layout.RepoRoot "build\vcpkg_installed\x64-windows\tools\python3\python.exe"
+# Was a hardcoded build\vcpkg_installed\x64-windows\tools\python3\python.exe --
+# a path that has never existed in this tree (that directory holds only Lib,
+# measured 2026-09-18), and not the interpreter CLAUDE.md binds to the name
+# $py12 in any case.
+# One shared resolver now, in launch-common.ps1, which is already dot-sourced
+# above.
+$py12 = Resolve-DotTalkPython -RepoRoot $layout.RepoRoot -Label 'run-bible pydottalk smoke'
 $smoke = Join-Path $layout.RepoRoot "bindings\pydottalk_smoke.py"
 
 Write-Host ""
