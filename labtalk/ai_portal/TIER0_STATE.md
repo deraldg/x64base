@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-09-18T00:52:49Z
+    generated_utc : 2026-09-18T13:40:15Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,9 +11,9 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : 612384209  (2026-09-17)
+    HEAD          : b63606ec1  (2026-09-17)
     upstream      : c39e4e930
-    unpushed      : 28 commit(s) ahead of upstream
+    unpushed      : 29 commit(s) ahead of upstream
 
 ## Declared target
 
@@ -23,12 +23,12 @@ cannot drift, because nothing here is written by hand.
 ## Newest closeout
 
     file          : SESSION_CLOSEOUT_PORTAL_GATE_FAIL_CLOSED_2026-09-16.md
-    commits behind HEAD : 28
+    commits behind HEAD : 29
 
 ## Staleness warnings
 
-- The newest closeout is 28 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
-- 28 commit(s) are unpushed and invisible to a clone.
+- The newest closeout is 29 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
+- 29 commit(s) are unpushed and invisible to a clone.
 
 ## Claimed lanes (newest first)
 
@@ -52,6 +52,7 @@ cannot drift, because nothing here is written by hand.
 
     live   : 2026-07-31_cowork_bbs_agency_legs  (member.ai.claude.cowork)  [stale, reapable]
     live   : AIPR-20260729-001  (member.ai.claude.cowork)  [stale, reapable]
+    live   : CODEX-20260918-UIDEF-STOREIMAGE  (member.ai.codex)
     live   : COWORK-20260816-002  (member.ai.claude.cowork)  [stale, reapable]
     live   : COWORK-20260818-001  (member.ai.claude.cowork)  [stale, reapable]
     live   : COWORK-20260821-002  (member.ai.claude.cowork)  [stale, reapable]
