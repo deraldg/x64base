@@ -1,0 +1,54 @@
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+ECHO === JOURNAL REPLAY PROBE, PART 2 of 2 -- open, and watch recovery run ===
+ECHO
+ECHO Each USE below fires recover_table_buffer_journal. Watch for RECOVER:
+ECHO lines. Their ABSENCE is itself a result: replay is silent unless it
+ECHO refuses the log outright or fails to sync.
+
+SET PATH DBF DBF/SANDBOX
+
+ECHO
+ECHO ############## JRN1 -- CONTROL, recno 3 on a 2-record table ##############
+USE JRN1
+ECHO EXPECT 3 records, record 3 = J1 / REPLAYED:
+COUNT
+SMARTLIST 10
+USE
+
+ECHO
+ECHO ############## JRN2 -- STALE IN BOUNDS, recno 3 on 4 records ##############
+USE JRN2
+ECHO   HAZARD -> count 4 and record 3 reads J2 / REPLAYED. LIVE3 is gone and
+ECHO             the replay reported nothing
+ECHO   SAFE   -> count 5, record 3 still L3 / LIVE3, record 5 = J2
+COUNT
+SMARTLIST 10
+USE
+
+ECHO
+ECHO ############## JRN3 -- STALE OUT OF BOUNDS, recno 3 on 1 record ##########
+USE JRN3
+ECHO   HAZARD -> count 1, only SEED1. A COMMITTED row was dropped in silence
+ECHO             and the log was deleted on the way out
+ECHO   SAFE   -> count 2 with the row appended, or a REFUSED/kept log
+COUNT
+SMARTLIST 10
+USE
+
+ECHO
+ECHO ############## JRN4 -- THE BLEND, recno 3 setting only field 2 ###########
+USE JRN4
+ECHO   BLEND  -> count 4 and record 3 reads L3 / BLENDED. Not the old row, not
+ECHO             the new one -- ID survived from LIVE3 and TAG came from the
+ECHO             journal. This is the shape that looks like valid data
+ECHO   SAFE   -> count 5, record 3 still L3 / LIVE3
+COUNT
+SMARTLIST 10
+USE
+
+ECHO
+ECHO --- did the logs survive? a deleted log means recovery called itself done
+ECHO Run this after the script:  dir dottalkpp\data\DBF\SANDBOX\JRN*.tbj
+ECHO === part 2 done ===

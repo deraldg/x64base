@@ -1,0 +1,216 @@
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+ECHO === SQLSEL INSERT vs AN INTERVENING APPEND: what does COMMIT do? ===
+ECHO
+ECHO THE QUESTION. sqlsel_statement.cpp:3859 reserves a recno for a buffered
+ECHO INSERT as recCount64() + 1, then bumps past any recno already staged as
+ECHO CHANGE_INSERT. cmd_commit.cpp:363 appends a NEW record only when
+ECHO   rn == A.recCount64() + 1
+ECHO and otherwise falls to an else that does gotoRec64(rn) and writes the
+ECHO staged fields into whatever record is already there. If the table GROWS
+ECHO between the INSERT and the COMMIT, the reservation goes stale and the
+ECHO else branch is what runs.
+ECHO
+ECHO THIS IS ONE PROCESS ON PURPOSE. APPEND is immediate and unbuffered, so a
+ECHO single process can grow the table inside the transaction window. That
+ECHO measures the COMMIT PATH, which is the same code two processes reach.
+ECHO
+ECHO v2, after the v1 run. v1 tried to use the legacy bare INSERT verb as a
+ECHO second interloper and it never fired -- shell_api.cpp:364 ALIASES INSERT
+ECHO to SQLSEL whenever SET MODE SQL is in force, so v1's ARM C and ARM D got
+ECHO "INSERT requires INTO <table>" and quietly became two more copies of the
+ECHO control. ARM C is now the arm that PROVES that aliasing instead of
+ECHO tripping over it, and ARM D uses APPEND BLANK like ARM B.
+ECHO
+ECHO NO ECHO LINE BELOW MAY END IN A SEMICOLON. v1 had two that did, and the
+ECHO parser read the trailing ";" as a separator and swallowed the newline,
+ECHO so the following ECHO printed as literal text inside the previous line.
+ECHO
+ECHO Reads are SMARTLIST, not LIST. OWNER RULING 2026-09-19.
+
+SET PATH DBF DBF/SANDBOX
+
+ECHO
+ECHO ############################################################
+ECHO ARM 0 -- does the bare INSERT verb honour TABLE ON at all?
+ECHO ############################################################
+ECHO NATIVE mode, so this really is cmd_sql_insert.cpp and not the alias.
+ERASE SQLINS CONFIRM
+CREATE X64 SQLINS (ID C(4), TAG C(12))
+USE SQLINS
+TABLE ON
+INSERT (ID,TAG) VALUES ("B0","BAREINS")
+ECHO If BAREINS is on disk below with NO COMMIT having run, the bare verb
+ECHO bypassed the table buffer entirely -- it is not a buffered-mode citizen.
+ECHO record count:
+COUNT
+SMARTLIST 10
+ROLLBACK
+ECHO after ROLLBACK -- if BAREINS survives, it was never buffered:
+COUNT
+SMARTLIST 10
+TABLE OFF
+
+ECHO
+ECHO ############################################################
+ECHO ARM A -- CONTROL. SQLSEL INSERT, nothing intervenes.
+ECHO ############################################################
+USE
+ERASE SQLINS CONFIRM
+CREATE X64 SQLINS (ID C(4), TAG C(12))
+USE SQLINS
+INSERT (ID,TAG) VALUES ("S1","SEED1")
+INSERT (ID,TAG) VALUES ("S2","SEED2")
+ECHO seeded, expect 2:
+COUNT
+SET MODE SQL
+SQLSEL BEGIN TRANSACTION
+SQLSEL INSERT INTO SQLINS (ID,TAG) VALUES ("A1","ARM_A")
+ECHO staged -- count should still be 2 on disk:
+COUNT
+SQLSEL COMMIT
+SQLSEL ROLLBACK
+SET MODE NATIVE
+ECHO EXPECT 3 records, record 3 = A1 / ARM_A:
+COUNT
+SMARTLIST 10
+
+ECHO
+ECHO ############################################################
+ECHO ARM B -- APPEND BLANK intervenes. ONE staged row.
+ECHO ############################################################
+USE
+ERASE SQLINS CONFIRM
+CREATE X64 SQLINS (ID C(4), TAG C(12))
+USE SQLINS
+INSERT (ID,TAG) VALUES ("S1","SEED1")
+INSERT (ID,TAG) VALUES ("S2","SEED2")
+SET MODE SQL
+SQLSEL BEGIN TRANSACTION
+SQLSEL INSERT INTO SQLINS (ID,TAG) VALUES ("B1","ARM_B")
+ECHO staged at recno 3. Now grow the table IMMEDIATELY, inside the window.
+ECHO APPEND goes through append_support.cpp:619, which DOES take the table
+ECHO lock -- but the owner token is host:pid:ms minted once per process, so
+ECHO in ONE process the lock is re-entrant and this gets through. Across two
+ECHO processes it would be refused, and that is the fence working.
+APPEND BLANK
+ECHO after APPEND, expect 3 on disk:
+COUNT
+SQLSEL COMMIT
+SQLSEL ROLLBACK
+SET MODE NATIVE
+ECHO
+ECHO   HAZARD  -> count 3, record 3 reads B1 / ARM_B. The appended blank row
+ECHO              was silently overwritten and COMMIT said nothing
+ECHO   SAFE    -> count 4, record 3 blank, record 4 reads B1 / ARM_B
+ECHO   REFUSED -> COMMIT printed a refusal and the buffer is still held
+COUNT
+SMARTLIST 10
+
+ECHO
+ECHO ############################################################
+ECHO ARM C -- the NO-LOCK door, and why it needs two processes.
+ECHO ############################################################
+ECHO cmd_sql_insert.cpp calls A.appendBlank() / A.writeCurrent() directly and
+ECHO the string try_lock_table appears nowhere in that file. DbArea::appendBlank
+ECHO (dbf_file.cpp:364) takes no lock either. So the legacy verb can grow a
+ECHO table that another process has fenced with a table lock.
+ECHO
+ECHO THIS ARM CANNOT PROVOKE THAT IN ONE PROCESS, and says so rather than
+ECHO pretending. In SQL mode shell_api.cpp:364 routes INSERT to SQLSEL, and
+ECHO SET MODE NATIVE is refused while a transaction is open (cmd_set.cpp:730).
+ECHO There is no in-process path to the legacy verb inside the window.
+ECHO
+ECHO What it DOES assert is the aliasing itself, because that aliasing is the
+ECHO only thing standing between a SQL-mode session and the unlocked door.
+USE
+ERASE SQLINS CONFIRM
+CREATE X64 SQLINS (ID C(4), TAG C(12))
+USE SQLINS
+INSERT (ID,TAG) VALUES ("S1","SEED1")
+SET MODE SQL
+ECHO A bare INSERT in SQL mode must be REFUSED BY THE SQLSEL PARSER
+ECHO ("INSERT requires INTO <table> ..."). If it instead says "1 row(s)
+ECHO inserted", the alias is gone and the unlocked door is open in-process.
+INSERT (ID,TAG) VALUES ("C1","ARM_C")
+ECHO And SET MODE NATIVE inside an open transaction must be REFUSED.
+SQLSEL BEGIN TRANSACTION
+SQLSEL INSERT INTO SQLINS (ID,TAG) VALUES ("C2","ARM_C2")
+SET MODE NATIVE
+ECHO If the line above said "MODE: NATIVE" the escape hatch is real.
+SQLSEL ROLLBACK
+SET MODE NATIVE
+ECHO expect 1 record, the seed only:
+COUNT
+SMARTLIST 10
+
+ECHO
+ECHO ############################################################
+ECHO ARM D -- TWO staged rows, ONE APPEND BLANK. The misalignment shape.
+ECHO ############################################################
+ECHO Staged recnos are 3 and 4. One interloper makes the table 3 records.
+ECHO COMMIT walks the multimap in ascending recno. recno 3 finds
+ECHO 3 != recCount()+1 (4) and falls to the else -> overwrites the
+ECHO interloper. recno 4 then finds 4 == recCount()+1 (4) and appends
+ECHO correctly. So the FIRST staged row eats the interloper and the SECOND
+ECHO lands cleanly -- one row lost, applied_ok reports 2, no error anywhere.
+USE
+ERASE SQLINS CONFIRM
+CREATE X64 SQLINS (ID C(4), TAG C(12))
+USE SQLINS
+INSERT (ID,TAG) VALUES ("S1","SEED1")
+INSERT (ID,TAG) VALUES ("S2","SEED2")
+SET MODE SQL
+SQLSEL BEGIN TRANSACTION
+SQLSEL INSERT INTO SQLINS (ID,TAG) VALUES ("D1","ARM_D1"),("D2","ARM_D2")
+APPEND BLANK
+ECHO after APPEND, expect 3 on disk:
+COUNT
+SQLSEL COMMIT
+SQLSEL ROLLBACK
+SET MODE NATIVE
+ECHO
+ECHO   HAZARD  -> count 4, record 3 = D1 / ARM_D1 with the blank row eaten,
+ECHO              record 4 = D2 / ARM_D2
+ECHO   SAFE    -> count 5, record 3 blank, record 4 = D1, record 5 = D2
+COUNT
+SMARTLIST 10
+
+ECHO
+ECHO ############################################################
+ECHO ARM E -- TWO interlopers, ONE staged row. How far does it reach?
+ECHO ############################################################
+ECHO Staged recno is 3. Two APPENDs make the table 4 records. At COMMIT
+ECHO 3 != recCount()+1 (5), and the else branch guards only rn > recCount(),
+ECHO which 3 is not -- so it overwrites record 3 and record 4 survives.
+ECHO The guard is a BOUNDS CHECK, not a staleness check, and this arm is
+ECHO what shows the difference.
+USE
+ERASE SQLINS CONFIRM
+CREATE X64 SQLINS (ID C(4), TAG C(12))
+USE SQLINS
+INSERT (ID,TAG) VALUES ("S1","SEED1")
+INSERT (ID,TAG) VALUES ("S2","SEED2")
+SET MODE SQL
+SQLSEL BEGIN TRANSACTION
+SQLSEL INSERT INTO SQLINS (ID,TAG) VALUES ("E1","ARM_E")
+APPEND BLANK
+APPEND BLANK
+ECHO after two APPENDs, expect 4 on disk:
+COUNT
+SQLSEL COMMIT
+SQLSEL ROLLBACK
+SET MODE NATIVE
+ECHO
+ECHO   HAZARD  -> count 4, record 3 = E1 / ARM_E, record 4 still blank
+ECHO   SAFE    -> count 5, records 3 and 4 blank, record 5 = E1 / ARM_E
+COUNT
+SMARTLIST 10
+
+ECHO
+ECHO --- teardown ---
+SET MODE NATIVE
+USE
+ERASE SQLINS CONFIRM
+ECHO === probe done ===
