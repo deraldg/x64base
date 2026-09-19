@@ -10,6 +10,13 @@ ECHO v2. The first cut assumed 1-based areas and a bare second USE. The engine
 ECHO corrected both: areas are 0-BASED, and a duplicate open is REFUSED unless
 ECHO AGAIN is given -- "two record pointers, not one moved by SELECT", which is
 ECHO exactly the instrument this probe needs.
+ECHO
+ECHO v3. Reads go through SMARTLIST, not LIST. OWNER RULING 2026-09-19: LIST is
+ECHO the owner's own MANUAL tool -- the caller controls the cursors -- and
+ECHO SMARTLIST is the official listing command. A probe in the corpus models a
+ECHO habit whether it means to or not, so it models the official one. SMARTLIST
+ECHO declares "mutates: cursor"; every REPLACE below is already preceded by its
+ECHO own GO 1, so nothing here depends on where a read left the pointer.
 
 SET PATH DBF DBF/SANDBOX
 
@@ -22,28 +29,28 @@ REPLACE ID WITH "R1"
 REPLACE F1 WITH "ORIG1"
 REPLACE F2 WITH "ORIG2"
 GO 1
-LIST 1
+SMARTLIST 1
 
 ECHO --- second independent cursor in area 1 ---
 SELECT 1
 USE TWOWRITE AGAIN ALIAS T2
 AREA
-LIST 1
+SMARTLIST 1
 
 ECHO --- PROBE A: T2 buffers a change to F1 and does NOT commit ---
 TABLE ON
 GO 1
 REPLACE F1 WITH "FROM_T2"
-ECHO TUP shows the BUFFERED value, LIST the on-disk one:
+ECHO TUP and SMARTLIST both read through the area; compare them:
 TUP
-LIST 1
+SMARTLIST 1
 
 ECHO --- PROBE B: area 0 writes F1 IMMEDIATELY ---
 SELECT 0
 TABLE OFF
 GO 1
 REPLACE F1 WITH "FROM_A0"
-LIST 1
+SMARTLIST 1
 
 ECHO --- PROBE C: now T2 commits its STALE buffer ---
 SELECT T2
@@ -52,7 +59,7 @@ SELECT 0
 GO 1
 ECHO F1 = FROM_T2 means the stale buffered commit OVERWROTE a newer write with
 ECHO no complaint. F1 = FROM_A0 means something detected or refused it.
-LIST 1
+SMARTLIST 1
 
 ECHO --- PROBE D: the per-field question. Nobody buffered F2. ---
 ECHO F2 = ORIG2 means COMMIT writes ONLY the fields it buffered, so two editors
