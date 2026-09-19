@@ -18,6 +18,7 @@
 #include <sstream>
 
 #include "xbase.hpp"
+#include "cli/append_fence.hpp"
 #include "xbase/durable.hpp"   // AIF-161: durable_sync before the log dies
 #include "common/path_state.hpp"  // AIF-160: the SYS slot, and what it exempts
 #include "cli/group_log.hpp"      // AIF-160: the P marker asks the group log
@@ -1026,7 +1027,8 @@ bool recover_table_buffer_journal(xbase::DbArea& area, RecoverStats* out) {
             // dropped by the bare `continue` below while the log was deleted
             // anyway.
             if (tag == "I") {
-                if (!area.appendBlank() || !area.readCurrent()) { ++stats.skipped; continue; }
+                // OI-043: recovery grows a table other engines may hold.
+                if (!cli::fence::append_fenced(area) || !area.readCurrent()) { ++stats.skipped; continue; }
             } else {
                 if (recno > area.recCount64()) { ++stats.skipped; continue; }
                 if (!area.gotoRec64(recno) || !area.readCurrent()) { ++stats.skipped; continue; }

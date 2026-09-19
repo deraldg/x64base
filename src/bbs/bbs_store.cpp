@@ -14,6 +14,7 @@
 #include "bbs/bbs_schema.hpp"
 
 #include "xbase.hpp"
+#include "cli/append_fence.hpp"
 #include "xbase/dbf_create.hpp"
 #include "xbase/field_name_policy.hpp"
 #include "xbase/fields.hpp"
@@ -88,16 +89,28 @@ bool open_table(const std::string& dir, const char* name, xbase::DbArea& a, std:
 // board store concurrently and be serialized by the engine, not by convention. Appends grow the
 // record-count header, so a whole-table lock (not a per-record lock) is the correct granularity.
 // Release happens in the destructor while the area is still open (table_lock_path uses filename()).
+// OI-043, 2026-09-19: REBUILT ON THE SHARED FENCE, keeping this type's own
+// interface so no caller changes.
+//
+// What stood here was a THIRD hand-written copy of the table-lock protocol --
+// cmd_commit.cpp had one, cmd_workspace.cpp had one, this file had one -- which
+// is the shape that ends with two of them disagreeing. The shared guard now
+// lives in include/cli/append_fence.hpp and this is a thin wrapper over it.
+//
+// AND THE COPY HAD A LATENT BUG THE SHARED ONE DOES NOT. `held =
+// try_lock_table(...)` is TRUE when this process ALREADY held the lock, because
+// the lock is re-entrant for its own owner by design -- so the destructor would
+// RELEASE A FENCE THIS SCOPE DID NOT TAKE, tearing down an enclosing holder's
+// protection. Nothing nests these locks today, so it never fired; it was a
+// defect waiting for the first caller that nested them. cli::fence::TableFence
+// asks who holds the lock before taking it and releases only what it acquired.
 struct TableLock {
-    xbase::DbArea& a; bool held = false;
-    TableLock(xbase::DbArea& area, std::string& err) : a(area) {
-        std::string lerr;
-        held = xbase::locks::try_lock_table(a, &lerr);
-        if (!held && err.empty())
-            err = "bbs: table busy (locked by another process)" + (lerr.empty() ? std::string() : ": " + lerr);
+    cli::fence::TableFence fence;
+    TableLock(xbase::DbArea& area, std::string& err) : fence(area) {
+        if (!fence.ready && err.empty())
+            err = "bbs: table busy (locked by another process)" + (fence.error.empty() ? std::string() : ": " + fence.error);
     }
-    ~TableLock() { if (held) xbase::locks::unlock_table(a); }
-    explicit operator bool() const { return held; }
+    explicit operator bool() const { return fence.ready; }
     TableLock(const TableLock&) = delete;
     TableLock& operator=(const TableLock&) = delete;
 };
@@ -134,7 +147,7 @@ std::uint64_t board_id_for(const std::string& dir, const std::string& board_key,
 
 void seed_board(xbase::DbArea& a, std::string& err, std::uint64_t id, const char* bkey,
                 const char* name, int kind, const char* postperm) {
-    a.appendBlank(); RowW w{a, err};
+    (void)cli::fence::append_fenced(a); RowW w{a, err};
     w.set("ID", s_u64(id)); w.set("BKEY", bkey); w.set("NAME", name); w.set("KIND", s_int(kind));
     w.set("POSTPERM", postperm); w.set("STATUS", "0");
     w.set("VFROM", s_u64(now_epoch())); w.set("VTHRU", "0"); w.set("ROWVER", "1");
@@ -284,7 +297,7 @@ bool post_new(const std::string& dir, const std::string& board_key, const std::s
     { xbase::DbArea a; if (!open_table(dir, "SYSTHREAD", a, err)) return false;
       bool wrote = false;
       { TableLock lk(a, err);
-        if (lk) { a.appendBlank(); RowW w{a, err};
+        if (lk) { (void)cli::fence::append_fenced(a); RowW w{a, err};
           w.set("ID", s_u64(tid)); w.set("BOARDID", s_u64(bid)); w.set("SUBJECT", subject);
           w.set("OPENEDBY", s_u64(author_id)); w.set("OPENAT", s_u64(now)); w.set("STATE", "0"); w.set("LASTPOST", s_u64(pid));
           if (w.ok) { a.writeCurrent(); wrote = true; } } }
@@ -293,7 +306,7 @@ bool post_new(const std::string& dir, const std::string& board_key, const std::s
     { xbase::DbArea a; if (!open_table(dir, "SYSPOST", a, err)) return false;
       bool wrote = false;
       { TableLock lk(a, err);
-        if (lk) { a.appendBlank(); RowW w{a, err};
+        if (lk) { (void)cli::fence::append_fenced(a); RowW w{a, err};
           w.set("ID", s_u64(pid)); w.set("BOARDID", s_u64(bid)); w.set("THREADID", s_u64(tid));
           w.set("AUTHORID", s_u64(author_id)); w.set("AUTHKIND", s_int(author_kind)); w.set("KIND", "0");
           w.set("BODY", body); w.set("REFGRANT", "0"); w.set("RUNID", ""); w.set("POSTAT", s_u64(now)); w.set("STATUS", "0");
@@ -319,7 +332,7 @@ bool reply_to(const std::string& dir, std::uint64_t post_id, const std::string& 
     { xbase::DbArea a; if (!open_table(dir, "SYSPOST", a, err)) return false;
       bool wrote = false;
       { TableLock lk(a, err);
-        if (lk) { a.appendBlank(); RowW w{a, err};
+        if (lk) { (void)cli::fence::append_fenced(a); RowW w{a, err};
           w.set("ID", s_u64(pid)); w.set("BOARDID", s_u64(bid)); w.set("THREADID", s_u64(tid));
           w.set("AUTHORID", s_u64(author_id)); w.set("AUTHKIND", s_int(author_kind)); w.set("KIND", "1");
           w.set("BODY", body); w.set("REFGRANT", "0"); w.set("RUNID", ""); w.set("POSTAT", s_u64(now)); w.set("STATUS", "0");

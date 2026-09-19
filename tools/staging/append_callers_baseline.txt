@@ -1,26 +1,2 @@
-src/bbs/bbs_store.cpp :: post_new :: if (lk) { a.appendBlank(); RowW w{a, err}; :: appendBlank #1
-src/bbs/bbs_store.cpp :: post_new :: if (lk) { a.appendBlank(); RowW w{a, err}; :: appendBlank #2
-src/bbs/bbs_store.cpp :: reply_to :: if (lk) { a.appendBlank(); RowW w{a, err}; :: appendBlank #1
-src/bbs/bbs_store.cpp :: seed_board :: a.appendBlank(); RowW w{a, err}; :: appendBlank #1
-src/cli/cmd_autodbf.cpp :: import_rows :: if (!area.appendBlank()) { :: appendBlank #1
-src/cli/cmd_commit.cpp :: apply_one_recno :: if (!A.appendBlank() || !A.readCurrent()) return false; :: appendBlank #1
-src/cli/cmd_workspace.cpp :: ensure_durable_workspace :: a.appendBlank(); :: appendBlank #1
-src/cli/cmd_workspace.cpp :: save_to_memo :: a.appendBlank(); :: appendBlank #1
-src/cli/group_log.cpp :: decide_committed :: bool ok = a.appendBlank() && a.readCurrent(); :: appendBlank #1
-src/cli/group_log.cpp :: record_members :: if (!a.appendBlank() || !a.readCurrent()) { ok = false; break; } :: appendBlank #1
-src/cli/table_state.cpp :: recover_table_buffer_journal :: if (!area.appendBlank() || !area.readCurrent()) { ++stats.skipped; continue; } :: appendBlank #1
-src/dewey/hierarchy_service.cpp :: add_child :: _area.appendBlank(); :: appendBlank #1
-src/dewey/hierarchy_service.cpp :: create_root :: _area.appendBlank(); :: appendBlank #1
-src/dewey/hierarchy_service.cpp :: insert_between :: _area.appendBlank(); :: appendBlank #1
 src/help/message_catalog.cpp :: apply_seed_message_rows :: if (!area.appendBlank() || !area.readCurrent()) { :: appendBlank #1
 src/help/message_catalog.cpp :: apply_seed_text_rows :: if (!area.appendBlank() || !area.readCurrent()) { :: appendBlank #1
-src/identity/identity_dbf_store.cpp :: save_identity_tables :: a.appendBlank(); RowW w{a, err}; :: appendBlank #1
-src/identity/identity_dbf_store.cpp :: save_identity_tables :: a.appendBlank(); RowW w{a, err}; :: appendBlank #10
-src/identity/identity_dbf_store.cpp :: save_identity_tables :: a.appendBlank(); RowW w{a, err}; :: appendBlank #2
-src/identity/identity_dbf_store.cpp :: save_identity_tables :: a.appendBlank(); RowW w{a, err}; :: appendBlank #3
-src/identity/identity_dbf_store.cpp :: save_identity_tables :: a.appendBlank(); RowW w{a, err}; :: appendBlank #4
-src/identity/identity_dbf_store.cpp :: save_identity_tables :: a.appendBlank(); RowW w{a, err}; :: appendBlank #5
-src/identity/identity_dbf_store.cpp :: save_identity_tables :: a.appendBlank(); RowW w{a, err}; :: appendBlank #6
-src/identity/identity_dbf_store.cpp :: save_identity_tables :: a.appendBlank(); RowW w{a, err}; :: appendBlank #7
-src/identity/identity_dbf_store.cpp :: save_identity_tables :: a.appendBlank(); RowW w{a, err}; :: appendBlank #8
-src/identity/identity_dbf_store.cpp :: save_identity_tables :: a.appendBlank(); RowW w{a, err}; :: appendBlank #9

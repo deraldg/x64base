@@ -580,6 +580,7 @@
 #include <vector>
 
 #include "xbase.hpp"
+#include "cli/append_fence.hpp"
 #include "xbase_64.hpp"
 #include "memo/memo_auto.hpp"   // cli_memo::memo_auto_on_use / memo_auto_on_close
 #include "dottalk/minidb.hpp"       // AIF-120: the MINIDB 1 container scanner
@@ -3053,17 +3054,28 @@ static fs::path catalog_path() { return catalog_dir() / "WORKSPACES.dbf"; }
 // RAII whole-table lock; the bbs_store idiom (cross-process FLOCK,
 // pid-stamped, stale-owner recovering). Appends grow the header, so
 // whole-table granularity is correct.
+// OI-043, 2026-09-19: REBUILT ON THE SHARED FENCE, keeping this type's own
+// interface so no caller changes.
+//
+// What stood here was a THIRD hand-written copy of the table-lock protocol --
+// cmd_commit.cpp had one, cmd_workspace.cpp had one, this file had one -- which
+// is the shape that ends with two of them disagreeing. The shared guard now
+// lives in include/cli/append_fence.hpp and this is a thin wrapper over it.
+//
+// AND THE COPY HAD A LATENT BUG THE SHARED ONE DOES NOT. `held =
+// try_lock_table(...)` is TRUE when this process ALREADY held the lock, because
+// the lock is re-entrant for its own owner by design -- so the destructor would
+// RELEASE A FENCE THIS SCOPE DID NOT TAKE, tearing down an enclosing holder's
+// protection. Nothing nests these locks today, so it never fired; it was a
+// defect waiting for the first caller that nested them. cli::fence::TableFence
+// asks who holds the lock before taking it and releases only what it acquired.
 struct WsLock {
-    xbase::DbArea& a; bool held = false;
-    WsLock(xbase::DbArea& area, std::string& err) : a(area) {
-        std::string lerr;
-        held = xbase::locks::try_lock_table(a, &lerr);
-        if (!held && err.empty())
-            err = "WORKSPACE MEMO: catalog busy (locked by another process)"
-                  + (lerr.empty() ? std::string() : ": " + lerr);
+    cli::fence::TableFence fence;
+    WsLock(xbase::DbArea& area, std::string& err) : fence(area) {
+        if (!fence.ready && err.empty())
+            err = "WORKSPACE MEMO: catalog busy (locked by another process)" + (fence.error.empty() ? std::string() : ": " + fence.error);
     }
-    ~WsLock() { if (held) xbase::locks::unlock_table(a); }
-    explicit operator bool() const { return held; }
+    explicit operator bool() const { return fence.ready; }
     WsLock(const WsLock&) = delete;
     WsLock& operator=(const WsLock&) = delete;
 };
@@ -3484,7 +3496,7 @@ static bool ensure_durable_workspace(const std::string& name,
             ok        = true;
         } else {
             const std::uint64_t newId = scan.max_id + 1;
-            a.appendBlank();
+            (void)cli::fence::append_fenced(a);
             ok = set_by_name(a, "WS_ID",      std::to_string(newId), err)
               && set_by_name(a, "WS_NAME",    name, err)
               && set_by_name(a, "SCHEMA_NAME", name, err)
@@ -3885,7 +3897,7 @@ static void save_to_memo(const std::string& name, int version,
             }
         }
 
-        a.appendBlank();
+        (void)cli::fence::append_fenced(a);
         bool ok = set_by_name(a, "WS_ID", std::to_string(newId), err)
                && set_by_name(a, "WS_NAME", name, err)
                && set_by_name(a, "SCHEMA_NAME", name, err)   // display name; defaults to handle until owner supplies one

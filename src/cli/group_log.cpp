@@ -11,6 +11,7 @@
 
 #include "common/path_state.hpp"
 #include "xbase.hpp"
+#include "cli/append_fence.hpp"
 #include "xbase/dbf_create.hpp"
 #include "xbase/durable.hpp"
 #include "xbase_locks.hpp"
@@ -200,7 +201,16 @@ bool decide_committed(const std::string& key, int members, std::string* err) {
 
     const auto& owner = xbase::locks::current_owner();
 
-    bool ok = a.appendBlank() && a.readCurrent();
+    // OI-043: the group catalog is SHARED ACROSS PROCESSES BY DESIGN -- that
+    // is the entire point of a group decision row -- so it is exactly the table
+    // a second engine may be writing. A fresh fence, not a borrowed one: the
+    // member tables' fences are on different files.
+    cli::fence::TableFence catalog_fence(a);
+    if (!catalog_fence.ready) {
+        if (err) *err = "group log: catalog table locked (" + catalog_fence.error + ")";
+        return false;
+    }
+    bool ok = cli::fence::append_fenced(a) != 0 && a.readCurrent();
     if (ok) {
         ok = a.set(F_GRP_KEY, key)
           && a.set(F_DECIDED_AT, stamp_now())
@@ -308,7 +318,7 @@ bool record_members(const std::string& key,
 
     bool ok = true;
     for (const auto& m : member_paths) {
-        if (!a.appendBlank() || !a.readCurrent()) { ok = false; break; }
+        if (!cli::fence::append_fenced(a) || !a.readCurrent()) { ok = false; break; }
         if (!a.set(M_GRP_KEY, key) || !a.set(M_MEMBER, m) || !a.writeCurrent()) {
             ok = false;
             break;

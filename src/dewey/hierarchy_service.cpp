@@ -7,6 +7,7 @@
 // owner: member.derald
 // status: supported
 
+#include "cli/append_fence.hpp"
 #include "hierarchy_service.hpp"
 
 #include "xbase_cli.hpp"
@@ -509,7 +510,11 @@ bool HierarchyService::create_root(const HierNodeInput& in)
     };
     if (!gate_row(_area, row)) return false;
 
-    _area.appendBlank();
+    // OI-043: the hierarchy store is a shared engine table -- another process
+    // can hold it -- and _area is a member, so nothing in this file previously
+    // proved the append was fenced. gate_row() above validates the FIELDS; this
+    // guards the ROW COUNT, which is a different primitive and a different lock.
+    if (!cli::fence::append_fenced(_area)) return false;
     if (!write_row(_area, row)) return false;
 
     return _area.writeCurrent();
@@ -541,7 +546,11 @@ bool HierarchyService::add_child(const std::string& parent_id, const HierNodeInp
     };
     if (!gate_row(_area, row)) return false;
 
-    _area.appendBlank();
+    // OI-043: the hierarchy store is a shared engine table -- another process
+    // can hold it -- and _area is a member, so nothing in this file previously
+    // proved the append was fenced. gate_row() above validates the FIELDS; this
+    // guards the ROW COUNT, which is a different primitive and a different lock.
+    if (!cli::fence::append_fenced(_area)) return false;
     if (!write_row(_area, row)) return false;
 
     return _area.writeCurrent();
@@ -597,7 +606,11 @@ bool HierarchyService::insert_between(const std::string& left_id,
     };
     if (!gate_row(_area, row)) return false;
 
-    _area.appendBlank();
+    // OI-043: the hierarchy store is a shared engine table -- another process
+    // can hold it -- and _area is a member, so nothing in this file previously
+    // proved the append was fenced. gate_row() above validates the FIELDS; this
+    // guards the ROW COUNT, which is a different primitive and a different lock.
+    if (!cli::fence::append_fenced(_area)) return false;
     if (!write_row(_area, row)) return false;
 
     return _area.writeCurrent();

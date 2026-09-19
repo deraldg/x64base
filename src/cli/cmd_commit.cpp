@@ -400,7 +400,10 @@ static bool apply_one_recno(xbase::DbArea& A, const Agg& agg, bool talk,
     bool appended_now = false;
     std::uint64_t rn = 0;
     if (inserting) {
-        if (!A.appendBlank() || !A.readCurrent()) return false;
+        // Borrows the fence commit_area already holds (insert_lock). Routed
+        // anyway so the gate sees ONE route rather than one route plus an
+        // exception nobody re-checks.
+        if (!cli::fence::append_fenced(A) || !A.readCurrent()) return false;
         appended_now = true;
         // appendBlank ends in gotoRec64(_rec_count64), so this IS the new row.
         rn = A.recno64();
