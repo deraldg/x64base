@@ -18,7 +18,7 @@ src/cli/cmd_workspace.cpp :: ensure_durable_workspace :: a.appendBlank(); :: app
 src/cli/cmd_workspace.cpp :: save_to_memo :: a.appendBlank(); :: appendBlank #1
 src/cli/group_log.cpp :: decide_committed :: bool ok = a.appendBlank() && a.readCurrent(); :: appendBlank #1
 src/cli/group_log.cpp :: record_members :: if (!a.appendBlank() || !a.readCurrent()) { ok = false; break; } :: appendBlank #1
-src/cli/table_state.cpp :: recover_table_buffer_journal :: if (!area.appendBlank() || !area.readCurrent()) continue; :: appendBlank #1
+src/cli/table_state.cpp :: recover_table_buffer_journal :: if (!area.appendBlank() || !area.readCurrent()) { ++stats.skipped; continue; } :: appendBlank #1
 src/dewey/hierarchy_service.cpp :: add_child :: _area.appendBlank(); :: appendBlank #1
 src/dewey/hierarchy_service.cpp :: create_root :: _area.appendBlank(); :: appendBlank #1
 src/dewey/hierarchy_service.cpp :: insert_between :: _area.appendBlank(); :: appendBlank #1

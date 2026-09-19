@@ -281,7 +281,24 @@ bool is_engine_state_file(const std::string& file_path);
 // afterwards leaves binaries in the field that half-replay silently.
 // Graded by src/tests/test_journal_version_gate.cpp, whose G0 control proves
 // the fixture can replay at all before the refusal arms are believed.
-bool recover_table_buffer_journal(xbase::DbArea& area);
+// WHAT A REPLAY ACTUALLY DID (OI-044, 2026-09-19).
+//
+// The bool below means "a log was found and processed" and has never meant
+// "the rows landed". Measured 2026-09-19: a replay whose only redo record was
+// skipped returned true, printed the same success sentence as a replay that
+// applied everything, and DELETED ITS OWN LOG on the way out -- removing the
+// only durable evidence that a committed row had existed. Three arms and one
+// total loss were indistinguishable to the caller because nothing counted.
+//
+// Callers that pass `out` can tell those apart. The bool is unchanged so the
+// version-gate test and every existing caller keep compiling.
+struct RecoverStats {
+    int  applied = 0;   // redo records written to the table
+    int  skipped = 0;   // redo records the replay could not place
+    bool log_kept = false;
+};
+
+bool recover_table_buffer_journal(xbase::DbArea& area, RecoverStats* out = nullptr);
 
 // History mode control
 bool is_history_enabled(int area0);

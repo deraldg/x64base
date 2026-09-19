@@ -42,6 +42,15 @@
 //     a dirty table buffer raises the same prompt CLOSE raises, and answering
 //     No leaves the area open. Owner ruling 2026-09-19. It previously printed
 //     "missing table name" and the usage block.
+//   CRASH RECOVERY NOW SAYS WHAT IT DID (OI-044, 2026-09-19). USE replays a
+//     committed <dbf>.tbj redo log on open. It announces "recovered a
+//     committed table-buffer journal" ONLY when redo records actually landed;
+//     a replay that placed some reports applied-and-not-placed counts, and one
+//     that placed NOTHING says so instead of claiming a recovery. In either of
+//     those cases THE LOG IS KEPT rather than deleted, because a record the
+//     replay could not place is a committed row and the log is the only
+//     evidence it existed. Previously one sentence covered all three, and the
+//     log was removed regardless.
 //   USE with an argument it cannot use still shows usage.
 //   USE REFUSES arguments it does not recognize, by name (AIF-121). It used to
 //   ignore them and open into the current area anyway, which destroyed that
@@ -1071,8 +1080,39 @@ void cmd_USE(DbArea& current_area, std::istringstream& iss)
     // Crash recovery: if an interrupted COMMIT left a committed <dbf>.tbj redo
     // log, replay it into the DBF now; an uncommitted one is discarded. No-op if
     // no log is present (the common case).
-    if (dottalk::table::recover_table_buffer_journal(a)) {
-        cli::cmdout::print_line("USE: recovered a committed table-buffer journal (.tbj).");
+    //
+    // THE SENTENCE BELOW IS A CLAIM ABOUT DATA AND USED TO BE A CLAIM ABOUT A
+    // FILE (OI-044, 2026-09-19). It printed whenever a log was found and
+    // processed -- including for a replay that placed NOTHING, which is the one
+    // case where "recovered a committed ... journal" is false. Measured that
+    // day across four arms: a correct replay, one that destroyed a live record,
+    // one that applied nothing at all, and one that produced a blended row ALL
+    // printed this identical line.
+    //
+    // It is kept VERBATIM for the case where it is true, because
+    // cmd_regression.cpp pins it as a required transcript fragment and that arm
+    // replays a journal that does apply. What changed is that it no longer
+    // speaks for a replay that did not.
+    {
+        dottalk::table::RecoverStats rec;
+        if (dottalk::table::recover_table_buffer_journal(a, &rec)) {
+            if (rec.skipped == 0 && rec.applied > 0) {
+                cli::cmdout::print_line("USE: recovered a committed table-buffer journal (.tbj).");
+            } else if (rec.applied > 0) {
+                cli::cmdout::print_line(
+                    "USE: table-buffer journal PARTIALLY replayed (.tbj) -- "
+                    + std::to_string(rec.applied) + " applied, "
+                    + std::to_string(rec.skipped) + " not placed; the log was kept.");
+            } else if (rec.skipped > 0) {
+                cli::cmdout::print_line(
+                    "USE: a committed table-buffer journal (.tbj) was found and NOTHING "
+                    "was applied -- " + std::to_string(rec.skipped)
+                    + " redo record(s) could not be placed; the log was kept.");
+            }
+            // applied == 0 && skipped == 0: a log existed but carried no redo
+            // records to place. Nothing was recovered and nothing was lost, so
+            // there is nothing to announce.
+        }
     }
 
     // Memo auto-attach (best-effort, never fatal)

@@ -795,7 +795,10 @@ bool journal_note_rollback(int area0) {
 }
 
 // Crash recovery: replay a committed <dbf>.tbj on open, else discard it.
-bool recover_table_buffer_journal(xbase::DbArea& area) {
+bool recover_table_buffer_journal(xbase::DbArea& area, RecoverStats* out) {
+    RecoverStats local;
+    RecoverStats& stats = out ? *out : local;
+    stats = RecoverStats{};
     if (!area.isOpen()) return false;
 
     // SYS IS NEVER RECOVERED -- see is_engine_state_file above. This returns
@@ -1011,12 +1014,22 @@ bool recover_table_buffer_journal(xbase::DbArea& area) {
             std::string tag, prio, mode;
             std::uint64_t recno = 0;
             is >> tag >> recno >> prio >> mode;  // "I|U" <recno> <priority> <H|S>
-            if (recno == 0) continue;
-            if (tag == "I" && recno == area.recCount64() + 1) {
-                if (!area.appendBlank() || !area.readCurrent()) continue;
+            if (recno == 0) { ++stats.skipped; continue; }
+            // AN INSERT ALWAYS APPENDS (owner ruling 2026-09-19, OI-043 option
+            // A). The number in the log is the BUFFER KEY the transaction used
+            // to order its changes, not an address. What stood here was
+            // `recno == area.recCount64() + 1`, the same bounds-not-staleness
+            // shape as cmd_commit.cpp, written independently in a second file
+            // -- and worse here, because a replay runs when the operator has
+            // already lost something. Measured 2026-09-19: a stale-but-in-range
+            // key overwrote a live record, and a stale-and-out-of-range one was
+            // dropped by the bare `continue` below while the log was deleted
+            // anyway.
+            if (tag == "I") {
+                if (!area.appendBlank() || !area.readCurrent()) { ++stats.skipped; continue; }
             } else {
-                if (recno > area.recCount64()) continue;
-                if (!area.gotoRec64(recno) || !area.readCurrent()) continue;
+                if (recno > area.recCount64()) { ++stats.skipped; continue; }
+                if (!area.gotoRec64(recno) || !area.readCurrent()) { ++stats.skipped; continue; }
             }
 
             std::string pair;
@@ -1031,14 +1044,22 @@ bool recover_table_buffer_journal(xbase::DbArea& area) {
                     if (area.set(field, val)) wrote = true;
                 }
             }
-            if (wrote) (void)area.writeCurrent();
+            if (wrote) {
+                if (area.writeCurrent()) ++stats.applied; else ++stats.skipped;
+            } else {
+                // Nothing decoded. A redo record that set no field is not a
+                // record that landed, and counting it as applied is how a
+                // replay comes to report a success it did not have.
+                ++stats.skipped;
+            }
         } else if (rec_tag == "D") {
             std::istringstream is(ln);
             std::string tag;
             std::uint64_t recno = 0;
             is >> tag >> recno;                  // "D" <recno>
-            if (recno == 0 || recno > area.recCount64()) continue;
-            if (area.gotoRec64(recno) && area.readCurrent()) (void)area.deleteCurrent();
+            if (recno == 0 || recno > area.recCount64()) { ++stats.skipped; continue; }
+            if (area.gotoRec64(recno) && area.readCurrent() && area.deleteCurrent()) ++stats.applied;
+            else ++stats.skipped;
         }
         // Header, C, P, R lines: ignored HERE, and only here. Every one of
         // them was read above -- the header by the version gate, C and P by
@@ -1073,8 +1094,33 @@ bool recover_table_buffer_journal(xbase::DbArea& area) {
             std::cout << "RECOVER: warning -- journal replayed but the table was"
                          " not synced to durable media (" << sync_err << "); the"
                          " journal is KEPT and replays again at the next USE\n";
+            stats.log_kept = true;
             return true;   // replayed; log deliberately retained
         }
+    }
+
+    // OI-044: A SKIPPED RECORD IS A COMMITTED ROW THAT DID NOT LAND, AND THE
+    // LOG IS THE ONLY EVIDENCE IT EVER EXISTED.
+    //
+    // What stood here was `std::remove(path.c_str()); return true;` with no
+    // count of anything. A replay that skipped every record it carried deleted
+    // its log and reported success, indistinguishably from one that applied
+    // every record -- measured 2026-09-19, one committed row gone in silence.
+    //
+    // The durable_sync branch immediately above already keeps the log for a
+    // LESSER failure and says so in the same breath. This is that rule applied
+    // to the larger one. The note over the remove -- "idempotent replay is the
+    // property that makes recovery safe" -- is true only while the table has
+    // not changed, which is exactly the case a skip reports.
+    if (stats.skipped > 0) {
+        std::cout << "RECOVER: " << stats.applied << " redo record(s) applied, "
+                  << stats.skipped << " NOT PLACED -- " << path << "\n"
+                     "  A skipped record is a COMMITTED row that did not land.\n"
+                     "  THE LOG IS KEPT so the rows are not lost with it. A replay\n"
+                     "  cannot place a record whose table has changed underneath it;\n"
+                     "  inspect the table and the log rather than re-running USE.\n";
+        stats.log_kept = true;
+        return true;
     }
 
     std::remove(path.c_str());

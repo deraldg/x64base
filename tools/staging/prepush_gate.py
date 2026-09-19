@@ -859,6 +859,35 @@ def main() -> int:
                   "NOT blocking. Route the new call through the funnel, or exempt "
                   "the file BY ROUTE with a reason.")
 
+        # 5c-ter. APPEND CALLERS -- the same instrument for the RECORD COUNT.
+        # OI-045, wired 2026-09-19 on the owner's go.
+        #
+        # ++_rec_count64 occurs exactly ONCE in this tree (src/xbase/dbf_file.cpp,
+        # inside DbArea::appendBlank), so the grow primitive is already singular.
+        # It takes no lock and records no allocation, and 37 sites in 17 files
+        # reach it directly. Frozen there.
+        #
+        # UNTIL THIS LINE EXISTED THE BASELINE WAS A SNAPSHOT, NOT A RATCHET.
+        # The gate was built and green on 2026-09-19 and ran nowhere, so a 38th
+        # grower could have landed the next morning in silence -- the exact
+        # condition it was built to prevent, which is worth naming because a
+        # tool nobody runs reads as coverage.
+        #
+        # ITS OWN FIRST FINDING WAS ABOUT ITSELF. Keyed like the field-write
+        # gate -- file, function, call text -- it reported 26 sites and called
+        # it clean: identity_dbf_store.cpp calls `a.appendBlank(); RowW w{a,
+        # err};` ten times in one function with byte-identical text, and all ten
+        # collapsed to one key. The model survives its own key only because
+        # field writes carry a field name and a value; appendBlank takes no
+        # arguments. The key now carries an occurrence ordinal.
+        rc = _run_portal_check(
+            "tools/staging/check_append_callers.py", [], (0, 1))
+        if rc == 1:
+            print("\n  ADVISORY -- the append-caller set moved (see above). "
+                  "NOT blocking. A new table grower belongs behind the append "
+                  "gatekeeper (OI-043), or the FILE belongs in EXEMPT_FILES with "
+                  "a reason -- never the line in the baseline.")
+
         # 5c-bis. SOAK EVIDENCE -- HARD, and only ever in scope when a spec's
         # in_default_suite flag flips false -> true. Promotion doctrine wants two
         # green runs on a build nobody changed anything on; until 2026-09-08

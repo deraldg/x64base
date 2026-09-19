@@ -39,6 +39,21 @@
 // summary:
 //   Apply buffered TABLE changes to the current area or all open buffered areas,
 //   locking records at commit time and reporting persistence-stage failures.
+// notes:
+//   A BUFFERED INSERT IS ASSIGNED ITS RECORD NUMBER HERE, NOT WHEN IT WAS
+//   STAGED (owner ruling 2026-09-19, OI-043). The number a staged insert
+//   carries is a BUFFER KEY: it orders the changes and joins a statement to
+//   its own uncommitted rows. COMMIT always APPENDS an insert and the record
+//   number it lands on is minted at that moment, so a recno read back inside
+//   the transaction may differ from the one the row ends up with. Nothing may
+//   treat a pre-commit recno as an address.
+//   THE OLD BEHAVIOUR WAS NOT A WEAKER PROMISE BUT A WRONG ONE. An insert
+//   whose staged number was still in range was written OVER whatever record
+//   already held it, so a table that grew between the INSERT and the COMMIT
+//   lost a live row with no message. A DBF record's identity is its physical
+//   position, so a reservation held across a window is a promise about a gap,
+//   and a gap cannot exist in the file.
+//   UPDATE and DELETE are unaffected: they name records that already exist.
 //
 // usage:
 //   COMMIT USAGE
@@ -358,14 +373,55 @@ struct RecordLockGuard {
 
 static bool apply_one_recno(xbase::DbArea& A, const Agg& agg, bool talk,
                             bool maintain_index) {
-    const std::uint64_t rn = agg.recno;
-    if (rn == 0) return false;
+    // THE STAGED NUMBER IS A BUFFER KEY, NOT AN ADDRESS (OWNER RULING 2026-09-19,
+    // OI-043 option A). It orders the multimap and joins read-your-own-writes to
+    // its row. It is NOT where the record goes.
+    //
+    // WHAT STOOD HERE UNTIL THIS RULING:
+    //
+    //     if (inserting && rn == A.recCount64() + 1) { appendBlank(); }
+    //     else { if (rn > A.recCount64()) return false; gotoRec64(rn); }
+    //
+    // A BOUNDS CHECK WHERE A STALENESS CHECK BELONGED. The `else` asked only
+    // whether the number was past the end of the file, never whether it was
+    // still true -- so a table that GREW between the INSERT and this COMMIT
+    // sent a staged insert down the else branch and wrote it over a live
+    // record. Measured 2026-09-19, silently, on three arms: one intervening
+    // APPEND destroyed the appended row; two staged rows plus one interloper
+    // ate the interloper and reported applied_ok = 2; one staged row plus TWO
+    // interlopers overwrote record 3 and left record 4 alone, which is the
+    // bounds-not-staleness signature in one line.
+    //
+    // NO GUARD HERE COULD HAVE FIXED IT, and that is why the ruling is at this
+    // level rather than on the comparison. A DBF record's identity IS its
+    // physical position -- gotoRec64 is arithmetic plus a bounds test, with no
+    // directory and no free list -- so record 211 cannot exist unless 201-210
+    // do. A reservation that survives a window is a promise about a gap, and a
+    // gap is representable in an allocator and NOT representable in the file.
+    // The owner's case settles it: if A reserves 201-210 and B commits five,
+    // "if student A commits the record number sequence is complete, if not
+    // there is a gap."
+    //
+    // SO AN INSERT ALWAYS APPENDS, and the record number is minted HERE, at the
+    // moment the row physically exists. `key` is what the buffer called it;
+    // `rn` is what the file gave it, and every consumer below -- the record
+    // lock, the index snapshot pair, the AFTER trigger's ev.recno -- takes
+    // `rn`. Until this ruling the two could not differ on the append path, so
+    // one name did both jobs; they can differ now, and a single name would put
+    // index keys and trigger events on the wrong record.
+    const std::uint64_t key = agg.recno;
+    if (key == 0) return false;
     const bool inserting = (agg.flags & dottalk::table::CHANGE_INSERT) != 0;
     bool appended_now = false;
-    if (inserting && rn == A.recCount64() + 1) {
+    std::uint64_t rn = 0;
+    if (inserting) {
         if (!A.appendBlank() || !A.readCurrent()) return false;
         appended_now = true;
+        // appendBlank ends in gotoRec64(_rec_count64), so this IS the new row.
+        rn = A.recno64();
+        if (rn == 0) return false;
     } else {
+        rn = key;
         if (rn > A.recCount64() || !A.gotoRec64(rn) || !A.readCurrent()) return false;
     }
 
