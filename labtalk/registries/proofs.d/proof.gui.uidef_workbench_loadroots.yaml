@@ -1,0 +1,16 @@
+id: proof.gui.uidef_workbench_loadroots
+label: Workbench schema table directories and native preflight
+state: source_defined
+source: docs/maintenance/AIF120_WORKBENCH_LOAD_ROOTS_V1.md
+related:
+- include/cli/workspace_definition.hpp
+- src/cli/cmd_workspace.cpp
+- gui/uidef/author_workbench.py
+- gui/uidef/wx_workbench.cpp
+- gui/uidef/workbench_session.cpp
+- gui/uidef/workbench_paths_test.cpp
+- gui/uidef/verify_workspace_schema_load.py
+- docs/maintenance/evidence/AIF120_workbench_loadroots_real_20260918.txt
+- docs/maintenance/evidence/AIF120_workbench_loadroots_20260918.txt
+- docs/maintenance/evidence/AIF120_workbench_20260918_loadroots-modal-LOAD.png
+notes: Nine registered checks and sixteen window modes pass locally on Windows. Private copies of the actual schemas load all 12 MCC and 10 Help tables with row readback, unchanged source hashes, explicit directories, missing-member modal refusal and v3 root precedence. Source and evidence uncommitted; no runtime_observed promotion, publication or cross-platform claim.

@@ -1,0 +1,25 @@
+# AIF-120: compose the generated host from the CLI's actual build inventory.
+# Keep product filters, platform exclusions and linked libraries in one home.
+find_package(unofficial-lmdb CONFIG REQUIRED)
+get_target_property(_wb_sources dottalkpp SOURCES)
+get_target_property(_wb_source_dir dottalkpp SOURCE_DIR)
+set(_wb_runtime_sources)
+foreach(_source IN LISTS _wb_sources)
+  if(NOT IS_ABSOLUTE "${_source}")
+    set(_source "${_wb_source_dir}/${_source}")
+  endif()
+  if(NOT _source MATCHES "/cli/main\\.cpp$")
+    list(APPEND _wb_runtime_sources "${_source}")
+  endif()
+endforeach()
+list(REMOVE_DUPLICATES _wb_runtime_sources)
+# Object linking preserves command units whose only entry is static
+# registration, just as the original executable's direct source inventory does.
+add_library(dottalk_cli_runtime OBJECT ${_wb_runtime_sources})
+foreach(_property IN ITEMS INCLUDE_DIRECTORIES COMPILE_DEFINITIONS COMPILE_OPTIONS)
+  set_property(TARGET dottalk_cli_runtime PROPERTY ${_property} "$<TARGET_PROPERTY:dottalkpp,${_property}>")
+endforeach()
+target_link_libraries(dottalk_cli_runtime PUBLIC "$<TARGET_PROPERTY:dottalkpp,LINK_LIBRARIES>")
+set(UIDEF_BUILD_WORKBENCH ON)
+enable_testing()
+add_subdirectory("${DOTTALK_ROOT}/gui/uidef" "${CMAKE_BINARY_DIR}/uidef")

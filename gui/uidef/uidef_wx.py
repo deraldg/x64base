@@ -21,7 +21,7 @@ from uidef import doc_source, doc_alias_tables
 
 KINDS_RENDERED = frozenset((
     'form', 'label', 'text', 'button', 'check', 'radio', 'list', 'combo',
-    'panel', 'page', 'group', 'pageset', 'splitter',
+    'panel', 'page', 'group', 'pageset', 'splitter', 'menu',
     # R66. wx has a native control for each: wxListCtrl in report mode is the grid,
     # wxTreeCtrl the tree, and a frame owns its own status bar.
     'grid', 'tree', 'detail', 'summary', 'statusbar',
@@ -69,7 +69,7 @@ def fill_of(pr):
 
 
 def cstr(s):
-    return '"' + (s or '').replace('\\', '\\\\').replace('"', '\\"') + '"'
+    return '"' + (s or '').replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n').replace('\r', '\\r').replace('\t', '\\t') + '"'
 
 
 def domains_from_source(src):
@@ -128,8 +128,64 @@ def generate(path, title=None, dispatch=False, stream=False):
     src_aliases, src_rels = doc_source(rows)
     src_tables = doc_alias_tables(rows)
     objs = [r for r in rows if (r['RECKIND'] or '').strip() == 'OBJ']
+    for r in objs:
+        if parse_props(r['PROPS']).get('modal', '').lower() not in FALSEY + ('',):
+            if r['KIND'].strip().lower() != 'form' or (r['PARENT'] or '').strip():
+                raise ValueError('REFUSED Modal on %s -- requires a top-level form' % r['OBJID'])
     fonts = [r for r in rows if (r['RECKIND'] or '').strip() == 'FONT']
     rec = {(r['OBJID'] or '').strip(): r for r in objs}
+
+    def menu_label(pr):
+        label = pr.get('caption', '').replace('&', '&&')
+        if 'mnemonic' in pr:
+            # R18 carries a character index, not a toolkit-specific escape.
+            n = int(pr['mnemonic'])
+            raw = pr.get('caption', '')
+            label = raw[:n].replace('&', '&&') + '&' + raw[n:].replace('&', '&&')
+        if pr.get('key'):
+            label += '\t' + pr['key']
+        return label
+
+    def emit_menu(root, frame, ind):
+        """R18: container -> opener item -> submenu container, also recursive."""
+        bar = var(root['OBJID'].strip())
+        body.append('%sauto* %s = new wxMenuBar;' % (ind, bar))
+        made[0] += 1
+
+        def fill(container, owner, top=False):
+            for item in kids.get(container['OBJID'].strip(), []):
+                oid = item['OBJID'].strip()
+                pr = parse_props(item['PROPS'])
+                made[0] += 1
+                subs = kids.get(oid, [])
+                if subs:
+                    if len(subs) != 1 or parse_props(subs[0]['PROPS']).get('container', '').lower() in FALSEY + ('',):
+                        raise ValueError('REFUSED menu %s: expected one submenu container' % oid)
+                    mv = var(oid)
+                    body.append('%sauto* %s = new wxMenu;' % (ind, mv))
+                    made[0] += 1
+                    fill(subs[0], mv)
+                    method = 'Append' if top else 'AppendSubMenu'
+                    body.append('%s%s->%s(%s, %s);' % (ind, owner, method, mv, cstr(menu_label(pr))))
+                elif top:
+                    raise ValueError('REFUSED menu %s: menubar items must open a submenu' % oid)
+                elif pr.get('separator', '').lower() not in FALSEY + ('',):
+                    body.append('%s%s->AppendSeparator();' % (ind, owner))
+                else:
+                    iv = 'id_' + oid
+                    body.append('%sconst int %s = wxWindow::NewControlId();' % (ind, iv))
+                    body.append('%sg_menu_ids[%s] = %s;' % (ind, cstr(oid), iv))
+                    body.append('%s%s->Append(%s, %s, %s);' % (ind, owner, iv, cstr(menu_label(pr)), cstr(pr.get('message', ''))))
+                    hs = parse_handlers(item['HANDLERS'])
+                    if dispatch and 'Click' in hs:
+                        name, disp, comp = hs['Click']
+                        body.append('%s%s->Bind(wxEVT_MENU, [](wxCommandEvent&){ g_rt->fire(%s, %s, g_scope, "", %s); }, %s);' %
+                                    (ind, frame, cstr(name), cstr(disp), cstr(comp), iv))
+                    else:
+                        body.append('%s%s->Enable(%s, false);' % (ind, owner, iv))
+                        notes.append('REFUSED menu action on %s -- no dispatch handler' % oid)
+        fill(root, bar, True)
+        body.append('%s%s->SetMenuBar(%s);' % (ind, frame, bar))
     kids = {}
     for r in objs:
         kids.setdefault((r['PARENT'] or '').strip(), []).append(r)
@@ -254,6 +310,8 @@ def generate(path, title=None, dispatch=False, stream=False):
             notes.append("REFUSED kind %r on %s -- contract s4" % (kind, oid))
             body.append('%s// REFUSED kind %s on %s' % (ind, kind, oid))
             return
+        if kind == 'menu':
+            raise ValueError('REFUSED menu %s -- menu bar must be attached directly to a form' % oid)
         made[0] += 1
 
         # position and size, for `free` parents only (contract s8)
@@ -282,6 +340,32 @@ def generate(path, title=None, dispatch=False, stream=False):
         }.get(kind)
 
         if kind == 'form':
+            if pr.get('modal', '').lower() not in FALSEY + ('',):
+                if stream:
+                    raise ValueError('REFUSED Modal form with --stream: source lifetime belongs to the host')
+                body.append('%sauto* %s = new wxDialog(owner, wxID_ANY, %s, wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);' % (ind, v, cstr(cap)))
+                body.append('%s%s->SetName(%s);' % (ind, v, cstr(oid)))
+                if dispatch:
+                    emit_scope(oid, v, ind)
+                sub = child_sizer(oid, flow, pr, v, ind)
+                for c in kids.get(oid, []):
+                    emit(c, v, flow, sub, depth)
+                close_sizer(oid, flow, v, sub, ind)
+                body.append('%s%s->SetAffirmativeId(wxID_OK); %s->SetEscapeId(wxID_CANCEL);' % (ind, v, v))
+                # Forms may place their controls inside nested panels. Route
+                # the dialog's key hook to its standard result event explicitly
+                # so validation runs once, independently of native child layout.
+                body.append('%s%s->Bind(wxEVT_CHAR_HOOK, [%s](wxKeyEvent& e) {' % (ind, v, v))
+                body.append('%s  auto* input = wxDynamicCast(wxWindow::FindFocus(), wxTextCtrl);' % ind)
+                body.append('%s  const bool enter = (e.GetKeyCode() == WXK_RETURN || e.GetKeyCode() == WXK_NUMPAD_ENTER) && input && !(input->GetWindowStyleFlag() & wxTE_MULTILINE);' % ind)
+                body.append('%s  if (e.GetKeyCode() == WXK_ESCAPE || enter) {' % ind)
+                body.append('%s    wxCommandEvent result(wxEVT_BUTTON, enter ? %s->GetAffirmativeId() : %s->GetEscapeId());' % (ind, v, v))
+                body.append('%s    result.SetEventObject(%s); %s->GetEventHandler()->ProcessEvent(result);' % (ind, v, v))
+                body.append('%s  } else e.Skip();' % ind)
+                body.append('%s});' % ind)
+                body.append('%s%s->SetMinSize(wxSize(%s, -1)); %s->Fit(); %s->CentreOnParent();' % (ind, v, org.get('origin_width', '620'), v, v))
+                body.append('%sreturn %s;' % (ind, v))
+                return
             body.append('%sauto* %s = new wxFrame(nullptr, wxID_ANY, %s, '
                         'wxDefaultPosition, wxSize(%s,%s));'
                         % (ind, v, cstr(cap or title or 'UIDEF'),
@@ -310,7 +394,10 @@ def generate(path, title=None, dispatch=False, stream=False):
                 body.append('%suidef_register(*g_rt);' % ind)
             sub = child_sizer(oid, flow, pr, v, ind)
             for c in kids.get(oid, []):
-                emit(c, v, flow, sub, depth)
+                if (c['KIND'] or '').strip().lower() == 'menu':
+                    emit_menu(c, v, ind)
+                else:
+                    emit(c, v, flow, sub, depth)
             close_sizer(oid, flow, v, sub, ind)
             for _tv in live_trees:
                 body.append('%suidef_fill_tree(%s);' % (ind, _tv))
@@ -550,15 +637,37 @@ def generate(path, title=None, dispatch=False, stream=False):
             if f:
                 body.append('%s%s->SetFont(%s);' % (ind, v, f))
             if sizer_var:
-                add_to(sizer_var, v, ind)
+                # Data-frame controls return before the generic child path.
+                # They still owe the same R79 geometry: otherwise a grid with
+                # Weight=1 / Fill=.T. stays at its tiny wx default size.
+                add_to(sizer_var, v, ind,
+                       span=int(float((r['SPAN'] or '0').strip() or 0)) or 1,
+                       weight=weight_of(pr), fill=fill_of(pr))
             return
 
         if ctor is None:
             return
+        if kind == 'button' and pr.get('dialogresult'):
+            result = pr['dialogresult'].lower()
+            if result not in ('accept', 'cancel'):
+                raise ValueError('REFUSED DialogResult on %s: use accept or cancel' % oid)
+            # The native child ID must be correct at creation, not just the wx
+            # object's later ID: OS dialog keyboard routing uses the native ID.
+            ctor = ctor.replace('wxID_ANY', 'wxID_OK' if result == 'accept' else 'wxID_CANCEL')
         if kind in ('label', 'button', 'check', 'radio'):
             body.append('%sauto* %s = %s;' % (ind, v, ctor % (parent_var, cstr(cap), pos, size)))
         else:
             body.append('%sauto* %s = %s;' % (ind, v, ctor % (parent_var, pos, size)))
+        if kind not in ('panel', 'page', 'pageset', 'splitter'):
+            # Stable document identity for native host lookup, tooltips and
+            # activation tests. Naming does not create a new dispatch scope.
+            body.append('%s%s->SetName(%s);' % (ind, v, cstr(oid)))
+        if kind == 'button' and pr.get('dialogresult'):
+            result = pr['dialogresult'].lower()
+            if result not in ('accept', 'cancel'):
+                raise ValueError('REFUSED DialogResult on %s: use accept or cancel' % oid)
+            if result == 'accept':
+                body.append('%s%s->SetDefault();' % (ind, v))
 
         f = fontexpr(r)
         if f:
@@ -727,8 +836,26 @@ def generate(path, title=None, dispatch=False, stream=False):
         body.append('%s%s->SetSizer(%s);' % (ind, owner, sizer_var))
 
     roots = kids.get('', [])
+    dialogs = []
+    modal_ids = []
     for r in roots:
-        emit(r, 'nullptr', '', None, 1)
+        modal = parse_props(r['PROPS']).get('modal', '').lower() not in FALSEY + ('',)
+        if modal:
+            if r['KIND'].strip().lower() != 'form':
+                raise ValueError('REFUSED Modal: only form can be modal')
+            saved_body = body
+            body = []
+            emit(r, 'owner', '', None, 1)
+            oid = r['OBJID'].strip()
+            modal_ids.append(oid)
+            dialogs += ['static wxDialog* make_%s(wxWindow* owner) {' % oid] + body + ['}']
+            body = saved_body
+        else:
+            emit(r, 'nullptr', '', None, 1)
+    if modal_ids:
+        dialogs += ['wxDialog* uidef_create_dialog(const std::string& id, wxWindow* owner) {']
+        dialogs += ['  if (id == %s) return make_%s(owner);' % (cstr(oid), oid) for oid in modal_ids]
+        dialogs += ['  throw std::runtime_error("Unknown generated modal form: " + id);', '}']
 
     doc = [r for r in rows if (r['RECKIND'] or '').strip() == 'DOC'][0]
     doms = domains_from_source(doc['SOURCE'])
@@ -739,7 +866,7 @@ def generate(path, title=None, dispatch=False, stream=False):
     # conditional include is one more thing that can be wrong per document.
     head = ['#include <wx/wx.h>\n#include <wx/splitter.h>', '#include <wx/notebook.h>', '#include <wx/gbsizer.h>',
             '#include <wx/statbox.h>', '#include <wx/listctrl.h>',
-            '#include <wx/treectrl.h>']
+            '#include <wx/treectrl.h>', '#include <map>', '#include <stdexcept>']
     REL_LINES = []
     for _pa, _ch, _ed in stream_relations:
         if not _ed:
@@ -902,7 +1029,9 @@ def generate(path, title=None, dispatch=False, stream=False):
     # and emitting both made the second argument quit before anything ran.
     tail = ([] if dispatch else
             ['  if (wxTheApp->argc > 1) CallAfter([]{ wxTheApp->ExitMainLoop(); });'])
-    src = head + [''] + pre + [
+    if any(r['KIND'].strip().lower() == 'menu' for r in objs):
+        pre += ['std::map<std::string, int> g_menu_ids;']
+    src = head + [''] + pre + dialogs + [
            'class App : public wxApp { public: bool OnInit() override {'] + (
            ['  static const std::vector<std::vector<std::string>> DOMAINS = {%s};'
             % ', '.join('{%s}' % ', '.join('"%s"' % a for a in d) for d in doms)]

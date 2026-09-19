@@ -326,8 +326,7 @@ static bool block_begin_token(const std::string& U, std::string& endtok, bool& s
 // -----------------------------------------------------------------------------
 // Shell engine pointer API
 // -----------------------------------------------------------------------------
-static xbase::XBaseEngine* g_shell_engine = nullptr;
-extern "C" xbase::XBaseEngine* shell_engine() { return g_shell_engine; }
+// The non-owning binding is shared with embedded command hosts.
 
 // -----------------------------------------------------------------------------
 // Relations auto-refresh suppression
@@ -527,7 +526,7 @@ int run_shell()
 
     XBaseEngine eng;
     eng.selectArea(0);
-    g_shell_engine = &eng;
+    shell_bind_engine(&eng);
 
     xbase::cursor_hook::set_callback(&on_cursor_changed, &eng);
     relations_api::attach_engine(&eng);
@@ -786,7 +785,7 @@ int run_shell()
     emit_exit_trace("after relations_api detach");
 
     emit_exit_trace("before g_shell_engine clear");
-    g_shell_engine = nullptr;
+    shell_bind_engine(nullptr);
     emit_exit_trace("before return 0");
     return 0;
 }

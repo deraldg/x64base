@@ -1,0 +1,16 @@
+id: proof.gui.uidef_workbench_m2
+label: M2 workspace tree and stable navigation
+state: source_defined
+source: docs/maintenance/AIF120_WORKBENCH_M2_V1.md
+related:
+- gui/uidef/author_workbench.py
+- gui/uidef/wx_workbench.cpp
+- gui/uidef/workbench_navigation.cpp
+- gui/uidef/workbench_session.hpp
+- gui/uidef/workbench_session_test.cpp
+- gui/uidef/verify_workbench.py
+- docs/maintenance/AIF120_WORKBENCH_MILESTONES_V1.md
+- docs/maintenance/evidence/AIF120_workbench_m2_20260918.txt
+- docs/maintenance/evidence/AIF120_workbench_m2_build_20260918.txt
+- docs/maintenance/evidence/AIF120_workbench_20260918_m2-navigation.png
+notes: Native workspace/table tree uses stable workspace and area handles, independent SWITCH and SELECT actions, ancestor-preserving search, keyboard/context actions and stale-target validation. Local validation is recorded in the closeout. Source and evidence remain uncommitted; no promotion, publication or cross-platform runtime claim.

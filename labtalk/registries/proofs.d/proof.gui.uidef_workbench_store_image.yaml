@@ -1,0 +1,14 @@
+id: proof.gui.uidef_workbench_store_image
+label: Generated Workbench buffered database-image memo storage
+state: source_defined
+source: docs/maintenance/AIF120_WORKBENCH_STORE_IMAGE_V1.md
+related:
+- gui/uidef/workbench_table.cpp
+- gui/uidef/workbench_session.cpp
+- gui/uidef/workbench_images.cpp
+- gui/uidef/workbench_store_image_test.cpp
+- gui/uidef/wx_workbench.cpp
+- gui/uidef/author_workbench.py
+- docs/maintenance/evidence/AIF120_workbench_store_image_20260918.txt
+- docs/maintenance/evidence/AIF120_workbench_20260918_v10-store.png
+notes: Store image allocates a new DTX object and buffers its reference through the native field-write funnel. Local Windows tests cover token/fixed references, shared old objects, rollback, commit/reopen, RAM-table storage and child hydration. Source and evidence remain uncommitted; no runtime_observed promotion or lane closure claim.

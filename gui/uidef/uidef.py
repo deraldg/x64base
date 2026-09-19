@@ -160,6 +160,25 @@ def write(dbf_path, fpt_path, records, today=None, encoding=DEFAULT_ENCODING):
     return len(packed), rlen, hlen
 
 
+def modal_forms(rows):
+    """R144: modality changes lifetime; an unsupported target must refuse."""
+    result = []
+    for r in rows:
+        if (r.get('RECKIND') or '').strip() != 'OBJ':
+            continue
+        for line in (r.get('PROPS') or '').splitlines():
+            key, sep, value = line.partition(' = ')
+            if sep and key.strip().lower() == 'modal' and value.strip().strip('"').lower() not in ('', '.f.', 'false', '0', 'no', 'off', 'f'):
+                result.append((r.get('OBJID') or '').strip())
+    return result
+
+
+def refuse_unsupported_modals(rows, target):
+    forms = modal_forms(rows)
+    if forms:
+        raise ValueError('REFUSED Modal on %s: %s has no modal lifetime implementation' % (', '.join(forms), target))
+
+
 def validate(rows):
     """Conformance checks from contract section 12. Returns a list of findings."""
     out=[]

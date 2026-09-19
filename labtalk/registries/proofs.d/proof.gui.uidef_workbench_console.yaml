@@ -1,0 +1,13 @@
+id: proof.gui.uidef_workbench_console
+label: Generated Workbench shared command console
+state: source_defined
+source: docs/maintenance/AIF120_WORKBENCH_LIST_V1.md
+related:
+- gui/uidef/workbench_session.cpp
+- gui/uidef/workbench_session_test.cpp
+- gui/uidef/wx_workbench.cpp
+- cmake/AddUidefWorkbench.cmake
+- src/cli/shell_engine.cpp
+- docs/maintenance/evidence/AIF120_workbench_console_20260917.txt
+- docs/maintenance/evidence/AIF120_workbench_20260917_v4-live.png
+notes: Locally built and tested on Windows. Canonical executor attached to the same live engine, 310 registered command/function names including aliases. Representative reads, writes, SQL, expressions, scripts, nested images, Enter/history and buffered close protection verified. Terminal frontend exceptions remain. Source and evidence are uncommitted; do not promote to runtime_observed until versioned. See the closeout for exact proof and limits.

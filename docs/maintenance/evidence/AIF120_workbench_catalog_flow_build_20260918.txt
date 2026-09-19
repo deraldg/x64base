@@ -1,0 +1,188 @@
+-- Selecting Windows SDK version 10.0.26100.0 to target Windows 10.0.26200.
+-- == Build vectors (AIF-044) ==
+--    areas=512 fields=256 rows=9223372036854775807 index_slots=5
+--    x64 record hard=16777216 advisory=65536
+--    depth caps relation=24 workspace=32
+--    x64 names default=128/128 max=256/256 table-buffer changes=10000 prompt='.'
+-- dottalkpp: DOTTALK_WITH_DEV = ON
+-- dottalkpp: DOTTALK_WITH_TV  = OFF
+-- dottalkpp: DOTTALK_WITH_GUI = OFF
+-- dottalkpp: DOTTALK_WITH_WX  = OFF
+-- Turbo Vision explicitly disabled for 'dottalkpp'.
+-- Index engine LMDB ENABLED for 'dottalkpp'.
+-- Developer tools ENABLED for 'dottalkpp'.
+-- Relations ENABLED for 'dottalkpp'.
+-- Product package: DEVELOPMENT: 428 tracked files, 60573082 bytes
+-- ==== DotTalk++ / Build summary ====
+--   CMAKE_BUILD_TYPE      : 
+--   DOTTALK_PROFILE       : DEV
+--   DOTTALK_MAX_AREA      : 256 (legacy/inert; engine uses build-vector areas=512)
+--   DOTTALK_WITH_DEV      : ON
+--   DOTTALK_EXTRA_DIAGN.  : ON
+--   DOTTALK_WITH_INDEX    : ON
+--   DOTTALK_INDEX_MODE    : LMDB
+--   DOTTALK_HAS_XINDEX    : ON
+--   DOTTALK_PRODUCT       : DEVELOPMENT
+--   DOTTALK_WITH_RELATIONS: ON
+--   DOTTALK_WITH_EDUCATION: ON
+--   xexpr found           : ON
+--   DOTTALK_WITH_TV       : OFF
+--   DOTTALK_WITH_GUI      : OFF
+--   DOTTALK_WITH_WX       : OFF
+--   DOTTALK_TV_TESTS      : ON
+--   BUILD_PYDOTTALK       : OFF
+--   BUILD_TESTING         : OFF
+--   version metadata      : beta 1.1 2026-09-18 bbf22e75 dirty=1
+--   TVISION_ROOT          : D:/code/ccode/../tvision
+--   VCPKG_ROOT            : C:/Users/deral/vcpkg
+--   sqlite found          : ON
+--   sqlite origin         : official
+--   tvision found         : OFF
+--   tvision origin        : not-found
+-- ===================================
+-- Found wxWidgets: debug;D:/code/ccode/build/uidef-deps/x64-windows/debug/lib/wxmsw33ud_core.lib;optimized;D:/code/ccode/build/uidef-deps/x64-windows/lib/wxmsw33u_core.lib;debug;D:/code/ccode/build/uidef-deps/x64-windows/debug/lib/wxbase33ud.lib;optimized;D:/code/ccode/build/uidef-deps/x64-windows/lib/wxbase33u.lib;gdiplus;msimg32;winmm;comctl32;uuid;oleacc;uxtheme;rpcrt4;shlwapi;version;wsock32 (found version "3.3.1") found components: core base missing components: png tiff jpeg zlib regex expat
+-- == Build vectors (AIF-044) ==
+--    areas=512 fields=256 rows=9223372036854775807 index_slots=5
+--    x64 record hard=16777216 advisory=65536
+--    depth caps relation=24 workspace=32
+--    x64 names default=128/128 max=256/256 table-buffer changes=10000 prompt='.'
+-- Configuring done (6.7s)
+-- Generating done (1.0s)
+-- Build files have been written to: D:/code/ccode/build/uidef-native
+MSBuild version 17.14.51+25f168cee for .NET Framework
+
+  Checking File Globs
+  memo.vcxproj -> D:\code\ccode\build\uidef-native\src\memo\Release\memo.lib
+  xindex.vcxproj -> D:\code\ccode\build\uidef-native\src\xindex\Release\xindex.lib
+  xbase.vcxproj -> D:\code\ccode\build\uidef-native\src\xbase\Release\xbase.lib
+  dottalk_value.vcxproj -> D:\code\ccode\build\uidef-native\src\Release\dottalk_value.lib
+  xexpr.vcxproj -> D:\code\ccode\build\uidef-native\src\xexpr\Release\xexpr.lib
+  sqlsel.vcxproj -> D:\code\ccode\build\uidef-native\src\sqlsel\Release\sqlsel.lib
+  dottalk_cli_runtime.vcxproj -> D:\code\ccode\build\uidef-native\dottalk_cli_runtime.dir\Release\dottalk_cli_runtime.lib
+  uidef_catalog.vcxproj -> D:\code\ccode\build\uidef-native\uidef\Release\uidef_catalog.lib
+  uidef_session.vcxproj -> D:\code\ccode\build\uidef-native\uidef\Release\uidef_session.lib
+  wx_workbench.cpp
+  arctictalk_workbench.vcxproj -> D:\code\ccode\build\uidef-native\Release\arctictalk_workbench_catalogflow.exe
+MSBuild version 17.14.51+25f168cee for .NET Framework
+
+  Checking File Globs
+  memo.vcxproj -> D:\code\ccode\build\uidef-native\src\memo\Release\memo.lib
+  xindex.vcxproj -> D:\code\ccode\build\uidef-native\src\xindex\Release\xindex.lib
+  xbase.vcxproj -> D:\code\ccode\build\uidef-native\src\xbase\Release\xbase.lib
+  uidef_catalog.vcxproj -> D:\code\ccode\build\uidef-native\uidef\Release\uidef_catalog.lib
+  uidef_catalog_test.vcxproj -> D:\code\ccode\build\uidef-native\Release\uidef_catalog_test.exe
+MSBuild version 17.14.51+25f168cee for .NET Framework
+
+  Checking File Globs
+  memo.vcxproj -> D:\code\ccode\build\uidef-native\src\memo\Release\memo.lib
+  xindex.vcxproj -> D:\code\ccode\build\uidef-native\src\xindex\Release\xindex.lib
+  xbase.vcxproj -> D:\code\ccode\build\uidef-native\src\xbase\Release\xbase.lib
+  xexpr.vcxproj -> D:\code\ccode\build\uidef-native\src\xexpr\Release\xexpr.lib
+  dottalk_value.vcxproj -> D:\code\ccode\build\uidef-native\src\Release\dottalk_value.lib
+  sqlsel.vcxproj -> D:\code\ccode\build\uidef-native\src\sqlsel\Release\sqlsel.lib
+  dottalk_cli_runtime.vcxproj -> D:\code\ccode\build\uidef-native\dottalk_cli_runtime.dir\Release\dottalk_cli_runtime.lib
+  uidef_catalog.vcxproj -> D:\code\ccode\build\uidef-native\uidef\Release\uidef_catalog.lib
+  uidef_session.vcxproj -> D:\code\ccode\build\uidef-native\uidef\Release\uidef_session.lib
+  uidef_session_test.vcxproj -> D:\code\ccode\build\uidef-native\Release\uidef_session_test.exe
+MSBuild version 17.14.51+25f168cee for .NET Framework
+
+  Checking File Globs
+  memo.vcxproj -> D:\code\ccode\build\uidef-native\src\memo\Release\memo.lib
+  xindex.vcxproj -> D:\code\ccode\build\uidef-native\src\xindex\Release\xindex.lib
+  xbase.vcxproj -> D:\code\ccode\build\uidef-native\src\xbase\Release\xbase.lib
+  xexpr.vcxproj -> D:\code\ccode\build\uidef-native\src\xexpr\Release\xexpr.lib
+  dottalk_value.vcxproj -> D:\code\ccode\build\uidef-native\src\Release\dottalk_value.lib
+  sqlsel.vcxproj -> D:\code\ccode\build\uidef-native\src\sqlsel\Release\sqlsel.lib
+  dottalk_cli_runtime.vcxproj -> D:\code\ccode\build\uidef-native\dottalk_cli_runtime.dir\Release\dottalk_cli_runtime.lib
+  uidef_catalog.vcxproj -> D:\code\ccode\build\uidef-native\uidef\Release\uidef_catalog.lib
+  uidef_session.vcxproj -> D:\code\ccode\build\uidef-native\uidef\Release\uidef_session.lib
+  uidef_paths_test.vcxproj -> D:\code\ccode\build\uidef-native\Release\uidef_paths_test.exe
+MSBuild version 17.14.51+25f168cee for .NET Framework
+
+  Checking File Globs
+  memo.vcxproj -> D:\code\ccode\build\uidef-native\src\memo\Release\memo.lib
+  xindex.vcxproj -> D:\code\ccode\build\uidef-native\src\xindex\Release\xindex.lib
+  xbase.vcxproj -> D:\code\ccode\build\uidef-native\src\xbase\Release\xbase.lib
+  xexpr.vcxproj -> D:\code\ccode\build\uidef-native\src\xexpr\Release\xexpr.lib
+  dottalk_value.vcxproj -> D:\code\ccode\build\uidef-native\src\Release\dottalk_value.lib
+  sqlsel.vcxproj -> D:\code\ccode\build\uidef-native\src\sqlsel\Release\sqlsel.lib
+  dottalk_cli_runtime.vcxproj -> D:\code\ccode\build\uidef-native\dottalk_cli_runtime.dir\Release\dottalk_cli_runtime.lib
+  uidef_catalog.vcxproj -> D:\code\ccode\build\uidef-native\uidef\Release\uidef_catalog.lib
+  uidef_session.vcxproj -> D:\code\ccode\build\uidef-native\uidef\Release\uidef_session.lib
+  uidef_images_test.vcxproj -> D:\code\ccode\build\uidef-native\Release\uidef_images_test.exe
+MSBuild version 17.14.51+25f168cee for .NET Framework
+
+  Checking File Globs
+  memo.vcxproj -> D:\code\ccode\build\uidef-native\src\memo\Release\memo.lib
+  xindex.vcxproj -> D:\code\ccode\build\uidef-native\src\xindex\Release\xindex.lib
+  xbase.vcxproj -> D:\code\ccode\build\uidef-native\src\xbase\Release\xbase.lib
+  dottalk_value.vcxproj -> D:\code\ccode\build\uidef-native\src\Release\dottalk_value.lib
+  xexpr.vcxproj -> D:\code\ccode\build\uidef-native\src\xexpr\Release\xexpr.lib
+  sqlsel.vcxproj -> D:\code\ccode\build\uidef-native\src\sqlsel\Release\sqlsel.lib
+  dottalk_cli_runtime.vcxproj -> D:\code\ccode\build\uidef-native\dottalk_cli_runtime.dir\Release\dottalk_cli_runtime.lib
+  uidef_catalog.vcxproj -> D:\code\ccode\build\uidef-native\uidef\Release\uidef_catalog.lib
+  uidef_session.vcxproj -> D:\code\ccode\build\uidef-native\uidef\Release\uidef_session.lib
+  uidef_table_test.vcxproj -> D:\code\ccode\build\uidef-native\Release\uidef_table_test.exe
+MSBuild version 17.14.51+25f168cee for .NET Framework
+
+  Checking File Globs
+  memo.vcxproj -> D:\code\ccode\build\uidef-native\src\memo\Release\memo.lib
+  xindex.vcxproj -> D:\code\ccode\build\uidef-native\src\xindex\Release\xindex.lib
+  xbase.vcxproj -> D:\code\ccode\build\uidef-native\src\xbase\Release\xbase.lib
+  xexpr.vcxproj -> D:\code\ccode\build\uidef-native\src\xexpr\Release\xexpr.lib
+  dottalk_value.vcxproj -> D:\code\ccode\build\uidef-native\src\Release\dottalk_value.lib
+  sqlsel.vcxproj -> D:\code\ccode\build\uidef-native\src\sqlsel\Release\sqlsel.lib
+  dottalk_cli_runtime.vcxproj -> D:\code\ccode\build\uidef-native\dottalk_cli_runtime.dir\Release\dottalk_cli_runtime.lib
+  uidef_catalog.vcxproj -> D:\code\ccode\build\uidef-native\uidef\Release\uidef_catalog.lib
+  uidef_session.vcxproj -> D:\code\ccode\build\uidef-native\uidef\Release\uidef_session.lib
+  uidef_save_test.vcxproj -> D:\code\ccode\build\uidef-native\Release\uidef_save_test.exe
+MSBuild version 17.14.51+25f168cee for .NET Framework
+
+  Checking File Globs
+  memo.vcxproj -> D:\code\ccode\build\uidef-native\src\memo\Release\memo.lib
+  xindex.vcxproj -> D:\code\ccode\build\uidef-native\src\xindex\Release\xindex.lib
+  xbase.vcxproj -> D:\code\ccode\build\uidef-native\src\xbase\Release\xbase.lib
+  dottalk_value.vcxproj -> D:\code\ccode\build\uidef-native\src\Release\dottalk_value.lib
+  xexpr.vcxproj -> D:\code\ccode\build\uidef-native\src\xexpr\Release\xexpr.lib
+  sqlsel.vcxproj -> D:\code\ccode\build\uidef-native\src\sqlsel\Release\sqlsel.lib
+  dottalk_cli_runtime.vcxproj -> D:\code\ccode\build\uidef-native\dottalk_cli_runtime.dir\Release\dottalk_cli_runtime.lib
+  uidef_catalog.vcxproj -> D:\code\ccode\build\uidef-native\uidef\Release\uidef_catalog.lib
+  uidef_session.vcxproj -> D:\code\ccode\build\uidef-native\uidef\Release\uidef_session.lib
+  uidef_memo_image_test.vcxproj -> D:\code\ccode\build\uidef-native\Release\uidef_memo_image_test.exe
+MSBuild version 17.14.51+25f168cee for .NET Framework
+
+  Checking File Globs
+  memo.vcxproj -> D:\code\ccode\build\uidef-native\src\memo\Release\memo.lib
+  xindex.vcxproj -> D:\code\ccode\build\uidef-native\src\xindex\Release\xindex.lib
+  xbase.vcxproj -> D:\code\ccode\build\uidef-native\src\xbase\Release\xbase.lib
+  xexpr.vcxproj -> D:\code\ccode\build\uidef-native\src\xexpr\Release\xexpr.lib
+  dottalk_value.vcxproj -> D:\code\ccode\build\uidef-native\src\Release\dottalk_value.lib
+  sqlsel.vcxproj -> D:\code\ccode\build\uidef-native\src\sqlsel\Release\sqlsel.lib
+  dottalk_cli_runtime.vcxproj -> D:\code\ccode\build\uidef-native\dottalk_cli_runtime.dir\Release\dottalk_cli_runtime.lib
+  uidef_catalog.vcxproj -> D:\code\ccode\build\uidef-native\uidef\Release\uidef_catalog.lib
+  uidef_session.vcxproj -> D:\code\ccode\build\uidef-native\uidef\Release\uidef_session.lib
+  uidef_store_image_test.vcxproj -> D:\code\ccode\build\uidef-native\Release\uidef_store_image_test.exe
+Test project D:/code/ccode/build/uidef-native
+    Start 1: uidef_catalog_test
+1/9 Test #1: uidef_catalog_test ...............   Passed    0.08 sec
+    Start 2: uidef_session_test
+2/9 Test #2: uidef_session_test ...............   Passed    4.94 sec
+    Start 3: uidef_paths_test
+3/9 Test #3: uidef_paths_test .................   Passed    0.74 sec
+    Start 4: uidef_images_test
+4/9 Test #4: uidef_images_test ................   Passed    0.47 sec
+    Start 5: uidef_table_test
+5/9 Test #5: uidef_table_test .................   Passed    0.59 sec
+    Start 6: uidef_save_test
+6/9 Test #6: uidef_save_test ..................   Passed    0.65 sec
+    Start 7: uidef_memo_image_test
+7/9 Test #7: uidef_memo_image_test ............   Passed    0.23 sec
+    Start 8: uidef_store_image_test
+8/9 Test #8: uidef_store_image_test ...........   Passed    0.66 sec
+    Start 9: uidef_workbench_m1_design
+9/9 Test #9: uidef_workbench_m1_design ........   Passed    0.36 sec
+
+100% tests passed, 0 tests failed out of 9
+
+Total Test time (real) =   8.75 sec
+Workbench: D:\code\ccode\build\uidef-native\Release\arctictalk_workbench_catalogflow.exe

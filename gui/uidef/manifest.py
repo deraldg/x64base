@@ -134,7 +134,8 @@ PROPS_KNOWN = {
     'DOC':  {'sourcefile', 'contract', 'version', 'title', 'origin', 'kind'},
     'FONT': {'name', 'size', 'metrics', 'bold', 'italic'},
     'OBJ':  {'caption', 'columns', 'columnwidths', 'fill', 'filter', 'mask',
-             'minpane', 'order', 'readonly', 'rowlimit', 'shows', 'weight'},
+             'minpane', 'order', 'readonly', 'rowlimit', 'shows', 'weight',
+             'modal', 'dialogresult', 'container', 'separator', 'mnemonic', 'key', 'message'},
     # `multiline` is deliberately ABSENT. R85's P8 states it, no target reads it,
     # and adding it here before a backend implements it would declare a word known
     # on the strength of wanting it -- which is the silence this check exists to
@@ -456,6 +457,7 @@ def manifest(path):
         # subsets the earlier rulings happened to collect.
         'all_props': [],
         'unknown_props': [],
+        'modal_forms': uidef.modal_forms(rows),
     }
     for r in rows:
         rk = (r['RECKIND'] or '').strip().upper()
@@ -647,6 +649,9 @@ PROFILE_MINIMAL = {
 def check(m, p):
     """Return a list of (severity, subject, reason). REFUSE stops a render."""
     out = []
+    if m.get('modal_forms') and not p.get('modal', False):
+        out.append(('REFUSE', 'Modal: ' + ', '.join(m['modal_forms']),
+                    'target has no modal form lifetime implementation (R144)'))
     for k, n in sorted(m['kinds'].items()):
         if k and k not in p['kinds']:
             out.append(('REFUSE', 'kind %s (x%d)' % (k, n),

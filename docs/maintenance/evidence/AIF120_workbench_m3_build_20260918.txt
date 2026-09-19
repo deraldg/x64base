@@ -1,0 +1,20 @@
+MSBuild version 17.14.51+25f168cee for .NET Framework
+
+  Checking File Globs
+  memo.vcxproj -> D:\code\ccode\build\uidef-native\src\memo\Release\memo.lib
+  xindex.vcxproj -> D:\code\ccode\build\uidef-native\src\xindex\Release\xindex.lib
+  xbase.vcxproj -> D:\code\ccode\build\uidef-native\src\xbase\Release\xbase.lib
+  xexpr.vcxproj -> D:\code\ccode\build\uidef-native\src\xexpr\Release\xexpr.lib
+  dottalk_value.vcxproj -> D:\code\ccode\build\uidef-native\src\Release\dottalk_value.lib
+  sqlsel.vcxproj -> D:\code\ccode\build\uidef-native\src\sqlsel\Release\sqlsel.lib
+  dottalk_cli_runtime.vcxproj -> D:\code\ccode\build\uidef-native\dottalk_cli_runtime.dir\Release\dottalk_cli_runtime.lib
+  uidef_catalog.vcxproj -> D:\code\ccode\build\uidef-native\uidef\Release\uidef_catalog.lib
+  uidef_session.vcxproj -> D:\code\ccode\build\uidef-native\uidef\Release\uidef_session.lib
+  UIDEF: authoring the Workbench design table
+  WORKBENCH: authored 301 rows; conformance findings: none
+  UIDEF: generating the Workbench frontend
+  WORKBENCH.DBF -> D:/code/ccode/build/uidef-native/uidef/WORKBENCH_ui.cpp   300 widget(s)
+  WORKBENCH_ui.cpp
+  wx_workbench.cpp
+  Generating Code...
+  arctictalk_workbench.vcxproj -> D:\code\ccode\build\uidef-native\Release\arctictalk_workbench_m3.exe

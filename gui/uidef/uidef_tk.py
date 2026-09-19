@@ -295,10 +295,12 @@ def frame_widget(parent, kind, r, pr, cap, src_aliases, src_rels):
 
 
 def build_window(path, registry=None, host=None):
+    doc, fonts, objs = load(path)
+    from uidef import refuse_unsupported_modals
+    refuse_unsupported_modals(objs, 'Tk')
     import tkinter as tk
     from tkinter import ttk
     from tkinter import font as tkfont
-    doc, fonts, objs = load(path)
     src_aliases, src_rels = source_of(path)
     kids = tree(objs)
     rec = {(r['OBJID'] or '').strip(): r for r in objs}

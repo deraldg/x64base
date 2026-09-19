@@ -1,0 +1,17 @@
+id: proof.gui.uidef_workbench_catalog_flow
+label: Direct saved-version catalog load and RAM hydration
+state: source_defined
+source: docs/maintenance/AIF120_WORKBENCH_CATALOG_FLOW_V1.md
+related:
+- gui/uidef/author_workbench.py
+- gui/uidef/wx_workbench.cpp
+- gui/uidef/workbench_catalog.cpp
+- gui/uidef/workbench_session.cpp
+- gui/uidef/workbench_paths_test.cpp
+- gui/uidef/verify_workbench.py
+- docs/maintenance/AIF120_WORKBENCH_MILESTONES_V1.md
+- docs/maintenance/evidence/AIF120_workbench_catalog_flow_20260918.txt
+- docs/maintenance/evidence/AIF120_workbench_catalog_flow_build_20260918.txt
+- docs/maintenance/evidence/AIF120_workbench_catalog_flow_hydrate_20260918.png
+- docs/maintenance/evidence/AIF120_workbench_catalog_flow_load_20260918.png
+notes: Exact selected payload actions, generated modal destination and path choices, historical duplicate-name readback, RAM residence, Database images population, cancellation and stale/buffer refusal. Local Windows evidence is recorded in the closeout, including startup-abort correction and original catalog hashes. Source and evidence remain uncommitted; no promotion, publication or cross-platform runtime claim.

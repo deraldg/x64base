@@ -1,0 +1,15 @@
+id: proof.gui.uidef_workbench_browse
+label: Generated Workbench live table and memo views
+state: source_defined
+source: docs/maintenance/AIF120_WORKBENCH_BROWSE_V1.md
+related:
+- gui/uidef/workbench_table.hpp
+- gui/uidef/workbench_table.cpp
+- gui/uidef/workbench_table_test.cpp
+- gui/uidef/workbench_session.cpp
+- gui/uidef/wx_workbench.cpp
+- include/cli/table_object.hpp
+- src/cli/table_object.cpp
+- docs/maintenance/evidence/AIF120_workbench_browse_20260918.txt
+- docs/maintenance/evidence/AIF120_workbench_20260918_v5-browse.png
+notes: Native Windows verification covers paging, shared order and visibility, cursor preservation, buffered scalar and memo values, bounded memo previews, stale identities and the 64-bit overlay lookup. BROWSE dispatch and memo window exercised in generated GUI. Actual catalog hydration and prior session tests rerun. Source and evidence remain uncommitted; no promotion to runtime_observed. Existing numeric CDX text-key ordering is recorded in the closeout.

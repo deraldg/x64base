@@ -1,0 +1,13 @@
+id: proof.gui.uidef_workbench_export
+label: Generated Workbench exact selected-image export
+state: source_defined
+source: docs/maintenance/AIF120_WORKBENCH_EXPORT_V1.md
+related:
+- gui/uidef/workbench_images.cpp
+- gui/uidef/workbench_session.cpp
+- gui/uidef/workbench_images_test.cpp
+- gui/uidef/wx_workbench.cpp
+- gui/uidef/author_workbench.py
+- docs/maintenance/evidence/AIF120_workbench_export_20260918.txt
+- docs/maintenance/evidence/AIF120_workbench_20260918_v9-export.png
+notes: Selected root and nested images export byte-exactly to new files. Local Windows tests cover overwrite refusal, unchanged live buffers, and fresh-session hydration. Source and evidence remain uncommitted; no runtime_observed promotion or lane closure claim.

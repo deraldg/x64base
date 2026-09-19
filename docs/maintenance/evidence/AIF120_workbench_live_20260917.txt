@@ -1,0 +1,46 @@
+PASS catalog: parent/version separation, history/deletion, MINIDB members, RAM/disk split,
+corrupt payload, cycles, unchanged inputs, cancellation, missing/malformed files
+PASS live session: durable births, nesting, roots, same-name areas, independent selection, SWITCH/SELECT number/name/qualified name, scoped/recursive close, stale handle refusal, 12 reuse cycles, serialized reads, queued shutdown, unchanged source
+session_home=C:\Users\deral\AppData\Local\Temp\arctictalk-session-7513327684200
+records=134 deleted=148 minidb=7 payload_errors=0
+PASS generated native Workbench
+catalog=D:\code\ccode\dottalkpp\data\workspaces\WORKSPACES.dbf
+records=134
+deleted=148
+selected_ws_id=18
+identity_rows=21
+member_rows=24
+grid_width=760
+grid_height=498
+history_ok=1
+filter_ok=1
+ui_timer_ticks=6
+error=
+live_smoke=0
+live_workspaces=1
+live_areas=0
+live_error=
+session_home=C:\Users\deral\AppData\Local\Temp\arctictalk-session-7514640719500
+PASS generated native Workbench
+catalog=D:\code\ccode\dottalkpp\data\workspaces\WORKSPACES.dbf
+records=134
+deleted=148
+selected_ws_id=18
+identity_rows=21
+member_rows=24
+grid_width=760
+grid_height=498
+history_ok=1
+filter_ok=1
+ui_timer_ticks=16
+error=
+live_smoke=1
+live_workspaces=4
+live_areas=2
+live_error=
+session_home=C:\Users\deral\AppData\Local\Temp\arctictalk-session-7516660438000
+PASS close during read: cancellation requested, worker joined
+PASS input SHA-256 unchanged
+0221de4b8752afe43d4dedeb9f49869373f024e115fa3e40a26d4dec0f43a23e D:\code\ccode\dottalkpp\data\workspaces\WORKSPACES.dbf
+152b64988b90cfd467957e561c14cfbde29e034dbd19ca448c9e7209a1b7d722 D:\code\ccode\dottalkpp\data\workspaces\WORKSPACES.dtx
+binary_sha256=8f9bb3706291bf6191e0b18f7b0bee17c714c5148ca8168a7597afd3c619ae02

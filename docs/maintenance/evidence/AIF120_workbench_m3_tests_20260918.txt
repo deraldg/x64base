@@ -1,0 +1,23 @@
+Test project D:/code/ccode/build/uidef-native
+    Start 1: uidef_catalog_test
+1/9 Test #1: uidef_catalog_test ...............   Passed    0.12 sec
+    Start 2: uidef_session_test
+2/9 Test #2: uidef_session_test ...............   Passed    5.53 sec
+    Start 3: uidef_paths_test
+3/9 Test #3: uidef_paths_test .................   Passed    0.71 sec
+    Start 4: uidef_images_test
+4/9 Test #4: uidef_images_test ................   Passed    0.52 sec
+    Start 5: uidef_table_test
+5/9 Test #5: uidef_table_test .................   Passed    1.11 sec
+    Start 6: uidef_save_test
+6/9 Test #6: uidef_save_test ..................   Passed    0.70 sec
+    Start 7: uidef_memo_image_test
+7/9 Test #7: uidef_memo_image_test ............   Passed    0.25 sec
+    Start 8: uidef_store_image_test
+8/9 Test #8: uidef_store_image_test ...........   Passed    0.67 sec
+    Start 9: uidef_workbench_m1_design
+9/9 Test #9: uidef_workbench_m1_design ........   Passed    0.41 sec
+
+100% tests passed, 0 tests failed out of 9
+
+Total Test time (real) =  10.05 sec

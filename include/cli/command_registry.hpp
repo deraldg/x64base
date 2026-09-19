@@ -21,6 +21,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <utility>
 
 namespace xbase { class DbArea; }
 
@@ -64,6 +65,10 @@ struct RunResult {
 
 class CommandRegistry final {
 public:
+    // Optional host admission runs at actual dispatch, including macro/script
+    // replays. Empty means admitted; a message refuses with HandlerError.
+    using ExecutionGuard = std::function<std::string(const std::string&, const std::string&)>;
+    void set_execution_guard(ExecutionGuard guard) { execution_guard_ = std::move(guard); }
     /**
      * Historical registration path. It now means "core/built-in" and protects
      * the command name from later extension overwrite.
@@ -115,6 +120,7 @@ public:
     bool remove(const std::string& name);
 
 private:
+    ExecutionGuard execution_guard_;
     bool add_with_origin(const std::string& name,
                          Handler h,
                          CommandOrigin origin,

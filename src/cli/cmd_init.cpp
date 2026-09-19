@@ -203,9 +203,7 @@ static std::string exe_stem_lower() {
     return stem;
 }
 
-static fs::path find_system_ini_in_bin() {
-    const fs::path bin = get_executable_dir();
-    const std::string stem = exe_stem_lower();
+static fs::path find_system_ini_in_bin(const fs::path& bin, const std::string& stem) {
 
     if (!stem.empty()) {
         const fs::path exact = bin / (stem + ".ini");
@@ -217,8 +215,7 @@ static fs::path find_system_ini_in_bin() {
     return {};
 }
 
-static fs::path find_user_ini_in_bin() {
-    const fs::path bin = get_executable_dir();
+static fs::path find_user_ini_in_bin(const fs::path& bin) {
     const fs::path user_ini = bin / "init.ini";
 
     if (fs::exists(user_ini) && fs::is_regular_file(user_ini)) {
@@ -267,7 +264,10 @@ static void run_init_script(xbase::DbArea& current, const fs::path& ini_path, co
     }
 }
 
-void cmd_INIT(xbase::DbArea& current, std::istringstream& in) {
+// Shared initializer for a native host with a configured installation BIN.
+// The CLI wrapper below retains its executable-relative behavior.
+void cmd_INIT_from(xbase::DbArea& current, std::istringstream& in,
+                   const fs::path& bin, const std::string& system_stem) {
     if (is_init_usage_request(in.str())) {
         print_init_usage();
         return;
@@ -284,7 +284,7 @@ void cmd_INIT(xbase::DbArea& current, std::istringstream& in) {
     }
 
     std::cout << "INIT: Paths\n";
-    std::cout << "  BIN        : " << get_executable_dir().string() << "\n";
+    std::cout << "  BIN        : " << bin.string() << "\n";
     std::cout << "  DATA       : " << state().data_root.string() << "\n";
     std::cout << "  DBF        : " << get_slot(Slot::DBF).string() << "\n";
     std::cout << "  INDEXES    : " << get_slot(Slot::INDEXES).string() << "\n";
@@ -306,8 +306,8 @@ void cmd_INIT(xbase::DbArea& current, std::istringstream& in) {
     }
 
     try {
-        const fs::path system_ini = find_system_ini_in_bin();
-        const fs::path user_ini   = find_user_ini_in_bin();
+        const fs::path system_ini = find_system_ini_in_bin(bin, system_stem);
+        const fs::path user_ini   = find_user_ini_in_bin(bin);
 
         bool ran_any = false;
 
@@ -331,11 +331,14 @@ void cmd_INIT(xbase::DbArea& current, std::istringstream& in) {
         }
 
         if (!ran_any) {
-            std::cout << "INIT: no .ini file found in " << get_executable_dir().string() << "\n";
+            std::cout << "INIT: no .ini file found in " << bin.string() << "\n";
         }
     } catch (const std::exception& ex) {
         std::cout << "INIT: ini processing failed: " << ex.what() << "\n";
     } catch (...) {
         std::cout << "INIT: ini processing failed (unknown error)\n";
     }
+}
+void cmd_INIT(xbase::DbArea& current, std::istringstream& in) {
+    cmd_INIT_from(current, in, get_executable_dir(), exe_stem_lower());
 }

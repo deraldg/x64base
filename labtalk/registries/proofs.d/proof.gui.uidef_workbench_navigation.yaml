@@ -1,0 +1,14 @@
+id: proof.gui.uidef_workbench_navigation
+label: Generated Workbench workspace-scoped table navigation
+state: source_defined
+source: docs/maintenance/AIF120_WORKBENCH_NAVIGATION_V1.md
+related:
+- gui/uidef/workbench_navigation.cpp
+- gui/uidef/workbench_session.hpp
+- gui/uidef/workbench_session_test.cpp
+- gui/uidef/wx_workbench.cpp
+- gui/uidef/author_workbench.py
+- gui/uidef/verify_workbench.py
+- docs/maintenance/evidence/AIF120_workbench_navigation_20260918.txt
+- docs/maintenance/evidence/AIF120_workbench_20260918_v11-navigation.png
+notes: Local Windows native and generated-window checks pass for parent, child and peer table scopes, independent view nesting, name search, duplicate table names and filtered-row SELECT identity. Browsing preserves engine workspace and area selection. Source and evidence remain uncommitted; no runtime_observed promotion or lane closure claim.

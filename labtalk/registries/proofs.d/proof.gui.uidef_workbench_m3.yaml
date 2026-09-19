@@ -1,0 +1,16 @@
+id: proof.gui.uidef_workbench_m3
+label: M3 everyday table controls and buffered memo editing
+state: source_defined
+source: docs/maintenance/AIF120_WORKBENCH_M3_V1.md
+related:
+- gui/uidef/author_workbench.py
+- gui/uidef/wx_workbench.cpp
+- gui/uidef/workbench_table.cpp
+- gui/uidef/workbench_session.cpp
+- gui/uidef/workbench_table_test.cpp
+- gui/uidef/verify_workbench.py
+- docs/maintenance/AIF120_WORKBENCH_MILESTONES_V1.md
+- docs/maintenance/evidence/AIF120_workbench_m3_tests_20260918.txt
+- docs/maintenance/evidence/AIF120_workbench_m3_release_20260918.txt
+- docs/maintenance/evidence/AIF120_workbench_m3_20260918.png
+notes: Locally verified on Windows; nine final checks and the eighteen-step M3 window workflow pass. The broader eighteen-mode suite passed before the final field-pane layout correction. TABLE ON preserves supported buffering; native buffered append/recall and NULL representation are explicitly deferred. Source/evidence remain uncommitted, so no committed or published proof claim.

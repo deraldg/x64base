@@ -1,0 +1,18 @@
+Source and executable inventory 2026-09-18T15:38:17.723203-07:00
+HEAD bbf22e7570f1d9a3c5a0286cdb3cd2333e7dacfe
+C++ catalog rows: 112
+Kinds: {'run': 66, 'prefill': 45, 'info': 1}
+Categories: {'Work': 9, 'Table': 12, 'Record': 18, 'Index': 13, 'Lists': 13, 'Browse': 13, 'Rel': 12, 'Tuple': 7, 'Cmd': 15}
+Python catalog rows: 112
+Python/C++ category, label, command, kind rows equal: True
+dottalkpp\bin\dottalk_wb.exe bytes=1499648 SHA256=124541d1f5003de164d59c691966a8a0fa07fb73175b1bc923596d1bd042858f
+build\uidef-native\Release\arctictalk_workbench_m2.exe bytes=9640448 SHA256=afda8f778af8e35079f08ee08b8967188e9a314e4931929c69e50b99f9010c39
+src\gui\core\gui_command_catalog.cpp bytes=9610 SHA256=f1455b22586c604baaa803d5c7918376fcdbb92d85ef6f8aaaf5093cba87dc5e
+src\gui\wx\main_frame.cpp bytes=93107 SHA256=42ebca8553f562ae057eae87ac75f46be7961582648396ed7633aa0fcd957309
+src\gui\wx\memo_browser_frame.cpp bytes=7806 SHA256=ce87bab6b52eb577e42dc4a0b70fccc38d14f95bd102ba3ea91daf3aaef79110
+gui\uidef\author_workbench.py bytes=17503 SHA256=5376977d102cf1565113031447a5b0a9edecbd00e3e17f95e1b829af0e7b9a61
+gui\uidef\wx_workbench.cpp bytes=137269 SHA256=8776fa43c0527249706db26a141f566881316d2d21e65c1de67721295ca14b4e
+tools\gui_preview\dottalk_gui_preview.py bytes=53277 SHA256=ea96c7657eb3bef36c576800535b9a5ffd360238183a8064ffe018e9fe755cbd
+Counts are catalog definitions, not counts of working GUI operations.
+Old Work category has nine rows but its native Workspace menu is built separately.
+Runtime launched executable identifies itself as 17f5deda, not current HEAD; no old binary rebuild in this audit.

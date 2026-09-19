@@ -71,7 +71,7 @@ public:
 
     // Return the merged overlay patch for (area0, recno).
     // If multiple ChangeEntry exist for recno, later/higher priority wins per-field.
-    Overlay overlay_for(int recno) const;
+    Overlay overlay_for(std::uint64_t recno) const;
 
     // Overlay one scalar value if a buffered change exists for (area0, recno, field1).
     // Returns true if it overrode the value.
@@ -96,7 +96,7 @@ private:
     std::vector<std::string> read_record_values_no_side_effect(int recno) const;
 
     // Merge overlay entries for a specific recno from the TableBuffer.
-    Overlay merge_overlay_from_tb(int recno, const TableBuffer& tb) const;
+    Overlay merge_overlay_from_tb(std::uint64_t recno, const TableBuffer& tb) const;
 };
 
 } // namespace dottalk::table

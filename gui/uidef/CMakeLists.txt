@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.21)
 
 # ============================================================================
+
+# The sample below remains standalone. The commissioned Workbench uses the root
+# DOTTALK_BUILD_UIDEF_WORKBENCH option and the complete shared command runtime;
+# its host and the prompt execute the same language on their bound engine.
 # uidef_wx_demo -- build a wx frontend FROM A UIDEF DOCUMENT. AIF-120 R76.
 #
 # WHAT IS ACTUALLY BEING BUILT
@@ -66,6 +70,11 @@ if(UIDEF_STANDALONE)
   set(CMAKE_CXX_STANDARD 20)
   set(CMAKE_CXX_STANDARD_REQUIRED ON)
   set(CMAKE_CXX_EXTENSIONS OFF)
+  # The root build supplies these to engine libraries too. Without NOMINMAX,
+  # Windows headers turn numeric_limits::max() into a macro invocation.
+  if(WIN32)
+    add_compile_definitions(NOMINMAX WIN32_LEAN_AND_MEAN)
+  endif()
 endif()
 
 # ---- Locate the repository, and fail HERE if it is wrong -------------------
@@ -142,6 +151,7 @@ set(UIDEF_CLI_SOURCES
   src/cli/expr/text_compare.cpp    src/cli/expr/value_eval.cpp
   src/cli/expr/date/date_arith.cpp src/cli/expr/date/date_utils.cpp
   src/common/path_resolver.cpp     src/common/path_state.cpp
+  src/sqlsel/mode.cpp              src/cli/group_log.cpp
 )
 list(TRANSFORM UIDEF_CLI_SOURCES PREPEND "${DOTTALK_ROOT}/")
 foreach(_s IN LISTS UIDEF_CLI_SOURCES)
@@ -179,6 +189,7 @@ add_custom_command(
 # so a console-subsystem target is the classic first MSVC link failure for a wx
 # CMake project -- an unresolved entry point, with nothing about it that names wx.
 # Added unqualified because it costs the Linux build nothing (R87).
+if(UIDEF_STANDALONE)
 add_executable(uidef_wx_demo WIN32 "${_gen}" wx_host.cpp ${UIDEF_CLI_SOURCES})
 
 target_include_directories(uidef_wx_demo PRIVATE
@@ -199,3 +210,64 @@ if(EXISTS "${DOTTALK_ROOT}/cmake/MSVCWarnings.cmake")
 endif()
 
 message(STATUS "uidef: document=${UIDEF_DOCUMENT}  index=${DOTTALK_WITH_INDEX}  root=${DOTTALK_ROOT}")
+
+endif()
+
+# A separate product document. Existing examples and APPGUI stay independent.
+option(UIDEF_BUILD_WORKBENCH "Build the generated live and saved workspace Workbench" OFF)
+if(UIDEF_BUILD_WORKBENCH)
+  if(NOT TARGET dottalk_cli_runtime)
+    message(FATAL_ERROR "Workbench requires the root build with DOTTALK_BUILD_UIDEF_WORKBENCH=ON; use build_workbench.py. Standalone samples remain available.")
+  endif()
+  set(_wb_doc "${CMAKE_CURRENT_BINARY_DIR}/WORKBENCH.DBF")
+  set(_wb_cpp "${CMAKE_CURRENT_BINARY_DIR}/WORKBENCH_ui.cpp")
+  add_custom_command(OUTPUT "${_wb_doc}" "${CMAKE_CURRENT_BINARY_DIR}/WORKBENCH.FPT"
+    COMMAND ${Python3_EXECUTABLE} -B "${CMAKE_CURRENT_SOURCE_DIR}/author_workbench.py" WORKBENCH
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+    DEPENDS author_workbench.py uidef.py
+    COMMENT "UIDEF: authoring the Workbench design table")
+  add_custom_command(OUTPUT "${_wb_cpp}"
+    COMMAND ${Python3_EXECUTABLE} -B "${CMAKE_CURRENT_SOURCE_DIR}/uidef_wx.py"
+            "${_wb_doc}" "${_wb_cpp}" --dispatch
+    DEPENDS "${_wb_doc}" "${CMAKE_CURRENT_BINARY_DIR}/WORKBENCH.FPT" uidef_wx.py uidef.py
+    COMMENT "UIDEF: generating the Workbench frontend")
+  add_library(uidef_catalog STATIC workbench_catalog.cpp)
+  target_link_libraries(uidef_catalog PUBLIC xbase memo)
+  target_include_directories(uidef_catalog PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+  add_library(uidef_session STATIC workbench_session.cpp workbench_images.cpp workbench_table.cpp workbench_navigation.cpp workbench_paths.cpp)
+  target_link_libraries(uidef_session PUBLIC uidef_catalog dottalk_cli_runtime)
+  add_executable(uidef_session_test workbench_session_test.cpp)
+  target_link_libraries(uidef_session_test PRIVATE uidef_session dottalk_cli_runtime)
+  add_executable(uidef_paths_test workbench_paths_test.cpp)
+  target_link_libraries(uidef_paths_test PRIVATE uidef_session dottalk_cli_runtime)
+  add_executable(uidef_images_test workbench_images_test.cpp)
+  target_link_libraries(uidef_images_test PRIVATE uidef_session dottalk_cli_runtime)
+  add_executable(uidef_table_test workbench_table_test.cpp)
+  target_link_libraries(uidef_table_test PRIVATE uidef_session dottalk_cli_runtime)
+  add_executable(uidef_save_test workbench_save_test.cpp)
+  target_link_libraries(uidef_save_test PRIVATE uidef_session dottalk_cli_runtime)
+  add_executable(uidef_memo_image_test workbench_memo_image_test.cpp)
+  target_link_libraries(uidef_memo_image_test PRIVATE uidef_session dottalk_cli_runtime)
+  add_executable(uidef_store_image_test workbench_store_image_test.cpp)
+  target_link_libraries(uidef_store_image_test PRIVATE uidef_session dottalk_cli_runtime)
+  add_executable(arctictalk_workbench WIN32 "${_wb_cpp}" wx_workbench.cpp
+    "${DOTTALK_ROOT}/src/gui/core/localization.cpp")
+  target_link_libraries(arctictalk_workbench PRIVATE uidef_session dottalk_cli_runtime ${wxWidgets_LIBRARIES})
+  set(UIDEF_WORKBENCH_OUTPUT_NAME "arctictalk_workbench" CACHE STRING "Executable name for a side-by-side Workbench preview")
+  set_target_properties(arctictalk_workbench PROPERTIES OUTPUT_NAME "${UIDEF_WORKBENCH_OUTPUT_NAME}")
+  add_executable(uidef_catalog_test workbench_catalog_test.cpp)
+  target_link_libraries(uidef_catalog_test PRIVATE uidef_catalog)
+  foreach(_exe arctictalk_workbench uidef_catalog_test uidef_session_test uidef_paths_test uidef_images_test uidef_table_test uidef_save_test uidef_memo_image_test uidef_store_image_test)
+    set_target_properties(${_exe} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
+  endforeach()
+  enable_testing()
+  add_test(NAME uidef_catalog_test COMMAND uidef_catalog_test)
+  add_test(NAME uidef_session_test COMMAND uidef_session_test)
+  add_test(NAME uidef_paths_test COMMAND uidef_paths_test)
+  add_test(NAME uidef_images_test COMMAND uidef_images_test)
+  add_test(NAME uidef_table_test COMMAND uidef_table_test)
+  add_test(NAME uidef_save_test COMMAND uidef_save_test)
+  add_test(NAME uidef_memo_image_test COMMAND uidef_memo_image_test)
+  add_test(NAME uidef_store_image_test COMMAND uidef_store_image_test)
+  add_test(NAME uidef_workbench_m1_design COMMAND ${Python3_EXECUTABLE} -B "${CMAKE_CURRENT_SOURCE_DIR}/workbench_m1_test.py")
+endif()

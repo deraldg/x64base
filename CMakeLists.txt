@@ -9,6 +9,9 @@ if (POLICY CMP0091)
     cmake_policy(SET CMP0091 NEW)
 endif()
 
+# The generated product opts in independently of the handwritten GUI samples.
+option(DOTTALK_BUILD_UIDEF_WORKBENCH "Build the generated Workbench with the shared command runtime" OFF)
+
 # Honor *_ROOT hints more consistently.
 if (POLICY CMP0144)
     cmake_policy(SET CMP0144 NEW)
@@ -1029,4 +1032,8 @@ if(TARGET dottalkpp)
     else()
         install(TARGETS dottalkpp RUNTIME DESTINATION bin)
     endif()
+endif()
+
+if(DOTTALK_BUILD_UIDEF_WORKBENCH)
+    include(cmake/AddUidefWorkbench.cmake)
 endif()

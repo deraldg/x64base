@@ -1,0 +1,21 @@
+PASS catalog: parent/version separation, history/deletion, MINIDB members, RAM/disk split,
+corrupt payload, cycles, unchanged inputs, cancellation, missing/malformed files
+records=134 deleted=148 minidb=7 payload_errors=0
+PASS generated native Workbench
+catalog=D:\code\ccode\dottalkpp\data\workspaces\WORKSPACES.dbf
+records=134
+deleted=148
+selected_ws_id=18
+identity_rows=21
+member_rows=24
+grid_width=774
+grid_height=538
+history_ok=1
+filter_ok=1
+ui_timer_ticks=6
+error=
+PASS close during read: cancellation requested, worker joined
+PASS input SHA-256 unchanged
+0221de4b8752afe43d4dedeb9f49869373f024e115fa3e40a26d4dec0f43a23e D:\code\ccode\dottalkpp\data\workspaces\WORKSPACES.dbf
+152b64988b90cfd467957e561c14cfbde29e034dbd19ca448c9e7209a1b7d722 D:\code\ccode\dottalkpp\data\workspaces\WORKSPACES.dtx
+binary_sha256=ef4bc2755d122b02ec34560a47ee0f0795ce0b2554061d0ae710acdf96c9c9f0

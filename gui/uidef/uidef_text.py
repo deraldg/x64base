@@ -104,6 +104,8 @@ class Canvas:
 
 def render(path, width=100, height=40):
     rows = list(Dbf(path).rows())
+    from uidef import refuse_unsupported_modals
+    refuse_unsupported_modals(rows, 'text')
     objs = [r for r in rows if (r['RECKIND'] or '').strip() == 'OBJ']
     fonts = [r for r in rows if (r['RECKIND'] or '').strip() == 'FONT']
     rec = {(r['OBJID'] or '').strip(): r for r in objs}

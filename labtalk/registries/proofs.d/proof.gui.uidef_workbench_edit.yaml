@@ -1,0 +1,13 @@
+id: proof.gui.uidef_workbench_edit
+label: Generated Workbench buffered scalar editing
+state: source_defined
+source: docs/maintenance/AIF120_WORKBENCH_EDIT_V1.md
+related:
+- gui/uidef/workbench_table.cpp
+- gui/uidef/workbench_table_test.cpp
+- gui/uidef/workbench_session.cpp
+- gui/uidef/wx_workbench.cpp
+- gui/uidef/author_workbench.py
+- docs/maintenance/evidence/AIF120_workbench_edit_20260918.txt
+- docs/maintenance/evidence/AIF120_workbench_20260918_v6-edit.png
+notes: Local Windows native tests and generated GUI verification passed. Scalar input is literal, type-validated and staged through the existing native write funnel. Reopen proves commit; rollback and peer-area isolation are verified. Primary keys, SQL transactions and stale edits refuse. Memo/NULL/binary values remain inspect-only in this editor. Source and evidence are uncommitted; no runtime_observed promotion or lane closure claim.

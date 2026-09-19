@@ -1,0 +1,14 @@
+id: proof.gui.uidef_workbench_loadview
+label: Generated Workbench command-load visibility
+state: source_defined
+source: docs/maintenance/AIF120_WORKBENCH_LOADVIEW_V1.md
+related:
+- include/cli/workspace_image_event.hpp
+- src/cli/cmd_workspace.cpp
+- gui/uidef/workbench_session.cpp
+- gui/uidef/wx_workbench.cpp
+- gui/uidef/workbench_paths_test.cpp
+- gui/uidef/workbench_images_test.cpp
+- docs/maintenance/evidence/AIF120_workbench_loadview_20260918.txt
+- docs/maintenance/evidence/AIF120_workbench_20260918_v13-loadview.png
+notes: Native command-load observation and generated image/table navigation. Validation details are recorded in the closeout. Source and evidence are local and uncommitted; no runtime_observed promotion or lane closure claim.

@@ -1,0 +1,3 @@
+PASS image save: recursion scope, peer byte exclusion, duplicate basenames, memo carriage, active index seek, pending/SQL/stale refusal, no overwrite, independent selection, fresh-session restore, RAM resave, failed save preserves history, unchanged source
+saved_image=C:\Users\deral\AppData\Local\Temp\workbench save 48750142493900\Saved workspace.minidb
+ram_image=C:\Users\deral\AppData\Local\Temp\workbench save 48750142493900\RAM saved.minidb

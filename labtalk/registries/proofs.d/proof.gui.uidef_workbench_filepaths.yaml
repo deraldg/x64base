@@ -1,0 +1,16 @@
+id: proof.gui.uidef_workbench_filepaths
+label: Workbench deterministic native file locations and script modal
+state: source_defined
+source: docs/maintenance/AIF120_WORKBENCH_FILEPATHS_V1.md
+related:
+- src/cli/shell_api.cpp
+- src/cli/shell_api.hpp
+- src/cli/cmd_dotscript.cpp
+- src/cli/cmd_workspace.cpp
+- gui/uidef/author_workbench.py
+- gui/uidef/wx_workbench.cpp
+- gui/uidef/workbench_session.cpp
+- gui/uidef/workbench_paths_test.cpp
+- docs/maintenance/evidence/AIF120_workbench_filepaths_20260918.txt
+- docs/maintenance/evidence/AIF120_workbench_20260918_filepaths-modal-RUN.png
+notes: Eight native programs, design check and sixteen window modes pass locally on Windows; duplicate names, missing-file refusal, explicit roots, nested scripts, quoted filenames, twenty-three modal lifetimes and unchanged source catalog hashes. Source and evidence uncommitted; no runtime_observed promotion or publication claim. ERSATZ search policy remains outside this correction.

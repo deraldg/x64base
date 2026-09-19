@@ -1,0 +1,38 @@
+run_id: AIPR-20260918-UIDEF-M3
+member: member.ai.codex
+product: Codex
+project: project.x64base.gui
+lanes:
+- AIF-120
+role: contributing_agent_generated_workbench
+authored_by: member.ai.codex
+planned_by: member.derald
+owner: member.derald
+steward: member.ai.claude.cowork
+git:
+  branch: development
+  baseline: bbf22e7570f1d9a3c5a0286cdb3cd2333e7dacfe
+chat_handle: CODEX-20260918-UIDEF-M3
+handle_binding: SELF_REPORTED
+started: 2026-09-18
+closeouts:
+- docs/maintenance/AIF120_WORKBENCH_M3_V1.md
+artifacts:
+- gui/uidef/author_workbench.py
+- gui/uidef/wx_workbench.cpp
+- gui/uidef/workbench_table.hpp
+- gui/uidef/workbench_table.cpp
+- gui/uidef/workbench_session.hpp
+- gui/uidef/workbench_session.cpp
+- gui/uidef/workbench_table_test.cpp
+- gui/uidef/workbench_m1_test.py
+- gui/uidef/verify_workbench.py
+- docs/maintenance/AIF120_WORKBENCH_M3_V1.md
+- labtalk/registries/proofs.d/proof.gui.uidef_workbench_m3.yaml
+- docs/maintenance/evidence/AIF120_workbench_m3_tests_20260918.txt
+- docs/maintenance/evidence/AIF120_workbench_m3_release_20260918.txt
+- docs/maintenance/evidence/AIF120_workbench_m3_housekeeping_20260918.txt
+- gui/uidef/WORKBENCH.md
+- docs/maintenance/AIF120_WORKBENCH_MILESTONES_V1.md
+status: review-needed
+notes: M3 GUI locally complete within documented native limits. Nine final checks and eighteen-step M3 window workflow pass; broader eighteen-mode window suite passed before the final field-pane layout correction. Buffered append/recall and NULL representation remain engine follow-ups. Source/evidence remain local and uncommitted. No git mutation, promotion or publication. Original samples, catalog family and shared work preserved; existing user session left intact.

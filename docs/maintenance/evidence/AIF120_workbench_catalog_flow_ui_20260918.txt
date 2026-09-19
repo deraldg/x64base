@@ -1,0 +1,287 @@
+Fresh default launch
+Window: "ArcticTalk Workbench", App: arctictalk_workbench_catalogflow.exe.
+	0 window ArcticTalk Workbench Secondary Actions: Raise
+		1 tab ID: -31968
+			2 pane panel ID: -31967
+				3 pane panel ID: -31966
+					4 text Saved workspaces / database images | Select a saved version, then load its definition or hydrate its image ID: -31965
+				5 pane panel ID: -31964
+					6 pane panel ID: -31963
+						7 edit Description: Path to WORKSPACES.dbf ID: -31962
+					8 button Choose catalog... ID: -31961
+					9 button Refresh ID: -31960
+					10 button Inspect image... ID: -31959
+					11 button Open image file... ID: -31958
+				12 pane panel ID: -31957
+					13 button (disabled) Hydrate to RAM... ID: -31956
+					14 button Load definition... ID: -31955
+				15 text Load this exact saved definition using its table files. Choose their location in the next dialog. ID: -31954
+				16 pane panel ID: -31953
+					17 pane panel ID: -31952
+						18 text Workspace catalog ID: -31951
+						19 pane panel ID: -31950
+							20 edit Description: Filter workspace names or IDs ID: -31949
+						21 pane panel ID: -31948
+							22 check box Include superseded records ID: -31947
+						23 pane panel ID: -31946
+							24 list ID: -31945
+								25 list item (selectable) mcc_x64 #4 [DTSHEMA 2]
+								26 list item (selectable) mcc_v3 #6 [DTSHEMA 3]
+								27 list item (selectable) sess_cursor #13 [DTSHEMA 3]
+								28 list item (selectable) mcc_db #18 [MINIDB 1]
+								29 list item (selectable) mcc_minidb_memo #48 [MINIDB 1]
+								30 list item (selectable) x64 #207 [BIRTH 1]
+								31 list item (selectable) x32 #214 [BIRTH 1]
+								32 list item (selectable) MCC #265 [BIRTH 1]
+								33 list item (selectable) CASCERP #266 [BIRTH 1]
+								34 list item (selectable) workspaces #267 [BIRTH 1]
+								35 list item (selectable) mcc #268 [BIRTH 1]
+								36 list item (selectable) ws2 #281 [BIRTH 1]
+								37 list item (selectable) ws3 #282 [BIRTH 1]
+								38 list item (selectable) ws_new #283 [BIRTH 1]
+								39 list item (selectable) myram #284 [MINIDB 1]
+					40 tab ID: -31944
+						41 pane panel ID: -31943
+							42 list ID: -31942
+								43 header Header Control ID: Header
+									44 header item Property ID: HeaderItem 0
+									45 header item Value ID: HeaderItem 1
+								46 list item (selectable) View
+									47 text View
+									48 text Saved catalog record; not a live workspace
+								49 list item (selectable) Durable workspace ID
+									50 text Durable workspace ID
+									51 text 4
+								52 list item (selectable) Parent workspace ID
+									53 text Parent workspace ID
+									54 text Not recorded
+								55 list item (selectable) Previous saved version ID
+									56 text Previous saved version ID
+									57 text 2
+								58 list item (selectable) Catalog record
+									59 text Catalog record
+									60 text 4
+								61 list item (selectable) WS_NAME
+									62 text WS_NAME
+									63 text mcc_x64
+								64 list item (selectable) FMT
+									65 text FMT
+									66 text DTSHEMA 2
+								67 list item (selectable) FLAVOR
+									68 text FLAVOR
+									69 text X64
+								70 list item (selectable) SAVED_AT
+									71 text SAVED_AT
+									72 text 2026-08-11 14:21:56
+								73 list item (selectable) AUTHOR
+									74 text AUTHOR
+									75 text member#4/kind0
+								76 list item (selectable) SIZE_B
+									77 text SIZE_B
+									78 text 1134
+								79 list item (selectable) EST_HYD_B
+									80 text EST_HYD_B
+									81 text
+								82 list item (selectable) DBF_ROOT
+									83 text DBF_ROOT
+									84 text D:\code\ccode\dottalkpp\data\DBF\x64
+								85 list item (selectable) IDX_ROOT
+									86 text IDX_ROOT
+									87 text D:\code\ccode\dottalkpp\data\INDEXES\x64
+								88 list item (selectable) TREE_DEPTH
+									89 text TREE_DEPTH
+									90 text 0
+								91 list item (selectable) DEPTH
+									92 text DEPTH
+									93 text 0
+								94 list item (selectable) SELF_REF
+									95 text SELF_REF
+									96 text F
+						97 tab item (selectable) Workspace
+						98 tab item (selectable) MINIDB contents
+						99 tab item (selectable) Saved definition
+			100 tab item (selectable) Saved catalogs
+			101 tab item (selectable) Live session
+			102 tab item (selectable) Database images
+			103 tab item (selectable) Paths and defaults
+		104 pane panel ID: -31836
+			105 text 15 visible / 136 saved records | 148 deleted records excluded | Read-only snapshot ID: -31835
+		106 title bar
+			107 menu bar System ID: MenuBar
+				108 menu item System
+			109 button Minimize
+			110 button Maximize
+			111 button Close
+		112 menu bar Application ID: MenuBar
+			113 menu item File
+			114 menu item Workspace
+			115 menu item Table
+			116 menu item View
+			117 menu item Tools
+			118 menu item Help
+
+The focused UI element is 1 tab ID: -31968.
+
+Later passive observation after live hydration; no load/hydrate action sent by the verification agent:
+Window: "ArcticTalk Workbench", App: arctictalk_workbench_catalogflow.exe.
+	0 window ArcticTalk Workbench Secondary Actions: Raise
+		1 tab ID: -31968
+			247 pane panel ID: -31937
+				248 pane panel ID: -31936
+					249 text Live x64base session | Open table copy makes a copy | Commands operate on the paths you choose ID: -31935
+				250 pane panel ID: -31934
+					251 pane panel ID: -31933
+						252 button New workspace... ID: -31932
+						253 button Open... ID: -31931
+						254 button Load... ID: -31930
+						255 button New child... ID: -31929
+						256 button SWITCH workspace ID: -31928
+					257 pane panel ID: -31927
+						258 button Open table copy... ID: -31926
+						259 button Close current ID: -31925
+						260 button SELECT area ID: -31924
+						261 button Refresh ID: -31923
+				262 pane panel ID: -31922
+					263 check box Save and close include nested workspaces ID: -31921
+					264 button Save image... ID: -31920
+					265 button Open image file... ID: -31919
+					266 button Paths and defaults... ID: -31918
+				267 pane panel ID: -31917
+					268 text Current workspace: mcc_db_ram | Selected table: BUILDING (area 0) in mcc_db_ram ID: -31916
+				269 pane panel ID: -31915
+					270 pane panel ID: -31914
+						271 edit Description: x64base command or expression - Enter to run (Up/Down: history) ID: -31913
+					272 button Run command ID: -31912
+					273 button Run script... ID: -31911
+				274 pane panel ID: -31910
+					275 pane panel ID: -31909
+						276 pane panel ID: -31908
+							277 edit Description: Find workspace or table ID: -31907
+						278 text Browsing workspace. Enter to SWITCH. ID: -31906
+						279 pane panel ID: -31905
+							280 tree ID: -31904
+								537 tree item (selectable) DEFAULT [0 tables]
+								538 tree item (selectable) mcc_db_ram [13 tables] [current]
+									539 tree item (selectable) 0: BUILDING [RAM] [selected]
+									540 tree item (selectable) 1: CLASSES [RAM]
+									541 tree item (selectable) 2: COURSES [RAM]
+									542 tree item (selectable) 3: DEPT [RAM]
+									543 tree item (selectable) 4: ENROLL [RAM]
+									544 tree item (selectable) 5: MAJORS [RAM]
+									545 tree item (selectable) 6: ROOMS [RAM]
+									546 tree item (selectable) 7: STUD_MAJ [RAM]
+									547 tree item (selectable) 8: STUDENTS [RAM]
+									548 tree item (selectable) 9: TASSIGN [RAM]
+									549 tree item (selectable) 10: TEACHERS [RAM]
+									550 tree item (selectable) 11: TERMS [RAM]
+									551 tree item (selectable) 12: TEST64 [RAM]
+					282 tab ID: -31903
+						552 pane panel ID: -31886
+							553 pane panel ID: -31885
+								554 button Top ID: -31884
+								555 button Previous ID: -31883
+								556 button Next ID: -31882
+								557 button Refresh ID: -31881
+								558 button Select record ID: -31880
+								559 button Open value... ID: -31879
+								560 button Inspect image... ID: -31878
+							561 pane panel ID: -31877
+								562 button Edit value... ID: -31876
+								563 button Commit table ID: -31875
+								564 button Rollback table ID: -31874
+								565 button Store image... ID: -31873
+								566 text Edits stay buffered until Commit. ID: -31872
+							567 pane panel ID: -31871
+								568 text BUILDING | 8 records | NATURAL ASC | Deleted hidden | 8 rows from offset 0 | Current record 1 | 0 buffered records ID: -31870
+							569 pane panel ID: -31869
+								570 list ID: -31868
+									571 header Header Control ID: Header
+										572 header item Record ID: HeaderItem 0
+										573 header item State ID: HeaderItem 1
+										574 header item BLDG ID: HeaderItem 2
+										575 header item NAME ID: HeaderItem 3
+									576 scroll bar Vertical ID: NonClientVerticalScrollBar
+										577 button Line up ID: UpButton
+										636 button Page up ID: UpPageButton
+										578 thumb Position ID: ScrollbarThumb
+										580 button Line down ID: DownButton
+									581 list item (selectable) 1
+										582 text 1
+										583 text Current
+										584 text BLDG01
+										585 text Science Hall
+									586 list item (selectable) 2
+										587 text 2
+										588 text
+										589 text BLDG02
+										590 text Main Hall
+									591 list item (selectable) 3
+										592 text 3
+										593 text
+										594 text BLDG03
+										595 text Library
+									596 list item (selectable) 4
+										597 text 4
+										598 text
+										599 text BLDG04
+										600 text Business Center
+									601 list item (selectable) 5
+										602 text 5
+										603 text
+										604 text BLDG05
+										605 text Arts Center
+									606 list item (selectable) 6
+										607 text 6
+										608 text
+										609 text BLDG06
+										610 text Technology
+									611 list item (selectable) 7
+										612 text 7
+										613 text
+										614 text BLDG07
+										615 text Gym
+									616 list item (selectable) 8
+										617 text 8
+										618 text
+										619 text BLDG08
+										620 text Annex
+							621 text Select a row, then a field. Double-click a field to open its value or memo. ID: -31867
+							622 pane panel ID: -31866
+								623 list ID: -31865
+									624 header Header Control ID: Header
+										625 header item Field ID: HeaderItem 0
+										626 header item Type ID: HeaderItem 1
+										627 header item Value preview ID: HeaderItem 2
+									628 list item (selectable) BLDG
+										629 text BLDG
+										630 text C(6)
+										631 text BLDG01
+									632 list item (selectable) NAME
+										633 text NAME
+										634 text C(40)
+										635 text Science Hall
+						422 tab item (selectable) Workspace
+						423 tab item (selectable) Tables
+						424 tab item (selectable) Engine response
+						425 tab item (selectable) Table
+			100 tab item (selectable) Saved catalogs
+			101 tab item (selectable) Live session
+			102 tab item (selectable) Database images
+			103 tab item (selectable) Paths and defaults
+		104 pane panel ID: -31836
+			105 text Live session | 2 workspaces | 13 open areas | 310 registered commands | 0 tables with buffered edits ID: -31835
+		106 title bar
+			107 menu bar System ID: MenuBar
+				530 menu item System
+			109 button Minimize
+			110 button Maximize
+			111 button Close
+		112 menu bar Application ID: MenuBar
+			531 menu item File
+			532 menu item Workspace
+			533 menu item Table
+			534 menu item View
+			535 menu item Tools
+			536 menu item Help
+
+The focused UI element is 567 pane panel ID: -31871.

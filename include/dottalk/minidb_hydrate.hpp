@@ -38,6 +38,8 @@
 #include <filesystem>
 #include <string>
 #include <vector>
+#include <set>
+#include <algorithm>
 
 namespace dottalk::minidb {
 
@@ -56,6 +58,61 @@ struct MaterializeResult {
 
     std::vector<std::string> notes;       // non-fatal remarks, caller may print
 };
+
+// Plan every destination before writing any member. Both separators are treated
+// as separators on every host: a Windows traversal must not pass on Linux.
+// This is shared admission, not a GUI-only filter in front of an unsafe writer.
+inline bool materialization_paths(const std::string& payload, const Scan& scan,
+                                 const std::filesystem::path& ram_root,
+                                 const std::filesystem::path& ram_index_root,
+                                 std::vector<std::filesystem::path>& paths,
+                                 std::string& error) {
+    namespace fs = std::filesystem;
+    paths.clear(); error.clear();
+    if (!scan.ok) { error = "container scan failed: " + scan.error; return false; }
+    std::set<std::string> seen;
+    try {
+        for (const auto& member : scan.files) {
+            if (member.offset > payload.size() || member.length > payload.size() - member.offset) {
+                error = "member lies outside the payload"; return false;
+            }
+            std::string rel = member.relpath;
+            std::replace(rel.begin(), rel.end(), '\\', '/');
+            if (rel.empty() || rel.front() == '/' || rel.find(':') != std::string::npos ||
+                rel.find_first_of("\"<>|?*") != std::string::npos ||
+                std::any_of(rel.begin(), rel.end(), [](unsigned char c) { return c < 32; })) {
+                error = "unsafe member path: " + member.relpath; return false;
+            }
+            std::istringstream parts(rel); std::string part;
+            while (std::getline(parts, part, '/')) {
+                if (part.empty() || part == "." || part == ".." || part.back() == '.' || part.back() == ' ') {
+                    error = "unsafe member path: " + member.relpath; return false;
+                }
+                auto base = detail::lower_ascii(part.substr(0, part.find('.')));
+                if (base == "con" || base == "prn" || base == "aux" || base == "nul" ||
+                    (base.size() == 4 && (base.substr(0, 3) == "com" || base.substr(0, 3) == "lpt") &&
+                     base[3] >= '1' && base[3] <= '9')) {
+                    error = "reserved device member path: " + member.relpath; return false;
+                }
+            }
+            if (rel.back() == '/') { error = "member path names a directory"; return false; }
+            const bool index = rel.rfind("indexes/", 0) == 0;
+            const auto& supplied_root = index ? ram_index_root : ram_root;
+            if (supplied_root.empty()) { error = "empty materialization root"; return false; }
+            const auto root = fs::weakly_canonical(fs::absolute(supplied_root));
+            const auto destination = fs::weakly_canonical(root / fs::path(index ? rel.substr(8) : rel));
+            auto r = root.begin(), d = destination.begin();
+            for (; r != root.end() && d != destination.end() && *r == *d; ++r, ++d) {}
+            if (r != root.end() || d == destination.end()) {
+                error = "member escapes materialization root: " + member.relpath; return false;
+            }
+            const auto key = detail::lower_ascii(destination.generic_string());
+            if (!seen.insert(key).second) { error = "duplicate member destination: " + member.relpath; return false; }
+            paths.push_back(destination);
+        }
+    } catch (const std::exception& e) { error = e.what(); return false; }
+    return true;
+}
 
 // Write every member of a scanned container into the RAM VFS rooted at
 // `ram_root`, with "indexes/" members going to `ram_index_root`.
@@ -85,15 +142,17 @@ inline MaterializeResult materialize(const std::string& payload,
                                     const std::filesystem::path& ram_root,
                                     const std::filesystem::path& ram_index_root) {
     MaterializeResult r;
+    std::vector<std::filesystem::path> destinations;
+    if (!materialization_paths(payload, scan, ram_root, ram_index_root, destinations, r.error)) return r;
+    for (std::size_t i = 0; i < scan.files.size(); ++i) {
+        if (!is_memo_sidecar(scan.files[i].relpath) && !xbase::ramfs::is_virtual(destinations[i].string())) {
+            r.error = "RAM destination is not mounted: " + destinations[i].string(); return r;
+        }
+    }
+    std::size_t position = 0;
     for (const auto& member : scan.files) {
         const std::string& rel = member.relpath;
-        if (member.offset + member.length > payload.size()) {
-            r.error = "member '" + rel + "' lies outside the payload";
-            return r;
-        }
-        const std::filesystem::path dst = (rel.rfind("indexes/", 0) == 0)
-            ? ram_index_root / std::filesystem::path(rel.substr(8))
-            : ram_root / std::filesystem::path(rel);
+        const auto& dst = destinations[position++];
 
         // ONE predicate, shared with the scanner (minidb.hpp). It used to be a
         // three-extension literal here and nowhere else, so the budget upstream
@@ -103,6 +162,7 @@ inline MaterializeResult materialize(const std::string& payload,
         if (memo_sidecar) {
             std::error_code ec;
             std::filesystem::create_directories(dst.parent_path(), ec);
+            if (ec) { r.error = "cannot create sidecar directory: " + ec.message(); return r; }
             std::ofstream out(dst, std::ios::binary | std::ios::trunc);
             if (!out) {
                 r.error = "cannot create sidecar file " + dst.string();
@@ -111,6 +171,7 @@ inline MaterializeResult materialize(const std::string& payload,
             out.write(payload.data() + member.offset,
                       static_cast<std::streamsize>(member.length));
             out.flush();
+            if (!out) { r.error = "cannot write sidecar file " + dst.string(); return r; }
         } else {
             auto out = xbase::ramfs::open(dst.string(), /*create*/true);
             if (!out) {
@@ -120,6 +181,7 @@ inline MaterializeResult materialize(const std::string& payload,
             out->write(payload.data() + member.offset,
                        static_cast<std::streamsize>(member.length));
             out->flush();
+            if (!*out) { r.error = "cannot write RAM file " + dst.string(); return r; }
         }
         ++r.files;
         r.bytes += member.length;

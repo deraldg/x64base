@@ -1,0 +1,100 @@
+Table directory (unless saved in definition): C:\Users\deral\AppData\Local\Temp\workbench-schema-proof-ssu14mzw\tables
+Index directory (unless saved in definition): C:\Users\deral\AppData\Local\Temp\workbench-schema-proof-ssu14mzw\indexes
+> WORKSPACE LOAD C:\Users\deral\AppData\Local\Temp\workbench-schema-proof-ssu14mzw\mcc.dtschema
+[CNX READ RUN1] tag=BLDG entries=8
+[CNX READ RUN1] tag=CLS_ID entries=200
+[CNX READ RUN1] tag=TERM entries=200
+[CNX READ RUN1] tag=CID entries=200
+[CNX READ RUN1] tag=ROOM entries=200
+[CNX READ RUN1] tag=TID entries=200
+[CNX READ RUN1] tag=CID entries=100
+[CNX READ RUN1] tag=DEPT_ID entries=100
+[CNX READ RUN1] tag=DEPT_ID entries=10
+[CNX READ RUN1] tag=SID entries=686
+[CNX READ RUN1] tag=CLS_ID entries=686
+[CNX READ RUN1] tag=MAJOR entries=12
+[CNX READ RUN1] tag=DEPT_ID entries=12
+[CNX READ RUN1] tag=ROOM entries=30
+[CNX READ RUN1] tag=BLDG entries=30
+[CNX READ RUN1] tag=SID entries=200
+[CNX READ RUN1] tag=MAJOR entries=200
+[CNX READ RUN1] tag=SID entries=200
+[CNX READ RUN1] tag=MAJOR entries=200
+[CNX READ RUN1] tag=LNAME entries=200
+[CNX READ RUN1] tag=FNAME entries=200
+[CNX READ RUN1] tag=DOB entries=200
+[CNX READ RUN1] tag=GPA entries=200
+[CNX READ RUN1] tag=CLS_ID entries=200
+[CNX READ RUN1] tag=TID entries=200
+[CNX READ RUN1] tag=TID entries=20
+[CNX READ RUN1] tag=DEPT_ID entries=20
+[CNX READ RUN1] tag=LNAME entries=20
+[CNX READ RUN1] tag=FNAME entries=20
+[CNX READ RUN1] tag=TERM entries=3
+REL: STUDENTS -> ENROLL ON SID
+REL: STUDENTS -> STUD_MAJ ON SID
+REL: STUDENTS -> MAJORS ON MAJOR
+REL: ENROLL -> CLASSES ON CLS_ID
+REL: CLASSES -> COURSES ON CID
+REL: CLASSES -> TERMS ON TERM
+REL: CLASSES -> ROOMS ON ROOM
+REL: CLASSES -> TEACHERS ON TID
+REL: CLASSES -> TASSIGN ON CLS_ID
+REL: COURSES -> DEPT ON DEPT_ID
+REL: ROOMS -> BUILDING ON BLDG
+REL: TEACHERS -> DEPT ON DEPT_ID
+REL: TASSIGN -> TEACHERS ON TID
+REL: STUD_MAJ -> MAJORS ON MAJOR
+REL: MAJORS -> DEPT ON DEPT_ID
+WORKSPACE LOAD: restored 12 area(s) and 15 relation(s).
+PASS actual schema: mcc.dtschema declared=12 loaded=12 tables_with_rows_read=12 source=C:\Users\deral\AppData\Local\Temp\workbench-schema-proof-ssu14mzw\tables
+PASS unchanged source schema and 24 family files: mcc.dtschema
+d4a290ee9bf37765f1b7730941b45ea86cf3a5b6b37fdb02de509d4763620705 D:\code\ccode\dottalkpp\data\workspaces\mcc.dtschema
+e6718e166acbc7db1832d8fcfa8bd4efb76b52b9d5e0f2e7f02f5fd32e491f2d D:\code\ccode\dottalkpp\data\dbf\x32\BUILDING.dbf
+d218de259c38e23d1d4d990f9b0b81aaec9a16330dcd1f687bb94805cae3efbb D:\code\ccode\dottalkpp\data\dbf\x32\CLASSES.dbf
+a0307f11bb04ce9625e82a42cad5a6b7873841b3db84fbed35a3f29bec5642be D:\code\ccode\dottalkpp\data\dbf\x32\COURSES.dbf
+2b3e97d21a294ba2779cdd066cbe75b812cfe68af579ec9d6a0c64e0d71b662e D:\code\ccode\dottalkpp\data\dbf\x32\DEPT.dbf
+e814aa4780ac4e16042da8c39e17a44dd24ab13b1bc8933ea0820b5bc33cb5e9 D:\code\ccode\dottalkpp\data\dbf\x32\ENROLL.dbf
+c8a49dc49da5edb07f552374cf27d1c29d8a6e61f89093b1f3a052797a3e6a14 D:\code\ccode\dottalkpp\data\dbf\x32\MAJORS.dbf
+a3cd99180100e5c9a82ad26c9b73fd9c339d573e76dcf969c9776b9f777feb00 D:\code\ccode\dottalkpp\data\dbf\x32\ROOMS.dbf
+e907a5af612882fb7e3d206afcf180679ab689f52ea698d4ff4a6306e440ae31 D:\code\ccode\dottalkpp\data\dbf\x32\STUDENTS.dbf
+033fdc9c3d10baddd4fe01db561d3530259958d23c716266e3f24485abe62a39 D:\code\ccode\dottalkpp\data\dbf\x32\STUD_MAJ.dbf
+1c2bb2126f8b2705071c518c9b488ff492ea9a12401f926458212f66d731811c D:\code\ccode\dottalkpp\data\dbf\x32\TASSIGN.dbf
+8b7d6f3105c915d0b25623b2d422707369b4fa247a56417f4e11685b21629eaa D:\code\ccode\dottalkpp\data\dbf\x32\TEACHERS.dbf
+af9deb5327b223f8be2f43340a25cfbb9494484caffd9cc982c5383403ea022b D:\code\ccode\dottalkpp\data\dbf\x32\TERMS.dbf
+a8a1f8bf987081f2b41a7e0e86d4a1e952a232a0766f55e2fb8e14f5408ecba9 D:\code\ccode\dottalkpp\data\indexes\x32\BUILDING.cnx
+1dcf8f5ec51f257ffb549532c777fa02044a86fe73ea07ad4cef3ffcdf4bfebd D:\code\ccode\dottalkpp\data\indexes\x32\CLASSES.cnx
+e621c593d2189a76177dc10901f6496204d8a1cba7938dd43a0b98f103ed7e8a D:\code\ccode\dottalkpp\data\indexes\x32\COURSES.cnx
+a5070b58f8869b63b62679fb475adb083ffd17b95faa9b5d70bf3e27092e88f7 D:\code\ccode\dottalkpp\data\indexes\x32\DEPT.cnx
+ebe1d63ae7c95d45891b30d20449cfba790c036d15a5e0b715eef13a2a834876 D:\code\ccode\dottalkpp\data\indexes\x32\ENROLL.cnx
+e8027c5a0d5d8c095b0eb473d474a3b87f887be0f375a821a207ae0053f5942a D:\code\ccode\dottalkpp\data\indexes\x32\MAJORS.cnx
+4dc0358c3584bb19085dc20a3f4958b11684d6cd101957058a7e0e3b6fcdf317 D:\code\ccode\dottalkpp\data\indexes\x32\ROOMS.cnx
+0db40e67900ba034436539516b88bf3aefc45004cc837ea68dc89d1f829b74fc D:\code\ccode\dottalkpp\data\indexes\x32\STUDENTS.cnx
+3558ecdffe5ba73c9e1412de395299547eeed569bfe81839f4bc69465e1c25aa D:\code\ccode\dottalkpp\data\indexes\x32\STUD_MAJ.cnx
+c80cceedb821c28276045bfc31a90dd40592db2c451e3b3a4d194b7574c09154 D:\code\ccode\dottalkpp\data\indexes\x32\TASSIGN.cnx
+53d196a327f94b407ff6f61a444c871f0834107084eae10d33484d8e4b1383ca D:\code\ccode\dottalkpp\data\indexes\x32\TEACHERS.cnx
+e1c6a048ff5d71c70e71c47f7fb6bdd6d9fecaf41300abd486a9a3d3e43a692b D:\code\ccode\dottalkpp\data\indexes\x32\TERMS.cnx
+Table directory (unless saved in definition): C:\Users\deral\AppData\Local\Temp\workbench-schema-proof-f4vfvxo4\tables
+Index directory (unless saved in definition): C:\Users\deral\AppData\Local\Temp\workbench-schema-proof-f4vfvxo4\indexes
+> WORKSPACE LOAD C:\Users\deral\AppData\Local\Temp\workbench-schema-proof-f4vfvxo4\help.dtschemas
+WORKSPACE LOAD: restored 10 area(s) and 0 relation(s).
+PASS actual schema: help.dtschemas declared=10 loaded=10 tables_with_rows_read=10 source=C:\Users\deral\AppData\Local\Temp\workbench-schema-proof-f4vfvxo4\tables
+PASS unchanged source schema and 17 family files: help.dtschemas
+420f7fc238284c8464bcb8e0c4eadb7d2f7ac27d44074d55baa65b4ba6a08e49 D:\code\ccode\dottalkpp\data\workspaces\help.dtschemas
+239206d12039063727e4f920153da629a06de84661f8f547ba3ca5dec1deb2cd D:\code\ccode\dottalkpp\data\help\CMD_ARGS.dbf
+f056f95ee8540afebc0b2ef428a4b55571833ba2febb4460220604996bf2d056 D:\code\ccode\dottalkpp\data\help\cmd_args.dbt
+06e393c255e0f0dfd027f43de6bf672ab3626828cdf2be44c15ab66433d271a5 D:\code\ccode\dottalkpp\data\help\CMD_ARGS.dtx
+4e06dff8a8d50f3101ba59babc1dcb8a1d460710ac3fc0e7e95f19bd1550463e D:\code\ccode\dottalkpp\data\help\COMMANDS.dbf
+688e4cefdd9b626045874e63dea5dd04379e53ce78a0b4dd2b7271e6400dcf69 D:\code\ccode\dottalkpp\data\help\commands.dbt
+06e393c255e0f0dfd027f43de6bf672ab3626828cdf2be44c15ab66433d271a5 D:\code\ccode\dottalkpp\data\help\COMMANDS.dtx
+5b0e71cfd947797cfd0e9dd351fde72b08c19918f2ceb242757cc801b80fb85d D:\code\ccode\dottalkpp\data\help\HELP_ARTIFACTS.dbf
+a5dc3515202660289755d9d867c00657e1e69f5a85250618b6e93e6be33c8c58 D:\code\ccode\dottalkpp\data\help\help_artifacts.dbt
+06e393c255e0f0dfd027f43de6bf672ab3626828cdf2be44c15ab66433d271a5 D:\code\ccode\dottalkpp\data\help\HELP_ARTIFACTS.dtx
+f5e558a787250b5e83685593995856afec0e2fd6d10c950f33bdca52531de491 D:\code\ccode\dottalkpp\data\help\HELP_ARTIFACT_LOCALE.dbf
+ec65eb84df6c1df647fc9b96efbadde024fbafbb6a5caa57dad62e884e4831b4 D:\code\ccode\dottalkpp\data\help\HELP_LINE.dbf
+4b84359f1635daf2c1a7c644610630ebf2d876ee3f25c4ccbc234285a4e664ee D:\code\ccode\dottalkpp\data\help\HELP_LINE_LOCALE.dbf
+06e393c255e0f0dfd027f43de6bf672ab3626828cdf2be44c15ab66433d271a5 D:\code\ccode\dottalkpp\data\help\HELP_LINE_LOCALE.dtx
+d32bcaca893857192f63358884aba6d6da2c3c256265db1c8c559c748238bb8e D:\code\ccode\dottalkpp\data\help\HELP_SECTION.dbf
+3019d14a44b74e34fbb5d12c8d597abf7ba2a56f96e6edbb059b3a6698f78f87 D:\code\ccode\dottalkpp\data\help\HELP_SECTION_LOCALE.dbf
+c0d32c7a2cfca8596eddbdf82c68e0a067ec9c7fe952e44515963ef0b11ef05d D:\code\ccode\dottalkpp\data\help\HELP_TOPIC.dbf
+68bdc0f6d54c4388efafb0cde1580454cbb2c3ec793c84d76be3df5cc2d70558 D:\code\ccode\dottalkpp\data\help\HELP_TOPIC_LOCALE.dbf

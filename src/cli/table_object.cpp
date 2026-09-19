@@ -43,7 +43,7 @@ bool Table::table_enabled() const {
     return dottalk::table::is_enabled(_area0);
 }
 
-Overlay Table::merge_overlay_from_tb(int recno, const TableBuffer& tb) const {
+Overlay Table::merge_overlay_from_tb(std::uint64_t recno, const TableBuffer& tb) const {
     Overlay out{};
 
     if (recno <= 0) return out;
@@ -83,7 +83,7 @@ Overlay Table::merge_overlay_from_tb(int recno, const TableBuffer& tb) const {
     return out;
 }
 
-Overlay Table::overlay_for(int recno) const {
+Overlay Table::overlay_for(std::uint64_t recno) const {
     if (!in_range(_area0)) return Overlay{};
 
     // Even if table_enabled() is false, callers may still want to inspect.

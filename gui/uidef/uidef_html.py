@@ -90,6 +90,8 @@ def source_of(path):
 
 def generate(path):
     doc, fonts, objs = load(path)
+    from uidef import refuse_unsupported_modals
+    refuse_unsupported_modals(objs, 'HTML')
     src_aliases, src_rels = source_of(path)
     rec = {(r['OBJID'] or '').strip(): r for r in objs}
     kids = {}

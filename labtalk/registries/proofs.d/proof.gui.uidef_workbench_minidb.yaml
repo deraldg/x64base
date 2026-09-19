@@ -1,0 +1,13 @@
+id: proof.gui.uidef_workbench_minidb
+label: Generated native Workbench MINIDB hydration and nested DTX inspection
+state: source_defined
+source: docs/maintenance/AIF120_WORKBENCH_MINIDB_V1.md
+related:
+- gui/uidef/workbench_images_test.cpp
+- gui/uidef/verify_workbench.py
+- include/dottalk/minidb.hpp
+- include/dottalk/minidb_hydrate.hpp
+- docs/maintenance/evidence/AIF120_workbench_minidb_20260917.txt
+- docs/maintenance/evidence/AIF120_workbench_20260917_v3-image.png
+- docs/maintenance/evidence/AIF120_workbench_20260917_v3-nested.png
+notes: Locally tested native Windows generated frontend and in-process engine. Seven actual catalog images hydrated into 97 tables with unchanged source hashes; nested live DTX images verified with private fixtures and generated-window selection. Unsafe path/length refusal, byte readback, separate RAM/disk placement, repeated loads, failure recovery, scoped close and owned mount teardown tested. Source and evidence remain uncommitted; do not promote to runtime_observed until versioned. Index attachment, data editing and writeback are outside this slice.
