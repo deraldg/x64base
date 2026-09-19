@@ -712,6 +712,23 @@ target_include_directories(dottalkpp_ddict_catalog_dir_test PRIVATE
   ${CMAKE_SOURCE_DIR}/include)
 add_test(NAME dottalkpp_ddict_catalog_dir_test COMMAND dottalkpp_ddict_catalog_dir_test)
 
+# ---- Workspace catalog nesting order: PARENT_ID, never PREV_ID -------------
+# WORKSPACES.dbf carries two edges -- PARENT_ID/TREE_DEPTH for containment and
+# PREV_ID/SUPERSEDED for retirement -- and cmd_workspace.cpp writes both while
+# nothing in this tree ever walked either. Walk the wrong one and the catalog
+# renders as a tree built out of its own history.
+#
+# Header-only, so this links nothing and touches no filesystem. It runs on any
+# build.
+add_executable(dottalkpp_workspace_catalog_order_test
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_workspace_catalog_order.cpp
+)
+target_compile_features(dottalkpp_workspace_catalog_order_test PRIVATE cxx_std_20)
+target_include_directories(dottalkpp_workspace_catalog_order_test PRIVATE
+  ${CMAKE_SOURCE_DIR}/include)
+add_test(NAME dottalkpp_workspace_catalog_order_test
+         COMMAND dottalkpp_workspace_catalog_order_test)
+
 # ---- The build script's test-target list: DERIVED, not enumerated ----------
 # Written last, deliberately, so it sees every target this directory created.
 #
