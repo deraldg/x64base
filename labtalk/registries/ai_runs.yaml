@@ -207,6 +207,764 @@ runs:
   reports:
   - AIPR-20260803-003
   status: closed
+- run_id: AIPR-20260803-004
+  member: member.ai.codex.local
+  product: Codex
+  project: project.ai_systems.integration
+  lanes:
+  - AIF-086
+  role: requirements_steward
+  authored_by: member.ai.codex.local
+  planned_by: member.derald
+  owner: member.derald
+  committer: member.derald
+  git:
+    branch: development
+    baseline: 1a61e9e6a
+  chat_handle: codex-task:019fc81a-998c-7490-beee-f28fcb8d7684
+  handle_binding: SELF_REPORTED
+  continues_run: AIPR-20260803-003
+  started: 2026-08-03
+  closeouts:
+  - docs/maintenance/SESSION_CLOSEOUT_AI_SYSTEMS_INTEGRATION_SDLC_M1_2026-08-03.md
+  reports:
+  - AIPR-20260803-004
+  status: closed
+- run_id: AIPR-20260805-001
+  member: member.ai.claude.cowork
+  product: Cowork
+  project: project.ai_systems.integration
+  lanes:
+  - AIF-086
+  role: integration_steward
+  authored_by: member.ai.claude.cowork
+  planned_by: member.derald
+  owner: member.derald
+  committer: member.derald
+  git:
+    branch: development
+    baseline: 45136e0ff
+  chat_handle: ''
+  handle_binding: SELF_REPORTED
+  continues_run: AIPR-20260803-004
+  started: 2026-08-05
+  closeouts:
+  - docs/maintenance/SESSION_CLOSEOUT_AI_SYSTEMS_INTEGRATION_SDLC_2026-08-05_CLAUDE_STEWARD_M2.md
+  reports:
+  - AIPR-20260805-001
+  status: open
+- run_id: AIPR-20260810-001
+  member: member.ai.codex.local
+  product: Codex
+  project: project.x64base.runtime
+  lanes:
+  - AIF-104
+  role: implementer
+  authored_by: member.ai.codex.local
+  planned_by: member.derald
+  owner: member.derald
+  committer: member.derald
+  git:
+    branch: development
+    baseline: 9efa31278
+    head: 1bd7103d1
+  chat_handle: codex-task:019fa118-fb90-7593-a062-2254c59b2306
+  handle_binding: SELF_REPORTED
+  continues_run: null
+  started: 2026-08-10
+  closeouts:
+  - docs/maintenance/SESSION_CLOSEOUT_CLEAN_CLONE_CORE_CI_REPAIR_2026-08-10.md
+  reports:
+  - AIPR-20260810-001
+  status: closed
+- run_id: AIPR-20260810-002
+  member: member.ai.codex.local
+  product: Codex
+  project: project.labtalk.historical_database_migration
+  lanes:
+  - AIF-105
+  role: steward_implementer
+  authored_by: member.ai.codex.local
+  planned_by: member.derald
+  owner: member.derald
+  committer: member.derald
+  git:
+    branch: development
+    baseline: ff5f50058
+    head: ff5f50058
+  chat_handle: ''
+  handle_binding: NOT_RESOLVABLE
+  continues_run: null
+  started: 2026-08-10
+  closeouts:
+  - docs/maintenance/SESSION_CLOSEOUT_CASCADE_ERP_GATE0_HOUSEKEEPING_2026-08-10.md
+  reports:
+  - AIPR-20260810-002
+  status: closed
+- run_id: AIPR-20260810-003
+  member: member.ai.codex.local
+  product: Codex
+  project: project.labtalk.historical_database_migration
+  lanes:
+  - AIF-105
+  role: database_ecology_curator
+  authored_by: member.ai.codex.local
+  planned_by: member.derald
+  owner: member.derald
+  committer: member.derald
+  git:
+    branch: development
+    baseline: ff5f50058
+    head: ff5f50058
+  chat_handle: ''
+  handle_binding: NOT_RESOLVABLE
+  continues_run: AIPR-20260810-002
+  started: 2026-08-10
+  closeouts:
+  - docs/maintenance/SESSION_CLOSEOUT_DATABASE_ECOLOGY_INVENTORY_2026-08-10.md
+  reports:
+  - AIPR-20260810-003
+  status: closed
+- run_id: AIPR-20260810-004
+  member: member.ai.codex.local
+  product: Codex
+  project: project.labtalk.historical_database_migration
+  lanes:
+  - AIF-105
+  role: database_ecology_remediation_steward
+  authored_by: member.ai.codex.local
+  planned_by: member.derald
+  owner: member.derald
+  committer: member.derald
+  git:
+    branch: development
+    baseline: ff5f50058
+    head: ff5f50058
+  chat_handle: ''
+  handle_binding: NOT_RESOLVABLE
+  continues_run: AIPR-20260810-003
+  started: 2026-08-10
+  closeouts:
+  - docs/maintenance/SESSION_CLOSEOUT_DATABASE_ECOLOGY_REMEDIATION_2026-08-10.md
+  reports:
+  - AIPR-20260810-004
+  status: closed
+- run_id: AIPR-20260810-005
+  member: member.ai.codex.local
+  product: Codex
+  project: project.labtalk.historical_database_migration
+  lanes:
+  - AIF-105
+  role: public_schema_catalog_curator
+  authored_by: member.ai.codex.local
+  planned_by: member.derald
+  owner: member.derald
+  committer: member.derald
+  git:
+    branch: development
+    baseline: ff5f50058bd4ee5b8c431c47f702836a174f43bf
+    head: ff5f50058bd4ee5b8c431c47f702836a174f43bf
+  chat_handle: ''
+  handle_binding: NOT_RESOLVABLE
+  continues_run: AIPR-20260810-004
+  started: 2026-08-10
+  closeouts:
+  - docs/maintenance/SESSION_CLOSEOUT_DATABASE_SCHEMA_CATALOG_2026-08-10.md
+  reports:
+  - AIPR-20260810-005
+  status: closed
+- run_id: AIPR-20260810-006
+  member: member.ai.codex.local
+  product: Codex
+  project: project.x64base.website
+  lanes:
+  - AIF-106
+  role: historical_evidence_web_curator
+  authored_by: member.ai.codex.local
+  planned_by: member.derald
+  owner: member.derald
+  committer: member.ai.codex.local
+  git:
+    branch: codex/lean-sites-publish
+    baseline: 8ee1b4ba9c89085138bc1889982b02ea34a46a4e
+    head: f12001464ed87f354689dca3210088d95f837bff
+  chat_handle: ''
+  handle_binding: NOT_RESOLVABLE
+  continues_run: AIPR-20260810-005
+  started: 2026-08-10
+  closeouts:
+  - docs/maintenance/SESSION_CLOSEOUT_DOTTALK_AI_HISTORY_WEB_2026-08-10.md
+  reports:
+  - AIPR-20260810-006
+  status: closed
+- run_id: AIPR-20260812-002
+  member: member.ai.claude.cowork
+  product: Cowork
+  project: project.x64base.runtime
+  lanes:
+  - AIF-070
+  - AIF-082
+  - AIF-090
+  role: regression_repair_and_onboarding_records
+  authored_by: member.ai.claude.cowork
+  planned_by: member.derald
+  owner: member.derald
+  committer: member.derald
+  git:
+    branch: development
+    baseline: a766f1430
+    head: b3f648288
+  chat_handle: COWORK-20260812-002
+  handle_binding: SELF_REPORTED
+  continues_run: AIPR-20260812-001
+  started: 2026-08-12
+  closeouts:
+  - docs/maintenance/SESSION_CLOSEOUT_WORKSPACE_WRITEBACK_REGRESSION_2026-08-12.md
+  reports:
+  - AIPR-20260812-002
+  status: active
+- run_id: AIPR-20260816-001
+  member: member.ai.codex.local
+  product: Codex
+  project: project.ai_systems.integration
+  lanes:
+  - AIF-086
+  role: contributing_agent_assignment_conversation_crosswalk
+  authored_by: member.ai.codex.local
+  planned_by: member.derald
+  owner: member.derald
+  steward: member.ai.claude.cowork
+  git:
+    branch: development
+    baseline: 318ee579d44a57f5e5f9640fba6c28eaa7a6ce50
+  chat_handle: codex-local-20260816-agent-assignment-link
+  handle_binding: SELF_REPORTED
+  continues_run: AIPR-20260805-001
+  started: 2026-08-16
+  closeouts:
+  - docs/maintenance/SESSION_CLOSEOUT_AI_AGENT_ASSIGNMENT_LINK_AIF086_2026-08-16.md
+  reports:
+  - AIPR-20260816-001
+  status: complete
+- run_id: AIPR-20260816-002
+  member: member.ai.codex.local
+  product: Codex
+  project: project.ai_systems.integration
+  lanes:
+  - AIF-086
+  role: contributing_agent_relational_architecture_plan
+  authored_by: member.ai.codex.local
+  planned_by: member.derald
+  owner: member.derald
+  steward: member.ai.claude.cowork
+  git:
+    branch: development
+    baseline: 27ad6edc8ad6fb98a282bad4841eda7f8e71df8d
+  chat_handle: codex-local-20260816-relational-schema-plan
+  handle_binding: SELF_REPORTED
+  continues_run: AIPR-20260816-001
+  started: 2026-08-16
+  reports:
+  - AIPR-20260816-002
+  artifacts:
+  - docs/maintenance/AI_PORTAL_BBS_PSEUDO_CHAT_RELATIONAL_SCHEMA_PLAN_V1.md
+  - docs/maintenance/AI_SYSTEMS_CROSSWALK_V1.md
+  - docs/maintenance/AI_SYSTEMS_INTEGRATION_M2_COMPONENT_EDGE_MODEL_V1.md
+  - docs/maintenance/AI_SYSTEMS_INTEGRATION_SDLC_CHARTER_V1.md
+  - docs/maintenance/SESSION_CLOSEOUT_AI_AGENT_ASSIGNMENT_LINK_AIF086_2026-08-16.md
+  - labtalk/diagrams/ai_portal_bbs_pseudo_chat_relational_erd_v1.mmd
+  - labtalk/diagrams/ai_portal_bbs_pseudo_chat_relational_dfd_v1.mmd
+  - labtalk/diagrams/ai_portal_bbs_pseudo_chat_relational_pfd_v1.mmd
+  - labtalk/diagrams/README.md
+  - labtalk/registries/agent_assignment_links.yaml
+  status: complete
+- run_id: AIPR-20260816-003
+  member: member.ai.codex.local
+  product: Codex
+  project: project.ai_systems.integration
+  lanes:
+  - AIF-086
+  role: contributing_agent_ai_portal_live_maintenance
+  authored_by: member.ai.codex.local
+  planned_by: member.derald
+  owner: member.derald
+  steward: member.ai.claude.cowork
+  git:
+    branch: development
+    baseline: 119dc7af10f19e52895781b7721b5e5cd7fd9e60
+  chat_handle: codex-local-20260816-ai-portal-live-maintenance
+  handle_binding: SELF_REPORTED
+  continues_run: AIPR-20260816-002
+  started: 2026-08-16
+  closeouts:
+  - docs/maintenance/SESSION_CLOSEOUT_AI_PORTAL_LIVE_MAINTENANCE_AIF086_2026-08-16.md
+  reports:
+  - AIPR-20260816-003
+  artifacts:
+  - start-ai.ps1
+  - tools/dbf/maint_console.html
+  - tools/dbf/crud.py
+  - tools/dbf/maint_server.py
+  - tools/dbf/tests/test_maint_server.py
+  - tools/registries/registry_fragments.py
+  - tools/reports/build_reports.py
+  - tools/reports/serve_dynamic_reports.py
+  - tools/reports/tests/test_build_reports_closed_lanes.py
+  - tools/reports/tests/test_registry_fragment_source.py
+  - tools/reports/tests/test_serve_dynamic_reports.py
+  - labtalk/proofs/runs/20260816_230404_ai_portal_live_maintenance.txt
+  - labtalk/registries/proofs.d/proof.ai.portal_live_fragment_maintenance.yaml
+  - docs/maintenance/SESSION_CLOSEOUT_AI_PORTAL_LIVE_MAINTENANCE_AIF086_2026-08-16.md
+  status: complete
+- run_id: AIPR-20260917-001
+  member: member.ai.codex
+  product: Codex
+  project: project.x64base.gui
+  lanes:
+  - AIF-120
+  role: contributing_agent_generated_workbench
+  authored_by: member.ai.codex
+  planned_by: member.derald
+  owner: member.derald
+  steward: member.ai.claude.cowork
+  git:
+    branch: development
+    baseline: 6123842098f8e4d9cc3f8010865709cce899730f
+  chat_handle: CODEX-20260917-UIDEF-WORKBENCH
+  handle_binding: SELF_REPORTED
+  started: 2026-09-17
+  closeouts:
+  - docs/maintenance/AIF120_WORKBENCH_CATALOG_FLOW_V1.md
+  - docs/maintenance/AIF120_WORKBENCH_COMPARISON_V1.md
+  - docs/maintenance/AIF120_WORKBENCH_M2_V1.md
+  - docs/maintenance/AIF120_WORKBENCH_LOAD_ROOTS_V1.md
+  - docs/maintenance/AIF120_WORKBENCH_FILEPATHS_V1.md
+  - docs/maintenance/AIF120_WORKBENCH_FIRST_SLICE_V1.md
+  - docs/maintenance/AIF120_WORKBENCH_LIVE_SESSION_V1.md
+  - docs/maintenance/AIF120_WORKBENCH_MINIDB_V1.md
+  - docs/maintenance/AIF120_WORKBENCH_LIST_V1.md
+  - docs/maintenance/AIF120_WORKBENCH_BROWSE_V1.md
+  - docs/maintenance/AIF120_WORKBENCH_EDIT_V1.md
+  - docs/maintenance/AIF120_WORKBENCH_SAVE_V1.md
+  - docs/maintenance/AIF120_WORKBENCH_MEMO_IMAGE_V1.md
+  - docs/maintenance/AIF120_WORKBENCH_EXPORT_V1.md
+  - docs/maintenance/AIF120_WORKBENCH_STORE_IMAGE_V1.md
+  - docs/maintenance/AIF120_WORKBENCH_NAVIGATION_V1.md
+  - docs/maintenance/AIF120_WORKBENCH_PATHS_V1.md
+  - docs/maintenance/AIF120_WORKBENCH_LOADVIEW_V1.md
+  - docs/maintenance/AIF120_WORKBENCH_OPEN_LOAD_V1.md
+  - docs/maintenance/AIF120_WORKBENCH_M1_V1.md
+  artifacts:
+  - docs/maintenance/AIF120_WORKBENCH_CATALOG_FLOW_V1.md
+  - labtalk/registries/proofs.d/proof.gui.uidef_workbench_catalog_flow.yaml
+  - docs/maintenance/evidence/AIF120_workbench_catalog_flow_20260918.png
+  - docs/maintenance/evidence/AIF120_workbench_catalog_flow_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_catalog_flow_build_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_catalog_flow_history_20260918.png
+  - docs/maintenance/evidence/AIF120_workbench_catalog_flow_hydrate_20260918.png
+  - docs/maintenance/evidence/AIF120_workbench_catalog_flow_load_20260918.png
+  - docs/maintenance/evidence/AIF120_workbench_catalog_flow_ui_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_catalog_flow_housekeeping_20260918.txt
+  - docs/maintenance/AIF120_WORKBENCH_COMPARISON_V1.md
+  - docs/maintenance/evidence/AIF120_workbench_comparison_ui_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_comparison_sources_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_comparison_housekeeping_20260918.txt
+  - docs/maintenance/AIF120_WORKBENCH_M2_V1.md
+  - labtalk/registries/proofs.d/proof.gui.uidef_workbench_m2.yaml
+  - docs/maintenance/evidence/AIF120_workbench_m2_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_m2_build_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_m2_housekeeping_20260918.txt
+  - docs/maintenance/AIF120_WORKBENCH_MILESTONES_V1.md
+  - docs/maintenance/evidence/AIF120_workbench_milestones_housekeeping_20260918.txt
+  - gui/uidef/WORKBENCH.md
+  - gui/uidef/author_workbench.py
+  - gui/uidef/workbench_catalog.hpp
+  - gui/uidef/workbench_catalog.cpp
+  - gui/uidef/workbench_catalog_test.cpp
+  - gui/uidef/workbench_session.hpp
+  - gui/uidef/workbench_session.cpp
+  - gui/uidef/workbench_session_test.cpp
+  - gui/uidef/workbench_images.hpp
+  - gui/uidef/workbench_images.cpp
+  - gui/uidef/workbench_images_test.cpp
+  - include/dottalk/minidb.hpp
+  - include/dottalk/minidb_hydrate.hpp
+  - gui/uidef/wx_workbench.cpp
+  - gui/uidef/build_workbench.py
+  - gui/uidef/verify_workbench.py
+  - gui/uidef/CMakeLists.txt
+  - gui/uidef/uidef_wx.py
+  - docs/maintenance/evidence/AIF120_workbench_20260917.txt
+  - docs/maintenance/evidence/AIF120_workbench_20260917.png
+  - docs/maintenance/evidence/AIF120_workbench_live_20260917.txt
+  - docs/maintenance/evidence/AIF120_workbench_20260917_v2.png
+  - docs/maintenance/evidence/AIF120_workbench_20260917_v2-live.png
+  - docs/maintenance/evidence/AIF120_workbench_minidb_20260917.txt
+  - docs/maintenance/evidence/AIF120_workbench_20260917_v3.png
+  - docs/maintenance/evidence/AIF120_workbench_20260917_v3-live.png
+  - docs/maintenance/evidence/AIF120_workbench_20260917_v3-image.png
+  - docs/maintenance/evidence/AIF120_workbench_20260917_v3-nested.png
+  - docs/maintenance/evidence/AIF120_workbench_housekeeping_20260917.txt
+  - labtalk/registries/proofs.d/proof.gui.uidef_workbench_minidb.yaml
+  - CMakeLists.txt
+  - cmake/AddUidefWorkbench.cmake
+  - src/cli/shell.cpp
+  - src/cli/shell_api.hpp
+  - src/cli/shell_engine.cpp
+  - src/cli/command_registry.cpp
+  - include/cli/command_registry.hpp
+  - labtalk/registries/proofs.d/proof.gui.uidef_workbench_console.yaml
+  - docs/maintenance/evidence/AIF120_workbench_console_20260917.txt
+  - docs/maintenance/evidence/AIF120_workbench_console_housekeeping_20260917.txt
+  - docs/maintenance/evidence/AIF120_workbench_20260917_v4.png
+  - docs/maintenance/evidence/AIF120_workbench_20260917_v4-live.png
+  - docs/maintenance/evidence/AIF120_workbench_20260917_v4-image.png
+  - docs/maintenance/evidence/AIF120_workbench_20260917_v4-nested.png
+  - gui/uidef/workbench_table.hpp
+  - gui/uidef/workbench_table.cpp
+  - gui/uidef/workbench_table_test.cpp
+  - include/cli/table_object.hpp
+  - src/cli/table_object.cpp
+  - labtalk/registries/proofs.d/proof.gui.uidef_workbench_browse.yaml
+  - docs/maintenance/evidence/AIF120_workbench_browse_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_browse_housekeeping_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v5.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v5-live.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v5-browse.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v5-image.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v5-nested.png
+  - labtalk/registries/proofs.d/proof.gui.uidef_workbench_edit.yaml
+  - docs/maintenance/evidence/AIF120_workbench_edit_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_edit_housekeeping_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v6.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v6-live.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v6-browse.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v6-edit.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v6-image.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v6-nested.png
+  - src/cli/cmd_workspace.cpp
+  - gui/uidef/workbench_save_test.cpp
+  - labtalk/registries/proofs.d/proof.gui.uidef_workbench_save.yaml
+  - docs/maintenance/evidence/AIF120_workbench_save_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_save_extra_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_save_housekeeping_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v7.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v7-live.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v7-browse.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v7-edit.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v7-save.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v7-image.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v7-nested.png
+  - gui/uidef/workbench_memo_image_test.cpp
+  - labtalk/registries/proofs.d/proof.gui.uidef_workbench_memo_image.yaml
+  - docs/maintenance/evidence/AIF120_workbench_memo_image_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_memo_image_housekeeping_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v8.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v8-live.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v8-browse.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v8-edit.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v8-save.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v8-image.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v8-nested.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v8-memo-image.png
+  - labtalk/registries/proofs.d/proof.gui.uidef_workbench_export.yaml
+  - docs/maintenance/evidence/AIF120_workbench_export_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_export_housekeeping_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v9-browse.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v9-edit.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v9-export.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v9-image.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v9-live.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v9-memo-image.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v9-nested.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v9-save.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v9.png
+  - gui/uidef/workbench_store_image_test.cpp
+  - labtalk/registries/proofs.d/proof.gui.uidef_workbench_store_image.yaml
+  - docs/maintenance/evidence/AIF120_workbench_store_image_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_store_image_housekeeping_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v10-browse.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v10-edit.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v10-export.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v10-image.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v10-live.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v10-memo-image.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v10-nested.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v10-save.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v10-store.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v10.png
+  - gui/uidef/workbench_navigation.cpp
+  - labtalk/registries/proofs.d/proof.gui.uidef_workbench_navigation.yaml
+  - docs/maintenance/evidence/AIF120_workbench_navigation_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_navigation_housekeeping_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v11-browse.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v11-edit.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v11-export.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v11-image.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v11-live.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v11-memo-image.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v11-navigation.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v11-nested.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v11-save.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v11-store.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v11.png
+  - gui/uidef/workbench_paths.cpp
+  - gui/uidef/workbench_paths_test.cpp
+  - src/cli/cmd_init.cpp
+  - src/cli/cmd_setpath_command.cpp
+  - labtalk/registries/proofs.d/proof.gui.uidef_workbench_paths.yaml
+  - docs/maintenance/evidence/AIF120_workbench_paths_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_defaults_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_paths_housekeeping_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v12-browse.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v12-defaults.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v12-edit.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v12-export.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v12-image.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v12-live.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v12-memo-image.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v12-navigation.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v12-nested.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v12-paths.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v12-save.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v12-store.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v12.png
+  - include/cli/workspace_image_event.hpp
+  - labtalk/registries/proofs.d/proof.gui.uidef_workbench_loadview.yaml
+  - docs/maintenance/evidence/AIF120_workbench_loadview_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_loadview_housekeeping_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v13-browse.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v13-edit.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v13-export.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v13-image.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v13-live.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v13-loadview.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v13-memo-image.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v13-navigation.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v13-nested.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v13-paths.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v13-save.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v13-store.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v13.png
+  - gui/uidef/verify_workspace_flow.py
+  - labtalk/registries/proofs.d/proof.gui.uidef_workbench_openload.yaml
+  - docs/maintenance/evidence/AIF120_workbench_openload_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_openload_housekeeping_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v14-browse.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v14-edit.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v14-export.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v14-image.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v14-live.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v14-loadview.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v14-memo-image.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v14-navigation.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v14-nested.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v14-openload.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v14-paths.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v14-save.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v14-store.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v14.png
+  - docs/maintenance/AIF120_WORKBENCH_M1_V1.md
+  - gui/uidef/workbench_m1_test.py
+  - labtalk/registries/proofs.d/proof.gui.uidef_workbench_m1.yaml
+  - docs/maintenance/evidence/AIF120_workbench_m1_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_m1_housekeeping_20260918.txt
+  - gui/uidef/uidef.py
+  - gui/uidef/uidef_tk.py
+  - gui/uidef/uidef_html.py
+  - gui/uidef/uidef_text.py
+  - gui/uidef/manifest.py
+  - docs/maintenance/evidence/AIF120_workbench_20260918_m1-browse.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_m1-edit.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_m1-export.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_m1-image.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_m1-live.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_m1-loadview.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_m1-m1.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_m1-memo-image.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_m1-menus.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_m1-modal-LOAD.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_m1-modal-NEW.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_m1-modal-OPEN.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_m1-modal-SAVE.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_m1-navigation.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_m1-nested.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_m1-openload.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_m1-paths.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_m1-save.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_m1-store.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_m1.png
+  - docs/maintenance/AIF120_WORKBENCH_FILEPATHS_V1.md
+  - labtalk/registries/proofs.d/proof.gui.uidef_workbench_filepaths.yaml
+  - src/cli/shell_api.cpp
+  - src/cli/cmd_dotscript.cpp
+  - docs/maintenance/evidence/AIF120_workbench_filepaths_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_filepaths_housekeeping_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_20260918_filepaths-browse.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_filepaths-edit.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_filepaths-export.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_filepaths-image.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_filepaths-live.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_filepaths-loadview.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_filepaths-m1.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_filepaths-memo-image.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_filepaths-menus.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_filepaths-modal-LOAD.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_filepaths-modal-NEW.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_filepaths-modal-OPEN.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_filepaths-modal-RUN.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_filepaths-modal-SAVE.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_filepaths-navigation.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_filepaths-nested.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_filepaths-openload.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_filepaths-paths.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_filepaths-save.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_filepaths-store.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_filepaths.png
+  - docs/maintenance/AIF120_WORKBENCH_LOAD_ROOTS_V1.md
+  - labtalk/registries/proofs.d/proof.gui.uidef_workbench_loadroots.yaml
+  - include/cli/workspace_definition.hpp
+  - gui/uidef/verify_workspace_schema_load.py
+  - docs/maintenance/evidence/AIF120_workbench_loadroots_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_loadroots_real_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_loadroots_housekeeping_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_20260918_loadroots-browse.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_loadroots-edit.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_loadroots-export.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_loadroots-image.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_loadroots-live.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_loadroots-loadview.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_loadroots-m1.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_loadroots-memo-image.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_loadroots-menus.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_loadroots-modal-LOAD.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_loadroots-modal-NEW.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_loadroots-modal-OPEN.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_loadroots-modal-RUN.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_loadroots-modal-SAVE.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_loadroots-navigation.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_loadroots-nested.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_loadroots-openload.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_loadroots-paths.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_loadroots-save.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_loadroots-store.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_loadroots.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_m2-browse.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_m2-edit.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_m2-export.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_m2-image.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_m2-live.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_m2-loadview.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_m2-m1.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_m2-memo-image.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_m2-menus.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_m2-modal-LOAD.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_m2-modal-NEW.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_m2-modal-OPEN.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_m2-modal-RUN.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_m2-modal-SAVE.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_m2-navigation.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_m2-nested.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_m2-openload.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_m2-paths.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_m2-save.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_m2-store.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_m2.png
+  status: review-needed
+  notes: Catalog, live session, MINIDB, command console, native table/memo views, buffered scalar editing,
+    portable image save/reopen, live memo image inspection, exact selected-image export, buffered image
+    storage in DTX memo fields and workspace-scoped table navigation locally built and tested on Windows.
+    Continuation handles CODEX-20260917-UIDEF-LIVE, CODEX-20260917-UIDEF-MINIDB, CODEX-20260917-UIDEF-LIST,
+    CODEX-20260918-UIDEF-BROWSE, CODEX-20260918-UIDEF-EDIT, CODEX-20260918-UIDEF-SAVE, CODEX-20260918-UIDEF-MEMOIMAGE,
+    CODEX-20260918-UIDEF-EXPORT, CODEX-20260918-UIDEF-STOREIMAGE, CODEX-20260918-UIDEF-NAV and CODEX-20260918-UIDEF-PATHS.
+    Command registry measured at 310 names including aliases. BROWSE and native editing share selection,
+    order, visibility and buffers with the engine. Scoped MINIDB saves exclude peer bytes, preserve duplicate
+    basenames and reopen committed data in fresh sessions. A live memo can be inspected as an image and
+    hydrated with field provenance. Selected root and nested images export without rewriting, preserve
+    live buffers and hydrate in fresh sessions. Store image preserves shared old objects, stages a new
+    reference and passes rollback, commit/reopen and RAM table child-hydration checks. Tables browsing
+    supports independent descendant scope and all-workspace name search, with numeric global Area values
+    and stable filtered-row identity. Eight native programs and fourteen window modes pass, plus real
+    default startup from an unrelated directory. Native INIT, path settings and WORKSPACES/WORKSPACES.dbf
+    defaults are integrated; RESET roots survive workspace switching. Source and evidence are uncommitted;
+    no lane closure or publication claim. Command-load visibility continuation CODEX-20260918-UIDEF-LOADVIEW
+    passed native directory, command/script MINIDB, nested image and actual-open-count checks plus generated
+    window navigation; updated preview is side by side with the preserved earlier executable. Open/Load
+    and flow continuation CODEX-20260918-UIDEF-OPENLOAD passed eight native programs and fifteen window
+    modes, console areas 0..12/13..55, 512-area RAM capacity and twelve repeated save/reopen checks. NEW
+    activates, SWITCH selects the first open area or unused area when empty; numeric Area replaces redundant
+    identity columns. Reset per-session compatibility cache to prevent stale area pointers across engine
+    recreation. M1 continuation CODEX-20260918-UIDEF-M1 completed locally on Windows; six generated native
+    menus, four generated modal forms, nineteen modal lifetimes with cancellation and keyboard checks,
+    eight native programs plus the design check and sixteen window modes. Source/evidence remain uncommitted;
+    M2 is next. M1 file-location continuation CODEX-20260918-UIDEF-FILEPATHS removes DO and workspace-file
+    cwd fallback, adds the generated Run script modal, and verifies duplicate names, native overrides,
+    caller-relative scripts and exact quoted filenames. Eight native programs, design check and sixteen
+    window modes pass with twenty-three modal lifetimes and unchanged input catalog hashes. ERSATZ policy
+    is unchanged. Preview is arctictalk_workbench_filepaths.exe. Schema-location continuation CODEX-20260918-UIDEF-LOADROOTS
+    adds explicit table/index roots in Load, shared native preflight with modal missing-table correction,
+    worker recheck and per-load default restoration. Nine registered checks and sixteen window modes pass;
+    real-schema private copies load and read all twelve MCC and ten Help tables with unchanged source
+    hashes. Preview is arctictalk_workbench_loadroots.exe; source and evidence uncommitted. M2 continuation
+    CODEX-20260918-UIDEF-M2 completes the native workspace/table tree with ancestor-preserving search,
+    stable identity and expansion, explicit SWITCH/SELECT, context menus and keyboard actions. Nine registered
+    checks and sixteen window modes pass, including 27 navigator stages and tree/engine agreement after
+    hydration and commands. Shutdown notification lifetime was corrected and three extra live-session
+    lifetimes exited cleanly. Preview is arctictalk_workbench_m2.exe. Source and evidence remain uncommitted;
+    M3 is next. Comparison audit CODEX-20260918-UIDEF-COMPARISON inspected the older native catalog UI
+    and generated M2 pages, measured matching 112-row native/Python action catalogs, and recorded source-only
+    limits. Added a planned direct catalog-load/RAM-hydration prerequisite before M3, Record View reuse
+    in M3, and explicit DDict scope in M4. No application source changes or implementation proof in this
+    audit. Audit documents and evidence remain local and uncommitted. Catalog-flow continuation CODEX-20260918-UIDEF-CATALOGFLOW
+    implements direct selected-version Hydrate to RAM and Load definition actions. Nine registered checks
+    and seventeen window modes pass, including historical duplicate-name identity, Ada disk/RAM readback,
+    modal correction/cancellation, pending-edit and stale-context refusal. Fixed and reverified a startup
+    abort caused by direct control lookup. Original catalog hashes were unchanged at the automated-test
+    boundary. Later passive UI observation showed live mcc_db_ram with 13 RAM tables and a new catalog
+    image row; see closeout. Preview is arctictalk_workbench_catalogflow.exe; source/evidence remain uncommitted
+    and M3 remains planned.
+- run_id: AIPR-20260918-UIDEF-M3
+  member: member.ai.codex
+  product: Codex
+  project: project.x64base.gui
+  lanes:
+  - AIF-120
+  role: contributing_agent_generated_workbench
+  authored_by: member.ai.codex
+  planned_by: member.derald
+  owner: member.derald
+  steward: member.ai.claude.cowork
+  git:
+    branch: development
+    baseline: bbf22e7570f1d9a3c5a0286cdb3cd2333e7dacfe
+  chat_handle: CODEX-20260918-UIDEF-M3
+  handle_binding: SELF_REPORTED
+  started: 2026-09-18
+  closeouts:
+  - docs/maintenance/AIF120_WORKBENCH_M3_V1.md
+  artifacts:
+  - gui/uidef/author_workbench.py
+  - gui/uidef/wx_workbench.cpp
+  - gui/uidef/workbench_table.hpp
+  - gui/uidef/workbench_table.cpp
+  - gui/uidef/workbench_session.hpp
+  - gui/uidef/workbench_session.cpp
+  - gui/uidef/workbench_table_test.cpp
+  - gui/uidef/workbench_m1_test.py
+  - gui/uidef/verify_workbench.py
+  - docs/maintenance/AIF120_WORKBENCH_M3_V1.md
+  - labtalk/registries/proofs.d/proof.gui.uidef_workbench_m3.yaml
+  - docs/maintenance/evidence/AIF120_workbench_m3_tests_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_m3_release_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_m3_housekeeping_20260918.txt
+  - gui/uidef/WORKBENCH.md
+  - docs/maintenance/AIF120_WORKBENCH_MILESTONES_V1.md
+  status: review-needed
+  notes: M3 GUI locally complete within documented native limits. Nine final checks and eighteen-step
+    M3 window workflow pass; broader eighteen-mode window suite passed before the final field-pane layout
+    correction. Buffered append/recall and NULL representation remain engine follow-ups. Source/evidence
+    remain local and uncommitted. No git mutation, promotion or publication. Original samples, catalog
+    family and shared work preserved; existing user session left intact.
 current_by_lane:
   AIF-045: AIPR-20260722-005
   AIF-046: AIPR-20260722-007
@@ -223,11 +981,21 @@ current_by_lane:
   AIF-061: AIPR-20260725-001
   AIF-062: AIPR-20260725-001
   AIF-069: AIPR-20260727-001
+  AIF-070: AIPR-20260812-002
   AIF-074: AIPR-20260729-001
   AIF-078: AIPR-20260730-001
-  AIF-086: AIPR-20260803-003
+  AIF-082: AIPR-20260812-002
+  AIF-086: AIPR-20260816-003
+  AIF-090: AIPR-20260812-002
+  AIF-104: AIPR-20260810-001
+  AIF-105: AIPR-20260810-005
+  AIF-106: AIPR-20260810-006
+  AIF-120: AIPR-20260918-UIDEF-M3
 current_by_project:
   project.ai_friendly: AIPR-20260725-001
-  project.ai_systems.integration: AIPR-20260803-003
+  project.ai_systems.integration: AIPR-20260816-003
+  project.labtalk.historical_database_migration: AIPR-20260810-005
+  project.x64base.gui: AIPR-20260918-UIDEF-M3
   project.x64base.identity: AIPR-20260722-005
-  project.x64base.runtime: AIPR-20260730-001
+  project.x64base.runtime: AIPR-20260812-002
+  project.x64base.website: AIPR-20260810-006

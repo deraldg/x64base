@@ -463,6 +463,208 @@ proofs:
 
     Parked here rather than deleted at the maintainer''s direction to clear the repo root. Its former
     name was wsl_warnings.txt.'
+- id: proof.build.index_mode_changes_nothing_shipped
+  label: A three-state build option that changes the build tree and not the artifact, because nothing
+    in the module ever references what it selects
+  state: runtime_observed
+  related:
+  - D:/code/ccode/bindings/pydottalk/CMakeLists.txt
+  - D:/code/ccode/bindings/pydottalk/CMakePresets.json
+  - D:/code/ccode/bindings/pydottalk/src/module.cpp
+  - D:/code/ccode/src/xindex/CMakeLists.txt
+  - D:/code/ccode/CMakePresets.json
+  - D:/code/ccode/coordination/OPEN_ITEMS.md
+  notes: 'MEASURED 2026-08-17 on Linux/ELF, gcc, Ninja, Release. DOTTALK_INDEX_MODE has three legitimate
+    states and src/xindex/CMakeLists.txt genuinely honours all three. The build tree differs exactly as
+    documented:
+
+    LMDB    xindex.a=yes  lmdb_backend.o=yes  48 objects LEGACY  xindex.a=yes  lmdb_backend.o=no   47
+    objects NONE    xindex.a=no   lmdb_backend.o=no   25 objects
+
+    THE SHIPPED MODULE IS BYTE-IDENTICAL IN ALL THREE. 665336 bytes, sha256 54cb15eb9bf73c8d..., same
+    hash three times. Corroborated rather than inferred from size alone (the mistake this lane already
+    logged once): the .so carries ZERO mdb_ symbols, ZERO symbols matching lmdb, ZERO undefined index
+    symbols, and ldd lists only libstdc++, libgcc_s, libc, libm and the loader. No lmdb, no sodium.
+
+    CAUSE, and it is not a cmake bug. A static archive contributes only those objects that resolve an
+    undefined symbol. bindings/pydottalk/src/module.cpp references the index zero times, so libxindex.a
+    satisfies nothing and the linker discards all of it, lmdb_backend.o included. Compiling more does
+    not ship more.
+
+    WHY THE BINDING HAS NO INDEX REFERENCES, confirmed by searching the AI portal on the maintainer''s
+    instruction: it has never had an index API. The portal (labtalk/ai_portal/) mentions pydottalk exactly
+    ONCE, in TIER0_STATE.md, and only as a closeout FILENAME. The four launcher_pydottalk proof runs are
+    356-389 bytes each with zero hits for set order, seek, index or tag. proofs.yaml ties pydottalk to
+    exactly one proof, the APPEND BLANK catalog drift, which is CRUD. module.cpp binds open, close, gotoRec,
+    top, bottom, skip, readCurrent, writeCurrent, appendBlank, deleteCurrent, fields, get and set. There
+    is no setOrder, no seek, no tag. Maintainer, same day: "so far we have only used crud."
+
+    THE SHAPE, and this is why it belongs to AIF-118. The option answers the same for LMDB and for NONE
+    at the only layer a caller can observe. It is the third instance found today of one check or switch
+    returning an identical result for "present" and "absent", after proof.build.parent_provided_globals
+    and proof.contract.declaration_harvested_by_nothing. The distinguishing feature here is that NOTHING
+    IS BROKEN: xindex is correct, the modes are correct, and the module is correct. The defect is a claim
+    of choice where no choice currently exists, which is why the fix is a default and a comment rather
+    than code.
+
+    DECISION TAKEN: LEGACY becomes the default preset for the binding. It yields the identical artifact
+    while requiring no lmdb at configure time, so the cheapest of three indistinguishable options wins.
+    LMDB and NONE stay available and each preset description records this measurement, so the next reader
+    is told why the choice is free instead of rediscovering it.
+
+    WHAT WOULD MAKE THIS PROOF OBSOLETE, and it should be re-measured then rather than trusted: the first
+    index binding added to module.cpp. At that moment libxindex.a starts resolving symbols, lean-none
+    should begin to FAIL to link, and on Windows the .pyd may acquire a runtime dependency on lmdb.dll,
+    since vcpkg builds lmdb as a DLL on x64-windows. Tracked as OI-007.
+
+    RE-MEASURED AFTER A RELATED FIX, same session. Making LEGACY the default exposed a second defect (see
+    proof.build.macro_defined_twice_disagreeing) and flipping DOTTALK_HAS_XINDEX from 0 to 1 in LEGACY
+    did NOT change any of the three hashes. That is corroboration, not a coincidence: the macro is consulted
+    in zero public headers and only in src/cli, which the binding never compiles. A clean rebuild of all
+    three modes after the fix gives the same 665336 bytes and the same sha256, with zero redefinition
+    warnings.
+
+    NOT VERIFIED HERE: any Windows measurement. This session had no Windows host, so the lmdb.dll question
+    is stated as a question and not as a finding. One command settles it: dumpbin /dependents pydottalk.cp312-win_amd64.pyd
+
+    METHOD NOTE. lmdb is not installable in this container and vcpkg was not available, so LMDB mode was
+    exercised by building liblmdb from the py-lmdb sdist sources and placing a hand-written unofficial-lmdbConfig.cmake
+    shim in /tmp to stand in for the vcpkg-generated package. The shim lived only in /tmp and never in
+    the repository. It proves that lmdb_backend.cpp compiles and links on Linux/ELF, which was the one
+    path the 2026-08-17 morning run could not reach. It does NOT prove the house vcpkg route on Linux;
+    the wsl-lean root preset is that route and remains maintainer-operated.'
+- id: proof.build.macro_defined_twice_disagreeing
+  label: One macro, two authorities, opposite values on the same command line, and the only signal is
+    a compiler warning nobody reads
+  state: runtime_observed
+  related:
+  - D:/code/ccode/bindings/pydottalk/CMakeLists.txt
+  - D:/code/ccode/src/xindex/CMakeLists.txt
+  - D:/code/ccode/bindings/pydottalk/CMakePresets.json
+  notes: 'MEASURED 2026-08-17, Linux, gcc, Ninja, Release, DOTTALK_INDEX_MODE=LEGACY.
+
+    TWO AUTHORITIES emitted the same macro with opposite values, and both reached the compiler:
+
+    bindings/pydottalk/CMakeLists.txt   emitted DOTTALK_HAS_XINDEX=0 src/xindex/CMakeLists.txt:38        exports
+    DOTTALK_HAS_XINDEX=1, PUBLIC
+
+    A PUBLIC target_compile_definitions propagates to every consumer that links the target. The binding
+    links xindex, so both -D flags landed on the same command line: 48 occurrences of =0 against 26 of
+    =1 across the build. The last flag wins, per translation unit, which means the value depended on flag
+    order rather than on anything anyone decided.
+
+    THE CAUSE WAS A CONFLATION, not a typo. DOTTALK_HAS_XINDEX answers "does the xindex library exist".
+    DOTTALK_WITH_INDEX answers "is the lmdb backend compiled". The binding keyed the first off the second,
+    which is correct for LMDB (both 1) and correct for NONE (both 0) and WRONG for LEGACY, the one state
+    whose entire purpose is that the two differ. src/xindex/CMakeLists.txt had it right and said so in
+    its own comment: "xindex exists, lmdb does not".
+
+    WHY IT STAYED HIDDEN FOR THE WHOLE OF ITS LIFE: LEGACY was never the default and, before this session,
+    was never selected. The contradiction is unreachable in the other two modes. It appeared within minutes
+    of LEGACY becoming the default preset -- that is, the defect was found by CHANGING A DEFAULT, not
+    by reading the code, and the code had been read carefully twice that same day.
+
+    BLAST RADIUS, measured rather than assumed: DOTTALK_HAS_XINDEX appears in ZERO files under include/,
+    and is consulted only under src/cli, which the Python binding never compiles. So nothing was miscompiled
+    and the fix changed not one byte of the artifact. It was a live landmine rather than a live fire:
+    the moment a public header consults the macro, or the binding compiles a CLI source, the winner becomes
+    flag order.
+
+    THE AIF-118 CONNECTION. The observable symptom was a warning -- technically loud, practically silent,
+    buried in the middle of a 52-step Ninja log that ended in a green exit code. A build that PASSES while
+    emitting a diagnosis of its own incoherence is the same shape as a check that returns the same answer
+    for absent and fine. The exit code did not distinguish them.
+
+    FIX: key DOTTALK_HAS_XINDEX off DOTTALK_INDEX_MODE (0 only when NONE, since only NONE omits the library)
+    so the binding agrees with the library that owns the definition. Verified by clean rebuild of all
+    three modes: zero redefinition warnings, identical artifacts.
+
+    GENERALISATION WORTH KEEPING. When a subproject re-emits a flag that a linked target already exports
+    PUBLIC, the subproject is not configuring, it is arguing. Prefer letting the owning target be the
+    single authority, and emit from the parent only those flags no target owns. The enumeration discipline
+    in proof.build.parent_provided_globals tells you WHICH flags the parent must supply; it does not tell
+    you which it must NOT, and this is that other half.'
+- id: proof.build.parent_provided_globals
+  label: A subproject extracted from a monolithic build inherits four invisible globals, and only two
+    of them fail loudly
+  state: runtime_observed
+  related:
+  - D:/code/ccode/CMakeLists.txt
+  - D:/code/ccode/bindings/pydottalk/CMakeLists.txt
+  - D:/code/ccode/src/xbase/CMakeLists.txt
+  - D:/code/ccode/src/memo/CMakeLists.txt
+  - D:/code/ccode/src/xindex/CMakeLists.txt
+  - D:/code/ccode/config/build_vectors.cmake
+  - D:/code/ccode/build_pydottalk.ps1
+  notes: 'MEASURED 2026-08-17. pydottalk was a switch in the main build, then moved to bindings/ but kept
+    as a SUBDIRECTORY of that build. The wrapper therefore configured the whole tree and ran `cmake --build
+    --target dottalkpp pydottalk`, so producing a four-source Python module also built dottalkpp.exe (~400
+    cmd_*.cpp), dottalk_tvui.lib and the tvision vcpkg package. Measured from the build log: the binding
+    links xbase, memo and xindex, and references dottalkpp, tvision and dottalk_tvui ZERO times.
+
+    MAKING IT STANDALONE EXPOSED WHAT THE PARENT HAD BEEN SUPPLYING, four things, in the order they bit:
+
+    1. dottalk/build_vectors.hpp -- GENERATED by the root configure from config/, and present in no source
+    tree. Every xbase TU failed with "Cannot open include file". 2. NOMINMAX -- <windows.h> defines max()
+    as a function-like macro, so std::numeric_limits<T>::max() became C2589 "illegal token on right side
+    of ::". 30+ errors across 7 lines of dbf_file.cpp, NONE naming windows.h or max. 3. CMAKE_MSVC_RUNTIME_LIBRARY.
+    4. Seven feature flags emitted as =1/=0 (DOTTALK_WITH_INDEX, DOTTALK_HAS_XINDEX, five component flags).
+
+    THE LESSON IS THE SPLIT BETWEEN 1-2 AND 3-4. The first two are compile errors: loud, immediate, self-correcting.
+    The second two are SILENT. A CRT mismatch links cleanly and misbehaves at runtime. An undefined DOTTALK_WITH_INDEX
+    reads as 0 under #if, so the module compiles a different view of the same structs than the libraries
+    it links against -- it links, loads, and corrupts. Extracting a subproject and stopping when it compiles
+    is therefore not done; the dangerous half produces no diagnostic at all.
+
+    METHOD THAT ENDED THE WHACK-A-MOLE: rather than fixing one compile error at a time, enumerate every
+    global the parent sets BEFORE add_subdirectory(src) -- add_compile_ definitions, add_compile_options,
+    include_directories, CMAKE_CXX_*, CMAKE_MSVC_* -- and mirror the list. Four rounds of errors would
+    have been at least six.
+
+    WHAT WAS DELIBERATELY NOT DUPLICATED: the source lists. src/xbase|memo|xindex glob their own sources,
+    and a second hand-kept copy in the lean file would be two restatements that drift silently, so a file
+    added to src/xbase would land in the CLI and go missing from the binding. Instead ${CMAKE_SOURCE_DIR}
+    in those three files became ${DOTTALK_ROOT} (six substitutions), which the root sets to the identical
+    value and the lean project sets to the repo root. Same for build vectors: the emit is repeated, the
+    config/ inputs are shared, so the two configures cannot disagree about capacity.
+
+    A TRAP CAUGHT BEFORE IT SHIPPED: the lean file was first written as a pure standalone. cmake/AddPydotTalkIfPresent.cmake
+    still add_subdirectory''s it from the root build, where xbase already exists -- a duplicate-target
+    error that would have broken -DBUILD_PYDOTTALK=ON for the whole tree, not just the module. It now
+    detects its mode via CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR and skips all standalone-only
+    blocks as a subdirectory. Found by asking who calls this file before assuming.
+
+    RESULT: xbase + xindex + memo + 4 TUs -> pydottalk.cp312-win_amd64.pyd, ctest 2/2 green, and dottalkpp.exe
+    verified green BEFORE the lean path because the DOTTALK_ROOT substitution touched libraries the CLI
+    depends on.
+
+    LINUX RUN, 2026-08-17, and it found a FIFTH global Windows can never surface. Configured and built
+    under GCC 11.4 in a mounted Linux container (cmake and pybind11 from pip per the sandbox handoff;
+    index mode LEGACY because lmdb will not link on this glibc). Every translation unit compiled -- xbase,
+    memo, the module, all three extra TUs. Then the LINK failed:
+
+    relocation R_X86_64_TPOFF32 against `xbase::trigger_hooks::(anonymous)::g_suppress_depth` can not
+    be used when making a shared object; recompile with -fPIC
+
+    CMAKE_POSITION_INDEPENDENT_CODE is set NOWHERE in this repository. A DLL does not carry the constraint,
+    so the ROOT build with -DBUILD_PYDOTTALK=ON would hit exactly this the first time it ran on Linux.
+    Fixed in the lean file; root still latent (OI-006).
+
+    NOTE WHERE IT HID, because it changes the method. Not configure, not compile, but LINK -- naming a
+    thread-local in an anonymous namespace three libraries deep. The first four globals were found by
+    ENUMERATING what the parent sets before add_subdirectory(src). This fifth one is not in that list
+    at all: it is a property of the OUTPUT KIND (shared module vs executable), not of the parent. No amount
+    of reading the root CMakeLists would have produced it. Enumeration was necessary and INSUFFICIENT;
+    only building on the other platform found it.
+
+    AFTER THE FIX: builds, links, and IMPORTS -- pydottalk 0.4.0, 53 public members, Python 3.10. That
+    import also retired a separate over-correction: the Windows wrapper had been made to HARD-FAIL on
+    any interpreter but 3.12. The module is not pinned to a version; the real danger was a SILENT interpreter
+    swap, which a loud warning covers without refusing legitimate builds.
+
+    STILL NOT VERIFIED: the LMDB index path on any Linux host (__isoc23_strtol, the glibc mismatch documented
+    in the sandbox handoff), and no run on the maintainer WSL host, which has a newer glibc and would
+    settle it.'
 - id: proof.case.registry_exists
   label: Case registry exists
   state: case_registered
@@ -523,6 +725,64 @@ proofs:
     evidence is a document trail, not a transcript -- but the trail is complete and each instance is timestamped,
     quoted, and retained unedited. Falsifiable going forward: the statement parser was the first need
     inward search could not satisfy, which bounds the claim rather than breaking it.'
+- id: proof.contract.declaration_harvested_by_nothing
+  label: A contract declared a posture and asserted it was harvested; two tools existed and neither looked,
+    so the declaration reached no inventory
+  state: runtime_observed
+  related:
+  - D:/code/ccode/docs/contracts/PYTHON_BINDING_TRUST_CONTRACT_V1.md
+  - D:/code/ccode/docs/contracts/CONTRACT_REGISTRY_V1.md
+  - D:/code/ccode/bindings/pydottalk/src/module.cpp
+  - D:/code/ccode/tools/contracts/contract_scan.py
+  - D:/code/ccode/src/meta/metacollect.cpp
+  notes: 'MEASURED 2026-08-17, and the author of the defect is the author of the contract describing the
+    defect class.
+
+    CONTEXT. pydottalk exposes a write path (append_blank, delete_current, set, set_field, write_current)
+    and consults no member, permission or token, while every other write surface in the project carries
+    a boundary. The owner ruled it TRUSTED -- "our tool, our app" -- and asked that the confirmation ripple
+    through the system. A contract was written (PYTHON_BINDING_TRUST_CONTRACT_V1), registered in the Active
+    Contracts table, and the source header was annotated:
+
+    // @dottalk.contract PYTHON_BINDING_TRUST_CONTRACT_V1 // trust: caller-is-boundary (first-party, in-tree)
+    // mutates: dbf-records // locking: inherited-from-dbarea
+
+    The contract asserted the posture "travels with the code and is HARVESTED rather than living only
+    here". That sentence was committed in dacb23e83. It was FALSE.
+
+    THE MEASUREMENT, taken after committing rather than before. Two harvesters exist and the annotation
+    fell exactly between them:
+
+    src/meta/metacollect.cpp:152  -- DOES walk bindings/, but harvests @dottalk.usage, the COMMAND contract.
+    pydottalk is not a command, so it matched nothing. tools/contracts/contract_scan.py:171 -- DOES parse
+    @dottalk.contract, but its source_roots were include/, src/, tools/ only. It never looked in bindings/.
+
+    So the file carried a correct annotation, the registry carried a correct row, and no inventory anywhere
+    knew the annotation existed.
+
+    WHY THIS IS THE LANE SHAPE AND NOT MERELY A MISSING PATH. The failure is symmetric and silent on BOTH
+    sides. From the source side the file looks compliant -- the annotation is present and well-formed.
+    From the registry side the contract looks registered -- the row exists with an evidence class. Neither
+    side has any signal that the connection between them was never made. A reviewer checking either half
+    finds it correct. That is the same absent-vs-fine ambiguity AIF-118 was chartered for, reappearing
+    at the level of a metadata pipeline rather than a check.
+
+    FIX. One line: root / "bindings" added to contract_scan.py source_roots. Verified by compiling the
+    scanner, confirming bindings/ is in the list, confirming the scanner rglob''s each root, and confirming
+    module.cpp:10 carries the annotation.
+
+    THE REUSABLE RULE, which is the point of this record. An annotation is NOT self-executing. Before
+    writing that a declaration ripples, NAME THE TOOL that reads it and CHECK THAT TOOL''S ROOTS. "It
+    is annotated" and "it is harvested" are different claims, and the gap between them produces no diagnostic
+    on either side.
+
+    METHOD NOTE. The error was caught by the housekeeping rule filed into the Tier 1 seed the previous
+    day -- "a task is not done until the housekeeping is finished" -- which prompted asking what the commit
+    had made stale. The false sentence was left visible in the contract with its correction beside it
+    rather than edited away, per house practice for recording rather than smoothing.
+
+    Companion: proof.evidence.inference_dressed_as_measurement (same session, same shape applied to reasoning
+    rather than to pipelines).'
 - id: proof.contract.dottalk_file_fulltree
   label: '@dottalk.file universal contract - full-tree backfill at 100% coverage'
   state: runtime_observed
@@ -698,6 +958,58 @@ proofs:
     11/11 markers, 4/4 derived checks; the marker itself was rewritten from DIVERGE_ to CONFORM_ because
     the engine changed. RELJOIN 12/12 unchanged, so the fix altered exactly what it claimed and nothing
     else.
+- id: proof.evidence.inference_dressed_as_measurement
+  label: Four wrong conclusions in one session, each built on a CORRECT measurement; the defect is the
+    inference step, not the instrument
+  state: recorded
+  related:
+  - D:/dev/x64base-site/app/retro/page.tsx
+  - D:/dev/x64base-site/components/Navbar.tsx
+  - D:/code/ccode/coordination/OPEN_ITEMS.md
+  - D:/code/ccode/docs/maintenance/AIF_118_SILENT_PASS_GUARD_LANE_V1.md
+  notes: 'RECORDED 2026-08-17. AIF-118 exists because checks return the same answer for "absent" and "fine".
+    This is the human-side twin: the MEASUREMENT was right every time and the CONCLUSION drawn from it
+    was wrong.
+
+    FOUR INSTANCES, one session:
+
+    1. "derald.com is no longer ours." Evidence: the browser served an unrelated medical practice over
+    a rejected certificate. TRUE. Conclusion: the registration lapsed and someone re-registered it. FALSE
+    -- Verisign RDAP: registered 2004, expires 2027-06-24, GoDaddy, all four client locks set. The repo
+    even said "retired" in c244300da, and RETIRING A HOST IS NOT RELEASING A NAME. The wrong sentence
+    was written into a source comment before anyone checked the registry, which takes one request.
+
+    2. "The two IS_LOCAL_PREVIEW predicates disagree." Evidence: /retro appeared NOWHERE in the DOM while
+    the LOCAL PREVIEW badge rendered. TRUE. Conclusion: layout.tsx and Navbar.tsx compute local-preview
+    differently, so local-only nav is suppressed. FALSE -- the More menu was COLLAPSED and renders its
+    items on open. A whole lib/site.ts "single source of truth" was written, with a confident comment
+    citing a measured finding, for a defect that did not exist. The owner corrected it in five words:
+    "retro does live in more".
+
+    3. "The light theme is not the default." Evidence: grep found `color-scheme: dark` at a LOWER file
+    offset than `color-scheme: light`. TRUE. Conclusion: the dark block precedes :root. FALSE -- the match
+    was inside `prefers-color-scheme: dark` in the no-flash script''s media query. The pattern matched
+    text that was not the thing it named.
+
+    4. "docs/manuals/developer/dev is clean" and "the metadata directory is clean." Evidence: `git status
+    --porcelain <dir>` printed nothing. TRUE. Conclusion: nothing untracked there. FALSE -- porcelain
+    omits untracked files without -uall. 20 files in one case, 21 in the other.
+
+    THE COMMON SHAPE: a true observation, then a mechanism invented to explain it, then the mechanism
+    written down as though it had been verified. In 1 and 2 the invented mechanism reached a committed
+    artifact before being caught.
+
+    WHAT ACTUALLY CAUGHT THEM: 1 and 3 and 4 by measuring a SECOND way (a registry lookup, reading the
+    file rather than grepping it, re-running with -uall). 2 by the owner, who knew the UI. None by re-reading
+    the original evidence, because the original evidence was never wrong.
+
+    OPERATIONAL RULE THIS SUPPORTS: when a measurement implies a mechanism, the mechanism is a HYPOTHESIS
+    until separately measured. Write the observation down as an observation. The cheapest tell is a sentence
+    of the form "X, therefore Y" where Y was never independently checked -- and the cost is not the error,
+    it is that the error gets committed with a confident comment and outlives the session that made it.
+
+    Companion: proof.golden_rule_verify_before_assert, and the AIF-118 charter''s closing note that every
+    real find came from measuring a second way.'
 - id: proof.evidence.layer_versioned
   label: Proof transcripts un-ignored and committed -- registry claims now verifiable from a clone
   state: runtime_observed
@@ -849,6 +1161,354 @@ proofs:
     Same doctrine as proof.golden_rule_verify_before_assert, now applied across the ai<->ai seam: trust
     the measurement (the schema header), not the proposal. Evidence: the schema enumeration at bbs_schema.hpp
     lines 71-72; the paste-back correction issued the same day.'
+- id: proof.gui.uidef_workbench_browse
+  label: Generated Workbench live table and memo views
+  state: source_defined
+  source: docs/maintenance/AIF120_WORKBENCH_BROWSE_V1.md
+  related:
+  - gui/uidef/workbench_table.hpp
+  - gui/uidef/workbench_table.cpp
+  - gui/uidef/workbench_table_test.cpp
+  - gui/uidef/workbench_session.cpp
+  - gui/uidef/wx_workbench.cpp
+  - include/cli/table_object.hpp
+  - src/cli/table_object.cpp
+  - docs/maintenance/evidence/AIF120_workbench_browse_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v5-browse.png
+  notes: Native Windows verification covers paging, shared order and visibility, cursor preservation,
+    buffered scalar and memo values, bounded memo previews, stale identities and the 64-bit overlay lookup.
+    BROWSE dispatch and memo window exercised in generated GUI. Actual catalog hydration and prior session
+    tests rerun. Source and evidence remain uncommitted; no promotion to runtime_observed. Existing numeric
+    CDX text-key ordering is recorded in the closeout.
+- id: proof.gui.uidef_workbench_catalog
+  label: Generated native Workbench saved-catalog inspection
+  state: source_defined
+  source: docs/maintenance/AIF120_WORKBENCH_FIRST_SLICE_V1.md
+  related:
+  - gui/uidef/workbench_catalog_test.cpp
+  - gui/uidef/verify_workbench.py
+  - docs/maintenance/evidence/AIF120_workbench_20260917.txt
+  - docs/maintenance/evidence/AIF120_workbench_20260917.png
+  notes: Native MSVC build, reader fixtures, actual catalog, filtering/history/layout, shutdown and unchanged
+    hashes passed locally on 2026-09-17. The evidence is uncommitted; do not promote this row to runtime_observed
+    until those artifacts are versioned. Live sessions, hydration, editing, writeback and nested memo
+    expansion remain outside this slice.
+- id: proof.gui.uidef_workbench_catalog_flow
+  label: Direct saved-version catalog load and RAM hydration
+  state: source_defined
+  source: docs/maintenance/AIF120_WORKBENCH_CATALOG_FLOW_V1.md
+  related:
+  - gui/uidef/author_workbench.py
+  - gui/uidef/wx_workbench.cpp
+  - gui/uidef/workbench_catalog.cpp
+  - gui/uidef/workbench_session.cpp
+  - gui/uidef/workbench_paths_test.cpp
+  - gui/uidef/verify_workbench.py
+  - docs/maintenance/AIF120_WORKBENCH_MILESTONES_V1.md
+  - docs/maintenance/evidence/AIF120_workbench_catalog_flow_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_catalog_flow_build_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_catalog_flow_hydrate_20260918.png
+  - docs/maintenance/evidence/AIF120_workbench_catalog_flow_load_20260918.png
+  notes: Exact selected payload actions, generated modal destination and path choices, historical duplicate-name
+    readback, RAM residence, Database images population, cancellation and stale/buffer refusal. Local
+    Windows evidence is recorded in the closeout, including startup-abort correction and original catalog
+    hashes. Source and evidence remain uncommitted; no promotion, publication or cross-platform runtime
+    claim.
+- id: proof.gui.uidef_workbench_console
+  label: Generated Workbench shared command console
+  state: source_defined
+  source: docs/maintenance/AIF120_WORKBENCH_LIST_V1.md
+  related:
+  - gui/uidef/workbench_session.cpp
+  - gui/uidef/workbench_session_test.cpp
+  - gui/uidef/wx_workbench.cpp
+  - cmake/AddUidefWorkbench.cmake
+  - src/cli/shell_engine.cpp
+  - docs/maintenance/evidence/AIF120_workbench_console_20260917.txt
+  - docs/maintenance/evidence/AIF120_workbench_20260917_v4-live.png
+  notes: Locally built and tested on Windows. Canonical executor attached to the same live engine, 310
+    registered command/function names including aliases. Representative reads, writes, SQL, expressions,
+    scripts, nested images, Enter/history and buffered close protection verified. Terminal frontend exceptions
+    remain. Source and evidence are uncommitted; do not promote to runtime_observed until versioned. See
+    the closeout for exact proof and limits.
+- id: proof.gui.uidef_workbench_edit
+  label: Generated Workbench buffered scalar editing
+  state: source_defined
+  source: docs/maintenance/AIF120_WORKBENCH_EDIT_V1.md
+  related:
+  - gui/uidef/workbench_table.cpp
+  - gui/uidef/workbench_table_test.cpp
+  - gui/uidef/workbench_session.cpp
+  - gui/uidef/wx_workbench.cpp
+  - gui/uidef/author_workbench.py
+  - docs/maintenance/evidence/AIF120_workbench_edit_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v6-edit.png
+  notes: Local Windows native tests and generated GUI verification passed. Scalar input is literal, type-validated
+    and staged through the existing native write funnel. Reopen proves commit; rollback and peer-area
+    isolation are verified. Primary keys, SQL transactions and stale edits refuse. Memo/NULL/binary values
+    remain inspect-only in this editor. Source and evidence are uncommitted; no runtime_observed promotion
+    or lane closure claim.
+- id: proof.gui.uidef_workbench_export
+  label: Generated Workbench exact selected-image export
+  state: source_defined
+  source: docs/maintenance/AIF120_WORKBENCH_EXPORT_V1.md
+  related:
+  - gui/uidef/workbench_images.cpp
+  - gui/uidef/workbench_session.cpp
+  - gui/uidef/workbench_images_test.cpp
+  - gui/uidef/wx_workbench.cpp
+  - gui/uidef/author_workbench.py
+  - docs/maintenance/evidence/AIF120_workbench_export_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v9-export.png
+  notes: Selected root and nested images export byte-exactly to new files. Local Windows tests cover overwrite
+    refusal, unchanged live buffers, and fresh-session hydration. Source and evidence remain uncommitted;
+    no runtime_observed promotion or lane closure claim.
+- id: proof.gui.uidef_workbench_filepaths
+  label: Workbench deterministic native file locations and script modal
+  state: source_defined
+  source: docs/maintenance/AIF120_WORKBENCH_FILEPATHS_V1.md
+  related:
+  - src/cli/shell_api.cpp
+  - src/cli/shell_api.hpp
+  - src/cli/cmd_dotscript.cpp
+  - src/cli/cmd_workspace.cpp
+  - gui/uidef/author_workbench.py
+  - gui/uidef/wx_workbench.cpp
+  - gui/uidef/workbench_session.cpp
+  - gui/uidef/workbench_paths_test.cpp
+  - docs/maintenance/evidence/AIF120_workbench_filepaths_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_20260918_filepaths-modal-RUN.png
+  notes: Eight native programs, design check and sixteen window modes pass locally on Windows; duplicate
+    names, missing-file refusal, explicit roots, nested scripts, quoted filenames, twenty-three modal
+    lifetimes and unchanged source catalog hashes. Source and evidence uncommitted; no runtime_observed
+    promotion or publication claim. ERSATZ search policy remains outside this correction.
+- id: proof.gui.uidef_workbench_live_session
+  label: Generated native Workbench serialized live session
+  state: source_defined
+  source: docs/maintenance/AIF120_WORKBENCH_LIVE_SESSION_V1.md
+  related:
+  - gui/uidef/workbench_session_test.cpp
+  - gui/uidef/verify_workbench.py
+  - docs/maintenance/evidence/AIF120_workbench_live_20260917.txt
+  - docs/maintenance/evidence/AIF120_workbench_20260917_v2-live.png
+  notes: Locally tested native Windows engine and GUI, including real WORKSPACE births, SWITCH, SELECT
+    number/name/qualified name, nested close, twelve reuse cycles, stale handles and joined shutdown.
+    Input catalog hashes unchanged. Source and evidence remain uncommitted; do not promote to runtime_observed
+    until versioned. Hydration, nested memo expansion and writeback remain outside this slice.
+- id: proof.gui.uidef_workbench_loadroots
+  label: Workbench schema table directories and native preflight
+  state: source_defined
+  source: docs/maintenance/AIF120_WORKBENCH_LOAD_ROOTS_V1.md
+  related:
+  - include/cli/workspace_definition.hpp
+  - src/cli/cmd_workspace.cpp
+  - gui/uidef/author_workbench.py
+  - gui/uidef/wx_workbench.cpp
+  - gui/uidef/workbench_session.cpp
+  - gui/uidef/workbench_paths_test.cpp
+  - gui/uidef/verify_workspace_schema_load.py
+  - docs/maintenance/evidence/AIF120_workbench_loadroots_real_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_loadroots_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_20260918_loadroots-modal-LOAD.png
+  notes: Nine registered checks and sixteen window modes pass locally on Windows. Private copies of the
+    actual schemas load all 12 MCC and 10 Help tables with row readback, unchanged source hashes, explicit
+    directories, missing-member modal refusal and v3 root precedence. Source and evidence uncommitted;
+    no runtime_observed promotion, publication or cross-platform claim.
+- id: proof.gui.uidef_workbench_loadview
+  label: Generated Workbench command-load visibility
+  state: source_defined
+  source: docs/maintenance/AIF120_WORKBENCH_LOADVIEW_V1.md
+  related:
+  - include/cli/workspace_image_event.hpp
+  - src/cli/cmd_workspace.cpp
+  - gui/uidef/workbench_session.cpp
+  - gui/uidef/wx_workbench.cpp
+  - gui/uidef/workbench_paths_test.cpp
+  - gui/uidef/workbench_images_test.cpp
+  - docs/maintenance/evidence/AIF120_workbench_loadview_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v13-loadview.png
+  notes: Native command-load observation and generated image/table navigation. Validation details are
+    recorded in the closeout. Source and evidence are local and uncommitted; no runtime_observed promotion
+    or lane closure claim.
+- id: proof.gui.uidef_workbench_m1
+  label: Workbench M1 native menus and modal workflow
+  state: source_defined
+  source: docs/maintenance/AIF120_WORKBENCH_M1_V1.md
+  related:
+  - gui/uidef/author_workbench.py
+  - gui/uidef/uidef_wx.py
+  - gui/uidef/wx_workbench.cpp
+  - gui/uidef/workbench_session.cpp
+  - gui/uidef/workbench_paths_test.cpp
+  - gui/uidef/workbench_save_test.cpp
+  - gui/uidef/workbench_m1_test.py
+  - docs/maintenance/AIF120_WORKBENCH_MILESTONES_V1.md
+  - docs/maintenance/evidence/AIF120_workbench_m1_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_20260918_m1-menus.png
+  notes: Eight native programs, design check and sixteen window modes pass locally on Windows; nineteen
+    generated modal lifetimes, key hooks, cancellations, validation, root/child/peer workflow, actual
+    data and scoped save checks. Source/evidence uncommitted; no runtime_observed promotion, lane closure
+    or publication claim. Other renderers explicitly refuse Modal.
+- id: proof.gui.uidef_workbench_m2
+  label: M2 workspace tree and stable navigation
+  state: source_defined
+  source: docs/maintenance/AIF120_WORKBENCH_M2_V1.md
+  related:
+  - gui/uidef/author_workbench.py
+  - gui/uidef/wx_workbench.cpp
+  - gui/uidef/workbench_navigation.cpp
+  - gui/uidef/workbench_session.hpp
+  - gui/uidef/workbench_session_test.cpp
+  - gui/uidef/verify_workbench.py
+  - docs/maintenance/AIF120_WORKBENCH_MILESTONES_V1.md
+  - docs/maintenance/evidence/AIF120_workbench_m2_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_m2_build_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_20260918_m2-navigation.png
+  notes: Native workspace/table tree uses stable workspace and area handles, independent SWITCH and SELECT
+    actions, ancestor-preserving search, keyboard/context actions and stale-target validation. Local validation
+    is recorded in the closeout. Source and evidence remain uncommitted; no promotion, publication or
+    cross-platform runtime claim.
+- id: proof.gui.uidef_workbench_m3
+  label: M3 everyday table controls and buffered memo editing
+  state: source_defined
+  source: docs/maintenance/AIF120_WORKBENCH_M3_V1.md
+  related:
+  - gui/uidef/author_workbench.py
+  - gui/uidef/wx_workbench.cpp
+  - gui/uidef/workbench_table.cpp
+  - gui/uidef/workbench_session.cpp
+  - gui/uidef/workbench_table_test.cpp
+  - gui/uidef/verify_workbench.py
+  - docs/maintenance/AIF120_WORKBENCH_MILESTONES_V1.md
+  - docs/maintenance/evidence/AIF120_workbench_m3_tests_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_m3_release_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_m3_20260918.png
+  notes: Locally verified on Windows; nine final checks and the eighteen-step M3 window workflow pass.
+    The broader eighteen-mode suite passed before the final field-pane layout correction. TABLE ON preserves
+    supported buffering; native buffered append/recall and NULL representation are explicitly deferred.
+    Source/evidence remain uncommitted, so no committed or published proof claim.
+- id: proof.gui.uidef_workbench_memo_image
+  label: Generated Workbench live memo field image inspection
+  state: source_defined
+  source: docs/maintenance/AIF120_WORKBENCH_MEMO_IMAGE_V1.md
+  related:
+  - gui/uidef/workbench_table.cpp
+  - gui/uidef/workbench_session.cpp
+  - gui/uidef/workbench_memo_image_test.cpp
+  - gui/uidef/workbench_images_test.cpp
+  - gui/uidef/wx_workbench.cpp
+  - gui/uidef/author_workbench.py
+  - docs/maintenance/evidence/AIF120_workbench_memo_image_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v8-memo-image.png
+  notes: The field image action resolves committed memo references on the engine worker and uses the existing
+    MINIDB inspector and hydrator. Local Windows results and limits are in the closeout. Source and evidence
+    remain uncommitted; no runtime_observed promotion or lane closure claim.
+- id: proof.gui.uidef_workbench_minidb
+  label: Generated native Workbench MINIDB hydration and nested DTX inspection
+  state: source_defined
+  source: docs/maintenance/AIF120_WORKBENCH_MINIDB_V1.md
+  related:
+  - gui/uidef/workbench_images_test.cpp
+  - gui/uidef/verify_workbench.py
+  - include/dottalk/minidb.hpp
+  - include/dottalk/minidb_hydrate.hpp
+  - docs/maintenance/evidence/AIF120_workbench_minidb_20260917.txt
+  - docs/maintenance/evidence/AIF120_workbench_20260917_v3-image.png
+  - docs/maintenance/evidence/AIF120_workbench_20260917_v3-nested.png
+  notes: Locally tested native Windows generated frontend and in-process engine. Seven actual catalog
+    images hydrated into 97 tables with unchanged source hashes; nested live DTX images verified with
+    private fixtures and generated-window selection. Unsafe path/length refusal, byte readback, separate
+    RAM/disk placement, repeated loads, failure recovery, scoped close and owned mount teardown tested.
+    Source and evidence remain uncommitted; do not promote to runtime_observed until versioned. Index
+    attachment, data editing and writeback are outside this slice.
+- id: proof.gui.uidef_workbench_navigation
+  label: Generated Workbench workspace-scoped table navigation
+  state: source_defined
+  source: docs/maintenance/AIF120_WORKBENCH_NAVIGATION_V1.md
+  related:
+  - gui/uidef/workbench_navigation.cpp
+  - gui/uidef/workbench_session.hpp
+  - gui/uidef/workbench_session_test.cpp
+  - gui/uidef/wx_workbench.cpp
+  - gui/uidef/author_workbench.py
+  - gui/uidef/verify_workbench.py
+  - docs/maintenance/evidence/AIF120_workbench_navigation_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v11-navigation.png
+  notes: Local Windows native and generated-window checks pass for parent, child and peer table scopes,
+    independent view nesting, name search, duplicate table names and filtered-row SELECT identity. Browsing
+    preserves engine workspace and area selection. Source and evidence remain uncommitted; no runtime_observed
+    promotion or lane closure claim.
+- id: proof.gui.uidef_workbench_openload
+  label: Generated Workbench Open/Load controls and native workspace entry flow
+  state: source_defined
+  source: docs/maintenance/AIF120_WORKBENCH_OPEN_LOAD_V1.md
+  related:
+  - gui/uidef/author_workbench.py
+  - gui/uidef/workbench_session.cpp
+  - gui/uidef/wx_workbench.cpp
+  - gui/uidef/workbench_paths_test.cpp
+  - gui/uidef/workbench_session_test.cpp
+  - gui/uidef/verify_workspace_flow.py
+  - src/cli/cmd_workspace.cpp
+  - docs/maintenance/evidence/AIF120_workbench_openload_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v14-openload.png
+  notes: Native OPEN dbf and LOAD schema controls, zero-based global Area column, NEW activates and SWITCH
+    selects the first open area or an unused area when empty. See closeout for validation. Source and
+    evidence are local and uncommitted; no runtime_observed promotion or lane closure claim. Modal workflow
+    is queued for the next pass.
+- id: proof.gui.uidef_workbench_paths
+  label: Generated Workbench native initialization and path defaults
+  state: source_defined
+  source: docs/maintenance/AIF120_WORKBENCH_PATHS_V1.md
+  related:
+  - gui/uidef/workbench_paths.cpp
+  - gui/uidef/workbench_paths_test.cpp
+  - gui/uidef/workbench_session.cpp
+  - gui/uidef/wx_workbench.cpp
+  - src/cli/cmd_init.cpp
+  - src/cli/cmd_setpath_command.cpp
+  - docs/maintenance/evidence/AIF120_workbench_paths_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_defaults_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v12-paths.png
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v12-defaults.png
+  notes: Local Windows native and generated-window checks pass for INIT script order, SET PATH, workspace
+    root restoration, RESET binding, IN targeting, catalog following and pinned inspection overrides.
+    Real default catalog startup from an unrelated directory passes without changing source DBF/DTX bytes.
+    Source and evidence remain uncommitted; no runtime_observed promotion or lane closure claim.
+- id: proof.gui.uidef_workbench_save
+  label: Generated Workbench portable MINIDB save and reopen
+  state: source_defined
+  source: docs/maintenance/AIF120_WORKBENCH_SAVE_V1.md
+  related:
+  - src/cli/cmd_workspace.cpp
+  - gui/uidef/workbench_session.cpp
+  - gui/uidef/workbench_save_test.cpp
+  - gui/uidef/workbench_images_test.cpp
+  - gui/uidef/wx_workbench.cpp
+  - gui/uidef/author_workbench.py
+  - docs/maintenance/evidence/AIF120_workbench_save_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v7-save.png
+  notes: Local Windows native and generated-window verification is recorded in the closeout. Save uses
+    the engine MINIDB serializer with matching posture and file scope, portable member paths and duplicate
+    basename handling. Source and evidence are uncommitted; no runtime_observed promotion or lane closure
+    claim. Image restore creates one new workspace and does not reconstruct the saved ownership tree.
+- id: proof.gui.uidef_workbench_store_image
+  label: Generated Workbench buffered database-image memo storage
+  state: source_defined
+  source: docs/maintenance/AIF120_WORKBENCH_STORE_IMAGE_V1.md
+  related:
+  - gui/uidef/workbench_table.cpp
+  - gui/uidef/workbench_session.cpp
+  - gui/uidef/workbench_images.cpp
+  - gui/uidef/workbench_store_image_test.cpp
+  - gui/uidef/wx_workbench.cpp
+  - gui/uidef/author_workbench.py
+  - docs/maintenance/evidence/AIF120_workbench_store_image_20260918.txt
+  - docs/maintenance/evidence/AIF120_workbench_20260918_v10-store.png
+  notes: Store image allocates a new DTX object and buffers its reference through the native field-write
+    funnel. Local Windows tests cover token/fixed references, shared old objects, rollback, commit/reopen,
+    RAM-table storage and child hydration. Source and evidence remain uncommitted; no runtime_observed
+    promotion or lane closure claim.
 - id: proof.help.cmdhelp_source_exists
   label: CMDHELP source exists
   state: source_defined
@@ -1343,6 +2003,21 @@ proofs:
     because an inline fallback is how nine accumulated. JSON was chosen over a Python module precisely
     because one call site is PowerShell -- a Python-only helper would have left a tenth private copy behind.
     Eight Python call sites remain to migrate.
+
+    VERIFIED UNDER .NET 2026-08-21, which was a stated precondition for the next promotion run and is
+    now met. One authority feeding two regex engines is only safe if both engines read it the same way,
+    and that had been reasoned about rather than run. Static review first: all three patterns use only
+    constructs whose meaning is identical in Python re and System.Text.RegularExpressions -- no (?P<name>)
+    group syntax, no \Z (which anchors absolutely in Python and before a final newline in .NET), no POSIX
+    classes, and the (?<![A-Za-z0-9]) lookbehinds are fixed-width, so they are legal in both. Then executed,
+    in PowerShell, on the dev_roots_only pattern loaded from the JSON exactly as rebuild-staging.ps1:379
+    loads it, using real specimens produced by the same day''s sterilization of the staging tree: ''SETPATH
+    DBF = D:\code\ccode\dottalkpp\data\SYSTEMS\CASCADE_ERP\DBF'' returned True and ''SETPATH DBF = SYSTEMS\CASCADE_ERP\DBF''
+    returned False.
+
+    Both arms deliberately. A leak guard that fires on everything is as useless as one that fires on nothing,
+    and only the negative arm distinguishes a working detector from a broken one that happens to be shouting
+    -- the same reason the 22-case table carries must_not_match rows and not only must_match.
 
     The lesson is not "share your regexes". It is that a guard inherits the blind spots of whoever wrote
     it, and the author is the last person able to see them: the pattern matched the machine the author
