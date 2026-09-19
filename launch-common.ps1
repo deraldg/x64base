@@ -595,6 +595,154 @@ function Resolve-DotTalkPyModuleDir {
     )
 }
 
+function Test-LabTalkPythonModule {
+    # One module, one process, one answer. Two probes cost two process starts
+    # and are worth it: a single combined probe cannot say WHICH import failed,
+    # and which one failed is the whole diagnostic here.
+    param(
+        [Parameter(Mandatory = $true)] [string]$Exe,
+        [Parameter(Mandatory = $true)] [string]$Module
+    )
+
+    # find_spec is NOT enough for _tkinter: the spec can resolve while the
+    # import still fails on a missing tcl/tk DLL. Import it for real.
+    #
+    # ErrorActionPreference IS FORCED TO Continue FOR THE DURATION, and that is
+    # load-bearing rather than defensive. A caller running under 'Stop' -- which
+    # every launcher here does -- turns a NATIVE command's stderr into a
+    # TERMINATING error. This function's whole job is to let an import fail, so
+    # under Stop the failing probe threw a NativeCommandError whose message is
+    # python's first traceback line, and the refusal upstream reported
+    # "Traceback (most recent call last):" instead of naming the missing module.
+    # Measured 2026-09-19: the verification arm asserted that the refusal NAMES
+    # the module, and that assertion is the only reason this surfaced.
+    $prev = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        & $Exe -c "import $Module" 1>$null 2>$null
+        return ($LASTEXITCODE -eq 0)
+    }
+    finally {
+        $ErrorActionPreference = $prev
+    }
+}
+
+function Resolve-LabTalkPython {
+    # The portal needs an interpreter this repo does NOT otherwise use, and
+    # that is the whole finding. Measured 2026-09-18 on this machine:
+    #
+    #   vcpkg python3  -- what bare `python` resolves to here    tkinter NO   yaml NO
+    #   .venv312       -- based on the vcpkg python              tkinter NO   yaml yes
+    #   Anaconda 3.12.7                                          tkinter yes  yaml yes
+    #
+    # Both copies of launch_portal.ps1 said `python`, which on this box is the
+    # one interpreter of the three that can do neither, so the portal window
+    # has not opened from its own launcher for as long as PATH has resolved
+    # that way. The failure was also unhelpful: the portal caught the
+    # ImportError and printed "GUI unavailable" WITHOUT naming the interpreter
+    # it was running under, so the same line appeared no matter which python
+    # you tried, and trying another one looked like it had changed nothing.
+    #
+    # tkinter CANNOT be pip-installed -- it comes from the base install's
+    # tcl/tk. So this resolver PROBES rather than assuming, and a miss names
+    # every candidate and the module each one lacked.
+    #
+    # NOT the same question as Resolve-DotTalkPython, deliberately kept apart:
+    # that one resolves an interpreter to BUILD or IMPORT the pydottalk
+    # module and prefers the venv CLAUDE.md pins host tooling to. This one
+    # needs a desktop GUI toolkit, which that venv structurally cannot have.
+    # One function answering both would have to rank Anaconda above .venv312
+    # for every caller, and that contradicts the house rule.
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$RepoRoot,
+
+        # An explicit answer from the caller wins, but is still PROBED -- an
+        # interpreter that cannot import what the portal needs is not an
+        # answer just because someone named it.
+        [string]$PythonExe = '',
+
+        # Headless --audit / --audit-write / --run-item need yaml only. The
+        # venv serves those today and refusing it over a toolkit the run will
+        # never load would be a refusal for its own sake.
+        [bool]$RequireTk = $true,
+
+        [string]$Label = 'LabTalk portal'
+    )
+
+    $wanted = if ($RequireTk) { @('_tkinter', 'yaml') } else { @('yaml') }
+
+    # AN INSTRUCTION IS NOT A PREFERENCE, corrected 2026-09-19 when this
+    # function's own falsification arm caught it. -PythonExe used to sit at the
+    # head of the candidate list and FALL THROUGH when it failed the probe, so
+    # naming an interpreter that could not do the job quietly ran a different
+    # one. That is the precise substitution this resolver exists to prevent,
+    # reintroduced by the resolver itself.
+    #
+    # The two inputs are NOT the same kind of statement and are no longer
+    # treated alike. -PythonExe is per-invocation intent: someone typed it for
+    # this run, so a failure REFUSES and names what was missing. LABTALK_PYTHON
+    # is ambient configuration that can go stale in a shell profile, so a
+    # failure WARNS BY NAME and continues -- a stale variable should not make
+    # the portal unlaunchable, but it must never fail silently either.
+    if ($PythonExe) {
+        if (-not (Test-Path -LiteralPath $PythonExe -PathType Leaf)) {
+            throw "${Label}: -PythonExe names no file: '$PythonExe'."
+        }
+        $lack = @($wanted | Where-Object { -not (Test-LabTalkPythonModule -Exe $PythonExe -Module $_) })
+        if ($lack.Count -gt 0) {
+            throw ("${Label}: the interpreter you named cannot run this -- '$PythonExe' " +
+                   "is missing " + ($lack -join ', ') + ".`n" +
+                   "           _tkinter cannot be pip-installed; it comes from the base install's tcl/tk.`n" +
+                   "           Name one that has it, or drop -PythonExe to let the launcher choose.")
+        }
+        Write-Host ("{0}: using {1}" -f $Label, $PythonExe)
+        return $PythonExe
+    }
+
+    if ($env:LABTALK_PYTHON -and (Test-Path -LiteralPath $env:LABTALK_PYTHON -PathType Leaf)) {
+        $lack = @($wanted | Where-Object { -not (Test-LabTalkPythonModule -Exe $env:LABTALK_PYTHON -Module $_) })
+        if ($lack.Count -gt 0) {
+            Write-Warning ("{0}: LABTALK_PYTHON is set to {1}, which is missing {2}. Ignoring it." -f
+                           $Label, $env:LABTALK_PYTHON, ($lack -join ', '))
+        }
+    }
+
+    $ordered = @(
+        $env:LABTALK_PYTHON,
+        (Join-Path $env:USERPROFILE "anaconda3\python.exe"),
+        (Join-Path $env:USERPROFILE "AppData\Local\Programs\Python\Python312\python.exe"),
+        (Join-Path $env:USERPROFILE "AppData\Local\Programs\Python\Python313\python.exe"),
+        (Get-Command python -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source -First 1),
+        (Join-Path $RepoRoot ".venv312\Scripts\python.exe")
+    )
+
+    $present = @($ordered | Where-Object { $_ -and (Test-Path -LiteralPath $_ -PathType Leaf) } | Select-Object -Unique)
+    $report = @()
+
+    foreach ($exe in $present) {
+        $missing = @($wanted | Where-Object { -not (Test-LabTalkPythonModule -Exe $exe -Module $_) })
+        if ($missing.Count -eq 0) {
+            # Write-Host only: this function returns a PATH.
+            Write-Host ("{0}: using {1}" -f $Label, $exe)
+            return $exe
+        }
+        $report += ("           {0}  -- missing {1}" -f $exe, ($missing -join ', '))
+    }
+
+    if ($present.Count -eq 0) {
+        throw "${Label}: no Python interpreter found at all. Set LABTALK_PYTHON to one that has tkinter and PyYAML."
+    }
+
+    # NAME EVERY CANDIDATE AND WHAT IT LACKED. The portal's own message said
+    # only that tkinter was missing, which is true of most of this list and
+    # tells a reader nothing about what to do next.
+    throw ("${Label}: no interpreter has " + ($wanted -join ' + ') + ". Tried:`n" +
+           ($report -join "`n") + "`n" +
+           "           _tkinter cannot be pip-installed -- it comes from the base install's tcl/tk.`n" +
+           "           Set LABTALK_PYTHON to a full CPython (Anaconda or python.org) and re-run.")
+}
+
 function Invoke-PydotTalkStarterSmokes {
     param(
         [Parameter(Mandatory = $true)]
