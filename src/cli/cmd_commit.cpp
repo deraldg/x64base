@@ -131,6 +131,7 @@
 
 #include "xbase.hpp"
 #include "xbase_locks.hpp"
+#include "cli/append_fence.hpp"
 #include "xbase/trigger_hooks.hpp"   // AIF-087 M2b: BEFORE phase at commit entry
 #include "xbase/durable.hpp"        // AIF-161: durable_sync before the log dies
 #include "cli/group_log.hpp"        // AIF-160: one decision that spans N journals
@@ -218,31 +219,15 @@ struct CursorRestore {
     CursorRestore& operator=(const CursorRestore&) = delete;
 };
 
-struct InsertTableLockGuard {
-    xbase::DbArea* area = nullptr;
-    bool acquired_here = false;
-    bool ready = true;
-    std::string error;
-
-    InsertTableLockGuard(xbase::DbArea& value, bool required) : area(&value) {
-        if (!required) return;
-        xbase::locks::LockHolder holder;
-        const bool borrowed = xbase::locks::table_lock_holder(value, &holder) &&
-                              holder.owner_id == xbase::locks::current_owner().id;
-        if (!xbase::locks::try_lock_table(value, &error)) {
-            ready = false;
-            return;
-        }
-        acquired_here = !borrowed;
-    }
-
-    ~InsertTableLockGuard() {
-        if (!acquired_here || !area) return;
-        std::string ignored;
-        (void)xbase::locks::unlock_table(
-            *area, xbase::locks::current_owner(), &ignored);
-    }
-};
+// THE FENCE MOVED TO include/cli/append_fence.hpp (OI-043, 2026-09-19).
+//
+// It was file-local here and then TWO OTHER DOORS TURNED OUT TO NEED IT --
+// cmd_sql_insert.cpp and cmd_import.cpp, both measured that day letting a
+// write through a foreign table lock. Copying this struct twice more is how
+// three hand-written copies of a lock protocol start disagreeing, so it is
+// one definition now and this is an alias rather than a rename: the name
+// below is load-bearing in the commentary at the top of commit_area().
+using InsertTableLockGuard = cli::fence::TableFence;
 
 struct Agg {
     std::uint64_t recno = 0;

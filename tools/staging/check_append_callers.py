@@ -64,6 +64,15 @@ import sys
 
 ROOT = os.getcwd()
 SRC = os.path.join(ROOT, "src")
+# HEADERS ARE IN SCOPE TOO, AND THEY WERE NOT UNTIL 2026-09-19.
+# The gate scanned src/ only. The moment the append funnel was written as
+# include/cli/append_fence.hpp, the ONE call that matters most became
+# invisible to the instrument measuring it -- and so would any future
+# header-inlined grower. Scanning both and exempting the funnel BY NAME is
+# the model's own posture (check_field_write_callers.py exempts
+# src/cli/xbase_cli_write.cpp "is the funnel"), applied where it belongs.
+INC = os.path.join(ROOT, "include")
+SCAN_ROOTS = (SRC, INC)
 BASELINE = os.path.join("tools", "staging", "append_callers_baseline.txt")
 
 SKIP_DIRS = {
@@ -75,6 +84,12 @@ EXEMPT_FILES = {
     # DEFINES appendBlank(). Counting the definition's own file would make the
     # gate report the thing it is measuring.
     os.path.join("src", "xbase", "dbf_file.cpp"),
+
+    # IS THE FUNNEL (OI-043, 2026-09-19). cli::fence::append_fenced() is the one
+    # gatekeeper -- it takes the table fence, appends, and returns the record
+    # number the FILE assigned. Counting it would make the gate report the route
+    # it exists to prove people use.
+    os.path.join("include", "cli", "append_fence.hpp"),
 }
 
 # NOT EXEMPT, AND THE DISTINCTION MATTERS: src/xbase/fields_mgr.cpp is INSIDE
@@ -226,43 +241,44 @@ def scan():
     unconfirmed = []
     where = {}
     exempt_slash = {p.replace("\\", "/") for p in EXEMPT_FILES}
-    for dirpath, _dirnames, filenames in os.walk(SRC):
-        rel_dir = os.path.relpath(dirpath, ROOT)
-        if any(rel_dir == s or rel_dir.startswith(s + os.sep) for s in SKIP_DIRS):
-            continue
-        for fn in sorted(filenames):
-            if not fn.endswith((".cpp", ".cc", ".cxx")):
-                continue
-            rel = os.path.relpath(os.path.join(dirpath, fn), ROOT)
-            rel_slash = rel.replace("\\", "/")
-            if rel_slash in exempt_slash:
-                continue
-            try:
-                with open(os.path.join(dirpath, fn), "r", encoding="utf-8",
-                          errors="replace") as f:
-                    text = f.read()
-            except OSError:
-                continue
-            code = strip_comments_and_strings(text)
-            code_lines = code.split("\n")
-            areas = set(DBAREA_DECL.findall(code))
-            seen = {}   # (function, call text) -> how many already counted here
-            for lineno, line in enumerate(code_lines, 1):
-                if not PATTERN.search(line):
-                    continue
-                func = enclosing_function(code_lines, lineno - 1)
-                ctext = call_text(line)
-                seen[(func, ctext)] = seen.get((func, ctext), 0) + 1
-                key = site_key(rel_slash, func, ctext, LABEL, seen[(func, ctext)])
-                hits.append(key)
-                where[key] = "%s:%d" % (rel_slash, lineno)
-                m = RECEIVER.search(line)
-                recv = m.group(1) if m else None
-                if recv is None or recv not in areas:
-                    # COUNTED ANYWAY. Reported so a reader can confirm by hand.
-                    unconfirmed.append(
-                        "%s:%d  (%s not declared DbArea in this file)"
-                        % (rel_slash, lineno, recv if recv else "<receiver not a plain name>"))
+    for root in SCAN_ROOTS:
+      for dirpath, _dirnames, filenames in os.walk(root):
+          rel_dir = os.path.relpath(dirpath, ROOT)
+          if any(rel_dir == s or rel_dir.startswith(s + os.sep) for s in SKIP_DIRS):
+              continue
+          for fn in sorted(filenames):
+              if not fn.endswith((".cpp", ".cc", ".cxx", ".hpp", ".h")):
+                  continue
+              rel = os.path.relpath(os.path.join(dirpath, fn), ROOT)
+              rel_slash = rel.replace("\\", "/")
+              if rel_slash in exempt_slash:
+                  continue
+              try:
+                  with open(os.path.join(dirpath, fn), "r", encoding="utf-8",
+                            errors="replace") as f:
+                      text = f.read()
+              except OSError:
+                  continue
+              code = strip_comments_and_strings(text)
+              code_lines = code.split("\n")
+              areas = set(DBAREA_DECL.findall(code))
+              seen = {}   # (function, call text) -> how many already counted here
+              for lineno, line in enumerate(code_lines, 1):
+                  if not PATTERN.search(line):
+                      continue
+                  func = enclosing_function(code_lines, lineno - 1)
+                  ctext = call_text(line)
+                  seen[(func, ctext)] = seen.get((func, ctext), 0) + 1
+                  key = site_key(rel_slash, func, ctext, LABEL, seen[(func, ctext)])
+                  hits.append(key)
+                  where[key] = "%s:%d" % (rel_slash, lineno)
+                  m = RECEIVER.search(line)
+                  recv = m.group(1) if m else None
+                  if recv is None or recv not in areas:
+                      # COUNTED ANYWAY. Reported so a reader can confirm by hand.
+                      unconfirmed.append(
+                          "%s:%d  (%s not declared DbArea in this file)"
+                          % (rel_slash, lineno, recv if recv else "<receiver not a plain name>"))
     return sorted(set(hits)), sorted(set(unconfirmed)), where
 
 

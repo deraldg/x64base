@@ -1,0 +1,71 @@
+SET ECHO OFF
+STOP_ON_ERROR OFF
+ECHO === FOREIGN TABLE LOCK PROBE, PART 2 of 2 -- four doors, one fence ===
+ECHO
+ECHO A foreign LIVE table lock is in place. Every arm below either says REFUSED
+ECHO or changes the table. Changing it means that door does not consult the
+ECHO fence, and a second engine could walk through it.
+SET PATH DBF DBF/SANDBOX
+
+ECHO
+ECHO --- does USE itself take or respect the lock? ---
+ECHO If USE is refused the rest cannot run, and that is itself the answer.
+USE LOCKP
+COUNT
+SMARTLIST 10
+
+ECHO
+ECHO ############ L1 -- APPEND BLANK. append_support.cpp:619 locks first ############
+ECHO EXPECT REFUSED. This is the door that is already fenced.
+APPEND BLANK
+ECHO count after APPEND (2 = fenced, 3 = it got through):
+COUNT
+
+ECHO
+ECHO ############ L2 -- the legacy bare INSERT verb ############
+ECHO cmd_sql_insert.cpp calls A.appendBlank() / A.writeCurrent() directly and
+ECHO the string try_lock_table appears NOWHERE in that file.
+ECHO   FENCED -> refused, and OI-043's remaining locking gap does not exist
+ECHO   HOLE   -> "1 row(s) inserted" and the count moves. A second engine can
+ECHO             grow a table this one has fenced, with nothing in the way
+INSERT (ID,TAG) VALUES ("L2","FOREIGNINS")
+ECHO count after bare INSERT:
+COUNT
+SMARTLIST 10
+
+ECHO
+ECHO ############ L3 -- SQLSEL, which enlists and takes the fence ############
+ECHO EXPECT REFUSED at the first DML statement -- enlist_sql_transaction calls
+ECHO try_lock_table and returns the lock error verbatim.
+SET MODE SQL
+SQLSEL BEGIN TRANSACTION
+SQLSEL INSERT INTO LOCKP (ID,TAG) VALUES ("L3","SQLFOREIGN")
+SQLSEL ROLLBACK
+SET MODE NATIVE
+ECHO count after SQLSEL:
+COUNT
+
+ECHO
+ECHO ############ L4 -- REPLACE on an EXISTING record ############
+ECHO try_lock_record calls table_lock_allows_owner first, so a foreign table
+ECHO lock should stop a record write too. EXPECT REFUSED, TAG stays SEED1.
+GO 1
+REPLACE TAG WITH "CLOBBERED"
+SMARTLIST 10
+
+ECHO
+ECHO ############ L5 -- IMPORT, which appends into the CURRENT area ############
+ECHO cmd_IMPORT(DbArea& a, ...) takes the CURRENT area and its own contract says
+ECHO it "requires an open table". It calls a.appendBlank() in a loop and the
+ECHO string try_lock_table appears nowhere in cmd_import.cpp either.
+ECHO   FENCED -> refused, and L2 is the only hole on the command surface
+ECHO   HOLE   -> the count moves again, and the gap is a FAMILY rather than one verb
+IMPORT lockfeed.csv
+ECHO count after IMPORT:
+COUNT
+SMARTLIST 10
+
+ECHO
+ECHO --- teardown. The engine cannot remove a foreign lock; the harness does. ---
+USE
+ECHO === part 2 done ===

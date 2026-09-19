@@ -32,9 +32,18 @@
 //   INSERT USAGE prints usage before open-table checks.
 //   INSERT appends a new record and writes supplied field values.
 //   Field/value count must match in VALUES form.
+//   INSERT TAKES THE TABLE FENCE BEFORE IT APPENDS (OI-043, 2026-09-19) and
+//   refuses with "INSERT: table locked (<reason>)" when another process holds
+//   the table. It did not until that date: measured against a planted foreign
+//   lock, APPEND BLANK, SQLSEL INSERT and REPLACE were all refused by name and
+//   this verb inserted a row anyway.
+//   It still writes IMMEDIATELY and is NOT a buffered-mode citizen -- TABLE ON
+//   does not make it buffer, and ROLLBACK has nothing to discard. Measured from
+//   the DBF header 2026-09-19 and unchanged by the fence.
 //
 // risk:
 //   requires_open_table: yes except usage
+//   requires_table_lock: yes -- REFUSES while another process holds the table
 //   mutates_table_data: yes
 //   appends_records: yes
 //
@@ -51,6 +60,11 @@
 // shell_commands.cpp:458-459 as the bare verbs INSERT and UPDATE. Three arms
 // green said nothing whatever about this path.
 #include "xbase_cli.hpp"
+// OI-043: the append fence. MEASURED 2026-09-19 -- with a foreign LIVE table
+// lock in place, APPEND BLANK, SQLSEL INSERT and REPLACE were all refused and
+// THIS VERB INSERTED A ROW ANYWAY. One of two doors that let a second engine
+// grow a table this one had fenced.
+#include "cli/append_fence.hpp"
 #include "textio.hpp"
 #include <algorithm>
 #include <cctype>
@@ -214,7 +228,10 @@ void cmd_SQL_INSERT(xbase::DbArea& A, std::istringstream& iss){
                     std::cout<<"INSERT: "<<gate_err<<"\n"; return;
                 }
             }
-            if(!A.appendBlank() || !A.readCurrent()){ std::cout<<"INSERT: APPEND failed\n"; return; }
+            std::string fence_err;
+            if(!cli::fence::append_fenced(A, &fence_err)){
+                std::cout<<"INSERT: table locked ("<<fence_err<<")\n"; return; }
+            if(!A.readCurrent()){ std::cout<<"INSERT: APPEND failed\n"; return; }
             for(const auto& w: writes) A.set(w.first, w.second);
             if(!A.writeCurrent()){ std::cout<<"INSERT: write failed\n"; return; }
             ++inserted;
@@ -250,7 +267,10 @@ void cmd_SQL_INSERT(xbase::DbArea& A, std::istringstream& iss){
                 std::cout<<"INSERT: "<<gate_err<<"\n"; return;
             }
         }
-        if(!A.appendBlank() || !A.readCurrent()){ std::cout<<"INSERT: APPEND failed\n"; return; }
+        std::string fence_err;
+            if(!cli::fence::append_fenced(A, &fence_err)){
+                std::cout<<"INSERT: table locked ("<<fence_err<<")\n"; return; }
+            if(!A.readCurrent()){ std::cout<<"INSERT: APPEND failed\n"; return; }
         for(auto& p: assigns) A.set(p.first, p.second);
         if(!A.writeCurrent()){ std::cout<<"INSERT: write failed\n"; return; }
         ++inserted;

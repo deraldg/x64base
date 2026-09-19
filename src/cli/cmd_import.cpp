@@ -27,6 +27,15 @@
 // notes:
 //   IMPORT requires an open table except for IMPORT USAGE.
 //   IMPORT appends .csv to the file name when the extension is omitted.
+//   IMPORT TAKES THE TABLE FENCE ONCE, BEFORE THE FIRST ROW (OI-043,
+//   2026-09-19), and refuses with "IMPORT: table locked (<reason>)" when
+//   another process holds the table. One fence for the whole file, so a
+//   refusal costs nothing rather than leaving a partial import. It did not
+//   take one until that date: measured against a planted foreign lock, it
+//   appended to the fenced table and reported success.
+//   The FIRST csv record is read as HEADERS and mapped to fields by name; a
+//   column that matches no field is skipped, so a feed with no header line
+//   appends rows and writes nothing.
 //   The first CSV row is interpreted as headers.
 //   Headers are mapped to current table fields case-insensitively.
 //   Each data row appends a blank record, sets mapped fields, and writes the record.
@@ -54,6 +63,7 @@
 #include <cstdint>
 #include <string_view>
 #include "xbase.hpp"
+#include "cli/append_fence.hpp"
 #include "cli/command_output.hpp"
 #include "cli/memo_field_store.hpp"
 #include "xbase_64.hpp"
@@ -149,11 +159,31 @@ void cmd_IMPORT(DbArea& a, std::istringstream& iss) {
     for (auto &h : headers)
         col2fld.push_back(predicates::field_index_ci(a, textio::trim(h)));
 
+    // OI-043: ONE FENCE FOR THE WHOLE IMPORT, not one per row.
+    //
+    // MEASURED 2026-09-19. A foreign LIVE table lock was planted beside a table
+    // and five doors were tried. APPEND BLANK, SQLSEL INSERT and REPLACE were
+    // all refused by name; THIS LOOP APPENDED TO THE FENCED TABLE AND REPORTED
+    // SUCCESS. IMPORT takes the CURRENT area -- its own contract says it
+    // "requires an open table" -- so the table it grows is the one another
+    // engine may be holding.
+    //
+    // Taken HERE rather than per row for two reasons. A refusal stops the FIRST
+    // row instead of leaving a partial import behind, and the per-row
+    // append_fenced() calls below BORROW this fence rather than taking N locks:
+    // try_lock_table is re-entrant for its own process, and cli::fence::TableFence
+    // releases only what it actually acquired.
+    cli::fence::TableFence import_fence(a);
+    if (!import_fence.ready) {
+        cli::cmdout::print_line("IMPORT: table locked (" + import_fence.error + ").");
+        return;
+    }
+
     int imported = 0;
     while (csv::read_record(in, record)) {
         auto cols = split_import_csv_record(record, false);
         if (cols.empty()) continue;
-        if (!a.appendBlank()) {
+        if (!cli::fence::append_fenced(a)) {
             cli::cmdout::print_message(dottalk::helpdata::MessageId::ImportAppendFailedText);
             break;
         }

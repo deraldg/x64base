@@ -9,11 +9,8 @@ src/cli/cmd_autodbf.cpp :: import_rows :: if (!area.appendBlank()) { :: appendBl
 src/cli/cmd_commit.cpp :: apply_one_recno :: if (!A.appendBlank() || !A.readCurrent()) return false; :: appendBlank #1
 src/cli/cmd_copy.cpp :: logical_copy_to_as :: if (!dst.appendBlank()) { :: appendBlank #1
 src/cli/cmd_ddl.cpp :: append_blank_records :: if (!area.appendBlank()) throw std::runtime_error( ); :: appendBlank #1
-src/cli/cmd_import.cpp :: cmd_IMPORT :: if (!a.appendBlank()) { :: appendBlank #1
 src/cli/cmd_importsql.cpp :: <file-scope> :: if (!area.appendBlank()) :: appendBlank #1
 src/cli/cmd_sort.cpp :: cmd_SORT :: if (!out.appendBlank()) { :: appendBlank #1
-src/cli/cmd_sql_insert.cpp :: cmd_SQL_INSERT :: if(!A.appendBlank() || !A.readCurrent()){ std::cout<< ; return; } :: appendBlank #1
-src/cli/cmd_sql_insert.cpp :: cmd_SQL_INSERT :: if(!A.appendBlank() || !A.readCurrent()){ std::cout<< ; return; } :: appendBlank #2
 src/cli/cmd_workspace.cpp :: ensure_durable_workspace :: a.appendBlank(); :: appendBlank #1
 src/cli/cmd_workspace.cpp :: save_to_memo :: a.appendBlank(); :: appendBlank #1
 src/cli/group_log.cpp :: decide_committed :: bool ok = a.appendBlank() && a.readCurrent(); :: appendBlank #1
