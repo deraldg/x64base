@@ -15,9 +15,9 @@
 // command: USE
 // category: workspace
 // status: supported
-// noargs: usage
-// effect: session
-// mutates: session area order memo index
+// noargs: mutate
+// effect: mixed
+// mutates: session area order memo index table-buffer relations
 // usage-access: USE USAGE
 // summary:
 //   Open a DBF table into the current work area, with duplicate-open guard,
@@ -25,6 +25,7 @@
 //
 // usage:
 //   USE USAGE
+//   USE                      (no argument: CLOSE the current area)
 //   USE <table>
 //   USE <table.dbf>
 //   USE <path\table.dbf>
@@ -35,7 +36,13 @@
 //   USE <table> IN FREE
 //
 // notes:
-//   USE requires a table name or path; no usable argument shows usage.
+//   A BARE USE CLOSES THE CURRENT AREA -- indexes, memo sidecars, order
+//     state, relations and the TABLE buffer slot, by delegating to CLOSE so
+//     there is one definition of "closed" rather than two. It is CANCELLABLE:
+//     a dirty table buffer raises the same prompt CLOSE raises, and answering
+//     No leaves the area open. Owner ruling 2026-09-19. It previously printed
+//     "missing table name" and the usage block.
+//   USE with an argument it cannot use still shows usage.
 //   USE REFUSES arguments it does not recognize, by name (AIF-121). It used to
 //   ignore them and open into the current area anyway, which destroyed that
 //   area's occupant silently -- the reason IN <n> exists here at all.
@@ -43,8 +50,10 @@
 //   takes the lowest unoccupied area, and refuses rather than falling back
 //   when there is none.
 //   The USAGE text rendered by print_use_usage() comes from the message
-//   catalog and does not yet list IN; the catalog is owned by the full-stack
-//   document push and is OWED this line. The refusal path prints the correct
+//   catalog and does not yet list IN, nor the bare closing form; the catalog
+//   is owned by the full-stack document push and is OWED BOTH lines. Nothing
+//   here edits it. The bare form no longer reaches print_use_usage() at all,
+//   so the omission costs a reader of USE USAGE rather than a user of USE. The refusal path prints the correct
 //   syntax inline meanwhile.
 //   Relative logical names resolve through the configured DBF path slot.
 //   USE prevents duplicate opens of the same DBF path across work areas,
@@ -67,7 +76,10 @@
 //
 // risk:
 //   opens_files: yes
-//   closes_current_area: yes
+//   closes_current_area: yes (and it is the WHOLE effect of a bare USE)
+//   closes_memo_backend: yes -- a bare USE runs the memo sidecar close hook
+//   clears_relations: yes -- for the table being closed, on the bare form
+//   prompts_on_dirty_buffer: yes on the bare form, and cancellable
 //   clears_order_state: yes
 //   attaches_memo: when memo fields are present
 //   attaches_index: flavor-appropriate index when present unless NOINDEX/NOIDX
@@ -95,6 +107,7 @@
 #include <type_traits>
 #include <vector>
 
+#include "shell_commands.hpp"   // cmd_CLOSE -- a bare USE delegates to it
 #include "workarea_util.hpp"
 #include "xbase.hpp"
 #include "xbase/workspace_membership.hpp"   // IN FREE is workspace-scoped (AIF-121)
@@ -743,8 +756,29 @@ void cmd_USE(DbArea& current_area, std::istringstream& iss)
     iss >> name;
 
     if (name.empty()) {
-        cli::cmdout::print_prefixed_message("USE", dottalk::helpdata::MessageId::UseMissingTableNameText);
-        print_use_usage();
+        // A BARE USE CLOSES THE CURRENT AREA (owner ruling 2026-09-19).
+        //
+        // It used to print "missing table name" and the whole usage block,
+        // which is an error for a form that has an obvious meaning: USE takes
+        // the current area somewhere, and USE with no destination takes it
+        // nowhere. The ruling is explicit that it must close the INDEXES and
+        // the SIDECARS too, not merely drop the filename.
+        //
+        // IT DELEGATES RATHER THAN REIMPLEMENTING, and that is the whole
+        // design. cmd_CLOSE with an empty argument already does every part of
+        // this correctly: the dirty-table-buffer prompt, so a bare USE cannot
+        // silently discard buffered edits; relation clearing for the table
+        // being closed; the memo sidecar lifecycle hook that memo_auto owns;
+        // MemoManager::close(); order/index detach; the area close; and the
+        // TABLE slot reset to OFF/clean/fresh. A second implementation here
+        // would be a second opinion about what "closed" means, and the two
+        // would drift the first time either was touched.
+        //
+        // The consequence worth stating: BARE USE IS NOW CANCELLABLE. If the
+        // area carries a dirty buffer the prompt appears and answering No
+        // leaves the area open, exactly as CLOSE behaves.
+        std::istringstream none;
+        cmd_CLOSE(current_area, none);
         return;
     }
 

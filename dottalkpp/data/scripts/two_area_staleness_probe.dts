@@ -1,0 +1,68 @@
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+ECHO === TWO CURSORS, ONE FILE: can a buffered COMMIT overwrite a newer write? ===
+ECHO SINGLE-PROCESS proxy for two engines on one data directory. It tests the
+ECHO COMMIT PATH's staleness behaviour, which is the same code two processes
+ECHO reach. It does NOT test OS record locking -- that needs two processes.
+ECHO
+ECHO v2. The first cut assumed 1-based areas and a bare second USE. The engine
+ECHO corrected both: areas are 0-BASED, and a duplicate open is REFUSED unless
+ECHO AGAIN is given -- "two record pointers, not one moved by SELECT", which is
+ECHO exactly the instrument this probe needs.
+
+SET PATH DBF DBF/SANDBOX
+
+ECHO --- fixture, in area 0 ---
+ERASE TWOWRITE CONFIRM
+CREATE X64 TWOWRITE (ID C(4), F1 C(8), F2 C(8))
+USE TWOWRITE
+APPEND BLANK
+REPLACE ID WITH "R1"
+REPLACE F1 WITH "ORIG1"
+REPLACE F2 WITH "ORIG2"
+GO 1
+LIST 1
+
+ECHO --- second independent cursor in area 1 ---
+SELECT 1
+USE TWOWRITE AGAIN ALIAS T2
+AREA
+LIST 1
+
+ECHO --- PROBE A: T2 buffers a change to F1 and does NOT commit ---
+TABLE ON
+GO 1
+REPLACE F1 WITH "FROM_T2"
+ECHO TUP shows the BUFFERED value, LIST the on-disk one:
+TUP
+LIST 1
+
+ECHO --- PROBE B: area 0 writes F1 IMMEDIATELY ---
+SELECT 0
+TABLE OFF
+GO 1
+REPLACE F1 WITH "FROM_A0"
+LIST 1
+
+ECHO --- PROBE C: now T2 commits its STALE buffer ---
+SELECT T2
+COMMIT
+SELECT 0
+GO 1
+ECHO F1 = FROM_T2 means the stale buffered commit OVERWROTE a newer write with
+ECHO no complaint. F1 = FROM_A0 means something detected or refused it.
+LIST 1
+
+ECHO --- PROBE D: the per-field question. Nobody buffered F2. ---
+ECHO F2 = ORIG2 means COMMIT writes ONLY the fields it buffered, so two editors
+ECHO on DIFFERENT fields of one record both survive.
+TUP
+
+ECHO --- teardown, and it exercises the new bare-USE close ---
+SELECT T2
+USE
+SELECT 0
+USE
+ERASE TWOWRITE CONFIRM
+ECHO === probe done ===
