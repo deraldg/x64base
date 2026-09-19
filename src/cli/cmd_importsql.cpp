@@ -28,6 +28,15 @@
 //   IMPORTSQL CREATE <file> TO <table> [DELIM PIPE|TAB|COMMA]
 //   IMPORTSQL FILE <file> TO <table> [DELIM PIPE|TAB|COMMA]
 //   IMPORTSQL MAP <subcommand> <mapfile>
+// notes:
+//   IMPORTSQL FILE TAKES THE TABLE FENCE ONCE, BEFORE THE FIRST ROW (OI-043,
+//   2026-09-19), and refuses with "IMPORTSQL: table locked (<reason>)" when
+//   another process holds the target. It did not until that date: measured
+//   against a planted foreign lock it reported "IMPORT: OK / Rows imported: 1"
+//   while APPEND BLANK, SQLSEL INSERT and REPLACE were all refused by name.
+//   The target may be the table this session already has open --
+//   current_area_matches_target() exists for exactly that -- so the table it
+//   grows can be the one another engine is holding.
 //
 // examples:
 //   IMPORTSQL PREVIEW data\students.psv
@@ -64,6 +73,7 @@
 #include "import/import_normalize.hpp"
 #include "import/import_profile.hpp"
 #include "xbase.hpp"
+#include "cli/append_fence.hpp"
 #include <algorithm>
 #include <cctype>
 
@@ -672,6 +682,27 @@ namespace
             return;
         }
 
+        // OI-043: ONE FENCE FOR THE WHOLE IMPORT, before the first row.
+        //
+        // MEASURED 2026-09-19 as the THIRD command-surface door. With a foreign
+        // LIVE table lock planted beside the table, APPEND BLANK, SQLSEL INSERT
+        // and REPLACE were refused by name -- and this path reported
+        // "IMPORT: OK / Rows imported: 1" and left L6A on disk. current_area_
+        // matches_target() exists precisely so this can append into the table
+        // the session already has open, which is the table another engine may
+        // be holding.
+        //
+        // Taken here rather than per row for the reason cmd_import.cpp records:
+        // a refusal costs nothing instead of leaving a partial import, and the
+        // per-row append_fenced() calls below BORROW this fence rather than
+        // taking N locks.
+        cli::fence::TableFence importsql_fence(area);
+        if (!importsql_fence.ready)
+        {
+            std::cout << "IMPORTSQL: table locked (" << importsql_fence.error << ")\n";
+            return;
+        }
+
         std::size_t lineNumber = 1;
         std::size_t importedRows = 0;
 
@@ -710,7 +741,7 @@ namespace
                 }
             }
 
-            if (!area.appendBlank())
+            if (!cli::fence::append_fenced(area))
             {
                 std::cout << "IMPORT: FAILED\n";
                 std::cout << "  Line " << lineNumber

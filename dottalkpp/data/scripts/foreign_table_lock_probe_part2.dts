@@ -66,6 +66,18 @@ COUNT
 SMARTLIST 10
 
 ECHO
+ECHO ############ L6 -- IMPORTSQL FILE, the third current-area door ############
+ECHO run_file_import(DbArea& area, ...) takes the area threaded down from
+ECHO cmd_IMPORTSQL, and current_area_matches_target() exists precisely so it can
+ECHO append into the table this session already has open. No lock in that file.
+ECHO   FENCED -> refused
+ECHO   HOLE   -> the count moves, and there is a THIRD door
+IMPORTSQL FILE lockfeed2.csv TO LOCKP DELIM COMMA
+ECHO count after IMPORTSQL:
+COUNT
+SMARTLIST 10
+
+ECHO
 ECHO --- teardown. The engine cannot remove a foreign lock; the harness does. ---
 USE
 ECHO === part 2 done ===

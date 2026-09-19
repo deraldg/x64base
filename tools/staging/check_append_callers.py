@@ -85,6 +85,35 @@ EXEMPT_FILES = {
     # gate report the thing it is measuring.
     os.path.join("src", "xbase", "dbf_file.cpp"),
 
+    # THE GENERATOR. append_support.cpp is the APPEND verb itself: it takes the
+    # table fence explicitly and generates a PRIMARY KEY inside it, which is why
+    # the lock is held across more than the append. Routing it through the
+    # funnel would nest a fence inside its own fence for no gain. This is the
+    # model's "the generator" exemption (check_field_write_callers.py).
+    os.path.join("src", "cli", "append_support.cpp"),
+
+    # FRESH PRIVATE OUTPUTS, exempted BY FILE WITH THE REASON rather than by
+    # dropping lines into the baseline -- a baseline of things that are FINE is
+    # how a measurement stops meaning anything.
+    #
+    # Each of these appends into a destination IT JUST CREATED and opened, so
+    # there is no concurrent holder to fence against and a lock file per output
+    # buys nothing. Verified by reading where the receiver comes from, not
+    # assumed from the command's name:
+    #   cmd_copy.cpp     dst.open(dstp)        the COPY TO destination
+    #   cmd_sort.cpp     out.open(out_path)    the SORT output
+    #   cmd_ddl.cpp      area.open(out_dbf)    pre-sizing a table DDL just made
+    #   fields_mgr.cpp   out.open(tempPath)    a TEMP file during schema rebuild
+    #
+    # THE COST IS REAL AND ACCEPTED: a future append added to one of these files
+    # against a SHARED table will not be seen here. The trade is the same one
+    # the model states, and the reason it holds is that all four write to a path
+    # they created in the same function.
+    os.path.join("src", "cli", "cmd_copy.cpp"),
+    os.path.join("src", "cli", "cmd_sort.cpp"),
+    os.path.join("src", "cli", "cmd_ddl.cpp"),
+    os.path.join("src", "xbase", "fields_mgr.cpp"),
+
     # IS THE FUNNEL (OI-043, 2026-09-19). cli::fence::append_fenced() is the one
     # gatekeeper -- it takes the table fence, appends, and returns the record
     # number the FILE assigned. Counting it would make the gate report the route

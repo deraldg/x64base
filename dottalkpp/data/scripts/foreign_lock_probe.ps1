@@ -50,30 +50,49 @@ Write-Host ("  harness pid $PID is alive, so the engine must treat this as a liv
 $feed = Join-Path (Join-Path $repo "dottalkpp\data") "lockfeed.csv"
 [System.IO.File]::WriteAllText($feed, "L5A,IMPORTED1`nL5B,IMPORTED2`n", [System.Text.Encoding]::ASCII)
 Write-Host "  wrote $feed for L5"
+# L6 needs its own feed WITH a header row, because IMPORTSQL maps by column name.
+$feed2 = Join-Path (Join-Path $repo "dottalkpp\data") "lockfeed2.csv"
+[System.IO.File]::WriteAllText($feed2, "ID,TAG`nL6A,SQLIMPORTED`n", [System.Text.Encoding]::ASCII)
+Write-Host "  wrote $feed2 for L6"
 
 Write-Host ""
-Write-Host "=============== PART 2: five doors ===============" -ForegroundColor Cyan
+Write-Host "=============== PART 2: six doors ===============" -ForegroundColor Cyan
 Write-Host "  L1 APPEND BLANK   expect REFUSED (append_support locks first)" -ForegroundColor Yellow
 Write-Host "  L2 bare INSERT    expect ??? -- this is the measurement" -ForegroundColor Yellow
 Write-Host "  L3 SQLSEL INSERT  expect REFUSED (enlist takes the fence)" -ForegroundColor Yellow
 Write-Host "  L4 REPLACE        expect REFUSED (record lock checks the table lock)" -ForegroundColor Yellow
 Write-Host "  L5 IMPORT         expect ??? -- appends into the CURRENT area, no lock in that file" -ForegroundColor Yellow
+Write-Host "  L6 IMPORTSQL FILE expect ??? -- same shape, threaded through run_file_import" -ForegroundColor Yellow
 Write-Host ""
 & (Join-Path $repo "datarun.ps1") -AppArgs '--script','scripts\foreign_table_lock_probe_part2.dts'
 
 Write-Host ""
 Write-Host "=============== cleanup ===============" -ForegroundColor Cyan
+
+# THE LOCK CHECK AND THE FEED CHECK ARE SEPARATE, AND AN EARLIER EDIT MERGED
+# THEM. The lock's else-branch ended up attached to the feed's if, so a missing
+# FEED would have printed "THE PLANTED LOCK IS GONE" -- a false alarm about the
+# one condition this harness exists to detect honestly. Written out in full
+# rather than patched again.
+
 # The engine cannot remove a lock it does not own, so the planter removes it.
 if (Test-Path -LiteralPath $lock) {
     Remove-Item -LiteralPath $lock -Force
     Write-Host "  removed the planted lock"
-}
-if (Test-Path -LiteralPath $feed) {
-    Remove-Item -LiteralPath $feed -Force
-    Write-Host "  removed the L5 feed"
 } else {
     Write-Host "  THE PLANTED LOCK IS GONE and this harness did not remove it." -ForegroundColor Red
-    Write-Host "  Something declared a live foreign owner stale. That is its own finding."
+    Write-Host "  Something declared a LIVE foreign owner stale. That is its own"
+    Write-Host "  finding and a worse one than any arm above -- AIF-116 made that"
+    Write-Host "  path fail closed on purpose."
 }
+
+foreach ($f in @($feed, $feed2)) {
+    if ($f -and (Test-Path -LiteralPath $f)) {
+        Remove-Item -LiteralPath $f -Force
+        Write-Host ("  removed {0}" -f (Split-Path -Leaf $f))
+    }
+}
+
 Write-Host ""
-Write-Host "Read L2. If it inserted, the fence has a hole a second engine can use."
+Write-Host "L2 / L5 / L6 are the measurement. A door that changed the table does"
+Write-Host "not consult the fence, and a second engine could walk through it."
