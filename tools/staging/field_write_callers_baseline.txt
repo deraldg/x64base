@@ -1,6 +1,67 @@
 # AIF-156 -- direct DbArea field writes outside the engine that do NOT go
 # through xbase::cli::replaceFieldStored / replaceFieldNull.
 #
+# ============================================================================
+# MIGRATED 2026-09-19 FROM file:line TO A CONTENT KEY. COUNT UNCHANGED: 13.
+#
+# Each entry is now  file :: enclosing function :: call text :: label.
+# An insertion above a site changes none of the three, so a relocation is
+# silent; a genuinely new writer changes at least one, so it still speaks.
+# The LINE NUMBER IS STILL PRINTED beside a NEW finding -- a reader needs it
+# to navigate. It is simply no longer COMPARED, which is what drifted.
+#
+# WHY NOW, AND NOT AT ANY OF THE NINE EARLIER OCCASIONS. This file recorded
+# nine anchor drifts and named this exact remedy at the seventh, then declined
+# it each time because the checker belongs to AIF-156. A TENTH arrived
+# 2026-09-18 -- cmd_workspace.cpp 3057 -> 3074, a WsLock struct inserted above
+# an untouched call by the M3 workbench commit -- and it was the FIRST OUTSIDE
+# cmd_commit.cpp, which removes the last reading in which this was one
+# pathological file rather than the keying scheme.
+#
+# THE DECIDING FACT IS THIS FILE'S OWN: EVERY ONE OF THE TEN WAS A FALSE
+# POSITIVE. Not one NEW line in this gate's history has been a genuine
+# unrouted writer. A signal whose every firing to date is noise trains its
+# reader to skim, and the real one then arrives in a channel nobody reads.
+#
+# FALSIFIED BEFORE MIGRATING, three claims:
+#   python tools/staging/check_field_write_callers.py --selftest
+#     1. the same call keys IDENTICALLY after lines are inserted above it
+#     2. a different call in the same function keys DIFFERENTLY
+#     3. the same text in another function keys DIFFERENTLY
+# And the migration itself was checked by count: 13 sites in 11 files before,
+# 13 sites in 11 files after. A migration that changed the count would be a
+# migration that changed the measurement.
+#
+# A LEGACY BASELINE IS NOT COMPARED. The checker detects the old shape and
+# prints the migration instruction rather than reporting 13 FIXED and 13 NEW
+# in one run -- which would be the loudest instance yet of the noise this
+# change ends.
+#
+# THE CALL TEXT IS THE STRIPPED FORM the scanner matches on, not source
+# verbatim: string literals are blanked before matching. That is deterministic,
+# so the key is stable; it is recorded here so nobody reads a blanked literal
+# as a defect.
+#
+# cmd_importsql.cpp keys as <file-scope> because the definition heuristic found
+# no enclosing definition line. Disclosed rather than hidden: a consistent
+# wrong answer still keys correctly, and only a FLAPPING one would reintroduce
+# drift.
+# ============================================================================
+#
+# ADVISORY, AND THIS LIST MAY ONLY SHRINK. A NEW line means somebody added a
+# direct write: route it through the funnel, or -- if it is a deliberate
+# below-the-funnel writer like the key generator -- add the FILE to
+# EXEMPT_FILES in the checker WITH ITS REASON, never to this baseline. A
+# baseline that grows stops being a measurement.
+#
+# Regenerate: python tools/staging/check_field_write_callers.py --emit-baseline
+#
+# ---------------------------------------------------------------------------
+# THE HISTORY BELOW IS KEPT VERBATIM. It is the evidence for the migration
+# above, and the ten drifts are the reason the scheme changed.
+# ---------------------------------------------------------------------------
+# through xbase::cli::replaceFieldStored / replaceFieldNull.
+#
 # Frozen 2026-09-07 at 28 sites in 19 files; 27 after CALCWRITE was routed
 # and 22 after REPLACE_MULTI and the LEGACY INSERT/UPDATE verbs were gated
 # (see EXEMPT_FILES in the checker for why those three are exempt rather
@@ -138,16 +199,16 @@
 # is the cost the seventh entry priced only as "noise a reader has to
 # recognise". STILL NOT PROPOSED AS A CHANGE HERE -- the checker belongs to
 # AIF-156 -- but the evidence has moved again and this is the ninth time it has.
-src/bbs/bbs_store.cpp:334:set
-src/bbs/bbs_store.cpp:350:set
-src/bbs/bbs_store.cpp:49:set
-src/cli/app_simple_browser.cpp:796:set
-src/cli/browse/browse_edit.cpp:40:set
-src/cli/cmd_autodbf.cpp:985:set
-src/cli/cmd_commit.cpp:399:set
-src/cli/cmd_copy.cpp:589:set
-src/cli/cmd_importsql.cpp:723:set
-src/cli/cmd_sort.cpp:923:set
-src/cli/cmd_workspace.cpp:3057:set
-src/help/message_catalog.cpp:844:set
-src/identity/identity_dbf_store.cpp:63:set
+src/bbs/bbs_store.cpp :: close_thread :: if (idx >= 0) a.set(idx + 1, " "); :: set
+src/bbs/bbs_store.cpp :: join :: a.set(i + 1, v); :: set
+src/bbs/bbs_store.cpp :: reply_to :: int idx = fields::findFieldCI(a, " "); if (idx >= 0) a.set(idx + 1, s_u64(pid)); a.writeCurrent(); } } } :: set
+src/cli/app_simple_browser.cpp :: app_SIMPLE_BROWSER :: if (!area.set(kv.first, kv.second)) { :: set
+src/cli/browse/browse_edit.cpp :: commit_staged :: if (!db.set(kv.first, kv.second)) return false; :: set
+src/cli/cmd_autodbf.cpp :: import_rows :: if (!area.set(static_cast<int>(i + 1), converted[i])) { :: set
+src/cli/cmd_commit.cpp :: apply_one_recno :: if (!A.set(f1, v)) { :: set
+src/cli/cmd_copy.cpp :: logical_copy_to_as :: if (!dst.set(i, s.get(i))) { :: set
+src/cli/cmd_importsql.cpp :: <file-scope> :: if (!area.set(static_cast<int>(i + 1), converted[i])) :: set
+src/cli/cmd_sort.cpp :: cmd_SORT :: (void)out.set(out_i + 1, v); :: set
+src/cli/cmd_workspace.cpp :: set_by_name :: if (!a.set(i + 1, v)) { err = std::string(" ") + col; return false; } :: set
+src/help/message_catalog.cpp :: set_field_or_throw :: if (!area.set(field1, value)) { :: set
+src/identity/identity_dbf_store.cpp :: s_optid :: a.set(i + 1, v); :: set

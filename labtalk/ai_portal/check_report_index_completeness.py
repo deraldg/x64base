@@ -26,6 +26,17 @@ WHAT IT RECONCILES
      is a maintainer question. Reporting it is useful; failing on it would be
      this gate inventing policy, which is how a gate gets switched off.
 
+  D. ENVELOPE PRESENCE. Every intake directory should carry an
+     `ai_report_audit` envelope. ADVISORY, because MONITOR item 3 proposes it
+     ("an intake without an envelope should raise an advisory the harvest step
+     resolves, not silently pass") and nothing has ruled it. Measured
+     2026-09-19: the validity audit reports `intake=9 intake_findings=0` over
+     FOURTEEN directories -- not nine clean out of fourteen, but nine that
+     carry an envelope AT ALL. The other five produce no finding because a
+     missing envelope is an absence, and a validity audit speaks only about
+     what is present. That is this gate's own defect one layer inside the
+     population it reconciles.
+
   C. MERGE FRESHNESS. runs.d/ is the canonical store -- one file per record so
      two sessions never touch the same file -- and ai_runs.yaml is GENERATED
      from it. Measured 2026-09-19: 23 fragments, 8 records in the merged file,
@@ -119,6 +130,39 @@ def run_fragments(root):
     return out
 
 
+def intake_envelopes(root, dirs):
+    """Which intake directories carry an ai_report_audit envelope.
+
+    The marker is a `report_id` under an `ai_report_audit` block. Read as TEXT
+    rather than parsed as YAML: these are markdown files with front matter or
+    fenced blocks in several shapes, and a parse failure would report a
+    present envelope as absent -- a false miss, which is the one error a
+    completeness gate must not make.
+    """
+    base = os.path.join(root, INTAKE_DIR)
+    without = []
+    for name in dirs:
+        found = False
+        for walk_root, _dirs, files in os.walk(os.path.join(base, name)):
+            for fname in files:
+                if not fname.lower().endswith(".md"):
+                    continue
+                try:
+                    with open(os.path.join(walk_root, fname), "r",
+                              encoding="utf-8", errors="replace") as handle:
+                        text = handle.read()
+                except OSError:
+                    continue
+                if "ai_report_audit" in text and "report_id" in text:
+                    found = True
+                    break
+            if found:
+                break
+        if not found:
+            without.append(name)
+    return without
+
+
 def merged_run_ids(root):
     path = os.path.join(root, RUNS_MERGED)
     if not os.path.isfile(path):
@@ -144,6 +188,7 @@ def main(argv):
         dirs = intake_dirs(root)
         frags = run_fragments(root)
         merged = merged_run_ids(root)
+        no_envelope = intake_envelopes(root, dirs)
     except Exception as exc:                      # noqa: BLE001 -- reported, not hidden
         print(f"check-report-index: could not read the registries: {exc}",
               file=sys.stderr)
@@ -209,10 +254,20 @@ def main(argv):
     else:
         print(f"B. all {len(frags)} runs appear in the index.")
 
+    print()
+    if no_envelope:
+        print(f"D. ADVISORY, UNRULED -- {len(no_envelope)} of {len(dirs)} intake "
+              f"directories carry no ai_report_audit envelope. The validity "
+              f"audit cannot report these: a missing envelope is an absence.")
+        for name in no_envelope:
+            print(f"     {INTAKE_DIR}/{name}/")
+    else:
+        print(f"D. all {len(dirs)} intake directories carry an envelope.")
+
     ruled_findings = len(unindexed_dirs) + len(stale_merge)
     print()
     print(f"check-report-index: ruled findings {ruled_findings}, "
-          f"advisory findings {len(unindexed_runs)}.")
+          f"advisory findings {len(unindexed_runs) + len(no_envelope)}.")
 
     if args.strict and ruled_findings:
         print("check-report-index: FAIL (--strict)")

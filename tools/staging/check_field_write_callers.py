@@ -291,7 +291,63 @@ def strip_comments_and_strings(text, keep_strings=False):
     return "".join(out)
 
 
+
+# ---------------------------------------------------------------------------
+# A CONTENT KEY, BECAUSE file:line IS A SECOND DECLARATION OF WHERE THE CODE IS
+#
+# The baseline recorded NINE anchor drifts before this change and a tenth
+# arrived on 2026-09-18 (cmd_workspace.cpp 3057 -> 3074, a WsLock struct
+# inserted above an untouched call). Its own summary: EVERY ONE OF THEM WAS A
+# FALSE POSITIVE. Not one NEW line in this gate's history has been a genuine
+# unrouted writer. A signal whose every firing is noise trains its reader to
+# skim, and the real one then arrives in a channel nobody reads -- which is a
+# worse failure than the manual re-anchoring it also cost.
+#
+# The remedy the baseline named nine times, now implemented: key each site by
+# FILE + ENCLOSING FUNCTION + THE NORMALIZED CALL TEXT. An insertion above the
+# site changes none of the three. A genuinely new writer changes at least one.
+#
+# THE LINE NUMBER IS STILL PRINTED, just not keyed on -- a reader needs it to
+# navigate, and the failure was never that the number was shown. It was that
+# the number was COMPARED.
+DEF_RE = re.compile(r"^[A-Za-z_][\w:<>,&*\s]*?([A-Za-z_]\w*)\s*\([^;]*$")
+CTRL = {"if", "for", "while", "switch", "catch", "return", "else", "do"}
+
+
+def enclosing_function(lines, index):
+    """Nearest preceding definition-shaped line, by name. Heuristic on purpose.
+
+    It does not need to be a parser. It needs to be STABLE under insertions
+    above the site, and to differ when the site genuinely moves to another
+    function. A wrong-but-consistent answer still keys correctly; only a
+    FLAPPING answer would reintroduce the drift, and a definition line does
+    not move relative to the body it opens.
+    """
+    for i in range(index, -1, -1):
+        line = lines[i]
+        if not line or line[0].isspace():
+            continue
+        m = DEF_RE.match(line)
+        if m and m.group(1) not in CTRL:
+            return m.group(1)
+    return "<file-scope>"
+
+
+def call_text(line):
+    return re.sub(r"\s+", " ", line.strip())
+
+
+def site_key(rel_slash, func, text, label):
+    return "%s :: %s :: %s :: %s" % (rel_slash, func, text, label)
+
+
+def is_legacy_baseline(entries):
+    # Legacy lines look like path:1234:set and carry no " :: " separator.
+    return bool(entries) and not any(" :: " in e for e in entries)
+
+
 def scan():
+    where = {}
     hits = []
     excluded = []
     unclassified = []
@@ -332,6 +388,9 @@ def scan():
                     if not pat.search(line):
                         continue
                     rel_slash = rel.replace("\\", "/")
+                    code_lines = code.split("\n")
+                    func = enclosing_function(code_lines, lineno - 1)
+                    ctext = call_text(line)
                     if label == "set":
                         m = RECEIVER.search(line)
                         if m is None:
@@ -341,17 +400,82 @@ def scan():
                             excluded.append("%s:%d  (%s is not a DbArea here)"
                                             % (rel_slash, lineno, m.group(1)))
                             continue
-                    hits.append("%s:%d:%s" % (rel_slash, lineno, label))
-    return sorted(set(hits)), sorted(set(excluded)), sorted(set(unclassified))
+                    hits.append(site_key(rel_slash, func, ctext, label))
+                    where[site_key(rel_slash, func, ctext, label)] = "%s:%d" % (rel_slash, lineno)
+    return sorted(set(hits)), sorted(set(excluded)), sorted(set(unclassified)), where
 
+
+
+def selftest():
+    """Falsify the KEY, which is the only thing this change touched.
+
+    Two claims, and the second is the one nine drifts were waiting for:
+      1. the same call in the same function keys IDENTICALLY after lines are
+         inserted above it -- a relocation is silent;
+      2. a genuinely different call in the same file keys DIFFERENTLY -- a new
+         writer still speaks.
+    """
+    before = [
+        "#include <a.hpp>",
+        "static bool set_by_name(DbArea& a, const char* col) {",
+        "    if (!a.set(i + 1, v)) { return false; }",
+        "    return true;",
+        "}",
+    ]
+    after = [
+        "#include <a.hpp>",
+        "#include <b.hpp>",
+        "struct WsLock { int held; };",
+        "",
+        "static bool set_by_name(DbArea& a, const char* col) {",
+        "    if (!a.set(i + 1, v)) { return false; }",
+        "    return true;",
+        "}",
+    ]
+    k1 = site_key("f.cpp", enclosing_function(before, 2), call_text(before[2]), "set")
+    k2 = site_key("f.cpp", enclosing_function(after, 5), call_text(after[5]), "set")
+    if k1 != k2:
+        print("selftest FAIL: a relocation changed the key")
+        print("  before: " + k1)
+        print("  after : " + k2)
+        return 2
+    print("selftest: relocation is silent      OK")
+    print("  key: " + k1)
+
+    added = list(after)
+    added.insert(6, "    if (!a.set(j + 1, w)) { return false; }")
+    k3 = site_key("f.cpp", enclosing_function(added, 6), call_text(added[6]), "set")
+    if k3 == k1:
+        print("selftest FAIL: a genuinely new write did not change the key")
+        return 2
+    print("selftest: a new writer still speaks OK")
+    print("  key: " + k3)
+
+    moved = ["static bool other(DbArea& a) {",
+             "    if (!a.set(i + 1, v)) { return false; }",
+             "}"]
+    k4 = site_key("f.cpp", enclosing_function(moved, 1), call_text(moved[1]), "set")
+    if k4 == k1:
+        print("selftest FAIL: the same text in another function kept the key")
+        return 2
+    print("selftest: another function differs  OK")
+    return 0
 
 def main():
-    hits, excluded, unclassified = scan()
+    if "--selftest" in sys.argv:
+        return selftest()
+    if "--emit-baseline" in sys.argv:
+        hits, _e, _u, _w = scan()
+        for h in hits:
+            print(h)
+        return 0
+    hits, excluded, unclassified, where = scan()
 
     by_file = {}
     for h in hits:
-        by_file.setdefault(h.split(":")[0], 0)
-        by_file[h.split(":")[0]] += 1
+        f = h.split(" :: ")[0]
+        by_file.setdefault(f, 0)
+        by_file[f] += 1
 
     print("field-write-callers: %d direct call site(s) in %d file(s) outside the engine"
           % (len(hits), len(by_file)))
@@ -382,13 +506,28 @@ def main():
         base = sorted(set(l.strip() for l in f
                           if l.strip() and not l.startswith("#")))
 
+    # A LEGACY BASELINE IS NOT COMPARED, AND SAYS SO. Keying changed from
+    # file:line to file + function + call text (see the note above scan()).
+    # Comparing the two shapes would report every site FIXED and every site
+    # NEW at once -- thirteen false alarms in one run, which is exactly the
+    # noise this change exists to end. It reports the migration instead.
+    if is_legacy_baseline(base):
+        print("  BASELINE IS IN THE OLD file:line SHAPE -- not compared this run.")
+        print("  The key is now file + enclosing function + call text, so an")
+        print("  insertion above a site no longer reads as FIXED plus NEW.")
+        print("  This is a ONE-TIME migration and the count must not change.")
+        print("  Regenerate, then diff the counts before committing:")
+        print("    python tools/staging/check_field_write_callers.py --emit-baseline")
+        print("  current site count: %d in %d file(s)" % (len(hits), len(by_file)))
+        return 0
+
     new = [h for h in hits if h not in base]
     fixed = [b for b in base if b not in hits]
 
     if new:
         print("  NEW -- a direct field write that does not go through the funnel:")
         for h in new:
-            print("    " + h)
+            print("    %s        [%s]" % (h, where.get(h, "?")))
         print("  Route it through xbase::cli::replaceFieldStored / replaceFieldNull,")
         print("  or -- if it is a deliberate below-the-funnel writer like the key")
         print("  generator -- add it to EXEMPT_FILES with the reason, not to the baseline.")
