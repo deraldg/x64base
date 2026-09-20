@@ -22,10 +22,14 @@ tag. `@dottalk.usage` is only the *command* KIND; know the whole family before y
   demographics + `lane:` + `owner:` (never embedded change history -- the closeout/run registry hold
   that; and never the path, which git already tracks and which goes stale on rename). This is the
   spine that turns the tree into a harvestable object graph (census, coverage gate, architecture map)
-  and connects each file back to its lane and accountable member. AIF-050; **coverage is 100% as of
-  2026-07-25** (1034/1034 tracked source files; the `--strict` gate now passes and is promotable to a
-  hard drift gate). Every new source file MUST carry it -- `tools/fullstack_docs/source_census.py
-  --write` inserts it idempotently. Spec: `docs/maintenance/AI_RUN_TRACEABILITY_LANE_V1.md`.
+  and connects each file back to its lane and accountable member. AIF-050; **coverage is GATED, not
+  aspirational** -- `tools/gates/run_gates.py` is strict by default and fails on any uncovered tracked
+  source file. Measure it there; do not quote a number here. (This bullet read "100% as of 2026-07-25,
+  1034/1034 ... promotable to a hard drift gate" until 2026-09-20. The gate was promoted 2026-08-02
+  and the count has moved since, so the sentence was stale on both halves -- a perishable literal on
+  an always-read surface, which `TIER1_MAINTENANCE_CONTRACT_V1.md` forbids for this exact reason.)
+  Every new source file MUST carry it -- `tools/fullstack_docs/source_census.py --write` inserts it
+  idempotently. Spec: `docs/maintenance/AI_RUN_TRACEABILITY_LANE_V1.md`.
 - **`@dottalk.usage` v1 -- command behavior.** Only on `src/cli/cmd_*.cpp`. `src/meta/metacollect.cpp`
   auto-harvests every command whose contract is `status: supported` into HELP/META and the manual
   command reference -- the contract IS the publish trigger. Fields: `owner`, `command`, `category`,
