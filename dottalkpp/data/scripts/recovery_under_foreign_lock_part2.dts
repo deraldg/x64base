@@ -1,0 +1,19 @@
+SET ECHO OFF
+STOP_ON_ERROR OFF
+ECHO === PART 2 of 3 -- a pending journal, and the table HELD by another owner ===
+ECHO
+ECHO A two-record committed journal sits beside JRN5 and a foreign LIVE table
+ECHO lock is in place. USE fires recover_table_buffer_journal.
+ECHO
+ECHO   SAFE      -> 0 applied, 2 not placed, THE LOG IS KEPT, and USE says so
+ECHO                plainly. Nothing is lost; the rows wait for the lock to go.
+ECHO   URGENT    -> the log is deleted, or USE claims a recovery. Then the
+ECHO                whole-loop fence is not a nicety and must be built now.
+ECHO   ALSO READ -> whether USE opens the table at all. If recovery refusing
+ECHO                also refuses the OPEN, that is its own finding.
+SET PATH DBF DBF/SANDBOX
+USE JRN5
+COUNT
+SMARTLIST 10
+USE
+ECHO === part 2 done ===

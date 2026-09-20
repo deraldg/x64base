@@ -1,0 +1,25 @@
+SET ECHO OFF
+STOP_ON_ERROR OFF
+ECHO === RECOVERY UNDER A FOREIGN LOCK, PART 1 of 3 -- build the fixture ===
+ECHO
+ECHO THE QUESTION THE OWNER'S IDEA RAISES. COMMIT already holds a table lock for
+ECHO the whole transaction when the buffer carries an INSERT -- cmd_commit.cpp:658,
+ECHO gated on has_insert, declared "released LAST" so it outlives the apply loop.
+ECHO Crash RECOVERY does not: recover_table_buffer_journal fences each append
+ECHO individually, so a replay of several rows is not held under one lock.
+ECHO
+ECHO BEFORE BUILDING THAT FENCE, MEASURE WHAT RECOVERY DOES WHEN THE TABLE IS
+ECHO HELD. Under rule (A) an interleaved replay is SAFE -- rows interleave, they
+ECHO do not clobber -- so the whole-loop fence buys contiguity, not correctness.
+ECHO What would make it URGENT is if a held table made recovery LOSE something.
+ECHO That is the answerable question, and this is it.
+SET PATH DBF DBF/SANDBOX
+ERASE JRN5 CONFIRM
+CREATE X64 JRN5 (ID C(4), TAG C(12))
+USE JRN5
+INSERT (ID,TAG) VALUES ("S1","SEED1")
+INSERT (ID,TAG) VALUES ("S2","SEED2")
+ECHO seeded, expect 2:
+COUNT
+USE
+ECHO === part 1 done ===

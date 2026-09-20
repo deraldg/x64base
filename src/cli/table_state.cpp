@@ -1028,6 +1028,33 @@ bool recover_table_buffer_journal(xbase::DbArea& area, RecoverStats* out) {
             // anyway.
             if (tag == "I") {
                 // OI-043: recovery grows a table other engines may hold.
+                //
+                // ONE FENCE PER APPEND, NOT ONE FENCE PER REPLAY -- and that is
+                // a measured choice, not an oversight. The obvious objection is
+                // that a second process can append BETWEEN two of these, so the
+                // rows one log carries need not land contiguously. True, and
+                // harmless: under rule (A) the recno is minted INSIDE the fence
+                // at append time, so a gap in the replayed run is an artifact
+                // of interleaving, not a lost record. Nothing downstream reads
+                // a journal's recnos as addresses any more -- that was exactly
+                // the bug the comment above this one records fixing.
+                //
+                // The question that DID need measuring is what happens when the
+                // table is held for the whole replay. Measured 2026-09-19 by
+                // dottalkpp/data/scripts/recovery_under_foreign_lock.ps1: a
+                // two-record journal was planted beside a LIVE foreign lock.
+                // USE opened the table, applied NOTHING, left the count at the
+                // seeds, and KEPT THE LOG -- OI-044's keep-the-log path firing
+                // against a genuine refusal rather than against a corrupt file.
+                // The lock was released; the log was still present; the next
+                // USE replayed both records in order and removed the log.
+                //
+                // A CONTENDED RECOVERY IS A DEFERRAL, NOT A PARTIAL WRITE.
+                // Per-append fencing is therefore sufficient for correctness. A
+                // whole-loop fence would buy contiguity and nothing else, and
+                // contiguity is not a property this engine promises. If someone
+                // proposes one again, the burden is to name a reader that
+                // requires a journal's rows to be adjacent -- there is none.
                 if (!cli::fence::append_fenced(area) || !area.readCurrent()) { ++stats.skipped; continue; }
             } else {
                 if (recno > area.recCount64()) { ++stats.skipped; continue; }

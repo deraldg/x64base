@@ -1,0 +1,15 @@
+SET ECHO OFF
+STOP_ON_ERROR OFF
+ECHO === PART 3 of 3 -- the lock is gone, the log survived. Retry. ===
+ECHO
+ECHO THIS IS THE ARM THAT DECIDES IT. If recovery is RETRYABLE and LOSSLESS,
+ECHO per-append fencing is sufficient and the whole-loop fence is a contiguity
+ECHO nicety. If the rows are gone, it is a defect.
+ECHO   EXPECT: count 4, records 3 and 4 carry R1/RECOVER1 and R2/RECOVER2,
+ECHO           and the log is deleted this time because nothing was skipped.
+SET PATH DBF DBF/SANDBOX
+USE JRN5
+COUNT
+SMARTLIST 10
+USE
+ECHO === part 3 done ===
