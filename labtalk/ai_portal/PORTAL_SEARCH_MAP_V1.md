@@ -24,6 +24,7 @@ next agent. A scan you did not record is a scan the next agent repeats.
 
 | Looking for | Go straight to | Crosslinks |
 | --- | --- | --- |
+| **The laws every agent is held to** (and why Asimov's are not them) | `labtalk/ai_portal/AI_AGENT_LAWS_SEED_V1.md` -- six ordered rules, each written so breaking it leaves evidence | origin and its failure modes are in the same file; the instrument rule (law 4) is drawn from OI-023's measured instrument failures |
 | **RUN a full-stack doc flush/push** (the runbook) | `docs/maintenance/lanes/full_stack_documentation/FULL_STACK_DOCUMENTATION_FLUSH_COOKBOOK_V2.md` -- Step 0 classifies the run | V1 SUPERSEDED; gate defects `GATE_CORRECTIONS_REQUIRED_V1.md`; reasoning `FLUSH_FIELD_NOTES_V1.md` |
 | Website page classes, design + retention policy, freshness sweep | `x64base-site/content/docs/dev/website-documentation-matrix.mdx` -- ENTRY and CLOSEOUT gate of the website phase | manifest `tools/fullstack_docs/website_content_manifest.yaml`; gate `tools/fullstack_docs/website_matrix_check.py` |
 | Which website pages are classified, and the class totals | `tools/fullstack_docs/website_content_manifest.yaml` (in CCODE, not the site repo) | validator `validate_website_content_manifest.py`; it checks the FILESYSTEM, not git -- see G3 |
