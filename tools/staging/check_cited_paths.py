@@ -17,6 +17,15 @@ SCOPE: only documents in THIS change set. A gate that reported every pre-existin
 widow in the tree would print the same paragraph every commit and stop being read
 by the third day -- the reasoning `open-items` already uses.
 
+TWO MORE LANES SHARE THAT SCOPE RULE WITHOUT OBEYING IT THE SAME WAY (OI-023,
+2026-09-20). The RENAME SWEEP asks the inverted question -- does anything still
+cite the path this change set just REMOVED -- so its trigger is change-set scoped
+and its search is tree-wide, because a widow made by a rename is never in the
+commit that made it. `--audit` drops the scoping entirely and always exits 0: it
+reports the whole backlog and judges none of it, so the size of what the scoping
+hides is knowable without anyone being blocked by it. Precedent for that mode and
+that rule: check_house_style.py --audit.
+
 Exit codes follow the portal convention: 0 clean, 3 advisory. Never 2. A widow is
 someone forgetting to stage a file, and blocking the commit that would have carried
 the rest of their work is the wrong trade.
@@ -415,14 +424,127 @@ def check_siblings(docs, rev, root):
     return lines, problem
 
 
+# ---------------------------------------------------------------------------
+# THE RENAME SWEEP (OI-023)
+#
+# Every check above asks ONE question: does the path this CHANGED DOCUMENT
+# cites exist? There is a second question with the same subject and the
+# opposite direction, and nothing in this tree asked it: **does anything still
+# cite the path this CHANGED FILE used to live at?**
+#
+# The two are not the same sweep and a rename is only visible to the second.
+# Moving `fields_mgr.cpp` out of `src/core/` on 2026-08-30 left EIGHT files
+# naming the old location, and this check saw none of them -- correctly, by its
+# own scope rule, because none of those eight documents was in the change set.
+# The breakage surfaced two commits later when an unrelated edit happened to
+# touch the intake register.
+#
+# SCOPE IS PRESERVED AND INVERTED. The trigger stays change-set scoped: this
+# only speaks when the change set REMOVES a citable path. What widens is where
+# it then looks -- the whole tree, because a widow made by a rename can be
+# anywhere and by definition is not in the commit that made it. A gate that
+# reported every pre-existing widow would stop being read by the third day
+# (the reasoning in this file's own header); a gate that fires on the rare
+# commit that deletes a tracked file costs nothing on every other commit.
+#
+# A DELETE AND A RENAME ARE THE SAME EVENT HERE, which is why `--diff-filter`
+# takes both. Git pairs a rename only when the content survives the move; a
+# file that was moved AND heavily edited comes through as a delete plus an add,
+# and the citations it orphans are just as broken. Asking only for R would have
+# missed exactly the renames big enough to be worth noticing.
+#
+# MEASURED BEFORE IT WAS BUILT, 2026-09-20, because the item assumed a size it
+# does not have. 1,820 tracked .md documents cite 2,222 distinct repo paths;
+# 334 are not tracked -- 75 IGNORED, 158 WIDOW, 101 MISSING. Of the 101
+# MISSING, TWELVE ever existed in git history and 89 never did. So this sweep
+# addresses twelve paths, and the other 322 are a different problem that no
+# rename sweep would ever touch. That is what `--audit` below is for.
+
+
+def removed_paths(range_spec):
+    """Citable repo paths the change set REMOVES -- deleted or renamed away.
+
+    Returns old paths only. A rename's new path is not interesting here: it is
+    present, so nothing cites it in vain.
+    """
+    args = ['diff', '-M', '--diff-filter=DR', '--name-status']
+    args += [range_spec] if range_spec else ['--cached']
+    out = git(args)
+    gone = set()
+    for line in out.splitlines():
+        parts = line.split('\t')
+        if len(parts) < 2:
+            continue
+        # D -> ['D', path];  R### -> ['R100', old, new]. Old is always [1].
+        old = parts[1]
+        if old.startswith(ROOTS) and old.endswith(EXTS):
+            gone.add(old)
+    return sorted(gone)
+
+
+def all_docs(rev=None):
+    """Every tracked .md in the tree -- the search space, not the change set."""
+    if rev:
+        names = git(['ls-tree', '-r', '--name-only', rev])
+    else:
+        names = git(['ls-files'])
+    return [p for p in names.splitlines() if p.endswith('.md')]
+
+
+def orphan_sweep(range_spec, rev):
+    """Who still cites what this change set just removed?
+
+    Returns (lines, problem). Reads the whole document surface, so it returns
+    EARLY AND FREE on the overwhelming majority of commits, which remove
+    nothing citable.
+    """
+    gone = removed_paths(range_spec)
+    if not gone:
+        return [], False
+
+    docs = all_docs(rev)
+    holders = {}
+    for d in docs:
+        hits = cited(d, rev) & set(gone)
+        for p in hits:
+            holders.setdefault(p, []).append(d)
+
+    lines = ["  rename sweep: %d path(s) removed by this change set, %d document(s) searched"
+             % (len(gone), len(docs))]
+    if not holders:
+        lines.append("  rename sweep: OK -- nothing in the tree cites a path this "
+                     "change set removed")
+        return lines, False
+
+    for p in sorted(holders):
+        lines.append("  ORPHANED %s -- removed here, still cited by %d document(s)"
+                     % (p, len(holders[p])))
+        for d in holders[p]:
+            lines.append("          cited by %s" % d)
+    lines.append("  A citation that was true before this commit is a LIVE POINTER or a")
+    lines.append("  HISTORICAL REFERENCE, and the two want opposite repairs. Repoint the")
+    lines.append("  first at where the file went; respell the second so it stops parsing")
+    lines.append("  as a pointer (OI-010). Do not repoint a session record -- it was")
+    lines.append("  accurate when it was written and repointing it makes it a lie.")
+    return lines, True
+
+
 def main(argv):
     rng = argv[0] if argv else None
+    rev = (rng.split('..')[-1] or 'HEAD') if rng else None
+
+    # THE SWEEP RUNS BEFORE THE EARLY RETURN BELOW, AND THAT IS THE WHOLE POINT.
+    # A commit that moves a .cpp and touches no .md has NO DOCUMENTS IN SCOPE --
+    # it would take that return and never look. That commit is precisely the one
+    # that orphans citations; the fields_mgr.cpp move was exactly this shape.
+    sweep_lines, sweep_problem = orphan_sweep(rng, rev)
+
     docs = staged_docs(rng)
     if not docs:
         print("cited-paths: no documents in scope -- nothing to check")
-        return 0
-
-    rev = (rng.split('..')[-1] or 'HEAD') if rng else None
+        for ln in sweep_lines:
+            print(ln)
+        return 3 if sweep_problem else 0
 
     # Computed BEFORE the `no repo paths cited` early return below. A document
     # that cites only website files has no repo paths at all, and returning
@@ -442,9 +564,9 @@ def main(argv):
             every.setdefault(p, []).append(d)
     if not every:
         print("cited-paths: %d document(s), no repo paths cited" % len(docs))
-        for ln in sib_lines:
+        for ln in sib_lines + sweep_lines:
             print(ln)
-        return 3 if sib_problem else 0
+        return 3 if (sib_problem or sweep_problem) else 0
 
     paths = sorted(every)
     # Resolve tracked-ness AT THE REVISION, not now. With no range this is the
@@ -474,7 +596,7 @@ def main(argv):
 
     print("cited-paths: %d document(s), %d path(s) cited, %d tracked"
           % (len(docs), len(paths), len(tracked)))
-    for ln in sib_lines:
+    for ln in sib_lines + sweep_lines:
         print(ln)
     if inert:
         print("  advisory: %d suppression(s) hiding nothing that needed hiding "
@@ -486,7 +608,7 @@ def main(argv):
             print("    %s:%d  (%s)" % (d, line_no, why))
         if len(inert) > 10:
             print("    ... and %d more" % (len(inert) - 10))
-    if not (widows or missing or ignored or sib_problem):
+    if not (widows or missing or ignored or sib_problem or sweep_problem):
         print("cited-paths: OK -- every cited path is tracked")
         return 0
     if not (widows or missing or ignored):
@@ -505,7 +627,96 @@ def main(argv):
         print("  IGNORED %s -- `git add` on it is a no-op (R42.1)" % p)
         for d in every[p]:
             print("          cited by %s" % d)
-    return 3 if (widows or missing or ignored or sib_problem) else 0
+    return 3 if (widows or missing or ignored or sib_problem or sweep_problem) else 0
+
+
+def looks_like_prose(path):
+    """True when the token is a SENTENCE the matcher swallowed, not a path.
+
+    `gui/uidef/workbench_session.hpp/.cpp` is one file name written as two, and
+    PATH_RE takes the lot as a single path ending in `.cpp`. It has been cited
+    three times and reported MISSING by every audit that ever looked, which is
+    a phantom rather than a finding. The test is structural and narrow: a
+    component BEFORE the last one carrying a known extension cannot be a
+    directory anybody made.
+
+    Report-only, and deliberately NOT wired into PATH_RE. Narrowing the matcher
+    changes what every other lane in this file sees, and AIF-120 R81.4 is the
+    record of what a quiet change to this tuple costs -- 175 citations
+    invisible, never verified, not once. Name the class, leave the matcher.
+    """
+    parts = path.split('/')
+    return any(c.endswith(EXTS) for c in parts[:-1])
+
+
+def ever_deleted():
+    """Every path git has ever seen removed. The slow half of --audit.
+
+    `--diff-filter=D` with no `-M` counts a rename as a delete of the old name,
+    which is what this needs: it answers "did this path ever exist", not "was
+    it renamed".
+    """
+    out = git(['log', '--diff-filter=D', '--name-only', '--format='], ok=(0, 1))
+    return {ln for ln in out.splitlines() if ln}
+
+
+def audit():
+    """Full-tree census of citations. ALWAYS EXITS 0 -- it reports, it does not judge.
+
+    The gate proper is change-set scoped for a reason its own header states, and
+    that scoping means nobody has ever seen the size of the backlog. This does,
+    in the same vocabulary, so the two numbers are comparable. Precedent for the
+    mode and the never-judge rule: check_house_style.py --audit.
+    """
+    docs = all_docs()
+    every = {}
+    for d in docs:
+        for pth in cited(d):
+            every.setdefault(pth, []).append(d)
+
+    paths = sorted(every)
+    tracked = tracked_repo_paths(paths)
+    rest = [pth for pth in paths if pth not in tracked]
+    ignored = ignored_repo_paths(rest)
+
+    prose = [pth for pth in rest if pth not in ignored and looks_like_prose(pth)]
+    body = [pth for pth in rest if pth not in ignored and pth not in prose]
+    widows = [pth for pth in body if os.path.exists(pth)]
+    missing = [pth for pth in body if not os.path.exists(pth)]
+
+    print("cited-paths --audit: %d document(s), %d distinct repo path(s) cited"
+          % (len(docs), len(paths)))
+    print("  tracked                          : %d" % len(tracked))
+    print("  IGNORED   git add is a no-op     : %d" % len(ignored))
+    print("  WIDOW     on disk, not tracked   : %d" % len(widows))
+    print("  MISSING   not on disk at all     : %d" % len(missing))
+    print("  MALFORMED a sentence, not a path : %d" % len(prose))
+
+    print("  (reading history for the MISSING split -- this is the slow part)")
+    gone = ever_deleted()
+    moved = [pth for pth in missing if pth in gone]
+    never = [pth for pth in missing if pth not in gone]
+    print("  of the MISSING, EXISTED ONCE (a move or a delete) : %d" % len(moved))
+    print("  of the MISSING, NEVER IN HISTORY                  : %d" % len(never))
+    print("  ONLY THE FIRST GROUP IS RENAME BREAKAGE. The second was wrong the day")
+    print("  it was written -- a planned file, a generated output nobody tracks, or")
+    print("  a typo -- and no sweep over renames will ever find it.")
+
+    if moved:
+        print("  -- MISSING that existed once, with a same-named successor if there is one --")
+        by_base = {}
+        for t in git(['ls-files']).splitlines():
+            by_base.setdefault(os.path.basename(t), []).append(t)
+        for pth in sorted(moved, key=lambda x: -len(every[x])):
+            cands = by_base.get(os.path.basename(pth), [])
+            where = ", ".join(cands) if cands else "(no file of that name anywhere -- deleted, not moved)"
+            print("    %2d cite(s)  %s" % (len(every[pth]), pth))
+            print("                -> %s" % where)
+    if prose:
+        print("  -- MALFORMED --")
+        for pth in sorted(prose):
+            print("    %2d cite(s)  %s" % (len(every[pth]), pth))
+    return 0
 
 
 def selftest():
@@ -680,6 +891,72 @@ def selftest():
     finally:
         rmtree(tmp)
 
+    # -- the rename sweep (OI-023) ------------------------------------------
+    # Pure-function cases first, then a real repo. The sweep's whole claim is
+    # that it fires on a commit with NO DOCUMENTS IN SCOPE, and only a repo
+    # where that is literally true can prove it.
+    check("prose with an inner extension is not a path",
+          looks_like_prose("gui/uidef/workbench_session.hpp/.cpp"), True)
+    check("an ordinary path is not prose",
+          looks_like_prose("src/cli/table_state.cpp"), False)
+    check("a dotted directory name is not prose",
+          looks_like_prose("docs/v1.2/notes.md"), False)
+
+    sweep_tmp = tempfile.mkdtemp(prefix="citecheck-sweep-")
+    cwd0 = os.getcwd()
+    try:
+        repo = os.path.join(sweep_tmp, "repo")
+        os.makedirs(os.path.join(repo, "src", "core"))
+        os.makedirs(os.path.join(repo, "src", "xbase"))
+        os.makedirs(os.path.join(repo, "docs"))
+        open(os.path.join(repo, "src", "core", "foo.cpp"), "w").write("int foo();\n")
+        doc = os.path.join(repo, "docs", "note.md")
+        open(doc, "w").write("the mover lives at `src/core/foo.cpp` today\n")
+        run(['git', 'init', '-q'], repo)
+        run(['git', 'config', 'user.email', 'selftest@example.invalid'], repo)
+        run(['git', 'config', 'user.name', 'selftest'], repo)
+        run(['git', 'add', '-A'], repo)
+        run(['git', 'commit', '-q', '-m', 'base'], repo)
+
+        os.chdir(repo)
+
+        # NOTHING REMOVED -> the sweep must cost nothing and say nothing.
+        lines, problem = orphan_sweep(None, None)
+        check("a commit that removes nothing produces no sweep output",
+              (lines, problem), ([], False))
+
+        run(['git', 'mv', 'src/core/foo.cpp', 'src/xbase/foo.cpp'], repo)
+        run(['git', 'add', '-A'], repo)
+
+        check("removed_paths reports the OLD path of a rename",
+              removed_paths(None), ["src/core/foo.cpp"])
+
+        # THE CASE THE ITEM IS ABOUT: the change set is one .cpp move and no
+        # document at all, so `staged_docs` is empty and every other lane in
+        # this file returns early.
+        check("the change set has no documents in scope", staged_docs(None), [])
+
+        lines, problem = orphan_sweep(None, None)
+        check("a rename that orphans a citation is reported", problem, True)
+        check("the orphaned OLD path is named",
+              any("ORPHANED src/core/foo.cpp" in l for l in lines), True)
+        check("the document still holding the pointer is named",
+              any("cited by docs/note.md" in l for l in lines), True)
+
+        # And main() must carry it out, not just the helper -- the early return
+        # for "no documents in scope" is what swallowed this before.
+        check("main() exits advisory on an orphaning rename", main([]), 3)
+
+        open(doc, "w").write("the mover lives at `src/xbase/foo.cpp` today\n")
+        run(['git', 'add', '-A'], repo)
+        lines, problem = orphan_sweep(None, None)
+        check("a rename whose citation followed it is clean", problem, False)
+        check("the clean case still says how much it searched",
+              any("rename sweep: OK" in l for l in lines), True)
+    finally:
+        os.chdir(cwd0)
+        rmtree(sweep_tmp)
+
     print("cited-paths selftest: %d case(s), %d failure(s)"
           % (len(ran), len(failures)))
     return 1 if failures else 0
@@ -692,4 +969,6 @@ if __name__ == '__main__':
     # printing a green that answered a question nobody asked.
     if '--selftest' in sys.argv[1:]:
         sys.exit(selftest())
+    if '--audit' in sys.argv[1:]:
+        sys.exit(audit())
     sys.exit(main([a for a in sys.argv[1:] if not a.startswith('-')]))

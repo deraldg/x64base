@@ -282,6 +282,38 @@ if ($Testing -and $NoTests) {
 # and a target may be handed to MSBuild only once.
 $Targets = @($Targets | Select-Object -Unique)
 
+# OI-022, owner ruling 2026-09-20: leave `dottalk_bbsd` OUT of the house build
+# and SAY SO, so the omission reads as a choice rather than an oversight.
+#
+# `DOTTALK_BUILD_BBSD` defaults ON and the target configures on every run, but
+# this script builds seven targets and that is not one of them, so A CHANGE
+# THAT BREAKS IT PASSES THIS BUILD IN SILENCE. That is the mirror of the
+# standing rule that a single-target build never proves the other six: a target
+# outside the seven is never proven at all.
+#
+# It is out ON PURPOSE. You cannot relink a running executable, so a daemon in
+# the default list fails the build for everyone who has it up -- LNK1104,
+# cannot open OUTPUT, which reads nothing like the missing symbol people expect
+# and cost an afternoon once already. That is a bad trade for the many to cover
+# the few who are actually touching bbsd. The hypothesis was in OI-022 from
+# 2026-08-30 and nothing in this file said it; now it does.
+#
+# DERIVED, NOT ASSERTED. It reads the cache and the live target list rather
+# than stating a fact that can rot: put `dottalk_bbsd` in $Targets some day and
+# this notice removes itself. A hardcoded sentence here would be the same shape
+# AIF-078 took out of this very block -- a summary that printed the same thing
+# whether or not it was true.
+$BbsdConfigured = $false
+if (Test-Path $CacheFile) {
+  $BbsdConfigured = Select-String -Path $CacheFile -Pattern '^DOTTALK_BUILD_BBSD:BOOL=ON' -Quiet
+}
+if ($BbsdConfigured -and ($Targets -notcontains 'dottalk_bbsd')) {
+  Write-Host ">>> NOT BUILT HERE: dottalk_bbsd -- configured ON, deliberately outside this build."
+  Write-Host ">>>   A running daemon holds its own exe open, so building it here would fail"
+  Write-Host ">>>   for anyone with it up. Prove it yourself when you touch it:"
+  Write-Host (">>>   cmake --build " + $BuildDir + " --config " + $Config + " --target dottalk_bbsd")
+}
+
 Write-Host (">>> Building target(s): " + ($Targets -join ', '))
 if ($UseNinja) {
   cmake --build $BuildDir --target $Targets
