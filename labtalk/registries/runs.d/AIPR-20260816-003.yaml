@@ -1,0 +1,38 @@
+run_id: AIPR-20260816-003
+member: member.ai.codex.local
+product: Codex
+project: project.ai_systems.integration
+lanes:
+- AIF-086
+role: contributing_agent_ai_portal_live_maintenance
+authored_by: member.ai.codex.local
+planned_by: member.derald
+owner: member.derald
+steward: member.ai.claude.cowork
+git:
+  branch: development
+  baseline: 119dc7af10f19e52895781b7721b5e5cd7fd9e60
+chat_handle: codex-local-20260816-ai-portal-live-maintenance
+handle_binding: SELF_REPORTED
+continues_run: AIPR-20260816-002
+started: 2026-08-16
+closeouts:
+- docs/maintenance/SESSION_CLOSEOUT_AI_PORTAL_LIVE_MAINTENANCE_AIF086_2026-08-16.md
+reports:
+- AIPR-20260816-003
+artifacts:
+- start-ai.ps1
+- tools/dbf/maint_console.html
+- tools/dbf/crud.py
+- tools/dbf/maint_server.py
+- tools/dbf/tests/test_maint_server.py
+- tools/registries/registry_fragments.py
+- tools/reports/build_reports.py
+- tools/reports/serve_dynamic_reports.py
+- tools/reports/tests/test_build_reports_closed_lanes.py
+- tools/reports/tests/test_registry_fragment_source.py
+- tools/reports/tests/test_serve_dynamic_reports.py
+- labtalk/proofs/runs/20260816_230404_ai_portal_live_maintenance.txt
+- labtalk/registries/proofs.d/proof.ai.portal_live_fragment_maintenance.yaml
+- docs/maintenance/SESSION_CLOSEOUT_AI_PORTAL_LIVE_MAINTENANCE_AIF086_2026-08-16.md
+status: complete
