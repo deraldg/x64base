@@ -248,12 +248,55 @@ def staged_docs(range_spec):
     return [p for p in names.splitlines() if p.endswith('.md') and os.path.exists(p)]
 
 
-def cited(doc, rev=None):
+def not_a_path(token):
+    """Why this token CANNOT be a repo path, or None if it might be one.
+
+    PATH_RE finds things that LOOK like paths in prose, and prose contains two
+    shapes that cannot be paths under any spelling. Owner ruling 2026-09-20:
+    teach the checker these two and leave relative-path resolution alone.
+
+    ELISION -- the token contains `...`, which is an author shortening a long
+    path in a sentence ("src/AIPortal/.../PROJECT_LANE_X.md"). No directory in
+    this repository is named `...`, and the selftest asserts that rather than
+    assuming it.
+
+    TWO NAMES IN ONE -- a component BEFORE the last carries a known extension,
+    as in `workbench_session.hpp/.cpp`. That is one file name written as two and
+    no directory anybody made.
+
+    WHY THIS IS A PREDICATE AND NOT A NARROWER PATH_RE. AIF-120 R81.4 is the
+    record of what a quiet change to that regex costs -- 175 citations invisible
+    and never verified, plus a real sibling-repo file reported as a widow,
+    because ROOTS was wrong in two directions at once and nobody counted. The
+    regex still matches exactly what it always matched; what changed is that
+    `cited` refuses two token shapes AND SAYS SO OUT LOUD through `rejected`.
+    A narrowing nobody can see is the failure; a narrowing that reports itself
+    is a measurement.
+
+    RELATIVE PATHS ARE DELIBERATELY NOT HERE. One citation in this tree resolves
+    against its own document's folder (the cascade ERP README naming `scripts/`).
+    Teaching the checker that would make one string mean different things in
+    different files and would resolve citations nobody meant. One path is not
+    worth an order-dependent check.
+    """
+    if '...' in token:
+        return "elision -- `...` is prose, not a directory"
+    parts = token.split('/')
+    if any(c.endswith(EXTS) for c in parts[:-1]):
+        return "two file names written as one token"
+    return None
+
+
+def cited(doc, rev=None, rejected=None):
     """The paths a document cites -- AS IT READ at `rev`, not as it reads now.
 
     Reading today's text while resolving targets at an old revision reports every
     document written since as a widow of that commit. Both halves have to come from
     the same moment, which is the same mismatch this check exists to find.
+
+    `rejected`, when given a dict, collects token -> reason for everything
+    not_a_path refused. The caller can then REPORT the narrowing instead of
+    inheriting it silently.
     """
     text = doc_text(doc, rev)
     out = set()
@@ -262,8 +305,14 @@ def cited(doc, rev=None):
             continue
         for m in PATH_RE.finditer(line):
             p = m.group(1).rstrip('.,;:)`*')
-            if p.endswith(EXTS):
-                out.add(p)
+            if not p.endswith(EXTS):
+                continue
+            why = not_a_path(p)
+            if why:
+                if rejected is not None:
+                    rejected.setdefault(p, why)
+                continue
+            out.add(p)
     return out
 
 
@@ -565,6 +614,27 @@ def orphan_sweep(range_spec, rev):
     return lines, True
 
 
+def report_refused(refused):
+    """Say what the matcher REFUSED to treat as a path, and why.
+
+    A narrowing nobody can see is how a checker quietly stops checking. This
+    line exists so the two shapes not_a_path drops are visible in the same
+    output as everything it keeps -- the counter-measure to R81.4, where a wrong
+    ROOTS tuple hid 175 citations and no line anywhere said so.
+
+    Never touches the exit code. These are not findings; they are tokens that
+    were never citations.
+    """
+    if not refused:
+        return
+    print("  note: %d token(s) matched the path shape but are not paths "
+          "-- not counted above, not findings:" % len(refused))
+    for tok, why in sorted(refused.items())[:6]:
+        print("    %s  (%s)" % (tok, why))
+    if len(refused) > 6:
+        print("    ... and %d more" % (len(refused) - 6))
+
+
 def report_ignored(ignored, every):
     """Print the ignored citations as an ADVISORY, with the rule for each.
 
@@ -621,11 +691,13 @@ def main(argv):
                                   % (type(exc).__name__, exc)], False
 
     every = {}
+    refused = {}
     for d in docs:
-        for p in cited(d, rev):
+        for p in cited(d, rev, refused):
             every.setdefault(p, []).append(d)
     if not every:
         print("cited-paths: %d document(s), no repo paths cited" % len(docs))
+        report_refused(refused)
         for ln in sib_lines + sweep_lines:
             print(ln)
         return 3 if (sib_problem or sweep_problem) else 0
@@ -658,6 +730,7 @@ def main(argv):
 
     print("cited-paths: %d document(s), %d path(s) cited, %d tracked"
           % (len(docs), len(paths), len(tracked)))
+    report_refused(refused)
     for ln in sib_lines + sweep_lines:
         print(ln)
     if inert:
@@ -711,18 +784,30 @@ def looks_like_prose(path):
     record of what a quiet change to this tuple costs -- 175 citations
     invisible, never verified, not once. Name the class, leave the matcher.
     """
-    parts = path.split('/')
-    return any(c.endswith(EXTS) for c in parts[:-1])
+    return not_a_path(path) == "two file names written as one token"
 
 
-def ever_deleted():
-    """Every path git has ever seen removed. The slow half of --audit.
+def ever_existed():
+    """Every path git has ever seen ADDED. The slow half of --audit.
 
-    `--diff-filter=D` with no `-M` counts a rename as a delete of the old name,
-    which is what this needs: it answers "did this path ever exist", not "was
-    it renamed".
+    ASK ABOUT ADDITIONS, NOT DELETIONS, AND THE REASON IS A MEASURED ONE.
+    This function used to ask `git log --diff-filter=D` -- what was ever
+    removed -- and it was WRONG BY THIRTEEN PATHS on this tree, measured
+    2026-09-20. `git log` applies history simplification and PRUNES MERGE
+    COMMITS, so a file deleted as part of a merge is invisible to it. Four real
+    commands (cmd_vuse, cmd_codaysl, cmd_cobol, cmd_smart_browser) were
+    classified as "never existed" on that evidence, and cmd_vuse is documented
+    in OPEN_ITEMS as added at 7c56022a1 and gone by c86c18783 -- a merge.
+
+    An ADDITION happens in an ordinary commit and no merge can hide it, so the
+    question flips and `--all` covers every branch rather than this one.
+
+    THE TELL, for anyone auditing this later: the delete-sweep and the
+    add-sweep returned the SAME COUNT (985) on this tree, which reads like
+    agreement and is not -- they are different sets. Comparing totals instead
+    of members is how the first error survived.
     """
-    out = git(['log', '--diff-filter=D', '--name-only', '--format='], ok=(0, 1))
+    out = git(['log', '--all', '--diff-filter=A', '--name-only', '--format='], ok=(0, 1))
     return {ln for ln in out.splitlines() if ln}
 
 
@@ -736,8 +821,9 @@ def audit():
     """
     docs = all_docs()
     every = {}
+    refused = {}
     for d in docs:
-        for pth in cited(d):
+        for pth in cited(d, None, refused):
             every.setdefault(pth, []).append(d)
 
     paths = sorted(every)
@@ -745,8 +831,11 @@ def audit():
     rest = [pth for pth in paths if pth not in tracked]
     ignored = ignored_repo_paths(rest)
 
-    prose = [pth for pth in rest if pth not in ignored and looks_like_prose(pth)]
-    body = [pth for pth in rest if pth not in ignored and pth not in prose]
+    # NOT-A-PATH tokens never reach `every` any more, so the class is read off
+    # the collector rather than re-derived. Two derivations of one rule is how
+    # they end up disagreeing.
+    prose = sorted(refused)
+    body = [pth for pth in rest if pth not in ignored]
     widows = [pth for pth in body if os.path.exists(pth)]
     missing = [pth for pth in body if not os.path.exists(pth)]
 
@@ -756,10 +845,10 @@ def audit():
     print("  IGNORED   git add is a no-op     : %d" % len(ignored))
     print("  WIDOW     on disk, not tracked   : %d" % len(widows))
     print("  MISSING   not on disk at all     : %d" % len(missing))
-    print("  MALFORMED a sentence, not a path : %d" % len(prose))
+    print("  NOT A PATH  refused by not_a_path: %d" % len(prose))
 
     print("  (reading history for the MISSING split -- this is the slow part)")
-    gone = ever_deleted()
+    gone = ever_existed()
     moved = [pth for pth in missing if pth in gone]
     never = [pth for pth in missing if pth not in gone]
     print("  of the MISSING, EXISTED ONCE (a move or a delete) : %d" % len(moved))
@@ -779,9 +868,9 @@ def audit():
             print("    %2d cite(s)  %s" % (len(every[pth]), pth))
             print("                -> %s" % where)
     if prose:
-        print("  -- MALFORMED --")
-        for pth in sorted(prose):
-            print("    %2d cite(s)  %s" % (len(every[pth]), pth))
+        print("  -- NOT A PATH, refused before counting --")
+        for pth in prose:
+            print("    %-58s %s" % (pth, refused[pth]))
     return 0
 
 
@@ -969,6 +1058,34 @@ def selftest():
           looks_like_prose("src/cli/table_state.cpp"), False)
     check("a dotted directory name is not prose",
           looks_like_prose("docs/v1.2/notes.md"), False)
+
+    # -- not_a_path: the two shapes the matcher refuses (2026-09-20) ----------
+    check("an elision is refused",
+          bool(not_a_path("src/AIPortal/.../PLAN_V1.md")), True)
+    check("two names in one token are refused",
+          bool(not_a_path("src/cli/shell_api.cpp/.hpp")), True)
+    check("an ordinary path is NOT refused",
+          not_a_path("src/cli/table_state.cpp"), None)
+    check("a dotted directory is NOT refused",
+          not_a_path("docs/v1.2/notes.md"), None)
+    check("a version-numbered file is NOT refused",
+          not_a_path("docs/manuals/man_v1.2.md"), None)
+
+    # THE DOCSTRING CLAIMS NO DIRECTORY IS NAMED `...`. ASSERT IT, because the
+    # whole elision rule rests on it and a tree that grew one would silently
+    # start dropping real citations.
+    dotdotdot = [t for t in git(['ls-files']).splitlines()
+                 if '...' in t.split('/')]
+    check("no tracked path has a `...` component", dotdotdot, [])
+
+    # The refusal must be VISIBLE. A narrowing nobody can see is the failure
+    # R81.4 records; this asserts the line that prevents it.
+    buf2 = io.StringIO()
+    with contextlib.redirect_stdout(buf2):
+        report_refused({"src/a/b.cpp/.hpp": "two file names written as one token"})
+    out2 = buf2.getvalue()
+    check("a refusal is reported, not silent", "not paths" in out2, True)
+    check("the refused token is named", "src/a/b.cpp/.hpp" in out2, True)
 
     sweep_tmp = tempfile.mkdtemp(prefix="citecheck-sweep-")
     cwd0 = os.getcwd()

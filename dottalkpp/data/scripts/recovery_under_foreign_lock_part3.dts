@@ -12,4 +12,9 @@ USE JRN5
 COUNT
 SMARTLIST 10
 USE
+ECHO
+ECHO --- housekeeping. The probe made JRN5; the probe removes it. ---
+ECHO A fixture left in SANDBOX is a table the NEXT probe may open by accident,
+ECHO and a sandbox that fills up is how a clean run stops meaning clean.
+ERASE JRN5 CONFIRM
 ECHO === part 3 done ===

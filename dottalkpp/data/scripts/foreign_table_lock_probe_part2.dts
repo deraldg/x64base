@@ -79,5 +79,7 @@ SMARTLIST 10
 
 ECHO
 ECHO --- teardown. The engine cannot remove a foreign lock; the harness does. ---
+ECHO The TABLE is ours to remove though, and this probe used to leave it.
 USE
+ERASE LOCKP CONFIRM
 ECHO === part 2 done ===
