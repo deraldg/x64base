@@ -32,18 +32,37 @@
 //   INSERT USAGE prints usage before open-table checks.
 //   INSERT appends a new record and writes supplied field values.
 //   Field/value count must match in VALUES form.
-//   INSERT TAKES THE TABLE FENCE BEFORE IT APPENDS (OI-043, 2026-09-19) and
-//   refuses with "INSERT: table locked (<reason>)" when another process holds
-//   the table. It did not until that date: measured against a planted foreign
-//   lock, APPEND BLANK, SQLSEL INSERT and REPLACE were all refused by name and
-//   this verb inserted a row anyway.
-//   It still writes IMMEDIATELY and is NOT a buffered-mode citizen -- TABLE ON
-//   does not make it buffer, and ROLLBACK has nothing to discard. Measured from
-//   the DBF header 2026-09-19 and unchanged by the fence.
+//   INSERT HONOURS TABLE ON (2026-09-20). The two modes differ and the
+//   difference is the contract:
+//     TABLE OFF -- one table fence, one append, one write, immediately.
+//                  Refuses with "INSERT: table locked (<reason>)" while
+//                  another process holds the table (OI-043, 2026-09-19).
+//                  ROLLBACK has nothing to discard; the row is already on disk.
+//     TABLE ON  -- the row STAGES into the table buffer as CHANGE_INSERT and
+//                  reaches the DBF at COMMIT. It takes NO OS lock at the
+//                  statement, marks the area DIRTY, and ROLLBACK DISCARDS IT.
+//                  A foreign table lock is refused at COMMIT rather than here,
+//                  because a staged row touches no file.
+//   marks_dirty: yes when TABLE ON; no when TABLE OFF
+//   rollback_discards: yes when TABLE ON; no when TABLE OFF
+//   Until 2026-09-20 this verb IGNORED TABLE ON entirely and wrote through in
+//   both modes, so an INSERT inside a buffered session was durable before
+//   COMMIT ran and ROLLBACK did not undo it. Measured from the DBF header
+//   2026-09-19 (B0/BAREINS survived a ROLLBACK, no journal was ever written)
+//   by dottalkpp/data/scripts/sql_insert_intervening_append_probe.dts ARM 0.
+//   Same defect and same repair as MULTIREP under AIF-151.
+//   THE STAGED NUMBER IS A BUFFER KEY, NOT AN ADDRESS (ruling (A), 2026-09-19).
+//   Record identity is minted at COMMIT by the file.
+//   MEMO IS UNMEASURED. This verb has never had memo-specific handling, so
+//   staging changes nothing about where a payload lands, but what A.set() does
+//   to a memo field here has not been measured either way.
 //
 // risk:
 //   requires_open_table: yes except usage
-//   requires_table_lock: yes -- REFUSES while another process holds the table
+//   requires_table_lock: TABLE OFF only -- REFUSES while another process holds
+//     the table. Under TABLE ON no lock is taken here and the refusal moves to
+//     COMMIT, which matches COMMIT's own contract: "TABLE ON buffers changes;
+//     no OS locking should occur".
 //   mutates_table_data: yes
 //   appends_records: yes
 //
@@ -65,6 +84,10 @@
 // THIS VERB INSERTED A ROW ANYWAY. One of two doors that let a second engine
 // grow a table this one had fenced.
 #include "cli/append_fence.hpp"
+// AIF-151 / OI-043: TABLE ON makes this verb a buffered citizen, so it needs
+// the buffer, the journal and the area-slot lookup the other buffered verbs use.
+#include "cli/table_state.hpp"
+#include "workarea_util.hpp"   // cli::slot_of_area -- which slot is this area?
 #include "textio.hpp"
 #include <algorithm>
 #include <cctype>
@@ -159,6 +182,121 @@ static bool insert_usage_contract(std::string tok)
         [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
     return tok == "USAGE" || tok == "HELP" || tok == "?";
 }
+
+// ---------------------------------------------------------------------------
+// ONE PLACE WHERE A ROW BECOMES A ROW (OI-043 remainder, 2026-09-20).
+//
+// This file had the append-and-write sequence TWICE -- once per syntax form --
+// and both copies wrote straight through the table buffer. Adding the buffered
+// branch to each would have made four paths where there should be one, so the
+// sequence is a function now and the fork lives inside it.
+//
+// AIF-151 IS THE PRECEDENT AND IT IS THE SAME DEFECT IN ANOTHER VERB.
+// cmd_replace_multi.cpp:887 records it: "MULTIREP used to ignore TABLE ON
+// entirely and lock-and-write regardless, so a MULTIREP inside a buffered
+// session was durable before COMMIT ran and ROLLBACK did not undo it." The
+// legacy bare INSERT verb was the last one still doing that, measured by
+// dottalkpp/data/scripts/sql_insert_intervening_append_probe.dts ARM 0 --
+// written in NATIVE mode on purpose, because SET MODE SQL aliases INSERT to
+// SQLSEL and a probe in SQL mode measures the wrong door entirely.
+//
+// NO FENCE ON THE BUFFERED PATH, AND THAT IS THE RULING RATHER THAN AN
+// OVERSIGHT. Owner, 2026-09-20. COMMIT's own contract says "TABLE ON buffers
+// changes; no OS locking should occur", and MULTIREP's buffered branch is
+// taken BEFORE its record lock for exactly that reason: a staged row touches
+// no file, so there is nothing for a table fence to protect. The fence fires
+// at COMMIT, where cmd_commit.cpp already takes a transaction-long table lock
+// gated on has_insert. THE VISIBLE CONSEQUENCE, stated because it changes what
+// shipped on 2026-09-19: with TABLE ON, a foreign lock no longer refuses this
+// verb at the statement -- the refusal moves to COMMIT. With TABLE OFF, which
+// is what the foreign-lock probe measures, nothing changes at all.
+//
+// THE KEY IS NOT AN ADDRESS. Under ruling (A) the staged number orders the
+// buffer and nothing else; the record number is minted at COMMIT by the file.
+// next_insert_key is the one producer of it.
+//
+// MEMO IS UNMEASURED AND DELIBERATELY UNTOUCHED. MULTIREP had to write memo
+// payloads immediately and buffer only the handle. This file has never had any
+// memo handling, so staging changes nothing about where a payload lands -- but
+// nobody has measured what A.set() does to a memo field here, and this comment
+// is the record that it was noticed rather than assumed.
+static bool insert_one_row(xbase::DbArea& A,
+                           const std::vector<std::pair<int,std::string>>& writes,
+                           std::string& err)
+{
+    const int area0 = cli::slot_of_area(&A);
+    if (area0 >= 0 && dottalk::table::is_enabled(area0)) {
+        auto& tb = dottalk::table::get_tb(area0);
+        const std::uint64_t key =
+            dottalk::table::next_insert_key(area0, A.recCount64());
+
+        for (const auto& w : writes) {
+            std::uint64_t bits[dottalk::table::kWords]{};
+            const int index0 = w.first - 1;
+            if (index0 < 0 || index0 / 64 >= dottalk::table::kWords) {
+                err = "field index out of range";
+                return false;
+            }
+            bits[index0 / 64] |= (std::uint64_t{1} << (index0 % 64));
+
+            const int priority = tb.add_change(
+                key, dottalk::table::CHANGE_INSERT, bits, w.first, w.second);
+            if (priority == 0) { err = "table buffer refused a change"; return false; }
+
+            // Write-ahead redo, only under RamJournal. Same shape as MULTIREP:
+            // journal the exact buffered edit with the priority add_change
+            // assigned, so history mode keeps every retained edit per field.
+            if (dottalk::table::is_persistent_enabled(area0)) {
+                dottalk::table::ChangeEntry je;
+                je.recno = key;
+                je.dirty_flags = dottalk::table::CHANGE_INSERT;
+                je.priority = priority;
+                je.new_values[w.first] = w.second;
+                if (!dottalk::table::journal_note_change(area0, je)) {
+                    err = "write-ahead journal refused a change";
+                    return false;
+                }
+            }
+            dottalk::table::mark_stale_field(area0, w.first);
+        }
+
+        // A ROW WITH NO FIELDS STILL HAS TO EXIST. The loop above stages one
+        // entry per field, so an empty write list would stage nothing and the
+        // row would vanish silently. It cannot happen from either syntax form
+        // today -- both refuse a mismatched count long before here -- and it is
+        // handled anyway, because "cannot happen" is how a row goes missing.
+        if (writes.empty()) {
+            const int priority = tb.add_change(key, dottalk::table::CHANGE_INSERT);
+            if (priority == 0) { err = "table buffer refused a change"; return false; }
+            if (dottalk::table::is_persistent_enabled(area0)) {
+                dottalk::table::ChangeEntry je;
+                je.recno = key;
+                je.dirty_flags = dottalk::table::CHANGE_INSERT;
+                je.priority = priority;
+                if (!dottalk::table::journal_note_change(area0, je)) {
+                    err = "write-ahead journal refused a change";
+                    return false;
+                }
+            }
+            dottalk::table::set_stale(area0, true);
+        }
+
+        if (!dottalk::table::is_dirty(area0)) dottalk::table::set_dirty(area0, true);
+        return true;
+    }
+
+    // TABLE OFF -- unchanged. One fence, one append, one write, immediately.
+    std::string fence_err;
+    if (!cli::fence::append_fenced(A, &fence_err)) {
+        err = "table locked (" + (fence_err.empty() ? std::string("lock exists") : fence_err) + ")";
+        return false;
+    }
+    if (!A.readCurrent()) { err = "APPEND failed"; return false; }
+    for (const auto& w : writes) A.set(w.first, w.second);
+    if (!A.writeCurrent()) { err = "write failed"; return false; }
+    return true;
+}
+
 void cmd_SQL_INSERT(xbase::DbArea& A, std::istringstream& iss){
     // INSERT_USAGE_CONTRACT_BRANCH
     {
@@ -228,12 +366,11 @@ void cmd_SQL_INSERT(xbase::DbArea& A, std::istringstream& iss){
                     std::cout<<"INSERT: "<<gate_err<<"\n"; return;
                 }
             }
-            std::string fence_err;
-            if(!cli::fence::append_fenced(A, &fence_err)){
-                std::cout<<"INSERT: table locked ("<<fence_err<<")\n"; return; }
-            if(!A.readCurrent()){ std::cout<<"INSERT: APPEND failed\n"; return; }
-            for(const auto& w: writes) A.set(w.first, w.second);
-            if(!A.writeCurrent()){ std::cout<<"INSERT: write failed\n"; return; }
+            {
+                std::string row_err;
+                if(!insert_one_row(A, writes, row_err)){
+                    std::cout<<"INSERT: "<<row_err<<"\n"; return; }
+            }
             ++inserted;
             while(i<rest.size() && std::isspace((unsigned char)rest[i])) ++i;
             if(i<rest.size() && rest[i]==','){ ++i; continue; }
@@ -267,12 +404,11 @@ void cmd_SQL_INSERT(xbase::DbArea& A, std::istringstream& iss){
                 std::cout<<"INSERT: "<<gate_err<<"\n"; return;
             }
         }
-        std::string fence_err;
-            if(!cli::fence::append_fenced(A, &fence_err)){
-                std::cout<<"INSERT: table locked ("<<fence_err<<")\n"; return; }
-            if(!A.readCurrent()){ std::cout<<"INSERT: APPEND failed\n"; return; }
-        for(auto& p: assigns) A.set(p.first, p.second);
-        if(!A.writeCurrent()){ std::cout<<"INSERT: write failed\n"; return; }
+        {
+            std::string row_err;
+            if(!insert_one_row(A, assigns, row_err)){
+                std::cout<<"INSERT: "<<row_err<<"\n"; return; }
+        }
         ++inserted;
     }
 

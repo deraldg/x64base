@@ -9,6 +9,7 @@
 
 #include "cli/table_state.hpp"
 
+#include <algorithm>   // std::max, for next_insert_key
 #include <array>
 #include <cctype>
 #include <cstring>
@@ -1181,6 +1182,27 @@ TableBuffer& get_tb(int area0) {
 const TableBuffer& get_tb_const(int area0) {
     if (!in_range(area0)) throw std::out_of_range("Invalid area index");
     return state_store()[area0].tb;
+}
+
+// The staged-insert buffer key. See the header for why this is a function and
+// not two copies of four lines.
+//
+// OUT-OF-RANGE RETURNS rec_count + 1 RATHER THAN THROWING. A caller with no
+// buffer has no staged inserts to skip past, so the physical answer IS the
+// right answer, and the alternative would put a throw in the path of a verb
+// that is about to decide it is not buffering at all.
+std::uint64_t next_insert_key(int area0, std::uint64_t rec_count) {
+    std::uint64_t key = rec_count + 1;
+    if (!in_range(area0)) return key;
+    for (const auto& entry : state_store()[area0].tb.changes) {
+        if (entry.second.dirty_flags & CHANGE_INSERT) {
+            // entry.first + 1, NOT ++key: the keys already staged need not be
+            // contiguous with each other or with the file, and stepping by one
+            // per entry would collide the moment they are not.
+            key = std::max(key, entry.first + 1);
+        }
+    }
+    return key;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

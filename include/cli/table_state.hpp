@@ -308,6 +308,27 @@ void set_history_enabled(int area0, bool value);
 TableBuffer&       get_tb(int area0);
 const TableBuffer& get_tb_const(int area0);
 
+// THE BUFFER KEY FOR A STAGED INSERT -- ONE PRODUCER, NOT TWO (OI-043, 2026-09-20).
+//
+// Under owner ruling (A) an INSERT always appends and the number a staged row
+// carries is a BUFFER KEY, never an address: it orders the multimap and joins a
+// read-your-own-writes lookup, and record identity is minted at COMMIT by the
+// file. The key must still be UNIQUE and ASCENDING within the buffer, because
+// COMMIT walks the multimap in key order and that order is the order the rows
+// are appended in.
+//
+// The rule -- start past the last physical record, then past the highest key
+// already staged as an insert -- lived inline in execute_insert_statement and
+// nowhere else, which was fine while SQLSEL was the only verb that staged an
+// insert. The legacy bare INSERT verb becoming a buffered citizen makes that
+// two, and two copies of the rule that decides record identity is the shape
+// this tree has now consolidated three times in two days (three hand-written
+// copies of the table-lock protocol, 2026-09-19).
+//
+// `rec_count` is passed rather than read, because the caller already has the
+// area and this header must not depend on DbArea's definition.
+std::uint64_t next_insert_key(int area0, std::uint64_t rec_count);
+
 // Area index validation
 inline bool in_range(int area0) {
     return area0 >= 0 && area0 < xbase::MAX_AREA;

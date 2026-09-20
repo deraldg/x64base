@@ -36,21 +36,78 @@ ECHO ############################################################
 ECHO ARM 0 -- does the bare INSERT verb honour TABLE ON at all?
 ECHO ############################################################
 ECHO NATIVE mode, so this really is cmd_sql_insert.cpp and not the alias.
+ECHO
+ECHO THIS ARM ONCE ASSERTED THE DEFECT AND NOW ASSERTS THE REPAIR. Until
+ECHO 2026-09-20 the bare verb ignored TABLE ON entirely: B0/BAREINS was on
+ECHO disk before any COMMIT and survived a ROLLBACK. Same defect and same
+ECHO repair as MULTIREP under AIF-151. An arm that only ever described a
+ECHO defect cannot tell you the day it stops being one.
+ECHO
+ECHO ------------------------------------------------------------
+ECHO ARM 0a -- TABLE ON, then ROLLBACK. The row must NOT survive.
+ECHO ------------------------------------------------------------
 ERASE SQLINS CONFIRM
 CREATE X64 SQLINS (ID C(4), TAG C(12))
 USE SQLINS
 TABLE ON
 INSERT (ID,TAG) VALUES ("B0","BAREINS")
-ECHO If BAREINS is on disk below with NO COMMIT having run, the bare verb
-ECHO bypassed the table buffer entirely -- it is not a buffered-mode citizen.
-ECHO record count:
+ECHO   FIXED  -> count 0. The row is STAGED and the DBF is untouched.
+ECHO   BROKEN -> count 1 with B0 on disk before any COMMIT ran.
 COUNT
 SMARTLIST 10
 ROLLBACK
-ECHO after ROLLBACK -- if BAREINS survives, it was never buffered:
+ECHO after ROLLBACK:
+ECHO   FIXED  -> count 0 and no B0 anywhere. ROLLBACK DISCARDED IT.
+ECHO   BROKEN -> B0 survives, which is what it did before this date.
 COUNT
 SMARTLIST 10
 TABLE OFF
+
+ECHO
+ECHO ------------------------------------------------------------
+ECHO ARM 0b -- TABLE ON, then COMMIT. Both forms, both must land.
+ECHO ------------------------------------------------------------
+ECHO Discarding on ROLLBACK proves only half of it. A verb that staged and
+ECHO then lost the row at COMMIT would pass 0a and be far worse than the
+ECHO defect it replaced.
+ECHO
+ECHO BOTH SYNTAX FORMS RUN HERE ON PURPOSE. cmd_sql_insert.cpp had the
+ECHO append-and-write sequence written out TWICE, once per form, and only a
+ECHO probe that exercises both can say the fork was applied to both.
+USE
+ERASE SQLINS CONFIRM
+CREATE X64 SQLINS (ID C(4), TAG C(12))
+USE SQLINS
+TABLE ON
+INSERT (ID,TAG) VALUES ("K1","TUPLEFORM")
+INSERT ID="K2", TAG="ASSIGNFORM"
+ECHO staged -- count must still be 0:
+COUNT
+COMMIT
+ECHO after COMMIT:
+ECHO   FIXED  -> count 2, record 1 = K1 / TUPLEFORM, record 2 = K2 / ASSIGNFORM
+ECHO   BROKEN -> any other count, or the rows out of order. The buffer key is
+ECHO             minted by next_insert_key and COMMIT walks the multimap in
+ECHO             key order, so key order IS append order.
+COUNT
+SMARTLIST 10
+TABLE OFF
+
+ECHO
+ECHO ------------------------------------------------------------
+ECHO ARM 0c -- TABLE OFF is UNCHANGED. The control.
+ECHO ------------------------------------------------------------
+ECHO The whole point of a fork is that the other branch still works. With
+ECHO TABLE OFF this verb still fences, appends and writes immediately, and
+ECHO ROLLBACK has nothing to discard.
+USE
+ERASE SQLINS CONFIRM
+CREATE X64 SQLINS (ID C(4), TAG C(12))
+USE SQLINS
+INSERT (ID,TAG) VALUES ("U1","UNBUFFERED")
+ECHO   EXPECT count 1 IMMEDIATELY -- no COMMIT was run and none is needed.
+COUNT
+SMARTLIST 10
 
 ECHO
 ECHO ############################################################

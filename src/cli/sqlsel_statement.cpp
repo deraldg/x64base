@@ -3856,12 +3856,13 @@ bool execute_insert_statement(const std::string& statement) {
     dottalk::tupleaugment::WorkAreaCursorRestore restore;
     dottalk::TupleRow empty_row;
     std::vector<PendingDmlRow> changes;
-    std::uint64_t next_recno = table.area->recCount64() + 1;
-    for (const auto& entry : dottalk::table::get_tb_const(cli::slot_of_area(table.area)).changes) {
-        if (entry.second.dirty_flags & dottalk::table::CHANGE_INSERT) {
-            next_recno = std::max(next_recno, entry.first + 1);
-        }
-    }
+    // THE KEY RULE MOVED, IT DID NOT CHANGE (OI-043, 2026-09-20). These four
+    // lines were the only producer of a staged-insert buffer key until the
+    // legacy bare INSERT verb became a buffered citizen. Two copies of the rule
+    // that decides record identity is the shape this tree keeps consolidating,
+    // so it is one function now and this call is the same arithmetic.
+    std::uint64_t next_recno = dottalk::table::next_insert_key(
+        cli::slot_of_area(table.area), table.area->recCount64());
     for (const auto& group : groups) {
         const auto expressions = split_csv(group);
         if (expressions.size() != fields.size()) {
