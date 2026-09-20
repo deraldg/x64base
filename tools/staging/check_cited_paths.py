@@ -29,6 +29,13 @@ that rule: check_house_style.py --audit.
 Exit codes follow the portal convention: 0 clean, 3 advisory. Never 2. A widow is
 someone forgetting to stage a file, and blocking the commit that would have carried
 the rest of their work is the wrong trade.
+
+AND AN IGNORED CITATION IS NOT EVEN THAT (owner ruling, 2026-09-21). A path the
+tree deliberately excludes can be cited correctly; 48 of the 75 such citations
+here are `docs/manuals` output covered by rulings already taken under OI-011. It
+is reported WITH THE RULE THAT EXCLUDES IT and does not move the exit code --
+because a permanent advisory is the thing this file's own SCOPE note says stops
+a check from being read.
 """
 import os
 import re
@@ -186,6 +193,35 @@ def ignored_repo_paths(paths):
     """Return ignored paths without exceeding the Windows argv ceiling."""
     text = git_path_batches(['check-ignore'], paths, ok=(0, 1))
     return {p for p in text.splitlines() if p}
+
+
+def ignored_repo_rules(paths):
+    """Ignored paths mapped to the .gitignore rule that excludes each one.
+
+    OWNER RULING 2026-09-21: a citation to a deliberately ignored path is
+    CORRECT, and this check had no way to know the ruling existed. 48 of the 75
+    cited-and-ignored paths in this tree are `docs/manuals` output covered by
+    .gitignore:525 and :101 -- decisions taken deliberately, under OI-011, and
+    then re-reported as a problem on every commit that touched a citing
+    document. THAT IS THE FAILURE MODE THIS FILE'S OWN DOCSTRING NAMES: a
+    standing advisory trains people to skip the whole check.
+
+    So the rule is PRINTED BESIDE THE PATH. `git add` on it is still a silent
+    no-op and that still deserves saying; what changes is that the reader can
+    see WHICH decision made it so, without going to look.
+
+    `-v` output is `source:line:pattern\tpath`. A path with no rule (a plain
+    exit 1) simply does not appear.
+    """
+    text = git_path_batches(['check-ignore', '-v'], paths, ok=(0, 1))
+    out = {}
+    for line in text.splitlines():
+        if not line:
+            continue
+        parts = line.split('\t')
+        if len(parts) >= 2:
+            out[parts[-1]] = parts[0]
+    return out
 
 
 def doc_text(doc, rev=None):
@@ -529,6 +565,32 @@ def orphan_sweep(range_spec, rev):
     return lines, True
 
 
+def report_ignored(ignored, every):
+    """Print the ignored citations as an ADVISORY, with the rule for each.
+
+    Never touches the exit code. Grouped by RULE rather than by path, because
+    75 lines saying the same thing 48 times is how a report stops being read --
+    and because the rule is the thing a reader can act on.
+    """
+    if not ignored:
+        return
+    rules = ignored_repo_rules(sorted(ignored))
+    by_rule = {}
+    for p in sorted(ignored):
+        by_rule.setdefault(rules.get(p, "(no rule reported)"), []).append(p)
+    print("  advisory: %d cited path(s) are gitignored -- `git add` on one is a "
+          "SILENT no-op (R42.1). Not a finding: the exclusion was a decision."
+          % len(ignored))
+    for rule, paths in sorted(by_rule.items()):
+        print("    %s  -- %d path(s)" % (rule, len(paths)))
+        for p in paths[:4]:
+            print("      %s" % p)
+            for d in every[p][:2]:
+                print("        cited by %s" % d)
+        if len(paths) > 4:
+            print("      ... and %d more under the same rule" % (len(paths) - 4))
+
+
 def main(argv):
     rng = argv[0] if argv else None
     rev = (rng.split('..')[-1] or 'HEAD') if rng else None
@@ -608,8 +670,15 @@ def main(argv):
             print("    %s:%d  (%s)" % (d, line_no, why))
         if len(inert) > 10:
             print("    ... and %d more" % (len(inert) - 10))
-    if not (widows or missing or ignored or sib_problem or sweep_problem):
-        print("cited-paths: OK -- every cited path is tracked")
+    # IGNORED NO LONGER MOVES THE EXIT CODE (owner ruling, 2026-09-21). It is
+    # reported, with its rule, and it is not a finding. See ignored_repo_rules.
+    if not (widows or missing or sib_problem or sweep_problem):
+        if ignored:
+            print("cited-paths: OK -- %d cited path(s) are DELIBERATELY IGNORED "
+                  "and listed below; nothing else is outstanding." % len(ignored))
+            report_ignored(ignored, every)
+        else:
+            print("cited-paths: OK -- every cited path is tracked")
         return 0
     if not (widows or missing or ignored):
         print("cited-paths: every path cited INTO THIS REPO is tracked; "
@@ -623,11 +692,8 @@ def main(argv):
         print("  MISSING %s -- cited, not on disk" % p)
         for d in every[p]:
             print("          cited by %s" % d)
-    for p in sorted(ignored):
-        print("  IGNORED %s -- `git add` on it is a no-op (R42.1)" % p)
-        for d in every[p]:
-            print("          cited by %s" % d)
-    return 3 if (widows or missing or ignored or sib_problem or sweep_problem) else 0
+    report_ignored(ignored, every)
+    return 3 if (widows or missing or sib_problem or sweep_problem) else 0
 
 
 def looks_like_prose(path):
@@ -726,6 +792,8 @@ def selftest():
     job is to ask another checkout a question, and a mock that answers cannot
     fail the way a missing checkout does.
     """
+    import contextlib
+    import io
     import shutil
     import stat
     import tempfile
@@ -956,6 +1024,45 @@ def selftest():
     finally:
         os.chdir(cwd0)
         rmtree(sweep_tmp)
+
+    # -- an IGNORED citation is an advisory, not a finding (2026-09-21) -------
+    # THE WHOLE CLAIM IS THE EXIT CODE, so the case asserts the exit code. It
+    # also asserts the RULE is printed, because "reported with its rule" was
+    # the ruling and a version that merely stopped failing would satisfy half
+    # of it silently.
+    ign_tmp = tempfile.mkdtemp(prefix="citecheck-ign-")
+    cwd1 = os.getcwd()
+    try:
+        repo = os.path.join(ign_tmp, "repo")
+        os.makedirs(os.path.join(repo, "docs", "generated"))
+        run(['git', 'init', '-q'], repo)
+        run(['git', 'config', 'user.email', 'selftest@example.invalid'], repo)
+        run(['git', 'config', 'user.name', 'selftest'], repo)
+        open(os.path.join(repo, "seed.md"), "w").write("seed\n")
+        run(['git', 'add', '-A'], repo)
+        run(['git', 'commit', '-q', '-m', 'base'], repo)
+
+        open(os.path.join(repo, ".gitignore"), "w").write("docs/generated/\n")
+        # ON DISK and IGNORED -- without the ignore lane this reads as a WIDOW.
+        open(os.path.join(repo, "docs", "generated", "out.md"), "w").write("x\n")
+        open(os.path.join(repo, "NOTE.md"), "w").write(
+            "the generator writes `docs/generated/out.md` every run\n")
+        run(['git', 'add', '--', '.gitignore', 'NOTE.md'], repo)
+
+        os.chdir(repo)
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = main([])
+        text = buf.getvalue()
+        check("an ignored citation does NOT set the exit code", rc, 0)
+        check("an ignored citation is still reported",
+              "gitignored" in text, True)
+        check("the rule that ignores it is named",
+              ".gitignore:1:docs/generated/" in text, True)
+        check("it is not miscalled a widow", "WIDOW" in text, False)
+    finally:
+        os.chdir(cwd1)
+        rmtree(ign_tmp)
 
     print("cited-paths selftest: %d case(s), %d failure(s)"
           % (len(ran), len(failures)))
