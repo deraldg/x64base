@@ -1,0 +1,10 @@
+media_id,source_filename,case_ids,role,status
+MEDIA_CASE_DATA_TRAIL_OVERVIEW_V1,"ChatGPT Image May 26, 2026, 10_56_24 AM.png",HIST-000,overview storyboard,needs_media_review
+MEDIA_CASE_COBOL_CONNECTED_COMPUTERS_V1,"ChatGPT Image May 26, 2026, 11_04_49 AM.png",HIST-010,COBOL / connected computers storyboard,needs_media_review
+MEDIA_CASE_JUMPS_BOARD_V1,"ChatGPT Image May 26, 2026, 11_23_18 AM (1).png",HIST-020,JUMPS / 73C board,needs_media_review
+MEDIA_CASE_CODASYL_ALCOA_V1,"ChatGPT Image May 26, 2026, 11_23_18 AM (2).png",HIST-030,Unisys / CODASYL / ALCOA board,needs_media_review
+MEDIA_CASE_XBASE_PLATFORM_V1,"ChatGPT Image May 26, 2026, 11_23_18 AM (3).png",HIST-040,xBase platform board,needs_media_review
+MEDIA_CASE_EARTHKIDS_CAREPAX_V1,"ChatGPT Image May 26, 2026, 11_23_18 AM (4).png",HIST-050,Earthkids / CAREPAX board,needs_media_review
+MEDIA_CASE_TRANSFER_ERP_INDUSTRIAL_V1,"ChatGPT Image May 26, 2026, 11_23_19 AM (5).png","HIST-060,HIST-070",database transfer / ERP / industrial board,needs_media_review
+MEDIA_CASE_HYNIX_PROCESS_DATA_V1,"ChatGPT Image May 26, 2026, 11_23_19 AM (6).png",HIST-080,HYNIX / process data board,needs_media_review
+MEDIA_CASE_DOTTALK_LABTALK_AI_FUTURE_V1,"ChatGPT Image May 26, 2026, 11_23_20 AM (7).png",HIST-090,DotTalk++ / LabTalk / AI future board,needs_media_review
