@@ -92,6 +92,13 @@ endif()
 # would hit exactly this the first time it ran on Linux. Set here because this
 # is the file that builds a shared module; if the root build ever grows a Linux
 # .so target it needs the same line.
+#
+# THE ROOT NOW SETS IT TOO (OI-006, 2026-09-20), and this line still has to
+# stay. They are not redundant: the root's set() serves the root build, where
+# add_subdirectory(src) runs three lines above the include of this file and the
+# property is read when a target is CREATED; this one serves PYDOTTALK_STANDALONE,
+# which never enters the root list at all. Either alone leaves one of the two
+# builds broken.
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # ---- Locate the repository -------------------------------------------------

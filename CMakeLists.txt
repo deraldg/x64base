@@ -412,6 +412,68 @@ configure_file(
     @ONLY)
 include_directories("${CMAKE_BINARY_DIR}/generated")
 
+# ---- Position-independent code: REQUIRED on ELF, A NO-OP ON WINDOWS ---------
+# OI-006, raised 2026-08-17, ruled and set 2026-09-20.
+#
+# THE FAILURE THIS PREVENTS, measured 2026-08-17 on the first Linux configure
+# of this project. Every translation unit compiled cleanly under GCC 11.4 and
+# then the LINK failed:
+#
+#   relocation R_X86_64_TPOFF32 against
+#   `xbase::trigger_hooks::(anonymous)::g_suppress_depth`
+#   can not be used when making a shared object; recompile with -fPIC
+#
+# Note where it failed: not at configure, not at compile, but at LINK, naming a
+# thread-local in an anonymous namespace three libraries deep. Nothing earlier
+# hinted at it, and nothing in the message says "the root build sets no PIC".
+#
+# WHY IT HAS TO BE HERE AND NOT IN THE BINDING, WHICH ALREADY SETS IT.
+# bindings/pydottalk/CMakeLists.txt:95 carries the same line, and it CANNOT
+# help this build for two independent reasons: it is a different directory
+# scope, and it runs three lines BELOW -- `add_subdirectory(src)` has already
+# created every static library by then, and the property is read when a target
+# is created. That file's own comment anticipated this: "if the root build ever
+# grows a Linux .so target it needs the same line."
+#
+# GLOBAL RATHER THAN PER-TARGET, and that is the ruling (owner, 2026-09-20).
+# The obvious alternative is set_target_properties on xbase, memo and xindex --
+# the three the binding links today. THIS TREE DECLARES NINE STATIC LIBRARIES:
+# also sqlsel, xexpr, dottalk_helpdata, dottalk_tvui, dottalk_value and
+# dottalk_inx_payload. A three-name list is a LIST, correct only while the
+# module's link set does not grow, and the failure for a tenth is the same
+# unhelpful relocation error above. One declaration covers the targets nobody
+# has written yet -- the same reason the append primitive got one gatekeeper
+# rather than 37 audited call sites.
+#
+# WHAT IT COSTS, stated rather than left to be discovered. MSVC HAS NO SUCH
+# CONCEPT and CMake emits nothing for it, so the house build on Windows is
+# byte-for-byte unaffected -- this is why the change can ship without a Linux
+# run to prove it. On ELF the CLI executable becomes PIE, which is already the
+# default on every modern distribution and is the state a Linux user would
+# expect anyway.
+#
+# THE MECHANISM IS RE-MEASURED, THE WHOLE BUILD IS NOT, AND THE DIFFERENCE
+# MATTERS. Re-measured 2026-09-20 at 70a0287d4 under the SAME compiler as the
+# original finding, g++ 11.4.0, on the real translation unit rather than a
+# sketch -- src/xbase/trigger_hooks.cpp compiled without -fPIC and linked with
+# -shared:
+#
+#   /usr/bin/ld: relocation R_X86_64_TPOFF32 against
+#   `_ZN5xbase13trigger_hooks12_GLOBAL__N_116g_suppress_depthE'
+#   can not be used when making a shared object; recompile with -fPIC
+#
+# which demangles to exactly the symbol the 2026-08-17 note named. The same TU
+# with -fPIC links clean. So the defect still exists a month and many commits
+# later, and -fPIC is demonstrably the repair.
+#
+# WHAT IS STILL UNPROVEN: that the WHOLE root build links on Linux with
+# -DBUILD_PYDOTTALK=ON. One TU is not nine libraries. Nobody builds the root on
+# Linux today -- that is precisely why this sat unfixed for a month -- and the
+# first real run there is what closes the gap. The claim made here is the
+# narrow one: the property is now set where target creation can see it, and the
+# specific failure that was measured no longer has a cause.
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 add_subdirectory(src)
 
 # Add Python binding helper after code targets exist.
