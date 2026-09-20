@@ -35,6 +35,7 @@ Invariants first, then state: read the 8 KB seed before the perishable resume.
 | Step | Read | Why |
 | --- | --- | --- |
 | 0 | **`labtalk/ai_portal/AI_TIER1_SEED_V1.md` -- read FIRST** | The 8 KB budgeted "safe to act" seed: where you are, what you may do, git safety, house conventions, and a five-question stopping rule. Invariants before state -- the cheapest read and the only one that makes you *safe*, not merely informed. |
+| 0b | **`labtalk/ai_portal/AI_AGENT_LAWS_SEED_V1.md` -- read SECOND, before any state** | The laws this house holds every agent AND every person to. Four restated laws (do not harm a human; do not harm yourself; where both cannot be served the human comes first, because a human cannot be regenerated) and six ordered house rules, each written so that BREAKING IT LEAVES EVIDENCE. This is an INVARIANT and belongs above the closeout for the same reason step 0 does. Asimov is quoted there as the named origin and is explicitly NOT the governance. |
 | 1 | **Newest `docs/maintenance/SESSION_CLOSEOUT_*.md`** | Fastest true resume. What the last session did, and what it left open. If none exists, skip. |
 | 1b | If the BBS daemon is up: AUTH and `BBS READ board.worklog LAST 20` for your lane's live handoff; post one back on finishing (AIF-057, see `AI_BBS_OPERATIONS_RUNBOOK_V1.md` sec 11). | The live, identity-bound pickup/dropoff. Optional and simplex -- the closeout is authority; the board is the fast handoff. Skip if the daemon is down. |
 | 2 | `docs/agents/CURRENT_TARGET.md` | The active objective. |

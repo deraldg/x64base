@@ -39,6 +39,13 @@ newest session closeout, current target, authority seed, local-access checklist
 when applicable, SDLC fast start, source-mutation gate, and DotScript readiness
 when `.dts` work is involved.
 
+**Binding on every agent and every person who works this tree, whatever the task:**
+[`labtalk/ai_portal/AI_AGENT_LAWS_SEED_V1.md`](labtalk/ai_portal/AI_AGENT_LAWS_SEED_V1.md).
+It is step 0b of that table. It is NOT in the task-specific list below, because it
+is not task-specific -- there is no lane, change class, or operating mode that
+exempts you from it. Four restated laws and six house rules, each written so that
+breaking it leaves evidence.
+
 Before selecting gates, apply the scope-calibration seed. Name the operating
 mode, change class, actual build target, product profile, and index profile.
 `xbase` engine-only, full `dottalkpp`, and the `LEAN` / `PROFESSIONAL` /
