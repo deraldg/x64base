@@ -522,6 +522,25 @@ mcc/*.DBF
 # (manualgen/reports/mdo_226_*, labtalk/reports/.../crosswalk_v1) stay tracked.
 **/generated/**/*.csv
 **/reports/**/*.csv
+# ...AND THE .md/.json EVIDENCE BESIDE THEM, FOR ONE DIRECTORY ONLY.
+# The CSV rule above is extension-scoped ON PURPOSE and must stay that way:
+# 45 tracked files live under `reports/` directories in this tree, including
+# the 15-file Python application under tools/reports/. Widening it to
+# `**/reports/**` would ignore all of them. Measured 2026-09-20 before the
+# widening was written, which is the only reason it was not.
+#
+# docs/cases/reports/ is different and is named individually. Every file in
+# it is REVIEW OUTPUT of the case catalog -- CASE_REVIEW_V1.md opens with
+# "Safety: REPORT_ONLY / NO MUTATION", review_summary_v1.json carries
+# counters and a gate verdict, and the inventory CSV is the tracked registry
+# plus two derived columns. Five of its seven files were already caught by
+# the CSV rule; the .md and the .json escaped it, so the directory was
+# ignored in a way nobody chose. Nothing in it is tracked, so this adds two
+# files to the ignore set and removes nothing from the index.
+#
+# It is also STALE -- the summary counts 15 case files against 17 on disk --
+# which is what generated evidence does when its subject moves on.
+docs/cases/reports/
 docs/manuals/developer/manualgen/**/*.csv
 docs/maintenance/lanes/**/runs/**/*.csv
 docs/**/candidates/**/*.csv
