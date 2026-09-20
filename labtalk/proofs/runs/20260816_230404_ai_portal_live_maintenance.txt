@@ -1,0 +1,89 @@
+AI Portal live maintenance proof transcript
+timestamp_utc: 2026-08-16T23:04:04Z
+item_id: ai_portal.live_fragment_maintenance
+run_id: AIPR-20260816-003
+lane: AIF-086
+kind: source_tests_http_and_browser_observation
+repository: D:\code\ccode
+branch: development
+baseline_commit: 119dc7af10f19e52895781b7721b5e5cd7fd9e60
+return_code: 0
+
+SOURCE AND SAFETY
+=================
+Development reports use registry fragments in memory.
+Reviewed production snapshots retain flat YAML as their explicit input.
+The fragment composition path did not write ai_runs.yaml or proofs.yaml.
+The observed gateway ran in read + preview mode without --enable-write.
+No persistent DBF table was created, modified, or deleted.
+
+AUTOMATED VERIFICATION
+======================
+python -m unittest tools.dbf.tests.test_maint_server tools.reports.tests.test_serve_dynamic_reports tools.reports.tests.test_registry_fragment_source tools.reports.tests.test_build_reports_closed_lanes
+RESULT: 34 tests passed.
+
+python tools/dbf/tests/test_schema_registry.py
+RESULT: 130 passed, 0 failed.
+
+python tools/dbf/tests/test_crud_logic.py
+RESULT: 28 passed, 0 failed.
+
+python -m py_compile tools/dbf/maint_server.py tools/registries/registry_fragments.py tools/reports/build_reports.py tools/reports/serve_dynamic_reports.py
+RESULT: PASS.
+
+PowerShell parser check for start-ai.ps1
+RESULT: PASS.
+
+Independent read-only final hardening review
+RESULT: PASS.
+
+LIVE DEVELOPMENT OBSERVATION
+============================
+http://localhost:3000/AI/health returned HTTP 200 and identified:
+- mode: live-development
+- report source: authoritative registry fragments
+- snapshot source: reviewed flat YAML
+- execute enabled: false
+- website upstream: healthy
+- runs: 20 live fragments, 8 snapshot inputs, 12 pending review
+- proofs: 68 live fragments, 67 snapshot inputs, 1 pending review
+- lessons: 16 live fragments, 16 snapshot inputs, 0 pending review
+
+http://localhost:3000/AI/console returned HTTP 200 with no-store headers.
+Browser interaction verified table selection, row filtering, the typed create
+panel, a disabled Execute option, ascending/descending ID sorting, and a
+read-only record drilldown with all 15 SYSRUN fields locked. The dashboard
+displayed portal, identity, and BBS catalogs separately and showed live-fragment
+versus snapshot counts.
+
+Maintenance POST boundary probes:
+- text/plain request: HTTP 400
+- application/json with non-loopback Origin: HTTP 400
+- application/json local DotScript preview: HTTP 200 with generated preview
+- unknown mode typo: HTTP 400 with unknown-mode refusal
+- omitted mode: HTTP 200 and safe DotScript default
+
+The write-enabled paths additionally require a random server-session token,
+strict JSON, a loopback Host/Origin, and a loopback bind. Unknown operation
+modes fail closed. Tombstoned rows are view-only, and failed or out-of-order
+table loads clear actionable UI state.
+
+The pure DBF maintenance read preserves physical deletion state and record
+number only when metadata is requested. Default report/read callers retain their
+existing row shape. Fresh health probes render the index, unhealthy health uses
+HTTP 503, and a second listener on port 3000 is rejected.
+
+http://localhost:3000/AI/AI_PORTAL_REPORT.html returned HTTP 200 with the live
+banner, fragment-source label, current AIF-086 run, and assignment-link proof.
+The displayed regeneration command retains --source fragments.
+
+PUBLICATION BOUNDARY
+====================
+D:\dev\x64base-site was used only as the local Next.js upstream. No website
+source file or public/AI snapshot was changed. A full site build was attempted
+but its existing public-content guard rejected unrelated derald.com references
+in app/retro/page.tsx. That is not production build or deployment proof.
+
+node scripts/check-public-content.mjs
+RESULT: exit 1 at app/retro/page.tsx lines 213, 220, and 224 for the retired
+derald.com support host. No AI Portal file caused this gate failure.
