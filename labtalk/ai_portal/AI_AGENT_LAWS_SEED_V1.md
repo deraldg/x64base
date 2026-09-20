@@ -215,7 +215,13 @@ Recorded rather than edited away, per rule 5.
   being unreachable from a clone is now a gate failure rather than a discovery.
   `labtalk/ai_portal/AI_TIER1_SEED_V1.md` also gained a one-line pointer in section 2,
   by owner ruling, since both always-read shims funnel there. 170 B, against a declared
-  16,384 B ceiling the commit does not touch. RESIDUAL, recorded rather than fixed: the
-  seed's five-question stopping rule does not ask about the laws, so an agent who can
-  answer those five is told to stop reading and may never open this file. The front-door
-  table does not have that hole -- step 0b precedes step 1 -- but the seed does.
+  16,384 B ceiling the commit does not touch. A RESIDUAL was recorded here and then
+  closed the same day: the seed's five questions did not ask about the laws, and the
+  seed told a reader who could answer them to "stop reading and start working", so a
+  competent agent was licensed to skip the file the same seed called mandatory.
+- **The stopping rule retired, 2026-09-20, owner ruling.** *"remove the instruction/rule
+  stop reading and start working, it was a one time instruction, not a rule."* The five
+  questions survive as a READINESS SELF-CHECK -- a floor, not a ceiling. Removed from
+  `labtalk/ai_portal/AI_TIER1_SEED_V1.md` (both sites), `AGENTS.md`, and the descriptions
+  in `CLAUDE.md` and `AI_README.md`. Historical records that quote it were left alone:
+  they were accurate when written, and repointing a session record makes it a lie.

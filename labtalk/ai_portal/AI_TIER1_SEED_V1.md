@@ -7,8 +7,7 @@
     budget      : 16384 B hard ceiling (raised from 8192, 2026-09-04; see "Maintenance contract")
 
 The smallest set that makes you **safe to act**. Engine knowledge loads per
-task. If you can answer the five questions at the end, stop reading and start
-working.
+task. The five questions at the end tell you whether you have that floor.
 
 ---
 
@@ -135,11 +134,13 @@ owns it.
 measured; run it bare to list triggers. If you cannot run it, the generated
 fallback is `labtalk/ai_portal/RECALL_FALLBACK_TABLE_V1.md`.
 
-## The five questions (stopping rule)
+## The five questions (readiness self-check)
 
-If you can answer all five from this file plus the pointers above, you are
-onboarded. If you cannot, keep reading. If you can, **stop reading and start
-working** -- the rest loads by trigger.
+If you can answer all five from this file plus the pointers above, you have the
+floor. If you cannot, keep reading.
+
+**This is a floor, not a ceiling, and not a licence to stop reading.** The rest
+loads by trigger; step 0b of the front door is mandatory either way.
 
 1. Which tree are you in, on which branch, which tree may push to `main`, and
    which of the four unrelated histories does `main` belong to?

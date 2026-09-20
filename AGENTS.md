@@ -3,8 +3,8 @@
 **Start at `labtalk/ai_portal/AI_TIER1_SEED_V1.md`** -- the canonical Tier 1
 body, roughly 8 KB: repository roles, mutation guard, git rules, house
 conventions, a pointer table for perishable state, a trigger index for
-everything deeper, and a five-question stopping test. If you can answer those
-five, stop reading and start working.
+everything deeper, and a five-question readiness self-check. If you cannot
+answer those five, keep reading.
 
 This file is a shim over that seed and must not restate it. Two shims that
 restate will diverge, and have (AIF-082, 6.8a).

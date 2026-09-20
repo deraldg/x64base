@@ -2,7 +2,7 @@
 
 **Start with `labtalk/ai_portal/AI_TIER1_SEED_V1.md`** -- the canonical Tier 1
 body: repo roles, mutation guard, git rules, house conventions, and a five-question
-stopping rule. This file is a Claude-specific shim over it and must not restate it
+readiness self-check. This file is a Claude-specific shim over it and must not restate it
 (AIF-082, 6.8: two shims that restate will diverge, and have).
 
 Conventions and locations to remember when working in this repo. Keep terse; correct in place.
