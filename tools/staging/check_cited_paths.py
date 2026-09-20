@@ -30,7 +30,7 @@ Exit codes follow the portal convention: 0 clean, 3 advisory. Never 2. A widow i
 someone forgetting to stage a file, and blocking the commit that would have carried
 the rest of their work is the wrong trade.
 
-AND AN IGNORED CITATION IS NOT EVEN THAT (owner ruling, 2026-09-21). A path the
+AND AN IGNORED CITATION IS NOT EVEN THAT (owner ruling, 2026-09-20). A path the
 tree deliberately excludes can be cited correctly; 48 of the 75 such citations
 here are `docs/manuals` output covered by rulings already taken under OI-011. It
 is reported WITH THE RULE THAT EXCLUDES IT and does not move the exit code --
@@ -198,7 +198,7 @@ def ignored_repo_paths(paths):
 def ignored_repo_rules(paths):
     """Ignored paths mapped to the .gitignore rule that excludes each one.
 
-    OWNER RULING 2026-09-21: a citation to a deliberately ignored path is
+    OWNER RULING 2026-09-20: a citation to a deliberately ignored path is
     CORRECT, and this check had no way to know the ruling existed. 48 of the 75
     cited-and-ignored paths in this tree are `docs/manuals` output covered by
     .gitignore:525 and :101 -- decisions taken deliberately, under OI-011, and
@@ -670,7 +670,7 @@ def main(argv):
             print("    %s:%d  (%s)" % (d, line_no, why))
         if len(inert) > 10:
             print("    ... and %d more" % (len(inert) - 10))
-    # IGNORED NO LONGER MOVES THE EXIT CODE (owner ruling, 2026-09-21). It is
+    # IGNORED NO LONGER MOVES THE EXIT CODE (owner ruling, 2026-09-20). It is
     # reported, with its rule, and it is not a finding. See ignored_repo_rules.
     if not (widows or missing or sib_problem or sweep_problem):
         if ignored:
@@ -1025,7 +1025,7 @@ def selftest():
         os.chdir(cwd0)
         rmtree(sweep_tmp)
 
-    # -- an IGNORED citation is an advisory, not a finding (2026-09-21) -------
+    # -- an IGNORED citation is an advisory, not a finding (2026-09-20) -------
     # THE WHOLE CLAIM IS THE EXIT CODE, so the case asserts the exit code. It
     # also asserts the RULE is printed, because "reported with its rule" was
     # the ruling and a version that merely stopped failing would satisfy half
