@@ -118,7 +118,7 @@ These sections should be promoted before the manual grows into hundreds of pages
 | Topic | Current evidence | Manual stance |
 |---|---|---|
 | `LOCK` / `UNLOCK` | `src/cli/cmd_lock.cpp`; `src/cli/cmd_unlock.cpp`; help message catalog | Supported command surface; needs fresh transcript examples. |
-| `TABLE BUFFER` | `src/cli/table_buffer.cpp`; `src/cli/table_state.hpp`; message catalog | Supported table-buffer control; persistent journal is stubbed/future. |
+| `TABLE BUFFER` | `src/cli/table_buffer.cpp`; `include/cli/table_state.hpp`; message catalog | Supported table-buffer control; persistent journal is stubbed/future. |
 | `COMMIT` | `src/cli/cmd_commit.cpp` | Supported buffered apply; locks records at commit time; partial commit possible. |
 | `ROLLBACK` | `src/cli/cmd_rollback.cpp` | Supported discard of buffered changes; table data is not mutated by rollback. |
 | Cursor control | `src/cli/cmd_recno.cpp`; workarea/browser/cursor code | Supported navigation/reporting; cursor restoration exists in selected workflows. |

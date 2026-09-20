@@ -42,7 +42,7 @@ Install:
 ## Normalized destination map
 
 ```text
-docs/developer_manual/DEVELOPER_MANUAL_DRAFT_COMBINED.md
+docs/manuals/developer/DEVELOPER_MANUAL_DRAFT_COMBINED.md
   -> docs/manuals/developer/DEVELOPER_MANUAL_DRAFT_COMBINED.md
 
 docs/developer_manual/dev/*

@@ -171,6 +171,6 @@ lane's finish line.
 - `src/cli/cmd_commit.cpp` -- the contract disclaimer this lane retires.
 - `src/cli/cmd_replace.cpp` -- `writes_memo` / `clears_memo_field`, the call sites to instrument.
 - `SET INDEXTXN` (`src/cli/cmd_set.cpp`) -- the index half of M4.
-- `docs/ai-friendly/AI_RUN_TRACEABILITY_LANE_V1.md` -- additive version-gating precedent.
+- `docs/maintenance/AI_RUN_TRACEABILITY_LANE_V1.md` -- additive version-gating precedent.
 
 Owner: `member.derald`. Steward: `member.ai.claude.cowork`. Evidence class: `design-intended`.

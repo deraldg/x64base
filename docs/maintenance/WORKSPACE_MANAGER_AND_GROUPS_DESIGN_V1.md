@@ -302,7 +302,7 @@ workspace.
 | lock call sites | absent from the table | **43 sites, 13 files** |
 | per-workspace current area | absent | new item, critical path for W4 |
 | `USE` duplicate-open guard | one site | **two same-named functions** (`cmd_workspace.cpp:451` and `cmd_use.cpp:303`); the second governs USE |
-| GUI consumers | absent from both reviews | **CLI output text is an API**: the GUI matches markers (`gui/core/session.cpp:164` "WORKSPACE OPEN: scanning directory:", `:610` "Selected area ", `:357` parses shell output for index attachments) so summary-line wording changes break the GUI mirror silently -- and the GUI carries its OWN dtschema parser (`load_dtschema2_areas`, `:470`), a third reader of the posture format that must track ordinals and v4 or drift. A live two-things-that-never-compare, pre-existing, made hotter by this design |
+| GUI consumers | absent from both reviews | **CLI output text is an API**: the GUI matches markers (`src/gui/core/session.cpp:164` "WORKSPACE OPEN: scanning directory:", `:610` "Selected area ", `:357` parses shell output for index attachments) so summary-line wording changes break the GUI mirror silently -- and the GUI carries its OWN dtschema parser (`load_dtschema2_areas`, `:470`), a third reader of the posture format that must track ordinals and v4 or drift. A live two-things-that-never-compare, pre-existing, made hotter by this design |
 
 Phasing follows from the counts: registry + DEFAULT + chain (touches nothing
 listed above); then the resolver and its 15 sites; then the 68 enumerations
