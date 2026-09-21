@@ -155,3 +155,37 @@ reports:
       of the campus registries: 4 labs, 16 lessons, 36 concepts, 56 proofs,
       ZERO student-ready. Produced the reviewed /lms-architecture deck on the
       website. Proposed lane AIF-102; Q1-Q5 owner rulings outstanding.
+
+  - report_id: AIPR-20260913-001
+    provider: Anthropic
+    product: Cowork (Claude)
+    date: 2026-09-13
+    kind: command_contract_inventory
+    project: project.x64base.runtime
+    path: labtalk/ai_portal/COMMAND_CONTRACT_INVENTORY_2026-09-13_V1.md
+    status: snapshot-verified
+    topics:
+      - command contracts
+      - usage contract
+      - dottalk.usage v1
+      - voluntary usage
+      - worked examples
+      - file header lane and owns
+      - documentation push
+    aliases:
+      - command contract inventory
+      - which commands changed this week
+      - commands with no examples
+      - voluntary commands
+      - set order set lmdb set unique not under contract
+      - empty lane field
+    notes: >
+      Snapshot of the 23 src/cli/cmd_*.cpp files whose source moved 2026-09-06 to
+      2026-09-13, with each usage contract verbatim. Produced as an HTML artifact;
+      added to the portal 2026-09-21 on owner instruction and VERIFIED against git
+      at dbb6aad57 first, as the report's own footer asked. Verification found the
+      mtime cut missed three files (cmd_buildlmdb, cmd_workspace, cmd_calcwrite --
+      26 in the window, not 23), three rows now stale (SQLHELP, INSERT, UPDATE
+      experimental -> supported), and eight of 26 files changed since. The gaps it
+      named still hold: three voluntary SET commands, 15 of 26 with no example,
+      lane: empty in 26 of 26 headers.
