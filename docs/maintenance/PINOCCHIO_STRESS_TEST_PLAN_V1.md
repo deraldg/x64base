@@ -487,3 +487,37 @@ identities disagreed and the printed numbers said why):
 Remediation before the next run: `BUILDLMDB HUGE CLEAN YES` on STUDENTS and
 ENROLL in the pinocchio lane paths, then rerun 3a; the R0 gates now make a
 gutted tag a one-line stop instead of a 20-minute forensic exercise.
+### Phase 3a results, 2026-09-20 evening -- twelve identity legs green, zero wrong answers
+
+Rerun over rebuilt indexes (teed: `relational_readonly_teed_20260920T165015Z.log`;
+tail via console after the R5a abort -- console numbers marked CONSOLE_PASTE in the
+ledger, promote by teed rerun). Scoreboard:
+
+- I1 x2 GREEN: physical 1000000 (23.3 s) / 5501358 (89.2 s).
+- I2 GREEN: INNER JOIN COUNT(*) = 5501358 EXACT; access path CDX seek,
+  probes=1000000, candidates=5501358; 273.9 s. Yesterday's gutted-tag 686 fully avenged.
+- I3 x3 GREEN: canary triple agreement, 8 == 8 == 8 (REL LIST, REL ENUM, SQLsel join).
+- I4 GREEN: LEFT = 5501358, left-extended 0 (every student enrolled; pins I7 = 1000000).
+- I5 GREEN: native COUNT FOR = SQLsel = 90700. I6 GREEN: 11 groups == 11 DISTINCT.
+- I8 x3 GREEN: UNION 150 / INTERSECT 50 / EXCEPT 50, membership exact, operand
+  counts REPORTED (left=100, right=100); 832.7 / 757.3 / 763.8 s.
+- I7 NOT CLOSED -- fail-closed twice, see findings 5-6. True answer known (1000000);
+  closes with the hash-set fix regression line.
+
+Two more findings (5 and 6, joining the four above):
+
+5. **WHERE cannot conjoin a subquery predicate with AND.** The predicate splitter
+   takes everything before IN/EXISTS as the left token ('S.SID < 50001000 AND
+   S.SID' -> refused; the AND EXISTS form fell through to the SCALAR path and
+   refused on the 1x1 rule after correlating correctly -- got 8 rows, the canary's).
+   Fail-closed both times: zero wrong answers. Grammar boundary now known, and the
+   manual's subquery examples (whole-WHERE only) are a boundary, not a style.
+6. **Subquery validation runs AFTER materialization** (materialize at
+   sqlsel_statement.cpp:1712, prefix validation at :1714): the two refusals cost
+   1146 s and 2348 s of 5.5M-row scanning to say no. A malformed predicate should
+   die at parse time in milliseconds. Cheap fix, real money at scale.
+
+Calibrated rates for future estimates: SQLsel simple-WHERE scan ~208 us/row;
+with correlation glue ~427 us/row; function-call WHERE 345 us/row (run 1) with an
+unexplained 2 ms/row outlier (run 2 R4b, post-join, parked); native COUNT FOR scan
+~26 us/row; set operation ~380 us/row-pass including dedup.
