@@ -614,3 +614,21 @@ the decisive test (seconds = it was finite). Proposed for the SQLsel repair
 slice alongside the three fixes: a periodic progress line (every N seconds:
 rows in, rows out) on any statement exceeding a threshold -- the same honesty
 culture as reported access paths, applied to time.
+
+
+### Phase 3c results, 2026-09-21 afternoon -- five for five, first attempt
+
+Teed: `star_readonly_teed_20260921T143055Z.log` (sha256:0A68223EBA3878F6...),
+~19 minutes end to end. All gates and all five identities GREEN: I9 = 5501358
+EXACT via the CLS_ID key (CDX seek, probes=9900 -- ~100 s faster than the
+SID-driven join on identical candidates, ~105 us/probe measured); I10 LEFT =
+5501358 with left-extended 0 (zero empty classes, as the closed-universe
+enumeration predicted); I11 join+GROUP BY over C.MAJOR produced 11 groups from
+5501358 source rows whose counts SUM EXACTLY to the fact count; I12 = 9900
+with the evaluation-count report; I13 = 9900 (nested-loop, not the predicted
+seek: CLASSES' active tag was CLS_ID, so the seek precondition the battery
+itself documents was demonstrated on the battery's own author). S4 also shows
+why finding 7 hid until scale: an 11-row cached list copied 9,900 times costs
+nothing; a 5,500-row list copied 1M times costs hours. Phase 3 identity ledger
+final: I1-I13 green except I7, which is blocked by findings 3/7 with its true
+answer pinned (1,000,000) and its regression line ready.
