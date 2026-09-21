@@ -397,3 +397,93 @@ are the last mile to full durability on indexed tables; broader ACID remains
 
 Concurrent sessions and forced-termination durability beyond the WAL slice, run
 only against the disposable lane. Scoped in a later revision.
+## Phase 3 -- relational shakedown (REL/ENUM + SQLsel + transactional DML)  [AIF-167]
+
+**Status: CANDIDATE, authored 2026-09-20 -- scripts written, host run pending.**
+
+Phases 1-2 stressed the engine one table at a time. Phase 3 is the first
+runtime shakedown of the RELATIONAL surface at the same scale: the fixtures
+were built as a parent/child pair (STUDENTS 1M -> ENROLL 5.5M ON SID) and no
+battery ever joined them. The pieces all exist -- REL/ENUM with SCANLIMIT
+honesty, SQLsel's full typed algebra (P4 complete 2026-09-03), SQLsel DML with
+the AIF-160 multi-table group COMMIT, and SET INDEXTXN -- Phase 3 runs them
+together for the first time.
+
+**Method: cross-oracle identities, not parity.** Two independent relational
+implementations (REL/ENUM and SQLsel) walk the same data, and every count is
+anchored to a THIRD, non-relational number (header COUNT, COUNT FOR), so two
+engines cannot agree on the same wrong answer and read as green -- the
+EVALDIFF lesson applied at scale. The read-only battery carries eight
+identities (I1-I8), from `INNER JOIN COUNT(*) == ENROLL COUNT == REL LIST
+total` down to exact 150/50/50 set-operation windows.
+
+### 3a -- read-only (fixtures never written)
+
+`pinocchio_relational_readonly.dts` / `run_pinocchio_relational_teed.ps1`.
+REL declaration + the scan-limit honesty warning AT the 500000 default (the
+warning firing is a PASS datum), full REL LIST walk at a 12M budget, bounded
+REL ENUM/JOIN emission, SQLsel INNER/LEFT join counts with the ACCESS-PATH
+report read as its own datum, native-vs-SQLsel aggregate identity, GROUP BY
+over 1M with the R28 blank report, the uncorrelated-IN full pass over 5.5M,
+the bounded correlated-EXISTS probe (the OQ-12 cost-per-row measurement the
+charter deferred to exactly this lane), and exact set-operation windows.
+
+### 3b -- transactional DML (disposable clones SCR_SQLTXN / SCR_SQLTX2 only)
+
+`pinocchio_relational_txn.dts` / `run_pinocchio_reltxn_teed.ps1`.
+Every mutation writes an impossible one-char GENDER value to a disjoint SID
+band so each verify is an EXACT count, never fuzzy drift; the key-field bands
+mutate LNAME (a CDX tag on the clone) because a non-key write drives no index
+maintenance at all. The battery: no-WHERE refusal probe, 10k non-key
+autocommit UPDATE + post-commit SEEK, the **INDEXTXN OFF-vs-ON pair of 10k
+key-field UPDATEs (the index-maintenance surcharge datum this phase exists
+for)**, committed-truth SELECT inside BEGIN TRANSACTION, ROLLBACK to zero,
+the AIF-160 multi-table group COMMIT (one row decides both tables) with the
+mid-transaction SET MODE NATIVE refusal asserted, and SQLsel DELETE / native
+RECALL interop. Fixtures are only COPY sources; an aborted run reruns clean
+(startup drops stale clones).
+
+### Phase 3 pass/fail
+
+Green only if: every identity I1-I8 holds exactly; the R1c bounds warning
+FIRED; both expected refusals refused; T5 counts are 0 both before COMMIT and
+after ROLLBACK; T6 reads exactly 1000 in each table after one COMMIT; and the
+access-path report on the SID equi-join names CDX seek or an honest hybrid.
+Timings (REL full walk, join counts, T3-vs-T4 surcharge, correlated ms/row)
+are recorded in `PINOCCHIO_SCALE_VERB_BENCHMARKS_V1.csv` from the teed
+transcripts, machine-identity rule as in Phase 1.
+### Phase 3 first run, 2026-09-20 -- one environment defect, one engine honesty gap, two battery corrections
+
+Transcript `labtalk/proofs/runs/relational_readonly_teed_20260920T160609Z.log`.
+The battery caught a real defect pair on its first execution, by design (the
+identities disagreed and the printed numbers said why):
+
+- **Environment: the fixture LMDB envs are GONE** (`data/lmdb/pinocchio/`
+  empty, dir mtime 2026-09-19; the July runs had them). The CDX containers are
+  stubs whose entries lived in LMDB, so tag SID attached with **200 entries on
+  a 1,000,000-row STUDENTS and 686 on a 5,501,358-row ENROLL** -- and SET ORDER
+  PRINTED those numbers at attach time.
+- **Engine honesty gap: nothing compares the tag entry count to the table
+  record count.** The gutted tags attached silently and every logical-rowset
+  consumer then answered from them with confidence: bare `COUNT` reported
+  200/686, `COUNT FOR MAJOR = "CSCI"` reported 18 in 9.5 ms (true 90700 --
+  SQLsel's physical-scan count of the same predicate, which matches the
+  Phase-1.3 expected value), SQLsel's CDX-seek INNER JOIN reported
+  `probes=1000000, candidates=686`, COUNT(*) = 6, and LEFT JOIN left-extended
+  999,998 parents. Every wrong answer traced to the one wound; every correct
+  answer (REL's linear walks, SQLsel's physical scans) never touched the tag.
+  The defense already half-exists -- the entry count is printed -- it is just
+  compared against nothing. Disposition: owner ruling on a repair lane
+  (attach-time cardinality check, or refuse-and-rebuild); until then the
+  battery carries its own gate (below).
+- **Battery corrections (v2 of the script, same day):** (1) I1 anchors are
+  taken under `SET ORDER TO PHYSICAL`, because bare COUNT under an active
+  order walks the tag; R0c/R0d assert entry-count == physical-count as an
+  explicit tag-sanity gate. (2) REL LIST / REL ENUM are CURRENT-PARENT scoped
+  (the first run proved it: ENUM emitted exactly the canary's 8 tuples), so
+  I3 is now a canary-scoped triple agreement (REL LIST 8 == REL ENUM 8 ==
+  SQLsel canary-join 8), not a relation-total.
+
+Remediation before the next run: `BUILDLMDB HUGE CLEAN YES` on STUDENTS and
+ENROLL in the pinocchio lane paths, then rerun 3a; the R0 gates now make a
+gutted tag a one-line stop instead of a 20-minute forensic exercise.

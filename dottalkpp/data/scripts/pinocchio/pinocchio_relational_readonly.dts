@@ -1,0 +1,217 @@
+* ============================================================
+*  PINOCCHIO RELATIONAL -- READ-ONLY SHAKEDOWN (Phase 3a, AIF-167)
+*
+*  Status:  CANDIDATE / REVIEW_BEFORE_EXECUTION. READ-ONLY (no mutation).
+*  Purpose: First runtime shakedown of the RELATIONAL surface at scale:
+*           REL declarations + ENUM/JOIN emission, SQLsel joins, aggregates,
+*           subqueries and set operations, over STUDENTS (1,000,000) and
+*           ENROLL (5,501,358) -- the parent/child pair the fixtures were
+*           built for and no Phase 1 battery ever joined.
+*
+*  THE CROSS-ORACLE IDENTITIES (the point of this battery)
+*  -------------------------------------------------------
+*  Two independent relational implementations walk the same data; their
+*  counts must agree with each other AND with native scans. Parity between
+*  two engines is not correctness (EVALDIFF lesson), so every identity below
+*  is anchored to a THIRD, non-relational count:
+*    I1  PHYSICAL counts: STUDENTS 1000000, ENROLL 5501358 (ORDER PHYSICAL --
+*        under an active order, COUNT walks the tag, and a gutted tag lies)
+*    I2  SQLsel INNER JOIN COUNT(*) ON SID == 5501358 (every child has a parent)
+*    I3  canary triple agreement: REL LIST == REL ENUM rows == SQLsel
+*        canary-join COUNT == 8 for SID 50000000 (REL is current-parent scoped)
+*    I4  SQLsel LEFT JOIN COUNT(*)         == I2 + reported left-extended rows
+*    I5  native COUNT FOR MAJOR = "CSCI"   == SQLsel COUNT(*) ALLTRIM(MAJOR)='CSCI'
+*    I6  GROUP BY MAJOR row count          == DISTINCT MAJOR row count
+*    I7  IN-subquery student count         == 1000000 - LEFT-unmatched parents
+*    I8  UNION 150 / INTERSECT 50 / EXCEPT 50 on overlapping 100-row SID bands
+*
+*  SCANLIMIT HONESTY (g_scan_limit default 500000, set_relations.cpp:122):
+*  the first REL LIST ALL runs AT the default against a 5.5M child and MUST
+*  print the bounds warning ("BOUNDS, not totals"). That warning firing is a
+*  PASS datum; silence there is a regression of the scan-limit honesty gate.
+*
+*  RUNTIME: multi-minute. The full-walk verbs (REL LIST at 12M budget, the
+*  join counts, GROUP BY, the IN subquery) each pass 1M-5.5M rows. Each
+*  ELAPSED (SET TIMER ON) is the datum -- do not abort early.
+*
+*  RUN (host, top-level runner so per-command SET TIMER fires):
+*    powershell -ExecutionPolicy Bypass -File .\dottalkpp\data\scripts\pinocchio\run_pinocchio_relational_teed.ps1
+* ============================================================
+SET ECHO OFF
+SET TIMER ON
+SET TALK ON
+
+SET PATH DBF DBF/pinocchio
+SET PATH INDEXES INDEXES/pinocchio
+SET PATH LMDB LMDB/pinocchio
+
+ECHO === R0. open the pair: area 1 STUDENTS, area 2 ENROLL ===
+* FIRST-RUN LESSON (2026-09-20, transcript relational_readonly_teed_20260920T160609Z):
+* bare COUNT under an ACTIVE order walks the LOGICAL ROWSET -- i.e. the TAG --
+* so a gutted index makes COUNT report the tag's cardinality (200 / 686 that
+* day, LMDB envs deleted) and every identity downstream inherits the lie.
+* Anchors are therefore taken with ORDER PHYSICAL, and R0c/R0d are the
+* tag-sanity gates: bare COUNT under the ACTIVE TAG answers from the tag's
+* own view, and that number MUST equal the physical COUNT beside it.
+* 200-vs-1000000 there = gutted index; STOP, rebuild (BUILDLMDB HUGE CLEAN
+* YES per table), rerun. Nothing in the engine checks this for you yet.
+* GATE MECHANICS (corrected after watching the 2026-09-20 rerun): SET ORDER
+* itself prints NO count. The probe is bare COUNT, whose answer depends on the
+* order state -- ORDER PHYSICAL scans the file (~23 s / 1M, the truth), while
+* an ACTIVE TAG answers from the tag's own view (O(1); the gutted tags said
+* 200 / 686 there). So each gate is the PAIR: physical COUNT, then tag COUNT,
+* and the two numbers MUST be equal. Cheap, decisive, and the second number
+* is exactly the one that lied on the first run.
+SELECT 1
+USE STUDENTS
+ECHO --- R0a. IDENTITY I1 anchor (parent): PHYSICAL count must be 1000000 ---
+SET ORDER TO PHYSICAL
+COUNT
+ECHO --- R0c. tag-sanity gate: COUNT under TAG SID must equal R0a ---
+SET ORDER TO TAG SID
+COUNT
+SELECT 2
+USE ENROLL
+ECHO --- R0b. IDENTITY I1 anchor (child): PHYSICAL count must be 5501358 ---
+SET ORDER TO PHYSICAL
+COUNT
+ECHO --- R0d. tag-sanity gate: COUNT under TAG SID must equal R0b ---
+SET ORDER TO TAG SID
+COUNT
+SELECT 1
+
+* ============================================================
+* R1. REL declaration + scan-limit honesty
+* ============================================================
+ECHO === R1a. scan limit as found (expect the 500000 default) ===
+REL SCANLIMIT
+ECHO === R1b. declare the relation: STUDENTS -> ENROLL ON SID ===
+REL ADD STUDENTS ENROLL ON SID
+* FIRST-RUN LESSON (2026-09-20): REL LIST's "matches: N" is scoped to the
+* CURRENT PARENT record, not the whole relation -- and REL's matcher walks the
+* child LINEARLY (that is why SCANLIMIT exists). The canary parent (recno 1,
+* SID 50000000) has exactly 8 enrollments, so I3 is a CANARY-SCOPED identity:
+* REL LIST 8 == REL ENUM 8 rows == SQLsel canary-join COUNT 8 (R3c).
+ECHO === R1c. REL LIST ALL at the DEFAULT budget: the bounds warning MUST fire ===
+GO TOP
+REL LIST ALL
+ECHO === R1d. raise the budget above the child (12M) and re-list ===
+REL SCANLIMIT 12000000
+ECHO --- R1e. IDENTITY I3 leg 1: canary matches must be exactly 8 ---
+REL LIST ALL
+
+* ============================================================
+* R2. REL ENUM / REL JOIN emission (bounded -- ENUM prints every tuple)
+* ============================================================
+ECHO === R2a. REL ENUM for the canary parent: IDENTITY I3 leg 2, exactly 8 rows ===
+ECHO --- (current-parent scope; ELAPSED times one full linear child hop) ---
+REL ENUM ALL LIMIT 100000 TUPLE STUDENTS.SID, ENROLL.CLS_ID
+ECHO === R2b. REL ENUM DISTINCT over parent MAJOR (bounded) ===
+REL ENUM DISTINCT LIMIT 50 TUPLE STUDENTS.MAJOR
+ECHO === R2c. REL JOIN for the current parent (canary student, 10 rows) ===
+GO TOP
+REL JOIN ONE LIMIT 10 TUPLE STUDENTS.SID, STUDENTS.LNAME, ENROLL.CLS_ID
+
+* ============================================================
+* R3. SQLsel joins at full scale -- counts, not row floods
+*     READ THE ACCESS-PATH REPORT: the equi-join on SID with the child tag
+*     active must report CDX seek or an honest hybrid, and the report is a
+*     datum in its own right (equal row sets do not prove the path).
+* ============================================================
+ECHO === R3a. IDENTITY I2: INNER JOIN count must equal 5501358 ===
+SQLSEL SELECT COUNT(*) FROM STUDENTS S INNER JOIN ENROLL E ON S.SID = E.SID
+ECHO === R3b. IDENTITY I4: LEFT JOIN count = I2 + reported left-extended rows ===
+SQLSEL SELECT COUNT(*) FROM STUDENTS S LEFT JOIN ENROLL E ON S.SID = E.SID
+* MEASURED 2026-09-20: this probe costs ~33 MINUTES, and that cost is itself
+* the datum. The access path reports probes=1000000, candidates=5501358 --
+* identical to the unfiltered R3a join -- because SQLsel has NO PREDICATE
+* PUSHDOWN: WHERE S.SID = 50000000 does not prune the outer scan; the full
+* 5.5M-row join runs and is then filtered to 8. The ~0.35 ms/joined-row WHERE
+* tax over 5.5M rows is the runtime. The charter never promised an optimizer
+* (see the capability boundary in docs/manuals/user/sqlsel.md); this line is
+* the number a future optimizer slice gets measured against. The 8 itself
+* closes identity I3 (REL LIST 8 == REL ENUM 8 == SQLsel 8).
+ECHO === R3c. IDENTITY I3 leg 3: SQLsel canary join must count exactly 8 ===
+ECHO --- (multi-minute BY DESIGN: no pushdown -- full join, then filter) ---
+SQLSEL SELECT COUNT(*) FROM STUDENTS S INNER JOIN ENROLL E ON S.SID = E.SID WHERE S.SID = 50000000
+
+* ============================================================
+* R4. Aggregates: native vs SQLsel on the same predicate, then GROUP BY
+* ============================================================
+ECHO === R4a. IDENTITY I5 left side: native COUNT FOR MAJOR = "CSCI" ===
+COUNT FOR MAJOR = "CSCI"
+ECHO === R4b. IDENTITY I5 right side: SQLsel count of the same predicate ===
+SQLSEL SELECT COUNT(*) FROM STUDENTS WHERE ALLTRIM(MAJOR) = 'CSCI'
+ECHO === R4c. GROUP BY MAJOR over 1M (R28: blank counts are REPORTED, read them) ===
+SQLSEL SELECT MAJOR,COUNT(*) AS N,AVG(GPA) AS G FROM STUDENTS GROUP BY MAJOR ORDER BY MAJOR
+ECHO === R4d. IDENTITY I6 partner: DISTINCT MAJOR row count == R4c row count ===
+SQLSEL SELECT DISTINCT MAJOR FROM STUDENTS ORDER BY MAJOR
+
+* ============================================================
+* R5. Subqueries at scale
+* ============================================================
+* MEASURED 2026-09-20, then READ IN SOURCE (sqlsel_statement.cpp):
+*   :1744-1749  IN membership is a LINEAR SCAN of the materialized vector --
+*               the cache (:1509) makes the subquery run ONCE, but every outer
+*               probe walks it to first hit. Full-scale (1M outer x 5.5M
+*               vector) is ~2.75e12 compares: the 2026-09-20 run sat 68+
+*               minutes with hours to go and was aborted. OQ-12's own terms
+*               ("optimize only against a measured Pinocchio-scale case") are
+*               now MET -- a one-column hash set built at materialization
+*               makes each probe O(1). Until that lands, both probes here are
+*               BOUNDED; the full-scale IN line below returns as the
+*               regression proof of the fix, not before.
+*   :1626       a CORRELATED subquery RE-MATERIALIZES its entire inner table
+*               on EVERY outer evaluation. The original R5b (1000 outer x
+*               5.5M-row materialization each) was a run-killer and never
+*               completed a single evaluation batch; 10 outer rows price the
+*               re-materialization honestly (~10 x 1M rows).
+ECHO === R5a. IN identity, BOTH SIDES BOUNDED to the 1000-row canary band ===
+ECHO --- expect exactly 1000 (every student in the band is enrolled) ---
+SQLSEL SELECT COUNT(*) FROM STUDENTS S WHERE S.SID < 50001000 AND S.SID IN (SELECT E.SID FROM ENROLL E WHERE E.SID < 50001000)
+ECHO === R5b. correlated EXISTS, outer bounded to THREE rows (re-materialization price) ===
+ECHO --- expect 3; each evaluation re-materializes 5.5M rows (:1626), so even ---
+ECHO --- three cost ~10-20 min. The per-evaluation ELAPSED is the OQ-12 datum. ---
+SQLSEL SELECT COUNT(*) FROM STUDENTS S WHERE S.SID < 50000003 AND EXISTS (SELECT E.SID FROM ENROLL E WHERE E.SID = S.SID)
+* Full-scale IN -- RE-ENABLE ONLY AFTER the hash-set membership fix lands;
+* it is that fix's regression proof (expect 1000000, minutes not hours):
+* SQLSEL SELECT COUNT(*) FROM STUDENTS S WHERE S.SID IN (SELECT E.SID FROM ENROLL E)
+
+* ============================================================
+* R6. Set operations -- exact small identities (overlapping 100-row bands)
+*     band A: SID < 50000100 (100 rows)  band B: 50000050 <= SID < 50000150
+* ============================================================
+ECHO === R6a. IDENTITY I8: UNION must produce exactly 150 rows ===
+SQLSEL SELECT SID FROM STUDENTS WHERE SID < 50000100 UNION SELECT SID FROM STUDENTS WHERE SID >= 50000050 AND SID < 50000150
+ECHO === R6b. IDENTITY I8: INTERSECT must produce exactly 50 rows ===
+SQLSEL SELECT SID FROM STUDENTS WHERE SID < 50000100 INTERSECT SELECT SID FROM STUDENTS WHERE SID >= 50000050 AND SID < 50000150
+ECHO === R6c. IDENTITY I8: EXCEPT must produce exactly 50 rows ===
+SQLSEL SELECT SID FROM STUDENTS WHERE SID < 50000100 EXCEPT SELECT SID FROM STUDENTS WHERE SID >= 50000050 AND SID < 50000150
+
+* ============================================================
+* R7. Restore session state (fixtures were never written)
+* ============================================================
+ECHO === R7. cleanup: clear relations, restore the 500000 scan limit, close ===
+REL CLEAR ALL
+REL SCANLIMIT 500000
+SELECT 2
+CLOSE
+SELECT 1
+CLOSE
+
+ECHO ============================================================
+ECHO RELATIONAL READ-ONLY SHAKEDOWN COMPLETE. Confirm and record:
+ECHO   R0a/R0b: PHYSICAL counts 1000000 / 5501358 (I1 anchors).
+ECHO   R0c/R0d: COUNT under the active tag EQUALS the physical count
+ECHO            beside it. A mismatch means a gutted tag attached
+ECHO            silently -- BUILDLMDB HUGE CLEAN YES per table, rerun.
+ECHO   R1c: bounds warning FIRED at the 500000 default (honesty datum).
+ECHO   I3 : canary triple agreement -- REL LIST 8 == REL ENUM 8 rows ==
+ECHO        SQLsel canary join 8 (R1e / R2a / R3c).
+ECHO   R3a: INNER JOIN COUNT = 5501358 (I2) -- record ELAPSED + ACCESS PATH.
+ECHO   R3b: LEFT COUNT - INNER COUNT = reported left-extended rows (I4).
+ECHO   R4a = R4b (I5); R4c row count = R4d row count (I6).
+ECHO   R5a: IN-subquery count = 1000000 minus R3b unmatched parents (I7).
+ECHO   R5b: read the correlated evaluation-count report (OQ-12 datum).
+ECHO   R6 : UNION 150, INTERSECT 50, EXCEPT 50 (I8), exact.
+ECHO ============================================================

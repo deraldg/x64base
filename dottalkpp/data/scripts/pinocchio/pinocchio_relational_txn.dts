@@ -1,0 +1,185 @@
+* ============================================================
+*  PINOCCHIO RELATIONAL -- TRANSACTIONAL DML SHAKEDOWN (Phase 3b, AIF-167)
+*
+*  Status:  CANDIDATE / REVIEW_BEFORE_EXECUTION. MUTATING -- disposable
+*           clones ONLY (SCR_SQLTXN, SCR_SQLTX2), both built by COPY TO from
+*           STUDENTS and ERASEd at the end. The pinocchio fixtures are only
+*           READ (COPY source) and never mutated, so no lane rebuild is needed.
+*  Purpose: First scale run of SQLsel DML and explicit SQL transactions with
+*           live index maintenance: autocommit UPDATE, key-field UPDATE under
+*           SET INDEXTXN OFF vs ON, committed-truth reads, ROLLBACK, the
+*           AIF-160 multi-table group COMMIT, and DELETE/RECALL interop.
+*
+*  MUTATION DESIGN: every UPDATE writes an IMPOSSIBLE one-char GENDER value
+*  ('Z','W','V') to a disjoint 10k/1k SID band, so each verify is an EXACT
+*  COUNT (== band size or == 0), never a fuzzy numeric drift. The key-field
+*  bands mutate LNAME (a CDX tag on the clone), which is what actually
+*  drives index maintenance -- a GENDER write touches no tag.
+*
+*  EXPECTED REFUSALS (each is a PASS datum, not a fault):
+*    T1  UPDATE with no WHERE            -> refused (whole-table safety rule)
+*    T6b SET MODE NATIVE inside live txn -> refused (AIF-159: SQLsel keeps state)
+*
+*  NOTE AIF-160 (2026-09-11): the one-table transaction refusal is GONE; a SQL
+*  transaction may span tables and ONE row decides them (group commit). T6
+*  asserts the new truth. The user manual (2026-09-03) predates this.
+*
+*  RUNTIME: several minutes -- two 1M-row COPY TO clones (~84 s each, Phase
+*  1.3b baseline) + BUILDLMDB (~18 s) dominate; the DML bands are 10k rows.
+*
+*  RUN (host):
+*    powershell -ExecutionPolicy Bypass -File .\dottalkpp\data\scripts\pinocchio\run_pinocchio_reltxn_teed.ps1
+* ============================================================
+SET ECHO OFF
+SET TIMER ON
+SET TALK ON
+
+SET PATH DBF DBF/pinocchio
+SET PATH INDEXES INDEXES/pinocchio
+SET PATH LMDB LMDB/pinocchio
+
+* Startup cleanup: drop clones left by an aborted run (harmless "not found").
+CLOSE
+ERASE TABLE SCR_SQLTXN CONFIRM
+ERASE TABLE SCR_SQLTX2 CONFIRM
+
+* ============================================================
+* T0. Build the disposable pair
+* ============================================================
+ECHO === T0a. clone STUDENTS -> SCR_SQLTXN (1M rows, expect ~84 s) ===
+* Fixed areas throughout: area 1 = SCR_SQLTXN, area 2 = SCR_SQLTX2.
+SELECT 1
+USE STUDENTS
+COPY TO SCR_SQLTXN AS X64 OVERWRITE
+USE SCR_SQLTXN
+COUNT
+ECHO === T0b. index the clone: CDX tags SID + LNAME, then BUILDLMDB (~18 s) ===
+CDX CREATE
+CDX ADDTAG SID
+CDX ADDTAG LNAME
+BUILDLMDB HUGE CLEAN YES
+CDX TAGS
+ECHO --- T0b-gate. COUNT under TAG SID must be 1000000 (tag view == truth). ---
+ECHO --- (First-run lesson 2026-09-20: a gutted tag attaches silently and  ---
+ECHO --- every rowset consumer then lies. Mismatch = stop, rebuild.)       ---
+SET ORDER TO TAG SID
+COUNT
+SET ORDER TO PHYSICAL
+ECHO === T0c. clone STUDENTS -> SCR_SQLTX2 (1M rows, NO index -- group-txn peer) ===
+SELECT 2
+USE STUDENTS
+COPY TO SCR_SQLTX2 AS X64 OVERWRITE
+USE SCR_SQLTX2
+COUNT
+SELECT 1
+
+* ============================================================
+* T1. Refusal probe: UPDATE with no WHERE must be REFUSED
+* ============================================================
+ECHO === T1. EXPECTED REFUSAL: whole-table UPDATE without WHERE ===
+SQLSEL UPDATE SCR_SQLTXN SET GENDER = 'Q'
+
+* ============================================================
+* T2. Autocommit non-key UPDATE, 10k band (INDEXTXN OFF -- the default)
+*     band: 50000000 <= SID < 50010000, GENDER := 'Z'
+* ============================================================
+ECHO === T2a. autocommit UPDATE, 10k non-key writes (no tag touched) ===
+SQLSEL UPDATE SCR_SQLTXN SET GENDER = 'Z' WHERE SID >= 50000000 AND SID < 50010000
+ECHO --- T2b. verify EXACTLY 10000 ---
+SQLSEL SELECT COUNT(*) FROM SCR_SQLTXN WHERE GENDER = 'Z'
+ECHO --- T2c. index still lands: SEEK mid-band under TAG SID ---
+SET ORDER TO TAG SID
+SEEK 50005000
+SMARTLIST SID,LNAME,GENDER NEXT 1
+
+* ============================================================
+* T3. Key-field UPDATE, 10k band, INDEXTXN OFF -- LNAME is a CDX tag, so
+*     this measures the per-row index-maintenance surcharge (compare T4)
+*     band: 50010000 <= SID < 50020000, LNAME := UPPER(LNAME)
+* ============================================================
+ECHO === T3a. key-field UPDATE (tag LNAME), 10k rows, INDEXTXN OFF ===
+SQLSEL UPDATE SCR_SQLTXN SET LNAME = UPPER(LNAME) WHERE SID >= 50010000 AND SID < 50020000
+ECHO --- T3b. verify EXACTLY 10000 uppercased in the band ---
+SQLSEL SELECT COUNT(*) FROM SCR_SQLTXN WHERE SID >= 50010000 AND SID < 50020000 AND LNAME = UPPER(LNAME)
+ECHO --- T3c. tag truth: LNAME order still streams (top 3 under TAG LNAME) ---
+SET ORDER TO TAG LNAME
+GO TOP
+SMARTLIST SID,LNAME NEXT 3
+SET ORDER TO TAG SID
+
+* ============================================================
+* T4. Same key-field shape, next 10k band, SET INDEXTXN ON
+*     band: 50020000 <= SID < 50030000  -- ELAPSED vs T3a is the datum
+* ============================================================
+ECHO === T4a. SET INDEXTXN ON (transactional in-COMMIT index maintenance) ===
+SET INDEXTXN ON
+ECHO === T4b. key-field UPDATE (tag LNAME), 10k rows, INDEXTXN ON ===
+SQLSEL UPDATE SCR_SQLTXN SET LNAME = UPPER(LNAME) WHERE SID >= 50020000 AND SID < 50030000
+ECHO --- T4c. verify EXACTLY 10000 ---
+SQLSEL SELECT COUNT(*) FROM SCR_SQLTXN WHERE SID >= 50020000 AND SID < 50030000 AND LNAME = UPPER(LNAME)
+SET INDEXTXN OFF
+
+* ============================================================
+* T5. Explicit SQL transaction: committed-truth SELECT, then ROLLBACK
+*     band: 50030000 <= SID < 50040000, GENDER := 'W' (staged, never lands)
+* ============================================================
+ECHO === T5a. enter SQL mode, stage a 10k UPDATE inside BEGIN TRANSACTION ===
+SET MODE SQL
+BEGIN TRANSACTION
+UPDATE SCR_SQLTXN SET GENDER = 'W' WHERE SID >= 50030000 AND SID < 50040000
+ECHO --- T5b. committed-truth view: this COUNT must be 0 (staged, not committed) ---
+SELECT COUNT(*) FROM SCR_SQLTXN WHERE GENDER = 'W'
+ECHO === T5c. ROLLBACK, then the COUNT must STILL be 0 ===
+ROLLBACK
+SELECT COUNT(*) FROM SCR_SQLTXN WHERE GENDER = 'W'
+
+* ============================================================
+* T6. AIF-160 multi-table group transaction: one COMMIT, one deciding row
+*     band: 50040000 <= SID < 50041000 (1000 rows) on BOTH clones
+* ============================================================
+ECHO === T6a. BEGIN; UPDATE both tables in ONE transaction ===
+BEGIN TRANSACTION
+UPDATE SCR_SQLTXN SET GENDER = 'V' WHERE SID >= 50040000 AND SID < 50041000
+UPDATE SCR_SQLTX2 SET GENDER = 'V' WHERE SID >= 50040000 AND SID < 50041000
+ECHO === T6b. EXPECTED REFUSAL: SET MODE NATIVE while the transaction is live ===
+SET MODE NATIVE
+ECHO === T6c. group COMMIT (one row decides both tables) ===
+COMMIT
+ECHO --- T6d. verify EXACTLY 1000 in EACH table ---
+SELECT COUNT(*) FROM SCR_SQLTXN WHERE GENDER = 'V'
+SELECT COUNT(*) FROM SCR_SQLTX2 WHERE GENDER = 'V'
+SET MODE NATIVE
+
+* ============================================================
+* T7. DELETE / native RECALL interop, 10k tail band (SID >= 50990000)
+* ============================================================
+ECHO === T7a. SQLsel DELETE of the 10k tail band ===
+SQLSEL DELETE FROM SCR_SQLTXN WHERE SID >= 50990000
+ECHO --- T7b. deleted-aware native COUNT (expect 990000 visible) ---
+COUNT
+ECHO === T7c. native RECALL ALL, then COUNT must be 1000000 again ===
+RECALL ALL
+COUNT
+
+* ============================================================
+* T8. Cleanup: fixtures untouched, clones erased
+* ============================================================
+ECHO === T8. cleanup: ERASE both clones ===
+SELECT 1
+CLOSE
+ERASE TABLE SCR_SQLTXN CONFIRM
+SELECT 2
+CLOSE
+ERASE TABLE SCR_SQLTX2 CONFIRM
+
+ECHO ============================================================
+ECHO TRANSACTIONAL DML SHAKEDOWN COMPLETE. Confirm and record:
+ECHO   T1 : no-WHERE UPDATE was REFUSED (safety rule held).
+ECHO   T2 : 10000 non-key writes; SEEK 50005000 lands post-commit.
+ECHO   T3a vs T4b ELAPSED: key-field 10k UPDATE, INDEXTXN OFF vs ON --
+ECHO        the index-maintenance surcharge pair is THE datum of this run.
+ECHO   T5 : staged COUNT 0 (committed truth), post-ROLLBACK COUNT 0.
+ECHO   T6 : SET MODE NATIVE refused mid-txn; after ONE group COMMIT both
+ECHO        tables read exactly 1000 (AIF-160: one row decided them).
+ECHO   T7 : 990000 visible after DELETE band, 1000000 after RECALL ALL.
+ECHO ============================================================
