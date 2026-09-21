@@ -632,3 +632,55 @@ why finding 7 hid until scale: an 11-row cached list copied 9,900 times costs
 nothing; a 5,500-row list copied 1M times costs hours. Phase 3 identity ledger
 final: I1-I13 green except I7, which is blocked by findings 3/7 with its true
 answer pinned (1,000,000) and its regression line ready.
+
+
+### Subquery repair slice AUTHORED 2026-09-21 (SQLsel lane, findings 3+6+7)
+
+`src/cli/sqlsel_statement.cpp`, one file, pending build + regression + commit:
+cache is now a std::deque handing out POINTERS (finding 7 -- no per-row deep
+copy; deque so cached entries never move); uncorrelated IN probes a hash set
+built once per subquery text, keyed to preserve value_equal semantics exactly
+including the numeric-literal rule (finding 3); predicate shape is classified
+and the LEFT column resolved BEFORE materialization (finding 6 -- refusals in
+microseconds, not after a 5.5M scan). Correlated IN keeps the linear pass
+(optimal for a per-row result). Refusal texts preserved verbatim for the
+SQLSEL_SUBQUERIES validators. Known residue, commented at the site: an
+AND-conjoined prefix whose left column RESOLVES (X < 5 AND EXISTS ...) still
+pays one materialization on the scalar fallthrough -- conjunction support is
+that fix. Finding 8 (progress heartbeat) NOT in this slice.
+HONEST EXPECTATIONS post-fix (materialization itself still pays the PERF-1
+per-row tax): yesterday's two refusals drop from 1146 s / 2348 s to
+milliseconds; bounded R5a from >7.2 h (aborted) to ~20 min; the full-scale IN
+(the battery's commented regression line) from unfinishable to ~25 min with
+COUNT(*) = 1000000. Sub-second arrives when PERF-1 lowers the constant.
+
+### Subquery repair slice VERIFIED 2026-09-21 (build 7b13ffcb, Sep 21 2026 15:02:47)
+
+Owner built and ran the four-step verification (console-tier evidence; the
+teed 3a battery rerun with the new R5c line is the promotion path). Every
+number landed inside the honest-expectations envelope:
+
+1. REGRESSION RUN SQLSEL_SUBQUERIES: **PASS** -- 7/7 ordered row sets equal
+   SQLite, refusals 3/3 with texts intact, cursors 3/3, division and
+   scalar-agg exact. The evaluation-count reports now expose the cache
+   accounting (correlated=12/uncorrelated=0 on division;
+   uncorrelated=1 on scalar-agg). The repair moved no answer.
+2. Finding 6 (validate-before-materialize): the AND+IN refusal that cost
+   **1146 s** on 2026-09-20 now refuses in **0.0011 s** -- same text
+   verbatim -- six orders of magnitude. The engine reads the statement
+   before paying for it.
+3. Findings 3+7 (hash-set IN + pointer cache): bounded R5a, aborted at
+   >7.2 h pre-fix, completed in **1084.2 s** with COUNT(*) = 1000 EXACT and
+   uncorrelated=1 (one materialization). The elapsed IS the inner scan
+   (5.5M x ~200 us); the 1M probes vanished from the bill.
+4. I7 CLOSED: full-scale IN completed in **564.1 s** with
+   COUNT(*) = **1000000 EXACT**, uncorrelated=1. Faster than the bounded
+   form because the inner scan carries no WHERE (~100 us/row, no per-row
+   predicate). This also settles the owner's infinite-loop question from
+   the abort: finite-slow then, finite-fast now.
+
+Phase 3 identity ledger is now **I1-I13 ALL GREEN** -- zero wrong answers
+over honest indexes across the entire program. R5c is live in the battery
+as the permanent regression line. Residue unchanged: AND-conjunction
+support, finding 8 heartbeat, :1626 correlated re-materialization, and the
+per-row constant itself (AIF-168 PERF-1).

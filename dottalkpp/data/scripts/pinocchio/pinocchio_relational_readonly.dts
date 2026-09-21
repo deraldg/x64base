@@ -151,16 +151,19 @@ SQLSEL SELECT DISTINCT MAJOR FROM STUDENTS ORDER BY MAJOR
 * R5. Subqueries at scale
 * ============================================================
 * MEASURED 2026-09-20, then READ IN SOURCE (sqlsel_statement.cpp):
-*   :1744-1749  IN membership is a LINEAR SCAN of the materialized vector --
-*               the cache (:1509) makes the subquery run ONCE, but every outer
-*               probe walks it to first hit. Full-scale (1M outer x 5.5M
-*               vector) is ~2.75e12 compares: the 2026-09-20 run sat 68+
-*               minutes with hours to go and was aborted. OQ-12's own terms
-*               ("optimize only against a measured Pinocchio-scale case") are
-*               now MET -- a one-column hash set built at materialization
-*               makes each probe O(1). Until that lands, both probes here are
-*               BOUNDED; the full-scale IN line below returns as the
-*               regression proof of the fix, not before.
+*   :1744-1749  WAS a LINEAR SCAN of the materialized vector -- the cache
+*               (:1509) made the subquery run ONCE, but every outer probe
+*               walked it to first hit. Full-scale (1M outer x 5.5M vector)
+*               is ~2.75e12 compares: the 2026-09-20 run sat 68+ minutes with
+*               hours to go and was aborted. FIXED 2026-09-21 (findings 3+7
+*               repair): uncorrelated IN probes a hash set built once at
+*               materialization (in_probe_key preserves value_equal semantics
+*               including the numeric-literal rule), and cache hits hand out
+*               POINTERS instead of deep-copying the result per outer row.
+*               MEASURED post-fix (build Sep 21 2026 15:02:47): R5a 1084 s,
+*               R5c full-scale 564 s COUNT = 1000000 -- the probes vanished
+*               from the bill; what remains is the one-time materialization
+*               at the PERF-1 per-row rate (AIF-168 territory).
 *   :1626       a CORRELATED subquery RE-MATERIALIZES its entire inner table
 *               on EVERY outer evaluation. The original R5b (1000 outer x
 *               5.5M-row materialization each) was a run-killer and never
@@ -170,9 +173,9 @@ SQLSEL SELECT DISTINCT MAJOR FROM STUDENTS ORDER BY MAJOR
 * predicate must be the ENTIRE WHERE -- 'X AND col IN (...)' and 'X AND
 * EXISTS (...)' are both REFUSED (the second falls through to the scalar
 * path). So R5a is the PURE IN form, bounded inside the subquery only.
-* Expect 1000: only band SIDs are in the list. Cost model: subquery scan
-* 5.5M x 208us + 1M outer probes against the ~8k list (linear, finding 3:
-* misses walk the whole list) -- roughly 10-15 min total.
+* Expect 1000: only band SIDs are in the list. Cost model post-fix: the
+* subquery scan (5.5M x ~200us for the WHERE-carrying inner) IS the price;
+* 1M outer probes are O(1) hash lookups. MEASURED 2026-09-21: 1084.2 s.
 ECHO === R5a. pure IN, subquery bounded to the canary band: expect 1000 ===
 SQLSEL SELECT COUNT(*) FROM STUDENTS S WHERE S.SID IN (SELECT E.SID FROM ENROLL E WHERE E.SID < 50001000)
 * R5b (correlated EXISTS at scale) is REMOVED, not bounded: the per-evaluation
@@ -183,9 +186,15 @@ SQLSEL SELECT COUNT(*) FROM STUDENTS S WHERE S.SID IN (SELECT E.SID FROM ENROLL 
 * (evaluation counts) lives in REGRESSION SQLSEL_SUBQUERIES at small scale,
 * and the scale price is on record in the benchmarks ledger (PIN-REL3A-013).
 ECHO === R5b. correlated-at-scale: SKIPPED BY DESIGN, see comment (39 min/row) ===
-* Full-scale IN -- RE-ENABLE ONLY AFTER the hash-set membership fix lands;
-* it is that fix's regression proof (expect 1000000, minutes not hours):
-* SQLSEL SELECT COUNT(*) FROM STUDENTS S WHERE S.SID IN (SELECT E.SID FROM ENROLL E)
+* R5c. IDENTITY I7 -- full-scale IN, the findings 3+7 regression proof.
+* Unfinishable pre-fix (aborted >7.2 h, 2026-09-20); MEASURED post-fix at
+* 564.1 s (2026-09-21, console; promote by this battery's teed rerun).
+* FASTER than bounded R5a because the inner scan carries no WHERE: no
+* per-row predicate evaluation, ~100us/row instead of ~200us. Expect
+* COUNT = 1000000 EXACT (every student enrolled, closed universe) and
+* 'correlated=0, uncorrelated=1' in the evaluation-count report.
+ECHO === R5c. IDENTITY I7: full-scale IN, expect 1000000 (findings 3+7 regression) ===
+SQLSEL SELECT COUNT(*) FROM STUDENTS S WHERE S.SID IN (SELECT E.SID FROM ENROLL E)
 
 * ============================================================
 * R6. Set operations -- exact small identities (overlapping 100-row bands)
@@ -223,5 +232,6 @@ ECHO   R3b: LEFT COUNT - INNER COUNT = reported left-extended rows (I4).
 ECHO   R4a = R4b (I5); R4c row count = R4d row count (I6).
 ECHO   R5a: pure-IN count = 1000 exactly (band membership; I7 bounded form).
 ECHO   R5b: skipped by design -- correlated is 39 min/row until :1626 is fixed.
+ECHO   R5c: full-scale IN = 1000000 EXACT (I7 proper; findings 3+7 regression).
 ECHO   R6 : UNION 150, INTERSECT 50, EXCEPT 50 (I8), exact.
 ECHO ============================================================

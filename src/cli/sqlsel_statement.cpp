@@ -30,6 +30,7 @@
 #include <cctype>
 #include <cstdint>
 #include <cmath>
+#include <deque>
 #include <filesystem>
 #include <iomanip>
 #include <iostream>
@@ -38,6 +39,8 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "xbase.hpp"
@@ -1506,8 +1509,35 @@ bool resolve_result_column(const QueryResult& source,
 struct SubqueryRuntime {
     std::size_t correlated_evaluations = 0;
     std::size_t uncorrelated_evaluations = 0;
-    std::vector<std::pair<std::string, QueryResult>> cache;
+    // FINDING 7 FIX (AIF-167, 2026-09-21): std::deque, not std::vector -- the
+    // cache now hands out POINTERS into itself (no per-row deep copy), and a
+    // deque's elements stay put when a later subquery is appended. The old
+    // vector cache deep-copied the whole materialized result on EVERY cache
+    // hit (old :1589, `result = cached->second;`) -- ~1M copies of a
+    // 5,500-row result in the run aborted after 7.2 h on 2026-09-21.
+    std::deque<std::pair<std::string, QueryResult>> cache;
+    // FINDING 3 FIX: one hash set per uncorrelated IN-subquery text, built
+    // once, probed O(1) -- replaces the linear walk of the cached list (old
+    // :1744) that misses paid in full (~5.5e9 compares in the aborted run).
+    std::unordered_map<std::string, std::unordered_set<std::string>> in_sets;
 };
+
+// FINDING 3 FIX: hash key that preserves value_equal's semantics EXACTLY --
+// numeric literals compare by value (stod: "007" == "7" == "7.0"), everything
+// else by trimmed text. Distinct namespaces so a stored string can never
+// collide with a numeric's canonical form.
+std::string in_probe_key(const std::string& raw) {
+    const std::string t = trim(raw);
+    if (!t.empty() && is_numeric_literal(t)) {
+        try {
+            std::ostringstream os;
+            os.precision(17);
+            os << std::stod(t);
+            return "N:" + os.str();
+        } catch (...) {}
+    }
+    return "S:" + t;
+}
 
 std::size_t find_subquery_paren(const std::string& text) {
     bool in_single = false;
@@ -1579,24 +1609,37 @@ bool evaluate_sql_predicate(const std::string& text,
 bool materialize_subquery(const std::string& sql,
                           const dottalk::TupleRow& outer,
                           SubqueryRuntime& runtime,
-                          QueryResult& result,
+                          const QueryResult*& result_out,
+                          QueryResult& correlated_scratch,
+                          bool& from_cache,
                           std::string& error) {
     const bool correlated = context_is_referenced(sql, outer);
     if (!correlated) {
+        from_cache = true;
         const auto cached = std::find_if(runtime.cache.begin(), runtime.cache.end(),
             [&](const auto& entry) { return entry.first == sql; });
         if (cached != runtime.cache.end()) {
-            result = cached->second;
+            // FINDING 7 FIX: a pointer into the deque-backed cache. The old
+            // `result = cached->second;` deep-copied the ENTIRE materialized
+            // result (columns, rows, every value string) on every single
+            // outer row -- the dominant cost of the >7.2 h aborted run.
+            result_out = &cached->second;
             return true;
         }
         ++runtime.uncorrelated_evaluations;
-        if (!execute_select_term(sql, &result) || !result.ok) {
+        runtime.cache.emplace_back(sql, QueryResult{});
+        QueryResult& slot = runtime.cache.back().second;
+        if (!execute_select_term(sql, &slot) || !slot.ok) {
+            runtime.cache.pop_back();
             error = "uncorrelated subquery failed";
             return false;
         }
-        runtime.cache.push_back({sql, result});
+        result_out = &slot;
         return true;
     }
+    from_cache = false;
+    correlated_scratch = QueryResult{};
+    QueryResult& result = correlated_scratch;
 
     ++runtime.correlated_evaluations;
     const std::string query = trim(sql);
@@ -1665,6 +1708,7 @@ bool materialize_subquery(const std::string& sql,
         }
         result.rows.push_back(std::move(projected));
     }
+    result_out = &correlated_scratch;
     return true;
 }
 
@@ -1708,85 +1752,129 @@ bool evaluate_sql_predicate(const std::string& raw,
         return false;
     }
     const std::string sub_sql = trim(text.substr(sub_open + 1, sub_close - sub_open - 1));
-    QueryResult subquery;
-    if (!materialize_subquery(sub_sql, context, runtime, subquery, error)) return false;
 
+    // FINDING 6 FIX (AIF-167, 2026-09-21): classify and validate the predicate
+    // shape BEFORE materializing the subquery. The old order materialized
+    // first, so a malformed prefix paid a full inner-table pass just to be
+    // refused -- measured 1146 s and 2348 s on the 5.5M fixture to say no.
+    // A refusal must cost microseconds. (Known residue: an AND-conjoined
+    // prefix whose left column RESOLVES, e.g. `X < 5 AND EXISTS (...)`, still
+    // falls to the scalar path and pays one materialization before its 1x1
+    // refusal -- conjunction support, not validation order, is that fix.)
     const std::string prefix = trim(text.substr(0, sub_open));
     const std::string upper_prefix = up(prefix);
-    if (upper_prefix == "EXISTS" || upper_prefix == "NOT EXISTS") {
-        const bool exists = !subquery.rows.empty();
-        state = (upper_prefix == "NOT EXISTS" ? !exists : exists)
+    enum class SubqKind { Exists, NotExists, In, NotIn, Scalar };
+    SubqKind kind = SubqKind::Scalar;
+    std::string left_token;
+    std::string op;
+    if (upper_prefix == "EXISTS") kind = SubqKind::Exists;
+    else if (upper_prefix == "NOT EXISTS") kind = SubqKind::NotExists;
+    else {
+        const std::size_t in_pos = find_kw(prefix, "IN");
+        if (in_pos != std::string::npos && in_pos + 2 == prefix.size()) {
+            kind = SubqKind::In;
+            left_token = trim(prefix.substr(0, in_pos));
+            const std::size_t not_pos = find_kw(left_token, "NOT");
+            if (not_pos != std::string::npos && not_pos + 3 == left_token.size()) {
+                kind = SubqKind::NotIn;
+                left_token = trim(left_token.substr(0, not_pos));
+            }
+        } else {
+            std::size_t op_pos = std::string::npos;
+            for (const char* candidate : {"<=", ">=", "<>", "!=", "=", "<", ">"}) {
+                const std::size_t hit = prefix.rfind(candidate);
+                if (hit != std::string::npos &&
+                    (op_pos == std::string::npos || hit > op_pos)) {
+                    op = candidate;
+                    op_pos = hit;
+                }
+            }
+            if (op_pos == std::string::npos) {
+                error = "subquery predicate must be EXISTS, IN, or a scalar comparison";
+                return false;
+            }
+            kind = SubqKind::Scalar;
+            left_token = trim(prefix.substr(0, op_pos));
+        }
+    }
+
+    std::size_t left_pos = 0;
+    if (kind != SubqKind::Exists && kind != SubqKind::NotExists) {
+        QueryResult context_result;
+        context_result.columns = context.columns;
+        if (!resolve_result_column(context_result, left_token, left_pos, error)) return false;
+    }
+
+    // FINDING 7 FIX: the materialized result arrives BY POINTER; a cache hit
+    // no longer deep-copies thousands of TupleRows per outer row.
+    QueryResult correlated_scratch;
+    const QueryResult* subquery = nullptr;
+    bool from_cache = false;
+    if (!materialize_subquery(sub_sql, context, runtime, subquery, correlated_scratch,
+                              from_cache, error)) return false;
+
+    if (kind == SubqKind::Exists || kind == SubqKind::NotExists) {
+        const bool exists = !subquery->rows.empty();
+        state = (kind == SubqKind::NotExists ? !exists : exists)
             ? PredicateState::True : PredicateState::False;
         return true;
     }
 
-    const std::size_t in_pos = find_kw(prefix, "IN");
-    if (in_pos != std::string::npos && in_pos + 2 == prefix.size()) {
-        std::string left_token = trim(prefix.substr(0, in_pos));
-        bool negate = false;
-        const std::size_t not_pos = find_kw(left_token, "NOT");
-        if (not_pos != std::string::npos && not_pos + 3 == left_token.size()) {
-            negate = true;
-            left_token = trim(left_token.substr(0, not_pos));
-        }
-        QueryResult context_result;
-        context_result.columns = context.columns;
-        std::size_t left_pos = 0;
-        if (!resolve_result_column(context_result, left_token, left_pos, error)) return false;
-        if (subquery.columns.size() != 1) {
+    if (kind == SubqKind::In || kind == SubqKind::NotIn) {
+        const bool negate = (kind == SubqKind::NotIn);
+        if (subquery->columns.size() != 1) {
             error = "IN subquery must return exactly one column";
             return false;
         }
-        if (!same_column_family(context.columns[left_pos].ftype, subquery.columns[0].ftype)) {
+        if (!same_column_family(context.columns[left_pos].ftype, subquery->columns[0].ftype)) {
             error = "IN subquery compares incompatible typed columns";
             return false;
         }
         bool found = false;
-        for (const auto& row : subquery.rows) {
-            if (context.cell_kind(left_pos) == dottalk::TupleCellKind::ProducedAbsent ||
-                row.cell_kind(0) == dottalk::TupleCellKind::ProducedAbsent) continue;
-            if (value_equal(context.values[left_pos], row.values[0])) { found = true; break; }
+        if (context.cell_kind(left_pos) != dottalk::TupleCellKind::ProducedAbsent) {
+            if (from_cache) {
+                // FINDING 3 FIX: uncorrelated IN membership is a hash probe,
+                // built once per subquery text -- the old linear walk paid the
+                // whole list per miss (~5.5e9 compares in the aborted run).
+                // in_probe_key preserves value_equal semantics exactly.
+                auto& probe_set = runtime.in_sets[sub_sql];
+                if (probe_set.empty() && !subquery->rows.empty()) {
+                    for (const auto& row : subquery->rows) {
+                        if (row.cell_kind(0) == dottalk::TupleCellKind::ProducedAbsent) continue;
+                        probe_set.insert(in_probe_key(row.values[0]));
+                    }
+                }
+                found = probe_set.count(in_probe_key(context.values[left_pos])) != 0;
+            } else {
+                // Correlated: the result differs per outer row, so one linear
+                // pass is already optimal -- no set to amortize.
+                for (const auto& row : subquery->rows) {
+                    if (row.cell_kind(0) == dottalk::TupleCellKind::ProducedAbsent) continue;
+                    if (value_equal(context.values[left_pos], row.values[0])) { found = true; break; }
+                }
+            }
         }
         state = (negate ? !found : found) ? PredicateState::True : PredicateState::False;
         return true;
     }
 
-    std::string op;
-    std::size_t op_pos = std::string::npos;
-    for (const char* candidate : {"<=", ">=", "<>", "!=", "=", "<", ">"}) {
-        const std::size_t hit = prefix.rfind(candidate);
-        if (hit != std::string::npos &&
-            (op_pos == std::string::npos || hit > op_pos)) {
-            op = candidate;
-            op_pos = hit;
-        }
-    }
-    if (op_pos == std::string::npos) {
-        error = "subquery predicate must be EXISTS, IN, or a scalar comparison";
-        return false;
-    }
-    const std::string left_token = trim(prefix.substr(0, op_pos));
-    QueryResult context_result;
-    context_result.columns = context.columns;
-    std::size_t left_pos = 0;
-    if (!resolve_result_column(context_result, left_token, left_pos, error)) return false;
-    if (subquery.columns.size() != 1 || subquery.rows.size() != 1) {
+    if (subquery->columns.size() != 1 || subquery->rows.size() != 1) {
         error = "scalar subquery must return exactly one row and one column (got " +
-                std::to_string(subquery.rows.size()) + " row(s), " +
-                std::to_string(subquery.columns.size()) + " column(s))";
+                std::to_string(subquery->rows.size()) + " row(s), " +
+                std::to_string(subquery->columns.size()) + " column(s))";
         return false;
     }
-    if (!same_column_family(context.columns[left_pos].ftype, subquery.columns[0].ftype)) {
+    if (!same_column_family(context.columns[left_pos].ftype, subquery->columns[0].ftype)) {
         error = "scalar subquery compares incompatible typed columns";
         return false;
     }
     dottalk::TupleRow comparison;
     comparison.columns = {
         {"__SQ_LEFT", -1, "__SQ_LEFT", context.columns[left_pos].ftype},
-        {"__SQ_RIGHT", -1, "__SQ_RIGHT", subquery.columns[0].ftype}
+        {"__SQ_RIGHT", -1, "__SQ_RIGHT", subquery->columns[0].ftype}
     };
-    comparison.values = {context.values[left_pos], subquery.rows[0].values[0]};
-    comparison.cell_kinds = {context.cell_kind(left_pos), subquery.rows[0].cell_kind(0)};
+    comparison.values = {context.values[left_pos], subquery->rows[0].values[0]};
+    comparison.cell_kinds = {context.cell_kind(left_pos), subquery->rows[0].cell_kind(0)};
     auto compiled = dottalk::expr::compile_where("__SQ_LEFT " + op + " __SQ_RIGHT");
     if (!compiled) {
         error = "could not compile scalar subquery comparison";
