@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-09-21T04:33:52Z
+    generated_utc : 2026-09-21T21:24:40Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,8 +11,8 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : b9ab79a1a  (2026-09-20)
-    upstream      : b9ab79a1a
+    HEAD          : 47521d088  (2026-09-20)
+    upstream      : 47521d088
     unpushed      : 0 commit(s) ahead of upstream
 
 ## Declared target
@@ -33,6 +33,7 @@ cannot drift, because nothing here is written by hand.
 
 | AIF | lane | steward | intake row |
 | --- | --- | --- | --- |
+| AIF-168 | Engine performance: per-row cost reduction + parallel read-only scans | member.ai.claude.cowork | yes |
 | AIF-167 | Pinocchio Phase 3: relational shakedown (REL/ENUM + SQLsel + transactional DML via indexes) | member.ai.claude.cowork | yes |
 | AIF-166 | partner-amicus-standing | member.derald | yes |
 | AIF-165 | Regression summary must distinguish graded PASS from transcript-only execution; add validators for the workspace family exposed as not graded by REGRESSION ALL | member.ai.codex | yes |
@@ -44,8 +45,7 @@ cannot drift, because nothing here is written by hand.
 | AIF-159 | sqlsel-transactions | member.derald | yes |
 | AIF-158 | autoincrement | member.derald | yes |
 | AIF-157 | index-sidecar-durability | member.ai.claude.cowork | yes |
-| AIF-156 | primary-key-policy | member.ai.claude.cowork | yes |
-| ... | 86 older claims omitted | | |
+| ... | 87 older claims omitted | | |
 
 ## Sessions, lineage, asides
 
@@ -62,7 +62,7 @@ parent + born_utc from the durable lineage ledger, '-' until a run wakes.
 
 | run | member | parent | born_utc | asides |
 | --- | --- | --- | --- | --- |
-| AIPR-20260920-001 | member.ai.claude.cowork | - | - | AIF-167 |
+| AIPR-20260920-001 | member.ai.claude.cowork | - | - | AIF-167 -> AIF-168 |
 | AIFGEN-20260916-090054 | member.derald | - | - | AIF-166 |
 | CODEX-20260915-AIF165-REGGRADE-001 | member.ai.codex | - | - | AIF-165 |
 | AIFGEN-20260914-194836 | member.derald | - | - | AIF-164 |

@@ -1,0 +1,62 @@
+* ============================================================
+*  PINOCCHIO BUILD DIMS -- CLASSES + MAJORS (Phase 3c, AIF-167)
+*
+*  Status:  CANDIDATE / REVIEW_BEFORE_EXECUTION. Creates NEW tables only;
+*           the fact fixtures (STUDENTS, ENROLL) are never opened, so this
+*           is safe to run even while a read-only battery holds them.
+*  Path:    same mature recipe as pinocchio_build.dts -- CREATE X64 +
+*           IMPORT + CDX + BUILDLMDB. SID-style N-typing lesson honored
+*           (CNUM is N(3); no bare I types).
+*  Input:   tmp/pinocchio/classes.csv + majors.csv, written by
+*           dottalkpp/scripts/pinocchio/gen_pinocchio_dims.ps1 (an
+*           ENUMERATION of the fact generator's closed CLS_ID universe --
+*           FK integrity holds by construction, no fixture scan needed).
+*  CLS_ID:  C(12) to MATCH ENROLL.CLS_ID exactly -- same-family typed
+*           columns are what the join and IN paths require.
+* ============================================================
+SET ECHO OFF
+SET TIMER ON
+
+SET PATH DBF DBF/pinocchio
+SET PATH INDEXES INDEXES/pinocchio
+SET PATH LMDB LMDB/pinocchio
+
+* Startup cleanup: drop dims left by an earlier run (harmless "not found").
+CLOSE
+ERASE TABLE CLASSES CONFIRM
+ERASE TABLE MAJORS CONFIRM
+
+ECHO === CLASSES: create x64 structure, IMPORT 9900 rows, index CLS_ID + MAJOR ===
+CREATE X64 CLASSES (CLS_ID C(12), TERM C(3), MAJOR C(4), CNUM N(3))
+IMPORT tmp/pinocchio/classes.csv
+SHOW COLUMNS
+ECHO --- COUNT must be exactly 9900 ---
+COUNT
+CDX CREATE
+CDX ADDTAG CLS_ID
+CDX ADDTAG MAJOR
+BUILDLMDB SMALL CLEAN YES
+CDX TAGS
+ECHO --- tag-sanity gate (first-run lesson): COUNT under TAG CLS_ID must be 9900 ---
+SET ORDER TO TAG CLS_ID
+COUNT
+SET ORDER TO PHYSICAL
+
+ECHO === MAJORS: create x64 structure, IMPORT 11 rows, index MAJOR ===
+CREATE X64 MAJORS (MAJOR C(4), MNAME C(24))
+IMPORT tmp/pinocchio/majors.csv
+SHOW COLUMNS
+ECHO --- COUNT must be exactly 11 ---
+COUNT
+CDX CREATE
+CDX ADDTAG MAJOR
+BUILDLMDB TINY CLEAN YES
+CDX TAGS
+
+ECHO ============================================================
+ECHO DIMS BUILD COMPLETE. A zero exit code is NOT proof -- confirm:
+ECHO   - CLASSES COUNT = 9900 physical AND 9900 under TAG CLS_ID
+ECHO   - MAJORS COUNT = 11
+ECHO   - every BUILDLMDB reported OK
+ECHO Next: run_pinocchio_star_teed.ps1 (Phase 3c star battery)
+ECHO ============================================================

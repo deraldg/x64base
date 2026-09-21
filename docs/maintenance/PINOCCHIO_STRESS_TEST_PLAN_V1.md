@@ -464,7 +464,13 @@ identities disagreed and the printed numbers said why):
   a 1,000,000-row STUDENTS and 686 on a 5,501,358-row ENROLL** -- and SET ORDER
   PRINTED those numbers at attach time.
 - **Engine honesty gap: nothing compares the tag entry count to the table
-  record count.** The gutted tags attached silently and every logical-rowset
+  record count.** SHARPENED 2026-09-21 by the form smoke: the gutted tags'
+  entry counts (200 / 686) are EXACTLY the x64 sample tables' row counts --
+  the pinocchio tables were being served ANOTHER TABLE'S index content, not
+  an empty one, presumably via an index path fallback (candidate mechanism:
+  see tests/x64_fallback_lookup_alias_canary.dts). Wrong-table attach is a
+  worse class than hollow attach: the entries look plausible. Unconfirmed
+  mechanism; the cardinality check catches both classes either way. The gutted tags attached silently and every logical-rowset
   consumer then answered from them with confidence: bare `COUNT` reported
   200/686, `COUNT FOR MAJOR = "CSCI"` reported 18 in 9.5 ms (true 90700 --
   SQLsel's physical-scan count of the same predicate, which matches the
@@ -521,3 +527,90 @@ Calibrated rates for future estimates: SQLsel simple-WHERE scan ~208 us/row;
 with correlation glue ~427 us/row; function-call WHERE 345 us/row (run 1) with an
 unexplained 2 ms/row outlier (run 2 R4b, post-join, parked); native COUNT FOR scan
 ~26 us/row; set operation ~380 us/row-pass including dedup.
+## Phase 3c -- the star: dimensions the Phase-1 plan promised  [AIF-167]
+
+**Status: AUTHORED 2026-09-21 -- dims not yet built, battery not yet run.**
+
+Phase 1 designed "supporting dims (MAJORS, CLASSES) small" and never built them;
+Phases 3a/3b therefore proved everything two tables can prove and nothing about
+the star shape at scale. Phase 3c closes that.
+
+**The dims cost no fixture reads.** The fact generator draws CLS_ID from a
+CLOSED universe (3 terms x 11 majors x 300 numbers = 9,900), so
+`gen_pinocchio_dims.ps1` ENUMERATES it -- FK integrity holds by construction,
+and generation is safe even while a timed battery holds the facts. Build via
+the mature recipe (`pinocchio_build_dims.dts`: CREATE X64 + IMPORT + CDX +
+BUILDLMDB, CLS_ID C(12) to match ENROLL exactly).
+
+**Battery** (`pinocchio_star_readonly.dts` / `run_pinocchio_star_teed.ps1`,
+~15-25 min): identities I9-I13 -- the dim-driven INNER JOIN must reproduce
+Phase 3a's 5,501,358 through a DIFFERENT key and driving side; LEFT measures
+empty classes; join+GROUP BY over C.MAJOR sums to the fact count; dim self-IN
+and dim-dim join close cheap. Gates first, per the first-run lesson.
+
+**No 3-table chain at scale, on arithmetic, not timidity:** chains run
+nested-loop stages (no CDX assist per the SQLsel manual), and a stage against
+the 5.5M fact from a 9,900-row left is ~5.4e10 row-visits -- ~750 hours at the
+measured ~50 us/visit. The chain FORM is proven at 200 rows in the 3c smoke;
+the 750-hour figure is recorded as the case for extending the P4.2 seek path
+to chain stages.
+
+Sequencing: (1) gen_pinocchio_dims.ps1; (2) build_dims via datarun;
+(3) 200-row form smoke including join+GROUP BY and the 3-table chain form
+against the x64 sample (which carries a real CLASSES); (4) the star battery.
+Steps 1-2 are safe to run alongside a live read-only battery (new tables
+only); step 4 wants the machine quiet.
+### Resource profile, observed live 2026-09-21 (Task Manager during the 3a rerun)
+
+During the R5a probe phase: **D: disk 0% active, 0 KB/s, 0 ms response** -- the
+entire fixture set (~225 MB + indexes) is cache-resident after first touch and
+the battery performs no disk I/O at all. CPU ~11% overall at 2.70 GHz = ONE
+core saturated (single-threaded statement execution) with the rest idle; RAM
+31/63.5 GB, largely OS file cache. The engine's measured profile is therefore
+MEMORY-RESIDENT, SINGLE-CORE, COMPUTE-BOUND: the ~200-400 us/row tax is
+roughly half a million instructions per row of TupleRow construction, per-cell
+string materialization, and AST-interpretation -- zero hardware wait.
+Consequence for future lanes: headroom is multiplicative and entirely in
+software -- per-row cost reduction (tighter predicate compilation, fewer
+per-cell allocations; plausibly 10-50x) and read-only scan parallelism over
+record ranges (~Ncores x), independent axes. Evidence tier: operator
+observation (screenshot), not a teed transcript; promote with a counter-logged
+run if a perf lane opens.
+
+
+### Phase 3a rerun, 2026-09-21 -- gates green on first use, R4b closed, finding 7
+
+Teed: `relational_readonly_teed_20260921T061020Z.log` (sha256:62608fb1950c91c2).
+All four R0 tag-sanity gates GREEN on their first-ever execution (1000000 ==
+1000000, 5501358 == 5501358); ten identity legs re-proven exact over the
+rebuilt indexes (I1 x2, I2, I3 x3, I4, I5, I6 pair). **The R4b anomaly did not
+reproduce** -- 394.7 s vs the prior evening's 2008 s under identical statement
+order -- and is CLOSED AS TRANSIENT. The no-pushdown price is stable
+(1907.7 s vs 1958.0 s).
+
+**Finding 7 -- subquery cache hit deep-copies the result per outer row**
+(`sqlsel_statement.cpp:1589`, `result = cached->second;`): the cache prevents
+re-execution but pays a full copy of the materialized result (~5,500 TupleRows
+here) on EVERY evaluation -- ~1M copies for one statement. Combined with
+finding 3 (linear membership, :1744), the bounded R5a probe ran >7.2 HOURS and
+was aborted unfinished at 14:19 (ledger PIN-REL3A-020, lower bound). That the
+5-hour copy-model underpredicted suggests per-cycle cost GROWS with run age --
+allocator churn is the unifying HYPOTHESIS for this and the R4b transient;
+unconfirmed, testable with an allocation-counter build. The repair set is ~30
+lines across three cited sites (:1589 return-by-reference, :1744 one-column
+hash set, :1712/:1714 validate-before-materialize) and re-prices this
+statement from hours to sub-second; the battery's commented full-scale IN is
+its regression proof. Set operations were not re-witnessed under tee (aborted
+before R6); their identities stand on the 2026-09-20 console tail and re-tee
+free with any future run.
+
+**Finding 8 (operability): a long statement is indistinguishable from a
+hang.** Seven-plus hours of silence -- no heartbeat, no rows-processed
+counter, no interrupt point -- left the operator unable to tell slow from
+stuck; the abort decision had to be made on arithmetic, not evidence. Every
+loop on the executed path is finitely bounded in source, so infinite-loop is
+the weaker hypothesis, but the post-repair rerun of this exact statement is
+the decisive test (seconds = it was finite). Proposed for the SQLsel repair
+slice alongside the three fixes: a periodic progress line (every N seconds:
+rows in, rows out) on any statement exceeding a threshold -- the same honesty
+culture as reported access paths, applied to time.

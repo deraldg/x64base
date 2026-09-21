@@ -1,0 +1,113 @@
+* ============================================================
+*  PINOCCHIO STAR -- DIM/FACT READ-ONLY BATTERY (Phase 3c, AIF-167)
+*
+*  Status:  CANDIDATE / REVIEW_BEFORE_EXECUTION. READ-ONLY (no mutation).
+*  Needs:   the dims built first (gen_pinocchio_dims.ps1 +
+*           pinocchio_build_dims.dts), and the S3 join+GROUP-BY form proven
+*           at 200 rows by the 3c form smoke (200-row rule: no statement
+*           form reaches the 5.5M fixture unsmoked).
+*  Purpose: the star shape the Phase-1 plan promised ("supporting dims")
+*           and never built: dimension-driven joins over the 5.5M fact,
+*           join+aggregate over a dim attribute, and the honest arithmetic
+*           for why a 3-table CHAIN at fact scale is not run at all.
+*
+*  IDENTITIES (extending I1-I8 from Phase 3a):
+*    I9   CLASSES-driven INNER JOIN COUNT(*) ON CLS_ID == 5501358 -- the
+*         SAME total Phase 3a proved via the SID key: two different join
+*         keys, two different driving sides, one row universe.
+*    I10  LEFT variant: left-extended row count == classes with zero
+*         enrollments (MEASURED, expected ~0 at ~555 draws per class).
+*    I11  join+GROUP BY C.MAJOR: 11 groups whose counts SUM to 5501358.
+*    I12  dim self-IN: CLASSES WHERE MAJOR IN (SELECT MAJOR FROM MAJORS)
+*         == 9900 (11-element cached list; probe cost trivial).
+*    I13  MAJORS-driven dim-dim join == 9900 with the seek path reported
+*         (probes=11 into the CLASSES MAJOR tag).
+*
+*  WHY THERE IS NO 3-TABLE CHAIN AT SCALE IN THIS BATTERY (measured, not
+*  timid): the manual discloses join CHAINS run correctness-first
+*  nested-loop stages -- no CDX assist. A chain stage against the 5.5M
+*  fact from a 9900-row accumulated left is ~5.4e10 row-visits; at the
+*  measured ~50 us/visit that is ~750 HOURS. The chain FORM is proven at
+*  200 rows in the smoke; this number is the case for extending the P4.2
+*  seek path to chain stages, recorded where an optimizer slice will
+*  need it.
+*
+*  RUNTIME: ~15-25 minutes. Heaviest: S1/S2/S3 each process the 5.5M
+*  candidate stream (~3-8 min each at calibrated rates).
+*
+*  RUN (host):
+*    powershell -ExecutionPolicy Bypass -File .\dottalkpp\data\scripts\pinocchio\run_pinocchio_star_teed.ps1
+* ============================================================
+SET ECHO OFF
+SET TIMER ON
+SET TALK ON
+
+SET PATH DBF DBF/pinocchio
+SET PATH INDEXES INDEXES/pinocchio
+SET PATH LMDB LMDB/pinocchio
+
+ECHO === S0. open the star: 1 CLASSES, 2 MAJORS, 3 ENROLL ===
+SELECT 1
+USE CLASSES
+ECHO --- S0a. gate: physical COUNT must be 9900 ---
+SET ORDER TO PHYSICAL
+COUNT
+ECHO --- S0b. gate: COUNT under TAG CLS_ID must equal S0a ---
+SET ORDER TO TAG CLS_ID
+COUNT
+SELECT 2
+USE MAJORS
+ECHO --- S0c. gate: MAJORS COUNT must be 11 ---
+COUNT
+SELECT 3
+USE ENROLL
+ECHO --- S0d. gate: fact COUNT under TAG CLS_ID must be 5501358 ---
+SET ORDER TO TAG CLS_ID
+COUNT
+SELECT 1
+
+* SEEK PRECONDITION (smoke-proven 2026-09-21): the CDX-seek path engages only
+* when the ON key matches the INNER table's ACTIVE order. ENROLL auto-attaches
+* on SID; S0d switched it to TAG CLS_ID and it MUST stay there for S1-S3 --
+* on SID order these joins fall to nested loop at 9900 x 5.5M (~750 h).
+* Re-asserted here so a future re-ordering of S0 cannot silently demote the
+* path; the report line is the check (seek = right, nested-loop = STOP).
+SELECT 3
+SET ORDER TO TAG CLS_ID
+SELECT 1
+ECHO === S1. IDENTITY I9: dim-driven fact INNER JOIN == 5501358 ===
+ECHO --- read the path report: expect CDX seek, inner=ENROLL, tag=CLS_ID, probes=9900 ---
+SQLSEL SELECT COUNT(*) FROM CLASSES C INNER JOIN ENROLL E ON C.CLS_ID = E.CLS_ID
+
+ECHO === S2. IDENTITY I10: LEFT variant -- left-extended = empty classes (expect ~0) ===
+SQLSEL SELECT COUNT(*) FROM CLASSES C LEFT JOIN ENROLL E ON C.CLS_ID = E.CLS_ID
+
+ECHO === S3. IDENTITY I11: join + GROUP BY dim attribute; 11 groups, sum = 5501358 ===
+SQLSEL SELECT C.MAJOR,COUNT(*) AS N FROM CLASSES C INNER JOIN ENROLL E ON C.CLS_ID = E.CLS_ID GROUP BY C.MAJOR ORDER BY C.MAJOR
+
+ECHO === S4. IDENTITY I12: dim self-IN against the 11-major list == 9900 ===
+SQLSEL SELECT COUNT(*) FROM CLASSES C WHERE C.MAJOR IN (SELECT M.MAJOR FROM MAJORS M)
+
+ECHO === S5. IDENTITY I13: dim-dim join == 9900; expect seek probes=11 ===
+SQLSEL SELECT COUNT(*) FROM MAJORS M INNER JOIN CLASSES C ON M.MAJOR = C.MAJOR
+
+ECHO === S6. cleanup ===
+SELECT 3
+CLOSE
+SELECT 2
+CLOSE
+SELECT 1
+CLOSE
+
+ECHO ============================================================
+ECHO STAR BATTERY COMPLETE. Confirm and record:
+ECHO   S0 : gates 9900/9900, 11, 5501358 (tag views == truth).
+ECHO   S1 : I9 = 5501358 EXACT -- same universe Phase 3a counted via SID;
+ECHO        record ELAPSED + the probes=9900 path report.
+ECHO   S2 : I10 -- LEFT minus INNER == reported left-extended (empty classes).
+ECHO   S3 : I11 -- 11 groups, counts sum to 5501358.
+ECHO   S4 : I12 = 9900.   S5: I13 = 9900 with probes=11 reported.
+ECHO   CHAIN-AT-SCALE: deliberately absent -- ~750 h nested-loop by the
+ECHO   measured stage rate; the number that argues for chain-seek (P4.2
+ECHO   extension). Form proven at 200 rows in the 3c smoke.
+ECHO ============================================================

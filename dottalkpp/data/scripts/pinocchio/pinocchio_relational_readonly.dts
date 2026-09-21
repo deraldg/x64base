@@ -166,13 +166,23 @@ SQLSEL SELECT DISTINCT MAJOR FROM STUDENTS ORDER BY MAJOR
 *               5.5M-row materialization each) was a run-killer and never
 *               completed a single evaluation batch; 10 outer rows price the
 *               re-materialization honestly (~10 x 1M rows).
-ECHO === R5a. IN identity, BOTH SIDES BOUNDED to the 1000-row canary band ===
-ECHO --- expect exactly 1000 (every student in the band is enrolled) ---
-SQLSEL SELECT COUNT(*) FROM STUDENTS S WHERE S.SID < 50001000 AND S.SID IN (SELECT E.SID FROM ENROLL E WHERE E.SID < 50001000)
-ECHO === R5b. correlated EXISTS, outer bounded to THREE rows (re-materialization price) ===
-ECHO --- expect 3; each evaluation re-materializes 5.5M rows (:1626), so even ---
-ECHO --- three cost ~10-20 min. The per-evaluation ELAPSED is the OQ-12 datum. ---
-SQLSEL SELECT COUNT(*) FROM STUDENTS S WHERE S.SID < 50000003 AND EXISTS (SELECT E.SID FROM ENROLL E WHERE E.SID = S.SID)
+* GRAMMAR CORRECTION (measured 2026-09-20 tail run, finding 5): a subquery
+* predicate must be the ENTIRE WHERE -- 'X AND col IN (...)' and 'X AND
+* EXISTS (...)' are both REFUSED (the second falls through to the scalar
+* path). So R5a is the PURE IN form, bounded inside the subquery only.
+* Expect 1000: only band SIDs are in the list. Cost model: subquery scan
+* 5.5M x 208us + 1M outer probes against the ~8k list (linear, finding 3:
+* misses walk the whole list) -- roughly 10-15 min total.
+ECHO === R5a. pure IN, subquery bounded to the canary band: expect 1000 ===
+SQLSEL SELECT COUNT(*) FROM STUDENTS S WHERE S.SID IN (SELECT E.SID FROM ENROLL E WHERE E.SID < 50001000)
+* R5b (correlated EXISTS at scale) is REMOVED, not bounded: the per-evaluation
+* price was MEASURED at ~2349 s (one 5.5M correlated materialization, :1626,
+* 427us/row) -- 39 minutes PER OUTER ROW, and the grammar refuses AND-bounding
+* of the outer scan. Correlated-at-scale returns to this battery only after
+* the :1626 re-materialization fix; until then the OQ-12 mechanism datum
+* (evaluation counts) lives in REGRESSION SQLSEL_SUBQUERIES at small scale,
+* and the scale price is on record in the benchmarks ledger (PIN-REL3A-013).
+ECHO === R5b. correlated-at-scale: SKIPPED BY DESIGN, see comment (39 min/row) ===
 * Full-scale IN -- RE-ENABLE ONLY AFTER the hash-set membership fix lands;
 * it is that fix's regression proof (expect 1000000, minutes not hours):
 * SQLSEL SELECT COUNT(*) FROM STUDENTS S WHERE S.SID IN (SELECT E.SID FROM ENROLL E)
@@ -211,7 +221,7 @@ ECHO        SQLsel canary join 8 (R1e / R2a / R3c).
 ECHO   R3a: INNER JOIN COUNT = 5501358 (I2) -- record ELAPSED + ACCESS PATH.
 ECHO   R3b: LEFT COUNT - INNER COUNT = reported left-extended rows (I4).
 ECHO   R4a = R4b (I5); R4c row count = R4d row count (I6).
-ECHO   R5a: IN-subquery count = 1000000 minus R3b unmatched parents (I7).
-ECHO   R5b: read the correlated evaluation-count report (OQ-12 datum).
+ECHO   R5a: pure-IN count = 1000 exactly (band membership; I7 bounded form).
+ECHO   R5b: skipped by design -- correlated is 39 min/row until :1626 is fixed.
 ECHO   R6 : UNION 150, INTERSECT 50, EXCEPT 50 (I8), exact.
 ECHO ============================================================
