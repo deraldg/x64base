@@ -201,6 +201,43 @@ based), DML source (materialize_join_source based), DbTupleStream, and the
 REL graph cursor are untouched. Gate: same as PERF-1a -- six regressions
 green (EVALDIFF 22/22 exact), then full 3a + star teed with I1-I13 identical.
 
+#### PERF-1b MEASURED 2026-09-22 -- G-P1 GREEN, 1.6-3.9x on top of PERF-1a
+
+Build 9b1a2945+1b (Sep 21 2026 21:31:25, committed ca1f66cfd). Six
+regressions PASS first (EVALDIFF 22/22 exact), then both batteries teed
+(sha256:BEB3FCC7... relational 20260921T213210Z; sha256:76082DA5... star
+20260922T073937Z) with EVERY identity IDENTICAL again -- I1-I13 exact,
+paths and refusals unchanged.
+
+Ratios, PERF-1a build -> PERF-1b build (cumulative vs pre-PERF-1 in parens):
+
+    R6a/b/c set ops     207/256/264 -> 69.8/73.1/67.4   3.0-3.9x  (~11x)
+    R4b function-WHERE   95.0 ->  51.1                  1.9x      (7.7x)
+    R5a bounded IN      336.6 -> 183.6                  1.8x      (5.9x)
+    R4c GROUP BY        128.7 ->  81.2                  1.6x
+    R4d DISTINCT         74.5 ->  61.5                  1.2x
+    R5c full-scale IN   608.8 -> 390.2 (idle probe)     1.6x      (1.4x)
+    R3a/b/c joins, R4a native, star S1-S5: flat (untouched paths)
+
+ANOMALY, CLOSED AS TRANSIENT (the R4b-2008s protocol): the teed 3a run
+recorded R5c at 34129.3 s WALL CLOCK with the count exact and
+uncorrelated=1. The run spanned an actively used desktop evening and the
+overnight standby hours; the identical statement standalone on an idle
+machine the next morning ran 390.2 s. The teed figure is DISQUALIFIED as a
+duration datum (the transcript remains valid for its counts); the 390.2 s
+console probe is the datum, to be promoted by a daytime teed rerun whenever
+convenient. Lesson recorded: overnight-spanning batteries produce wall-clock
+durations that are not compute measurements.
+
+CONSEQUENCE: two slices took simple/function-WHERE from 208-345 us/row to
+~51 us/row -- within 1.8x of the native scan loop's 26-29 us. That is
+OQ-P3's question answered by measurement: the typed TupleRow premium now
+STANDS AT ~1.8x, inside the 2-3x band the proposal offered to accept.
+Remaining constant: the AST walk and per-access string copies
+(trim/norm_by_collation) in the accessors. PERF-2 multiplies from a far
+better base: 51 us/row x 6 P-cores puts the 3a battery's minutes into
+seconds without touching another constant.
+
 ### PERF-2 -- SET PARALLEL <n>: partitioned read-only scans
 
 A bounded worker pool; recno-range partitions; per-worker private row source
