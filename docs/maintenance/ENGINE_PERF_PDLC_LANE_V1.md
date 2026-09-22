@@ -301,6 +301,45 @@ DEFERRED to the registered regression (needs a fixture with deleted rows;
 the read-only pinocchio set has none) -- recorded, not waved. The speedup
 curve (2,4,6,8,12,16,22) reruns D1/D3 per OQ-P1.
 
+### PERF-2 slice 1 MEASURED 2026-09-22 -- the engine's first multi-core run
+
+Two differential runs, both teed. Run 1 (sha256:193857DA...,
+parallel_diff_teed_20260922T101304Z) declined every ON leg -- the pre-flight
+handed DbArea::open the LOGICAL name instead of filename(); one-line fix
+(1508008f6). That run was not waste: it witnessed the FAIL-CLOSED skeleton
+under fire -- six declines, all reported, all serial-identical, every count
+exact. Run 2 (sha256:D0B7B682..., parallel_diff_teed_20260922T105718Z, build
+content 1508008f6, stamp Sep 22 2026 10:56:40) is the datum:
+
+    D5  ENROLL 5.5M COUNT        81.3 -> 16.9 s    4.8x
+    D2  torn-seam bands (x5)    35-41 -> 8.8-9.1   4.0-4.5x, all 100==100
+    D3  bare COUNT 1M            21.1 ->  4.9 s    4.3x
+    D4  ORDER BY + LIMIT         37.7 ->  9.1 s    4.1x, SAME 5 rows SAME order
+    D1  function-WHERE           46.6 -> 14.4 s    3.2x
+    P1  subquery outer declined (reported); INNER materialization
+        parallelized on its own scan: 243.2 -> 100.3 s, 1000 exact
+
+EVERY OFF/ON pair identical -- counts, rows, order, LIMIT reports. The five
+torn-partition bands straddling the exact 6-worker seams all returned 100
+both modes: partition boundary arithmetic is proven at the seams, not
+assumed. 4.0-4.8x on 6 workers (67-80 percent efficiency) on the cheap-row
+statements; the charter's own words apply -- sublinear is expected and
+honest, wrong is impossible to miss, and nothing was wrong.
+
+PROBE DEFECT, MINE: P2 opened the 200-row x64 sample as STUDENTS while
+pinocchio STUDENTS sat open in area 1, and the by-name resolver correctly
+picked the first open match -- the probe measured the wrong (1M) table and
+parallelized it exactly. Script corrected to the uniquely-named 11-row
+MAJORS; the small-table decline remains RUNTIME-UNWITNESSED until the next
+diff run. Recorded, not waved.
+
+COMPOUND STATE OF THE LANE after one day: 208-345 us/row serial constant ->
+~51 us/row (PERF-1a+1b), x 4-4.8 on six workers (PERF-2 slice 1). The 3a
+battery's 395-second R4b of two days ago answers in ~14 s ON. Next: the
+OQ-P1 speedup curve (2,4,8,12,16,22) decides the shipped default and the
+E-core question; then the registered SQLSEL_PARALLEL regression (with the
+deleted-rows-per-partition fixture) before any default flips ON.
+
 ## 5. Open rulings, placed where they block
 
 - OQ-P1 (blocks PERF-2 design freeze): worker count default when ON --

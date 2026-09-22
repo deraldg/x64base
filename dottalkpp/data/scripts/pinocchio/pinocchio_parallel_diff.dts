@@ -83,14 +83,16 @@ ECHO === P1. DECLINE HONESTY: subquery predicate under ON must decline + exact 1
 SET PARALLEL 6
 SQLSEL SELECT COUNT(*) FROM STUDENTS S WHERE S.SID IN (SELECT E.SID FROM ENROLL E WHERE E.SID < 50001000)
 
-ECHO === P2. DECLINE HONESTY: 200-row sample must decline (too small) + exact 21 ===
-SET PATH DBF DBF/x64
+ECHO === P2. DECLINE HONESTY: 11-row MAJORS must decline (too small) + exact 11 ===
+* (First-run lesson 2026-09-22: the original probe opened the 200-row x64
+*  sample as STUDENTS while pinocchio STUDENTS was open in area 1, and the
+*  by-name resolver correctly picked the FIRST open match -- the probe
+*  measured the wrong table. MAJORS is unique by name and 11 rows.)
 SELECT 3
-USE STUDENTS
-SQLSEL SELECT COUNT(*) FROM STUDENTS WHERE ALLTRIM(MAJOR) = 'CSCI'
+USE MAJORS
+SQLSEL SELECT COUNT(*) FROM MAJORS
 CLOSE
 SELECT 1
-SET PATH DBF DBF/pinocchio
 
 ECHO === D6. cleanup: PARALLEL back OFF (the default this build ships with) ===
 SET PARALLEL OFF
@@ -106,7 +108,8 @@ ECHO   D1 : 90700 == 90700; the ON leg prints workers=6 in its path line.
 ECHO   D2 : five torn-seam bands, 100 each, OFF == ON pairwise.
 ECHO   D3 : 1000000 == 1000000.   D5: 5501358 == 5501358.
 ECHO   D4 : identical 5 rows in identical order (ORDER BY sorts the merge).
-ECHO   P1 : declined (subquery) + 1000 exact.  P2: declined (small) + 21 exact.
+ECHO   P1 : declined (subquery; INNER select parallelizes) + 1000 exact.
+ECHO   P2 : declined (too small) + 11 exact.
 ECHO   ELAPSED ratios OFF vs ON are the speedup datum; record the curve by
 ECHO   rerunning D1/D3 at SET PARALLEL 2, 4, 6, 8, 12, 16, 22 (OQ-P1).
 ECHO ============================================================

@@ -1,0 +1,441 @@
+datarun: staging D:\code\ccode\build\src\Release\dottalkpp.exe
+         chosen by timestamp from 5 candidate(s); built 0.6 min ago.
+         other candidate(s), newest first:
+           D:\code\ccode\build\uidef-native\src\Release\dottalkpp.exe  (9/18/2026 11:05:01 AM)
+           D:\code\ccode\build\core-vcpkg\src\dottalkpp.exe  (8/10/2026 4:50:33 AM)
+           D:\code\ccode\build\core-vcpkg\stage-proof\bin\dottalkpp.exe  (8/10/2026 4:50:33 AM)
+           D:\code\ccode\build\src\Debug\dottalkpp.exe  (7/27/2026 2:04:15 PM)
+[32mINIT: Paths
+  BIN        : D:\code\ccode\dottalkpp\bin
+  DATA       : D:\code\ccode\dottalkpp\data
+  DBF        : D:\code\ccode\dottalkpp\data\dbf
+  INDEXES    : D:\code\ccode\dottalkpp\data\indexes
+  LMDB       : D:\code\ccode\dottalkpp\data\lmdb
+  WORKSPACES : D:\code\ccode\dottalkpp\data\workspaces
+  SCHEMAS    : D:\code\ccode\dottalkpp\data\schemas
+  PROJECTS   : D:\code\ccode\dottalkpp\data\projects
+  SCRIPTS    : D:\code\ccode\dottalkpp\data\scripts
+  TESTS      : D:\code\ccode\dottalkpp\data\tests
+  HELP       : D:\code\ccode\dottalkpp\data\help
+  LOGS       : D:\code\ccode\dottalkpp\data\logs
+  SYS        : D:\code\ccode\dottalkpp\data\sys
+  TMP        : D:\code\ccode\dottalkpp\data\tmp
+INIT: processing system .ini D:\code\ccode\dottalkpp\bin\dottalkpp.ini
+INIT: processing user .ini D:\code\ccode\dottalkpp\bin\init.ini
+Echo is OFF
+Paging is OFF
+Talk is OFF
+dottalk++ beta 1.b, 61a1f85d  (Sep 22 2026 10:56:40)
+DotTalk++ build Sep 22 2026 10:56:40
+SQLite available: 1, version: 3.50.4
+[0m         [33m*[0m
+[0m         [32m^[0m
+[0m        [32m^[31mo[32m^[0m
+[0m       [32m^^[36m#[32m^^[0m
+[0m      [32m^^^[33m*[32m^^^[0m
+[0m     [32m^^[33m+[32m^^^^^^[0m
+[0m    [32m^^^^^[31mo[32m^^^^^[0m
+[0m   [32m^^^[36m#[32m^^^^^[33m+[32m^^^[0m
+[0m  [32m^^[31mo[32m^^^^[33m*[32m^^^^^^^[0m
+[0m [32m^^^^^[33m+[32m^^^^^^[31mo[32m^^^^[0m
+[32m^^^^[36m#[32m^^^^[31mo[32m^^^^[33m+[32m^^^^[0m
+[0m         [37m|||[0m
+[0m         [37m|||[0m
+EDU_BIBLETALK: opened BibleTalk seed biblebase\bible_kjv_x64.sqlite
+BibleTalk Quote
+  Mark 7:5
+  Then the Pharisees and scribes asked him, Why walk not thy disciples according to the tradition of the elders, but eat bread with unwashen hands?
+DotTalk++ type HELP. USE, SELECT <n>, AREA, COLOR <GREEN|AMBER|DEFAULT>, ABOUT, QUIT.
+
+Dev: CMDHELPCHK, GPS, WORKSPACE, ERSATZ.
+
+Hello World!
+. . . . . . . . . . . . . . . . . . . . . . . . . Echo is OFF
+. Timer is ON
+. TIMER START: 0.020871600 s
+Talk is ON
+TIMER END  : 0.020968400 s
+ELAPSED    : 0.000096800 s
+. TIMER START: 0.021120600 s
+SETPATH: DBF = D:\code\ccode\dottalkpp\data\DBF\pinocchio
+TIMER END  : 0.021420700 s
+ELAPSED    : 0.000300100 s
+. TIMER START: 0.021589600 s
+SETPATH: INDEXES = D:\code\ccode\dottalkpp\data\INDEXES\pinocchio
+TIMER END  : 0.021821900 s
+ELAPSED    : 0.000232300 s
+. TIMER START: 0.021960100 s
+SETPATH: LMDB = D:\code\ccode\dottalkpp\data\LMDB\pinocchio
+TIMER END  : 0.022163600 s
+ELAPSED    : 0.000203500 s
+. TIMER START: 0.022323000 s
+; === D0. open STUDENTS + ENROLL; assert PARALLEL starts OFF ===
+TIMER END  : 0.022422100 s
+ELAPSED    : 0.000099100 s
+. TIMER START: 0.022555600 s
+Selected area 1.
+Current area: 1
+TIMER END  : 0.022677200 s
+ELAPSED    : 0.000121600 s
+. TIMER START: 0.022819000 s
+Opened STUDENTS (v64) : Record count 1000000
+Valid Index/Indices   : CDX, CNX
+Auto-attached order: STUDENTS.cdx (tag: SID)
+TIMER END  : 0.029632700 s
+ELAPSED    : 0.006813700 s
+. TIMER START: 0.029765800 s
+Selected area 2.
+Current area: 2
+TIMER END  : 0.029816600 s
+ELAPSED    : 0.000050800 s
+. TIMER START: 0.029876900 s
+Opened ENROLL (v64) : Record count 5501358
+Valid Index/Indices   : CDX, CNX
+Auto-attached order: ENROLL.cdx (tag: SID)
+TIMER END  : 0.034814300 s
+ELAPSED    : 0.004937400 s
+. TIMER START: 0.034950700 s
+Selected area 1.
+Current area: 1
+  File: D:\code\ccode\dottalkpp\data\dbf\pinocchio\STUDENTS.dbf  Recs: 1000000  Recno: 1
+TIMER END  : 0.035109800 s
+ELAPSED    : 0.000159100 s
+. TIMER START: 0.035181900 s
+SET PARALLEL: OFF
+TIMER END  : 0.035235600 s
+ELAPSED    : 0.000053700 s
+. TIMER START: 0.035307100 s
+; === D1-OFF. function-WHERE count (I5 form): expect 90700 ===
+TIMER END  : 0.035364700 s
+ELAPSED    : 0.000057600 s
+. TIMER START: 0.035437000 s
+SET PARALLEL: OFF
+TIMER END  : 0.035490000 s
+ELAPSED    : 0.000053000 s
+. TIMER START: 0.035753900 s
+COUNT(*)
+90700
+1 row(s) selected.
+TIMER END  : 46.591825000 s
+ELAPSED    : 46.556071100 s
+. TIMER START: 46.591924900 s
+; === D1-ON. same statement, workers=6: expect 90700 and the workers=6 path line ===
+TIMER END  : 46.591994400 s
+ELAPSED    : 0.000069500 s
+. TIMER START: 46.592053500 s
+SET PARALLEL: 6 worker(s)
+TIMER END  : 46.592140700 s
+ELAPSED    : 0.000087200 s
+. TIMER START: 46.592232100 s
+SQLSEL: single-table scan access path -- parallel (workers=6, rows=1000000, recno-range partitions).
+COUNT(*)
+90700
+1 row(s) selected.
+TIMER END  : 60.950527400 s
+ELAPSED    : 14.358295300 s
+. TIMER START: 60.950693700 s
+; === D2. torn-partition bands, OFF then ON -- five seams, expect 100 each, ALL pairs equal ===
+TIMER END  : 60.950807900 s
+ELAPSED    : 0.000114200 s
+. TIMER START: 60.950926400 s
+SET PARALLEL: OFF
+TIMER END  : 60.951011900 s
+ELAPSED    : 0.000085500 s
+. TIMER START: 60.951134300 s
+COUNT(*)
+100
+1 row(s) selected.
+TIMER END  : 95.909847700 s
+ELAPSED    : 34.958713400 s
+. TIMER START: 95.909941700 s
+COUNT(*)
+100
+1 row(s) selected.
+TIMER END  : 136.915140800 s
+ELAPSED    : 41.005199100 s
+. TIMER START: 136.915257100 s
+COUNT(*)
+100
+1 row(s) selected.
+TIMER END  : 178.070576200 s
+ELAPSED    : 41.155319100 s
+. TIMER START: 178.070753200 s
+COUNT(*)
+100
+1 row(s) selected.
+TIMER END  : 218.012994100 s
+ELAPSED    : 39.942240900 s
+. TIMER START: 218.013331100 s
+COUNT(*)
+100
+1 row(s) selected.
+TIMER END  : 258.552198000 s
+ELAPSED    : 40.538866900 s
+. TIMER START: 258.552305300 s
+SET PARALLEL: 6 worker(s)
+TIMER END  : 258.552363600 s
+ELAPSED    : 0.000058300 s
+. TIMER START: 258.552454900 s
+SQLSEL: single-table scan access path -- parallel (workers=6, rows=1000000, recno-range partitions).
+COUNT(*)
+100
+1 row(s) selected.
+TIMER END  : 267.356487100 s
+ELAPSED    : 8.804032200 s
+. TIMER START: 267.356706400 s
+SQLSEL: single-table scan access path -- parallel (workers=6, rows=1000000, recno-range partitions).
+COUNT(*)
+100
+1 row(s) selected.
+TIMER END  : 276.264015200 s
+ELAPSED    : 8.907308800 s
+. TIMER START: 276.264116600 s
+SQLSEL: single-table scan access path -- parallel (workers=6, rows=1000000, recno-range partitions).
+COUNT(*)
+100
+1 row(s) selected.
+TIMER END  : 285.220910000 s
+ELAPSED    : 8.956793400 s
+. TIMER START: 285.221014900 s
+SQLSEL: single-table scan access path -- parallel (workers=6, rows=1000000, recno-range partitions).
+COUNT(*)
+100
+1 row(s) selected.
+TIMER END  : 294.201792600 s
+ELAPSED    : 8.980777700 s
+. TIMER START: 294.201900100 s
+SQLSEL: single-table scan access path -- parallel (workers=6, rows=1000000, recno-range partitions).
+COUNT(*)
+100
+1 row(s) selected.
+TIMER END  : 303.310139600 s
+ELAPSED    : 9.108239500 s
+. TIMER START: 303.310301700 s
+; === D3. bare COUNT(*) both modes: expect 1000000 twice ===
+TIMER END  : 303.310426900 s
+ELAPSED    : 0.000125200 s
+. TIMER START: 303.310563600 s
+SET PARALLEL: OFF
+TIMER END  : 303.310648700 s
+ELAPSED    : 0.000085100 s
+. TIMER START: 303.310791600 s
+COUNT(*)
+1000000
+1 row(s) selected.
+TIMER END  : 324.457266200 s
+ELAPSED    : 21.146474600 s
+. TIMER START: 324.457353400 s
+SET PARALLEL: 6 worker(s)
+TIMER END  : 324.457429000 s
+ELAPSED    : 0.000075600 s
+. TIMER START: 324.457507800 s
+SQLSEL: single-table scan access path -- parallel (workers=6, rows=1000000, recno-range partitions).
+COUNT(*)
+1000000
+1 row(s) selected.
+TIMER END  : 329.396507400 s
+ELAPSED    : 4.938999600 s
+. TIMER START: 329.396726900 s
+; === D4. row-returning + ORDER BY + LIMIT both modes: SAME 5 rows, same order ===
+TIMER END  : 329.396899700 s
+ELAPSED    : 0.000172800 s
+. TIMER START: 329.397031700 s
+SET PARALLEL: OFF
+TIMER END  : 329.397138000 s
+ELAPSED    : 0.000106300 s
+. TIMER START: 329.397315300 s
+SID | LNAME
+50000006 | Anderson
+50000008 | Anderson
+50000010 | Anderson
+50000027 | Anderson
+50000068 | Anderson
+5 row(s) selected.
+SQLSEL: LIMIT reached; 95 more row(s) available.
+SQLSEL: ORDER BY LNAME ASC -- materialized sort over 100 matching row(s).
+TIMER END  : 367.102195400 s
+ELAPSED    : 37.704880100 s
+. TIMER START: 367.102290100 s
+SET PARALLEL: 6 worker(s)
+TIMER END  : 367.102351000 s
+ELAPSED    : 0.000060900 s
+. TIMER START: 367.102426800 s
+SQLSEL: single-table scan access path -- parallel (workers=6, rows=1000000, recno-range partitions).
+SID | LNAME
+50000006 | Anderson
+50000008 | Anderson
+50000010 | Anderson
+50000027 | Anderson
+50000068 | Anderson
+5 row(s) selected.
+SQLSEL: LIMIT reached; 95 more row(s) available.
+SQLSEL: ORDER BY LNAME ASC -- materialized sort over 100 matching row(s).
+TIMER END  : 376.185809800 s
+ELAPSED    : 9.083383000 s
+. TIMER START: 376.185931800 s
+; === D5. ENROLL at 5.5M both modes over the seek-join fact: expect 5501358 ===
+TIMER END  : 376.186069000 s
+ELAPSED    : 0.000137200 s
+. TIMER START: 376.186124800 s
+Selected area 2.
+Current area: 2
+  File: D:\code\ccode\dottalkpp\data\dbf\pinocchio\ENROLL.dbf  Recs: 5501358  Recno: 1
+TIMER END  : 376.186261300 s
+ELAPSED    : 0.000136500 s
+. TIMER START: 376.186318200 s
+SET PARALLEL: OFF
+TIMER END  : 376.186371700 s
+ELAPSED    : 0.000053500 s
+. TIMER START: 376.186485500 s
+COUNT(*)
+5501358
+1 row(s) selected.
+TIMER END  : 457.513109600 s
+ELAPSED    : 81.326624100 s
+. TIMER START: 457.513316500 s
+SET PARALLEL: 6 worker(s)
+TIMER END  : 457.513432700 s
+ELAPSED    : 0.000116200 s
+. TIMER START: 457.513572400 s
+SQLSEL: single-table scan access path -- parallel (workers=6, rows=5501358, recno-range partitions).
+COUNT(*)
+5501358
+1 row(s) selected.
+TIMER END  : 474.436971200 s
+ELAPSED    : 16.923398800 s
+. TIMER START: 474.437169800 s
+Selected area 1.
+Current area: 1
+  File: D:\code\ccode\dottalkpp\data\dbf\pinocchio\STUDENTS.dbf  Recs: 1000000  Recno: 1
+TIMER END  : 474.437517800 s
+ELAPSED    : 0.000348000 s
+. TIMER START: 474.437699200 s
+; === P1. DECLINE HONESTY: subquery predicate under ON must decline + exact 1000 ===
+TIMER END  : 474.437862200 s
+ELAPSED    : 0.000163000 s
+. TIMER START: 474.437996600 s
+SET PARALLEL: 6 worker(s)
+TIMER END  : 474.438084400 s
+ELAPSED    : 0.000087800 s
+. TIMER START: 474.438207100 s
+SQLSEL: parallel declined -- subquery predicate (shared subquery runtime); scanning serial.
+SQLSEL: single-table scan access path -- parallel (workers=6, rows=5501358, recno-range partitions).
+SQLSEL: subquery evaluation count -- correlated=0, uncorrelated=1.
+COUNT(*)
+1000
+1 row(s) selected.
+TIMER END  : 574.744547000 s
+ELAPSED    : 100.306339900 s
+. TIMER START: 574.744674100 s
+; === P2. DECLINE HONESTY: 200-row sample must decline (too small) + exact 21 ===
+TIMER END  : 574.744752100 s
+ELAPSED    : 0.000078000 s
+. TIMER START: 574.744808700 s
+SETPATH: DBF = D:\code\ccode\dottalkpp\data\DBF\x64
+TIMER END  : 574.744979500 s
+ELAPSED    : 0.000170800 s
+. TIMER START: 574.745033600 s
+Selected area 3.
+Current area: 3
+TIMER END  : 574.745074000 s
+ELAPSED    : 0.000040400 s
+. TIMER START: 574.745120900 s
+USE: alias 'STUDENTS' is held by area 1 in this workspace; this instance is named 'STUDENTS2'. Use ALIAS to choose your own.
+Opened STUDENTS2 (v64) : Record count 200
+Valid Index/Indices   : CDX, CNX
+TIMER END  : 574.765846800 s
+ELAPSED    : 0.020725900 s
+. TIMER START: 574.766031900 s
+SQLSEL: single-table scan access path -- parallel (workers=6, rows=1000000, recno-range partitions).
+COUNT(*)
+90700
+1 row(s) selected.
+TIMER END  : 590.808843300 s
+ELAPSED    : 16.042811400 s
+. TIMER START: 590.809142000 s
+Closed.
+TIMER END  : 590.810089000 s
+ELAPSED    : 0.000947000 s
+. TIMER START: 590.810282700 s
+Selected area 1.
+Current area: 1
+  File: D:\code\ccode\dottalkpp\data\dbf\pinocchio\STUDENTS.dbf  Recs: 1000000  Recno: 1
+TIMER END  : 590.810720900 s
+ELAPSED    : 0.000438200 s
+. TIMER START: 590.811017200 s
+SETPATH: DBF = D:\code\ccode\dottalkpp\data\DBF\pinocchio
+TIMER END  : 590.811425500 s
+ELAPSED    : 0.000408300 s
+. TIMER START: 590.811674800 s
+; === D6. cleanup: PARALLEL back OFF (the default this build ships with) ===
+TIMER END  : 590.811873100 s
+ELAPSED    : 0.000198300 s
+. TIMER START: 590.812077800 s
+SET PARALLEL: OFF
+TIMER END  : 590.812220600 s
+ELAPSED    : 0.000142800 s
+. TIMER START: 590.812400400 s
+SET PARALLEL: OFF
+TIMER END  : 590.812529700 s
+ELAPSED    : 0.000129300 s
+. TIMER START: 590.812701700 s
+Selected area 2.
+Current area: 2
+  File: D:\code\ccode\dottalkpp\data\dbf\pinocchio\ENROLL.dbf  Recs: 5501358  Recno: 1
+TIMER END  : 590.812948200 s
+ELAPSED    : 0.000246500 s
+. TIMER START: 590.813101700 s
+Closed.
+TIMER END  : 590.815590700 s
+ELAPSED    : 0.002489000 s
+. TIMER START: 590.815682800 s
+Selected area 1.
+Current area: 1
+  File: D:\code\ccode\dottalkpp\data\dbf\pinocchio\STUDENTS.dbf  Recs: 1000000  Recno: 1
+TIMER END  : 590.815848400 s
+ELAPSED    : 0.000165600 s
+. TIMER START: 590.816271100 s
+Closed.
+TIMER END  : 590.818845800 s
+ELAPSED    : 0.002574700 s
+. TIMER START: 590.819086000 s
+; ============================================================
+TIMER END  : 590.819177000 s
+ELAPSED    : 0.000091000 s
+. TIMER START: 590.819375600 s
+; PARALLEL DIFFERENTIAL COMPLETE. Confirm and record:
+TIMER END  : 590.819477500 s
+ELAPSED    : 0.000101900 s
+. TIMER START: 590.819667000 s
+; D1 : 90700 == 90700; the ON leg prints workers=6 in its path line.
+TIMER END  : 590.819785500 s
+ELAPSED    : 0.000118500 s
+. TIMER START: 590.819965200 s
+; D2 : five torn-seam bands, 100 each, OFF == ON pairwise.
+TIMER END  : 590.820081200 s
+ELAPSED    : 0.000116000 s
+. TIMER START: 590.820256100 s
+; D3 : 1000000 == 1000000.   D5: 5501358 == 5501358.
+TIMER END  : 590.820361700 s
+ELAPSED    : 0.000105600 s
+. TIMER START: 590.820581800 s
+; D4 : identical 5 rows in identical order (ORDER BY sorts the merge).
+TIMER END  : 590.820725600 s
+ELAPSED    : 0.000143800 s
+. TIMER START: 590.820888100 s
+; P1 : declined (subquery) + 1000 exact.  P2: declined (small) + 21 exact.
+TIMER END  : 590.821085500 s
+ELAPSED    : 0.000197400 s
+. TIMER START: 590.821232500 s
+; ELAPSED ratios OFF vs ON are the speedup datum; record the curve by
+TIMER END  : 590.821311900 s
+ELAPSED    : 0.000079400 s
+. TIMER START: 590.821454400 s
+; rerunning D1/D3 at SET PARALLEL 2, 4, 6, 8, 12, 16, 22 (OQ-P1).
+TIMER END  : 590.821537700 s
+ELAPSED    : 0.000083300 s
+. TIMER START: 590.821688900 s
+; ============================================================
+TIMER END  : 590.821753200 s
+ELAPSED    : 0.000064300 s
+. SHUTDOWN: processing D:\code\ccode\dottalkpp\bin\shutdown.ini
