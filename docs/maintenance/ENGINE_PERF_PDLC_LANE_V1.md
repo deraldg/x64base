@@ -406,6 +406,46 @@ interesting number is function-WHERE at 8-12 workers). Gate: six
 regressions green (EVALDIFF 22/22), the parallel differential
 pairwise-identical again, then the curve rerun.
 
+#### PERF-1c MEASURED 2026-09-22 -- 1.3-2.2x serial; 1M rows under one second
+
+Committed 7f26cf0cb (build stamp Sep 22 2026 12:10:53). Six regressions
+PASS, then the differential (sha256:5E655922...,
+parallel_diff_teed_20260922T121137Z): every pair identical AGAIN, and the
+small-table decline got its first runtime witness (MAJORS, 11 exact,
+"table too small to partition").
+
+Differential, PERF-1b -> PERF-1c build:
+
+    serial:  D5 5.5M COUNT 81.3->36.6 (2.2x)  D3 bare 21.1->12.1 (1.7x)
+             D2 band ~38->~24 (1.6x)  D4 37.7->24.5  D1 func 46.6->35.6 (1.3x)
+    ON-6:    D5 16.9->7.8   D3 4.9->1.70   D2 8.9->5.5   D4 9.1->5.1
+             D1 14.4->10.0   P1 subquery 100.3->65.4
+
+Curve rerun (console; serial baselines 35.6 / 12.1):
+
+    workers      2      4      6      8      12     16     22
+    func-WHERE  15.1   10.7   10.5   10.5   10.8   12.5   13.1 s
+    bare COUNT   3.4    1.9    1.5    1.2    0.97   1.3    1.2 s
+
+FINDINGS. (1) ONE MILLION ROWS COUNTED IN 0.97 s at 12 workers -- 12.5x vs
+serial, superlinear because workers skip the eager decode the serial
+top/skip navigation still performs. E-cores EARN their keep on cheap rows.
+(2) Function-WHERE improved absolutely (15.6 -> 10.5 s) but its PLATEAU
+persists (flat 6-12, degrading past): with plan-side allocations gone, the
+cap is the FUNCTION EVALUATION itself -- ALLTRIM/UPPER temporaries and the
+copy-returning RecordView accessor signatures. Fixing that is an
+engine-wide RecordView contract change: the platinum item this charter
+priced and deferred, now with a measurement attached. (3) DEFAULT STAYS 8:
+ties 6/12 on the expensive case, loses 0.24 s on the trivial one.
+(4) OQ-P3 CLOSED BEYOND ITS OWN TERMS: serial simple-WHERE ~22-24 us/row
+and serial bare COUNT ~12 us/row are AT OR BELOW the native loop's rates
+(native COUNT FOR: 28-29 s on the same table). The typed premium -- 8x when
+this lane opened -- is eliminated, not merely accepted.
+
+LANE LEDGER, Saturday to Monday: function-WHERE 394.7 s -> 10.5 s (38x);
+bare 1M COUNT ~21 s serial-double-decode -> 0.97 s (22x); 5.5M COUNT
+~148 s tag walk -> 7.8 s (19x). Identities exact through every step.
+
 ## 5. Open rulings, placed where they block
 
 - OQ-P1 -- ANSWERED BY MEASUREMENT 2026-09-22: default 8 (see the curve in
