@@ -57,15 +57,27 @@ cheaper rows. Indicative ceiling on the observed box: 200 us -> ~15 us/row
   on a wrong answer must be impossible to read as green.
 - **R23/R25 (SQLsel lane): gold by default; platinum priced and deferred.**
 
-## 3. Sequencing -- blocked, and by exactly what
+## 3. Sequencing -- CORRECTED 2026-09-21: the gate already closed
 
-BLOCKED BEHIND ED-01a and P4.0b (SQLsel charter). The classic evaluator IS a
-shared DbArea cursor (R21 hazard embodied); only the row-stateless TupleRow
-path can fan out. P4.0b migrates SQLsel's WHERE to that path once EVALDIFF is
-green with CORRECT verdicts. This lane starts the day that gate closes, and
-not before. (The hash-set IN fix and validate-before-materialize repairs from
-AIF-167's findings are SQLsel-lane work, not this lane -- they remove
-algorithmic cliffs; this lane lowers the constant and multiplies it.)
+This section shipped 2026-09-21 claiming the lane was BLOCKED BEHIND ED-01a
+and P4.0b. THAT WAS STALE ON ARRIVAL: both evaluator defects were repaired on
+2026-09-03 and P4.0b was COMPLETED in the same run -- SQLsel WHERE evaluates
+committed-truth TupleRows through the {TRUE,FALSE,ERROR} seam, EVALDIFF is
+22/22 green under a fail-closed exact-vector validator, and both are
+DEFAULT-SUITE PROMOTED (EVALUATOR_DIFFERENTIAL_HARNESS_SCOPE_V1.md,
+"2026-09-03 repair result"; SQLSEL_PDLC_LANE_V1.md phase register, P4.0a/b).
+The error: the charter author cited the 2026-07-30 handoff's phase state
+without re-reading the scope doc's September section -- the OI-024 shape,
+recorded here so the correction travels with the claim.
+
+CONSEQUENCE: this lane is START-READY. The R21 reasoning above stands (only
+the row-stateless TupleRow path fans out) -- it is now a satisfied
+precondition, not a blocker. PERF-1 can begin immediately. PERF-2 still waits
+on PERF-1's exit (parallelizing a 208 us/row interpreter rents cores to
+multiply overhead) and on the OQ-P1..P3 rulings where marked. (The hash-set
+IN fix and validate-before-materialize repairs from AIF-167's findings landed
+2026-09-21, commit 54d1a7231 -- SQLsel-lane work that removed algorithmic
+cliffs; this lane lowers the constant and multiplies it.)
 
 ## 4. The two slices
 
@@ -81,6 +93,45 @@ Gate G-P1: the FULL 3a + star batteries rerun with identical identity results
 (I1-I13 exact), and the ELAPSED ratio per statement is the datum. A single
 divergent count fails the slice regardless of speed. Oracle unchanged (SQLite
 gates stay green).
+
+#### PERF-1a AUTHORED 2026-09-21 (pending build + regression + measurement)
+
+Source read found the constant's largest single component NOT in the AST walk
+but in view construction: `exprglue::make_record_view` (expr_tuple_glue.hpp)
+built a CiIndex (two hash maps over every column) per call and then copied
+BOTH the TupleRow and that index BY VALUE into three separate std::function
+closures -- three deep copies of every cell string, per row evaluated, at
+every `evaluate_tuple_predicate` call site (WHERE scans, join ON loops, HAVING,
+DML selection) plus the projection loop, which built the view even when every
+select-list item was a direct column and nothing read it.
+
+The slice: `TupleViewContext` (expr_tuple_glue.hpp) builds the index once per
+column LAYOUT and rebinds rows by pointer assignment; accessor bodies are the
+same code reading through the pointer, so semantics are identical, including
+ProducedAbsent, the EMPTY-identifier path, and ISNULL's deliberate refusal. A
+layout guard (column count + first/last names) rebuilds on shape change.
+`evaluate_tuple_predicate` gains a context overload; eight hot loops hoist a
+context (chain ON, chain WHERE, two-table ON, join WHERE, HAVING, single-table
+scan, UPDATE, DELETE); the projection loop binds lazily and skips the view for
+all-direct select lists. Cold one-shot sites keep the old signature through a
+wrapper that is itself cheaper (no row copies). EVALDIFF's own harness path
+(cmd_evaldiff.cpp) is deliberately UNTOUCHED so the differential oracle stays
+byte-identical.
+
+HONEST EXPECTATION: this removes per-row-eval 3x row deep copy + 4x hash-map
+build/copy + 3x std::function churn; it does NOT touch build_tuple_from_spec's
+all-column string materialization, the per-row alias rename loop, or the AST
+walk itself. Predicted 1.5-3x on the 3a battery's WHERE scans (wider rows gain
+more); the 208 -> 15-30 us target still needs PERF-1b. The measured claim
+comes from the G-P1 rerun, not from this paragraph.
+
+PERF-1b backlog, pinned to lines during the same read (sqlsel_statement.cpp
+post-slice numbering): build_tuple_from_spec materializes every column per
+predicate row (:2996); the alias rename loop reconcatenates every column name
+per row (:3002); evaluate_store_expression RE-COMPILES the value expression
+per UPDATE row (:3722); db_tuple_stream::passes_filter_on_tuple and
+tuple_graph_cursor still call the copying make_record_view (browser FOR and
+REL-graph paths, outside this battery's gate).
 
 ### PERF-2 -- SET PARALLEL <n>: partitioned read-only scans
 

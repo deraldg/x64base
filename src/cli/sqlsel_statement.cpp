@@ -452,17 +452,30 @@ PredicateState evaluate_tuple_predicate_node(const dottalk::expr::Expr* node,
 // cells yield UNKNOWN without pretending that x64base stores SQL NULL. Boolean
 // composition follows SQL truth tables, while every other evaluator error
 // remains a reported failure.
+// PERF-1a (AIF-168): the context overload is the hot path -- the caller
+// hoists one TupleViewContext out of its row loop and the per-row cost drops
+// from copy-row-three-times-plus-build-two-hash-maps to a pointer rebind.
 PredicateVerdict evaluate_tuple_predicate(const dottalk::expr::Expr* program,
-                                          const dottalk::TupleRow& row) {
+                                          const dottalk::TupleRow& row,
+                                          dottalk::exprglue::TupleViewContext& view_ctx) {
     if (!program) return {PredicateState::True, {}};
     try {
-        const auto view = dottalk::exprglue::make_record_view(row);
+        const auto& view = view_ctx.view_for(row);
         return {evaluate_tuple_predicate_node(program, view), {}};
     } catch (const std::exception& ex) {
         return {PredicateState::Error, ex.what()};
     } catch (...) {
         return {PredicateState::Error, "unknown predicate evaluation error"};
     }
+}
+
+// One-shot convenience for cold call sites (subquery scalar comparisons and
+// the like). Still cheaper than the old body: the context builds the index
+// once but never deep-copies the row into the closures.
+PredicateVerdict evaluate_tuple_predicate(const dottalk::expr::Expr* program,
+                                          const dottalk::TupleRow& row) {
+    dottalk::exprglue::TupleViewContext local_ctx;
+    return evaluate_tuple_predicate(program, row, local_ctx);
 }
 
 enum class JoinKind { Inner, Left, Right, Full, Cross };
@@ -789,6 +802,9 @@ bool execute_multi_join(const std::string& select_list,
             }
             on = std::move(compiled.program);
         }
+        // PERF-1a: one view context per stage; candidate layout is constant
+        // within a stage, so the index builds once and rows rebind by pointer.
+        dottalk::exprglue::TupleViewContext on_view_ctx;
         std::vector<dottalk::TupleRow> joined;
         for (const auto& left_row : rows) {
             bool matched = false;
@@ -796,7 +812,7 @@ bool execute_multi_join(const std::string& select_list,
                 dottalk::TupleRow candidate = combine_join_rows(left_row, right_row);
                 bool keep = stage.kind == JoinKind::Cross;
                 if (on) {
-                    const PredicateVerdict verdict = evaluate_tuple_predicate(on.get(), candidate);
+                    const PredicateVerdict verdict = evaluate_tuple_predicate(on.get(), candidate, on_view_ctx);
                     if (verdict.state == PredicateState::Error) {
                         std::cout << "SQLSEL: JOIN stage " << (stage_index + 1)
                                   << " ON evaluation failed: " << verdict.error << "\n";
@@ -824,9 +840,10 @@ bool execute_multi_join(const std::string& select_list,
                       << " (" << compiled.error << ")\n";
             return true;
         }
+        dottalk::exprglue::TupleViewContext where_view_ctx;   // PERF-1a
         std::vector<dottalk::TupleRow> filtered;
         for (auto& row : rows) {
-            const PredicateVerdict verdict = evaluate_tuple_predicate(compiled.program.get(), row);
+            const PredicateVerdict verdict = evaluate_tuple_predicate(compiled.program.get(), row, where_view_ctx);
             if (verdict.state == PredicateState::Error) {
                 std::cout << "SQLSEL: predicate evaluation failed: " << verdict.error << "\n";
                 return true;
@@ -1130,6 +1147,9 @@ bool execute_join(const std::string& select_list,
     std::size_t index_candidates = 0;
     std::size_t scan_probes = 0;
     std::string join_evaluation_error;
+    // PERF-1a: hoisted out of the candidate loops; the joined-candidate
+    // layout is constant for the whole statement.
+    dottalk::exprglue::TupleViewContext on_view_ctx;
 
     for (std::uint64_t li = 1; li <= left_count; ++li) {
         std::vector<std::string> lv;
@@ -1150,7 +1170,7 @@ bool execute_join(const std::string& select_list,
             if (simple_equi_on) {
                 matches = value_equal(lv[on_left.field_index], rv[on_right.field_index]);
             } else if (on_program) {
-                const PredicateVerdict verdict = evaluate_tuple_predicate(on_program.get(), candidate);
+                const PredicateVerdict verdict = evaluate_tuple_predicate(on_program.get(), candidate, on_view_ctx);
                 if (verdict.state == PredicateState::Error) {
                     join_evaluation_error = verdict.error;
                     return;
@@ -1277,10 +1297,11 @@ bool execute_join(const std::string& select_list,
     }
 
     if (where_program) {
+        dottalk::exprglue::TupleViewContext where_view_ctx;   // PERF-1a
         std::vector<dottalk::TupleRow> filtered;
         filtered.reserve(rows.size());
         for (auto& tuple : rows) {
-            const PredicateVerdict verdict = evaluate_tuple_predicate(where_program.get(), tuple);
+            const PredicateVerdict verdict = evaluate_tuple_predicate(where_program.get(), tuple, where_view_ctx);
             if (verdict.state == PredicateState::Error) {
                 std::cout << "SQLSEL: predicate evaluation failed: " << verdict.error << "\n";
                 return true;
@@ -1960,11 +1981,18 @@ bool project_query_expressions(const std::string& select_list,
     for (const Plan& plan : plans) {
         result.columns.push_back({plan.label, -1, plan.label, plan.type, 0, 0});
     }
+    // PERF-1a: build the view only when some select-list item is an
+    // expression -- an all-direct projection was paying three row copies per
+    // row for a view nothing read. When needed, one context serves the loop.
+    const bool needs_view = std::any_of(plans.begin(), plans.end(),
+        [](const Plan& plan) { return !plan.direct; });
+    dottalk::exprglue::TupleViewContext projection_view_ctx;
     for (const auto& source_row : source.rows) {
         dottalk::TupleRow projected;
         projected.columns = result.columns;
         projected.fragments = source_row.fragments;
-        const auto view = dottalk::exprglue::make_record_view(source_row);
+        const dottalk::expr::RecordView* view =
+            needs_view ? &projection_view_ctx.view_for(source_row) : nullptr;
         for (const Plan& plan : plans) {
             if (plan.direct) {
                 projected.values.push_back(source_row.values[*plan.direct]);
@@ -1972,7 +2000,7 @@ bool project_query_expressions(const std::string& select_list,
                 continue;
             }
             try {
-                projected.values.push_back(trim(plan.expression->evalString(view)));
+                projected.values.push_back(trim(plan.expression->evalString(*view)));
                 projected.cell_kinds.push_back(dottalk::TupleCellKind::Present);
             } catch (const dottalk::exprglue::ProducedAbsentCellAccess&) {
                 projected.values.emplace_back();
@@ -2460,6 +2488,7 @@ bool execute_aggregate_term(const std::string& tail,
                       << " (" << compiled.error << ")\n";
             return true;
         }
+        dottalk::exprglue::TupleViewContext having_view_ctx;   // PERF-1a
         std::vector<dottalk::TupleRow> retained;
         for (auto& row : result.rows) {
             dottalk::TupleRow evaluation = row;
@@ -2469,7 +2498,7 @@ bool execute_aggregate_term(const std::string& tail,
                     evaluation.columns[i].field = evaluation.columns[i].name;
                 }
             }
-            const PredicateVerdict verdict = evaluate_tuple_predicate(compiled.program.get(), evaluation);
+            const PredicateVerdict verdict = evaluate_tuple_predicate(compiled.program.get(), evaluation, having_view_ctx);
             if (verdict.state == PredicateState::Error) {
                 std::cout << "SQLSEL: HAVING evaluation failed: " << verdict.error << "\n";
                 return true;
@@ -2923,6 +2952,9 @@ bool execute_select_term(const std::string& tail_in, QueryResult* result_out) {
         }
         pred = std::move(compiled.program);
     }
+    // PERF-1a: one view context for the whole scan; the predicate row's
+    // layout (alias-prefixed columns of one table) is constant per statement.
+    dottalk::exprglue::TupleViewContext scan_view_ctx;
 
     // --- scan, projecting each surviving row ---------------------------------
     // Cursor neutrality (R16b): remember where every cursor was and put it back.
@@ -2980,7 +3012,7 @@ bool execute_select_term(const std::string& tail_in, QueryResult* result_out) {
                         }
                         keep = verdict == PredicateState::True;
                     } else {
-                        const auto verdict = evaluate_tuple_predicate(pred.get(), predicate_row.row);
+                        const auto verdict = evaluate_tuple_predicate(pred.get(), predicate_row.row, scan_view_ctx);
                         if (verdict.state == PredicateState::Error) {
                             scan_error = "predicate evaluation failed: " + verdict.error;
                             break;
@@ -4070,9 +4102,10 @@ bool execute_update_statement(const std::string& statement) {
         std::cout << "SQLSEL: UPDATE refused -- " << error << ".\n";
         return true;
     }
+    dottalk::exprglue::TupleViewContext dml_view_ctx;   // PERF-1a
     std::vector<PendingDmlRow> changes;
     for (const auto& row : rows) {
-        const auto verdict = evaluate_tuple_predicate(predicate.program.get(), row);
+        const auto verdict = evaluate_tuple_predicate(predicate.program.get(), row, dml_view_ctx);
         if (verdict.state == PredicateState::Error) {
             error = verdict.error;
             break;
@@ -4144,9 +4177,10 @@ bool execute_delete_statement(const std::string& statement) {
         std::cout << "SQLSEL: DELETE refused -- " << error << ".\n";
         return true;
     }
+    dottalk::exprglue::TupleViewContext dml_view_ctx;   // PERF-1a
     std::vector<PendingDmlRow> changes;
     for (const auto& row : rows) {
-        const auto verdict = evaluate_tuple_predicate(predicate.program.get(), row);
+        const auto verdict = evaluate_tuple_predicate(predicate.program.get(), row, dml_view_ctx);
         if (verdict.state == PredicateState::Error) {
             error = verdict.error;
             break;

@@ -10,6 +10,7 @@
 #pragma once
 // Bind the dottalk::expr AST engine to TupleRow for tuple-value FOR evaluation.
 // Built-ins: RECNO(), DELETED(), best-effort EMPTY(<FIELD>).
+#include <cstddef>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -196,5 +197,120 @@ inline dottalk::expr::RecordView make_record_view(const TupleRow& row) {
 
     return rv;
 }
+
+// PERF-1a (AIF-168, 2026-09-21): make_record_view() above is correct but
+// expensive in a loop. Each call builds a CiIndex (two hash maps over every
+// column) and then copies BOTH the TupleRow and that index BY VALUE into
+// three separate std::function closures -- three deep copies of every cell
+// string, per row evaluated. At Pinocchio scale that is the dominant share
+// of the measured ~208 us/row SQLsel constant.
+//
+// This context builds the index once per column LAYOUT and rebinds rows by
+// pointer assignment; the closures capture `this` and read through it.
+// Semantics are IDENTICAL to make_record_view -- the accessor bodies are the
+// same code reading *current_ instead of a captured copy (the dead is_bare
+// lambda is not carried over; it had no effect).
+//
+// Contract: the RecordView& returned by view_for() is valid only while this
+// context AND the bound row are both alive and unmoved -- bind, evaluate,
+// discard, per row, exactly as the hot loops use it. The layout guard
+// (column count + first/last column names) rebuilds the index when a
+// differently shaped row arrives, so a context shared across stages stays
+// correct; it exists to make layout drift SAFE, not to encourage sharing one
+// context across unrelated loops.
+class TupleViewContext {
+public:
+    const dottalk::expr::RecordView& view_for(const TupleRow& row) {
+        if (!layout_matches(row)) rebuild(row);
+        current_ = &row;
+        return view_;
+    }
+
+private:
+    bool layout_matches(const TupleRow& row) const {
+        if (!idx_) return false;
+        if (row.columns.size() != layout_count_) return false;
+        if (layout_count_ == 0) return true;
+        return row.columns.front().name == layout_first_ &&
+               row.columns.back().name == layout_last_;
+    }
+
+    void rebuild(const TupleRow& row) {
+        idx_.emplace(row);
+        layout_count_ = row.columns.size();
+        layout_first_ = layout_count_ ? row.columns.front().name : std::string();
+        layout_last_  = layout_count_ ? row.columns.back().name  : std::string();
+        wire();
+    }
+
+    void wire() {
+        view_.get_field_str = [this](std::string_view name) -> std::string {
+            const TupleRow& row = *current_;
+            if (dottalk::expr::iequals(name, "RECNO()") || dottalk::expr::iequals(name, "RECNO")) {
+                if (auto n = tuple_recno_number(row)) {
+                    long v = static_cast<long>(*n + 1e-9);
+                    return std::to_string(v);
+                }
+                return {};
+            }
+            if (dottalk::expr::iequals(name, "DELETED()") || dottalk::expr::iequals(name, "DELETED")) {
+                return tuple_deleted(row) ? "T" : "F";
+            }
+            if (auto em = try_eval_empty_identifier(std::string(name), *idx_, row)) {
+                return (*em ? "1" : "0");
+            }
+            if (auto pos = idx_->find(name)) {
+                require_present_cell(row, *pos, name);
+                return norm_by_collation(row.values[*pos]);
+            }
+            throw std::runtime_error("unknown field '" + std::string(name) + "'");
+        };
+
+        view_.get_field_num = [this](std::string_view name) -> std::optional<double> {
+            const TupleRow& row = *current_;
+            if (dottalk::expr::iequals(name, "RECNO()") || dottalk::expr::iequals(name, "RECNO")) {
+                return tuple_recno_number(row);
+            }
+            if (dottalk::expr::iequals(name, "DELETED()") || dottalk::expr::iequals(name, "DELETED")) {
+                return tuple_deleted(row) ? 1.0 : 0.0;
+            }
+            if (auto em = try_eval_empty_identifier(std::string(name), *idx_, row)) {
+                return (*em ? 1.0 : 0.0);
+            }
+            if (auto pos = idx_->find(name)) {
+                require_present_cell(row, *pos, name);
+                const std::string value = trim(row.values[*pos]);
+                const char type = static_cast<char>(std::toupper(
+                    static_cast<unsigned char>(row.columns[*pos].ftype)));
+                if (type == 'L') {
+                    std::string logical = value;
+                    for (char& c : logical) c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+                    if (logical == ".T." || logical == "T" || logical == "TRUE" || logical == "Y") return 1.0;
+                    if (logical == ".F." || logical == "F" || logical == "FALSE" || logical == "N") return 0.0;
+                }
+                return dottalk::expr::to_number(value);
+            }
+            return std::nullopt;
+        };
+
+        view_.get_field_type = [this](std::string_view name) -> std::optional<char> {
+            if (dottalk::expr::iequals(name, "RECNO") ||
+                dottalk::expr::iequals(name, "RECCOUNT")) return 'N';
+            if (dottalk::expr::iequals(name, "DELETED")) return 'L';
+            if (auto pos = idx_->find(name)) return current_->columns[*pos].ftype;
+            return std::nullopt;
+        };
+        // get_field_is_null stays unset, exactly like make_record_view: a
+        // TupleRow source has no null concept, so ISNULL() must refuse
+        // rather than answer "not null" (see RecordView's own comment).
+    }
+
+    const TupleRow* current_ = nullptr;
+    std::optional<CiIndex> idx_;
+    std::size_t layout_count_ = 0;
+    std::string layout_first_;
+    std::string layout_last_;
+    dottalk::expr::RecordView view_;
+};
 
 } // namespace dottalk::exprglue
