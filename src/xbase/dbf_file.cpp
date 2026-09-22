@@ -334,6 +334,26 @@ bool DbArea::gotoRec64(std::uint64_t recno) {
     return readCurrent();
 }
 
+// PERF-1c (AIF-168): gotoRec64 with a RAW load -- position, read the record
+// bytes, update the deleted flag, decode NOTHING. See the header contract:
+// values are read via decodeFieldFromBuffer()/fieldNumFromBuffer() until the
+// next full readCurrent(). Body mirrors gotoRec64 exactly except the final
+// call.
+bool DbArea::gotoRec64Raw(std::uint64_t recno) {
+    if (recno < 1) return false;
+    if (recno > _rec_count64) return false;
+
+    _crn64 = recno;
+    _crn = (recno > static_cast<std::uint64_t>(std::numeric_limits<int32_t>::max()))
+        ? std::numeric_limits<int32_t>::max()
+        : static_cast<int32_t>(recno);
+
+    const std::streampos pos = checked_record_pos_(*this, recno);
+
+    io().seekg(pos, std::ios::beg);
+    return readCurrentRaw();
+}
+
 // 32-bit compatibility adapter. Correct for classic/VFP (format-bounded to a
 // 32-bit count); for x64 tables prefer gotoRec64.
 bool DbArea::gotoRec(int32_t recno) {

@@ -480,6 +480,49 @@ PredicateVerdict evaluate_tuple_predicate(const dottalk::expr::Expr* program,
     return evaluate_tuple_predicate(program, row, local_ctx);
 }
 
+// PERF-1c (AIF-168): collect every field name a compiled predicate can read,
+// so the scan materializes ONLY those columns. Returns false on any node
+// kind it does not recognize -- the caller then thins NOTHING (fail safe:
+// an unthinned row is merely slower, never wrong). RECNO()/DELETED() are
+// FunctionCalls with no field args and read fragments, not values; a bare
+// unknown ident still throws "unknown field" through the CiIndex miss
+// whether or not its value cell was materialized, so unmapped names cost
+// nothing to correctness.
+bool collect_predicate_fields(const dottalk::expr::Expr* node,
+                              std::vector<std::string>& out) {
+    using namespace dottalk::expr;
+    if (!node) return true;
+    if (dynamic_cast<const LitString*>(node) ||
+        dynamic_cast<const LitNumber*>(node) ||
+        dynamic_cast<const LitBool*>(node)) return true;
+    if (const auto* f = dynamic_cast<const FieldRef*>(node)) {
+        out.push_back(f->name);
+        return true;
+    }
+    if (const auto* c = dynamic_cast<const FunctionCall*>(node)) {
+        for (const auto& a : c->args) {
+            if (!collect_predicate_fields(a.get(), out)) return false;
+        }
+        return true;
+    }
+    if (const auto* c = dynamic_cast<const Cmp*>(node)) {
+        return collect_predicate_fields(c->lhs.get(), out) &&
+               collect_predicate_fields(c->rhs.get(), out);
+    }
+    if (const auto* b = dynamic_cast<const BoolBin*>(node)) {
+        return collect_predicate_fields(b->lhs.get(), out) &&
+               collect_predicate_fields(b->rhs.get(), out);
+    }
+    if (const auto* n = dynamic_cast<const Not*>(node)) {
+        return collect_predicate_fields(n->inner.get(), out);
+    }
+    if (const auto* a = dynamic_cast<const Arith*>(node)) {
+        return collect_predicate_fields(a->lhs.get(), out) &&
+               collect_predicate_fields(a->rhs.get(), out);
+    }
+    return false;   // unknown node kind -> do not thin
+}
+
 enum class JoinKind { Inner, Left, Right, Full, Cross };
 
 const char* join_kind_name(JoinKind kind) {
@@ -2997,6 +3040,32 @@ bool execute_select_term(const std::string& tail_in, QueryResult* result_out) {
             }
         }
 
+        // PERF-1c (AIF-168): thin the predicate row to the columns the AST
+        // actually references. The prototype keeps the FULL column layout
+        // (the CiIndex and unknown-field refusal semantics depend on it);
+        // only the VALUE decode is skipped, via the same field1=0 mechanism
+        // the threw-column edge already uses. Never applied under a subquery
+        // predicate -- that path parses text per row and may read any column.
+        if (pred && !subquery_where && scan_error.empty() && predicate_plan.ok) {
+            std::vector<std::string> refs;
+            if (collect_predicate_fields(pred.get(), refs)) {
+                std::vector<char> needed(predicate_plan.items.size(), 0);
+                for (const auto& rname : refs) {
+                    const std::string R = up(rname);
+                    for (std::size_t i = 0; i < predicate_plan.prototype.columns.size(); ++i) {
+                        const auto& col = predicate_plan.prototype.columns[i];
+                        if (up(col.name) == R || up(col.field) == R) needed[i] = 1;
+                    }
+                }
+                for (std::size_t i = 0; i < predicate_plan.items.size(); ++i) {
+                    if (!needed[i]) {
+                        predicate_plan.items[i].field1 = 0;
+                        predicate_plan.items[i].canonical.clear();
+                    }
+                }
+            }
+        }
+
         // ============================================================
         // PERF-2 (AIF-168): SET PARALLEL -- partitioned pass-1 scan.
         //
@@ -3073,6 +3142,19 @@ bool execute_select_term(const std::string& tail_in, QueryResult* result_out) {
                         worker_programs.push_back(std::move(compiled.program));
                     }
                 }
+                // PERF-1c: workers navigate RAW and decode from the buffer,
+                // so the ORDER BY key needs its 1-based index up front (the
+                // by-name getter reads the stale _fd under raw loads). An
+                // unresolvable field leaves 0 -> keys stay empty, and the
+                // post-scan R16d check reports the unknown field exactly as
+                // the serial path does.
+                int order_field1 = 0;
+                if (decline.empty() && !order_field.empty()) {
+                    try {
+                        const int idx0 = xfg::resolve_field_index_std(*area, order_field);
+                        if (idx0 >= 0) order_field1 = idx0 + 1;
+                    } catch (...) { order_field1 = 0; }
+                }
 
                 if (!decline.empty()) {
                     std::cout << "SQLSEL: parallel declined -- " << decline
@@ -3099,16 +3181,18 @@ bool execute_select_term(const std::string& tail_in, QueryResult* result_out) {
                         const bool want_keys = !count_star && !order_field.empty();
                         const bool want_rows = !count_star;
                         pool.emplace_back([lo, hi, program, out, want_keys, want_rows,
-                                           &area_path, &predicate_plan, &order_field]() {
+                                           order_field1, &area_path, &predicate_plan]() {
                             try {
                                 xbase::DbArea priv;
                                 priv.open(area_path);
                                 dottalk::exprglue::TupleViewContext view_ctx;
                                 for (int64_t r = lo; r <= hi; ++r) {
-                                    if (!priv.gotoRec64(static_cast<std::uint64_t>(r))) break;
+                                    // PERF-1c: RAW navigation -- no eager
+                                    // all-fields decode; the plan builder
+                                    // decodes only what the row needs.
+                                    if (!priv.gotoRec64Raw(static_cast<std::uint64_t>(r))) break;
                                     bool keep = true;
                                     try {
-                                        if (!priv.readCurrent()) break;
                                         if (priv.isDeleted()) keep = false;
                                     } catch (...) { break; }
                                     if (keep && program) {
@@ -3131,8 +3215,8 @@ bool execute_select_term(const std::string& tail_in, QueryResult* result_out) {
                                         if (want_rows) {
                                             MatchRow m;
                                             m.recno = r;
-                                            if (want_keys) {
-                                                try { m.key = trim(xfg::getFieldAsString(priv, order_field)); }
+                                            if (want_keys && order_field1 > 0) {
+                                                try { m.key = trim(priv.decodeFieldFromBuffer(order_field1)); }
                                                 catch (...) { m.key.clear(); }
                                             }
                                             out->found.push_back(std::move(m));
@@ -3183,7 +3267,10 @@ bool execute_select_term(const std::string& tail_in, QueryResult* result_out) {
 
                 bool keep = true;
                 try {
-                    if (!area->readCurrent()) break;
+                    // PERF-1c: the explicit readCurrent here was REDUNDANT --
+                    // top()/skip() call readCurrent internally, so every row
+                    // paid TWO full all-field decodes. The buffer and deleted
+                    // flag are already fresh from the navigation.
                     if (area->isDeleted()) keep = false;
                 } catch (...) { break; }
 
@@ -3275,8 +3362,11 @@ bool execute_select_term(const std::string& tail_in, QueryResult* result_out) {
                 if (!scan_error.empty()) break;
                 if (projection_limit >= 0 && static_cast<long long>(shown) >= projection_limit) break;
                 try {
-                    area->gotoRec64(static_cast<std::uint64_t>(m.recno));
-                    if (!area->readCurrent()) break;
+                    // PERF-1c: raw positioning -- the plan builder decodes
+                    // only the selected columns from the buffer, so the
+                    // eager all-fields decode (twice, before this slice) is
+                    // gone from the projection loop entirely.
+                    if (!area->gotoRec64Raw(static_cast<std::uint64_t>(m.recno))) break;
                 } catch (...) { break; }
 
                 const dottalk::TupleBuildResult r = dottalk::build_tuple_from_plan(projection_plan);

@@ -335,22 +335,89 @@ diff run. Recorded, not waved.
 
 COMPOUND STATE OF THE LANE after one day: 208-345 us/row serial constant ->
 ~51 us/row (PERF-1a+1b), x 4-4.8 on six workers (PERF-2 slice 1). The 3a
-battery's 395-second R4b of two days ago answers in ~14 s ON. Next: the
-OQ-P1 speedup curve (2,4,8,12,16,22) decides the shipped default and the
-E-core question; then the registered SQLSEL_PARALLEL regression (with the
-deleted-rows-per-partition fixture) before any default flips ON.
+battery's 395-second R4b of two days ago answers in ~14 s ON.
+
+#### OQ-P1 CURVE MEASURED 2026-09-22 (console; promote by teed rerun)
+
+Fourteen rungs, every count exact (90700 / 1000000 at all seven widths):
+
+    workers   function-WHERE          bare COUNT
+    OFF       46.6 s   1.0x           21.1 s   1.0x
+    2         22.1 s   2.1x            9.4 s   2.2x
+    4         16.8 s   2.8x            7.3 s   2.9x
+    6         16.3 s   2.9x            5.6 s   3.8x
+    8         15.6 s   3.0x  <- best   4.6 s   4.6x
+    12        16.9 s   2.8x            4.0 s   5.2x  <- best
+    16        18.1 s   2.6x            4.5 s   4.7x
+    22        18.1 s   2.6x            4.5 s   4.7x
+
+RULING (per the charter's own terms -- "the curve decides"): DEFAULT 8.
+It beats the proposed 6 on both statements and is the only width that wins
+cheap and expensive rows together. SET PARALLEL ON now means 8.
+
+THE CURVE'S SHAPE IS A DIAGNOSIS. Cheap rows scale to 5.2x at 12 before the
+E-cores flatten; expensive rows cap at 3.0x at 8 and DEGRADE past it. That
+is not core starvation -- it is ALLOCATOR CONTENTION: the function-WHERE
+statement allocates more strings per row (function temporaries + row
+values), and the heap lock becomes the wall exactly where the remaining-
+constant list already pointed. PERF-1c (fewer per-row allocations:
+view-based accessors, trim/norm copies) therefore buys back BOTH serial
+time and parallel scaling -- it is the next slice by measurement, not
+preference. E-core answer: they help cheap rows modestly (12 > 8 there),
+hurt expensive rows, and 16-22 never win anything; 8 is the honest default
+on this part.
+
+Remaining before gold closes: the registered SQLSEL_PARALLEL regression
+(deleted-rows-per-partition fixture + small-table decline witness) before
+any default flips ON; teed promotion of the curve and the R5c probe.
+
+#### PERF-1c slice 1 AUTHORED 2026-09-22 (pending build + regression + measurement)
+
+The curve demanded the allocator slice; the source read found the target
+bigger than predicted: gotoRec64 calls readCurrent INTERNALLY, so every
+scanned row was paying TWO complete all-field decodes (one from navigation,
+one from the explicit readCurrent that followed) -- N staging strings each --
+before the plan builder then COPIED each needed value out of _fd via get().
+
+Three cuts, all additive:
+1. xbase gains gotoRec64Raw (the M2 selective-decode idiom extended one
+   step): position + raw buffer load + deleted flag, decode NOTHING. The
+   existing gotoRec64/readCurrent are untouched.
+2. Both plan builders decode values straight from the record buffer
+   (decodeFieldFromBuffer -- same codec, one allocation, no _fd staging);
+   valid after full OR raw loads. The serial pass-1 loop drops its redundant
+   explicit readCurrent (navigation already decoded); pass-2 and the
+   parallel workers go fully raw (gotoRec64Raw + on-demand decode -- workers
+   never pay an eager decode at all). Worker ORDER BY keys read through a
+   precomputed 1-based index (the by-name getter would read stale _fd).
+3. Predicate-row THINNING: an AST walk collects the fields the compiled
+   predicate can read; unreferenced columns get the plan's existing
+   field1=0/empty-canonical treatment, so their values are never decoded.
+   The prototype keeps the FULL layout -- CiIndex and unknown-field refusal
+   semantics unchanged. Fail-safe: any unrecognized AST node kind thins
+   nothing. Never applied under subquery predicates (text parsed per row may
+   read any column).
+
+HONEST EXPECTATION: serial WHERE scans lose one full decode of two plus the
+staging copies plus unreferenced-column decodes -- predict 1.5-2.5x serial;
+workers lose the eager decode entirely AND the allocation pressure the curve
+blamed for the 3.0x cap, so the parallel ceiling should RISE (the
+interesting number is function-WHERE at 8-12 workers). Gate: six
+regressions green (EVALDIFF 22/22), the parallel differential
+pairwise-identical again, then the curve rerun.
 
 ## 5. Open rulings, placed where they block
 
-- OQ-P1 (blocks PERF-2 design freeze): worker count default when ON --
-  physical cores, logical processors, or fixed cap? MEASURED BASELINE
-  (owner's box, Get-CimInstance 2026-09-21): Intel Core Ultra 9 185H,
-  16 cores / 22 logical processors -- a HYBRID part: 6 P-cores (HT, 12
-  threads) + 8 E-cores + 2 LP E-cores. Three core classes running the same
-  interpreter at different rates means "one worker per core" is not one
-  number on this machine. Proposed: default 6 (P-core count), and let the
-  PERF-2 speedup curve (1,2,4,6,8,12,16,22) decide empirically whether
-  E-cores help or drag; never assume topology, always read it at startup.
+- OQ-P1 -- ANSWERED BY MEASUREMENT 2026-09-22: default 8 (see the curve in
+  PERF-2 MEASURED above; 8 beat the proposed 6 on both probe statements;
+  E-cores help cheap rows modestly and hurt expensive ones; 16-22 never
+  win). SET PARALLEL ON = 8. Original question kept for the record:
+  worker count default when ON -- physical cores, logical processors, or
+  fixed cap? MEASURED BASELINE (owner's box, Get-CimInstance 2026-09-21):
+  Intel Core Ultra 9 185H, 16 cores / 22 logical -- 6 P-cores (HT) + 8
+  E-cores + 2 LP E-cores. Proposal was 6; the curve ruled 8, per this
+  charter's own "curve decides" clause and the owner's 2026-09-22
+  directive.
 - OQ-P2 (blocks PERF-2): does REL's linear child walk join the pool, or stay
   single-lane until its own slice? Proposed: stay out in v1 (REL walks the
   child via the relation engine, a different row source).

@@ -312,6 +312,17 @@ public:
     // to decodeFieldFromBuffer()).
     bool fieldNumFromBuffer(int idx1, double& out) const;
 
+    // PERF-1c (AIF-168): position + RAW load in one step -- gotoRec64 with
+    // readCurrentRaw instead of readCurrent. gotoRec64 decodes EVERY field
+    // eagerly on every navigation; a scan that decodes on demand through
+    // decodeFieldFromBuffer() was paying that full decode anyway (and the
+    // explicit readCurrent that followed made it TWO full decodes per row).
+    // Same contract as readCurrentRaw: the deleted flag and record buffer are
+    // fresh; get()/_fd are NOT -- read values only via decodeFieldFromBuffer()
+    // or fieldNumFromBuffer() until the next full readCurrent(). Additive:
+    // gotoRec64 is unchanged.
+    bool gotoRec64Raw(std::uint64_t recno);
+
     // ---- Durable PRIMARY designation (AIF-156) ----------------------------
     //
     // Stamp field1 as the table's PRIMARY key IN THE FILE, by setting

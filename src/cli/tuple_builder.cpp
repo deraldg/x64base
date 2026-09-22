@@ -606,11 +606,13 @@ TupleBuildResult build_tuple_from_plan(const TupleBuildPlan& plan) {
         if (have_area) {
             try {
                 if (item.field1 > 0) {
-                    // Identical bytes to getFieldAsString(canonical):
-                    // rtrim(db.get(idx0+1)) without the third name resolution.
-                    val = xfg::rtrim_copy(
-                        const_cast<xbase::DbArea*>(ar)->get(item.field1));
-                } else {
+                    // PERF-1c: decode straight from the record buffer -- the
+                    // same codec loadFieldsFromBuffer uses, one field, one
+                    // allocation, no _fd staging copy. Identical bytes to
+                    // rtrim(get(idx0+1)). Valid after readCurrent OR
+                    // readCurrentRaw/gotoRec64Raw.
+                    val = xfg::rtrim_copy(ar->decodeFieldFromBuffer(item.field1));
+                } else if (!item.canonical.empty()) {
                     val = xfg::getFieldAsString(
                         *const_cast<xbase::DbArea*>(ar), item.canonical);
                 }
@@ -675,7 +677,10 @@ TupleBuildResult build_tuple_for_area(const TupleBuildPlan& plan, xbase::DbArea&
     for (const auto& item : plan.items) {
         std::string val;
         if (item.field1 > 0) {
-            try { val = xfg::rtrim_copy(area.get(item.field1)); }
+            // PERF-1c: buffer decode, no _fd staging. Valid after readCurrent
+            // OR readCurrentRaw/gotoRec64Raw -- the worker path uses the raw
+            // navigation and never pays the eager all-fields decode at all.
+            try { val = xfg::rtrim_copy(area.decodeFieldFromBuffer(item.field1)); }
             catch (...) { val.clear(); }
         } else if (!item.canonical.empty()) {
             try { val = xfg::getFieldAsString(area, item.canonical); }
