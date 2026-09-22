@@ -2977,8 +2977,27 @@ bool execute_select_term(const std::string& tail_in, QueryResult* result_out) {
 
     {
         cli::ScopedAreaSelect focus(area);
+        // PERF-1b (AIF-168): compile the predicate-row plan ONCE. The old
+        // per-row build_tuple_from_spec call re-parsed the spec, re-resolved
+        // the area, and resolved every field name three times per column on
+        // every row; the alias rename loop then reconcatenated every column
+        // name per row. The plan does all of that here, and the prototype
+        // carries the alias-prefixed names.
+        dottalk::TupleBuildPlan predicate_plan;
+        if (pred || subquery_where) {
+            predicate_plan = dottalk::compile_tuple_plan(area_label + ".*", opts);
+            if (predicate_plan.ok) {
+                for (auto& column : predicate_plan.prototype.columns) {
+                    column.name = single_table.alias + "." + column.field;
+                }
+            } else {
+                scan_error = "predicate row build failed: " + predicate_plan.error;
+            }
+        }
         bool ok = false;
-        try { ok = area->top(); } catch (...) { ok = false; }
+        if (scan_error.empty()) {
+            try { ok = area->top(); } catch (...) { ok = false; }
+        }
         if (ok) {
             const int64_t rec_count = static_cast<int64_t>(area->recCount());
             for (;;) {
@@ -2993,13 +3012,10 @@ bool execute_select_term(const std::string& tail_in, QueryResult* result_out) {
 
                 if (keep && (pred || subquery_where)) {
                     dottalk::TupleBuildResult predicate_row =
-                        dottalk::build_tuple_from_spec(area_label + ".*", opts);
+                        dottalk::build_tuple_from_plan(predicate_plan);
                     if (!predicate_row.ok) {
                         scan_error = "predicate row build failed: " + predicate_row.error;
                         break;
-                    }
-                    for (auto& column : predicate_row.row.columns) {
-                        column.name = single_table.alias + "." + column.field;
                     }
                     if (subquery_where) {
                         PredicateState verdict = PredicateState::Error;
@@ -3067,16 +3083,26 @@ bool execute_select_term(const std::string& tail_in, QueryResult* result_out) {
         // PASS 2: materialize typed TupleRows. DISTINCT is applied after
         // projection and before LIMIT, so it requests the complete match set.
         if (scan_error.empty() && !count_star) {
+            // PERF-1b (AIF-168): same plan treatment for the projection pass.
+            // Compiled at the exact execution point the per-row calls used, so
+            // bare-field specs resolve against the same current area they
+            // always did.
+            const dottalk::TupleBuildPlan projection_plan =
+                dottalk::compile_tuple_plan(spec, opts);
+            if (!projection_plan.ok) {
+                scan_error = "projection failed: " + projection_plan.error;
+            }
             std::size_t shown = 0;
             const long long projection_limit = select_distinct ? -1 : limit_n;
             for (const auto& m : matches) {
+                if (!scan_error.empty()) break;
                 if (projection_limit >= 0 && static_cast<long long>(shown) >= projection_limit) break;
                 try {
                     area->gotoRec64(static_cast<std::uint64_t>(m.recno));
                     if (!area->readCurrent()) break;
                 } catch (...) { break; }
 
-                const dottalk::TupleBuildResult r = dottalk::build_tuple_from_spec(spec, opts);
+                const dottalk::TupleBuildResult r = dottalk::build_tuple_from_plan(projection_plan);
                 if (!r.ok) { scan_error = "projection failed: " + r.error; break; }
                 dottalk::TupleRow projected = r.row;
                 projected.columns = result.columns;

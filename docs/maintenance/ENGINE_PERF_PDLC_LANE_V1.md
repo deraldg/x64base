@@ -168,6 +168,39 @@ dominant remaining term is build_tuple_from_spec's all-column materialization
 per predicate row -- the top PERF-1b backlog item above. OQ-P3's premium
 question should be re-asked against the ~95 us number, not 208.
 
+#### PERF-1b slice 1 AUTHORED 2026-09-21 (pending build + regression + measurement)
+
+Source read of build_tuple_from_spec found the materialization constant is
+mostly NAME RESOLUTION, not value reading. Per predicate row the spec path:
+re-concatenates and re-parses the constant spec string; re-resolves the source
+area by scanning every open work area (uppercase/basename churn per area);
+resolves every field name THREE times per column (twice in its own body at
+tuple_builder.cpp:336/:359, a third time inside getFieldAsString) -- and
+resolve_field_index_std allocates two strings per field COMPARED, so a
+10-field table pays ~600 allocations per row before any value is read. The
+sqlsel scan then re-concatenated every alias-prefixed column name per row.
+
+The slice: TupleBuildPlan (tuple_builder.hpp/.cpp) -- compile_tuple_plan runs
+the constant half once (same parse, same resolution, same refusal texts,
+emitted at compile time instead of on row 1); build_tuple_from_plan reads
+values through precomputed 1-based indices: db.get(field1) + rtrim + overlay +
+memo resolve, byte-identical to the spec path's output. build_tuple_from_spec
+itself is UNTOUCHED -- every other caller keeps the proven path. sqlsel
+converts pass 1 (predicate rows; prototype carries the alias-prefixed names,
+retiring the per-row rename loop) and pass 2 (projection), compiled at the
+same execution points the per-row calls occupied so current-area-relative
+resolution is unchanged. Fragment order for multi-area specs moves from
+unordered-set iteration to first-touch order; it was never specified.
+
+HONEST EXPECTATION: removes per-row parse + area scan + 3x per-column
+resolution + rename concats; keeps per-value get/rtrim/memo and the AST walk.
+Predicted 1.5-2.5x on the 1M/5.5M WHERE scans on top of PERF-1a (~95 ->
+~40-65 us/row); R5c full-scale IN should finally move (its cost IS the inner
+materialization this slice attacks). Native paths, joins (read_area_row
+based), DML source (materialize_join_source based), DbTupleStream, and the
+REL graph cursor are untouched. Gate: same as PERF-1a -- six regressions
+green (EVALDIFF 22/22 exact), then full 3a + star teed with I1-I13 identical.
+
 ### PERF-2 -- SET PARALLEL <n>: partitioned read-only scans
 
 A bounded worker pool; recno-range partitions; per-worker private row source
