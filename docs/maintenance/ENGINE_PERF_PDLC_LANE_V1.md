@@ -481,6 +481,24 @@ check-site-artifacts gate (site said 83 specs, tree says 84): both site
 artifacts re-derived and the two prose pages corrected in the site tree,
 site freshness 16/16 green.
 
+FIRST GREEN 2026-09-22, second attempt, commit 28fc59aac, build e88408bb:
+every pinned value exact on the first run of the repaired fixture,
+including the two counts the red run could not witness (UPDATE affected
+100, DELETE affected 10 x3) and both cursor markers .T.
+
+MUTATION PROOF 2026-09-22, green-red-green on build e88408bb in one
+sitting, the DEF_FAMILY control-at-both-ends shape: control PASS; ARM =
+the T3 OFF band alone widened to `ID < 1301` (one more visible row) ->
+`SQLSEL PARALLEL: FAIL -- PAR-T3-OFF line 2 mismatch / expected: 190 /
+actual: 191`, fail-closed with both sides printed; restore via git
+checkout of the committed fixture -> PASS again. The arm run carried a
+second witness for free: only the OFF leg was widened, so its transcript
+shows OFF=191 against ON=190 -- the OFF/ON divergence this spec exists to
+catch, displayed by the instrument that catches it. With the first red
+(2370 vs 2400, fixture defect) this validator has now failed closed on
+two DIFFERENT wrong-count shapes. Remaining before default-suite
+promotion: soak only.
+
 ## 5. Open rulings, placed where they block
 
 - OQ-P1 -- ANSWERED BY MEASUREMENT 2026-09-22: default 8 (see the curve in
