@@ -399,7 +399,9 @@ Concurrent sessions and forced-termination durability beyond the WAL slice, run
 only against the disposable lane. Scoped in a later revision.
 ## Phase 3 -- relational shakedown (REL/ENUM + SQLsel + transactional DML)  [AIF-167]
 
-**Status: CANDIDATE, authored 2026-09-20 -- scripts written, host run pending.**
+**Status: RUN COMPLETE. 3a ran twice (first run caught the gutted tags; teed
+rerun GREEN, sha256:62608fb1...); 3b RAN GREEN 2026-09-21 (teed
+sha256:29738073..., results in "Phase 3b run results" below).**
 
 Phases 1-2 stressed the engine one table at a time. Phase 3 is the first
 runtime shakedown of the RELATIONAL surface at the same scale: the fixtures
@@ -527,9 +529,48 @@ Calibrated rates for future estimates: SQLsel simple-WHERE scan ~208 us/row;
 with correlation glue ~427 us/row; function-call WHERE 345 us/row (run 1) with an
 unexplained 2 ms/row outlier (run 2 R4b, post-join, parked); native COUNT FOR scan
 ~26 us/row; set operation ~380 us/row-pass including dedup.
+### Phase 3b run results 2026-09-21 (teed sha256:29738073..., build 7b13ffcb Sep 21 15:02:47)
+
+Every correctness leg GREEN; total run 9143.6 s (~2 h 32 m). The write paths
+work, the transaction boundary tells the truth, and cleanup left ZERO residue
+(ERASE removed dbf + cdx + cdx.meta + cdx.d for the indexed clone, 5/5 files,
+Failed: 0 -- the 2026-09-07 ERASE/TBJ1 journal defect did NOT reproduce on
+this path).
+
+- T0 gates: both 1M-row clones built; CDX SID+LNAME + BUILDLMDB 47.1 s;
+  tag-sanity gate 1000000 == 1000000 on first use.
+- T1: no-WHERE UPDATE REFUSED in microseconds (safety rule held).
+- T2: autocommit 10k non-key writes (527.9 s), verify EXACTLY 10000, SEEK
+  lands mid-band post-commit.
+- **T3a vs T4b -- THE datum: key-field 10k UPDATE (tag LNAME), INDEXTXN OFF
+  480.0 s vs ON 518.4 s = +38.4 s, a +8.0% surcharge for transactional
+  in-COMMIT index maintenance on this shape.** Both verifies exact; LNAME
+  tag still streams ordered rows after both.
+- T5: staged 10k UPDATE invisible to committed-truth COUNT (0), ROLLBACK
+  discarded 10000 in **0.0997 s** (rollback is essentially free -- staging
+  is the cost, discarding is not), COUNT still 0.
+- T6: two-table transaction -- SET MODE NATIVE REFUSED mid-transaction;
+  group COMMIT decided BOTH tables in one 10.4 s act; each verifies EXACTLY
+  1000 (AIF-160 group commit proven at 1M-row scale).
+- T7: DELETE 10k band -> 990000 visible; RECALL ALL -> 1000000. Deleted-
+  visibility and recall both exact.
+
+Timing observations (all PRE-PERF-1a -- this run staged the 15:02:47 build,
+so every number here is a clean G-P1 before-picture): each DML statement and
+each SQLsel verify pays a full 1M-row pipeline pass -- verifies ran 476-676 s
+(~480-680 us/row for AND-compound predicates, higher than 3a's 208 us simple-
+WHERE rate) and the function-predicate verify (LNAME = UPPER(LNAME) band
+check, T3b) ran 1023.5 s. DML additionally materializes the full source table
+before filtering (materialize_dml_source), which is why 10k-row updates cost
+~480-630 s each. PREDICTION MISS, recorded per discipline: the runtime
+estimate was 45-75 min against an actual 152 min -- the model priced verifies
+at the 3a simple-WHERE rate and did not price DML's full materialization;
+both misses are PERF-1 arguments, not battery defects.
+
 ## Phase 3c -- the star: dimensions the Phase-1 plan promised  [AIF-167]
 
-**Status: AUTHORED 2026-09-21 -- dims not yet built, battery not yet run.**
+**Status: RUN GREEN 2026-09-21 -- dims built and gated (9900+11), star battery
+teed (sha256:0A68223E...), I9-I13 results recorded further down.**
 
 Phase 1 designed "supporting dims (MAJORS, CLASSES) small" and never built them;
 Phases 3a/3b therefore proved everything two tables can prove and nothing about
