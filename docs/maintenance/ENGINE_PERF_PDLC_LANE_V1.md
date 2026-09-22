@@ -133,6 +133,41 @@ per UPDATE row (:3722); db_tuple_stream::passes_filter_on_tuple and
 tuple_graph_cursor still call the copying make_record_view (browser FOR and
 REL-graph paths, outside this battery's gate).
 
+#### PERF-1a MEASURED 2026-09-21 -- G-P1 GREEN, 3-6x on the converted loops
+
+Build eac74271 (Sep 21 2026 17:10:36). Correctness first: all six SQLsel
+regressions PASS including EVALDIFF 22/22 exact, then the FULL 3a + star
+batteries reran teed (sha256:A86C83C4... relational_readonly 20260921T184455Z;
+sha256:B7696D5F... star_readonly 20260921T203206Z) with EVERY identity
+IDENTICAL -- I1-I13 exact, path reports unchanged, refusal texts intact. The
+gate's terms were met before any ratio was read.
+
+Measured ratios, pre-PERF-1a baseline -> this build:
+
+    R3c join + WHERE filter over 5.5M   1907.7 s -> 306.9 s   6.2x
+    R4b function-WHERE scan (1M)         394.7 s ->  95.0 s   4.2x
+    R6a UNION                            832.7 s -> 207.0 s   4.0x
+    R5a bounded pure-IN                 1084.2 s -> 336.6 s   3.2x
+    R6b INTERSECT                        757.3 s -> 255.6 s   3.0x
+    R6c EXCEPT                           763.8 s -> 263.9 s   2.9x
+    R3a seek join (simple-equi path)     274.0 s -> 243.3 s   ~1.1x
+    R5c full-scale IN                    564.1 s -> 608.8 s   ~0.9x
+    R4a native COUNT FOR (control)        ~26 s  ->  28.3 s   ~1.0x
+    Star S1-S3 (seek joins, GROUP BY)    169.9/207.2/394.2 -> 195.5/175.0/397.4
+
+The SHAPE is the finding: converted WHERE loops gained 3-6x, with the WIDEST
+rows (R3c's combined join tuples) gaining most -- three deep copies per row
+priced by row width, exactly as diagnosed. Untouched paths are flat: the
+native control, the tag walks, the simple-equi seek joins (fluctuating inside
+the fixture's documented +/-15%), star GROUP BY, and R5c, whose cost is the
+inner materialization + hash-set build that PERF-1a deliberately did not
+touch. The 1.5-3x prediction missed LOW; recorded per discipline.
+
+CONSEQUENCE for the constant: simple-WHERE is now ~95 us/row (was 208). The
+dominant remaining term is build_tuple_from_spec's all-column materialization
+per predicate row -- the top PERF-1b backlog item above. OQ-P3's premium
+question should be re-asked against the ~95 us number, not 208.
+
 ### PERF-2 -- SET PARALLEL <n>: partitioned read-only scans
 
 A bounded worker pool; recno-range partitions; per-worker private row source
