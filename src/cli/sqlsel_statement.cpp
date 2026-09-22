@@ -3027,7 +3027,7 @@ bool execute_select_term(const std::string& tail_in, QueryResult* result_out) {
             const int requested = cli::Settings::parallelWorkers();
             if (requested >= 2) {
                 const int64_t rec_count = static_cast<int64_t>(area->recCount());
-                const char* decline = nullptr;
+                std::string decline;
                 bool memo_col = false;
                 if (pred || subquery_where) {
                     for (const auto& column : predicate_plan.prototype.columns) {
@@ -3043,24 +3043,30 @@ bool execute_select_term(const std::string& tail_in, QueryResult* result_out) {
                 else if (workers < 2) decline = "table too small to partition (< 2000 rows)";
 
                 std::string area_path;
-                if (!decline) {
-                    try { area_path = area->name(); } catch (...) { area_path.clear(); }
+                if (decline.empty()) {
+                    // filename() is the absolute DBF path; name() is the
+                    // LOGICAL table name and does not open (first diff run
+                    // proved it -- every leg declined here).
+                    try { area_path = area->filename(); } catch (...) { area_path.clear(); }
                     if (area_path.empty()) decline = "source path unavailable for private opens";
                 }
-                if (!decline) {
+                if (decline.empty()) {
                     // Pre-flight the private open HERE so a failure is an
-                    // honest decline to serial, not a failed statement.
+                    // honest decline to serial, not a failed statement --
+                    // and carry the reason so the transcript diagnoses it.
                     try {
                         xbase::DbArea probe;
                         probe.open(area_path);
                         probe.close();
+                    } catch (const std::exception& ex) {
+                        decline = std::string("private open failed for '") + area_path + "': " + ex.what();
                     } catch (...) {
-                        decline = "private open failed for the source file";
+                        decline = std::string("private open failed for '") + area_path + "'";
                     }
                 }
 
                 std::vector<std::unique_ptr<dottalk::expr::Expr>> worker_programs;
-                if (!decline && pred) {
+                if (decline.empty() && pred) {
                     for (int w = 0; w < workers; ++w) {
                         auto compiled = dottalk::expr::compile_where(where_text);
                         if (!compiled) { decline = "per-worker predicate compile failed"; break; }
@@ -3068,7 +3074,7 @@ bool execute_select_term(const std::string& tail_in, QueryResult* result_out) {
                     }
                 }
 
-                if (decline) {
+                if (!decline.empty()) {
                     std::cout << "SQLSEL: parallel declined -- " << decline
                               << "; scanning serial.\n";
                 } else {
