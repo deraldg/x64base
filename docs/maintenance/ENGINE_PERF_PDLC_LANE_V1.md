@@ -446,6 +446,41 @@ LANE LEDGER, Saturday to Monday: function-WHERE 394.7 s -> 10.5 s (38x);
 bare 1M COUNT ~21 s serial-double-decode -> 0.97 s (22x); 5.5M COUNT
 ~148 s tag walk -> 7.8 s (19x). Identities exact through every step.
 
+#### SQLSEL_PARALLEL REGISTERED 2026-09-22 (gold closure; pending first green)
+
+The G-P2 gate is now a NAMED, RUNNABLE spec: REGRESSION RUN SQLSEL_PARALLEL
+(sqlsel_parallel_regression.dts + SqlselParallelV1, capture_routed_channel
+because SET PARALLEL prints through cmdout). The fixture is what the
+pinocchio diff script could not be: 2400 self-bootstrapped SANDBOX rows
+(ID == RECNO by construction, LOOP-generated) with DELETED rows in BOTH
+2-worker partitions AND in a band straddling the seam (recno 1200/1201).
+Five OFF/ON pairs pinned as EXACT blocks -- the OFF leg IS the oracle --
+plus the clamp probe (request 6, must RUN and REPORT workers=2), both
+declines with exact serial answers, occurrence counts for the path line and
+declines, fixture-shape pins, two cursor restorations, and PARALLEL left
+OFF for the next spec. Explicit-run pending first green, mutation proof
+(flip one expected count, watch it FAIL, restore), and soak; promotion to
+the default suite comes after that, per the DEF_FAMILY precedent -- never
+before the instrument has graded.
+
+FIRST RUN WAS RED, AND THE RED WAS THE FIXTURE, NOT THE VALIDATOR
+(2026-09-22): `REPLACE ID WITH RECNO()` printed "invalid numeric for
+field" on every row -- REPLACE's RHS evaluator does not resolve RECNO()
+(the function catalog already records the same quirk for '?' markers), so
+every ID stayed blank, the shaping UPDATE/DELETEs matched 0 rows, and the
+validator failed closed on the first block with expected/actual printed
+(2370 vs 2400). Everything the red run COULD witness came out right: all
+six workers=2 path lines, both declines with exact serial answers, the T7
+decline ordering as authored, and the T4 line ordering
+(rows -> selected -> LIMIT -> ORDER BY) later confirmed at the emit sites.
+Fix: the builder now increments a shell variable (`SET VAR! counter =
+&counter + 1`; `REPLACE ID WITH &counter`) -- macro expansion happens per
+LOOP replay through shell_execute_line, so the literal reaches REPLACE and
+ID == RECNO() still holds by construction. Same run also tripped the
+check-site-artifacts gate (site said 83 specs, tree says 84): both site
+artifacts re-derived and the two prose pages corrected in the site tree,
+site freshness 16/16 green.
+
 ## 5. Open rulings, placed where they block
 
 - OQ-P1 -- ANSWERED BY MEASUREMENT 2026-09-22: default 8 (see the curve in

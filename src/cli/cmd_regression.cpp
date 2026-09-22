@@ -167,6 +167,7 @@ enum class RegressionValidator {
     SqlselAdvancedJoinV1,
     SqlselDmlTransactionV1,
     SqlselWorkspaceScopeV1,
+    SqlselParallelV1,
     SqlmodeSmokeV1,
     SqlselBufferVisibilityV1,
     EvaldiffV1,
@@ -287,7 +288,7 @@ struct RegressionSpec {
 // compile error ("too many initializers"), which is the safe failure -- but it
 // is a recurring papercut: it happened when CNXLIVE was added on 2026-07-31.
 // Bump it when you add a regression.
-constexpr std::array<RegressionSpec, 83> kRegressionSpecs{{
+constexpr std::array<RegressionSpec, 84> kRegressionSpecs{{
     {
         "COUNT_LIST_VERBOSE",
         "count_list_verbose_regression.dts",
@@ -829,6 +830,15 @@ constexpr std::array<RegressionSpec, 83> kRegressionSpecs{{
         false,
         true,
         RegressionValidator::SqlselWorkspaceScopeV1
+    },
+    {
+        "SQLSEL_PARALLEL",
+        "sqlsel_parallel_regression.dts",
+        "SET PARALLEL differential (AIF-168 PERF-2, the registered G-P2 gate): a 2400-row self-bootstrapping SANDBOX fixture (ID == RECNO by construction) shaped so DELETED rows sit in BOTH 2-worker partitions and in a band that STRADDLES the partition seam (recno 1200/1201). Five OFF/ON pairs are pinned as EXACT blocks -- the OFF leg IS the oracle -- covering bare COUNT, char WHERE, function WHERE, a seam-straddling numeric band, and ORDER BY+LIMIT row order. The validator also pins the clamp (SET PARALLEL 6 over 2400 rows must RUN and REPORT workers=2), both declines with their exact serial answers (5-row table too small; subquery predicate, whose 5-row inner select declines again), exact occurrence counts for the workers=2 path line (6) and each decline, the fixture shape (one 100-row UPDATE, three 10-row DELETEs), two cursor restorations, and that the spec leaves PARALLEL OFF for whatever runs next. R21 is exercised structurally: every ON leg runs workers that opened PRIVATE DbAreas. Explicit-run pending mutation proof and soak; the deleted-rows-per-partition probe this spec carries is the one the pinocchio diff script could not (read-only fixtures carry no deleted rows).",
+        false,
+        false,
+        RegressionValidator::SqlselParallelV1,
+        true                       // SET PARALLEL prints via cmdout::print_line: routed channel
     },
     {
         "EVALDIFF",
@@ -2789,6 +2799,102 @@ bool validate_sqlsel_subqueries(const std::string& transcript)
     return true;
 }
 
+// AIF-168 PERF-2: the registered G-P2 gate. The OFF leg of each pair IS the
+// oracle -- both legs are pinned as EXACT blocks, so a parallel answer that
+// differs from serial in count, rows, order, or report composition cannot
+// read as green. The fixture is shaped so deleted rows sit in BOTH 2-worker
+// partitions and in a band that STRADDLES the seam (recno 1200/1201 of
+// 2400); the clamp (request 6, carry 2) and both declines are pinned with
+// their exact serial answers.
+bool validate_sqlsel_parallel(const std::string& transcript)
+{
+    static constexpr const char* kParLine =
+        "SQLSEL: single-table scan access path -- parallel (workers=2, rows=2400, recno-range partitions).";
+    static constexpr const char* kSmallDecline =
+        "SQLSEL: parallel declined -- table too small to partition (< 2000 rows); scanning serial.";
+    static constexpr const char* kSubqDecline =
+        "SQLSEL: parallel declined -- subquery predicate (shared subquery runtime); scanning serial.";
+
+    static constexpr std::array<const char*, 3> t1_off{{
+        "COUNT(*)", "2370", "1 row(s) selected."}};
+    static constexpr std::array<const char*, 4> t1_on{{
+        kParLine, "COUNT(*)", "2370", "1 row(s) selected."}};
+    static constexpr std::array<const char*, 3> t2_off{{
+        "COUNT(*)", "90", "1 row(s) selected."}};
+    static constexpr std::array<const char*, 4> t2_on{{
+        kParLine, "COUNT(*)", "90", "1 row(s) selected."}};
+    static constexpr std::array<const char*, 3> t3_off{{
+        "COUNT(*)", "190", "1 row(s) selected."}};
+    static constexpr std::array<const char*, 4> t3_on{{
+        kParLine, "COUNT(*)", "190", "1 row(s) selected."}};
+    static constexpr std::array<const char*, 10> t4_off{{
+        "ID", "1214", "1213", "1212", "1211", "1210", "1209",
+        "6 row(s) selected.",
+        "SQLSEL: LIMIT reached; 4 more row(s) available.",
+        "SQLSEL: ORDER BY ID DESC -- materialized sort over 10 matching row(s)."}};
+    static constexpr std::array<const char*, 11> t4_on{{
+        kParLine,
+        "ID", "1214", "1213", "1212", "1211", "1210", "1209",
+        "6 row(s) selected.",
+        "SQLSEL: LIMIT reached; 4 more row(s) available.",
+        "SQLSEL: ORDER BY ID DESC -- materialized sort over 10 matching row(s)."}};
+    static constexpr std::array<const char*, 4> t5_clamp{{
+        kParLine, "COUNT(*)", "2370", "1 row(s) selected."}};
+    static constexpr std::array<const char*, 4> t6_small{{
+        kSmallDecline, "COUNT(*)", "5", "1 row(s) selected."}};
+    static constexpr std::array<const char*, 6> t7_subq{{
+        kSubqDecline, kSmallDecline,
+        "SQLSEL: subquery evaluation count -- correlated=0, uncorrelated=1.",
+        "COUNT(*)", "5", "1 row(s) selected."}};
+
+    static constexpr std::array<const char*, 8> required{{
+        "SQLSEL: UPDATE affected 100 row(s); committed through table buffer + WAL.",
+        "SQLSEL: DELETE affected 10 row(s); committed through table buffer + WAL.",
+        "PAR_C1_parll_cursor_restored:.T.",
+        "PAR_C2_parsm_cursor_restored:.T.",
+        "SET PARALLEL: 2 worker(s)",
+        "SET PARALLEL: 6 worker(s)",
+        "SET PARALLEL: OFF",
+        "SQLSEL-PAR-END"}};
+
+    if (!require_exact_transcript_block(transcript, "SQLSEL PARALLEL", "PAR-T1-OFF", t1_off) ||
+        !require_exact_transcript_block(transcript, "SQLSEL PARALLEL", "PAR-T1-ON", t1_on) ||
+        !require_exact_transcript_block(transcript, "SQLSEL PARALLEL", "PAR-T2-OFF", t2_off) ||
+        !require_exact_transcript_block(transcript, "SQLSEL PARALLEL", "PAR-T2-ON", t2_on) ||
+        !require_exact_transcript_block(transcript, "SQLSEL PARALLEL", "PAR-T2F-OFF", t2_off) ||
+        !require_exact_transcript_block(transcript, "SQLSEL PARALLEL", "PAR-T2F-ON", t2_on) ||
+        !require_exact_transcript_block(transcript, "SQLSEL PARALLEL", "PAR-T3-OFF", t3_off) ||
+        !require_exact_transcript_block(transcript, "SQLSEL PARALLEL", "PAR-T3-ON", t3_on) ||
+        !require_exact_transcript_block(transcript, "SQLSEL PARALLEL", "PAR-T4-OFF", t4_off) ||
+        !require_exact_transcript_block(transcript, "SQLSEL PARALLEL", "PAR-T4-ON", t4_on) ||
+        !require_exact_transcript_block(transcript, "SQLSEL PARALLEL", "PAR-T5", t5_clamp) ||
+        !require_exact_transcript_block(transcript, "SQLSEL PARALLEL", "PAR-T6", t6_small) ||
+        !require_exact_transcript_block(transcript, "SQLSEL PARALLEL", "PAR-T7", t7_subq) ||
+        !require_transcript_fragments(transcript, "SQLSEL PARALLEL", required)) {
+        return false;
+    }
+
+    const std::size_t par_lines = transcript_count(transcript, kParLine);
+    const std::size_t small_declines = transcript_count(transcript, kSmallDecline);
+    const std::size_t subq_declines = transcript_count(transcript, kSubqDecline);
+    const std::size_t delete_tens = transcript_count(
+        transcript, "SQLSEL: DELETE affected 10 row(s); committed through table buffer + WAL.");
+    if (par_lines != 6 || small_declines != 2 || subq_declines != 1 || delete_tens != 3) {
+        std::cout << "SQLSEL PARALLEL: FAIL -- expected workers=2 lines 6, small declines 2, "
+                     "subquery declines 1, 10-row deletes 3; got "
+                  << par_lines << '/' << small_declines << '/' << subq_declines << '/'
+                  << delete_tens << ".\n";
+        return false;
+    }
+
+    std::cout << "SQLSEL PARALLEL DIFFERENTIAL: PASS -- 5/5 OFF==ON pairs exact "
+                 "(count, char, function, seam band, ORDER BY+LIMIT); deleted rows "
+                 "excluded in both partitions and ACROSS the seam; clamp 6->2 pinned "
+                 "in the path line; declines 3/3 with exact serial answers; cursors "
+                 "2/2; PARALLEL left OFF.\n";
+    return true;
+}
+
 bool validate_sqlsel_advanced_join(const std::string& transcript)
 {
     static constexpr std::array<SqlselOraclePair, 8> pairs{{
@@ -4574,6 +4680,8 @@ bool validate_regression_transcript(const RegressionSpec& spec,
             return validate_sqlsel_dml_transaction(transcript);
         case RegressionValidator::SqlselWorkspaceScopeV1:
             return validate_sqlsel_workspace_scope(transcript);
+        case RegressionValidator::SqlselParallelV1:
+            return validate_sqlsel_parallel(transcript);
         case RegressionValidator::SqlmodeSmokeV1:
             return validate_sqlmode_smoke(transcript);
         case RegressionValidator::SqlselBufferVisibilityV1:
