@@ -15,6 +15,8 @@
 
 #include "tuple_types.hpp"
 
+namespace xbase { class DbArea; }   // PERF-2: build_tuple_for_area worker entry
+
 namespace dottalk {
 
 // Result wrapper so callers can handle errors without printing.
@@ -61,5 +63,16 @@ struct TupleBuildPlan {
 
 TupleBuildPlan compile_tuple_plan(const std::string& spec, const TupleBuildOptions& opt);
 TupleBuildResult build_tuple_from_plan(const TupleBuildPlan& plan);
+
+// PERF-2 (AIF-168): build a plan's row from an EXPLICIT area instead of the
+// global work-area slots. This is the R21 worker entry point: a parallel
+// scan worker owns a private DbArea (own file handle, own cursor) and must
+// never touch workareas state, so slot resolution is bypassed and every item
+// reads from `area`. Only valid for single-source plans (every item the same
+// slot); the caller positions the record, exactly as with the other builders.
+// Overlay and memo resolution are NOT applied (the parallel scan declines
+// memo-bearing plans and runs with overlay off); values are the raw
+// rtrim(get(field1)) bytes, identical to the serial scan's opts.
+TupleBuildResult build_tuple_for_area(const TupleBuildPlan& plan, xbase::DbArea& area);
 
 } // namespace dottalk

@@ -656,4 +656,47 @@ TupleBuildResult build_tuple_from_plan(const TupleBuildPlan& plan) {
     return res;
 }
 
+TupleBuildResult build_tuple_for_area(const TupleBuildPlan& plan, xbase::DbArea& area) {
+    TupleBuildResult res;
+    if (!plan.ok) {
+        res.ok = false;
+        res.error = plan.error;
+        return res;
+    }
+    // NO refresh_relations, NO workareas access, NO overlay, NO memo resolve:
+    // this is the R21 worker path. The caller guarantees the plan is
+    // single-source and memo-free (the parallel scan declines otherwise).
+
+    TupleRow row;
+    row.columns = plan.prototype.columns;
+    row.cell_kinds = plan.prototype.cell_kinds;
+    row.values.reserve(plan.items.size());
+
+    for (const auto& item : plan.items) {
+        std::string val;
+        if (item.field1 > 0) {
+            try { val = xfg::rtrim_copy(area.get(item.field1)); }
+            catch (...) { val.clear(); }
+        } else if (!item.canonical.empty()) {
+            try { val = xfg::getFieldAsString(area, item.canonical); }
+            catch (...) { val.clear(); }
+        }
+        row.values.push_back(std::move(val));
+    }
+
+    for (const auto& seed : plan.fragment_seeds) {
+        TupleFragment f;
+        f.area_slot = seed.slot;                       // provenance label only
+        try { f.recno = area.recno64(); } catch (...) { f.recno = 0; }
+        f.kind = TupleSourceKind::DBF;
+        try { f.deleted = area.isDeleted(); } catch (...) { f.deleted = false; }
+        f.note = seed.note;
+        row.fragments.push_back(std::move(f));
+    }
+
+    res.ok = true;
+    res.row = std::move(row);
+    return res;
+}
+
 } // namespace dottalk

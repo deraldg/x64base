@@ -259,6 +259,48 @@ expected and honest, wrong is impossible to miss.
 Parallel join pipelines, concurrent GROUP BY, work stealing, NUMA placement.
 Not scheduled; revisited when PERF-2's curve flattens.
 
+### PERF-2 slice 1 AUTHORED 2026-09-22 (pending build + differential + measurement)
+
+Proceeding on the charter's proposed defaults per owner directive 2026-09-22
+("keep going for the cores"): OQ-P1 default 6 with the curve deciding, OQ-P2
+REL out of the pool in v1, OQ-P3 premium accepted at its measured 1.8x.
+
+The slice: `SET PARALLEL <n>|ON|OFF` (settings.hpp + cmd_set.cpp, the
+INDEXTXN pattern exactly -- default OFF, DOTTALK_PARALLEL env seed, runtime
+override, ON = 6). When >= 2, the single-table pass-1 scan partitions
+contiguous recno ranges across n workers. THE R21 LAW IS STRUCTURAL: each
+worker opens a PRIVATE DbArea on the source file (own handle, own cursor,
+physical walk, no index attach), compiles its OWN predicate program, owns its
+own TupleViewContext, reads rows through the new build_tuple_for_area
+(tuple_builder) which bypasses workareas entirely, and prints nothing.
+Merge is monoid: counts add, match vectors concatenate in range order;
+ORDER BY sorts the merged set exactly as serial. The ON path prints
+`workers=<n>` in its access-path line (charter requirement: every transcript
+names its mode).
+
+WHAT THE POOL REFUSES, each reported when ON and falling back to the
+byte-identical serial walk: subquery predicates (shared SubqueryRuntime),
+memo-bearing rows (memo backend not audited for concurrent readers), tables
+under 2000 rows, private-open failure (pre-flighted on the main thread so it
+is a decline, not a failed statement). Writes never reach this code. Pass 2
+projection and joins stay serial in slice 1 -- COUNT-shaped statements gain
+fully; row-returning statements gain pass 1 only.
+
+Thread-safety notes recorded: workers share NOTHING mutable -- programs,
+contexts, areas, and result slots are all per-worker; the one known global in
+the eval path (exprglue ambiguity note) is unreachable for single-table
+alias-prefixed layouts (short names unique within one table). Workers carry
+errors back in their result slot; any worker error fails the statement with
+that text (fail closed, never a partial count).
+
+Gate G-P2 instrument: pinocchio_parallel_diff.dts -- the same statements OFF
+then ON, five torn-partition bands straddling the exact 6-worker seams of the
+1M fixture, ORDER BY+LIMIT identical-rows probe, and two decline-honesty
+probes (subquery, small table). The DELETED-flag-per-partition probe is
+DEFERRED to the registered regression (needs a fixture with deleted rows;
+the read-only pinocchio set has none) -- recorded, not waved. The speedup
+curve (2,4,6,8,12,16,22) reruns D1/D3 per OQ-P1.
+
 ## 5. Open rulings, placed where they block
 
 - OQ-P1 (blocks PERF-2 design freeze): worker count default when ON --

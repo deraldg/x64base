@@ -30,6 +30,8 @@
 #include <cctype>
 #include <cstdint>
 #include <cmath>
+#include <thread>   // PERF-2 (AIF-168): SET PARALLEL scan workers
+#include "cli/settings.hpp"   // PERF-2: Settings::parallelWorkers()
 #include <deque>
 #include <filesystem>
 #include <iomanip>
@@ -2994,8 +2996,177 @@ bool execute_select_term(const std::string& tail_in, QueryResult* result_out) {
                 scan_error = "predicate row build failed: " + predicate_plan.error;
             }
         }
-        bool ok = false;
+
+        // ============================================================
+        // PERF-2 (AIF-168): SET PARALLEL -- partitioned pass-1 scan.
+        //
+        // R21 law: workers NEVER share a DbArea. Each worker opens a PRIVATE
+        // DbArea on the same file (own handle, own cursor, no index attach --
+        // physical recno walk), compiles its OWN predicate program, owns its
+        // own TupleViewContext, touches no workareas state, and prints
+        // nothing. Partitions are contiguous recno ranges (dev-08: fixed-
+        // width records make that exact arithmetic); merge is monoid --
+        // counts add, match vectors concatenate in range order. ORDER BY
+        // sorts the merged set exactly as the serial path does below.
+        //
+        // The pool serves only what it can serve HONESTLY. Declines (each
+        // reported when PARALLEL is ON, silent when OFF): subquery
+        // predicates (shared SubqueryRuntime), memo-bearing rows (memo
+        // backend not audited for concurrent readers), tables too small to
+        // partition, and any failure to open a private area -- every decline
+        // falls back to the serial walk below, which is byte-identical to
+        // yesterday's behavior. Writes never reach this code (DML has its
+        // own executors).
+        //
+        // NOTE on row order: workers walk PHYSICAL recno ranges. The manual
+        // disclaims result order without ORDER BY, and the serial loop's own
+        // monotonic-recno guard (next <= prev breaks the walk) already binds
+        // it to the same physical universe.
+        bool parallel_done = false;
         if (scan_error.empty()) {
+            const int requested = cli::Settings::parallelWorkers();
+            if (requested >= 2) {
+                const int64_t rec_count = static_cast<int64_t>(area->recCount());
+                const char* decline = nullptr;
+                bool memo_col = false;
+                if (pred || subquery_where) {
+                    for (const auto& column : predicate_plan.prototype.columns) {
+                        if (column.ftype == 'M' || column.ftype == 'm') { memo_col = true; break; }
+                    }
+                }
+                int workers = requested;
+                if (rec_count < static_cast<int64_t>(workers) * 1000) {
+                    workers = static_cast<int>(rec_count / 1000);
+                }
+                if (subquery_where) decline = "subquery predicate (shared subquery runtime)";
+                else if (pred && memo_col) decline = "memo column in the row (backend not audited for concurrent readers)";
+                else if (workers < 2) decline = "table too small to partition (< 2000 rows)";
+
+                std::string area_path;
+                if (!decline) {
+                    try { area_path = area->name(); } catch (...) { area_path.clear(); }
+                    if (area_path.empty()) decline = "source path unavailable for private opens";
+                }
+                if (!decline) {
+                    // Pre-flight the private open HERE so a failure is an
+                    // honest decline to serial, not a failed statement.
+                    try {
+                        xbase::DbArea probe;
+                        probe.open(area_path);
+                        probe.close();
+                    } catch (...) {
+                        decline = "private open failed for the source file";
+                    }
+                }
+
+                std::vector<std::unique_ptr<dottalk::expr::Expr>> worker_programs;
+                if (!decline && pred) {
+                    for (int w = 0; w < workers; ++w) {
+                        auto compiled = dottalk::expr::compile_where(where_text);
+                        if (!compiled) { decline = "per-worker predicate compile failed"; break; }
+                        worker_programs.push_back(std::move(compiled.program));
+                    }
+                }
+
+                if (decline) {
+                    std::cout << "SQLSEL: parallel declined -- " << decline
+                              << "; scanning serial.\n";
+                } else {
+                    struct WorkerOut {
+                        long long count = 0;
+                        std::vector<MatchRow> found;
+                        std::string error;
+                    };
+                    std::vector<WorkerOut> outs(static_cast<std::size_t>(workers));
+                    std::vector<std::thread> pool;
+                    pool.reserve(static_cast<std::size_t>(workers));
+
+                    const int64_t base = rec_count / workers;
+                    const int64_t rem  = rec_count % workers;
+
+                    for (int w = 0; w < workers; ++w) {
+                        const int64_t lo = 1 + w * base + std::min<int64_t>(w, rem);
+                        const int64_t hi = lo + base - 1 + (w < rem ? 1 : 0);
+                        dottalk::expr::Expr* program =
+                            pred ? worker_programs[static_cast<std::size_t>(w)].get() : nullptr;
+                        WorkerOut* out = &outs[static_cast<std::size_t>(w)];
+                        const bool want_keys = !count_star && !order_field.empty();
+                        const bool want_rows = !count_star;
+                        pool.emplace_back([lo, hi, program, out, want_keys, want_rows,
+                                           &area_path, &predicate_plan, &order_field]() {
+                            try {
+                                xbase::DbArea priv;
+                                priv.open(area_path);
+                                dottalk::exprglue::TupleViewContext view_ctx;
+                                for (int64_t r = lo; r <= hi; ++r) {
+                                    if (!priv.gotoRec64(static_cast<std::uint64_t>(r))) break;
+                                    bool keep = true;
+                                    try {
+                                        if (!priv.readCurrent()) break;
+                                        if (priv.isDeleted()) keep = false;
+                                    } catch (...) { break; }
+                                    if (keep && program) {
+                                        dottalk::TupleBuildResult row =
+                                            dottalk::build_tuple_for_area(predicate_plan, priv);
+                                        if (!row.ok) {
+                                            out->error = "predicate row build failed: " + row.error;
+                                            return;
+                                        }
+                                        const PredicateVerdict verdict =
+                                            evaluate_tuple_predicate(program, row.row, view_ctx);
+                                        if (verdict.state == PredicateState::Error) {
+                                            out->error = "predicate evaluation failed: " + verdict.error;
+                                            return;
+                                        }
+                                        keep = verdict.state == PredicateState::True;
+                                    }
+                                    if (keep) {
+                                        ++out->count;
+                                        if (want_rows) {
+                                            MatchRow m;
+                                            m.recno = r;
+                                            if (want_keys) {
+                                                try { m.key = trim(xfg::getFieldAsString(priv, order_field)); }
+                                                catch (...) { m.key.clear(); }
+                                            }
+                                            out->found.push_back(std::move(m));
+                                        }
+                                    }
+                                }
+                                priv.close();
+                            } catch (const std::exception& ex) {
+                                out->error = std::string("parallel worker failed: ") + ex.what();
+                            } catch (...) {
+                                out->error = "parallel worker failed: unknown error";
+                            }
+                        });
+                    }
+                    for (auto& t : pool) t.join();
+
+                    for (int w = 0; w < workers && scan_error.empty(); ++w) {
+                        const auto& o = outs[static_cast<std::size_t>(w)];
+                        if (!o.error.empty()) { scan_error = o.error; break; }
+                    }
+                    if (scan_error.empty()) {
+                        for (auto& o : outs) {
+                            matched_total += o.count;
+                            if (!count_star) {
+                                matches.insert(matches.end(),
+                                               std::make_move_iterator(o.found.begin()),
+                                               std::make_move_iterator(o.found.end()));
+                            }
+                        }
+                        std::cout << "SQLSEL: single-table scan access path -- parallel "
+                                  << "(workers=" << workers << ", rows=" << rec_count
+                                  << ", recno-range partitions).\n";
+                    }
+                    parallel_done = true;   // ran (or failed with a reported error)
+                }
+            }
+        }
+
+        bool ok = false;
+        if (!parallel_done && scan_error.empty()) {
             try { ok = area->top(); } catch (...) { ok = false; }
         }
         if (ok) {

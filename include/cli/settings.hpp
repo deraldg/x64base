@@ -37,6 +37,21 @@ inline bool default_index_txn_enabled() {
     return !(c == '0' || c == 'n' || c == 'N' || c == 'f' || c == 'F');
 }
 
+// SET PARALLEL default (AIF-168 PERF-2). 0 = OFF unless DOTTALK_PARALLEL env
+// seeds a worker count (CI/regression can opt in without editing scripts).
+// Runtime `SET PARALLEL` always overrides. Clamped to [0, 64].
+inline int default_parallel_workers() {
+    const char* v = std::getenv("DOTTALK_PARALLEL");
+    if (!v || !*v) return 0;
+    int n = 0;
+    for (const char* p = v; *p; ++p) {
+        if (*p < '0' || *p > '9') return 0;
+        n = n * 10 + (*p - '0');
+        if (n > 64) return 64;
+    }
+    return n;
+}
+
 } // namespace detail
 
 enum class EditorMode {
@@ -78,6 +93,12 @@ struct Settings {
     // Transactional in-COMMIT index maintenance (SET INDEXTXN). OFF (default) keeps
     // the legacy batch behavior (BUILDLMDB / REBUILD / REINDEX); ON is opt-in.
     std::atomic<bool> index_txn_on{detail::default_index_txn_enabled()}; // SET INDEXTXN
+
+    // Parallel read-only SQLSEL scans (SET PARALLEL, AIF-168 PERF-2). 0 = OFF
+    // (default): every statement runs exactly as before. n >= 2 partitions
+    // eligible single-table scans across n workers, each with a PRIVATE DbArea
+    // (AIF-120 R21: workers never share a cursor). Writes never enter the pool.
+    std::atomic<int> parallel_workers{detail::default_parallel_workers()}; // SET PARALLEL
 
     // ---- Formatting ----
     std::atomic<bool> century_on{false};      // SET CENTURY
@@ -144,6 +165,14 @@ struct Settings {
     // SET INDEXTXN -- transactional in-COMMIT index maintenance toggle.
     static bool indexTxnOn() { return instance().index_txn_on.load(); }
     static void setIndexTxn(bool on) { instance().index_txn_on.store(on); }
+
+    // SET PARALLEL -- worker count for read-only SQLSEL scans (0 = OFF).
+    static int parallelWorkers() { return instance().parallel_workers.load(); }
+    static void setParallelWorkers(int n) {
+        if (n < 0) n = 0;
+        if (n > 64) n = 64;
+        instance().parallel_workers.store(n);
+    }
 };
 
 } // namespace cli
