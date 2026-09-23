@@ -197,6 +197,29 @@ Mechanism, so this does not recur silently:
 - check_site.py prints the facts' age and warns past 30 days.
 - The site banner carries the engine stamp, linked to the commit.
 
+Retirement polarity (added 2026-09-23, later the same day). engine-facts.json
+catches a cited spec that disappears; it cannot catch prose teaching a retired
+form. check_site.py now sweeps every page against `retirements.json`, a port of
+x64base-site scripts/check-retirement-polarity.mjs (same register format, 6-line
+excuse window, register fixtures replayed first, exemptions must state a reason).
+Unlike the sibling, it FAILS the build. Negative-tested five ways: the 0083f82
+getting-started page is flagged at the exact `SQL SELECT` line; a broken
+fixture, a reasonless exemption, and a broken pattern on the full build path
+all exit 1.
+
+FINDING FOR THE UPSTREAM REGISTER (x64base-site scripts/engine-retirements-v1.json,
+another session's untracked draft -- deliberately NOT edited here): run
+unmodified over the text of the 0083f82 pages, the upstream sweep passed the
+`SQL SELECT custname ... FROM orders` example GREEN. The `sql.verb.scanner` row
+covers the scanner forms (SQL COUNT / ALL / DELETED / VERBOSE, "executes
+statements") but not `SQL SELECT`, whose redirect guard was retired with the
+scanner (cmd_sql.cpp header line 16, print_sql_reserved answers every
+invocation). Proposed row, carried locally as `sql.verb.select_redirect` with
+`local_proposed_upstream: true`: pattern `\bSQL\s+SELECT\b`, which does not
+match SQLSEL SELECT or SQLITE SELECT (both must_pass fixtures). Adopting it
+upstream would make the register three rows -- the census note's own
+threshold for revisiting a generator.
+
 Not verified this pass (left as they were, flagged honestly): the
 Interface-definition-language row (an APPLICATION_UI_DSL lane closed out
 2026-09-16 may have moved it); CDX-on-classic (still chartered, no spec
