@@ -61,3 +61,15 @@ first run immediately after the c559013d rebuild, the second an explicit
 `REGRESSION RUN SQLSEL_PARALLEL` minutes later with nothing changed. The
 spec's FIRST green -- also PASS -- was on build e88408bb and is deliberately
 NOT listed, the VARCHARRESET rule applied: a different build is not soak.
+
+| METAREPORT | dottalk++ beta 1.b, 632c737a  (Sep 22 2026 20:44:51) | PASS 8/8 blocks | 2026-09-23 |
+| METAREPORT | dottalk++ beta 1.b, 632c737a  (Sep 22 2026 20:44:51) | PASS 8/8 blocks | 2026-09-23 |
+
+METAREPORT's run 2 banner was transcribed directly from the operator's
+console paste of 2026-09-23. Run 1's banner line was cut from the paste;
+its identity is pinned by run 2's own datarun header, which staged the
+SAME exe ('built 405 min ago', newest candidate unchanged) seconds after
+run 1 completed -- recorded as a derivation, not a reconstruction. Both
+runs carried the post-632c737a4 CDX INFO honesty note in MR-P1/P2 and
+graded 8/8. Earlier greens (2026-09-22, incl. the 8bd/2b78-era builds)
+are deliberately NOT listed: different builds are not soak.
