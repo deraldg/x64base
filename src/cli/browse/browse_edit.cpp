@@ -9,7 +9,9 @@
 
 #include "browse_edit.hpp"
 #include "xbase.hpp"
+#include "xbase_cli.hpp"
 #include <iostream>
+#include <vector>
 
 namespace dottalk::browse::edit {
 
@@ -35,11 +37,40 @@ void list_fields(::xbase::DbArea& db){
     }
 }
 
-bool commit_staged(::xbase::DbArea& db, StageMap& staged){
-    for (auto& kv : staged){
-        if (!db.set(kv.first, kv.second)) return false;
+bool commit_staged(::xbase::DbArea& db, StageMap& staged, std::string* err){
+    if (err) err->clear();
+    if (staged.empty()) return true;
+
+    // THE GATE, BEFORE ANY WRITE (AIF-156). Ask about EVERY staged field
+    // before writing ANY of them -- all or nothing, the whole point of
+    // gateFieldWrites(). A refusal names its field and leaves the staged
+    // map intact for the operator to amend or cancel.
+    std::vector<std::pair<int, std::string>> writes;
+    writes.reserve(staged.size());
+    for (const auto& kv : staged) writes.emplace_back(kv.first, kv.second);
+
+    std::string gate_err;
+    int refused1 = 0;
+    if (!::xbase::cli::gateFieldWrites(db, writes, &gate_err, &refused1)){
+        if (err){
+            *err = gate_err.empty() ? std::string("write refused") : gate_err;
+            const auto& defs = db.fields();
+            if (refused1 >= 1 && refused1 <= static_cast<int>(defs.size()))
+                *err += std::string(" (field ") + defs[static_cast<size_t>(refused1) - 1].name + ")";
+        }
+        return false;   // nothing was written
     }
-    if (!staged.empty() && !db.writeCurrent()) return false;
+
+    for (auto& kv : staged){
+        if (!db.set(kv.first, kv.second)){
+            if (err) *err = "failed to set field #" + std::to_string(kv.first);
+            return false;
+        }
+    }
+    if (!db.writeCurrent()){
+        if (err) *err = "failed to write record";
+        return false;
+    }
     staged.clear();
     return true;
 }

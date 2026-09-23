@@ -107,6 +107,7 @@
 
 #include "xbase.hpp"
 #include "xbase_field_getters.hpp"
+#include "browse/browse_edit.hpp"
 #include "predicates.hpp"
 #include "textio.hpp"
 #include "cli/where_eval_shared.hpp"
@@ -790,19 +791,18 @@ void app_SIMPLE_BROWSER(xbase::DbArea& area, std::istringstream& in)
         }
     };
 
+    // COMMIT THROUGH THE SHARED EDITOR DOOR (AIF-156, 2026-09-23). The
+    // per-field set loop this lambda used to own lives in
+    // dottalk::browse::edit::commit_staged(), which gates every staged
+    // field through xbase::cli::gateFieldWrites() before writing any --
+    // so a staged edit to a declared PRIMARY key is refused whole, with
+    // the field named, and nothing reaches disk.
     auto commit_staged = [&]() -> bool {
-        if (staged.empty()) return true;
-        for (auto& kv : staged) {
-            if (!area.set(kv.first, kv.second)) {
-                std::cout << "Failed to set field #" << kv.first << "\n";
-                return false;
-            }
-        }
-        if (!area.writeCurrent()) {
-            std::cout << "Failed to write record.\n";
+        std::string edit_err;
+        if (!dottalk::browse::edit::commit_staged(area, staged, &edit_err)) {
+            std::cout << "SAVE blocked: " << edit_err << "\n";
             return false;
         }
-        staged.clear();
         return true;
     };
 

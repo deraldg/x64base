@@ -57,6 +57,14 @@
 # Regenerate: python tools/staging/check_field_write_callers.py --emit-baseline
 #
 # ---------------------------------------------------------------------------
+# 2026-09-23 -- THE FIRST GENUINE SHRINK SINCE THE MIGRATION: 13 -> 11 sites,
+# 11 -> 9 files, and both removals are ROUTINGS, not re-anchors. Owner ruling:
+# interactive editors share ONE gated commit function. browse_edit.cpp's
+# commit_staged() now asks gateFieldWrites() for every staged field before
+# writing any (exempted BY ROUTE -- see EXEMPT_FILES); app_simple_browser.cpp
+# lost its private commit lambda entirely and calls that shared door. The
+# content-key scheme carried its first real signal in the shrink direction.
+# ---------------------------------------------------------------------------
 # THE HISTORY BELOW IS KEPT VERBATIM. It is the evidence for the migration
 # above, and the ten drifts are the reason the scheme changed.
 # ---------------------------------------------------------------------------
@@ -202,8 +210,6 @@
 src/bbs/bbs_store.cpp :: close_thread :: if (idx >= 0) a.set(idx + 1, " "); :: set
 src/bbs/bbs_store.cpp :: join :: a.set(i + 1, v); :: set
 src/bbs/bbs_store.cpp :: reply_to :: int idx = fields::findFieldCI(a, " "); if (idx >= 0) a.set(idx + 1, s_u64(pid)); a.writeCurrent(); } } } :: set
-src/cli/app_simple_browser.cpp :: app_SIMPLE_BROWSER :: if (!area.set(kv.first, kv.second)) { :: set
-src/cli/browse/browse_edit.cpp :: commit_staged :: if (!db.set(kv.first, kv.second)) return false; :: set
 src/cli/cmd_autodbf.cpp :: import_rows :: if (!area.set(static_cast<int>(i + 1), converted[i])) { :: set
 src/cli/cmd_commit.cpp :: apply_one_recno :: if (!A.set(f1, v)) { :: set
 src/cli/cmd_copy.cpp :: logical_copy_to_as :: if (!dst.set(i, s.get(i))) { :: set

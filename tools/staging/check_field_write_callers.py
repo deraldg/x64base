@@ -121,6 +121,19 @@ EXEMPT_FILES = {
     # compiler name every site.
     os.path.join("src", "dewey", "hierarchy_service.cpp"),
 
+    # src/cli/browse/browse_edit.cpp (AIF-156, 2026-09-23). THE SHARED EDITOR
+    # COMMIT DOOR, exempted BY ROUTE like the gated multi-field writers above:
+    # commit_staged() asks gateFieldWrites() about EVERY staged field before
+    # writing ANY of them, then keeps its own set()+writeCurrent() apply --
+    # per-field routing through replaceFieldStored() would turn one physical
+    # write into N and destroy the all-or-nothing edit. Owner ruling
+    # 2026-09-23: interactive editors share ONE commit function; the two
+    # simple field-test editors (this helper's own caller surface plus
+    # app_simple_browser, now routed through it) are the historical examples,
+    # and future browsers/editors that enable editing call this door and
+    # inherit the funnel without writing their own.
+    os.path.join("src", "cli", "browse", "browse_edit.cpp"),
+
     # src/cli/table_state.cpp (2026-09-09). EXEMPT FOR A DIFFERENT REASON THAN
     # EVERY FILE ABOVE, and the difference is the point. The others are exempt
     # because gating them per field would be slower and would break atomicity.
