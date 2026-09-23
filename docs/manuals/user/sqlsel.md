@@ -5,9 +5,15 @@ page_id: USER-SQLSEL-01
 title: SQLsel
 audience: knows xBase, new to SQLsel
 status: DEVELOPMENT-RUNTIME-VERIFIED
-last_verified: 2026-09-03
+last_verified: 2026-09-23
 runtime_scope: development
 ```
+
+> Revised 2026-09-23. Three weeks of engine movement postdated the 09-03
+> text: explicit transactions became MULTI-TABLE with group commit
+> (AIF-160, 09-11), the WAL moved TBJ1 -> TBJ2, primary-key enforcement
+> arrived on the DML paths (AIF-156, 09-07), and read-only scans gained
+> SET PARALLEL (AIF-168, 09-22). Corrections below are dated in place.
 
 ## Purpose and authority
 
@@ -347,7 +353,18 @@ DELETE marks matching xBase records deleted. It does not PACK the table.
 RECALL can unmark a record according to the normal xBase rules.
 
 Outside an explicit SQL transaction, each DML statement is atomic for its one
-target table and commits automatically through TableBuffer and TBJ1 WAL.
+target table and commits automatically through TableBuffer and the write-ahead
+journal (TBJ1 when this chapter was first verified; TBJ2 as of 2026-09-23).
+
+One more refusal joined this path on 2026-09-07 (AIF-156) and it is doctrine,
+not a parser limit: **a declared PRIMARY key cannot be written by INSERT or
+UPDATE.** A primary key is minted when the row is created and never edited
+afterwards, which is what makes it unique without a duplicate search. INSERT
+a row without its key and the engine mints it at append; supply a value for
+the key column, or UPDATE one, and the whole statement refuses with the field
+named -- before the append, so a refusal leaves no blank row behind. The same
+policy covers `IMPORTSQL FILE` (2026-09-23): a source file's key column is
+never imported into the house key; import it as an ordinary data column.
 
 ## 9. Explicit transactions
 
@@ -365,14 +382,25 @@ SET MODE NATIVE
 Use `ROLLBACK` instead of `COMMIT` to discard the staged changes.
 
 The first DML statement takes the target table fence and opens a private
-TableBuffer/TBJ1 scope. Later DML in the transaction reads its own inserts,
-updates, and deletes. A SQLsel SELECT issued before COMMIT deliberately remains
-a committed-truth view; it does not overlay the pending DML buffer.
+TableBuffer/WAL scope (TBJ2 as of 2026-09-23). Later DML in the transaction
+reads its own inserts, updates, and deletes. A SQLsel SELECT issued before
+COMMIT deliberately remains a committed-truth view; it does not overlay the
+pending DML buffer.
 
 The transaction is atomic for one target table. A statement targeting a second
 table refuses because x64base does not claim cross-table atomic commit across
 DBF, memo, and index stores. Changing out of SQL mode also refuses while a SQL
 transaction is active, so native COMMIT cannot bypass SQLsel's state.
+
+**The paragraph above was true when written and is left standing; it stopped
+being true on 2026-09-11 (AIF-160).** An explicit transaction may now span
+SEVERAL tables. Each target prepares its own buffered work, and a single
+group-log row -- the engine's own ledger, written as one durable append --
+decides them all: a crash before that row lands leaves NONE of the tables
+applied, and recovery after it applies every one. So cross-table atomicity is
+now claimed, precisely and only at that group-decision boundary; the mode-exit
+refusal still holds while a transaction is active. The GRPMINT arm in the
+default suite proves the decision row and both members on every REGRESSION ALL.
 
 If COMMIT cannot clear the buffered work, the transaction remains available
 for retry or rollback. A caller-owned table lock remains owned by the caller.
@@ -407,7 +435,10 @@ Common corrective results include:
 - incompatible set columns: align arity and TupleRow types;
 - scalar subquery returned more than one row: make it scalar deliberately;
 - RIGHT/FULL in a multi-join chain: use a two-table form or materialize a stage;
-- second DML target inside one transaction: commit/rollback, then begin another;
+- second DML target inside one transaction: this REFUSED until 2026-09-11 and
+  is now supported -- the group commit decides all targets as one (section 9);
+- INSERT or UPDATE writing a declared PRIMARY key: keys are minted at append
+  and never written -- omit the key column and let the engine mint it;
 - DML NULL or memo field: use a supported typed value/native memo workflow;
 - UPDATE or DELETE without WHERE: supply an explicit predicate;
 - table-buffer capacity exceeded: reduce the transaction batch;
@@ -416,6 +447,27 @@ Common corrective results include:
 Do not recover from a refusal by weakening the query until it merely runs. Read
 the message, preserve the intended semantics, and change the data preparation
 or statement shape deliberately.
+
+## 11a. Parallel read-only scans (added 2026-09-23; AIF-168, 2026-09-22)
+
+Single-table read-only scans can be partitioned across worker threads:
+
+```text
+SET PARALLEL 8        exact worker count
+SET PARALLEL ON       compiled default (8; movable with SET PARALLEL DEFAULT <n>)
+SET PARALLEL OFF      serial (the startup default)
+SET PARALLEL STATUS   current setting
+```
+
+The partitioning is by recno range and the statement reports its access path
+(`parallel (workers=N, rows=R, recno-range partitions)`), so the evidence is
+in the transcript like every other path report. Answers are proven identical
+to serial by a differential spec in the default suite (SQLSEL_PARALLEL:
+OFF==ON pairs, deleted-row exclusion across partition seams, worker clamping).
+The engine DECLINES parallelism and says so -- small tables (under 2000 rows)
+and subquery predicates scan serial with the reason printed. DML, joins and
+transactions are untouched; this is a read-side feature only. Measured on the
+1M-row fixture: a bare COUNT fell from 46.6s to about 2.1s at 12 workers.
 
 ## 12. Current development capability boundary
 
@@ -436,13 +488,15 @@ or statement shape deliberately.
 | correlation to a single-table outer scope | implemented and counted |
 | correlation to a joined outer scope | refused |
 | INSERT/UPDATE/DELETE | implemented through house write machinery |
+| write to a declared PRIMARY key | refused; keys are minted at append (2026-09-07) |
 | autocommit DML | implemented, one target table |
-| BEGIN/COMMIT/ROLLBACK | implemented in SQL mode, one target table |
+| BEGIN/COMMIT/ROLLBACK | implemented in SQL mode; MULTI-TABLE via group commit (2026-09-11; read "one target table" here before that date) |
+| parallel read-only scans (SET PARALLEL) | implemented, OFF by default, differential-proven (2026-09-22) |
 | duplicate table names in simultaneous workspaces | current-workspace scoped |
 | workspace-qualified table syntax | not implemented |
 | stored SQL NULL | not present |
 | memo-field SQLsel DML | refused pending an atomic store boundary |
-| cross-table write atomicity | not claimed |
+| cross-table write atomicity | claimed at the group-commit decision row, explicit transactions only (2026-09-11; "not claimed" before that date) |
 | cost-based optimizer or EXPLAIN | not implemented |
 
 ## 13. Maintainer verification
@@ -469,7 +523,12 @@ REGRESSION RUN SQLSEL_BUFFER_VIS
 REGRESSION RUN EVALDIFF
 REGRESSION RUN SQLSEL_DML
 REGRESSION RUN SQLSEL_WORKSPACE
+REGRESSION RUN SQLSEL_PARALLEL
 ```
+
+(SQLSEL_PARALLEL and SQLMODE_SMOKE joined the DEFAULT suite in September
+2026, so a plain REGRESSION ALL now runs them; the explicit forms above still
+work for a focused check.)
 
 The DML and workspace fixtures are self-erasing. The workspace fixture mints
 catalog rows and therefore must run inside the regression catalog bracket, not
@@ -490,7 +549,10 @@ shown that changing an oracle row makes the DML and workspace validators fail.
 5. Remember that SELECT sees committed truth, while DML inside one transaction
    reads its own staged writes.
 6. Treat `<UNMATCHED>` as produced outer-join absence, not stored NULL.
-7. Keep an explicit transaction to one target table.
+6a. Never supply a declared PRIMARY key's value in INSERT or UPDATE -- omit
+    the column and the engine mints it at append (2026-09-07).
+7. An explicit transaction may span several tables (2026-09-11); one COMMIT
+   decides them all, so batch related changes into one transaction on purpose.
 8. COMMIT or ROLLBACK before leaving SQL mode.
 9. Use native REPLACE for memo writes until the memo store shares the SQLsel
    atomicity boundary.
