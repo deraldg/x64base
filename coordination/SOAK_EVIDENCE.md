@@ -37,6 +37,22 @@ falsifying evidence, not defeating a check.
 rows below were taken with `grep` from `tmp/varreset2.txt` and
 `tmp/varreset3.txt` rather than reconstructed.
 
+## THE FLIP COMMIT'S OWN ORDERING (measured 2026-09-23, SQLMODE_SMOKE)
+
+A default-suite flip moves numbers the SITE publishes (`in_default_suite`,
+the oracle default/explicit split), and `check-site-artifacts` HARD-blocks a
+commit whose tree disagrees with the published artifacts. So the site
+re-derive is a PRECONDITION of the flip commit, not a follow-up: the
+SQLMODE_SMOKE promotion commit was blocked exit 2 with check-soak-evidence
+itself already PASSING, and could not exist until both artifacts were
+re-derived in the site tree. The re-derive necessarily stamps the flip
+commit's PARENT (the flip is uncommitted at derive time); the gate treats
+exactly that -- facts current, provenance one behind -- as advisory.
+Promotion order, in full: preconditions (mutation proof, review, soak) ->
+rows here -> flag flip in the working tree -> rebuild + REGRESSION ALL off
+the dirty tree -> site derive against this tree -> flip commit -> site
+commit.
+
 ## ROWS
 
 | SPEC | BANNER | VERDICT | RECORDED |
