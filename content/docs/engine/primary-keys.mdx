@@ -68,14 +68,18 @@ language prints nothing rather than going red, which is why the marker counts
 below are load-bearing and why a transcript that is one short is a lost claim
 rather than a pass.
 
-`PKPOLICY` carries 15 graded markers — 7 guards and 8 arms — over generation,
-reservation and refusal. Its five refusal arms cover five different doors into a
-field write: native `REPLACE`, `SQLSEL INSERT`, `SQLSEL UPDATE`, and the two
+`PKPOLICY` carries 19 graded markers — 9 guards and 10 arms — over generation,
+reservation and refusal. Its seven acceptance arms cover six different doors
+into a field write: native `REPLACE`, `SQLSEL INSERT`, `SQLSEL UPDATE`, the two
 legacy bare `INSERT` / `UPDATE` verbs, which are different files reached by a
-different registration. They are five arms and not one because a fix wired into
-one door is not evidence about another — which is not hypothetical: the first
-increment turned two of them green and left the third untouched, and as a single
-arm that transcript would have read as a win.
+different registration, and — as of 2026-09-23 — `IMPORTSQL FILE`, the first
+bulk-creation door, whose pair of arms asks both halves of the creation-time
+question: an import whose columns would land on the key refuses before the
+first row, and rows imported past the key come out minted rather than blank.
+They are separate arms and not one because a fix wired into one door is not
+evidence about another — which is not hypothetical: the first increment turned
+two of them green and left the third untouched, and as a single arm that
+transcript would have read as a win.
 
 `PKDURABLE` carries 15 child markers — 10 guards and 5 arms, 2 of which are
 expected red — and it is the only spec in the tree that can say a designation
@@ -88,8 +92,8 @@ asymmetry is the only reason a cross-process claim is assertable here at all.
 
 | | `PKPOLICY` | `PKDURABLE` |
 | --- | --- | --- |
-| Graded markers | 15 | 15 (in the children) |
-| Guards / arms | 7 / 8 | 10 / 5 |
+| Graded markers | 19 | 15 (in the children) |
+| Guards / arms | 9 / 10 | 10 / 5 |
 | In the default suite | false | false |
 | Answers | generation, reservation, refusal | the designation survives a restart |
 
@@ -113,14 +117,14 @@ either way, and that is recorded rather than tuned away.
 
 ## Where enforcement stops
 
-**Five write paths are proven. The engine has more.** A static gate counts
-**6 direct field-write call sites across 6 files** that do not go through
-the write funnel — `COPY`, `SORT` and `IMPORTSQL` among them. (This sentence
-read "13 across 11, `CALCWRITE` and browse editing among them" until
-2026-09-23: `CALCWRITE` had in fact been routed on 2026-09-07 and this page
-kept naming it, and browse editing left the list on 2026-09-23 — see below.
-Later the same day the engine-owned system stores left it too, taking 11
-across 9 to the count above.)
+**Six write paths are proven. The engine has more.** A static gate counts
+**5 direct field-write call sites across 5 files** that do not go through
+the write funnel — `COPY` and `SORT` among them. (This sentence read "13
+across 11, `CALCWRITE` and browse editing among them" until 2026-09-23:
+`CALCWRITE` had in fact been routed on 2026-09-07 and this page kept naming
+it, and browse editing left the list on 2026-09-23 — see below. Later the
+same day the engine-owned system stores left it too, and `IMPORTSQL` left it
+last, by routing, taking 11 across 9 to 6 across 6 to the count above.)
 Five of five is *the arms that exist*, not a key that is enforced
 everywhere.
 
@@ -162,6 +166,22 @@ the key designation to the destination table, does an imported row's key get
 its uniqueness checked at creation, and is the deferred-commit apply covered
 by the gate it already passed at staging time.
 
+**The import question was answered the same day, by routing — and by a
+doctrine worth stating on its own: identity is house-owned, meaning is
+data.** A source database's key may embed meaning (a VIN encodes plant and
+model year), and meaning must survive an import — so the source key is
+*demoted* to an ordinary data column, never imported into the house key,
+and the house key is minted at append, the same last nanosecond every other
+creation path uses. `IMPORTSQL FILE` now refuses, before the first row, any
+import whose positional columns would land on a stamped key; gates every
+column of every row before appending it; and mints the key on rows imported
+past it — a stamped key field that imported blank could never be filled
+afterwards, by engine or operator. `PKPOLICY` grew four markers to hold
+this (a verb guard, the two acceptance arms, and a fixture-open guard the
+extended spec's own first — red — run demanded, when its ratchet caught a
+blind arm before anything was committed), which is why its counts above
+read 19 and seven.
+
 **And one is exempt because gating it would be wrong.** Write-ahead-log replay
 puts back values the gate already accepted at `COMMIT`; asking again would let a
 later constraint refuse a write that is already durable, and since replay
@@ -195,7 +215,7 @@ The numbers above are not typed. They are derived from the engine tree by
 this page to that artifact — change a count in the engine without changing this
 page and the build fails, naming the sentence.
 
-**Derived from engine commit `23795960e` (2026-09-23).**
+**Derived from engine commit `36e55ccc2` (2026-09-23).**
 
 The limit of that arrangement is stated because it is the one that has already
 bitten. Every freshness contract on this site resolves its authority against the
