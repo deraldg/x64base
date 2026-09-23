@@ -1,0 +1,79 @@
+* ============================================================
+*  PINOCCHIO PERF-3 CURVE -- the OQ-P1 rerun that grades to_number()
+*  (AIF-168 PERF-3, 2026-09-22)
+*
+*  Status:  CANDIDATE / REVIEW_BEFORE_EXECUTION. READ-ONLY.
+*  Purpose: the same two statements as the OQ-P1 curve (D1 function-WHERE,
+*           D3 bare COUNT), the same seven widths plus serial, on the build
+*           carrying the from_chars to_number(). Predictions ON RECORD
+*           BEFORE this run (charter, PERF-3 AUTHORED):
+*             (1) serial function-WHERE closes most of its gap to the
+*                 cheap statement (old baseline: 46.6 s vs 21.1 s);
+*             (2) the 6-12 worker plateau on function-WHERE BREAKS
+*                 (old: 16.3 / 15.6 / 16.9 s at 6/8/12 -- unwinder-lock
+*                 serialization, now removed);
+*             (3) every count identical at every width: 90700 / 1000000.
+*           A refuted prediction is a finding, not a failure.
+*
+*  Baseline table to grade against: charter, "OQ-P1 CURVE MEASURED
+*  2026-09-22". Run on an IDLE machine (the R4b protocol).
+* ============================================================
+SET ECHO OFF
+SET TIMER ON
+SET TALK ON
+
+SET PATH DBF DBF/pinocchio
+SET PATH INDEXES INDEXES/pinocchio
+SET PATH LMDB LMDB/pinocchio
+
+ECHO === C0. open STUDENTS; assert PARALLEL starts OFF ===
+SELECT 1
+USE STUDENTS
+SET PARALLEL STATUS
+
+ECHO === C1. serial: function-WHERE then bare COUNT (expect 90700 / 1000000) ===
+SET PARALLEL OFF
+SQLSEL SELECT COUNT(*) FROM STUDENTS WHERE ALLTRIM(MAJOR) = 'CSCI'
+SQLSEL SELECT COUNT(*) FROM STUDENTS
+
+ECHO === C2. workers=2 ===
+SET PARALLEL 2
+SQLSEL SELECT COUNT(*) FROM STUDENTS WHERE ALLTRIM(MAJOR) = 'CSCI'
+SQLSEL SELECT COUNT(*) FROM STUDENTS
+
+ECHO === C3. workers=4 ===
+SET PARALLEL 4
+SQLSEL SELECT COUNT(*) FROM STUDENTS WHERE ALLTRIM(MAJOR) = 'CSCI'
+SQLSEL SELECT COUNT(*) FROM STUDENTS
+
+ECHO === C4. workers=6 ===
+SET PARALLEL 6
+SQLSEL SELECT COUNT(*) FROM STUDENTS WHERE ALLTRIM(MAJOR) = 'CSCI'
+SQLSEL SELECT COUNT(*) FROM STUDENTS
+
+ECHO === C5. workers=8 (the ruled default) ===
+SET PARALLEL 8
+SQLSEL SELECT COUNT(*) FROM STUDENTS WHERE ALLTRIM(MAJOR) = 'CSCI'
+SQLSEL SELECT COUNT(*) FROM STUDENTS
+
+ECHO === C6. workers=12 ===
+SET PARALLEL 12
+SQLSEL SELECT COUNT(*) FROM STUDENTS WHERE ALLTRIM(MAJOR) = 'CSCI'
+SQLSEL SELECT COUNT(*) FROM STUDENTS
+
+ECHO === C7. workers=16 ===
+SET PARALLEL 16
+SQLSEL SELECT COUNT(*) FROM STUDENTS WHERE ALLTRIM(MAJOR) = 'CSCI'
+SQLSEL SELECT COUNT(*) FROM STUDENTS
+
+ECHO === C8. workers=22 ===
+SET PARALLEL 22
+SQLSEL SELECT COUNT(*) FROM STUDENTS WHERE ALLTRIM(MAJOR) = 'CSCI'
+SQLSEL SELECT COUNT(*) FROM STUDENTS
+
+ECHO === C9. restore: PARALLEL OFF, close ===
+SET PARALLEL OFF
+SET PARALLEL STATUS
+CLOSE
+SET TIMER OFF
+* END pinocchio_perf3_curve.dts

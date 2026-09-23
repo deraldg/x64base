@@ -517,6 +517,18 @@ same change-set); it needs a REBUILD to take, and REGRESSION LIST must
 show SQLSEL_PARALLEL [default] BEFORE the next REGRESSION ALL is
 believed -- NAV_NATURAL's wasted run is the precedent.
 
+VERIFIED IN-SUITE 2026-09-22 on the promoting build (aeaa6a6b4): the
+listing was read first and showed [default], then REGRESSION ALL LOG
+read specs run 32, passed 32, VERDICT PASS, isolation arms ok at both
+ends. The spec's in-suite verdict is identical to its standalone one
+(5/5 pairs, clamp, 3/3 declines, cursors 2/2), and its promise to
+leave PARALLEL OFF is now demonstrated rather than assumed: EVALDIFF
+runs after it in declaration order and its 22/22 held. This is the
+order-independence check a standalone run cannot provide -- the spec
+inherited whatever the 16 specs before it left behind and re-pointed
+its own three slots. Evidence: dottalkpp/data/tmp/regression_all.log
+(gitignored; this paragraph is the transcription).
+
 #### PERF-3 AUTHORED 2026-09-22 -- the plateau was EXCEPTIONS, not allocations
 
 SANDBOX MEASUREMENT (Cowork sandbox, g++ 11.4/glibc 2.35 -- third confirmed
@@ -568,6 +580,63 @@ triple per-row name resolution where a compiled binding could resolve once
 per layout (~115 ns across three CiIndex finds). None warrants the
 engine-wide RecordView contract change as priced -- that item is DEMOTED
 pending host confirmation of this slice.
+
+#### PERF-3 MEASURED 2026-09-22 -- one wall down, one wall named, one prediction refuted as worded
+
+Two full curve runs on the promoting build (banner aeaa6a6b, Sep 22 2026
+18:11:41), scripts/pinocchio/pinocchio_perf3_curve.dts, SET TIMER ON.
+Run 2 is the teed datum (tmp/perf3_curve_teed.txt, sha256:0984a7681a07cc60
+-- the tee reuses one filename, so run 2 OVERWROTE run 1's file); run 1 is
+console-paste corroboration, uniformly a few percent faster (cooler
+machine), same shape everywhere. THE BASELINE IS PIN-PERF1C-002 (the
+post-PERF-1c curve of 12:10 the same day), NOT the original OQ-P1 table:
+PERF-1c landed between the two curves, and grading PERF-3 against the
+pre-1c numbers would claim 1c's win twice.
+
+    workers   function-WHERE (1c -> now)     bare COUNT (1c -> now)
+    OFF       35.6 -> 25.0 / 27.3   1.3-1.4x  12.1 -> 9.6 / 11.2  ~noise
+    2         15.1 -> 10.0          1.5x       3.4 -> 3.4          1.0x
+    4         10.7 ->  6.5          1.6x       1.9 -> 1.8          1.0x
+    6         10.5 ->  5.8 / 6.3    1.7x       1.5 -> 1.4          1.0x
+    8         10.5 ->  5.7          1.8x       1.2 -> 1.15         1.0x
+    12        10.8 ->  6.1          1.8x       0.97 -> 0.92        1.0x
+    16        12.5 ->  6.7          1.9x       1.3 -> 1.2          1.0x
+    22        13.1 ->  6.9 / 7.3    1.8x       1.2 -> 1.1          1.0x
+
+THE DIFFERENTIAL IS THE FINDING. Bare COUNT -- which never threw -- is
+unchanged at EVERY width: a perfect in-run control proving the change
+touched only the throwing path. Function-WHERE improved at every width,
+and improved MORE in parallel (1.7-1.9x at 6-22 workers) than in serial
+(1.3-1.4x) -- the fingerprint of removed LOCK CONTENTION on top of removed
+per-call cost. The unwinder lock was real.
+
+PREDICTIONS GRADED AGAINST THE RECORD:
+(3) CONFIRMED EXACTLY: 90700 / 1000000 at all 16 rungs of both runs.
+(2) PARTIALLY CONFIRMED: the plateau's HEIGHT halved (10.5 -> 5.7 s at 8)
+    and the scaling ceiling lifted 3.4x -> 4.4x, but the SHAPE persists --
+    function-WHERE still stops scaling at ~8 while bare COUNT runs to
+    10.5x at 12. The exception lock was ONE wall, not the only wall.
+(1) REFUTED AS WORDED, confirmed in direction. "Closes MOST of its gap"
+    did not happen: the serial surcharge over bare COUNT fell from
+    ~23.5 us/row to ~15.7 us/row -- one third removed, ~7.9 us/row.
+    THE REFUTATION CARRIES ITS OWN CALIBRATION: 7.9 us/row over two
+    throws is ~4 us per thrown-and-caught exception on MSVC x64 --
+    three times the sandbox's glibc figure of 1.3 us. The sandbox
+    predicted the MECHANISM correctly and the MAGNITUDE conservatively;
+    "a sandbox green is not a host green" cuts both ways, and this row
+    is the measured exchange rate for next time.
+
+WHAT THE REMAINING WALL IS, BY ELIMINATION: with exceptions gone, the
+~15.7 us/row serial surcharge and the persisting 8-worker cap both point
+at the already-named second-order residue -- function argv/return
+allocations (the heap lock under concurrency) and per-row name
+resolution. The demoted platinum item stays demoted; the NEXT slice, if
+taken, is the narrow argv/return-allocation cut, sized by this
+differential rather than by the old engine-wide RecordView pricing.
+
+DEFAULT UNCHANGED: 8 still wins function-WHERE (5.70 s best both runs)
+and is within noise of 12 on bare COUNT; the OQ-P1 ruling stands.
+Ledger: PIN-PERF3-001/002. Fixture script committed with this section.
 
 ## 5. Open rulings, placed where they block
 
