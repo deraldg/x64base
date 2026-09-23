@@ -8,10 +8,10 @@ question: can the educational database behave like a real engine at
 million-row scale? Its generated data, tables, indexes, and LMDB stores remain
 isolated from protected project data.
 
-> **Benchmark evidence current through 2026-07-22** (the scan-evaluator baseline
-> below). The documentation flush, identity / AI-BBS, and expression-function
-> work since then added no new Pinocchio run; per the append-only rule, none of
-> the figures below have been altered.
+> **Benchmark evidence current through 2026-09-22** (the engine performance
+> lane below). This banner read "current through 2026-07-22" until 2026-09-23;
+> per the append-only rule, no historical figure below has been altered -- the
+> new evidence is appended as its own section.
 
 ## Current proof state
 
@@ -126,6 +126,55 @@ The benchmark is preserved as the curated regression `PHASE0_DECODE_COST`
 — it is a ~2-minute reproducible baseline, not a pass/fail gate — and is run
 explicitly.
 
+## Engine performance lane — the named bottleneck, removed (2026-09-20 to 2026-09-22)
+
+The scan-evaluator baseline above ended by naming its own successor: "bind
+field offsets once, compile the predicate once, decode in place without
+allocation," with a single-term scan "dropping from ~38 s toward under a
+second" as the target. The AIF-168 engine-performance lane did exactly that,
+in graded slices over three days, against the same 1,000,000-row STUDENTS /
+5,501,358-row ENROLL workload. Each slice carries its own before/after
+differential, and the later curve runs are **teed and hash-verified**
+(`PIN-PERF3-001/002`, `PIN-PERF4-001`) — a stronger evidence tier than the
+console-paste rows they superseded.
+
+The slices, each measured against the build before it: view-based row
+contexts (PERF-1a, 3–6× on the converted loops), a compiled predicate plan
+(PERF-1b, 1.6–3.9× on top), raw navigation with decode-from-buffer and
+predicate-driven column thinning (PERF-1c, 1.3–2.2× serial), partitioned
+parallel scans behind `SET PARALLEL` (PERF-2, 4.0–4.8× on 6 workers, every
+OFF/ON pair identical including five bands straddling the exact partition
+seams), exception-free numeric conversion (PERF-3 — the plateau was
+`std::stod` **exceptions**, ~4 µs per throw on MSVC x64, and removing them
+also removed unwinder lock contention), and per-scan row refill instead of
+per-row construction (PERF-4 — the heap lock was the second wall, and
+breaking it broke the scaling plateau).
+
+The compound ledger, worst-case statement (a function-predicate `WHERE` over
+1M rows): **46.6 s serial when the lane opened → 2.08 s at 12 workers — 22×**,
+with `90700 / 1000000` exact at every rung of every curve. The bare 1M
+`COUNT` runs in **0.94 s** at 12 workers — the baseline's "toward under a
+second" target, met. Serial simple-`WHERE` reached ~22–24 µs/row and serial
+bare `COUNT` ~12 µs/row, at or below the native loop's own rates on the same
+table: the typed-pipeline premium the baseline priced at 8× was eliminated,
+not accepted. Correctness rode along the whole way: the full regression
+suite green on every slice's build, including the promoted `SQLSEL_PARALLEL`
+spec whose five OFF==ON differential pairs are part of the default suite.
+
+`SET PARALLEL ON` resolves to a compiled default of 8 workers (the first
+curve's ruling), configurable per box (`SET PARALLEL DEFAULT <n>` or
+`DOTTALK_PARALLEL_ON`); the post-PERF-4 curve favors 12 on the attested
+machine and nothing degrades through 22. Two calibration rows worth keeping:
+sandbox (glibc) predictions priced the *mechanisms* correctly and the *host
+magnitudes* wrong by measured factors of 3× (exception cost) and ~60×
+(heap-and-copy cost) — the sandbox names what to remove; only the host
+prices it. The lane's full slice-by-slice record, predictions graded against
+results, lives in `docs/maintenance/ENGINE_PERF_PDLC_LANE_V1.md`; the curve
+fixture is `pinocchio_perf3_curve.dts`, reproducible and unchanged across
+the PERF-3/PERF-4 runs. Machine identity: the same attested profile below
+(the OQ-P1 ruling re-verified it by `Get-CimInstance` on 2026-09-21); per-run
+auto-captured profiles remain future work.
+
 ## Machine identity
 
 The individual run transcripts did not self-record the machine, so the raw
@@ -167,9 +216,15 @@ the current public runtime or a tagged release.
 ## Next benchmark gate
 
 1. Run a fresh large-data battery with raw before/after transcripts and an
-   automatically captured machine profile.
+   automatically captured machine profile. **Substantially delivered
+   2026-09-22** by the performance-lane curves above — teed, hash-verified,
+   before/after at every slice — except the *automatic* machine profile,
+   which still rests on the maintainer attestation.
 2. Bind the tested engine commit and release state to the fresh evidence.
-3. Append the new results; never overwrite the historical baseline.
+   **Delivered for the lane runs**: each curve records its engine build
+   banner (content sha + build stamp) in the lane ledger.
+3. Append the new results; never overwrite the historical baseline. **Done
+   above**; every 2026-07 figure stands untouched.
 4. Continue Phase 2 fault injection. The crash/recovery + durability slice for
    the buffered lane is delivered (the table-buffer WAL above); concurrency and
    multi-store recovery remain unverified.
