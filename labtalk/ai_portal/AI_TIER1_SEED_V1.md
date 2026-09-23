@@ -3,7 +3,7 @@
     status      : seed (lane AIF-082; ruling state lives in the lane doc)
     owner       : member.derald   steward: member.ai.claude.cowork
     created_utc : 2026-07-31T13:25:00Z
-    updated_utc : 2026-09-04T00:00:00Z
+    updated_utc : 2026-09-23T00:00:00Z
     budget      : 16384 B hard ceiling (raised from 8192, 2026-09-04; see "Maintenance contract")
 
 The smallest set that makes you **safe to act**. Engine knowledge loads per
@@ -73,7 +73,10 @@ modified and hundreds of untracked files belonging to other sessions.
 - Inline comment marker is `&&`. A single `&` is the xBase macro operator, never
   a comment. Free-text commands that read to end of line must be comment-free.
 - **No em-dashes, en-dashes, smart quotes, or Unicode arrows.** Use `--` and
-  `->`. ASCII only in new content; check with `grep -P '[^\x00-\x7F]'`.
+  `->`. Scope is what the gates check, on added lines only: authored `.md` in
+  this tree must be ASCII (`check_house_style.py`); C/C++ bans an enumerated
+  typographic set, so box-drawing and accented text stay (`check_cpp_ascii.py`).
+  Websites and generated output are out of scope.
 - Cite `file:line` for source claims.
 - **Evidence tiers are load-bearing:** `planned`, `source-evidenced`,
   `runtime-proven`. Never write `runtime-proven` unless it ran, and never leave

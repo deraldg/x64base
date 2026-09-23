@@ -4,8 +4,10 @@ check_cpp_ascii.py -- an em dash in C/C++ source is an automatic fail.
 
 Owner ruling, 2026-08-13: "make a rule in the ai portal, an em dash is an
 automatic fail in your source code" and "fail on c++ code". Web source is
-explicitly OUT of scope by the same ruling; see the measurement in
-AI_PORTAL.md, "ASCII in C/C++ source".
+explicitly OUT of scope by the same ruling. The scope is stated for agents in
+AI_TIER1_SEED_V1.md section 4, "House conventions". (This line used to cite an
+AI_PORTAL.md section "ASCII in C/C++ source" that does not exist; found
+2026-09-23, grep count 0.)
 
 WHY THIS IS NOT COSMETIC. The em dashes in this tree's C/C++ are not in
 comments. Measured 2026-08-13: of 51 in 10 files, 41 sit inside STRING
@@ -59,11 +61,11 @@ CPP_EXT = (".c", ".cc", ".cpp", ".cxx", ".h", ".hh", ".hpp", ".hxx", ".inl", ".i
 # Credit where due -- this gate is the follow-through on that analysis, not its
 # discovery.
 #
-# KNOWN CONFLICT, recorded rather than resolved here: AI_TIER1_SEED_V1.md sec 4
-# says "ASCII only in new content; check with grep -P '[^\x00-\x7F]'", which is a
-# closure and disagrees with the ruling above. The seed is owner-maintained and
-# byte-budgeted; correcting it is his edit, not this file's. Until then the RULING
-# governs this gate and the disagreement is stated so nobody has to rediscover it.
+# FORMER CONFLICT, RESOLVED 2026-09-23: AI_TIER1_SEED_V1.md sec 4 used to say
+# "ASCII only in new content; check with grep -P '[^\x00-\x7F]'", a closure that
+# disagreed with the ruling above. With the owner's go-ahead the seed now states
+# the scope per gate: authored .md must be ASCII (check_house_style.py), C/C++
+# bans this enumerated set, websites and generated output are out.
 #
 # This list WAS widened to a full closure on 2026-08-14 and reverted the same day
 # when the ruling was found. The widening was made citing the seed, without having
