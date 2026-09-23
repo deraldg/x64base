@@ -755,12 +755,37 @@ Ledger: PIN-PERF4-001.
   E-cores + 2 LP E-cores. Proposal was 6; the curve ruled 8, per this
   charter's own "curve decides" clause and the owner's 2026-09-22
   directive.
-- OQ-P2 (blocks PERF-2): does REL's linear child walk join the pool, or stay
-  single-lane until its own slice? Proposed: stay out in v1 (REL walks the
-  child via the relation engine, a different row source).
-- OQ-P3 (blocks PERF-1 exit): is 26 us/row (native COUNT FOR) the floor to
-  chase, or does the typed TupleRow pipeline accept a stated premium (2-3x)
-  for its type fidelity? Proposed: accept the stated premium; record it.
+- OQ-P1 AMENDED BY OWNER RULING 2026-09-22 (post-PERF-4): the ON width is
+  CONFIGURABLE, not baked. `SET PARALLEL ON` resolves to a session default
+  (compiled 8, the standing ruling), movable at runtime with
+  `SET PARALLEL DEFAULT <n>` or seeded at startup by DOTTALK_PARALLEL_ON --
+  the SET INDEXTXN pattern. The owner asked "can it be optional" rather than
+  moving 8 to 12, so the curve's finding (12 wins both statements
+  post-PERF-4, nothing degrades through 22) is carried as CONTEXT in the
+  usage text and this charter, and each box picks its own width. An explicit
+  `SET PARALLEL <n>` is untouched; SQLSEL_PARALLEL's pinned output lines
+  (OFF/2/6 spellings) are byte-identical, so the promoted spec needs no
+  retune. STATUS now also reports what ON means.
+- OQ-P2 -- RULED 2026-09-22, adopted as proposed by owner direction
+  ("proceed"): REL's linear child walk STAYS OUT of the pool in v1. REL
+  walks the child via the relation engine, a different row source with its
+  own cursor discipline; parallelizing it is a future lane with its own
+  R21 analysis, not a rider on this one.
+- OQ-P3 -- CLOSED BY MEASUREMENT 2026-09-22, overtaken before it needed a
+  ruling: PIN-PERF1C-002 recorded the premium ELIMINATED (serial
+  simple-WHERE 22-24 us/row and bare 12 us/row, at or below native rates),
+  and PERF-3/PERF-4 cut further from there. The question "accept a 2-3x
+  premium?" has no premium left to accept. Kept for the record: the typed
+  TupleRow pipeline retains its type fidelity at native-or-better cost.
+- PERF-5 (the ~4.8 us/row function-eval surcharge: fn argv/return
+  allocations, decode-into-buffer) -- PARKED BY OWNER RULING 2026-09-22
+  ("agreed"): diminishing returns; reopen only if a workload demands it.
+- Teed-promotion debt on the OQ-P1 and PERF-1c console-paste curves --
+  DISCHARGED BY SUPERSESSION: the same fixture statements have since been
+  measured TWICE under tee on newer builds (PIN-PERF3-001
+  sha256:0984a7681a07cc60, PIN-PERF4-001 sha256:2c67dcd22a27225b). The
+  historical rows keep their CONSOLE_PASTE evidence tier honestly; nothing
+  now rests on them that a teed run does not carry.
 
 ## 6. What this lane refuses
 

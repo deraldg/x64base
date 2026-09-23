@@ -52,6 +52,25 @@ inline int default_parallel_workers() {
     return n;
 }
 
+// What `SET PARALLEL ON` means (AIF-168 PERF-4, owner ruling 2026-09-22:
+// the ON width is CONFIGURABLE, not baked). Compiled default 8 -- the
+// OQ-P1 ruling stands until the owner moves it. DOTTALK_PARALLEL_ON env
+// seeds a different width (2..64); runtime `SET PARALLEL DEFAULT <n>`
+// always overrides. Context for the chooser: the post-PERF-4 curve
+// (PIN-PERF4-001) measured 12 beating 8 on BOTH probe statements with
+// no degradation through 22 on the reference 185H.
+inline int default_parallel_on_workers() {
+    const char* v = std::getenv("DOTTALK_PARALLEL_ON");
+    if (!v || !*v) return 8;
+    int n = 0;
+    for (const char* p = v; *p; ++p) {
+        if (*p < '0' || *p > '9') return 8;
+        n = n * 10 + (*p - '0');
+        if (n > 64) return 64;
+    }
+    return (n >= 2) ? n : 8;
+}
+
 } // namespace detail
 
 enum class EditorMode {
@@ -99,6 +118,12 @@ struct Settings {
     // eligible single-table scans across n workers, each with a PRIVATE DbArea
     // (AIF-120 R21: workers never share a cursor). Writes never enter the pool.
     std::atomic<int> parallel_workers{detail::default_parallel_workers()}; // SET PARALLEL
+
+    // What `SET PARALLEL ON` resolves to (SET PARALLEL DEFAULT <n>, AIF-168
+    // PERF-4). Session-only like every other SET; env-seedable via
+    // DOTTALK_PARALLEL_ON. Never read by the scan itself -- only by the ON
+    // spelling in cmd_set.cpp, so an explicit `SET PARALLEL <n>` is untouched.
+    std::atomic<int> parallel_on_workers{detail::default_parallel_on_workers()}; // SET PARALLEL DEFAULT
 
     // ---- Formatting ----
     std::atomic<bool> century_on{false};      // SET CENTURY
@@ -172,6 +197,14 @@ struct Settings {
         if (n < 0) n = 0;
         if (n > 64) n = 64;
         instance().parallel_workers.store(n);
+    }
+
+    // SET PARALLEL DEFAULT -- what the ON spelling resolves to (AIF-168 PERF-4).
+    static int parallelOnWorkers() { return instance().parallel_on_workers.load(); }
+    static void setParallelOnWorkers(int n) {
+        if (n < 2) n = 2;
+        if (n > 64) n = 64;
+        instance().parallel_on_workers.store(n);
     }
 };
 
