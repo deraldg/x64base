@@ -123,8 +123,17 @@ This lane exists partly to close that gap honestly.
     R3  RULED by action: the lean site replaced `main` of deraldg/dottalkpp.
         Old skeleton preserved at branch archive/nextjs-skeleton-2026-07 and
         in the local clone D:\dev\dottalkpp-site.
-    R4  OPEN: ASCII compliance for rendered HTML (entities vs literal `--`).
-        161 non-ASCII characters shipped in the deployed site.
+    R4  CLOSED 2026-09-23 -- NOT APPLICABLE. It was never a real ruling; the
+        steward over-read Tier 1 section 4's "ASCII only in new content" as
+        covering rendered websites. Measured scope of the rule as enforced:
+        C/C++ source (tools/staging/check_cpp_ascii.py, owner ruling
+        2026-08-13, "Web source is explicitly OUT of scope by the same
+        ruling"); authored .md in the engine tree, added lines only
+        (tools/staging/check_house_style.py, CHECKED_SUFFIXES = (".md",);
+        generated output such as manualgen pages excluded -- fix at the
+        generator). Websites are ungated, and x64base.com carries non-ASCII in
+        38 of 80 sampled docs pages. Owner confirmation, 2026-09-23: the rule
+        is for contracts and C++ source, not websites or manuals.
     R5  DEFERRED by owner ruling: all domain reorganization (x64base /
         dottalkpp / derald / dottalk) is explicitly a separate future effort,
         not part of this lane.
@@ -224,8 +233,8 @@ Not verified this pass (left as they were, flagged honestly): the
 Interface-definition-language row (an APPLICATION_UI_DSL lane closed out
 2026-09-16 may have moved it); CDX-on-classic (still chartered, no spec
 found); the "64-bit widening of every shared path" row (restated, not
-re-audited). R4 (non-ASCII in rendered HTML) remains open; all new text
-is ASCII.
+re-audited). R4 closed as not applicable (see the G1 rulings above): the
+ASCII rule does not govern rendered websites.
 
 **G3 -- sibling-site rules.** `deraldg/dottalkpp` requires downloads to carry
 type, source, proof status, and accessibility status. The lean Downloads page
