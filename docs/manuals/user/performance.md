@@ -132,6 +132,11 @@ function-eval surcharge), scheduled only if a workload demands it.
 joined the default suite 2026-09-22). The lane record with every curve,
 prediction and refutation is `docs/maintenance/ENGINE_PERF_PDLC_LANE_V1.md`.
 
+This chapter and the website's Pinocchio Engine Benchmarks page are tied by
+ANCHOR-PERFORMANCE in the manual anchor map: the benchmarks page is the
+published measurement record, this chapter is the operator guidance, and
+BOTH transcribe from the one lane record -- neither restates the other.
+
 ## 7. Owed sections (recorded, not written)
 
 - **Memory**: working-set behavior of wide scans, the one-row-buffer
