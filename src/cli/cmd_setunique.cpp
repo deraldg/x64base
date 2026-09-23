@@ -31,11 +31,19 @@
 //   SET UNIQUE USAGE
 //   SET UNIQUE FIELD <name> ON
 //   SET UNIQUE FIELD <name> OFF
+//   SET UNIQUE FIELD <name> PRIMARY
 //
 // notes:
 //   SET UNIQUE with no arguments lists current unique fields.
 //   FIELD <name> ON marks a field as unique in the registry.
 //   FIELD <name> OFF clears the unique marker.
+//   FIELD <name> PRIMARY designates the table's primary key (implies ON):
+//     the designation is stamped DURABLY into the x64 field header
+//     (AIF-156, 2026-09-07) and REFUSED where the header cannot carry it
+//     (VFP/classic flavors). A primary key is minted at append and never
+//     edited afterwards; the write funnel enforces that from then on.
+//     (This spelling shipped 2026-09-06 and was undocumented here until
+//     2026-09-23 -- the gap PKP_G1's comment recorded.)
 //   This mutates uniqueness metadata only; it does not rewrite table records.
 //
 // risk:

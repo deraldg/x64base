@@ -348,20 +348,30 @@ const std::vector<MessageDef>& all_messages()
             "  SET MESSAGE CATALOG CHECK|STATUS\n"
             "  SET MESSAGE PROOF <args>\n"
             "  SET MESSAGE EMIT <symbol> [LOCALE <locale>]\n"
+            "  SET MODE\n"
+            "  SET MODE [TO] NATIVE|SQL|OTHER\n"
             "  SET NEAR ON|OFF\n"
 #if DOTTALK_HAS_XINDEX
             "  SET ORDER TO <tag|0>\n"
 #endif
             "  SET PAGING ON|OFF\n"
+            "  SET PARALLEL\n"
+            "  SET PARALLEL <n>|ON|OFF\n"
+            "  SET PARALLEL DEFAULT <n>\n"
+            "  SET PARALLEL STATUS|CHECK\n"
+            "  SET PARALLEL USAGE|HELP|?\n"
             "  SET PATH <slot> <path>\n"
             "  SET POLLING ON|OFF\n"
             "  SET PRINT ON|OFF\n"
             "  SET PRINT TO <file>\n"
+            "  SET RECURSION\n"
+            "  SET RECURSION ON|OFF\n"
             "  SET TABLE BUFFER ON|OFF\n"
             "  SET TABLE BUFFER ON|OFF ALL\n"
             "  SET TALK ON|OFF\n"
             "  SET TIMER ON|OFF\n"
             "  SET UNIQUE FIELD <name> ON|OFF\n"
+            "  SET UNIQUE FIELD <name> PRIMARY\n"
             "  SET WRAP ON|OFF\n"
 #if (DOTTALK_HAS_XINDEX) || (DOTTALK_WITH_DEV) || (DOTTALK_WITH_INDEX)
             "\n"
@@ -1607,7 +1617,7 @@ const std::vector<MessageDef>& all_messages()
             "COMMAND:SET UNIQUE",
             "USAGE",
             "INFO",
-            "Usage:\n  SET UNIQUE\n  SET UNIQUE USAGE\n  SET UNIQUE FIELD <name> ON\n  SET UNIQUE FIELD <name> OFF"
+            "Usage:\n  SET UNIQUE\n  SET UNIQUE USAGE\n  SET UNIQUE FIELD <name> ON\n  SET UNIQUE FIELD <name> OFF\n  SET UNIQUE FIELD <name> PRIMARY   (designates the primary key; implies ON)"
         },
         {
             MessageId::SetUniqueNoneText,
@@ -9826,20 +9836,30 @@ const std::vector<MessageTextDef>& all_message_texts()
             "  SET MESSAGE CATALOG CHECK|STATUS\n"
             "  SET MESSAGE PROOF <args>\n"
             "  SET MESSAGE EMIT <symbol> [LOCALE <locale>]\n"
+            "  SET MODE\n"
+            "  SET MODE [TO] NATIVE|SQL|OTHER\n"
             "  SET NEAR ON|OFF\n"
 #if DOTTALK_HAS_XINDEX
             "  SET ORDER TO <tag|0>\n"
 #endif
             "  SET PAGING ON|OFF\n"
+            "  SET PARALLEL\n"
+            "  SET PARALLEL <n>|ON|OFF\n"
+            "  SET PARALLEL DEFAULT <n>\n"
+            "  SET PARALLEL STATUS|CHECK\n"
+            "  SET PARALLEL USAGE|HELP|?\n"
             "  SET PATH <slot> <path>\n"
             "  SET POLLING ON|OFF\n"
             "  SET PRINT ON|OFF\n"
             "  SET PRINT TO <file>\n"
+            "  SET RECURSION\n"
+            "  SET RECURSION ON|OFF\n"
             "  SET TABLE BUFFER ON|OFF\n"
             "  SET TABLE BUFFER ON|OFF ALL\n"
             "  SET TALK ON|OFF\n"
             "  SET TIMER ON|OFF\n"
             "  SET UNIQUE FIELD <name> ON|OFF\n"
+            "  SET UNIQUE FIELD <name> PRIMARY\n"
             "  SET WRAP ON|OFF\n"
 #if (DOTTALK_HAS_XINDEX) || (DOTTALK_WITH_DEV) || (DOTTALK_WITH_INDEX)
             "\n"
@@ -10015,7 +10035,7 @@ const std::vector<MessageTextDef>& all_message_texts()
         { MessageId::SetLmdbOpenCdxFailedText, "en-US", "error: {detail}" },
         { MessageId::SetLmdbUsingText, "en-US", "using CDX '{container}' TAG '{tag}' ({direction})" },
         { MessageId::SetLmdbEnvdirLineText, "en-US", "  envdir: {path}" },
-        { MessageId::SetUniqueUsageText, "en-US", "Usage:\n  SET UNIQUE\n  SET UNIQUE USAGE\n  SET UNIQUE FIELD <name> ON\n  SET UNIQUE FIELD <name> OFF" },
+        { MessageId::SetUniqueUsageText, "en-US", "Usage:\n  SET UNIQUE\n  SET UNIQUE USAGE\n  SET UNIQUE FIELD <name> ON\n  SET UNIQUE FIELD <name> OFF\n  SET UNIQUE FIELD <name> PRIMARY   (designates the primary key; implies ON)" },
         { MessageId::SetUniqueNoneText, "en-US", "UNIQUE: (none)" },
         { MessageId::SetUniqueFieldsText, "en-US", "UNIQUE fields: {fields}" },
         { MessageId::SetUniqueFieldStatusText, "en-US", "UNIQUE {state} for FIELD {field}." },

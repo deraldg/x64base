@@ -1988,9 +1988,13 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
     // usage-access: SET USAGE
     // summary:
     //   Routed to the SET_UNIQUE handler; see that command for argument
-    //   detail.
+    //   detail. PRIMARY designates the table's primary key (implies ON,
+    //   stamped durably into the x64 header; refused where the header
+    //   cannot carry it). This line was missing until 2026-09-23 although
+    //   the spelling shipped 2026-09-06 -- PKP_G1's comment named the gap.
     // usage:
     //   SET UNIQUE FIELD <name> ON|OFF
+    //   SET UNIQUE FIELD <name> PRIMARY
     if (opt == "UNIQUE") {
         std::istringstream r(rest(args));
         cmd_SET_UNIQUE(A, r);
