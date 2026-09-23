@@ -78,6 +78,16 @@
 # (buffer-flush apply), cmd_copy and cmd_sort (does the PRIMARY stamp travel
 # to the destination?), and cmd_workspace set_by_name.
 # ---------------------------------------------------------------------------
+# 2026-09-23, THIRD SHRINK OF THE DAY -- 6 -> 5 sites, by ROUTING:
+# cmd_importsql.cpp's FILE row loop now gates every column before appending
+# (exempted BY ROUTE -- see EXEMPT_FILES), refuses key-covering imports before
+# the first row, and mints the house key per appended row through
+# dottalk_append_blank_raw_locked(). Owner ruling: identity is house-owned,
+# meaning is data. PKP_G8/T9/T10 are the runtime arms; this gate remains the
+# static half. Remaining: autodbf (creates its own unstamped destination),
+# cmd_commit (WAL-shaped apply), copy/sort (validated stamp travel via
+# carryPrimaryKey, write-before-stamp), cmd_workspace set_by_name.
+# ---------------------------------------------------------------------------
 # THE HISTORY BELOW IS KEPT VERBATIM. It is the evidence for the migration
 # above, and the ten drifts are the reason the scheme changed.
 # ---------------------------------------------------------------------------
@@ -223,6 +233,5 @@
 src/cli/cmd_autodbf.cpp :: import_rows :: if (!area.set(static_cast<int>(i + 1), converted[i])) { :: set
 src/cli/cmd_commit.cpp :: apply_one_recno :: if (!A.set(f1, v)) { :: set
 src/cli/cmd_copy.cpp :: logical_copy_to_as :: if (!dst.set(i, s.get(i))) { :: set
-src/cli/cmd_importsql.cpp :: <file-scope> :: if (!area.set(static_cast<int>(i + 1), converted[i])) :: set
 src/cli/cmd_sort.cpp :: cmd_SORT :: (void)out.set(out_i + 1, v); :: set
 src/cli/cmd_workspace.cpp :: set_by_name :: if (!a.set(i + 1, v)) { err = std::string(" ") + col; return false; } :: set

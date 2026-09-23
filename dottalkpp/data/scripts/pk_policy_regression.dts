@@ -29,10 +29,26 @@
 ;   A green Part B on a build with no enforcement means the arm stopped
 ;   discriminating, not that the engine improved.
 ;
-; MARKER COUNT IS 15 AND IT IS DERIVED, NOT DECLARED: 7 guards (PKP_G*) and
-; 8 arms (PKP_T1..T8), contiguous. COUNT THEM. A transcript with 14 is a spec
+; MARKER COUNT IS 19 AND IT IS DERIVED, NOT DECLARED: 9 guards (PKP_G*) and
+; 10 arms (PKP_T1..T10), contiguous. COUNT THEM. A transcript with 18 is a spec
 ; that lost a claim, not a spec that passed. An errored marker in this language
 ; PRINTS NOTHING rather than going red, so a missing line is a silent loss.
+;
+; IT WAS 18 FOR ONE RED RUN ON 2026-09-23: the first cut of the import
+; section had no fixture-open guard, its CREATEs closed PKPOL out of area 1,
+; and T9 read .F. for the wrong reason. G9 is the correction -- see the
+; section itself for the full account.
+;
+; IT WAS 15 UNTIL 2026-09-23. G8, T9 and T10 arrived with the IMPORTSQL FILE
+; gating (owner ruling: identity is house-owned, meaning is data -- a source
+; key is DEMOTED to a data column, never imported into the house key, and the
+; house key is minted at append). T9 asks whether an import whose columns
+; would land on the stamped key is refused BEFORE the first row; T10 asks
+; whether rows imported past the key come out MINTED rather than blank -- a
+; stamped blank can never be filled, so a blank here is a row the table can
+; never repair. G8 exists for G6's reason: both arms read their answer from
+; rows appearing or not appearing, and a verb that failed to parse also
+; appends nothing.
 ;
 ; IT WAS 11 UNTIL 2026-09-07. T7 and T8 were added because T4..T6 measured
 ; native REPLACE, SQLSEL INSERT and SQLSEL UPDATE and NOTHING ELSE, and the
@@ -265,6 +281,92 @@ GO 3
 UPDATE SET LNAME="GAMMAX" WHERE LNAME = "GAMMA"
 GO 3
 ? "PKP_G7_legacy_update_verb_reaches_the_row:" + (ALLTRIM(LNAME) = "GAMMAX")
+
+; ---------------------------------------------------------------------------
+; IMPORTSQL FILE (AIF-156, 2026-09-23). THE SIXTH DOOR, and the first one that
+; is a BULK CREATION path rather than an edit path. Owner ruling: identity is
+; house-owned, meaning is data. A source database's key may embed meaning (a
+; VIN does), so the source key is DEMOTED to an ordinary data column -- never
+; imported into the house key -- and the house key is minted at append, the
+; same last nanosecond every other creation path uses.
+;
+; Columns map BY POSITION in this command (source column i feeds table field
+; i+1), so whether an import would feed the stamped key is knowable from the
+; column count alone, and the refusal fires BEFORE THE FIRST ROW: a refusal
+; that has already appended half the file is a half-import, the state the
+; whole-import fence exists to prevent.
+; ---------------------------------------------------------------------------
+
+; BOTH FIXTURE TABLES ARE CREATED HERE, UP FRONT, AND THE REASON IS A RED
+; RUN. CREATE CLOSES THE CURRENT AREA BEFORE WRITING -- its own usage says
+; so -- and the first cut of this section ran CREATE with area 1 current, so
+; PKPOL was closed out from under T9: SELECT 1 selected an empty area, the
+; import refused for the WRONG reason (target not open), and T9 read .F.
+; The ratchet caught it before anything was committed (2026-09-23, first run
+; of the extended spec, build 16:01:40). That is PKP_G5's lesson arriving
+; for the SEVENTH recorded time, in a section added to a spec whose own
+; header warns about it. Hence PKP_G9 below: T9 gets its own fixture-open
+; guard, the same shape G5 gives the original Part B.
+ERASE TABLE PKIMPG CONFIRM
+ERASE TABLE PKIMP CONFIRM
+CREATE X64 PKIMPG (TXT C(8))
+CLOSE
+CREATE X64 PKIMP (TXT C(8), PKEY N(6,0))
+CLOSE
+
+; PKP_G8 -- THE VERB WORKS ON AN UNKEYED TABLE. A guard, for G6's reason: T9
+; reads "refused" from rows NOT appearing, and a verb that failed to parse, or
+; a fixture file that is missing, also appends nothing. Prove the same fixture
+; shape imports where nothing is declared before asking whether it is refused
+; where a key is.
+SELECT 4
+USE PKIMPG
+IMPORTSQL FILE pk_import_data_only.psv TO PKIMPG DELIM PIPE
+GO 2
+? "PKP_G8_import_verb_appends_unkeyed:" + (ALLTRIM(TXT) = "IMPB")
+
+; PKP_G9 -- REOPEN PKPOL AND PROVE IT IS OPEN BEFORE T9 RUNS. The CREATEs
+; above closed it; a bare SELECT 1 is not an open. If G9 reds, T9 is
+; UNPROVEN rather than failing, and the validator treats it that way.
+SELECT 1
+USE PKPOL
+GO 5
+? "PKP_G9_t9_fixture_is_open:" + (ALLTRIM(LNAME) = "EPS")
+
+; PKP_T9 -- AN IMPORT WHOSE COLUMNS WOULD LAND ON THE KEY IS REFUSED, with no
+; row appended. PKPOL's key is SID, field 1, so ANY positional import covers
+; it; the fixture also duplicates the key value (9 twice) the way a foreign
+; dump would, though coverage refuses it before content is ever read. PKPOL
+; holds records 1-5 (EPS is 5, proven by G6 and re-read by G9); the cursor is
+; parked on 5, import, and GO 6 must fail leaving the cursor on EPS -- the
+; T5/T7 read, by data, never by console.
+IMPORTSQL FILE pk_import_covers_key.psv TO PKPOL DELIM PIPE
+GO 6
+? "PKP_T9_import_covering_key_refused:" + (ALLTRIM(LNAME) = "EPS")
+
+; PKP_T10 -- ROWS IMPORTED PAST THE KEY COME OUT MINTED. The complementary
+; half of T9: a stamped table CAN be imported into when the key field sits
+; beyond the imported columns, and the key must come out MINTED, not blank --
+; a stamped blank can never be filled by engine or operator, so a blank here
+; is a row the table can never repair (the FINDING_A_FRESH_PROCESS state).
+; The key is deliberately NOT named SID: a field named SID is minted by
+; spelling alone (plan_sid_if_needed, proven by PKP_P1 below), and an arm
+; whose key the magic name would mint anyway measures the name, not the
+; import path. PKEY is minted only if the import path runs the registered
+; generator. WITNESSED GREEN on the red run of 2026-09-23: PKEY read 2.
+SELECT 5
+USE PKIMP
+SET UNIQUE FIELD PKEY PRIMARY
+IMPORTSQL FILE pk_import_data_only.psv TO PKIMP DELIM PIPE
+GO 2
+? "PKP_T10_import_rows_minted:" + (PKEY = 2)
+
+SELECT 5
+CLOSE
+SELECT 4
+CLOSE
+ERASE TABLE PKIMPG CONFIRM
+ERASE TABLE PKIMP CONFIRM
 
 ; ---------------------------------------------------------------------------
 ; UNGRADED PROBE (AIF-158, 2026-09-08). NOT PART OF THE FIFTEEN GRADED MARKERS

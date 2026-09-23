@@ -134,6 +134,19 @@ EXEMPT_FILES = {
     # inherit the funnel without writing their own.
     os.path.join("src", "cli", "browse", "browse_edit.cpp"),
 
+    # src/cli/cmd_importsql.cpp (AIF-156, 2026-09-23). Exempted BY ROUTE like
+    # the gated multi-field writers above: run_file_import() asks
+    # gateFieldWrites() about EVERY column of a row BEFORE appending it (the
+    # PKP_T7 ordering -- a refusal that leaves a blank row has still changed
+    # the table), then keeps its own set()+writeCurrent() apply. It also
+    # refuses, BEFORE THE FIRST ROW, any import whose positional columns would
+    # land on a stamped primary key (owner ruling 2026-09-23: identity is
+    # house-owned, meaning is data -- a source key is demoted to a data
+    # column, never imported into the house key), and appends through
+    # dottalk_append_blank_raw_locked() so the house key is MINTED on rows
+    # imported past it. PKP_G8/T9/T10 are the arms.
+    os.path.join("src", "cli", "cmd_importsql.cpp"),
+
     # src/cli/table_state.cpp (2026-09-09). EXEMPT FOR A DIFFERENT REASON THAN
     # EVERY FILE ABOVE, and the difference is the point. The others are exempt
     # because gating them per field would be slower and would break atomicity.
