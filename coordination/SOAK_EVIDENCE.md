@@ -73,3 +73,17 @@ run 1 completed -- recorded as a derivation, not a reconstruction. Both
 runs carried the post-632c737a4 CDX INFO honesty note in MR-P1/P2 and
 graded 8/8. Earlier greens (2026-09-22, incl. the 8bd/2b78-era builds)
 are deliberately NOT listed: different builds are not soak.
+
+| SQLMODE_SMOKE | dottalk++ beta 1.b, 648a7a3e  (Sep 23 2026 04:38:55) | PASS 2/2 oracle, 3/3 blocks, 4/4 cursors | 2026-09-23 |
+| SQLMODE_SMOKE | dottalk++ beta 1.b, 648a7a3e  (Sep 23 2026 04:38:55) | PASS 2/2 oracle, 3/3 blocks, 4/4 cursors | 2026-09-23 |
+
+SQLMODE_SMOKE's two banners were BOTH transcribed directly from the
+operator's console of 2026-09-23 -- the two soak runs ran back-to-back
+with nothing changed between them, on the exe built at 04:38:55 (the
+post-back-out restore build of commit 648a7a3e; no rebuild happened at
+any point in the block). The same session's earlier runs on this same
+build are deliberately NOT counted as soak rows: the baseline green
+preceded the mutation proof, and the three mutation FAILs sat between
+it and these two greens with the script restored by git checkout each
+time -- only the final two runs, on the tracked script with nothing
+changed, are the soak.
