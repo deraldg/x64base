@@ -43,6 +43,8 @@ rows below were taken with `grep` from `tmp/varreset2.txt` and
 |---|---|---|---|
 | VARCHARRESET | dottalk++ v0.6 (2026-09-08, 8885ab99 dirty)  (Sep 08 2026 15:23:52) | PASS 15/15 | 2026-09-08 |
 | VARCHARRESET | dottalk++ v0.6 (2026-09-08, 8885ab99 dirty)  (Sep 08 2026 15:23:52) | PASS 15/15 | 2026-09-08 |
+| SQLSEL_PARALLEL | dottalk++ beta 1.b, c559013d  (Sep 22 2026 17:46:44) | PASS 5/5 pairs, clamp, 3/3 declines | 2026-09-22 |
+| SQLSEL_PARALLEL | dottalk++ beta 1.b, c559013d  (Sep 22 2026 17:46:44) | PASS 5/5 pairs, clamp, 3/3 declines | 2026-09-22 |
 
 VARCHARRESET's rows are recorded **after** its promotion (50b85c3b4), which this
 gate did not exist to guard. They are the genuine banners of the second and third
@@ -51,3 +53,11 @@ gate protects is not also the first spec with no history in it. A third run --
 `Sep 08 2026 15:13:56`, also PASS -- is deliberately NOT listed: it was the first
 green, on a different build, and listing it would imply the soak rested on three
 matching runs when it rested on two.
+
+SQLSEL_PARALLEL's banners were transcribed from the operator's console
+transcripts of 2026-09-22 (the banner prints to the console, not into the
+spec's routed .alt capture), both showing the identical string above: the
+first run immediately after the c559013d rebuild, the second an explicit
+`REGRESSION RUN SQLSEL_PARALLEL` minutes later with nothing changed. The
+spec's FIRST green -- also PASS -- was on build e88408bb and is deliberately
+NOT listed, the VARCHARRESET rule applied: a different build is not soak.

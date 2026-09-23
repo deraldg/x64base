@@ -499,6 +499,24 @@ catch, displayed by the instrument that catches it. With the first red
 two DIFFERENT wrong-count shapes. Remaining before default-suite
 promotion: soak only.
 
+PROMOTED TO THE DEFAULT SUITE 2026-09-22. The soak: two PASS runs on ONE
+build, banner `dottalk++ beta 1.b, c559013d  (Sep 22 2026 17:46:44)` on
+both -- the first immediately after the PERF-3 rebuild, the second an
+explicit `REGRESSION RUN SQLSEL_PARALLEL` minutes later with nothing
+changed between them. Rows in coordination/SOAK_EVIDENCE.md, which
+check_soak_evidence.py reads when the flag flips. The first green (build
+e88408bb) is deliberately NOT counted: a different build is not soak.
+The soak build is itself the PERF-3 build, so the promotion run doubles
+as the third suite-scale confirmation of prediction (3). THE REASON is
+the RELSCOPE2/NULLASSERT precedent -- a measured coverage hole, not the
+soak alone: before this spec REGRESSION ALL never executed one SET
+PARALLEL statement, so a partitioning defect that lost or double-counted
+rows at the seam would have shipped green through the whole suite. The
+flip changes the published default-suite facts (site re-derive in the
+same change-set); it needs a REBUILD to take, and REGRESSION LIST must
+show SQLSEL_PARALLEL [default] BEFORE the next REGRESSION ALL is
+believed -- NAV_NATURAL's wasted run is the precedent.
+
 #### PERF-3 AUTHORED 2026-09-22 -- the plateau was EXCEPTIONS, not allocations
 
 SANDBOX MEASUREMENT (Cowork sandbox, g++ 11.4/glibc 2.35 -- third confirmed
