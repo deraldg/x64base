@@ -22,17 +22,22 @@
     product_profile   : n/a
     index_profile     : n/a
     scope_reason      : audience mismatch on the existing entry surface; see 1
-    truth_state       : source-evidenced (from `main` + x64base.com, NOT
-                        reconciled against `development`)
-    proof_state       : not proven -- reconciliation is gate G2 below
+    truth_state       : reconciled against `development` ee1b446e3
+                        (2026-09-23, G2). Rows citing a REGRESSION spec are
+                        checked against a registry snapshot at build time.
+    proof_state       : report (build + check_site + two negative tests of
+                        the new guards; live-site verification pending push)
     risk_class        : low for runtime (no source, no data, no build);
-                        moderate for publication (evidence tiers restated
-                        from a lagging branch)
+                        moderate for publication -- the board decays as the
+                        engine moves; mitigated by the engine stamp and the
+                        30-day freshness warning, not eliminated
     source_path       : none in D:\code\ccode
     website_path      : dottalkpp.com apex (owner ruling 2026-08-11 superseded
                         the earlier lean.dottalkpp.com plan; deployed and
                         verified same day). x64base.com possible after reorg.
-    next_gate         : G2 reconcile status board against `development`
+    next_gate         : G3 downloads metadata (type, source, proof,
+                        accessibility); standing duty: refresh
+                        engine-facts.json whenever the board changes
     status            : claimed; deliverable live at dottalkpp.com
 
 ---
@@ -138,6 +143,66 @@ is a lagging snapshot. Anything proven on `development` since the last promotion
 is under-reported; anything demoted there is over-reported. The board is honest
 about `main` and may be stale about reality. Requires either repo access or a
 maintainer-supplied current state.
+
+**G2 PASSED 2026-09-23** against `development` ee1b446e3, 43 days after
+deployment, by which time the board was materially wrong.
+
+What was wrong (measured, each checked in source or the registry):
+
+- Joins were tiered Chartered. INNER/LEFT/RIGHT/FULL/CROSS are default-suite
+  (SQLSEL_INNER_JOIN, SQLSEL_JOIN_EDGES, SQLSEL_LEFT_JOIN, SQLSEL_JOIN_FAMILY).
+- Getting Started told users to type `SQL SELECT ...`. `SQL` has been a
+  reserved no-op since 2026-09-04 (src/cli/cmd_sql.cpp, print_sql_reserved;
+  commit a3243e7aa). Examples now come from the default-suite script
+  sqlsel_select_v1_regression.dts.
+- Command families named three non-commands: SMARTBROWSE and SIMPLEBROWSE
+  (real: SMARTBROWSER, SIMPLEBROWSER) and URL (absent). SB was described as
+  SmartBrowser's alias; it resolves to SIMPLEBROWSER
+  (src/cli/shortcut_resolver.hpp). CORRECTED same day: the first pass also
+  removed SHELLO, because it grepped only `registry().add` in src/cli.
+  SHELLO registers via `dli::register_extension_command` in
+  src/ext/cmd/cmd_student_hello.cpp and was restored. CMDHELP BUILD LEGACY's
+  IMPLEMENTED column is the complete check; the grep was not.
+- The steward's own August examples were invented and wrong: `LIST NEXT 10`
+  (cmd_list.cpp has no NEXT scope), a `SCAN AREAS` loop, and tables
+  (customers/orders) that do not exist. Replaced with lines from registered
+  scripts. Recorded because the no-guessing rule applies to the steward too.
+
+What was added: newly proven rows for GROUP BY, subqueries, set ops, DML,
+parallel scans, primary keys, NULLs, INDEX_TXN, multi-workspace, mini-DB,
+WAL commit/rollback, localized messages, x64 metrics, advanced joins, and the
+CI build. Board: 31 runtime-proven of 45 rows.
+
+Near-miss, recorded: the site repo had been edited by other sessions after
+deployment (75374b2 and 378e5ef on 2026-08-11, 0083f82 on 2026-09-03) and the
+steward did not read `git log` before patching. The STATUS rewrite silently
+demoted the memo-zoo promotion (runtime-proven -> source-evidenced) and dropped
+the REL JOIN and two-walker rows. Caught before push by comparing against HEAD
+(`git cat-file -p HEAD:build_lean_site.py`, since `git diff` is barred in a
+sandbox). All three were restored, and RELJOIN is now registry-checked.
+Lesson for this lane: read the site repo's log first -- the lean site is
+maintained by more than one session.
+
+Mechanism, so this does not recur silently:
+
+- `engine-facts.json` (site repo): snapshot of kRegressionSpecs via
+  tools/reports/regression_index.py, stamped with engine sha and date.
+- The build FAILS if a status row cites a spec not in the snapshot.
+  Negative-tested: removing INDEX_TXN -> exit 1 naming the spec.
+- The build FAILS if the board renders fewer rows than STATUS holds.
+  Negative-tested: a two-group order list -> "rendered 11 of 43", exit 1.
+  (This guard exists because the defect happened: a hard-coded group list
+  silently dropped 12 rows during this very reconciliation, with every gate
+  green.)
+- check_site.py prints the facts' age and warns past 30 days.
+- The site banner carries the engine stamp, linked to the commit.
+
+Not verified this pass (left as they were, flagged honestly): the
+Interface-definition-language row (an APPLICATION_UI_DSL lane closed out
+2026-09-16 may have moved it); CDX-on-classic (still chartered, no spec
+found); the "64-bit widening of every shared path" row (restated, not
+re-audited). R4 (non-ASCII in rendered HTML) remains open; all new text
+is ASCII.
 
 **G3 -- sibling-site rules.** `deraldg/dottalkpp` requires downloads to carry
 type, source, proof status, and accessibility status. The lean Downloads page
