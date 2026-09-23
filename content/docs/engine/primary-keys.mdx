@@ -114,11 +114,13 @@ either way, and that is recorded rather than tuned away.
 ## Where enforcement stops
 
 **Five write paths are proven. The engine has more.** A static gate counts
-**11 direct field-write call sites across 9 files** that do not go through
+**6 direct field-write call sites across 6 files** that do not go through
 the write funnel — `COPY`, `SORT` and `IMPORTSQL` among them. (This sentence
 read "13 across 11, `CALCWRITE` and browse editing among them" until
 2026-09-23: `CALCWRITE` had in fact been routed on 2026-09-07 and this page
-kept naming it, and browse editing left the list on 2026-09-23 — see below.)
+kept naming it, and browse editing left the list on 2026-09-23 — see below.
+Later the same day the engine-owned system stores left it too, taking 11
+across 9 to the count above.)
 Five of five is *the arms that exist*, not a key that is enforced
 everywhere.
 
@@ -145,6 +147,20 @@ private commit loop entirely. Future editors that enable editing call the
 same door and inherit enforcement without writing their own. 13 across 11
 became 11 across 9, and for the first time the shrink was a lock added
 rather than a miscount removed.
+
+**Later on 2026-09-23 the engine-owned system stores were exempted — a third
+exemption shape, and a clarifying one.** The doctrine behind it is worth
+stating because it reframes the whole boundary: **a primary key is assigned
+at record creation and never edited.** The BBS store, the message catalog and
+the identity store are that doctrine's trivial case — the engine is the sole
+author of every row, every key is engine-assigned at append under the table
+lock, and no code path in any of them aims a write at an existing key, all
+verified at the call sites. "Never edited" holds there because no editing
+door exists, not because a gate refuses one. 11 across 9 became 6 across 6,
+and every remaining site is a genuine question: do `COPY` and `SORT` carry
+the key designation to the destination table, does an imported row's key get
+its uniqueness checked at creation, and is the deferred-commit apply covered
+by the gate it already passed at staging time.
 
 **And one is exempt because gating it would be wrong.** Write-ahead-log replay
 puts back values the gate already accepted at `COMMIT`; asking again would let a
@@ -179,7 +195,7 @@ The numbers above are not typed. They are derived from the engine tree by
 this page to that artifact — change a count in the engine without changing this
 page and the build fails, naming the sentence.
 
-**Derived from engine commit `67bd146b2` (2026-09-23).**
+**Derived from engine commit `23795960e` (2026-09-23).**
 
 The limit of that arrangement is stated because it is the one that has already
 bitten. Every freshness contract on this site resolves its authority against the
