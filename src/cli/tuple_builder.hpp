@@ -75,4 +75,28 @@ TupleBuildResult build_tuple_from_plan(const TupleBuildPlan& plan);
 // rtrim(get(field1)) bytes, identical to the serial scan's opts.
 TupleBuildResult build_tuple_for_area(const TupleBuildPlan& plan, xbase::DbArea& area);
 
+// PERF-4 (AIF-168, 2026-09-22): in-place refill -- build ONCE, refill per row.
+//
+// Why: even with the compiled plan and the thinned decode, build_tuple_from_plan
+// constructs a FRESH TupleRow per row -- a deep copy of the full prototype
+// columns vector, three vector allocations, and a rebuilt fragment -- before
+// the predicate reads one byte. Measured on the host (PIN-PERF1C-002 /
+// PIN-PERF3-001): a numeric simple-WHERE that allocates nothing in its
+// EVALUATION still pays ~10-12 us/row over bare COUNT, which is this
+// construction; under workers those allocations contend on the heap lock,
+// the surviving 8-worker cap after PERF-3 removed the unwinder lock.
+//
+// Contract: `row` MUST be the row produced by the matching build_* call with
+// the SAME plan (columns, cell_kinds and fragment count are laid down then
+// and not touched here). The refill rewrites ONLY what the record changes:
+// every value cell (cleared, then decoded for plan-needed items -- a thinned
+// or unresolved item stays empty exactly as a fresh build leaves it) and
+// each fragment's recno + deleted flag. Overlay, memo resolution and
+// refresh_relations follow plan.opt exactly as the fresh builders do; the
+// _for_area variant applies none of them, mirroring build_tuple_for_area.
+// Positioning stays the caller's job. A row refilled this way is
+// byte-identical to a freshly built one for the same record.
+void refill_tuple_from_plan(const TupleBuildPlan& plan, TupleRow& row);
+void refill_tuple_for_area(const TupleBuildPlan& plan, xbase::DbArea& area, TupleRow& row);
+
 } // namespace dottalk

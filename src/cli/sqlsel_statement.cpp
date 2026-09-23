@@ -3186,6 +3186,12 @@ bool execute_select_term(const std::string& tail_in, QueryResult* result_out) {
                                 xbase::DbArea priv;
                                 priv.open(area_path);
                                 dottalk::exprglue::TupleViewContext view_ctx;
+                                // PERF-4: one row per worker, refilled in
+                                // place -- the per-row prototype copy and
+                                // vector churn were the heap-lock contention
+                                // that survived PERF-3 (the 8-worker cap).
+                                dottalk::TupleBuildResult row_holder;
+                                bool row_built = false;
                                 for (int64_t r = lo; r <= hi; ++r) {
                                     // PERF-1c: RAW navigation -- no eager
                                     // all-fields decode; the plan builder
@@ -3196,14 +3202,19 @@ bool execute_select_term(const std::string& tail_in, QueryResult* result_out) {
                                         if (priv.isDeleted()) keep = false;
                                     } catch (...) { break; }
                                     if (keep && program) {
-                                        dottalk::TupleBuildResult row =
-                                            dottalk::build_tuple_for_area(predicate_plan, priv);
-                                        if (!row.ok) {
-                                            out->error = "predicate row build failed: " + row.error;
-                                            return;
+                                        if (!row_built) {
+                                            row_holder =
+                                                dottalk::build_tuple_for_area(predicate_plan, priv);
+                                            if (!row_holder.ok) {
+                                                out->error = "predicate row build failed: " + row_holder.error;
+                                                return;
+                                            }
+                                            row_built = true;
+                                        } else {
+                                            dottalk::refill_tuple_for_area(predicate_plan, priv, row_holder.row);
                                         }
                                         const PredicateVerdict verdict =
-                                            evaluate_tuple_predicate(program, row.row, view_ctx);
+                                            evaluate_tuple_predicate(program, row_holder.row, view_ctx);
                                         if (verdict.state == PredicateState::Error) {
                                             out->error = "predicate evaluation failed: " + verdict.error;
                                             return;
@@ -3261,6 +3272,10 @@ bool execute_select_term(const std::string& tail_in, QueryResult* result_out) {
         }
         if (ok) {
             const int64_t rec_count = static_cast<int64_t>(area->recCount());
+            // PERF-4: one predicate row for the whole serial scan, refilled
+            // in place per row (see tuple_builder.hpp for the contract).
+            dottalk::TupleBuildResult serial_row_holder;
+            bool serial_row_built = false;
             for (;;) {
                 const int64_t cur = static_cast<int64_t>(area->recno());
                 if (cur <= 0 || cur > rec_count) break;
@@ -3275,16 +3290,21 @@ bool execute_select_term(const std::string& tail_in, QueryResult* result_out) {
                 } catch (...) { break; }
 
                 if (keep && (pred || subquery_where)) {
-                    dottalk::TupleBuildResult predicate_row =
-                        dottalk::build_tuple_from_plan(predicate_plan);
-                    if (!predicate_row.ok) {
-                        scan_error = "predicate row build failed: " + predicate_row.error;
-                        break;
+                    if (!serial_row_built) {
+                        serial_row_holder = dottalk::build_tuple_from_plan(predicate_plan);
+                        if (!serial_row_holder.ok) {
+                            scan_error = "predicate row build failed: " + serial_row_holder.error;
+                            break;
+                        }
+                        serial_row_built = true;
+                    } else {
+                        dottalk::refill_tuple_from_plan(predicate_plan, serial_row_holder.row);
                     }
+                    const dottalk::TupleRow& predicate_row = serial_row_holder.row;
                     if (subquery_where) {
                         PredicateState verdict = PredicateState::Error;
                         std::string predicate_error;
-                        if (!evaluate_sql_predicate(where_text, predicate_row.row,
+                        if (!evaluate_sql_predicate(where_text, predicate_row,
                                                     subquery_runtime, verdict,
                                                     predicate_error)) {
                             scan_error = "subquery predicate failed: " + predicate_error;
@@ -3292,7 +3312,7 @@ bool execute_select_term(const std::string& tail_in, QueryResult* result_out) {
                         }
                         keep = verdict == PredicateState::True;
                     } else {
-                        const auto verdict = evaluate_tuple_predicate(pred.get(), predicate_row.row, scan_view_ctx);
+                        const auto verdict = evaluate_tuple_predicate(pred.get(), predicate_row, scan_view_ctx);
                         if (verdict.state == PredicateState::Error) {
                             scan_error = "predicate evaluation failed: " + verdict.error;
                             break;

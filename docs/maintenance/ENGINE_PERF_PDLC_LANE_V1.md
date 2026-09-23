@@ -638,6 +638,56 @@ DEFAULT UNCHANGED: 8 still wins function-WHERE (5.70 s best both runs)
 and is within noise of 12 on bare COUNT; the OQ-P1 ruling stands.
 Ledger: PIN-PERF3-001/002. Fixture script committed with this section.
 
+#### PERF-4 AUTHORED 2026-09-22 -- one row per scan, refilled in place
+
+THE TARGET, SIZED BY THE PERF-3 DIFFERENTIAL: with exceptions gone, a
+numeric simple-WHERE whose EVALUATION allocates nothing still pays
+~10-12 us/row over bare COUNT, and function-WHERE stops scaling at ~8
+workers while bare COUNT runs to 10.5x at 12. Both point at the same
+place: build_tuple_from_plan / build_tuple_for_area construct a FRESH
+TupleRow per row -- a deep copy of the full 10-column prototype, three
+vector constructions, and a rebuilt fragment -- before the predicate
+reads one byte. Serially that is construction cost; under workers those
+allocations meet on the heap lock.
+
+THE CHANGE: refill_tuple_from_plan / refill_tuple_for_area
+(tuple_builder.cpp) rewrite ONLY what the record changes -- value cells
+(cleared, then decoded for plan-needed items) and fragment recno +
+deleted -- into a row built once per scan. Bodies mirror the fresh
+builders line for line (the compile_tuple_plan precedent: proven paths
+untouched); both sqlsel single-table scan loops (serial including the
+subquery branch, and the R21 worker) hoist one row holder and refill
+after the first build. The TupleViewContext layout guard makes the
+same-object rebind free. A refilled row is byte-identical to a freshly
+built one for the same record; g++ 11.4 syntax-clean in the sandbox
+(named: not a host green).
+
+SANDBOX PRICE OF THE REMOVED WORK (container mirror probe, 1M rows,
+glibc, single thread): fresh 160 ns/row + 4.00 allocs/row; refill
+11 ns/row + 0 allocs. NOT REMOVED, stated so nobody reads more into
+it: decodeFieldFromBuffer still allocates its result string per needed
+field (1-2 allocs/row survive), and the eval path's argv/return
+allocations are untouched -- this slice is the ROW, not the evaluator.
+
+PREDICTIONS ON RECORD BEFORE THE HOST RUN, shaped by PERF-3's
+refutation (the sandbox prices mechanisms, not host magnitudes):
+  (1) every exact count unchanged -- REGRESSION ALL (now carrying
+      SQLSEL_PARALLEL by default) and the curve's 90700/1000000 are
+      the gate;
+  (2) serial gains MODEST by design -- the sandbox prices the removed
+      serial work at ~0.15 us/row; even at a generous MSVC exchange
+      rate that is under 1 us/row of a ~15.7 us surcharge;
+  (3) THE LOAD-BEARING ONE: if the heap lock is the surviving 8-worker
+      cap, the parallel legs improve MORE than serial again and
+      function-WHERE's scaling draws toward bare COUNT's shape past 8
+      workers. A NULL RESULT HERE IS A FINDING: parallel gain equal to
+      serial gain refutes the heap-lock hypothesis and re-points the
+      cap at a shared resource no allocator change reaches (memory
+      bandwidth -- bare COUNT's 12-worker floor is already ~0.9 us/row).
+
+Verification: rebuild, REGRESSION ALL (32/32 expected), then the same
+pinocchio_perf3_curve.dts -- it measures this slice unchanged.
+
 ## 5. Open rulings, placed where they block
 
 - OQ-P1 -- ANSWERED BY MEASUREMENT 2026-09-22: default 8 (see the curve in

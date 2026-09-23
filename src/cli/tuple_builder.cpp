@@ -704,4 +704,95 @@ TupleBuildResult build_tuple_for_area(const TupleBuildPlan& plan, xbase::DbArea&
     return res;
 }
 
+// PERF-4 (AIF-168): the per-row halves of the two builders above, applied to
+// an EXISTING row. Each body mirrors its builder's value/fragment code line
+// for line (kept duplicated rather than refactored, the compile_tuple_plan
+// precedent: the proven fresh-build paths stay untouched). What is deliberately
+// NOT redone per row: the prototype columns copy, the cell_kinds copy, the
+// vector constructions, and the fragment note -- the plan guarantees they are
+// row-invariant.
+void refill_tuple_from_plan(const TupleBuildPlan& plan, TupleRow& row) {
+    if (!plan.ok) return;
+
+    if (plan.opt.refresh_relations) {
+        relations_api::refresh_for_current_parent();
+    }
+
+    const std::size_t n = plan.items.size();
+    for (std::size_t i = 0; i < n && i < row.values.size(); ++i) {
+        const auto& item = plan.items[i];
+        const xbase::DbArea* ar = resolve_area(static_cast<std::size_t>(item.slot));
+        const bool have_area = area_is_open(ar);
+
+        std::string& val = row.values[i];
+        val.clear();
+        int field1 = have_area ? item.field1 : 0;
+
+        if (have_area) {
+            try {
+                if (item.field1 > 0) {
+                    val = xfg::rtrim_copy(ar->decodeFieldFromBuffer(item.field1));
+                } else if (!item.canonical.empty()) {
+                    val = xfg::getFieldAsString(
+                        *const_cast<xbase::DbArea*>(ar), item.canonical);
+                }
+            } catch (...) {
+                val.clear();
+                field1 = 0;
+            }
+        }
+
+        if (plan.opt.overlay_table_buffer && have_area && field1 > 0) {
+            std::string ov;
+            if (get_buffer_override(item.slot, safe_recno(ar), field1, ov)) {
+                val = ov;
+            }
+        }
+
+        if (have_area && field1 > 0) {
+            try {
+                val = cli_memo::resolve_display_value(
+                    *const_cast<xbase::DbArea*>(ar), field1, val);
+            } catch (...) {
+                // Leave raw value unchanged on lookup failure.
+            }
+        }
+    }
+
+    std::size_t fi = 0;
+    for (const auto& seed : plan.fragment_seeds) {
+        const xbase::DbArea* ar = resolve_area(static_cast<std::size_t>(seed.slot));
+        if (!area_is_open(ar)) continue;   // fresh build skips closed areas too
+        if (fi >= row.fragments.size()) break;
+        TupleFragment& f = row.fragments[fi++];
+        f.recno = safe_recno(ar);
+        try { f.deleted = ar->isDeleted(); } catch (...) { f.deleted = false; }
+    }
+}
+
+void refill_tuple_for_area(const TupleBuildPlan& plan, xbase::DbArea& area, TupleRow& row) {
+    if (!plan.ok) return;
+    // R21 worker path: no workareas, no overlay, no memo resolve -- exactly
+    // build_tuple_for_area's boundary.
+
+    const std::size_t n = plan.items.size();
+    for (std::size_t i = 0; i < n && i < row.values.size(); ++i) {
+        const auto& item = plan.items[i];
+        std::string& val = row.values[i];
+        val.clear();
+        if (item.field1 > 0) {
+            try { val = xfg::rtrim_copy(area.decodeFieldFromBuffer(item.field1)); }
+            catch (...) { val.clear(); }
+        } else if (!item.canonical.empty()) {
+            try { val = xfg::getFieldAsString(area, item.canonical); }
+            catch (...) { val.clear(); }
+        }
+    }
+
+    for (TupleFragment& f : row.fragments) {
+        try { f.recno = area.recno64(); } catch (...) { f.recno = 0; }
+        try { f.deleted = area.isDeleted(); } catch (...) { f.deleted = false; }
+    }
+}
+
 } // namespace dottalk
