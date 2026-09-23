@@ -4091,7 +4091,10 @@ bool validate_metadata_reports(const std::string& transcript)
                  "ASSERTED ANYWHERE -- every path claim is an equality between two "
                  "verbs or a claim about an extension. NOT CLAIMED: CDX INFO's per-tag "
                  "counts, which print root_off=0 recs=0 for every tag over a 200-row "
-                 "table and are a separate open question.\n";
+                 "table -- RESOLVED BY SOURCE 2026-09-22: honestly zero on disk (only "
+                 "the NATIVE rebuild writes them; BUILDLMDB never writes the tag "
+                 "directory back), and CDX INFO now says so with a pathless note this "
+                 "validator deliberately never reads.\n";
     return true;
 }
 
