@@ -584,7 +584,7 @@ pending host confirmation of this slice.
 #### PERF-3 MEASURED 2026-09-22 -- one wall down, one wall named, one prediction refuted as worded
 
 Two full curve runs on the promoting build (banner aeaa6a6b, Sep 22 2026
-18:11:41), scripts/pinocchio/pinocchio_perf3_curve.dts, SET TIMER ON.
+18:11:41), dottalkpp/data/scripts/pinocchio/pinocchio_perf3_curve.dts, SET TIMER ON.
 Run 2 is the teed datum (tmp/perf3_curve_teed.txt, sha256:0984a7681a07cc60
 -- the tee reuses one filename, so run 2 OVERWROTE run 1's file); run 1 is
 console-paste corroboration, uniformly a few percent faster (cooler
@@ -636,7 +636,7 @@ differential rather than by the old engine-wide RecordView pricing.
 
 DEFAULT UNCHANGED: 8 still wins function-WHERE (5.70 s best both runs)
 and is within noise of 12 on bare COUNT; the OQ-P1 ruling stands.
-Ledger: PIN-PERF3-001/002. Fixture script committed with this section.
+Ledger: PIN-PERF3-001/002. Fixture: dottalkpp/data/scripts/pinocchio/pinocchio_perf3_curve.dts, committed with this section.
 
 #### PERF-4 AUTHORED 2026-09-22 -- one row per scan, refilled in place
 
@@ -686,7 +686,62 @@ refutation (the sandbox prices mechanisms, not host magnitudes):
       bandwidth -- bare COUNT's 12-worker floor is already ~0.9 us/row).
 
 Verification: rebuild, REGRESSION ALL (32/32 expected), then the same
-pinocchio_perf3_curve.dts -- it measures this slice unchanged.
+dottalkpp/data/scripts/pinocchio/pinocchio_perf3_curve.dts unchanged.
+
+#### PERF-4 MEASURED 2026-09-22 -- THE PLATEAU IS BROKEN
+
+Build b340f255 (Sep 22 2026 19:09:59). Correctness first: REGRESSION
+ALL LOG 32/32 PASS on the refill build -- every oracle spec, EVALDIFF
+22/22, SQLSEL_PARALLEL's five OFF==ON pairs, isolation arms ok both
+ends. Then the curve (dottalkpp/data/scripts/pinocchio/
+pinocchio_perf3_curve.dts unchanged, teed: tmp/perf4_curve_teed.txt,
+sha256:2c67dcd22a27225b), graded against PIN-PERF3-001/002:
+
+    workers   function-WHERE (P3 -> now)     bare COUNT (P3 -> now)
+    OFF       25.0 -> 15.1   1.65x            9.6 -> 10.3   ~noise
+    2         10.0 ->  5.7   1.75x            3.4 ->  3.3   1.0x
+    4          6.5 ->  3.4   1.9x             1.8 ->  2.0   1.0x
+    6          5.8 ->  2.60  2.2x             1.4 ->  1.39  1.0x
+    8          5.70->  2.36  2.4x             1.15->  1.23  1.0x
+    12         6.1 ->  2.08  2.9x  <- best    0.92->  0.94  1.0x
+    16         6.7 ->  2.22  3.0x             1.2 ->  1.25  1.0x
+    22         6.9 ->  2.16  3.2x             1.1 ->  1.10  1.0x
+
+THE IN-RUN CONTROL HELD AGAIN: bare COUNT unchanged at every width,
+so the gain belongs to the change and nothing else.
+
+PREDICTIONS GRADED:
+(1) CONFIRMED: 90700 / 1000000 at all 16 rungs, and the whole suite.
+(3) CONFIRMED, AND IT SETTLES THE DIAGNOSIS: parallel gains (2.9-3.2x
+    at 12-22) far exceed serial (1.65x), and function-WHERE NO LONGER
+    STOPS AT 8 -- it now peaks at 12 and holds through 22, the same
+    shape as bare COUNT. Scaling vs own serial: 7.3x at 12 workers
+    (was 4.4x capped at 8 after PERF-3, 3.4x after 1c, 3.0x at the
+    lane's start). The heap lock was the second wall; there is no
+    third within reach of this fixture.
+(2) REFUTED IN THE GOOD DIRECTION, and the refutation calibrates
+    AGAIN: "serial gains modest" predicted under 1 us/row from the
+    sandbox's 0.16 us container price; the host removed ~9.9 us/row.
+    The MSVC-heap-and-copy cost of the fresh row was ~60x the glibc
+    figure -- the second measured sandbox-to-host exchange rate in
+    one day (throws were 3x). RULE EARNED TWICE NOW: the sandbox
+    identifies WHAT to remove; only the host prices it.
+
+COMPOUND STATE: the function-WHERE statement that took 46.6 s serial
+when this lane opened OQ-P1 runs in 2.08 s at 12 workers -- 22x in
+one day, all of it named, graded and committed in slices. The serial
+surcharge over bare COUNT is down to ~4.8 us/row (23.5 after 1c,
+15.7 after PERF-3) -- what remains is the actual function evaluation
+plus the per-needed-field decode allocation, the residuals already
+named.
+
+RULING FLAGGED FOR THE OWNER, per OQ-P1's own "the curve decides"
+clause: 8 was ruled when expensive rows DEGRADED past it. On this
+build 12 wins BOTH statements (2.08 vs 2.36; 0.94 vs 1.23) and
+nothing degrades through 22. The data now favors SET PARALLEL ON = 12;
+the flip is the owner's call and is NOT made by this section.
+
+Ledger: PIN-PERF4-001.
 
 ## 5. Open rulings, placed where they block
 
