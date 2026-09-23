@@ -64,6 +64,10 @@
 //   DROPTAG is deliberately NOT field-checked: removing a tag whose field is gone is exactly
 //     when you need it, so requiring the field to exist would fence off the repair.
 //   CDX manages container header/tag metadata; backend tag build data persistence is owned elsewhere.
+//   INFO's per-tag root_off/recs fields are written by the NATIVE rebuild only (2026-09-22):
+//     BUILDLMDB -- the x64 default flow -- reads tag NAMES and never writes the directory back,
+//     so those fields read 0 on an LMDB-backed container while the env holds the live keys.
+//     INFO appends a pathless note saying so when the env exists; LMDB INFO has the live counts.
 //
 // risk:
 //   reads_index_file: INFO TAGS ADDTAG DROPTAG

@@ -1,9 +1,9 @@
 // @dottalk.file v1
 // subsystem: cli
 // layer: helper
-// owns: 
+// owns: the shared gated editor commit door (staged-edit commit + field helpers)
 // project: project.x64base.runtime
-// lane: 
+// lane: AIF-156
 // owner: member.derald
 // status: supported
 

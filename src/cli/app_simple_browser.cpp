@@ -81,11 +81,17 @@
 //   Non-interactive listing restores the cursor best-effort.
 //   Interactive edit/session mode intentionally leaves cursor at final position.
 //   Table mutation occurs only through explicit interactive edit/save/delete actions.
+//   SAVE commits through the shared gated editor commit door (AIF-156,
+//   2026-09-23: dottalk::browse::edit::commit_staged), which asks the write
+//   gate about EVERY staged field before writing any. A refusal -- today, an
+//   edit to a declared PRIMARY key -- prints "SAVE blocked: ... (field
+//   <name>)", writes nothing, and KEEPS the staged edits for amend/CANCEL.
 //
 // risk:
 //   launches_ui: yes except usage
 //   mutates_cursor_or_ui_state: browser interaction
 //   mutates_table_data: interactive edit/delete only
+//   refuses: SAVE of a staged edit to a declared PRIMARY key
 //
 // related:
 //   WORKSPACE
@@ -404,7 +410,8 @@ static void print_help_inline() {
         "  G <recno>      - Go to record number\n"
         "  R              - Refresh (rebuild active order vector + re-sync cursor)\n"
         "  E [<field> [WITH <value>]]  - Edit current record (prompt if <field> omitted)\n"
-        "  SAVE / CANCEL  - Commit or discard staged edits\n"
+        "  SAVE / CANCEL  - Commit or discard staged edits (a staged edit to a\n"
+        "                   declared PRIMARY key is refused; edits are kept)\n"
         "  DEL / RECALL   - Mark deleted / Undelete current record\n"
         "  CF (CHECK FOR) <expr> - Evaluate FOR on current record (TRUE/FALSE)\n"
         "  STATUS         - Reprint status line\n"

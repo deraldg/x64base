@@ -38,6 +38,17 @@
 //   current_area_matches_target() exists for exactly that -- so the table it
 //   grows can be the one another engine is holding.
 //
+//   IMPORTSQL FILE ENFORCES PRIMARY-KEY POLICY (AIF-156, 2026-09-23, owner
+//   ruling: identity is house-owned, meaning is data). On a table whose key
+//   is declared PRIMARY: an import whose positional columns would land on
+//   the key column is REFUSED BEFORE THE FIRST ROW ("IMPORT: REFUSED",
+//   naming the key and instructing demotion to a data column); every row's
+//   columns are asked of xbase::cli::gateFieldWrites() BEFORE the append;
+//   and rows imported past the key come out MINTED by the same generator
+//   APPEND uses, never blank. A source key with embedded meaning (a VIN)
+//   is imported as an ordinary data column, never as the house key.
+//   PKPOLICY arms PKP_G8/G9/T9/T10 are the runtime proof.
+//
 // examples:
 //   IMPORTSQL PREVIEW data\students.psv
 //   IMPORTSQL VALIDATE data\students.csv DELIM COMMA
@@ -48,11 +59,14 @@
 //   IMPORTSQL USAGE returns before file/table work.
 //   IMPORTSQL PREVIEW/VALIDATE/SCHEMA read input files.
 //   IMPORTSQL CREATE/FILE may create tables and import records.
+//   IMPORTSQL FILE refuses to feed a declared PRIMARY key and mints it
+//   instead (2026-09-23; see the enforcement note above).
 //
 // risk:
 //   reads_filesystem: IMPORTSQL PREVIEW/VALIDATE/SCHEMA/CREATE/FILE
 //   writes_filesystem: IMPORTSQL CREATE
 //   mutates_table_data: IMPORTSQL FILE/CREATE where implemented
+//   refuses: IMPORTSQL FILE when source columns would cover a PRIMARY key
 //
 // related:
 //   USE
@@ -866,7 +880,11 @@ static void print_importsql_usage_contract()
         << "Notes:\n"
         << "  - IMPORTSQL USAGE returns before file or table work.\n"
         << "  - PREVIEW/VALIDATE/SCHEMA read input files.\n"
-        << "  - CREATE/FILE may create tables and import records.\n";
+        << "  - CREATE/FILE may create tables and import records.\n"
+        << "  - FILE never imports into a declared PRIMARY key: an import whose\n"
+        << "    columns would land on it is refused before the first row, and a\n"
+        << "    key field beyond the imported columns is minted at append.\n"
+        << "    Import a source key as an ordinary data column instead.\n";
 }
 
 static void print_exportsql_usage_contract()
