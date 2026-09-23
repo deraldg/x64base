@@ -467,7 +467,9 @@ OFF==ON pairs, deleted-row exclusion across partition seams, worker clamping).
 The engine DECLINES parallelism and says so -- small tables (under 2000 rows)
 and subquery predicates scan serial with the reason printed. DML, joins and
 transactions are untouched; this is a read-side feature only. Measured on the
-1M-row fixture: a bare COUNT fell from 46.6s to about 2.1s at 12 workers.
+1M-row fixture: the reference function-WHERE fell from 46.6s serial to 2.08s
+at 12 workers. Full treatment -- worker-count curve, decline rules, and why
+it was slow -- in the [Performance chapter](performance.md).
 
 ## 12. Current development capability boundary
 
