@@ -217,6 +217,39 @@ proofs:
   - D:/code/ccode/dottalkpp/docs/architecture/X64BASE_LABORATORY_CAMPUS_MISSION_VISION_V1.md
   notes: Records the governed Alpha/Experimental status, APH-0 through APH-6 gates, authority boundary,
     and requirement that the portal not be presented as production autonomous memory.
+- id: proof.ai_portal.reentry_43day_20260923
+  label: 43-day re-entry -- portal returned state but not understanding; the agent's worst errors came
+    from not looking
+  state: runtime_observed
+  source: D:/code/ccode/labtalk/proofs/AI_PORTAL_REENTRY_43DAY_20260923_V1.md
+  related:
+  - D:/code/ccode/labtalk/registries/proofs.d/proof.ai_portal.cold_resume_retention.yaml
+  - D:/code/ccode/labtalk/ai_portal/TIER0_STATE.md
+  - D:/code/ccode/labtalk/ai_portal/AI_TIER1_SEED_V1.md
+  - D:/code/ccode/CLAUDE.md
+  - D:/code/ccode/docs/maintenance/AIF_107_LOW_KEY_ENTRY_SURFACE_LANE_V1.md
+  - D:/code/ccode/docs/maintenance/SESSION_CLOSEOUT_LEAN_SITE_G2_RECONCILIATION_2026-09-23.md
+  notes: 'Second recorded re-entry, following cold_resume_retention (11 days, 2026-08-12). A Cowork conversation
+    dormant 2026-08-11 to 2026-09-23 re-onboarded: 1031 development commits, 60 new lane claims (39 under
+    its own member name, none remembered). CONFOUND STATED FIRST: the conversation kept its 08-10/11 context
+    verbatim, so only the post-08-11 window was artifact-recovered; this is not a pure cold resume. GOOD:
+    Tier 0 gave state in one read; the x64base skill staleness test (handler mtime vs guide mtime) found
+    a public defect in minutes -- the lean site told readers to type SQL SELECT, reserved since 2026-09-04;
+    regression_index.py rebuilt the site status board from registry truth (31 of 45 runtime-proven, each
+    spec-cited). BAD, PORTAL: Tier 0 printed no staleness warnings while its own inputs failed ("commits
+    behind HEAD : ?", target "updated: unknown" at 54 days); a stale CDN copy of Tier 0 was served silently;
+    CLAUDE.md arrives only on mount; the read-only git list is not labeled exhaustive in Tier 1; no per-member
+    open-work view; claim files 44 CRLF / 16 LF; runs registry knows one of four run-id namespaces. BAD,
+    AGENT (recorded at equal weight): git outside the allow-list (no lock left, verified); projects walk
+    skipped; SHELLO wrongly reported absent from a src/cli-only grep (it is an src/ext extension) and
+    removed from the public site; its own August site examples were invented; rewrote the site status
+    block without reading repo history, silently demoting another session''s memo-zoo promotion and dropping
+    two proven rows -- caught by comparison with HEAD before push and restored; its new generator dropped
+    12 of 43 rows while every gate stayed green, caught by counting output. PATTERN: three checks whose
+    scope silently excluded the case they appeared to cover -- the exact shape cold_resume_retention recorded,
+    read at re-entry and reproduced anyway. FALSIFIABLE CORE in the proof doc section 5 (file:line, commit
+    ids, re-count commands). LIMITS: one agent, one re-entry, no control; specs confirmed registered,
+    not executed; sandbox platform.'
 - id: proof.ai_portal.root_entry_and_external_package.v1
   label: Root AI Portal entry and external change-package contract defined
   state: source_defined
