@@ -92,6 +92,16 @@ and quantifies staleness instead of silently running the old copy.
 Build both:  `cmake --build build --target dottalkpp dottalk_bbsd --config Release`
 WSL builds also exist (`build-wsl`, etc.); `.exe` cross-platform via guarded code.
 
+**The engine is CROSS-PLATFORM by design, and that widens YOUR execution
+surface** (added 2026-09-23): an agent on this repo has up to three places to
+build and run -- the Windows host (MSVC, the authority), **WSL** (`build-wsl`
+presets; a full Linux toolchain over the same working tree), and a mounted
+Linux sandbox. Do not treat Windows-host-unavailable as blocked: WSL builds
+and runs the same source, and the sandbox rules below apply to WSL only where
+they say so (the path-form guard trap hit WSL identically; the git-lock rules
+are about the MOUNT, not about Linux). Name the platform in every measurement.
+Detail: `AI_README.md`, "WSL working environment".
+
 ## BBS agent-server daemon (dottalk_bbsd)
 
 - Runs headless via the **`DotTalkBBSD`** logon scheduled task; binds `127.0.0.1:8765` (loopback only).
@@ -143,6 +153,13 @@ a worked example: `docs/ai-friendly/AI_SESSION_CLOSEOUT_CONTRACT_V1.md`.
 3. **Report the residue you created** -- fixtures, captures, scratch dirs, grants,
    env vars, catalog rows. A device shell cannot delete; reporting what you cannot
    remove is still the job, not an excuse to skip it.
+   Corrected 2026-09-23: "cannot delete" is a PERMISSION DEFAULT, not a wall. When
+   `rm` fails with `Operation not permitted` on a mounted folder, ASK for the
+   delete grant (the Cowork file-delete permission tool) and retry -- measured:
+   the grant was given and five gitignored tmp files unlinked from the sandbox.
+   Reporting is the fallback when the grant is refused or no such tool exists,
+   not the first move. The git-lock rule is unchanged: an orphaned
+   `.git/index.lock` is still `mv`d aside, never deleted, grant or no grant.
 4. **Write the state a next session needs**: anything time-boxed, anything living
    only in an environment variable, anything green here that would be red on a
    clean clone.
