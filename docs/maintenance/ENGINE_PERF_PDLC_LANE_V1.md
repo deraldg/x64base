@@ -499,6 +499,58 @@ catch, displayed by the instrument that catches it. With the first red
 two DIFFERENT wrong-count shapes. Remaining before default-suite
 promotion: soak only.
 
+#### PERF-3 AUTHORED 2026-09-22 -- the plateau was EXCEPTIONS, not allocations
+
+SANDBOX MEASUREMENT (Cowork sandbox, g++ 11.4/glibc 2.35 -- third confirmed
+build-and-run per the 2026-08-12 handoff; full-engine recipe was closed this
+shape by a 403ing package proxy, so the measurement is a standalone harness
+over the EXACT worker code path: compile_where program -> TupleViewContext::
+view_for -> Expr::eval, walker copied verbatim from sqlsel_statement.cpp:423).
+
+THE PRICED DIAGNOSIS WAS WRONG, AND THE HARNESS SAID SO ON ITS FIRST TABLE.
+The platinum item priced "ALLTRIM/UPPER temporaries and copy-returning
+RecordView accessors". Measured: a BARE char comparison (BAND = 'CSCI', no
+function anywhere) cost 2,982 ns/eval while ALLTRIM added only ~330 ns on
+top. gprof put all instrumented code at ~260 ns of that; the missing ~2.6 us
+was to_number() -- eval.hpp's stod-in-a-try, which ALLOCATES a std::string
+and THROWS on non-numeric text. Cmp::eval probes BOTH sides numerically
+before comparing as text, so every char-leaf row paid TWO thrown-and-caught
+exceptions (~1.3 us each, measured in isolation). AND THE PLATEAU FALLS OUT
+FOR FREE: concurrent throws serialize on the unwinder's global lock, which
+is why char/function WHEREs flatlined at 6-12 workers while the numeric
+probe scaled superlinearly. Allocations were never the story.
+
+THE CHANGE (one function, include/cli/expr/eval.hpp): to_number() rewritten
+on std::from_chars -- non-throwing, non-allocating, locale-free. Semantics
+pinned in the header comment: leading whitespace and lone leading '+' kept
+(stod behavior), trailing garbage still refuses, hex floats and locale
+grouping now refuse DELIBERATELY (stod took "0x10" as 16; xBase numerics
+are canonical decimal). Every to_number caller benefits: Cmp, bool
+coercion, function args, the incompatible-literal guard.
+
+MEASURED IN THE HARNESS, same truth counts on every probe:
+  char_eq    2,982 -> 409 ns/eval (7.3x), 2 -> 0 allocs
+  fn_alltrim 3,318 -> 650 ns (5.1x); fn_upper 3,323 -> 675 ns (4.9x)
+  fn_nested  3,390 -> 866 ns (3.9x); simple_num unchanged (never threw)
+
+HOST PREDICTIONS, falsifiable, for the next curve run: (1) serial
+function-WHERE closes most of its gap to serial simple-WHERE; (2) the 6-12
+worker plateau BREAKS -- with no unwinder lock, char/function WHEREs should
+scale like the numeric probe did; (3) exact counts unchanged everywhere
+(the harness held truth counts constant; SQLSEL_PARALLEL's T2/T2F pins are
+the gate). A sandbox green is not a host green; the curve decides.
+
+SIBLINGS SWEPT AND CLEARED: sqlsel value_less/value_equal and the
+glue_xbase stod calls all sit behind guards that guarantee success -- no
+other silent throw-per-row sites found. NAMED, MEASURED, DEFERRED
+(second-order residue, in cost order): function argv/return allocations
+(~250 ns/call, the demoted remains of the platinum item);
+try_eval_empty_identifier prefix-scanned 2x per char leaf (~30 ns);
+triple per-row name resolution where a compiled binding could resolve once
+per layout (~115 ns across three CiIndex finds). None warrants the
+engine-wide RecordView contract change as priced -- that item is DEMOTED
+pending host confirmation of this slice.
+
 ## 5. Open rulings, placed where they block
 
 - OQ-P1 -- ANSWERED BY MEASUREMENT 2026-09-22: default 8 (see the curve in
