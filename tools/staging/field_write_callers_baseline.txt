@@ -65,6 +65,19 @@
 # lost its private commit lambda entirely and calls that shared door. The
 # content-key scheme carried its first real signal in the shrink direction.
 # ---------------------------------------------------------------------------
+# 2026-09-23, LATER THE SAME DAY -- 11 -> 6 sites, 9 -> 6 files, by EXEMPTION
+# of the engine-owned system stores, not by routing. Owner ruling: a primary
+# key is assigned at record creation and never edited; bbs_store.cpp (3
+# sites), message_catalog.cpp and identity_dbf_store.cpp are creation-only BY
+# CONSTRUCTION -- every key engine-assigned at append under the table lock, no
+# path aims a write at an existing key, and their SYS* tables never carry a
+# user-declared PRIMARY designation. Verified at the call sites, recorded with
+# the reasons in EXEMPT_FILES (a THIRD exemption shape: engine-owned system
+# store). What remains below is the real frontier: cmd_autodbf and
+# cmd_importsql (creation-time uniqueness of imported keys), cmd_commit
+# (buffer-flush apply), cmd_copy and cmd_sort (does the PRIMARY stamp travel
+# to the destination?), and cmd_workspace set_by_name.
+# ---------------------------------------------------------------------------
 # THE HISTORY BELOW IS KEPT VERBATIM. It is the evidence for the migration
 # above, and the ten drifts are the reason the scheme changed.
 # ---------------------------------------------------------------------------
@@ -207,14 +220,9 @@
 # is the cost the seventh entry priced only as "noise a reader has to
 # recognise". STILL NOT PROPOSED AS A CHANGE HERE -- the checker belongs to
 # AIF-156 -- but the evidence has moved again and this is the ninth time it has.
-src/bbs/bbs_store.cpp :: close_thread :: if (idx >= 0) a.set(idx + 1, " "); :: set
-src/bbs/bbs_store.cpp :: join :: a.set(i + 1, v); :: set
-src/bbs/bbs_store.cpp :: reply_to :: int idx = fields::findFieldCI(a, " "); if (idx >= 0) a.set(idx + 1, s_u64(pid)); a.writeCurrent(); } } } :: set
 src/cli/cmd_autodbf.cpp :: import_rows :: if (!area.set(static_cast<int>(i + 1), converted[i])) { :: set
 src/cli/cmd_commit.cpp :: apply_one_recno :: if (!A.set(f1, v)) { :: set
 src/cli/cmd_copy.cpp :: logical_copy_to_as :: if (!dst.set(i, s.get(i))) { :: set
 src/cli/cmd_importsql.cpp :: <file-scope> :: if (!area.set(static_cast<int>(i + 1), converted[i])) :: set
 src/cli/cmd_sort.cpp :: cmd_SORT :: (void)out.set(out_i + 1, v); :: set
 src/cli/cmd_workspace.cpp :: set_by_name :: if (!a.set(i + 1, v)) { err = std::string(" ") + col; return false; } :: set
-src/help/message_catalog.cpp :: set_field_or_throw :: if (!area.set(field1, value)) { :: set
-src/identity/identity_dbf_store.cpp :: s_optid :: a.set(i + 1, v); :: set

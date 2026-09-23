@@ -185,6 +185,44 @@ EXEMPT_FILES = {
     # file is a hundred lines with one writer in it, which is the smallest that
     # cost gets.
     os.path.join("src", "cli", "group_log.cpp"),
+
+    # ENGINE-OWNED SYSTEM STORES (AIF-156, 2026-09-23). A THIRD exemption
+    # shape, distinct from by-route (gates then keeps its own write) and from
+    # gating-would-be-wrong (WAL replay, the group ledger). These files are
+    # CREATION-ONLY BY CONSTRUCTION: the engine is the sole author of every
+    # row, every key is engine-assigned at append (next_id()-style max+1 under
+    # the table lock, or serialized store state), and no path in any of them
+    # aims a write at an existing key. Owner ruling 2026-09-23: a primary key
+    # is assigned at record creation and never edited -- these stores are the
+    # trivial case of that model, where "never edited" holds because no editing
+    # door exists at all, not because a gate refuses one. Their SYS* tables are
+    # engine-defined schema (create_dbf X64) that never carries a user-declared
+    # SET UNIQUE FIELD ... PRIMARY designation, so the gate would consult a
+    # flag that is never set.
+    #
+    # Verified at the CALL SITES, not the declarations, 2026-09-23:
+    #
+    #   src/bbs/bbs_store.cpp -- RowW::set ("Row writer over a freshly
+    #   appended record") writes only rows whose ID came from next_id() under
+    #   a TableLock; the two existing-row writes touch STATE (close_thread)
+    #   and LASTPOST (reply_to), bookkeeping fields, never ID.
+    #
+    #   src/help/message_catalog.cpp -- set_field_or_throw serves the two
+    #   seed-row creators (write_message_seed_row, write_text_seed_row) into
+    #   SYSTEM_MESSAGES / SYSTEM_MESSAGE_TEXT and throws on failure.
+    #
+    #   src/identity/identity_dbf_store.cpp -- RowW::set is the full-store
+    #   writeback appending rows with engine-assigned IDs.
+    #
+    # THE WHOLE-FILE COST IS ACCEPTED KNOWINGLY, as everywhere above: a future
+    # ungated write added to one of these files will not be seen here. The
+    # mitigations are the same ones the pattern already relies on -- each file
+    # funnels its writes through ONE local writer (RowW::set,
+    # set_field_or_throw), so a new direct write would be a break of the
+    # file's own idiom, not just of this gate's.
+    os.path.join("src", "bbs", "bbs_store.cpp"),
+    os.path.join("src", "help", "message_catalog.cpp"),
+    os.path.join("src", "identity", "identity_dbf_store.cpp"),
 }
 
 # `set(` IS DISCRIMINATED BY THE SHAPE OF ITS FIRST ARGUMENT, and this took
