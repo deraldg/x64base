@@ -8,6 +8,8 @@
 
 The smallest set that makes you **safe to act**. Engine knowledge loads per
 task. The five questions at the end tell you whether you have that floor.
+If you can mount `D:\code\ccode`, do it FIRST: `CLAUDE.md` arrives on mount
+and supersedes remote reads of this file (2026-09-23, onboarding report B1).
 
 ---
 
@@ -65,7 +67,9 @@ modified and hundreds of untracked files belonging to other sessions.
 - **In a mounted sandbox, no git that takes `.git/index.lock`**: no mutate, and
   NOT plain `git status` (it takes the lock; wedged the repo once). Read-only IS
   lock-free and allowed: `git --no-optional-locks status`, `log`, `ls-files`,
-  `check-ignore`. Every mutating git goes to the maintainer. (Why: `CLAUDE.md`.)
+  `check-ignore`. That list is EXHAUSTIVE, not illustrative -- `git diff` in ANY
+  form takes the lock (measured 2026-08-17). Every mutating git goes to the
+  maintainer. (Why: `CLAUDE.md`.)
 - Claim lane numbers atomically, never by grep. Grep is not an allocator.
 
 ## 4. House conventions (invariant)
