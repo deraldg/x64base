@@ -63,7 +63,26 @@ FIELDS = ["anchor_id", "section", "layer", "layer_label",
 # have been a lie for exactly the rows that matter most. The alignment is
 # enforced below and a mismatch is fatal, because a silently misaligned list is
 # worse than no column at all: it reads as precision.
-TARGET_MANUALS = {"developer", "reader", "command_reference", "site", "none"}
+# `user` ADDED 2026-09-24. The vocabulary was written 2026-09-16 and enumerated
+# four manuals; the User Manual was not one of them, and nothing targeted it, so
+# nothing noticed. ANCHOR-PERFORMANCE then landed with target_manual `user` and
+# this check failed on its own config rather than on the tree -- preflight step
+# 10 reported UNRUN for it. The surface is real and was real before the row:
+#
+#   docs/manuals/user/  README.md, sqlsel.md, workspaces-and-minidbs.md,
+#                       performance.md (added 2026-09-23, page_id USER-PERF-01)
+#   and the README lists all three chapters as available.
+#
+# ANCHOR-PERFORMANCE cites docs/manuals/user/performance.md by path in its own
+# evidence_paths, so the CSV row was right and the allowed set was behind.
+#
+# NOT added, deliberately: `student`. docs/manuals/student/ exists but is a
+# 524-byte README with no chapters, and no row targets it. Widening a vocabulary
+# for a surface nothing references is how `proven/candidate` survived 79 days.
+#
+# `reader` is NOT a directory and that is correct -- the Reader Manual is
+# DOTTALKPP_READER_MANUAL_V1.md at the repo root. Do not "fix" it by deleting it.
+TARGET_MANUALS = {"developer", "reader", "user", "command_reference", "site", "none"}
 TARGET_LEVELS = {"chapter", "section"}
 
 # The map documents its own vocabulary. A state outside it is an error, not a
