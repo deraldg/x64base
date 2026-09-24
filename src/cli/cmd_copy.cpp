@@ -45,6 +45,14 @@
 //     key. Without it, COPY TO ... AS REFUSES rather than discarding the
 //     designation in silence -- which is what a downgrade to VFP, FOX26 or
 //     MSDOS does, since those headers have nowhere to record one.
+//   Binary COPY TO takes exactly one destination token; a stray token after
+//     it REFUSES (corrected 2026-09-23: COPY TO <name> VECTOR without AS X64
+//     used to fall through to a silent binary copy).
+//
+// refuses:
+//   VECTOR without AS X64 (any position), stray tokens after the binary
+//   destination, unknown flavors, key-carrying source into a keyless target
+//   without KEY DROP.
 //
 // risk:
 //   writes_filesystem: yes
@@ -785,7 +793,29 @@ void cmd_COPY(DbArea& a, std::istringstream& iss) {
             return;
         }
 
-        // Existing binary copy behavior
+        // Existing binary copy behavior.
+        //
+        // Binary COPY TO takes exactly ONE destination token. A stray token
+        // here was silently ignored until 2026-09-23, when
+        //   COPY TO <name> VECTOR OVERWRITE     (missing AS X64)
+        // fell through to this branch and produced a byte-identical v32 copy
+        // the operator believed was a conversion -- measured afterward: the
+        // "converted" tables still read DBF version byte 0x03. The usage
+        // contract already said "VECTOR is ... valid only with AS X64"; the
+        // parser just never enforced it on this path. Refuse loudly instead.
+        if (tok.size() > 2) {
+            std::string detail =
+                "COPY TO: unexpected token after destination: '" + tok[2] + "'.";
+            if (up(trim(tok[2])) == "VECTOR") {
+                detail += " VECTOR is valid only with AS X64 -- did you mean: "
+                          "COPY TO " + tok[1] + " AS X64 VECTOR ?";
+            }
+            ::cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::CopyDetailText, {{"detail", detail}});
+            ::cli::cmdout::print_message(dottalk::helpdata::MessageId::CopyAsUseHintText);
+            return;
+        }
+
         const std::filesystem::path dstp = resolve_dst_for_copy_to(a, tok[1]);
 
         std::string err;
