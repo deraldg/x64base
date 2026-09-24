@@ -635,8 +635,35 @@ rollback evidence and explicit authority.
 **Re-export the harvest FIRST if it predates the Phase-4 rebuild.** This is E5
 of the entry check and the cookbook flags it as the row that usually fails.
 
+**USE THE ENGINE EXPORTER. The Python one cannot produce a promotable package.**
+
+    pwsh -File dottalkpp\data\scripts\metadata\HELP_META_HARVEST_EXPORT_v1.ps1
+
+That is the sanctioned producer: it runs the .dts, promotes into
+`harvested\export_runs\HELPMETA-<utc>\`, carries the four stale May `META_*`
+forward LABELLED `CARRIED_STALE`, and writes
+`HELP_META_EXPORT_MANIFEST_v1.csv` -- row counts AND a SHA-256 per file.
+
     $py12 tools\fullstack_docs\export_help_meta_harvest.py --repo-root . --out <candidate dir>
-    -> 14 tables, 62,570 rows
+    -> 14 tables, 44,280 rows   [RAN 2026-09-24; the 62,570 above was v6, before
+                                 the USAGE_CONTRACT collapse took HELP_LINE from
+                                 29,268 to 18,730]
+
+The Python scaffold is fine for MEASURING the store -- it reads all 14 tables
+from the live DBFs and reached **E5 PASS 14/14** on 2026-09-24. It is NOT a
+promotion producer: it writes `HELP_META_EXPORT_MANIFEST_v0.csv`, a different
+schema with NO per-file hash, and the planner requires one manifest spelling
+present in BOTH workspaces. Canonical carries v1, the scaffold writes v0, so
+`resolve_manifest_name` finds neither in both, falls back to v0, and reports:
+
+    FAIL_PLAN_ONLY: mutation_rows=9 noops=5 apply_available=0
+      CANONICAL_MISSING:HELP_META_EXPORT_MANIFEST_v0.csv
+      PACKAGE_INCOMPLETE:14/15
+
+**That is not the planner being wrong.** The planner was already repaired for
+exactly this on 2026-09-14 and its comment says so. The repair landed in the
+READERS -- the freshness checker and the planner -- and never in the producer
+beside them, which is the same shape twice in one tool chain.
 
 Then:
 

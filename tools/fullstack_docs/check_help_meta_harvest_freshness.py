@@ -21,7 +21,9 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import dbfread  # noqa: E402
-from export_help_meta_harvest import HELP_TABLES, META_TABLES, _cell  # noqa: E402
+from export_help_meta_harvest import (  # noqa: E402
+    HELP_TABLES, META_TABLES, _cell, _recode, render,
+)
 
 
 def compare_table(
@@ -134,29 +136,13 @@ def compare_table(
     return result
 
 
-def _recode(value: str) -> str:
-    """Undo dbfread's latin1 decode so the reference reads as UTF-8.
-
-    `dbfread` decodes record bytes with latin1 (`.decode("latin1")`), which never
-    raises and therefore never reveals that the store actually holds UTF-8. An
-    em-dash stored as E2 80 94 comes back as 'a\\x80\\x94'. The engine's
-    `EXPORT ... CSV` writes real UTF-8, so every row containing a non-ASCII
-    character compared unequal -- measured 2026-09-02 as the LAST cause of E5
-    failing the engine export, 28 rows in HELP_LINE alone.
-
-    Round-tripping latin1 -> bytes -> utf-8 recovers the true text. When the
-    bytes are not valid UTF-8 the original is returned unchanged, so a genuinely
-    latin1 store is not corrupted by this.
-
-    This does NOT hide the non-ASCII; `audit_workspace` counts it per table and
-    reports it, because the content it exposed is a real house-rule finding.
-    """
-    if value.isascii():
-        return value
-    try:
-        return value.encode("latin1").decode("utf-8")
-    except (UnicodeEncodeError, UnicodeDecodeError):
-        return value
+# _recode AND render NOW LIVE IN export_help_meta_harvest.py and are imported
+# above. They were defined HERE and applied only to the reference side, which
+# meant this checker rendered the store as UTF-8 while the exporter wrote the
+# latin1 mangling -- so a candidate the exporter had just written could not
+# reach 14/14 against the store it came from. The producer owns the rendering
+# and the checker reuses it; that is what stops them diverging again.
+# `_recode` stays importable by name so its unit test keeps addressing it.
 
 
 def read_manifest(path: Path) -> dict[str, dict[str, str]]:
@@ -249,7 +235,7 @@ def audit_workspace(repo_root: Path, workspace: Path) -> dict[str, object]:
             # reference cannot render these columns and must not judge them.
             memo_cols = frozenset(f.name for f in table.fields
                                   if getattr(f, "type", "") == "M")
-            rows = [{key: _recode(_cell(value)) for key, value in row.items()}
+            rows = [{key: render(value) for key, value in row.items()}
                     for row in table.rows]
             expected_counts[csv_name] = len(rows)
             comparison = compare_table(header, rows, target / csv_name,

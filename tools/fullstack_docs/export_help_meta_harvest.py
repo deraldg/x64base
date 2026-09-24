@@ -57,6 +57,58 @@ def _cell(value: str) -> str:
     # cmd_use.cpp) resolves memo text properly. Interim = resolved-or-empty.
     return "" if _MEMO.match(value) else value
 
+
+def _recode(value: str) -> str:
+    """Undo dbfread's latin1 decode so a cell reads as the UTF-8 the store holds.
+
+    MOVED HERE FROM check_help_meta_harvest_freshness.py 2026-09-24. It was
+    defined in the CHECKER and applied only on the reference side, so the
+    checker rendered the store as UTF-8 and this exporter wrote the latin1
+    mangling. Two readers of the same bytes, one function apart -- and the
+    consequence was that a candidate this tool had JUST written could not pass
+    E5 against the store it was written from:
+
+        E5 FAIL: 13/14 ... HELP_HELP_LINE.csv: CONTENT_MISMATCH
+                 source_rows=18730 harvest_rows=18730 first_mismatch=4860
+
+        row 4860, TEXT
+          this exporter : 'Rollback also failed \xe2\x80\x94 manual recovery needed!'
+          the checker   : 'Rollback also failed -- [em dash] manual recovery needed!'
+
+    Identical row counts with a first-row content mismatch is the signature the
+    checker's own docstring names for a RENDERING difference rather than
+    staleness. It was right; it just could not see that the difference was its
+    own.
+
+    `dbfread` decodes record bytes with latin1, which never raises and therefore
+    never reveals that the store actually holds UTF-8. Round-tripping
+    latin1 -> bytes -> utf-8 recovers the true text; when the bytes are not
+    valid UTF-8 the original is returned unchanged, so a genuinely latin1 store
+    is not corrupted by this.
+
+    This does NOT hide the non-ASCII. `audit_workspace` counts it per table and
+    reports it, because ASCII-only is the house rule and a non-ASCII SHIPPED
+    HELP row is a finding in its own right. Six such rows exist today, all
+    em-dashes in SHARED_MSG text for ZAP, PACK and TURBOPACK.
+    """
+    if value.isascii():
+        return value
+    try:
+        return value.encode("latin1").decode("utf-8")
+    except (UnicodeEncodeError, UnicodeDecodeError):
+        return value
+
+
+def render(value: str) -> str:
+    """The ONE cell rendering. Producer and checker must both call this.
+
+    Keeping the composition in one place is the structural half of the fix; the
+    behavioural half was adding `_recode` to the export at all. A second copy of
+    this expression anywhere is a divergence waiting to happen, and the last one
+    cost a gate that could never pass.
+    """
+    return _recode(_cell(value))
+
 # target CSV -> source DBF (relative to the data roots)
 HELP_TABLES = {
     "HELP_COMMANDS.csv": "COMMANDS.dbf",
@@ -86,7 +138,7 @@ def _dump(dbf_path: Path, csv_path: Path) -> tuple[int, str]:
                                 lineterminator="\n")
         writer.writeheader()
         for row in table.rows:
-            writer.writerow({k: _cell(v) for k, v in row.items()})
+            writer.writerow({k: render(v) for k, v in row.items()})
     return len(table.rows), ",".join(header)
 
 
