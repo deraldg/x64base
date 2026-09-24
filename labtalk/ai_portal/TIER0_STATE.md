@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-09-24T03:02:09Z
+    generated_utc : 2026-09-24T03:21:50Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,8 +11,8 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : e0a558774  (2026-09-23)
-    upstream      : e0a558774
+    HEAD          : 5a69fec5a  (2026-09-23)
+    upstream      : 5a69fec5a
     unpushed      : 0 commit(s) ahead of upstream
 
 ## Declared target
@@ -23,17 +23,18 @@ cannot drift, because nothing here is written by hand.
 ## Newest closeout
 
     file          : SESSION_CLOSEOUT_LEAN_SITE_G2_RECONCILIATION_2026-09-23.md
-    commits behind HEAD : 9
+    commits behind HEAD : 10
 
 ## Staleness warnings
 
 - Closeout(s) on disk but not tracked -- a session's record that never landed: SESSION_CLOSEOUT_EVIDENCE_TRACKING_AND_PORTAL_2026-09-20.md.
-- The newest closeout is 9 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
+- The newest closeout is 10 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
 
 ## Claimed lanes (newest first)
 
 | AIF | lane | steward | intake row |
 | --- | --- | --- | --- |
+| AIF-169 | cascade_differential | member.ai.claude.cowork | yes |
 | AIF-168 | Engine performance: per-row cost reduction + parallel read-only scans | member.ai.claude.cowork | yes |
 | AIF-167 | Pinocchio Phase 3: relational shakedown (REL/ENUM + SQLsel + transactional DML via indexes) | member.ai.claude.cowork | yes |
 | AIF-166 | partner-amicus-standing | member.derald | yes |
@@ -45,8 +46,7 @@ cannot drift, because nothing here is written by hand.
 | AIF-160 | multi-area-commit | member.derald | yes |
 | AIF-159 | sqlsel-transactions | member.derald | yes |
 | AIF-158 | autoincrement | member.derald | yes |
-| AIF-157 | index-sidecar-durability | member.ai.claude.cowork | yes |
-| ... | 87 older claims omitted | | |
+| ... | 88 older claims omitted | | |
 
 ## Sessions, lineage, asides
 
@@ -63,7 +63,7 @@ parent + born_utc from the durable lineage ledger, '-' until a run wakes.
 
 | run | member | parent | born_utc | asides |
 | --- | --- | --- | --- | --- |
-| AIPR-20260920-001 | member.ai.claude.cowork | - | - | AIF-167 -> AIF-168 |
+| AIPR-20260920-001 | member.ai.claude.cowork | - | - | AIF-167 -> AIF-168 -> AIF-169 |
 | AIFGEN-20260916-090054 | member.derald | - | - | AIF-166 |
 | CODEX-20260915-AIF165-REGGRADE-001 | member.ai.codex | - | - | AIF-165 |
 | AIFGEN-20260914-194836 | member.derald | - | - | AIF-164 |
