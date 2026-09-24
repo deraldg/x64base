@@ -119,6 +119,24 @@ def newest_closeout(root: Path) -> Path | None:
     return max(dated)[1]
 
 
+def untracked_closeouts(root: Path, head: str) -> list[str]:
+    """Names of SESSION_CLOSEOUT_*.md on disk that git does not track, newest first.
+
+    Empty when git is unavailable (head == 'unknown'): not knowing is reported by
+    the unmeasured-inputs warning, not by pretending every file is a widow.
+    """
+    folder = root / "docs" / "maintenance"
+    if head == "unknown" or not folder.is_dir():
+        return []
+    tracked = set(git(root, "ls-files", "--", "docs/maintenance/").splitlines())
+    names = [p.name for p in folder.glob("SESSION_CLOSEOUT_*.md")
+             if f"docs/maintenance/{p.name}" not in tracked]
+    def by_date(name: str) -> tuple[str, str]:
+        match = re.search(r"(\d{4}-\d{2}-\d{2})\.md$", name)
+        return (match.group(1) if match else "", name)
+    return sorted(names, key=by_date, reverse=True)
+
+
 def declared_target(root: Path) -> tuple[str, str]:
     """Return (heading, updated) from CURRENT_TARGET.md's first live section."""
     path = root / "docs" / "agents" / "CURRENT_TARGET.md"
@@ -126,11 +144,17 @@ def declared_target(root: Path) -> tuple[str, str]:
         return ("unknown -- CURRENT_TARGET.md not found", "unknown")
     text = path.read_text(encoding="utf-8", errors="replace")
     updated = "unknown"
-    stamp = re.search(r"^Updated_utc:\s*(.+?)\.?\s*$", text, flags=re.MULTILINE)
+    # The file's header is an INDENTED key block (`    updated_utc : ...`), and
+    # this used to match only an unindented `Updated_utc:` -- so from the day the
+    # header took its current form, Tier 0 printed "updated : unknown" for a file
+    # that carries its stamp on line 4. Measured 2026-09-23. Accept both forms.
+    stamp = re.search(r"^\s*updated_utc\s*:\s*(.+?)\.?\s*$", text,
+                      flags=re.MULTILINE | re.IGNORECASE)
     if stamp:
         updated = stamp.group(1)
     else:
-        stamp = re.search(r"^Updated:\s*(.+?)\.?\s*$", text, flags=re.MULTILINE)
+        stamp = re.search(r"^\s*updated\s*:\s*(.+?)\.?\s*$", text,
+                          flags=re.MULTILINE | re.IGNORECASE)
         if stamp:
             updated = stamp.group(1) + " (bare date -- see 6.5e)"
     heading = re.search(r"^##\s+(.+?)\s*$", text, flags=re.MULTILINE)
@@ -231,12 +255,17 @@ def render(root: Path) -> str:
     closeout = newest_closeout(root)
     closeout_name = closeout.name if closeout else "none found"
     closeout_behind = "?"
+    closeout_uncommitted = False
     if closeout is not None:
         rel = closeout.relative_to(root).as_posix()
         last = git(root, "log", "-1", "--format=%h", "--", rel)
         if last:
             count = git(root, "rev-list", "--count", f"{last}..HEAD")
             closeout_behind = count or "?"
+        elif head != "unknown":
+            # git answered and no commit touches the file: it is on disk only.
+            closeout_uncommitted = True
+            closeout_behind = "not committed"
 
     target, target_updated = declared_target(root)
 
@@ -271,7 +300,37 @@ def render(root: Path) -> str:
     add("")
 
     warnings: list[str] = []
-    if closeout_behind not in ("?", "0"):
+    # AN INPUT THAT COULD NOT BE MEASURED IS A WARNING, NEVER SILENCE.
+    # Before 2026-09-23 every check below skipped its "?" / "unknown" case, so a
+    # projection whose inputs had failed printed "Staleness warnings: none" --
+    # the one sentence in this file a reader acts on, asserting health it had not
+    # measured. Found by a 43-day re-entry (proof.ai_portal.reentry_43day_20260923,
+    # P1): "commits behind HEAD : ?" and "updated : unknown" beside "none".
+    unmeasured = []
+    for label, value in (("branch", branch), ("HEAD", head), ("upstream", upstream),
+                         ("unpushed count", ahead), ("declared target stamp", target_updated),
+                         ("newest-closeout distance", closeout_behind)):
+        if value in ("?", "unknown") or value.startswith("unknown"):
+            unmeasured.append(label)
+    if closeout_uncommitted:
+        warnings.append(
+            f"The newest closeout by date, {closeout_name}, is on disk but in no "
+            "commit. A clone cannot see it; whoever wrote it has not landed it."
+        )
+    widowed = untracked_closeouts(root, head)
+    others = [name for name in widowed if name != closeout_name]
+    if others:
+        warnings.append(
+            "Closeout(s) on disk but not tracked -- a session's record that never "
+            "landed: " + ", ".join(others[:4])
+            + (f" (+{len(others) - 4} more)" if len(others) > 4 else "") + "."
+        )
+    if unmeasured:
+        warnings.append(
+            "Could not measure: " + ", ".join(unmeasured) + ". This projection is "
+            "INCOMPLETE; do not read the absence of other warnings as health."
+        )
+    if closeout_behind not in ("?", "0", "not committed"):
         warnings.append(
             f"The newest closeout is {closeout_behind} commit(s) behind HEAD. "
             "Work has landed that no closeout describes; read `git log` as well."

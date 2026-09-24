@@ -35,9 +35,9 @@
     website_path      : dottalkpp.com apex (owner ruling 2026-08-11 superseded
                         the earlier lean.dottalkpp.com plan; deployed and
                         verified same day). x64base.com possible after reorg.
-    next_gate         : G3 downloads metadata (type, source, proof,
-                        accessibility); standing duty: refresh
-                        engine-facts.json whenever the board changes
+    next_gate         : none open (G3 and G4 closed 2026-09-23); standing
+                        duty: refresh engine-facts.json whenever the board
+                        changes
     status            : claimed; deliverable live at dottalkpp.com
 
 ---
@@ -216,7 +216,7 @@ getting-started page is flagged at the exact `SQL SELECT` line; a broken
 fixture, a reasonless exemption, and a broken pattern on the full build path
 all exit 1.
 
-FINDING FOR THE UPSTREAM REGISTER (x64base-site scripts/engine-retirements-v1.json,
+FINDING FOR THE UPSTREAM REGISTER (x64base-site/scripts/engine-retirements-v1.json,
 another session's untracked draft -- deliberately NOT edited here): run
 unmodified over the text of the 0083f82 pages, the upstream sweep passed the
 `SQL SELECT custname ... FROM orders` example GREEN. The `sql.verb.scanner` row
@@ -240,9 +240,34 @@ ASCII rule does not govern rendered websites.
 type, source, proof status, and accessibility status. The lean Downloads page
 carries proof status only. Add the rest.
 
+G3 CLOSED 2026-09-23 (dottalkpp-lean, generator + check_site.py green). Every
+obtainable item on /downloads/ -- engine source, binary release, license,
+teaching datasets, regression suite, demonstration workspace -- now carries
+type, source, proof status (evidence-tier chip) and accessibility status.
+Accessibility uses the vocabulary of
+docs/manuals/developer/dev/dev-17-contributor-rules.md ("Accessibility /
+inclusive design rule"): REVIEW = not yet assessed, GAP = known shortfall. No
+item has had an accessibility review and the page says so rather than implying
+one. Suite counts come from engine-facts.json and the workspace row cites its
+specs through ev(), so both fail the build if the engine moves under them.
+
+FOUND WHILE DOING IT (the F4 shape again, agent-authored August content):
+Downloads AND Getting started told readers `cmake --preset default`. No preset
+of that name exists in CMakePresets.json on development or on origin/main.
+Replaced with the recipe .github/workflows/ci.yml runs on every push
+(`core-vcpkg`, both OSes; lean product, INDEX_MODE NONE) and the maintainer's
+full presets (`pro-md` / `pro-md-Release`, `wsl` / `wsl-Release`), each
+labelled with what it needs. Labelled source-evidenced: read from the
+repository, not run from a fresh clone. Open, stated on the page as GAP: the
+system packages the `wsl` preset expects.
+
 **G4 -- license.** The site footer says GPLv3 with the license file pending, and
 `/status/` lists it as not started. Honest today, embarrassing in a month. The
 `LICENSE` file is prepared and waiting to be committed.
+
+G4 CLOSED (recorded 2026-09-23; done 2026-08-11). LICENSE committed as
+2dbc29c8f and present on origin/main (checked with `git cat-file -e`); the
+site says GPL-3.0-only and the status row is no longer "not started".
 
 **G5 -- publication.** Deploy, then verify: six nav items, status filters
 respond, styled 404 serves, sitemap and robots carry the right host, footer

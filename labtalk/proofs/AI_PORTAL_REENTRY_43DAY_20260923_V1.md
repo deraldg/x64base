@@ -191,3 +191,21 @@ all in the tree. Each error came from not looking.
 Companion reports: D:\dev\ONBOARDING_EXPERIENCE_REPORT_2026-09-23.md,
 D:\dev\STATE_REFRESH_2026-09-23.md; closeout
 docs/maintenance/SESSION_CLOSEOUT_LEAN_SITE_G2_RECONCILIATION_2026-09-23.md.
+
+## 8. Follow-ups (appended 2026-09-23, same day; the record above is unchanged)
+
+- P1 FIXED. Two defects, not one. (a) `declared_target()` matched only an
+  unindented `Updated_utc:` while CURRENT_TARGET.md carries an indented
+  `    updated_utc : ...` key block, so "updated : unknown" was a parser miss,
+  not a missing stamp. (b) Every staleness check skipped its "?"/"unknown"
+  case, so failed inputs produced "none". Now an unmeasured input is itself a
+  warning ("Could not measure ... INCOMPLETE"), an uncommitted newest closeout
+  is named, and closeouts on disk but untracked are listed. Guarded by
+  labtalk/ai_portal/tests/test_generate_tier0_state.py: 6 tests, 5 of which
+  FAIL against the pre-fix generator and 1 (healthy inputs still say "none")
+  passes on both, so "none" stays reachable. Sandbox run, git stubbed.
+- First real output of the widow check, on this tree: two closeouts on disk
+  and never committed -- SESSION_CLOSEOUT_EVIDENCE_TRACKING_AND_PORTAL_2026-09-20.md
+  (another session's; its Session Log row also sits uncommitted in the
+  dashboard) and SESSION_CLOSEOUT_SECOND_OPINION_AUTHORIZATION_BOUNDARY_2026-07-30.md.
+  Neither is this session's; both left as found.
