@@ -1,0 +1,136 @@
+* ============================================================
+*  PINOCCHIO INDEX MCC DIMS -- CDX + LMDB for the newly converted
+*  MCC dimension tables (2026-09-23, owner: "I just added the rest
+*  of the MCC tables to pinocchio and converted them to x64").
+*
+*  Status:  CANDIDATE / REVIEW_BEFORE_EXECUTION. INDEX-ONLY: no table
+*           is created, imported, erased, or written -- this script
+*           adds CDX containers + LMDB envs beside EXISTING tables.
+*           The fact fixtures (STUDENTS 1M, ENROLL 5.5M) and the
+*           already-indexed dims (CLASSES, MAJORS from
+*           pinocchio_build_dims.dts) are NOT opened.
+*  Tags:    FIELD KEYS ONLY, per the corrected contract of 2026-07-14
+*           (CONTRACT_DRIFT_INDEX_EXPRESSION_2026-07-14.md). The two
+*           FoxPro expression tags in the MCC provenance notes (NAME,
+*           TCSEC) are NOT buildable and are deliberately absent.
+*  Tag set: TEACHERS TID, DEPT_ID; COURSES CID, DEPT_ID; DEPT DEPT_ID;
+*           ROOMS ROOM; TERMS TERM; STUD_MAJ SID; TASSIGN CLS_ID.
+*           BUILDING: no tags defined in the schema contract -- skipped
+*           on purpose, not forgotten.
+*  Recipe:  the pinocchio_build_dims.dts idiom exactly: USE, CDX
+*           CREATE, CDX ADDTAG <field>, BUILDLMDB TINY CLEAN YES,
+*           CDX TAGS, then the tag-sanity gate (COUNT under the tag
+*           must equal physical COUNT -- the first-run lesson).
+*           ADDTAG refuses a name that is not a field, so a schema
+*           mismatch fails loudly here rather than silently at BUILD.
+*  Safety:  CDX CREATE refuses an existing container, so a rerun over
+*           an already-indexed table stops at the refusal and mutates
+*           nothing. To rebuild, erase the container first by hand.
+*  Outputs: indexes/pinocchio/<t>.cdx (+ .meta)   <- commit these
+*           lmdb/pinocchio/<t>.cdx.d/             <- derived, gitignored
+* ============================================================
+SET ECHO OFF
+SET TIMER ON
+
+SET PATH DBF DBF/pinocchio
+SET PATH INDEXES INDEXES/pinocchio
+SET PATH LMDB LMDB/pinocchio
+CLOSE
+
+ECHO === TEACHERS: expect ~20 rows; tags TID, DEPT_ID ===
+USE TEACHERS
+COUNT
+CDX CREATE
+CDX ADDTAG TID
+CDX ADDTAG DEPT_ID
+BUILDLMDB TINY CLEAN YES
+CDX TAGS
+SET ORDER TO TAG TID
+COUNT
+SET ORDER TO PHYSICAL
+CLOSE
+
+ECHO === COURSES: expect ~100 rows; tags CID, DEPT_ID ===
+USE COURSES
+COUNT
+CDX CREATE
+CDX ADDTAG CID
+CDX ADDTAG DEPT_ID
+BUILDLMDB TINY CLEAN YES
+CDX TAGS
+SET ORDER TO TAG CID
+COUNT
+SET ORDER TO PHYSICAL
+CLOSE
+
+ECHO === DEPT: expect ~10 rows; tag DEPT_ID ===
+USE DEPT
+COUNT
+CDX CREATE
+CDX ADDTAG DEPT_ID
+BUILDLMDB TINY CLEAN YES
+CDX TAGS
+SET ORDER TO TAG DEPT_ID
+COUNT
+SET ORDER TO PHYSICAL
+CLOSE
+
+ECHO === ROOMS: expect ~30 rows; tag ROOM ===
+USE ROOMS
+COUNT
+CDX CREATE
+CDX ADDTAG ROOM
+BUILDLMDB TINY CLEAN YES
+CDX TAGS
+SET ORDER TO TAG ROOM
+COUNT
+SET ORDER TO PHYSICAL
+CLOSE
+
+ECHO === TERMS: expect ~3 rows; tag TERM ===
+USE TERMS
+COUNT
+CDX CREATE
+CDX ADDTAG TERM
+BUILDLMDB TINY CLEAN YES
+CDX TAGS
+SET ORDER TO TAG TERM
+COUNT
+SET ORDER TO PHYSICAL
+CLOSE
+
+ECHO === STUD_MAJ: expect ~200 rows; tag SID ===
+USE STUD_MAJ
+COUNT
+CDX CREATE
+CDX ADDTAG SID
+BUILDLMDB TINY CLEAN YES
+CDX TAGS
+SET ORDER TO TAG SID
+COUNT
+SET ORDER TO PHYSICAL
+CLOSE
+
+ECHO === TASSIGN: expect ~200 rows; tag CLS_ID ===
+USE TASSIGN
+COUNT
+CDX CREATE
+CDX ADDTAG CLS_ID
+BUILDLMDB TINY CLEAN YES
+CDX TAGS
+SET ORDER TO TAG CLS_ID
+COUNT
+SET ORDER TO PHYSICAL
+CLOSE
+
+ECHO === BUILDING: skipped by contract (no tags defined) ===
+
+ECHO === DONE. Read rule: every table must open as (v64); every
+ECHO === SET ORDER must print CDX TAG '<tag>' (ASC) -- a "file not
+ECHO === found: ...cnx" line means the table is NOT x64, the flavor
+ECHO === routing never reached the CDX, and the COUNT gate below is
+ECHO === BLIND (both counts are physical and equal trivially).
+ECHO === Measured 2026-09-23, first run: all seven dims opened (v32),
+ECHO === every SET ORDER missed, and the gate passed without engaging
+ECHO === -- the PKP_G5 shape. Then: COUNT twice EQUAL under a REAL
+ECHO === tag attach; every BUILDLMDB OK; CDX TAGS exactly as added.
