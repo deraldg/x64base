@@ -114,6 +114,13 @@ EXCLUDED = {
     "fox_palette": "opt-in standalone Turbo Vision palette editor "
                    "(src/CMakeLists.txt:494, DOTTALK_WITH_TV + "
                    "DOTTALK_BUILD_PALETTE_EXE); not in the documentation push.",
+    "arctictalk_workbench": "the UIDEF wx Workbench target "
+                            "(gui/uidef/CMakeLists.txt:253). A GUI, not a doc-push "
+                            "program -- APPGUI launches dottalk_wb, and this is a "
+                            "separate UIDEF-side build. Added 2026-09-24 when the "
+                            "manifest-coverage check reported it, which is that "
+                            "check doing its job: the tree went 27 -> 49 targets "
+                            "while this manifest stood still.",
     "uidef_wx_demo": "UIDEF-generated wx frontend demo "
                      "(gui/uidef/CMakeLists.txt:182); a separate target from "
                      "APPGUI and not wired to it -- see the APPGUI usage "
