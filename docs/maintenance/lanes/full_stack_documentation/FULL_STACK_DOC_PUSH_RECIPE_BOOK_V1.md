@@ -51,6 +51,10 @@ than a second answer to "what is it now".
       tools/manualgen         5 ->  8 py      + tools/dbf 4, tools/tracking 2
       add_executable targets 27 -> 49
       Tier-1 seed ceiling  8,192 -> 16,384 B (raised 2026-09-04)
+      ENGINE VERSION       0.6 -> 1.1  (CMakeLists.txt:24, the one authority)
+      AIF intake rows      128 -> 165 distinct
+      mandatory-tracked    62 docs / 10 scripts -> 66 / 16
+      + ai_report_audit    NEW gate: portal report hygiene, 135 enforced
       R-numbers  19 declared / R127  ->  41 declared / R148
       lanes      AIF-131  ->  AIF-169        open items  17 -> 27 parked
       DOCFLUSH runs  7 -> 11 (20260901-001, -002, 20260902-001, 20260914-001)
@@ -268,6 +272,14 @@ types goes through `shell_dispatch` / `shell_execute_line` in
 **The banner lies, in two different ways** [RAN]:
 
     dottalk++ v0.6 (2026-08-24, c39d966c dirty)  (Aug 25 2026 18:00:12)
+
+**That banner is QUOTED AS EVIDENCE from 2026-08-25 and is NOT current state.**
+The version authority is `CMakeLists.txt:24`, `project(DotTalkpp VERSION 1.1)`,
+and it reads **1.1** as of 2026-09-24. The line is left verbatim because
+rewriting a quoted observation to match today falsifies the observation -- the
+same reason the BOM'd acceptance records were committed unmodified rather than
+normalised. **Annotate evidence; do not edit it.**
+
                     ^ commit from CMake CONFIGURE time (CMakeLists.txt:59),
                       never refreshed by `cmake --build`
                                               ^ __DATE__/__TIME__ from a TU that
@@ -920,6 +932,11 @@ is the smallest useful version of that.
                     for all of the work you have done AND know about in the full
                     stack document push."
                     REFRESH: member.derald, 2026-09-24 -- "refresh".
+    Refresh miss  : the FIRST pass of this refresh claimed "every [RAN] figure
+                    re-measured" and had not checked the ENGINE VERSION, which
+                    had moved 0.6 -> 1.1. Caught from a gate line in the commit
+                    that carried the refresh. A claim of completeness is itself
+                    a claim, and this one was not measured before it was made.
     Refresh scope : every [RAN] figure re-measured against HEAD 9c4179367. The
                     store, the SOURCE/KIND/CATALOG distributions, the metadata
                     tables, the tool counts, the add_executable total, the seed
