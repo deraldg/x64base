@@ -209,3 +209,10 @@ docs/maintenance/SESSION_CLOSEOUT_LEAN_SITE_G2_RECONCILIATION_2026-09-23.md.
   (another session's; its Session Log row also sits uncommitted in the
   dashboard) and SESSION_CLOSEOUT_SECOND_OPINION_AUTHORIZATION_BOUNDARY_2026-07-30.md.
   Neither is this session's; both left as found.
+- Later the same day, on owner instruction ("retire it"), the 07-30 closeout
+  was MOVED out of the tree to D:\dev\retired_closeouts\ (copy verified with
+  cmp before removal; that folder's README records why). Its rule already
+  lives in AI_PORTAL.md and AI_ASSIMILATION_BOOK_V1.md sec 11; its report_id
+  collided with a registered Cowork run; its third claimed correction
+  (AI_FRIENDLY_WORKFLOW_V1.md) never landed in any commit. The 09-20 closeout
+  is still on disk and untouched.
