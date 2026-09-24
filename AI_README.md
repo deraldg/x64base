@@ -2,6 +2,18 @@
 
 Root start point for a new AI assistant working in this repo.
 
+**If you can mount `D:\code\ccode`, do it BEFORE reading anything else** --
+`CLAUDE.md` is injected on mount, carries the newest corrections with full
+authority, and supersedes anything you read remotely (added 2026-09-23,
+onboarding report B1: a re-entering session got the three corrections it
+needed most only after a mid-task mount).
+
+**Remote readers of `labtalk/ai_portal/TIER0_STATE.md`**: raw.githubusercontent
+CACHES -- a 45-day-old Tier 0 was served with no warning (onboarding report
+B4, 2026-09-23). Append a cache-busting query string, and compare its
+`generated_utc` against `git ls-remote` HEAD before trusting it. Tier 0
+cannot drift from the tree, but a cached COPY of it can drift from Tier 0.
+
 ## STOP: Repository Roles Before Any Other Read
 
 | Location | Branch | Role |
