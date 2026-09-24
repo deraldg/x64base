@@ -1,6 +1,7 @@
 # The Full-Stack Documentation Push -- recipe book
 
-    Version   : v1, 2026-08-26
+    Version   : v1, 2026-08-26. **REFRESHED 2026-09-24 -- every [RAN] figure
+                re-measured; see "Refresh ledger" below for what moved.**
     By        : member.ai.claude.cowork, for member.derald
     Lane      : full_stack_documentation (AIF-068)
     Written   : after running flush v6 (DOCFLUSH-20260825-001) end to end
@@ -24,6 +25,41 @@ claims that no one had tested.
 **Never write `runtime-proven` for something that did not run**, and name the
 platform every time -- a sandbox green is not a green on the maintainer's
 toolchain.
+
+## 0b. Refresh ledger -- 2026-09-24, HEAD 9c4179367
+
+Re-measured, not edited from memory. **Every figure in the body is now the
+September value**; this ledger records the MOVEMENT, which is history rather
+than a second answer to "what is it now".
+
+    THE STORE -- one source moved, and it is a REPAIR
+      HELP_LINE        29,268 -> 18,715   because USAGE_CONTRACT 15,198 -> 4,556
+      HELP_SECTION     14,601 -> 10,707
+      HELP_ARTIFACTS   14,601 -> 10,707
+      HELP_TOPIC          667 ->    669
+      COMMANDS            462 ->    464
+      CMD_ARGS          2,368 ->  2,378
+      SYSFUNC              75 ->     79
+    Every other SOURCE is flat or up. See section 2f -- the drop is the
+    two-family contract collapse landing, and it was VERIFIED, not assumed.
+
+    THE PIPELINE -- the preflight nearly doubled
+      docpush_preflight   6 checks -> 12 (steps 1, 1b, 2, 3, 4, 5, 6, 6b,
+                          7, 8, 9, 10). Steps 7, 8, 9 and 10 did not exist.
+      **Step 8 IS the content-level assertion this book ranked #1 for v7.**
+      tools/fullstack_docs   50 -> 62 py      tools/staging   23 -> 35 py
+      tools/manualgen         5 ->  8 py      + tools/dbf 4, tools/tracking 2
+      add_executable targets 27 -> 49
+      Tier-1 seed ceiling  8,192 -> 16,384 B (raised 2026-09-04)
+      R-numbers  19 declared / R127  ->  41 declared / R148
+      lanes      AIF-131  ->  AIF-169        open items  17 -> 27 parked
+      DOCFLUSH runs  7 -> 11 (20260901-001, -002, 20260902-001, 20260914-001)
+
+    WHAT THIS BOOK GOT WRONG BY AGEING
+      Part 11 ranked three open items. TWO ARE BUILT: the content-level
+      assertion is preflight step 8 (contract drift), and the site
+      present-state check is step 9. Only the rehearsal harness and the
+      stated-impossibility check remain.
 
 ---
 
@@ -55,19 +91,19 @@ Six tables plus memo sidecars. Row counts are the live store as of
 2026-08-26 01:11:28.
 
     TABLE            rows    fields
-    HELP_TOPIC        667    TOPICID, TOPICKEY, CATALOG, TOPIC, TOPICTYPE,
+    HELP_TOPIC        669    TOPICID, TOPICKEY, CATALOG, TOPIC, TOPICTYPE,
                              STATUS, IMPLEMENT, SUPPORTED, PRIMARY, CONFID,
                              TITLE, SUMMARY, SECTIONS, LINES
-    HELP_LINE       29268    LINEID, ARTID, TOPICKEY, CATALOG, TOPIC, KIND,
+    HELP_LINE       18715    LINEID, ARTID, TOPICKEY, CATALOG, TOPIC, KIND,
                              SOURCE, CONFID, SEVERITY, NAME, ROLE, LINE_NO,
                              PART_NO, TEXT
-    HELP_SECTION    14601    SECTID, ARTID, TOPICID, TOPICKEY, KIND, SOURCE,
+    HELP_SECTION    10707    SECTID, ARTID, TOPICID, TOPICKEY, KIND, SOURCE,
                              CONFID, SEVERITY, NAME, ORD, NLINES
-    HELP_ARTIFACTS  14601    ID, CATALOG, COMMAND, CMDKEY, OWNER, KIND, SOURCE,
+    HELP_ARTIFACTS  10707    ID, CATALOG, COMMAND, CMDKEY, OWNER, KIND, SOURCE,
                              CONFID, SEVERITY, NAME, ORD, TEXT, DETAIL, EVIDENCE
-    COMMANDS          462    ID, CATALOG, COMMAND, CMDKEY, IMPLEMENT,
+    COMMANDS          464    ID, CATALOG, COMMAND, CMDKEY, IMPLEMENT,
                              SUPPORTED, USAGE, VERBOSE
-    CMD_ARGS         2368    ID, CATALOG, COMMAND, CMDKEY, ARG, USAGE, VERBOSE
+    CMD_ARGS         2378    ID, CATALOG, COMMAND, CMDKEY, ARG, USAGE, VERBOSE
 
 Plus `*_LOCALE` companions (HELP_TOPIC_LOCALE, HELP_LINE_LOCALE,
 HELP_SECTION_LOCALE, HELP_ARTIFACT_LOCALE) and `.dbt` memo files
@@ -76,24 +112,24 @@ HELP_SECTION_LOCALE, HELP_ARTIFACT_LOCALE) and `.dbt` memo files
 **`TOPICKEY` is `CATALOG|TOPIC`** -- `DOT|APPEND`, `FOX|FILE`, `ED|LOOPS`.
 The join every consumer depends on is HELP_LINE.TOPICKEY -> HELP_TOPIC.TOPICKEY.
 
-**CATALOG values seen** [RAN]: DOT 23330, SYSTEM 2637, FOX 1247, ED 842,
-EDU 832, UI 132, EXT 91, DEV 89, INTERNAL 68 (HELP_LINE row counts).
+**CATALOG values seen** [RAN]: DOT 13689, SYSTEM 2663, FOX 1247, ED 842,
+EDU 191, UI 28, EXT 21, DEV 18, INTERNAL 16 (HELP_LINE row counts).
 
 **SOURCE values -- the provenance layer, and it is the most useful column in the
 store** [RAN]:
 
-    USAGE_CONTRACT  15198   mined from `@dottalk.usage` blocks in C++ source
-    SOURCE_MINER     7644   leading comments and source facts
-    SHARED_MSG       2637   the runtime message catalog
-    DOTREF           1006   the hand-curated command catalog, COMPILED IN
+    SOURCE_MINER     7701   leading comments and source facts
+    USAGE_CONTRACT   4556   mined from `@dottalk.usage` blocks in C++ source
+    SHARED_MSG       2663   the runtime message catalog
+    DOTREF           1010   the hand-curated command catalog, COMPILED IN
     CURATED_DOC       868   hand-written documentation
     EDREF             786   the educational catalog, COMPILED IN
     FOXREF            667   the FoxPro-compat catalog, COMPILED IN
-    REGISTRY          462   reflected from the C++ command registry
+    REGISTRY          464   reflected from the C++ command registry
 
-**KIND values** (15) [RAN]: SYNTAX 6083, USAGE 6031, SOURCE_FACT 4302, NOTE 3743,
-SUMMARY 2391, RELATED 1980, STATUS 1560, EXAMPLE 1078, MESSAGE 1009,
-ARGUMENT 495, ERROR 478, ALIAS 53, WARNING 45, HINT 19, DEPRECATION 1.
+**KIND values** (15) [RAN]: SOURCE_FACT 4335, SYNTAX 3532, SUMMARY 2390,
+NOTE 2171, STATUS 1566, USAGE 1364, MESSAGE 1026, RELATED 672, ARGUMENT 558,
+EXAMPLE 535, ERROR 483, WARNING 45, HINT 19, ALIAS 18, DEPRECATION 1.
 
     NOTE: there is no RISK kind. `risk:` sub-blocks appear in 206 source files
     and reach ZERO rows in the built store (AIF-129).
@@ -104,7 +140,7 @@ Eight tables. This is the SelfDoc metadata layer; it is NOT the HELP store and
 the two are built by different programs.
 
     SYSCMD       212  CMD_ID, CAN_NAME, TYPE, VIS, HANDLER, ACTIVE
-    SYSFUNC       75  FUNC_ID, CAN_NAME, DISP_NAME, DEF_LOCALE, REGION_ID,
+    SYSFUNC       79  FUNC_ID, CAN_NAME, DISP_NAME, DEF_LOCALE, REGION_ID,
                       FUNC_CAT, MIN_ARGS, MAX_ARGS, IMPL_STAT, VIS_TIER, OWNER,
                       SRC_AUTH, SRC_FILE, HANDLER, CALC_CALL, PUB_SURF,
                       SELF_REG, MSG_CAT, ACTIVE, VER_AT, NOTES
@@ -134,6 +170,38 @@ messaging lane (part 4c) is the reason.
 is why `metacollect`'s `dispatch_reachable` fact column is false for every row:
 its only assignment reads `DISP_REACH`/`DISPATCH`/`HAS_HDLR` from a metadata row,
 and the table that would answer the COMMAND question has no such field.
+
+### 2b-bis. THE CONTRACT-FAMILY COLLAPSE, and why the store shrank by a third
+
+**2026-09-13 (`b6dabae63`), on the owner's one-word instruction "normalize":
+the store went from TWO contract families to ONE.** It reached the data in the
+rebuild of 2026-09-23 and is the entire reason `HELP_LINE` fell 29,268 -> 18,715.
+
+    before   CONTRACT_*       5,196 rows, written by helpdata_source_miner.cpp
+             USAGE_CONTRACT*  3,817 rows, written by helpdata_cmdhelp_bridge.cpp
+             deduped union    5,666  -- ~37% of contract text stored twice,
+             and NEITHER was a superset, so a reader of one silently missed
+             content and a reader of both double-counted.
+    after    USAGE_CONTRACT*  4,556 rows.  CONTRACT_*  0.  223 topics covered.
+
+**The row NAME says the opposite of the writer** -- `CONTRACT_*` was the
+miner's and `USAGE_CONTRACT*` was the bridge's. Two earlier documents asserted
+the reverse, from the names rather than the emitters. **Attributing a defect
+from the row name alone blames the wrong file.**
+
+The BRIDGE survived, and on measurement rather than preference: it covers 223
+commands against the miner's 217 and misses none of the miner's, while the
+miner truncated at `#` (losing four of seven published IDX usage forms) and
+absorbed post-contract commentary (32 stored notes where `cmd_rel.cpp` declares
+3). Full record:
+`claude/MEASUREMENT_WHICH_CONTRACT_FAMILY_SURVIVES_AND_WHY_IT_WAS_NOT_THE_ONE_NAMED_FOR_IT.md`.
+
+**HOW TO VERIFY IT IS THE REPAIR AND NOT A LOSS**, because the shape of a
+one-third drop invites the wrong conclusion:
+
+    count NAME families among SOURCE='USAGE_CONTRACT' HELP_LINE rows.
+    CONTRACT_* == 0 and 223 distinct TOPICKEYs is the signature.
+    223 is the number the 09-13 measurement PREDICTED for the survivor.
 
 ### 2c. Declared schemas -- `dottalkpp/data/schemas/` [RAN]
 
@@ -240,7 +308,10 @@ CMakeLists.txt:771 before adding a stub.
     fox_palette         opt-in TV palette editor (src/CMakeLists.txt:494)
     uidef_wx_demo       UIDEF-generated wx frontend (gui/uidef/CMakeLists.txt:182)
 
-27 `add_executable` targets exist in total. `tools/coordination/program_freshness_check.py`
+49 `add_executable` targets exist in total (27 in August).
+**`arctictalk_workbench` is currently neither DECLARED nor EXCLUDED** in
+`program_freshness_check.py`, which is the manifest-coverage check reporting its
+own staleness exactly as designed. `tools/coordination/program_freshness_check.py`
 requires every one to be DECLARED or EXCLUDED by name.
 
 ## 4. Python tooling, by role
@@ -249,7 +320,7 @@ Run everything with the host `$py12`:
 `C:\Users\deral\vcpkg\installed\x64-windows\tools\python3\python.exe`.
 Most tools run on 3.9+; two carry version guards (part 8d).
 
-### 4a. Gate and preflight -- `tools/coordination/` (15) and `tools/staging/` (23)
+### 4a. Gate and preflight -- `tools/coordination/` (15) and `tools/staging/` (35)
 
     docpush_preflight.py            THE preflight. Six steps. tools/fullstack_docs/
     help_build_order_check.py       steps 4: catalogs -> exe -> LEGACY -> store
@@ -273,7 +344,17 @@ Most tools run on 3.9+; two carry version guards (part 8d).
     check_sandbox_git_guard.py      the sandbox git rules
     plan_gate5_staging_overlay.py / execute_gate5_staging_rebuild.py
 
-### 4b. The doc stack -- `tools/fullstack_docs/` (50)
+    NEW since 2026-08-26, and every one of them runs in the pre-commit hook:
+    check_append_callers.py        appendBlank() call sites vs a baseline
+    check_field_write_callers.py   direct DbArea field writes vs a baseline
+    check_declaration_order.py
+    check_header_reachability.py
+    check_manual_link_integrity.py every linked manual page exists and is tracked
+    check_site_artifacts.py        the site's generated JSON authorities
+    check_soak_evidence.py         the regression registry
+    check_untracked_contracts.py
+
+### 4b. The doc stack -- `tools/fullstack_docs/` (62)
 
     source_census.py                @dottalk.file coverage (preflight step 1)
     command_catalog_sync.py         website catalog vs registry (step 2)
@@ -295,11 +376,13 @@ Most tools run on 3.9+; two carry version guards (part 8d).
 
 ### 4c. The other tool populations, and one of them is a problem
 
-    tools/manualgen/       5      manualgen.py + 4 builders (part 6)
+    tools/manualgen/       8      manualgen.py + 7 builders (part 6)
     tools/selfdoc/         7      the SelfDoc validators (part 5)
     tools/comments/        5      source-comment escrow and reharvest
     tools/contracts/       1      contract_scan.py
-    tools/reports/        10      regression_index.py writes the website MDX
+    tools/reports/        11      regression_index.py writes the website MDX
+    tools/dbf/             4      schema_registry.py and friends (NEW since Aug)
+    tools/tracking/        2      seed_tracking.py (NEW since Aug)
     tools/diagram/         2      generate_drawio_from_meta.py
     tools/datadict/        0 py   extractors live in subdirectories
     tools/messaging/     547      <- SEE BELOW
@@ -358,17 +441,42 @@ calls Phase 7 "Web ascent to x64base.com". Say which you mean.
     $py12 tools\fullstack_docs\docpush_preflight.py --root .
     $py12 tools\fullstack_docs\docpush_preflight.py --root . --catalog <site>\command-catalog.mdx
 
-    1  @dottalk.file coverage 100%, uncovered 0                    HARD
-    2  website catalog matches the registry                        HARD (needs --catalog)
-    3  plan doc is ASCII                                           advisory
-    4  help_build_order_check: binding / exe newer than catalogs /
-       store newer than exe / legacy before store / generation
-       stamp / store integrity / status coherence                  HARD
-    5  help_store_check: every HELP_LINE row names a topic         HARD
-    6  program_freshness_check: every program newer than its
-       sources; python version guards; manifest coverage           HARD
+    1   @dottalk.file coverage 100%, uncovered 0                   HARD
+    1b  audit_contracts: helper-aware usage and dotref coverage    measure HARD,
+                                                                   debt advisory
+    2   website catalog matches the registry                       HARD (--catalog)
+    3   plan doc is ASCII                                          advisory
+    4   help_build_order_check: binding / exe newer than catalogs /
+        store newer than exe / legacy before store / generation
+        stamp / store integrity / status coherence                 HARD
+    5   help_store_check: every HELP_LINE row names a topic        HARD
+    6   program_freshness_check: every program newer than its
+        sources; python version guards; manifest coverage          HARD
+    6b  metacollect is BUILT, not merely fresh                     HARD
+    7   harvest freshness (E5): the CANONICAL harvest matches the
+        live HELP/META store                                       HARD
+    8   CONTRACT DRIFT: every source usage contract is in the
+        store, UNCHANGED                                           HARD
+    9   site present-state: the website progress authority matches
+        a fresh derivation                                         HARD (--site-root)
+    10  anchor map                                                 HARD
 
 **Re-run it after EVERY rebuild.** `--no-git` skips the worktree-binding check.
+
+**STEP 8 IS THE CHECK THIS BOOK ASKED FOR.** Part 11 of the August version
+ranked "a content-level assertion in the preflight" first, on the grounds that
+6' is a membership check and the content diff was a hand-run workaround. It was
+built. Measured 2026-09-24 it reported `CONTRACT DRIFT: 1 DIFFERENCE --
+~ DOT|COPY [NOTE]`, which is the COPY contract that changed at 02:48 that
+morning against a store built the previous evening. **It works, and it is the
+answer to the blind spot this book named.** Step 9 likewise closes the
+site-present-state gap.
+
+**UNRUN IS NOT PASS**, and the preflight now says so in those words for steps 9
+and 10. Step 10 currently fails on its own configuration --
+`derive_anchor_map: target_manual 'user' is not in [command_reference,
+developer, none, reader, site]` -- which is a defect in the check, not in the
+tree.
 
 ### Gate 1 -- mine and count
 
@@ -578,6 +686,22 @@ space can never match. `preprocess_for_dispatch` rewrites exactly two forms
 `ERROR` parent) and `SET UNIQUE`/`SET RELATION` (dead but served, because SET is
 registered and reads its own next token).
 
+### 8c-bis. A CATALOG ENTRY AGES IN PARTS
+
+A `dotref.hpp` entry is **name, syntax, summary, supported**, and those age
+independently. `refcheck_v1.py` gates the NAME (does it resolve?) and nothing
+gates the SYNTAX. Measured 2026-09-24: coverage PASS with 0 phantoms, while six
+commands' syntax strings were behind their own `@dottalk.usage` headers and
+`AUTODBF` said `TO` where the handler takes `FROM`.
+
+**dotref.hpp is a MANUAL SEED LIST, so editing it for one reason does not make
+it current for another. A dotref EDIT is not a dotref REFRESH.** The commit that
+last touched it (`b6dabae63`) is NEWER than the workspace lane whose verbs are
+still missing.
+
+Generalise it: **when one artifact carries several claims, a gate on one claim
+reads as a gate on the artifact.** Same shape as `IMPLEMENT` in 8a.
+
 ### 8d. Version guards and other false ceilings
 
     build_postbaseline_supported_command_pages.py:391
@@ -591,6 +715,45 @@ carry `from __future__ import annotations` and parse clean under 3.8 grammar.
 
 **"It is a Windows exe" is a fact about a FILE. "Requires Python 3.12" is a fact
 about an INTERPRETER. Neither is a fact about the QUESTION.**
+
+### 8e-pre. A PSEUDO-MEMO POINTER IS A LINE ID, NOT PROSE
+
+`HELP_ARTIFACTS.TEXT`, `.DETAIL` and `.EVIDENCE` are memo columns, and
+`dbfread` does not follow memo blocks -- it yields the literal string
+`<memo:unresolved ptr='N'>`. Two consequences, both of which have produced a
+false measurement in this lane:
+
+    1  COMPARING THEM COMPARES POINTERS, which are unique by construction, so a
+       duplicate scan returns "0 duplicates" from a store full of duplicates.
+       Recorded in FINDING_TWO_MINERS_COVER_THE_SAME_BLOCK_AND_THE_DEDUP_KEY_
+       ENDS_IN_EVIDENCE.md, whose own first blast-radius run hit it.
+    2  FILTERING THEM BY SUBSTRING excludes everything. On 2026-09-24 a count of
+       artifacts with a non-empty EVIDENCE column filtered on `'memo' not in
+       value` -- and EVERY value contains "memo", so the filter removed all
+       4,548 rows and printed 0, which read as "provenance is gone".
+
+**Test the POINTER VALUE (`ptr='0'` means empty), never the rendered string.**
+And reassemble prose from `HELP_LINE` ROLE=TEXT parts, which is where the text
+actually lives.
+
+### 8e-bis. ONE POLARITY CHECKED IS NOT THE PROPERTY CHECKED
+
+`check_site_artifacts.py` carries this in its own output, and it is the
+sharpest instance of the proxy family anyone in this project has written down:
+
+> it read "nothing on the site is false" for six days while four sentences
+> across two pages described a scanner retired 2026-09-04 and a SQLSEL
+> predicate form retired 2026-09-10. **Neither retirement changed a counted
+> fact.**
+
+And the site's own `npm run check:freshness` was green on BOTH tiers throughout:
+tier 1 compares exact values, and no value was stale; tier 2 sweeps for a
+SHIPPED capability described as planned or missing, **and its authority is a list
+of what ships, so a page asserting a REMOVED surface has no entry to match.**
+
+**A sweep for "claimed but absent" is not a sweep for "absent but claimed".**
+Ask which direction your check runs in, and whether the other direction has an
+owner. The four sentences were found by a person asking.
 
 ### 8e. Sandbox conduct [RAN]
 
@@ -634,7 +797,18 @@ area / Authorization / How to verify / How to undo.
 
 # PART FIVE -- STATE AND OPEN WORK
 
-## 10. Where v6 left things (2026-08-26)
+## 10. Where things stand (refreshed 2026-09-24; v6 closed 2026-08-26)
+
+    HEAD 9c4179367, pushed. FOUR MORE DOCFLUSH RUNS have happened since v6 --
+    DOCFLUSH-20260901-001, -002, 20260902-001, 20260914-001 -- and this book
+    does not describe them. Read their run directories before assuming v6 is
+    the latest state of the lane.
+
+    The preflight currently FAILS on four steps: 4 (store older than exe),
+    7 (harvest freshness), 9 (UNRUN, needs --site-root) and 10 (UNRUN, the
+    check's own config). Step 8 PASSES with one named difference, DOT|COPY.
+
+### v6's own closing state (2026-08-26)
 
     Gate 0    GREEN. Standing WARN: 167 rows STATUS=pending + CONFID=AUTHORITATIVE.
     Gate 4    validated twice; 6' green both times.
@@ -648,37 +822,61 @@ hardening pass. On disk: developer 4,208 markdown files, student 1, user 1. Four
 developer-manual assembly variants exist (4118/4597/4710/4597 lines,
 26/26/29/26 H1s) and the ACTIVE pointer names the smallest.
 
-## 11. Open, ranked -- the input CODEX should plan against
+## 11. Open, ranked -- refreshed 2026-09-24
 
-1. **A content-level assertion in the preflight.** 6' is membership only; the
-   content diff is still hand-run and it saw the substantive half of v6.
-2. **A rehearsal harness.** The sandbox can build every program and run the whole
+**CLOSED since the August version, and both were ranked in the top three:**
+
+    1  a content-level assertion in the preflight  ->  BUILT, step 8
+       (contract drift). Caught DOT|COPY on its first run in this refresh.
+    2  the site present-state check                ->  BUILT, step 9.
+
+**Still open, re-ranked:**
+
+1. **A rehearsal harness.** The sandbox can build every program and run the whole
    push. Turn the owner's run from a DISCOVERY into a VERIFICATION: predict, then
-   diff. Measured on 2026-08-25 -- four of five headline numbers predicted
-   exactly, and the fifth (29263 vs 29265, LEGACY arg rows 2609 vs 2363) is a
-   real host/sandbox divergence and the reason a rehearsal must be a COMPARISON.
-3. **A stated-impossibility check** -- flag any routing document asserting
+   diff. Measured 2026-08-25 -- four of five headline numbers predicted exactly,
+   and the fifth (29263 vs 29265, LEGACY arg rows 2609 vs 2363) is a real
+   host/sandbox divergence and the reason a rehearsal must be a COMPARISON.
+2. **A stated-impossibility check** -- flag any routing document asserting
    "cannot build / cannot run" with no adjacent measurement date. Would have
-   fired on all four of v6's false ceilings.
-4. **Harden the manual** -- resolve the developer variants; decide what the
-   student and user manuals should be.
-5. **Five open rulings** -- multiword registrations, `dispatch_reachable`, the
+   fired on all four of the August false ceilings.
+3. **dotref SYNTAX drift has no check.** `refcheck_v1.py` proves every entry
+   RESOLVES and nothing proves the syntax still DESCRIBES the handler. Six
+   commands are behind their own headers and AUTODBF is inverted (`TO` where the
+   handler takes `FROM`). Wants a `--syntax-drift` flag with an allow-list of
+   delegating parents. Record:
+   `FINDING_DOTREF_COVERS_EVERY_COMMAND_AND_ITS_SYNTAX_IS_BEHIND_ON_SEVEN.md`.
+4. **The store is UNCOMMITTED** as of this refresh, built 2026-09-23 21:41, and
+   step 4 now FAILS `store newer than exe` because the exe was rebuilt
+   2026-09-24 03:01 for the COPY change. The remedy is the standing one: LEGACY,
+   then `BUILD . <src>`, one at a time at the `.` prompt.
+5. **Step 7 (harvest freshness) FAILS**, 10 of 14 tables matching. Exporting
+   does NOT promote -- run the promotion plan then the apply. And the only
+   producer blanks memo pointers its own comments promise to preserve
+   (`claude/FINDING_THE_ONLY_HARVEST_PRODUCER_BLANKS_THE_MEMO_POINTERS...`).
+6. **Step 10 (anchor map) fails on its own config**, not on the tree.
+7. **`program_freshness_check.py` does not know `arctictalk_workbench`.** Its
+   manifest-coverage check is reporting its own staleness, as designed.
+8. **Harden the manual** -- resolve the developer variants; decide what the
+   student and user manuals should be. Treated COLLECTIVELY by owner ruling.
+9. **Five open rulings** -- multiword registrations, `dispatch_reachable`, the
    CRLF/LF hash, the DOT-only page filter, the `!= (3, 12)` guard.
-6. **`validate_metadata_system_registry.py` fails on 10 of 24 and nothing runs
-   it.** The check conflates "the registry is malformed" with "this attestation
-   needs renewing", so it can only be green immediately after a re-pin.
-7. **`tools/messaging`, 547 scripts, no index, SYSMSG still empty.**
-8. **AIF-129** -- `status=` and `risk:` sub-block vocabularies. `risk:` is in 206
-   files and reaches zero store rows.
-9. **56 owner topics that can never render** (AIF-126).
-10. **`binding` will never be clean and must be EXPLAINED, not fixed.**
+10. **`validate_metadata_system_registry.py` fails on 10 of 24 and nothing runs
+    it.** The check conflates "the registry is malformed" with "this attestation
+    needs renewing", so it can only be green immediately after a re-pin.
+11. **`tools/messaging`, 547 scripts, no index, SYSMSG still empty.**
+12. **AIF-129** -- `status=` and `risk:` sub-block vocabularies.
+13. **138 rows STATUS=pending + CONFID=AUTHORITATIVE** (was 167).
+14. **`binding` will never be clean and must be EXPLAINED, not fixed.**
 
 ## 12. For CODEX, planning the AI Portal
 
 The portal's job is ROUTING: getting an arriving agent to the truth in the
 mandatory reading order, without a trigger it has to know to fire.
 
-    labtalk/ai_portal/AI_TIER1_SEED_V1.md     8,192 B HARD CEILING (89% used).
+    labtalk/ai_portal/AI_TIER1_SEED_V1.md     16,384 B HARD CEILING, raised
+                                              from 8,192 on 2026-09-04.
+                                              8,718 B used, 53%.
                                               Invariants and POINTERS only.
                                               Adding requires DEMOTING, and
                                               demoting means MOVING, not restating.
@@ -721,6 +919,16 @@ is the smallest useful version of that.
     Authorization : member.derald, 2026-08-26 -- "Give me a detailed recipe book
                     for all of the work you have done AND know about in the full
                     stack document push."
+                    REFRESH: member.derald, 2026-09-24 -- "refresh".
+    Refresh scope : every [RAN] figure re-measured against HEAD 9c4179367. The
+                    store, the SOURCE/KIND/CATALOG distributions, the metadata
+                    tables, the tool counts, the add_executable total, the seed
+                    ceiling, the R and AIF ranges, and the preflight step table.
+                    Sections 2b-bis, 8c-bis, 8e-pre and 8e-bis are NEW. Part 11
+                    is re-ranked and records that two of its top three are BUILT.
+                    Corrected IN PLACE so there is ONE answer per number; the
+                    movement is in the refresh ledger at 0b, which is history
+                    rather than a second answer.
     How to verify : every [RAN] figure is reproducible by the command beside it.
                     Table shapes: read the DBFs with tools/fullstack_docs/dbfread.py.
                     Tool counts: ls the directories named in part 4.
