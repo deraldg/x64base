@@ -7,7 +7,9 @@
 
 ## 1. What is bound
 
-The candidates are gitignored by `.gitignore:342`
+The candidates are gitignored by the `.gitignore` rule
+`docs/maintenance/lanes/**/runs/**/*.csv` (line 342 when this was written; 545
+at 2026-09-24 -- cite the rule text, the line moves)
 (`docs/maintenance/lanes/**/runs/**/*.csv`), which is what the METACOLLECT
 runbook requires -- candidates stay out of history. **Binding by SHA is
 therefore the ONLY thing that makes them citable**, and this document is the

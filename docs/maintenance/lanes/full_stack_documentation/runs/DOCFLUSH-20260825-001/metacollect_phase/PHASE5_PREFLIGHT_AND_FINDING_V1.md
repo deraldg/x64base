@@ -171,7 +171,8 @@ maintainer as the pattern to copy -- which is how `ERROR CLEAR` and
   (`Unknown command: BUILD`), and the mechanism is identical, but a proven
   sibling is not a proof. The one-line settlement, for the owner:
 
-      . ERROR STATUS
+      ERROR STATUS            (at the engine prompt; the `.` a transcript
+                              shows is the PROMPT, not part of the command)
       expect: Unknown command: ERROR
 
   Written down so this item is QUEUED, not blocked.
@@ -230,7 +231,9 @@ is not an authorization.
       METACOLLECT sysfunc export:   75 row(s)
       METACOLLECT sysargs export: 1066 row(s)
 
-Outputs are in this directory and are gitignored by `.gitignore:342`
+Outputs are in this directory and are gitignored by the `.gitignore` rule
+`docs/maintenance/lanes/**/runs/**/*.csv` (line 342 when written; 545 at
+2026-09-24 -- the line moves, the text does not)
 (`docs/maintenance/lanes/**/runs/**/*.csv`), which is the contract the
 METACOLLECT runbook already states: candidates stay out of the tree.
 
@@ -255,16 +258,22 @@ unnamed.
     metacollect --compare --metadata-root dottalkpp/data/metadata
     exit 0, 192 issue(s), all severity WARN
 
-      189  METADATA_ONLY  command    live SYSCMD row with no source-catalog fact
+      187  METADATA_ONLY  command    live SYSCMD row with no source-catalog fact
+        2  METADATA_ONLY  function   STRCAT, TRIM
         3  SOURCE_ONLY    command    SET FILTER, SET INDEX, SET ORDER
                                      (src/cli/command_catalog.cpp)
-        2  ...            function
+
+    [CORRECTED 2026-09-24] this table read 189 METADATA_ONLY *command* above a
+    separate function line, which totals 194 against the 192 stated one line
+    up. 189 is the METADATA_ONLY total across BOTH domains; the command figure
+    is 187. TRIAGE_LOG_20260824_V1.md had it right. Re-measured by re-running
+    the compare on 2026-09-24: byte-identical output, 187/2/3.
 
     live SYSCMD 212 rows; candidate emit 229 rows
 
-**Be careful what 189 means.** The compare's source side is the SOURCE CATALOG
+**Be careful what 187 means.** The compare's source side is the SOURCE CATALOG
 (`command_catalog.cpp`), a different extractor from the seed emit's REGISTRY
-scan. 189 is not "189 commands vanished"; it is "189 of 212 live SYSCMD rows
+scan. 187 is not "187 commands vanished"; it is "187 of 212 live SYSCMD rows
 have no counterpart in the source-catalog extraction." Whether that is drift, or
 two extractors with legitimately different populations, is one measurement away
 and is not settled here. `SYSMSG.dbf` has zero rows and warned.
@@ -352,7 +361,9 @@ misleads, is a ruling for the area that owns metacollect.
 ## 7.6 Good Neighbor for section 7
 
     What changed  : this document; four candidate CSVs in this directory, all
-                    gitignored by .gitignore:342. Nothing else. The metacollect
+                    gitignored by the .gitignore rule
+                    docs/maintenance/lanes/**/runs/**/*.csv (line 342 when
+                    written; 545 at 2026-09-24). Nothing else. The metacollect
                     binary was built to /tmp and is not in the repo. --compare
                     reads metadata and writes none.
     Whose area    : lane full_stack_documentation. Section 7.5 concerns

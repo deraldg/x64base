@@ -508,10 +508,21 @@ authorized what.
 
 ### Gate 4 -- execute and validate [RAN]
 
-**THE TWO REBUILD COMMANDS. Type them at the `.` prompt, ONE AT A TIME.**
+**THE TWO REBUILD COMMANDS. Type them at the engine prompt, ONE AT A TIME.**
 
-    . cmdhelp build legacy
-    . cmdhelp build . d:\code\ccode\src
+    cmdhelp build legacy
+    cmdhelp build . d:\code\ccode\src
+
+**`.` IS THE PROMPT, NOT SOMETHING YOU TYPE** -- it is DotTalk++'s prompt
+character, the way `PS>` is PowerShell's, and a transcript shows it because the
+engine printed it. Earlier drafts of this book wrote `. cmdhelp build legacy`
+as if the dot were a prefix; it is not. Owner's correction, 2026-09-24.
+
+**The `.` in the SECOND command IS real** and is the command's own argument:
+`CMDHELP BUILD LEGACY` builds the legacy tables and `CMDHELP BUILD . <src>`
+builds the current ones, where `.` names the current target. So one of the two
+dots on that line is prompt and the other is argument, which is exactly why the
+distinction is worth stating rather than assuming.
 
 **NEVER pass both to `datarun.ps1 -CommandLines` as an array.** `--script` is
 stdin redirection (`main.cpp:195-213`), so a nested `std::cin` read in the first
@@ -540,7 +551,9 @@ SUBSTITUTION. The workaround, and it is still a hand-run [RAN]:
 ### Phase 5 / Gate 5 -- metadata candidates [RAN]
 
     $mc = 'D:\code\ccode\build\Release\metacollect.exe'
-    $out = '<run>\metacollect_phase'
+    $run = 'D:\code\ccode\docs\maintenance\lanes\full_stack_documentation\runs\DOCFLUSH-20260924-001'
+    $out = "$run\metacollect_phase"      # SUBSTITUTE YOUR RUN ID ABOVE, and
+    mkdir $out -Force                     # create it -- metacollect will not
     & $mc --source-root D:\code\ccode\src --include-dev-commands --sysargs-include-keywords `
           --syscmd-import-out  "$out\SYSCMD_IMPORT_candidate_v1.csv" `
           --sysfunc-import-out "$out\SYSFUNC_IMPORT_candidate_v1.csv" `
@@ -551,11 +564,38 @@ SUBSTITUTION. The workaround, and it is still a hand-run [RAN]:
           --compare-out "$out\metacollect_compare_v1.csv" `
           --metadata-root D:\code\ccode\dottalkpp\data\metadata
 
-v6 results [RAN]: SYSCMD 229, SYSFUNC 75, SYSARGS 1066 (baselines 226/74/959).
-`--compare`: 192 WARN, 189 METADATA_ONLY, 3 SOURCE_ONLY.
+**A `<placeholder>` in a command block gets pasted.** `$out` read `'<run>\...'`
+in the first edition, and it was pasted verbatim and raised OpenError. Any
+placeholder left in a runnable block must be a variable you assign on the line
+above, not angle brackets inside a quoted string.
 
-**Candidate CSVs are gitignored** (`.gitignore:342`), so Gate 5 binds them BY
-SHA-256 in a tracked document. The governing contract is
+v6 results [RAN] 2026-08-26: SYSCMD 229, SYSFUNC 75, SYSARGS 1066
+(baselines 226/74/959). `--compare`: 192 WARN = 187 METADATA_ONLY command +
+2 METADATA_ONLY function + 3 SOURCE_ONLY command.
+
+v7 results [RAN] 2026-09-24: SYSCMD 231, SYSFUNC 79, SYSARGS 1180, and the
+compare CSV came back **byte-identical to August's** -- same 27,184 bytes.
+Explained, not lucky: `command_catalog.cpp` has not been touched since
+2026-07-25 and `SYSCMD.dbf` since 2026-08-24, so both sides of that compare are
+frozen. A flat instrument reports that ITS INPUTS did not move; it is not
+evidence the lane is stable. SYSFUNC +4 is one commit (94782c434, the four
+cursor functions) landing on both sides; SYSARGS +114 is 17 commands' usage
+contracts growing, led by WORKSPACE 44, USER 22, SQLSEL 18.
+
+**TRAP: `--sysargs-include-keywords` makes ARG_ID collide.** `ARG_ID` is
+`ARG_<command>_<arg_name>` (`metacollect.cpp:1087`) while the row is aggregated
+on `command|arg_kind|arg_name` (`:1084`), so a command whose usage text uses one
+word as BOTH a literal keyword and a placeholder -- `SET PATH` and `<path>`,
+`USER ... KEY` and `<key>` -- emits two different rows under one id. 9 such
+collisions on 2026-08-05, 12 on 08-26, 14 on 09-24. The standard emit above
+turns the flag on, so every candidate has carried them. Nothing catches it: the
+contract's uniqueness clause is on SYSCMD. Check it with
+`cut -d, -f1 SYSARGS_IMPORT_candidate_v1.csv | sort | uniq -d`.
+
+**Candidate CSVs are gitignored** by the `.gitignore` rule
+`docs/maintenance/lanes/**/runs/**/*.csv` -- cite it by TEXT, not by line: it
+was line 342 on 2026-08-26 and is line 545 today, because the file grew above
+it. Gate 5 binds them BY SHA-256 in a tracked document. The governing contract is
 `METACOLLECT_SYSCMD_CANDIDATE_CONTRACT_V1.md` -- itself found untracked on
 2026-08-26 and staged then. Its strongest clause is
 **"repeated runs over unchanged source must be byte-identical"**, which makes a
