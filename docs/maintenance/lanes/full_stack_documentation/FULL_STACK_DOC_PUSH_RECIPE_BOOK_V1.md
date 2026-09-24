@@ -564,6 +564,31 @@ SUBSTITUTION. The workaround, and it is still a hand-run [RAN]:
           --compare-out "$out\metacollect_compare_v1.csv" `
           --metadata-root D:\code\ccode\dottalkpp\data\metadata
 
+**VALIDATE BOTH CANDIDATES. Nothing else runs these.**
+
+    python tools\fullstack_docs\validate_syscmd_candidate.py `
+        "$out\SYSCMD_IMPORT_candidate_v1.csv" --repo-root .
+    python tools\fullstack_docs\validate_sysargs_candidate.py `
+        "$out\SYSARGS_IMPORT_candidate_v1.csv" --repo-root . `
+        --syscmd-candidate "$out\SYSCMD_IMPORT_candidate_v1.csv"
+
+    expected 2026-09-24:  SYSCMDCHK  OK   rows=231  findings=0
+                          SYSARGSCHK FAIL rows=1180 findings=14
+
+**THE SYSARGS FAIL IS CORRECT AND MUST NOT BE SILENCED.** All 14 are
+`ARG_ID_DUPLICATE`, the keyword/placeholder collision in
+`METACOLLECT_SYSARGS_CANDIDATE_CONTRACT_V1.md`. Run against the 08-05 and 08-26
+candidates the same check reports 9 and 12 and nothing else, so the clauses are
+right and the collision is the only defect. It goes green when the emitter's id
+carries `arg_kind`.
+
+**Neither validator was wired to anything before 2026-09-24.** The SYSCMD one
+has existed since July, its contract said "the candidate must pass the focused
+validator", and the only thing outside its own unit test that named it was one
+July run document. A validator nobody runs is a contract clause nobody checks --
+the same shape as `validate_metadata_system_registry.py` failing on 10 of 24
+with no caller, which is still open in Part 11.
+
 **A `<placeholder>` in a command block gets pasted.** `$out` read `'<run>\...'`
 in the first edition, and it was pasted verbatim and raised OpenError. Any
 placeholder left in a runnable block must be a variable you assign on the line

@@ -69,6 +69,18 @@ The candidate must pass the focused validator for schema, field lengths,
 allowed values, unique ids, unique canonical names, and static-registry
 backing. Determinism is proved by two byte-identical emissions.
 
+The validator is `tools/fullstack_docs/validate_syscmd_candidate.py` (unit
+tests alongside it). NAMED HERE 2026-09-24, because "the focused validator" was
+an unnamed authority: nothing in the tree called the script, and the only
+mention of it outside its own test was a 2026-07 run document. The Gate 5 block
+of `FULL_STACK_DOC_PUSH_RECIPE_BOOK_V1.md` now runs it.
+
+The sibling contract for the SYSARGS candidate emitted by the same command is
+`METACOLLECT_SYSARGS_CANDIDATE_CONTRACT_V1.md`. It exists because this
+contract's uniqueness clause covers `CMD_ID` and `CAN_NAME` -- which have
+always passed -- and nothing covered `ARG_ID`, which has been non-unique since
+at least 2026-08-05.
+
 Any load into `dottalkpp/data/metadata/SYSCMD.dbf`, and any associated
 CDX/LMDB work, requires a separate reviewed mutation gate with backup,
 before/after readback, rollback evidence, and explicit maintainer authority.
