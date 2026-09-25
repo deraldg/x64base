@@ -168,6 +168,68 @@ What this run changed in the pipeline, against objective 2. Nine commits.
 The verdict stays the text comparison. The explainer can never turn a FAIL into
 a PASS, and the tests pin that.
 
+**AND THE FIRST ATTEMPT AT THIS FIX WAS HALF A FIX.** The deriver learned to name
+its fields and the preflight kept printing a boolean, because step 9 greps for
+exactly two lines -- `documentation-progress check=` and
+`documentation-progress check:` -- and drops the rest of the output. The owner ran
+the preflight, saw the identical FAIL, and said "almost made it".
+
+That is the MIRROR of the defect this same run recorded in 9d60f46e1: there a
+repair landed in the READERS and never in the producer beside them; here it landed
+in the producer and never in the reader. Same lane, same day, opposite direction.
+**A pipeline stage improved is not an improvement until the thing that prints it
+knows.**
+
+The relay is written to survive the next change: it forwards any line the deriver
+INDENTS, rather than matching known phrases, so whatever the deriver learns to say
+next arrives in the preflight without touching docpush_preflight.py.
+
+**AND THE FIELD DIFF CAUGHT A LIVE DEFECT ON ITS FIRST REAL RUN.** Six fields
+differed; two were not predicted and those two were the find:
+
+    current_vertical.measured_fields   LOST   first_open_entry, publication_authorized
+    current_vertical.carried_fields    GAINED the same two
+
+Cause, measured: `runs/DOCFLUSH-20260914-001/` holds both
+`gate8_publication_authorization.json` and `gate8_publication_evidence.json`;
+`runs/DOCFLUSH-20260924-001/` holds neither. So `read_gate8()` returned None,
+nothing wrote the two fields, and `vertical = dict(prior_vertical)` left the
+09-14 answers standing. **A blind re-derive would have published
+`publication_authorized: true` and `first_open_entry: "none"` in an artifact
+stamped `run_id: DOCFLUSH-20260924-001`** -- a run that had not closed Gate 7,
+let alone Gate 8. `content/docs/dottalk/command-reference.mdx:23` prints that
+field verbatim: "First open publication gate: `none`."
+
+`read_gate8`'s own docstring said what should happen -- "the site should keep
+reporting E8 open" -- and no code implemented it. **The comment stated an intent
+the implementation did not have**, which is a sharper failure than a missing check
+because it reads as covered.
+
+FIXED, owner ruling 2026-09-25: `first_open_entry: "E8"`, `publication_authorized:
+false` on the absent path. Both states are now MEASURED, not carried -- "this run
+directory holds no gate8 authorization" is a measurement of the run directory, and
+classifying it so also stops the two fields churning between the two lists every
+run. `gate8_vertical()` ALWAYS returns a non-empty dict, because returning nothing
+is precisely what let the prior value stand; 6 more tests, including one asserting
+both states name the same field set and one asserting they disagree on every field.
+
+STILL OPEN and deliberately not changed: `publication_state` carries the prior
+artifact's string on the same path, so an unpublished run reports the LAST run's
+publication state. Same rot, not covered by the ruling, and what an unpublished
+run's publication_state should read is a lane convention rather than a function's
+to invent. Part 11.
+
+**And a second thing the diff settled by NOT appearing.**
+`canonical_harvest_tables_exported` stayed 10 and `carried_stale` stayed 4, which
+I had predicted would move to 14 and 0. They are correct -- the manifest says
+EXPORTED 10, CARRIED_STALE_MAY 4, total 44280 rows -- so the authority publishes
+"4 tables carried stale" while step 7 publishes "14/14 tables match current
+HELP/META". Both true, about different things, and a reader will take them as
+contradictory. The four are META_SYSENTVAR (12 rows), META_SYSFLDDIC (16),
+META_SYSHELP (8) and META_SYSMSG (**0**) -- so one of the four "matches" by being
+empty on both sides, which is part 7's rule that an empty result is not a
+measurement, landing inside a PASS.
+
 **And running the suite to check those 8 tests found the bigger one:** 26 test
 files, 104 tests, invoked by no gate, 7 of them erroring since 2026-09-13 -- in
 the harvest promotion code THIS RUN used. See 8g-ter. That discovery is worth
@@ -1364,48 +1426,58 @@ developer-manual assembly variants exist (4118/4597/4710/4597 lines,
 5. **USER, BUILDVECTORS and VDISK have no command page on any branch.** The only
    genuine content debt in the 22, and each is the companion of one of the four
    sections main does not publish. Three pages, not twenty-two.
-6. **`command_reference_candidate.py:427` derives the page set from the accepted
+6. **`publication_state` carries the prior run's value when gate8 is absent.**
+   The sibling of the defect fixed this run, and NOT covered by the 2026-09-25
+   ruling, which named `first_open_entry` and `publication_authorized` only. An
+   unpublished run currently reports the last run's publication state. Decide
+   what it should read, then implement it beside `GATE8_OPEN_VERTICAL`.
+7. **The authority says "4 tables carried stale" while step 7 says "14/14
+   match".** Both true, about different things. META_SYSENTVAR, META_SYSFLDDIC,
+   META_SYSHELP and META_SYSMSG have been carried since May; META_SYSMSG has
+   ZERO rows, so its match is vacuous. Either rename the field so it stops
+   reading as a freshness verdict, or re-export the four.
+8. **`command_reference_candidate.py:427` derives the page set from the accepted
    reader's OWN PRIOR LINKS**, with 164 hardcoded at :525. A command the reader
    never links can never get a page however completely the harvest and the
    disposition cover it -- and the tool's help text already says "the accepted
    reader's linked command pages", so the behaviour is documented and its
    consequence is not. Either derive from the approved topic set, or record at
    :427 that 164 is a FLOOR and not a measurement.
-7. **A rehearsal harness.** Unchanged and still ranked high. Turn the owner's run
+9. **A rehearsal harness.** Unchanged and still ranked high. Turn the owner's run
    from a DISCOVERY into a VERIFICATION: predict, then diff. Measured 2026-08-25,
    four of five headline numbers predicted exactly; the fifth is a real
    host/sandbox divergence and the reason a rehearsal must be a COMPARISON.
-8. **A stated-impossibility check** -- flag any routing document asserting
+10. **A stated-impossibility check** -- flag any routing document asserting
    "cannot build / cannot run" with no adjacent measurement date. Would have
    fired on all four August false ceilings.
-9. **dotref SYNTAX drift has no check.** `refcheck_v1.py` proves every entry
+11. **dotref SYNTAX drift has no check.** `refcheck_v1.py` proves every entry
    RESOLVES and nothing proves the syntax still DESCRIBES the handler. Six
    commands are behind their own headers; AUTODBF is inverted (`TO` where the
    handler takes `FROM`).
-10. **Add `destination_file_exists` and the branch name to the standalone section
+12. **Add `destination_file_exists` and the branch name to the standalone section
    link gap ledger.** Its existing column,
    `present_in_accepted_reader_destination_set`, is a true and useless fact: it
    asks whether the reader links the destination when the question was whether
    the destination exists, and on which branch.
-11. **`program_freshness_check.py` does not know `arctictalk_workbench`** (its
+13. **`program_freshness_check.py` does not know `arctictalk_workbench`** (its
     manifest-coverage check is reporting its own staleness, as designed).
-12. **Harden the manual** -- resolve the developer variants; decide what the
+14. **Harden the manual** -- resolve the developer variants; decide what the
     student and user manuals should be. Treated COLLECTIVELY by owner ruling.
-13. **Five open rulings** -- multiword registrations, `dispatch_reachable`, the
+15. **Five open rulings** -- multiword registrations, `dispatch_reachable`, the
     CRLF/LF hash, the DOT-only page filter, the `!= (3, 12)` guard in
     `build_postbaseline_supported_command_pages.py`.
-14. **`validate_metadata_system_registry.py` fails on 10 of 24 and nothing runs
+16. **`validate_metadata_system_registry.py` fails on 10 of 24 and nothing runs
     it.** It conflates "the registry is malformed" with "this attestation needs
     renewing", so it can only be green immediately after a re-pin.
-15. **`tools/messaging`, 547 scripts, no index, SYSMSG still empty.**
-16. **AIF-129** -- `status=` and `risk:` sub-block vocabularies.
-17. **138 rows STATUS=pending + CONFID=AUTHORITATIVE** (was 167).
-18. **Two untracked `.dtschema` files**; no sysargs schema exists at all.
-19. **Six em-dashes in `helpdata_messages.cpp`**, against house style.
-20. **ARG_ID remedy (1) at `metacollect.cpp:1087`** -- the collapse of keyword
+17. **`tools/messaging`, 547 scripts, no index, SYSMSG still empty.**
+18. **AIF-129** -- `status=` and `risk:` sub-block vocabularies.
+19. **138 rows STATUS=pending + CONFID=AUTHORITATIVE** (was 167).
+20. **Two untracked `.dtschema` files**; no sysargs schema exists at all.
+21. **Six em-dashes in `helpdata_messages.cpp`**, against house style.
+22. **ARG_ID remedy (1) at `metacollect.cpp:1087`** -- the collapse of keyword
     and placeholder that the new SYSARGS uniqueness clause now fails on.
-21. **Two DOCFLUSH runs open with no Gate 7** -- 20260902-001, 20260914-001.
-22. **`binding` will never be clean and must be EXPLAINED, not fixed.**
+23. **Two DOCFLUSH runs open with no Gate 7** -- 20260902-001, 20260914-001.
+24. **`binding` will never be clean and must be EXPLAINED, not fixed.**
 
 ### 11b. My own errors this run, recorded because the pattern is the lesson
 

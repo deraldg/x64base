@@ -367,6 +367,19 @@ def main(argv=None):
             print("  9. site present-state: %s" % line)
             if note:
                 print("     %s" % note.split("check: ", 1)[-1])
+            # RELAY THE DETAIL, do not just the verdict. The deriver names every
+            # differing field by dotted path with both values; this step used to
+            # grep out its two headline lines and drop the rest, so a FAIL read
+            # as a boolean here even after the deriver learned to explain itself
+            # (2026-09-25). That is the mirror of the defect recorded in
+            # 9d60f46e1 -- there a repair landed in the readers and never in the
+            # producer; here it landed in the producer and never in the reader.
+            # Any line the deriver indents is its own explanation. Relaying by
+            # indentation rather than by matching known phrases means the next
+            # thing it learns to say arrives here without a change to this file.
+            for detail in out.splitlines():
+                if detail.startswith("  ") and detail.strip():
+                    print("   %s" % detail)
         if line is not None and rc == 2:
             fails.append(
                 "site present-state: documentation-progress-v1.json no longer "

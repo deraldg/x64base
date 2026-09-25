@@ -290,8 +290,49 @@ def read_gate8(run_dir: Path) -> dict | None:
 
     return {
         "publication_state": state,
-        "vertical": {"first_open_entry": "none", "publication_authorized": True},
+        "vertical": dict(GATE8_CLOSED_VERTICAL),
     }
+
+
+# The two fields that describe publication, in each of their two states.
+#
+# GATE8_OPEN is the one that was missing, and its absence was a live defect until
+# 2026-09-25. read_gate8's docstring says that when the authorization is absent
+# "the site should keep reporting E8 open" -- and nothing implemented that. On the
+# None path neither field was written, so `vertical = dict(prior_vertical)` in
+# render() left the PREVIOUS run's answers standing: an artifact stamped
+# DOCFLUSH-20260924-001 would have published publication_authorized=true and
+# first_open_entry="none" for a run that had not reached Gate 7, let alone Gate 8,
+# and content/docs/dottalk/command-reference.mdx prints that field verbatim.
+#
+# That is this tool's own stated enemy, from its header: the pages agreed with the
+# authority, the authority agreed with itself, and nothing compared either to the
+# engine. It is also exactly what the write-path refusal warns about in words --
+# "a field carried forward silently is a field that rots" -- happening to two
+# fields at once.
+#
+# Caught because --check learned to NAME the fields it fails on (same day): the
+# two showed up moving from measured_fields to carried_fields, which is the
+# demotion that made the carry visible. A boolean FAIL would have been answered by
+# re-deriving, and the stale values would have been written into the authority.
+#
+# Values are the owner's ruling, 2026-09-25: E8 and false. The vocabulary is the
+# eight fail-closed Phase 7 -> 8 entry rows (E1..E8); build_documentation_progress.py
+# defaults --first-open-entry to E5.
+GATE8_CLOSED_VERTICAL = {"first_open_entry": "none", "publication_authorized": True}
+GATE8_OPEN_VERTICAL = {"first_open_entry": "E8", "publication_authorized": False}
+
+
+def gate8_vertical(gate8: dict | None) -> dict:
+    """The publication fields for either state. NEVER returns empty.
+
+    Returning {} for the absent case is what let render() fall through to the
+    prior artifact. A function that always answers cannot be silently skipped,
+    which is why this exists as a function rather than an `if` inside render().
+    """
+    if gate8 is None:
+        return dict(GATE8_OPEN_VERTICAL)
+    return dict(gate8["vertical"])
 
 
 def render(root: Path, site_root: Path, static_pages: int, indexed_pages: int) -> str:
@@ -327,7 +368,18 @@ def render(root: Path, site_root: Path, static_pages: int, indexed_pages: int) -
     publication_state = prior.get("publication_state")
     if gate8 is not None:
         publication_state = gate8["publication_state"]
-        measured.update(gate8["vertical"])
+    # BOTH states are MEASURED, not carried. "This run directory holds no gate8
+    # authorization" is a measurement of the run directory, not an absence of one,
+    # and classifying it as measured also stops the two fields churning between
+    # measured_fields and carried_fields from run to run.
+    measured.update(gate8_vertical(gate8))
+    # STILL CARRIED, and NOT covered by the 2026-09-25 ruling, which named
+    # first_open_entry and publication_authorized only: publication_state keeps the
+    # prior artifact's string when gate8 is absent, so an unpublished run reports
+    # the LAST run's publication state. That is arguably the same rot as the two
+    # fields above and is deliberately not changed here, because deciding what an
+    # unpublished run's publication_state should read is a lane convention and not
+    # this function's to invent. Recorded in the recipe book's open list instead.
 
     vertical = dict(prior_vertical)
     vertical.update(measured)

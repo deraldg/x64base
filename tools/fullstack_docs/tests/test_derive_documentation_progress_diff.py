@@ -15,9 +15,12 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from derive_documentation_progress import (  # noqa: E402
+    GATE8_CLOSED_VERTICAL,
+    GATE8_OPEN_VERTICAL,
     VOLATILE_FIELDS,
     field_differences,
     flatten,
+    gate8_vertical,
 )
 
 
@@ -91,3 +94,50 @@ class TestFieldDifferences(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestGate8Vertical(unittest.TestCase):
+    """The publication fields must be ANSWERED in both states, never omitted.
+
+    Omission is what let render()'s `vertical = dict(prior_vertical)` publish the
+    previous run's publication_authorized=true for an unpublished run.
+    """
+
+    def test_absent_authorization_reports_E8_open_and_not_authorized(self):
+        # Owner ruling 2026-09-25.
+        self.assertEqual(
+            gate8_vertical(None),
+            {"first_open_entry": "E8", "publication_authorized": False},
+        )
+
+    def test_present_authorization_reports_none_open_and_authorized(self):
+        gate8 = {"publication_state": "v9-published-github-pages",
+                 "vertical": dict(GATE8_CLOSED_VERTICAL)}
+        self.assertEqual(
+            gate8_vertical(gate8),
+            {"first_open_entry": "none", "publication_authorized": True},
+        )
+
+    def test_neither_state_is_ever_empty(self):
+        # The whole defect was an empty update() letting the prior value stand.
+        for arg in (None, {"vertical": dict(GATE8_CLOSED_VERTICAL)}):
+            self.assertTrue(gate8_vertical(arg), "an empty vertical lets the prior value stand")
+
+    def test_both_states_answer_exactly_the_same_field_names(self):
+        # If one state named a field the other did not, that field would fall
+        # through to the prior artifact on the state that omits it.
+        self.assertEqual(
+            set(GATE8_OPEN_VERTICAL), set(GATE8_CLOSED_VERTICAL)
+        )
+
+    def test_the_returned_dict_is_a_copy(self):
+        got = gate8_vertical(None)
+        got["first_open_entry"] = "MUTATED"
+        self.assertEqual(GATE8_OPEN_VERTICAL["first_open_entry"], "E8")
+
+    def test_the_two_states_disagree_on_every_field(self):
+        # A field with the same value in both states would be telling the reader
+        # nothing about whether publication happened.
+        for name in GATE8_OPEN_VERTICAL:
+            self.assertNotEqual(GATE8_OPEN_VERTICAL[name], GATE8_CLOSED_VERTICAL[name],
+                                f"{name} does not distinguish the two states")
