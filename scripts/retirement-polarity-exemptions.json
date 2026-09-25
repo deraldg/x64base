@@ -1,0 +1,10 @@
+{
+  "note": "Every entry states WHY the assertion is legitimate. An exemption without a reason is rejected by the checker: muting a check silently is how a check dies. Mirrors capability-contradiction-exemptions.json on purpose -- one idiom, two polarities.",
+  "exemptions": [
+    {
+      "file": "content/docs/engine/sqlsel-and-sql-conformance.mdx",
+      "retirement": "*",
+      "reason": "This page is where both retirements are NARRATED. It quotes the retired grammar in order to say it was retired, names both dates, and carries the reason each form had to go. The excuse-marker rule already clears most of it; this entry covers the lines where the marker and the grammar land in different paragraphs."
+    }
+  ]
+}

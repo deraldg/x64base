@@ -14,7 +14,7 @@
     "check:pk-authority": "node scripts/derive-primary-key-authority.mjs --check",
     "derive:sqlsel-authority": "node scripts/derive-sqlsel-authority.mjs",
     "check:sqlsel-authority": "node scripts/derive-sqlsel-authority.mjs --check",
-    "build": "node scripts/check-diagrams.mjs && node scripts/check-public-content.mjs && node scripts/check-site-freshness.mjs && node scripts/check-opacity-scale.mjs && node scripts/clean-build-output.mjs && next build && pagefind --site out",
+    "build": "node scripts/check-diagrams.mjs && node scripts/check-public-content.mjs && node scripts/check-site-freshness.mjs && node scripts/check-retirement-polarity.mjs && node scripts/check-opacity-scale.mjs && node scripts/clean-build-output.mjs && next build && pagefind --site out",
     "index:search": "pagefind --site out",
     "start": "next start",
     "lint": "next lint",
@@ -22,7 +22,10 @@
     "build:sites": "node scripts/build-sites-artifact.mjs",
     "publish:github-pages": "node scripts/publish-github-pages.mjs",
     "build:publish": "npm run build && node scripts/strip-local-only-output.mjs && node scripts/build-sites-dist.mjs",
-    "check:opacity": "node scripts/check-opacity-scale.mjs"
+    "check:opacity": "node scripts/check-opacity-scale.mjs",
+    "check:retirement": "node scripts/check-retirement-polarity.mjs",
+    "check:retirement:selftest": "node scripts/check-retirement-polarity.mjs --selftest",
+    "check:retirement:strict": "node scripts/check-retirement-polarity.mjs --strict"
   },
   "dependencies": {
     "clsx": "^2.1.1",

@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "generated_by": "SEEDED BY HAND 2026-09-15. There is no generator yet, and this file says so rather than implying one. The intended producer derives from source: a contract whose `status:` is `reserved` or `deprecated`, joined to the retirement date its file states in prose. Until that exists, adding a row is a human step and the census below is why that is currently affordable.",
+  "census_note": "Two command-surface retirements exist in the tree as of 2026-09-15, and BOTH were found stranded in dotref, in foxref, and on the published site. A register of two rows is not worth a generator yet; a register of twenty is. Revisit when a third row is added by hand.",
+  "source_of_truth": [
+    "src/cli/cmd_sql.cpp",
+    "src/cli/cmd_sql_select.cpp"
+  ],
+  "retirements": [
+    {
+      "id": "sql.verb.scanner",
+      "title": "The SQL verb as a predicate scanner",
+      "retired_on": "2026-09-04",
+      "authority": "owner ruling; src/cli/cmd_sql.cpp",
+      "contract_status": "reserved",
+      "replaced_by": "COUNT, COUNT LIST, COUNT VERBOSE",
+      "severity": "flag",
+      "why": "The retired form kept its own idea of which rows were in scope and could disagree with COUNT without saying so.",
+      "patterns": [
+        "SQL\\s+COUNT\\b",
+        "SQL\\s+\\[COUNT\\]",
+        "SQL\\s+(?:ALL|DELETED|VERBOSE)\\b",
+        "`SQL`[^.\\n]{0,80}\\bCOUNT\\b",
+        "\\bSQL\\b[^.\\n]{0,60}\\bexecutes?\\b[^.\\n]{0,30}\\bstatements?\\b"
+      ],
+      "must_flag": [
+        "| `SQL` | A **COUNT** command with `FOR <expr>` and optional `ALL` / `DELETED`. It does not execute SELECT statements; the name is historical. |",
+        "Use SQL COUNT FOR GPA >= 3.0 to count matching rows."
+      ],
+      "must_pass": [
+        "| `SQL` | **A reserved name.** Retired as a scanner on 2026-09-04; it answers with direction to `COUNT` and `SQLSEL`. |"
+      ]
+    },
+    {
+      "id": "sqlsel.predicate.scanner",
+      "title": "The SQLSEL legacy predicate-scan form",
+      "retired_on": "2026-09-09",
+      "authority": "AIF-074, owner ruling; src/cli/cmd_sql_select.cpp:200",
+      "contract_status": "supported (the STATEMENT surface ships; only the predicate form was withdrawn)",
+      "replaced_by": "COUNT FOR <expr>, COUNT LIST, COUNT VERBOSE",
+      "severity": "flag",
+      "why": "Same defect as the SQL verb, one file over: a private deleted-row policy and a hand-rolled walk that consulted the shared selector zero times.",
+      "note": "The published site says 2026-09-10 for this one. The source says 2026-09-09 twice, once in capitals. The source is the authority and the site should be corrected, not this file.",
+      "patterns": [
+        "SQLSEL\\s+\\[COUNT\\]",
+        "SQLSEL\\s+COUNT\\s+FOR\\b",
+        "SQLSEL\\s+(?:ALL|DELETED)\\b",
+        "SQLSEL\\s+FOR\\b"
+      ],
+      "must_flag": [
+        "The legacy predicate-scan form SQLSEL [COUNT] [FOR <expr>] is still accepted."
+      ],
+      "must_pass": [
+        "SQLSEL COUNT FOR <expr> was retired on 2026-09-09; COUNT carries it now."
+      ]
+    }
+  ],
+  "excuse_markers": [
+    "retired",
+    "retirement",
+    "reserved",
+    "no longer",
+    "used to be",
+    "until 20",
+    "withdrawn",
+    "was removed",
+    "has been removed",
+    "corrected 20",
+    "this answer called",
+    "this section said",
+    "moved to count",
+    "its behaviour moved"
+  ],
+  "excuse_markers_note": "A marker must assert REMOVAL. `historical` and `predates` were in the first draft and both describe where a NAME came from, not what a surface does. The FAQ row this check was built to catch ends `the name is historical`, so the stale sentence excused itself with the check's own vocabulary on its first run. Keep this list narrow; an excuse word that merely sounds retrospective is worse than no excuse word, because it fails silently and green.",
+  "selftest_note": "Each retirement carries the sentence that motivated it. --selftest replays them. A check whose founding example is not in its own fixtures is one edit away from passing over the thing it was built for."
+}
