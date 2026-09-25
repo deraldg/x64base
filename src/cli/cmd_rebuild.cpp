@@ -67,6 +67,7 @@
 //   TABLE
 //
 
+#include "cli/ask.hpp"
 #include "xbase.hpp"
 
 #include "cnx/cnx.hpp"
@@ -129,16 +130,17 @@ static inline std::string up_copy(std::string s)
 
 static bool prompt_yes_no(const std::string& prompt, bool default_no = true)
 {
-    std::cout << prompt;
-    std::cout << (default_no ? " (y/N) " : " (Y/n) ");
-
-    std::string line;
-    std::getline(std::cin, line);
-
-    if (line.empty()) return !default_no;
-
-    const char c = static_cast<char>(std::toupper(static_cast<unsigned char>(line[0])));
-    return c == 'Y';
+    // ONE RENDERER, ONE PARSER (owner ruling (3), 2026-09-25). This was a
+    // copy of the same function in cmd_reindex.cpp, differing by the word `const`,
+    // and both tested only `toupper(line[0]) == 'Y'` -- so ANY word beginning
+    // with Y consented to an index rebuild. cli::ask re-asks instead.
+    // The printed text is unchanged: " (y/N) " or " (Y/n) ", derived.
+    cli::ask::Ask a;
+    a.prompt = prompt;
+    a.options = { {"YES", 'Y', "yes"}, {"NO", 'N', "no"} };
+    a.on_empty = default_no ? "NO" : "YES";
+    a.when_unattended = a.on_empty;
+    return cli::ask::ask(a).token == "YES";
 }
 
 static std::string normalize_field_name(std::string s)

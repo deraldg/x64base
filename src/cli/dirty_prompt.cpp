@@ -16,6 +16,7 @@
 #include <sstream>
 #include <string>
 
+#include "cli/ask.hpp"
 #include "cli/prompt_policy.hpp"
 #include "cli/table_state.hpp"
 #include "xbase.hpp"
@@ -41,27 +42,27 @@ static inline std::string to_upper_copy(std::string s) {
     return s;
 }
 
-static inline bool parse_yes_default_no() {
-    std::string answer;
-    if (!std::getline(std::cin, answer)) return false;
-
-    auto is_space = [](unsigned char ch) { return std::isspace(ch) != 0; };
-    while (!answer.empty() && is_space((unsigned char)answer.front())) answer.erase(answer.begin());
-    while (!answer.empty() && is_space((unsigned char)answer.back()))  answer.pop_back();
-
-    for (std::size_t i = 0; i < answer.size(); ++i) {
-        answer[i] = (char)std::tolower((unsigned char)answer[i]);
-    }
-
-    if (answer.empty()) return false; // default No
-    return (answer == "y" || answer == "yes");
-}
-
+// ONE RENDERER, ONE PARSER (owner ruling (3), 2026-09-25). This used to be
+// `parse_yes_default_no()` -- trim, lowercase, accept only "y" or "yes" --
+// which disagreed with the two copies in cmd_rebuild.cpp and cmd_reindex.cpp:
+// `yellow` consented there and not here, a leading space consented here and not
+// there. Both are gone; cli::ask owns the keystrokes now.
+//
+// THE PRINTED TEXT IS UNCHANGED. cli::ask derives " (y/N) " from a two-option
+// YES/NO ask whose bare-Enter answer is NO, which is byte-for-byte what this
+// function printed.
 static inline bool prompt_commit_yn(const std::string& scopeLabel) {
-    std::cout << "TABLE: uncommitted changes detected (" << scopeLabel << "). "
-              << "COMMIT changes? (y/N) ";
-    std::cout.flush();
-    return parse_yes_default_no();
+    cli::ask::Ask a;
+    a.prompt = "TABLE: uncommitted changes detected (" + scopeLabel + "). COMMIT changes?";
+    a.options = { {"YES", 'Y', "yes"}, {"NO", 'N', "no"} };
+    a.on_empty = "NO";
+    // NO, not PROCEED: the four-token ask of ruling (2) is a later step. What
+    // changes here is that an unattended caller RESOLVES rather than reading --
+    // `--script` is stdin redirection, so the old getline ate the next line of
+    // the script as its answer. Cancelling deterministically is both safer and
+    // what EOF already did.
+    a.when_unattended = "NO";
+    return cli::ask::ask(a).token == "YES";
 }
 
 static bool commit_area0(int area0) {
