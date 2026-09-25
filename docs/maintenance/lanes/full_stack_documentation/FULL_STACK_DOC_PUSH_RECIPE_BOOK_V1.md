@@ -294,6 +294,35 @@ than a second answer to "what is it now".
 hook. It refuses a root it does not recognise, which is correct behaviour in a
 sandbox -- the mount path is unrelated to either declared root.
 
+**THE SITE BRANCH IS AN ORPHAN, AND A BRANCH COMPARISON ACROSS THE TWO TREES IS
+MEANINGLESS.** Measured 2026-09-25 because it nearly produced a wrong finding:
+
+    D:\dev\x64base-site        git merge-base origin/main HEAD  ->  NOTHING
+    files tracked on that branch                      470   all website
+    files tracked on origin/main                    3,015   includes src/cli,
+                                                            include/cli,
+                                                            dottalkpp/data,
+                                                            tools/manualgen
+    rev-list --left-right --count origin/main...HEAD   96  262
+
+`codex/lean-sites-publish` shares NO COMMON ANCESTOR with `main`. The two are
+deliberately disjoint trees inside one repository, so "96 behind main" is not a
+gap to reconcile -- it is the engine, which the website branch has never carried
+and should not.
+
+**Do not read that the way the ccode gap reads.** In `D:\code\ccode`,
+`development` and `main` DO share history, `merge-base --is-ancestor` answers, and
+the 99-commit gap strands 19 real command pages (8g-bis). Same command, same shape
+of output, opposite meaning. This was one careless sentence away from being filed
+as a second branch defect.
+
+    THE RULE. Before reporting a branch gap, ask whether the branches share an
+    ancestor. `rev-list --left-right --count` answers cheerfully for two
+    unrelated histories and its number means nothing there.
+
+And a reader running `git branch -r` in EITHER tree sees the other's branches,
+because there is one remote. That is the trap this note exists for.
+
 **RULING 2026-08-26: the website LINKS to the manual; it does not project it.**
 That retires "website projection" as a state the pipeline must keep in sync.
 
@@ -1051,6 +1080,84 @@ Manual and website are CONSUMERS. Reuse the 9-gate
 
 # PART FOUR -- THE DISCIPLINE
 
+### PHASE 8, THE WEBSITE HALF -- AN ORDER THAT IS CIRCULAR IF YOU GUESS [RAN 2026-09-25]
+
+Preflight step 9 cannot pass without a website build, and the obvious order
+deadlocks. Written down because this run walked into it twice, from two directions.
+
+    documentation-progress-v1.json is the authority for ELEVEN of the site's 16
+    freshness contracts. Re-deriving it REQUIRES --static-pages and
+    --indexed-pages, which come from `next build` and `pagefind`. And
+    `npm run build` runs check:freshness BEFORE next build.
+
+    So: re-derive first  ->  11 contracts fail against pages that still quote the
+    old authority  ->  build stops  ->  no counts  ->  cannot re-derive.
+
+**THE ORDER THAT WORKS:**
+
+    1  npm run build                      with the OLD authority in place. Pages
+                                          match it, freshness passes, capture the
+                                          two counts from the output.
+    2  derive_documentation_progress.py   --static-pages N --indexed-pages M
+    3  node scripts/check-site-freshness.mjs
+                                          Read its `missing:` lines. They are the
+                                          exact strings to write. Do NOT recompute
+                                          them -- see 8g-quater.
+    4  edit the named pages
+    5  npm run build                      again, to confirm
+    6  docpush_preflight.py --site-root   step 9 can now pass
+
+**THE SAME TRAP CATCHES THE ENGINE ARTIFACTS, FROM THE OTHER SIDE.** The two
+engine authorities have their own derivers and their own pages:
+
+    npm run derive:pk-authority     -- --engine D:\code\ccode
+    npm run derive:sqlsel-authority -- --engine D:\code\ccode
+
+Both REQUIRE --engine and refuse to default it, which is correct -- see 8h.
+Running them advances `engine.commit_short`, and two contracts require the PAGES to
+carry that stamp verbatim, so the build stops until
+`content/docs/engine/primary-keys.mdx` and `.../sqlsel-and-sql-conformance.mdx` are
+updated. Measured 2026-09-25: the facts in both artifacts were unchanged and ONLY
+the stamp moved, exactly as the engine-side advisory had been reporting for days.
+
+    THE GENERAL RULE. Re-deriving ANY authority makes every page that quotes it
+    stale in the same instant. Re-derive an authority and fix its pages as ONE
+    step, never as two.
+
+**VERIFY THE MANUAL LINKS BEFORE CALLING THE WEBSITE HALF DONE** (owner
+instruction, 2026-09-25). Measured this run, all green:
+
+    5 download targets    developer_manual_publication_v1.md, and
+                          developer-manual-latest .html / .md / .pdf, plus
+                          DEVELOPER_MANUAL_LATEST.json -- present in public/ AND
+                          in the built out/. Checking public/ alone is NOT the
+                          check: the build copies, and a copy can be missing.
+    3 routes              /docs/dev/developer-manual, /docs/dev/manual-assembly,
+                          /downloads -- each has out/<route>/index.html.
+    2 branch links        docs/manuals/user/sqlsel.md and performance.md resolve
+                          on origin/development. These track a BRANCH, so they
+                          are the ones that can rot with no change to the site.
+    8 pinned permalinks   pinned to be9350531, reachable from origin/main, so
+                          they are publicly fetchable. Pinning is correct
+                          practice and needs no maintenance.
+
+The staged manual downloads are deliberately NOT advanced by a Gate 4 acceptance:
+the manifest stays dated 2026-07-23 and two contracts bind the visible date and
+counts to it. Gate 4 accepting 164 pages into the dev tree is a different
+assembly, and advancing the downloads because the dev tree moved would be the
+error.
+
+**Counts are only valid while the page SET is unchanged.** 2026-09-25 measured 178
+static and 171 indexed, both up one from 09-14. Prose edits to existing pages keep
+the counts valid; adding or removing a page invalidates the counts captured at step
+1 and needs a third build.
+
+**And `website_pagefind_pages_indexed` is not a count of pages.** pagefind reports
+`Found 235 files matching **/*.{html}` then `Indexed 171 pages`, because it ignores
+pages with no `data-pagefind-body` element. So 178 built against 171 indexed is 7
+pages deliberately outside search, and neither the field name nor the artifact says
+so. The next person comparing the two will wonder.
+
 ## 7. The count discipline
 
 1. **Name what is in a count.** A substring grep is not a count of the thing you
@@ -1250,6 +1357,41 @@ Three instances, all measured 2026-09-25, and they are one disease:
         candidate, not a track candidate. Its boundary text is still correct
         doctrine and belongs in a document, not a dead library.
 
+**FOURTH INSTANCE, found 2026-09-25 in the WEBSITE tree, and it is the worst of
+the four because this run quoted it as evidence.**
+
+    scripts/check-site-freshness.mjs        MODIFIED, uncommitted since 09-14
+    scripts/check-retirement-polarity.mjs   UNTRACKED since 09-15, 5657 B
+    scripts/engine-retirements-v1.json      UNTRACKED since 09-15
+    scripts/retirement-polarity-exemptions.json  UNTRACKED since 09-15
+    site repo HEAD: b0bcccd67, 2026-09-23
+
+The uncommitted diff to `check-site-freshness.mjs` IS the tier-1/tier-2 repair --
+the one that moved the exit to the end of the file so a single stale number can no
+longer silence the prose sweep. Its own comment records the measurement: every
+build one morning failed on a date mismatch while two published pages denied a
+shipped capability, and the sweep never ran once. **This run quoted that line three
+times tonight** -- "Tier 1 FAILED above. Tier 2 runs anyway" -- as an example of an
+instrument behaving well. It behaves because of a diff no clone has.
+
+And the three untracked files are a WORKING retirement-polarity checker:
+
+    node scripts/check-retirement-polarity.mjs
+    Retirement polarity sweep: 0 assertion(s) over 2 retirement(s) and 1 stated
+    exemption(s). Nothing on the site states a retired surface as live.
+
+It records exactly the two retirements the standing engine-side advisory names --
+`sql.verb.scanner` 2026-09-04 and `sqlsel.predicate.scanner` 2026-09-09 -- and
+that advisory has been printing, on every commit for days, that this polarity is
+the one nothing checks. **Somebody built it on 2026-09-15 and it has sat on the
+floor for ten days**, wired into no npm script and no other script, so
+`npm run build` has never called it.
+
+The pattern is now unmistakable and it is not carelessness about git. It is that
+this lane's instruments get built in the moment a defect is felt, used once by the
+person who built them, and never enter the repository -- so the NEXT person meets
+the defect again with no tool. Four instances, three repositories, one disease.
+
 And the branch gap underneath all of it:
 
     files tracked on origin/main : 3174     on HEAD : 6542
@@ -1261,6 +1403,98 @@ Development is 1620 ahead and 99 behind, and one of those 99 (`be9350531`,
 Either reconcile the 99, or record the publish-to-main step as a one-way door and
 stop measuring development against publications it does not carry. 803 files is
 too many to be an accident.
+
+### 8g-quinquies. 140 OF 152 SITE PAGES HAVE NO CONTRACT, AND SOME SAY "CURRENT"
+
+Owner instruction, 2026-09-25: a page that hand-lists a count "needs to be
+annotated as a hand maintenance item until it is automated." Measured first,
+because the size of the gap decides whether annotation is a note or a policy.
+
+    content/**/*.mdx                          152 pages
+    named as a target by a freshness contract  12
+    covered by nothing                       140
+
+The 12 are the whole of the automated surface. This lane's instinct is to trust the
+site because `check:freshness` is green, and green covers 8 percent of the pages.
+
+**FOUR uncovered pages were measured and all four had drifted:**
+
+    /docs/dev/roadmap                 245 registered command keys, 300 with
+                                      aliases, dated 2026-09-05. The engine's own
+                                      normalization gate prints 247 and 302 on
+                                      every commit that stages a tool. Two runs of
+                                      drift beside a live measurement.
+    /docs/dev/current-lanes           calls DOCFLUSH-20260825-001 the "Current
+                                      run". Two runs stale. 239/239 keys, 670
+                                      topics, 29,480 HELP lines.
+    /docs/dev/documentation-progress  heading "Current measured state", every
+                                      figure from August: 239/239, 63,217 harvest
+                                      rows, 29,480 HELP lines, 171 static / 164
+                                      indexed, manual candidate MANRUN-20260826.
+    /docs/dev/full-stack-documentation-push
+                                      heading "Current proof table" / "Reviewed
+                                      current state", the same August figures.
+
+HELP lines on two of those read 29,480 against a measured 18,730. **Off by 10,750,
+under the word "Current", for eleven days** -- the contract-family collapse landed
+on 09-14 and no contract reaches those pages.
+
+**THE DISTINCTION THAT MATTERS.** 8e-bis says one polarity checked is not the
+property checked. This is the other axis: a page can be wrong without any COVERED
+page being wrong. `check-site-freshness` proves 12 pages agree with a generated
+authority. It says nothing about the other 140, and its green line reads as though
+it does.
+
+**THE CONVENTION, applied to /docs/dev/roadmap this run.** A page carrying
+hand-maintained counts gets a visible block saying so, and the block names three
+things or it is decoration:
+
+    1  that NO contract covers this page, so the numbers drift silently
+    2  the COMMAND that re-measures them, if one exists
+    3  the drift ALREADY OBSERVED, with both values and both dates
+
+Point 3 is what makes it a maintenance item rather than a disclaimer. "These
+numbers may be stale" is worth nothing; "these read 245/300 on 2026-09-05 and
+247/302 on 2026-09-25, and here is the gate that prints the real ones" is a task.
+Where no command can produce the number, the honest annotation says to delete the
+count rather than let it age.
+
+### 8g-quater. NEVER RECOMPUTE WHAT A CHECKER ALREADY COMPUTES
+
+Third instance in one session, and the third was mine.
+
+    9d60f46e1   the harvest exporter and its freshness checker each had their
+                own _recode. Fixed by moving it into the exporter.
+    (same run)  the progress deriver learned to name its fields; the preflight
+                that prints it kept grepping two headline lines. Producer fixed,
+                reader not.
+    (same run)  bringing the SITE pages back into agreement, I reimplemented
+                check-site-freshness.mjs's own template expansion in Python.
+
+The third diverged from the original on two types:
+
+    JS  String(false)        -> "false"     Python  str(False)     -> "False"
+    JS  String(["A","B"])    -> "A,B"       Python  str(["A","B"]) -> "['A', 'B']"
+
+It proposed rewriting `| In the default suite | false | false |` to `False`,
+**breaking a contract that was passing**, and reported 222 phantom failures on
+another page whose every inline code span matched a bare-placeholder template. A
+non-greedy regex in the same script would have written
+`status is reconciled through 2026-09-25026-09-14`. A dry run caught all three and
+nothing was written.
+
+**THE RULE.** When a checker already computes a value, do not recompute it. Run it
+and read what it says. `check-site-freshness.mjs` prints
+
+    missing: | HELP lines | 18,730 |
+
+which is the literal string it wants, for every failing template. That output is an
+API. Eight replacements taken verbatim from it landed first try, after a hand-rolled
+expander had been wrong about three of them.
+
+The general shape: a second producer of one fact is not a convenience, it is a
+divergence with a delay -- and the delay is what makes it expensive, because all
+three instances here read as working code until something compared them.
 
 ### 8g-ter. A TEST SUITE NO GATE RUNS IS NOT COVERAGE, IT IS A FILE
 
@@ -1431,53 +1665,69 @@ developer-manual assembly variants exist (4118/4597/4710/4597 lines,
    ruling, which named `first_open_entry` and `publication_authorized` only. An
    unpublished run currently reports the last run's publication state. Decide
    what it should read, then implement it beside `GATE8_OPEN_VERTICAL`.
-7. **The authority says "4 tables carried stale" while step 7 says "14/14
+7. **`news-current-status` binds a CURRENT measurement to a HISTORICAL record.**
+   It requires the interpolated sentence "{website_command_keys} command keys
+   matched to {website_command_rows_parsed} parsed contracts" to appear somewhere
+   in `milestones.json`. Until 2026-09-25 the only entry carrying it was the
+   2026-09-14 one, so the first change to the catalog count would have demanded
+   EDITING A HISTORICAL NEWS ENTRY -- a citation, not a claim. Mitigated by
+   anchoring the phrase in the current entry too; the contract still cannot tell
+   the two apart. Same family as 8e-bis.
+8. **140 of the site's 152 content pages are covered by no freshness contract,
+   and four measured ones had drifted.** Two carry August figures under the
+   heading "Current", with HELP lines reading 29,480 against a measured 18,730.
+   `/docs/dev/roadmap` is corrected and annotated this run per the owner's
+   instruction; `current-lanes`, `documentation-progress` and
+   `full-stack-documentation-push` are NOT, and all three present a two-runs-old
+   flush as current. Either bring them under contracts or annotate them the same
+   way. See 8g-quinquies for the convention.
+9. **The authority says "4 tables carried stale" while step 7 says "14/14
    match".** Both true, about different things. META_SYSENTVAR, META_SYSFLDDIC,
    META_SYSHELP and META_SYSMSG have been carried since May; META_SYSMSG has
    ZERO rows, so its match is vacuous. Either rename the field so it stops
    reading as a freshness verdict, or re-export the four.
-8. **`command_reference_candidate.py:427` derives the page set from the accepted
+10. **`command_reference_candidate.py:427` derives the page set from the accepted
    reader's OWN PRIOR LINKS**, with 164 hardcoded at :525. A command the reader
    never links can never get a page however completely the harvest and the
    disposition cover it -- and the tool's help text already says "the accepted
    reader's linked command pages", so the behaviour is documented and its
    consequence is not. Either derive from the approved topic set, or record at
    :427 that 164 is a FLOOR and not a measurement.
-9. **A rehearsal harness.** Unchanged and still ranked high. Turn the owner's run
+11. **A rehearsal harness.** Unchanged and still ranked high. Turn the owner's run
    from a DISCOVERY into a VERIFICATION: predict, then diff. Measured 2026-08-25,
    four of five headline numbers predicted exactly; the fifth is a real
    host/sandbox divergence and the reason a rehearsal must be a COMPARISON.
-10. **A stated-impossibility check** -- flag any routing document asserting
+12. **A stated-impossibility check** -- flag any routing document asserting
    "cannot build / cannot run" with no adjacent measurement date. Would have
    fired on all four August false ceilings.
-11. **dotref SYNTAX drift has no check.** `refcheck_v1.py` proves every entry
+13. **dotref SYNTAX drift has no check.** `refcheck_v1.py` proves every entry
    RESOLVES and nothing proves the syntax still DESCRIBES the handler. Six
    commands are behind their own headers; AUTODBF is inverted (`TO` where the
    handler takes `FROM`).
-12. **Add `destination_file_exists` and the branch name to the standalone section
+14. **Add `destination_file_exists` and the branch name to the standalone section
    link gap ledger.** Its existing column,
    `present_in_accepted_reader_destination_set`, is a true and useless fact: it
    asks whether the reader links the destination when the question was whether
    the destination exists, and on which branch.
-13. **`program_freshness_check.py` does not know `arctictalk_workbench`** (its
+15. **`program_freshness_check.py` does not know `arctictalk_workbench`** (its
     manifest-coverage check is reporting its own staleness, as designed).
-14. **Harden the manual** -- resolve the developer variants; decide what the
+16. **Harden the manual** -- resolve the developer variants; decide what the
     student and user manuals should be. Treated COLLECTIVELY by owner ruling.
-15. **Five open rulings** -- multiword registrations, `dispatch_reachable`, the
+17. **Five open rulings** -- multiword registrations, `dispatch_reachable`, the
     CRLF/LF hash, the DOT-only page filter, the `!= (3, 12)` guard in
     `build_postbaseline_supported_command_pages.py`.
-16. **`validate_metadata_system_registry.py` fails on 10 of 24 and nothing runs
+18. **`validate_metadata_system_registry.py` fails on 10 of 24 and nothing runs
     it.** It conflates "the registry is malformed" with "this attestation needs
     renewing", so it can only be green immediately after a re-pin.
-17. **`tools/messaging`, 547 scripts, no index, SYSMSG still empty.**
-18. **AIF-129** -- `status=` and `risk:` sub-block vocabularies.
-19. **138 rows STATUS=pending + CONFID=AUTHORITATIVE** (was 167).
-20. **Two untracked `.dtschema` files**; no sysargs schema exists at all.
-21. **Six em-dashes in `helpdata_messages.cpp`**, against house style.
-22. **ARG_ID remedy (1) at `metacollect.cpp:1087`** -- the collapse of keyword
+19. **`tools/messaging`, 547 scripts, no index, SYSMSG still empty.**
+20. **AIF-129** -- `status=` and `risk:` sub-block vocabularies.
+21. **138 rows STATUS=pending + CONFID=AUTHORITATIVE** (was 167).
+22. **Two untracked `.dtschema` files**; no sysargs schema exists at all.
+23. **Six em-dashes in `helpdata_messages.cpp`**, against house style.
+24. **ARG_ID remedy (1) at `metacollect.cpp:1087`** -- the collapse of keyword
     and placeholder that the new SYSARGS uniqueness clause now fails on.
-23. **Two DOCFLUSH runs open with no Gate 7** -- 20260902-001, 20260914-001.
-24. **`binding` will never be clean and must be EXPLAINED, not fixed.**
+25. **Two DOCFLUSH runs open with no Gate 7** -- 20260902-001, 20260914-001.
+26. **`binding` will never be clean and must be EXPLAINED, not fixed.**
 
 ### 11b. My own errors this run, recorded because the pattern is the lesson
 
