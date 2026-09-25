@@ -99,7 +99,7 @@
 //   COMMIT
 //
 
-#include "cli/ask.hpp"
+#include "cli/dirty_prompt.hpp"
 #include "xbase.hpp"
 #include "xbase/ramfs.hpp"
 #include "xindex/cdx_native_backend.hpp"
@@ -127,7 +127,6 @@ using xbase::DbArea;
 extern "C" xbase::XBaseEngine* shell_engine(void);
 
 // forward declare (defined elsewhere)
-void cmd_COMMIT(xbase::DbArea& A, std::istringstream& in);
 void cmd_REBUILD(xbase::DbArea& A, std::istringstream& in);
 #if DOTTALK_WITH_INDEX
 void cmd_BUILDLMDB(xbase::DbArea& A, std::istringstream& in);
@@ -160,42 +159,22 @@ static std::string upper_copy(std::string s) {
     return s;
 }
 
-static bool prompt_yes_no(const std::string& prompt, bool default_no = true)
+static bool ensure_clean_or_commit(xbase::DbArea& A, int area0, const char* verb)
 {
-    // ONE RENDERER, ONE PARSER (owner ruling (3), 2026-09-25). This was a
-    // copy of the same function in cmd_rebuild.cpp, differing by the word `const`,
-    // and both tested only `toupper(line[0]) == 'Y'` -- so ANY word beginning
-    // with Y consented to an index rebuild. cli::ask re-asks instead.
-    // The printed text is unchanged: " (y/N) " or " (Y/n) ", derived.
-    cli::ask::Ask a;
-    a.prompt = prompt;
-    a.options = { {"YES", 'Y', "yes"}, {"NO", 'N', "no"} };
-    a.on_empty = default_no ? "NO" : "YES";
-    a.when_unattended = a.on_empty;
-    return cli::ask::ask(a).token == "YES";
-}
-
-static bool ensure_clean_or_commit(xbase::DbArea& A, int area0, const char* verb) {
-    if (area0 < 0) return true;
-
-    if (!dottalk::table::is_enabled(area0)) return true;
-    if (!dottalk::table::is_dirty(area0)) return true;
-
-    std::ostringstream oss;
-    oss << verb << ": TABLE has uncommitted changes. Commit now and continue?";
-    if (!prompt_yes_no(oss.str(), true)) {
-        cli::cmdout::print_prefixed_message(verb, dottalk::helpdata::MessageId::ReindexCanceledDirtyText);
-        return false;
+    // S4 (OI-041): the mechanism moved to dottalk::dirty. This copy and the
+    // one in cmd_rebuild.cpp differed in exactly one thing -- which two MessageIds
+    // they printed -- so that is all that is left here.
+    switch (dottalk::dirty::ensure_clean_or_commit(A, area0, verb)) {
+        case dottalk::dirty::CleanOrCommit::DeclinedByUser:
+            cli::cmdout::print_prefixed_message(verb, dottalk::helpdata::MessageId::ReindexCanceledDirtyText);
+            return false;
+        case dottalk::dirty::CleanOrCommit::StillDirtyAfterCommit:
+            cli::cmdout::print_prefixed_message(verb, dottalk::helpdata::MessageId::ReindexStillDirtyText);
+            return false;
+        case dottalk::dirty::CleanOrCommit::AlreadyClean:
+        case dottalk::dirty::CleanOrCommit::Committed:
+            break;
     }
-
-    std::istringstream empty;
-    cmd_COMMIT(A, empty);
-
-    if (dottalk::table::is_dirty(area0)) {
-        cli::cmdout::print_prefixed_message(verb, dottalk::helpdata::MessageId::ReindexStillDirtyText);
-        return false;
-    }
-
     return true;
 }
 

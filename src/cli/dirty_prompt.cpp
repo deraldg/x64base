@@ -180,4 +180,36 @@ bool maybe_prompt_all(xbase::XBaseEngine& eng, const char* opLabel) {
     return maybe_prompt_all(eng, opLabel ? std::string(opLabel) : std::string());
 }
 
+
+// S4 (OI-041): ONE copy of the commit-before-index gate, was two.
+//
+// BEHAVIOUR IS DELIBERATELY UNCHANGED, including one thing that is arguably a
+// defect: cmd_COMMIT is called here WITHOUT a cli::prompt::SuppressScope, so a
+// COMMIT that prompts would prompt again underneath this one. commit_area0()
+// above DOES guard it. Collapsing a duplicate is not the change that should
+// decide that question -- it is named in OI-041, unproven, not claimed fixed.
+CleanOrCommit ensure_clean_or_commit(xbase::DbArea& A, int area0, const char* verb)
+{
+    if (area0 < 0) return CleanOrCommit::AlreadyClean;
+    if (!dottalk::table::is_enabled(area0)) return CleanOrCommit::AlreadyClean;
+    if (!dottalk::table::is_dirty(area0)) return CleanOrCommit::AlreadyClean;
+
+    // The printed text is unchanged: the two copies built this with an
+    // ostringstream and asked through prompt_yes_no(default_no = true), which
+    // is a two-option YES/NO ask answering NO to a bare Enter -- " (y/N) ".
+    cli::ask::Ask a;
+    a.prompt = std::string(verb ? verb : "") +
+               ": TABLE has uncommitted changes. Commit now and continue?";
+    a.options = { {"YES", 'Y', "yes"}, {"NO", 'N', "no"} };
+    a.on_empty = "NO";
+    a.when_unattended = "NO";
+    if (cli::ask::ask(a).token != "YES") return CleanOrCommit::DeclinedByUser;
+
+    std::istringstream empty;
+    ::cmd_COMMIT(A, empty);
+
+    if (dottalk::table::is_dirty(area0)) return CleanOrCommit::StillDirtyAfterCommit;
+    return CleanOrCommit::Committed;
+}
+
 }} // namespace dottalk::dirty
