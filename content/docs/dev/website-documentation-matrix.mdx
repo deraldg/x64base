@@ -219,7 +219,50 @@ page or artifact is set by its class and by these gates:
 Retention is enforced at closeout: the matrix re-audit confirms that nothing which
 should have been preserved was overwritten during the pass.
 
-## 2026-09-14 Site-Wide Freshness Sweep
+## 2026-09-25 Site-Wide Freshness Sweep
+
+`DOCFLUSH-20260924-001`, the reconciliation for the run that applied Gate 4 into
+the developer manual. **Nothing is published.** Publication is E8 and E8 is open,
+which the authority now says out loud for the first time rather than carrying the
+previous run's answer. All 178 content pages were swept mechanically against the
+values this run measured.
+
+| Route or surface | Class | Freshness disposition | Enforced relationship |
+| --- | --- | --- | --- |
+| `documentation-progress-v1.json` (the authority behind eleven contracts) | `maintained_current` | `REGENERATED, AND ITS CHECK REPAIRED TWICE` -- the generator existed; its `--check` mode compared whole text and printed a boolean, so the only way to comply with its own remedy was to re-derive blind, which overwrites the authority with whatever the tree says and launders a regression as readily as it records progress. It now names every differing field by dotted path with both values. Then the preflight that calls it was found grepping out two headline lines and discarding the rest, so the fix reached the producer and not the reader. Both closed this run. | `docpush_preflight.py` step 9 relays any line the deriver indents, rather than matching known phrases, so the next thing it learns to say arrives without editing the preflight. |
+| The accepted developer manual, 164 command pages | `generated` | `GATE 4 APPLIED` -- 168 rows, 0 validation findings, 0 rollbacks, reader pointer untouched, website untouched. Reviewed as a diff before commit: 168 of 168 ledger rows produced a real modification and **zero files moved that the ledger does not name**. 157 pages carry only this run's lineage; seven gained real content from the promoted harvest, including the primary-key enforcement and table fence that landed in the engine between 19 and 23 September. | The mutation ledger, reconciled against `git diff` by hand before staging. The lane's defence is the diff, not the ledger. |
+| The published manual's section files and appendices | `generated` | `NOT TRACKED ON THIS BRANCH, AND NOTHING SAYS SO` -- 28 section files and 4 appendices sit in the working tree untracked and unignored; the publication root's README and appendices index are upstream-only. Development carries 164 of 183 command pages. 19 of the 22 "missing" pages have been on the published branch and in staging since 18 July; three -- USER, BUILDVECTORS, VDISK -- exist nowhere. **The published manual resolves perfectly on the branch it was published to: 183 links, 183 pages, nothing dangling.** | `check_manual_link_integrity.py` was built for this defect a month ago and scoped to `command_reference_v1/`, which is exactly and only the subtree that IS tracked. It has printed PASS on every commit since. Widening it fails today, correctly. |
+| `/docs/dottalk/command-reference` | `maintained_current` | `REFRESHED` -- snapshot date, HELP lines 18,566 to 18,730, canonical harvest rows 43,858 to 44,280, manual candidate advanced to this run's plan, and **publication gate `none` to `E8`**. That last one is a ruling reaching the public site: the authority may no longer report an unpublished run as authorized. | `command-reference-current-snapshot`. Every replacement was taken verbatim from what the checker printed as `missing:`, not recomputed. |
+| `/docs/engine/primary-keys`, `/docs/engine/sqlsel-and-sql-conformance` | `derived` | `PROVENANCE ADVANCED, FACTS UNCHANGED` -- both authorities re-derived at `76ac01dcb`; every measured fact held. 19 PKPOLICY markers, 15 PKDURABLE child markers, 5 unrouted write sites in 5 files, 13 SQLSEL specs, conformance map 16 of 33 mapped. Only the commit stamp moved, which is what the engine-side advisory had been saying for two days. | `primary-key-policy`, `sqlsel-conformance`, `specifications-sqlsel-counts`. **Re-deriving an authority makes every page quoting it stale in the same instant**, and this pair blocked the build until the two stamps were updated. |
+| `/docs/getting-started/faq`, `/docs/labtalk/agent-sync` | `maintained` / `maintained_current` | `POINTER ADVANCED` -- one line each, restating the authority's reconciliation date. Neither page claims to have been reviewed beyond that. | `faq-reconciliation-check`, `agent-sync-snapshot-disclosure`. PASS. |
+| `/docs/labtalk/current-work` | `maintained_current` envelope / generated body | `DEFERRED_REGENERATION_PENDING` -- unchanged and still accurate. The reconciliation pointer advanced; the registry snapshot and its disposition did not, because neither the body nor its cause has moved. | `current-work-freshness-disclosure` interpolates the disposition FROM THE AUTHORITY. PASS. |
+| `/news` | `maintained` / generated feed | `REFRESHED` -- one entry dated 2026-09-25, written from this run's transcripts. The new entry deliberately carries the interpolated catalog sentence, which until now lived only in the 2026-09-14 entry. **The contract binds a current measurement to whatever record holds that phrase**, so while the phrase sat in a historical entry, the first catalog change would have demanded editing history. Anchoring it to the current record frees the old one. | `news-current-status`, `news-current-status-first`. PASS. |
+| `/downloads`, `/docs/dev/developer-manual`, `/docs/dev/manual-assembly` | `maintained` envelope / reported artifacts | `NO_CHANGE` -- the staged manual manifest remains dated 2026-07-23 with its visible date and counts bound to it. Gate 4 accepted 164 pages into the dev tree this run, which is a different assembly and is not a reason to advance these. | Two manual-snapshot contracts bind visible date and counts to `DEVELOPER_MANUAL_LATEST.json`. |
+| E8, website publication | gate | `OPEN, AND REPORTED OPEN` -- no authorization exists for this run and none is claimed. Until this run the generator wrote nothing on that path, so the previous run's `publication_authorized: true` and `first_open_entry: none` simply survived into an artifact stamped with this run's id. The absence is now measured rather than inherited. | `gate8_publication_evidence.json` + `gate8_publication_authorization.json`. `publication_state` still carries the prior string on the same path and is recorded as open debt. |
+| `tools/fullstack_docs/tests`, 26 files and 104 tests | -- | `RUN BY NO GATE` -- and 7 of the 104 have been erroring since 13 September, in the harvest-promotion code **this run used to promote the canonical harvest**. The promotion is independently verified by its own ledgers and by E5 reaching 14 of 14, so the result stands; the test suite contributed nothing to that confidence and could not have. | **None.** Coverage is what a gate runs. A test file no gate invokes measures only that somebody once cared. |
+
+**Measured from this run's own build:** `website_static_pages_built` 178 and
+`website_pagefind_pages_indexed` 171, both up one from 2026-09-14. The page SET
+grew, which is the case that makes carried counts dangerous: the six page edits
+above are prose-only, so these two hold, but a sweep that added a page would have
+made them stale the moment it landed.
+
+**The ordering hazard this run walked into twice, and it is circular.** Re-deriving
+the progress authority needs page counts from `next build`; `npm run build` runs
+`check:freshness` before `next build`; eleven contracts resolve against that
+authority. Re-derive first and the build stops before the counts can exist. The
+order that works is build, then re-derive, then edit the pages, then build again.
+The same shape caught the two engine artifacts from the other direction.
+
+**A near-miss worth keeping.** The first attempt at the page edits reimplemented
+the checker's own template expansion in Python and diverged on two types --
+`str(False)` is not `String(false)`, and a Python list is not a JS comma-join. It
+proposed breaking a contract that was passing and reported 222 phantom failures on
+another. A dry run caught it; nothing was written. **When a checker already
+computes a value, do not recompute it -- it prints the literal string it wants,
+and that is an API.**
+
+## 2026-09-14 Site-Wide Freshness Sweep (retained)
 
 `DOCFLUSH-20260914-001`, the reconciliation for the run that published. **This
 is the first sweep on this page taken after a deployment rather than before
