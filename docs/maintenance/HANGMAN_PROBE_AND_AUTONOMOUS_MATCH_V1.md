@@ -205,6 +205,56 @@ instructive:
 Both are fixed by this file existing under a searchable name, plus the pointers added
 alongside it.
 
+### 8a. It happened again -- 2026-09-24, same question, same failure mode
+
+**The anchor worked. The habit did not.**
+
+Forty-five days later the owner asked "look up hangman on our d:". A different
+steward session opened with a broad `find -iname "*hangman*"` across three mounts,
+got empty output because the command hit the tool timeout, and then ran a broad
+`grep -ril` across `docs/` which also returned empty for the same reason. Both
+searches were false negatives on a file that plainly exists. The session was one
+recalled detail away from reporting NOT FOUND a second time -- it only caught
+itself because it happened to remember a dashboard row mentioning the match.
+
+What makes this worth recording rather than quietly fixing:
+
+- **The anchor did its job.** `-iname "*hangman*"` SHOULD have matched
+  `HANGMAN_PROBE_AND_AUTONOMOUS_MATCH_V1.md`. Section 8's fix was correct and
+  sufficient. The tool failed, not the naming.
+- **Four layers of guidance were in place and all four were delivered.**
+  `CLAUDE.md` says walk the portal before you scan -- and it is AUTO-INJECTED, so
+  it was read at session start. `PORTAL_SEARCH_MAP_V1.md` says "go straight there,
+  do not scan" in its TITLE and, in its second paragraph, names this exact failure:
+  "broad find/grep over the tree is slow (worse across the mount -- **it times
+  out**)". Section 8 above says do not read silence as absence.
+  `proof.golden_rule_verify_before_assert` says verify before asserting.
+- **None of them fired**, because none of them is mechanical. Each is a sentence
+  an agent must remember at the moment of temptation, and the moment of temptation
+  is exactly when a broad scan looks like the fastest path to an answer.
+
+`PREPUSH_GATE_REFERENCE_V1.md` already measured the difference: obligations
+carrying a gate held 83-94 percent, the one without a gate held 33. A second
+instance of the same failure, from a session that had the rule in its context
+window, is the data point that moves this from "remind people" to "build the
+gate."
+
+**The gate, built 2026-09-24:** `tools/search/verified_search.py`. It prints
+exactly one verdict and the three cases are not confusable --
+`FOUND`, `NO MATCHES (search completed)`, `INCOMPLETE (timed out; NOT evidence of
+absence)` -- and exits 0 / 1 / 2 respectively, so a caller checking status cannot
+read a timeout as an absence. It consults the portal search map before scanning,
+defaults to the four trees where a "where is X" question is nearly always
+answered, and prunes the nine directories that make a tree-wide scan time out in
+the first place. Verified on this very question: the bare `find` that failed
+returns `FOUND 1` through the tool in 51 s, and a deliberately starved run
+(`--timeout 3`) produces byte-identical empty output but reports `INCOMPLETE`
+and exits 2.
+
+A row for hangman was also added to `PORTAL_SEARCH_MAP_V1.md`, per that file's
+own maintenance rule -- "a scan you did not record is a scan the next agent
+repeats." It had no hangman row, which is the third reason the scan happened.
+
 ## 9. Pointers (kept here so the trail is one hop from anywhere)
 
 - Board post + played protocol: `docs/ai-friendly/PSEUDO_CHAT_BOARD.md` (2026-08-04)
