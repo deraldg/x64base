@@ -43,6 +43,9 @@ Copy the current DBF, convert the current table to a target DBF flavor, or copy 
 - OVERWRITE is required when the destination already exists.
 - KEY DROP accepts a destination that cannot carry the source's primary key. Without it, COPY TO ... AS REFUSES rather than discarding the designation in silence -- which is what a downgrade to VFP, FOX26 or
 - MSDOS does, since those headers have nowhere to record one.
+- Binary COPY TO takes exactly one destination token; a stray token after it REFUSES (corrected 2026-09-23: COPY TO &lt;name&gt; VECTOR without AS X64 used to fall through to a silent binary copy).
+- refuses:
+- VECTOR without AS X64 (any position), stray tokens after the binary destination, unknown flavors, key-carrying source into a keyless target without KEY DROP.
 
 ## Related
 
@@ -53,7 +56,7 @@ Copy the current DBF, convert the current table to a target DBF flavor, or copy 
 ## Provenance
 
 - Topic key: `DOT|COPY`
-- Included HELP rows: `26`
-- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
-- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
+- Included HELP rows: `33`
+- HELP reference run: `MANRUN-20260924T230323Z-76AD9EBC`
+- Disposition run: `MANRUN-20260925T002350Z-BF0876DF`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

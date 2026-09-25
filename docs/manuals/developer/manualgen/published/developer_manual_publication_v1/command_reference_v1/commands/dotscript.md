@@ -8,7 +8,7 @@
 
 ## Summary
 
-Run a DotTalk++ script file, resolving bare names through script/test search locations, supporting @file notation, TRACE mode, and one-level subscript nesting.
+Run a DotTalk++ script file, resolving bare names through SCRIPTS, supporting @file notation, TRACE mode, and one-level subscript nesting.
 
 ## Status
 
@@ -55,7 +55,9 @@ Run a DotTalk++ script file, resolving bare names through script/test search loc
 - DOTSCRIPT with no arguments shows usage.
 - DOTSCRIPT reads an external script file and executes each nonblank, noncomment line through the shell command executor.
 - Script comments/blank lines are ignored when they begin with *, //, &amp;&amp;, or ; after trimming.
-- Bare script names try the typed name, .dts extension, scripts/, and tests/ candidates.
+- Bare names use SCRIPTS only; a missing extension means .dts.
+- Qualified relative paths use DATA; subscripts use their caller's directory.
+- Absolute paths are exact. Missing files never trigger a directory search.
 - @file notation is accepted and unquoted before path resolution.
 - TRACE without a file reports the current trace state and usage.
 - TRACE ON/OFF changes global DOTSCRIPT trace state.
@@ -76,7 +78,7 @@ Run a DotTalk++ script file, resolving bare names through script/test search loc
 ## Provenance
 
 - Topic key: `DOT|DOTSCRIPT`
-- Included HELP rows: `55`
-- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
-- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
+- Included HELP rows: `57`
+- HELP reference run: `MANRUN-20260924T230323Z-76AD9EBC`
+- Disposition run: `MANRUN-20260925T002350Z-BF0876DF`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

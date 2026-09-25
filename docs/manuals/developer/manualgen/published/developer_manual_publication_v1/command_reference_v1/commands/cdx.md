@@ -40,6 +40,9 @@ Manage CDX index container metadata: create containers, inspect header/tag direc
 - Before 2026-08-29 any string was accepted here and the miss was swallowed at BUILD time without a message, leaving a container carrying a tag nothing would ever fill.
 - DROPTAG is deliberately NOT field-checked: removing a tag whose field is gone is exactly when you need it, so requiring the field to exist would fence off the repair.
 - CDX manages container header/tag metadata; backend tag build data persistence is owned elsewhere.
+- INFO's per-tag root_off/recs fields are written by the NATIVE rebuild only (2026-09-22):
+- BUILDLMDB -- the x64 default flow -- reads tag NAMES and never writes the directory back, so those fields read 0 on an LMDB-backed container while the env holds the live keys.
+- INFO appends a pathless note saying so when the env exists; LMDB INFO has the live counts.
 
 ## Related
 
@@ -52,7 +55,7 @@ Manage CDX index container metadata: create containers, inspect header/tag direc
 ## Provenance
 
 - Topic key: `DOT|CDX`
-- Included HELP rows: `30`
-- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
-- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
+- Included HELP rows: `34`
+- HELP reference run: `MANRUN-20260924T230323Z-76AD9EBC`
+- Disposition run: `MANRUN-20260925T002350Z-BF0876DF`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

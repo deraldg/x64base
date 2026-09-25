@@ -38,6 +38,6 @@ Minimal example/test command used to verify token parsing and command routing.
 
 - Topic key: `DOT|EXAMPLE`
 - Included HELP rows: `11`
-- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
-- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
+- HELP reference run: `MANRUN-20260924T230323Z-76AD9EBC`
+- Disposition run: `MANRUN-20260925T002350Z-BF0876DF`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

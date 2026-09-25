@@ -53,9 +53,16 @@ Preview, validate, infer schema, create/import table data from delimited files.
 
 ## Note
 
+- IMPORTSQL FILE TAKES THE TABLE FENCE ONCE, BEFORE THE FIRST ROW (OI-043, 2026-09-19), and refuses with "IMPORTSQL: table locked (&lt;reason&gt;)" when another process holds the target. It did not until that date: measured against a planted foreign lock it reported "IMPORT: OK / Rows imported: 1" while APPEND BLANK, SQLSEL INSERT and REPLACE were all refused by name.
+- The target may be the table this session already has open -- current_area_matches_target() exists for exactly that -- so the table it grows can be the one another engine is holding.
+- IMPORTSQL FILE ENFORCES PRIMARY-KEY POLICY (AIF-156, 2026-09-23, owner ruling: identity is house-owned, meaning is data). On a table whose key is declared PRIMARY: an import whose positional columns would land on the key column is REFUSED BEFORE THE FIRST ROW ("IMPORT: REFUSED", naming the key and instructing demotion to a data column); every row's columns are asked of xbase::cli::gateFieldWrites() BEFORE the append;
+- and rows imported past the key come out MINTED by the same generator
+- APPEND uses, never blank. A source key with embedded meaning (a VIN) is imported as an ordinary data column, never as the house key.
+- PKPOLICY arms PKP_G8/G9/T9/T10 are the runtime proof.
 - IMPORTSQL USAGE returns before file/table work.
 - IMPORTSQL PREVIEW/VALIDATE/SCHEMA read input files.
 - IMPORTSQL CREATE/FILE may create tables and import records.
+- IMPORTSQL FILE refuses to feed a declared PRIMARY key and mints it instead (2026-09-23; see the enforcement note above).
 
 ## Related
 
@@ -66,7 +73,7 @@ Preview, validate, infer schema, create/import table data from delimited files.
 ## Provenance
 
 - Topic key: `DOT|IMPORTSQL`
-- Included HELP rows: `37`
-- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
-- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
+- Included HELP rows: `57`
+- HELP reference run: `MANRUN-20260924T230323Z-76AD9EBC`
+- Disposition run: `MANRUN-20260925T002350Z-BF0876DF`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

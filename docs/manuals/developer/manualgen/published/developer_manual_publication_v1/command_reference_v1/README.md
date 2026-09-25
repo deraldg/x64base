@@ -21,7 +21,7 @@ This index exposes all **164** generated pages for human review.
 | 11 | [BUFFERING](commands/buffering.md) | `ED|BUFFERING` | `supported` | 17 |
 | 12 | [BUILDLMDB](commands/buildlmdb.md) | `DOT|BUILDLMDB` | `supported` | 49 |
 | 13 | [CANARY](commands/canary.md) | `DOT|CANARY` | `supported` | 21 |
-| 14 | [CDX](commands/cdx.md) | `DOT|CDX` | `supported` | 30 |
+| 14 | [CDX](commands/cdx.md) | `DOT|CDX` | `supported` | 34 |
 | 15 | [CHR](commands/chr.md) | `FOX|CHR` | `supported` | 3 |
 | 16 | [CHRISTMAS](commands/christmas.md) | `DOT|CHRISTMAS` | `supported` | 4 |
 | 17 | [CLOSE](commands/close.md) | `DOT|CLOSE` | `supported` | 19 |
@@ -30,9 +30,9 @@ This index exposes all **164** generated pages for human review.
 | 20 | [COBOL](commands/cobol.md) | `DOT|COBOL` | `supported` | 12 |
 | 21 | [CODASYL](commands/codasyl.md) | `DOT|CODASYL` | `supported` | 50 |
 | 22 | [COMMANDSHELP](commands/commandshelp.md) | `DOT|COMMANDSHELP` | `supported` | 3 |
-| 23 | [COMMIT](commands/commit.md) | `DOT|COMMIT` | `supported` | 61 |
+| 23 | [COMMIT](commands/commit.md) | `DOT|COMMIT` | `supported` | 75 |
 | 24 | [CONCAT](commands/concat.md) | `DOT|CONCAT` | `supported` | 29 |
-| 25 | [COPY](commands/copy.md) | `DOT|COPY` | `supported` | 26 |
+| 25 | [COPY](commands/copy.md) | `DOT|COPY` | `supported` | 33 |
 | 26 | [CREATE](commands/create.md) | `DOT|CREATE` | `supported` | 29 |
 | 27 | [CTOD](commands/ctod.md) | `FOX|CTOD` | `supported` | 3 |
 | 28 | [DATE](commands/date.md) | `FOX|DATE` | `supported` | 3 |
@@ -42,7 +42,7 @@ This index exposes all **164** generated pages for human review.
 | 32 | [DIR](commands/dir.md) | `DOT|DIR` | `supported` | 26 |
 | 33 | [DO](commands/do.md) (!) | `FOX|DO` | `partial` | 3 |
 | 34 | [DOTHELP](commands/dothelp.md) | `DOT|DOTHELP` | `supported` | 15 |
-| 35 | [DOTSCRIPT](commands/dotscript.md) | `DOT|DOTSCRIPT` | `supported` | 55 |
+| 35 | [DOTSCRIPT](commands/dotscript.md) | `DOT|DOTSCRIPT` | `supported` | 57 |
 | 36 | [DRAWIO](commands/drawio.md) | `DOT|DRAWIO` | `supported` | 37 |
 | 37 | [DTOC](commands/dtoc.md) | `FOX|DTOC` | `supported` | 3 |
 | 38 | [DUMP](commands/dump.md) | `DOT|DUMP` | `supported` | 17 |
@@ -72,8 +72,8 @@ This index exposes all **164** generated pages for human review.
 | 62 | [IDX](commands/idx.md) | `DOT|IDX` | `supported` | 25 |
 | 63 | [IF](commands/if.md) | `DOT|IF` | `supported` | 32 |
 | 64 | [IMAGE](commands/image.md) | `DOT|IMAGE` | `supported` | 19 |
-| 65 | [IMPORT](commands/import.md) | `DOT|IMPORT` | `supported` | 17 |
-| 66 | [IMPORTSQL](commands/importsql.md) | `DOT|IMPORTSQL` | `supported` | 37 |
+| 65 | [IMPORT](commands/import.md) | `DOT|IMPORT` | `supported` | 26 |
+| 66 | [IMPORTSQL](commands/importsql.md) | `DOT|IMPORTSQL` | `supported` | 57 |
 | 67 | [INDEX](commands/index.md) | `DOT|INDEX` | `supported` | 30 |
 | 68 | [INIT](commands/init.md) | `DOT|INIT` | `supported` | 16 |
 | 69 | [INTRO](commands/intro.md) | `ED|INTRO` | `supported` | 20 |
@@ -134,7 +134,7 @@ This index exposes all **164** generated pages for human review.
 | 124 | [SPACE](commands/space.md) | `FOX|SPACE` | `supported` | 3 |
 | 125 | [SQL](commands/sql.md) | `DOT|SQL` | `supported` | 22 |
 | 126 | [SQLERASE](commands/sqlerase.md) | `DOT|SQLERASE` | `supported` | 14 |
-| 127 | [SQLHELP](commands/sqlhelp.md) | `DOT|SQLHELP` | `supported` | 19 |
+| 127 | [SQLHELP](commands/sqlhelp.md) | `DOT|SQLHELP` | `supported` | 29 |
 | 128 | [SQLITE](commands/sqlite.md) | `DOT|SQLITE` | `supported` | 46 |
 | 129 | [SQLSEL](commands/sqlsel.md) | `DOT|SQLSEL` | `supported` | 53 |
 | 130 | [SQLVER](commands/sqlver.md) | `DOT|SQLVER` | `supported` | 9 |

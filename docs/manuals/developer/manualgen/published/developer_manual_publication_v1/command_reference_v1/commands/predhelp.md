@@ -39,6 +39,6 @@ Report predicate syntax, operators, functions, and filtering examples.
 
 - Topic key: `DOT|PREDHELP`
 - Included HELP rows: `9`
-- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
-- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
+- HELP reference run: `MANRUN-20260924T230323Z-76AD9EBC`
+- Disposition run: `MANRUN-20260925T002350Z-BF0876DF`
 - Authority: `candidate_only`; `publication_authority_claimed=0`

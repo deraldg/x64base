@@ -47,6 +47,10 @@ Apply buffered TABLE changes to the current area or all open buffered areas, loc
 
 - Applies buffered table changes and clears stale state on success
 - Index maintenance should flow through the index subsystem rather than direct backend parsing
+- A BUFFERED INSERT IS ASSIGNED ITS RECORD NUMBER HERE, NOT WHEN IT WAS
+- STAGED (owner ruling 2026-09-19, OI-043). The number a staged insert carries is a BUFFER KEY: it orders the changes and joins a statement to its own uncommitted rows. COMMIT always APPENDS an insert and the record number it lands on is minted at that moment, so a recno read back inside the transaction may differ from the one the row ends up with. Nothing may treat a pre-commit recno as an address.
+- THE OLD BEHAVIOUR WAS NOT A WEAKER PROMISE BUT A WRONG ONE. An insert whose staged number was still in range was written OVER whatever record already held it, so a table that grew between the INSERT and the COMMIT lost a live row with no message. A DBF record's identity is its physical position, so a reservation held across a window is a promise about a gap, and a gap cannot exist in the file.
+- UPDATE and DELETE are unaffected: they name records that already exist.
 - COMMIT with no arguments applies buffered changes for the current area.
 - COMMIT ALL applies buffered changes for all open buffered areas.
 - TABLE ON buffers changes; COMMIT applies them with record locking.
@@ -77,7 +81,7 @@ Apply buffered TABLE changes to the current area or all open buffered areas, loc
 ## Provenance
 
 - Topic key: `DOT|COMMIT`
-- Included HELP rows: `61`
-- HELP reference run: `MANRUN-20260914T034553Z-26B1376D`
-- Disposition run: `MANRUN-20260914T034657Z-783CD9C3`
+- Included HELP rows: `75`
+- HELP reference run: `MANRUN-20260924T230323Z-76AD9EBC`
+- Disposition run: `MANRUN-20260925T002350Z-BF0876DF`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
