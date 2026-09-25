@@ -1099,7 +1099,7 @@ deadlocks. Written down because this run walked into it twice, from two directio
                                           match it, freshness passes, capture the
                                           two counts from the output.
     2  derive_documentation_progress.py   --static-pages N --indexed-pages M
-    3  node scripts/check-site-freshness.mjs
+    3  node scripts/check-site-freshness.mjs   (from the SITE tree)
                                           Read its `missing:` lines. They are the
                                           exact strings to write. Do NOT recompute
                                           them -- see 8g-quater.
@@ -1360,11 +1360,19 @@ Three instances, all measured 2026-09-25, and they are one disease:
 **FOURTH INSTANCE, found 2026-09-25 in the WEBSITE tree, and it is the worst of
 the four because this run quoted it as evidence.**
 
-    scripts/check-site-freshness.mjs        MODIFIED, uncommitted since 09-14
-    scripts/check-retirement-polarity.mjs   UNTRACKED since 09-15, 5657 B
-    scripts/engine-retirements-v1.json      UNTRACKED since 09-15
-    scripts/retirement-polarity-exemptions.json  UNTRACKED since 09-15
+    x64base-site/scripts/check-site-freshness.mjs   MODIFIED, uncommitted 09-14
+    x64base-site/scripts/check-retirement-polarity.mjs  UNTRACKED 09-15, 5657 B
+    x64base-site/scripts/engine-retirements-v1.json     UNTRACKED 09-15
+    x64base-site/scripts/retirement-polarity-exemptions.json  UNTRACKED 09-15
     site repo HEAD: b0bcccd67, 2026-09-23
+
+    The `x64base-site/` prefix is not decoration. check_cited_paths.py:106
+    declares it as the SIBLING prefix for the website tree, resolved via
+    X64BASE_SITE_ROOT or three ordered relative guesses, because the site is not
+    a directory sibling of this checkout. Written bare, a website path reads as a
+    path in THIS repo -- which is how the first draft of this section got two of
+    these four reported as MISSING by that gate, in the document that catalogues
+    gate failures. The gate was right and its source named the fix.
 
 The uncommitted diff to `check-site-freshness.mjs` IS the tier-1/tier-2 repair --
 the one that moved the exit to the end of the file so a single stale number can no
@@ -1376,7 +1384,7 @@ instrument behaving well. It behaves because of a diff no clone has.
 
 And the three untracked files are a WORKING retirement-polarity checker:
 
-    node scripts/check-retirement-polarity.mjs
+    node scripts/check-retirement-polarity.mjs      (run IN the site tree)
     Retirement polarity sweep: 0 assertion(s) over 2 retirement(s) and 1 stated
     exemption(s). Nothing on the site states a retired surface as live.
 
