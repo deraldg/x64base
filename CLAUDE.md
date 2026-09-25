@@ -137,6 +137,20 @@ Detail: `AI_README.md`, "WSL working environment".
   repo venv `.venv312` via `$py12 = "D:\code\ccode\.venv312\Scripts\python.exe"`. NOT `py -3.12`
   (not installed) and NOT the vcpkg python (minimal, no PyYAML -> `ModuleNotFoundError: yaml`).
   Recipes + the vcpkg-vs-venv rationale: the full-stack flush cookbook interpreters note.
+- **Every runnable block establishes its own environment.** Added 2026-09-25 after four round
+  trips lost to blocks that assumed one. A block a reader pastes hours later, into a shell whose
+  state nobody recorded, has to stand alone:
+  1. START WITH `cd D:\code\ccode` (or the tree the block is for) and assign `$py12` IN the
+     block. Do not assume the working directory or that a variable survived. A preflight run from
+     `D:\dev\x64base-site` failed on a path that only exists in `ccode`, and `--root .` pointed
+     at the wrong tree without complaining.
+  2. `& $py12 .\tools\...` -- the CALL OPERATOR is required when the executable is in a
+     variable. `$py12 tools\...` is a PowerShell parser error, not a path problem.
+  3. NO `<placeholder>` inside a quoted string; assign it as a variable on the line above.
+     `$out = '<run>\metacollect_phase'` was pasted verbatim and raised OpenError.
+  4. The shell's own syntax is part of the command. `-Format s` already emits
+     `2026-09-24T20:05:00` with no `Z`; appending one makes it a separate argument and argparse
+     rejects it.
 
 ## Close out before you stop (AIF-156 2026-09-07)
 

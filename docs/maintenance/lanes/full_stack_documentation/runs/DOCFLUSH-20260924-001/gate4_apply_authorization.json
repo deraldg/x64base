@@ -1,0 +1,14 @@
+{
+  "schema": "dottalk.manualgen.gate4_apply_authorization.v1",
+  "decision": "AUTHORIZED_FOR_CANONICAL_APPLY",
+  "plan_run": "MANRUN-20260925T003945Z-20B9AD1C",
+  "plan_manifest_sha256": "7F566E64837CF7E4DA1CCCD6696F9E9AF4BF52C96E477F89B4D4D6A7A6F9AFDE",
+  "mutation_ledger_sha256": "771328E02B645081B62FEB86F0F2D9CE0036D737EF2EB7D247FC6FF048E16DD5",
+  "mutation_rows_authorized": 168,
+  "required_interpreter": "Python 3.12",
+  "apply_time_finalization_targets": [
+    "docs/manuals/developer/manualgen/accepted_artifacts/primary_reader_artifact_v1.json",
+    "docs/manuals/developer/manualgen/accepted_manifests/developer_manual_canonical_manifest_v1.json",
+    "docs/manuals/developer/manualgen/accepted_artifacts/command_reference_artifact_v1.json"
+  ]
+}

@@ -1,7 +1,14 @@
 # The Full-Stack Documentation Push -- recipe book
 
-    Version   : v1, 2026-08-26. **REFRESHED 2026-09-24 -- every [RAN] figure
-                re-measured; see "Refresh ledger" below for what moved.**
+    Version   : **v6, 2026-09-25.** Numbered to the flush generation it
+                describes, per the owner's instruction 2026-09-24: the book's
+                version tracks the PUSH, not the document's own edit count.
+                (Was "v1"; the filename keeps its _V1 suffix so the lane's
+                existing citations to it do not break -- see 8f.)
+                History: v1 2026-08-26 after DOCFLUSH-20260825-001; refreshed
+                2026-09-24 with every [RAN] figure re-measured; v6 2026-09-25
+                adds the real Gate 6 ladder, the promotion result, and the
+                runnable-block rules in 0c.
     By        : member.ai.claude.cowork, for member.derald
     Lane      : full_stack_documentation (AIF-068)
     Written   : after running flush v6 (DOCFLUSH-20260825-001) end to end
@@ -25,6 +32,53 @@ claims that no one had tested.
 **Never write `runtime-proven` for something that did not run**, and name the
 platform every time -- a sandbox green is not a green on the maintainer's
 toolchain.
+
+## 0c. RULES FOR EVERY RUNNABLE BLOCK IN THIS BOOK
+
+Owner's rule, stated 2026-09-25 after four round trips lost to blocks that
+assumed an environment they did not establish. Every one of these broke
+something real.
+
+**1. ESTABLISH THE ENVIRONMENT IN THE BLOCK.** A block starts with its own `cd`
+and its own variable assignments. Do not assume the reader's working directory
+or that a variable survived from an earlier block. Measured cost: a preflight
+run from `D:\dev\x64base-site` failed on a path that only exists in
+`D:\code\ccode`, and `--root .` silently pointed at the wrong tree.
+
+**2. PIN THE INTERPRETER, AND USE `&`.**
+
+    $py12 = 'D:\code\ccode\.venv312\Scripts\python.exe'
+    & $py12 .\tools\...
+
+`$py12 tools\...` is a PARSER ERROR -- PowerShell needs the call operator when
+the executable is in a variable. Bare `python` is also wrong: exactly one
+sub-check in this lane requires >= 3.12 (`command_catalog_sync.py`, reached
+through preflight step 9) and the rest run on 3.10, so a bare `python` passes
+eleven steps and fails the twelfth for a reason that looks like drift.
+`py -3.12` is NOT a substitute -- the launcher does not see the venv, and on
+this workstation it reported "No suitable Python runtime found" while
+`.venv312` sat in the repo root. Nor is the vcpkg python: it is minimal and has
+no PyYAML, so anything importing yaml dies with `ModuleNotFoundError`.
+
+**THIS RULE WAS ALREADY WRITTEN DOWN AND I DID NOT READ IT.** `CLAUDE.md`'s
+Conventions section has carried the `$py12` / NOT `py -3.12` / NOT vcpkg note
+for some time, with the PyYAML reason attached. Four failed invocations came out
+of not consulting the one file in this repo whose entire job is to be consulted
+first. CLAUDE.md is the authority for rules 1-4; this section exists so a reader
+already inside the book does not have to know that.
+
+**3. NO `<placeholder>` INSIDE A QUOTED STRING.** Assign it as a variable on
+the line above. `$out = '<run>\metacollect_phase'` was pasted verbatim and
+raised OpenError. A placeholder that is syntactically valid gets executed.
+
+**4. SHELL SYNTAX IS PART OF THE COMMAND.** `-Format s` already emits
+`2026-09-24T20:05:00` with no `Z`; appending one makes it a separate argument
+and argparse rejects it. Check the shell's output format before decorating it.
+
+**WHY THIS IS IN THE BOOK AND NOT A STYLE NOTE.** Every block here is pasted by
+someone who is not the author, often hours later, into a shell whose state
+nobody recorded. A block that works only in the author's session is a [DOC]
+claim wearing a [RAN] badge.
 
 ## 0b. Refresh ledger -- 2026-09-24, HEAD 9c4179367
 
@@ -701,6 +755,79 @@ dry run because the counts report what was WRITTEN; and `supported()` filters
 `CATALOG == "DOT"`, so non-DOT topics are outside the input set and are never
 mentioned. 53 supported topics sit outside it -- 30 FOX (expression functions),
 23 ED (teaching concepts).
+
+### Gate 6, THE REST OF IT -- nine steps, not four [RAN 2026-09-25]
+
+The four commands above (inventory, validate, export-manifest, build-dry-run) are
+the ENTRY to Gate 6, not the whole of it. Read off `manualgen.py --help` and run
+end to end on 2026-09-25, the ladder to an applied manual candidate is:
+
+    1  build-reference-candidate                 no args    -> REFERENCE_RUN
+    2  build-curation-candidate                  no args    (disposition reads it)
+    3  build-disposition-candidate               no args    -> DISPOSITION_RUN
+    4  build-command-reference-candidate                    -> COMMAND_RUN
+           --reference-run <1> --disposition-run <3>
+    5  build-publication-structure-candidate     no args    -> STRUCTURE_RUN
+    6  OWNER writes gate4_status_approval.json
+    7  build-gate4-acceptance-plan                          -> the plan
+           --command-run <4> --structure-run <5> --status-approval <6>
+    8  OWNER writes gate4_apply_authorization.json
+    9  apply-gate4-acceptance
+
+**EVERY STEP MINTS ITS OWN `MANRUN-`, and steps 4 and 7 want EXACT ids from
+earlier steps.** Capture each id as it prints; there is no "latest run" fallback
+and a wrong id is a refusal, not a warning.
+
+[RAN 2026-09-25] against harvest HELPMETA-20260924T195925Z:
+
+    parity-review        exact_hash_match=0 section_parity_fail_rows=0
+                         diff_review_rows=5 boundary_fail_rows=0
+    reference candidate  topics=669 lines=18730/18730 commands=464 args=2378
+                         syscmd=212 compact_aliases_resolved=8
+                         command_without_topic=0            PASS
+    curation candidate   topics 669/669 shelves=9, no duplicates, none unclassified
+    disposition          dispositions=71/71 approved_section_topics=479   PASS
+    command reference    pages=164/164 lineage_rows=6356 attention=2
+                         local_path_hits=0 accepted_reader_mutated=0
+                         website_mutated=0        PASS_CANDIDATE_ONLY
+    structure candidate  ALREADY_NORMALIZED_NOOP, balance 24/24, diff 0 bytes,
+                         dispositions proposed 0, accepted reader hash unchanged
+                         EA2E12A9...A5A8F before AND after   PASS_CANDIDATE_ONLY
+
+**`diff_review_rows=5` IS NOT FIVE SECTIONS.** It is the five REVIEW rows of
+`mdo_227_parity_diff_reason_v1.csv`; `section_parity_fail_rows=0` and all 25
+sections are present in BOTH artifacts. The hash mismatch survives CRLF
+normalization, header stripping AND whitespace normalization, so it is real
+content -- the rebuilt harvest reaching the prose -- and not a formatting
+artifact. Misreading that number as five broken sections was a live error in
+this session's own review.
+
+**THE STATUS LEDGER HASH IS NOT RUN-SPECIFIC WHEN THE LEDGER IS EMPTY.** The
+2026-09-25 structure candidate's `status_disposition_ledger.csv` is the 29-byte
+string `status,note\nEMPTY,No rows.` and hashes to
+`1A0DBD33E3EC2F01AFF9699367EE6E8E58B9294A081446CB33F87A9C7160D47F` -- BYTE FOR
+BYTE the same hash recorded in DOCFLUSH-20260914-001's approval eleven days
+earlier, because an empty ledger is an empty ledger. The approval's
+`status_ledger_sha256` therefore binds the DECISION SHAPE, not the run; the
+`structure_candidate_run` field is the only part that identifies which run was
+approved. Worth knowing before treating a matching hash as evidence of anything.
+
+### PREFLIGHT STEP 9 IS AN EXIT CONDITION, NOT AN ENTRY ONE
+
+`derive_documentation_progress.py` reads the NEWEST `DOCFLUSH-*` directory and
+requires `gate4_apply_authorization.json` in it, whose `plan_run` must start with
+`MANRUN-`. That file is written at step 8 above -- AFTER Gate 6. So for any fresh
+run, step 9 fails from the moment the run directory exists until that run's own
+Gate 6 apply lands:
+
+    no gate4_apply_authorization.json in ...runs\DOCFLUSH-<this run>.
+      The manual candidate is the applied plan run; without the
+      authorization record there is nothing to name.
+
+**The preflight therefore cannot be all-green at the start of a run, by
+construction.** This book presented it as an entry check without saying so, and
+step 9 sat on the blockers list for a day while blocking nothing. Read steps 1-8
+and 10 as entry; read 9 as the gate that says Gate 6 has not finished.
 
 ### Phase 7 -- review and close the dev-tree run (COOKBOOK numbering)
 
