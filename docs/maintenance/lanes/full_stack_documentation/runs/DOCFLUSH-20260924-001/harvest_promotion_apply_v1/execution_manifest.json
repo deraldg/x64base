@@ -1,0 +1,59 @@
+{
+  "schema": "dottalk.fullstack.help_meta_harvest_apply.v1",
+  "observed_at_utc": "2026-09-24T20:40:38",
+  "run_id": "HELPMETA-20260924T195925Z",
+  "plan_manifest": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260924-001/harvest_promotion_plan_v2/help_meta_harvest_promotion_plan.json",
+  "plan_manifest_sha256": "0D50BF54083458CA891F2FECD33592BBDD3406E8422597EDF7920B30CC33B559",
+  "mutation_ledger": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260924-001/harvest_promotion_plan_v2/help_meta_harvest_mutation_ledger.json",
+  "mutation_ledger_sha256": "9167476F9BDB44E04ED6B57BE379F4B0EF6453AE2C73BB0166FBA3B64631F21E",
+  "authorization_record": "tmp/HARVEST_PROMOTION_REVIEW_HELPMETA-20260924T195925Z.md",
+  "authorization_sha256": "43F1685B0947EF67B1DD60B35CADB0B738D96F7E2AD23879F6C802974D9CDBFC",
+  "status": "APPLIED",
+  "findings": [],
+  "canonical_files_mutated": 5,
+  "rollback_performed": 0,
+  "backup_retention": "local_ignored",
+  "rows": [
+    {
+      "ordinal": 1,
+      "target": "docs/manuals/developer/manualgen/harvested/HELP_HELP_ARTIFACTS.csv",
+      "before_sha256": "74B1C1B8125EDC3D7E69094693BECE0D0DB1743A5060F434B1B0D817CFAB6A5B",
+      "after_sha256": "E1ECF5BCC314771A5D42E14BF2EAF9F5CA5502220BDC8D79429F0FC6C0AFBF78",
+      "backup": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260924-001/harvest_promotion_apply_v1/before/HELP_HELP_ARTIFACTS.csv",
+      "staged_after": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260924-001/harvest_promotion_apply_v1/staged_after/HELP_HELP_ARTIFACTS.csv"
+    },
+    {
+      "ordinal": 2,
+      "target": "docs/manuals/developer/manualgen/harvested/HELP_HELP_LINE.csv",
+      "before_sha256": "F1C23827058564C6E0E0143EA694E06F1B219E503FB626A5B196BFACA3BB574F",
+      "after_sha256": "6B96668FD06D58E821C4D62F8EA2979D994867B609FF64F2D816644F3692F59A",
+      "backup": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260924-001/harvest_promotion_apply_v1/before/HELP_HELP_LINE.csv",
+      "staged_after": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260924-001/harvest_promotion_apply_v1/staged_after/HELP_HELP_LINE.csv"
+    },
+    {
+      "ordinal": 3,
+      "target": "docs/manuals/developer/manualgen/harvested/HELP_HELP_SECTION.csv",
+      "before_sha256": "8774AE593BAB17C03831C5F4D012A261378367E0A9E41434CAC7E38EB203C381",
+      "after_sha256": "B5E13C07FA2506112813CC89C603129B810B74916797A222997465FDE2B21BC3",
+      "backup": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260924-001/harvest_promotion_apply_v1/before/HELP_HELP_SECTION.csv",
+      "staged_after": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260924-001/harvest_promotion_apply_v1/staged_after/HELP_HELP_SECTION.csv"
+    },
+    {
+      "ordinal": 4,
+      "target": "docs/manuals/developer/manualgen/harvested/HELP_HELP_TOPIC.csv",
+      "before_sha256": "53063B28EFD66099EEFAEEB7DDECF9362DC9E6947EB53B2454BF9E51991C2CCE",
+      "after_sha256": "A4C0665B21BA1BF12BAE8FCD17A25E21B8EC19F808F81D5FE3651D56B7BB057B",
+      "backup": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260924-001/harvest_promotion_apply_v1/before/HELP_HELP_TOPIC.csv",
+      "staged_after": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260924-001/harvest_promotion_apply_v1/staged_after/HELP_HELP_TOPIC.csv"
+    },
+    {
+      "ordinal": 5,
+      "target": "docs/manuals/developer/manualgen/harvested/HELP_META_EXPORT_MANIFEST_v1.csv",
+      "before_sha256": "5A7A622366129CFDFA35894846DA1BE8B7881298950E4C655FB2D307EBDA7F13",
+      "after_sha256": "F7FB7D0A43108914EA211D33D27C583A997D05B26CB0BC7B9290547EE96559C8",
+      "backup": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260924-001/harvest_promotion_apply_v1/before/HELP_META_EXPORT_MANIFEST_v1.csv",
+      "staged_after": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260924-001/harvest_promotion_apply_v1/staged_after/HELP_META_EXPORT_MANIFEST_v1.csv"
+    }
+  ],
+  "canonical_freshness_status": "PASS"
+}
