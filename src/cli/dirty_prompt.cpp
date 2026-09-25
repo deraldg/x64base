@@ -16,6 +16,7 @@
 #include <sstream>
 #include <string>
 
+#include "cli/prompt_policy.hpp"
 #include "cli/table_state.hpp"
 #include "xbase.hpp"
 
@@ -24,7 +25,9 @@ extern void cmd_COMMIT(xbase::DbArea& A, std::istringstream& in);
 
 namespace dottalk { namespace dirty {
 
-static bool g_suppress_prompts = false;
+// The suppression flag moved to cli::prompt on 2026-09-25 -- it answers a
+// process-wide question and is not this file's property. See
+// include/cli/prompt_policy.hpp.
 
 extern "C" xbase::XBaseEngine* shell_engine();
 
@@ -73,10 +76,14 @@ static bool commit_area0(int area0) {
         xbase::DbArea& A = eng->area(area0);
         std::istringstream empty;
 
-        const bool prev = g_suppress_prompts;
-        g_suppress_prompts = true;
-        ::cmd_COMMIT(A, empty);   // <-- global call
-        g_suppress_prompts = prev;
+        // RAII, not save/restore: the manual version restored on the NEXT LINE,
+        // so a throwing cmd_COMMIT skipped it and left suppression on for the
+        // life of the process -- silently, because the catch below reports only
+        // "COMMIT failed (exception)".
+        {
+            cli::prompt::SuppressScope guard;
+            ::cmd_COMMIT(A, empty);   // <-- global call
+        }
 
         if (dottalk::table::is_enabled(area0) && dottalk::table::is_dirty(area0)) {
             std::cout << "COMMIT failed (area still dirty).\n";
@@ -121,18 +128,18 @@ static bool is_quit_like(const std::string& opLabel) {
 }
 
 bool maybe_prompt_area(const int area0, const std::string& opLabel) {
-    if (g_suppress_prompts) return true;
+    if (cli::prompt::suppressed()) return true;
     if (!dottalk::table::is_enabled(area0) || !dottalk::table::is_dirty(area0)) return true;
 
     if (!prompt_commit_yn(std::string("area ") + std::to_string(area0))) return false;
 
     const bool ok = commit_area0(area0);
-    if (ok && is_quit_like(opLabel)) g_suppress_prompts = true;
+    if (ok && is_quit_like(opLabel)) cli::prompt::set_suppressed(true);
     return ok;
 }
 
 bool maybe_prompt_area(xbase::DbArea& areaRef, const char* opLabel) {
-    if (g_suppress_prompts) return true;
+    if (cli::prompt::suppressed()) return true;
 
     const std::string label = opLabel ? std::string(opLabel) : std::string();
     const int idx = area_index_from_ref(areaRef);
@@ -143,7 +150,7 @@ bool maybe_prompt_area(xbase::DbArea& areaRef, const char* opLabel) {
         if (dottalk::table::is_enabled(i) && dottalk::table::is_dirty(i)) {
             if (!prompt_commit_yn("unknown area (index unavailable)")) return false;
             const bool ok = commit_all_dirty();
-            if (ok && is_quit_like(label)) g_suppress_prompts = true;
+            if (ok && is_quit_like(label)) cli::prompt::set_suppressed(true);
             return ok;
         }
     }
@@ -153,7 +160,7 @@ bool maybe_prompt_area(xbase::DbArea& areaRef, const char* opLabel) {
 bool maybe_prompt_all(xbase::XBaseEngine& eng, const std::string& opLabel) {
     (void)eng;
 
-    if (g_suppress_prompts) return true;
+    if (cli::prompt::suppressed()) return true;
 
     int dirtyCount = 0;
     for (int i = 0; i < xbase::MAX_AREA; ++i) {
@@ -164,7 +171,7 @@ bool maybe_prompt_all(xbase::XBaseEngine& eng, const std::string& opLabel) {
     if (!prompt_commit_yn(std::string("all areas (") + std::to_string(dirtyCount) + " dirty)")) return false;
 
     const bool ok = commit_all_dirty();
-    if (ok && is_quit_like(opLabel)) g_suppress_prompts = true;
+    if (ok && is_quit_like(opLabel)) cli::prompt::set_suppressed(true);
     return ok;
 }
 
