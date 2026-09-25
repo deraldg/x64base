@@ -36,6 +36,8 @@ def commands(root: Path, site_root: Path) -> list[tuple[str, list[str]]]:
                 str(tools / "docpush_preflight.py"),
                 "--root",
                 str(root),
+                "--site-root",
+                str(site_root),
                 "--catalog",
                 str(content / "docs" / "dottalk" / "command-catalog.mdx"),
             ],
