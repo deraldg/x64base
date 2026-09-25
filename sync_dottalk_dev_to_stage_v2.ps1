@@ -18,7 +18,10 @@
 
 [CmdletBinding()]
 param(
-    [string]$SourceRepo = "D:\code\ccode",
+    # DEFAULTS TO THE CLONE THIS SCRIPT LIVES IN, not a pinned drive letter. -SourceRepo
+    # still overrides. $StageRepo below is deliberately left alone: it names a machine
+    # location, not this repo, so following the script would be wrong there.
+    [string]$SourceRepo = $PSScriptRoot,
     [string]$StageRepo  = "C:\dottalkpp",
 
     [switch]$Apply,

@@ -1,6 +1,8 @@
 $ErrorActionPreference = "Stop"
 
-$Root = "D:\code\ccode\dottalkpp\data\bible_kjv_x64_rdbms"
+# The clone is not on a known drive (an SD card changes letter between machines), so this
+# resolves from the script's own location rather than a pinned D:\code\ccode.
+$Root = Join-Path $PSScriptRoot "dottalkpp\data\bible_kjv_x64_rdbms"
 
 $Required = @(
     "bible_kjv_x64.sqlite",

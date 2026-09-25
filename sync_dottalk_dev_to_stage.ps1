@@ -18,7 +18,7 @@
   Default mode is PREVIEW ONLY. Nothing is copied or deleted unless -Apply is used.
 
 .PARAMETER SourceRepo
-  Developer repo. Default: D:\code\ccode
+  Developer repo. Default: the clone this script lives in ($PSScriptRoot).
 
 .PARAMETER StageRepo
   Clean staging repo. Default: C:\dottalkpp
@@ -61,7 +61,10 @@
 
 [CmdletBinding()]
 param(
-    [string]$SourceRepo = "D:\code\ccode",
+    # DEFAULTS TO THE CLONE THIS SCRIPT LIVES IN, not a pinned drive letter. -SourceRepo
+    # still overrides. $StageRepo below is deliberately left alone: it names a machine
+    # location, not this repo, so following the script would be wrong there.
+    [string]$SourceRepo = $PSScriptRoot,
     [string]$StageRepo  = "C:\dottalkpp",
 
     [switch]$Apply,
