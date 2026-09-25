@@ -8,7 +8,10 @@
                 History: v1 2026-08-26 after DOCFLUSH-20260825-001; refreshed
                 2026-09-24 with every [RAN] figure re-measured; v6 2026-09-25
                 adds the real Gate 6 ladder, the promotion result, and the
-                runnable-block rules in 0c.
+                runnable-block rules in 0c. v6 was revised a SECOND time the
+                same day, after the flush ran to Gate 4 apply: 0d states the two
+                standing objectives, 0e is this run's improvement ledger, and
+                parts 8g, 8h and 11 moved.
     By        : member.ai.claude.cowork, for member.derald
     Lane      : full_stack_documentation (AIF-068)
     Written   : after running flush v6 (DOCFLUSH-20260825-001) end to end
@@ -79,6 +82,97 @@ and argparse rejects it. Check the shell's output format before decorating it.
 someone who is not the author, often hours later, into a shell whose state
 nobody recorded. A block that works only in the author's session is a [DOC]
 claim wearing a [RAN] badge.
+
+## 0d. THE TWO STANDING OBJECTIVES (owner, 2026-09-25)
+
+Stated in the owner's words: **"update data, and improve the fullstack push with
+every run."** Everything in this book serves one or the other, and a run that
+does only the first is half a run.
+
+    1  UPDATE DATA.  Get the documentation data current: HELP/META store ->
+       canonical harvest -> candidates -> the manual -> the website authority.
+       This is the visible product of a flush and it is the easier half.
+
+    2  IMPROVE THE PUSH.  Every run must leave at least one instrument better
+       than it found it, and must RECORD which one in that run's improvement
+       ledger. Not "notice a defect" -- close one, or make one that could not
+       answer a question able to answer it.
+
+Why the second objective needs to be written down as an objective rather than a
+hope: a flush is measured by whether the data moved, so the instruments that
+measured it are never on the critical path. Left implicit, "improve the pipeline"
+is what gets dropped when the run is long -- and this lane's entire history is
+gates that went green on questions they could not answer, each one shipped by
+somebody in a hurry to move data.
+
+**The test for objective 2 is mechanical.** At closeout, name the instrument, the
+question it could not answer before, and the question it answers now. If that
+sentence cannot be written, objective 2 was not met, and saying so is the honest
+closeout rather than a failed one.
+
+## 0e. RUN IMPROVEMENT LEDGER -- DOCFLUSH-20260924-001 [RAN 2026-09-24/25]
+
+What this run changed in the pipeline, against objective 2. Nine commits.
+
+    d5491107c  Gate 5 bound. The accounting found two defects in the binding it
+               was confirming.
+    fc0b14725  SYSARGS gets the contract and the check SYSCMD has had since July.
+               tools/fullstack_docs/validate_sysargs_candidate.py, 161 lines, 12
+               clauses, 8 tests. ARG_ID uniqueness is a NEW clause the SYSCMD
+               sibling never had; it fails today at rows=1180 findings=14 and the
+               header says so in words so nobody loosens it. Contract recorded at
+               METACOLLECT_SYSARGS_CANDIDATE_CONTRACT_V1.md, which also records
+               that no sysargs .dtschema exists.
+    64040cc99  Preflight step 10 was failing on its OWN CONFIG, not the tree.
+               derive_anchor_map.py TARGET_MANUALS was missing "user"; adding it
+               recovered a real ANCHOR-PERFORMANCE row the bug had hidden. The
+               comment records why "student" was deliberately NOT added and that
+               the reader manual is correctly not a directory.
+    9d60f46e1  The harvest exporter and its checker disagreed by one function, so
+               E5 could not pass. _recode moved INTO the exporter beside a single
+               render(); the checker imports it. The measured failure (row 4860)
+               is in the moved docstring. Two producers of one encoding is the
+               same shape as the freshness repair that landed in the readers and
+               never in the producer beside them.
+    38ec8986d  The canonical harvest is PROMOTED. E5 10/14 -> 14/14,
+               canonical_files_mutated=5, rollback_performed=0. Gate 6 opens.
+    df698774a  The 22 standalone section link gaps decompose: 19 branch, 3
+               content. Recipe book to v6. CLAUDE.md gains the runnable-block
+               rules. Both Gate 4 authorizations, machine-verified against their
+               own validators before being written.
+    00f7796a7  The link gate is scoped to the one directory that was already
+               fixed. See 8h.
+    7cee40e5d  GATE 4 APPLIED. 168 rows, validation_findings=0,
+               rollback_findings=0, reader_pointer_mutated=0, website_mutated=0.
+               Reviewed as a diff first: 168 of 168 ledger rows produced a real
+               modification and 0 files moved that the ledger does not name.
+    a77e3b149  validation_fail_rows 1 -> 0.
+
+**The instrument improved, stated per the 0d test:**
+
+    derive_documentation_progress.py --check
+      could not answer : WHICH field drifted. It compared whole text and printed
+                         a boolean, so the only way to comply with its own
+                         remedy was to re-derive BLIND -- which overwrites the
+                         authority with whatever the tree currently says and
+                         launders a regression into it as readily as it records
+                         real progress.
+      now answers      : every differing field by dotted name with both values.
+                         field_differences() + flatten(), 8 tests. VOLATILE_FIELDS
+                         is ONE list shared with strip_volatile so the text
+                         verdict and the field explanation cannot disagree. It
+                         returns None rather than [] when either side is
+                         unparseable, because an empty list printed for a missing
+                         artifact reads as clean.
+
+The verdict stays the text comparison. The explainer can never turn a FAIL into
+a PASS, and the tests pin that.
+
+**And running the suite to check those 8 tests found the bigger one:** 26 test
+files, 104 tests, invoked by no gate, 7 of them erroring since 2026-09-13 -- in
+the harvest promotion code THIS RUN used. See 8g-ter. That discovery is worth
+more than the field diff, and it came from the routine act of running the tests
+rather than from any check.
 
 ## 0b. Refresh ledger -- 2026-09-24, HEAD 9c4179367
 
@@ -829,6 +923,39 @@ construction.** This book presented it as an entry check without saying so, and
 step 9 sat on the blockers list for a day while blocking nothing. Read steps 1-8
 and 10 as entry; read 9 as the gate that says Gate 6 has not finished.
 
+**ITS FIRST ACTUAL VERDICT, 2026-09-25, after the Gate 4 apply landed:**
+
+     9. site present-state: documentation-progress check=FAIL --
+        artifact differs from a fresh derivation
+        website_static_pages_built and website_pagefind_pages_indexed NOT
+        compared -- no build in scope. Every other measured field was.
+
+That is the first time step 9 has said anything but UNRUN, and reaching it took
+THREE layers, each masking the next: no `--site-root`, then Python 3.10 instead
+of 3.12, then the missing authorization record. Name all three when explaining
+this to the next agent -- a fix at any one layer looks like the whole answer.
+
+**AND STEP 9 CANNOT BE SATISFIED WITHOUT A WEBSITE BUILD.** The remedy line says
+"drop --check and pass --static-pages / --indexed-pages", and the tool REFUSES to
+write without them:
+
+    if not args.check and (args.static_pages is None or args.indexed_pages is None):
+        print("... --static-pages and --indexed-pages are required to write the
+               artifact. They come from this run's own build; a field carried
+               forward silently is a field that rots.")
+
+So a `next build` plus pagefind is a PREREQUISITE of step 9 turning green, and
+this book did not say so. The refusal is correct and must not be worked around:
+those two counts are the only fields in the authority that cannot be derived from
+the ccode tree, which is exactly why they are the two that rot.
+
+Read the FAIL before re-deriving. The artifact on disk is the 2026-09-14
+derivation -- `as_of_date 2026-09-14`, `run_id DOCFLUSH-20260914-001`,
+`canonical_harvest_tables_exported 10`, `carried_stale 4`. This run moved the
+harvest to 14/0 and the run id, so a FAIL is EXPECTED here and re-deriving is
+correct. That is a conclusion from reading the fields, not from trusting the
+verdict; see 0e for why the check now prints them.
+
 ### Phase 7 -- review and close the dev-tree run (COOKBOOK numbering)
 
 Review five states for pointer agreement -- candidate workspace, accepted/
@@ -1000,6 +1127,149 @@ owner. The four sentences were found by a person asking.
     deleting         a sandbox CANNOT delete. `mv` orphans aside.
     building         YES. All of it. See part 3.
 
+### 8g. A GATE SCOPED TO THE DIRECTORY WHERE THE DEFECT WAS FOUND
+
+The proxy family's sharpest instance, because the checker was written FOR the
+defect it now cannot see.
+
+`check_manual_link_integrity.py` was built 2026-09-02 after 47 untracked command
+pages were found under `command_reference_v1/commands/`. Its docstring is correct
+about why that matters: an untracked publication means the acceptance ledgers are
+the ONLY record of a change, so an apply cannot be reviewed as a diff, and the
+diff review is this lane's entire defence. It asserts LINKED IMPLIES TRACKED and
+NO UNTRACKED STRAYS. Both are the right assertions.
+
+    :87  --manual-root default =
+         docs/manuals/developer/manualgen/published/
+         developer_manual_publication_v1/command_reference_v1
+
+Measured 2026-09-25, the publication's tracking state on `development`:
+
+    subtree                                    on disk  tracked  on main
+    command_reference_v1/commands/*.md            164      164      183
+    command_reference_v1/README.md                  1        1        1
+    developer_manual_publication_v1.md              1        1        1
+    sections/sections/*.md                         28        0       24
+    appendices/*                                    4        0        4
+    README.md            (publication root)         1        0        1
+    ..._v1_appendices.md (publication root)         1        0        1
+
+**The gate's scope is exactly and only the subtree that is fully tracked.** It
+reads one README's 164 links; the 183 links the section files carry are outside
+it. Its stray sweep globs `<manual-root>/commands/*.md` only, so 28 untracked
+section files and 4 untracked appendices in sibling directories produce zero
+strays. It prints PASS on every commit.
+
+Nothing else covers it. `check_mandatory_tracked.py:62` builds its set from paths
+the ENTRY_DOCS cite, so a file nothing cites cannot be declared and a file not
+declared cannot fail. Its PASS on `sections/sections` is structural, not earned.
+
+**THE RULE.** A gate built in response to a defect found in one directory must be
+scoped to the CLASS of the defect, not to the directory it was found in.
+Otherwise its green is a report on the region somebody already repaired. And have
+it NAME ITS SCOPE in its own output: "164 link target(s) in the accepted README"
+does not say which README, or that a second set of 183 links exists one directory
+over.
+
+### 8g-bis. THIS LANE KEEPS ITS GUARANTEES OUTSIDE THE REPOSITORY
+
+Three instances, all measured 2026-09-25, and they are one disease:
+
+    28 section files + 4 appendices + 2 publication-root files   UNTRACKED
+        The published manual. Tracked on origin/main, not here.
+    commit-fullstack-guards-and-conversion-proofs.ps1            UNTRACKED
+        Holds the scoped-pathspec commit discipline AND the stale-index.lock
+        handling with an age check. Both were needed twice in one session.
+        Dated one-off for run COWORK-20260726-001, so it is a PATTERN to
+        generalize, not a tool to run.
+    manualgen_factory_common_v1.ps1                              UNTRACKED
+        Zero consumers: `grep -l manualgen_factory_common_v1 *.ps1` returns
+        only itself. Superseded by the Python manualgen toolchain. A DELETE
+        candidate, not a track candidate. Its boundary text is still correct
+        doctrine and belongs in a document, not a dead library.
+
+And the branch gap underneath all of it:
+
+    files tracked on origin/main : 3174     on HEAD : 6542
+    tracked on origin/main and NOT on HEAD : 803
+    rev-list --left-right --count origin/main...HEAD : 99  1620
+
+Development is 1620 ahead and 99 behind, and one of those 99 (`be9350531`,
+2026-07-18) carries 19 command pages including USE, SELECT, LIST and WORKSPACE.
+Either reconcile the 99, or record the publish-to-main step as a one-way door and
+stop measuring development against publications it does not carry. 803 files is
+too many to be an accident.
+
+### 8g-ter. A TEST SUITE NO GATE RUNS IS NOT COVERAGE, IT IS A FILE
+
+Found 2026-09-25 by running the suite, which is apparently not a routine act.
+
+    tools/fullstack_docs/tests/   26 files, 104 tests
+    invoked by prepush_gate.py, the AIF-082 portal gates, .githooks : NOWHERE
+
+**7 of those 104 have been ERRORING for twelve days.**
+
+    AttributeError: module 'harvest_promotion_plan' has no attribute 'PACKAGE_FILES'
+      test_build_help_meta_harvest_promotion_plan.py   4 tests
+      test_apply_help_meta_harvest_promotion.py        3 tests
+
+`6ff960730` (2026-09-13, "record the authorized promotion of the canonical
+HELP/META harvest") replaced `PACKAGE_FILES = tuple(REQUIRED_FILES) +
+(MANIFEST_NAME,)` with `MANIFEST_NAMES = (...)`. Both tracked test files still
+reference the old name. Nothing reported it because nothing runs them.
+
+**The part that should sting.** The code those 7 tests cover is
+`build_help_meta_harvest_promotion_plan.py` and its apply -- which is what THIS
+RUN used to promote the canonical harvest in `38ec8986d`. A promotion that
+mutated 5 canonical files was executed by code whose test suite had been erroring
+for twelve days, and the run reported `rollback_performed=0` and looked clean.
+
+The promotion was independently verified by its own plan/apply ledgers and the
+E5 14/14 result, so this is not a claim that the promotion was wrong. It is the
+observation that **the test suite contributed nothing to that confidence and
+could not have**, and that eight new tests added in this very run join a suite
+nobody runs.
+
+    THE RULE. Coverage is what a gate runs. A test file that no gate invokes
+    measures nothing about the tree -- it measures only that somebody once cared.
+    Either wire the suite into the gate chain, or stop counting it as coverage in
+    closeouts.
+
+### 8h. THE INSTRUMENTS THAT BEHAVE -- copy these, not the green ones
+
+This book names traps. It should also name the two checks that got it right,
+because they are the pattern the others should be rewritten toward.
+
+**The mass-change guard.** `prepush_gate.py:593`, threshold 60. This run staged
+168 legitimate paths and the gate went to exit 3 with "large sets often mean an
+accidental mass add or an un-sliced batch. Confirm the scope, then re-run with
+--allow-mass if intentional." It fails on a shape that is USUALLY wrong. Every
+gate this lane filed a finding against went green on a question it could not
+answer; this one went red on one it could.
+
+Its escape hatch is the better half. From its own comment at :481 -- the
+pre-commit hook passes no arguments, so the only way to comply with "re-run with
+--allow-mass" was `--no-verify`, which would have disabled the hard-block,
+house-style and mandatory-tracked checks along with the warning. That is strictly
+worse than the thing being acknowledged. So:
+
+    Windows : set X64BASE_ALLOW_MASS=1  &&  git commit ...
+    POSIX   : X64BASE_ALLOW_MASS=1 git commit ...
+
+NARROW (one flag), SCOPED (one invocation), LOUD (announced in the output). Not a
+bypass: hard-blocks still fail. **When a check must be overridable, build the
+override rather than leaving --no-verify as the only door.**
+
+**The deriver's refusal to guess.** `derive_documentation_progress.py` raises
+rather than deriving when a sub-check gives no verdict:
+
+    DeriveError command catalog check: could not find its verdict line
+      A missing verdict is NOT a zero. Refusing to derive.
+
+Measured: this is what stopped a field-level diff from being computed off-host,
+correctly, because the catalog check needs the Windows engine. An instrument that
+refuses is worth more than one that reports a plausible number.
+
 ### 8f. Staging history into history
 
 Staging a previously-untracked file makes EVERY line an added line, so
@@ -1053,52 +1323,132 @@ hardening pass. On disk: developer 4,208 markdown files, student 1, user 1. Four
 developer-manual assembly variants exist (4118/4597/4710/4597 lines,
 26/26/29/26 H1s) and the ACTIVE pointer names the smallest.
 
-## 11. Open, ranked -- refreshed 2026-09-24
+## 11. Open, ranked -- refreshed 2026-09-25 after Gate 4 apply
 
-**CLOSED since the August version, and both were ranked in the top three:**
+**CLOSED by DOCFLUSH-20260924-001.** Every one is a commit, not a claim; see 0e.
 
-    1  a content-level assertion in the preflight  ->  BUILT, step 8
-       (contract drift). Caught DOT|COPY on its first run in this refresh.
-    2  the site present-state check                ->  BUILT, step 9.
+    step 7   harvest freshness   FAIL 10/14  ->  PASS 14/14   (38ec8986d)
+    step 10  anchor map          failing on its own config -> PASS (64040cc99)
+    step 9   site present-state  UNRUN (3 layers) -> its first real verdict
+    Gate 5   bound                                            (d5491107c)
+    Gate 6   ladder run end to end, acceptance plan PASS_PLAN_ONLY mutations=168
+    Gate 4   APPLIED, 168 rows, 0 findings, 0 rollback         (7cee40e5d)
+    SYSARGS  no contract, no check -> both, 12 clauses, 8 tests (fc0b14725)
+    exporter/checker one-function disagreement                 (9d60f46e1)
+    validation_fail_rows  1 -> 0                               (a77e3b149)
+    the "22 dead links"  ->  19 branch + 3 content, measured    (df698774a)
+    derive_documentation_progress --check names its fields   (this run, see 0e)
 
-**Still open, re-ranked:**
+**Still open, re-ranked. The first four are new and outrank what was here.**
 
-1. **A rehearsal harness.** The sandbox can build every program and run the whole
-   push. Turn the owner's run from a DISCOVERY into a VERIFICATION: predict, then
-   diff. Measured 2026-08-25 -- four of five headline numbers predicted exactly,
-   and the fifth (29263 vs 29265, LEGACY arg rows 2609 vs 2363) is a real
+1. **THE `tools/fullstack_docs/tests` SUITE IS RUN BY NO GATE, and 7 of its 104
+   tests have been erroring for twelve days.** `PACKAGE_FILES` was renamed to
+   `MANIFEST_NAMES` in 6ff960730 (2026-09-13) and both harvest-promotion test
+   files still reference the old name. This run promoted the canonical harvest
+   with that very code. Fix the 7, then wire the suite into the gate chain --
+   in that order, because wiring in a red suite gets the wiring reverted. See
+   8g-ter.
+2. **A WEBSITE BUILD is a prerequisite of step 9 and nothing says so.** The
+   authority cannot be written without `--static-pages` and `--indexed-pages`
+   from this run's own build, and the tool correctly refuses. Until a flush runs
+   `next build` plus pagefind, step 9 cannot go green no matter what else is
+   fixed. Either fold the build into the ladder or record step 9 as reachable
+   only in Phase 8.
+3. **28 section files, 4 appendices and 2 publication-root files are UNTRACKED,
+   and no gate asserts they should be tracked.** The one gate whose subject is
+   exactly this is scoped one directory away. See 8g and 8g-bis. This is the
+   defect underneath the 22 and it is bigger than the 22.
+4. **Development is 99 commits behind origin/main; 803 tracked files exist there
+   and not here.** Reconcile, or declare the publish a one-way door and stop
+   measuring development against publications it does not carry.
+5. **USER, BUILDVECTORS and VDISK have no command page on any branch.** The only
+   genuine content debt in the 22, and each is the companion of one of the four
+   sections main does not publish. Three pages, not twenty-two.
+6. **`command_reference_candidate.py:427` derives the page set from the accepted
+   reader's OWN PRIOR LINKS**, with 164 hardcoded at :525. A command the reader
+   never links can never get a page however completely the harvest and the
+   disposition cover it -- and the tool's help text already says "the accepted
+   reader's linked command pages", so the behaviour is documented and its
+   consequence is not. Either derive from the approved topic set, or record at
+   :427 that 164 is a FLOOR and not a measurement.
+7. **A rehearsal harness.** Unchanged and still ranked high. Turn the owner's run
+   from a DISCOVERY into a VERIFICATION: predict, then diff. Measured 2026-08-25,
+   four of five headline numbers predicted exactly; the fifth is a real
    host/sandbox divergence and the reason a rehearsal must be a COMPARISON.
-2. **A stated-impossibility check** -- flag any routing document asserting
+8. **A stated-impossibility check** -- flag any routing document asserting
    "cannot build / cannot run" with no adjacent measurement date. Would have
-   fired on all four of the August false ceilings.
-3. **dotref SYNTAX drift has no check.** `refcheck_v1.py` proves every entry
+   fired on all four August false ceilings.
+9. **dotref SYNTAX drift has no check.** `refcheck_v1.py` proves every entry
    RESOLVES and nothing proves the syntax still DESCRIBES the handler. Six
-   commands are behind their own headers and AUTODBF is inverted (`TO` where the
-   handler takes `FROM`). Wants a `--syntax-drift` flag with an allow-list of
-   delegating parents. Record:
-   `FINDING_DOTREF_COVERS_EVERY_COMMAND_AND_ITS_SYNTAX_IS_BEHIND_ON_SEVEN.md`.
-4. **The store is UNCOMMITTED** as of this refresh, built 2026-09-23 21:41, and
-   step 4 now FAILS `store newer than exe` because the exe was rebuilt
-   2026-09-24 03:01 for the COPY change. The remedy is the standing one: LEGACY,
-   then `BUILD . <src>`, one at a time at the `.` prompt.
-5. **Step 7 (harvest freshness) FAILS**, 10 of 14 tables matching. Exporting
-   does NOT promote -- run the promotion plan then the apply. And the only
-   producer blanks memo pointers its own comments promise to preserve
-   (`claude/FINDING_THE_ONLY_HARVEST_PRODUCER_BLANKS_THE_MEMO_POINTERS...`).
-6. **Step 10 (anchor map) fails on its own config**, not on the tree.
-7. **`program_freshness_check.py` does not know `arctictalk_workbench`.** Its
-   manifest-coverage check is reporting its own staleness, as designed.
-8. **Harden the manual** -- resolve the developer variants; decide what the
-   student and user manuals should be. Treated COLLECTIVELY by owner ruling.
-9. **Five open rulings** -- multiword registrations, `dispatch_reachable`, the
-   CRLF/LF hash, the DOT-only page filter, the `!= (3, 12)` guard.
-10. **`validate_metadata_system_registry.py` fails on 10 of 24 and nothing runs
-    it.** The check conflates "the registry is malformed" with "this attestation
-    needs renewing", so it can only be green immediately after a re-pin.
-11. **`tools/messaging`, 547 scripts, no index, SYSMSG still empty.**
-12. **AIF-129** -- `status=` and `risk:` sub-block vocabularies.
-13. **138 rows STATUS=pending + CONFID=AUTHORITATIVE** (was 167).
-14. **`binding` will never be clean and must be EXPLAINED, not fixed.**
+   commands are behind their own headers; AUTODBF is inverted (`TO` where the
+   handler takes `FROM`).
+10. **Add `destination_file_exists` and the branch name to the standalone section
+   link gap ledger.** Its existing column,
+   `present_in_accepted_reader_destination_set`, is a true and useless fact: it
+   asks whether the reader links the destination when the question was whether
+   the destination exists, and on which branch.
+11. **`program_freshness_check.py` does not know `arctictalk_workbench`** (its
+    manifest-coverage check is reporting its own staleness, as designed).
+12. **Harden the manual** -- resolve the developer variants; decide what the
+    student and user manuals should be. Treated COLLECTIVELY by owner ruling.
+13. **Five open rulings** -- multiword registrations, `dispatch_reachable`, the
+    CRLF/LF hash, the DOT-only page filter, the `!= (3, 12)` guard in
+    `build_postbaseline_supported_command_pages.py`.
+14. **`validate_metadata_system_registry.py` fails on 10 of 24 and nothing runs
+    it.** It conflates "the registry is malformed" with "this attestation needs
+    renewing", so it can only be green immediately after a re-pin.
+15. **`tools/messaging`, 547 scripts, no index, SYSMSG still empty.**
+16. **AIF-129** -- `status=` and `risk:` sub-block vocabularies.
+17. **138 rows STATUS=pending + CONFID=AUTHORITATIVE** (was 167).
+18. **Two untracked `.dtschema` files**; no sysargs schema exists at all.
+19. **Six em-dashes in `helpdata_messages.cpp`**, against house style.
+20. **ARG_ID remedy (1) at `metacollect.cpp:1087`** -- the collapse of keyword
+    and placeholder that the new SYSARGS uniqueness clause now fails on.
+21. **Two DOCFLUSH runs open with no Gate 7** -- 20260902-001, 20260914-001.
+22. **`binding` will never be clean and must be EXPLAINED, not fixed.**
+
+### 11b. My own errors this run, recorded because the pattern is the lesson
+
+Not housekeeping. Every one of these was caught by the owner asking a question,
+and the ratio is the point.
+
+    the 22 dead links, cause    blamed R127's --expected-topic-key allow-list.
+                                Wrong generator entirely -- that belongs to
+                                build_postbaseline_supported_command_pages.py.
+    the 22 dead links, scope    titled it "none of them exist" after measuring
+                                ONE branch. 19 of 22 existed in two places.
+                                Fixed only because the owner asked "missing from
+                                github, the site, the manual?"
+    five environment errors     $py12 without &; `py -3.12` while standing in
+                                the site tree; bare `python`; a stray Z from
+                                -Format s; blocks with no cd. Drew explicit
+                                reproof. The rule was ALREADY in CLAUDE.md and
+                                I had not read it. Now also 0c.
+    pasted source as commands   quoted the internals of
+                                commit-fullstack-guards-and-conversion-proofs.ps1
+                                as a runnable block. $lock and $ClearStaleLock
+                                exist only inside that script and the `...` was
+                                a literal ellipsis. The owner ran it. This is
+                                rule 3 of 0c violated by the author of 0c.
+    a stale index.lock          my own `git status` hit a 115s ceiling and was
+                                killed, leaving a 0-byte .git/index.lock that
+                                blocked the owner's next FOUR commands. Read-only
+                                intent is not read-only effect. Sandbox git calls
+                                must be scoped tightly enough to finish.
+    diff_review_rows=5          read as five differing sections. It is five
+                                REVIEW rows of the parity CSV;
+                                section_parity_fail_rows=0, all 25 present.
+    four near-misses            nearly filed the reader manual as a phantom (it
+                                is at repo root); nearly chased a ghost prepush
+                                FAIL from old scrollback; assumed sections/sections
+                                was a stray duplicate tree (it is the real
+                                layout); assumed the status ledger hash was
+                                run-specific (an empty ledger is an empty ledger).
+
+**The lesson, stated once:** every one of these was a conclusion drawn from one
+measurement when a second was cheap. The count discipline in part 7 says derive
+don't assert, and an empty result is not a measurement. Add: **one tree is not the
+tree, and one branch is not the repository.**
 
 ## 12. For CODEX, planning the AI Portal
 
@@ -1156,6 +1506,20 @@ is the smallest useful version of that.
                     had moved 0.6 -> 1.1. Caught from a gate line in the commit
                     that carried the refresh. A claim of completeness is itself
                     a claim, and this one was not measured before it was made.
+    2nd revision  : member.derald, 2026-09-25 -- "update the recipe book with
+                    every thing we have corrected or need corrected", and then
+                    "we have two objectives, update data, and improve the
+                    fullstack push with every run". The second is now 0d, stated
+                    as an objective rather than a hope, with a mechanical test.
+                    NEW in this revision: 0d (the two objectives), 0e (this run's
+                    improvement ledger, nine commits), 8g (a gate scoped to the
+                    directory where the defect was found), 8g-bis (this lane
+                    keeps its guarantees outside the repository), 8h (the
+                    instruments that behave -- copy these, not the green ones),
+                    11b (my own errors this run). REWRITTEN: part 11 entirely,
+                    and the step 9 section now records its first real verdict and
+                    that a website build is a prerequisite nobody had written
+                    down.
     Refresh scope : every [RAN] figure re-measured against HEAD 9c4179367. The
                     store, the SOURCE/KIND/CATALOG distributions, the metadata
                     tables, the tool counts, the add_executable total, the seed

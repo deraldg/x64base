@@ -369,6 +369,57 @@ def strip_volatile(text: str) -> str:
     return re.sub(r'"as_of_date": "[^"]*",\n', "", text)
 
 
+# The fields strip_volatile removes from the TEXT comparison, so field_differences
+# does not report them either. One list, so the two comparisons cannot disagree.
+VOLATILE_FIELDS = ("as_of_date",)
+
+
+def flatten(value, prefix: str = ""):
+    """Yield (dotted_path, scalar) for every leaf, lists compared whole.
+
+    A list is emitted as one canonical JSON string rather than per-index leaves.
+    measured_fields and carried_fields are lists of names whose ORDER is not
+    meaningful, and a per-index diff of a reordered list reports every element as
+    changed, which buries the one field that actually moved.
+    """
+    if isinstance(value, dict):
+        for key, inner in value.items():
+            yield from flatten(inner, f"{prefix}.{key}" if prefix else key)
+    elif isinstance(value, list):
+        yield prefix, json.dumps(sorted(value, key=repr), sort_keys=True)
+    else:
+        yield prefix, value
+
+
+def field_differences(on_disk_text: str, rendered_text: str):
+    """Return [(field, on_disk, fresh)] or None when either side is not JSON.
+
+    None means "cannot say", NOT "no differences" -- an unparseable artifact is
+    exactly the case where a caller printing an empty list would read as clean.
+    The text comparison in main() remains the verdict; this only explains it, so a
+    None here never turns a FAIL into a PASS.
+    """
+    try:
+        disk = json.loads(on_disk_text)
+        fresh = json.loads(rendered_text)
+    except (ValueError, TypeError):
+        return None
+    flat_disk = dict(flatten(disk))
+    flat_fresh = dict(flatten(fresh))
+    absent = object()
+    rows = []
+    for field in sorted(set(flat_disk) | set(flat_fresh)):
+        if field in VOLATILE_FIELDS or field.split(".")[-1] in VOLATILE_FIELDS:
+            continue
+        was = flat_disk.get(field, absent)
+        now = flat_fresh.get(field, absent)
+        if was != now:
+            rows.append((field,
+                         "<absent>" if was is absent else was,
+                         "<absent>" if now is absent else now))
+    return rows
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, required=True, help="ccode authority root")
@@ -418,6 +469,26 @@ def main() -> int:
             print("documentation-progress check=PASS -- artifact matches a fresh derivation")
             return 0
         print("documentation-progress check=FAIL -- artifact differs from a fresh derivation")
+        # A boolean FAIL is not actionable. Until 2026-09-25 this printed the
+        # verdict and the remedy and NOTHING ABOUT WHAT MOVED, so the only way to
+        # comply was to re-derive blind -- which overwrites the authority with
+        # whatever the tree currently says and launders a regression into it as
+        # readily as it records real progress. Naming the fields is what makes
+        # "re-derive" a decision instead of an obedience.
+        rows = field_differences(on_disk, rendered)
+        if rows is None:
+            print("  fields: NOT COMPARED -- one side is not parseable JSON. "
+                  "That is not the same as no differences.")
+        elif not rows:
+            print("  fields: the text differs but no JSON field does. Formatting, "
+                  "key order or line endings moved. Do not re-derive to chase it; "
+                  "find what rewrote the file.")
+        else:
+            print(f"  {len(rows)} field(s) differ (on disk -> fresh):")
+            for field, was, now in rows:
+                print(f"      {field}")
+                print(f"          on disk : {was}")
+                print(f"          fresh   : {now}")
         print("  re-derive: drop --check and re-run with this build's page counts")
         return 2
 
