@@ -78,25 +78,39 @@ for (const item of loaded) {
   for (const expected of findings) console.error(`  missing: ${expected}`);
 }
 
-if (failed) process.exit(1);
-
-if (process.argv.includes("--self-test")) {
-  for (const item of loaded) {
-    const expected = expand(item.contract.mustContain[0], item.authority);
-    const staleText = item.targetText.split(expected).join("__STALE_SNAPSHOT__");
-    if (staleText === item.targetText) {
-      throw new Error(`${item.contract.id}: self-test could not create a stale snapshot`);
+// TIER 1 FAILING NO LONGER SUPPRESSES TIER 2. Until 2026-09-14 this file
+// exited here, twenty-seven lines above the capability sweep, so a site with
+// ONE stale number got no prose sweep at all -- the advisory instrument was
+// silent exactly when the site was most likely to be wrong. Measured that day:
+// every build of the morning failed on a date mismatch while two published
+// pages denied a shipped capability, and the sweep never ran once. An advisory
+// check disabled by an unrelated failure is not advisory; it is conditional on
+// not needing it. The exit now happens at the END of the file, after tier 2 has
+// had its say, and the exit CODE is unchanged.
+if (!failed) {
+  if (process.argv.includes("--self-test")) {
+    for (const item of loaded) {
+      const expected = expand(item.contract.mustContain[0], item.authority);
+      const staleText = item.targetText.split(expected).join("__STALE_SNAPSHOT__");
+      if (staleText === item.targetText) {
+        throw new Error(`${item.contract.id}: self-test could not create a stale snapshot`);
+      }
+      if (!evaluate(item.contract, item.authority, staleText).length) {
+        throw new Error(`${item.contract.id}: self-test accepted deliberate staleness`);
+      }
     }
-    if (!evaluate(item.contract, item.authority, staleText).length) {
-      throw new Error(`${item.contract.id}: self-test accepted deliberate staleness`);
-    }
+    console.log(
+      `Site freshness self-test passed: deliberate staleness was rejected by ${loaded.length} contract(s).`
+    );
   }
-  console.log(
-    `Site freshness self-test passed: deliberate staleness was rejected by ${loaded.length} contract(s).`
+
+  console.log(`Site freshness check passed: ${loaded.length} contract(s).`);
+} else {
+  console.error(
+    `Tier 1 FAILED above. Tier 2 runs anyway -- a stale number must not silence ` +
+    `the prose sweep.`
   );
 }
-
-console.log(`Site freshness check passed: ${loaded.length} contract(s).`);
 
 // TIER 2. The contracts above compare EXACT VALUES and are blind to a page
 // that contradicts the engine without getting a number wrong -- which is the
@@ -108,6 +122,9 @@ console.log(`Site freshness check passed: ${loaded.length} contract(s).`);
 const capResult = sweep(root);
 report(capResult);
 
-if (process.argv.includes("--self-test")) {
+if (!failed && process.argv.includes("--self-test")) {
   selfTest(root);
 }
+
+// The exit lives here now, not above tier 2. Same code, later moment.
+if (failed) process.exit(1);
