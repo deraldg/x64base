@@ -35,7 +35,46 @@ ai_report_audit:
 
 Lane: AIF-120 (application-ui-dsl). Owner: `member.derald`.
 Author: `member.ai.claude.cowork`. Status: **review-needed**.
-Scopes R147. **Proposes; decides nothing.**
+Scopes R147. Proposed 2026-09-17; **three of its four open questions were RULED
+2026-09-25 and the fourth was deliberately deferred -- see section 0-R, placed
+first because a reader must not act on sections 3 and 3b without it.**
+
+---
+
+## 0-R. RULINGS, 2026-09-25 (owner `member.derald`)
+
+**(1) TWO KINDS, NOT THREE.** The ASK is `choice` (fixed, R145 `Style = 2`) or
+`entry` (editable, `Style = 0`). A confirm is a CHOICE OVER TWO TOKENS, not a
+third kind -- R145 already supplies the only distinction that carries weight, and
+a separate `confirm` would invent a category the vocabulary does not need. This
+retires the author's own earlier three-kind proposal.
+
+**(2) FOUR BUTTONS ON THE DIRTY PRECONDITION, not three:** `COMMIT`,
+`ROLLBACK`, `PROCEED`, `CANCEL`. The fourth is the one section 3's table missed:
+**PROCEED WITHOUT COMMITTING, leaving the buffer dirty**, which is a DIFFERENT
+END STATE from ROLLBACK's discard. It is not a new semantic --
+`dirty_prompt.cpp:124` takes exactly this path when `g_suppress_prompts` is set,
+so the engine already implements it and only the unattended caller can reach it.
+**THE UNATTENDED DEFAULT IS THEREFORE `PROCEED` AND UNATTENDED BEHAVIOUR DOES
+NOT CHANGE** -- the dialog exposes an outcome the engine has, rather than adding
+one.
+
+**(3) THE CONSOLE GOES THROUGH THE PROTOCOL TOO.** Owner: *"as much as possible
+code is unified."* No console fast path. A driver returns a TOKEN, so keystroke
+parsing exists in exactly ONE place -- a single console renderer mapping keys to
+tokens -- replacing the three implementations measured in OI-041
+(`dirty_prompt.cpp:43`, `cmd_rebuild.cpp:136`, `cmd_reindex.cpp:166`), which
+today disagree: `yellow` consents to an index rebuild, and a leading space
+consents to a commit.
+
+**(4) TRANSPORT IS DEFERRED, DELIBERATELY AND ON THE RECORD.** Whether the ASK
+crosses as a reserved line on stdout or on a separate channel is NOT decided.
+It can wait: the kinds, the payload fields, the four tokens and the single parser
+are all transport-independent, and the wire format is an adapter behind them.
+**THE HAZARD IS THAT A DEFERRED DECISION GETS MADE BY ACCIDENT** -- by whoever
+writes the first line of code -- and is then read back as ruled. So it is
+recorded here as OPEN, and the first implementation must name the transport it
+chose as PROVISIONAL, in the code and in its commit message, until this is ruled.
 
 ---
 
@@ -98,6 +137,7 @@ Measured at `08fa0234c`:
 |---|---|---|
 | Commit | `COMMIT` | registered (`dotref.hpp:207`), and **already invoked from inside the prompt** (`dirty_prompt.cpp:78`) |
 | Discard | `ROLLBACK` | registered (`dotref.hpp:1130`) -- and **`dirty_prompt.cpp` mentions it ZERO times** |
+| Proceed | (none) | **ADDED BY RULING (2), 2026-09-25.** Proceed WITHOUT committing; the buffer stays dirty. `dirty_prompt.cpp:124` already returns exactly this outcome under `g_suppress_prompts`, so it is the engine's own third answer and today only an unattended caller can choose it |
 | Cancel | (none) | drop the pending intent |
 
 **`parse_yes_default_no()` gives commit-or-cancel. There is no way to say
@@ -112,9 +152,15 @@ y/N prompt is **LOSSY relative to the engine's own vocabulary.**
 
 ### 3a. Therefore REPLY carries a TOKEN, and for COMMIT that token is a VERB
 
-    REPLY COMMIT      run COMMIT, then re-dispatch the pending command
-    REPLY ROLLBACK    run ROLLBACK, then re-dispatch the pending command
-    REPLY CANCEL      drop the pending command
+    REPLY <id> COMMIT     run COMMIT, then re-dispatch the pending command
+    REPLY <id> ROLLBACK   discard the buffered changes, then re-dispatch
+    REPLY <id> PROCEED    re-dispatch WITHOUT committing; the buffer stays dirty
+    REPLY <id> CANCEL     drop the pending command
+
+**THE `<id>` IS NOT DECORATION.** It correlates the reply to the ask, so a late
+or duplicated answer cannot resolve a question it was not asked. The machinery
+for this already exists in the other direction: `gui_shell_runtime.cpp:157`
+numbers its completion marker `__DOTTALK_GUI_DONE_<n>__` for the same reason.
 
 **For this precondition, REPLY introduces no new semantics: it is a SEQUENCER
 over commands that already exist.** The pending intent is one slot holding a
@@ -146,12 +192,36 @@ COMMIT` and `REPLY "students.dbf"` are the same grammar -- a token -- and the
 ASK declares which kind it expects, so validation belongs to the asker rather
 than to REPLY.
 
-**STATED PLAINLY BECAUSE DESIGNING AHEAD OF A REAL CASE IS HOW VOCABULARIES
-BLOAT: there are ZERO entry-prompts in the tree today.** Every prompt measured
-for R147 is y/N -- two direct parsers and one shared helper reached from nine
-sites. So this section is about **not precluding** an entry prompt, not about
-building one. The fixed/editable property is what a second precondition would
-DECLARE; it is not work this worked example does.
+**CORRECTED 2026-09-25 -- THIS PARAGRAPH SAID THERE WERE NONE, AND THERE ARE
+FIVE.** As written it read: *"designing ahead of a real case is how vocabularies
+bloat: there are ZERO entry-prompts in the tree today"*, and concluded that this
+section was only about NOT PRECLUDING an entry prompt rather than serving one.
+That was wrong, and HOW it was wrong is worth more than the count.
+
+**THE EARLIER SWEEP SCOPED ITSELF TO THE PRECONDITION PATHS AND THEN CLAIMED THE
+TREE.** It measured `maybe_prompt_*` plus the two rebuild/reindex confirms, and
+reported *"every prompt measured for R147 is y/N"* -- true of that population.
+The sentence above promoted it to a statement about the whole tree. **A
+MEASUREMENT WHOSE SCOPE WAS NARROWER THAN ITS CLAIM**, which is the defect this
+lane names most often, occurring in a document that teaches the rule.
+
+**MEASURED 2026-09-25 at `4d47bc43c`:** every `std::getline(std::cin, ...)` and
+`std::cin >>` under `src/` and `include/` -- **15 reads in 9 files**, one of them
+(`reader.cpp:16`) the REPL loop and not a prompt. Three shapes: **3 confirms**,
+**5 FREE ENTRIES**, **6 command loops**. The entries, with their own prompt text:
+
+    app_simple_browser.cpp:857   "Enter value for <field> [<type>] (current=<v>): "
+    app_simple_browser.cpp:1022  "Field name or #? "
+    app_simple_browser.cpp:1047  "Enter value: "
+    cmd_browser.cpp:190          "Field name: "
+    cmd_browser.cpp:199          "New value: "
+
+So entry prompts are not hypothetical, and under ruling (1) **serving them is in
+scope rather than merely not precluding them.** `:857` is the binding case: it
+already prints the FIELD NAME, the FIELD TYPE and the CURRENT VALUE, so an
+`entry` ask carries those three as fields and a modal can render the prompt
+faithfully. **That is ADOPTED from what the code already prints, not invented**
+-- section 7 of the design-table contract, applied to this protocol.
 
 ---
 
@@ -203,10 +273,20 @@ is a declaration rather than architecture.**
 - What `ROLLBACK` does to a workspace-wide dirty set, as against one area.
   `maybe_prompt_all` exists; a discard-all has not been read.
 - Whether the TVision dialog is this lane's work or its own.
-- **What an ENTRY prompt would validate against.** Section 3b keeps the grammar
-  open for one; nothing in the tree asks for a value today, so there is no
-  measured case to design the validation from, and guessing one would be the
-  vocabulary bloat that section warns about.
+- **What an ENTRY prompt would validate against.** ~~nothing in the tree asks
+  for a value today, so there is no measured case to design the validation
+  from~~ -- **CORRECTED 2026-09-25: five do, and section 3b lists them.** The
+  validation question is still open, but it is no longer unmeasurable: the cases
+  are a DBF field name, a field ordinal, and a typed field value whose type the
+  prompt already prints. Designing from those is adoption; designing from none
+  would have been the bloat.
+- **The transport.** Deferred by ruling (4). Named here so it is not mistaken
+  for settled.
+- **`g_suppress_prompts` is a process-global that is never cleared**, set true
+  after any successful QUIT-like prompt (`:130`, `:146`, `:167`), while the GUI
+  bridge keeps ONE `dottalkpp.exe` alive across every command. Whether that path
+  is reachable without the process exiting has NOT been traced. Named, not
+  claimed.
 
 ## 7. How to verify
 
@@ -214,3 +294,29 @@ is a declaration rather than architecture.**
     grep -c 'ROLLBACK' src/cli/dirty_prompt.cpp              # 0
     sed -n '44,57p'  src/cli/dirty_prompt.cpp                # commit-or-cancel
     grep -n 'maybe_prompt' src/cli/*.cpp                     # nine sites, all guards
+
+    # the 2026-09-25 correction to section 3b -- the whole prompt population
+    git grep -n 'getline(std::cin\|std::cin >>' -- 'src/**' 'include/**'
+    sed -n '855,858p'   src/cli/app_simple_browser.cpp       # name, type, current
+    sed -n '123,131p'   src/cli/dirty_prompt.cpp             # the third outcome
+
+## 8. Corrections to this document
+
+Recorded rather than edited away.
+
+- **2026-09-25, section 3b.** Its central factual claim -- *"there are ZERO
+  entry-prompts in the tree today"* -- was false when written and is corrected in
+  place, with the original sentence quoted so the change is visible. Five entry
+  prompts exist. The cause was a scope error, not a counting error: a sweep of
+  the precondition paths was reported as a fact about the tree. Found while
+  answering R147's own unmeasured question (3), *whether any prompt asks
+  something that is not y/N*. Full working:
+  `OI-041` in `coordination/OPEN_ITEMS.md`.
+- **2026-09-25, section 6.** The matching bullet, which reasoned from the same
+  false premise, is struck and replaced.
+- **2026-09-25, sections 0-R, 3 and 3a.** Owner rulings: two kinds; four buttons;
+  the console goes through the protocol; transport deferred. Section 3's button
+  table gained `Proceed`, and section 3a's REPLY list gained that token and a
+  correlation id.
+- **Unchanged deliberately:** the `ai_report_audit` envelope at the head, which
+  records what was reported on 2026-09-17 and is not a live claim about today.
