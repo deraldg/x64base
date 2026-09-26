@@ -62,11 +62,37 @@ if ($WithPyDotTalk -and [string]::IsNullOrWhiteSpace($PythonExe)) {
   $PythonExe = $pythonCandidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
 }
 
+# VCPKG RESOLUTION, IN ORDER, AND IT SAYS WHICH ONE WON.
+#
+# This used to read $env:VCPKG_ROOT and nothing else, which is how a build run
+# from an SD card at H:\ccode silently linked against C:\Users\deral\vcpkg --
+# correct on this machine, wrong on any other, and reported as a bare path with
+# no hint of where it came from.
+#
+# TWO VARIABLES NAME THE SAME THING IN THIS REPO AND THAT IS THE REAL TRAP:
+# build.ps1 read VCPKG_ROOT while every preset in CMakePresets.json reads
+# $env{VCPKG_INSTALLATION_ROOT}. Setting one satisfied half the build system.
+# Both are consulted here now.
+#
+# The last candidate is the useful one for a portable clone: a vcpkg sitting
+# BESIDE the repo (<parent>\vcpkg). On a card laid out as X:\ccode + X:\vcpkg
+# that resolves on any drive letter with no environment variable at all. On a
+# normal checkout the sibling does not exist and this changes nothing.
+$vcpkgCandidates = @(
+  @{ src = '-VcpkgRoot / VCPKG_ROOT';     root = $VcpkgRoot },
+  @{ src = 'VCPKG_INSTALLATION_ROOT';     root = $env:VCPKG_INSTALLATION_ROOT },
+  @{ src = 'a vcpkg beside the repo';     root = (Join-Path (Split-Path -Parent $RepoRoot) 'vcpkg') }
+)
+
 $Toolchain = $null
-if (-not [string]::IsNullOrWhiteSpace($VcpkgRoot)) {
-  $candidate = Join-Path $VcpkgRoot 'scripts\buildsystems\vcpkg.cmake'
-  if (Test-Path $candidate) {
+$ToolchainSource = $null
+foreach ($c in $vcpkgCandidates) {
+  if ([string]::IsNullOrWhiteSpace($c.root)) { continue }
+  $candidate = Join-Path $c.root 'scripts\buildsystems\vcpkg.cmake'
+  if (Test-Path -LiteralPath $candidate) {
     $Toolchain = $candidate
+    $ToolchainSource = $c.src
+    break
   }
 }
 
@@ -83,8 +109,9 @@ if ($WithPyDotTalk) {
 }
 if ($Toolchain) {
   Write-Host "vcpkg:    $Toolchain"
+  Write-Host "          (from $ToolchainSource)"
 } else {
-  Write-Warning "vcpkg toolchain not found. Set VCPKG_ROOT or pass -VcpkgRoot."
+  Write-Warning "vcpkg toolchain not found. Set VCPKG_ROOT or VCPKG_INSTALLATION_ROOT, pass -VcpkgRoot, or put a vcpkg beside the repo."
 }
 
 $ManifestFeatures = @()
