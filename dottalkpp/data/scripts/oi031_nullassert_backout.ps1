@@ -28,7 +28,8 @@
 # the spec would change what is being measured.
 
 $ErrorActionPreference = "Stop"
-Set-Location "D:\code\ccode"
+# Derived, never hardcoded: this file lives at <repo>/dottalkpp/data/scripts/.
+Set-Location (Resolve-Path (Join-Path $PSScriptRoot "..\..\..")).Path
 
 $src  = "src\xbase\dbarea.cpp"
 # IT CUTS ITS OWN COPIES, so a fresh clone can run it. The first version read

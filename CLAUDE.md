@@ -68,7 +68,14 @@ fact about another. Check the CALL SITES, not the declaration.
 
 ## Running the CLI over the work directory
 
-Use **`./datarun.ps1`** from `D:\code\ccode`. Do NOT run the raw build exe by hand.
+Use **`./datarun.ps1`** from the clone root. Do NOT run the raw build exe by hand.
+
+**There is more than one development clone** (2026-09-25): `D:\code\ccode`, and a
+travelling clone on a removable card whose drive letter depends on the machine.
+Resolve the root with `git rev-parse --show-toplevel`; never assume `D:`. The card
+clone is recognised by `git config --local x64base.role development` (see
+`detect_declared_clone_role` in `tools/staging/repository_role_guard.py`), and its
+`.venv312` is rebuilt by `make_venv.ps1` whenever the drive letter changes.
 
 `datarun.ps1` (via `launch-common.ps1`) stages the **newest** built `dottalkpp.exe` into the
 runtime bin and runs it over the work data:
@@ -134,7 +141,7 @@ Detail: `AI_README.md`, "WSL working environment".
   and public repo are separate promotion steps.
 - No em-dashes in scripts or docs (maintainer preference); use `--` / `->`.
 - **Python 3.12 host tools** (`tools/fullstack_docs/**`, anything importing yaml) run under the
-  repo venv `.venv312` via `$py12 = "D:\code\ccode\.venv312\Scripts\python.exe"`. NOT `py -3.12`
+  repo venv `.venv312` via `$py12 = Join-Path (git rev-parse --show-toplevel) '.venv312\Scripts\python.exe'`. NOT `py -3.12`
   (not installed) and NOT the vcpkg python (minimal, no PyYAML -> `ModuleNotFoundError: yaml`).
   Recipes + the vcpkg-vs-venv rationale: the full-stack flush cookbook interpreters note.
 - **Every runnable block establishes its own environment.** Added 2026-09-25 after four round

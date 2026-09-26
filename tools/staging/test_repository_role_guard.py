@@ -273,6 +273,60 @@ class BranchCutFromMainTests(unittest.TestCase):
         self._git(clone, "checkout", "-qb", "ci/fix", "origin/main")
         self.assertIsNone(guard.detect_role(str(clone)))
         self.assertIsNone(guard.detect_branch_cut_role(str(clone), "ci/fix"))
+        self.assertIsNone(guard.detect_declared_clone_role(str(clone)))
+
+    def _clone(self, name):
+        clone = Path(self._tmp.name) / name
+        subprocess.run(
+            ["git", "clone", "-q", str(Path(self._tmp.name) / "origin.git"),
+             str(clone)],
+            check=True, capture_output=True,
+        )
+        return clone
+
+    def test_declared_clone_gets_the_development_contract(self):
+        """The travelling card clone, added 2026-09-25."""
+        clone = self._clone("card")
+        self._git(clone, "config", "--local", "x64base.role", "development")
+        role = guard.detect_declared_clone_role(str(clone))
+        self.assertIsNotNone(role)
+        self.assertEqual(role.allowed_remote_branch, "development")
+        self.assertEqual(guard.validate_worktree(role, "development"), [])
+        self.assertTrue(guard.validate_worktree(role, "main"))
+
+    def test_declaration_cannot_claim_staging(self):
+        clone = self._clone("card")
+        for value in ("staging", "main", "Development", ""):
+            with self.subTest(value=value):
+                self._git(clone, "config", "--local", "x64base.role", value)
+                self.assertIsNone(guard.detect_declared_clone_role(str(clone)))
+
+    def test_global_declaration_is_ignored(self):
+        """A global value would bless every repository on the machine."""
+        clone = self._clone("card")
+        global_cfg = Path(self._tmp.name) / "global.gitconfig"
+        global_cfg.write_text("[x64base]\n\trole = development\n", encoding="utf-8")
+        saved = os.environ.get("GIT_CONFIG_GLOBAL")
+        os.environ["GIT_CONFIG_GLOBAL"] = str(global_cfg)
+        try:
+            self.assertIsNone(guard.detect_declared_clone_role(str(clone)))
+        finally:
+            if saved is None:
+                del os.environ["GIT_CONFIG_GLOBAL"]
+            else:
+                os.environ["GIT_CONFIG_GLOBAL"] = saved
+
+    def test_worktree_of_declared_clone_does_not_inherit_development(self):
+        """Linked worktrees share .git/config; they must stay branch-cut only."""
+        clone = self._clone("card")
+        self._git(clone, "config", "--local", "x64base.role", "development")
+        self._git(clone, "fetch", "-q", "origin")
+        wt = Path(self._tmp.name) / "card-wt"
+        self._git(clone, "worktree", "add", "-b", "ci/fix", str(wt), "origin/main")
+        self.assertIsNone(guard.detect_declared_clone_role(str(wt)))
+        role = guard.detect_branch_cut_role(str(wt), "ci/fix")
+        self.assertIsNotNone(role)
+        self.assertEqual(role.allowed_remote_branch, "ci/fix")
 
     def test_branch_cut_role_may_push_only_its_own_branch(self):
         role = guard.detect_branch_cut_role(str(self.wt_main), "ci/fix")

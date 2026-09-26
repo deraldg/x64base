@@ -1,5 +1,5 @@
 param(
-    [string]$RepoRoot = "D:\code\ccode",
+    [string]$RepoRoot = (Split-Path -Parent $PSScriptRoot),
     [string]$OutName = ""
 )
 

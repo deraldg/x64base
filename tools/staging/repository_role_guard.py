@@ -13,6 +13,9 @@ always correct because they are raw strings; only the documentation lied.
 Known roles:
   D:\code\ccode  -> development authoring worktree; may push development only.
   C:\x64base     -> sterilized staging worktree; may push main only.
+  a clone whose LOCAL config sets x64base.role=development -> the same
+      development contract at another path (the travelling card clone). See
+      detect_declared_clone_role for the three conditions.
   linked worktree cut from origin/main -> may push its OWN topic branch only,
       for opening a pull request into main. Never main, never development, and
       never a branch that carries development history. See
@@ -150,6 +153,50 @@ def detect_role(root: str) -> RepositoryRole | None:
     return None
 
 
+DECLARED_ROLE_KEY = "x64base.role"
+
+
+def detect_declared_clone_role(root: str) -> RepositoryRole | None:
+    """Recognise a development clone that is not at DEVELOPMENT_ROOT.
+
+    ADDED 2026-09-25 for the travelling clone. The engine tree now lives on a
+    removable card as well as at D:\\code\\ccode, and the card's drive letter
+    is whatever the machine it is plugged into hands out. A path cannot name
+    it, so the clone names itself, once, by the owner:
+
+        git config --local x64base.role development
+
+    ALL of these must hold, or the role is refused and the old message stands:
+
+      1. The key is set in the REPOSITORY-LOCAL config. A global or system
+         value would bless every repository on the machine, so it is ignored.
+      2. The value is exactly "development". The staging role stays PATH-ONLY:
+         a clone cannot declare itself C:\\x64base, and that is deliberate --
+         staging pushes main.
+      3. `root` is the MAIN worktree of that clone. A linked worktree shares
+         .git/config, so without this every worktree cut from the card would
+         inherit the development role and pre-empt detect_branch_cut_role.
+
+    The role returned is DEVELOPMENT_ROLE's contract under this root: branch
+    development only, push development only. The permitted push SET does not
+    grow; one more place may push the branch that was already permitted.
+    """
+    if linked_worktree_parent(root) is not None:
+        return None
+    try:
+        value = git_output(root, "config", "--local", "--get", DECLARED_ROLE_KEY)
+    except RuntimeError:
+        return None
+    if value != "development":
+        return None
+    return RepositoryRole(
+        name=DEVELOPMENT_ROLE.name,
+        root=root,
+        required_branch=DEVELOPMENT_ROLE.required_branch,
+        allowed_remote_branch=DEVELOPMENT_ROLE.allowed_remote_branch,
+    )
+
+
 def linked_worktree_parent(root: str) -> str | None:
     """Return the main repository root if `root` is a LINKED worktree of it.
 
@@ -268,7 +315,9 @@ def detect_branch_cut_role(root: str, branch: str) -> RepositoryRole | None:
     if branch in ("", "main", "development"):
         return None
     parent = linked_worktree_parent(root)
-    if parent is None or detect_role(parent) is None:
+    if parent is None or (
+        detect_role(parent) is None and detect_declared_clone_role(parent) is None
+    ):
         return None
     try:
         head = git_output(root, "rev-parse", "HEAD")
@@ -703,7 +752,11 @@ def main(argv: list[str] | None = None) -> int:
         print(f"repository-role-guard: {exc}", file=sys.stderr)
         return 4
 
-    role = detect_role(root) or detect_branch_cut_role(root, branch)
+    role = (
+        detect_role(root)
+        or detect_declared_clone_role(root)
+        or detect_branch_cut_role(root, branch)
+    )
     allow_staging_branch = (
         args.allow_staging_branch
         or os.environ.get("X64BASE_ALLOW_STAGING_BRANCH") == "1"

@@ -33,7 +33,7 @@
 
 .PARAMETER DataRoot
     The dottalkpp DATA folder (parent of dbf/indexes/lmdb).
-    Default: D:\code\ccode\dottalkpp\data
+    Default: <this clone>\dottalkpp\data, derived from $PSScriptRoot
 
 .PARAMETER Remove
     Tear down: remove the junctions and detach the RAM disk.
@@ -57,7 +57,7 @@ param(
     [ValidateRange(0, 1048576)]
     [int]$SizeMB = 0,
 
-    [string]$DataRoot = 'D:\code\ccode\dottalkpp\data',
+    [string]$DataRoot = (Join-Path (Split-Path -Parent $PSScriptRoot) 'data'),
 
     [switch]$Remove
 )
