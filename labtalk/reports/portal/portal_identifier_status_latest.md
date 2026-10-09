@@ -7,10 +7,10 @@ Generated from the typed identifier model and maintained authorities. Do not han
 | Class | Records |
 | --- | ---: |
 | `identifier_classes` | 8 |
-| `projects` | 21 |
-| `aif_intake_rows` | 130 |
-| `aif_claims` | 65 |
-| `rulings` | 20 |
+| `projects` | 22 |
+| `aif_intake_rows` | 160 |
+| `aif_claims` | 95 |
+| `rulings` | 35 |
 | `runs` | 20 |
 | `work_items` | 17 |
 | `proofs` | 74 |
@@ -18,13 +18,18 @@ Generated from the typed identifier model and maintained authorities. Do not han
 ## Compatibility observations
 
 - `aif_claim_backfill`: intake_without_claim=65, claim_without_intake=0
-- `legacy_ticket_crosswalk`: external_ticket_id=3, lane_id=14
+- `legacy_ticket_crosswalk`: external_ticket_id=2, lane_id=15
 - `run_report_compatibility`: report_ids_in_run_id_field=20
-- `lane_references`: task_lanes=12, run_lanes=24, task_lanes_without_claim=9, run_lanes_without_intake=0
+- `lane_references`: task_lanes=13, run_lanes=24, task_lanes_without_claim=10, run_lanes_without_intake=0
 
 ## Findings
 
-No structural identifier findings.
+- `AIF-111` [claim_ledger]: claim file is present but not tracked: coordination/aif/AIF-111.claim
+- `AIF-131` [claim_ledger]: claim file is present but not tracked: coordination/aif/AIF-131.claim
+- `AIF-134` [claim_ledger]: claim file is present but not tracked: coordination/aif/AIF-134.claim
+- `AIF-135` [claim_ledger]: claim file is present but not tracked: coordination/aif/AIF-135.claim
+- `AIF-136` [claim_ledger]: claim file is present but not tracked: coordination/aif/AIF-136.claim
+- `AIF-163` [claim_ledger]: claim file is present but not tracked: coordination/aif/AIF-163.claim
 
 ## Boundary
 

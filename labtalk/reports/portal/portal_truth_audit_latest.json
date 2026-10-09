@@ -1,14 +1,50 @@
 {
-  "generated_at": "2026-07-26T15:29:36",
+  "generated_at": "2026-09-15T17:47:48",
   "labtalk_root": "D:\\code\\ccode\\labtalk",
   "repo_root": "D:\\code\\ccode",
   "portal_registry": "D:\\code\\ccode\\labtalk\\registries\\portal.yaml",
-  "section_count": 14,
-  "item_count": 221,
-  "runnable_count": 32,
-  "proof_like_count": 65,
+  "section_count": 15,
+  "item_count": 304,
+  "runnable_count": 33,
+  "proof_like_count": 129,
   "duplicate_item_ids": [],
   "missing_paths": [
+    {
+      "item_id": "project.labtalk.staging",
+      "label": "LabTalk Above-Runtime Staging",
+      "field": "root",
+      "path": "C:\\labtalk"
+    },
+    {
+      "item_id": "project.labtalk.staging",
+      "label": "LabTalk Above-Runtime Staging",
+      "field": "docs",
+      "path": "C:\\labtalk\\README.md"
+    },
+    {
+      "item_id": "project.labtalk.staging",
+      "label": "LabTalk Above-Runtime Staging",
+      "field": "docs",
+      "path": "C:\\labtalk\\STAGING_POLICY.md"
+    },
+    {
+      "item_id": "project.labtalk.staging",
+      "label": "LabTalk Above-Runtime Staging",
+      "field": "docs",
+      "path": "C:\\labtalk\\publication\\labtalk-website-pipeline.md"
+    },
+    {
+      "item_id": "project.labtalk.staging",
+      "label": "LabTalk Above-Runtime Staging",
+      "field": "docs",
+      "path": "C:\\labtalk\\registries\\projects.yaml"
+    },
+    {
+      "item_id": "project.labtalk.staging",
+      "label": "LabTalk Above-Runtime Staging",
+      "field": "docs",
+      "path": "C:\\labtalk\\registries\\intake.yaml"
+    },
     {
       "item_id": "project.db_converter",
       "label": "DB_Converter",
@@ -40,10 +76,46 @@
       "path": "D:\\code\\ccode\\docs\\## AI Portal re-examination.txt"
     },
     {
+      "item_id": "lesson.student.cursor_versus_set",
+      "label": "Two Ways to Ask a Database a Question",
+      "field": "path",
+      "path": "D:\\code\\ccode\\labtalk\\lessons\\student\\cursor_versus_set_v0.md"
+    },
+    {
       "item_id": "lesson.student.properties_of_valid_data",
       "label": "The Properties of Valid Data",
       "field": "path",
       "path": "D:\\code\\ccode\\labtalk\\lessons\\student\\properties_of_valid_data_v0.md"
+    },
+    {
+      "item_id": "report.aif_rulings",
+      "label": "AI Portal -- Open Rulings",
+      "field": "source",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF_*RULING_SHEET*.md + labtalk\\ai_portal\\TIER0_STATE.md"
+    },
+    {
+      "item_id": "launcher.wx",
+      "label": "wx GUI",
+      "field": "path",
+      "path": "D:\\code\\ccode\\wx.run.ps1"
+    },
+    {
+      "item_id": "launcher.wx_next",
+      "label": "wx Next GUI",
+      "field": "path",
+      "path": "D:\\code\\ccode\\wx.next.run.ps1"
+    },
+    {
+      "item_id": "launcher.run_wx",
+      "label": "run-wx.ps1",
+      "field": "path",
+      "path": "D:\\code\\ccode\\run-wx.ps1"
+    },
+    {
+      "item_id": "launcher.run_wx_next",
+      "label": "run-wx-next.ps1",
+      "field": "path",
+      "path": "D:\\code\\ccode\\run-wx-next.ps1"
     }
   ],
   "ai_report_audit": {
@@ -51,111 +123,1347 @@
     "status": "active_mandatory",
     "policy_path": "labtalk/registries/ai_report_audit.yaml",
     "project_registry": "labtalk/registries/projects.yaml",
-    "closeout_count": 74,
+    "closeout_count": 140,
     "grandfathered_count": 9,
-    "enforced_count": 65,
-    "valid_count": 46,
-    "finding_count": 20,
-    "findings": [
+    "enforced_count": 131,
+    "valid_count": 131,
+    "finding_count": 0,
+    "findings": [],
+    "intake_enforced_count": 9,
+    "intake_finding_count": 0,
+    "intake_findings": [],
+    "reports": [
       {
-        "report": "docs/maintenance/SESSION_CLOSEOUT_AI_PORTAL_ONBOARDING_HARDENING_2026-07-25.md",
-        "field": "ai_report_audit.report_id",
-        "issue": "duplicate report id also used by docs/maintenance/SESSION_CLOSEOUT_AI_BBS_LANE_BUILD_GREEN_2026-07-25.md"
+        "report_id": "AIPR-20260723-002",
+        "provider": "Anthropic",
+        "product": "Claude (Cowork)",
+        "date": "2026-07-23",
+        "kind": "session_closeout",
+        "project": "project.ai_friendly",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_AFB_OLLAMA_APP_REGISTRATION_2026-07-23.md"
       },
       {
-        "report": "docs/maintenance/SESSION_CLOSEOUT_AIF050_FULLTREE_BACKFILL_2026-07-25.md",
-        "field": "front_matter",
-        "issue": "missing YAML front matter"
+        "report_id": "AIPR-20260816-001",
+        "provider": "openai",
+        "product": "Codex",
+        "date": "2026-08-16",
+        "kind": "session_closeout",
+        "project": "project.ai_systems.integration",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_AI_AGENT_ASSIGNMENT_LINK_AIF086_2026-08-16.md"
       },
       {
-        "report": "docs/maintenance/SESSION_CLOSEOUT_ARCTICTALK_REGRESSION_ENVIRONMENT_MENU_2026-07-22.md",
-        "field": "front_matter",
-        "issue": "missing YAML front matter"
+        "report_id": "AIPR-20260725-001",
+        "provider": "Anthropic",
+        "product": "Cowork",
+        "date": "2026-07-25",
+        "kind": "session_closeout",
+        "project": "project.ai_friendly",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_AI_BBS_LANE_BUILD_GREEN_2026-07-25.md"
       },
       {
-        "report": "docs/maintenance/SESSION_CLOSEOUT_ARCTICTALK_RETRO_TUI_WORKBENCH_LANE_2026-07-22.md",
-        "field": "front_matter",
-        "issue": "missing YAML front matter"
+        "report_id": "AIPR-20260826-001",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-08-26",
+        "kind": "session_closeout",
+        "project": "project.ai_friendly",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_AI_PORTAL_FEED_HARDENING_2026-08-26.md",
+        "topics": [
+          "ai_portal",
+          "data_feeds",
+          "documentation_push",
+          "governance"
+        ]
       },
       {
-        "report": "docs/maintenance/SESSION_CLOSEOUT_ARCTICTALK_TVISION_GRID_BROWSER_2026-07-22.md",
-        "field": "front_matter",
-        "issue": "missing YAML front matter"
+        "report_id": "AIPR-20260816-003",
+        "provider": "openai",
+        "product": "Codex",
+        "date": "2026-08-16",
+        "kind": "session_closeout",
+        "project": "project.ai_systems.integration",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_AI_PORTAL_LIVE_MAINTENANCE_AIF086_2026-08-16.md"
       },
       {
-        "report": "docs/maintenance/SESSION_CLOSEOUT_ARRAYS_PDLC_LANES_2026-07-20.md",
-        "field": "front_matter",
-        "issue": "missing YAML front matter"
+        "report_id": "AIPR-20260725-002",
+        "provider": "Anthropic",
+        "product": "Cowork",
+        "date": "2026-07-25",
+        "kind": "session_closeout",
+        "project": "project.ai_friendly",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_AI_PORTAL_ONBOARDING_HARDENING_2026-07-25.md"
       },
       {
-        "report": "docs/maintenance/SESSION_CLOSEOUT_DOTSCRIPT_ERRORSTOP_LEXING_2026-07-20.md",
-        "field": "front_matter",
-        "issue": "missing YAML front matter"
+        "report_id": "AIPR-20260826-003",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-08-26",
+        "kind": "session_closeout",
+        "project": "project.ai_friendly",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_AI_PORTAL_PROFESSIONAL_SYSTEM_MODEL_2026-08-26.md",
+        "topics": [
+          "ai_portal",
+          "architecture",
+          "schemas",
+          "process_flow",
+          "data_flow"
+        ]
       },
       {
-        "report": "docs/maintenance/SESSION_CLOSEOUT_DTV_FOUNDATION_INTEGRATED_2026-07-20.md",
-        "field": "front_matter",
-        "issue": "missing YAML front matter"
+        "report_id": "AIPR-20260728-003",
+        "provider": "Anthropic",
+        "product": "Cowork (Claude)",
+        "date": "2026-07-28",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_AI_PORTAL_REPORT_DISCOVERABILITY_AND_AUDIT_GREEN_2026-07-28.md"
       },
       {
-        "report": "docs/maintenance/SESSION_CLOSEOUT_ENGINE_LIMITS_AND_CORRECTIONS_2026-07-19.md",
-        "field": "front_matter",
-        "issue": "missing YAML front matter"
+        "report_id": "AIPR-20260804-010",
+        "provider": "Anthropic",
+        "product": "Cowork (Claude)",
+        "date": "2026-08-04",
+        "kind": "session_closeout",
+        "project": "project.ai_systems.integration",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_AI_PORTAL_REPORTS_VISIBILITY_2026-08-04.md"
       },
       {
-        "report": "docs/maintenance/SESSION_CLOSEOUT_FIELDTYPE_CODEC_2026-07-19.md",
-        "field": "front_matter",
-        "issue": "missing YAML front matter"
+        "report_id": "AIPR-20260826-002",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-08-26",
+        "kind": "session_closeout",
+        "project": "project.ai_friendly",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_AI_PORTAL_STRUCTURED_ASSERTIONS_2026-08-26.md",
+        "topics": [
+          "ai_portal",
+          "structured_assertions",
+          "data_feeds",
+          "documentation_push"
+        ]
       },
       {
-        "report": "docs/maintenance/SESSION_CLOSEOUT_HELP_GIANT_ALL_BRANCH_RENAME_2026-07-23.md",
-        "field": "ai_report_audit.report_id",
-        "issue": "duplicate report id also used by docs/maintenance/SESSION_CLOSEOUT_AFB_OLLAMA_APP_REGISTRATION_2026-07-23.md"
+        "report_id": "AIPR-20260715-001",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-07-16",
+        "kind": "session_closeout",
+        "project": "project.ai_friendly",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_AI_REPORT_AUDIT_TRAIL_2026-07-15.md"
       },
       {
-        "report": "docs/maintenance/SESSION_CLOSEOUT_MANUAL_ASSEMBLY_2026-07-20.md",
-        "field": "front_matter",
-        "issue": "missing YAML front matter"
+        "report_id": "AIPR-20260805-001",
+        "provider": "Anthropic",
+        "product": "Cowork",
+        "date": "2026-08-05",
+        "kind": "session_closeout",
+        "project": "project.ai_systems.integration",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_AI_SYSTEMS_INTEGRATION_SDLC_2026-08-05_CLAUDE_STEWARD_M2.md"
       },
       {
-        "report": "docs/maintenance/SESSION_CLOSEOUT_PINOCCHIO_AGGS_ALL_2026-07-19.md",
-        "field": "front_matter",
-        "issue": "missing YAML front matter"
+        "report_id": "AIPR-20260803-003",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-08-03",
+        "kind": "session_closeout",
+        "project": "project.ai_systems.integration",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_AI_SYSTEMS_INTEGRATION_SDLC_M0_2026-08-03.md"
       },
       {
-        "report": "docs/maintenance/SESSION_CLOSEOUT_PINOCCHIO_DELETE_BATCH_2026-07-19.md",
-        "field": "front_matter",
-        "issue": "missing YAML front matter"
+        "report_id": "AIPR-20260803-004",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-08-03",
+        "kind": "session_closeout",
+        "project": "project.ai_systems.integration",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_AI_SYSTEMS_INTEGRATION_SDLC_M1_2026-08-03.md"
       },
       {
-        "report": "docs/maintenance/SESSION_CLOSEOUT_PINOCCHIO_SEEK_FIX_2026-07-18.md",
-        "field": "front_matter",
-        "issue": "missing YAML front matter"
+        "report_id": "AIPR-20260725-BF1",
+        "provider": "not_exposed",
+        "product": "not_exposed",
+        "date": "2026-07-26",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_AIF050_FULLTREE_BACKFILL_2026-07-25.md"
       },
       {
-        "report": "docs/maintenance/SESSION_CLOSEOUT_PROMOTE_MANIFEST_PROJECTION_REALIGNMENT_2026-07-23.md",
-        "field": "ai_report_audit.project.id",
-        "issue": "unknown project id: x64base / DotTalk++ Runtime"
+        "report_id": "AIPR-20260815-COWORK-013",
+        "provider": "Anthropic",
+        "product": "Claude (Cowork)",
+        "date": "2026-08-15",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_AIF112_PHASE1_AND_LOCK_MUTUAL_EXCLUSION_2026-08-15.md"
       },
       {
-        "report": "docs/maintenance/SESSION_CLOSEOUT_RECNO64_M1_M4_2026-07-19.md",
-        "field": "front_matter",
-        "issue": "missing YAML front matter"
+        "report_id": "AIPR-20260817-COWORK-001",
+        "provider": "Anthropic",
+        "product": "Claude (Cowork)",
+        "date": "2026-08-17",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_AIF118_CONSOLE_THEME_LAB_AND_LEAN_PYDOTTALK_2026-08-17.md"
       },
       {
-        "report": "docs/maintenance/SESSION_CLOSEOUT_TABLE_BUFFER_WAL_2026-07-19.md",
-        "field": "front_matter",
-        "issue": "missing YAML front matter"
+        "report_id": "AIPR-20260816-COWORK-001",
+        "provider": "Anthropic",
+        "product": "Claude (Cowork)",
+        "date": "2026-08-16",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_AIF118_GUARDS_SITE_AND_EDREF_SHAPE_2026-08-16.md"
       },
       {
-        "report": "docs/maintenance/SESSION_CLOSEOUT_WEBSITE_SOURCE_DERIVED_CATALOG_HARVEST_2026-07-19.md",
-        "field": "ai_report_audit.git.branch",
-        "issue": "required field missing"
+        "report_id": "AIPR-20260817-COWORK-002",
+        "provider": "Anthropic",
+        "product": "Claude (Cowork)",
+        "date": "2026-08-17",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_AIF119_PYDOTTALK_PRODUCT_BOUNDARY_2026-08-17.md"
       },
       {
-        "report": "docs/maintenance/SESSION_CLOSEOUT_WEBSITE_SOURCE_DERIVED_CATALOG_HARVEST_2026-07-19.md",
-        "field": "ai_report_audit.git.baseline_commit",
-        "issue": "required field missing"
+        "report_id": "AIPR-20260827-COWORK-002",
+        "provider": "Anthropic",
+        "product": "Cowork",
+        "date": "2026-08-27",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_AIF137_FIX_AND_THE_INSTRUMENT_2026-08-27.md",
+        "topics": [
+          "workspace",
+          "multi_workspace",
+          "name_resolution",
+          "relations",
+          "regression_coverage",
+          "instrument_defect"
+        ]
+      },
+      {
+        "report_id": "AIPR-20260819-COWORK-016",
+        "provider": "Anthropic",
+        "product": "Claude (Cowork)",
+        "date": "2026-08-19",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_APPLICATION_UI_DSL_LANE_2026-08-19.md"
+      },
+      {
+        "report_id": "AIPR-20260821-COWORK-095",
+        "provider": "Anthropic",
+        "product": "Claude (Cowork)",
+        "date": "2026-08-21",
+        "kind": "session_closeout",
+        "project": "project.x64base.gui",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_APPLICATION_UI_DSL_LANE_2026-08-20.md"
+      },
+      {
+        "report_id": "AIPR-20260722-BF1",
+        "provider": "not_exposed",
+        "product": "not_exposed",
+        "date": "2026-07-26",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_ARCTICTALK_REGRESSION_ENVIRONMENT_MENU_2026-07-22.md"
+      },
+      {
+        "report_id": "AIPR-20260722-BF2",
+        "provider": "not_exposed",
+        "product": "not_exposed",
+        "date": "2026-07-26",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_ARCTICTALK_RETRO_TUI_WORKBENCH_LANE_2026-07-22.md"
+      },
+      {
+        "report_id": "AIPR-20260722-BF3",
+        "provider": "not_exposed",
+        "product": "not_exposed",
+        "date": "2026-07-26",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_ARCTICTALK_TVISION_GRID_BROWSER_2026-07-22.md"
+      },
+      {
+        "report_id": "AIPR-20260720-BF1",
+        "provider": "not_exposed",
+        "product": "not_exposed",
+        "date": "2026-07-26",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_ARRAYS_PDLC_LANES_2026-07-20.md"
+      },
+      {
+        "report_id": "AIPR-20260731-002",
+        "provider": "Anthropic",
+        "product": "Claude (Cowork)",
+        "date": "2026-07-31",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_BBS_AGENCY_LEGS_2026-07-31.md"
+      },
+      {
+        "report_id": "AIPR-20260810-008",
+        "provider": "Anthropic",
+        "product": "Claude Cowork",
+        "date": "2026-08-11",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_CASCADE_DOUBLE_MILESTONE_2026-08-10.md"
+      },
+      {
+        "report_id": "AIPR-20260810-002",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-08-10",
+        "kind": "session_closeout",
+        "project": "project.labtalk.historical_database_migration",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_CASCADE_ERP_GATE0_HOUSEKEEPING_2026-08-10.md"
+      },
+      {
+        "report_id": "AIPR-20260716-002",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-07-16",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_CLAUDE_MESSAGING_CORRECTIVE_AUDIT_2026-07-16.md"
+      },
+      {
+        "report_id": "AIPR-20260810-001",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-08-10",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_CLEAN_CLONE_CORE_CI_REPAIR_2026-08-10.md"
+      },
+      {
+        "report_id": "AIPR-20260809-001",
+        "provider": "Anthropic",
+        "product": "Claude (Cowork)",
+        "date": "2026-08-09",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_CNX_ON_X64_2026-08-09.md"
+      },
+      {
+        "report_id": "AIPR-20260731-003",
+        "provider": "Anthropic",
+        "product": "Claude (Cowork)",
+        "date": "2026-07-31",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_CNX_REALTIME_INDEX_MAINTENANCE_2026-07-31.md"
+      },
+      {
+        "report_id": "AIPR-20260718-014",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-07-18",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_COMMAND_REFERENCE_HUMAN_REVIEW_BOOK_2026-07-18.md"
+      },
+      {
+        "report_id": "AIPR-20260716-006",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-07-17",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_COMMENTS_HELP_PROMOTION_2026-07-16.md"
+      },
+      {
+        "report_id": "AIPR-20260808-001",
+        "provider": "Anthropic",
+        "product": "Claude (Cowork)",
+        "date": "2026-08-08",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_COORDINATION_ONTOLOGY_AND_REGRESSION_2026-08-08.md"
+      },
+      {
+        "report_id": "AIPR-20260804-005",
+        "provider": "Anthropic",
+        "product": "Cowork (Claude)",
+        "date": "2026-08-04",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_CROSS_AGENT_CONNECTIVITY_MILESTONE_2026-08-04.md"
+      },
+      {
+        "report_id": "AIPR-20260802-001",
+        "provider": "Anthropic",
+        "product": "Claude (Cowork)",
+        "date": "2026-08-02",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_CROSS_PLATFORM_TOOLING_2026-08-02.md"
+      },
+      {
+        "report_id": "AIPR-20260810-003",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-08-10",
+        "kind": "session_closeout",
+        "project": "project.labtalk.historical_database_migration",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_DATABASE_ECOLOGY_INVENTORY_2026-08-10.md"
+      },
+      {
+        "report_id": "AIPR-20260810-004",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-08-10",
+        "kind": "session_closeout",
+        "project": "project.labtalk.historical_database_migration",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_DATABASE_ECOLOGY_REMEDIATION_2026-08-10.md"
+      },
+      {
+        "report_id": "AIPR-20260810-005",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-08-10",
+        "kind": "session_closeout",
+        "project": "project.labtalk.historical_database_migration",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_DATABASE_SCHEMA_CATALOG_2026-08-10.md"
+      },
+      {
+        "report_id": "AIPR-20260724-001",
+        "provider": "Anthropic",
+        "product": "Cowork (Claude)",
+        "date": "2026-07-24",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_DEV_TREE_HYGIENE_UNTRACKED_SOURCE_RECOVERY_2026-07-24.md"
+      },
+      {
+        "report_id": "AIPR-20260717-002",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-07-17",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_DOCUMENTATION_CONTRACT_RESOLUTION_2026-07-17.md"
+      },
+      {
+        "report_id": "AIPR-20260717-001",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-07-17",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_DOCUMENTATION_MULTICONTRACT_RECONCILIATION_2026-07-17.md"
+      },
+      {
+        "report_id": "AIPR-20260718-029",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-07-18",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_DOCUMENTATION_PROGRESS_PUBLICATION_2026-07-18.md"
+      },
+      {
+        "report_id": "AIPR-20260718-007",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-07-18",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_DOCUMENTATION_PUBLICATION_ASCENT_PREFLIGHT_2026-07-18.md"
+      },
+      {
+        "report_id": "AIPR-20260718-027",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-07-18",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_DOCUMENTATION_TO_X64BASE_COM_PUBLICATION_2026-07-18.md"
+      },
+      {
+        "report_id": "AIPR-20260720-BF2",
+        "provider": "not_exposed",
+        "product": "not_exposed",
+        "date": "2026-07-26",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_DOTSCRIPT_ERRORSTOP_LEXING_2026-07-20.md"
+      },
+      {
+        "report_id": "AIPR-20260810-006",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-08-10",
+        "kind": "session_closeout",
+        "project": "project.x64base.website",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_DOTTALK_AI_HISTORY_WEB_2026-08-10.md"
+      },
+      {
+        "report_id": "AIPR-20260720-BF3",
+        "provider": "not_exposed",
+        "product": "not_exposed",
+        "date": "2026-07-26",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_DTV_FOUNDATION_INTEGRATED_2026-07-20.md"
+      },
+      {
+        "report_id": "AIPR-20260719-BF1",
+        "provider": "not_exposed",
+        "product": "not_exposed",
+        "date": "2026-07-26",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_ENGINE_LIMITS_AND_CORRECTIONS_2026-07-19.md"
+      },
+      {
+        "report_id": "AIPR-20260727-001",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-07-27",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_EXPORT_SDF_PDLC_2026-07-27.md"
+      },
+      {
+        "report_id": "AIPR-20260716-004",
+        "provider": "Anthropic",
+        "product": "Claude Cowork",
+        "date": "2026-07-16",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_EXPORTFUNCTIONS_ERROR_IDENTITY_2026-07-16.md"
+      },
+      {
+        "report_id": "AIPR-20260719-BF2",
+        "provider": "not_exposed",
+        "product": "not_exposed",
+        "date": "2026-07-26",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_FIELDTYPE_CODEC_2026-07-19.md"
+      },
+      {
+        "report_id": "AIPR-20260718-017",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-07-18",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_GATE4_CANONICAL_COMMAND_REFERENCE_APPLY_2026-07-18.md"
+      },
+      {
+        "report_id": "AIPR-20260718-016",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-07-18",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_GATE4_CONTROLLED_ACCEPTANCE_PLAN_2026-07-18.md"
+      },
+      {
+        "report_id": "AIPR-20260718-015",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-07-18",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_GATE4_NEWLINE_AND_STRUCTURE_CANDIDATES_2026-07-18.md"
+      },
+      {
+        "report_id": "AIPR-20260718-020",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-07-18",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_GATE5_DEVELOPMENT_APPLY_2026-07-18.md"
+      },
+      {
+        "report_id": "AIPR-20260718-019",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-07-18",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_GATE5_DEVELOPMENT_PLAN_2026-07-18.md"
+      },
+      {
+        "report_id": "AIPR-20260718-023",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-07-18",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_GATE5_DOCUMENTATION_GIT_PUBLICATION_2026-07-18.md"
+      },
+      {
+        "report_id": "AIPR-20260718-022",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-07-18",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_GATE5_PUBLIC_BASELINE_ESCROW_AND_RECOVERY_MIRROR_2026-07-18.md"
+      },
+      {
+        "report_id": "AIPR-20260718-018",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-07-18",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_GATE5_SOURCE_STAGING_PREFLIGHT_2026-07-18.md"
+      },
+      {
+        "report_id": "AIPR-20260718-021",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-07-18",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_GATE5_STAGING_PRESERVATION_AND_PLAN_2026-07-18.md"
+      },
+      {
+        "report_id": "AIPR-20260718-024",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-07-18",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_GATE6_WEBSITE_FEED_EXPORT_PACKET_2026-07-18.md"
+      },
+      {
+        "report_id": "AIPR-20260718-026",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-07-18",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_GATE7_WEBSITE_INTEGRATION_APPLY_2026-07-18.md"
+      },
+      {
+        "report_id": "AIPR-20260718-025",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-07-18",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_GATE7_WEBSITE_INTEGRATION_PLAN_2026-07-18.md"
+      },
+      {
+        "report_id": "AIPR-20260827-COWORK-004",
+        "provider": "Anthropic",
+        "product": "Cowork",
+        "date": "2026-08-27",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_GPS_AND_THE_IDENTITY_LANE_2026-08-27.md",
+        "topics": [
+          "cursor_reporting",
+          "recno64",
+          "deletion_semantics",
+          "identity",
+          "rbac",
+          "locking",
+          "multi_workspace"
+        ]
+      },
+      {
+        "report_id": "AIPR-20260723-003",
+        "provider": "Anthropic",
+        "product": "Cowork (Claude)",
+        "date": "2026-07-24",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_HELP_GIANT_ALL_BRANCH_RENAME_2026-07-23.md"
+      },
+      {
+        "report_id": "AIPR-20260727-BF1",
+        "provider": "not_exposed",
+        "product": "not_exposed",
+        "date": "2026-07-27",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_HELP_META_HARVEST_FEEDER_2026-07-27.md"
+      },
+      {
+        "report_id": "AIPR-20260717-004",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-07-17",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_HELP_REFRESH_PROMOTION_2026-07-17.md"
+      },
+      {
+        "report_id": "AIPR-20260730-004",
+        "provider": "Anthropic",
+        "product": "Claude (Cowork)",
+        "date": "2026-07-30",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_HOUSE_INDEX_VDISK_AND_CAPABILITY_VALIDATOR_2026-07-30.md"
+      },
+      {
+        "report_id": "AIPR-20260722-002",
+        "provider": "Anthropic",
+        "product": "Cowork",
+        "date": "2026-07-22",
+        "kind": "session_closeout",
+        "project": "project.x64base.identity",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_IDENTITY_2BI_PREPUSH_GATE_PUBLISH_2026-07-22.md"
+      },
+      {
+        "report_id": "AIPR-20260722-003",
+        "provider": "Anthropic",
+        "product": "Cowork",
+        "date": "2026-07-22",
+        "kind": "session_closeout",
+        "project": "project.x64base.identity",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_IDENTITY_2BII_2BIII_PERSISTENCE_2026-07-22.md"
+      },
+      {
+        "report_id": "AIPR-20260722-004",
+        "provider": "Anthropic",
+        "product": "Cowork",
+        "date": "2026-07-22",
+        "kind": "session_closeout",
+        "project": "project.x64base.identity",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_IDENTITY_2C_AGENT_SECURITY_2026-07-22.md"
+      },
+      {
+        "report_id": "AIPR-20260722-005",
+        "provider": "Anthropic",
+        "product": "Cowork",
+        "date": "2026-07-22",
+        "kind": "session_closeout",
+        "project": "project.x64base.identity",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_IDENTITY_2D_SESSION_AUTH_2026-07-22.md"
+      },
+      {
+        "report_id": "AIPR-20260827-COWORK-005",
+        "provider": "Anthropic",
+        "product": "Cowork",
+        "date": "2026-08-27",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_IDENTITY_STAGE1_AND_LIFECYCLE_L1_2026-08-27.md",
+        "topics": [
+          "identity",
+          "locking",
+          "predicate_evaluation",
+          "multi_workspace",
+          "catalog_lifecycle",
+          "schema_design"
+        ]
+      },
+      {
+        "report_id": "AIPR-20260811-001",
+        "provider": "Anthropic",
+        "product": "Cowork",
+        "date": "2026-08-11",
+        "kind": "session_closeout",
+        "project": "project.x64base.website",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_LEAN_SITE_DEPLOY_2026-08-11.md"
+      },
+      {
+        "report_id": "AIPR-20260716-005",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-07-17",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_MAINT_DOCUMENTATION_RECONCILIATION_2026-07-16.md"
+      },
+      {
+        "report_id": "AIPR-20260720-BF4",
+        "provider": "not_exposed",
+        "product": "not_exposed",
+        "date": "2026-07-26",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_MANUAL_ASSEMBLY_2026-07-20.md"
+      },
+      {
+        "report_id": "AIPR-20260718-012",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-07-18",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_MANUAL_COMMAND_REFERENCE_CANDIDATE_2026-07-18.md"
+      },
+      {
+        "report_id": "AIPR-20260718-010",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-07-18",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_MANUAL_CONTROLLED_ACCEPTANCE_APPLY_2026-07-18.md"
+      },
+      {
+        "report_id": "AIPR-20260718-009",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-07-18",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_MANUAL_CONTROLLED_ACCEPTANCE_PLAN_2026-07-18.md"
+      },
+      {
+        "report_id": "AIPR-20260718-008",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-07-18",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_MANUAL_POINTER_EVIDENCE_RECONCILIATION_2026-07-18.md"
+      },
+      {
+        "report_id": "AIPR-20260718-011",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-07-18",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_MANUAL_PUBLICATION_READINESS_AUDIT_2026-07-18.md"
+      },
+      {
+        "report_id": "AIPR-20260717-005",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-07-17",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_MANUALGEN_HARVEST_PROVENANCE_2026-07-17.md"
+      },
+      {
+        "report_id": "AIPR-20260716-001",
+        "provider": "Anthropic",
+        "product": "Claude Cowork",
+        "date": "2026-07-16",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_MESSAGING_LOCALIZATION_RUNTIME_PROOF_2026-07-16.md"
+      },
+      {
+        "report_id": "AIPR-20260716-007",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-07-17",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_METACOLLECT_SYSCMD_EMITTER_2026-07-16.md"
+      },
+      {
+        "report_id": "AIPR-20260731-001",
+        "provider": "Anthropic",
+        "product": "Claude (Cowork)",
+        "date": "2026-07-31",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_ONBOARDING_COST_AND_ACCEPTANCE_2026-07-31.md"
+      },
+      {
+        "report_id": "AIPR-20260828-COWORK-002",
+        "provider": "Anthropic",
+        "product": "Cowork",
+        "date": "2026-08-28",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_PATH_LADDERS_AND_TRAVERSAL_SURFACES_2026-08-28.md",
+        "topics": [
+          "path_resolution",
+          "multi_workspace",
+          "relation_traversal",
+          "sqlsel",
+          "evidence_quality",
+          "identity"
+        ]
+      },
+      {
+        "report_id": "AIPR-20260807-003",
+        "provider": "Anthropic",
+        "product": "Claude Cowork",
+        "date": "2026-08-07",
+        "kind": "session_closeout",
+        "project": "project.labtalk.pdlc",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_PDLC_VOCABULARY_MERGE_2026-08-07.md"
+      },
+      {
+        "report_id": "AIPR-20260719-BF3",
+        "provider": "not_exposed",
+        "product": "not_exposed",
+        "date": "2026-07-26",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_PINOCCHIO_AGGS_ALL_2026-07-19.md"
+      },
+      {
+        "report_id": "AIPR-20260719-BF4",
+        "provider": "not_exposed",
+        "product": "not_exposed",
+        "date": "2026-07-26",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_PINOCCHIO_DELETE_BATCH_2026-07-19.md"
+      },
+      {
+        "report_id": "AIPR-20260718-006",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-07-18",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_PINOCCHIO_HISTORICAL_BASELINE_2026-07-18.md"
+      },
+      {
+        "report_id": "AIPR-20260718-001",
+        "provider": "anthropic",
+        "product": "claude-cowork",
+        "date": "2026-07-18",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_PINOCCHIO_NAV_PERFORMANCE_2026-07-18.md"
+      },
+      {
+        "report_id": "AIPR-20260718-BF1",
+        "provider": "not_exposed",
+        "product": "not_exposed",
+        "date": "2026-07-26",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_PINOCCHIO_SEEK_FIX_2026-07-18.md"
+      },
+      {
+        "report_id": "AIPR-20260808-002",
+        "provider": "Anthropic",
+        "product": "Claude (Cowork)",
+        "date": "2026-08-08",
+        "kind": "session_closeout",
+        "project": "project.ai_friendly.agent_memory",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_PORTAL_MEMORY_SYNAPSE_2026-08-08.md"
+      },
+      {
+        "report_id": "AIPR-20260902-COWORK-001",
+        "provider": "Anthropic",
+        "product": "Claude Cowork",
+        "date": "2026-09-02",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_PORTAL_REPO_DISTRIBUTION_AND_SEED_CEILING_2026-09-02.md"
+      },
+      {
+        "report_id": "AIPR-20260723-001",
+        "provider": "Anthropic",
+        "product": "Cowork (Claude)",
+        "date": "2026-07-23",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_PROMOTE_MANIFEST_PROJECTION_REALIGNMENT_2026-07-23.md"
+      },
+      {
+        "report_id": "AIPR-20260821-COWORK-009",
+        "provider": "Anthropic",
+        "product": "Claude (Cowork)",
+        "date": "2026-08-21",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_PROMOTION_TO_MAIN_AND_WORKBENCH_RENAME_2026-08-21.md"
+      },
+      {
+        "report_id": "AIPR-20260807-002",
+        "provider": "Anthropic",
+        "product": "Claude (Cowork)",
+        "date": "2026-08-07",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_PUBLICATION_SURFACE_RECOVERY_2026-08-07.md"
+      },
+      {
+        "report_id": "AIPR-20260718-013",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-07-18",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_PYTHON_312_LABTALK_ENVIRONMENT_2026-07-18.md"
+      },
+      {
+        "report_id": "AIPR-20260826-COWORK-001",
+        "provider": "Anthropic",
+        "product": "Cowork",
+        "date": "2026-08-26",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_R128_ADDITIVE_WORKSPACES_2026-08-26.md",
+        "topics": [
+          "workspace",
+          "multi_workspace",
+          "regression"
+        ]
+      },
+      {
+        "report_id": "AIPR-20260827-COWORK-001",
+        "provider": "Anthropic",
+        "product": "Cowork",
+        "date": "2026-08-27",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_R129_AIF137_WORKSPACE_CURSOR_2026-08-27.md",
+        "topics": [
+          "workspace",
+          "multi_workspace",
+          "name_resolution",
+          "relations",
+          "workspace_cursor"
+        ]
+      },
+      {
+        "report_id": "AIPR-20260827-COWORK-003",
+        "provider": "Anthropic",
+        "product": "Cowork",
+        "date": "2026-08-27",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_R130_LOAD_IS_ADDITIVE_2026-08-27.md",
+        "topics": [
+          "workspace",
+          "multi_workspace",
+          "posture_load",
+          "slot_allocation",
+          "session_state",
+          "regression_coverage"
+        ]
+      },
+      {
+        "report_id": "AIPR-20260719-BF5",
+        "provider": "not_exposed",
+        "product": "not_exposed",
+        "date": "2026-07-26",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_RECNO64_M1_M4_2026-07-19.md"
+      },
+      {
+        "report_id": "AIPR-20260728-004",
+        "provider": "Anthropic",
+        "product": "Cowork (Claude)",
+        "date": "2026-07-28",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_REPORTS_PUBLIC_BUILD_MODE_2026-07-28.md"
+      },
+      {
+        "report_id": "AIPR-20260722-007",
+        "provider": "Anthropic",
+        "product": "Cowork",
+        "date": "2026-07-22",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_SCAN_EVALUATOR_LANE_2026-07-22.md"
+      },
+      {
+        "report_id": "AIPR-20260722-001",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-07-22",
+        "kind": "session_closeout",
+        "project": "project.labtalk.sdlc",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_SCOPE_CALIBRATED_LIFECYCLE_DOCTRINE_2026-07-22.md"
+      },
+      {
+        "report_id": "AIPR-20260730-001",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-07-30",
+        "kind": "session_closeout",
+        "project": "project.ai_friendly",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_SECOND_OPINION_AUTHORIZATION_BOUNDARY_2026-07-30.md"
+      },
+      {
+        "report_id": "AIPR-20260803-005",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-08-03",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_SIDECAR_M0_2026-08-03.md"
+      },
+      {
+        "report_id": "AIPR-20260810-007",
+        "provider": "Anthropic",
+        "product": "Claude Cowork",
+        "date": "2026-08-10",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_SITE_PUBLISH_AND_CODEX_RESIDUE_TRIAGE_2026-08-10.md"
+      },
+      {
+        "report_id": "AIPR-20260809-002",
+        "provider": "Anthropic",
+        "product": "Cowork (Claude)",
+        "date": "2026-08-09",
+        "kind": "session_closeout",
+        "project": "project.labtalk.campus",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_SPECIALTY_LMS_INTAKE_2026-08-09.md"
+      },
+      {
+        "report_id": "AIPR-20260903-001",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-09-03",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_SQLSEL_LEFT_JOIN_AND_ATOMIC_LOCK_RACE_2026-09-03.md"
+      },
+      {
+        "report_id": "AIPR-20260729-001",
+        "provider": "Anthropic",
+        "product": "Cowork",
+        "date": "2026-07-29",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_SQLSEL_P0_P1_2026-07-29.md"
+      },
+      {
+        "report_id": "AIPR-20260903-002",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-09-03",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_SQLSEL_P4_4_JOIN_FAMILY_2026-09-03.md"
+      },
+      {
+        "report_id": "AIPR-20260910-001",
+        "provider": "Anthropic",
+        "product": "Claude (Cowork)",
+        "date": "2026-09-10",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_SQLSEL_RETIREMENT_AND_SITE_2026-09-10.md"
+      },
+      {
+        "report_id": "AIPR-20260903-003",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-09-03",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_SQLSEL_USER_MANUAL_2026-09-03.md"
+      },
+      {
+        "report_id": "AIPR-20260717-003",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-07-17",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_SYSCMD_V8_PROMOTION_2026-07-17.md"
+      },
+      {
+        "report_id": "AIPR-20260719-BF6",
+        "provider": "not_exposed",
+        "product": "not_exposed",
+        "date": "2026-07-26",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_TABLE_BUFFER_WAL_2026-07-19.md"
+      },
+      {
+        "report_id": "AIPR-20260804-013",
+        "provider": "Anthropic",
+        "product": "Cowork (Claude)",
+        "date": "2026-08-04",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_TRACKING_CRUD_DOGFOOD_2026-08-04.md"
+      },
+      {
+        "report_id": "AIPR-20260804-009",
+        "provider": "Anthropic",
+        "product": "Cowork (Claude)",
+        "date": "2026-08-04",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_TRIGGERS_PHASE1_AND_BBS_COOPERATION_2026-08-04.md"
+      },
+      {
+        "report_id": "AIPR-20260803-001",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-08-03",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_WEBSITE_ACADEMIC_CREDIBILITY_2026-08-03.md"
+      },
+      {
+        "report_id": "AIPR-20260718-028",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-07-18",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_WEBSITE_DOCUMENTATION_PROGRESS_PREVIEW_2026-07-18.md"
+      },
+      {
+        "report_id": "AIPR-20260719-004",
+        "provider": "Anthropic",
+        "product": "Claude (Cowork)",
+        "date": "2026-07-19",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_WEBSITE_SOURCE_DERIVED_CATALOG_HARVEST_2026-07-19.md"
+      },
+      {
+        "report_id": "AIPR-20260730-003",
+        "provider": "Anthropic",
+        "product": "Claude (Cowork)",
+        "date": "2026-07-30",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_WORKSPACE_QUALIFIER_NAMESPACE_DEPTH_2026-07-30.md"
+      },
+      {
+        "report_id": "AIPR-20260910-COWORK-202",
+        "provider": "Anthropic",
+        "product": "Claude (Cowork)",
+        "date": "2026-09-10",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_WORKSPACE_SCOPING_AND_WORKDESK_2026-09-10.md"
+      },
+      {
+        "report_id": "AIPR-20260812-002",
+        "provider": "Anthropic",
+        "product": "Cowork",
+        "date": "2026-08-12",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_WORKSPACE_WRITEBACK_REGRESSION_2026-08-12.md"
+      },
+      {
+        "report_id": "AIPR-20260806-006",
+        "provider": "Anthropic",
+        "product": "Claude (Cowork)",
+        "date": "2026-08-07",
+        "kind": "session_closeout",
+        "project": "project.ai_friendly",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_X64BASE_AGENT_SKILL_D1_D4_2026-08-06.md"
+      },
+      {
+        "report_id": "AIPR-20260806-003",
+        "provider": "Anthropic",
+        "product": "Claude (Cowork)",
+        "date": "2026-08-07",
+        "kind": "session_closeout",
+        "project": "project.ai_friendly",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_X64BASE_AGENT_SKILL_LANE_OPEN_2026-08-06.md"
+      },
+      {
+        "report_id": "AIPR-20260806-005",
+        "provider": "Anthropic",
+        "product": "Claude (Cowork)",
+        "date": "2026-08-07",
+        "kind": "session_closeout",
+        "project": "project.ai_friendly",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_X64BASE_AGENT_SKILL_P0_2026-08-06.md"
+      },
+      {
+        "report_id": "AIPR-20260806-007",
+        "provider": "Anthropic",
+        "product": "Claude (Cowork)",
+        "date": "2026-08-07",
+        "kind": "session_closeout",
+        "project": "project.ai_friendly",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_X64BASE_AGENT_SKILL_PROBE_C_2026-08-06.md"
+      },
+      {
+        "report_id": "AIPR-20260815-COWORK-011",
+        "provider": "Anthropic",
+        "product": "Claude (Cowork)",
+        "date": "2026-08-15",
+        "kind": "review_needed_change_package",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/external_ai_intake/aif112_phase1_return_2026-08-15/MANIFEST.md"
+      },
+      {
+        "report_id": "AIPR-20260815-GROK-003",
+        "provider": "xAI",
+        "product": "Grok",
+        "date": "2026-08-15",
+        "kind": "review_needed_change_package",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/external_ai_intake/aif112_phase1_spike_2026-08-15/MANIFEST.md"
+      },
+      {
+        "report_id": "AIPR-20260815-GROK-004",
+        "provider": "xAI",
+        "product": "Grok",
+        "date": "2026-08-15",
+        "kind": "review_needed_change_package",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/external_ai_intake/aif112_phase1_spike_amend1_2026-08-15/MANIFEST.md"
+      },
+      {
+        "report_id": "AIPR-20260815-GROK-005",
+        "provider": "xAI",
+        "product": "Grok",
+        "date": "2026-08-15",
+        "kind": "review_needed_change_package",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/external_ai_intake/aif112_phase1_spike_amend2_2026-08-15/MANIFEST.md"
+      },
+      {
+        "report_id": "AIPR-20260810-GROK-001",
+        "provider": "xAI",
+        "product": "Grok",
+        "date": "2026-08-11",
+        "kind": "review_needed_change_package",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/external_ai_intake/dotscript_language_peer_review_2026-08-10/MANIFEST.md"
+      },
+      {
+        "report_id": "AIPR-20260809-003",
+        "provider": "Anthropic",
+        "product": "Cowork (Claude)",
+        "date": "2026-08-09",
+        "kind": "intake_assessment",
+        "project": "project.labtalk.campus",
+        "path": "docs/maintenance/external_ai_intake/specialty_lms_ecosystem_2026-08-09/ASSESSMENT_LOCAL_WORKBENCH.md"
+      },
+      {
+        "report_id": "AIPR-20260809-COPILOT-001",
+        "provider": "Microsoft",
+        "product": "Copilot (Tasks / slides skill)",
+        "date": "2026-08-09",
+        "kind": "review_needed_change_package",
+        "project": "project.labtalk.campus",
+        "path": "docs/maintenance/external_ai_intake/specialty_lms_ecosystem_2026-08-09/MANIFEST.md"
+      },
+      {
+        "report_id": "AIPR-20260728-001",
+        "provider": "Anthropic",
+        "product": "Cowork (Claude)",
+        "date": "2026-07-28",
+        "kind": "intake_assessment",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/external_ai_intake/virtual_workspaces_memo_resident_2026-07-28/ASSESSMENT_LOCAL_WORKBENCH.md"
+      },
+      {
+        "report_id": "AIPR-20260728-GROK-002",
+        "provider": "xAI",
+        "product": "Grok",
+        "date": "2026-07-28",
+        "kind": "review_needed_change_package",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/external_ai_intake/virtual_workspaces_memo_resident_2026-07-28/MANIFEST.md"
       }
     ]
   },
@@ -177,6 +1485,12 @@
       "label": "AI Portal Work \u2014 Alpha/Experimental",
       "registry_state": "ok",
       "registry_path": "D:\\code\\ccode\\labtalk\\registries\\ai_portal.yaml"
+    },
+    {
+      "id": "portal.agent_assignment_links",
+      "label": "Agent Assignment Links",
+      "registry_state": "ok",
+      "registry_path": "D:\\code\\ccode\\labtalk\\registries\\agent_assignment_links.yaml"
     },
     {
       "id": "portal.apps",
@@ -222,7 +1536,7 @@
     },
     {
       "id": "portal.reports",
-      "label": "Reports",
+      "label": "AI Operations",
       "registry_state": "inline",
       "registry_path": ""
     },
@@ -1267,6 +2581,25 @@
       "derived_from": []
     },
     {
+      "id": "report.ai_portal.reonboarding_assessment.2026_07_29",
+      "label": "AI Portal Re-Onboarding Assessment - 2026-07-29",
+      "section": "portal.ai_portal_work",
+      "kind": "onboarding_assessment",
+      "status": "reviewed_observation",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\AI_PORTAL_REONBOARDING_ASSESSMENT_2026-07-29.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
       "id": "lane.ai_portal.hardening",
       "label": "AI Portal Hardening Lane",
       "section": "portal.ai_portal_work",
@@ -1410,6 +2743,471 @@
       "truth_state": "",
       "proof_state": "",
       "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "agent_assignment_link.contract",
+      "label": "Agent Assignment Link Contract",
+      "section": "portal.agent_assignment_links",
+      "kind": "markdown",
+      "status": "source_defined",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\contracts\\AI_AGENT_ASSIGNMENT_LINK_CONTRACT_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "agent_assignment_link.maintenance_manual",
+      "label": "Agent Assignment Link Maintenance Manual",
+      "section": "portal.agent_assignment_links",
+      "kind": "markdown",
+      "status": "source_defined",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\AI_AGENT_ASSIGNMENT_LINK_MAINTENANCE_MANUAL_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "agent_assignment_link.pfd",
+      "label": "Agent Assignment Link Process Flow",
+      "section": "portal.agent_assignment_links",
+      "kind": "diagram",
+      "status": "maintained",
+      "truth_state": "source_defined",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\diagrams\\ai_agent_assignment_link_pfd_v1.mmd"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "provenance_ok",
+      "derived_from": [
+        "D:\\code\\ccode\\docs\\contracts\\AI_AGENT_ASSIGNMENT_LINK_CONTRACT_V1.md",
+        "D:\\code\\ccode\\docs\\maintenance\\AI_AGENT_ASSIGNMENT_LINK_MAINTENANCE_MANUAL_V1.md"
+      ]
+    },
+    {
+      "id": "agent_assignment_link.dfd",
+      "label": "Agent Assignment Link Data Flow",
+      "section": "portal.agent_assignment_links",
+      "kind": "diagram",
+      "status": "maintained",
+      "truth_state": "source_defined",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\diagrams\\ai_agent_assignment_link_dfd_v1.mmd"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "provenance_ok",
+      "derived_from": [
+        "D:\\code\\ccode\\docs\\contracts\\AI_AGENT_ASSIGNMENT_LINK_CONTRACT_V1.md",
+        "D:\\code\\ccode\\dottalkpp\\data\\schemas\\syschatlnk_v1.schema.json"
+      ]
+    },
+    {
+      "id": "agent_assignment_link.schema",
+      "label": "SYSCHATLNK X64 Schema",
+      "section": "portal.agent_assignment_links",
+      "kind": "json",
+      "status": "source_defined",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\dottalkpp\\data\\schemas\\syschatlnk_v1.schema.json"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "agent_assignment_link.regression",
+      "label": "Create and Read SYSCHATLNK in X64",
+      "section": "portal.agent_assignment_links",
+      "kind": "dottalk_script",
+      "status": "proof_passed",
+      "truth_state": "runtime_observed",
+      "proof_state": "validated",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\dottalkpp\\data\\scripts\\ddl\\syschatlnk_x64_regression.dts"
+        },
+        {
+          "field": "script",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\dottalkpp\\data\\scripts\\ddl\\syschatlnk_x64_regression.dts"
+        }
+      ],
+      "runnable": true,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "agent_assignment_link.relational_plan",
+      "label": "AI Portal, BBS, and Pseudo-Chat Relational Schema Plan",
+      "section": "portal.agent_assignment_links",
+      "kind": "markdown",
+      "status": "review_needed",
+      "truth_state": "source_defined",
+      "proof_state": "design_intended",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\AI_PORTAL_BBS_PSEUDO_CHAT_RELATIONAL_SCHEMA_PLAN_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "agent_assignment_link.relational_erd",
+      "label": "Relational Conversation and Route ERD",
+      "section": "portal.agent_assignment_links",
+      "kind": "diagram",
+      "status": "review_needed",
+      "truth_state": "source_defined",
+      "proof_state": "design_intended",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\diagrams\\ai_portal_bbs_pseudo_chat_relational_erd_v1.mmd"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "provenance_ok",
+      "derived_from": [
+        "D:\\code\\ccode\\docs\\maintenance\\AI_PORTAL_BBS_PSEUDO_CHAT_RELATIONAL_SCHEMA_PLAN_V1.md",
+        "D:\\code\\ccode\\docs\\contracts\\AI_AGENT_ASSIGNMENT_LINK_CONTRACT_V1.md"
+      ]
+    },
+    {
+      "id": "agent_assignment_link.relational_dfd",
+      "label": "Relational Portal, CLI, Daemon, and BBS Data Flow",
+      "section": "portal.agent_assignment_links",
+      "kind": "diagram",
+      "status": "review_needed",
+      "truth_state": "source_defined",
+      "proof_state": "design_intended",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\diagrams\\ai_portal_bbs_pseudo_chat_relational_dfd_v1.mmd"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "provenance_ok",
+      "derived_from": [
+        "D:\\code\\ccode\\docs\\maintenance\\AI_PORTAL_BBS_PSEUDO_CHAT_RELATIONAL_SCHEMA_PLAN_V1.md",
+        "D:\\code\\ccode\\docs\\maintenance\\AI_BBS_OPERATIONS_RUNBOOK_V1.md"
+      ]
+    },
+    {
+      "id": "agent_assignment_link.relational_pfd",
+      "label": "Relational Conversation Write and Recovery Process Flow",
+      "section": "portal.agent_assignment_links",
+      "kind": "diagram",
+      "status": "review_needed",
+      "truth_state": "source_defined",
+      "proof_state": "design_intended",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\diagrams\\ai_portal_bbs_pseudo_chat_relational_pfd_v1.mmd"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "provenance_ok",
+      "derived_from": [
+        "D:\\code\\ccode\\docs\\maintenance\\AI_PORTAL_BBS_PSEUDO_CHAT_RELATIONAL_SCHEMA_PLAN_V1.md"
+      ]
+    },
+    {
+      "id": "agent_assignment_link.aif_lane",
+      "label": "AIF-086 AI Systems Integration SDLC",
+      "section": "portal.agent_assignment_links",
+      "kind": "markdown",
+      "status": "m2_architecture_active",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\AI_SYSTEMS_INTEGRATION_SDLC_CHARTER_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "agent_assignment_link.system_crosswalk",
+      "label": "AI Systems Component Crosswalk",
+      "section": "portal.agent_assignment_links",
+      "kind": "markdown",
+      "status": "maintained",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\AI_SYSTEMS_CROSSWALK_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "agent_assignment_link.run",
+      "label": "Assignment Link Contribution Run",
+      "section": "portal.agent_assignment_links",
+      "kind": "yaml",
+      "status": "complete",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\registries\\runs.d\\AIPR-20260816-001.yaml"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "agent_assignment_link.relational_plan_run",
+      "label": "Relational Schema Planning Run",
+      "section": "portal.agent_assignment_links",
+      "kind": "yaml",
+      "status": "complete",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\registries\\runs.d\\AIPR-20260816-002.yaml"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "agent_assignment_link.closeout",
+      "label": "Assignment Link Contribution Closeout",
+      "section": "portal.agent_assignment_links",
+      "kind": "markdown",
+      "status": "complete_development_only",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\SESSION_CLOSEOUT_AI_AGENT_ASSIGNMENT_LINK_AIF086_2026-08-16.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "agent_assignment_link.proof_registry",
+      "label": "Assignment Link X64 Proof Registry Fragment",
+      "section": "portal.agent_assignment_links",
+      "kind": "yaml",
+      "status": "runtime_observed",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\registries\\proofs.d\\proof.ai.agent_assignment_link_x64.yaml"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "agent_assignment_link.proof_transcript",
+      "label": "Assignment Link X64 Accepted Transcript",
+      "section": "portal.agent_assignment_links",
+      "kind": "text",
+      "status": "accepted",
+      "truth_state": "runtime_observed",
+      "proof_state": "validated",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\proofs\\runs\\20260816_101951_agent_assignment_link_regression.txt"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "agent_assignment_link.identity_route",
+      "label": "Agent to Assignment",
+      "section": "portal.agent_assignment_links",
+      "kind": "relation_route",
+      "status": "source_defined",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "agent_assignment_link.conversation_route",
+      "label": "Shared Multi-Agent Conversation",
+      "section": "portal.agent_assignment_links",
+      "kind": "relation_route",
+      "status": "source_defined",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "agent_assignment_link.bbs_route",
+      "label": "Conversation to AI-BBS and Pseudo-Chat",
+      "section": "portal.agent_assignment_links",
+      "kind": "relation_route",
+      "status": "source_defined",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "agent_assignment_link.ui_route",
+      "label": "Conversation to Project Name and UI Position",
+      "section": "portal.agent_assignment_links",
+      "kind": "relation_route",
+      "status": "observational",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "agent_assignment_link.v2_participant_route",
+      "label": "V2 Project, Conversation, Assignment, and Member Route",
+      "section": "portal.agent_assignment_links",
+      "kind": "relation_route",
+      "status": "review_needed",
+      "truth_state": "source_defined",
+      "proof_state": "design_intended",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "agent_assignment_link.v2_provider_ui_route",
+      "label": "V2 Provider Route and UI Observation",
+      "section": "portal.agent_assignment_links",
+      "kind": "relation_route",
+      "status": "review_needed",
+      "truth_state": "source_defined",
+      "proof_state": "design_intended",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "agent_assignment_link.v2_bbs_route",
+      "label": "V2 Conversation to Durable AI-BBS",
+      "section": "portal.agent_assignment_links",
+      "kind": "relation_route",
+      "status": "review_needed",
+      "truth_state": "source_defined",
+      "proof_state": "design_intended",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "agent_assignment_link.v2_message_provenance_route",
+      "label": "V2 Message Origin, Actor, Principal, and Writer Route",
+      "section": "portal.agent_assignment_links",
+      "kind": "relation_route",
+      "status": "review_needed",
+      "truth_state": "source_defined",
+      "proof_state": "design_intended",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "app.dottalkpp.sql_family",
+      "label": "SQL Family (SQLsel)",
+      "section": "portal.apps",
+      "kind": "query_surface",
+      "status": "active_source",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "root",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli"
+        }
+      ],
       "runnable": false,
       "provenance_state": "",
       "derived_from": []
@@ -1608,6 +3406,31 @@
         {
           "field": "docs",
           "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\SQLSEL_PDLC_LANE_V1.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\BUFFER_VISIBILITY_TWO_FAMILIES_V1.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\EVALUATOR_DIFFERENTIAL_HARNESS_SCOPE_V1.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\EXPORT_SDF_PDLC_CLOSEOUT_V1.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\X32_TRADITIONAL_XBASE_SUPPORT_LANE_V1.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
           "path": "D:\\code\\ccode\\docs\\maintenance\\ARCTICTALK_RETRO_TUI_WORKBENCH_LANE_V1.md"
         },
         {
@@ -1619,6 +3442,65 @@
           "field": "docs",
           "state": "ok",
           "path": "D:\\code\\ccode\\docs\\maintenance\\RETRO_LANE_PROPOSAL_V2_20260726.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\MEMO_ZOO_ORTHOGONALITY_STRESS_CHARTER_V1.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\MEMO_OBJECT_CHALLENGE_LANE_V1.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\MEMO_RESIDENT_MINIDB_V1.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\RAM_MINIDB_MEMO_WORKSPACE_OPERATIONS_V1.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\AI_MEMO_WAL_ATOMICITY_LANE_V1.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\WORKSPACE_MEMO_RESIDENCE_PLAN_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "project.x64base.sqlsel",
+      "label": "SQLsel -- Set-Oriented SQL Surface",
+      "section": "portal.projects",
+      "kind": "pdlc_project",
+      "status": "active_development",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "root",
+          "state": "ok",
+          "path": "D:\\code\\ccode"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\SQLSEL_PDLC_LANE_V1.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\manuals\\user\\sqlsel.md"
         }
       ],
       "runnable": false,
@@ -1743,32 +3625,32 @@
       "paths": [
         {
           "field": "root",
-          "state": "ok",
+          "state": "missing",
           "path": "C:\\labtalk"
         },
         {
           "field": "docs",
-          "state": "ok",
+          "state": "missing",
           "path": "C:\\labtalk\\README.md"
         },
         {
           "field": "docs",
-          "state": "ok",
+          "state": "missing",
           "path": "C:\\labtalk\\STAGING_POLICY.md"
         },
         {
           "field": "docs",
-          "state": "ok",
+          "state": "missing",
           "path": "C:\\labtalk\\publication\\labtalk-website-pipeline.md"
         },
         {
           "field": "docs",
-          "state": "ok",
+          "state": "missing",
           "path": "C:\\labtalk\\registries\\projects.yaml"
         },
         {
           "field": "docs",
-          "state": "ok",
+          "state": "missing",
           "path": "C:\\labtalk\\registries\\intake.yaml"
         }
       ],
@@ -1855,6 +3737,158 @@
       "derived_from": []
     },
     {
+      "id": "project.ai_friendly.agent_memory",
+      "label": "External Agent Memory & Continuity",
+      "section": "portal.projects",
+      "kind": "knowledge_project",
+      "status": "design_intended",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "root",
+          "state": "ok",
+          "path": "D:\\code\\ccode"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\EXTERNAL_AGENT_MEMORY_LANE_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "project.ai_systems.integration",
+      "label": "AI Systems Integration SDLC",
+      "section": "portal.projects",
+      "kind": "sdlc_project",
+      "status": "m1_accepted_m2_architecture_active",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "root",
+          "state": "ok",
+          "path": "D:\\code\\ccode"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\AI_SYSTEMS_INTEGRATION_SDLC_CHARTER_V1.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\AI_SYSTEMS_CROSSWALK_V1.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\AI_SYSTEMS_INTEGRATION_DISCOVERY_AND_NEEDS_ASSESSMENT_M1_V1.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\AI_SYSTEMS_INTEGRATION_REQUIREMENTS_V1.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\contracts\\AI_AGENT_ASSIGNMENT_LINK_CONTRACT_V1.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\AI_AGENT_ASSIGNMENT_LINK_MAINTENANCE_MANUAL_V1.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\dottalkpp\\data\\schemas\\syschatlnk_v1.schema.json"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\registries\\agent_assignment_links.yaml"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\diagrams\\ai_agent_assignment_link_pfd_v1.mmd"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\diagrams\\ai_agent_assignment_link_dfd_v1.mmd"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\contracts\\TRESPASS_AND_DELEGATED_AUTHORIZATION_CONTRACT_V1.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\SESSION_CLOSEOUT_AI_SYSTEMS_INTEGRATION_SDLC_M0_2026-08-03.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\SESSION_CLOSEOUT_AI_SYSTEMS_INTEGRATION_SDLC_M1_2026-08-03.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\LABTALK_SDLC_FRAMEWORK_v0.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "project.bbs.cooperation",
+      "label": "BBS Cooperation Medium (participant-agnostic)",
+      "section": "portal.projects",
+      "kind": "integration_project",
+      "status": "charter_with_autonomous_poc",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "root",
+          "state": "ok",
+          "path": "D:\\code\\ccode"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\BBS_SESSION_EXCHANGE_GUARD_LANE_V1.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\BBS_AGENCY_LEGS_LANE_V1.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\ai-friendly\\AGENCY_MODEL_V1.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\ai-friendly\\PSEUDO_CHAT_BOARD.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
       "id": "project.pycrud",
       "label": "pycrud Companion",
       "section": "portal.projects",
@@ -1882,6 +3916,55 @@
           "field": "launchers",
           "state": "ok",
           "path": "D:\\code\\ccode\\run-pycrud.ps1"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "project.pydottalk",
+      "label": "PyDotTalk Python Binding",
+      "section": "portal.projects",
+      "kind": "binding_project",
+      "status": "active_beta",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "root",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\bindings\\pydottalk"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\bindings\\PYDOTTALK_STARTER_README.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\PYDOTTALK_SDLC_CHARTER_v0.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\contracts\\PYTHON_BINDING_TRUST_CONTRACT_V1.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\PYDOTTALK_CAPABILITY_REVIEW_AND_CRUD_READINESS_V1.md"
+        },
+        {
+          "field": "launchers",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\build_pydottalk.ps1"
+        },
+        {
+          "field": "launchers",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\run-pydottalk.ps1"
         }
       ],
       "runnable": false,
@@ -1988,6 +4071,16 @@
           "field": "docs",
           "state": "ok",
           "path": "D:\\code\\ccode\\docs\\maintenance\\DOTSCRIPT_STOP_ON_ERROR_LANE_V1.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\DOTSCRIPT_FUNCTION_SURFACE_PRIOR_ART_V1.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\DOTSCRIPT_BUILD_PLAN_V1.md"
         }
       ],
       "runnable": false,
@@ -2046,6 +4139,11 @@
           "field": "docs",
           "state": "ok",
           "path": "D:\\code\\ccode\\docs\\maintenance\\HISTORICAL_DATABASE_MIGRATION_PDLC_PROJECT_V1.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\CASCADE_ERP_METADATA_ETL_LEARNING_GOLD_STANDARD_LANE_V1.md"
         },
         {
           "field": "docs",
@@ -2134,6 +4232,45 @@
           "field": "docs",
           "state": "ok",
           "path": "D:\\code\\ccode\\labtalk\\registries\\ai_portal.yaml"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "project.x64base.gui",
+      "label": "UIDEF -- the UI description layer",
+      "section": "portal.projects",
+      "kind": "gui_project",
+      "status": "active_beta",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "root",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\gui"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\gui\\README.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\AIF120_DESIGN_TABLE_CONTRACT_V1.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\AIF120_LANE_STATUS_AND_FIXTURES_V1.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\AIF120_PROJECT_PROMOTION_V1.md"
         }
       ],
       "runnable": false,
@@ -2335,6 +4472,249 @@
       "derived_from": []
     },
     {
+      "id": "lesson.career.a_documented_option_is_not_an_honoured_option",
+      "label": "A Documented Option Is Not an Honoured Option",
+      "section": "portal.lessons",
+      "kind": "lesson",
+      "status": "draft",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\lessons\\career\\a_documented_option_is_not_an_honoured_option_v0.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "lesson.career.a_gitignored_path_is_invisible_to_your_sweep",
+      "label": "A Gitignored Path Is Invisible to Your Sweep",
+      "section": "portal.lessons",
+      "kind": "lesson",
+      "status": "draft",
+      "truth_state": "",
+      "proof_state": "observed",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\lessons\\career\\a_gitignored_path_is_invisible_to_your_sweep_v0.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "lesson.career.a_script_never_run_is_not_evidence",
+      "label": "A Script That Has Never Been Run Is Not Evidence",
+      "section": "portal.lessons",
+      "kind": "lesson",
+      "status": "draft",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\lessons\\career\\a_script_never_run_is_not_evidence_v0.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "lesson.career.a_wrong_answer_that_looks_right",
+      "label": "The Worst Failure Is the One That Returns a Number",
+      "section": "portal.lessons",
+      "kind": "lesson",
+      "status": "draft",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\lessons\\career\\a_wrong_answer_that_looks_right_v0.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "lesson.career.discovery_by_documentation",
+      "label": "Discovery by Documentation",
+      "section": "portal.lessons",
+      "kind": "lesson",
+      "status": "draft",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\lessons\\career\\discovery_by_documentation_v0.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "lesson.career.entities_and_the_bridge",
+      "label": "Entities and the Bridge: Build Up Solid, Build Down Empirical",
+      "section": "portal.lessons",
+      "kind": "lesson",
+      "status": "draft",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\lessons\\career\\entities_and_the_bridge_v0.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "lesson.career.legacy_systems_as_labs",
+      "label": "Turning Legacy Systems into Learning Labs",
+      "section": "portal.lessons",
+      "kind": "lesson",
+      "status": "draft",
+      "truth_state": "",
+      "proof_state": "case_registered",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\lessons\\career\\legacy_systems_as_labs_v0.md"
+        },
+        {
+          "field": "evidence",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\media\\LabTalk_DotTalkpp_Systems_Storyboard_Deck.pptx"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "lesson.career.proof_first_development",
+      "label": "Proof-First Development Lessons",
+      "section": "portal.lessons",
+      "kind": "lesson",
+      "status": "draft",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\lessons\\career\\proof_first_development_v0.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "lesson.career.the_tree_already_has_it",
+      "label": "Search Before You Build, and Trust the Enforcer Over the Spec",
+      "section": "portal.lessons",
+      "kind": "lesson",
+      "status": "draft",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\lessons\\career\\the_tree_already_has_it_v0.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "lesson.student.agency_who_may_act",
+      "label": "Agency: Who May Act, and Who Answers For It",
+      "section": "portal.lessons",
+      "kind": "lesson",
+      "status": "draft",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\lessons\\student\\agency_who_may_act_v0.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "lesson.student.cursor_versus_set",
+      "label": "Two Ways to Ask a Database a Question",
+      "section": "portal.lessons",
+      "kind": "lesson",
+      "status": "idea",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "path",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\lessons\\student\\cursor_versus_set_v0.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "lesson.student.database_history_trail",
+      "label": "Data Systems History Trail",
+      "section": "portal.lessons",
+      "kind": "lesson",
+      "status": "draft",
+      "truth_state": "",
+      "proof_state": "case_registered",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\lessons\\student\\data_systems_history_trail_v0.md"
+        },
+        {
+          "field": "evidence",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\media\\LabTalk_DotTalkpp_Systems_Storyboard_Deck.pptx"
+        },
+        {
+          "field": "evidence",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\LABTALK_EDUCATION_MAP_v0.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
       "id": "lesson.student.properties_of_valid_data",
       "label": "The Properties of Valid Data",
       "section": "portal.lessons",
@@ -2392,90 +4772,18 @@
       "derived_from": []
     },
     {
-      "id": "lesson.student.database_history_trail",
-      "label": "Data Systems History Trail",
+      "id": "lesson.student.three_things_called_a_set",
+      "label": "Three Things Called a Set",
       "section": "portal.lessons",
       "kind": "lesson",
-      "status": "draft",
-      "truth_state": "",
-      "proof_state": "case_registered",
-      "paths": [
-        {
-          "field": "path",
-          "state": "ok",
-          "path": "D:\\code\\ccode\\labtalk\\lessons\\student\\data_systems_history_trail_v0.md"
-        },
-        {
-          "field": "evidence",
-          "state": "ok",
-          "path": "D:\\code\\ccode\\docs\\media\\LabTalk_DotTalkpp_Systems_Storyboard_Deck.pptx"
-        },
-        {
-          "field": "evidence",
-          "state": "ok",
-          "path": "D:\\code\\ccode\\labtalk\\LABTALK_EDUCATION_MAP_v0.md"
-        }
-      ],
-      "runnable": false,
-      "provenance_state": "",
-      "derived_from": []
-    },
-    {
-      "id": "lesson.career.proof_first_development",
-      "label": "Proof-First Development Lessons",
-      "section": "portal.lessons",
-      "kind": "lesson",
-      "status": "draft",
+      "status": "idea",
       "truth_state": "",
       "proof_state": "source_defined",
       "paths": [
         {
           "field": "path",
           "state": "ok",
-          "path": "D:\\code\\ccode\\labtalk\\lessons\\career\\proof_first_development_v0.md"
-        }
-      ],
-      "runnable": false,
-      "provenance_state": "",
-      "derived_from": []
-    },
-    {
-      "id": "lesson.career.legacy_systems_as_labs",
-      "label": "Turning Legacy Systems into Learning Labs",
-      "section": "portal.lessons",
-      "kind": "lesson",
-      "status": "draft",
-      "truth_state": "",
-      "proof_state": "case_registered",
-      "paths": [
-        {
-          "field": "path",
-          "state": "ok",
-          "path": "D:\\code\\ccode\\labtalk\\lessons\\career\\legacy_systems_as_labs_v0.md"
-        },
-        {
-          "field": "evidence",
-          "state": "ok",
-          "path": "D:\\code\\ccode\\docs\\media\\LabTalk_DotTalkpp_Systems_Storyboard_Deck.pptx"
-        }
-      ],
-      "runnable": false,
-      "provenance_state": "",
-      "derived_from": []
-    },
-    {
-      "id": "lesson.student.agency_who_may_act",
-      "label": "Agency: Who May Act, and Who Answers For It",
-      "section": "portal.lessons",
-      "kind": "lesson",
-      "status": "draft",
-      "truth_state": "",
-      "proof_state": "runtime_observed",
-      "paths": [
-        {
-          "field": "path",
-          "state": "ok",
-          "path": "D:\\code\\ccode\\labtalk\\lessons\\student\\agency_who_may_act_v0.md"
+          "path": "D:\\code\\ccode\\labtalk\\lessons\\student\\three_things_called_a_set_v0.md"
         }
       ],
       "runnable": false,
@@ -2964,6 +5272,19 @@
       "derived_from": []
     },
     {
+      "id": "design_intended",
+      "label": "design_intended",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
       "id": "source_defined",
       "label": "source_defined",
       "section": "portal.proofs",
@@ -3081,8 +5402,8 @@
       "derived_from": []
     },
     {
-      "id": "proof.edref.topic_exists",
-      "label": "EDREF topic exists",
+      "id": "proof.agency.model",
+      "label": "Agency model -- capacity to act plus accountability for having acted",
       "section": "portal.proofs",
       "kind": "registry_item",
       "status": "",
@@ -3092,64 +5413,22 @@
         {
           "field": "source",
           "state": "ok",
-          "path": "D:\\code\\ccode\\include\\edref.hpp"
-        }
-      ],
-      "runnable": false,
-      "provenance_state": "",
-      "derived_from": []
-    },
-    {
-      "id": "proof.case.registry_exists",
-      "label": "Case registry exists",
-      "section": "portal.proofs",
-      "kind": "registry_item",
-      "status": "",
-      "truth_state": "",
-      "proof_state": "case_registered",
-      "paths": [
+          "path": "D:\\code\\ccode\\docs\\ai-friendly\\AGENCY_MODEL_V1.md"
+        },
         {
-          "field": "source",
+          "field": "related",
           "state": "ok",
-          "path": "D:\\code\\ccode\\docs\\cases\\REGISTRY_CASES_v0.csv"
-        }
-      ],
-      "runnable": false,
-      "provenance_state": "",
-      "derived_from": []
-    },
-    {
-      "id": "proof.help.cmdhelp_source_exists",
-      "label": "CMDHELP source exists",
-      "section": "portal.proofs",
-      "kind": "registry_item",
-      "status": "",
-      "truth_state": "",
-      "proof_state": "source_defined",
-      "paths": [
+          "path": "D:\\code\\ccode\\labtalk\\lessons\\student\\agency_who_may_act_v0.md"
+        },
         {
-          "field": "source",
+          "field": "related",
           "state": "ok",
-          "path": "D:\\code\\ccode\\src\\cli\\cmdhelp.cpp"
-        }
-      ],
-      "runnable": false,
-      "provenance_state": "",
-      "derived_from": []
-    },
-    {
-      "id": "proof.selfdoc.comments_workflow_exists",
-      "label": "Comments to HELP workflow exists",
-      "section": "portal.proofs",
-      "kind": "registry_item",
-      "status": "",
-      "truth_state": "",
-      "proof_state": "source_defined",
-      "paths": [
+          "path": "D:\\code\\ccode\\docs\\ai-friendly\\AI_ROLES_TAXONOMY_V1.md"
+        },
         {
-          "field": "source",
+          "field": "related",
           "state": "ok",
-          "path": "D:\\code\\ccode\\docs\\maintenance\\COMMENTS_HELP_PROOF_WORKFLOW_v1.md"
+          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\AI_ENGINEERING_STANDARDS_SEED_V1.md"
         }
       ],
       "runnable": false,
@@ -3157,8 +5436,8 @@
       "derived_from": []
     },
     {
-      "id": "proof.lab.database_literacy_starter.first_run",
-      "label": "Database Literacy Starter first portal/runtime transcript",
+      "id": "proof.ai.agent_assignment_link_x64",
+      "label": "SYSCHATLNK X64 schema create and identifier readback",
       "section": "portal.proofs",
       "kind": "registry_item",
       "status": "",
@@ -3168,7 +5447,37 @@
         {
           "field": "source",
           "state": "ok",
-          "path": "D:\\code\\ccode\\labtalk\\proofs\\runs\\20260702_155913_runtime_database_literacy_starter.txt"
+          "path": "D:\\code\\ccode\\labtalk\\proofs\\runs\\20260816_101951_agent_assignment_link_regression.txt"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\contracts\\AI_AGENT_ASSIGNMENT_LINK_CONTRACT_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\AI_AGENT_ASSIGNMENT_LINK_MAINTENANCE_MANUAL_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\dottalkpp\\data\\schemas\\syschatlnk_v1.schema.json"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\dottalkpp\\data\\scripts\\ddl\\syschatlnk_x64_regression.dts"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\diagrams\\ai_agent_assignment_link_pfd_v1.mmd"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\diagrams\\ai_agent_assignment_link_dfd_v1.mmd"
         }
       ],
       "runnable": false,
@@ -3176,23 +5485,58 @@
       "derived_from": []
     },
     {
-      "id": "proof.lab.selfdoc.comments_to_contracts.first_run",
-      "label": "SelfDoc comments-to-contracts first CMDHELP/CMDHELPCHK run",
+      "id": "proof.ai.portal_live_fragment_maintenance",
+      "label": "AI Portal live fragment reports and guarded maintenance console",
       "section": "portal.proofs",
       "kind": "registry_item",
       "status": "",
       "truth_state": "",
-      "proof_state": "validated",
+      "proof_state": "runtime_observed",
       "paths": [
         {
           "field": "source",
           "state": "ok",
-          "path": "D:\\code\\ccode\\labtalk\\proofs\\runs\\20260704_075057_runtime_selfdoc_comments_to_contracts_first_lab.txt"
+          "path": "D:\\code\\ccode\\labtalk\\proofs\\runs\\20260816_230404_ai_portal_live_maintenance.txt"
         },
         {
           "field": "related",
           "state": "ok",
-          "path": "D:\\code\\ccode\\labtalk\\reports\\selfdoc\\lab_selfdoc_first_crosswalk_v0.md"
+          "path": "D:\\code\\ccode\\tools\\reports\\serve_dynamic_reports.py"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\tools\\reports\\build_reports.py"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\tools\\registries\\registry_fragments.py"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\tools\\dbf\\crud.py"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\tools\\dbf\\maint_server.py"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\tools\\dbf\\maint_console.html"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\start-ai.ps1"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\SESSION_CLOSEOUT_AI_PORTAL_LIVE_MAINTENANCE_AIF086_2026-08-16.md"
         }
       ],
       "runnable": false,
@@ -3200,82 +5544,18 @@
       "derived_from": []
     },
     {
-      "id": "proof.product.manualgen.board_preserved",
-      "label": "Manualgen product board and map preservation",
+      "id": "proof.ai.roles_taxonomy",
+      "label": "AI roles taxonomy - agents vs Ollama vs GPTbase",
       "section": "portal.proofs",
       "kind": "registry_item",
       "status": "",
       "truth_state": "",
-      "proof_state": "validated",
+      "proof_state": "source_defined",
       "paths": [
         {
           "field": "source",
           "state": "ok",
-          "path": "D:\\code\\ccode\\labtalk\\products\\manualgen_product_preservation_v0.md"
-        },
-        {
-          "field": "related",
-          "state": "ok",
-          "path": "D:\\code\\ccode\\labtalk\\products\\manualgen_product_board_v0.html"
-        },
-        {
-          "field": "related",
-          "state": "ok",
-          "path": "D:\\code\\ccode\\labtalk\\products\\manualgen_product_map_v0.md"
-        },
-        {
-          "field": "related",
-          "state": "ok",
-          "path": "D:\\code\\ccode\\tools\\manualgen\\README.md"
-        },
-        {
-          "field": "related",
-          "state": "ok",
-          "path": "D:\\code\\ccode\\docs\\manuals\\developer\\manualgen\\reports\\mdo_226_validate_summary_v1.csv"
-        },
-        {
-          "field": "related",
-          "state": "ok",
-          "path": "D:\\code\\ccode\\docs\\manuals\\developer\\manualgen\\reports\\mdo_226_build_dry_run_summary_v1.csv"
-        }
-      ],
-      "runnable": false,
-      "provenance_state": "",
-      "derived_from": []
-    },
-    {
-      "id": "proof.portal.truth_audit.latest",
-      "label": "Portal truth audit latest report",
-      "section": "portal.proofs",
-      "kind": "registry_item",
-      "status": "",
-      "truth_state": "",
-      "proof_state": "validated",
-      "paths": [
-        {
-          "field": "source",
-          "state": "ok",
-          "path": "D:\\code\\ccode\\labtalk\\reports\\portal\\portal_truth_audit_latest.md"
-        },
-        {
-          "field": "related",
-          "state": "ok",
-          "path": "D:\\code\\ccode\\labtalk\\reports\\portal\\portal_truth_audit_latest.json"
-        },
-        {
-          "field": "related",
-          "state": "ok",
-          "path": "D:\\dev\\x64base-site\\content\\docs\\labtalk\\sdlc.mdx"
-        },
-        {
-          "field": "related",
-          "state": "ok",
-          "path": "D:\\dev\\x64base-site\\content\\docs\\labtalk\\selfdoc-lane.mdx"
-        },
-        {
-          "field": "related",
-          "state": "ok",
-          "path": "D:\\dev\\x64base-site\\content\\docs\\dev\\selfdoc-website-publication.mdx"
+          "path": "D:\\code\\ccode\\docs\\ai-friendly\\AI_ROLES_TAXONOMY_V1.md"
         }
       ],
       "runnable": false,
@@ -3351,8 +5631,47 @@
       "derived_from": []
     },
     {
-      "id": "proof.ai_portal.lane_registered",
-      "label": "AI Portal Alpha/Experimental lane registered",
+      "id": "proof.ai_portal.cold_resume_retention",
+      "label": "Artifact-mediated cold resume -- an 11-day-dormant agent recovering position from a handoff",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\proofs\\AI_PORTAL_COLD_RESUME_RETENTION_20260812_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\agents\\HANDOFF_CLAUDE_COWORK_SANDBOX_BUILD_2026-08-12.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\AI_TIER1_SEED_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\DEVELOPMENT_ACCELERATION_ANALYSIS_LANE_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\BETA1_E1_GATE_FALSIFICATION_FINDINGS_2026-08-09.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.ai_portal.discoverability_caught_its_own_author",
+      "label": "The discoverability fix caught its own maker -- Phase 7 was the next dropped thread",
       "section": "portal.proofs",
       "kind": "registry_item",
       "status": "",
@@ -3360,19 +5679,24 @@
       "proof_state": "source_defined",
       "paths": [
         {
-          "field": "source",
+          "field": "related",
           "state": "ok",
-          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\AI_PORTAL_HARDENING_LANE_V1.md"
+          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\INTAKE_DISCOVERABILITY_GAP_AND_FIX_V1.md"
         },
         {
           "field": "related",
           "state": "ok",
-          "path": "D:\\code\\ccode\\labtalk\\registries\\ai_portal.yaml"
+          "path": "D:\\code\\ccode\\labtalk\\registries\\ai_report_index.yaml"
         },
         {
           "field": "related",
           "state": "ok",
-          "path": "D:\\code\\ccode\\dottalkpp\\docs\\architecture\\X64BASE_LABORATORY_CAMPUS_MISSION_VISION_V1.md"
+          "path": "D:\\code\\ccode\\docs\\maintenance\\PHASE7_MANUAL_WEB_ASCENT_PICKUP_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\agents\\CURRENT_TARGET.md"
         }
       ],
       "runnable": false,
@@ -3414,8 +5738,8 @@
       "derived_from": []
     },
     {
-      "id": "proof.ai_portal.source_mutation_contract_gate.v1",
-      "label": "Source mutation contract preflight registered",
+      "id": "proof.ai_portal.engineering_standards_seed",
+      "label": "AI Portal engineering-standards / definition-of-done seed on the mandatory path",
       "section": "portal.proofs",
       "kind": "registry_item",
       "status": "",
@@ -3425,27 +5749,27 @@
         {
           "field": "source",
           "state": "ok",
-          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md"
+          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\AI_ENGINEERING_STANDARDS_SEED_V1.md"
         },
         {
           "field": "related",
           "state": "ok",
-          "path": "D:\\code\\ccode\\docs\\contracts\\README.md"
+          "path": "D:\\code\\ccode\\AI_README.md"
         },
         {
           "field": "related",
           "state": "ok",
-          "path": "D:\\code\\ccode\\docs\\contracts\\CONTRACT_REGISTRY_V1.md"
+          "path": "D:\\code\\ccode\\AI_PORTAL.md"
         },
         {
           "field": "related",
           "state": "ok",
-          "path": "D:\\code\\ccode\\docs\\contracts\\CONTRACT_LIFECYCLE_V1.md"
+          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\ROOT_AI_PORTAL_ENTRY_V1.md"
         },
         {
           "field": "related",
           "state": "ok",
-          "path": "D:\\code\\ccode\\labtalk\\registries\\ai_portal.yaml"
+          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\AI_PORTAL_HARDENING_LANE_V1.md"
         }
       ],
       "runnable": false,
@@ -3453,26 +5777,16 @@
       "derived_from": []
     },
     {
-      "id": "proof.ai_portal.seed_connection_prototype_direction.v1",
-      "label": "AI fast-start seed connection prototype direction registered",
+      "id": "proof.ai_portal.lane_registered",
+      "label": "AI Portal Alpha/Experimental lane registered",
       "section": "portal.proofs",
       "kind": "registry_item",
       "status": "",
       "truth_state": "",
-      "proof_state": "design_intended",
+      "proof_state": "source_defined",
       "paths": [
         {
           "field": "source",
-          "state": "ok",
-          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\SEED_CONNECTION_PROTOTYPE_NOTE_V1.md"
-        },
-        {
-          "field": "related",
-          "state": "ok",
-          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\README.md"
-        },
-        {
-          "field": "related",
           "state": "ok",
           "path": "D:\\code\\ccode\\labtalk\\ai_portal\\AI_PORTAL_HARDENING_LANE_V1.md"
         },
@@ -3480,6 +5794,11 @@
           "field": "related",
           "state": "ok",
           "path": "D:\\code\\ccode\\labtalk\\registries\\ai_portal.yaml"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\dottalkpp\\docs\\architecture\\X64BASE_LABORATORY_CAMPUS_MISSION_VISION_V1.md"
         }
       ],
       "runnable": false,
@@ -3558,6 +5877,244 @@
           "field": "related",
           "state": "ok",
           "path": "D:\\code\\ccode\\labtalk\\registries\\ai_portal.yaml"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.ai_portal.seed_connection_prototype_direction.v1",
+      "label": "AI fast-start seed connection prototype direction registered",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "design_intended",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\SEED_CONNECTION_PROTOTYPE_NOTE_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\README.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\AI_PORTAL_HARDENING_LANE_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\registries\\ai_portal.yaml"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.ai_portal.source_mutation_contract_gate.v1",
+      "label": "Source mutation contract preflight registered",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\contracts\\README.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\contracts\\CONTRACT_REGISTRY_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\contracts\\CONTRACT_LIFECYCLE_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\registries\\ai_portal.yaml"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.aif078.slot_cost_measured_per_toolchain",
+      "label": "MAX_AREA per-slot cost measured on both supported toolchains; the two axes bind on different platforms",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\proofs\\runs\\20260801_aif078_g0_slot_cost_msvc.txt"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\proofs\\runs\\20260801_aif078_g0_slot_cost_gcc.txt"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\config\\build_vectors.cmake"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\include\\xbase.hpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\xbase\\dbf_file.cpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli\\shell.cpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\WORKSPACE_QUALIFIER_NAMESPACE_DEPTH_LANE_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.aif078.workspace_path_preserves_depth1",
+      "label": "DataAddress workspace scalar widened to a path with no depth-1 behavior change",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\proofs\\runs\\20260801_aif078_q7_workspace_path_msvc.txt"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\include\\reference\\data_address.hpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\reference\\data_address.cpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\tests\\test_pdlc_foundation_smoke.cpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\WORKSPACE_QUALIFIER_NAMESPACE_DEPTH_LANE_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.aside.diagnostic_removed_and_called_a_fix",
+      "label": "Silencing a warning was recorded as fixing it -- the commit message is wrong on the record",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\tools\\fullstack_docs\\ecoschema_map.py"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\ECOSCHEMA_MAP_V1.html"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\registries\\proofs.d\\proof.memo.zoo_orthogonality.yaml"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.aside.rule_caught_its_own_author",
+      "label": "The aside rule caught its own author over-scoping -- the same session it was coined",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\AI_GLOSSARY_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\tools\\ps\\py12_guard.ps1"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\tools\\staging\\check_host_python.py"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.bbs.guest",
+      "label": "AI-BBS guest leave-a-message (member.guest + board.guestbook)",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\ai-friendly\\AI_BBS_LOUNGE_ROOM_V1.md"
         }
       ],
       "runnable": false,
@@ -3660,64 +6217,6 @@
       "derived_from": []
     },
     {
-      "id": "proof.bbs.guest",
-      "label": "AI-BBS guest leave-a-message (member.guest + board.guestbook)",
-      "section": "portal.proofs",
-      "kind": "registry_item",
-      "status": "",
-      "truth_state": "",
-      "proof_state": "runtime_observed",
-      "paths": [
-        {
-          "field": "source",
-          "state": "ok",
-          "path": "D:\\code\\ccode\\docs\\ai-friendly\\AI_BBS_LOUNGE_ROOM_V1.md"
-        }
-      ],
-      "runnable": false,
-      "provenance_state": "",
-      "derived_from": []
-    },
-    {
-      "id": "proof.ai_portal.engineering_standards_seed",
-      "label": "AI Portal engineering-standards / definition-of-done seed on the mandatory path",
-      "section": "portal.proofs",
-      "kind": "registry_item",
-      "status": "",
-      "truth_state": "",
-      "proof_state": "source_defined",
-      "paths": [
-        {
-          "field": "source",
-          "state": "ok",
-          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\AI_ENGINEERING_STANDARDS_SEED_V1.md"
-        },
-        {
-          "field": "related",
-          "state": "ok",
-          "path": "D:\\code\\ccode\\AI_README.md"
-        },
-        {
-          "field": "related",
-          "state": "ok",
-          "path": "D:\\code\\ccode\\AI_PORTAL.md"
-        },
-        {
-          "field": "related",
-          "state": "ok",
-          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\ROOT_AI_PORTAL_ENTRY_V1.md"
-        },
-        {
-          "field": "related",
-          "state": "ok",
-          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\AI_PORTAL_HARDENING_LANE_V1.md"
-        }
-      ],
-      "runnable": false,
-      "provenance_state": "",
-      "derived_from": []
-    },
-    {
       "id": "proof.bbs.worklog",
       "label": "AI-BBS worklog/handoff board + simplex cascade guard",
       "section": "portal.proofs",
@@ -3737,8 +6236,105 @@
       "derived_from": []
     },
     {
-      "id": "proof.ai.roles_taxonomy",
-      "label": "AI roles taxonomy - agents vs Ollama vs GPTbase",
+      "id": "proof.build.gcc_linux_warning_baseline",
+      "label": "GCC/Linux build of x64base under WSL -- warning baseline",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\proofs\\runs\\20260730_wsl_gcc_build_warnings.txt"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cnx\\cnx_file.cpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\identity\\identity_dbf_store.cpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\include\\value_normalize.hpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\xbase\\field_codec.cpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\include\\cli\\expr\\fn_string.hpp"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.case.registry_exists",
+      "label": "Case registry exists",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "case_registered",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\cases\\REGISTRY_CASES_v0.csv"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.cnx_orthogonality_recno_permutation",
+      "label": "The cross-generation index cocktail works BY CONSTRUCTION -- a CNX is a table-agnostic recno permutation, and REINDEX self-heals a foreign container",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli\\cmd_setorder.cpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli\\cmd_rebuild.cpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\TICKET_CNX_ON_X64_WARN_NOT_REFUSE_AND_WORKSPACE_OPEN_INDEX_SOURCE_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\TICKET_CDX_ON_V32_WARN_NOT_REFUSE_MIRROR_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.codev.system_corrects_its_extender",
+      "label": "The tree's own artifacts and gates corrected an outside AI extender, repeatedly",
       "section": "portal.proofs",
       "kind": "registry_item",
       "status": "",
@@ -3748,7 +6344,22 @@
         {
           "field": "source",
           "state": "ok",
-          "path": "D:\\code\\ccode\\docs\\ai-friendly\\AI_ROLES_TAXONOMY_V1.md"
+          "path": "D:\\code\\ccode\\docs\\maintenance\\SESSION_CLOSEOUT_SQLSEL_P0_P1_2026-07-29.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\registries\\ai_report_audit.yaml"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\AI_README.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\AI_REPORT_AUDIT_V2_SPEC.md"
         }
       ],
       "runnable": false,
@@ -3785,8 +6396,52 @@
       "derived_from": []
     },
     {
-      "id": "proof.agency.model",
-      "label": "Agency model -- capacity to act plus accountability for having acted",
+      "id": "proof.edref.storage_was_already_decided",
+      "label": "The EDREF storage question was answered in July and half-built; the search nearly produced a duplicate schema instead",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\include\\edref.hpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\dottalkpp\\data\\help\\HELP_TOPIC.dbf"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\config\\package\\lean.manifest"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\config\\package\\educational.manifest"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\help\\helpdata_export_dbf.cpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\tools\\fullstack_docs\\edrefcheck_v1.py"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.edref.topic_exists",
+      "label": "EDREF topic exists",
       "section": "portal.proofs",
       "kind": "registry_item",
       "status": "",
@@ -3796,22 +6451,1110 @@
         {
           "field": "source",
           "state": "ok",
-          "path": "D:\\code\\ccode\\docs\\ai-friendly\\AGENCY_MODEL_V1.md"
+          "path": "D:\\code\\ccode\\include\\edref.hpp"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.engine.append_blank_catalog_drift",
+      "label": "Runtime APPEND rejects the BLANK token the command catalog documents (silent clobber)",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\proofs\\runs\\20260804_append_blank_catalog_drift_ram.txt"
         },
         {
           "field": "related",
           "state": "ok",
-          "path": "D:\\code\\ccode\\labtalk\\lessons\\student\\agency_who_may_act_v0.md"
+          "path": "D:\\code\\ccode\\docs\\maintenance\\COMMAND_CATALOG_RUNTIME_DRIFT_PDLC_LANE_V1.md"
         },
         {
           "field": "related",
           "state": "ok",
-          "path": "D:\\code\\ccode\\docs\\ai-friendly\\AI_ROLES_TAXONOMY_V1.md"
+          "path": "D:\\code\\ccode\\docs\\maintenance\\PYDOTTALK_CAPABILITY_REVIEW_AND_CRUD_READINESS_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli\\cmd_append.cpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli\\cmd_append_blank.cpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\dottalkpp\\data\\scripts\\mem_proof.dts"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.engine.key_metadata_survives_workspace_roundtrip",
+      "label": "PRIMARY/UNIQUE key declarations persist through WORKSPACE SAVE and LOAD",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\proofs\\runs\\20260729_aif074_key_metadata_roundtrip.txt"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\include\\cli\\unique_registry.hpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli\\unique_registry.cpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli\\cmd_setunique.cpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli\\cmd_workspace.cpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli\\cmd_validate_unique.cpp"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.engine.scan_limit_reports_truncation",
+      "label": "Relation scans announce when the scan limit stopped them",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\proofs\\runs\\20260729_aif074_rel_scanlimit_honesty.txt"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli\\set_relations.cpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli\\set_relations.hpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli\\cmd_rel.cpp"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.engine.two_read_families_buffer_visibility",
+      "label": "Two coherent read families; buffer-visibility defects occur only at the hybrid seam",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\proofs\\runs\\20260729_aif074_smartbrowser_tuple_filter_interactive.txt"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\proofs\\runs\\20260729_aif074_buffer_visibility_probe.txt"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\proofs\\runs\\20260729_aif074_buffer_visibility_probe_v2.txt"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli\\expr_tuple_glue.hpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli\\db_tuple_stream.cpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli\\smartlist_output.cpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli\\sqlsel_statement.cpp"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.engine.typed_equality_crosses_declared_types",
+      "label": "Relation equality compares numerically whenever both sides are numeric literals",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\proofs\\runs\\20260729_aif074_rdb_truth_typed_equality.txt"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli\\set_relations.cpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\dottalkpp\\data\\scripts\\rdb_truth_check_v1.py"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.evidence.layer_versioned",
+      "label": "Proof transcripts un-ignored and committed -- registry claims now verifiable from a clone",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\AI_EVIDENCE_LAYER_VERSIONING_LANE_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.export.sdf.fixed_width_export",
+      "label": "EXPORT SDF writes fixed-width records using the shared TUPTALK row formatter",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\proofs\\runs\\20260727_export_sdf_regression.txt"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli\\cmd_export.cpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\include\\cli\\fixed_width_row.hpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli\\cmd_tuptalk.cpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli\\cmd_regression.cpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\help\\helpdata_messages.cpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\include\\dotref.hpp"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.golden_rule_verify_before_assert",
+      "label": "The golden rule, earned -- host-only changes asserted \"done\" broke; ground truth came only on running",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\AI_GLOSSARY_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\tools\\reports\\serve_dynamic_reports.py"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\start-ai.ps1"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\tools\\reports\\bbs_auth_relay.py"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.governance.availability_is_not_adoption",
+      "label": "A foreign carrier was selected and signed because it was available -- a failure of proof, not of reasoning, and it passed two onboarded AI agencies",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\AIF112_OWNER_RULING_D1_D3_AND_DOGFOOD_DEFINITION_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\external_ai_intake\\aif112_document_control_acceptance_2026-08-15\\ACCEPTANCE_NOTE.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\external_ai_intake\\aif112_phase0_decisions_2026-08-15\\PHASE0_DECISIONS.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\AIF112_PRIOR_ART_INVENTORY_AND_DBF_REVISION_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\AI_GLOSSARY_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.grok_lane1_coworker_kind_collision",
+      "label": "First ai-ai coworker lane delivery (Grok) landed clean AND its one engine error was caught by ground-truthing before apply",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\LANE_L1_WRITE_ADAPTER_ASSIGNMENT_GROK_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\GROK_PUSH_L1_WRITE_ADAPTER_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\include\\bbs\\bbs_schema.hpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\tools\\memory\\promote.py"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.help.cmdhelp_source_exists",
+      "label": "CMDHELP source exists",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli\\cmdhelp.cpp"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.lab.database_literacy_starter.first_run",
+      "label": "Database Literacy Starter first portal/runtime transcript",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\proofs\\runs\\20260702_155913_runtime_database_literacy_starter.txt"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.lab.selfdoc.comments_to_contracts.first_run",
+      "label": "SelfDoc comments-to-contracts first CMDHELP/CMDHELPCHK run",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "validated",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\proofs\\runs\\20260704_075057_runtime_selfdoc_comments_to_contracts_first_lab.txt"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\reports\\selfdoc\\lab_selfdoc_first_crosswalk_v0.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.lmdb.mapsize_ladder_honoured_after_fix",
+      "label": "BUILDLMDB TINY survives an index attach -- the size ladder is honoured",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\proofs\\runs\\20260727_aif065_tiny_survives_attach_postfix.txt"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\xindex\\lmdb_backend.cpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\tools\\proofs\\run_proof.ps1"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\LMDB_MAPSIZE_OVERRIDE_LANE_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.lmdb.mapsize_override_on_attach",
+      "label": "LMDB env resizes 128 MiB -> 1 GiB on index auto-attach, ignoring the BUILDLMDB ladder",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\proofs\\runs\\20260727_aif065_mapsize_attach.txt"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\xindex\\cdx_backend.cpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\xindex\\lmdb_backend.cpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli\\cmd_buildlmdb.cpp"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.lmdb.mapsize_override_replication_sysfunc",
+      "label": "LMDB mapsize override replicates on a second table (SYSFUNC, 69 rows)",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\proofs\\runs\\20260727_aif065_mapsize_tiny_survives_attach.txt"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\tools\\proofs\\run_proof.ps1"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\xindex\\cdx_backend.cpp"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.memo.object_challenge",
+      "label": "Memo object challenge -- an open exercise in AI cooperation",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "design_intended",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\MEMO_OBJECT_CHALLENGE_LANE_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\MEMO_ZOO_ORTHOGONALITY_STRESS_CHARTER_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\memo\\memo_zoo.cpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\MEMO_RESIDENT_MINIDB_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.memo.zoo_orthogonality",
+      "label": "Quantum Memo Zoo -- memo store stays payload-agnostic and orthogonal under adversarial chaos",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\MEMO_ZOO_ORTHOGONALITY_STRESS_CHARTER_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\memo\\memo_zoo.cpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\memo\\memo_ref.cpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\MEMO_OBJECT_CHALLENGE_LANE_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\MEMO_RESIDENT_MINIDB_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\RAM_MINIDB_MEMO_WORKSPACE_OPERATIONS_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.owner_dogfood_caught_cross_slot_leak",
+      "label": "A green seven-phase regression missed what two minutes of owner dogfood caught -- the proof environment could not express the failure",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli\\cmd_workspace.cpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\dottalkpp\\data\\scripts\\index_x64_cnx_smoke.dts"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\TICKET_CNX_ON_X64_WARN_NOT_REFUSE_AND_WORKSPACE_OPEN_INDEX_SOURCE_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\GATE_GOVERNANCE_LANE_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.pdlc.cobol_fixed_record.hop_closed",
+      "label": "DBF to fixed-record to GnuCOBOL read, 200 records",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\proofs\\runs\\20260726T233000Z_pdlc_cobol_fixed_record_hop.txt"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\tests\\conversion\\12_cobol_fixed_record_v1.dts"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\dottalkpp\\data\\projects\\cobol\\src\\first_cobol_test.cob"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\edu\\edu_cobol.cpp"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.pdlc.csv_to_x64base.type_fidelity",
+      "label": "CSV to x64base preserves types, NULLs and long names",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\proofs\\runs\\20260726T233000Z_pdlc_csv_to_x64base_type_fidelity.txt"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\tests\\conversion\\02_csv_to_dbf_v2.dts"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\tests\\conversion\\10_crosswalk_cascade_items_v1.dts"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.pdlc.dbf_csv_dbf.roundtrip_lossless",
+      "label": "DBF to CSV to DBF round trip is lossless",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\proofs\\runs\\20260726T233000Z_pdlc_dbf_csv_dbf_roundtrip.txt"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\tests\\conversion\\05_roundtrip_dbf_csv_dbf_v2.dts"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\tests\\conversion\\README_SUITE_REPAIR_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.pdlc.dialect_ladder.dbase3_to_x64",
+      "label": "dBASE III to FoxPro 2.6 to VFP to x64 to x64 VECTOR, lossless",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\proofs\\runs\\20260726T233000Z_pdlc_historical_dialect_ladder.txt"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\tests\\conversion\\11_historical_dialect_ladder_v1.dts"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli\\cmd_copy.cpp"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.peer_review.header_only_findings",
+      "label": "A hosted peer with no tree access found three real defects from a header block",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\proofs\\PEER_REVIEW_HEADER_ONLY_FINDINGS_20260813_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\agents\\HANDOFF_CLAUDE_COWORK_SITE_PUBLISH_ECO_2026-08-13.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\PEER_DESIGN_REVIEW_SESSION_PROTOCOL_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\peer_design_review\\PDR-001_workspace_scanner_wbak_2026-08-12\\SESSION_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\BETA1_EXIT_GATE_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\proofs\\AI_PORTAL_COLD_RESUME_RETENTION_20260812_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.portal.truth_audit.latest",
+      "label": "Portal truth audit latest report",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "validated",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\reports\\portal\\portal_truth_audit_latest.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\reports\\portal\\portal_truth_audit_latest.json"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.product.manualgen.board_preserved",
+      "label": "Manualgen product board and map preservation",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "validated",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\products\\manualgen_product_preservation_v0.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\products\\manualgen_product_board_v0.html"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\products\\manualgen_product_map_v0.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\tools\\manualgen\\README.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\manuals\\developer\\manualgen\\reports\\mdo_226_validate_summary_v1.csv"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\manuals\\developer\\manualgen\\reports\\mdo_226_build_dry_run_summary_v1.csv"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.selfdoc.comments_workflow_exists",
+      "label": "Comments to HELP workflow exists",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\COMMENTS_HELP_PROOF_WORKFLOW_v1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.site.invalid_opacity_renders_nothing",
+      "label": "Seven Tailwind opacity values were off-scale, so the utilities generated nothing and a hero caption sat unreadable on the live site",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\dev\\x64base-site\\app\\page.tsx"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\dev\\x64base-site\\app\\globals.css"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\dev\\x64base-site\\tailwind.config.ts"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\registries\\proofs.d\\proof.tooling.catalog_state_blindness.yaml"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.sqlsel.select_statement_matches_sqlite",
+      "label": "SQLSEL SELECT ... FROM returns row sets equal to SQLite over the same data",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\proofs\\runs\\20260729_aif074_sqlsel_select_v1_oracle.txt"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli\\sqlsel_statement.cpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli\\sqlsel_statement.hpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli\\cmd_sql_select.cpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli\\workarea_util.cpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli\\tuple_builder.cpp"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.tooling.catalog_state_blindness",
+      "label": "A guard returned the same answer for missing, empty, and healthy -- so an empty catalog advertised as supported went unseen",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\include\\devref.hpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\tools\\fullstack_docs\\refcheck_v1.py"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\tools\\fullstack_docs\\edrefcheck_v1.py"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\AI_TIER1_SEED_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\registries\\proofs.d\\proof.tooling.local_path_detector_consolidation.yaml"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.tooling.cross_platform",
+      "label": "Workflow tooling ported to cross-platform Python, each tested",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\SESSION_CLOSEOUT_CROSS_PLATFORM_TOOLING_2026-08-02.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\tools\\lanes\\lane.py"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\tools\\git\\restore_lfs.py"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\tools\\reports\\stage_public.py"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\tools\\registries\\registry_fragments.py"
         },
         {
           "field": "related",
           "state": "ok",
           "path": "D:\\code\\ccode\\labtalk\\ai_portal\\AI_ENGINEERING_STANDARDS_SEED_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.tooling.local_path_detector_consolidation",
+      "label": "Nine local-path detectors, seven blind to the environment the agents actually run in",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\tools\\common\\local_paths.json"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\tools\\common\\local_paths.py"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\tools\\staging\\rebuild-staging.ps1"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\tools\\reports\\stage_public.py"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\tools\\fullstack_docs\\ecoschema_map.py"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\registries\\proofs.d\\proof.aside.diagnostic_removed_and_called_a_fix.yaml"
         }
       ],
       "runnable": false,
@@ -3874,7 +7617,7 @@
       "kind": "registry_item",
       "status": "",
       "truth_state": "",
-      "proof_state": "design-intended",
+      "proof_state": "design_intended",
       "paths": [
         {
           "field": "source",
@@ -3887,8 +7630,8 @@
       "derived_from": []
     },
     {
-      "id": "proof.evidence.layer_versioned",
-      "label": "Proof transcripts un-ignored and committed -- registry claims now verifiable from a clone",
+      "id": "proof.workspace.writeback",
+      "label": "WORKSPACE WRITEBACK -- the memo/RAM to disk return leg, with its path resolution corrected",
       "section": "portal.proofs",
       "kind": "registry_item",
       "status": "",
@@ -3898,7 +7641,86 @@
         {
           "field": "source",
           "state": "ok",
-          "path": "D:\\code\\ccode\\docs\\maintenance\\AI_EVIDENCE_LAYER_VERSIONING_LANE_V1.md"
+          "path": "D:\\code\\ccode\\labtalk\\proofs\\runs\\workspace_writeback_pathfix_proof_20260812T195516Z.log"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\proofs\\runs\\workspace_writeback_proof_windows_20260812T180000Z.log"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\proofs\\runs\\workspace_writeback_proof_teed_20260812T174605Z.log"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\proofs\\runs\\workspace_writeback_proof_teed_20260812T174605Z.CORRECTION.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\SESSION_CLOSEOUT_WORKSPACE_WRITEBACK_REGRESSION_2026-08-12.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\MEMO_RESIDENT_MINIDB_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\dottalkpp\\data\\scripts\\workspace_writeback.dts"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli\\cmd_workspace.cpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli\\cmd_erase.cpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli\\expr\\fn_string.cpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli\\expr\\function_catalog.cpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli\\cmd_regression.cpp"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.worktree.lane_isolation",
+      "label": "Worktree-per-lane isolation -- sessions stop sharing one working tree",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "design_intended",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\AI_WORKTREE_LANE_ISOLATION_LANE_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\ai-friendly\\AI_GITLOCK_HOT_POTATO_LANE_V1.md"
         }
       ],
       "runnable": false,
@@ -3975,6 +7797,30 @@
           "field": "path",
           "state": "ok",
           "path": "D:\\code\\ccode\\docs\\reports\\BBS_ACCESS_REPORT.html"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "report.aif_rulings",
+      "label": "AI Portal -- Open Rulings",
+      "section": "portal.reports",
+      "kind": "html",
+      "status": "generated",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\reports\\AIF_RULINGS_REPORT.html"
+        },
+        {
+          "field": "source",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF_*RULING_SHEET*.md + labtalk\\ai_portal\\TIER0_STATE.md"
         }
       ],
       "runnable": false,
@@ -4377,7 +8223,7 @@
       "paths": [
         {
           "field": "path",
-          "state": "ok",
+          "state": "missing",
           "path": "D:\\code\\ccode\\wx.run.ps1"
         }
       ],
@@ -4396,7 +8242,7 @@
       "paths": [
         {
           "field": "path",
-          "state": "ok",
+          "state": "missing",
           "path": "D:\\code\\ccode\\wx.next.run.ps1"
         }
       ],
@@ -4510,7 +8356,7 @@
       "paths": [
         {
           "field": "path",
-          "state": "ok",
+          "state": "missing",
           "path": "D:\\code\\ccode\\run-wx.ps1"
         }
       ],
@@ -4529,7 +8375,7 @@
       "paths": [
         {
           "field": "path",
-          "state": "ok",
+          "state": "missing",
           "path": "D:\\code\\ccode\\run-wx-next.ps1"
         }
       ],

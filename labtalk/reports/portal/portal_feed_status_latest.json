@@ -20,8 +20,8 @@
     "feed_findings": 0,
     "feed_artifact_observations": 53,
     "assertions": 6,
-    "assertion_findings": 0,
-    "assertions_passing": 6,
+    "assertion_findings": 3,
+    "assertions_passing": 3,
     "feed_statuses": {
       "active": 4,
       "degraded": 2
@@ -109,7 +109,7 @@
       "expected": "DOCFLUSH-20260825-001",
       "actual": "DOCFLUSH-20260825-001",
       "passed": true,
-      "findings": 0
+      "findings": 1
     },
     {
       "claim_id": "assertion.fullstack.canonical_process",
@@ -119,7 +119,7 @@
       "expected": "development_closeout",
       "actual": "development_closeout",
       "passed": true,
-      "findings": 0
+      "findings": 1
     },
     {
       "claim_id": "assertion.fullstack.publication_state",
@@ -129,7 +129,7 @@
       "expected": "not_entered",
       "actual": "not_entered",
       "passed": true,
-      "findings": 0
+      "findings": 1
     },
     {
       "claim_id": "assertion.portal.feed_schema",
@@ -160,6 +160,8 @@
         "trigger.understand_why",
         "trigger.release_or_license",
         "trigger.persistent_memory",
+        "trigger.memory_retention",
+        "trigger.portal_history",
         "trigger.where_is",
         "trigger.read_write_dbf",
         "trigger.use_reference_authority",
@@ -192,6 +194,25 @@
   ],
   "findings": {
     "feeds": [],
-    "assertions": []
+    "assertions": [
+      {
+        "claim_id": "assertion.fullstack.current_run",
+        "field": "expires_at_utc",
+        "issue": "ASSERTION_EXPIRED at 2026-09-02 04:29:19+00:00",
+        "severity": "advisory"
+      },
+      {
+        "claim_id": "assertion.fullstack.canonical_process",
+        "field": "expires_at_utc",
+        "issue": "ASSERTION_EXPIRED at 2026-09-02 04:29:19+00:00",
+        "severity": "advisory"
+      },
+      {
+        "claim_id": "assertion.fullstack.publication_state",
+        "field": "expires_at_utc",
+        "issue": "ASSERTION_EXPIRED at 2026-09-02 04:29:19+00:00",
+        "severity": "advisory"
+      }
+    ]
   }
 }
