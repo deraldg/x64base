@@ -44,6 +44,13 @@ Lane: AIF-120 (application-ui-dsl). Owner: `member.derald`.
 Author: `member.ai.claude.cowork`. Status: **review-needed**.
 Measured at `0eb1ee5df`.
 
+**CORRECTED 2026-10-12, at `a67d65824`.** Section 3.3 was WRONG as first
+committed. It reported that no index containers exist anywhere, having measured
+only the DBF root. They exist, in the INDEXES root, which is a separate path
+slot by design. The section now says so, says what it said before, and keeps the
+one finding that survived the correction. Sections 4.5 and 5 cited the false
+claim and are adjusted. Nothing in sections 1, 2, 6 or 7 depended on it.
+
 No R-number is claimed. A proposal is not a ruling, and an R-number records a
 ruling; section 7 names the three questions an owner would actually be ruling
 on, and the number belongs with the answer.
@@ -116,6 +123,12 @@ areas, and the two it does not open are exactly STUDENTS and TEST64. Both files
 are present in `dbf/x64/`. This is the reported symptom, and it is not a
 missing file: it is a short posture.
 
+**RESOLVED 2026-10-12, after the measurement above.** The owner re-saved from a
+thirteen-area open: `WORKSPACE SAVE: ... 13 area(s)` / `wrote memo 'mcc_x64'
+(1452 B, oracle byte-compare OK)`. The MEMO carrier now matches the FILE
+carrier. The divergence is gone for this name. What is not gone is that nothing
+in the system would have told anyone it was there.
+
 ### 3.2 `mcc_v3`: there is no file carrier at all
 
 `mcc_v3` loads eleven areas and has no `.dtschema` anywhere in
@@ -124,28 +137,54 @@ listed and `mcc_v3` is not among them. Its only copy is the short one, so for
 this name there is no second source to compare against and no longer copy to
 recover from.
 
-### 3.3 The file carrier names twelve index files. Zero of them exist.
+**PARTLY RESOLVED 2026-10-12.** The same run wrote `mcc_v3` from the same
+thirteen-area open, so its memo is no longer short. It still has no `.dtschema`,
+so this section's actual claim -- that for this name there is no second source
+to compare against -- stands unchanged.
 
-`mcc_x64.dtschema` declares `indextype=CDX` and an `index=<stem>.cdx` for twelve
-of its thirteen areas. The flavor directories contain **no index containers at
-all**. Extension counts, `dottalkpp/data/dbf`:
+### 3.3 The declared indexes exist. They live in a different root, and this author looked in the wrong one.
 
-| directory | DBF | dtx | cdx | cnx | inx |
-|---|---|---|---|---|---|
-| `x64` | 14 | 2 | 0 | 0 | 0 |
-| `x32` | 13 | 0 | 0 | 0 | 0 |
-| `vfp` | 12 | 0 | 0 | 0 | 0 |
-| `og` | 12 | 0 | 0 | 0 | 0 |
-| `pinocchio` | 12 | 1 | 0 | 0 | 0 |
+**CORRECTED 2026-10-12, and the correction is the most useful thing in the
+section.** This read "The file carrier names twelve index files. Zero of them
+exist", and tabulated zero `.cdx`, `.cnx` and `.inx` across five directories.
+That measurement was taken in `dottalkpp/data/dbf/<flavor>/` and nowhere else.
+It was wrong.
 
-The two `.dtx` files in `dbf/x64` are `STUDENTS.dtx` and `TEACHERS.dtx`, both
-4096 bytes, both stamped 2026-10-11. Neither is named by any AREA line in
-`mcc_x64.dtschema`, which asks for `STUDENTS.cdx` and `TEACHERS.cdx`.
+Indexes do not live beside their tables. A workspace owns **three** path slots
+-- DBF, INDEXES and LMDB -- and they move as a set. That is R131, it is stated
+at length in the WORKSPACE contract this document quotes elsewhere, and
+`dottalkpp/data/scripts/x64.dts` sets all three. So `index=STUDENTS.cdx` in a
+posture resolves against IDXROOT, never against the directory holding
+`STUDENTS.dbf`.
 
-This row is the one a reader is most likely to mis-read, so: it is **not
-necessarily a defect**. The LOAD path rules deliberately that it is not, and
-section 4.2 quotes that ruling. It is listed here because it is a divergence no
-verb reports, which is a different claim from "it is broken".
+Measured in the right place, `dottalkpp/data/indexes/`:
+
+| root | containers |
+|---|---|
+| `indexes/x64` | 14 `.cdx`, 1 `.cnx`, 1 `.inx`, 17 `.cdx.meta` |
+| `indexes/x32` | 15 `.cnx` |
+| `indexes/vfp` | 14 `.cnx` |
+
+All twelve `.cdx` that `mcc_x64.dtschema` declares are present in
+`indexes/x64/`. The owner's run of 2026-10-12 confirms it from the other
+direction: twelve of thirteen areas reported `[index: <stem>.cdx, attached]`.
+
+**What survives is a better instance than the claim it replaces.**
+`indexes/x64/` holds `TEST64.cnx` -- a CNX, which is the v32 index type, sitting
+in the x64 index root, for the one table `mcc_x64.dtschema` declares as
+`indextype=NONE`. The owner's run opened `Area 12: opened 'TEST64.dbf'` with no
+index line at all. So there is an index container on disk for a table whose
+posture says it has none, and it is the wrong type for the flavor. `SO_ID.inx`
+is a second such artifact, an INX in a CDX root, named by no posture. Both are
+section 3.6's shape -- present and undeclared -- and nothing reports either.
+
+**The error itself is evidence for the proposal.** A VERIFY that resolved
+`index=` beside the DBF instead of through IDXROOT would produce exactly the
+false negative this section originally carried: twelve indexes declared, none
+found, a workspace pronounced broken that is entirely intact. Three-slot
+resolution is not an implementation detail of the verb. It is the first thing
+the verb has to get right, and the author of this proposal got it wrong by hand
+before the verb existed to get it wrong for him.
 
 ### 3.4 `mcc_x32` and `mcc_vfp` are byte-identical, and disagree with the live open
 
@@ -276,8 +315,17 @@ SIDECARS` would not carry the index**, and for any table with a memo it would
 not carry the memo file either. Had the requested copy been run blind against an
 x64 minidb it would have produced a table with neither, and reported success.
 
-This is reported as a finding, not fixed. Which of the two lists is right is a
-question for the COPY contract and its owner, not for this document.
+**AND THE DIRECTORY IS THE DEEPER PROBLEM, per 3.3.** `copy_sidecars()` builds
+every candidate from `src_dbf.parent_path()`. Indexes resolve through IDXROOT, a
+separate root entirely, so the suffix list is the second problem and not the
+first: even with `.cdx` added, the function would look for it beside the DBF and
+not find it. A copy meant to carry indexes has to be told where indexes live --
+which is what `WORKSPACE WRITEBACK ... WITH INDEXES` already knows and `COPY`
+does not.
+
+This is reported as a finding, not fixed. Which of the two lists is right, and
+whether COPY should resolve IDXROOT at all, are questions for the COPY contract
+and its owner, not for this document.
 
 ### 4.6 The flavor rule, and `AREA`
 
@@ -317,8 +365,9 @@ by side, per area, plus the two set differences:
 - **carrier disagreement** -- MEMO posture versus FILE posture under one name,
   with the AREA count of each. 3.1 is the whole reason, and this is the column
   that would have answered the original question in one line.
-- **index status** -- declared `index=`/`indextype=` against what is on disk,
-  reported and never refused on, per 4.2.
+- **index status** -- declared `index=`/`indextype=` against what is on disk
+  **in IDXROOT, not beside the DBF**. Section 3.3 is what happens otherwise.
+  Reported and never refused on, per 4.2.
 
 Three constraints the design must respect:
 
@@ -339,9 +388,9 @@ Three constraints the design must respect:
 until this report exists. Section 3.1 says the file that was reported missing is
 present on disk and absent from a posture, so copying it in would copy a file
 over itself and leave the posture still short. Section 4.5 says the copy verb
-would silently drop the index for x64 targets. A copy run now would therefore do
-nothing useful, report success, and make the next reader believe the problem was
-handled. The ordering is not caution for its own sake -- it is that the copy
+hunts sidecars beside the table while indexes live in a separate root, so it
+would carry no index at all. A copy run now would therefore do nothing useful,
+report success, and make the next reader believe the problem was handled. The ordering is not caution for its own sake -- it is that the copy
 cannot currently be aimed.
 
 
@@ -392,6 +441,16 @@ not have this problem, which is a further argument for the verb.
 Also not measured: whether `PAYLOAD_SHA` being empty means the two identical
 postures of 3.4 are a duplicate or a coincidence of content; and whether any
 other catalog row shares the shape that produced the 3.5 warning.
+
+**How the 3.3 error happened, recorded so it is not repeated.** The measurement
+was an `ls` of `dbf/<flavor>/` with extensions counted, and it answered the
+question "are there index files beside these tables". That is not the question a
+posture asks. The three-slot design was stated in a contract this document had
+already quoted, so the contradiction was available on the page and went
+unnoticed: a count that disagrees with a documented design should be re-run
+against the design before it is written down. The sequence that catches it in
+one step is the owner's own -- `do x64` then `workspace open dbf`, which prints
+the resolved INDEXES root and then says `attached` twelve times.
 
 **Loose ends found en route, not acted on.** Three flavor defects:
 `dbf/x32/STUDENTS64.dbf` carries version byte `0x64` in a v32 directory and is
