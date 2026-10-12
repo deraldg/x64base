@@ -170,13 +170,35 @@ All twelve `.cdx` that `mcc_x64.dtschema` declares are present in
 direction: twelve of thirteen areas reported `[index: <stem>.cdx, attached]`.
 
 **What survives is a better instance than the claim it replaces.**
-`indexes/x64/` holds `TEST64.cnx` -- a CNX, which is the v32 index type, sitting
-in the x64 index root, for the one table `mcc_x64.dtschema` declares as
-`indextype=NONE`. The owner's run opened `Area 12: opened 'TEST64.dbf'` with no
-index line at all. So there is an index container on disk for a table whose
-posture says it has none, and it is the wrong type for the flavor. `SO_ID.inx`
-is a second such artifact, an INX in a CDX root, named by no posture. Both are
-section 3.6's shape -- present and undeclared -- and nothing reports either.
+`indexes/x64/` holds `TEST64.cnx`, for the one table `mcc_x64.dtschema` declares
+as `indextype=NONE`. The owner's run opened `Area 12: opened 'TEST64.dbf'` with
+no index line at all. So a loadable index container sits in this workspace's own
+IDXROOT for a table whose posture says it has none, and nothing reports that.
+That is section 3.6's shape -- present and undeclared.
+
+**CNX ON AN X64 TABLE IS NOT A DEFECT, and a first draft of this paragraph said
+it was.** CNX and CDX are two different index technologies with two different
+openers -- `openCdx()` at `cmd_use.cpp:696` and `openCnx()` at `:698` -- and an
+x64 area's VALID SET IS BOTH, by owner ruling of 2026-08-09 (AIF-099), recorded
+at `cmd_use.cpp:726-729`:
+
+    // CNX-on-x64 (AIF-099, owner ruling 2026-08-09): explicit CNX is now
+    // accepted on x64 tables (advisory path); CDX/LMDB remains preferred.
+    if (is_x64_cdx_area(a)) return "CDX, CNX";
+    if (is_classic_tag_area(a)) return "CNX, INX";
+
+The flavor rule quoted in 4.6 governs DEFAULT SELECTION when no CNX/INX/CDX
+keyword is given. It is not a validity constraint, and `WORKSPACE OPEN <target>
+CNX` is in the contract precisely so the choice can be made explicitly. So
+`TEST64.cnx` is sanctioned, and the finding is that the POSTURE is out of date
+about it -- which is a cleaner instance of the gap than a damaged file would
+have been, because there is nothing here to repair except the description.
+
+`SO_ID.inx` is also in `indexes/x64/` and is named by no posture. INX belongs to
+the classic pair (`"CNX, INX"` above; `cmd_use.cpp:1208` has the x32 preference
+order), so an INX serving an x64 table would be outside the valid set -- but
+WHICH TABLE `SO_ID.inx` SERVES WAS NOT ESTABLISHED, and there is no `SO_ID.dbf`
+in the DBF root. It is recorded as undeclared, not as wrong.
 
 **The error itself is evidence for the proposal.** A VERIFY that resolved
 `index=` beside the DBF instead of through IDXROOT would produce exactly the
@@ -335,6 +357,13 @@ The flavor-to-index-type rule is the engine's, stated in the WORKSPACE help at
     - Without CNX/INX/CDX, index files are chosen by DBF flavor: true x64/v128
       CDX, classic VFP/v32 CNX.
 
+**THAT SENTENCE LICENSES A DEFAULT AND FORBIDS NOTHING**, and a reader in a
+hurry -- this author, twice -- turns it into a constraint. The validity
+authority is a different function: `valid_index_types_for()` at
+`src/cli/cmd_use.cpp:720` returns `"CDX, CNX"` for an x64 area and
+`"CNX, INX"` for a classic one. A VERIFY that reports an index kind must
+consult that function, not this help text.
+
 `AREA` already reports the per-table facts a VERIFY would need to render: its
 usage block at `src/cli/cmd_area.cpp:29` lists record count, current record,
 **DBF flavor** and **runtime kind** among its columns. VERIFY should render
@@ -451,6 +480,16 @@ unnoticed: a count that disagrees with a documented design should be re-run
 against the design before it is written down. The sequence that catches it in
 one step is the owner's own -- `do x64` then `workspace open dbf`, which prints
 the resolved INDEXES root and then says `attached` twelve times.
+
+**AND THE SAME ERROR A SECOND TIME, which is why it is worth a rule.** The first
+draft of the corrected 3.3 called `TEST64.cnx` "the wrong type for the flavor".
+It is not: AIF-099 accepts CNX on x64 explicitly. Both mistakes read a DEFAULT
+SELECTION RULE as a CONSTRAINT -- first "indexes resolve beside the DBF" from a
+rule about which root is searched, then "CNX is invalid on x64" from a rule about
+which extension is chosen when none is named. The rule to carry forward: in this
+engine a sentence of the form "X is chosen by Y" licenses a default and forbids
+nothing, and the valid set is a separate function -- `valid_index_types_for()` at
+`cmd_use.cpp:720` is the authority for index kinds, not the WORKSPACE help text.
 
 **Loose ends found en route, not acted on.** Three flavor defects:
 `dbf/x32/STUDENTS64.dbf` carries version byte `0x64` in a v32 directory and is
