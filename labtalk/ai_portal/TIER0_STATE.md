@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-10-09T01:18:02Z
+    generated_utc : 2026-10-12T04:36:31Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,8 +11,8 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : 6bc1fc477  (2026-10-08)
-    upstream      : 6bc1fc477
+    HEAD          : 0eb1ee5df  (2026-10-08)
+    upstream      : 0eb1ee5df
     unpushed      : 0 commit(s) ahead of upstream
 
 ## Declared target
@@ -22,13 +22,13 @@ cannot drift, because nothing here is written by hand.
 
 ## Newest closeout
 
-    file          : SESSION_CLOSEOUT_LEAN_SITE_G2_RECONCILIATION_2026-09-23.md
-    commits behind HEAD : 40
+    file          : SESSION_CLOSEOUT_FULLSTACK_SCHEMA_REVIEW_2026-10-10.md
+    commits behind HEAD : not committed
 
 ## Staleness warnings
 
-- Closeout(s) on disk but not tracked -- a session's record that never landed: SESSION_CLOSEOUT_EVIDENCE_TRACKING_AND_PORTAL_2026-09-20.md.
-- The newest closeout is 40 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
+- The newest closeout by date, SESSION_CLOSEOUT_FULLSTACK_SCHEMA_REVIEW_2026-10-10.md, is on disk but in no commit. A clone cannot see it; whoever wrote it has not landed it.
+- Closeout(s) on disk but not tracked -- a session's record that never landed: SESSION_CLOSEOUT_DDICT_HOUSEKEEPING_2026-10-10.md, SESSION_CLOSEOUT_EVIDENCE_TRACKING_AND_PORTAL_2026-09-20.md.
 
 ## Claimed lanes (newest first)
 
@@ -52,7 +52,6 @@ cannot drift, because nothing here is written by hand.
 
     live   : 2026-07-31_cowork_bbs_agency_legs  (member.ai.claude.cowork)  [stale, reapable]
     live   : AIPR-20260729-001  (member.ai.claude.cowork)  [stale, reapable]
-    live   : COWORK-20260816-002  (member.ai.claude.cowork)  [stale, reapable]
     live   : COWORK-20260818-001  (member.ai.claude.cowork)  [stale, reapable]
     live   : COWORK-20260821-002  (member.ai.claude.cowork)  [stale, reapable]
     live   : COWORK-20260826-001  (member.ai.claude.cowork)  [stale, reapable]
