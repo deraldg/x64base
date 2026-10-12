@@ -85,7 +85,7 @@ three tiers already have.
 | # | Date | Ruling |
 | --- | --- | --- |
 | R1 | 2026-08-06 | ~~**Lifecycle is PLDC.** The earlier "PDLC" was an owner typo; canonical usage governs.~~ **Superseded by R8 (2026-08-07).** Engine-adjacent work inside a phase runs as a full PDLC, gated on SDLC evidence beneath it. |
-| R2 | 2026-08-06 | **Skills are a first-class LabTalk asset class.** `labtalk/skills/<name>/`, registered in `labtalk/registries/skills.yaml` beside `labs.yaml` / `proofs.yaml` / `apps.yaml`. NOT `src/` -- that tree is compiled runtime truth under `file(GLOB_RECURSE ...)` (`src/CMakeLists.txt:82,368`), and governance places portal/teaching material under LabTalk identity. |
+| R2 | 2026-08-06 | **Skills are a first-class LabTalk asset class.** `labtalk/skills/<name>/`, registered in `labtalk/registries/skills.yaml` beside `labs.yaml` / `proofs.yaml` / `apps.yaml`. NOT `src/` -- that tree is compiled runtime truth under `file(GLOB_RECURSE ...)` (`src/CMakeLists.txt:82,368`), and governance places portal/teaching material under LabTalk identity. |  <!-- cite-check:ignore -->
 | R3 | 2026-08-06 | **Bundle and tree are orthogonal, on the `dottalkpp` / `dottalk_bbsd` model.** Independently runnable; no runtime coupling in either direction; coordination only through the shared registry substrate. "Separate, but not far." |
 | R4 | 2026-08-06 | **Drift gate runs advisory for one cycle**, then promotes to hard-fail. |
 | R5 | 2026-08-06 | **`.claude/skills/` is an accepted vendor target in `development`.** |
@@ -153,12 +153,12 @@ three tiers already have.
 | Phase | Content | Gate |
 | --- | --- | --- |
 | **P0** | **DONE 2026-08-06.** Two outside-runner cold probes, control vs skill stub, plus static reachability measurement. Evidence: `X64BASE_AGENT_SKILL_P0_MEASUREMENT_V1.md`. | **G0 NO-GO RECOMMENDED.** Both arms reached Tier 1 and answered 5/5; both read ~48 KB; no material saving. Premise falsified. Owner ruling required -- no self-approval by the author. |
-| **P1** | Registry substrate. Author `labtalk/registries/skills.yaml` on the `labs.yaml` / `proofs.yaml` shape. Define the skill asset class and its fields. | **G1** registry validates; `recall.py --validate` still PASSes. |
-| **P2** | Projector. `tools/ai_portal/emit_skill.py` with `emit` / `install` / `check`. Derives trigger table, pointer table and stopping rule verbatim from the registry and seed. | **G2** fixture suite passes, including the must-fail cases: dangling edge, seed over budget, hand-edited `SKILL.md`, non-ASCII byte. |
+| **P1** | Registry substrate. **NEVER BUILT.** Author `labtalk/registries/skills.yaml` on the `labs.yaml` / `proofs.yaml` shape. Define the skill asset class and its fields. | **G1** registry validates; `recall.py --validate` still PASSes. |  <!-- cite-check:ignore -->
+| **P2** | Projector. **NEVER BUILT.** `tools/ai_portal/emit_skill.py` with `emit` / `install` / `check`. Derives trigger table, pointer table and stopping rule verbatim from the registry and seed. | **G2** fixture suite passes, including the must-fail cases: dangling edge, seed over budget, hand-edited `SKILL.md`, non-ASCII byte. |  <!-- cite-check:ignore -->
 | **P3** | Canonical skill. `labtalk/skills/x64base/` authored; `SKILL.md` + references emitted. | **G3** ASCII clean; no perishable literal; body within budget; a cold agent can answer the seed's five questions from it alone. |
 | **P4** | Orthogonal bundle (R3). Standalone `.skill` package: vendored Tier-1 snapshot, trigger index, branch-enumeration rule, `EXTERNAL_AI_CHANGE_PACKAGE_V1` protocol, provenance manifest naming the source commit. | **G4** bundle usable with NO tree present; provenance manifest verifies against the commit it claims. |
 | **P5** | Tree-side inspection. The `BBS BOARDS` analogue: `recall.py --skills` or equivalent reports which skills exist, what commit they were cut from, how far the bundle trails the seed. No coupling. | **G5** inspection reads only the registry substrate; falsification test confirms the bundle still works with the tree absent, and vice versa. |
-| **P6** | Gate wiring (R4). `emit_skill.py check` into `prepush_gate.py`, advisory for one cycle. `SKILL.md` added to `check_mandatory_tracked.py`. `recall.py --validate` asserts every trigger appears in the projection. | **G6** advisory cycle observed, then promoted to hard-fail. |
+| **P6** | Gate wiring (R4). **NEVER BUILT.** An emit_skill check into `prepush_gate.py`, advisory for one cycle. `SKILL.md` added to `check_mandatory_tracked.py`. `recall.py --validate` asserts every trigger appears in the projection. | **G6** advisory cycle observed, then promoted to hard-fail. |
 | **P7** | Trigger-description evals. 15-25 prompts spanning true positives and true negatives; measure trigger rate; iterate the description only. Use the `skill-creator` eval path. | **G7** trigger rate RECORDED AS A NUMBER, not an impression. A skill that fires 60 percent of the time is a 60 percent skill. |
 | **P8** | Shim collapse. `CLAUDE.md`, `AGENTS.md`, `.github/copilot-instructions.md` become generated projections of one canonical body. | **G8** all three regenerate identically from `emit_skill.py install`; hand-edit fails. |
 | **P9** | PDLC ascent. Audience documentation, setup, support path, retirement policy, LabTalk registration, website promotion. | **G9** package delivery checklist; SDLC evidence beneath every claim. |
@@ -184,7 +184,7 @@ cheaply measured is no longer asserted here -- each row names the check instead.
 | --- | --- |
 | AIF-090 claim | `coordination/aif/AIF-090.claim`, run `COWORK-20260806-001` |
 | Intake row AIF-090 | `grep -n 'AIF-090' docs/ai-friendly/AI_INTERACTION_INTAKE_QUEUE_V1.md` -- the row is authoritative, not this line |
-| `labtalk/registries/skills.yaml` | `ls labtalk/registries/skills.yaml`. Created only if A1 rules toward a built artifact; R7 retired the P1 that would have created it unconditionally |
+| `labtalk/registries/skills.yaml` | `ls labtalk/registries/skills.yaml`. Created only if A1 rules toward a built artifact; R7 retired the P1 that would have created it unconditionally |  <!-- cite-check:ignore -->
 | `labtalk/registries/ai_portal.yaml` | update owed at first material increment |
 | This charter | tracked; `git log --oneline -- docs/maintenance/X64BASE_AGENT_SKILL_PDLC_LANE_V1.md` |
 
@@ -207,7 +207,7 @@ consumes: tools/staging/check_house_style.py             (ASCII enforcement)
 consumes: labtalk/ai_portal/check_mandatory_tracked.py   (tracked-set enforcement)
 consumes: scripts/publish-github-pages.mjs               (provenance-manifest pattern)
 searched-and-absent: a skill projector or vendor-shim generator of any kind
-searched-and-absent: labtalk/registries/skills.yaml
+searched-and-absent: labtalk/registries/skills.yaml  <!-- cite-check:ignore -->
 searched-and-absent: any `.claude/skills/` directory in this tree
 ```
 
