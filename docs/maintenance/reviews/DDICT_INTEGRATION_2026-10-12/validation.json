@@ -1,0 +1,38 @@
+{
+  "schema": "dottalk.ddict.integration.proof.v2",
+  "recorded_at_utc": "2026-10-12T22:13:31Z",
+  "run_id": "CODEX-20261012-DDICT-COMPLETE-001",
+  "baseline_commit": "2701ae13bbc6",
+  "stage": "development candidate; not published",
+  "feed": {
+    "manifest_sha256": "8d5f2e22ae1151eaf6e1c72552cc7672319e7b3ae0085009a7f3eb87bac37dbc",
+    "status": "REVIEW",
+    "acceptance": "CANDIDATE",
+    "source_state": "FULLY_VERIFIED",
+    "objects": 110,
+    "identities": 803,
+    "diagnostics": 19,
+    "affected_memo_cells": 139
+  },
+  "diagnostic_classes": {
+    "MEMO_PAYLOAD_UNAVAILABLE": 4,
+    "MEMO_LINK_INVALID": 1,
+    "RELATION_ENDPOINT_UNRESOLVED": 14,
+    "UNCLASSIFIED": 0
+  },
+  "verification": {
+    "focused_build": "PASS: ddict_export, dottalkpp_ddict_catalog_view_test, dottalk_gui_core, dottalkpp",
+    "native_ctest": "PASS: 2 of 2",
+    "python_integration": "PASS: 18 of 18",
+    "fresh_binary_runtime": "PASS: DDICT STATUS, DDICT OBJECTS FAMILY X64, DDICT HELP",
+    "current_pointer": "PASS: full source validation returned REVIEW with 19 diagnostics",
+    "fullstack_gate": "PASS CONTROL: returned REVIEW and therefore blocks clean publication",
+    "catalog_mutation": "NONE: feed builder before/after snapshot equality passed"
+  },
+  "limits": [
+    "No catalog DBF, DTX, CDX or LMDB repair was authorized or performed.",
+    "No website checkout, publication branch, remote, or deployment was changed.",
+    "A running process held dottalkpp/bin/dottalkpp.exe; datarun used the older runtime copy, so final CLI proof invoked build/src/Release/dottalkpp.exe directly.",
+    "Portal clone inspection is explicitly SNAPSHOT_ONLY; full-stack preflight remains FULLY_VERIFIED-only."
+  ]
+}

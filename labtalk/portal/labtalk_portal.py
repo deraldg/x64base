@@ -10,12 +10,21 @@ import json
 import shlex
 import subprocess
 import sys
-import tkinter as tk
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from tkinter import messagebox, ttk
 from typing import Any
+
+try:
+    import tkinter as tk
+    from tkinter import messagebox, ttk
+except ModuleNotFoundError as exc:  # Headless audit/report paths do not need Tk.
+    tk = None  # type: ignore[assignment]
+    messagebox = None  # type: ignore[assignment]
+    ttk = None  # type: ignore[assignment]
+    TK_IMPORT_ERROR: Exception | None = exc
+else:
+    TK_IMPORT_ERROR = None
 
 try:
     import yaml
@@ -202,14 +211,38 @@ def provenance_state(item: PortalItem) -> tuple[str, list[Path]]:
 
 
 def first_openable_path(item: PortalItem) -> Path | None:
+    if item.kind == "ddict_feed":
+        path, _detail = ddict_feed_status(item)
+        return path
     for _field, path in item_paths(item):
         if path.exists():
             return path
     return None
 
 
+def ddict_feed_status(item: PortalItem) -> tuple[Path | None, str]:
+    """Resolve the current read-only feed; stale snapshots are not opened."""
+    try:
+        if str(REPO_ROOT) not in sys.path:
+            sys.path.insert(0, str(REPO_ROOT))
+        from tools.datadict.catalog.ddict_feed import catalog_source_present, contained, validate_bundle
+        pointer = json.loads(normalize_path(str(item.data["path"])).read_text(encoding="utf-8"))
+        directory = contained(REPO_ROOT, pointer["workspace"])
+        # Development catalogs demand full freshness proof. A clean clone may
+        # inspect the hash-bound candidate snapshot, but it is labeled and
+        # never promoted to source-verified status.
+        result = validate_bundle(directory, REPO_ROOT, check_sources=catalog_source_present(directory, REPO_ROOT))
+        if result["manifest_sha256"] != pointer["manifest_sha256"]:
+            raise ValueError("manifest pointer hash mismatch")
+        return directory / "dictionary.html", f"DDICT {result['status']} / {result['source_state']}: {result['object_count']} objects; {result['diagnostic_count']} diagnostics; candidate only"
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        return None, "DDICT unavailable/stale: " + str(exc)
+
+
 def item_truth_checks(item: PortalItem) -> list[str]:
     checks: list[str] = []
+    if item.kind == "ddict_feed":
+        checks.append(ddict_feed_status(item)[1])
     paths = item_paths(item)
     if paths:
         for field, path in paths:
@@ -815,7 +848,10 @@ def load_portal_items() -> tuple[list[dict[str, Any]], list[PortalItem]]:
     return sections, items
 
 
-class LabTalkPortal(tk.Tk):
+_PortalWindowBase = tk.Tk if tk is not None else object
+
+
+class LabTalkPortal(_PortalWindowBase):
     def __init__(self) -> None:
         super().__init__()
         self.title(title_with_version("LabTalk Portal", REPO_ROOT))
@@ -1171,6 +1207,14 @@ def main() -> int:
         print(f"return_code={code}")
         print(f"transcript={transcript}")
         return code
+
+    if tk is None or messagebox is None:
+        print(
+            "LabTalk Portal GUI unavailable: tkinter could not be imported. "
+            f"Headless --audit and --audit-write remain available. ({TK_IMPORT_ERROR})",
+            file=sys.stderr,
+        )
+        return 1
 
     try:
         app = LabTalkPortal()

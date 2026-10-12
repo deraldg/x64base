@@ -77,6 +77,7 @@ MemoStore::~MemoStore()
 
 MemoStore::MemoStore(MemoStore&& other) noexcept
     : _fp(std::move(other._fp))
+    , _read_only(other._read_only)
     , _path(std::move(other._path))
     , _hdr(other._hdr)
     , _live_index(std::move(other._live_index))
@@ -89,6 +90,7 @@ MemoStore& MemoStore::operator=(MemoStore&& other) noexcept
     if (this != &other) {
         close();
         _fp = std::move(other._fp);
+        _read_only = other._read_only;
         _path = std::move(other._path);
         _hdr = other._hdr;
         _live_index = std::move(other._live_index);
@@ -140,9 +142,20 @@ MemoOpResult MemoStore::open(const std::string& sidecar_path, OpenMode mode)
     return err_result("MemoStore: unknown open mode");
 }
 
+MemoOpResult MemoStore::open_read_only(const std::string& sidecar_path)
+{
+    close();
+    _read_only = true;
+    if (!open_existing_(sidecar_path)) {
+        return err_result("MemoStore: could not open read-only DTX sidecar");
+    }
+    return ok_result();
+}
+
 MemoOpResult MemoStore::flush()
 {
     if (!_fp.is_open()) return ok_result();
+    if (_read_only) return ok_result();
 
     if (!write_header_()) {
         return err_result("MemoStore: failed to write DTX header during flush");
@@ -159,11 +172,14 @@ MemoOpResult MemoStore::flush()
 void MemoStore::close() noexcept
 {
     if (_fp.is_open()) {
-        (void)write_header_();
-        _fp.flush();
+        if (!_read_only) {
+            (void)write_header_();
+            _fp.flush();
+        }
         _fp.close();
     }
 
+    _read_only = false;
     _path.clear();
     _hdr = dtx::make_default_header();
     _live_index.clear();
@@ -171,6 +187,7 @@ void MemoStore::close() noexcept
 
 MemoPutResult MemoStore::put_text(std::string_view text)
 {
+    if (_read_only) return err_put("MemoStore: sidecar is read-only");
     if (!_fp.is_open()) {
         return err_put("MemoStore: sidecar is not open");
     }
@@ -208,6 +225,7 @@ MemoGetResult MemoStore::get_text(const MemoRef& ref)
 
 MemoPutResult MemoStore::update_text(const MemoRef& old_ref, std::string_view text)
 {
+    if (_read_only) return err_put("MemoStore: sidecar is read-only");
     if (!_fp.is_open()) {
         return err_put("MemoStore: sidecar is not open");
     }
@@ -229,6 +247,7 @@ MemoPutResult MemoStore::update_text(const MemoRef& old_ref, std::string_view te
 
 MemoOpResult MemoStore::erase(const MemoRef& ref)
 {
+    if (_read_only) return err_result("MemoStore: sidecar is read-only");
     if (!_fp.is_open()) {
         return err_result("MemoStore: sidecar is not open");
     }
@@ -471,7 +490,8 @@ bool MemoStore::header_valid() const noexcept
 
 bool MemoStore::open_existing_(const std::string& sidecar_path)
 {
-    _fp.open(sidecar_path, std::ios::in | std::ios::out | std::ios::binary);
+    _fp.open(sidecar_path, std::ios::in | std::ios::binary |
+             (_read_only ? std::ios::openmode{} : std::ios::out));
     if (!_fp.is_open()) {
         return false;
     }
@@ -542,6 +562,7 @@ bool MemoStore::load_header_()
 
 bool MemoStore::write_header_()
 {
+    if (_read_only) return false;
     if (!_fp.is_open()) return false;
 
     _fp.clear();
@@ -624,6 +645,7 @@ std::uint64_t MemoStore::allocate_object_id_()
 std::uint64_t MemoStore::append_text_object_(std::string_view text,
                                              std::uint64_t previous_version_of)
 {
+    if (_read_only) return dtx::kInvalidObjectId;
     if (!_fp.is_open()) return dtx::kInvalidObjectId;
 
     const std::uint64_t object_id = allocate_object_id_();
@@ -721,6 +743,7 @@ bool MemoStore::read_object_text_(std::uint64_t object_id, std::string& out)
 
 bool MemoStore::tombstone_object_(std::uint64_t object_id)
 {
+    if (_read_only) return false;
     auto it = _live_index.find(object_id);
     if (it == _live_index.end()) {
         return false;

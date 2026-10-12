@@ -712,6 +712,29 @@ target_include_directories(dottalkpp_ddict_catalog_dir_test PRIVATE
   ${CMAKE_SOURCE_DIR}/include)
 add_test(NAME dottalkpp_ddict_catalog_dir_test COMMAND dottalkpp_ddict_catalog_dir_test)
 
+# DDICT read view: native x64base-created long-name fixtures and read-only DTX.
+add_executable(dottalkpp_ddict_catalog_view_test
+  test_ddict_catalog_view.cpp
+  ${CMAKE_SOURCE_DIR}/src/help/helpdata_messages.cpp
+  ${CMAKE_SOURCE_DIR}/src/cli/cmd_ddict.cpp
+  ${CMAKE_SOURCE_DIR}/src/cli/command_output.cpp
+  ${CMAKE_SOURCE_DIR}/src/cli/command_catalog.cpp
+  ${CMAKE_SOURCE_DIR}/src/cli/output_router.cpp
+  ${CMAKE_SOURCE_DIR}/src/datadict/ddict_catalog_paths.cpp
+  ${CMAKE_SOURCE_DIR}/src/datadict/ddict_callsite_bridge.cpp
+  ${CMAKE_SOURCE_DIR}/src/datadict/ddict_catalog_resolver.cpp
+  ${CMAKE_SOURCE_DIR}/src/datadict/ddict_catalog_view.cpp
+  ${CMAKE_SOURCE_DIR}/src/datadict/ddict_dbf_reader.cpp
+  ${CMAKE_SOURCE_DIR}/src/datadict/ddict_object_resolver.cpp
+  ${CMAKE_SOURCE_DIR}/src/datadict/ddict_read_helpers.cpp
+)
+target_compile_features(dottalkpp_ddict_catalog_view_test PRIVATE cxx_std_20)
+target_link_libraries(dottalkpp_ddict_catalog_view_test PRIVATE xbase memo)
+target_include_directories(dottalkpp_ddict_catalog_view_test PRIVATE ${CMAKE_SOURCE_DIR}/src)
+target_compile_definitions(dottalkpp_ddict_catalog_view_test PRIVATE
+  DDICT_TEST_ROOT="${CMAKE_BINARY_DIR}/ddict-dogfood")
+add_test(NAME dottalkpp_ddict_catalog_view_test COMMAND dottalkpp_ddict_catalog_view_test)
+
 # ---- Workspace catalog nesting order: PARENT_ID, never PREV_ID -------------
 # WORKSPACES.dbf carries two edges -- PARENT_ID/TREE_DEPTH for containment and
 # PREV_ID/SUPERSEDED for retirement -- and cmd_workspace.cpp writes both while

@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-10-12T20:43:58Z
+    generated_utc : 2026-10-12T22:22:32Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is a generated current-state projection;
@@ -11,7 +11,7 @@ verify it with the generator's --check mode before relying on it.
 ## Tree
 
     branch        : development
-    HEAD          : 74c428571  (2026-10-12)
+    HEAD          : 2701ae13b  (2026-10-12)
     upstream      : 40f68c7b8
     unpushed      : 1 commit(s) ahead of upstream
 
@@ -22,11 +22,12 @@ verify it with the generator's --check mode before relying on it.
 
 ## Newest closeout
 
-    file          : SESSION_CLOSEOUT_AIF136_MEMORY_TIERING_RETENTION_2026-10-12.md
-    commits behind HEAD : 0
+    file          : SESSION_CLOSEOUT_DDICT_NATIVE_FEED_COMPLETION_2026-10-12.md
+    commits behind HEAD : not committed
 
 ## Staleness warnings
 
+- The newest closeout by date, SESSION_CLOSEOUT_DDICT_NATIVE_FEED_COMPLETION_2026-10-12.md, is on disk but in no commit. A clone cannot see it; whoever wrote it has not landed it.
 - Closeout(s) on disk but not tracked -- a session's record that never landed: SESSION_CLOSEOUT_FULLSTACK_SCHEMA_REVIEW_2026-10-10.md, SESSION_CLOSEOUT_DDICT_HOUSEKEEPING_2026-10-10.md, SESSION_CLOSEOUT_EVIDENCE_TRACKING_AND_PORTAL_2026-09-20.md.
 - 1 commit(s) are unpushed and invisible to a clone.
 
@@ -52,6 +53,7 @@ verify it with the generator's --check mode before relying on it.
 
     live   : 2026-07-31_cowork_bbs_agency_legs  (member.ai.claude.cowork)  [stale, reapable]
     live   : AIPR-20260729-001  (member.ai.claude.cowork)  [stale, reapable]
+    live   : CODEX-20261012-DDICT-COMPLETE-001  (member.ai.codex)
     live   : COWORK-20260818-001  (member.ai.claude.cowork)  [stale, reapable]
     live   : COWORK-20260821-002  (member.ai.claude.cowork)  [stale, reapable]
     live   : COWORK-20260826-001  (member.ai.claude.cowork)  [stale, reapable]

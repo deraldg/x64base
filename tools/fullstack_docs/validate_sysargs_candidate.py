@@ -3,15 +3,7 @@
 Sibling of validate_syscmd_candidate.py. Governed by
 docs/maintenance/lanes/full_stack_documentation/METACOLLECT_SYSARGS_CANDIDATE_CONTRACT_V1.md
 
-THIS CHECK IS EXPECTED TO FAIL ON TODAY'S CANDIDATE, and that is the point.
-ARG_ID is `ARG_<command>_<arg_name>` (metacollect.cpp arg_id assignment) while
-the row is aggregated on `command|arg_kind|arg_name` (metacollect.cpp
-aggregate_key) -- three components in the key, two in the id -- so a command
-whose usage text uses one word as BOTH a literal keyword and a placeholder
-emits two different rows under one id. 9 such collisions on 2026-08-05, 12 on
-08-26, 14 on 09-24. Do not loosen ARG_ID_DUPLICATE to make this green; the
-finding and its two remedies are in
-FINDING_ARG_ID_COLLAPSES_KEYWORD_AND_PLACEHOLDER_AND_THE_UNIQUENESS_CLAUSE_STOPS_AT_SYSCMD.md
+Candidate v2 uses ARG:COMMAND:<owner>:<kind>:<name>. Legacy duplicate IDs remain rejected; no live rows are renamed by this validator.
 """
 
 from __future__ import annotations
@@ -41,6 +33,12 @@ PLACEHOLDER_SHAPES = {
 VAL_SHAPES = PLACEHOLDER_SHAPES | {KEYWORD_SHAPE}
 BOOLEANS = {"true", "false"}
 SRC_AUTHORITY = "usage_contract_v1"
+PHYSICAL_CONTRACT = Path(__file__).resolve().parents[2] / "docs/datadict/schemas/sysargs_catalog_candidate_v2.dtschema"
+
+
+def candidate_widths() -> dict[str, int]:
+    return {name: int(width) for name, width in re.findall(
+        r"^\s+(\w+) TYPE=C LEN=(\d+)", PHYSICAL_CONTRACT.read_text(encoding="utf-8"), re.M)}
 
 
 def normalize(value: str) -> str:
@@ -78,7 +76,7 @@ def validate_rows(
         if not row["ARG_NAME"].strip():
             findings.append(f"ROW_{index}:ARG_NAME_EMPTY")
 
-        expected_id = f"ARG_{symbol(row['OWNER_NAM'])}_{row['ARG_NAME']}"
+        expected_id = "ARG:COMMAND:" + " ".join(row['OWNER_NAM'].upper().split()) + ":" + row['ARG_KIND'].upper() + ":" + row['ARG_NAME']
         if row["ARG_ID"] != expected_id:
             findings.append(f"ROW_{index}:ARG_ID_PROJECTION:{row['ARG_ID']}!={expected_id}")
 
@@ -148,12 +146,16 @@ def main() -> int:
             syscmd_names(args.syscmd_candidate) if args.syscmd_candidate else None,
         )
     )
+    for index, row in enumerate(rows, 2):
+        for field, width in candidate_widths().items():
+            if len(row[field].encode("utf-8")) > width:
+                findings.append(f"ROW_{index}:{field}_EXCEEDS_X64_BYTE_WIDTH:{width}")
     for finding in findings:
         print(f"SYSARGSCHK {finding}")
     if findings:
         print(f"SYSARGSCHK FAIL rows={len(rows)} findings={len(findings)}")
         return 1
-    print(f"SYSARGSCHK OK rows={len(rows)} findings=0")
+    print(f"SYSARGSCHK OK rows={len(rows)} findings=0 owner_check={'same-run' if args.syscmd_candidate else 'NOT_RUN'}")
     return 0
 
 

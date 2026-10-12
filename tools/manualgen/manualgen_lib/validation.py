@@ -52,6 +52,11 @@ def validate_inventory(paths: ManualgenPaths, inv: dict[str, Any]) -> list[dict[
     add("HARVEST_SELECTION_EXPLICIT", "PASS" if harvest.get("selection_mode") == "explicit" else "REVIEW", harvest.get("selection_mode", ""), "explicit", "Evidence-bearing runs must name their HELP/META harvest workspace.")
     add("HARVEST_REQUIRED_FILES", "PASS" if harvest.get("present_file_count") == harvest.get("required_file_count") else "FAIL", harvest.get("present_file_count", 0), str(harvest.get("required_file_count", 0)), "All required HELP/META CSV contracts must be present.")
     add("HARVEST_CSV_READABLE", "PASS" if harvest.get("readable_file_count") == harvest.get("required_file_count") else "FAIL", harvest.get("readable_file_count", 0), str(harvest.get("required_file_count", 0)), "Every required harvest file must have a readable CSV header.")
+    dictionary = harvest.get("dictionary", {})
+    if dictionary.get("selected"):
+        status = dictionary.get("status", "FAIL")
+        add("DDICT_COMPANION", "PASS" if status == "READY" else status, dictionary,
+            "fresh hash-bound candidate; no native diagnostics", "Dictionary evidence never implies manual acceptance.")
     file_rows = {row.get("file_name"): row for row in harvest.get("files", [])}
     for name in ("HELP_COMMANDS.csv", "HELP_HELP_LINE.csv", "META_SYSCMD.csv"):
         count = file_rows.get(name, {}).get("row_count", -1)

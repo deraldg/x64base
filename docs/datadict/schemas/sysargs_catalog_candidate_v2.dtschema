@@ -1,0 +1,31 @@
+# Candidate physical contract. Not accepted and not an executable loader.
+# No live SYSARGS table or indexes are created/altered by this document.
+SCHEMA_ID: SYSARGS_CATALOG_CANDIDATE_V2
+SCHEMA_STATUS: CANDIDATE_REVIEW_REQUIRED
+STORAGE_FLAVOR: X64
+TABLE: SYSARGS
+LOGICAL_TABLE_NAME: SYSTEM_COMMAND_ARGUMENT_METADATA
+IDENTITY: ARG:<OWNER_KND>:<OWNER_NAM>:<ARG_KIND>:<ARG_NAME>
+IDENTITY_NORMALIZATION: uppercase; trim; collapse internal ASCII whitespace
+FIELDS:
+  ARG_ID TYPE=C LEN=1024 DEC=0
+  OWNER_KND TYPE=C LEN=32 DEC=0
+  OWNER_NAM TYPE=C LEN=256 DEC=0
+  ARG_NAME TYPE=C LEN=256 DEC=0
+  DEF_LOCALE TYPE=C LEN=32 DEC=0
+  REGION_ID TYPE=C LEN=32 DEC=0
+  ARG_KIND TYPE=C LEN=32 DEC=0
+  VAL_SHAPE TYPE=C LEN=32 DEC=0
+  REQUIRED TYPE=L LEN=1 DEC=0
+  REPEAT TYPE=L LEN=1 DEC=0
+  SRC_AUTH TYPE=C LEN=64 DEC=0
+  SRC_FILE TYPE=C LEN=1024 DEC=0
+  ACTIVE TYPE=L LEN=1 DEC=0
+  VER_AT TYPE=C LEN=64 DEC=0
+  NOTES TYPE=M LEN=8 DEC=0
+MEMO_CONTRACT: native DTX; zero binary link is null; space-filled M8 is invalid
+WIDTH_GATE: UTF-8 byte lengths must fit; reject truncation before candidate load
+UNIQUE_KEY: ARG_ID
+OWNER_GATE: canonical command owner must exist in same-run SYSCMD candidate
+INDEX_CONTRACT_STATUS: REVIEW_REQUIRED; no inferred index rebuild
+MIGRATION: preserve legacy IDs in a reviewed crosswalk; no implicit upsert by new ID

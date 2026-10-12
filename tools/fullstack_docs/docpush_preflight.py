@@ -420,6 +420,10 @@ def main(argv=None):
             fails.append("anchor map: unexpected exit (rc=%d)" % rc)
 
     print()
+    dictionary = check_ddict_feed(root)
+    print("  11. native DDICT feed: %s" % dictionary)
+    if dictionary["status"] != "READY":
+        fails.append("native DDICT feed: %s -- resolve stale inputs or catalog diagnostics before publication" % dictionary["status"])
     if fails:
         print("PREFLIGHT FAIL:")
         for f in fails:
@@ -427,6 +431,23 @@ def main(argv=None):
         return 2
     print("PREFLIGHT PASS -- Phase 0/0.5 foundation is clean; proceed to Phase 1.")
     return 0
+
+
+def check_ddict_feed(root, pointer_path=None):
+    """A selected dictionary must be fresh and clean before a full push."""
+    import json
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(root))
+    from tools.datadict.catalog.ddict_feed import contained, validate_bundle
+    try:
+        pointer = json.loads(Path(pointer_path or root / "labtalk/registries/current_ddict_feed.json").read_text(encoding="utf-8"))
+        result = validate_bundle(contained(root, pointer["workspace"]), root)
+        if result["manifest_sha256"] != pointer["manifest_sha256"]:
+            raise ValueError("Dictionary pointer hash mismatch")
+        return result
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        return {"status": "FAIL", "error": str(exc)}
 
 
 if __name__ == "__main__":

@@ -1,5 +1,12 @@
 # metacollect runbook v1
 
+October 9 integration update: explicit `--source-root` values now constrain both
+the SYSCMD registry scan and its contract scan. Use bounded roots such as
+`src/cli`; an omitted source root retains the older full-src default. SYSARGS
+still reads CLI contracts and SYSFUNC uses its compiled registry. SYSARGS
+candidate IDs now include owner kind and argument kind, per the v2 amendment
+in `METACOLLECT_SYSARGS_CANDIDATE_CONTRACT_V1.md`. Live metadata was not renamed.
+
 Lane: `full_stack_documentation` (Phase 5, Metadata)
 Owner: `member.derald`
 Recorded: 2026-08-05

@@ -1,0 +1,263 @@
+{
+  "schema": "dottalk.ddict.feed.v1",
+  "run_id": "feed",
+  "generated_at_utc": "2026-10-12T22:19:27.562949+00:00",
+  "status": "REVIEW",
+  "acceptance": "CANDIDATE",
+  "sensitivity": "internal",
+  "catalog": "dottalkpp/data/datadict",
+  "source_files": [
+    {
+      "name": "DATA_DICTIONARY_EVIDENCE_RECORDS.dbf",
+      "bytes": 2432,
+      "mtime_ns": 1780023004118267300,
+      "sha256": "fad4e41fc3d9692cb88224f62e5d29e25ceae240c97e5e721b14dcfd285a183b"
+    },
+    {
+      "name": "DATA_DICTIONARY_EVIDENCE_RECORDS.dtx",
+      "bytes": 4096,
+      "mtime_ns": 1781901953111718500,
+      "sha256": "06e393c255e0f0dfd027f43de6bf672ab3626828cdf2be44c15ab66433d271a5"
+    },
+    {
+      "name": "DATA_DICTIONARY_GATE_RECORDS.dbf",
+      "bytes": 1465,
+      "mtime_ns": 1780023004299335600,
+      "sha256": "68aa3ea50399f30132922cf50066065d785841b6cf4cc17ab6c6b52d21a3d897"
+    },
+    {
+      "name": "DATA_DICTIONARY_GATE_RECORDS.dtx",
+      "bytes": 4096,
+      "mtime_ns": 1781901953157227800,
+      "sha256": "06e393c255e0f0dfd027f43de6bf672ab3626828cdf2be44c15ab66433d271a5"
+    },
+    {
+      "name": "DATA_DICTIONARY_OBJECT_ATTRIBUTES.dbf",
+      "bytes": 66500,
+      "mtime_ns": 1780023003090007900,
+      "sha256": "4af98be7ee457c2437054a3d571a6891ab01cfe19413f6c0c192921cb94a0083"
+    },
+    {
+      "name": "DATA_DICTIONARY_OBJECT_ATTRIBUTES.dtx",
+      "bytes": 4096,
+      "mtime_ns": 1781901953158222600,
+      "sha256": "06e393c255e0f0dfd027f43de6bf672ab3626828cdf2be44c15ab66433d271a5"
+    },
+    {
+      "name": "DATA_DICTIONARY_OBJECTS.dbf",
+      "bytes": 5761,
+      "mtime_ns": 1780023001503543800,
+      "sha256": "63412569a6ca8d5e8d1e498bee1060f95214d14c5cf3b38b2e7d5c1681ad6adf"
+    },
+    {
+      "name": "DATA_DICTIONARY_RELATION_EDGES.dbf",
+      "bytes": 4108,
+      "mtime_ns": 1780023003847679300,
+      "sha256": "b55bb9c3b5ff9d244bd93d15086b9eddf085702c32fc5d964e2b6f4c39bf6bdd"
+    },
+    {
+      "name": "DATA_DICTIONARY_RUNS.dbf",
+      "bytes": 940,
+      "mtime_ns": 1780023004416840200,
+      "sha256": "edc900c5c8fd4cb5ff00105b35fd1da4972ffeb00158d95881c60564ffc70edd"
+    },
+    {
+      "name": "DATA_DICTIONARY_RUNS.dtx",
+      "bytes": 4096,
+      "mtime_ns": 1781901953159227400,
+      "sha256": "06e393c255e0f0dfd027f43de6bf672ab3626828cdf2be44c15ab66433d271a5"
+    },
+    {
+      "name": "DDARTIF.dbf",
+      "bytes": 2406,
+      "mtime_ns": 1779935016394415200,
+      "sha256": "e3f07ea80c540efd622086f909b25a0fc076c1f981be21c1d49e120aa91a9420"
+    },
+    {
+      "name": "DDATTR.dbf",
+      "bytes": 61386,
+      "mtime_ns": 1779935016304738700,
+      "sha256": "abb4586b28b732cf19e9cc22d3499ef9481f8eae47bccd1ba7bd213b70401541"
+    },
+    {
+      "name": "DDATTR.dbt",
+      "bytes": 211456,
+      "mtime_ns": 1779916207783885700,
+      "sha256": "9567dd1e75e97da68977c6e1583158dd124d8fca7a8b91270bcae8aea2e2409c"
+    },
+    {
+      "name": "ddattr.dtx",
+      "bytes": 32240,
+      "mtime_ns": 1785176758980730900,
+      "sha256": "77add7598074f59e2275cff52f73fd2cb054601b38dd108a85d1609256fdd6e9"
+    },
+    {
+      "name": "DDBASE.dbf",
+      "bytes": 765,
+      "mtime_ns": 1779935016141899300,
+      "sha256": "164d9d32dbc0e49c639dcf4000a7010376ceac0b7595f3539cb51920420e2db8"
+    },
+    {
+      "name": "DDBASE.dbt",
+      "bytes": 1024,
+      "mtime_ns": 1779916207768885500,
+      "sha256": "844bb3698cc479e6548f92da214994a8a32a2a0f2cfc03fbd0eeca4b91d017cf"
+    },
+    {
+      "name": "ddbase.dtx",
+      "bytes": 4208,
+      "mtime_ns": 1785176759037673000,
+      "sha256": "cc299269288a98e143a8ab5edfa1a6af92c03ef212b549c93291da1713fc343f"
+    },
+    {
+      "name": "DDEDGE.dbf",
+      "bytes": 8517,
+      "mtime_ns": 1779935016327496600,
+      "sha256": "b7f3706ca9e57a6ac5ffa81843fe3a9c509fc59c1d03bd6828b9a30aa4cf91e1"
+    },
+    {
+      "name": "DDEVID.dbf",
+      "bytes": 582,
+      "mtime_ns": 1779935016345495300,
+      "sha256": "a50bf5c72cdd9b1f2d5b0680c481e08f7fd8dfed576ea0e89049f50f0bce6321"
+    },
+    {
+      "name": "DDEVID.dbt",
+      "bytes": 1024,
+      "mtime_ns": 1779916207791893200,
+      "sha256": "7a2b0dfaecf5f1142ab9d253281cf6391295d10a92e81a9feac40a4b07f3f064"
+    },
+    {
+      "name": "ddevid.dtx",
+      "bytes": 4192,
+      "mtime_ns": 1785176759179730300,
+      "sha256": "919e2aeb590657ca077138e58793a1e3947c0cb001a35eee1ad669a2cdecb020"
+    },
+    {
+      "name": "DDGATE.dbf",
+      "bytes": 1109,
+      "mtime_ns": 1779935016364306500,
+      "sha256": "70b9dc6994d6bc7d24d14be1f5528aee8afafff07cd7015bdb8f990f8c178ea5"
+    },
+    {
+      "name": "DDGATE.dbt",
+      "bytes": 3584,
+      "mtime_ns": 1779916207795888200,
+      "sha256": "b90fbdb28f9ffa000859d386a7baf2dcd698b6a45636f92c97ca6cfa50f4f499"
+    },
+    {
+      "name": "ddgate.dtx",
+      "bytes": 4752,
+      "mtime_ns": 1785176759240684400,
+      "sha256": "a04b6d256c01d2f9a3390e076a8379018bea9a908d0e1a486feedc592ff48320"
+    },
+    {
+      "name": "DDOBJECT.dbf",
+      "bytes": 10925,
+      "mtime_ns": 1779935016181004700,
+      "sha256": "576fbfb09dba84eb59921d00f9d614964aededebc0769d893887f3b13bebd7db"
+    },
+    {
+      "name": "DDPROFILE.dbf",
+      "bytes": 512,
+      "mtime_ns": 1779935016412903000,
+      "sha256": "7aad21e530596151da13e63c8adaefc6ac186f77a90cf3c7903deaeb6b652034"
+    },
+    {
+      "name": "DDPROFILE.dbt",
+      "bytes": 2048,
+      "mtime_ns": 1779916207804890800,
+      "sha256": "061f1761e74f36520d83322ef97921f0a93fdd0103312604e72333777df071a2"
+    },
+    {
+      "name": "ddprofile.dtx",
+      "bytes": 4448,
+      "mtime_ns": 1785176759378683700,
+      "sha256": "6c9f53ecdbe82100d278581c3eb6ae0bf9bcc913fcf03532f39fa70957351f3e"
+    },
+    {
+      "name": "DDREVIEW.dbf",
+      "bytes": 524,
+      "mtime_ns": 1779935016369819300,
+      "sha256": "3da03227121c0cd3f1a1711cff2959a5d82d08b0f8b59bed0425295f2467449f"
+    },
+    {
+      "name": "DDREVIEW.dbt",
+      "bytes": 512,
+      "mtime_ns": 1779916207799885600,
+      "sha256": "aed59380c12c111bd8c966dea7e08f1047ea6ef4f44946f467fb5378aebfd943"
+    },
+    {
+      "name": "ddreview.dtx",
+      "bytes": 4096,
+      "mtime_ns": 1785176759446707500,
+      "sha256": "06e393c255e0f0dfd027f43de6bf672ab3626828cdf2be44c15ab66433d271a5"
+    },
+    {
+      "name": "DDRUN.dbf",
+      "bytes": 802,
+      "mtime_ns": 1779935016125272300,
+      "sha256": "522089b9cc74cbbd808b777fa095859f8d354bf8da86de92d9ab3cd0e981276b"
+    },
+    {
+      "name": "DDRUN.dbt",
+      "bytes": 1024,
+      "mtime_ns": 1779916207764373500,
+      "sha256": "3de0d3c1e967e0471d5dd0309c141bd6e2e8db0d115f93810b7f279c74df4303"
+    },
+    {
+      "name": "ddrun.dtx",
+      "bytes": 4192,
+      "mtime_ns": 1785176759526747300,
+      "sha256": "b8555fa111645f4f7f36a39d8b5b31771e6c738da1b0bff8a9c9e945da8aa848"
+    },
+    {
+      "name": "DDSOURCE.dbf",
+      "bytes": 2303,
+      "mtime_ns": 1779935016155449300,
+      "sha256": "6f0c70a322fe8c8db4830e78d5dec0ed143fb1e332dd4170c0971791756ad4f4"
+    }
+  ],
+  "producer_hashes": {
+    "src/tools/ddict_export_main.cpp": "127cb8e87dac604ec8f1e1544c6003bd8c4cfeaf0cc5584c1c85b6e288934100",
+    "src/datadict/ddict_catalog_view.cpp": "5ddbc5dc5c08330a25e5e2e4a3f02794fb8f7315b73ad407ba7c8e3f80e4e161",
+    "src/datadict/ddict_dbf_reader.cpp": "e8791c40846908f8990c005df957d20b7dd4c7dbde35ffe706ffcfe07b3e8036",
+    "src/memo/memostore.cpp": "2615483cf6034942aa58a764580c58691813e658b6b7045d2bdc2e1d45147e28",
+    "include/datadict/ddict_catalog_view.hpp": "09548e7cc15839427bfd4870ae762d0d7bd181a8fa4573fc72d00081c3cc0164",
+    "tools/datadict/catalog/ddict_feed.py": "691a7bfa9c381cf034adc64c21d954078b4a400c0454616367a7634a9d888ade",
+    "docs/datadict/schemas/ddict_native_v1.schema.json": "afcf5182d1627bfdfb0e6c6cb0b6b9a2bafeb56cc6e0e33e0ec287605c817dd8",
+    "docs/datadict/schemas/ddict_feed_v1.schema.json": "d98ca499f5a12fc4063d2d49e2e35477deaeba042e9932a61d699ebcd362597f"
+  },
+  "binary": {
+    "path": "build/src/Release/ddict_export.exe",
+    "sha256": "69882afc78a1fbbc2d9d8660b9542f18e4c07b5314fb8d33362738f25c88f7a8"
+  },
+  "artifacts": {
+    "DDICT_CROSSWALK.json": "fc0de7a9d3617ce7fd167073829f75a3429e0592b212823ef8db885c55f0769f",
+    "DDICT_DIAGNOSTIC_DISPOSITION.json": "cb5685a9e755debbebeb82c7b87033be84c9931dc23e7a8f777af1b87f3f15dc",
+    "DDICT_NATIVE.json": "3d74f4d6179bc5ea23770888b9af7ce0a1167e1a717d5115567387e8e4e94cf1",
+    "dictionary.html": "1ea32a1cefa3ad8982fd75d5b9a875e0d0cb7d7d169e0e4b4df30d8fd0e86786",
+    "dictionary.md": "357c96467190d964db0dd5c055e105dbbb3d9a4d8a99cd9cda0d4d6a12796c29"
+  },
+  "diagnostics": [
+    "DATA_DICTIONARY_EVIDENCE_RECORDS: EVIDENCE_DETAIL_TEXT: MemoStore: memo object not found or unreadable (cells=7)",
+    "DATA_DICTIONARY_GATE_RECORDS: GATE_DETAIL_TEXT: MemoStore: memo object not found or unreadable (cells=3)",
+    "DATA_DICTIONARY_OBJECT_ATTRIBUTES: CATALOG_ATTRIBUTE_DETAIL: MemoStore: memo object not found or unreadable (cells=1)",
+    "DATA_DICTIONARY_OBJECT_ATTRIBUTES: CATALOG_ATTRIBUTE_DETAIL: invalid space-filled x64 memo link (cells=126)",
+    "DATA_DICTIONARY_RELATION_EDGES: unresolved source x64:OBJ_3122F33830CB2DB8DCBE",
+    "DATA_DICTIONARY_RELATION_EDGES: unresolved source x64:OBJ_A05DB9F99A7AD6B36069",
+    "DATA_DICTIONARY_RELATION_EDGES: unresolved source x64:OBJ_A05DB9F99A7AD6B36069",
+    "DATA_DICTIONARY_RELATION_EDGES: unresolved source x64:OBJ_A05DB9F99A7AD6B36069",
+    "DATA_DICTIONARY_RELATION_EDGES: unresolved source x64:OBJ_A05DB9F99A7AD6B36069",
+    "DATA_DICTIONARY_RELATION_EDGES: unresolved source x64:OBJ_F145DDC879A1964EB5D0",
+    "DATA_DICTIONARY_RELATION_EDGES: unresolved source x64:OBJ_F145DDC879A1964EB5D0",
+    "DATA_DICTIONARY_RELATION_EDGES: unresolved target x64:OBJ_57266DFAD7BF21A758E2",
+    "DATA_DICTIONARY_RELATION_EDGES: unresolved target x64:OBJ_5D7F72EAF174C4798A0E",
+    "DATA_DICTIONARY_RELATION_EDGES: unresolved target x64:OBJ_5D7F72EAF174C4798A0E",
+    "DATA_DICTIONARY_RELATION_EDGES: unresolved target x64:OBJ_92818B77DFCD62590870",
+    "DATA_DICTIONARY_RELATION_EDGES: unresolved target x64:OBJ_92D957D39F59C251F128",
+    "DATA_DICTIONARY_RELATION_EDGES: unresolved target x64:OBJ_BEEBBBB7C3B6C1ECE4D2",
+    "DATA_DICTIONARY_RELATION_EDGES: unresolved target x64:OBJ_E5DD5DB46A44911D24C7",
+    "DATA_DICTIONARY_RUNS: RUN_DETAIL_TEXT: MemoStore: memo object not found or unreadable (cells=2)"
+  ]
+}

@@ -11,6 +11,12 @@ python .\labtalk\portal\labtalk_portal.py
 
 Current behavior:
 
+- Docs includes native Data Dictionary recipes and a current dictionary report.
+  The report is selected through `registries/current_ddict_feed.json` and labeled
+  as a candidate. A development checkout with the source catalog requires full
+  source freshness; a clean clone without that ignored catalog is explicitly
+  `SNAPSHOT_ONLY`. Missing memos and relationship diagnostics remain visible;
+  stale development snapshots do not open.
 - reads `registries/portal.yaml`
 - reads referenced LabTalk registries
 - shows Docs, Apps, Labs, Lessons, Concepts, Proofs, and Runtime sections

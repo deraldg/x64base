@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:dottalk:ddict:feed:v1",
+  "title": "Hash-bound dictionary candidate feed manifest",
+  "type": "object",
+  "required": ["schema", "run_id", "generated_at_utc", "status", "acceptance", "sensitivity", "catalog", "source_files", "producer_hashes", "binary", "artifacts", "diagnostics"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {"const": "dottalk.ddict.feed.v1"},
+    "run_id": {"type": "string", "minLength": 1},
+    "generated_at_utc": {"type": "string", "format": "date-time"},
+    "status": {"enum": ["READY", "REVIEW"]},
+    "acceptance": {"const": "CANDIDATE"},
+    "sensitivity": {"const": "internal"},
+    "catalog": {"type": "string", "minLength": 1},
+    "source_files": {"type": "array", "items": {
+      "type": "object", "required": ["name", "bytes", "mtime_ns", "sha256"], "additionalProperties": false,
+      "properties": {"name": {"type": "string"}, "bytes": {"type": "integer", "minimum": 0}, "mtime_ns": {"type": "integer"}, "sha256": {"$ref": "#/$defs/hash"}}
+    }},
+    "producer_hashes": {"type": "object", "minProperties": 1, "additionalProperties": {"$ref": "#/$defs/hash"}},
+    "binary": {"type": "object", "required": ["path", "sha256"], "additionalProperties": false, "properties": {"path": {"type": "string"}, "sha256": {"$ref": "#/$defs/hash"}}},
+    "artifacts": {"type": "object", "required": ["DDICT_NATIVE.json", "DDICT_CROSSWALK.json", "DDICT_DIAGNOSTIC_DISPOSITION.json", "dictionary.md", "dictionary.html"], "minProperties": 5, "maxProperties": 5, "additionalProperties": {"$ref": "#/$defs/hash"}},
+    "diagnostics": {"type": "array", "items": {"type": "string"}}
+  },
+  "$defs": {"hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"}}
+}

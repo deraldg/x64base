@@ -116,11 +116,21 @@ triggers:
     label: about to build, install tooling, or run anything inside the mounted Linux sandbox
   - id: trigger.fullstack_doc_push
     label: about to run or harden the full-stack documentation push or a Portal data feed
+  - id: trigger.ddict
+    label: about to inspect, export or integrate the native data dictionary
   - id: trigger.understand_portal_system
     label: about to understand or normalize the AI Portal hierarchy, schemas, process flow, or data-flow seams
 
 # ---------------------------------------------------------------- nodes
 nodes:
+  - id: procedure.ddict_feed
+    label: "native dictionary reporting and candidate feed"
+    path: docs/datadict/contracts/DDICT_FEED_CONTRACT_V1.md
+    anchor: ""
+    class: procedural
+    enforced_by: tools/datadict/catalog/ddict_feed.py
+    hard_fails: true
+    tier: 2
   - id: doctrine.repository_roles
     label: "STOP: Repository Roles"
     path: AI_PORTAL.md
@@ -813,6 +823,8 @@ nodes:
 #   evidenced_by doctrine -> the episodic record that produced it.
 #   supersedes   newer -> older.
 edges:
+  - {from: trigger.ddict, to: procedure.ddict_feed, type: fires_at}
+  - {from: trigger.fullstack_doc_push, to: procedure.ddict_feed, type: fires_at}
   - {from: trigger.onboard, to: seed.tier1, type: fires_at}
   - {from: trigger.onboard, to: state.tier0, type: fires_at}
   - {from: trigger.onboard, to: doctrine.repository_roles, type: fires_at}

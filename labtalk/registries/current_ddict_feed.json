@@ -1,0 +1,8 @@
+{
+  "schema": "dottalk.ddict.current.v1",
+  "observed_at_utc": "2026-10-12T22:19:27.562949Z",
+  "manifest_sha256": "8d5f2e22ae1151eaf6e1c72552cc7672319e7b3ae0085009a7f3eb87bac37dbc",
+  "workspace": "docs/maintenance/reviews/DDICT_INTEGRATION_2026-10-12/feed",
+  "status": "REVIEW",
+  "acceptance": "CANDIDATE"
+}

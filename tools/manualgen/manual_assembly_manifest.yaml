@@ -93,6 +93,32 @@ baseline:
 # `binding.exists: false` -> a NEW generator specced in M2, built in M3.
 # ---------------------------------------------------------------------------
 parts:
+  - id: art-ddict-recipes
+    order: 295
+    kind: article
+    class: maintained
+    direction: authored
+    title: "Data dictionary and metadata recipes"
+    anchor: MAN-ART-DDICT-RECIPES
+    region_mode: authored
+    binding: {generator: null, exists: true}
+    source_of_record: docs/datadict/DDICT_METADATA_RECIPE_BOOK_V1.md
+    source_file: docs/datadict/DDICT_METADATA_RECIPE_BOOK_V1.md
+    proof_label: source-evidenced
+    status: exists
+
+  - id: appendix-ddict-snapshot
+    order: 895
+    kind: appendix
+    class: reported
+    direction: S-rep
+    title: "Data dictionary candidate snapshot"
+    anchor: MAN-APP-DDICT-SNAPSHOT
+    region_mode: candidate
+    binding: {generator: "assembler:ddict", exists: true}
+    source_of_record: labtalk/registries/current_ddict_feed.json
+    proof_label: source-evidenced
+    status: exists
 
   # ===================== FRONT MATTER =====================
   - id: fm-title

@@ -8,6 +8,28 @@ registry:
   validation_mode: report_only
 
 feeds:
+  - feed_id: feed.dottalk.ddict
+    subject_class: data_dictionary_catalog
+    status: degraded
+    phase: {canonical: development_closeout, legacy_labels: []}
+    source_authorities:
+      - {path: src/datadict/ddict_catalog_view.cpp, role: native_catalog_view, retention: tracked}
+      - {path: docs/datadict/contracts/DDICT_FEED_CONTRACT_V1.md, role: feed_contract, retention: tracked}
+    producer:
+      kind: native_export_with_candidate_wrapper
+      path: tools/datadict/catalog/ddict_feed.py
+      retention: tracked
+    outputs:
+      - {path: labtalk/registries/current_ddict_feed.json, role: hash_bound_snapshot_pointer, retention: tracked}
+    evidence: {state: source-evidenced, platform: windows-host, proofs: []}
+    sensitivity: internal
+    derived_from: []
+    consumers:
+      - {id: consumer.portal.ddict, path: labtalk/portal/labtalk_portal.py, retention: tracked, visibility: internal, mode: reads}
+      - {id: consumer.manualgen.ddict, path: tools/manualgen/manualgen_lib/harvest.py, retention: tracked, visibility: internal, mode: reads}
+      - {id: consumer.manual_assembly.ddict, path: tools/manualgen/assemble_manual.py, retention: tracked, visibility: internal, mode: reads}
+      - {id: consumer.website.ddict_candidate, path: tools/fullstack_docs/build_ddict_website_candidate.py, retention: tracked, visibility: internal, mode: reads}
+    freshness: {policy: validate_on_change}
   - feed_id: feed.dottalk.help_store
     subject_class: help_catalog
     status: active

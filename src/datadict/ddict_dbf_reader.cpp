@@ -1,173 +1,146 @@
 // @dottalk.file v1
 // subsystem: datadict
 // layer: helper
-// owns: 
 // project: project.x64base.runtime
-// lane: 
 // owner: member.derald
 // status: supported
 
 #include "datadict/ddict_dbf_reader.hpp"
 #include "datadict/ddict_read_helpers.hpp"
-
 #include <fstream>
-
-// DD-089C extraction provenance. This file was extracted from
-// src/cli/cmd_ddict.cpp by DD-089C.
-//
-// CORRECTED 2026-08-24. This banner used to read "extraction preview only /
-// This generated candidate is not installed or wired by DD-089C" -- and that
-// stopped being true when the file was wired, which nothing updated. It is
-// COMPILED THREE SEPARATE WAYS today:
-//   1. src/CMakeLists.txt GLOB_RECURSE over src/**/*.cpp sweeps src/datadict/
-//   2. the DD-089H block re-adds four of these files by name via target_sources
-//   3. root CMakeLists.txt links ddict_read_helpers + ddict_dbf_reader into the
-//      dt_meta static library that metacollect uses
-//
-// A reader trusting the old banner concluded this code was inert. A comment
-// cannot go red, so it drifted silently from the day the wiring landed --
-// the same shape as a severed setting whose default survives it.
+#include <set>
+#include <stdexcept>
 
 namespace dottalk::datadict {
-namespace fs = std::filesystem;
-
-bool plausible_name(const std::vector<unsigned char>& data, std::size_t off) {
-    if (off + 11 > data.size()) {
-        return false;
+namespace {
+// Inspection decoder for the geometry in xbase_64.hpp. No DbArea is opened:
+// catalog inspection must not initialize memo/index sidecars or update headers.
+std::uint64_t number(const std::vector<unsigned char>& b, std::size_t p, unsigned n) {
+    if (p > b.size() || n > b.size() - p) throw std::runtime_error("truncated header");
+    std::uint64_t v = 0;
+    for (unsigned i = 0; i < n; ++i) v |= std::uint64_t(b[p + i]) << (8 * i);
+    return v;
+}
+struct Geometry {
+    std::size_t start{}, length{}, count{};
+    std::string name;
+    std::vector<FieldDef> fields;
+};
+Geometry geometry(const std::vector<unsigned char>& b) {
+    if (b.size() < 32) throw std::runtime_error("truncated DBF header");
+    const bool x64 = b[0] == 0x64;
+    const auto start = number(b, x64 ? 40 : 8, x64 ? 8 : 2);
+    const auto length = number(b, x64 ? 48 : 10, x64 ? 8 : 2);
+    const auto count = number(b, x64 ? 32 : 4, x64 ? 8 : 4);
+    std::size_t p = x64 ? 96 : 32;
+    if (start <= p || start > b.size() || length == 0 ||
+        count > (b.size() - start) / length)
+        throw std::runtime_error("invalid DBF record geometry or truncated records");
+    Geometry g{static_cast<std::size_t>(start), static_cast<std::size_t>(length),
+               static_cast<std::size_t>(count), {}, {}};
+    while (p < start && b[p] != 0x0d) {
+        if (start - p < 32) throw std::runtime_error("truncated field descriptor");
+        std::string name;
+        for (std::size_t j = 0; j < 11 && b[p + j]; ++j) name += char(b[p + j]);
+        const char type = char(b[p + 11]);
+        if (name.empty() || std::string("CDNLFIMBYT@GOVQ0").find(type) == std::string::npos)
+            throw std::runtime_error("invalid field descriptor");
+        // Character width uses both bytes in extended FoxPro descriptors.
+        std::size_t width = static_cast<std::size_t>(number(b, p + 16, type == 'C' ? 2 : 1));
+        g.fields.push_back({upper_copy(name), type, width});
+        p += 32;
     }
-    unsigned char first = data[off];
-    if (!(std::isalpha(first) || first == '_')) {
-        return false;
-    }
-    for (std::size_t i = off; i < off + 11 && data[i] != 0; ++i) {
-        unsigned char ch = data[i];
-        if (!(std::isalnum(ch) || ch == '_')) {
-            return false;
+    if (p >= start || g.fields.empty()) throw std::runtime_error("missing descriptor terminator or fields");
+    ++p;
+    if (x64 && start - p >= 4 && std::string(reinterpret_cast<const char*>(b.data() + p), 4) == "X64M") {
+        if (start - p < 44) throw std::runtime_error("truncated X64M header");
+        const auto version = number(b, p + 4, 2), total = number(b, p + 8, 4);
+        const auto entries = number(b, p + 20, 4), n = number(b, p + 24, 4);
+        const auto pool = number(b, p + 28, 4), pool_size = number(b, p + 32, 4);
+        const std::size_t stride = version == 1 ? 12 : 16;
+        if ((version != 1 && version != 2) || total < 44 || total > start - p ||
+            entries < 44 || entries > total || n > (total - entries) / stride ||
+            pool > total || pool_size > total - pool)
+            throw std::runtime_error("invalid X64M bounds/version");
+        auto text = [&](std::uint64_t off, std::uint64_t len) {
+            if (off > pool_size || len > pool_size - off) throw std::runtime_error("invalid X64M string");
+            return std::string(reinterpret_cast<const char*>(b.data() + p + pool + off), static_cast<std::size_t>(len));
+        };
+        g.name = text(number(b, p + 12, 4), number(b, p + 16, 2));
+        std::set<std::uint64_t> seen;
+        for (std::uint64_t i = 0; i < n; ++i) {
+            const std::size_t e = p + static_cast<std::size_t>(entries + i * stride);
+            const auto index = number(b, e, 4);
+            if (!index || index > g.fields.size() || !seen.insert(index).second)
+                throw std::runtime_error("invalid/duplicate X64M field index");
+            auto name = text(number(b, e + 4, 4), number(b, e + 8, 2));
+            if (!name.empty()) g.fields[index - 1].name = upper_copy(name);
+            if (version == 2 && number(b, e + 12, 4))
+                g.fields[index - 1].width = static_cast<std::size_t>(number(b, e + 12, 4));
         }
+    } else if (x64 && start - p >= 4 && (b[p] || b[p+1] || b[p+2] || b[p+3])) {
+        throw std::runtime_error("unrecognized x64 metadata");
     }
-    return true;
+    std::set<std::string> names;
+    std::size_t used = 1;
+    for (const auto& f : g.fields) {
+        if (!names.insert(f.name).second || !f.width || used > length || f.width > length - used)
+            throw std::runtime_error("duplicate field name or invalid field width");
+        used += f.width;
+    }
+    if (used != length) throw std::runtime_error("field widths do not match record size");
+    return g;
 }
-
-bool plausible_descriptor(const std::vector<unsigned char>& data, std::size_t off) {
-    if (off + 32 > data.size() || data[off] == 0x0D || data[off] == 0x1A) {
-        return false;
-    }
-    if (!plausible_name(data, off)) {
-        return false;
-    }
-    char t = static_cast<char>(data[off + 11]);
-    std::string allowed = "CDNLFIMBYT@GOVQ";
-    return allowed.find(t) != std::string::npos;
 }
-
-std::size_t descriptor_start(const std::vector<unsigned char>& data) {
-    if (plausible_descriptor(data, 96)) {
-        return 96;
-    }
-    if (plausible_descriptor(data, 32)) {
-        return 32;
-    }
-    const std::size_t limit = std::min<std::size_t>(data.size(), 512);
-    for (std::size_t off = 0; off + 64 < limit; ++off) {
-        if (plausible_descriptor(data, off) && plausible_descriptor(data, off + 32)) {
-            return off;
-        }
-    }
-    return static_cast<std::size_t>(-1);
-}
-
-std::uint16_t le16(const std::vector<unsigned char>& data, std::size_t off) {
-    if (off + 2 > data.size()) {
-        return 0;
-    }
-    return static_cast<std::uint16_t>(data[off] | (data[off + 1] << 8));
-}
-
-std::uint32_t le32(const std::vector<unsigned char>& data, std::size_t off) {
-    if (off + 4 > data.size()) {
-        return 0;
-    }
-    return static_cast<std::uint32_t>(data[off] | (data[off + 1] << 8) |
-        (data[off + 2] << 16) | (data[off + 3] << 24));
-}
-
-std::string descriptor_name(const std::vector<unsigned char>& data, std::size_t off) {
-    std::string s;
-    for (std::size_t i = off; i < off + 11 && i < data.size() && data[i] != 0; ++i) {
-        s.push_back(static_cast<char>(data[i]));
-    }
-    return upper_copy(trim_copy(s));
-}
-
-std::vector<unsigned char> read_binary(const fs::path& path) {
+std::vector<unsigned char> read_binary(const std::filesystem::path& path) {
     std::ifstream in(path, std::ios::binary);
-    if (!in) {
-        return {};
-    }
+    if (!in) return {};
     return std::vector<unsigned char>(std::istreambuf_iterator<char>(in), {});
 }
-
 std::vector<FieldDef> parse_fields(const std::vector<unsigned char>& data) {
-    std::vector<FieldDef> fields;
-    std::size_t start = descriptor_start(data);
-    if (start == static_cast<std::size_t>(-1)) {
-        return fields;
-    }
-    for (std::size_t off = start; off + 32 <= data.size(); off += 32) {
-        if (data[off] == 0x0D || !plausible_descriptor(data, off)) {
-            break;
-        }
-        FieldDef f;
-        f.name = descriptor_name(data, off);
-        f.type = static_cast<char>(data[off + 11]);
-        f.width = data[off + 16];
-        if (f.width == 0) {
-            f.width = le16(data, off + 16);
-        }
-        if (!f.name.empty() && f.width > 0 && f.width < 4096) {
-            fields.push_back(f);
-        }
-    }
-    return fields;
+    try { return geometry(data).fields; } catch (const std::exception&) { return {}; }
 }
-
-std::vector<DDictRow> read_dbf_table(const fs::path& catalog_dir, const std::string& table_name) {
-    fs::path path = catalog_dir / (upper_copy(table_name) + ".dbf");
-    std::vector<unsigned char> data = read_binary(path);
-    if (data.size() < 32) {
-        return {};
-    }
-
-    std::uint32_t records = le32(data, 4);
-    std::uint16_t header_len = le16(data, 8);
-    std::uint16_t record_len = le16(data, 10);
-    std::vector<FieldDef> fields = parse_fields(data);
-    if (header_len == 0 || record_len == 0 || fields.empty()) {
-        return {};
-    }
-
-    std::vector<DDictRow> rows;
-    for (std::uint32_t rec = 0; rec < records; ++rec) {
-        std::size_t base = static_cast<std::size_t>(header_len) + static_cast<std::size_t>(rec) * record_len;
-        if (base + record_len > data.size()) {
-            break;
+TableReadResult read_dbf_table_checked(const std::filesystem::path& dir, const std::string& table) {
+    TableReadResult result;
+    try {
+        const auto path = dir / (table + ".dbf");
+        std::error_code ec;
+        if (!std::filesystem::exists(path, ec)) {
+            if (ec) throw std::runtime_error(ec.message());
+            result.state = TableReadState::Missing;
+            return result;
         }
-        if (data[base] == '*') {
-            continue;
-        }
-        DDictRow row;
-        std::size_t pos = base + 1;
-        for (const auto& f : fields) {
-            if (pos + f.width > data.size()) {
-                break;
+        auto data = read_binary(path);
+        auto g = geometry(data);
+        result.fields = g.fields;
+        result.x64 = data[0] == 0x64;
+        result.logical_name = g.name.empty() ? table : g.name;
+        for (std::size_t rec = 0; rec < g.count; ++rec) {
+            const auto base = g.start + rec * g.length;
+            if (data[base] == '*') continue;
+            if (data[base] != ' ') throw std::runtime_error("invalid record deletion marker");
+            DDictRow row;
+            std::size_t pos = base + 1;
+            for (const auto& f : g.fields) {
+                std::string raw(reinterpret_cast<const char*>(data.data() + pos), f.width);
+                row[f.name] = f.type == 'M' ? raw : trim_copy(raw);
+                pos += f.width;
             }
-            std::string raw(reinterpret_cast<const char*>(&data[pos]), f.width);
-            row[f.name] = trim_copy(raw);
-            pos += f.width;
+            result.rows.push_back(std::move(row));
         }
-        rows.push_back(std::move(row));
+        result.state = TableReadState::Ready;
+    } catch (const std::exception& e) {
+        result.rows.clear();
+        result.error = e.what();
+        result.state = TableReadState::Error;
     }
-    return rows;
+    return result;
 }
-
+std::vector<DDictRow> read_dbf_table(const std::filesystem::path& dir, const std::string& table) {
+    // Compatibility API for metacollect. The catalog view uses checked reads.
+    auto result = read_dbf_table_checked(dir, upper_copy(table));
+    for (auto& row : result.rows) for (const auto& f : result.fields)
+        if (f.type == 'M') row[f.name] = trim_copy(row[f.name]);
+    return std::move(result.rows);
+}
 } // namespace dottalk::datadict

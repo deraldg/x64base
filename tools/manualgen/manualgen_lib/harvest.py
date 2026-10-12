@@ -75,7 +75,18 @@ def inventory_harvest(paths: ManualgenPaths) -> dict[str, Any]:
             "relative_path_posix": relpath_posix(candidate, paths.repo_root) if candidate else "",
         })
 
+    dictionary = {"selected": False, "status": "NOT_SELECTED"}
+    if root and (root / "DDICT_MANIFEST.json").is_file():
+        # Optional versioned companion; legacy 14-file harvests stay valid.
+        import sys
+        sys.path.insert(0, str(paths.repo_root))
+        from tools.datadict.catalog.ddict_feed import validate_bundle
+        try:
+            dictionary = {"selected": True, **validate_bundle(root, paths.repo_root)}
+        except (OSError, ValueError, KeyError, TypeError) as exc:
+            dictionary = {"selected": True, "status": "FAIL", "error": str(exc)}
     return {
+        "dictionary": dictionary,
         "workspace": relpath(root, paths.repo_root) if root else "",
         "workspace_posix": relpath_posix(root, paths.repo_root) if root else "",
         "selection_requested": paths.harvest_workspace or "",

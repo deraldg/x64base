@@ -16,7 +16,7 @@ SPEC.loader.exec_module(MOD)
 
 def row(**updates: str) -> dict[str, str]:
     value = {
-        "ARG_ID": "ARG_SET_PATH",
+        "ARG_ID": "ARG:COMMAND:SET:KEYWORD:PATH",
         "OWNER_KND": "command",
         "OWNER_NAM": "SET",
         "ARG_NAME": "PATH",
@@ -40,21 +40,33 @@ class SysArgsCandidateValidatorTests(unittest.TestCase):
     def test_valid_row(self) -> None:
         self.assertEqual([], MOD.validate_rows([row()]))
 
+    def test_physical_candidate_uses_wide_identity_and_native_memo(self) -> None:
+        widths = MOD.candidate_widths()
+        self.assertEqual(1024, widths["ARG_ID"])
+        self.assertNotIn("NOTES", widths)
+        self.assertIn("NOTES TYPE=M LEN=8", MOD.PHYSICAL_CONTRACT.read_text())
+
     def test_keyword_and_placeholder_collide_on_one_id(self) -> None:
         """THE FINDING. Same word, two roles, one id -- and the rows differ.
 
         This is the real ARG_SET_PATH pair from the 2026-09-24 candidate. The
         check exists to make this loud; do not relax it to make the suite green.
         """
-        keyword = row()
+        keyword = row(ARG_ID="ARG_SET_PATH")
         placeholder = row(
+            ARG_ID="ARG_SET_PATH",
             ARG_KIND="placeholder",
             VAL_SHAPE="path",
             NOTES="usage=SET DEVICE TO FILE <path> ; usage=SET PATH <slot> <path>",
         )
         self.assertNotEqual(keyword, placeholder)
         findings = MOD.validate_rows([keyword, placeholder])
-        self.assertEqual(["ARG_ID_DUPLICATE:ARG_SET_PATH:2"], findings)
+        self.assertIn("ARG_ID_DUPLICATE:ARG_SET_PATH:2", findings)
+
+    def test_owned_kind_identity_does_not_collide(self) -> None:
+        keyword = row()
+        placeholder = row(ARG_ID="ARG:COMMAND:SET:PLACEHOLDER:PATH", ARG_KIND="placeholder", VAL_SHAPE="path")
+        self.assertEqual([], MOD.validate_rows([keyword, placeholder]))
 
     def test_projection_and_reserved_values_fail(self) -> None:
         findings = MOD.validate_rows(

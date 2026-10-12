@@ -1,5 +1,21 @@
 # Metacollect SYSARGS Candidate Contract V1
 
+## Current amendment -- candidate v2, 2026-10-09
+
+The owner authorized normalization as part of the DDICT/full-stack integration.
+New candidate ARG_ID values are `ARG:COMMAND:<canonical-owner>:<KEYWORD|PLACEHOLDER>:<ARG_NAME>`.
+The emitter and validator now include argument kind; legacy duplicate IDs still
+fail. The physical candidate contract is
+`docs/datadict/schemas/sysargs_catalog_candidate_v2.dtschema` (X64, wide IDs,
+native DTX NOTES). This is a proposed load schema, not a live table migration.
+The 15-column CSV header is unchanged. The earlier projection and physical-schema
+absence described below are retained as historical evidence, superseded for
+new candidates by this amendment. No live IDs, DBFs or indexes were changed.
+Before loading, bind the same-run owner inventory, validate UTF-8 byte widths,
+record an old/new ID crosswalk and prove native readback/rollback.
+
+## Historical v1 contract and observations
+
 Status: active source-defined candidate contract
 Owner: metadata / full-stack documentation
 Physical schema: NONE EXISTS -- see "Physical Schema Is Absent" below

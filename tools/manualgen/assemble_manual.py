@@ -29,6 +29,7 @@ import csv
 import hashlib
 import subprocess
 from datetime import datetime, timezone
+from pathlib import Path
 
 import yaml
 
@@ -442,7 +443,21 @@ def gen_colophon(ctx):
     return "\n".join(lines)
 
 
+def gen_ddict(ctx):
+    # The assembled manual is a candidate. Validate current input hashes before
+    # including the dictionary; never silently reuse stale evidence.
+    sys.path.insert(0, ROOT)
+    from tools.datadict.catalog.ddict_feed import contained, validate_bundle
+    pointer = json.loads(Path(ROOT, "labtalk/registries/current_ddict_feed.json").read_text(encoding="utf-8"))
+    directory = contained(Path(ROOT), pointer["workspace"])
+    result = validate_bundle(directory, Path(ROOT))
+    if result["manifest_sha256"] != pointer["manifest_sha256"]:
+        raise ValueError("DDICT feed pointer hash mismatch")
+    return demote((directory / "dictionary.md").read_text(encoding="utf-8"), 1)
+
+
 GENERATORS = {
+    "assembler:ddict": gen_ddict,
     "assembler:frontmatter:fm-title": gen_frontmatter_title,
     "assembler:frontmatter:fm-provenance": gen_frontmatter_provenance,
     "assembler:toc": gen_toc,
@@ -460,11 +475,30 @@ GENERATORS = {
 # --------------------------------------------------------------------------- #
 def resolve_existing(part):
     """Map a part's declared output to a concrete published file, if any."""
+    source_file = part.get("source_file")
+    if source_file:
+        path = Path(ROOT, source_file).resolve()
+        if not path.is_relative_to(Path(ROOT).resolve()) or not path.is_file():
+            raise ValueError("Missing or escaping maintained manual source: " + source_file)
+        return str(path)
     out = part.get("output")
     if not out or "*" in out:
         return None
     p = os.path.join(PUB_ROOT, out)
     return p if os.path.exists(p) else None
+
+
+def rebase_source_links(text, source_file, output_dir):
+    """Keep maintained chapter links valid when the chapter is assembled elsewhere."""
+    def replace(match):
+        target = match.group(1)
+        if target.startswith(("#", "/")) or re.match(r"^[A-Za-z][A-Za-z0-9+.-]*:", target):
+            return match.group(0)
+        path, marker, fragment = target.partition("#")
+        resolved = (Path(source_file).parent / path).resolve()
+        relative = os.path.relpath(resolved, output_dir).replace("\\", "/")
+        return "](" + relative + (marker + fragment if marker else "") + ")"
+    return re.sub(r"\]\(([^)\n]+)\)", replace, text)
 
 
 def bind_command_reference(part, ctx):
@@ -506,7 +540,10 @@ def render_part(part, ctx):
     if mode == "authored":
         f = resolve_existing(part)
         if f:
-            body = demote(rd(f).strip(), 1)
+            body = rd(f).strip()
+            if part.get("source_file"):
+                body = rebase_source_links(body, f, ctx.get("output_dir", ROOT))
+            body = demote(body, 1)
         elif part.get("status") == "greenfield":
             body = "## %s\n\n_To be authored._" % title
         else:
@@ -571,6 +608,7 @@ def main(out_dir=None):
     by_id = {p["id"]: p for p in parts}
 
     ctx = {
+        "output_dir": out_dir,
         "manifest": manifest,
         "accepted": load_json(manifest["provenance"]["accepted_artifact"]),
         "machine": load_json(manifest["provenance"]["machine_profile"]),

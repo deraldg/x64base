@@ -2,6 +2,16 @@
 # Classifies every x64base-site content page on the simplex/duplex spine x content class.
 # Detail + source-of-record per page: docs/maintenance/WEBSITE_CONTENT_MANIFEST_M1_CLASSIFICATION_V1.md
 schema: dottalk.website.content_manifest.v2
+candidate_feeds:
+  - id: ddict-native-v1
+    producer: tools/fullstack_docs/build_ddict_website_candidate.py
+    source_pointer: labtalk/registries/current_ddict_feed.json
+    maintained_recipe: docs/datadict/DDICT_METADATA_RECIPE_BOOK_V1.md
+    direction: S-rep
+    acceptance: candidate_only
+    sensitivity: internal
+    proposed_routes: [docs/dottalk/data-dictionary, docs/dottalk/data-dictionary-recipes]
+    note: "Proposed routes are not counted as existing site pages; separate review and deployment required."
 generated_at: "2026-08-26"
 spine: simplex_duplex_direction_gates   # S-impl | S-rep | D-man | WO
 site_root: x64base-site/content

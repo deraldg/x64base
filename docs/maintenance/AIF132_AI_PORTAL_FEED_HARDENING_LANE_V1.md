@@ -9,7 +9,7 @@ Steward: `member.ai.codex`
 Runs: `CODEX-20260826-001`, `CODEX-20260826-002`, `CODEX-20260826-003`,
 `CODEX-20260826-004`, `CODEX-20260826-005`, `CODEX-20260826-006`,
 `CODEX-20260826-007`, `CODEX-20260826-008`, `CODEX-20260826-009`,
-`CODEX-20260826-010`
+`CODEX-20260826-010`, `CODEX-20261012-DDICT-COMPLETE-001`
 
 ## Authorization
 
@@ -76,6 +76,7 @@ renumbered.
 | M19 | Phase 8 entry preflight | FAIL CLOSED -- owner entry authorization received, but E2 was invalidated because canonical HELP predates the current executable; no source or public mutation |
 | M20 | Executable website matrix gate | PASS CONTROL / CURRENTLY RED -- matrix runner binds complete page classification to full-stack E2 freshness and the four website catalogs; owner recompile proves stale HELP fails the matrix; timestamp fallback remains conservative pending a HELP-producer fingerprint |
 | M21 | Tier 0 check truthfulness | PASS LOCAL -- a real normalized-content check now rejects stale persisted state; focused positive and negative tests pass; exact-path durability remains open |
+| M22 | Native DDICT feed completion | PASS DEVELOPMENT / REVIEW DATA -- shared native view and hash-bound feed landed with all 19 diagnostics classified; full-stack publication remains blocked |
 
 ## Coordination finding
 
@@ -500,3 +501,20 @@ The focused suite passed 17 tests. The live negative arm then returned exit 3
 against the stale file; one explicit write regenerated it at 3,811 bytes; the
 live positive arm returned current. No feed, storage, website, publication, or
 Git state was mutated by the check itself.
+
+## Native DDICT feed completion -- CODEX-20261012-DDICT-COMPLETE-001
+
+The previously local native DDICT view/export/feed spine is now a bounded,
+replayable development candidate. CLI, Workbench and exporter share the same
+LEGACY-plus-X64 read view. The selected candidate carries 110 objects and 803
+row identities. Its 19 findings have deterministic blocking dispositions: four
+missing memo-payload groups, one invalid-link group covering 126 cells, and 14
+unresolved relation endpoints. Unknown diagnostic text fails construction.
+
+Portal readers now state whether evidence is `FULLY_VERIFIED` or
+`SNAPSHOT_ONLY`. A clean clone may inspect the hash-bound candidate without the
+ignored source catalog, but development never falls back around a present stale
+catalog and full-stack preflight always requires full source proof. The current
+catalog therefore remains `REVIEW`; no DBF/DTX/CDX/LMDB repair, family cutover,
+website mutation, promotion or publication occurred. Evidence and exact limits
+are in `SESSION_CLOSEOUT_DDICT_NATIVE_FEED_COMPLETION_2026-10-12.md`.

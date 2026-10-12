@@ -5,6 +5,15 @@ sections:
     label: Docs
     description: Core LabTalk definition and planning documents.
     items:
+      - id: doc.ddict.recipes
+        label: Data dictionary recipes
+        kind: markdown
+        path: ../docs/datadict/DDICT_METADATA_RECIPE_BOOK_V1.md
+      - id: doc.ddict.feed
+        label: Data dictionary -- current native report
+        kind: ddict_feed
+        path: registries/current_ddict_feed.json
+        status: candidate_only
       - id: doc.readme
         label: LabTalk README
         kind: markdown
