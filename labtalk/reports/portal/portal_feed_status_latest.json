@@ -1,38 +1,49 @@
 {
   "schema": "dottalk.portal.status.v1",
-  "generated_at_utc": "2026-08-26T15:48:51Z",
+  "generated_at_utc": "2026-10-10T03:20:58.298124+00:00",
   "mode": "development_advisory",
   "current_documentation_push": {
-    "run_id": "DOCFLUSH-20260825-001",
+    "run_id": "DDICT-INTEGRATION-20261009",
     "lane": "full_stack_documentation",
     "canonical_process": "development_closeout",
-    "legacy_label": "Gate 7",
-    "state": "closed_publication_entry_failed",
+    "state": "integration_candidate_review",
     "publication_state": "not_entered",
-    "authority_path": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260825-001/publication_phase/PHASE8_ENTRY_PREFLIGHT_2026-08-26.md",
-    "next_process": "publication_ascent",
-    "next_entry_state": "blocked",
-    "first_open_entry": "E2",
-    "first_open_entry_summary": "Phase 8 owner entry authorization was received, but the executable website matrix is red: canonical HELP predates the current engine executable and include/dottalk/scratch_sidecar.hpp is outside the universal source census; the timestamp rule is a conservative fallback pending a content-addressed HELP-producer fingerprint, and no HELP refresh, source push, Pages deployment, or live publication was attempted"
+    "scope": "DDICT integration only; not a full HELP/META refresh or a reconciliation of every historical publication run",
+    "authority_path": "docs/maintenance/reviews/DDICT_INTEGRATION_2026-10-09/CLOSEOUT.md",
+    "next_process": "catalog_data_review",
+    "next_entry_state": "review",
+    "first_open_entry": "DDICT_DATA_REVIEW",
+    "first_open_entry_summary": "Native feed and candidate consumers implemented. Existing catalog memo and relation findings remain; no live metadata import or publication."
   },
   "summary": {
-    "feeds": 6,
-    "feed_findings": 0,
-    "feed_artifact_observations": 53,
+    "feeds": 7,
+    "feed_findings": 5,
+    "feed_artifact_observations": 61,
     "assertions": 6,
-    "assertion_findings": 3,
+    "assertion_findings": 4,
     "assertions_passing": 3,
     "feed_statuses": {
       "active": 4,
-      "degraded": 2
+      "degraded": 3
     },
     "evidence_states": {
       "planned": 1,
       "runtime-proven": 1,
-      "source-evidenced": 4
+      "source-evidenced": 5
     }
   },
   "feeds": [
+    {
+      "feed_id": "feed.dottalk.ddict",
+      "subject_class": "data_dictionary_catalog",
+      "status": "degraded",
+      "phase": "development_closeout",
+      "evidence_state": "source-evidenced",
+      "sensitivity": "internal",
+      "outputs": 1,
+      "consumers": 4,
+      "findings": 5
+    },
     {
       "feed_id": "feed.dottalk.help_store",
       "subject_class": "help_catalog",
@@ -107,9 +118,9 @@
       "predicate": "current_run_id",
       "validity": "perishable",
       "expected": "DOCFLUSH-20260825-001",
-      "actual": "DOCFLUSH-20260825-001",
-      "passed": true,
-      "findings": 1
+      "actual": "DDICT-INTEGRATION-20261009",
+      "passed": false,
+      "findings": 2
     },
     {
       "claim_id": "assertion.fullstack.canonical_process",
@@ -169,6 +180,7 @@
         "trigger.edit_website",
         "trigger.work_in_sandbox",
         "trigger.fullstack_doc_push",
+        "trigger.ddict",
         "trigger.understand_portal_system"
       ],
       "passed": true,
@@ -181,6 +193,7 @@
       "validity": "invariant",
       "expected": "feed.portal.status_projection",
       "actual": [
+        "feed.dottalk.ddict",
         "feed.dottalk.help_store",
         "feed.dottalk.metadata_metacollect",
         "feed.dottalk.manual_accepted",
@@ -193,12 +206,49 @@
     }
   ],
   "findings": {
-    "feeds": [],
+    "feeds": [
+      {
+        "feed_id": "feed.dottalk.ddict",
+        "field": "source_authorities[0].retention",
+        "issue": "path is not tracked: src/datadict/ddict_catalog_view.cpp",
+        "severity": "advisory"
+      },
+      {
+        "feed_id": "feed.dottalk.ddict",
+        "field": "source_authorities[1].retention",
+        "issue": "path is not tracked: docs/datadict/contracts/DDICT_FEED_CONTRACT_V1.md",
+        "severity": "advisory"
+      },
+      {
+        "feed_id": "feed.dottalk.ddict",
+        "field": "producer.retention",
+        "issue": "path is not tracked: tools/datadict/catalog/ddict_feed.py",
+        "severity": "advisory"
+      },
+      {
+        "feed_id": "feed.dottalk.ddict",
+        "field": "outputs[0].retention",
+        "issue": "path is not tracked: labtalk/registries/current_ddict_feed.json",
+        "severity": "advisory"
+      },
+      {
+        "feed_id": "feed.dottalk.ddict",
+        "field": "consumers[3].retention",
+        "issue": "path is not tracked: tools/fullstack_docs/build_ddict_website_candidate.py",
+        "severity": "advisory"
+      }
+    ],
     "assertions": [
       {
         "claim_id": "assertion.fullstack.current_run",
         "field": "expires_at_utc",
         "issue": "ASSERTION_EXPIRED at 2026-09-02 04:29:19+00:00",
+        "severity": "advisory"
+      },
+      {
+        "claim_id": "assertion.fullstack.current_run",
+        "field": "check",
+        "issue": "ASSERTION_FALSE expected 'DOCFLUSH-20260825-001' observed 'DDICT-INTEGRATION-20261009'",
         "severity": "advisory"
       },
       {

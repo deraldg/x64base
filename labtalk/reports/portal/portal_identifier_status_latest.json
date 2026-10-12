@@ -4,13 +4,13 @@
   "summary": {
     "identifier_classes": 8,
     "projects": 22,
-    "aif_intake_rows": 160,
-    "aif_claims": 95,
-    "rulings": 35,
-    "runs": 20,
+    "aif_intake_rows": 165,
+    "aif_claims": 100,
+    "rulings": 41,
+    "runs": 23,
     "work_items": 17,
-    "proofs": 74,
-    "findings": 6
+    "proofs": 95,
+    "findings": 0
   },
   "observations": [
     {
@@ -25,46 +25,15 @@
     },
     {
       "kind": "run_report_compatibility",
-      "report_ids_in_run_id_field": 20
+      "report_ids_in_run_id_field": 23
     },
     {
       "kind": "lane_references",
       "task_lanes": 13,
-      "run_lanes": 24,
+      "run_lanes": 25,
       "task_lanes_without_claim": 10,
       "run_lanes_without_intake": 0
     }
   ],
-  "findings": [
-    {
-      "subject": "AIF-111",
-      "field": "claim_ledger",
-      "issue": "claim file is present but not tracked: coordination/aif/AIF-111.claim"
-    },
-    {
-      "subject": "AIF-131",
-      "field": "claim_ledger",
-      "issue": "claim file is present but not tracked: coordination/aif/AIF-131.claim"
-    },
-    {
-      "subject": "AIF-134",
-      "field": "claim_ledger",
-      "issue": "claim file is present but not tracked: coordination/aif/AIF-134.claim"
-    },
-    {
-      "subject": "AIF-135",
-      "field": "claim_ledger",
-      "issue": "claim file is present but not tracked: coordination/aif/AIF-135.claim"
-    },
-    {
-      "subject": "AIF-136",
-      "field": "claim_ledger",
-      "issue": "claim file is present but not tracked: coordination/aif/AIF-136.claim"
-    },
-    {
-      "subject": "AIF-163",
-      "field": "claim_ledger",
-      "issue": "claim file is present but not tracked: coordination/aif/AIF-163.claim"
-    }
-  ]
+  "findings": []
 }

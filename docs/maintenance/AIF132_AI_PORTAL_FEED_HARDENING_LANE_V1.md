@@ -74,8 +74,8 @@ renumbered.
 | M17 | Website command catalog refresh | PASS -- restarted E0 audit, 239/239 parsed registry rows, zero fallback, alias-aware extraction, and local production build; no publication |
 | M18 | Website matrix-wide reconciliation | PASS LOCAL -- all 146 MDX routes classified exactly once, generated catalogs and diagram refreshed, maintained-current surfaces reconciled, and dirty/shared authorities explicitly deferred; owner rendering signoff and publication remain open |
 | M19 | Phase 8 entry preflight | FAIL CLOSED -- owner entry authorization received, but E2 was invalidated because canonical HELP predates the current executable; no source or public mutation |
-| M20 | Executable website matrix gate | PASS CONTROL / CURRENTLY RED -- matrix runner binds complete page classification to full-stack E2 freshness and the four website catalogs; the current timestamp fallback is conservative pending a HELP-producer fingerprint |
-| M20 | Executable website matrix gate | PASS CONTROL / CURRENTLY RED -- matrix runner binds complete page classification to full-stack E2 freshness and the four website catalogs; owner recompile proves stale HELP fails the matrix |
+| M20 | Executable website matrix gate | PASS CONTROL / CURRENTLY RED -- matrix runner binds complete page classification to full-stack E2 freshness and the four website catalogs; owner recompile proves stale HELP fails the matrix; timestamp fallback remains conservative pending a HELP-producer fingerprint |
+| M21 | Tier 0 check truthfulness | PASS LOCAL -- a real normalized-content check now rejects stale persisted state; focused positive and negative tests pass; exact-path durability remains open |
 
 ## Coordination finding
 
@@ -478,19 +478,25 @@ for one newly tracked source outside the universal census,
 `include/dottalk/scratch_sidecar.hpp`. The checker ran every row and reported the
 combined red state; it did not stop at the first failure or publish.
 
-## Executable matrix freshness gate -- CODEX-20260826-013
-
-The website matrix previously described producer/consumer relationships but its
-machine check only proved that 146 routes were classified exactly once. It did
-not bind publication to the engine -> canonical HELP build/store order that
-stopped Phase 8.
-
-`website_matrix_check.py` now combines the inventory check, the full-stack
-publication-entry preflight, and the function, error-code, and locale catalog
-checks. The manifest requires all five by identifier and requires `mode: hard`,
-so deleting or weakening the E2 relationship is itself a validation failure.
-The website matrix explains the same rule to readers.
-
 The maintainer recompiled after the first failed entry check. That is the live
 negative arm: the matrix must remain red at `fullstack_publication_entry` until
 guarded HELP and post-E2 harvest refresh are separately authorized and run.
+
+## Tier 0 check truthfulness -- CODEX-20261012-AIF132-CONTROL-001
+
+The aggregate Portal `--check` reported Tier 0 green while the persisted file
+named HEAD `f21ef71c7` and Git named HEAD `40f68c7b8`. The Tier 0 refresh step had
+no check arguments; in check mode it ran the generator's print-only path and
+treated exit 0 as freshness without comparing any state.
+
+`generate_tier0_state.py --check` now renders current state and compares it with
+the persisted projection after normalizing transport line endings and
+`generated_utc`. Every semantic state field remains load-bearing. A missing or
+different projection exits 3.
+The aggregate refresh runner explicitly invokes that mode, and its test asserts
+the argument cannot silently disappear.
+
+The focused suite passed 17 tests. The live negative arm then returned exit 3
+against the stale file; one explicit write regenerated it at 3,811 bytes; the
+live positive arm returned current. No feed, storage, website, publication, or
+Git state was mutated by the check itself.

@@ -1,0 +1,116 @@
+{
+  "schema": "dottalk.portal.m5b-reclaim-manifest.v1",
+  "manifest_id": "AIF136-M5B-001",
+  "lane_id": "AIF-136",
+  "phase": "M5-B",
+  "created_at_utc": "2026-09-16T03:14:46.0574535Z",
+  "ruling_state": "approved",
+  "operation": "exact_mdb_payload_reclaim",
+  "m5b_action_authorized": true,
+  "execution": {
+    "run_id": "CODEX-20260915-AIF136-M5B-RECLAIM-001",
+    "status": "PASS",
+    "completed_at_utc": "2026-09-16T03:38:26Z",
+    "removed_file_count": 2,
+    "reclaimed_logical_bytes": 16384,
+    "target_directory_present": true,
+    "target_directory_entries_after": [],
+    "retained_dbf_cdx_unchanged": true,
+    "other_lmdb_environments_changed": 0,
+    "proof": "docs/maintenance/AIF136_M5B_RECLAIM_EXECUTION_PROOF_V1.md",
+    "proof_json": "labtalk/proofs/runs/20260915_aif136_m5b_reclaim.json"
+  },
+  "restore_drill": {
+    "operation": "isolated_timestamped_directory_restore_proof_only",
+    "ruling_state": "approved",
+    "owner": "member.derald",
+    "decided_at_utc": "2026-09-16T03:21:31Z",
+    "run_id": "CODEX-20260915-AIF136-M5B-RESTORE-001",
+    "completed_at_utc": "2026-09-16T03:25:09Z",
+    "status": "PASS",
+    "proof": "docs/maintenance/AIF136_M5B_RESTORE_DRILL_PROOF_V1.md",
+    "proof_json": "labtalk/proofs/runs/20260915_aif136_m5b_restore_drill.json",
+    "transcript": "labtalk/proofs/runs/20260915_aif136_m5b_restore_drill.txt",
+    "physical_reclaim_authorized": false
+  },
+  "expected_reclaim_logical_bytes": 16384,
+  "target_directory": "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_OBJECTS.cdx.d_20260529_111604",
+  "directory_must_persist": true,
+  "delete_files": [
+    {
+      "path": "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_OBJECTS.cdx.d_20260529_111604/data.mdb",
+      "size_bytes": 8192,
+      "sha256": "b74af879d304cf0bb5be2b8deebb75ab63183062a39db9836af59cca908cbe6c"
+    },
+    {
+      "path": "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/lmdb/backups/DATA_DICTIONARY_OBJECTS.cdx.d_20260529_111604/lock.mdb",
+      "size_bytes": 8192,
+      "sha256": "bc30335232fdf9613ca3c1de50c36fd109f63dd25bd25f5b961b8efa3b80c312"
+    }
+  ],
+  "retain_files": [
+    {
+      "role": "authoritative_dbf_source",
+      "path": "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/dbf/DATA_DICTIONARY_OBJECTS.dbf",
+      "size_bytes": 5761,
+      "sha256": "63412569a6ca8d5e8d1e498bee1060f95214d14c5cf3b38b2e7d5c1681ad6adf"
+    },
+    {
+      "role": "cdx_metadata_index_generator",
+      "path": "docs/datadict/candidates/DD096ZB-backup-and-inactive-candidate-staging-v0/indexes/DATA_DICTIONARY_OBJECTS.cdx",
+      "size_bytes": 1064,
+      "sha256": "76b94efde9268493a31d0fd3d61f3e89c8db23a18feb79cc641f101ba2f30503"
+    }
+  ],
+  "expected_pre_delete_directory_entries": [
+    "data.mdb",
+    "lock.mdb"
+  ],
+  "expected_post_delete_directory_entries": [],
+  "protected_population_manifest": "labtalk/registries/aif136_m5a_reconstruction_manifest_v1.json",
+  "source_table": "DATA_DICTIONARY_OBJECTS",
+  "expected_record_count": 10,
+  "expected_container_tag_count": 3,
+  "expected_container_tags": [
+    "CATALOG_OBJECT_ID",
+    "CATALOG_OBJECT_TYPE",
+    "CATALOG_OBJECT_NAME"
+  ],
+  "generated_tag": "CATALOG_OBJECT_ID",
+  "expected_ordered_keys": [
+    "OBJ_038D3910E2A03EC3C8E3",
+    "OBJ_10B13FF8898D310C2984",
+    "OBJ_1ED364A2329D48A2AC2A",
+    "OBJ_3A2AD7136EA14A09404D",
+    "OBJ_4532A5B1FB126FC1C1FA",
+    "OBJ_626DAEBB8D1F7BDCB2EE",
+    "OBJ_67BE39160E7A7E46FF37",
+    "OBJ_67EB8A48769CE3CF37F6",
+    "OBJ_6892E6E0D01ECD3FEE3B",
+    "OBJ_DD096X_COMMAND_SURFACE_01"
+  ],
+  "prohibited_actions": [
+    "remove_or_rename_target_directory",
+    "modify_or_remove_source_dbf",
+    "modify_or_remove_source_cdx_or_cnx",
+    "invoke_tools/fullstack_docs/prune_lmdb_archives.ps1_-Execute_for_this_pilot",
+    "touch_any_other_lmdb_environment"
+  ],
+  "reconstruction": {
+    "existing_evidence": "docs/maintenance/AIF136_M5A_RECONSTRUCTION_PROOF_V1.md",
+    "existing_runner": "labtalk/ai_portal/run_aif136_m5a_reconstruction.py",
+    "source_model": "retained DBF plus retained CDX metadata container",
+    "standard_environment_rebuild_proven": true,
+    "direct_timestamped_directory_restore_proven": true,
+    "required_before_delete": "Satisfied by docs/maintenance/AIF136_M5B_RESTORE_DRILL_PROOF_V1.md: the isolated restore rebuilt a standard environment, copied generated data.mdb and lock.mdb into the exact timestamp-suffixed test-directory shape, read all three tags and ten records directly from that directory, and rechecked the protected population.",
+    "rollback_after_delete": "Repeat the validated simulated-restore procedure against the preserved target directory, then validate 10 records and three tags and recheck the retained DBF/CDX hashes."
+  },
+  "owner_ruling": {
+    "owner": "member.derald",
+    "decision": "approved",
+    "decided_at_utc": "2026-09-16T03:35:26Z",
+    "response": "go",
+    "approved_scope": "AIF136-M5B-001 exactly as measured: remove only the listed data.mdb and lock.mdb files; preserve the target directory, DBF, CDX/CNX metadata containers, and every other LMDB environment",
+    "recorded_in": "docs/maintenance/AIF136_M5B_RECLAIM_PILOT_RULING_PACKET_V1.md"
+  }
+}

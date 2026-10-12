@@ -1,6 +1,8 @@
 # AIF-136 -- AI Portal Memory Tiering and Retention Plan V1
 
-Status: M4 cognitive pilot locally implemented and verified; commit pending; no artifact moved or deleted.
+Status: IMPLEMENTATION COMPLETE IN DEVELOPMENT; owner review-needed. M1-M6 are
+durable and verified for AIF-136 scope. No bulk reclaim or publication is
+authorized.
 
 Owner: `member.derald`
 
@@ -39,6 +41,7 @@ with a verified recovery or reconstruction path.
 | AIF-098 | Owns the held Frontal_Mem Lane 1 write-adapter implementation, not this retention lifecycle. |
 | AIF-112 | Owns document control and check-in/check-out. AIF-136 consumes its inventory and custody concepts but does not replace it. |
 | AIF-132 | Supplies Portal feed, authority, lineage, sensitivity, and publication-boundary fields. |
+| AIF-163 | Owns memo-sidecar orphan reclamation. It does not authorize AIF-136 LMDB reconstruction or reclaim work, and the two physical-storage populations must remain separate. |
 | `TRIAGE_OPTIMIZATION_PDLC_LANE_V1.md` | Supplies the value function and human-confirmed promotion model. AIF-136 applies it to document and storage lifecycle. |
 | `SYNAPSE_CONCEPT_V1.md` | Supplies the rule that durable knowledge must be reachable by intent, not merely filed. |
 | `LMDB_MAPSIZE_OVERRIDE_LANE_V1.md` | Supplies the source-backed rule that LMDB environments are derived and rebuildable; physical reclamation remains separately approved. |
@@ -167,12 +170,12 @@ and makes no destructive change.
 | Phase | Deliverable | Gate |
 | --- | --- | --- |
 | M0 | This charter, AIF claim, measured opening baseline, and proposed rules. | G0: owner reviews scope and rules; no storage mutation. |
-| M1 | **IMPLEMENTED LOCALLY.** Read-only inventory generator, typed schema, contract validator, hierarchical counts, and generated Markdown/JSON reports. | G1 local PASS: deterministic output, alias exclusion, deferred hashing, tracked/ignored/untracked/external posture, schema failure fixtures, and stale-report detection tested. Review/commit remains owed. |
-| M2 | **IMPLEMENTED LOCALLY.** Derived classification and lineage pass over Portal documents and the generated current LMDB population. | G2 local PASS: every M1 candidate has an authority, sensitivity, tier proposal, and recovery posture; unknowns remain Q5; lineage and recovery matches remain candidate-only. Review/commit remains owed. |
+| M1 | **COMMITTED; CURRENT REPORTS REFRESHED.** Read-only inventory generator, typed schema, contract validator, hierarchical counts, and generated Markdown/JSON reports. | G1 PASS: deterministic output, alias exclusion, deferred hashing, tracked/ignored/untracked/external posture, schema failure fixtures, stale-report detection, and the unified deep check are green. |
+| M2 | **COMMITTED; CURRENT REPORTS REFRESHED.** Derived classification and lineage pass over Portal documents and the generated current LMDB population. | G2 PASS: every M1 candidate has an authority, sensitivity, tier proposal, and recovery posture; unknowns remain Q5; lineage and recovery matches remain candidate-only. |
 | M3 | **APPROVED.** Owner approved the exact three-body in-place cognitive pilot at `2026-08-27T00:10:00Z`. | G3 PASS: exact manifest approved; no wildcard or physical action; rollback named. |
-| M4 | **IMPLEMENTED LOCALLY.** Three exact owner-confirmed C3 overrides, bounded history summary, explicit recall trigger, and repeatable exclusion/retrieval proof. | G4 local PASS: ordinary onboarding excludes the bodies; history recall resolves every exact path and hash through the bounded summary; sources remain in place. Review/commit remains owed. |
-| M5 | **M5-A APPROVED AND VERIFIED; M5-B NOT AUTHORIZED.** The isolated reconstruction pilot copied one DBF and its retained CDX, generated an LMDB environment, removed only the two temporary `*.mdb` files, preserved the environment directory and CDX, and rebuilt the MDB files. No existing archive or live file changed. | G5-A PASS: three CDX tags rebuilt twice; 10 records returned in the expected order; all protected before/after hashes matched. G5-B remains behind a second exact owner ruling. See `AIF136_M5A_RECONSTRUCTION_PROOF_V1.md`. |
-| M6 | Recurring drift, freshness, widow/orphan, and storage-budget checks. | G6: known-bad fixtures fail; clean fixtures pass; alerts do not mutate storage. |
+| M4 | **COMMITTED AND VERIFIED.** Three exact owner-confirmed C3 overrides, bounded history summary, explicit recall trigger, and repeatable exclusion/retrieval proof. | G4 PASS: ordinary onboarding excludes the bodies; history recall resolves every exact path and hash through the clone-visible bounded summary; sources remain in place. |
+| M5 | **M5-A AND THE ONE EXACT M5-B PILOT APPROVED, VERIFIED, AND DURABLE.** M5-A proved reconstruction from the retained DBF plus CDX metadata container. After a separately approved restore drill, M5-B manifest `AIF136-M5B-001` removed only its listed `data.mdb` and `lock.mdb`, reclaimed 16,384 logical bytes, preserved the empty target directory, and left the retained DBF, CDX, and every other protected environment unchanged. | G5 PASS: ruling packet, exact manifest, fail-closed executors, focused tests, transcript, and machine-readable proofs ship together. Recheck on 2026-10-12 confirmed the local target directory is present and empty, removed payloads remain absent, retained local DBF/CDX match their approved hashes, and the transcript hash matches its proof. The evidence is clone-visible; the retained DBF/CDX are development data at the manifest paths, not Git payloads. This pilot authorizes no other target or bulk reclaim. |
+| M6 | **IMPLEMENTED AND VERIFIED.** One ordered command refreshes or checks Tier 0, its self-declared byte budget, mandatory tracked onboarding, identifier/feed projections, the truth audit, history summary, M3/M4 proof, and optionally the slower M1/M2 storage census. | G6 PASS for AIF-136 scope: the Portal suite is 97/97; Tier 0 stale detection was proven red before regeneration; the history target is clone-visible; M3/M4 recall checks pass; and current inventory/classification checks pass. Recurrence is event-triggered at cold start, restart, Portal mutation, and closeout through the maintained README command, not a background time scheduler. The aggregate recall gate still reports two untracked DDICT resources owned by the separate DDICT integration slice; they do not reopen AIF-136. |
 
 M5 must use a new execution authorization even if M0-M4 are accepted. The
 existing `prune_lmdb_archives.ps1` defaults to dry-run and is evidence of prior
@@ -236,14 +239,14 @@ M1 and M2 created these development-tree artifacts:
 - `labtalk/ai_portal/tests/test_verify_memory_pilot_recall.py`
 - `docs/maintenance/AIF136_M4_COGNITIVE_DEMOTION_PROOF_V1.md`
 
-Local verification ran the M1 tests plus ten focused M2 tests, both
-standard-library contract validators, report generation, and stale-report
-checks. The generated inventory is the authority for current counts, byte
-distributions, Git posture, and the Portal-facing hierarchy. The generated M2
-report is the authority for the current proposed classifications, exact-hash
-duplicate groups, conservative filename families, and unverified LMDB recovery
-input candidates. These results remain working-tree evidence until a scoped
-commit makes them durable.
+The implementation and its focused tests landed in development at `5d09988bd`;
+the charter and M3/M4 proof landed at `3d79836b7`. The generated inventory is
+the authority for current counts, byte distributions, Git posture, and the
+Portal-facing hierarchy. The generated M2 report is the authority for the
+current proposed classifications, exact-hash duplicate groups, conservative
+filename families, and unverified LMDB recovery input candidates. Generated
+reports remain perishable projections and must pass the refresh/check workflow
+before their values are treated as current.
 
 M3 adds a three-item exact manifest for cognitive demotion only. Its validator
 matches every memory ID, path, size, and SHA-256 against M1 and the live tracked
@@ -257,6 +260,65 @@ generates the bounded history summary, and proves the selected bodies are absent
 from ordinary onboarding while their paths and hashes remain reachable through
 `trigger.portal_history`. No source body changed location or content.
 
-This slice did not create a long-term store, movement manifest, or deletion
-authorization. No DBF, CDX, CNX, LMDB, backup, archive, website file, or
-publication surface was mutated.
+M6 adds `labtalk/ai_portal/refresh_portal_state.py`. Its default path checks or
+refreshes the fast control plane. `--include-storage` adds the slower read-only
+M1/M2 scan. The order is part of the contract: the generated history summary is
+written before M1 inventories `labtalk/ai_portal`; otherwise the refresh makes
+its own inventory stale later in the same pass. The Portal truth audit was also
+separated from the optional Tk GUI import so headless maintenance can run on the
+project Python. The same fast path delegates the F0 size limit to
+`tools/staging/check_seed_budget.py` and clone visibility of mandatory onboarding
+to `labtalk/ai_portal/check_mandatory_tracked.py`; the orchestrator deliberately
+does not duplicate either tool's maintained threshold or path set.
+
+The 2026-10-12 truthfulness repair closes one false-green in that orchestration.
+The Tier 0 step previously had no check arguments, so `--check` merely printed a
+fresh projection and returned success without comparing it with
+`TIER0_STATE.md`. The generator normalizes transport line endings and the
+deliberately volatile `generated_utc` value, then compares every semantic state
+line. A different HEAD, upstream, target, closeout, warning, claim, session,
+lineage row, or aside chain makes the check fail with exit 3. Focused tests
+prove current and stale paths, and the aggregate runner explicitly requires the
+new `--check` argument.
+
+The storage inventory excludes `.git` from its maintained workspace summaries.
+Repository bookkeeping is not Portal memory, and staging a refreshed report
+mutates `.git/index`; including it made the report invalidate itself before an
+immediate check. The dated opening baseline above preserves the useful Git-size
+observation without turning Git index churn into a false Portal freshness
+failure. A focused test changes `.git/index` and proves the inventory remains
+identical.
+
+The M6 automation slice did not create a long-term store, movement manifest, or
+deletion authorization. Its checks do not mutate DBF, CDX, CNX, LMDB, backup,
+archive, website, or publication surfaces. The earlier M5-B action remains
+bounded exclusively by manifest `AIF136-M5B-001` and its owner ruling.
+
+M5-B and M6 completion add these durable artifacts:
+
+- `docs/maintenance/AIF136_M5B_RECLAIM_PILOT_RULING_PACKET_V1.md`
+- `docs/maintenance/AIF136_M5B_RESTORE_DRILL_PROOF_V1.md`
+- `docs/maintenance/AIF136_M5B_RECLAIM_EXECUTION_PROOF_V1.md`
+- `labtalk/registries/aif136_m5b_reclaim_manifest_v1.json`
+- `labtalk/ai_portal/run_aif136_m5b_restore_drill.py`
+- `labtalk/ai_portal/run_aif136_m5b_reclaim.py`
+- `labtalk/ai_portal/tests/test_run_aif136_m5b_restore_drill.py`
+- `labtalk/ai_portal/tests/test_run_aif136_m5b_reclaim.py`
+- `labtalk/proofs/runs/20260915_aif136_m5b_restore_drill.txt`
+- `labtalk/proofs/runs/20260915_aif136_m5b_restore_drill.json`
+- `labtalk/proofs/runs/20260915_aif136_m5b_reclaim.json`
+- `labtalk/ai_portal/PORTAL_HISTORY_SUMMARY_V1.md`
+- `labtalk/ai_portal/refresh_portal_state.py`
+- `labtalk/ai_portal/tests/test_refresh_portal_state.py`
+
+Completion means the bounded lifecycle, pilot, proof, recall route, and
+maintenance command are durable in `development`. It does not approve another
+reclaim candidate, convert the one pilot into a wildcard policy, promote files
+to `C:\x64base`, publish the website, or push a branch.
+
+The M5-B evidence and recovery procedure are durable in Git. The exact retained
+DBF and CDX inputs remain local development data, untracked at their manifest
+paths. A fresh clone can inspect the approval and proof but cannot rebuild this
+specific environment until those exact inputs are restored from the retained
+data store. That boundary is deliberate and must not be abbreviated to
+"clone-reproducible."

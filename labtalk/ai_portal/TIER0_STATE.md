@@ -2,18 +2,18 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-10-12T19:18:39Z
+    generated_utc : 2026-10-12T20:43:58Z
     lane        : AIF-082 (6.1)
 
-Read this before acting. It is the only current-state source that
-cannot drift, because nothing here is written by hand.
+Read this before acting. It is a generated current-state projection;
+verify it with the generator's --check mode before relying on it.
 
 ## Tree
 
     branch        : development
-    HEAD          : f21ef71c7  (2026-10-12)
-    upstream      : f21ef71c7
-    unpushed      : 0 commit(s) ahead of upstream
+    HEAD          : 74c428571  (2026-10-12)
+    upstream      : 40f68c7b8
+    unpushed      : 1 commit(s) ahead of upstream
 
 ## Declared target
 
@@ -22,13 +22,13 @@ cannot drift, because nothing here is written by hand.
 
 ## Newest closeout
 
-    file          : SESSION_CLOSEOUT_FULLSTACK_SCHEMA_REVIEW_2026-10-10.md
-    commits behind HEAD : not committed
+    file          : SESSION_CLOSEOUT_AIF136_MEMORY_TIERING_RETENTION_2026-10-12.md
+    commits behind HEAD : 0
 
 ## Staleness warnings
 
-- The newest closeout by date, SESSION_CLOSEOUT_FULLSTACK_SCHEMA_REVIEW_2026-10-10.md, is on disk but in no commit. A clone cannot see it; whoever wrote it has not landed it.
-- Closeout(s) on disk but not tracked -- a session's record that never landed: SESSION_CLOSEOUT_DDICT_HOUSEKEEPING_2026-10-10.md, SESSION_CLOSEOUT_EVIDENCE_TRACKING_AND_PORTAL_2026-09-20.md.
+- Closeout(s) on disk but not tracked -- a session's record that never landed: SESSION_CLOSEOUT_FULLSTACK_SCHEMA_REVIEW_2026-10-10.md, SESSION_CLOSEOUT_DDICT_HOUSEKEEPING_2026-10-10.md, SESSION_CLOSEOUT_EVIDENCE_TRACKING_AND_PORTAL_2026-09-20.md.
+- 1 commit(s) are unpushed and invisible to a clone.
 
 ## Claimed lanes (newest first)
 

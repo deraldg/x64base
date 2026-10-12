@@ -124,6 +124,36 @@ class MemoryStorageInventoryTests(unittest.TestCase):
             hierarchy = {row["path"]: row for row in first["hierarchy"]}
             self.assertEqual(1, hierarchy["docs/ai-friendly"]["direct_documents"])
 
+    def test_repository_bookkeeping_is_not_a_storage_summary_root(self) -> None:
+        self.assertNotIn(".git", inventory_builder.SUMMARY_ROOTS)
+
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            self.make_repo(root)
+            (root / ".git/index").write_bytes(b"first index image")
+            with patch.object(inventory_builder, "git_paths", return_value=(set(), set())), patch.object(
+                inventory_builder, "allocated_size", return_value=None
+            ):
+                before = inventory_builder.build_inventory(
+                    repo_root=root,
+                    observed_at_utc="2026-08-26T00:00:00Z",
+                    hash_max_bytes=4,
+                    include_external=False,
+                )
+                (root / ".git/index").write_bytes(b"different staged index image")
+                after = inventory_builder.build_inventory(
+                    repo_root=root,
+                    observed_at_utc="2026-08-26T00:00:00Z",
+                    hash_max_bytes=4,
+                    include_external=False,
+                )
+
+            self.assertEqual(before, after)
+            self.assertNotIn(
+                "collection.workspace.git",
+                {row["collection_id"] for row in after["collections"]},
+            )
+
     def test_markdown_states_non_destructive_boundary(self) -> None:
         inventory = {
             "generated_at_utc": "2026-08-26T00:00:00Z",

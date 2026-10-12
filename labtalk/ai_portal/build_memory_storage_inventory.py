@@ -41,7 +41,10 @@ FRONTAL_PATHS = (
     "AI_PORTAL.md",
     "docs/agents/CURRENT_TARGET.md",
 )
-SUMMARY_ROOTS = ("docs", "dottalkpp", "tmp", "build", ".git")
+# Repository bookkeeping is not Portal memory.  Including .git here made the
+# generated inventory self-invalidating: staging the refreshed report mutates
+# .git/index, so an immediate --check could never remain green.
+SUMMARY_ROOTS = ("docs", "dottalkpp", "tmp", "build")
 
 
 def utc_now() -> str:

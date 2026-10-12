@@ -5,6 +5,8 @@ these tests run anywhere, including a sandbox that must not run git at all.
 """
 from __future__ import annotations
 
+import contextlib
+import io
 import sys
 import tempfile
 import unittest
@@ -97,6 +99,67 @@ class Tier0Tests(unittest.TestCase):
         w = warnings_of(body)
         self.assertIn("SESSION_CLOSEOUT_B_2026-09-20.md", w)
         self.assertNotIn("- none", w)
+
+    def test_check_accepts_transport_and_generation_metadata_difference(self) -> None:
+        fresh = "# Tier 0\n    generated_utc : 2026-10-12T20:00:00Z\nHEAD: abc\n"
+        persisted = "# Tier 0\r\n    generated_utc : 2026-10-11T20:00:00Z\r\nHEAD: abc\r\n"
+        self.assertEqual(
+            t0.normalized_for_check(fresh),
+            t0.normalized_for_check(persisted),
+        )
+
+    def test_check_rejects_a_stale_persisted_projection(self) -> None:
+        fresh = "# Tier 0\n    generated_utc : 2026-10-12T20:00:00Z\nHEAD: new\n"
+        stale = "# Tier 0\n    generated_utc : 2026-10-12T19:00:00Z\nHEAD: old\n"
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            target = root / t0.OUTPUT_RELATIVE
+            target.parent.mkdir(parents=True)
+            target.write_text(stale, encoding="utf-8")
+            stderr = io.StringIO()
+            with (
+                mock.patch.object(t0, "repo_root", return_value=root),
+                mock.patch.object(t0, "render", return_value=fresh),
+                contextlib.redirect_stderr(stderr),
+            ):
+                result = t0.main(["--check"])
+
+        self.assertEqual(result, 3)
+        self.assertIn("tier0: stale", stderr.getvalue())
+
+    def test_check_rejects_a_missing_persisted_projection(self) -> None:
+        fresh = "# Tier 0\n    generated_utc : 2026-10-12T20:00:00Z\nHEAD: abc\n"
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            stderr = io.StringIO()
+            with (
+                mock.patch.object(t0, "repo_root", return_value=root),
+                mock.patch.object(t0, "render", return_value=fresh),
+                contextlib.redirect_stderr(stderr),
+            ):
+                result = t0.main(["--check"])
+
+        self.assertEqual(result, 3)
+        self.assertIn("tier0: stale -- missing", stderr.getvalue())
+
+    def test_check_accepts_a_current_persisted_projection(self) -> None:
+        fresh = "# Tier 0\n    generated_utc : 2026-10-12T20:00:00Z\nHEAD: abc\n"
+        persisted = "# Tier 0\n    generated_utc : 2026-10-12T19:00:00Z\nHEAD: abc\n"
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            target = root / t0.OUTPUT_RELATIVE
+            target.parent.mkdir(parents=True)
+            target.write_text(persisted, encoding="utf-8")
+            stdout = io.StringIO()
+            with (
+                mock.patch.object(t0, "repo_root", return_value=root),
+                mock.patch.object(t0, "render", return_value=fresh),
+                contextlib.redirect_stdout(stdout),
+            ):
+                result = t0.main(["--check"])
+
+        self.assertEqual(result, 0)
+        self.assertIn("tier0: current", stdout.getvalue())
 
 
 if __name__ == "__main__":

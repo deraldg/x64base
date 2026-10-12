@@ -1,14 +1,14 @@
 # LabTalk Portal Truth Audit
 
-Generated: 2026-09-15T17:47:48
+Generated: 2026-10-12T13:38:41
 
 ## Summary
 
 - Sections: 15
-- Items: 304
+- Items: 332
 - Runnable items: 33
-- Proof-like records: 129
-- Missing paths: 18
+- Proof-like records: 155
+- Missing paths: 203
 - Duplicate item IDs: 0
 - AI report audit findings: 0
 
@@ -29,6 +29,191 @@ Generated: 2026-09-15T17:47:48
 | `project.x64base.identity` | `docs` | `D:\code\ccode\docs\## AI Portal re-examination.txt` |
 | `lesson.student.cursor_versus_set` | `path` | `D:\code\ccode\labtalk\lessons\student\cursor_versus_set_v0.md` |
 | `lesson.student.properties_of_valid_data` | `path` | `D:\code\ccode\labtalk\lessons\student\properties_of_valid_data_v0.md` |
+| `proof.gui.uidef_workbench_browse` | `source` | `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_BROWSE_V1.md` |
+| `proof.gui.uidef_workbench_browse` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_table.hpp` |
+| `proof.gui.uidef_workbench_browse` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_table.cpp` |
+| `proof.gui.uidef_workbench_browse` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_table_test.cpp` |
+| `proof.gui.uidef_workbench_browse` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_session.cpp` |
+| `proof.gui.uidef_workbench_browse` | `related` | `D:\code\ccode\labtalk\gui\uidef\wx_workbench.cpp` |
+| `proof.gui.uidef_workbench_browse` | `related` | `D:\code\ccode\labtalk\include\cli\table_object.hpp` |
+| `proof.gui.uidef_workbench_browse` | `related` | `D:\code\ccode\labtalk\src\cli\table_object.cpp` |
+| `proof.gui.uidef_workbench_browse` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_browse_20260918.txt` |
+| `proof.gui.uidef_workbench_browse` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_20260918_v5-browse.png` |
+| `proof.gui.uidef_workbench_catalog` | `source` | `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_FIRST_SLICE_V1.md` |
+| `proof.gui.uidef_workbench_catalog` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_catalog_test.cpp` |
+| `proof.gui.uidef_workbench_catalog` | `related` | `D:\code\ccode\labtalk\gui\uidef\verify_workbench.py` |
+| `proof.gui.uidef_workbench_catalog` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_20260917.txt` |
+| `proof.gui.uidef_workbench_catalog` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_20260917.png` |
+| `proof.gui.uidef_workbench_catalog_flow` | `source` | `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_CATALOG_FLOW_V1.md` |
+| `proof.gui.uidef_workbench_catalog_flow` | `related` | `D:\code\ccode\labtalk\gui\uidef\author_workbench.py` |
+| `proof.gui.uidef_workbench_catalog_flow` | `related` | `D:\code\ccode\labtalk\gui\uidef\wx_workbench.cpp` |
+| `proof.gui.uidef_workbench_catalog_flow` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_catalog.cpp` |
+| `proof.gui.uidef_workbench_catalog_flow` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_session.cpp` |
+| `proof.gui.uidef_workbench_catalog_flow` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_paths_test.cpp` |
+| `proof.gui.uidef_workbench_catalog_flow` | `related` | `D:\code\ccode\labtalk\gui\uidef\verify_workbench.py` |
+| `proof.gui.uidef_workbench_catalog_flow` | `related` | `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_MILESTONES_V1.md` |
+| `proof.gui.uidef_workbench_catalog_flow` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_catalog_flow_20260918.txt` |
+| `proof.gui.uidef_workbench_catalog_flow` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_catalog_flow_build_20260918.txt` |
+| `proof.gui.uidef_workbench_catalog_flow` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_catalog_flow_hydrate_20260918.png` |
+| `proof.gui.uidef_workbench_catalog_flow` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_catalog_flow_load_20260918.png` |
+| `proof.gui.uidef_workbench_console` | `source` | `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_LIST_V1.md` |
+| `proof.gui.uidef_workbench_console` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_session.cpp` |
+| `proof.gui.uidef_workbench_console` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_session_test.cpp` |
+| `proof.gui.uidef_workbench_console` | `related` | `D:\code\ccode\labtalk\gui\uidef\wx_workbench.cpp` |
+| `proof.gui.uidef_workbench_console` | `related` | `D:\code\ccode\labtalk\cmake\AddUidefWorkbench.cmake` |
+| `proof.gui.uidef_workbench_console` | `related` | `D:\code\ccode\labtalk\src\cli\shell_engine.cpp` |
+| `proof.gui.uidef_workbench_console` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_console_20260917.txt` |
+| `proof.gui.uidef_workbench_console` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_20260917_v4-live.png` |
+| `proof.gui.uidef_workbench_edit` | `source` | `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_EDIT_V1.md` |
+| `proof.gui.uidef_workbench_edit` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_table.cpp` |
+| `proof.gui.uidef_workbench_edit` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_table_test.cpp` |
+| `proof.gui.uidef_workbench_edit` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_session.cpp` |
+| `proof.gui.uidef_workbench_edit` | `related` | `D:\code\ccode\labtalk\gui\uidef\wx_workbench.cpp` |
+| `proof.gui.uidef_workbench_edit` | `related` | `D:\code\ccode\labtalk\gui\uidef\author_workbench.py` |
+| `proof.gui.uidef_workbench_edit` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_edit_20260918.txt` |
+| `proof.gui.uidef_workbench_edit` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_20260918_v6-edit.png` |
+| `proof.gui.uidef_workbench_export` | `source` | `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_EXPORT_V1.md` |
+| `proof.gui.uidef_workbench_export` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_images.cpp` |
+| `proof.gui.uidef_workbench_export` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_session.cpp` |
+| `proof.gui.uidef_workbench_export` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_images_test.cpp` |
+| `proof.gui.uidef_workbench_export` | `related` | `D:\code\ccode\labtalk\gui\uidef\wx_workbench.cpp` |
+| `proof.gui.uidef_workbench_export` | `related` | `D:\code\ccode\labtalk\gui\uidef\author_workbench.py` |
+| `proof.gui.uidef_workbench_export` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_export_20260918.txt` |
+| `proof.gui.uidef_workbench_export` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_20260918_v9-export.png` |
+| `proof.gui.uidef_workbench_filepaths` | `source` | `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_FILEPATHS_V1.md` |
+| `proof.gui.uidef_workbench_filepaths` | `related` | `D:\code\ccode\labtalk\src\cli\shell_api.cpp` |
+| `proof.gui.uidef_workbench_filepaths` | `related` | `D:\code\ccode\labtalk\src\cli\shell_api.hpp` |
+| `proof.gui.uidef_workbench_filepaths` | `related` | `D:\code\ccode\labtalk\src\cli\cmd_dotscript.cpp` |
+| `proof.gui.uidef_workbench_filepaths` | `related` | `D:\code\ccode\labtalk\src\cli\cmd_workspace.cpp` |
+| `proof.gui.uidef_workbench_filepaths` | `related` | `D:\code\ccode\labtalk\gui\uidef\author_workbench.py` |
+| `proof.gui.uidef_workbench_filepaths` | `related` | `D:\code\ccode\labtalk\gui\uidef\wx_workbench.cpp` |
+| `proof.gui.uidef_workbench_filepaths` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_session.cpp` |
+| `proof.gui.uidef_workbench_filepaths` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_paths_test.cpp` |
+| `proof.gui.uidef_workbench_filepaths` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_filepaths_20260918.txt` |
+| `proof.gui.uidef_workbench_filepaths` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_20260918_filepaths-modal-RUN.png` |
+| `proof.gui.uidef_workbench_live_session` | `source` | `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_LIVE_SESSION_V1.md` |
+| `proof.gui.uidef_workbench_live_session` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_session_test.cpp` |
+| `proof.gui.uidef_workbench_live_session` | `related` | `D:\code\ccode\labtalk\gui\uidef\verify_workbench.py` |
+| `proof.gui.uidef_workbench_live_session` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_live_20260917.txt` |
+| `proof.gui.uidef_workbench_live_session` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_20260917_v2-live.png` |
+| `proof.gui.uidef_workbench_loadroots` | `source` | `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_LOAD_ROOTS_V1.md` |
+| `proof.gui.uidef_workbench_loadroots` | `related` | `D:\code\ccode\labtalk\include\cli\workspace_definition.hpp` |
+| `proof.gui.uidef_workbench_loadroots` | `related` | `D:\code\ccode\labtalk\src\cli\cmd_workspace.cpp` |
+| `proof.gui.uidef_workbench_loadroots` | `related` | `D:\code\ccode\labtalk\gui\uidef\author_workbench.py` |
+| `proof.gui.uidef_workbench_loadroots` | `related` | `D:\code\ccode\labtalk\gui\uidef\wx_workbench.cpp` |
+| `proof.gui.uidef_workbench_loadroots` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_session.cpp` |
+| `proof.gui.uidef_workbench_loadroots` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_paths_test.cpp` |
+| `proof.gui.uidef_workbench_loadroots` | `related` | `D:\code\ccode\labtalk\gui\uidef\verify_workspace_schema_load.py` |
+| `proof.gui.uidef_workbench_loadroots` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_loadroots_real_20260918.txt` |
+| `proof.gui.uidef_workbench_loadroots` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_loadroots_20260918.txt` |
+| `proof.gui.uidef_workbench_loadroots` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_20260918_loadroots-modal-LOAD.png` |
+| `proof.gui.uidef_workbench_loadview` | `source` | `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_LOADVIEW_V1.md` |
+| `proof.gui.uidef_workbench_loadview` | `related` | `D:\code\ccode\labtalk\include\cli\workspace_image_event.hpp` |
+| `proof.gui.uidef_workbench_loadview` | `related` | `D:\code\ccode\labtalk\src\cli\cmd_workspace.cpp` |
+| `proof.gui.uidef_workbench_loadview` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_session.cpp` |
+| `proof.gui.uidef_workbench_loadview` | `related` | `D:\code\ccode\labtalk\gui\uidef\wx_workbench.cpp` |
+| `proof.gui.uidef_workbench_loadview` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_paths_test.cpp` |
+| `proof.gui.uidef_workbench_loadview` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_images_test.cpp` |
+| `proof.gui.uidef_workbench_loadview` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_loadview_20260918.txt` |
+| `proof.gui.uidef_workbench_loadview` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_20260918_v13-loadview.png` |
+| `proof.gui.uidef_workbench_m1` | `source` | `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_M1_V1.md` |
+| `proof.gui.uidef_workbench_m1` | `related` | `D:\code\ccode\labtalk\gui\uidef\author_workbench.py` |
+| `proof.gui.uidef_workbench_m1` | `related` | `D:\code\ccode\labtalk\gui\uidef\uidef_wx.py` |
+| `proof.gui.uidef_workbench_m1` | `related` | `D:\code\ccode\labtalk\gui\uidef\wx_workbench.cpp` |
+| `proof.gui.uidef_workbench_m1` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_session.cpp` |
+| `proof.gui.uidef_workbench_m1` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_paths_test.cpp` |
+| `proof.gui.uidef_workbench_m1` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_save_test.cpp` |
+| `proof.gui.uidef_workbench_m1` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_m1_test.py` |
+| `proof.gui.uidef_workbench_m1` | `related` | `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_MILESTONES_V1.md` |
+| `proof.gui.uidef_workbench_m1` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_m1_20260918.txt` |
+| `proof.gui.uidef_workbench_m1` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_20260918_m1-menus.png` |
+| `proof.gui.uidef_workbench_m2` | `source` | `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_M2_V1.md` |
+| `proof.gui.uidef_workbench_m2` | `related` | `D:\code\ccode\labtalk\gui\uidef\author_workbench.py` |
+| `proof.gui.uidef_workbench_m2` | `related` | `D:\code\ccode\labtalk\gui\uidef\wx_workbench.cpp` |
+| `proof.gui.uidef_workbench_m2` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_navigation.cpp` |
+| `proof.gui.uidef_workbench_m2` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_session.hpp` |
+| `proof.gui.uidef_workbench_m2` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_session_test.cpp` |
+| `proof.gui.uidef_workbench_m2` | `related` | `D:\code\ccode\labtalk\gui\uidef\verify_workbench.py` |
+| `proof.gui.uidef_workbench_m2` | `related` | `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_MILESTONES_V1.md` |
+| `proof.gui.uidef_workbench_m2` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_m2_20260918.txt` |
+| `proof.gui.uidef_workbench_m2` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_m2_build_20260918.txt` |
+| `proof.gui.uidef_workbench_m2` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_20260918_m2-navigation.png` |
+| `proof.gui.uidef_workbench_m3` | `source` | `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_M3_V1.md` |
+| `proof.gui.uidef_workbench_m3` | `related` | `D:\code\ccode\labtalk\gui\uidef\author_workbench.py` |
+| `proof.gui.uidef_workbench_m3` | `related` | `D:\code\ccode\labtalk\gui\uidef\wx_workbench.cpp` |
+| `proof.gui.uidef_workbench_m3` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_table.cpp` |
+| `proof.gui.uidef_workbench_m3` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_session.cpp` |
+| `proof.gui.uidef_workbench_m3` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_table_test.cpp` |
+| `proof.gui.uidef_workbench_m3` | `related` | `D:\code\ccode\labtalk\gui\uidef\verify_workbench.py` |
+| `proof.gui.uidef_workbench_m3` | `related` | `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_MILESTONES_V1.md` |
+| `proof.gui.uidef_workbench_m3` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_m3_tests_20260918.txt` |
+| `proof.gui.uidef_workbench_m3` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_m3_release_20260918.txt` |
+| `proof.gui.uidef_workbench_m3` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_m3_20260918.png` |
+| `proof.gui.uidef_workbench_memo_image` | `source` | `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_MEMO_IMAGE_V1.md` |
+| `proof.gui.uidef_workbench_memo_image` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_table.cpp` |
+| `proof.gui.uidef_workbench_memo_image` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_session.cpp` |
+| `proof.gui.uidef_workbench_memo_image` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_memo_image_test.cpp` |
+| `proof.gui.uidef_workbench_memo_image` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_images_test.cpp` |
+| `proof.gui.uidef_workbench_memo_image` | `related` | `D:\code\ccode\labtalk\gui\uidef\wx_workbench.cpp` |
+| `proof.gui.uidef_workbench_memo_image` | `related` | `D:\code\ccode\labtalk\gui\uidef\author_workbench.py` |
+| `proof.gui.uidef_workbench_memo_image` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_memo_image_20260918.txt` |
+| `proof.gui.uidef_workbench_memo_image` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_20260918_v8-memo-image.png` |
+| `proof.gui.uidef_workbench_minidb` | `source` | `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_MINIDB_V1.md` |
+| `proof.gui.uidef_workbench_minidb` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_images_test.cpp` |
+| `proof.gui.uidef_workbench_minidb` | `related` | `D:\code\ccode\labtalk\gui\uidef\verify_workbench.py` |
+| `proof.gui.uidef_workbench_minidb` | `related` | `D:\code\ccode\labtalk\include\dottalk\minidb.hpp` |
+| `proof.gui.uidef_workbench_minidb` | `related` | `D:\code\ccode\labtalk\include\dottalk\minidb_hydrate.hpp` |
+| `proof.gui.uidef_workbench_minidb` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_minidb_20260917.txt` |
+| `proof.gui.uidef_workbench_minidb` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_20260917_v3-image.png` |
+| `proof.gui.uidef_workbench_minidb` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_20260917_v3-nested.png` |
+| `proof.gui.uidef_workbench_navigation` | `source` | `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_NAVIGATION_V1.md` |
+| `proof.gui.uidef_workbench_navigation` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_navigation.cpp` |
+| `proof.gui.uidef_workbench_navigation` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_session.hpp` |
+| `proof.gui.uidef_workbench_navigation` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_session_test.cpp` |
+| `proof.gui.uidef_workbench_navigation` | `related` | `D:\code\ccode\labtalk\gui\uidef\wx_workbench.cpp` |
+| `proof.gui.uidef_workbench_navigation` | `related` | `D:\code\ccode\labtalk\gui\uidef\author_workbench.py` |
+| `proof.gui.uidef_workbench_navigation` | `related` | `D:\code\ccode\labtalk\gui\uidef\verify_workbench.py` |
+| `proof.gui.uidef_workbench_navigation` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_navigation_20260918.txt` |
+| `proof.gui.uidef_workbench_navigation` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_20260918_v11-navigation.png` |
+| `proof.gui.uidef_workbench_openload` | `source` | `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_OPEN_LOAD_V1.md` |
+| `proof.gui.uidef_workbench_openload` | `related` | `D:\code\ccode\labtalk\gui\uidef\author_workbench.py` |
+| `proof.gui.uidef_workbench_openload` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_session.cpp` |
+| `proof.gui.uidef_workbench_openload` | `related` | `D:\code\ccode\labtalk\gui\uidef\wx_workbench.cpp` |
+| `proof.gui.uidef_workbench_openload` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_paths_test.cpp` |
+| `proof.gui.uidef_workbench_openload` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_session_test.cpp` |
+| `proof.gui.uidef_workbench_openload` | `related` | `D:\code\ccode\labtalk\gui\uidef\verify_workspace_flow.py` |
+| `proof.gui.uidef_workbench_openload` | `related` | `D:\code\ccode\labtalk\src\cli\cmd_workspace.cpp` |
+| `proof.gui.uidef_workbench_openload` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_openload_20260918.txt` |
+| `proof.gui.uidef_workbench_openload` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_20260918_v14-openload.png` |
+| `proof.gui.uidef_workbench_paths` | `source` | `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_PATHS_V1.md` |
+| `proof.gui.uidef_workbench_paths` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_paths.cpp` |
+| `proof.gui.uidef_workbench_paths` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_paths_test.cpp` |
+| `proof.gui.uidef_workbench_paths` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_session.cpp` |
+| `proof.gui.uidef_workbench_paths` | `related` | `D:\code\ccode\labtalk\gui\uidef\wx_workbench.cpp` |
+| `proof.gui.uidef_workbench_paths` | `related` | `D:\code\ccode\labtalk\src\cli\cmd_init.cpp` |
+| `proof.gui.uidef_workbench_paths` | `related` | `D:\code\ccode\labtalk\src\cli\cmd_setpath_command.cpp` |
+| `proof.gui.uidef_workbench_paths` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_paths_20260918.txt` |
+| `proof.gui.uidef_workbench_paths` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_defaults_20260918.txt` |
+| `proof.gui.uidef_workbench_paths` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_20260918_v12-paths.png` |
+| `proof.gui.uidef_workbench_paths` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_20260918_v12-defaults.png` |
+| `proof.gui.uidef_workbench_save` | `source` | `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_SAVE_V1.md` |
+| `proof.gui.uidef_workbench_save` | `related` | `D:\code\ccode\labtalk\src\cli\cmd_workspace.cpp` |
+| `proof.gui.uidef_workbench_save` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_session.cpp` |
+| `proof.gui.uidef_workbench_save` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_save_test.cpp` |
+| `proof.gui.uidef_workbench_save` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_images_test.cpp` |
+| `proof.gui.uidef_workbench_save` | `related` | `D:\code\ccode\labtalk\gui\uidef\wx_workbench.cpp` |
+| `proof.gui.uidef_workbench_save` | `related` | `D:\code\ccode\labtalk\gui\uidef\author_workbench.py` |
+| `proof.gui.uidef_workbench_save` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_save_20260918.txt` |
+| `proof.gui.uidef_workbench_save` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_20260918_v7-save.png` |
+| `proof.gui.uidef_workbench_store_image` | `source` | `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_STORE_IMAGE_V1.md` |
+| `proof.gui.uidef_workbench_store_image` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_table.cpp` |
+| `proof.gui.uidef_workbench_store_image` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_session.cpp` |
+| `proof.gui.uidef_workbench_store_image` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_images.cpp` |
+| `proof.gui.uidef_workbench_store_image` | `related` | `D:\code\ccode\labtalk\gui\uidef\workbench_store_image_test.cpp` |
+| `proof.gui.uidef_workbench_store_image` | `related` | `D:\code\ccode\labtalk\gui\uidef\wx_workbench.cpp` |
+| `proof.gui.uidef_workbench_store_image` | `related` | `D:\code\ccode\labtalk\gui\uidef\author_workbench.py` |
+| `proof.gui.uidef_workbench_store_image` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_store_image_20260918.txt` |
+| `proof.gui.uidef_workbench_store_image` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_20260918_v10-store.png` |
 | `report.aif_rulings` | `source` | `D:\code\ccode\labtalk\docs\maintenance\AIF_*RULING_SHEET*.md + labtalk\ai_portal\TIER0_STATE.md` |
 | `launcher.wx` | `path` | `D:\code\ccode\wx.run.ps1` |
 | `launcher.wx_next` | `path` | `D:\code\ccode\wx.next.run.ps1` |
@@ -42,8 +227,8 @@ No duplicate item IDs found.
 ## AI Report Identity and Provenance
 
 - Schema: `ai-report-audit-v1`
-- Enforced closeouts: 131
-- Valid closeouts: 131
+- Enforced closeouts: 139
+- Valid closeouts: 139
 - Grandfathered closeouts: 9
 - Findings: 0
 
@@ -73,6 +258,8 @@ All enforced AI-authored closeouts have valid identity and provenance envelopes.
 
 | Item | Section | Kind | Paths |
 |---|---|---|---|
+| `doc.ddict.recipes` | `portal.docs` | `markdown` | `path` ok: `D:\code\ccode\docs\datadict\DDICT_METADATA_RECIPE_BOOK_V1.md` |
+| `doc.ddict.feed` | `portal.docs` | `ddict_feed` | `path` ok: `D:\code\ccode\labtalk\registries\current_ddict_feed.json` |
 | `doc.readme` | `portal.docs` | `markdown` | `path` ok: `D:\code\ccode\labtalk\README.md` |
 | `doc.campus_architecture` | `portal.docs` | `markdown` | `path` ok: `D:\code\ccode\labtalk\LABTALK_CAMPUS_ARCHITECTURE_v0.md` |
 | `doc.education_map` | `portal.docs` | `markdown` | `path` ok: `D:\code\ccode\labtalk\LABTALK_EDUCATION_MAP_v0.md` |
@@ -275,6 +462,7 @@ All enforced AI-authored closeouts have valid identity and provenance envelopes.
 | `proof.ai_portal.dotscript_startup_readiness.v1` | `portal.proofs` | `registry_item` | `source` ok: `D:\code\ccode\labtalk\proofs\runs\20260712_195729_probe_ai_portal_dotscript_startup_readiness_v1.txt`<br>`related` ok: `D:\code\ccode\labtalk\ai_portal\DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md`<br>`related` ok: `D:\code\ccode\labtalk\ai_portal\probes\dotscript_startup_readiness_v1.dts`<br>`related` ok: `D:\code\ccode\src\cli\cmd_dotscript.cpp` |
 | `proof.ai_portal.engineering_standards_seed` | `portal.proofs` | `registry_item` | `source` ok: `D:\code\ccode\labtalk\ai_portal\AI_ENGINEERING_STANDARDS_SEED_V1.md`<br>`related` ok: `D:\code\ccode\AI_README.md`<br>`related` ok: `D:\code\ccode\AI_PORTAL.md`<br>`related` ok: `D:\code\ccode\labtalk\ai_portal\ROOT_AI_PORTAL_ENTRY_V1.md`<br>`related` ok: `D:\code\ccode\labtalk\ai_portal\AI_PORTAL_HARDENING_LANE_V1.md` |
 | `proof.ai_portal.lane_registered` | `portal.proofs` | `registry_item` | `source` ok: `D:\code\ccode\labtalk\ai_portal\AI_PORTAL_HARDENING_LANE_V1.md`<br>`related` ok: `D:\code\ccode\labtalk\registries\ai_portal.yaml`<br>`related` ok: `D:\code\ccode\dottalkpp\docs\architecture\X64BASE_LABORATORY_CAMPUS_MISSION_VISION_V1.md` |
+| `proof.ai_portal.reentry_43day_20260923` | `portal.proofs` | `registry_item` | `source` ok: `D:\code\ccode\labtalk\proofs\AI_PORTAL_REENTRY_43DAY_20260923_V1.md`<br>`related` ok: `D:\code\ccode\labtalk\registries\proofs.d\proof.ai_portal.cold_resume_retention.yaml`<br>`related` ok: `D:\code\ccode\labtalk\ai_portal\TIER0_STATE.md`<br>`related` ok: `D:\code\ccode\labtalk\ai_portal\AI_TIER1_SEED_V1.md`<br>`related` ok: `D:\code\ccode\CLAUDE.md`<br>`related` ok: `D:\code\ccode\docs\maintenance\AIF_107_LOW_KEY_ENTRY_SURFACE_LANE_V1.md`<br>`related` ok: `D:\code\ccode\docs\maintenance\SESSION_CLOSEOUT_LEAN_SITE_G2_RECONCILIATION_2026-09-23.md` |
 | `proof.ai_portal.root_entry_and_external_package.v1` | `portal.proofs` | `registry_item` | `source` ok: `D:\code\ccode\AI_PORTAL.md`<br>`related` ok: `D:\code\ccode\labtalk\ai_portal\ROOT_AI_PORTAL_ENTRY_V1.md`<br>`related` ok: `D:\code\ccode\labtalk\ai_portal\SDLC_FAST_START_SEED_V1.md`<br>`related` ok: `D:\code\ccode\labtalk\ai_portal\EXTERNAL_AI_CHANGE_PACKAGE_V1.md`<br>`related` ok: `D:\code\ccode\labtalk\registries\ai_portal.yaml` |
 | `proof.ai_portal.sdlc_fast_start.v1` | `portal.proofs` | `registry_item` | `source` ok: `D:\code\ccode\labtalk\ai_portal\SDLC_FAST_START_SEED_V1.md`<br>`related` ok: `D:\code\ccode\docs\maintenance\DOTTALKPP_SDLC_CHARTER_v0.md`<br>`related` ok: `D:\code\ccode\labtalk\LABTALK_SDLC_FRAMEWORK_v0.md`<br>`related` ok: `D:\code\ccode\docs\planning\SDLC_PDLC_PLANNING_ADOPTION_v0.md`<br>`related` ok: `D:\code\ccode\labtalk\registries\ai_portal.yaml` |
 | `proof.ai_portal.seed_connection_prototype_direction.v1` | `portal.proofs` | `registry_item` | `source` ok: `D:\code\ccode\labtalk\ai_portal\SEED_CONNECTION_PROTOTYPE_NOTE_V1.md`<br>`related` ok: `D:\code\ccode\labtalk\ai_portal\README.md`<br>`related` ok: `D:\code\ccode\labtalk\ai_portal\AI_PORTAL_HARDENING_LANE_V1.md`<br>`related` ok: `D:\code\ccode\labtalk\registries\ai_portal.yaml` |
@@ -291,9 +479,13 @@ All enforced AI-authored closeouts have valid identity and provenance envelopes.
 | `proof.bbs.m6_daemon` | `portal.proofs` | `registry_item` | `source` ok: `D:\code\ccode\docs\maintenance\AI_BBS_M6_STANDALONE_DAEMON_V1.md` |
 | `proof.bbs.worklog` | `portal.proofs` | `registry_item` | `source` ok: `D:\code\ccode\docs\ai-friendly\AI_BBS_WORKLOG_HANDOFF_LANE_V1.md` |
 | `proof.build.gcc_linux_warning_baseline` | `portal.proofs` | `registry_item` | `source` ok: `D:\code\ccode\labtalk\proofs\runs\20260730_wsl_gcc_build_warnings.txt`<br>`related` ok: `D:\code\ccode\src\cnx\cnx_file.cpp`<br>`related` ok: `D:\code\ccode\src\identity\identity_dbf_store.cpp`<br>`related` ok: `D:\code\ccode\include\value_normalize.hpp`<br>`related` ok: `D:\code\ccode\src\xbase\field_codec.cpp`<br>`related` ok: `D:\code\ccode\include\cli\expr\fn_string.hpp` |
+| `proof.build.index_mode_changes_nothing_shipped` | `portal.proofs` | `registry_item` | `related` ok: `D:\code\ccode\bindings\pydottalk\CMakeLists.txt`<br>`related` ok: `D:\code\ccode\bindings\pydottalk\CMakePresets.json`<br>`related` ok: `D:\code\ccode\bindings\pydottalk\src\module.cpp`<br>`related` ok: `D:\code\ccode\src\xindex\CMakeLists.txt`<br>`related` ok: `D:\code\ccode\CMakePresets.json`<br>`related` ok: `D:\code\ccode\coordination\OPEN_ITEMS.md` |
+| `proof.build.macro_defined_twice_disagreeing` | `portal.proofs` | `registry_item` | `related` ok: `D:\code\ccode\bindings\pydottalk\CMakeLists.txt`<br>`related` ok: `D:\code\ccode\src\xindex\CMakeLists.txt`<br>`related` ok: `D:\code\ccode\bindings\pydottalk\CMakePresets.json` |
+| `proof.build.parent_provided_globals` | `portal.proofs` | `registry_item` | `related` ok: `D:\code\ccode\CMakeLists.txt`<br>`related` ok: `D:\code\ccode\bindings\pydottalk\CMakeLists.txt`<br>`related` ok: `D:\code\ccode\src\xbase\CMakeLists.txt`<br>`related` ok: `D:\code\ccode\src\memo\CMakeLists.txt`<br>`related` ok: `D:\code\ccode\src\xindex\CMakeLists.txt`<br>`related` ok: `D:\code\ccode\config\build_vectors.cmake`<br>`related` ok: `D:\code\ccode\build_pydottalk.ps1` |
 | `proof.case.registry_exists` | `portal.proofs` | `registry_item` | `source` ok: `D:\code\ccode\docs\cases\REGISTRY_CASES_v0.csv` |
 | `proof.cnx_orthogonality_recno_permutation` | `portal.proofs` | `registry_item` | `related` ok: `D:\code\ccode\src\cli\cmd_setorder.cpp`<br>`related` ok: `D:\code\ccode\src\cli\cmd_rebuild.cpp`<br>`related` ok: `D:\code\ccode\docs\maintenance\TICKET_CNX_ON_X64_WARN_NOT_REFUSE_AND_WORKSPACE_OPEN_INDEX_SOURCE_V1.md`<br>`related` ok: `D:\code\ccode\docs\maintenance\TICKET_CDX_ON_V32_WARN_NOT_REFUSE_MIRROR_V1.md` |
 | `proof.codev.system_corrects_its_extender` | `portal.proofs` | `registry_item` | `source` ok: `D:\code\ccode\docs\maintenance\SESSION_CLOSEOUT_SQLSEL_P0_P1_2026-07-29.md`<br>`related` ok: `D:\code\ccode\labtalk\registries\ai_report_audit.yaml`<br>`related` ok: `D:\code\ccode\AI_README.md`<br>`related` ok: `D:\code\ccode\docs\maintenance\AI_REPORT_AUDIT_V2_SPEC.md` |
+| `proof.contract.declaration_harvested_by_nothing` | `portal.proofs` | `registry_item` | `related` ok: `D:\code\ccode\docs\contracts\PYTHON_BINDING_TRUST_CONTRACT_V1.md`<br>`related` ok: `D:\code\ccode\docs\contracts\CONTRACT_REGISTRY_V1.md`<br>`related` ok: `D:\code\ccode\bindings\pydottalk\src\module.cpp`<br>`related` ok: `D:\code\ccode\tools\contracts\contract_scan.py`<br>`related` ok: `D:\code\ccode\src\meta\metacollect.cpp` |
 | `proof.contract.dottalk_file_fulltree` | `portal.proofs` | `registry_item` | `source` ok: `D:\code\ccode\docs\maintenance\SESSION_CLOSEOUT_AIF050_FULLTREE_BACKFILL_2026-07-25.md`<br>`related` ok: `D:\code\ccode\tools\fullstack_docs\source_census.py`<br>`related` ok: `D:\code\ccode\docs\maintenance\AI_RUN_TRACEABILITY_LANE_V1.md` |
 | `proof.edref.storage_was_already_decided` | `portal.proofs` | `registry_item` | `related` ok: `D:\code\ccode\include\edref.hpp`<br>`related` ok: `D:\code\ccode\dottalkpp\data\help\HELP_TOPIC.dbf`<br>`related` ok: `D:\code\ccode\config\package\lean.manifest`<br>`related` ok: `D:\code\ccode\config\package\educational.manifest`<br>`related` ok: `D:\code\ccode\src\help\helpdata_export_dbf.cpp`<br>`related` ok: `D:\code\ccode\tools\fullstack_docs\edrefcheck_v1.py` |
 | `proof.edref.topic_exists` | `portal.proofs` | `registry_item` | `source` ok: `D:\code\ccode\include\edref.hpp` |
@@ -302,11 +494,32 @@ All enforced AI-authored closeouts have valid identity and provenance envelopes.
 | `proof.engine.scan_limit_reports_truncation` | `portal.proofs` | `registry_item` | `source` ok: `D:\code\ccode\labtalk\proofs\runs\20260729_aif074_rel_scanlimit_honesty.txt`<br>`related` ok: `D:\code\ccode\src\cli\set_relations.cpp`<br>`related` ok: `D:\code\ccode\src\cli\set_relations.hpp`<br>`related` ok: `D:\code\ccode\src\cli\cmd_rel.cpp` |
 | `proof.engine.two_read_families_buffer_visibility` | `portal.proofs` | `registry_item` | `source` ok: `D:\code\ccode\labtalk\proofs\runs\20260729_aif074_smartbrowser_tuple_filter_interactive.txt`<br>`related` ok: `D:\code\ccode\labtalk\proofs\runs\20260729_aif074_buffer_visibility_probe.txt`<br>`related` ok: `D:\code\ccode\labtalk\proofs\runs\20260729_aif074_buffer_visibility_probe_v2.txt`<br>`related` ok: `D:\code\ccode\src\cli\expr_tuple_glue.hpp`<br>`related` ok: `D:\code\ccode\src\cli\db_tuple_stream.cpp`<br>`related` ok: `D:\code\ccode\src\cli\smartlist_output.cpp`<br>`related` ok: `D:\code\ccode\src\cli\sqlsel_statement.cpp` |
 | `proof.engine.typed_equality_crosses_declared_types` | `portal.proofs` | `registry_item` | `source` ok: `D:\code\ccode\labtalk\proofs\runs\20260729_aif074_rdb_truth_typed_equality.txt`<br>`related` ok: `D:\code\ccode\src\cli\set_relations.cpp`<br>`related` ok: `D:\code\ccode\dottalkpp\data\scripts\rdb_truth_check_v1.py` |
+| `proof.evidence.inference_dressed_as_measurement` | `portal.proofs` | `registry_item` | `related` ok: `D:\dev\x64base-site\app\retro\page.tsx`<br>`related` ok: `D:\dev\x64base-site\components\Navbar.tsx`<br>`related` ok: `D:\code\ccode\coordination\OPEN_ITEMS.md`<br>`related` ok: `D:\code\ccode\docs\maintenance\AIF_118_SILENT_PASS_GUARD_LANE_V1.md` |
 | `proof.evidence.layer_versioned` | `portal.proofs` | `registry_item` | `source` ok: `D:\code\ccode\docs\maintenance\AI_EVIDENCE_LAYER_VERSIONING_LANE_V1.md` |
 | `proof.export.sdf.fixed_width_export` | `portal.proofs` | `registry_item` | `source` ok: `D:\code\ccode\labtalk\proofs\runs\20260727_export_sdf_regression.txt`<br>`related` ok: `D:\code\ccode\src\cli\cmd_export.cpp`<br>`related` ok: `D:\code\ccode\include\cli\fixed_width_row.hpp`<br>`related` ok: `D:\code\ccode\src\cli\cmd_tuptalk.cpp`<br>`related` ok: `D:\code\ccode\src\cli\cmd_regression.cpp`<br>`related` ok: `D:\code\ccode\src\help\helpdata_messages.cpp`<br>`related` ok: `D:\code\ccode\include\dotref.hpp` |
 | `proof.golden_rule_verify_before_assert` | `portal.proofs` | `registry_item` | `related` ok: `D:\code\ccode\labtalk\ai_portal\AI_GLOSSARY_V1.md`<br>`related` ok: `D:\code\ccode\tools\reports\serve_dynamic_reports.py`<br>`related` ok: `D:\code\ccode\start-ai.ps1`<br>`related` ok: `D:\code\ccode\tools\reports\bbs_auth_relay.py` |
 | `proof.governance.availability_is_not_adoption` | `portal.proofs` | `registry_item` | `source` ok: `D:\code\ccode\docs\maintenance\AIF112_OWNER_RULING_D1_D3_AND_DOGFOOD_DEFINITION_V1.md`<br>`related` ok: `D:\code\ccode\docs\maintenance\external_ai_intake\aif112_document_control_acceptance_2026-08-15\ACCEPTANCE_NOTE.md`<br>`related` ok: `D:\code\ccode\docs\maintenance\external_ai_intake\aif112_phase0_decisions_2026-08-15\PHASE0_DECISIONS.md`<br>`related` ok: `D:\code\ccode\docs\maintenance\AIF112_PRIOR_ART_INVENTORY_AND_DBF_REVISION_V1.md`<br>`related` ok: `D:\code\ccode\labtalk\ai_portal\AI_GLOSSARY_V1.md` |
 | `proof.grok_lane1_coworker_kind_collision` | `portal.proofs` | `registry_item` | `related` ok: `D:\code\ccode\docs\maintenance\LANE_L1_WRITE_ADAPTER_ASSIGNMENT_GROK_V1.md`<br>`related` ok: `D:\code\ccode\docs\maintenance\GROK_PUSH_L1_WRITE_ADAPTER_V1.md`<br>`related` ok: `D:\code\ccode\include\bbs\bbs_schema.hpp`<br>`related` ok: `D:\code\ccode\tools\memory\promote.py` |
+| `proof.gui.uidef_workbench_browse` | `portal.proofs` | `registry_item` | `source` missing: `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_BROWSE_V1.md`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_table.hpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_table.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_table_test.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_session.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\wx_workbench.cpp`<br>`related` missing: `D:\code\ccode\labtalk\include\cli\table_object.hpp`<br>`related` missing: `D:\code\ccode\labtalk\src\cli\table_object.cpp`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_browse_20260918.txt`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_20260918_v5-browse.png` |
+| `proof.gui.uidef_workbench_catalog` | `portal.proofs` | `registry_item` | `source` missing: `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_FIRST_SLICE_V1.md`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_catalog_test.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\verify_workbench.py`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_20260917.txt`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_20260917.png` |
+| `proof.gui.uidef_workbench_catalog_flow` | `portal.proofs` | `registry_item` | `source` missing: `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_CATALOG_FLOW_V1.md`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\author_workbench.py`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\wx_workbench.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_catalog.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_session.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_paths_test.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\verify_workbench.py`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_MILESTONES_V1.md`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_catalog_flow_20260918.txt`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_catalog_flow_build_20260918.txt`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_catalog_flow_hydrate_20260918.png`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_catalog_flow_load_20260918.png` |
+| `proof.gui.uidef_workbench_console` | `portal.proofs` | `registry_item` | `source` missing: `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_LIST_V1.md`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_session.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_session_test.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\wx_workbench.cpp`<br>`related` missing: `D:\code\ccode\labtalk\cmake\AddUidefWorkbench.cmake`<br>`related` missing: `D:\code\ccode\labtalk\src\cli\shell_engine.cpp`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_console_20260917.txt`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_20260917_v4-live.png` |
+| `proof.gui.uidef_workbench_edit` | `portal.proofs` | `registry_item` | `source` missing: `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_EDIT_V1.md`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_table.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_table_test.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_session.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\wx_workbench.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\author_workbench.py`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_edit_20260918.txt`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_20260918_v6-edit.png` |
+| `proof.gui.uidef_workbench_export` | `portal.proofs` | `registry_item` | `source` missing: `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_EXPORT_V1.md`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_images.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_session.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_images_test.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\wx_workbench.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\author_workbench.py`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_export_20260918.txt`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_20260918_v9-export.png` |
+| `proof.gui.uidef_workbench_filepaths` | `portal.proofs` | `registry_item` | `source` missing: `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_FILEPATHS_V1.md`<br>`related` missing: `D:\code\ccode\labtalk\src\cli\shell_api.cpp`<br>`related` missing: `D:\code\ccode\labtalk\src\cli\shell_api.hpp`<br>`related` missing: `D:\code\ccode\labtalk\src\cli\cmd_dotscript.cpp`<br>`related` missing: `D:\code\ccode\labtalk\src\cli\cmd_workspace.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\author_workbench.py`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\wx_workbench.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_session.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_paths_test.cpp`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_filepaths_20260918.txt`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_20260918_filepaths-modal-RUN.png` |
+| `proof.gui.uidef_workbench_live_session` | `portal.proofs` | `registry_item` | `source` missing: `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_LIVE_SESSION_V1.md`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_session_test.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\verify_workbench.py`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_live_20260917.txt`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_20260917_v2-live.png` |
+| `proof.gui.uidef_workbench_loadroots` | `portal.proofs` | `registry_item` | `source` missing: `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_LOAD_ROOTS_V1.md`<br>`related` missing: `D:\code\ccode\labtalk\include\cli\workspace_definition.hpp`<br>`related` missing: `D:\code\ccode\labtalk\src\cli\cmd_workspace.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\author_workbench.py`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\wx_workbench.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_session.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_paths_test.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\verify_workspace_schema_load.py`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_loadroots_real_20260918.txt`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_loadroots_20260918.txt`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_20260918_loadroots-modal-LOAD.png` |
+| `proof.gui.uidef_workbench_loadview` | `portal.proofs` | `registry_item` | `source` missing: `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_LOADVIEW_V1.md`<br>`related` missing: `D:\code\ccode\labtalk\include\cli\workspace_image_event.hpp`<br>`related` missing: `D:\code\ccode\labtalk\src\cli\cmd_workspace.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_session.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\wx_workbench.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_paths_test.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_images_test.cpp`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_loadview_20260918.txt`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_20260918_v13-loadview.png` |
+| `proof.gui.uidef_workbench_m1` | `portal.proofs` | `registry_item` | `source` missing: `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_M1_V1.md`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\author_workbench.py`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\uidef_wx.py`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\wx_workbench.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_session.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_paths_test.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_save_test.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_m1_test.py`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_MILESTONES_V1.md`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_m1_20260918.txt`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_20260918_m1-menus.png` |
+| `proof.gui.uidef_workbench_m2` | `portal.proofs` | `registry_item` | `source` missing: `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_M2_V1.md`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\author_workbench.py`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\wx_workbench.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_navigation.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_session.hpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_session_test.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\verify_workbench.py`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_MILESTONES_V1.md`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_m2_20260918.txt`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_m2_build_20260918.txt`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_20260918_m2-navigation.png` |
+| `proof.gui.uidef_workbench_m3` | `portal.proofs` | `registry_item` | `source` missing: `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_M3_V1.md`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\author_workbench.py`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\wx_workbench.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_table.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_session.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_table_test.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\verify_workbench.py`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_MILESTONES_V1.md`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_m3_tests_20260918.txt`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_m3_release_20260918.txt`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_m3_20260918.png` |
+| `proof.gui.uidef_workbench_memo_image` | `portal.proofs` | `registry_item` | `source` missing: `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_MEMO_IMAGE_V1.md`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_table.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_session.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_memo_image_test.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_images_test.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\wx_workbench.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\author_workbench.py`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_memo_image_20260918.txt`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_20260918_v8-memo-image.png` |
+| `proof.gui.uidef_workbench_minidb` | `portal.proofs` | `registry_item` | `source` missing: `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_MINIDB_V1.md`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_images_test.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\verify_workbench.py`<br>`related` missing: `D:\code\ccode\labtalk\include\dottalk\minidb.hpp`<br>`related` missing: `D:\code\ccode\labtalk\include\dottalk\minidb_hydrate.hpp`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_minidb_20260917.txt`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_20260917_v3-image.png`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_20260917_v3-nested.png` |
+| `proof.gui.uidef_workbench_navigation` | `portal.proofs` | `registry_item` | `source` missing: `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_NAVIGATION_V1.md`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_navigation.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_session.hpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_session_test.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\wx_workbench.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\author_workbench.py`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\verify_workbench.py`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_navigation_20260918.txt`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_20260918_v11-navigation.png` |
+| `proof.gui.uidef_workbench_openload` | `portal.proofs` | `registry_item` | `source` missing: `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_OPEN_LOAD_V1.md`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\author_workbench.py`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_session.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\wx_workbench.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_paths_test.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_session_test.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\verify_workspace_flow.py`<br>`related` missing: `D:\code\ccode\labtalk\src\cli\cmd_workspace.cpp`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_openload_20260918.txt`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_20260918_v14-openload.png` |
+| `proof.gui.uidef_workbench_paths` | `portal.proofs` | `registry_item` | `source` missing: `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_PATHS_V1.md`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_paths.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_paths_test.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_session.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\wx_workbench.cpp`<br>`related` missing: `D:\code\ccode\labtalk\src\cli\cmd_init.cpp`<br>`related` missing: `D:\code\ccode\labtalk\src\cli\cmd_setpath_command.cpp`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_paths_20260918.txt`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_defaults_20260918.txt`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_20260918_v12-paths.png`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_20260918_v12-defaults.png` |
+| `proof.gui.uidef_workbench_save` | `portal.proofs` | `registry_item` | `source` missing: `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_SAVE_V1.md`<br>`related` missing: `D:\code\ccode\labtalk\src\cli\cmd_workspace.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_session.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_save_test.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_images_test.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\wx_workbench.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\author_workbench.py`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_save_20260918.txt`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_20260918_v7-save.png` |
+| `proof.gui.uidef_workbench_store_image` | `portal.proofs` | `registry_item` | `source` missing: `D:\code\ccode\labtalk\docs\maintenance\AIF120_WORKBENCH_STORE_IMAGE_V1.md`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_table.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_session.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_images.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\workbench_store_image_test.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\wx_workbench.cpp`<br>`related` missing: `D:\code\ccode\labtalk\gui\uidef\author_workbench.py`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_store_image_20260918.txt`<br>`related` missing: `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_20260918_v10-store.png` |
 | `proof.help.cmdhelp_source_exists` | `portal.proofs` | `registry_item` | `source` ok: `D:\code\ccode\src\cli\cmdhelp.cpp` |
 | `proof.lab.database_literacy_starter.first_run` | `portal.proofs` | `registry_item` | `source` ok: `D:\code\ccode\labtalk\proofs\runs\20260702_155913_runtime_database_literacy_starter.txt` |
 | `proof.lab.selfdoc.comments_to_contracts.first_run` | `portal.proofs` | `registry_item` | `source` ok: `D:\code\ccode\labtalk\proofs\runs\20260704_075057_runtime_selfdoc_comments_to_contracts_first_lab.txt`<br>`related` ok: `D:\code\ccode\labtalk\reports\selfdoc\lab_selfdoc_first_crosswalk_v0.md` |

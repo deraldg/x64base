@@ -1,12 +1,12 @@
 {
-  "generated_at": "2026-09-15T17:47:48",
+  "generated_at": "2026-10-12T13:38:41",
   "labtalk_root": "D:\\code\\ccode\\labtalk",
   "repo_root": "D:\\code\\ccode",
   "portal_registry": "D:\\code\\ccode\\labtalk\\registries\\portal.yaml",
   "section_count": 15,
-  "item_count": 304,
+  "item_count": 332,
   "runnable_count": 33,
-  "proof_like_count": 129,
+  "proof_like_count": 155,
   "duplicate_item_ids": [],
   "missing_paths": [
     {
@@ -88,6 +88,1116 @@
       "path": "D:\\code\\ccode\\labtalk\\lessons\\student\\properties_of_valid_data_v0.md"
     },
     {
+      "item_id": "proof.gui.uidef_workbench_browse",
+      "label": "Generated Workbench live table and memo views",
+      "field": "source",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_BROWSE_V1.md"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_browse",
+      "label": "Generated Workbench live table and memo views",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_table.hpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_browse",
+      "label": "Generated Workbench live table and memo views",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_table.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_browse",
+      "label": "Generated Workbench live table and memo views",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_table_test.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_browse",
+      "label": "Generated Workbench live table and memo views",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_session.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_browse",
+      "label": "Generated Workbench live table and memo views",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\wx_workbench.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_browse",
+      "label": "Generated Workbench live table and memo views",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\include\\cli\\table_object.hpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_browse",
+      "label": "Generated Workbench live table and memo views",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\src\\cli\\table_object.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_browse",
+      "label": "Generated Workbench live table and memo views",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_browse_20260918.txt"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_browse",
+      "label": "Generated Workbench live table and memo views",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_20260918_v5-browse.png"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_catalog",
+      "label": "Generated native Workbench saved-catalog inspection",
+      "field": "source",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_FIRST_SLICE_V1.md"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_catalog",
+      "label": "Generated native Workbench saved-catalog inspection",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_catalog_test.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_catalog",
+      "label": "Generated native Workbench saved-catalog inspection",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\verify_workbench.py"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_catalog",
+      "label": "Generated native Workbench saved-catalog inspection",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_20260917.txt"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_catalog",
+      "label": "Generated native Workbench saved-catalog inspection",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_20260917.png"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_catalog_flow",
+      "label": "Direct saved-version catalog load and RAM hydration",
+      "field": "source",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_CATALOG_FLOW_V1.md"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_catalog_flow",
+      "label": "Direct saved-version catalog load and RAM hydration",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\author_workbench.py"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_catalog_flow",
+      "label": "Direct saved-version catalog load and RAM hydration",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\wx_workbench.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_catalog_flow",
+      "label": "Direct saved-version catalog load and RAM hydration",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_catalog.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_catalog_flow",
+      "label": "Direct saved-version catalog load and RAM hydration",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_session.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_catalog_flow",
+      "label": "Direct saved-version catalog load and RAM hydration",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_paths_test.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_catalog_flow",
+      "label": "Direct saved-version catalog load and RAM hydration",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\verify_workbench.py"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_catalog_flow",
+      "label": "Direct saved-version catalog load and RAM hydration",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_MILESTONES_V1.md"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_catalog_flow",
+      "label": "Direct saved-version catalog load and RAM hydration",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_catalog_flow_20260918.txt"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_catalog_flow",
+      "label": "Direct saved-version catalog load and RAM hydration",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_catalog_flow_build_20260918.txt"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_catalog_flow",
+      "label": "Direct saved-version catalog load and RAM hydration",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_catalog_flow_hydrate_20260918.png"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_catalog_flow",
+      "label": "Direct saved-version catalog load and RAM hydration",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_catalog_flow_load_20260918.png"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_console",
+      "label": "Generated Workbench shared command console",
+      "field": "source",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_LIST_V1.md"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_console",
+      "label": "Generated Workbench shared command console",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_session.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_console",
+      "label": "Generated Workbench shared command console",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_session_test.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_console",
+      "label": "Generated Workbench shared command console",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\wx_workbench.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_console",
+      "label": "Generated Workbench shared command console",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\cmake\\AddUidefWorkbench.cmake"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_console",
+      "label": "Generated Workbench shared command console",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\src\\cli\\shell_engine.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_console",
+      "label": "Generated Workbench shared command console",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_console_20260917.txt"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_console",
+      "label": "Generated Workbench shared command console",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_20260917_v4-live.png"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_edit",
+      "label": "Generated Workbench buffered scalar editing",
+      "field": "source",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_EDIT_V1.md"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_edit",
+      "label": "Generated Workbench buffered scalar editing",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_table.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_edit",
+      "label": "Generated Workbench buffered scalar editing",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_table_test.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_edit",
+      "label": "Generated Workbench buffered scalar editing",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_session.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_edit",
+      "label": "Generated Workbench buffered scalar editing",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\wx_workbench.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_edit",
+      "label": "Generated Workbench buffered scalar editing",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\author_workbench.py"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_edit",
+      "label": "Generated Workbench buffered scalar editing",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_edit_20260918.txt"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_edit",
+      "label": "Generated Workbench buffered scalar editing",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_20260918_v6-edit.png"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_export",
+      "label": "Generated Workbench exact selected-image export",
+      "field": "source",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_EXPORT_V1.md"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_export",
+      "label": "Generated Workbench exact selected-image export",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_images.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_export",
+      "label": "Generated Workbench exact selected-image export",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_session.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_export",
+      "label": "Generated Workbench exact selected-image export",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_images_test.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_export",
+      "label": "Generated Workbench exact selected-image export",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\wx_workbench.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_export",
+      "label": "Generated Workbench exact selected-image export",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\author_workbench.py"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_export",
+      "label": "Generated Workbench exact selected-image export",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_export_20260918.txt"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_export",
+      "label": "Generated Workbench exact selected-image export",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_20260918_v9-export.png"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_filepaths",
+      "label": "Workbench deterministic native file locations and script modal",
+      "field": "source",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_FILEPATHS_V1.md"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_filepaths",
+      "label": "Workbench deterministic native file locations and script modal",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\src\\cli\\shell_api.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_filepaths",
+      "label": "Workbench deterministic native file locations and script modal",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\src\\cli\\shell_api.hpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_filepaths",
+      "label": "Workbench deterministic native file locations and script modal",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\src\\cli\\cmd_dotscript.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_filepaths",
+      "label": "Workbench deterministic native file locations and script modal",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\src\\cli\\cmd_workspace.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_filepaths",
+      "label": "Workbench deterministic native file locations and script modal",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\author_workbench.py"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_filepaths",
+      "label": "Workbench deterministic native file locations and script modal",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\wx_workbench.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_filepaths",
+      "label": "Workbench deterministic native file locations and script modal",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_session.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_filepaths",
+      "label": "Workbench deterministic native file locations and script modal",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_paths_test.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_filepaths",
+      "label": "Workbench deterministic native file locations and script modal",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_filepaths_20260918.txt"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_filepaths",
+      "label": "Workbench deterministic native file locations and script modal",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_20260918_filepaths-modal-RUN.png"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_live_session",
+      "label": "Generated native Workbench serialized live session",
+      "field": "source",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_LIVE_SESSION_V1.md"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_live_session",
+      "label": "Generated native Workbench serialized live session",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_session_test.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_live_session",
+      "label": "Generated native Workbench serialized live session",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\verify_workbench.py"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_live_session",
+      "label": "Generated native Workbench serialized live session",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_live_20260917.txt"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_live_session",
+      "label": "Generated native Workbench serialized live session",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_20260917_v2-live.png"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_loadroots",
+      "label": "Workbench schema table directories and native preflight",
+      "field": "source",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_LOAD_ROOTS_V1.md"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_loadroots",
+      "label": "Workbench schema table directories and native preflight",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\include\\cli\\workspace_definition.hpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_loadroots",
+      "label": "Workbench schema table directories and native preflight",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\src\\cli\\cmd_workspace.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_loadroots",
+      "label": "Workbench schema table directories and native preflight",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\author_workbench.py"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_loadroots",
+      "label": "Workbench schema table directories and native preflight",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\wx_workbench.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_loadroots",
+      "label": "Workbench schema table directories and native preflight",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_session.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_loadroots",
+      "label": "Workbench schema table directories and native preflight",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_paths_test.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_loadroots",
+      "label": "Workbench schema table directories and native preflight",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\verify_workspace_schema_load.py"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_loadroots",
+      "label": "Workbench schema table directories and native preflight",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_loadroots_real_20260918.txt"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_loadroots",
+      "label": "Workbench schema table directories and native preflight",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_loadroots_20260918.txt"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_loadroots",
+      "label": "Workbench schema table directories and native preflight",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_20260918_loadroots-modal-LOAD.png"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_loadview",
+      "label": "Generated Workbench command-load visibility",
+      "field": "source",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_LOADVIEW_V1.md"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_loadview",
+      "label": "Generated Workbench command-load visibility",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\include\\cli\\workspace_image_event.hpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_loadview",
+      "label": "Generated Workbench command-load visibility",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\src\\cli\\cmd_workspace.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_loadview",
+      "label": "Generated Workbench command-load visibility",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_session.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_loadview",
+      "label": "Generated Workbench command-load visibility",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\wx_workbench.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_loadview",
+      "label": "Generated Workbench command-load visibility",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_paths_test.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_loadview",
+      "label": "Generated Workbench command-load visibility",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_images_test.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_loadview",
+      "label": "Generated Workbench command-load visibility",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_loadview_20260918.txt"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_loadview",
+      "label": "Generated Workbench command-load visibility",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_20260918_v13-loadview.png"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_m1",
+      "label": "Workbench M1 native menus and modal workflow",
+      "field": "source",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_M1_V1.md"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_m1",
+      "label": "Workbench M1 native menus and modal workflow",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\author_workbench.py"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_m1",
+      "label": "Workbench M1 native menus and modal workflow",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\uidef_wx.py"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_m1",
+      "label": "Workbench M1 native menus and modal workflow",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\wx_workbench.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_m1",
+      "label": "Workbench M1 native menus and modal workflow",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_session.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_m1",
+      "label": "Workbench M1 native menus and modal workflow",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_paths_test.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_m1",
+      "label": "Workbench M1 native menus and modal workflow",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_save_test.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_m1",
+      "label": "Workbench M1 native menus and modal workflow",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_m1_test.py"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_m1",
+      "label": "Workbench M1 native menus and modal workflow",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_MILESTONES_V1.md"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_m1",
+      "label": "Workbench M1 native menus and modal workflow",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_m1_20260918.txt"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_m1",
+      "label": "Workbench M1 native menus and modal workflow",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_20260918_m1-menus.png"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_m2",
+      "label": "M2 workspace tree and stable navigation",
+      "field": "source",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_M2_V1.md"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_m2",
+      "label": "M2 workspace tree and stable navigation",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\author_workbench.py"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_m2",
+      "label": "M2 workspace tree and stable navigation",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\wx_workbench.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_m2",
+      "label": "M2 workspace tree and stable navigation",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_navigation.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_m2",
+      "label": "M2 workspace tree and stable navigation",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_session.hpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_m2",
+      "label": "M2 workspace tree and stable navigation",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_session_test.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_m2",
+      "label": "M2 workspace tree and stable navigation",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\verify_workbench.py"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_m2",
+      "label": "M2 workspace tree and stable navigation",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_MILESTONES_V1.md"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_m2",
+      "label": "M2 workspace tree and stable navigation",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_m2_20260918.txt"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_m2",
+      "label": "M2 workspace tree and stable navigation",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_m2_build_20260918.txt"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_m2",
+      "label": "M2 workspace tree and stable navigation",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_20260918_m2-navigation.png"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_m3",
+      "label": "M3 everyday table controls and buffered memo editing",
+      "field": "source",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_M3_V1.md"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_m3",
+      "label": "M3 everyday table controls and buffered memo editing",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\author_workbench.py"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_m3",
+      "label": "M3 everyday table controls and buffered memo editing",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\wx_workbench.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_m3",
+      "label": "M3 everyday table controls and buffered memo editing",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_table.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_m3",
+      "label": "M3 everyday table controls and buffered memo editing",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_session.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_m3",
+      "label": "M3 everyday table controls and buffered memo editing",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_table_test.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_m3",
+      "label": "M3 everyday table controls and buffered memo editing",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\verify_workbench.py"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_m3",
+      "label": "M3 everyday table controls and buffered memo editing",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_MILESTONES_V1.md"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_m3",
+      "label": "M3 everyday table controls and buffered memo editing",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_m3_tests_20260918.txt"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_m3",
+      "label": "M3 everyday table controls and buffered memo editing",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_m3_release_20260918.txt"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_m3",
+      "label": "M3 everyday table controls and buffered memo editing",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_m3_20260918.png"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_memo_image",
+      "label": "Generated Workbench live memo field image inspection",
+      "field": "source",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_MEMO_IMAGE_V1.md"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_memo_image",
+      "label": "Generated Workbench live memo field image inspection",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_table.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_memo_image",
+      "label": "Generated Workbench live memo field image inspection",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_session.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_memo_image",
+      "label": "Generated Workbench live memo field image inspection",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_memo_image_test.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_memo_image",
+      "label": "Generated Workbench live memo field image inspection",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_images_test.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_memo_image",
+      "label": "Generated Workbench live memo field image inspection",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\wx_workbench.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_memo_image",
+      "label": "Generated Workbench live memo field image inspection",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\author_workbench.py"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_memo_image",
+      "label": "Generated Workbench live memo field image inspection",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_memo_image_20260918.txt"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_memo_image",
+      "label": "Generated Workbench live memo field image inspection",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_20260918_v8-memo-image.png"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_minidb",
+      "label": "Generated native Workbench MINIDB hydration and nested DTX inspection",
+      "field": "source",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_MINIDB_V1.md"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_minidb",
+      "label": "Generated native Workbench MINIDB hydration and nested DTX inspection",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_images_test.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_minidb",
+      "label": "Generated native Workbench MINIDB hydration and nested DTX inspection",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\verify_workbench.py"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_minidb",
+      "label": "Generated native Workbench MINIDB hydration and nested DTX inspection",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\include\\dottalk\\minidb.hpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_minidb",
+      "label": "Generated native Workbench MINIDB hydration and nested DTX inspection",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\include\\dottalk\\minidb_hydrate.hpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_minidb",
+      "label": "Generated native Workbench MINIDB hydration and nested DTX inspection",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_minidb_20260917.txt"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_minidb",
+      "label": "Generated native Workbench MINIDB hydration and nested DTX inspection",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_20260917_v3-image.png"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_minidb",
+      "label": "Generated native Workbench MINIDB hydration and nested DTX inspection",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_20260917_v3-nested.png"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_navigation",
+      "label": "Generated Workbench workspace-scoped table navigation",
+      "field": "source",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_NAVIGATION_V1.md"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_navigation",
+      "label": "Generated Workbench workspace-scoped table navigation",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_navigation.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_navigation",
+      "label": "Generated Workbench workspace-scoped table navigation",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_session.hpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_navigation",
+      "label": "Generated Workbench workspace-scoped table navigation",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_session_test.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_navigation",
+      "label": "Generated Workbench workspace-scoped table navigation",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\wx_workbench.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_navigation",
+      "label": "Generated Workbench workspace-scoped table navigation",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\author_workbench.py"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_navigation",
+      "label": "Generated Workbench workspace-scoped table navigation",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\verify_workbench.py"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_navigation",
+      "label": "Generated Workbench workspace-scoped table navigation",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_navigation_20260918.txt"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_navigation",
+      "label": "Generated Workbench workspace-scoped table navigation",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_20260918_v11-navigation.png"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_openload",
+      "label": "Generated Workbench Open/Load controls and native workspace entry flow",
+      "field": "source",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_OPEN_LOAD_V1.md"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_openload",
+      "label": "Generated Workbench Open/Load controls and native workspace entry flow",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\author_workbench.py"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_openload",
+      "label": "Generated Workbench Open/Load controls and native workspace entry flow",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_session.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_openload",
+      "label": "Generated Workbench Open/Load controls and native workspace entry flow",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\wx_workbench.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_openload",
+      "label": "Generated Workbench Open/Load controls and native workspace entry flow",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_paths_test.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_openload",
+      "label": "Generated Workbench Open/Load controls and native workspace entry flow",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_session_test.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_openload",
+      "label": "Generated Workbench Open/Load controls and native workspace entry flow",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\verify_workspace_flow.py"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_openload",
+      "label": "Generated Workbench Open/Load controls and native workspace entry flow",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\src\\cli\\cmd_workspace.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_openload",
+      "label": "Generated Workbench Open/Load controls and native workspace entry flow",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_openload_20260918.txt"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_openload",
+      "label": "Generated Workbench Open/Load controls and native workspace entry flow",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_20260918_v14-openload.png"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_paths",
+      "label": "Generated Workbench native initialization and path defaults",
+      "field": "source",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_PATHS_V1.md"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_paths",
+      "label": "Generated Workbench native initialization and path defaults",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_paths.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_paths",
+      "label": "Generated Workbench native initialization and path defaults",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_paths_test.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_paths",
+      "label": "Generated Workbench native initialization and path defaults",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_session.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_paths",
+      "label": "Generated Workbench native initialization and path defaults",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\wx_workbench.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_paths",
+      "label": "Generated Workbench native initialization and path defaults",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\src\\cli\\cmd_init.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_paths",
+      "label": "Generated Workbench native initialization and path defaults",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\src\\cli\\cmd_setpath_command.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_paths",
+      "label": "Generated Workbench native initialization and path defaults",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_paths_20260918.txt"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_paths",
+      "label": "Generated Workbench native initialization and path defaults",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_defaults_20260918.txt"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_paths",
+      "label": "Generated Workbench native initialization and path defaults",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_20260918_v12-paths.png"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_paths",
+      "label": "Generated Workbench native initialization and path defaults",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_20260918_v12-defaults.png"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_save",
+      "label": "Generated Workbench portable MINIDB save and reopen",
+      "field": "source",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_SAVE_V1.md"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_save",
+      "label": "Generated Workbench portable MINIDB save and reopen",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\src\\cli\\cmd_workspace.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_save",
+      "label": "Generated Workbench portable MINIDB save and reopen",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_session.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_save",
+      "label": "Generated Workbench portable MINIDB save and reopen",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_save_test.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_save",
+      "label": "Generated Workbench portable MINIDB save and reopen",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_images_test.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_save",
+      "label": "Generated Workbench portable MINIDB save and reopen",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\wx_workbench.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_save",
+      "label": "Generated Workbench portable MINIDB save and reopen",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\author_workbench.py"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_save",
+      "label": "Generated Workbench portable MINIDB save and reopen",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_save_20260918.txt"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_save",
+      "label": "Generated Workbench portable MINIDB save and reopen",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_20260918_v7-save.png"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_store_image",
+      "label": "Generated Workbench buffered database-image memo storage",
+      "field": "source",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_STORE_IMAGE_V1.md"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_store_image",
+      "label": "Generated Workbench buffered database-image memo storage",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_table.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_store_image",
+      "label": "Generated Workbench buffered database-image memo storage",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_session.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_store_image",
+      "label": "Generated Workbench buffered database-image memo storage",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_images.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_store_image",
+      "label": "Generated Workbench buffered database-image memo storage",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_store_image_test.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_store_image",
+      "label": "Generated Workbench buffered database-image memo storage",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\wx_workbench.cpp"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_store_image",
+      "label": "Generated Workbench buffered database-image memo storage",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\author_workbench.py"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_store_image",
+      "label": "Generated Workbench buffered database-image memo storage",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_store_image_20260918.txt"
+    },
+    {
+      "item_id": "proof.gui.uidef_workbench_store_image",
+      "label": "Generated Workbench buffered database-image memo storage",
+      "field": "related",
+      "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_20260918_v10-store.png"
+    },
+    {
       "item_id": "report.aif_rulings",
       "label": "AI Portal -- Open Rulings",
       "field": "source",
@@ -123,10 +1233,10 @@
     "status": "active_mandatory",
     "policy_path": "labtalk/registries/ai_report_audit.yaml",
     "project_registry": "labtalk/registries/projects.yaml",
-    "closeout_count": 140,
+    "closeout_count": 148,
     "grandfathered_count": 9,
-    "enforced_count": 131,
-    "valid_count": 131,
+    "enforced_count": 139,
+    "valid_count": 139,
     "finding_count": 0,
     "findings": [],
     "intake_enforced_count": 9,
@@ -324,6 +1434,24 @@
         "path": "docs/maintenance/SESSION_CLOSEOUT_AIF119_PYDOTTALK_PRODUCT_BOUNDARY_2026-08-17.md"
       },
       {
+        "report_id": "AIPR-20261012-001",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-10-12",
+        "kind": "session_closeout",
+        "project": "project.ai_friendly",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_AIF132_PORTAL_CONTROL_PLANE_TRUTHFULNESS_2026-10-12.md"
+      },
+      {
+        "report_id": "AIPR-20261012-002",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-10-12",
+        "kind": "session_closeout",
+        "project": "project.ai_friendly.agent_memory",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_AIF136_MEMORY_TIERING_RETENTION_2026-10-12.md"
+      },
+      {
         "report_id": "AIPR-20260827-COWORK-002",
         "provider": "Anthropic",
         "product": "Cowork",
@@ -339,6 +1467,15 @@
           "regression_coverage",
           "instrument_defect"
         ]
+      },
+      {
+        "report_id": "AIPR-20260916-CODEX-001",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-09-16",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_AIF165_REGRESSION_GRADING_2026-09-16.md"
       },
       {
         "report_id": "AIPR-20260819-COWORK-016",
@@ -357,6 +1494,15 @@
         "kind": "session_closeout",
         "project": "project.x64base.gui",
         "path": "docs/maintenance/SESSION_CLOSEOUT_APPLICATION_UI_DSL_LANE_2026-08-20.md"
+      },
+      {
+        "report_id": "AIPR-20260916-COWORK-206",
+        "provider": "Anthropic",
+        "product": "Claude (Cowork)",
+        "date": "2026-09-16",
+        "kind": "session_closeout",
+        "project": "project.x64base.gui",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_APPLICATION_UI_DSL_LANE_2026-09-16.md"
       },
       {
         "report_id": "AIPR-20260722-BF1",
@@ -530,6 +1676,15 @@
         "path": "docs/maintenance/SESSION_CLOSEOUT_DATABASE_SCHEMA_CATALOG_2026-08-10.md"
       },
       {
+        "report_id": "DDICT-HOUSEKEEPING-20261010-041750",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-10-10",
+        "kind": "session_closeout",
+        "project": "project.ai_friendly",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_DDICT_HOUSEKEEPING_2026-10-10.md"
+      },
+      {
         "report_id": "AIPR-20260724-001",
         "provider": "Anthropic",
         "product": "Cowork (Claude)",
@@ -620,6 +1775,15 @@
         "path": "docs/maintenance/SESSION_CLOSEOUT_ENGINE_LIMITS_AND_CORRECTIONS_2026-07-19.md"
       },
       {
+        "report_id": "AIPR-20260920-001",
+        "provider": "Anthropic",
+        "product": "Cowork / Claude",
+        "date": "2026-09-20",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_EVIDENCE_TRACKING_AND_PORTAL_2026-09-20.md"
+      },
+      {
         "report_id": "AIPR-20260727-001",
         "provider": "OpenAI",
         "product": "Codex",
@@ -645,6 +1809,15 @@
         "kind": "session_closeout",
         "project": "project.x64base.runtime",
         "path": "docs/maintenance/SESSION_CLOSEOUT_FIELDTYPE_CODEC_2026-07-19.md"
+      },
+      {
+        "report_id": "FULLSTACK-SCHEMA-REVIEW-20261010",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-10-10",
+        "kind": "session_closeout",
+        "project": "project.ai_friendly",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_FULLSTACK_SCHEMA_REVIEW_2026-10-10.md"
       },
       {
         "report_id": "AIPR-20260718-017",
@@ -871,6 +2044,15 @@
         "path": "docs/maintenance/SESSION_CLOSEOUT_LEAN_SITE_DEPLOY_2026-08-11.md"
       },
       {
+        "report_id": "AIPR-20260923-001",
+        "provider": "Anthropic",
+        "product": "Cowork",
+        "date": "2026-09-23",
+        "kind": "session_closeout",
+        "project": "project.x64base.website",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_LEAN_SITE_G2_RECONCILIATION_2026-09-23.md"
+      },
+      {
         "report_id": "AIPR-20260716-005",
         "provider": "OpenAI",
         "product": "Codex",
@@ -1041,6 +2223,15 @@
         "path": "docs/maintenance/SESSION_CLOSEOUT_PINOCCHIO_SEEK_FIX_2026-07-18.md"
       },
       {
+        "report_id": "AIPR-20260916-CODEX-002",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-09-16",
+        "kind": "session_closeout",
+        "project": "project.ai_friendly",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_PORTAL_GATE_FAIL_CLOSED_2026-09-16.md"
+      },
+      {
         "report_id": "AIPR-20260808-002",
         "provider": "Anthropic",
         "product": "Claude (Cowork)",
@@ -1176,15 +2367,6 @@
         "kind": "session_closeout",
         "project": "project.labtalk.sdlc",
         "path": "docs/maintenance/SESSION_CLOSEOUT_SCOPE_CALIBRATED_LIFECYCLE_DOCTRINE_2026-07-22.md"
-      },
-      {
-        "report_id": "AIPR-20260730-001",
-        "provider": "OpenAI",
-        "product": "Codex",
-        "date": "2026-07-30",
-        "kind": "session_closeout",
-        "project": "project.ai_friendly",
-        "path": "docs/maintenance/SESSION_CLOSEOUT_SECOND_OPINION_AUTHORIZATION_BOUNDARY_2026-07-30.md"
       },
       {
         "report_id": "AIPR-20260803-005",
@@ -1560,6 +2742,44 @@
     }
   ],
   "items": [
+    {
+      "id": "doc.ddict.recipes",
+      "label": "Data dictionary recipes",
+      "section": "portal.docs",
+      "kind": "markdown",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\datadict\\DDICT_METADATA_RECIPE_BOOK_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "doc.ddict.feed",
+      "label": "Data dictionary -- current native report",
+      "section": "portal.docs",
+      "kind": "ddict_feed",
+      "status": "candidate_only",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\registries\\current_ddict_feed.json"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
     {
       "id": "doc.readme",
       "label": "LabTalk README",
@@ -5806,6 +7026,55 @@
       "derived_from": []
     },
     {
+      "id": "proof.ai_portal.reentry_43day_20260923",
+      "label": "43-day re-entry -- portal returned state but not understanding; the agent's worst errors came from not looking",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\proofs\\AI_PORTAL_REENTRY_43DAY_20260923_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\registries\\proofs.d\\proof.ai_portal.cold_resume_retention.yaml"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\TIER0_STATE.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\AI_TIER1_SEED_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\CLAUDE.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\AIF_107_LOW_KEY_ENTRY_SURFACE_LANE_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\SESSION_CLOSEOUT_LEAN_SITE_G2_RECONCILIATION_2026-09-23.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
       "id": "proof.ai_portal.root_entry_and_external_package.v1",
       "label": "Root AI Portal entry and external change-package contract defined",
       "section": "portal.proofs",
@@ -6280,6 +7549,128 @@
       "derived_from": []
     },
     {
+      "id": "proof.build.index_mode_changes_nothing_shipped",
+      "label": "A three-state build option that changes the build tree and not the artifact, because nothing in the module ever references what it selects",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\bindings\\pydottalk\\CMakeLists.txt"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\bindings\\pydottalk\\CMakePresets.json"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\bindings\\pydottalk\\src\\module.cpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\xindex\\CMakeLists.txt"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\CMakePresets.json"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\coordination\\OPEN_ITEMS.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.build.macro_defined_twice_disagreeing",
+      "label": "One macro, two authorities, opposite values on the same command line, and the only signal is a compiler warning nobody reads",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\bindings\\pydottalk\\CMakeLists.txt"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\xindex\\CMakeLists.txt"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\bindings\\pydottalk\\CMakePresets.json"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.build.parent_provided_globals",
+      "label": "A subproject extracted from a monolithic build inherits four invisible globals, and only two of them fail loudly",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\CMakeLists.txt"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\bindings\\pydottalk\\CMakeLists.txt"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\xbase\\CMakeLists.txt"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\memo\\CMakeLists.txt"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\xindex\\CMakeLists.txt"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\config\\build_vectors.cmake"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\build_pydottalk.ps1"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
       "id": "proof.case.registry_exists",
       "label": "Case registry exists",
       "section": "portal.proofs",
@@ -6360,6 +7751,45 @@
           "field": "related",
           "state": "ok",
           "path": "D:\\code\\ccode\\docs\\maintenance\\AI_REPORT_AUDIT_V2_SPEC.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.contract.declaration_harvested_by_nothing",
+      "label": "A contract declared a posture and asserted it was harvested; two tools existed and neither looked, so the declaration reached no inventory",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\contracts\\PYTHON_BINDING_TRUST_CONTRACT_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\contracts\\CONTRACT_REGISTRY_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\bindings\\pydottalk\\src\\module.cpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\tools\\contracts\\contract_scan.py"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\meta\\metacollect.cpp"
         }
       ],
       "runnable": false,
@@ -6659,6 +8089,40 @@
       "derived_from": []
     },
     {
+      "id": "proof.evidence.inference_dressed_as_measurement",
+      "label": "Four wrong conclusions in one session, each built on a CORRECT measurement; the defect is the inference step, not the instrument",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "recorded",
+      "paths": [
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\dev\\x64base-site\\app\\retro\\page.tsx"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\dev\\x64base-site\\components\\Navbar.tsx"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\coordination\\OPEN_ITEMS.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\AIF_118_SILENT_PASS_GUARD_LANE_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
       "id": "proof.evidence.layer_versioned",
       "label": "Proof transcripts un-ignored and committed -- registry claims now verifiable from a clone",
       "section": "portal.proofs",
@@ -6827,6 +8291,1211 @@
           "field": "related",
           "state": "ok",
           "path": "D:\\code\\ccode\\tools\\memory\\promote.py"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.gui.uidef_workbench_browse",
+      "label": "Generated Workbench live table and memo views",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "source",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_BROWSE_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_table.hpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_table.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_table_test.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_session.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\wx_workbench.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\include\\cli\\table_object.hpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\src\\cli\\table_object.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_browse_20260918.txt"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_20260918_v5-browse.png"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.gui.uidef_workbench_catalog",
+      "label": "Generated native Workbench saved-catalog inspection",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "source",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_FIRST_SLICE_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_catalog_test.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\verify_workbench.py"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_20260917.txt"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_20260917.png"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.gui.uidef_workbench_catalog_flow",
+      "label": "Direct saved-version catalog load and RAM hydration",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "source",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_CATALOG_FLOW_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\author_workbench.py"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\wx_workbench.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_catalog.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_session.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_paths_test.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\verify_workbench.py"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_MILESTONES_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_catalog_flow_20260918.txt"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_catalog_flow_build_20260918.txt"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_catalog_flow_hydrate_20260918.png"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_catalog_flow_load_20260918.png"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.gui.uidef_workbench_console",
+      "label": "Generated Workbench shared command console",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "source",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_LIST_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_session.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_session_test.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\wx_workbench.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\cmake\\AddUidefWorkbench.cmake"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\src\\cli\\shell_engine.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_console_20260917.txt"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_20260917_v4-live.png"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.gui.uidef_workbench_edit",
+      "label": "Generated Workbench buffered scalar editing",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "source",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_EDIT_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_table.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_table_test.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_session.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\wx_workbench.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\author_workbench.py"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_edit_20260918.txt"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_20260918_v6-edit.png"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.gui.uidef_workbench_export",
+      "label": "Generated Workbench exact selected-image export",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "source",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_EXPORT_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_images.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_session.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_images_test.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\wx_workbench.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\author_workbench.py"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_export_20260918.txt"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_20260918_v9-export.png"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.gui.uidef_workbench_filepaths",
+      "label": "Workbench deterministic native file locations and script modal",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "source",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_FILEPATHS_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\src\\cli\\shell_api.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\src\\cli\\shell_api.hpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\src\\cli\\cmd_dotscript.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\src\\cli\\cmd_workspace.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\author_workbench.py"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\wx_workbench.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_session.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_paths_test.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_filepaths_20260918.txt"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_20260918_filepaths-modal-RUN.png"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.gui.uidef_workbench_live_session",
+      "label": "Generated native Workbench serialized live session",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "source",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_LIVE_SESSION_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_session_test.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\verify_workbench.py"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_live_20260917.txt"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_20260917_v2-live.png"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.gui.uidef_workbench_loadroots",
+      "label": "Workbench schema table directories and native preflight",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "source",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_LOAD_ROOTS_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\include\\cli\\workspace_definition.hpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\src\\cli\\cmd_workspace.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\author_workbench.py"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\wx_workbench.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_session.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_paths_test.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\verify_workspace_schema_load.py"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_loadroots_real_20260918.txt"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_loadroots_20260918.txt"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_20260918_loadroots-modal-LOAD.png"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.gui.uidef_workbench_loadview",
+      "label": "Generated Workbench command-load visibility",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "source",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_LOADVIEW_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\include\\cli\\workspace_image_event.hpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\src\\cli\\cmd_workspace.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_session.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\wx_workbench.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_paths_test.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_images_test.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_loadview_20260918.txt"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_20260918_v13-loadview.png"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.gui.uidef_workbench_m1",
+      "label": "Workbench M1 native menus and modal workflow",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "source",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_M1_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\author_workbench.py"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\uidef_wx.py"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\wx_workbench.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_session.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_paths_test.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_save_test.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_m1_test.py"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_MILESTONES_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_m1_20260918.txt"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_20260918_m1-menus.png"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.gui.uidef_workbench_m2",
+      "label": "M2 workspace tree and stable navigation",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "source",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_M2_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\author_workbench.py"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\wx_workbench.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_navigation.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_session.hpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_session_test.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\verify_workbench.py"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_MILESTONES_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_m2_20260918.txt"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_m2_build_20260918.txt"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_20260918_m2-navigation.png"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.gui.uidef_workbench_m3",
+      "label": "M3 everyday table controls and buffered memo editing",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "source",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_M3_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\author_workbench.py"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\wx_workbench.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_table.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_session.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_table_test.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\verify_workbench.py"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_MILESTONES_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_m3_tests_20260918.txt"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_m3_release_20260918.txt"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_m3_20260918.png"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.gui.uidef_workbench_memo_image",
+      "label": "Generated Workbench live memo field image inspection",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "source",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_MEMO_IMAGE_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_table.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_session.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_memo_image_test.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_images_test.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\wx_workbench.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\author_workbench.py"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_memo_image_20260918.txt"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_20260918_v8-memo-image.png"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.gui.uidef_workbench_minidb",
+      "label": "Generated native Workbench MINIDB hydration and nested DTX inspection",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "source",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_MINIDB_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_images_test.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\verify_workbench.py"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\include\\dottalk\\minidb.hpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\include\\dottalk\\minidb_hydrate.hpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_minidb_20260917.txt"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_20260917_v3-image.png"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_20260917_v3-nested.png"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.gui.uidef_workbench_navigation",
+      "label": "Generated Workbench workspace-scoped table navigation",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "source",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_NAVIGATION_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_navigation.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_session.hpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_session_test.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\wx_workbench.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\author_workbench.py"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\verify_workbench.py"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_navigation_20260918.txt"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_20260918_v11-navigation.png"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.gui.uidef_workbench_openload",
+      "label": "Generated Workbench Open/Load controls and native workspace entry flow",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "source",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_OPEN_LOAD_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\author_workbench.py"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_session.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\wx_workbench.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_paths_test.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_session_test.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\verify_workspace_flow.py"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\src\\cli\\cmd_workspace.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_openload_20260918.txt"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_20260918_v14-openload.png"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.gui.uidef_workbench_paths",
+      "label": "Generated Workbench native initialization and path defaults",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "source",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_PATHS_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_paths.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_paths_test.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_session.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\wx_workbench.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\src\\cli\\cmd_init.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\src\\cli\\cmd_setpath_command.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_paths_20260918.txt"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_defaults_20260918.txt"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_20260918_v12-paths.png"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_20260918_v12-defaults.png"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.gui.uidef_workbench_save",
+      "label": "Generated Workbench portable MINIDB save and reopen",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "source",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_SAVE_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\src\\cli\\cmd_workspace.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_session.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_save_test.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_images_test.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\wx_workbench.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\author_workbench.py"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_save_20260918.txt"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_20260918_v7-save.png"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.gui.uidef_workbench_store_image",
+      "label": "Generated Workbench buffered database-image memo storage",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "source",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF120_WORKBENCH_STORE_IMAGE_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_table.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_session.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_images.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\workbench_store_image_test.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\wx_workbench.cpp"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\gui\\uidef\\author_workbench.py"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_store_image_20260918.txt"
+        },
+        {
+          "field": "related",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\evidence\\AIF120_workbench_20260918_v10-store.png"
         }
       ],
       "runnable": false,

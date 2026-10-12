@@ -28,8 +28,9 @@ Usage (PowerShell 7, from D:\\code\\ccode):
 
     python labtalk\\ai_portal\\generate_tier0_state.py            # print only
     python labtalk\\ai_portal\\generate_tier0_state.py --write    # write the file
+    python labtalk\\ai_portal\\generate_tier0_state.py --check    # compare with file
 
-Exit codes: 0 ok, 1 could not locate the repository root.
+Exit codes: 0 ok/current, 1 could not locate the repository root, 3 stale/missing.
 """
 
 from __future__ import annotations
@@ -43,6 +44,7 @@ from pathlib import Path
 
 OUTPUT_RELATIVE = Path("labtalk/ai_portal/TIER0_STATE.md")
 SIZE_TARGET = 4096
+GENERATED_UTC_PREFIX = "    generated_utc : "
 
 
 def repo_root() -> Path:
@@ -278,8 +280,8 @@ def render(root: Path) -> str:
     add(f"    generated_utc : {now}")
     add("    lane        : AIF-082 (6.1)")
     add("")
-    add("Read this before acting. It is the only current-state source that")
-    add("cannot drift, because nothing here is written by hand.")
+    add("Read this before acting. It is a generated current-state projection;")
+    add("verify it with the generator's --check mode before relying on it.")
     add("")
     add("## Tree")
     add("")
@@ -401,20 +403,60 @@ def render(root: Path) -> str:
     return "\n".join(lines)
 
 
-def main() -> int:
+def normalized_for_check(text: str) -> str:
+    """Normalize transport line endings and the volatile generation stamp.
+
+    Every other rendered state line is load-bearing: HEAD, upstream, target,
+    closeouts, warnings, claims, sessions, and lineage. A check that ignored
+    any of those could report a stale projection current.
+    """
+    lines = text.replace("\r\n", "\n").replace("\r", "\n").splitlines()
+    return "\n".join(
+        GENERATED_UTC_PREFIX + "<volatile>"
+        if line.startswith(GENERATED_UTC_PREFIX)
+        else line
+        for line in lines
+    )
+
+
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Generate the Tier 0 state projection.")
-    parser.add_argument("--write", action="store_true", help="write the file")
-    args = parser.parse_args()
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--write", action="store_true", help="write the file")
+    mode.add_argument(
+        "--check",
+        action="store_true",
+        help="fail when the persisted projection differs from current measured state",
+    )
+    args = parser.parse_args(argv)
 
     root = repo_root()
     body = render(root)
     size = len(body.encode("utf-8"))
+    target = root / OUTPUT_RELATIVE
+    result = 0
 
     if args.write:
-        target = root / OUTPUT_RELATIVE
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(body, encoding="utf-8", newline="\n")
         print(f"tier0: wrote {OUTPUT_RELATIVE.as_posix()}  {size} B")
+    elif args.check:
+        if not target.is_file():
+            print(
+                f"tier0: stale -- missing {OUTPUT_RELATIVE.as_posix()}",
+                file=sys.stderr,
+            )
+            result = 3
+        else:
+            persisted = target.read_text(encoding="utf-8", errors="replace")
+            if normalized_for_check(persisted) != normalized_for_check(body):
+                print(
+                    f"tier0: stale -- {OUTPUT_RELATIVE.as_posix()}",
+                    file=sys.stderr,
+                )
+                result = 3
+            else:
+                print(f"tier0: current -- {OUTPUT_RELATIVE.as_posix()}")
     else:
         print(body)
         print(f"--- tier0: {size} B (target under {SIZE_TARGET})", file=sys.stderr)
@@ -424,7 +466,7 @@ def main() -> int:
             f"tier0: WARNING {size} B exceeds the {SIZE_TARGET} B target",
             file=sys.stderr,
         )
-    return 0
+    return result
 
 
 if __name__ == "__main__":
