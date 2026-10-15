@@ -93,7 +93,9 @@ inline HelpOpts parse_opts(const std::string& raw) {
         o.term += toks[i];
     }
 
-    if (!o.predOnly && eqi(o.term, "PREDICATES")) {
+    const bool has_explicit_namespace =
+        o.onlyLocal || o.onlyFox || o.onlyDot || o.onlySql || o.onlyPs || o.onlyEd;
+    if (!o.predOnly && !has_explicit_namespace && eqi(o.term, "PREDICATES")) {
         o.predOnly = true;
         o.term.clear();
     }

@@ -1,0 +1,69 @@
+[32mINIT: Paths
+  BIN        : D:\code\ccode\build\src\Release
+  DATA       : D:\code\ccode\build\src\Release
+  DBF        : D:\code\ccode\build\src\Release\dbf
+  INDEXES    : D:\code\ccode\build\src\Release\indexes
+  LMDB       : D:\code\ccode\build\src\Release\lmdb
+  WORKSPACES : D:\code\ccode\build\src\Release\workspaces
+  SCHEMAS    : D:\code\ccode\build\src\Release\schemas
+  PROJECTS   : D:\code\ccode\build\src\Release\projects
+  SCRIPTS    : D:\code\ccode\build\src\Release\scripts
+  TESTS      : D:\code\ccode\build\src\Release\tests
+  HELP       : D:\code\ccode\build\src\Release\help
+  LOGS       : D:\code\ccode\build\src\Release\logs
+  SYS        : D:\code\ccode\build\src\Release\sys
+  TMP        : D:\code\ccode\build\src\Release\tmp
+INIT: no .ini file found in D:\code\ccode\build\src\Release
+DotTalk++ type HELP. USE, SELECT <n>, AREA, COLOR <GREEN|AMBER|DEFAULT>, ABOUT, QUIT.
+
+Dev: CMDHELPCHK, GPS, WORKSPACE, ERSATZ.
+
+Hello World!
+. . Usage:
+  DOTHELP
+  DOTHELP USAGE
+  DOTHELP <term>
+  HELP /DOT <term>
+
+. Usage:
+  DOTHELP
+  DOTHELP USAGE
+  DOTHELP <term>
+  HELP /DOT <term>
+
+. Predicate help (COUNT/LOCATE)
+
+Syntax:
+  COUNT [ALL|DELETED] [FOR <field> <op> <value>]
+  LOCATE [FOR <field> <op> <value>]
+
+Operators:
+  Strings:   =  !=  $ (substring)
+  Numbers:   =  !=  >  >=  <  <=
+  Dates:     use YYYYMMDD (e.g., DOB >= 20000101)
+  Booleans:  =  !=  (T/F, .T./.F., TRUE/FALSE, 1/0)
+
+Case:
+  SETCASE OFF  (default) => string compares are case-insensitive
+  SETCASE ON             => string compares are case-sensitive
+
+Functions (left side):
+  UPPER(field) / LOWER(field)
+    e.g., COUNT FOR UPPER(LAST_NAME) $ "MIT"
+          COUNT FOR LOWER(LAST_NAME) = "smith"
+
+Inline comments:
+  Use && to comment the rest of the line.
+
+Examples:
+  COUNT FOR LAST_NAME = "Smith"
+  COUNT FOR LAST_NAME $ "MIT"
+  COUNT FOR GPA >= 3
+  COUNT FOR DOB >= 20000101
+  COUNT FOR IS_ACTIVE = .T.
+  LOCATE FOR UPPER(LAST_NAME) = "SMITH"
+. . ROUTECHECK = retained
+. . VAR not defined: routecheck
+. . ROUTEBANG = 42
+. . VAR not defined: routebang
+. SHUTDOWN: no shutdown.ini found in D:\code\ccode\build\src\Release

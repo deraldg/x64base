@@ -752,6 +752,17 @@ target_include_directories(dottalkpp_workspace_catalog_order_test PRIVATE
 add_test(NAME dottalkpp_workspace_catalog_order_test
          COMMAND dottalkpp_workspace_catalog_order_test)
 
+# ---- HELP namespace and predicate-shortcut precedence ---------------------
+# An explicit catalog namespace must win over the bare HELP PREDICATES
+# convenience spelling. Header-only: no runtime or filesystem dependency.
+add_executable(dottalkpp_help_router_test
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_help_router.cpp
+)
+target_compile_features(dottalkpp_help_router_test PRIVATE cxx_std_20)
+target_include_directories(dottalkpp_help_router_test PRIVATE
+  ${CMAKE_SOURCE_DIR}/src)
+add_test(NAME dottalkpp_help_router_test COMMAND dottalkpp_help_router_test)
+
 # ---- The build script's test-target list: DERIVED, not enumerated ----------
 # Written last, deliberately, so it sees every target this directory created.
 #

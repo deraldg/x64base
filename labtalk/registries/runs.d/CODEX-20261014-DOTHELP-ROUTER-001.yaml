@@ -1,0 +1,33 @@
+run_id: CODEX-20261014-DOTHELP-ROUTER-001
+member: member.ai.codex
+product: Codex
+project: project.x64base.runtime
+lanes:
+- AIF-171
+role: contributing_agent_dotref_router_parity
+authored_by: member.ai.codex
+planned_by: member.derald
+owner: member.derald
+steward: member.ai.codex
+git:
+  branch: development
+  baseline: a48a709e968d8c208b6c19bd699028f0d25ade3e
+chat_handle: CODEX-20261014-DOTHELP-ROUTER-001
+handle_binding: SELF_REPORTED
+started: 2026-10-14
+continues_run: DOCFLUSH-20261013-002
+closeouts:
+- docs/maintenance/SESSION_CLOSEOUT_AIF171_DOTREF_ROUTER_PARITY_2026-10-14.md
+reports:
+- AIPR-20261014-001
+artifacts:
+- docs/maintenance/SESSION_CLOSEOUT_AIF171_DOTREF_ROUTER_PARITY_2026-10-14.md
+- docs/maintenance/AIF171_GUARDED_HELP_STORE_REFRESH_LANE_V1.md
+- docs/maintenance/lanes/full_stack_documentation/DOTREF_M3_DB_CATALOG_AND_EMITTER_SPEC_V1.md
+- docs/maintenance/lanes/full_stack_documentation/runs/CODEX-20261014-DOTHELP-ROUTER-001/router_parity_v5/router_parity_summary.json
+- tools/fullstack_docs/verify_dotref_router_parity_v1.py
+status: complete
+notes: >-
+  The three post-M3E routing advisories are closed. The rebuilt runtime resolves
+  all 268 approved DOTREF members through both DOTHELP and HELP /DOT with zero
+  exceptions while retaining usage, bare predicate-help, and shell VAR behavior.

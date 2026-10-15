@@ -1,0 +1,13 @@
+authorities: 302 commands/aliases (REGISTRY 247 + 55 alias forms), 81 functions (SYSFUNC 79 + 2 source-derived)
+
+catalog      entries   cmd   fn   sub  PHANTOM   phantoms
+dotref           268   252    2    14        0   -
+foxref           176   139   29     8        0   -
+edref             29     8    0     0       21   [edref owns its namespace; not failed] INTRO, MODEL, SEQUENTIAL, DECISION, LOOPS, STATE, WORKAREA, TABLE_RECORD_FIELD
+devref       (empty)   status: reserved -- empty by declaration
+pshell_ref        90     0    0     0       90   [pshell_ref owns its namespace; not failed] SEARCH-FILES, SEARCH-EXT, SEARCH-INCLUDE, SEARCH-SIZE-GT, SEARCH-RECENT, SEARCH-LOG-SORT, SEARCH-JSON, SEARCH-DLL
+sql_ref           33     6    0     0       27   [sql_ref owns its namespace; not failed] CREATE-TABLE, CREATE-TABLE-MSSQL, CREATE-INDEX, CREATE-UNIQUE-INDEX, CREATE-COMPOSITE-INDEX, DROP-TABLE, DROP-INDEX, ALTER-TABLE-ADD
+
+GUARDED phantoms (dotref+foxref): 0
+PASS: every dotref/foxref entry resolves to a command, function, or sub-form.
+PASS: every catalog's content agrees with its declared status.

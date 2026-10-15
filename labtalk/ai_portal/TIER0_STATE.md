@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-10-12T22:22:32Z
+    generated_utc : 2026-10-15T02:18:30Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is a generated current-state projection;
@@ -11,9 +11,9 @@ verify it with the generator's --check mode before relying on it.
 ## Tree
 
     branch        : development
-    HEAD          : 2701ae13b  (2026-10-12)
+    HEAD          : a48a709e9  (2026-10-12)
     upstream      : 40f68c7b8
-    unpushed      : 1 commit(s) ahead of upstream
+    unpushed      : 2 commit(s) ahead of upstream
 
 ## Declared target
 
@@ -22,19 +22,21 @@ verify it with the generator's --check mode before relying on it.
 
 ## Newest closeout
 
-    file          : SESSION_CLOSEOUT_DDICT_NATIVE_FEED_COMPLETION_2026-10-12.md
+    file          : SESSION_CLOSEOUT_AIF171_DOTREF_ROUTER_PARITY_2026-10-14.md
     commits behind HEAD : not committed
 
 ## Staleness warnings
 
-- The newest closeout by date, SESSION_CLOSEOUT_DDICT_NATIVE_FEED_COMPLETION_2026-10-12.md, is on disk but in no commit. A clone cannot see it; whoever wrote it has not landed it.
-- Closeout(s) on disk but not tracked -- a session's record that never landed: SESSION_CLOSEOUT_FULLSTACK_SCHEMA_REVIEW_2026-10-10.md, SESSION_CLOSEOUT_DDICT_HOUSEKEEPING_2026-10-10.md, SESSION_CLOSEOUT_EVIDENCE_TRACKING_AND_PORTAL_2026-09-20.md.
-- 1 commit(s) are unpushed and invisible to a clone.
+- The newest closeout by date, SESSION_CLOSEOUT_AIF171_DOTREF_ROUTER_PARITY_2026-10-14.md, is on disk but in no commit. A clone cannot see it; whoever wrote it has not landed it.
+- Closeout(s) on disk but not tracked -- a session's record that never landed: SESSION_CLOSEOUT_GUARDED_HELP_REFRESH_2026-10-13.md, SESSION_CLOSEOUT_AIF171_MANUAL_GATE6_CANDIDATE_2026-10-13.md, SESSION_CLOSEOUT_AIF171_CANONICAL_HARVEST_APPLY_2026-10-13.md, SESSION_CLOSEOUT_DDICT_DATA_REPAIR_2026-10-12.md (+3 more).
+- 2 commit(s) are unpushed and invisible to a clone.
 
 ## Claimed lanes (newest first)
 
 | AIF | lane | steward | intake row |
 | --- | --- | --- | --- |
+| AIF-171 | guarded-help-store-refresh | member.ai.codex | yes |
+| AIF-170 | ddict-data-repair | member.ai.codex | yes |
 | AIF-169 | cascade_differential | member.ai.claude.cowork | yes |
 | AIF-168 | Engine performance: per-row cost reduction + parallel read-only scans | member.ai.claude.cowork | yes |
 | AIF-167 | Pinocchio Phase 3: relational shakedown (REL/ENUM + SQLsel + transactional DML via indexes) | member.ai.claude.cowork | yes |
@@ -45,34 +47,33 @@ verify it with the generator's --check mode before relying on it.
 | AIF-162 | record-lock-lifetime | member.derald | yes |
 | AIF-161 | negative-claim-decay | member.derald | yes |
 | AIF-160 | multi-area-commit | member.derald | yes |
-| AIF-159 | sqlsel-transactions | member.derald | yes |
-| AIF-158 | autoincrement | member.derald | yes |
-| ... | 88 older claims omitted | | |
+| ... | 90 older claims omitted | | |
 
 ## Sessions, lineage, asides
 
     live   : 2026-07-31_cowork_bbs_agency_legs  (member.ai.claude.cowork)  [stale, reapable]
     live   : AIPR-20260729-001  (member.ai.claude.cowork)  [stale, reapable]
-    live   : CODEX-20261012-DDICT-COMPLETE-001  (member.ai.codex)
+    live   : CODEX-20261014-AIF171-LAND-001  (member.ai.codex)
     live   : COWORK-20260818-001  (member.ai.claude.cowork)  [stale, reapable]
     live   : COWORK-20260821-002  (member.ai.claude.cowork)  [stale, reapable]
     live   : COWORK-20260826-001  (member.ai.claude.cowork)  [stale, reapable]
     live   : DECLARED-CAPABILITY-VALIDATOR-20260730  (member.ai.claude.cowork)  [stale, reapable]
+    live   : DOCFLUSH-20261013-002  (member.ai.codex)  [stale, reapable]
 
 Aside chains -- a run's claims in order (its horizontal structure);
 parent + born_utc from the durable lineage ledger, '-' until a run wakes.
 
 | run | member | parent | born_utc | asides |
 | --- | --- | --- | --- | --- |
+| CODEX-20261013-HELP-REFRESH-001 | member.ai.codex | - | - | AIF-171 |
+| CODEX-20261012-DDICT-REPAIR-001 | member.ai.codex | - | - | AIF-170 |
 | AIPR-20260920-001 | member.ai.claude.cowork | - | - | AIF-167 -> AIF-168 -> AIF-169 |
 | AIFGEN-20260916-090054 | member.derald | - | - | AIF-166 |
 | CODEX-20260915-AIF165-REGGRADE-001 | member.ai.codex | - | - | AIF-165 |
 | AIFGEN-20260914-194836 | member.derald | - | - | AIF-164 |
 | AIFGEN-20260914-105334 | member.derald | - | - | AIF-163 |
 | AIFGEN-20260910-190858 | member.derald | - | - | AIF-162 |
-| AIFGEN-20260910-171303 | member.derald | - | - | AIF-161 |
-| AIFGEN-20260910-155043 | member.derald | - | - | AIF-160 |
-| ... | | | | 57 older run(s) omitted |
+| ... | | | | 59 older run(s) omitted |
 
 Perishable detail lives in the artifacts these point at. Do not
 restate anything above; regenerate it.

@@ -1,0 +1,13 @@
+* AIF-171 preserved compatibility probe.
+DOTHELP USAGE
+DOTHELP ?
+HELP PREDICATES
+SET VAR routecheck = retained
+SHOW VAR routecheck
+CLEAR VAR routecheck
+SHOW VAR routecheck
+SET VAR! routebang = 40 + 2
+SHOW VAR routebang
+CLEAR VAR routebang
+SHOW VAR routebang
+QUIT

@@ -1,0 +1,7 @@
+Test project D:/code/ccode/build
+    Start 40: dottalkpp_help_router_test
+1/1 Test #40: dottalkpp_help_router_test .......   Passed    0.04 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.07 sec

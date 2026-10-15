@@ -135,6 +135,7 @@ VarCmdResult try_handle_var_command(xbase::DbArea& area, const std::string& prep
     ss >> sub;
     const std::string subU = textio::up(sub);
     const bool var_bang = (subU == "VAR!");
+    if (!(U == "SET" || U == "SHOW" || U == "CLEAR")) return r;
     if (!(subU == "VAR" || var_bang)) return r;
     r.handled = true;
     std::string rest;

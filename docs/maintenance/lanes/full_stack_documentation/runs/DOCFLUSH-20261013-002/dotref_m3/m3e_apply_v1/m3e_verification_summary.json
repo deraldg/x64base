@@ -1,0 +1,83 @@
+{
+  "approved_field_difference_count": 22,
+  "backup_sha256": "F1C30234AF8765BF5732BEF926928F9AF583B22AC9AC7F14DBA3DDD895AD33E5",
+  "build_logs": {
+    "dottalkpp": {
+      "bytes": 650,
+      "sha256": "667C517539B340DD83EA344823B2FCBD4417423EB7B0D94EEF8BCA1B5C6EC9F2"
+    },
+    "metacollect": {
+      "bytes": 212,
+      "sha256": "CAF046006F650542253ECBDC6868E3FD9932400A4F68E983C0A76FDA1245FE29"
+    }
+  },
+  "candidate_csv_sha256": "70E3AE34B43105E3EB0818731107E9DCEC5E7189B4CB9B9240C3C3BA5F38AF73",
+  "commit_or_push": false,
+  "dothelp_member_probe": {
+    "allowed_router_exceptions": [
+      "HELP",
+      "VAR"
+    ],
+    "alternate_sha256": "26DA54DF971D34744F5342EE4FEB285B9F66E34B684F83D85DE5BC65906874EA",
+    "console_sha256": "2DAEC231A2F73B26D532AEC436AA4CA55F955E2D493071748D6045FD40C9EB85",
+    "members": 266,
+    "script_sha256": "C67FBB391FD0A85E63C652F133431807C367E7C63776D25A6207D8FCF5B1B3C5"
+  },
+  "dottalkpp_sha256": "5C0E119D5A2BE2EFC3C5B0E92EE702FB1D336CD2E2CA2D7044F637BC11CD4B01",
+  "gates": {
+    "G8_BUILD_AND_RUNTIME_PARITY": "PASS",
+    "G9_PROMOTION_AND_ROLLBACK": "PASS"
+  },
+  "header_sha256": "0FAB5B3AAED1B6C0AA0AAE81C1F0C6406CFFD597A2DF6555824DD9DBB9D91243",
+  "help_dot_member_probe": {
+    "allowed_router_exceptions": [
+      "PREDICATES"
+    ],
+    "alternate_sha256": "FF993F1A1D1EC8506434A105264023B67001E9B9583CCE46F0C6FB6E543E3F58",
+    "console_sha256": "A9B3488D0EDE85FB4B0E1B65375D8C14D32D4794359AC3CD48F1D459DB55384C",
+    "members": 267,
+    "script_sha256": "35E1442AB0B784122538E57DF376E8CAF4CB2BF02B0C8CF4919FC6CA2AFC75D0"
+  },
+  "live_help_meta_manual_website_mutation": false,
+  "member_set_count": 268,
+  "metacollect_sha256": "3092230A5F13D301970C03583AE5F3E7BA415B75EC3269C84A6437BAD7BB1F6B",
+  "promotion_manifest_sha256": "3A065D2FAE4AE2B892E2BB651535FD8F6DFF75D896CF067ACC1E8AC6019554B7",
+  "representative_consumers": {
+    "bytes": 81350,
+    "dothelp_full_list_members": 268,
+    "forbidden_markers": 0,
+    "required_markers": 8,
+    "sha256": "3C833EE41965F14233DF082538318B7EF81BA58D021AEB1CCEAD160F5F727EB7"
+  },
+  "rollback_drill": {
+    "log_sha256": "2A748D77932112BA720B504DDD4151129EE535B93C4E077F479FBE17D983CFFB",
+    "restored_sha256": "F1C30234AF8765BF5732BEF926928F9AF583B22AC9AC7F14DBA3DDD895AD33E5",
+    "status": "ROLLED_BACK_AND_READ_BACK"
+  },
+  "run_id": "DOCFLUSH-20261013-002",
+  "runtime_advisories": [
+    "DOTHELP HELP is reserved by DOTHELP as its usage token; HELP /DOT HELP resolves it.",
+    "DOTHELP VAR is intercepted by try_handle_var_command because it treats any second token VAR as SET/SHOW/CLEAR VAR; HELP /DOT VAR resolves it.",
+    "HELP /DOT PREDICATES is diverted by help_router predOnly precedence; the full DOTHELP list still carries the member."
+  ],
+  "schema": "dottalk.dotref.m3e_verification.v1",
+  "status": "M3E_G8_G9_PASS",
+  "validation_logs": {
+    "g8_focused_unittests.log": {
+      "bytes": 9021,
+      "sha256": "93FDD9874E23730FA7AE117E59CB63F578659F36E5940C72846F31D9FF351980"
+    },
+    "g8_normcheck.log": {
+      "bytes": 717,
+      "sha256": "7CB70246EE898104E1BE90718863C8BCDCFA05046854C3E2152FDAB323B70C77"
+    },
+    "g8_refcheck_live.log": {
+      "bytes": 1125,
+      "sha256": "1F6A05CE438EDB66F3BD96FBB2F3EE9E233C7C7B710F75FA828864A5C99D5025"
+    },
+    "g8_refcheck_selftest.log": {
+      "bytes": 1200,
+      "sha256": "CD85D404FAD641092C716E5180EDE4D400A84E71EA1465E779DF3DA391CD7CDE"
+    }
+  }
+}

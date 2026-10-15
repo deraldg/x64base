@@ -1,0 +1,163 @@
+{
+  "approved_field_differences": [
+    {
+      "CANDIDATE": "F",
+      "CURRENT": "T",
+      "FIELD": "SUPPORTED",
+      "NAME": "DEFCMD"
+    },
+    {
+      "CANDIDATE": "F",
+      "CURRENT": "T",
+      "FIELD": "SUPPORTED",
+      "NAME": "UNDEFCMD"
+    },
+    {
+      "CANDIDATE": "F",
+      "CURRENT": "T",
+      "FIELD": "SUPPORTED",
+      "NAME": "DEFFN"
+    },
+    {
+      "CANDIDATE": "F",
+      "CURRENT": "T",
+      "FIELD": "SUPPORTED",
+      "NAME": "UNDEFFN"
+    },
+    {
+      "CANDIDATE": "F",
+      "CURRENT": "T",
+      "FIELD": "SUPPORTED",
+      "NAME": "SCHEMAS"
+    },
+    {
+      "CANDIDATE": "F",
+      "CURRENT": "T",
+      "FIELD": "SUPPORTED",
+      "NAME": "TVISION"
+    },
+    {
+      "CANDIDATE": "F",
+      "CURRENT": "T",
+      "FIELD": "SUPPORTED",
+      "NAME": "MANUAL"
+    },
+    {
+      "CANDIDATE": "F",
+      "CURRENT": "T",
+      "FIELD": "SUPPORTED",
+      "NAME": "MANSTAR"
+    },
+    {
+      "CANDIDATE": "F",
+      "CURRENT": "T",
+      "FIELD": "SUPPORTED",
+      "NAME": "BBOX"
+    },
+    {
+      "CANDIDATE": "F",
+      "CURRENT": "T",
+      "FIELD": "SUPPORTED",
+      "NAME": "MAINT"
+    },
+    {
+      "CANDIDATE": "F",
+      "CURRENT": "T",
+      "FIELD": "SUPPORTED",
+      "NAME": "CMDARGCHK"
+    },
+    {
+      "CANDIDATE": "F",
+      "CURRENT": "T",
+      "FIELD": "SUPPORTED",
+      "NAME": "SQL"
+    },
+    {
+      "CANDIDATE": "F",
+      "CURRENT": "T",
+      "FIELD": "SUPPORTED",
+      "NAME": "EVALDIFF"
+    },
+    {
+      "CANDIDATE": "F",
+      "CURRENT": "T",
+      "FIELD": "SUPPORTED",
+      "NAME": "AUTODBF"
+    },
+    {
+      "CANDIDATE": "F",
+      "CURRENT": "T",
+      "FIELD": "SUPPORTED",
+      "NAME": "EXPORTSQL"
+    },
+    {
+      "CANDIDATE": "F",
+      "CURRENT": "T",
+      "FIELD": "SUPPORTED",
+      "NAME": "IMPORTSQL"
+    },
+    {
+      "CANDIDATE": "F",
+      "CURRENT": "T",
+      "FIELD": "SUPPORTED",
+      "NAME": "SMTP"
+    },
+    {
+      "CANDIDATE": "F",
+      "CURRENT": "T",
+      "FIELD": "SUPPORTED",
+      "NAME": "STUDENTECHO"
+    },
+    {
+      "CANDIDATE": "F",
+      "CURRENT": "T",
+      "FIELD": "SUPPORTED",
+      "NAME": "STUDENTHELLO"
+    },
+    {
+      "CANDIDATE": "F",
+      "CURRENT": "T",
+      "FIELD": "SUPPORTED",
+      "NAME": "LMDB_UTIL"
+    },
+    {
+      "CANDIDATE": "F",
+      "CURRENT": "T",
+      "FIELD": "SUPPORTED",
+      "NAME": "TUPLEDELTA"
+    },
+    {
+      "CANDIDATE": "F",
+      "CURRENT": "T",
+      "FIELD": "SUPPORTED",
+      "NAME": "WORKDESK"
+    }
+  ],
+  "authorized_mutation": "include/dotref.hpp catalog row region only",
+  "backup_path": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20261013-002/dotref_m3/m3e_apply_v1/backup/include/dotref.hpp",
+  "backup_sha256": "F1C30234AF8765BF5732BEF926928F9AF583B22AC9AC7F14DBA3DDD895AD33E5",
+  "branch": "development",
+  "forbidden_mutations": [
+    "HELP",
+    "META",
+    "manuals",
+    "website",
+    "publication staging",
+    "commit",
+    "push"
+  ],
+  "input_hashes": {
+    "authorization": "AFA2FA0A7713EEB7184180A0422098F4ECE233B91B68C9903543D947EC075164",
+    "candidate": "2184A0085DA4D617863EC01373E16191B3D7FE86E466D4BDC756A077CAE2DCD3",
+    "field_diff": "B58671A1429F6FEBEF7FD59125D560A76D314AAA4E3FA15630DCBA250496E1B0",
+    "pre_header": "F1C30234AF8765BF5732BEF926928F9AF583B22AC9AC7F14DBA3DDD895AD33E5",
+    "verification": "69F5E037C28418AF21CFF6E0DE1525BB8F1D7EA07175F766AB0AD4400B7F7034"
+  },
+  "post_header_sha256": "0FAB5B3AAED1B6C0AA0AAE81C1F0C6406CFFD597A2DF6555824DD9DBB9D91243",
+  "pre_header_sha256": "F1C30234AF8765BF5732BEF926928F9AF583B22AC9AC7F14DBA3DDD895AD33E5",
+  "repo_sha": "A48A709E968D8C208B6C19BD699028F0D25ADE3E",
+  "rollback_command": "python tools/fullstack_docs/apply_dotref_m3e_promotion_v1.py --root . --rollback --manifest docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20261013-002/dotref_m3/m3e_apply_v1/promotion_manifest.json",
+  "run_id": "DOCFLUSH-20261013-002",
+  "schema": "dottalk.dotref.m3e_promotion.v1",
+  "status": "APPLIED_AND_READ_BACK"
+}

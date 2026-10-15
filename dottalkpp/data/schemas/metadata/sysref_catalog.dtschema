@@ -1,0 +1,182 @@
+# sysref_catalog.dtschema
+# M3D candidate schema contract for database-backed reference assembly.
+#
+# Status: APPROVED_REPORT_ONLY_M3D_CONTRACT
+# Boundary: tables emitted under a run directory are candidates only. No table
+# below is an active HELP/META store and no generated header is applied.
+# Promotion requires the separately authorized M3E gate.
+
+SCHEMA_ID: SYSREF_CATALOG_V1
+SCHEMA_STATUS: APPROVED_REPORT_ONLY_M3D_CONTRACT
+DESIGN_AUTHORITY: docs/maintenance/lanes/full_stack_documentation/DOTREF_M3_DB_CATALOG_AND_EMITTER_SPEC_V1.md
+ASSEMBLER: tools/fullstack_docs/generate_sysref_candidate_v1.py
+MANIFEST_BUILDER: tools/fullstack_docs/build_sysref_harvest_manifest_v1.py
+MANIFEST_SCHEMA: dottalk.sysref.harvest_manifest.v1
+ACTIVE_SCHEMA_TARGET: RUN_SCOPED_CANDIDATE_ONLY
+
+TABLE: SYSREFRUN
+ROLE: immutable candidate-run binding
+KEY: RUN_ID
+FIELDS:
+  RUN_ID TYPE=C LEN=48 DEC=0
+  REPO_SHA TYPE=C LEN=64 DEC=0
+  START_UTC TYPE=C LEN=32 DEC=0
+  END_UTC TYPE=C LEN=32 DEC=0
+  COLLECTOR TYPE=C LEN=64 DEC=0
+  COLL_HASH TYPE=C LEN=64 DEC=0
+  POLICY_ID TYPE=C LEN=64 DEC=0
+  POL_HASH TYPE=C LEN=64 DEC=0
+  INPUT_HASH TYPE=C LEN=64 DEC=0
+  STATUS TYPE=C LEN=24 DEC=0
+  CREATED_BY TYPE=C LEN=64 DEC=0
+  DETAIL TYPE=M LEN=10 DEC=0
+
+TABLE: SYSREF
+ROLE: normalized reference identity
+KEY: RUN_ID + REF_ID
+FIELDS:
+  REF_ID TYPE=C LEN=64 DEC=0
+  RUN_ID TYPE=C LEN=48 DEC=0
+  NAMESPACE TYPE=C LEN=16 DEC=0
+  ENT_KIND TYPE=C LEN=16 DEC=0
+  CAN_NAME TYPE=C LEN=80 DEC=0
+  TOPICKEY TYPE=C LEN=96 DEC=0
+  VIS TYPE=C LEN=20 DEC=0
+  IMPLEMENT TYPE=L LEN=1 DEC=0
+  SUPPORTED TYPE=L LEN=1 DEC=0
+  SUPPORT_ST TYPE=C LEN=32 DEC=0
+  MATURITY TYPE=C LEN=24 DEC=0
+  AUDIENCE TYPE=C LEN=24 DEC=0
+  ACTIVE TYPE=L LEN=1 DEC=0
+  DISP_ORD TYPE=N LEN=10 DEC=0
+  SRC_AUTH TYPE=C LEN=32 DEC=0
+  SRC_FILE TYPE=C LEN=180 DEC=0
+  SRC_HASH TYPE=C LEN=64 DEC=0
+  REVIEW_ST TYPE=C LEN=24 DEC=0
+  VER_AT TYPE=C LEN=32 DEC=0
+
+TABLE: SYSREFLINE
+ROLE: ordered locale and voice aware reference prose
+KEY: RUN_ID + REF_ID + LOCALE_ID + VOICE + KIND + ORDINAL
+FIELDS:
+  LINE_ID TYPE=C LEN=64 DEC=0
+  RUN_ID TYPE=C LEN=48 DEC=0
+  REF_ID TYPE=C LEN=64 DEC=0
+  LOCALE_ID TYPE=C LEN=16 DEC=0
+  VOICE TYPE=C LEN=16 DEC=0
+  KIND TYPE=C LEN=32 DEC=0
+  ROLE TYPE=C LEN=32 DEC=0
+  ORDINAL TYPE=N LEN=6 DEC=0
+  TEXT TYPE=M LEN=10 DEC=0
+  SRC_AUTH TYPE=C LEN=32 DEC=0
+  SRC_FILE TYPE=C LEN=180 DEC=0
+  SRC_HASH TYPE=C LEN=64 DEC=0
+  OVERRIDE TYPE=L LEN=1 DEC=0
+  REVIEW_ST TYPE=C LEN=24 DEC=0
+  ACTIVE TYPE=L LEN=1 DEC=0
+
+TABLE: SYSREFALIAS
+ROLE: explicit alias and routing edges; never inferred from syntax punctuation
+KEY: RUN_ID + REF_ID + ALIAS + ALIAS_KND
+FIELDS:
+  ALIAS_ID TYPE=C LEN=64 DEC=0
+  RUN_ID TYPE=C LEN=48 DEC=0
+  REF_ID TYPE=C LEN=64 DEC=0
+  ALIAS TYPE=C LEN=80 DEC=0
+  ALIAS_KND TYPE=C LEN=24 DEC=0
+  DISP_STYL TYPE=C LEN=24 DEC=0
+  TARGET_ID TYPE=C LEN=64 DEC=0
+  SRC_AUTH TYPE=C LEN=32 DEC=0
+  SRC_FILE TYPE=C LEN=180 DEC=0
+  SRC_HASH TYPE=C LEN=64 DEC=0
+  ACTIVE TYPE=L LEN=1 DEC=0
+
+TABLE: REFVOICE
+ROLE: reviewed exception-only wording authority
+KEY: OVR_ID
+FIELDS:
+  OVR_ID TYPE=C LEN=64 DEC=0
+  NAMESPACE TYPE=C LEN=16 DEC=0
+  ENT_KIND TYPE=C LEN=16 DEC=0
+  CAN_NAME TYPE=C LEN=80 DEC=0
+  LOCALE_ID TYPE=C LEN=16 DEC=0
+  VOICE TYPE=C LEN=16 DEC=0
+  KIND TYPE=C LEN=32 DEC=0
+  ORDINAL TYPE=N LEN=6 DEC=0
+  TEXT TYPE=M LEN=10 DEC=0
+  RATIONALE TYPE=M LEN=10 DEC=0
+  OWNER TYPE=C LEN=64 DEC=0
+  RULING_ID TYPE=C LEN=64 DEC=0
+  REVIEW_ST TYPE=C LEN=24 DEC=0
+  SRC_HASH TYPE=C LEN=64 DEC=0
+  ACTIVE TYPE=L LEN=1 DEC=0
+  VER_AT TYPE=C LEN=32 DEC=0
+
+TABLE: REFSUPPORT
+ROLE: reviewed closed support-status vocabulary
+KEY: STATUS
+FIELDS:
+  STATUS TYPE=C LEN=32 DEC=0
+  SUPPORTED TYPE=L LEN=1 DEC=0
+  MATURITY TYPE=C LEN=24 DEC=0
+  AUDIENCE TYPE=C LEN=24 DEC=0
+  RATIONALE TYPE=M LEN=10 DEC=0
+  OWNER TYPE=C LEN=64 DEC=0
+  RULING_ID TYPE=C LEN=64 DEC=0
+  REVIEW_ST TYPE=C LEN=24 DEC=0
+  ACTIVE TYPE=L LEN=1 DEC=0
+  VER_AT TYPE=C LEN=32 DEC=0
+
+TABLE: DOTREF
+ROLE: future generated DOT projection; not emitted by M3B
+KEY: RUN_ID + REF_ID
+FIELDS:
+  REF_ID TYPE=C LEN=64 DEC=0
+  RUN_ID TYPE=C LEN=48 DEC=0
+  NAME TYPE=C LEN=80 DEC=0
+  SYNTAX TYPE=M LEN=10 DEC=0
+  SUMMARY TYPE=M LEN=10 DEC=0
+  SUPPORTED TYPE=L LEN=1 DEC=0
+  SRC_HASH TYPE=C LEN=64 DEC=0
+  REVIEW_ST TYPE=C LEN=24 DEC=0
+  ACTIVE TYPE=L LEN=1 DEC=0
+
+HARVEST_MANIFEST_CONTRACT:
+  REQUIRED_TOP_LEVEL: schema harvest_run_id repo_sha created_utc created_by collector inputs
+  REQUIRED_ROLES: SYSCMD SYSARGS SRCUSAGE REFVOICE
+  OPTIONAL_ROLES: SYSSUBCMD SYSFUNC REFALIASES
+  HASH: SHA-256 over exact file bytes
+  SAME_RUN: every harvested role producer_run_id equals harvest_run_id
+  REFVOICE_RUN: producer_run_id may be CANONICAL because it is reviewed independent authority
+  SAFETY: every input and output path must resolve beneath repository root
+
+STABLE_ID_CONTRACT:
+  ALGORITHM: uppercase trimmed parts joined by NUL, UTF-8 encoded, SHA-256 uppercase hex
+  REF_ID_PARTS: NAMESPACE ENT_KIND CAN_NAME
+  LINE_ID_PARTS: REF_ID LOCALE_ID VOICE KIND ORDINAL
+  ALIAS_ID_PARTS: REF_ID ALIAS ALIAS_KND
+
+REPORT_ONLY_OUTPUTS:
+  candidate/sysrefrun_candidate.csv
+  candidate/sysref_candidate.csv
+  candidate/sysrefline_candidate.csv
+  candidate/sysrefalias_candidate.csv
+  reports/input_manifest.json
+  reports/authority_join_report.json
+  reports/dispositions.csv
+  reports/gate_results.json
+
+FORBIDDEN_M3B_OUTPUTS:
+  DBF DTX FPT HPP H INC CPP
+
+REPORT_ONLY_M3D_OUTPUTS:
+  candidate/csv/*.csv
+  candidate/dbf/*.dbf
+  candidate/dbf/*.dtx
+  candidate/include/dotref_catalog.generated.inc
+  reports/*.csv
+  reports/*.json
+
+FORBIDDEN_M3D_MUTATIONS:
+  include/dotref.hpp
+  HELP META CMDHELPCHK MANUAL WEBSITE STAGING COMMIT PUSH

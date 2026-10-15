@@ -1,0 +1,16 @@
+cross-authority normalization gate
+  commands : REGISTRY 247  CATALOG(SYSCMD) 212  HELP(*ref) 325  REFLECTION(command_catalog) 28
+  functions: IMPLEMENTED(fn specs) 79  CATALOG(SYSFUNC) 79 [populated]
+
+lane         sev   findings
+IDENTITY     fail         0
+HANDLER      warn         0
+HELP         warn         0
+REFLECTION   warn         0
+FN_IDENTITY  fail         0
+FN_COVERAGE  warn         0
+
+(informational) registered commands absent from SYSCMD: 19  -- policy exclusions (dev/subcmd), not gated
+(informational) command_catalog curated-doc coverage: 25/242 registered commands (10%) -- curated subset by design
+
+PASS: no findings in any 'fail'-severity lane (warn lanes may still have items).

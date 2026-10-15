@@ -1,0 +1,33 @@
+{
+  "counts": {
+    "dotref": 268,
+    "refsupport": 23,
+    "refvoice": 536,
+    "sysref": 268,
+    "sysrefalias": 23,
+    "sysrefline": 2658
+  },
+  "dot_fox_distinct_rows": 75,
+  "dot_fox_shared_rows": 143,
+  "field_differences": 22,
+  "gates": {
+    "G0_IMMUTABLE_INPUT_PACKAGE": "PASS",
+    "G1_SCHEMA_AND_KEY_INTEGRITY": "PASS",
+    "G2_AUTHORITY_RESOLUTION": "PASS",
+    "G3_COMPLETE_FIELD_REFRESH": "PASS",
+    "G4_NO_SILENT_LEGACY_CARRY": "PASS",
+    "G5_NATIVE_COMPATIBILITY_VOICE": "PASS",
+    "G6_DETERMINISM_AND_EXISTING_OUTPUT_REFUSAL": "PASS",
+    "G7_NATIVE_DBF_CPP_ROUNDTRIP": "PASS"
+  },
+  "live_header_applied": false,
+  "logical_artifacts_compared": 12,
+  "m3e_authorized": false,
+  "native_dotref_rows_compared": 268,
+  "native_memo_tables_verified_per_run": 5,
+  "physical_files_compared": 12,
+  "runtime": "dottalkpp/bin/dottalkpp.exe",
+  "runtime_sha256": "D194FB23FC6DED0F8F9A3A075C2C7D04BD6C80317CF479C22A4D4A5EFBECB3F4",
+  "schema": "dottalk.dotref.m3d_verification.v1",
+  "status": "M3D_REPORT_ONLY_G0_G7_PASS"
+}
