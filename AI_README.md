@@ -455,6 +455,34 @@ Main DotTalk++ runtime:
 & .\build\src\Release\dottalkpp.exe
 ```
 
+### The prompt is a period. It is never part of a command.
+
+The build vector declares it, and the configure output prints it:
+
+```text
+x64 names default=128/128 max=256/256 table-buffer changes=10000 prompt='.'
+```
+
+So a transcript line reading `.security selftest` is the shell SHOWING ITS
+PROMPT followed by what was typed. **What was typed is `security selftest`.**
+
+```text
+security selftest        <- correct: this is the input
+. security selftest      <- WRONG: the period is the prompt, and pasting it errors
+```
+
+This matters when an agent quotes commands back for a human to run, or writes a
+`-CommandLines` list: a leading period is rejected, every line, every time. The
+Native Orientation Commands block below is in the correct form -- bare verbs.
+
+**The one leading dot that IS real input is PowerShell's path prefix, used
+OUTSIDE the shell:** `.\datarun.ps1`, `.\build.ps1`. Those are typed at the
+PowerShell prompt, not at DotTalk++'s.
+
+Added 2026-10-15. It had been established in conversation many times and written
+down in neither this file nor the x64base skill, which is why it kept recurring.
+A rule that lives only in the owner's patience is not a rule.
+
 Build:
 
 ```powershell
