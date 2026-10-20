@@ -17,6 +17,21 @@ the portal actually says: every repo-relative `.md` path backticked inside
 `AI_README.md` and `AI_PORTAL.md`, plus the two vendor shims and the two entry
 documents themselves.
 
+A THIRD CATEGORY, ADDED 2026-10-20: AGENT ASSETS -- everything under
+`.claude/skills/` and `.claude/plugins/`. These are agent BEHAVIOUR, the same
+class of thing as the entry documents, and a clone that does not get them runs
+an agent with different instructions. Owner instruction the same day: the skills
+and plugins we build for DotTalk++ belong in GitHub too.
+
+This category is walked from DISK, not read out of the entry documents, and that
+is deliberate twice over. First, a skill nobody thought to mention in the portal
+is exactly the one that goes missing. Second, DOC_RE cannot see these paths at
+all: its first character class excludes a dot, so a backticked
+`.claude/skills/<name>/SKILL.md` never MATCHES rather than matching and being
+mangled -- the same shape as the backslash hole recorded below, and widening the
+pattern would move the document count in the same commit, which this file
+refuses on principle.
+
 Usage (PowerShell 7, from D:\\code\\ccode):
 
     python labtalk\\ai_portal\\check_mandatory_tracked.py
@@ -35,6 +50,10 @@ from pathlib import Path
 
 ENTRY_DOCS = ("AI_README.md", "AI_PORTAL.md")
 ALWAYS_READ = ("CLAUDE.md", "AGENTS.md")
+
+# Agent behaviour that ships with the tree. Walked from disk; see the head of
+# this file for why these are not derived from the entry documents.
+AGENT_ASSET_ROOTS = (".claude/skills", ".claude/plugins")
 
 # Documents the portal points at, inline: `docs/agents/CURRENT_TARGET.md`
 DOC_RE = re.compile(r"`([A-Za-z0-9_][A-Za-z0-9_./-]*\.md)`")
@@ -105,6 +124,52 @@ def declared(root: Path) -> tuple[set[str], set[str]]:
     return docs, scripts
 
 
+def agent_assets(root: Path) -> list[str]:
+    """Every file under the agent-asset roots, repo-relative, sorted.
+
+    Returns [] when no root exists, and main() says so rather than printing a
+    green. A zero that is not distinguished from a pass is how this repo's
+    instruments have lied all autumn: seven greens in one week meant "I did not
+    look".
+    """
+    found: list[str] = []
+    for rel in AGENT_ASSET_ROOTS:
+        base = root / rel
+        if not base.is_dir():
+            continue
+        for path in sorted(base.rglob("*")):
+            if path.is_file():
+                found.append(path.relative_to(root).as_posix())
+    return found
+
+
+def ignored(root: Path, paths: list[str]) -> set[str]:
+    """Of `paths`, those git deliberately excludes.
+
+    A gitignored asset is a DECISION, not a defect -- a personal settings file
+    belongs to one clone. It is reported and never failed on. `check-ignore`
+    EXITS 1 when nothing matches, which is the ordinary case, so only a code
+    above 1 is an error.
+    """
+    if not paths:
+        return set()
+    out = subprocess.run(
+        ["git", "check-ignore", "--stdin"],
+        cwd=root,
+        input="\n".join(paths),
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=60,
+        check=False,
+    )
+    if out.returncode > 1:
+        print("check: git check-ignore failed", file=sys.stderr)
+        raise SystemExit(1)
+    return {line.strip().replace("\\", "/") for line in out.stdout.splitlines() if line.strip()}
+
+
 def tracked(root: Path) -> set[str]:
     out = subprocess.run(
         ["git", "ls-files"],
@@ -125,31 +190,56 @@ def tracked(root: Path) -> set[str]:
 def main() -> int:
     root = repo_root()
     docs, scripts = declared(root)
+    assets = agent_assets(root)
     have = tracked(root)
+    excluded = ignored(root, assets)
 
     missing_docs = sorted(docs - have)
     missing_scripts = sorted(scripts - have)
+    missing_assets = sorted(a for a in assets if a not in have and a not in excluded)
 
     print(
-        f"mandatory-tracked: {len(docs)} document(s) and {len(scripts)} script(s) checked"
+        f"mandatory-tracked: {len(docs)} document(s), {len(scripts)} script(s) "
+        f"and {len(assets)} agent asset(s) checked"
     )
-    if not missing_docs and not missing_scripts:
+    # SAY WHICH ROOTS WERE WALKED AND WHICH WERE NOT THERE. Zero assets from a
+    # root that does not exist is a different fact from zero untracked ones.
+    for rel in AGENT_ASSET_ROOTS:
+        if (root / rel).is_dir():
+            n = sum(1 for a in assets if a.startswith(rel + "/"))
+            print(f"  agent assets: {rel}/ -- {n} file(s)")
+        else:
+            print(f"  agent assets: {rel}/ -- not present in this tree")
+    for name in sorted(excluded):
+        print(f"  agent assets: GITIGNORED (a decision, not a defect) {name}")
+
+    if not missing_docs and not missing_scripts and not missing_assets:
         print("mandatory-tracked: PASS -- every declared file is tracked")
         return 0
 
     print(
         "mandatory-tracked: FAIL -- "
-        f"{len(missing_docs)} document(s) and {len(missing_scripts)} script(s) UNTRACKED"
+        f"{len(missing_docs)} document(s), {len(missing_scripts)} script(s) "
+        f"and {len(missing_assets)} agent asset(s) UNTRACKED"
     )
     for name in missing_scripts:
         print(f"  UNTRACKED SCRIPT  {name}   <-- a gate that will not run downstream")
     for name in missing_docs:
         print(f"  UNTRACKED DOC     {name}")
+    for name in missing_assets:
+        print(f"  UNTRACKED ASSET   {name}   <-- agent behaviour a clone will not get")
     print("")
     print("These are invisible to a clone. An agent onboarding from GitHub cannot")
     print("read the documents and cannot run the gates. Commit them, or stop")
     print("declaring them mandatory. An untracked script is the worse case: it")
     print("does not error, it silently does not exist.")
+    if missing_assets:
+        print("")
+        print("AN UNTRACKED SKILL OR PLUGIN IS THE SAME DEFECT WEARING A DIFFERENT")
+        print("HAT. The tree's agent reads it, a clone's agent does not, and nothing")
+        print("else in the toolchain notices: 100a43170 shipped a skill whose content")
+        print("was 41 lines stale and every gate passed. Commit it, or gitignore it")
+        print("on purpose so this check reports it as a decision.")
     return 2
 
 

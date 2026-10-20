@@ -293,6 +293,41 @@ renamed to what it is or retired; declaring it mandatory would preserve the
 wrong thing, and a misleading name in root is worse than an absent one because
 the name alone gets cited as authority.
 
+### Agent assets are tracked too (owner instruction, 2026-10-20)
+
+THE SKILLS AND PLUGINS BUILT FOR DOTTALK++ BELONG IN GITHUB, exactly as the
+governance documents above do. A skill is agent BEHAVIOUR: a clone that does not
+get it runs an agent working from different instructions, and nothing in a
+transcript makes that visible.
+
+Where they live:
+
+- `.claude/skills/<name>/SKILL.md` -- in-tree skills. This is the authoritative
+  copy and the one a session working in this tree reads.
+- `.claude/plugins/` -- reserved for plugins. Not present yet; the gate below
+  says so out loud rather than reporting a green over an empty walk.
+
+THE ACCOUNT COPY OF A SKILL IS A DIFFERENT ARTIFACT AND IS NOT IN GIT. It is
+updated through the skill review card, it can drift from the in-tree copy, and
+it is not what a clone gets. When the two disagree, the in-tree copy is the one
+this repository stands behind -- so an improvement made in the account copy is
+not landed until it is also committed here.
+
+ENFORCEMENT DIFFERS FROM THE DOCUMENTS ABOVE, DELIBERATELY. Those are derived
+from backticked paths in this file; agent assets are WALKED FROM DISK by
+check_mandatory_tracked.py, for two reasons. A skill nobody thought to mention
+in the portal is exactly the one that goes missing, and a path beginning with a
+dot cannot be matched by the derivation at all -- its pattern's first character
+class excludes a dot, so a backticked dotfile path is never seen rather than
+seen and mangled. An asset git excludes on purpose is reported as a DECISION and
+does not fail; an asset that is merely untracked fails the gate.
+
+WHY THIS IS A RULE AND NOT A PREFERENCE. On 2026-10-20 commit 100a43170
+committed a skill 41 lines staler than the version that had been written, with
+every gate green, because a staging script wrote the file it was staging from a
+second copy in tmp/. Restored in 0db4647fb. ONE FILE, ONE SOURCE OF TRUTH: edit
+the in-tree copy, and never let a script write what it stages.
+
 ## Source Locations
 
 Use the repo-local source map before searching broadly:
