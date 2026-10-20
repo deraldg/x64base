@@ -3,7 +3,7 @@
 *
 * PACK AND MEMO GC MUST REFUSE A MEMO WIDTH THEY CANNOT DECODE.
 *
-* EXPECTED MARKER COUNT: 5  (M16_G1, M16_G2, M16_T1, M16_T2, M16_T3)
+* EXPECTED MARKER COUNT: 8  (M16_G1..G3, M16_T1..T5)
 *
 * FIRST RUN 2026-10-20: 5 of 5 markers printed, ONE GREEN AND FOUR RED, and
 *   NONE of the four reds was the guard failing. Three were one bug in this
@@ -12,6 +12,24 @@
 *   catalog copy was never found and the fixture was created in the wrong
 *   place. The fourth was a REAL ENGINE DEFECT in PACK's memo path, recorded
 *   at the contrast arm below. The arm earned its place on its first run.
+*
+* THIRD RUN 2026-10-20: 8 of 8 GREEN, including the M(8) memo arm that the fix
+*   repaired -- "Sidecar(s): DBF and DTX rebuilt and synchronized." But the
+*   wrapper still said FAIL, and its reason was ITS OWN over-broad check, not
+*   this spec: it swept the whole sandbox for *.pack.tmp.* and found
+*   PKSRC.pack.tmp.dbf dated SEP 14, a month-old artifact of the primary-key
+*   lane. Scoped to this spec's own three tables. An assertion too WIDE fails
+*   for other people's state; every other instrument this session was too
+*   NARROW. Both are the same mistake about what the question is.
+*
+* AND ERASE WAS A DRY RUN IN BOTH RUNS. "ERASE <table>" without CONFIRM prints
+*   what it would delete and does nothing -- cmd_erase.cpp's documented safety
+*   gate. The cleanup this spec intended never happened; CREATE overwrote the
+*   table anyway, so nothing failed, which is exactly why it went unnoticed.
+*   TWICE NOW I HAVE GUESSED A COMMAND'S SPELLING INSTEAD OF READING THE
+*   WORKING SPEC IN THE SAME DIRECTORY: SET PATH DBF sandbox (should have been
+*   DBF/SANDBOX) and ERASE without CONFIRM. copy_table_regression.dts has had
+*   both right since it was written.
 *   THAT NUMBER IS THE PRIMARY INSTRUMENT. An errored marker PRINTS NOTHING
 *   rather than going red, so a lost claim leaves this suite in silence while
 *   every remaining arm still reads green. Count them in the transcript. Four
@@ -152,7 +170,7 @@ CLOSE
 * that the MEMO-AWARE path works -- stated here rather than implied, because
 * that is exactly the claim the deferred commit has to earn.
 SELECT 2
-ERASE PKPLAIN
+ERASE PKPLAIN CONFIRM
 CREATE X64 PKPLAIN (ID N(4), MARK C(10))
 APPEND
 REPLACE MARK WITH "A"
@@ -173,6 +191,49 @@ GO 2
 ? "M16_T2_pack_still_compacts_a_plain_x64_table:" + (ALLTRIM(MARK) = "C")
 GO 1
 ? "M16_T3_plain_pack_dropped_the_deleted_row:" + (ALLTRIM(MARK) = "B")
+CLOSE
+
+* ---- THE M(8) MEMO ARM: the path the one-line fix repaired ----
+* THIS ARM IS WHY THE FIX IS NOT A CLAIM. It was removed from this spec on
+* 2026-10-20 because it was RED for a real reason -- cmd_pack.cpp released the
+* DBF handle and never the sidecar, so the DTX rename always failed -- and a
+* permanently red arm must not sit in a suite. It returns with the fix that
+* makes it green, which is the order the house asks for: red for a reason, then
+* the fix, then green.
+*
+* IT IS NOT A DUPLICATE OF THE PLAIN ARM. 'BODY M' becomes M(8) on an x64
+* table, so this exercises pack_x64_memo_table -- the memo-aware path that
+* rebuilds BOTH files and remaps object ids. The plain arm above never enters
+* that function. Both are kept: the plain one proves PACK compacts at all, this
+* one proves the memo path does.
+*
+* WHAT THIS ARM STILL CANNOT SEE, and the wrapper checks instead: that the
+* rebuilt sidecar's remapped ids, CRCs and surviving payloads are correct. A
+* marker reads a field, not a sidecar. Record 2 reading C proves the DBF was
+* compacted; it does not prove the DTX is sound. That measurement is still
+* nobody's, and it is named here so it is not assumed.
+SELECT 3
+ERASE PK8M CONFIRM
+CREATE X64 PK8M (ID N(4), MARK C(10), BODY M)
+APPEND
+REPLACE MARK WITH "A"
+APPEND
+REPLACE MARK WITH "B"
+APPEND
+REPLACE MARK WITH "C"
+GO 3
+? "M16_G3_m8_memo_fixture_has_three_rows:" + (ALLTRIM(MARK) = "C")
+
+GO 1
+DELETE
+PACK
+
+SELECT 3
+USE PK8M
+GO 2
+? "M16_T4_pack_compacts_an_m8_memo_table:" + (ALLTRIM(MARK) = "C")
+GO 1
+? "M16_T5_m8_memo_pack_dropped_the_deleted_row:" + (ALLTRIM(MARK) = "B")
 CLOSE
 
 ? "M16-GUARD-PROOF-END"

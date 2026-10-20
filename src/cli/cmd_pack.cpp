@@ -49,6 +49,11 @@
 //   PACK USAGE prints usage before open-table checks.
 //   PACK rewrites the current DBF with only non-deleted records and closes the table on success.
 //   PACK supports x64 M(8) memo tables by rebuilding DBF and DTX together.
+//     CORRECTED 2026-10-20: this was advertised and did NOT work. PACK released
+//     the DBF handle and never the sidecar, so the DTX rename always failed and
+//     the pack aborted. Fixed at the close site in cmd_PACK; proven by
+//     m16_guard_regression.dts's M(8) arm. The sentence above was aspirational
+//     until that date and is left standing because it states the intent.
 //   Legacy memo tables are refused.
 //   An x64 table holding a memo field of any width other than 8 is REFUSED, and
 //     nothing is changed -- the table is not even closed. M(16) is a MemoRef
@@ -90,6 +95,7 @@
 #include "cli/command_output.hpp"
 #include "cli/order_state.hpp"
 #include "memo/memostore.hpp"
+#include "memo/memo_auto.hpp"   // cli_memo::memo_auto_on_close -- see the close site in cmd_PACK
 #include <cctype>
 
 // Optional path slot support (SETPATH)
@@ -775,6 +781,17 @@ static bool pack_x64_memo_table(const fs::path& origPath,
 
     if (!replace_two_files_with_backup(origPath, tmpPath, bakPath, origDtx, tmpDtx, bakDtx)) {
         err = "failed replacing original DBF/DTX with packed pair";
+
+        // A FAILED REPLACE MUST NOT LEAVE ITS TEMPS. Every other error path in
+        // this function removes them; this one did not, so the aborted pack of
+        // 2026-10-20 left PK8T.pack.tmp.dbf and PK8T.pack.tmp.dtx on disk beside
+        // the table it had not changed. replace_two_files_with_backup already
+        // rolls the ORIGINALS back, which is why nothing was damaged -- the gap
+        // was only the two files it had built and no longer needed.
+        std::error_code ec_tmp;
+        fs::remove(tmpPath, ec_tmp);
+        ec_tmp.clear();
+        fs::remove(tmpDtx, ec_tmp);
         return false;
     }
 
@@ -867,6 +884,31 @@ void cmd_PACK(xbase::DbArea& A, std::istringstream& in)
     const std::vector<MemoFieldInfo> memoFields = collect_x64_memo_fields(A);
 
     try { orderstate::clearOrder(A); } catch (...) {}
+
+    // RELEASE THE SIDECAR, NOT JUST THE DBF. A.close() drops the DBF handle and
+    // nothing else; the AREA's MemoStore lives in cli_memo's g_store, put there
+    // by memo_auto_on_use when the table was opened, and it keeps the .dtx OPEN.
+    //
+    // WITHOUT THIS LINE THE x64 MEMO PACK COULD NEVER SUCCEED, and it is not a
+    // race or a stale lock -- it is structural. pack_x64_memo_table closes its
+    // own oldStore and newStore immediately before the rename, so the handle
+    // that blocks it is the area's, and PACK REQUIRES AN OPEN TABLE, so for an
+    // x64 memo table that handle is ALWAYS present. Measured 2026-10-20 on build
+    // Oct 15 09:32:22 by m16_guard_regression.dts's contrast arm:
+    //
+    //   PACK: Failed to rename original DTX to backup: The process cannot
+    //         access the file because it is being used by another process.
+    //   PACK: failed replacing original DBF/DTX with packed pair
+    //   PACK: operation aborted. Table remains closed.
+    //
+    // The usage block above has advertised "x64 M(8) memo tables are packed by
+    // rebuilding BOTH the DBF and the DTX sidecar" since the feature was
+    // written. It appears never to have worked on a table with deleted rows:
+    // the two earlier runtime measurements both missed it, one having zero
+    // deleted rows and the other being the catalog, which takes the plain path.
+    //
+    // The idiom is cmd_workspace.cpp's, used there twice (:1386, :1759).
+    try { cli_memo::memo_auto_on_close(A); } catch (...) {}
     try { A.close(); } catch (...) {}
 
     fs::path origPath = resolve_dbf_slot_path(fs::path(dbf_path_str));
