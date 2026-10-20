@@ -38,6 +38,16 @@
 //   GC without CONFIRM is a dry run.
 //   GC with CONFIRM may remove orphan memo objects and reclaim storage.
 //   ALL targets all open work areas; otherwise the current work area is used.
+//   A TABLE THIS SCANNER CANNOT READ REPORTS "NOT SCANNED" AND GC DOES NOT RUN
+//     (2026-10-13). Memo references are decoded only as the x64 uint64 object-id
+//     slot, M(8). A memo field of any other width -- M(16), which holds a
+//     MemoRef token, as WORKSPACES.SNAPSHOT does -- cannot be decoded here, so
+//     STATUS/VERIFY name the field and refuse rather than reporting zero
+//     orphans. Before this, such a table reported "orphan objects 0 /
+//     reclaimable 0" for every possible state of its store, which is a zero
+//     meaning "I did not look". The refusal fires even when decodable fields
+//     are also present: a partial scan would classify the undecodable field's
+//     objects as orphans, and GC CONFIRM would erase live data.
 //
 // risk:
 //   reads_memo_storage: yes

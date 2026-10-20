@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-10-15T02:18:30Z
+    generated_utc : 2026-10-20T01:14:34Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is a generated current-state projection;
@@ -11,9 +11,9 @@ verify it with the generator's --check mode before relying on it.
 ## Tree
 
     branch        : development
-    HEAD          : a48a709e9  (2026-10-12)
+    HEAD          : fbfb651ac  (2026-10-14)
     upstream      : 40f68c7b8
-    unpushed      : 2 commit(s) ahead of upstream
+    unpushed      : 3 commit(s) ahead of upstream
 
 ## Declared target
 
@@ -22,14 +22,14 @@ verify it with the generator's --check mode before relying on it.
 
 ## Newest closeout
 
-    file          : SESSION_CLOSEOUT_AIF171_DOTREF_ROUTER_PARITY_2026-10-14.md
+    file          : SESSION_CLOSEOUT_AIF171_PHASE8_REPAIR_PLAN_2026-10-15.md
     commits behind HEAD : not committed
 
 ## Staleness warnings
 
-- The newest closeout by date, SESSION_CLOSEOUT_AIF171_DOTREF_ROUTER_PARITY_2026-10-14.md, is on disk but in no commit. A clone cannot see it; whoever wrote it has not landed it.
-- Closeout(s) on disk but not tracked -- a session's record that never landed: SESSION_CLOSEOUT_GUARDED_HELP_REFRESH_2026-10-13.md, SESSION_CLOSEOUT_AIF171_MANUAL_GATE6_CANDIDATE_2026-10-13.md, SESSION_CLOSEOUT_AIF171_CANONICAL_HARVEST_APPLY_2026-10-13.md, SESSION_CLOSEOUT_DDICT_DATA_REPAIR_2026-10-12.md (+3 more).
-- 2 commit(s) are unpushed and invisible to a clone.
+- The newest closeout by date, SESSION_CLOSEOUT_AIF171_PHASE8_REPAIR_PLAN_2026-10-15.md, is on disk but in no commit. A clone cannot see it; whoever wrote it has not landed it.
+- Closeout(s) on disk but not tracked -- a session's record that never landed: SESSION_CLOSEOUT_AIF171_PHASE8_M4_PLAN_2026-10-15.md, SESSION_CLOSEOUT_AIF171_PHASE8_M4_APPLY_M5_REMEASURE_2026-10-15.md, SESSION_CLOSEOUT_AIF171_PHASE8_M3_APPLY_2026-10-15.md, SESSION_CLOSEOUT_AIF171_PHASE8_M2_PLAN_2026-10-15.md (+13 more).
+- 3 commit(s) are unpushed and invisible to a clone.
 
 ## Claimed lanes (newest first)
 
@@ -53,7 +53,6 @@ verify it with the generator's --check mode before relying on it.
 
     live   : 2026-07-31_cowork_bbs_agency_legs  (member.ai.claude.cowork)  [stale, reapable]
     live   : AIPR-20260729-001  (member.ai.claude.cowork)  [stale, reapable]
-    live   : CODEX-20261014-AIF171-LAND-001  (member.ai.codex)
     live   : COWORK-20260818-001  (member.ai.claude.cowork)  [stale, reapable]
     live   : COWORK-20260821-002  (member.ai.claude.cowork)  [stale, reapable]
     live   : COWORK-20260826-001  (member.ai.claude.cowork)  [stale, reapable]

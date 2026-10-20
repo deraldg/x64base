@@ -31,6 +31,16 @@ struct MemoScanResult
 
     int x64_memo_fields = 0;
 
+    // MEMO-TYPED FIELDS THIS SCANNER CANNOT DECODE -- M(n) with n != 8.
+    //
+    // A table with any of these was NOT SCANNED and every count below it is
+    // meaningless. It is recorded rather than ignored because the old code
+    // returned a clean zero for such a table, and a zero that means "I did not
+    // look" is indistinguishable from a zero that means "there is no garbage".
+    // scan_x64_memos_in_area() now returns false and fills `error` instead.
+    int undecodable_memo_fields = 0;
+    std::vector<std::string> undecodable_field_names;
+
     std::uint64_t records_scanned = 0;
     std::uint64_t memo_refs_found = 0;
     std::uint64_t empty_refs = 0;

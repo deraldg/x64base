@@ -15,6 +15,9 @@
 //   - legacy memo tables are still refused
 //   - x64 M(8) memo tables are packed by rebuilding BOTH the DBF and the DTX sidecar
 //   - x64 memo object ids are remapped to fresh ids in the new DTX
+//   - x64 memo fields of ANY OTHER WIDTH are refused (2026-10-13). M(16) holds a
+//     MemoRef token, not an id slot; the memo-aware path cannot see it, and the
+//     plain path would strand every payload the removed rows named.
 //
 // POLICY (2026):
 //   - Structural command (file-level operation)
@@ -47,13 +50,20 @@
 //   PACK rewrites the current DBF with only non-deleted records and closes the table on success.
 //   PACK supports x64 M(8) memo tables by rebuilding DBF and DTX together.
 //   Legacy memo tables are refused.
+//   An x64 table holding a memo field of any width other than 8 is REFUSED, and
+//     nothing is changed -- the table is not even closed. M(16) is a MemoRef
+//     token rather than an object-id slot, so the memo-aware path does not see
+//     it; the plain path would rewrite the DBF and leave the sidecar untouched,
+//     stranding the payloads the removed rows named. WORKSPACES.SNAPSHOT is the
+//     field this refusal exists for.
 //   Index containers must be rebuilt/rebound after PACK.
 //
 // risk:
 //   requires_open_table: yes except usage
 //   destructive_rewrite: yes
 //   mutates_table_file: yes
-//   mutates_memo_sidecar: x64 memo tables
+//   mutates_memo_sidecar: x64 M(8) memo tables only
+//   refuses_undecodable_memo_width: yes -- x64 M(n != 8), nothing changed
 //   closes_table: yes
 //   clears_order_state: yes
 //
@@ -397,6 +407,51 @@ static bool has_x64_memo_fields(const xbase::DbArea& a)
         }
     }
     return false;
+}
+
+// MEMO-TYPED FIELDS THIS PACK PATH CANNOT DECODE, and why that is a refusal
+// rather than a fallback (measured 2026-10-13).
+//
+// Everything above gates on f.length == 8 -- the x64 uint64 object-id slot,
+// xbase::X64_MEMO_FIELD_LEN. A SECOND CONVENTION EXISTS AND THIS FILE CANNOT
+// READ IT: WORKSPACES.SNAPSHOT is M(16), holding a 16-hex MemoRef token rather
+// than an id slot. It is built that way deliberately (cmd_workspace.cpp sets
+// m.len = 16) and read back with get_by_name() like a character field. So
+// collect_x64_memo_fields() skips it, has_x64_memo_fields() returns false, and
+// the catalog has been taking the PLAIN path: DBF rewritten, DTX untouched.
+//
+// THE PLAIN PATH DOES NOT DELETE THE PAYLOADS -- IT STRANDS THEM, which is
+// harder to notice and harder to undo. Measured on the live catalog: 282 rows,
+// 148 delete-flagged, 121 SNAPSHOT tokens against exactly 121 DTX objects. A
+// plain pack drops the 148 rows and keeps every byte they named, so 110 objects
+// / 2,305,296 bytes become unreachable -- still on disk, no longer named by any
+// row, and NOT collectable by MEMO GC either, because memo_verify.cpp gates on
+// this same width and takes an early return above its orphan computation.
+// Neither history nor garbage. PAYLOAD_SHA does not rescue them: the identity
+// lives in the row the pack just removed.
+//
+// A SECOND, INDEPENDENT HAZARD sits on the same table and is already recorded
+// in include/xbase_64.hpp: "this slot must not gate a PACK ... a pack that
+// renumbers without a live sequence reissues WS_IDs, and it does so without
+// printing anything."
+//
+// WIDENING THE PREDICATE IS NOT THE FIX HERE. It would let MEMO GC begin
+// COLLECTING those 110 objects, and whether a retired workspace's snapshot is
+// garbage is a retention ruling (D10.3 says retirement leaves a record rather
+// than a hole). A guard does not get to decide that. Refuse, and let the ruling
+// arrive on its own schedule.
+static std::vector<std::string> undecodable_x64_memo_fields(const xbase::DbArea& a)
+{
+    std::vector<std::string> out;
+    if (a.versionByte() != xbase::DBF_VERSION_64) return out;
+
+    for (const auto& f : a.fields()) {
+        if ((f.type == 'M' || f.type == 'm') &&
+            f.length != static_cast<std::uint32_t>(xbase::X64_MEMO_FIELD_LEN)) {
+            out.push_back(f.name);
+        }
+    }
+    return out;
 }
 
 static std::vector<MemoFieldInfo> collect_x64_memo_fields(const xbase::DbArea& a)
@@ -775,6 +830,34 @@ void cmd_PACK(xbase::DbArea& A, std::istringstream& in)
     if (A.memoKind() != xbase::DbArea::MemoKind::NONE && !x64_memo_pack) {
         cli::cmdout::print_prefixed_message("PACK", dottalk::helpdata::MessageId::PackMemoNotSupportedText);
         return;
+    }
+
+    // THE GATE ABOVE CANNOT CATCH THIS ONE, which is why the guard is separate
+    // rather than folded into it. MemoKind is NONE/FPT/DBT -- LEGACY SIDECARS
+    // ONLY, there is no DTX kind -- so for every x64 memo table memoKind() is
+    // NONE and that refusal never fires. x64_memo_pack then merely SELECTS a
+    // path, with no arm for an x64 memo table the path cannot read.
+    //
+    // Refuse here, BEFORE orderstate is cleared and the area is closed, so a
+    // refusal costs the caller nothing. See undecodable_x64_memo_fields above.
+    {
+        const std::vector<std::string> blind = undecodable_x64_memo_fields(A);
+        if (!blind.empty()) {
+            std::string names;
+            for (std::size_t i = 0; i < blind.size(); ++i) {
+                if (i) names += ", ";
+                names += blind[i];
+            }
+            cli::cmdout::print_info("PACK",
+                "refused -- this table holds memo field(s) PACK cannot decode: "
+                + names
+                + ". These are M(n) with n != 8, so the memo-aware path does not"
+                  " see them and the plain path would rewrite the DBF while"
+                  " leaving the sidecar untouched -- stranding every payload the"
+                  " removed rows named: unreachable, still on disk, and not"
+                  " collectable by MEMO GC. Nothing was changed.");
+            return;
+        }
     }
 
     std::string orderContainer;

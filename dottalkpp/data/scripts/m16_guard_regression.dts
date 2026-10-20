@@ -1,0 +1,178 @@
+* ============================================================================
+* m16_guard_regression.dts
+*
+* PACK AND MEMO GC MUST REFUSE A MEMO WIDTH THEY CANNOT DECODE.
+*
+* EXPECTED MARKER COUNT: 5  (M16_G1, M16_G2, M16_T1, M16_T2, M16_T3)
+*
+* FIRST RUN 2026-10-20: 5 of 5 markers printed, ONE GREEN AND FOUR RED, and
+*   NONE of the four reds was the guard failing. Three were one bug in this
+*   file -- SET PATH is DATA-relative, so "SET PATH DBF sandbox" pointed at
+*   data\sandbox, a directory that EXISTS, so there was no hard error: the
+*   catalog copy was never found and the fixture was created in the wrong
+*   place. The fourth was a REAL ENGINE DEFECT in PACK's memo path, recorded
+*   at the contrast arm below. The arm earned its place on its first run.
+*   THAT NUMBER IS THE PRIMARY INSTRUMENT. An errored marker PRINTS NOTHING
+*   rather than going red, so a lost claim leaves this suite in silence while
+*   every remaining arm still reads green. Count them in the transcript. Four
+*   green is a FAILURE that looks like a pass, and which one vanished is the
+*   first thing to find out.
+*
+* WHY THIS SPEC EXISTS, AND WHY IT WAS CLAIMED IMPOSSIBLE TWICE
+*   cmd_create.cpp hard-codes memo width -- 8 for x64, 10 for legacy -- and
+*   DISCARDS the width the caller asked for, so no CREATE can build an M(16)
+*   table. The only producer in the tree is cmd_workspace.cpp. From that I
+*   twice concluded no .dts could test this, and handed over a fourteen-line
+*   hand procedure instead. IT WAS NOT RUN, TWICE, OVER FIVE DAYS.
+*
+*   THE ERROR WAS CONFLATING TWO THINGS: "no script can CREATE an M(16) table"
+*   is true; "no script can TEST one" is false. The fixture is a FILE COPY of
+*   the workspace catalog, made by tmp/verify_m16_guard.ps1 before this runs.
+*   This spec only OPENS it.
+*
+*   AND THAT IS ALSO WHY NO CatalogBracket IS NEEDED. The bracket exists for
+*   specs that MINT catalog rows through WORKSPACE NEW/SAVE. This spec MINTS NO
+*   CATALOG ROW -- its only WORKSPACE verb is CLOSE ALL, which closes areas
+*   and writes nothing -- and it writes no file outside DBF\SANDBOX. The
+*   production catalog is never opened, so the 2.3 MB stranding event this
+*   guard prevents cannot be caused by the test for it.
+*
+* FIXTURE REQUIRED, and this spec CANNOT build it:
+*   dottalkpp\data\dbf\sandbox\PK16CAT.dbf  + .dtx
+*   Run tmp\verify_m16_guard.ps1 first; it copies the live catalog and then
+*   invokes this file. If M16_G1 reds, the fixture is missing or is not the
+*   catalog -- every arm below is then meaningless, which is what G1 is for.
+*
+* WHY RECORD 4 IS THE DISCRIMINATOR, measured 2026-10-20 against the copy:
+*   rec 4 is NOT delete-flagged in either state, so no arm has to read a
+*   deleted record, and the name differs between the two outcomes:
+*
+*     unpacked (PACK REFUSED)   rec 4 WS_NAME = mcc_x64
+*     packed   (PACK RAN)       rec 4 WS_NAME = sess_cursor
+*
+*   293 rows, 148 delete-flagged, so a successful pack leaves 145 and shifts
+*   everything from rec 1 onward. Record 1 would also discriminate and is
+*   REJECTED on purpose: it is delete-flagged, and an arm that depends on
+*   reading a deleted record depends on SET DELETED, which is not this spec's
+*   subject.
+*
+* WHAT NO MARKER HERE CAN ASSERT, stated rather than implied:
+*   THE REFUSAL TEXT. No marker in this language reads console output, so
+*   "NOT SCANNED -- 1 memo field(s) ... (SNAPSHOT)" and "PACK: refused --
+*   ... cannot decode: SNAPSHOT" are run for the TRANSCRIPT and proved only by
+*   EFFECT. Read them with your eyes; the arms prove the file did not change.
+*   THE SIDECAR BYTES. A marker cannot stat a file. tmp\verify_m16_guard.ps1
+*   compares PK16CAT.dbf and .dtx before and after and is the other half of
+*   this proof. Markers for data in the engine; PowerShell for bytes on disk.
+*
+* THE CONTRAST ARM IS NOT OPTIONAL. A BROKEN PACK REFUSES EVERYTHING, so
+* M16_T1 alone is worthless. M16_T2 and M16_T3 prove PACK still compacts in
+* this process on this build. They use a PLAIN x64 table; the reason, and the
+* defect that forced it, are at the arm itself.
+*
+* GUARDS EXIST BECAUSE BOTH ARMS READ A VALUE THAT A DEAD FIXTURE ALSO
+* PRODUCES. M16_G1 proves the catalog copy is open and rec 4 reads what this
+* spec was written against. M16_G2 proves the M(8) fixture got three rows
+* before anything is deleted or packed -- without it, a CREATE that silently
+* wrote nothing would leave M16_T2 reading a blank and going red for a reason
+* that has nothing to do with PACK. That is the G6/G7 lesson from the primary
+* key spec, designed in rather than discovered after.
+*
+* MUTATION PASS OWED on all five arms. None has been shown able to red.
+* Until then they are decoration. The honest way to earn M16_T1 is to stash
+* the guard in cmd_pack.cpp, re-run, and watch it go red on a real pack.
+* ============================================================================
+
+STOP_ON_ERROR OFF
+? "M16-GUARD-PROOF-BEGIN"
+
+WORKSPACE CLOSE ALL
+* SET PATH IS DATA-RELATIVE, NOT DBF-RELATIVE, and the first run of this spec
+* proved it the expensive way: "SET PATH DBF sandbox" resolved to
+* data\sandbox -- a directory that EXISTS, so there was no hard error. The
+* catalog copy was looked for there and not found, and CREATE then wrote the
+* M(8) fixture there too. Four arms went red for a reason unrelated to what
+* they test. copy_table_regression.dts has had it right all along:
+SET PATH DBF DBF/SANDBOX
+
+* ---- the M(16) fixture: a copy of the live catalog, opened, never minted ----
+SELECT 1
+USE PK16CAT
+GO 4
+? "M16_G1_fixture_is_the_catalog_copy:" + (ALLTRIM(WS_NAME) = "mcc_x64")
+
+* ---- the two refusals. For the transcript; proved by effect below. ----
+MEMO STATUS
+MEMO GC CONFIRM
+PACK
+
+* ---- BOTH BRANCHES MUST LAND READABLE. A refused PACK leaves the table OPEN;
+* ---- a successful one leaves it CLOSED. CLOSE then USE handles either, and a
+* ---- plain second USE of a still-open table would print "already open" and
+* ---- NOT change the current area, which would read the wrong thing silently.
+CLOSE
+SELECT 1
+USE PK16CAT
+GO 4
+? "M16_T1_pack_refused_on_m16_catalog:" + (ALLTRIM(WS_NAME) = "mcc_x64")
+CLOSE
+
+* ---- THE CONTRAST ARM: PACK must still compact a PLAIN x64 table ----
+* IT WAS AN M(8) MEMO TABLE ON THE FIRST RUN AND THAT RUN FOUND A REAL DEFECT,
+* which is why it is plain now. On 2026-10-20, build Oct 15 09:32:22, the M(8)
+* arm produced:
+*
+*   PACK: Failed to rename original DTX to backup: The process cannot access
+*         the file because it is being used by another process.
+*   PACK: failed replacing original DBF/DTX with packed pair
+*   PACK: operation aborted. Table remains closed.
+*
+* MEASURED CAUSE: cmd_pack.cpp calls A.close() but NEVER calls
+* cli_memo::memo_auto_on_close(A) -- the string appears zero times in that file
+* -- so the AREA's MemoStore, placed in g_store by memo_auto_on_use when the
+* table was opened, still holds the .dtx open across the whole pack.
+* pack_x64_memo_table closes its own oldStore and newStore before renaming, so
+* the leaked handle is the area's. PACK REQUIRES AN OPEN TABLE, so for an x64
+* memo table that handle is ALWAYS present and the rename ALWAYS fails.
+*
+* So PACK's advertised M(8) memo support -- its own usage block says "x64 M(8)
+* memo tables are packed by rebuilding BOTH the DBF and the DTX sidecar" --
+* appears never to have worked on a table with deleted rows. The two earlier
+* runtime measurements both missed it: one had zero deleted rows, the other was
+* the catalog, which takes the plain path.
+*
+* THE FIX IS ONE LINE AND IT IS A SEPARATE COMMIT, by owner ruling of
+* 2026-10-20 ("two commits, guard first"). A permanently red arm must not enter
+* this suite -- that is DEF_FAMILY's mistake, markers with no grader -- so this
+* arm uses a PLAIN x64 table today and the M(8) memo arm arrives with its fix.
+*
+* WHAT THE PLAIN ARM STILL PROVES, and it is the whole job of a contrast arm:
+* PACK compacts in this process on this build. A broken PACK refuses
+* everything, so without this M16_T1 is worthless. What it no longer proves is
+* that the MEMO-AWARE path works -- stated here rather than implied, because
+* that is exactly the claim the deferred commit has to earn.
+SELECT 2
+ERASE PKPLAIN
+CREATE X64 PKPLAIN (ID N(4), MARK C(10))
+APPEND
+REPLACE MARK WITH "A"
+APPEND
+REPLACE MARK WITH "B"
+APPEND
+REPLACE MARK WITH "C"
+GO 3
+? "M16_G2_plain_fixture_has_three_rows:" + (ALLTRIM(MARK) = "C")
+
+GO 1
+DELETE
+PACK
+
+SELECT 2
+USE PKPLAIN
+GO 2
+? "M16_T2_pack_still_compacts_a_plain_x64_table:" + (ALLTRIM(MARK) = "C")
+GO 1
+? "M16_T3_plain_pack_dropped_the_deleted_row:" + (ALLTRIM(MARK) = "B")
+CLOSE
+
+? "M16-GUARD-PROOF-END"
