@@ -888,6 +888,38 @@ def main() -> int:
                   "gatekeeper (OI-043), or the FILE belongs in EXEMPT_FILES with "
                   "a reason -- never the line in the baseline.")
 
+        # 5c-quater. THE x64 MEMO SLOT PREDICATE -- HARD, and hard on purpose.
+        # R149 / AIF-172, wired 2026-10-20 on the owner's go.
+        #
+        # The two gates above are RATCHETS against a baseline: a new caller is
+        # an advisory because a new caller may be legitimate. This one is not a
+        # ratchet and has no baseline, because the expected set is exactly ONE
+        # path. A second definition of "is this field an x64 object-id memo
+        # slot" is never the right answer: the predicate decides what a field
+        # READ returns, whether a consumer may treat that string as an object
+        # id, and whether a field WRITE lays down eight raw bytes or text, so a
+        # disagreement across those layers is silent data corruption.
+        #
+        # MEASURED BEFORE IT WAS WIRED: ten copies in two signatures, every body
+        # identical. FOUR OF THEM THE HAND CENSUS MISSED -- the sweep looked for
+        # the function NAME and two copies in cmd_pack.cpp spelled the predicate
+        # inline with a bare 8. That is the argument for a shape-matcher over a
+        # grep, and it is why this is wired rather than written down.
+        #
+        # Its own first run reported two false positives, both large switches
+        # over field types (validateFieldDef, pack_field). `case 'M':` is a
+        # DISPATCH, not a type test; the gate now says so and carries both
+        # shapes in its selftest.
+        rc = _run_portal_check(
+            "tools/staging/check_memo_slot_predicate.py", [], (0, 2))
+        if rc == 2:
+            print("\n  BLOCKED -- the x64 memo slot predicate has more than one "
+                  "definition (R149). Call xbase::x64_memo_slot_kind() instead; "
+                  "it answers None / ObjectId8 / RefToken16 / UnknownWidth, and "
+                  "the wrappers is_x64_memo_field() and "
+                  "is_undecodable_x64_memo_field() sit beside it.", file=sys.stderr)
+            exit_code = 2
+
         # 5c-bis. SOAK EVIDENCE -- HARD, and only ever in scope when a spec's
         # in_default_suite flag flips false -> true. Promotion doctrine wants two
         # green runs on a build nobody changed anything on; until 2026-09-08

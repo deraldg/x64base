@@ -91,6 +91,7 @@
 
 #include "xbase.hpp"
 #include "xbase_64.hpp"
+#include "xbase/x64_memo_slot.hpp"
 #include "textio.hpp"
 #include "cli/command_output.hpp"
 #include "cli/order_state.hpp"
@@ -403,12 +404,16 @@ static bool replace_two_files_with_backup(const fs::path& origDbf,
     return true;
 }
 
+// THE GATE FOUND THIS ONE, NOT THE CENSUS (R149, AIF-172). A hand sweep for
+// the NAME is_x64_memo_field missed it, because it spelled the predicate inline
+// with a bare 8. It is the function whose FALSE answer sent the M(16) catalog
+// down the plain pack path with its payloads stranded.
 static bool has_x64_memo_fields(const xbase::DbArea& a)
 {
     if (a.versionByte() != xbase::DBF_VERSION_64) return false;
 
     for (const auto& f : a.fields()) {
-        if ((f.type == 'M' || f.type == 'm') && f.length == 8) {
+        if (xbase::is_x64_memo_field(f, /*is_x64=*/true)) {
             return true;
         }
     }
@@ -514,9 +519,11 @@ static std::vector<std::string> undecodable_x64_memo_fields(const xbase::DbArea&
     std::vector<std::string> out;
     if (a.versionByte() != xbase::DBF_VERSION_64) return out;
 
+    // ONE OWNER FOR THE WIDTH QUESTION (R149). This loop used to spell the test
+    // `type == 'M' && length != 8` inline, which is the same predicate in the
+    // negative -- and the ninth place it was written down.
     for (const auto& f : a.fields()) {
-        if ((f.type == 'M' || f.type == 'm') &&
-            f.length != static_cast<std::uint32_t>(xbase::X64_MEMO_FIELD_LEN)) {
+        if (xbase::is_undecodable_x64_memo_field(f, /*is_x64=*/true)) {
             out.push_back(f.name);
         }
     }
@@ -532,7 +539,7 @@ static std::vector<MemoFieldInfo> collect_x64_memo_fields(const xbase::DbArea& a
     const auto& fsf = a.fields();
     for (std::size_t i = 0; i < fsf.size(); ++i) {
         const auto& f = fsf[i];
-        if ((f.type == 'M' || f.type == 'm') && f.length == 8) {
+        if (xbase::is_x64_memo_field(f, /*is_x64=*/true)) {
             out.push_back(MemoFieldInfo{
                 static_cast<int>(i) + 1,
                 off

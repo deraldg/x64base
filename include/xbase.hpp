@@ -142,8 +142,14 @@ inline AreaKind detect_area_kind_from_version(std::uint8_t ver) noexcept
 }
 
 // ---- Memo field storage contract ------------------------------------------
-constexpr std::uint8_t LEGACY_MEMO_FIELD_LEN = 10; // pre-x64: plain fixed-width text slot
-constexpr std::uint8_t X64_MEMO_FIELD_LEN    = 8;  // x64: uint64 object-id slot
+// THREE WIDTHS, TWO x64 CONVENTIONS. A memo field's WIDTH is what says how its
+// bytes are to be read; the type letter alone does not. Asking only the type is
+// how an M(16) table came to be opened with a sidecar store its own readers then
+// refused. The predicate that answers this has ONE owner --
+// xbase/x64_memo_slot.hpp -- and R149 says so.
+constexpr std::uint8_t LEGACY_MEMO_FIELD_LEN  = 10; // pre-x64: plain fixed-width text slot
+constexpr std::uint8_t X64_MEMO_FIELD_LEN     = 8;  // x64: uint64 object-id slot
+constexpr std::uint8_t X64_MEMO_REF_TOKEN_LEN = 16; // x64: 16-hex MemoRef token, character-like
 
 // ---- On-disk structures (packed) ------------------------------------------
 #pragma pack(push, 1)

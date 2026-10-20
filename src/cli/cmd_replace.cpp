@@ -112,6 +112,7 @@
 #include "xbase.hpp"
 #include "xbase_cli.hpp"
 #include "xbase/field_codec.hpp"
+#include "xbase/x64_memo_slot.hpp"
 #include "cli/memo_field_store.hpp"
 #include "xbase_64.hpp"
 #include "xbase_field_getters.hpp"
@@ -272,26 +273,13 @@ static int field_decimals(const xbase::DbArea& A, int field1) {
     }
 }
 
-static bool is_x64_memo_field(const xbase::DbArea& A, int field1) {
-    if (field1 < 1 || field1 > A.fieldCount()) return false;
-    if (A.versionByte() != xbase::DBF_VERSION_64) return false;
-
-    const auto& f = A.fields()[static_cast<std::size_t>(field1 - 1)];
-    return (f.type == 'M' || f.type == 'm') &&
-           f.length == xbase::X64_MEMO_FIELD_LEN;
-}
-
-static std::uint64_t parse_u64_or_zero(const std::string& s) {
-    if (s.empty()) return 0;
-    try {
-        std::size_t used = 0;
-        const unsigned long long v = std::stoull(s, &used, 10);
-        if (used != s.size()) return 0;
-        return static_cast<std::uint64_t>(v);
-    } catch (...) {
-        return 0;
-    }
-}
+// THE PREDICATE AND THE PARSER HAVE ONE OWNER -- xbase/x64_memo_slot.hpp (R149).
+// What stood here were two of ten identical private bodies. Deleting them is
+// the point: this predicate decides what a field READ returns, whether a value
+// may be treated as an object id, and whether a WRITE lays down raw bytes --
+// three layers that must not be able to disagree.
+using xbase::is_x64_memo_field;
+using xbase::parse_u64_or_zero;
 
 static dottalk::memo::MemoStore* memo_store_for_area(xbase::DbArea& A) noexcept {
     auto* backend = cli_memo::memo_backend_for(A);

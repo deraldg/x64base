@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-10-20T18:04:07Z
+    generated_utc : 2026-10-20T21:33:29Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is a generated current-state projection;
@@ -11,8 +11,8 @@ verify it with the generator's --check mode before relying on it.
 ## Tree
 
     branch        : development
-    HEAD          : 0db4647fb  (2026-10-20)
-    upstream      : 0db4647fb
+    HEAD          : 03673c073  (2026-10-20)
+    upstream      : 03673c073
     unpushed      : 0 commit(s) ahead of upstream
 
 ## Declared target
@@ -34,6 +34,7 @@ verify it with the generator's --check mode before relying on it.
 
 | AIF | lane | steward | intake row |
 | --- | --- | --- | --- |
+| AIF-172 | x64-memo-slot-predicate-one-owner | member.ai.claude.cowork | yes |
 | AIF-171 | guarded-help-store-refresh | member.ai.codex | yes |
 | AIF-170 | ddict-data-repair | member.ai.codex | yes |
 | AIF-169 | cascade_differential | member.ai.claude.cowork | yes |
@@ -45,8 +46,7 @@ verify it with the generator's --check mode before relying on it.
 | AIF-163 | memo-sidecar-reclamation | member.derald | yes |
 | AIF-162 | record-lock-lifetime | member.derald | yes |
 | AIF-161 | negative-claim-decay | member.derald | yes |
-| AIF-160 | multi-area-commit | member.derald | yes |
-| ... | 90 older claims omitted | | |
+| ... | 91 older claims omitted | | |
 
 ## Sessions, lineage, asides
 
@@ -63,6 +63,7 @@ parent + born_utc from the durable lineage ledger, '-' until a run wakes.
 
 | run | member | parent | born_utc | asides |
 | --- | --- | --- | --- | --- |
+| AIFGEN-20261020-131238 | member.ai.claude.cowork | - | - | AIF-172 |
 | CODEX-20261013-HELP-REFRESH-001 | member.ai.codex | - | - | AIF-171 |
 | CODEX-20261012-DDICT-REPAIR-001 | member.ai.codex | - | - | AIF-170 |
 | AIPR-20260920-001 | member.ai.claude.cowork | - | - | AIF-167 -> AIF-168 -> AIF-169 |
@@ -70,8 +71,7 @@ parent + born_utc from the durable lineage ledger, '-' until a run wakes.
 | CODEX-20260915-AIF165-REGGRADE-001 | member.ai.codex | - | - | AIF-165 |
 | AIFGEN-20260914-194836 | member.derald | - | - | AIF-164 |
 | AIFGEN-20260914-105334 | member.derald | - | - | AIF-163 |
-| AIFGEN-20260910-190858 | member.derald | - | - | AIF-162 |
-| ... | | | | 59 older run(s) omitted |
+| ... | | | | 60 older run(s) omitted |
 
 Perishable detail lives in the artifacts these point at. Do not
 restate anything above; regenerate it.

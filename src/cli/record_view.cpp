@@ -30,6 +30,7 @@
 #include "textio.hpp"
 #include "xbase_64.hpp"
 #include "xbase/field_codec.hpp"
+#include "xbase/x64_memo_slot.hpp"
 
 #include <algorithm>
 #include <cstring>
@@ -46,14 +47,17 @@ namespace xbase {
 
 namespace {
 
-static inline bool is_memo_type(const FieldDef& f) noexcept
-{
-    return (f.type == 'M' || f.type == 'm');
-}
-
+// THIS FILE IS NOT COMPILED, AND IT HELD THE NINTH COPY OF THE PREDICATE.
+// src/CMakeLists.txt names it in a list(REMOVE_ITEM ...): "This legacy duplicate
+// implements DbArea methods inside the CLI. The physical implementation is owned
+// exclusively by xbase.lib." The live decoder is src/xbase/record_view.cpp.
+//
+// The private body that stood here is gone and this delegates instead, because a
+// dead file is still the first thing a grep for an example finds -- and copy ten
+// would have arrived from here. ONE OWNER: xbase/x64_memo_slot.hpp (R149).
 static inline bool is_x64_memo_field_fast(bool is_x64, const FieldDef& f) noexcept
 {
-    return is_x64 && is_memo_type(f) && f.length == X64_MEMO_FIELD_LEN;
+    return x64_memo_slot_kind(f, is_x64) == X64MemoSlotKind::ObjectId8;
 }
 
 static inline std::uint64_t read_u64_le(const char* p) noexcept

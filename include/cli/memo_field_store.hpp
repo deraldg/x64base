@@ -23,33 +23,19 @@
 
 #include "xbase.hpp"
 #include "xbase_64.hpp"
+#include "xbase/x64_memo_slot.hpp"
 #include "memo/memo_auto.hpp"
 #include "memo/memostore.hpp"
 
 namespace dottalk::cli::memo_field_store {
 
-inline bool is_x64_memo_field(const DbArea& area, int field1)
-{
-    if (field1 < 1 || field1 > area.fieldCount()) return false;
-    if (area.versionByte() != xbase::DBF_VERSION_64) return false;
-
-    const auto& f = area.fields()[static_cast<std::size_t>(field1 - 1)];
-    return (f.type == 'M' || f.type == 'm') &&
-           f.length == xbase::X64_MEMO_FIELD_LEN;
-}
-
-inline std::uint64_t parse_u64_or_zero(const std::string& s)
-{
-    if (s.empty()) return 0;
-    try {
-        std::size_t used = 0;
-        const unsigned long long v = std::stoull(s, &used, 10);
-        if (used != s.size()) return 0;
-        return static_cast<std::uint64_t>(v);
-    } catch (...) {
-        return 0;
-    }
-}
+// ONE OWNER, NOT A SECOND COPY. These two were the shared pair -- and still
+// one of ten identical private bodies, because seven TUs did not use them.
+// They now NAME the owner in xbase/x64_memo_slot.hpp (R149) rather than
+// re-deriving it, so a caller that reaches this header and a caller that
+// reaches the owner directly cannot be given different answers.
+using xbase::is_x64_memo_field;
+using xbase::parse_u64_or_zero;
 
 inline dottalk::memo::MemoStore* memo_store_for_area(DbArea& area) noexcept
 {

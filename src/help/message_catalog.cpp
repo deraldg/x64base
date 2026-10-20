@@ -24,6 +24,7 @@
 #include "memo/memostore.hpp"
 #include "xbase.hpp"
 #include "xbase_64.hpp"
+#include "xbase/x64_memo_slot.hpp"
 #include "xbase_locks.hpp"
 
 #include <algorithm>
@@ -285,29 +286,13 @@ bool has_memo_fields(const xbase::DbArea& area)
     return false;
 }
 
-bool is_x64_memo_field(const xbase::DbArea& area, int field1)
-{
-    if (field1 < 1 || field1 > area.fieldCount()) return false;
-    if (area.versionByte() != xbase::DBF_VERSION_64) return false;
-
-    const auto& f = area.fields()[static_cast<std::size_t>(field1 - 1)];
-    return (f.type == 'M' || f.type == 'm') &&
-           f.length == xbase::X64_MEMO_FIELD_LEN;
-}
-
-std::uint64_t parse_u64_or_zero(const std::string& s)
-{
-    const std::string t = trim_copy(s);
-    if (t.empty()) return 0;
-    try {
-        std::size_t used = 0;
-        const auto v = std::stoull(t, &used, 10);
-        if (used != t.size()) return 0;
-        return static_cast<std::uint64_t>(v);
-    } catch (...) {
-        return 0;
-    }
-}
+// THE PREDICATE AND THE PARSER HAVE ONE OWNER -- xbase/x64_memo_slot.hpp (R149).
+// What stood here were two of ten identical private bodies. Deleting them is
+// the point: this predicate decides what a field READ returns, whether a value
+// may be treated as an object id, and whether a WRITE lays down raw bytes --
+// three layers that must not be able to disagree.
+using xbase::is_x64_memo_field;
+using xbase::parse_u64_or_zero;
 
 const std::vector<SeedMessageRow>& priority_a_message_rows()
 {
