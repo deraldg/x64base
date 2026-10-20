@@ -119,6 +119,14 @@
 //   A posture is NOT byte-stable and is not meant to be (owner ruling,
 //   2026-08-24): WSID carries a per-save stamp because a posture records an
 //   INSTANCE. Byte-identity belongs to MINIDB, which carries table bytes.
+//   EVERY SAVE NOW RECORDS PAYLOAD_SHA, the SHA-256 of the payload as written
+//   (owner, 2026-10-13). Read it with WORKSPACE CATALOG. It is the identity of
+//   those bytes, so two MINIDB rows with one SHA hold one container -- and two
+//   POSTURE rows will usually differ even for an unchanged desk, because the
+//   per-save WSID stamp above is part of the bytes. That is the ruling above
+//   showing through, not a defect: a posture records an instance, a container
+//   records content. Rows saved before 2026-10-13 are blank and are NOT
+//   backfilled -- blank means the identity was never recorded.
 //   WORKSPACE LOAD <file>
 //   WORKSPACE LOAD <name> MEMO
 //   WORKSPACE LOAD <name> MEMO RAM
@@ -611,6 +619,7 @@
 #include "xbase/workspace_naming.hpp"
 #include "workarea_util.hpp"
 #include "cli/workspace_image_event.hpp"
+#include "security/token_crypto.hpp"   // sha256_hex -- payload identity
 
 #define HAVE_PATHS 1
 
@@ -3124,6 +3133,19 @@ static bool ensure_catalog(std::string& err) {
     // PAYLOAD_SHA / EST_HYD_B / VERIFIED_AT / dimension fields are created
     // now and populated by later milestones -- an empty column is a
     // chartered claim, same rule as the public status board.
+    //
+    // TWO OF THOSE CLAIMS HAVE SINCE BEEN PAID, and this comment is corrected
+    // in place rather than left to be read as current: EST_HYD_B is written for
+    // MINIDB payloads (AIF-120 R103) and PAYLOAD_SHA is written for every
+    // payload (owner, 2026-10-13). VERIFIED_AT is still a claim, and the verb
+    // it names still does not exist.
+    //
+    // ROWS WRITTEN BEFORE THOSE DATES ARE NOT BACKFILLED, deliberately. A blank
+    // PAYLOAD_SHA means "this row's identity was never recorded", which is
+    // true; a value computed today would assert the row was identified when it
+    // was not, and would do it by rewriting the lineage the column exists to
+    // make trustworthy. Backfill, if it is ever wanted, is a separate verb with
+    // its own ruling -- not a side effect of opening the catalog.
     std::vector<xbase::dbf_create::FieldSpec> f;
     auto C = [&](const char* n, std::uint32_t len) {
         xbase::dbf_create::FieldSpec s; s.name = n; s.type = 'C'; s.len = len; s.dec = 0;
@@ -3139,7 +3161,11 @@ static bool ensure_catalog(std::string& err) {
     C("FLAVOR", 8);        // dimension: X64/X32/VFP/REF (M2 populates)
     C("OS_COMPAT", 8);     // dimension: ALL/WIN/POSIX/MAC -- a CLAIM, not a partition
     C("FMT", 12);          // payload format tag: "DTSHEMA 2" now, "MINIDB n" later
-    C("PAYLOAD_SHA", 64);  // integrity + cycle-detection material (chartered)
+    C("PAYLOAD_SHA", 64);  // SHA-256 hex of the payload AS WRITTEN -- written
+                           // since 2026-10-13. 64 == crypto_hash_sha256 hex.
+                           // Integrity today; content identity is what it is
+                           // FOR, and cycle detection by identity is the half
+                           // still unbuilt (SELF_REF is the declaration half).
     N("SIZE_B", 12);       // payload bytes (populated now)
     N("EST_HYD_B", 12);    // estimated hydrated bytes (chartered; budget input)
     N("MAX_AREAS", 4);     // areas the posture opens (populated now; admission input)
@@ -3876,6 +3902,33 @@ static void save_to_memo(const std::string& name, int version,
             cli_memo::memo_auto_on_close(a); a.close(); return;
         }
 
+        // PAYLOAD_SHA: THE IDENTITY OF THESE BYTES. Owner instruction
+        // 2026-10-13, "proceed with filling payload sha".
+        //
+        // The column was chartered C(64) on 2026-08-11 and never written. 64 is
+        // exactly SHA-256 hex, so the width has encoded the intended algorithm
+        // since the day the catalog was designed.
+        //
+        // WHAT IS HASHED IS THE PAYLOAD AS WRITTEN -- the posture text for a
+        // DTSHEMA save, the container bytes for a MINIDB one -- so the column
+        // means the same thing for every FMT. Hashing the posture inside a
+        // MINIDB instead would make two rows with the same SHA hold different
+        // bytes, which is the one thing a content identity may never do.
+        //
+        // A FAILURE HERE DOES NOT REFUSE THE SAVE. sha256_hex throws only if
+        // libsodium cannot initialise, which is a whole-product condition and
+        // not this row's fault. A workspace that saves with no identity is
+        // worse than one that saves with one and better than one that does not
+        // save; blank means UNKNOWN, which is the same thing it means on every
+        // row written before today.
+        std::string payloadSha;
+        try { payloadSha = dottalk::security::sha256_hex(payload); }
+        catch (const std::exception& e) {
+            std::cout << "WORKSPACE SAVE: warning -- payload identity could not be"
+                      << " computed (" << e.what() << "); PAYLOAD_SHA left blank"
+                      << " for this row.\n";
+        }
+
         // Fresh row + memo payload.
         auto* store = cli_memo::memo_store_for(a);
         if (!store || !store->is_open()) {
@@ -3941,9 +3994,12 @@ static void save_to_memo(const std::string& name, int version,
                && set_by_name(a, "SUPERSEDED", "0", err)
                && set_by_name(a, "DBF_ROOT", s8(dbf_root()), err)
                && set_by_name(a, "IDX_ROOT", s8(idx_root()), err)
+               && set_by_name(a, "PAYLOAD_SHA", payloadSha, err)
                && set_by_name(a, "SNAPSHOT", mr.ref.token, err);
-        // PAYLOAD_SHA / VERIFIED_AT remain chartered columns; EST_HYD_B is
-        // populated above for MINIDB payloads as of AIF-120 R103.
+        // VERIFIED_AT remains a chartered column -- it records WORKSPACE
+        // VERIFY, which does not exist (AIPR-20261012-COWORK-213). EST_HYD_B is
+        // populated above for MINIDB payloads as of AIF-120 R103, and
+        // PAYLOAD_SHA as of the owner instruction of 2026-10-13.
         if (!ok) { std::cout << err << "\n"; cli_memo::memo_auto_on_close(a); a.close(); return; }
         a.writeCurrent();
 
@@ -3963,6 +4019,15 @@ static void save_to_memo(const std::string& name, int version,
             std::cout << "WORKSPACE SAVE: wrote memo '" << name << "' ("
                       << payload.size() << " B, oracle byte-compare OK) to "
                       << s8(catalog_path()) << "\n";
+            // THE READBACK IS NOT RE-HASHED, and that is a decision rather than
+            // an omission. `back.text != payload` above is an EXACT comparison,
+            // so a hash of the readback could not disagree with it -- adding one
+            // would be an instrument incapable of failing, which this tree has
+            // a folder about. The identity is printed so the operator can see
+            // and cite it; the byte-compare is what proves it describes what a
+            // fresh session will read.
+            if (!payloadSha.empty())
+                std::cout << "  PAYLOAD_SHA: " << payloadSha << "\n";
             if (minidb) {
                 std::cout << "  MINIDB 1: " << mdFiles << " file(s), " << mdBytes
                           << " B of table+index bytes carried IN the memo"

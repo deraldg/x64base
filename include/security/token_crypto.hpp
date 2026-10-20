@@ -48,4 +48,27 @@ bool verify_credential(const std::string& stored, const std::string& secret);
 // True if `stored` is an Argon2 PHC credential (vs a legacy FNV credential).
 bool is_argon2_credential(const std::string& stored);
 
+// ---- content identity (AIF-120, owner instruction 2026-10-13) --------------
+//
+// SHA-256 of an arbitrary byte string, as 64 LOWERCASE HEX characters.
+//
+// NOT A CREDENTIAL PRIMITIVE, and deliberately not in the family above. There
+// is no salt, no cost parameter and no secret. The two functions above are slow
+// ON PURPOSE because a password must resist being guessed; this one is fast on
+// purpose because it answers a different question -- "are these the same bytes"
+// and "what is the identity of these bytes". Using it on a secret would be a
+// defect; using Argon2id for content identity would be unusable.
+//
+// WHY IT LIVES HERE rather than beside its caller. This file is the ONE place
+// the product speaks to libsodium, which is the whole reason it exists, and
+// crypto_init()'s call_once discipline is already correct in it. A hash helper
+// anywhere else would either re-derive that discipline or skip it. The file's
+// own rule -- "No hand-rolled crypto" -- rules out writing a second SHA-256,
+// and sodium_bin2hex means the hex conversion is not hand-rolled either.
+//
+// 64 hex characters is not a coincidence: WORKSPACES.dbf's PAYLOAD_SHA column
+// was chartered C(64) on 2026-08-11, which is exactly SHA-256 hex. The column
+// was sized for this before anything wrote it.
+std::string sha256_hex(const std::string& bytes);
+
 } // namespace dottalk::security
