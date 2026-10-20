@@ -178,8 +178,20 @@ function Update-DotTalkRuntimeExe {
             Write-Warning "  reason : $($_.Exception.Message)"
             Write-Warning "  built  : $builtExe  ($builtTime)"
             Write-Warning "  running: $($Layout.RuntimeExe)  ($runTime)"
-            Write-Warning "  A running process is likely holding it (dottalk_bbsd daemon or another dottalkpp)."
-            Write-Warning "  Stop that process and re-run datarun to actually test the new build."
+            # CORRECTED 2026-10-11 (owner: "It was appgui"). This named dottalk_bbsd
+            # first, and bbsd is a SEPARATE EXECUTABLE -- it holds dottalk_bbsd.exe,
+            # never dottalkpp.exe, so it could not cause this error at all. build.ps1
+            # already excludes bbsd for exactly the holds-its-own-exe reason, so the
+            # case that was designed around was the one being blamed.
+            #
+            # THE WORKBENCH IS THE STRUCTURAL HOLDER. Its persistent bridge keeps ONE
+            # dottalkpp.exe alive for the whole GUI session, spawned from the runtime
+            # bin (gui_cli_bridge.cpp find_runtime_cli_executable). So an open APPGUI
+            # holds this file every time, by design, not by accident.
+            Write-Warning "  A running process is holding it. Most likely the WORKBENCH (APPGUI):"
+            Write-Warning "  its persistent bridge keeps one dottalkpp.exe alive for the whole"
+            Write-Warning "  GUI session. Close the Workbench, or quit any other dottalkpp, and"
+            Write-Warning "  re-run datarun to actually test the new build."
         }
         else {
             throw "Could not stage runtime executable from $builtExe to $($Layout.RuntimeExe): $($_.Exception.Message)"
