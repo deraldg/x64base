@@ -33,7 +33,10 @@
 //
 // notes:
 //   MEMO with no arguments prints usage.
-//   STATUS reports memo object/ref statistics.
+//   STATUS reports memo object/ref statistics, and prints the reason when the
+//     scan reported one (2026-10-20). Before that it printed "status : ERROR"
+//     with no explanation, where VERIFY had always printed "VERIFY: error: ...".
+//     The counts above an error line are not measurements; the reason says so.
 //   VERIFY scans memo references and reports missing/orphaned objects.
 //   GC without CONFIRM is a dry run.
 //   GC with CONFIRM may remove orphan memo objects and reclaim storage.
@@ -163,6 +166,17 @@ void print_status(const dottalk::memo::MemoScanResult& s)
     std::cout << "  dtx bytes      : " << s.dtx_append_bytes << "\n";
     std::cout << "  largest memo   : " << s.largest_live_object_bytes << "\n";
     std::cout << "  status         : " << status << "\n";
+
+    // A RED THAT DOES NOT SAY WHY IS HALF AN INSTRUMENT. print_verify has always
+    // printed this line and print_status never did, so STATUS reported
+    // "status : ERROR" sitting directly beneath "orphan objects : 0" with no
+    // reason given -- a zero that is not a measurement, next to a failure that
+    // does not explain itself. Found 2026-10-20 by the run that PROVED the
+    // undecodable-width refusal: the refusal worked, and STATUS was the one
+    // surface that would not say so.
+    if (!s.error.empty()) {
+        std::cout << "STATUS: error: " << s.error << "\n";
+    }
 }
 
 void print_gc(const dottalk::memo::MemoScanResult& s,

@@ -415,6 +415,69 @@ static bool has_x64_memo_fields(const xbase::DbArea& a)
     return false;
 }
 
+// AN M(8) SLOT IS EMPTY WHEN IT IS ALL ZEROS *OR* ALL SPACES, and only the first
+// of those was recognised. APPEND leaves the slot as eight ASCII SPACES, so
+// read_u64_le returns 0x2020202020202020 -- decimal 2314885530818453536 -- which
+// is not 0, so the old code looked that "id" up, failed, and printed
+//
+//   PACK: warning -- memo object 2314885530818453536 not found, clearing reference
+//
+// once per appended row, on every successful memo pack. The OUTCOME was already
+// right (the slot is written as 0 either way); the DIAGNOSIS named an object that
+// never existed, and a warning that cries wolf on normal data teaches the reader
+// to skip warnings.
+//
+// THE TREE ALREADY KNEW ABOUT THIS SLOT STATE. AIF-163's reachability measurement
+// counts a slot reading 0 or 0x2020202020202020 as empty -- "the blank-slot
+// defect" -- and memo_verify.cpp reaches the same answer by a different road: it
+// reads the slot as a STRING, so eight spaces trim to empty and land in
+// empty_refs. PACK reads RAW BYTES, which is why it alone saw a number. The
+// asymmetry was the bug, not the data.
+//
+// Normalising to 0 on the way out is deliberate: the packed table gets clean
+// zeros where the source had spaces, which is what every other path here writes.
+static bool x64_memo_slot_is_empty(const std::uint8_t* p)
+{
+    bool all_zero = true;
+    bool all_space = true;
+    for (std::size_t i = 0; i < 8; ++i) {
+        if (p[i] != 0x00) all_zero  = false;
+        if (p[i] != 0x20) all_space = false;
+    }
+    return all_zero || all_space;
+}
+
+// THE DESCRIPTOR TERMINATOR IS NOT AT THE END OF AN x64 HEADER BLOCK, and the
+// check that assumed it was fired on EVERY x64 table -- including a plain one
+// PACK then compacted successfully, which is how it was finally diagnosed as a
+// false alarm rather than a property of memo tables.
+//
+// Classic/VFP: header_size points JUST PAST the 0x0D that ends the descriptor
+// area, so the last byte of the block IS the terminator and `back()` is right.
+//
+// x64: data_start_64 points past the descriptors AND past the optional X64M
+// metadata block, so the last byte of the block is normally METADATA. The
+// terminator sits at the end of the descriptor area -- descriptors begin at
+// LARGE_HEADER_SIZE and run in 32-byte steps -- which is where this looks.
+// Measured on WORKSPACES: descriptors from 96, terminator at 800, 22 fields.
+//
+// This REPLACES the assumption with the real question rather than silencing the
+// warning: a malformed x64 header with no terminator anywhere in the block still
+// warns.
+static bool header_block_has_terminator(const std::vector<std::uint8_t>& hdr)
+{
+    if (hdr.empty()) return false;
+
+    if (hdr[0] != xbase::DBF_VERSION_64) {
+        return hdr.back() == xbase::HEADER_TERM_BYTE;
+    }
+
+    for (std::size_t off = xbase::LARGE_HEADER_SIZE; off < hdr.size(); off += 32) {
+        if (hdr[off] == xbase::HEADER_TERM_BYTE) return true;
+    }
+    return false;
+}
+
 // MEMO-TYPED FIELDS THIS PACK PATH CANNOT DECODE, and why that is a refusal
 // rather than a fallback (measured 2026-10-13).
 //
@@ -583,7 +646,7 @@ static bool pack_x64_memo_table(const fs::path& origPath,
     }
     src.close();
 
-    if (headerBlock.size() > 0 && headerBlock.back() != xbase::HEADER_TERM_BYTE) {
+    if (!header_block_has_terminator(headerBlock)) {
         cli::cmdout::print_prefixed_message("Warning", dottalk::helpdata::MessageId::PackHeaderNoTerminatorText);
     }
 
@@ -677,12 +740,12 @@ static bool pack_x64_memo_table(const fs::path& origPath,
                 return false;
             }
 
-            const std::uint64_t old_id = read_u64_le(recbuf.data() + mf.row_offset);
-
-            if (old_id == 0) {
+            if (x64_memo_slot_is_empty(recbuf.data() + mf.row_offset)) {
                 write_u64_le(recbuf.data() + mf.row_offset, 0);
                 continue;
             }
+
+            const std::uint64_t old_id = read_u64_le(recbuf.data() + mf.row_offset);
 
             std::string text;
             std::string memo_err;
@@ -980,7 +1043,7 @@ void cmd_PACK(xbase::DbArea& A, std::istringstream& in)
             return;
         }
 
-        if (headerBlock.size() > 0 && headerBlock.back() != xbase::HEADER_TERM_BYTE) {
+        if (!header_block_has_terminator(headerBlock)) {
             cli::cmdout::print_prefixed_message("Warning", dottalk::helpdata::MessageId::PackHeaderNoTerminatorText);
         }
 
