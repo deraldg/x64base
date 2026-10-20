@@ -27,6 +27,11 @@
 //   COPY TO <DBFNAME> AS <MSDOS|DBASE|FOX26|FOXPRO|VFP|X64> [KEY DROP] [OVERWRITE]
 //   COPY TO <DBFNAME> AS X64 VECTOR [KEY DROP] [OVERWRITE]
 //   COPY FILE <SRC> TO <DST> [OVERWRITE]
+//   COPY TABLE TO <WS> [WITH INDEXES] [OVERWRITE]
+//   COPY TABLE FROM <WS> [WITH INDEXES] [OVERWRITE]
+//   COPY TABLE <STEM> TO <WS> [WITH INDEXES] [OVERWRITE]
+//   COPY TABLE <STEM> FROM <WS> [WITH INDEXES] [OVERWRITE]
+//   COPY TABLE <STEM> FROM <WS> TO <WS> [WITH INDEXES] [OVERWRITE]
 //
 // examples:
 //   COPY TO students_copy
@@ -34,11 +39,77 @@
 //   COPY TO students_vfp AS VFP
 //   COPY TO students_backup WITH SIDECARS OVERWRITE
 //   COPY FILE source.txt TO tmp\source_copy.txt OVERWRITE
+//   COPY TABLE TO mcc_v3 WITH INDEXES
+//   COPY TABLE FROM mcc_x64 WITH INDEXES OVERWRITE
+//   COPY TABLE STUDENTS TO mcc_v3 WITH INDEXES
+//   COPY TABLE STUDENTS FROM mcc_x64 TO mcc_v3 WITH INDEXES OVERWRITE
 //
 // notes:
 //   COPY USAGE prints usage and does not require an open table.
 //   COPY TO requires an open table.
 //   COPY FILE does not require an open table.
+//   COPY TABLE DEFAULTS THE STEM, FROM AND TO INDEPENDENTLY. An omitted
+//   <STEM> is the table open in the CURRENT work area; an omitted FROM or
+//   TO is the CURRENT workspace. So TO <WS> pushes out and FROM <WS>
+//   pulls in, and any form that omits the stem requires an open table
+//   while the forms naming one do not. This mirrors COPY TO, which also
+//   reads the current area. Omitting BOTH FROM and TO is refused rather
+//   than treated as a copy onto itself.
+//   THE PULL FORM OVERWRITES WHAT YOU ARE LOOKING AT, which is why the
+//   open-destination refusal below is not a corner case: COPY TABLE FROM
+//   <WS> takes the stem from the current area and writes into the current
+//   workspace, so its destination is usually the very file that area has
+//   open. Close it first.
+//   NO DESTINATION LEG MAY BE A FILE OPEN IN A WORK AREA. Rewriting the
+//   bytes under a live area leaves the engine holding a header that no
+//   longer describes the file -- a record count and field map from the old
+//   table over the new one, which reads as data rather than as an error.
+//   The run refuses and names the areas, having written nothing.
+//   COPY TABLE requires every workspace it uses -- named or defaulted --
+//   to be OPEN in this session. The catalog columns are never consulted.
+//   A name that is not open is refused and WORKSPACE SWITCH is the fix.
+//   WHICH ROOTS IT USES DEPENDS ON WHETHER THE WORKSPACE IS CURRENT. The
+//   CURRENT workspace resolves through the LIVE PATH SLOTS, because those
+//   are what every other command resolves a filename through and because
+//   WORKSPACE LOAD ... MEMO RAM moves them WITHOUT re-stamping membership
+//   (workspace_roots_ensure_stamped is called only from SWITCH and NEW).
+//   A non-current workspace resolves through its R131 stamp, which is the
+//   only authority available for it. Each run prints [slots] or [stamp]
+//   per side, and a stamp that disagrees with the slots is reported.
+//   COPY TABLE MOVES COMPANIONS AND INDEXES FROM DIFFERENT ROOTS, which is
+//   the whole reason it exists. A memo (.dbt/.fpt) sits BESIDE the table
+//   under DBFROOT; an index container (.cdx/.cdx.meta/.cnx/.inx/.dtx, and
+//   the .cdx.d environment) sits under IDXROOT. WITH SIDECARS cannot do
+//   this -- it builds every candidate from the source table's own
+//   directory -- so the two flags are not interchangeable.
+//   TWO WORKSPACES CAN SHARE ROOTS, and that is refused separately from
+//   naming the same workspace twice: a WORKSPACE NEW stamps from whatever
+//   the slots hold, so two made without a SET PATH between them are
+//   distinct handles over one directory. Every leg would copy a file onto
+//   itself, so the run refuses by PATH as well as by handle.
+//   WITH INDEXES IS A REFUSAL, NOT A BEST EFFORT. Asking for it when no
+//   index container exists for the stem refuses before writing anything,
+//   the same line WORKSPACE WRITEBACK draws. Omit it to copy the table and
+//   its memo alone.
+//   IT DOES NOT JUDGE INDEX KIND. An x64 area accepts CDX and CNX both
+//   (AIF-099, owner ruling 2026-08-09); every container found for the stem
+//   travels and none is called wrong.
+//   COPY TABLE CROSSES RAM AND DISK IN BOTH DIRECTIONS, so a workspace
+//   hydrated from a MINIDB (WORKSPACE LOAD <name> MEMO RAM) is a legal
+//   FROM and a legal TO. Residence is decided per file by
+//   xbase::ramfs::is_virtual on the ABSOLUTE path, and the run prints
+//   which side is which. Disk-to-disk still goes through the same
+//   copy_file_binary() every other COPY form uses.
+//   A RAM DESTINATION IS ERASED BEFORE IT IS REWRITTEN. ramfs::open
+//   positions at the start and does not truncate, so overwriting in place
+//   would leave the tail of a longer previous file behind. OVERWRITE on a
+//   virtual path therefore erases first.
+//   THE .cdx.d ENVIRONMENT CANNOT LIVE IN RAM. The registry maps paths to
+//   byte buffers and has no directories, so a stem carrying one refuses
+//   rather than copying the containers and dropping the environment.
+//   LMDB NEVER TRAVELS, by either route. It must mmap a real OS file, it
+//   is out of scope for the VFS, and no form of COPY carries it; the
+//   destination needs BUILDLMDB.
 //   WITH SIDECARS applies only to binary COPY TO.
 //   OVERWRITE is required when the destination already exists.
 //   KEY DROP accepts a destination that cannot carry the source's primary
@@ -73,6 +144,8 @@
 #include <cctype>
 #include <system_error>
 #include <cstdint>
+#include <fstream>
+#include <memory>
 
 #include "xbase.hpp"
 #include "xbase_64.hpp"
@@ -80,6 +153,10 @@
 #include "xbase_cli.hpp"
 #include "xbase/field_name_policy.hpp"
 #include "cli/command_output.hpp"
+#include "xbase/workspace_membership.hpp"
+#include "xbase/ramfs.hpp"
+#include "cli/cmd_setpath.hpp"
+#include "cli/workarea_util.hpp"
 #include "textio.hpp"
 
 using namespace xbase;
@@ -646,6 +723,566 @@ static bool logical_copy_to_as(const DbArea& src,
 
 } // namespace
 
+// ---- COPY TABLE <stem> FROM <ws> TO <ws> ------------------------------------
+//
+// WHY THIS VERB EXISTS. Owner, 2026-10-13: "can i copy ws1:students.dbf
+// ws2:students.dbf? in a minidb ... or accross any workspace". The answer was
+// no. COPY TO names a file resolved through the CURRENT path slots, so there
+// was no way to say "that other workspace's root", and COPY FILE takes two
+// hand-built paths the operator has to look up first -- twice, because the
+// table and its index do not live in the same place.
+//
+// SO THIS IS A RESOLVER, NOT A NEW COPY ENGINE. A workspace already knows
+// where its tables and indexes live: R131 stamps DBF, INDEXES and LMDB as a
+// set. The bytes still move through copy_file_binary() above.
+//
+// OPEN WORKSPACES ONLY (owner decision, 2026-10-13). Roots come from the LIVE
+// stamp. The catalog's DBF_ROOT / IDX_ROOT columns are deliberately NOT used:
+// the WORKSPACE contract records that both catalog write sites store the
+// SESSION slot rather than the workspace's own stamp, and whether the live
+// stamp and the durable columns are one thing or two is explicitly unruled
+// (R131 sec 11.8). Resolving through them today could land a table under the
+// wrong root, which IS the founding defect R131 exists to close.
+//
+// TWO ROOTS, NOT ONE, AND THAT IS THE POINT. copy_sidecars() above builds
+// every candidate from src_dbf.parent_path(), so it can never carry an index
+// that lives under IDXROOT -- and its list has no .cdx, .dbt or .fpt either.
+// It is not reused here, and this is not a fix to it; which of its two lists
+// is right is a question for the COPY contract and its owner.
+//
+// IT DOES NOT JUDGE INDEX KIND. An x64 area accepts CDX and CNX both (AIF-099,
+// owner ruling 2026-08-09; valid_index_types_for() in cmd_use.cpp is the
+// authority, not the flavor sentence in the WORKSPACE help). Every container
+// found for the stem travels and none is called wrong. Refusing on extension
+// would re-make a mistake that ruling already settled.
+//
+// GATHER-ALL-BEFORE-WRITING, borrowed from WORKSPACE WRITEBACK. The whole
+// manifest is resolved and probed BEFORE the first byte moves, so a shortfall
+// refuses having written nothing. A missing index cannot leave a table copied
+// without it, which is the half-state this verb exists to avoid.
+
+namespace {
+
+static std::string abs_norm(const std::filesystem::path& p);
+static std::string path_key(const std::filesystem::path& p);
+
+struct WsRoots {
+    std::uint64_t handle = 0;
+    std::string name;            // as the operator sees it, defaulted or not
+    std::filesystem::path dbf;
+    std::filesystem::path idx;
+    bool from_slots = false;     // live global slots, not the membership stamp
+    std::string stamp_divergence; // set when the stamp disagreed with the slots
+};
+
+// An EMPTY name means the CURRENT workspace -- the default for FROM.
+//
+// TWO AUTHORITIES, AND WHICH ONE WINS DEPENDS ON WHETHER THE WORKSPACE IS
+// CURRENT. R131's model is that SWITCH copies a workspace's stamped roots INTO
+// the global path slots, so for the CURRENT workspace the two agree by
+// construction -- and the GLOBAL SLOTS are what every other command actually
+// resolves a filename through.
+//
+// They can disagree, and the case that matters is the one this verb was
+// extended for. WORKSPACE LOAD <name> MEMO RAM repoints the POSTURE at the RAM
+// root and loads through the v3 mechanism, which moves the global DBF and
+// INDEXES slots -- but that path does not call workspace_roots_ensure_stamped,
+// whose only callers are in SWITCH and NEW. So after a RAM load the global
+// slots are the RAM paths while the membership stamp still holds the DISK paths
+// it was last switched to.
+//
+// Resolving the CURRENT workspace through the stamp would therefore copy to
+// disk while the operator is working in RAM, find the hydrated table "missing",
+// or quietly hit a stale disk copy of it. All three are wrong answers that
+// look like clean outcomes, so: CURRENT resolves through the live slots, a
+// NAMED non-current workspace resolves through its stamp (the only thing there
+// is), and a disagreement is REPORTED rather than silently preferred.
+//
+// This is not a fix to the missing stamp. That belongs to the LOAD path and is
+// a separate change; this only declines to be misled by it.
+static bool resolve_ws_roots(const std::string& name, WsRoots& out, std::string& err) {
+    const bool implied = name.empty();
+    const std::uint64_t cur = xbase::workspace::current_handle();
+    const std::uint64_t h = implied ? cur : xbase::workspace::find_by_name_ci(name);
+    if (h == 0) {
+        err = implied
+            ? std::string("there is no current workspace to copy from.")
+            : "'" + name + "' is not an open workspace in this session. Open it"
+              " (WORKSPACE SWITCH " + name + ") or name directories with COPY FILE.";
+        return false;
+    }
+    out.handle = h;
+    out.name = implied ? xbase::workspace::name_of(h) : name;
+    if (out.name.empty()) out.name = "handle " + std::to_string(h);
+
+    std::string d, i, l;
+    const bool stamped = xbase::workspace::roots_stamped(h) &&
+                         xbase::workspace::roots_of(h, d, i, l);
+
+    if (h == cur) {
+        const std::filesystem::path sd = dottalk::paths::get_slot(dottalk::paths::Slot::DBF);
+        const std::filesystem::path si = dottalk::paths::get_slot(dottalk::paths::Slot::INDEXES);
+        if (sd.empty() || si.empty()) {
+            err = "'" + out.name + "' is current but the DBF or INDEXES path slot"
+                  " is empty. SET PATH them, or DO a profile script.";
+            return false;
+        }
+        out.dbf = sd;
+        out.idx = si;
+        out.from_slots = true;
+        if (stamped) {
+            const bool dsame = path_key(std::filesystem::path(d)) == path_key(sd);
+            const bool isame = path_key(std::filesystem::path(i)) == path_key(si);
+            if (!dsame || !isame) {
+                out.stamp_divergence =
+                    "'" + out.name + "' is current and its stamped roots DISAGREE"
+                    " with the live path slots; the slots win. Stamp: " + d + " | " + i;
+            }
+        }
+        return true;
+    }
+
+    // Not current: the stamp is the only authority there is. R131 wants all
+    // three or none, so a partial stamp is refused rather than completed
+    // piecemeal.
+    if (!stamped) {
+        err = "'" + out.name + "' is open but its three roots are not all"
+              " stamped, and it is not the current workspace, so there are no"
+              " live slots to fall back on. WORKSPACE SWITCH " + out.name +
+              " stamps them as a set.";
+        return false;
+    }
+    out.dbf = std::filesystem::path(d);
+    out.idx = std::filesystem::path(i);
+    return true;
+}
+
+// A memo belongs to the TABLE and sits beside it under DBFROOT.
+static const char* const kTableCompanions[] = { ".dbt", ".fpt" };
+
+// Index containers sit under IDXROOT. All of them travel; see the AIF-099 note
+// above for why none of them is judged.
+static const char* const kIndexContainers[] = {
+    ".cdx", ".cdx.meta", ".cnx", ".inx", ".dtx"
+};
+
+// ---- residence ------------------------------------------------------------
+//
+// ramfs is a flat registry of absolute paths to byte buffers, and its own
+// header is explicit that callers normalize to an absolute path FIRST (the same
+// rule DbArea::open follows). Every predicate below goes through abs() for that
+// reason; is_virtual on a relative path is a silent wrong answer.
+static std::string abs_norm(const std::filesystem::path& p) {
+    std::error_code ec;
+    auto a = std::filesystem::absolute(p, ec);
+    if (ec) a = p;
+    return a.lexically_normal().string();
+}
+
+// COMPARING TWO PATHS IS NOT THE SAME OPERATION AS HANDING ONE TO RAMFS, and
+// conflating them cost this verb its open-destination refusal on the spec's
+// first run. abs_norm() is for ramfs: the registry is keyed by normalized
+// absolute path and lowercasing a key could stop a lookup matching, so what
+// goes to ramfs goes verbatim. path_key() is for ASKING WHETHER TWO PATHS ARE
+// THE SAME FILE, and on Windows that question is case-insensitive.
+//
+// MEASURED 2026-10-13, copy_table_regression CT_T10 red: the destination root
+// came from a stamp as ...\data\DBF\SANDBOX\CTDST while the open area
+// reported ...\data\dbf\sandbox\CTDST\CTSRC.dbf. Same file, different
+// spelling, string-unequal -- so the open-destination check never matched and
+// the copy overwrote a table that was open in area 8.
+//
+// same_path() at the top of this file has done it correctly all along. This is
+// not a new technique, it is the one already here, finally reused.
+static std::string path_key(const std::filesystem::path& p) {
+    std::string k = abs_norm(p);
+#if defined(_WIN32)
+    std::transform(k.begin(), k.end(), k.begin(),
+        [](unsigned char c){ return static_cast<char>(std::tolower(c)); });
+#endif
+    return k;
+}
+
+static bool path_is_virtual(const std::filesystem::path& p) {
+    return xbase::ramfs::is_virtual(abs_norm(p));
+}
+
+// Residence-aware "is there a file here". fs::is_regular_file answers FALSE for
+// every virtual path, so a probe that used it alone would report a hydrated
+// table as missing -- and this verb refuses on a missing source, so that would
+// read as a clean refusal rather than a wrong answer.
+static bool file_exists_any(const std::filesystem::path& p) {
+    const std::string a = abs_norm(p);
+    if (xbase::ramfs::is_virtual(a)) return xbase::ramfs::exists(a);
+    std::error_code ec;
+    return std::filesystem::exists(p, ec) && !ec &&
+           std::filesystem::is_regular_file(p, ec) && !ec;
+}
+
+static bool dir_exists_real(const std::filesystem::path& p) {
+    std::error_code ec;
+    return std::filesystem::exists(p, ec) && !ec &&
+           std::filesystem::is_directory(p, ec) && !ec;
+}
+
+// The four combinations. Disk-to-disk is DELEGATED rather than reimplemented,
+// so the ordinary case keeps using the exact function COPY TO and COPY FILE
+// use and this change cannot alter it.
+static bool copy_bytes_any(const std::filesystem::path& src,
+                           const std::filesystem::path& dst,
+                           bool overwrite,
+                           std::string* err) {
+    const std::string sa = abs_norm(src);
+    const std::string da = abs_norm(dst);
+    const bool sv = xbase::ramfs::is_virtual(sa);
+    const bool dv = xbase::ramfs::is_virtual(da);
+
+    if (!sv && !dv) return copy_file_binary(src, dst, overwrite, err);
+
+    if (!file_exists_any(src)) {
+        if (err) *err = "Source does not exist: " + src.string();
+        return false;
+    }
+    if (file_exists_any(dst) && !overwrite) {
+        if (err) *err = "Destination exists (use OVERWRITE): " + dst.string();
+        return false;
+    }
+
+    // ---- reader ----
+    std::unique_ptr<std::iostream> rin;
+    std::ifstream fin;
+    if (sv) {
+        rin = xbase::ramfs::open(sa, /*create*/false);
+        if (!rin) { if (err) *err = "RAM source could not be opened: " + src.string();
+                    return false; }
+    } else {
+        fin.open(src, std::ios::binary);
+        if (!fin.good()) { if (err) *err = "Source could not be opened: " + src.string();
+                           return false; }
+    }
+    std::istream& in = sv ? static_cast<std::istream&>(*rin)
+                          : static_cast<std::istream&>(fin);
+
+    // ---- writer ----
+    //
+    // A VIRTUAL destination is ERASED FIRST. ramfs::open positions at the start
+    // and has no truncate, so rewriting a shorter file in place would leave the
+    // previous tail attached -- a DBF whose header says N records followed by
+    // the bytes of a longer table is not a detectable error, it is a readable
+    // wrong answer. erase() then create is the only safe order.
+    std::unique_ptr<std::iostream> rout;
+    std::ofstream fout;
+    if (dv) {
+        if (xbase::ramfs::exists(da)) xbase::ramfs::erase(da);
+        rout = xbase::ramfs::open(da, /*create*/true);
+        if (!rout) { if (err) *err = "RAM destination could not be created: " + dst.string();
+                     return false; }
+    } else {
+        std::error_code ec;
+        if (dst.has_parent_path() && !dst.parent_path().empty()) {
+            std::filesystem::create_directories(dst.parent_path(), ec);
+            ec.clear();
+        }
+        fout.open(dst, std::ios::binary | std::ios::trunc);
+        if (!fout.good()) { if (err) *err = "Destination could not be created: " + dst.string();
+                            return false; }
+    }
+    std::ostream& out = dv ? static_cast<std::ostream&>(*rout)
+                           : static_cast<std::ostream&>(fout);
+
+    char buf[1 << 16];
+    while (in.read(buf, sizeof(buf)) || in.gcount() > 0) {
+        out.write(buf, in.gcount());
+        if (!out) { if (err) *err = "Write failed into " + dst.string(); return false; }
+    }
+    out.flush();
+    if (!out) { if (err) *err = "Flush failed into " + dst.string(); return false; }
+    return true;
+}
+
+static const char* residence_label(const std::filesystem::path& p) {
+    return path_is_virtual(p) ? "RAM" : "disk";
+}
+
+struct Leg {
+    std::filesystem::path src;
+    std::filesystem::path dst;
+    bool is_dir = false;      // the .cdx.d environment
+    bool mandatory = false;   // the table itself
+};
+
+} // namespace
+
+static void copy_table_between_workspaces(const DbArea& a,
+                                          const std::string& stem_in,
+                                          const std::string& from_name,
+                                          const std::string& to_name,
+                                          bool with_indexes,
+                                          bool overwrite) {
+    namespace fs = std::filesystem;
+
+    // An omitted stem is the CURRENT AREA's table. dbfBasename() is the name the
+    // area was opened under, so the copy carries the name the operator is
+    // looking at rather than one re-derived from a path.
+    std::string stem = fs::path(trim(stem_in)).stem().string();
+    if (stem.empty()) {
+        if (!a.isOpen()) {
+            std::cout << "COPY TABLE: refusing -- no table name was given and no"
+                      << " table is open in the current area. Name one, or USE a"
+                      << " table first.\n";
+            return;
+        }
+        stem = fs::path(a.dbfBasename()).stem().string();
+        if (stem.empty()) {
+            std::cout << "COPY TABLE: refusing -- the open area has no table name"
+                      << " to copy. Name one explicitly.\n";
+            return;
+        }
+    }
+
+    WsRoots from{}, to{};
+    std::string err;
+    if (!resolve_ws_roots(from_name, from, err)) {
+        std::cout << "COPY TABLE: refusing -- FROM " << err << "\n";
+        return;
+    }
+    if (!resolve_ws_roots(to_name, to, err)) {
+        std::cout << "COPY TABLE: refusing -- TO " << err << "\n";
+        return;
+    }
+    // Same workspace both ends is a no-op dressed as a copy, and with
+    // OVERWRITE it would copy a file onto itself. Refuse and say which name
+    // resolved where, because with a defaulted FROM the collision is invisible
+    // in what the operator typed.
+    if (from.handle == to.handle) {
+        std::cout << "COPY TABLE: refusing -- FROM and TO are the same workspace ('"
+                  << from.name << "'"
+                  << (from_name.empty() ? ", defaulted from the current workspace" : "")
+                  << "). Nothing was written.\n";
+        return;
+    }
+
+    // ---- gather ------------------------------------------------------------
+    std::vector<Leg> legs;
+
+    const fs::path srcTable = from.dbf / (stem + ".dbf");
+    if (!file_exists_any(srcTable)) {
+        std::cout << "COPY TABLE: refusing -- '" << stem << ".dbf' is not under "
+                  << from.name << "'s DBF root (" << from.dbf.string()
+                  << "). Nothing was written.\n";
+        return;
+    }
+    legs.push_back(Leg{srcTable, to.dbf / (stem + ".dbf"), false, true});
+
+    for (const char* ext : kTableCompanions) {
+        const fs::path c = from.dbf / (stem + ext);
+        if (file_exists_any(c)) legs.push_back(Leg{c, to.dbf / (stem + ext), false, false});
+    }
+
+    int indexes_found = 0;
+    if (with_indexes) {
+        for (const char* ext : kIndexContainers) {
+            const fs::path c = from.idx / (stem + ext);
+            if (file_exists_any(c)) {
+                legs.push_back(Leg{c, to.idx / (stem + ext), false, false});
+                ++indexes_found;
+            }
+        }
+        const fs::path env = from.idx / (stem + ".cdx.d");
+        if (dir_exists_real(env)) {
+            // The registry has no directories, so an environment cannot be
+            // created in RAM and cannot be read out of one. Refuse the whole
+            // run rather than carry the containers and drop the environment --
+            // a CDX whose environment is missing is the kind of half-state this
+            // verb exists to prevent.
+            if (path_is_virtual(to.idx) || path_is_virtual(from.idx)) {
+                std::cout << "COPY TABLE: refusing -- '" << stem << ".cdx.d' is a"
+                          << " directory and one side of this copy is RAM-resident."
+                          << " The RAM registry holds files, not directories, so the"
+                          << " environment cannot travel. Nothing was written."
+                          << " WORKSPACE WRITEBACK the RAM side to real disk first.\n";
+                return;
+            }
+            legs.push_back(Leg{env, to.idx / (stem + ".cdx.d"), true, false});
+            ++indexes_found;
+        }
+        // The shortfall refusal. WITH INDEXES was ASKED FOR, so finding none is
+        // a failed request and not an empty set -- the same line WRITEBACK
+        // draws, and the reason nothing has been written yet at this point.
+        if (indexes_found == 0) {
+            std::cout << "COPY TABLE: refusing -- WITH INDEXES was asked for and no"
+                      << " index container for '" << stem << "' is under "
+                      << from.name << "'s INDEXES root (" << from.idx.string()
+                      << "). Nothing was written. Drop WITH INDEXES to copy the"
+                      << " table alone, or REINDEX at the destination.\n";
+            return;
+        }
+    }
+
+    // ORDER: SAME PATH IS CHECKED BEFORE OPEN-DESTINATION, deliberately.
+    // "These two names are one file" is a more fundamental complaint than
+    // "that file is open", and a self-copy is usually ALSO open -- so the
+    // other order made every same-path case report the open refusal and
+    // say nothing about the real problem. Found by writing the regression
+    // spec, before it had been run once.
+    // SAME PATH IS A SEPARATE REFUSAL FROM SAME WORKSPACE, and the handle check
+    // above does not cover it. Two DIFFERENT workspaces can carry the SAME
+    // roots -- a WORKSPACE NEW stamps from whatever the slots hold, so two made
+    // without a SET PATH between them are distinct handles over one directory.
+    // Every leg would then be a file copied onto itself: without OVERWRITE the
+    // destination-exists probe below would refuse it for the wrong reason, and
+    // WITH OVERWRITE std::filesystem::copy_file on one path is undefined
+    // territory this verb has no business entering. Refuse per leg, by path.
+    {
+        std::vector<std::string> selfcopy;
+        for (const auto& L : legs) {
+            if (path_key(L.src) == path_key(L.dst)) selfcopy.push_back(L.src.string());
+        }
+        if (!selfcopy.empty()) {
+            std::cout << "COPY TABLE: refusing -- '" << from.name << "' and '"
+                      << to.name << "' are different workspaces resolving to the"
+                      << " same path, so " << selfcopy.size()
+                      << " leg(s) would copy a file onto itself. Nothing was"
+                      << " written.\n";
+            for (const auto& f : selfcopy) std::cout << "    = " << f << "\n";
+            return;
+        }
+    }
+
+    // NO DESTINATION MAY BE OPEN IN A WORK AREA.
+    //
+    // THE REVERSE DEFAULT MAKES THIS THE COMMON CASE, NOT A CORNER. Owner,
+    // 2026-10-13: "we can also use the reverse default of copy table from ws
+    // (to current area)". COPY TABLE FROM <ws> takes the stem from the CURRENT
+    // AREA and writes into the CURRENT WORKSPACE -- so by construction its
+    // destination is usually the exact file that area has open.
+    //
+    // Rewriting those bytes underneath a live area is worse than a failure. On
+    // disk Windows may refuse the share and the copy fails honestly, but that
+    // is the platform's accident and not a rule. On the RAM path there is no
+    // share to violate at all: ramfs hands out a shared reference to the
+    // RamFile and erase() plus re-create swaps the bytes under a reader that
+    // holds a header describing the OLD table. A stale record count and field
+    // map over new bytes reads as DATA, not as an error.
+    //
+    // find_open_areas_by_name_ci() returns every candidate rather than picking
+    // one, which is what makes it usable here: the question is "is ANY area on
+    // this path", not "which one would resolve".
+    //
+    // LEADING :: IS REQUIRED, not style. This file carries `using namespace
+    // xbase;` at :162, so a bare cli:: is AMBIGUOUS between global ::cli and
+    // xbase::cli (xbase_cli.hpp:47) and MSVC refuses it with C2872. Every other
+    // reference in this file is already spelled ::cli::cmdout for the same
+    // reason; the first draft of this block was not, and the build caught it.
+    {
+        std::vector<std::string> live;
+        for (const auto& L : legs) {
+            const std::string da = path_key(L.dst);
+            const std::string stem_of = L.dst.stem().string();
+            for (xbase::DbArea* ar : ::cli::find_open_areas_by_name_ci(stem_of)) {
+                if (!ar || !ar->isOpen()) continue;
+                if (path_key(std::filesystem::path(ar->filename())) != da) continue;
+                live.push_back("area " + std::to_string(::cli::slot_of_area(ar)) +
+                               ": " + L.dst.string());
+            }
+        }
+        if (!live.empty()) {
+            std::cout << "COPY TABLE: refusing -- " << live.size()
+                      << " destination(s) are OPEN in a work area. Rewriting a"
+                      << " file under a live area leaves the engine holding a"
+                      << " header that no longer describes it. Nothing was"
+                      << " written; close these and re-run.\n";
+            for (const auto& l : live) std::cout << "    = " << l << "\n";
+            return;
+        }
+    }
+
+    // ---- probe the destinations BEFORE writing anything --------------------
+    if (!overwrite) {
+        std::vector<std::string> blocked;
+        for (const auto& L : legs) {
+            if (file_exists_any(L.dst) || dir_exists_real(L.dst))
+                blocked.push_back(L.dst.string());
+        }
+        if (!blocked.empty()) {
+            std::cout << "COPY TABLE: refusing -- " << blocked.size()
+                      << " destination(s) exist and OVERWRITE was not given."
+                      << " Nothing was written.\n";
+            for (const auto& b : blocked) std::cout << "    = " << b << "\n";
+            return;
+        }
+    }
+
+    // ---- write -------------------------------------------------------------
+    if (!from.stamp_divergence.empty())
+        std::cout << "  NOTE: " << from.stamp_divergence << "\n";
+    if (!to.stamp_divergence.empty())
+        std::cout << "  NOTE: " << to.stamp_divergence << "\n";
+
+    std::cout << "COPY TABLE: " << stem << "  " << from.name
+              << (from.from_slots ? " [slots]" : " [stamp]") << " -> " << to.name
+              << (to.from_slots ? " [slots]" : " [stamp]") << "\n";
+    std::cout << "  DBF    : " << from.dbf.string() << " [" << residence_label(from.dbf)
+              << "]  ->  " << to.dbf.string() << " [" << residence_label(to.dbf) << "]\n";
+    if (with_indexes)
+        std::cout << "  INDEXES: " << from.idx.string() << " [" << residence_label(from.idx)
+                  << "]  ->  " << to.idx.string() << " [" << residence_label(to.idx) << "]\n";
+
+    int copied = 0, failed = 0;
+    for (const auto& L : legs) {
+        if (L.is_dir) {
+            std::error_code ec;
+            fs::create_directories(L.dst, ec);
+            ec.clear();
+            const auto opt = fs::copy_options::recursive |
+                             (overwrite ? fs::copy_options::overwrite_existing
+                                        : fs::copy_options::none);
+            fs::copy(L.src, L.dst, opt, ec);
+            if (ec) { ++failed; std::cout << "  ! " << L.src.filename().string()
+                                          << " -- " << ec.message() << "\n"; }
+            else    { ++copied; std::cout << "    " << L.src.filename().string()
+                                          << "  (environment)\n"; }
+            continue;
+        }
+        std::string e;
+        if (copy_bytes_any(L.src, L.dst, overwrite, &e)) {
+            ++copied;
+            std::cout << "    " << L.src.filename().string() << "\n";
+        } else {
+            ++failed;
+            std::cout << "  ! " << L.src.filename().string() << " -- " << e << "\n";
+        }
+    }
+
+    std::cout << "COPY TABLE: " << copied << " file(s) copied";
+    if (failed) std::cout << ", " << failed << " FAILED";
+    std::cout << ".\n";
+
+    // A copied index is a copied FILE, not a proven order. The destination has
+    // to open it before anyone can claim it works -- SEEK a known key, since an
+    // unordered area reports not-found for rows that exist.
+    if (with_indexes && !failed)
+        std::cout << "  The index travelled as bytes. Prove it at the destination"
+                  << " (open the table there and SEEK a known key).\n";
+
+    // Nothing here touches the destination workspace's POSTURE. A copied table
+    // is on disk and absent from the .dtschema and the memo until someone saves
+    // them, which is exactly the divergence AIPR-20261012-COWORK-213 reports.
+    if (!failed)
+        std::cout << "  The posture is unchanged: WORKSPACE OPEN the destination"
+                  << " and SAVE it if this table should be a member.\n";
+
+    // RAM IS EPHEMERAL BY DESIGN -- ramfs::clear() drops everything at session
+    // teardown. A copy INTO RAM that is never written back or saved is gone at
+    // QUIT, and saying so here costs one line against an operator losing work
+    // they watched succeed.
+    if (!failed && path_is_virtual(to.dbf))
+        std::cout << "  THE DESTINATION IS RAM-RESIDENT AND RAM DOES NOT SURVIVE"
+                  << " THIS SESSION. WORKSPACE WRITEBACK " << to.name
+                  << " TO <dir> WITH INDEXES, or WORKSPACE SAVE " << to.name
+                  << " MEMO MINIDB, before you quit.\n";
+}
+
 void cmd_COPY(DbArea& a, std::istringstream& iss) {
     std::vector<std::string> tok;
     {
@@ -661,6 +1298,7 @@ void cmd_COPY(DbArea& a, std::istringstream& iss) {
 
     bool overwrite = false;
     bool with_sidecars = false;
+    bool with_indexes = false;
     bool key_drop = false;
 
     // Strip OVERWRITE, WITH, SIDECARS tokens (flexibly)
@@ -688,10 +1326,19 @@ void cmd_COPY(DbArea& a, std::istringstream& iss) {
                     ++i;
                     continue;
                 }
+                // INDEXES is NOT a spelling of SIDECARS. SIDECARS looks beside
+                // the table; INDEXES looks under IDXROOT. Only COPY TABLE can
+                // honour the second, because only it knows two roots.
+                if (i + 1 < tok.size() && up(tok[i + 1]) == "INDEXES") {
+                    with_indexes = true;
+                    ++i;
+                    continue;
+                }
                 continue;
             }
 
             if (u == "SIDECARS") { with_sidecars = true; continue; }
+            if (u == "INDEXES")  { with_indexes  = true; continue; }
 
             kept.push_back(tok[i]);
         }
@@ -700,6 +1347,55 @@ void cmd_COPY(DbArea& a, std::istringstream& iss) {
     }
 
     if (tok.empty()) { usage_copy(); return; }
+
+    // COPY TABLE <stem> FROM <ws> TO <ws>
+    if (token_is(tok[0], "TABLE")) {
+        // Three forms, shortest first. An empty stem or an empty FROM name is
+        // the DEFAULT and the handler resolves it; the parser's only job is to
+        // say which slot was left out.
+        //
+        //   TABLE TO <ws>                 -> push:  current area's table out
+        //   TABLE FROM <ws>               -> pull:  into the current workspace
+        //   TABLE <stem> TO <ws>          -> push a named table
+        //   TABLE <stem> FROM <ws>        -> pull a named table
+        //   TABLE <stem> FROM <ws> TO <ws>
+        //
+        // AN EMPTY STRING MEANS "DEFAULTED" and the handler resolves it, so the
+        // parser only decides which slot was left out. Omitting BOTH FROM and
+        // TO would default both to the current workspace, which the same-path
+        // and same-handle refusals would catch -- but refusing it HERE says
+        // what is actually wrong instead of reporting a self-copy.
+        std::string stem, fromName, toName;
+        bool haveFrom = false, haveTo = false;
+
+        if (tok.size() == 3 && token_is(tok[1], "TO")) {
+            toName = trim(tok[2]);                       haveTo = true;
+        } else if (tok.size() == 3 && token_is(tok[1], "FROM")) {
+            fromName = trim(tok[2]);                     haveFrom = true;
+        } else if (tok.size() == 4 && token_is(tok[2], "TO")) {
+            stem = tok[1]; toName = trim(tok[3]);        haveTo = true;
+        } else if (tok.size() == 4 && token_is(tok[2], "FROM")) {
+            stem = tok[1]; fromName = trim(tok[3]);      haveFrom = true;
+        } else if (tok.size() == 6 && token_is(tok[2], "FROM") && token_is(tok[4], "TO")) {
+            stem = tok[1];
+            fromName = trim(tok[3]);                     haveFrom = true;
+            toName   = trim(tok[5]);                     haveTo   = true;
+        } else {
+            usage_copy();
+            return;
+        }
+
+        if (!haveFrom && !haveTo) {
+            std::cout << "COPY TABLE: refusing -- neither FROM nor TO was given,"
+                      << " so both would default to the current workspace. Name"
+                      << " at least one end.\n";
+            return;
+        }
+
+        copy_table_between_workspaces(a, stem, fromName, toName,
+                                      with_indexes, overwrite);
+        return;
+    }
 
     // COPY FILE <src> TO <dst>
     if (token_is(tok[0], "FILE")) {
