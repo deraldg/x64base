@@ -13,6 +13,16 @@ restate will diverge, and have.
 **No counts here, only the command that measures them.** Every figure this file
 could have asserted has already moved once. Measure.
 
+**THE DOTTALK++ PROMPT IS A PERIOD, AND IT IS NEVER PART OF A COMMAND.** The
+build vector declares it in the configure output -- `prompt='.'` -- so a line
+reading `.security selftest` is the shell PRINTING ITS PROMPT, not input. Quote
+commands without it: `security selftest`, never `. security selftest`. A pasted
+leading period is an error every time. The only leading dot that is real input is
+PowerShell's own path prefix, OUTSIDE the shell: `.\datarun.ps1`, `.\build.ps1`.
+Recorded here 2026-10-15 because it had been established in conversation many
+times and written down nowhere -- which is why it kept recurring. A rule that
+lives only in the owner's patience is not a rule.
+
 ## 1. Which source is authoritative when several look like it
 
 Several obvious-looking tables are decoys. Each one below cost a wrong conclusion,
@@ -23,6 +33,7 @@ and one of them reached a second lane's review before it was caught.
 | command surface | `SYSCMD` (`CMD_ID, CAN_NAME, TYPE, VIS, HANDLER, ACTIVE`) | -- |
 | command prose | `dottalkpp/data/help/HELP_ARTIFACTS.dbf`, and `docs/manuals/command_reference/command_reference_guide_v1.csv` (`summary, usage, effect, mutates, examples`) | **`SYSHELP` -- vestigial. A conclusion drawn from it was wrong by two orders of magnitude.** |
 | house coined vocabulary | `labtalk/ai_portal/AI_GLOSSARY_V1.md` | `docs/glossary/*.csv` |
+| the workspace catalog | `dottalkpp/data/workspaces/WORKSPACES.dbf` -- the path the engine's INIT block prints and `WORKSPACE CATALOG` names | **`dottalkpp/data/sys/WORKSPACES.dbf` -- a STALE COPY. It parses perfectly and is months out of date.** |
 | reader terminology, aliases, legacy wording | `docs/glossary/glossary_master_v0.csv`, `alias_map_v0.csv`, `legacy_terms_v0.csv` | `AI_GLOSSARY_V1.md` |
 
 **The two glossaries are different instruments, not versions of each other.** The
@@ -30,6 +41,14 @@ first records terms the house MINTED -- doctrine. The second is a reader's
 dictionary: what a word means, what to say instead, what has been retired. They do
 not overlap. Both are projected to the site by
 `tools/fullstack_docs/glossary_sync.py` (`emit` / `check`); `check` is a drift gate.
+
+**THE CATALOG DECOY COST A PUBLISHED MEASUREMENT.** A `find` for `WORKSPACES.dbf`
+piped through `head -10` returned ten lines and the live file was below the cut;
+the first plausible hit was then measured and published -- 282 rows, "unchanged in
+29 days". The live catalog had 293 rows, and the copy was unchanged because it was
+FROZEN, not because the store was stable. **Run the thing and read its INIT block;
+it prints every root on every start.** A truncated search plus a decoy produces a
+confident number with no error anywhere in the arithmetic.
 
 Measure rather than cite:
 
@@ -120,6 +139,28 @@ head and a free-text tail -- so an unmapped token means "no rule", never "no ris
   see. (Corrected by that probe: `.claude/` **is** writable from the remote shell
   -- `cp` exit 0 -- so an earlier note saying remote writes there are blocked is
   wrong for the shell, whatever is true of `device_commit_files`.)
+- **READ THE WORKING SPEC'S SPELLING. DO NOT GUESS IT.** Twice in one `.dts` I
+  wrote a command the way it reads in English instead of the way the file next to
+  it writes it: `SET PATH DBF sandbox` (it is DATA-relative, so that resolved to
+  `data\sandbox`, **a directory that EXISTS** -- no hard error, just four red
+  arms), and `ERASE <table>` without `CONFIRM` (a documented dry run, so the
+  cleanup silently never happened and `CREATE` overwrote the table anyway, which
+  is why nothing complained). `copy_table_regression.dts`, in the same directory,
+  has had both right since it was written: `SET PATH DBF DBF/SANDBOX` and
+  `ERASE ctsrc CONFIRM`. **A working example beside you outranks your reading of
+  the help.**
+- **AN ASSERTION TOO WIDE FAILS ON OTHER PEOPLE'S STATE.** A check swept the whole
+  sandbox for `*.pack.tmp.*` and failed a commit on an artifact dated a MONTH
+  earlier from a different lane. A verdict of FAIL on someone else's residue is as
+  useless as a green that did not look -- and it is the same mistake as every
+  too-NARROW instrument, just mirrored: both are wrong about what the question
+  is. Scope an assertion to what the change OWNS, and report the rest as a note.
+- **RUNNING THE TEST FINDS MORE THAN READING THE CODE, and the margin is not
+  small.** Over one week in the memo/pack area, reading found one defect and
+  RUNNING found four -- including one in a verb whose own usage block had
+  advertised the broken feature for months, and two in warnings that fired on
+  every healthy table. Three of those four were found by the arm of a spec that
+  had been called optional. **Write the arm you think is unnecessary.**
 - **Take a line number from `grep -n`, never by counting inside a `sed -n 'A,Bp'`
   window.** Four citations in one document were off by one to three lines that
   way. Nothing downstream catches it: `check_cited_paths.py` resolves PATHS, never
