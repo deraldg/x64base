@@ -12,6 +12,7 @@ import argparse
 import csv
 import datetime as dt
 import json
+import sys
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -205,8 +206,28 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--repo-root", default=".")
     parser.add_argument("--out-dir", default="labtalk/reports/selfdoc")
+    # THE MANUAL SECTION IS A PUBLISHED, TRACKED FILE AND --out-dir NEVER
+    # GOVERNED IT. On 2026-10-21 a probe run with --out-dir pointed at a
+    # scratch directory rewrote it anyway, twice, while the script driving
+    # the probe asserted that nothing published had been touched. The tool
+    # had said where it wrote; the operator read past it. Both halves are
+    # fixed: this flag lets a probe redirect or suppress it, and the line
+    # printed below now says PUBLISHED.
+    parser.add_argument(
+        "--manual-section",
+        default="docs/manuals/developer/generated/x64base_engine_feature_crosswalk_manual_section_v1.md",
+        help="where to write the published manual section; empty string to skip it",
+    )
     parser.add_argument("--manualgen-validation-status", default="FAIL")
-    parser.add_argument("--manualgen-validation-caveat", default="Python 3.12 required; current run used Python 3.11.")
+    parser.add_argument(
+        "--manualgen-validation-caveat",
+        # THIS WAS A HARD-CODED STRING: "current run used Python 3.11."
+        # It is printed into the PUBLISHED manual section as though it
+        # described the run, and it described the DEFAULT -- so the artifact
+        # claimed 3.11 no matter what interpreter produced it. Derived now.
+        default=("Python 3.12 required; current run used Python "
+                 f"{sys.version_info.major}.{sys.version_info.minor}."),
+    )
     args = parser.parse_args()
 
     root = Path(args.repo_root).resolve()
@@ -248,16 +269,20 @@ def main() -> int:
     csv_path = out_dir / "x64base_engine_feature_crosswalk_v1.csv"
     md_path = out_dir / "x64base_engine_feature_crosswalk_v1.md"
     json_path = out_dir / "x64base_engine_feature_crosswalk_v1.manifest.json"
-    manual_section = root / "docs/manuals/developer/generated/x64base_engine_feature_crosswalk_manual_section_v1.md"
+    manual_section = (root / args.manual_section) if args.manual_section else None
 
     write_csv(csv_path, rows)
     write_markdown(md_path, rows, summary)
-    write_markdown(manual_section, rows, summary)
+    if manual_section is not None:
+        write_markdown(manual_section, rows, summary)
     json_path.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
 
     print(f"wrote {csv_path}")
     print(f"wrote {md_path}")
-    print(f"wrote {manual_section}")
+    if manual_section is not None:
+        print(f"wrote {manual_section}   <-- PUBLISHED, TRACKED FILE")
+    else:
+        print("manual section SKIPPED (--manual-section empty)")
     print(f"features={len(rows)} help_commands={len(commands)} source_file_mentions={source_file_mentions}")
     return 0
 
