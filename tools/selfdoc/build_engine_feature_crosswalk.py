@@ -29,6 +29,19 @@ class FeatureSpec:
     note: str = ""
 
 
+# TWO FEATURES USED TO NAME include/xbase_64_phase1_contract.txt AS A SOURCE.
+# Removed 2026-10-20 on owner ruling R150: the three headers -- xbase.hpp,
+# xbase_vfp.hpp and xbase_64.hpp -- are the source of truth, and that .txt is a
+# superseded snapshot. It is UNTRACKED and gitignored by /include/*.txt, so on a
+# fresh clone it was simply absent and those two features quietly lost a source.
+#
+# WORSE FOR `vectored-names` SPECIFICALLY, WHICH IS WHY THIS IS NOT COSMETIC:
+# the .txt hard-codes X64_FIELD_NAME_LENGTH = 10, X64_FIELD_NAME_LENGTH_MAX = 64
+# and X64_TABLE_NAME_LENGTH_MAX = 128, while the engine's own startup banner
+# prints `x64 names default=128/128 max=256/256`. The crosswalk was drawing
+# evidence for the NAMING feature from a file that disagrees with the engine
+# about the naming numbers. include/xbase_64*.hpp already covers the real one.
+
 FEATURES: tuple[FeatureSpec, ...] = (
     FeatureSpec("table-runtime", "DBF table runtime and DbArea object model", "xbase engine", ("DbArea", "dbarea", "readCurrent", "recCount", "gotoRec"), ("USE", "DBAREA", "AREA", "STRUCT", "FIELDS"), ("src/xbase/*.cpp", "include/xbase*.hpp", "src/cli/cmd_dbarea.cpp")),
     FeatureSpec("workspace-area-wrapper", "Workspaces wrapping active areas", "workspace", ("workspace", "SchemaWorkspace", "SchemaAreaState", "area state"), ("WORKSPACE", "WSREPORT", "AREA", "DBAREAS"), ("src/cli/cmd_workspace.cpp", "src/workspace/**/*.cpp", "include/workspace/**/*.hpp", "src/cli/cmd_wsreport.cpp")),
@@ -38,8 +51,8 @@ FEATURES: tuple[FeatureSpec, ...] = (
     FeatureSpec("triggers-rules", "Triggers, rules, and validation hooks", "rules", ("trigger", "rule", "constraint", "validate", "validator"), ("TRIGGER", "RULE", "VALIDATE", "VALIDATE UNIQUE", "TUPVALIDATE"), ("src/cli/cmd_trigger.cpp", "src/cli/cmd_rule.cpp", "src/cli/cmd_validate*.cpp", "src/cli/field_constraints.cpp")),
     FeatureSpec("dbf-trinity", "DBF flavor trinity: MS-DOS/classic, VFP, and x64 DBF_64", "storage formats", ("ClassicNoMemo", "ClassicWithMemo", "Fox26Memo", "VfpBase", "VfpAutoInc", "VfpVar", "DBF_VERSION_64", "AreaKind"), ("USE", "CREATE", "AUTODBF", "STRUCT", "FIELDS", "SET INDEX", "SET ORDER"), ("include/xbase.hpp", "include/xbase_vfp.hpp", "include/xbase_64.hpp", "src/cli/cmd_setindex.cpp", "src/cli/cmd_setorder.cpp"), note="xbase.hpp is the neutral runtime contract; xbase_vfp.hpp bridges classic/MS-DOS, FoxPro, and VFP descriptors; xbase_64.hpp owns x64 extensions, vector metadata, and fallback naming."),
     FeatureSpec("vfp-field-types", "Visual FoxPro DBF field/data type compatibility", "storage formats", ("VFP", "Visual FoxPro", "Currency", "DateTime", "Double", "Integer", "field type"), ("CREATE", "AUTODBF", "FIELDS", "STRUCT"), ("include/xbase_vfp.hpp", "tests/xbase_vfp_probe.cpp", "src/cli/cli_currency.cpp", "include/cli/field_codecs.hpp", "include/cli/field_meta.hpp")),
-    FeatureSpec("x64-dbf-types", "x64 DBF extensions and newer data types", "storage formats", ("DBF64", "x64", "LargeHeaderExtension", "X64Meta", "currency", "datetime", "vector"), ("CREATE", "AUTODBF", "STRUCT"), ("include/xbase_64*.hpp", "include/xbase_64_phase1_contract.txt", "tests/xbase_64_probe.cpp", "src/cli/dbf64_header_validate.cpp")),
-    FeatureSpec("vectored-names", "Vectored table and field names with fallback mangling", "storage formats", ("vector", "field name", "table name", "mangle", "fallback", "string_pool"), ("CREATE", "STRUCT", "FIELDS"), ("include/xbase_64_phase1_contract.txt", "include/xbase_64*.hpp", "src/xbase/*name*.cpp")),
+    FeatureSpec("x64-dbf-types", "x64 DBF extensions and newer data types", "storage formats", ("DBF64", "x64", "LargeHeaderExtension", "X64Meta", "currency", "datetime", "vector"), ("CREATE", "AUTODBF", "STRUCT"), ("include/xbase_64*.hpp", "tests/xbase_64_probe.cpp", "src/cli/dbf64_header_validate.cpp")),
+    FeatureSpec("vectored-names", "Vectored table and field names with fallback mangling", "storage formats", ("vector", "field name", "table name", "mangle", "fallback", "string_pool"), ("CREATE", "STRUCT", "FIELDS"), ("include/xbase_64*.hpp", "src/xbase/*name*.cpp")),
     FeatureSpec("memo-object-model", "Object-oriented memo storage and display", "memo", ("memo", "MemoManager", "MemoObject", "MemoRef", "FPT64", "DBT"), ("MEMO", "DISPLAY", "BROWSETUI"), ("src/memo/**/*.cpp", "include/memo/**/*.hpp", "src/cli/cmd_memo.cpp", "src/cli/memo_display.cpp")),
     FeatureSpec("index-api", "Open index API and index backends", "index", ("IndexManager", "IndexTag", "LMDB", "CDX", "CNX", "INX", "seek", "order"), ("INDEX", "REINDEX", "SET INDEX", "SET ORDER", "SEEK", "IDX", "CDX", "CNX", "LMDB", "BUILDLMDB"), ("src/xindex/**/*.cpp", "include/xindex/**/*.hpp", "src/cli/cmd_index*.cpp", "src/cli/cmd_setindex.cpp", "src/cli/cmd_setorder.cpp"), note="SET ORDER defaults v32/classic-like tables to .cnx and v64/VFP/x64 tables to .cdx; SET INDEX accepts .inx/.cnx for v32 and .cdx for v64."),
     FeatureSpec("filter-search", "Filtering, searching, predicates, and WHERE cache", "query", ("filter", "where", "predicate", "locate", "find", "seek", "wherecache"), ("SET FILTER", "LOCATE", "FIND", "SEEK", "WHERE", "WHERECACHE", "SMARTLIST"), ("src/cli/cmd_setfilter.cpp", "src/cli/filters/**/*.cpp", "src/cli/cmd_where*.cpp", "src/cli/cmd_locate.cpp", "src/cli/cmd_seek.cpp")),
