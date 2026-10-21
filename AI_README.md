@@ -490,6 +490,23 @@ Main DotTalk++ runtime:
 & .\build\src\Release\dottalkpp.exe
 ```
 
+### Proof runners that build.ps1 does not build
+
+Two targets are configured but deliberately left out of the default build, and
+`build.ps1` names both on every run so they stop being invisible:
+
+- `dottalk_bbsd` -- a running daemon holds its own exe open.
+- `memo_zoo` -- the AIF-070 memo zoo stress harness. Replay all four recorded
+  seeds (20,500 generations, 104,044 operations, zero divergences) with
+  `run-memo-zoo-soak.ps1`. It checks each seed's operation count against the
+  recorded one, so a mismatch names the seed instead of passing quietly, and it
+  removes its own 500-plus MB store when it finishes.
+
+A PROOF YOU CANNOT RE-RUN FROM THE TREE IS A RESULT, NOT A PROOF. The zoo's four
+green seeds sat in the tree from 2026-08-11 recorded only as prose inside a
+registry notes field, with no script and no build line -- findable, and not
+runnable. Cited here so `check_mandatory_tracked.py` keeps the runner tracked.
+
 ### The prompt is a period. It is never part of a command.
 
 The build vector declares it, and the configure output prints it:

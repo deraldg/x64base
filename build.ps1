@@ -341,6 +341,15 @@ if ($BbsdConfigured -and ($Targets -notcontains 'dottalk_bbsd')) {
   Write-Host (">>>   cmake --build " + $BuildDir + " --config " + $Config + " --target dottalk_bbsd")
 }
 
+Write-Host ">>> NOT BUILT HERE: memo_zoo -- the AIF-070 memo zoo stress harness."
+Write-Host ">>>   A standalone soak target, not part of the product or the suite, so it"
+Write-Host ">>>   is left out of the default build rather than paying for it every time."
+Write-Host ">>>   IT IS NOT OPTIONAL EVIDENCE, THOUGH: four recorded seeds, 20,500"
+Write-Host ">>>   generations, 104,044 operations, zero divergences. Replay all four:"
+Write-Host ">>>   .\run-memo-zoo-soak.ps1"
+Write-Host ">>>   Or build it alone:"
+Write-Host (">>>   cmake --build " + $BuildDir + " --config " + $Config + " --target memo_zoo")
+
 Write-Host (">>> Building target(s): " + ($Targets -join ', '))
 if ($UseNinja) {
   cmake --build $BuildDir --target $Targets

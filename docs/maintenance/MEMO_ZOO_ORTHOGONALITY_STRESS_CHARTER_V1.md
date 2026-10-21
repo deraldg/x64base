@@ -135,3 +135,41 @@ claim that the store polices content (it must NOT -- policing would violate
 agnosticism); no simulation-for-its-own-sake -- every species exists to
 stress a verb, and a species that stresses nothing new is zoo decoration
 and stays out of v1.
+
+## 7. How to reproduce it (added 2026-10-21)
+
+    .\run-memo-zoo-soak.ps1
+
+That builds the `memo_zoo` target and replays all four recorded seeds, checking
+each run's operation count against the recorded one and failing on any
+divergence line. It removes `tmp/memo_zoo.dtx` when it finishes (`-KeepStore`
+keeps it for inspection).
+
+WHY THE SCRIPT HAD TO BE WRITTEN, THREE MONTHS AFTER THE SOAK. The harness and
+this charter were in the tree from 2026-08-11 and the four green seeds were
+recorded faithfully -- but only as PROSE, inside the notes field of
+`labtalk/registries/proofs.d/proof.memo.zoo_orthogonality.yaml`. Re-running the
+soak therefore meant reading a paragraph and reconstructing six command-line
+flags from it, and `build.ps1` does not build the target at all, so step one was
+knowledge that existed nowhere. AN OPERATION THAT CANNOT BE RE-RUN FROM THE TREE
+IS A RESULT, NOT A PROOF -- which is the same failure this record's own
+registration note names, one level further in: the evidence was never missing,
+only unrunnable.
+
+The recorded parameters are now in the script, and they check out against the
+registry's own arithmetic: 500 + 5,000 + 5,000 + 10,000 = 20,500 generations and
+1,584 + 22,353 + 29,648 + 50,459 = 104,044 operations, exactly the totals that
+note claims. The op counts are EXPECTATIONS rather than inputs -- the harness
+derives them -- so a mismatch means the engine or the harness moved, and the
+script says which seed rather than quietly passing.
+
+`build.ps1` now names the target the way it names `dottalk_bbsd`: configured,
+deliberately not built here, with the command to build it alone.
+
+THE STORE FILE IS NEVER INPUT. `memo_zoo.cpp` points its store at
+`tmp/memo_zoo.dtx` and REMOVES IT at startup -- "deterministic fresh biosphere
+per run" -- so that file is only ever the leftover of the last run. One was found
+at 584 MB dated 11 August while reclaiming `tmp/`, which is what prompted this
+section.
+
+M2 REMAINS UNRUN. Nothing here claims concurrency.
