@@ -12,7 +12,10 @@ notes: 'QUANTUM MEMO ZOO / memo zoo / memo_zoo -- also the MINIDB and memo-resid
   surface. Retrieval names first, on purpose: consumers of this registry truncate notes, so a
   record whose identifying words sit in the last paragraph is a record nobody finds. M1 SOAKED
   2026-08-11 -- 20,500 generations, 104,044 operations, four seeds, ZERO divergences; M2 concurrency
-  UNRUN. Detail follows. Harness is src/memo/memo_zoo.cpp (target
+  UNRUN. REPLAYED 2026-10-21 from the tree with run-memo-zoo-soak.ps1 --
+  all four seeds identical, same op counts, same totals, zero divergences, against an
+  engine two months and ten days further on; the runner is tracked, so the soak is now
+  reproducible rather than merely recorded. Detail follows. Harness is src/memo/memo_zoo.cpp (target
   memo_zoo) -- six driver personas plus a shadow oracle, embedded-NUL and high-byte payloads,
   Temporal Collapse reopens, steady-state settle, final reopen sweep. Four seeds green -- 20260811
   (500 generations / 1,584 ops), 7 (5,000 / 22,353), 42 (5,000 / 29,648, genesis population 200),

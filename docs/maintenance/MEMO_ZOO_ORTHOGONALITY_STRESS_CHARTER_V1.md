@@ -173,3 +173,36 @@ at 584 MB dated 11 August while reclaiming `tmp/`, which is what prompted this
 section.
 
 M2 REMAINS UNRUN. Nothing here claims concurrency.
+
+## 8. The first execution (2026-10-21)
+
+    .\run-memo-zoo-soak.ps1 -SkipBuild
+    VERDICT: PASS -- four seeds, zero divergences, counts as recorded
+
+Two months and ten days after the seeds were recorded, every one of them
+replayed exactly: 1,584 / 22,353 / 29,648 / 50,459 operations, 20,500
+generations and 104,044 operations in total, zero divergences. The engine has
+not stood still in between -- the x64 memo slot predicate went from twelve
+copies to one in the same week -- and the store still reads back byte-identical
+to the shadow in all four worlds.
+
+THE 584 MB FILE WAS NOT RESIDUE OF UNKNOWN ORIGIN. The leftover found while
+reclaiming `tmp/` measured 584 MB; this run left one of 584.3 MB. It was seed
+1993's store, reproduced to the tenth of a megabyte -- a second and unplanned
+check that the replay is faithful.
+
+THE FIRST RUN SAID FAIL, AND THE DEFECT WAS IN THE RUNNER, NOT THE ENGINE.
+PowerShell's `-match` is CASE-INSENSITIVE, and the harness's success line ends
+with the literal `0 divergences` -- so the pattern `DIVERGENCE|ZOO-FAIL` matched
+the one line that proves a seed PASSED, and a clean soak reported four findings,
+one per seed. The detector is now `-cmatch` and anchored on the colon:
+`MEMO-ZOO DIVERGENCE:` and `ZOO-FAIL:` are the only lines the harness emits for
+a real failure, and both abort before the summary line is ever printed.
+
+THE INDEPENDENT CHECK WAS ALREADY THERE AND WENT UNREAD. A divergence returns 1,
+so four exit codes of zero had settled the question before the text detector was
+consulted. A VERDICT COMPUTED FROM THE SAME LINE THAT PROVES SUCCESS NEEDS A
+SECOND CHECK THAT DOES NOT READ THAT LINE. This script had one; the finding is
+that nothing looked at it until the text disagreed.
+
+M2 REMAINS UNRUN. Nothing here claims concurrency.

@@ -78,7 +78,14 @@ foreach ($s in $Seeds) {
   $rc = $LASTEXITCODE
 
   $report = @($out | Where-Object { $_ -match '^MEMO-ZOO: ' })
-  $diverge = @($out | Where-Object { $_ -match 'DIVERGENCE|ZOO-FAIL' })
+  # -match IS CASE-INSENSITIVE IN POWERSHELL. The harness's own SUCCESS line ends
+  # with the literal "0 divergences" (memo_zoo.cpp, the final std::cout), so a
+  # case-insensitive 'DIVERGENCE' matched every green seed and this script reported
+  # four findings on a soak in which nothing diverged. Anchor on the colon and use
+  # -cmatch: the only real failure lines are "MEMO-ZOO DIVERGENCE:" and
+  # "ZOO-FAIL:", both on stderr. Both also return 1 immediately, so the summary
+  # line is never printed after one -- the exit code is the independent check.
+  $diverge = @($out | Where-Object { $_ -cmatch 'MEMO-ZOO DIVERGENCE:|ZOO-FAIL:' })
 
   if ($rc -ne 0)            { $failures += "seed $($s.seed): exit $rc" }
   if ($diverge.Count -gt 0) { $failures += "seed $($s.seed): $($diverge.Count) divergence/fail line(s)"
