@@ -135,6 +135,49 @@ Two routes, and the first is cheaper than it looks:
     destroy-history. That is a pre-existing question about PACK.
   - **Rule the tiers directly.** B (595,864 B) and C (2,305,296 B) separately.
 
+**M2 RULED 2026-10-22 -- R151. THE RULING THIS MILESTONE WAITED FOR IS MADE, AND IT
+CHOSE NEITHER OF THE TWO ROUTES ABOVE.** Both bullets are left standing because both
+were true when written; what follows replaces them as the live plan.
+
+The owner ruled that **a retired workspace's history lives in an ARCHIVED PAIR, not in
+the live catalog's bytes** -- and supplied the mechanism himself: *"it would be
+extremely easy to copy to for deleted before packing ... it requires no engine change,
+just a procedure."* So:
+
+1. **Archive the pair.** `COPY TABLE ... WITH SIDECARS` already carries `.dtx` with the
+   table. The archive -- not the live row -- is what D10.3's *"a record rather than a
+   hole"* promises. **The PAIR is the unit**: an M(16) token means nothing except beside
+   the store it indexes, so archiving rows alone preserves a dangling pointer.
+2. **Gate it on the refusal that already exists.** PACK's refusal on a table holding an
+   undecodable memo field (shipped 2026-10-13) gains a CONDITION -- archive present and
+   newer than the catalog's last write -- rather than a mechanism. OI-037 prices an
+   ungated obligation here at 33 percent compliance against 83-94 for a gated one.
+3. **Then compact, then sweep. TIER C ONLY** -- 110 objects / 2,305,296 B. Tier B
+   (599,736 B) keeps its bytes and is **OI-048**, unruled on purpose. A sweep written
+   against "superseded" rather than "destroyed" would collect it silently and settle
+   that item without anyone ruling on it.
+
+**THE ROW-LEVEL SPELLING OF STEP 1 CANNOT WORK, and it is the one anybody would reach
+for first.** `COPY TO AS` hard-codes the destination's memo width (8 for x64, 10 for
+legacy) and DISCARDS the source width, the same hard-code as `cmd_create.cpp` -- so a
+`COPY TO ... FOR DELETED()` archive of this catalog gets an M(8) `SNAPSHOT` holding a
+truncated 16-hex token read as a raw little-endian uint64. Verbatim, and silent.
+
+**AND THIS LANE'S CHEAPER ROUTE WAS CLOSED BY OUR OWN GUARD, which section 3a could not
+have known.** The *"PACK then sweep"* bullet above rests on M1 collecting what PACK
+stranded. `memo_verify` now REFUSES a store holding an M(16) field (2026-10-13), so the
+sweep cannot run on this store before OR after a pack. **M2 therefore DEPENDS on
+catalog-aware reachability** (the `WORKSPACE VERIFY` work) rather than merely sitting
+beside it. That dependency is new, is a cost of the October guard, and is worth it: the
+guard is what stopped a partial scan from classifying live lineage as orphans.
+
+**A LATENT TRAP, recorded here because nothing in the tree would surface it.** `.dtx` is
+classed as an INDEX CONTAINER under IDXROOT, while the table-companion list is `.dbt`
+and `.fpt` only. For an x64 memo table the `.dtx` IS the memo store, so it is filed by
+WHERE IT SITS rather than WHAT IT IS: `COPY TABLE` resolves the table under DBFROOT and
+its store under IDXROOT, and wherever those roots differ the pair does not travel
+together. The archive step in 1 above is exactly where that would bite.
+
 **M3 -- the PACK contract defect** (section 5).
 
 **M4 -- duplicate ids.** Decide whether a sweep RENUMBERS (fixing them, as PACK's
