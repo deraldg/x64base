@@ -34,7 +34,7 @@ runtime start points.
 
 ## THIS FILE IS THE ONE FRONT DOOR
 
-There are several onboarding documents in this repo — `AI_PORTAL.md`,
+There are several onboarding documents in this repo -- `AI_PORTAL.md`,
 `AI_ASSIMILATION_PORTAL_V1.md`, `AI_ASSIMILATION_BOOK_V1.md`,
 `AI_BABY_BOOTSTRAP_CARD.md`, `labtalk/ai_portal/README.md`. They overlap because
 they grew at different times. **Do not try to read all of them first.** They are
@@ -60,8 +60,8 @@ Invariants first, then state: read the 8 KB seed before the perishable resume.
 | 8 | Before touching source: `labtalk/ai_portal/SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md` | The contract preflight. |
 | 9 | Before writing DotScript: `labtalk/ai_portal/DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md` | Learn the command surface from source + runtime, not memory. |
 
-Everything else — the assimilation book, the bootstrap card, the older portal
-docs — is context you pull *when the task needs it*, not a mandatory prefix.
+Everything else -- the assimilation book, the bootstrap card, the older portal
+docs -- is context you pull *when the task needs it*, not a mandatory prefix.
 
 **Looking for a prior report or a received external-AI package** (e.g. "the Grok
 post about virtual databases")? Do **not** grep the tree. Look it up by
@@ -165,7 +165,7 @@ development integration branch: development
 The `development` branch on origin is the named integration branch (renamed on
 GitHub from the earlier dated `homegrown-cnx-20251112-branch`). It carries
 current workspace state and moves quickly. Always confirm the checked-out branch
-locally before making Git decisions — do not assume a branch name from this file.
+locally before making Git decisions -- do not assume a branch name from this file.
 
 Always re-check before making Git decisions:
 
@@ -746,6 +746,24 @@ General implementation conventions:
   `Push-Location <tree>; <command>; Pop-Location` for anything cwd-dependent
   (npm, generators, datarun-style tools). A bare command that assumes a
   location is a defect; three publishes failed on it 2026-08-10/11.
+- **Dates come from THIS HOST, never from the agent's own clock** (owner
+  instruction, 2026-10-21; rule R152). A date, a time or a day-count written
+  into this tree is read from the host -- `git log -1 --date=short` -- not from
+  the writing agent's environment. MEASURED 2026-10-21 across all 139 dated
+  rows ever added to `docs/ai-friendly/R_RULING_REGISTER_V1.md` and
+  `coordination/OPEN_ITEMS.md`: FOUR are stamped one day AHEAD of the commit
+  that introduced them, and **every discrepancy is exactly +1** -- an agent
+  reporting UTC writing into a tree that keeps local time, during the evening
+  hours this work happens in. Three of the four shipped in August and September
+  and nothing ever said so. This is the bullet above's own lesson one step on:
+  the agent cannot observe the operator's environment and must not assume it.
+  **THE GATE IS NARROWER THAN THE RULE, WHICH IS WHY THIS BULLET EXISTS.**
+  `tools/staging/check_row_dates.py` is HARD and reads the two registers in a
+  change set at commit time. A date written into a charter, a session ledger, a
+  project note or a commit message is covered by NOTHING but this instruction.
+  So do not demote it out on the strength of the gate: the Tier 1 seed's
+  contract says a gated rule demotes, and that bullet assumes the gate covers
+  the rule. Here it covers a subset.
 - It costs nothing to do it right (owner rule, 2026-08-11): when the correct
   form of a small act is free -- the location-proof command, the scoped add,
   the measured number -- the correct form is mandatory. Convenience is not a
@@ -833,8 +851,8 @@ Still open:
 ```
 
 The third block is the **closeout-updates-startup** gate (AIF-006). If the
-session changed lane state — objective, branch, authority pointer, contract,
-dashboard status, intake row — the AI-facing document describing that state
+session changed lane state -- objective, branch, authority pointer, contract,
+dashboard status, intake row -- the AI-facing document describing that state
 must be updated in the same session, or the omission explicitly justified. See
 `AI_PORTAL.md` -> "Closeout Updates Startup".
 

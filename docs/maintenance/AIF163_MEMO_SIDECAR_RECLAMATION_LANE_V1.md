@@ -135,7 +135,7 @@ Two routes, and the first is cheaper than it looks:
     destroy-history. That is a pre-existing question about PACK.
   - **Rule the tiers directly.** B (595,864 B) and C (2,305,296 B) separately.
 
-**M2 RULED 2026-10-22 -- R151. THE RULING THIS MILESTONE WAITED FOR IS MADE, AND IT
+**M2 RULED 2026-10-21 -- R151. THE RULING THIS MILESTONE WAITED FOR IS MADE, AND IT
 CHOSE NEITHER OF THE TWO ROUTES ABOVE.** Both bullets are left standing because both
 were true when written; what follows replaces them as the live plan.
 

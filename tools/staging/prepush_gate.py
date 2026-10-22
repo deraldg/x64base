@@ -920,6 +920,33 @@ def main() -> int:
                   "is_undecodable_x64_memo_field() sit beside it.", file=sys.stderr)
             exit_code = 2
 
+        # 5c-quinquies. REGISTER ROW DATES -- HARD, and the cheapest gate here.
+        # R152: the host's clock is the authority for anything written into this tree.
+        #
+        # A row dated in the FUTURE is wrong without argument: nothing has
+        # happened tomorrow. Measured 2026-10-21 over all 139 dated rows ever
+        # added to the two registers, FOUR are stamped one day later than the
+        # commit that introduced them -- OI-048 and R151 (caught), OI-039 and
+        # R134/OI-024 (shipped in August and September, uncorrected).
+        #
+        # EVERY DISCREPANCY IS EXACTLY +1 DAY, which is a signature and not
+        # noise: a steward environment reporting UTC writing into a tree that
+        # keeps local time, during the evening hours the work happens in.
+        #
+        # AND THE DATA WAS ALREADY HERE. check_open_items.py has printed
+        # "as of <date>" on every run for two months -- the host's own date, in
+        # hand, never compared against what the rows claim. This gate is that
+        # one comparison. The cheapest instrument in this file, and the four
+        # rows above are what it cost to not have written it.
+        rc = _run_portal_check(
+            "tools/staging/check_row_dates.py", [], (0, 2))
+        if rc == 2:
+            print("\n  BLOCKED -- a register row is dated ahead of this host's"
+                  " clock. Take the date from THIS tree:"
+                  " git log -1 --date=short. The host's clock is the authority"
+                  " for anything written into it (R152).", file=sys.stderr)
+            exit_code = 2
+
         # 5c-bis. SOAK EVIDENCE -- HARD, and only ever in scope when a spec's
         # in_default_suite flag flips false -> true. Promotion doctrine wants two
         # green runs on a build nobody changed anything on; until 2026-09-08
