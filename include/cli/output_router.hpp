@@ -27,6 +27,17 @@ public:
 
     std::ostream& out();
 
+    // Independent of SET ALTERNATE: regression graders retain their captures.
+    // The caller owns sink until end_capture(), and must restore its streams first.
+    // nullptr sink permits quiet-only capture. Nested capture refuses unchanged.
+    // Quiet suppresses console presentation, not alternate files or evidence.
+    // end_capture flushes the sink, reports write/flush failure, and releases it.
+    // These methods do not redirect cout/cerr; the scoped caller does that.
+    bool begin_capture(std::streambuf* sink, bool quiet);
+    bool end_capture();
+    bool capture_active() const;
+    void capture_quiet(bool quiet);
+
     void talk_line(const std::string& line);
     void console_note(const std::string& line);
 

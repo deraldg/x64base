@@ -176,6 +176,14 @@ struct OutputRouter::Impl {
     std::ofstream alt_file;
 
     std::streambuf* console_buf = nullptr;
+    std::streambuf* capture_sink = nullptr;
+    bool capturing = false;
+    bool capture_silent = false;
+    bool capture_failed = false;
+
+    void capture_locked(const char* s, std::streamsize n) {
+        if (capture_sink && capture_sink->sputn(s, n) != n) capture_failed = true;
+    }
     std::vector<std::streambuf*> cout_redirect_stack;
 
     struct NullBuf : public std::streambuf {
@@ -189,7 +197,7 @@ struct OutputRouter::Impl {
     std::mutex mtx;
 
     bool should_page_console_locked() const {
-        return console_on
+        return !capture_silent && console_on
             && dest == OutputDest::Console
             && paging_on_global
             && paging_this_command
@@ -205,12 +213,14 @@ struct OutputRouter::Impl {
     }
 
     void write_direct_console_locked(const char* s, std::streamsize n) {
+        if (capture_silent) return;
         if (!console_buf || !s || n <= 0) return;
         console_buf->sputn(s, n);
         console_buf->pubsync();
     }
 
     void write_direct_console_char_locked(char c) {
+        if (capture_silent) return;
         if (!console_buf) return;
         console_buf->sputc(c);
         if (c == '\n') console_buf->pubsync();
@@ -302,6 +312,8 @@ struct OutputRouter::Impl {
 
             std::lock_guard<std::mutex> guard(impl->mtx);
 
+            impl->capture_locked(&c, 1);
+
             if (impl->paging_abort_this_command) {
                 return ch;
             }
@@ -335,6 +347,8 @@ struct OutputRouter::Impl {
             if (!s || n <= 0) return 0;
 
             std::lock_guard<std::mutex> guard(impl->mtx);
+
+            impl->capture_locked(s, n);
 
             if (impl->paging_abort_this_command) {
                 return n;
@@ -387,8 +401,40 @@ std::ostream& OutputRouter::out() {
     return impl_->routed_stream;
 }
 
+bool OutputRouter::begin_capture(std::streambuf* sink, bool quiet) {
+    std::lock_guard<std::mutex> lk(impl_->mtx);
+    if (impl_->capturing) return false;
+    impl_->capturing = true;
+    impl_->capture_sink = sink;
+    impl_->capture_silent = quiet;
+    impl_->capture_failed = false;
+    return true;
+}
+
+bool OutputRouter::end_capture() {
+    std::lock_guard<std::mutex> lk(impl_->mtx);
+    if (impl_->capture_sink && impl_->capture_sink->pubsync() != 0)
+        impl_->capture_failed = true;
+    const bool ok = !impl_->capture_failed;
+    impl_->capture_sink = nullptr;
+    impl_->capturing = impl_->capture_silent = false;
+    return ok;
+}
+
+bool OutputRouter::capture_active() const {
+    std::lock_guard<std::mutex> lk(impl_->mtx);
+    return impl_->capturing;
+}
+
+void OutputRouter::capture_quiet(bool quiet) {
+    std::lock_guard<std::mutex> lk(impl_->mtx);
+    impl_->capture_silent = impl_->capturing && quiet;
+}
+
 void OutputRouter::console_note(const std::string& line) {
     std::lock_guard<std::mutex> guard(impl_->mtx);
+    impl_->capture_locked(line.data(), static_cast<std::streamsize>(line.size()));
+    impl_->capture_locked("\n", 1);
     impl_->write_direct_console_locked(
         line.c_str(),
         static_cast<std::streamsize>(line.size())
@@ -399,6 +445,8 @@ void OutputRouter::console_note(const std::string& line) {
 void OutputRouter::talk_line(const std::string& line) {
     std::lock_guard<std::mutex> guard(impl_->mtx);
     if (!cli::Settings::instance().talk_on.load()) return;
+    impl_->capture_locked(line.data(), static_cast<std::streamsize>(line.size()));
+    impl_->capture_locked("\n", 1);
 
     switch (impl_->dest) {
     case OutputDest::Console:

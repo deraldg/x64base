@@ -1,3 +1,13 @@
+# ---- Regression output capture --------------------------------------------
+add_executable(dottalkpp_regression_output_capture_test
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_regression_output_capture.cpp
+  ${CMAKE_SOURCE_DIR}/src/cli/output_router.cpp
+)
+target_include_directories(dottalkpp_regression_output_capture_test PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_compile_definitions(dottalkpp_regression_output_capture_test PRIVATE NOMINMAX)
+target_compile_features(dottalkpp_regression_output_capture_test PRIVATE cxx_std_17)
+add_test(NAME dottalkpp_regression_output_capture_test COMMAND dottalkpp_regression_output_capture_test)
+
 # ---- PDLC / DTV foundation smoke test --------------------------------------
 # Canonical DotTalk Value + qualified reference + DataAddress (tuple/PDLC Phase-0).
 # Links the isolated dottalk_value lib; proves signed/unsigned exact integers

@@ -11,7 +11,7 @@ had the engine's capabilities to compare against.
 So this emits them. The authority is `kRegressionSpecs` in cmd_regression.cpp
 -- the same table `regression_index.py` parses, and the strongest capability
 statement the tree makes, because a spec in the default suite is a claim the
-engine re-proves on every REGRESSION ALL.
+engine re-proves on every REGRESSION CURATED SUITE.
 
 WHAT IS HAND-MAINTAINED AND WHY THAT IS THE RISK. CAPABILITIES below is written
 by a person: a spec name cannot know which English words a documentation page
@@ -191,7 +191,7 @@ def build(root: Path) -> dict:
             "id": cap_id,
             "title": title,
             "state": state,
-            # default-suite is re-proven every REGRESSION ALL, so a page that
+            # default-suite is re-proven every REGRESSION CURATED SUITE, so a page that
             # denies it is simply wrong; explicit-run is proven but unsoaked,
             # so a page denying it may be describing the soak honestly.
             "severity": "flag" if state == "default-suite" else "review",

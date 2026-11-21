@@ -169,7 +169,7 @@ launcher as evidence.
 
 ### REGRESSION
 
-`REGRESSION [USAGE|LIST|SHOW <name>|RUN <name>|<name>|ALL]` selects from a
+`REGRESSION [USAGE|LIST|GROUPS|SHOW <name>|RUN <name>|<name>|CURATED SUITE|GROUP <name>]` selects from a
 curated set of stable regression and shakedown scripts. `LIST` and `SHOW` expose
 the curated entries; `RUN <name>` and the compact `<name>` form launch one
 entry; `ALL` launches the defined ordered set. The command delegates execution

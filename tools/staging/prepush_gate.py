@@ -964,7 +964,7 @@ def main() -> int:
         if rc == 2:
             print("\n  BLOCKED -- a spec entered the default suite without "
                   "naming two PASS runs on ONE build in "
-                  "coordination/SOAK_EVIDENCE.md. Promotion makes REGRESSION ALL "
+                  "coordination/SOAK_EVIDENCE.md. Promotion makes REGRESSION CURATED SUITE "
                   "claim something on every run; the soak is what makes that "
                   "claim survive a build nobody looked at.", file=sys.stderr)
             exit_code = 2

@@ -131,7 +131,7 @@ def _literal_runs(entry: str) -> list[tuple[str, int]]:
     cout`, so the scan started inside that comment, found no bool, defaulted to
     false, and reported a DEFAULT-SUITE spec as explicit -- the single wrong row
     in an otherwise complete 77. Caught by diffing the generated default set
-    against the 28 specs REGRESSION ALL actually ran, rather than by stopping at
+    against the 28 specs REGRESSION CURATED SUITE actually ran, rather than by stopping at
     "77 entries, that's all of them."
     """
     runs, cur, start, last_end = [], [], None, None
@@ -235,7 +235,7 @@ def render_markdown(root: Path, sha: str) -> str:
     out.append(
         "The list below is generated from the engine's own registry -- the "
         f"`kRegressionSpecs` table in [`src/cli/cmd_regression.cpp`]({_blob(sha, REG_CPP)}), "
-        f"the same set `REGRESSION LIST` / `REGRESSION ALL` drive ({len(specs)} entries, "
+        f"the same set `REGRESSION LIST` / `REGRESSION CURATED SUITE` drive ({len(specs)} entries, "
         f"{default_n} in the default suite), grouped by domain. It cannot drift from what "
         "the engine runs, because it is parsed from that source. Regenerate with "
         "`python tools/reports/regression_index.py --md`.")
@@ -278,7 +278,7 @@ def render_html(root: Path, sha: str, *, script_href) -> str:
     parts = ['<section style="margin-top:1.5rem">', '<h2>Regression tests</h2>',
              f'<p>Generated from the engine registry '
              f'<a href="{_blob(sha, REG_CPP)}"><code>cmd_regression.cpp</code></a> '
-             '(<code>REGRESSION LIST/ALL</code>), grouped by domain; links open the '
+             '(<code>REGRESSION LIST/CURATED SUITE</code>), grouped by domain; links open the '
              'real script.</p>']
     for cat, items in grouped:
         d = sum(1 for s in items if s["default"])

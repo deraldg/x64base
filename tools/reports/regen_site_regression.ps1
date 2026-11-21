@@ -1,6 +1,6 @@
 # regen_site_regression.ps1 -- regenerate the website regression catalog from the
 # engine's OWN registry (src/cli/cmd_regression.cpp) so the published page cannot drift
-# from what REGRESSION ALL runs. This is the wired doc-push step: run it after
+# from what REGRESSION CURATED SUITE runs. This is the wired doc-push step: run it after
 # cmd_regression.cpp changes (or as part of the full-stack flush), then commit the site
 # page as its own slice and publish. Idempotent -- it rewrites only the marked block.
 #

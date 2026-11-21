@@ -13,6 +13,7 @@ projects:
       - AI_PORTAL.md
       - docs/governance/REPO_BOUNDARIES_RUNTIME_GUI_LABTALK_v1.md
       - docs/maintenance/DOTTALKPP_SDLC_CHARTER_v0.md
+      - docs/maintenance/AIF174_REGRESSION_PROCESS_GROUPS_V1.md
       - docs/maintenance/DDL_SCHEMA_PDLC_LANE_V1.md
       - docs/maintenance/SQLSEL_PDLC_LANE_V1.md
       - docs/maintenance/BUFFER_VISIBILITY_TWO_FAMILIES_V1.md

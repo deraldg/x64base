@@ -1,0 +1,134 @@
+{
+  "date": "2026-11-21",
+  "platform": "Windows MSVC Release",
+  "evidence_tier": "runtime-proven for listed checks only",
+  "curated_suite": {
+    "run": 34,
+    "passed": 34,
+    "failed": 0,
+    "unmeasured": 0,
+    "not_graded": 0,
+    "isolation": "BEFORE/AFTER ok"
+  },
+  "field_types": {
+    "run": 5,
+    "passed": 5,
+    "full_screen_lines": 4477,
+    "quiet_screen_lines": 76,
+    "equal_marked_evidence_lines": 110
+  },
+  "sql_dml": {
+    "run": 6,
+    "passed": 6
+  },
+  "router_ctest": "PASS: quiet/full, direct/routed/note/talk, restoration, nested refusal, failing sink, child stdout/stderr capture",
+  "durability": "3/4 checks passed; PKDURABLE failed because member.ai.regression has no live host.shell grant. No grant created.",
+  "syntax": "ALL replacement, malformed CURATED, duplicate QUIET, trailing garbage, unmatched quote refused before execution; bad log path refused; console restored",
+  "artifacts": {
+    "tmp/regression174_build.log": {
+      "sha256": "d515410c6b1fe6b7c9c97414e8ca4fd83efc800210a5501d61ed8eafa0c5b872",
+      "bytes": 30915,
+      "lines": 464
+    },
+    "tmp/regression174_build_closeout.log": {
+      "sha256": "8647b341979095c99aabaed673fd0d5e50e267156fdaec93e9e41735dad47f45",
+      "bytes": 672,
+      "lines": 12
+    },
+    "tmp/regression174_build_final.log": {
+      "sha256": "144caa61f97e71065cee10366440d38aa593d7a16399f8ec53f47606c3c3a3aa",
+      "bytes": 922,
+      "lines": 17
+    },
+    "tmp/regression174_build_verify.log": {
+      "sha256": "79ac3f7b4b1b6de0b5fa1d6d342648560419a68a522152aa088238e4c681b15c",
+      "bytes": 5496,
+      "lines": 129
+    },
+    "tmp/regression174_curated.log": {
+      "sha256": "e7df0fd27d45a92654698f96932fa93f71685aa5903c9cc682448ad9439f0b2f",
+      "bytes": 706222,
+      "lines": 10066
+    },
+    "tmp/regression174_curated_screen.txt": {
+      "sha256": "d7d42f4ca57ccd284eb1d9a50b0266e01ac2751dd5760218d8fb0bbefdab589d",
+      "bytes": 4167,
+      "lines": 131
+    },
+    "tmp/regression174_durability.log": {
+      "sha256": "10ad225aee0f6aa639c435cec8c4aa16c6492ccf0ac213c8330262bb52c0c961",
+      "bytes": 21214,
+      "lines": 423
+    },
+    "tmp/regression174_durability_screen.txt": {
+      "sha256": "66a0feded7d00ac81438fd785462ed75284b171fc4ae300260a966ad17da7aaf",
+      "bytes": 3579,
+      "lines": 83
+    },
+    "tmp/regression174_final_syntax.txt": {
+      "sha256": "a6d5cb7bbb4011324674d3a9b12c37cc56ae22392925be9816e8ffd5ff5ea531",
+      "bytes": 2741,
+      "lines": 58
+    },
+    "tmp/regression174_fixturecheck.log": {
+      "sha256": "d2fb4df753dde28db5a02a63a28405fd8e30555cad91cd6f4b1f5f8d571b4888",
+      "bytes": 1188,
+      "lines": 21
+    },
+    "tmp/regression174_full.log": {
+      "sha256": "455eb4f2ac16b9e0da5ede205cfb456db1a35ccfd51654aee03e3b74e6085319",
+      "bytes": 466787,
+      "lines": 4424
+    },
+    "tmp/regression174_full_screen.txt": {
+      "sha256": "89016a19c409724e1c44d1c319dfb5d0eb622d3ffd4483e97a1625639d9d736b",
+      "bytes": 474141,
+      "lines": 4477
+    },
+    "tmp/regression174_quiet.log": {
+      "sha256": "3fc995e2700d93b2a8c9688a8861bf3853a6587a347b42f0ed75e82855946f3f",
+      "bytes": 466941,
+      "lines": 4432
+    },
+    "tmp/regression174_quiet_screen.txt": {
+      "sha256": "02f709dc419f11daced1274133ed3041ad5f0f71105e28a29ce5e7e3dfb16325",
+      "bytes": 3116,
+      "lines": 76
+    },
+    "tmp/regression174_router_build.log": {
+      "sha256": "d23659675ecf1b19bbb7f2697413e68d4074f6bc307c6fb81a367b57ddd42523",
+      "bytes": 75,
+      "lines": 3
+    },
+    "tmp/regression174_sql_dml.log": {
+      "sha256": "5c0bff832f79763f3d32b6fb4e30b6d08c09c2048a5bd1d7d3028c6e9f7d25c5",
+      "bytes": 29695,
+      "lines": 703
+    },
+    "tmp/regression174_sql_dml_screen.txt": {
+      "sha256": "302825ec54c3c629bf5fd9b6782001d3b39580579f574a66c5ab29ff0a15b7c2",
+      "bytes": 3103,
+      "lines": 75
+    },
+    "tmp/regression174_syntax.txt": {
+      "sha256": "beeb103d658af4aac181c4222621de3c78a9ccc969eaa7d5c7c23ede066c6869",
+      "bytes": 4183,
+      "lines": 78
+    },
+    "tmp/regression174_workspace_status.txt": {
+      "sha256": "65e7da68b5236cad641013d23a61dc30748d2c576f20cd27f0abcfa7a31e63a2",
+      "bytes": 729616,
+      "lines": 7818
+    },
+    "tmp/regression174_wrapper.log": {
+      "sha256": "ac1783cea72b531f902276ded7403b81202ac46245bdf60cc06ccf750d4dadf9",
+      "bytes": 1181,
+      "lines": 21
+    },
+    "tmp/regression174_wrapper_screen.txt": {
+      "sha256": "6d3056ded31a62f1a8b09dbbf6717c2e07549098b00f7f34b799787236c15591",
+      "bytes": 4186,
+      "lines": 97
+    }
+  }
+}

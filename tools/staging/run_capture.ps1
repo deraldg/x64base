@@ -2,7 +2,7 @@
 #
 # RUN A DOTTALK++ COMMAND OR SCRIPT AND PUT THE WHOLE TRANSCRIPT IN A FILE.
 #
-# WHY THIS EXISTS. A big run -- REGRESSION ALL above all -- produces thousands of
+# WHY THIS EXISTS. A big run -- REGRESSION CURATED SUITE above all -- produces thousands of
 # lines that otherwise have to be copied out of a console by hand. The three
 # obvious alternatives were each measured and each fails:
 #
@@ -14,7 +14,7 @@
 #   Start-Transcript   -- measured 2026-09-04: captured its own headers and
 #                         NOTHING from the engine.
 #   the .alt files     -- only specs carrying capture_routed_channel write one,
-#                         and REGRESSION ALL produces no single file of its own.
+#                         use REGRESSION CURATED SUITE LOG for in-engine capture.
 #
 # WHAT WORKS is stdout redirection off a DIRECT exe launch, which is already the
 # established pattern: pk_durability_child.ps1 invokes the exe with --script and
@@ -25,20 +25,10 @@
 # the runtime, and copying over a running binary fails on Windows. This copies
 # nothing and builds nothing -- run .\build.ps1 yourself first if you need to.
 #
-# IT RUNS dottalkpp\bin\dottalkpp.exe WITH THE WORKING DIRECTORY AT dottalkpp\,
-# AND BOTH HALVES OF THAT ARE LOAD-BEARING. MEASURED 2026-09-08, the first cut of
-# this script got both wrong and produced a session unlike the one anybody uses:
-#
-#   THE ENGINE DERIVES ITS DATA ROOT FROM THE CURRENT DIRECTORY. Starting in
-#   dottalkpp\data gave DATA = dottalkpp\data\data, so every path slot pointed at
-#   a directory that does not exist, the L3 arm and the spec were both 'not on
-#   disk', and PKPOLICY reported all fifteen markers missing. NOTHING RAN.
-#   (The harness was right throughout: it printed NOT RUN and UNMEASURED rather
-#   than a pass or a failure. A missing instrument did not read like a green one.)
-#
-#   THE .ini FILES LIVE BESIDE THE bin COPY OF THE EXE and are looked up in the
-#   EXE'S OWN DIRECTORY. Launching build\src\Release\dottalkpp.exe therefore ran
-#   with NO dottalkpp.ini and NO init.ini -- a different session again.
+# Use the same runtime bin and data working directory as launch-common.ps1.
+# The older wrapper used dottalkpp/; the current canonical launcher uses
+# dottalkpp/data. Keeping these aligned avoids testing a different fixture root.
+# Runtime .ini files are resolved beside the bin copy of the executable.
 #
 # So the default exe is the bin copy, which is what datarun runs. That copy can
 # be STALE relative to a fresh build, and staleness that is not announced is how
@@ -49,10 +39,10 @@
 # measures the older bin copy on purpose.
 #
 # USAGE
-#   .\tools\staging\run_capture.ps1 -Command "REGRESSION ALL" -Out tmp\regall.txt
+#   .\tools\staging\run_capture.ps1 -Command "REGRESSION CURATED SUITE" -Out tmp\regall.txt
 #   .\tools\staging\run_capture.ps1 -Script dottalkpp\data\scripts\pk_policy_regression.dts -Out tmp\pkp.txt
 #   .\tools\staging\run_capture.ps1 -Command "REGRESSION PKDURABLE" -Out tmp\pkd.txt -AllowHostCommands
-#   .\tools\staging\run_capture.ps1 -Command "REGRESSION ALL" -Out tmp\old.txt -AllowStale
+#   .\tools\staging\run_capture.ps1 -Command "REGRESSION CURATED SUITE" -Out tmp\old.txt -AllowStale
 #
 # THE ORDER THAT BITES: build, THEN .\datarun.ps1, THEN capture. Running datarun
 # before the build refreshes the bin copy from the PREVIOUS build and the capture
@@ -60,7 +50,7 @@
 # staleness check now refuses.
 #
 # -Command may be given more than once and the lines run in order:
-#   -Command "REGRESSION ALL","REGRESSION PKPOLICY"
+#   -Command "REGRESSION CURATED SUITE","REGRESSION PKPOLICY"
 # which is the ONE arrangement that reproduces the AIF-158 contamination, because
 # both run in a SINGLE PROCESS. Two separate invocations of this script are two
 # processes and will not reproduce it.
@@ -104,8 +94,8 @@ $repo     = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $binExe   = Join-Path $repo "dottalkpp\bin\dottalkpp.exe"
 $buildExe = Join-Path $repo "build\src\Release\dottalkpp.exe"
 
-# The working directory is dottalkpp\, NOT dottalkpp\data -- see the header.
-$cwd = Join-Path $repo "dottalkpp"
+# Match Get-DotTalkLayout / Invoke-DotTalkCliRuntime in launch-common.ps1.
+$cwd = Join-Path $repo "dottalkpp\data"
 
 if ($UseBuildExe) { $exe = $buildExe } else { $exe = $binExe }
 
@@ -272,4 +262,4 @@ if (Test-Path -LiteralPath $outPath) {
     Write-Host "RUN-CAPTURE: NO OUTPUT FILE was produced. Treat this as an unrun measurement."
     exit 2
 }
-exit 0
+exit $code
