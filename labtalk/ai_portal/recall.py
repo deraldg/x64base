@@ -184,9 +184,12 @@ def walk(g: dict, start: str) -> list[tuple[int, str, dict]]:
     seen = {start}
     out: list[tuple[int, str, dict]] = []
     frontier = [(start, 0)]
+    # Cold-start order must match the fallback. Follow deeper edges only for
+    # task-specific recall, after the mandatory reads and state check.
+    depth_limit = 1 if start == "trigger.onboard" else MAX_DEPTH + 1
     while frontier:
         nid, depth = frontier.pop(0)
-        if depth >= MAX_DEPTH + 1:
+        if depth >= depth_limit:
             continue
         for e in g["edges"]:
             if e.get("from") != nid or e.get("to") in seen:
@@ -384,6 +387,8 @@ def main() -> int:
 
     scored = []
     for t in g["triggers"]:
+        if t["id"] == "trigger.open_lane" and not (qt & {"open", "claim", "create"}):
+            continue
         hay = f"{norm(t['id'])} {norm(t.get('label', ''))}"
         ht = set(hay.split())
         if q and q in hay:
@@ -402,8 +407,10 @@ def main() -> int:
     scored.sort(key=lambda r: -r[0])
     hits = [t for _, t in scored]
     if len(scored) > 1 and scored[0][0] == scored[1][0]:
-        print(f"recall: ambiguous, using {hits[0]['id']}. Also matched: "
-              + ", ".join(t["id"].replace("trigger.", "") for t in hits[1:4]))
+        tied = [t["id"].removeprefix("trigger.") for score, t in scored if score == scored[0][0]]
+        print("recall: ambiguous; choose an explicit trigger: " + ", ".join(tied),
+              file=sys.stderr)
+        return 3
 
     trig = hits[0]
     print(f"=== recall: {trig['id']} -- {trig.get('label', '')}")
@@ -430,8 +437,8 @@ def main() -> int:
           f"({pct}% of the {corpus} B corpus this graph indexes, {corpus_n} nodes).")
     if entry:
         ratio = total / entry
-        note = "smaller" if ratio < 1 else f"{ratio:.1f}x LARGER"
-        print(f"  for scale: the onboarding entry path in force is {entry} B "
+        note = "the same size" if total == entry else f"{ratio:.2f}x as large"
+        print(f"  for scale: the ordered onboarding seed and state path is {entry} B "
               f"({entry_n} files); this working set is {note}.")
         print(f"  recall does NOT replace onboarding -- it replaces reading the "
               f"corpus afterwards.")

@@ -10,9 +10,9 @@ needed most only after a mid-task mount).
 
 **Remote readers of `labtalk/ai_portal/TIER0_STATE.md`**: raw.githubusercontent
 CACHES -- a 45-day-old Tier 0 was served with no warning (onboarding report
-B4, 2026-09-23). Append a cache-busting query string, and compare its
-`generated_utc` against `git ls-remote` HEAD before trusting it. Tier 0
-cannot drift from the tree, but a cached COPY of it can drift from Tier 0.
+B4, 2026-09-23). Append a cache-busting query string and compare the
+projection's recorded HEAD with the development ref. Treat an older
+projection as a snapshot; a newly fetched copy can still be stale.
 
 ## STOP: Repository Roles Before Any Other Read
 
@@ -42,13 +42,13 @@ depth-on-demand, not a queue.
 
 Start here, in this order, and stop when you have enough for the task:
 
-Invariants first, then state: read the 8 KB seed before the perishable resume.
+Invariants first, then state: read Tier 1 and the Agent Laws before the resume.
 
 | Step | Read | Why |
 | --- | --- | --- |
-| 0 | **`labtalk/ai_portal/AI_TIER1_SEED_V1.md` -- read FIRST** | The 8 KB budgeted "safe to act" seed: where you are, what you may do, git safety, house conventions, and a five-question readiness self-check. Invariants before state -- the cheapest read and the only one that makes you *safe*, not merely informed. |
-| 0b | **`labtalk/ai_portal/AI_AGENT_LAWS_SEED_V1.md` -- read SECOND, before any state** | The laws this house holds every agent AND every person to. Four restated laws (do not harm a human; do not harm yourself; where both cannot be served the human comes first, because a human cannot be regenerated) and six ordered house rules, each written so that BREAKING IT LEAVES EVIDENCE. This is an INVARIANT and belongs above the closeout for the same reason step 0 does. Asimov is quoted there as the named origin and is explicitly NOT the governance. |
-| 1 | **Newest `docs/maintenance/SESSION_CLOSEOUT_*.md`** | Fastest true resume. What the last session did, and what it left open. If none exists, skip. |
+| 0 | **[Tier 1 seed](labtalk/ai_portal/AI_TIER1_SEED_V1.md) -- read first** | Repository roles, authorization, Git safety, house conventions, and the readiness self-check. |
+| 0b | **[Agent Laws](labtalk/ai_portal/AI_AGENT_LAWS_SEED_V1.md) -- read second** | Rules for people and agents. These rules govern how to act on the state below. |
+| 1 | **[Tier 0 state](labtalk/ai_portal/TIER0_STATE.md) and the assigned lane's handoff** | Verify state against the checkout. For a named lane, run `python labtalk/ai_portal/generate_tier0_state.py --lane AIF-NNN`. Without a lane assignment, continue with the owner target and task scope. |
 | 1b | If the BBS daemon is up: AUTH and `BBS READ board.worklog LAST 20` for your lane's live handoff; post one back on finishing (AIF-057, see `AI_BBS_OPERATIONS_RUNBOOK_V1.md` sec 11). | The live, identity-bound pickup/dropoff. Optional and simplex -- the closeout is authority; the board is the fast handoff. Skip if the daemon is down. |
 | 2 | `docs/agents/CURRENT_TARGET.md` | The active objective. |
 | 2a | If the task creates, interprets, or publishes Portal projects, AIF lanes, R rulings, runs, tasks, proofs, reports, feeds, or schemas: `docs/maintenance/AI_PORTAL_PROFESSIONAL_SYSTEM_MODEL_V1.md`, then `labtalk/ai_portal/README.md`. | The normalized identifier and data-flow model. It prevents a fresh or resumed chat from treating every number as a ticket, confusing a run with an AI report, or treating a website projection as authority. |
@@ -62,6 +62,16 @@ Invariants first, then state: read the 8 KB seed before the perishable resume.
 
 Everything else -- the assimilation book, the bootstrap card, the older portal
 docs -- is context you pull *when the task needs it*, not a mandatory prefix.
+
+Without Python, use the [Recall fallback](labtalk/ai_portal/RECALL_FALLBACK_TABLE_V1.md).
+For an assigned lane, look up its durable claim in [coordination/aif](coordination/aif/)
+and match that lane in [run records](labtalk/registries/runs.d/).
+Use the recorded UTC from registered closeouts; if you cannot verify the
+handoff or its visibility, say so before acting.
+
+For a read-only local readiness check, run
+`python labtalk/ai_portal/refresh_portal_state.py --check`. It shows stale
+snapshots, blocking checks, and optional BBS transport separately.
 
 **Looking for a prior report or a received external-AI package** (e.g. "the Grok
 post about virtual databases")? Do **not** grep the tree. Look it up by
@@ -337,7 +347,7 @@ Use the repo-local source map before searching broadly:
 | C++ runtime and command shell | `src/cli`, `src/xbase`, `src/xindex`, `src/memo`, `src/cnx`, `include` |
 | Build and dependency metadata | `CMakeLists.txt`, `CMakePresets.json`, `vcpkg.json`, `vcpkg-wsl.json`, `cmake` |
 | Python bindings and bridge work | `bindings/pydottalk`, `src/bindings`, `python_misc`, `py`, `run-pydottalk.ps1` |
-| GUI/TUI/workbench lanes | `src/gui`, `src/tv`, `docs/gui`, `run-wx.ps1`, `run-wx-next.ps1`, `tk.run.ps1` |
+| GUI/TUI/workbench lanes | `src/gui`, `src/tv`, `docs/gui`, `run-wb.ps1`, `run-wb-next.ps1`, `tk.run.ps1` |
 | Runtime scripts and data | `dottalkpp/data`, `dottalkpp/data/scripts`, `dottalkpp/data/dbf` |
 | Documentation, contracts, governance | `docs`, `docs/contracts`, `docs/governance`, `docs/maintenance` |
 | AI Friendly and agent bootstrap | `docs/ai-friendly`, `docs/agents`, `AI_README.md` |
@@ -653,7 +663,7 @@ Convenience launchers from the repo root:
 .\run-cli.ps1
 .\run-erp.ps1
 .\run-bible.ps1
-.\run-wx.ps1
+.\run-wb.ps1
 .\run-pydottalk.ps1
 .\run-pycrud.ps1
 ```

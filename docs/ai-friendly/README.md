@@ -12,16 +12,20 @@ LabTalk, proof reports, or source comments. It routes material into those
 systems and looks for simplification, consolidation, and integration before
 creating anything new.
 
-## First Reads
+## Start and reference shelf
 
-- `AI_ASSIMILATION_PORTAL_V1.md`
-- `AI_ASSIMILATION_BOOK_V1.md`
+Start onboarding at the [repository AI README](../../AI_README.md). Use the
+references below when the task needs AI Friendly context.
+
+- `AI_ASSIMILATION_BOOK_V1.md` for the evidence and authority order
 - `AI_FRIENDLY_DASHBOARD_V1.md`
 - `AI_FRIENDLY_LANE_MANIFEST_V1.md`
 - `AI_FRIENDLY_WORKFLOW_V1.md`
 - `AI_INTERACTION_INTAKE_QUEUE_V1.md`
 - `../../labtalk/ai_portal/README.md`
 - `../../labtalk/ai_portal/AI_PORTAL_HARDENING_LANE_V1.md`
+
+The superseded `AI_ASSIMILATION_PORTAL_V1.md` is historical context.
 
 ## Active AI Portal Work
 

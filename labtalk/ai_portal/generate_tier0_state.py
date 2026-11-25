@@ -2,9 +2,9 @@
 """Generate the Tier 0 state projection for the AI Portal (AIF-082, 6.1).
 
 Tier 0 answers "where are we" without prose. It is GENERATED, never authored,
-so it cannot drift the way a hand-maintained pointer does.
+and the persisted snapshot can be checked against the current inputs.
 
-Sections: tree state, declared target, newest closeout, staleness warnings,
+Sections: tree state, declared target, handoff routing, staleness warnings,
 claimed lanes, and -- added AIF-096 -- "Sessions, lineage, asides": live
 check-ins (heartbeat older than STALE_MIN is marked reapable, so an abandoned
 straggler is never shown plainly 'live'), plus each run's aside chain (its
@@ -29,8 +29,10 @@ Usage (PowerShell 7, from D:\\code\\ccode):
     python labtalk\\ai_portal\\generate_tier0_state.py            # print only
     python labtalk\\ai_portal\\generate_tier0_state.py --write    # write the file
     python labtalk\\ai_portal\\generate_tier0_state.py --check    # compare with file
+    python labtalk\\ai_portal\\generate_tier0_state.py --lane AIF-NNN  # read-only handoff
 
-Exit codes: 0 ok/current, 1 could not locate the repository root, 3 stale/missing.
+Exit codes: 0 ok/current, 1 input could not be read, 2 invalid arguments,
+3 stale, unavailable, or ambiguous.
 """
 
 from __future__ import annotations
@@ -108,6 +110,7 @@ def intake_numbers(root: Path) -> set[str]:
 
 
 def newest_closeout(root: Path) -> Path | None:
+    """Legacy date-only snapshot for global context; never selects a handoff."""
     folder = root / "docs" / "maintenance"
     if not folder.is_dir():
         return None
@@ -119,6 +122,128 @@ def newest_closeout(root: Path) -> Path | None:
     if not dated:
         return None
     return max(dated)[1]
+
+
+def utc_stamp(value) -> datetime | None:
+    try:
+        stamp = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        return stamp.astimezone(timezone.utc) if stamp.tzinfo is not None else None
+    except ValueError:
+        return None
+
+
+def lane_handoff(root: Path, lane: str) -> tuple[str, int]:
+    """Resolve a claimed lane against its run records, without writing state."""
+    import yaml
+
+    module_root = str(Path(__file__).resolve().parents[2])
+    if module_root not in sys.path:
+        sys.path.insert(0, module_root)
+    from tools.registries.registry_fragments import SPECS, read_fragments
+
+    claim = root / "coordination" / "aif" / f"{lane}.claim"
+    lines = [f"# {lane} handoff"]
+    if not claim.is_file():
+        return "\n".join(lines + ["No durable claim; no handoff selected."]), 3
+    if not git(root, "rev-parse", "HEAD"):
+        return "\n".join(lines + ["Git HEAD unavailable; visibility could not be measured."]), 1
+
+    folder = root / "labtalk" / "registries"
+    try:
+        header, records = read_fragments(root, SPECS["ai_runs.yaml"])
+        if header is None:
+            records = yaml.safe_load((folder / "ai_runs.yaml").read_text(encoding="utf-8"))["runs"]
+    except yaml.YAMLError as exc:
+        raise ValueError(f"invalid run registry YAML: {exc}") from exc
+    upstream = git(root, "rev-parse", "--verify", "@{u}")
+    ranked = {}
+    issues = set()
+    legacy_unranked = set()
+    for run in records:
+        if lane not in (run.get("lanes") or []):
+            continue
+        if header is None:
+            source = "labtalk/registries/ai_runs.yaml"
+        else:
+            source = f"labtalk/registries/runs.d/{run['run_id']}.yaml"
+        for rel in run.get("closeouts") or []:
+            path = root / rel
+            relative = Path(rel)
+            if (path.suffix != ".md" or not path.resolve().is_relative_to(root.resolve())
+                    or relative.is_absolute() or relative.drive or ".." in relative.parts):
+                raise ValueError(f"invalid closeout path in {source}: {rel}")
+            rel = path.relative_to(root).as_posix()
+            if not path.is_file():
+                issues.add(f"absent from worktree: {rel}")
+                continue
+            head_blob = git(root, "rev-parse", "--verify", f"HEAD:{rel}")
+            # The audit envelope is the timestamp authority. Older reports can
+            # use a clearly labeled Git timestamp when that is all we have.
+            body = path.read_text(encoding="utf-8")
+            envelope = body.split("\n---\n", 1)[0][4:] if body.startswith("---\n") else ""
+            try:
+                data = yaml.safe_load(envelope) or {}
+            except yaml.YAMLError as exc:
+                raise ValueError(f"invalid closeout YAML in {rel}: {exc}") from exc
+            audit = data.get("ai_report_audit", {}) if isinstance(data, dict) else {}
+            recorded = audit.get("recorded_at_utc")
+            stamp = utc_stamp(recorded)
+            basis = "report recorded UTC"
+            if recorded is None and head_blob:
+                stamp = utc_stamp(git(root, "log", "-1", "--format=%cI", "--", rel))
+                basis = "Git last-change UTC; legacy closeout has no recorded timestamp"
+            if stamp is None:
+                if recorded is None:
+                    legacy_unranked.add(rel)
+                else:
+                    issues.add(f"invalid recorded UTC timestamp: {rel}")
+                continue
+            order = (recorded is not None, stamp)
+            _, _, _, sources = ranked.setdefault(rel, (order, basis, head_blob, set()))
+            sources.add(source)
+
+    if ranked and not issues:
+        newest = max(candidate[0] for candidate in ranked.values())
+        winners = [rel for rel, candidate in ranked.items() if candidate[0] == newest]
+        if len(winners) == 1 and (newest[0] or not legacy_unranked):
+            rel = winners[0]
+            (_, stamp), basis, head_blob, sources = ranked[rel]
+            lines += [f"closeout: {rel}", f"timestamp: {stamp.isoformat()} ({basis})"]
+            if not head_blob:
+                lines.append("artifact: local-only; absent from HEAD")
+            elif git(root, "hash-object", "--", rel) != head_blob:
+                lines.append("artifact: committed at HEAD; worktree copy differs")
+            else:
+                lines.append("artifact: committed at HEAD")
+            if upstream:
+                upstream_blob = git(root, "rev-parse", "--verify", f"{upstream}:{rel}")
+                lines.append("artifact at configured upstream: " + (
+                    "absent" if not upstream_blob else
+                    "matches HEAD" if upstream_blob == head_blob else "differs from HEAD"
+                ))
+            else:
+                lines.append("artifact at configured upstream: unmeasured (no upstream ref)")
+            for source in sorted(sources):
+                binding = git(root, "rev-parse", "--verify", f"HEAD:{source}")
+                local = git(root, "hash-object", "--", source)
+                visibility = "matches HEAD" if binding and binding == local else "local-only binding"
+                upstream_source = git(root, "rev-parse", "--verify", f"{upstream}:{source}") if upstream else ""
+                if upstream:
+                    visibility += "; upstream " + (
+                        "absent" if not upstream_source else
+                        "matches worktree" if upstream_source == local else "differs from worktree"
+                    )
+                lines.append(f"run record: {source} ({visibility})")
+            for rel in sorted(legacy_unranked):
+                lines.append(f"unranked legacy companion (no recorded or committed UTC): {rel}")
+            return "\n".join(lines), 0
+        if len(winners) > 1:
+            issues.add("equally recent UTC records: " + ", ".join(sorted(winners)))
+    issues.update(f"cannot order legacy closeout (no recorded or committed UTC): {rel}"
+                  for rel in legacy_unranked)
+    if not ranked and not issues:
+        issues.add("no closeout registered for this claim")
+    return "\n".join(lines + ["No handoff selected.", *sorted(issues)]), 3
 
 
 def untracked_closeouts(root: Path, head: str) -> list[str]:
@@ -280,8 +405,7 @@ def render(root: Path) -> str:
     add(f"    generated_utc : {now}")
     add("    lane        : AIF-082 (6.1)")
     add("")
-    add("Read this before acting. It is a generated current-state projection;")
-    add("verify it with the generator's --check mode before relying on it.")
+    add("Before relying on this snapshot, run the generator with --check.")
     add("")
     add("## Tree")
     add("")
@@ -295,7 +419,11 @@ def render(root: Path) -> str:
     add(f"    updated       : {target_updated}")
     add(f"    section       : {target}")
     add("")
-    add("## Newest closeout")
+    add("## Handoff")
+    add("")
+    add("    lane selected : none (use --lane AIF-NNN for an assigned lane)")
+    add("")
+    add("### Latest dated closeout filename (all lanes; context only)")
     add("")
     add(f"    file          : {closeout_name}")
     add(f"    commits behind HEAD : {closeout_behind}")
@@ -316,16 +444,15 @@ def render(root: Path) -> str:
             unmeasured.append(label)
     if closeout_uncommitted:
         warnings.append(
-            f"The newest closeout by date, {closeout_name}, is on disk but in no "
-            "commit. A clone cannot see it; whoever wrote it has not landed it."
+            f"The global dated closeout, {closeout_name}, is on disk but in no "
+            "commit."
         )
     widowed = untracked_closeouts(root, head)
     others = [name for name in widowed if name != closeout_name]
     if others:
         warnings.append(
-            "Closeout(s) on disk but not tracked -- a session's record that never "
-            "landed: " + ", ".join(others[:4])
-            + (f" (+{len(others) - 4} more)" if len(others) > 4 else "") + "."
+            "Untracked closeout(s): " + ", ".join(others[:2])
+            + (f" (+{len(others) - 2} more)" if len(others) > 2 else "") + "."
         )
     if unmeasured:
         warnings.append(
@@ -334,8 +461,8 @@ def render(root: Path) -> str:
         )
     if closeout_behind not in ("?", "0", "not committed"):
         warnings.append(
-            f"The newest closeout is {closeout_behind} commit(s) behind HEAD. "
-            "Work has landed that no closeout describes; read `git log` as well."
+            f"The global dated closeout is {closeout_behind} commit(s) behind HEAD. "
+            "Read the assigned lane's handoff and `git log` for its actual state."
         )
     if unregistered:
         warnings.append(
@@ -382,8 +509,7 @@ def render(root: Path) -> str:
     add("")
     lin = lineage_records(root)
     asides = run_asides(root)
-    add("Aside chains -- a run's claims in order (its horizontal structure);")
-    add("parent + born_utc from the durable lineage ledger, '-' until a run wakes.")
+    add("Aside chains are ordered claims. Parent and birth UTC come from the lineage ledger.")
     add("")
     add("| run | member | parent | born_utc | asides |")
     add("| --- | --- | --- | --- | --- |")
@@ -397,8 +523,7 @@ def render(root: Path) -> str:
         add(f"| ... | | | | {len(asides) - 8} older run(s) omitted |")
     add("")
 
-    add("Perishable detail lives in the artifacts these point at. Do not")
-    add("restate anything above; regenerate it.")
+    add("Use the source artifacts for detail. Regenerate instead of restating this snapshot.")
     add("")
     return "\n".join(lines)
 
@@ -428,9 +553,20 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="fail when the persisted projection differs from current measured state",
     )
+    mode.add_argument("--lane", metavar="AIF-NNN", help="show the assigned lane's handoff without writing")
     args = parser.parse_args(argv)
 
     root = repo_root()
+    if args.lane is not None:
+        if not re.fullmatch(r"AIF-\d{3,}", args.lane):
+            parser.error("--lane requires an exact AIF claim number, such as AIF-174")
+        try:
+            body, code = lane_handoff(root, args.lane)
+        except (ImportError, OSError, KeyError, TypeError, ValueError) as exc:
+            print(f"tier0: cannot resolve {args.lane}: {exc}", file=sys.stderr)
+            return 1
+        print(body)
+        return code
     body = render(root)
     size = len(body.encode("utf-8"))
     target = root / OUTPUT_RELATIVE

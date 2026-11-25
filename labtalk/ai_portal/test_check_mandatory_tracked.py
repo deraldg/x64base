@@ -16,9 +16,12 @@ the backslash spelling, because AI_README.md uses it (`.\\run-erp.ps1`, line
 560) and nothing else in the tree would notice if it stopped being understood.
 """
 
+import contextlib
+import io
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import check_mandatory_tracked as checker
 
@@ -84,15 +87,32 @@ class ScriptNormalizationTests(unittest.TestCase):
             self.assertFalse(s.startswith("/"), f"{s} normalized to absolute")
             self.assertNotIn("\\", s, f"{s} kept a backslash")
 
-    def test_a_declared_script_absent_from_disk_is_still_dropped(self):
-        # UNCHANGED BEHAVIOUR, PINNED SO THE NEXT READER KNOWS IT IS A CHOICE.
-        # Prose mentions a bare filename constantly ("prepush_gate.py enforces
-        # ..."), so the is_file() filter is load-bearing. The cost is that a
-        # DEAD reference -- run-wx.ps1 is one today -- is indistinguishable
-        # from prose and is never reported. Separate problem, not this fix.
-        root = portal_saying("Run `.\\ghost.ps1` sometime.", [])
-        _, scripts = checker.declared(root)
+    def test_missing_explicit_paths_survive_extraction(self):
+        root = portal_saying("Run `.\\ghost.ps1` after reading `docs\\missing.md`.")
+        docs, scripts = checker.declared(root)
+        self.assertIn("ghost.ps1", scripts)
+        self.assertIn("docs/missing.md", docs)
+
+    def test_missing_bare_prose_names_are_not_explicit_paths(self):
+        root = portal_saying("The old `ghost.ps1` read `missing.md`.")
+        docs, scripts = checker.declared(root)
         self.assertNotIn("ghost.ps1", scripts)
+        self.assertNotIn("missing.md", docs)
+
+    def test_gate_distinguishes_an_absent_tracked_doc_from_a_local_script(self):
+        root = portal_saying("[Read first](gone.md#start) and run `./local.py`.", ["local.py"])
+        have = set(checker.ENTRY_DOCS) | set(checker.ALWAYS_READ) | {"gone.md"}
+        for rel in checker.ALWAYS_READ:
+            (root / rel).touch()
+        stdout = io.StringIO()
+        with (
+            mock.patch.object(checker, "repo_root", return_value=root),
+            mock.patch.object(checker, "tracked", return_value=have),
+            contextlib.redirect_stdout(stdout),
+        ):
+            self.assertEqual(checker.main(), 2)
+        self.assertIn("MISSING PATH      gone.md", stdout.getvalue())
+        self.assertIn("UNTRACKED SCRIPT  local.py", stdout.getvalue())
 
 
 if __name__ == "__main__":

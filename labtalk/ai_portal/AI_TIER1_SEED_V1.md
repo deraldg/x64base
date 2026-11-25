@@ -127,7 +127,7 @@ owns it.
 | --- | --- | --- |
 | Current target | `docs/agents/CURRENT_TARGET.md` | hand-maintained; **has drifted twice**; check against HEAD |
 | Open lanes and state | intake queue; `coordination/aif/*.claim` | ledger atomic; queue rows long |
-| What the last session did | newest `docs/maintenance/SESSION_CLOSEOUT_*.md` | may lag HEAD by commits |
+| What the assigned lane last did | Tier 0 generator `--lane AIF-NNN` | check artifact and run-record visibility |
 | Who is working now | `session_coordinator.py status` | **stale entries common** |
 | Build and run | `AI_README.md`, Runtime Start Points / WSL | maintained |
 | Build and run **in a sandbox** | you CAN -- `CLAUDE.md`, Sandbox agents; `recall.py work_in_sandbox` | corrected 2026-08-26 |

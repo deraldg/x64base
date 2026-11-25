@@ -402,14 +402,14 @@ sections:
         path: ../biblerun.ps1
         status: interactive
       - id: launcher.wx
-        label: wx GUI
+        label: DotTalk++ Workbench GUI
         kind: powershell_launcher
-        path: ../wx.run.ps1
+        path: ../wb.run.ps1
         status: interactive
       - id: launcher.wx_next
-        label: wx Next GUI
+        label: DotTalk++ Next Workbench GUI
         kind: powershell_launcher
-        path: ../wx.next.run.ps1
+        path: ../wb.next.run.ps1
         status: interactive
       - id: launcher.tk
         label: ArcticTalk Tk GUI
@@ -438,14 +438,14 @@ sections:
         path: ../run-bible.ps1
         status: interactive
       - id: launcher.run_wx
-        label: run-wx.ps1
+        label: run-wb.ps1
         kind: powershell_launcher
-        path: ../run-wx.ps1
+        path: ../run-wb.ps1
         status: interactive
       - id: launcher.run_wx_next
-        label: run-wx-next.ps1
+        label: run-wb-next.ps1
         kind: powershell_launcher
-        path: ../run-wx-next.ps1
+        path: ../run-wb-next.ps1
         status: interactive
       - id: launcher.arctictalk_runtime
         label: ArcticTalk Runtime

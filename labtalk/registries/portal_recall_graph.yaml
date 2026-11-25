@@ -47,8 +47,9 @@ created_utc: 2026-07-31T20:30:00Z
 # Conflating the two is what let "21% of the entry path" be printed about a
 # working set 2.5x larger than the entry path.
 entry_path:
-  - path: labtalk/ai_portal/TIER0_STATE.md
   - path: labtalk/ai_portal/AI_TIER1_SEED_V1.md
+  - path: labtalk/ai_portal/AI_AGENT_LAWS_SEED_V1.md
+  - path: labtalk/ai_portal/TIER0_STATE.md
 
 # ---------------------------------------------------------------- triggers
 triggers:
@@ -60,6 +61,8 @@ triggers:
     label: about to write DotScript
   - id: trigger.open_lane
     label: about to open a lane
+  - id: trigger.review_lane
+    label: review an existing lane
   - id: trigger.commit_or_push
     label: about to commit or push
   - id: trigger.publish
@@ -527,6 +530,14 @@ nodes:
     hard_fails: false
     tier: 2
 
+  - id: seed.agent_laws
+    label: Mandatory Agent Laws
+    path: labtalk/ai_portal/AI_AGENT_LAWS_SEED_V1.md
+    class: procedural
+    enforced_by: labtalk/ai_portal/check_mandatory_tracked.py
+    hard_fails: true
+    tier: 1
+
   - id: seed.sdlc_fast_start
     label: SDLC Fast-Start Seed
     path: labtalk/ai_portal/SDLC_FAST_START_SEED_V1.md
@@ -826,8 +837,11 @@ edges:
   - {from: trigger.ddict, to: procedure.ddict_feed, type: fires_at}
   - {from: trigger.fullstack_doc_push, to: procedure.ddict_feed, type: fires_at}
   - {from: trigger.onboard, to: seed.tier1, type: fires_at}
+  - {from: trigger.onboard, to: seed.agent_laws, type: fires_at}
   - {from: trigger.onboard, to: state.tier0, type: fires_at}
-  - {from: trigger.onboard, to: doctrine.repository_roles, type: fires_at}
+  - {from: trigger.review_lane, to: doctrine.lanes_and_promotion, type: fires_at}
+  - {from: trigger.review_lane, to: state.tier0, type: fires_at}
+  - {from: trigger.change_source, to: doctrine.repository_roles, type: fires_at}
 
   - {from: trigger.change_source, to: doctrine.source_mutation, type: fires_at}
   - {from: trigger.change_source, to: seed.engineering_standards, type: fires_at}
@@ -867,11 +881,9 @@ edges:
   - {from: trigger.release_or_license, to: mechanism.editions_licensing, type: fires_at}
   - {from: mechanism.editions_licensing, to: doc.license_map, type: requires}
   - {from: trigger.understand_why, to: doctrine.synapse, type: fires_at}
-  - {from: trigger.onboard, to: doc.ai_glossary, type: fires_at}
   - {from: doctrine.synapse, to: doc.ai_glossary, type: requires}
   # Portal synapse (2026-08-08): the root project (Frontal_Mem) reachable in one hop.
   - {from: trigger.persistent_memory, to: root.frontal_mem, type: fires_at}
-  - {from: trigger.onboard, to: root.frontal_mem, type: fires_at}
   - {from: root.frontal_mem, to: doctrine.synapse, type: requires}
   - {from: root.frontal_mem, to: doc.ai_glossary, type: requires}
   # Portal synapse (2026-08-08): the triage value function, now built (M1).
@@ -879,7 +891,6 @@ edges:
   - {from: root.frontal_mem, to: mechanism.consolidation_service, type: evidenced_by}
   # Portal synapse (2026-08-08): the search map -- reach targets by pointer, not by scan.
   - {from: trigger.where_is, to: doc.search_map, type: fires_at}
-  - {from: trigger.onboard, to: doc.search_map, type: fires_at}
   # Portal synapse (2026-08-08): the Grok coworker handoff, reachable via the memory lane.
   - {from: trigger.persistent_memory, to: doc.grok_push, type: fires_at}
   - {from: doc.grok_push, to: mechanism.consolidation_service, type: requires}
@@ -943,7 +954,6 @@ edges:
   - {from: seed.tier1, to: doc.bootstrap_card, type: supersedes}
   - {from: doctrine.authority_chain, to: doc.assimilation_book, type: requires}
   - {from: trigger.understand_why, to: doc.assimilation_book, type: fires_at}
-  - {from: trigger.onboard, to: doc.bootstrap_card, type: fires_at}
   - {from: trigger.understand_why, to: doc.assimilation_portal, type: fires_at}
   - {from: doctrine.retrieval_failure, to: doc.root_portal_ancestor, type: evidenced_by}
 

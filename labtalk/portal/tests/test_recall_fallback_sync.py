@@ -27,6 +27,8 @@ WHAT DRIFT LOOKS LIKE IF THIS TEST IS ABSENT
 from __future__ import annotations
 
 import importlib.util
+import subprocess
+import sys
 import unittest
 from pathlib import Path
 
@@ -68,6 +70,28 @@ class FallbackSyncTest(unittest.TestCase):
         for trig in self.graph["triggers"]:
             with self.subTest(trigger=trig["id"]):
                 self.assertIn(str(trig.get("label", "")), text)
+
+    def test_fallback_and_runtime_keep_the_same_ordered_cold_start(self):
+        expected = [row["path"] for row in self.graph["entry_path"]]
+        self.assertEqual(expected, [
+            "labtalk/ai_portal/AI_TIER1_SEED_V1.md",
+            "labtalk/ai_portal/AI_AGENT_LAWS_SEED_V1.md",
+            "labtalk/ai_portal/TIER0_STATE.md",
+        ])
+        self.assertEqual([node["path"] for _, _, node in recall.walk(self.graph, "trigger.onboard")], expected)
+        row = next(line for line in self.target.read_text(encoding="utf-8").splitlines()
+                   if "starting cold, no context" in line)
+        indices = [row.index(path) for path in expected]
+        self.assertEqual(indices, sorted(indices))
+
+    def test_review_an_existing_lane_does_not_route_to_claim_a_lane(self):
+        result = subprocess.run(
+            [sys.executable, "-B", str(RECALL), "review an existing lane"], cwd=REPO_ROOT,
+            check=False, capture_output=True, text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("trigger.review_lane", result.stdout)
+        self.assertNotIn("trigger.open_lane", result.stdout)
 
     def test_it_declares_itself_generated(self):
         head = self.target.read_text(encoding="utf-8")[:400]

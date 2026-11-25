@@ -56,6 +56,88 @@ def warnings_of(body: str) -> str:
     return body.split("## Staleness warnings", 1)[1].split("##", 1)[0]
 
 
+class LaneHandoffTests(unittest.TestCase):
+    def setUp(self) -> None:
+        folder = tempfile.TemporaryDirectory()
+        self.addCleanup(folder.cleanup)
+        self.root = Path(folder.name)
+        self.write("coordination/aif/AIF-171.claim", "aif: AIF-171\n")
+
+    def write(self, rel: str, body: str) -> None:
+        path = self.root / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(body, encoding="utf-8")
+
+    def records(self, *paths: str) -> None:
+        self.write(
+            "labtalk/registries/runs.d/TEST-RUN.yaml",
+            "run_id: TEST-RUN\nlanes: [AIF-171]\ncloseouts:\n"
+            + "".join(f"- {path}\n" for path in paths),
+        )
+
+    def report(self, name: str, hour: str) -> None:
+        self.write(
+            name, f"---\nai_report_audit:\n  recorded_at_utc: 2026-10-15T{hour}:00Z\n---\n# Closeout\n"
+        )
+
+    def resolve(self, *git_answers: tuple[tuple[str, ...], str], lane: str = "AIF-171"):
+        answers = {("rev-parse", "HEAD"): "HEAD-oid", **dict(git_answers)}
+        with mock.patch.object(t0, "git", side_effect=lambda root, *args: answers.get(args, "")):
+            return t0.lane_handoff(self.root, lane)
+
+    def test_same_day_uses_recorded_utc_and_reports_local_visibility(self) -> None:
+        latest = "docs/alpha_2026-10-15.md"
+        older = "docs/zeta_2026-10-15.md"
+        companion = "docs/legacy.md"
+        self.records(latest, older, companion)
+        self.report(latest, "18:02")
+        self.report(older, "09:21")
+        self.write(companion, "# Companion without a recorded time\n")
+        body, code = self.resolve()
+        self.assertEqual(code, 0)
+        self.assertIn(f"closeout: {latest}", body)
+        self.assertNotIn(f"closeout: {older}", body)
+        self.assertIn("artifact: local-only", body)
+        self.assertIn("local-only binding", body)
+        self.assertIn("unranked legacy companion", body)
+
+    def test_legacy_name_comes_from_registry_and_uses_labeled_git_time(self) -> None:
+        name = "docs/GOOD_NEIGHBOR_CLOSEOUT.md"
+        self.records(name)
+        self.write(name, "# Legacy closeout\n")
+        body, code = self.resolve(
+            (("rev-parse", "--verify", f"HEAD:{name}"), "artifact-oid"),
+            (("hash-object", "--", name), "artifact-oid"),
+            (("log", "-1", "--format=%cI", "--", name), "2026-10-15T11:02:00-07:00"),
+            (("rev-parse", "--verify", "@{u}"), "upstream-oid"),
+        )
+        self.assertEqual(code, 0)
+        self.assertIn("2026-10-15T18:02:00+00:00 (Git last-change UTC", body)
+        self.assertIn("artifact: committed at HEAD", body)
+        self.assertIn("artifact at configured upstream: absent", body)
+
+    def test_absent_candidate_blocks_selection(self) -> None:
+        self.records("docs/missing.md", "docs/older.md")
+        self.report("docs/older.md", "09:21")
+        body, code = self.resolve()
+        self.assertEqual(code, 3)
+        self.assertIn("absent from worktree: docs/missing.md", body)
+        self.assertNotIn("closeout: docs/older.md", body)
+
+    def test_equal_recorded_stamps_are_ambiguous(self) -> None:
+        self.records("docs/a.md", "docs/b.md")
+        self.report("docs/a.md", "18:02")
+        self.report("docs/b.md", "18:02")
+        body, code = self.resolve()
+        self.assertEqual(code, 3)
+        self.assertIn("equally recent UTC records", body)
+
+    def test_an_unclaimed_lane_cannot_select_a_closeout(self) -> None:
+        body, code = self.resolve(lane="AIF-999")
+        self.assertEqual(code, 3)
+        self.assertIn("No durable claim", body)
+
+
 class Tier0Tests(unittest.TestCase):
     def render(self, answers, **tree):
         with tempfile.TemporaryDirectory() as d:

@@ -13,7 +13,7 @@ Both were discovered by accident, from `create mode` lines in unrelated commits.
 This check finds them on purpose.
 
 The mandatory set is derived, not hand-listed, so it cannot drift away from what
-the portal actually says: every repo-relative `.md` path backticked inside
+the portal actually says: every repo-relative `.md` path linked or backticked inside
 `AI_README.md` and `AI_PORTAL.md`, plus the two vendor shims and the two entry
 documents themselves.
 
@@ -23,20 +23,14 @@ class of thing as the entry documents, and a clone that does not get them runs
 an agent with different instructions. Owner instruction the same day: the skills
 and plugins we build for DotTalk++ belong in GitHub too.
 
-This category is walked from DISK, not read out of the entry documents, and that
-is deliberate twice over. First, a skill nobody thought to mention in the portal
-is exactly the one that goes missing. Second, DOC_RE cannot see these paths at
-all: its first character class excludes a dot, so a backticked
-`.claude/skills/<name>/SKILL.md` never MATCHES rather than matching and being
-mangled -- the same shape as the backslash hole recorded below, and widening the
-pattern would move the document count in the same commit, which this file
-refuses on principle.
+This category is walked from DISK. An asset does not need to be mentioned
+in the entry documents to affect a session.
 
 Usage (PowerShell 7, from D:\\code\\ccode):
 
     python labtalk\\ai_portal\\check_mandatory_tracked.py
 
-Exit codes: 0 all tracked, 1 repo root not found, 2 one or more untracked.
+Exit codes: 0 all present and tracked, 1 probe error, 2 missing or untracked.
 Run it host-side. It shells out to `git ls-files`, which is read-only and does
 not touch the index, but the sandbox rule is absolute for a reason.
 """
@@ -56,7 +50,9 @@ ALWAYS_READ = ("CLAUDE.md", "AGENTS.md")
 AGENT_ASSET_ROOTS = (".claude/skills", ".claude/plugins")
 
 # Documents the portal points at, inline: `docs/agents/CURRENT_TARGET.md`
-DOC_RE = re.compile(r"`([A-Za-z0-9_][A-Za-z0-9_./-]*\.md)`")
+DOC_PATH = r"([A-Za-z0-9_.][A-Za-z0-9_./\\-]*\.md)"
+DOC_RE = re.compile(r"`" + DOC_PATH + r"`")
+MD_LINK_RE = re.compile(r"\]\(" + DOC_PATH + r"(?:#[^()\s]*)?\)")
 
 # Scripts the portal instructs you to RUN. These matter more than the documents:
 # a missing document can be worked around, a missing gate cannot. Found the hard
@@ -78,12 +74,18 @@ def repo_root() -> Path:
     raise SystemExit(1)
 
 
-def declared(root: Path) -> tuple[set[str], set[str]]:
-    """Return (documents, scripts) the entry documents declare, that exist on disk.
+def declared_path(root: Path, reference: str, *, explicit: bool = False) -> str | None:
+    """Keep explicit repo paths even if missing. Bare names can be prose shorthand."""
+    path = reference.replace("\\", "/")
+    explicit = explicit or "/" in path
+    path = path.removeprefix("./")
+    if path.startswith("/") or ".." in path.split("/"):
+        return None
+    return path if explicit or (root / path).is_file() else None
 
-    Reported separately because they fail differently. A missing document can be
-    worked around by reading something else; a missing gate silently does not run.
-    """
+
+def declared(root: Path) -> tuple[set[str], set[str]]:
+    """Return declared document and script paths independently of availability."""
     docs: set[str] = set(ENTRY_DOCS) | set(ALWAYS_READ)
     scripts: set[str] = set()
 
@@ -92,35 +94,15 @@ def declared(root: Path) -> tuple[set[str], set[str]]:
         if not path.is_file():
             continue
         text = path.read_text(encoding="utf-8", errors="replace")
-        for hit in DOC_RE.findall(text):
-            # DOC_RE's character class has no backslash, so a Windows-spelled
-            # .md path is never MATCHED here rather than being matched and then
-            # mangled. Narrower hole, different shape, deliberately not widened
-            # in the same change: doing so would move the document count too,
-            # and one measured fix per commit.
-            docs.add(hit.lstrip("./"))
+        for refs, explicit in ((DOC_RE.findall(text), False), (MD_LINK_RE.findall(text), True)):
+            for hit in refs:
+                target = declared_path(root, hit, explicit=explicit)
+                if target:
+                    docs.add(target)
         for hit in SCRIPT_RE.findall(text):
-            # NORMALIZE SEPARATORS FIRST, THEN STRIP. The reverse order was
-            # silently discarding every Windows-spelled path in the portal, and
-            # AI_README.md spells its scripts that way (`.\\run-erp.ps1`, line
-            # 560). Worked through:
-            #
-            #   .\\run-erp.ps1  -lstrip("./")->  \\run-erp.ps1  -replace->  /run-erp.ps1
-            #
-            # -- a leading slash that matches nothing, so the is_file() filter
-            # below dropped it without a word. 27 hits in the entry documents,
-            # 10 survived. FOUR SCRIPTS THE PORTAL TELLS YOU TO RUN WERE
-            # UNTRACKED WHILE THIS GATE REPORTED PASS: launch_portal.ps1,
-            # run-cli.ps1, run-erp.ps1, run-pycrud.ps1.
-            #
-            # That is the 2026-07-31 defect described at the head of this file,
-            # recurring inside the checker written to catch it. A guard whose
-            # own input normalization drops the cases it exists for reports
-            # PASS over a smaller set every time and never says the set shrank.
-            scripts.add(hit.replace("\\", "/").lstrip("./"))
-
-    docs = {f for f in docs if (root / f).is_file()}
-    scripts = {f for f in scripts if (root / f).is_file()}
+            target = declared_path(root, hit)
+            if target:
+                scripts.add(target)
     return docs, scripts
 
 
@@ -172,7 +154,7 @@ def ignored(root: Path, paths: list[str]) -> set[str]:
 
 def tracked(root: Path) -> set[str]:
     out = subprocess.run(
-        ["git", "ls-files"],
+        ["git", "ls-files", "-z"],
         cwd=root,
         capture_output=True,
         text=True,
@@ -184,7 +166,7 @@ def tracked(root: Path) -> set[str]:
     if out.returncode != 0:
         print("check: git ls-files failed", file=sys.stderr)
         raise SystemExit(1)
-    return set(out.stdout.split())
+    return set(out.stdout.rstrip("\0").split("\0")) if out.stdout else set()
 
 
 def main() -> int:
@@ -194,8 +176,9 @@ def main() -> int:
     have = tracked(root)
     excluded = ignored(root, assets)
 
-    missing_docs = sorted(docs - have)
-    missing_scripts = sorted(scripts - have)
+    missing_paths = sorted(p for p in docs | scripts if not (root / p).is_file())
+    missing_docs = sorted(p for p in docs - have if (root / p).is_file())
+    missing_scripts = sorted(p for p in scripts - have if (root / p).is_file())
     missing_assets = sorted(a for a in assets if a not in have and a not in excluded)
 
     print(
@@ -213,15 +196,18 @@ def main() -> int:
     for name in sorted(excluded):
         print(f"  agent assets: GITIGNORED (a decision, not a defect) {name}")
 
-    if not missing_docs and not missing_scripts and not missing_assets:
-        print("mandatory-tracked: PASS -- every declared file is tracked")
+    if not (missing_paths or missing_docs or missing_scripts or missing_assets):
+        print("mandatory-tracked: PASS -- every declared file is present and tracked")
         return 0
 
     print(
         "mandatory-tracked: FAIL -- "
+        f"{len(missing_paths)} missing path(s); "
         f"{len(missing_docs)} document(s), {len(missing_scripts)} script(s) "
         f"and {len(missing_assets)} agent asset(s) UNTRACKED"
     )
+    for name in missing_paths:
+        print(f"  MISSING PATH      {name}")
     for name in missing_scripts:
         print(f"  UNTRACKED SCRIPT  {name}   <-- a gate that will not run downstream")
     for name in missing_docs:
@@ -229,10 +215,8 @@ def main() -> int:
     for name in missing_assets:
         print(f"  UNTRACKED ASSET   {name}   <-- agent behaviour a clone will not get")
     print("")
-    print("These are invisible to a clone. An agent onboarding from GitHub cannot")
-    print("read the documents and cannot run the gates. Commit them, or stop")
-    print("declaring them mandatory. An untracked script is the worse case: it")
-    print("does not error, it silently does not exist.")
+    print("Restore missing dependencies or correct their declarations.")
+    print("An untracked dependency needs a reviewed commit before a clone can use it.")
     if missing_assets:
         print("")
         print("AN UNTRACKED SKILL OR PLUGIN IS THE SAME DEFECT WEARING A DIFFERENT")

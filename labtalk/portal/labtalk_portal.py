@@ -71,6 +71,13 @@ DEFAULT_DOTSCRIPT_REJECT_OUTPUT_PATTERNS = (
 CHECKED_PATH_FIELDS = ("path", "source", "root", "script")
 CHECKED_LIST_PATH_FIELDS = ("related", "evidence", "docs", "launchers")
 DERIVED_FROM_FIELD = "derived_from"
+RUN_REQUIRED_FIELD = {
+    "dottalk_script": "script",
+    "dottalk_command": "command",
+    "powershell_launcher": "path",
+    "python_tool": "script",
+    "wsl_launcher": "script",
+}
 
 
 @dataclass
@@ -168,6 +175,8 @@ def item_paths(item: PortalItem) -> list[tuple[str, Path]]:
         value = item.data.get(field)
         if isinstance(value, str) and value.strip():
             paths.append((field, normalize_path(value)))
+    if item.kind == "wsl_launcher" and item.data.get("workdir"):
+        paths.append(("workdir", normalize_path(str(item.data["workdir"]))))
     for field in CHECKED_LIST_PATH_FIELDS:
         value = item.data.get(field)
         if isinstance(value, list):
@@ -492,8 +501,18 @@ def audit_portal() -> dict[str, Any]:
             proof_like_count += 1
 
         path_states: list[dict[str, str]] = []
+        required = RUN_REQUIRED_FIELD.get(item.kind)
+        if item.kind == "lab_script":
+            required = "script" if "script" in item.data else "path"
+        if required and not str(item.data.get(required) or "").strip():
+            missing_paths.append(
+                {"item_id": item.item_id, "label": item.label, "field": required,
+                 "path": "(not declared)"}
+            )
         for field, path in item_paths(item):
-            state = "ok" if path.exists() else "missing"
+            exists = (path.is_file() if field == required else
+                      path.is_dir() if field == "workdir" else path.exists())
+            state = "ok" if exists else "missing"
             row = {"field": field, "state": state, "path": display_path(path)}
             path_states.append(row)
             if state == "missing":
@@ -549,6 +568,23 @@ def portal_audit_summary(audit: dict[str, Any]) -> str:
         f"duplicate_ids={len(audit['duplicate_item_ids'])} "
         f"ai_report_findings={audit['ai_report_audit']['finding_count']}"
     )
+
+
+def portal_readiness_findings(audit: dict[str, Any]) -> tuple[list[str], int]:
+    """Separate broken entry points from missing supporting evidence."""
+    runnable = {row["id"] for row in audit["items"] if row["runnable"]}
+    blockers = [f"duplicate item id: {item_id}" for item_id in audit["duplicate_item_ids"]]
+    advisories = 0
+    for row in audit["missing_paths"]:
+        if row["field"] == "registry" or (
+            row["item_id"] in runnable and row["field"] in {"path", "script", "workdir", "command"}
+        ):
+            blockers.append(f"{row['item_id']} missing {row['field']}: {row['path']}")
+        else:
+            advisories += 1
+    if audit["ai_report_audit"]["finding_count"]:
+        blockers.append(f"AI report audit findings: {audit['ai_report_audit']['finding_count']}")
+    return blockers, advisories
 
 
 def write_portal_audit(audit: dict[str, Any]) -> tuple[Path, Path]:
@@ -1180,10 +1216,16 @@ class LabTalkPortal(_PortalWindowBase):
 
 
 def main() -> int:
-    if len(sys.argv) in {2, 3} and sys.argv[1] in {"--audit", "--audit-write"}:
+    if len(sys.argv) in {2, 3} and sys.argv[1] in {"--audit", "--audit-write", "--audit-check"}:
         try:
             audit = audit_portal()
             print(portal_audit_summary(audit))
+            if sys.argv[1] == "--audit-check":
+                blockers, advisories = portal_readiness_findings(audit)
+                print(f"portal-readiness: {len(blockers)} blocker(s), {advisories} advisory missing path(s)")
+                for finding in blockers:
+                    print(f"  BLOCKER {finding}")
+                return 2 if blockers else 0
             if sys.argv[1] == "--audit-write":
                 md_path, json_path = write_portal_audit(audit)
                 print(f"markdown={md_path}")
@@ -1211,7 +1253,7 @@ def main() -> int:
     if tk is None or messagebox is None:
         print(
             "LabTalk Portal GUI unavailable: tkinter could not be imported. "
-            f"Headless --audit and --audit-write remain available. ({TK_IMPORT_ERROR})",
+            f"Headless --audit, --audit-check and --audit-write are available. ({TK_IMPORT_ERROR})",
             file=sys.stderr,
         )
         return 1

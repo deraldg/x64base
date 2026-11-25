@@ -9,6 +9,7 @@ populations (without opening database payloads or following reparse points).
 from __future__ import annotations
 
 import argparse
+import socket
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -23,7 +24,7 @@ class RefreshStep:
     label: str
     relative_script: str
     write_args: tuple[str, ...] = ()
-    check_args: tuple[str, ...] = ()
+    check_args: tuple[str, ...] | None = ()
     storage: bool = False
 
 
@@ -41,7 +42,8 @@ STEPS = (
     RefreshStep("mandatory tracked onboarding", "labtalk/ai_portal/check_mandatory_tracked.py"),
     RefreshStep("identifier status", "labtalk/ai_portal/validate_portal_identifiers.py", (), ("--check",)),
     RefreshStep("feed status", "labtalk/ai_portal/build_portal_feed_status.py", (), ("--check",)),
-    RefreshStep("Portal truth audit", "labtalk/portal/labtalk_portal.py", ("--audit-write",), ("--audit",)),
+    RefreshStep("Portal readiness", "labtalk/portal/labtalk_portal.py", ("--audit-check",), ("--audit-check",)),
+    RefreshStep("Portal truth audit report", "labtalk/portal/labtalk_portal.py", ("--audit-write",), None),
     # The generated history summary lives inside labtalk/ai_portal and is
     # therefore an M1 inventory input. Build it before the inventory or a
     # nominal refresh makes its own inventory stale later in the same pass.
@@ -54,8 +56,22 @@ STEPS = (
 )
 
 
-def selected_steps(include_storage: bool) -> tuple[RefreshStep, ...]:
-    return tuple(step for step in STEPS if include_storage or not step.storage)
+def selected_steps(include_storage: bool, check: bool = False) -> tuple[RefreshStep, ...]:
+    return tuple(
+        step for step in STEPS
+        if (include_storage or not step.storage)
+        and (not check or step.check_args is not None)
+    )
+
+
+def report_optional_bbs() -> None:
+    address = ("127.0.0.1", 8765)
+    try:
+        with socket.create_connection(address, timeout=0.3):
+            status = "TCP reachable; identity and protocol untested"
+    except OSError:
+        status = "unavailable; continue with the durable lane handoff"
+    print(f"OPTIONAL  BBS {address[0]}:{address[1]} -- {status}", flush=True)
 
 
 def clipped(text: str, limit: int = 4000) -> str:
@@ -69,6 +85,7 @@ def clipped(text: str, limit: int = 4000) -> str:
 
 def run_step(step: RefreshStep, check: bool) -> bool:
     args = step.check_args if check else step.write_args
+    assert args is not None, "write-only step reached read-only check"
     command = [sys.executable, str(REPO_ROOT / step.relative_script), *args]
     result = subprocess.run(
         command,
@@ -79,7 +96,11 @@ def run_step(step: RefreshStep, check: bool) -> bool:
     if result.returncode == 0:
         detail = result.stdout.strip()
         if check:
-            print(f"PASS  {step.label}", flush=True)
+            detail = next(
+                (line for line in detail.splitlines() if line.startswith("portal-readiness:")),
+                "",
+            )
+            print(f"PASS  {step.label}" + (f" -- {detail}" if detail else ""), flush=True)
         else:
             print(
                 f"DONE  {step.label}" + (f" -- {detail}" if detail else ""),
@@ -87,7 +108,9 @@ def run_step(step: RefreshStep, check: bool) -> bool:
             )
         return True
 
-    print(f"FAIL  {step.label} (exit {result.returncode})", file=sys.stderr)
+    stale = any(": stale -- " in line for line in (result.stdout + result.stderr).splitlines())
+    status = "STALE" if check and result.returncode == 3 and stale else "FAIL"
+    print(f"{status}  {step.label} (exit {result.returncode})", file=sys.stderr)
     if result.stdout.strip():
         print(clipped(result.stdout), file=sys.stderr)
     if result.stderr.strip():
@@ -111,8 +134,10 @@ def main(argv: list[str] | None = None) -> int:
 
     mode = "check" if args.check else "refresh"
     scope = "control + storage" if args.include_storage else "control plane"
-    steps = selected_steps(args.include_storage)
+    steps = selected_steps(args.include_storage, check=args.check)
     print(f"portal-state: {mode} ({scope})", flush=True)
+    if args.check:
+        report_optional_bbs()
     failed: list[str] = []
     passed = 0
     for step in steps:

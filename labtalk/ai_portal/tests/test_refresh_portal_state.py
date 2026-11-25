@@ -23,8 +23,29 @@ class RefreshPortalStateTests(unittest.TestCase):
         self.assertIn("seed budget", labels)
         self.assertIn("mandatory tracked onboarding", labels)
         self.assertIn("identifier status", labels)
-        self.assertIn("Portal truth audit", labels)
+        self.assertIn("Portal readiness", labels)
+        self.assertIn("Portal truth audit report", labels)
         self.assertIn("recall graph tracked targets", labels)
+
+    def test_read_only_scope_never_materializes_the_audit_report(self) -> None:
+        steps = refresh_portal_state.selected_steps(False, check=True)
+        self.assertNotIn("Portal truth audit report", [step.label for step in steps])
+        gate = next(step for step in steps if step.label == "Portal readiness")
+        self.assertEqual(gate.check_args, ("--audit-check",))
+
+    def test_optional_bbs_outage_cannot_fail_readiness(self) -> None:
+        steps = (refresh_portal_state.RefreshStep("green", "green.py"),)
+        stdout = io.StringIO()
+        with (
+            mock.patch.object(refresh_portal_state, "selected_steps", return_value=steps),
+            mock.patch.object(refresh_portal_state, "run_step", return_value=True),
+            mock.patch.object(refresh_portal_state.socket, "create_connection", side_effect=OSError),
+            contextlib.redirect_stdout(stdout),
+        ):
+            result = refresh_portal_state.main(["--check"])
+        self.assertEqual(result, 0)
+        self.assertIn("OPTIONAL  BBS", stdout.getvalue())
+        self.assertIn("unavailable", stdout.getvalue())
 
     def test_f0_policy_gates_follow_tier0_generation(self) -> None:
         labels = [step.label for step in refresh_portal_state.STEPS]

@@ -34,10 +34,8 @@ The binding rule is
 
 ## Mandatory Start
 
-`AI_README.md` is the one canonical front door. Follow its ordered table first:
-newest session closeout, current target, authority seed, local-access checklist
-when applicable, SDLC fast start, source-mutation gate, and DotScript readiness
-when `.dts` work is involved.
+[`AI_README.md`](AI_README.md) defines the startup order and the lane-specific
+handoff lookup. Use that table for both cold starts and resumes.
 
 **Binding on every agent and every person who works this tree, whatever the task:**
 [`labtalk/ai_portal/AI_AGENT_LAWS_SEED_V1.md`](labtalk/ai_portal/AI_AGENT_LAWS_SEED_V1.md).
