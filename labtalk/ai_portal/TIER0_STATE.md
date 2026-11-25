@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-11-21T19:50:16Z
+    generated_utc : 2026-11-25T18:27:27Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is a generated current-state projection;
@@ -11,9 +11,9 @@ verify it with the generator's --check mode before relying on it.
 ## Tree
 
     branch        : development
-    HEAD          : eef247ce4  (2026-10-22)
+    HEAD          : e6de8233f  (2026-11-21)
     upstream      : e9a20b674
-    unpushed      : 2 commit(s) ahead of upstream
+    unpushed      : 3 commit(s) ahead of upstream
 
 ## Declared target
 
@@ -29,7 +29,7 @@ verify it with the generator's --check mode before relying on it.
 
 - The newest closeout by date, SESSION_CLOSEOUT_AIF171_PHASE8_REPAIR_PLAN_2026-10-15.md, is on disk but in no commit. A clone cannot see it; whoever wrote it has not landed it.
 - Closeout(s) on disk but not tracked -- a session's record that never landed: SESSION_CLOSEOUT_AIF171_PHASE8_M4_PLAN_2026-10-15.md, SESSION_CLOSEOUT_AIF171_PHASE8_M4_APPLY_M5_REMEASURE_2026-10-15.md, SESSION_CLOSEOUT_AIF171_PHASE8_M3_APPLY_2026-10-15.md, SESSION_CLOSEOUT_AIF171_PHASE8_M2_PLAN_2026-10-15.md (+13 more).
-- 2 commit(s) are unpushed and invisible to a clone.
+- 3 commit(s) are unpushed and invisible to a clone.
 
 ## Claimed lanes (newest first)
 
@@ -53,7 +53,7 @@ verify it with the generator's --check mode before relying on it.
 
     live   : 2026-07-31_cowork_bbs_agency_legs  (member.ai.claude.cowork)  [stale, reapable]
     live   : AIPR-20260729-001  (member.ai.claude.cowork)  [stale, reapable]
-    live   : CODEX-20261121-REGRESSION-CLOSEOUT  (member.ai.codex)
+    live   : CODEX-20261125-CONTRIBUTOR-019fc81a  (member.ai.codex.local)
     live   : COWORK-20260818-001  (member.ai.claude.cowork)  [stale, reapable]
     live   : COWORK-20260821-002  (member.ai.claude.cowork)  [stale, reapable]
     live   : COWORK-20260826-001  (member.ai.claude.cowork)  [stale, reapable]

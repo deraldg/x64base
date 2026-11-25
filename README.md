@@ -216,6 +216,12 @@ Derald Grimwood
 B.S. Management Information Systems  
 xBase / SAP / ERP background
 
+## Contributors
+
+OpenAI Codex has contributed code, tests, documentation, and website integration.
+See the [x64base contributor credits](https://x64base.com/about/contributors/) for
+the project's human and AI contributors.
+
 ## License
 
 x64base / DotTalk++ is **dual-licensed**:
