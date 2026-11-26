@@ -2,34 +2,37 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-11-25T18:27:27Z
+    generated_utc : 2026-11-26T01:56:50Z
     lane        : AIF-082 (6.1)
 
-Read this before acting. It is a generated current-state projection;
-verify it with the generator's --check mode before relying on it.
+Before relying on this snapshot, run the generator with --check.
 
 ## Tree
 
     branch        : development
-    HEAD          : e6de8233f  (2026-11-21)
+    HEAD          : cf022499f  (2026-11-25)
     upstream      : e9a20b674
-    unpushed      : 3 commit(s) ahead of upstream
+    unpushed      : 5 commit(s) ahead of upstream
 
 ## Declared target
 
     updated       : 2026-07-31T18:50:00Z
     section       : NEXT TARGET -- owner ruling 2026-07-31: no single controlling lane
 
-## Newest closeout
+## Handoff
+
+    lane selected : none (use --lane AIF-NNN for an assigned lane)
+
+### Latest dated closeout filename (all lanes; context only)
 
     file          : SESSION_CLOSEOUT_AIF171_PHASE8_REPAIR_PLAN_2026-10-15.md
     commits behind HEAD : not committed
 
 ## Staleness warnings
 
-- The newest closeout by date, SESSION_CLOSEOUT_AIF171_PHASE8_REPAIR_PLAN_2026-10-15.md, is on disk but in no commit. A clone cannot see it; whoever wrote it has not landed it.
-- Closeout(s) on disk but not tracked -- a session's record that never landed: SESSION_CLOSEOUT_AIF171_PHASE8_M4_PLAN_2026-10-15.md, SESSION_CLOSEOUT_AIF171_PHASE8_M4_APPLY_M5_REMEASURE_2026-10-15.md, SESSION_CLOSEOUT_AIF171_PHASE8_M3_APPLY_2026-10-15.md, SESSION_CLOSEOUT_AIF171_PHASE8_M2_PLAN_2026-10-15.md (+13 more).
-- 3 commit(s) are unpushed and invisible to a clone.
+- The global dated closeout, SESSION_CLOSEOUT_AIF171_PHASE8_REPAIR_PLAN_2026-10-15.md, is on disk but in no commit.
+- Untracked closeout(s): SESSION_CLOSEOUT_AIF171_PHASE8_M4_PLAN_2026-10-15.md, SESSION_CLOSEOUT_AIF171_PHASE8_M4_APPLY_M5_REMEASURE_2026-10-15.md (+15 more).
+- 5 commit(s) are unpushed and invisible to a clone.
 
 ## Claimed lanes (newest first)
 
@@ -53,15 +56,13 @@ verify it with the generator's --check mode before relying on it.
 
     live   : 2026-07-31_cowork_bbs_agency_legs  (member.ai.claude.cowork)  [stale, reapable]
     live   : AIPR-20260729-001  (member.ai.claude.cowork)  [stale, reapable]
-    live   : CODEX-20261125-CONTRIBUTOR-019fc81a  (member.ai.codex.local)
     live   : COWORK-20260818-001  (member.ai.claude.cowork)  [stale, reapable]
     live   : COWORK-20260821-002  (member.ai.claude.cowork)  [stale, reapable]
     live   : COWORK-20260826-001  (member.ai.claude.cowork)  [stale, reapable]
     live   : DECLARED-CAPABILITY-VALIDATOR-20260730  (member.ai.claude.cowork)  [stale, reapable]
     live   : DOCFLUSH-20261013-002  (member.ai.codex)  [stale, reapable]
 
-Aside chains -- a run's claims in order (its horizontal structure);
-parent + born_utc from the durable lineage ledger, '-' until a run wakes.
+Aside chains are ordered claims. Parent and birth UTC come from the lineage ledger.
 
 | run | member | parent | born_utc | asides |
 | --- | --- | --- | --- | --- |
@@ -75,5 +76,4 @@ parent + born_utc from the durable lineage ledger, '-' until a run wakes.
 | CODEX-20260915-AIF165-REGGRADE-001 | member.ai.codex | - | - | AIF-165 |
 | ... | | | | 62 older run(s) omitted |
 
-Perishable detail lives in the artifacts these point at. Do not
-restate anything above; regenerate it.
+Use the source artifacts for detail. Regenerate instead of restating this snapshot.

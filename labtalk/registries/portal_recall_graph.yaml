@@ -418,6 +418,13 @@ nodes:
     hard_fails: false
     tier: 2
 
+  - id: doc.agent_skill
+    label: "x64base agent skill -- which source is authoritative when several look alike, t.live, proof-by-mutates, search traps"
+    path: .claude/skills/x64base/SKILL.md
+    class: semantic
+    enforced_by: null
+    hard_fails: false
+    tier: 2
   - id: doc.ai_glossary
     label: AI Glossary -- coined terms (atoms, quip, wake, lineage, aside, synapse, Class A/B, ...)
     path: labtalk/ai_portal/AI_GLOSSARY_V1.md
@@ -834,6 +841,9 @@ nodes:
 #   evidenced_by doctrine -> the episodic record that produced it.
 #   supersedes   newer -> older.
 edges:
+  - {from: trigger.where_is, to: doc.agent_skill, type: fires_at}
+  - {from: trigger.read_write_dbf, to: doc.agent_skill, type: fires_at}
+  - {from: trigger.use_reference_authority, to: doc.agent_skill, type: fires_at}
   - {from: trigger.ddict, to: procedure.ddict_feed, type: fires_at}
   - {from: trigger.fullstack_doc_push, to: procedure.ddict_feed, type: fires_at}
   - {from: trigger.onboard, to: seed.tier1, type: fires_at}

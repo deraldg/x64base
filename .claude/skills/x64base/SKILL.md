@@ -201,6 +201,29 @@ sessions and is ephemeral by design; `docs/ai-friendly/PSEUDO_CHAT_BOARD.md`
 survives a fresh clone; `BBS SYSPOST` is the attributable, DBF-backed rung. A quip
 to a session that is not checked in reaches nobody -- the tool says so; believe it.
 
+**Each rung has a reach, and the top one is the narrowest.** Pick by where you are
+running, not by which is most durable:
+
+| Rung | Reachable from |
+| --- | --- |
+| quip | any session on this machine, to a CHECKED-IN run only; gitignored, dies with the clone |
+| `PSEUDO_CHAT_BOARD.md` | anything that can read the tree, including a fresh clone and another vendor's agent. The widest reach, and the reason it exists |
+| `BBS SYSPOST` | the host CLI only, today |
+
+The BBS is local by design. `dottalk_bbsd` binds `127.0.0.1:8765` and nothing else;
+the CLI reaches the same DBF store directly, with no pipes or IPC between them, so
+`BBS` works from `.\datarun.ps1` whether or not the daemon is up. A mounted sandbox
+cannot reach it -- the staged lean binary is built against the host's newer glibc
+and will not execute, which is a property of that binary, not a ceiling on the
+sandbox. Nothing outside this machine can reach it at all until the AIF-097 gateway
+lands: that design relays `AUTH <member> <token>` from an HTTP front end to the
+loopback daemon, and `tools/reports/serve_dynamic_reports.py` carries no such relay
+yet.
+
+So do not route a handoff through `SYSPOST` because it is the most attributable
+rung. Route it where the recipient can actually read it. If the recipient is not on
+this host, the board is the top of the ladder for that message.
+
 ## 7. Run IDs collide
 
 `claim-aif` is atomic (`O_EXCL`). `checkin` is a bare write with no existence
