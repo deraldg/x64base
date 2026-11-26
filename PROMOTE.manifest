@@ -133,10 +133,16 @@ tools/packaging/*
 tools/vfp/fixtures/*
 tests/test_where_cache_only.cpp
 
-# --- product edition manifests (development edition stays in dev) -----------
+# --- product edition manifests ---------------------------------------------
 config/package/lean.manifest
 config/package/professional.manifest
 config/package/educational.manifest
+# development.manifest was held back ("development edition stays in dev"),
+# but DOTTALK_PRODUCT defaults to DEVELOPMENT and pro-md, the preset BUILDING.md
+# recommends, selects it: a clean clone of main failed "Missing product package
+# manifest" at configure. Measured by a cold clone 2026-11-26. It is a 6-line
+# file list, not an edition.
+config/package/development.manifest
 
 # --- launchers (product front-ends: pydottalk, CLI, Workbench GUI) ----------------
 #     NOT listed: holdout products (bible, erp/cascade, artic) and ALPHA
