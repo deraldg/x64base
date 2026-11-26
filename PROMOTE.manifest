@@ -133,7 +133,9 @@ tools/packaging/*
 tools/vfp/fixtures/*
 # test_vfp_real_fixture_flags.cpp also reads generated/x64form.scx (and its .SCT
 # memo). It is a Visual FoxPro save, so it cannot be regenerated without VFP;
-# untracked, it failed that ctest on every clone (measured 2026-11-26)./vfp/generated/x64form.scx/vfp/generated/x64form.SCT
+# unpublished, it failed that ctest on every clone of main (measured 2026-11-26).
+tools/vfp/generated/x64form.scx
+tools/vfp/generated/x64form.SCT
 tests/test_where_cache_only.cpp
 
 # --- product edition manifests ---------------------------------------------
