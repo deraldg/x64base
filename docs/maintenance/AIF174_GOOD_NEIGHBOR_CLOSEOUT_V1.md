@@ -73,3 +73,15 @@ timestamp, so datarun's "could not copy" warning did not mean a stale run).
   ~180 uncommitted edits under `docs/manuals/developer/` and
   `dottalkpp/data/help/` from other lanes; a governed refresh over them would
   fuse that work into this lane. Deferred to the tree-cleanup plan.
+
+## RE: PKDURABLE closed, 2026-11-26 16:54Z
+
+- Owner created a 24-hour `host.shell` grant for member.ai.regression and ran
+  the group with `DOTTALK_ALLOW_HOST_COMMANDS=1` set for that window only.
+- First run still FAILED "a child capture is missing": the child launcher ran
+  the build exe from `dottalkpp\data`, so both captures landed in
+  `dottalkpp\data\data	mp`. Fixed in 244fd719f (launcher runs from `dottalkpp\`).
+- Rerun on build Nov 21 2026 11:45:31: `REGRESSION GROUP DURABILITY QUIET LOG`
+  4/4 PASS. PKDURABLE: 15 of 15 markers agree across two processes (13 green,
+  2 deliberately red). Log: `dottalkpp\data	mpegression_group_DURABILITY.log`.
+- The grant expires 24 hours after creation; a later run needs a new one.
