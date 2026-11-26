@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-12T13:38:41",
+  "generated_at": "2026-11-26T06:27:35",
   "labtalk_root": "D:\\code\\ccode\\labtalk",
   "repo_root": "D:\\code\\ccode",
   "portal_registry": "D:\\code\\ccode\\labtalk\\registries\\portal.yaml",
@@ -1202,30 +1202,6 @@
       "label": "AI Portal -- Open Rulings",
       "field": "source",
       "path": "D:\\code\\ccode\\labtalk\\docs\\maintenance\\AIF_*RULING_SHEET*.md + labtalk\\ai_portal\\TIER0_STATE.md"
-    },
-    {
-      "item_id": "launcher.wx",
-      "label": "wx GUI",
-      "field": "path",
-      "path": "D:\\code\\ccode\\wx.run.ps1"
-    },
-    {
-      "item_id": "launcher.wx_next",
-      "label": "wx Next GUI",
-      "field": "path",
-      "path": "D:\\code\\ccode\\wx.next.run.ps1"
-    },
-    {
-      "item_id": "launcher.run_wx",
-      "label": "run-wx.ps1",
-      "field": "path",
-      "path": "D:\\code\\ccode\\run-wx.ps1"
-    },
-    {
-      "item_id": "launcher.run_wx_next",
-      "label": "run-wx-next.ps1",
-      "field": "path",
-      "path": "D:\\code\\ccode\\run-wx-next.ps1"
     }
   ],
   "ai_report_audit": {
@@ -1233,10 +1209,10 @@
     "status": "active_mandatory",
     "policy_path": "labtalk/registries/ai_report_audit.yaml",
     "project_registry": "labtalk/registries/projects.yaml",
-    "closeout_count": 148,
+    "closeout_count": 166,
     "grandfathered_count": 9,
-    "enforced_count": 139,
-    "valid_count": 139,
+    "enforced_count": 157,
+    "valid_count": 157,
     "finding_count": 0,
     "findings": [],
     "intake_enforced_count": 9,
@@ -1478,6 +1454,141 @@
         "path": "docs/maintenance/SESSION_CLOSEOUT_AIF165_REGRESSION_GRADING_2026-09-16.md"
       },
       {
+        "report_id": "AIPR-20261013-002",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-10-13",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_AIF171_CANONICAL_HARVEST_APPLY_2026-10-13.md"
+      },
+      {
+        "report_id": "AIPR-20261013-004",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-10-13",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_AIF171_DOTREF_M3E_2026-10-13.md"
+      },
+      {
+        "report_id": "AIPR-20261014-001",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-10-15",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_AIF171_DOTREF_ROUTER_PARITY_2026-10-14.md"
+      },
+      {
+        "report_id": "AIPR-20261015-001",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-10-15",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_AIF171_GATE7_CANDIDATE_REPAIR_2026-10-15.md"
+      },
+      {
+        "report_id": "AIPR-20261014-003",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-10-15",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_AIF171_MANUAL_GATE4_APPLY_2026-10-14.md"
+      },
+      {
+        "report_id": "AIPR-20261014-002",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-10-15",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_AIF171_MANUAL_GATE4_PLAN_2026-10-14.md"
+      },
+      {
+        "report_id": "AIPR-20261013-003",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-10-13",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_AIF171_MANUAL_GATE6_CANDIDATE_2026-10-13.md"
+      },
+      {
+        "report_id": "AIPR-20261014-004",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-10-15",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_AIF171_MANUAL_GATE7_REVIEW_2026-10-14.md"
+      },
+      {
+        "report_id": "AIPR-20261015-002",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-10-15",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_AIF171_PHASE8_ENTRY_PREFLIGHT_2026-10-15.md"
+      },
+      {
+        "report_id": "AIPR-20261015-004",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-10-15",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_AIF171_PHASE8_M1_APPLY_2026-10-15.md"
+      },
+      {
+        "report_id": "AIPR-20261015-005",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-10-15",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_AIF171_PHASE8_M2_PLAN_2026-10-15.md"
+      },
+      {
+        "report_id": "AIPR-20261015-006",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-10-15",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_AIF171_PHASE8_M3_APPLY_2026-10-15.md"
+      },
+      {
+        "report_id": "AIPR-20261015-008",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-10-15",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_AIF171_PHASE8_M4_APPLY_M5_REMEASURE_2026-10-15.md"
+      },
+      {
+        "report_id": "AIPR-20261015-007",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-10-15",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_AIF171_PHASE8_M4_PLAN_2026-10-15.md"
+      },
+      {
+        "report_id": "AIPR-20261015-003",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-10-15",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_AIF171_PHASE8_REPAIR_PLAN_2026-10-15.md"
+      },
+      {
         "report_id": "AIPR-20260819-COWORK-016",
         "provider": "Anthropic",
         "product": "Claude (Cowork)",
@@ -1676,6 +1787,15 @@
         "path": "docs/maintenance/SESSION_CLOSEOUT_DATABASE_SCHEMA_CATALOG_2026-08-10.md"
       },
       {
+        "report_id": "AIPR-20261012-004",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-10-12",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_DDICT_DATA_REPAIR_2026-10-12.md"
+      },
+      {
         "report_id": "DDICT-HOUSEKEEPING-20261010-041750",
         "provider": "OpenAI",
         "product": "Codex",
@@ -1683,6 +1803,15 @@
         "kind": "session_closeout",
         "project": "project.ai_friendly",
         "path": "docs/maintenance/SESSION_CLOSEOUT_DDICT_HOUSEKEEPING_2026-10-10.md"
+      },
+      {
+        "report_id": "AIPR-20261012-003",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-10-12",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_DDICT_NATIVE_FEED_COMPLETION_2026-10-12.md"
       },
       {
         "report_id": "AIPR-20260724-001",
@@ -1944,6 +2073,15 @@
           "locking",
           "multi_workspace"
         ]
+      },
+      {
+        "report_id": "AIPR-20261013-001",
+        "provider": "OpenAI",
+        "product": "Codex",
+        "date": "2026-10-13",
+        "kind": "session_closeout",
+        "project": "project.x64base.runtime",
+        "path": "docs/maintenance/SESSION_CLOSEOUT_GUARDED_HELP_REFRESH_2026-10-13.md"
       },
       {
         "report_id": "AIPR-20260723-003",
@@ -4617,6 +4755,11 @@
           "field": "docs",
           "state": "ok",
           "path": "D:\\code\\ccode\\docs\\maintenance\\DOTTALKPP_SDLC_CHARTER_v0.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\AIF174_REGRESSION_PROCESS_GROUPS_V1.md"
         },
         {
           "field": "docs",
@@ -10883,7 +11026,7 @@
     },
     {
       "id": "launcher.wx",
-      "label": "wx GUI",
+      "label": "DotTalk++ Workbench GUI",
       "section": "portal.launchers",
       "kind": "powershell_launcher",
       "status": "interactive",
@@ -10892,8 +11035,8 @@
       "paths": [
         {
           "field": "path",
-          "state": "missing",
-          "path": "D:\\code\\ccode\\wx.run.ps1"
+          "state": "ok",
+          "path": "D:\\code\\ccode\\wb.run.ps1"
         }
       ],
       "runnable": true,
@@ -10902,7 +11045,7 @@
     },
     {
       "id": "launcher.wx_next",
-      "label": "wx Next GUI",
+      "label": "DotTalk++ Next Workbench GUI",
       "section": "portal.launchers",
       "kind": "powershell_launcher",
       "status": "interactive",
@@ -10911,8 +11054,8 @@
       "paths": [
         {
           "field": "path",
-          "state": "missing",
-          "path": "D:\\code\\ccode\\wx.next.run.ps1"
+          "state": "ok",
+          "path": "D:\\code\\ccode\\wb.next.run.ps1"
         }
       ],
       "runnable": true,
@@ -10951,6 +11094,11 @@
           "field": "script",
           "state": "ok",
           "path": "D:\\code\\ccode\\tk.run.sh"
+        },
+        {
+          "field": "workdir",
+          "state": "ok",
+          "path": "D:\\code\\ccode"
         }
       ],
       "runnable": true,
@@ -11016,7 +11164,7 @@
     },
     {
       "id": "launcher.run_wx",
-      "label": "run-wx.ps1",
+      "label": "run-wb.ps1",
       "section": "portal.launchers",
       "kind": "powershell_launcher",
       "status": "interactive",
@@ -11025,8 +11173,8 @@
       "paths": [
         {
           "field": "path",
-          "state": "missing",
-          "path": "D:\\code\\ccode\\run-wx.ps1"
+          "state": "ok",
+          "path": "D:\\code\\ccode\\run-wb.ps1"
         }
       ],
       "runnable": true,
@@ -11035,7 +11183,7 @@
     },
     {
       "id": "launcher.run_wx_next",
-      "label": "run-wx-next.ps1",
+      "label": "run-wb-next.ps1",
       "section": "portal.launchers",
       "kind": "powershell_launcher",
       "status": "interactive",
@@ -11044,8 +11192,8 @@
       "paths": [
         {
           "field": "path",
-          "state": "missing",
-          "path": "D:\\code\\ccode\\run-wx-next.ps1"
+          "state": "ok",
+          "path": "D:\\code\\ccode\\run-wb-next.ps1"
         }
       ],
       "runnable": true,
@@ -11084,6 +11232,11 @@
           "field": "script",
           "state": "ok",
           "path": "D:\\code\\ccode\\arctictalk.datarun.sh"
+        },
+        {
+          "field": "workdir",
+          "state": "ok",
+          "path": "D:\\code\\ccode"
         }
       ],
       "runnable": true,
@@ -11122,6 +11275,11 @@
           "field": "script",
           "state": "ok",
           "path": "D:\\code\\ccode\\artic.datarun.sh"
+        },
+        {
+          "field": "workdir",
+          "state": "ok",
+          "path": "D:\\code\\ccode"
         }
       ],
       "runnable": true,
@@ -11179,6 +11337,11 @@
           "field": "script",
           "state": "ok",
           "path": "D:\\code\\ccode\\wsl_build_dottalkpp.sh"
+        },
+        {
+          "field": "workdir",
+          "state": "ok",
+          "path": "D:\\code\\ccode"
         }
       ],
       "runnable": true,
@@ -11198,6 +11361,11 @@
           "field": "script",
           "state": "ok",
           "path": "D:\\code\\ccode\\datarun_wsl.sh"
+        },
+        {
+          "field": "workdir",
+          "state": "ok",
+          "path": "D:\\code\\ccode"
         }
       ],
       "runnable": true,
@@ -11217,6 +11385,11 @@
           "field": "script",
           "state": "ok",
           "path": "D:\\code\\ccode\\wslrun.sh"
+        },
+        {
+          "field": "workdir",
+          "state": "ok",
+          "path": "D:\\code\\ccode"
         }
       ],
       "runnable": true,

@@ -1,6 +1,6 @@
 # LabTalk Portal Truth Audit
 
-Generated: 2026-10-12T13:38:41
+Generated: 2026-11-26T06:27:35
 
 ## Summary
 
@@ -8,7 +8,7 @@ Generated: 2026-10-12T13:38:41
 - Items: 332
 - Runnable items: 33
 - Proof-like records: 155
-- Missing paths: 203
+- Missing paths: 199
 - Duplicate item IDs: 0
 - AI report audit findings: 0
 
@@ -215,10 +215,6 @@ Generated: 2026-10-12T13:38:41
 | `proof.gui.uidef_workbench_store_image` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_store_image_20260918.txt` |
 | `proof.gui.uidef_workbench_store_image` | `related` | `D:\code\ccode\labtalk\docs\maintenance\evidence\AIF120_workbench_20260918_v10-store.png` |
 | `report.aif_rulings` | `source` | `D:\code\ccode\labtalk\docs\maintenance\AIF_*RULING_SHEET*.md + labtalk\ai_portal\TIER0_STATE.md` |
-| `launcher.wx` | `path` | `D:\code\ccode\wx.run.ps1` |
-| `launcher.wx_next` | `path` | `D:\code\ccode\wx.next.run.ps1` |
-| `launcher.run_wx` | `path` | `D:\code\ccode\run-wx.ps1` |
-| `launcher.run_wx_next` | `path` | `D:\code\ccode\run-wx-next.ps1` |
 
 ## Duplicate IDs
 
@@ -227,8 +223,8 @@ No duplicate item IDs found.
 ## AI Report Identity and Provenance
 
 - Schema: `ai-report-audit-v1`
-- Enforced closeouts: 139
-- Valid closeouts: 139
+- Enforced closeouts: 157
+- Valid closeouts: 157
 - Grandfathered closeouts: 9
 - Findings: 0
 
@@ -357,7 +353,7 @@ All enforced AI-authored closeouts have valid identity and provenance envelopes.
 | `app.labtalk.case_library` | `portal.apps` | `case_library` | `root` ok: `D:\code\ccode\docs\cases` |
 | `app.labtalk.dataset_library` | `portal.apps` | `dataset_library` | `root` ok: `D:\code\ccode\dottalkpp\data` |
 | `app.labtalk.afb` | `portal.apps` | `local_ai_lab` | `root` ok: `D:\code` |
-| `project.x64base.runtime` | `portal.projects` | `runtime_project` | `root` ok: `D:\code\ccode`<br>`docs` ok: `D:\code\ccode\README.md`<br>`docs` ok: `D:\code\ccode\AI_PORTAL.md`<br>`docs` ok: `D:\code\ccode\docs\governance\REPO_BOUNDARIES_RUNTIME_GUI_LABTALK_v1.md`<br>`docs` ok: `D:\code\ccode\docs\maintenance\DOTTALKPP_SDLC_CHARTER_v0.md`<br>`docs` ok: `D:\code\ccode\docs\maintenance\DDL_SCHEMA_PDLC_LANE_V1.md`<br>`docs` ok: `D:\code\ccode\docs\maintenance\SQLSEL_PDLC_LANE_V1.md`<br>`docs` ok: `D:\code\ccode\docs\maintenance\BUFFER_VISIBILITY_TWO_FAMILIES_V1.md`<br>`docs` ok: `D:\code\ccode\docs\maintenance\EVALUATOR_DIFFERENTIAL_HARNESS_SCOPE_V1.md`<br>`docs` ok: `D:\code\ccode\docs\maintenance\EXPORT_SDF_PDLC_CLOSEOUT_V1.md`<br>`docs` ok: `D:\code\ccode\docs\maintenance\X32_TRADITIONAL_XBASE_SUPPORT_LANE_V1.md`<br>`docs` ok: `D:\code\ccode\docs\maintenance\ARCTICTALK_RETRO_TUI_WORKBENCH_LANE_V1.md`<br>`docs` ok: `D:\code\ccode\docs\maintenance\RETRO_LANE_CHARTER_20260726.md`<br>`docs` ok: `D:\code\ccode\docs\maintenance\RETRO_LANE_PROPOSAL_V2_20260726.md`<br>`docs` ok: `D:\code\ccode\docs\maintenance\MEMO_ZOO_ORTHOGONALITY_STRESS_CHARTER_V1.md`<br>`docs` ok: `D:\code\ccode\docs\maintenance\MEMO_OBJECT_CHALLENGE_LANE_V1.md`<br>`docs` ok: `D:\code\ccode\docs\maintenance\MEMO_RESIDENT_MINIDB_V1.md`<br>`docs` ok: `D:\code\ccode\docs\maintenance\RAM_MINIDB_MEMO_WORKSPACE_OPERATIONS_V1.md`<br>`docs` ok: `D:\code\ccode\docs\maintenance\AI_MEMO_WAL_ATOMICITY_LANE_V1.md`<br>`docs` ok: `D:\code\ccode\docs\maintenance\WORKSPACE_MEMO_RESIDENCE_PLAN_V1.md` |
+| `project.x64base.runtime` | `portal.projects` | `runtime_project` | `root` ok: `D:\code\ccode`<br>`docs` ok: `D:\code\ccode\README.md`<br>`docs` ok: `D:\code\ccode\AI_PORTAL.md`<br>`docs` ok: `D:\code\ccode\docs\governance\REPO_BOUNDARIES_RUNTIME_GUI_LABTALK_v1.md`<br>`docs` ok: `D:\code\ccode\docs\maintenance\DOTTALKPP_SDLC_CHARTER_v0.md`<br>`docs` ok: `D:\code\ccode\docs\maintenance\AIF174_REGRESSION_PROCESS_GROUPS_V1.md`<br>`docs` ok: `D:\code\ccode\docs\maintenance\DDL_SCHEMA_PDLC_LANE_V1.md`<br>`docs` ok: `D:\code\ccode\docs\maintenance\SQLSEL_PDLC_LANE_V1.md`<br>`docs` ok: `D:\code\ccode\docs\maintenance\BUFFER_VISIBILITY_TWO_FAMILIES_V1.md`<br>`docs` ok: `D:\code\ccode\docs\maintenance\EVALUATOR_DIFFERENTIAL_HARNESS_SCOPE_V1.md`<br>`docs` ok: `D:\code\ccode\docs\maintenance\EXPORT_SDF_PDLC_CLOSEOUT_V1.md`<br>`docs` ok: `D:\code\ccode\docs\maintenance\X32_TRADITIONAL_XBASE_SUPPORT_LANE_V1.md`<br>`docs` ok: `D:\code\ccode\docs\maintenance\ARCTICTALK_RETRO_TUI_WORKBENCH_LANE_V1.md`<br>`docs` ok: `D:\code\ccode\docs\maintenance\RETRO_LANE_CHARTER_20260726.md`<br>`docs` ok: `D:\code\ccode\docs\maintenance\RETRO_LANE_PROPOSAL_V2_20260726.md`<br>`docs` ok: `D:\code\ccode\docs\maintenance\MEMO_ZOO_ORTHOGONALITY_STRESS_CHARTER_V1.md`<br>`docs` ok: `D:\code\ccode\docs\maintenance\MEMO_OBJECT_CHALLENGE_LANE_V1.md`<br>`docs` ok: `D:\code\ccode\docs\maintenance\MEMO_RESIDENT_MINIDB_V1.md`<br>`docs` ok: `D:\code\ccode\docs\maintenance\RAM_MINIDB_MEMO_WORKSPACE_OPERATIONS_V1.md`<br>`docs` ok: `D:\code\ccode\docs\maintenance\AI_MEMO_WAL_ATOMICITY_LANE_V1.md`<br>`docs` ok: `D:\code\ccode\docs\maintenance\WORKSPACE_MEMO_RESIDENCE_PLAN_V1.md` |
 | `project.x64base.sqlsel` | `portal.projects` | `pdlc_project` | `root` ok: `D:\code\ccode`<br>`docs` ok: `D:\code\ccode\docs\maintenance\SQLSEL_PDLC_LANE_V1.md`<br>`docs` ok: `D:\code\ccode\docs\manuals\user\sqlsel.md` |
 | `project.x64base.public_staging` | `portal.projects` | `publication_staging_project` | `root` ok: `C:\x64base` |
 | `project.labtalk.campus` | `portal.projects` | `campus_project` | `root` ok: `D:\code\ccode\labtalk`<br>`docs` ok: `D:\code\ccode\labtalk\README.md`<br>`docs` ok: `D:\code\ccode\labtalk\portal\README.md`<br>`docs` ok: `D:\code\ccode\labtalk\ai_portal\README.md`<br>`docs` ok: `D:\code\ccode\labtalk\ai_portal\ROOT_AI_PORTAL_ENTRY_V1.md`<br>`docs` ok: `D:\code\ccode\labtalk\ai_portal\SDLC_FAST_START_SEED_V1.md`<br>`docs` ok: `D:\code\ccode\labtalk\ai_portal\EXTERNAL_AI_CHANGE_PACKAGE_V1.md`<br>`docs` ok: `D:\code\ccode\labtalk\ai_portal\AI_PORTAL_HARDENING_LANE_V1.md`<br>`docs` ok: `D:\code\ccode\labtalk\LABTALK_CAMPUS_ARCHITECTURE_v0.md` |
@@ -572,24 +568,24 @@ All enforced AI-authored closeouts have valid identity and provenance envelopes.
 | `launcher.cli` | `portal.launchers` | `powershell_launcher` | `path` ok: `D:\code\ccode\datarun.ps1` |
 | `launcher.erp` | `portal.launchers` | `powershell_launcher` | `path` ok: `D:\code\ccode\erprun.ps1` |
 | `launcher.bible` | `portal.launchers` | `powershell_launcher` | `path` ok: `D:\code\ccode\biblerun.ps1` |
-| `launcher.wx` | `portal.launchers` | `powershell_launcher` | `path` missing: `D:\code\ccode\wx.run.ps1` |
-| `launcher.wx_next` | `portal.launchers` | `powershell_launcher` | `path` missing: `D:\code\ccode\wx.next.run.ps1` |
+| `launcher.wx` | `portal.launchers` | `powershell_launcher` | `path` ok: `D:\code\ccode\wb.run.ps1` |
+| `launcher.wx_next` | `portal.launchers` | `powershell_launcher` | `path` ok: `D:\code\ccode\wb.next.run.ps1` |
 | `launcher.tk` | `portal.launchers` | `powershell_launcher` | `path` ok: `D:\code\ccode\tk.run.ps1` |
-| `launcher.tk_wsl` | `portal.launchers` | `wsl_launcher` | `script` ok: `D:\code\ccode\tk.run.sh` |
+| `launcher.tk_wsl` | `portal.launchers` | `wsl_launcher` | `script` ok: `D:\code\ccode\tk.run.sh`<br>`workdir` ok: `D:\code\ccode` |
 | `launcher.run_cli` | `portal.launchers` | `powershell_launcher` | `path` ok: `D:\code\ccode\run-cli.ps1` |
 | `launcher.run_erp` | `portal.launchers` | `powershell_launcher` | `path` ok: `D:\code\ccode\run-erp.ps1` |
 | `launcher.run_bible` | `portal.launchers` | `powershell_launcher` | `path` ok: `D:\code\ccode\run-bible.ps1` |
-| `launcher.run_wx` | `portal.launchers` | `powershell_launcher` | `path` missing: `D:\code\ccode\run-wx.ps1` |
-| `launcher.run_wx_next` | `portal.launchers` | `powershell_launcher` | `path` missing: `D:\code\ccode\run-wx-next.ps1` |
+| `launcher.run_wx` | `portal.launchers` | `powershell_launcher` | `path` ok: `D:\code\ccode\run-wb.ps1` |
+| `launcher.run_wx_next` | `portal.launchers` | `powershell_launcher` | `path` ok: `D:\code\ccode\run-wb-next.ps1` |
 | `launcher.arctictalk_runtime` | `portal.launchers` | `powershell_launcher` | `path` ok: `D:\code\ccode\arctictalk.datarun.ps1` |
-| `launcher.arctictalk_runtime_wsl` | `portal.launchers` | `wsl_launcher` | `script` ok: `D:\code\ccode\arctictalk.datarun.sh` |
+| `launcher.arctictalk_runtime_wsl` | `portal.launchers` | `wsl_launcher` | `script` ok: `D:\code\ccode\arctictalk.datarun.sh`<br>`workdir` ok: `D:\code\ccode` |
 | `launcher.artic_runtime` | `portal.launchers` | `powershell_launcher` | `path` ok: `D:\code\ccode\artic.datarun.ps1` |
-| `launcher.artic_runtime_wsl` | `portal.launchers` | `wsl_launcher` | `script` ok: `D:\code\ccode\artic.datarun.sh` |
+| `launcher.artic_runtime_wsl` | `portal.launchers` | `wsl_launcher` | `script` ok: `D:\code\ccode\artic.datarun.sh`<br>`workdir` ok: `D:\code\ccode` |
 | `launcher.pydottalk` | `portal.launchers` | `powershell_launcher` | `path` ok: `D:\code\ccode\run-pydottalk.ps1` |
 | `launcher.pycrud` | `portal.launchers` | `powershell_launcher` | `path` ok: `D:\code\ccode\run-pycrud.ps1` |
-| `launcher.wsl_build` | `portal.launchers` | `wsl_launcher` | `script` ok: `D:\code\ccode\wsl_build_dottalkpp.sh` |
-| `launcher.wsl_cli` | `portal.launchers` | `wsl_launcher` | `script` ok: `D:\code\ccode\datarun_wsl.sh` |
-| `launcher.wsl_runtime` | `portal.launchers` | `wsl_launcher` | `script` ok: `D:\code\ccode\wslrun.sh` |
+| `launcher.wsl_build` | `portal.launchers` | `wsl_launcher` | `script` ok: `D:\code\ccode\wsl_build_dottalkpp.sh`<br>`workdir` ok: `D:\code\ccode` |
+| `launcher.wsl_cli` | `portal.launchers` | `wsl_launcher` | `script` ok: `D:\code\ccode\datarun_wsl.sh`<br>`workdir` ok: `D:\code\ccode` |
+| `launcher.wsl_runtime` | `portal.launchers` | `wsl_launcher` | `script` ok: `D:\code\ccode\wslrun.sh`<br>`workdir` ok: `D:\code\ccode` |
 
 ## Diagram Provenance
 
