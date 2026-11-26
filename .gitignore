@@ -571,3 +571,14 @@ scripts/build/
 # AIF-093: `.text` is the curated "chosen to travel" marker -- never ignore it.
 # No rule above matches `.text`; this is an explicit durability guard (R1).
 !**/*.text
+
+# Added 2026-11-26 (tree cleanup, onboarding-fixes thread): local backups and
+# IDE captures that were sitting untracked. Ignoring them deletes nothing.
+/terminals/
+/dottalkpp/data/help.bak-*/
+/dottalkpp/docs/generated/backups/
+/dottalkpp/data/datadict/datadict_promotion_backups/
+# Staged Linux runtime bins (the extensionless binary escapes *.exe).
+/dottalkpp/bin-wsl/
+/dottalkpp/bin-wsl-lean/
+/dottalkpp/bin/bin-wsl/
