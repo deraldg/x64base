@@ -168,5 +168,6 @@ clone building each product/index combination from scratch on a clean machine.
 
 ## License
 
-To be determined. Editions intended for distribution will need this settled
-before public release.
+GNU GPL v3 (`LICENSE`), with a separate commercial license available for
+closed-source use. The posture and its rationale are in `LICENSING.md`
+(owner decision 2026-08-08).
