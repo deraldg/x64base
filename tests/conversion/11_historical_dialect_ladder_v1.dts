@@ -49,7 +49,7 @@ ECHO LADDER BEGIN historical-dialect
 * ---------------------------------------------------------------------------
 * Run 1 failed at every rung with:
 *   Open failed: DbArea: file does not exist:
-*     D:\code\ccode\dottalkpp\data\og\STUDENTS.dbf
+*     &_DATA\og\STUDENTS.dbf
 * because "USE og/STUDENTS" resolved the slashed path against the DATA root
 * (the process cwd), NOT the DBF root. The engine declares both at startup:
 *   DATA : dottalkpp\data          <- cwd
@@ -57,7 +57,7 @@ ECHO LADDER BEGIN historical-dialect
 * The protocol the metadata scripts follow is to SET THE SLOT FIRST and then
 * use BARE table names. Slashed relative paths bypass slot resolution.
 ECHO LADDER PATHS set-dbf-slot-to-og
-SETPATH DBF D:\code\ccode\dottalkpp\data\dbf\og
+SETPATH DBF &_DATA\dbf\og
 SETPATH
 
 * ---------------------------------------------------------------------------
@@ -75,8 +75,8 @@ ECHO LADDER L0 END
 * Outputs go to a dedicated ladder directory so the DBF slot can point at it
 * for the remaining rungs without disturbing the og/ fixture.
 ECHO LADDER L1 COPY as-fox26
-COPY TO D:\code\ccode\dottalkpp\data\dbf\ladder\students_fox26 AS FOX26 OVERWRITE
-SETPATH DBF D:\code\ccode\dottalkpp\data\dbf\ladder
+COPY TO &_DATA\dbf\ladder\students_fox26 AS FOX26 OVERWRITE
+SETPATH DBF &_DATA\dbf\ladder
 USE students_fox26
 COUNT
 STRUCT
@@ -87,7 +87,7 @@ ECHO LADDER L1 END
 * ---------------------------------------------------------------------------
 ECHO LADDER L2 COPY as-vfp
 USE students_fox26
-COPY TO D:\code\ccode\dottalkpp\data\dbf\ladder\students_vfp AS VFP OVERWRITE
+COPY TO &_DATA\dbf\ladder\students_vfp AS VFP OVERWRITE
 USE students_vfp
 COUNT
 STRUCT
@@ -98,7 +98,7 @@ ECHO LADDER L2 END
 * ---------------------------------------------------------------------------
 ECHO LADDER L3 COPY as-x64
 USE students_vfp
-COPY TO D:\code\ccode\dottalkpp\data\dbf\ladder\students_x64 AS X64 OVERWRITE
+COPY TO &_DATA\dbf\ladder\students_x64 AS X64 OVERWRITE
 USE students_x64
 COUNT
 STRUCT
@@ -109,7 +109,7 @@ ECHO LADDER L3 END
 * ---------------------------------------------------------------------------
 ECHO LADDER L4 COPY as-x64-vector
 USE students_vfp
-COPY TO D:\code\ccode\dottalkpp\data\dbf\ladder\students_x64vec AS X64 VECTOR OVERWRITE
+COPY TO &_DATA\dbf\ladder\students_x64vec AS X64 VECTOR OVERWRITE
 USE students_x64vec
 COUNT
 STRUCT
@@ -121,12 +121,12 @@ ECHO LADDER L4 END
 * Same record read at the 1985 end and the modern end. DOB/ENROLL_D are D type:
 * date encoding is the single most likely thing to drift across four dialects.
 ECHO LADDER L5 COMPARE origin
-SETPATH DBF D:\code\ccode\dottalkpp\data\dbf\og
+SETPATH DBF &_DATA\dbf\og
 USE STUDENTS
 GO TOP
 DISPLAY
 ECHO LADDER L5 COMPARE x64
-SETPATH DBF D:\code\ccode\dottalkpp\data\dbf\ladder
+SETPATH DBF &_DATA\dbf\ladder
 USE students_x64
 GO TOP
 DISPLAY

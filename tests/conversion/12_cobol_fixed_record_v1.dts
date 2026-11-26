@@ -48,7 +48,7 @@ ECHO COBOL BEGIN fixed-record-hop
 * db.logicalName() == "STUDENTS", and the logical name comes from the opened
 * table, so it must be opened as STUDENTS.
 ECHO COBOL C1 ORIGIN
-SETPATH DBF D:\code\ccode\dottalkpp\data\dbf\og
+SETPATH DBF &_DATA\dbf\og
 SETPATH
 USE STUDENTS
 COUNT

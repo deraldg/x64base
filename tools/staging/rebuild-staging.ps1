@@ -60,7 +60,9 @@
 
 [CmdletBinding()]
 param(
-    [string] $Dev      = "D:\code\ccode",
+    # Defaults to the clone this script lives in (tools/staging -> root), not a
+    # pinned drive letter: the development clone travels (CLAUDE.md, 2026-09-25).
+    [string] $Dev      = (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)),
     [string] $Staging  = "C:\x64base",
     [string] $Remote   = "https://github.com/deraldg/x64base.git",
     [string] $Branch   = "main",

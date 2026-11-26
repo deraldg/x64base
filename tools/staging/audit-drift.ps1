@@ -41,7 +41,7 @@
 #>
 [CmdletBinding()]
 param(
-  [string]$Dev      = 'D:\code\ccode',
+  [string]$Dev      = (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)),  # this clone, not a pinned drive
   [string]$Stage    = 'C:\x64base',
   [string]$Manifest = '',
   [switch]$ReportOnly,
