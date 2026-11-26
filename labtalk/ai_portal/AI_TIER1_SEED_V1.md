@@ -64,6 +64,10 @@ modified and hundreds of untracked files belonging to other sessions.
   staged. `-uall` is REQUIRED: this repo sets `status.showUntrackedFiles=no`, so
   a bare status cannot see a NEW file at all (measured 2026-08-17; OI-008).
 - Commit one coherent theme at a time. A push is a scoped slice, never a sweep.
+- When a commit includes work contributed by Codex, add
+  `Co-authored-by: Codex <codex@openai.com>` as a trailer in the final commit
+  message. Preserve the primary author and any other co-author trailers. Carry
+  the Codex trailer into a squash commit that includes the contribution.
 - **In a mounted sandbox, no git that takes `.git/index.lock`**: no mutate, and
   NOT plain `git status` (it takes the lock; wedged the repo once). Read-only IS
   lock-free and allowed: `git --no-optional-locks status`, `log`, `ls-files`,
