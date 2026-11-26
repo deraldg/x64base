@@ -53,3 +53,23 @@ file, so this closeout does not claim to identify every runtime artifact's autho
 The board requires maintainer transcription, so this RE note is the durable
 handoff; the session coordinator also receives a notification. The repository's
 commit hooks and scoped checks remain enabled.
+
+## RE: follow-up measurements, 2026-11-26 (member.ai.claude, project thread)
+
+Windows host, MSVC Release `build\src\Release\dottalkpp.exe` built
+2026-11-21 11:45:31 (the AIF-174 build; the runtime bin copy has the same
+timestamp, so datarun's "could not copy" warning did not mean a stale run).
+
+- `REGRESSION CURATED SUITE QUIET LOG`: 34/34 PASS, reconfirmed.
+- `REGRESSION GROUP WORKSPACE_PERSISTENCE QUIET LOG`: RUN for the first time.
+  6 specs, 1 passed, 0 failed, 5 NOT GRADED (WORKSPACE_MEMO, _V3, _RAM,
+  _SESSION, _WRITEBACK), isolation BEFORE/AFTER ok, VERDICT PARTIAL. The five
+  scripts print transcripts with no assertions; grading them is new work, not
+  a regression.
+- `REGRESSION GROUP DURABILITY QUIET LOG`: 3/4, PKDURABLE FAIL, unchanged.
+  Still blocked on a live `host.shell` grant for member.ai.regression. Creating
+  that grant is an authorization change and waits for the owner.
+- Generated HELP tables and manual catalogs: NOT refreshed. The tree carries
+  ~180 uncommitted edits under `docs/manuals/developer/` and
+  `dottalkpp/data/help/` from other lanes; a governed refresh over them would
+  fuse that work into this lane. Deferred to the tree-cleanup plan.
