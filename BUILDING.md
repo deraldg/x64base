@@ -151,9 +151,10 @@ Both axes are live and are **independent** of each other:
 default index mode is **`LEGACY`, not `NONE`**: passing `-DDOTTALK_WITH_INDEX=OFF`
 disables only the LMDB backend and leaves the house index in place.
 
-**Full reference:** `docs/manuals/developer/dev/dev-21-build-system.md` (DEV-21
-Build System) documents every target, option, preset, entry-point script and
-platform status, with the measured landmines.
+**Full reference:** [DEV-21 Build System](https://github.com/deraldg/x64base/blob/development/docs/manuals/developer/dev/dev-21-build-system.md)
+on the `development` branch (the developer manual is not published on `main`)
+documents every target, option, preset, entry-point script and platform
+status, with the measured landmines.
 
 Design and proof records for the edition work:
 

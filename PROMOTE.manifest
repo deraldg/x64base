@@ -150,6 +150,19 @@ wb.next.run.ps1
 launch-common.ps1
 tk.run.ps1
 tk.run.sh
+# The runtime launchers BUILDING.md tells a reader to run, and the WSL build
+# lane it documents. Added 2026-11-26: they were on main only from history,
+# so the drift audit classed them off-projection and a purge would have
+# deleted the quickstart's own first command.
+datarun.ps1
+datarun.sh
+wslbuild.sh
+wsl_build_dottalkpp.sh
+wslrun.sh
+wsl-common.sh
+# The one CI dependency: .github/workflows/ci.yml runs it. tools/ci/** stays
+# unpublished otherwise (see NOT PUBLISHED).
+tools/ci/source_policy.py
 
 # --- engine source + headers (the WHOLE tracked set, never a subset) --------
 # Subsetting is the one thing that breaks a build system. If a lane is not ready
