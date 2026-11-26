@@ -5,6 +5,13 @@ description: Source-of-truth map and measurement traps for the x64base / DotTalk
 
 # x64base -- what CLAUDE.md does not carry
 
+    budget      : 16384 B hard ceiling -- the same ceiling the Tier 1 seed carries,
+                  because no agent-facing document should outweigh the seed. When it
+                  binds, SPLIT rather than cut: a skill may carry reference files
+                  beside SKILL.md, loaded on demand instead of with the description.
+                  Enforced by `tools/staging/check_seed_budget.py`.
+
+
 **This file deliberately does not restate `CLAUDE.md` or `AI_TIER1_SEED_V1.md`.**
 Both are already in front of you. Repo roles, the portal walk, git rules, build and
 run, closeout, commit coordination: read them there. AIF-082 6.8 -- two shims that
@@ -210,15 +217,11 @@ running, not by which is most durable:
 | `PSEUDO_CHAT_BOARD.md` | anything that can read the tree, including a fresh clone and another vendor's agent. The widest reach, and the reason it exists |
 | `BBS SYSPOST` | the host CLI only, today |
 
-The BBS is local by design. `dottalk_bbsd` binds `127.0.0.1:8765` and nothing else;
-the CLI reaches the same DBF store directly, with no pipes or IPC between them, so
-`BBS` works from `.\datarun.ps1` whether or not the daemon is up. A mounted sandbox
-cannot reach it -- the staged lean binary is built against the host's newer glibc
-and will not execute, which is a property of that binary, not a ceiling on the
-sandbox. Nothing outside this machine can reach it at all until the AIF-097 gateway
-lands: that design relays `AUTH <member> <token>` from an HTTP front end to the
-loopback daemon, and `tools/reports/serve_dynamic_reports.py` carries no such relay
-yet.
+The BBS is local by design and that is why its rung is the narrowest: what it
+binds, what a sandbox cannot reach, and what the AIF-097 gateway would change are
+measured in the **xbbs skill**, which also covers boards, CHAT and egress. Load it
+before working inside the subsystem; this table is only what you need to CHOOSE a
+rung.
 
 So do not route a handoff through `SYSPOST` because it is the most attributable
 rung. Route it where the recipient can actually read it. If the recipient is not on

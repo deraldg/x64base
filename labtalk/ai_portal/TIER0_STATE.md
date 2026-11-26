@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-11-26T01:56:50Z
+    generated_utc : 2026-11-26T14:24:03Z
     lane        : AIF-082 (6.1)
 
 Before relying on this snapshot, run the generator with --check.
@@ -10,9 +10,9 @@ Before relying on this snapshot, run the generator with --check.
 ## Tree
 
     branch        : development
-    HEAD          : cf022499f  (2026-11-25)
+    HEAD          : 9d1c7c500  (2026-11-25)
     upstream      : e9a20b674
-    unpushed      : 5 commit(s) ahead of upstream
+    unpushed      : 7 commit(s) ahead of upstream
 
 ## Declared target
 
@@ -32,7 +32,7 @@ Before relying on this snapshot, run the generator with --check.
 
 - The global dated closeout, SESSION_CLOSEOUT_AIF171_PHASE8_REPAIR_PLAN_2026-10-15.md, is on disk but in no commit.
 - Untracked closeout(s): SESSION_CLOSEOUT_AIF171_PHASE8_M4_PLAN_2026-10-15.md, SESSION_CLOSEOUT_AIF171_PHASE8_M4_APPLY_M5_REMEASURE_2026-10-15.md (+15 more).
-- 5 commit(s) are unpushed and invisible to a clone.
+- 7 commit(s) are unpushed and invisible to a clone.
 
 ## Claimed lanes (newest first)
 

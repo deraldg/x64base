@@ -98,6 +98,12 @@ triggers:
     label: about to use or trust a reference authority or command/function catalog
   - id: trigger.capture_proof
     label: about to capture runtime output as proof
+  # Added 2026-11-25: the BBS subsystem had no trigger at all, so nothing fired
+  # at the material on lanes, reach, the model bridge or egress. Measured the
+  # same day: `ollama` appears in four engine sources and in ZERO files under
+  # docs/, labtalk/ or tools/.
+  - id: trigger.use_bbs_or_chat
+    label: about to use BBS boards or posts, the dottalk_bbsd daemon, CHAT or the house Ollama server, NET EGRESS, or to pick a rung for an agent-to-agent message
   # The fourth gap, closed 2026-08-16 after establishing what actually owns this.
   # It was NOT a cross-repo problem. The operative artifact an editor needs is the
   # AIF-033 lane (status: active foundation), which itself names the site's
@@ -421,6 +427,13 @@ nodes:
   - id: doc.agent_skill
     label: "x64base agent skill -- which source is authoritative when several look alike, t.live, proof-by-mutates, search traps"
     path: .claude/skills/x64base/SKILL.md
+    class: semantic
+    enforced_by: null
+    hard_fails: false
+    tier: 2
+  - id: doc.bbs_skill
+    label: "xbbs agent skill -- the three lanes (BBS/conversation/CHAT), what the daemon binds and who can reach it, the local Ollama bridge and its two-install decoy, revocable egress isolation, and the PSEUDO command that does not exist"
+    path: .claude/skills/xbbs/SKILL.md
     class: semantic
     enforced_by: null
     hard_fails: false
@@ -842,6 +855,8 @@ nodes:
 #   supersedes   newer -> older.
 edges:
   - {from: trigger.where_is, to: doc.agent_skill, type: fires_at}
+  - {from: trigger.use_bbs_or_chat, to: doc.bbs_skill, type: fires_at}
+  - {from: trigger.use_bbs_or_chat, to: doc.agent_skill, type: fires_at}
   - {from: trigger.read_write_dbf, to: doc.agent_skill, type: fires_at}
   - {from: trigger.use_reference_authority, to: doc.agent_skill, type: fires_at}
   - {from: trigger.ddict, to: procedure.ddict_feed, type: fires_at}

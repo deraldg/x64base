@@ -45,6 +45,8 @@ from pathlib import Path
 
 DEFAULT_TARGETS = [
     "labtalk/ai_portal/AI_TIER1_SEED_V1.md",
+    ".claude/skills/x64base/SKILL.md",
+    ".claude/skills/xbbs/SKILL.md",
 ]
 
 # `budget` then a colon then an integer then an optional B. Tolerant of the
