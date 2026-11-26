@@ -22,6 +22,13 @@ endif()
 if (TARGET xindex)
   target_link_libraries(sqlsel PUBLIC xindex)
 endif()
+# sqlsel_statement.cpp guards its CDX join probe on DOTTALK_HAS_XINDEX; this
+# library is not built through the dottalk target helper that defines it.
+if (DOTTALK_HAS_XINDEX AND TARGET xindex)
+  target_compile_definitions(sqlsel PRIVATE DOTTALK_HAS_XINDEX=1)
+else()
+  target_compile_definitions(sqlsel PRIVATE DOTTALK_HAS_XINDEX=0)
+endif()
 if (TARGET memo)
   target_link_libraries(sqlsel PUBLIC memo)
 endif()
