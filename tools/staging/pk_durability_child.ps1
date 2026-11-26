@@ -56,7 +56,12 @@ foreach ($p in @($alt1, $alt2)) {
     if (Test-Path -LiteralPath $p) { Remove-Item -LiteralPath $p -Force }
 }
 
-Push-Location $data
+# Run from dottalkpp\, NOT dottalkpp\data. The build exe has no dottalkpp.ini
+# beside it, so it takes DATA = <cwd>\data. From dottalkpp\data that made
+# DATA = dottalkpp\data\data and the captures landed in data\data\tmp, where
+# the validator never looks: PKDURABLE then failed "a child capture is
+# missing" while the measurement itself had passed. Measured 2026-11-26.
+Push-Location (Split-Path -Parent $data)
 try {
     Write-Host "PKDURABLE-CHILD: run 1 of 2 -- declare and write"
     & $exe --script $run1 | Out-Null
