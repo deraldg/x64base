@@ -1,0 +1,81 @@
+; ============================================================================
+; GROUP CATALOG MINT -- FIXTURE (AIF-160)
+;
+; ONE SCRIPT, NO FENCE. GRPFAIL is split across four files because a foreign
+; record lock has to be planted between staging and apply. NOTHING IS BEING
+; MADE TO FAIL HERE -- the question is only whether a healthy group commit
+; brings the SYS catalog into being -- so the transaction opens and closes
+; inside one file and no cross-script state is relied on.
+;
+; TWO TABLES IS THE MINIMUM THAT DECIDES A GROUP. A single-area commit takes
+; the ordinary path and writes no group row at all, so a one-table fixture
+; would mint nothing and the arm's red would mean "the fixture was wrong"
+; rather than "the catalog does not self-create".
+;
+; THE ARM AROUND THIS SCRIPT IS THE MEASUREMENT, NOT THIS SCRIPT. It moves the
+; SYS path slot to a directory that does not exist, asserts the catalog is
+; ABSENT, runs this, and then asserts the directory, GROUPS.dbf and
+; GROUPMEM.dbf all came into being. The two markers below are the GUARD on
+; that reading: if the group did not commit, the file readings are about a
+; transaction that never happened, and the arm says so instead of crediting
+; the absence.
+;
+; THE FIXTURES ARE DISPOSABLE SANDBOX TABLES, ERASED AT BOTH ENDS, and they
+; are erased at the START as well as the end on purpose -- a run killed
+; between the CREATE and the ERASE would otherwise leave GRPMINT1 carrying
+; MARK = AFTER, and the next run's commit would have nothing to change.
+; ============================================================================
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+SET PATH DBF DBF/SANDBOX
+SET PATH INDEXES INDEXES/SANDBOX
+SET PATH LMDB LMDB/SANDBOX
+
+FORMULA "GRPMINT-BEGIN"
+
+ERASE TABLE GRPMINT1 CONFIRM
+ERASE TABLE GRPMINT2 CONFIRM
+
+CREATE X64 GRPMINT1 (ID N(6,0), MARK C(8))
+APPEND
+REPLACE ID WITH "1"
+REPLACE MARK WITH "BEFORE"
+CLOSE
+
+CREATE X64 GRPMINT2 (ID N(6,0), MARK C(8))
+APPEND
+REPLACE ID WITH "1"
+REPLACE MARK WITH "BEFORE"
+CLOSE
+
+SELECT 1
+USE GRPMINT1
+SELECT 2
+USE GRPMINT2
+SELECT 1
+
+SET MODE SQL
+BEGIN
+UPDATE GRPMINT1 SET MARK = 'AFTER' WHERE ID = 1
+UPDATE GRPMINT2 SET MARK = 'AFTER' WHERE ID = 1
+COMMIT
+SET MODE NATIVE
+
+; THE GUARD. Both members must read AFTER. A group that never enlisted two
+; tables, or never decided, leaves at least one of these .F. -- and an absent
+; catalog after a commit that did not happen is not evidence about anything.
+SELECT 1
+? "GM_S1_member_one_applied:" + (ALLTRIM(MARK) = "AFTER")
+SELECT 2
+? "GM_S2_member_two_applied:" + (ALLTRIM(MARK) = "AFTER")
+
+SELECT 2
+CLOSE
+SELECT 1
+CLOSE
+
+ERASE TABLE GRPMINT1 CONFIRM
+ERASE TABLE GRPMINT2 CONFIRM
+
+FORMULA "GRPMINT-END"
